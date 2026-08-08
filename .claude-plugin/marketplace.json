@@ -346,6 +346,19 @@
       "category": "development",
       "homepage": "https://github.com/tony/ai-workflow-plugins/tree/main/plugins/package-updater",
       "license": "MIT"
+    },
+    {
+      "name": "disk",
+      "description": "Survey disk usage across every filesystem layer and reclaim space safely — classifies each candidate as regenerable cache, proved-redundant copy, or irreplaceable agent history, and deletes only what a proof says is safe",
+      "version": "0.1.0",
+      "author": {
+        "name": "Tony Narlock",
+        "email": "tony@git-pull.com"
+      },
+      "source": "./plugins/disk",
+      "category": "productivity",
+      "homepage": "https://github.com/tony/ai-workflow-plugins/tree/main/plugins/disk",
+      "license": "MIT"
     }
   ]
 }
