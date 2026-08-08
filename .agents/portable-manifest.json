@@ -144,7 +144,7 @@
         "references/study-repos.md": "plugins/disk/references/study-repos.md",
         "references/virtual-disks.md": "plugins/disk/references/virtual-disks.md"
       },
-      "bytes": 29158
+      "bytes": 29502
     },
     {
       "name": "disk-reclaim",

@@ -1,16 +1,20 @@
 ---
 name: disk
 description: >-
-  Use when a machine is low on disk space, or the user wants to find what is
-  consuming it and clean it up. Triggers on phrases like "disk is full",
-  "out of space", "what is eating my disk", "where did my space go", "clean
-  up my drive", "find the biggest directories", "reclaim disk space", "clean
-  up crap", "my home directory is huge", "analyze disk usage", or "free up
-  space". Surveys every filesystem layer, classifies each candidate as
-  regenerable cache, proved-redundant copy, or irreplaceable agent history,
-  and reclaims only what a proof says is safe. Protects LLM transcripts and
-  session stores by default. Never halts a virtual machine or WSL guest on
-  its own initiative.
+  Use when a machine is low on disk space, when the user wants to find what
+  is consuming it, or when the user asks whether a large directory is safe
+  to delete. Triggers on "disk is full", "out of space", "what is eating my
+  disk", "where did my space go", "clean up my drive", "find the biggest
+  directories", "reclaim disk space", "clean up crap", "my home directory is
+  huge", or "free up space". Also on safe-to-delete questions about specific
+  consumers — "can I delete my npm cache", "are my old agent sessions safe
+  to remove", "is this backup a duplicate", "node_modules is eating my SSD"
+  — and on virtual-disk pressure like "why is my ext4.vhdx so large", "WSL
+  is taking hundreds of gigabytes", or "shrink my WSL disk". Surveys every
+  filesystem layer, classifies each candidate as regenerable cache,
+  proved-redundant copy, or irreplaceable agent history, and reclaims only
+  what a proof says is safe. Protects LLM transcripts and session stores by
+  default. Never halts a VM or WSL guest on its own initiative.
 allowed-tools: "Bash, Read, Write, Edit, Glob, Grep, AskUserQuestion, TodoWrite"
 metadata:
   source: "plugins/disk/skills/disk/SKILL.md"
