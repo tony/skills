@@ -1,0 +1,14 @@
+{
+  "skill_name": "disk",
+  "trigger": {
+    "positive": [
+      { "prompt": "my disk is full, what is eating all the space", "top_k": 3 },
+      { "prompt": "where did my space go, find the biggest directories", "top_k": 3 },
+      { "prompt": "clean up the crap on this machine and free up space", "top_k": 3 }
+    ],
+    "negative": [
+      { "prompt": "clone my project's dependencies so I can read their source", "owner": "study-deps" },
+      { "prompt": "my pytest suite takes too long, can you speed it up", "owner": "pytest-optimizer" }
+    ]
+  }
+}
