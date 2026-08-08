@@ -1,7 +1,12 @@
 ---
-description: Reclaim disk space through a proof-gated plan — clears regenerable caches, merges proved-redundant copies, and protects agent history
-argument-hint: "[path or filesystem to focus on]"
-allowed-tools: Bash, Read, Write, Edit, Glob, Grep, AskUserQuestion, TodoWrite
+name: disk-reclaim
+description: >-
+  Reclaim disk space through a proof-gated plan — clears regenerable caches,
+  merges proved-redundant copies, and protects agent history
+allowed-tools: "Bash, Read, Write, Edit, Glob, Grep, AskUserQuestion, TodoWrite"
+metadata:
+  argument-hint: "[path or filesystem to focus on]"
+  source: "plugins/disk/commands/reclaim.md"
 ---
 
 Reclaim disk space on this machine without losing anything the user
@@ -25,29 +30,29 @@ another.
 
 ## Survey and classify
 
-Run the same analysis `/disk:usage` performs. Do not shortcut it
+Run the same analysis the `disk-usage` skill performs. Do not shortcut it
 because this command will execute — the classification is what makes
 execution safe.
 
 Establish the layer structure first, per
-`${CLAUDE_PLUGIN_ROOT}/references/virtual-disks.md`, so no guest-side
+`references/virtual-disks.md`, so no guest-side
 figure is mistaken for space recovered on the host.
 
 Assign every candidate to a tier from
-`${CLAUDE_PLUGIN_ROOT}/references/candidate-catalog.md`, classifying
+`references/candidate-catalog.md`, classifying
 where content is homogeneous rather than propagating a parent's tier.
 
 Prove every apparent duplicate with the path-set comparison in
-`${CLAUDE_PLUGIN_ROOT}/references/redundancy-proofs.md`. A `diff`
+`references/redundancy-proofs.md`. A `diff`
 reporting no differing files proves nothing on its own.
 
 Treat transcripts and session stores per
-`${CLAUDE_PLUGIN_ROOT}/references/agent-history.md`, resolving each
+`references/agent-history.md`, resolving each
 tool's discovery glob and native compression support before proposing
 anything.
 
 Handle directories of upstream clones per
-`${CLAUDE_PLUGIN_ROOT}/references/study-repos.md`, checking each for
+`references/study-repos.md`, checking each for
 unpushed work before calling it a conversion candidate.
 
 Carry forward, for every candidate: its tier, its size, the layer it
@@ -115,4 +120,10 @@ consequences stated.
 Report host recovery as pending rather than achieved, and say plainly
 which numbers are measured and which are projected.
 
-Follow `${CLAUDE_PLUGIN_ROOT}/references/output-contract.md`.
+Follow `references/output-contract.md`.
+
+
+## Portability notes
+
+- `$ARGUMENTS` — the text the user passed when invoking this skill. If your host does not substitute it, read it as the user's request in the current turn, and ask when there is none.
+- Bundled files — every relative path in this skill points at a file shipped inside this skill directory. Read them from here, not from the host's plugin tree.

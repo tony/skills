@@ -132,6 +132,51 @@
       "bytes": 7754
     },
     {
+      "name": "disk",
+      "sources": [
+        "plugins/disk/skills/disk/SKILL.md"
+      ],
+      "bundled": {
+        "references/agent-history.md": "plugins/disk/references/agent-history.md",
+        "references/candidate-catalog.md": "plugins/disk/references/candidate-catalog.md",
+        "references/output-contract.md": "plugins/disk/references/output-contract.md",
+        "references/redundancy-proofs.md": "plugins/disk/references/redundancy-proofs.md",
+        "references/study-repos.md": "plugins/disk/references/study-repos.md",
+        "references/virtual-disks.md": "plugins/disk/references/virtual-disks.md"
+      },
+      "bytes": 29158
+    },
+    {
+      "name": "disk-reclaim",
+      "sources": [
+        "plugins/disk/commands/reclaim.md"
+      ],
+      "bundled": {
+        "references/agent-history.md": "plugins/disk/references/agent-history.md",
+        "references/candidate-catalog.md": "plugins/disk/references/candidate-catalog.md",
+        "references/output-contract.md": "plugins/disk/references/output-contract.md",
+        "references/redundancy-proofs.md": "plugins/disk/references/redundancy-proofs.md",
+        "references/study-repos.md": "plugins/disk/references/study-repos.md",
+        "references/virtual-disks.md": "plugins/disk/references/virtual-disks.md"
+      },
+      "bytes": 27205
+    },
+    {
+      "name": "disk-usage",
+      "sources": [
+        "plugins/disk/commands/usage.md"
+      ],
+      "bundled": {
+        "references/agent-history.md": "plugins/disk/references/agent-history.md",
+        "references/candidate-catalog.md": "plugins/disk/references/candidate-catalog.md",
+        "references/output-contract.md": "plugins/disk/references/output-contract.md",
+        "references/redundancy-proofs.md": "plugins/disk/references/redundancy-proofs.md",
+        "references/study-repos.md": "plugins/disk/references/study-repos.md",
+        "references/virtual-disks.md": "plugins/disk/references/virtual-disks.md"
+      },
+      "bytes": 25760
+    },
+    {
       "name": "double-check",
       "sources": [
         "plugins/double-check/skills/double-check/SKILL.md"
@@ -915,6 +960,12 @@
     "plugins/terraform/references/layout-discovery.md": 4,
     "plugins/terraform/references/lock-and-init.md": 4,
     "plugins/business/references/measurement.md": 3,
+    "plugins/disk/references/agent-history.md": 3,
+    "plugins/disk/references/candidate-catalog.md": 3,
+    "plugins/disk/references/output-contract.md": 3,
+    "plugins/disk/references/redundancy-proofs.md": 3,
+    "plugins/disk/references/study-repos.md": 3,
+    "plugins/disk/references/virtual-disks.md": 3,
     "plugins/github-actions/references/action-pinning.md": 3,
     "plugins/github-actions/references/dependabot-closeout.md": 3,
     "plugins/package-updater/references/follow-ups.md": 3,
