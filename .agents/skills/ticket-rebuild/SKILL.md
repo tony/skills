@@ -117,14 +117,17 @@ section list from `altitude.md` for the role the item should be.
 Then verify the future tense specifically. Every surviving invariant passes
 the test: *if violated, is the work pointless, or is a neighbour broken?*
 
-Sanitize for local paths, hostnames, emails, tokens, and internal URLs. Run
-the mechanical checks, resolving the registry with a glob plus a flat-layout
-fallback because plugins cache under a version directory, through `sh`
-because zsh aborts on an unmatched glob:
+Sanitize for local paths, hostnames, emails, tokens, and internal URLs. Then
+run the mechanical checks, resolving the registry at the first hit:
 
-```bash
-sh -c 'for c in "$1"/../../pr/*/references/signatures.yml "$1"/../../slop/*/references/signatures.yml "$1"/../pr/references/signatures.yml "$1"/../slop/references/signatures.yml; do [ -f "$c" ] && echo "$c" && break; done' sh "$CLAUDE_PLUGIN_ROOT"
-```
+1. `references/signatures.yml`
+2. `references/slop-signatures.yml`
+
+An installed plugin caches under a version directory, so a sibling sits one
+level further out than those paths suggest. Glob the version segment rather
+than hard-coding it, and run the glob through `sh` — zsh treats an unmatched
+glob as a fatal error and would abort before reaching the flat-layout
+fallback.
 
 No hit means one line saying so, then continue on judgment.
 

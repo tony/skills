@@ -131,13 +131,16 @@ checkbox list of technical outcomes, it is wrong — rewrite it.
 Reread the whole body for local absolute paths, hostnames, emails, tokens,
 and internal URLs, including inside every pasted log. This is a gate.
 
-Resolve the slop registry for the mechanical checks. Plugins cache under a
-version directory, so the sibling path needs a glob plus a flat-layout
-fallback, run through `sh` because zsh aborts on an unmatched glob:
+Resolve the slop registry for the mechanical checks. First hit wins:
 
-```bash
-sh -c 'for c in "$1"/../../pr/*/references/signatures.yml "$1"/../../slop/*/references/signatures.yml "$1"/../pr/references/signatures.yml "$1"/../slop/references/signatures.yml; do [ -f "$c" ] && echo "$c" && break; done' sh "$CLAUDE_PLUGIN_ROOT"
-```
+1. `references/signatures.yml`
+2. `references/slop-signatures.yml`
+
+An installed plugin caches under a version directory, so a sibling sits one
+level further out than those paths suggest. Glob the version segment rather
+than hard-coding it, and run the glob through `sh` — zsh treats an unmatched
+glob as a fatal error and would abort before reaching the flat-layout
+fallback.
 
 No hit means no registry: say so in one line and continue with judgment
 alone. The check is non-blocking by design.

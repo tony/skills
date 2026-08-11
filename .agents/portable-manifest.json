@@ -202,10 +202,11 @@
         "plugins/gh/skills/create-issue/SKILL.md"
       ],
       "bundled": {
+        "references/contract.md": "plugins/ticket/references/contract.md",
         "references/rendered-markdown.md": "plugins/gh/references/rendered-markdown.md",
         "references/source-links.md": "plugins/gh/references/source-links.md"
       },
-      "bytes": 26911
+      "bytes": 32662
     },
     {
       "name": "gh-rendered-markdown",
@@ -421,9 +422,10 @@
         "plugins/pr/commands/pr.md"
       ],
       "bundled": {
+        "references/contract.md": "plugins/ticket/references/contract.md",
         "references/template-resolution.md": "plugins/pr/references/template-resolution.md"
       },
-      "bytes": 10741
+      "bytes": 16491
     },
     {
       "name": "pr-deslop",
@@ -791,9 +793,11 @@
         "references/linear.md": "plugins/ticket/references/providers/linear.md",
         "references/resolve.md": "plugins/ticket/references/resolve.md",
         "references/shortcut.md": "plugins/ticket/references/providers/shortcut.md",
+        "references/signatures.yml": "plugins/pr/references/signatures.yml",
+        "references/slop-signatures.yml": "plugins/slop/references/signatures.yml",
         "references/trello.md": "plugins/ticket/references/providers/trello.md"
       },
-      "bytes": 116893
+      "bytes": 144364
     },
     {
       "name": "ticket-rebuild",
@@ -813,9 +817,11 @@
         "references/linear.md": "plugins/ticket/references/providers/linear.md",
         "references/resolve.md": "plugins/ticket/references/resolve.md",
         "references/shortcut.md": "plugins/ticket/references/providers/shortcut.md",
+        "references/signatures.yml": "plugins/pr/references/signatures.yml",
+        "references/slop-signatures.yml": "plugins/slop/references/signatures.yml",
         "references/trello.md": "plugins/ticket/references/providers/trello.md"
       },
-      "bytes": 116559
+      "bytes": 144055
     },
     {
       "name": "weave-architecture",
@@ -990,8 +996,8 @@
     "plugins/weave/references/present-results.md": 11,
     "plugins/weave/docs/repo-guard-protocol.md": 10,
     "plugins/weave/references/worker-backends.md": 10,
-    "plugins/pr/references/signatures.yml": 7,
-    "plugins/slop/references/signatures.yml": 7,
+    "plugins/pr/references/signatures.yml": 9,
+    "plugins/slop/references/signatures.yml": 9,
     "plugins/business/references/interim-format.md": 6,
     "plugins/business/references/provenance.md": 6,
     "plugins/weave/references/deslop-pass.md": 6,
@@ -1003,6 +1009,7 @@
     "plugins/package-updater/references/upstream-links.md": 4,
     "plugins/terraform/references/layout-discovery.md": 4,
     "plugins/terraform/references/lock-and-init.md": 4,
+    "plugins/ticket/references/contract.md": 4,
     "plugins/business/references/measurement.md": 3,
     "plugins/disk/references/agent-history.md": 3,
     "plugins/disk/references/candidate-catalog.md": 3,
@@ -1043,7 +1050,6 @@
     "plugins/situate/references/prior-conversations.md": 2,
     "plugins/spike/references/verification-gates.md": 2,
     "plugins/ticket/references/altitude.md": 2,
-    "plugins/ticket/references/contract.md": 2,
     "plugins/ticket/references/hierarchy.md": 2,
     "plugins/ticket/references/providers/asana.md": 2,
     "plugins/ticket/references/providers/azure-devops.md": 2,

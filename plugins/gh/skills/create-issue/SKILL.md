@@ -28,13 +28,14 @@ drafting.
 
 The `ticket` plugin, when installed, owns the content contract these bodies
 follow — what past-tense provenance is worth carrying, and how to state what
-"done" means without hard-coding the implementation. Plugins cache under a
-version directory, so resolve it with a glob plus a flat-layout fallback,
-run through `sh` because zsh aborts on an unmatched glob:
+"done" means without hard-coding the implementation. Read it from
+`${CLAUDE_PLUGIN_ROOT}/../ticket/references/contract.md`.
 
-```bash
-sh -c 'for c in "$1"/../../ticket/*/references/contract.md "$1"/../ticket/references/contract.md; do [ -f "$c" ] && echo "$c" && break; done' sh "$CLAUDE_PLUGIN_ROOT"
-```
+An installed plugin caches under a version directory, so that sibling sits
+one level further out than the path suggests. Glob the version segment rather
+than hard-coding it, and run the glob through `sh` — zsh treats an unmatched
+glob as a fatal error and would abort before reaching the flat-layout
+fallback.
 
 No hit means the contract is unavailable. Continue with the rules below; the
 resolve is an enhancement, never a prerequisite.
