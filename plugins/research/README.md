@@ -7,25 +7,25 @@ Clone and study your project's dependencies at the exact versions you use — so
 In Claude Code, add the marketplace:
 
 ```console
-/plugin marketplace add tony/ai-workflow-plugins
+/plugin marketplace add tony/skills
 ```
 
 Install the plugin:
 
 ```console
-/plugin install research@ai-workflow-plugins
+/plugin install research@skills
 ```
 
 In Codex, add the marketplace:
 
 ```console
-codex plugin marketplace add tony/ai-workflow-plugins
+codex plugin marketplace add tony/skills
 ```
 
 Install the plugin:
 
 ```console
-codex plugin add research@ai-workflow-plugins
+codex plugin add research@skills
 ```
 
 ## Skills

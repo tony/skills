@@ -15,25 +15,25 @@ question of whether the work still serves what it was started for.
 In Claude Code, add the marketplace:
 
 ```console
-/plugin marketplace add tony/ai-workflow-plugins
+/plugin marketplace add tony/skills
 ```
 
 Install the plugin:
 
 ```console
-/plugin install situate@ai-workflow-plugins
+/plugin install situate@skills
 ```
 
 In Codex, add the marketplace:
 
 ```console
-codex plugin marketplace add tony/ai-workflow-plugins
+codex plugin marketplace add tony/skills
 ```
 
 Install the plugin:
 
 ```console
-codex plugin add situate@ai-workflow-plugins
+codex plugin add situate@skills
 ```
 
 ## Skills

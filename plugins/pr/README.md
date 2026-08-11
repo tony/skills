@@ -7,25 +7,25 @@ Generate, refresh, recut, and review gold-standard pull request descriptions wit
 In Claude Code, add the marketplace:
 
 ```console
-/plugin marketplace add tony/ai-workflow-plugins
+/plugin marketplace add tony/skills
 ```
 
 Install the plugin:
 
 ```console
-/plugin install pr@ai-workflow-plugins
+/plugin install pr@skills
 ```
 
 In Codex, add the marketplace:
 
 ```console
-codex plugin marketplace add tony/ai-workflow-plugins
+codex plugin marketplace add tony/skills
 ```
 
 Install the plugin:
 
 ```console
-codex plugin add pr@ai-workflow-plugins
+codex plugin add pr@skills
 ```
 
 ## Skills

@@ -10,25 +10,25 @@ gates, and fan out multiple tickets in parallel.
 In Claude Code, add the marketplace:
 
 ```console
-/plugin marketplace add tony/ai-workflow-plugins
+/plugin marketplace add tony/skills
 ```
 
 Install the plugin:
 
 ```console
-/plugin install action@ai-workflow-plugins
+/plugin install action@skills
 ```
 
 In Codex, add the marketplace:
 
 ```console
-codex plugin marketplace add tony/ai-workflow-plugins
+codex plugin marketplace add tony/skills
 ```
 
 Install the plugin:
 
 ```console
-codex plugin add action@ai-workflow-plugins
+codex plugin add action@skills
 ```
 
 ## Skills

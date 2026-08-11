@@ -14,25 +14,25 @@ claim a change lands "in vX.Y" unless the PR itself is release work.
 In Claude Code, add the marketplace:
 
 ```console
-/plugin marketplace add tony/ai-workflow-plugins
+/plugin marketplace add tony/skills
 ```
 
 Install the plugin:
 
 ```console
-/plugin install merge-pr@ai-workflow-plugins
+/plugin install merge-pr@skills
 ```
 
 In Codex, add the marketplace:
 
 ```console
-codex plugin marketplace add tony/ai-workflow-plugins
+codex plugin marketplace add tony/skills
 ```
 
 Install the plugin:
 
 ```console
-codex plugin add merge-pr@ai-workflow-plugins
+codex plugin add merge-pr@skills
 ```
 
 The skills below are written with Claude Code's leading slash. Codex uses

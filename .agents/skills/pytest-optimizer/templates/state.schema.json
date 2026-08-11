@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/tony/ai-workflow-plugins/pytest-optimizer/state.schema.json",
+  "$id": "https://github.com/tony/skills/pytest-optimizer/state.schema.json",
   "title": "pytest-optimizer durable memory",
   "description": "Schemas for the JSON files written under the resolved memory directory (.pytest-optimizer/ or the XDG/LOCALAPPDATA fallback).",
   "$defs": {

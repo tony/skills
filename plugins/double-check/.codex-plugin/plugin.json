@@ -6,7 +6,7 @@
     "name": "Tony Narlock",
     "email": "tony@git-pull.com"
   },
-  "homepage": "https://github.com/tony/ai-workflow-plugins/tree/main/plugins/double-check",
+  "homepage": "https://github.com/tony/skills/tree/main/plugins/double-check",
   "license": "MIT",
   "skills": "./skills/"
 }

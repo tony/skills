@@ -11,25 +11,25 @@ as separate commits.
 In Claude Code, add the marketplace:
 
 ```console
-/plugin marketplace add tony/ai-workflow-plugins
+/plugin marketplace add tony/skills
 ```
 
 Install the plugin:
 
 ```console
-/plugin install package-updater@ai-workflow-plugins
+/plugin install package-updater@skills
 ```
 
 In Codex, add the marketplace:
 
 ```console
-codex plugin marketplace add tony/ai-workflow-plugins
+codex plugin marketplace add tony/skills
 ```
 
 Install the plugin:
 
 ```console
-codex plugin add package-updater@ai-workflow-plugins
+codex plugin add package-updater@skills
 ```
 
 ## Skills
