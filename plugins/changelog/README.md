@@ -28,16 +28,13 @@ Install the plugin:
 codex plugin add changelog@ai-workflow-plugins
 ```
 
-The skills below are written with Claude Code's leading slash. Codex uses
-the same names without it, so `/changelog:…` there is `changelog:…`.
-
 ## Skills
 
-| Skill | Description |
-|---------|-------------|
-| `/changelog` | Analyze commits, categorize changes, and insert entries into the changelog |
-| `/changelog:refresh` | Update the branch's own entries to its current net change (stacks a new commit with `--commit`) |
-| `/changelog:recut` | Rebase out the branch's earlier changelog commits and regenerate its entries fresh (commits with `--commit`) |
+| Claude Code | Codex | Description |
+|---|---|---|
+| `/changelog` | `changelog` | Analyze commits, categorize changes, and insert entries into the changelog |
+| `/changelog:refresh` | `changelog:refresh` | Update the branch's own entries to its current net change (stacks a new commit with `--commit`) |
+| `/changelog:recut` | `changelog:recut` | Rebase out the branch's earlier changelog commits and regenerate its entries fresh (commits with `--commit`) |
 
 ## 5-Phase Workflow
 

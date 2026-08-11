@@ -54,7 +54,7 @@ it.
 
 ## Components
 
-### `/business:research` (command)
+### `/business:research` (skill)
 
 Collect the data. Presents an orchestration plan (plan mode where
 the host supports it), probes which instruments actually exist —

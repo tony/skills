@@ -30,24 +30,21 @@ Install the plugin:
 codex plugin add weave@ai-workflow-plugins
 ```
 
-The skills below are written with Claude Code's leading slash. Codex uses
-the same names without it, so `/weave:…` there is `weave:…`.
-
 ## Skills
 
-| Skill | Description |
-|---------|-------------|
-| `/weave:ask` | Ask adversarial participants a question, synthesize the best answer |
-| `/weave:plan` | Get independent implementation plans, synthesize the best plan |
-| `/weave:prompt` | Run a prompt in isolated worktrees, pick the best implementation |
-| `/weave:execute` | Run a task in isolated worktrees, synthesize the best parts of each |
-| `/weave:architecture` | Generate project scaffolding, conventions, skills, and architectural docs, then synthesize the best architecture |
-| `/weave:review` | Run independent code reviews, produce a consensus-weighted report |
-| `/weave:fix-review` | Fix review findings as atomic commits with test coverage |
-| `/weave:brainstorm` | Generate independent original ideas from each participant, with optional multiple variants |
-| `/weave:refine` | Iteratively improve an artifact through adversarial critique and weaving |
-| `/weave:brainstorm-and-refine` | Full pipeline: brainstorm originals, then iteratively judge, weave, and refine |
-| `/weave:serene-bliss` | Three-lens DX brainstorm-and-refine (Bliss, Serenity, Sublimity) with panel judging |
+| Claude Code | Codex | Description |
+|---|---|---|
+| `/weave:ask` | `weave:ask` | Ask adversarial participants a question, synthesize the best answer |
+| `/weave:plan` | `weave:plan` | Get independent implementation plans, synthesize the best plan |
+| `/weave:prompt` | `weave:prompt` | Run a prompt in isolated worktrees, pick the best implementation |
+| `/weave:execute` | `weave:execute` | Run a task in isolated worktrees, synthesize the best parts of each |
+| `/weave:architecture` | `weave:architecture` | Generate project scaffolding, conventions, skills, and architectural docs, then synthesize the best architecture |
+| `/weave:review` | `weave:review` | Run independent code reviews, produce a consensus-weighted report |
+| `/weave:fix-review` | `weave:fix-review` | Fix review findings as atomic commits with test coverage |
+| `/weave:brainstorm` | `weave:brainstorm` | Generate independent original ideas from each participant, with optional multiple variants |
+| `/weave:refine` | `weave:refine` | Iteratively improve an artifact through adversarial critique and weaving |
+| `/weave:brainstorm-and-refine` | `weave:brainstorm-and-refine` | Full pipeline: brainstorm originals, then iteratively judge, weave, and refine |
+| `/weave:serene-bliss` | `weave:serene-bliss` | Three-lens DX brainstorm-and-refine (Bliss, Serenity, Sublimity) with panel judging |
 
 ## Skills
 

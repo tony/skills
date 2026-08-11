@@ -51,7 +51,7 @@ standalone in the original request's structure: no verdicts about
 its own prior claims, no "what changed" section, no inherited
 numbering that hides omissions.
 
-### `/double-check:align` (command)
+### `/double-check:align` (skill)
 
 Recovery, for when the diff-shaped answer already landed. Restates
 the current best analysis whole, rebuilt from source, without

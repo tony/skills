@@ -31,15 +31,12 @@ Install the plugin:
 codex plugin add spike@ai-workflow-plugins
 ```
 
-The skills below are written with Claude Code's leading slash. Codex uses
-the same names without it, so `/spike:…` there is `spike:…`.
-
 ## Skills
 
-| Skill | Description |
-|---------|-------------|
-| `/spike:probe [<goal>]` | Probe the goal with zero commits, stash with a recovery ref, propose a commit-by-commit landing plan |
-| `/spike:bakeoff [<goal>]` | Build 2–4 competing strategies in isolated git worktrees, judge them adversarially, stash every contender, propose a landing plan for the winner |
+| Claude Code | Codex | Description |
+|---|---|---|
+| `/spike:probe [<goal>]` | `spike:probe [<goal>]` | Probe the goal with zero commits, stash with a recovery ref, propose a commit-by-commit landing plan |
+| `/spike:bakeoff [<goal>]` | `spike:bakeoff [<goal>]` | Build 2–4 competing strategies in isolated git worktrees, judge them adversarially, stash every contender, propose a landing plan for the winner |
 
 The goal can be typed or inferred from conversation context (review
 findings just presented, a failing test under discussion) — the

@@ -32,16 +32,13 @@ Install the plugin:
 codex plugin add package-updater@ai-workflow-plugins
 ```
 
-The skills below are written with Claude Code's leading slash. Codex uses
-the same names without it, so `/package-updater:…` there is `package-updater:…`.
-
 ## Skills
 
-| Skill | Description |
-|---------|-------------|
-| `/package-updater:update` | Find everything outdated in scope and bring it current, in commit order |
-| `/package-updater:update-package <name>` | Take one named package to a target version everywhere it is pinned |
-| `/package-updater:update-toolchain [tool]` | Move `.tool-versions`, `.nvmrc`, `packageManager` and `engines`, one tool per commit |
+| Claude Code | Codex | Description |
+|---|---|---|
+| `/package-updater:update` | `package-updater:update` | Find everything outdated in scope and bring it current, in commit order |
+| `/package-updater:update-package <name>` | `package-updater:update-package <name>` | Take one named package to a target version everywhere it is pinned |
+| `/package-updater:update-toolchain [tool]` | `package-updater:update-toolchain [tool]` | Move `.tool-versions`, `.nvmrc`, `packageManager` and `engines`, one tool per commit |
 
 "What's out of date?" → `update`, which also takes `--audit-only` to
 report without writing. One package you already know is stale →

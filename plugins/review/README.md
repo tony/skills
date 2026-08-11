@@ -31,14 +31,11 @@ Install the plugin:
 codex plugin add review@ai-workflow-plugins
 ```
 
-The skills below are written with Claude Code's leading slash. Codex uses
-the same names without it, so `/review:…` there is `review:…`.
-
 ## Skills
 
-| Skill | Description |
-|---------|-------------|
-| `/review:address [findings]` | Triage findings by provenance, fix in-branch ones as atomic gated commits, surface the rest for decisions |
+| Claude Code | Codex | Description |
+|---|---|---|
+| `/review:address [findings]` | `review:address [findings]` | Triage findings by provenance, fix in-branch ones as atomic gated commits, surface the rest for decisions |
 
 Flags: `--pr=<num>` (pull findings from the PR's review comments),
 `--base=<ref>` (override the provenance baseline), `--no-fixup`

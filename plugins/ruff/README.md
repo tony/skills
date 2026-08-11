@@ -28,14 +28,11 @@ Install the plugin:
 codex plugin add ruff@ai-workflow-plugins
 ```
 
-The skills below are written with Claude Code's leading slash. Codex uses
-the same names without it, so `/ruff:…` there is `ruff:…`.
-
 ## Skills
 
-| Skill | Description |
-|---------|-------------|
-| `/ruff:bump [version]` | Raise the ruff floor across the repositories in scope and absorb what the release surfaces, one commit per rule |
+| Claude Code | Codex | Description |
+|---|---|---|
+| `/ruff:bump [version]` | `ruff:bump [version]` | Raise the ruff floor across the repositories in scope and absorb what the release surfaces, one commit per rule |
 
 With no version, it targets the latest stable release. It defaults to the current repository, working on a branch in a throwaway worktree and opening a pull request.
 

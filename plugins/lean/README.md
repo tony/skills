@@ -46,7 +46,7 @@ first draft comes out tight: lead with the result, state current truth
 over the journey, reuse before creating, and preserve references when
 editing. Guidance only — it never edits files.
 
-### `/lean:tighten` (command)
+### `/lean:tighten` (skill)
 
 Point it at files or a pasted draft; it removes slop in place and
 prints a diff. It never commits, never pushes, and works fine on a

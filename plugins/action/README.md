@@ -31,15 +31,12 @@ Install the plugin:
 codex plugin add action@ai-workflow-plugins
 ```
 
-The skills below are written with Claude Code's leading slash. Codex uses
-the same names without it, so `/action:…` there is `action:…`.
-
 ## Skills
 
-| Skill | Description |
-|---------|-------------|
-| `/action:worktree [<ticket>...]` | One branch + worktree for one or more tickets: resolve read-only, name by convention, implement, land gated commits; push or PR only on request |
-| `/action:worktrees [<ticket>...]` | Discover and group several tickets, then fan out one worktree per unit — parallel subagents where the host supports them, sequential otherwise |
+| Claude Code | Codex | Description |
+|---|---|---|
+| `/action:worktree [<ticket>...]` | `action:worktree [<ticket>...]` | One branch + worktree for one or more tickets: resolve read-only, name by convention, implement, land gated commits; push or PR only on request |
+| `/action:worktrees [<ticket>...]` | `action:worktrees [<ticket>...]` | Discover and group several tickets, then fan out one worktree per unit — parallel subagents where the host supports them, sequential otherwise |
 
 One ticket (or a few that share one change) → `worktree`. A queue of
 independent tickets → `worktrees`. To land review findings on the

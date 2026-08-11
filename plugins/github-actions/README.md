@@ -32,15 +32,12 @@ Install the plugin:
 codex plugin add github-actions@ai-workflow-plugins
 ```
 
-The skills below are written with Claude Code's leading slash. Codex uses
-the same names without it, so `/github-actions:…` there is `github-actions:…`.
-
 ## Skills
 
-| Skill | Description |
-|---------|-------------|
-| `/github-actions:update-action <owner/action>` | Take one named action to its current version wherever it is pinned — verify the tag, research the span, commit per repository |
-| `/github-actions:update-actions` | Audit every action in scope and update the out-of-date ones, then close the dependabot PRs those commits superseded |
+| Claude Code | Codex | Description |
+|---|---|---|
+| `/github-actions:update-action <owner/action>` | `github-actions:update-action <owner/action>` | Take one named action to its current version wherever it is pinned — verify the tag, research the span, commit per repository |
+| `/github-actions:update-actions` | `github-actions:update-actions` | Audit every action in scope and update the out-of-date ones, then close the dependabot PRs those commits superseded |
 
 One action you already know is stale → `update-action`. "What's out of
 date?" across a repo or a fleet → `update-actions`, which also accepts

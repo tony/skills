@@ -40,7 +40,7 @@ the same names without it, so `/merge-pr:…` there is `merge-pr:…`.
 
 ## Components
 
-### `/merge-pr:this` (command)
+### `/merge-pr:this` (skill)
 
 Merge one PR — the one under discussion, or the current branch's.
 Runs the readiness gate (open, not draft, CI passing via
@@ -51,7 +51,7 @@ merges via `gh pr merge` with a merge commit message derived from
 the repo's merge history. Afterwards it checks out trunk, pulls,
 and stops.
 
-### `/merge-pr:multiple` (command)
+### `/merge-pr:multiple` (skill)
 
 Land a set of PRs one at a time. Detects whether the set is a
 **stack** (a PR based on another PR's head branch — merged

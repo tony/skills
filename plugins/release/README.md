@@ -42,7 +42,7 @@ the same names without it, so `/release:…` there is `release:…`.
 
 ## Components
 
-### `/release:cut <version> [--push] [--tag] [--push-tag]` (command)
+### `/release:cut <version> [--push] [--tag] [--push-tag]` (skill)
 
 Cut a release at an explicit version: bump every version-bearing
 file, refresh the lockfile, date the CHANGES section (and MIGRATION
@@ -73,7 +73,7 @@ An unscoped "never create tags" reads as outranking a flag the user
 just passed, and the agent stops mid-release — commit pushed, tag
 missing, publish never triggered.
 
-### `/release:bump [patch|minor|major|prerelease|final|<version>]` (command)
+### `/release:bump [patch|minor|major|prerelease|final|<version>]` (skill)
 
 Same procedure as `cut`, but discovers what "next" means first: reads
 the current version, tag history, and the CHANGES unreleased header,
@@ -85,7 +85,7 @@ projects keep their next unreleased CHANGES header in
 `MAJOR.MINOR.x` form; prerelease-track projects name the next
 prerelease outright.
 
-### `/release:update-downstream-packages <package> [<version>]` (command)
+### `/release:update-downstream-packages <package> [<version>]` (skill)
 
 After a release publishes, roll it out to every consumer repo you
 maintain. Discovers consumers under your workspace roots (skipping

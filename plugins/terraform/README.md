@@ -34,16 +34,13 @@ Install the plugin:
 codex plugin add terraform@ai-workflow-plugins
 ```
 
-The skills below are written with Claude Code's leading slash. Codex uses
-the same names without it, so `/terraform:…` there is `terraform:…`.
-
 ## Skills
 
-| Skill | Description |
-|---------|-------------|
-| `/terraform:bump-provider <provider> [version]` | Move a provider across every module that declares it, then refresh the affected lock files |
-| `/terraform:bump-terraform [version]` | Move the CLI version across every module and every pin site outside the configuration |
-| `/terraform:refresh-lock` | Re-resolve providers within the constraints already written, in every root module |
+| Claude Code | Codex | Description |
+|---|---|---|
+| `/terraform:bump-provider <provider> [version]` | `terraform:bump-provider <provider> [version]` | Move a provider across every module that declares it, then refresh the affected lock files |
+| `/terraform:bump-terraform [version]` | `terraform:bump-terraform [version]` | Move the CLI version across every module and every pin site outside the configuration |
+| `/terraform:refresh-lock` | `terraform:refresh-lock` | Re-resolve providers within the constraints already written, in every root module |
 
 With no version, each bump targets the latest stable release and
 confirms it before writing it anywhere. `--audit-only` reports the

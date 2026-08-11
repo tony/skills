@@ -28,14 +28,11 @@ Install the plugin:
 codex plugin add tailwind@ai-workflow-plugins
 ```
 
-The skills below are written with Claude Code's leading slash. Codex uses
-the same names without it, so `/tailwind:…` there is `tailwind:…`.
-
 ## Skills
 
-| Skill | Slash command | Description |
-|-------|--------------|-------------|
-| Tailwind Spacing Audit | `/tailwind:spacing-audit` | Systematically detect and fix inconsistent spacing in Tailwind CSS v4+ layouts |
+| Skill | Claude Code | Codex | Description |
+|---|---|---|---|
+| Tailwind Spacing Audit | `/tailwind:spacing-audit` | `tailwind:spacing-audit` | Systematically detect and fix inconsistent spacing in Tailwind CSS v4+ layouts |
 
 ## How It Works
 

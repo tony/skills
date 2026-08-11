@@ -28,14 +28,11 @@ Install the plugin:
 codex plugin add rebase@ai-workflow-plugins
 ```
 
-The skills below are written with Claude Code's leading slash. Codex uses
-the same names without it, so `/rebase:…` there is `rebase:…`.
-
 ## Skills
 
-| Skill | Description |
-|---------|-------------|
-| `/rebase` | Rebase current branch onto trunk, resolve conflicts, verify quality gates |
+| Claude Code | Codex | Description |
+|---|---|---|
+| `/rebase` | `rebase` | Rebase current branch onto trunk, resolve conflicts, verify quality gates |
 
 ## 5-Phase Workflow
 

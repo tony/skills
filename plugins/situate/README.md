@@ -36,16 +36,13 @@ Install the plugin:
 codex plugin add situate@ai-workflow-plugins
 ```
 
-The skills below are written with Claude Code's leading slash. Codex uses
-the same names without it, so `/situate:…` there is `situate:…`.
-
 ## Skills
 
-| Skill | Description |
-|---------|-------------|
-| `/situate` | Sweep the current branch, its pull request, its tickets, and the project's conventions, and report the situation |
-| `/situate:what` | Say what is going on in five lines or less, with numbered options when there is a real choice |
-| `/situate:refocus` | Re-derive what the work is for, sort the commits against it, and name both the drift and the gap |
+| Claude Code | Codex | Description |
+|---|---|---|
+| `/situate` | `situate` | Sweep the current branch, its pull request, its tickets, and the project's conventions, and report the situation |
+| `/situate:what` | `situate:what` | Say what is going on in five lines or less, with numbered options when there is a real choice |
+| `/situate:refocus` | `situate:refocus` | Re-derive what the work is for, sort the commits against it, and name both the drift and the gap |
 
 `/situate` defaults to the current branch measured against trunk.
 `--pr <number|url>` switches the subject to another pull request without

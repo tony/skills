@@ -36,14 +36,11 @@ Install the plugin:
 codex plugin add slop@ai-workflow-plugins
 ```
 
-The skills below are written with Claude Code's leading slash. Codex uses
-the same names without it, so `/slop:…` there is `slop:…`.
-
 ## Skills
 
-| Skill | Description |
-|---------|-------------|
-| `/slop:scan` | Scan tracked files at HEAD for slop; land one atomic commit per finding with quality-gate verification. |
+| Claude Code | Codex | Description |
+|---|---|---|
+| `/slop:scan` | `slop:scan` | Scan tracked files at HEAD for slop; land one atomic commit per finding with quality-gate verification. |
 
 ## How It Works
 

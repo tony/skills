@@ -28,19 +28,16 @@ Install the plugin:
 codex plugin add pr@ai-workflow-plugins
 ```
 
-The skills below are written with Claude Code's leading slash. Codex uses
-the same names without it, so `/pr:…` there is `pr:…`.
-
 ## Skills
 
-| Skill | Description |
-|---------|-------------|
-| `/pr` | Generate a gold-standard PR description from branch diff |
-| `/pr:refresh` | Update an existing PR description to the branch's current net change, preserving structure and customizations |
-| `/pr:recut` | Rewrite an existing PR description from scratch, carrying forward context that still matters |
-| `/pr:merge-commit` | Generate a gold-standard merge commit message from branch diff |
-| `/pr:review` | Review an existing PR description against gold-standard patterns |
-| `/pr:deslop` | Audit branch commits for AI slop / brittle counts / verbose messages and resolve via fixup commits with optional autosquash |
+| Claude Code | Codex | Description |
+|---|---|---|
+| `/pr` | `pr` | Generate a gold-standard PR description from branch diff |
+| `/pr:refresh` | `pr:refresh` | Update an existing PR description to the branch's current net change, preserving structure and customizations |
+| `/pr:recut` | `pr:recut` | Rewrite an existing PR description from scratch, carrying forward context that still matters |
+| `/pr:merge-commit` | `pr:merge-commit` | Generate a gold-standard merge commit message from branch diff |
+| `/pr:review` | `pr:review` | Review an existing PR description against gold-standard patterns |
+| `/pr:deslop` | `pr:deslop` | Audit branch commits for AI slop / brittle counts / verbose messages and resolve via fixup commits with optional autosquash |
 
 ## How It Works
 

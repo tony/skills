@@ -28,14 +28,11 @@ Install the plugin:
 codex plugin add commit@ai-workflow-plugins
 ```
 
-The skills below are written with Claude Code's leading slash. Codex uses
-the same names without it, so `/commit:…` there is `commit:…`.
-
 ## Skills
 
-| Skill | Description |
-|---------|-------------|
-| `/commit` | Analyze changes, draft a conventional commit message, and commit |
+| Claude Code | Codex | Description |
+|---|---|---|
+| `/commit` | `commit` | Analyze changes, draft a conventional commit message, and commit |
 
 ## How It Works
 

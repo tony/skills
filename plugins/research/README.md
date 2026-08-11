@@ -28,14 +28,11 @@ Install the plugin:
 codex plugin add research@ai-workflow-plugins
 ```
 
-The skills below are written with Claude Code's leading slash. Codex uses
-the same names without it, so `/research:…` there is `research:…`.
-
 ## Skills
 
-| Skill | Slash command | Description |
-|-------|--------------|-------------|
-| Study Dependencies | `/research:deps` | Clone dependencies and create version-pinned worktrees under `~/study/` |
+| Skill | Claude Code | Codex | Description |
+|---|---|---|---|
+| Study Dependencies | `/research:deps` | `research:deps` | Clone dependencies and create version-pinned worktrees under `~/study/` |
 
 ## How It Works
 
