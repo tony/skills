@@ -42,7 +42,7 @@ voice on `origin/<trunk>` (not `HEAD`) before being flagged. The
 skill auto-applies only Tier A signals; Tier B is user-confirmed per
 finding; Tier C is advisory only.
 
-This is a slash command, not a model-invocable skill — history
+This skill is invoked by name, never routed to on the model’s initiative — history
 rewrites must be user-explicit, not router-inferred.
 
 ## Core thesis
@@ -141,7 +141,7 @@ structure still guides analysis-before-execution.
 ## Step 1: Detect trunk, lock baseline, snapshot branch state
 
 Detect trunk using the same pattern as the sibling `/rebase` command
-(`plugins/rebase/skills/rebase/SKILL.md:9-12`):
+(`plugins/rebase/skills/rebase/SKILL.md`):
 
 ```bash
 git remote show origin 2>/dev/null | grep 'HEAD branch' | awk '{print $NF}'
@@ -509,7 +509,7 @@ paths, and creates one fixup commit per target. See
 `../../references/apply-template.sh` for the full contract.
 
 **Never `git add -A` or `git add .`** — explicit paths only, per
-`plugins/commit/skills/commit/SKILL.md:181-191` (rule line 187). This
+`plugins/commit/skills/commit/SKILL.md`. This
 rule applies to the patch driver too.
 
 If the user chose "Apply patches now" (middle option), stop here.
@@ -534,7 +534,7 @@ If autosquash exits 0, jump to Step 12.
 
 ## Step 11: Conflict loop (rerere-safe, gates touched-first)
 
-This loop is borrowed from `plugins/rebase/skills/rebase/SKILL.md:46-67`
+This loop is borrowed from `plugins/rebase/skills/rebase/SKILL.md`
 (Phase 4 of `/rebase`) with three tightenings. See
 `../../references/conflict-loop.md` for the full discussion.
 
@@ -771,14 +771,14 @@ For detailed catalogs and discovery procedures, consult:
   details" rubric, which this skill extends for commit-level rules,
   and the "Never modify the PR — only report findings" posture,
   mirrored as `/pr:deslop`'s never-edit-PR-description rule.
-- `plugins/rebase/skills/rebase/SKILL.md:46-67` — Phase 4 conflict loop
+- `plugins/rebase/skills/rebase/SKILL.md` — Phase 4 conflict loop
   with quality gates; the model this skill borrows.
-- `plugins/rebase/skills/rebase/SKILL.md:9-12` — trunk detection pattern.
+- `plugins/rebase/skills/rebase/SKILL.md` — trunk detection pattern.
 - `plugins/research/skills/deps/SKILL.md` — procedural skill
   archetype with frontmatter, numbered steps, decision tables, and
   `AskUserQuestion` confirmation gate.
 - `plugins/tailwind/skills/spacing-audit/SKILL.md` — references-
   directory progressive-disclosure pattern.
-- `plugins/commit/skills/commit/SKILL.md:181-191` — Rules section
+- `plugins/commit/skills/commit/SKILL.md` — Rules section
   forbidding `git add -A`, `--amend`, `--no-verify`, empty commits;
   this skill honors all of them.

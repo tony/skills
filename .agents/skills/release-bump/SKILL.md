@@ -5,6 +5,7 @@ description: >-
   own scheme (a1→a2, 0.1.9→0.1.10, 0.2.0, 0.2.0a0), confirm with the user,
   then cut the release with the same safe defaults as the `release-cut`
   skill.
+disable-model-invocation: true
 allowed-tools: ["Bash", "Read", "Grep", "Glob", "Edit", "AskUserQuestion"]
 metadata:
   argument-hint: "[patch|minor|major|prerelease|final|<version>] [--push] [--tag] [--push-tag]"

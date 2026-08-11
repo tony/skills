@@ -3,6 +3,7 @@ name: tdd-fix
 description: >-
   TDD bug-fix workflow — reproduce a bug as a failing test, find root cause,
   fix, and verify
+disable-model-invocation: true
 allowed-tools: ["Bash", "Read", "Grep", "Glob", "Edit", "Write", "Task"]
 metadata:
   argument-hint: "Paste or describe the bug to reproduce and fix"

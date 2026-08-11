@@ -10,6 +10,7 @@ description: >-
   confirms the grouping at a plan gate, then drives each unit through the
   `action-worktree` skill's procedure — one subagent per worktree where the
   host supports it, sequential otherwise.
+disable-model-invocation: true
 allowed-tools: ["Bash", "Read", "Grep", "Glob", "Edit", "Write", "AskUserQuestion", "Task"]
 metadata:
   argument-hint: "[<ticket>...] [--groups=\"a b; c\"] [--sequential] [--local|--temp] [--push|--pr|--setup-only]"
@@ -27,7 +28,7 @@ implementation, gates, commits, the exit axis — is
 the `action-worktree` skill's procedure, followed by reference, never
 restated here.
 
-This is a slash command, not a model-invocable skill: it creates
+This skill is invoked by name, never routed to on the model’s initiative: it creates
 worktrees and branches, modifies files, and creates commits, so it
 must be user-explicit, not router-inferred.
 

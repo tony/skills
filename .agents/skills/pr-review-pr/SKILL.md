@@ -2,6 +2,7 @@
 name: pr-review-pr
 description: >-
   Review a PR description against gold-standard patterns
+disable-model-invocation: true
 allowed-tools: ["Bash", "Read"]
 metadata:
   argument-hint: "[PR number or URL, e.g. '#42' or 'https://github.com/...']"

@@ -4,6 +4,7 @@ description: >-
   Take one named package to a target version everywhere it is pinned —
   research the span, land one commit per repo with a why/what body and
   verified links, then its follow-up
+disable-model-invocation: true
 allowed-tools: ["Bash", "Read", "Grep", "Glob", "Edit", "Write", "WebSearch", "WebFetch", "Task", "AskUserQuestion"]
 metadata:
   argument-hint: "<package> [version] [--root <dir>] [--repo <path|slug>...] [--owner <name>...] [--audit-only] [--branch <name>] [--pr] [--no-push]"

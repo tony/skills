@@ -10,6 +10,7 @@ description: >-
   parametrize gaps). Writes baseline.json, capabilities.json, and
   hypotheses.json to the memory directory. Read-only on the test suite. Use
   when starting a pytest optimization pass or re-baselining after changes.
+disable-model-invocation: true
 allowed-tools: ["Bash", "Read", "Grep", "Glob", "Write", "AskUserQuestion"]
 metadata:
   argument-hint: "[test-path-or-marker] [--force] [--runs=N] [--memory-dir=<path>]"

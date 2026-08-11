@@ -4,6 +4,7 @@ description: >-
   Refresh every root module's .terraform.lock.hcl within the constraints
   already written — no credentials needed, platform coverage preserved, and
   the versions that actually moved reported per module
+disable-model-invocation: true
 allowed-tools: ["Bash", "Read", "Grep", "Glob", "AskUserQuestion"]
 metadata:
   argument-hint: "[--root-module <dir>...] [--audit-only] [--no-commit]"

@@ -14,6 +14,32 @@ user-invocable: true
 
 # Weave Brainstorm & Refine
 
+Generate independent originals from adversarial participants, then refine them
+through judge-weave-incorporate cycles. Host-native sub-agents are the
+default; separate model CLIs are available by explicit choice.
+
+## When to Use
+
+- You want the best of both worlds: creative divergence then convergent refinement
+- You want to explore a problem space broadly, then hone in on the best solution
+- You need a high-quality result and are willing to spend tokens on multiple passes
+
+## Key Features
+
+- `--workers=subagents|model-clis`: Use host-native sub-agents by default or explicitly select separate model CLIs
+- Phase 1 (Brainstorm): Independent originals from each participant, optional `--variants=N`
+- Transition gate: You choose which originals enter refinement
+- Phase 2 (Refine): Iterative judge-weave-distribute cycle over `--passes=N`
+- Full rationale chain from brainstorm through every refinement pass
+- `--judge=host|round-robin`: Host judges every pass, or rotate judging across participants
+
+## The Pipeline
+
+1. **Brainstorm**: Each participant generates independent original responses
+2. **Review**: All originals presented — you pick which ones to refine
+3. **Refine**: Judge picks the best, weaves in strengths from runners-up, redistributes to all participants
+4. **Repeat**: Each pass improves the woven result until convergence or passes exhausted
+
 The full pipeline: generate originals from independent adversarial workers, then iteratively refine them through a judge-weave-distribute cycle. Host-native sub-agents are the default; separate model CLIs are optional. Phase 1 brainstorms diverse responses with optional multiple variants per worker. Phase 2 takes the best originals through iterative refinement where each pass picks the best, incorporates strengths from runners-up, and distributes the woven result back for another round.
 
 This is a **project-read-only** command — no files in your repository are written, edited, or deleted. Session artifacts (model outputs, judge assessments, woven results) are persisted to `$AI_AIP_ROOT` for post-session inspection; this directory is outside your repository.

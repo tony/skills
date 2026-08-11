@@ -1913,12 +1913,13 @@ def _codex_files() -> dict[str, bytes]:
 def _check_codex_drift(files: dict[str, bytes]) -> list[str]:
     """Compare the committed Codex manifests against a fresh generation."""
     errors: list[str] = []
+    # Globbing the real tree rather than deriving from discover_plugins(): a
+    # directory that lost its .claude-plugin/plugin.json is skipped by
+    # discovery, so deriving both sides from it can never report the orphaned
+    # Codex manifest it leaves behind.
     actual = {
         str(p.relative_to(REPO_ROOT))
-        for p in [
-            *(d / CODEX_MANIFEST_REL for d in discover_plugins()),
-            CODEX_MARKETPLACE_PATH,
-        ]
+        for p in [*PLUGINS_DIR.glob(f"*/{CODEX_MANIFEST_REL}"), CODEX_MARKETPLACE_PATH]
         if p.is_file()
     }
     errors.extend(f"codex: stale manifest '{rel}'" for rel in sorted(actual - set(files)))

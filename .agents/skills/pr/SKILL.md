@@ -2,6 +2,7 @@
 name: pr
 description: >-
   Generate a gold-standard pull request description from branch diff
+disable-model-invocation: true
 allowed-tools: ["Bash", "Read"]
 metadata:
   argument-hint: "[optional hint about the PR, e.g. 'fixes the race condition']"

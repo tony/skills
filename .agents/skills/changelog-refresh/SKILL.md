@@ -3,6 +3,7 @@ name: changelog-refresh
 description: >-
   Update the branch's own changelog entries to match its current net change;
   commits only with --commit
+disable-model-invocation: true
 allowed-tools: ["Bash", "Read", "Grep", "Glob", "Edit", "AskUserQuestion"]
 metadata:
   argument-hint: "[--commit] [optional additional context about the changes]"

@@ -25,7 +25,7 @@ the **simplest pragmatic way**, and landed as **its own commit** behind
 the project's discovered quality gates. History rewrites (fixup +
 autosquash) happen only with explicit consent.
 
-This is a slash command, not a model-invocable skill: it modifies files
+This skill is invoked by name, never routed to on the model’s initiative: it modifies files
 and creates commits, so it must be user-explicit, not router-inferred.
 
 ## Core thesis

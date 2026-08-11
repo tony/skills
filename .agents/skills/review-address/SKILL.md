@@ -9,6 +9,7 @@ description: >-
   only what the branch introduced, one finding per commit, behind the
   project's quality gates; anything pre-existing or history-rewriting is
   surfaced for a decision instead of silently done.
+disable-model-invocation: true
 allowed-tools: ["Bash", "Read", "Grep", "Glob", "Edit", "Write", "AskUserQuestion", "Task"]
 metadata:
   argument-hint: "[findings text] [--pr=<num>] [--base=<ref>] [--no-fixup] [--on-fail=skip|stop|ask]"
@@ -23,7 +24,7 @@ the **simplest pragmatic way**, and landed as **its own commit** behind
 the project's discovered quality gates. History rewrites (fixup +
 autosquash) happen only with explicit consent.
 
-This is a slash command, not a model-invocable skill: it modifies files
+This skill is invoked by name, never routed to on the model’s initiative: it modifies files
 and creates commits, so it must be user-explicit, not router-inferred.
 
 ## Core thesis

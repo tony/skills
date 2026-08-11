@@ -21,7 +21,7 @@ Tighten specified files in the working tree and print a diff. Never
 commits, never pushes, never requires a clean tree, never scans
 repo-wide.
 
-This is a slash command, not a model-invocable skill: it edits files,
+This skill is invoked by name, never routed to on the model’s initiative: it edits files,
 so it must be user-explicit.
 
 ## Difference from `/slop:scan`

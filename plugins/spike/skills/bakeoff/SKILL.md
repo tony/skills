@@ -35,7 +35,7 @@ gates, full bakes. What no contender ever touches is history: the
 kitchens are torn down after judging, and only stashes (all
 recoverable by SHA) and the verdict survive.
 
-This is a slash command, not a model-invocable skill: it creates
+This skill is invoked by name, never routed to on the model’s initiative: it creates
 worktrees, mutates them, and (in `--replay`) creates commits, so it
 must be user-explicit, not router-inferred.
 

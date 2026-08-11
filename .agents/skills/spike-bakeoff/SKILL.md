@@ -13,6 +13,7 @@ description: >-
   Antigravity, GPT), use the weave plugin instead. Ends with every contender
   stashed with a recovery SHA, a judged verdict, and a commit-by-commit plan
   to land the winner through the project's quality gates.
+disable-model-invocation: true
 allowed-tools: ["Bash", "Read", "Grep", "Glob", "Edit", "Write", "AskUserQuestion", "Task"]
 metadata:
   argument-hint: "[<goal>] [--strategies=\"a; b; c\"] [--prongs=<2-4>] [--keep-trees] [--replay]"
@@ -32,7 +33,7 @@ gates, full bakes. What no contender ever touches is history: the
 kitchens are torn down after judging, and only stashes (all
 recoverable by SHA) and the verdict survive.
 
-This is a slash command, not a model-invocable skill: it creates
+This skill is invoked by name, never routed to on the model’s initiative: it creates
 worktrees, mutates them, and (in `--replay`) creates commits, so it
 must be user-explicit, not router-inferred.
 

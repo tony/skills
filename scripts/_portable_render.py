@@ -30,7 +30,13 @@ imports nothing from its caller.
 """
 PLUGINS_DIR = REPO_ROOT / "plugins"
 
-SPEC_FRONTMATTER_KEYS = ("name", "description", "allowed-tools", "metadata")
+SPEC_FRONTMATTER_KEYS = (
+    "name",
+    "description",
+    "allowed-tools",
+    "disable-model-invocation",
+    "metadata",
+)
 """Frontmatter keys the portable export is allowed to emit, in output order."""
 
 RESOURCE_DIRS = ("references", "templates", "docs", "assets")
@@ -242,7 +248,14 @@ def _fold_description(text: str) -> list[str]:
     return lines
 
 
-def _render_frontmatter(name: str, description: str, tools: object, meta: dict[str, str]) -> str:
+def _render_frontmatter(
+    name: str,
+    description: str,
+    tools: object,
+    meta: dict[str, str],
+    *,
+    model_invocable: bool = True,
+) -> str:
     """Render the portable frontmatter block, spec keys only.
 
     Parameters
@@ -255,6 +268,10 @@ def _render_frontmatter(name: str, description: str, tools: object, meta: dict[s
         ``allowed-tools`` value carried over from the source, or None.
     meta : dict[str, str]
         ``metadata`` string map (provenance and the original argument hint).
+    model_invocable : bool
+        False when the source forbids the router firing this skill. Dropping
+        that on export would publish a name-only workflow into a routing
+        corpus, which is the one thing the source said not to do.
 
     Returns
     -------
@@ -262,6 +279,8 @@ def _render_frontmatter(name: str, description: str, tools: object, meta: dict[s
         The frontmatter block including its delimiters.
     """
     lines = ["---", f"name: {name}", "description: >-", *_fold_description(description)]
+    if not model_invocable:
+        lines.append("disable-model-invocation: true")
     if tools is not None:
         lines.append(f"allowed-tools: {json.dumps(tools)}")
     if meta:
@@ -504,7 +523,13 @@ class SkillBuilder:
         hint = t.cast("str | None", fm.get("argument-hint") or desc_fm.get("argument-hint"))
         if hint is not None:
             meta["argument-hint"] = hint
-        header = _render_frontmatter(self._skill.name, description, fm.get("allowed-tools"), meta)
+        header = _render_frontmatter(
+            self._skill.name,
+            description,
+            fm.get("allowed-tools"),
+            meta,
+            model_invocable=not fm.get("disable-model-invocation", False),
+        )
         return header + body
 
     def _source_paths(self) -> list[str]:

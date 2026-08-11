@@ -4,6 +4,7 @@ description: >-
   Re-derive what this work is for from its ticket and pull request, sort
   every commit into on-goal, load-bearing, and drift, name what the goal
   asked for that is still missing, and propose the correction
+disable-model-invocation: true
 allowed-tools: ["Bash", "Read", "Grep", "Glob", "AskUserQuestion"]
 metadata:
   argument-hint: "[the goal, when the repo does not record one]"

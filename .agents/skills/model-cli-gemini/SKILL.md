@@ -6,6 +6,7 @@ description: >-
   supersedes the standalone gemini CLI (Google retires it on 2026-06-18), so
   both entry points resolve through the same backend chain: agy, then the
   gemini CLI, then agent --model gemini-3.1-pro.
+disable-model-invocation: true
 allowed-tools: ["Bash", "Read", "Grep", "Glob", "Write", "Edit"]
 metadata:
   argument-hint: "<prompt> [timeout:<seconds>]"

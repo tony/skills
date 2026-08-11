@@ -3,6 +3,7 @@ name: weave-architecture
 description: >-
   Weave architecture — compare independent adversarial workers, then
   synthesize the best project architecture
+disable-model-invocation: true
 allowed-tools: ["Bash", "Read", "Grep", "Glob", "Edit", "Write", "Task", "AskUserQuestion"]
 metadata:
   argument-hint: "<architecture goal> [--passes=N] [--timeout=N|none] [--mode=fast|balanced|deep] [--workers=subagents|model-clis]"

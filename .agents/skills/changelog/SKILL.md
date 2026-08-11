@@ -2,6 +2,7 @@
 name: changelog
 description: >-
   Generate CHANGES entries from branch commits and PR context
+disable-model-invocation: true
 allowed-tools: ["Bash", "Read", "Grep", "Glob", "Edit"]
 metadata:
   argument-hint: "[optional additional context about the changes]"

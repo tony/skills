@@ -4,6 +4,7 @@ description: >-
   Move runtime and toolchain pins — .tool-versions, .nvmrc, .python-version,
   packageManager, engines — one tool per commit, each release in the span
   linked
+disable-model-invocation: true
 allowed-tools: ["Bash", "Read", "Grep", "Glob", "Edit", "Write", "WebSearch", "WebFetch", "Task", "AskUserQuestion"]
 metadata:
   argument-hint: "[tool] [version] [--root <dir>] [--repo <path|slug>...] [--owner <name>...] [--audit-only] [--branch <name>] [--pr] [--no-push]"

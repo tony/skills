@@ -271,14 +271,14 @@ Treat this file like code and prune it.
 
 ## Plugin Quality Standards
 
-### Command Files
+### Skill Files
 
-- Every command `.md` file **must** have YAML frontmatter with at least a `description` field
-- Commands **must not** hardcode language-specific tool commands (e.g., `uv run pytest`,
+- Every `SKILL.md` **must** have YAML frontmatter with at least `name` and `description`
+- Skills **must not** hardcode language-specific tool commands (e.g., `uv run pytest`,
   `npm test`, `cargo test`). Instead, reference "the project's test suite / quality checks
   as defined in AGENTS.md/CLAUDE.md"
 - Frontmatter `allowed-tools` should use bare tool names (e.g., `Bash`) rather than
-  language-specific patterns (e.g., `Bash(uv run:*)`) so commands work across any project
+  language-specific patterns (e.g., `Bash(uv run:*)`) so skills work across any project
 
 ### Plugin Directory Structure
 
@@ -299,8 +299,9 @@ plugins/<name>/
 └── .lsp.json            # LSP server configuration
 ```
 
-At least one component directory (`commands/`, `agents/`, `skills/`, or `hooks/`) or
-configuration file (`.mcp.json`, `.lsp.json`) is expected.
+At least one component directory (`skills/`, `agents/`, or `hooks/`) or
+configuration file (`.mcp.json`, `.lsp.json`) is expected. Claude Code also
+accepts `commands/`; this repo does not use it, for the reasons below.
 
 `.codex-plugin/plugin.json` is written by `scripts/marketplace.py portable` and
 verified by `portable --check`. Never hand-edit it; change
@@ -334,7 +335,7 @@ skills either.
 
 Each component type has specific frontmatter requirements:
 
-**Commands** (`commands/*.md`):
+**Commands** (`commands/*.md`) — supported by Claude Code, unused here:
 - `description` (required) — shown in `/` menu
 - `allowed-tools` (optional) — tool access list (bare names, e.g. `Bash`)
 - `argument-hint` (optional) — placeholder text for command argument

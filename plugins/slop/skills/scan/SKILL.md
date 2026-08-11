@@ -33,7 +33,7 @@ topology. For branch-scoped slop cleanup that uses fixup commits
 and `git rebase -i --autosquash`, see the sibling `/pr:deslop`
 command in `plugins/pr/`.
 
-This is a slash command, not a model-invocable skill: it modifies
+This skill is invoked by name, never routed to on the model’s initiative: it modifies
 files and creates commits, so it must be user-explicit, not
 router-inferred.
 

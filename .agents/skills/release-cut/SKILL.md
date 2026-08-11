@@ -4,6 +4,7 @@ description: >-
   Cut a release at an explicit version — bump version files, refresh the
   lockfile, date CHANGES/MIGRATION, and commit. Never pushes or tags unless
   explicitly flagged.
+disable-model-invocation: true
 allowed-tools: ["Bash", "Read", "Grep", "Glob", "Edit", "AskUserQuestion"]
 metadata:
   argument-hint: "<version> [--push] [--tag] [--push-tag]"

@@ -4,6 +4,7 @@ description: >-
   Move a Terraform or OpenTofu provider to a new version across every module
   that declares it, then refresh each root module's lock file without
   narrowing its platform coverage
+disable-model-invocation: true
 allowed-tools: ["Bash", "Read", "Grep", "Glob", "Edit", "WebSearch", "WebFetch", "AskUserQuestion"]
 metadata:
   argument-hint: "<provider> [version] [--root-module <dir>...] [--audit-only] [--no-lock] [--no-commit]"

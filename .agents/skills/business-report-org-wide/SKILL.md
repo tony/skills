@@ -3,6 +3,7 @@ name: business-report-org-wide
 description: >-
   Render the tier-1 org-wide projection — explicit adoption and realization
   inputs, scenario spread, sensitivity ranking, plain-language company close
+disable-model-invocation: true
 allowed-tools: ["Bash", "Read", "Write", "Grep", "AskUserQuestion"]
 metadata:
   argument-hint: "[run directory]"

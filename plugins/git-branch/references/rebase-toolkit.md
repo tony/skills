@@ -29,35 +29,39 @@ below with a preflight and a consistent exit code. It refuses to run
 on a dirty tree or over an operation already in progress, and it
 reports rather than hides a rebase it left stopped.
 
+`<toolkit>` is the absolute path to `references/rebase-todo.sh`, which ships
+with this skill. A shell runs with your project as its working directory, not
+this skill's, so substitute the full path before invoking it.
+
 Report any operation in progress, so a later command does not fail
 mysteriously:
 
 ```
-sh ../references/rebase-todo.sh status
+sh <toolkit> status
 ```
 
 Print the todo list for a range:
 
 ```
-sh ../references/rebase-todo.sh show <base>
+sh <toolkit> show <base>
 ```
 
 Replay the range using an edited plan as the todo list:
 
 ```
-sh ../references/rebase-todo.sh apply <base> plan.txt
+sh <toolkit> apply <base> plan.txt
 ```
 
 Run a command after every commit, in place:
 
 ```
-sh ../references/rebase-todo.sh verify <base> 'make test'
+sh <toolkit> verify <base> 'make test'
 ```
 
 Fold every pending `fixup!` and `amend!` commit:
 
 ```
-sh ../references/rebase-todo.sh squash <base>
+sh <toolkit> squash <base>
 ```
 
 Exit 0 is success, 1 means git failed and may have left a rebase

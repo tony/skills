@@ -134,10 +134,14 @@ Write each message from the intent gathered in Phase 1, in the format
 discovered in Phase 3, preserving the original author identity and
 date. Carry `Co-authored-by` and ticket trailers forward.
 
+`<toolkit>` is the absolute path to `references/rebase-todo.sh`, which ships
+with this skill. A shell runs with your project as its working directory, not
+this skill's, so substitute the full path before invoking it.
+
 Then gate the whole series in place:
 
 ```
-sh ../../references/rebase-todo.sh verify <base-sha> '<test command>'
+sh <toolkit> verify <base-sha> '<test command>'
 ```
 
 A failure stops the rebase and leaves it in progress; the script says

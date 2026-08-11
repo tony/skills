@@ -3,6 +3,7 @@ name: weave-prompt
 description: >-
   Weave prompt — compare independent adversarial implementations, then pick
   the best approach
+disable-model-invocation: true
 allowed-tools: ["Bash", "Read", "Grep", "Glob", "Edit", "Write", "Task", "AskUserQuestion"]
 metadata:
   argument-hint: "<implementation prompt> [--passes=N] [--timeout=N|none] [--mode=fast|balanced|deep] [--workers=subagents|model-clis]"

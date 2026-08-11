@@ -74,7 +74,7 @@ the conflict to the user via `ask-user-choice` rather than guessing.
 git add -- <file>
 ```
 
-Per the `commit` skill (rule line 187):
+Per the `commit` skill:
 **never `git add -A` or `git add .`** — explicit paths only, even in
 the conflict loop.
 

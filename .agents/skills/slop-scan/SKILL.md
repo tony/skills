@@ -10,6 +10,7 @@ description: >-
   "clean up slop without rewriting history". Does NOT rewrite history; every
   finding lands as a forward-going commit, with the project's formatter,
   linter, and type-checker running before each commit.
+disable-model-invocation: true
 allowed-tools: ["Bash", "Read", "Grep", "Glob", "Edit", "Write", "AskUserQuestion", "Task"]
 metadata:
   argument-hint: "[--paths=<glob>] [--apply] [--budget=strict|default|lax] [--with-history=<N>] [--allow-dirty] [--run-tests] [--no-semantic] [--taxonomy=<path>] [--on-fail=skip|stop|ask]"
@@ -30,7 +31,7 @@ HEAD. It is safe on pushed branches and cannot flatten merge
 topology. For branch-scoped slop cleanup that uses fixup commits
 and `git rebase -i --autosquash`, see the sibling the `pr-deslop` skill in the pr plugin.
 
-This is a slash command, not a model-invocable skill: it modifies
+This skill is invoked by name, never routed to on the model’s initiative: it modifies
 files and creates commits, so it must be user-explicit, not
 router-inferred.
 

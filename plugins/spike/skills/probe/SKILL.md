@@ -33,7 +33,7 @@ the code is the sensing instrument. What it never touches is history:
 like an attached kprobe, it patches the live system to take its
 measurement and detaches without a trace in `git log`.
 
-This is a slash command, not a model-invocable skill: it mutates the
+This skill is invoked by name, never routed to on the model’s initiative: it mutates the
 working tree and (in `--replay`) creates commits, so it must be
 user-explicit, not router-inferred.
 

@@ -3,6 +3,7 @@ name: rebase
 description: >-
   Rebase current branch onto trunk (origin/master or origin/main), predict
   and resolve conflicts
+disable-model-invocation: true
 allowed-tools: ["Bash", "Read", "Grep", "Glob", "Edit"]
 metadata:
   source: "plugins/rebase/skills/rebase/SKILL.md"

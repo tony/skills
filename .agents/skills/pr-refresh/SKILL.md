@@ -3,6 +3,7 @@ name: pr-refresh
 description: >-
   Refresh an existing PR description to match the branch's current net
   change, preserving structure and customizations
+disable-model-invocation: true
 allowed-tools: ["Bash", "Read", "Write", "AskUserQuestion"]
 metadata:
   argument-hint: "[PR number or URL, and/or a hint, e.g. 'the retry logic was dropped']"

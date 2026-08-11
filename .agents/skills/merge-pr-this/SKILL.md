@@ -3,6 +3,7 @@ name: merge-pr-this
 description: >-
   Merge one PR via gh with a merge commit matching the repo's git history —
   readiness-gated, CI-watched, trunk synced after
+disable-model-invocation: true
 allowed-tools: ["Bash", "Read", "Grep", "Edit", "AskUserQuestion"]
 metadata:
   argument-hint: "[PR number or URL] [--squash | --rebase | any other gh pr merge flag]"

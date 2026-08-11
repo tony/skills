@@ -116,7 +116,7 @@ large runs):
 - **Never pushes.** The user runs `git push` after reviewing the
   new commits.
 - **Never `git add -A` / `git add .`.** Per
-  `plugins/commit/skills/commit/SKILL.md:181-191`, the apply loop
+  `plugins/commit/skills/commit/SKILL.md`, the apply loop
   stages explicit paths only.
 - **Never `--no-verify`.** Project pre-commit / commit-msg hooks
   are the project's authority; hook rejection rolls back the

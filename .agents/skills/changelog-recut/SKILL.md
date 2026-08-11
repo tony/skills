@@ -3,6 +3,7 @@ name: changelog-recut
 description: >-
   Rebase out the branch's earlier changelog commits and regenerate its
   entries fresh; commits only with --commit
+disable-model-invocation: true
 allowed-tools: ["Bash", "Read", "Grep", "Glob", "Edit", "AskUserQuestion"]
 metadata:
   argument-hint: "[--commit] [optional additional context about the changes]"

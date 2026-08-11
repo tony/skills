@@ -2,6 +2,7 @@
 name: pr-merge-commit
 description: >-
   Generate a gold-standard merge commit message from branch diff
+disable-model-invocation: true
 allowed-tools: ["Bash", "Read"]
 metadata:
   argument-hint: "[optional hint, e.g. 'version bump' or 'breaking change']"

@@ -9,6 +9,7 @@ description: >-
   version". Rebuilds the answer from source as a standalone artifact; with
   an argument, re-anchors on a narrower question and drops the old
   scaffolding entirely.
+disable-model-invocation: true
 allowed-tools: ["Read", "Grep", "Glob", "Bash"]
 metadata:
   argument-hint: "[topic or question to re-anchor on]"

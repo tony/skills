@@ -4,6 +4,7 @@ description: >-
   Gain situational awareness — read the branch, its diff, its PR, its
   tickets, and the project's own conventions, and report where the work
   stands
+disable-model-invocation: true
 allowed-tools: ["Bash", "Read", "Grep", "Glob", "AskUserQuestion"]
 metadata:
   argument-hint: "[--pr <number|url>] [--with-agentgrep [terms]]"

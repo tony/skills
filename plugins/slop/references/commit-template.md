@@ -112,6 +112,6 @@ preventative hook, not this skill.
 - `CLAUDE.md` Project Component Naming — `slop[<id>]` follows the
   same nesting pattern as `claude[skill{deslop}]` from existing
   commit examples.
-- `plugins/commit/skills/commit/SKILL.md:181-191` — never `git add -A`,
+- `plugins/commit/skills/commit/SKILL.md` — never `git add -A`,
   never `--amend`, never `--no-verify`, never empty commits. The
   per-finding commit loop honors all of these.

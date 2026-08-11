@@ -139,8 +139,8 @@ def _run_test(label: str, fn: t.Callable[[], None]) -> bool:
     except TestFailureError as exc:
         _fail(label, str(exc))
         return False
-    except subprocess.TimeoutExpired:
-        _fail(label, "Command timed out (120s)")
+    except subprocess.TimeoutExpired as exc:
+        _fail(label, f"Command timed out ({exc.timeout:.0f}s)")
         return False
     return True
 
@@ -193,7 +193,14 @@ def _test_static_frontmatter() -> list[TestCase]:
                     "description" in fm,
                     f"{p.relative_to(REPO_ROOT)}: missing 'description' in frontmatter",
                 )
-                allowed: str = t.cast("str", fm.get("allowed-tools", ""))
+                # Every skill here writes allowed-tools as a YAML list, so a
+                # substring test against the parsed value asks whether "(" is
+                # an element and is always False. Join first.
+                raw = t.cast("object", fm.get("allowed-tools", ""))
+                names: list[object] = (
+                    t.cast("list[object]", raw) if isinstance(raw, list) else [raw]
+                )
+                allowed = " ".join(str(n) for n in names)
                 if allowed:
                     rel = p.relative_to(REPO_ROOT)
                     detail = f"(no parenthesized patterns): {allowed}"
@@ -658,7 +665,7 @@ def _test_static_weave_worker_backends() -> list[TestCase]:
 
     tests.extend(
         (
-            f"weave worker backend: {command_path.name}",
+            f"weave worker backend: {command_path.parent.name}",
             lambda p=command_path: _assert_weave_worker_command(p),
         )
         for command_path in ensemble_commands
@@ -717,7 +724,7 @@ def _test_static_weave_timeouts() -> list[TestCase]:
                 f"{rel}: Long={long_}s but expected {expected_long}s (1.5x {default}s)",
             )
 
-        tests.append((f"weave timeouts: {cmd_file.name}", _check_timeouts))
+        tests.append((f"weave timeouts: {cmd_file.parent.name}", _check_timeouts))
 
     return tests
 
@@ -1069,7 +1076,11 @@ def _codex_prompt_skill_ids(sandbox: Path, project: Path) -> set[str]:
     start = text.find("<skills_instructions>")
     _assert(start >= 0, "prompt carries no skills block")
     end = text.find("</skills_instructions>", start)
-    catalog = text[start:end] if end > start else text[start:]
+    # Falling back to the rest of the prompt would let any "- foo:bar:" bullet
+    # downstream count as a delivered skill, turning a malformed prompt into a
+    # pass.
+    _assert(end > start, "skills block is not closed")
+    catalog = text[start:end]
     return {m.group("id") for m in CODEX_SKILL_ENTRY_RE.finditer(catalog)}
 
 

@@ -147,10 +147,14 @@ task. Stop and surface it: the choices are to fix the rebuild, or to
 agree the test encoded something the new approach deliberately
 changes. Never edit a spec test to make a rebuild green.
 
+`<toolkit>` is the absolute path to `references/rebase-todo.sh`, which ships
+with this skill. A shell runs with your project as its working directory, not
+this skill's, so substitute the full path before invoking it.
+
 Then gate every commit of the new series in place:
 
 ```
-sh ../../references/rebase-todo.sh verify <base-sha> '<test command>'
+sh <toolkit> verify <base-sha> '<test command>'
 ```
 
 ## Phase 6 — Reconcile

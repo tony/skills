@@ -29,7 +29,7 @@ implementation, gates, commits, the exit axis — is
 `/action:worktree`'s procedure, followed by reference, never
 restated here.
 
-This is a slash command, not a model-invocable skill: it creates
+This skill is invoked by name, never routed to on the model’s initiative: it creates
 worktrees and branches, modifies files, and creates commits, so it
 must be user-explicit, not router-inferred.
 
