@@ -4,7 +4,7 @@ Generate categorized changelog entries from branch commits and PR context, and k
 
 ## Installation
 
-Add the marketplace:
+In Claude Code, add the marketplace:
 
 ```console
 /plugin marketplace add tony/ai-workflow-plugins
@@ -16,9 +16,24 @@ Install the plugin:
 /plugin install changelog@ai-workflow-plugins
 ```
 
-## Commands
+In Codex, add the marketplace:
 
-| Command | Description |
+```console
+codex plugin marketplace add tony/ai-workflow-plugins
+```
+
+Install the plugin:
+
+```console
+codex plugin add changelog@ai-workflow-plugins
+```
+
+The skills below are written with Claude Code's leading slash. Codex uses
+the same names without it, so `/changelog:…` there is `changelog:…`.
+
+## Skills
+
+| Skill | Description |
 |---------|-------------|
 | `/changelog` | Analyze commits, categorize changes, and insert entries into the changelog |
 | `/changelog:refresh` | Update the branch's own entries to its current net change (stacks a new commit with `--commit`) |

@@ -12,7 +12,7 @@ question of whether the work still serves what it was started for.
 
 ## Installation
 
-Add the marketplace:
+In Claude Code, add the marketplace:
 
 ```console
 /plugin marketplace add tony/ai-workflow-plugins
@@ -24,9 +24,24 @@ Install the plugin:
 /plugin install situate@ai-workflow-plugins
 ```
 
-## Commands
+In Codex, add the marketplace:
 
-| Command | Description |
+```console
+codex plugin marketplace add tony/ai-workflow-plugins
+```
+
+Install the plugin:
+
+```console
+codex plugin add situate@ai-workflow-plugins
+```
+
+The skills below are written with Claude Code's leading slash. Codex uses
+the same names without it, so `/situate:…` there is `situate:…`.
+
+## Skills
+
+| Skill | Description |
 |---------|-------------|
 | `/situate` | Sweep the current branch, its pull request, its tickets, and the project's conventions, and report the situation |
 | `/situate:what` | Say what is going on in five lines or less, with numbered options when there is a real choice |

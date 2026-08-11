@@ -11,8 +11,16 @@ not affiliated with or endorsed by Anthropic.
 
 ## Official Documentation References
 
-These docs are the canonical references for the Claude Code plugin system.
-Consult them when authoring or reviewing plugin components:
+These docs are the canonical references for the two plugin systems this
+marketplace targets. Consult them when authoring or reviewing plugin
+components.
+
+Codex:
+
+- [Package your plugin](https://developers.openai.com/plugins/build/plugins.md) — `.codex-plugin/plugin.json`, marketplace format, local and repo marketplaces, bundled MCP servers and hooks
+- [Build skills](https://developers.openai.com/plugins/build/skills) — SKILL.md authoring for Codex
+
+Claude Code:
 
 - [Plugins overview](https://code.claude.com/docs/en/plugins.md) — plugin lifecycle, installation, discovery
 - [Plugin reference](https://code.claude.com/docs/en/plugins-reference.md) — component types, frontmatter schemas, directory structure

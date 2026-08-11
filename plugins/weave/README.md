@@ -6,7 +6,7 @@ are the default; separate model CLIs are available by explicit choice.
 
 ## Installation
 
-Add the marketplace:
+In Claude Code, add the marketplace:
 
 ```console
 /plugin marketplace add tony/ai-workflow-plugins
@@ -18,9 +18,24 @@ Install the plugin:
 /plugin install weave@ai-workflow-plugins
 ```
 
-## Commands
+In Codex, add the marketplace:
 
-| Command | Description |
+```console
+codex plugin marketplace add tony/ai-workflow-plugins
+```
+
+Install the plugin:
+
+```console
+codex plugin add weave@ai-workflow-plugins
+```
+
+The skills below are written with Claude Code's leading slash. Codex uses
+the same names without it, so `/weave:…` there is `weave:…`.
+
+## Skills
+
+| Skill | Description |
 |---------|-------------|
 | `/weave:ask` | Ask adversarial participants a question, synthesize the best answer |
 | `/weave:plan` | Get independent implementation plans, synthesize the best plan |

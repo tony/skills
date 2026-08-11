@@ -9,7 +9,36 @@ duplicate and which turned out to hold the only copy of something.
 Every destructive step is gated on a proof, and the proofs are
 specified rather than left to judgment.
 
-## Commands
+## Installation
+
+In Claude Code, add the marketplace:
+
+```console
+/plugin marketplace add tony/ai-workflow-plugins
+```
+
+Install the plugin:
+
+```console
+/plugin install disk@ai-workflow-plugins
+```
+
+In Codex, add the marketplace:
+
+```console
+codex plugin marketplace add tony/ai-workflow-plugins
+```
+
+Install the plugin:
+
+```console
+codex plugin add disk@ai-workflow-plugins
+```
+
+The skills below are written with Claude Code's leading slash. Codex uses
+the same names without it, so `/disk:…` there is `disk:…`.
+
+## Skills
 
 **`/disk:usage`** — survey every filesystem layer and classify what is
 reclaimable. Read-only; deletes nothing. Takes an optional path to

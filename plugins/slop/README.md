@@ -12,7 +12,7 @@ For branch-scoped slop cleanup that uses fixup commits and
 
 ## Installation
 
-Add the marketplace:
+In Claude Code, add the marketplace:
 
 ```console
 /plugin marketplace add tony/ai-workflow-plugins
@@ -24,9 +24,24 @@ Install the plugin:
 /plugin install slop@ai-workflow-plugins
 ```
 
-## Commands
+In Codex, add the marketplace:
 
-| Command | Description |
+```console
+codex plugin marketplace add tony/ai-workflow-plugins
+```
+
+Install the plugin:
+
+```console
+codex plugin add slop@ai-workflow-plugins
+```
+
+The skills below are written with Claude Code's leading slash. Codex uses
+the same names without it, so `/slop:…` there is `slop:…`.
+
+## Skills
+
+| Skill | Description |
 |---------|-------------|
 | `/slop:scan` | Scan tracked files at HEAD for slop; land one atomic commit per finding with quality-gate verification. |
 

@@ -13,7 +13,7 @@ language or layout is hardcoded.
 
 ## Installation
 
-Add the marketplace:
+In Claude Code, add the marketplace:
 
 ```console
 /plugin marketplace add tony/ai-workflow-plugins
@@ -24,6 +24,21 @@ Install the plugin:
 ```console
 /plugin install release@ai-workflow-plugins
 ```
+
+In Codex, add the marketplace:
+
+```console
+codex plugin marketplace add tony/ai-workflow-plugins
+```
+
+Install the plugin:
+
+```console
+codex plugin add release@ai-workflow-plugins
+```
+
+The skills below are written with Claude Code's leading slash. Codex uses
+the same names without it, so `/release:…` there is `release:…`.
 
 ## Components
 

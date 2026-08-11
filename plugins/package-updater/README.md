@@ -8,7 +8,7 @@ as separate commits.
 
 ## Installation
 
-Add the marketplace:
+In Claude Code, add the marketplace:
 
 ```console
 /plugin marketplace add tony/ai-workflow-plugins
@@ -20,9 +20,24 @@ Install the plugin:
 /plugin install package-updater@ai-workflow-plugins
 ```
 
-## Commands
+In Codex, add the marketplace:
 
-| Command | Description |
+```console
+codex plugin marketplace add tony/ai-workflow-plugins
+```
+
+Install the plugin:
+
+```console
+codex plugin add package-updater@ai-workflow-plugins
+```
+
+The skills below are written with Claude Code's leading slash. Codex uses
+the same names without it, so `/package-updater:…` there is `package-updater:…`.
+
+## Skills
+
+| Skill | Description |
 |---------|-------------|
 | `/package-updater:update` | Find everything outdated in scope and bring it current, in commit order |
 | `/package-updater:update-package <name>` | Take one named package to a target version everywhere it is pinned |

@@ -4,7 +4,7 @@ Move one repository or a whole fleet onto a new [ruff](https://docs.astral.sh/ru
 
 ## Installation
 
-Add the marketplace:
+In Claude Code, add the marketplace:
 
 ```console
 /plugin marketplace add tony/ai-workflow-plugins
@@ -16,9 +16,24 @@ Install the plugin:
 /plugin install ruff@ai-workflow-plugins
 ```
 
-## Commands
+In Codex, add the marketplace:
 
-| Command | Description |
+```console
+codex plugin marketplace add tony/ai-workflow-plugins
+```
+
+Install the plugin:
+
+```console
+codex plugin add ruff@ai-workflow-plugins
+```
+
+The skills below are written with Claude Code's leading slash. Codex uses
+the same names without it, so `/ruff:…` there is `ruff:…`.
+
+## Skills
+
+| Skill | Description |
 |---------|-------------|
 | `/ruff:bump [version]` | Raise the ruff floor across the repositories in scope and absorb what the release surfaces, one commit per rule |
 

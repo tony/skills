@@ -7,7 +7,7 @@ commit-by-commit implementation plan.
 
 ## Installation
 
-Add the marketplace:
+In Claude Code, add the marketplace:
 
 ```console
 /plugin marketplace add tony/ai-workflow-plugins
@@ -19,9 +19,24 @@ Install the plugin:
 /plugin install spike@ai-workflow-plugins
 ```
 
-## Commands
+In Codex, add the marketplace:
 
-| Command | Description |
+```console
+codex plugin marketplace add tony/ai-workflow-plugins
+```
+
+Install the plugin:
+
+```console
+codex plugin add spike@ai-workflow-plugins
+```
+
+The skills below are written with Claude Code's leading slash. Codex uses
+the same names without it, so `/spike:…` there is `spike:…`.
+
+## Skills
+
+| Skill | Description |
 |---------|-------------|
 | `/spike:probe [<goal>]` | Probe the goal with zero commits, stash with a recovery ref, propose a commit-by-commit landing plan |
 | `/spike:bakeoff [<goal>]` | Build 2–4 competing strategies in isolated git worktrees, judge them adversarially, stash every contender, propose a landing plan for the winner |

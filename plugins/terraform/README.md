@@ -10,7 +10,7 @@ platforms it covers.
 
 ## Installation
 
-Add the marketplace:
+In Claude Code, add the marketplace:
 
 ```console
 /plugin marketplace add tony/ai-workflow-plugins
@@ -22,9 +22,24 @@ Install the plugin:
 /plugin install terraform@ai-workflow-plugins
 ```
 
-## Commands
+In Codex, add the marketplace:
 
-| Command | Description |
+```console
+codex plugin marketplace add tony/ai-workflow-plugins
+```
+
+Install the plugin:
+
+```console
+codex plugin add terraform@ai-workflow-plugins
+```
+
+The skills below are written with Claude Code's leading slash. Codex uses
+the same names without it, so `/terraform:…` there is `terraform:…`.
+
+## Skills
+
+| Skill | Description |
 |---------|-------------|
 | `/terraform:bump-provider <provider> [version]` | Move a provider across every module that declares it, then refresh the affected lock files |
 | `/terraform:bump-terraform [version]` | Move the CLI version across every module and every pin site outside the configuration |

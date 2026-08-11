@@ -4,7 +4,7 @@ Generate, refresh, recut, and review gold-standard pull request descriptions wit
 
 ## Installation
 
-Add the marketplace:
+In Claude Code, add the marketplace:
 
 ```console
 /plugin marketplace add tony/ai-workflow-plugins
@@ -16,9 +16,24 @@ Install the plugin:
 /plugin install pr@ai-workflow-plugins
 ```
 
-## Commands
+In Codex, add the marketplace:
 
-| Command | Description |
+```console
+codex plugin marketplace add tony/ai-workflow-plugins
+```
+
+Install the plugin:
+
+```console
+codex plugin add pr@ai-workflow-plugins
+```
+
+The skills below are written with Claude Code's leading slash. Codex uses
+the same names without it, so `/pr:…` there is `pr:…`.
+
+## Skills
+
+| Skill | Description |
 |---------|-------------|
 | `/pr` | Generate a gold-standard PR description from branch diff |
 | `/pr:refresh` | Update an existing PR description to the branch's current net change, preserving structure and customizations |

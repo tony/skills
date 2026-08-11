@@ -4,7 +4,7 @@ Automated rebase onto trunk with conflict prediction, resolution, and quality ga
 
 ## Installation
 
-Add the marketplace:
+In Claude Code, add the marketplace:
 
 ```console
 /plugin marketplace add tony/ai-workflow-plugins
@@ -16,9 +16,24 @@ Install the plugin:
 /plugin install rebase@ai-workflow-plugins
 ```
 
-## Command
+In Codex, add the marketplace:
 
-| Command | Description |
+```console
+codex plugin marketplace add tony/ai-workflow-plugins
+```
+
+Install the plugin:
+
+```console
+codex plugin add rebase@ai-workflow-plugins
+```
+
+The skills below are written with Claude Code's leading slash. Codex uses
+the same names without it, so `/rebase:…` there is `rebase:…`.
+
+## Skills
+
+| Skill | Description |
 |---------|-------------|
 | `/rebase` | Rebase current branch onto trunk, resolve conflicts, verify quality gates |
 
