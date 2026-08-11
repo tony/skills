@@ -100,7 +100,8 @@ Space, it is not the root work container.`
 
 ## Respect instance configuration over defaults
 
-Provider defaults in `providers/<name>.md` are fallback guidance, not proof
+Provider defaults, in the files indexed by `hierarchy.md`, are fallback
+guidance and not proof
 of how an installation is set up. Inspect real metadata when it is
 reachable — Jira's configured hierarchy and renamed work types, GitHub custom
 issue types, GitLab tier and configured work item types, Azure DevOps process

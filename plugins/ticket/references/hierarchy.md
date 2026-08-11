@@ -182,3 +182,24 @@ is a view. Never infer ownership or parentage from board membership.
 GitLab says Merge Request. Trackers without a code host name the artifact
 after its host. Emitting "Pull Request" for a GitLab merge request is a
 correctness error, not a style preference.
+
+## Provider files
+
+One per tracker. Each carries that provider's real hierarchy, its native-to-
+canonical role map with support status and requirement, what its renderer
+auto-detects, which reference forms fire a backreference, and what a local
+agent can actually read and write.
+
+- `references/providers/github.md`
+- `references/providers/gitlab.md`
+- `references/providers/linear.md`
+- `references/providers/jira.md`
+- `references/providers/azure-devops.md`
+- `references/providers/shortcut.md`
+- `references/providers/trello.md`
+- `references/providers/asana.md`
+- `references/providers/generic.md` — the fallback for anything else, which
+  assumes nothing is auto-detected and no write backend exists.
+
+The defaults in those files are fallback guidance. An instance's own
+configuration beats them, per `references/resolve.md`.

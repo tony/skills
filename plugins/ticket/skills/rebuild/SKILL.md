@@ -14,7 +14,7 @@ user-invocable: true
 allowed-tools: ["Bash", "Read", "Write", "Grep", "Glob", "WebSearch", "WebFetch", "AskUserQuestion"]
 ---
 
-# Rewrite a ticket
+# Rebuild a ticket
 
 Rebuild one live tracker item against the content contract. Not a trim — a
 rebuild, at the altitude the item should have been written at.
@@ -29,7 +29,7 @@ Argument: `$ARGUMENTS` — a URL, an identifier, or nothing (then ask).
 - `${CLAUDE_PLUGIN_ROOT}/references/altitude.md` — which sections that kind
   of object should carry.
 - `${CLAUDE_PLUGIN_ROOT}/references/resolve.md` — how to establish the above.
-- `${CLAUDE_PLUGIN_ROOT}/references/providers/<provider>.md` — reference
+- The provider's own file, indexed in `hierarchy.md` under Provider files — reference
   syntax, read and write mechanics.
 
 ## Core principle
@@ -91,9 +91,10 @@ Most checklist items demote; a couple survive as invariants; any that encode
 a technical decision are cut outright and the reasoning goes to intent.
 
 **Repair.** References that rot or misfire — `blob/main` links, line anchors
-on unpinned refs, bare cross-repo references that mint a backlink, bare
-identifiers where an explicit titled link belongs. Rewrite them per the
-two-axis rule and the provider file.
+on unpinned refs, bare cross-container references, bare identifiers that are
+ambiguous out of context. Rewrite them per the two-axis rule and the provider
+file. Re-saving a body can re-fire every reference in it, so check the
+provider file before assuming an edit is silent.
 
 ## Phase 4 — Find what is missing
 

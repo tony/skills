@@ -780,11 +780,20 @@
       ],
       "bundled": {
         "references/altitude.md": "plugins/ticket/references/altitude.md",
+        "references/asana.md": "plugins/ticket/references/providers/asana.md",
+        "references/azure-devops.md": "plugins/ticket/references/providers/azure-devops.md",
         "references/contract.md": "plugins/ticket/references/contract.md",
+        "references/generic.md": "plugins/ticket/references/providers/generic.md",
+        "references/github.md": "plugins/ticket/references/providers/github.md",
+        "references/gitlab.md": "plugins/ticket/references/providers/gitlab.md",
         "references/hierarchy.md": "plugins/ticket/references/hierarchy.md",
-        "references/resolve.md": "plugins/ticket/references/resolve.md"
+        "references/jira.md": "plugins/ticket/references/providers/jira.md",
+        "references/linear.md": "plugins/ticket/references/providers/linear.md",
+        "references/resolve.md": "plugins/ticket/references/resolve.md",
+        "references/shortcut.md": "plugins/ticket/references/providers/shortcut.md",
+        "references/trello.md": "plugins/ticket/references/providers/trello.md"
       },
-      "bytes": 35745
+      "bytes": 116893
     },
     {
       "name": "ticket-rebuild",
@@ -793,11 +802,20 @@
       ],
       "bundled": {
         "references/altitude.md": "plugins/ticket/references/altitude.md",
+        "references/asana.md": "plugins/ticket/references/providers/asana.md",
+        "references/azure-devops.md": "plugins/ticket/references/providers/azure-devops.md",
         "references/contract.md": "plugins/ticket/references/contract.md",
+        "references/generic.md": "plugins/ticket/references/providers/generic.md",
+        "references/github.md": "plugins/ticket/references/providers/github.md",
+        "references/gitlab.md": "plugins/ticket/references/providers/gitlab.md",
         "references/hierarchy.md": "plugins/ticket/references/hierarchy.md",
-        "references/resolve.md": "plugins/ticket/references/resolve.md"
+        "references/jira.md": "plugins/ticket/references/providers/jira.md",
+        "references/linear.md": "plugins/ticket/references/providers/linear.md",
+        "references/resolve.md": "plugins/ticket/references/resolve.md",
+        "references/shortcut.md": "plugins/ticket/references/providers/shortcut.md",
+        "references/trello.md": "plugins/ticket/references/providers/trello.md"
       },
-      "bytes": 35465
+      "bytes": 116559
     },
     {
       "name": "weave-architecture",
@@ -1027,6 +1045,15 @@
     "plugins/ticket/references/altitude.md": 2,
     "plugins/ticket/references/contract.md": 2,
     "plugins/ticket/references/hierarchy.md": 2,
+    "plugins/ticket/references/providers/asana.md": 2,
+    "plugins/ticket/references/providers/azure-devops.md": 2,
+    "plugins/ticket/references/providers/generic.md": 2,
+    "plugins/ticket/references/providers/github.md": 2,
+    "plugins/ticket/references/providers/gitlab.md": 2,
+    "plugins/ticket/references/providers/jira.md": 2,
+    "plugins/ticket/references/providers/linear.md": 2,
+    "plugins/ticket/references/providers/shortcut.md": 2,
+    "plugins/ticket/references/providers/trello.md": 2,
     "plugins/ticket/references/resolve.md": 2,
     "plugins/action/references/ticket-detection.md": 1,
     "plugins/business/references/instruments.md": 1,
@@ -1066,10 +1093,6 @@
     "docs/pull_request_template.md": [
       "pr",
       "pr-recut"
-    ],
-    "references/providers/": [
-      "ticket-draft",
-      "ticket-rebuild"
     ]
   },
   "unresolved_host_commands": {}

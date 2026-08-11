@@ -14,7 +14,7 @@ user-invocable: true
 allowed-tools: ["Bash", "Read", "Write", "Grep", "Glob", "WebSearch", "WebFetch", "AskUserQuestion"]
 ---
 
-# Write a ticket
+# Draft a ticket
 
 Write work into a tracker so that someone picking it up in a year needs
 nothing from you, and so that the code still gets to make the decisions the
@@ -37,8 +37,8 @@ single issue.
   of object carries.
 - `${CLAUDE_PLUGIN_ROOT}/references/resolve.md` — how to establish the above
   from evidence.
-- `${CLAUDE_PLUGIN_ROOT}/references/providers/<provider>.md` — that
-  provider's hierarchy, reference syntax, and filing mechanics.
+- The provider's own file, indexed in `hierarchy.md` under Provider files —
+  its hierarchy, reference syntax, and filing mechanics.
 
 ## Core principle
 
@@ -73,7 +73,7 @@ customer data does not become fileable by trimming it.
 Read the project's own conventions before imposing any: issue templates and
 forms, required fields, work types actually configured in this instance,
 labels that exist. Instance configuration beats the provider defaults in
-`providers/<name>.md`; when they disagree, follow the instance and record the
+the provider file; when they disagree, follow the instance and record the
 deviation.
 
 A template's structure wins over the section order in `altitude.md`. Fill it
@@ -111,8 +111,11 @@ Take the section list from `altitude.md` for the resolved role. Include only
 sections you have content for; never invent one.
 
 Write references per `contract.md`'s two-axis rule and the provider file:
-bare where the renderer resolves it and you want the backlink, explicitly
-titled where you do not, fully qualified across containers.
+bare where the renderer resolves it, fully qualified across containers, and
+titled where a bare identifier would be ambiguous. Suppressing the
+backreference is a separate question with a per-provider answer — do not
+assume a titled link is the quiet form, because on GitHub and GitLab it is
+not.
 
 Use the provider's native noun for every object you name. Never write `Epic`
 for a Linear Project or `Pull Request` for a GitLab merge request.

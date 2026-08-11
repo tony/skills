@@ -77,7 +77,7 @@ and `Related to #5` links without closing ([closing issues automatically][close]
 
 GitLab auto-detects a wide sigil set in descriptions and comments, so hand-linking any of
 them fights the renderer. Leave bare: `#123` (Issue, or an Epic in group context),
-`GL-123`, `[issue:123]`, `[work_item:123]`, `!123` (Merge Request), `&123` and
+`GL-123`, `[issue:123]`, `[work_item:123]`, `` !123 `` (Merge Request), `&123` and
 `[epic:123]`, `$123` (snippet), `~bug`, `~"feature request"`, `~"priority::high"`,
 `%v1.23`, `%"release candidate"`, `9ba12248`, `9ba12248...b19a04f5`,
 `*iteration:"iteration title"`, `[cadence:123]`, `[vulnerability:123]`,
@@ -121,7 +121,7 @@ mentioned users with to-do items and emails", and the person becomes a participa
 approved.
 
 House forms: bare short ref for a same-Project commit reachable from trunk; bare `#123` or
-`!123` in-Project; bare `project#123` for another Project in the same namespace; bare
+`` !123 `` in-Project; bare `project#123` for another Project in the same namespace; bare
 `namespace/project#123` anywhere else; `namespace/project@9ba12248` for a cross-project
 commit. Unlike GitHub, a titled link buys nothing cross-container — it posts the same
 cross-reference onto the other tracker and adds noise. If naming an object must not touch
@@ -152,7 +152,7 @@ expansions and cross-references only reveal themselves after render.
 
 ## Naming traps
 
-Never write "Pull Request" — the noun is Merge Request and `!123` is its sigil. Never say
+Never write "Pull Request" — the noun is Merge Request and `` !123 `` is its sigil. Never say
 bare "Project" for a delivery grouping; a GitLab Project is a scope_container holding a
 repository, and the delivery_group is an Epic. Never say "repo" as the home of an Epic;
 Epics live in a Group. Never treat Objective and Epic as interchangeable, and never promote

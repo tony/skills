@@ -5,7 +5,8 @@ rules are the same for a GitHub issue, a Linear project, a Confluence page,
 and a merge request.
 
 How much of each a given object carries is in `altitude.md`. How a specific
-renderer expresses a reference is in `providers/<name>.md`.
+renderer expresses a reference is in that provider's file, indexed in
+`hierarchy.md`.
 
 ## Past — the cost-to-relearn filter
 

@@ -72,7 +72,7 @@ Auto-detected inside a Work Item description, rich-text field or Discussion comm
   them in prose — write the plain name. Through an API the raw form is `@<userID>` in the Markdown editor,
   or an anchor carrying `data-vss-mention` in the HTML editor
   ([Use @mentions](https://learn.microsoft.com/en-us/azure/devops/organizations/notifications/at-mentions?view=azure-devops)).
-- `!` opens a pull request picker and inserts a clickable link; documented for GitHub pull requests in a
+- `` ! `` opens a pull request picker and inserts a clickable link; documented for GitHub pull requests in a
   connected repository
   ([Link GitHub commits, PRs, branches, and issues](https://learn.microsoft.com/en-us/azure/devops/boards/github/link-to-from-github?view=azure-devops)).
 - Escape a hash you do not mean as a reference — write `\#` for hex colors — or the editor offers
