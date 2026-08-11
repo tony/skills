@@ -1,0 +1,12 @@
+{
+  "name": "research",
+  "version": "0.0.1",
+  "description": "Clone and study your project's dependencies at the exact versions you use — source repos with version-pinned git worktrees",
+  "author": {
+    "name": "Tony Narlock",
+    "email": "tony@git-pull.com"
+  },
+  "homepage": "https://github.com/tony/ai-workflow-plugins/tree/main/plugins/research",
+  "license": "MIT",
+  "skills": "./skills/"
+}

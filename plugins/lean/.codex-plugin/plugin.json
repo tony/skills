@@ -1,0 +1,12 @@
+{
+  "name": "lean",
+  "version": "0.0.1",
+  "description": "Write tight, slop-free prose and code, and tighten existing files in place with no commits — a model-invocable writing discipline plus a working-tree cleanup command",
+  "author": {
+    "name": "Tony Narlock",
+    "email": "tony@git-pull.com"
+  },
+  "homepage": "https://github.com/tony/ai-workflow-plugins/tree/main/plugins/lean",
+  "license": "MIT",
+  "skills": "./skills/"
+}

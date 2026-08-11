@@ -1,0 +1,12 @@
+{
+  "name": "commit",
+  "version": "0.0.1",
+  "description": "Create git commits following project conventions with format enforcement and safety checks",
+  "author": {
+    "name": "Tony Narlock",
+    "email": "tony@git-pull.com"
+  },
+  "homepage": "https://github.com/tony/ai-workflow-plugins/tree/main/plugins/commit",
+  "license": "MIT",
+  "skills": "./skills/"
+}

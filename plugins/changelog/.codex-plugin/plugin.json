@@ -1,0 +1,12 @@
+{
+  "name": "changelog",
+  "version": "0.1.0",
+  "description": "Generate categorized changelog entries from branch commits and PR context; refresh or recut a branch's own entries as it evolves",
+  "author": {
+    "name": "Tony Narlock",
+    "email": "tony@git-pull.com"
+  },
+  "homepage": "https://github.com/tony/ai-workflow-plugins/tree/main/plugins/changelog",
+  "license": "MIT",
+  "skills": "./skills/"
+}

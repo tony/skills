@@ -257,6 +257,64 @@ class PluginJson(pydantic.BaseModel):
     keywords: list[str] | None = None
 
 
+class CodexPluginJson(pydantic.BaseModel):
+    """A plugin's ``.codex-plugin/plugin.json``, Codex's required entry point.
+
+    ``skills`` names the default location rather than relying on it, so the
+    manifest states where Codex looks instead of leaving it implicit.
+
+    Examples
+    --------
+    >>> CodexPluginJson(name="commit", version="0.0.1", description="d").skills
+    './skills/'
+    """
+
+    name: str
+    version: str
+    description: str
+    author: Author | None = None
+    homepage: str | None = None
+    license: str | None = None
+    skills: str = "./skills/"
+
+
+class CodexSource(pydantic.BaseModel):
+    """A local plugin source in Codex's marketplace format."""
+
+    source: t.Literal["local"] = "local"
+    path: str
+
+
+class CodexPolicy(pydantic.BaseModel):
+    """Install and authentication policy for one Codex marketplace entry."""
+
+    installation: t.Literal["AVAILABLE", "INSTALLED_BY_DEFAULT", "NOT_AVAILABLE"] = "AVAILABLE"
+    authentication: t.Literal["ON_INSTALL", "ON_FIRST_USE"] = "ON_INSTALL"
+
+
+class CodexPluginEntry(pydantic.BaseModel):
+    """One plugin in Codex's marketplace manifest."""
+
+    name: str
+    source: CodexSource
+    policy: CodexPolicy
+    category: str
+
+
+class CodexInterface(pydantic.BaseModel):
+    """Install-surface metadata for a Codex marketplace."""
+
+    displayName: str  # noqa: N815
+
+
+class CodexMarketplace(pydantic.BaseModel):
+    """Top-level schema for ``.agents/plugins/marketplace.json``."""
+
+    name: str
+    interface: CodexInterface
+    plugins: list[CodexPluginEntry]
+
+
 def load_marketplace() -> MarketplaceManifest:
     """Load and validate the marketplace manifest.
 
@@ -1450,6 +1508,23 @@ AGENTS_DIR = REPO_ROOT / ".agents"
 PORTABLE_SKILLS_DIR = AGENTS_DIR / "skills"
 PORTABLE_MANIFEST_PATH = AGENTS_DIR / "portable-manifest.json"
 
+CODEX_MARKETPLACE_PATH = AGENTS_DIR / "plugins" / "marketplace.json"
+"""Codex's native marketplace manifest.
+
+Codex prefers this over ``.claude-plugin/marketplace.json``, which it accepts
+only as a legacy fallback. Both ship so neither host depends on the other's
+spelling.
+"""
+
+CODEX_MANIFEST_REL = Path(".codex-plugin") / "plugin.json"
+
+CODEX_MARKETPLACE_DISPLAY_NAME = "AI Workflow Plugins"
+"""Label Codex shows in its marketplace picker.
+
+Written out rather than derived: title-casing the manifest name yields "Ai",
+and the manifest description is a full sentence, too long for a picker row.
+"""
+
 
 def _collect_sources() -> list[SourceComponent]:
     """Collect every skill and command in the source tree.
@@ -1704,6 +1779,16 @@ def _check_one_skill(skill: BuiltSkill) -> list[str]:
             errors.append(f"portable: [{skill.name}] '{rel}' still contains an inline-bash span")
         if re.search(r"(?<![A-Za-z0-9._/-])plugins/[a-z]", body):
             errors.append(f"portable: [{skill.name}] '{rel}' still contains an in-repo path")
+        climb = re.search(
+            r"(?<![A-Za-z0-9._/-])(?:\.\./)+(?:" + "|".join(RESOURCE_DIRS) + r")/",
+            body,
+        )
+        if climb is not None:
+            # A source skill reaches its plugin's shared files by climbing out of
+            # its own directory, and the flattened export severs that climb. Only
+            # a climb into a resource directory is a bundle path; '../myproject'
+            # names a sibling of the user's own checkout and must survive intact.
+            errors.append(f"portable: [{skill.name}] '{rel}' still climbs out of the skill")
     errors.extend(_check_frontmatter(skill, text))
     errors.extend(
         f"portable: [{skill.name}] bundled path '{rel}' was not emitted"
@@ -1769,16 +1854,96 @@ def _check_body_paths(skill: BuiltSkill) -> list[str]:
     return errors
 
 
+def _dump_json(model: pydantic.BaseModel) -> str:
+    """Serialize a generated manifest the way it is written to disk."""
+    raw: dict[str, t.Any] = model.model_dump(mode="json", exclude_none=True)
+    return json.dumps(raw, indent=2, ensure_ascii=False) + "\n"
+
+
+def _codex_files() -> dict[str, bytes]:
+    """Lay out every generated Codex manifest, keyed by repo-relative path.
+
+    Identity mirrors ``.claude-plugin/plugin.json`` so the two manifests cannot
+    describe one plugin differently; ``homepage`` and ``license`` live only on
+    the marketplace entry and are read from there.
+
+    Returning the whole set as bytes lets the writer and the drift check work
+    from one description, so they cannot disagree about what belongs on disk.
+    """
+    manifest = load_marketplace()
+    entries = {entry.name: entry for entry in manifest.plugins}
+    codex_marketplace = CodexMarketplace(
+        name=manifest.name,
+        interface=CodexInterface(displayName=CODEX_MARKETPLACE_DISPLAY_NAME),
+        plugins=[
+            CodexPluginEntry(
+                name=entry.name,
+                source=CodexSource(path=entry.source),
+                policy=CodexPolicy(),
+                # Codex documents its categories capitalized; the value is the
+                # same one the Claude manifest already validates.
+                category=entry.category.title(),
+            )
+            for entry in manifest.plugins
+        ],
+    )
+    files = {
+        str(CODEX_MARKETPLACE_PATH.relative_to(REPO_ROOT)): _dump_json(codex_marketplace).encode(
+            "utf-8"
+        )
+    }
+    for plugin_dir in discover_plugins():
+        meta = _load_plugin_json(plugin_dir)
+        entry = entries.get(plugin_dir.name)
+        codex_json = CodexPluginJson(
+            name=meta.name,
+            # Codex keys its install cache on the version, so one is required
+            # even where the Claude manifest leaves it unset.
+            version=meta.version or "0.0.0",
+            description=meta.description,
+            author=meta.author or (entry.author if entry is not None else None),
+            homepage=meta.homepage or (entry.homepage if entry is not None else None),
+            license=meta.license or (entry.license if entry is not None else None),
+        )
+        rel = plugin_dir.relative_to(REPO_ROOT) / CODEX_MANIFEST_REL
+        files[str(rel)] = _dump_json(codex_json).encode("utf-8")
+    return files
+
+
+def _check_codex_drift(files: dict[str, bytes]) -> list[str]:
+    """Compare the committed Codex manifests against a fresh generation."""
+    errors: list[str] = []
+    actual = {
+        str(p.relative_to(REPO_ROOT))
+        for p in [
+            *(d / CODEX_MANIFEST_REL for d in discover_plugins()),
+            CODEX_MARKETPLACE_PATH,
+        ]
+        if p.is_file()
+    }
+    errors.extend(f"codex: stale manifest '{rel}'" for rel in sorted(actual - set(files)))
+    for rel, content in sorted(files.items()):
+        path = REPO_ROOT / rel
+        if not path.is_file():
+            errors.append(f"codex: missing manifest '{rel}'")
+        elif path.read_bytes() != content:
+            errors.append(f"codex: '{rel}' differs from a fresh render")
+    return errors
+
+
 @app.command()
 def portable(*, check: bool = False) -> None:
-    """Emit ``.agents/skills/`` so non-Claude agents can consume this repo.
+    """Emit ``.agents/skills/`` and the Codex manifests this repo ships.
 
-    Every skill and command becomes one portable skill directory. Files a
-    component reaches through ``${CLAUDE_PLUGIN_ROOT}`` or a plugin-relative
-    path are copied into that directory and the links rewritten, so each
-    output skill is self-contained. Copies are deliberate: the manifest at
+    Each skill becomes one portable skill directory. Files a skill reaches by
+    climbing out of its own directory are copied in and the links rewritten, so
+    each output skill is self-contained. Copies are deliberate: the manifest at
     ``.agents/portable-manifest.json`` records how many times each source is
     duplicated.
+
+    The Codex side needs no such copy. Codex reads ``skills/`` in place, so all
+    it takes is a ``.codex-plugin/plugin.json`` per plugin naming that directory
+    and a marketplace manifest in Codex's own format.
 
     Parameters
     ----------
@@ -1788,8 +1953,14 @@ def portable(*, check: bool = False) -> None:
     """
     sources = _collect_sources()
     built = _build_portable()
+    codex_files = _codex_files()
     if not check:
         _write_portable(built, PORTABLE_SKILLS_DIR, PORTABLE_MANIFEST_PATH)
+        for rel, content in sorted(codex_files.items()):
+            path = REPO_ROOT / rel
+            path.parent.mkdir(parents=True, exist_ok=True)
+            _ = path.write_bytes(content)
+        console.print(f"[green]Wrote {len(codex_files)} Codex manifests[/green]")
         total = sum(len(c) for s in built for c, _ in s.files.values())
         files = sum(len(s.files) for s in built)
         summary = (
@@ -1800,6 +1971,7 @@ def portable(*, check: bool = False) -> None:
         return
 
     errors = _check_invariants(built, sources) + _check_drift(built)
+    errors.extend(_check_codex_drift(codex_files))
     manifest = json.dumps(_portable_manifest(built), indent=2) + "\n"
     if not PORTABLE_MANIFEST_PATH.exists():
         errors.append("portable: .agents/portable-manifest.json is missing")

@@ -1,0 +1,12 @@
+{
+  "name": "rebase",
+  "version": "0.0.1",
+  "description": "Automated rebase onto trunk with conflict prediction, resolution, and quality gate verification",
+  "author": {
+    "name": "Tony Narlock",
+    "email": "tony@git-pull.com"
+  },
+  "homepage": "https://github.com/tony/ai-workflow-plugins/tree/main/plugins/rebase",
+  "license": "MIT",
+  "skills": "./skills/"
+}
