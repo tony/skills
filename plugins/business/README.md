@@ -17,25 +17,25 @@ written as unknown, never invented.
 In Claude Code, add the marketplace:
 
 ```console
-/plugin marketplace add tony/ai-workflow-plugins
+/plugin marketplace add tony/skills
 ```
 
 Install the plugin:
 
 ```console
-/plugin install business@ai-workflow-plugins
+/plugin install business@skills
 ```
 
 In Codex, add the marketplace:
 
 ```console
-codex plugin marketplace add tony/ai-workflow-plugins
+codex plugin marketplace add tony/skills
 ```
 
 Install the plugin:
 
 ```console
-codex plugin add business@ai-workflow-plugins
+codex plugin add business@skills
 ```
 
 The skills below are written with Claude Code's leading slash. Codex uses

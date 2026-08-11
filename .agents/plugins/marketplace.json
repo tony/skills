@@ -1,7 +1,7 @@
 {
-  "name": "ai-workflow-plugins",
+  "name": "skills",
   "interface": {
-    "displayName": "AI Workflow Plugins"
+    "displayName": "Skills from Tony"
   },
   "plugins": [
     {

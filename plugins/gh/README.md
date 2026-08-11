@@ -9,25 +9,25 @@ renders correctly and its links keep resolving.
 In Claude Code, add the marketplace:
 
 ```console
-/plugin marketplace add tony/ai-workflow-plugins
+/plugin marketplace add tony/skills
 ```
 
 Install the plugin:
 
 ```console
-/plugin install gh@ai-workflow-plugins
+/plugin install gh@skills
 ```
 
 In Codex, add the marketplace:
 
 ```console
-codex plugin marketplace add tony/ai-workflow-plugins
+codex plugin marketplace add tony/skills
 ```
 
 Install the plugin:
 
 ```console
-codex plugin add gh@ai-workflow-plugins
+codex plugin add gh@skills
 ```
 
 The skills below are written with Claude Code's leading slash. Codex uses

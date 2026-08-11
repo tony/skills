@@ -8,7 +8,7 @@
 #     "pyyaml>=6.0",
 # ]
 # ///
-"""Marketplace management CLI for ai-workflow-plugins.
+"""Marketplace management CLI for tony/skills.
 
 Validates marketplace manifests, plugin structures, and command frontmatter.
 Syncs the marketplace manifest with discovered plugin directories.
@@ -108,7 +108,7 @@ missing rather than the line endings being reported."""
 
 
 app = typer.Typer(
-    help="Marketplace management CLI for ai-workflow-plugins.",
+    help="Marketplace management CLI for tony/skills.",
     invoke_without_command=True,
 )
 console = rich.console.Console()
@@ -116,7 +116,7 @@ console = rich.console.Console()
 
 @app.callback()
 def _main(ctx: typer.Context) -> None:  # pyright: ignore[reportUnusedFunction]
-    """Marketplace management CLI for ai-workflow-plugins."""
+    """Marketplace management CLI for tony/skills."""
     if ctx.invoked_subcommand is None:
         console.print(ctx.get_help())
 
@@ -371,7 +371,7 @@ def validate_marketplace_name(name: str) -> list[str]:
 
     Non-reserved names pass:
 
-    >>> validate_marketplace_name("ai-workflow-plugins")
+    >>> validate_marketplace_name("skills")
     []
     """
     errors: list[str] = []
@@ -1518,11 +1518,12 @@ spelling.
 
 CODEX_MANIFEST_REL = Path(".codex-plugin") / "plugin.json"
 
-CODEX_MARKETPLACE_DISPLAY_NAME = "AI Workflow Plugins"
+CODEX_MARKETPLACE_DISPLAY_NAME = "Skills from Tony"
 """Label Codex shows in its marketplace picker.
 
-Written out rather than derived: title-casing the manifest name yields "Ai",
-and the manifest description is a full sentence, too long for a picker row.
+Names the owner because the manifest name alone is generic in a picker listing
+several marketplaces; the manifest description is a full sentence, too long for
+a picker row.
 """
 
 

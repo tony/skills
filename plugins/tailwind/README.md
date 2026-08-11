@@ -7,25 +7,25 @@ Detect and fix inconsistent spacing in Tailwind CSS layouts — container fragme
 In Claude Code, add the marketplace:
 
 ```console
-/plugin marketplace add tony/ai-workflow-plugins
+/plugin marketplace add tony/skills
 ```
 
 Install the plugin:
 
 ```console
-/plugin install tailwind@ai-workflow-plugins
+/plugin install tailwind@skills
 ```
 
 In Codex, add the marketplace:
 
 ```console
-codex plugin marketplace add tony/ai-workflow-plugins
+codex plugin marketplace add tony/skills
 ```
 
 Install the plugin:
 
 ```console
-codex plugin add tailwind@ai-workflow-plugins
+codex plugin add tailwind@skills
 ```
 
 ## Skills

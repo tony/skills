@@ -15,25 +15,25 @@ For branch-scoped slop cleanup that uses fixup commits and
 In Claude Code, add the marketplace:
 
 ```console
-/plugin marketplace add tony/ai-workflow-plugins
+/plugin marketplace add tony/skills
 ```
 
 Install the plugin:
 
 ```console
-/plugin install slop@ai-workflow-plugins
+/plugin install slop@skills
 ```
 
 In Codex, add the marketplace:
 
 ```console
-codex plugin marketplace add tony/ai-workflow-plugins
+codex plugin marketplace add tony/skills
 ```
 
 Install the plugin:
 
 ```console
-codex plugin add slop@ai-workflow-plugins
+codex plugin add slop@skills
 ```
 
 ## Skills

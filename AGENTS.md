@@ -6,8 +6,8 @@ Project conventions and standards for AI-assisted development.
 
 This is a **public, third-party [Claude Code plugin marketplace](https://code.claude.com/docs/en/plugin-marketplaces)**
 providing language-agnostic AI / agentic workflow plugins for DX efficiency. Hosted
-on GitHub ([tony/ai-workflow-plugins](https://github.com/tony/ai-workflow-plugins)),
-not affiliated with or endorsed by Anthropic.
+on GitHub ([tony/skills](https://github.com/tony/skills)), not affiliated with or
+endorsed by Anthropic or OpenAI.
 
 ## Official Documentation References
 

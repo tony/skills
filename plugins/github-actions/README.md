@@ -11,25 +11,25 @@ them.
 In Claude Code, add the marketplace:
 
 ```console
-/plugin marketplace add tony/ai-workflow-plugins
+/plugin marketplace add tony/skills
 ```
 
 Install the plugin:
 
 ```console
-/plugin install github-actions@ai-workflow-plugins
+/plugin install github-actions@skills
 ```
 
 In Codex, add the marketplace:
 
 ```console
-codex plugin marketplace add tony/ai-workflow-plugins
+codex plugin marketplace add tony/skills
 ```
 
 Install the plugin:
 
 ```console
-codex plugin add github-actions@ai-workflow-plugins
+codex plugin add github-actions@skills
 ```
 
 ## Skills

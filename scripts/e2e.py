@@ -7,7 +7,7 @@
 #     "typer>=0.15",
 # ]
 # ///
-"""E2E plugin lifecycle tests for ai-workflow-plugins.
+"""E2E plugin lifecycle tests for tony/skills.
 
 Runs the full Claude plugin CLI lifecycle in an isolated sandbox:
 validate -> marketplace add -> install -> disable/enable -> uninstall -> marketplace remove.
@@ -47,8 +47,8 @@ import yaml
 from _private_path import PrivatePath  # pyright: ignore[reportImplicitRelativeImport]
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
-MARKETPLACE_NAME = "ai-workflow-plugins"
-GITHUB_SOURCE = "tony/ai-workflow-plugins"
+MARKETPLACE_NAME = "skills"
+GITHUB_SOURCE = "tony/skills"
 
 
 def _discover_plugins() -> list[str]:
@@ -75,7 +75,7 @@ WEAVE_WORKER_REFERENCE = "../../references/worker-backends.md"
 PORTABLE_HEADLESS_DEFAULT_MARKER = "<!-- portable: ask-user-choice=headless-default -->"
 WEAVE_MUTATING_SKILLS = frozenset({"architecture", "execute", "prompt"})
 
-app = typer.Typer(help="E2E plugin lifecycle tests for ai-workflow-plugins.")
+app = typer.Typer(help="E2E plugin lifecycle tests for tony/skills.")
 console = rich.console.Console()
 
 Source = t.Literal["local", "github", "both"]

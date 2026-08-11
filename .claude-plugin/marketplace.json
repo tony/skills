@@ -1,5 +1,5 @@
 {
-  "name": "ai-workflow-plugins",
+  "name": "skills",
   "metadata": {
     "description": "Language-agnostic workflow plugins for Claude Code — cross-model AI collaboration, rebase automation, changelog generation, and TDD workflows",
     "pluginRoot": "."
@@ -19,7 +19,7 @@
       },
       "source": "./plugins/weave",
       "category": "development",
-      "homepage": "https://github.com/tony/ai-workflow-plugins/tree/main/plugins/weave",
+      "homepage": "https://github.com/tony/skills/tree/main/plugins/weave",
       "license": "MIT"
     },
     {
@@ -32,7 +32,7 @@
       },
       "source": "./plugins/rebase",
       "category": "development",
-      "homepage": "https://github.com/tony/ai-workflow-plugins/tree/main/plugins/rebase",
+      "homepage": "https://github.com/tony/skills/tree/main/plugins/rebase",
       "license": "MIT"
     },
     {
@@ -45,7 +45,7 @@
       },
       "source": "./plugins/changelog",
       "category": "productivity",
-      "homepage": "https://github.com/tony/ai-workflow-plugins/tree/main/plugins/changelog",
+      "homepage": "https://github.com/tony/skills/tree/main/plugins/changelog",
       "license": "MIT"
     },
     {
@@ -58,7 +58,7 @@
       },
       "source": "./plugins/tdd",
       "category": "testing",
-      "homepage": "https://github.com/tony/ai-workflow-plugins/tree/main/plugins/tdd",
+      "homepage": "https://github.com/tony/skills/tree/main/plugins/tdd",
       "license": "MIT"
     },
     {
@@ -71,7 +71,7 @@
       },
       "source": "./plugins/commit",
       "category": "development",
-      "homepage": "https://github.com/tony/ai-workflow-plugins/tree/main/plugins/commit",
+      "homepage": "https://github.com/tony/skills/tree/main/plugins/commit",
       "license": "MIT"
     },
     {
@@ -84,7 +84,7 @@
       },
       "source": "./plugins/model-cli",
       "category": "development",
-      "homepage": "https://github.com/tony/ai-workflow-plugins/tree/main/plugins/model-cli",
+      "homepage": "https://github.com/tony/skills/tree/main/plugins/model-cli",
       "license": "MIT"
     },
     {
@@ -97,7 +97,7 @@
       },
       "source": "./plugins/pr",
       "category": "development",
-      "homepage": "https://github.com/tony/ai-workflow-plugins/tree/main/plugins/pr",
+      "homepage": "https://github.com/tony/skills/tree/main/plugins/pr",
       "license": "MIT"
     },
     {
@@ -110,7 +110,7 @@
       },
       "source": "./plugins/research",
       "category": "learning",
-      "homepage": "https://github.com/tony/ai-workflow-plugins/tree/main/plugins/research",
+      "homepage": "https://github.com/tony/skills/tree/main/plugins/research",
       "license": "MIT"
     },
     {
@@ -123,7 +123,7 @@
       },
       "source": "./plugins/slop",
       "category": "development",
-      "homepage": "https://github.com/tony/ai-workflow-plugins/tree/main/plugins/slop",
+      "homepage": "https://github.com/tony/skills/tree/main/plugins/slop",
       "license": "MIT"
     },
     {
@@ -136,7 +136,7 @@
       },
       "source": "./plugins/tailwind",
       "category": "design",
-      "homepage": "https://github.com/tony/ai-workflow-plugins/tree/main/plugins/tailwind",
+      "homepage": "https://github.com/tony/skills/tree/main/plugins/tailwind",
       "license": "MIT"
     },
     {
@@ -149,7 +149,7 @@
       },
       "source": "./plugins/pytest-optimizer",
       "category": "testing",
-      "homepage": "https://github.com/tony/ai-workflow-plugins/tree/main/plugins/pytest-optimizer",
+      "homepage": "https://github.com/tony/skills/tree/main/plugins/pytest-optimizer",
       "license": "MIT"
     },
     {
@@ -162,7 +162,7 @@
       },
       "source": "./plugins/spike",
       "category": "development",
-      "homepage": "https://github.com/tony/ai-workflow-plugins/tree/main/plugins/spike",
+      "homepage": "https://github.com/tony/skills/tree/main/plugins/spike",
       "license": "MIT"
     },
     {
@@ -175,7 +175,7 @@
       },
       "source": "./plugins/review",
       "category": "development",
-      "homepage": "https://github.com/tony/ai-workflow-plugins/tree/main/plugins/review",
+      "homepage": "https://github.com/tony/skills/tree/main/plugins/review",
       "license": "MIT"
     },
     {
@@ -188,7 +188,7 @@
       },
       "source": "./plugins/action",
       "category": "development",
-      "homepage": "https://github.com/tony/ai-workflow-plugins/tree/main/plugins/action",
+      "homepage": "https://github.com/tony/skills/tree/main/plugins/action",
       "license": "MIT"
     },
     {
@@ -201,7 +201,7 @@
       },
       "source": "./plugins/lean",
       "category": "development",
-      "homepage": "https://github.com/tony/ai-workflow-plugins/tree/main/plugins/lean",
+      "homepage": "https://github.com/tony/skills/tree/main/plugins/lean",
       "license": "MIT"
     },
     {
@@ -214,7 +214,7 @@
       },
       "source": "./plugins/double-check",
       "category": "productivity",
-      "homepage": "https://github.com/tony/ai-workflow-plugins/tree/main/plugins/double-check",
+      "homepage": "https://github.com/tony/skills/tree/main/plugins/double-check",
       "license": "MIT"
     },
     {
@@ -227,7 +227,7 @@
       },
       "source": "./plugins/release",
       "category": "development",
-      "homepage": "https://github.com/tony/ai-workflow-plugins/tree/main/plugins/release",
+      "homepage": "https://github.com/tony/skills/tree/main/plugins/release",
       "license": "MIT"
     },
     {
@@ -240,7 +240,7 @@
       },
       "source": "./plugins/merge-pr",
       "category": "development",
-      "homepage": "https://github.com/tony/ai-workflow-plugins/tree/main/plugins/merge-pr",
+      "homepage": "https://github.com/tony/skills/tree/main/plugins/merge-pr",
       "license": "MIT"
     },
     {
@@ -253,7 +253,7 @@
       },
       "source": "./plugins/business",
       "category": "productivity",
-      "homepage": "https://github.com/tony/ai-workflow-plugins/tree/main/plugins/business",
+      "homepage": "https://github.com/tony/skills/tree/main/plugins/business",
       "license": "MIT"
     },
     {
@@ -266,7 +266,7 @@
       },
       "source": "./plugins/github-actions",
       "category": "development",
-      "homepage": "https://github.com/tony/ai-workflow-plugins/tree/main/plugins/github-actions",
+      "homepage": "https://github.com/tony/skills/tree/main/plugins/github-actions",
       "license": "MIT"
     },
     {
@@ -279,7 +279,7 @@
       },
       "source": "./plugins/situate",
       "category": "development",
-      "homepage": "https://github.com/tony/ai-workflow-plugins/tree/main/plugins/situate",
+      "homepage": "https://github.com/tony/skills/tree/main/plugins/situate",
       "license": "MIT"
     },
     {
@@ -292,7 +292,7 @@
       },
       "source": "./plugins/terraform",
       "category": "development",
-      "homepage": "https://github.com/tony/ai-workflow-plugins/tree/main/plugins/terraform",
+      "homepage": "https://github.com/tony/skills/tree/main/plugins/terraform",
       "license": "MIT"
     },
     {
@@ -305,7 +305,7 @@
       },
       "source": "./plugins/ruff",
       "category": "development",
-      "homepage": "https://github.com/tony/ai-workflow-plugins/tree/main/plugins/ruff",
+      "homepage": "https://github.com/tony/skills/tree/main/plugins/ruff",
       "license": "MIT"
     },
     {
@@ -318,7 +318,7 @@
       },
       "source": "./plugins/gh",
       "category": "development",
-      "homepage": "https://github.com/tony/ai-workflow-plugins/tree/main/plugins/gh",
+      "homepage": "https://github.com/tony/skills/tree/main/plugins/gh",
       "license": "MIT"
     },
     {
@@ -331,7 +331,7 @@
       },
       "source": "./plugins/git-branch",
       "category": "development",
-      "homepage": "https://github.com/tony/ai-workflow-plugins/tree/main/plugins/git-branch",
+      "homepage": "https://github.com/tony/skills/tree/main/plugins/git-branch",
       "license": "MIT"
     },
     {
@@ -344,7 +344,7 @@
       },
       "source": "./plugins/package-updater",
       "category": "development",
-      "homepage": "https://github.com/tony/ai-workflow-plugins/tree/main/plugins/package-updater",
+      "homepage": "https://github.com/tony/skills/tree/main/plugins/package-updater",
       "license": "MIT"
     },
     {
@@ -357,7 +357,7 @@
       },
       "source": "./plugins/disk",
       "category": "productivity",
-      "homepage": "https://github.com/tony/ai-workflow-plugins/tree/main/plugins/disk",
+      "homepage": "https://github.com/tony/skills/tree/main/plugins/disk",
       "license": "MIT"
     },
     {
@@ -370,7 +370,7 @@
       },
       "source": "./plugins/ticket",
       "category": "development",
-      "homepage": "https://github.com/tony/ai-workflow-plugins/tree/main/plugins/ticket",
+      "homepage": "https://github.com/tony/skills/tree/main/plugins/ticket",
       "license": "MIT"
     }
   ]

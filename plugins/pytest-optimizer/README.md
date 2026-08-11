@@ -20,25 +20,25 @@ profile      prove each        rank by       apply each speedup
 In Claude Code, add the marketplace:
 
 ```console
-/plugin marketplace add tony/ai-workflow-plugins
+/plugin marketplace add tony/skills
 ```
 
 Install the plugin:
 
 ```console
-/plugin install pytest-optimizer@ai-workflow-plugins
+/plugin install pytest-optimizer@skills
 ```
 
 In Codex, add the marketplace:
 
 ```console
-codex plugin marketplace add tony/ai-workflow-plugins
+codex plugin marketplace add tony/skills
 ```
 
 Install the plugin:
 
 ```console
-codex plugin add pytest-optimizer@ai-workflow-plugins
+codex plugin add pytest-optimizer@skills
 ```
 
 The skills below are written with Claude Code's leading slash. Codex uses

@@ -494,7 +494,7 @@
         "templates/pytest_optimizer_plugin.py": "plugins/pytest-optimizer/templates/pytest_optimizer_plugin.py",
         "templates/state.schema.json": "plugins/pytest-optimizer/templates/state.schema.json"
       },
-      "bytes": 76539
+      "bytes": 76526
     },
     {
       "name": "pytest-optimizer-00-scan",
@@ -512,7 +512,7 @@
         "templates/pytest_optimizer_plugin.py": "plugins/pytest-optimizer/templates/pytest_optimizer_plugin.py",
         "templates/state.schema.json": "plugins/pytest-optimizer/templates/state.schema.json"
       },
-      "bytes": 58957
+      "bytes": 58944
     },
     {
       "name": "pytest-optimizer-01-benchmark",

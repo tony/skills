@@ -7,25 +7,25 @@ Move one repository or a whole fleet onto a new [ruff](https://docs.astral.sh/ru
 In Claude Code, add the marketplace:
 
 ```console
-/plugin marketplace add tony/ai-workflow-plugins
+/plugin marketplace add tony/skills
 ```
 
 Install the plugin:
 
 ```console
-/plugin install ruff@ai-workflow-plugins
+/plugin install ruff@skills
 ```
 
 In Codex, add the marketplace:
 
 ```console
-codex plugin marketplace add tony/ai-workflow-plugins
+codex plugin marketplace add tony/skills
 ```
 
 Install the plugin:
 
 ```console
-codex plugin add ruff@ai-workflow-plugins
+codex plugin add ruff@skills
 ```
 
 ## Skills

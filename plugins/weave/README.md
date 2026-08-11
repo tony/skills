@@ -9,25 +9,25 @@ are the default; separate model CLIs are available by explicit choice.
 In Claude Code, add the marketplace:
 
 ```console
-/plugin marketplace add tony/ai-workflow-plugins
+/plugin marketplace add tony/skills
 ```
 
 Install the plugin:
 
 ```console
-/plugin install weave@ai-workflow-plugins
+/plugin install weave@skills
 ```
 
 In Codex, add the marketplace:
 
 ```console
-codex plugin marketplace add tony/ai-workflow-plugins
+codex plugin marketplace add tony/skills
 ```
 
 Install the plugin:
 
 ```console
-codex plugin add weave@ai-workflow-plugins
+codex plugin add weave@skills
 ```
 
 ## Skills

@@ -1,4 +1,4 @@
-# ai-workflow-plugins
+# skills
 
 A third-party plugin marketplace providing language-agnostic AI / agentic
 workflow plugins for DX efficiency. Every plugin installs into both
@@ -9,7 +9,7 @@ are readable by any agent that scans `.agents/skills/`.
 > **Warning:** Review plugins before installing. Anthropic does not control plugin
 > contents and cannot verify they work as intended.
 
-**Repository:** [tony/ai-workflow-plugins](https://github.com/tony/ai-workflow-plugins)
+**Repository:** [tony/skills](https://github.com/tony/skills)
 
 ## Plugins
 
@@ -51,7 +51,7 @@ are readable by any agent that scans `.agents/skills/`.
 Add the marketplace:
 
 ```console
-/plugin marketplace add tony/ai-workflow-plugins
+/plugin marketplace add tony/skills
 ```
 
 You can also browse available plugins with `/plugin > Discover`.
@@ -59,7 +59,7 @@ You can also browse available plugins with `/plugin > Discover`.
 Then install any plugin by the name in the table above:
 
 ```console
-/plugin install commit@ai-workflow-plugins
+/plugin install commit@skills
 ```
 
 ### Codex
@@ -67,13 +67,13 @@ Then install any plugin by the name in the table above:
 Add the marketplace:
 
 ```console
-codex plugin marketplace add tony/ai-workflow-plugins
+codex plugin marketplace add tony/skills
 ```
 
 Then install any plugin by the name in the table above:
 
 ```console
-codex plugin add commit@ai-workflow-plugins
+codex plugin add commit@skills
 ```
 
 Each workflow is one skill, invoked as `pr:deslop` under Codex and
@@ -172,7 +172,7 @@ Hosts that scan `.agents/skills/` read the tree straight from a checkout, with
 no install step. The `skills` CLI reads the same tree:
 
 ```bash
-npx skills add tony/ai-workflow-plugins
+npx skills add tony/skills
 ```
 
 That installs the export and nothing else. The CLI would otherwise also walk
