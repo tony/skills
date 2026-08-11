@@ -1,0 +1,9 @@
+{
+  "name": "ticket",
+  "description": "Write and rebuild work in any tracker — GitHub, GitLab, Linear, Jira, Azure DevOps, Shortcut, Trello, Asana — treating each as its own typed graph rather than one universal Initiative-to-Task ladder, so a Linear Project is never called an Epic and a merge request is never called a pull request. Carries only provenance that cannot be re-derived from the repository, writes references that neither rot nor mint unwanted backlinks, and states the few invariants that would make the work pointless instead of a checklist that decides the implementation before the code gets a say",
+  "version": "0.0.1",
+  "author": {
+    "name": "Tony Narlock",
+    "email": "tony@git-pull.com"
+  }
+}

@@ -26,6 +26,20 @@ and every link in it follows
 `references/source-links.md`. Read both before
 drafting.
 
+The `ticket` plugin, when installed, owns the content contract these bodies
+follow — what past-tense provenance is worth carrying, and how to state what
+"done" means without hard-coding the implementation. Read it from
+`references/contract.md`.
+
+An installed plugin caches under a version directory, so that sibling sits
+one level further out than the path suggests. Glob the version segment rather
+than hard-coding it, and run the glob through `sh` — zsh treats an unmatched
+glob as a fatal error and would abort before reaching the flat-layout
+fallback.
+
+No hit means the contract is unavailable. Continue with the rules below; the
+resolve is an enhancement, never a prerequisite.
+
 ## Core principle
 
 Evidence before prose.

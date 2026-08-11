@@ -1,0 +1,17 @@
+{
+  "skill_name": "rebuild",
+  "trigger": {
+    "positive": [
+      { "prompt": "this issue grew into a design document, rebuild it at the right altitude", "top_k": 3 },
+      { "prompt": "the definition of done on this epic hard-codes the storage engine, fix the ticket", "top_k": 3 },
+      { "prompt": "rebuild this linear project description, it restates the whole spec", "top_k": 3 },
+      { "prompt": "this jira ticket is full of insertion counts and line numbers, rewrite it", "top_k": 3 }
+    ],
+    "negative": [
+      { "prompt": "squash these wip commits into atomic commits with real messages", "owner": "soft-reset-and-recommit" },
+      { "prompt": "polish this README until it reads well", "owner": "refine" },
+      { "prompt": "keep this commit message tight, no filler", "owner": "lean-writing" },
+      { "prompt": "file a github issue for this crash", "owner": "create-issue" }
+    ]
+  }
+}

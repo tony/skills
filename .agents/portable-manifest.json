@@ -202,10 +202,11 @@
         "plugins/gh/skills/create-issue/SKILL.md"
       ],
       "bundled": {
+        "references/contract.md": "plugins/ticket/references/contract.md",
         "references/rendered-markdown.md": "plugins/gh/references/rendered-markdown.md",
         "references/source-links.md": "plugins/gh/references/source-links.md"
       },
-      "bytes": 26241
+      "bytes": 32662
     },
     {
       "name": "gh-rendered-markdown",
@@ -421,9 +422,10 @@
         "plugins/pr/commands/pr.md"
       ],
       "bundled": {
+        "references/contract.md": "plugins/ticket/references/contract.md",
         "references/template-resolution.md": "plugins/pr/references/template-resolution.md"
       },
-      "bytes": 10226
+      "bytes": 16491
     },
     {
       "name": "pr-deslop",
@@ -774,6 +776,54 @@
       "bytes": 18621
     },
     {
+      "name": "ticket-draft",
+      "sources": [
+        "plugins/ticket/skills/draft/SKILL.md"
+      ],
+      "bundled": {
+        "references/altitude.md": "plugins/ticket/references/altitude.md",
+        "references/asana.md": "plugins/ticket/references/providers/asana.md",
+        "references/azure-devops.md": "plugins/ticket/references/providers/azure-devops.md",
+        "references/contract.md": "plugins/ticket/references/contract.md",
+        "references/generic.md": "plugins/ticket/references/providers/generic.md",
+        "references/github.md": "plugins/ticket/references/providers/github.md",
+        "references/gitlab.md": "plugins/ticket/references/providers/gitlab.md",
+        "references/hierarchy.md": "plugins/ticket/references/hierarchy.md",
+        "references/jira.md": "plugins/ticket/references/providers/jira.md",
+        "references/linear.md": "plugins/ticket/references/providers/linear.md",
+        "references/resolve.md": "plugins/ticket/references/resolve.md",
+        "references/shortcut.md": "plugins/ticket/references/providers/shortcut.md",
+        "references/signatures.yml": "plugins/pr/references/signatures.yml",
+        "references/slop-signatures.yml": "plugins/slop/references/signatures.yml",
+        "references/trello.md": "plugins/ticket/references/providers/trello.md"
+      },
+      "bytes": 144364
+    },
+    {
+      "name": "ticket-rebuild",
+      "sources": [
+        "plugins/ticket/skills/rebuild/SKILL.md"
+      ],
+      "bundled": {
+        "references/altitude.md": "plugins/ticket/references/altitude.md",
+        "references/asana.md": "plugins/ticket/references/providers/asana.md",
+        "references/azure-devops.md": "plugins/ticket/references/providers/azure-devops.md",
+        "references/contract.md": "plugins/ticket/references/contract.md",
+        "references/generic.md": "plugins/ticket/references/providers/generic.md",
+        "references/github.md": "plugins/ticket/references/providers/github.md",
+        "references/gitlab.md": "plugins/ticket/references/providers/gitlab.md",
+        "references/hierarchy.md": "plugins/ticket/references/hierarchy.md",
+        "references/jira.md": "plugins/ticket/references/providers/jira.md",
+        "references/linear.md": "plugins/ticket/references/providers/linear.md",
+        "references/resolve.md": "plugins/ticket/references/resolve.md",
+        "references/shortcut.md": "plugins/ticket/references/providers/shortcut.md",
+        "references/signatures.yml": "plugins/pr/references/signatures.yml",
+        "references/slop-signatures.yml": "plugins/slop/references/signatures.yml",
+        "references/trello.md": "plugins/ticket/references/providers/trello.md"
+      },
+      "bytes": 144055
+    },
+    {
       "name": "weave-architecture",
       "sources": [
         "plugins/weave/commands/architecture.md"
@@ -946,8 +996,8 @@
     "plugins/weave/references/present-results.md": 11,
     "plugins/weave/docs/repo-guard-protocol.md": 10,
     "plugins/weave/references/worker-backends.md": 10,
-    "plugins/pr/references/signatures.yml": 7,
-    "plugins/slop/references/signatures.yml": 7,
+    "plugins/pr/references/signatures.yml": 9,
+    "plugins/slop/references/signatures.yml": 9,
     "plugins/business/references/interim-format.md": 6,
     "plugins/business/references/provenance.md": 6,
     "plugins/weave/references/deslop-pass.md": 6,
@@ -959,6 +1009,7 @@
     "plugins/package-updater/references/upstream-links.md": 4,
     "plugins/terraform/references/layout-discovery.md": 4,
     "plugins/terraform/references/lock-and-init.md": 4,
+    "plugins/ticket/references/contract.md": 4,
     "plugins/business/references/measurement.md": 3,
     "plugins/disk/references/agent-history.md": 3,
     "plugins/disk/references/candidate-catalog.md": 3,
@@ -998,6 +1049,18 @@
     "plugins/situate/references/brief.md": 2,
     "plugins/situate/references/prior-conversations.md": 2,
     "plugins/spike/references/verification-gates.md": 2,
+    "plugins/ticket/references/altitude.md": 2,
+    "plugins/ticket/references/hierarchy.md": 2,
+    "plugins/ticket/references/providers/asana.md": 2,
+    "plugins/ticket/references/providers/azure-devops.md": 2,
+    "plugins/ticket/references/providers/generic.md": 2,
+    "plugins/ticket/references/providers/github.md": 2,
+    "plugins/ticket/references/providers/gitlab.md": 2,
+    "plugins/ticket/references/providers/jira.md": 2,
+    "plugins/ticket/references/providers/linear.md": 2,
+    "plugins/ticket/references/providers/shortcut.md": 2,
+    "plugins/ticket/references/providers/trello.md": 2,
+    "plugins/ticket/references/resolve.md": 2,
     "plugins/action/references/ticket-detection.md": 1,
     "plugins/business/references/instruments.md": 1,
     "plugins/git-branch/references/rebuild-contract.md": 1,
