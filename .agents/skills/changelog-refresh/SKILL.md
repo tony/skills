@@ -6,7 +6,7 @@ description: >-
 allowed-tools: ["Bash", "Read", "Grep", "Glob", "Edit", "AskUserQuestion"]
 metadata:
   argument-hint: "[--commit] [optional additional context about the changes]"
-  source: "plugins/changelog/commands/refresh.md"
+  source: "plugins/changelog/skills/refresh/SKILL.md"
 ---
 
 # Refresh Changelog Entries

@@ -13,7 +13,7 @@ description: >-
 allowed-tools: ["Bash", "Read", "Grep", "Glob", "Edit", "Write", "AskUserQuestion", "Task"]
 metadata:
   argument-hint: "[--paths=<glob>] [--apply] [--budget=strict|default|lax] [--with-history=<N>] [--allow-dirty] [--run-tests] [--no-semantic] [--taxonomy=<path>] [--on-fail=skip|stop|ask]"
-  source: "plugins/slop/commands/scan.md"
+  source: "plugins/slop/skills/scan/SKILL.md"
 ---
 
 # this skill

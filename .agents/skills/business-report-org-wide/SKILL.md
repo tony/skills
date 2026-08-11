@@ -6,7 +6,7 @@ description: >-
 allowed-tools: ["Bash", "Read", "Write", "Grep", "AskUserQuestion"]
 metadata:
   argument-hint: "[run directory]"
-  source: "plugins/business/commands/report-org-wide.md"
+  source: "plugins/business/skills/report-org-wide/SKILL.md"
 ---
 
 # Org-Wide Report (tier 1)

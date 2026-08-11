@@ -9,12 +9,10 @@ description: >-
 allowed-tools: ["Bash", "Read", "Grep", "Glob", "Write", "Task", "AskUserQuestion"]
 metadata:
   argument-hint: "<prompt> [--variants=N] [--passes=N] [--timeout=N|none] [--mode=fast|balanced|deep] [--judge=host|round-robin] [--preamble=...] [--no-deslop|--quiet-deslop|--verbose-deslop] [--workers=subagents|model-clis]"
-  source: "plugins/weave/commands/brainstorm-and-refine.md, plugins/weave/skills/brainstorm-and-refine/SKILL.md"
+  source: "plugins/weave/skills/brainstorm-and-refine/SKILL.md"
 ---
 
 # Weave Brainstorm & Refine
-
-*Selection guidance for this skill is bundled at `references/overview.md`.*
 
 The full pipeline: generate originals from independent adversarial workers, then iteratively refine them through a judge-weave-distribute cycle. Host-native sub-agents are the default; separate model CLIs are optional. Phase 1 brainstorms diverse responses with optional multiple variants per worker. Phase 2 takes the best originals through iterative refinement where each pass picks the best, incorporates strengths from runners-up, and distributes the woven result back for another round.
 

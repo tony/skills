@@ -7,7 +7,7 @@ description: >-
 allowed-tools: ["Bash", "Read", "Grep", "Glob", "Edit", "Write", "WebSearch", "WebFetch", "Task", "AskUserQuestion"]
 metadata:
   argument-hint: "[version] [--root <dir>] [--repo <path|slug>...] [--owner <name>...] [--branch <name>] [--adopt-defaults] [--audit-only] [--no-pr] [--no-changelog]"
-  source: "plugins/ruff/commands/bump.md"
+  source: "plugins/ruff/skills/bump/SKILL.md"
 ---
 
 # Bump ruff

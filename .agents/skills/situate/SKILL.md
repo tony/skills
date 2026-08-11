@@ -7,7 +7,7 @@ description: >-
 allowed-tools: ["Bash", "Read", "Grep", "Glob", "AskUserQuestion"]
 metadata:
   argument-hint: "[--pr <number|url>] [--with-agentgrep [terms]]"
-  source: "plugins/situate/commands/situate.md"
+  source: "plugins/situate/skills/situate/SKILL.md"
 ---
 
 # Situate

@@ -13,7 +13,7 @@ description: >-
 allowed-tools: ["Bash", "Read", "Grep", "Glob", "Edit", "Write", "AskUserQuestion", "Task"]
 metadata:
   argument-hint: "[<ticket>...] [--groups=\"a b; c\"] [--sequential] [--local|--temp] [--push|--pr|--setup-only]"
-  source: "plugins/action/commands/worktrees.md"
+  source: "plugins/action/skills/worktrees/SKILL.md"
 ---
 
 # this skill

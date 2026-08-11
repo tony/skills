@@ -6,7 +6,7 @@ description: >-
 allowed-tools: ["Bash", "Read", "Grep", "Edit", "AskUserQuestion"]
 metadata:
   argument-hint: "[PR numbers/URLs, e.g. '#31 #32'] [--squash | --rebase | any other gh pr merge flag]"
-  source: "plugins/merge-pr/commands/multiple.md"
+  source: "plugins/merge-pr/skills/multiple/SKILL.md"
 ---
 
 # Merge Multiple PRs

@@ -5,7 +5,7 @@ description: >-
 allowed-tools: ["Bash", "Read"]
 metadata:
   argument-hint: "[optional hint about the PR, e.g. 'fixes the race condition']"
-  source: "plugins/pr/commands/pr.md"
+  source: "plugins/pr/skills/pr/SKILL.md"
 ---
 
 # Generate PR Description

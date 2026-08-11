@@ -5,7 +5,7 @@ description: >-
 allowed-tools: ["Bash", "Read", "Grep", "Glob", "Edit"]
 metadata:
   argument-hint: "[optional additional context about the changes]"
-  source: "plugins/changelog/commands/changelog.md"
+  source: "plugins/changelog/skills/changelog/SKILL.md"
 ---
 
 # Changelog Entry Generator

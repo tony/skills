@@ -9,12 +9,10 @@ description: >-
 allowed-tools: ["Bash", "Read", "Grep", "Glob", "Write", "Task", "AskUserQuestion"]
 metadata:
   argument-hint: "<prompt> [--variants=N] [--timeout=N|none] [--mode=fast|balanced|deep] [--preamble=...] [--workers=subagents|model-clis]"
-  source: "plugins/weave/commands/brainstorm.md, plugins/weave/skills/brainstorm/SKILL.md"
+  source: "plugins/weave/skills/brainstorm/SKILL.md"
 ---
 
 # Weave Brainstorm
-
-*Selection guidance for this skill is bundled at `references/overview.md`.*
 
 Generate original responses from independent adversarial workers in parallel, with optional multiple variants per worker. Host-native sub-agents are the default; separate model CLIs are optional. This is a **project-read-only** command — no files in your repository are written, edited, or deleted. Session artifacts (worker outputs, prompts, variant results) are persisted to `$AI_AIP_ROOT` for post-session inspection; this directory is outside your repository.
 

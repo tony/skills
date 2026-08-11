@@ -7,7 +7,7 @@ description: >-
 allowed-tools: ["Bash", "Read", "Grep", "Glob", "Edit", "WebSearch", "WebFetch", "Task", "AskUserQuestion"]
 metadata:
   argument-hint: "[--root <dir>] [--owner <name>...] [--repo <path|slug>...] [--audit-only] [--pr] [--no-push]"
-  source: "plugins/github-actions/commands/update-actions.md"
+  source: "plugins/github-actions/skills/update-actions/SKILL.md"
 ---
 
 # Update All GitHub Actions

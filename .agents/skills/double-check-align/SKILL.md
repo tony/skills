@@ -12,7 +12,7 @@ description: >-
 allowed-tools: ["Read", "Grep", "Glob", "Bash"]
 metadata:
   argument-hint: "[topic or question to re-anchor on]"
-  source: "plugins/double-check/commands/align.md"
+  source: "plugins/double-check/skills/align/SKILL.md"
 ---
 
 # this skill

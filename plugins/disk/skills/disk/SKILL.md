@@ -40,7 +40,7 @@ is not space freed on the machine until the disk is compacted.
 ## Survey
 
 Establish the layer structure before measuring anything. Read
-`${CLAUDE_PLUGIN_ROOT}/references/virtual-disks.md`.
+`../../references/virtual-disks.md`.
 
 Run `df -h` and identify every distinct filesystem. When one is a
 virtual disk, locate its backing file on the host and compare the
@@ -60,24 +60,24 @@ matter.
 ## Classify
 
 Assign every candidate above the size threshold to exactly one tier
-from `${CLAUDE_PLUGIN_ROOT}/references/candidate-catalog.md`. Default
+from `../../references/candidate-catalog.md`. Default
 to the highest tier that plausibly applies, and classify where content
 is homogeneous rather than propagating a parent's tier to its children.
 
 For each apparent duplicate, run the path-set comparison from
-`${CLAUDE_PLUGIN_ROOT}/references/redundancy-proofs.md` and record the
+`../../references/redundancy-proofs.md` and record the
 outcome as redundant, mergeable, conflicted, or unique. A `diff`
 reporting no differing files proves nothing on its own — establish the
 size of the intersection.
 
 For agent history, read
-`${CLAUDE_PLUGIN_ROOT}/references/agent-history.md`. Determine each
+`../../references/agent-history.md`. Determine each
 tool's discovery glob and whether it maintains a state database, and
 check for native compression support before considering any
 hand-rolled compression.
 
 For directories of upstream clones kept for reading, read
-`${CLAUDE_PLUGIN_ROOT}/references/study-repos.md`. Report huge clones,
+`../../references/study-repos.md`. Report huge clones,
 clones that are not shallow, and build artifacts as three separate
 groups, and verify no clone holds unpushed work.
 
@@ -132,7 +132,7 @@ stated. Report the host recovery as pending, not achieved.
 
 ## Reporting
 
-Follow `${CLAUDE_PLUGIN_ROOT}/references/output-contract.md`.
+Follow `../../references/output-contract.md`.
 
 Lead with the constraint, not the inventory. A ranked list of large
 directories is not an answer to "where did my space go" when the

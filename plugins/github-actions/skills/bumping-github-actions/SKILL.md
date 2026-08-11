@@ -12,10 +12,10 @@ citing the commit that superseded them.
 Two reference files carry the parts that must not drift between this
 skill and the plugin's commands:
 
-- `${CLAUDE_PLUGIN_ROOT}/references/action-pinning.md` — inventory,
+- `../../references/action-pinning.md` — inventory,
   tag verification, annotated-tag dereferencing, pin granularity, and
   the per-repo gates to check before claiming an upgrade is safe.
-- `${CLAUDE_PLUGIN_ROOT}/references/dependabot-closeout.md` — the
+- `../../references/dependabot-closeout.md` — the
   one-way citation rule, the closing protocol, CI attribution, and
   scope discipline.
 

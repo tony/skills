@@ -6,7 +6,7 @@ description: >-
 allowed-tools: ["Bash", "Read", "Grep", "Glob", "Edit", "Write", "Task", "AskUserQuestion"]
 metadata:
   argument-hint: "<task description> [--passes=N] [--timeout=N|none] [--mode=fast|balanced|deep] [--workers=subagents|model-clis]"
-  source: "plugins/weave/commands/execute.md"
+  source: "plugins/weave/skills/execute/SKILL.md"
 ---
 
 # Weave Execute

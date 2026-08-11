@@ -7,7 +7,7 @@ description: >-
 allowed-tools: ["Bash", "Read", "Write", "Grep", "AskUserQuestion", "EnterPlanMode"]
 metadata:
   argument-hint: "[skill or workflow to measure] [date range, e.g. 2026-04-01..2026-06-30]"
-  source: "plugins/business/commands/research.md"
+  source: "plugins/business/skills/research/SKILL.md"
 ---
 
 # Business Research

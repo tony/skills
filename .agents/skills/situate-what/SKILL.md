@@ -7,7 +7,7 @@ description: >-
 allowed-tools: ["Bash", "Read", "Grep", "Glob"]
 metadata:
   argument-hint: "[what you are confused about]"
-  source: "plugins/situate/commands/what.md"
+  source: "plugins/situate/skills/what/SKILL.md"
 ---
 
 # What

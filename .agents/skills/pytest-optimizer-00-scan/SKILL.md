@@ -13,7 +13,7 @@ description: >-
 allowed-tools: ["Bash", "Read", "Grep", "Glob", "Write", "AskUserQuestion"]
 metadata:
   argument-hint: "[test-path-or-marker] [--force] [--runs=N] [--memory-dir=<path>]"
-  source: "plugins/pytest-optimizer/commands/00-scan.md"
+  source: "plugins/pytest-optimizer/skills/00-scan/SKILL.md"
 ---
 
 # 00-scan

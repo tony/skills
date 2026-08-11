@@ -5,7 +5,7 @@ description: >-
   each as atomic changes
 allowed-tools: ["Bash", "Read", "Grep", "Glob", "Edit", "Write", "Task", "AskUserQuestion", "EnterPlanMode", "ExitPlanMode"]
 metadata:
-  source: "plugins/weave/commands/fix-review.md"
+  source: "plugins/weave/skills/fix-review/SKILL.md"
 ---
 
 # Fix Review Findings

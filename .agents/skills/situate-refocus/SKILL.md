@@ -7,7 +7,7 @@ description: >-
 allowed-tools: ["Bash", "Read", "Grep", "Glob", "AskUserQuestion"]
 metadata:
   argument-hint: "[the goal, when the repo does not record one]"
-  source: "plugins/situate/commands/refocus.md"
+  source: "plugins/situate/skills/refocus/SKILL.md"
 ---
 
 # Refocus

@@ -7,7 +7,7 @@ description: >-
 allowed-tools: ["Bash", "Read", "Grep", "Glob", "Edit", "WebSearch", "WebFetch", "AskUserQuestion"]
 metadata:
   argument-hint: "<provider> [version] [--root-module <dir>...] [--audit-only] [--no-lock] [--no-commit]"
-  source: "plugins/terraform/commands/bump-provider.md"
+  source: "plugins/terraform/skills/bump-provider/SKILL.md"
 ---
 
 # Bump a Terraform provider

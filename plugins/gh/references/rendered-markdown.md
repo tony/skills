@@ -6,7 +6,7 @@ tickets, and a repository's own markdown files.
 
 Shared by the `rendered-markdown` skill and `/gh:create-issue` so the
 rules cannot drift between them. Linking mechanics live in
-`${CLAUDE_PLUGIN_ROOT}/references/source-links.md`.
+`../references/source-links.md`.
 
 ## The test
 

@@ -12,7 +12,7 @@ description: >-
 allowed-tools: ["Bash", "Read", "Grep", "Glob", "Edit", "Write", "AskUserQuestion", "Task"]
 metadata:
   argument-hint: "[findings text] [--pr=<num>] [--base=<ref>] [--no-fixup] [--on-fail=skip|stop|ask]"
-  source: "plugins/review/commands/address.md"
+  source: "plugins/review/skills/address/SKILL.md"
 ---
 
 # this skill

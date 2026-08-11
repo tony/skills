@@ -1,7 +1,7 @@
 # Conflict Loop
 
 The rebase-pause handler used by `/pr:deslop --apply-rebase`. Borrows
-the structure of `plugins/rebase/commands/rebase.md:46-67` (Phase 4 of
+the structure of `plugins/rebase/skills/rebase/SKILL.md:46-67` (Phase 4 of
 `/rebase`) with three tightenings specific to deslop:
 
 1. **Touched-file gates first, full set at end.** After resolving
@@ -74,7 +74,7 @@ the conflict to the user via `AskUserQuestion` rather than guessing.
 git add -- <file>
 ```
 
-Per `plugins/commit/commands/commit.md:181-191` (rule line 187):
+Per `plugins/commit/skills/commit/SKILL.md:181-191` (rule line 187):
 **never `git add -A` or `git add .`** — explicit paths only, even in
 the conflict loop.
 

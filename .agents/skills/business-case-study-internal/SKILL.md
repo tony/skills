@@ -6,7 +6,7 @@ description: >-
 allowed-tools: ["Bash", "Read", "Write", "Grep", "AskUserQuestion"]
 metadata:
   argument-hint: "[run directory]"
-  source: "plugins/business/commands/case-study-internal.md"
+  source: "plugins/business/skills/case-study-internal/SKILL.md"
 ---
 
 # Internal Case Study (tier 2)

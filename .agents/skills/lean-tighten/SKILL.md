@@ -11,7 +11,7 @@ description: >-
 allowed-tools: ["Bash", "Read", "Grep", "Glob", "Edit", "AskUserQuestion"]
 metadata:
   argument-hint: "[paths/globs] [--stdin] [--gates] [--diff-only]"
-  source: "plugins/lean/commands/tighten.md"
+  source: "plugins/lean/skills/tighten/SKILL.md"
 ---
 
 # this skill

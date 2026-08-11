@@ -8,7 +8,7 @@ description: >-
 allowed-tools: ["Bash", "Read", "Grep", "Glob", "Edit", "AskUserQuestion"]
 metadata:
   argument-hint: "[patch|minor|major|prerelease|final|<version>] [--push] [--tag] [--push-tag]"
-  source: "plugins/release/commands/bump.md"
+  source: "plugins/release/skills/bump/SKILL.md"
 ---
 
 # Bump to the Next Version

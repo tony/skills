@@ -21,9 +21,9 @@ three years.
 Two references carry the rules, and they are the same ones
 `/gh:create-issue` follows:
 
-- `${CLAUDE_PLUGIN_ROOT}/references/rendered-markdown.md` — wrapping,
+- `../../references/rendered-markdown.md` — wrapping,
   symbols, code fences, `<details>`, structure, and what to leave out.
-- `${CLAUDE_PLUGIN_ROOT}/references/source-links.md` — pinning,
+- `../../references/source-links.md` — pinning,
   autolinking, cross-repo references, and the project link set.
 
 ## The test

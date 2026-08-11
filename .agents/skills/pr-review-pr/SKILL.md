@@ -5,7 +5,7 @@ description: >-
 allowed-tools: ["Bash", "Read"]
 metadata:
   argument-hint: "[PR number or URL, e.g. '#42' or 'https://github.com/...']"
-  source: "plugins/pr/commands/review-pr.md"
+  source: "plugins/pr/skills/review-pr/SKILL.md"
 ---
 
 # Review PR Description

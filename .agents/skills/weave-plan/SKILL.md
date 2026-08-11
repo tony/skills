@@ -6,7 +6,7 @@ description: >-
 allowed-tools: ["Bash", "Read", "Grep", "Glob", "Write", "Task", "AskUserQuestion", "EnterPlanMode"]
 metadata:
   argument-hint: "<task description> [--passes=N] [--timeout=N|none] [--mode=fast|balanced|deep] [--no-deslop|--quiet-deslop|--verbose-deslop] [--workers=subagents|model-clis]"
-  source: "plugins/weave/commands/plan.md"
+  source: "plugins/weave/skills/plan/SKILL.md"
 ---
 
 # Weave Plan

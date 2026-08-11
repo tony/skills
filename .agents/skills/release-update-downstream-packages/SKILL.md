@@ -7,7 +7,7 @@ description: >-
 allowed-tools: ["Bash", "Read", "Grep", "Glob", "Edit", "AskUserQuestion", "Task"]
 metadata:
   argument-hint: "<package> [<version>] [--roots <glob>...] [--no-push]"
-  source: "plugins/release/commands/update-downstream-packages.md"
+  source: "plugins/release/skills/update-downstream-packages/SKILL.md"
 ---
 
 # Update Downstream Packages

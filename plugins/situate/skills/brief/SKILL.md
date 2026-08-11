@@ -13,7 +13,7 @@ allowed-tools: ["Bash", "Read", "Grep", "Glob"]
 
 Someone just said "huh". Give them five lines and get out of the way.
 
-Read `${CLAUDE_PLUGIN_ROOT}/references/brief.md` before answering — it
+Read `../../references/brief.md` before answering — it
 carries the five-line budget, the ranking that decides what earns a
 line, the option-line format, and the evidence tiers. `/situate:what` is
 the explicit entry point to this same contract.

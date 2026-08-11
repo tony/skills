@@ -5,7 +5,7 @@ description: >-
   and resolve conflicts
 allowed-tools: ["Bash", "Read", "Grep", "Glob", "Edit"]
 metadata:
-  source: "plugins/rebase/commands/rebase.md"
+  source: "plugins/rebase/skills/rebase/SKILL.md"
 ---
 
 ## Context

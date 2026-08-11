@@ -6,7 +6,7 @@ description: >-
 allowed-tools: ["Bash", "Read", "Grep", "Glob", "Edit", "Write", "Task", "AskUserQuestion"]
 metadata:
   argument-hint: "<architecture goal> [--passes=N] [--timeout=N|none] [--mode=fast|balanced|deep] [--workers=subagents|model-clis]"
-  source: "plugins/weave/commands/architecture.md"
+  source: "plugins/weave/skills/architecture/SKILL.md"
 ---
 
 # Weave Architecture

@@ -30,12 +30,12 @@ single issue.
 
 ## Read first
 
-- `${CLAUDE_PLUGIN_ROOT}/references/contract.md` — the three tenses.
-- `${CLAUDE_PLUGIN_ROOT}/references/hierarchy.md` — what kind of object this
+- `../../references/contract.md` — the three tenses.
+- `../../references/hierarchy.md` — what kind of object this
   is, in this provider.
-- `${CLAUDE_PLUGIN_ROOT}/references/altitude.md` — which sections that kind
+- `../../references/altitude.md` — which sections that kind
   of object carries.
-- `${CLAUDE_PLUGIN_ROOT}/references/resolve.md` — how to establish the above
+- `../../references/resolve.md` — how to establish the above
   from evidence.
 - The provider's own file, indexed in `hierarchy.md` under Provider files —
   its hierarchy, reference syntax, and filing mechanics.
@@ -132,8 +132,8 @@ and internal URLs, including inside every pasted log. This is a gate.
 
 Resolve the slop registry for the mechanical checks. First hit wins:
 
-1. `${CLAUDE_PLUGIN_ROOT}/../pr/references/signatures.yml`
-2. `${CLAUDE_PLUGIN_ROOT}/../slop/references/signatures.yml`
+1. `../../../pr/references/signatures.yml`
+2. `../../../slop/references/signatures.yml`
 
 An installed plugin caches under a version directory, so a sibling sits one
 level further out than those paths suggest. Glob the version segment rather

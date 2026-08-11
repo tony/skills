@@ -13,12 +13,10 @@ description: >-
 allowed-tools: ["Bash", "Read", "Grep", "Glob", "Write", "Task", "AskUserQuestion"]
 metadata:
   argument-hint: "<prompt> [--passes=N] [--timeout=N|none] [--mode=fast|balanced|deep] [--no-deslop|--quiet-deslop|--verbose-deslop] [--workers=subagents|model-clis]"
-  source: "plugins/weave/commands/serene-bliss.md, plugins/weave/skills/serene-bliss/SKILL.md"
+  source: "plugins/weave/skills/serene-bliss/SKILL.md"
 ---
 
 # Weave Serene Bliss
-
-*Selection guidance for this skill is bundled at `references/overview.md`.*
 
 A first-class three-lens brainstorm-and-refine command for
 developer-experience, documentation, and tooling-UX design work. Three

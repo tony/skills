@@ -20,7 +20,7 @@ user-invocable: true
 Re-verify by re-deriving. The deliverable is the verified answer,
 not a record of how it differs from your last one.
 
-Read `${CLAUDE_PLUGIN_ROOT}/references/verification-contract.md`
+Read `../../references/verification-contract.md`
 before responding — it is the contract this skill enforces.
 
 ## Why the obvious response is wrong

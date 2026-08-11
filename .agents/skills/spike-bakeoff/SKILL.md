@@ -16,7 +16,7 @@ description: >-
 allowed-tools: ["Bash", "Read", "Grep", "Glob", "Edit", "Write", "AskUserQuestion", "Task"]
 metadata:
   argument-hint: "[<goal>] [--strategies=\"a; b; c\"] [--prongs=<2-4>] [--keep-trees] [--replay]"
-  source: "plugins/spike/commands/bakeoff.md"
+  source: "plugins/spike/skills/bakeoff/SKILL.md"
 ---
 
 # this skill

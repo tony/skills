@@ -7,7 +7,7 @@ description: >-
 allowed-tools: ["Bash", "Read", "Grep", "Glob", "Edit", "AskUserQuestion"]
 metadata:
   argument-hint: "<version> [--push] [--tag] [--push-tag]"
-  source: "plugins/release/commands/cut.md"
+  source: "plugins/release/skills/cut/SKILL.md"
 ---
 
 # Cut a Release

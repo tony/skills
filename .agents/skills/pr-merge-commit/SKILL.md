@@ -5,7 +5,7 @@ description: >-
 allowed-tools: ["Bash", "Read"]
 metadata:
   argument-hint: "[optional hint, e.g. 'version bump' or 'breaking change']"
-  source: "plugins/pr/commands/merge-commit.md"
+  source: "plugins/pr/skills/merge-commit/SKILL.md"
 ---
 
 # Generate Merge Commit Message

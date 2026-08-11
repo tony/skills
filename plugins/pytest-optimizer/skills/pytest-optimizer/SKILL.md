@@ -75,7 +75,7 @@ python -c "import pytest; print(pytest.__version__)"
 pytest --help 2>/dev/null | rg -- '--durations-min|--import-mode|--dist|--sw-reset' || true
 ```
 
-Resolve each feature against `${CLAUDE_PLUGIN_ROOT}/references/version-matrix.md`
+Resolve each feature against `../../references/version-matrix.md`
 (min version, detection probe, and graceful fallback). For example: pre-6.1 pytest
 has no `--durations-min` (post-filter rows yourself); `--dist=loadgroup` needs
 `pytest-xdist >= 2.5`; the `Stash` API needs pytest >= 7.0 (else use
@@ -83,7 +83,7 @@ has no `--durations-min` (post-filter rows yourself); `--dist=loadgroup` needs
 
 ## Step 3: Resolve the memory directory
 
-Follow `${CLAUDE_PLUGIN_ROOT}/references/memory-schema.md`. Prefer
+Follow `../../references/memory-schema.md`. Prefer
 `.pytest-optimizer/` at the repo root and add it to `.gitignore` idempotently. If
 the tree is read-only or the user declines an in-tree directory, fall back to the
 XDG cache path. Record the chosen path in `state.json` so all four phases agree.
@@ -125,7 +125,7 @@ carries the shared context (test command, capabilities, memory dir).
   independence, collection determinism, green re-run). Within-noise or
   gate-failing candidates are rejected with a reason.
 - **`02-plan`** scores the survivors with the rubric
-  (`${CLAUDE_PLUGIN_ROOT}/references/scoring-rubric.md`), drops anything below the
+  (`../../references/scoring-rubric.md`), drops anything below the
   safety gate, orders the rest (typing and safety-gate fixes first; scope and
   consolidation before parallelism), and drafts one commit per speedup.
 - **`03-execute`** applies the plan one item at a time: edit, run the project
@@ -137,7 +137,7 @@ carries the shared context (test command, capabilities, memory dir).
 
 After `03-execute`, re-measure total wall-time against `baseline.json` and present
 the result using the shared output contract
-(`${CLAUDE_PLUGIN_ROOT}/references/output-contract.md`): a hero block, the
+(`../../references/output-contract.md`): a hero block, the
 applied/skipped speedups with their measured deltas, and an `AskUserQuestion`
 next-step panel (re-scan for a second pass, scaffold the opt-in cache/plugin, or
 stop).
@@ -174,20 +174,20 @@ chooses to commit it.
 
 ## References
 
-- `${CLAUDE_PLUGIN_ROOT}/references/scoring-rubric.md` — the weighted rubric and
+- `../../references/scoring-rubric.md` — the weighted rubric and
   the hard safety gate.
-- `${CLAUDE_PLUGIN_ROOT}/references/heuristic-catalog.md` — `H01`–`H44` with
+- `../../references/heuristic-catalog.md` — `H01`–`H44` with
   detect/action/risk/effort and the goal each addresses.
-- `${CLAUDE_PLUGIN_ROOT}/references/version-matrix.md` — feature → min version →
+- `../../references/version-matrix.md` — feature → min version →
   probe → fallback.
-- `${CLAUDE_PLUGIN_ROOT}/references/memory-schema.md` — memory location, file set,
+- `../../references/memory-schema.md` — memory location, file set,
   idempotency token, baseline-diff.
-- `${CLAUDE_PLUGIN_ROOT}/references/durations-parsing.md` — invoking and parsing
+- `../../references/durations-parsing.md` — invoking and parsing
   `--durations`, phase bucketing, JUnit XML, the noise band.
-- `${CLAUDE_PLUGIN_ROOT}/references/fixture-analysis.md` — scope model and the
+- `../../references/fixture-analysis.md` — scope model and the
   unused/duplicate/mis-scope recipes.
-- `${CLAUDE_PLUGIN_ROOT}/references/safety-gates.md` — order independence,
+- `../../references/safety-gates.md` — order independence,
   collection determinism, xdist preconditions.
-- `${CLAUDE_PLUGIN_ROOT}/references/parametrize-convention.md` — the typed
+- `../../references/parametrize-convention.md` — the typed
   NamedTuple + test_id convention and typed builtins.
-- `${CLAUDE_PLUGIN_ROOT}/references/output-contract.md` — the shared output shape.
+- `../../references/output-contract.md` — the shared output shape.

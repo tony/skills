@@ -12,7 +12,7 @@ description: >-
 allowed-tools: ["Bash", "Read", "Grep", "Glob", "Write", "AskUserQuestion"]
 metadata:
   argument-hint: "[--max-commits=N] [--min-score=<0..1>] [--force] [--memory-dir=<path>]"
-  source: "plugins/pytest-optimizer/commands/02-plan.md"
+  source: "plugins/pytest-optimizer/skills/02-plan/SKILL.md"
 ---
 
 # 02-plan

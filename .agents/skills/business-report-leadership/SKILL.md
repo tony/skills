@@ -7,7 +7,7 @@ description: >-
 allowed-tools: ["Bash", "Read", "Write", "Grep", "AskUserQuestion"]
 metadata:
   argument-hint: "[run directory]"
-  source: "plugins/business/commands/report-leadership.md"
+  source: "plugins/business/skills/report-leadership/SKILL.md"
 ---
 
 # Leadership Report (tier 0)

@@ -6,7 +6,7 @@ description: >-
 allowed-tools: ["Bash", "Read", "Grep", "Glob", "Edit", "Write", "Task", "AskUserQuestion"]
 metadata:
   argument-hint: "<implementation prompt> [--passes=N] [--timeout=N|none] [--mode=fast|balanced|deep] [--workers=subagents|model-clis]"
-  source: "plugins/weave/commands/prompt.md"
+  source: "plugins/weave/skills/prompt/SKILL.md"
 ---
 
 # Weave Prompt

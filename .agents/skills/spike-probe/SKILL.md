@@ -16,7 +16,7 @@ description: >-
 allowed-tools: ["Bash", "Read", "Grep", "Glob", "Edit", "Write", "AskUserQuestion", "Task"]
 metadata:
   argument-hint: "[<goal>] [--branch=<name>] [--keep-tree] [--replay]"
-  source: "plugins/spike/commands/probe.md"
+  source: "plugins/spike/skills/probe/SKILL.md"
 ---
 
 # this skill

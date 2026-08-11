@@ -21,15 +21,15 @@ asking you anything.
 Argument: $ARGUMENTS — a description, a repository, a pasted finding,
 or nothing.
 
-The body follows `${CLAUDE_PLUGIN_ROOT}/references/rendered-markdown.md`
+The body follows `../../references/rendered-markdown.md`
 and every link in it follows
-`${CLAUDE_PLUGIN_ROOT}/references/source-links.md`. Read both before
+`../../references/source-links.md`. Read both before
 drafting.
 
 The `ticket` plugin, when installed, owns the content contract these bodies
 follow — what past-tense provenance is worth carrying, and how to state what
 "done" means without hard-coding the implementation. Read it from
-`${CLAUDE_PLUGIN_ROOT}/../ticket/references/contract.md`.
+`../../../ticket/references/contract.md`.
 
 An installed plugin caches under a version directory, so that sibling sits
 one level further out than the path suggests. Glob the version segment rather

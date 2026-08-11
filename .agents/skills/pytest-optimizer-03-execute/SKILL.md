@@ -12,7 +12,7 @@ description: >-
 allowed-tools: ["Bash", "Read", "Grep", "Glob", "Write", "Edit", "AskUserQuestion"]
 metadata:
   argument-hint: "[--from=<index>] [--dry-run] [--memory-dir=<path>]"
-  source: "plugins/pytest-optimizer/commands/03-execute.md"
+  source: "plugins/pytest-optimizer/skills/03-execute/SKILL.md"
 ---
 
 # 03-execute

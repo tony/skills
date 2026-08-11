@@ -6,7 +6,7 @@ description: >-
 allowed-tools: ["Bash", "Read", "Grep", "Glob", "Edit", "Write", "Task"]
 metadata:
   argument-hint: "Paste or describe the bug to reproduce and fix"
-  source: "plugins/tdd/commands/fix.md"
+  source: "plugins/tdd/skills/fix/SKILL.md"
 ---
 
 # TDD Bug-Fix Workflow

@@ -8,12 +8,10 @@ description: >-
 allowed-tools: ["Bash", "Read", "Grep", "Glob", "Write", "Task", "AskUserQuestion"]
 metadata:
   argument-hint: "<text or file path> [--passes=N] [--timeout=N|none] [--mode=fast|balanced|deep] [--judge=host|round-robin] [--no-deslop|--quiet-deslop|--verbose-deslop] [--workers=subagents|model-clis]"
-  source: "plugins/weave/commands/refine.md, plugins/weave/skills/refine/SKILL.md"
+  source: "plugins/weave/skills/refine/SKILL.md"
 ---
 
 # Weave Refine
-
-*Selection guidance for this skill is bundled at `references/overview.md`.*
 
 Iteratively improve an artifact through independent adversarial workers using a judge-weave-distribute cycle. Host-native sub-agents are the default; separate model CLIs are optional. Each pass produces independent critiques and improved versions from all workers, then the host agent judges, picks the best, incorporates strengths from runners-up, and distributes the woven result back for the next pass. This is a **project-read-only** command — no files in your repository are written, edited, or deleted. Session artifacts (worker outputs, judge assessments, woven results) are persisted to `$AI_AIP_ROOT` for post-session inspection; this directory is outside your repository.
 

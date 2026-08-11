@@ -64,6 +64,7 @@ TOKEN_RE = re.compile(
     | (?P<repo>"""
     + REPO_PATH_PATTERN
     + r""")(?::\d+(?:-\d+)?)?
+    | (?P<rel>(?<![A-Za-z0-9._/-])\.\./[A-Za-z0-9._/-]+)
     | (?P<res>(?<![A-Za-z0-9._/-])(?:references|templates|docs|assets)/[A-Za-z0-9._/-]+)
     | (?P<slash>(?<![A-Za-z0-9/])/[a-z][a-z0-9-]*:[a-z0-9][a-z0-9-]*)
     """,
@@ -544,7 +545,10 @@ class SkillBuilder:
                 # through untouched rather than failing the whole export.
                 self._files[rel] = (src.read_bytes(), mode)
                 continue
-            base = plugin
+            # A resource resolves its own relative links from where it sits, not
+            # from the plugin root. ``_resolve`` still falls back to the plugin
+            # root, so a root-relative link in the same file keeps working.
+            base = src.parent
             if src.suffix == _MARKDOWN_SUFFIX:
                 text = self._transform_markdown(raw, plugin, base)
             else:
@@ -682,6 +686,12 @@ class SkillBuilder:
             if raw is None:
                 return "the plugin root", False
             return self._replace_path(raw.lstrip("/"), plugin, plugin)
+        if match.group("rel") is not None:
+            # A skill addresses its plugin's shared resources by climbing out of
+            # its own directory, the spelling both hosts resolve without
+            # substitution. Flattening the export severs that climb, so the
+            # target is vendored exactly as a ${CLAUDE_PLUGIN_ROOT} path was.
+            return self._replace_path(match.group("rel"), plugin, base)
         return self._replace_path(match.group("res"), plugin, base)
 
     def _replace_slash(self, token: str) -> tuple[str | None, bool]:

@@ -12,18 +12,18 @@ toolchain from the dependencies from their fallout.
 Six references carry the parts that must not drift between this skill
 and the plugin's commands:
 
-- `${CLAUDE_PLUGIN_ROOT}/references/repo-scope.md` — deciding which
+- `../../references/repo-scope.md` — deciding which
   repositories are yours to commit to, and when to stop and ask.
-- `${CLAUDE_PLUGIN_ROOT}/references/ecosystems.md` — how to detect each
+- `../../references/ecosystems.md` — how to detect each
   ecosystem, its discovery and apply commands, and the supply-chain
   cooldown that can hide a release from the resolver.
-- `${CLAUDE_PLUGIN_ROOT}/references/commit-conventions.md` — the four
+- `../../references/commit-conventions.md` — the four
   commit tracks, subject grammar, body anatomy, and the empty-body rule.
-- `${CLAUDE_PLUGIN_ROOT}/references/upstream-links.md` — which URLs each
+- `../../references/upstream-links.md` — which URLs each
   tool's bump cites, and how to verify them.
-- `${CLAUDE_PLUGIN_ROOT}/references/follow-ups.md` — which bumps need a
+- `../../references/follow-ups.md` — which bumps need a
   second commit, and how to declare a knowingly-red intermediate.
-- `${CLAUDE_PLUGIN_ROOT}/references/holds.md` — deliberately staying
+- `../../references/holds.md` — deliberately staying
   behind on a package, and releasing the hold when its condition is met.
 
 ## Never run cargo-outdated
@@ -47,7 +47,7 @@ years later when someone needs exactly that.
 ## Scope
 
 Repositories you maintain. Follow
-`${CLAUDE_PLUGIN_ROOT}/references/repo-scope.md` before any sweep that
+`../../references/repo-scope.md` before any sweep that
 walks a directory: skip worktrees and duplicate clones, ask the forge
 for `isFork` and `viewerPermission`, and fall back to the remote owner
 plus trunk authorship only when it cannot answer.
