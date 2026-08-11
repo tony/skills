@@ -774,6 +774,32 @@
       "bytes": 18621
     },
     {
+      "name": "ticket-draft",
+      "sources": [
+        "plugins/ticket/skills/draft/SKILL.md"
+      ],
+      "bundled": {
+        "references/altitude.md": "plugins/ticket/references/altitude.md",
+        "references/contract.md": "plugins/ticket/references/contract.md",
+        "references/hierarchy.md": "plugins/ticket/references/hierarchy.md",
+        "references/resolve.md": "plugins/ticket/references/resolve.md"
+      },
+      "bytes": 35745
+    },
+    {
+      "name": "ticket-rebuild",
+      "sources": [
+        "plugins/ticket/skills/rebuild/SKILL.md"
+      ],
+      "bundled": {
+        "references/altitude.md": "plugins/ticket/references/altitude.md",
+        "references/contract.md": "plugins/ticket/references/contract.md",
+        "references/hierarchy.md": "plugins/ticket/references/hierarchy.md",
+        "references/resolve.md": "plugins/ticket/references/resolve.md"
+      },
+      "bytes": 35465
+    },
+    {
       "name": "weave-architecture",
       "sources": [
         "plugins/weave/commands/architecture.md"
@@ -998,6 +1024,10 @@
     "plugins/situate/references/brief.md": 2,
     "plugins/situate/references/prior-conversations.md": 2,
     "plugins/spike/references/verification-gates.md": 2,
+    "plugins/ticket/references/altitude.md": 2,
+    "plugins/ticket/references/contract.md": 2,
+    "plugins/ticket/references/hierarchy.md": 2,
+    "plugins/ticket/references/resolve.md": 2,
     "plugins/action/references/ticket-detection.md": 1,
     "plugins/business/references/instruments.md": 1,
     "plugins/git-branch/references/rebuild-contract.md": 1,
@@ -1036,6 +1066,10 @@
     "docs/pull_request_template.md": [
       "pr",
       "pr-recut"
+    ],
+    "references/providers/": [
+      "ticket-draft",
+      "ticket-rebuild"
     ]
   },
   "unresolved_host_commands": {}
