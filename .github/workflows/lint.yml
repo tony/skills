@@ -68,6 +68,12 @@ jobs:
       - name: Verify Claude CLI
         run: claude --version
 
+      - name: Install Codex CLI
+        run: npm install -g @openai/codex
+
+      - name: Verify Codex CLI
+        run: codex --version
+
       - uses: astral-sh/setup-uv@v9.0.0
         with:
           enable-cache: true
@@ -76,6 +82,6 @@ jobs:
         run: uv sync --group dev
 
       - name: E2E plugin lifecycle (local)
-        run: uv run scripts/e2e.py --source local
+        run: uv run scripts/e2e.py --source local --host both
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
