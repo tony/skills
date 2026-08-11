@@ -60,6 +60,10 @@ BASE=$(git rev-parse --verify origin/main >/dev/null 2>&1 && echo main || echo m
 ### 2. Read Project Conventions
 
 - Read AGENTS.md and/or CLAUDE.md for any PR description conventions
+- Resolve the `ticket` plugin's content contract when it is installed — it owns the past/present/future tense rules this description follows. Plugins cache under a version directory, so glob it with a flat-layout fallback, run through `sh` because zsh aborts on an unmatched glob, and continue without it when nothing resolves:
+  ```bash
+  sh -c 'for c in "$1"/../../ticket/*/references/contract.md "$1"/../ticket/references/contract.md; do [ -f "$c" ] && echo "$c" && break; done' sh "$CLAUDE_PLUGIN_ROOT"
+  ```
 - Resolve the PR template per `references/template-resolution.md`: a template mentioned in the user's message wins; otherwise the repository's PR template; otherwise the gold-standard patterns below. When multiple candidate templates are in play, ask — never guess between them
 - If a template applies, its structure is the starting point; fill it in with the gold-standard patterns below
 

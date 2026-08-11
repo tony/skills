@@ -26,6 +26,19 @@ and every link in it follows
 `${CLAUDE_PLUGIN_ROOT}/references/source-links.md`. Read both before
 drafting.
 
+The `ticket` plugin, when installed, owns the content contract these bodies
+follow — what past-tense provenance is worth carrying, and how to state what
+"done" means without hard-coding the implementation. Plugins cache under a
+version directory, so resolve it with a glob plus a flat-layout fallback,
+run through `sh` because zsh aborts on an unmatched glob:
+
+```bash
+sh -c 'for c in "$1"/../../ticket/*/references/contract.md "$1"/../ticket/references/contract.md; do [ -f "$c" ] && echo "$c" && break; done' sh "$CLAUDE_PLUGIN_ROOT"
+```
+
+No hit means the contract is unavailable. Continue with the rules below; the
+resolve is an enhancement, never a prerequisite.
+
 ## Core principle
 
 Evidence before prose.

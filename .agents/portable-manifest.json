@@ -205,7 +205,7 @@
         "references/rendered-markdown.md": "plugins/gh/references/rendered-markdown.md",
         "references/source-links.md": "plugins/gh/references/source-links.md"
       },
-      "bytes": 26241
+      "bytes": 26911
     },
     {
       "name": "gh-rendered-markdown",
@@ -423,7 +423,7 @@
       "bundled": {
         "references/template-resolution.md": "plugins/pr/references/template-resolution.md"
       },
-      "bytes": 10226
+      "bytes": 10741
     },
     {
       "name": "pr-deslop",
