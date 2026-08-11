@@ -4,10 +4,11 @@ description: >-
   Render the tier-0 leadership report from a business run — SCQA with the
   answer first, action-titled exhibits, explicit value build, the
   conservative number committed
+disable-model-invocation: true
 allowed-tools: ["Bash", "Read", "Write", "Grep", "AskUserQuestion"]
 metadata:
   argument-hint: "[run directory]"
-  source: "plugins/business/commands/report-leadership.md"
+  source: "plugins/business/skills/report-leadership/SKILL.md"
 ---
 
 # Leadership Report (tier 0)

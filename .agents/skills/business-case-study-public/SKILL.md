@@ -3,10 +3,11 @@ name: business-case-study-public
 description: >-
   Write the tier-3 public case study — hard sanitization, every headline
   claim triangulated against external evidence, candid limitations mandatory
+disable-model-invocation: true
 allowed-tools: ["Bash", "Read", "Write", "Grep", "AskUserQuestion"]
 metadata:
   argument-hint: "[run directory]"
-  source: "plugins/business/commands/case-study-public.md"
+  source: "plugins/business/skills/case-study-public/SKILL.md"
 ---
 
 # Public Case Study (tier 3)

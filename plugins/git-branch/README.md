@@ -5,7 +5,7 @@ keep the requirements and replace the implementation.
 
 ## Installation
 
-Add the marketplace:
+In Claude Code, add the marketplace:
 
 ```console
 /plugin marketplace add tony/ai-workflow-plugins
@@ -16,6 +16,21 @@ Install the plugin:
 ```console
 /plugin install git-branch@ai-workflow-plugins
 ```
+
+In Codex, add the marketplace:
+
+```console
+codex plugin marketplace add tony/ai-workflow-plugins
+```
+
+Install the plugin:
+
+```console
+codex plugin add git-branch@ai-workflow-plugins
+```
+
+The skills below are written with Claude Code's leading slash. Codex uses
+the same names without it, so `/git-branch:…` there is `git-branch:…`.
 
 ## Components
 

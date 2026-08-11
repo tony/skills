@@ -4,7 +4,7 @@ Run prompts through individual AI CLIs — Antigravity/agy (Gemini), codex/GPT, 
 
 ## Installation
 
-Add the marketplace:
+In Claude Code, add the marketplace:
 
 ```console
 /plugin marketplace add tony/ai-workflow-plugins
@@ -16,15 +16,27 @@ Install the plugin:
 /plugin install model-cli@ai-workflow-plugins
 ```
 
+In Codex, add the marketplace:
+
+```console
+codex plugin marketplace add tony/ai-workflow-plugins
+```
+
+Install the plugin:
+
+```console
+codex plugin add model-cli@ai-workflow-plugins
+```
+
 ## Skills
 
-| Skill | Slash command | Description |
-|-------|--------------|-------------|
-| Antigravity CLI | `/model-cli:agy` | Run a prompt through the Antigravity (`agy`) CLI for Gemini, fall back to gemini then agent |
-| Codex CLI | `/model-cli:codex` | Run a prompt through the Codex CLI (OpenAI GPT), fall back to agent |
-| GPT CLI | `/model-cli:gpt` | Alias for codex — same backend, same fallback |
-| Gemini CLI | `/model-cli:gemini` | Alias for agy — Antigravity supersedes the gemini CLI; same backend chain |
-| Cursor Agent CLI | `/model-cli:cursor` | Run a prompt through Cursor's agent CLI directly |
+| Skill | Claude Code | Codex | Description |
+|---|---|---|---|
+| Antigravity CLI | `/model-cli:agy` | `model-cli:agy` | Run a prompt through the Antigravity (`agy`) CLI for Gemini, fall back to gemini then agent |
+| Codex CLI | `/model-cli:codex` | `model-cli:codex` | Run a prompt through the Codex CLI (OpenAI GPT), fall back to agent |
+| GPT CLI | `/model-cli:gpt` | `model-cli:gpt` | Alias for codex — same backend, same fallback |
+| Gemini CLI | `/model-cli:gemini` | `model-cli:gemini` | Alias for agy — Antigravity supersedes the gemini CLI; same backend chain |
+| Cursor Agent CLI | `/model-cli:cursor` | `model-cli:cursor` | Run a prompt through Cursor's agent CLI directly |
 
 The agy, codex, and cursor skills are auto-invoked by Claude when it determines delegation to another model is appropriate. The gpt and gemini skills are user-invocable only (`disable-model-invocation: true`) to avoid duplicate auto-triggering — gpt with codex, and gemini with agy.
 

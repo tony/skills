@@ -9,10 +9,11 @@ description: >-
   delta, confidence, and observed risk to benchmarks.json. Never mutates
   committed history. Idempotent per hypothesis id. Use after 00-scan to find
   out which proposed speedups are real.
+disable-model-invocation: true
 allowed-tools: ["Bash", "Read", "Grep", "Glob", "Write", "Edit", "AskUserQuestion"]
 metadata:
   argument-hint: "[--only=<heuristic-id>] [--runs=N] [--force] [--memory-dir=<path>]"
-  source: "plugins/pytest-optimizer/commands/01-benchmark.md"
+  source: "plugins/pytest-optimizer/skills/01-benchmark/SKILL.md"
 ---
 
 # 01-benchmark

@@ -1,7 +1,10 @@
 # ai-workflow-plugins
 
-A third-party [Claude Code plugin marketplace](https://code.claude.com/docs/en/plugin-marketplaces.md)
-providing language-agnostic AI / agentic workflow plugins for DX efficiency.
+A third-party plugin marketplace providing language-agnostic AI / agentic
+workflow plugins for DX efficiency. Every plugin installs into both
+[Claude Code](https://code.claude.com/docs/en/plugin-marketplaces.md) and
+[Codex](https://developers.openai.com/plugins/build/plugins), and the skills
+are readable by any agent that scans `.agents/skills/`.
 
 > **Warning:** Review plugins before installing. Anthropic does not control plugin
 > contents and cannot verify they work as intended.
@@ -43,6 +46,8 @@ providing language-agnostic AI / agentic workflow plugins for DX efficiency.
 
 ## Installation
 
+### Claude Code
+
 Add the marketplace:
 
 ```console
@@ -56,6 +61,23 @@ Then install any plugin by the name in the table above:
 ```console
 /plugin install commit@ai-workflow-plugins
 ```
+
+### Codex
+
+Add the marketplace:
+
+```console
+codex plugin marketplace add tony/ai-workflow-plugins
+```
+
+Then install any plugin by the name in the table above:
+
+```console
+codex plugin add commit@ai-workflow-plugins
+```
+
+Each workflow is one skill, invoked as `pr:deslop` under Codex and
+`/pr:deslop` under Claude Code.
 
 ## Design Philosophy
 
@@ -120,12 +142,15 @@ uv run ./scripts/marketplace.py check-outdated
 
 ### Regenerate the portable skill export
 
-`.agents/skills/` is a generated, committed mirror of every plugin skill and
-command in a form that agents outside Claude Code (Codex, Cursor, pi,
-Antigravity, Grok) can read: one `SKILL.md` per component, spec-only
-frontmatter, no `${CLAUDE_PLUGIN_ROOT}`, and no host-specific inline-bash
-expansion. Files a component references are copied into its own directory, so
-each exported skill is self-contained and can be moved on its own.
+`.agents/skills/` is a generated, committed mirror of every plugin skill in a
+flat form that agents outside Claude Code (Cursor, pi, Antigravity, Grok) can
+read: spec-only frontmatter and no host-specific inline-bash expansion. A skill
+reaches its plugin's shared files by climbing out of its own directory, and
+flattening severs that climb, so every file it reaches is copied in and the
+links rewritten. Each exported skill is therefore self-contained.
+
+Codex needs none of this. It reads `skills/` in place, so it consumes the
+plugins directly through `.codex-plugin/plugin.json`.
 
 ```bash
 uv run ./scripts/marketplace.py portable
@@ -137,9 +162,11 @@ Verify the committed tree matches the plugins it was generated from:
 uv run ./scripts/marketplace.py portable --check
 ```
 
-Edit `plugins/`, never `.agents/skills/`. `.agents/portable-manifest.json`
-records each exported skill's sources, its bundled files, and how many times
-each source file is copied across the export.
+Edit `plugins/*/skills/`. Never edit `.agents/skills/`, `.agents/plugins/`, or
+`plugins/*/.codex-plugin/` — all three are generated.
+`.agents/portable-manifest.json` records each exported skill's sources, its
+bundled files, and how many times each source file is copied across the
+export.
 
 Hosts that scan `.agents/skills/` read the tree straight from a checkout, with
 no install step. The `skills` CLI reads the same tree:

@@ -2,10 +2,11 @@
 name: commit
 description: >-
   Create a git commit following project conventions
+disable-model-invocation: true
 allowed-tools: ["Bash", "Read"]
 metadata:
   argument-hint: "[optional hint about the changes, e.g. 'fix the auth bug']"
-  source: "plugins/commit/commands/commit.md"
+  source: "plugins/commit/skills/commit/SKILL.md"
 ---
 
 # Git Commit

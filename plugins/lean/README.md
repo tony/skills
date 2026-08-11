@@ -10,7 +10,7 @@ without the commit ceremony.
 
 ## Installation
 
-Add the marketplace:
+In Claude Code, add the marketplace:
 
 ```console
 /plugin marketplace add tony/ai-workflow-plugins
@@ -22,6 +22,21 @@ Install the plugin:
 /plugin install lean@ai-workflow-plugins
 ```
 
+In Codex, add the marketplace:
+
+```console
+codex plugin marketplace add tony/ai-workflow-plugins
+```
+
+Install the plugin:
+
+```console
+codex plugin add lean@ai-workflow-plugins
+```
+
+The skills below are written with Claude Code's leading slash. Codex uses
+the same names without it, so `/lean:…` there is `lean:…`.
+
 ## Components
 
 ### `lean-writing` (skill)
@@ -31,7 +46,7 @@ first draft comes out tight: lead with the result, state current truth
 over the journey, reuse before creating, and preserve references when
 editing. Guidance only — it never edits files.
 
-### `/lean:tighten` (command)
+### `/lean:tighten` (skill)
 
 Point it at files or a pasted draft; it removes slop in place and
 prints a diff. It never commits, never pushes, and works fine on a

@@ -13,7 +13,7 @@ happened.
 
 ## Installation
 
-Add the marketplace:
+In Claude Code, add the marketplace:
 
 ```console
 /plugin marketplace add tony/ai-workflow-plugins
@@ -24,6 +24,21 @@ Install the plugin:
 ```console
 /plugin install double-check@ai-workflow-plugins
 ```
+
+In Codex, add the marketplace:
+
+```console
+codex plugin marketplace add tony/ai-workflow-plugins
+```
+
+Install the plugin:
+
+```console
+codex plugin add double-check@ai-workflow-plugins
+```
+
+The skills below are written with Claude Code's leading slash. Codex uses
+the same names without it, so `/double-check:…` there is `double-check:…`.
 
 ## Components
 
@@ -36,7 +51,7 @@ standalone in the original request's structure: no verdicts about
 its own prior claims, no "what changed" section, no inherited
 numbering that hides omissions.
 
-### `/double-check:align` (command)
+### `/double-check:align` (skill)
 
 Recovery, for when the diff-shaped answer already landed. Restates
 the current best analysis whole, rebuilt from source, without

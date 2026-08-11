@@ -10,7 +10,7 @@ platforms it covers.
 
 ## Installation
 
-Add the marketplace:
+In Claude Code, add the marketplace:
 
 ```console
 /plugin marketplace add tony/ai-workflow-plugins
@@ -22,13 +22,25 @@ Install the plugin:
 /plugin install terraform@ai-workflow-plugins
 ```
 
-## Commands
+In Codex, add the marketplace:
 
-| Command | Description |
-|---------|-------------|
-| `/terraform:bump-provider <provider> [version]` | Move a provider across every module that declares it, then refresh the affected lock files |
-| `/terraform:bump-terraform [version]` | Move the CLI version across every module and every pin site outside the configuration |
-| `/terraform:refresh-lock` | Re-resolve providers within the constraints already written, in every root module |
+```console
+codex plugin marketplace add tony/ai-workflow-plugins
+```
+
+Install the plugin:
+
+```console
+codex plugin add terraform@ai-workflow-plugins
+```
+
+## Skills
+
+| Claude Code | Codex | Description |
+|---|---|---|
+| `/terraform:bump-provider <provider> [version]` | `terraform:bump-provider <provider> [version]` | Move a provider across every module that declares it, then refresh the affected lock files |
+| `/terraform:bump-terraform [version]` | `terraform:bump-terraform [version]` | Move the CLI version across every module and every pin site outside the configuration |
+| `/terraform:refresh-lock` | `terraform:refresh-lock` | Re-resolve providers within the constraints already written, in every root module |
 
 With no version, each bump targets the latest stable release and
 confirms it before writing it anywhere. `--audit-only` reports the

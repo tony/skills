@@ -13,9 +13,9 @@ ask for, and what the project's own rules require of the work.
 Two reference files carry the parts that must not drift between this
 skill and `/situate`:
 
-- `${CLAUDE_PLUGIN_ROOT}/references/situation-sweep.md` — the six
+- `../../references/situation-sweep.md` — the six
   evidence layers, how each one degrades, and the read-only contract.
-- `${CLAUDE_PLUGIN_ROOT}/references/prior-conversations.md` — when
+- `../../references/prior-conversations.md` — when
   searching local AI transcripts is warranted, how to scope it, and
   what may not appear in the report.
 

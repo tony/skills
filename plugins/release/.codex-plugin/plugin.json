@@ -1,0 +1,12 @@
+{
+  "name": "release",
+  "version": "0.0.1",
+  "description": "Cut and bump releases with safe defaults — no push, no tag, no tag push without an explicit flag — and roll new releases out to every downstream consumer repo with CI verification",
+  "author": {
+    "name": "Tony Narlock",
+    "email": "tony@git-pull.com"
+  },
+  "homepage": "https://github.com/tony/ai-workflow-plugins/tree/main/plugins/release",
+  "license": "MIT",
+  "skills": "./skills/"
+}

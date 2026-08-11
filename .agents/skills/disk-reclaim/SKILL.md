@@ -3,10 +3,11 @@ name: disk-reclaim
 description: >-
   Reclaim disk space through a proof-gated plan — clears regenerable caches,
   merges proved-redundant copies, and protects agent history
+disable-model-invocation: true
 allowed-tools: "Bash, Read, Write, Edit, Glob, Grep, AskUserQuestion, TodoWrite"
 metadata:
   argument-hint: "[path or filesystem to focus on]"
-  source: "plugins/disk/commands/reclaim.md"
+  source: "plugins/disk/skills/reclaim/SKILL.md"
 ---
 
 Reclaim disk space on this machine without losing anything the user

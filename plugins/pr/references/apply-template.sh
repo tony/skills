@@ -26,7 +26,7 @@
 #     `reword-map.tsv` records the mapping for audit/provenance only.
 #
 # Stages explicit paths only — never `git add -A` / `git add .` per
-# `plugins/commit/commands/commit.md:181-191` (rule line 187).
+# `plugins/commit/skills/commit/SKILL.md`.
 #
 # Exit codes:
 #   0  — all checkpointed steps complete.

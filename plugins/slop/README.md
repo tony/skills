@@ -12,7 +12,7 @@ For branch-scoped slop cleanup that uses fixup commits and
 
 ## Installation
 
-Add the marketplace:
+In Claude Code, add the marketplace:
 
 ```console
 /plugin marketplace add tony/ai-workflow-plugins
@@ -24,11 +24,23 @@ Install the plugin:
 /plugin install slop@ai-workflow-plugins
 ```
 
-## Commands
+In Codex, add the marketplace:
 
-| Command | Description |
-|---------|-------------|
-| `/slop:scan` | Scan tracked files at HEAD for slop; land one atomic commit per finding with quality-gate verification. |
+```console
+codex plugin marketplace add tony/ai-workflow-plugins
+```
+
+Install the plugin:
+
+```console
+codex plugin add slop@ai-workflow-plugins
+```
+
+## Skills
+
+| Claude Code | Codex | Description |
+|---|---|---|
+| `/slop:scan` | `slop:scan` | Scan tracked files at HEAD for slop; land one atomic commit per finding with quality-gate verification. |
 
 ## How It Works
 
@@ -116,7 +128,7 @@ large runs):
 - **Never pushes.** The user runs `git push` after reviewing the
   new commits.
 - **Never `git add -A` / `git add .`.** Per
-  `plugins/commit/commands/commit.md:181-191`, the apply loop
+  `plugins/commit/skills/commit/SKILL.md`, the apply loop
   stages explicit paths only.
 - **Never `--no-verify`.** Project pre-commit / commit-msg hooks
   are the project's authority; hook rejection rolls back the

@@ -4,10 +4,11 @@ description: >-
   Roll a newly published package release out to every consumer repo you
   maintain — discover consumers under your workspace roots, bump pins,
   re-lock, commit, push, and verify CI with gh.
+disable-model-invocation: true
 allowed-tools: ["Bash", "Read", "Grep", "Glob", "Edit", "AskUserQuestion", "Task"]
 metadata:
   argument-hint: "<package> [<version>] [--roots <glob>...] [--no-push]"
-  source: "plugins/release/commands/update-downstream-packages.md"
+  source: "plugins/release/skills/update-downstream-packages/SKILL.md"
 ---
 
 # Update Downstream Packages

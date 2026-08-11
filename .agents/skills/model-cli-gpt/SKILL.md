@@ -5,6 +5,7 @@ description: >-
   invocation point for the `model-cli-codex` skill — both use the same
   backend (codex binary or agent --model gpt-5.4-high fallback). Use this or
   the `model-cli-codex` skill interchangeably.
+disable-model-invocation: true
 allowed-tools: ["Bash", "Read", "Grep", "Glob", "Write", "Edit"]
 metadata:
   argument-hint: "<prompt> [timeout:<seconds>]"

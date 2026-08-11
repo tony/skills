@@ -3,10 +3,11 @@ name: pr-recut
 description: >-
   Rewrite an existing PR description from scratch against the branch's
   current net change, carrying forward context that still matters
+disable-model-invocation: true
 allowed-tools: ["Bash", "Read", "Write", "AskUserQuestion"]
 metadata:
   argument-hint: "[PR number or URL, and/or a template path or hint]"
-  source: "plugins/pr/commands/recut.md"
+  source: "plugins/pr/skills/recut/SKILL.md"
 ---
 
 # Recut PR Description

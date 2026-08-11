@@ -15,6 +15,35 @@ profile      prove each        rank by       apply each speedup
 + hypothesize  noise band       rubric        verify green, resume
 ```
 
+## Installation
+
+In Claude Code, add the marketplace:
+
+```console
+/plugin marketplace add tony/ai-workflow-plugins
+```
+
+Install the plugin:
+
+```console
+/plugin install pytest-optimizer@ai-workflow-plugins
+```
+
+In Codex, add the marketplace:
+
+```console
+codex plugin marketplace add tony/ai-workflow-plugins
+```
+
+Install the plugin:
+
+```console
+codex plugin add pytest-optimizer@ai-workflow-plugins
+```
+
+The skills below are written with Claude Code's leading slash. Codex uses
+the same names without it, so `/pytest-optimizer:…` there is `pytest-optimizer:…`.
+
 ## Why four commands instead of one loop
 
 A single autonomous loop cannot be re-entered safely: if it crashes between
@@ -60,9 +89,9 @@ Full definition in `references/scoring-rubric.md`.
 | confidence | 0.12 | Quality of the timing evidence (serial, repeated, well above the noise floor). |
 | reversibility | 0.08 | How cleanly the change is undone if green-verify fails. |
 
-## Commands
+## Skills
 
-| Command | Phase | Writes |
+| Skill | Phase | Writes |
 |---------|-------|--------|
 | `/pytest-optimizer:00-scan` | Profile, detect, hypothesize (plan-mode gated) | `baseline.json`, `capabilities.json`, `hypotheses.json` |
 | `/pytest-optimizer:01-benchmark` | Prove each hypothesis vs the noise band | `benchmarks.json` |

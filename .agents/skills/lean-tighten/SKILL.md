@@ -8,10 +8,11 @@ description: >-
   "deslop this draft in place". For repo-wide commit-per-finding cleanup use
   the `slop-scan` skill; for branch commit cleanup use the `pr-deslop`
   skill.
+disable-model-invocation: true
 allowed-tools: ["Bash", "Read", "Grep", "Glob", "Edit", "AskUserQuestion"]
 metadata:
   argument-hint: "[paths/globs] [--stdin] [--gates] [--diff-only]"
-  source: "plugins/lean/commands/tighten.md"
+  source: "plugins/lean/skills/tighten/SKILL.md"
 ---
 
 # this skill
@@ -20,7 +21,7 @@ Tighten specified files in the working tree and print a diff. Never
 commits, never pushes, never requires a clean tree, never scans
 repo-wide.
 
-This is a slash command, not a model-invocable skill: it edits files,
+This skill is invoked by name, never routed to on the model’s initiative: it edits files,
 so it must be user-explicit.
 
 ## Difference from the `slop-scan` skill

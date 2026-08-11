@@ -4,10 +4,11 @@ description: >-
   Say what is going on in five lines or less — the session, the branch, the
   pull request and ticket if they exist — with numbered options when there
   is a real choice to make
+disable-model-invocation: true
 allowed-tools: ["Bash", "Read", "Grep", "Glob"]
 metadata:
   argument-hint: "[what you are confused about]"
-  source: "plugins/situate/commands/what.md"
+  source: "plugins/situate/skills/what/SKILL.md"
 ---
 
 # What

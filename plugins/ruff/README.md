@@ -4,7 +4,7 @@ Move one repository or a whole fleet onto a new [ruff](https://docs.astral.sh/ru
 
 ## Installation
 
-Add the marketplace:
+In Claude Code, add the marketplace:
 
 ```console
 /plugin marketplace add tony/ai-workflow-plugins
@@ -16,11 +16,23 @@ Install the plugin:
 /plugin install ruff@ai-workflow-plugins
 ```
 
-## Commands
+In Codex, add the marketplace:
 
-| Command | Description |
-|---------|-------------|
-| `/ruff:bump [version]` | Raise the ruff floor across the repositories in scope and absorb what the release surfaces, one commit per rule |
+```console
+codex plugin marketplace add tony/ai-workflow-plugins
+```
+
+Install the plugin:
+
+```console
+codex plugin add ruff@ai-workflow-plugins
+```
+
+## Skills
+
+| Claude Code | Codex | Description |
+|---|---|---|
+| `/ruff:bump [version]` | `ruff:bump [version]` | Raise the ruff floor across the repositories in scope and absorb what the release surfaces, one commit per rule |
 
 With no version, it targets the latest stable release. It defaults to the current repository, working on a branch in a throwaway worktree and opening a pull request.
 

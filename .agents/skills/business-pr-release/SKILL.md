@@ -3,10 +3,11 @@ name: business-pr-release
 description: >-
   Write the tier-3 one-page announcement — figures drawn only from the
   public case study, denominators attached, limitations one-liner included
+disable-model-invocation: true
 allowed-tools: ["Bash", "Read", "Write", "Grep", "AskUserQuestion"]
 metadata:
   argument-hint: "[run directory]"
-  source: "plugins/business/commands/pr-release.md"
+  source: "plugins/business/skills/pr-release/SKILL.md"
 ---
 
 # PR Release (tier 3)

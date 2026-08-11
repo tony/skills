@@ -25,14 +25,14 @@ should change about the approach, or nothing.
 
 Four references carry the parts that must not drift:
 
-- `${CLAUDE_PLUGIN_ROOT}/references/rebuild-contract.md` — the
+- `../../references/rebuild-contract.md` — the
   contract, the coverage ledger, reconciliation, and what counts as
   done.
-- `${CLAUDE_PLUGIN_ROOT}/references/branch-safety.md` — the gates, the
+- `../../references/branch-safety.md` — the gates, the
   backup, recovery, and the push.
-- `${CLAUDE_PLUGIN_ROOT}/references/commit-messages.md` — style
+- `../../references/commit-messages.md` — style
   discovery, intent recovery, and the privacy gate.
-- `${CLAUDE_PLUGIN_ROOT}/references/rebase-toolkit.md` — per-commit
+- `../../references/rebase-toolkit.md` — per-commit
   verification with no editor.
 
 ## Core principle
@@ -147,10 +147,14 @@ task. Stop and surface it: the choices are to fix the rebuild, or to
 agree the test encoded something the new approach deliberately
 changes. Never edit a spec test to make a rebuild green.
 
+`<toolkit>` is the absolute path to `references/rebase-todo.sh`, which ships
+with this skill. A shell runs with your project as its working directory, not
+this skill's, so substitute the full path before invoking it.
+
 Then gate every commit of the new series in place:
 
 ```
-sh ${CLAUDE_PLUGIN_ROOT}/references/rebase-todo.sh verify <base-sha> '<test command>'
+sh <toolkit> verify <base-sha> '<test command>'
 ```
 
 ## Phase 6 — Reconcile

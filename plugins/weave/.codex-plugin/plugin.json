@@ -1,0 +1,12 @@
+{
+  "name": "weave",
+  "version": "0.0.2",
+  "description": "Run independent adversarial participants through host-native sub-agents by default or separate model CLIs by choice — brainstorm, refine, plan, execute, architect, review, and synthesize",
+  "author": {
+    "name": "Tony Narlock",
+    "email": "tony@git-pull.com"
+  },
+  "homepage": "https://github.com/tony/ai-workflow-plugins/tree/main/plugins/weave",
+  "license": "MIT",
+  "skills": "./skills/"
+}

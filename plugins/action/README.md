@@ -7,7 +7,7 @@ gates, and fan out multiple tickets in parallel.
 
 ## Installation
 
-Add the marketplace:
+In Claude Code, add the marketplace:
 
 ```console
 /plugin marketplace add tony/ai-workflow-plugins
@@ -19,12 +19,24 @@ Install the plugin:
 /plugin install action@ai-workflow-plugins
 ```
 
-## Commands
+In Codex, add the marketplace:
 
-| Command | Description |
-|---------|-------------|
-| `/action:worktree [<ticket>...]` | One branch + worktree for one or more tickets: resolve read-only, name by convention, implement, land gated commits; push or PR only on request |
-| `/action:worktrees [<ticket>...]` | Discover and group several tickets, then fan out one worktree per unit — parallel subagents where the host supports them, sequential otherwise |
+```console
+codex plugin marketplace add tony/ai-workflow-plugins
+```
+
+Install the plugin:
+
+```console
+codex plugin add action@ai-workflow-plugins
+```
+
+## Skills
+
+| Claude Code | Codex | Description |
+|---|---|---|
+| `/action:worktree [<ticket>...]` | `action:worktree [<ticket>...]` | One branch + worktree for one or more tickets: resolve read-only, name by convention, implement, land gated commits; push or PR only on request |
+| `/action:worktrees [<ticket>...]` | `action:worktrees [<ticket>...]` | Discover and group several tickets, then fan out one worktree per unit — parallel subagents where the host supports them, sequential otherwise |
 
 One ticket (or a few that share one change) → `worktree`. A queue of
 independent tickets → `worktrees`. To land review findings on the

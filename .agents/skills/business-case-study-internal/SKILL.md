@@ -3,10 +3,11 @@ name: business-case-study-internal
 description: >-
   Write the tier-2 internal case study — situation, what was built, tagged
   outcomes with denominators, lessons, replication guide for other teams
+disable-model-invocation: true
 allowed-tools: ["Bash", "Read", "Write", "Grep", "AskUserQuestion"]
 metadata:
   argument-hint: "[run directory]"
-  source: "plugins/business/commands/case-study-internal.md"
+  source: "plugins/business/skills/case-study-internal/SKILL.md"
 ---
 
 # Internal Case Study (tier 2)

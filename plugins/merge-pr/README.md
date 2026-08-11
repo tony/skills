@@ -11,7 +11,7 @@ claim a change lands "in vX.Y" unless the PR itself is release work.
 
 ## Installation
 
-Add the marketplace:
+In Claude Code, add the marketplace:
 
 ```console
 /plugin marketplace add tony/ai-workflow-plugins
@@ -23,9 +23,24 @@ Install the plugin:
 /plugin install merge-pr@ai-workflow-plugins
 ```
 
+In Codex, add the marketplace:
+
+```console
+codex plugin marketplace add tony/ai-workflow-plugins
+```
+
+Install the plugin:
+
+```console
+codex plugin add merge-pr@ai-workflow-plugins
+```
+
+The skills below are written with Claude Code's leading slash. Codex uses
+the same names without it, so `/merge-pr:…` there is `merge-pr:…`.
+
 ## Components
 
-### `/merge-pr:this` (command)
+### `/merge-pr:this` (skill)
 
 Merge one PR — the one under discussion, or the current branch's.
 Runs the readiness gate (open, not draft, CI passing via
@@ -36,7 +51,7 @@ merges via `gh pr merge` with a merge commit message derived from
 the repo's merge history. Afterwards it checks out trunk, pulls,
 and stops.
 
-### `/merge-pr:multiple` (command)
+### `/merge-pr:multiple` (skill)
 
 Land a set of PRs one at a time. Detects whether the set is a
 **stack** (a PR based on another PR's head branch — merged

@@ -4,7 +4,7 @@ Create git commits following project conventions with format enforcement and saf
 
 ## Installation
 
-Add the marketplace:
+In Claude Code, add the marketplace:
 
 ```console
 /plugin marketplace add tony/ai-workflow-plugins
@@ -16,11 +16,23 @@ Install the plugin:
 /plugin install commit@ai-workflow-plugins
 ```
 
-## Command
+In Codex, add the marketplace:
 
-| Command | Description |
-|---------|-------------|
-| `/commit` | Analyze changes, draft a conventional commit message, and commit |
+```console
+codex plugin marketplace add tony/ai-workflow-plugins
+```
+
+Install the plugin:
+
+```console
+codex plugin add commit@ai-workflow-plugins
+```
+
+## Skills
+
+| Claude Code | Codex | Description |
+|---|---|---|
+| `/commit` | `commit` | Analyze changes, draft a conventional commit message, and commit |
 
 ## How It Works
 

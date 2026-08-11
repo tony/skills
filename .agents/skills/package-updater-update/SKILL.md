@@ -4,10 +4,11 @@ description: >-
   Find every outdated dependency and toolchain pin across one repo or a
   fleet and bring them current — toolchain, named bumps, bulk refresh and
   fallout as separate researched commits
+disable-model-invocation: true
 allowed-tools: ["Bash", "Read", "Grep", "Glob", "Edit", "Write", "WebSearch", "WebFetch", "Task", "AskUserQuestion"]
 metadata:
   argument-hint: "[--root <dir>] [--repo <path|slug>...] [--owner <name>...] [--audit-only] [--branch <name>] [--pr] [--issue github|linear] [--no-push]"
-  source: "plugins/package-updater/commands/update.md"
+  source: "plugins/package-updater/skills/update/SKILL.md"
 ---
 
 # Update packages

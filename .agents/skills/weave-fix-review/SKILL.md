@@ -3,9 +3,10 @@ name: weave-fix-review
 description: >-
   Fix weave review findings — validate, add test coverage, fix, and commit
   each as atomic changes
+disable-model-invocation: true
 allowed-tools: ["Bash", "Read", "Grep", "Glob", "Edit", "Write", "Task", "AskUserQuestion", "EnterPlanMode", "ExitPlanMode"]
 metadata:
-  source: "plugins/weave/commands/fix-review.md"
+  source: "plugins/weave/skills/fix-review/SKILL.md"
 ---
 
 # Fix Review Findings

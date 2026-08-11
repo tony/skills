@@ -23,12 +23,12 @@ Argument: `$ARGUMENTS` — a URL, an identifier, or nothing (then ask).
 
 ## Read first
 
-- `${CLAUDE_PLUGIN_ROOT}/references/contract.md` — the three tenses.
-- `${CLAUDE_PLUGIN_ROOT}/references/hierarchy.md` — what kind of object this
+- `../../references/contract.md` — the three tenses.
+- `../../references/hierarchy.md` — what kind of object this
   is, in this provider.
-- `${CLAUDE_PLUGIN_ROOT}/references/altitude.md` — which sections that kind
+- `../../references/altitude.md` — which sections that kind
   of object should carry.
-- `${CLAUDE_PLUGIN_ROOT}/references/resolve.md` — how to establish the above.
+- `../../references/resolve.md` — how to establish the above.
 - The provider's own file, indexed in `hierarchy.md` under Provider files — reference
   syntax, read and write mechanics.
 
@@ -119,8 +119,8 @@ the test: *if violated, is the work pointless, or is a neighbour broken?*
 Sanitize for local paths, hostnames, emails, tokens, and internal URLs. Then
 run the mechanical checks, resolving the registry at the first hit:
 
-1. `${CLAUDE_PLUGIN_ROOT}/../pr/references/signatures.yml`
-2. `${CLAUDE_PLUGIN_ROOT}/../slop/references/signatures.yml`
+1. `../../../pr/references/signatures.yml`
+2. `../../../slop/references/signatures.yml`
 
 An installed plugin caches under a version directory, so a sibling sits one
 level further out than those paths suggest. Glob the version segment rather

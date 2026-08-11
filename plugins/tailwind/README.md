@@ -4,7 +4,7 @@ Detect and fix inconsistent spacing in Tailwind CSS layouts — container fragme
 
 ## Installation
 
-Add the marketplace:
+In Claude Code, add the marketplace:
 
 ```console
 /plugin marketplace add tony/ai-workflow-plugins
@@ -16,11 +16,23 @@ Install the plugin:
 /plugin install tailwind@ai-workflow-plugins
 ```
 
+In Codex, add the marketplace:
+
+```console
+codex plugin marketplace add tony/ai-workflow-plugins
+```
+
+Install the plugin:
+
+```console
+codex plugin add tailwind@ai-workflow-plugins
+```
+
 ## Skills
 
-| Skill | Slash command | Description |
-|-------|--------------|-------------|
-| Tailwind Spacing Audit | `/tailwind:spacing-audit` | Systematically detect and fix inconsistent spacing in Tailwind CSS v4+ layouts |
+| Skill | Claude Code | Codex | Description |
+|---|---|---|---|
+| Tailwind Spacing Audit | `/tailwind:spacing-audit` | `tailwind:spacing-audit` | Systematically detect and fix inconsistent spacing in Tailwind CSS v4+ layouts |
 
 ## How It Works
 

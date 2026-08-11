@@ -3,10 +3,11 @@ name: weave-ask
 description: >-
   Weave question — ask independent adversarial workers in parallel, then
   synthesize the best answer
+disable-model-invocation: true
 allowed-tools: ["Bash", "Read", "Grep", "Glob", "Write", "Task", "AskUserQuestion"]
 metadata:
   argument-hint: "<question> [--cascade] [--passes=N] [--timeout=N|none] [--mode=fast|balanced|deep] [--no-deslop|--quiet-deslop|--verbose-deslop] [--workers=subagents|model-clis]"
-  source: "plugins/weave/commands/ask.md"
+  source: "plugins/weave/skills/ask/SKILL.md"
 ---
 
 # Weave Ask

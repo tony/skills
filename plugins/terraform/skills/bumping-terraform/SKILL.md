@@ -13,13 +13,13 @@ the selected version actually changed.
 Three reference files carry the parts that must not drift between this
 skill and the plugin's commands:
 
-- `${CLAUDE_PLUGIN_ROOT}/references/layout-discovery.md` — classifying
+- `../../references/layout-discovery.md` — classifying
   root and child modules by signal, the `.terraform/` cache trap,
   `.tofu` shadowing, other drivers, and what to ask about.
-- `${CLAUDE_PLUGIN_ROOT}/references/pin-sites.md` — every file a
+- `../../references/pin-sites.md` — every file a
   provider or CLI version is pinned in, how constraints combine across
   modules, operator preservation, and registry lookups.
-- `${CLAUDE_PLUGIN_ROOT}/references/lock-and-init.md` — per-root-module
+- `../../references/lock-and-init.md` — per-root-module
   `init`, `-backend=false`, the platform-narrowing trap, blocked
   resolvers, and verification gates.
 

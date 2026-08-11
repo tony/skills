@@ -10,10 +10,11 @@ description: >-
   assigns, comments, or transitions), names the branch by the team's own
   conventions, implements through the project's discovered quality gates,
   and never pushes or opens a PR unless the flags say so.
+disable-model-invocation: true
 allowed-tools: ["Bash", "Read", "Grep", "Glob", "Edit", "Write", "AskUserQuestion", "Task"]
 metadata:
   argument-hint: "[<ticket>...] [--branch=<name>] [--local|--temp] [--push|--pr|--setup-only]"
-  source: "plugins/action/commands/worktree.md"
+  source: "plugins/action/skills/worktree/SKILL.md"
 ---
 
 # this skill
@@ -28,7 +29,7 @@ One worktree, one branch, one deliverable — carrying one ticket by
 default, and several when they genuinely share a change. Crosscutting
 is first-class, not an error.
 
-This is a slash command, not a model-invocable skill: it creates
+This skill is invoked by name, never routed to on the model’s initiative: it creates
 worktrees and branches, modifies files, and creates commits, so it
 must be user-explicit, not router-inferred. To land review findings
 on the *current* branch, use the `review-address` skill; this command starts

@@ -11,8 +11,16 @@ not affiliated with or endorsed by Anthropic.
 
 ## Official Documentation References
 
-These docs are the canonical references for the Claude Code plugin system.
-Consult them when authoring or reviewing plugin components:
+These docs are the canonical references for the two plugin systems this
+marketplace targets. Consult them when authoring or reviewing plugin
+components.
+
+Codex:
+
+- [Package your plugin](https://developers.openai.com/plugins/build/plugins.md) — `.codex-plugin/plugin.json`, marketplace format, local and repo marketplaces, bundled MCP servers and hooks
+- [Build skills](https://developers.openai.com/plugins/build/skills) — SKILL.md authoring for Codex
+
+Claude Code:
 
 - [Plugins overview](https://code.claude.com/docs/en/plugins.md) — plugin lifecycle, installation, discovery
 - [Plugin reference](https://code.claude.com/docs/en/plugins-reference.md) — component types, frontmatter schemas, directory structure
@@ -271,14 +279,14 @@ Treat this file like code and prune it.
 
 ## Plugin Quality Standards
 
-### Command Files
+### Skill Files
 
-- Every command `.md` file **must** have YAML frontmatter with at least a `description` field
-- Commands **must not** hardcode language-specific tool commands (e.g., `uv run pytest`,
+- Every `SKILL.md` **must** have YAML frontmatter with at least `name` and `description`
+- Skills **must not** hardcode language-specific tool commands (e.g., `uv run pytest`,
   `npm test`, `cargo test`). Instead, reference "the project's test suite / quality checks
   as defined in AGENTS.md/CLAUDE.md"
 - Frontmatter `allowed-tools` should use bare tool names (e.g., `Bash`) rather than
-  language-specific patterns (e.g., `Bash(uv run:*)`) so commands work across any project
+  language-specific patterns (e.g., `Bash(uv run:*)`) so skills work across any project
 
 ### Plugin Directory Structure
 
@@ -289,23 +297,53 @@ Every plugin directory under `plugins/` must contain `.claude-plugin/plugin.json
 plugins/<name>/
 ├── .claude-plugin/
 │   └── plugin.json      # name, description (required)
+├── .codex-plugin/
+│   └── plugin.json      # generated
 ├── README.md            # usage docs, prerequisites, component reference
-├── commands/            # slash commands (*.md with YAML frontmatter)
-├── agents/              # sub-agents (*.md with name, description, tools)
 ├── skills/              # skills (skill-name/SKILL.md)
+├── agents/              # sub-agents (*.md with name, description, tools)
 ├── hooks/               # hooks (hooks.json)
 ├── .mcp.json            # MCP server configuration
 └── .lsp.json            # LSP server configuration
 ```
 
-At least one component directory (`commands/`, `agents/`, `skills/`, or `hooks/`) or
-configuration file (`.mcp.json`, `.lsp.json`) is expected.
+At least one component directory (`skills/`, `agents/`, or `hooks/`) or
+configuration file (`.mcp.json`, `.lsp.json`) is expected. Claude Code also
+accepts `commands/`; this repo does not use it, for the reasons below.
+
+`.codex-plugin/plugin.json` is written by `scripts/marketplace.py portable` and
+verified by `portable --check`. Never hand-edit it; change
+`.claude-plugin/plugin.json`, which it mirrors, and regenerate.
+
+### Skills Are the Only Workflow Component
+
+Claude Code still supports `commands/`, but this repo does not use it. Every
+workflow is a skill, for three reasons:
+
+- Claude Code folds commands into skills already. A command-only plugin reports
+  `Skills (1)` in `claude plugin details`, and there is no Commands row at all.
+  A plugin shipping both a command and a skill under one name lists that name
+  twice.
+- Codex reads only `skills/`. It migrates `commands/` on its own, but silently
+  drops any command over roughly 3.9KB, which is most of them.
+- A skill is invoked the same way from either host: `/pr:deslop` in Claude
+  Code, `pr:deslop` in Codex.
+
+A skill carrying a workflow that only makes sense when the user asks for it by
+name sets `disable-model-invocation: true`. That keeps a command's semantics —
+invocable by name, never routed to on the model's initiative — and keeps it out
+of a routing corpus where it would crowd skills meant to be discovered.
+
+Address bundled files by climbing out of the skill directory
+(`../../references/x.md`), never through `${CLAUDE_PLUGIN_ROOT}`. Codex performs
+no substitution on that variable, and Anthropic's own plugins do not use it in
+skills either.
 
 ### Component Frontmatter Schemas
 
 Each component type has specific frontmatter requirements:
 
-**Commands** (`commands/*.md`):
+**Commands** (`commands/*.md`) — supported by Claude Code, unused here:
 - `description` (required) — shown in `/` menu
 - `allowed-tools` (optional) — tool access list (bare names, e.g. `Bash`)
 - `argument-hint` (optional) — placeholder text for command argument
@@ -404,6 +442,12 @@ way, so listing tools only skips the permission prompt for those. Only
 - Users must install the language server binary separately
 
 ### Marketplace Manifest
+
+Two manifests describe the same marketplace. `.claude-plugin/marketplace.json`
+is hand-maintained and authoritative; `.agents/plugins/marketplace.json` is
+generated from it. Codex prefers the generated one and accepts the Claude
+manifest only as a legacy fallback, so both ship and neither host depends on
+the other's spelling.
 
 - Located at `.claude-plugin/marketplace.json`
 - Must reference every plugin under `plugins/` with a valid `source` path

@@ -4,7 +4,7 @@ Generate, refresh, recut, and review gold-standard pull request descriptions wit
 
 ## Installation
 
-Add the marketplace:
+In Claude Code, add the marketplace:
 
 ```console
 /plugin marketplace add tony/ai-workflow-plugins
@@ -16,16 +16,28 @@ Install the plugin:
 /plugin install pr@ai-workflow-plugins
 ```
 
-## Commands
+In Codex, add the marketplace:
 
-| Command | Description |
-|---------|-------------|
-| `/pr` | Generate a gold-standard PR description from branch diff |
-| `/pr:refresh` | Update an existing PR description to the branch's current net change, preserving structure and customizations |
-| `/pr:recut` | Rewrite an existing PR description from scratch, carrying forward context that still matters |
-| `/pr:merge-commit` | Generate a gold-standard merge commit message from branch diff |
-| `/pr:review` | Review an existing PR description against gold-standard patterns |
-| `/pr:deslop` | Audit branch commits for AI slop / brittle counts / verbose messages and resolve via fixup commits with optional autosquash |
+```console
+codex plugin marketplace add tony/ai-workflow-plugins
+```
+
+Install the plugin:
+
+```console
+codex plugin add pr@ai-workflow-plugins
+```
+
+## Skills
+
+| Claude Code | Codex | Description |
+|---|---|---|
+| `/pr` | `pr` | Generate a gold-standard PR description from branch diff |
+| `/pr:refresh` | `pr:refresh` | Update an existing PR description to the branch's current net change, preserving structure and customizations |
+| `/pr:recut` | `pr:recut` | Rewrite an existing PR description from scratch, carrying forward context that still matters |
+| `/pr:merge-commit` | `pr:merge-commit` | Generate a gold-standard merge commit message from branch diff |
+| `/pr:review` | `pr:review` | Review an existing PR description against gold-standard patterns |
+| `/pr:deslop` | `pr:deslop` | Audit branch commits for AI slop / brittle counts / verbose messages and resolve via fixup commits with optional autosquash |
 
 ## How It Works
 
@@ -125,7 +137,7 @@ The default mode is **audit-only** — patches are written under
 `.git/deslop/<ts>-<pid>/` for review; nothing is applied. Use
 `--apply-patches` to create fixup commits without rebasing, or
 `--apply-rebase` to also run autosquash. See
-`plugins/pr/commands/deslop.md` for the full flag reference and
+`plugins/pr/skills/deslop/SKILL.md` for the full flag reference and
 edge cases.
 
 ## Gold-Standard Patterns

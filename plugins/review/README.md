@@ -7,7 +7,7 @@ history rewrites.
 
 ## Installation
 
-Add the marketplace:
+In Claude Code, add the marketplace:
 
 ```console
 /plugin marketplace add tony/ai-workflow-plugins
@@ -19,11 +19,23 @@ Install the plugin:
 /plugin install review@ai-workflow-plugins
 ```
 
-## Command
+In Codex, add the marketplace:
 
-| Command | Description |
-|---------|-------------|
-| `/review:address [findings]` | Triage findings by provenance, fix in-branch ones as atomic gated commits, surface the rest for decisions |
+```console
+codex plugin marketplace add tony/ai-workflow-plugins
+```
+
+Install the plugin:
+
+```console
+codex plugin add review@ai-workflow-plugins
+```
+
+## Skills
+
+| Claude Code | Codex | Description |
+|---|---|---|
+| `/review:address [findings]` | `review:address [findings]` | Triage findings by provenance, fix in-branch ones as atomic gated commits, surface the rest for decisions |
 
 Flags: `--pr=<num>` (pull findings from the PR's review comments),
 `--base=<ref>` (override the provenance baseline), `--no-fixup`

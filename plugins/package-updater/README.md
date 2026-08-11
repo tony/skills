@@ -8,7 +8,7 @@ as separate commits.
 
 ## Installation
 
-Add the marketplace:
+In Claude Code, add the marketplace:
 
 ```console
 /plugin marketplace add tony/ai-workflow-plugins
@@ -20,13 +20,25 @@ Install the plugin:
 /plugin install package-updater@ai-workflow-plugins
 ```
 
-## Commands
+In Codex, add the marketplace:
 
-| Command | Description |
-|---------|-------------|
-| `/package-updater:update` | Find everything outdated in scope and bring it current, in commit order |
-| `/package-updater:update-package <name>` | Take one named package to a target version everywhere it is pinned |
-| `/package-updater:update-toolchain [tool]` | Move `.tool-versions`, `.nvmrc`, `packageManager` and `engines`, one tool per commit |
+```console
+codex plugin marketplace add tony/ai-workflow-plugins
+```
+
+Install the plugin:
+
+```console
+codex plugin add package-updater@ai-workflow-plugins
+```
+
+## Skills
+
+| Claude Code | Codex | Description |
+|---|---|---|
+| `/package-updater:update` | `package-updater:update` | Find everything outdated in scope and bring it current, in commit order |
+| `/package-updater:update-package <name>` | `package-updater:update-package <name>` | Take one named package to a target version everywhere it is pinned |
+| `/package-updater:update-toolchain [tool]` | `package-updater:update-toolchain [tool]` | Move `.tool-versions`, `.nvmrc`, `packageManager` and `engines`, one tool per commit |
 
 "What's out of date?" → `update`, which also takes `--audit-only` to
 report without writing. One package you already know is stale →

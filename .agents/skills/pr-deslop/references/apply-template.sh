@@ -26,7 +26,7 @@
 #     `reword-map.tsv` records the mapping for audit/provenance only.
 #
 # Stages explicit paths only — never `git add -A` / `git add .` per
-# the `commit` skill (rule line 187).
+# the `commit` skill.
 #
 # Exit codes:
 #   0  — all checkpointed steps complete.

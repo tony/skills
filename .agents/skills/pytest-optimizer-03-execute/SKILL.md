@@ -9,10 +9,11 @@ description: >-
   every item to execution-log.json and resumes from the last applied index,
   so it is crash-safe and idempotent. Refuses to run on a dirty tree. Use
   after 02-plan to land the speedups as separate, verified commits.
+disable-model-invocation: true
 allowed-tools: ["Bash", "Read", "Grep", "Glob", "Write", "Edit", "AskUserQuestion"]
 metadata:
   argument-hint: "[--from=<index>] [--dry-run] [--memory-dir=<path>]"
-  source: "plugins/pytest-optimizer/commands/03-execute.md"
+  source: "plugins/pytest-optimizer/skills/03-execute/SKILL.md"
 ---
 
 # 03-execute

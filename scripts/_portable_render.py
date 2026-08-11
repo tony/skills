@@ -30,7 +30,13 @@ imports nothing from its caller.
 """
 PLUGINS_DIR = REPO_ROOT / "plugins"
 
-SPEC_FRONTMATTER_KEYS = ("name", "description", "allowed-tools", "metadata")
+SPEC_FRONTMATTER_KEYS = (
+    "name",
+    "description",
+    "allowed-tools",
+    "disable-model-invocation",
+    "metadata",
+)
 """Frontmatter keys the portable export is allowed to emit, in output order."""
 
 RESOURCE_DIRS = ("references", "templates", "docs", "assets")
@@ -64,6 +70,7 @@ TOKEN_RE = re.compile(
     | (?P<repo>"""
     + REPO_PATH_PATTERN
     + r""")(?::\d+(?:-\d+)?)?
+    | (?P<rel>(?<![A-Za-z0-9._/-])\.\./[A-Za-z0-9._/-]+)
     | (?P<res>(?<![A-Za-z0-9._/-])(?:references|templates|docs|assets)/[A-Za-z0-9._/-]+)
     | (?P<slash>(?<![A-Za-z0-9/])/[a-z][a-z0-9-]*:[a-z0-9][a-z0-9-]*)
     """,
@@ -241,7 +248,14 @@ def _fold_description(text: str) -> list[str]:
     return lines
 
 
-def _render_frontmatter(name: str, description: str, tools: object, meta: dict[str, str]) -> str:
+def _render_frontmatter(
+    name: str,
+    description: str,
+    tools: object,
+    meta: dict[str, str],
+    *,
+    model_invocable: bool = True,
+) -> str:
     """Render the portable frontmatter block, spec keys only.
 
     Parameters
@@ -254,6 +268,10 @@ def _render_frontmatter(name: str, description: str, tools: object, meta: dict[s
         ``allowed-tools`` value carried over from the source, or None.
     meta : dict[str, str]
         ``metadata`` string map (provenance and the original argument hint).
+    model_invocable : bool
+        False when the source forbids the router firing this skill. Dropping
+        that on export would publish a name-only workflow into a routing
+        corpus, which is the one thing the source said not to do.
 
     Returns
     -------
@@ -261,6 +279,8 @@ def _render_frontmatter(name: str, description: str, tools: object, meta: dict[s
         The frontmatter block including its delimiters.
     """
     lines = ["---", f"name: {name}", "description: >-", *_fold_description(description)]
+    if not model_invocable:
+        lines.append("disable-model-invocation: true")
     if tools is not None:
         lines.append(f"allowed-tools: {json.dumps(tools)}")
     if meta:
@@ -503,7 +523,13 @@ class SkillBuilder:
         hint = t.cast("str | None", fm.get("argument-hint") or desc_fm.get("argument-hint"))
         if hint is not None:
             meta["argument-hint"] = hint
-        header = _render_frontmatter(self._skill.name, description, fm.get("allowed-tools"), meta)
+        header = _render_frontmatter(
+            self._skill.name,
+            description,
+            fm.get("allowed-tools"),
+            meta,
+            model_invocable=not fm.get("disable-model-invocation", False),
+        )
         return header + body
 
     def _source_paths(self) -> list[str]:
@@ -544,7 +570,10 @@ class SkillBuilder:
                 # through untouched rather than failing the whole export.
                 self._files[rel] = (src.read_bytes(), mode)
                 continue
-            base = plugin
+            # A resource resolves its own relative links from where it sits, not
+            # from the plugin root. ``_resolve`` still falls back to the plugin
+            # root, so a root-relative link in the same file keeps working.
+            base = src.parent
             if src.suffix == _MARKDOWN_SUFFIX:
                 text = self._transform_markdown(raw, plugin, base)
             else:
@@ -682,6 +711,12 @@ class SkillBuilder:
             if raw is None:
                 return "the plugin root", False
             return self._replace_path(raw.lstrip("/"), plugin, plugin)
+        if match.group("rel") is not None:
+            # A skill addresses its plugin's shared resources by climbing out of
+            # its own directory, the spelling both hosts resolve without
+            # substitution. Flattening the export severs that climb, so the
+            # target is vendored exactly as a ${CLAUDE_PLUGIN_ROOT} path was.
+            return self._replace_path(match.group("rel"), plugin, base)
         return self._replace_path(match.group("res"), plugin, base)
 
     def _replace_slash(self, token: str) -> tuple[str | None, bool]:

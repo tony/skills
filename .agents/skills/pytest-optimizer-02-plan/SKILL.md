@@ -9,10 +9,11 @@ description: >-
   drafts one why/what commit per speedup with its verify command. Runs
   inside plan mode and presents the plan for approval. Writes plan.json. Use
   after 01-benchmark to decide what to apply and in what order.
+disable-model-invocation: true
 allowed-tools: ["Bash", "Read", "Grep", "Glob", "Write", "AskUserQuestion"]
 metadata:
   argument-hint: "[--max-commits=N] [--min-score=<0..1>] [--force] [--memory-dir=<path>]"
-  source: "plugins/pytest-optimizer/commands/02-plan.md"
+  source: "plugins/pytest-optimizer/skills/02-plan/SKILL.md"
 ---
 
 # 02-plan

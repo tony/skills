@@ -70,15 +70,18 @@ def _discover_plugins() -> list[str]:
 
 PLUGINS = _discover_plugins()
 
-WEAVE_PRESENT_RESULTS = "${CLAUDE_PLUGIN_ROOT}/references/present-results.md"
-WEAVE_WORKER_REFERENCE = "${CLAUDE_PLUGIN_ROOT}/references/worker-backends.md"
+WEAVE_PRESENT_RESULTS = "../../references/present-results.md"
+WEAVE_WORKER_REFERENCE = "../../references/worker-backends.md"
 PORTABLE_HEADLESS_DEFAULT_MARKER = "<!-- portable: ask-user-choice=headless-default -->"
-WEAVE_MUTATING_COMMANDS = frozenset({"architecture.md", "execute.md", "prompt.md"})
+WEAVE_MUTATING_SKILLS = frozenset({"architecture", "execute", "prompt"})
 
 app = typer.Typer(help="E2E plugin lifecycle tests for ai-workflow-plugins.")
 console = rich.console.Console()
 
 Source = t.Literal["local", "github", "both"]
+Host = t.Literal["claude", "codex", "both"]
+
+CODEX_SKILL_ENTRY_RE = re.compile(r"^- (?P<id>[A-Za-z0-9:._-]+):", re.MULTILINE)
 
 TestCase = tuple[str, t.Callable[[], None]]
 
@@ -136,8 +139,8 @@ def _run_test(label: str, fn: t.Callable[[], None]) -> bool:
     except TestFailureError as exc:
         _fail(label, str(exc))
         return False
-    except subprocess.TimeoutExpired:
-        _fail(label, "Command timed out (120s)")
+    except subprocess.TimeoutExpired as exc:
+        _fail(label, f"Command timed out ({exc.timeout:.0f}s)")
         return False
     return True
 
@@ -166,14 +169,19 @@ def _parse_frontmatter(path: Path) -> dict[str, t.Any]:
 
 
 def _test_static_frontmatter() -> list[TestCase]:
-    """Verify command frontmatter has required fields and bare tool names."""
+    """Verify skill frontmatter has required fields and bare tool names.
+
+    Skills are the only component that carries ``allowed-tools`` here, and a
+    parenthesized pattern in one binds the entry to a single ecosystem's
+    command line, which is what this repo's language-agnostic rule forbids.
+    """
     tests: list[TestCase] = []
 
     for plugin in PLUGINS:
-        commands_dir = REPO_ROOT / "plugins" / plugin / "commands"
+        commands_dir = REPO_ROOT / "plugins" / plugin / "skills"
         if not commands_dir.is_dir():
             continue
-        for cmd_file in sorted(commands_dir.glob("*.md")):
+        for cmd_file in sorted(commands_dir.glob("*/SKILL.md")):
 
             def _check_frontmatter(p: Path = cmd_file) -> None:
                 fm = _parse_frontmatter(p)
@@ -185,7 +193,14 @@ def _test_static_frontmatter() -> list[TestCase]:
                     "description" in fm,
                     f"{p.relative_to(REPO_ROOT)}: missing 'description' in frontmatter",
                 )
-                allowed: str = t.cast("str", fm.get("allowed-tools", ""))
+                # Every skill here writes allowed-tools as a YAML list, so a
+                # substring test against the parsed value asks whether "(" is
+                # an element and is always False. Join first.
+                raw = t.cast("object", fm.get("allowed-tools", ""))
+                names: list[object] = (
+                    t.cast("list[object]", raw) if isinstance(raw, list) else [raw]
+                )
+                allowed = " ".join(str(n) for n in names)
                 if allowed:
                     rel = p.relative_to(REPO_ROOT)
                     detail = f"(no parenthesized patterns): {allowed}"
@@ -193,7 +208,7 @@ def _test_static_frontmatter() -> list[TestCase]:
                     _assert("(" not in allowed, msg)
 
             tests.append(
-                (f"frontmatter: {plugin}/{cmd_file.name}", _check_frontmatter),
+                (f"frontmatter: {plugin}/{cmd_file.parent.name}", _check_frontmatter),
             )
 
     return tests
@@ -412,7 +427,7 @@ def _weave_result_commands(commands_dir: Path) -> tuple[Path, ...]:
     """Derive weave commands that render through the shared result contract."""
     return tuple(
         path
-        for path in sorted(commands_dir.glob("*.md"))
+        for path in sorted(commands_dir.glob("*/SKILL.md"))
         if WEAVE_PRESENT_RESULTS in path.read_text(encoding="utf-8")
     )
 
@@ -420,7 +435,7 @@ def _weave_result_commands(commands_dir: Path) -> tuple[Path, ...]:
 def _weave_ensemble_commands(commands_dir: Path) -> tuple[Path, ...]:
     """Derive ensemble commands from all shared result-rendering callers."""
     return tuple(
-        path for path in _weave_result_commands(commands_dir) if path.name != "fix-review.md"
+        path for path in _weave_result_commands(commands_dir) if path.parent.name != "fix-review"
     )
 
 
@@ -436,7 +451,7 @@ def _session_contract_text(command_path: Path, text: str) -> str:
     if '"session_id"' in text:
         return text
     inherited = re.search(
-        r"Follow Phase 2 .*?\$\{CLAUDE_PLUGIN_ROOT\}/commands/([^`]+\.md)`",
+        r"Follow Phase 2 .*?\.\./([^`/]+)/SKILL\.md`",
         text,
         re.DOTALL,
     )
@@ -445,7 +460,7 @@ def _session_contract_text(command_path: Path, text: str) -> str:
         f"{command_path.relative_to(REPO_ROOT)}: session template is neither local nor inherited",
     )
     inherited_match = t.cast("re.Match[str]", inherited)
-    inherited_path = command_path.parent / inherited_match.group(1)
+    inherited_path = command_path.parent.parent / inherited_match.group(1) / "SKILL.md"
     _assert(
         inherited_path.is_file(),
         f"{command_path.relative_to(REPO_ROOT)}: inherited session command is missing",
@@ -564,7 +579,7 @@ def _assert_weave_worker_command(command_path: Path) -> None:
         f"{rel}: MODELS must be conditional on model-clis and null otherwise",
     )
 
-    if command_path.name in WEAVE_MUTATING_COMMANDS:
+    if command_path.parent.name in WEAVE_MUTATING_SKILLS:
         heading = "## Native mutating lifecycle"
         _assert(heading in text, f"{rel}: native mutating lifecycle is missing")
         native_lifecycle = text.split(heading, 1)[1].split("\n## ", 1)[0].lower()
@@ -600,7 +615,7 @@ def _assert_weave_worker_portable_contract(commands_dir: Path) -> None:
     ).read_text(encoding="utf-8")
 
     for command_path in _weave_ensemble_commands(commands_dir):
-        skill_name = f"weave-{command_path.stem}"
+        skill_name = f"weave-{command_path.parent.name}"
         skill_dir = REPO_ROOT / ".agents" / "skills" / skill_name
         skill_path = skill_dir / "SKILL.md"
         rel = skill_path.relative_to(REPO_ROOT)
@@ -630,7 +645,7 @@ def _assert_weave_worker_portable_contract(commands_dir: Path) -> None:
 def _test_static_weave_worker_backends() -> list[TestCase]:
     """Verify every weave ensemble resolves its worker backend before execution."""
     weave_dir = REPO_ROOT / "plugins" / "weave"
-    commands_dir = weave_dir / "commands"
+    commands_dir = weave_dir / "skills"
     reference_path = weave_dir / "references" / "worker-backends.md"
     result_commands = _weave_result_commands(commands_dir)
     ensemble_commands = _weave_ensemble_commands(commands_dir)
@@ -642,7 +657,7 @@ def _test_static_weave_worker_backends() -> list[TestCase]:
         (
             "weave worker backend: command coverage",
             lambda: _assert(
-                set(result_commands) == set(commands_dir.glob("*.md")),
+                set(result_commands) == set(commands_dir.glob("*/SKILL.md")),
                 "weave worker backend: every command must declare its result contract",
             ),
         ),
@@ -650,13 +665,13 @@ def _test_static_weave_worker_backends() -> list[TestCase]:
 
     tests.extend(
         (
-            f"weave worker backend: {command_path.name}",
+            f"weave worker backend: {command_path.parent.name}",
             lambda p=command_path: _assert_weave_worker_command(p),
         )
         for command_path in ensemble_commands
     )
 
-    fix_review_path = commands_dir / "fix-review.md"
+    fix_review_path = commands_dir / "fix-review" / "SKILL.md"
     tests.append(
         (
             "weave worker backend: fix-review result contract",
@@ -675,7 +690,7 @@ def _test_static_weave_worker_backends() -> list[TestCase]:
 def _test_static_weave_timeouts() -> list[TestCase]:
     """Verify weave command timeout multipliers are consistent (0.5x/1.5x)."""
     tests: list[TestCase] = []
-    weave_commands_dir = REPO_ROOT / "plugins" / "weave" / "commands"
+    weave_commands_dir = REPO_ROOT / "plugins" / "weave" / "skills"
     if not weave_commands_dir.is_dir():
         return tests
 
@@ -709,7 +724,7 @@ def _test_static_weave_timeouts() -> list[TestCase]:
                 f"{rel}: Long={long_}s but expected {expected_long}s (1.5x {default}s)",
             )
 
-        tests.append((f"weave timeouts: {cmd_file.name}", _check_timeouts))
+        tests.append((f"weave timeouts: {cmd_file.parent.name}", _check_timeouts))
 
     return tests
 
@@ -717,13 +732,13 @@ def _test_static_weave_timeouts() -> list[TestCase]:
 def _test_static_weave_stderr_redirects() -> list[TestCase]:
     """Verify fallback agent CLI uses append (2>>) not overwrite (2>)."""
     tests: list[TestCase] = []
-    weave_commands_dir = REPO_ROOT / "plugins" / "weave" / "commands"
+    weave_commands_dir = REPO_ROOT / "plugins" / "weave" / "skills"
     if not weave_commands_dir.is_dir():
         return tests
 
     def _check_redirects() -> None:
         bad_files: list[str] = []
-        for cmd_file in sorted(weave_commands_dir.glob("*.md")):
+        for cmd_file in sorted(weave_commands_dir.glob("*/SKILL.md")):
             text = cmd_file.read_text(encoding="utf-8")
             for line in text.splitlines():
                 if "agent " in line and '2>"$SESSION_DIR' in line:
@@ -741,11 +756,11 @@ def _test_static_weave_stderr_redirects() -> list[TestCase]:
 def _test_static_agy_invocations() -> list[TestCase]:
     """Verify agy invocations put -p last and weave commands add </dev/null."""
     tests: list[TestCase] = []
-    weave_commands_dir = REPO_ROOT / "plugins" / "weave" / "commands"
+    weave_commands_dir = REPO_ROOT / "plugins" / "weave" / "skills"
     flag_order_files = [
         REPO_ROOT / "plugins" / "model-cli" / "README.md",
         REPO_ROOT / "plugins" / "model-cli" / "skills" / "agy" / "SKILL.md",
-        *sorted(weave_commands_dir.glob("*.md")),
+        *sorted(weave_commands_dir.glob("*/SKILL.md")),
     ]
     # agy's -p/--print/--prompt is a Go-style value-flag: it must come last, or it
     # swallows the next flag as the prompt. Flag a print-flag right after `agy`, or a
@@ -769,7 +784,7 @@ def _test_static_agy_invocations() -> list[TestCase]:
     def _check_stdin_guard() -> None:
         offenders: list[str] = []
         if weave_commands_dir.is_dir():
-            for cmd_file in sorted(weave_commands_dir.glob("*.md")):
+            for cmd_file in sorted(weave_commands_dir.glob("*/SKILL.md")):
                 lines = cmd_file.read_text(encoding="utf-8").splitlines()
                 for num, line in enumerate(lines, 1):
                     if (
@@ -789,7 +804,7 @@ def _test_static_agy_invocations() -> list[TestCase]:
         # wrapper must therefore capture `rc=$?` and `exit "$rc"` after cleanup.
         offenders: list[str] = []
         if weave_commands_dir.is_dir():
-            for cmd_file in sorted(weave_commands_dir.glob("*.md")):
+            for cmd_file in sorted(weave_commands_dir.glob("*/SKILL.md")):
                 lines = cmd_file.read_text(encoding="utf-8").splitlines()
                 for num, line in enumerate(lines, 1):
                     if 'worktree add -q --detach "$AGY_RO_WT"' in line and 'exit "$rc"' not in line:
@@ -805,7 +820,7 @@ def _test_static_agy_invocations() -> list[TestCase]:
         # land a Google result in outputs/gpt.md); GPT falls back to agent.
         offenders: list[str] = []
         if weave_commands_dir.is_dir():
-            for cmd_file in sorted(weave_commands_dir.glob("*.md")):
+            for cmd_file in sorted(weave_commands_dir.glob("*/SKILL.md")):
                 heading = ""
                 lines = cmd_file.read_text(encoding="utf-8").splitlines()
                 for num, line in enumerate(lines, 1):
@@ -982,6 +997,214 @@ def _test_marketplace_remove(sandbox: Path) -> list[TestCase]:
 
 
 # ---------------------------------------------------------------------------
+# Codex plugin lifecycle
+# ---------------------------------------------------------------------------
+
+
+def _run_codex(
+    args: list[str],
+    sandbox: Path,
+    cwd: Path | None = None,
+) -> subprocess.CompletedProcess[str]:
+    """Run a ``codex`` CLI command against a throwaway Codex home.
+
+    ``CODEX_HOME`` holds Codex's config, marketplace snapshots, and plugin
+    cache. ``HOME`` is redirected too, so a skill already installed under the
+    developer's own ``~/.agents/skills`` cannot satisfy an assertion that a
+    plugin was supposed to. Codex refuses a ``CODEX_HOME`` that does not exist
+    rather than creating it, so both directories are made up front.
+    """
+    home = sandbox / "home"
+    codex_home = sandbox / "codex"
+    for directory in (home, codex_home):
+        directory.mkdir(parents=True, exist_ok=True)
+    env = {**os.environ, "HOME": str(home), "CODEX_HOME": str(codex_home)}
+    return subprocess.run(  # noqa: S603
+        ["codex", *args],  # noqa: S607
+        capture_output=True,
+        text=True,
+        env=env,
+        cwd=str(cwd) if cwd is not None else None,
+        timeout=300,
+        check=False,
+    )
+
+
+def _codex_skill_ids() -> dict[str, list[str]]:
+    """Map each plugin to the skill IDs Codex should expose for it.
+
+    Keyed on the frontmatter ``name`` rather than the directory, because that
+    is what Codex prefixes with the plugin name to build the invocable ID.
+    """
+    ids: dict[str, list[str]] = {}
+    for plugin in PLUGINS:
+        skills = REPO_ROOT / "plugins" / plugin / "skills"
+        if not skills.is_dir():
+            continue
+        names = [
+            t.cast("str", _parse_frontmatter(md).get("name", md.parent.name))
+            for md in sorted(skills.glob("*/SKILL.md"))
+        ]
+        if names:
+            ids[plugin] = sorted(f"{plugin}:{name}" for name in names)
+    return ids
+
+
+def _declared_codex_version(plugin: str) -> str:
+    """Return the version a plugin's Codex manifest declares."""
+    manifest = REPO_ROOT / "plugins" / plugin / ".codex-plugin" / "plugin.json"
+    declared: dict[str, t.Any] = json.loads(  # pyright: ignore[reportAny]
+        manifest.read_text(encoding="utf-8"),
+    )
+    return t.cast("str", declared["version"])
+
+
+def _codex_prompt_skill_ids(sandbox: Path, project: Path) -> set[str]:
+    """Return every skill ID Codex puts in front of the model, in *project*."""
+    result = _run_codex(["debug", "prompt-input"], sandbox, cwd=project)
+    _assert(
+        result.returncode == 0,
+        f"debug prompt-input: exit {result.returncode}: {result.stderr[-400:]}",
+    )
+    messages = t.cast("list[dict[str, t.Any]]", json.loads(result.stdout))
+    blocks = [
+        t.cast("str", block.get("text", ""))
+        for message in messages
+        for block in t.cast("list[dict[str, t.Any]]", message.get("content", []))
+    ]
+    text = "\n".join(blocks)
+    start = text.find("<skills_instructions>")
+    _assert(start >= 0, "prompt carries no skills block")
+    end = text.find("</skills_instructions>", start)
+    # Falling back to the rest of the prompt would let any "- foo:bar:" bullet
+    # downstream count as a delivered skill, turning a malformed prompt into a
+    # pass.
+    _assert(end > start, "skills block is not closed")
+    catalog = text[start:end]
+    return {m.group("id") for m in CODEX_SKILL_ENTRY_RE.finditer(catalog)}
+
+
+def _test_static_codex_manifests() -> list[TestCase]:
+    """Verify every plugin declares a Codex manifest over a populated skills dir."""
+    tests: list[TestCase] = []
+    marketplace = REPO_ROOT / ".agents" / "plugins" / "marketplace.json"
+
+    def _check_marketplace() -> None:
+        _assert(marketplace.is_file(), "Codex marketplace.json not found")
+        data: dict[str, t.Any] = json.loads(  # pyright: ignore[reportAny]
+            marketplace.read_text(encoding="utf-8"),
+        )
+        entries = t.cast("list[dict[str, t.Any]]", data.get("plugins", []))
+        names = {t.cast("str", e["name"]) for e in entries}
+        for plugin in PLUGINS:
+            _assert(plugin in names, f"'{plugin}' missing from Codex marketplace.json")
+        for entry in entries:
+            name = t.cast("str", entry.get("name", "<unnamed>"))
+            source = t.cast("dict[str, t.Any]", entry.get("source", {}))
+            path = t.cast("str", source.get("path", ""))
+            _assert(path.startswith("./"), f"Codex entry '{name}': path must start with './'")
+            _assert((REPO_ROOT / path).is_dir(), f"Codex entry '{name}': '{path}' does not exist")
+            policy = t.cast("dict[str, t.Any]", entry.get("policy", {}))
+            for f in ("installation", "authentication"):
+                _assert(f in policy, f"Codex entry '{name}': policy missing '{f}'")
+
+    tests.append(("Codex marketplace.json validation", _check_marketplace))
+
+    for plugin in PLUGINS:
+
+        def _check_manifest(name: str = plugin) -> None:
+            d = REPO_ROOT / "plugins" / name
+            manifest = d / ".codex-plugin" / "plugin.json"
+            _assert(manifest.is_file(), f"{name}: missing .codex-plugin/plugin.json")
+            data: dict[str, t.Any] = json.loads(  # pyright: ignore[reportAny]
+                manifest.read_text(encoding="utf-8"),
+            )
+            for field in ("name", "version", "description", "skills"):
+                _assert(field in data, f"{name}: Codex manifest missing '{field}'")
+            skills = t.cast("str", data["skills"])
+            target = d / skills.removeprefix("./")
+            _assert(target.is_dir(), f"{name}: skills path '{skills}' does not exist")
+            _assert(any(target.glob("*/SKILL.md")), f"{name}: '{skills}' holds no SKILL.md")
+
+        tests.append((f"codex manifest: {plugin}", _check_manifest))
+
+    return tests
+
+
+def _test_codex_lifecycle(sandbox: Path) -> list[TestCase]:
+    """Build the Codex marketplace add -> install -> prompt -> remove cases."""
+    tests: list[TestCase] = []
+    project = sandbox / "project"
+    expected = _codex_skill_ids()
+
+    def _marketplace_add() -> None:
+        r = _run_codex(["plugin", "marketplace", "add", str(REPO_ROOT), "--json"], sandbox)
+        _assert(r.returncode == 0, f"exit {r.returncode}: {r.stdout}{r.stderr}")
+        payload = t.cast("dict[str, t.Any]", json.loads(r.stdout))
+        added = t.cast("str | None", payload.get("marketplaceName"))
+        _assert(added == MARKETPLACE_NAME, f"marketplace name is {added!r}")
+
+    tests.append(("codex marketplace add", _marketplace_add))
+
+    def _list_available() -> None:
+        r = _run_codex(["plugin", "list", "--available", "--json"], sandbox)
+        _assert(r.returncode == 0, f"exit {r.returncode}: {r.stdout}{r.stderr}")
+        payload = t.cast("dict[str, t.Any]", json.loads(r.stdout))
+        available = t.cast("list[dict[str, t.Any]]", payload.get("available", []))
+        listed = {t.cast("str", p["name"]): p for p in available}
+        for plugin in PLUGINS:
+            _assert(plugin in listed, f"'{plugin}' not offered by Codex")
+            # Codex falls back to .claude-plugin/plugin.json when the Codex
+            # manifest is absent, so a non-null version proves nothing; a
+            # mismatch is what catches the two manifests disagreeing.
+            want = _declared_codex_version(plugin)
+            got = t.cast("str | None", listed[plugin].get("version"))
+            _assert(got == want, f"'{plugin}': Codex reports {got!r}, manifest declares {want!r}")
+
+    tests.append((f"codex list --available ({len(PLUGINS)} offered)", _list_available))
+
+    for plugin in PLUGINS:
+
+        def _install(name: str = plugin) -> None:
+            r = _run_codex(["plugin", "add", f"{name}@{MARKETPLACE_NAME}", "--json"], sandbox)
+            _assert(r.returncode == 0, f"install {name}: exit {r.returncode}: {r.stderr[-300:]}")
+
+        tests.append((f"codex install: {plugin}", _install))
+
+    def _skills_reach_model() -> None:
+        project.mkdir(parents=True, exist_ok=True)
+        seen = _codex_prompt_skill_ids(sandbox, project)
+        missing = sorted(i for ids in expected.values() for i in ids if i not in seen)
+        _assert(not missing, f"{len(missing)} skill(s) never reached the model: {missing[:8]}")
+
+    total = sum(len(v) for v in expected.values())
+    tests.append((f"codex skills reach the model ({total} IDs)", _skills_reach_model))
+
+    def _teardown() -> None:
+        for plugin in PLUGINS:
+            r = _run_codex(["plugin", "remove", f"{plugin}@{MARKETPLACE_NAME}"], sandbox)
+            _assert(r.returncode == 0, f"remove {plugin}: exit {r.returncode}: {r.stderr[-200:]}")
+        r = _run_codex(["plugin", "marketplace", "remove", MARKETPLACE_NAME], sandbox)
+        _assert(r.returncode == 0, f"marketplace remove: exit {r.returncode}: {r.stderr[-200:]}")
+        r2 = _run_codex(["plugin", "marketplace", "list"], sandbox)
+        _assert(MARKETPLACE_NAME not in r2.stdout, f"still configured: {r2.stdout}")
+
+    tests.append((f"codex remove ({len(PLUGINS)} plugins) and marketplace", _teardown))
+    return tests
+
+
+def _run_codex_suite() -> tuple[int, int]:
+    """Run the Codex lifecycle in a sandbox that outlives no single test."""
+    console.print("\n[bold]Host: codex[/bold]")
+    sandbox = Path(tempfile.mkdtemp(prefix="codex-e2e-"))
+    try:
+        tests = _test_codex_lifecycle(sandbox)
+        return sum(_run_test(name, fn) for name, fn in tests), len(tests)
+    finally:
+        shutil.rmtree(sandbox, ignore_errors=True)
+
+
+# ---------------------------------------------------------------------------
 # Suite runner
 # ---------------------------------------------------------------------------
 
@@ -1023,8 +1246,11 @@ def _run_suite(source_type: t.Literal["local", "github"]) -> tuple[int, int]:
 @app.command()
 def main(
     source: t.Annotated[Source, typer.Option(help="Source type: local, github, or both")] = "local",
+    host: t.Annotated[
+        Host, typer.Option(help="Host CLI to exercise: claude, codex, or both")
+    ] = "both",
 ) -> None:
-    """Run E2E plugin lifecycle tests against the Claude CLI."""
+    """Run E2E plugin lifecycle tests against the Claude and Codex CLIs."""
     console.print("[bold]E2E Plugin Lifecycle Tests[/bold]")
     console.print("=" * 40)
 
@@ -1035,6 +1261,7 @@ def main(
     static_tests.extend(_test_static_plugin_structure())
     static_tests.extend(_test_static_agent_skill_frontmatter())
     static_tests.extend(_test_static_marketplace_json())
+    static_tests.extend(_test_static_codex_manifests())
     static_tests.extend(_test_static_weave_worker_backends())
     static_tests.extend(_test_static_weave_timeouts())
     static_tests.extend(_test_static_weave_stderr_redirects())
@@ -1045,19 +1272,30 @@ def main(
     total_passed = static_passed
     total_tests = static_total
 
-    if shutil.which("claude") is None:
-        console.print(
-            "\n[yellow]Warning:[/yellow] 'claude' CLI not found in PATH -- skipping CLI tests",
-        )
-    else:
-        sources: list[t.Literal["local", "github"]]
-        if source == "both":
-            sources = ["local", "github"]
+    if host in {"claude", "both"}:
+        if shutil.which("claude") is None:
+            console.print(
+                "\n[yellow]Warning:[/yellow] 'claude' CLI not found in PATH -- skipping CLI tests",
+            )
         else:
-            sources = [source]
+            sources: list[t.Literal["local", "github"]]
+            if source == "both":
+                sources = ["local", "github"]
+            else:
+                sources = [source]
 
-        for src in sources:
-            passed, total = _run_suite(src)
+            for src in sources:
+                passed, total = _run_suite(src)
+                total_passed += passed
+                total_tests += total
+
+    if host in {"codex", "both"}:
+        if shutil.which("codex") is None:
+            console.print(
+                "\n[yellow]Warning:[/yellow] 'codex' CLI not found in PATH -- skipping Codex tests",
+            )
+        else:
+            passed, total = _run_codex_suite()
             total_passed += passed
             total_tests += total
 

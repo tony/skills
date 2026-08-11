@@ -41,7 +41,7 @@ a house voice, that governs — match it.
 
 ## Deeper catalog
 
-See `${CLAUDE_PLUGIN_ROOT}/references/lean-rubric.md` for the full
+See `../../references/lean-rubric.md` for the full
 signature list, preservation rules, and the "add a table / file / test"
 decision blocks.
 

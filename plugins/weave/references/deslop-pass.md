@@ -36,8 +36,8 @@ file, no summary block.
 The slop taxonomy is owned by the `pr` plugin. Weave never ships a copy.
 Resolve at runtime in this order:
 
-1. `${CLAUDE_PLUGIN_ROOT}/../pr/references/signatures.yml`
-2. `${CLAUDE_PLUGIN_ROOT}/../slop/references/signatures.yml`
+1. `../../pr/references/signatures.yml`
+2. `../../slop/references/signatures.yml`
 3. If neither exists, emit one line and return:
 
    ```
@@ -49,14 +49,14 @@ Resolve at runtime in this order:
 
 Apply the project overlay `.claude/deslop.local.yml` if present (same
 `replace:` / `append:` / `delete:` semantics as `/pr:deslop`, see
-`plugins/pr/commands/deslop.md:285-310`). Hash the resolved registry
+`plugins/pr/skills/deslop/SKILL.md`). Hash the resolved registry
 (sha256) for the audit record.
 
 ---
 
 ## Step 2 — Tone calibration
 
-Mirror `plugins/pr/commands/deslop.md:254-275`. Read the last 50 commit
+Mirror `plugins/pr/skills/deslop/SKILL.md`. Read the last 50 commit
 messages on the locked baseline:
 
 ```bash
@@ -94,7 +94,7 @@ the artifact is one file). Sub-agent contract:
 
 The prompt receives the artifact text, the registry filtered to
 `kind: semantic`, and the Step 2 tone calibration. The
-**anti-slop-on-slop constraint** from `plugins/pr/commands/deslop.md:346-353`
+**anti-slop-on-slop constraint** from `plugins/pr/skills/deslop/SKILL.md`
 applies verbatim:
 
 > Do not introduce slop in your suggested replacements. Do not use

@@ -3,10 +3,11 @@ name: github-actions-update-action
 description: >-
   Update one named GitHub Action to its current version — verify the tag
   exists, research the upgrade, and commit it with release links
+disable-model-invocation: true
 allowed-tools: ["Bash", "Read", "Grep", "Glob", "Edit", "WebSearch", "WebFetch", "AskUserQuestion"]
 metadata:
   argument-hint: "<owner/action> [target version] [--repo <path|slug>...] [--pr] [--no-push]"
-  source: "plugins/github-actions/commands/update-action.md"
+  source: "plugins/github-actions/skills/update-action/SKILL.md"
 ---
 
 # Update One GitHub Action

@@ -3,10 +3,11 @@ name: weave-review
 description: >-
   Weave code review — run independent adversarial reviews in parallel, then
   synthesize findings
+disable-model-invocation: true
 allowed-tools: ["Bash", "Read", "Grep", "Glob", "Write", "Task", "AskUserQuestion", "EnterPlanMode", "ExitPlanMode"]
 metadata:
   argument-hint: "[focus area] [--cascade] [--passes=N] [--timeout=N|none] [--mode=fast|balanced|deep] [--no-deslop|--quiet-deslop|--verbose-deslop] [--workers=subagents|model-clis]"
-  source: "plugins/weave/commands/review.md"
+  source: "plugins/weave/skills/review/SKILL.md"
 ---
 
 # Weave Code Review

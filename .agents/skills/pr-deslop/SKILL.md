@@ -12,10 +12,11 @@ description: >-
   fixup commits (and `--fixup=reword:` for commit-message slop), then
   optionally runs `git rebase -i --autosquash`, running the project's
   formatter, linter, and type-checker on every conflict pause.
+disable-model-invocation: true
 allowed-tools: ["Bash", "Read", "Grep", "Glob", "Edit", "Write", "AskUserQuestion", "Task"]
 metadata:
   argument-hint: "[<commit-range>] [--apply-patches] [--apply-rebase] [--budget=strict|default|lax] [--targets=diff,messages,both] [--message-only | --diff-only] [--since=<ref>] [--force-rewrite-pushed] [--run-tests] [--no-semantic] [--taxonomy=<path>]"
-  source: "plugins/pr/commands/deslop.md"
+  source: "plugins/pr/skills/deslop/SKILL.md"
 ---
 
 # this skill
@@ -40,7 +41,7 @@ voice on `origin/<trunk>` (not `HEAD`) before being flagged. The
 skill auto-applies only Tier A signals; Tier B is user-confirmed per
 finding; Tier C is advisory only.
 
-This is a slash command, not a model-invocable skill — history
+This skill is invoked by name, never routed to on the model’s initiative — history
 rewrites must be user-explicit, not router-inferred.
 
 ## Core thesis
@@ -507,7 +508,7 @@ paths, and creates one fixup commit per target. See
 `references/apply-template.sh` for the full contract.
 
 **Never `git add -A` or `git add .`** — explicit paths only, per
-the `commit` skill (rule line 187). This
+the `commit` skill. This
 rule applies to the patch driver too.
 
 If the user chose "Apply patches now" (middle option), stop here.

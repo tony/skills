@@ -13,12 +13,84 @@ description: >-
 allowed-tools: ["Bash", "Read", "Grep", "Glob", "Write", "Task", "AskUserQuestion"]
 metadata:
   argument-hint: "<prompt> [--passes=N] [--timeout=N|none] [--mode=fast|balanced|deep] [--no-deslop|--quiet-deslop|--verbose-deslop] [--workers=subagents|model-clis]"
-  source: "plugins/weave/commands/serene-bliss.md, plugins/weave/skills/serene-bliss/SKILL.md"
+  source: "plugins/weave/skills/serene-bliss/SKILL.md"
 ---
 
 # Weave Serene Bliss
 
-*Selection guidance for this skill is bundled at `references/overview.md`.*
+A three-lens aesthetic brainstorm-and-refine pipeline for DX, documentation,
+and developer-tooling UX work. Each of the three weave variant slots carries
+a different serene-DX lens, so a single invocation yields three
+independent aesthetic takes before the refine phase picks and polishes the
+strongest. Host-native sub-agents are the default; separate model CLIs are
+available by explicit choice.
+
+## When to Use
+
+- Sphinx / MyST / docs site polish (badge styling, navigation, code
+  fixture showcases, dark mode, mobile responsiveness)
+- CLI / TUI output design — where logging and user-facing output need
+  distinct visual channels
+- Developer-tooling UX (error messages, empty states, onboarding flows)
+- Component galleries, docs landing pages, and reference implementations
+  where the output is consumed by humans reading docs
+
+Do **not** use this for implementation work without a reference anchor
+named in the prompt — serene-DX prompts need something concrete to
+compare against.
+
+## The Three Serene Lenses
+
+| Slot | Lens | Aesthetic | Ask of each participant |
+|------|------|-----------|-------------------|
+| 1 | **DX Bliss** | Frictionless, delightful, zero-friction | "Make this feel effortless. Does every interaction feel weightless?" |
+| 2 | **DX Serenity** | Calm, unhurried, information-architectural clarity | "Make this feel like a quiet library. Does the reader's eye rest naturally?" |
+| 3 | **DX Sublimity** | Awe-inducing, showcase-grade, novel | "Make this feel like a first. Would this be memorable enough to screenshot?" |
+
+The lenses are exhaustive for serene-DX work — pick one aesthetic per
+invocation, not all four of the source-skill quality keywords. "Reader
+happiness" collapses into Serenity here; use it as a trigger phrase, not
+a fourth slot.
+
+
+## Context Packet Expectations
+
+Weave builds a standard context packet for every invocation. For
+serene-DX work, make sure the host surfaces these fields before
+invoking, so each lens has something concrete to react to:
+
+- **Reference anchor** — a file path, URL, or snippet of a known-good
+  implementation to compare against (e.g., `libtmux-mcp/custom.css`,
+  a reference Sphinx theme, a CLI whose output you admire).
+- **Current state** — the file, markup, or screenshot description of
+  what looks ugly or broken right now. Name the ugly element
+  explicitly; "the badges look like an eyesore" beats "improve the
+  badges."
+- **Constraint envelope** — what must NOT change (branch, file scope,
+  no mutations) and what must be preserved (accessibility, WCAG,
+  dark mode, `NO_COLOR` / `FORCE_COLOR` handling, mobile
+  responsiveness).
+- **Technology stack** — Sphinx + MyST, Furo variables, React +
+  Tailwind, Python stdlib-only, etc. Each lens responds differently
+  to what's idiomatic in the stack.
+- **Known gaps / unknowns** — open questions the participants should
+  address rather than hand-wave past.
+
+## Anti-Patterns
+
+- **No reference anchor.** Prompting for bliss / serenity / sublimity
+  without a concrete comparison target produces generic advice from
+  every lens. Always name a known-good implementation.
+- **No constraint envelope.** Without explicit "do not modify files"
+  and stack boundaries, models will start proposing edits instead of
+  design critique.
+- **Mixing quality keywords in one invocation.** The three slots
+  already cover the range. Don't rephrase the prompt to ask for
+  "bliss and serenity and sublimity at once" — that defeats the
+  lens-differentiation that makes the brainstorm phase useful.
+- **Using this for implementation tasks.** Serene-bliss is a
+  design-research pattern. For actual code changes, run
+  the `weave-execute` skill or the `weave-prompt` skill instead.
 
 A first-class three-lens brainstorm-and-refine command for
 developer-experience, documentation, and tooling-UX design work. Three
@@ -686,14 +758,6 @@ events.jsonl, latest symlink.
 
 ---
 
-## Relationship to the skill
-
-The `weave:serene-bliss` skill at
-this skill auto-discovers on serene-DX
-vocabulary ("serene bliss", "DX bliss", "DX serenity", "DX sublimity",
-"reader happiness", etc.) and routes to this command. The skill owns
-the trigger surface; this command owns the execution contract, the
-canonical preamble text, and the panel judging protocol.
 
 
 ## Portability notes

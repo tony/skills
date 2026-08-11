@@ -179,7 +179,7 @@ filled per command.
 ```markdown
 ### Phase N: Present results
 
-Read `${CLAUDE_PLUGIN_ROOT}/references/present-results.md` and apply
+Read `../references/present-results.md` and apply
 it with:
 
 - `RESULT_KIND` = `<review|ask|brainstorm|...>`
@@ -245,17 +245,17 @@ the design for future weave-like plugins:
 - `plugins/weave/docs/specs/2026-05-17-clean-output-and-plan-handoff.md` (this file)
 
 **Modified** (13):
-- `plugins/weave/commands/architecture.md`
-- `plugins/weave/commands/ask.md`
-- `plugins/weave/commands/brainstorm-and-refine.md`
-- `plugins/weave/commands/brainstorm.md`
-- `plugins/weave/commands/execute.md`
-- `plugins/weave/commands/fix-review.md` (set `IN_PLAN_MODE=true`)
-- `plugins/weave/commands/plan.md` (set `IN_PLAN_MODE=true`; add the two transition lines)
-- `plugins/weave/commands/prompt.md`
-- `plugins/weave/commands/refine.md`
-- `plugins/weave/commands/review.md`
-- `plugins/weave/commands/serene-bliss.md`
+- `plugins/weave/skills/architecture/SKILL.md`
+- `plugins/weave/skills/ask/SKILL.md`
+- `plugins/weave/skills/brainstorm-and-refine/SKILL.md`
+- `plugins/weave/skills/brainstorm/SKILL.md`
+- `plugins/weave/skills/execute/SKILL.md`
+- `plugins/weave/skills/fix-review/SKILL.md` (set `IN_PLAN_MODE=true`)
+- `plugins/weave/skills/plan/SKILL.md` (set `IN_PLAN_MODE=true`; add the two transition lines)
+- `plugins/weave/skills/prompt/SKILL.md`
+- `plugins/weave/skills/refine/SKILL.md`
+- `plugins/weave/skills/review/SKILL.md`
+- `plugins/weave/skills/serene-bliss/SKILL.md`
 - `plugins/weave/README.md` (point at the new reference)
 - `CLAUDE.md` (add Output Contract Convention subsection)
 
