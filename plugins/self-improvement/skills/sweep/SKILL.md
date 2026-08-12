@@ -116,19 +116,21 @@ Without an invocation:
   rather than presenting adjacency as attribution, and confirm against
   the transcript before proposing anything expensive.
 
+## A superseded skill is not a gap
+
+Check this before the verdicts, because it disqualifies the pattern
+rather than judging it. A predecessor keeps its invocations forever and
+stops earning new ones the day a successor ships, so its ratio stays
+high while its present-tense usage is zero. Split it on the successor's
+birth date: a full record with an empty recent half is **superseded**,
+and every pattern around it is a historical record rather than a gap.
+Say so and move on. The remedy already shipped, and a handoff proposed
+here would point a skill nobody invokes at the one that replaced it.
+
 ## The three verdicts
 
-Before any of them, check that the skill is still where the behavior
-lives. A predecessor keeps its invocations forever and stops earning
-new ones the day a successor ships, so its ratio stays high while its
-present-tense usage is zero. Split it on the successor's birth date: a
-full record with an empty recent half is **superseded**, and every
-pattern around it is a historical record rather than a gap. Say so and
-move on. The remedy already shipped, and a handoff proposed here would
-point a skill nobody invokes at the one that replaced it.
-
-Then, for every pattern, ask what the skill already says. There are
-three answers, and the middle one is the trap:
+For every pattern that survives that check, ask what the skill already
+says. There are three answers, and the middle one is the trap:
 
 1. **Absent** — the skill never covered it. Propose it.
 2. **Present and binding** — the skill covers it and the pastes stop
@@ -225,9 +227,10 @@ near-verbatim repetition — not frequency — is the signal.
 
 ## Phase 3: Verdicts
 
-Run the three verdicts against each cluster that clears the evidence
-bar, and record the ratio, the spread, the window that denominator
-covers, and the mechanic that produced the verdict.
+Drop the superseded clusters first, then run the three verdicts against
+each one that clears the evidence bar, and record the ratio, the
+spread, the window that denominator covers, and the mechanic that
+produced the verdict.
 
 Window each finding against the birth date of the skill that covers
 it, not against one date for the whole sweep. Skills arrive on
