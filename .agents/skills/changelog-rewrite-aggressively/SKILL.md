@@ -104,8 +104,15 @@ Read the sibling command file
 the `changelog` skill and apply its rules
 verbatim — the *Core Constraint* (a branch is not a release), Phase 1
 convention detection, Phase 2 commit categorization, Phase 3 entry
-generation and voice, and its Phase 4 presentation gate. Generate
-entries from the branch's current net change against `origin/<base>`.
+generation and voice, and its Phase 4 presentation gate — including the
+per-entry voice check. Generate entries from the branch's current net
+change against `origin/<base>`.
+
+One exception: the sibling's Phase 4 offers the commit as a choice at
+its approval panel. That choice does not carry here. `--commit` decides
+what lands, it was passed or not before the rebase ran, and re-asking
+after a history rewrite invites a yes that means something different
+from the one the sibling collects.
 
 Entries superseding a mixed commit's surviving changelog hunks may
 update those hunks — they are branch-owned content — but nothing from

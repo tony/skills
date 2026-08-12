@@ -42,8 +42,8 @@ codex plugin add changelog@skills
 1. **Gather context**: Detect project info, read conventions (`AGENTS.md`), find changelog, and collect commits.
 2. **Categorize**: Parse commit types and group related commits.
 3. **Generate**: Draft markdown matching the existing changelog style.
-4. **Review**: Present proposed entries for approval.
-5. **Insert**: Apply approved entries to the unreleased section.
+4. **Review**: Present proposed entries for approval, each named with the reader question it answers, alongside the commit message they would land under.
+5. **Insert**: Apply approved entries to the unreleased section, and commit them when the review step chose to.
 
 ## Refresh and Rewrite
 

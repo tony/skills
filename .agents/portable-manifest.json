@@ -105,7 +105,7 @@
         "plugins/changelog/skills/changelog/SKILL.md"
       ],
       "bundled": {},
-      "bytes": 24941
+      "bytes": 26346
     },
     {
       "name": "changelog-refresh",
@@ -121,7 +121,7 @@
         "plugins/changelog/skills/rewrite-aggressively/SKILL.md"
       ],
       "bundled": {},
-      "bytes": 7791
+      "bytes": 8148
     },
     {
       "name": "commit",
