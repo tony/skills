@@ -1618,8 +1618,8 @@ def _qualify(plugin: str, raw_name: str) -> str:
     'pytest-optimizer-00-scan'
     >>> _qualify("commit", "commit")
     'commit'
-    >>> _qualify("changelog", "changelog-recut")
-    'changelog-recut'
+    >>> _qualify("changelog", "changelog-rewrite-aggressively")
+    'changelog-rewrite-aggressively'
     """
     if raw_name == plugin or raw_name.startswith(f"{plugin}-"):
         return raw_name

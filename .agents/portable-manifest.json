@@ -108,20 +108,20 @@
       "bytes": 24296
     },
     {
-      "name": "changelog-recut",
-      "sources": [
-        "plugins/changelog/skills/recut/SKILL.md"
-      ],
-      "bundled": {},
-      "bytes": 7725
-    },
-    {
       "name": "changelog-refresh",
       "sources": [
         "plugins/changelog/skills/refresh/SKILL.md"
       ],
       "bundled": {},
-      "bytes": 6293
+      "bytes": 6323
+    },
+    {
+      "name": "changelog-rewrite-aggressively",
+      "sources": [
+        "plugins/changelog/skills/rewrite-aggressively/SKILL.md"
+      ],
+      "bundled": {},
+      "bytes": 7791
     },
     {
       "name": "commit",

@@ -1,22 +1,24 @@
 ---
-name: recut
-description: Rebase out the branch's earlier changelog commits and regenerate its entries fresh; commits only with --commit
-allowed-tools: ["Bash", "Read", "Grep", "Glob", "Edit", "AskUserQuestion"]
-argument-hint: "[--commit] [optional additional context about the changes]"
-user-invocable: true
+name: changelog-rewrite-aggressively
+description: >-
+  Rebase out the branch's earlier changelog commits and regenerate its
+  entries fresh; commits only with --commit
 disable-model-invocation: true
+allowed-tools: ["Bash", "Read", "Grep", "Glob", "Edit", "AskUserQuestion"]
+metadata:
+  argument-hint: "[--commit] [optional additional context about the changes]"
+  source: "plugins/changelog/skills/rewrite-aggressively/SKILL.md"
 ---
 
-
-# Recut Changelog Entries
+# Rewrite Changelog Entries Aggressively
 
 Remove the changelog commits this branch accumulated, then regenerate
 its entries from the branch's **current net change**. With `--commit`,
 the regenerated entries land as one fresh commit at the tip; otherwise
 they are left as an uncommitted edit for the user to commit. Where
-`/changelog:refresh` stacks a correcting commit on top, recut rewrites
-the branch so its changelog history collapses to a single clean
-commit.
+the `changelog-refresh` skill stacks a correcting commit on top,
+this skill rewrites the branch so its changelog
+history collapses to a single clean commit.
 
 Hard scope rule: only the branch's own changelog content is rewritten.
 Changelog content from the base branch — earlier releases, or
@@ -48,22 +50,22 @@ Additional context from user: $ARGUMENTS
    - **Pure changelog commits** — the commit's diff touches only the
      changelog file. These will be dropped in Phase 2.
    - **Mixed commits** — changelog hunks entangled with code changes.
-     These cannot be dropped wholesale. Ask via `AskUserQuestion` how
+     These cannot be dropped wholesale. Ask via `ask-user-choice` how
      to handle each: leave the commit intact and let the new tip
      commit supersede its entries (recommended — no code history
      rewrite), or abort so the user can split the commit first.
-   - No changelog commits at all → nothing to recut; suggest
-     `/changelog` (or `/changelog:refresh`) and stop.
+   - No changelog commits at all → nothing to rewrite; suggest
+     `/changelog` (or the `changelog-refresh` skill) and stop.
 
 5. **Pushed-branch gate.** If the branch exists on the remote and the
-   commits to drop are pushed, warn that completing the recut will
+   commits to drop are pushed, warn that completing the rewrite will
    require the **user** to `git push --force-with-lease` afterwards,
    and get explicit confirmation before rewriting. This command never
    pushes.
 
 6. **Back up.** Record the current tip and create a backup branch:
    ```
-   git branch changelog-recut-backup-$(date -u +%Y%m%d-%H%M%SZ)
+   git branch changelog-rewrite-backup-$(date -u +%Y%m%d-%H%M%SZ)
    ```
    Report the backup branch name and SHA to the user.
 
@@ -99,7 +101,7 @@ Additional context from user: $ARGUMENTS
 ## Phase 3: Regenerate entries fresh
 
 Read the sibling command file
-`../changelog/SKILL.md` and apply its rules
+the `changelog` skill and apply its rules
 verbatim — the *Core Constraint* (a branch is not a release), Phase 1
 convention detection, Phase 2 commit categorization, Phase 3 entry
 generation and voice, and its Phase 4 presentation gate. Generate
@@ -116,7 +118,7 @@ the base branch.
 1. Present: the summary line
    (`Branch: <name> | Base: <base> | Dropped: <shas> | Backup: <branch>`),
    the proposed entries as exact markdown, the insertion point, and the
-   `Target: unreleased section` line. Recut never touches version
+   `Target: unreleased section` line. This skill never touches version
    headings or version files.
 2. On approval, apply with the Edit tool. **With `--commit`** in
    `$ARGUMENTS`, commit **once** at the tip, following the commit
@@ -147,8 +149,8 @@ the base branch.
   modified.
 - **Commits only with `--commit`**: by default the regenerated entries
   are left uncommitted with a suggested message; the rebase that drops
-  old changelog commits still runs (that is the point of recut), behind
-  its own confirmation gates.
+  old changelog commits still runs (that is the point of this skill),
+  behind its own confirmation gates.
 - **Never pushes**: force-pushing the rewritten branch is the user's
   explicit act, flagged in the closing report.
 - **A branch is not a release**: all Core Constraint rules from
@@ -156,3 +158,9 @@ the base branch.
   version-file edits.
 - **Ask on ambiguity**: mixed commits, unclear entry ownership, or a
   pushed branch all get a question, not a guess.
+
+
+## Portability notes
+
+- `ask-user-choice` — present the listed options and wait for the user to pick one. Hosts with a structured multiple-choice tool (Claude Code's `AskUserQuestion`) should use it; otherwise print a numbered list and wait for a numbered reply. Never proceed on an assumed answer.
+- `$ARGUMENTS` — the text the user passed when invoking this skill. If your host does not substitute it, read it as the user's request in the current turn, and ask when there is none.

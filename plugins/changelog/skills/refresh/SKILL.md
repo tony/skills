@@ -14,7 +14,7 @@ Bring the changelog entries **this branch introduced** back in sync
 with what the branch currently does. With `--commit`, the correction
 lands as a **new commit stacked on top**; otherwise the edit is left
 uncommitted for the user to commit, like `/changelog`. History is
-never rewritten — for that, use `/changelog:recut`.
+never rewritten — for that, use `/changelog:rewrite-aggressively`.
 
 Hard scope rule: this command only ever edits changelog content the
 branch itself added. Entries that came from the base branch — earlier
@@ -117,7 +117,7 @@ entries (Phase 2):
 - **Never rewrites**: no rebase, no amend, no force-push. With
   `--commit` it stacks a single new commit; otherwise it commits
   nothing. Rewriting the branch's changelog history is
-  `/changelog:recut`.
+  `/changelog:rewrite-aggressively`.
 - **A branch is not a release**: all Core Constraint rules from
   `/changelog` apply — no version headings, no version predictions, no
   version-file edits.

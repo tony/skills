@@ -35,7 +35,7 @@ codex plugin add changelog@skills
 |---|---|---|
 | `/changelog` | `changelog` | Analyze commits, categorize changes, and insert entries into the changelog |
 | `/changelog:refresh` | `changelog:refresh` | Update the branch's own entries to its current net change (stacks a new commit with `--commit`) |
-| `/changelog:recut` | `changelog:recut` | Rebase out the branch's earlier changelog commits and regenerate its entries fresh (commits with `--commit`) |
+| `/changelog:rewrite-aggressively` | `changelog:rewrite-aggressively` | Rebase out the branch's earlier changelog commits and regenerate its entries fresh (commits with `--commit`) |
 
 ## Workflow
 
@@ -45,12 +45,12 @@ codex plugin add changelog@skills
 4. **Review**: Present proposed entries for approval.
 5. **Insert**: Apply approved entries to the unreleased section.
 
-## Refresh and Recut
+## Refresh and Rewrite
 
 Both follow-up commands are hard-scoped to the current branch's net change. They use the PR base (or trunk) and avoid committing by default unless `--commit` is passed.
 
 - **`/changelog:refresh`**: Recomputes entries from the net change and applies the diff in place without rewriting history.
-- **`/changelog:recut`**: Rebuilds history by dropping pure-changelog commits via non-interactive rebase, then regenerates entries. (Does not run `git push`).
+- **`/changelog:rewrite-aggressively`**: Rebuilds history by dropping pure-changelog commits via non-interactive rebase, then regenerates entries. (Does not run `git push`).
 
 ## Release Scope
 
