@@ -656,7 +656,7 @@
       "bundled": {
         "references/corpus-queries.md": "plugins/self-improvement/references/corpus-queries.md"
       },
-      "bytes": 21552
+      "bytes": 21824
     },
     {
       "name": "situate",

@@ -237,13 +237,16 @@ here — record both shapes and let the proposal say so.
 
 1. Hero block (1–3 lines): `N findings across M skills` plus the
    corpus coverage the census actually achieved.
-2. `## Usage` — the catalog ranked by real invocation count, channels
-   unioned and renames summed, with the never-invoked ones named as
-   unranked rather than as dead.
+2. `## Usage` — the catalog ranked twice by real invocation count,
+   all-time and current-era, because a skill can lead the first and be
+   absent from the second. Channels unioned and renames summed. Name
+   the never-invoked ones as unranked rather than as dead, each with
+   its age: zero invocations in three weeks and zero in six months are
+   different facts, and only the second is about the skill.
 3. `## Findings` — one entry per pattern: category, the ratio and its
-   denominator, spread, the verdict with the evidence that produced
-   it, and the change class it implies. Quote one representative
-   prompt, trimmed.
+   denominator, the window that denominator covers, spread, the
+   verdict with the evidence that produced it, and the change class it
+   implies. Quote one representative prompt, trimmed.
 4. `## Not proposed` — clusters that failed the evidence bar, and
    which half they failed. This is the section that keeps the catalog
    small, so it is never omitted.
