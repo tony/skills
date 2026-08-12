@@ -101,8 +101,8 @@ provenance recorded in the brief.
 
 | Flag | Default | Effect |
 |---|---|---|
-| `--rounds=<n>` | 3 | Hard cap on rounds. The loop may stop earlier by converging; it never runs past this. |
-| `--replay` | off | After the final plan is approved, land it immediately — passed through to the closing probe. |
+| `--rounds=<n>` | 3 | Cap on the rounds the loop runs on its own. It may stop earlier by converging; only an explicit choice from the closing panel takes it further. |
+| `--replay` | off | At Phase 4, land the approved plan immediately instead of stopping at the panel, following the `spike-probe` skill Phase 6. Never applies to a round. |
 
 ## Phase 0: Situational awareness
 
@@ -136,10 +136,15 @@ non-interactive run, record the brief and proceed.
 
 Repeat until Phase 3 says stop. Each round:
 
-1. **Probe.** Run the `spike-probe` skill against the goal as sharpened by the
-   ledger's open questions, with its own discipline intact: shortest
-   path to proven, cheapest verification signal, `SPIKE:` markers,
-   exit gate, stash with a recorded SHA.
+1. **Probe.** Follow the `spike-probe` skill Phases 2 through 4 against the goal
+   as sharpened by the ledger's open questions: shortest path to
+   proven, cheapest verification signal, `SPIKE:` markers, stumbling
+   blocks, the exit gate, and a stash with a recorded SHA. A round
+   borrows those phases, it does not invoke the whole skill — probe's
+   Phase 0 already ran once in Phase 0 above, its Phase 1 brief is the
+   loop brief you already approved, and its plan and replay phases
+   belong to the loop's exit. This is also why `--replay` never
+   reaches a round.
 2. **Branch on what fought back.** A stumbling block that admits two
    or more genuinely different resolutions is what the `spike-bakeoff` skill
    exists for — run it on those resolutions as the contender list. A
@@ -147,16 +152,19 @@ Repeat until Phase 3 says stop. Each round:
    the next probe. No stumbling blocks at all means the round
    converged.
 3. **Re-probe the graft.** Grafts leave a bakeoff unproven in
-   combination. A round that takes them starts its next probe from the
-   winner's stash plus those hunks, so the proving check runs on the
-   tree that was actually chosen. A graft that fails there is dropped
-   and recorded as dropped.
+   combination. When a round takes them, the loop seeds the next
+   round's tree itself — apply the winner's stash, then the graft
+   hunks — and that round probes from there, so the proving check runs
+   on the tree actually chosen. Seeding is the loop's own step rather
+   than a probe invocation, which is why probe's dirty-tree halt does
+   not fire on a tree the loop deliberately built. A graft that fails
+   the check is dropped and recorded as dropped.
 4. **Record.** Append the round's ledger section before starting the
    next one. A round that ends without its ledger entry written did
    not happen — the next round has no other memory of it.
 
-Round N does not build on round N-1's tree; it builds on round N-1's
-locked decisions.
+Except when carrying grafts, a round starts from a clean tree. What it
+inherits from round N-1 is the ledger's locked decisions, not its code.
 
 ## Phase 3: Convergence test
 
@@ -183,9 +191,10 @@ and every earlier round's stash SHA. Offer the two exits:
   and the final stash as reference. This is the right exit when the
   accumulated code carries the marks of rounds that were later
   abandoned.
-- **Landing plan** — the closing probe's commit-by-commit plan for the
-  final stash, replayed immediately under `--replay`. This is the right
-  exit when the last round's code is already what the design wants.
+- **Landing plan** — a commit-by-commit plan for the final stash, built
+  as the `spike-probe` skill Phase 5, and landed under `--replay` as its
+  Phase 6. This is the right exit when the last round's code is
+  already what the design wants.
 
 Recommend one and say why. Never drop earlier stashes — the ledger
 cites them by SHA as the evidence for its locked decisions.
@@ -204,8 +213,8 @@ cites them by SHA as the evidence for its locked decisions.
    stop, why spiking cannot settle them.
 5. `## Stashes` — table: round, stash message, **SHA**, restore
    command. Every round appears.
-6. `## Next` — the recommended exit and the closing probe's plan when
-   one was produced.
+6. `## Next` — the recommended exit, and the landing plan when one was
+   produced.
 7. End with an `ask-user-choice` panel: rewrite from the ledger / land
    the final stash / run another round / stop and keep the ledger —
    unless already in plan mode or `--replay` was given. In a
