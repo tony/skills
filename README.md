@@ -25,7 +25,7 @@ readable by agents scanning `.agents/skills/`.
 | [slop](plugins/slop/) | Development | Scan tracked files for AI slop and verbose noise, resolving each finding with atomic, verified commits. |
 | [tailwind](plugins/tailwind/) | Design | Detect and fix inconsistent spacing, margin/gap mixing, and padding asymmetry in Tailwind CSS layouts. |
 | [pytest-optimizer](plugins/pytest-optimizer/) | Testing | Profile and optimize pytest suites. Ranks and applies safe speedups as verified, independent commits. |
-| [spike](plugins/spike/) | Development | Run no-commit spikes or strategy bakeoffs in git worktrees. Tests ideas against quality gates and returns a commit-by-commit implementation plan. |
+| [spike](plugins/spike/) | Development | Run no-commit spikes, strategy bakeoffs, or multi-round convergence loops in git worktrees. Tests ideas against quality gates and returns a commit-by-commit implementation plan. |
 | [respond](plugins/respond/) | Development | Screen review feedback from humans or bots before changing code. Verifies claims against facts and project decisions. Valid findings become gated, atomic commits; invalid ones get evidence-backed replies. |
 | [action](plugins/action/) | Development | Convert tickets to branches in isolated worktrees. Uses team branch conventions, lands gated commits, and supports parallel tickets. |
 | [lean](plugins/lean/) | Development | Writing discipline and cleanup tools for tight, slop-free prose and code. |
