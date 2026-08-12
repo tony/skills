@@ -2,7 +2,7 @@
 
 Upgrade Terraform and OpenTofu versions. Discovers every root module, moves
 provider constraints together because they combine across modules, and
-refreshes lock files without narrowing platform coverage.
+refreshes lock files.
 
 ## Installation
 
