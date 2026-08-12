@@ -80,8 +80,9 @@ the era boundary too, which is what stops retired skills outvoting live
 ones. The supersession check uses the successor's birth date, because
 that is the day the behavior moved.
 
-Report the anchor beside every ratio. A window with no anchor is
-gerrymandered, and a finding that needs one is not a finding.
+Report the window beside every ratio, and the anchor it hangs on. A
+window with no anchor is gerrymandered, and a finding that needs one is
+not a finding.
 
 Report **ratios, not counts.** Every useful finding here is a
 denominator away from its opposite: the same "instructions appended to
@@ -296,9 +297,10 @@ here — record both shapes and let the proposal say so.
    with its age: zero invocations in three weeks and zero in six months
    are different facts, and only the second is about the skill.
 3. `## Findings` — one entry per pattern: category, the ratio and its
-   denominator, the window that denominator covers, spread, the
-   verdict with the evidence that produced it, and the change class it
-   implies. Quote one representative prompt, trimmed.
+   denominator, the window that denominator covers and the date it is
+   anchored to, spread, the verdict with the evidence that produced it,
+   and the change class it implies. Quote one representative prompt,
+   trimmed.
 4. `## Not proposed` — clusters that failed the evidence bar, and
    which leg they failed. This is the section that keeps the catalog
    small, so it is never omitted.
