@@ -414,7 +414,7 @@
         "references/repo-scope.md": "plugins/package-updater/references/repo-scope.md",
         "references/upstream-links.md": "plugins/package-updater/references/upstream-links.md"
       },
-      "bytes": 47441
+      "bytes": 47517
     },
     {
       "name": "pr",
@@ -614,7 +614,7 @@
         "references/feedback-sources.md": "plugins/respond/references/feedback-sources.md",
         "references/screening-rubric.md": "plugins/respond/references/screening-rubric.md"
       },
-      "bytes": 21023
+      "bytes": 21052
     },
     {
       "name": "respond-goal",

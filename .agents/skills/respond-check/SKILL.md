@@ -12,7 +12,6 @@ description: >-
   decisions the project already made, the odds the scenario ever fires, and
   what the fix would cost — emitting a ledger of fix / defer / decline
   verdicts with the evidence and drafted replies. Changes no files.
-disable-model-invocation: true
 allowed-tools: ["Bash", "Read", "Grep", "Glob", "AskUserQuestion", "Task"]
 metadata:
   argument-hint: "[findings text] [--pr=<num>] [--base=<ref>] [--include-resolved]"
@@ -30,9 +29,9 @@ evidence, and a reply the reviewer can argue with.
 posted, no threads resolved. Its entire output is a ledger and a
 recommendation; acting on it is the `respond-action` skill's job.
 
-Invoked by name, never routed to on the model's initiative: it is the
-first phase of a named workflow, and the `respond-action` skill runs it when it
-needs a ledger.
+That is also why this skill can be routed to on the model's initiative
+while the `respond-action` skill and the `respond-goal` skill cannot: reaching for
+screening when someone pastes a review costs a report and nothing else.
 
 ## Core thesis
 

@@ -16,7 +16,6 @@ description: >-
 allowed-tools: ["Bash", "Read", "Grep", "Glob", "AskUserQuestion", "Task"]
 argument-hint: "[findings text] [--pr=<num>] [--base=<ref>] [--include-resolved]"
 user-invocable: true
-disable-model-invocation: true
 ---
 
 
@@ -31,9 +30,9 @@ evidence, and a reply the reviewer can argue with.
 posted, no threads resolved. Its entire output is a ledger and a
 recommendation; acting on it is `/respond:action`'s job.
 
-Invoked by name, never routed to on the model's initiative: it is the
-first phase of a named workflow, and `/respond:action` runs it when it
-needs a ledger.
+That is also why this skill can be routed to on the model's initiative
+while `/respond:action` and `/respond:goal` cannot: reaching for
+screening when someone pastes a review costs a report and nothing else.
 
 ## Core thesis
 
