@@ -1,7 +1,7 @@
 {
   "name": "commit",
   "version": "0.0.1",
-  "description": "Create git commits following project conventions with format enforcement and safety checks",
+  "description": "Create git commits following project conventions with format enforcement and safety checks.",
   "author": {
     "name": "Tony Narlock",
     "email": "tony@git-pull.com"

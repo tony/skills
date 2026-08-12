@@ -1,10 +1,7 @@
 # github-actions
 
-Update GitHub Actions pins across one repository or a whole fleet —
-verify every target tag exists before writing it, research each upgrade
-against the vendor's own release notes, land one commit per action, and
-close dependabot's pull requests by citing the commit that superseded
-them.
+Update GitHub Actions pins fleet-wide. Verifies tags, researches release
+notes, commits each action separately, and supersedes Dependabot PRs.
 
 ## Installation
 

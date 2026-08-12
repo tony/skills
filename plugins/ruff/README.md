@@ -1,6 +1,7 @@
 # ruff
 
-Move one repository or a whole fleet onto a new [ruff](https://docs.astral.sh/ruff/) release — work out which rules the release can actually fire against each repository's own `select` list, gate on the resolver being able to see the version at all, then land one reviewed commit per rule with the upstream rule documentation cited.
+Upgrade Ruff across repositories. Resolves applicable rules against project
+configurations and lands one reviewed commit per rule.
 
 ## Installation
 

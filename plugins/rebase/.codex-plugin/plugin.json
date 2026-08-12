@@ -1,7 +1,7 @@
 {
   "name": "rebase",
   "version": "0.0.1",
-  "description": "Automated rebase onto trunk with conflict prediction, resolution, and quality gate verification",
+  "description": "Automated rebase onto trunk with conflict prediction, resolution, and quality gate verification.",
   "author": {
     "name": "Tony Narlock",
     "email": "tony@git-pull.com"

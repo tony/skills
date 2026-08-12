@@ -1,7 +1,7 @@
 {
   "name": "spike",
   "version": "0.0.1",
-  "description": "Prove a path fast in a no-commit spike — a single probe or a bakeoff of competing strategies in git worktrees — exit through the project's quality gates into stashes, and hand back a commit-by-commit implementation plan",
+  "description": "Run no-commit spikes or strategy bakeoffs in git worktrees. Tests ideas against quality gates and returns a commit-by-commit implementation plan.",
   "author": {
     "name": "Tony Narlock",
     "email": "tony@git-pull.com"

@@ -1,8 +1,7 @@
 # gh
 
-File GitHub issues a maintainer can still act on in three years, and
-write any rendered body — issue, pull request, comment, ticket — so it
-renders correctly and its links keep resolving.
+File durable GitHub issues with reproductions, pinned links, and stripped PII.
+Enforces a markdown writing discipline reusable for any PR, comment, or ticket.
 
 ## Installation
 

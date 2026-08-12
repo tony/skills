@@ -1,10 +1,7 @@
 # package-updater
 
-Update dependencies and toolchain pins across one repository or a whole
-fleet. Check the supply-chain cooldown before calling anything current,
-research each move against the vendor's own release notes, and land the
-toolchain, the named bumps, the bulk lockfile refresh and their fallout
-as separate commits.
+Update dependencies and toolchains across repositories. Commits updates
+separately (toolchain, bumps, lockfiles) with upstream release notes cited.
 
 ## Installation
 

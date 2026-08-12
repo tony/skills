@@ -1,10 +1,7 @@
 # slop
 
-Scan the current repo for AI slop, brittle counts, verbose noise,
-and low-value contributions in tracked files. Each finding becomes
-its own forward-going commit, after the project's discovered
-formatter / linter / type-checker pass. Never rewrites history;
-safe on pushed and shared branches.
+Scan tracked files for AI slop and verbose noise, resolving each finding
+with atomic, verified commits.
 
 For branch-scoped slop cleanup that uses fixup commits and
 `git rebase -i --autosquash`, see the sibling `pr` plugin's

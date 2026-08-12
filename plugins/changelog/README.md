@@ -1,6 +1,7 @@
 # changelog
 
-Generate categorized changelog entries from branch commits and PR context, and keep a branch's own entries in sync as the branch evolves.
+Generate and maintain categorized changelog entries from branch commits and
+PR context.
 
 ## Installation
 

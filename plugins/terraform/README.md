@@ -1,12 +1,7 @@
 # terraform
 
-Move [Terraform](https://developer.hashicorp.com/terraform) and
-[OpenTofu](https://opentofu.org/) versions through a repository whose
-layout you have not seen before — find the root modules by signal
-rather than by convention, move every declaration of a version
-together because Terraform requires all of them to be satisfied at
-once, and refresh each lock file without quietly narrowing the
-platforms it covers.
+Upgrade Terraform and OpenTofu versions. Discovers root modules, updates
+provider constraints holistically, and refreshes lock files.
 
 ## Installation
 

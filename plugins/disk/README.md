@@ -1,7 +1,7 @@
 # disk
 
-Find what is consuming a machine's disk, and reclaim it without losing
-anything that cannot be regenerated.
+Safely reclaim disk space. Classifies consumers as cache, redundant copy,
+or history, deleting only what is proven safe.
 
 The failure mode this plugin exists to prevent is not missing some
 space. It is deleting a directory whose name suggested it was a

@@ -1,9 +1,7 @@
 # spike
 
-Prove a path fast in a no-commit spike — a single probe, or a bakeoff
-of 2–4 competing strategies in git worktrees — exit through the
-project's quality gates into stashes, and hand back a neat
-commit-by-commit implementation plan.
+Run no-commit spikes or strategy bakeoffs in git worktrees. Tests ideas against
+quality gates and returns a commit-by-commit implementation plan.
 
 ## Installation
 

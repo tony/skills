@@ -1,6 +1,7 @@
 # pr
 
-Generate, refresh, recut, and review gold-standard pull request descriptions with structured headings, tables, and test plans. Audit branch commits for AI slop, brittle counts, and verbose messages, then resolve via fixup commits and autosquash with quality-gate checks.
+Manage gold-standard PR descriptions. Detects AI slop and verbose commits,
+resolving them via fixup commits and autosquash.
 
 ## Installation
 

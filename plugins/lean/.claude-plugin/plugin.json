@@ -1,6 +1,6 @@
 {
   "name": "lean",
-  "description": "Write tight, slop-free prose and code, and tighten existing files in place with no commits — a model-invocable writing discipline plus a working-tree cleanup command",
+  "description": "Writing discipline and cleanup tools for tight, slop-free prose and code.",
   "version": "0.0.1",
   "author": {
     "name": "Tony Narlock",

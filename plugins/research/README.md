@@ -1,6 +1,7 @@
 # research
 
-Clone and study your project's dependencies at the exact versions you use — source repos with version-pinned git worktrees.
+Study dependencies locally. Clones upstream repos and creates version-pinned
+worktrees matching your project's exact versions.
 
 ## Installation
 

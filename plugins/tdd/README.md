@@ -1,6 +1,7 @@
 # tdd
 
-TDD bug-fix workflow — reproduce bugs as failing tests, find root cause, fix, and verify.
+TDD bug-fix workflow: reproduce bugs as failing tests, determine root cause,
+fix, and verify.
 
 ## Installation
 

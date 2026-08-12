@@ -1,7 +1,7 @@
 {
   "name": "weave",
   "version": "0.0.2",
-  "description": "Run independent adversarial participants through host-native sub-agents by default or separate model CLIs by choice — brainstorm, refine, plan, execute, architect, review, and synthesize",
+  "description": "Run independent, adversarial AI participants via sub-agents or model CLIs to brainstorm, refine, plan, execute, architect, review, and synthesize.",
   "author": {
     "name": "Tony Narlock",
     "email": "tony@git-pull.com"

@@ -1,7 +1,7 @@
 {
   "name": "slop",
   "version": "0.1.0",
-  "description": "Scan repo tracked files for AI slop, brittle counts, and verbose noise; resolve each finding as an atomic forward-going commit with quality-gate verification",
+  "description": "Scan tracked files for AI slop and verbose noise, resolving each finding with atomic, verified commits.",
   "author": {
     "name": "Tony Narlock",
     "email": "tony@git-pull.com"

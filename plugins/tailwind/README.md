@@ -1,6 +1,7 @@
 # tailwind
 
-Detect and fix inconsistent spacing in Tailwind CSS layouts — container fragmentation, margin/gap mixing, padding asymmetry, and more.
+Detect and fix inconsistent spacing, margin/gap mixing, and padding
+asymmetry in Tailwind CSS layouts.
 
 ## Installation
 

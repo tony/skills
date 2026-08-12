@@ -1,6 +1,6 @@
 {
   "name": "pytest-optimizer",
-  "description": "Profile a pytest suite, rank safe speedups with a safety-first rubric, and apply each as its own verified commit",
+  "description": "Profile and optimize pytest suites. Ranks and applies safe speedups as verified, independent commits.",
   "version": "0.1.0",
   "author": {
     "name": "Tony Narlock",

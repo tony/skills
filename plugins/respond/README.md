@@ -1,10 +1,8 @@
 # respond
 
-Respond to review feedback — from a colleague, from Bugbot or
-CodeRabbit or Copilot, from a review command run earlier in the session
-— by screening every claim before any code moves, fixing what survives
-as atomic gated commits, and looping the whole cycle against CI and the
-review agents until the pull request goes quiet.
+Screen review feedback from humans or bots before changing code. Verifies
+claims against facts and project decisions. Valid findings become gated,
+atomic commits; invalid ones get evidence-backed replies.
 
 ## Installation
 

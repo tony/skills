@@ -1,8 +1,7 @@
 # merge-pr
 
-Merge pull requests via `gh` with merge commits that match the
-repository's own `git log --merges` history — never before a
-readiness gate confirms the PR is actually mergeable.
+Merge PRs matching repo history conventions. Includes readiness checks,
+CI watching, stack detection, and automated rebasing.
 
 Merging is treated as its own provincial act: verify checks, bring
 the branch up to date, land it, sync trunk, stand by. It is not a

@@ -1,7 +1,7 @@
 # double-check
 
-Make verification requests return the re-derived answer instead of a
-diff against the agent's prior turn.
+Forces verification requests to return re-derived answers instead of diffs
+against prior turns. Includes an alignment tool for repairing chats.
 
 Ask an agent to "double check" an analysis and it usually replies
 with a revision log — *Overstated*, *Does not hold*, *still holds* —

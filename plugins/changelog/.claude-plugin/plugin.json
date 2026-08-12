@@ -1,6 +1,6 @@
 {
   "name": "changelog",
-  "description": "Generate categorized changelog entries from branch commits and PR context; refresh or recut a branch's own entries as it evolves",
+  "description": "Generate and maintain categorized changelog entries from branch commits and PR context.",
   "version": "0.1.0",
   "author": {
     "name": "Tony Narlock",

@@ -1,7 +1,8 @@
 # git-branch
 
-Redo a branch two ways: keep the code and rebuild only the history, or
-keep the requirements and replace the implementation.
+Rebuild branch history into atomic commits (byte-identical), or reimplement
+from scratch using existing tests as the spec. Includes an interactive-rebase
+toolkit.
 
 ## Installation
 

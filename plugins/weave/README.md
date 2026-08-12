@@ -1,8 +1,7 @@
 # weave
 
-Weave prompts across independent adversarial participants in parallel — plan,
-execute, review, and synthesize their strongest work. Host-native sub-agents
-are the default; separate model CLIs are available by explicit choice.
+Run independent, adversarial AI participants via sub-agents or model CLIs to
+brainstorm, refine, plan, execute, architect, review, and synthesize.
 
 ## Installation
 

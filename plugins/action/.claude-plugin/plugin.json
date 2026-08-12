@@ -1,6 +1,6 @@
 {
   "name": "action",
-  "description": "Take tickets to branches in isolated git worktrees — resolve Linear/GitHub issues strictly read-only, name branches by the team's own conventions, land gated commits, and fan out multiple tickets in parallel",
+  "description": "Convert tickets to branches in isolated worktrees. Uses team branch conventions, lands gated commits, and supports parallel tickets.",
   "version": "0.0.1",
   "author": {
     "name": "Tony Narlock",

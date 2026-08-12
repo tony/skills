@@ -1,8 +1,6 @@
 # lean
 
-Write tight, slop-free prose and code, and tighten existing files in
-place — a model-invocable writing discipline plus a no-commit
-working-tree cleanup command.
+Writing discipline and cleanup tools for tight, slop-free prose and code.
 
 `slop` and `pr` clean slop that is already committed. `lean` keeps it
 out of the draft in the first place, and tidies working-tree files

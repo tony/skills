@@ -1,6 +1,6 @@
 {
   "name": "rebase",
-  "description": "Automated rebase onto trunk with conflict prediction, resolution, and quality gate verification",
+  "description": "Automated rebase onto trunk with conflict prediction, resolution, and quality gate verification.",
   "version": "0.0.1",
   "author": {
     "name": "Tony Narlock",

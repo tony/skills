@@ -1,8 +1,8 @@
 # ticket
 
-Write work into any tracker so that someone picking it up in a year needs
-nothing from you, and so the code still gets to make the decisions the code
-should make.
+Manage work across trackers (Linear, Jira, GitHub, etc.) respecting each
+platform's native object graph. Drafts durable tickets focused on
+invariants.
 
 ## Installation
 

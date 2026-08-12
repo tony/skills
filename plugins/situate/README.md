@@ -1,9 +1,8 @@
 # situate
 
-Gain situational awareness before touching a repository. Read the
-branch against trunk, its diff, its pull request and review threads,
-its linked tickets, and the project's own conventions — then report
-where the work stands and what is unresolved.
+Gain situational awareness before modifying code. Scans branches, PRs,
+tickets, and project conventions to orient the agent and verify the work
+required.
 
 Three depths, for three different moments. `/situate` is the full sweep,
 for opening a session on work you do not know. `/situate:what` answers a

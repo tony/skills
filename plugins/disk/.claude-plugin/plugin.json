@@ -1,6 +1,6 @@
 {
   "name": "disk",
-  "description": "Survey disk usage across every filesystem layer and reclaim space safely — classifies each candidate as regenerable cache, proved-redundant copy, or irreplaceable agent history, and deletes only what a proof says is safe",
+  "description": "Safely reclaim disk space. Classifies consumers as cache, redundant copy, or history, deleting only what is proven safe.",
   "version": "0.1.0",
   "author": {
     "name": "Tony Narlock",

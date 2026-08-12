@@ -1,7 +1,7 @@
 {
   "name": "merge-pr",
   "version": "0.0.1",
-  "description": "Merge PRs via gh with merge commits matching the repo's own git history — readiness checks and CI watch before every merge, plus multi-PR runs with stack detection, rebase, and conflict resolution between merges",
+  "description": "Merge PRs matching repo history conventions. Includes readiness checks, CI watching, stack detection, and automated rebasing.",
   "author": {
     "name": "Tony Narlock",
     "email": "tony@git-pull.com"

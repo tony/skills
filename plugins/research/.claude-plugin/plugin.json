@@ -1,6 +1,6 @@
 {
   "name": "research",
-  "description": "Clone and study your project's dependencies at the exact versions you use — source repos with version-pinned git worktrees",
+  "description": "Study dependencies locally. Clones upstream repos and creates version-pinned worktrees matching your project's exact versions.",
   "version": "0.0.1",
   "author": {
     "name": "Tony Narlock",

@@ -1,6 +1,6 @@
 {
   "name": "pr",
-  "description": "Generate, refresh, recut, and review gold-standard PR descriptions; detect AI slop, brittle counts, and verbose commit messages on branch commits and resolve via fixup commits and autosquash with quality-gate checks",
+  "description": "Manage gold-standard PR descriptions. Detects AI slop and verbose commits, resolving them via fixup commits and autosquash.",
   "version": "0.3.0",
   "author": {
     "name": "Tony Narlock",

@@ -1,8 +1,7 @@
 # release
 
-Cut, bump, and roll out releases with safe defaults: nothing leaves
-your machine — no push, no tag, no tag push — unless you explicitly
-flag it or pick it from the closing prompt.
+Cut and bump releases with safe defaults (no automatic push/tag). Rolls out
+releases to downstream consumers with CI verification.
 
 Release procedures are discovered from the target repo at runtime:
 which files carry the version (`pyproject.toml`, `__about__.py`,

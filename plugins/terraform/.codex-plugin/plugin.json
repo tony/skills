@@ -1,7 +1,7 @@
 {
   "name": "terraform",
   "version": "0.0.1",
-  "description": "Move Terraform and OpenTofu versions across any repository layout — discover every root module instead of assuming one, move every declaration of a provider together because constraints combine across modules, and refresh each lock file without narrowing its platform coverage",
+  "description": "Upgrade Terraform and OpenTofu versions. Discovers root modules, updates provider constraints holistically, and refreshes lock files.",
   "author": {
     "name": "Tony Narlock",
     "email": "tony@git-pull.com"

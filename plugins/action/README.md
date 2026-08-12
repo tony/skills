@@ -1,9 +1,7 @@
 # action
 
-Take tickets to branches in isolated git worktrees — resolve Linear /
-GitHub issues strictly read-only, name branches the way the team
-already does, implement through the project's discovered quality
-gates, and fan out multiple tickets in parallel.
+Convert tickets to branches in isolated worktrees. Uses team branch
+conventions, lands gated commits, and supports parallel tickets.
 
 ## Installation
 

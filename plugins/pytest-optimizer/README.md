@@ -1,7 +1,7 @@
 # pytest-optimizer
 
-A Claude Code plugin that profiles a pytest suite, finds **safe** speedups, and
-applies each one as its own verified commit.
+Profile and optimize pytest suites. Ranks and applies safe speedups as
+verified, independent commits.
 
 It runs as a **resumable four-phase pipeline**. Measurement and mutation are
 separated on purpose: you can re-run any phase without redoing the previous one,

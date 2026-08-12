@@ -1,8 +1,7 @@
 # business
 
-Measure and report the business value of AI skills and agentic
-workflows — productivity, time saved, quality, capacity, delivery
-outcomes.
+Measure and report the business value of AI workflows using provenance-
+tagged data, engineer-hours, and cycle time metrics.
 
 Never money. No currency symbols or units, no cost-in-money, no
 dollar ROI, in any artifact or command output. Value is stated in
