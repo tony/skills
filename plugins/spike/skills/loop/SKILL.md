@@ -212,7 +212,10 @@ cites them by SHA as the evidence for its locked decisions.
 4. `## Open` — questions the loop did not settle, and for a thrashing
    stop, why spiking cannot settle them.
 5. `## Stashes` — table: round, stash message, **SHA**, restore
-   command. Every round appears.
+   command. Every round appears, and so does every contender a round's
+   bakeoff stashed: a loop never runs bakeoff's own replay, so those
+   stashes outlive it and belong in the accounting rather than in
+   `git stash list` alone.
 6. `## Next` — the recommended exit, and the landing plan when one was
    produced.
 7. End with an `AskUserQuestion` panel: rewrite from the ledger / land
