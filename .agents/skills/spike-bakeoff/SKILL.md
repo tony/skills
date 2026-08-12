@@ -272,11 +272,13 @@ winner's stash (apply, not pop), land plan items one gated commit at
 a time, apply graft hunks from runner-up stashes where the plan says
 so, and only after the final green gate drop the contender stashes.
 
-Grafts get their one real test here: after the last graft is applied
-and before the commit carrying it, re-run the shared proving check on
-the combined tree. A graft that fails is dropped from the plan and
-recorded as dropped — a replay is not the place to debug an idea that
-was only ever judged on paper.
+Grafts get their one real test here: re-run the shared proving check
+before committing **each** plan item that carries a graft, not once
+after the last one — a graft that lands in an early item is already
+history by the time a later check fails, and dropping it would mean
+rewriting commits this phase never authorizes. A graft that fails is
+dropped from the plan and recorded as dropped; a replay is not the
+place to debug an idea that was only ever judged on paper.
 
 ## Output contract
 

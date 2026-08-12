@@ -714,7 +714,7 @@
       "bundled": {
         "references/verification-gates.md": "plugins/spike/references/verification-gates.md"
       },
-      "bytes": 18401
+      "bytes": 18562
     },
     {
       "name": "spike-loop",
