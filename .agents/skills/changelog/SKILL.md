@@ -313,7 +313,21 @@ Changelog entries describe the **net shipped result** of the branch, not its int
    ```
    ````
 
-3. **Insertion point**: Describe where these entries will go:
+3. **Voice check**: Name, per entry, which of the four reader questions
+   from *Voice* its first sentence answers:
+   ```
+   New package: cli-sync ............ can I take a new affordance?
+   Fix phantom error ................ was my bug just fixed?
+   cli sync: errored items .......... was my bug just fixed?
+   ```
+
+   Echo this every run, not only when something looks wrong. An entry that
+   answers none of the four is not a changelog entry — it is a commit summary
+   or a release-notes paragraph that reached Phase 4 by mistake. Send it back
+   to *Voice* and rewrite it before presenting, rather than presenting it with
+   a blank.
+
+4. **Insertion point**: Describe where these entries will go:
    ```
    Insert after: <identified insertion point from Phase 1>
    Before: <next section or release heading>
@@ -325,7 +339,7 @@ Changelog entries describe the **net shipped result** of the branch, not its int
    the unreleased section, the user explicitly asked for a release (see *The one
    exception*) — otherwise stop and re-read the *Core Constraint*.
 
-4. **Ask the user**: "Insert these entries into <changelog-file>? You can also ask me to modify them first."
+5. **Ask the user**: "Insert these entries into <changelog-file>? You can also ask me to modify them first."
 
 **Wait for user response.** Do not proceed until they confirm.
 
