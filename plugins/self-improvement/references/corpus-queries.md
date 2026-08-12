@@ -93,19 +93,28 @@ The evidence bar is repetition **and** spread: a pattern confined to
 one project is that project's quirk.
 
 Project attribution sits in a different field per record type, and
-reading only one of them silently reports zero spread. Prompt-history
-records carry it in `.metadata.project` — their `path` is the single
-history file they all share, so deriving a project from the path
-discards that whole channel. Transcript records are the reverse: the
-project is the `/projects/<slug>` path segment and `.metadata.project`
-is absent. Union both.
+reading only one of them silently reports zero spread. In `agentgrep`'s
+`--json` output, prompt-history records carry it in `.metadata.project`
+— their `path` is the single history file they all share, so deriving a
+project from the path discards that whole channel. Transcript records
+are the reverse: their metadata comes back empty and the project is the
+`/projects/<slug>` path segment. Union both.
 
 ```console
 uvx agentgrep --color never search --exhaustive '<pattern>' --limit 500 --no-progress --json | jq -r '[.. | objects | select(has("path")) | .metadata.project // (.path | capture("/projects/(?<p>[^/]+)").p) // empty] | .[]' | sort -u | wc -l
 ```
 
-Codex history records carry neither field, so their spread is not
-countable from a result alone — say so rather than scoring it zero.
+Those field names describe agentgrep's normalization, not the files
+underneath it. The slash-channel query above reads
+`~/.claude/history.jsonl` directly, and there the project is a
+top-level `project` holding an absolute path — that record has no
+`metadata` object at all. Carrying `.metadata.project` across from one
+query to the other returns nothing for every record, which is
+indistinguishable from a pattern that genuinely has no spread.
+
+Some hosts' prompt histories, Codex and Grok among them, carry neither
+field, so their spread is not countable from a result alone — say so
+rather than scoring it zero.
 
 ## Cost, and how to not pay it repeatedly
 
