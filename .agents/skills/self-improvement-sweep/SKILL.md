@@ -65,14 +65,23 @@ A skill young enough to have accumulated a handful of invocations
 cannot clear repetition however the window is drawn — two of three is
 not a ratio.
 
-The window is not a free parameter. Exactly two are legal and each
-answers a different question. A **finding** is measured against the
-lifetime of the skill that covers it, which is what separates a
-discoverability gap from a rule people read and ignored. The **Usage
-ranking** is measured against the one era boundary Phase 0 fixes for
-the whole sweep, which is what stops retired skills outvoting live
-ones. Any third window is gerrymandered, and a finding that needs one
-is not a finding. Say which of the two produced each number.
+The window is not a free parameter. Every window is anchored to a date
+the catalog supplies — a skill's birth date, or the era boundary Phase
+0 fixes for the whole sweep — never to a date chosen because it makes a
+number look better.
+
+Which anchor follows from what is being measured. A pattern typed
+around an existing skill is windowed on that skill's birth date, which
+separates a discoverability gap from a rule people read and ignored. A
+pattern typed with no skill named has no such date, so it is windowed
+on the era boundary: the question there is whether the typing is still
+happening, not whether it predates something. The Usage ranking uses
+the era boundary too, which is what stops retired skills outvoting live
+ones. The supersession check uses the successor's birth date, because
+that is the day the behavior moved.
+
+Report the anchor beside every ratio. A window with no anchor is
+gerrymandered, and a finding that needs one is not a finding.
 
 Report **ratios, not counts.** Every useful finding here is a
 denominator away from its opposite: the same "instructions appended to
@@ -208,7 +217,7 @@ git log --diff-filter=R --name-status --format='%h %s' -- 'plugins/*/skills/*'
    skill did not exist for are nobody's denominator.
 
 ```console
-git log --follow --format='%ad' --date=short -- <path to SKILL.md> | tail -1
+git log --follow --format='%ad' --date=short -- <path to SKILL.md> | sort | head -1
 ```
 
    One path per run, never a glob. `--follow` requires a single file
@@ -228,16 +237,21 @@ git log --follow --format='%ad' --date=short -- <path to SKILL.md> | tail -1
 
 Extract both channels per `references/detecting-invocations.md`,
 union them, and sum across renames. Keep the timestamp on every
-occurrence — the era split below cannot be recovered once a query has
-collapsed the corpus to name and count. Confirm the sweep completed
-before applying any threshold: a bounded run and a genuine zero look
-identical.
+occurrence that has one — the era split below cannot be recovered once
+a query has collapsed the corpus to name and count. Confirm the sweep
+completed before applying any threshold: a bounded run and a genuine
+zero look identical.
 
 Then split the counts on the boundary from Phase 0 and carry both
 halves forward. A corpus that accumulated across a catalog rebuild is
 mostly a record of skills that no longer carry the behavior, and the
 older half can outweigh the newer one by enough to decide the ranking
 on its own.
+
+Only the slash channel can be split — the tool channel records no
+usable date. The era ranking is therefore built from one channel and
+must say so, because a skill the model reaches for on its own is
+undercounted there by construction.
 
 State what the count assumes about the corpus: an archived or reclaimed
 transcript store comes back clean, complete, and wrong, so the
@@ -261,13 +275,12 @@ each one that clears the evidence bar, and record the ratio, the
 spread, the window that denominator covers, and the mechanic that
 produced the verdict.
 
-Window each finding against the birth date of the skill that covers
-it. Skills arrive on different days, and measuring a hand-typed
-procedure against the day its skill shipped is the difference between
-*nobody knows this exists* and *this shipped and the typing stopped*.
-The catalog-wide era boundary belongs to the Usage ranking, not here;
-using it for a finding measures the catalog's history rather than that
-skill's.
+Window each finding on the anchor the evidence bar assigns it: the
+covering skill's birth date where there is one, the era boundary where
+there is not. Skills arrive on different days, and measuring a
+hand-typed procedure against the day its skill shipped is the
+difference between *nobody knows this exists* and *this shipped and the
+typing stopped*.
 
 Where a finding could be answered two plausible ways, do not judge it
 here — record both shapes and let the proposal say so.

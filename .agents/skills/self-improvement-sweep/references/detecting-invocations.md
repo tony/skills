@@ -6,13 +6,23 @@ the rest. That pile is the corpus, and `agentgrep` searches it. This
 file is how to turn it into a per-skill invocation count, and the ways
 that count comes back confidently wrong.
 
-These are heuristics distilled from sweeps already run, not a worked
-pass. `worked-example-spike.md` is that — one sweep followed from the
-prompts it mined to the edits they became. The queries here are the
-reusable part; copy them. The figures beside them record one machine on
-one day and are kept only to show how large a trap was, never as a
-threshold or an expected value. A number whose run you cannot inspect
-is cheaper to re-measure than to trust.
+This file holds the queries. The reasoning behind each rule lives in a
+dated scenario beside it, written as input, reasoning, and output, so a
+claim can be re-run rather than believed:
+
+- `references/worked-example-spike.md` — one sweep followed end to
+  end, from the prompts it mined to the edits they became.
+- `references/2026-08-12-tool-channel-has-no-date.md` — why the era
+  ranking comes from one channel.
+- `references/2026-08-12-superseded-skill-leads-all-time.md` — why the
+  evidence bar needs currency at all.
+- `references/2026-08-12-one-project-three-spellings.md` — why spread
+  has to be normalized before it is counted.
+
+Figures in a scenario record one machine on one day and are dated for
+that reason. They show how large a trap was; none is a threshold or an
+expected value. A number whose run you cannot inspect is cheaper to
+re-measure than to trust.
 
 ## Invocations land in two places, and neither is the whole count
 
@@ -22,34 +32,43 @@ channel is wrong.
 
 **Typed slash commands** live in the host's prompt history —
 `~/.claude/history.jsonl`, one JSON object per line carrying
-`.display`, `.project`, and `.timestamp`. Cheap: no search, just `jq`
-and `rg`.
+`.display`, `.project`, and `.timestamp`. Cheap: no search, just `jq`.
+
+Everything below writes to a scratch directory outside the repository,
+because a sweep that leaves untracked files in the tree it is measuring
+has edited it:
+
+```console
+SCRATCH=$(mktemp -d)
+```
 
 Extract one dated row per record and keep it:
 
 ```console
-jq -r 'select(.display != null) | [(.timestamp / 1000 | todate | .[:10]), .display] | @tsv' ~/.claude/history.jsonl | rg '^\S+\t/[a-z0-9-]+:[a-z0-9-]+' | sed -E 's|^(\S+)\t/([a-z0-9-]+:[a-z0-9-]+).*|\1\t\2|' > slash-channel.tsv
+jq -r 'select(.display != null) | select(.display | test("^/[a-z0-9-]+:[a-z0-9-]+")) | [(.timestamp / 1000 | todate | .[:10]), (.display | capture("^/(?<s>[a-z0-9-]+:[a-z0-9-]+)").s)] | @tsv' ~/.claude/history.jsonl > "$SCRATCH/slash-channel.tsv"
 ```
 
-Two things in that pipeline are load-bearing. Carrying `.timestamp`
+Three things in that one-liner are load-bearing. Carrying `.timestamp`
 through is what makes an era split possible at all — rank straight to
 `uniq -c` and the dates are gone, with no later phase able to recover
-them. And anchoring the match to the start of the *record* rather than
-to the start of any line is what stops a pasted prompt that merely
-mentions the `action-worktree` skill from scoring as an invocation of it; on one
-corpus, matching per line inflated the total by 43.
+them. Matching against the whole `.display` anchored at `^` is what
+stops a pasted prompt that merely mentions the `action-worktree` skill from
+scoring as an invocation of it; on one corpus, matching line by line
+instead inflated the total by 43. And doing the extraction inside `jq`
+rather than piping through `sed` keeps it identical on BSD and GNU,
+where `\S` and a `\t` replacement are not.
 
 Rank it all-time:
 
 ```console
-cut -f2 slash-channel.tsv | sort | uniq -c | sort -rn
+cut -f2 "$SCRATCH/slash-channel.tsv" | sort | uniq -c | sort -rn
 ```
 
 Then re-slice the same file for the current era, using the boundary
 Phase 0 derived from the catalog's birth dates:
 
 ```console
-awk -F'\t' '$1 >= "<boundary>"' slash-channel.tsv | cut -f2 | sort | uniq -c | sort -rn
+awk -F'\t' '$1 >= "<boundary>"' "$SCRATCH/slash-channel.tsv" | cut -f2 | sort | uniq -c | sort -rn
 ```
 
 **Skill-tool invocations** emit a `Launching skill: <plugin>:<skill>`
@@ -60,6 +79,12 @@ mandatory.
 ```console
 uvx agentgrep --color never search --exhaustive '"Launching skill:"' --limit 2000 --no-progress --json
 ```
+
+This channel has no usable date, and the `timestamp:` query field
+appears to fix that while silently dropping almost everything. The era
+split is therefore a slash-channel measurement, and the union of both
+channels can only be ranked all-time. Worked through in
+`references/2026-08-12-tool-channel-has-no-date.md`.
 
 The two disagree, and not by a fixed amount. The ratio between them
 belongs to each skill rather than to the corpus: a skill invoked almost
@@ -89,7 +114,7 @@ total: one measured rename left 150 invocations under the old name and
 Recover the old names from the repository rather than guessing.
 
 ```console
-git log --diff-filter=R --name-status --format='%h' -- 'plugins/*/skills/*'
+git log --diff-filter=R --name-status --format='%h %s' -- 'plugins/*/skills/*'
 ```
 
 Also read commit subjects for renames that moved a file the rename
@@ -119,7 +144,7 @@ Recover the boundary from birth dates, since the rename detector scores
 a supersession at nothing:
 
 ```console
-git log --follow --format='%ad' --date=short -- <path to SKILL.md> | tail -1
+git log --follow --format='%ad' --date=short -- <path to SKILL.md> | sort | head -1
 ```
 
 Then window each finding against the birth date of the skill that
@@ -142,8 +167,14 @@ are the reverse: their metadata comes back empty and the project is the
 `/projects/<slug>` path segment. Union both.
 
 ```console
-uvx agentgrep --color never search --exhaustive '<pattern>' --limit 500 --no-progress --json | jq -r '[.. | objects | select(has("path")) | .metadata.project // (.path | capture("/projects/(?<p>[^/]+)").p) // empty] | .[]' | sort -u | wc -l
+uvx agentgrep --color never search --exhaustive '<pattern>' --limit 500 --no-progress --json | jq -r '[.. | objects | select(has("path")) | .metadata.project // (.path | capture("/projects/(?<p>[^/]+)").p) // empty] | .[]' | sort -u
 ```
+
+Deduplicate the names it returns before counting them, and compare by
+equality rather than by prefix. The two channels spell the same project
+differently and one slug can extend another, so a raw `wc -l` over that
+union inflates spread for a single project and merges two neighbouring
+ones. Worked through in `references/2026-08-12-one-project-three-spellings.md`.
 
 Those field names describe agentgrep's normalization, not the files
 underneath it. The slash-channel query above reads

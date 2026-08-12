@@ -117,9 +117,9 @@ the prompts themselves, which name the ports they were written for. A
 sweep that had trusted the attribution would have scored this finding
 one project and dropped it.
 
-Host attribution held up. Once the sweep's own noise came out, the
-cycle sat in twenty-three Codex records and twenty-five Claude records
-— genuinely both, not an artifact.
+Neither trap announced itself. A bounded run reports results, and a
+contaminated count reports a project. Both look like measurements, and
+only the completeness field and the project names say otherwise.
 
 ## Finding one: the cycle had no name
 
