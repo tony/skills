@@ -105,7 +105,7 @@
         "plugins/changelog/skills/changelog/SKILL.md"
       ],
       "bundled": {},
-      "bytes": 26346
+      "bytes": 26299
     },
     {
       "name": "changelog-refresh",
@@ -318,7 +318,7 @@
       "bundled": {
         "references/merge-readiness.md": "plugins/merge-pr/references/merge-readiness.md"
       },
-      "bytes": 10504
+      "bytes": 10420
     },
     {
       "name": "model-cli-agy",

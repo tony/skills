@@ -107,6 +107,5 @@ local branch, stop here) — skip the panel only in plan mode.
 
 Offer the release when the merged trunk is a releasable state and the
 repo carries the version files a release touches; name the skill that
-cuts it rather than the git commands. Merging is often the last step
-before a release, and the panel is where that shows. Tagging and
-pushing stay the user's explicit act either way.
+cuts it rather than the git commands. Tagging and pushing stay the
+user's explicit act either way.

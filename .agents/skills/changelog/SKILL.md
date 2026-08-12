@@ -349,8 +349,7 @@ Changelog entries describe the **net shipped result** of the branch, not its int
    ```
 
    Build that message from *Commit message conventions for CHANGES edits*
-   below — the same rules either way, shown before the choice rather than
-   after it. Offer three options:
+   below — the same rules whichever option is taken. Offer three:
 
    - **Insert only** — apply the edit, leave it staged for nobody; the user
      commits when they choose.
@@ -358,8 +357,8 @@ Changelog entries describe the **net shipped result** of the branch, not its int
      only, using the message shown.
    - **Edit first** — the entries are wrong; go back to Phase 3.
 
-   Insert-only remains what happens on anything short of an explicit choice
-   to commit: a run that cannot ask, or a user who answers something else,
+   Insert-only is what happens on anything short of an explicit choice to
+   commit: a run that cannot ask, or a user who answers something else,
    ends with an uncommitted edit.
 
 **Wait for user response.** Do not proceed until they confirm.
