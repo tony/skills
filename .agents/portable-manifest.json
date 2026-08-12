@@ -318,7 +318,7 @@
       "bundled": {
         "references/merge-readiness.md": "plugins/merge-pr/references/merge-readiness.md"
       },
-      "bytes": 10143
+      "bytes": 10504
     },
     {
       "name": "model-cli-agy",
