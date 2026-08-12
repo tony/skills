@@ -149,8 +149,7 @@ Repeat until Phase 3 says stop. Each round:
    or more genuinely different resolutions is what `/spike:bakeoff`
    exists for — run it on those resolutions as the contender list. A
    stumbling block with one obvious fix is not a bakeoff; fold it into
-   the next probe. No stumbling blocks at all means the round
-   converged.
+   the next probe.
 3. **Re-probe the graft.** Grafts leave a bakeoff unproven in
    combination. When a round takes them, the loop seeds the next
    round's tree itself — apply the winner's stash, then the graft
@@ -170,14 +169,17 @@ inherits from round N-1 is the ledger's locked decisions, not its code.
 
 Stop when any of these holds, and say which one in the report:
 
-- **Converged** — the round surfaced no new stumbling block.
+Test them in this order, because a repeats-only round satisfies more
+than one:
+
+- **Thrashing** — the round surfaced stumbling blocks, but every one
+  was already recorded and decided in an earlier round. Repetition is
+  evidence that more spiking cannot settle the question; stop and
+  surface it rather than spending another round.
+- **Converged** — the round surfaced no stumbling block at all.
 - **Capped** — `--rounds` is exhausted. Report the still-open
   questions plainly; a capped loop is an honest partial result, not a
   failure to hide.
-- **Thrashing** — every stumbling block this round was already
-  recorded and decided in an earlier one. Repetition is evidence that
-  more spiking cannot settle the question; stop and surface it for the
-  user rather than spending another round.
 
 Otherwise start the next round from the ledger's open questions.
 
