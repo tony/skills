@@ -1,7 +1,7 @@
 {
   "name": "package-updater",
   "version": "0.0.1",
-  "description": "Update dependencies and toolchains across repositories. Commits updates separately (toolchain, bumps, lockfiles) with upstream release notes cited.",
+  "description": "Update dependencies and toolchains across repositories. Checks the supply-chain cooldown first, then commits toolchain, named bumps, and lockfile refreshes separately with release notes cited.",
   "author": {
     "name": "Tony Narlock",
     "email": "tony@git-pull.com"

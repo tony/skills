@@ -1,7 +1,8 @@
 # terraform
 
-Upgrade Terraform and OpenTofu versions. Discovers root modules, updates
-provider constraints holistically, and refreshes lock files.
+Upgrade Terraform and OpenTofu versions. Discovers every root module, moves
+provider constraints together because they combine across modules, and
+refreshes lock files without narrowing platform coverage.
 
 ## Installation
 

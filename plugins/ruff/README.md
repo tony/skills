@@ -1,7 +1,8 @@
 # ruff
 
-Upgrade Ruff across repositories. Resolves applicable rules against project
-configurations and lands one reviewed commit per rule.
+Upgrade Ruff across repositories. Works out which new rules can fire against
+each repo's select list and lands one reviewed commit per rule, citing the
+upstream rule doc.
 
 ## Installation
 

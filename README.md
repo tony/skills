@@ -33,14 +33,14 @@ are readable by any agent that scans `.agents/skills/`.
 | [double-check](plugins/double-check/) | Productivity | Forces verification requests to return re-derived answers instead of diffs against prior turns. Includes an alignment tool for repairing chats. |
 | [release](plugins/release/) | Development | Cut and bump releases with safe defaults (no automatic push/tag). Rolls out releases to downstream consumers with CI verification. |
 | [merge-pr](plugins/merge-pr/) | Development | Merge PRs matching repo history conventions. Includes readiness checks, CI watching, stack detection, and automated rebasing. |
-| [business](plugins/business/) | Productivity | Measure and report the business value of AI workflows using provenance-tagged data, engineer-hours, and cycle time metrics. |
+| [business](plugins/business/) | Productivity | Measure and report the business value of AI workflows with provenance-tagged data — metrics in engineer-hours and cycle time, never currency. |
 | [disk](plugins/disk/) | Productivity | Safely reclaim disk space. Classifies consumers as cache, redundant copy, or history, deleting only what is proven safe. |
 | [github-actions](plugins/github-actions/) | Development | Update GitHub Actions pins fleet-wide. Verifies tags, researches release notes, commits each action separately, and supersedes Dependabot PRs. |
 | [situate](plugins/situate/) | Development | Gain situational awareness before modifying code. Scans branches, PRs, tickets, and project conventions to orient the agent and verify the work required. |
-| [terraform](plugins/terraform/) | Development | Upgrade Terraform and OpenTofu versions. Discovers root modules, updates provider constraints holistically, and refreshes lock files. |
-| [ruff](plugins/ruff/) | Development | Upgrade Ruff across repositories. Resolves applicable rules against project configurations and lands one reviewed commit per rule. |
+| [terraform](plugins/terraform/) | Development | Upgrade Terraform and OpenTofu versions. Discovers every root module, moves provider constraints together because they combine across modules, and refreshes lock files without narrowing platform coverage. |
+| [ruff](plugins/ruff/) | Development | Upgrade Ruff across repositories. Works out which new rules can fire against each repo's select list and lands one reviewed commit per rule, citing the upstream rule doc. |
 | [git-branch](plugins/git-branch/) | Development | Rebuild branch history into atomic commits (byte-identical), or reimplement from scratch using existing tests as the spec. Includes an interactive-rebase toolkit. |
-| [package-updater](plugins/package-updater/) | Development | Update dependencies and toolchains across repositories. Commits updates separately (toolchain, bumps, lockfiles) with upstream release notes cited. |
+| [package-updater](plugins/package-updater/) | Development | Update dependencies and toolchains across repositories. Checks the supply-chain cooldown first, then commits toolchain, named bumps, and lockfile refreshes separately with release notes cited. |
 | [gh](plugins/gh/) | Development | File durable GitHub issues with reproductions, pinned links, and stripped PII. Enforces a markdown writing discipline reusable for any PR, comment, or ticket. |
 | [ticket](plugins/ticket/) | Development | Manage work across trackers (Linear, Jira, GitHub, etc.) respecting each platform's native object graph. Drafts durable tickets focused on invariants. |
 

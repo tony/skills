@@ -1,6 +1,6 @@
 {
   "name": "business",
-  "description": "Measure and report the business value of AI workflows using provenance-tagged data, engineer-hours, and cycle time metrics.",
+  "description": "Measure and report the business value of AI workflows with provenance-tagged data — metrics in engineer-hours and cycle time, never currency.",
   "version": "0.0.1",
   "author": {
     "name": "Tony Narlock",

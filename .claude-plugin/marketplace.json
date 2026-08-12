@@ -232,7 +232,7 @@
     },
     {
       "name": "business",
-      "description": "Measure and report the business value of AI workflows using provenance-tagged data, engineer-hours, and cycle time metrics.",
+      "description": "Measure and report the business value of AI workflows with provenance-tagged data — metrics in engineer-hours and cycle time, never currency.",
       "version": "0.0.1",
       "author": {
         "name": "Tony Narlock",
@@ -271,7 +271,7 @@
     },
     {
       "name": "terraform",
-      "description": "Upgrade Terraform and OpenTofu versions. Discovers root modules, updates provider constraints holistically, and refreshes lock files.",
+      "description": "Upgrade Terraform and OpenTofu versions. Discovers every root module, moves provider constraints together because they combine across modules, and refreshes lock files without narrowing platform coverage.",
       "version": "0.0.1",
       "author": {
         "name": "Tony Narlock",
@@ -284,7 +284,7 @@
     },
     {
       "name": "ruff",
-      "description": "Upgrade Ruff across repositories. Resolves applicable rules against project configurations and lands one reviewed commit per rule.",
+      "description": "Upgrade Ruff across repositories. Works out which new rules can fire against each repo's select list and lands one reviewed commit per rule, citing the upstream rule doc.",
       "version": "0.0.1",
       "author": {
         "name": "Tony Narlock",
@@ -323,7 +323,7 @@
     },
     {
       "name": "package-updater",
-      "description": "Update dependencies and toolchains across repositories. Commits updates separately (toolchain, bumps, lockfiles) with upstream release notes cited.",
+      "description": "Update dependencies and toolchains across repositories. Checks the supply-chain cooldown first, then commits toolchain, named bumps, and lockfile refreshes separately with release notes cited.",
       "version": "0.0.1",
       "author": {
         "name": "Tony Narlock",

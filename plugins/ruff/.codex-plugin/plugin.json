@@ -1,7 +1,7 @@
 {
   "name": "ruff",
   "version": "0.0.1",
-  "description": "Upgrade Ruff across repositories. Resolves applicable rules against project configurations and lands one reviewed commit per rule.",
+  "description": "Upgrade Ruff across repositories. Works out which new rules can fire against each repo's select list and lands one reviewed commit per rule, citing the upstream rule doc.",
   "author": {
     "name": "Tony Narlock",
     "email": "tony@git-pull.com"

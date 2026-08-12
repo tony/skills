@@ -1,7 +1,8 @@
 # package-updater
 
-Update dependencies and toolchains across repositories. Commits updates
-separately (toolchain, bumps, lockfiles) with upstream release notes cited.
+Update dependencies and toolchains across repositories. Checks the
+supply-chain cooldown first, then commits toolchain, named bumps, and
+lockfile refreshes separately with release notes cited.
 
 ## Installation
 
