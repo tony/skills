@@ -75,3 +75,7 @@ places and either alone misreports usage, renames split a skill's history,
 a supersession splits it the other way, a truncated query is
 indistinguishable from a genuine absence, and one exhaustive query
 reads the entire corpus.
+
+`references/worked-example-spike.md` is a worked example of the whole
+pass: the prompts a hand-run sweep mined from `/spike:*` usage, and
+the edits they became.

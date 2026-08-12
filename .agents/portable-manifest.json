@@ -654,9 +654,10 @@
         "plugins/self-improvement/skills/sweep/SKILL.md"
       ],
       "bundled": {
-        "references/corpus-queries.md": "plugins/self-improvement/references/corpus-queries.md"
+        "references/corpus-queries.md": "plugins/self-improvement/references/corpus-queries.md",
+        "references/worked-example-spike.md": "plugins/self-improvement/references/worked-example-spike.md"
       },
-      "bytes": 21824
+      "bytes": 25549
     },
     {
       "name": "situate",
@@ -1125,6 +1126,7 @@
     "plugins/ruff/references/pin-sites-and-gating.md": 1,
     "plugins/ruff/references/release-triage.md": 1,
     "plugins/self-improvement/references/corpus-queries.md": 1,
+    "plugins/self-improvement/references/worked-example-spike.md": 1,
     "plugins/situate/references/goal-derivation.md": 1,
     "plugins/slop/references/commit-template.md": 1,
     "plugins/slop/references/quality-gates.md": 1,

@@ -45,6 +45,11 @@ remedy is a skill that does not exist yet.
 
 A pattern that is neither is usually not a finding.
 
+A worked example of the whole pass — the prompts that were mined,
+the verdicts, and the edits they became — is
+`../../references/worked-example-spike.md`. It was run by hand
+before this skill existed.
+
 ## The evidence bar
 
 A finding needs repetition, spread, **and currency**: several
