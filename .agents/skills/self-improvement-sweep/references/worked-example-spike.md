@@ -1,19 +1,23 @@
+<!-- portable: verbatim-fences -->
+
 # A worked example: spike, before this skill existed
 
 The pass that became the `spike-loop` skill is this skill run by hand, months of
-prompts read in one sitting. Everything below is quoted from the corpus
-or from the diff it produced. Nothing is paraphrased, because the point
-of the example is what the evidence actually looked like.
+prompts read in one sitting. Every fenced block below is quoted from the
+corpus or from the diff it produced, character for character. Nothing in
+one is paraphrased, because the point of the example is what the
+evidence actually looked like.
 
-The outcome is pull request
-[#74](https://github.com/tony/skills/pull/74), merged as `00e6215`.
+The outcome is
+[pull request #74](https://github.com/tony/skills/pull/74), merged as
+[`00e6215`](https://github.com/tony/skills/commit/00e6215).
 
 ## The ask that started it
 
 ```
 /goal You're a pro at Claude and Codex Skills
 
-This will be for improving: /spike:*, spike-probe and spike-bakeoff
+This will be for improving: /spike:*, /spike:probe and /spike:bakeoff
 
 study `uvx agentgrep` for prompts i've written w/ `depth:exhaustive` if you want to go deep
 
@@ -65,11 +69,17 @@ Seven retypings, no two identical, each drifting a step. Step 4 — the
 planning notes — is the one that goes missing most often, and it is the
 reason to run rounds at all.
 
-The sentence form carries `$spike` and `$bakeoff`; the list form
-carries the `spike-probe` skill. Both name the same cycle. That split is host
-asymmetry in the raw: a host that does not slash-invoke skills gets a
-sigil instead, and the same intent lands in a different shape. Counting
-only `/spike:` would have found the list form and missed the rest.
+Both shapes carry `$spike` and `$bakeoff`. Not one of the seven names a
+skill the way either host actually invokes one — which is what "typed
+instead of an invocation" means in practice. A count of `/spike:` finds
+zero of them. The procedure with the strongest case for becoming a
+skill is precisely the one that invocation counting cannot see.
+
+Every genuine retyping is a Codex record. That is not a fact about
+Codex; it is a fact about where this particular exploration happened,
+and it is only visible because the Claude side turned out to be the
+sweep's own reflection. A per-host count taken without that subtraction
+would have reported the cycle as evenly split and hidden both facts.
 
 ## Reading it wrong, first
 
@@ -86,15 +96,26 @@ matches_seen: 69
 
 Forty results returned against sixty-nine matches. `state` reads
 `bounded`, not `complete` — but a reader who checks only the result
-count sees forty findings and no error. Re-running at `--limit 2000`
-returned `complete` and the full seventy.
+count sees forty findings and no error.
 
-Spread misled in the other direction. Project attribution came back
-twenty-five occurrences in a single repository — until it turned out
-that repository was this one, and the occurrences were the session
-that was *writing this file* quoting the prompt back. A sweep is part
-of the corpus it reads. Exclude the sweep's own project or the finding
-measures the sweep.
+Re-running at `--limit 2000` returned `complete`, seventy matches, and
+forty-eight records. Three numbers, three meanings: seventy is every
+occurrence, forty-eight is what survives deduplication, and the extra
+match over the first run's sixty-nine was created *by the sweep* — the
+session running it had written the phrase down in between.
+
+Spread then misled in the opposite direction. Project attribution came
+back twenty-five occurrences in a single repository, which reads as a
+pattern confined to one project and therefore not a finding at all.
+Every one of those twenty-five was this repository, and every one was a
+session working on the sweep, quoting the prompt back.
+
+Strip them and the genuine evidence is entirely Codex: twenty-three
+records, which carry no project field at all. So the spread that
+mattered was never countable from the result — it had to be read off
+the prompts themselves, which name the ports they were written for. A
+sweep that had trusted the attribution would have scored this finding
+one project and dropped it.
 
 Host attribution held up. Once the sweep's own noise came out, the
 cycle sat in twenty-three Codex records and twenty-five Claude records
@@ -148,7 +169,7 @@ stumbling blocks were not a concept; after:
 +  a constraint that surfaced too late to design around. A stumbling
 +  block is neither a `SPIKE:` marker (a shortcut you chose) nor an
 +  adjacent problem (out of scope); it is evidence the *approach* may be
-+  wrong, which makes it the reason to reach for `spike-bakeoff` and
++  wrong, which makes it the reason to reach for `/spike:bakeoff` and
 +  the input the next probe sharpens against.
 ```
 
@@ -161,8 +182,8 @@ the case for a bakeoff whenever the probe happened to work:
 +2. `## Spike findings` — what was proven, stumbling blocks, `SPIKE:`
 +   markers, observed-not-addressed list. State the stumbling blocks
 +   even when the probe succeeded: a path that worked while fighting
-+   you the whole way is the case for `spike-bakeoff` or
-+   `spike-loop`, and reporting only the success buries it.
++   you the whole way is the case for `/spike:bakeoff` or
++   `/spike:loop`, and reporting only the success buries it.
 ```
 
 ## Finding two: grafts landed without ever being run
@@ -175,7 +196,7 @@ Once you have a graft selected, then go ahead and do the graft in a spike:probe
 ```
 
 ```
-spike-probe Double check 1-8 work without any hitches - without committing, and confirm the winning + grafted approach works:
+/spike:probe Double check 1-8 work without any hitches - without committing, and confirm the winning + grafted approach works:
 ```
 
 And the defect named outright, in a prompt that was not about skills at
@@ -201,7 +222,7 @@ proven *without* them, no contender was ever built *with* them, and
 +  on the combined tree. When the grafts are substantial enough that
 +  landing them blind is the wrong call, recommend re-probing instead:
 +  apply the winner's stash and the graft hunks, then run
-+  `spike-probe` on that tree, answering its dirty-tree halt with
++  `/spike:probe` on that tree, answering its dirty-tree halt with
 +  *probe on top of it* — the seeded tree is the intended starting
 +  point, not stray work.
 ```
@@ -220,10 +241,10 @@ prompt was asking for:
 The panel gained the exit the user had been typing by hand:
 
 ```diff
--7. End with an `ask-user-choice` panel: replay the winner / keep
+-7. End with an `AskUserQuestion` panel: replay the winner / keep
 -   stashes and stop / discard all
-+7. End with an `ask-user-choice` panel: replay the winner / probe the
-+   grafted winner (`spike-probe`, still zero commits) / keep stashes
++7. End with an `AskUserQuestion` panel: replay the winner / probe the
++   grafted winner (`/spike:probe`, still zero commits) / keep stashes
 +   and stop / discard all
 ```
 
