@@ -55,8 +55,37 @@ git log --diff-filter=R --name-status --format='%h' -- 'plugins/*/skills/*'
 Also read commit subjects for renames that moved a file the rename
 detector scored below its threshold, and for skills replaced by a
 different set rather than renamed — the successor carries none of the
-predecessor's history either way. Sum across every name a skill has
-had before applying any threshold.
+predecessor's history either way. Sum across every name a single skill
+has had before applying any threshold, and across nothing else — a
+replacement is not a rename.
+
+## Supersessions split it the other way
+
+A rename and a supersession look identical in a census and demand
+opposite handling. A rename you detect and **sum** across. A
+supersession — a skill replaced by a different one, or by a set of
+them — leaves no git trace linking predecessor to successor, and
+summing them is precisely wrong: the predecessor's invocations all
+belong to the era before the successor shipped.
+
+The tell is cheap once you look for it. A superseded skill has a full
+all-time record and an empty recent half. Confirm it against the
+successor, which carries the mirror image — empty until that date and
+holding the traffic after it. A predecessor that went quiet with no
+sibling picking up its work is abandoned rather than superseded, and
+that is a different finding with a different remedy.
+
+Recover the boundary from birth dates, since the rename detector scores
+a supersession at nothing:
+
+```console
+git log --follow --format='%ad' --date=short -- <path to SKILL.md> | tail -1
+```
+
+Then window each finding against the birth date of the skill that
+covers it. A procedure typed by hand over and over is a discoverability
+gap only if the typing continued after the skill existed; measured
+against the wrong date it reads as a gap either way.
 
 ## Spread, not just repetition
 

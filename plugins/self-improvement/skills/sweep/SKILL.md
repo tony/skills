@@ -47,10 +47,18 @@ A pattern that is neither is usually not a finding.
 
 ## The evidence bar
 
-A finding needs repetition **and** spread: several occurrences, across
-more than one project or ecosystem. One project's friction is that
-project's quirk, and proposing a catalog change from it is how a
-catalog gets bloated.
+A finding needs repetition, spread, **and currency**: several
+occurrences, across more than one project or ecosystem, in the era of
+the catalog you are about to change. One project's friction is that
+project's quirk. One dead era's friction is history. Proposing a
+catalog change from either is how a catalog gets bloated.
+
+Currency and repetition pull against each other, and that tension is
+what stops the window from being drawn wherever the numbers look best.
+A skill young enough to have accumulated a handful of invocations
+cannot clear repetition however the window is drawn — two of three is
+not a ratio — and a finding that needs a window narrower than its
+skill's lifetime to look large is not a finding.
 
 Report **ratios, not counts.** Every useful finding here is a
 denominator away from its opposite: the same "instructions appended to
@@ -60,12 +68,12 @@ numerator cannot tell those apart, and a ledger full of bare
 numerators leaves the reader unable to sort majority behavior from a
 5% tail.
 
-Getting the denominator right is the hard part, and it has two traps
-with measured consequences. Read `../../references/corpus-queries.md`
+Getting the denominator right is the hard part, and its traps have
+measured consequences. Read `../../references/corpus-queries.md`
 before counting anything: it covers the two invocation channels and
-why either alone is wrong, why renames split a skill's history, how to
-tell a truncated query from a real absence, and what one exhaustive
-query costs.
+why either alone is wrong, why renames split a skill's history and why
+supersessions split it the other way, how to tell a truncated query
+from a real absence, and what one exhaustive query costs.
 
 ## What counts as a signal
 
@@ -105,8 +113,17 @@ Without an invocation:
 
 ## The three verdicts
 
-For every pattern, ask what the skill already says. There are three
-answers, and the middle one is the trap:
+Before any of them, check that the skill is still where the behavior
+lives. A predecessor keeps its invocations forever and stops earning
+new ones the day a successor ships, so its ratio stays high while its
+present-tense usage is zero. Split it on the successor's birth date: a
+full record with an empty recent half is **superseded**, and every
+pattern around it is a historical record rather than a gap. Say so and
+move on. The remedy already shipped, and a handoff proposed here would
+point a skill nobody invokes at the one that replaced it.
+
+Then, for every pattern, ask what the skill already says. There are
+three answers, and the middle one is the trap:
 
 1. **Absent** — the skill never covered it. Propose it.
 2. **Present and binding** — the skill covers it and the pastes stop
@@ -145,7 +162,7 @@ Non-flag text narrows the sweep to named plugins or skills. Empty
 sweeps the whole catalog of the repository you are in; outside a skill
 repository, ask what to sweep rather than guessing.
 
-## Phase 0: Inventory and rename map
+## Phase 0: Inventory, rename map, and birth dates
 
 1. List the catalog: every `plugins/*/skills/*/SKILL.md`, its name,
    and whether it sets `disable-model-invocation`.
@@ -162,11 +179,29 @@ git log --diff-filter=R --name-status --format='%h %s' -- 'plugins/*/skills/*'
    threshold and for skills replaced by a different set rather than
    renamed. The successor inherits none of the history either way.
 
+3. Date every skill. A rename map says which names are one skill; it
+   cannot say when a behavior first became reachable, and months a
+   skill did not exist for are nobody's denominator.
+
+```console
+git log --follow --format='%ad' --date=short -- <path to SKILL.md> | tail -1
+```
+
+   Birth dates that cluster on a single day mark a structural change to
+   the catalog rather than one skill's arrival. That day is the
+   boundary the census reports either side of.
+
 ## Phase 1: Census
 
 Extract both channels per `corpus-queries.md`, union them, and sum
 across renames. Confirm the sweep completed before applying any
 threshold — a bounded run and a genuine zero look identical.
+
+Then split the census on the boundary from Phase 0 and carry both
+halves forward. A corpus that accumulated across a catalog rebuild is
+mostly a record of skills that no longer carry the behavior, and the
+older half can outweigh the newer one by enough to decide the ranking
+on its own.
 
 State the corpus assumption in the report: an archived or reclaimed
 transcript store reports a clean, complete, wrong census, so the
@@ -186,8 +221,14 @@ near-verbatim repetition — not frequency — is the signal.
 ## Phase 3: Verdicts
 
 Run the three verdicts against each cluster that clears the evidence
-bar, and record the ratio, the spread, and the mechanic that produced
-the verdict.
+bar, and record the ratio, the spread, the window that denominator
+covers, and the mechanic that produced the verdict.
+
+Window each finding against the birth date of the skill that covers
+it, not against one date for the whole sweep. Skills arrive on
+different days, and measuring a hand-typed procedure against the day
+its skill shipped is the difference between *nobody knows this exists*
+and *this shipped and the typing stopped*.
 
 Where a finding could be answered two plausible ways, do not judge it
 here — record both shapes and let the proposal say so.
