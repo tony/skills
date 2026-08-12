@@ -227,12 +227,19 @@ git log --follow --format='%ad' --date=short -- <path to SKILL.md> | sort | head
    same wrong answer for every skill in the catalog.
 
    Birth dates cluster on the days the catalog changed shape, and there
-   will be several such days rather than one. Take the most recent
-   cluster large enough to represent a rebuild rather than a batch of
-   arrivals; an earlier boundary buries the era you are about to change
-   under one you cannot. State the chosen date and the runners-up in
-   the report, because the choice decides the current-era ranking and
-   the next sweep has to be able to disagree with it.
+   will be several such days rather than one. A cluster counts as a
+   rebuild when it holds at least a tenth of the catalog; anything
+   smaller is a batch of arrivals. Take the most recent rebuild — an
+   earlier boundary buries the era you are about to change under one
+   you cannot. State the chosen date and the runners-up in the report,
+   because the choice decides the current-era ranking and the next
+   sweep has to be able to disagree with it.
+
+   Then check the era is long enough to rank against at all. If its
+   leading skill holds too few invocations to form a ratio, the
+   current-era ranking is noise: say so and rank all-time only. Printing
+   a noise ranking beside a real one gives them equal weight, and the
+   reader has no way to tell which is which.
 
 ## Phase 1: Count every skill
 
