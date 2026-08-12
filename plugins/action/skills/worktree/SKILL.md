@@ -33,7 +33,7 @@ is first-class, not an error.
 This skill is invoked by name, never routed to on the model’s initiative: it creates
 worktrees and branches, modifies files, and creates commits, so it
 must be user-explicit, not router-inferred. To land review findings
-on the *current* branch, use `/review:address`; this command starts
+on the *current* branch, use `/respond:action`; this command starts
 ticket work on a *new* branch.
 
 `/action:worktrees` delegates to this file's phases by name and

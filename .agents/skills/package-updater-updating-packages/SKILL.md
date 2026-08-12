@@ -5,7 +5,8 @@ description: >-
   a whole fleet — bump dev packages, refresh a lockfile (uv.lock,
   pnpm-lock.yaml, package-lock.json, Cargo.lock, go.sum), find outdated
   packages with ncu, uv, pnpm or cargo, hold a package back in .ncurc, or
-  move a .tool-versions, .nvmrc, packageManager or engines pin.
+  move a .tool-versions, .nvmrc, packageManager or engines pin. Lands each
+  bump as its own commit, with the upstream release notes cited.
 metadata:
   source: "plugins/package-updater/skills/updating-packages/SKILL.md"
 ---

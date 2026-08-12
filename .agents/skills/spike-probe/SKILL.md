@@ -100,8 +100,9 @@ Non-flag text is the probe goal. Resolve the goal by this ladder:
    conversation.
 
 When the inferred goal is a set of review findings, note the boundary
-in the brief: a probe explores fixes with zero commits; landing fixes
-commit-by-commit is the `review-address` skill.
+in the brief: a probe explores fixes with zero commits; screening those
+findings is the `respond-check` skill and landing them commit-by-commit is
+the `respond-action` skill.
 
 | Flag | Default | Effect |
 |---|---|---|
