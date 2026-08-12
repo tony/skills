@@ -75,9 +75,8 @@ gets swallowed by the round's own `git stash push -u`, erased by
 absolute path from every bakeoff worktree, so contenders and the main
 checkout write to one file.
 
-Announce the path in the Phase 1 brief. An existing ledger for the same
-goal is resumed, not overwritten — a loop interrupted by a context
-compaction or a closed session picks up from its last round.
+Announce the path in the Phase 1 brief, and append to whatever ledger
+is already there rather than truncating it.
 
 Each round appends one section:
 
