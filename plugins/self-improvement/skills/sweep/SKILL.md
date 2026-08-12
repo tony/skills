@@ -120,8 +120,15 @@ constraints are usually already written in the skill they concern. Get
 to it by dating the rule and splitting the evidence around it.
 
 ```console
-git log --format='%h %ad' --date=short -1 -S '<phrase from the rule>' -- <path to SKILL.md>
+git log --follow --format='%h %ad' --date=short -S '<phrase from the rule>' -- <path to SKILL.md> | tail -1
 ```
+
+`--follow` because a rename otherwise dates every phrase in the file
+to the rename, which is the same history-splitting this skill builds a
+rename map to avoid. `tail -1` because `-S` lists newest first, and
+`-1` would return the rule's latest edit rather than its introduction.
+`--reverse` is not the fix: `-n` applies before the reversal, and
+`--follow --reverse` returns nothing.
 
 Compare the paste rate before that date against after. A rate that did
 not drop is proof that prose guidance failed, and the remedy is a

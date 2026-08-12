@@ -61,12 +61,22 @@ had before applying any threshold.
 ## Spread, not just repetition
 
 The evidence bar is repetition **and** spread: a pattern confined to
-one project is that project's quirk. Both search channels encode the
-originating project in the result path, so spread is countable.
+one project is that project's quirk.
+
+Project attribution sits in a different field per record type, and
+reading only one of them silently reports zero spread. Prompt-history
+records carry it in `.metadata.project` — their `path` is the single
+history file they all share, so deriving a project from the path
+discards that whole channel. Transcript records are the reverse: the
+project is the `/projects/<slug>` path segment and `.metadata.project`
+is absent. Union both.
 
 ```console
-uvx agentgrep --color never search --exhaustive '<pattern>' --limit 500 --no-progress --json | jq -r '[.. | objects | select(has("path")) | .path] | .[]' | rg -o '/projects/[^/]+' | sort -u | wc -l
+uvx agentgrep --color never search --exhaustive '<pattern>' --limit 500 --no-progress --json | jq -r '[.. | objects | select(has("path")) | .metadata.project // (.path | capture("/projects/(?<p>[^/]+)").p) // empty] | .[]' | sort -u | wc -l
 ```
+
+Codex history records carry neither field, so their spread is not
+countable from a result alone — say so rather than scoring it zero.
 
 ## Cost, and how to not pay it repeatedly
 
@@ -89,8 +99,13 @@ matches.
 jq -c '.summary.status, .summary.stats, .summary.coverage' <saved.json>
 ```
 
-`status.state` must read `complete`. `stats.matched` is the exact
-count, which is what a threshold should be applied to.
+`status.state` must read `complete`. Do not then threshold on
+`stats.matched`: it counts results after deduplication and after
+`--limit`, so it quietly equals the limit whenever the limit binds and
+`state` still reads `complete`. `coverage.matches_seen` counts every
+match before either, and is the number a threshold belongs on. In one
+measured run the two read 302 and 439 for the same query, and 439 was
+the literal occurrence count.
 
 ## Query syntax that bites
 
