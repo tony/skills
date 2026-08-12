@@ -255,9 +255,12 @@ resolve, per-commit gates — plus:
   without them and no contender was ever built with them, so a graft
   is a hypothesis judged on paper until the shared proving check runs
   on the combined tree. When the grafts are substantial enough that
-  landing them blind is the wrong call, say so and recommend the
-  the `spike-probe` skill exit, which re-proves winner-plus-grafts as one tree
-  at zero commits and returns a plan for what actually ran.
+  landing them blind is the wrong call, recommend re-probing instead:
+  apply the winner's stash and the graft hunks, then run
+  the `spike-probe` skill on that tree, answering its dirty-tree halt with
+  *probe on top of it* — the seeded tree is the intended starting
+  point, not stray work. That proves winner-plus-grafts as one tree at
+  zero commits and returns a plan for what actually ran.
 - The losing strategies, one line each: why they lost, and under
   what future conditions they would have won (this is the decision
   record the bakeoff existed to produce).
@@ -297,9 +300,9 @@ place to debug an idea that was only ever judged on paper.
 7. End with an `ask-user-choice` panel: replay the winner / probe the
    grafted winner (the `spike-probe` skill, still zero commits) / keep stashes
    and stop / discard all — unless already in plan mode or `--replay`
-   was given. Recommend the probe exit whenever the verdict carried
-   grafts. In a non-interactive run, record the question in the report
-   and default to keeping the stashes.
+   was given. Recommend the probe exit when Phase 6 judged the grafts
+   too substantial to land blind. In a non-interactive run, record the
+   question in the report and default to keeping the stashes.
 
 
 ## Portability notes
