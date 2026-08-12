@@ -465,6 +465,34 @@ def _fix_phrases(text: str) -> str:
     return text
 
 
+def fenced_blocks(text: str) -> list[str]:
+    r"""Return the lines inside ``text``'s code fences, fence markers excluded.
+
+    Exported for the export check, which compares a verbatim source against
+    what shipped. Uses the same open/close toggle as the renderer, so both
+    agree on where a fence starts even where that toggle is wrong.
+
+    Examples
+    --------
+    >>> fenced_blocks("a\n```\nkept\n```\nb")
+    ['kept']
+    """
+    inside: list[str] = []
+    in_code = False
+    for line in text.split("\n"):
+        if _FENCE_RE.match(line):
+            in_code = not in_code
+            continue
+        if in_code:
+            inside.append(line)
+    return inside
+
+
+def has_verbatim_fences(text: str) -> bool:
+    """Report whether ``text`` carries the verbatim-fences marker."""
+    return _VERBATIM_FENCES_RE.search(text) is not None
+
+
 def _plugin_of(path: Path) -> Path | None:
     """Return the plugin directory containing ``path``, or None."""
     try:

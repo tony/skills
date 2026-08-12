@@ -61,6 +61,8 @@ from _portable_render import (  # pyright: ignore[reportImplicitRelativeImport]
     PortableIndex,
     SkillBuilder,
     SourceComponent,
+    fenced_blocks,
+    has_verbatim_fences,
     strip_frontmatter,
 )
 from _private_path import PrivatePath  # pyright: ignore[reportImplicitRelativeImport]
@@ -1797,6 +1799,33 @@ def _check_one_skill(skill: BuiltSkill) -> list[str]:
         if rel not in skill.files
     )
     errors.extend(_check_body_paths(skill))
+    errors.extend(_check_verbatim_fences(skill))
+    return errors
+
+
+def _check_verbatim_fences(skill: BuiltSkill) -> list[str]:
+    """Verify a verbatim source's fenced blocks shipped byte-identical.
+
+    Nothing else catches a regression here. A rewritten quote is still valid
+    markdown, still resolves every path, and still passes every other
+    invariant — it is simply no longer what the person typed, which is the
+    one property the marker exists to hold.
+    """
+    errors: list[str] = []
+    for rel, src_rel in sorted(skill.vendored.items()):
+        source = REPO_ROOT / src_rel
+        if source.suffix != ".md" or rel not in skill.files:
+            continue
+        try:
+            raw = source.read_text(encoding="utf-8")
+        except (OSError, UnicodeDecodeError):
+            continue
+        if not has_verbatim_fences(raw):
+            continue
+        shipped = skill.files[rel][0].decode("utf-8", errors="replace")
+        if fenced_blocks(raw) != fenced_blocks(shipped):
+            altered = "is marked verbatim but its fenced blocks were altered on export"
+            errors.append(f"portable: [{skill.name}] '{rel}' {altered}")
     return errors
 
 
