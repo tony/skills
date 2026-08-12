@@ -646,7 +646,7 @@
         "plugins/self-improvement/skills/apply/SKILL.md"
       ],
       "bundled": {},
-      "bytes": 6786
+      "bytes": 6796
     },
     {
       "name": "self-improvement-sweep",
@@ -654,9 +654,13 @@
         "plugins/self-improvement/skills/sweep/SKILL.md"
       ],
       "bundled": {
-        "references/corpus-queries.md": "plugins/self-improvement/references/corpus-queries.md"
+        "references/2026-08-12-one-project-three-spellings.md": "plugins/self-improvement/references/2026-08-12-one-project-three-spellings.md",
+        "references/2026-08-12-superseded-skill-leads-all-time.md": "plugins/self-improvement/references/2026-08-12-superseded-skill-leads-all-time.md",
+        "references/2026-08-12-tool-channel-has-no-date.md": "plugins/self-improvement/references/2026-08-12-tool-channel-has-no-date.md",
+        "references/detecting-invocations.md": "plugins/self-improvement/references/detecting-invocations.md",
+        "references/worked-example-spike.md": "plugins/self-improvement/references/worked-example-spike.md"
       },
-      "bytes": 18011
+      "bytes": 48732
     },
     {
       "name": "situate",
@@ -1124,7 +1128,11 @@
     "plugins/ruff/references/default-rule-set.md": 1,
     "plugins/ruff/references/pin-sites-and-gating.md": 1,
     "plugins/ruff/references/release-triage.md": 1,
-    "plugins/self-improvement/references/corpus-queries.md": 1,
+    "plugins/self-improvement/references/2026-08-12-one-project-three-spellings.md": 1,
+    "plugins/self-improvement/references/2026-08-12-superseded-skill-leads-all-time.md": 1,
+    "plugins/self-improvement/references/2026-08-12-tool-channel-has-no-date.md": 1,
+    "plugins/self-improvement/references/detecting-invocations.md": 1,
+    "plugins/self-improvement/references/worked-example-spike.md": 1,
     "plugins/situate/references/goal-derivation.md": 1,
     "plugins/slop/references/commit-template.md": 1,
     "plugins/slop/references/quality-gates.md": 1,

@@ -33,7 +33,7 @@ codex plugin add self-improvement@skills
 
 | Claude Code | Codex | Description |
 |---|---|---|
-| `/self-improvement:sweep [<skill>...]` | `self-improvement:sweep [<skill>...]` | Rank the catalog by real invocation counts and report what gets retyped around it. Changes nothing |
+| `/self-improvement:sweep [<skill>...]` | `self-improvement:sweep [<skill>...]` | Rank the catalog twice — all-time and current-era — and report what gets retyped around it. Changes nothing |
 | `/self-improvement:apply [<id>...]` | `self-improvement:apply [<id>...]` | Land the sweep's accepted findings, one gated commit per finding |
 
 `sweep` reports and `apply` acts, the same split as `/respond:check` and
@@ -54,21 +54,28 @@ on. Each points at a different remedy: a default, a terminal step, an argument.
 A procedure restated near-verbatim with **no** skill named is the case for a
 skill that does not exist yet. That is the only finding allowed to propose one.
 
-A finding needs repetition and spread across more than one project, and is
-reported as a ratio against that skill's invocation count — the same evidence
-argues for opposite remedies at 54% and at 20%.
+A finding needs repetition, spread, and currency: several occurrences,
+across more than one project, in the era of the catalog you are about
+to change. It is reported as a ratio against that skill's invocation
+count — the same evidence argues for opposite remedies at 54% and at 20%.
 
 ## Prerequisites
 
 - **agentgrep** — read-only search across local agent stores, run as
   `uvx agentgrep`
 - **jq** — slicing saved search results
-- **git** — dating when a rule entered a skill, and mapping renames
+- **git** — dating when a rule entered a skill, mapping renames, and
+  dating when each skill first became reachable
 
-## Reading the corpus
+## Finding the invocations
 
-`references/corpus-queries.md` documents the measurement method and the traps
-that produce confident wrong answers: invocations are recorded in two separate
-places and either alone misreports usage, renames split a skill's history,
-a truncated query is indistinguishable from a genuine absence, and one
-exhaustive query reads the entire corpus.
+`references/detecting-invocations.md` documents how to get a per-skill count
+out of your local agent history, and the traps that produce confident wrong
+answers: invocations are recorded in two separate places and either alone
+misreports usage, renames split a skill's history, a supersession splits it
+the other way, a truncated query is indistinguishable from a genuine absence,
+and one exhaustive query reads every store on disk.
+
+`references/worked-example-spike.md` is a worked example of the whole
+pass: the prompts a hand-run sweep mined from `/spike:*` usage, and
+the edits they became.

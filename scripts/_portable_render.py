@@ -54,6 +54,26 @@ _ASK_TOKEN = "ask-user-choice"  # noqa: S105
 _HEADLESS_DEFAULT_MARKER = "<!-- portable: ask-user-choice=headless-default -->"
 """Source marker allowing a command's documented choice default in headless mode."""
 
+_VERBATIM_FENCES_MARKER = "<!-- portable: verbatim-fences -->"
+"""Source marker exempting a file's fenced blocks from the host rewrites.
+
+A fence normally holds a usage example, so a slash invocation inside one is
+rewritten to the bare skill name a Codex user would type. A file carrying this
+marker quotes evidence instead — prompts somebody actually typed, hunks that
+actually landed — and rewriting a quote makes it a false one.
+
+It exempts fences from rewriting, not from the emitted-tree invariants the
+export checks afterwards. A quote holding an in-repo path or an inline-bash
+span still fails ``portable --check``, because those checks describe what may
+ship rather than what may be rewritten. Such a quote has to be trimmed to the
+part that carries the point.
+"""
+
+_VERBATIM_FENCES_RE = re.compile(
+    r"^[ \t]*" + re.escape(_VERBATIM_FENCES_MARKER) + r"[ \t]*\n?", re.MULTILINE
+)
+"""The marker on a line of its own, so prose quoting it does not arm it."""
+
 _BASH_PROSE = "run this command and read the output:"
 
 REPO_PATH_PATTERN = r"(?<![A-Za-z0-9._/-])plugins/[a-z][a-z0-9-]*/[A-Za-z0-9._/-]*"
@@ -445,6 +465,34 @@ def _fix_phrases(text: str) -> str:
     return text
 
 
+def fenced_blocks(text: str) -> list[str]:
+    r"""Return the lines inside ``text``'s code fences, fence markers excluded.
+
+    Exported for the export check, which compares a verbatim source against
+    what shipped. Uses the same open/close toggle as the renderer, so both
+    agree on where a fence starts even where that toggle is wrong.
+
+    Examples
+    --------
+    >>> fenced_blocks("a\n```\nkept\n```\nb")
+    ['kept']
+    """
+    inside: list[str] = []
+    in_code = False
+    for line in text.split("\n"):
+        if _FENCE_RE.match(line):
+            in_code = not in_code
+            continue
+        if in_code:
+            inside.append(line)
+    return inside
+
+
+def has_verbatim_fences(text: str) -> bool:
+    """Report whether ``text`` carries the verbatim-fences marker."""
+    return _VERBATIM_FENCES_RE.search(text) is not None
+
+
 def _plugin_of(path: Path) -> Path | None:
     """Return the plugin directory containing ``path``, or None."""
     try:
@@ -586,12 +634,12 @@ class SkillBuilder:
 
     def _transform_markdown(self, text: str, plugin: Path, base: Path) -> str:
         """Apply every portability transform to a markdown body."""
+        verbatim = _VERBATIM_FENCES_RE.search(text) is not None
+        if verbatim:
+            text = _VERBATIM_FENCES_RE.sub("", text, count=1)
         text = _convert_bash_lines(text)
         text = _widen_inline_bang(text)
-        text = self._rewrite_fenced(text, plugin, base)
-        if _ASK_RE.search(text):
-            self._notes.add("ask")
-        return _ASK_RE.sub(_ASK_TOKEN, text)
+        return self._rewrite_fenced(text, plugin, base, verbatim=verbatim)
 
     def _portability_notes(self, body: str, *, has_headless_default: bool) -> str:
         """Build the trailing notes block for whatever degraded forms were used."""
@@ -663,11 +711,16 @@ class SkillBuilder:
         self._pending.append((src, plugin))
         return rel
 
-    def _rewrite_fenced(self, text: str, plugin: Path, base: Path) -> str:
+    def _rewrite_fenced(
+        self, text: str, plugin: Path, base: Path, *, verbatim: bool = False
+    ) -> str:
         """Rewrite tokens line by line, tracking fenced blocks.
 
         Inside a fence a slash invocation is a usage example, so it becomes the
-        bare skill name rather than a prose phrase.
+        bare skill name rather than a prose phrase. Under ``verbatim`` the
+        fences are left exactly as written; prose outside them still rewrites,
+        so a worked example reads in the host's own vocabulary while its quoted
+        evidence stays quotable.
         """
         lines: list[str] = []
         self._in_code = False
@@ -676,9 +729,20 @@ class SkillBuilder:
                 self._in_code = not self._in_code
                 lines.append(line)
                 continue
-            lines.append(self._rewrite_tokens(line, plugin, base))
+            if verbatim and self._in_code:
+                lines.append(line)
+                continue
+            rewritten = self._rewrite_tokens(line, plugin, base)
+            # Neutralizing the Claude-only choice tool rides this pass rather
+            # than a second one, so it inherits the same fence state: a note
+            # promising the token is only earned where the token was written.
+            if _ASK_RE.search(rewritten):
+                self._notes.add("ask")
+                rewritten = _ASK_RE.sub(_ASK_TOKEN, rewritten)
+            lines.append(rewritten)
         self._in_code = False
-        return _fix_phrases("\n".join(lines))
+        joined = "\n".join(lines)
+        return joined if verbatim else _fix_phrases(joined)
 
     def _rewrite_tokens(self, text: str, plugin: Path, base: Path) -> str:
         """Rewrite every host-specific path or slash token in ``text``."""
