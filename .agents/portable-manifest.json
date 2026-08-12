@@ -10,7 +10,7 @@
         "references/ticket-detection.md": "plugins/action/references/ticket-detection.md",
         "references/verification-gates.md": "plugins/action/references/verification-gates.md"
       },
-      "bytes": 27472
+      "bytes": 27499
     },
     {
       "name": "action-worktrees",
@@ -20,7 +20,7 @@
       "bundled": {
         "references/verification-gates.md": "plugins/action/references/verification-gates.md"
       },
-      "bytes": 15921
+      "bytes": 15948
     },
     {
       "name": "business-case-study-internal",
@@ -594,14 +594,39 @@
       "bytes": 8442
     },
     {
-      "name": "review-address",
+      "name": "respond-action",
       "sources": [
-        "plugins/review/skills/address/SKILL.md"
+        "plugins/respond/skills/action/SKILL.md"
       ],
       "bundled": {
-        "references/verification-gates.md": "plugins/review/references/verification-gates.md"
+        "references/bloat-discipline.md": "plugins/respond/references/bloat-discipline.md",
+        "references/screening-rubric.md": "plugins/respond/references/screening-rubric.md",
+        "references/verification-gates.md": "plugins/respond/references/verification-gates.md"
       },
-      "bytes": 16161
+      "bytes": 28138
+    },
+    {
+      "name": "respond-check",
+      "sources": [
+        "plugins/respond/skills/check/SKILL.md"
+      ],
+      "bundled": {
+        "references/feedback-sources.md": "plugins/respond/references/feedback-sources.md",
+        "references/screening-rubric.md": "plugins/respond/references/screening-rubric.md"
+      },
+      "bytes": 21023
+    },
+    {
+      "name": "respond-goal",
+      "sources": [
+        "plugins/respond/skills/goal/SKILL.md"
+      ],
+      "bundled": {
+        "references/feedback-sources.md": "plugins/respond/references/feedback-sources.md",
+        "references/review-agents.md": "plugins/respond/references/review-agents.md",
+        "references/verification-gates.md": "plugins/respond/references/verification-gates.md"
+      },
+      "bytes": 20428
     },
     {
       "name": "ruff-bump",
@@ -689,7 +714,7 @@
       "bundled": {
         "references/verification-gates.md": "plugins/spike/references/verification-gates.md"
       },
-      "bytes": 17283
+      "bytes": 17310
     },
     {
       "name": "spike-probe",
@@ -699,7 +724,7 @@
       "bundled": {
         "references/verification-gates.md": "plugins/spike/references/verification-gates.md"
       },
-      "bytes": 16586
+      "bytes": 16670
     },
     {
       "name": "tailwind-spacing-audit",
@@ -1038,6 +1063,9 @@
     "plugins/pytest-optimizer/templates/pytest_optimizer_plugin.py": 2,
     "plugins/pytest-optimizer/templates/state.schema.json": 2,
     "plugins/release/references/release-conventions.md": 2,
+    "plugins/respond/references/feedback-sources.md": 2,
+    "plugins/respond/references/screening-rubric.md": 2,
+    "plugins/respond/references/verification-gates.md": 2,
     "plugins/situate/references/brief.md": 2,
     "plugins/situate/references/prior-conversations.md": 2,
     "plugins/spike/references/verification-gates.md": 2,
@@ -1063,7 +1091,8 @@
     "plugins/pr/references/quality-gates.md": 1,
     "plugins/pr/references/slop-taxonomy.md": 1,
     "plugins/pytest-optimizer/templates/conftest_cache_snippet.py": 1,
-    "plugins/review/references/verification-gates.md": 1,
+    "plugins/respond/references/bloat-discipline.md": 1,
+    "plugins/respond/references/review-agents.md": 1,
     "plugins/ruff/references/default-rule-set.md": 1,
     "plugins/ruff/references/pin-sites-and-gating.md": 1,
     "plugins/ruff/references/release-triage.md": 1,
@@ -1099,5 +1128,10 @@
       "pr-recut"
     ]
   },
-  "unresolved_host_commands": {}
+  "unresolved_host_commands": {
+    "/codex:review": [
+      "respond-check",
+      "respond-goal"
+    ]
+  }
 }

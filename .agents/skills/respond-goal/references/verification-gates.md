@@ -1,18 +1,19 @@
 # Verification-Gate & CI Discovery
 
 > **Lockstep note**: this file is identical to
-> `plugins/spike/references/verification-gates.md` and
-> `plugins/action/references/verification-gates.md`. When you change
+> the spike plugin's verification-gates reference and
+> the action plugin's verification-gates reference. When you change
 > discovery behavior in one copy, mirror the change in the others in
 > the same PR. It extends the four-bucket algorithm shared by
-> `/pr:deslop` and `/slop:scan`
-> (`plugins/pr/references/quality-gates.md`) with a `build` bucket and
+> the `pr-deslop` skill and the `slop-scan` skill
+> (the pr plugin's quality-gates reference) with a `build` bucket and
 > a CI-coverage pass.
 
-How `/spike:probe`, `/spike:bakeoff`, `/review:address`,
-`/action:worktree`, and `/action:worktrees` learn, at runtime, which
-verification the project expects — and how much of it to run locally
-versus observe in CI after pushing. Language-agnostic, never hardcoded.
+How the `spike-probe` skill, the `spike-bakeoff` skill, the `respond-action` skill,
+this skill, the `action-worktree` skill, and the `action-worktrees` skill learn, at
+runtime, which verification the project expects — and how much of it to
+run locally versus observe in CI after pushing. Language-agnostic,
+never hardcoded.
 
 ## Local gate buckets
 
@@ -33,7 +34,7 @@ block beneath it. The first file's command wins on collision.
 When a bucket is unset **and the manifest shows evidence the project
 has that gate** — a typecheck config (`mypy`/`pyright` section,
 `tsconfig.json`), a `build` script, a test-runner dependency — present
-*example* commands via `AskUserQuestion` and require explicit
+*example* commands via `ask-user-choice` and require explicit
 selection. Never auto-inject `pytest`, `npm test`, `cargo build`, etc.
 Without such evidence, the bucket is legitimately `unset`: skip it
 downstream, do not prompt. In a non-interactive run, treat

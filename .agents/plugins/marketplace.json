@@ -149,18 +149,6 @@
       "category": "Development"
     },
     {
-      "name": "review",
-      "source": {
-        "source": "local",
-        "path": "./plugins/review"
-      },
-      "policy": {
-        "installation": "AVAILABLE",
-        "authentication": "ON_INSTALL"
-      },
-      "category": "Development"
-    },
-    {
       "name": "action",
       "source": {
         "source": "local",
@@ -333,6 +321,18 @@
       "source": {
         "source": "local",
         "path": "./plugins/ticket"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Development"
+    },
+    {
+      "name": "respond",
+      "source": {
+        "source": "local",
+        "path": "./plugins/respond"
       },
       "policy": {
         "installation": "AVAILABLE",

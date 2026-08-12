@@ -1,0 +1,12 @@
+{
+  "name": "respond",
+  "version": "0.1.0",
+  "description": "Respond to review feedback from any source — human reviewers, automated review agents, and the findings a review command produced earlier in the session — by screening every claim before code moves: is it true, did this branch cause it, does it hold against decisions the project already made, how often does the scenario actually fire, and what does the fix cost the next reader. What survives lands as one gated commit per finding that adds no test, comment, or complexity it cannot justify; what does not lands in a reply carrying the evidence. The whole cycle loops against CI and the review agents until the pull request goes quiet",
+  "author": {
+    "name": "Tony Narlock",
+    "email": "tony@git-pull.com"
+  },
+  "homepage": "https://github.com/tony/skills/tree/main/plugins/respond",
+  "license": "MIT",
+  "skills": "./skills/"
+}

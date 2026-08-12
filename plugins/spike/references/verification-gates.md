@@ -1,7 +1,7 @@
 # Verification-Gate & CI Discovery
 
 > **Lockstep note**: this file is identical to
-> `plugins/review/references/verification-gates.md` and
+> `plugins/respond/references/verification-gates.md` and
 > `plugins/action/references/verification-gates.md`. When you change
 > discovery behavior in one copy, mirror the change in the others in
 > the same PR. It extends the four-bucket algorithm shared by
@@ -9,10 +9,11 @@
 > (`plugins/pr/references/quality-gates.md`) with a `build` bucket and
 > a CI-coverage pass.
 
-How `/spike:probe`, `/spike:bakeoff`, `/review:address`,
-`/action:worktree`, and `/action:worktrees` learn, at runtime, which
-verification the project expects — and how much of it to run locally
-versus observe in CI after pushing. Language-agnostic, never hardcoded.
+How `/spike:probe`, `/spike:bakeoff`, `/respond:action`,
+`/respond:goal`, `/action:worktree`, and `/action:worktrees` learn, at
+runtime, which verification the project expects — and how much of it to
+run locally versus observe in CI after pushing. Language-agnostic,
+never hardcoded.
 
 ## Local gate buckets
 
