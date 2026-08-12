@@ -38,92 +38,66 @@ codex plugin add package-updater@skills
 | `/package-updater:update-package <name>` | `package-updater:update-package <name>` | Take one named package to a target version everywhere it is pinned |
 | `/package-updater:update-toolchain [tool]` | `package-updater:update-toolchain [tool]` | Move `.tool-versions`, `.nvmrc`, `packageManager` and `engines`, one tool per commit |
 
-"What's out of date?" → `update`, which also takes `--audit-only` to
-report without writing. One package you already know is stale →
-`update-package`. A runtime or CLI tool → `update-toolchain`.
+- `update`: Update everything outdated. Use `--audit-only` to report
+  without writing. Use `--issue github|linear` to file an audit issue
+  before starting and work on a derived branch.
+- `update-package`: Update a single named package.
+- `update-toolchain`: Update a runtime or CLI tool.
 
-All three default to the current repository and to committing on the
-default branch. `--branch <name>` works on a branch, `--pr` opens a pull
-request from it, `--no-push` commits locally and stops. All three also
-widen scope the same way: `--root <dir>` sweeps every repository beneath
-a directory, `--repo <path|slug>` names individual ones, and
-`--owner <name>` keeps only those belonging to given accounts.
+Defaults: Current repository, commit on default branch.
+Flags:
+- `--branch <name>`: Work on a specific branch.
+- `--pr`: Open a pull request.
+- `--no-push`: Commit locally and stop.
+- `--root <dir>`: Sweep every repo beneath a directory.
+- `--repo <path|slug>`: Target individual repositories.
+- `--owner <name>`: Keep only repos belonging to given accounts.
 
-`update --issue github|linear` files the audit before the work starts:
-create the issue or card listing what is outstanding, derive the branch
-name from it, then work on that branch.
+## The Four Commit Tracks
 
-## The four commit tracks
+Dependency commit value lies in reasoning, so work is split into four
+tracks:
 
-The plugin's central claim is that a dependency commit's value is its
-reasoning, and reasoning does not survive bundling. So the work splits:
+1. **Toolchain and runtime** — One tool per commit. Every release in the
+   span is linked.
+2. **Package manager and engines** — `packageManager` and `engines` are
+   committed separately from dependencies.
+3. **Named package bumps** — One per package (or coupled release train).
+   Body includes `why:` and `what:` with verified links.
+4. **Bulk lockfile refresh** — Everything routine in one commit with an
+   **empty body**. The lockfile diff speaks for itself.
 
-1. **Toolchain and runtime** — one tool per commit, even when one edit
-   to `.tool-versions` moves three. Every release in the span is linked,
-   because the intermediate ones are where regressions hide.
-2. **Package manager and engines** — `packageManager` and `engines` pin
-   the toolchain despite living in a manifest, so they never ride along
-   with a dependency bump.
-3. **Named package bumps** — one per package, or per release train when
-   the body can say why they are coupled. `why:` then `what:`, with
-   verified links.
-4. **Bulk lockfile refresh** — everything routine, in one commit, with
-   an **empty body**. The lockfile diff already says what moved, and a
-   generated list of package names buries the commits that carry real
-   reasoning.
+Fallout (e.g., schema bumps, migrations) lands after in a separate commit.
 
-Fallout lands after, as its own commit: a `biome.jsonc` schema bump, a
-snapshot regeneration, a framework migration.
+## Supply-Chain Cooldown
 
-## Supply-chain cooldown
+Checks for a cooldown before reporting anything as current to prevent
+pulling risky, fresh releases. Exemptions are narrow, annotated,
+committed alone, and reverted when the block lapses.
+- `uv`: Reads `exclude-newer` as a duration.
+- `pnpm`: Reads `minimumReleaseAge` (minutes) from `pnpm-workspace.yaml`.
+- `npm`: Reads `min-release-age` (days) from `.npmrc`.
 
-A cooldown makes the resolver ignore releases younger than a threshold.
-The plugin checks for one before reporting anything as current, because
-a gated release looks identical to no release at all.
+## Repository Scope
 
-The keys are not interchangeable: uv reads `exclude-newer` as a
-duration, pnpm reads `minimumReleaseAge` in **minutes** from
-`pnpm-workspace.yaml`, and npm reads `min-release-age` in **days** from
-`.npmrc` — a key pnpm ignores entirely.
+For `--root` sweeps, the plugin checks forge APIs (`isFork` and
+`viewerPermission`).
+- Skips forks regardless of ownership.
+- **Stops to ask** when signals disagree (e.g., owned repo with only
+  agent commits, or contributed-to org repo).
 
-Waiting out the window is the default. An exemption is narrow,
-annotated, committed alone, and reverted when the block lapses.
+## Discovery Tool Limitations
 
-## Whose repositories get committed to
-
-A `--root` sweep walks into worktrees, forks, vendored clones and
-upstream projects kept around for reference — all of which look like git
-repositories. The plugin asks the forge for `isFork` and
-`viewerPermission` before touching any of them, skips forks regardless
-of who owns them, and **stops to ask when the signals disagree** rather
-than inferring ownership from an account name.
-
-That last case is not hypothetical: one repo here is owned outright by
-the user, yet its last ten commits on trunk are all from a coding agent,
-so authorship alone would have excluded it. Another sits under an
-organisation the user only contributes to, where the account name alone
-would have included it.
-
-## What one discovery tool misses
-
-`ncu` reads `package.json`, so a `pnpm-workspace.yaml` catalog entry, an
-`overrides` block, or a package held in `.ncurc` never appears in its
-report. A clean run is not a current tree.
+Clean runs with `ncu` don't mean a current tree, as it misses
+`pnpm-workspace.yaml` catalogs, `overrides`, and packages held in
+`.ncurc`.
 
 ## Holds
 
-A `reject` entry in `.ncurc` is a decision to stay behind on purpose,
-and every one has a condition that ends it. The plugin audits them on
-every sweep: it releases the holds whose condition has been met, and
-surfaces the ones whose reason is no longer recoverable rather than
-quietly dropping them.
-
-Two things make this easy to get wrong. `.ncurc` resolves next to the
-*package file*, so a workspace member can hold a package its siblings
-track and a root-only scan will miss it. And `ncu` rejects unknown keys,
-so a `$comment` explaining the hold breaks the tool rather than
-documenting it — the commit message is the only durable record, which is
-why the grammar names the condition in the subject:
+Audits `.ncurc` `reject` entries on every sweep:
+- Releases holds whose condition has been met.
+- Surfaces holds with unrecoverable reasons.
+- To properly document a hold, name the condition in the subject:
 
 ```
 .ncurc: Ignore `@biomejs/biome` 2.3.5 -> 2.3.6 until they fix class methods
@@ -133,36 +107,25 @@ why the grammar names the condition in the subject:
 .ncurc: Unignore `@biomejs/biome` (2.3.7 fixed issue)
 ```
 
-## What this plugin does not do
+## Out of Scope
 
-Three dependency classes belong to sibling plugins, which own the
-research that makes them safe. This plugin reports them as findings and
-names the command:
-
+Handled by sibling plugins:
 - GitHub Actions `uses:` pins → `/github-actions:update-actions`
-- ruff's floor and the rule fallout it produces → `/ruff:bump`
-- Terraform versions, providers and lock files → `/terraform:bump-provider`
+- ruff's floor and rule fallout → `/ruff:bump`
+- Terraform versions, providers, and lock files → `/terraform:bump-provider`
 
 ## Components
 
-**Commands** — `update`, `update-package`, `update-toolchain`.
-
-**Skill** — `updating-packages`, the phase structure the commands share:
-inventory, discovery, research, plan gate, land in order, verify,
-report.
-
-**References** — `repo-scope.md` (which repositories are yours to commit
-to, and when to stop and ask), `ecosystems.md` (detection, discovery and apply
-commands, cooldown configuration), `commit-conventions.md` (subject
-grammar, body anatomy, the empty-body rule), `upstream-links.md` (which
-URLs each tool's bump cites), `follow-ups.md` (which bumps need a second
-commit, and how to declare a knowingly-red intermediate), `holds.md`
-(staying behind on purpose, and releasing the hold when its condition is
-met).
+- **Commands** — `update`, `update-package`, `update-toolchain`.
+- **Skill** — `updating-packages` (inventory, discovery, research, plan
+  gate, land in order, verify, report).
+- **References** — `repo-scope.md`, `ecosystems.md`,
+  `commit-conventions.md`, `upstream-links.md`, `follow-ups.md`,
+  `holds.md`.
 
 ## Prerequisites
 
-`git`, and whichever ecosystem tooling the repositories actually use —
-`uv`, `pnpm`, `ncu`, `npm`, `cargo`, `go`, `mise`. The plugin detects
-what is present rather than assuming a stack. `gh` is needed for issue
-creation and for verifying release URLs on GitHub.
+- **git**
+- **Ecosystem tooling** — `uv`, `pnpm`, `ncu`, `npm`, `cargo`, `go`, or
+  `mise` (auto-detected).
+- **gh** — For issue creation and GitHub release URL verification.

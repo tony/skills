@@ -1,10 +1,9 @@
 # skills
 
-A third-party plugin marketplace providing language-agnostic AI / agentic
-workflow plugins for DX efficiency. Every plugin installs into both
-[Claude Code](https://code.claude.com/docs/en/plugin-marketplaces.md) and
-[Codex](https://developers.openai.com/plugins/build/plugins), and the skills
-are readable by any agent that scans `.agents/skills/`.
+A third-party marketplace of language-agnostic AI workflow plugins. Plugins
+install into [Claude Code](https://code.claude.com/docs/en/plugin-marketplaces.md)
+and [Codex](https://developers.openai.com/plugins/build/plugins), and are
+readable by agents scanning `.agents/skills/`.
 
 > **Warning:** Review plugins before installing. Anthropic does not control plugin
 > contents and cannot verify they work as intended.
@@ -81,19 +80,16 @@ Each workflow is one skill, invoked as `pr:deslop` under Codex and
 
 ## Design Philosophy
 
-Every plugin in this repository is **language-agnostic**. Commands do not hardcode
-language-specific tools like `pytest`, `jest`, `cargo test`, or `ruff`. Instead, they
-reference the project's own conventions by reading `AGENTS.md` or `CLAUDE.md` at
-runtime to discover:
+All plugins are **language-agnostic**. Instead of hardcoding language-specific
+tools (e.g., `pytest`, `jest`, `cargo test`), they dynamically read project
+conventions from `AGENTS.md` or `CLAUDE.md` to discover:
 
-- How to run the test suite
-- How to run linters and formatters
-- How to run type checkers
-- What commit message format to use
-- What test patterns to follow
+- Test suite, linter, formatter, and type checker commands
+- Commit message formats
+- Test patterns
 
-This means the same plugin works whether your project uses Python, TypeScript, Rust, Go,
-or any other language.
+This ensures compatibility across languages like Python, TypeScript,
+Rust, and Go.
 
 ## Development
 
@@ -142,44 +138,40 @@ uv run ./scripts/marketplace.py check-outdated
 
 ### Regenerate the portable skill export
 
-`.agents/skills/` is a generated, committed mirror of every plugin skill in a
-flat form that agents outside Claude Code (Cursor, pi, Antigravity, Grok) can
-read: spec-only frontmatter and no host-specific inline-bash expansion. A skill
-reaches its plugin's shared files by climbing out of its own directory, and
-flattening severs that climb, so every file it reaches is copied in and the
-links rewritten. Each exported skill is therefore self-contained.
+`.agents/skills/` is a generated, flattened mirror of every plugin skill for
+agents outside Claude Code (Cursor, pi, Antigravity, Grok). It contains
+spec-only frontmatter with no host-specific inline-bash expansion. Files are
+copied and links rewritten to make each exported skill self-contained.
 
-Codex needs none of this. It reads `skills/` in place, so it consumes the
-plugins directly through `.codex-plugin/plugin.json`.
+Codex reads `skills/` in place and consumes plugins directly via
+`.codex-plugin/plugin.json`.
 
 ```bash
 uv run ./scripts/marketplace.py portable
 ```
 
-Verify the committed tree matches the plugins it was generated from:
+Verify the committed tree matches the generated plugins:
 
 ```bash
 uv run ./scripts/marketplace.py portable --check
 ```
 
-Edit `plugins/*/skills/`. Never edit `.agents/skills/`, `.agents/plugins/`, or
-`plugins/*/.codex-plugin/` — all three are generated.
-`.agents/portable-manifest.json` records each exported skill's sources, its
-bundled files, and how many times each source file is copied across the
-export.
+- **Edit:** `plugins/*/skills/`
+- **Do not edit generated files:** `.agents/skills/`, `.agents/plugins/`,
+  or `plugins/*/.codex-plugin/`
 
-Hosts that scan `.agents/skills/` read the tree straight from a checkout, with
-no install step. The `skills` CLI reads the same tree:
+`.agents/portable-manifest.json` tracks exported skill sources and
+bundled files.
+
+Hosts scanning `.agents/skills/` read the tree directly. The `skills` CLI
+also reads this tree:
 
 ```bash
 npx skills add tony/skills
 ```
 
-That installs the export and nothing else. The CLI would otherwise also walk
-each plugin's `skills/` directory and offer both renderings of the same skill —
-the exported one and the Claude Code original, which has not been through the
-transform. `metadata.pluginRoot` in the marketplace manifest is what keeps it to
-the export alone; a manifest edit that drops it brings the duplicates back.
+This installs only the export. The `metadata.pluginRoot` in the marketplace
+manifest prevents duplicate skill renderings from being exposed.
 
 ### Code quality for scripts
 

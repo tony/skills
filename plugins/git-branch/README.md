@@ -30,86 +30,58 @@ Install the plugin:
 codex plugin add git-branch@skills
 ```
 
-The skills below are written with Claude Code's leading slash. Codex uses
-the same names without it, so `/git-branch:…` there is `git-branch:…`.
+The skills below use Claude Code's leading slash. Codex uses the same names
+without it (`git-branch:…`).
 
 ## Components
 
 ### `/git-branch:soft-reset-and-recommit` (skill)
 
-Takes a branch of `wip` commits, or one commit doing five things, and
-turns it into a series a reviewer can read.
+Converts messy `wip` commits into a readable, reviewable series. Pushing is
+always a manual step.
 
-1. **Gathers intent first** — the original commit messages, trailers,
-   the pull request body and its review threads, linked tickets, and
-   optionally the session that wrote the code. The collapse destroys
-   the original boundaries, so everything is read before anything is
-   touched.
-2. **Resolves the base and refuses** — one merge base or stop; the
-   parent tip for a stacked branch, never trunk; and a halt on a dirty
-   tree, an operation in progress, merge commits in the range, or a
-   branch someone else has pushed to.
-3. **Discovers the commit format** — declared in `AGENTS.md`,
-   `CONTRIBUTING.md`, or a commitlint config, otherwise mined from the
-   project's own history at the fork point. Reports `mixed` and asks
-   rather than guessing.
-4. **Plans the series and waits** — every proposed commit, its
-   contents, and the intent behind it, presented in plan mode for
-   approval before anything destructive happens.
-5. **Backs up, collapses, rebuilds** — a backup branch, then
-   `git reset --soft`, then one atomic commit at a time, preserving
-   original authorship and carrying trailers forward.
-6. **Proves it** — `git diff --quiet` against the backup must exit 0,
-   and every commit is gated in place through the project's own
-   checks.
-
-Pushing is always a separate decision the user makes.
+1. **Gathers intent:** Reads commit messages, trailers, PR bodies, reviews,
+   and linked tickets before altering boundaries.
+2. **Resolves base & validates:** Stops on dirty trees, operations in
+   progress, merge commits, or pushed branches. Identifies correct base for
+   stacked branches.
+3. **Discovers commit format:** Reads from `AGENTS.md`, `CONTRIBUTING.md`,
+   commitlint configs, or mining history. Asks if mixed.
+4. **Plans and waits:** Presents proposed commits and contents for approval
+   before making destructive changes.
+5. **Backs up and rebuilds:** Creates a backup, performs `git reset --soft`,
+   and recreates atomic commits preserving authorship and trailers.
+6. **Proves identical state:** Ensures `git diff --quiet` exits 0 against the
+   backup and runs project checks on every commit.
 
 ### `/git-branch:redo-from-scratch` (skill)
 
-For the other case: the branch's code is what is wrong. A proof of
-concept that became the real thing, or an approach found halfway
-through that the earlier code does not reflect.
+Reimplements flawed branch code cleanly using tests as the specification.
+Retains original branch as a reference.
 
-1. **Establishes a contract before anything else** — trunk's tests,
-   the tests this branch added, and their result right now. What
-   passes is the specification. A branch with no tests stops here, and
-   the skill offers to write characterization tests against the
-   existing implementation first, so a spec exists before anything is
-   discarded.
-2. **Studies the branch into a coverage ledger** — behavior changes,
-   tests, edge cases, workarounds, review requests, acceptance
-   criteria, public surface, dependencies. The undocumented guards get
-   the most attention, because a clean rewrite is what drops them.
-3. **Rebuilds in a worktree, from the ledger** — not by reading the
-   old implementation line by line, which reproduces the shape the
-   rewrite was called in to replace. Offers a bakeoff when more than
-   one approach is genuinely in contention.
-4. **Verifies against the contract** — a test the rebuild cannot pass
-   without editing is a decision surfaced to you, never a silent edit.
-5. **Reconciles** — every ledger entry addressed or explicitly
-   dropped, then the old-versus-new diff walked as review material
-   rather than as a gate, since the code is supposed to differ.
+1. **Establishes test contract:** Uses passing trunk tests and branch tests as
+   the spec. Requires characterization tests if none exist.
+2. **Studies branch coverage:** Logs behavior changes, edge cases,
+   workarounds, and public surface to prevent regression.
+3. **Rebuilds from ledger in worktree:** Rewrites based on gathered
+   requirements, avoiding line-by-line copying.
+4. **Verifies contract:** Any failing test requiring edits triggers user review.
+5. **Reconciles:** Validates all ledger entries are addressed and reviews the
+   old-vs-new diff.
 
-The original branch is kept as the reference and the fallback.
+### Which skill to use
 
-### Which one
-
-The net change is the difference. `soft-reset-and-recommit` guarantees
-it is byte-identical and gates on that. `redo-from-scratch` expects it
-to change, so it earns its safety from the test contract and the
-ledger instead. That makes the second strictly riskier, and it is why
-it refuses to start on a branch with no tests.
+- **`soft-reset-and-recommit`**: Code is correct, but history is messy.
+  Guarantees byte-identical changes.
+- **`redo-from-scratch`**: Code approach needs changing. Guarantees
+  correctness via test contracts and coverage ledgers.
 
 ### The interactive-rebase toolkit
 
-`references/rebase-todo.sh` drives `git rebase -i` from a shell with
-no editor and no TTY. Both skills use it, and it works standalone.
+`references/rebase-todo.sh` drives `git rebase -i` without an editor or TTY.
 
-Run it from anywhere — the examples below spell the path in full so
-they can be pasted as-is. Inside a session `${CLAUDE_PLUGIN_ROOT}`
-resolves to this plugin's directory; from a plain shell, substitute
-wherever the plugin is installed.
+Run it from anywhere (substitute `${CLAUDE_PLUGIN_ROOT}` with the plugin's
+install path outside a session):
 
 Report any git operation in progress:
 
@@ -141,38 +113,20 @@ Fold pending `fixup!` and `amend!` commits:
 sh ${CLAUDE_PLUGIN_ROOT}/references/rebase-todo.sh squash <base>
 ```
 
-It refuses to run on a dirty tree or over an operation already in
-progress, pins the three config settings that otherwise change the
-todo format or hide dropped commits, and reports rather than hides a
-rebase it left stopped.
+## Relationship to other git plugins
 
-## Relationship to the other git plugins
-
-### Reach for `/git-branch:soft-reset-and-recommit` when
-
-The branch's *content* is right and its *history* is wrong — commits
-that mix concerns, say nothing, or do not survive review.
-
-### Reach for `/pr:deslop` when
-
-The commit messages need cleaning but the commit boundaries are fine.
-It fixes messages through fixup commits and autosquash, and explicitly
-does not split multi-topic commits — that gap is what this plugin
-fills.
-
-### Reach for `/rebase` when
-
-The branch needs to move onto current trunk. That is a different
-operation: neither skill here changes the base a branch sits on.
-
-### Reach for `/commit` when
-
-You are creating a new commit rather than rebuilding existing ones.
+- **Use `/git-branch:soft-reset-and-recommit`**: When the branch content is
+  correct but history is messy.
+- **Use `/pr:deslop`**: When commit messages need cleaning but boundaries are
+  fine (uses autosquash without splitting commits).
+- **Use `/rebase`**: When moving a branch onto the current trunk.
+- **Use `/commit`**: When creating a new commit rather than rebuilding
+  existing ones.
 
 ## Prerequisites
 
-- **git** — 2.43 or newer for the verified behavior of `--keep-base`,
-  `git restore`, and `--force-if-includes`.
-- **gh** — to read the pull request, its review threads, and linked
-  issues. Optional; the skill degrades to git-only sources.
-- **uvx** — only for the optional prior-conversation layer.
+- **git** — 2.43+ for verified `--keep-base`, `git restore`, and
+  `--force-if-includes` behavior.
+- **gh** — (Optional) to read PRs, reviews, and linked issues. Degrades to
+  git-only if missing.
+- **uvx** — (Optional) for the prior-conversation layer.

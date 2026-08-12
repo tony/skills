@@ -33,56 +33,44 @@ codex plugin add research@skills
 
 | Skill | Claude Code | Codex | Description |
 |---|---|---|---|
-| Study Dependencies | `/research:deps` | `research:deps` | Clone dependencies and create version-pinned worktrees under `~/study/` |
+| Study Dependencies | `/research:deps` | `research:deps` | Clone deps and create version-pinned worktrees in `~/study/` |
 
 ## How It Works
 
-The skill follows a 9-step workflow:
-
-1. **Detect preferred tools** — Check for `rg`, `fd`, `jq` and fall back to standard alternatives
-2. **Scan manifest files** — Find `package.json`, `pyproject.toml`, `Cargo.toml`, `go.mod`, and more; extract deps + versions
-3. **Filter dependencies** — Apply the user's filter (package name, "all", or category); check `~/study/` for existing repos
-4. **Resolve source repositories** — Try manifest metadata first, then registry commands, then web search
-5. **Present plan and confirm** — Show a table of what will be cloned/created vs. what exists; wait for approval
-6. **Clone repositories** — `git clone` to `~/study/<language>/<repo>/`; `git fetch --tags` for existing clones
-7. **Resolve version tag or branch** — Match exact tag, `v`-prefix, scoped, crate-style, or release branch
-8. **Create version-pinned worktree** — `git worktree add --detach` for tags, `git worktree add` for branches
-9. **Report results** — Summary of created, skipped, and failed items with full paths
+1. **Detect tools**: Checks for `rg`, `fd`, `jq`.
+2. **Scan manifests**: Finds `package.json`, `pyproject.toml`, `Cargo.toml`, etc.
+3. **Filter**: Applies user filter (package, "all", category).
+4. **Resolve repos**: Uses metadata, registry, or search.
+5. **Confirm**: Presents plan for approval.
+6. **Clone**: Clones/fetches to `~/study/<language>/<repo>/`.
+7. **Resolve version**: Matches tags or branches (prefers lockfiles).
+8. **Create worktree**: Pins to resolved version.
+9. **Report**: Summarizes results.
 
 ## Supported Manifests
 
-| Manifest | Language dir | Lockfiles |
-|----------|-------------|-----------|
+| Manifest | Language | Lockfiles |
+|----------|----------|-----------|
 | `package.json` | `typescript` | `package-lock.json`, `pnpm-lock.yaml`, `yarn.lock`, `bun.lock` |
 | `pyproject.toml` | `python` | `uv.lock`, `poetry.lock`, `requirements.txt` |
 | `Cargo.toml` | `rust` | `Cargo.lock` |
 | `go.mod` | `golang` | `go.sum` |
 | `Gemfile` | `ruby` | `Gemfile.lock` |
 | `mix.exs` | `elixir` | `mix.lock` |
-| `build.gradle` / `build.gradle.kts` | `java` | `gradle.lockfile` |
+| `build.gradle` / `build.gradle.kts`| `java` | `gradle.lockfile` |
 | `pom.xml` | `java` | — |
 
 ## Version Tag Resolution
 
-Tags are resolved in priority order, stopping at the first match:
-
-| Priority | Pattern | Example |
-|----------|---------|---------|
-| 1 | Exact tag | `5.2.0` |
-| 2 | `v`-prefixed tag | `v5.2.0` |
-| 3 | Scoped package tag | `@scope/pkg@5.2.0` |
-| 4 | Crate-style tag | `pkg-v5.2.0` |
-| 5 | Minor branch | `release/5.2`, `stable/5.2.x` |
-| 6 | Major branch | `release/5.x`, `v5` |
-
-Lockfile resolved versions are preferred over manifest version constraints.
+Prioritizes: exact tags (`5.2.0`), `v`-prefixed, scoped, crate-style, minor
+branches, major branches.
 
 ## Arguments
 
 | Flag | Effect |
 |------|--------|
-| `--lang <language>` | Override auto-detected language directory |
-| `--no-worktree` | Clone only, skip worktree creation |
+| `--lang <language>` | Override auto-detected language |
+| `--no-worktree` | Clone only, no worktree |
 
 ```console
 /research:deps vite
@@ -106,35 +94,13 @@ Lockfile resolved versions are preferred over manifest version constraints.
 
 ## Study Directory Layout
 
-Each language gets its own directory under `~/study/`. The plain directory (e.g., `vite/`) is the
-main clone, and the version-suffixed directory (e.g., `vite-6.2.0/`) is the worktree pinned to
-that tag.
+Clones structure under `~/study/`:
+- **Main Clone**: `~/study/<language>/<repo>/`
+- **Pinned Worktree**: `~/study/<language>/<repo>-<version>/`
 
-```
-~/study/
-├── typescript/
-│   ├── vite/
-│   ├── vite-6.2.0/
-│   ├── react/
-│   └── react-19.1.0/
-├── python/
-│   ├── django/
-│   └── django-5.2/
-├── rust/
-│   ├── tokio/
-│   └── tokio-1.44.0/
-└── golang/
-    ├── chi/
-    └── chi-5.2.1/
-```
-
-For monorepo-hosted packages (e.g., `@tanstack/react-query` in `tanstack/query`), the repo is cloned once and the worktree contains all packages.
+Monorepos clone once, with worktrees containing all packages.
 
 ## Prerequisites
 
-- **git** — for cloning and worktree management
-- A project with at least one supported manifest file
-
-## Language-Agnostic Design
-
-Manifest detection and language directory assignment are automatic. The skill works with any combination of supported manifests in a single project. Use `--lang` to override the detected language directory when needed.
+- **git**
+- Project with a supported manifest. Manifest detection is automatic.

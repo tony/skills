@@ -1,6 +1,7 @@
 # model-cli
 
-Run prompts through individual AI CLIs — Antigravity/agy (Gemini), codex/GPT, and cursor/agent with fallback support.
+Run prompts through individual AI CLIs — Antigravity/agy (Gemini),
+codex/GPT, and cursor/agent with fallback support.
 
 ## Installation
 
@@ -38,18 +39,23 @@ codex plugin add model-cli@skills
 | Gemini CLI | `/model-cli:gemini` | `model-cli:gemini` | Alias for agy — Antigravity supersedes the gemini CLI; same backend chain |
 | Cursor Agent CLI | `/model-cli:cursor` | `model-cli:cursor` | Run a prompt through Cursor's agent CLI directly |
 
-The agy, codex, and cursor skills are auto-invoked by Claude when it determines delegation to another model is appropriate. The gpt and gemini skills are user-invocable only (`disable-model-invocation: true`) to avoid duplicate auto-triggering — gpt with codex, and gemini with agy.
+The agy, codex, and cursor skills trigger automatically during delegation.
+The gpt and gemini aliases are user-invocable only to avoid duplicate
+auto-triggering.
 
 ## How It Works
 
 Each skill follows a 6-step workflow:
 
-1. **Capture** — Use `$ARGUMENTS` as the prompt. Extract `timeout:<seconds>` or `timeout:none` triggers.
-2. **Detect CLI** — Check for the native CLI binary, then the `agent` fallback.
-3. **Detect Timeout** — Check for `timeout`/`gtimeout` for time limits.
-4. **Execute** — Write prompt to a temp file, run the CLI with timeout and stderr capture.
-5. **Handle Failure** — Classify failures (timeout, rate-limit, crash, empty output) and retry transient failures once.
-6. **Clean Up** — Present the output, report which backend was used, clean up temp files.
+1. **Capture:** Extracts prompt and timeout triggers (`timeout:<seconds>` or
+   `timeout:none`) from `$ARGUMENTS`.
+2. **Detect CLI:** Checks for the native binary or falls back to `agent`.
+3. **Detect Timeout:** Validates `timeout` or `gtimeout` availability.
+4. **Execute:** Runs CLI with timeout limits via temporary prompt files.
+5. **Handle Failure:** Classifies failures (timeout, rate-limit, crash, empty
+   output) and retries transients.
+6. **Clean Up:** Presents the result, backend source, and removes temporary
+   files.
 
 ### Fallback Resolution
 
@@ -61,7 +67,8 @@ Each skill follows a 6-step workflow:
 
 ### Timeout
 
-Default timeout is 600 seconds. Override with `timeout:<seconds>` or disable with `timeout:none` in the skill arguments.
+Defaults to 600 seconds. Override with `timeout:<seconds>` or disable with
+`timeout:none`.
 
 ## Prerequisites
 
@@ -71,10 +78,10 @@ Install at least one external CLI:
 |-----|-------|---------|
 | `agy` | Gemini (via Antigravity) | [Antigravity CLI](https://antigravity.google/product/antigravity-cli) |
 | `codex` | GPT | [Codex CLI](https://github.com/openai/codex) |
-| `gemini` | Gemini (fallback; gemini CLI retired 2026-06-18) | [Gemini CLI](https://github.com/google-gemini/gemini-cli) |
-| `agent` | Cursor (also used as fallback) | [Agent CLI](https://cursor.com/cli) |
+| `gemini` | Gemini (fallback) | [Gemini CLI](https://github.com/google-gemini/gemini-cli) |
+| `agent` | Cursor (fallback) | [Agent CLI](https://cursor.com/cli) |
 
-Install the Antigravity CLI with the vendor script:
+Install the Antigravity CLI:
 
 ```console
 curl -fsSL https://antigravity.google/cli/install.sh | bash
@@ -82,36 +89,21 @@ curl -fsSL https://antigravity.google/cli/install.sh | bash
 
 ### macOS timeout support
 
-External CLI invocations are wrapped with `timeout` (GNU coreutils) to enforce time limits. On macOS, install GNU coreutils to get `gtimeout`:
+On macOS, install GNU coreutils to enable `gtimeout`:
 
 ```console
 brew install coreutils
 ```
 
-If neither `timeout` nor `gtimeout` is found, skills run without a time limit.
+If neither `timeout` nor `gtimeout` is found, commands run without time limits.
 
 ## Plan-Only Mode
 
-Add `mode:plan` to any skill invocation to request a detailed implementation
-plan without making changes. The skill prepends a plan-only preamble to the
-prompt, instructing the external model to analyze the codebase and describe
-what it would do rather than executing.
-
-Example:
-
-```
-/model-cli:codex analyze the auth module mode:plan
-```
-
-```
-/model-cli:gemini refactor the database layer mode:plan
-```
-
-The `mode:plan` trigger works with all skills (agy, codex, gpt, gemini, cursor).
+Add `mode:plan` to any invocation (e.g., `/model-cli:codex analyze mode:plan`)
+for a detailed implementation plan without making changes. This triggers a
+preamble instructing the model to analyze and describe rather than execute.
 
 ## Comparison with weave
-
-The **weave** plugin runs all models in parallel and synthesizes results. The **model-cli** plugin runs a single model at a time — useful when you want to target a specific model without the overhead of parallel orchestration.
 
 | Feature | weave | model-cli |
 |---------|------|-----------|
@@ -122,4 +114,10 @@ The **weave** plugin runs all models in parallel and synthesizes results. The **
 
 ## Shell Resilience
 
-All skills use `command -v` (POSIX-portable) instead of `which` for CLI detection. Prompts are written to temporary files (`/tmp/mc-prompt-XXXXXX.txt`) to avoid shell metacharacter injection. stderr is captured to separate files (`/tmp/mc-stderr-<model>.txt`) for failure diagnostics. A retry protocol classifies failures (timeout, rate-limit, crash, empty output) and retries transient failures once before reporting.
+- **Portable detection:** Uses `command -v` instead of `which`.
+- **Injection prevention:** Writes prompts to temporary files
+  (`/tmp/mc-prompt-XXXXXX.txt`).
+- **Diagnostics:** Captures stderr to separate files
+  (`/tmp/mc-stderr-<model>.txt`).
+- **Retry protocol:** Classifies failures (timeout, rate-limit, crash, empty
+  output) and retries transient errors once.

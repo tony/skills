@@ -36,90 +36,49 @@ codex plugin add action@skills
 | `/action:worktree [<ticket>...]` | `action:worktree [<ticket>...]` | One branch + worktree for one or more tickets: resolve read-only, name by convention, implement, land gated commits; push or PR only on request |
 | `/action:worktrees [<ticket>...]` | `action:worktrees [<ticket>...]` | Discover and group several tickets, then fan out one worktree per unit — parallel subagents where the host supports them, sequential otherwise |
 
-One ticket (or a few that share one change) → `worktree`. A queue of
-independent tickets → `worktrees`. To land review findings on the
-current branch, use the review plugin instead — this plugin starts
-ticket work on new branches.
+One ticket (or related set) → `worktree`. Independent tickets → `worktrees`.
+(Use the review plugin to land findings on the current branch; this plugin
+creates new branches).
 
-Both commands share two flag axes:
+Flag axes:
+- **Placement**: `--local` (default) creates a sibling worktree. `--temp` uses
+  the host's temp-worktree mechanism.
+- **Exit**: By default, commits locally. Optionally use `--push`, `--pr`, or
+  `--setup-only`.
 
-- **Placement** — `--local` (default): a visible sibling worktree at
-  `{repo_path}-{branch-with-slashes-flattened}/`; `--temp`: the
-  host's native temp-worktree mechanism, else a temp root outside the
-  repo.
-- **Exit** — default: implement and commit through the project's
-  gates, no push; `--push`: also push the branch; `--pr`: also open a
-  PR with the tickets linked; `--setup-only`: stop after worktree +
-  branch + a ticket primer.
-
-`/action:worktree` also takes `--branch=<name>` (use a name
-verbatim). `/action:worktrees` also takes `--groups="a b; c"`
-(explicit grouping) and `--sequential` (no parallel fan-out).
+Additional flags: `/action:worktree` accepts `--branch=<name>`.
+`/action:worktrees` accepts `--groups="a b; c"` and `--sequential`.
 
 ## Workflow
 
-1. **Situational awareness** — read AGENTS.md / CLAUDE.md, discover
-   the project's format / lint / typecheck / test / build commands
-   and what CI covers post-push
-2. **Ticket resolution** — detect the tracker (prompt > conversation
-   > MCP tools > CLIs > repo heuristics), fetch title, description,
-   and acceptance criteria read-only
-3. **Branch naming** — precedence ladder: explicit ask > project
-   conventions > ticket-system default (Linear `gitBranchName`,
-   GitHub `<num>-<slug>`) > observed repo norms mined from history >
-   kebab-slug fallback
-4. **Plan gate** — tickets, branch name, worktree path, grouping (for
-   the plural), gates, and exit axis, confirmed before any mutation
-5. **Worktree & branch** — idempotent: re-running with the same
-   ticket resumes the existing worktree; an unexpected directory
-   collision halts with a question
-6. **Implement, gates, commit** — inside the worktree only, gated by
-   the discovered commands, ticket IDs in every commit body
-7. **Exit** — stop local by default; push, PR, or setup-only per the
-   flags
+1. **Awareness**: Read conventions to discover formatting, linting, testing, and CI rules.
+2. **Resolution**: Detect tracker, fetch ticket details read-only.
+3. **Naming**: Follow precedence (explicit ask > conventions > tracker default > repo norms).
+4. **Plan**: Confirm details before mutation.
+5. **Worktree**: Idempotent setup (resumes existing, halts on collision).
+6. **Implement**: Code and commit strictly inside the worktree, running gates.
+7. **Exit**: Stop locally, push, PR, or setup-only.
 
-A multi-ticket branch is first-class: crosscutting tickets share one
-branch under a theme slug confirmed at the plan gate, and every
-ticket ID still rides in commits and the PR for server-side linking.
+Multi-ticket branches share a theme slug; ticket IDs ride in commits/PRs for linking.
 
-## Zero ticket write-back
+## Zero Ticket Write-Back
 
-The plugin never assigns, comments, transitions, or otherwise mutates
-tickets — all reads, no writes, in every tracker. Linking happens
-server-side from naming alone: Linear auto-attaches branches and PRs
-whose names carry the issue ID; GitHub links issues from closing
-keywords in the PR body. An abandoned branch therefore unwinds with
-zero blowback — nothing on the ticket to undo.
+The plugin performs **zero writes** to trackers. Links form server-side via branch
+or PR names. Abandoned branches unwind cleanly.
 
-## Shared references
+## Shared References
 
-Both commands read the same reference files at runtime, so the
-singular and plural procedures cannot drift:
+Both commands share runtime procedures:
+- `ticket-detection.md`: Tracker detection, branch naming, linking.
+- `verification-gates.md`: Quality-gate and CI discovery.
 
-- `references/ticket-detection.md` — tracker detection, ticket
-  resolution, the branch-name precedence ladder, worktree path
-  sanitization, and server-side linking
-- `references/verification-gates.md` — quality-gate and CI discovery
-  (lockstep copy shared with the spike and review plugins)
+## Verification Discovery
 
-The plural command delegates all per-unit work to
-`/action:worktree`'s phases by reference rather than duplicating the
-procedure.
-
-## Verification discovery
-
-Both commands read AGENTS.md / CLAUDE.md / CONTRIBUTING.md to
-discover which quality checks the project requires, and read the CI
-definitions to learn what a push verifies for free (see
-`references/verification-gates.md`). They do **not** hardcode any
-test runner, linter, or build tool — and they run no more
-verification than the change needs, deferring CI-covered work to
-`gh pr checks --watch` after a push.
+Reads conventions (`AGENTS.md`) and CI configs to run necessary local checks.
+Defers CI-covered work to `gh pr checks --watch` when pushing.
 
 ## Prerequisites
 
-- **git** — worktree-based workflow uses `git worktree`
-- **gh** (optional) — first-class GitHub issue resolution, PR
-  creation, and CI watching
-- **Tracker MCP server** (optional) — e.g. Linear's, for real
-  `gitBranchName` resolution and read-only issue lookups
+- **git**: Required for `git worktree`.
+- **gh** (optional): For GitHub integration.
+- **Tracker MCP server** (optional): For tools like Linear.

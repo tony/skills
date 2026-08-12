@@ -58,18 +58,20 @@ Skills provide auto-discovery — they trigger when the user's intent matches th
 
 ## How It Works
 
-The orchestration commands follow consistent multi-phase workflows. Of the original six, plan, prompt, execute, and architecture use **targeted conflict resolution** for multi-pass (passes only address unresolved conflicts), while ask and review use **residual re-attack** (passes address only the prior pass's unresolved residuals). The new three (brainstorm, refine, brainstorm-and-refine) use **expansive weaving** — each pass is a full judge-pick-best-incorporate-strengths-address-weaknesses cycle. The `fix-review` command is a separate remediation workflow for applying review findings as atomic commits.
+Orchestration commands follow consistent workflows:
+- **Targeted conflict resolution** (plan, prompt, execute, architecture): Multi-pass only addresses unresolved conflicts.
+- **Residual re-attack** (ask, review): Multi-pass addresses prior pass's unresolved residuals.
+- **Expansive weaving** (brainstorm, refine, brainstorm-and-refine): Each pass is a full judge/weave cycle.
+- **Remediation** (fix-review): Applies review findings as atomic commits.
 
-1. **Choose workers** — Use `--workers=subagents|model-clis` or answer the first configuration prompt. Host-native sub-agents are recommended and selected automatically in headless mode.
-2. **Configure** — Parse `--passes`, `--timeout`, `--mode` flags and prompt for any remaining settings. CLI timeouts apply only to `model-clis`.
-3. **Run in parallel** — Dispatch the Maintainer, Skeptic, and Builder as independent participants.
-4. **Synthesize** — Compare outputs, verify claims against the codebase, and combine the best elements.
-5. **Refine** (multi-pass) — Optionally re-attack the prior pass's unresolved residuals with all participants for deeper results.
+**Workflow Steps:**
+1. **Choose workers**: Use `--workers=subagents|model-clis` (sub-agents recommended).
+2. **Configure**: Parse flags (`--passes`, `--timeout`, `--mode`) or prompt.
+3. **Run parallel**: Dispatch Maintainer, Skeptic, and Builder.
+4. **Synthesize**: Compare outputs, verify claims, combine best elements.
+5. **Refine**: Re-attack unresolved residuals (multi-pass).
 
-When `model-clis` is selected, Weave detects `agy`, `gemini`, `codex`,
-and `agent` only after that explicit choice. Retry and fallback stay
-within the selected worker backend; Weave never switches between
-sub-agents and model CLIs without asking.
+*Note: Worker backends (sub-agents vs model CLIs) are strictly isolated. Retry and fallback stay within the chosen backend.*
 
 ### Protocols
 
@@ -96,55 +98,27 @@ the full specification.
 | 4 | Prompt hardening ("CRITICAL: Do NOT write files") | All commands |
 | 5 | Session-end verification against fingerprint | All commands |
 
-Default host-native sub-agents run in session-scoped isolated worktrees under
-the host's permissions and prompt hardening. Read-only worktrees are
-disposable; write participants retain separate branch worktrees through
-comparison and refinement. Native workers never receive the writable user
-checkout.
+- **Host-native sub-agents**: Run in session-scoped isolated worktrees. Read-only worktrees are disposable; write commands retain separate branch worktrees. Native workers never receive the writable user checkout.
+- **Model-CLIs**:
+  - **Read-only commands**: External CLIs run in their native read-only sandbox (e.g., `codex -s read-only`). `agy` uses a disposable worktree discarded afterward.
+  - **Write commands**: External CLIs run in isolated worktrees, verifying the main tree remains unchanged.
 
-With `--workers=model-clis`, **read-only commands** run external CLIs in their native read-only
-sandbox (codex `-s read-only`, gemini `--approval-mode plan`, agent
-`--mode plan`) pointed at the repo, so models can read but not write;
-the `cd "$SESSION_DIR"` wrapper is a backstop. The `agy` (Antigravity)
-CLI has no native read-only mode — its print mode reads *and* writes —
-so its read-only lanes run in a disposable git worktree checked out at
-`HEAD`, which is discarded afterward; any stray write lands in the
-throwaway worktree, never the main repo. **Write commands** run
-external CLIs in isolated worktrees
-and verify the main tree is unchanged after diff capture. All commands
-verify the repo is unchanged at session end.
+*Defense-in-depth prevents external CLIs from modifying project files unexpectedly, enforcing read-only sandboxing and session-end state verification.*
 
-The guard was introduced because external CLIs have known issues with
-unexpectedly modifying project files. The protocol provides
-defense-in-depth: the native read-only sandbox (or disposable worktree
-for `agy`) blocks writes, post-CLI verification catches writes to
-absolute paths, and session-end verification is the final safety net.
+### Command Categories
 
-### Read-Only Commands
+**Read-Only Commands**: Gather multiple perspectives and synthesize (`ask`, `plan`, `brainstorm`, `refine`, `brainstorm-and-refine`, `serene-bliss`, `review`).
 
-**ask**, **plan**, **brainstorm**, **refine**, **brainstorm-and-refine**,
-**serene-bliss**, and **review** do not modify files. They gather multiple
-perspectives and synthesize a single best result.
+**Write Commands**: Create isolated worktrees per participant.
+- **prompt**: Picks one winner.
+- **execute**: Cherry-picks the best parts from each participant.
+- **architecture**: Cherry-picks conventions, skills, and scaffolding per file.
+- **fix-review**: Applies review findings as atomic commits (multi-pass does not apply).
 
-### Write Commands
-
-With the default native backend, **prompt**, **execute**, and
-**architecture** create an isolated git worktree for every participant. The
-opt-in model-CLI backend preserves its existing host lane and isolates its
-external lanes in separate worktrees. After comparison:
-- **prompt** picks one winner
-- **execute** cherry-picks the best parts from each participant
-- **architecture** cherry-picks the best conventions, skills, agents, and scaffolding per file
-
-**fix-review** processes findings from a review, applying each as an atomic commit with test coverage. Multi-pass does not apply to fix-review since it is already iterative.
-
-### Brainstorm & Refine Commands
-
-**brainstorm** generates independent originals from each participant with no synthesis. Use `--variants=N` (1-3) to get multiple originals per participant, each with a distinct creative-direction preamble (conventional, creative, contrarian). Override preambles with `--preamble='...'`.
-
-**refine** takes a single artifact (inline text or file path) and iteratively improves it. Each pass: all participants critique and improve → judge picks the best → identifies strengths in runners-up → weaves a revised version → distributes back to all participants. Uses `--passes=N` (1-5, default 2).
-
-**brainstorm-and-refine** is the full pipeline: brainstorm originals, present them, let the user choose which enter refinement, then run the refine cycle. A transition gate always asks the user before proceeding.
+**Brainstorm & Refine Commands**:
+- **brainstorm**: Generates independent originals. Use `--variants=N` for multiple concepts.
+- **refine**: Iteratively improves a single artifact. Cycle: critique → judge → weave → distribute. Use `--passes=N`.
+- **brainstorm-and-refine**: Brainstorms originals, waits for user selection, then refines.
 
 ## Plan Mode
 

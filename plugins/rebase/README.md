@@ -34,23 +34,20 @@ codex plugin add rebase@skills
 |---|---|---|
 | `/rebase` | `rebase` | Rebase current branch onto trunk, resolve conflicts, verify quality gates |
 
-## 5-Phase Workflow
+## Workflow
 
-1. **Detect trunk** — Identify the remote trunk branch (`main` or `master`)
-2. **Fetch and analyze** — Fetch latest, identify files changed on both sides, predict conflict zones
-3. **Execute rebase** — Run `git pull --rebase origin <trunk> --autostash`
-4. **Resolve conflicts** — If any conflicts arise, resolve them file-by-file preserving both sides' intent
-5. **Verify** — Confirm clean history, run the project's full quality gate suite
+1. **Detect Trunk**: Identify the remote trunk branch (`main` or `master`).
+2. **Analyze**: Fetch latest, identify changed files, and predict conflict zones.
+3. **Rebase**: Run `git pull --rebase origin <trunk> --autostash`.
+4. **Resolve**: Resolve conflicts file-by-file, preserving both sides' intent.
+5. **Verify**: Confirm clean history and run full quality gates.
 
-## Quality Gate Discovery
+## Quality Gates & Design
 
-The command reads AGENTS.md / CLAUDE.md to discover which quality checks the project requires. It does **not** hardcode any specific test runner or linter — it works with whatever the project uses.
+- **Dynamic Discovery**: Reads `AGENTS.md` / `CLAUDE.md` to discover required checks.
+- **Language-Agnostic**: Does not hardcode linters or test runners; works with whatever the project uses.
 
 ## Prerequisites
 
-- **git** — the rebase command uses standard git operations
-- A remote named `origin` with a trunk branch (`main` or `master`)
-
-## Language-Agnostic Design
-
-Quality gate examples are provided for reference, but the command always defers to the project's own AGENTS.md / CLAUDE.md for the actual commands to run.
+- **git** for standard operations.
+- A remote named `origin` with a trunk branch (`main` or `master`).

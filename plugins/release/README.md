@@ -1,14 +1,10 @@
 # release
 
-Cut and bump releases with safe defaults (no automatic push/tag). Rolls out
-releases to downstream consumers with CI verification.
+Cut and bump releases safely (no automatic push/tag). Rolls out releases
+downstream with CI verification.
 
-Release procedures are discovered from the target repo at runtime:
-which files carry the version (`pyproject.toml`, `__about__.py`,
-`package.json`, ...), which lockfile to refresh, how the changelog
-formats its unreleased header, whether a MIGRATION file participates,
-and which quality gates AGENTS.md / CLAUDE.md prescribe. Nothing about
-language or layout is hardcoded.
+Discovers procedures dynamically: version files, lockfiles, changelog formats,
+MIGRATION files, and quality gates (`AGENTS.md` / `CLAUDE.md`).
 
 ## Installation
 
@@ -36,81 +32,43 @@ Install the plugin:
 codex plugin add release@skills
 ```
 
-The skills below are written with Claude Code's leading slash. Codex uses
-the same names without it, so `/release:…` there is `release:…`.
+Claude Code uses a leading slash (`/release:…`). Codex omits it (`release:…`).
 
 ## Components
 
-### `/release:cut <version> [--push] [--tag] [--push-tag]` (skill)
+### `/release:cut <version> [--push] [--tag] [--push-tag]`
 
-Cut a release at an explicit version: bump every version-bearing
-file, refresh the lockfile, date the CHANGES section (and MIGRATION
-heading, if present), open the next unreleased placeholder, run the
-project's quality gates, and commit with a plain `Tag v<version>`
-subject.
+Cuts a release: bumps versions, refreshes lockfiles, dates changelogs, runs
+quality gates, and commits.
 
-Safety model — each escalation needs its own flag:
+**Safety Model (Requires Explicit Flags)**:
+- **Default**: Commit stays local (no push/tag).
+- **`--push`**: Pushes commit.
+- **`--tag`**: Creates local tag `v<version>`.
+- **`--push-tag`**: Pushes tag (often triggers publish workflow).
 
-- Default: commit stays local. No push, no tag.
-- `--push`: push the release commit. Never implies the tag.
-- `--tag`: create `v<version>` locally. Never pushed by itself.
-- `--tag --push-tag`: push the tag. In repos where tags trigger the
-  publish workflow, this *is* releasing — which is why it takes two
-  flags.
+Unused flags print as ready-to-run commands. Refuses unprompted tagging if
+forbidden by `AGENTS.md`.
 
-Whatever the flags did not authorize is printed as ready-to-run
-commands, and offered interactively at the end.
+### `/release:bump [patch|minor|major|prerelease|final|<version>]`
 
-If your repo's AGENTS.md / CLAUDE.md reserves tagging for a human,
-scope the rule to unprompted action:
+Like `cut`, but calculates the next version first based on current version,
+tags, and changelog headers. Asks on ambiguity.
 
-> Never create or push a tag on your own initiative. An explicit
-> instruction is the user's call, including a `--tag` or `--push-tag`
-> flag; act on it without asking again.
+### `/release:update-downstream-packages <package> [<version>]`
 
-An unscoped "never create tags" reads as outranking a flag the user
-just passed, and the agent stops mid-release — commit pushed, tag
-missing, publish never triggered.
-
-### `/release:bump [patch|minor|major|prerelease|final|<version>]` (skill)
-
-Same procedure as `cut`, but discovers what "next" means first: reads
-the current version, tag history, and the CHANGES unreleased header,
-then enumerates concrete candidates in the project's own scheme —
-`0.1.9a1 → 0.1.9a2`, `0.1.9 → 0.1.10`, `0.2.0`, `1.0.0`, or starting
-a prerelease series like `0.2.0a0`. The user picks; ambiguous
-arguments get interpretations offered rather than guessed. Stable
-projects keep their next unreleased CHANGES header in
-`MAJOR.MINOR.x` form; prerelease-track projects name the next
-prerelease outright.
-
-### `/release:update-downstream-packages <package> [<version>]` (skill)
-
-After a release publishes, roll it out to every consumer repo you
-maintain. Discovers consumers under your workspace roots (skipping
-git worktrees and dirty checkouts), then per repo: syncs trunk,
-removes stale source overrides and maintains uv's
-`exclude-newer-package` cutoffs as separate commits, bumps the pin
-for the package and its workspace siblings, re-locks with a fresh
-resolver cache, commits in the repo's own bump-commit style, pushes,
-and verifies CI (and docs deploys) with `gh` — clearing stale Actions
-caches and rerunning failures once.
-
-Nothing mutates before a confirmation gate showing every repo,
-branch, and planned commit. `--no-push` keeps all commits local.
-Prerelease resolution warnings halt that repo and get reported
-instead of being forced through with resolver flags.
+Rolls out published releases to local consumer repos.
+- Syncs trunk, updates pins, re-locks, and commits.
+- Verifies CI with `gh`.
+- Requires confirmation before mutating.
+- `--no-push` keeps commits local.
 
 ## Shared reference
 
-`references/release-conventions.md` holds the discovery procedures
-and templates both release commands follow: version-file and bump-
-tooling discovery, version-scheme vocabulary (PEP 440, semver, npm
-prereleases), CHANGES/MIGRATION unreleased-header lifecycle, the
-release commit format, and the safety contract.
+See `references/release-conventions.md` for discovery procedures, templates,
+and safety contracts.
 
 ## Prerequisites
 
-- `git`, and `gh` for the downstream CI verification
-- The target project's own toolchain (whatever its AGENTS.md /
-  CLAUDE.md quality gates require)
+- **git** and **gh**.
+- The target project's toolchain (as required by quality gates).

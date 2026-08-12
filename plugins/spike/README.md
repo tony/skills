@@ -34,64 +34,53 @@ codex plugin add spike@skills
 | Claude Code | Codex | Description |
 |---|---|---|
 | `/spike:probe [<goal>]` | `spike:probe [<goal>]` | Probe the goal with zero commits, stash with a recovery ref, propose a commit-by-commit landing plan |
-| `/spike:bakeoff [<goal>]` | `spike:bakeoff [<goal>]` | Build 2–4 competing strategies in isolated git worktrees, judge them adversarially, stash every contender, propose a landing plan for the winner |
+| `/spike:bakeoff [<goal>]` | `spike:bakeoff [<goal>]` | Build 2–4 competing strategies in isolated worktrees, judge adversarially, stash contenders, propose landing plan for winner |
 
 The goal can be typed or inferred from conversation context (review
-findings just presented, a failing test under discussion) — the
-plan-mode brief confirms it either way.
+findings, failing tests) — the plan-mode brief confirms it.
 
-`/spike:probe` flags: `--branch=<name>` (spike on a scratch branch),
-`--keep-tree` (skip the stash, leave changes for inspection),
-`--replay` (implement the approved plan immediately, one gated commit
-per plan item).
+`/spike:probe` flags: `--branch=<name>` (spike on scratch branch),
+`--keep-tree` (skip stash, leave changes), `--replay` (implement
+approved plan immediately via gated commits).
 
 `/spike:bakeoff` flags: `--strategies="a; b; c"` (explicit contender
 list), `--prongs=<2-4>` (cap contender count), `--keep-trees` (leave
-worktrees for inspection), `--replay` (land the winner immediately).
+worktrees), `--replay` (land winner immediately).
 
 One approach in mind → `probe`. Genuinely uncertain between
-approaches → `bakeoff`. To vary the *model* rather than the strategy,
-use the weave plugin instead.
+approaches → `bakeoff`. To vary the *model* rather than strategy,
+use the weave plugin.
 
 ## Workflow
 
-1. **Situational awareness** — read AGENTS.md / CLAUDE.md, discover the
-   project's format / lint / typecheck / test / build commands and what
-   CI covers post-push
-2. **Spike brief** — short plan-mode confirmation of goal (with its
-   provenance), "proven" criterion, and exit path
+1. **Situational awareness** — read AGENTS.md / CLAUDE.md to discover
+   format / lint / test / build commands and post-push CI coverage.
+2. **Spike brief** — confirm goal, "proven" criterion, and exit path.
 3. **Probe** — shortest path to proven; cheapest verification signal
-   only; shortcuts marked `SPIKE:`
-4. **Exit gate** — one pass of the fast local gates so the plan starts
-   from known state
-5. **Stash** — `git stash push -u` with a descriptive message and a
-   recorded immutable SHA for recovery
+   only; shortcuts marked `SPIKE:`.
+4. **Exit gate** — fast local gates pass to ensure known state.
+5. **Stash** — `git stash push -u` with descriptive message and
+   recorded immutable SHA for recovery.
 6. **Replay plan** — numbered commit sequence mapping stash hunks to
-   commits, decisions to resolve, per-commit gates, local-vs-CI split
+   commits, resolving decisions, and noting per-commit gates.
 
-A bakeoff runs steps 3–5 once per contender, each in its own git
-worktree with contenders blind to each other, then adds an
-adversarial judging pass (correctness, blast radius, idiom fit, gate
-status) before the replay plan. Every contender is stashed with a
-recovery SHA — losers included, as graft material — before its
-worktree is removed.
+A bakeoff runs steps 3–5 once per contender in isolated worktrees,
+adds an adversarial judging pass (correctness, blast radius, idiom
+fit, gate status), then proposes a replay plan for the winner. Every
+contender is stashed for recovery before its worktree is removed.
 
-The spike itself never commits — not in the working tree, not in any
-worktree. Commits only happen in `--replay`, after the plan is
-approved, one plan item at a time, each behind a green gate.
+The spike never commits locally or in worktrees. Commits only happen
+via `--replay` after plan approval, one item at a time behind green gates.
 
 ## Verification discovery
 
-Both commands read AGENTS.md / CLAUDE.md / CONTRIBUTING.md to discover
-which quality checks the project requires, and reads the CI definitions
-to learn what a push verifies for free (see
-`references/verification-gates.md`). It does **not** hardcode any test
-runner, linter, or build tool — and it deliberately runs no more
-verification than the change needs, deferring CI-covered work to
-`gh pr checks --watch` after a push.
+Commands read AGENTS.md / CLAUDE.md / CONTRIBUTING.md to discover
+required quality checks, and CI definitions to learn push coverage
+(see `references/verification-gates.md`). Does **not** hardcode
+runners or linters, and deliberately limits verification to defer
+CI-covered work to `gh pr checks --watch`.
 
 ## Prerequisites
 
-- **git** — stash-based workflow uses standard git operations;
-  `/spike:bakeoff` additionally uses `git worktree`
+- **git** — stash-based workflow; `/spike:bakeoff` uses `git worktree`
 - **gh** (optional) — enables watching CI checks after a push

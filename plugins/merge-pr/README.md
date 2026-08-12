@@ -3,10 +3,8 @@
 Merge PRs matching repo history conventions. Includes readiness checks,
 CI watching, stack detection, and automated rebasing.
 
-Merging is treated as its own provincial act: verify checks, bring
-the branch up to date, land it, sync trunk, stand by. It is not a
-release — these commands never tag, never edit changelogs, and never
-claim a change lands "in vX.Y" unless the PR itself is release work.
+Merging is a separate act: verify checks, sync trunk, land branch. It never tags,
+edits changelogs, or claims releases.
 
 ## Installation
 
@@ -34,50 +32,35 @@ Install the plugin:
 codex plugin add merge-pr@skills
 ```
 
-The skills below are written with Claude Code's leading slash. Codex uses
-the same names without it, so `/merge-pr:…` there is `merge-pr:…`.
+Claude Code uses a leading slash (`/merge-pr:…`). Codex omits it (`merge-pr:…`).
 
 ## Components
 
-### `/merge-pr:this` (skill)
+### `/merge-pr:this`
 
-Merge one PR — the one under discussion, or the current branch's.
-Runs the readiness gate (open, not draft, CI passing via
-`gh pr checks`, mergeable, no requested changes), waits on pending
-checks with `gh pr checks --watch`, rebases and force-pushes with
-`--force-with-lease` if the branch is behind or conflicted, then
-merges via `gh pr merge` with a merge commit message derived from
-the repo's merge history. Afterwards it checks out trunk, pulls,
-and stops.
+Merges a single PR. 
+- Runs readiness gates (open, CI passing via `gh pr checks`).
+- Waits on pending CI.
+- Rebases and force-pushes if behind.
+- Merges via `gh pr merge` using repo history for commit messages.
+- Checks out and pulls trunk.
 
-### `/merge-pr:multiple` (skill)
+### `/merge-pr:multiple`
 
-Land a set of PRs one at a time. Detects whether the set is a
-**stack** (a PR based on another PR's head branch — merged
-bottom-up, children retargeted and rebased with the parent's commits
-dropped) or **independent** (merged in the user's order, each
-rebased onto the trunk the previous merge produced). Between merges:
-rebase, resolve conflicts, force-push, and wait on CI before the
-next `gh pr merge`. Halts — preserving everything already merged —
-on failing CI, unexpected rebase drift, or a conflict that needs a
-product decision.
+Lands multiple PRs sequentially. 
+- Detects if PRs are a **stack** (merged bottom-up, children rebased/retargeted)
+  or **independent** (merged in order, rebased on trunk).
+- Between merges: rebases, force-pushes, waits on CI.
+- Halts on CI failure, drift, or product-level conflicts, preserving merges.
 
 ## Merge strategy and flags
 
-Both commands default to a merge commit. `--squash` and `--rebase`
-override the strategy, and every other `gh pr merge` flag passes
-through verbatim (`--auto`, `--delete-branch`, `--admin`,
-`--match-head-commit`, `--body-file`, `--repo`, ...). `--admin` is
-honored only to bypass branch protection when CI is otherwise green
-— never to merge over failing or pending checks.
-
-Both commands read `references/merge-readiness.md`, the shared
-contract covering the readiness gate, the rebase procedure, the
-merge-message derivation, and the do-no-harm rules: discovery before
-action, ask on ambiguity, halt on anything surprising.
+- Defaults to merge commit. `--squash` and `--rebase` override.
+- Passes other `gh pr merge` flags verbatim (e.g., `--delete-branch`, `--admin`). 
+- `--admin` only bypasses branch protection for green CI; never merges over failing checks.
+- Adheres to `references/merge-readiness.md` rules: discover, ask on ambiguity, halt on surprise.
 
 ## Prerequisites
 
-- `gh` CLI, authenticated with permission to merge in the target
-  repository.
-- `git` with fetch/push access to the PR branches.
+- **gh**: Authenticated with merge permissions.
+- **git**: Fetch/push access to PR branches.

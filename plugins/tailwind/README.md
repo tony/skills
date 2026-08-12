@@ -38,16 +38,19 @@ codex plugin add tailwind@skills
 ## How It Works
 
 The spacing audit follows a 5-step workflow:
-
-1. **Detect framework** — Scan for `.tsx`, `.jsx`, `.vue`, `.svelte`, `.astro`, `.html`, `.erb`, `.blade.php` to determine the attribute name (`className` vs `class`) and file globs
-2. **Structural audit** — Read the component and produce a spacing map annotating every spacing mechanism acting on the element group
-3. **Classify anti-patterns** — Match against seven heuristics (H1-H7) covering container fragmentation, margin/gap mixing, padding asymmetry, fixed widths, wrapper nesting, hit target inconsistency, and space-x/gap collision
-4. **Refactor** — Merge fragmented containers, choose one spacing authority per relationship, standardize envelopes, flatten wrappers
-5. **Validate** — Re-draw the spacing map and confirm single authority, consistent containers, uniform envelopes, and hit targets
+1. **Detect framework**: Scans extensions to determine attribute names
+   (`className` vs `class`) and globs.
+2. **Structural audit**: Creates a spacing map of mechanisms acting on
+   the element group.
+3. **Classify anti-patterns**: Matches against seven heuristics
+   (fragmentation, margin/gap mixing, padding asymmetry, wrapper
+   nesting, etc.).
+4. **Refactor**: Merges fragmented containers, assigns one spacing
+   authority, and flattens wrappers.
+5. **Validate**: Re-evaluates the spacing map to confirm uniform
+   envelopes and authorities.
 
 ## Framework Support
-
-The skill automatically detects which frameworks are in use and adjusts search patterns accordingly:
 
 | Framework | File extensions | Attribute |
 |-----------|----------------|-----------|
@@ -73,5 +76,5 @@ Target specific files or components:
 
 ## Prerequisites
 
-- A project using **Tailwind CSS** (v4+ recommended, v3 also works)
+- A project using **Tailwind CSS** (v4+ recommended, v3 supported)
 - Template files in any supported framework

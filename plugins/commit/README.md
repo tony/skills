@@ -1,6 +1,7 @@
 # commit
 
-Create git commits following project conventions with format enforcement and safety checks.
+Create git commits following project conventions with format enforcement
+and safety checks.
 
 ## Installation
 
@@ -36,11 +37,17 @@ codex plugin add commit@skills
 
 ## How It Works
 
-1. **Analyze changes** — review the diff, determine commit type and scope, check topic coherence
-2. **Determine staging** — respect existing staged files; auto-stage only if nothing is staged; exclude secrets
-3. **Draft commit message** — read AGENTS.md/CLAUDE.md for the project's format; match recent commit style; applies commit quality guidelines — proportional detail, version bump URLs, before/after patterns
-4. **Commit** — present the message, then execute; handle pre-commit hook failures by fixing and retrying
-5. **Confirm result** — show the created commit and remaining working tree state
+1. **Analyze changes** — Review diff, determine type/scope, check topic
+   coherence.
+2. **Determine staging** — Respect existing staged files. Auto-stage
+   only if nothing is staged. Excludes secrets.
+3. **Draft commit message** — Follow `AGENTS.md`/`CLAUDE.md` and recent
+   commit styles. Apply guidelines: proportional detail, version bump
+   URLs, before/after patterns.
+4. **Commit** — Execute the commit. Handle and retry on pre-commit hook
+   failures.
+5. **Confirm result** — Show the created commit and remaining working
+   tree state.
 
 ## Arguments
 
@@ -51,20 +58,26 @@ Pass an optional hint to influence the commit description:
 /commit add retry logic to the API client
 ```
 
-The hint supplements auto-detection — the project's commit format is always enforced.
+The hint supplements auto-detection — the project's commit format is
+always enforced.
 
 ## Commit Format Detection
 
-The command reads AGENTS.md and CLAUDE.md to discover the project's commit convention. It also inspects the last 10 commits for style matching. If no convention is found, it falls back to Conventional Commits (`type(scope): description`).
+Reads `AGENTS.md` and `CLAUDE.md` to discover conventions. Inspects the
+last 10 commits for style matching. Falls back to Conventional Commits
+(`type(scope): description`) if no convention is found.
 
 ## Safety
 
-- Never runs `git push`, `git reset --hard`, or other destructive commands
-- Never uses `--amend` — always creates new commits
-- Never stages `.env`, credentials, or key files
-- Never uses `git add -A` or `git add .` — stages specific files only
-- Uses heredoc formatting for multi-line commit messages
+- **No destructive commands** — Never runs `git push` or `git reset
+  --hard`.
+- **No history rewriting** — Never uses `--amend`; always creates new
+  commits.
+- **Secret filtering** — Never stages `.env`, credentials, or key files.
+- **Explicit staging** — Stages specific files only; never uses
+  `git add -A` or `git add .`.
+- **Heredoc formatting** — Used for multi-line commit messages.
 
 ## Prerequisites
 
-- **git** — for all version control operations
+- **git**

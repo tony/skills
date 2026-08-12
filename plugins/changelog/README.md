@@ -37,36 +37,29 @@ codex plugin add changelog@skills
 | `/changelog:refresh` | `changelog:refresh` | Update the branch's own entries to its current net change (stacks a new commit with `--commit`) |
 | `/changelog:recut` | `changelog:recut` | Rebase out the branch's earlier changelog commits and regenerate its entries fresh (commits with `--commit`) |
 
-## 5-Phase Workflow
+## Workflow
 
-1. **Gather context** — Detect project name, read project conventions (AGENTS.md/CLAUDE.md), find changelog file, analyze its format, check for PR, collect commits
-2. **Categorize commits** — Parse commit types, group related commits (e.g., TDD sequences collapse into one entry)
-3. **Generate entries** — Write markdown matching the existing changelog style
-4. **Present for review** — Show proposed entries and insertion point, wait for user approval
-5. **Insert** — Apply approved entries to the changelog file
+1. **Gather context**: Detect project info, read conventions (`AGENTS.md`), find changelog, and collect commits.
+2. **Categorize**: Parse commit types and group related commits.
+3. **Generate**: Draft markdown matching the existing changelog style.
+4. **Review**: Present proposed entries for approval.
+5. **Insert**: Apply approved entries to the unreleased section.
 
 ## Refresh and Recut
 
-Both follow-up commands are hard-scoped to changelog content the branch itself introduced — entries from earlier releases or from other branches' unreleased work are read-only, and anything requiring an edit outside that footprint gets a question, not a guess. Both are stack-aware: the base is the branch's PR base when a PR exists, trunk otherwise. Both reuse `/changelog`'s categorization, voice, and release-safety rules. Like `/changelog`, neither commits by default — the edit is left in the working tree with a suggested commit message unless you pass `--commit`.
+Both follow-up commands are hard-scoped to the current branch's net change. They use the PR base (or trunk) and avoid committing by default unless `--commit` is passed.
 
-### `/changelog:refresh` — correct the entries in place
+- **`/changelog:refresh`**: Recomputes entries from the net change and applies the diff in place without rewriting history.
+- **`/changelog:recut`**: Rebuilds history by dropping pure-changelog commits via non-interactive rebase, then regenerates entries. (Does not run `git push`).
 
-Recomputes what the branch's entries should say from its current net change, diffs that against what the entries currently say, and applies the correction (with `--commit`, as a new commit stacked on top). History is never rewritten.
+## Release Scope
 
-### `/changelog:recut` — rebuild the branch's changelog history
+Entries always land in the unreleased section. The plugin does not:
+- Create or date version headings.
+- Guess release versions or reason about SemVer.
+- Edit version files or create tags.
 
-Drops the branch's pure-changelog commits via a scripted non-interactive rebase (after creating a backup branch and confirming if the branch is pushed), verifies the branch's code diff is untouched, then regenerates entries fresh — committing once at the tip with `--commit`. Commits that mix changelog and code changes are never rewritten without an explicit choice. The command never pushes — publishing the rewrite with `git push --force-with-lease` is left to you.
-
-## A Branch Is Not a Release
-
-Entries always land in the unreleased section. The command will not create or date
-a version heading, guess which version the work ships in, reason about SemVer from
-the commits, edit version files, or create tags — a release-shaped branch name,
-milestone, or version bump in the diff changes none of this.
-
-Cutting a release is a separate, explicit act: the command does it only when you ask
-for it and name the version ("cut v1.53.0", "this is the release branch for 0.9.4").
-Ambiguous asks get a clarifying question, not a guess.
+*Cutting a release must be explicitly requested (e.g., "cut v1.53.0").*
 
 ## Supported Changelog Formats
 
@@ -96,19 +89,18 @@ Related commits are grouped automatically:
 
 ## Project Conventions
 
-The command reads `AGENTS.md`, `CLAUDE.md`, and similar convention files at the repo root in Phase 1, and applies them with this priority:
+The command reads `AGENTS.md` and `CLAUDE.md` to discover project rules. Priority:
+1. **Explicit Rules**: `AGENTS.md` / `CLAUDE.md`.
+2. **Implicit Rules**: The existing changelog file (mirrors formatting of the latest release).
+3. **Defaults**: Used if no precedent exists.
 
-1. **AGENTS.md / CLAUDE.md** (explicit project rules) — wins over everything else
-2. **Existing CHANGES file** (implicit homogeneity) — section order, heading capitalization, entry shape, and proportionality are mirrored from the most recent populated release
-3. **Command defaults** — used only when neither source has precedent
-
-This applies to both the changelog entries themselves and the commit message used when the CHANGES update is committed. If the project's AGENTS.md prescribes a commit format (e.g., `Scope(type[detail])` with `why:` / `what:` body), the command follows it instead of its fallback `docs(CHANGES) <description>` form.
+Follows project-specific commit formats prescribed in conventions.
 
 ## Prerequisites
 
-- **git** — for commit history analysis
-- **gh** (optional) — for PR number and label detection
+- **git**: For commit history analysis.
+- **gh** (optional): For PR and label detection.
 
 ## Language-Agnostic Design
 
-Project name detection works across ecosystems: `pyproject.toml`, `package.json`, `Cargo.toml`, `go.mod`, or the repository directory name. The changelog format is detected from the existing file — no format is assumed.
+Detects project details across ecosystems (`pyproject.toml`, `package.json`, etc.) and seamlessly adapts to existing changelog formats.

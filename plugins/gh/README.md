@@ -29,80 +29,59 @@ Install the plugin:
 codex plugin add gh@skills
 ```
 
-The skills below are written with Claude Code's leading slash. Codex uses
-the same names without it, so `/gh:…` there is `gh:…`.
+The skills below use Claude Code's leading slash. Codex uses the same names
+without it (`gh:…`).
 
 ## Components
 
 ### `/gh:create-issue` (skill)
 
-Files a GitHub issue from a description, a pasted finding, or an
-investigation already in the conversation.
+Files a GitHub issue from existing descriptions, findings, or conversations.
+Read-only until the final step.
 
-1. **Resolves the target repository, then checks it belongs in a
-   public issue** — a vulnerability goes down that project's private
-   reporting path instead.
-2. **Preflights the repository** — issues enabled, contact links,
-   issue templates and forms read from the default branch,
+1. **Resolves repository & checks visibility:** Directs vulnerabilities to
+   private reporting paths.
+2. **Preflights repository:** Checks for enabled issues, templates, forms, and
    `CONTRIBUTING.md` requirements.
-3. **Looks for the issue that already exists** — open and closed, in
-   titles and bodies, before writing anything.
-4. **Gathers evidence** — reproduces the defect, records exact
-   versions, pins the code that causes it, researches every upstream
-   project it names.
-5. **Drafts** — a fixed section order, `###` headings, long output in
-   `<details>`, nested sections instead of tables.
-6. **Sanitizes and previews** — strips local paths and PII, then
-   renders the body through GitHub's own renderer to catch broken
-   markup before it ships.
-7. **Files on approval** — shows the full title and body, then opens
-   it with `gh issue create --body-file`.
-
-Read-only until that last step.
+3. **Checks for existing issues:** Searches open and closed issues before
+   drafting.
+4. **Gathers evidence:** Reproduces defects, records versions, pins code, and
+   researches upstream projects.
+5. **Drafts:** Enforces fixed sections, `###` headings, `<details>` for long
+   output, and nested sections.
+6. **Sanitizes and previews:** Strips local paths/PII and validates markup via
+   GitHub's renderer.
+7. **Files on approval:** Previews title/body and opens via
+   `gh issue create --body-file`.
 
 ### `rendered-markdown` (skill)
 
-Loads while you write anything a renderer will show a human: never
-hard-wrap a comment body, backtick every symbol, one shell command per
-fence, long output in `<details>`, nested sections instead of tables,
-no local paths or PII, and every source link pinned to a tag or a
-7-character commit. Guidance only — it never edits files.
+Provides rendering guidance for human-readable markdown. Never edits files.
+- Prevents hard-wrapping in comment bodies.
+- Enforces backticks for symbols and one shell command per fence.
+- Requires long output in `<details>` and pinned source links.
+- Rules sync with `references/rendered-markdown.md` and
+  `references/source-links.md`.
 
-The rules live in `references/rendered-markdown.md` and
-`references/source-links.md`, which `/gh:create-issue` follows too, so
-the two cannot drift.
+## The wrapping rule exception
 
-## Why the wrapping rule has an exception
+GitHub renders newlines as line breaks in comments/issues, but as spaces in
+markdown files. Comment bodies avoid hard-wrapping, while repository `.md`
+files follow project conventions. The skills respect this boundary rather than
+globally reformatting.
 
-GitHub renders a single newline as a line break in issue, pull
-request, discussion, and comment bodies, and as a space in a markdown
-file. So a comment body is never hard-wrapped, while a repository's
-`.md` files follow whatever convention the repository already uses.
-The skills apply that boundary rather than reformatting files to match
-bodies.
+## Plugin comparisons
 
-## Relationship to `pr` and `lean`
-
-### Reach for `gh` when
-
-You are filing an issue, or writing any body GitHub will render and
-you want the markup and links to hold up.
-
-### Reach for `pr` when
-
-You need a pull request description generated, refreshed, recut, or
-reviewed against gold-standard structure.
-
-### Reach for `lean` when
-
-You want the prose itself tightened — filler, diff narration, and
-inflation removed. `lean` governs the sentences; `gh` governs the
-markup, structure, and links around them.
+- **Use `gh`:** For filing issues or writing GitHub-rendered markdown
+  (focuses on markup and links).
+- **Use `pr`:** For generating, refreshing, or reviewing PR descriptions.
+- **Use `lean`:** For tightening prose by removing filler and diff narration
+  (focuses on sentences).
 
 ## Prerequisites
 
-- **gh** — GitHub CLI, authenticated. Used for every repository read,
-  the markdown preview, and creating the issue.
+- **gh** — GitHub CLI, authenticated. Used for repository checks, previews,
+  and creating issues.
 - **git** — for resolving tags and refs when pinning links.
-- **curl** and **jq** — for the package-registry lookups and the
-  pre-publish link check when an issue names an upstream project.
+- **curl** and **jq** — for package-registry lookups and pre-publish link
+  checks.

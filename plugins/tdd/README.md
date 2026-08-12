@@ -39,61 +39,47 @@ the same names without it, so `/tdd:…` there is `tdd:…`.
 | `/tdd:fix` | Standard xfail-driven TDD bug-fix loop |
 | `/tdd:xfail` | Hermetic xfail workflow with diff gates, mock contamination guards, and CI checkpoints |
 
-## `/tdd:fix` — 6-Phase Workflow
+## `/tdd:fix` Workflow
 
-1. **Understand the bug** — Parse the report into symptom, expected behavior, trigger conditions
-2. **Write a failing test** — Create an xfail-marked test that reproduces the bug
-3. **Find root cause** — Trace from symptom to the exact code that needs to change
-4. **Fix the bug** — Apply the minimal fix, confirm xfail flips to unexpected-pass
-5. **Remove xfail and verify** — Convert to a regression test, run full quality gates
-6. **Recovery loop** — If the fix doesn't work, diagnose and retry (up to 3 attempts)
+1. **Understand**: Parse bug report (symptom, expected behavior, triggers).
+2. **Reproduce**: Create an xfail-marked test.
+3. **Analyze**: Trace to the root cause.
+4. **Fix**: Apply minimal fix; confirm xfail passes.
+5. **Verify**: Remove xfail, run quality gates.
+6. **Recover**: Retry on failure (up to 3 attempts).
 
-Each phase produces a separate, atomic commit — the xfail test, the fix, and the xfail removal.
+*Produces atomic commits for: xfail test, fix, and xfail removal.*
 
-## Supported Test Frameworks
+## `/tdd:xfail` Protocol
 
-The command adapts to the project's test framework using the appropriate expected-failure mechanism:
+A strict TDD variant enforcing proof at each boundary:
 
-| Framework | xfail mechanism |
-|-----------|----------------|
-| pytest (Python) | `@pytest.mark.xfail(strict=True)` |
-| Jest (JavaScript/TypeScript) | `it.failing('...')` |
-| Rust `#[test]` | `#[should_panic]` or `#[ignore]` |
-| Go `testing` | `t.Skip("known bug: ...")` |
+1. **Reproduce**: Write strict xfail test.
+2. **Verify Reproduction**: Ensure test fails for the right reason (no mock contamination).
+3. **Apply Fix**: Edit source code only (xfail now XPASSes).
+4. **Verify Isolation**: Stash fix to confirm bug returns, pop to confirm resolution.
+5. **Remove xfail**: Edit test file only.
+6. **Final Verification**: Ensure full suite passes.
 
-For other frameworks, the command uses whatever skip/pending/expected-failure mechanism is available.
-
-## Quality Gate Discovery
-
-The command reads AGENTS.md / CLAUDE.md to discover the project's quality gates (test runner, linter, formatter, type checker). All gates must pass before each commit.
-
-## `/tdd:xfail` — Hermetic Reproduction Protocol
-
-A strict variant of the TDD workflow that enforces proof at every phase boundary:
-
-1. **Reproduce** — Write a test with `strict=True` xfail; confirm it xfails
-2. **Verify reproduction** — Temporarily remove xfail, confirm the test fails for the right reason (not mock contamination)
-3. **Apply fix** — Source code only, zero test file changes; xfail now XPASSes
-4. **Verify isolation** — Stash the fix, confirm the bug returns; pop, confirm it's gone
-5. **Remove xfail** — Test file only, zero source changes; test passes normally
-6. **Final verification** — Full suite green, three commits with correct file separation
-
-Each commit passes a `git diff --stat` gate ensuring test-only and source-only commits stay separated. The stash round-trip in step 4 proves the fix is what resolved the test.
+*Enforces separation via `git diff --stat` gates.*
 
 ## Cross-Dependency Bugs
 
-When a bug spans this project and a dependency, the command handles both:
-1. Fix the dependency first
-2. Verify the dependency's tests pass
-3. Configure the local dependency for development
-4. Then fix and test in this project
+For bugs spanning multiple projects:
+1. Fix the dependency first.
+2. Verify dependency tests pass.
+3. Configure local dependency for development.
+4. Fix and test in the main project.
+
+## Quality Gates & Frameworks
+
+Adapts dynamically based on `AGENTS.md` / `CLAUDE.md`:
+- Discovers test runners, linters, formatters, and type checkers.
+- Uses native expected-failure mechanisms (e.g., `pytest.mark.xfail`, `it.failing`, `#[should_panic]`, `t.Skip`).
+- Language and framework agnostic.
 
 ## Prerequisites
 
-- **git** — for atomic commits at each phase
-- A test framework supported by the project
-- Quality gate commands defined in AGENTS.md / CLAUDE.md
-
-## Language-Agnostic Design
-
-Test conventions, quality gates, and commit formats are all discovered from AGENTS.md / CLAUDE.md at runtime. The command works with any language or test framework.
+- **git** for atomic commits.
+- A supported test framework.
+- Quality gate commands defined in conventions.

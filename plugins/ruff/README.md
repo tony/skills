@@ -1,8 +1,8 @@
 # ruff
 
-Upgrade Ruff across repositories. Works out which new rules can fire against
-each repo's select list and lands one reviewed commit per rule, citing the
-upstream rule doc.
+Upgrade Ruff across repositories. Resolves new rules against each repo's
+select list and creates one reviewed commit per rule, citing the upstream
+rule doc.
 
 ## Installation
 
@@ -36,37 +36,47 @@ codex plugin add ruff@skills
 |---|---|---|
 | `/ruff:bump [version]` | `ruff:bump [version]` | Raise the ruff floor across the repositories in scope and absorb what the release surfaces, one commit per rule |
 
-With no version, it targets the latest stable release. It defaults to the current repository, working on a branch in a throwaway worktree and opening a pull request.
+Defaults to the latest stable release in the current repository, creating
+a PR from a throwaway worktree.
 
-`--root <dir>` sweeps every repository beneath a directory, `--repo` names individual ones, and `--owner <name>` keeps only those belonging to given accounts. `--audit-only` reports the predicted work and writes nothing. `--adopt-defaults` carries through the default-rule-set change described below rather than only measuring it. `--no-pr` commits and pushes without opening a pull request; `--no-changelog` skips the changelog entry.
+**Arguments:**
+- `--root <dir>`: Sweep every repository beneath a directory.
+- `--repo`: Target specific repositories.
+- `--owner <name>`: Filter by account ownership.
+- `--audit-only`: Report predicted work without making changes.
+- `--adopt-defaults`: Carry through the default-rule-set change.
+- `--no-pr`: Commit and push without opening a PR.
+- `--no-changelog`: Skip the changelog entry.
 
 ## Why this isn't just `ruff check --fix`
 
-Running the autofixer is the easy five percent. The parts that go wrong are the ones around it.
-
-**The headline change is usually not the change that affects you.** Ruff is pre-1.0 and ships breaking changes in minor releases, but an explicit `[tool.ruff.lint] select` *replaces* the default rule set rather than extending it — so a release that dramatically expands the defaults produces no new diagnostics for most repositories, while a quietly stabilized preview rule inside a prefix you already select is what actually fires. The command predicts the diagnostics per repository by intersecting the release with that repository's own configuration, and treats a diagnostic it did not predict as a signal that it misread something rather than as a cue to apply the fix.
-
-**Producing no diagnostics is not the same as having no consequence.** That same `select` means the repository is now silently opted out of the baseline the vendor curated and recommends — invisibly, permanently, and a little further at every future release. The command measures what adopting the default set would actually cost, per repository and per rule, and surfaces it as a decision. It also refuses the tempting shortcut: a curated default set takes a *subset* of each linter, so widening `select` to whole linter prefixes enables far more than the vendor recommends. Measured on real repositories, the prefix shortcut produced 50-100x more findings than the exact default set.
-
-**Formatter scope changes dwarf lint fixes.** When a release brings a new *file type* into the formatter's scope, it rewrites files no formatter in that repository has ever touched. That churn needs to be isolated in its own commit and labelled as mechanical, or review stalls on a diff nobody can read.
-
-**The version is often invisible to the resolver.** A supply-chain cooldown that hides releases younger than a threshold, a lagging mirror, a transitive cap — the package index shows the version plainly while the resolver insists there is no such release. The command diagnoses which layer is blocking before working around it, and when a temporary exemption is genuinely warranted it lands as its own revertible commit, annotated where it lives, and surfaced as a pre-merge blocker on the pull request. A cooldown exemption that gets merged is a permanent hole in a supply-chain guard traded for a few hours of convenience.
-
-**Pins drift across files.** The same tool is routinely pinned in project metadata, a requirements file, and a pre-commit configuration, and they disagree. Pre-commit is the most commonly missed: the project metadata says the new version, pre-commit keeps running the old one, and the two disagree about what "clean" means until it surfaces as a mystery failure on somebody else's pull request.
-
-**Not every fix is cosmetic.** Rules that touch exception handling, logging, the iterator protocol, or return types exist because the current code is subtly wrong, and satisfying them changes what the program does. Those need the behavior delta stated and the tests re-run, not batched in with a hundred import reorderings.
+- **The headline change is usually not the change that affects you:**
+  Explicit `[tool.ruff.lint] select` replaces defaults. The command
+  predicts diagnostics per repository.
+- **Producing no diagnostics has consequences:** Repositories can
+  silently opt out of baseline rules. Widening `select` to whole
+  prefixes enables far more than recommended.
+- **Formatter scope changes dwarf lint fixes:** Churn from new file
+  types in the formatter's scope needs isolated, mechanical commits.
+- **The version is often invisible to the resolver:** The command
+  diagnoses blocking layers and handles temporary cooldown exemptions
+  as revertible commits.
+- **Pins drift across files:** It surfaces and resolves disagreements in
+  pinned versions (e.g., project metadata vs pre-commit).
+- **Not every fix is cosmetic:** Rules altering behavior require tests
+  to be re-run, not batched with import reorderings.
 
 ## Components
 
 | Path | Purpose |
 |------|---------|
 | `commands/bump.md` | The command |
-| `references/release-triage.md` | Sorting a release into the five buckets that matter, intersecting it with a repository's configuration, and grading each fix by how much care it needs |
-| `references/pin-sites-and-gating.md` | Every file a version can be pinned in, and diagnosing and gating a resolver that cannot see the release |
-| `references/default-rule-set.md` | Measuring what a newly curated default rule set would cost, the three config shapes and why two are wrong, and curating what adoption surfaces |
+| `references/release-triage.md` | Sorting a release, intersecting with configuration, and grading fixes |
+| `references/pin-sites-and-gating.md` | Pin sites, diagnosing, and gating resolvers |
+| `references/default-rule-set.md` | Measuring default rule set cost and curating adoption |
 
 ## Prerequisites
 
-- `git`, and a git remote you can push to
-- The GitHub CLI, authenticated, for opening pull requests and watching CI
-- The project's own resolver and quality-check commands, as its `AGENTS.md`/`CLAUDE.md` or CI workflow defines them — the command reads them rather than assuming a toolchain
+- `git` (with remote push access)
+- GitHub CLI, authenticated
+- Project's resolver and quality-check commands (defined in `AGENTS.md`/`CLAUDE.md` or CI workflow)
