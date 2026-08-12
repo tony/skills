@@ -641,6 +641,24 @@
       "bytes": 32323
     },
     {
+      "name": "self-improvement-apply",
+      "sources": [
+        "plugins/self-improvement/skills/apply/SKILL.md"
+      ],
+      "bundled": {},
+      "bytes": 6786
+    },
+    {
+      "name": "self-improvement-sweep",
+      "sources": [
+        "plugins/self-improvement/skills/sweep/SKILL.md"
+      ],
+      "bundled": {
+        "references/corpus-queries.md": "plugins/self-improvement/references/corpus-queries.md"
+      },
+      "bytes": 16774
+    },
+    {
       "name": "situate",
       "sources": [
         "plugins/situate/skills/situate/SKILL.md"
@@ -1106,6 +1124,7 @@
     "plugins/ruff/references/default-rule-set.md": 1,
     "plugins/ruff/references/pin-sites-and-gating.md": 1,
     "plugins/ruff/references/release-triage.md": 1,
+    "plugins/self-improvement/references/corpus-queries.md": 1,
     "plugins/situate/references/goal-derivation.md": 1,
     "plugins/slop/references/commit-template.md": 1,
     "plugins/slop/references/quality-gates.md": 1,
@@ -1142,6 +1161,9 @@
     "/codex:review": [
       "respond-check",
       "respond-goal"
+    ],
+    "/plugin:skill": [
+      "self-improvement-sweep"
     ]
   }
 }

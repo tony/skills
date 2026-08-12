@@ -41,6 +41,7 @@ readable by agents scanning `.agents/skills/`.
 | [git-branch](plugins/git-branch/) | Development | Rebuild branch history into atomic commits (byte-identical), or reimplement from scratch using existing tests as the spec. Includes an interactive-rebase toolkit. |
 | [package-updater](plugins/package-updater/) | Development | Update dependencies and toolchains across repositories. Checks the supply-chain cooldown first, then commits toolchain, named bumps, and lockfile refreshes separately with release notes cited. |
 | [gh](plugins/gh/) | Development | File durable GitHub issues with reproductions, pinned links, and stripped PII. Enforces a markdown writing discipline reusable for any PR, comment, or ticket. |
+| [self-improvement](plugins/self-improvement/) | Development | Mine local agent prompt history for how the skill catalog is really used, then land the changes that usage evidence supports. |
 | [ticket](plugins/ticket/) | Development | Manage work across trackers (Linear, Jira, GitHub, etc.) respecting each platform's native object graph. Drafts durable tickets focused on invariants. |
 
 ## Installation
