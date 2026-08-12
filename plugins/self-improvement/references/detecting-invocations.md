@@ -21,11 +21,35 @@ somewhere else. Call each one a channel. A count built on a single
 channel is wrong.
 
 **Typed slash commands** live in the host's prompt history —
-`~/.claude/history.jsonl`, one JSON object per line with a `.display`
-field. Cheap: no search, just `jq` and `rg`.
+`~/.claude/history.jsonl`, one JSON object per line carrying
+`.display`, `.project`, and `.timestamp`. Cheap: no search, just `jq`
+and `rg`.
+
+Extract one dated row per record and keep it:
 
 ```console
-jq -r 'select(.display != null) | .display' ~/.claude/history.jsonl | rg -o '^/[a-z0-9-]+:[a-z0-9-]+' | sed 's|^/||' | sort | uniq -c | sort -rn
+jq -r 'select(.display != null) | [(.timestamp / 1000 | todate | .[:10]), .display] | @tsv' ~/.claude/history.jsonl | rg '^\S+\t/[a-z0-9-]+:[a-z0-9-]+' | sed -E 's|^(\S+)\t/([a-z0-9-]+:[a-z0-9-]+).*|\1\t\2|' > slash-channel.tsv
+```
+
+Two things in that pipeline are load-bearing. Carrying `.timestamp`
+through is what makes an era split possible at all — rank straight to
+`uniq -c` and the dates are gone, with no later phase able to recover
+them. And anchoring the match to the start of the *record* rather than
+to the start of any line is what stops a pasted prompt that merely
+mentions `/action:worktree` from scoring as an invocation of it; on one
+corpus, matching per line inflated the total by 43.
+
+Rank it all-time:
+
+```console
+cut -f2 slash-channel.tsv | sort | uniq -c | sort -rn
+```
+
+Then re-slice the same file for the current era, using the boundary
+Phase 0 derived from the catalog's birth dates:
+
+```console
+awk -F'\t' '$1 >= "<boundary>"' slash-channel.tsv | cut -f2 | sort | uniq -c | sort -rn
 ```
 
 **Skill-tool invocations** emit a `Launching skill: <plugin>:<skill>`

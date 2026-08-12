@@ -1,12 +1,16 @@
+<!-- portable: verbatim-fences -->
+
 # A worked example: spike, before this skill existed
 
 The pass that became `/spike:loop` is this skill run by hand, months of
-prompts read in one sitting. Everything below is quoted from the corpus
-or from the diff it produced. Nothing is paraphrased, because the point
-of the example is what the evidence actually looked like.
+prompts read in one sitting. Every fenced block below is quoted from the
+corpus or from the diff it produced, character for character. Nothing in
+one is paraphrased, because the point of the example is what the
+evidence actually looked like.
 
-The outcome is pull request
-[#74](https://github.com/tony/skills/pull/74), merged as `00e6215`.
+The outcome is
+[pull request #74](https://github.com/tony/skills/pull/74), merged as
+[`00e6215`](https://github.com/tony/skills/commit/00e6215).
 
 ## The ask that started it
 
@@ -65,11 +69,17 @@ Seven retypings, no two identical, each drifting a step. Step 4 — the
 planning notes — is the one that goes missing most often, and it is the
 reason to run rounds at all.
 
-The sentence form carries `$spike` and `$bakeoff`; the list form
-carries `/spike:probe`. Both name the same cycle. That split is host
-asymmetry in the raw: a host that does not slash-invoke skills gets a
-sigil instead, and the same intent lands in a different shape. Counting
-only `/spike:` would have found the list form and missed the rest.
+Both shapes carry `$spike` and `$bakeoff`. Not one of the seven names a
+skill the way either host actually invokes one — which is what "typed
+instead of an invocation" means in practice. A count of `/spike:` finds
+zero of them. The procedure with the strongest case for becoming a
+skill is precisely the one that invocation counting cannot see.
+
+Every genuine retyping is a Codex record. That is not a fact about
+Codex; it is a fact about where this particular exploration happened,
+and it is only visible because the Claude side turned out to be the
+sweep's own reflection. A per-host count taken without that subtraction
+would have reported the cycle as evenly split and hidden both facts.
 
 ## Reading it wrong, first
 
@@ -86,15 +96,26 @@ matches_seen: 69
 
 Forty results returned against sixty-nine matches. `state` reads
 `bounded`, not `complete` — but a reader who checks only the result
-count sees forty findings and no error. Re-running at `--limit 2000`
-returned `complete` and the full seventy.
+count sees forty findings and no error.
 
-Spread misled in the other direction. Project attribution came back
-twenty-five occurrences in a single repository — until it turned out
-that repository was this one, and the occurrences were the session
-that was *writing this file* quoting the prompt back. A sweep is part
-of the corpus it reads. Exclude the sweep's own project or the finding
-measures the sweep.
+Re-running at `--limit 2000` returned `complete`, seventy matches, and
+forty-eight records. Three numbers, three meanings: seventy is every
+occurrence, forty-eight is what survives deduplication, and the extra
+match over the first run's sixty-nine was created *by the sweep* — the
+session running it had written the phrase down in between.
+
+Spread then misled in the opposite direction. Project attribution came
+back twenty-five occurrences in a single repository, which reads as a
+pattern confined to one project and therefore not a finding at all.
+Every one of those twenty-five was this repository, and every one was a
+session working on the sweep, quoting the prompt back.
+
+Strip them and the genuine evidence is entirely Codex: twenty-three
+records, which carry no project field at all. So the spread that
+mattered was never countable from the result — it had to be read off
+the prompts themselves, which name the ports they were written for. A
+sweep that had trusted the attribution would have scored this finding
+one project and dropped it.
 
 Host attribution held up. Once the sweep's own noise came out, the
 cycle sat in twenty-three Codex records and twenty-five Claude records

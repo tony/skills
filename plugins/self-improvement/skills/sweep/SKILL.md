@@ -63,8 +63,16 @@ Currency and repetition pull against each other, and that tension is
 what stops the window from being drawn wherever the numbers look best.
 A skill young enough to have accumulated a handful of invocations
 cannot clear repetition however the window is drawn — two of three is
-not a ratio — and a finding that needs a window narrower than its
-skill's lifetime to look large is not a finding.
+not a ratio.
+
+The window is not a free parameter. Exactly two are legal and each
+answers a different question. A **finding** is measured against the
+lifetime of the skill that covers it, which is what separates a
+discoverability gap from a rule people read and ignored. The **Usage
+ranking** is measured against the one era boundary Phase 0 fixes for
+the whole sweep, which is what stops retired skills outvoting live
+ones. Any third window is gerrymandered, and a finding that needs one
+is not a finding. Say which of the two produced each number.
 
 Report **ratios, not counts.** Every useful finding here is a
 denominator away from its opposite: the same "instructions appended to
@@ -122,11 +130,19 @@ Without an invocation:
 Check this before the verdicts, because it disqualifies the pattern
 rather than judging it. A predecessor keeps its invocations forever and
 stops earning new ones the day a successor ships, so its ratio stays
-high while its present-tense usage is zero. Split it on the successor's
-birth date: a full record with an empty recent half is **superseded**,
-and every pattern around it is a historical record rather than a gap.
-Say so and move on. The remedy already shipped, and a handoff proposed
-here would point a skill nobody invokes at the one that replaced it.
+high while its present-tense usage is zero.
+
+A full record with an empty recent half is the symptom, not the
+diagnosis. Name the successor before calling it superseded, and confirm
+that skill carries the mirror image: empty until its birth date, and
+holding the traffic after it. Only then is the pattern a historical
+record rather than a gap — say so and move on, because the remedy
+already shipped and a handoff proposed here would point a skill nobody
+invokes at the one that replaced it.
+
+A predecessor that went quiet with **no** sibling picking up its work
+is abandoned, not superseded. That is a live finding with a different
+remedy, and it is the one this check exists to avoid burying.
 
 ## The three verdicts
 
@@ -195,15 +211,27 @@ git log --diff-filter=R --name-status --format='%h %s' -- 'plugins/*/skills/*'
 git log --follow --format='%ad' --date=short -- <path to SKILL.md> | tail -1
 ```
 
-   Birth dates that cluster on a single day mark a structural change to
-   the catalog rather than one skill's arrival. That day is the
-   boundary the counts are reported either side of.
+   One path per run, never a glob. `--follow` requires a single file
+   and goes silently inert against a pattern, returning the oldest
+   commit that touched any skill — a plausible date, no error, and the
+   same wrong answer for every skill in the catalog.
+
+   Birth dates cluster on the days the catalog changed shape, and there
+   will be several such days rather than one. Take the most recent
+   cluster large enough to represent a rebuild rather than a batch of
+   arrivals; an earlier boundary buries the era you are about to change
+   under one you cannot. State the chosen date and the runners-up in
+   the report, because the choice decides the current-era ranking and
+   the next sweep has to be able to disagree with it.
 
 ## Phase 1: Count every skill
 
-Extract both channels per `detecting-invocations.md`, union them, and
-sum across renames. Confirm the sweep completed before applying any
-threshold — a bounded run and a genuine zero look identical.
+Extract both channels per `../../references/detecting-invocations.md`,
+union them, and sum across renames. Keep the timestamp on every
+occurrence — the era split below cannot be recovered once a query has
+collapsed the corpus to name and count. Confirm the sweep completed
+before applying any threshold: a bounded run and a genuine zero look
+identical.
 
 Then split the counts on the boundary from Phase 0 and carry both
 halves forward. A corpus that accumulated across a catalog rebuild is
@@ -234,18 +262,20 @@ spread, the window that denominator covers, and the mechanic that
 produced the verdict.
 
 Window each finding against the birth date of the skill that covers
-it, not against one date for the whole sweep. Skills arrive on
-different days, and measuring a hand-typed procedure against the day
-its skill shipped is the difference between *nobody knows this exists*
-and *this shipped and the typing stopped*.
+it. Skills arrive on different days, and measuring a hand-typed
+procedure against the day its skill shipped is the difference between
+*nobody knows this exists* and *this shipped and the typing stopped*.
+The catalog-wide era boundary belongs to the Usage ranking, not here;
+using it for a finding measures the catalog's history rather than that
+skill's.
 
 Where a finding could be answered two plausible ways, do not judge it
 here — record both shapes and let the proposal say so.
 
 ## Output contract
 
-1. Hero block (1–3 lines): `N findings across M skills` plus the
-   how much of the corpus the search actually reached.
+1. Hero block (1–3 lines): `N findings across M skills` plus how much
+   of the corpus the search actually reached.
 2. `## Usage` — the catalog ranked twice by real invocation count,
    all-time and current-era, because a skill can lead the first and be
    absent from the second. Channels unioned and renames summed. Name
@@ -257,10 +287,13 @@ here — record both shapes and let the proposal say so.
    verdict with the evidence that produced it, and the change class it
    implies. Quote one representative prompt, trimmed.
 4. `## Not proposed` — clusters that failed the evidence bar, and
-   which half they failed. This is the section that keeps the catalog
+   which leg they failed. This is the section that keeps the catalog
    small, so it is never omitted.
 5. `## Corpus` — what was searched, what completed, and what the count
-   assumes about it. Close it with the ledger key: the catalog's `HEAD`
+   assumes about it. State the era boundary here with the birth-date
+   clusters it was chosen over: it decides the current-era ranking and
+   every finding's window, and a ledger that hides it cannot be
+   audited or reproduced. Close with the ledger key: the catalog's `HEAD`
    and a digest of the finding set. `/self-improvement:apply`
    recomputes that key, and a mismatch means the catalog moved since
    the sweep and the ledger describes a picture that no longer holds.
