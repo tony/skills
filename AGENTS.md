@@ -472,6 +472,37 @@ at runtime rather than assuming a particular ecosystem. When listing examples of
 or frameworks, present them as illustrative examples (e.g., in lists or short prose), never
 as hardcoded instructions.
 
+### Portable Shell Examples
+
+A shell command shipped in a skill or reference runs on whatever
+machine the user has. Either use a spelling that works on both GNU
+coreutils and BSD/Darwin, or show both forms and label them.
+
+The differences that matter here:
+
+- `sed -i` takes an optional suffix on GNU and a mandatory one on
+  BSD/Darwin, and the two spellings are mutually exclusive. Ship
+  `sed -i` for GNU and `sed -i ''` for BSD/Darwin.
+- In `sed` basic regular expressions, `\+`, `\?`, and `\|` are GNU
+  extensions. Write `-E` with a bare `+`, `?`, or `|` — that spelling
+  is identical on both.
+- `du --files0-from`, `find -printf`, `numfmt`, `tac`, `nproc`,
+  `shuf`, `base64 -w`, `readlink -f`, `stat -c`, and `date -d` are
+  GNU-only with no BSD/Darwin flag to swap in. Reach for a different
+  construct, not a different flag.
+- macOS ships bash 3.2, so `mapfile`, `readarray`, `declare -A`, and
+  `${var,,}` are unavailable there regardless of which coreutils are
+  installed.
+
+Check before splitting a command in two. `xargs -r`, `xargs -0`,
+`sort -V`, `du -sch`, `find -print0`, `head -c`, and POSIX `date`
+format specifiers all work on BSD/Darwin, so a second variant for
+those is noise. `xargs -a` and `xargs -d` are the GNU-only ones.
+
+When a command is genuinely single-platform — WSL virtual disks,
+`findmnt`, `systemctl` — say so in the surrounding prose instead of
+inventing an equivalent.
+
 ### Orchestration Plan Convention
 
 Skills with analysis-then-execute phases should include a portable
