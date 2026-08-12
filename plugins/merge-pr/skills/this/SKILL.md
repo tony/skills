@@ -102,5 +102,10 @@ Open with a one-line hero (`✓ Merged #N: <title>` or
 3. `## Trunk` — the post-merge trunk state after checkout and pull.
 
 End with an `AskUserQuestion` panel offering next steps (for example:
-merge another PR, delete the local branch, stop here) — skip the
-panel only in plan mode.
+cut a release from the merged trunk, merge another PR, delete the
+local branch, stop here) — skip the panel only in plan mode.
+
+Offer the release when the merged trunk is a releasable state and the
+repo carries the version files a release touches; name the skill that
+cuts it rather than the git commands. Tagging and pushing stay the
+user's explicit act either way.

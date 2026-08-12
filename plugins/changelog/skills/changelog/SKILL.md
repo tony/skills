@@ -1,7 +1,7 @@
 ---
 name: changelog
 description: Generate CHANGES entries from branch commits and PR context
-allowed-tools: ["Bash", "Read", "Grep", "Glob", "Edit"]
+allowed-tools: ["Bash", "Read", "Grep", "Glob", "Edit", "AskUserQuestion"]
 argument-hint: "[optional additional context about the changes]"
 user-invocable: true
 disable-model-invocation: true
@@ -312,7 +312,21 @@ Changelog entries describe the **net shipped result** of the branch, not its int
    ```
    ````
 
-3. **Insertion point**: Describe where these entries will go:
+3. **Voice check**: Name, per entry, which of the four reader questions
+   from *Voice* its first sentence answers:
+   ```
+   New package: cli-sync ............ can I take a new affordance?
+   Fix phantom error ................ was my bug just fixed?
+   cli sync: errored items .......... was my bug just fixed?
+   ```
+
+   Echo this every run, not only when something looks wrong. An entry that
+   answers none of the four is not a changelog entry — it is a commit summary
+   or a release-notes paragraph that reached Phase 4 by mistake. Send it back
+   to *Voice* and rewrite it before presenting, rather than presenting it with
+   a blank.
+
+4. **Insertion point**: Describe where these entries will go:
    ```
    Insert after: <identified insertion point from Phase 1>
    Before: <next section or release heading>
@@ -324,7 +338,27 @@ Changelog entries describe the **net shipped result** of the branch, not its int
    the unreleased section, the user explicitly asked for a release (see *The one
    exception*) — otherwise stop and re-read the *Core Constraint*.
 
-4. **Ask the user**: "Insert these entries into <changelog-file>? You can also ask me to modify them first."
+5. **Ask the user** via `AskUserQuestion`, showing the commit message the
+   entries would land under so the choice is informed:
+   ```
+   Insert into <changelog-file>?
+
+   Commit message, if you commit:
+     docs(CHANGES) <what the update covers>
+   ```
+
+   Build that message from *Commit message conventions for CHANGES edits*
+   below — the same rules whichever option is taken. Offer three:
+
+   - **Insert only** — apply the edit, leave it staged for nobody; the user
+     commits when they choose.
+   - **Insert and commit** — apply the edit and commit it, changelog file
+     only, using the message shown.
+   - **Edit first** — the entries are wrong; go back to Phase 3.
+
+   Insert-only is what happens on anything short of an explicit choice to
+   commit: a run that cannot ask, or a user who answers something else,
+   ends with an uncommitted edit.
 
 **Wait for user response.** Do not proceed until they confirm.
 
@@ -355,11 +389,19 @@ Changelog entries describe the **net shipped result** of the branch, not its int
 
 5. **Show the result**:
    - After editing, read the modified region of the changelog file and display it so the user can verify
-   - Note: this command does NOT commit — the user decides when to stage and commit the changelog update
+
+6. **Commit, only if Phase 4 chose it**:
+   - Stage the changelog file by path — never `git add -A`, and never a code
+     file that happens to be dirty
+   - Commit once, with the message already shown in Phase 4
+   - Never push, and never tag; publishing stays the user's act
+   - Otherwise say the edit is uncommitted and repeat the message, so
+     committing is one paste rather than a second run
 
 ### Commit message conventions for CHANGES edits
 
-When the user asks to commit the CHANGES update, the commit message follows a tiered rule:
+Whether the commit happens here or the user makes it later, the message
+follows a tiered rule:
 
 1. **Project convention wins.** If `AGENTS.md` / `CLAUDE.md` (read in Phase 1) prescribes a commit format, use it exactly — including any required subject pattern, body structure, and line-wrap budget. For example, a project might prescribe:
 
