@@ -32,7 +32,7 @@ whole catalog, and a bad edit there degrades skills that were working.
 NO EDIT WITHOUT A LEDGER ENTRY
 ```
 
-Every edit traces to a finding with a ratio, a spread, and a verdict.
+Every edit traces to a finding with a ratio, a spread, a window, and a verdict.
 An improvement noticed while working here is not in scope — it has no
 usage evidence, which is exactly what separates this skill from
 rewriting prose because it could read better.
