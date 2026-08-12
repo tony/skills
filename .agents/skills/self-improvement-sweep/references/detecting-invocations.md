@@ -1,15 +1,24 @@
-# Reading the Corpus
+# Detecting Skill Usage From Local Agent History
 
-How this skill gets usage facts out of local agent
-history with `agentgrep`, and the traps that produce confident wrong
-answers. Every number below was measured, not estimated; re-measure
-rather than trusting these figures, which are here to show the shape
-of the problem.
+Every prompt you have typed and every transcript your agents wrote sits
+in local stores on your disk — Claude Code, Codex, Cursor, Gemini and
+the rest. That pile is the corpus, and `agentgrep` searches it. This
+file is how to turn it into a per-skill invocation count, and the ways
+that count comes back confidently wrong.
 
-## Two channels, and neither one is the census
+These are heuristics distilled from sweeps already run, not a worked
+pass. `worked-example-spike.md` is that — one sweep followed from the
+prompts it mined to the edits they became. The queries here are the
+reusable part; copy them. The figures beside them record one machine on
+one day and are kept only to show how large a trap was, never as a
+threshold or an expected value. A number whose run you cannot inspect
+is cheaper to re-measure than to trust.
 
-A skill gets invoked two different ways, recorded in two different
-places, and a census built on one of them is wrong.
+## Invocations land in two places, and neither is the whole count
+
+A skill gets invoked two different ways and each way is recorded
+somewhere else. Call each one a channel. A count built on a single
+channel is wrong.
 
 **Typed slash commands** live in the host's prompt history —
 `~/.claude/history.jsonl`, one JSON object per line with a `.display`
@@ -28,11 +37,18 @@ mandatory.
 uvx agentgrep --color never search --exhaustive '"Launching skill:"' --limit 2000 --no-progress --json
 ```
 
-The two disagree violently. In one measured run the slash channel held
-2,416 invocations and the tool channel 230, and `merge-pr:this` scored
-44 in the first and 0 in the second. **A skill is only "unused" when
-it is absent from both.** Reporting from the tool channel alone
-recommends deleting heavily used skills.
+The two disagree, and not by a fixed amount. The ratio between them
+belongs to each skill rather than to the corpus: a skill invoked almost
+only by name outscores its tool-channel count by two or three orders of
+magnitude, and one the model reaches for on its own inverts that
+completely. An aggregate ratio therefore describes no skill in
+particular, and a reader carrying one across will discard whichever
+channel it made look small.
+
+**A skill is only "unused" when it is absent from both.** Reporting
+from the tool channel alone recommends deleting heavily used skills;
+reporting from the slash channel alone erases the ones the model
+invokes without ever being asked by name.
 
 Do not try to predict which channel a skill lands in from its
 frontmatter. `disable-model-invocation: true` does not confine a skill
@@ -61,7 +77,7 @@ replacement is not a rename.
 
 ## Supersessions split it the other way
 
-A rename and a supersession look identical in a census and demand
+A rename and a supersession look identical in the counts and demand
 opposite handling. A rename you detect and **sum** across. A
 supersession — a skill replaced by a different one, or by a set of
 them — leaves no git trace linking predecessor to successor, and
@@ -89,8 +105,9 @@ against the wrong date it reads as a gap either way.
 
 ## Spread, not just repetition
 
-The evidence bar is repetition **and** spread: a pattern confined to
-one project is that project's quirk.
+The evidence bar is repetition, spread, **and** currency. Spread is the
+leg this section serves: a pattern confined to one project is that
+project's quirk.
 
 Project attribution sits in a different field per record type, and
 reading only one of them silently reports zero spread. In `agentgrep`'s
@@ -150,9 +167,11 @@ the literal occurrence count.
 - Global flags go **before** the subcommand. `agentgrep search --color
   never` is an error; `agentgrep --color never search` is not.
 - `depth:exhaustive` as an inline query term is equivalent to
-  `--exhaustive`, but it is a request-wide directive: combining it with
-  `OR` or negation is a hard error. Use the flag when the query needs
-  boolean operators.
+  `--exhaustive`, but the field is a request-wide directive and cannot
+  itself be negated or joined by `OR`. Boolean operators elsewhere in
+  the query are fine: `depth:exhaustive (a OR b)` runs, while
+  `depth:exhaustive a OR b` is a hard error because the bare `OR` takes
+  the directive as an operand. Parenthesize, or use the flag.
 - Bare terms are AND-combined substrings. `OR`, `NOT`, `( )`, and
   `"exact phrases"` compose. Fields: `agent:`, `model:`, `role:`,
   `timestamp:`, `path:`, `scope:`, `cwd:`, `project:`, `branch:`.

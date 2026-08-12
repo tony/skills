@@ -26,10 +26,11 @@ procedures run entirely by hand because no skill exists for them.
 
 ## This skill changes nothing
 
-No edits, no commits, no pushes. Its whole output is a ledger, and
-acting on it is `/self-improvement:apply`'s job. That is also why this
-one is safe to route to on the model's initiative and the apply half
-is not: reaching for a sweep costs a report.
+No edits, no commits, no pushes. Its whole output is a ledger: every
+finding written down with the evidence that produced it, and nothing
+acted on. Acting on it is `/self-improvement:apply`'s job. That is also
+why this one is safe to route to on the model's initiative and the
+apply half is not: reaching for a sweep costs a report.
 
 ## Core thesis
 
@@ -74,7 +75,7 @@ numerators leaves the reader unable to sort majority behavior from a
 5% tail.
 
 Getting the denominator right is the hard part, and its traps have
-measured consequences. Read `../../references/corpus-queries.md`
+measured consequences. Read `../../references/detecting-invocations.md`
 before counting anything: it covers the two invocation channels and
 why either alone is wrong, why renames split a skill's history and why
 supersessions split it the other way, how to tell a truncated query
@@ -196,22 +197,22 @@ git log --follow --format='%ad' --date=short -- <path to SKILL.md> | tail -1
 
    Birth dates that cluster on a single day mark a structural change to
    the catalog rather than one skill's arrival. That day is the
-   boundary the census reports either side of.
+   boundary the counts are reported either side of.
 
-## Phase 1: Census
+## Phase 1: Count every skill
 
-Extract both channels per `corpus-queries.md`, union them, and sum
-across renames. Confirm the sweep completed before applying any
+Extract both channels per `detecting-invocations.md`, union them, and
+sum across renames. Confirm the sweep completed before applying any
 threshold — a bounded run and a genuine zero look identical.
 
-Then split the census on the boundary from Phase 0 and carry both
+Then split the counts on the boundary from Phase 0 and carry both
 halves forward. A corpus that accumulated across a catalog rebuild is
 mostly a record of skills that no longer carry the behavior, and the
 older half can outweigh the newer one by enough to decide the ranking
 on its own.
 
-State the corpus assumption in the report: an archived or reclaimed
-transcript store reports a clean, complete, wrong census, so the
+State what the count assumes about the corpus: an archived or reclaimed
+transcript store comes back clean, complete, and wrong, so the
 completeness gate is necessary and not sufficient.
 
 Budget deliberately. One exhaustive query reads the whole corpus, so
@@ -244,13 +245,13 @@ here — record both shapes and let the proposal say so.
 ## Output contract
 
 1. Hero block (1–3 lines): `N findings across M skills` plus the
-   corpus coverage the census actually achieved.
+   how much of the corpus the search actually reached.
 2. `## Usage` — the catalog ranked twice by real invocation count,
    all-time and current-era, because a skill can lead the first and be
    absent from the second. Channels unioned and renames summed. Name
-   the never-invoked ones as unranked rather than as dead, each with
-   its age: zero invocations in three weeks and zero in six months are
-   different facts, and only the second is about the skill.
+   the never-invoked ones as exactly that rather than as dead, each
+   with its age: zero invocations in three weeks and zero in six months
+   are different facts, and only the second is about the skill.
 3. `## Findings` — one entry per pattern: category, the ratio and its
    denominator, the window that denominator covers, spread, the
    verdict with the evidence that produced it, and the change class it
@@ -258,8 +259,8 @@ here — record both shapes and let the proposal say so.
 4. `## Not proposed` — clusters that failed the evidence bar, and
    which half they failed. This is the section that keeps the catalog
    small, so it is never omitted.
-5. `## Corpus` — what was searched, what completed, and what the
-   census assumes. Close it with the ledger key: the catalog's `HEAD`
+5. `## Corpus` — what was searched, what completed, and what the count
+   assumes about it. Close it with the ledger key: the catalog's `HEAD`
    and a digest of the finding set. `/self-improvement:apply`
    recomputes that key, and a mismatch means the catalog moved since
    the sweep and the ledger describes a picture that no longer holds.
@@ -286,6 +287,6 @@ them, a `SKILL.md`, commit, pull request, or issue may not.
   report standalone. A sweep that reports itself as a delta against
   its own previous run is the failure `/double-check:double-check`
   exists to prevent.
-- **Not a census of one project.** Reading a single project's history
-  to explain the branch in front of you is `/situate:situate`, which
-  reconciles against the repository and wins there.
+- **Not a read of one project's history.** Reading a single project's
+  history to explain the branch in front of you is `/situate:situate`,
+  which reconciles against the repository and wins there.

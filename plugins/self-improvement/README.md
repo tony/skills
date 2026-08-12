@@ -67,14 +67,14 @@ count — the same evidence argues for opposite remedies at 54% and at 20%.
 - **git** — dating when a rule entered a skill, mapping renames, and
   dating when each skill first became reachable
 
-## Reading the corpus
+## Finding the invocations
 
-`references/corpus-queries.md` documents the measurement method and the traps
-that produce confident wrong answers: invocations are recorded in two separate
-places and either alone misreports usage, renames split a skill's history,
-a supersession splits it the other way, a truncated query is
-indistinguishable from a genuine absence, and one exhaustive query
-reads the entire corpus.
+`references/detecting-invocations.md` documents how to get a per-skill count
+out of your local agent history, and the traps that produce confident wrong
+answers: invocations are recorded in two separate places and either alone
+misreports usage, renames split a skill's history, a supersession splits it
+the other way, a truncated query is indistinguishable from a genuine absence,
+and one exhaustive query reads every store on disk.
 
 `references/worked-example-spike.md` is a worked example of the whole
 pass: the prompts a hand-run sweep mined from `/spike:*` usage, and
