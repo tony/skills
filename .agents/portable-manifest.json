@@ -425,7 +425,7 @@
         "references/contract.md": "plugins/ticket/references/contract.md",
         "references/template-resolution.md": "plugins/pr/references/template-resolution.md"
       },
-      "bytes": 16526
+      "bytes": 16528
     },
     {
       "name": "pr-deslop",
@@ -450,22 +450,12 @@
       "bytes": 6623
     },
     {
-      "name": "pr-recut",
-      "sources": [
-        "plugins/pr/skills/recut/SKILL.md"
-      ],
-      "bundled": {
-        "references/template-resolution.md": "plugins/pr/references/template-resolution.md"
-      },
-      "bytes": 7460
-    },
-    {
       "name": "pr-refresh",
       "sources": [
         "plugins/pr/skills/refresh/SKILL.md"
       ],
       "bundled": {},
-      "bytes": 6086
+      "bytes": 6088
     },
     {
       "name": "pr-review-pr",
@@ -474,6 +464,16 @@
       ],
       "bundled": {},
       "bytes": 4872
+    },
+    {
+      "name": "pr-rewrite",
+      "sources": [
+        "plugins/pr/skills/rewrite/SKILL.md"
+      ],
+      "bundled": {
+        "references/template-resolution.md": "plugins/pr/references/template-resolution.md"
+      },
+      "bytes": 7471
     },
     {
       "name": "pytest-optimizer",
@@ -1125,7 +1125,7 @@
     ],
     "docs/pull_request_template.md": [
       "pr",
-      "pr-recut"
+      "pr-rewrite"
     ]
   },
   "unresolved_host_commands": {

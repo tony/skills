@@ -1,5 +1,5 @@
 ---
-name: pr-recut
+name: pr-rewrite
 description: >-
   Rewrite an existing PR description from scratch against the branch's
   current net change, carrying forward context that still matters
@@ -7,14 +7,14 @@ disable-model-invocation: true
 allowed-tools: ["Bash", "Read", "Write", "AskUserQuestion"]
 metadata:
   argument-hint: "[PR number or URL, and/or a template path or hint]"
-  source: "plugins/pr/skills/recut/SKILL.md"
+  source: "plugins/pr/skills/rewrite/SKILL.md"
 ---
 
-# Recut PR Description
+# Rewrite PR Description
 
 Regenerate an existing PR's description from scratch. Where
 the `pr-refresh` skill patches stale content inside the existing structure,
-recut discards the old structure and drafts a fresh gold-standard
+this skill discards the old structure and drafts a fresh gold-standard
 description of the branch's current net change — after mining the old
 description for context worth carrying forward.
 

@@ -18,7 +18,7 @@ content that the branch's evolution has made stale is updated.
 This command is **content-only**. It never restructures the
 description, never applies a template, and never discusses structure or
 templates. If the user asks for a different structure or mentions a
-template, reply in one line that restructuring is `/pr:recut`'s job,
+template, reply in one line that restructuring is `/pr:rewrite`'s job,
 then continue with the content-only refresh (or stop, if restructuring
 was the sole request).
 

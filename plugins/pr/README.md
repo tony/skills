@@ -35,7 +35,7 @@ codex plugin add pr@skills
 |---|---|---|
 | `/pr` | `pr` | Generate PR description from branch diff |
 | `/pr:refresh` | `pr:refresh` | Update PR description to current branch net change, preserving structure |
-| `/pr:recut` | `pr:recut` | Rewrite PR description from scratch, keeping relevant context |
+| `/pr:rewrite` | `pr:rewrite` | Rewrite PR description from scratch, keeping relevant context |
 | `/pr:merge-commit` | `pr:merge-commit` | Generate merge commit message from branch diff |
 | `/pr:review` | `pr:review` | Review PR description against gold-standard patterns |
 | `/pr:deslop` | `pr:deslop` | Audit commits for AI slop and verbosity; resolve via fixups/autosquash |
@@ -46,7 +46,7 @@ codex plugin add pr@skills
   templates), applies gold-standard patterns, and optionally creates PR via `gh`.
 - **`/pr:refresh`**: Stacks-aware diff against base, backs up to `.git/pr-backups/`,
   updates content while preserving hand-written text/structure, and applies via `gh`.
-- **`/pr:recut`**: Backs up PR, mines old description for manual context, resolves
+- **`/pr:rewrite`**: Backs up PR, mines old description for manual context, resolves
   templates, drafts fresh description, and applies via `gh`.
 - **`/pr:merge-commit`**: Gathers diff/log, reads conventions, drafts proportional
   message (title-only for small, structured for large), and presents for copying.
@@ -65,14 +65,14 @@ Generate PR description (optional hint):
 /pr fixes the race condition in new_session
 ```
 
-Refresh/recut existing PR (defaults to current branch's PR):
+Refresh/rewrite existing PR (defaults to current branch's PR):
 
 ```
 /pr:refresh
 /pr:refresh #42
 /pr:refresh the retry logic was dropped
-/pr:recut
-/pr:recut #42 use .github/PULL_REQUEST_TEMPLATE/feature.md
+/pr:rewrite
+/pr:rewrite #42 use .github/PULL_REQUEST_TEMPLATE/feature.md
 ```
 
 Generate merge commit message (optional hint):
@@ -119,7 +119,7 @@ Generated descriptions use patterns from high-quality open-source PRs:
 
 ## PR Templates
 
-`/pr` and `/pr:recut` resolve templates in this order: user hint > repo template >
+`/pr` and `/pr:rewrite` resolve templates in this order: user hint > repo template >
 gold-standard structure. `/pr:review` accepts user hints. `/pr:refresh` preserves
 existing structure without applying templates.
 

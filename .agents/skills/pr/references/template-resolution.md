@@ -1,7 +1,7 @@
 # PR Template Resolution
 
 Shared procedure for commands that draft a PR description from scratch
-(`/pr` and the `pr-recut` skill). the `pr-refresh` skill never performs template
+(`/pr` and the `pr-rewrite` skill). the `pr-refresh` skill never performs template
 resolution — it preserves the existing description's structure and must
 not discuss structure or templates at all.
 

@@ -1,5 +1,5 @@
 ---
-name: recut
+name: rewrite
 description: Rewrite an existing PR description from scratch against the branch's current net change, carrying forward context that still matters
 allowed-tools: ["Bash", "Read", "Write", "AskUserQuestion"]
 argument-hint: "[PR number or URL, and/or a template path or hint]"
@@ -8,11 +8,11 @@ disable-model-invocation: true
 ---
 
 
-# Recut PR Description
+# Rewrite PR Description
 
 Regenerate an existing PR's description from scratch. Where
 `/pr:refresh` patches stale content inside the existing structure,
-recut discards the old structure and drafts a fresh gold-standard
+`/pr:rewrite` discards the old structure and drafts a fresh gold-standard
 description of the branch's current net change — after mining the old
 description for context worth carrying forward.
 
