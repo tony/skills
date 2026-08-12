@@ -71,9 +71,15 @@ Additional context from user: $ARGUMENTS
 
 1. Drop the pure changelog commits non-interactively with a scripted
    sequence editor — for example, turning their `pick` lines into
-   `drop` by SHA:
+   `drop` by SHA. With GNU coreutils:
    ```
    GIT_SEQUENCE_EDITOR='sed -i -E "s/^pick (<sha1>|<sha2>)/drop \1/"' git rebase -i origin/<base>
+   ```
+   On BSD/Darwin, `-i` requires an explicit backup suffix; without the
+   empty one it consumes `-E` as the suffix and litters the rebase
+   directory:
+   ```
+   GIT_SEQUENCE_EDITOR='sed -i "" -E "s/^pick (<sha1>|<sha2>)/drop \1/"' git rebase -i origin/<base>
    ```
    Use each dropped commit's abbreviated SHA exactly as it appears in
    the todo list. On conflict, stop and show the state — never resolve

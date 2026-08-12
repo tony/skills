@@ -77,10 +77,17 @@ the source it was built from.
 
 Aggregate artifact directories across the whole study root before
 proposing anything, so the total is visible as one number rather than
-scattered across dozens of clones.
+scattered across dozens of clones. With GNU coreutils:
 
 ```
 find <study-root> -maxdepth 3 -type d \( -name target -o -name node_modules -o -name build \) -prune -print0 | du -sch --files0-from=- | tail -1
+```
+
+BSD/Darwin `du` has no `--files0-from`, so sum the per-directory sizes
+instead. This reports GiB:
+
+```
+find <study-root> -maxdepth 3 -type d \( -name target -o -name node_modules -o -name build \) -prune -print0 | xargs -0 du -sk | awk '{total += $1} END {printf "%.1f GiB\n", total / 1048576}'
 ```
 
 Restrict the depth. An unbounded search descends into vendored

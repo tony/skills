@@ -113,7 +113,7 @@
         "plugins/changelog/skills/recut/SKILL.md"
       ],
       "bundled": {},
-      "bytes": 7438
+      "bytes": 7725
     },
     {
       "name": "changelog-refresh",
@@ -144,7 +144,7 @@
         "references/study-repos.md": "plugins/disk/references/study-repos.md",
         "references/virtual-disks.md": "plugins/disk/references/virtual-disks.md"
       },
-      "bytes": 29502
+      "bytes": 30354
     },
     {
       "name": "disk-reclaim",
@@ -159,7 +159,7 @@
         "references/study-repos.md": "plugins/disk/references/study-repos.md",
         "references/virtual-disks.md": "plugins/disk/references/virtual-disks.md"
       },
-      "bytes": 27240
+      "bytes": 28092
     },
     {
       "name": "disk-usage",
@@ -174,7 +174,7 @@
         "references/study-repos.md": "plugins/disk/references/study-repos.md",
         "references/virtual-disks.md": "plugins/disk/references/virtual-disks.md"
       },
-      "bytes": 25795
+      "bytes": 26647
     },
     {
       "name": "double-check",
@@ -583,7 +583,7 @@
         "plugins/release/skills/update-downstream-packages/SKILL.md"
       ],
       "bundled": {},
-      "bytes": 8052
+      "bytes": 8245
     },
     {
       "name": "research-study-deps",

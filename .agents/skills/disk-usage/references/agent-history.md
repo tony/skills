@@ -104,8 +104,17 @@ for it. Both are reclaimable:
   `node_modules/`, and build output. The transcript is a rounding error
   against the artifacts. Strip the artifacts and keep the session.
 
-Measure the artifact share before classifying a snapshot store:
+Measure the artifact share before classifying a snapshot store. With
+GNU coreutils:
 
 ```
 find <store> -type d \( -name target -o -name node_modules -o -name .venv \) -prune -print0 | du -sch --files0-from=- | tail -1
+```
+
+BSD/Darwin `du` has no `--files0-from`, so sum the per-directory sizes
+instead. This reports GiB, and a snapshot store that hardlinks across
+directories will read high, since each batch dedups only within itself:
+
+```
+find <store> -type d \( -name target -o -name node_modules -o -name .venv \) -prune -print0 | xargs -0 du -sk | awk '{total += $1} END {printf "%.1f GiB\n", total / 1048576}'
 ```

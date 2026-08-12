@@ -35,7 +35,9 @@ A dynamically expanding virtual disk grows on write and never shrinks
 on delete. The guest kernel can signal freed blocks with TRIM, but the
 signal only reaches the host when the backing file is sparse-aware.
 
-Check whether the guest even issues TRIM:
+Check whether the guest even issues TRIM. This layer is Linux-only —
+`findmnt` is util-linux, and the surrounding `.vhdx` inspection assumes
+a WSL guest:
 
 ```
 findmnt -no OPTIONS /

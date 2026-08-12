@@ -114,10 +114,17 @@ unavailable. Each repo, on each of its confirmed branches:
      the fresh release.
 3. **Bump pins** — replace the pinned version for the package and all
    siblings in the manifest. A pattern replacement across the shared
-   version series catches every sibling at once, e.g.:
+   version series catches every sibling at once. With GNU coreutils:
 
    ```
-   sed -i 's/==0\.0\.1a[0-9]\+/==0.0.1a<N>/g' pyproject.toml
+   sed -i -E 's/==0\.0\.1a[0-9]+/==0.0.1a<N>/g' pyproject.toml
+   ```
+
+   On BSD/Darwin, `-i` requires an explicit backup suffix, and an
+   empty one edits in place:
+
+   ```
+   sed -i '' -E 's/==0\.0\.1a[0-9]+/==0.0.1a<N>/g' pyproject.toml
    ```
 
 4. **Re-lock** — the ecosystem's lock command (`uv lock`,
