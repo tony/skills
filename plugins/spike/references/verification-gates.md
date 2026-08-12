@@ -9,11 +9,11 @@
 > (`plugins/pr/references/quality-gates.md`) with a `build` bucket and
 > a CI-coverage pass.
 
-How `/spike:probe`, `/spike:bakeoff`, `/respond:action`,
-`/respond:goal`, `/action:worktree`, and `/action:worktrees` learn, at
-runtime, which verification the project expects — and how much of it to
-run locally versus observe in CI after pushing. Language-agnostic,
-never hardcoded.
+How `/spike:probe`, `/spike:bakeoff`, `/spike:loop`,
+`/respond:action`, `/respond:goal`, `/action:worktree`, and
+`/action:worktrees` learn, at runtime, which verification the project
+expects — and how much of it to run locally versus observe in CI after
+pushing. Language-agnostic, never hardcoded.
 
 ## Local gate buckets
 
