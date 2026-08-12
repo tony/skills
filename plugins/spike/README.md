@@ -97,5 +97,8 @@ CI-covered work to `gh pr checks --watch`.
 
 ## Prerequisites
 
-- **git** — stash-based workflow; `/spike:bakeoff` uses `git worktree`
+- **git** — stash-based workflow; `/spike:bakeoff` and `/spike:loop`
+  use `git worktree`. `/spike:loop` also needs git 2.31 or newer,
+  which is where `git rev-parse --path-format` arrived; it resolves
+  the ledger path with it.
 - **gh** (optional) — enables watching CI checks after a push
