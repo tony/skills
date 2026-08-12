@@ -187,11 +187,10 @@ Otherwise start the next round from the ledger's open questions.
 The surviving artifacts are the ledger, the final round's stash SHA,
 and every earlier round's stash SHA. Offer the two exits:
 
-- **Clean rewrite** — hand the ledger to `git-branch:redo-from-scratch`
-  when it is installed, which treats locked decisions as requirements
-  and the final stash as reference. This is the right exit when the
-  accumulated code carries the marks of rounds that were later
-  abandoned.
+- **Clean rewrite** — write the final implementation from the ledger's
+  locked decisions rather than from the accumulated code, keeping the
+  final stash as reference and fallback. This is the right exit when
+  the code carries the marks of rounds that were later abandoned.
 - **Landing plan** — a commit-by-commit plan for the final stash, built
   as the `spike-probe` skill Phase 5, and landed under `--replay` as its
   Phase 6. This is the right exit when the last round's code is
