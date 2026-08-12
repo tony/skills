@@ -714,7 +714,17 @@
       "bundled": {
         "references/verification-gates.md": "plugins/spike/references/verification-gates.md"
       },
-      "bytes": 17310
+      "bytes": 18401
+    },
+    {
+      "name": "spike-loop",
+      "sources": [
+        "plugins/spike/skills/loop/SKILL.md"
+      ],
+      "bundled": {
+        "references/verification-gates.md": "plugins/spike/references/verification-gates.md"
+      },
+      "bytes": 14421
     },
     {
       "name": "spike-probe",
@@ -724,7 +734,7 @@
       "bundled": {
         "references/verification-gates.md": "plugins/spike/references/verification-gates.md"
       },
-      "bytes": 16670
+      "bytes": 17390
     },
     {
       "name": "tailwind-spacing-audit",
@@ -1039,6 +1049,7 @@
     "plugins/package-updater/references/follow-ups.md": 3,
     "plugins/pytest-optimizer/references/heuristic-catalog.md": 3,
     "plugins/situate/references/situation-sweep.md": 3,
+    "plugins/spike/references/verification-gates.md": 3,
     "plugins/terraform/references/pin-sites.md": 3,
     "plugins/action/references/verification-gates.md": 2,
     "plugins/business/references/evidence.md": 2,
@@ -1068,7 +1079,6 @@
     "plugins/respond/references/verification-gates.md": 2,
     "plugins/situate/references/brief.md": 2,
     "plugins/situate/references/prior-conversations.md": 2,
-    "plugins/spike/references/verification-gates.md": 2,
     "plugins/ticket/references/altitude.md": 2,
     "plugins/ticket/references/hierarchy.md": 2,
     "plugins/ticket/references/providers/asana.md": 2,

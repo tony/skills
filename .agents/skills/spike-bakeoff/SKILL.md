@@ -53,7 +53,9 @@ do not see each other), and adversarial judging.
 **Bakeoff vs weave**: a bakeoff varies the *strategy* with one model;
 the weave plugin varies the *model* with one prompt. Reaching for
 "three models, one approach" → weave. "One model, three approaches"
-→ bakeoff.
+→ bakeoff. Reaching for a second bakeoff because the first winner hit
+new resistance → the `spike-loop` skill, which runs the rounds and carries a
+ledger across them.
 
 ## The Iron Rule
 
@@ -249,6 +251,13 @@ resolve, per-commit gates — plus:
 
 - **Grafts**: plan items that pull specific hunks from runner-up
   stashes (identified by SHA and file), stated as recommendations.
+  Mark them **unproven in combination**: the winner's stash was proven
+  without them and no contender was ever built with them, so a graft
+  is a hypothesis judged on paper until the shared proving check runs
+  on the combined tree. When the grafts are substantial enough that
+  landing them blind is the wrong call, say so and recommend the
+  the `spike-probe` skill exit, which re-proves winner-plus-grafts as one tree
+  at zero commits and returns a plan for what actually ran.
 - The losing strategies, one line each: why they lost, and under
   what future conditions they would have won (this is the decision
   record the bakeoff existed to produce).
@@ -262,6 +271,12 @@ As the `spike-probe` skill Phase 6, from the main checkout: apply the
 winner's stash (apply, not pop), land plan items one gated commit at
 a time, apply graft hunks from runner-up stashes where the plan says
 so, and only after the final green gate drop the contender stashes.
+
+Grafts get their one real test here: after the last graft is applied
+and before the commit carrying it, re-run the shared proving check on
+the combined tree. A graft that fails is dropped from the plan and
+recorded as dropped — a replay is not the place to debug an idea that
+was only ever judged on paper.
 
 ## Output contract
 
@@ -277,10 +292,12 @@ so, and only after the final green gate drop the contender stashes.
    restore command. Every contender appears, losers included.
 6. `## Replay plan` — the numbered commit sequence for the winner,
    grafts marked.
-7. End with an `ask-user-choice` panel: replay the winner / keep
-   stashes and stop / discard all — unless already in plan mode or
-   `--replay` was given. In a non-interactive run, record the
-   question in the report and default to keeping the stashes.
+7. End with an `ask-user-choice` panel: replay the winner / probe the
+   grafted winner (the `spike-probe` skill, still zero commits) / keep stashes
+   and stop / discard all — unless already in plan mode or `--replay`
+   was given. Recommend the probe exit whenever the verdict carried
+   grafts. In a non-interactive run, record the question in the report
+   and default to keeping the stashes.
 
 
 ## Portability notes

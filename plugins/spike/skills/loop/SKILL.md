@@ -1,0 +1,213 @@
+---
+name: loop
+description: >-
+  Use when one spike will not settle a design and the work needs
+  repeated contact with real code — probe, bake off the approaches the
+  probe's stumbling blocks put in doubt, graft the runners-up, probe
+  again, and stop when nothing new fights back. Triggers on phrases
+  like "rinse and repeat", "spike then bakeoff then spike again",
+  "keep spiking until it's right", "iterate until the design settles",
+  "converge on an approach", "prove it out then rewrite it from
+  scratch", or a port or rewrite whose shape is not yet known. Keeps a
+  ledger of stumbling blocks and locked decisions outside the working
+  tree, produces zero commits across every round, and ends by handing
+  that ledger to a clean rewrite or to a commit-by-commit landing plan.
+allowed-tools: ["Bash", "Read", "Grep", "Glob", "Edit", "Write", "AskUserQuestion", "Task"]
+argument-hint: "[<goal>] [--rounds=<n>] [--replay]"
+user-invocable: true
+disable-model-invocation: true
+---
+
+
+# `/spike:loop`
+
+Convergence harness. `/spike:probe` answers "does this path work?".
+`/spike:bakeoff` answers "which path is best?". Neither answers "what
+is the right design?" — that only emerges from hitting real code
+several times and watching which parts keep fighting back. The loop
+runs both in rounds until the design stops resisting.
+
+This skill is invoked by name, never routed to on the model's
+initiative: it runs multiple mutating rounds and (in `--replay`)
+creates commits, so it must be user-explicit, not router-inferred.
+
+## Core thesis
+
+Across rounds the code is disposable and **the ledger is the
+product**. Each round throws away its implementation and keeps what it
+learned: which approaches the code rejected, which decisions are now
+settled, which questions are still open.
+
+A loop is worth running when the shape of the answer is unknown — a
+port to another language, an API whose ergonomics only show up in use,
+a subsystem where the first sketch is expected to be wrong. When one
+approach is already clear, use `/spike:probe`. When two or three named
+approaches compete once, use `/spike:bakeoff`.
+
+## The Iron Rule
+
+```
+EVERY ROUND PRODUCES ZERO COMMITS
+```
+
+Inherited whole from `/spike:probe`, including its rationalization
+table, and unchanged by round count: five rounds of exploration is
+five times the reason not to put it in history. Rounds end in stashes;
+commits happen only in `--replay`, after the final plan is approved.
+
+**Red flag** unique to this skill: "round 3 is basically final, commit
+it as a checkpoint so round 4 has a base." Round 4 starts from the
+stash, and the ledger is the base.
+
+## The ledger
+
+One markdown file, written outside the working tree:
+
+```
+git rev-parse --path-format=absolute --git-common-dir
+```
+
+The ledger lives at `<that path>/spike/<goal-slug>.md`. That location
+is load-bearing, not a preference: a ledger kept in the working tree
+gets swallowed by the round's own `git stash push -u`, erased by
+`git clean -xdf`, and shows up as an untracked file in every
+`git status` the user reads. The common dir also resolves to the same
+absolute path from every bakeoff worktree, so contenders and the main
+checkout write to one file.
+
+Announce the path in the Phase 1 brief. An existing ledger for the same
+goal is resumed, not overwritten — a loop interrupted by a context
+compaction or a closed session picks up from its last round.
+
+Each round appends one section:
+
+- **Probed** — what this round built, and its stash SHA.
+- **Stumbling blocks** — what fought back, per `/spike:probe`'s
+  definition. New ones only; repeats are marked as repeats.
+- **Bakeoff** — contenders, winner, why, and which grafts were taken
+  (omit when no bakeoff ran this round).
+- **Locked** — decisions that will not be revisited, with the evidence
+  that settled them.
+- **Open** — questions carried into the next round.
+
+Keep every entry to a line or two. The ledger is read by the next
+round and by the final rewrite; it is not a transcript.
+
+## `$ARGUMENTS` contract
+
+Non-flag text is the goal, resolved by the same ladder as
+`/spike:probe` — typed goal wins, empty mines the conversation,
+provenance recorded in the brief.
+
+| Flag | Default | Effect |
+|---|---|---|
+| `--rounds=<n>` | 3 | Hard cap on rounds. The loop may stop earlier by converging; it never runs past this. |
+| `--replay` | off | After the final plan is approved, land it immediately — passed through to the closing probe. |
+
+## Phase 0: Situational awareness
+
+`/spike:probe` Phase 0 once for the whole loop — conventions files, the
+five gate buckets and CI split per
+`../../references/verification-gates.md`, dirty-tree halt — plus:
+
+1. Resolve the ledger path and read it if it already exists.
+2. Confirm `git worktree` is usable, since any round may call a
+   bakeoff.
+
+## Phase 1: Orchestration plan
+
+Enter plan mode if the host supports it (Claude Code: `EnterPlanMode`;
+Cursor / Codex / Gemini: `/plan` or `Shift+Tab`) and present the
+**loop brief**:
+
+1. The goal, one line, with provenance.
+2. What "converged" means for this goal — the demo or property the
+   final design must satisfy, not just the first round's smoke check.
+3. The round cap, and any rounds already in the ledger.
+4. Discovered gate commands and the local-vs-CI split.
+5. The ledger path.
+6. The intended exit: clean rewrite, or landing plan.
+
+Wait for approval, then exit plan mode. If plan mode is unavailable,
+present the brief inline and proceed on confirmation. In a
+non-interactive run, record the brief and proceed.
+
+## Phase 2: A round
+
+Repeat until Phase 3 says stop. Each round:
+
+1. **Probe.** Run `/spike:probe` against the goal as sharpened by the
+   ledger's open questions, with its own discipline intact: shortest
+   path to proven, cheapest verification signal, `SPIKE:` markers,
+   exit gate, stash with a recorded SHA.
+2. **Branch on what fought back.** A stumbling block that admits two
+   or more genuinely different resolutions is what `/spike:bakeoff`
+   exists for — run it on those resolutions as the contender list. A
+   stumbling block with one obvious fix is not a bakeoff; fold it into
+   the next probe. No stumbling blocks at all means the round
+   converged.
+3. **Re-probe the graft.** Grafts leave a bakeoff unproven in
+   combination. A round that takes them starts its next probe from the
+   winner's stash plus those hunks, so the proving check runs on the
+   tree that was actually chosen. A graft that fails there is dropped
+   and recorded as dropped.
+4. **Record.** Append the round's ledger section before starting the
+   next one. A round that ends without its ledger entry written did
+   not happen — the next round has no other memory of it.
+
+Round N does not build on round N-1's tree; it builds on round N-1's
+locked decisions.
+
+## Phase 3: Convergence test
+
+Stop when any of these holds, and say which one in the report:
+
+- **Converged** — the round surfaced no new stumbling block.
+- **Capped** — `--rounds` is exhausted. Report the still-open
+  questions plainly; a capped loop is an honest partial result, not a
+  failure to hide.
+- **Thrashing** — every stumbling block this round was already
+  recorded and decided in an earlier one. Repetition is evidence that
+  more spiking cannot settle the question; stop and surface it for the
+  user rather than spending another round.
+
+Otherwise start the next round from the ledger's open questions.
+
+## Phase 4: Exit
+
+The surviving artifacts are the ledger, the final round's stash SHA,
+and every earlier round's stash SHA. Offer the two exits:
+
+- **Clean rewrite** — hand the ledger to `git-branch:redo-from-scratch`
+  when it is installed, which treats locked decisions as requirements
+  and the final stash as reference. This is the right exit when the
+  accumulated code carries the marks of rounds that were later
+  abandoned.
+- **Landing plan** — the closing probe's commit-by-commit plan for the
+  final stash, replayed immediately under `--replay`. This is the right
+  exit when the last round's code is already what the design wants.
+
+Recommend one and say why. Never drop earlier stashes — the ledger
+cites them by SHA as the evidence for its locked decisions.
+
+## Output contract
+
+1. Hero block (1–3 lines): `✓ converged in <n> rounds` /
+   `⚠ capped at <n> rounds` / `⚠ thrashing — stopped at round <n>` +
+   the goal.
+2. `## Rounds` — one block per round: what was probed, what fought
+   back, bakeoff winner if any, what got locked.
+3. `## Design` — the locked decisions as they now stand, read as a
+   specification rather than a history. This is what the rewrite
+   consumes.
+4. `## Open` — questions the loop did not settle, and for a thrashing
+   stop, why spiking cannot settle them.
+5. `## Stashes` — table: round, stash message, **SHA**, restore
+   command. Every round appears.
+6. `## Next` — the recommended exit and the closing probe's plan when
+   one was produced.
+7. End with an `AskUserQuestion` panel: rewrite from the ledger / land
+   the final stash / run another round / stop and keep the ledger —
+   unless already in plan mode or `--replay` was given. In a
+   non-interactive run, record the question and default to stopping
+   with the ledger kept.

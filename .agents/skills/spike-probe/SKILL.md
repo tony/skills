@@ -159,6 +159,13 @@ Code the shortest path to "proven". During this phase:
   items, not debt to fix during the probe.
 - Stay inside the goal. Adjacent problems you notice go in the plan's
   "observed, not addressed" list.
+- Record **stumbling blocks** — the places the approach itself fought
+  back: an API that will not compose, a type that cannot be expressed,
+  a constraint that surfaced too late to design around. A stumbling
+  block is neither a `SPIKE:` marker (a shortcut you chose) nor an
+  adjacent problem (out of scope); it is evidence the *approach* may be
+  wrong, which makes it the reason to reach for the `spike-bakeoff` skill and
+  the input the next probe sharpens against.
 
 ## Phase 3: Spike exit gate
 
@@ -237,8 +244,11 @@ remote)" so the deferral is visible rather than implied.
 
 1. Hero block (1–3 lines): `✓ spike proven` / `⚠ spike blocked` +
    goal + exit path taken.
-2. `## Spike findings` — what was proven, `SPIKE:` markers, observed-
-   not-addressed list.
+2. `## Spike findings` — what was proven, stumbling blocks, `SPIKE:`
+   markers, observed-not-addressed list. State the stumbling blocks
+   even when the probe succeeded: a path that worked while fighting
+   you the whole way is the case for the `spike-bakeoff` skill or
+   the `spike-loop` skill, and reporting only the success buries it.
 3. `## Verification` — gate commands run and their results; the
    local-vs-CI split; what was deferred and why.
 4. `## Stash` — stash ref, message, **SHA**, restore command (omit
