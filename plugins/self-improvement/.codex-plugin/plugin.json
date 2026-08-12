@@ -1,0 +1,12 @@
+{
+  "name": "self-improvement",
+  "version": "0.1.0",
+  "description": "Mine local agent prompt history for how the skill catalog is really used, then land the changes that usage evidence supports.",
+  "author": {
+    "name": "Tony Narlock",
+    "email": "tony@git-pull.com"
+  },
+  "homepage": "https://github.com/tony/skills/tree/main/plugins/self-improvement",
+  "license": "MIT",
+  "skills": "./skills/"
+}

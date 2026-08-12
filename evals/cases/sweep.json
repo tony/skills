@@ -1,0 +1,19 @@
+{
+  "skill_name": "sweep",
+  "trigger": {
+    "positive": [
+      { "prompt": "sweep the corpus", "top_k": 1 },
+      { "prompt": "mine my prompt history", "top_k": 1 },
+      { "prompt": "rank my skills by usage", "top_k": 1 },
+      { "prompt": "which skills never get invoked", "top_k": 1 },
+      { "prompt": "count how often each skill actually runs", "top_k": 1 },
+      { "prompt": "turn my prompt history into skill improvements", "top_k": 1 },
+      { "prompt": "find the instructions I keep retyping around my skills", "top_k": 3 }
+    ],
+    "negative": [
+      { "prompt": "how do I write this ticket body without the AI fluff", "owner": "lean-writing" },
+      { "prompt": "I came back to this branch after two weeks, what was I in the middle of", "owner": "situational-awareness" },
+      { "prompt": "are you sure that count is right? check it again", "owner": "double-check" }
+    ]
+  }
+}

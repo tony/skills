@@ -1,0 +1,246 @@
+---
+name: self-improvement-sweep
+description: >-
+  Use to measure how a skill catalog is actually invoked: mine local agent
+  prompt history with agentgrep for per-skill invocation counts across hosts
+  and projects, plus the arguments recorded alongside them. Triggers on
+  "sweep the corpus", "mine my prompt history", "rank my skills by usage",
+  or "which skills never get invoked". Reports usage evidence; edits
+  nothing.
+allowed-tools: ["Bash", "Read", "Grep", "Glob", "AskUserQuestion"]
+metadata:
+  argument-hint: "[<plugin|plugin:skill>...]"
+  source: "plugins/self-improvement/skills/sweep/SKILL.md"
+---
+
+# this skill
+
+The corpus of your own prompts records what you actually did, not what
+the skills were designed to do. Where those two disagree, the prompts
+are right.
+
+This skill reads that record and reports where the catalog is losing
+to it: instructions retyped around a skill that should have been in
+it, follow-ups appended because the skill stopped a step early, and
+procedures run entirely by hand because no skill exists for them.
+
+## This skill changes nothing
+
+No edits, no commits, no pushes. Its whole output is a ledger, and
+acting on it is the `self-improvement-apply` skill's job. That is also why this
+one is safe to route to on the model's initiative and the apply half
+is not: reaching for a sweep costs a report.
+
+## Core thesis
+
+Two shapes carry almost all the signal, and they point opposite ways.
+
+**Typed around an invocation** — the prompt names a skill and then
+adds something. That addition is the skill's gap, stated by the person
+who hit it. The remedy is inside the skill that was already invoked.
+
+**Typed instead of an invocation** — a procedure restated near
+verbatim, session after session, with no skill named anywhere. The
+remedy is a skill that does not exist yet.
+
+A pattern that is neither is usually not a finding.
+
+## The evidence bar
+
+A finding needs repetition **and** spread: several occurrences, across
+more than one project or ecosystem. One project's friction is that
+project's quirk, and proposing a catalog change from it is how a
+catalog gets bloated.
+
+Report **ratios, not counts.** Every useful finding here is a
+denominator away from its opposite: the same "instructions appended to
+`changelog`" evidence says *make this a checked gate* at half of all
+invocations and *offer it as an opt-out default* at a fifth. A bare
+numerator cannot tell those apart, and a ledger full of bare
+numerators leaves the reader unable to sort majority behavior from a
+5% tail.
+
+Getting the denominator right is the hard part, and it has two traps
+with measured consequences. Read `references/corpus-queries.md`
+before counting anything: it covers the two invocation channels and
+why either alone is wrong, why renames split a skill's history, how to
+tell a truncated query from a real absence, and what one exhaustive
+query costs.
+
+## What counts as a signal
+
+Around an invocation, sorted by how the tail behaves:
+
+- **Paste** — the same preamble reappears after the skill name:
+  reference directories, tool preferences, a quality bar, a
+  constraint. Changes *how* the skill works. Becomes a default, a
+  resolved input, or a reference example.
+- **Continuation** — the next prompt asks for a step the skill stopped
+  short of. Changes *what comes after*. Becomes a terminal step with
+  an opt-out, or a named handoff.
+- **Override** — the argument re-scopes the target: a set where the
+  skill assumed one, a different target type, a state it appeared to
+  refuse. Changes *what it runs on*. Becomes an argument, or
+  detect-and-echo.
+
+Without an invocation:
+
+- **Unnamed procedure** — a multi-step instruction restated with only
+  a slot or two varying. Only this category may propose a new skill,
+  and the bar is high because a skill costs a marketplace entry, a
+  README row, and a description that must survive the collision check.
+  Someone asking for "the usual" or "same as last time" is trying to
+  name something that has no name; that is stronger evidence than raw
+  repetition.
+- **Host asymmetry** — the same skill measured per host, then
+  differenced. The finding is the gap, not either count. A host whose
+  channel comes back near-empty means the extraction does not fit that
+  host until proven otherwise, never that the host has no users.
+- **Correction** — a prompt shortly after an invocation saying the
+  agent did the wrong thing. Highest severity, weakest attribution:
+  binding a correction to a skill is same-session adjacency, a
+  heuristic. State the anchoring method and its window in the ledger
+  rather than presenting adjacency as attribution, and confirm against
+  the transcript before proposing anything expensive.
+
+## The three verdicts
+
+For every pattern, ask what the skill already says. There are three
+answers, and the middle one is the trap:
+
+1. **Absent** — the skill never covered it. Propose it.
+2. **Present and binding** — the skill covers it and the pastes stop
+   after it started saying so. Solved; the residue is noise.
+3. **Present but not binding** — the skill says it and people keep
+   retyping it anyway.
+
+The third verdict is unreachable by reading alone, and skipping it
+throws away the best findings in a typical sweep: the most-pasted
+constraints are usually already written in the skill they concern. Get
+to it by dating the rule and splitting the evidence around it.
+
+```console
+git log --follow --format='%h %ad' --date=short -S '<phrase from the rule>' -- <path to SKILL.md> | tail -1
+```
+
+`--follow` because a rename otherwise dates every phrase in the file
+to the rename, which is the same history-splitting this skill builds a
+rename map to avoid. `tail -1` because `-S` lists newest first, and
+`-1` would return the rule's latest edit rather than its introduction.
+`--reverse` is not the fix: `-n` applies before the reversal, and
+`--follow --reverse` returns nothing.
+
+Compare the paste rate before that date against after. A rate that did
+not drop is proof that prose guidance failed, and the remedy is a
+checked output gate or a resolved-and-echoed value — never another
+sentence saying the same thing. A rate that dropped means it worked.
+
+The same split separates two findings that look identical: a behavior
+the skill performs but never announces is a **trust gap**, fixed by
+echoing it; a behavior it never performs is a **capability gap**.
+
+## `$ARGUMENTS` contract
+
+Non-flag text narrows the sweep to named plugins or skills. Empty
+sweeps the whole catalog of the repository you are in; outside a skill
+repository, ask what to sweep rather than guessing.
+
+## Phase 0: Inventory and rename map
+
+1. List the catalog: every `plugins/*/skills/*/SKILL.md`, its name,
+   and whether it sets `disable-model-invocation`.
+2. Build the rename map before counting. A renamed skill keeps its old
+   invocations under its old name, and summing across every name a
+   skill has had is the difference between a real count and an 82%
+   undercount.
+
+```console
+git log --diff-filter=R --name-status --format='%h %s' -- 'plugins/*/skills/*'
+```
+
+   Read commit subjects too, for renames the detector scored below its
+   threshold and for skills replaced by a different set rather than
+   renamed. The successor inherits none of the history either way.
+
+## Phase 1: Census
+
+Extract both channels per `corpus-queries.md`, union them, and sum
+across renames. Confirm the sweep completed before applying any
+threshold — a bounded run and a genuine zero look identical.
+
+State the corpus assumption in the report: an archived or reclaimed
+transcript store reports a clean, complete, wrong census, so the
+completeness gate is necessary and not sufficient.
+
+Budget deliberately. One exhaustive query reads the whole corpus, so
+fan out per skill and the sweep costs hours. Run one broad query, save
+the raw JSON, and re-slice it locally for every question after that.
+
+## Phase 2: Cluster
+
+Group the text that surrounds each invocation and cluster it by shared
+phrasing. Sort each cluster into paste, continuation, or override by
+what its tail does. Cluster the no-invocation corpus separately, where
+near-verbatim repetition — not frequency — is the signal.
+
+## Phase 3: Verdicts
+
+Run the three verdicts against each cluster that clears the evidence
+bar, and record the ratio, the spread, and the mechanic that produced
+the verdict.
+
+Where a finding could be answered two plausible ways, do not judge it
+here — record both shapes and let the proposal say so.
+
+## Output contract
+
+1. Hero block (1–3 lines): `N findings across M skills` plus the
+   corpus coverage the census actually achieved.
+2. `## Usage` — the catalog ranked by real invocation count, channels
+   unioned and renames summed, with the never-invoked ones named as
+   unranked rather than as dead.
+3. `## Findings` — one entry per pattern: category, the ratio and its
+   denominator, spread, the verdict with the evidence that produced
+   it, and the change class it implies. Quote one representative
+   prompt, trimmed.
+4. `## Not proposed` — clusters that failed the evidence bar, and
+   which half they failed. This is the section that keeps the catalog
+   small, so it is never omitted.
+5. `## Corpus` — what was searched, what completed, and what the
+   census assumes. Close it with the ledger key: the catalog's `HEAD`
+   and a digest of the finding set. the `self-improvement-apply` skill
+   recomputes that key, and a mismatch means the catalog moved since
+   the sweep and the ledger describes a picture that no longer holds.
+6. End with an `ask-user-choice` panel: hand the ledger to
+   the `self-improvement-apply` skill, narrow the sweep and rerun, or stop. In
+   a non-interactive run, record the options and stop.
+
+Evidence is quoted here and stripped from anything that lands. Prompts
+carry absolute paths, hostnames, and client names; the ledger may show
+them, a `SKILL.md`, commit, pull request, or issue may not.
+
+## What this is not
+
+- **Not a description grader.** `scripts/skill_evals.py route` ranks a
+  prompt against the live catalog and `check` enforces the collision
+  ceiling and description limits. Mined prompts are the ground truth
+  those were missing — feed them in and report disagreements rather
+  than inventing a second opinion about routing.
+- **Not a prose auditor.** A finding with no usage fact behind it is
+  the `lean-tighten` skill's or the `slop-scan` skill's work; say so and route there.
+- **Not a bakeoff.** When a finding has two plausible shapes, that is
+  the `spike-bakeoff` skill.
+- **Not a diff against the last sweep.** Re-derive from the corpus and
+  report standalone. A sweep that reports itself as a delta against
+  its own previous run is the failure the `double-check` skill
+  exists to prevent.
+- **Not a census of one project.** Reading a single project's history
+  to explain the branch in front of you is the `situate` skill, which
+  reconciles against the repository and wins there.
+
+
+## Portability notes
+
+- `ask-user-choice` — present the listed options and wait for the user to pick one. Hosts with a structured multiple-choice tool (Claude Code's `AskUserQuestion`) should use it; otherwise print a numbered list and wait for a numbered reply. Never proceed on an assumed answer.
+- `$ARGUMENTS` — the text the user passed when invoking this skill. If your host does not substitute it, read it as the user's request in the current turn, and ask when there is none.
+- Bundled files — every relative path in this skill points at a file shipped inside this skill directory. Read them from here, not from the host's plugin tree.
