@@ -2,17 +2,47 @@
   "skill_name": "draft",
   "trigger": {
     "positive": [
-      { "prompt": "file a linear issue for this regression", "top_k": 1 },
-      { "prompt": "write up a jira epic for the authentication work", "top_k": 3 },
-      { "prompt": "draft a linear project description for the search rework", "top_k": 3 },
-      { "prompt": "open a gitlab issue for this and link the merge request", "top_k": 3 },
-      { "prompt": "create a shortcut story for this bug", "top_k": 3 },
-      { "prompt": "turn this design discussion into a linear document", "top_k": 3 }
+      {
+        "prompt": "file a linear issue for this regression",
+        "top_k": 1
+      },
+      {
+        "prompt": "write up a jira epic for the authentication work",
+        "top_k": 3
+      },
+      {
+        "prompt": "draft a linear project description for the search rework",
+        "top_k": 3
+      },
+      {
+        "prompt": "open a gitlab issue for this and link the merge request",
+        "top_k": 3
+      },
+      {
+        "prompt": "create a shortcut story for this bug",
+        "top_k": 3
+      },
+      {
+        "prompt": "turn this design discussion into a linear document",
+        "top_k": 3
+      }
     ],
     "negative": [
-      { "prompt": "file a github issue for this crash", "owner": "create-issue" },
-      { "prompt": "should I hard-wrap this issue body or leave the paragraphs on one line", "owner": "rendered-markdown" },
-      { "prompt": "catch me up on what this branch and its pull request are asking for", "owner": "situational-awareness" }
+      {
+        "prompt": "file a github issue for this crash",
+        "owner": "create-issue"
+      },
+      {
+        "prompt": "should I hard-wrap this issue body or leave the paragraphs on one line",
+        "owner": "rendered-markdown"
+      },
+      {
+        "prompt": "catch me up on what this branch and its pull request are asking for",
+        "owner": "situational-awareness"
+      },
+      {
+        "prompt": "draft an email to legal"
+      }
     ]
   }
 }
