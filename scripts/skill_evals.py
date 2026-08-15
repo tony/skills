@@ -361,9 +361,26 @@ def _load_cases(known: set[str] | None = None) -> tuple[list[dict[str, object]],
     return cases, errors
 
 
-def _check_triggers(corpus: Corpus, cases: list[dict[str, object]]) -> tuple[int, int, list[str]]:
-    """Rank each case's positive and negative prompts. Returns hits, total, failures."""
+def _check_triggers(
+    corpus: Corpus, cases: list[dict[str, object]]
+) -> tuple[int, int, list[str], list[str]]:
+    """Rank each case's positive and negative prompts.
+
+    Returns hits, total, failures, warnings.
+
+    A negative naming an ``owner`` asserts the prompt belongs to that other
+    skill. A negative with no ``owner`` asserts it belongs to no skill at all —
+    the everyday sense of a word the catalog happens to use as a name, like
+    "brief the team on Monday". Nothing should answer it, so the assertion is
+    that the whole catalog stays under ``NEGATIVE_MIN_SCORE``.
+
+    Unowned negatives report as warnings rather than errors. Whether a stray
+    match is worth acting on is a judgement about the description, and the
+    catalog-wide scores are what inform it; failing the build on each one would
+    make the prompts too costly to write down in the first place.
+    """
     failures: list[str] = []
+    warnings: list[str] = []
     hits = 0
     total = 0
     for case in cases:
@@ -393,11 +410,14 @@ def _check_triggers(corpus: Corpus, cases: list[dict[str, object]]) -> tuple[int
                 item = t.cast("dict[str, object]", entry)
                 prompt = str(item.get("prompt", ""))
                 owner = item.get("owner")
+                ranked = rank_skills(prompt, corpus)
+
                 if not isinstance(owner, str) or not owner:
-                    failures.append(f"{skill_name}: negative {prompt!r} names no owner")
+                    if ranked and ranked[0].score >= NEGATIVE_MIN_SCORE:
+                        detail = f"{ranked[0].name} at {ranked[0].score:.2f}"
+                        warnings.append(f"no skill should answer {prompt!r}, but {detail}")
                     continue
 
-                ranked = rank_skills(prompt, corpus)
                 if not ranked or ranked[0].score < NEGATIVE_MIN_SCORE:
                     continue
 
@@ -414,7 +434,7 @@ def _check_triggers(corpus: Corpus, cases: list[dict[str, object]]) -> tuple[int
                     detail = f"outranks its declared owner {owner!r} for negative {prompt!r}"
                     failures.append(f"{skill_name}: {detail}")
 
-    return hits, total, failures
+    return hits, total, failures, warnings
 
 
 @app.command()
@@ -447,8 +467,10 @@ def check(*, require_cases: bool = True) -> None:
     cases, case_errors = _load_cases(known)
     errors.extend(case_errors)
 
-    hits, total, failures = _check_triggers(corpus, cases)
+    hits, total, failures, warnings = _check_triggers(corpus, cases)
     errors.extend(failures)
+    for warning in warnings:
+        console.print(f"[yellow]warn[/yellow] {warning}")
 
     if require_cases:
         covered = {str(case.get("skill_name", "")) for case in cases}
