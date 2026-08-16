@@ -39,6 +39,13 @@ to be cleaned up later.
 Read `./AGENTS.md` and `./CLAUDE.md`. When they define a slop rubric or
 a house voice, that governs — match it.
 
+## Comments
+
+Code comments and docstrings answer to
+`../../references/comment-policy.md`: one or two lines, only for what
+the code cannot say, rationale in the commit message. To trim comments
+that already exist, use `/lean:trim-comments`.
+
 ## Deeper catalog
 
 See `../../references/lean-rubric.md` for the full

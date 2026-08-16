@@ -291,14 +291,25 @@
       "bytes": 6876
     },
     {
+      "name": "lean-trim-comments",
+      "sources": [
+        "plugins/lean/skills/trim-comments/SKILL.md"
+      ],
+      "bundled": {
+        "references/comment-policy.md": "plugins/lean/references/comment-policy.md"
+      },
+      "bytes": 10666
+    },
+    {
       "name": "lean-writing",
       "sources": [
         "plugins/lean/skills/lean-writing/SKILL.md"
       ],
       "bundled": {
+        "references/comment-policy.md": "plugins/lean/references/comment-policy.md",
         "references/lean-rubric.md": "plugins/lean/references/lean-rubric.md"
       },
-      "bytes": 5052
+      "bytes": 11141
     },
     {
       "name": "merge-pr-multiple",
@@ -1082,6 +1093,7 @@
     "plugins/git-branch/references/commit-messages.md": 2,
     "plugins/git-branch/references/rebase-todo.sh": 2,
     "plugins/git-branch/references/rebase-toolkit.md": 2,
+    "plugins/lean/references/comment-policy.md": 2,
     "plugins/lean/references/lean-rubric.md": 2,
     "plugins/merge-pr/references/merge-readiness.md": 2,
     "plugins/pr/references/template-resolution.md": 2,

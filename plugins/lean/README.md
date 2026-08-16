@@ -43,6 +43,13 @@ over journey, and preserving references. Never edits files.
 Removes slop in-place for files or pasted drafts. Prints diffs but never commits
 or pushes.
 
+### `/lean:trim-comments`
+
+Judges code comments and docstrings against three gates — would losing it hurt a
+maintainer in three years, would an elite library write it this tersely, will it
+stay true without hand-syncing — and deletes or rewrites the failures in place.
+Defaults to the files the branch changed. Prints a diff, never commits.
+
 ## Related Plugins
 
 - **`lean`**: For real-time writing guidance or quick, commit-free tidying of working trees.
