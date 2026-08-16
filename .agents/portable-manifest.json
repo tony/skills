@@ -450,7 +450,7 @@
         "references/signatures.yml": "plugins/pr/references/signatures.yml",
         "references/slop-taxonomy.md": "plugins/pr/references/slop-taxonomy.md"
       },
-      "bytes": 72823
+      "bytes": 74214
     },
     {
       "name": "pr-merge-commit",
@@ -737,7 +737,7 @@
         "references/signatures.yml": "plugins/slop/references/signatures.yml",
         "references/slop-taxonomy.md": "plugins/slop/references/slop-taxonomy.md"
       },
-      "bytes": 63701
+      "bytes": 63198
     },
     {
       "name": "spike-bakeoff",
@@ -865,7 +865,7 @@
         "references/slop-signatures.yml": "plugins/slop/references/signatures.yml",
         "references/trello.md": "plugins/ticket/references/providers/trello.md"
       },
-      "bytes": 144364
+      "bytes": 144437
     },
     {
       "name": "ticket-rebuild",
@@ -889,7 +889,7 @@
         "references/slop-signatures.yml": "plugins/slop/references/signatures.yml",
         "references/trello.md": "plugins/ticket/references/providers/trello.md"
       },
-      "bytes": 144055
+      "bytes": 144128
     },
     {
       "name": "weave-architecture",
@@ -918,7 +918,7 @@
         "references/slop-signatures.yml": "plugins/slop/references/signatures.yml",
         "references/worker-backends.md": "plugins/weave/references/worker-backends.md"
       },
-      "bytes": 115148
+      "bytes": 115221
     },
     {
       "name": "weave-brainstorm",
@@ -947,7 +947,7 @@
         "references/slop-signatures.yml": "plugins/slop/references/signatures.yml",
         "references/worker-backends.md": "plugins/weave/references/worker-backends.md"
       },
-      "bytes": 127811
+      "bytes": 127884
     },
     {
       "name": "weave-execute",
@@ -987,7 +987,7 @@
         "references/slop-signatures.yml": "plugins/slop/references/signatures.yml",
         "references/worker-backends.md": "plugins/weave/references/worker-backends.md"
       },
-      "bytes": 120731
+      "bytes": 120804
     },
     {
       "name": "weave-prompt",
@@ -1016,7 +1016,7 @@
         "references/slop-signatures.yml": "plugins/slop/references/signatures.yml",
         "references/worker-backends.md": "plugins/weave/references/worker-backends.md"
       },
-      "bytes": 126563
+      "bytes": 126636
     },
     {
       "name": "weave-review",
@@ -1032,7 +1032,7 @@
         "references/slop-signatures.yml": "plugins/slop/references/signatures.yml",
         "references/worker-backends.md": "plugins/weave/references/worker-backends.md"
       },
-      "bytes": 120274
+      "bytes": 120347
     },
     {
       "name": "weave-serene-bliss",
@@ -1048,7 +1048,7 @@
         "references/slop-signatures.yml": "plugins/slop/references/signatures.yml",
         "references/worker-backends.md": "plugins/weave/references/worker-backends.md"
       },
-      "bytes": 111900
+      "bytes": 111973
     }
   ],
   "duplication": {

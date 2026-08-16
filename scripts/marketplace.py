@@ -98,6 +98,9 @@ SHARED_REFERENCES_DIR = REPO_ROOT / "shared-references"
 
 SHARED_REFERENCES: dict[str, tuple[str, ...]] = {
     "verification-gates.md": ("action", "respond", "spike"),
+    "quality-gates.md": ("pr", "slop"),
+    "signatures.yml": ("pr", "slop"),
+    "slop-taxonomy.md": ("pr", "slop"),
 }
 """Canonical reference docs fanned out to more than one plugin.
 
