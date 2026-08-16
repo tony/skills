@@ -33,6 +33,10 @@ Rationale, alternatives weighed, and the story of how the code got
 here belong in the commit message: timestamped, attached to the exact
 diff, and free to maintain.
 
+A comment often holds both a constraint and the deliberation that
+found it. Keep the constraint, cut the deliberation. "Runs once per
+pane per second" survives; "this is the right trade for now" does not.
+
 ## Exemptions
 
 Doctests, minimal usage examples, and param, return, and raises lines

@@ -298,7 +298,7 @@
       "bundled": {
         "references/comment-policy.md": "plugins/lean/references/comment-policy.md"
       },
-      "bytes": 10460
+      "bytes": 10666
     },
     {
       "name": "lean-writing",
@@ -309,7 +309,7 @@
         "references/comment-policy.md": "plugins/lean/references/comment-policy.md",
         "references/lean-rubric.md": "plugins/lean/references/lean-rubric.md"
       },
-      "bytes": 10935
+      "bytes": 11141
     },
     {
       "name": "merge-pr-multiple",
