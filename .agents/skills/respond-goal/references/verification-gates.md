@@ -9,7 +9,7 @@
 > (the pr plugin's quality-gates reference) with a `build` bucket and
 > a CI-coverage pass.
 
-How the `spike-probe` skill, the `spike-bakeoff` skill, the `spike-loop` skill,
+How the `spike-probe` skill, the `spike-bakeoff` skill, the `spike-ratchet` skill,
 the `respond-action` skill, this skill, the `action-worktree` skill, and
 the `action-worktrees` skill learn, at runtime, which verification the project
 expects — and how much of it to run locally versus observe in CI after

@@ -10,7 +10,7 @@
         "references/ticket-detection.md": "plugins/action/references/ticket-detection.md",
         "references/verification-gates.md": "plugins/action/references/verification-gates.md"
       },
-      "bytes": 27523
+      "bytes": 27526
     },
     {
       "name": "action-worktrees",
@@ -20,7 +20,7 @@
       "bundled": {
         "references/verification-gates.md": "plugins/action/references/verification-gates.md"
       },
-      "bytes": 15972
+      "bytes": 15975
     },
     {
       "name": "business-case-study-internal",
@@ -603,7 +603,7 @@
         "references/screening-rubric.md": "plugins/respond/references/screening-rubric.md",
         "references/verification-gates.md": "plugins/respond/references/verification-gates.md"
       },
-      "bytes": 28162
+      "bytes": 28165
     },
     {
       "name": "respond-check",
@@ -626,7 +626,7 @@
         "references/review-agents.md": "plugins/respond/references/review-agents.md",
         "references/verification-gates.md": "plugins/respond/references/verification-gates.md"
       },
-      "bytes": 20452
+      "bytes": 20455
     },
     {
       "name": "ruff-bump",
@@ -660,7 +660,7 @@
         "references/detecting-invocations.md": "plugins/self-improvement/references/detecting-invocations.md",
         "references/worked-example-spike.md": "plugins/self-improvement/references/worked-example-spike.md"
       },
-      "bytes": 48732
+      "bytes": 48741
     },
     {
       "name": "situate",
@@ -736,17 +736,7 @@
       "bundled": {
         "references/verification-gates.md": "plugins/spike/references/verification-gates.md"
       },
-      "bytes": 18805
-    },
-    {
-      "name": "spike-loop",
-      "sources": [
-        "plugins/spike/skills/loop/SKILL.md"
-      ],
-      "bundled": {
-        "references/verification-gates.md": "plugins/spike/references/verification-gates.md"
-      },
-      "bytes": 15277
+      "bytes": 18811
     },
     {
       "name": "spike-probe",
@@ -756,7 +746,17 @@
       "bundled": {
         "references/verification-gates.md": "plugins/spike/references/verification-gates.md"
       },
-      "bytes": 17414
+      "bytes": 17420
+    },
+    {
+      "name": "spike-ratchet",
+      "sources": [
+        "plugins/spike/skills/ratchet/SKILL.md"
+      ],
+      "bundled": {
+        "references/verification-gates.md": "plugins/spike/references/verification-gates.md"
+      },
+      "bytes": 15322
     },
     {
       "name": "tailwind-spacing-audit",

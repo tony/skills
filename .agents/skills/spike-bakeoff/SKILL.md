@@ -54,7 +54,7 @@ do not see each other), and adversarial judging.
 the weave plugin varies the *model* with one prompt. Reaching for
 "three models, one approach" → weave. "One model, three approaches"
 → bakeoff. Reaching for a second bakeoff because the first winner hit
-new resistance → the `spike-loop` skill, which runs the rounds and carries a
+new resistance → the `spike-ratchet` skill, which runs the rounds and carries a
 ledger across them.
 
 ## The Iron Rule

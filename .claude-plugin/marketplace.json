@@ -154,7 +154,7 @@
     },
     {
       "name": "spike",
-      "description": "Run no-commit spikes, strategy bakeoffs, or multi-round convergence loops in git worktrees. Tests ideas against quality gates and returns a commit-by-commit implementation plan.",
+      "description": "Run no-commit spikes, strategy bakeoffs, or multi-round convergence in git worktrees. Tests ideas against quality gates and returns a commit-by-commit implementation plan.",
       "version": "0.1.0",
       "author": {
         "name": "Tony Narlock",

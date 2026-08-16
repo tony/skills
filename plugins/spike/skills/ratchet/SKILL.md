@@ -1,5 +1,5 @@
 ---
-name: loop
+name: ratchet
 description: >-
   Use when one spike will not settle a design and the work needs
   repeated contact with real code — probe, bake off the approaches the
@@ -18,12 +18,12 @@ user-invocable: true
 ---
 
 
-# `/spike:loop`
+# `/spike:ratchet`
 
 Convergence harness. `/spike:probe` answers "does this path work?".
 `/spike:bakeoff` answers "which path is best?". Neither answers "what
 is the right design?" — that only emerges from hitting real code
-several times and watching which parts keep fighting back. The loop
+several times and watching which parts keep fighting back. The ratchet
 runs both in rounds until the design stops resisting.
 
 This skill is invoked by name, never routed to on the model's
@@ -37,7 +37,7 @@ product**. Each round throws away its implementation and keeps what it
 learned: which approaches the code rejected, which decisions are now
 settled, which questions are still open.
 
-A loop is worth running when the shape of the answer is unknown — a
+A ratchet is worth running when the shape of the answer is unknown — a
 port to another language, an API whose ergonomics only show up in use,
 a subsystem where the first sketch is expected to be wrong. When one
 approach is already clear, use `/spike:probe`. When two or three named
@@ -99,12 +99,12 @@ provenance recorded in the brief.
 
 | Flag | Default | Effect |
 |---|---|---|
-| `--rounds=<n>` | 3 | Cap on the rounds the loop runs on its own. It may stop earlier by converging; only an explicit choice from the closing panel takes it further. |
+| `--rounds=<n>` | 3 | Cap on the rounds the ratchet runs on its own. It may stop earlier by converging; only an explicit choice from the closing panel takes it further. |
 | `--replay` | off | At Phase 4, land the approved plan immediately instead of stopping at the panel, following `/spike:probe` Phase 6. Never applies to a round. |
 
 ## Phase 0: Situational awareness
 
-`/spike:probe` Phase 0 once for the whole loop — conventions files, the
+`/spike:probe` Phase 0 once for the whole ratchet — conventions files, the
 five gate buckets and CI split per
 `../../references/verification-gates.md`, dirty-tree halt — plus:
 
@@ -116,7 +116,7 @@ five gate buckets and CI split per
 
 Enter plan mode if the host supports it (Claude Code: `EnterPlanMode`;
 Cursor / Codex / Gemini: `/plan` or `Shift+Tab`) and present the
-**loop brief**:
+**ratchet brief**:
 
 1. The goal, one line, with provenance.
 2. What "converged" means for this goal — the demo or property the
@@ -140,8 +140,8 @@ Repeat until Phase 3 says stop. Each round:
    blocks, the exit gate, and a stash with a recorded SHA. A round
    borrows those phases, it does not invoke the whole skill — probe's
    Phase 0 already ran once in Phase 0 above, its Phase 1 brief is the
-   loop brief you already approved, and its plan and replay phases
-   belong to the loop's exit. This is also why `--replay` never
+   ratchet brief you already approved, and its plan and replay phases
+   belong to the ratchet's exit. This is also why `--replay` never
    reaches a round.
 2. **Branch on what fought back.** A stumbling block that admits two
    or more genuinely different resolutions is what `/spike:bakeoff`
@@ -149,12 +149,12 @@ Repeat until Phase 3 says stop. Each round:
    stumbling block with one obvious fix is not a bakeoff; fold it into
    the next probe.
 3. **Re-probe the graft.** Grafts leave a bakeoff unproven in
-   combination. When a round takes them, the loop seeds the next
+   combination. When a round takes them, the ratchet seeds the next
    round's tree itself — apply the winner's stash, then the graft
    hunks — and that round probes from there, so the proving check runs
-   on the tree actually chosen. Seeding is the loop's own step rather
+   on the tree actually chosen. Seeding is the ratchet's own step rather
    than a probe invocation, which is why probe's dirty-tree halt does
-   not fire on a tree the loop deliberately built. A graft that fails
+   not fire on a tree the ratchet deliberately built. A graft that fails
    the check is dropped and recorded as dropped.
 4. **Record.** Append the round's ledger section before starting the
    next one. A round that ends without its ledger entry written did
@@ -176,7 +176,7 @@ than one:
   surface it rather than spending another round.
 - **Converged** — the round surfaced no stumbling block at all.
 - **Capped** — `--rounds` is exhausted. Report the still-open
-  questions plainly; a capped loop is an honest partial result, not a
+  questions plainly; a capped ratchet is an honest partial result, not a
   failure to hide.
 
 Otherwise start the next round from the ledger's open questions.
@@ -208,11 +208,11 @@ cites them by SHA as the evidence for its locked decisions.
 3. `## Design` — the locked decisions as they now stand, read as a
    specification rather than a history. This is what the rewrite
    consumes.
-4. `## Open` — questions the loop did not settle, and for a thrashing
+4. `## Open` — questions the ratchet did not settle, and for a thrashing
    stop, why spiking cannot settle them.
 5. `## Stashes` — table: round, stash message, **SHA**, restore
    command. Every round appears, and so does every contender a round's
-   bakeoff stashed: a loop never runs bakeoff's own replay, so those
+   bakeoff stashed: a ratchet never runs bakeoff's own replay, so those
    stashes outlive it and belong in the accounting rather than in
    `git stash list` alone.
 6. `## Next` — the recommended exit, and the landing plan when one was

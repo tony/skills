@@ -1,5 +1,5 @@
 {
-  "skill_name": "loop",
+  "skill_name": "ratchet",
   "trigger": {
     "positive": [
       { "prompt": "spike this then bake off the approaches then spike again", "top_k": 1 },
@@ -10,8 +10,8 @@
     "negative": [
       { "prompt": "rewrite this module from scratch now that we know the shape", "owner": "redo-from-scratch" },
       { "prompt": "brainstorm some approaches for the new API", "owner": "brainstorm" },
-      { "prompt": "refactor this loop to use a comprehension" },
-      { "prompt": "why is this event loop blocking" }
+      { "prompt": "ratchet up the request timeout to 30 seconds" },
+      { "prompt": "the ratchet strap on the roof rack came loose" }
     ]
   }
 }

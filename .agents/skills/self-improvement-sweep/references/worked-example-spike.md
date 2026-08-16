@@ -1,7 +1,7 @@
 
 # A worked example: spike, before this skill existed
 
-The pass that became the `spike-loop` skill is this skill run by hand, months of
+The pass that became the `spike-ratchet` skill is this skill run by hand, months of
 prompts read in one sitting. Every fenced block below is quoted from the
 corpus or from the diff it produced, character for character. Nothing in
 one is paraphrased, because the point of the example is what the
@@ -132,7 +132,7 @@ The stop condition in every retyping was *"when you finally have it
 perfect"*, which cannot be evaluated, which is why every retyping
 needed a human to decide when to quit.
 
-**Landed as** a new skill, the `spike-loop` skill, whose stop conditions are
+**Landed as** a new skill, the `spike-ratchet` skill, whose stop conditions are
 falsifiable and ordered:
 
 ```
@@ -182,7 +182,7 @@ the case for a bakeoff whenever the probe happened to work:
 +   markers, observed-not-addressed list. State the stumbling blocks
 +   even when the probe succeeded: a path that worked while fighting
 +   you the whole way is the case for `/spike:bakeoff` or
-+   `/spike:loop`, and reporting only the success buries it.
++   `/spike:ratchet`, and reporting only the success buries it.
 ```
 
 ## Finding two: grafts landed without ever being run

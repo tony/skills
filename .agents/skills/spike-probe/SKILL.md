@@ -248,7 +248,7 @@ remote)" so the deferral is visible rather than implied.
    markers, observed-not-addressed list. State the stumbling blocks
    even when the probe succeeded: a path that worked while fighting
    you the whole way is the case for the `spike-bakeoff` skill or
-   the `spike-loop` skill, and reporting only the success buries it.
+   the `spike-ratchet` skill, and reporting only the success buries it.
 3. `## Verification` — gate commands run and their results; the
    local-vs-CI split; what was deferred and why.
 4. `## Stash` — stash ref, message, **SHA**, restore command (omit

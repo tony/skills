@@ -1,6 +1,6 @@
 # spike
 
-Run no-commit spikes, strategy bakeoffs, or multi-round convergence loops in git
+Run no-commit spikes, strategy bakeoffs, or multi-round convergence in git
 worktrees. Tests ideas against quality gates and returns a commit-by-commit
 implementation plan.
 
@@ -36,7 +36,7 @@ codex plugin add spike@skills
 |---|---|---|
 | `/spike:probe [<goal>]` | `spike:probe [<goal>]` | Probe the goal with zero commits, stash with a recovery ref, propose a commit-by-commit landing plan |
 | `/spike:bakeoff [<goal>]` | `spike:bakeoff [<goal>]` | Build 2–4 competing strategies in isolated worktrees, judge adversarially, stash contenders, propose landing plan for winner |
-| `/spike:loop [<goal>]` | `spike:loop [<goal>]` | Run probes and bakeoffs in rounds until the design stops fighting back, accumulating a ledger of stumbling blocks and locked decisions |
+| `/spike:ratchet [<goal>]` | `spike:ratchet [<goal>]` | Run probes and bakeoffs in rounds until the design stops fighting back, accumulating a ledger of stumbling blocks and locked decisions |
 
 The goal can be typed or inferred from conversation context (review
 findings, failing tests) — the plan-mode brief confirms it.
@@ -49,12 +49,12 @@ approved plan immediately via gated commits).
 list), `--prongs=<2-4>` (cap contender count), `--keep-trees` (leave
 worktrees), `--replay` (land winner immediately).
 
-`/spike:loop` flags: `--rounds=<n>` (cap rounds, default 3),
+`/spike:ratchet` flags: `--rounds=<n>` (cap rounds, default 3),
 `--replay` (land the converged result immediately).
 
 One approach in mind → `probe`. Genuinely uncertain between two or
 three named approaches → `bakeoff`. Shape of the answer still unknown,
-so one pass of either will not settle it → `loop`. To vary the *model*
+so one pass of either will not settle it → `ratchet`. To vary the *model*
 rather than the strategy, use the weave plugin.
 
 ## Workflow
@@ -75,14 +75,14 @@ adds an adversarial judging pass (correctness, blast radius, idiom
 fit, gate status), then proposes a replay plan for the winner. Every
 contender is stashed for recovery before its worktree is removed.
 
-A loop repeats that cycle in rounds — probe, bake off the approaches
+A ratchet repeats that cycle in rounds — probe, bake off the approaches
 the probe's stumbling blocks put in doubt, re-probe the winner with
 its grafts applied — and stops when a round surfaces nothing new, the
 round cap is reached, or the same blocks keep recurring. Each round
 appends to a ledger under the repository's git common directory,
 where `git stash -u` and `git clean` cannot reach it and every
 worktree resolves the same path. The ledger, not the code, is what a
-loop is for: it feeds a clean rewrite or the closing landing plan.
+ratchet is for: it feeds a clean rewrite or the closing landing plan.
 
 The spike never commits locally or in worktrees. Commits only happen
 via `--replay` after plan approval, one item at a time behind green gates.
@@ -97,8 +97,8 @@ CI-covered work to `gh pr checks --watch`.
 
 ## Prerequisites
 
-- **git** — stash-based workflow; `/spike:bakeoff` and `/spike:loop`
-  use `git worktree`. `/spike:loop` also needs git 2.31 or newer,
+- **git** — stash-based workflow; `/spike:bakeoff` and `/spike:ratchet`
+  use `git worktree`. `/spike:ratchet` also needs git 2.31 or newer,
   which is where `git rev-parse --path-format` arrived; it resolves
   the ledger path with it.
 - **gh** (optional) — enables watching CI checks after a push
