@@ -10,7 +10,7 @@
         "references/ticket-detection.md": "plugins/action/references/ticket-detection.md",
         "references/verification-gates.md": "plugins/action/references/verification-gates.md"
       },
-      "bytes": 27526
+      "bytes": 27560
     },
     {
       "name": "action-worktrees",
@@ -20,7 +20,7 @@
       "bundled": {
         "references/verification-gates.md": "plugins/action/references/verification-gates.md"
       },
-      "bytes": 15975
+      "bytes": 16009
     },
     {
       "name": "business-case-study-internal",
@@ -614,7 +614,7 @@
         "references/screening-rubric.md": "plugins/respond/references/screening-rubric.md",
         "references/verification-gates.md": "plugins/respond/references/verification-gates.md"
       },
-      "bytes": 28165
+      "bytes": 28200
     },
     {
       "name": "respond-check",
@@ -637,7 +637,7 @@
         "references/review-agents.md": "plugins/respond/references/review-agents.md",
         "references/verification-gates.md": "plugins/respond/references/verification-gates.md"
       },
-      "bytes": 20455
+      "bytes": 20490
     },
     {
       "name": "ruff-bump",
@@ -747,7 +747,7 @@
       "bundled": {
         "references/verification-gates.md": "plugins/spike/references/verification-gates.md"
       },
-      "bytes": 18811
+      "bytes": 18844
     },
     {
       "name": "spike-probe",
@@ -757,7 +757,7 @@
       "bundled": {
         "references/verification-gates.md": "plugins/spike/references/verification-gates.md"
       },
-      "bytes": 17420
+      "bytes": 17453
     },
     {
       "name": "spike-ratchet",
@@ -767,7 +767,7 @@
       "bundled": {
         "references/verification-gates.md": "plugins/spike/references/verification-gates.md"
       },
-      "bytes": 15322
+      "bytes": 15355
     },
     {
       "name": "tailwind-spacing-audit",
