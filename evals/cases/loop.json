@@ -1,0 +1,17 @@
+{
+  "skill_name": "loop",
+  "trigger": {
+    "positive": [
+      { "prompt": "spike this then bake off the approaches then spike again", "top_k": 1 },
+      { "prompt": "keep spiking until the design settles", "top_k": 1 },
+      { "prompt": "rinse and repeat until nothing new fights back", "top_k": 1 },
+      { "prompt": "i want to converge on an approach for this port", "top_k": 2 }
+    ],
+    "negative": [
+      { "prompt": "rewrite this module from scratch now that we know the shape", "owner": "redo-from-scratch" },
+      { "prompt": "brainstorm some approaches for the new API", "owner": "brainstorm" },
+      { "prompt": "refactor this loop to use a comprehension" },
+      { "prompt": "why is this event loop blocking" }
+    ]
+  }
+}

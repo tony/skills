@@ -12,7 +12,6 @@ description: >-
   the working tree, produces zero commits across every round, and ends by
   handing that ledger to a clean rewrite or to a commit-by-commit landing
   plan.
-disable-model-invocation: true
 allowed-tools: ["Bash", "Read", "Grep", "Glob", "Edit", "Write", "AskUserQuestion", "Task"]
 metadata:
   argument-hint: "[<goal>] [--rounds=<n>] [--replay]"

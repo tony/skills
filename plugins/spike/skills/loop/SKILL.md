@@ -15,7 +15,6 @@ description: >-
 allowed-tools: ["Bash", "Read", "Grep", "Glob", "Edit", "Write", "AskUserQuestion", "Task"]
 argument-hint: "[<goal>] [--rounds=<n>] [--replay]"
 user-invocable: true
-disable-model-invocation: true
 ---
 
 
