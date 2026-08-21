@@ -43,6 +43,7 @@ readable by agents scanning `.agents/skills/`.
 | [gh](plugins/gh/) | Development | File durable GitHub issues with reproductions, pinned links, and stripped PII. Enforces a markdown writing discipline reusable for any PR, comment, or ticket. |
 | [self-improvement](plugins/self-improvement/) | Development | Mine local agent prompt history for how the skill catalog is really used, then land the changes that usage evidence supports. |
 | [ticket](plugins/ticket/) | Development | Manage work across trackers (Linear, Jira, GitHub, etc.) respecting each platform's native object graph. Drafts durable tickets focused on invariants. |
+| [agent-messaging](plugins/agent-messaging/) | Development | Message another running agent session — Claude Code or Codex — and verify who actually sent an incoming message. |
 
 ## Installation
 
