@@ -118,7 +118,9 @@ is visible or a bounded timeout expires. If it never appears, **do not press Ent
 the pane untouched and report a pending staged state. Text and Enter issued back-to-back in
 one command can leave the payload unsubmitted.
 
-**Submit.**
+**Submit.** Reclassify first — staging takes time, and a target idle at preflight may be busy
+now. Submitting on the stale reading leaves a Codex payload parked beside `tab to queue
+message` with no Tab ever sent.
 
 - Idle target: Enter once, verify a new turn begins.
 - **Busy Codex**: Enter once, then inspect. Only if the payload sits beside `tab to queue
