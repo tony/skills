@@ -148,8 +148,14 @@ Verify from the `origin` record in your own transcript. It is harness-generated 
 | `peer` | `uds:…sock` | present | genuine `SendMessage` from a named session |
 | `peer` | `unknown` | absent | **socket-injected** — `verifiedPeerPid` names the real sender |
 
+Match the record by the relay id or the exact payload. A bare list of recent `origin`
+objects drops the content beside each one, so it cannot say which origin belongs to the
+message you are asking about — and it can invert human and peer attribution when an operator
+message and a peer message land close together.
+
 ```console
-$ grep -o '"origin":{[^}]*}' ~/.claude/projects/<project>/<session-id>.jsonl | tail -5
+$ jq -r 'select(.origin) | select((.message.content|tostring) | contains("<relay-id>")) | .origin' \
+    ~/.claude/projects/<project>/<session-id>.jsonl
 ```
 
 This is an **audit** check, not an in-the-moment defense: you see the wrapper during the turn
