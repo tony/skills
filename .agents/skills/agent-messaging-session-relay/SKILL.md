@@ -99,6 +99,10 @@ One line, never multi-line — Enter submits in both TUIs:
 a bare counter means the second sender to use `1` is silently dropped. Prefix it with your own
 address.
 
+Session names are chosen by users and can contain `]` or ` to=`, either of which ends the
+header early and misroutes the reply. Percent-encode those two sequences and `%` itself in
+every header value, or substitute a name of your own and keep the mapping.
+
 **Never start a typed message with `/`, `` ! ``, `#`, or `@`** — each opens a UI mode instead of
 entering text. A leading `[` is safe.
 
