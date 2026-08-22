@@ -89,4 +89,6 @@ around. End with the single sentence a future maintainer most needs to know.
 ## Evidence
 
 Link each non-obvious claim to the experiment ID in the findings files that established it.
-Claims with no experiment ID are marked `(unverified — from docs/source)`.
+Claims with no experiment ID are marked `(unverified — from source)` when the agent is open
+source and the claim comes from reading its code, or `(unverified — from docs)` when it comes
+from vendor documentation instead.

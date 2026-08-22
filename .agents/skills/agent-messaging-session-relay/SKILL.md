@@ -108,7 +108,7 @@ one command can leave the payload unsubmitted.
 **Confirm.** Classify from receiver evidence, not from `send-keys` exit status.
 
 **A target may never go idle.** A Codex session running under a goal controller auto-resumes,
-so no stable idle interval ever appears — three idle sends in the trial were withheld for
+so no stable idle interval ever appears — two idle sends in the trial were withheld for
 exactly this reason. Do not block waiting for idle. Withhold and report, or switch to a
 durable transport that does not require it.
 
@@ -127,9 +127,9 @@ $ sqlite3 ~/.codex/queue_1.sqlite "select queue_order, substr(payload_json,1,80)
   disappear and the remaining ones are not renumbered. Codex has **two independent inboxes**,
   and the durable queue wins the next turn ahead of a process-local tmux follow-up.
 
-- **To Claude Code**, there is no receipt. Ask for an ack, or subscribe with
-  `notify_when_idle` — which reports "idle now, and when that started", not the next
-  transition, and whose summary can be stale.
+- **To Claude Code**, there is no receipt. Ask for an ack, or subscribe with `SendMessage`'s
+  `notify_when_idle: true` (no body) — it reports "idle now, and when that started", not the
+  next transition, and its summary can be stale.
 
 ## 7. Verify who sent an incoming message
 

@@ -32,7 +32,7 @@
         "references/claude-code.md": "plugins/agent-messaging/references/agents/claude-code.md",
         "references/codex.md": "plugins/agent-messaging/references/agents/codex.md"
       },
-      "bytes": 32533
+      "bytes": 32706
     },
     {
       "name": "business-case-study-internal",
@@ -1190,9 +1190,6 @@
     "docs/pull_request_template.md": [
       "pr",
       "pr-rewrite"
-    ],
-    "docs/source": [
-      "agent-messaging-session-relay"
     ]
   },
   "unresolved_host_commands": {
