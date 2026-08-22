@@ -120,16 +120,20 @@ durable transport that does not require it.
 
 Sending is not arriving.
 
-- **To Codex**, read the queue back — it is externally observable:
+- **To Codex**, read back the exact item whose id `codex queue` printed. Matching on thread
+  or recency picks up an unrelated row when the target already has a backlog:
 
 ```console
-$ sqlite3 "${CODEX_HOME:-$HOME/.codex}/queue_1.sqlite" "select queue_order, substr(payload_json,1,80) from queued_items where thread_id='<uuid>' order by queue_order;"
+$ sqlite3 "file:${CODEX_HOME:-$HOME/.codex}/queue_1.sqlite?mode=ro" \
+    "select queue_order, payload_json from queued_items where id='<queue-item-uuid>';"
 ```
 
-  A row still present means it has not been consumed. Codex dispatches **one message per idle
-  transition**, so a backlog drains one per turn — batch into a single message. Consumed rows
-  disappear and the remaining ones are not renumbered. Codex has **two independent inboxes**,
-  and the durable queue wins the next turn ahead of a process-local tmux follow-up.
+  A row still present means it has not been consumed. Its disappearance proves **dequeue, not
+  delivery to the model** — for that, require the receiver's turn or acknowledgment to carry
+  your exact payload. Codex dispatches **one message per idle transition**, so a backlog
+  drains one per turn — batch into a single message. Consumed rows disappear and the
+  remaining ones are not renumbered. Codex has **two independent inboxes**, and the durable
+  queue wins the next turn ahead of a process-local tmux follow-up.
 
 - **To Claude Code**, there is no receipt. Ask for an ack, or subscribe with `SendMessage`'s
   `notify_when_idle: true` (no body) — it reports "idle now, and when that started", not the
