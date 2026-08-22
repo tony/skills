@@ -40,12 +40,17 @@ Evidence: T1.C-disc and T1.O-disc.
 
 ```console
 $ codex queue \
-    --thread xsm-b \
-    --message '[relay/1 from=A:codex@<thread> to=B id=<id> hop=0 want=none] <body>'
+    --thread <uuid-or-name> \
+    --message "$(cat <<'RELAY'
+[relay/1 from=A:codex@<thread> to=B id=<id> hop=0 want=none] <body>
+RELAY
+)"
 ```
 
 - **Preconditions**: the target thread exists in the same `CODEX_HOME` and is not archived.
-  Exact UUIDs and exact names both work.
+  Exact UUIDs and exact names both work. Pass the body through a quoted heredoc as shown;
+  interpolating it into a quoted literal breaks on an apostrophe such as `it's done`, and the
+  remainder of the message is then read as shell syntax.
 - **Success signal**: stdout returns a durable queue-item UUID and the resolved target UUID.
   A same-UID helper can verify the row in `queue_1.sqlite`.
 - **Daemon requirement**: no long-running daemon was needed; a Claude shell invocation used
