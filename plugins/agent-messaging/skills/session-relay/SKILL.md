@@ -27,10 +27,11 @@ Discovery is **vendor-scoped** — each agent enumerates only its own kind. To r
 vendor you must read its registry directly.
 
 - **Claude sessions, from Claude**: `ListAgents`. Addresses are session names.
-- **Claude sessions, from anything else**: `/run/user/$(id -u)/cc-socks/<pid>.sock`. Two traps:
-  most entries are **stale** — liveness-check each PID — and one logical session can hold two
-  sockets (parent and child), so naive counting overreports. The directory yields PIDs and
-  working directories, **never names**.
+- **Claude sessions, from anything else**: `claude agents --json` lists only live sessions,
+  each with `name`, `pid`, and `status`; that session's inbox is
+  `/run/user/$(id -u)/cc-socks/<pid>.sock`. Resolve a name through that listing, never by
+  scanning the socket directory — it publishes no names, most entries are **stale**, and one
+  logical session can hold two sockets (parent and child).
 - **Codex sessions, from anything**: `~/.codex/session_index.jsonl` maps thread id to name;
   `~/.codex/thread-writer-locks/<uuid>.lock` is flocked by its owner, so `fuser` gives liveness
   and PID. No daemon required. `codex app-server` also answers `thread/list` over stdio.

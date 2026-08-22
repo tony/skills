@@ -22,9 +22,10 @@ Evidence: Phase 1 in role C's findings and T3.2.
 - **Scope**: Claude sessions only; it did not list either live Codex pane.
 - **What a listing shows**: name, short identifier, kind, status, and tmux coordinate when
   known.
-- **Foreign discovery**: a same-UID helper can enumerate socket filenames as process IDs,
-  but seven of twelve observed sockets were stale and one logical session owned two sockets.
-  Check process liveness and deduplicate. The socket directory does not publish session names.
+- **Foreign discovery**: `claude agents --json` lists live sessions with name, pid, and
+  status; join its `pid` to `/run/user/$(id -u)/cc-socks/<pid>.sock` for the inbox. The
+  socket directory alone is not enough — it publishes no names, seven of twelve observed
+  sockets were stale, and one logical session owned two.
 
 Evidence: T1.C-disc and T1.O-disc.
 
