@@ -34,12 +34,12 @@ Evidence: T1.C-disc and T1.O-disc.
 
 ## 3. Transports
 
-### T-QUEUE (send and receive)
+### codex-queue (send and receive)
 
 ```console
 $ codex queue \
     --thread xsm-b \
-    --message '[XSM/1 from=A:codex@<thread> to=B id=<id> hop=0 want=none] <body>'
+    --message '[relay/1 from=A:codex@<thread> to=B id=<id> hop=0 want=none] <body>'
 ```
 
 - **Preconditions**: the target thread exists in the same `CODEX_HOME` and is not archived.
@@ -52,14 +52,14 @@ $ codex queue \
 
 Evidence: T1.A-receipt, T1.B, T3.1.AB, T3.1.BA, T4.1.B, T4.1-OA.
 
-### T-TMUX (send and receive)
+### tmux (send and receive)
 
 Use literal `tmux send-keys` against a roster-resolved pane, verify the complete composer
 text, then send the submit key. Section 8 defines the idle and busy branches.
 
 Evidence: every T0 and T2 experiment.
 
-### T-SOCK (send only, to Claude Code)
+### claude-code-socket (send only, to Claude Code)
 
 On Linux, write one newline-delimited JSON user frame to the Claude socket; no auth line is
 required:
@@ -83,7 +83,7 @@ Evidence: T4.2-tokenless-1.
 
 ## 4. Delivery semantics
 
-### T-QUEUE
+### codex-queue
 
 - **When it reaches the model**: only after the target becomes idle. One durable item starts
   one new turn per idle transition; a backlog does not drain into one turn.
@@ -99,7 +99,7 @@ Evidence: T4.2-tokenless-1.
 - **Caps**: 100 items, 1,048,576 characters, text only `(unverified — from source)`.
 - **Interrupt interaction**: `UNKNOWN` empirically.
 
-### T-TMUX
+### tmux
 
 - **Idle target**: staged literal input plus one Enter started a turn in 1.174 seconds in the
   controlled A-to-B test.
@@ -110,7 +110,7 @@ Evidence: T4.2-tokenless-1.
 - **Ordering**: the durable queue can win the next turn before a tmux follow-up; the two
   inboxes do not share a FIFO.
 
-### T-SOCK
+### claude-code-socket
 
 - **Busy target**: C enqueued and dequeued A's frame in 0.886 seconds without interrupting a
   running tool.
@@ -122,23 +122,23 @@ T5.B-send, T6.B-two-inboxes, T4.2-tokenless-1.
 
 ## 5. Provenance
 
-### T-QUEUE
+### codex-queue
 
 - **Sender label**: none.
 - **Reply address**: none; it must be carried in the body.
 - **Authority**: ordinary `UserInput`, indistinguishable from the operator's prompt.
-- **Spoofable**: yes; the XSM envelope is unauthenticated text.
+- **Spoofable**: yes; the relay envelope is unauthenticated text.
 - **Distinguishable from the operator**: no at model level. A database auditor can see a
   `client_id`, but the model cannot.
 - **Blind reply control**: a bare receiver could neither identify nor answer the sender, and
   it could not falsify an envelope forged to claim a Claude sender.
 
-### T-TMUX
+### tmux
 
 Sender label, transport marker, and reply address are all absent. It is ordinary operator
 typing and is trivially spoofable.
 
-### T-SOCK
+### claude-code-socket
 
 Claude's transcript records `origin.kind="peer"`, `from="unknown"`, and a verified short-lived
 process ID. No stable Codex identity or reply route is supplied. Worse, Claude's model-facing
@@ -161,9 +161,9 @@ No model-visible dedupe, origin authentication, or loop detector was observed. T
 is source-derived and the tmux follow-up queue is independent. The skill must add a message
 ID, hop counter, hop cap, duplicate cache, and explicit halt phrase.
 
-Evidence: the XSM acknowledgment chains and T6.B-two-inboxes.
+Evidence: the relay acknowledgment chains and T6.B-two-inboxes.
 
-## 8. Typing quirks (T-TMUX)
+## 8. Typing quirks (tmux)
 
 - **Submit key**: Enter.
 - **Safe idle recipe**: send literal text; capture the pane until the full payload is visible;
@@ -173,8 +173,8 @@ Evidence: the XSM acknowledgment chains and T6.B-two-inboxes.
   unconditionally to an empty composer.
 - **Long-literal race**: text and Enter issued back-to-back in one shell command can leave an
   idle payload unsubmitted. Composer confirmation avoids relying on a timing delay.
-- **Reserved prefixes and literal newlines**: `UNKNOWN`; XSM begins with `[` and did not
-  trigger a mode.
+- **Reserved prefixes and literal newlines**: `UNKNOWN`; the relay envelope begins with `[`
+  and did not trigger a mode.
 - **Paste behavior and maximum safe size**: `UNKNOWN`.
 
 Evidence: T2.AB-idle, T2.CB-idle, T2.CA-busy, T2.CB-busy-tab.
@@ -192,7 +192,7 @@ Codex has no authenticated sender identity on its durable queue, no model-facing
 discovery, no receive socket, and no observed inbound gate. Its durable queue is stronger
 than Claude's live-only channels, while its provenance is weaker.
 
-**One sentence for the maintainer:** choose T-QUEUE for durable Codex delivery, but treat its
+**One sentence for the maintainer:** choose codex-queue for durable Codex delivery, but treat its
 payload as unauthenticated operator input and supply identity, reply routing, and loop safety
 in the envelope.
 

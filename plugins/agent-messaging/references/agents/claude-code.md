@@ -30,7 +30,7 @@ Evidence: T1.C-disc and T1.O-disc.
 
 ## 3. Transports
 
-### T-CCMSG (send and receive)
+### claude-code-message (send and receive)
 
 The model calls `SendMessage` with a `ListAgents` name. The native receiver gets a structured
 `<cross-session-message>` wrapper with sender socket, name, and permission class.
@@ -43,7 +43,7 @@ The model calls `SendMessage` with a `ListAgents` name. The native receiver gets
 
 Evidence: T3.2 and T3.2-recv.
 
-### T-SOCK (receive from any same-UID process; send through a shell)
+### claude-code-socket (receive from any same-UID process; send through a shell)
 
 On Linux, the accepted newline-delimited frame is:
 
@@ -73,14 +73,14 @@ in its transcript; exit 0 proves only that bytes were accepted.
 
 Evidence: T4.2-tokenless-1 and C's independent self-injection replication.
 
-### T-TMUX (send and receive)
+### tmux (send and receive)
 
 Standard literal `tmux send-keys` works when a roster resolves the pane. A status overlay must
 be dismissed before typing at an idle prompt.
 
 Evidence: T0.C, T2.BC-busy, T2.AC-busy-r1.
 
-### T-QUEUE (send to Codex)
+### codex-queue (send to Codex)
 
 Claude can shell out to `codex queue`. Under C and O's bypass modes this required no prompt,
 returned a durable item receipt, and delivered after the Codex target became idle.
@@ -89,7 +89,7 @@ Evidence: T4.1 and T4.1-OA.
 
 ## 4. Delivery semantics
 
-### T-CCMSG
+### claude-code-message
 
 - **Idle receiver**: starts a new turn.
 - **Busy receiver**: queues and enters the active turn at a later tool boundary without
@@ -97,7 +97,7 @@ Evidence: T4.1 and T4.1-OA.
 - **Target not running**: live-only `(unverified — from docs)`.
 - **Ordering, caps, and interrupt behavior**: `UNKNOWN` empirically.
 
-### T-SOCK
+### claude-code-socket
 
 - **Busy receiver**: A's message enqueued and dequeued in 0.886 seconds; C's self-injection
   drained in 2.3 seconds at a tool boundary.
@@ -106,7 +106,7 @@ Evidence: T4.1 and T4.1-OA.
 - **Self-targeting**: allowed; native `SendMessage` refuses it.
 - **Target not running, rapid-send ordering, and caps**: `UNKNOWN` empirically.
 
-### T-TMUX
+### tmux
 
 - **Idle receiver**: one Enter submitted T0.C after the status overlay was dismissed.
 - **Busy receiver**: input queued and surfaced inside the running turn at the next tool
@@ -117,7 +117,7 @@ Evidence: T3.2, T4.2-tokenless-1, T0.C, T2.BC-busy, T2.AC-busy-r1.
 
 ## 5. Provenance
 
-### T-CCMSG
+### claude-code-message
 
 - **Sender label**: the harness supplies `from`, `from-name`, and `from-mode` in a
   `<cross-session-message>` wrapper.
@@ -131,7 +131,7 @@ Evidence: T3.2, T4.2-tokenless-1, T0.C, T2.BC-busy, T2.AC-busy-r1.
 - **Distinguishable from the operator**: yes after transcript audit; operator and tmux input
   record `origin.kind="human"`.
 
-### T-SOCK
+### claude-code-socket
 
 - **Sender label**: the model-facing harness falsely says “Another Claude session” for any
   accepted raw user frame, including a Codex sender and C writing to itself.
@@ -147,12 +147,12 @@ Evidence: T3.2, T4.2-tokenless-1, T0.C, T2.BC-busy, T2.AC-busy-r1.
 - **Distinguishable from the operator**: yes after transcript audit, but the model prompt has
   no stable sender identity or unassisted reply route.
 
-### T-TMUX
+### tmux
 
 The harness announces peer keystrokes as “The user sent a new message while you were
 working.” It supplies no sender or reply address and is indistinguishable from operator input.
 
-### T-QUEUE
+### codex-queue
 
 Claude is only the sender. Codex receives ordinary `UserInput` and loses Claude provenance.
 
@@ -166,19 +166,19 @@ T2.BC-busy, T4.1.B.
 - **Default posture**: permission-class comparison `(unverified — from docs)`.
 - **Isolated hold/refuse test**: not executed because changing user scope would affect
   unrelated sessions; use an isolated receiver with per-session settings if authorized.
-- **T-SOCK interaction**: C's explicit `accept` admitted an unnamed tokenless sender. Behavior
-  under `hold` and `refuse` is `UNKNOWN` empirically.
+- **claude-code-socket interaction**: C's explicit `accept` admitted an unnamed tokenless
+  sender. Behavior under `hold` and `refuse` is `UNKNOWN` empirically.
 
 Evidence: C Phase 1, standing T7.1 conflict, T4.2-tokenless-1.
 
 ## 7. Loop and abuse safety
 
 Native `SendMessage` documents rate limits, repeat suppression, a 50-message inbox, and burst
-refusal `(unverified — from docs)`. Raw T-SOCK accepted self-injection, so no self-loop guard
-exists at that layer. The skill must enforce message IDs, dedupe, hop caps, and halt phrases
+refusal `(unverified — from docs)`. The raw socket accepted self-injection, so no self-loop
+guard exists at that layer. The skill must enforce message IDs, dedupe, hop caps, and halt phrases
 across all transports rather than trusting native controls.
 
-## 8. Typing quirks (T-TMUX)
+## 8. Typing quirks (tmux)
 
 - **Submit key**: Enter.
 - **Idle precondition**: dismiss overlays such as `/status`, stage literal text, verify it,
@@ -187,7 +187,7 @@ across all transports rather than trusting native controls.
 - **Busy receiver**: Enter queues input; it appears at a later tool boundary without
   interrupting the active tool.
 - **Reserved prefixes**: `/`, `!`, `#`, and `@` are documented UI prefixes but were not
-  empirically varied. XSM begins with `[` and was safe.
+  empirically varied. The relay envelope begins with `[` and was safe.
 - **Literal newline, paste limits, and maximum safe size**: `UNKNOWN`.
 
 Evidence: T0.C, T2.BC-busy, T2.AC-busy-r1, T2.AC-idle-attempt1.
@@ -204,8 +204,8 @@ Evidence: T4.2 token-acquisition notes and T4.2-tokenless-1.
 ## 10. Gaps
 
 Native messaging has named, kernel-auditable provenance but is Claude-only and live-only.
-Raw T-SOCK bridges vendors and is process-auditable, but has no stable session identity,
-reply address, acknowledgment, or truthful vendor label. Foreign discovery exposes socket
+The raw socket bridges vendors and is process-auditable, but has no stable session
+identity, reply address, acknowledgment, or truthful vendor label. Foreign discovery exposes socket
 PIDs without the names native messaging requires.
 
 **One sentence for the maintainer:** audit transcript `origin` for peer class and verified

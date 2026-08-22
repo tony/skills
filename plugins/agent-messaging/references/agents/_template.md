@@ -27,7 +27,7 @@ skill's design.
 
 One block per transport this agent supports, sender side and receiver side.
 
-- **Name** (T-TMUX / T-QUEUE / T-CCMSG / T-SOCK / new).
+- **Name** (tmux / codex-queue / claude-code-message / claude-code-socket / new).
 - **Direction**: can this agent send on it, receive on it, or both.
 - **Invocation**: the exact command, tool call, or frame. Copy-pasteable.
 - **Preconditions**: daemon running, experimental capability, feature flag, socket bound,
@@ -68,7 +68,7 @@ The section the skill depends on most.
 - Rate limiting, dedupe, queue caps, and whether a two-agent ping-pong terminates on its own.
 - If nothing built in: say so, and state what the skill must add.
 
-## 8. Typing quirks (T-TMUX)
+## 8. Typing quirks (tmux)
 
 - **Submit key**, and how to send a literal newline without submitting.
 - **Reserved leading characters** that open a UI mode instead of entering text.
