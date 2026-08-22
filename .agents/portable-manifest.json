@@ -23,6 +23,18 @@
       "bytes": 15975
     },
     {
+      "name": "agent-messaging-session-relay",
+      "sources": [
+        "plugins/agent-messaging/skills/session-relay/SKILL.md"
+      ],
+      "bundled": {
+        "references/_template.md": "plugins/agent-messaging/references/agents/_template.md",
+        "references/claude-code.md": "plugins/agent-messaging/references/agents/claude-code.md",
+        "references/codex.md": "plugins/agent-messaging/references/agents/codex.md"
+      },
+      "bytes": 38726
+    },
+    {
       "name": "business-case-study-internal",
       "sources": [
         "plugins/business/skills/case-study-internal/SKILL.md"
@@ -1126,6 +1138,9 @@
     "plugins/ticket/references/providers/trello.md": 2,
     "plugins/ticket/references/resolve.md": 2,
     "plugins/action/references/ticket-detection.md": 1,
+    "plugins/agent-messaging/references/agents/_template.md": 1,
+    "plugins/agent-messaging/references/agents/claude-code.md": 1,
+    "plugins/agent-messaging/references/agents/codex.md": 1,
     "plugins/business/references/instruments.md": 1,
     "plugins/git-branch/references/rebuild-contract.md": 1,
     "plugins/git-branch/references/split-mechanics.md": 1,

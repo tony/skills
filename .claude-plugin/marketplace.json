@@ -385,6 +385,19 @@
       "category": "development",
       "homepage": "https://github.com/tony/skills/tree/main/plugins/self-improvement",
       "license": "MIT"
+    },
+    {
+      "name": "agent-messaging",
+      "description": "Message another running agent session — Claude Code or Codex — and verify who actually sent an incoming message.",
+      "version": "0.0.1",
+      "author": {
+        "name": "Tony Narlock",
+        "email": "tony@git-pull.com"
+      },
+      "source": "./plugins/agent-messaging",
+      "category": "development",
+      "homepage": "https://github.com/tony/skills/tree/main/plugins/agent-messaging",
+      "license": "MIT"
     }
   ]
 }
