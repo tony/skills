@@ -32,8 +32,10 @@ vendor you must read its registry directly.
   `/run/user/$(id -u)/cc-socks/<pid>.sock`. Resolve a name through that listing, never by
   scanning the socket directory — it publishes no names, most entries are **stale**, and one
   logical session can hold two sockets (parent and child).
-- **Codex sessions, from anything**: `~/.codex/session_index.jsonl` maps thread id to name;
-  `~/.codex/thread-writer-locks/<uuid>.lock` is flocked by its owner, so `fuser` gives liveness
+- **Codex sessions, from anything**: all Codex state lives under
+  `${CODEX_HOME:-$HOME/.codex}` — resolve it once and reuse it, because a non-default
+  `CODEX_HOME` makes live threads look missing. `session_index.jsonl` there maps thread id to
+  name; `thread-writer-locks/<uuid>.lock` is flocked by its owner, so `fuser` gives liveness
   and PID. No daemon required. `codex app-server` also answers `thread/list` over stdio.
 
 ## 3. Choose the transport
@@ -112,7 +114,7 @@ Sending is not arriving.
 - **To Codex**, read the queue back — it is externally observable:
 
 ```console
-$ sqlite3 ~/.codex/queue_1.sqlite "select queue_order, substr(payload_json,1,80) from queued_items where thread_id='<uuid>' order by queue_order;"
+$ sqlite3 "${CODEX_HOME:-$HOME/.codex}/queue_1.sqlite" "select queue_order, substr(payload_json,1,80) from queued_items where thread_id='<uuid>' order by queue_order;"
 ```
 
   A row still present means it has not been consumed. Codex dispatches **one message per idle

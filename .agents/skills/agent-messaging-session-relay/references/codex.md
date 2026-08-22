@@ -20,12 +20,14 @@ Evidence: T1.A, T1.B, T1.A-receipt.
 
 ## 2. Discovery
 
+Paths below are relative to `${CODEX_HOME:-$HOME/.codex}`.
+
 - **Enumerate peers**: no model-facing peer tool was found. A same-UID helper can join
-  `~/.codex/session_index.jsonl` with held files under
-  `~/.codex/thread-writer-locks/`; `fuser` supplies the owning process ID.
+  `session_index.jsonl` with held files under `thread-writer-locks/`; `fuser` supplies the
+  owning process ID.
 - **Scope**: threads sharing a `CODEX_HOME`.
 - **What a listing shows**: thread UUID and name from the index; liveness and process ID from
-  the writer lock. Queue depth is readable from `~/.codex/queue_1.sqlite`.
+  the writer lock. Queue depth is readable from `queue_1.sqlite`.
 - **Blind spots**: Claude sessions never appear. The `codex agents` interactive UI and
   app-server discovery were observed only from source and are not the adapter's portable
   discovery path.
