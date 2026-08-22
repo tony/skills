@@ -23,9 +23,10 @@ Evidence: Phase 1 in role C's findings and T3.2.
 - **What a listing shows**: name, short identifier, kind, status, and tmux coordinate when
   known.
 - **Foreign discovery**: `claude agents --json` lists live sessions with name, pid, and
-  status; read the inbox from `~/.claude/sessions/<pid>.json`, field `messagingSocketPath`,
-  rather than assuming a directory. The socket directory alone is not enough — it publishes
-  no names, seven of twelve observed sockets were stale, and one logical session owned two.
+  status; read the inbox from `${CLAUDE_CONFIG_DIR:-$HOME/.claude}/sessions/<pid>.json`,
+  field `messagingSocketPath`, rather than assuming a directory. The socket directory alone
+  is not enough — it publishes no names, seven of twelve observed sockets were stale, and one
+  logical session owned two.
 
 Evidence: T1.C-disc and T1.O-disc.
 

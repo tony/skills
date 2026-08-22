@@ -38,8 +38,9 @@ vendor you must read its registry directly.
 - **Claude sessions, from Claude**: `ListAgents`. Addresses are session names.
 - **Claude sessions, from anything else**: `claude agents --json` lists only live sessions,
   each with `name`, `pid`, and `status`. Read that session's inbox from
-  `~/.claude/sessions/<pid>.json`, field `messagingSocketPath` — never build the path
-  yourself, because its directory follows `XDG_RUNTIME_DIR` and differs across hosts. Resolve
+  `${CLAUDE_CONFIG_DIR:-$HOME/.claude}/sessions/<pid>.json`, field `messagingSocketPath` —
+  never build the path yourself, because its directory follows `XDG_RUNTIME_DIR` and differs
+  across hosts. Resolve
   a name through the listing, never by scanning the socket directory: it publishes no names,
   most entries are **stale**, and one logical session can hold two sockets (parent and
   child).
@@ -200,7 +201,7 @@ id was not unique; resolve that before trusting either.
 ```console
 $ jq -r 'select(.origin) | select((.message.content|tostring) | contains("id=<relay-id> ")) | \
     {origin, content: (.message.content|tostring)}' \
-    ~/.claude/projects/<project>/<session-id>.jsonl
+    "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/projects/<project>/<session-id>.jsonl"
 ```
 
 This is an **audit** check, not an in-the-moment defense: you see the wrapper during the turn
