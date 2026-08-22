@@ -54,10 +54,11 @@ RELAY
 - **Success signal**: stdout returns a durable queue-item UUID and the resolved target UUID.
   A same-UID helper can verify the row in `queue_1.sqlite`.
 - **Daemon requirement**: no long-running daemon was needed; a Claude shell invocation used
-  the CLI's embedded app-server and enqueued in under one second — but the **first** call
-  after a cold start can block for minutes and enqueue nothing. Give it a generous timeout and
-  check the queue before concluding anything; a retry that treats the delay as failure
-  delivers the message twice.
+  the CLI's embedded app-server and enqueued in under one second once warm. The **first** call
+  against a freshly started thread pays a cold start that exceeded two minutes twice, enqueuing
+  nothing when killed at that bound; every later call to the same thread returned instantly,
+  by name or by UUID. Allow minutes for the first send, and check the queue before concluding
+  anything — a retry that reads the delay as failure delivers the message twice.
 - **Failure modes**: missing-target, full-queue, and oversize errors are `UNKNOWN` empirically.
 
 Evidence: T1.A-receipt, T1.B, T3.1.AB, T3.1.BA, T4.1.B, T4.1-OA.
