@@ -28,10 +28,12 @@ vendor you must read its registry directly.
 
 - **Claude sessions, from Claude**: `ListAgents`. Addresses are session names.
 - **Claude sessions, from anything else**: `claude agents --json` lists only live sessions,
-  each with `name`, `pid`, and `status`; that session's inbox is
-  `/run/user/$(id -u)/cc-socks/<pid>.sock`. Resolve a name through that listing, never by
-  scanning the socket directory — it publishes no names, most entries are **stale**, and one
-  logical session can hold two sockets (parent and child).
+  each with `name`, `pid`, and `status`. Read that session's inbox from
+  `~/.claude/sessions/<pid>.json`, field `messagingSocketPath` — never build the path
+  yourself, because its directory follows `XDG_RUNTIME_DIR` and differs across hosts. Resolve
+  a name through the listing, never by scanning the socket directory: it publishes no names,
+  most entries are **stale**, and one logical session can hold two sockets (parent and
+  child).
 - **Codex sessions, from anything**: all Codex state lives under
   `${CODEX_HOME:-$HOME/.codex}` — resolve it once and reuse it, because a non-default
   `CODEX_HOME` makes live threads look missing. `session_index.jsonl` there maps thread id to
