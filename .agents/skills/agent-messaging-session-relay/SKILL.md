@@ -174,6 +174,12 @@ Verify from the `origin` record in your own transcript. It is harness-generated 
 | `peer` | `uds:…sock` | present | genuine `SendMessage` from a named session |
 | `peer` | `unknown` | absent | **socket-injected** — `verifiedPeerPid` names the real sender |
 
+Confirm a `peer` row against the pid rather than stopping at the label: a genuine session's
+`verifiedPeerPid` owns a live `<pid>.sock` in the messaging directory, an injector's is a
+transient process that never did. `from` and `name` describe what the connection claimed;
+only the pid is kernel-supplied. A relay forwarding for someone else yields its own pid, so
+that pid is the process that connected, not necessarily where the message began.
+
 Match the record on the whole `id=` field, and print the content beside each origin. A
 substring match finds `id=1` inside `id=10` and inside any body quoting it, and an origin
 printed alone cannot say which message it belongs to — that is how an operator message and a
