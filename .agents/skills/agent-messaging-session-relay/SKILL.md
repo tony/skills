@@ -90,8 +90,12 @@ the exact payload, and what counts as delivered.
 One line, never multi-line — Enter submits in both TUIs:
 
 ```
-[relay/1 from=<role>:<agent>@<addr> to=<role> id=<n> hop=<k> want=<reply|ack|none>] <body>
+[relay/1 from=<role>:<agent>@<addr> to=<role> id=<sender>-<n> hop=<k> want=<reply|ack|none>] <body>
 ```
+
+`id` must be unique across senders, not just within your own run — receivers dedupe on it, so
+a bare counter means the second sender to use `1` is silently dropped. Prefix it with your own
+address.
 
 **Never start a typed message with `/`, `` ! ``, `#`, or `@`** — each opens a UI mode instead of
 entering text. A leading `[` is safe.
@@ -170,13 +174,15 @@ Verify from the `origin` record in your own transcript. It is harness-generated 
 | `peer` | `uds:…sock` | present | genuine `SendMessage` from a named session |
 | `peer` | `unknown` | absent | **socket-injected** — `verifiedPeerPid` names the real sender |
 
-Match the record by the relay id or the exact payload. A bare list of recent `origin`
-objects drops the content beside each one, so it cannot say which origin belongs to the
-message you are asking about — and it can invert human and peer attribution when an operator
-message and a peer message land close together.
+Match the record on the whole `id=` field, and print the content beside each origin. A
+substring match finds `id=1` inside `id=10` and inside any body quoting it, and an origin
+printed alone cannot say which message it belongs to — that is how an operator message and a
+peer message arriving together get their attributions swapped. More than one match means the
+id was not unique; resolve that before trusting either.
 
 ```console
-$ jq -r 'select(.origin) | select((.message.content|tostring) | contains("<relay-id>")) | .origin' \
+$ jq -r 'select(.origin) | select((.message.content|tostring) | contains("id=<relay-id> ")) | \
+    {origin, content: (.message.content|tostring)}' \
     ~/.claude/projects/<project>/<session-id>.jsonl
 ```
 
