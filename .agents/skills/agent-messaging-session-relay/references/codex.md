@@ -55,10 +55,12 @@ RELAY
   A same-UID helper can verify the row in `queue_1.sqlite`.
 - **Daemon requirement**: no long-running daemon was needed; a Claude shell invocation used
   the CLI's embedded app-server and enqueued in under one second once warm. The **first** call
-  against a freshly started thread pays a cold start that exceeded two minutes twice, enqueuing
-  nothing when killed at that bound; every later call to the same thread returned instantly,
-  by name or by UUID. Allow minutes for the first send, and check the queue before concluding
-  anything — a retry that reads the delay as failure delivers the message twice.
+  against a freshly started thread can block for minutes and enqueue nothing — measured at over
+  two minutes twice and over four minutes once, the last outliving its own `timeout` and never
+  completing even though the target was discoverable and its writer lock live. Do not retry: a
+  second call double-delivers if the first was merely slow. Poll `queued_items` for the item
+  id instead, and if nothing lands, report the transport unreachable rather than falling back
+  to a live-only one.
 - **Failure modes**: missing-target, full-queue, and oversize errors are `UNKNOWN` empirically.
 
 Evidence: T1.A-receipt, T1.B, T3.1.AB, T3.1.BA, T4.1.B, T4.1-OA.
