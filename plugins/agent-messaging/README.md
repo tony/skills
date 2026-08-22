@@ -6,9 +6,11 @@ this machine, and verify who actually sent an incoming message.
 ## Requirements
 
 Both sessions run on the same machine under the same user; every route is
-local, and the socket route trusts that boundary. The `codex-queue` route
-needs Codex 0.149 or newer, the release that added `codex queue`; the
-trial ran on 0.149.0.
+local, and the socket route trusts that boundary. Reaching a Claude session
+needs the `claude` CLI on PATH, and reaching a Codex thread needs it to
+share your `CODEX_HOME` — a thread under a different one is invisible, not
+merely unreachable. The `codex-queue` route needs Codex 0.149 or newer, the
+release that added `codex queue`; the trial ran on 0.149.0.
 
 ## Installation
 
