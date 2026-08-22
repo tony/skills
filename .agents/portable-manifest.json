@@ -32,7 +32,7 @@
         "references/claude-code.md": "plugins/agent-messaging/references/agents/claude-code.md",
         "references/codex.md": "plugins/agent-messaging/references/agents/codex.md"
       },
-      "bytes": 34147
+      "bytes": 34286
     },
     {
       "name": "business-case-study-internal",
