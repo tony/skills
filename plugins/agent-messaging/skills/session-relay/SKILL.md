@@ -147,9 +147,12 @@ $ sqlite3 "file:${CODEX_HOME:-$HOME/.codex}/queue_1.sqlite?mode=ro" \
   remaining ones are not renumbered. Codex has **two independent inboxes**, and the durable
   queue wins the next turn ahead of a process-local tmux follow-up.
 
-- **To Claude Code**, there is no receipt. Ask for an ack, or subscribe with `SendMessage`'s
-  `notify_when_idle: true` (no body) — it reports "idle now, and when that started", not the
-  next transition, and its summary can be stale.
+- **To Claude Code**, there is no receipt. Require an acknowledgment carrying your relay id,
+  or find the payload in the receiver's transcript. `SendMessage`'s `notify_when_idle: true`
+  (no body) is not a substitute: it is tied to the session, not to your message, and fires
+  just the same if the payload was malformed, refused, or dropped. Use it for liveness and
+  timing only — and note it reports "idle now, and when that started", not the next
+  transition, so its summary can be stale.
 
 ## 8. Verify who sent an incoming message
 
