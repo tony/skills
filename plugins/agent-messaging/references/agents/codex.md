@@ -13,8 +13,8 @@ which introduced `codex queue`.
   displays it.
 - **Stability**: stable across the observed turn sequence. Resume and restart stability are
   `UNKNOWN` because neither was exercised.
-- **Human-readable name**: `/rename xsm-a` and `/rename xsm-b` made both names immediately
-  resolvable by `codex queue --thread <name>`. Collision behavior is `UNKNOWN`.
+- **Human-readable name**: `/rename <name>` made the thread immediately resolvable by
+  `codex queue --thread <name>`, on both trial threads. Collision behavior is `UNKNOWN`.
 
 Evidence: T1.A, T1.B, T1.A-receipt.
 
