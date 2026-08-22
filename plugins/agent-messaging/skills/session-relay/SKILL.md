@@ -183,15 +183,10 @@ transient process that never did. `from` and `name` describe what the connection
 only the pid is kernel-supplied. A relay forwarding for someone else yields its own pid, so
 that pid is the process that connected, not necessarily where the message began.
 
-**A message delivered while you were busy has no `origin` record.** It is stored as a
-`queue-operation` pair carrying only the rendered wrapper's attributes, so the kernel-supplied
-pid is unavailable and the check below finds nothing for it. Do not read that as "no such
-message" — match on the relay id first, and only then decide which check applies. For a queued
-arrival the strongest available evidence is the socket path in the wrapper's `from`: resolve it
-to a live `<pid>.sock` and confirm that pid is a session in `claude agents --json`. That is
-weaker than `verifiedPeerPid`, which cannot be forged, and the notes are explicit that a
-`queue-operation` is a delivery-state artifact rather than provenance — treat it as a
-best-effort identification, not proof.
+**A message delivered while you were busy stores its `origin` one level down.** It arrives as
+a `queue-operation` pair plus an `attachment`, and the record lives at `.attachment.origin`
+rather than top level. A query that reads only `.origin` returns nothing and looks like the
+message never arrived. Search both paths.
 
 Match the record on the whole `id=` field, and print the content beside each origin. A
 substring match finds `id=1` inside `id=10` and inside any body quoting it, and an origin
@@ -200,8 +195,8 @@ peer message arriving together get their attributions swapped. More than one mat
 id was not unique; resolve that before trusting either.
 
 ```console
-$ jq -r 'select(.origin) | select((.message.content|tostring) | contains("id=<relay-id> ")) | \
-    {origin, content: (.message.content|tostring)}' \
+$ jq -c 'select(.origin or (.attachment.origin?)) | \
+    select(tostring | contains("id=<relay-id> ")) | (.origin // .attachment.origin)' \
     "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/projects/<project>/<session-id>.jsonl"
 ```
 
