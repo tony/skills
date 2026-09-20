@@ -117,7 +117,7 @@ console = rich.console.Console()
 
 
 @app.callback()
-def _main(ctx: typer.Context) -> None:  # pyright: ignore[reportUnusedFunction]
+def _main(ctx: typer.Context) -> None:
     """Marketplace management CLI for tony/skills."""
     if ctx.invoked_subcommand is None:
         console.print(ctx.get_help())
