@@ -233,7 +233,7 @@
     {
       "name": "business",
       "description": "Measure and report the business value of AI workflows with provenance-tagged data \u2014 metrics in engineer-hours and cycle time, never currency.",
-      "version": "0.0.1",
+      "version": "0.0.2",
       "author": {
         "name": "Tony Narlock",
         "email": "tony@git-pull.com"

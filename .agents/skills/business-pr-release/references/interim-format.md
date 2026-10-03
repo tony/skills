@@ -6,12 +6,16 @@ this file.
 
 ## Where runs live
 
-Default root: `~/Documents/<YYYY-MM-DD>/business/`.
+`<root>/<YYYY-MM-DD>/business/<workflow>/`: the research plugin's
+topic layout, with namespace `business` and the measured skill or
+workflow as the topic (`lean-tighten`, `pr-review`).
 
-On WSL, prefer the Windows Documents folder: detect WSL by
-`/proc/version` containing `microsoft`, and when an existing
-`/mnt/c/Users/<user>` directory is present, use
-`/mnt/c/Users/<user>/Documents/<YYYY-MM-DD>/business/`.
+Open the run with the `research:foray` skill, passing
+`--namespace business` and the workflow as the topic. It picks the
+root (Documents; on WSL the Windows user's Documents), writes the
+run's `index.md`, and lists earlier runs of the same workflow.
+Without the research plugin, use `~/Documents`, or on WSL
+`/mnt/c/Users/<user>/Documents`.
 
 These roots are defaults, not decisions — always ask the user where
 to write before creating a run. Running non-interactively: use the
@@ -21,6 +25,7 @@ default root and record that decision in the run README.
 
 ```
 <run>/
+├── index.md
 ├── README.md
 ├── sources.md
 ├── assumptions.yaml
@@ -29,6 +34,12 @@ default root and record that decision in the run README.
 ├── findings.md
 └── reports/
 ```
+
+### index.md
+
+Written when the run is opened: the topic's frontmatter (namespace,
+workflow, date) that lets `research:foray` find this run and its
+predecessors. The run's scope and window live in `README.md`.
 
 ### README.md
 
@@ -95,11 +106,20 @@ absent creates it rather than failing.
 
 ## Locating an existing run
 
-Precedence: an explicit path argument, else the newest `*/business/`
-directory under the Documents roots above. Confirm the chosen run
-with the user before rendering anything from it. Running
-non-interactively: proceed with the newest run and record the choice
-in the output's Run section instead of asking.
+Precedence: an explicit path argument, else the newest run of the
+named workflow, else the newest business run. List runs newest
+first:
+
+```console
+$ sh -c 'ls -dt "$HOME"/Documents/*/business/*/ /mnt/c/Users/*/Documents/*/business/*/ 2>/dev/null' | head -5
+```
+
+Runs written before workflow topics sit directly in
+`<date>/business/`; pass their path explicitly.
+
+Confirm the chosen run with the user before rendering anything from
+it. Running non-interactively: proceed with the newest run and record
+the choice in the output's Run section instead of asking.
 
 ## Completeness gate
 

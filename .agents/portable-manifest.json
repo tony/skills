@@ -44,7 +44,7 @@
         "references/interim-format.md": "plugins/business/references/interim-format.md",
         "references/provenance.md": "plugins/business/references/provenance.md"
       },
-      "bytes": 14528
+      "bytes": 15040
     },
     {
       "name": "business-case-study-public",
@@ -57,7 +57,7 @@
         "references/interim-format.md": "plugins/business/references/interim-format.md",
         "references/provenance.md": "plugins/business/references/provenance.md"
       },
-      "bytes": 18175
+      "bytes": 18687
     },
     {
       "name": "business-pr-release",
@@ -69,7 +69,7 @@
         "references/interim-format.md": "plugins/business/references/interim-format.md",
         "references/provenance.md": "plugins/business/references/provenance.md"
       },
-      "bytes": 14810
+      "bytes": 15322
     },
     {
       "name": "business-report-leadership",
@@ -83,7 +83,7 @@
         "references/measurement.md": "plugins/business/references/measurement.md",
         "references/provenance.md": "plugins/business/references/provenance.md"
       },
-      "bytes": 22039
+      "bytes": 22551
     },
     {
       "name": "business-report-org-wide",
@@ -96,7 +96,7 @@
         "references/measurement.md": "plugins/business/references/measurement.md",
         "references/provenance.md": "plugins/business/references/provenance.md"
       },
-      "bytes": 19006
+      "bytes": 19518
     },
     {
       "name": "business-research",
@@ -109,7 +109,7 @@
         "references/measurement.md": "plugins/business/references/measurement.md",
         "references/provenance.md": "plugins/business/references/provenance.md"
       },
-      "bytes": 21137
+      "bytes": 21651
     },
     {
       "name": "changelog",
