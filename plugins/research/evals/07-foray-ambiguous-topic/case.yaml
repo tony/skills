@@ -1,0 +1,33 @@
+schema_version: "1.0"
+name: 07-foray-ambiguous-topic
+description: >-
+  A topic the user names loosely matches two existing ones. Without a way to
+  ask, the run stops and lists both instead of starting a third.
+tags: [fixture]
+
+context:
+  scaffold_script: scaffold.sh
+
+execution:
+  prompt: >-
+    /research:foray continue my research on sqlite wal checkpoints. Use
+    --root out.
+  max_turns: 25
+  timeout_seconds: 600
+  allowed_tools: [Bash, Read, Write, Edit, Glob, Grep, Skill]
+
+runs: 3
+
+graders:
+  - name: starts-no-new-topic
+    type: file_exists
+    path: out/*/research/sqlite-wal-checkpoints/index.md
+    exists: false
+
+  - name: lists-both-candidates
+    type: llm
+    criteria: >-
+      The reply names both existing topics, sqlite-wal and sqlite-wal-mode, as
+      candidates and asks which one the user means, or stops pending that
+      choice. It does not claim to have started or continued a topic named
+      sqlite-wal-checkpoints.

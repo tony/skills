@@ -1,0 +1,45 @@
+schema_version: "1.0"
+name: 08-report-public-privacy
+description: >-
+  A public-audience report keeps the answer first and leaves out the contact
+  email, home path, and redacted name found in the source notes.
+tags: [fixture]
+
+context:
+  scaffold_script: scaffold.sh
+
+execution:
+  prompt: >-
+    /research:report write the report for topic vendor-x. Use --root out and
+    --date 2026-01-15.
+  max_turns: 30
+  timeout_seconds: 900
+  allowed_tools: [Bash, Read, Write, Edit, Glob, Grep, Skill]
+
+runs: 3
+
+graders:
+  - name: report-written
+    type: file_exists
+    path: out/2026-01-15/research/vendor-x/report.md
+
+  - name: no-email-path-or-name
+    type: regex
+    target:
+      source: file
+      path: out/2026-01-15/research/vendor-x/report.md
+    match: not_contains
+    pattern: 'jane\.doe@|/home/jdoe|Jane Doe'
+
+  - name: summary-before-sources
+    type: regex
+    target:
+      source: file
+      path: out/2026-01-15/research/vendor-x/report.md
+    pattern: '^## Summary[\s\S]*^## Sources'
+    flags: m
+
+  - name: scans-before-shipping
+    type: tool_used
+    tool: Bash
+    input_match: '\s(scan|lint-report)\s'
