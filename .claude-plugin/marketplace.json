@@ -102,8 +102,8 @@
     },
     {
       "name": "research",
-      "description": "Study dependencies locally. Clones upstream repos and creates version-pinned worktrees matching your project's exact versions.",
-      "version": "0.0.1",
+      "description": "Research topics and assess decisions with pinned, captured sources in dated folders. Resume, re-verify, report. Clones dependencies at pinned versions.",
+      "version": "0.1.0",
       "author": {
         "name": "Tony Narlock",
         "email": "tony@git-pull.com"
