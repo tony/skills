@@ -29,13 +29,13 @@ jobs:
         run: uv sync --group dev
 
       - name: Ruff check
-        run: uv run ruff check scripts/
+        run: uv run ruff check scripts/ plugins/research/scripts/
 
       - name: Ruff format
-        run: uv run ruff format --check scripts/
+        run: uv run ruff format --check scripts/ plugins/research/scripts/
 
       - name: Type check
-        run: uv run basedpyright scripts/
+        run: uv run basedpyright scripts/ plugins/research/scripts/
 
       - name: Tests
         run: uv run pytest -q

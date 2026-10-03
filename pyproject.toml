@@ -40,4 +40,4 @@ typeCheckingMode = "all"
 
 [tool.pytest.ini_options]
 addopts = "--doctest-modules"
-testpaths = ["scripts", "plugins/scholar/references"]
+testpaths = ["scripts", "plugins/scholar/references", "plugins/research/scripts"]
