@@ -37,6 +37,7 @@ that has nothing to do with the manifest.
 
 from __future__ import annotations
 
+import concurrent.futures
 import json
 import os
 import re
@@ -889,13 +890,16 @@ def _run_claude_validate(path: Path) -> tuple[list[str], list[str]]:
     """
     if shutil.which("claude") is None:
         return [], []
-    result = subprocess.run(  # noqa: S603
-        ["claude", "plugin", "validate", str(path)],  # noqa: S607
-        capture_output=True,
-        text=True,
-        timeout=30,
-        check=False,
-    )
+    try:
+        result = subprocess.run(  # noqa: S603
+            ["claude", "plugin", "validate", str(path)],  # noqa: S607
+            capture_output=True,
+            text=True,
+            timeout=30,
+            check=False,
+        )
+    except subprocess.TimeoutExpired:
+        return [f"claude validate: {path.name} timed out after 30s"], []
     marker = "\u276f"
     findings = [
         line.strip().removeprefix(marker).strip()
@@ -924,10 +928,11 @@ def _lint_claude_validate() -> tuple[list[str], list[str]]:
     console.print("\n[bold]Running claude plugin validate...[/bold]")
     all_errors: list[str] = []
     all_warnings: list[str] = []
-    for path in [REPO_ROOT, *discover_plugins()]:
-        ve, vw = _run_claude_validate(path)
-        all_errors.extend(ve)
-        all_warnings.extend(vw)
+    paths = [REPO_ROOT, *discover_plugins()]
+    with concurrent.futures.ThreadPoolExecutor(max_workers=min(8, os.cpu_count() or 1)) as pool:
+        for ve, vw in pool.map(_run_claude_validate, paths):
+            all_errors.extend(ve)
+            all_warnings.extend(vw)
     if not all_errors:
         console.print("  [green]OK[/green]")
     return all_errors, all_warnings
