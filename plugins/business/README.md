@@ -42,7 +42,7 @@ same names without it.*
 
 ### `/business:research` (skill)
 Collects cycle times, review latency, and telemetry into a run directory
-(`~/Documents/<date>/business/`). Writes a tagged interim package.
+(`~/Documents/<date>/business/<workflow>/`). Writes a tagged interim package.
 Unavailabilities are recorded as unknown.
 
 ### Report Commands (Bound to Disclosure Tiers)

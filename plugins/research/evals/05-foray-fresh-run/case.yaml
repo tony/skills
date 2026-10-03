@@ -1,0 +1,53 @@
+schema_version: "1.0"
+name: 05-foray-fresh-run
+description: >-
+  A fresh topic lands in a dated run with a recorded, hashed source and a
+  report that leads with its summary and passes its own checks.
+tags: [fixture]
+
+context:
+  scaffold_script: scaffold.sh
+
+execution:
+  prompt: >-
+    /research:foray research when SQLite WAL readers and writers block each
+    other. Use topic sqlite-wal, --root out, and --date 2026-01-15. There is no
+    network access here: record https://sqlite.org/wal.html at ref 3.46.0 from
+    the capture in caps/wal.md, then write the report.
+  max_turns: 40
+  timeout_seconds: 900
+  allowed_tools: [Bash, Read, Write, Edit, Glob, Grep, Skill]
+
+runs: 3
+
+graders:
+  - name: opens-the-dated-run
+    type: file_exists
+    path: out/2026-01-15/research/sqlite-wal/index.md
+
+  - name: records-a-hashed-source
+    type: regex
+    target:
+      source: file
+      path: out/2026-01-15/research/sqlite-wal/references/sources.jsonl
+    pattern: '"sha256": "[0-9a-f]{64}"'
+
+  - name: report-leads-with-summary
+    type: regex
+    target:
+      source: file
+      path: out/2026-01-15/research/sqlite-wal/report.md
+    pattern: '^## Summary[\s\S]*^## Findings[\s\S]*^## Sources'
+    flags: m
+
+  - name: report-cites-the-source
+    type: regex
+    target:
+      source: file
+      path: out/2026-01-15/research/sqlite-wal/report.md
+    pattern: '\[S1\]'
+
+  - name: runs-the-ship-checks
+    type: tool_used
+    tool: Bash
+    input_match: '\blint-report\b'

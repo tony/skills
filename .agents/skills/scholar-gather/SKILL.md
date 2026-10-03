@@ -27,8 +27,10 @@ GATHER NEVER WRITES INTO THE CORPUS IT READS
 ```
 
 Studying a project must not dirty its checkout. Output lands under `--out`,
-defaulting to `notes/ontology/<subject>/` in the current repository. The corpus
-is recorded by URL and ref, not by local path.
+defaulting to `notes/ontology/<subject>/` in the current repository. For a
+study kept outside any repository, open a dated run with the `research:foray`
+skill (`--namespace scholar`, the subject as topic) and pass its directory as
+`--out`. The corpus is recorded by URL and ref, not by local path.
 
 ## Context
 

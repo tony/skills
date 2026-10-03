@@ -42,12 +42,6 @@ Today — run this command and read the output:
 date +%F
 ```
 
-Kernel (WSL detection) — run this command and read the output:
-
-```bash
-grep -qi microsoft /proc/version 2>/dev/null && echo "WSL" || echo "(not WSL)"
-```
-
 Instruments on PATH — run this command and read the output:
 
 ```bash
@@ -69,9 +63,8 @@ measured, over what pinned date range, with which instruments, to
 which output directory. Enter plan mode if the host supports it —
 Claude Code `EnterPlanMode`; Cursor, Codex, or Gemini via `/plan` or
 Shift+Tab; otherwise present the plan as plain text and pause. Ask
-where to write the run, defaulting per the location rules in
-`interim-format.md` (Documents root; on WSL prefer the Windows
-Documents folder when detected). Wait for confirmation.
+where to write the run, defaulting per `interim-format.md` § Where
+runs live, and open it there. Wait for confirmation.
 
 ### 2. Instrument discovery — never assumption
 

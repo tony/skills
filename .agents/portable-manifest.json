@@ -44,7 +44,7 @@
         "references/interim-format.md": "plugins/business/references/interim-format.md",
         "references/provenance.md": "plugins/business/references/provenance.md"
       },
-      "bytes": 14528
+      "bytes": 15040
     },
     {
       "name": "business-case-study-public",
@@ -57,7 +57,7 @@
         "references/interim-format.md": "plugins/business/references/interim-format.md",
         "references/provenance.md": "plugins/business/references/provenance.md"
       },
-      "bytes": 18175
+      "bytes": 18687
     },
     {
       "name": "business-pr-release",
@@ -69,7 +69,7 @@
         "references/interim-format.md": "plugins/business/references/interim-format.md",
         "references/provenance.md": "plugins/business/references/provenance.md"
       },
-      "bytes": 14810
+      "bytes": 15322
     },
     {
       "name": "business-report-leadership",
@@ -83,7 +83,7 @@
         "references/measurement.md": "plugins/business/references/measurement.md",
         "references/provenance.md": "plugins/business/references/provenance.md"
       },
-      "bytes": 22039
+      "bytes": 22551
     },
     {
       "name": "business-report-org-wide",
@@ -96,7 +96,7 @@
         "references/measurement.md": "plugins/business/references/measurement.md",
         "references/provenance.md": "plugins/business/references/provenance.md"
       },
-      "bytes": 19006
+      "bytes": 19518
     },
     {
       "name": "business-research",
@@ -109,7 +109,7 @@
         "references/measurement.md": "plugins/business/references/measurement.md",
         "references/provenance.md": "plugins/business/references/provenance.md"
       },
-      "bytes": 21137
+      "bytes": 21651
     },
     {
       "name": "changelog",
@@ -609,12 +609,69 @@
       "bytes": 8170
     },
     {
+      "name": "research-assess",
+      "sources": [
+        "plugins/research/skills/assess/SKILL.md"
+      ],
+      "bundled": {},
+      "bytes": 992
+    },
+    {
+      "name": "research-continue",
+      "sources": [
+        "plugins/research/skills/continue/SKILL.md"
+      ],
+      "bundled": {},
+      "bytes": 1015
+    },
+    {
+      "name": "research-foray",
+      "sources": [
+        "plugins/research/skills/foray/SKILL.md"
+      ],
+      "bundled": {
+        "references/assessment.md": "plugins/research/references/assessment.md",
+        "references/continue.md": "plugins/research/references/continue.md",
+        "references/layout.md": "plugins/research/references/layout.md",
+        "references/report.md": "plugins/research/references/report.md",
+        "references/start.md": "plugins/research/references/start.md",
+        "references/status.md": "plugins/research/references/status.md",
+        "references/topic.py": "plugins/research/scripts/topic.py",
+        "references/verify.md": "plugins/research/references/verify.md"
+      },
+      "bytes": 131813
+    },
+    {
+      "name": "research-report",
+      "sources": [
+        "plugins/research/skills/report/SKILL.md"
+      ],
+      "bundled": {},
+      "bytes": 891
+    },
+    {
+      "name": "research-status",
+      "sources": [
+        "plugins/research/skills/status/SKILL.md"
+      ],
+      "bundled": {},
+      "bytes": 758
+    },
+    {
       "name": "research-study-deps",
       "sources": [
         "plugins/research/skills/deps/SKILL.md"
       ],
       "bundled": {},
       "bytes": 8149
+    },
+    {
+      "name": "research-verify",
+      "sources": [
+        "plugins/research/skills/verify/SKILL.md"
+      ],
+      "bundled": {},
+      "bytes": 931
     },
     {
       "name": "respond-action",
@@ -734,7 +791,7 @@
         "references/citation.md": "plugins/scholar/references/citation.md",
         "references/stage-gates.md": "plugins/scholar/references/stage-gates.md"
       },
-      "bytes": 8790
+      "bytes": 8961
     },
     {
       "name": "scholar-ontology",
@@ -1279,6 +1336,14 @@
     "plugins/pr/references/quality-gates.md": 1,
     "plugins/pr/references/slop-taxonomy.md": 1,
     "plugins/pytest-optimizer/templates/conftest_cache_snippet.py": 1,
+    "plugins/research/references/assessment.md": 1,
+    "plugins/research/references/continue.md": 1,
+    "plugins/research/references/layout.md": 1,
+    "plugins/research/references/report.md": 1,
+    "plugins/research/references/start.md": 1,
+    "plugins/research/references/status.md": 1,
+    "plugins/research/references/verify.md": 1,
+    "plugins/research/scripts/topic.py": 1,
     "plugins/respond/references/bloat-discipline.md": 1,
     "plugins/respond/references/review-agents.md": 1,
     "plugins/ruff/references/default-rule-set.md": 1,
@@ -1300,6 +1365,9 @@
     "plugins/tailwind/skills/spacing-audit/references/patterns.md": 1
   },
   "external_paths": {
+    "../etc": [
+      "research-foray"
+    ],
     "../myproject-weave-agy": [
       "weave-architecture",
       "weave-execute",

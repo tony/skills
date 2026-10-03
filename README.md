@@ -21,7 +21,7 @@ readable by agents scanning `.agents/skills/`.
 | [tdd](plugins/tdd/) | Testing | TDD bug-fix workflow: reproduce bugs as failing tests, determine root cause, fix, and verify. |
 | [model-cli](plugins/model-cli/) | Development | Run prompts through individual AI CLIs — Antigravity/agy (Gemini), codex/GPT, and cursor/agent with fallback support. |
 | [pr](plugins/pr/) | Development | Manage gold-standard PR descriptions. Detects AI slop and verbose commits, resolving them via fixup commits and autosquash. |
-| [research](plugins/research/) | Learning | Study dependencies locally. Clones upstream repos and creates version-pinned worktrees matching your project's exact versions. |
+| [research](plugins/research/) | Learning | Research topics and assess decisions with pinned, captured sources in dated folders. Resume, re-verify, report. Clones dependencies at pinned versions. |
 | [slop](plugins/slop/) | Development | Scan tracked files for AI slop and verbose noise, resolving each finding with atomic, verified commits. |
 | [tailwind](plugins/tailwind/) | Design | Detect and fix inconsistent spacing, margin/gap mixing, and padding asymmetry in Tailwind CSS layouts. |
 | [pytest-optimizer](plugins/pytest-optimizer/) | Testing | Profile and optimize pytest suites. Ranks and applies safe speedups as verified, independent commits. |

@@ -27,11 +27,6 @@ references until the gate passes; a refused render never loads them:
 
 User arguments: $ARGUMENTS
 
-## Context
-
-Recent runs:
-`!sh -c 'ls -dt "$HOME"/Documents/*/business/ /mnt/c/Users/*/Documents/*/business/ 2>/dev/null' | head -5 | grep . || echo "(no runs found)"`
-
 ## Procedure
 
 ### 1. Locate the run
