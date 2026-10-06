@@ -1,6 +1,6 @@
 # Pin sites and resolver gating
 
-Two things go wrong when raising a linter's version floor across repositories: you miss a place the version is written, so CI keeps running the old one; or the resolver refuses to install the new one and you spend the debugging budget on the wrong layer.
+Raising a linter's version floor fails two ways: a pin site is missed, so CI keeps running the old version, or the resolver refuses the new release and the diagnosis targets the wrong layer.
 
 ## Every place a linter version can be pinned
 
@@ -20,7 +20,7 @@ A repository frequently pins the same tool in more than one file, and they drift
 
 **Editor and container configuration.** `.vscode/`, `.devcontainer/`, and similar. Not load-bearing for CI, but a stale pin here makes a contributor's editor disagree with the build.
 
-Raise every site in the same commit. A partial bump is worse than none: it produces a repo where two tools disagree about what "clean" means, and the disagreement surfaces as a mystery CI failure on somebody else's pull request.
+Raise every site in the same commit. A partial bump leaves two tools disagreeing about what "clean" means.
 
 ## Prefer a floor to an exact pin
 
@@ -32,7 +32,11 @@ Pre-commit is the exception — its `rev:` is a single tag by design, so it take
 
 A newly published version can be invisible to the resolver for reasons that have nothing to do with your constraint. Diagnose which one before working around it:
 
-**Publication cooldown.** Some resolvers support a supply-chain setting that hides releases younger than some threshold, on the theory that most malicious uploads are detected and yanked within hours. If a global or per-user configuration sets such a cooldown, a release published inside the window simply does not exist as far as resolution is concerned. This is the most common cause and the most confusing, because the package index shows the version plainly while the resolver insists there is no such release.
+**Publication cooldown.** Some resolvers hide releases younger than a configured threshold. A release inside the window does not exist as far as resolution is concerned, though the package index shows it. This is the most common cause. For uv, look for `exclude-newer` in the user and project config:
+
+```console
+$ cat "${UV_CONFIG_FILE:-$HOME/.config/uv/uv.toml}" uv.toml | grep -i exclude-newer
+```
 
 **Index lag.** A private mirror or proxy has not synchronized yet. Nothing to work around; wait or repoint the index.
 
@@ -46,9 +50,7 @@ If the blocker is a cooldown and the work genuinely cannot wait for it to lapse,
 
 - Exempt only the one package, never the cooldown globally. A resolver that supports cooldowns generally supports a per-package override.
 - Prefer an override form that does not bake a date into the repository. A date ages into the lockfile and quietly stops meaning anything; a boolean exemption does not.
-- Mark it in the file itself as temporary, with the reason and the condition for removing it. The next reader has no way to distinguish a deliberate permanent exemption from a workaround somebody forgot.
+- Mark it in the file as temporary, with the reason and the removal condition.
 - Land it as its own commit, first in the branch, so reverting it is a single revert rather than a surgical edit.
-- State the removal as a pre-merge requirement in the pull request body. A permanent exemption silently opts that package out of the supply-chain guard forever, which is a real security regression traded for a few hours of convenience.
-- Compute when the cooldown lapses — publication timestamp plus the configured window — and say so, so the reviewer knows how long the workaround needs to live.
-
-The version floor, not the exemption, is what holds the upgrade. Once the cooldown lapses the exemption is pure liability, which is why it is worth the separate commit.
+- State the removal as a pre-merge requirement in the pull request body. A permanent exemption opts the package out of the supply-chain guard for good.
+- Compute when the cooldown lapses (publication timestamp plus the configured window) and say so.

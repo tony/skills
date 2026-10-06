@@ -1,8 +1,17 @@
 # Release conventions reference
 
-Shared discovery procedures and templates for this skill and
-the `release-bump` skill. Everything here is discovered from the target repo at
-runtime — nothing is assumed about language or ecosystem.
+Discovery procedures and templates for this skill and
+the `release-bump` skill. Discover everything from the target repo at runtime;
+assume nothing about language or ecosystem. The push and tag safety
+contract lives in this skill.
+
+## Contents
+
+- Version-bearing files
+- Version schemes
+- CHANGES
+- MIGRATION
+- Release commit
 
 ## Version-bearing files
 
@@ -30,8 +39,7 @@ CLI `--version` fallback). Leave coincidental matches alone.
 
 ### Bump tooling
 
-Prefer the project's own bump tooling when it exists — it already knows
-every file to touch:
+Prefer the project's own bump tooling when it exists:
 
 - A `justfile` / `Makefile` recipe such as `bump-version <version>`
 - A `scripts/` bump script referenced by that recipe
@@ -55,8 +63,7 @@ Classify the project's scheme from its current version and recent tags
 
 - **PEP 440 prerelease track** — `0.0.1a35`, `0.1.0a41`. Increments:
   next prerelease (`a35` → `a36`), segment promotion (`a` → `b` →
-  `rc`), graduation to final (`0.0.1a35` → `0.0.1`). Also seen
-  historically: `postN`, `devN` (e.g. `0.0.1a18.dev0`).
+  `rc`), graduation to final (`0.0.1a35` → `0.0.1`).
 - **Stable semver** — `0.1.9`, `1.74.0`. Increments: patch
   (`0.1.9` → `0.1.10`), minor (`0.1.9` → `0.2.0`), major
   (`0.1.9` → `1.0.0`), or starting a prerelease series for the next
@@ -68,8 +75,8 @@ Mirror the vocabulary the project has actually used in its tags. Do
 not introduce `rc`/`post`/`dev` segments into a project whose history
 never used them unless the user asks.
 
-Tags are `v`-prefixed (`v0.62.0`, `v0.0.1a35`) — but confirm against
-the repo's existing tags before assuming.
+Tags are usually `v`-prefixed (`v0.62.0`); confirm against the repo's
+existing tags.
 
 ## CHANGES
 
@@ -79,7 +86,7 @@ existing file is the source of truth for shape — mirror it exactly.
 
 ### Unreleased header
 
-Detect the project's variant; all of these exist in the wild:
+Detect the project's variant:
 
 ```markdown
 ## <project> 0.63.x (Yet to be released)
@@ -93,15 +100,15 @@ Detect the project's variant; all of these exist in the wild:
 ## <project> 0.0.1a36 (unreleased)
 ```
 
-The rule behind the variants: **stable-track projects target
-`MAJOR.MINOR.x`** for the next unreleased version (the exact patch
-number is unknowable in advance); **prerelease-track projects target
-the full next prerelease** (the next version *is* knowable — it is the
-increment). Some projects prefix the version with `v` in this header;
-mirror that too.
+Stable-track projects target `MAJOR.MINOR.x` for the next unreleased
+version, since the patch number is unknowable in advance; after cutting
+`1.70.1` the placeholder usually reads `1.71.x`, but the file's own past
+release-to-placeholder transitions are the specification. Prerelease-track
+projects target the full next prerelease (after `0.0.1a35`, `0.0.1a36`).
+Mirror a `v` prefix in the header if the project uses one.
 
 Below the header, projects keep a maintainer comment and placeholder
-block. Preserve the exact wording found in the file, typically:
+block. Preserve the exact wording found in the file, for example:
 
 ```markdown
 <!-- To maintainers and contributors: Please add notes for the forthcoming version below -->
@@ -126,9 +133,6 @@ At release time:
    next version per the rule above, with the same maintainer comment
    and placeholder block.
 
-If the unreleased section has no entries (only the placeholder), stop
-and confirm with the user before cutting an empty release.
-
 ## MIGRATION
 
 If a `MIGRATION` file exists, it follows the same lifecycle:
@@ -141,8 +145,7 @@ If a `MIGRATION` file exists, it follows the same lifecycle:
 
 ## Release commit
 
-Subject is plain — never the `Scope(type[detail])` format, don't bury
-the lede:
+The subject is plain, never the `Scope(type[detail])` format:
 
 ```
 Tag v<version>
@@ -166,46 +169,3 @@ what:
 ```
 
 Add a MIGRATION line when that file was retitled.
-
-## Safety contract
-
-These commands must be safe to run reflexively. Hard rules, no
-exceptions:
-
-- **Never `git push`** unless the user passed `--push`.
-- **Never create a tag** unless the user passed `--tag`.
-- **Never push a tag** unless the user passed both `--tag` and
-  `--push-tag`. In many projects a pushed tag *is* the publish
-  trigger (CI releases to the package index on tags) — an accidental
-  tag push is an accidental release.
-- Never force-push; never delete or move an existing tag.
-- If `v<version>` already exists as a tag, stop — the version is
-  taken.
-
-These rules gate what the commands do on their own initiative. A flag
-is the user authorizing that step *in this run*, not a default the
-target repo can restyle: an AGENTS.md/CLAUDE.md rule reserving tags
-for a human governs unprompted tagging and does not withdraw
-authorization the user has just given. When the two conflict the flag
-wins. If you still believe an authorized step must not run, stop
-before the release commit and say why — never cut the release and
-drop the step afterward.
-
-After the release commit, report the exact commands the user can run
-themselves for whichever steps were not authorized:
-
-```
-git tag v<version>
-```
-
-```
-git push
-```
-
-```
-git push origin v<version>
-```
-
-An interactive next-step prompt may offer these actions; a user
-selecting one there counts as explicit authorization, same as the
-flag. Silence never does.

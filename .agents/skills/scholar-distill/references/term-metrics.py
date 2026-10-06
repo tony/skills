@@ -1,14 +1,11 @@
 #!/usr/bin/env python3
 """Measure a scholar term table.
 
-Reads the study's own artifacts — ``terms.jsonl``, ``sources.jsonl``,
-``brief.md`` — and never the corpus, so it behaves identically on a monorepo
-and a translated text. Standard library only: the analyzer has to run inside
-any corpus checkout, where there is no ``uv``, no third-party packages, and no
-marketplace harness to import.
+Reads the study's own artifacts (``terms.jsonl``, ``brief.md``), never the
+corpus. Standard library only, so it runs inside any corpus checkout.
 
-It proposes; it never decides. Every finding is a candidate for a human or an
-agent to judge in ``contest``.
+It proposes; it never decides. Every finding is a candidate for judgment in
+``contest``.
 
 Examples
 --------
@@ -34,10 +31,16 @@ One term standing for two unrelated things:
 >>> [term for term, _ in polysemy(rows)]
 ['bump']
 
-A term whose parent is not in the table:
+A term whose parent is not in the table, or that has no parent at all:
 
 >>> orphans([{"term": "probe", "parent": "spike", "definition": "one path"}])
 ['probe']
+>>> orphans([{"term": "probe", "parent": "", "definition": "one path"}])
+['probe']
+>>> orphans([{"term": "probe", "definition": "one path"}])
+['probe']
+>>> orphans([{"term": "probe", "parent": "root", "definition": "one path"}])
+[]
 
 A citation that quotes the term it is meant to support:
 
@@ -89,12 +92,9 @@ def tokenize(text):
 def idf(docs):
     """Smoothed inverse document frequency per token across *docs*.
 
-    Smoothed as ``log((N + 1) / (1 + df)) + 1`` rather than the textbook
-    ``log(N / df)``. A term table is a small corpus — a dozen rows, not a
-    million documents — and unsmoothed weights go to zero for a token in most
-    rows and negative for a token in every row. Definitions in one ontology
-    share their vocabulary by design, so the textbook form cancels out exactly
-    the words that make two siblings look alike.
+    Computed as ``log((N + 1) / (1 + df)) + 1`` so a token in every row keeps
+    a positive weight; the textbook ``log(N / df)`` zeroes the shared
+    vocabulary that makes siblings look alike.
 
     >>> round(idf([["a", "b"], ["a"]])["a"], 3)
     1.0
@@ -186,8 +186,8 @@ def polysemy(terms):
 
 
 def orphans(terms):
-    """Terms whose parent is neither another term nor ``root``."""
-    known = {row["term"] for row in terms} | {"root", ""}
+    """Terms whose parent is unassigned, or neither another term nor ``root``."""
+    known = {row["term"] for row in terms} | {"root"}
     return [row["term"] for row in terms if row.get("parent", "") not in known]
 
 
@@ -206,13 +206,7 @@ def fan_out(terms):
 
 
 def circular(terms):
-    """Terms whose own token appears in the text of a citation supporting them.
-
-    Evidence that quotes the term it is meant to support proves nothing. This
-    is not theoretical: routing eval prompts that contained their own skill's
-    name made every rename candidate look expensive until the self-reference
-    was noticed.
-    """
+    """Terms whose own token appears in the text of a citation supporting them."""
     hits = []
     for row in terms:
         own = set(tokenize(row["term"]))
@@ -225,11 +219,7 @@ def circular(terms):
 
 
 def check_brief(text):
-    """Findings for a brief that carries a citation, a permalink, or a bare number.
-
-    The brief is the one file meant to be read start to finish. Where it wants
-    a number or a source it links into ``evidence/`` instead.
-    """
+    """Findings for a brief that carries a citation, a permalink, or a bare number."""
     findings = []
     for number, line in enumerate(text.splitlines(), start=1):
         bare = _EVIDENCE_LINK.sub("", line)

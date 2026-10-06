@@ -1,5 +1,7 @@
 # Asana
 
+Contents: Scope; Native hierarchy; Semantic roles; Orthogonal objects; References and autolinks; Reading and writing; Naming traps.
+
 ## Scope
 
 Workspace or Organization contains Teams; a Team contains Projects; a Project belongs to
@@ -114,20 +116,15 @@ the object in prose as well as linking it. UNVERIFIED: whether pasting a bare
 
 ## Reading and writing
 
-A local agent has a real backend. Prefer the official MCP server, V2, generally available
-at `https://mcp.asana.com/v2/mcp` over Streamable HTTP with OAuth. Documented tools include
+Prefer the official MCP server at `https://mcp.asana.com/v2/mcp` over Streamable HTTP with OAuth. Documented tools include
 `search_objects`, `get_task`, `get_my_tasks`, `search_tasks`, `get_project`, `create_tasks`,
-`update_tasks`, `add_comment`, and `create_project_status_update`, plus preview tools that
+`update_tasks`, `add_comment`, and `create_project_status_update`, plus tools that
 render a confirmation UI before committing. Tokens issued for MCP apps work only against
 the MCP server, not the standard REST API. Otherwise use the REST API at
 `https://app.asana.com/api/1.0` with a personal access token or OAuth, plus the official
-Python or JavaScript client library — the Java and Ruby libraries are discontinued.
+Python or JavaScript client library.
 Sources: https://developers.asana.com/docs/mcp-tools-reference and
 https://developers.asana.com/docs/client-libraries
-
-UNVERIFIED as absent: no first-party Asana CLI appears in the developer docs, which point
-to cURL, Postman, and the API explorer instead. Treat "there is no official CLI" as an
-argument from absence, not a cited statement.
 
 The writing gotcha that outranks the rest: send HTML, never markdown. A body drafted in
 markdown is stored and displayed as literal asterisks and brackets. Convert before the
@@ -136,12 +133,10 @@ write, and validate the fragment parses as XML.
 ## Naming traps
 
 - Never say "Milestone" to mean a grouping of work. An Asana Milestone is a Task subtype
-  and a checkpoint; do not translate a GitHub Milestone, GitLab Milestone, or Jira Version
-  into one by name.
+  and a checkpoint.
 - Never say "Story" to mean a unit of work. In Asana a Story is an activity-feed event or
   comment on a Task. The work item is a Task.
-- Never say bare "Project". An Asana Project is a delivery_group, not the scope_container
-  a Jira Project is. Qualify it on first use in cross-provider text.
+- Never say bare "Project". Qualify it on first use in cross-provider text.
 - Never say "Section" to mean containment; it is project-local grouping.
 - Never say "Portfolio" to mean a container of Tasks; it gathers Projects and Portfolios.
 - Never say "Sprint", "Iteration", "Cycle", "Epic", "Version", or "Release" as if Asana has

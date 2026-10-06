@@ -1,5 +1,14 @@
 # Measurement Contract
 
+## Contents
+
+- Net per-instance saving
+- Net over a period, and break-even
+- Org-wide projection
+- Statistics discipline
+- Counterfactual quality ladder
+- Quality guardrails
+
 Formulas, statistics discipline, counterfactual quality, and quality
 guardrails for `/business:*`. The variable definitions here are the
 only definitions — commands use them verbatim, never re-derive them.
@@ -45,11 +54,10 @@ Annual_hours_saved = V * F * t * s * a * r
 - `F` — instances per person per period.
 - `t` — baseline time per instance (measured, not self-reported).
 - `s` — savings rate net of the verification tax.
-- `a` — adoption, strictly < 1.0, explicit input. License-holding
-  and active use are different numbers; `a` means active use.
-- `r` — realization, strictly < 1.0, explicit input. Scattered
-  minutes rarely convert to capacity; `r` is the fraction of gross
-  saved time that becomes usable capacity.
+- `a` — adoption: active use, not license-holding. Strictly < 1.0.
+- `r` — realization: the fraction of gross saved time that becomes
+  usable capacity, since scattered minutes rarely convert. Strictly
+  < 1.0.
 
 Refuse to default `a` or `r` to 1.0. If either is absent from the
 assumptions register, stop and ask the user, then append the answer

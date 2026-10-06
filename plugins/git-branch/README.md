@@ -117,7 +117,7 @@ sh ${CLAUDE_PLUGIN_ROOT}/references/rebase-todo.sh squash <base>
 
 - **Use `/git-branch:soft-reset-and-recommit`**: When the branch content is
   correct but history is messy.
-- **Use `/pr:deslop`**: When commit messages need cleaning but boundaries are
+- **Use `/slop:deslop`**: When commit messages need cleaning but boundaries are
   fine (uses autosquash without splitting commits).
 - **Use `/rebase`**: When moving a branch onto the current trunk.
 - **Use `/commit`**: When creating a new commit rather than rebuilding
@@ -126,7 +126,7 @@ sh ${CLAUDE_PLUGIN_ROOT}/references/rebase-todo.sh squash <base>
 ## Prerequisites
 
 - **git** — 2.30+ for `--keep-base`, `git restore`, and
-  `--force-if-includes` (check with `git --version`).
+  `--force-if-includes`; 2.38+ for `RECUT_UPDATE_REFS` (`--update-refs`).
+  Check with `git --version`.
 - **gh** — (Optional) to read PRs, reviews, and linked issues. Degrades to
   git-only if missing.
-- **uvx** — (Optional) for the prior-conversation layer.

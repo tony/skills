@@ -24,12 +24,16 @@ repo-wide.
   format/lint/typecheck once and report. Never commits.
 - `--diff-only` — show what would change without editing.
 
-If `$ARGUMENTS` is empty, ask which files via `AskUserQuestion`.
+If `$ARGUMENTS` is empty, ask which files via `AskUserQuestion`. Without
+an interactive question tool (Codex, headless runs), print the usage
+and stop. A request that says "go ahead" authorizes the edits it
+names, never a commit.
 
 ## Steps
 
 1. **Resolve targets.** Expand paths/globs, or read stdin with
-   `--stdin`. Reject an empty target set with a clear message.
+   `--stdin`. Reject an empty target set with a clear message; with `--stdin`, ask
+   for the text.
 2. **Load the rules and voice.** Read
    `../../references/prose-rules.md` and
    `../../references/lean-rubric.md`, then `./AGENTS.md` and
@@ -40,16 +44,25 @@ If `$ARGUMENTS` is empty, ask which files via `AskUserQuestion`.
    load-bearing reference and "why" comment.
 4. **Preview and confirm.** Show the proposed edits and confirm via
    `AskUserQuestion` before writing; the preview and the printed diff
-   (Step 6) are the review surface. Skip when `--diff-only`.
+   (Step 6) are the review surface. Skip when `--diff-only` or
+   `--stdin`. Without an interactive question tool, act as
+   `--diff-only`.
 5. **Apply in place.** Use `Edit`. Replacements are concrete and
    shorter than the original.
-6. **Diff.** Print `git diff -- <targets>`. With `--gates`, run the
+6. **Diff.** Print `git diff -- <targets>`. Skip for `--stdin`, which instead
+   prints the tightened text as the whole reply. With `--gates`, run the
    discovered checks once and report; commit on neither pass nor fail.
-7. **Report and hand off.** Summarize findings resolved and skipped,
-   then offer next steps via `AskUserQuestion`: commit, or discard the
-   edits. Review the printed diff first, since `git checkout -- <file>`
-   resets the whole file to HEAD and drops any other uncommitted work
-   in it.
+7. **Report and hand off.** Write it per
+   `../../references/prose-rules.md`: a one-line count of findings
+   resolved and skipped, with no section labels and no recap of what
+   changed. Then offer next steps via `AskUserQuestion`: commit, or
+   discard the edits. Review the printed diff first, since
+   `git checkout -- <file>` resets the whole file to HEAD and drops any
+   other uncommitted work in it. A commit message carries no
+   `Co-Authored-By`, no "Generated with" or other tool trailer, and no
+   emoji. Skip this step for `--stdin`; after the tightened text, add
+   one line only for load-bearing text kept that the user might expect
+   cut.
 
 ## What this does not do
 

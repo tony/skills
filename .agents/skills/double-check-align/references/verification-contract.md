@@ -1,21 +1,18 @@
 # The verification contract
 
-The shared rule behind the `double-check` skill and
-this skill. Both load this file; host projects can copy
-the fragment at the bottom into their own AGENTS.md.
+The rule behind `double-check` and this skill. Host projects
+can copy the fragment at the bottom into their own AGENTS.md.
 
 ## The failure
 
-When asked to double-check prior analysis, agents tend to return a
-diff against their own previous message: entries like *Overstated*,
-*Does not hold*, *still holds*, *I over-called several of these*.
+Asked to double-check prior analysis, agents tend to return a diff
+against their own previous message: *Overstated*, *Does not hold*,
+*still holds*, *I over-called several of these*.
 
 This is **temporal-baseline misalignment**: transcript order mistaken
-for user-adopted state. The agent treats its prior turn as a published
-baseline the reader has internalized. Usually they have not — the
-double-check was often requested precisely because the user had not
-committed to the first answer. The output is **revision-history
-leakage**, with four distinct defects:
+for user-adopted state. The double-check was often requested because
+the user had not committed to the first answer, so the output is
+**revision-history leakage**, with four defects:
 
 - **Wrong baseline.** Every verdict is a delta against a version the
   reader never held.
@@ -29,8 +26,8 @@ leakage**, with four distinct defects:
   framing means the pass can only revise existing items, never notice
   a missing one. Omissions are structurally invisible to a diff pass.
 
-Root cause: "double check" is ambiguous between *process* (verify)
-and *product* (the verified answer). The deliverable is the product.
+"Double check" is ambiguous between *process* (verify) and *product*
+(the verified answer). The deliverable is the product.
 
 ## The contract
 

@@ -26,7 +26,9 @@ the thing this pipeline exists to avoid producing.
 
 ## distill
 
-Every type has a discriminator, and `term-metrics.py` reports no orphans.
+Every type has a discriminator, and `term-metrics.py` reports no orphans: a
+term with no parent, or a parent that is neither another term nor `root`, is an
+orphan.
 
 ## contest
 

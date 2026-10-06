@@ -38,16 +38,19 @@ Claude Code uses a leading slash (`/merge-pr:â€¦`). Codex omits it (`merge-pr:â€
 
 ### `/merge-pr:this`
 
-Merges a single PR. 
-- Runs readiness gates (open, CI passing via `gh pr checks`).
+Merges a single PR.
+
+- Runs the readiness gate: open, not draft, CI, mergeability, reviews.
 - Waits on pending CI.
-- Rebases and force-pushes if behind.
-- Merges via `gh pr merge` using repo history for commit messages.
+- Rebases and force-pushes if behind, after confirming.
+- Merges via `gh pr merge`, pinned to the verified head commit, using repo
+  history for the commit message.
 - Checks out and pulls trunk.
 
 ### `/merge-pr:multiple`
 
-Lands multiple PRs sequentially. 
+Lands multiple PRs sequentially.
+
 - Detects if PRs are a **stack** (merged bottom-up, children rebased/retargeted)
   or **independent** (merged in order, rebased on trunk).
 - Between merges: rebases, force-pushes, waits on CI.
@@ -56,8 +59,7 @@ Lands multiple PRs sequentially.
 ## Merge strategy and flags
 
 - Defaults to merge commit. `--squash` and `--rebase` override.
-- Passes other `gh pr merge` flags verbatim (e.g., `--delete-branch`, `--admin`). 
-- `--admin` only bypasses branch protection for green CI; never merges over failing checks.
+- Passes other `gh pr merge` flags verbatim (e.g., `--delete-branch`, `--admin`).
 - Adheres to `references/merge-readiness.md` rules: discover, ask on ambiguity, halt on surprise.
 
 ## Prerequisites

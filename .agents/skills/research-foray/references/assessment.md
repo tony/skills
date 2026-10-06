@@ -51,7 +51,7 @@ For an adopt, trial, hold, or reject question about one product, a single `ratin
 
 ## In the report
 
-The options table (criteria against options) is the first finding, closed like every finding with a stated confidence. Each decisive criterion gets its own finding. The verdict is a recommendation; once the decider acts on a released report, record it with `decide` per `release.md`. Draw the table with `topic.py chart --csv data/criteria.csv --value uv --value pip-tools`: rating words map to 3, 2, 1, and 0, each option gets its own bar, and an unknown rating draws none.
+The options table (criteria against options) is the first finding, closed like every finding with a stated confidence. Each decisive criterion gets its own finding. The verdict is a recommendation; once the decider acts on a released report, record it with `decide` per `release.md`. Draw the table with `topic.py chart --csv <run_dir>/data/criteria.csv --out <run_dir>/charts/criteria.svg --value uv --value pip-tools`: rating words map to 3, 2, 1, and 0, each option gets its own bar, and an unknown rating draws none.
 
 `lint-report` on an assessment also checks that the report states its sensitivity and what would flip it, and that each rating in `data/criteria.csv` has a known source, no vendor-only high confidence, and no note contradicting it.
 
@@ -68,4 +68,4 @@ Open with a one-line hero (`✓ <topic>: <verdict>, <confidence> confidence` or 
 3. `## Open`: unknown ratings and open questions.
 4. `## Run`: run directory and report path.
 
-End with an `ask-user-choice` panel (for example: fill the unknowns, verify sources, stop). Skip it in plan mode; without an interactive host, print the options as a numbered list.
+Panel options: fill the unknowns, verify sources, stop.

@@ -17,7 +17,7 @@ The caller sets these variables before invoking this reference:
 | ARTIFACT_PATH | absolute path | Desloped final artifact (single file) or directory of per-participant outputs |
 | SESSION_DIR | absolute path | Session directory for auxiliary writes |
 | PASS_COUNT | integer | Toggles Evolution/Confidence sections |
-| IN_PLAN_MODE | boolean | True for plan and fix-review; suppresses next-step panel |
+| IN_PLAN_MODE | boolean | True for plan; suppresses next-step panel |
 | WORKER_BACKEND | `subagents`, `model-clis`, or null | Selects participant attribution; null for fix-review |
 | PARTICIPANTS | JSON array of strings | Successful role IDs (`subagents`) or lane artifact IDs (`model-clis`) |
 | EXECUTORS | JSON object or null | Participant ID to actual executor mapping; null for fix-review |
@@ -47,9 +47,7 @@ content. Emit 1–4 lines.
 | plan | `Plan: N steps, M files touched` |
 | ask | One-sentence answer |
 | brainstorm | `N ideas from M participants` |
-| brainstorm-and-refine | `Refined through N passes` (suffix `(early-stop @ K)` if converged early) |
-| refine | `Refined through N passes` (suffix `(early-stop @ K)` if converged early) |
-| serene-bliss | `Refined through N passes` (suffix `(early-stop @ K)` if converged early) |
+| brainstorm-and-refine, refine, serene-bliss | `Refined through N passes` (suffix `(early-stop @ K)` if converged early) |
 | prompt | `Winner: <participant>` |
 | architecture | `Architecture: <chosen approach>` |
 | execute | `Best of N implementations` |
@@ -72,9 +70,7 @@ optional.
 | plan | Architecture Decision · Implementation Steps · Test Strategy · Risks and Mitigations · Scores · Verification Summary · Adjudication · Critic Findings · Plan Evolution (only when PASS_COUNT > 1) · Attribution. Rendered into the harness plan file, not chat. |
 | ask | Verified Answer · Evidence (file:line bullets) · Disagreements (only if any) · Refinement Notes (only when PASS_COUNT > 1) · Attribution |
 | brainstorm | Per-participant responses (variants flattened) · Attribution |
-| brainstorm-and-refine | Final Result · Evolution Summary · Rationale Chain · Attribution |
-| refine | Final Result · Evolution Summary · Rationale Chain · Attribution |
-| serene-bliss | Final Result · Evolution Summary · Rationale Chain · Attribution |
+| brainstorm-and-refine, refine, serene-bliss | Final Result · Evolution Summary · Rationale Chain · Attribution |
 | prompt | Per-variant outputs · Winner Selection Rationale · Attribution |
 | architecture | Chosen Architecture · Component Map · Trade-off Analysis · Risks · Attribution |
 | execute | Winning Implementation · Diff Summary · Trade-offs · Attribution |
@@ -129,20 +125,19 @@ When IN_PLAN_MODE is true, skip Phase B entirely.
 
 Call `ask-user-choice` with options from this table. When CASCADE_STATE
 is `early-exit`, prepend **Escalate to full ensemble** as the first
-option — on selection, return control to the caller's escalation path
-(`references/ensemble-techniques.md`, Technique 1) instead of Phase C.
+option; on selection, return control to the caller's cascade escalation
+path instead of Phase C.
 
 | RESULT_KIND | Options (in display order) |
 |---|---|
 | review | **Draft plan from findings** · **Fix now** (suggest the `weave-fix-review` skill) · **Done** |
 | ask | **Turn this into a plan** · **Refine the answer** (suggest the `weave-refine` skill) · **Done** |
 | brainstorm | **Pick one and plan it** (sub-prompt for which idea, then plan) · **Refine further** (suggest the `weave-refine` skill) · **Done** |
-| brainstorm-and-refine | **Plan the refined result** · **Refine again** (suggest the `weave-refine` skill) · **Done** |
-| serene-bliss | **Plan the refined result** · **Refine again** (suggest the `weave-refine` skill) · **Done** |
-| refine | **Plan the refined result** · **Refine again** (suggest the `weave-refine` skill) · **Done** |
+| brainstorm-and-refine, refine, serene-bliss | **Plan the refined result** · **Refine again** (suggest the `weave-refine` skill) · **Done** |
 | architecture | **Plan the chosen architecture** · **Brainstorm alternatives** (suggest this skill) · **Done** |
 | execute | **Apply the winning implementation** · **Compare with another participant** (suggest the `weave-prompt` skill) · **Done** |
 | prompt | **Use the winner — plan it** · **Re-run with different variants** · **Done** |
+| fix-review | **Review the branch again** (suggest the `weave-review` skill) · **Done** |
 
 ### Step 2: Route user choice
 

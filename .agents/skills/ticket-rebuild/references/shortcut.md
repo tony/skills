@@ -1,5 +1,7 @@
 # Shortcut
 
+Contents: Scope; Native hierarchy; Semantic roles; Orthogonal objects; References and autolinks; Reading and writing; Naming traps.
+
 ## Scope
 
 Organization > Workspace. An Organization holds a collection of Workspaces, and
@@ -12,7 +14,7 @@ a Story belongs to a Workspace and carries a Team field.
 ## Native hierarchy
 
 Objective > Epic > Story > Sub-task. Shortcut has **no native Project work
-level** — `Project` survives only as a deprecated legacy field — and **no native
+level** — `Project` survives only as a legacy field — and **no native
 release object**.
 
 - **Objective** is ["Shortcut's top-level planning object"](https://www.shortcut.com/help/objectives/objectives-overview/).
@@ -44,8 +46,6 @@ release object**.
   relates to; record as `blocks` and `relates_to`. native, optional.
 
 ## Orthogonal objects
-
-None of these is a parent of a Story. Never render them as hierarchy.
 
 - **Iteration** — timebox. native, optional. Stories are `scheduled_in` it.
 - **release_group** — absent. No release or version object exists; use a Label or
@@ -127,9 +127,8 @@ Key Result therefore still ends in approved text for the user to paste.
 Otherwise use the [REST API v3](https://developer.shortcut.com/api/rest/v3) at
 `https://api.app.shortcut.com/api/v3` with a `Shortcut-Token` header, covering
 stories and story search, sub-tasks, epics, objectives, key-results, iterations,
-and documents; a v4 alpha exists. The official client is the JavaScript
-`@shortcut/client`, and the standalone npm MCP server repo is archived in favor
-of the hosted one. Shortcut ships **no official CLI** — do not invoke one.
+and documents. The official client is the JavaScript
+`@shortcut/client`.
 
 ## Naming traps
 

@@ -5,7 +5,7 @@ prose artifact. Scrubs AI-slop signatures (flagship phrases, hedging,
 restated subjects, fragile counts/line numbers, AI footers) from one
 markdown file in `$SESSION_DIR` before the user sees the synthesis.
 
-Distinct from the `pr-deslop` skill (mutates git history via patch series + autosquash)
+Distinct from the `slop-deslop` skill (mutates git history via patch series + autosquash)
 and the `slop-scan` skill (mutates working-tree files via forward-going atomic
 commits). Weave deslop edits **one** file, **once**, in `$SESSION_DIR`.
 The repo guard never triggers — no project-tree changes occur.
@@ -14,49 +14,47 @@ The repo guard never triggers — no project-tree changes occur.
 
 ## Caller contract
 
-The caller (one of the 6 prose weave commands) sets these inputs:
+A prose weave command sets these inputs:
 
 - `ARTIFACT_PATH` — absolute path to the markdown file to clean.
   Always inside `$SESSION_DIR`.
 - `SESSION_DIR` — the run's session directory (already exists).
-- `BASELINE_SHA` — trunk SHA the caller's repo guard locked, used for
-  tone calibration.
+- `BASELINE_SHA` — the `baseline_sha` that the engine's `init` returned,
+  used for tone calibration.
 - `DESLOP_MODE` — one of `default`, `quiet`, `verbose`. Defaults to
   `default`. Set from `--quiet-deslop` / `--verbose-deslop` flags.
-- `NO_SEMANTIC` — boolean. Set when `--no-semantic` was passed.
 
 The caller is responsible for honouring `--no-deslop`: if set, do **not**
 invoke this reference at all. Skip cleanly with no banner, no sibling
 file, no summary block.
 
+Before Step 1, print `Polishing synthesis (deslop pass)…`. The summary block
+or the no-op line replaces it.
+
 ---
 
 ## Step 1 — Resolve the registry
 
-The slop taxonomy is owned by the `pr` plugin. Weave never ships a copy.
-Resolve at runtime in this order:
+Read the registry at `../../references/signatures.yml`. If it is
+missing, emit one line and return:
 
-1. `references/signatures.yml`
-2. `references/slop-signatures.yml`
-3. If neither exists, emit one line and return:
+```
+Skipping deslop (registry not found)
+```
 
-   ```
-   Skipping deslop (registry not found — install pr or slop plugin)
-   ```
+The weave run continues; the synthesis is presented unchanged. Deslop
+is non-blocking by design.
 
-   The weave run continues; the synthesis is presented unchanged. Deslop
-   is non-blocking by design.
-
-Apply the project overlay `.claude/deslop.local.yml` if present (same
-`replace:` / `append:` / `delete:` semantics as the `pr-deslop` skill, see
-the `pr-deslop` skill). Hash the resolved registry
+Apply the project overlay `.claude/slop.local.yml` if present, with
+`replace:` / `append:` / `delete:` lists of signature ids; an id may
+appear under only one key. Hash the resolved registry
 (sha256) for the audit record.
 
 ---
 
 ## Step 2 — Tone calibration
 
-Mirror the `pr-deslop` skill. Read the last 50 commit
+Read the last 50 commit
 messages on the locked baseline:
 
 ```bash
@@ -84,7 +82,7 @@ those concern commits, not prose.
 Tier A and Tier B candidates are produced. Tier C is never auto-applied;
 Tier C matches are recorded for the summary only.
 
-### Pass B — Semantic verifier (skip if `NO_SEMANTIC`)
+### Pass B — Semantic verifier
 
 Dispatch **one** `Task` sub-agent (not per-finding, not per-paragraph —
 the artifact is one file). Sub-agent contract:
@@ -94,8 +92,7 @@ the artifact is one file). Sub-agent contract:
 
 The prompt receives the artifact text, the registry filtered to
 `kind: semantic`, and the Step 2 tone calibration. The
-**anti-slop-on-slop constraint** from the `pr-deslop` skill
-applies verbatim:
+**anti-slop-on-slop constraint** applies verbatim:
 
 > Do not introduce slop in your suggested replacements. Do not use
 > phrases listed in the registry. Do not narrate your changes ("I
@@ -170,7 +167,7 @@ Write `${SESSION_DIR}/deslop-report.md` with:
 - Tier C advisories (list)
 - Word-count delta (before → after)
 - Path to `<artifact>.pre-deslop.md` sibling
-- Verifier status (`enabled` | `skipped` | `skipped-for-cause`)
+- Verifier status (`enabled` | `skipped`)
 
 Emit the terminal summary block per `DESLOP_MODE`:
 
@@ -226,27 +223,3 @@ Synthesis already clean (no deslop edits applied)
 ```
 
 ---
-
-## Inline transition
-
-Before Step 1 starts, the caller prints:
-
-```
-Polishing synthesis (deslop pass)…
-```
-
-This single line is replaced in place by the summary block (or the
-no-op line) when Step 6 finishes.
-
----
-
-## Failure modes
-
-| Mode | Behaviour |
-|---|---|
-| Registry missing | One-line skip; run continues unchanged. |
-| Verifier fails to parse | Mark `verifier=skipped`; fall back to Pass A. |
-| `Task` unavailable | Mark `verifier=skipped`; Pass A only. |
-| Hard abort triggered | Restore from sibling; surface the held-back banner. |
-| Sibling write fails | Refuse to edit `ARTIFACT_PATH`; surface a one-line error and continue with the original synthesis. |
-| `Edit` tool denied | Skip that finding; record as `declined` in `deslop-report.md`. |

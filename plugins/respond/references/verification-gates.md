@@ -9,9 +9,12 @@ Language-agnostic, never hardcoded.
 
 Five buckets, resolved by reading the project's conventions files in
 priority order: `AGENTS.md`, then `CLAUDE.md`, then
-`.github/CONTRIBUTING.md`. Split each file by heading; a heading whose
-lowercased text contains a bucket keyword claims the first fenced code
-block beneath it. The first file's command wins on collision.
+`.github/CONTRIBUTING.md`. Split each file by heading; a heading that
+contains a bucket keyword as a whole word ("Tests" matches `test`;
+"Latest" and "Respect" do not) claims the first fenced code block beneath
+it, when that block holds a command rather than output or an example. The
+first file's command wins on collision. In a non-interactive run, name each
+discovered command in the report before running it.
 
 | Bucket | Heading keywords (case-insensitive) |
 |---|---|

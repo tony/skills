@@ -68,23 +68,8 @@ Only after gates 1–3 pass:
    For a single shared resource use the `FileLock` single-exec pattern or a
    `testrun_uid`-keyed resource.
 
-## What makes a speedup "safe"
+## Measurement hygiene
 
-Map directly to the rubric's `safety` dimension:
-
-- `safety ≈ 0.9` — pure config/selection, or widening the scope of **read-only**
-  setup that passed gates 1–2.
-- `safety ≈ 0.5` — scope change on a possibly-mutated resource, autouse removal, or
-  xdist **with** grouping.
-- `safety ≈ 0.1` — parallelizing across known shared mutable state, or deleting a
-  fixture reachable only via `getfixturevalue`. These fall below the `0.4` gate and
-  are never auto-applied; the prerequisite refactor is surfaced as its own
-  hypothesis instead.
-
-## Measurement hygiene (so the gates' verdicts are trustworthy)
-
-- Measure serially, cache disabled (`-p no:cacheprovider`), N ≥ 3 runs.
 - Never compare a parallel run's wall-time to a serial baseline as "the speedup" —
   benchmark the *change*, holding the run mode fixed, then evaluate parallelism as
   its own separate candidate.
-- Treat rows below the ~50ms trust floor as noise.

@@ -16,28 +16,22 @@ Stage 5. Write the two layers a reader actually meets: a brief they read start
 to finish, and the evidence they check it against.
 
 The analyzer ships at `references/term-metrics.py`; `<analyzer>` below
-is that path.
+is that path. `references/stage-gates.md` states the brief gate's exit
+condition.
 
 User arguments: $ARGUMENTS
 
 ## The prohibition
 
-```
-THE BRIEF CARRIES NO CITATION, NO PERMALINK, AND NO BARE NUMBER
-```
+The brief carries no citation, no permalink, and no bare number. Where it
+wants one, it links into `evidence/`. A brief with its appendices inlined is a
+report, and nobody reads it start to finish.
 
-Where it wants one, it links into `evidence/`. This is what keeps the top
-layer readable: a brief with its appendices inlined is a report, and nobody
-reads it start to finish.
-
-The rule is enforced, not hoped for:
+The analyzer enforces the rule. Run it before reporting success:
 
 ```console
 $ <analyzer> notes/ontology/<subject>/ --check-brief
 ```
-
-Non-zero exit means the brief is not renderable yet. Fix the brief, not the
-checker.
 
 ## What the brief says
 
@@ -50,7 +44,8 @@ support:
    made them necessary.
 4. What `contest` overturned, and what the kills revealed.
 
-Write it for a reader who was not present. They do not have the corpus open,
+Write it per `references/prose-rules.md`, for a reader who was not
+present. They do not have the corpus open,
 they do not know the analyst, and they will judge the study by whether they
 can disagree with it.
 
@@ -71,30 +66,24 @@ produced it and the output it produced.
 
 ## Rules
 
-- Run the brief gate before reporting success. A study whose brief fails the
-  gate is not rendered.
 - Refresh the evidence documents rather than appending; they describe the
   current state of the study, and `corrections.md` is where history lives.
-- Every section of the brief links to the evidence file that supports it.
 - Do not restate an evidence document in the brief. If a paragraph would
   survive being replaced by a link, replace it.
 
 ## Output
 
-Open with a one-line hero (`✓ rendered <subject>: brief + <n> evidence docs`
-or `⚠ Brief gate failed: <n> findings`), then exactly these sections:
+Per `references/output-contract.md`. Hero: `✓ rendered <subject>: brief +
+<n> evidence docs` or `⚠ Brief gate failed: <n> findings`. Sections:
 
 1. `## Brief` — the path, and the four movements in one line each.
 2. `## Evidence` — each document written and what it holds.
 3. `## Gate` — the brief check's output, verbatim.
 
-End with an `ask-user-choice` panel offering next steps (for example: publish
-via gh, compare against another study, stop here) — skip the panel only in
-plan mode.
+Next-step options: publish via gh, compare against another study, stop here.
 
 
 ## Portability notes
 
-- `ask-user-choice` — present the listed options and wait for the user to pick one. Hosts with a structured multiple-choice tool (Claude Code's `AskUserQuestion`) should use it; otherwise print a numbered list and wait for a numbered reply. Never proceed on an assumed answer.
 - `$ARGUMENTS` — the text the user passed when invoking this skill. If your host does not substitute it, read it as the user's request in the current turn, and ask when there is none.
 - Bundled files — every relative path in this skill points at a file shipped inside this skill directory. Read them from here, not from the host's plugin tree.

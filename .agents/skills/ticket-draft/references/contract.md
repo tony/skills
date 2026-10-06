@@ -1,5 +1,7 @@
 # The content contract
 
+Contents: Past — the cost-to-relearn filter; Present — nothing that rots; Future — invariants and intent; The rule that catches the worst failure.
+
 Every body this plugin writes is governed by three rules, one per tense. The
 rules are the same for a GitHub issue, a Linear project, a Confluence page,
 and a merge request.
@@ -85,6 +87,12 @@ one tracker's answer onto another.
 Each provider file states its auto-detected forms, which of them fire a
 backreference, how to avoid it there, and the cross-container form. `#N` on
 its own is not evidence of which tracker you are in.
+
+### Mentions
+
+Never `@mention` anyone in a generated body, including mentions in a body
+being rebuilt. A mention subscribes and notifies the person, and re-saving a
+body can send it again.
 
 ## Future — invariants and intent
 

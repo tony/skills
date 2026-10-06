@@ -1,0 +1,184 @@
+# Detect Pipeline
+
+The steps this skill and the `slop-scan` skill run identically before they
+materialize a patch series. Each skill keeps its own step numbers and
+names the section below it follows. A "unit" is a commit for `deslop`
+and a file for `scan`.
+
+## Contents
+
+- Orchestration plan
+- Baseline
+- Tone calibration
+- Registry load
+- Pass A: regex
+- Pass B: semantic verifier
+- Budget and confirmation
+
+---
+
+## Orchestration plan
+
+Enter plan mode before any analysis. Claude Code: `EnterPlanMode`.
+Cursor / Codex / Gemini: `/plan` or `Shift+Tab`.
+
+1. Build the plan from the skill's checklist, with pre-execution ranges.
+2. Present it and wait for explicit user approval.
+3. Exit plan mode before Step 1 runs.
+
+Without plan mode, the step order still puts analysis before execution.
+The final report holds post-hoc exact counts, not the plan's ranges.
+
+---
+
+## Baseline
+
+Find the trunk ref without touching the network:
+
+```bash
+git symbolic-ref --short refs/remotes/origin/HEAD
+```
+
+It prints `origin/<trunk>`. When `origin/HEAD` is unset, use the first of
+`origin/main`, `origin/master` that `git rev-parse --verify --quiet`
+accepts. When neither exists, ask the user for the trunk.
+
+Lock the baseline as a SHA so a background fetch cannot move it mid-run:
+
+```bash
+git merge-base HEAD "origin/${TRUNK}"
+```
+
+Store it as `BASELINE_SHA` and use it everywhere. On the trunk itself it
+equals `HEAD`.
+
+---
+
+## Tone calibration
+
+Calibrate Tier C against the trunk's accepted voice. Read history at
+`BASELINE_SHA`, never the branch tip, where unreviewed slop could
+whitelist itself.
+
+1. Search the conventions files for headings such as `tone`, `style`,
+   `prose`, `writing`, `voice`. Capture any directives.
+2. Read the last 50 commit messages before the baseline:
+
+   ```bash
+   git log -n 50 --format='%B%n--END--' "${BASELINE_SHA}"
+   ```
+
+3. Count Tier C signal phrases. A phrase with at least 3 occurrences in
+   those 50 commits is demoted from Tier C-active to
+   advisory-only-in-summary for this run.
+
+---
+
+## Registry load
+
+Read `signatures.yml` as UTF-8. The project override is
+`.claude/slop.local.yml` at the repo root, if present. It may declare:
+
+- `replace:` — signature ids; each replaces the built-in entry of the
+  same id.
+- `append:` — new signatures with ids absent from the built-in set.
+- `delete:` — built-in ids removed for this run.
+
+```yaml
+version: 1
+
+replace:
+  - id: ai-slop.flagship-phrases
+    pattern: '(?i)\b(custom phrase 1|custom phrase 2)\b'
+
+append:
+  - id: project.no-bullet-headings
+    tier: A
+    confidence: high
+    action: rewrite
+    kind: regex
+    target: [message-body]
+    pattern: '^\s*\*\s+\*\*'
+    rationale: This project disallows bold headings inside markdown bullets.
+
+delete:
+  - low-value.formatting-only-commit
+```
+
+An id may appear under only one key. A duplicate id or a malformed
+override is a parser error naming the offending line; never fall back to
+the built-in set.
+
+`--taxonomy=<path>` replaces both the built-in registry and the
+override. A missing path is a path-resolution error.
+
+If the override is tracked by git and dirty, warn that a rebase or
+rollback touching it can pause or lose edits, and advise committing or
+stashing first.
+
+Print: "Loaded N signatures (B builtin, R replaced, A appended, D
+deleted; tone calibration demoted X)." When every signature is
+disabled, print "No active signatures — nothing to detect." and exit 0.
+
+---
+
+## Pass A: regex
+
+Always runs. Patterns are PCRE, not POSIX ERE: they use `(?i)`, `\b`,
+`\d`, and `\x{…}`. Match with `git grep -P`, `grep -P`, or `rg -P` (only
+when ripgrep is built with PCRE2); `rg` without `-P` and `grep -E`
+misparse them. The skill lists which
+`target` values apply to its units.
+
+---
+
+## Pass B: semantic verifier
+
+Skipped by `--no-semantic`. Dispatch one `Task` sub-agent per unit with
+at least one finding, at most 8 concurrent. The prompt enforces the
+contract; no separate agent file exists.
+
+- Allowed tools: `Read`, `Grep`, `Glob`. Disallowed: `Bash`, `Write`,
+  `Edit`, `Task`.
+- Input: the unit's full content (commit diff and message, or file),
+  its Pass A findings, the registry filtered to `kind: semantic`, and
+  the tone-calibration result.
+- The prompt includes:
+
+  > Do not introduce slop in your suggested replacements. Do not use
+  > phrases listed in the registry. Do not narrate your changes ("I
+  > tightened…"). Replacement text should be concrete and shorter than
+  > the original where possible.
+
+The sub-agent returns a JSON list of findings. Parse resiliently: strip
+markdown fences, extract the first balanced `[ … ]`, parse. On failure,
+mark `verifier=skipped-for-<unit>` and keep that unit's Pass A findings;
+never crash the run.
+
+Join to Pass A by `(unit, location)`: a semantic confirmation upgrades
+confidence, a denial drops the finding, a semantic-only finding is
+added. When `Task` is unavailable, mark `verifier=skipped` globally and
+continue with Pass A.
+
+---
+
+## Budget and confirmation
+
+The budget caps how many findings per tier enter the proposal:
+
+| Budget | Tier A | Tier B | Tier C |
+|---|---|---|---|
+| `strict` | proposed | none (advisory) | none (silently skipped) |
+| `default` | proposed | up to 5, rest advisory | up to 10 advisory |
+| `lax` | proposed | up to 10, rest advisory | unlimited advisory |
+
+Within a tier, rank by `(units_affected DESC, confidence DESC,
+signature_id ASC)` and take the top N. The rest go to the run's
+`advisory.md`.
+
+Audit mode, the default, applies nothing: every proposed finding becomes
+a patch for review. When an apply flag was passed, the user confirms
+each proposed Tier B finding with `ask-user-choice` before
+materialization, and a declined finding moves to `advisory.md`. Tier A
+findings apply with no per-finding prompt once the user picks an apply
+choice. Tier C never applies.

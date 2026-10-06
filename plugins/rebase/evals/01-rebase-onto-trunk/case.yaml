@@ -12,7 +12,7 @@ execution:
   prompt: /rebase:rebase
   max_turns: 40
   timeout_seconds: 900
-  allowed_tools: [Bash, Read, Glob, Grep, Skill]
+  allowed_tools: [Bash, Read, Edit, Glob, Grep, Skill]
 
 runs: 3
 

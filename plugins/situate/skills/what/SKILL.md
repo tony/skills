@@ -62,6 +62,21 @@ when there is a real fork. Stay read-only, per the contract in
 `../../references/situation-sweep.md`, and write per
 `../../references/prose-rules.md`.
 
+Before sending, check each line:
+
+- One sentence per line, short enough to read in one breath. Cut a
+  second sentence or a stacked clause.
+- A narrow question gets only the causal answer. No line on branch
+  position, trunk, or repository location unless the answer needs it.
+- No headings, bullets, bold, preamble, closing summary, or offer to go
+  deeper. No `AskUserQuestion`; options are plain numbered lines.
+- No absolute paths, and no line true in every repository ("nothing has
+  been committed because no one ran `git commit`").
+- Never spend a line saying a layer was checked and was quiet. At most
+  one hedged inference.
+- If the work has wandered from its purpose, say so in one line and
+  offer `/situate:refocus` as an option; do not diagnose it here.
+
 ## Output
 
 The body, then the options. Nothing else — no title, no framing

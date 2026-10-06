@@ -1,8 +1,28 @@
 # Action pinning and tag verification
 
-Shared by this skill and
-the `github-actions-update-actions` skill. Read before writing any version
-string into a workflow.
+Read before writing any version string into a workflow.
+
+## Contents
+
+- Scope
+- Inventory pins from trunk, not the working tree
+- Resolve the latest version
+- Verify the target tag exists
+- Dereference annotated tags before comparing
+- Choose the pin, preserving the repo's shape
+- Check the gates the research surfaces
+
+## Scope
+
+Own repositories only. Check the fork flag, not the owner name:
+
+```console
+gh repo view <owner>/<name> --json isFork
+```
+
+A fork (`isFork: true`) and an upstream project are out of scope, with
+no override: a fork's workflows belong upstream. Report which
+repositories were excluded and why.
 
 ## Inventory pins from trunk, not the working tree
 
@@ -43,10 +63,9 @@ gh api repos/<owner>/<action>/git/ref/tags/<tag> >/dev/null 2>&1
 Piping `gh api` into `jq` or `sed` before checking the status swallows
 the 404 and reports a missing tag as present. Check the exit code.
 
-Not every action publishes a floating major. `astral-sh/setup-uv`
-stopped after v7 and upstream declined to add more, so `@v9` does not
-resolve while `@v9.0.0` does. Re-check per action rather than trusting
-any list.
+Not every action publishes a floating major. Run the same check against
+the major tag (`git/ref/tags/v<major>`) per action before choosing a
+float.
 
 ## Dereference annotated tags before comparing
 
@@ -86,19 +105,15 @@ does not exist.
 
 ## Check the gates the research surfaces
 
-Before writing a body that claims an upgrade is safe, confirm the claim
-against the actual workflows. Recurring ones worth grepping:
+Before writing a body that claims an upgrade is safe, grep the actual
+workflows for each breaking change the release notes name:
 
+- Removed or renamed inputs, and changed defaults.
 - `pull_request_target` or `workflow_run` combined with an explicit
-  `ref:`/`repository:` pointing at fork data — gates newer
-  `actions/checkout` majors.
-- A package manager declared via `devEngines` rather than
-  `packageManager`, or a missing committed lockfile — gates newer
-  `pnpm/action-setup` and `actions/setup-node` majors.
-- Long-removed inputs still present: `file:`, `plugin:`,
-  `always-auth`, `save-always`, `pip-install`.
-- `runs-on` values — self-hosted runners gate every bump that moves an
-  action to a newer Node runtime.
+  `ref:` or `repository:` pointing at fork data.
+- A new runtime requirement. Self-hosted `runs-on` values gate every
+  bump to a newer Node runtime.
+- Package-manager declaration and lockfile requirements.
 
 A fleet-wide fact is not a per-repo fact. If the body says "this repo
 authenticates via OIDC" and one repo uses static keys, that is a false

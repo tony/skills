@@ -5,7 +5,11 @@ ones they replace. That takes two things the original commits do not
 carry on their own: the project's own conventions, and the reasoning
 behind the code.
 
-Verified against git 2.43.
+## Contents
+
+- Part 1 — Match the project's style
+- Part 2 — Recover the intent
+- What a recommit message owes the reader
 
 ## Part 1 — Match the project's style
 

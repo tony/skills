@@ -1,49 +1,41 @@
 # PR Template Resolution
 
-Shared procedure for commands that draft a PR description from scratch
-(`/pr` and this skill). the `pr-refresh` skill never performs template
-resolution — it preserves the existing description's structure and must
-not discuss structure or templates at all.
+Procedure for skills that draft a PR description from scratch (`/pr` and
+this skill). the `pr-refresh` skill never resolves templates; it keeps the
+existing structure and does not discuss templates at all.
 
 ## Precedence
 
-1. **Template mentioned in the user's message.** If the user's message
-   or command argument names a template (a file path, a repo-relative
-   path, or a URL), read that file and use it. An explicit mention wins
-   over everything below — no question needed. If the mentioned path
-   does not exist, ask the user to correct it; do not silently fall
-   back.
+1. **Template named in the user's message.** When the message or
+   argument names a template (a file path, a repo-relative path, or a
+   URL), read it and use it. It wins over everything below with no
+   question. When the named path does not exist, ask the user to correct
+   it; never fall back silently.
 
-2. **Repository template.** Search the standard GitHub locations,
-   case-insensitively:
+2. **Repository template.** Search these locations, case-insensitively:
    - `.github/pull_request_template.md`
    - `pull_request_template.md` (repo root)
    - `docs/pull_request_template.md`
    - `.github/PULL_REQUEST_TEMPLATE/*.md` (multi-template directory)
 
-3. **No template found.** Use the gold-standard section patterns from
-   the `/pr` command. Do not mention templates to the user in this
-   case.
+3. **No template.** Use the section patterns in `/pr` (the `pr` skill,
+   step 3). Do not mention templates to the user.
 
 ## When to ask
 
-Ask via `ask-user-choice` — never guess — when:
+Ask through `ask-user-choice`, never guess, when:
 
-- The multi-template directory contains more than one template and the
-  user's message doesn't indicate which applies.
-- Templates exist in more than one standard location and they differ.
-- The user's mention is ambiguous (e.g., a name matching several
-  files).
+- The multi-template directory holds more than one template and the
+  message does not say which applies.
+- Templates in more than one standard location differ.
+- The user's mention is ambiguous (a name that matches several files).
 
-Offer the candidate templates as options, plus falling back to the
-gold-standard structure.
+Offer the candidates as options, plus the `/pr` section patterns.
 
-## Blending rule
+## Blending
 
-When a template is in play, the **template supplies the structure**:
-its sections, their order, and its headings are kept verbatim,
-including HTML comments and checklists. The gold-standard patterns
-(bold impact labels, tables, verification commands, proportionality)
-fill in the content *within* that structure. Add a section the template
-lacks only when the diff clearly warrants it, and say so when
-presenting the draft.
+A template supplies the structure: its sections, order, and headings
+stay verbatim, including HTML comments and checklists. The `/pr` patterns
+(bold impact labels, tables, verification commands, proportionality) fill
+the content inside that structure. Add a section the template lacks only
+when the diff clearly warrants it, and say so when presenting the draft.

@@ -1,5 +1,7 @@
 # GitLab
 
+Contents: Scope; Native hierarchy; Semantic roles; Orthogonal objects; References and autolinks; Reading and writing; Naming traps.
+
 ## Scope
 
 Group > Subgroup > Project. A GitLab Project is a development container: one repository
@@ -50,8 +52,6 @@ Never translate one into the other.
   absent on Free.
 
 ## Orthogonal objects
-
-None of these is a parent. Never convert one into `parent_of`.
 
 - Iteration (timebox) — native_tier_gated. "Iterations are only available to groups"
   ([iterations][iter]). Work is `scheduled_in` one. An iteration cadence schedules
@@ -117,8 +117,7 @@ in the docs: treat it as likely, and preview before posting.
 
 `@user_name` and `@group_name` are side effects, not formatting: "GitLab notifies all
 mentioned users with to-do items and emails", and the person becomes a participant
-([mentions][ment]). Avoid `@all`. Never put an @mention in draft text the user has not
-approved.
+([mentions][ment]). Avoid `@all`.
 
 House forms: bare short ref for a same-Project commit reachable from trunk; bare `#123` or
 `` !123 `` in-Project; bare `project#123` for another Project in the same namespace; bare
@@ -129,7 +128,7 @@ their timeline, put it in a code span or escape it and accept the loss of the li
 
 ## Reading and writing
 
-A local agent has a real backend; no paste-only fallback is needed. `glab` is GitLab's CLI,
+`glab` is GitLab's CLI,
 authenticated with `glab auth login` ([GitLab CLI][cli]). It has `issue`, `mr`,
 `work-items`, `milestone` and `api` command groups; there is no `epic` group. `glab issue
 create` takes `-t/--title`, `-d/--description`, `-l/--label`, `-m/--milestone`,
@@ -144,20 +143,17 @@ Issues, Merge Requests and Milestones are also plain REST ([Issues API][restapi]
 Tasks, Objectives and Key Results are work items and belong to GraphQL: `workItemCreate`
 and `workItemUpdate` take a `workItemTypeId` global ID and set parentage through the
 hierarchy widget ([workItemCreate][gql]). Query the instance's type list first. GitLab also
-ships an official MCP server at `https://<gitlab.example.com>/api/v4/mcp`, in beta,
-requiring GitLab Duo and beta features to be enabled by an administrator or group Owner
-([MCP server][mcp]); it exposes read and write tools, so prefer read until the user
+ships an official MCP server at `https://<gitlab.example.com>/api/v4/mcp`, when an
+administrator has enabled it ([MCP server][mcp]); it exposes read and write tools, so prefer read until the user
 approves a write. Preview the rendered body before posting — sigils, label chips, `+`
 expansions and cross-references only reveal themselves after render.
 
 ## Naming traps
 
 Never write "Pull Request" — the noun is Merge Request and `` !123 `` is its sigil. Never say
-bare "Project" for a delivery grouping; a GitLab Project is a scope_container holding a
-repository, and the delivery_group is an Epic. Never say "repo" as the home of an Epic;
+bare "Project" for a delivery grouping; the delivery_group is an Epic. Never say "repo" as the home of an Epic;
 Epics live in a Group. Never treat Objective and Epic as interchangeable, and never promote
-a Key Result into a parent. Never say "Sprint" — the noun is Iteration, and a Milestone is
-not one, nor is a Milestone a parent or an epic. Never say "Subtask"; the sub_item is a
+a Key Result into a parent. Never say "Sprint" — the noun is Iteration. Never say "Subtask"; the sub_item is a
 Task. Never say "story points" — the field is weight. Never say "Backlog" as an object; it
 is a board list. Never assume a work item type exists on the instance, and never invent a
 sigil for one that has none.

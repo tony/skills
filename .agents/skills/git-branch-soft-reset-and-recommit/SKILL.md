@@ -105,13 +105,8 @@ Wait for approval. Exit plan mode before executing.
 
 ## Phase 5 — Back up, then collapse
 
-Create the backup branch first, and report its name:
-
-```
-git branch "backup/<branch>-$(date -u +%Y%m%dT%H%M%SZ)" <branch>
-```
-
-Then collapse:
+Create the backup branch first, per `branch-safety.md`, and report its
+name. Then collapse:
 
 ```
 git reset --soft <base-sha>
@@ -125,14 +120,12 @@ across commits through the regenerate-filter-apply loop, and the
 staged set asserted before every commit.
 
 Write each message from the intent gathered in Phase 1, in the format
-discovered in Phase 3, preserving the original author identity and
-date. Carry `Co-authored-by` and ticket trailers forward.
+discovered in Phase 3, preserving each original author's name, email,
+and author date; the committer is whoever runs the recommit. Carry `Co-authored-by` and ticket trailers forward. Write the messages
+per `references/prose-rules.md`.
 
-`<toolkit>` is the absolute path to `references/rebase-todo.sh`, which ships
-with this skill. A shell runs with your project as its working directory, not
-this skill's, so substitute the full path before invoking it.
-
-Then gate the whole series in place:
+Then gate the whole series in place, with `<toolkit>` as defined in
+`rebase-toolkit.md`:
 
 ```
 sh <toolkit> verify <base-sha> '<test command>'
@@ -160,7 +153,7 @@ git range-diff <base-sha> backup/<branch>-<ts> HEAD
 ```
 
 Report the new series, the backup branch name, the gate results, and
-what was deferred.
+what was deferred, per `references/prose-rules.md`.
 
 ## Phase 8 — Pushing is a separate decision
 
@@ -185,34 +178,6 @@ git push --force-with-lease --force-if-includes origin <branch>
 - Never invent a test command, a version, or a ticket ID.
 - Language-agnostic: every gate command comes from the project's own
   conventions files.
-
-## Common mistakes
-
-**Collapsing before reading the original messages.** They are the
-primary evidence of intent, and after the soft reset they are only
-reachable through the backup ref.
-
-**Recutting a stacked branch against trunk.** It absorbs the entire
-parent pull request into the child. The base is the parent tip.
-
-**Trusting a clean `git rebase --exec` run that had no `--keep-base`.**
-Without it the "verification" rebases onto upstream and silently drops
-commits that became empty, exiting 0.
-
-**Putting `-m` after the `--` in `git commit --only`.** Everything
-after `--` is a pathspec, so git looks for a file named `-m`.
-
-**Gating on `git range-diff` being clean.** Heavy regrouping shows as
-drop-and-add pairs. It explains the recommit; tree equality gates it.
-
-**Leaving a stopped rebase in place.** A failed `--exec` leaves a
-detached HEAD that poisons every later git command.
-
-**Copying a span out of a transcript into a message.** Transcripts are
-unredacted. Re-state the claim in your own words.
-
-**Adding a `(#N)` suffix because the merge commits have one.** Merge
-style and branch style legitimately differ in the same repository.
 
 
 ## Portability notes

@@ -3,9 +3,6 @@
 How to pin a source so the citation still works in three years, and what a
 citation has to carry before it counts as evidence.
 
-The pinning rules are carried in lockstep with the discipline the `gh` plugin
-owns. The two rules at the end are this plugin's own.
-
 ## Pin every reference
 
 **A release tag first.** `blob/v2.40.0/README.md`. Most durable, and it tells
@@ -16,7 +13,9 @@ Use when there is no tag, or the claim is about unreleased code. Never a
 pull-request head: it can be rebased or garbage-collected.
 
 **Never a branch.** `blob/main/…` rots silently. The file moves, the lines
-shift, and the anchor lands on unrelated code while still returning 200.
+shift, and the anchor lands on unrelated code while still returning 200. The
+one exception is a living document meant to always show the latest state, such
+as a contributing guide; link it as a pointer, never as evidence for a claim.
 
 **Line anchors only on a pinned ref.** `#L120` for a line, `#L120-L145` for a
 range. On a file the host renders rather than displays — Markdown,
@@ -39,14 +38,21 @@ $ curl -s -o /dev/null -w '%{http_code}\n' -L 'https://github.com/OWNER/REPO/blo
 ## Every citation carries a locator
 
 A citation names where in the source the claim lives, not just which source.
+Take the most stable locator the source supports, in this order:
 
-- Code in version control: a line range on a pinned ref.
-- Structured prose: chapter and section.
-- A book: a page, and only where `sources.jsonl` records the edition. A page
-  number without an edition is not a locator.
-- A source with no stable anchor — a PDF without pagination, a transcript:
-  quote enough text to be found by search, and record in `sources.jsonl` that
-  the locator is a search string rather than a position.
+1. Code or text in version control: a line range on a pinned ref, which
+   `verify` can check mechanically.
+2. Structured prose: chapter and section. It survives repagination and
+   translation.
+3. A book: a page, and only where `sources.jsonl` records the edition. A page
+   number without an edition is true of one printing only.
+4. A source with no stable anchor, such as a PDF without pagination or a
+   transcript: quote enough unique text to be found by search, and record in
+   `sources.jsonl` that the locator is a search string rather than a position,
+   so `verify` checks it by search.
+
+Never invent a position the source does not have. A confident wrong locator
+costs a reader more than an honest search string.
 
 ## Circular evidence does not count
 

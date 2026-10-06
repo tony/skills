@@ -6,8 +6,8 @@ time.
 
 The whole motion happens in the index. The working tree stays pinned
 at the branch's final content from start to finish, so it never
-matches any intermediate commit — which is why intermediate commits
-are tested in a separate worktree, not this one.
+matches any intermediate commit — so intermediate commits are checked
+only after the series is committed, with the toolkit's `verify`.
 
 ## Contents
 
@@ -50,7 +50,7 @@ string that flows into `git reset --soft`.
 
 **On a stacked branch the base is the parent branch tip, never
 trunk.** Recutting a child against trunk absorbs the entire parent
-pull request into it. Once the parent has itself been recommit, plain
+pull request into it. Once the parent has itself been recommitted, plain
 `merge-base` for the child collapses back to trunk — recommit stacks
 bottom-up and re-derive each child's base afterward.
 
@@ -113,10 +113,11 @@ splitting is precisely the state where the index differs from the
 working tree.
 
 A rename is a delete plus an add in the index; the `R` in status is
-diff-time detection. Name both sides or you get a half-rename:
+diff-time detection. A soft reset leaves both sides staged already. If
+you unstaged one, name both sides or you get a half-rename:
 
 ```
-git add -A -- old-name new-name
+git add -- old-name new-name
 ```
 
 ## Split one file across several commits
@@ -218,9 +219,6 @@ its `<` and `>` lines are expected noise on a real recommit — heavy
 regrouping is reported as unrelated drop-and-add pairs rather than as
 matched edits.
 
-Then check that each commit stands on its own, in a worktree that is
-not pinned to the final content:
-
-```
-git worktree add --detach /tmp/recommit-check <sha>
-```
+Then check that each commit stands on its own with the toolkit's
+`verify` (see `rebase-toolkit.md`), which tests every commit in place
+once the series is committed.

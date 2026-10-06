@@ -1,5 +1,7 @@
 # Resolving a work item's provider and context
 
+Contents: Detect the provider before interpreting any noun; Capture native type and semantic role separately; Traverse only actual hierarchy relations; Collect orthogonal context separately; Never synthesize a missing level; Prefer native nouns in output; Respect instance configuration over defaults; Capture model; Reporting context back.
+
 Procedure for working out what an object actually is before writing about
 it. The taxonomy it resolves against is in `hierarchy.md`.
 

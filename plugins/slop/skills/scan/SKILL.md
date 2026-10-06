@@ -209,8 +209,9 @@ written per `../../references/prose-rules.md`. The user may edit it
 before the apply loop reads it. The skill drives the loop itself; there
 is no `apply.sh`.
 
-Without `--apply`, stop here. The user re-invokes with `--apply` once
-the proposals look right. The directory is run-scoped, not a permanent
+Without `--apply`, print the Step 11 report (skip its git and gate
+commands; counts of committed and rolled-back findings are 0) and stop.
+The user re-invokes with `--apply` once the proposals look right. The directory is run-scoped, not a permanent
 record.
 
 ## Step 9: Confirmation gate

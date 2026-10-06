@@ -3,6 +3,15 @@
 The rule behind `double-check` and `/double-check:align`. Host projects
 can copy the fragment at the bottom into their own AGENTS.md.
 
+## Contents
+
+- The failure
+- The contract
+- Banned in the output
+- The adopted-state exception
+- What this contract is not
+- AGENTS.md fragment
+
 ## The failure
 
 Asked to double-check prior analysis, agents tend to return a diff
@@ -66,7 +75,9 @@ answering for the first time.
 
 ## The adopted-state exception
 
-The Published-Release Test, applied to conversation: did the user
+The Published-Release Test, applied to conversation (a correction
+belongs in the answer only if a reader of the published text saw the
+old claim): did the user
 **act** on a prior claim — commit it, file it, send it, build on it?
 Then the correction describes something they experienced. Say so
 explicitly, once, briefly ("the issue filed earlier claims X; that is

@@ -35,7 +35,7 @@ same names without it.*
 ## Components
 
 - **`double-check` (skill):** Triggers when asked to double-check,
-  cross-check, or verify. The agent re-derives answers directly from
+  verify, or "are you sure". The agent re-derives answers directly from
   source artifacts, avoiding revision logs or inherited numbering.
 - **`/double-check:align` (skill):** Recovers conversations where
   diff-shaped answers already landed. Restates the best analysis rebuilt
@@ -51,6 +51,10 @@ Both components enforce `references/verification-contract.md`:
 - Confidence belongs to the claim, never the revision.
 - **Exception:** Explicit corrections are stated once if you acted on a
   prior claim.
+
+Beyond pasting the contract into your own rules file, the plugin adds
+trigger routing on those request phrases and `align`, which repairs a chat
+after a revision-log answer has already landed.
 
 ## Prerequisites
 

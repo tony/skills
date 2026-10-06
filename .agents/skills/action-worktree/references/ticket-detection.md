@@ -1,10 +1,17 @@
 # Ticket Detection, Branch Naming & Worktree Placement
 
 How this skill and the `action-worktrees` skill resolve tickets into
-branch names and worktree paths at runtime. Shared by both commands
-so the singular and plural procedures cannot drift. Language-agnostic
-and tracker-agnostic: Linear and GitHub are first-class, everything
+branch names and worktree paths at runtime. Tracker-agnostic: Linear and GitHub are fully supported, everything
 else degrades gracefully.
+
+Contents:
+
+- The read-only invariant (zero ticket write-back)
+- Detection source ladder
+- Ticket systems
+- Branch-name precedence ladder
+- Worktree placement & path sanitization
+- Server-side linking (how zero write-back still links)
 
 ## The read-only invariant (zero ticket write-back)
 
@@ -17,13 +24,9 @@ estimates, or otherwise mutates a ticket — in any tracker, through
 any tool. Every ticket operation is a read: title, description,
 acceptance criteria, the ticket's branch-name field.
 
-Rationale — **zero blowback**: a branch that goes nowhere unwinds
-with `git worktree remove` and `git branch -D`, and nothing else in
-the world needs undoing. No teammate was pinged, no board column
-moved, no assignment has to be handed back. Linking still happens —
-server-side, from naming (see § Server-side linking): the tracker
-attaches the branch and PR to the ticket because the *name* carries
-the ID, not because the plugin touched the ticket.
+A branch that goes nowhere unwinds with `git worktree remove` and
+`git branch -D`; nothing else needs undoing. Linking still happens
+server-side, from naming (see § Server-side linking).
 
 Concretely forbidden (non-exhaustive): tracker MCP mutation tools
 (create/update comment, state change, assignee change),
@@ -44,7 +47,7 @@ source that yields a concrete ticket wins:
    agreed to work.
 3. **Available MCP tools** — a tracker MCP server (Linear or
    otherwise) whose read tools can fetch or search issues.
-4. **CLIs** — `gh` first-class (`gh issue view`, `gh issue list`);
+4. **CLIs** — `gh` preferred (`gh issue view`, `gh issue list`);
    other tracker CLIs generically, read-only subcommands only.
 5. **Repo remote heuristics** — `git remote get-url origin` pointing
    at github.com suggests GitHub issues; a tracker ID pattern
@@ -69,7 +72,7 @@ are present and the prompt gives no URL, try the Linear MCP lookup
 first (cheaper, structured); if the ID is unknown there, try the
 other system; if both claim it, ask.
 
-### Linear (first-class)
+### Linear
 
 - **ID pattern**: per the table above. Match case-insensitively in
   prompts; display uppercased.
@@ -82,10 +85,8 @@ other system; if both claim it, ask.
   plus a kebab slug of the title (`tea-123-fix-login-redirect`),
   subject to the observed-norms adjustment below (teams commonly add
   or drop a `username/` prefix).
-- **Auto-attach**: Linear links the branch and PR to the issue when
-  the branch name or PR title contains the ID.
 
-### GitHub (first-class)
+### GitHub
 
 - **References**: `#123`, bare issue numbers in context, full issue
   URLs, `owner/repo#123`.
@@ -99,9 +100,6 @@ gh issue view <num> --json number,title,body,labels,url
 
 - **Branch name default**: `<number>-<kebab-title-slug>`, e.g.
   `123-fix-login-redirect`.
-- **Linking**: closing keywords in the PR body (`Fixes #123`,
-  `Closes #123`). The issue closes when a human merges the PR — not
-  when this plugin runs.
 
 ### Generic fallback (Jira, GitLab, others)
 

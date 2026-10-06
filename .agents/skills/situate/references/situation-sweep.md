@@ -7,15 +7,26 @@ with no remote still has commits, a branch with no pull request still
 has a diff. A layer that cannot be gathered is reported as unavailable,
 never dropped.
 
+## Contents
+
+- Read-only contract
+- 1. Position
+- 2. Change
+- 3. Pull request
+- 4. Tickets
+- 5. Conventions
+- 6. Prior conversations
+- Evidence discipline
+
 ## Read-only contract
 
-Nothing in this sweep writes. No commits, no pushes, no branch
-switches, no file edits, no stash.
+This is the one contract for every situate skill and command. Reading
+files, git history, and `gh` views is allowed. Never commit, push, edit
+files, stash, switch branches, or run `git fetch`.
 
-Do not `git fetch`. It rewrites remote-tracking refs, which changes
-what every other command in the session sees — a mutation dressed as a
-read. Work from the refs already in the repository and say how old they
-are:
+`git fetch` rewrites remote-tracking refs, which changes what every
+other command in the session sees: a mutation dressed as a read. Work
+from the refs already in the repository and say how old they are:
 
 ```console
 git log -1 --format='%cr' "$(git symbolic-ref --short refs/remotes/origin/HEAD 2>/dev/null || echo origin/main)" 2>/dev/null || echo "(unknown)"
@@ -167,7 +178,7 @@ commands named in those files or in the project's manifest.
 
 ## 6. Prior conversations
 
-Opt-in only. See `prior-conversations.md`.
+Opt-in only, through `--with-agentgrep` or an explicit request.
 
 ## Evidence discipline
 
@@ -179,8 +190,6 @@ Report absence explicitly. A section that silently disappears because
 nothing was found is indistinguishable from a section that was never
 checked, and the reader has no way to tell which.
 
-Orient, do not fix. The sweep surfaces failing checks, unresolved
-threads, and dirty files; it does not repair them, and it does not
-propose a plan for them beyond the closing next-step panel. A command
-that edits while claiming to be reading is the one failure mode that
-makes it unusable as a first move in a session.
+Orient, do not fix. Failing checks, unresolved threads, and dirty files
+get surfaced, not repaired, and the sweep proposes no plan for them
+beyond the closing next-step panel.

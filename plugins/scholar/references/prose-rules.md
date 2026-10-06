@@ -80,7 +80,8 @@ comes to", "in order to", "going forward", "let's dive in".
 ## Formatting
 
 - Prose and nested sections over tables, unless the data is a real matrix.
-- No headings over two-sentence sections; no bold sprinkled mid-sentence.
+- No headings over two-sentence sections. Bold only a term the reader must
+  not miss; never a bold label on every bullet, never bold mid-sentence.
 - Use bullets for parallel items, prose for an argument.
 - Em dashes: none in short text, one or two in long text where a comma or
   period reads worse.

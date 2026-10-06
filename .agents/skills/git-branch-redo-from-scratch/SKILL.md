@@ -17,7 +17,7 @@ the original learned.
 Argument: $ARGUMENTS — a PR number, a branch, a statement of what
 should change about the approach, or nothing.
 
-Four references carry the parts that must not drift:
+Five references carry the parts that must not drift:
 
 - `references/rebuild-contract.md` — the
   contract, the coverage ledger, reconciliation, and what counts as
@@ -27,7 +27,9 @@ Four references carry the parts that must not drift:
 - `references/commit-messages.md` — style
   discovery, intent recovery, and the privacy gate.
 - `references/rebase-toolkit.md` — per-commit
-  verification with no editor.
+  verification with no editor, and `<toolkit>`.
+- `references/split-mechanics.md` — committing whole files and
+  splitting one file across commits.
 
 ## Core principle
 
@@ -79,12 +81,8 @@ and the original author usually had a reason they never wrote down.
 
 ## Phase 3 — Gate and back up
 
-Every refusal in `branch-safety.md`. Then record the original tip so
-it cannot be lost:
-
-```
-git branch "backup/<branch>-$(date -u +%Y%m%dT%H%M%SZ)" <branch>
-```
+Every refusal in `branch-safety.md`. Then record the original tip in a
+backup branch, per `branch-safety.md`, so it cannot be lost.
 
 The old branch is never deleted, never force-moved, and never the
 place the rebuild happens.
@@ -126,11 +124,10 @@ until the contract is met — the exploration is a spike, and unreviewed
 exploration does not belong in history. Mark shortcuts in place as you
 take them so they become commits or decisions, not silent debt.
 
-When the plan called for a bakeoff and the `spike` plugin is
-installed, the `spike-bakeoff` skill runs the competing strategies in isolated
-worktrees and returns a scored comparison. Without it, build the
-leading candidate, record what the alternatives were, and say they
-were not tried.
+When the plan called for a bakeoff and a bakeoff skill is available,
+run the competing strategies in isolated worktrees and compare them.
+Otherwise build the leading candidate, record the alternatives, and say
+they were not tried.
 
 ## Phase 5 — Verify against the contract
 
@@ -141,21 +138,25 @@ task. Stop and surface it: the choices are to fix the rebuild, or to
 agree the test encoded something the new approach deliberately
 changes. Never edit a spec test to make a rebuild green.
 
-`<toolkit>` is the absolute path to `references/rebase-todo.sh`, which ships
-with this skill. A shell runs with your project as its working directory, not
-this skill's, so substitute the full path before invoking it.
+## Phase 6 — Commit the series
 
-Then gate every commit of the new series in place:
+Commit the rebuild as an atomic series in the project's own format,
+per `commit-messages.md` (write the messages per
+`references/prose-rules.md`), carving the working tree into commits with
+`split-mechanics.md` ("Commit whole files", "Split one file across
+several commits").
+
+Then gate every commit of the new series in place, with `<toolkit>` as
+defined in `rebase-toolkit.md`:
 
 ```
 sh <toolkit> verify <base-sha> '<test command>'
 ```
 
-## Phase 6 — Reconcile
+## Phase 7 — Reconcile, then stop
 
-Walk the ledger. Every entry is addressed, deliberately dropped, or
-missed. A drop is recorded in the commit message that drops it; a miss
-is a defect.
+Walk the ledger per `rebuild-contract.md`. Record each deliberate drop
+in the commit message that drops it; a miss is a defect.
 
 Then present the comparison as review material, never as a gate:
 
@@ -166,46 +167,11 @@ git diff <backup-branch> <branch>-redo
 Each hunk where the old branch did something the new one does not is a
 question for the user. This is where a lost workaround surfaces.
 
-## Phase 7 — Land, then stop
-
-Commit the rebuild as an atomic series in the project's own format,
-per `commit-messages.md`. Report the ledger outcome, the contract
-result, the backup branch, and every deliberate drop.
+Report the ledger outcome, the contract result, the backup branch, and
+every deliberate drop. Write it per `references/prose-rules.md`.
 
 Pushing is a separate decision, with the flags from
 `branch-safety.md`. The old branch stays until the user retires it.
-
-## Rules
-
-- Never edit a test the branch added in order to make the rebuild
-  pass, without explicit approval.
-- Never delete or force-move the original branch.
-- Never rebuild in the original branch's worktree.
-- Never present a passing test run as proof of completeness; the
-  ledger covers what the tests missed.
-- Never commit during the rebuild phase.
-- Language-agnostic: every gate command comes from the project's own
-  conventions files.
-
-## Common mistakes
-
-**Retyping the old implementation.** The result is the same shape with
-new commit hashes. Build from the ledger.
-
-**Treating `git diff` against the old branch as a gate.** The code is
-supposed to differ. It is a list of questions.
-
-**Dropping a guard that had no test.** It usually marks a bug someone
-already hit. Every workaround is load-bearing until its ledger entry
-says otherwise.
-
-**Starting without a contract.** On an untested branch this skill's
-first job is to create one, not to rebuild.
-
-**Rebuilding a branch that only needed its commits redone.** If the
-code is right and the history is wrong, that is
-the `git-branch-soft-reset-and-recommit` skill, and it comes with a guarantee
-this skill cannot offer.
 
 
 ## Portability notes

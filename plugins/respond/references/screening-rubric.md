@@ -2,7 +2,7 @@
 
 Contents: The gates, Verdicts, The ledger, Rationalizations.
 
-Every claim a reviewer makes — human or machine — passes six gates
+Every claim a reviewer makes, human or machine, passes six gates
 before a single file is edited. `/respond:check` runs them and writes
 the ledger; `/respond:action` reads that ledger and does not
 re-litigate it.
@@ -22,6 +22,11 @@ Tie the claim to a specific place in the code — file and symbol, not a
 line number that the next commit invalidates. A finding whose target
 cannot be found is `unlocatable`: report it, ask the reviewer what they
 meant, and never guess at a fix for it.
+
+With no repository or no readable code (findings pasted into a bare
+session), every gate past Locate fails for lack of evidence. Each
+finding gets `ask` with the reason "code not available", no fix shape,
+and no `fixup!`. Merging duplicates and dropping non-claims still apply.
 
 ### 2. Truth
 
@@ -44,8 +49,11 @@ Resolve the base: `--base=<ref>` if given, else the merge-base with the
 remote trunk:
 
 ```console
-git merge-base origin/<trunk> HEAD
+$ git merge-base origin/<trunk> HEAD
 ```
+
+`/respond:action` and `/respond:goal` run `git fetch origin` first.
+`/respond:check` does not, so its provenance may be stale.
 
 With no remote, fall back to the local trunk (`main` or `master`); when
 neither resolves, ask for the base rather than guessing.
@@ -88,17 +96,23 @@ can argue with the decision itself rather than with the triage.
 How often does the scenario actually fire? Classify the trigger it
 needs and the damage it does; do not invent a probability.
 
-| Trigger | Meaning |
-|---|---|
-| Routine | Reachable on a path users take, with ordinary inputs. |
-| Occasional | Needs an unusual but attainable combination — a rare flag, an empty collection, a slow network, a specific platform the project supports. |
-| Remote | Needs a combination nobody has produced: a race with a microsecond window on a single-threaded path, an input no caller can construct, a platform the project does not support. |
+Trigger:
 
-| Damage | Meaning |
-|---|---|
-| Severe | Security, data loss, corruption, or a silently wrong result a user would act on. |
-| Visible | A crash, an error, a wrong render — the user notices and can report it. |
-| Cosmetic | Style, an internal log line, a message no user reads. |
+- **Routine.** Reachable on a path users take, with ordinary inputs.
+- **Occasional.** Needs an unusual but attainable combination: a rare
+  flag, an empty collection, a slow network, a specific platform the
+  project supports.
+- **Remote.** Needs a combination nobody has produced: a race with a
+  microsecond window on a single-threaded path, an input no caller can
+  construct, a platform the project does not support.
+
+Damage:
+
+- **Severe.** Security, data loss, corruption, or a silently wrong
+  result a user would act on.
+- **Visible.** A crash, an error, a wrong render; the user notices and
+  can report it.
+- **Cosmetic.** Style, an internal log line, a message no user reads.
 
 Severe damage clears this gate at any trigger — a remote security bug
 is still a security bug, and the cost of being wrong is unbounded.
@@ -128,7 +142,8 @@ the defect only needed a condition. Cost the smaller fix and offer it.
 
 ## Verdicts
 
-Every finding leaves screening with exactly one:
+Every finding leaves screening with exactly one, never a conditional
+("fix if X"):
 
 - **`fix`** — cleared all six gates. Goes to `/respond:action` with the
   intended fix shape recorded.
@@ -152,16 +167,25 @@ One record per finding. The whole ledger is keyed by three values,
 printed in the report's `## Ledger key` section and read back from the
 session by `/respond:action`:
 
-- **branch** — `git branch --show-current`.
-- **`HEAD`** — `git rev-parse HEAD`.
+- **branch** — `git branch --show-current`; `none` when empty or
+  outside a repository.
+- **`HEAD`** — `git rev-parse HEAD`; `none` when it fails (no commits,
+  no repository).
 - **digest** — the first 12 hex characters of the SHA-256 of the
   screened claims: one line per finding, `<source>` TAB `<claim>` with
   the claim whitespace-collapsed, sorted bytewise, newline-terminated.
   It covers the findings as collected, before dedup, so new or edited
   feedback changes it.
 
-```console
-$ LC_ALL=C sort claims.tsv | shasum -a 256 | cut -c1-12
+Build the lines and hash them in one command, since shell state does
+not persist between commands. Collapse each claim's whitespace
+yourself and write a single quote as `'\''`:
+
+```bash
+{
+  printf '%s\t%s\n' 'alex' 'first claim'
+  printf '%s\t%s\n' 'lint-bot' 'second claim'
+} | LC_ALL=C sort | shasum -a 256 | cut -c1-12
 ```
 
 `/respond:action` recomputes all three from the feedback it collects.
@@ -188,11 +212,9 @@ Each record carries:
 
 ## Rationalizations
 
-| Thought | Reality |
-|---|---|
-| "The reviewer asked for it, so I should fix it" | The reviewer flags; the owner scopes. Compliance is not review. |
-| "Three bots flagged it, so it must be real" | Bots share training data and prompt shapes. Three agreements are one opinion; the code is the evidence. |
-| "It's a real bug, declining feels wrong" | Declining `improbable` is a recorded, falsifiable claim about the trigger, published to the reviewer. Ignoring is silence; this is not that. |
-| "It's a one-line guard, the cost is nothing" | The line is one; the test that holds it up, the comment explaining it, and every future reader's second of confusion are not. |
-| "Provenance is obvious here" | Skipping the diff is how a branch ends up fixing trunk code and burying that fix inside an unrelated review. Run it. |
-| "It contradicts how I'd have built it" | That is not an alignment citation. Find the written decision or drop the objection. |
+- "Three bots flagged it, so it must be real." Bots share training data
+  and prompt shapes; three agreements are one opinion, and the code is
+  the evidence.
+- "It's a real bug, declining feels wrong." Declining `improbable` is a
+  recorded, falsifiable claim about the trigger, published to the
+  reviewer. Ignoring is silence; this is not that.

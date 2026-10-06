@@ -6,23 +6,16 @@ the rest. That pile is the corpus, and `agentgrep` searches it. This
 file is how to turn it into a per-skill invocation count, and the ways
 that count comes back confidently wrong.
 
-This file holds the queries. The reasoning behind each rule lives in a
-dated scenario beside it, written as input, reasoning, and output, so a
-claim can be re-run rather than believed:
+Contents:
 
-- `references/worked-example-spike.md` — one sweep followed end to
-  end, from the prompts it mined to the edits they became.
-- `references/2026-08-12-tool-channel-has-no-date.md` — why the era
-  ranking comes from one channel.
-- `references/2026-08-12-superseded-skill-leads-all-time.md` — why the
-  evidence bar needs currency at all.
-- `references/2026-08-12-one-project-three-spellings.md` — why spread
-  has to be normalized before it is counted.
-
-Figures in a scenario record one machine on one day and are dated for
-that reason. They show how large a trap was; none is a threshold or an
-expected value. A number whose run you cannot inspect is cheaper to
-re-measure than to trust.
+- Invocations land in two places, and neither is the whole count
+- Renames split the history
+- Supersessions split it the other way
+- Spread, not just repetition
+- Cost, and how to not pay it repeatedly
+- Query syntax that bites
+- Hosts do not type alike
+- Redact before anything ships
 
 ## Invocations land in two places, and neither is the whole count
 
@@ -53,8 +46,7 @@ through is what makes an era split possible at all — rank straight to
 `uniq -c` and the dates are gone, with no later phase able to recover
 them. Matching against the whole `.display` anchored at `^` is what
 stops a pasted prompt that merely mentions the `action-worktree` skill from
-scoring as an invocation of it; on one corpus, matching line by line
-instead inflated the total by 43. And doing the extraction inside `jq`
+scoring as an invocation of it. And doing the extraction inside `jq`
 rather than piping through `sed` keeps it identical on BSD and GNU,
 where `\S` and a `\t` replacement are not.
 
@@ -83,8 +75,7 @@ uvx agentgrep --color never search --exhaustive '"Launching skill:"' --limit 200
 This channel has no usable date, and the `timestamp:` query field
 appears to fix that while silently dropping almost everything. The era
 split is therefore a slash-channel measurement, and the union of both
-channels can only be ranked all-time. Worked through in
-`references/2026-08-12-tool-channel-has-no-date.md`.
+channels can only be ranked all-time.
 
 The two disagree, and not by a fixed amount. The ratio between them
 belongs to each skill rather than to the corpus: a skill invoked almost
@@ -99,17 +90,15 @@ from the tool channel alone recommends deleting heavily used skills;
 reporting from the slash channel alone erases the ones the model
 invokes without ever being asked by name.
 
-Do not try to predict which channel a skill lands in from its
-frontmatter. `disable-model-invocation: true` does not confine a skill
-to the slash channel — measured counterexamples exist in both
-directions. Union the channels; do not model them.
+Do not predict a skill's channel from its frontmatter:
+`disable-model-invocation: true` does not confine a skill to the slash
+channel. Union the channels; do not model them.
 
 ## Renames split the history
 
 A renamed skill keeps its old invocations under the old name forever.
 Counting only the current name undercounts, sometimes by most of the
-total: one measured rename left 150 invocations under the old name and
-34 under the new one, an 82% undercount.
+total.
 
 Recover the old names from the repository rather than guessing.
 
@@ -154,9 +143,8 @@ against the wrong date it reads as a gap either way.
 
 ## Spread, not just repetition
 
-The evidence bar is repetition, spread, **and** currency. Spread is the
-leg this section serves: a pattern confined to one project is that
-project's quirk.
+A pattern confined to one project is that project's quirk, so spread
+has to be counted correctly.
 
 Project attribution sits in a different field per record type, and
 reading only one of them silently reports zero spread. In `agentgrep`'s
@@ -174,7 +162,7 @@ Deduplicate the names it returns before counting them, and compare by
 equality rather than by prefix. The two channels spell the same project
 differently and one slug can extend another, so a raw `wc -l` over that
 union inflates spread for a single project and merges two neighbouring
-ones. Worked through in `references/2026-08-12-one-project-three-spellings.md`.
+ones.
 
 Those field names describe agentgrep's normalization, not the files
 underneath it. The slash-channel query above reads
@@ -190,9 +178,8 @@ rather than scoring it zero.
 
 ## Cost, and how to not pay it repeatedly
 
-An exhaustive search reads the whole corpus — one measured run covered
-916 sources and 402,283 records in about 95 seconds. That is the unit
-cost of *one* query. Budget accordingly:
+An exhaustive search reads every store on disk. That is the unit cost
+of *one* query. Budget accordingly:
 
 - Run **one** broad exhaustive query and group its results locally,
   rather than one query per skill. A single `"Launching skill:"` sweep
@@ -213,9 +200,9 @@ jq -c '.summary.status, .summary.stats, .summary.coverage' <saved.json>
 `stats.matched`: it counts results after deduplication and after
 `--limit`, so it quietly equals the limit whenever the limit binds and
 `state` still reads `complete`. `coverage.matches_seen` counts every
-match before either, and is the number a threshold belongs on. In one
-measured run the two read 302 and 439 for the same query, and 439 was
-the literal occurrence count.
+match before either, and is the number a threshold belongs on. The two
+can differ for the same query; `matches_seen` is the literal occurrence
+count.
 
 ## Query syntax that bites
 

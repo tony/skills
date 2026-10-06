@@ -1,8 +1,18 @@
 # Ecosystem discovery and apply
 
-Shared by the `package-updater-update` skill, the `package-updater-update-package` skill,
-and the `package-updater-update-toolchain` skill. Read before running anything
-that resolves a version.
+Read before running anything that resolves a version.
+
+## Contents
+
+- Python with uv
+- Python with poetry or pip
+- Node with pnpm
+- Node with npm or yarn
+- Rust
+- Go
+- When a project has no established procedure
+- Runtime and toolchain pins
+- Supply-chain cooldown
 
 Detect an ecosystem by the files present, never by the project's name or
 its language tag. A repository can carry several at once — a Python
@@ -121,8 +131,8 @@ resolves next to the package file, so a workspace member can hold a
 package its siblings track — a root-only scan under-reports holds.
 
 Adding and releasing a hold are both commits, and both name the
-condition. See `holds.md` for the lifecycle, the commit grammar, and why
-the reason cannot be written into the file itself.
+condition. The reason cannot be written into the file itself, because
+`ncu` rejects unknown keys; the commit message carries it.
 
 For a one-off exclusion that is not worth checking in, `ncu -u -x <name>`.
 
@@ -136,21 +146,12 @@ pnpm section applies unchanged, except the cooldown key.
 
 Marked by `Cargo.lock`.
 
-**Never run `cargo-outdated`.** It allocates without bound — around
-18 GB resident — and on a memory-constrained host such as WSL the OOM
-killer takes the machine down, losing whatever else was running. The
-cost is paid by starting the process, so there is no safe way to try it
-and see. Do not offer it as an option, and do not run it to check
-whether the problem still reproduces.
-
+Never run `cargo-outdated`; it exhausts memory on constrained hosts.
 Discover with the resolver instead:
 
 ```console
 cargo update --dry-run
 ```
-
-Or read the `Cargo.lock` diff directly, which is what the dry run
-prints anyway.
 
 `cargo update` applies an in-range refresh, touching only the lockfile.
 Raising a version in `Cargo.toml` is a manifest edit and a separate
@@ -165,18 +166,16 @@ and `go.sum` are committed together.
 
 ## When a project has no established procedure
 
-Some ecosystems here are documented from their own tooling rather than
-from a procedure this project has settled on. Say so in the plan rather
-than presenting an untested command as routine, and prefer the smallest
-reversible step: report what is outdated, propose the command, and let
-the user confirm before the first run in that repository.
+Poetry, pip and Go commands above come from the tools' own
+documentation, not from a procedure the project has settled on. Say so
+in the plan, propose the command, and let the user confirm before the
+first run in that repository.
 
 ## Runtime and toolchain pins
 
 Marked by `.tool-versions`, `.nvmrc`, `.python-version`, or a
 `mise.toml`. These pin the tools that resolve everything above, so they
-move first and on their own — see `commit-conventions.md` for the
-one-tool-per-commit rule.
+move first and on their own, one tool per commit.
 
 Discover with the version manager that reads the file:
 
@@ -199,10 +198,10 @@ hours. It is configured per ecosystem and the keys are not
 interchangeable.
 
 **uv** reads `exclude-newer` as a duration string (`"3 days"`), from
-`uv.toml` in the project or from the user's config file. Requires uv
-0.9.17 or newer. It stamps the window into the lockfile as
-`exclude-newer-span`, so an existing `uv.lock` records the cooldown it
-was resolved under.
+`uv.toml` in the project or from the user's config file. A uv too old
+for the duration form rejects or ignores it; confirm the window landed
+by finding `exclude-newer-span` in `uv.lock` after a lock run. The
+lockfile records the cooldown it was resolved under.
 
 **pnpm** reads `minimumReleaseAge` from `pnpm-workspace.yaml`, in
 **minutes**. Setting it explicitly forces strict mode, which fails an
@@ -212,8 +211,8 @@ instead. Individual versions are let through with
 `minimumReleaseAgeExclude`.
 
 **npm** reads `min-release-age` from `.npmrc`, as an **integer number of
-days**. Requires npm 11.10.0 or newer. pnpm ignores this key entirely,
-so a repository using pnpm must set its own.
+days**. Check `npm --version` against npm's docs for the key. pnpm
+ignores it entirely, so a repository using pnpm must set its own.
 
 `ncu` honours npm's key and says so in its output — a run that prints
 `Using min-release-age from .npmrc: 3 days` is filtering, and versions
@@ -227,15 +226,21 @@ is merely gated.
 
 ### Exempting a package
 
-Only when the resolver genuinely cannot see a release that is needed
-now. An exemption is a hole in a supply-chain guard, so keep it small
-and temporary:
+Only when the resolver cannot see a release that is needed now. An
+exemption is a hole in a supply-chain guard, so keep it small and
+temporary. Skip it when the resolver already sees the release or the
+window is short enough to wait out.
 
-- Narrow it to the one package and the one version.
-- Annotate it where it lives, with the condition for removing it.
-- Land it as its own commit, so it reverts cleanly.
-- Say in the body when the block lapses, and revert it then.
-
-Skip this entirely when the resolver can already see the release.
-Waiting out a three-day window costs nothing; a permanent exemption
-nobody remembers to remove costs the guard.
+- Exempt the one package, never the cooldown globally. Resolvers that
+  support a cooldown support a per-package override.
+- Prefer an override form that carries no date. A dated override ages
+  into the lockfile and stops meaning anything.
+- Annotate it in the file with the reason and the condition for removal.
+  JSON configs reject comments: put the annotation in the commit message
+  instead.
+- Land it as its own commit, first in the branch, so one revert removes
+  it.
+- Compute when the block lapses (publication timestamp plus the window),
+  state it in the commit body, and revert the exemption then.
+- When the work goes through a pull request, name the revert as a
+  pre-merge requirement in its body, with the lapse time.

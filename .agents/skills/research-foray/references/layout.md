@@ -10,7 +10,7 @@ The on-disk contract for research and assessment runs, and the part of it other 
 
 - **root**: `--root`, else `$RESEARCH_ROOT`, else `~/Documents`. On WSL, the Windows user's `/mnt/c/Users/<user>/Documents`: service profiles are skipped, and among several users the one in `PATH` or matching the Linux user wins. When that still leaves several, `topic.py` exits 2 naming them. The default is never the temp directory, and a run never goes inside the repository or corpus being studied.
 - **date**: the local calendar day of the run.
-- **namespace**: who owns the topic. `research` by default; a plugin's name when a plugin writes the run (`business`, `downstream-users`, `libtmux-port`).
+- **namespace**: who owns the topic. `research` by default; a plugin's name when a plugin writes the run (`business`, `downstream-users`).
 - **topic**: a kebab-case slug. The same slug on different dates is what makes them one topic.
 
 ## Inside a run
@@ -69,7 +69,7 @@ A release row: `at`, `sha256` and `report` (the snapshot under `releases/`), `to
 
 ## Source states
 
-`status` reports each current source as fresh (added this run), verified (a live check of its current version passed, and no later check failed), intact (only an offline check passed), unchecked (no capture, and no live check), unretrieved (never captured), unverified (carried, not yet checked), stale (carried and retrieved over 180 days ago), or the failed check's status. It also counts cards whose notes are still the template, lists assessment criteria rated unknown or citing no source, sources pinned to something that moves, conflicts not yet weighed, and, for each reader, the latest release if it rests on a source that has since changed, failed, or been retired, with the decisions taken on it.
+`status` reports each current source as fresh (added this run), verified (a live check of its current version passed, and no later check failed), intact (only an offline check passed), unchecked (no capture, and no live check), unretrieved (never captured), unverified (carried, not yet checked), stale (carried, and retrieved longer ago than the script's staleness window), or the failed check's status. It also counts cards whose notes are still the template, lists assessment criteria rated unknown or citing no source, sources pinned to something that moves, conflicts not yet weighed, and, for each reader, the latest release if it rests on a source that has since changed, failed, or been retired, with the decisions taken on it.
 
 ## Export
 

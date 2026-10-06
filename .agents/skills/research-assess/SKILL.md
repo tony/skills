@@ -12,8 +12,6 @@ metadata:
 
 # this skill
 
-Answer a decision question against criteria fixed before the evidence: rate each criterion from captured sources, then reach the verdict those ratings support.
-
 Invoke the `research-foray` skill with `assess` followed by the user arguments, and follow it.
 
 User arguments: $ARGUMENTS

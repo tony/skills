@@ -1,22 +1,42 @@
-# Anti-Pattern Catalog
+# Spacing anti-pattern catalog
 
-Examples use React/TSX (`className`). The same patterns apply to `class=` in Vue, Svelte,
-Astro, and plain HTML.
+Seven patterns, ordered by how often they cause visible unevenness. Each
+has a signal, a detect command, a before and after, and when to leave it
+alone. Examples use `className`; Vue, Svelte, Astro, HTML, ERB, and Blade
+use `class`. Physical margins (`ml-*`, `mr-*`) and logical margins
+(`ms-*`, `me-*`) are the same anti-pattern.
 
-Each pattern shows the problem structure, why it causes visual inconsistency, and the
-refactored version. All examples use Tailwind CSS v4 syntax.
+Detect commands match both attributes in every supported template
+extension. Each hit needs a read in context.
 
----
+## Contents
 
-## Pattern 1: Container Fragmentation
+- Pattern 1: Container fragmentation
+- Pattern 2: Margin and gap mixing
+- Pattern 3: Padding asymmetry
+- Pattern 4: Fixed width on content-sized items
+- Pattern 5: Wrapper nesting
+- Pattern 6: Hit target inconsistency
+- Pattern 7: space-x and space-y with gap
+- Decision tree
 
-The most common cause of "it looks uneven but I can't tell why." Items that belong to the
-same visual group are split across sibling containers, each with its own spacing rules.
+## Pattern 1: Container fragmentation
 
-### Before
+Items that read as one row are split across sibling containers, each
+with its own spacing rule. No `rg` pattern finds this; walk the DOM.
+
+Detect: list the visual peers, then check that all share one flex or
+grid parent. Margins on a container that has a flex sibling hint at it:
+
+```console
+$ rg -n \
+    '(class|className)=[^>]*[ "'"'"':]-?m[esrlx]-[0-9]' \
+    -g '*.{tsx,jsx,vue,svelte,astro,html,erb,blade.php}'
+```
+
+Before:
 
 ```tsx
-{/* Group A: gap-1 governs internal spacing */}
 <div className="me-1 flex gap-1">
   <a className="flex h-12 items-center" href="/social">
     <img className="h-6 w-auto" alt="Social" src="..." />
@@ -29,21 +49,19 @@ same visual group are split across sibling containers, each with its own spacing
   </button>
 </div>
 
-{/* Group B: completely separate spacing context */}
 <div className="me-2 flex place-items-center">
   <button className="flex h-8 w-24 items-center gap-1.5 rounded px-2">
-    <span>☀️</span><span>Theme</span>
+    <span>Theme</span>
   </button>
 </div>
 ```
 
-**Spacing between Babylon.js and Theme:** `me-1` (from Group A) + flex layout gap =
-uncontrolled. **Spacing between Wrench and Babylon.js:** `gap-1` = 4px. These don't match.
+The Wrench to Babylon.js gap is `gap-1`. The Babylon.js to Theme gap is
+`me-1` plus whatever the outer parent adds. They differ.
 
-### After
+After:
 
 ```tsx
-{/* Single container, single gap */}
 <div className="flex items-center gap-2">
   <a className="flex h-12 items-center px-2" href="/social">
     <img className="h-6 w-auto" alt="Social" src="..." />
@@ -55,40 +73,47 @@ uncontrolled. **Spacing between Wrench and Babylon.js:** `gap-1` = 4px. These do
     <span>B</span><span>Babylon.js</span>
   </button>
   <button className="flex h-8 items-center gap-1.5 rounded px-2">
-    <span>☀️</span><span>Theme</span>
+    <span>Theme</span>
   </button>
 </div>
 ```
 
-**What changed:**
-- Merged two containers into one
-- Removed `me-1` and `me-2` margin hacks
-- Single `gap-2` governs all inter-item spacing
-- Removed `w-24` from Theme (see Pattern 4)
-- Added `px-2` to the social link for envelope consistency (see Pattern 3)
+One container, one `gap-2`. The `me-*` hacks and `w-24` are gone
+(Patterns 2 and 4), and the social link gained `px-2` (Pattern 3).
 
----
+## Pattern 2: Margin and gap mixing
 
-## Pattern 2: Margin/Gap Mixing
+A flex or grid parent sets `gap-*`, and some children also carry
+margin. The margin adds to the gap on that edge.
 
-A flex parent uses `gap-*` for inter-child spacing, but individual children also carry
-margin classes, creating compound spacing on specific edges.
+Detect: find parents with gap, then margins on their children:
 
-### Before
+```console
+$ rg -n \
+    '(class|className)="[^"]*(flex|grid)[^"]*gap-' \
+    -g '*.{tsx,jsx,vue,svelte,astro,html,erb,blade.php}'
+```
+
+```console
+$ rg -n \
+    '(class|className)=[^>]*[ "'"'"':]-?m[trblxyse]?-[0-9a\[ps]' \
+    -g '*.{tsx,jsx,vue,svelte,astro,html,erb,blade.php}'
+```
+
+Before:
 
 ```tsx
 <nav className="flex items-center gap-3">
   <a className="px-2" href="/">Home</a>
   <a className="px-2" href="/about">About</a>
-  <a className="px-2 me-4" href="/docs">Docs</a>    {/* me-4 + gap-3 = 28px right */}
-  <button className="ms-2 px-3">Contact</button>     {/* ms-2 + gap-3 = 20px left */}
+  <a className="px-2 me-4" href="/docs">Docs</a>
+  <button className="ms-2 px-3">Contact</button>
 </nav>
 ```
 
-The gap between Docs and Contact is `gap-3` (12px) + `me-4` (16px) + `ms-2` (8px) = 36px.
-Every other gap is 12px. This is almost never intentional.
+Docs to Contact is 12 + 16 + 8 = 36px; every other gap is 12px.
 
-### After (uniform spacing)
+After, uniform:
 
 ```tsx
 <nav className="flex items-center gap-3">
@@ -99,218 +124,172 @@ Every other gap is 12px. This is almost never intentional.
 </nav>
 ```
 
-### After (intentional section break)
-
-If the Docs-Contact gap was meant to be a visual separator:
+After, if the wide gap was a deliberate break, make it a visible
+divider instead of margin arithmetic:
 
 ```tsx
 <nav className="flex items-center gap-3">
-  <a className="px-2" href="/">Home</a>
-  <a className="px-2" href="/about">About</a>
   <a className="px-2" href="/docs">Docs</a>
   <div className="mx-1 h-5 w-px bg-slate-300" aria-hidden="true" />
   <button className="px-3">Contact</button>
 </nav>
 ```
 
-Use a visible divider element rather than invisible margin accumulation. It's honest about
-the intent and doesn't rely on margin math.
+Leave alone: a margin on the first or last child that insets from the
+container edge. `gap-*` does not govern edge space, but padding on the
+parent is cleaner.
 
----
+## Pattern 3: Padding asymmetry
 
-## Pattern 3: Padding Asymmetry Across Peer Elements
+Peer interactive elements in one row have different `px-*`, `py-*`, or
+`p-*`. Their content sits unevenly even when the gaps match.
 
-Interactive elements in the same row have different horizontal padding, causing their
-content to appear unevenly positioned even when the gap between containers is uniform.
+Detect: list the buttons, links, and toggles in one container, extract
+their padding classes, and compare. Candidates:
 
-### Before
+```console
+$ rg -n \
+    '<(a|button)[^>]*(class|className)=' \
+    -g '*.{tsx,jsx,vue,svelte,astro,html,erb,blade.php}'
+```
+
+Before:
 
 ```tsx
 <div className="flex items-center gap-2">
-  {/* No padding — content touches the element edge */}
   <a className="flex h-12 items-center" href="/profile">
     <img className="h-6" src="avatar.png" alt="" />
   </a>
-  {/* px-2 — content has 8px breathing room */}
   <button className="flex h-12 items-center px-2">
     <SettingsIcon />
   </button>
-  {/* px-4 — content has 16px breathing room */}
   <button className="flex h-12 items-center px-4">
     <span>Settings</span>
   </button>
 </div>
 ```
 
-Visual result: the avatar crowds toward the settings icon, but "Settings" text floats
-with extra internal space. The gap between elements is identical, but the perceived gap
-varies because of padding differences.
+After: all three use `px-2`.
 
-### After
+If text-heavy items truly need more padding, they probably belong to a
+different visual group.
 
-```tsx
-<div className="flex items-center gap-2">
-  <a className="flex h-12 items-center px-2" href="/profile">
-    <img className="h-6" src="avatar.png" alt="" />
-  </a>
-  <button className="flex h-12 items-center px-2">
-    <SettingsIcon />
-  </button>
-  <button className="flex h-12 items-center px-2">
-    <span>Settings</span>
-  </button>
-</div>
+## Pattern 4: Fixed width on content-sized items
+
+One item in a flex row has `w-*` while its siblings size to content.
+Extra space pools inside it and it reads wider than its peers.
+
+Detect: `w-` followed by a digit, not preceded by `-`, so `min-w-*` and
+`max-w-*` do not match:
+
+```console
+$ rg -n \
+    '(class|className)=[^>]*[ "'"'"':]w-[0-9]' \
+    -g '*.{tsx,jsx,vue,svelte,astro,html,erb,blade.php}'
 ```
 
-**Rule of thumb:** Icon-only elements and icon+text elements in the same group should share
-the same `px-*`. If text-heavy elements genuinely need more padding, that's a signal they
-might belong in a different visual group or need a different component treatment.
-
----
-
-## Pattern 4: Fixed Width on Content-Adaptive Elements
-
-One item in a flex row has a fixed width while its siblings size to content, creating
-uneven internal whitespace.
-
-### Before
+Before:
 
 ```tsx
 <div className="flex items-center gap-2">
   <button className="flex h-8 items-center gap-1.5 rounded px-2">
-    <span>B</span><span>Babylon.js</span>
+    <span>Babylon.js</span>
   </button>
-  {/* w-24 = 96px fixed, but content only needs ~80px */}
   <button className="flex h-8 w-24 items-center gap-1.5 rounded px-2">
-    <span>☀️</span><span>Theme</span>
+    <span>Theme</span>
   </button>
 </div>
 ```
 
-"Babylon.js" button: content-sized, padding is symmetric. "Theme" button: 96px fixed width
-with ~80px content = ~16px excess, distributed by `justify-center` or pooled on the right.
+After: remove `w-24`; content and padding set the width.
 
-### After
+Leave alone: `min-w-*` and `max-w-*` (they constrain, not fix); grid
+cells that must align; form inputs that share a field width; counters
+whose text length varies enough to cause layout shift.
 
-```tsx
-<div className="flex items-center gap-2">
-  <button className="flex h-8 items-center gap-1.5 rounded px-2">
-    <span>B</span><span>Babylon.js</span>
-  </button>
-  <button className="flex h-8 items-center gap-1.5 rounded px-2">
-    <span>☀️</span><span>Theme</span>
-  </button>
-</div>
+## Pattern 5: Wrapper nesting
+
+A single-child `<div>` with flex alignment classes wraps an element that
+could take those classes itself. The parent's `gap-*` then acts between
+wrappers, whose size differs from their content.
+
+Detect: divs with flex and `items-center`, then check each for one child:
+
+```console
+$ rg -n \
+    '<div (class|className)="[^"]*flex[^"]*items-center[^"]*">' \
+    -g '*.{tsx,jsx,vue,svelte,astro,html,erb,blade.php}'
 ```
 
-Remove `w-24`, let content + padding determine width. Now both buttons have identical
-envelope behavior and their internal whitespace is symmetric.
-
-**When fixed width IS appropriate:**
-- Buttons in a grid layout that must align vertically
-- Inputs in a form where consistent field widths improve scanability
-- Elements whose content length varies dramatically (e.g., a counter that goes from "1" to
-  "999") and layout shift must be prevented
-
----
-
-## Pattern 5: Wrapper Nesting
-
-Unnecessary single-child `<div>` wrappers that exist solely for alignment, adding an
-extra layout level that can distort spacing.
-
-### Before
+Before:
 
 ```tsx
 <div className="flex items-center gap-2">
-  {/* Wrapper does nothing the button can't do */}
   <div className="flex h-full items-center">
     <button className="flex h-8 items-center gap-1.5 rounded px-2">
-      <span>B</span><span>Babylon.js</span>
-    </button>
-  </div>
-  {/* Another unnecessary wrapper */}
-  <div className="flex h-full items-center">
-    <button className="flex h-8 items-center gap-1.5 rounded px-2">
-      <span>☀️</span><span>Theme</span>
+      <span>Theme</span>
     </button>
   </div>
 </div>
 ```
 
-The `gap-2` acts between the *wrappers*, which have `h-full` (stretching to parent height).
-The buttons inside are `h-8`. The clickable area is `h-8`, but the gap-consuming element is
-`h-full` — this can cause subtle vertical alignment differences.
+After: the button is a direct child of the gap container, and
+`items-center` on the parent centers it.
 
-### After
+Leave alone: a wrapper that carries padding, background, or border the
+child cannot take, and any wrapper around more than one child.
 
-```tsx
-<div className="flex items-center gap-2">
-  <button className="flex h-8 items-center gap-1.5 rounded px-2">
-    <span>B</span><span>Babylon.js</span>
-  </button>
-  <button className="flex h-8 items-center gap-1.5 rounded px-2">
-    <span>☀️</span><span>Theme</span>
-  </button>
-</div>
+## Pattern 6: Hit target inconsistency
+
+Peer interactive elements have different `h-*` classes, so clickable
+areas differ and items jitter vertically.
+
+Detect: collect the `h-*` classes of the peers in one container and
+compare.
+
+```console
+$ rg -n \
+    '<(a|button)[^>]*(class|className)=[^>]*[ "'"'"':]h-[0-9]' \
+    -g '*.{tsx,jsx,vue,svelte,astro,html,erb,blade.php}'
 ```
 
-Buttons are direct children of the gap container. `items-center` on the parent handles
-vertical centering. No wrappers needed.
-
----
-
-## Pattern 6: Hit Target Inconsistency
-
-Peer interactive elements with different height classes, creating uneven clickable areas
-and potential vertical alignment jitter.
-
-### Before
+Before:
 
 ```tsx
 <div className="flex items-center gap-2">
-  <a className="flex h-6 items-center">           {/* h-6 = 24px */}
+  <a className="flex h-6 items-center">
     <img className="h-6" src="icon.svg" alt="" />
   </a>
-  <button className="flex h-12 items-center px-2"> {/* h-12 = 48px */}
-    <WrenchIcon />
-  </button>
-  <button className="flex h-8 items-center px-2">  {/* h-8 = 32px */}
-    <span>Menu</span>
-  </button>
+  <button className="flex h-12 items-center px-2"><WrenchIcon /></button>
+  <button className="flex h-8 items-center px-2"><span>Menu</span></button>
 </div>
 ```
 
-Three different hit target heights. The `h-6` link is especially problematic — hard to
-click on mobile and misaligned with the nav bar's visual rail.
+After: every peer uses the bar height (`h-12`) with `items-center`, and
+the icon keeps its visual size.
 
-### After
+## Pattern 7: space-x and space-y with gap
 
-```tsx
-<div className="flex items-center gap-2">
-  <a className="flex h-12 items-center px-2">       {/* matches bar height */}
-    <img className="h-6" src="icon.svg" alt="" />   {/* visual size unchanged */}
-  </a>
-  <button className="flex h-12 items-center px-2">
-    <WrenchIcon className="h-5 w-5" />
-  </button>
-  <button className="flex h-12 items-center px-2">
-    <span>Menu</span>
-  </button>
-</div>
+In Tailwind v4, `space-x-*` and `space-y-*` add margin to every child
+except the last (`& > :not(:last-child)`). With `gap-*` on the same
+container, every gap becomes gap plus margin. The space utilities also
+misbehave with wrapping and grids.
+
+Detect: both utilities in one class list, in either order:
+
+```console
+$ rg -n \
+    '(class|className)="[^"]*gap-[^"]*space-[xy]-' \
+    -g '*.{tsx,jsx,vue,svelte,astro,html,erb,blade.php}'
 ```
 
-All items use `h-12` (the nav bar height) as their hit target. Visual content inside retains
-its original size. The clickable area is uniform; the visual content is centered within it.
+```console
+$ rg -n \
+    '(class|className)="[^"]*space-[xy]-[^"]*gap-' \
+    -g '*.{tsx,jsx,vue,svelte,astro,html,erb,blade.php}'
+```
 
----
-
-## Pattern 7: space-x/space-y + gap Collision
-
-Both `space-x-*` and `gap-*` on the same container. They do the same job via different
-CSS mechanisms, and they stack.
-
-### Before
+Before:
 
 ```tsx
 <div className="flex gap-2 space-x-3">
@@ -320,11 +299,10 @@ CSS mechanisms, and they stack.
 </div>
 ```
 
-Effective spacing: `gap` (8px) + `margin-left` (12px) = 20px between items. First item has
-no `space-x` margin but still has gap, so the spacing after the first item differs from
-subsequent items.
+Every gap is 8 + 12 = 20px, and the margin follows the child, so hiding
+or reordering the last child changes the spacing.
 
-### After
+After:
 
 ```tsx
 <div className="flex gap-3">
@@ -334,30 +312,30 @@ subsequent items.
 </div>
 ```
 
-Pick one mechanism. `gap` is the modern standard and doesn't have first/last-child edge
-cases.
+A lone `space-*` on a container without `gap-*` is not this pattern.
+Flag it as a migration opportunity only when the file already uses
+`gap-*` elsewhere.
 
----
+## Decision tree
 
-## Quick Decision Tree
-
-When diagnosing a spacing issue between items A and B:
+For a spacing issue between items A and B:
 
 ```
 Is A in a different container than B?
-+-- Yes --> Pattern 1 (Container Fragmentation). Merge containers.
++-- Yes --> Pattern 1. Merge containers.
 +-- No --> Does the parent have gap-*?
     +-- Yes --> Does A or B also have margin?
-    |   +-- Yes --> Pattern 2 (Margin/Gap Mixing). Remove margin.
+    |   +-- Yes --> Pattern 2. Remove margin.
     |   +-- No --> Do A and B have different px-*?
-    |       +-- Yes --> Pattern 3 (Padding Asymmetry). Standardize.
+    |       +-- Yes --> Pattern 3. Standardize.
     |       +-- No --> Does A or B have a fixed w-*?
-    |           +-- Yes --> Pattern 4 (Fixed Width). Remove w-*.
-    |           +-- No --> Check for wrapper nesting (Pattern 5).
-    |               +-- No --> Do A and B have different h-* classes?
-    |                   +-- Yes --> Pattern 6 (Hit Target). Standardize heights.
-    |                   +-- No --> Does the parent have both gap-* and space-*?
-    |                       +-- Yes --> Pattern 7 (space + gap). Remove space-*.
+    |           +-- Yes --> Pattern 4. Remove w-*.
+    |           +-- No --> Is A or B a single-child wrapper?
+    |               +-- Yes --> Pattern 5. Flatten.
+    |               +-- No --> Do A and B have different h-*?
+    |                   +-- Yes --> Pattern 6. Standardize heights.
+    |                   +-- No --> Does the parent also have space-*?
+    |                       +-- Yes --> Pattern 7. Remove space-*.
     |                       +-- No --> Spacing may be correct. Verify visually.
     +-- No --> Is spacing done via margins?
         +-- Yes --> Add gap-* to parent, remove margins.

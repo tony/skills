@@ -1,8 +1,16 @@
 # Durations parsing
 
 How `00-scan` measures and ranks. pytest's profiler is `--durations`, implemented
-in `_pytest/runner.py` over `_pytest/timing.py`. Understanding exactly what it
-reports avoids three common mis-reads.
+in `_pytest/runner.py` over `_pytest/timing.py`.
+
+## Contents
+
+- What pytest measures
+- Three things the table does not do
+- Invocations
+- Bucketing by phase
+- Machine-readable timings
+- Noise band
 
 ## What pytest measures
 
@@ -63,9 +71,9 @@ sub-5ms phases. Use `--durations-min=0` (or `-vv`) to truly show all.
 
 Each row is `<float>s <when> <nodeid>`. Split on the **second** token:
 
-- `when == "call"` → test-body ranking (goal 1).
-- `when == "setup"` → fixture/setup-chain ranking (goal 2).
-- `when == "teardown"` → finalizer ranking (goal 2).
+- `when == "call"` → test-body ranking.
+- `when == "setup"` → fixture/setup-chain ranking.
+- `when == "teardown"` → finalizer ranking.
 
 The same nodeid appears up to three times (once per phase), and parametrized
 subtests (pytest ≥ 9.0) add extra `call` rows under one nodeid — **de-duplicate by
@@ -91,10 +99,10 @@ Fast rows are not benchmarks. To know whether a later change is a real speedup:
    times.
 2. Compute the **median** total wall-time and the **MAD** (median absolute
    deviation) of the per-run totals.
-3. The noise band is `median + k * MAD` (default `k = 3`); the **trust floor** is
+3. The noise band is `k * MAD` (default `k = 3`); the **trust floor** is
    ~50ms — rank nothing below it.
-4. A candidate's measured delta counts only if it exceeds the band
-   (see `memory-schema.md`, baseline-diff).
+4. A candidate's saving (`baseline_median - candidate_median`) counts only if it
+   exceeds the band.
 
 Why disable cacheprovider while measuring: its `.pytest_cache` writes happen at
 session start/finish (outside any item phase), so they do **not** change the

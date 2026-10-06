@@ -7,8 +7,6 @@ Four buckets are resolved before any change is applied: `format`,
 `lint`, `typecheck`, `test`. Any bucket may stay `unset`; every step
 that runs gates skips empty buckets.
 
----
-
 ## Algorithm
 
 ```
@@ -47,8 +45,6 @@ command wins on collision, in the order `AGENTS.md`, `CLAUDE.md`,
 `.github/CONTRIBUTING.md`; a later file fills only the buckets still
 unset.
 
----
-
 ## Heading keywords
 
 | Bucket | Heading substrings (case-insensitive) |
@@ -62,8 +58,6 @@ Match is a substring of the lowercased heading. The first command line
 of the first fenced block under a matching heading becomes the bucket's
 command.
 
----
-
 ## Manifest fallback
 
 Manifest sniffing is never a default. When a bucket is still `unset` and
@@ -72,8 +66,6 @@ a manifest exists (`pyproject.toml`, `package.json`, `Cargo.toml`,
 ecosystem through `AskUserQuestion` and require an explicit choice
 before storing. Never auto-inject `pytest`, `npm test`, `cargo test`, or
 any other command.
-
----
 
 ## Total absence
 
@@ -86,8 +78,6 @@ When no conventions file and no manifest exists, ask once through
 
 Answering `skip` makes every gate step a no-op for the run.
 
----
-
 ## Empty buckets
 
 Skip an `unset` bucket wherever gates run: the conflict loop, the
@@ -96,8 +86,6 @@ per-finding commit loop, and final verification.
 When every bucket is `unset` and the run will modify files or history
 (`--apply-patches`, `--apply-rebase`, `--apply`), warn before the first
 modification that no gate will validate the result.
-
----
 
 ## Storage
 

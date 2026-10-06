@@ -885,10 +885,13 @@ def _check_estate_rules(plugin_dir: Path) -> list[str]:
         rel = path.relative_to(plugin_dir)
         if rel.parts[0] not in (*RESOURCE_DIRS, "scripts"):
             continue
+        # A README may name a contributor file, but a vendored copy must be
+        # read by some skill, or it ships unused.
+        vendored = VENDOR_MARKER in texts[path].partition("\n")[0]
         named = any(
             path.name in other_text
             for other, other_text in texts.items()
-            if other != path and other.name != "README.md"
+            if other != path and not (vendored and other.name == "README.md")
         )
         if not named:
             errors.append(f"[{name}] {rel}: no skill or resource in the plugin names it")

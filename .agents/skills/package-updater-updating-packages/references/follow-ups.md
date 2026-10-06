@@ -46,7 +46,7 @@ This is the honest form. The alternatives are worse: bundling the two
 loses the clean revert, and staying silent leaves a bisect landing on a
 commit that fails for reasons its message does not mention.
 
-An exemplar of the pair, from a Tailwind bump:
+An exemplar of the pair:
 
 ```
 js(deps[dev]) bump tailwind, vite, babylon
@@ -87,15 +87,3 @@ Regenerating a snapshot is asserting the new output is correct. Read
 enough of the diff to say why it moved, and put that in the body. A
 snapshot refreshed without that check records a regression as the new
 expected value.
-
-## Quality gates
-
-Run the project's own checks after each commit — the lint, format,
-type-check and test commands its `AGENTS.md`, `CLAUDE.md`, `justfile`,
-or CI workflow declares. Never substitute assumed commands for the ones
-the project actually runs.
-
-When something fails, establish whether it fails on trunk too before
-attributing it to the bump. A pre-existing failure is reported as
-pre-existing, not fixed and not concealed. Never report green without
-having read the output that says so.

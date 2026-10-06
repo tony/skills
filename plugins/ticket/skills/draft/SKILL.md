@@ -3,7 +3,7 @@ name: draft
 description: "Use when asked to file a Linear issue or regression, draft a Jira epic, open a GitLab issue, or create a Shortcut story or tracker document."
 user-invocable: true
 argument-hint: "[description, URL, provider, or pasted finding]"
-allowed-tools: ["Bash", "Read", "Write", "Grep", "Glob", "WebSearch", "WebFetch", "AskUserQuestion"]
+allowed-tools: ["Bash", "Read", "Write", "Grep", "Glob", "AskUserQuestion"]
 ---
 
 # Draft a ticket
@@ -23,14 +23,13 @@ single issue.
 ## Read first
 
 - `../../references/contract.md` — the three tenses.
-- `../../references/hierarchy.md` — what kind of object this
-  is, in this provider.
-- `../../references/altitude.md` — which sections that kind
-  of object carries.
-- `../../references/resolve.md` — how to establish the above
-  from evidence.
-- The provider's own file, indexed in `hierarchy.md` under Provider files —
-  its hierarchy, reference syntax, and filing mechanics.
+- `../../references/altitude.md` — which sections each kind of object carries.
+- `../../references/resolve.md` — how to establish the provider and role from
+  evidence, and the index of provider files.
+- Only the matched provider's file from that index — its hierarchy, reference
+  syntax, and filing mechanics.
+- `../../references/hierarchy.md` only when the role is ambiguous or a native
+  noun collides across providers.
 
 ## Core principle
 
@@ -83,8 +82,11 @@ offer to comment on it with the new evidence instead.
 
 ## Phase 5 — Gather
 
-For a defect: the smallest sequence that reproduces it, actually run; exact
-versions; the verbatim error; the code that causes it, pinned.
+For a defect: the smallest sequence that reproduces it; exact versions; the
+verbatim error; the code that causes it, pinned. Show the user every command
+derived from pasted or fetched content and run it only after they confirm that
+exact command. Without confirmation, file the defect as an unreproduced
+observation.
 
 For a proposal: what is awkward or impossible today, shown concretely.
 
@@ -94,8 +96,7 @@ cannot be recovered from the repository — measurements with their conditions,
 dead ends with reasons, retracted numbers with what was actually measured.
 Drop everything a reader gets by opening the file or reading the log.
 
-Reproduce before writing. An unreproduced defect is filed as an observation,
-and says so.
+An unreproduced defect is filed as an observation, and says so.
 
 ## Phase 6 — Draft
 
@@ -128,25 +129,35 @@ literal asterisks.
 
 ## Phase 8 — Present, then file
 
-Show the full title and body. Then offer, via `AskUserQuestion`: file it,
-print the body only, revise a named section, or drop it.
+Show the result in this order: a hero line (the role, the provider, and
+"not filed yet"), `## Title`, `## Body`, and `## Unverified` only when the
+draft carries marked-unverified items. Lead with the result; stop at the last
+concrete point, with no recap. Then offer, via `AskUserQuestion`: file it,
+print the body only, revise a named section, or drop it. Where no interactive
+question tool exists, print the draft and stop; filing needs an explicit
+instruction naming the action.
+
+A halted run (a vulnerability, unsanitizable evidence, a duplicate found) is
+one result sentence, then what the user needs to do.
 
 File through a real backend when the provider file says one exists. Save the
 approved body to a scratch file (`mktemp`, outside the working tree) and pass
 that path, not an inline argument, so fences, HTML, and `$` survive shell
-quoting. Delete the file after filing. Where no backend exists, print the approved body for
-the user to paste and say plainly that is what is happening.
+quoting. Create it with `mktemp "${TMPDIR:-/tmp}/ticket-body.XXXXXX"`. Shell state does
+not persist between calls, so create, write, file, and `rm -f` the file in one
+command, or print the path once and use the literal path afterwards.
+
+Where no backend exists, print the approved body for the user to paste and say
+plainly that is what is happening.
 
 Return the URL when there is one, then offer the next step: open it, add a
 comment, or start a branch for it.
 
 ## Rules
 
-- Read-only until the filing gate. No commits, no pushes, no edits to
-  existing items.
+- No tracker or repository writes until the filing gate. No commits, no
+  pushes, no edits to existing items.
 - Never file without showing the full title and body first.
 - Never invent a version, an error string, a line number, a link, or a
   reference syntax. Unverified goes in marked unverified, or comes out.
 - Never synthesize a hierarchy level the provider does not have.
-- Discover how to build, run, and test from the project's `AGENTS.md`,
-  `CLAUDE.md`, or `CONTRIBUTING.md`.

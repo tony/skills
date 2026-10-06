@@ -117,8 +117,8 @@ bare reference form.
 `--project`, `--type`, `--parent`, `--blocked-by` and `--blocking`, so a
 drafted body goes in from a file undamaged by shell quoting.
 
-```
-gh issue create --title "..." --body-file ./draft.md --type Bug
+```console
+$ gh issue create --title "..." --body-file ./draft.md --type Bug
 ```
 
 `gh issue edit`, `gh issue view` and `gh project item-add` cover rewriting an

@@ -1,13 +1,20 @@
 # Dependency commit conventions
 
-Shared by every command in this plugin. A dependency commit is read
-years later by someone deciding whether a version is safe to move again,
-so the body carries the reasoning and the links, not an inventory of the
-diff.
+A dependency commit is read years later by someone deciding whether a
+version is safe to move again, so the body carries the reasoning and the
+links, not an inventory of the diff.
 
 Defer to the project's own `AGENTS.md` or `CLAUDE.md` when it states a
 subject format. What follows is the shape to use when the project does
 not say otherwise.
+
+## Contents
+
+- Subject grammar
+- The four tracks
+- Body anatomy
+- Writing the message
+- Exemplars
 
 ## Subject grammar
 
@@ -33,8 +40,9 @@ characters or fewer.
 
 ## The four tracks
 
-Each track has its own commit. They are never merged, and they land in
-this order within a session.
+Each track has its own commit, and each follow-up and hold change is a
+further commit. None are merged, and tracks land in this order within a
+session.
 
 ### Toolchain and runtime
 
@@ -48,8 +56,7 @@ intermediate ones are where the regression usually is.
 
 A routine bump takes a link block and nothing else: a patch or minor
 inside the same series, with nothing in the span the repository
-exercises, is fully described by its links. See `upstream-links.md` for
-which URLs each tool takes.
+exercises, is fully described by its links.
 
 A bump takes a `why:` above that link block when any of these hold:
 
@@ -103,7 +110,7 @@ A package earns its own commit when any of these hold:
 
 - The version crosses a major.
 - It is a linter, formatter, or compiler whose output changes.
-- It needs a follow-up commit — see `follow-ups.md`.
+- It needs a follow-up commit.
 - The change is a floor or constraint in the manifest, not just a
   lockfile move.
 - It is a workspace sibling this repository also publishes.
@@ -207,8 +214,7 @@ EOF
 
 ## Exemplars
 
-These are real commits from repositories this convention was derived
-from. Match their density, not their length.
+Match their density, not their length.
 
 A named bump whose body earns its place by naming the coupling:
 

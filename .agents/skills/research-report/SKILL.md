@@ -12,8 +12,6 @@ metadata:
 
 # this skill
 
-Write or rewrite `report.md` for a topic's latest run, per the report standard, and ship it only when it passes the lint and the leak scan.
-
 Invoke the `research-foray` skill with `report` followed by the user arguments, and follow it.
 
 User arguments: $ARGUMENTS

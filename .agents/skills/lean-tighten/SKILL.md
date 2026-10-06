@@ -16,22 +16,6 @@ Tighten specified files in the working tree and print a diff. Never
 commits, never pushes, never requires a clean tree, never scans
 repo-wide.
 
-This skill is invoked by name, never routed to on the model’s initiative: it edits files,
-so it must be user-explicit.
-
-## Difference from the `slop-scan` skill
-
-### Use this skill when
-
-The slop is in files you are actively editing and you want a quick
-in-place tidy with a diff to review — no commit ceremony, dirty tree
-fine.
-
-### Use the `slop-scan` skill when
-
-You want repo-wide coverage with one reviewable, revertable commit per
-finding, on a clean tree.
-
 ## `$ARGUMENTS`
 
 - `paths/globs` — files to tighten (via `git ls-files -- <glob>` when
@@ -48,34 +32,30 @@ If `$ARGUMENTS` is empty, ask which files via `ask-user-choice`.
 
 1. **Resolve targets.** Expand paths/globs, or read stdin with
    `--stdin`. Reject an empty target set with a clear message.
-2. **Load the rubric and voice.** Read
-   `references/lean-rubric.md`, then `./AGENTS.md`
-   and `./CLAUDE.md` for the host's rubric and accepted voice. For
+2. **Load the rules and voice.** Read
+   `references/prose-rules.md` and
+   `references/lean-rubric.md`, then `./AGENTS.md` and
+   `./CLAUDE.md` for the host's rubric and accepted voice. For
    `--gates`, take the format/lint/typecheck commands from a checks
    section in those files; if none is defined, skip gates.
-3. **Detect.** Flag slop per the rubric — AI signatures, brittle
-   references, diff narration, prose inflation, coded labels, and
-   tables where prose reads cleaner. Preserve every load-bearing
-   reference and "why" comment.
+3. **Detect.** Flag what the prose rules list as cut. Preserve every
+   load-bearing reference and "why" comment.
 4. **Preview and confirm.** Show the proposed edits and confirm via
    `ask-user-choice` before writing; the preview and the printed diff
    (Step 6) are the review surface. Skip when `--diff-only`.
-5. **Apply in place.** Use `Edit`. Replacements must be concrete and
+5. **Apply in place.** Use `Edit`. Replacements are concrete and
    shorter than the original.
 6. **Diff.** Print `git diff -- <targets>`. With `--gates`, run the
    discovered checks once and report; commit on neither pass nor fail.
 7. **Report and hand off.** Summarize findings resolved and skipped,
-   then offer next steps via `ask-user-choice`: commit with `/commit`,
-   run the `slop-scan` skill for repo-wide coverage, or discard the edits —
-   review the printed diff first, since `git checkout -- <file>` resets
-   the whole file to HEAD and drops any other uncommitted work in it.
+   then offer next steps via `ask-user-choice`: commit, or discard the
+   edits. Review the printed diff first, since `git checkout -- <file>`
+   resets the whole file to HEAD and drops any other uncommitted work
+   in it.
 
 ## What this does not do
 
-- Commit or push — you decide; use `/commit`.
-- Rewrite history — that is the `pr-deslop` skill.
-- Scan the whole repo — that is the `slop-scan` skill.
-- Delete whole files — too consequential; report them instead.
+- Delete whole files. Report them instead.
 
 
 ## Portability notes

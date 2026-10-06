@@ -20,32 +20,6 @@ tiers that keep this cheap enough to ask casually.
 
 User arguments: $ARGUMENTS
 
-## Context
-
-Current branch — run this command and read the output:
-
-```bash
-git branch --show-current 2>/dev/null || echo "(detached HEAD)"
-```
-
-Ahead / behind trunk — run this command and read the output:
-
-```bash
-git rev-list --left-right --count "$(git symbolic-ref --short refs/remotes/origin/HEAD 2>/dev/null || echo origin/main)"...HEAD 2>/dev/null || echo "(no comparison available)"
-```
-
-Working tree — run this command and read the output:
-
-```bash
-git status --short 2>/dev/null | head -20 || echo "(unavailable)"
-```
-
-Commits since trunk — run this command and read the output:
-
-```bash
-TRUNK=$(git symbolic-ref --short refs/remotes/origin/HEAD 2>/dev/null || echo origin/main); BASE=$(git merge-base HEAD "$TRUNK" 2>/dev/null); if [ -n "$BASE" ]; then git log --no-merges --format='%h %s' "$BASE..HEAD" | head -15; elif git rev-parse --verify --quiet "$TRUNK" >/dev/null; then echo "(no merge-base with $TRUNK)"; else echo "(trunk $TRUNK not found)"; fi
-```
-
 ## Procedure
 
 ### 1. Read what was actually asked
@@ -60,43 +34,35 @@ spends no lines on branch position.
 ### 2. Answer from the session first
 
 The conversation is the highest-value evidence and the cheapest. When
-the confusion is about what just happened — a command that ran, a
-decision taken, why the work moved — the answer is already in context
-and needs no tools at all.
+the confusion is about what just happened (a command that ran, a
+decision taken, why the work moved), the answer is already in context
+and needs no tools.
 
-The context block above is local git, already gathered. It measures from
-trunk, which is the cheap approximation this command is built on — on a
-branch stacked over another branch that range carries the parent's
-commits too, so treat the count as approximate and say so rather than
-re-resolving the base for a five-line answer.
+When the session's memory is thin, gather the cheap tier:
 
-Go beyond the block only for the paid tier in the brief reference: a
-pull request when the branch has one, a ticket when an ID appears in the
-branch name, a commit, or the pull request body.
+1. The current branch (`git branch --show-current`; empty means
+   detached HEAD).
+2. Trunk (`git symbolic-ref --short refs/remotes/origin/HEAD`, falling
+   back to `origin/main`), then ahead/behind counts
+   (`git rev-list --left-right --count <trunk>...HEAD`).
+3. Uncommitted work (`git status --short`).
+4. Commit subjects since trunk
+   (`git log --no-merges --format='%h %s' <trunk>..HEAD`).
+
+A failed command means that layer is unavailable; say so inside an
+existing line. Measuring from trunk is approximate on a branch stacked
+over another branch, because the range carries the parent's commits;
+say so rather than re-resolving the base.
+
+Go beyond that only for the paid tier in the brief reference.
 
 ### 3. Write the brief
 
-Five lines maximum, ranked as the brief reference sets out: the blocker
-first, then position, then what just happened, then what it is for, then
-what is outstanding. Stop early when the situation runs out.
-
-Then numbered single-line options — only when there is a real fork.
-
-## Rules
-
-- Read-only, and the same contract as `/situate`: no commits, no edits,
-  no branch switches, no `git fetch`.
-- Five lines is a ceiling on the body, not a target. Three good lines is
-  a better answer.
-- No headings, no preamble, no bullets in the body, no closing summary.
-- Never spend a line reporting that a layer was checked and was quiet.
-- One hedged inference at most. Two means say what is unknown instead.
-- No `ask-user-choice` panel — the options are plain numbered lines. A
-  modal is heavier than the answer it would follow, and this command is
-  often reached ambiently, mid-thought.
-- If the branch has wandered from what it was for, do not diagnose it
-  here. Say so in a line and offer the `situate-refocus` skill as an option.
-- No local absolute paths, no third-party personal details.
+Five lines maximum, ranked as the brief reference sets out. Stop early
+when the situation runs out. Then numbered single-line options, only
+when there is a real fork. Stay read-only, per the contract in
+`references/situation-sweep.md`, and write per
+`references/prose-rules.md`.
 
 ## Output
 
@@ -117,6 +83,5 @@ The ticket asks for a terse mode; the terse mode works, the failing types do not
 
 ## Portability notes
 
-- `ask-user-choice` — present the listed options and wait for the user to pick one. Hosts with a structured multiple-choice tool (Claude Code's `AskUserQuestion`) should use it; otherwise print a numbered list and wait for a numbered reply. Never proceed on an assumed answer.
 - `$ARGUMENTS` — the text the user passed when invoking this skill. If your host does not substitute it, read it as the user's request in the current turn, and ask when there is none.
 - Bundled files — every relative path in this skill points at a file shipped inside this skill directory. Read them from here, not from the host's plugin tree.

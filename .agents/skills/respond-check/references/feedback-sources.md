@@ -1,5 +1,7 @@
 # Feedback Sources
 
+Contents: Channels, Normalizing, Merging duplicates, Re-posts across rounds, Nitpicks and collapsed sections.
+
 Where review feedback comes from, how each channel is read, and how the
 same defect reported four times becomes one finding. Every channel
 produces the same record shape, so screening never has to know which

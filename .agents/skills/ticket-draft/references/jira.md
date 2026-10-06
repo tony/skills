@@ -1,5 +1,7 @@
 # Jira
 
+Contents: Scope; Native hierarchy; Semantic roles; Orthogonal objects; References and autolinks; Reading and writing; Naming traps.
+
 ## Scope
 
 Atlassian Site (tenant) > Jira Space (scope_container) > Jira Work Item
@@ -53,8 +55,6 @@ unparented, not an implied Epic.
   or a configured Work Type. Do not present it as native.
 
 ## Orthogonal objects
-
-None of these is a parent. Membership says nothing about decomposition.
 
 - **Sprint** — timebox; native to Jira Software, optional; `scheduled_in`.
 - **Version**, surfaced as Release — release_group; native, optional;

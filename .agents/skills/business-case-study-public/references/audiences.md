@@ -64,32 +64,27 @@ this skill runs this as an explicit final pass
 over the finished draft. the `business-pr-release` skill inherits the result
 by sourcing figures only from the public case study.
 
-1. Scan the draft for organization, repository, team, and person
-   names, ticket IDs, internal URLs, and internal or local paths —
-   remove every hit.
+1. Scan the draft for everything the tier-3 contract excludes
+   (organization, repository, team, and person names, ticket IDs,
+   internal URLs, internal or local paths) and remove every hit.
 2. Confirm every figure is an aggregate or a range, rounded to
-   honest precision.
+   honest precision, with its provenance tag and denominator.
 3. Confirm every headline claim passed triangulation or carries its
    methodology defense.
 4. Confirm the limitations section is present and candid.
 5. Confirm no currency appears (`provenance.md` bans it at every
    tier; re-check here because external text travels furthest).
 
-Report the checklist results in the command output — pass per item,
+Report the checklist results in the command output: pass per item,
 with what was removed or reworded.
 
 ## Firewall sweep
 
 the `business-pr-release` skill treats the public case study as its
-sanitization firewall — and verifies it rather than trusting it.
-Before deriving the announcement, sweep the located case study:
-
-- No organization, repository, team, person, or ticket identifiers;
-  no internal URLs or paths.
-- Aggregates and ranges only; figures carry provenance tags and
-  denominators.
-- A limitations section exists.
-- No currency symbols or money-adjacent terms.
+sanitization firewall, and verifies it rather than trusting it.
+Before deriving the announcement, run checklist items 1, 2, 4, and 5
+over the located case study, plus a scan for money-adjacent terms.
+Triangulation was the case study's job.
 
 Any failure means the case study is regenerated via
 this skill, never patched around in the release.

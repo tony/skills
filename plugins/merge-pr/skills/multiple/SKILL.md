@@ -26,14 +26,17 @@ Take the PR set from the arguments, or from the PRs this
 conversation has been working on. If the set is ambiguous (the
 conversation touched more PRs than the user likely means, or an
 argument doesn't match an open PR), present the candidates via
-`AskUserQuestion` and let the user pick. Show the final roster
+`AskUserQuestion` and let the user pick; without a question tool, halt and
+list them. Show the final roster
 before merging anything.
 
 List the open PRs to check the roster against. A failure means `gh` is
-unavailable or unauthenticated: report it and stop.
+unavailable or unauthenticated: report it and stop. `--limit` lifts the
+default cap of 30; a roster PR missing from the list is checked with
+`gh pr view <n>` before it is called not open.
 
 ```console
-gh pr list --json number,title,headRefName,baseRefName,isDraft
+$ gh pr list --limit 200 --json number,title,headRefName,baseRefName,isDraft
 ```
 
 ### 2. Detect the topology
@@ -67,7 +70,8 @@ order:
 3. **Wait on CI** — `gh pr checks <n> --watch` on the rebased head.
 4. **Merge** — compose the message per the reference and
    `../../references/prose-rules.md`, then merge with
-   `gh pr merge <n> <strategy flag> -t ... -b ...`, passing the user's
+   `gh pr merge <n> <strategy flag> --match-head-commit <sha>`, plus
+   `-t`/`-b` only under the reference's condition, passing the user's
    flags through verbatim. The strategy flag is `--merge` unless the user
    passed `--squash` or `--rebase`. `--admin` only within the reference's
    policy.
@@ -84,7 +88,8 @@ where the run stopped and why.
 ## Output
 
 Open with a one-line hero (`✓ Merged N of M PRs` or
-`⚠ Halted at #N: <reason>`), then exactly these sections:
+`⚠ Halted at #N: <reason>`), then exactly these sections. Report only what
+a command in this run verified:
 
 1. `## Roster` — the PRs, detected topology (stack or independent),
    and merge order.
@@ -96,4 +101,5 @@ Write the sections per `../../references/prose-rules.md`.
 
 End with an `AskUserQuestion` panel offering next steps (for
 example: continue with a halted PR after a fix, merge another set,
-stop here) — skip the panel only in plan mode.
+stop here) — skip the panel in plan mode. Without a question tool, end
+after the sections: no `## Next steps` section.

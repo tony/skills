@@ -1,0 +1,62 @@
+schema_version: "1.0"
+name: 02-align-retry-cap-clean-restatement
+description: >-
+  A revision-log answer landed and the user asks for the clean version. The
+  restatement must come from re-opening the file, state the cap as 3, and
+  carry no verdict language.
+tags: [align]
+
+context:
+  scaffold_script: scaffold.sh
+
+execution:
+  prompt: |
+    /double-check:align the retry cap value
+
+    Here's what you told me in your last message, and I don't want it repeated in this format:
+
+    "Verdict update: Item 1 (MAX_RETRIES) - overstated, corrected to 3. Item 2 (backoff seconds) - still holds at 2. As I mentioned before, the retry loop code confirms this."
+
+    The module is client.py in this directory. Give me the clean version.
+  max_turns: 10
+  timeout_seconds: 300
+  allowed_tools: [Read, Glob, Grep, Skill]
+
+runs: 1
+
+graders:
+  - name: skill-fired
+    type: tool_used
+    tool: Skill
+    input_match: '"skill":\s*"(double-check:)?align"'
+
+  - name: reads-the-file
+    type: tool_used
+    tool: Read
+    input_match: 'client\.py'
+    arm: both
+
+  - name: states-the-cap
+    type: regex
+    target: last_message
+    pattern: 'MAX_RETRIES\s*(=|is|of|:)?\s*3'
+
+  - name: states-the-backoff
+    type: regex
+    target: last_message
+    pattern: 'RETRY_BACKOFF_SECONDS|backoff'
+    flags: i
+
+  - name: no-verdict-language
+    type: regex
+    target: last_message
+    match: not_contains
+    pattern: 'overstated|corrected to|still holds|as I (mentioned|said) (before|earlier)|verdict'
+    flags: i
+
+  - name: claims-no-edit
+    type: regex
+    target: last_message
+    match: not_contains
+    pattern: 'I (have )?(edited|committed|updated the file|made a commit)'
+    flags: i

@@ -4,8 +4,19 @@
 todo list, one per reworded message. An agent has no editor and no
 TTY, so both must be replaced before any of it is usable.
 
-Everything here is verified against git 2.43. Where a behavior depends
-on the user's config rather than git's default, the config is named.
+Where a behavior depends on the user's config rather than git's default,
+the config is named.
+
+## Contents
+
+- The two hooks
+- The toolkit script
+- Reading the todo without side effects
+- Config that changes the rules
+- Verifying every commit
+- Rewriting a message with no editor
+- Recovering
+- Things that eat commits
 
 ## The two hooks
 
@@ -24,14 +35,14 @@ message.
 
 ## The toolkit script
 
-`references/rebase-todo.sh` wraps the idioms
+`rebase-todo.sh`, next to this file, wraps the idioms
 below with a preflight and a consistent exit code. It refuses to run
 on a dirty tree or over an operation already in progress, and it
 reports rather than hides a rebase it left stopped.
 
-`<toolkit>` is the absolute path to `references/rebase-todo.sh`, which ships
-with this skill. A shell runs with your project as its working directory, not
-this skill's, so substitute the full path before invoking it.
+`<toolkit>` is the absolute path to `rebase-todo.sh`. A shell runs in the
+project's working directory, not this plugin's, so resolve the full path
+before invoking it.
 
 Report any operation in progress, so a later command does not fail
 mysteriously:

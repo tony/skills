@@ -1,7 +1,8 @@
 # pr
 
-Manage gold-standard PR descriptions. Detects AI slop and verbose commits,
-resolving them via fixup commits and autosquash.
+Draft, refresh, rewrite, and review PR descriptions, and draft merge commit
+messages, from the branch diff. For slop cleanup of a branch's commits, see
+the `slop` plugin.
 
 ## Installation
 
@@ -37,24 +38,20 @@ codex plugin add pr@skills
 | `/pr:refresh` | `pr:refresh` | Update PR description to current branch net change, preserving structure |
 | `/pr:rewrite` | `pr:rewrite` | Rewrite PR description from scratch, keeping relevant context |
 | `/pr:merge-commit` | `pr:merge-commit` | Generate merge commit message from branch diff |
-| `/pr:review` | `pr:review` | Review PR description against gold-standard patterns |
-| `/pr:deslop` | `pr:deslop` | Audit commits for AI slop and verbosity; resolve via fixups/autosquash |
+| `/pr:review-pr` | `pr:review-pr` | Review a PR description for structure, proportionality, and brittle details |
 
 ## How It Works
 
 - **`/pr`**: Gathers diff/log context, reads conventions (`AGENTS.md`/`CLAUDE.md`,
-  templates), applies gold-standard patterns, and optionally creates PR via `gh`.
-- **`/pr:refresh`**: Stacks-aware diff against base, backs up to `.git/pr-backups/`,
+  templates), applies the section patterns below, and optionally creates the PR via `gh`.
+- **`/pr:refresh`**: Stack-aware diff against base, backs up to `.git/pr-backups/`,
   updates content while preserving hand-written text/structure, and applies via `gh`.
 - **`/pr:rewrite`**: Backs up PR, mines old description for manual context, resolves
   templates, drafts fresh description, and applies via `gh`.
 - **`/pr:merge-commit`**: Gathers diff/log, reads conventions, drafts proportional
   message (title-only for small, structured for large), and presents for copying.
-- **`/pr:review`**: Fetches PR and diff, evaluates against structure/patterns,
+- **`/pr:review-pr`**: Fetches PR and diff, evaluates against structure/patterns,
   and reports strengths and specific markdown improvements.
-- **`/pr:deslop`**: Detects trunk, discovers quality gates, checks commits for slop
-  (regex + semantic), writes patches to `.git/deslop/`, and optionally applies
-  via rebase/autosquash.
 
 ## Arguments
 
@@ -86,28 +83,14 @@ Generate merge commit message (optional hint):
 Review PR:
 
 ```
-/pr:review
-/pr:review #42
-/pr:review https://github.com/owner/repo/pull/42
+/pr:review-pr
+/pr:review-pr #42
+/pr:review-pr https://github.com/owner/repo/pull/42
 ```
 
-Audit branch for slop:
+## Section patterns
 
-```
-/pr:deslop
-/pr:deslop --apply-patches
-/pr:deslop --apply-rebase --run-tests
-/pr:deslop --message-only --budget=strict
-/pr:deslop --force-rewrite-pushed --apply-rebase
-```
-
-Defaults to **audit-only** (writes patches to `.git/deslop/`). Use `--apply-patches`
-for fixups or `--apply-rebase` for autosquash. See `plugins/pr/skills/deslop/SKILL.md`
-for flags.
-
-## Gold-Standard Patterns
-
-Generated descriptions use patterns from high-quality open-source PRs:
+Generated descriptions use these patterns:
 - **`## Summary`**: Bold impact labels
 - **`## Changes by area`**: Sub-headings for multi-module changes
 - **`## Design decisions`**: Trade-off rationale
@@ -120,7 +103,7 @@ Generated descriptions use patterns from high-quality open-source PRs:
 ## PR Templates
 
 `/pr` and `/pr:rewrite` resolve templates in this order: user hint > repo template >
-gold-standard structure. `/pr:review` accepts user hints. `/pr:refresh` preserves
+the `/pr` section patterns. `/pr:review-pr` accepts user hints. `/pr:refresh` preserves
 existing structure without applying templates.
 
 ## Safety

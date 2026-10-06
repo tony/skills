@@ -72,5 +72,3 @@ A hard contract, not a preference:
   is untaggable.
 - Skill build and maintenance cost is amortized into net savings,
   never dropped.
-- Adoption and realization multipliers are explicit inputs, strictly
-  below 1.0; refuse defaults of 1.0 (`measurement.md` defines both).

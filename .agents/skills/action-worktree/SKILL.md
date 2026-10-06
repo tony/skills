@@ -20,38 +20,10 @@ PR only when asked.
 
 One worktree, one branch, one deliverable — carrying one ticket by
 default, and several when they genuinely share a change. Crosscutting
-is first-class, not an error.
+is normal, not an error.
 
-This skill is invoked by name, never routed to on the model’s initiative: it creates
-worktrees and branches, modifies files, and creates commits, so it
-must be user-explicit, not router-inferred. To land review findings
-on the *current* branch, use the `respond-action` skill; this command starts
-ticket work on a *new* branch.
-
-the `action-worktrees` skill delegates to this file's phases by name and
-number. When renaming, renumbering, or reordering phases here, update
-that file's references in the same change; on any disagreement
-between the two files, this one wins.
-
-## Core thesis
-
-A ticket describes an outcome; a branch is the unit of delivery. This
-command is the plumbing between the two, done the way the tracker and
-the team already expect: the branch name carries the ticket ID so
-linking happens server-side, the worktree keeps the main checkout
-untouched, and the gates keep every commit green.
-
-Three disciplines:
-
-1. **Tickets are read-only.** Resolution pulls title, description,
-   acceptance criteria, and the branch-name field — and writes
-   nothing back (see The Iron Rule).
-2. **Names follow the precedence ladder.** Explicit ask > project
-   conventions > ticket-system default > observed repo norms > slug
-   fallback — per
-   `references/ticket-detection.md`.
-3. **The main checkout is never disturbed.** All work happens in the
-   worktree; the default exit is a gated commit, not a push.
+To land review findings on the *current* branch, use a review-response
+skill; this command starts ticket work on a *new* branch.
 
 ## The Iron Rule
 
@@ -206,33 +178,13 @@ a commit. With `--setup-only`, skip ahead to the output contract now.
 
 ## Phase 4: Implement
 
-Inside the worktree only:
-
-1. Work the acceptance criteria in the project's idiom.
-2. Verify with the **cheapest signal that moves you forward** — the
-   one test file or smoke command exercising the change. Full passes
-   wait for Phase 5.
-3. Stay in ticket scope. Adjacent problems go in the report's
-   "observed, not addressed" list, not in the diff.
-4. Multi-ticket: keep each ticket's work separable — every commit in
-   Phase 5 must be attributable to its ticket ID(s).
+Inside the worktree only, per `references/implement-and-commit.md`
+(Implement).
 
 ## Phase 5: Gates & commit
 
-1. Run the fast local buckets exactly as discovered — `format`,
-   `lint`, `typecheck`, scoped `test`; `build` only when plausibly
-   affected — per verification-gates.md right-sizing. Gates run as
-   discovered, including mutating ones (`--fix`-style): fold
-   autofixes into the commit under test and re-run the scoped test
-   once when a gate changed files.
-2. Green → commit in the project's format. Each commit body names the
-   ticket ID(s) it advances (exact form per project conventions;
-   closing keywords are reserved for the PR body — see
-   ticket-detection.md § Server-side linking). Multi-ticket branches
-   land one commit per separable unit of work where practical.
-3. Red → fix and re-run. A gate that cannot be brought green stops
-   the exit axis before any push/PR; report the failure verbatim in
-   `## Verification`.
+Per `references/implement-and-commit.md` (Gates and commit). The
+red path stops the exit axis before any push or PR.
 
 ## Phase 6: Exit axis
 
@@ -258,6 +210,9 @@ gh pr create --title "<title>" --body "<body linking the tickets>"
   After opening, offer `gh pr checks --watch` when CI is observable.
 
 ## Output contract
+
+Write the report, commit messages, and PR title and body per
+`references/prose-rules.md`.
 
 1. Hero block (1–4 lines): `✓ <branch> ready — N commit(s), <exit>`
    or `⚠ blocked at <phase>`, plus ticket ID(s) and worktree path.

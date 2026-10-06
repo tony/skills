@@ -12,8 +12,6 @@ metadata:
 
 # this skill
 
-Show where every topic stands and what to do next. Read-only.
-
 Invoke the `research-foray` skill with `status` followed by the user arguments, and follow it.
 
 User arguments: $ARGUMENTS

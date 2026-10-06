@@ -60,20 +60,24 @@ A line-range permalink unfurls into a code snippet only inside its own
 repository. Filing across repositories, quote the lines in a fence
 next to the link.
 
+When a pin cannot be resolved (no network, no release), keep the
+unresolved ref visibly marked in the draft, such as `<SHA>`, and list
+it in the reply as unverified. Never substitute a guess.
+
 ### Resolving the ref
 
 Newest tag of a repository you have not cloned:
 
-```
-gh release list --repo OWNER/REPO --limit 1 --exclude-drafts --exclude-pre-releases --json tagName --jq '.[0].tagName'
+```console
+$ gh release list --repo OWNER/REPO --limit 1 --exclude-drafts --exclude-pre-releases --json tagName --jq '.[0].tagName'
 ```
 
 A repository can have thousands of tags and no releases at all, in
 which case that command prints nothing. Fall back to the tags
 themselves:
 
-```
-git ls-remote --tags --refs --sort=-v:refname https://github.com/OWNER/REPO
+```console
+$ git ls-remote --tags --refs --sort=-v:refname https://github.com/OWNER/REPO
 ```
 
 Version sort puts a prerelease above its own release, so `v1.2.0-rc1`
@@ -83,8 +87,8 @@ A tag pins content only by convention — git allows a tag to be moved,
 and a move never propagates to anyone who already fetched it. When the
 link is evidence for a quoted line, resolve it to a commit:
 
-```
-gh api repos/OWNER/REPO/commits/v2.40.0 --jq .sha
+```console
+$ gh api repos/OWNER/REPO/commits/v2.40.0 --jq .sha
 ```
 
 That endpoint resolves lightweight and annotated tags alike. Do not
@@ -93,8 +97,8 @@ object's SHA, and a blob URL built on it 404s.
 
 Confirm before publishing:
 
-```
-curl -s -o /dev/null -w '%{http_code}\n' -L 'https://github.com/OWNER/REPO/blob/v2.40.0/README.md'
+```console
+$ curl -s -o /dev/null -w '%{http_code}\n' -L 'https://github.com/OWNER/REPO/blob/v2.40.0/README.md'
 ```
 
 ## Let GitHub do the linking where it already does
@@ -125,16 +129,16 @@ not GitHub, and in a body someone copies elsewhere.
 ### Tracker keys: check whether the repository resolves them
 
 A key like `TIK-111` renders as plain text unless a repository admin
-configured a custom autolink for that prefix. When it is configured, write the bare key. When it
-is not, write a full markdown link.
+configured a custom autolink for that prefix. When it is configured, write the
+bare key. When it is not, write a full markdown link.
 
 `GET /repos/{owner}/{repo}/autolinks` needs admin and returns 404 for
 everyone else, which is indistinguishable from "none configured".
 Render the token instead — the preview applies the repository's real
 autolinks:
 
-```
-gh api --method POST /markdown -f mode=gfm -f context=OWNER/REPO -f text='TIK-111'
+```console
+$ gh api --method POST /markdown -f mode=gfm -f context=OWNER/REPO -f text='TIK-111'
 ```
 
 ### Unresolvable references render as plain text
@@ -151,10 +155,10 @@ package-registry page. Research it — do not reconstruct URLs from
 memory.
 
 Render it as the project name linked to its primary home, with the
-rest in parentheses:
+rest in parentheses (the project and version below are illustrative):
 
 ```
-[vitest](https://vitest.dev) — [repo](https://github.com/vitest-dev/vitest), [docs](https://vitest.dev/guide/), [v4.1.10 release notes](https://github.com/vitest-dev/vitest/releases/tag/v4.1.10), [npm](https://www.npmjs.com/package/vitest)
+[vitest](https://vitest.dev) — [repo](https://github.com/vitest-dev/vitest), [docs](https://vitest.dev/guide/), [v1.2.3 release notes](https://github.com/vitest-dev/vitest/releases/tag/v1.2.3), [npm](https://www.npmjs.com/package/vitest)
 ```
 
 Drop a slot that genuinely does not exist rather than pointing two
@@ -164,39 +168,39 @@ slots at the same page.
 
 npm, including `repository.directory` for a package inside a monorepo:
 
-```
-curl -s https://registry.npmjs.org/PKG/latest | jq '{version, homepage, repository, bugs}'
+```console
+$ curl -s https://registry.npmjs.org/PKG/latest | jq '{version, homepage, repository, bugs}'
 ```
 
 PyPI, where the link set is maintainer-labeled free text:
 
-```
-curl -s https://pypi.org/pypi/PROJECT/json | jq '.info | {package_url, home_page, project_urls}'
+```console
+$ curl -s https://pypi.org/pypi/PROJECT/json | jq '.info | {package_url, home_page, project_urls}'
 ```
 
 crates.io, which requires an identifying user agent:
 
-```
-curl -s -A 'issue-authoring' https://crates.io/api/v1/crates/CRATE | jq '.crate | {homepage, documentation, repository, default_version}'
+```console
+$ curl -s -A 'issue-authoring' https://crates.io/api/v1/crates/CRATE | jq '.crate | {homepage, documentation, repository, default_version}'
 ```
 
 RubyGems, the one registry with a first-class changelog field:
 
-```
-curl -s https://rubygems.org/api/v1/gems/GEM.json | jq '{homepage_uri, source_code_uri, documentation_uri, changelog_uri}'
+```console
+$ curl -s https://rubygems.org/api/v1/gems/GEM.json | jq '{homepage_uri, source_code_uri, documentation_uri, changelog_uri}'
 ```
 
 Go, resolving version, tag ref, and commit in one call:
 
-```
-curl -s https://proxy.golang.org/MODULE/@latest
+```console
+$ curl -s https://proxy.golang.org/MODULE/@latest
 ```
 
 Second-source the repository itself, since a registry records what was
 true at publish time:
 
-```
-gh repo view OWNER/REPO --json url,homepageUrl,description,isArchived
+```console
+$ gh repo view OWNER/REPO --json url,homepageUrl,description,isArchived
 ```
 
 ### Changelog at the release, never at trunk
@@ -210,8 +214,8 @@ carry prefixes and encodings that are not derivable from a version
 number — `@changesets/cli@2.31.1` becomes `%40changesets/cli%402.31.1`
 in a URL, Go submodules tag as `module1/v1.2.3`.
 
-```
-gh api repos/OWNER/REPO/releases/tags/v2.40.0 --jq '{tag_name, html_url}'
+```console
+$ gh api repos/OWNER/REPO/releases/tags/v2.40.0 --jq '{tag_name, html_url}'
 ```
 
 `/releases/latest` moves on every publish and means different things

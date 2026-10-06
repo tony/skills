@@ -12,12 +12,11 @@ metadata:
 
 # this skill
 
-Recovery for a broken double-check. The chat currently holds a
-revision log — verdicts about prior claims, deltas against text the
-user never read. Replace it with the analysis itself.
+Recovery for a broken double-check. The chat holds a revision log:
+verdicts about prior claims, deltas against text the user never read.
+Replace it with the analysis itself.
 
-Read `references/verification-contract.md`
-first — it is the contract this command restores.
+Read `references/verification-contract.md` first.
 
 ## `$ARGUMENTS`
 
@@ -38,15 +37,14 @@ first — it is the contract this command restores.
    numbering, category names, or verdict framing.
 3. **Re-derive and restate.** Re-open the source artifacts and write
    the full analysis, standalone, in the shape the original request
-   implied. Every claim stated positively and in full — no verdict
-   shorthand, no "as noted above", no delta table.
+   implied. State every claim positively and in full, per
+   `references/prose-rules.md`.
 4. **Weakness inline.** If a claim is weak, say why it is weak.
    Never say it was previously stated differently.
 
 ## What this does not do
 
-- Reference, summarize, or grade the earlier response — the user did
-  not read it and will not.
+- Reference, summarize, or grade the earlier response.
 - Edit files or commit — output is conversation only.
 - Answer a different question than the one recovered or given —
   losing focus is the failure this command repairs.

@@ -24,44 +24,6 @@ contract. Read
 
 User arguments: $ARGUMENTS
 
-## Context
-
-Repository — run this command and read the output:
-
-```bash
-git remote get-url origin 2>/dev/null || echo "(no remote)"
-```
-
-Current branch — run this command and read the output:
-
-```bash
-git branch --show-current 2>/dev/null || echo "(detached HEAD)"
-```
-
-Trunk — run this command and read the output:
-
-```bash
-git symbolic-ref --short refs/remotes/origin/HEAD 2>/dev/null || echo "(origin/HEAD unset)"
-```
-
-Ahead / behind trunk — run this command and read the output:
-
-```bash
-git rev-list --left-right --count "$(git symbolic-ref --short refs/remotes/origin/HEAD 2>/dev/null || echo origin/main)"...HEAD 2>/dev/null || echo "(no comparison available)"
-```
-
-Working tree — run this command and read the output:
-
-```bash
-git status --short 2>/dev/null | head -20 || echo "(unavailable)"
-```
-
-Trunk ref last updated — run this command and read the output:
-
-```bash
-git log -1 --format='%cr' "$(git symbolic-ref --short refs/remotes/origin/HEAD 2>/dev/null || echo origin/main)" 2>/dev/null || echo "(unknown)"
-```
-
 ## Procedure
 
 ### 1. Fix the scope
@@ -74,10 +36,6 @@ head branch instead — for reviewing someone else's work, or returning
 to a branch not currently checked out. Read it through `gh`; do not
 check it out.
 
-On trunk with nothing ahead and a clean tree, there is no branch story.
-Report recent trunk activity and the open pull requests, and say that
-is what happened.
-
 ### 2. Sweep the layers
 
 Work through the five repository layers in the order the sweep
@@ -88,35 +46,15 @@ criteria reframe the diff that implements them.
 
 ### 3. Search prior conversations
 
-Only with `--with-agentgrep`, and only under the rules in the
-prior-conversations reference: scoped to this project, capped, checked
-against the repository, and reported without local paths.
-
-Derive the search terms from what the first four layers found unless
+Only with `--with-agentgrep`, under the prior-conversations reference.
+Derive the search terms from what the first five layers found unless
 the user supplied them.
 
 ### 4. Report
 
-Write the sections below, in order. Then hand back — this command ends
-at understanding.
-
-## Rules
-
-- Read-only. No commits, no pushes, no edits, no stashes, no branch
-  switches, and no `git fetch`.
-- Report absence explicitly. "No pull request open" is a finding; a
-  missing section reads as a layer that was never checked.
-- Separate what was read from what was inferred, and mark the
-  inferences.
-- Cite only ticket IDs found in the commits, the branch name, or the
-  pull request body. Never invent a reference.
-- Prior conversations are evidence of intent; the repository is the
-  evidence of state. When they disagree, the repository wins and the
-  disagreement is worth reporting.
-- Orient, do not fix. Failing checks, review threads, and dirty files
-  get surfaced, not repaired.
-- No local absolute paths and no third-party personal details in the
-  report.
+Write the sections below, in order, per
+`references/prose-rules.md`. Then hand back; this command ends at
+understanding.
 
 ## Output
 

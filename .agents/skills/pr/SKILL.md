@@ -1,7 +1,8 @@
 ---
 name: pr
 description: >-
-  Generate a gold-standard pull request description from branch diff
+  Use when drafting a pull request description from the current branch's
+  diff, optionally creating the PR with gh.
 disable-model-invocation: true
 allowed-tools: ["Bash", "Read"]
 metadata:
@@ -11,72 +12,68 @@ metadata:
 
 # Generate PR Description
 
-Create a gold-standard pull request description from the current branch's diff.
+Draft a pull request description from the current branch's diff.
 
 User hint: $ARGUMENTS
 
-## Context
+## Procedure
 
-Current branch — run this command and read the output:
+### 1. Gather context
+
+Find the trunk without touching the network:
+
+```bash
+git symbolic-ref --short refs/remotes/origin/HEAD
+```
+
+It prints `origin/<trunk>`; call that `BASE`. When it fails, use the
+first of `origin/main` or `origin/master` that
+`git rev-parse --verify --quiet` accepts; when neither exists, ask the
+user for the base. Then gather the branch's change:
 
 ```bash
 git branch --show-current
 ```
 
-Base branch detection — run this command and read the output:
-
 ```bash
-git rev-parse --verify origin/main >/dev/null 2>&1 && echo main || echo master
+git log "${BASE}..HEAD" --oneline
 ```
 
-Commits on this branch — run this command and read the output:
-
 ```bash
-BASE=$(git rev-parse --verify origin/main >/dev/null 2>&1 && echo main || echo master); git log "origin/$BASE..HEAD" --oneline 2>/dev/null || echo "(no commits ahead of base)"
+git diff "${BASE}...HEAD" --stat
 ```
 
-Files changed (stat) — run this command and read the output:
-
 ```bash
-BASE=$(git rev-parse --verify origin/main >/dev/null 2>&1 && echo main || echo master); git diff "origin/$BASE...HEAD" --stat 2>/dev/null || echo "(no diff)"
+git diff "${BASE}...HEAD"
 ```
 
-Full diff — run this command and read the output:
+An empty log means the branch has nothing ahead of the base; say so and
+stop. Review the diff and **all** commits, not only the latest.
+Determine the kind of change (feature, fix, refactor, CI, docs), the
+modules it touches, and whether it is a small targeted fix or a large
+multi-module change.
 
-```bash
-BASE=$(git rev-parse --verify origin/main >/dev/null 2>&1 && echo main || echo master); git diff "origin/$BASE...HEAD" 2>/dev/null || echo "(no diff)"
-```
+### 2. Read project conventions
 
----
+- Read `AGENTS.md` and `CLAUDE.md` for PR description conventions.
+- Resolve the PR template per `references/template-resolution.md`.
+  When several candidate templates are in play, ask; never guess. A
+  template's structure is the starting point; fill it with the patterns
+  below.
 
-## Procedure
+### 3. Draft the description
 
-### 1. Analyze Changes
-
-- Review the full diff and **all commits** on the branch — not just the latest
-- Determine the nature of the change: new feature, bug fix, refactor, CI/infra, docs, etc.
-- Identify which modules, files, and areas are affected
-- Note the scope: is this a small targeted fix or a large multi-module change?
-
-### 2. Read Project Conventions
-
-- Read AGENTS.md and/or CLAUDE.md for any PR description conventions
-- Resolve the `ticket` plugin's content contract when it is installed — it owns the past/present/future tense rules this description follows. Read `references/contract.md`. An installed plugin caches under a version directory, so that sibling sits one level further out than the path suggests: glob the version segment rather than hard-coding it, and run the glob through `sh`, since zsh treats an unmatched glob as a fatal error and would abort before reaching the flat-layout fallback. Continue without it when nothing resolves
-- Resolve the PR template per `references/template-resolution.md`: a template mentioned in the user's message wins; otherwise the repository's PR template; otherwise the gold-standard patterns below. When multiple candidate templates are in play, ask — never guess between them
-- If a template applies, its structure is the starting point; fill it in with the gold-standard patterns below
-
-### 3. Draft PR Description
+Write it per `references/prose-rules.md`.
 
 #### Title
 
-- Short — under 70 characters
-- Descriptive of the impact, not the implementation
-- Details belong in the body, not the title
-- Match the project's commit/PR title style if one exists
+- Under 70 characters
+- Describe the impact, not the implementation; details belong in the body
+- Match the project's commit and PR title style if one exists
 
 #### Body
 
-Use the sections that are **relevant** to the change — not every PR needs every section. A small bug fix needs fewer sections than a large feature.
+Use only the sections that fit the change, in proportion to the diff: a one-file fix needs few; a 30-file feature needs more than one sentence.
 
 **`## Summary`** — 3-7 bullet points:
 - Each bullet opens with a **bold impact label** (e.g., **Fix**, **Add**, **Remove**, **Replace**, **Migrate**)
@@ -154,14 +151,13 @@ For removal or migration PRs, include "verify zero matches for X" items proving 
 - Number of files or lines changed ("updated 12 files", "adds 340 lines")
 - Details the reviewer can see in the diff
 - Redundant context already visible in `git log`
-- `Fixes #N` hardcoded in the body — use `gh pr create` flags or let GitHub auto-link
-- **Within-branch tactical narrative** — renames of unshipped symbols, "no longer X" / "previously Y" phrasing, diff paraphrases, or `### Fixes` framing for behavior that never shipped. Belongs in the commit messages of the commits that did the work. See `AGENTS.md` § *AI Slop Prevention*; apply the Published-Release Test before including.
+- `Fixes #N` hardcoded in the body — link the issue through `gh pr create` flags or let GitHub auto-link. (The merge commit title takes ` (#N)`; see the merge-commit skill.)
+- **Within-branch tactical narrative** — renames of unshipped symbols, "no longer X" / "previously Y" phrasing, diff paraphrases, or `### Fixes` framing for behavior that never shipped. Belongs in the commit messages of the commits that did the work. Keep such text only when a user of the latest published release experienced the old name, behavior, or bug.
 
 #### Whole-branch perspective
 
-Describe the branch's **net shipped result**, not its internal evolution. Ignore
-fixup commits, reverts-then-re-adds, and intermediate WIP states — the PR
-description is a product changelog for reviewers, not a commit-by-commit diary.
+Describe the branch's **net shipped result**, not its internal evolution.
+Ignore fixup commits, reverts-then-re-adds, and intermediate WIP states.
 
 ### 4. Present and Create
 
@@ -187,14 +183,9 @@ description is a product changelog for reviewers, not a commit-by-commit diary.
 
 ## Rules
 
-- **Never** force-push or run destructive git commands
-- **Never** push to `main` or `master`
-- **Always** present the full description before creating the PR
-- **Always** use heredoc for `gh pr create --body` to preserve formatting
-- **Language-agnostic**: discover test/lint commands from AGENTS.md/CLAUDE.md — never hardcode specific tool commands
-- **Proportional**: match the description's detail level to the diff size — a one-file fix doesn't need 20 bullets; a 30-file feature shouldn't be one sentence
-- **No brittle details**: no test counts, no SHAs, no line numbers, no file/line-changed counts
-- **Whole-branch perspective**: describe the net shipped result, not the branch's internal commit history
+- **Never** force-push, run destructive git commands, or push to `main` or `master`.
+- **Always** show the full description before creating the PR.
+- **Language-agnostic**: discover test, lint, and typecheck commands from `AGENTS.md` / `CLAUDE.md`; never hardcode a tool's commands.
 
 
 ## Portability notes

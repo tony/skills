@@ -1,8 +1,5 @@
 # Dependabot close-out and CI attribution
 
-Shared by the `github-actions-update-action` skill and
-the `github-actions-update-actions` skill.
-
 ## The one-way rule
 
 Our commit lands on trunk first. The dependabot PR is then closed with
@@ -13,7 +10,7 @@ Do not name, link, or cite a dependabot PR in a commit message. The PR
 number may not exist when the commit is written, it carries no meaning
 for anyone reading the history later, and it inverts the direction of
 the citation. Referencing an *upstream action's* own issue tracker
-(`pnpm/action-setup#265`) is fine and often valuable — that is the
+(`<owner>/<action>#<n>`) is fine and often valuable — that is the
 vendor's tracker, not dependabot.
 
 Never merge the dependabot PR. Its commit message is the bot's, not
@@ -44,8 +41,8 @@ before mapping.
 
 ## Attributing CI failures
 
-Getting this wrong in either direction is expensive: revert good work,
-or ship a regression. Establish attribution before acting.
+Establish attribution before acting: a wrong call either reverts good
+work or ships a regression.
 
 **Compare the same workflow by name.** A fleet often runs a second
 workflow — dependency graph, deploy, docs — whose green run sits next

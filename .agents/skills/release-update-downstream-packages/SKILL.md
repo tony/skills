@@ -12,14 +12,14 @@ metadata:
 
 # Update Downstream Packages
 
-A release of one of the user's packages just published. Find every
+A new release of one of the user's packages is published. Find every
 repo of theirs that consumes it, bump the pin (and sibling workspace
 packages released together with it), refresh lockfiles, commit, push
 to trunk, and verify CI end to end.
 
 Arguments: $ARGUMENTS
 
-This command **pushes to trunk of many repos**. Nothing is mutated
+This command pushes to trunk of many repos. Nothing is mutated
 before the Phase 3 confirmation gate. `--no-push` runs the whole
 procedure but leaves commits local.
 
@@ -31,9 +31,8 @@ procedure but leaves commits local.
 2. **Version** — the second non-flag argument, or discover the latest
    published version from the package index (for PyPI:
    `https://pypi.org/pypi/<package>/json`; for npm:
-   `npm view <package> version`). Confirm the version actually exists
-   on the index before touching anything — locking against an
-   unpublished version fails everywhere at once.
+   `npm view <package> version`). Confirm the version exists on the
+   index before touching anything.
 3. **Workspace roots** — from `--roots` globs. If not given, ask the
    user which directories hold their open-source checkouts (e.g.
    glob patterns two levels deep under a work directory). Do not
@@ -42,10 +41,9 @@ procedure but leaves commits local.
    repo that publishes several packages versioned together, list the
    siblings (from the source repo's `packages/*` manifests or the
    index). They bump together.
-5. **Fresh resolver cache** — for Python consumers, run
-   `uv cache clean --force` once before any locking, so every lock
-   resolves against the newly published files rather than a stale
-   cached index.
+5. **Fresh resolver cache** — clear the package manager's resolver
+   cache once before any locking, so every lock resolves against the
+   newly published files (for uv: `uv cache clean --force`).
 
 ## Phase 2: Discover Consumers
 
@@ -68,14 +66,15 @@ For each hit, record:
 - **Current pin(s)** — the pinned version(s) of the package and any
   siblings in the manifest.
 - **Source overrides** — dependency sources that shadow the index
-  (`[tool.uv.sources]` entries, npm `file:`/`link:`/`git:` specs).
+  (for example `[tool.uv.sources]` entries, npm `file:`/`link:`/`git:`
+  specs).
   These repos need the override removed and the published index
   package used instead — as its own commit, before the bump.
-- **Resolver cutoffs** — for uv consumers, whether
-  `[tool.uv.exclude-newer]` is set and whether the package and every
-  sibling appear under `[tool.uv.exclude-newer-package]`. A missing
-  entry blocks the fresh release at lock time; add the missing
-  entries as their own commit, before the bump.
+- **Resolver cutoffs** — a cooldown setting that hides fresh releases
+  (for uv, `[tool.uv.exclude-newer]`, with per-package exemptions under
+  `[tool.uv.exclude-newer-package]`). If one is set, check that the
+  package and every sibling are exempt. A missing entry blocks the fresh
+  release at lock time; add it as its own commit, before the bump.
 - **Dirty?** Repos with uncommitted changes get reported and skipped
   unless the user says otherwise.
 
@@ -105,50 +104,46 @@ unavailable. Each repo, on each of its confirmed branches:
 1. **Sync** — `git checkout <branch> && git pull --ff-only`.
 2. **Prep commits** (each on its own, only if discovery flagged it):
    - Remove the source override so the repo consumes the published
-     index package. Commit it alone, e.g.
-     `py(deps[docs]) Use published <package> from PyPI` with a
-     why/what body.
-   - Add missing entries to `[tool.uv.exclude-newer-package]`
-     (`<name> = false`, alphabetical order). Commit alone; wrap
-     `exclude-newer-package` in backticks in the subject:
-     ``py(deps[uv]) Add <name> to `exclude-newer-package` whitelist``
-     with a why/what body noting the cooldown would otherwise block
-     the fresh release.
+     index package. Commit it alone, in the repo's own commit style.
+   - Add missing cooldown exemptions (for uv, `<name> = false` under
+     `[tool.uv.exclude-newer-package]`, alphabetical order). Commit
+     alone, with a body noting the cooldown would otherwise block the
+     fresh release.
 3. **Bump pins** — replace the pinned version for the package and all
-   siblings in the manifest. A pattern replacement across the shared
-   version series catches every sibling at once. With GNU coreutils:
+   siblings in the manifest. Siblings released together share a version
+   series, so one pattern catches them all. With GNU coreutils:
 
    ```
-   sed -i -E 's/==0\.0\.1a[0-9]+/==0.0.1a<N>/g' pyproject.toml
+   sed -i -E 's/==<old-version>/==<new-version>/g' pyproject.toml
    ```
 
    On BSD/Darwin, `-i` requires an explicit backup suffix, and an
    empty one edits in place:
 
    ```
-   sed -i '' -E 's/==0\.0\.1a[0-9]+/==0.0.1a<N>/g' pyproject.toml
+   sed -i '' -E 's/==<old-version>/==<new-version>/g' pyproject.toml
    ```
 
 4. **Re-lock** — the ecosystem's lock command (`uv lock`,
    `npm install --package-lock-only`, ...). On a resolution failure,
-   `uv cache clean --force` and retry once.
+   clear the resolver cache and retry once.
 5. **Prerelease warnings mean stop.** If locking warns about
    prerelease resolution or would need `--prerelease` flags or
    config to accept the version, do not add flags, pins, or config
-   to force it through — halt this repo and report. A correctly
-   published release resolves without coaxing; a warning means
-   something upstream is wrong (stale cache, missing
-   `exclude-newer-package` entry, or a bad publish).
+   to force it through; halt this repo and report. A warning means
+   something upstream is wrong: a stale cache, a missing cooldown
+   exemption, or a bad publish.
 6. **Commit** — mirror the repo's own previous bump commits for this
-   package (`git log --oneline --grep '<package>'`). Fallback
-   subject, version-arrow form:
+   package (`git log --oneline --grep '<package>'`). Fallback subject,
+   version-arrow form:
 
    ```
-   py(deps[docs]) <package> <old> → <new>
+   <package> <old> → <new>
    ```
 
-   Body: why/what summarizing what the new release ships — read the
-   package's CHANGES entry for the version, do not invent.
+   Body: what the new release ships, read from the package's CHANGES
+   entry for the version. Write it per
+   `references/prose-rules.md`.
 7. **Push** — `git push` (skip with `--no-push`). Never force.
 
 ## Phase 5: Verify with gh
@@ -161,10 +156,16 @@ For every pushed repo:
    gh cache delete --all --repo <owner>/<repo>
    ```
 
-2. Watch the run for the pushed commit:
+2. Find the run for the pushed commit:
 
    ```
    gh run list --repo <owner>/<repo> --branch <branch> --limit 1
+   ```
+
+   Then wait for it to conclude:
+
+   ```
+   gh run watch <run-id> --repo <owner>/<repo> --exit-status
    ```
 
 3. On failure: clear the cache again and
@@ -192,3 +193,4 @@ For every pushed repo:
 
 - `ask-user-choice` — present the listed options and wait for the user to pick one. Hosts with a structured multiple-choice tool (Claude Code's `AskUserQuestion`) should use it; otherwise print a numbered list and wait for a numbered reply. Never proceed on an assumed answer.
 - `$ARGUMENTS` — the text the user passed when invoking this skill. If your host does not substitute it, read it as the user's request in the current turn, and ask when there is none.
+- Bundled files — every relative path in this skill points at a file shipped inside this skill directory. Read them from here, not from the host's plugin tree.

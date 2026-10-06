@@ -11,77 +11,52 @@ metadata:
 
 # Git Commit
 
-Create a well-formatted git commit using the project's commit conventions.
+Create a git commit using the project's commit conventions.
 
 User hint: $ARGUMENTS
 
-## Context
-
-Current branch — run this command and read the output:
-
-```bash
-git branch --show-current
-```
-
-Working tree status — run this command and read the output:
-
-```bash
-git status --short
-```
-
-Staged changes (stat) — run this command and read the output:
-
-```bash
-git diff --cached --stat
-```
-
-Unstaged changes (stat) — run this command and read the output:
-
-```bash
-git diff --stat
-```
-
-Full diff against HEAD — run this command and read the output:
-
-```bash
-git diff HEAD
-```
-
-Recent commits (for style matching) — run this command and read the output:
-
-```bash
-git log --oneline -10
-```
-
----
-
 ## Commit Convention
 
-Read the project's AGENTS.md and/or CLAUDE.md to discover the commit message format. Look for:
-- Subject line format (e.g., `Scope(type[detail]) description`, Conventional Commits `type(scope): description`, or other patterns)
-- Body structure (e.g., `why:/what:` sections)
+Read the project's AGENTS.md and/or CLAUDE.md for the commit message format:
+
+- Subject line format (`Scope(type[detail]) description`, Conventional Commits
+  `type(scope): description`, or another pattern)
+- Body structure (such as `why:/what:` sections)
 - Component naming conventions
 
-If no project convention is found, fall back to Conventional Commits: `type(scope): description`.
+With no project convention, use Conventional Commits. Match the recent
+commits' capitalization, tense, and level of detail.
 
-Match the style of the recent commits shown above — capitalization, tense, level of detail.
-
-### Message scope
-
-Commit messages are the canonical home for branch-internal narrative — renames, refactors, attempts-then-reverts, intermediate states, "first I tried X" stories. Put that content *here*, not in the artifacts the commit modifies (code, docstrings, README, CHANGES, PR descriptions). See `AGENTS.md` § *AI Slop Prevention*.
+Branch-internal narrative (renames, refactors, attempts-then-reverts,
+intermediate states) belongs in the commit message, not in the code,
+docstrings, README, or CHANGES the commit modifies.
 
 ---
 
 ## Procedure
 
-### 1. Analyze Changes
+### 1. Gather State
+
+Run these and read the output:
+
+- `git branch --show-current`: the current branch.
+- `git status --short`: the working tree.
+- `git diff --cached --stat` and `git diff --stat`: staged and unstaged changes.
+- `git diff HEAD`: the full diff.
+- `git log --oneline -10`: recent commits, for style matching.
+
+A failure of the first command means this is not a git repository: report it
+and stop. `git diff HEAD` fails in a repository with no commits; use
+`git diff --cached` there. No changes: report "Nothing to commit" and stop.
+
+### 2. Analyze Changes
 
 - Review the full diff to understand what changed
 - Determine the commit type (`feat`, `fix`, `refactor`, `docs`, `chore`, `test`, `style`, etc.)
 - Determine the scope/component from the files and modules touched
 - Check topic coherence: if the changes span unrelated topics, warn the user and suggest splitting into separate commits
 
-### 2. Determine Staging
+### 3. Determine Staging
 
 - **If files are already staged** (`git diff --cached` is non-empty): respect the user's staging — only commit what is staged
 - **If nothing is staged**: auto-stage changed files, but:
@@ -89,9 +64,10 @@ Commit messages are the canonical home for branch-internal narrative — renames
   - Use `git add <specific-files>` — never `git add -A` or `git add .`
   - Tell the user which files you are staging
 
-### 3. Draft Commit Message
+### 4. Draft Commit Message
 
-- Follow the project's commit format discovered above
+- Follow the project's commit format
+- Write the message per `references/prose-rules.md`
 - If the user provided `$ARGUMENTS`, use it as a hint for the description — but always enforce the project's format
 - Include a body (`why:/what:` or equivalent) when:
   - Multiple files are changed
@@ -101,12 +77,10 @@ Commit messages are the canonical home for branch-internal narrative — renames
 
 #### Line wrapping
 
-Wrap commit message body lines at **72 characters**. This is the git
-convention and ensures readable output in `git log`, terminals, and
-email-based review.
+Wrap commit message body lines at 72 characters.
 
-**Overflow exceptions** — do NOT break these tokens across lines;
-place them at the end of a line or on their own line:
+Overflow exceptions: never break these tokens across lines; place them at the
+end of a line or on their own line:
 
 - URLs
 - commit hashes
@@ -114,12 +88,11 @@ place them at the end of a line or on their own line:
 - file paths
 - long identifiers (class names, function signatures)
 
-If a bullet point exceeds 72 characters due to an overflow token,
-let the line run long rather than wrapping mid-token.
+Let such a line run long rather than wrapping mid-token.
 
-### 3a. Version & Dependency Bump Commits
+### 5. Version and Dependency Bumps
 
-When the changes are version bumps or dependency updates, use this specialized format:
+For version bumps and dependency updates, use this format.
 
 **Single package** — compact subject with body:
 ```
@@ -148,7 +121,7 @@ URL guidelines:
 - Use `/blob/<tag>/CHANGELOG.md` for changelogs pinned to the release tag — not `/blob/main/` unless no tags exist
 - Use arrow notation for version transitions: `v1.2.0 → v1.3.0` or `1.2.0 -> 1.3.0`
 
-### 4. Commit
+### 6. Commit
 
 - For single-line messages:
   ```
@@ -169,9 +142,9 @@ URL guidelines:
   - Read the hook output to understand the failure
   - Fix the issue (formatting, lint, etc.)
   - Re-stage the fixed files
-  - Create a **new** commit — never use `--amend` (the failed commit does not exist)
+  - Create a new commit; the failed commit does not exist, so there is nothing to amend
 
-### 5. Confirm Result
+### 7. Confirm Result
 
 - Run `git log --oneline -1` to show the created commit
 - Run `git status` to show the remaining working tree state
@@ -183,41 +156,37 @@ URL guidelines:
 
 ### Do
 
-- **Proportional detail** — small fix gets a concise body; large feature gets structured sub-sections (Changes, Test coverage)
-- **`why:` explains motivation; `what:` lists specific technical changes** — reader understands the reason before the implementation
-- **Quantify impact** for performance changes — include before/after numbers and percentages
-- **Before/after examples** for bug fixes — show broken vs fixed behavior inline when helpful
-- **Cross-reference** related PRs/issues with `Fixes #N` or `See also: <URL>`
-- **List specific files** changed when multiple modules are touched
-- **Version bumps** — include release date, release tag URL, and changelog URL
-- **Arrow notation** for version transitions: `v1.2.0 → v1.3.0` or `1.2.0 -> 1.3.0`
-- **Wrap body at 72 characters** — the git convention; let URLs, paths,
-  hashes, and identifiers overflow rather than breaking mid-token
+- Match detail to the change: a small fix gets a concise body; a large feature
+  gets structured sub-sections.
+- Put motivation in `why:` and specific technical changes in `what:`.
+- Give before/after numbers for performance changes.
+- Show broken vs fixed behavior inline for bug fixes when it helps.
+- Name an issue the commit closes with `Fixes #N`; link anything else with
+  `See also: <URL>`.
+- List the files changed when several modules are touched.
 
 ### Don't
 
-- **Vague subjects**: "update code", "fix bug", "misc changes"
-- **Redundant type-in-description**: "feat: add new feature" — the type already says feat
-- **`#PR_NUMBER` in commit messages** — PR numbers belong in CHANGES entries, not commits; git merge history already tracks PR association
-- **Bodies longer than the change warrants** — a one-line typo fix doesn't need 10 bullets
-- **Omitting the body** when changes span multiple files or the diff is non-obvious
-- **Counts of files, lines, or tests changed** — these duplicate `git diff --stat` and become stale; describe *what* changed, not *how many*
+- Vague subjects: "update code", "fix bug", "misc changes".
+- Type repeated in the description: "feat: add new feature".
+- The branch's own PR number in a branch commit. Only the merge commit's
+  subject carries ` (#N)`, and changelog entries cite it.
+- Bodies longer than the change warrants, or no body when changes span multiple
+  files or the diff is non-obvious.
+- Counts of files, lines, or tests; they duplicate `git diff --stat` and go
+  stale.
 
 ---
 
 ## Rules
 
-- **Never** run `git push`, `git push --force`, `git reset --hard`, or any destructive git command
-- **Never** use `--amend` — always create new commits
-- **Never** use `--no-verify` or `--no-gpg-sign`
-- **Never** create empty commits
-- **Never** use `git add -A` or `git add .`
-- **Never** commit files that likely contain secrets (`.env`, credentials, keys)
-- Always use heredoc when the commit message has a body (multi-line)
-- Always present the proposed commit message before executing `git commit`
-- If there are no changes to commit, report "Nothing to commit" and stop
+- Never run `git push`, `git push --force`, `git reset --hard`, or any
+  destructive git command.
+- Never use `--amend`, `--no-verify`, or `--no-gpg-sign`.
+- Never create empty commits.
 
 
 ## Portability notes
 
 - `$ARGUMENTS` — the text the user passed when invoking this skill. If your host does not substitute it, read it as the user's request in the current turn, and ask when there is none.
+- Bundled files — every relative path in this skill points at a file shipped inside this skill directory. Read them from here, not from the host's plugin tree.

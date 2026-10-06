@@ -24,11 +24,10 @@ product**. Each round throws away its implementation and keeps what it
 learned: which approaches the code rejected, which decisions are now
 settled, which questions are still open.
 
-A ratchet is worth running when the shape of the answer is unknown — a
-port to another language, an API whose ergonomics only show up in use,
-a subsystem where the first sketch is expected to be wrong. When one
-approach is already clear, use the `spike-probe` skill. When two or three named
-approaches compete once, use the `spike-bakeoff` skill.
+Run a ratchet when the shape of the answer is unknown, such as a port
+to another language or an API whose ergonomics only show up in use. One
+clear approach is the `spike-probe` skill; two or three named approaches
+competing once is the `spike-bakeoff` skill.
 
 ## The Iron Rule
 
@@ -124,11 +123,9 @@ Repeat until Phase 3 says stop. Each round:
 1. **Probe.** Follow the `spike-probe` skill Phases 2 through 4 against the goal
    as sharpened by the ledger's open questions: shortest path to
    proven, cheapest verification signal, `SPIKE:` markers, stumbling
-   blocks, the exit gate, and a stash with a recorded SHA. A round
-   borrows those phases, it does not invoke the whole skill — probe's
-   Phase 0 already ran once in Phase 0 above, its Phase 1 brief is the
-   ratchet brief you already approved, and its plan and replay phases
-   belong to the ratchet's exit. This is also why `--replay` never
+   blocks, the exit gate, and a stash with a recorded SHA. Probe's
+   Phase 0 and Phase 1 brief already ran above, and its plan and
+   replay phases belong to the ratchet's exit, so `--replay` never
    reaches a round.
 2. **Branch on what fought back.** A stumbling block that admits two
    or more genuinely different resolutions is what the `spike-bakeoff` skill
@@ -139,9 +136,8 @@ Repeat until Phase 3 says stop. Each round:
    combination. When a round takes them, the ratchet seeds the next
    round's tree itself — apply the winner's stash, then the graft
    hunks — and that round probes from there, so the proving check runs
-   on the tree actually chosen. Seeding is the ratchet's own step rather
-   than a probe invocation, which is why probe's dirty-tree halt does
-   not fire on a tree the ratchet deliberately built. A graft that fails
+   on the tree actually chosen. Probe's dirty-tree halt does not fire on a tree the ratchet seeded
+   itself. A graft that fails
    the check is dropped and recorded as dropped.
 4. **Record.** Append the round's ledger section before starting the
    next one. A round that ends without its ledger entry written did
@@ -152,10 +148,9 @@ inherits from round N-1 is the ledger's locked decisions, not its code.
 
 ## Phase 3: Convergence test
 
-Stop when any of these holds, and say which one in the report:
-
-Test them in this order, because a repeats-only round satisfies more
-than one:
+Stop when any of these holds, tested in this order because a
+repeats-only round satisfies more than one. Say which one in the
+report:
 
 - **Thrashing** — the round surfaced stumbling blocks, but every one
   was already recorded and decided in an earlier round. Repetition is
@@ -171,7 +166,8 @@ Otherwise start the next round from the ledger's open questions.
 ## Phase 4: Exit
 
 The surviving artifacts are the ledger, the final round's stash SHA,
-and every earlier round's stash SHA. Offer the two exits:
+and every earlier round's stash SHA. Offer the two exits, writing any commit message per
+`references/prose-rules.md`:
 
 - **Clean rewrite** — write the final implementation from the ledger's
   locked decisions rather than from the accumulated code, keeping the
@@ -186,6 +182,8 @@ Recommend one and say why. Never drop earlier stashes — the ledger
 cites them by SHA as the evidence for its locked decisions.
 
 ## Output contract
+
+Write the report per `references/prose-rules.md`.
 
 1. Hero block (1–3 lines): `✓ converged in <n> rounds` /
    `⚠ capped at <n> rounds` / `⚠ thrashing — stopped at round <n>` +

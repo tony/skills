@@ -20,9 +20,9 @@ readable by agents scanning `.agents/skills/`.
 | [changelog](plugins/changelog/) | Productivity | Generate and maintain categorized changelog entries from branch commits and PR context. |
 | [tdd](plugins/tdd/) | Testing | TDD bug-fix workflow: reproduce bugs as failing tests, determine root cause, fix, and verify. |
 | [model-cli](plugins/model-cli/) | Development | Run prompts through individual AI CLIs — Antigravity/agy (Gemini), codex/GPT, and cursor/agent with fallback support. |
-| [pr](plugins/pr/) | Development | Manage gold-standard PR descriptions. Detects AI slop and verbose commits, resolving them via fixup commits and autosquash. |
+| [pr](plugins/pr/) | Development | Draft, refresh, rewrite, and review PR descriptions, and draft merge commit messages, from the branch diff. |
 | [research](plugins/research/) | Learning | Research topics and assess decisions with pinned, captured sources in dated folders. Resume, re-verify, report. Clones dependencies at pinned versions. |
-| [slop](plugins/slop/) | Development | Scan tracked files for AI slop and verbose noise, resolving each finding with atomic, verified commits. |
+| [slop](plugins/slop/) | Development | Audit a branch's commits or a repo's tracked files for AI slop and brittle references; fix through fixup or atomic commits. |
 | [tailwind](plugins/tailwind/) | Design | Detect and fix inconsistent spacing, margin/gap mixing, and padding asymmetry in Tailwind CSS layouts. |
 | [pytest-optimizer](plugins/pytest-optimizer/) | Testing | Profile and optimize pytest suites. Ranks and applies safe speedups as verified, independent commits. |
 | [spike](plugins/spike/) | Development | Run no-commit spikes, strategy bakeoffs, or multi-round convergence in git worktrees. Tests ideas against quality gates and returns a commit-by-commit implementation plan. |
@@ -79,8 +79,8 @@ Then install any plugin by the name in the table above:
 codex plugin add commit@skills
 ```
 
-Each workflow is one skill, invoked as `pr:deslop` under Codex and
-`/pr:deslop` under Claude Code.
+Each workflow is one skill, invoked as `slop:deslop` under Codex and
+`/slop:deslop` under Claude Code.
 
 ## Design Philosophy
 
@@ -101,14 +101,14 @@ Scripts use [uv](https://docs.astral.sh/uv/) to manage Python dependencies.
 
 Install uv:
 
-```bash
-curl -LsSf https://astral.sh/uv/install.sh | sh
+```console
+$ curl -LsSf https://astral.sh/uv/install.sh | sh
 ```
 
 or:
 
-```bash
-wget -qO- https://astral.sh/uv/install.sh | sh
+```console
+$ wget -qO- https://astral.sh/uv/install.sh | sh
 ```
 
 See [uv installation docs](https://docs.astral.sh/uv/getting-started/installation/) for
@@ -116,28 +116,28 @@ other methods.
 
 ### Lint and validate
 
-```bash
-uv run ./scripts/marketplace.py lint
+```console
+$ uv run ./scripts/marketplace.py lint
 ```
 
 ### Sync marketplace manifest with plugin directories
 
 Dry-run:
 
-```bash
-uv run ./scripts/marketplace.py sync
+```console
+$ uv run ./scripts/marketplace.py sync
 ```
 
 Write changes to marketplace.json:
 
-```bash
-uv run ./scripts/marketplace.py sync --write
+```console
+$ uv run ./scripts/marketplace.py sync --write
 ```
 
 ### Check for outdated entries
 
-```bash
-uv run ./scripts/marketplace.py check-outdated
+```console
+$ uv run ./scripts/marketplace.py check-outdated
 ```
 
 ### Regenerate the portable skill export
@@ -150,19 +150,21 @@ copied and links rewritten to make each exported skill self-contained.
 Codex reads `skills/` in place and consumes plugins directly via
 `.codex-plugin/plugin.json`.
 
-```bash
-uv run ./scripts/marketplace.py portable
+```console
+$ uv run ./scripts/marketplace.py portable
 ```
 
 Verify the committed tree matches the generated plugins:
 
-```bash
-uv run ./scripts/marketplace.py portable --check
+```console
+$ uv run ./scripts/marketplace.py portable --check
 ```
 
 - **Edit:** `plugins/*/skills/`
+- **Edit shared files in `shared/`:** `portable` copies each one into the
+  plugins `shared/vendor.yml` lists for it.
 - **Do not edit generated files:** `.agents/skills/`, `.agents/plugins/`,
-  or `plugins/*/.codex-plugin/`
+  `plugins/*/.codex-plugin/`, or a plugin's copy of a `shared/` file.
 
 `.agents/portable-manifest.json` tracks exported skill sources and
 bundled files.
@@ -170,8 +172,8 @@ bundled files.
 Hosts scanning `.agents/skills/` read the tree directly. The `skills` CLI
 also reads this tree:
 
-```bash
-npx skills add tony/skills
+```console
+$ npx skills add tony/skills
 ```
 
 This installs only the export. The `metadata.pluginRoot` in the marketplace
@@ -181,20 +183,20 @@ manifest prevents duplicate skill renderings from being exposed.
 
 Lint:
 
-```bash
-uv run ruff check ./scripts/
+```console
+$ uv run ruff check ./scripts/
 ```
 
 Format check:
 
-```bash
-uv run ruff format --check ./scripts/
+```console
+$ uv run ruff format --check ./scripts/
 ```
 
 Type check:
 
-```bash
-uv run basedpyright ./scripts/
+```console
+$ uv run basedpyright ./scripts/
 ```
 
 ## Documentation

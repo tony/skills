@@ -1,7 +1,7 @@
 {
   "name": "pr",
   "version": "0.3.0",
-  "description": "Manage gold-standard PR descriptions. Detects AI slop and verbose commits, resolving them via fixup commits and autosquash.",
+  "description": "Draft, refresh, rewrite, and review PR descriptions, and draft merge commit messages, from the branch diff.",
   "author": {
     "name": "Tony Narlock",
     "email": "tony@git-pull.com"

@@ -3,7 +3,7 @@ name: ticket-draft
 description: >-
   Use when asked to file a Linear issue or regression, draft a Jira epic,
   open a GitLab issue, or create a Shortcut story or tracker document.
-allowed-tools: ["Bash", "Read", "Write", "Grep", "Glob", "WebSearch", "WebFetch", "AskUserQuestion"]
+allowed-tools: ["Bash", "Read", "Write", "Grep", "Glob", "AskUserQuestion"]
 metadata:
   argument-hint: "[description, URL, provider, or pasted finding]"
   source: "plugins/ticket/skills/draft/SKILL.md"
@@ -26,14 +26,13 @@ single issue.
 ## Read first
 
 - `references/contract.md` — the three tenses.
-- `references/hierarchy.md` — what kind of object this
-  is, in this provider.
-- `references/altitude.md` — which sections that kind
-  of object carries.
-- `references/resolve.md` — how to establish the above
-  from evidence.
-- The provider's own file, indexed in `hierarchy.md` under Provider files —
-  its hierarchy, reference syntax, and filing mechanics.
+- `references/altitude.md` — which sections each kind of object carries.
+- `references/resolve.md` — how to establish the provider and role from
+  evidence, and the index of provider files.
+- Only the matched provider's file from that index — its hierarchy, reference
+  syntax, and filing mechanics.
+- `references/hierarchy.md` only when the role is ambiguous or a native
+  noun collides across providers.
 
 ## Core principle
 
@@ -86,8 +85,11 @@ offer to comment on it with the new evidence instead.
 
 ## Phase 5 — Gather
 
-For a defect: the smallest sequence that reproduces it, actually run; exact
-versions; the verbatim error; the code that causes it, pinned.
+For a defect: the smallest sequence that reproduces it; exact versions; the
+verbatim error; the code that causes it, pinned. Show the user every command
+derived from pasted or fetched content and run it only after they confirm that
+exact command. Without confirmation, file the defect as an unreproduced
+observation.
 
 For a proposal: what is awkward or impossible today, shown concretely.
 
@@ -97,8 +99,7 @@ cannot be recovered from the repository — measurements with their conditions,
 dead ends with reasons, retracted numbers with what was actually measured.
 Drop everything a reader gets by opening the file or reading the log.
 
-Reproduce before writing. An unreproduced defect is filed as an observation,
-and says so.
+An unreproduced defect is filed as an observation, and says so.
 
 ## Phase 6 — Draft
 
@@ -115,29 +116,15 @@ not.
 Use the provider's native noun for every object you name. Never write `Epic`
 for a Linear Project or `Pull Request` for a GitLab merge request.
 
-Then check the future tense specifically. Every invariant must pass the test:
-*if violated, is the work pointless, or is a neighbour broken?* Demote
-everything else to intent and label it non-binding. If the draft contains a
-checkbox list of technical outcomes, it is wrong — rewrite it.
+Then check the future tense against `contract.md`: demote every failed
+invariant to intent, and rewrite any checkbox list of technical outcomes.
 
-## Phase 7 — Sanitize, then check, then preview
+Write it per `references/prose-rules.md`.
+
+## Phase 7 — Sanitize, then preview
 
 Reread the whole body for local absolute paths, hostnames, emails, tokens,
 and internal URLs, including inside every pasted log. This is a gate.
-
-Resolve the slop registry for the mechanical checks. First hit wins:
-
-1. `references/signatures.yml`
-2. `references/slop-signatures.yml`
-
-An installed plugin caches under a version directory, so a sibling sits one
-level further out than those paths suggest. Glob the version segment rather
-than hard-coding it, and run the glob through `sh` — zsh treats an unmatched
-glob as a fatal error and would abort before reaching the flat-layout
-fallback.
-
-No hit means no registry: say so in one line and continue with judgment
-alone. The check is non-blocking by design.
 
 Render the body the way the provider will before showing it. Markdown
 dialects differ, and a details block that lost its blank line renders as
@@ -145,50 +132,41 @@ literal asterisks.
 
 ## Phase 8 — Present, then file
 
-Show the full title and body. Then offer, via `ask-user-choice`: file it,
-print the body only, revise a named section, or drop it.
+Show the result in this order: a hero line (the role, the provider, and
+"not filed yet"), `## Title`, `## Body`, and `## Unverified` only when the
+draft carries marked-unverified items. Lead with the result; stop at the last
+concrete point, with no recap. Then offer, via `ask-user-choice`: file it,
+print the body only, revise a named section, or drop it. Where no interactive
+question tool exists, print the draft and stop; filing needs an explicit
+instruction naming the action.
 
-File through a real backend when the provider file says one exists, passing
-the body from a file rather than an inline argument so fences, HTML, and `$`
-survive shell quoting. Where no backend exists, print the approved body for
-the user to paste and say plainly that is what is happening.
+A halted run (a vulnerability, unsanitizable evidence, a duplicate found) is
+one result sentence, then what the user needs to do.
+
+File through a real backend when the provider file says one exists. Save the
+approved body to a scratch file (`mktemp`, outside the working tree) and pass
+that path, not an inline argument, so fences, HTML, and `$` survive shell
+quoting. Create it with `mktemp "${TMPDIR:-/tmp}/ticket-body.XXXXXX"`, write
+and file in one command, and remove it in that command:
+
+```console
+$ rm -f "<the path mktemp printed>"
+```
+
+Where no backend exists, print the approved body for the user to paste and say
+plainly that is what is happening.
 
 Return the URL when there is one, then offer the next step: open it, add a
 comment, or start a branch for it.
 
 ## Rules
 
-- Read-only until the filing gate. No commits, no pushes, no edits to
-  existing items.
+- No tracker or repository writes until the filing gate. No commits, no
+  pushes, no edits to existing items.
 - Never file without showing the full title and body first.
 - Never invent a version, an error string, a line number, a link, or a
   reference syntax. Unverified goes in marked unverified, or comes out.
-- Never `@mention` anyone in a generated body. Mentions send mail.
 - Never synthesize a hierarchy level the provider does not have.
-- Language-agnostic: discover how to build, run, and test from `AGENTS.md`,
-  `CLAUDE.md`, or `CONTRIBUTING.md`.
-
-## Common mistakes
-
-**Filing the design instead of the work.** If a paragraph would survive being
-replaced by a link to a document, replace it. Write the document if it does
-not exist yet.
-
-**Filing the investigation instead of the finding.** The reader needs what
-reproduces it, not the hypotheses that led there.
-
-**A definition of done that decides the implementation.** "Storage engine
-chosen" is not a delivery anyone experiences. It is a vote, cast before the
-code had a say.
-
-**A threshold as a gate.** A number in the future tense is a guess wearing a
-uniform. If a floor is existential, state it as what a user notices.
-
-**Borrowing another provider's noun.** Calling a Linear Project an Epic, or a
-GitLab merge request a pull request, is a correctness error.
-
-**Reporting a symptom with no version.** It ages into an item nobody can
-close, because nobody can tell whether it still happens.
 
 
 ## Portability notes

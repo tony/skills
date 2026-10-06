@@ -15,119 +15,69 @@ metadata:
 Raise a provider's version across every module that declares it, in one
 commit, then refresh the lock file of every affected root module.
 
-Use the `terraform-bumping-terraform` skill for the
-phase structure. It reads the same three references this command does,
-so the two cannot drift:
-`references/layout-discovery.md`,
-`references/pin-sites.md`, and
-`references/lock-and-init.md`.
-
-To move the CLI itself, use the `terraform-bump-terraform` skill. To refresh
-locks within the constraints already written, use
-the `terraform-refresh-lock` skill.
+Follow the phase structure in the `terraform-bumping-terraform` skill, which
+points to the three references this skill relies on. To move the CLI
+itself, use the `terraform-bump-terraform` skill. To refresh locks within the
+constraints already written, use the `terraform-refresh-lock` skill.
 
 User arguments: $ARGUMENTS
 
-## Context
-
-Repository — run this command and read the output:
-
-```bash
-git remote get-url origin 2>/dev/null || echo "(not a git repository)"
-```
-
-Directories holding a committed lock file or a backend block — run this command and read the output:
-
-```bash
-{ git ls-files -- '*.terraform.lock.hcl' 2>/dev/null | sed -E 's|\.terraform\.lock\.hcl$||; s|/$||; s|^$|.|'; git grep -lE '^[[:space:]]*(backend[[:space:]]+"|cloud[[:space:]]*\{)' -- '*.tf' '*.tofu' 2>/dev/null | xargs -r -n1 dirname; } 2>/dev/null | sort -u | grep . || echo "(none — no root module found)"
-```
-
-Source addresses declared in tracked configuration, provider and module alike — run this command and read the output:
-
-```bash
-git grep -hE '^[[:space:]]*source[[:space:]]*=' -- '*.tf' '*.tofu' 2>/dev/null | sed -E 's/.*"([^"]*)".*/\1/' | grep -vE '^\.{1,2}/' | sort | uniq -c | sort -rn | head -30 | grep . || echo "(none)"
-```
-
-Version constraints declared — run this command and read the output:
-
-```bash
-git grep -hE '^[[:space:]]*version[[:space:]]*=[[:space:]]*"' -- '*.tf' '*.tofu' 2>/dev/null | sed -E 's/^[[:space:]]*//' | sort | uniq -c | sort -rn | head -30 | grep . || echo "(none)"
-```
-
-Tooling available — run this command and read the output:
-
-```bash
-{ command -v terraform >/dev/null 2>&1 && terraform -version | head -1; command -v tofu >/dev/null 2>&1 && tofu -version | head -1; command -v terragrunt >/dev/null 2>&1 && terragrunt --version | head -1; } 2>/dev/null | grep . || echo "(no terraform, tofu, or terragrunt on PATH)"
-```
-
 ## Procedure
-
-Follow the skill's phases. This command supplies the target and the
-scope.
 
 ### 1. Resolve which provider
 
-The argument may be a full source address or a bare name. Resolve it
-against the addresses the repository actually declares, inside
-`required_providers` blocks — the context above cannot tell a provider
-source from a module source, and only the block it sits in can. If more
-than one declared address matches, ask which.
+The argument may be a full source address or a bare name. List the
+source addresses the repository declares:
 
-A name that matches nothing declared is a finding, not a typo to
-correct silently: say so and stop.
+```console
+git grep -hE '^[[:space:]]*source[[:space:]]*=' -- '*.tf' '*.tofu'
+```
+
+The list mixes provider and module sources. Resolve the argument against
+the addresses inside `required_providers` blocks only. If more than one
+declared address matches, ask which.
+
+A name that matches nothing declared is a finding, not a typo to correct
+silently: say so and stop.
 
 ### 2. Discover the layout and settle the ambiguities
 
-Run the skill's discovery phase. `--root-module` limits the run to the
-named directories; without it, discover them and confirm the set when
-there is more than one.
+Run the umbrella's discovery phase. `--root-module` limits the run to the
+named directories.
 
 ### 3. Resolve the target version
 
-If the user named a version, confirm it is published. Otherwise take
-the latest stable release. Either way, record the tag and the source
-repository the registry reports, and derive the changelog link from
-that source rather than from a table of providers somebody remembered.
+If the user named a version, confirm it is published. Otherwise take the
+latest stable release. Either way, record the tag and the source
+repository the registry reports, and derive the changelog link from that
+source.
 
 ### 4. Inventory the sites and predict the edits
 
 Every module declaring this provider, root and child, per the pin-sites
-reference. Decide per site whether it needs editing at all: a
-constraint that already admits the target does not, and rewriting it
-anyway narrows what the module accepts.
+reference. Decide per site whether it needs editing at all.
 
 ### 5. Present the plan and wait
 
-Show the sites to be edited with the operator each keeps, the sites
-left alone with the reason, the lock files to be refreshed with how
-many platforms each currently tracks, and any drift found. With
-`--audit-only`, stop here — nothing is written.
+Show the sites to be edited with the operator each keeps, the sites left
+alone with the reason, the lock files to be refreshed with how many
+platforms each tracks, and any drift found. With `--audit-only`, stop
+here and write nothing.
 
 ### 6. Edit and commit
 
 All constraint edits in one commit. Then, unless `--no-lock`, refresh
 each affected root module's lock and commit those separately, checking
-each lock's per-provider platform count against what it was. With
+each lock's per-provider platform count against its count before. With
 `--no-commit`, leave everything in the working tree and say what would
-have been committed.
+have been committed. Write commit messages and the report per
+`references/prose-rules.md`.
 
 ### 7. Verify
 
 Read the selected version back out of each lock file and compare it to
-the target. Run the repository's own gates. Report root modules that
-did not move, and why.
-
-## Rules
-
-- No version string is written before the release is confirmed to exist.
-- Every declaration of the provider moves in the same commit, or none
-  does.
-- Constraint edits and lock files are separate commits.
-- Each site keeps its existing operator; a bump never normalises
-  operators repository-wide.
-- A lock file never comes back tracking fewer platforms than it had.
-- Report drift and unrelated breakage; fix neither as a side effect.
-- Untracked files are never edited, and `.terraform/` is never searched.
+the target. Run the repository's own gates. Report root modules that did
+not move, and why.
 
 ## Output
 
@@ -150,7 +100,7 @@ sections:
    bump, root modules that did not move and why, and modules whose
    constraints already admitted the target.
 
-End with an `ask-user-choice` panel offering next steps — for example:
+End with an `ask-user-choice` panel offering next steps, for example:
 converge the pin sites that disagree, refresh the lock files this run
 left alone, restore multi-platform coverage to a lock that only ever
 tracked one, or stop here. Skip the panel only in plan mode.

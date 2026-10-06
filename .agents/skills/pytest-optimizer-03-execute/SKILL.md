@@ -12,7 +12,7 @@ metadata:
 
 # 03-execute
 
-Land the plan as separate, verified commits. This is the **only** phase that edits
+Land the plan as separate, verified commits. This is the only phase that edits
 the suite and writes history.
 
 `$ARGUMENTS` may pass `--from=<index>` to start at a specific plan item,
@@ -24,7 +24,8 @@ the suite and writes history.
 Read `plan.json`, `baseline.json`, and the project quality-check + test commands.
 Refuse to run unless:
 
-- the working tree is **clean** (one commit per speedup needs a clean base), and
+- `git status --porcelain` is empty (one commit per speedup needs a clean base;
+  the excluded memory directory does not show), and
 - `plan.json` exists and was approved in the `pytest-optimizer-02-plan` skill.
 
 Read `execution-log.json` if present and resume from `last_applied_index + 1`
@@ -44,11 +45,12 @@ For each plan item not yet applied:
    pytest -p no:cacheprovider -q
    ```
 
-   For a typing/parametrize item (goals 9, 10), the type checker must cover
+   For a typing or parametrize item (H26–H32), the type checker must cover
    `tests/` and pass.
 3. **On success** — commit this change **alone** with the drafted why/what
    message (`templates/commit-message.tmpl`, adapted to
-   the target project's convention). Record the `commit_sha`.
+   the target project's convention, written per
+   `references/prose-rules.md`). Record the `commit_sha`.
 4. **On failure** — revert the change (`git checkout -- <files>` / discard), mark
    the item `skipped` with the reason. Do not let one failure block the rest.
 5. **Checkpoint** — append the item's outcome to `execution-log.json` immediately
@@ -62,9 +64,8 @@ committing.
 
 After the plan is exhausted, re-run the baseline measurement (serial, cache
 disabled, N runs) and compare total wall-time to `baseline.json`. Emit the
-`03-execute` sections from `references/output-contract.md`:
-hero block, then `## Applied` (commit SHAs + measured verify), `## Skipped`
-(revert reasons), `## Result` (post-suite wall-time vs baseline, total recovered).
+`03-execute` sections from `references/output-contract.md`. Write the prose
+per `references/prose-rules.md`.
 
 ## Step 4: Offer another pass
 

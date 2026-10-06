@@ -90,17 +90,15 @@ With no paths, the target set is the files this branch changed.
 
 7. **Report and hand off.** Give the counts kept, rewritten, and
    deleted, and name anything skipped and why. Then offer next steps
-   through `ask-user-choice`: commit with `/commit`, tighten the prose
-   too with the `lean-tighten` skill, or discard — review the printed diff
-   first, since `git checkout -- <file>` resets the whole file to HEAD
-   and drops any other uncommitted work in it.
+   through `ask-user-choice`: commit, tighten the prose too with
+   the `lean-tighten` skill, or discard. Review the printed diff first, since
+   `git checkout -- <file>` resets the whole file to HEAD and drops any
+   other uncommitted work in it.
 
 ## What this does not do
 
-- Commit or push — that is `/commit`.
 - Edit code, only its comments.
-- Rewrite prose files — that is the `lean-tighten` skill.
-- Rewrite history — that is the `pr-deslop` skill.
+- Rewrite prose files; that is the `lean-tighten` skill.
 - Add missing comments. Absence is not a finding here.
 
 

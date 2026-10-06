@@ -41,6 +41,19 @@ graders:
       path: CHANGES.md
     pattern: 'config loader'
 
+  - name: vague-entry-is-gone-from-the-file
+    type: regex
+    target:
+      source: file
+      path: CHANGES.md
+    match: not_contains
+    pattern: 'a bit better'
+
+  - name: commits-because-commit-was-passed
+    type: tool_used
+    tool: Bash
+    input_match: 'git commit'
+
   - name: never-rewrites-history
     type: tool_used
     tool: Bash

@@ -70,21 +70,21 @@ Four categories, because the remedy differs:
 
 ## Output
 
-Open with a one-line hero (`✓ <n> citations checked, <n> stale` or
-`⚠ <n> misquoted`), then exactly these sections:
+Per `references/output-contract.md`. Hero: `✓ <n> citations checked, <n>
+stale` or `⚠ <n> misquoted`. Sections:
 
 1. `## Moved` — each citation whose ref advanced, with the new ref.
 2. `## Vanished` — each source that is gone.
 3. `## Misquoted` — each locator whose text no longer matches, with both texts.
 4. `## Changed` — each measurement that produced a different number, with both.
 
-End with an `ask-user-choice` panel offering next steps (for example: revise
-the overturned claims, re-pin the moved ones, stop here) — skip the panel only
-in plan mode.
+Next-step options: revise the overturned claims, re-pin the moved ones, stop
+here.
+
+Write it per `references/prose-rules.md`.
 
 
 ## Portability notes
 
-- `ask-user-choice` — present the listed options and wait for the user to pick one. Hosts with a structured multiple-choice tool (Claude Code's `AskUserQuestion`) should use it; otherwise print a numbered list and wait for a numbered reply. Never proceed on an assumed answer.
 - `$ARGUMENTS` — the text the user passed when invoking this skill. If your host does not substitute it, read it as the user's request in the current turn, and ask when there is none.
 - Bundled files — every relative path in this skill points at a file shipped inside this skill directory. Read them from here, not from the host's plugin tree.

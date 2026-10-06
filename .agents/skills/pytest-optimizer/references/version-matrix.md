@@ -22,7 +22,7 @@ use only what exists.
 3. Probe plugin presence and version:
 
    ```bash
-   python -c "import importlib.metadata as m; [print(d, m.version(d)) for d in ('pytest-xdist','pytest-randomly','pytest-timeout') if (lambda: True)()]" 2>/dev/null || true
+   python -c "import importlib.metadata as m; [print(d, next((x.version for x in m.distributions() if x.metadata['Name'].lower() == d), 'missing')) for d in ('pytest-xdist', 'pytest-randomly', 'pytest-timeout')]"
    ```
 
 4. For API features, import-probe:
@@ -66,9 +66,3 @@ use only what exists.
 
 - Prefer **probing a flag** (`--help | rg`) over comparing version strings: it is
   robust to backports, vendored builds, and plugins that add or remove options.
-- A `setup` durations row is the **whole setup chain** for an item in every pytest
-  version; per-fixture attribution (H03) always needs the opt-in timing plugin,
-  regardless of version.
-- When duration precision is coarse (pre-6.0), the noise band widens
-  automatically because `01-benchmark` measures it per project — there is no fixed
-  jitter figure to quote.

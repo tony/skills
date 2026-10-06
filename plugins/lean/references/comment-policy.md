@@ -126,12 +126,11 @@ Keep — a durable constraint, invisible in the code, nothing to sync:
 deadline = monotonic() + timeout
 ```
 
-Keep — what the loss gate exists to protect. `tmux < 3.2` is a frozen
-external fact, not a value tracking your own code:
+Keep — what the loss gate exists to protect. `Python < 3.11` is a
+frozen external fact, not a value tracking your own code:
 
 ```python
-# tmux < 3.2 reports the pane ID only after the command completes,
-# so this query must stay separate.
+# CPython < 3.11 has no ExceptionGroup, so this branch stays.
 ```
 
 Keep — exempt from the loss gate, passes concision:
@@ -140,7 +139,8 @@ Keep — exempt from the loss gate, passes concision:
 :param timeout: Maximum seconds to wait for the tmux command.
 ```
 
-Rewrite — the same fact, with the argument cut away:
+Rewrite — the same fact, with the argument cut away (GCC 13 added
+`-Wdangling-reference`):
 
 ```cpp
 // By value, though the answer is cached and a reference would be

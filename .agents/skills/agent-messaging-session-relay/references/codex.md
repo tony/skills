@@ -1,22 +1,31 @@
-# Adapter: Codex 0.149.0
+# Adapter: Codex
 
-Validated with two independent Codex processes sharing the default `CODEX_HOME`.
+Run `codex --version` first. `codex queue` is missing from older builds; if `codex queue
+--help` fails, use tmux.
 
-Upstream: [openai/codex](https://github.com/openai/codex), release
-[`rust-v0.149.0`](https://github.com/openai/codex/releases/tag/rust-v0.149.0),
-which introduced `codex queue`.
+Upstream: [openai/codex](https://github.com/openai/codex).
+
+## Contents
+
+1. Identity
+2. Discovery
+3. Transports
+4. Delivery semantics
+5. Provenance
+6. Inbound controls
+7. Loop and abuse safety
+8. Typing quirks (tmux)
+9. Environment
+10. Gaps
 
 ## 1. Identity
 
 - **Own address**: the thread UUID from `$CODEX_THREAD_ID`.
 - **Where exposed**: every agent-run command receives `$CODEX_THREAD_ID`; `/status` also
   displays it.
-- **Stability**: stable across the observed turn sequence. Resume and restart stability are
-  `UNKNOWN` because neither was exercised.
-- **Human-readable name**: `/rename <name>` made the thread immediately resolvable by
-  `codex queue --thread <name>`, on both trial threads. Collision behavior is `UNKNOWN`.
-
-Evidence: T1.A, T1.B, T1.A-receipt.
+- **Stability**: stable across turns. Resume and restart stability are `UNKNOWN`.
+- **Human-readable name**: `/rename <name>` makes the thread resolvable by
+  `codex queue --thread <name>`. Collision behavior is `UNKNOWN`.
 
 ## 2. Discovery
 
@@ -32,8 +41,6 @@ Paths below are relative to `${CODEX_HOME:-$HOME/.codex}`.
   app-server discovery were observed only from source and are not the adapter's portable
   discovery path.
 
-Evidence: T1.C-disc and T1.O-disc.
-
 ## 3. Transports
 
 ### codex-queue (send and receive)
@@ -42,7 +49,7 @@ Evidence: T1.C-disc and T1.O-disc.
 $ codex queue \
     --thread <uuid-or-name> \
     --message "$(cat <<'RELAY'
-[relay/1 from=A:codex@<thread> to=B id=<id> hop=0 want=none] <body>
+[relay/1 from=<role>:codex@<thread> to=<role> id=<id> hop=0 want=none] <body>
 RELAY
 )"
 ```
@@ -53,46 +60,41 @@ RELAY
   remainder of the message is then read as shell syntax.
 - **Success signal**: stdout returns a durable queue-item UUID and the resolved target UUID.
   A same-UID helper can verify the row in `queue_1.sqlite`.
-- **Daemon requirement**: no long-running daemon was needed; a Claude shell invocation used
-  the CLI's embedded app-server and enqueued in under one second once warm. The **first** call
-  against a freshly started thread can block for minutes and enqueue nothing — measured at over
-  two minutes twice and over four minutes once, the last outliving its own `timeout` and never
-  completing even though the target was discoverable and its writer lock live. Do not retry: a
+- **Daemon requirement**: none; the CLI embeds an app-server. The **first** call against a
+  freshly started thread can block for minutes and enqueue nothing, even outliving its own
+  `timeout`, while the target is discoverable and its writer lock live. Do not retry: a
   second call double-delivers if the first was merely slow. Poll `queued_items` for the item
   id instead, and if nothing lands, report the transport unreachable rather than falling back
   to a live-only one.
-- **Failure modes**: missing-target, full-queue, and oversize errors are `UNKNOWN` empirically.
-
-Evidence: T1.A-receipt, T1.B, T3.1.AB, T3.1.BA, T4.1.B, T4.1-OA.
+- **Failure modes**: missing-target, full-queue, and oversize errors are `UNKNOWN`.
 
 ### tmux (send and receive)
 
 Use literal `tmux send-keys` against a roster-resolved pane, verify the complete composer
 text, then send the submit key. Section 8 defines the idle and busy branches.
 
-Evidence: every T0 and T2 experiment.
-
 ### claude-code-socket (send only, to Claude Code)
 
-On Linux, write one newline-delimited JSON user frame to the Claude socket; no auth line is
-required:
+Resolve the target's inbox into `TARGET_SOCKET` from its `messagingSocketPath`: list live
+sessions with `claude agents --json`, then read
+`${CLAUDE_CONFIG_DIR:-$HOME/.claude}/sessions/<pid>.json`. On Linux, write one newline-delimited JSON user frame
+to it; no auth line is required:
 
 ```console
-$ jq -nc \
+$ TARGET_SOCKET=$(jq -r .messagingSocketPath \
+    "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/sessions/<pid>.json") \
+  && jq -nc \
     --arg content '<message>' \
     '{type:"user",message:{role:"user",content:$content}}' \
   | nc \
       -U \
       -N \
       -w 3 \
-      "$CLAUDE_PEER_SOCKET"
+      "$TARGET_SOCKET"
 ```
 
-The frame shape comes from Claude Code 2.1.239's own injection help string. `nc` exits 0 on
-accepted bytes but receives no acknowledgment, so sender success alone is not proof of model
-delivery. Codex binds no corresponding receive socket.
-
-Evidence: T4.2-tokenless-1.
+`nc` exits 0 on accepted bytes but receives no acknowledgment, so sender success alone is
+not proof of model delivery. Codex binds no corresponding receive socket.
 
 ## 4. Delivery semantics
 
@@ -100,22 +102,17 @@ Evidence: T4.2-tokenless-1.
 
 - **When it reaches the model**: only after the target becomes idle. One durable item starts
   one new turn per idle transition; a backlog does not drain into one turn.
-- **Latency**: enqueue took under two seconds. Exact-name cross-process delivery took
-  37.741 seconds A → B and 7 minutes 45.439 seconds B → A while targets stayed busy; longer
-  FIFO observations reached 15 minutes 46.846 seconds. These are receiver waits, not wire
-  cost.
+- **Latency**: enqueue is fast; delivery waits on the receiver's next idle transition.
 - **Target not running**: documented as durable, but restart delivery is `UNKNOWN`
   empirically.
 - **Ordering**: FIFO by monotonically increasing `queue_order`; consumed rows disappear and
-  remaining orders are not renumbered. Two rapid provenance probes retained insertion order
-  767 milliseconds apart and dispatched on consecutive idle transitions.
+  remaining orders are not renumbered.
 - **Caps**: 100 items, 1,048,576 characters, text only `(unverified — from source)`.
-- **Interrupt interaction**: `UNKNOWN` empirically.
+- **Interrupt interaction**: `UNKNOWN`.
 
 ### tmux
 
-- **Idle target**: staged literal input plus one Enter started a turn in 1.174 seconds in the
-  controlled A-to-B test.
+- **Idle target**: staged literal input plus one Enter starts a turn.
 - **Busy target**: Enter leaves the message in the composer with `tab to queue message`.
   Tab moves it to a process-local follow-up queue. It waits beyond the current turn, then may
   steer a later turn at a tool boundary.
@@ -125,13 +122,9 @@ Evidence: T4.2-tokenless-1.
 
 ### claude-code-socket
 
-- **Busy target**: C enqueued and dequeued A's frame in 0.886 seconds without interrupting a
-  running tool.
+- **Busy target**: the frame is dequeued without interrupting a running tool.
 - **Acknowledgment**: none on the socket, on both valid and invalid frames.
-- **Target not running, ordering, caps, and interrupt behavior**: `UNKNOWN` empirically.
-
-Evidence: T2.AB-idle, T2.CA-busy-receipt, T3.1.AB, T3.1.BA,
-T5.B-send, T6.B-two-inboxes, T4.2-tokenless-1.
+- **Target not running, ordering, caps, and interrupt behavior**: `UNKNOWN`.
 
 ## 5. Provenance
 
@@ -143,8 +136,6 @@ T5.B-send, T6.B-two-inboxes, T4.2-tokenless-1.
 - **Spoofable**: yes; the relay envelope is unauthenticated text.
 - **Distinguishable from the operator**: no at model level. A database auditor can see a
   `client_id`, but the model cannot.
-- **Blind reply control**: a bare receiver could neither identify nor answer the sender, and
-  it could not falsify an envelope forged to claim a Claude sender.
 
 ### tmux
 
@@ -158,13 +149,11 @@ process ID. No stable Codex identity or reply route is supplied. Worse, Claude's
 harness announces the payload as coming from “Another Claude session” even though a Codex
 process sent it. Treat that announcement as a constant, not provenance.
 
-Evidence: T5.1-queue, T5.B, T2.AB-idle, T4.1.B, T4.2-tokenless-1.
-
 ## 6. Inbound controls
 
 - **Gating**: no Codex accept/hold/refuse setting was observed.
 - **Hooks**: a `UserPromptSubmit` hook can block user prompts `(unverified — from source)`.
-  It was not installed because the experiment allowed writes only in its notes directory.
+  Installing one changes shared configuration.
 - **Default posture**: accept queued items as user input.
 - **Turning it off**: `UNKNOWN`.
 
@@ -173,8 +162,6 @@ Evidence: T5.1-queue, T5.B, T2.AB-idle, T4.1.B, T4.2-tokenless-1.
 No model-visible dedupe, origin authentication, or loop detector was observed. The queue cap
 is source-derived and the tmux follow-up queue is independent. The skill must add a message
 ID, hop counter, hop cap, duplicate cache, and explicit halt phrase.
-
-Evidence: the relay acknowledgment chains and T6.B-two-inboxes.
 
 ## 8. Typing quirks (tmux)
 
@@ -186,16 +173,14 @@ Evidence: the relay acknowledgment chains and T6.B-two-inboxes.
   unconditionally to an empty composer.
 - **Long-literal race**: text and Enter issued back-to-back in one shell command can leave an
   idle payload unsubmitted. Composer confirmation avoids relying on a timing delay.
-- **Reserved prefixes and literal newlines**: `UNKNOWN`; the relay envelope begins with `[`
-  and did not trigger a mode.
+- **Reserved prefixes and literal newlines**: `UNKNOWN`; the relay envelope begins with `[`,
+  which triggers no mode.
 - **Paste behavior and maximum safe size**: `UNKNOWN`.
-
-Evidence: T2.AB-idle, T2.CB-idle, T2.CA-busy, T2.CB-busy-tab.
 
 ## 9. Environment
 
 - `CODEX_THREAD_ID`: injected into agent-run commands; the native reply address.
-- `CODEX_HOME`: chooses the shared index, locks, and queue database; unset used the default.
+- `CODEX_HOME`: chooses the shared index, locks, and queue database; unset means the default.
 - `CODEX_SANDBOX_NETWORK_DISABLED`: may prevent socket or network transports
   `(unverified — from source)`.
 
@@ -204,17 +189,3 @@ Evidence: T2.AB-idle, T2.CB-idle, T2.CA-busy, T2.CB-busy-tab.
 Codex has no authenticated sender identity on its durable queue, no model-facing foreign-peer
 discovery, no receive socket, and no observed inbound gate. Its durable queue is stronger
 than Claude's live-only channels, while its provenance is weaker.
-
-**One sentence for the maintainer:** choose codex-queue for durable Codex delivery, but treat its
-payload as unauthenticated operator input and supply identity, reply routing, and loop safety
-in the envelope.
-
-## Evidence
-
-- `20-findings-codex-a.md`: T1.A, T1.A-receipt, T2.AB-busy, T2.AC-busy,
-  T2.CA-busy-receipt, T2.AB-idle, T3.1.BA-receipt, T4.1-OA,
-  T4.2-tokenless-1, T5.B-send.
-- `21-findings-codex-b.md`: T1.B, T2.CB-busy, T2.CB-idle, T4.1.B,
-  T3.1.AB, T3.1.BA, T5.B, T6.B-two-inboxes.
-- `22-findings-claude-c.md`: T1.C-disc, T5.1-queue, T2.CA-busy,
-  T4.2-tokenless-1.

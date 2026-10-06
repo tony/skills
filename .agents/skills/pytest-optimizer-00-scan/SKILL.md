@@ -12,8 +12,9 @@ metadata:
 
 # 00-scan
 
-Profile, detect, hypothesize. This phase **only reads** the suite and **only
-writes** JSON to the memory directory. No test is edited here.
+Profile, detect, hypothesize. This phase never edits the suite. It writes only
+JSON to the memory directory, plus one line in the local git exclude file when it
+creates an in-tree memory directory.
 
 `$ARGUMENTS` may scope the run to a path or marker, set `--runs=N` (baseline
 sample count, default 5), `--force` to ignore the idempotency token, and
@@ -29,11 +30,10 @@ later phase reuses it. Substitute it wherever this file writes `pytest`.
 ## Step 2: Resolve memory and check idempotency
 
 Resolve the memory directory per `references/memory-schema.md`
-(repo-root `.pytest-optimizer/`, gitignored; XDG fallback). Compute the
-idempotency token (git HEAD + collection node-ids + pytest/plugin versions +
-environment fingerprint). If `state.json` shows `scan` completed with an unchanged
-token and
-`hypotheses.json` exists, report "already scanned" and stop — unless `--force`.
+(repo-root `.pytest-optimizer/`, excluded locally; XDG fallback). Compute the
+idempotency token defined there. If `state.json` shows `scan` completed with an
+unchanged token and `hypotheses.json` exists, report "already scanned" and stop,
+unless `--force`.
 
 ## Step 3: Detect capabilities
 
@@ -52,9 +52,9 @@ pytest -p no:cacheprovider -p no:randomly -q
 ```
 
 Compute the median and MAD of the per-run totals; set the noise band
-(`median + k·MAD`, default `k = 3`) and the ~50ms trust floor. Write the env
-fingerprint, versions, capabilities, and the band to `baseline.json`. See
-`references/durations-parsing.md`.
+(`k·MAD`, default `k = 3`: a saving counts only above it) and the ~50ms trust
+floor. Write the env fingerprint, versions, capabilities, and the band to
+`baseline.json`. See `references/durations-parsing.md`.
 
 ## Step 5: Profile slowest tests and fixtures
 
@@ -84,22 +84,23 @@ parametrize gaps:
 - Typing and parametrize gaps (H26–H32).
 - I/O, sleep, markers, timeouts (H15/H33/H37/H39/H40).
 - Recomputation and duplication (H24/H25/H34/H35/H36/H38).
+- Shared mutable state (H16) and parallelism candidates (H19). Emit H19 only
+  when `time pytest --co -q` is a small share of the baseline (H22 rules it out).
 
 Apply the `getfixturevalue` guard (H09) before proposing any fixture deletion.
 
 ## Step 7: Emit hypotheses
 
 Write `hypotheses.json`: one entry per firing detector, each tagged with its
-heuristic id, the goal(s) it addresses, the raw evidence, and prior risk/effort.
-Do **not** estimate impact here — `01-benchmark` measures it. Update `state.json`
+heuristic id, the raw evidence, and prior risk/effort. Do not estimate impact
+here; `01-benchmark` measures it. Update `state.json`
 (`phase=scan`, `completed.scan=true`, token).
 
 ## Step 8: Report
 
 Emit the `00-scan` sections from
-`references/output-contract.md`: a hero block, then
-`## Environment`, `## Baseline`, `## Slowest tests`, `## Slowest fixtures`,
-`## Hypotheses`. Close with an `ask-user-choice` panel offering to benchmark the
+`references/output-contract.md`. Write the prose per
+`references/prose-rules.md`. Close with an `ask-user-choice` panel offering to benchmark the
 hypotheses, narrow scope, or stop.
 
 

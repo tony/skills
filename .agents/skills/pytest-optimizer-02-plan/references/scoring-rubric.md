@@ -10,7 +10,7 @@ Each dimension is scored `0.0`–`1.0`. The total is their weighted sum.
 | Dimension | Weight | `1.0` means | `0.0` means |
 |-----------|-------:|-------------|-------------|
 | `safety` | 0.35 | Behavior-preserving: pure config/selection, or widening the scope of read-only setup that passed the order-independence (H17) and collection-determinism (H18) gates. | Parallelizing across known shared mutable state, or deleting a fixture reachable only via `getfixturevalue`. |
-| `impact` | 0.30 | **Measured** in `01-benchmark`: recovers > 40% of suite wall-time, or removes the single dominant test/fixture. | Delta within the noise band (median + k·MAD) — indistinguishable from jitter. |
+| `impact` | 0.30 | **Measured** in `01-benchmark`: recovers > 40% of suite wall-time, or removes the single dominant test/fixture. | Saving within the noise band (`k·MAD`) — indistinguishable from jitter. |
 | `effort` | 0.15 | Trivial: `addopts`/marker/flag, or a one-line scope change. | Restructuring shared global state across modules. |
 | `confidence` | 0.12 | Serial, cache-disabled, repeated runs; delta many multiples of the noise floor. | Collection-bound or xdist-contended numbers known to be distorted, or sub-50ms rows. |
 | `reversibility` | 0.08 | A single isolated commit, config-only revert. | An entangled multi-file refactor. |
@@ -84,7 +84,7 @@ benchmark, not as an auto-applied speedup.
 These defaults are deliberately conservative; a project may override them in the
 orchestration plan:
 
-- **Noise-band multiplier `k`** (default `3`) in `median + k·MAD`. Lower `k`
+- **Noise-band multiplier `k`** (default `3`) in the band `k·MAD`. Lower `k`
   credits smaller deltas as real; higher `k` demands a larger, surer win.
 - **Safety-gate cutoff** (default `0.4`). Raise it to be stricter about which
   changes may be applied at all.

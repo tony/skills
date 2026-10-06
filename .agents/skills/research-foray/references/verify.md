@@ -1,6 +1,6 @@
 # Verify a topic
 
-Three checks, in this order: the references still say what you cite them for, no source you should have used is missing, and the report reads cleanly. `<topic.py>` is the script path from the skill that sent you here; `<run_dir>` is the newest run that `python3 <topic.py> prior --topic <topic>` lists. When that run is dated before today, open today's run per `continue.md` step 2 and check there; only `--resume` keeps writing in the earlier run. With no topic named, run `status.md` and verify the topic with failed or unverified sources.
+Three checks, in this order: the references still say what you cite them for, no source you should have used is missing, and the report reads cleanly. `<run_dir>` is the newest run that `python3 <topic.py> prior --topic <topic>` lists. When that run is dated before today, open today's run per `continue.md` step 2 and check there; only `--resume` keeps writing in the earlier run. With no topic named, run `status.md` and verify the topic with failed or unverified sources.
 
 ## 1. References
 
@@ -17,12 +17,11 @@ Handle each failure by its status:
 - **changed**: read the new version and re-capture it (`add --fetch` with the same URL and ref). Keep the id; revise claims it no longer supports, and pass `--set-quotes` with passages from the new capture.
 - **misquoted**: the quote is not where you said it is. Re-add with `--set-quotes` and the passage as it appears, or revise the claim.
 
-A re-add of the same URL with `--quote` adds that passage to the ones recorded, as a new version under the same id. Name a retired id in `## Since` as history (`S11 became [S20]`); everywhere else, cite the id that replaced it.
 - **unreachable**: an auth wall or server error. Report it as unchecked, not as passing.
 
-Never swap in a different source that happens to support the same claim without saying so. Record every replacement and retraction under `## Since <prior date>`, or under `## Log` in a first run, with the old and new source ids.
+A re-add of the same URL with `--quote` adds that passage to the ones recorded, as a new version under the same id. Name a retired id in `## Since` as history (`S11 became [S20]`); everywhere else, cite the id that replaced it.
 
-For a scholar study (a `terms.jsonl` beside the run), run the `scholar-verify` skill for its term citations.
+Never swap in a different source that happens to support the same claim without saying so. Record every replacement and retraction under `## Since <prior date>`, or under `## Log` in a first run, with the old and new source ids.
 
 ## 2. Missed sources
 
@@ -46,9 +45,9 @@ Run it last: after `verify`, after `sources --write` refreshes the Sources table
 $ python3 <topic.py> lint-report --strict <run_dir>/report.md
 ```
 
-Then read the summary alone, as the reader will. It should answer the question and stand without the findings, and its title should claim no more than its findings and ratings support. Check the report against `report.md`'s prose rules, and invoke the `lean:lean-writing` skill on it when installed.
+Then read the summary alone, as the reader will. It should answer the question and stand without the findings, and its title should claim no more than its findings and ratings support. Check the report against the prose rules.
 
-Finish with `python3 <topic.py> check --run <run_dir>` and quote its result; call the report verified only on `ok: true` from this call.
+Finish with `python3 <topic.py> check --run <run_dir>` and quote its result.
 
 ## 4. Keep it fresh
 
@@ -62,4 +61,4 @@ Open with a one-line hero (`✓ <n> sources checked, all ok` or `⚠ <n> failed:
 2. `## Missed`: sources found and added, conflicts recorded, and leads not yet followed.
 3. `## Report`: the final `check` result from this session, and the fixes made to reach it.
 
-End with an `ask-user-choice` panel (for example: fix the failures, continue the topic, stop). Skip it in plan mode; without an interactive host, print the options as a numbered list.
+Panel options: fix the failures, continue the topic, stop.

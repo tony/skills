@@ -1,7 +1,7 @@
 {
   "name": "skills",
   "metadata": {
-    "description": "Language-agnostic workflow plugins for Claude Code \u2014 cross-model AI collaboration, rebase automation, changelog generation, and TDD workflows",
+    "description": "Language-agnostic workflow plugins for Claude Code — cross-model AI collaboration, rebase automation, changelog generation, and TDD workflows",
     "pluginRoot": "."
   },
   "owner": {
@@ -76,7 +76,7 @@
     },
     {
       "name": "model-cli",
-      "description": "Run prompts through individual AI CLIs \u2014 Antigravity/agy (Gemini), codex/GPT, and cursor/agent with fallback support.",
+      "description": "Run prompts through individual AI CLIs — Antigravity/agy (Gemini), codex/GPT, and cursor/agent with fallback support.",
       "version": "0.0.2",
       "author": {
         "name": "Tony Narlock",
@@ -89,7 +89,7 @@
     },
     {
       "name": "pr",
-      "description": "Manage gold-standard PR descriptions. Detects AI slop and verbose commits, resolving them via fixup commits and autosquash.",
+      "description": "Draft, refresh, rewrite, and review PR descriptions, and draft merge commit messages, from the branch diff.",
       "version": "0.3.0",
       "author": {
         "name": "Tony Narlock",
@@ -115,7 +115,7 @@
     },
     {
       "name": "slop",
-      "description": "Scan tracked files for AI slop and verbose noise, resolving each finding with atomic, verified commits.",
+      "description": "Audit a branch's commits or a repo's tracked files for AI slop and brittle references; fix through fixup or atomic commits.",
       "version": "0.1.0",
       "author": {
         "name": "Tony Narlock",
@@ -232,7 +232,7 @@
     },
     {
       "name": "business",
-      "description": "Measure and report the business value of AI workflows with provenance-tagged data \u2014 metrics in engineer-hours and cycle time, never currency.",
+      "description": "Measure and report the business value of AI workflows with provenance-tagged data — metrics in engineer-hours and cycle time, never currency.",
       "version": "0.0.2",
       "author": {
         "name": "Tony Narlock",
@@ -388,7 +388,7 @@
     },
     {
       "name": "agent-messaging",
-      "description": "Message another running agent session \u2014 Claude Code or Codex \u2014 and verify who actually sent an incoming message.",
+      "description": "Message another running agent session — Claude Code or Codex — and verify who actually sent an incoming message.",
       "version": "0.0.1",
       "author": {
         "name": "Tony Narlock",
@@ -401,7 +401,7 @@
     },
     {
       "name": "skill-style",
-      "description": "Hold SKILL.md files to a deletion test \u2014 a line stays only when its removal would change what the agent does \u2014 while frontmatter, code blocks, and sections survive verbatim.",
+      "description": "Hold SKILL.md files to a deletion test — a line stays only when its removal would change what the agent does — while frontmatter, code blocks, and sections survive verbatim.",
       "version": "0.0.1",
       "author": {
         "name": "Tony Narlock",

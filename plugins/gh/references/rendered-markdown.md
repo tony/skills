@@ -6,8 +6,6 @@ The writing rules for text a renderer will show a human: issue, pull
 request, discussion and review-comment bodies, release notes, tracker
 tickets, and a repository's own markdown files.
 
-Shared by the `rendered-markdown` skill and `/gh:create-issue`.
-
 ## The test
 
 Will a maintainer three years from now find this helpful?
@@ -184,8 +182,8 @@ plain text.
 
 GitHub's own renderer will tell you whether the body works:
 
-```
-gh api --method POST /markdown -f mode=gfm -f context=OWNER/REPO -f text="$(cat body.md)"
+```console
+$ gh api --method POST /markdown -f mode=gfm -f context=OWNER/REPO -f text="$(cat body.md)"
 ```
 
 Literal `**` or ``` ``` ``` in that output means a `<details>` block

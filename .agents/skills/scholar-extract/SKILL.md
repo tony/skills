@@ -15,7 +15,8 @@ metadata:
 Stage 2. Harvest the terms the corpus uses for its own things, each with a
 citation that shows the term in use.
 
-Read `references/citation.md` for what a citation must carry and
+Read `references/citation.md` for what a citation must carry, including
+why a quotation containing its own term is circular, and
 `references/stage-gates.md` for this stage's exit condition.
 
 User arguments: $ARGUMENTS
@@ -73,34 +74,25 @@ citation's quote by choosing a passage that shows the usage.
 
 ## Rules
 
-- Do not invent a term the corpus does not use.
 - Do not normalize spellings. `bump` and `update` staying separate is what
   lets `contest` find the synonymy; merging them here destroys the evidence.
-- Every row has a non-empty definition and at least one citation with a
-  locator, or this stage does not hand off.
-- A citation whose quoted text contains the term it supports is circular and
-  does not count. Pick a passage that shows the term in use instead.
 - Set `tier` to `structural`. Distributional claims are `contest`'s to make,
   and they go in `evidence/metrics.md`, not on a term row.
 
 ## Output
 
-Open with a one-line hero (`✓ <n> terms extracted from <n> sources` or
-`⚠ Blocked: <reason>`), then exactly these sections:
+Per `references/output-contract.md`. Hero: `✓ <n> terms extracted from
+<n> sources` or `⚠ Blocked: <reason>`. Sections:
 
 1. `## Terms` — count by `kind`, and the ten most frequent with their
    definitions.
 2. `## Rejected` — candidates that looked like terms and were not, with why.
-   This section is the one that shows the harvest was judged rather than
-   scraped.
 3. `## Gate` — confirmation that every row has a definition and a citation.
 
-End with an `ask-user-choice` panel offering next steps (for example: run
-distill, harvest another source, stop here) — skip the panel only in plan mode.
+Next-step options: run distill, harvest another source, stop here.
 
 
 ## Portability notes
 
-- `ask-user-choice` — present the listed options and wait for the user to pick one. Hosts with a structured multiple-choice tool (Claude Code's `AskUserQuestion`) should use it; otherwise print a numbered list and wait for a numbered reply. Never proceed on an assumed answer.
 - `$ARGUMENTS` — the text the user passed when invoking this skill. If your host does not substitute it, read it as the user's request in the current turn, and ask when there is none.
 - Bundled files — every relative path in this skill points at a file shipped inside this skill directory. Read them from here, not from the host's plugin tree.

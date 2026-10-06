@@ -1,7 +1,8 @@
 ---
 name: rendered-markdown
 description: "Use when Markdown must render: never hard-wrap issue-body paragraphs; fix GitHub code fences, fold logs into details, and pin source links to tags."
-allowed-tools: ["Read", "Grep", "Glob", "Bash", "WebSearch", "WebFetch"]
+allowed-tools: ["Read", "Grep", "Glob", "Bash"]
+disallowed-tools: ["Edit", "Write"]
 ---
 
 # Rendered markdown
@@ -26,7 +27,8 @@ ones. Read both before drafting:
    when present: a house voice, slop rubric, or wrap convention there
    governs.
 2. Draft or fix the text per `rendered-markdown.md`. This skill
-   governs what you are writing, not the files around it.
+   governs what you are writing, not the files around it. Filing an
+   issue belongs to `/gh:create-issue`, which applies these rules.
 3. Pin and complete every link per `source-links.md`.
 4. Preview through GitHub's renderer with the command in
    `rendered-markdown.md`, and read the output before publishing.

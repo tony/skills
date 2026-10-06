@@ -213,7 +213,8 @@ checkpoints, recomputes the registry SHA-256 recorded in `0000-PLAN.md`,
 and aborts if the registry changed. Its exit codes are in the header of
 `../../references/apply-template.sh`.
 
-Without an apply flag, stop here and tell the user how to run it:
+Without an apply flag, print the Step 12 report (skip its git and gate
+commands) and stop, telling the user how to run
 `bash .git/deslop/<ts>-<pid>/apply.sh`. The directory is run-scoped, not
 a permanent record.
 
@@ -330,7 +331,7 @@ format=<status> | lint=<status> | typecheck=<status> | tests=<status>
 Patch series: .git/deslop/<ts>-<pid>/
 ```
 
-In audit mode, "Applied" is 0 and the Commits lines are omitted.
+In audit mode, "Applied" is 0 and the Commits and gate lines are omitted.
 
 Do not push; the user decides. After `--force-rewrite-pushed`, recommend
 `git push --force-with-lease` over `git push --force`.

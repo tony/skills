@@ -8,25 +8,25 @@ PR context.
 In Claude Code, add the marketplace:
 
 ```console
-/plugin marketplace add tony/skills
+$ /plugin marketplace add tony/skills
 ```
 
 Install the plugin:
 
 ```console
-/plugin install changelog@skills
+$ /plugin install changelog@skills
 ```
 
 In Codex, add the marketplace:
 
 ```console
-codex plugin marketplace add tony/skills
+$ codex plugin marketplace add tony/skills
 ```
 
 Install the plugin:
 
 ```console
-codex plugin add changelog@skills
+$ codex plugin add changelog@skills
 ```
 
 ## Skills
@@ -43,7 +43,11 @@ codex plugin add changelog@skills
 2. **Categorize**: Parse commit types and group related commits.
 3. **Generate**: Draft markdown matching the existing changelog style.
 4. **Review**: Present proposed entries for approval, each named with the reader question it answers, alongside the commit message they would land under.
-5. **Insert**: Apply approved entries to the unreleased section, and commit them when the review step chose to.
+5. **Insert**: Apply approved entries to the unreleased section, and commit them when `--commit` was passed or the review step chose to.
+
+With no question tool (Codex, headless runs), a request that asks to add the
+entries approves insert only, `--commit` approves insert and commit, and
+anything else ends with the proposal and no edit.
 
 ## Refresh and Rewrite
 
@@ -63,33 +67,29 @@ Entries always land in the unreleased section. The plugin does not:
 
 ## Supported Changelog Formats
 
-The command auto-detects the changelog format from the existing file:
-
-| File names | `CHANGES`, `CHANGES.md`, `CHANGELOG`, `CHANGELOG.md`, `HISTORY.md`, `NEWS.md` |
-|------------|--------------------------------------------------------------------------------|
-| Heading styles | `## v1.2.3`, `## [1.2.3]`, `## project v1.2.3`, `## 1.2.3 (YYYY-MM-DD)` |
-| Insertion points | Placeholder comments, `## [Unreleased]` headings, top of file |
+The skill detects the format from the existing file. It looks for `CHANGES`,
+`CHANGELOG`, `HISTORY`, or `NEWS`, with or without `.md`; for heading styles
+such as `## v1.2.3`, `## [1.2.3]`, `## project v1.2.3`, or
+`## 1.2.3 (YYYY-MM-DD)`; and for an insertion point at a placeholder comment,
+an `## [Unreleased]` heading, or the top of the file.
 
 ## Commit Categorization
 
-Commits are mapped to changelog sections based on their type prefix. **Section names mirror the existing CHANGES file when one exists** — the table below lists fallback names used only when the file has no precedent:
+Section names mirror the existing changelog. Without precedent, `feat` goes
+under What's new, `fix` under Bug fixes, `docs` under Documentation, and `test`
+under Tests. `chore` and `deps` go under Development only when consumers see
+the change, such as a minimum version bump; CI, linter, and dev-tooling changes
+are skipped.
 
-| Commit type | Fallback section |
-|-------------|------------------|
-| `feat` | What's new (or `Features`, if the project uses that) |
-| `fix` | Bug fixes |
-| `docs` | Documentation |
-| `test` | Tests |
-| `chore`, `deps` | Development |
+Related commits are grouped:
 
-Related commits are grouped automatically:
-- TDD sequences (xfail → fix → remove xfail) collapse into a single bug fix entry
-- Sequential feature commits on the same component merge into one entry
-- Merge commits and formatting-only changes are skipped
+- A TDD sequence (xfail, fix, remove xfail) collapses into one bug fix entry.
+- Sequential feature commits on one component merge into one entry.
+- Merge commits and formatting-only changes are skipped.
 
 ## Project Conventions
 
-The command reads `AGENTS.md` and `CLAUDE.md` to discover project rules. Priority:
+The skill reads `AGENTS.md` and `CLAUDE.md` to discover project rules. Priority:
 1. **Explicit Rules**: `AGENTS.md` / `CLAUDE.md`.
 2. **Implicit Rules**: The existing changelog file (mirrors formatting of the latest release).
 3. **Defaults**: Used if no precedent exists.
@@ -98,7 +98,3 @@ The command reads `AGENTS.md` and `CLAUDE.md` to discover project rules. Priorit
 
 - **git**: For commit history analysis.
 - **gh** (optional): For PR and label detection.
-
-## Language-Agnostic Design
-
-Works in any ecosystem; the existing changelog file sets the format.

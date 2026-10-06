@@ -33,10 +33,10 @@ codex plugin add model-cli@skills
 
 | Skill | Claude Code | Codex | Description |
 |---|---|---|---|
-| Antigravity CLI | `/model-cli:agy` | `model-cli:agy` | Run a prompt through the Antigravity (`agy`) CLI for Gemini, fall back to gemini then agent |
+| Antigravity CLI | `/model-cli:agy` | `model-cli:agy` | Run a prompt through the Antigravity (`agy`) CLI for Gemini, fall back to agent |
 | Codex CLI | `/model-cli:codex` | `model-cli:codex` | Run a prompt through the Codex CLI (OpenAI GPT), fall back to agent |
 | GPT CLI | `/model-cli:gpt` | `model-cli:gpt` | Alias for codex — same backend, same fallback |
-| Gemini CLI | `/model-cli:gemini` | `model-cli:gemini` | Alias for agy — Antigravity supersedes the gemini CLI; same backend chain |
+| Gemini CLI | `/model-cli:gemini` | `model-cli:gemini` | Alias for agy — same backend chain |
 | Cursor Agent CLI | `/model-cli:cursor` | `model-cli:cursor` | Run a prompt through Cursor's agent CLI directly |
 
 The agy, codex, and cursor skills trigger automatically during delegation.
@@ -45,24 +45,18 @@ auto-triggering.
 
 ## How It Works
 
-Each skill follows a 6-step workflow:
-
-1. **Capture:** Extracts prompt and timeout triggers (`timeout:<seconds>` or
-   `timeout:none`) from `$ARGUMENTS`.
-2. **Detect CLI:** Checks for the native binary or falls back to `agent`.
-3. **Detect Timeout:** Validates `timeout` or `gtimeout` availability.
-4. **Execute:** Runs CLI with timeout limits via temporary prompt files.
-5. **Handle Failure:** Classifies failures (timeout, rate-limit, crash, empty
-   output) and retries transients.
-6. **Clean Up:** Presents the result, backend source, and removes temporary
-   files.
+Each skill detects its CLI, then follows the shared protocol in
+`references/dispatch.md`: parse triggers, detect `timeout` or `gtimeout`, run
+the prompt from a temporary file, classify failures (timeout, rate-limit,
+credit exhaustion, crash, empty output), retry transients once, fall to the
+next tier, clean up, and report every tier that ran.
 
 ### Fallback Resolution
 
 | Skill | Primary CLI | Fallback chain | Agent model |
 |-------|------------|----------------|-------------|
-| `agy` / `gemini` | `agy --model "Gemini 3.1 Pro (High)" --dangerously-skip-permissions -p` | `gemini -m gemini-3-pro-preview` → `agent --model gemini-3.1-pro` | `gemini-3.1-pro` |
-| `codex` / `gpt` | `codex` | `agent --model gpt-5.4-high` | `gpt-5.4-high` |
+| `agy` / `gemini` | `agy --model "Gemini 3.1 Pro (High)" --dangerously-skip-permissions -p` | `agent --model gemini-3.1-pro` → `agy --model "Gemini 3.5 Flash (High)"` | `gemini-3.1-pro` |
+| `codex` / `gpt` | `codex` | `agent --model gpt-5.4-high` → `agent --model gpt-5.4-mini` | `gpt-5.4-high` |
 | `cursor` | `agent` | none | — |
 
 ### Timeout
@@ -78,7 +72,6 @@ Install at least one external CLI:
 |-----|-------|---------|
 | `agy` | Gemini (via Antigravity) | [Antigravity CLI](https://antigravity.google/product/antigravity-cli) |
 | `codex` | GPT | [Codex CLI](https://github.com/openai/codex) |
-| `gemini` | Gemini (fallback) | [Gemini CLI](https://github.com/google-gemini/gemini-cli) |
 | `agent` | Cursor (fallback) | [Agent CLI](https://cursor.com/cli) |
 
 Install the Antigravity CLI:
@@ -116,8 +109,7 @@ preamble instructing the model to analyze and describe rather than execute.
 
 - **Portable detection:** Uses `command -v` instead of `which`.
 - **Injection prevention:** Writes prompts to temporary files
-  (`/tmp/mc-prompt-XXXXXX.txt`).
-- **Diagnostics:** Captures stderr to separate files
-  (`/tmp/mc-stderr-<model>.txt`).
-- **Retry protocol:** Classifies failures (timeout, rate-limit, crash, empty
-  output) and retries transient errors once.
+  (`mktemp` files).
+- **Diagnostics:** Captures stderr to a `mktemp` file.
+- **Retry protocol:** Classifies failures (timeout, rate-limit, credit
+  exhaustion, crash, empty output) and retries transient errors once.

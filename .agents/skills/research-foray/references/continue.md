@@ -1,7 +1,5 @@
 # Continue, fill, or expand a topic
 
-`<topic.py>` is the script path from the skill that sent you here.
-
 ## 1. Pick the topic
 
 Use the topic the user names. If the name matches more than one topic, ask which one; without an interactive host, stop and list the candidates. If none is named, run `status.md` and ask; without an interactive host, take the most recently updated topic and say so.
@@ -38,4 +36,4 @@ Open with a one-line hero (`✓ <topic> <date>: carried <n>, verified <n>, ticke
 2. `## Open`: what is still unanswered.
 3. `## Run`: run directory and report path.
 
-End with an `ask-user-choice` panel (for example: keep going, write the report, stop). Skip it in plan mode; without an interactive host, print the options as a numbered list.
+Panel options: keep going, write the report, stop.

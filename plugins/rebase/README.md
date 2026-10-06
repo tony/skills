@@ -30,17 +30,16 @@ codex plugin add rebase@skills
 
 ## Skills
 
-| Claude Code | Codex | Description |
-|---|---|---|
-| `/rebase` | `rebase` | Rebase current branch onto trunk, resolve conflicts, verify quality gates |
+`/rebase` in Claude Code, `rebase` in Codex: rebase the current branch onto
+trunk, resolve conflicts, verify quality gates.
 
 ## Workflow
 
-1. **Detect Trunk**: Identify the remote trunk branch (`main` or `master`).
+1. **Detect Trunk**: Identify the remote trunk branch (the remote's default branch).
 2. **Analyze**: Fetch latest, identify changed files, and predict conflict zones.
-3. **Rebase**: Run `git pull --rebase origin <trunk> --autostash`.
+3. **Rebase**: Record the pre-rebase tip, then run `git pull --rebase origin <trunk> --autostash`.
 4. **Resolve**: Resolve conflicts file-by-file, preserving both sides' intent.
-5. **Verify**: Confirm clean history and run full quality gates.
+5. **Verify**: Confirm clean history, compare patches with `git range-diff`, and run the quality gates once.
 
 ## Quality Gates & Design
 
@@ -50,4 +49,4 @@ codex plugin add rebase@skills
 ## Prerequisites
 
 - **git** for standard operations.
-- A remote named `origin` with a trunk branch (`main` or `master`).
+- A remote named `origin` with a trunk branch (the remote's default branch).

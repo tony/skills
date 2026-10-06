@@ -1,6 +1,6 @@
 ---
 name: double-check
-description: "Use when asked “are you sure/certain” or “I don't trust that”; recheck code/files from source and repeat prior analysis in full, not just changes."
+description: "Use when asked to double-check, verify, “are you sure/certain”, or “I don't trust that”; recheck from source and repeat the earlier analysis in full."
 user-invocable: true
 ---
 
@@ -9,9 +9,8 @@ user-invocable: true
 Re-verify by re-deriving. The deliverable is the verified answer,
 not a record of how it differs from your last one.
 
-Read `../../references/verification-contract.md` before responding. It
-defines why a verdict list against your prior answer fails and which
-phrases to avoid.
+Phrases to avoid, and why a verdict list against your prior answer
+fails: `../../references/verification-contract.md`.
 
 ## Steps
 
@@ -36,10 +35,16 @@ phrases to avoid.
    explicitly, once, briefly. Otherwise the prior turn does not
    exist in your output.
 
+If the chat holds no prior answer, treat the request as a first ask and
+verify the claim the user names. If the claim has no checkable artifact
+(a web fact, a memory), say which source you can reach and which you
+cannot; never answer "verified" from recall.
+
 ## Output shape
 
 Same shape the original request implied, as if answering for the
-first time. No "what changed" section, no verdict legend, no
+first time. Name each file you re-opened or command you ran, relative to
+the project. No "what changed" section, no verdict legend, no
 *as noted above*. Write it per `../../references/prose-rules.md`.
 
 When a narrow request ("are you sure about X?") scopes the answer to

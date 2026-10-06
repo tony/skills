@@ -17,7 +17,7 @@ User arguments: $ARGUMENTS
 
 ## Pick the procedure
 
-`<topic.py>` is `references/topic.py`. When the arguments open with a step word (`assess`, `status`, `continue`, `verify`, `report`, `release`) used as a command rather than as part of a topic, drop the word and follow that step's procedure. Otherwise read the request and pick one:
+`<topic.py>` is `references/topic.py` in every reference below. When the arguments open with a step word (`assess`, `status`, `continue`, `verify`, `report`, `release`) used as a command rather than as part of a topic, drop the word and follow that step's procedure. Otherwise read the request and pick one:
 
 - A new topic or question: `references/start.md`.
 - `assess`, or a new decision: `references/start.md` in assessment mode, with `references/assessment.md`.
@@ -27,7 +27,7 @@ User arguments: $ARGUMENTS
 - `report`, write or rewrite the report: `references/report.md`.
 - `release`, is it ready, send or hand it off, record a decision, archive or export: `references/release.md`.
 
-`references/layout.md` is the folder contract every procedure relies on, and `references/analysis.md` the standard every finding meets; read both once per session.
+`references/layout.md` is the folder contract every procedure relies on, and `references/analysis.md` the standard every finding meets; read both once per session. Write every report, summary, and chat result per `references/prose-rules.md`.
 
 Sent by another plugin with `--namespace`: run `references/start.md` step 2 only, report the run directory and earlier runs, and return. That plugin's procedure does the rest.
 
@@ -52,7 +52,7 @@ Finish with the `## Output` section of the procedure you picked; for a new asses
 3. `## Open`: open questions and failed checks.
 4. `## Next`: the recommended next step.
 
-End with an `ask-user-choice` panel offering next steps (for example: continue, verify, write the report, stop). Skip it in plan mode; without an interactive host, print the options as a numbered list.
+End every procedure's output with an `ask-user-choice` panel offering next steps (a new topic: continue, verify, write the report, stop; other procedures list their own options). Skip it in plan mode; without an interactive host, print the options as a numbered list.
 
 
 ## Portability notes

@@ -2,7 +2,7 @@
 name: changelog
 description: Generate CHANGES entries from branch commits and PR context
 allowed-tools: ["Bash", "Read", "Grep", "Glob", "Edit", "AskUserQuestion"]
-argument-hint: "[optional additional context about the changes]"
+argument-hint: "[--commit] [optional additional context about the changes]"
 user-invocable: true
 disable-model-invocation: true
 ---
@@ -43,7 +43,7 @@ Write entries and the commit message per `../../references/prose-rules.md`.
 5. **Check for a PR.** `gh pr view --json number,title,body,labels` returns the
    number, title, body, and labels. A failure means no PR; use `(#???)`
    placeholders.
-6. **Get commits.** `git log origin/<base>..HEAD --format='%H %s%n%b---'`
+6. **Get commits.** Fetch per `branch-scope.md` first. `git log origin/<base>..HEAD --format='%H %s%n%b---'`
    gives subjects and bodies. No commits ahead: report "No commits ahead of
    the base branch" and stop.
 
@@ -54,25 +54,39 @@ both per `entry-rules.md`. Keep each entry's source commits for traceability.
 
 ## Phase 3: Present for Review
 
-Approval gate. Do not edit before explicit user approval.
+Approval gate. Do not edit before approval. Approval comes from, in order:
+
+- `--commit` in `$ARGUMENTS`: approves the insert and the commit.
+- An invoking message that asks to add or insert the entries ("go ahead and
+  add them"): approves insert only.
+- `AskUserQuestion`, when the host has it and neither of the above applies.
+- Otherwise, present the proposal and stop; never wait for a reply.
+
+Present, in this order:
 
 1. Summary line: `Branch: <branch-name> | Commits: <count> | PR: #<number> (or "none")`.
 2. The proposed entries in a fenced `markdown` block, showing the exact text.
 3. The voice check and target line from `entry-rules.md`.
-4. Ask via `AskUserQuestion`: "Insert into `<changelog-file>`?", showing the
-   commit message the entries would land under, built per `commit-message.md`.
-   Offer:
+4. The commit message the entries would land under, built per
+   `commit-message.md`.
+
+When asking, use `AskUserQuestion`: "Insert into `<changelog-file>`?" Offer:
    - **Insert only**: apply the edit and leave it uncommitted.
    - **Insert and commit**: apply the edit and commit the changelog file with
      the message shown.
    - **Edit first**: return to Phase 2.
 
-Anything short of an explicit choice to commit, including a run that cannot
-ask, means insert only. Wait for the response.
+Without approval already given and without `AskUserQuestion`, end with one
+line: nothing was edited; re-run with "add the entries" to insert, or with
+`--commit` to insert and commit.
+
+A stopped run (no commits ahead, on the base branch) is one result sentence,
+then what the user needs to do.
 
 ## Phase 4: Insert into Changelog
 
-Run only after approval.
+Run only after approval. Without `--commit` or an explicit "commit" choice,
+never commit.
 
 1. Insert at the Phase 1 insertion point with Edit, matching the file's
    blank-line spacing. Leave every release heading and version file

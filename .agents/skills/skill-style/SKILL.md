@@ -113,19 +113,14 @@ it, in the literal words a user would type.
 - Set `disable-model-invocation: true` when the skill only makes sense
   asked for by name, so it stays out of the routing corpus.
 
-## Body budget
-
-Keep the body under 500 lines. Past that — or for anything a task
-needs only sometimes — move the detail into a reference file and link
-it from the body. Keep every reference one level deep from the body:
-an agent that follows a link to a link reads the second one partially.
-
 ## Steps
 
 1. **Load the rubric and the house voice.** Read
    `references/skill-rubric.md`, then `./AGENTS.md` and
    `./CLAUDE.md`.
-2. **Fix the description before touching a line of the body.**
+2. **Fix the description before touching a line of the body**, and
+   test it: three prompts a user would type must match it, and one
+   that belongs to a neighboring skill must not.
 3. **Measure.** Line counts locate the bloat:
 
    ```console
@@ -142,18 +137,10 @@ an agent that follows a link to a link reads the second one partially.
    $ git diff --stat -- <targets>
    ```
 
-7. **Test the trigger.** Write three prompts a user would actually
-   type and confirm the description answers each; write one that must
-   belong to a different skill and confirm it does. A description that
-   fails this is not done.
-
 ## References
 
-- `references/skill-rubric.md` — the full rule catalog, the
-  anti-patterns, and the pre-ship checklist.
-- `references/example-bloated.md` — a bloated skill with every
-  defect named.
-- `references/example-ideal.md` — the same skill, rewritten.
+`references/skill-rubric.md` is the rule catalog; `example-bloated.md` and
+`example-ideal.md` beside it show a skill before and after the test.
 
 ## While trimming, do not add bloat
 

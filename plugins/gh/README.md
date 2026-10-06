@@ -56,12 +56,15 @@ Read-only until the final step.
 
 ### `rendered-markdown` (skill)
 
-Provides rendering guidance for human-readable markdown. Never edits files.
+Provides rendering guidance for human-readable markdown. Edit and Write
+are disallowed while it runs.
 - Prevents hard-wrapping in comment bodies.
 - Enforces backticks for symbols and one shell command per fence.
 - Requires long output in `<details>` and pinned source links.
 - Rules live in `references/rendered-markdown.md` and
-  `references/source-links.md`.
+  `references/source-links.md`. `references/prose-rules.md` is a vendored
+  copy; edit `shared/prose-rules.md` in the marketplace repository and
+  regenerate.
 
 ## The wrapping rule exception
 
@@ -70,13 +73,10 @@ markdown files. Comment bodies avoid hard-wrapping, while repository `.md`
 files follow project conventions. The skills respect this boundary rather than
 globally reformatting.
 
-## Plugin comparisons
+## Scope
 
-- **Use `gh`:** For filing issues or writing GitHub-rendered markdown
-  (focuses on markup and links).
-- **Use `pr`:** For generating, refreshing, or reviewing PR descriptions.
-- **Use `lean`:** For tightening prose by removing filler and diff narration
-  (focuses on sentences).
+Use `gh` for filing issues or writing GitHub-rendered markdown (markup and
+links). It does not generate PR descriptions or tighten prose.
 
 ## Prerequisites
 

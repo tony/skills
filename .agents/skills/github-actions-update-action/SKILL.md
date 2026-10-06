@@ -17,45 +17,23 @@ whatever the user names — from whatever each repository currently pins
 to its current version, with one commit per repository explaining the
 upgrade.
 
-Read `references/action-pinning.md` first; it
-defines how to inventory pins, verify a target tag exists, dereference
-annotated tags, and choose the pin shape. Read
-`references/dependabot-closeout.md` for the
+Read `references/action-pinning.md` first: scope, inventorying
+pins, verifying a target tag, dereferencing annotated tags, and choosing
+the pin shape. Read `references/dependabot-closeout.md` for the
 close-out and CI-attribution rules.
 
 User arguments: $ARGUMENTS
-
-## Context
-
-Repository — run this command and read the output:
-
-```bash
-git remote get-url origin 2>/dev/null || echo "(not a git repository)"
-```
-
-Default branch — run this command and read the output:
-
-```bash
-git symbolic-ref --short refs/remotes/origin/HEAD 2>/dev/null || echo "(unknown)"
-```
-
-Current pins for all actions on this branch — run this command and read the output:
-
-```bash
-git grep -hoE 'uses:[[:space:]]*[^[:space:]]+' "$(git symbolic-ref --short refs/remotes/origin/HEAD 2>/dev/null || echo HEAD)" -- '.github/workflows/*' '.github/actions/*' 2>/dev/null | sed -E 's/uses:[[:space:]]*//' | sort | uniq -c | sort -rn || echo "(no workflows found)"
-```
 
 ## Procedure
 
 ### 1. Identify the action and the scope
 
-The action comes from the argument. Without one, ask via
-`ask-user-choice`, offering the out-of-date pins from the context block
-above.
+The action comes from the argument. Without one, inventory the pins
+(step 2) and ask via `ask-user-choice`, offering the out-of-date ones.
 
 Scope defaults to the current repository. `--repo` may be repeated to
-name others by path or slug. Exclude forks unless the user insists —
-ownership is not the same as authorship.
+name others by path or slug. The fork rule is in the pinning
+reference.
 
 ### 2. Inventory the current pins
 
@@ -78,17 +56,24 @@ target, each with a verified release URL, plus the breaking changes.
 Then check those claims against the actual workflows — the gates
 section of the pinning reference lists the recurring ones.
 
-### 5. Commit
+### 5. Present the plan and wait
+
+Show the target and its tag evidence, the pin shape per repository, the
+breaking changes and which repositories they reach, and how many commits
+this produces. Wait for approval before writing.
+
+### 6. Commit
 
 One commit per repository. Subject and body follow the project's own
-commit conventions from AGENTS.md or CLAUDE.md; the body says what
-changed upstream, what it means for that repository, and links every
-major release in the span. Never cite a dependabot pull request.
+commit conventions from AGENTS.md or CLAUDE.md; write them per
+`references/prose-rules.md`. The body says what changed upstream,
+what it means for that repository, and links every major release in the
+span. Never cite a dependabot pull request.
 
 Push unless `--no-push`. With `--pr`, branch and open a pull request
 instead of committing to the default branch.
 
-### 6. Verify and close out
+### 7. Verify and close out
 
 Watch CI. Attribute any failure before blaming the bump. Close any
 dependabot pull request for this action by citing the commit that
@@ -98,10 +83,6 @@ superseded it.
 
 - Never write a version string whose tag has not been confirmed to
   exist.
-- One commit per repository, for this action only — no bundling with
-  unrelated bumps.
-- Preserve each repository's pin shape; move a SHA pin's trailing
-  version comment along with the SHA.
 - A commit body may not carry a claim that is false for the repository
   it lands in.
 - Bump the action; report unrelated breakage rather than fixing it.

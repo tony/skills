@@ -5,6 +5,13 @@ reader can answer "what did this actually change" without going hunting,
 so it points at the release notes for the exact version, never at a
 project's front page.
 
+## Contents
+
+- Rules
+- Per-tool
+- Packages with no changelog
+- Workspace siblings you publish
+
 ## Rules
 
 **Pin the version into the path.** `blob/<version>/CHANGELOG.md` is
@@ -43,8 +50,7 @@ minor that opened it.
 `https://docs.python.org/release/<version>/whatsnew/changelog.html#python-<version-with-dashes>`,
 plus `https://devguide.python.org/versions/` when the support window is
 part of the reason. A version's release schedule PEP belongs in the
-block when the bump is about the schedule rather than the content: PEP
-745 for 3.14, PEP 596 for the 3.9 end of life.
+block when the bump is about the schedule rather than the content.
 
 **Go** — `https://go.dev/blog/go<major.minor>` and
 `https://tip.golang.org/doc/go<major.minor>`. Both are per minor; a
@@ -65,9 +71,6 @@ https://github.com/biomejs/biome/releases/tag/%40biomejs%2Fbiome%40<version>
 ```
 https://github.com/biomejs/biome/blob/%40biomejs%2Fbiome%40<version>/packages/%40biomejs/biome/CHANGELOG.md
 ```
-
-A Biome bump usually needs a `biome.jsonc` follow-up — see
-`follow-ups.md`.
 
 **ruff** — `https://astral.sh/blog/ruff-v<version>` for a minor,
 otherwise `https://github.com/astral-sh/ruff/releases/tag/<version>`.

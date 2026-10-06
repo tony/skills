@@ -1,5 +1,7 @@
 # Provider-aware planning hierarchy
 
+Contents: Core rule; Canonical semantic roles; Relation vocabulary; Support and requirement are two fields; Native naming; Dangerous collisions; Provider files.
+
 ## Core rule
 
 Treat planning systems as provider-specific typed graphs, not as one

@@ -1,24 +1,16 @@
-# Weave ensemble techniques — cascade gate, residual re-attack, consensus signal
+# Weave ensemble techniques: cascade gate and residual re-attack
 
-Three cost/quality protocols shared by the weave commands. Each command
-wires only the techniques that pay off for it and points here for the
-full procedure; this file is the single source of truth for semantics.
+Two cost/quality protocols for `ask` and `review`:
 
-- **Cascade gate** (`--cascade`) — wired into `ask` and `review`.
-- **Residual re-attack** — governs multi-pass (N ≥ 2) in `ask` and
-  `review`, and the Distribute step in `refine`.
-- **Consensus signal** — wired into `ask` and `review` synthesis.
-  Intentionally not applied to `brainstorm` — independent diversity is
-  the product there, not agreement.
+- **Cascade gate** (`--cascade`): a Maintainer-only first pass that fans out only
+  when a confidence trigger fires.
+- **Residual re-attack**: governs multi-pass (N >= 2).
 
-Commands inline the consensus tag spec they need at render time; this
-file is read only when `--cascade` is set or a pass N ≥ 2 begins.
-Without one of those, nothing in this file runs.
+The skill reads this file only when `--cascade` is set or a pass N >= 2 begins.
 
 Throughout, `M` = the number of lanes that produced an output this
 pass. When `M` = 1 (single-participant fallback or cascade early-exit)
-the residual and consensus procedures are skipped — both need multiple
-lanes to mean anything.
+the residual procedure is skipped; it needs multiple lanes to mean anything.
 
 ---
 
@@ -95,8 +87,7 @@ Early-exit ends the run: any remaining configured passes are not run,
 making this pass the final pass. Skip the remaining lanes, blind
 judging, and rubric scoring (nothing to compare). Keep the command's
 Critic step — it is the only remaining error correction — and the
-deslop pass. Present via
-`references/present-results.md` with `CASCADE_STATE` = `early-exit`:
+deslop pass. Present with `CASCADE_STATE` = `early-exit`:
 the hero identifies the Maintainer lane in subagent mode or the Claude
 lane in model-CLI mode, and the next-step panel gains **Escalate to full
 ensemble** as the first option. If the user picks it, continue below as
@@ -140,8 +131,8 @@ residuals from exactly four sources:
    evidence) in `verification.md`.
 3. **Unincorporated critic findings** — items in `critic.md` that were
    neither folded into the synthesis nor refuted with evidence.
-4. **Split consensus** — items marked `split` in the consensus map
-   (Technique 3) that verification did not settle.
+4. **Split consensus**: items marked `split` in `consensus.md` that
+   verification did not settle.
 
 `refine` fills its ledger from its Distribute step instead: critique
 points the woven version left unaddressed, runner-up strengths the
@@ -181,57 +172,3 @@ discarded unread — scope discipline is what makes residual passes
 cheap.
 
 ---
-
-## Technique 3 — Consensus signal
-
-Where lanes disagree, the variance is information. Adjudication decides
-what is *true* (evidence wins); consensus reports how *confident* the
-ensemble is — it must never be silently adjudicated away.
-
-### Counting rule
-
-During adjudication (synthesis Step 3), classify each lane per finding
-or claim as **agree** (asserts it or a compatible position), **dissent**
-(asserts an incompatible position, including "not an issue"), or
-**silent** (does not address it). Count over the M participating lanes.
-
-On cascade-escalated runs the Skeptic and Builder were primed with the
-fired triggers, so for any item that restates a fired trigger, count
-only those two lanes — the cheap pass is not an independent source for
-its own weak points.
-
-### Levels
-
-- **unanimous** — agree = M
-- **majority** — agree > M/2, and at least one lane dissents or is
-  silent
-- **split** — no position held by more than M/2 lanes (includes 1–1
-  conflicts at M = 2)
-- **single** — agree = 1, all other lanes silent (no dissent)
-
-Dissent and silence are not the same: a single-lane finding no one
-contradicted outranks a split one.
-
-### Artifacts
-
-Write the per-item consensus map into
-`$SESSION_DIR/pass-NNNN/consensus.md` using blind labels. Reveal role
-IDs after scoring in subagent mode; reveal lane artifact IDs after
-scoring in model-CLI mode.
-
-### Surfacing in output
-
-- **review** — every finding under Verified Issues carries a consensus
-  tag: `consensus 3/3`, `consensus 2/3`, `consensus 1/3 (uncontested)`.
-  Split findings that verification could not settle MUST appear under
-  Reviewer Disagreements with both positions and the evidence for each
-  — never dropped. Within a severity band, order findings: unanimous
-  and verified, then majority and verified, then single verified, then
-  anything unverified.
-- **ask** — the Disagreements section renders every split and
-  majority-with-dissent item: both positions, which was adopted, and
-  the deciding evidence (or "unresolved — both positions retained").
-
-Consensus feeds ordering and labeling only. It never overrides
-verification: a unanimous claim contradicted by the code is still
-`false`, and the code wins.

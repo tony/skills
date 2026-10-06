@@ -66,9 +66,8 @@ before pushing, then poll for new reviews and comments at a steady
 interval. Stop early the moment every agent on the roster has weighed
 in on the head SHA; otherwise stop at the cap.
 
-The cap is not optional and it is not generous. Ten minutes and a
-handful of polls covers the agents that were going to answer; past
-that, the loop is holding a session open in the hope of an event that
+The cap (`--wait` in this skill) is not optional. Past it, the
+loop is holding a session open in the hope of an event that
 has already failed to happen. Report who was still missing and move on
 — an agent that arrives later is picked up by the next round, and the
 loop can be re-entered at any time.

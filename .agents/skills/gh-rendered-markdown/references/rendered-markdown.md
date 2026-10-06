@@ -1,12 +1,12 @@
 # Rendered markdown
 
+Contents: The test, Two surfaces, one difference, Symbols, Nothing local, nothing personal, Code blocks, Long output goes in `<details>`, Structure, In a body, mentions are notifications, What to leave out, Preview before publishing, Primary sources.
+
 The writing rules for text a renderer will show a human: issue, pull
 request, discussion and review-comment bodies, release notes, tracker
 tickets, and a repository's own markdown files.
 
-Shared by the `rendered-markdown` skill and the `gh-create-issue` skill so the
-rules cannot drift between them. Linking mechanics live in
-`references/source-links.md`.
+Shared by the `rendered-markdown` skill and the `gh-create-issue` skill.
 
 ## The test
 
@@ -42,9 +42,9 @@ into unreadable diffs.
 
 ### Repository files follow the repository
 
-Wrapping a `.md` file is safe and most repositories do it — this file
-is wrapped at 72. Match whatever the repository already does; never
-re-wrap a file just because a body nearby is unwrapped.
+Wrapping a `.md` file is safe and most repositories do it. Match
+whatever the repository already does; never re-wrap a file just because
+a body nearby is unwrapped.
 
 ### Commit messages wrap
 
@@ -184,8 +184,8 @@ plain text.
 
 GitHub's own renderer will tell you whether the body works:
 
-```
-gh api --method POST /markdown -f mode=gfm -f context=OWNER/REPO -f text="$(cat body.md)"
+```console
+$ gh api --method POST /markdown -f mode=gfm -f context=OWNER/REPO -f text="$(cat body.md)"
 ```
 
 Literal `**` or ``` ``` ``` in that output means a `<details>` block

@@ -1,5 +1,7 @@
 # Azure DevOps (Azure Boards)
 
+Contents: Scope; Native hierarchy; Semantic roles; Orthogonal objects; References and autolinks; Reading and writing; Naming traps.
+
 ## Scope
 
 Organization (on-premises: Project Collection) > Project > Team. An Azure DevOps Project is a durable
@@ -41,8 +43,6 @@ Canonical form: Epic > Feature > requirement-level Work Item > Task, joined by P
   so measured_by is convention via fields, tags, queries or a dashboard chart.
 
 ## Orthogonal objects
-
-None of these is a parent. Never convert any of them into parent_of.
 
 - Iteration Path / Sprint: timebox, native, optional; scheduled_in.
 - Area Path: ownership and product grouping, native, required (defaults to the Project root node);
@@ -124,18 +124,15 @@ az boards work-item create --title "..." --type "User Story" --project "..." --d
 ```
 
 - REST API: Work Item Tracking. Work items are created and patched with JSON Patch; comments use a
-  separate, still preview-versioned endpoint whose body is `{"text": "..."}`
+  separate endpoint, versioned independently, whose body is `{"text": "..."}`
   ([Comments - Add](https://learn.microsoft.com/en-us/rest/api/azure/devops/wit/comments/add?view=azure-devops-rest-7.1)).
 - MCP: Microsoft ships an official Azure DevOps MCP Server, remote and local. Use the local one from Claude
   Code, Claude Desktop, Cursor and Codex, which cannot authenticate to the remote server with Microsoft
-  Entra ID. Requires Node.js 20+
+  Entra ID.
   ([Azure DevOps MCP Server](https://learn.microsoft.com/en-us/azure/devops/mcp-server/mcp-server-overview)).
 
-The Markdown editor for Work Item comments is generally available
-([Sprint 259 update](https://learn.microsoft.com/en-us/azure/devops/release-notes/2025/boards/sprint-259-update)),
-but existing large text fields such as Description stay in their current format until converted
-individually, and a Markdown comment cannot be converted back to HTML. Detect the field's editor before
-emitting Markdown; HTML fields need HTML, and a soft line break needs two trailing spaces.
+A field is either Markdown or HTML, and a Markdown comment cannot be converted back to HTML. Detect
+the field's editor before emitting Markdown; HTML fields need HTML, and a soft line break needs two trailing spaces.
 
 ## Naming traps
 

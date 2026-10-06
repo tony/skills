@@ -4,6 +4,14 @@ Shared by `/situate` and the `situational-awareness` skill. This layer
 runs only when the user passes `--with-agentgrep` or asks for it in
 words.
 
+## Contents
+
+- Why it is opt-in
+- Requirements
+- Scoping
+- Reconciling with the repository
+- Privacy
+
 ## Why it is opt-in
 
 The first five layers read the repository — a bounded, current, shared

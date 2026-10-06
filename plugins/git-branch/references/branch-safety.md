@@ -69,10 +69,17 @@ remote:
 git merge-base --is-ancestor <remote-tip> HEAD
 ```
 
-A non-zero exit means someone else pushed. Halt and report who:
+A non-zero exit means someone else pushed, or the remote tip is not
+local yet. Halt. Report the SHA from `ls-remote`. To name who pushed,
+fetch by URL into a scratch ref; a fetch by remote name also refreshes
+`origin/<branch>` and defeats the lease:
 
 ```
-git log --format='%h %an %s' HEAD..origin/<branch>
+git fetch "$(git remote get-url origin)" <branch>:refs/remote-check/<branch>
+```
+
+```
+git log --format='%h %an %s' HEAD..refs/remote-check/<branch>
 ```
 
 ## Back up before touching anything
@@ -102,11 +109,15 @@ recovery story, and the user needs it in front of them.
 
 ## Recovery
 
-Undo the most recent rewrite of the checked-out branch:
+Undo a rewrite of the checked-out branch from its backup. This is the
+only recovery that holds after a multi-commit rewrite, because
+`<branch>@{1}` is the previous reflog step, not the original tip:
 
 ```
-git reset --hard <branch>@{1}
+git reset --hard backup/<branch>-<ts>
 ```
+
+`<branch>@{1}` is correct only for a rewrite that moved the branch once.
 
 Restore a branch that is not checked out:
 
@@ -115,7 +126,7 @@ git branch --force <branch> <backup-sha>
 ```
 
 Never delete and recreate a branch to move it — that destroys its
-reflog and throws away the `<branch>@{1}` handle.
+reflog.
 
 When no ref or reflog points at the work any more:
 

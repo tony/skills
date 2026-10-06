@@ -34,8 +34,8 @@ and every round is measured against it:
 
 > The loop is finished when a round lands no new fixes, CI is green on
 > the current head, and every review agent on the roster has weighed in
-> on that head — or when the round cap is reached, whichever comes
-> first.
+> on that head — or when the round cap is reached or the loop goes
+> quiet (see Stopping), whichever comes first.
 
 When the host has a standing-goal or stop-condition mechanism, register
 that sentence with it so the session cannot quietly stop halfway
@@ -86,7 +86,7 @@ Each round is the same six steps.
 **1. Collect.** Gather this round's feedback per
 `references/feedback-sources.md` — the pull request's reviews,
 inline comments, and threads, plus any failing CI. Carry forward the
-previous rounds' declines so a re-post is not re-screened.
+previous rounds' declines per the re-post rule there.
 
 **2. Screen.** Run the `respond-check` skill on what collected. Its verdicts
 settle what this round does.
@@ -118,12 +118,15 @@ head, and the roster has weighed in on it.
 **Capped** — `--max-rounds` reached. Report what is still open and what
 the next round would do.
 
-**Quiet** — two consecutive rounds where everything new was declined.
-The reviewers are repeating themselves; more rounds will not change
-that. Report it as finished, with the repeats listed once.
+**Quiet** — two consecutive rounds that landed no new fixes while the
+exit condition stayed unmet because a roster agent never arrived.
+More rounds will not change that. Report it as finished, listing who
+never weighed in.
 
 **Halted** — stop the loop and report, without another round:
 
+- No pull request exists (Phase 0). The report offers one local round
+  as its first next step.
 - A quality gate fails in a way no accepted fix resolves.
 - A push is rejected, or the branch needs a rebase or a force-push.
 - Screening returns an `ask` verdict that needs the author's intent.
@@ -140,6 +143,8 @@ behalf.
 
 ## Phase 3: Report — the output contract
 
+Write the report and replies per `references/prose-rules.md`.
+
 1. Hero block (1–3 lines): the outcome (finished, capped, quiet, or
    halted), rounds run, and total fixed / deferred / declined.
 2. `## Rounds` — per round: findings collected and from whom, verdicts,
@@ -155,8 +160,10 @@ behalf.
    gate commands run.
 6. End with an `ask-user-choice` panel (skip inside plan mode): run
    another round past the cap, post the drafted replies, open the
-   follow-ups, or stop. In a non-interactive run, record the options
-   and default to stopping.
+   follow-ups, or stop. When the loop halted for lack of a pull request,
+   the first option is one local round with `--no-push`. In a
+   non-interactive run, list the options in the report and default to
+   stopping.
 
 
 ## Portability notes

@@ -3,7 +3,7 @@ name: rebuild
 description: "Use when rebuilding a bloated tracker item whose epic or Jira ticket hard-codes implementation, restates a spec, or cites counts and line numbers."
 user-invocable: true
 argument-hint: "[URL or identifier]"
-allowed-tools: ["Bash", "Read", "Write", "Grep", "Glob", "WebSearch", "WebFetch", "AskUserQuestion"]
+allowed-tools: ["Bash", "Read", "Write", "Grep", "Glob", "AskUserQuestion"]
 ---
 
 # Rebuild a ticket
@@ -16,13 +16,13 @@ Argument: `$ARGUMENTS` — a URL, an identifier, or nothing (then ask).
 ## Read first
 
 - `../../references/contract.md` — the three tenses.
-- `../../references/hierarchy.md` — what kind of object this
-  is, in this provider.
-- `../../references/altitude.md` — which sections that kind
-  of object should carry.
-- `../../references/resolve.md` — how to establish the above.
-- The provider's own file, indexed in `hierarchy.md` under Provider files — reference
-  syntax, read and write mechanics.
+- `../../references/altitude.md` — which sections each kind of object carries.
+- `../../references/resolve.md` — how to establish the provider and role, and
+  the index of provider files.
+- Only the matched provider's file from that index — reference syntax, read
+  and write mechanics.
+- `../../references/hierarchy.md` only when the role is ambiguous or a native
+  noun collides across providers.
 
 ## Core principle
 
@@ -38,11 +38,14 @@ Resolve the provider and identifier per `resolve.md`, then fetch the live
 item with its comments. Comments matter: the decision that supersedes the
 body is often in one.
 
-Write the original body to a scratch file outside the working tree before
-touching anything.
+Save the original body to a private scratch file outside the working tree
+before touching anything. The body may hold secrets or personal data, so
+restrict the file and remove it when the run ends, whether or not the user
+confirms. Shell state does not persist between calls: print the path once and
+use the literal path afterwards.
 
-```bash
-ORIGINAL=$(mktemp "${TMPDIR:-/tmp}"/ticket-original-XXXXXX.md)
+```console
+$ umask 077 && mktemp "${TMPDIR:-/tmp}/ticket-original.XXXXXX"
 ```
 
 Some providers keep edit history and some do not. Do not rely on the tracker
@@ -96,7 +99,8 @@ Most overgrown items are also missing something. Check for all of these:
 - An outcome that never says what changes for whom.
 - Evidence asserted without a reproduction or a version.
 - Children or absorbed items referenced in prose but never linked.
-- A superseding decision that lives only in a comment.
+- A superseding decision that lives only in a comment. Comments are never
+  rewritten, so report it under Missing and propose carrying it into the body.
 
 Absence is a finding. Report it with the rest.
 
@@ -111,25 +115,32 @@ Sanitize for local paths, hostnames, emails, tokens, and internal URLs.
 
 Write it per `../../references/prose-rules.md`.
 
-Save the new body to a scratch file created like the original, so Phase 7
-passes it from a file.
+Save the new body to a scratch file created the same way, so Phase 7 passes
+it from a file.
 
 Render the new body the way the provider will.
 
 ## Phase 6 — Present
 
-Show, in this order:
+Lead with the result and stop at the last concrete point, with no recap. Use
+plain prose and nested lists, no tables, and no bold label on every bullet.
+Do not name scratch-file paths. Show, in this order:
 
-1. A hero line: the role it is, the role it should be, and the bucket counts.
-2. **Kept** — what survived, and why each item could not be re-derived.
-3. **Cut** — what went, grouped by reason.
-4. **Relocated** — what moved, and where it is going.
-5. **Demoted** — the old definition of done beside the new invariants.
-6. **Missing** — what the item never had.
-7. The full rebuilt title and body.
+1. A hero line: the role it is and the role it should be. No bucket counts.
+2. `## Kept` — what survived, and why each item could not be re-derived.
+3. `## Cut` — what went, grouped by reason.
+4. `## Relocated` — what moved, and where it is going.
+5. `## Demoted` — the old definition of done, then the new invariants.
+6. `## Missing` — what the item never had.
+7. `## Rebuilt title and body` — the full title and body.
+
+A halted run (no readable item, unsanitizable evidence) is one result
+sentence, then what the user needs to do.
 
 Then offer, via `AskUserQuestion`: update the item, update and also create the
 relocated document, print the body only, revise a named section, or drop it.
+Where no interactive question tool exists, print the result and stop; an
+update needs an explicit instruction naming the action.
 
 ## Phase 7 — Update
 
@@ -143,8 +154,7 @@ When a document was relocated, create it first and land its link in the
 rebuilt body before the item is updated, so the item never points at
 something that does not exist yet.
 
-Report the URL, keep the scratch original until the user confirms, then
-remove it.
+Report the URL, then remove both scratch files.
 
 ## Rules
 

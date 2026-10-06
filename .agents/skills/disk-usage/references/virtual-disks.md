@@ -2,8 +2,7 @@
 
 When the filesystem being cleaned lives inside a virtual disk, deleting
 files frees nothing on the host until the disk is compacted. Getting
-this wrong produces the most demoralizing possible outcome: hours of
-cleanup, and a host disk still at 100%.
+this wrong costs hours of cleanup and leaves the host disk still full.
 
 ## Detect the nesting first
 
@@ -11,17 +10,17 @@ Measure free space on **every** layer before proposing any reclaim.
 A guest filesystem reporting ample free space tells you nothing about
 the host that stores its backing file.
 
-```
-df -h
+```console
+$ df -h
 ```
 
 On WSL, the guest root is an `ext4.vhdx` under the Windows user
 profile, and container runtimes add their own. Locate every backing
 file and compare its on-disk size against the used space reported
-inside it.
+inside it. This command is WSL-only and needs GNU `find` and `numfmt`:
 
-```
-find /mnt/c/Users/*/AppData/Local -iname '*.vhdx' -size +1G -printf '%s\t%p\n' | sort -rn | numfmt --field=1 --to=iec
+```console
+$ find /mnt/c/Users/*/AppData/Local -iname '*.vhdx' -size +1G -printf '%s\t%p\n' | sort -rn | numfmt --field=1 --to=iec
 ```
 
 The gap between a backing file's allocated size and the guest's used
@@ -39,8 +38,8 @@ Check whether the guest even issues TRIM. This layer is Linux-only —
 `findmnt` is util-linux, and the surrounding `.vhdx` inspection assumes
 a WSL guest:
 
-```
-findmnt -no OPTIONS /
+```console
+$ findmnt -no OPTIONS /
 ```
 
 `discard` in the mount options means the kernel trims on every delete.
@@ -78,15 +77,3 @@ Setting the disk sparse is a durable fix rather than a one-time
 recovery — it makes future TRIM self-reclaiming, so the balloon stops
 re-accumulating. Offer it alongside a plain compact and let the user
 choose.
-
-## Reporting
-
-Report guest and host separately, and never present a guest-side figure
-as space recovered on the host. State three numbers: what the cleanup
-frees inside the guest, what the balloon already holds, and what the
-host gains once the user completes the steps only they can run.
-
-When the host is critically full, say so before anything else. Guest
-cleanup is often not the user's most urgent lever — a host-side cache,
-media library, or second virtual disk may dominate, and the user cannot
-weigh that against guest cleanup unless both are on the table.

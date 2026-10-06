@@ -3,7 +3,7 @@ name: soft-reset-and-recommit
 description: "Use when commit history must be rebuilt into atomic reviewable commits while preserving the branch's final tree and authorship."
 user-invocable: true
 argument-hint: "[PR number, base ref, or a hint like 'split the auth work out']"
-allowed-tools: ["Bash", "Read", "Write", "Grep", "Glob", "AskUserQuestion", "WebFetch"]
+allowed-tools: ["Bash", "Read", "Write", "Grep", "Glob", "AskUserQuestion"]
 ---
 
 # Soft reset and recommit
@@ -98,7 +98,9 @@ dependency between commits.
 Split when a commit does two things. The signal is the message — if
 the body needs to describe two concerns, it is two commits.
 
-Wait for approval. Exit plan mode before executing.
+Wait for approval. Exit plan mode before executing. Without an
+interactive question tool, stop after presenting the plan; an
+instruction to recommit authorizes the recommit, not a push.
 
 ## Phase 5 — Back up, then collapse
 
@@ -118,8 +120,11 @@ staged set asserted before every commit.
 
 Write each message from the intent gathered in Phase 1, in the format
 discovered in Phase 3, preserving each original author's name, email,
-and author date; the committer is whoever runs the recommit. Carry `Co-authored-by` and ticket trailers forward. Write the messages
-per `../../references/prose-rules.md`.
+and author date; the committer is whoever runs the recommit. Carry
+`Co-authored-by` and ticket trailers forward, but add no
+`Co-Authored-By`, "Generated with" or other tool trailer of your own,
+and no emoji. Write the messages per
+`../../references/prose-rules.md`.
 
 Then gate the whole series in place, with `<toolkit>` as defined in
 `rebase-toolkit.md`:
@@ -141,7 +146,8 @@ git diff --quiet backup/<branch>-<ts> HEAD
 ```
 
 A non-zero exit means the recommit changed the result. Restore from the
-backup and report — do not try to patch the difference.
+backup per `branch-safety.md` Recovery and report; do not try to patch
+the difference.
 
 Then show the user how the history was regrouped:
 
@@ -150,7 +156,13 @@ git range-diff <base-sha> backup/<branch>-<ts> HEAD
 ```
 
 Report the new series, the backup branch name, the gate results, and
-what was deferred, per `../../references/prose-rules.md`.
+what was deferred, per `../../references/prose-rules.md`. Open with one
+result sentence, then the series as a plain list; no bold lead-ins and
+no absolute paths.
+
+A refused or halted run is one result sentence naming the gate that
+stopped it, then what the user must do. It states no commit list,
+hashes, or diffs that were not read from the repository.
 
 ## Phase 8 — Pushing is a separate decision
 

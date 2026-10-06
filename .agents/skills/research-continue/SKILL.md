@@ -12,8 +12,6 @@ metadata:
 
 # this skill
 
-Resume a topic where its last run stopped. `--fill` works only the open questions; `--expand=<scope>` widens the scope first; neither means continue with the open questions and the weakest findings.
-
 Invoke the `research-foray` skill with `continue` followed by the user arguments, and follow it.
 
 User arguments: $ARGUMENTS

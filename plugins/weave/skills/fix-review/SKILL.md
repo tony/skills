@@ -6,260 +6,116 @@ user-invocable: true
 disable-model-invocation: true
 ---
 
-
 # Fix Review Findings
 
 Process weave code review findings from the conversation context. Validate each finding independently against the actual codebase and project conventions, add test coverage where applicable, apply fixes as separate atomic commits, and ensure all quality gates pass before each commit.
 
-Multi-pass (`multipass`, `x2`, etc.) is not applicable to this command — it is already iterative by nature. Trigger words are ignored if present.
+`<engine>` is `../../scripts/engine.py`, run with `python3`. It prints JSON; `"ok": false` carries the reason.
 
 ---
 
 ## Orchestration Plan
 
-Before executing any fixes, enter plan mode to create a fix strategy from the
-review findings.
+Before executing any fixes, enter plan mode and produce a fix strategy from the review findings. Plan-mode activation varies by host:
 
-**Enter your tool's plan mode:**
+- Claude Code: `EnterPlanMode` tool
+- Cursor / Codex / Gemini: `/plan` or `Shift+Tab`
 
-- **Claude Code**: Call `EnterPlanMode`
-- **Cursor**: Use `/plan` or press `Shift+Tab`
-- **Codex**: Use `/plan` to switch to Plan mode
-- **Gemini**: Use `/plan` or press `Shift+Tab`
-- **Other tools**: Use your tool's planning/read-only mode if available
+The plan must contain:
 
-If plan mode is not available, proceed — the phase structure still guides the
-analysis before execution.
+1. **Findings inventory**: each finding with its consensus level and severity
+2. **Validity pre-assessment**: likely valid, likely incorrect, or needs investigation
+3. **Fix ordering**: dependencies first, then highest consensus, then file proximity
+4. **Test strategy per finding**: extend an existing test, add a case, or no test (and why)
+5. **Risk assessment**: fixes that could break other code or conflict with each other
+6. **Expected commit sequence**: the atomic commits this session will produce
 
-**Create an orchestration plan covering:**
-
-1. **Findings inventory** — List each review finding with its consensus level
-   and severity
-2. **Validity pre-assessment** — For each finding, note your initial read:
-   likely valid, likely incorrect, needs investigation
-3. **Fix ordering** — Propose the sequence: dependencies first, then highest
-   consensus, then by file proximity (minimize context switches)
-4. **Test strategy per finding** — For each likely-valid finding: extend
-   existing test, add new case, or no test needed (and why)
-5. **Risk assessment** — Flag findings where the fix could break other code
-   or conflict with other findings
-6. **Expected commit sequence** — Predict the atomic commits this session
-   will produce
-
-**Present the orchestration plan to the user.** Wait for approval before
-proceeding to Phase 1. The user may adjust priorities, skip findings, or
-reorder the sequence.
-
-**After approval, exit plan mode:**
-
-- **Claude Code**: Call `ExitPlanMode`
-- **Cursor/Codex/Gemini**: Exit plan mode per your tool's method
-
-Then proceed to Phase 1 with the approved plan as your guide.
+Present the plan and wait for approval, then exit plan mode (`ExitPlanMode`). The user may adjust priorities, skip findings, or reorder the sequence. If plan mode is unavailable, write the plan as numbered steps in your response and continue.
 
 ---
 
-## Phase 1: Parse and Prioritize Findings
+## Phase 1: Parse and prioritize findings
 
-Follow the approved orchestration plan for finding order and priority.
-If no orchestration plan was created (plan mode unavailable), proceed
-with the default priority ordering below.
+Follow the approved plan for finding order; without one, use the default order below.
 
-**Goal**: Extract structured findings from the weave review report in the conversation.
-
-**Actions**:
-
-1. **Locate the review report** in the conversation context (output from `/weave:review` or similar)
-
-2. **Extract each finding** into a numbered list with:
-   - **Consensus level**: how many reviewers flagged it (3, 2, or 1)
-   - **Severity**: Critical / Important / Suggestion (after consensus promotion)
-   - **Reviewers**: which models flagged it (Claude, Antigravity, GPT)
-   - **File and line**: location in the codebase
-   - **Description**: what the issue is
-   - **Recommendation**: suggested fix
-
-3. **Sort by priority** (process in this order):
-   - Consensus Critical (3 reviewers) first
+1. Locate the review report in the conversation context (output from `/weave:review` or similar).
+2. Extract each finding into a numbered list with its consensus level (3, 2, or 1 reviewers), severity after consensus promotion (Critical / Important / Suggestion), reviewers, file and line, description, and recommendation.
+3. Sort by priority:
+   - Consensus Critical (3 reviewers)
    - Consensus Critical (2 reviewers, promoted)
-   - Consensus Important (2 reviewers, promoted)
+   - Consensus Important (2 or 3 reviewers, promoted)
    - Single-reviewer Important
    - Single-reviewer Suggestions
-
-4. **Create a todo list** tracking each finding
-
-5. **Read CLAUDE.md / AGENTS.md** for project conventions that apply to the fixes
+4. Create a todo list tracking each finding.
+5. Read the project's CLAUDE.md / AGENTS.md for conventions that apply to the fixes.
 
 ---
 
-## Phase 2: Validate Each Finding
+## Phase 2: Validate each finding
 
-**Goal**: Independently assess whether each finding is valid and actionable.
+For each finding:
 
-For EACH finding:
-
-1. **Read the relevant code** — the exact lines referenced in the finding
-
-2. **Check project conventions** — read CLAUDE.md/AGENTS.md to verify whether the finding aligns with project standards
-
-3. **Review the project's own APIs** — read the function signatures, return types, and docstrings to understand the intended contract vs what the reviewers flagged
-
-4. **Check existing test coverage** — search for tests that already cover this code path
-
-5. **Assess validity** using these criteria:
-   - **Valid**: The finding identifies a real issue that aligns with project conventions
-   - **Already addressed**: The issue was already fixed in a later commit
-   - **Incorrect**: The reviewer misread the code or the suggestion would introduce a bug
-   - **Out of scope**: Valid concern but not related to this branch's changes
-   - **Pre-existing**: Valid but existed before this branch (not introduced by our changes)
-
-6. **Document the verdict** for each finding:
-   - If valid: note the planned fix AND test coverage strategy
-   - If invalid: note the specific reason (cite code, tests, or conventions)
-
-7. **Present the validation results** to the user:
-   - List each finding with its verdict (compare against orchestration plan predictions)
-   - For findings where validity differs from the plan, highlight the change
-   - For valid findings, confirm: the fix + the test approach from the plan
-   - **Wait for user confirmation** before proceeding to Phase 3
+1. Read the exact lines the finding cites, the project's own APIs they use (signatures, return types, docstrings), and the conventions that apply.
+2. Search for tests that already cover the code path.
+3. Assess validity:
+   - **Valid**: a real issue that aligns with project conventions
+   - **Already addressed**: fixed in a later commit
+   - **Incorrect**: the reviewer misread the code, or the suggestion would introduce a bug
+   - **Out of scope**: valid but unrelated to this branch's changes
+   - **Pre-existing**: valid but older than this branch
+4. Record the verdict. For a valid finding, note the planned fix and test strategy. For any other verdict, cite the code, test, or convention that decides it.
+5. Present each finding with its verdict, compared against the plan's predictions, and highlight changes. Wait for the user's confirmation before Phase 3. A pre-existing finding is fixed only when the user approves it.
 
 ---
 
-## Phase 3: Apply Fixes (One Commit Per Finding)
+## Phase 3: Apply fixes, one commit per finding
 
-**Goal**: Apply each valid finding as a separate, atomic commit with test coverage.
+Process one finding at a time and finish its full cycle before the next. A finding that needs changes in several files is still one commit.
 
-**CRITICAL**: Process one finding at a time. Complete the full cycle for each before moving to the next.
+1. **Find existing tests.** Search the test directory for the affected function or module, read the test structure, and look for parameterized fixtures or helpers to extend.
+2. **Write or extend a test**, following the project's test conventions strictly. Prefer, in order: a new entry in an existing parameterized fixture, a new case in an existing test function, a new test function in an existing file, and a new test file only when nothing covers the area.
+3. **Apply the minimal fix** that addresses the finding, with no unrelated changes, following the project's conventions.
+4. **Run the project's quality gates.** All must pass before committing. On a failure, adjust the fix, or update the test when the finding changes expected behavior.
+5. **Commit** only the files changed for this finding, using the project's commit message format and a reference to the review finding:
 
-For EACH valid finding:
+   ```console
+   $ git add <specific-files>
+   ```
 
-### Step 1: Search for Existing Test Coverage
+6. **Verify clean state** with `git status`. No uncommitted changes may remain before the next finding.
 
-Before writing any code, search for existing tests that can be extended:
+### Recovery: quality gate failure
 
-- Search for the affected function/module name in the test directory
-- Read the test file structure — identify existing parameterized fixtures
-- Look for fixtures or helpers that can be extended with a new test case
-
-**Priority order for test placement**:
-1. **Extend existing parameterized test** — add a new entry to an existing fixture list
-2. **Add a case to an existing test function** — if the test function already covers the component
-3. **Create a new test function** in the existing test file — only if no existing test covers this area
-4. **Create a new test file** — only as a last resort
-
-### Step 2: Write/Extend Tests
-
-Follow the project's test conventions from AGENTS.md/CLAUDE.md strictly. Common conventions to check for:
-
-- Test structure (classes vs functions, parameterized vs individual)
-- Fixture patterns (project-specific fixtures, setup/teardown)
-- Assertion style (assert statements, matchers, custom assertions)
-- Import conventions
-- Mock patterns and documentation requirements
-
-### Step 3: Apply the Fix
-
-- Make the minimal change that addresses the finding
-- Do not bundle unrelated changes
-- Follow project conventions from CLAUDE.md/AGENTS.md
-
-### Step 4: Run Quality Gates
-
-Run the project's quality gates as defined in AGENTS.md/CLAUDE.md. All gates must pass before committing.
-
-- If any gate fails, fix the issue before proceeding
-- If a test fails due to the change, either:
-  - Adjust the fix to be correct, OR
-  - Update the test if the finding changes expected behavior
-- ALL gates must pass before committing
-
-### Step 5: Commit
-
-Stage only the files changed for this specific finding:
-
-```bash
-git add <specific-files>
-```
-
-Use the project's commit message format from AGENTS.md/CLAUDE.md. Include a reference to the weave review finding.
-
-### Step 6: Verify Clean State
-
-After committing, confirm:
-```bash
-git status
-```
-
-Verify no uncommitted changes remain:
-
-```bash
-git diff
-```
-
-No uncommitted changes should remain before moving to the next finding.
+If a gate still fails after two attempts at the fix, revert the change with `git checkout -- <files>`, mark the finding "valid but could not apply cleanly", move to the next finding, and report it in the Phase 4 summary.
 
 ---
 
 ## Phase 4: Present results
 
-Resolve `AIP_ROOT`, `REPO_DIR`, and `SESSION_ID` by following Steps 1–3 of
-Session Directory Initialization in `../review/SKILL.md`, then create the
-session directory:
+Create the session directory:
 
-```bash
-SESSION_DIR="$AIP_ROOT/repos/$REPO_DIR/sessions/fix-review/$SESSION_ID"
+```console
+$ python3 <engine> init \
+    --command fix-review \
+    --bare
 ```
 
-```bash
-mkdir -p -m 700 "$SESSION_DIR"
+Write the session summary, with each finding, its verdict, and the commit that addressed it, to `$SESSION_DIR/phase-4-summary.md` per `../../references/prose-rules.md`.
+
+Read `../../references/present-results.md` and apply it with `RESULT_KIND` = `fix-review`, `ARTIFACT_PATH` = `$SESSION_DIR/phase-4-summary.md`, `SESSION_DIR` = `$SESSION_DIR`, `PASS_COUNT` = 1, `IN_PLAN_MODE` = false, `WORKER_BACKEND` = null, `PARTICIPANTS` = [], `EXECUTORS` = null, `MODELS` = null, `LABEL_MAP_PATH` = null.
+
+After the reference returns, run the full quality gate one last time, show the commit log for the session, report the final pass/fail status, and mark the session complete:
+
+```console
+$ python3 <engine> update \
+    --session "$SESSION_DIR" \
+    --status completed \
+    --event session_complete \
+    --link-latest
 ```
-
-Write the session summary — each finding, its verdict, and the commit that
-addressed it — to `$SESSION_DIR/phase-4-summary.md`.
-
-Read `../../references/present-results.md` and apply it with:
-
-- `RESULT_KIND` = `fix-review`
-- `ARTIFACT_PATH` = `$SESSION_DIR/phase-4-summary.md`
-- `SESSION_DIR` = `$SESSION_DIR`
-- `PASS_COUNT` = 1
-- `IN_PLAN_MODE` = true
-- `WORKER_BACKEND` = null
-- `PARTICIPANTS` = []
-- `EXECUTORS` = null
-- `MODELS` = null
-- `LABEL_MAP_PATH` = null
-
-After the reference returns, finalize the session: run the full quality
-gate one last time, show the commit log for the session, and report the
-final pass/fail status.
-
----
-
-## Recovery: Quality Gate Failure
-
-If quality gates fail after applying a fix:
-
-1. **Identify** which gate failed and why
-2. **Fix** the issue (adjust the change, not bypass the gate)
-3. **Re-run** all gates
-4. If the fix cannot be made to pass all gates after 2 attempts:
-   - Revert the change: `git checkout -- <files>`
-   - Mark the finding as "valid but could not apply cleanly"
-   - Move to the next finding
-   - Report the issue in the Phase 4 summary
-
----
 
 ## Rules
 
-- Never skip quality gates
-- Never bundle multiple findings into one commit
-- Never modify code that isn't related to the finding being addressed
-- Always wait for user confirmation after Phase 2 validation
-- Always use the project's commit message conventions from AGENTS.md/CLAUDE.md
-- Always search for existing tests before creating new test functions
-- Always prefer extending existing test fixtures over creating new tests
-- If a finding requires changes in multiple files, that is still ONE commit (one logical change)
-- Process consensus findings before single-reviewer findings
-- If a finding is pre-existing (not from this branch), note it but still fix if the user approved it
+- Never skip quality gates, bundle several findings into one commit, or modify code unrelated to the finding.
+- Process consensus findings before single-reviewer findings.
+- Use the project's commit message conventions from AGENTS.md / CLAUDE.md.

@@ -1,7 +1,8 @@
 ---
 name: pr-merge-commit
 description: >-
-  Generate a gold-standard merge commit message from branch diff
+  Use when drafting a merge or squash-merge commit message for the current
+  branch, to copy into the merge workflow.
 disable-model-invocation: true
 allowed-tools: ["Bash", "Read"]
 metadata:
@@ -11,168 +12,144 @@ metadata:
 
 # Generate Merge Commit Message
 
-Create a gold-standard merge commit message for the current branch. Merge commits are the **user-facing, product-level** summary that appears in `git log --merges` on the main branch.
-
-Merge commit text is user-facing. Apply the Published-Release Test before adding rename history, `### Fixes` for behavior that never shipped, or "no longer X" framing. See `AGENTS.md` § *The Published-Release Test*.
+Draft a merge commit message for the current branch. It is the
+**user-facing, product-level** summary that appears in `git log --merges`
+on the main branch. Write it per `references/prose-rules.md`.
 
 User hint: $ARGUMENTS
 
-## Context
+## Procedure
 
-Current branch — run this command and read the output:
+### 1. Gather context
+
+Find the trunk without touching the network:
+
+```bash
+git symbolic-ref --short refs/remotes/origin/HEAD
+```
+
+It prints `origin/<trunk>`; call that `BASE`. When it fails, use the
+first of `origin/main` or `origin/master` that
+`git rev-parse --verify --quiet` accepts; when neither exists, ask the
+user for the base. Then gather the branch's change:
 
 ```bash
 git branch --show-current
 ```
 
-Base branch detection — run this command and read the output:
-
 ```bash
-git rev-parse --verify origin/main >/dev/null 2>&1 && echo main || echo master
+git log "${BASE}..HEAD" --oneline
 ```
 
-Commits on this branch — run this command and read the output:
-
 ```bash
-BASE=$(git rev-parse --verify origin/main >/dev/null 2>&1 && echo main || echo master); git log "origin/$BASE..HEAD" --oneline 2>/dev/null || echo "(no commits ahead of base)"
+git diff "${BASE}...HEAD" --stat
 ```
 
-Files changed (stat) — run this command and read the output:
-
 ```bash
-BASE=$(git rev-parse --verify origin/main >/dev/null 2>&1 && echo main || echo master); git diff "origin/$BASE...HEAD" --stat 2>/dev/null || echo "(no diff)"
+git diff "${BASE}...HEAD"
 ```
 
-Full diff — run this command and read the output:
+An empty log means nothing is ahead of the base; say so and stop.
 
-```bash
-BASE=$(git rev-parse --verify origin/main >/dev/null 2>&1 && echo main || echo master); git diff "origin/$BASE...HEAD" 2>/dev/null || echo "(no diff)"
-```
+### 2. Analyze changes
 
----
+- Review the full diff and **all** commits, not only the latest.
+- Classify the change: feature, fix, refactor, version bump, CI, docs,
+  breaking change, runtime version drop. Assess its scope.
+- Note any PR number visible in the branch name or commits.
+- Describe the **net shipped result**: collapse fixups,
+  reverts-then-re-adds, and WIP states. Keep rename history, `### Fixes`
+  for behavior that never shipped, and "no longer X" framing out unless a
+  user of the latest published release experienced the old name,
+  behavior, or bug.
 
-## Procedure
+### 3. Read project conventions
 
-### 1. Analyze Changes
+Read `AGENTS.md` and `CLAUDE.md` for merge commit conventions. When the
+project uses a scope format such as `scope(type[detail])`, match it in
+the title.
 
-- Review the full diff and **all commits** on the branch — not just the latest
-- Determine the nature: feature, bug fix, refactor, version bump, CI/infra, docs, breaking change, Python/runtime version drop, etc.
-- Assess scope: is this a small targeted fix or a large multi-module change?
-- Note any PR number visible in branch name or commits (e.g., `feature-name` with PR `#42`)
-- **Whole-branch perspective**: describe the net shipped result — collapse fixup
-  commits, reverts-then-re-adds, and WIP states. The merge commit is a product
-  summary, not a commit diary.
+### 4. Draft the message
 
-### 2. Read Project Conventions
+#### Title line
 
-- Read AGENTS.md and/or CLAUDE.md for any merge commit or commit message format preferences
-- If the project uses a scope format (e.g., `scope(type[detail])`), match it in the title
+- Under 70 characters.
+- Ends with ` (#N)` when the PR number is known. The suffix belongs to
+  the merge commit title only; commits on the branch never carry `#N`.
+- Matches the project's scope format when one exists.
+- Describes the **impact**, what changed for the user, not the
+  implementation.
 
-### 3. Draft Merge Commit Message
+#### Body, proportional to the change
 
-#### Title Line
+- **Small change** (1-3 file fix, simple bump): title only.
+- **Medium change** (feature, targeted refactor, fix with a root cause):
+  an opening paragraph of 2-4 sentences on what changed and why, then
+  bullets with **bold labels** for specific changes.
+- **Large change** (multi-module feature, major refactor, migration): a
+  structured body from the patterns below.
 
-- Under 70 characters
-- Ends with ` (#N)` if the PR number is known
-- Match the project's commit scope format if one exists
-- Descriptive of the **impact** — what changed for the user, not implementation details
+Wrap body lines at 72 characters. Never break a URL, hash, path, stack
+trace, or long identifier mid-token; let that line run long.
 
-#### Body — Proportional to the Change
+#### Body patterns, use only what applies
 
-#### Line wrapping
+**Features, refactors, bug fixes:**
+- Opening paragraph: what and why.
+- Bullets with **bold labels** for specific changes.
+- `Breaking changes:` with migration guidance, when applicable.
+- Cross-references: `Fixes #N`, `See also:`, companion PR links.
+- Version compatibility notes (environment tables, test matrices).
 
-Wrap commit message body lines at **72 characters**. This is the git
-convention and ensures readable output in `git log`, terminals, and
-email-based review.
+**Bug fixes with a non-obvious root cause:**
+- A root-cause paragraph, numbered reproduction steps if they help,
+  and environment or version tables when the bug is version-specific.
 
-**Overflow exceptions** — do NOT break these tokens across lines;
-place them at the end of a line or on their own line:
+**API refactors with migration paths:**
+- Old/new tables for renamed methods, parameters, or modules.
+- Deprecation notices with a timeline, and `Breaking changes:`.
 
-- URLs
-- commit hashes
-- stack traces
-- file paths
-- long identifiers (class names, function signatures)
+**Version bumps:**
+- Arrow notation: `v1.2.3 -> v1.3.0` or `v1.2.3 → v1.3.0`.
+- A release tag URL and changelog URL per package, and the release date
+  when known.
+- Per-file scope notes when files change different dependencies.
 
-If a bullet point exceeds 72 characters due to an overflow token,
-let the line run long rather than wrapping mid-token.
+**Runtime version drops:**
+- The EOL date and links to the PEP and devguide references.
 
-**Small changes** (1-3 file fix, simple bump): title line only, no body needed.
+**Build and infra migrations:**
+- Before/after tooling and why the migration was needed.
 
-**Medium changes** (feature, targeted refactor, bug fix with root cause):
+**Multi-module sync results:**
+- Companion PR links, design decisions and trade-offs, and a qualitative
+  test coverage summary.
 
-Opening narrative paragraph (2-4 sentences) explaining what changed and why, followed by bullet points for specific changes with **bold labels**.
-
-**Large changes** (multi-module feature, major refactor, migration):
-
-Full structured body with relevant sections from the patterns below.
-
-#### Body Patterns — Use Only What Applies
-
-**For features, refactors, and bug fixes:**
-- Opening narrative paragraph: what and why (2-4 sentences)
-- Bullet points with **bold labels** for specific changes
-- `Breaking changes:` section if applicable, with migration guidance
-- Cross-references: `Fixes #N`, `See also:`, companion PR links
-- Version compatibility notes if applicable (environment tables, test matrices)
-
-**For bug fixes with non-obvious root cause:**
-- Narrative root-cause explanation
-- Numbered reproduction steps if helpful
-- Environment/version tables when the bug is version-specific
-
-**For API refactors with migration paths:**
-- Old/new tables showing renamed methods, parameters, or modules
-- Deprecation notices with timeline
-- `Breaking changes:` section
-
-**For version bumps:**
-- Arrow notation: `v1.2.3 -> v1.3.0` or `v1.2.3 → v1.3.0`
-- Release tag URL and changelog URL per package
-- Release date if known
-- Per-file scope annotations when multiple files change different dependencies
-
-**For Python/runtime version drops:**
-- EOL date
-- Links to PEP and devguide references
-
-**For build/infra migrations:**
-- Before/after tooling description
-- Summary of what changed and why the migration was needed
-
-**For multi-module sync results:**
-- Companion PR links
-- Design decisions and trade-offs
-- Test coverage summary (qualitative, not counts)
-
-#### What NOT to Include
+#### What not to include
 
 - Test counts or passing numbers ("875 tests pass")
 - Git SHAs or commit hashes
 - File-level line numbers
-- Number of files changed
+- The number of files changed
 - Details the reviewer can see in the diff
-- Redundant context already visible in `git log`
+- Context already visible in `git log`
 
-### 4. Present the Message
+### 5. Present the message
 
-- Show the complete merge commit message in a single fenced code block
-- **Do NOT run any git commands** — the message is for the user to copy/paste into their merge workflow (GitHub merge button, `git merge --edit`, squash-and-merge dialog, etc.)
-- If the PR number is unknown, note where `(#N)` should be inserted
-
----
+- Show the complete message in one fenced code block.
+- Do not run any git write command; the user pastes the message into
+  their merge workflow (GitHub merge button, `git merge --edit`, the
+  squash-and-merge dialog).
+- When the PR number is unknown, note where ` (#N)` goes.
 
 ## Rules
 
-- **Never** run git merge, git commit, or any write operation — output only
-- **Never** force-push or run destructive git commands
-- **Proportional**: a 1-line fix = subject line only; a large feature = structured body
-- **Product-level focus**: describe what changed for the user, not file-level diffs
-- **Language-agnostic**: discover conventions from AGENTS.md/CLAUDE.md — never hardcode specific tool commands
-- **Arrow notation** for version bumps: `old -> new`
-- **No brittle details**: no test counts, no SHAs, no line numbers, no file-changed counts
+- **Never** run `git merge`, `git commit`, or any write operation; output only.
+- **Never** force-push or run destructive git commands.
+- **Language-agnostic**: discover conventions from `AGENTS.md` / `CLAUDE.md`; never hardcode a tool's commands.
 
 
 ## Portability notes
 
 - `$ARGUMENTS` — the text the user passed when invoking this skill. If your host does not substitute it, read it as the user's request in the current turn, and ask when there is none.
+- Bundled files — every relative path in this skill points at a file shipped inside this skill directory. Read them from here, not from the host's plugin tree.

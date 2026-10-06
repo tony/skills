@@ -16,45 +16,22 @@ vocabulary, and an evidence layer. The product is a study directory, not a
 document, and every claim in it either cites a pinned source or carries a
 command that reproduces its number.
 
+A study passes when a reader who was not present can disagree with a specific
+claim, find what it rests on, and re-derive it. A summary cannot be checked,
+does not compose, and rots without saying so.
+
 Read `references/evidence-tiers.md` before starting; it decides what
 each claim must carry. `references/citation.md` governs every pin.
 `references/stage-gates.md` states each stage's exit condition.
 
 User arguments: $ARGUMENTS
 
-## Core thesis
+## Survey the workspace
 
-An agent that has read a corpus usually returns a summary. A summary cannot be
-checked, does not compose, and rots without saying so.
-
-The test this pipeline is built against:
-
-```
-CAN A READER WHO WAS NOT PRESENT DISAGREE WITH A CLAIM,
-FIND WHAT IT RESTS ON, AND RE-DERIVE IT?
-```
-
-A study that fails that test is a summary with more sections.
-
-## Context
-
-Repository — run this command and read the output:
-
-```bash
-git remote get-url origin 2>/dev/null || echo "(not a git repository)"
-```
-
-Current ref — run this command and read the output:
-
-```bash
-git rev-parse --short HEAD 2>/dev/null || echo "(unknown)"
-```
-
-Existing studies — run this command and read the output:
-
-```bash
-ls notes/ontology/ 2>/dev/null || echo "(none)"
-```
+1. Run `git remote get-url origin` to name the current repository. A failure
+   means the working directory is not a git repository.
+2. Run `ls notes/ontology/` to list existing studies. A failure means there
+   are none.
 
 ## Stages
 
@@ -98,21 +75,11 @@ Present it, wait for approval, then exit plan mode and run stage 1.
 
 - Never write into the corpus being studied. Output lands under `--out`,
   defaulting to `notes/ontology/<subject>/` in the current repository.
-- Every claim carries a tier. A claim that fits neither tier does not go in
-  the brief.
-- The brief carries no citation, no permalink, and no bare number. Where it
-  wants one, it links into `evidence/`.
-- A stage may not hand off until its gate passes. Report a failed gate; do not
-  work around it.
-- Terms are recorded as the corpus spells them. Variants are the evidence, not
-  noise to normalize away.
-- The analyzer proposes; it never decides. Every finding gets a human or agent
-  verdict recorded in `evidence/contested.md`.
 
 ## Output
 
-Open with a one-line hero (`✓ <subject>: <n> terms, <n> types, <n> contested`
-or `⚠ Blocked: <reason>`), then exactly these sections:
+Per `references/output-contract.md`. Hero: `✓ <subject>: <n> terms, <n>
+types, <n> contested` or `⚠ Blocked: <reason>`. Sections:
 
 1. `## Corpus` — each source, its resolved ref, and what was deliberately not
    read, with the reason.
@@ -122,13 +89,13 @@ or `⚠ Blocked: <reason>`), then exactly these sections:
    was killed and what the kill revealed.
 4. `## Where it lives` — the study directory path and which stages ran.
 
-End with an `ask-user-choice` panel offering next steps (for example: contest
-another round, compare against another study, publish the brief, stop here) —
-skip the panel only in plan mode.
+Next-step options: contest another round, compare against another study,
+publish the brief, stop here.
+
+Write it per `references/prose-rules.md`.
 
 
 ## Portability notes
 
-- `ask-user-choice` — present the listed options and wait for the user to pick one. Hosts with a structured multiple-choice tool (Claude Code's `AskUserQuestion`) should use it; otherwise print a numbered list and wait for a numbered reply. Never proceed on an assumed answer.
 - `$ARGUMENTS` — the text the user passed when invoking this skill. If your host does not substitute it, read it as the user's request in the current turn, and ask when there is none.
 - Bundled files — every relative path in this skill points at a file shipped inside this skill directory. Read them from here, not from the host's plugin tree.

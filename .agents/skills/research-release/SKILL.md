@@ -12,8 +12,6 @@ metadata:
 
 # this skill
 
-Hand a topic's report to the people who act on it, with a trail from each decision back to the exact report version and the sources it rested on.
-
 Invoke the `research-foray` skill with `release` followed by the user arguments, and follow it.
 
 User arguments: $ARGUMENTS

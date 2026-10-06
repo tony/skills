@@ -1,13 +1,13 @@
 # Screening Rubric
 
+Contents: The gates, Verdicts, The ledger, Rationalizations.
+
 Every claim a reviewer makes — human or machine — passes six gates
 before a single file is edited. the `respond-check` skill runs them and writes
 the ledger; this skill reads that ledger and does not
 re-litigate it.
 
-Both failure modes are expensive. Fixing everything a reviewer says
-produces sprawling branches, tests nobody needed, and comments that
-will confuse a reader in three years. Dismissing what a reviewer says
+Fixing everything a reviewer says bloats the branch; dismissing it
 ships bugs. Neither compliance nor reflex is a screening method —
 evidence is, and every verdict below carries some.
 
@@ -148,18 +148,33 @@ with whatever the six gates produced.
 
 ## The ledger
 
-One record per finding, and the whole artifact is keyed by the branch,
-`HEAD`, and a digest of the feedback it screened. this skill
-recomputes that key; when the key does not match, the ledger is stale
-and screening runs again rather than acting on an old picture.
+One record per finding. The whole ledger is keyed by three values,
+printed in the report's `## Ledger key` section and read back from the
+session by this skill:
+
+- **branch** — `git branch --show-current`.
+- **`HEAD`** — `git rev-parse HEAD`.
+- **digest** — the first 12 hex characters of the SHA-256 of the
+  screened claims: one line per finding, `<source>` TAB `<claim>` with
+  the claim whitespace-collapsed, sorted bytewise, newline-terminated.
+  It covers the findings as collected, before dedup, so new or edited
+  feedback changes it.
+
+```console
+$ LC_ALL=C sort claims.tsv | shasum -a 256 | cut -c1-12
+```
+
+this skill recomputes all three from the feedback it collects.
+Any mismatch means the ledger is stale, and screening runs again rather
+than acting on an old picture. When the report is no longer in the
+session, there is no ledger.
 
 Each record carries:
 
 - **id** — stable within the run; the reviewer's own id when it has
   one.
 - **source** — who said it and where: the author's login, whether that
-  author is a bot, and the thread or review it came from. A defect
-  three reviewers reported is **one** record with three sources.
+  author is a bot, and the thread or review it came from.
 - **claim** — the reviewer's words, quoted and trimmed to the assertion.
 - **location** — file and symbol.
 - **gates** — the result of each gate that ran, with its evidence: the
@@ -181,4 +196,3 @@ Each record carries:
 | "It's a one-line guard, the cost is nothing" | The line is one; the test that holds it up, the comment explaining it, and every future reader's second of confusion are not. |
 | "Provenance is obvious here" | Skipping the diff is how a branch ends up fixing trunk code and burying that fix inside an unrelated review. Run it. |
 | "It contradicts how I'd have built it" | That is not an alignment citation. Find the written decision or drop the objection. |
-| "I'll note the reasoning in a comment" | Screening reasoning belongs in the ledger and the reply. Code carries invariants, not review history. |

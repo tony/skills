@@ -1,90 +1,79 @@
 ---
 name: review-pr
-description: Review a PR description against gold-standard patterns
+description: "Use when reviewing an existing PR description for structure, proportionality, brittle details, and branch-internal narrative, without editing it."
 allowed-tools: ["Bash", "Read"]
 argument-hint: "[PR number or URL, e.g. '#42' or 'https://github.com/...']"
 user-invocable: true
 disable-model-invocation: true
 ---
 
-
 # Review PR Description
 
-Evaluate an existing PR description against gold-standard patterns and suggest concrete improvements.
+Evaluate an existing PR description against the section patterns
+`/pr` writes and suggest concrete improvements. Write the report per
+`../../references/prose-rules.md`.
 
 Target PR: $ARGUMENTS
-
----
 
 ## Procedure
 
 ### 1. Fetch the PR
 
-- If `$ARGUMENTS` contains a PR number (e.g., `#42`, `42`) or URL, use it directly
-- If `$ARGUMENTS` is empty, detect the current branch's PR:
-  ```
-  gh pr view --json number,title,body,url
-  ```
-- Fetch the full PR details:
-  ```
-  gh pr view <number> --json title,body,url
-  ```
+Use the PR number (`#42`, `42`) or URL in `$ARGUMENTS`; when it is
+empty, use the current branch's PR (omit `<number>`):
 
-### 2. Fetch the Diff Context
+```bash
+gh pr view <number> --json number,title,body,url
+```
 
-- Get the PR diff to understand the scope of changes:
-  ```
-  gh pr diff <number>
-  ```
-- Count files changed and estimate the magnitude (small fix, medium feature, large overhaul)
-- This context is needed to judge whether the description is **proportional** to the change
-- If the user's message names a PR template, read it and use its sections as the structural baseline for the evaluation below. Use it silently — this command reports findings and never raises template questions
+### 2. Fetch the diff context
 
-### 3. Evaluate Against Quality Patterns
+```bash
+gh pr diff <number>
+```
 
-Check each applicable dimension. Not every dimension applies to every PR — a one-line typo fix doesn't need a Design Decisions section.
+Judge the change's magnitude (small fix, medium feature, large
+overhaul) from the diff; the description must be **proportional** to it.
+When the user's message names a PR template, read it and use its
+sections as the structural baseline. Use it silently: this skill reports
+findings and never raises template questions.
+
+### 3. Evaluate against the quality patterns
+
+Check each dimension that applies; a one-line typo fix needs no Design
+decisions section.
 
 | Dimension | What to check |
 |---|---|
-| **Structure** | Does it use `## Summary`, `## Changes`, `## Test plan` headings where appropriate for the change size? |
-| **Proportionality** | Is the detail level proportional to the diff size? Small fix shouldn't have 20 bullets; large feature shouldn't be one sentence. |
-| **Bold impact labels** | Do summary bullets open with **bold verbs** (Fix, Add, Remove, Replace, Migrate)? |
-| **Tables** | Are comparison-heavy sections using tables instead of prose? (renames, parameter maps, file inventories, environment matrices) |
-| **Code blocks** | One command per block? No comments inside blocks? Explanatory text outside? |
-| **Test plan** | Does it have a checklist with `- [x]` or `- [ ]` items? Are items descriptive (what is validated), not just commands? |
-| **Design decisions** | For non-trivial changes, are trade-offs explained with rationale? |
-| **Verification** | Are there copyable `rg`/`grep` commands proving the change is complete? |
-| **Negative assertions** | For removal/migration PRs: "verify zero matches for X" items? |
-| **Cross-references** | Companion PRs, related issues, tracking links where relevant? |
-| **Before/After** | For behavioral changes, are both states shown in labeled code blocks? |
-| **No brittle details** | Does the description avoid test counts, SHAs, line numbers, or file/line-changed counts? These duplicate what the reviewer sees in the diff. |
-| **No branch-internal narrative** | Does the description avoid rename history, "no longer X" / "previously Y" phrasing, and `### Fixes` framing for behavior that never appeared in a published release? See `AGENTS.md` § *The Published-Release Test*. |
-| **Whole-branch perspective** | Does it describe the net shipped result, or does it narrate the branch's commit-by-commit evolution? |
+| **Structure** | `## Summary`, `## Changes`, `## Test plan` headings where the change size warrants them. |
+| **Proportionality** | Detail matches the diff: a small fix does not carry 20 bullets, and a large feature is not one sentence. |
+| **Bold impact labels** | Summary bullets open with a **bold verb** (Fix, Add, Remove, Replace, Migrate). |
+| **Tables** | Comparison-heavy sections (renames, parameter maps, file inventories, environment matrices) use tables, not prose. |
+| **Code blocks** | One command per block, no comments inside, explanation outside. |
+| **Test plan** | A `- [x]` or `- [ ]` checklist whose items say what is validated, not only the command. |
+| **Design decisions** | Non-trivial changes explain their trade-offs. |
+| **Verification** | Copyable `rg` or `grep` commands prove the change is complete. |
+| **Negative assertions** | Removal and migration PRs include "verify zero matches for X" items. |
+| **Cross-references** | Companion PRs, related issues, and tracking links, where relevant. |
+| **Before/After** | Behavioral changes show both states in labeled code blocks. |
+| **No brittle details** | No test counts, SHAs, line numbers, or file or line-changed counts; the diff already shows them. |
+| **No branch-internal narrative** | No rename history, "no longer X" or "previously Y" phrasing, or `### Fixes` framing for behavior that never appeared in a published release. Keep such text only when a user of the latest release experienced the old name, behavior, or bug. |
+| **Whole-branch perspective** | Describes the net shipped result, not the branch's commit-by-commit evolution. Suggest a rewrite when it narrates. |
 
 ### 4. Report
 
-Structure the report as:
+**What the description does well:** specific strengths, so the author
+keeps them.
 
-**What the PR description does well:**
-- List specific strengths — reinforce good patterns so the author knows to keep doing them
+**Suggested improvements:** each with a **concrete markdown snippet**,
+never vague advice like "add more detail". Draft a missing section the
+diff warrants as ready-to-paste text. Show the improved version of a
+weak one. Flag brittle details as concrete edits.
 
-**Suggested improvements:**
-- List specific improvements with **concrete markdown snippets** — not vague advice like "add more detail"
-- If a section is missing that the diff warrants, draft it as a ready-to-paste suggestion
-- If a section exists but could be improved, show the improved version
-
-**Overall assessment:**
-- One sentence summary: is this description adequate, good, or gold-standard?
-- For "adequate" or "good" descriptions, identify the single highest-impact improvement
-
----
+**Overall assessment:** one sentence: adequate, good, or complete. For
+adequate or good, name the single highest-impact improvement.
 
 ## Rules
 
-- **Never** modify the PR — only report findings
-- **Never** run destructive git or gh commands
-- Suggestions must be **concrete markdown snippets**, not abstract advice
-- Evaluate **proportionally** — don't penalize a one-line fix for missing a Design Decisions section
-- Recognize and reinforce good patterns — the report should be balanced, not just a list of criticisms
-- Check for **brittle details** (test counts, SHAs, line numbers, file-changed counts) — flag them as concrete improvements
-- Check for **commit-diary style** — if the description narrates the branch's internal evolution instead of the net result, suggest rewriting to whole-branch perspective
+- **Never** modify the PR; only report findings.
+- **Never** run destructive git or gh commands.

@@ -241,13 +241,60 @@ sub-agents, Weave stops and explains how to rerun with
 
 ## Deslop Pass
 
-The prose-producing weave commands (`ask`, `refine`, `brainstorm-and-refine`, `serene-bliss`, `plan`, `review`) run a deslop pass on the final synthesised artifact before it reaches the terminal. Slop signatures (flagship phrases, restated subjects, fragile counts/line numbers, AI footers) are detected against the same Tier A/B/C taxonomy used by `/pr:deslop` and `/slop:scan`, with tone calibration against the last 50 trunk commit messages.
+The prose-producing weave commands (`ask`, `refine`, `brainstorm-and-refine`, `serene-bliss`, `plan`, `review`) run a deslop pass on the final synthesised artifact before it reaches the terminal. Slop signatures (flagship phrases, restated subjects, fragile counts/line numbers, AI footers) are detected against the same Tier A/B/C taxonomy used by `/slop:deslop` and `/slop:scan`, with tone calibration against the last 50 trunk commit messages.
 
-The shared procedural reference is `plugins/weave/references/deslop-pass.md`. The slop registry is **not** duplicated into this plugin — it is resolved at runtime from a sibling plugin:
+The shared procedural reference is `plugins/weave/references/deslop-pass.md`. It reads the slop registry from `references/signatures.yml` in this plugin; if that file is missing, the deslop pass emits a one-line skip and the synthesis is presented unchanged.
 
-1. `${CLAUDE_PLUGIN_ROOT}/../pr/references/signatures.yml`
-2. `${CLAUDE_PLUGIN_ROOT}/../slop/references/signatures.yml`
-3. If neither resolves, the deslop pass emits a one-line skip and the synthesis is presented unchanged. Install either the `pr` or `slop` plugin to enable deslop.
+### Flags
+
+Control pass count, timeout, and execution mode with explicit flags:
+
+| Flag | Values | Default | Example |
+|------|--------|---------|---------|
+| `--workers=...` | `subagents` or `model-clis` | `subagents` | `/weave:ask question --workers=model-clis` |
+| `--passes=N` | 1–5 | 1 (refine: 2) | `/weave:plan add auth --passes=2` |
+| `--timeout=N\|none` | seconds or `none` | command-specific (`model-clis` only) | `/weave:ask question --timeout=300` |
+| `--mode=fast\|balanced\|deep` | mode preset | `balanced` | `/weave:execute task --mode=deep` |
+| `--cascade` | flag (ask, review) | off | `/weave:ask question --cascade` |
+| `--variants=N` | 1–3 | 1 | `/weave:brainstorm idea --variants=2` |
+| `--judge=host\|round-robin` | Who judges each refinement pass | `host` | `/weave:refine draft --judge=round-robin` |
+| `--preamble=...` | text | built-in | `/weave:brainstorm idea --preamble='focus on perf'` |
+
+Mode presets vary by command. For the original commands (ask, plan, prompt, execute, architecture, review): `fast` (1 pass, 0.5× timeout), `balanced` (1 pass, 1× timeout), `deep` (2 passes, 1.5× timeout). For brainstorm: presets control variants and timeout (deep = 2 variants). For refine: presets control passes and timeout (balanced = 2 passes, deep = 3 passes). For brainstorm-and-refine: presets control variants, passes, and timeout (deep = 2 variants, 3 passes).
+
+Default timeouts per command: ask (450s), plan (600s), prompt (600s), review (900s), execute (1200s), architecture (1200s).
+
+Legacy trigger words (`multipass`, `x<N>`, `timeout:<seconds>`) are still recognized as aliases for backward compatibility.
+
+### Judge Modes
+
+The `--judge` flag controls who evaluates participant outputs during refinement passes (refine
+and brainstorm-and-refine commands only).
+
+`--judge=host` (default): The host agent judges every pass.
+
+`--judge=round-robin`: Judging rotates across successful participants. Native
+mode launches a fresh role-matched sub-agent; model-CLI mode uses the resolved
+provider backend for that lane. The host always weaves and falls back to host
+judging when a judge response cannot be parsed.
+
+### Interactive Configuration
+
+When flags are provided, the corresponding interactive question is skipped. Otherwise, commands prompt via `AskUserQuestion`:
+
+1. **Workers** (skipped when `--workers` is provided) — choose recommended host-native sub-agents or separate model CLIs.
+2. **Pass count** (skipped when `--passes` is provided) — choose single pass (1), multipass (2), or triple pass (3).
+3. **Timeout** (`model-clis` only; skipped when `--timeout` is provided) — choose the default, quick (0.5× default), long (1.5× default), or no timeout.
+
+Headless mode defaults to `subagents`. If the host cannot create native
+sub-agents, Weave stops and explains how to rerun with
+`--workers=model-clis`; it never launches separate CLIs implicitly.
+
+## Deslop Pass
+
+The prose-producing weave commands (`ask`, `refine`, `brainstorm-and-refine`, `serene-bliss`, `plan`, `review`) run a deslop pass on the final synthesised artifact before it reaches the terminal. Slop signatures (flagship phrases, restated subjects, fragile counts/line numbers, AI footers) are detected against the same Tier A/B/C taxonomy used by `/slop:deslop` and `/slop:scan`, with tone calibration against the last 50 trunk commit messages.
+
+The shared procedural reference is `plugins/weave/references/deslop-pass.md`. It reads the slop registry from `references/signatures.yml` in this plugin; if that file is missing, the deslop pass emits a one-line skip and the synthesis is presented unchanged.
 
 ### Flags
 

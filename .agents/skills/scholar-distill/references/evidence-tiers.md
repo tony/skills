@@ -24,8 +24,8 @@ recorded in `evidence/metrics.md`. The command goes in a `console` block, the
 output in the block beneath it.
 
 The measurement must be reproducible from the study's own artifacts or from
-the pinned corpus. A number copied from a run nobody can repeat is folklore
-wearing a decimal point.
+the pinned corpus. A number copied from a run nobody can repeat is not
+evidence.
 
 Keep a measurement together with the conditions that produced it. A score
 without the corpus it was computed over says nothing.
@@ -34,7 +34,6 @@ without the corpus it was computed over says nothing.
 
 A claim that fits neither tier does not go in the brief.
 
-That is not a counsel of perfection. Impressions are worth having, and they
-belong in `evidence/contested.md` as claims that were raised and not settled,
-where a later round can pick them up. What they may not do is appear in the
+Impressions are worth having. They belong in `evidence/contested.md` as claims
+that were raised and not settled, where a later round can pick them up. What they may not do is appear in the
 brief in the same voice as a claim that carries its evidence.

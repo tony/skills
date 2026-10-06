@@ -10,6 +10,15 @@ weaker has to carry the guarantee, and it has to be named before any
 code is written — otherwise "it still works" means whatever the person
 looking at it wants it to mean.
 
+## Contents
+
+- The contract
+- Run the spec before trusting it
+- When the branch has no tests
+- The coverage ledger
+- Reconciling
+- What counts as done
+
 ## The contract
 
 **The tests are the specification.** Three sets, and they are not
@@ -110,24 +119,3 @@ All of these, together:
 - Every ledger entry is addressed or explicitly dropped.
 - The project's own gates pass on every commit of the new series.
 - The old branch still exists.
-
-## Failure modes
-
-**Silently editing a spec test.** The single most likely way a redo
-produces a green, wrong result.
-
-**Rebuilding from the diff instead of the ledger.** Reading the old
-implementation line by line and retyping it is not a redo; it
-reproduces the structure that motivated the rewrite. Work from the
-requirements, and consult the old code when the ledger is ambiguous.
-
-**Losing an unexplained workaround.** A guard with no test and no
-comment looks like noise and is usually a scar. Treat every one as
-load-bearing until its ledger entry says otherwise.
-
-**Deleting the old branch.** It is the reference, the fallback, and
-the evidence. It outlives the rebuild.
-
-**Calling it done because the tests pass.** The tests are the spec
-only to the extent the branch wrote them. The ledger covers what they
-missed.

@@ -7,26 +7,26 @@ object graphs. Drafts durable, invariant-focused tickets.
 
 In Claude Code, add the marketplace:
 
-```console
+```text
 /plugin marketplace add tony/skills
 ```
 
 Install the plugin:
 
-```console
+```text
 /plugin install ticket@skills
 ```
 
 In Codex, add the marketplace:
 
 ```console
-codex plugin marketplace add tony/skills
+$ codex plugin marketplace add tony/skills
 ```
 
 Install the plugin:
 
 ```console
-codex plugin add ticket@skills
+$ codex plugin add ticket@skills
 ```
 
 Claude Code uses a leading slash (`/ticket:…`). Codex omits it (`ticket:…`).
@@ -53,8 +53,8 @@ Relocates depth to linked documents. Updates only on approval.
 ## Provider Object Graphs
 
 Trackers use different native nouns. The plugin maps objects to canonical roles (e.g., Linear Project ≈ Jira Epic).
-- See `references/hierarchy.md` for roles and collisions.
-- See `references/providers/` for provider-specific hierarchies and capabilities.
+- `references/hierarchy.md` lists roles and collisions.
+- `references/resolve.md` indexes the provider files under `references/providers/`.
 
 ## When to Use
 

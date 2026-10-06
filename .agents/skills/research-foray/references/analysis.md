@@ -1,6 +1,6 @@
 # Analytic standard
 
-How a finding earns its place, its confidence, and its wording. `lint-report` enforces the mechanical half; the rest is judgment against this file. `<topic.py>` is the script path from the skill that sent you here.
+How a finding earns its place, its confidence, and its wording. `lint-report` enforces the mechanical half; the rest is judgment against this file.
 
 ## Evidence before judgment
 
@@ -35,8 +35,8 @@ When sources disagree:
 
 ## Gaps and limits
 
-- Log each search as you run it: `python3 <topic.py> searched --run <run_dir> --query "<query>" --where "<engine or site>" --results <n>`. The log is how a reader reproduces the search and judges its coverage.
-- Record what you could not retrieve, and why: `add --url <url> --unretrieved "<paywall, login, removed, rate limited>"`. Such a source is a gap, never a citation.
+- Log each search as you run it (`searched`): the log is how a reader reproduces the search and judges its coverage.
+- Record what you could not retrieve, and why (`add --unretrieved`). Such a source is a gap, never a citation.
 - Report an absence only when the search that would have found it is logged.
 
 ## Unverified claims

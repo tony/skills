@@ -1,25 +1,33 @@
 # Interim Run-Directory Format
 
+## Contents
+
+- Where runs live
+- Layout
+- Locating an existing run
+- Completeness gate
+- Rendering a report
+
 The package this skill writes and every report command
 reads. Commands resolve run locations and verify completeness by
 this file.
 
 ## Where runs live
 
-`<root>/<YYYY-MM-DD>/business/<workflow>/`: the research plugin's
-topic layout, with namespace `business` and the measured skill or
-workflow as the topic (`lean-tighten`, `pr-review`).
+`<root>/<YYYY-MM-DD>/business/<workflow>/`, where the date is today's
+local date (`date +%F`) and `<workflow>` is the measured skill or
+workflow as a kebab-case slug (`lean-tighten`, `pr-review`). The same
+slug on different dates is one workflow.
 
-Open the run with the `research:foray` skill, passing
-`--namespace business` and the workflow as the topic. It picks the
-root (Documents; on WSL the Windows user's Documents), writes the
-run's `index.md`, and lists earlier runs of the same workflow.
-Without the research plugin, use `~/Documents`, or on WSL
-`/mnt/c/Users/<user>/Documents`.
+Root: the user's choice, else `~/Documents`; on WSL, the Windows user's
+`/mnt/c/Users/<user>/Documents`. These are defaults, not decisions:
+always ask the user where to write before creating a run. Running
+non-interactively: use the default root and record that decision in the
+run README.
 
-These roots are defaults, not decisions — always ask the user where
-to write before creating a run. Running non-interactively: use the
-default root and record that decision in the run README.
+Where the `research` plugin is installed, `research:foray` with
+`--namespace business` and the workflow as the topic opens the same
+folder and writes the same `index.md`.
 
 ## Layout
 
@@ -37,9 +45,10 @@ default root and record that decision in the run README.
 
 ### index.md
 
-Written when the run is opened: the topic's frontmatter (namespace,
-workflow, date) that lets `research:foray` find this run and its
-predecessors. The run's scope and window live in `README.md`.
+Written when the run is opened: frontmatter with `namespace`
+(`business`), `topic` (the workflow slug), and `date`, which lets a
+later session find this run and its predecessors. The run's scope and
+window live in `README.md`.
 
 ### README.md
 
@@ -114,9 +123,6 @@ first:
 $ sh -c 'ls -dt "$HOME"/Documents/*/business/*/ /mnt/c/Users/*/Documents/*/business/*/ 2>/dev/null' | head -5
 ```
 
-Runs written before workflow topics sit directly in
-`<date>/business/`; pass their path explicitly.
-
 Confirm the chosen run with the user before rendering anything from
 it. Running non-interactively: proceed with the newest run and record
 the choice in the output's Run section instead of asking.
@@ -140,3 +146,28 @@ in order:
 
 On any failure: do not render. List exactly what is missing and
 point at this skill to fill the gaps.
+
+## Rendering a report
+
+Every report skill follows this frame. The skill names its own tier,
+references, and body.
+
+Value is engineer-hours, cycle time, and capacity, never money.
+
+1. Locate the run: the `$ARGUMENTS` path if given, else per "Locating
+   an existing run".
+2. Run the completeness gate. Load the skill's deferred references only
+   after it passes; a refused render never loads them.
+3. Render the body, then write the report to `<run>/reports/<name>.md`.
+
+Open the output with one hero line: the skill's success form, `✓
+Evidence report: <supported claim, unknowns named>` when the package
+holds no committable figure (`audiences.md` defines it), or `⚠
+Refused: <reason>`. Then these sections, with any the skill adds:
+
+1. `## Run`: the run chosen and its pinned window.
+2. `## Gate`: the completeness result.
+3. `## Report`: where it was written and the headline.
+
+End with an `ask-user-choice` panel offering the skill's next steps.
+Skip it in plan mode or when running non-interactively.

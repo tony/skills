@@ -407,6 +407,18 @@ Treat this file like code and prune it.
   as defined in AGENTS.md/CLAUDE.md"
 - Frontmatter `allowed-tools` should use bare tool names (e.g., `Bash`) rather than
   language-specific patterns (e.g., `Bash(uv run:*)`) so skills work across any project
+- Never use `!` context expansion. Codex never expands it, and on Claude Code a
+  command that fails or lacks a grant empties the whole skill without an error.
+  Gather context in a numbered step instead.
+- Never link outside the plugin; each plugin installs alone.
+- Every step that writes human-facing prose links `../../references/prose-rules.md`.
+- Put deterministic machinery (argument parsing, process control, git
+  plumbing) in a tested script under the plugin's `scripts/`; keep judgment in
+  prose.
+
+`scripts/marketplace.py lint` enforces the `!` and plugin-boundary rules, a
+500-line ceiling on skill bodies, a contents list on any resource over 100
+lines, and that every resource is named by some file in its plugin.
 
 ### Plugin Directory Structure
 
@@ -421,6 +433,8 @@ plugins/<name>/
 │   └── plugin.json      # generated
 ├── README.md            # usage docs, prerequisites, component reference
 ├── skills/              # skills (skill-name/SKILL.md)
+├── references/          # files skills read on demand
+├── scripts/             # tested scripts skills run
 ├── agents/              # sub-agents (*.md with name, description, tools)
 ├── hooks/               # hooks (hooks.json)
 ├── .mcp.json            # MCP server configuration
@@ -435,6 +449,13 @@ accepts `commands/`; this repo does not use it, for the reasons below.
 verified by `portable --check`. Never hand-edit it; change
 `.claude-plugin/plugin.json`, which it mirrors, and regenerate.
 
+### Shared Files
+
+A file several plugins ship lives once in `shared/`, and `shared/vendor.yml`
+lists the plugins that ship it. `portable` copies it into each plugin's
+`references/` under a one-line banner, and `portable --check` fails when a copy
+differs. Edit the file in `shared/`, never a copy.
+
 ### Skills Are the Only Workflow Component
 
 Claude Code still supports `commands/`, but this repo does not use it. Every
@@ -446,8 +467,8 @@ workflow is a skill, for three reasons:
   twice.
 - Codex reads only `skills/`. It migrates `commands/` on its own, but silently
   drops any command over roughly 3.9KB, which is most of them.
-- A skill is invoked the same way from either host: `/pr:deslop` in Claude
-  Code, `pr:deslop` in Codex.
+- A skill is invoked the same way from either host: `/slop:deslop` in Claude
+  Code, `slop:deslop` in Codex.
 
 A skill carrying a workflow that only makes sense when the user asks for it by
 name sets `disable-model-invocation: true`. That keeps a command's semantics —

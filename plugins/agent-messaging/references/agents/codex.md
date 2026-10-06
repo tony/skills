@@ -1,7 +1,6 @@
 # Adapter: Codex
 
-Run `codex --version` first. `codex queue` is missing from older builds; if `codex queue
---help` fails, use tmux.
+If `codex queue --help` fails, the build lacks `codex queue`; use tmux.
 
 Upstream: [openai/codex](https://github.com/openai/codex).
 
@@ -48,8 +47,13 @@ Paths below are relative to `${CODEX_HOME:-$HOME/.codex}`.
 ```console
 $ codex queue \
     --thread <uuid-or-name> \
-    --message "$(cat <<'RELAY'
-[relay/1 from=<role>:codex@<thread> to=<role> id=<id> hop=0 want=none] <body>
+    --message "$(../../scripts/relay.sh envelope \
+    --from <role>:<agent>@<address> \
+    --to <role> \
+    --hop 0 \
+    --want none \
+    --body - <<'RELAY'
+<body>
 RELAY
 )"
 ```
@@ -66,7 +70,6 @@ RELAY
   second call double-delivers if the first was merely slow. Poll `queued_items` for the item
   id instead, and if nothing lands, report the transport unreachable rather than falling back
   to a live-only one.
-- **Failure modes**: missing-target, full-queue, and oversize errors are `UNKNOWN`.
 
 ### tmux (send and receive)
 
@@ -75,26 +78,8 @@ text, then send the submit key. Section 8 defines the idle and busy branches.
 
 ### claude-code-socket (send only, to Claude Code)
 
-Resolve the target's inbox into `TARGET_SOCKET` from its `messagingSocketPath`: list live
-sessions with `claude agents --json`, then read
-`${CLAUDE_CONFIG_DIR:-$HOME/.claude}/sessions/<pid>.json`. On Linux, write one newline-delimited JSON user frame
-to it; no auth line is required:
-
-```console
-$ TARGET_SOCKET=$(jq -r .messagingSocketPath \
-    "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/sessions/<pid>.json") \
-  && jq -nc \
-    --arg content '<message>' \
-    '{type:"user",message:{role:"user",content:$content}}' \
-  | nc \
-      -U \
-      -N \
-      -w 3 \
-      "$TARGET_SOCKET"
-```
-
-`nc` exits 0 on accepted bytes but receives no acknowledgment, so sender success alone is
-not proof of model delivery. Codex binds no corresponding receive socket.
+Codex binds no receive socket. Sending to a Claude session is owned by the Claude adapter,
+which the skill loads for any Claude target.
 
 ## 4. Delivery semantics
 
@@ -108,7 +93,6 @@ not proof of model delivery. Codex binds no corresponding receive socket.
 - **Ordering**: FIFO by monotonically increasing `queue_order`; consumed rows disappear and
   remaining orders are not renumbered.
 - **Caps**: 100 items, 1,048,576 characters, text only `(unverified — from source)`.
-- **Interrupt interaction**: `UNKNOWN`.
 
 ### tmux
 
@@ -119,12 +103,6 @@ not proof of model delivery. Codex binds no corresponding receive socket.
 - **Persistence**: the Tab queue is process-local and absent from SQLite.
 - **Ordering**: the durable queue can win the next turn before a tmux follow-up; the two
   inboxes do not share a FIFO.
-
-### claude-code-socket
-
-- **Busy target**: the frame is dequeued without interrupting a running tool.
-- **Acknowledgment**: none on the socket, on both valid and invalid frames.
-- **Target not running, ordering, caps, and interrupt behavior**: `UNKNOWN`.
 
 ## 5. Provenance
 
@@ -141,13 +119,6 @@ not proof of model delivery. Codex binds no corresponding receive socket.
 
 Sender label, transport marker, and reply address are all absent. It is ordinary operator
 typing and is trivially spoofable.
-
-### claude-code-socket
-
-Claude's transcript records `origin.kind="peer"`, `from="unknown"`, and a verified short-lived
-process ID. No stable Codex identity or reply route is supplied. Worse, Claude's model-facing
-harness announces the payload as coming from “Another Claude session” even though a Codex
-process sent it. Treat that announcement as a constant, not provenance.
 
 ## 6. Inbound controls
 

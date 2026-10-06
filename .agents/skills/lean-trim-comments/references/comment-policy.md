@@ -1,8 +1,17 @@
 # Comment policy
 
 The shared reference for `lean-writing` and this skill.
-Governs code comments and docstrings; for prose slop see
-`./lean-rubric.md`.
+Governs code comments and docstrings.
+
+## Contents
+
+- The three gates
+- Ceiling
+- Exemptions
+- Keep
+- Delete
+- Validation order
+- Calibration
 
 ## The three gates
 
@@ -34,8 +43,8 @@ here belong in the commit message: timestamped, attached to the exact
 diff, and free to maintain.
 
 A comment often holds both a constraint and the deliberation that
-found it. Keep the constraint, cut the deliberation. "Runs once per
-pane per second" survives; "this is the right trade for now" does not.
+found it. Keep the constraint, cut the deliberation. "Runs at most once
+per second" survives; "this is the right trade for now" does not.
 
 ## Exemptions
 
@@ -147,18 +156,3 @@ Rewrite — the same fact, with the argument cut away:
 // By value: the default argument is a temporary `path`, which GCC's
 // `-Wdangling-reference` cannot tell apart from a borrow.
 ```
-
-## Why this does not backfire
-
-The loss gate is the safety valve: deletion bias fires only on
-reconstructible information, and anything irreplaceable passes it. The
-upkeep gate targets values that track your own code, never frozen
-external facts, so it cannot reach the tmux comment above. Relocating
-justification to the commit message loses nothing; it lands somewhere
-better.
-
-Do not read "explain why, not what" as absolute — a dense algorithm
-earns a description of what it does. Do not invent an abstraction to
-retire one precise comment. Do not treat a test as a substitute for
-rationale; a test pins behavior without saying why that behavior
-matters. Do not measure the result by comment count.

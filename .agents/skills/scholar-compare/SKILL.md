@@ -15,9 +15,6 @@ metadata:
 Two studies, one question: where do these vocabularies agree, where do they
 collide, and what does each one know that the other does not.
 
-This is what makes studying many projects pay off rather than producing many
-unrelated studies.
-
 User arguments: $ARGUMENTS
 
 ## Two shapes of comparison
@@ -74,8 +71,8 @@ $ <analyzer> <study-dir>
 
 ## Output
 
-Open with a one-line hero (`✓ <n> mappings, <n> collisions, <n> uncovered` or
-`⚠ Blocked: <reason>`), then exactly these sections:
+Per `references/output-contract.md`. Hero: `✓ <n> mappings, <n>
+collisions, <n> uncovered` or `⚠ Blocked: <reason>`. Sections:
 
 1. `## Mappings` — same concept, different term, with both definitions.
 2. `## Collisions` — same term, different concept, and what a reader moving
@@ -83,13 +80,12 @@ Open with a one-line hero (`✓ <n> mappings, <n> collisions, <n> uncovered` or
 3. `## Coverage` — what each side has that the other lacks, and whether that
    is a difference or a gap.
 
-End with an `ask-user-choice` panel offering next steps (for example: study
-the uncovered area, publish the mapping, stop here) — skip the panel only in
-plan mode.
+Next-step options: study the uncovered area, publish the mapping, stop here.
+
+Write it per `references/prose-rules.md`.
 
 
 ## Portability notes
 
-- `ask-user-choice` — present the listed options and wait for the user to pick one. Hosts with a structured multiple-choice tool (Claude Code's `AskUserQuestion`) should use it; otherwise print a numbered list and wait for a numbered reply. Never proceed on an assumed answer.
 - `$ARGUMENTS` — the text the user passed when invoking this skill. If your host does not substitute it, read it as the user's request in the current turn, and ask when there is none.
 - Bundled files — every relative path in this skill points at a file shipped inside this skill directory. Read them from here, not from the host's plugin tree.

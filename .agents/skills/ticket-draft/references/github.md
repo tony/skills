@@ -1,5 +1,7 @@
 # GitHub
 
+Contents: Scope; Native hierarchy; Semantic roles; Orthogonal objects; References and autolinks; Reading and writing; Naming traps.
+
 ## Scope
 
 Organization or personal account > Repository. Every Issue is created in a
@@ -39,8 +41,6 @@ Issue, recording `native_type: issue`, `native_display_type: Epic`,
   Project number field or tracking Issue is the nearest convention.
 
 ## Orthogonal objects
-
-None of these is a parent; never convert one into `parent_of`.
 
 - GitHub Project (view) — native to organization-owned repositories, absent on
   personal accounts, optional; items are `grouped_by` it. It collects and
@@ -107,13 +107,12 @@ prefix renders as literal text and the reference dies silently.
 
 `@username` and `@org/team-name` are side effects, not formatting: they
 subscribe the person or team and notify them, switchable per team by maintainers
-([team notifications][team]). Never put one in unapproved draft text. UNVERIFIED:
+([team notifications][team]). UNVERIFIED:
 whether a bare `#N` resolves to a Discussion, and whether a Project item has any
 bare reference form.
 
 ## Reading and writing
 
-A local agent has a real backend; no paste-only fallback is needed.
 `gh issue create` takes `--title`, `--body-file`, `--label`, `--milestone`,
 `--project`, `--type`, `--parent`, `--blocked-by` and `--blocking`, so a
 drafted body goes in from a file undamaged by shell quoting.
@@ -123,9 +122,9 @@ gh issue create --title "..." --body-file ./draft.md --type Bug
 ```
 
 `gh issue edit`, `gh issue view` and `gh project item-add` cover rewriting an
-Issue and attaching it to a Project. Sub-issue relations are CLI flags from
-`gh` 2.94.0: `--parent` on create, and `--parent`, `--add-sub-issue`,
-`--remove-sub-issue` and `--remove-parent` on `gh issue edit`.
+Issue and attaching it to a Project. Sub-issue relations are CLI flags: `--parent` on create, and `--parent`,
+`--add-sub-issue`, `--remove-sub-issue` and `--remove-parent` on `gh issue edit`.
+Run `gh issue create --help` to confirm the installed version has them.
 
 Reach for REST only where the CLI does not go — `PATCH
 /repos/{owner}/{repo}/issues/{issue_number}/sub_issues/priority` to reorder,
@@ -140,8 +139,8 @@ appear then.
 ## Naming traps
 
 Never say Epic or Initiative as though it were native. Never say bare
-"Project" — write GitHub Project (view), account-owned and not a Repository;
-classic Projects are a separate retired thing. It is not a Linear Project and
+"Project" — write GitHub Project (view), account-owned and not a Repository.
+It is not a Linear Project and
 does not parent its items. Never say "board" as
 an object; it is a Project view layout. Never call a Milestone a parent or an
 epic, and never say "sprint" — the native noun is a Project iteration field

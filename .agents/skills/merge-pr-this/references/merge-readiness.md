@@ -3,12 +3,20 @@
 Shared contract for this skill and the `merge-pr-multiple` skill. Both
 commands read this file before touching any PR.
 
+## Contents
+
+- Readiness gate
+- Rebase procedure
+- Merge commit message
+- Strategy and flag passthrough
+- After each merge
+
 ## Readiness gate
 
 A PR merges only after every check below is confirmed. When any of
 them is ambiguous, do discovery first — read the PR, its checks, and
 its branch — and if the answer is still unclear, ask the user rather
-than guessing. Do no harm.
+than guessing.
 
 - **Open and not draft**: `gh pr view <n> --json state,isDraft`.
   A draft or closed PR halts the run.
@@ -53,8 +61,8 @@ its disclosed core loop, covered by the roster shown up front.
 4. If conflicts were resolved, run the project's fast quality gates
    — format, lint, typecheck, scoped tests, discovered from its
    AGENTS.md/CLAUDE.md — and fix failures before pushing.
-5. Force-push with `git push --force-with-lease` — never bare
-   `--force`.
+5. Force-push the PR branch, and only that branch, with
+   `git push --force-with-lease` — never bare `--force`.
 6. Wait for CI on the rebased head: `gh pr checks <n> --watch`.
 
 ## Merge commit message
@@ -106,7 +114,7 @@ out to be needed, ask before using it.
 `--admin` yields to AGENTS.md because it overrides a control the
 repository set for everyone, not because repo rules outrank flags in
 general. A flag that authorizes a step the user would otherwise run by
-hand — the `release-cut` skill's `--tag` and `--push-tag` — is the user's
+hand, such as a release command's tag and push flags, is the user's
 decision and stands.
 
 ## After each merge

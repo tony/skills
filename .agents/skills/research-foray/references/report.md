@@ -1,17 +1,17 @@
 # Report standard
 
-How a research or assessment report is laid out, and the checks it passes before it ships. `topic.py lint-report` enforces the mechanical half; the rest is judgment against this file. `<topic.py>` is the script path from the skill that sent you here.
+How a research or assessment report is laid out, and the checks it passes before it ships. `topic.py lint-report` enforces the mechanical half; the rest is judgment against this file.
 
 ## Writing it
 
 1. Read `index.md`, every card, and the prior run's report when there is one. With no topic named, use the most recently updated topic from `status.md`. Read `analysis.md`.
 2. Decide the answer before writing. It becomes the title and the summary's first sentence.
 3. Rank the findings by how much the answer depends on them; the first finding carries the most weight. Group by theme across sources, never one finding per source.
-4. Draw each exhibit from `data/` with `python3 <topic.py> chart`, and embed it as `` ![<takeaway>](charts/<name>.svg) ``.
+4. Draw each exhibit from `data/` with `python3 <topic.py> chart --csv <run_dir>/data/<name>.csv --out <run_dir>/charts/<name>.svg`, and embed it as `` ![<takeaway>](charts/<name>.svg) ``.
 5. Write `report.md` in today's run, ending with an empty `## Sources` heading. When the newest run is dated before today, open today's run per `continue.md` step 2; only `--resume` keeps writing in the earlier run. A rerun writes a new report in the new run; the earlier one stays where it is. A resumed run keeps the previous version under `history/`.
 6. Run `python3 <topic.py> verify --run <run_dir>` after the last `add`, then write the Sources table instead of typing it: `python3 <topic.py> sources --write --run <run_dir>` fills the report's `## Sources` section.
 7. After the last edit, run `python3 <topic.py> claims --reviewed <run_dir>/report.md` and check every cited line against its quotes, per `verify.md` step 3. `--reviewed` logs the check against this exact version of the report; editing it again means checking again.
-8. Run `python3 <topic.py> check --run <run_dir>` and quote its result. Only `ok: true` from this call lets you call the report done.
+8. Run `python3 <topic.py> check --run <run_dir>` and quote its result.
 
 ## Shape
 
@@ -43,7 +43,7 @@ For a reader who decides and moves on, add `brief.md` beside the report: the tit
 
 ## Exhibits
 
-- Draw from a CSV under `data/` with `topic.py chart`, so the chart can be redrawn and the numbers re-checked.
+- Draw from a CSV under `data/` with `topic.py chart` (`--csv` and `--out` are required), so the chart can be redrawn and the numbers re-checked.
 - Bars for comparisons, lines for change over time. No pie charts, no 3D, no dual axes.
 - One unit per chart: pass `--value` for the column to draw, and split values in different units into separate charts.
 - The title is the takeaway ("Review latency fell by two thirds after rollout"), not the metric name.
@@ -60,21 +60,14 @@ For a reader who decides and moves on, add `brief.md` beside the report: the tit
 
 Write for a reader who was not there and will judge the report by whether they can disagree with it.
 
-- Lead with the point. Active voice, concrete nouns, direct verbs.
-- Name the source or cut the claim. "Studies show" and "experts agree" do not survive.
-- Cut: delve, leverage, utilize, robust, seamless, comprehensive, cutting-edge, transformative, game changer, paradigm shift, tapestry, realm, pivotal, testament, it's worth noting, in today's world, in conclusion, ultimately.
-- Cut patterns: binary contrasts ("not X, it's Y"), colon reveals ("The best part: it learns"), faux-insight setups ("what most people miss"), importance puffery ("marks a pivotal moment"), trailing `-ing` analysis ("highlighting its commitment"), summary-recap endings, em-dash clusters, emoji in headings, decorative bold.
-- End on the last concrete point or the next action.
 - Keep tool vocabulary (warnings, flags, script and command names) out of the Summary and Findings; Method may name the commands that produced a number.
-
-Patterns adapted from AGENTS.md § AI Slop Prevention and [no-ai-slop v1.0.6](https://github.com/petergyang/no-ai-slop/blob/v1.0.6/SKILL.md).
 
 ## Before it ships
 
 - `python3 <topic.py> check --run <run_dir>` returns `ok: true` in this session. It re-verifies every source, compares the Sources table with the manifest, runs `lint-report --strict`, and runs `scan` at the run's audience.
-- `lint-report` checks the answer title, Summary first, standard section order, no links or ids in the summary, and every `[S#]` in the manifest. `--strict` also fails on absolute titles; uncited, unquoted, uncaptured, unpinned, unretrieved, or placeholder-address sources; a Findings line that shares no words with its source's quotes; a claim with neither a source id nor `[unverified]`; a finding or recommendation with no stated confidence, or high confidence its sources cannot carry; unverified claims the summary hides; a recorded conflict the report never sets out; a missing claims review; label headings; and the prose patterns above.
+- `lint-report` checks the report's shape (answer title, Summary first, section order, no links or ids in the summary) and that every `[S#]` is in the manifest. `--strict` also fails its warnings: source, citation, pin, confidence, conflict, and claims-review gaps, label headings, and prose patterns. Its output names each failure.
 - The summary, read alone, answers the question.
-- Invoke the `lean:lean-writing` skill on the report when it is installed; otherwise reread it against the Prose rules above.
+- Reread the report against the prose rules.
 
 ## Output
 
@@ -83,4 +76,4 @@ Open with a one-line hero (`✓ <report path>: <n> findings, <n> sources, check 
 1. `## Answer`: the report's title and summary, verbatim.
 2. `## Checks`: the `check` result from this session, each gate with its counts.
 
-End with an `ask-user-choice` panel (for example: verify sources, tighten the prose, stop). Skip it in plan mode; without an interactive host, print the options as a numbered list.
+Panel options: verify sources, tighten the prose, stop.
