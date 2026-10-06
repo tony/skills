@@ -96,7 +96,7 @@ Guard
   clean, and keeps the `pre-reset-*` pins `reset-main` needs for recovery.
 - `guard prune [--repo R] [--days N]`: drops old pinned refs.
 
-`docs/repo-guard-protocol.md` describes the guard.
+`repo-guard-protocol.md` describes the guard.
 
 ## Session layout
 

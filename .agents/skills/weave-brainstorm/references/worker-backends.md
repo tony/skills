@@ -145,7 +145,7 @@ After a read-only WorkItem returns, or after a mutating participant's diffs
 and snapshots have been captured, remove only that participant's exact
 session-scoped worktree. Native workers never run `checkout`, `clean`, or
 `reset` against the user's checkout. The repo guard reports any change to the
-checkout and never repairs it on its own (see `docs/repo-guard-protocol.md`).
+checkout and never repairs it on its own.
 
 If the host cannot create native sub-agents, stop with a direct explanation.
 In an interactive session, offer a new explicit choice to use separate model

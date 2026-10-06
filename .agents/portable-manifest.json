@@ -1219,14 +1219,13 @@
         "plugins/weave/skills/architecture/SKILL.md"
       ],
       "bundled": {
-        "docs/repo-guard-protocol.md": "plugins/weave/docs/repo-guard-protocol.md",
         "references/engine.py": "plugins/weave/scripts/engine.py",
         "references/ensemble-core.md": "plugins/weave/references/ensemble-core.md",
         "references/present-results.md": "plugins/weave/references/present-results.md",
         "references/prose-rules.md": "plugins/weave/references/prose-rules.md",
         "references/worker-backends.md": "plugins/weave/references/worker-backends.md"
       },
-      "bytes": 147843
+      "bytes": 143860
     },
     {
       "name": "weave-ask",
@@ -1234,7 +1233,6 @@
         "plugins/weave/skills/ask/SKILL.md"
       ],
       "bundled": {
-        "docs/repo-guard-protocol.md": "plugins/weave/docs/repo-guard-protocol.md",
         "references/deslop-pass.md": "plugins/weave/references/deslop-pass.md",
         "references/engine.py": "plugins/weave/scripts/engine.py",
         "references/ensemble-core.md": "plugins/weave/references/ensemble-core.md",
@@ -1243,7 +1241,7 @@
         "references/prose-rules.md": "plugins/weave/references/prose-rules.md",
         "references/worker-backends.md": "plugins/weave/references/worker-backends.md"
       },
-      "bytes": 156694
+      "bytes": 152711
     },
     {
       "name": "weave-brainstorm",
@@ -1251,13 +1249,12 @@
         "plugins/weave/skills/brainstorm/SKILL.md"
       ],
       "bundled": {
-        "docs/repo-guard-protocol.md": "plugins/weave/docs/repo-guard-protocol.md",
         "references/engine.py": "plugins/weave/scripts/engine.py",
         "references/ensemble-core.md": "plugins/weave/references/ensemble-core.md",
         "references/present-results.md": "plugins/weave/references/present-results.md",
         "references/worker-backends.md": "plugins/weave/references/worker-backends.md"
       },
-      "bytes": 134700
+      "bytes": 130717
     },
     {
       "name": "weave-brainstorm-and-refine",
@@ -1265,7 +1262,6 @@
         "plugins/weave/skills/brainstorm-and-refine/SKILL.md"
       ],
       "bundled": {
-        "docs/repo-guard-protocol.md": "plugins/weave/docs/repo-guard-protocol.md",
         "references/deslop-pass.md": "plugins/weave/references/deslop-pass.md",
         "references/engine.py": "plugins/weave/scripts/engine.py",
         "references/ensemble-core.md": "plugins/weave/references/ensemble-core.md",
@@ -1273,7 +1269,7 @@
         "references/refine-cycle.md": "plugins/weave/references/refine-cycle.md",
         "references/worker-backends.md": "plugins/weave/references/worker-backends.md"
       },
-      "bytes": 151603
+      "bytes": 147620
     },
     {
       "name": "weave-execute",
@@ -1281,14 +1277,13 @@
         "plugins/weave/skills/execute/SKILL.md"
       ],
       "bundled": {
-        "docs/repo-guard-protocol.md": "plugins/weave/docs/repo-guard-protocol.md",
         "references/engine.py": "plugins/weave/scripts/engine.py",
         "references/ensemble-core.md": "plugins/weave/references/ensemble-core.md",
         "references/present-results.md": "plugins/weave/references/present-results.md",
         "references/prose-rules.md": "plugins/weave/references/prose-rules.md",
         "references/worker-backends.md": "plugins/weave/references/worker-backends.md"
       },
-      "bytes": 146543
+      "bytes": 142560
     },
     {
       "name": "weave-fix-review",
@@ -1300,7 +1295,7 @@
         "references/present-results.md": "plugins/weave/references/present-results.md",
         "references/prose-rules.md": "plugins/weave/references/prose-rules.md"
       },
-      "bytes": 113197
+      "bytes": 113686
     },
     {
       "name": "weave-plan",
@@ -1308,7 +1303,6 @@
         "plugins/weave/skills/plan/SKILL.md"
       ],
       "bundled": {
-        "docs/repo-guard-protocol.md": "plugins/weave/docs/repo-guard-protocol.md",
         "references/deslop-pass.md": "plugins/weave/references/deslop-pass.md",
         "references/engine.py": "plugins/weave/scripts/engine.py",
         "references/ensemble-core.md": "plugins/weave/references/ensemble-core.md",
@@ -1316,7 +1310,7 @@
         "references/prose-rules.md": "plugins/weave/references/prose-rules.md",
         "references/worker-backends.md": "plugins/weave/references/worker-backends.md"
       },
-      "bytes": 151118
+      "bytes": 147135
     },
     {
       "name": "weave-prompt",
@@ -1324,14 +1318,13 @@
         "plugins/weave/skills/prompt/SKILL.md"
       ],
       "bundled": {
-        "docs/repo-guard-protocol.md": "plugins/weave/docs/repo-guard-protocol.md",
         "references/engine.py": "plugins/weave/scripts/engine.py",
         "references/ensemble-core.md": "plugins/weave/references/ensemble-core.md",
         "references/present-results.md": "plugins/weave/references/present-results.md",
         "references/prose-rules.md": "plugins/weave/references/prose-rules.md",
         "references/worker-backends.md": "plugins/weave/references/worker-backends.md"
       },
-      "bytes": 146272
+      "bytes": 142289
     },
     {
       "name": "weave-refine",
@@ -1339,7 +1332,6 @@
         "plugins/weave/skills/refine/SKILL.md"
       ],
       "bundled": {
-        "docs/repo-guard-protocol.md": "plugins/weave/docs/repo-guard-protocol.md",
         "references/deslop-pass.md": "plugins/weave/references/deslop-pass.md",
         "references/engine.py": "plugins/weave/scripts/engine.py",
         "references/ensemble-core.md": "plugins/weave/references/ensemble-core.md",
@@ -1347,7 +1339,7 @@
         "references/refine-cycle.md": "plugins/weave/references/refine-cycle.md",
         "references/worker-backends.md": "plugins/weave/references/worker-backends.md"
       },
-      "bytes": 150980
+      "bytes": 146997
     },
     {
       "name": "weave-review",
@@ -1355,7 +1347,6 @@
         "plugins/weave/skills/review/SKILL.md"
       ],
       "bundled": {
-        "docs/repo-guard-protocol.md": "plugins/weave/docs/repo-guard-protocol.md",
         "references/deslop-pass.md": "plugins/weave/references/deslop-pass.md",
         "references/engine.py": "plugins/weave/scripts/engine.py",
         "references/ensemble-core.md": "plugins/weave/references/ensemble-core.md",
@@ -1364,7 +1355,7 @@
         "references/prose-rules.md": "plugins/weave/references/prose-rules.md",
         "references/worker-backends.md": "plugins/weave/references/worker-backends.md"
       },
-      "bytes": 160875
+      "bytes": 156892
     },
     {
       "name": "weave-serene-bliss",
@@ -1372,7 +1363,6 @@
         "plugins/weave/skills/serene-bliss/SKILL.md"
       ],
       "bundled": {
-        "docs/repo-guard-protocol.md": "plugins/weave/docs/repo-guard-protocol.md",
         "references/deslop-pass.md": "plugins/weave/references/deslop-pass.md",
         "references/engine.py": "plugins/weave/scripts/engine.py",
         "references/ensemble-core.md": "plugins/weave/references/ensemble-core.md",
@@ -1380,7 +1370,7 @@
         "references/refine-cycle.md": "plugins/weave/references/refine-cycle.md",
         "references/worker-backends.md": "plugins/weave/references/worker-backends.md"
       },
-      "bytes": 154596
+      "bytes": 150613
     }
   ],
   "duplication": {
@@ -1388,7 +1378,6 @@
     "plugins/scholar/references/prose-rules.md": 11,
     "plugins/weave/references/present-results.md": 11,
     "plugins/weave/scripts/engine.py": 11,
-    "plugins/weave/docs/repo-guard-protocol.md": 10,
     "plugins/weave/references/ensemble-core.md": 10,
     "plugins/weave/references/worker-backends.md": 10,
     "plugins/weave/references/prose-rules.md": 7,

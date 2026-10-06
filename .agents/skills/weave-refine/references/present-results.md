@@ -111,6 +111,26 @@ single-verified, then unverified). Omit consensus tags when only one lane partic
 >    declined) renders none of this: one sentence stating the result, then
 >    what the user needs to do next.
 
+Reply in this shape, as plain text outside any code fence, with plain
+bullets and no bold (never `- **Label:** ...`):
+
+```text
+Refined through 2 passes
+
+## Final Result
+Retry delivery with exponential backoff, capped at 5 attempts.
+
+## Evolution Summary
+- Pass 1 picked the maintainer draft (34/40).
+- Pass 2 merged the skeptic's cap on attempts.
+
+## Rationale Chain
+- Backoff avoids hammering a failing endpoint.
+
+## Attribution
+Host-native sub-agents: maintainer, skeptic, builder.
+```
+
 ### Step 4: Render Attribution
 
 Shared across all RESULT_KINDs. Render as the final body section:
