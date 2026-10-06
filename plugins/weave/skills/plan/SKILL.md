@@ -2,7 +2,7 @@
 name: plan
 description: Weave planning — compare independent adversarial plans, then synthesize the best one
 allowed-tools: ["Bash", "Read", "Grep", "Glob", "Write", "Task", "AskUserQuestion", "EnterPlanMode"]
-argument-hint: "<task description> [--passes=N] [--timeout=N|none] [--mode=fast|balanced|deep] [--no-deslop|--quiet-deslop|--verbose-deslop] [--workers=subagents|model-clis]"
+argument-hint: "[--passes=N] [--timeout=N|none] [--mode=fast|balanced|deep] [--no-deslop|--quiet-deslop|--verbose-deslop] [--workers=subagents|model-clis] <task description>"
 user-invocable: true
 disable-model-invocation: true
 ---
@@ -11,7 +11,7 @@ disable-model-invocation: true
 
 Get implementation plans from independent adversarial workers in parallel, then synthesize the best plan. Host-native sub-agents are the default; separate model CLIs are optional. The output is a finalized plan file ready for execution.
 
-This is a **project-read-only** command: no file in your repository is written, edited, or deleted. Session artifacts live in `$SESSION_DIR`, outside your repository, and the engine's repo guard reports any change to your checkout.
+This is a **project-read-only** command: no file in your repository is written, edited, or deleted. Session artifacts live in the session directory, outside your repository, and the engine's repo guard reports any change to your checkout.
 
 The task comes from `$ARGUMENTS`; if there are none, ask the user what they want planned.
 
@@ -35,7 +35,7 @@ The selected backend governs the whole session: dispatch, retry, judging, refine
 
 Call `EnterPlanMode` immediately and stay in it: the final output is the host's plan file, and the user approves execution from it. Never call `ExitPlanMode`. Emit `Plan mode active — drafting implementation plan…`.
 
-In plan mode the main agent reads (`Read`, `Grep`, `Glob`), asks questions, launches Task agents, and writes the plan file. It runs read-only engine commands (`flags`, `context`, `judge-parse`) directly. Everything else that writes goes to a **session agent**: a `general-purpose` Task agent with `mode: "default"`. Give it the exact engine commands or file contents; it returns each command's JSON verbatim. This covers `init`, `prompt`, `worktrees`, `labels`, `update`, `guard`, and every file written under `$SESSION_DIR`.
+In plan mode the main agent reads (`Read`, `Grep`, `Glob`), asks questions, launches Task agents, and writes the plan file. It runs read-only engine commands (`flags`, `context`, `judge-parse`) directly. Everything else that writes goes to a **session agent**: a `general-purpose` Task agent with `mode: "default"`. Give it the exact engine commands or file contents; it returns each command's JSON verbatim. This covers `init`, `prompt`, `worktrees`, `labels`, `update`, `guard`, and every file written under `<session_dir>`.
 
 Without plan mode (headless runs), proceed normally and present the final plan as markdown text instead of a plan file.
 
@@ -47,7 +47,7 @@ Without plan mode (headless runs), proceed normally and present the final plan a
 
 2. Follow `ensemble-core.md` (Start the session) with `--command plan`. Run `init` through the session agent. The flags result also reports the deslop flags in `flags`. It asks each unresolved setting through `AskUserQuestion`.
 
-3. Build the context packet per `ensemble-core.md` (Context packet), using `context` for the repo state. Lead with the changed files and their diff stats, key snippets of code the plan touches, and known unknowns the plan should address. The session agent writes it to `$SESSION_DIR/context-packet.md`.
+3. Build the context packet per `ensemble-core.md` (Context packet), using `context` for the repo state. Without a repository, say "no repository" up front and plan as greenfield: no existing files, conventions, or tests are assumed. Lead with the changed files and their diff stats, key snippets of code the plan touches, and known unknowns the plan should address. The session agent writes it to `<session_dir>/context-packet.md`.
 
 ---
 
@@ -79,11 +79,11 @@ Apply `ensemble-core.md` (Blind judging, Synthesis protocol) to this pass's outp
 
 Then, in this order:
 
-1. Have the session agent write the synthesis to `$SESSION_DIR/pass-NNNN/synthesis.md` per `../../references/prose-rules.md`. The plan must tell the executor to run the project's quality gates before each commit.
+1. Have the session agent write the synthesis to `<session_dir>/pass-NNNN/synthesis.md` per `../../references/prose-rules.md`. The plan must tell the executor to run the project's quality gates before each commit.
 
 2. On the final pass only (pass 1 when `passes` is 1, else the last pass of Phase 4), unless `--no-deslop` was set: read `../../references/deslop-pass.md` and apply it with `ARTIFACT_PATH` set to that file, `SESSION_DIR`, `BASELINE_SHA` set to `baseline_sha` from `init`, and `DESLOP_MODE` from the flags. Re-read `synthesis.md` for the desloped plan. The deslop summary block stays out of the plan body; emit one chat line instead, such as `Desloped (-84 words, 3 trims)`.
 
-3. Read `../../references/present-results.md` and apply it with `RESULT_KIND` = `plan`, `ARTIFACT_PATH` = the desloped `synthesis.md`, `SESSION_DIR`, `PASS_COUNT` = the resolved pass count, `IN_PLAN_MODE` = true, `LABEL_MAP_PATH` = `$SESSION_DIR/pass-NNNN/label-map.json`. Read `WORKER_BACKEND`, `PARTICIPANTS`, `EXECUTORS`, and `MODELS` from `session.json`.
+3. Read `../../references/present-results.md` and apply it with `RESULT_KIND` = `plan`, `ARTIFACT_PATH` = the desloped `synthesis.md`, `SESSION_DIR`, `PASS_COUNT` = the resolved pass count, `IN_PLAN_MODE` = true, `LABEL_MAP_PATH` = `<session_dir>/pass-NNNN/label-map.json`. Read `WORKER_BACKEND`, `PARTICIPANTS`, `EXECUTORS`, and `MODELS` from `session.json`.
 
 4. Write the rendered plan to the plan file, then emit `Plan ready for review.`
 
@@ -103,7 +103,7 @@ Skip when `passes` is 1. For pass N of 2 to `passes`, do not re-run the task. Ta
 >
 > For each item, give your resolution with evidence (file paths, line numbers, code references).
 
-1. Create the pass (`pass-dir --session "$SESSION_DIR" --pass <N>`) and write the prompt to `pass-<N>/prompt.md`, both through the session agent.
+1. Create the pass (`pass-dir --session "<session_dir>" --pass <N>`) and write the prompt to `pass-<N>/prompt.md`, both through the session agent.
 2. Dispatch as in Phase 2 with pass `<N>`. The Claude lane reads prior artifacts by path; external lanes get them inline.
 3. Re-synthesize per Phase 3: re-score only affected dimensions and re-adjudicate only targeted disputes. Write `pass-<N>/synthesis.md`.
 4. Stop early when no score moved by more than 1 and no new conflict appeared.

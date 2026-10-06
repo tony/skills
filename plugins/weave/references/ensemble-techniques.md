@@ -14,12 +14,12 @@ the residual procedure is skipped; it needs multiple lanes to mean anything.
 
 ## Contents
 
-- Technique 1 — Cascade gate
-- Technique 2 — Residual re-attack
+- Technique 1: Cascade gate
+- Technique 2: Residual re-attack
 
 ---
 
-## Technique 1 — Cascade gate (`--cascade`)
+## Technique 1: Cascade gate (`--cascade`)
 
 Every weave invocation normally pays full-ensemble price up front. With
 `--cascade`, a cheap Maintainer-only pass runs first, self-verifies, and
@@ -35,7 +35,7 @@ Inputs: `SESSION_DIR`, `worker_backend`, the command's Phase 3
 Maintainer prompt (verbatim, role preamble included), and the command's
 Verify Claims procedure.
 
-### Step 1 — Cheap pass
+### Step 1: Cheap pass
 
 Run the command's Maintainer lane exactly as its Phase 3 specifies,
 using the selected worker backend, prompt, and context packet. Capture
@@ -44,41 +44,41 @@ model-CLI mode. Do not launch the Skeptic or Builder yet. Running the
 lane verbatim makes the output reusable unchanged if the gate
 escalates.
 
-### Step 2 — Confidence gate
+### Step 2: Confidence gate
 
 Run the command's Verify Claims procedure (synthesis Step 1) against
-the cheap-pass output itself — self-verification against the codebase,
+the cheap-pass output itself - self-verification against the codebase,
 classifying each claim `verified` / `plausible-unverified` / `false`.
 Then evaluate these triggers in order. **Escalate if ANY fires**; each
 is a yes/no check an LLM can execute without judgment about the gate
 itself:
 
-1. **Contradicted claim** — any claim classified `false` during
+1. **Contradicted claim** - any claim classified `false` during
    self-verification.
-2. **Unverified load-bearing claim** — any claim classified
+2. **Unverified load-bearing claim** - any claim classified
    `plausible-unverified` whose removal would change the answer's
    conclusion or a finding's severity. Test: delete the claim mentally;
    if the conclusion or severity must change, it is load-bearing.
-3. **Ambiguous request** — the question or review focus admits two or
+3. **Ambiguous request** - the question or review focus admits two or
    more materially different readings, and the output committed to one
    without codebase evidence deciding between them. Record each reading
    in the ledger.
-4. **Coverage gap** — an explicit part of the request (a sub-question,
+4. **Coverage gap** - an explicit part of the request (a sub-question,
    a named file or focus area) has no corresponding content in the
    output.
-5. **Judgment call** — the conclusion rests on preference or design
+5. **Judgment call** - the conclusion rests on preference or design
    trade-off rather than facts checkable in the repo (e.g. "which
    approach is better"). Single-lane judgment has no error correction,
    so it always warrants the ensemble. For `review`: any finding
-   reported at **Critical** severity fires this trigger — Criticals
+   reported at **Critical** severity fires this trigger - Criticals
    always get ensemble confirmation before reaching the user.
 
 If no trigger fires, the verdict is **early-exit**.
 
-### Step 3 — Ledger and event
+### Step 3: Ledger and event
 
-Write `$SESSION_DIR/cascade.md`: the verdict (`early-exit` or
-`escalate`), then one line per trigger — fired or not, with the
+Write `<session_dir>/cascade.md`: the verdict (`early-exit` or
+`escalate`), then one line per trigger - fired or not, with the
 specific claim/reading/gap as evidence when fired. Append to
 `events.jsonl`:
 
@@ -91,7 +91,7 @@ specific claim/reading/gap as evidence when fired. Append to
 Early-exit ends the run: any remaining configured passes are not run,
 making this pass the final pass. Skip the remaining lanes, blind
 judging, and rubric scoring (nothing to compare). Keep the command's
-Critic step — it is the only remaining error correction — and the
+Critic step - it is the only remaining error correction - and the
 deslop pass. Present with `CASCADE_STATE` = `early-exit`:
 the hero identifies the Maintainer lane in subagent mode or the Claude
 lane in model-CLI mode, and the next-step panel gains **Escalate to full
@@ -118,10 +118,10 @@ the output.
 
 ---
 
-## Technique 2 — Residual re-attack (multi-pass, N ≥ 2)
+## Technique 2: Residual re-attack (multi-pass, N ≥ 2)
 
 Pass N+1 must not re-run the whole task with the prior synthesis as
-context. It re-attacks **only the residuals** — the regions where pass
+context. It re-attacks **only the residuals** - the regions where pass
 N could not reach an evidence-backed, agreed answer.
 
 ### Residual sources
@@ -129,12 +129,12 @@ N could not reach an evidence-backed, agreed answer.
 After completing pass N synthesis in `ask` or `review`, extract
 residuals from exactly four sources:
 
-1. **Unresolved conflicts** — adjudication Step 3 items where codebase
+1. **Unresolved conflicts** - adjudication Step 3 items where codebase
    evidence could not pick a side.
-2. **Failed verification** — claims classified `false` (needs a
+2. **Failed verification** - claims classified `false` (needs a
    correct replacement) or load-bearing `plausible-unverified` (needs
    evidence) in `verification.md`.
-3. **Unincorporated critic findings** — items in `critic.md` that were
+3. **Unincorporated critic findings** - items in `critic.md` that were
    neither folded into the synthesis nor refuted with evidence.
 4. **Split consensus**: items marked `split` in `consensus.md` that
    verification did not settle.
@@ -145,7 +145,7 @@ weave could not reconcile, and judge overrides or split judgments.
 
 ### Ledger format
 
-Write `$SESSION_DIR/pass-NNNN/residuals.md` (internal bookkeeping, not
+Write `<session_dir>/pass-NNNN/residuals.md` (internal bookkeeping, not
 shown to the user). One entry per residual:
 
 - **Source**: conflict | verification | critic | split-consensus
@@ -173,7 +173,7 @@ Apply each resolved item as a local edit to the quoted region of the
 pass-N synthesis; every untouched passage carries into the pass N+1
 synthesis verbatim. Re-score only the rubric dimensions the resolved
 items affect. Content a participant volunteered outside the ledger is
-discarded unread — scope discipline is what makes residual passes
+discarded unread - scope discipline is what makes residual passes
 cheap.
 
 ---

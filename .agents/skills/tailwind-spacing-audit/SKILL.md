@@ -16,11 +16,12 @@ fixed widths all control the space between the same visual peers. Each
 pair of adjacent items gets exactly one mechanism.
 
 Use `$ARGUMENTS` as the target scope. If it is empty, ask which
-component or file to audit.
+component or file to audit. Without a question tool, stop with the halted
+result below.
 
 ## Workflow
 
-### Step 0: Detect framework
+### Step 0: Detect framework and Tailwind version
 
 Find the template files in scope and the class attribute each uses:
 
@@ -28,8 +29,16 @@ Find the template files in scope and the class attribute each uses:
 - `*.vue`: `class=`, `:class=`
 - `*.svelte`, `*.astro`, `*.html`, `*.erb`, `*.blade.php`: `class=`
 
-Search every framework present. The catalog's commands match both
-`class=` and `className=`.
+The detect commands in `references/patterns.md` need `rg` (ripgrep). If
+it is missing, skip them and read the files in scope.
+
+Read the installed Tailwind version: the `tailwindcss` entry in the
+lockfile (`package-lock.json`, `pnpm-lock.yaml`, `yarn.lock`,
+`bun.lock`), else the range in `package.json`. As a cross-check, an
+`@import "tailwindcss"` line in a stylesheet means v4, and
+`@tailwind base` or a `tailwind.config.*` file means v3. If the version
+cannot be found, say so in the result and keep Pattern 7 advice
+version-neutral.
 
 ### Step 1: Structural audit
 
@@ -37,8 +46,8 @@ Read `references/patterns.md`. Scan the component and draw a spacing
 map: every spacing mechanism acting on the group the user cares about.
 
 ```
-[LinkedIn] --gap-1--> [Wrench] --gap-1--> [Babylon.js] --me-1+flex--> [Theme(me-2)]
-            ^ parent gap                   ^ margin leak    ^ separate container
+[Logo] --gap-1--> [Tools] --gap-1--> [Docs] --me-1+flex--> [Theme(me-2)]
+        ^ parent gap                  ^ margin leak    ^ separate container
 ```
 
 Call out how many mechanisms act between visual peers, which items sit
@@ -49,26 +58,33 @@ an item whose siblings size to content.
 
 Match each finding to a pattern in `references/patterns.md`. Run that
 pattern's detect command for codebase-wide scope. Each match needs a
-read in context before it counts.
+read in context before it counts. A command that returns nothing for a
+file the user named is not a clean bill: read the file.
 
 ### Step 3: Refactor
 
-Apply in this order. Preserve existing breakpoints, and change only
-spacing classes.
+Propose the changes as a diff or before/after; edit files only when the
+user asked to fix or apply them. For a pasted snippet, reply with the
+code. Preserve existing breakpoints, and change only spacing classes.
+Work in this order:
 
-1. **Merge fragmented containers.** Put one visual group in one flex
+1. Merge fragmented containers. Put one visual group in one flex
    container with one `gap-*`. Remove the outer `me-*` and `ms-*` that
    compensated for the split.
-2. **Pick one authority per relationship.** `gap-*` on the parent for
+2. Pick one authority per relationship. `gap-*` on the parent for
    uniform spacing; margin on a child only for a deliberate exception;
    padding only for space inside an item.
-3. **Standardize peer envelopes.** Peer buttons, links, and toggles
+3. Standardize peer envelopes. Peer buttons, links, and toggles
    share one height class and one horizontal padding, and no `w-*`
    unless every peer has the same one.
-4. **Flatten single-child wrappers.** Move the alignment classes onto
+4. Flatten single-child wrappers. Move the alignment classes onto
    the child.
-5. **Keep intentional breaks.** A divider between nav groups is
+5. Keep intentional breaks. A divider between nav groups is
    deliberate. Ask before normalizing a difference that may be design.
+   Without a question tool, keep the break and list it under the
+   findings. When you keep separate containers, name the evidence that
+   they are separate groups (a divider, different roles, a
+   `justify-between`), or merge them.
 
 ### Step 4: Validate
 
@@ -82,16 +98,26 @@ Redraw the spacing map and confirm:
 
 ## Output
 
-Write it per `references/prose-rules.md`. Present, in order:
+Write it per `references/prose-rules.md`. Present these sections
+in order, with these headings:
 
-1. **Spacing map**
-2. **Anti-patterns found**: numbered, with the pattern name and the
-   elements involved
-3. **Proposed refactor**: a focused diff or before/after
-4. **Validation checklist**: Step 4 filled in
+1. Spacing map
+2. Anti-patterns found: one plain sentence per finding, naming the
+   pattern and the elements involved, with no bold lead-ins
+3. Proposed refactor: a focused diff or before/after
+4. Validation checklist: Step 4 filled in
 
 For a straightforward fix, collapse this to a short explanation and the
-code.
+code. Do not restate that distances stay the same.
+
+Halted or empty runs give one result sentence, then what the user does:
+
+- No target given: "Nothing audited: no file or directory was given."
+  Pass a file or directory.
+- No Tailwind class attributes in scope: "No Tailwind classes found in
+  `<scope>`." Check the path, or point at the template files.
+- No issues found: "No spacing issues found in `<scope>`." Name the files
+  you read, since the detect commands can miss dynamic classes.
 
 
 ## Portability notes

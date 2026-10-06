@@ -1,23 +1,46 @@
 # Spacing anti-pattern catalog
 
-Seven patterns, ordered by how often they cause visible unevenness. Each
-has a signal, a detect command, a before and after, and when to leave it
-alone. Examples use `className`; Vue, Svelte, Astro, HTML, ERB, and Blade
-use `class`. Physical margins (`ml-*`, `mr-*`) and logical margins
-(`ms-*`, `me-*`) are the same anti-pattern.
+Each pattern has a signal, a detect command, a before and after, and
+when to leave it alone. Examples use `className`; Vue, Svelte, Astro,
+HTML, ERB, and Blade use `class`. Physical margins (`ml-*`, `mr-*`) and
+logical margins (`ms-*`, `me-*`; Tailwind 3.3 and later) are the same
+anti-pattern.
 
-Detect commands match both attributes in every supported template
-extension. Each hit needs a read in context.
+## Detect command limits
+
+Every command ends with a search path. Replace the `.` with the target
+from `$ARGUMENTS`. Run them with `rg` (ripgrep); without it, read the
+files in scope instead.
+
+The commands are candidate finders, not proof. They search class tokens
+in single, double, and backtick strings, so `class='...'`, `cn("...")`,
+`clsx(...)`, and template literals match. Patterns 3, 5, and 6 use
+multi-line mode (`-U`) so a tag split over several lines still matches.
+
+They cannot see:
+
+- classes assembled at runtime (`` `gap-${n}` ``), `@apply`, `cva`
+  variants, and component-library props
+- `className` values built across several string arguments (Pattern 7
+  has a fallback command for this)
+- tags whose opening line holds `>` inside an attribute other than
+  `=>`, such as a generic `<Foo<T>>`
+- anything in a file outside the glob
+
+Zero hits is not proof of a clean file. When a command returns nothing
+for a file the user named, read that file and apply the pattern by eye.
+Every hit needs a read in context.
 
 ## Contents
 
+- Detect command limits
 - Pattern 1: Container fragmentation
 - Pattern 2: Margin and gap mixing
 - Pattern 3: Padding asymmetry
 - Pattern 4: Fixed width on content-sized items
 - Pattern 5: Wrapper nesting
 - Pattern 6: Hit target inconsistency
-- Pattern 7: space-x and space-y with gap
+- Pattern 7: space-x and space-y with gap (v3 and v4)
 - Decision tree
 
 ## Pattern 1: Container fragmentation
@@ -26,12 +49,16 @@ Items that read as one row are split across sibling containers, each
 with its own spacing rule. No `rg` pattern finds this; walk the DOM.
 
 Detect: list the visual peers, then check that all share one flex or
-grid parent. Margins on a container that has a flex sibling hint at it:
+grid parent. The command lists every horizontal margin (`ml-`, `mr-`,
+`ms-`, `me-`, `mx-` with a number or arbitrary value; `mx-auto` is
+skipped). It has no sibling logic; walk the DOM to see which margins
+compensate for a split.
 
 ```console
 $ rg -n \
-    '(class|className)=[^>]*[ "'"'"':]-?m[esrlx]-[0-9]' \
-    -g '*.{tsx,jsx,vue,svelte,astro,html,erb,blade.php}'
+    -e '(?:^|[\s"\x27\x60:])-?m[xesrl]-[0-9\[]' \
+    -g '*.{tsx,jsx,vue,svelte,astro,html,erb,blade.php}' \
+    .
 ```
 
 Before:
@@ -62,42 +89,52 @@ The Wrench to Babylon.js gap is `gap-1`. The Babylon.js to Theme gap is
 After:
 
 ```tsx
-<div className="flex items-center gap-2">
+<div className="flex items-center gap-1">
   <a className="flex h-12 items-center px-2" href="/social">
     <img className="h-6 w-auto" alt="Social" src="..." />
   </a>
   <button className="flex h-12 items-center px-2">
     <WrenchIcon className="h-5 w-5" />
   </button>
-  <button className="flex h-8 items-center gap-1.5 rounded px-2">
+  <button className="flex h-12 items-center gap-1.5 rounded px-2">
     <span>B</span><span>Babylon.js</span>
   </button>
-  <button className="flex h-8 items-center gap-1.5 rounded px-2">
+  <button className="flex h-12 items-center gap-1.5 rounded px-2">
     <span>Theme</span>
   </button>
 </div>
 ```
 
-One container, one `gap-2`. The `me-*` hacks and `w-24` are gone
-(Patterns 2 and 4), and the social link gained `px-2` (Pattern 3).
+One container, one `gap-1`: the Wrench to Babylon.js gap is unchanged,
+and the Babylon.js to Theme gap shrinks to match it (it was `me-1` plus
+the outer parent's spacing). Pick the gap value you want the whole row
+to have. The `me-*` hacks and `w-24` are gone (Patterns 2 and 4), the
+social link gained `px-2` (Pattern 3), and all four peers share `h-12`
+(Pattern 6).
 
 ## Pattern 2: Margin and gap mixing
 
 A flex or grid parent sets `gap-*`, and some children also carry
 margin. The margin adds to the gap on that edge.
 
-Detect: find parents with gap, then margins on their children:
+Detect: find parents with gap, then margins on their children. A file in
+both lists is a candidate:
 
 ```console
 $ rg -n \
-    '(class|className)="[^"]*(flex|grid)[^"]*gap-' \
-    -g '*.{tsx,jsx,vue,svelte,astro,html,erb,blade.php}'
+    -e '(?:^|[\s"\x27\x60:])gap(?:-[xy])?-[0-9\[]' \
+    -g '*.{tsx,jsx,vue,svelte,astro,html,erb,blade.php}' \
+    .
 ```
 
+Then list margins, numeric and arbitrary values. `mx-auto` is skipped
+because it centers a block instead of spacing peers:
+
 ```console
 $ rg -n \
-    '(class|className)=[^>]*[ "'"'"':]-?m[trblxyse]?-[0-9a\[ps]' \
-    -g '*.{tsx,jsx,vue,svelte,astro,html,erb,blade.php}'
+    -e '(?:^|[\s"\x27\x60:])-?m[trblxyse]?-[0-9\[]' \
+    -g '*.{tsx,jsx,vue,svelte,astro,html,erb,blade.php}' \
+    .
 ```
 
 Before:
@@ -145,12 +182,18 @@ Peer interactive elements in one row have different `px-*`, `py-*`, or
 `p-*`. Their content sits unevenly even when the gaps match.
 
 Detect: list the buttons, links, and toggles in one container, extract
-their padding classes, and compare. Candidates:
+their padding classes, and compare. The command prints each
+interactive element's class attribute, including multi-line tags and
+elements with `=>` props. Component names outside the pattern
+(`IconButton` matches; `Action` does not) need a read of the file:
 
 ```console
 $ rg -n \
-    '<(a|button)[^>]*(class|className)=' \
-    -g '*.{tsx,jsx,vue,svelte,astro,html,erb,blade.php}'
+    -U \
+    -o \
+    -e '<(?:a|button|Button|Link|NavLink|[A-Z]\w*(?:Button|Link))\s(?:[^>]|=>)*?(?:class|className)=(?:"[^"]*"|\x27[^\x27]*\x27|\{[^}]*\})' \
+    -g '*.{tsx,jsx,vue,svelte,astro,html,erb,blade.php}' \
+    .
 ```
 
 Before:
@@ -179,13 +222,14 @@ different visual group.
 One item in a flex row has `w-*` while its siblings size to content.
 Extra space pools inside it and it reads wider than its peers.
 
-Detect: `w-` followed by a digit, not preceded by `-`, so `min-w-*` and
-`max-w-*` do not match:
+Detect: `w-` followed by a digit or `[`, at the start of a token, so
+`min-w-*` and `max-w-*` do not match:
 
 ```console
 $ rg -n \
-    '(class|className)=[^>]*[ "'"'"':]w-[0-9]' \
-    -g '*.{tsx,jsx,vue,svelte,astro,html,erb,blade.php}'
+    -e '(?:^|[\s"\x27\x60:])w-[0-9\[]' \
+    -g '*.{tsx,jsx,vue,svelte,astro,html,erb,blade.php}' \
+    .
 ```
 
 Before:
@@ -213,12 +257,17 @@ A single-child `<div>` with flex alignment classes wraps an element that
 could take those classes itself. The parent's `gap-*` then acts between
 wrappers, whose size differs from their content.
 
-Detect: divs with flex and `items-center`, then check each for one child:
+Detect: divs with `flex` and `items-center` in either order (not
+`inline-flex`, `flex-col`, or `place-items-center`), then check each for
+one child. The command reads the first string inside `cn(...)` or
+`clsx(...)` too:
 
 ```console
 $ rg -n \
-    '<div (class|className)="[^"]*flex[^"]*items-center[^"]*">' \
-    -g '*.{tsx,jsx,vue,svelte,astro,html,erb,blade.php}'
+    -U \
+    -e '<div\s(?:[^>]|=>)*?(?:class|className)=\{?(?:\w+\()?["\x27\x60](?:[^"\x27\x60]*\s)?(?:flex\s(?:[^"\x27\x60]*\s)?items-center|items-center\s(?:[^"\x27\x60]*\s)?flex)(?:\s[^"\x27\x60]*)?["\x27\x60]' \
+    -g '*.{tsx,jsx,vue,svelte,astro,html,erb,blade.php}' \
+    .
 ```
 
 Before:
@@ -244,14 +293,8 @@ child cannot take, and any wrapper around more than one child.
 Peer interactive elements have different `h-*` classes, so clickable
 areas differ and items jitter vertically.
 
-Detect: collect the `h-*` classes of the peers in one container and
-compare.
-
-```console
-$ rg -n \
-    '<(a|button)[^>]*(class|className)=[^>]*[ "'"'"':]h-[0-9]' \
-    -g '*.{tsx,jsx,vue,svelte,astro,html,erb,blade.php}'
-```
+Detect: run the Pattern 3 command, then compare the `h-*` classes of
+the peers in one container.
 
 Before:
 
@@ -270,23 +313,47 @@ the icon keeps its visual size.
 
 ## Pattern 7: space-x and space-y with gap
 
-In Tailwind v4, `space-x-*` and `space-y-*` add margin to every child
-except the last (`& > :not(:last-child)`). With `gap-*` on the same
-container, every gap becomes gap plus margin. The space utilities also
-misbehave with wrapping and grids.
+`space-x-*` and `space-y-*` put margin on children, and `gap-*` adds
+space between them, so on one container every gap becomes gap plus
+margin. The space utilities also misbehave with wrapping and grids. The
+selector depends on the Tailwind version found in Step 0:
 
-Detect: both utilities in one class list, in either order:
+- v4: margin goes on every child except the last
+  (`> :not(:last-child)`). Hiding the last child leaves its previous
+  sibling's margin behind as trailing space.
+- v3: margin goes on every child after the first visible one
+  (`> :not([hidden]) ~ :not([hidden])`), and children with the `hidden`
+  attribute are skipped.
+- Version unknown: state the collision (gap plus margin) and make no
+  claim about hidden children.
+
+Selector source: the section on the `space-x-*` and `space-y-*` selector change in the
+[Tailwind v4 upgrade guide](https://tailwindcss.com/docs/upgrade-guide).
+It also recommends migrating to `gap` when the selector change causes
+problems. The page is unversioned; fetch it when the version question
+decides the advice.
+
+Detect: both utilities in one string, in either order. The command also
+reads template literals and `cn()` strings that hold both:
 
 ```console
 $ rg -n \
-    '(class|className)="[^"]*gap-[^"]*space-[xy]-' \
-    -g '*.{tsx,jsx,vue,svelte,astro,html,erb,blade.php}'
+    -U \
+    -e '["\x27\x60](?:[^"\x27\x60]*\s)?gap(?:-[xy])?-[0-9\[][^"\x27\x60]*\sspace-[xy]-[0-9\[]' \
+    -e '["\x27\x60](?:[^"\x27\x60]*\s)?space-[xy]-[0-9\[][^"\x27\x60]*\sgap(?:-[xy])?-[0-9\[]' \
+    -g '*.{tsx,jsx,vue,svelte,astro,html,erb,blade.php}' \
+    .
 ```
 
+If the utilities sit in different arguments, such as
+`cn("flex gap-2", "space-x-3")`, the command misses them. List every
+space utility and read the surrounding call:
+
 ```console
 $ rg -n \
-    '(class|className)="[^"]*space-[xy]-[^"]*gap-' \
-    -g '*.{tsx,jsx,vue,svelte,astro,html,erb,blade.php}'
+    -e '(?:^|[\s"\x27\x60:])space-[xy]-[0-9\[]' \
+    -g '*.{tsx,jsx,vue,svelte,astro,html,erb,blade.php}' \
+    .
 ```
 
 Before:
@@ -299,8 +366,9 @@ Before:
 </div>
 ```
 
-Every gap is 8 + 12 = 20px, and the margin follows the child, so hiding
-or reordering the last child changes the spacing.
+Every gap is 8 + 12 = 20px, and the margin follows the child, so
+reordering children changes the spacing (in v4, hiding the last child
+does too).
 
 After:
 

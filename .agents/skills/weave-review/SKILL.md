@@ -6,13 +6,13 @@ description: >-
 disable-model-invocation: true
 allowed-tools: ["Bash", "Read", "Grep", "Glob", "Write", "Task", "AskUserQuestion", "EnterPlanMode", "ExitPlanMode"]
 metadata:
-  argument-hint: "[focus area] [--cascade] [--passes=N] [--timeout=N|none] [--mode=fast|balanced|deep] [--no-deslop|--quiet-deslop|--verbose-deslop] [--workers=subagents|model-clis]"
+  argument-hint: "[--cascade] [--passes=N] [--timeout=N|none] [--mode=fast|balanced|deep] [--no-deslop|--quiet-deslop|--verbose-deslop] [--workers=subagents|model-clis] [focus area]"
   source: "plugins/weave/skills/review/SKILL.md"
 ---
 
 # Weave Code Review
 
-Run code review through independent adversarial workers in parallel, then synthesize their findings into a unified report with evidence-backed adjudication. Host-native sub-agents are the default; separate model CLIs are optional. This is a **project-read-only** command: no file in your repository is written, edited, or deleted. Session artifacts live in `$SESSION_DIR`, outside your repository.
+Run code review through independent adversarial workers in parallel, then synthesize their findings into a unified report with evidence-backed adjudication. Host-native sub-agents are the default; separate model CLIs are optional. This is a **project-read-only** command: no file in your repository is written, edited, or deleted. Session artifacts live in the session directory, outside your repository.
 
 The focus area comes from `$ARGUMENTS`; without one, review the whole branch.
 
@@ -46,7 +46,7 @@ $ python3 <engine> context \
     --full-diff
 ```
 
-It returns `trunk`, `branch`, `commits` on the branch, and the diff stat and full diff in `markdown`. Read the project's CLAUDE.md / AGENTS.md as well.
+It returns `repo`, `trunk`, `base`, `branch`, `commits` on the branch, and the diff stat and full diff in `markdown`. `base` is `origin/<trunk>` as last fetched, else the local trunk, so the comparison may be stale; say so in the plan. When `repo` is false there is nothing to review: reply in one sentence that `review` needs a git repository with commits, and stop. Read the project's CLAUDE.md / AGENTS.md as well.
 
 The plan must contain:
 
@@ -56,7 +56,7 @@ The plan must contain:
 4. **Known concerns**: areas the user flagged, and risky patterns in the diff (large functions, missing tests, API changes)
 5. **Prompt strategy**: what each reviewer's prompt should emphasize
 
-Present the plan and wait for approval, then exit plan mode (`ExitPlanMode`). If plan mode is unavailable, write the plan as numbered steps in your response and continue. The session starts only after approval, because it writes outside the repository.
+Present the plan and wait for approval, then exit plan mode (`ExitPlanMode`). If plan mode is unavailable, write the plan as numbered steps in your response and continue; without an interactive way to approve, continue too. The session starts only after approval, because it writes outside the repository.
 
 ---
 
@@ -80,7 +80,7 @@ The shared worker prompt body is:
 
 > <the focus from $ARGUMENTS, or: Review the changes on this branch for bugs, security issues, and convention violations.>
 >
-> Perform a thorough code review of the changes on this branch compared to origin/<trunk>. The context packet holds the diff; run `git diff origin/<trunk>...HEAD` for more. Read the CLAUDE.md or AGENTS.md at the repo root for project conventions.
+> Perform a thorough code review of the changes on this branch compared to <base>. The context packet holds the diff; run `git diff <base>...HEAD` for more. Read the CLAUDE.md or AGENTS.md at the repo root for project conventions.
 >
 > Review for:
 > 1. **Bugs and logic errors**: incorrect behavior, edge cases, off-by-one errors
@@ -97,7 +97,7 @@ The shared worker prompt body is:
 >
 > Assign a confidence score (0-100) to each issue. Only report issues with confidence >= 70.
 
-Follow `ensemble-core.md` (Dispatch lanes) with this body, then (Close the repo guard). If no external reviewer is available, continue with the Claude lane alone and say so.
+Follow `ensemble-core.md` (Dispatch lanes) with this body, substituting `base` from `context` for `<base>`, then (Close the repo guard). If no external reviewer is available, continue with the Claude lane alone and say so.
 
 ---
 
@@ -125,13 +125,13 @@ Group findings that refer to the same issue (same file, similar description). Ea
 
 ### Write and polish the report
 
-Write the report to `$SESSION_DIR/pass-NNNN/synthesis.md` per `references/prose-rules.md`.
+Write the report to `<session_dir>/pass-NNNN/synthesis.md` per `references/prose-rules.md`.
 
 Run the deslop pass on the final pass only (pass 1 when `passes` is 1, else the last pass of Phase 5), unless `--no-deslop` was set. Read `references/deslop-pass.md` and apply it with `ARTIFACT_PATH` set to that file, `SESSION_DIR`, `BASELINE_SHA` set to `baseline_sha` from `init`, and `DESLOP_MODE` from the flags. Re-read `synthesis.md` and render from the desloped report; the deslop summary block follows the Attribution section.
 
 ### Present the report
 
-Read `references/present-results.md` and apply it with `RESULT_KIND` = `review`, `ARTIFACT_PATH` = `$SESSION_DIR/pass-NNNN/synthesis.md`, `SESSION_DIR`, `PASS_COUNT` = the resolved pass count, `IN_PLAN_MODE` = false, `LABEL_MAP_PATH` = `$SESSION_DIR/pass-NNNN/label-map.json`, `CASCADE_STATE` = `early-exit`, `escalated`, or null without `--cascade`. Read `WORKER_BACKEND`, `PARTICIPANTS`, `EXECUTORS`, and `MODELS` from `session.json`.
+Read `references/present-results.md` and apply it with `RESULT_KIND` = `review`, `ARTIFACT_PATH` = `<session_dir>/pass-NNNN/synthesis.md`, `SESSION_DIR`, `PASS_COUNT` = the resolved pass count, `IN_PLAN_MODE` = false, `LABEL_MAP_PATH` = `<session_dir>/pass-NNNN/label-map.json`, `CASCADE_STATE` = `early-exit`, `escalated`, or null without `--cascade`. Read `WORKER_BACKEND`, `PARTICIPANTS`, `EXECUTORS`, and `MODELS` from `session.json`.
 
 ---
 
@@ -139,7 +139,7 @@ Read `references/present-results.md` and apply it with `RESULT_KIND` = `review`,
 
 Skip when `passes` is 1. Read `references/ensemble-techniques.md` (Technique 2). For pass N of 2 to `passes`, do not re-run the task: extract `pass-<N-1>/residuals.md` from the prior pass, and stop on an empty ledger.
 
-1. Create the pass: `python3 <engine> pass-dir --session "$SESSION_DIR" --pass <N>`.
+1. Create the pass: `python3 <engine> pass-dir --session "<session_dir>" --pass <N>`.
 2. Write the residual prompt to `pass-<N>/prompt.md` (ledger entries only), then dispatch as in Phase 3 with pass `<N>`.
 3. Merge resolutions back into the prior synthesis; untouched findings carry forward verbatim. Re-score only affected dimensions and re-adjudicate only the ledger items. Write `pass-<N>/synthesis.md`.
 4. Stop early when no score moved by more than 1 and no new conflict appeared.

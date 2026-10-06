@@ -4,18 +4,20 @@ description: >-
   Use when applying accepted self-improvement sweep findings to skills as
   individually gated edits and commits.
 disable-model-invocation: true
-allowed-tools: ["Bash", "Read", "Grep", "Glob", "Edit", "Write", "AskUserQuestion", "Task"]
+allowed-tools: ["Bash", "Read", "Grep", "Glob", "Edit", "Write", "AskUserQuestion"]
 metadata:
-  argument-hint: "[<finding id>...] [--dry-run]"
+  argument-hint: "[<finding id>...] [--ledger <path>] [--dry-run]"
   source: "plugins/self-improvement/skills/apply/SKILL.md"
 ---
 
 # this skill
 
-Land what the sweep proved. The ledger already carries the evidence
-and the change class per finding; this skill turns each one into the
-smallest edit that removes the gap, behind the gates that catch a bad
-one.
+Land what the sweep proved. The ledger carries the evidence, the change
+class, and the expected change per finding; this skill turns each finding
+into the smallest edit that removes the gap, behind the gates that catch a
+bad one.
+
+`<sweep.py>` is `references/sweep.py` in every step below.
 
 ## The rule that makes this safe
 
@@ -24,52 +26,69 @@ NO EDIT WITHOUT A LEDGER ENTRY
 ```
 
 Every edit traces to a finding with a ratio, a spread, a window, and a
-verdict. An improvement noticed while working here is out of scope: it
-has no usage evidence.
-
-Recompute the ledger key the sweep recorded — the catalog's `HEAD` and
-the finding-set digest. A mismatch means the catalog moved since the
-sweep: sweep again rather than apply a picture that no longer holds.
+verdict. An improvement noticed while working here is out of scope: it has
+no usage evidence.
 
 ## `$ARGUMENTS` contract
 
-Non-flag text selects finding ids; empty takes every accepted finding
-in the ledger, in the order the ledger ranked them.
+Non-flag text selects finding ids; empty takes every finding in the
+ledger, in the order the ledger lists them. `--ledger <path>` names the
+ledger the sweep printed; without it, the default per-worktree ledger is
+used. `--dry-run` shows the edits and the gates each would run, and stops
+before the first write.
 
-| Flag | Default | Effect |
-|---|---|---|
-| `--dry-run` | off | Show the edits and the gates each would run, and stop before the first write. |
+## Phase 0: Preconditions
 
-## Phase 0: Situational awareness
+Check these in order. The first failure halts the run.
 
-Read the project's conventions files for its commit format and its
-quality checks, and confirm the tree is clean. A dirty tree halts:
-mixing a catalog edit with unrelated work is how an unreviewable
-commit gets made.
+1. The ledger exists and its key still holds. Run this once, before the
+   first edit; the run's own commits move `HEAD` afterwards.
+
+   ```console
+   $ python3 <sweep.py> ledger-verify <ledger path>
+   ```
+
+   Exit 1 means the ledger is missing, edited, or older than the catalog.
+   Sweep again; do not apply a picture that no longer holds.
+2. The tree is clean (`git status --porcelain` prints nothing). Mixing a
+   catalog edit with unrelated work makes an unreviewable commit.
+3. Read the project's conventions files for its commit format and quality
+   checks.
+
+A halted run is one result sentence, then what the user must do (run the
+sweep, supply `--ledger`, commit or stash the dirty files). It has no other
+sections.
 
 ## Phase 1: Orchestration plan
 
 Enter plan mode if the host supports it (Claude Code: `EnterPlanMode`;
-Cursor / Codex / Gemini: `/plan` or `Shift+Tab`) and present, per
-finding: the id, the smallest edit that removes the gap, the files it
-touches, and the gate it must clear. Then the commit sequence.
+Cursor / Codex / Gemini: `/plan` or `Shift+Tab`) and present, per finding:
+the id, the smallest edit that removes the gap, the files it touches, the
+gate it must clear, and its `expected_change`. Then the commit sequence.
 
-Say which findings you are **not** applying and why. A sweep proposes
-more than a catalog should absorb at once.
+Say which findings you are not applying and why. A sweep proposes more
+than a catalog should absorb at once.
 
-Wait for approval, then exit plan mode.
+Wait for approval, then exit plan mode. Without an interactive question
+tool, print the plan and stop. The exception is a request that named
+finding ids: that request approves editing and committing those findings
+on a topic branch, and nothing broader. Never push, open a pull request,
+or touch an unnamed finding without approval.
+
+If the current branch is the trunk (`main`, `master`, or the remote's
+default branch), create a topic branch from it before the first edit.
 
 ## Phase 2: Edit, one finding at a time
 
-Match the edit to the verdict the sweep recorded, not to the
-reviewer's instinct:
+Match the edit to the verdict the sweep recorded, not to the reviewer's
+instinct:
 
-- A **capability gap** grows behavior the skill did not have.
-- A **trust gap** echoes behavior it already performs, so the reader
-  can see it fired. This is usually one line and never a new mechanism.
-- A **present but not binding** finding never gets another sentence
-  restating the rule that already failed. It gets a checked output
-  gate, a resolved-and-echoed value, or an argument.
+- A capability gap grows behavior the skill did not have.
+- A trust gap echoes behavior it already performs, so the reader can see
+  it fired. This is usually one line and never a new mechanism.
+- A present-but-not-binding finding never gets another sentence restating
+  the rule that already failed. It gets a checked output gate, a
+  resolved-and-echoed value, or an argument.
 
 Prefer the smallest shape that works: a default over an argument, an
 argument over a new skill. A new skill is the last resort and needs its
@@ -82,51 +101,56 @@ issue may not.
 
 ## Phase 3: Gate each edit
 
-Gate any edit that touches a `description` on the catalog's routing
-checks (collision ceiling, description limits) before committing; a
-description that reads better while colliding with a sibling makes both
-worse. When the catalog ships a router or eval command, feed a redacted
-mined prompt through it to confirm the ranking moved as the finding
-predicted.
+Gate any edit that touches a `description` on the catalog's routing checks
+(collision ceiling, description limits) before committing; a description
+that reads better while colliding with a sibling makes both worse. When
+the catalog ships a router or eval command, feed a redacted mined prompt
+through it to confirm the ranking moved as the finding predicted.
 
 Then run the project's own gates as its conventions define them, plus
-whatever regenerates derived manifests. A red gate stops the run at
-that finding; report and hand back.
+whatever regenerates derived manifests. A red gate stops the run at that
+finding; report and hand back.
 
 ## Phase 4: Commit
 
-One finding, one commit, each behind its own green gate, in the
-project's commit format. Describe the defect and the fix in the
-project's own terms and do not cite the finding id or the sweep; the
-ledger holds that mapping. Write the message per
-`references/prose-rules.md`.
+One finding, one commit, each behind its own green gate, in the project's
+commit format. Describe the defect and the fix in the project's own terms
+and do not cite the finding id or the sweep; the ledger holds that
+mapping. Write the message per `references/prose-rules.md`.
+
+The message carries no `Co-Authored-By` trailer, no "Generated with" or
+other tool trailer, and no emoji. Hosts add them by default, so strip them.
 
 ## Phase 5: Verify what you wrote
 
-Gates cannot see contradictions in skill prose: a phase that promises
-what another forbids, a flag documented as absolute that a panel
-overrides, a handoff to a skill that cannot accept the input. Re-read
-the edits against the skills they landed in, as an independent
-adversarial pass when the host supports sub-agents.
+Gates cannot see contradictions in skill prose. One pass, as an independent
+reviewer sub-agent when the host supports them, checks each edit against
+the skill it landed in for exactly these three defects:
 
-Fix what it finds before handing back. While the branch is unpushed,
-amend the commit that introduced the defect; once pushed, the fix lands
-as its own commit.
+- A phase promises what another phase forbids.
+- A flag is documented as absolute and a panel overrides it.
+- A handoff goes to a skill that cannot accept the input.
+
+Fix what it finds before handing back. While the branch is unpushed, fix a
+defect in an earlier commit with `git commit --fixup=<sha>` followed by
+`git rebase --autosquash <sha>^` (set `GIT_SEQUENCE_EDITOR=true` to skip the
+editor). Once pushed, the fix lands as its own commit.
 
 ## Output contract
 
 Write the report per `references/prose-rules.md`.
 
-1. Hero block (1–3 lines): `N applied, M skipped` plus the branch.
-2. `## Applied` — per finding: the edit, the gates it cleared, and its
-   commit subject.
-3. `## Skipped` — findings not applied and why, including any the plan
+1. Hero line, first line of the reply: `N applied, M skipped` plus the
+   branch. Nothing precedes it.
+2. `## Applied`: per finding, the edit, the gates it cleared, its commit
+   subject, and its `expected_change` with the ledger's re-sweep date, so
+   the next sweep can check it. Plain bullets, no bold label on each.
+3. `## Skipped`: findings not applied and why, including any the plan
    deliberately held back.
-4. `## Verification` — gate commands run and their results, and what
-   the adversarial pass found and fixed.
-5. End with an `ask-user-choice` panel: open a pull request, sweep
-   again, or stop. In a non-interactive run, record the options and
-   stop.
+4. `## Verification`: gate commands run and their results, and what the
+   Phase 5 pass found and fixed. Name no temp directory or local path.
+5. End with an `ask-user-choice` panel: open a pull request, sweep again,
+   or stop. In a non-interactive run, record the options and stop.
 
 
 ## Portability notes

@@ -185,16 +185,23 @@ findings. For aggregation, use the `slop-deslop` skill.
 ## Step 8: Materialize the patch series
 
 Always materialize first; the series is the user's review surface. The
-directory name `<ts>-<pid>` prevents collisions on fast re-invocation:
+run directory resolves through `git rev-parse --git-path`, so it works
+in a linked worktree where `.git` is a file. Create it and print its
+path:
 
-```bash
-mkdir -p ".git/slop-scan/$(date -u +%Y%m%d-%H%M%SZ)-$$"
+```console
+$ d=$(git rev-parse --git-path "slop-scan/$(date -u +%Y%m%d-%H%M%SZ)-$$") && mkdir -p "$d" && echo "$d"
 ```
+
+Shell state does not persist between Bash calls: use the printed path
+literally as `<run-dir>` in every later command, and likewise the
+literal values of `BASELINE_SHA`, `START_SHA`, and the gate commands
+recorded in `0000-PLAN.md`.
 
 Layout:
 
 ```
-.git/slop-scan/<ts>-<pid>/
+<run-dir>/
 ├── 0000-PLAN.md                       (plan + registry source path + SHA-256)
 ├── NNNN-edit-<file-slug>-<sigid>.patch
 ├── advisory.md                        (Tier C, over-budget, declined, historical-only, dirty-file findings)
@@ -225,7 +232,7 @@ Reached only with `--apply`. Ask through `ask-user-choice`:
 |---|---|
 | **Patches only** (default) | Nothing is applied. |
 | **Apply and commit** | Run the per-finding commit loop. |
-| **Cancel** | Delete `.git/slop-scan/<ts>-<pid>/` and exit. |
+| **Cancel** | Delete `<run-dir>/` and exit. |
 
 ## Step 10: Per-finding commit loop
 
@@ -271,8 +278,13 @@ With `--run-tests`:
 ${TEST_CMD}
 ```
 
-- The formatter applies its changes; re-stage them with
-  `git add -- "<file>"`.
+- The formatter applies its changes; re-stage only `<file>` with
+  `git add -- "<file>"`. A project-wide formatter may also rewrite other
+  files: after the gates, run `git status --porcelain`, and restore
+  every path other than `<file>` with
+  `git restore --source=HEAD --staged --worktree -- "<path>"` so the
+  next finding starts from a clean tree. A path in `DIRTY_AT_START` is
+  never restored; treat a change to it as a gate failure.
 - A linter with `--fix` applies fixes; re-stage. An error it cannot fix
   is a gate failure.
 - A type checker never modifies files; its errors are gate failures.
@@ -299,12 +311,17 @@ Then apply `--on-fail`:
 
 ### 10e. On gate pass
 
-Read the finding's message from `commits.json`, write it to a temp file,
-and commit:
+Read the finding's message from `commits.json` and write it to a temp
+file made with `mktemp "${TMPDIR:-/tmp}/slop-msg.XXXXXX"`. Commit with
+it, then delete the file:
 
-```bash
-git commit -F "<temp-message-file>"
+```console
+$ git commit -F "<temp-message-file>"
 ```
+
+The message carries no `Co-Authored-By:` line, no "Generated with" or
+other tool trailer, and no emoji; hosts add these by default, so strip
+them before committing.
 
 If a `pre-commit` or `commit-msg` hook rejects the commit, treat it as a
 gate failure: roll back as in 10d, mark the finding `hook-failed`,
@@ -374,7 +391,7 @@ Gate-failed findings:
   <signature-id> in <file>:<line> — <gate>: <stderr summary>
   …
 
-Patch series: .git/slop-scan/<ts>-<pid>/
+Patch series: <run-dir>/
 ```
 
 Do not push; the user decides. A plain `git push` suffices because no

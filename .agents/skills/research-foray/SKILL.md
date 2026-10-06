@@ -1,8 +1,8 @@
 ---
 name: research-foray
 description: >-
-  Use when researching or assessing a topic and keeping its sources, picking
-  up earlier research, filling gaps, re-checking references, or reporting.
+  Use when researching or assessing a topic, like whether to adopt a tool:
+  keep sources, resume, fill gaps, re-check references, or write it up.
 allowed-tools: ["Bash", "Read", "Write", "Edit", "Grep", "Glob", "WebFetch", "WebSearch", "AskUserQuestion"]
 metadata:
   argument-hint: "[topic or question] [--mode=research|assessment] [--namespace=<ns>] [--root=<dir>] [--resume] [--audience=private|internal|public]"
@@ -51,6 +51,10 @@ Finish with the `## Output` section of the procedure you picked; for a new asses
 2. `## Done`: what this session added, verified, or changed.
 3. `## Open`: open questions and failed checks.
 4. `## Next`: the recommended next step.
+
+A stopped or halted run (`?` or `⚠` hero) prints the hero as the one result sentence, then one line per thing the user must decide or do. It prints no other sections.
+
+Write the hero and every section per `references/prose-rules.md`: no bold labels on bullets, no closing recap, no sentence that narrates your own edits. Name a run by its date and `<namespace>/<topic>`, never by its path.
 
 End every procedure's output with an `ask-user-choice` panel offering next steps (a new topic: continue, verify, write the report, stop; other procedures list their own options). Skip it in plan mode; without an interactive host, print the options as a numbered list.
 

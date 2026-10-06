@@ -44,6 +44,7 @@ import re
 import shutil
 import subprocess
 import tempfile
+import tomllib
 import typing as t
 from pathlib import Path
 
@@ -898,6 +899,41 @@ def _check_estate_rules(plugin_dir: Path) -> list[str]:
     return errors
 
 
+def _python_dirs_missing(testpaths: list[str], python_dirs: list[str]) -> list[str]:
+    """Return the directories that hold shipped Python but no pytest test path covers.
+
+    Examples
+    --------
+    >>> _python_dirs_missing(["scripts", "plugins/a/scripts"], ["plugins/a/scripts", "plugins/b"])
+    ['plugins/b']
+    >>> _python_dirs_missing(["plugins"], ["plugins/a/scripts"])
+    []
+    """
+    return [
+        d for d in python_dirs if not any(d == tp or d.startswith(f"{tp}/") for tp in testpaths)
+    ]
+
+
+def _check_testpaths() -> list[str]:
+    """Fail when a plugin ships Python whose doctests pytest would never collect."""
+    config = tomllib.loads((REPO_ROOT / "pyproject.toml").read_text(encoding="utf-8"))
+    tool = t.cast("dict[str, object]", config.get("tool", {}))
+    pytest_config = t.cast("dict[str, object]", tool.get("pytest", {}))
+    ini_options = t.cast("dict[str, object]", pytest_config.get("ini_options", {}))
+    testpaths = t.cast("list[str]", ini_options.get("testpaths", []))
+    python_dirs = sorted(
+        {
+            path.parent.relative_to(REPO_ROOT).as_posix()
+            for path in PLUGINS_DIR.rglob("*.py")
+            if not {"evals", "templates", "__pycache__"} & set(path.relative_to(PLUGINS_DIR).parts)
+        }
+    )
+    return [
+        f"pyproject.toml: pytest testpaths omits '{d}', which ships Python"
+        for d in _python_dirs_missing(testpaths, python_dirs)
+    ]
+
+
 def validate_plugin_dir(plugin_dir: Path) -> list[str]:
     """Validate a single plugin directory structure.
 
@@ -1207,6 +1243,8 @@ def lint() -> None:
         errors.extend(readme_errors)
         if not readme_errors:
             console.print(f"  Table: [green]OK[/green] ({len(manifest.plugins)} rows)")
+
+    errors.extend(_check_testpaths())
 
     # Run claude plugin validate if CLI is available
     cli_errors, cli_warnings = _lint_claude_validate()

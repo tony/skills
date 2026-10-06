@@ -5,6 +5,7 @@ description: >-
   Claude sessions or npm cache are safe to remove, or shrink WSL.
 allowed-tools: "Bash, Read, Glob, Grep, AskUserQuestion, TodoWrite"
 metadata:
+  argument-hint: "[path or filesystem to focus on]"
   source: "plugins/disk/skills/disk/SKILL.md"
 ---
 

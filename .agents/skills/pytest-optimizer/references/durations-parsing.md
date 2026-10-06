@@ -1,7 +1,6 @@
 # Durations parsing
 
-How `00-scan` measures and ranks. pytest's profiler is `--durations`, implemented
-in `_pytest/runner.py` over `_pytest/timing.py`.
+How `00-scan` measures and ranks. pytest's profiler is `--durations`.
 
 ## Contents
 
@@ -54,7 +53,7 @@ Rank slowest **fixture setup/teardown** (H02) — use `--durations=0` so no phas
 sliced away before you filter:
 
 ```bash
-pytest --durations=0 --durations-min=0.01 -p no:cacheprovider
+pytest --durations=0 --durations-min=0.005 -p no:cacheprovider
 ```
 
 Capture **everything** on a small suite (H04), including `0.00s` rows:
@@ -76,7 +75,7 @@ Each row is `<float>s <when> <nodeid>`. Split on the **second** token:
 - `when == "teardown"` → finalizer ranking.
 
 The same nodeid appears up to three times (once per phase), and parametrized
-subtests (pytest ≥ 9.0) add extra `call` rows under one nodeid — **de-duplicate by
+in-core subtests add extra `call` rows under one nodeid — **de-duplicate by
 `(nodeid, when)`** when aggregating.
 
 ## Machine-readable timings (H07)
@@ -95,14 +94,24 @@ result in `baseline.json`.
 
 Fast rows are not benchmarks. To know whether a later change is a real speedup:
 
-1. Run the same durations command serially (no `-n`), cache disabled, **N ≥ 3**
-   times.
-2. Compute the **median** total wall-time and the **MAD** (median absolute
-   deviation) of the per-run totals.
-3. The noise band is `k * MAD` (default `k = 3`); the **trust floor** is
-   ~50ms — rank nothing below it.
-4. A candidate's saving (`baseline_median - candidate_median`) counts only if it
-   exceeds the band.
+1. Run one untimed warm-up, then the same command serially (no `-n`), cache
+   disabled, **N ≥ 3** times. `measure.py run` times each run and counts outcomes:
+
+   ```console
+   $ python3 references/measure.py run \
+       -- pytest -p no:cacheprovider -p no:randomly -q
+   ```
+
+   Append each JSON line to one `.jsonl` file in the memory directory.
+2. `measure.py band <file>` prints the **median**, the **MAD** (median absolute
+   deviation), and the noise band `max(k * MAD, floor)` (`k = 3`; the **trust
+   floor**, 50 ms, keeps identical runs from producing a zero band). It reports
+   `valid: false` when any run exits non-zero or the counts differ between runs.
+3. `measure.py compare baseline.json <candidate .jsonl>` counts a candidate's
+   saving (`baseline_median - candidate_median`) only when it exceeds the band,
+   every run exits 0, and the test counts match.
+
+Rank nothing below the trust floor.
 
 Why disable cacheprovider while measuring: its `.pytest_cache` writes happen at
 session start/finish (outside any item phase), so they do **not** change the

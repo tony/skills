@@ -53,11 +53,11 @@ One id per URL. A row is one version of that source: new bytes, a more exact ref
 - `command`, `exit`, `wall_seconds`, `outputs`: for a measured source written by `run`, the argv, its exit status, its wall time, and the SHA-256 of each file it wrote. `run` refuses an output the command left untouched. A re-add without a new capture keeps these fields.
 - `carried_from`: the run date this row came from. `replaces`: the id of a moved or vanished source this one retires.
 
-A check row: `id`, `version` (a hash of the url, ref, capture hash, and quotes it tested), `checked`, `live`, `status` (ok, unchecked, unretrieved, vanished, moved, changed, misquoted, unreachable), `detail`, and `http`, `final_url`, `live_sha256` when the live check ran. A check counts only while that version is current. A measured source's check also re-hashes its outputs: a file edited after the command wrote it is `changed`.
+A check row: `id`, `version` (a hash of the url, ref, capture hash, and quotes it tested), `checked`, `live`, `status` (ok, unchecked, unretrieved, vanished, moved, changed, misquoted, unreachable, unverifiable), `detail`, and `http`, `final_url`, `live_sha256` when the live check ran. A check counts only while that version is current. A measured source's check also re-hashes its outputs: a file edited after the command wrote it is `changed`.
 
 A conflict row: `id` (`C1`, ...), `sources` (two or more source ids), `about`, and once weighed `weight` (the source that carries more), `why`, and `settle` (what evidence would end it). The newest row per id is the one in use.
 
-A release row: `at`, `sha256` and `report` (the snapshot under `releases/`), `to`, `audience`, `live`, and `cites`, each cited source id mapped to a hash of its url, ref, and capture at release. A decision row: `at`, `decision`, `by`, `release` (the release's sha256), and optional `revisit`.
+A release row: `at`, `sha256` and `report` (the snapshot under `releases/`), `to`, `audience`, `live` (false for a release on an offline check), and `cites`, each cited source id mapped to a hash of its url, ref, and capture at release. A decision row: `at`, `decision`, `by`, `release` (the release's sha256), and optional `revisit`.
 
 ## Reruns
 

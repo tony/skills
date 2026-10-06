@@ -12,7 +12,7 @@ disable-model-invocation: true
 Branch-scoped slop cleaner. Audits every commit on the current branch
 since trunk for AI slop, verbose code and comments, fragile hard-coded
 references, and low-value contributions. The default run writes a
-numbered patch series under `.git/deslop/<ts>-<pid>/` with a
+numbered patch series under `<run-dir>/` with a
 checkpointed `apply.sh` and changes nothing else. With `--apply-rebase`,
 it also builds fixup commits and runs `git rebase -i --autosquash`.
 
@@ -182,16 +182,23 @@ the project's commit-message convention from the conventions files.
 ## Step 8: Materialize the patch series
 
 Always materialize first; the series is the user's review surface. The
-directory name `<ts>-<pid>` prevents collisions on fast re-invocation:
+run directory resolves through `git rev-parse --git-path`, so it works
+in a linked worktree where `.git` is a file. Create it and print its
+path:
 
-```bash
-mkdir -p ".git/deslop/$(date -u +%Y%m%d-%H%M%SZ)-$$"
+```console
+$ d=$(git rev-parse --git-path "deslop/$(date -u +%Y%m%d-%H%M%SZ)-$$") && mkdir -p "$d" && echo "$d"
 ```
+
+Shell state does not persist between Bash calls: use the printed path
+literally as `<run-dir>` in every later command, and likewise the
+literal values of `BASELINE_SHA`, `START_SHA`, and the gate commands
+recorded in `0000-PLAN.md`.
 
 Layout:
 
 ```
-.git/deslop/<ts>-<pid>/
+<run-dir>/
 ├── 0000-PLAN.md                 (plan + registry source path + SHA-256)
 ├── NNNN-fixup-<sha>-<id>.patch  (one per diff finding)
 ├── NNNN-reword-<sha>.txt        (replacement message for <sha>)
@@ -215,7 +222,7 @@ and aborts if the registry changed. Its exit codes are in the header of
 
 Without an apply flag, print the Step 12 report (skip its git and gate
 commands) and stop, telling the user how to run
-`bash .git/deslop/<ts>-<pid>/apply.sh`. The directory is run-scoped, not
+`bash <run-dir>/apply.sh`. The directory is run-scoped, not
 a permanent record.
 
 ## Step 9: Confirmation gate
@@ -228,7 +235,7 @@ through `AskUserQuestion`:
 | **Patches only** (default) | Nothing is applied. |
 | **Apply patches now** | Run `apply.sh`; fixup commits land on `HEAD`; no rebase. |
 | **Apply and autosquash** | Full rewrite. Offered only with `--apply-rebase`, and only when Step 1 found no merge commits. |
-| **Cancel** | Delete `.git/deslop/<ts>-<pid>/` and exit. |
+| **Cancel** | Delete `<run-dir>/` and exit. |
 
 Before "Apply patches now", show this warning:
 
@@ -250,10 +257,10 @@ Record its name in the final report and tell the user that
 `git reset --hard <backup>` restores the original state.
 
 ```bash
-bash ".git/deslop/${TS_PID}/apply.sh"
+bash "<run-dir>/apply.sh"
 ```
 
-`TS_PID` is the run directory name. `apply.sh` stages explicit paths
+`apply.sh` stages explicit paths
 only and never uses `git add -A` or `git add .`. Reword commits are
 empty by design and are the only empty commits the skill creates.
 
@@ -328,7 +335,7 @@ Quality gates (final)
 =====================
 format=<status> | lint=<status> | typecheck=<status> | tests=<status>
 
-Patch series: .git/deslop/<ts>-<pid>/
+Patch series: <run-dir>/
 ```
 
 In audit mode, "Applied" is 0 and the Commits and gate lines are omitted.
@@ -345,7 +352,7 @@ Do not push; the user decides. After `--force-rewrite-pushed`, recommend
 | Empty diff after an edit | Skip the fixup and record a no-op. |
 | Single-commit branch, no body | A reword commit autosquashes cleanly. |
 | `--message-only` and diff slop exists | Report the skipped diff findings; build reword commits only. |
-| Worktrees | Permitted; the `<trunk>..HEAD` model is unaffected. |
+| Linked worktrees | Permitted; run directories resolve through `git rev-parse --git-path`. |
 | Existing `fixup!` or `amend!` commits on the branch | Detect with `git log -E --grep='^(fixup\|amend)!'`; offer to autosquash them first. |
 | Non-UTF-8 commit message | Skip message checks for it; warn. |
 | Pre-commit hook changes staged content during a fixup | `apply.sh` aborts that step with the hook's stderr; the user fixes it and re-runs. The skill never uses `--no-verify`. |

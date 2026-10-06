@@ -10,7 +10,7 @@ $ python3 <topic.py> check --run <run_dir>
 
 `check` reruns every ship check in one call: each source against its capture and live URL, the report's Sources table against the manifest, `lint-report --strict`, and the leak scan. `ok: true` is the only evidence that a report is ready.
 
-When it fails, `next` lists the fixes in order. The usual loop: fix, `sources --write`, `claims --reviewed`, then `check` again. When `<run_dir>` is dated before today, do not fix its report in place: continue the topic per `continue.md` and release from today's run. Without network, `--offline` checks the captures only and says so in its output.
+When it fails, `next` lists the fixes in order. The usual loop: fix, `sources --write`, `claims --reviewed`, then `check` again. When `<run_dir>` is dated before today, do not fix its report in place: continue the topic per `continue.md` and release from today's run. Without network, `--offline` checks the captures only; `live: false` in the result says so, and a hero that reports it names the check as offline.
 
 ## 2. Release
 
@@ -20,7 +20,7 @@ $ python3 <topic.py> release \
     --to "<who receives it, as a role or group>"
 ```
 
-`release` runs the same checks and refuses on any failure. On a pass it keeps the exact report (and `brief.md`, when there is one) under `releases/`, named by its hash, and appends to `<run_dir>/references/releases.jsonl`: when, to whom, at which audience, the report's sha256, and which version of each cited source it rested on. Name recipients by role at internal and public audiences.
+`release` runs the same checks and refuses on any failure. It also refuses `--offline`: a report a client reads needs a live check. When no network is reachable and the readers accept captures-only evidence, pass `--offline --allow-offline`; the release row records `live: false`. On a pass it keeps the exact report (and `brief.md`, when there is one) under `releases/`, named by its hash, and appends to `<run_dir>/references/releases.jsonl`: when, to whom, at which audience, the report's sha256, and which version of each cited source it rested on. Name recipients by role at internal and public audiences.
 
 ## 3. Decide
 
@@ -56,7 +56,7 @@ The bag holds evidence and working material the scan does not cover (cards, raw 
 
 ## Output
 
-Open with a one-line hero (`✓ Released <hash> to <who>`, `✓ Bag <file>: <n> files`, or `⚠ Not released: <failing checks>`), then exactly these sections:
+Open with a one-line hero (`✓ Released <hash> to <who>` or `✓ Released <hash> to <who> on an offline check`, `✓ Bag <file>: <n> files`, or `⚠ Not released: <failing checks>`), then exactly these sections:
 
 1. `## Check`: each check's result from this call, verbatim counts.
 2. `## Trail`: the release, decision, or bag written, with its hash.

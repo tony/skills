@@ -4,7 +4,7 @@ description: >-
   Pass every check fresh, release the exact report to its readers, record
   decisions taken on it, and export the run as a fixity-checked bag
 disable-model-invocation: true
-allowed-tools: ["Skill", "Bash", "Read", "Write", "Edit", "Grep", "Glob", "WebFetch", "AskUserQuestion"]
+allowed-tools: ["Skill", "Bash", "Read", "Write", "Edit", "Grep", "Glob", "AskUserQuestion"]
 metadata:
   argument-hint: "[topic or run directory] [--to=<readers>] [--offline]"
   source: "plugins/research/skills/release/SKILL.md"

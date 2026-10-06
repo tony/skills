@@ -13,12 +13,15 @@ metadata:
 # 00-scan
 
 Profile, detect, hypothesize. This phase never edits the suite. It writes only
-JSON to the memory directory, plus one line in the local git exclude file when it
-creates an in-tree memory directory.
+JSON and one collection listing to the memory directory, plus one line in the
+local git exclude file when it creates an in-tree memory directory.
 
 `$ARGUMENTS` may scope the run to a path or marker, set `--runs=N` (baseline
 sample count, default 5), `--force` to ignore the idempotency token, and
 `--memory-dir` to override the memory location.
+
+Arithmetic goes through `references/measure.py` (Python 3 standard library).
+Run it by its absolute path; the relative path is from this file, not the repo.
 
 ## Step 1: Preflight
 
@@ -27,33 +30,47 @@ Detect preferred tools (`rg`/`ag`/`fd`/`jq`/`uv`/`uvx`) and read the project's
 `pyproject.toml`. Do not hardcode a runner. Record the resolved command; every
 later phase reuses it. Substitute it wherever this file writes `pytest`.
 
+If the project has no pytest suite, stop with the halted-run shape in
+`references/output-contract.md`.
+
 ## Step 2: Resolve memory and check idempotency
 
-Resolve the memory directory per `references/memory-schema.md`
-(repo-root `.pytest-optimizer/`, excluded locally; XDG fallback). Compute the
-idempotency token defined there. If `state.json` shows `scan` completed with an
-unchanged token and `hypotheses.json` exists, report "already scanned" and stop,
-unless `--force`.
+Resolve the memory directory by the lookup order in
+`references/memory-schema.md`; create it there if none exists. Save the
+collection order:
+
+```console
+$ pytest --collect-only -q -p no:cacheprovider -p no:randomly
+```
+
+Write the node-id lines (unsorted) to `collection.txt`. Compute the idempotency
+token defined in the schema with `measure.py token --head <HEAD sha>
+--collection collection.txt --version <name>=<version> ...` (pytest and each
+plugin). If `state.json` shows `scan` completed with an unchanged token and
+`hypotheses.json` exists, report "already scanned" and stop, unless `--force`.
 
 ## Step 3: Detect capabilities
 
 Probe the installed pytest and plugins against
-`references/version-matrix.md`. Write
-`capabilities.json`. Use only available features below; fall back as the matrix
-directs (e.g. no `--durations-min` pre-6.1 → post-filter rows).
+`references/version-matrix.md`. Write `capabilities.json`. Use only
+available features below; fall back as the matrix directs (e.g. no
+`--durations-min` pre-6.1 → post-filter rows).
 
 ## Step 4: Establish the baseline and noise band
 
-Run the suite serially, cache disabled, `--runs` times, and record total
-wall-time each run:
+Run the suite once untimed as a warm-up, then time `--runs` serial,
+cache-disabled runs, appending each JSON line to a runs file in the memory
+directory:
 
-```bash
-pytest -p no:cacheprovider -p no:randomly -q
+```console
+$ python3 references/measure.py run \
+    -- pytest -p no:cacheprovider -p no:randomly -q
 ```
 
-Compute the median and MAD of the per-run totals; set the noise band
-(`k·MAD`, default `k = 3`: a saving counts only above it) and the ~50ms trust
-floor. Write the env fingerprint, versions, capabilities, and the band to
+`measure.py band <runs file>` prints the median, MAD, and noise band (floored at
+the 50 ms trust floor), and exits 1 when any run fails or the test counts differ.
+A failing baseline means the suite is red: stop and report it. Write the env
+fingerprint, versions, capabilities, the band, and the passed/total counts to
 `baseline.json`. See `references/durations-parsing.md`.
 
 ## Step 5: Profile slowest tests and fixtures
@@ -98,10 +115,13 @@ here; `01-benchmark` measures it. Update `state.json`
 
 ## Step 8: Report
 
-Emit the `00-scan` sections from
-`references/output-contract.md`. Write the prose per
-`references/prose-rules.md`. Close with an `ask-user-choice` panel offering to benchmark the
-hypotheses, narrow scope, or stop.
+Emit the `00-scan` sections from `references/output-contract.md`. Write the
+prose per `references/prose-rules.md`. Report only measured numbers; never
+project a speedup before `01-benchmark`.
+
+Close with an `ask-user-choice` panel offering to benchmark the hypotheses,
+narrow scope, or stop. Without an interactive question tool, stop after the
+report and name the next step in one sentence.
 
 
 ## Portability notes

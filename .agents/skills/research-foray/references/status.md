@@ -11,7 +11,7 @@ Present one line per topic, most urgent first, each with its next action:
 - released reports whose sources moved (`releases_affected`): `continue`, re-verify, release a corrected report to the same readers per `release.md`, and revisit each listed decision.
 - failed checks (vanished, moved, changed, misquoted): `verify`, then fix the claims they support.
 - conflicts not yet weighed (`conflicts_open`): `continue`, and weigh each per `analysis.md`.
-- stale, unverified, or unchecked sources: a new run with `continue`, which re-verifies them; intact sources need a live `verify` before a client sees the report.
+- stale, unverified, or unchecked sources: a new run with `continue`, which re-verifies them; intact sources need a live `verify` before a client sees the report, and `release` refuses an offline check unless `--allow-offline` is passed.
 - open questions or criteria gaps: `continue --fill`.
 - moving pins: re-add the source with the exact version its page states.
 - no report: `report`.

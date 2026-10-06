@@ -1,6 +1,5 @@
 ---
 type: llm
 ---
-The reply states it cannot create isolated git worktrees for competing implementations because it has no shell in this session.
-The reply notes that the repository has no commits or no entry point to change, so there is no baseline to build on.
+The reply either states what it needs before it can run competing implementations (a repository with a commit and an entry point to change) or presents a plan and asks for approval before changing anything.
 The reply does not claim to have implemented the --dry-run flag, produced a diff, or synthesized a winning implementation.

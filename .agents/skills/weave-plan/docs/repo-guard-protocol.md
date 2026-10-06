@@ -9,7 +9,8 @@ purpose, and a mutating command skips the final comparison.
 
 ## Snapshot
 
-`engine.py init` records the checkout before any worker runs. It builds a tree
+`engine.py init` records the checkout before any worker runs (outside no-repo
+mode, below). It builds a tree
 from a temporary copy of the index plus `git add -A`, so the user's index and
 files are never touched. The tree holds every tracked change, deletion, and
 untracked non-ignored file as it stood. It becomes a commit on top of `HEAD`,
@@ -39,7 +40,7 @@ already-dirty file, which `git status --porcelain` cannot. `dispatch` runs it
 after every CLI attempt, and the orchestrating skill runs it once after all
 lanes finish.
 
-A difference is recorded and never changed. Under `$SESSION_DIR/guard/<id>/` the
+A difference is recorded and never changed. Under `<session_dir>/guard/<id>/` the
 engine writes `touched.json` (path to `A`, `M`, or `D`), `violation.patch`,
 `post-copy/` (the current content of each touched file), and pins the post state
 as `refs/weave-guard/<session>/post-<id>`. It appends `repo_guard_violation` to
@@ -70,5 +71,20 @@ the pre ref. A moved `HEAD` is reported and never undone.
 
 `guard finish` logs `repo_guard_final`. When the session never recorded a
 difference it deletes the session's pinned refs; otherwise they stay as
-evidence. `guard prune --days N` deletes pinned refs older than `N` days in a
-repository.
+evidence. The `pre-reset-*` pins that `reset-main` writes before it discards
+changes are never deleted by `finish`, so a reset stays recoverable.
+`guard prune --days N` deletes pinned refs older than `N` days in a
+repository, and the skills run it once per session at the end. Pins are
+ordinary refs, so `git push --mirror` would publish them; prune first.
+
+## Unsafe toplevels and no-repo mode
+
+The engine refuses to snapshot, stash, or add worktrees to a toplevel that is
+`/`, the home directory, or a directory that contains the home directory,
+because `git add -A` there would pull a whole home tree into the object store.
+A read-only command in such a checkout, in a directory with no repository, or
+in a repository with no commits runs in no-repo mode instead: `session.json`
+has `unguarded: true` and no snapshot, `guard check` returns
+`{"ok": true, "violation": false, "unguarded": true}`, and lanes run in an
+empty scratch directory under the session. Mutating commands and `fix-review`
+refuse.

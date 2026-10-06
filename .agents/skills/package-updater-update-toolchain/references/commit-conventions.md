@@ -107,8 +107,8 @@ is not recoverable from the diff.
 ### Named package bumps
 
 One commit per package, or per release train when packages must move
-together. A release train needs the body to say *why* they are coupled —
-a peer contract, a bundled dependency, a shared compiler — otherwise the
+together. A release train needs the body to say *why* they are coupled
+(a peer contract, a bundled dependency, a shared compiler), otherwise the
 next reader will split them.
 
 The body is `why:` then `what:`. The `why:` explains what the release

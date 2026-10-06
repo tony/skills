@@ -155,8 +155,10 @@ The first failure stops the run: report it and run none of the later steps.
 
 2. `--tag`:
 
+   An annotated tag works with or without `tag.gpgSign`:
+
    ```console
-   $ git tag v<version>
+   $ git tag -a v<version> -m "v<version>"
    ```
 
 3. `--push`:
@@ -185,7 +187,7 @@ Never name local or temp paths. A completed run ends with these, in order:
 2. `## Release summary`: old to new version, CHANGES section dated, next
    unreleased target.
 3. `## Files changed`: the files in the release commit.
-4. `## Next steps`: the exact `git tag` / `git push --no-follow-tags` /
+4. `## Next steps`: the exact `git tag -a` / `git push --no-follow-tags` /
    `git push --no-follow-tags origin refs/tags/v<version>` commands for
    whatever the flags did not authorize.
 

@@ -31,30 +31,49 @@ plan. Plan-mode activation varies by host:
 
 The plan must contain:
 
-1. **Bug summary** — symptom, expected behavior, trigger conditions, affected component
-2. **Test strategy** — which test file, which fixtures, which xfail mechanism
-3. **Mock assessment** — are mocks required? If so, what real behavior do they replace, and how will you verify the failure is genuine (not mock-induced)?
-4. **Framework detection** — which mechanism applies (xfail-mechanisms reference)
-5. **Diff-gate file sets** — which paths are test files, which are source files
-6. **Quality gates** — commands from the project's AGENTS.md/CLAUDE.md
+1. Bug summary: symptom, expected behavior, trigger conditions, affected component.
+2. Test strategy: test file, fixtures, xfail mechanism.
+3. Mock assessment: whether mocks are required, what real behavior they replace, and how you will verify the failure is genuine (not mock-induced).
+4. Framework detection: which mechanism applies (xfail-mechanisms reference).
+5. Diff-gate file sets: the test-file pathspecs and what counts as source.
+6. Quality gates: commands from the project's AGENTS.md/CLAUDE.md.
 
 Present the plan to the user and wait for approval before executing.
 
 If plan mode is unavailable, write the plan as numbered steps in your
-response and confirm with the user before proceeding.
+response and confirm with the user before proceeding. A headless run with no
+user to ask treats the request to fix the bug as approval of the plan, and
+stops at any other question (dirty tree, wrong repository) with a one-sentence
+result and what the user must do.
+
+## Output shape
+
+Report in this order: one hero line (`✓` finished or `⚠` stopped, with the
+result in one sentence), then `## Evidence` (the three commit subjects with
+short hashes, the xfail line from Gate 1, the stash round-trip result), then
+`## Follow-ups` (omit when empty). A stopped run is the hero line plus what the
+user needs to do. Do not name local paths or temp files, and do not bold every
+bullet.
 
 ## Phase 0: Discover Conventions
 
 1. Create a todo list tracking all phases.
-2. Read the project's AGENTS.md / CLAUDE.md for test framework and conventions,
+2. Confirm the repository: `git rev-parse --show-toplevel` must be the
+   project the bug lives in. If it is a parent or home-directory repository,
+   or there is none, stop and tell the user.
+3. Confirm a clean tree: `git status --porcelain` must print nothing. If it
+   prints changes, ask the user to commit or stash them first. Without an
+   interactive question tool, stop; never stash or commit unrelated work.
+4. Read the project's AGENTS.md / CLAUDE.md for test framework and conventions,
    quality gate commands, and commit format.
-3. Detect the framework and select the mechanism from the xfail-mechanisms
+5. Detect the framework and select the mechanism from the xfail-mechanisms
    reference.
-4. Identify the test-file glob patterns the diff gates use. Common patterns:
-   `**/test_*`, `**/*_test.*`, `**/tests/**`, `**/__tests__/**`,
-   `**/*.test.*`, `**/*.spec.*`.
-5. Use Explore agents to find the relevant source and existing tests.
-6. When the bug spans a dependency, follow the cross-dependency steps in the
+6. Derive the test-file patterns the diff gates use from the project's own
+   layout and naming. Write each as its own `:(glob)` pathspec, for example
+   `:(glob)**/test_*`, `:(glob)**/*_test.*`, `:(glob)tests/**`,
+   `:(glob)**/*.spec.*`. Only `:(glob)` makes `**/` match top-level files too.
+7. Use Explore agents to find the relevant source and existing tests.
+8. When the bug spans a dependency, follow the cross-dependency steps in the
    gates-and-commits reference, running this protocol in the dependency first.
 
 ### Frameworks without strict xfail
@@ -73,7 +92,7 @@ cycle at each verification phase:
 
 The diff gates and three-commit structure are unchanged.
 
-## Phase 1: Reproduce — Write xfail Test
+## Phase 1: Reproduce with an xfail test
 
 Create a test that reproduces the bug, marked expected-to-fail.
 
@@ -95,7 +114,9 @@ The test must produce an expected-failure result. If it passes outright, it does
 not reproduce the bug; rewrite it. If it fails with an exception not matching
 `raises`, it targets the wrong symptom.
 
-6. Commit test file changes only.
+Then commit test file changes only. Write the message per the gates-and-commits
+reference: no `Co-Authored-By`, no "Generated with" or other tool trailers, no
+emoji.
 
 ## Phase 2: Verify Reproduction Is Genuine
 
@@ -128,10 +149,12 @@ Fix the source. Zero test file changes in this commit. Apply the minimal fix
 ### Gate 3: zero-diff on test files
 
 List modified and untracked files matching the test patterns from Phase 0. The
-command must print nothing:
+command must print nothing. Pass one `:(glob)` pathspec per pattern, for
+example:
 
-```
-git status --porcelain -- <test-file-patterns>
+```console
+$ git status --porcelain \
+    -- ':(glob)**/test_*.py' ':(glob)**/*.spec.ts'
 ```
 
 If test files changed, move those changes to Phase 5.
@@ -142,10 +165,27 @@ Do not commit yet; Phase 4 verifies fix isolation first.
 
 Prove the fix, not an unrelated change, resolved the test.
 
-1. Stash the fix: `git stash -u`
-2. Run the xfail test; it must xfail again.
-3. Restore the fix: `git stash pop`
-4. Run the xfail test; it must XPASS again.
+1. Print the current stash ref (`none` when there is no stash):
+
+   ```console
+   $ git rev-parse -q --verify refs/stash || echo none
+   ```
+2. Stash the fix:
+
+   ```console
+   $ git stash push --include-untracked
+   ```
+3. Print the stash ref again. A changed value means the stash was created.
+   An unchanged value means nothing was stashed: do not pop, and treat the
+   missing fix as a Phase 3 failure.
+4. Run the xfail test; it must xfail again.
+5. Restore the fix only when step 3 showed a new stash:
+
+   ```console
+   $ git stash pop
+   ```
+   On a pop conflict, stop and report; do not discard either side.
+6. Run the xfail test; it must XPASS again.
 
 ### Gate 4: stash round-trip confirmation
 
@@ -153,7 +193,8 @@ If the test does not return to xfail with the fix stashed, something else
 resolved it. Check for a stale build cache, an unrelated working-tree change, or
 a dependency update.
 
-5. Commit the fix with the root cause in the message.
+Then commit the fix with the root cause in the message, with no
+`Co-Authored-By`, tool trailers, or emoji.
 
 ## Phase 5: Remove xfail Marker
 
@@ -168,15 +209,17 @@ Convert the xfail test to a regression test. Zero source changes in this commit.
 ### Gate 5: zero-diff on source files
 
 List modified and untracked files outside the test patterns. The command must
-print nothing:
+print nothing. Pass one `:(exclude,glob)` pathspec per pattern; a single
+exclude holding several patterns excludes nothing:
 
-```
-git status --porcelain -- . ':!<test-file-patterns>'
+```console
+$ git status --porcelain \
+    -- . ':(exclude,glob)**/test_*.py' ':(exclude,glob)**/*.spec.ts'
 ```
 
 If source files changed, move them to a separate commit.
 
-6. Commit.
+Then commit, with no `Co-Authored-By`, tool trailers, or emoji.
 
 ## Phase 6: Final Verification
 
@@ -203,10 +246,12 @@ minimal fix and re-run from Phase 3.
 
 ## CI Integration
 
-When the project has CI, push after each commit to verify the sequence:
+Push only when the user asks. The fix commit is red on purpose (strict XPASS),
+so never push it unasked; without an answer, push nothing. When the user
+opts in and the project has CI, push after each commit to verify the sequence:
 
 - Phase 1 commit: green. The xfail is an expected failure.
-- Phase 4 commit: red. `strict=True` makes the XPASS a failure.
+- Phase 4 commit: red. A strict mechanism makes the XPASS a failure.
 - Phase 5 commit: green. The marker is gone and the test passes.
 
 Without CI, the diff gates and stash round-trip give equivalent confidence.

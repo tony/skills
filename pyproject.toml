@@ -44,4 +44,4 @@ exclude = [".agents", "plugins/pytest-optimizer/templates", "**/__pycache__"]
 
 [tool.pytest.ini_options]
 addopts = "--doctest-modules"
-testpaths = ["scripts", "plugins/business/scripts", "plugins/research/scripts", "plugins/scholar/references", "plugins/weave/scripts"]
+testpaths = ["scripts", "plugins/business/scripts", "plugins/pytest-optimizer/scripts", "plugins/research/scripts", "plugins/scholar/references", "plugins/self-improvement/scripts", "plugins/weave/scripts"]

@@ -3,7 +3,7 @@
 Shared by `refine`, `brainstorm-and-refine`, and `serene-bliss`. Each pass
 judges its candidates, weaves the best version with the runners-up's strengths,
 and redistributes the result to every participant. The calling skill supplies
-`<engine>`, `$SESSION_DIR`, the judge mode, and the pass's candidate files, and
+`<engine>`, `<session_dir>`, the judge mode, and the pass's candidate files, and
 dispatches the lanes of each distributed pass.
 
 ## Contents
@@ -35,7 +35,7 @@ Coherence (consistent, well structured). The total is the sum, at most 40.
 
    ```console
    $ python3 <engine> judge-plan \
-       --session "$SESSION_DIR" \
+       --session "<session_dir>" \
        --mode <host|round-robin|panel> \
        --pass <N>
    ```
@@ -99,11 +99,15 @@ Coherence (consistent, well structured). The total is the sum, at most 40.
 
    ```console
    $ python3 <engine> judge-parse \
-       --file "$SESSION_DIR/pass-NNNN/judges/<judge>.md"
+       --file "<session_dir>/pass-NNNN/judges/<judge>.md"
    ```
 
    `ok: false` drops that judge. A round-robin pass with no usable judge falls
-   back to the host; say so in `judge.md`.
+   back to the host; say so in `judge.md`. The parser accepts decimal scores,
+   strips a role suffix from a column (`claude (Maintainer)` is `claude`), and
+   reads a missing Winner section as the unique highest total
+   (`winner_declared` is false). For a judge that scored blind labels, add
+   `--label-map "<session_dir>/pass-NNNN/label-map.json"`.
 
 5. A single external or native judge becomes `judge.md` with the header
    `**Judged by**: <judge>`. If the host disagrees with a judge that picked its
@@ -114,9 +118,11 @@ Coherence (consistent, well structured). The total is the sum, at most 40.
 
    ```console
    $ python3 <engine> panel-merge \
-       --judge <judge>="$SESSION_DIR/pass-NNNN/judges/<judge>.md" \
-       --judge <judge>="$SESSION_DIR/pass-NNNN/judges/<judge>.md"
+       --judge <judge>="<session_dir>/pass-NNNN/judges/<judge>.md" \
+       --judge <judge>="<session_dir>/pass-NNNN/judges/<judge>.md"
    ```
+
+   Add the same `--label-map` when the judges scored blind labels.
 
    Take `winner` and `totals`. When `tied` lists candidates, the host picks one
    and states why in a sentence. When `ok` is false, the host judges alone. Write
@@ -149,7 +155,7 @@ Skip on the final pass.
    with the region quoted and the evidence that would settle it. Residuals are
    critique points the woven version left unaddressed, runner-up strengths the
    weave could not reconcile, and any judge override or split judgment.
-2. Create the next pass with `pass-dir --session "$SESSION_DIR" --pass <N+1>`.
+2. Create the next pass with `pass-dir --session "<session_dir>" --pass <N+1>`.
 3. Write the next pass's prompt body to `pass-<N+1>/prompt.md`:
 
    > You contributed to an earlier round on this artifact. The judge compared
@@ -208,7 +214,7 @@ After each pass:
 
 ```console
 $ python3 <engine> update \
-    --session "$SESSION_DIR" \
+    --session "<session_dir>" \
     --completed-passes <N> \
     --event pass_complete \
     --event-json '{"pass": <N>, "winner": "<id>", "winner_score": <score>, "judged_by": "<judge>"}'

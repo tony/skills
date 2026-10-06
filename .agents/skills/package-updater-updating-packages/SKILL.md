@@ -273,10 +273,9 @@ Shape, which the three commands in this plugin share:
 
 ## Common mistakes
 
-**Trusting one discovery tool to see every pin.** `ncu` reads
-`package.json` and nothing else, so catalog entries, overrides and
-`.ncurc` holds are invisible to it. A clean report is not a current
-tree.
+**Trusting one discovery tool to see every pin.** A manifest-based
+tool such as `ncu` does not see catalog entries or overrides, and skips
+what its own config holds. A clean report is not a current tree.
 
 **Regenerating a snapshot without reading why it moved.** That records a
 regression as the new expected value.

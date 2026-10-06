@@ -2,7 +2,7 @@
 name: execute
 description: Weave execute — compare independent adversarial implementations, then synthesize their best parts
 allowed-tools: ["Bash", "Read", "Grep", "Glob", "Edit", "Write", "Task", "AskUserQuestion", "EnterPlanMode", "ExitPlanMode"]
-argument-hint: "<task description> [--passes=N] [--timeout=N|none] [--mode=fast|balanced|deep] [--workers=subagents|model-clis]"
+argument-hint: "[--passes=N] [--timeout=N|none] [--mode=fast|balanced|deep] [--workers=subagents|model-clis] <task description>"
 user-invocable: true
 disable-model-invocation: true
 ---
@@ -14,6 +14,8 @@ Run a task across independent adversarial workers, using host-native sub-agents 
 The task comes from `$ARGUMENTS`. If there are none, ask the user what they want implemented.
 
 `<engine>` is `../../scripts/engine.py`, run with `python3`. It prints JSON; `"ok": false` carries the reason. `../../references/ensemble-core.md` holds the shared steps this skill calls by section name.
+
+This command needs a git repository with at least one commit, because workers run in worktrees and the engine stashes your uncommitted work. Without one, `init` fails: relay its `error` in one sentence and stop.
 
 ## Worker selection
 
@@ -44,7 +46,7 @@ The plan must contain:
 4. **Workers**: the backend, the lanes, and the pass count
 5. **Apply policy**: the user's uncommitted changes are stashed before workers start and restored at the end; nothing reaches the main checkout until the user confirms the synthesis plan
 
-Present the plan and wait for approval, then exit plan mode (`ExitPlanMode`). If plan mode is unavailable, write the plan as numbered steps in your response and confirm with the user before proceeding.
+Present the plan and wait for approval, then exit plan mode (`ExitPlanMode`). If plan mode is unavailable, write the plan as numbered steps in your response and confirm with the user before proceeding. Without an interactive way to confirm, continue: nothing reaches the main checkout before Phase 5, which has its own gate.
 
 ---
 
@@ -81,7 +83,7 @@ Under **subagents**, then confirm nothing touched the main checkout with `ensemb
 
    ```console
    $ python3 <engine> capture \
-       --session "$SESSION_DIR" \
+       --session "<session_dir>" \
        --pass <N> \
        --participant <participant>
    ```
@@ -92,9 +94,9 @@ Under **subagents**, then confirm nothing touched the main checkout with `ensemb
 
 3. **Judge** per `ensemble-core.md` (Blind judging, Synthesis protocol). The convergence mode is **file-by-file**. For each file any participant modified, read the original (`git show HEAD:<file>`) and each snapshot, verify what the code does against what the participant claims, score each version with the rubric per file, and select the best version per file. The best versions can come from different participants. Fix cross-file consistency when converging.
 
-4. Write the file-by-file analysis (selected version per file, scores, deleted paths, quality-gate failures) to `$SESSION_DIR/pass-NNNN/synthesis.md` per `../../references/prose-rules.md`.
+4. Write the file-by-file analysis (selected version per file, scores, deleted paths, quality-gate failures) to `<session_dir>/pass-NNNN/synthesis.md` per `../../references/prose-rules.md`.
 
-5. Read `../../references/present-results.md` and apply it with `RESULT_KIND` = `execute`, `ARTIFACT_PATH` = `$SESSION_DIR/pass-NNNN/synthesis.md`, `SESSION_DIR`, `PASS_COUNT` = `passes`, `IN_PLAN_MODE` = false, `LABEL_MAP_PATH` = `$SESSION_DIR/pass-NNNN/label-map.json`. Read `WORKER_BACKEND`, `PARTICIPANTS`, `EXECUTORS`, and `MODELS` from `session.json`.
+5. Read `../../references/present-results.md` and apply it with `RESULT_KIND` = `execute`, `ARTIFACT_PATH` = `<session_dir>/pass-NNNN/synthesis.md`, `SESSION_DIR`, `PASS_COUNT` = `passes`, `IN_PLAN_MODE` = false, `LABEL_MAP_PATH` = `<session_dir>/pass-NNNN/label-map.json`. Read `WORKER_BACKEND`, `PARTICIPANTS`, `EXECUTORS`, and `MODELS` from `session.json`.
 
 6. Record the pass (`update --completed-passes <N> --event pass_complete`).
 
@@ -104,9 +106,9 @@ Under **subagents**, then confirm nothing touched the main checkout with `ensemb
 
 Skip when `passes` is 1. For pass N of 2 to `passes`, do not re-run the whole task. Target only unresolved conflicts from the prior adjudication, critic findings from the prior pass, any dimension scored below 5 on any response, and per-file low scores and quality-gate failures.
 
-Before each pass, ask the user to confirm. Under **model-clis**, warn that each pass spawns external agents billed to other provider accounts.
+Before each pass, ask the user to confirm. Under **model-clis**, warn that each pass spawns external agents billed to other provider accounts. Without `AskUserQuestion`, run extra passes under **subagents** and stop after pass 1 under **model-clis**.
 
-Create the pass (`python3 <engine> pass-dir --session "$SESSION_DIR" --pass <N>`) and write the targeted prompt to `pass-<N>/prompt.md`:
+Create the pass (`python3 <engine> pass-dir --session "<session_dir>" --pass <N>`) and write the targeted prompt to `pass-<N>/prompt.md`:
 
 > The following issues remain from the prior pass. Address ONLY these items:
 >
@@ -122,12 +124,12 @@ Then repeat Phases 2 and 3 with pass `<N>`, reusing each participant's work:
 
   ```console
   $ python3 <engine> reset-main \
-      --session "$SESSION_DIR"
+      --session "<session_dir>"
   ```
 
   ```console
   $ python3 <engine> worktrees remove \
-      --session "$SESSION_DIR"
+      --session "<session_dir>"
   ```
 
   Then create the worktrees again as in Phase 2. Reference prior artifacts by path for `claude` and inline them for external lanes.
@@ -138,20 +140,20 @@ Re-score only affected files and dimensions. Stop early when no score moved by m
 
 ## Phase 5: Apply the best implementation
 
-Show the synthesis plan and wait for the user's confirmation before touching the main checkout.
+Show the synthesis plan and wait for the user's confirmation before touching the main checkout. Without `AskUserQuestion`, do not apply anything: report the synthesis plan, then run only the cleanup steps (discard the `claude` lane's main-checkout changes with `reset-main` under **model-clis**, remove the worktrees, restore the stash) so the user's tree is as they left it. A request that explicitly says to apply the result is that confirmation for applying it, never for committing.
 
 1. Under **model-clis**, discard the `claude` lane's changes first. The command refuses unless the user's stash is recorded and still present:
 
    ```console
    $ python3 <engine> reset-main \
-       --session "$SESSION_DIR"
+       --session "<session_dir>"
    ```
 
 2. Copy the chosen snapshot of each file into the main checkout and remove each path whose selected version is a deletion. Repeat `--pick` and `--delete` per path. Snapshots, not worktrees, are the source, so this works after worktrees are gone:
 
    ```console
    $ python3 <engine> adopt \
-       --session "$SESSION_DIR" \
+       --session "<session_dir>" \
        --pass <final N> \
        --pick <path>=<participant> \
        --delete <path>
@@ -163,7 +165,7 @@ Show the synthesis plan and wait for the user's confirmation before touching the
 
    ```console
    $ python3 <engine> update \
-       --session "$SESSION_DIR" \
+       --session "<session_dir>" \
        --event synthesis_applied
    ```
 
@@ -171,17 +173,17 @@ Show the synthesis plan and wait for the user's confirmation before touching the
 
    ```console
    $ python3 <engine> worktrees remove \
-       --session "$SESSION_DIR"
+       --session "<session_dir>"
    ```
 
 6. Check `git diff --stat HEAD` against the synthesis plan, then restore the user's changes:
 
    ```console
    $ python3 <engine> stash-restore \
-       --session "$SESSION_DIR"
+       --session "<session_dir>"
    ```
 
-   On `"conflict": true`, tell the user: "Pre-existing uncommitted changes conflicted with the synthesis. Resolve the conflicts, then run `git stash drop` to remove the stash entry."
+   On `"conflict": true` the restore was refused or conflicted and the stash is still intact. Tell the user, in this order: their uncommitted changes are safe in the stash, `stash_sha` identifies it, `inspect` shows it, and `apply` restores it once they are ready. Do not drop the stash and do not suggest dropping it.
 
 The result is unstaged in the working tree for the user to review. Never commit it.
 

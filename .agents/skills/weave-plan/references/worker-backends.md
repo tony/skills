@@ -62,8 +62,8 @@ not an executable; its normal model-CLI executor is `codex`.
 
 Use `<participant>` as the placeholder in backend-independent paths and
 events. A single output is
-`$SESSION_DIR/pass-NNNN/outputs/<participant>.md`; a variant is
-`$SESSION_DIR/outputs/<participant>-v<N>.md`. Blind-label maps point to
+`<session_dir>/pass-NNNN/outputs/<participant>.md`; a variant is
+`<session_dir>/outputs/<participant>-v<N>.md`. Blind-label maps point to
 participant IDs.
 
 The command supplies the task prompt, context packet, project-access mode,

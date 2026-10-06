@@ -4,12 +4,15 @@ Shared by every weave command that compares independent participant outputs.
 The calling skill supplies its command name, packet emphasis, prompt body,
 convergence mode, and rubric. `<engine>` is the script path the skill defines;
 every engine command prints JSON, and `"ok": false` carries the reason.
+`<session_dir>` is the literal `session_dir` path `init` prints. Paste it into
+each command: shell variables do not survive between Bash calls.
 
 ## Contents
 
 - Start the session
 - Context packet
 - Dispatch lanes
+- Variants
 - Close the repo guard
 - Blind judging
 - Synthesis protocol
@@ -29,9 +32,11 @@ every engine command prints JSON, and `"ok": false` carries the reason.
    EOF
    ```
 
-   Read `prompt` (the task, flags stripped), `passes`, `timeout`, `workers`,
-   `flags`, `timeout_menu`, `passes_recommended`, and `notes`. Report `notes`.
-   On `errors`, stop and show them. With an empty `prompt`, ask the user for it.
+   Flags are read only from the start of the arguments, up to the first word
+   that is not a flag (`--` also ends them); the rest is the prompt, flag-like
+   words included. Read `prompt`, `passes`, `timeout`, `workers`, `flags`,
+   `timeout_menu`, `passes_recommended`, and `notes`. Report `notes`. On
+   `errors`, stop and show them. With an empty `prompt`, ask the user for it.
 
 2. Ask for what is still null, skipping anything a flag set. Without
    `ask-user-choice`, use `passes_recommended` and the default timeout.
@@ -55,27 +60,38 @@ every engine command prints JSON, and `"ok": false` carries the reason.
 
    Add `--mutating` for a command that changes the tree (it stashes the user's
    uncommitted work first) and `--timeout <seconds|none>` under `model-clis`.
-   Stop when `ok` is false. Keep `session_dir` (`$SESSION_DIR`), `toplevel`,
-   `baseline_sha`, `participants`, `executors`, and `stash`. Tell the user
-   about a stash. Under `model-clis`, `participants` lists the lanes that can
-   run, so name the models taking part.
+   Stop when `ok` is false and relay `error` in one sentence. Keep
+   `session_dir`, `toplevel`, `baseline_sha`, `participants`, `executors`, and
+   `stash`. Tell the user about a stash. Under `model-clis`, `participants`
+   lists the lanes that can run, so name the models taking part.
 
    `init` also pins the checkout as a snapshot commit under
    `refs/weave-guard/<session>/`. Read-only lanes start from it.
+
+   Without a usable repository (no repo, no commits, or a toplevel that is
+   `/` or contains your home directory) a command that does not need commits
+   still starts: `init` returns `"unguarded": true` and a `note`. Say the note
+   once. Lanes then start in an empty scratch directory, the guard steps below
+   do nothing, and there is no repo state or trunk. A command that needs
+   commits (`execute`, `prompt`, `architecture`, `review`, `fix-review`) is
+   refused with `error`; relay it and stop.
 
 ---
 
 ## Context packet
 
 Build one bundle that goes verbatim into every participant prompt. Write it to
-`$SESSION_DIR/context-packet.md`.
+`<session_dir>/context-packet.md`.
 
 1. **Conventions**: key rules from the project's CLAUDE.md / AGENTS.md (max 50
    lines): commit format, test patterns, code style, quality gates relevant to
    the task.
 2. **Repo state and changed files**: the `markdown` field of
    `python3 <engine> context`. Add `--full-diff` when external participants
-   must see the diff.
+   must see the diff. `base` is `origin/<trunk>` as last fetched, else the
+   local trunk, so the comparison may be stale. Without a repository, `context`
+   returns a "No repository" note: keep it in the packet, and inline the text
+   the lanes must read, because their scratch directory is empty.
 3. **Relevant files**: paths matching the task keywords, no content.
 4. **Key snippets**: signatures, types, test patterns, or API contracts the
    task touches (max 200 lines). Interfaces over implementations.
@@ -87,7 +103,7 @@ Cap the packet at 400 lines; trim snippets first, then the file list.
 
 ## Dispatch lanes
 
-Write the shared worker prompt to `$SESSION_DIR/pass-NNNN/prompt.md`: the
+Write the shared worker prompt to `<session_dir>/pass-NNNN/prompt.md`: the
 skill's body text, then the context packet verbatim. The engine adds each
 lane's role preamble and, for read-only commands, the write ban, so write
 neither. For each lane, compose its prompt:
@@ -95,8 +111,8 @@ neither. For each lane, compose its prompt:
 ```console
 $ python3 <engine> prompt \
     --lane <lane> \
-    --file "$SESSION_DIR/pass-NNNN/prompt.md" \
-    --out "$SESSION_DIR/pass-NNNN/prompts/<lane>.md"
+    --file "<session_dir>/pass-NNNN/prompt.md" \
+    --out "<session_dir>/pass-NNNN/prompts/<lane>.md"
 ```
 
 Add `--mutating` for a mutating command. Launch every lane in the same turn;
@@ -109,18 +125,18 @@ user's uncommitted work:
 
 ```console
 $ python3 <engine> worktrees create \
-    --session "$SESSION_DIR" \
+    --session "<session_dir>" \
     --participants maintainer,skeptic,builder
 ```
 
 Launch a fresh `general-purpose` Task agent per role, rooted in its worktree
 path from the JSON, with the prompt "Read `<composed prompt path>` and follow
-it exactly." Write its reply to `$SESSION_DIR/pass-NNNN/outputs/<role>.md`.
+it exactly." Write its reply to `<session_dir>/pass-NNNN/outputs/<role>.md`.
 Read-only commands then remove the worktrees:
 
 ```console
 $ python3 <engine> worktrees remove \
-    --session "$SESSION_DIR"
+    --session "<session_dir>"
 ```
 
 **model-clis**: the lanes are the `participants` from `init`.
@@ -133,17 +149,17 @@ $ python3 <engine> worktrees remove \
 
   ```console
   $ python3 <engine> dispatch \
-      --session "$SESSION_DIR" \
+      --session "<session_dir>" \
       --lane <lane> \
       --pass <N> \
       --timeout <seconds|none> \
-      --prompt-file "$SESSION_DIR/pass-NNNN/prompt.md"
+      --prompt-file "<session_dir>/pass-NNNN/prompt.md"
   ```
 
   Add `--mutating` for a mutating command. On `"ok": true` the answer is at
   `output`; report any `attempts` that switched executor or model. On
   `"ok": false`, drop the lane with `python3 <engine> update --session
-  "$SESSION_DIR" --drop <lane>`, report `failure_class` and the stderr file,
+  "<session_dir>" --drop <lane>`, report `failure_class` and the stderr file,
   and continue. If a lane times out persistently, ask whether to retry with a
   higher timeout, and warn that retries spawn external agents billed to other
   provider accounts.
@@ -153,20 +169,52 @@ lane fails, stop and report each failure.
 
 ---
 
+## Variants
+
+For commands that generate several originals per participant. The skill
+supplies the prompt body, the preamble (if any), and what to show.
+
+1. Resolve `variants` from the flags result (`variants`, `variants_recommended`,
+   `preamble`); a skill that fixes the count skips the question. When it is
+   null, ask with `ask-user-choice`: "How many variants per participant? Each
+   gets a distinct creative direction." Options: 1 (recommended), 2, 3. Without
+   `ask-user-choice`, use `variants_recommended`. Pass `--variants <variants>`
+   to `init`.
+2. Write the body to `<session_dir>/pass-0001/prompt.md`, as in Dispatch lanes.
+   A custom `preamble` goes to `<session_dir>/preamble.md`.
+3. Every lane runs once per variant N of M, as its own invocation. Never
+   combine variants in one call, which would anchor them. Compose each prompt
+   with `--variant <N> --of <M>` into
+   `<session_dir>/pass-0001/prompts/<lane>-v<N>.md`, adding
+   `--preamble-file "<session_dir>/preamble.md"` when a preamble is set. The
+   engine supplies a distinct direction per variant and no role preamble.
+4. Sub-agents write `<session_dir>/outputs/<lane>-v<N>.md`. `dispatch` takes
+   the same `--variant <N> --of <M>` (and `--preamble-file`) and writes that
+   path. Launch every lane and variant in the same turn.
+5. Show the originals when the skill says to, after the repo guard closes:
+   each under its participant name, with `Variant N` and its direction
+   (Conventional, Creative, Contrarian) when there is more than one variant and
+   no custom preamble. A failed variant becomes a note with its failure class.
+   Never deslop originals; their diversity is the product.
+
+---
+
 ## Close the repo guard
 
-Run this once after all lanes of a read-only command finish, before judging:
+Run this once after all lanes of a read-only command finish, before judging.
+It reports `"unguarded": true` and nothing else when the session has no
+repository; skip the rest of this section then.
 
 ```console
 $ python3 <engine> guard check \
-    --session "$SESSION_DIR" \
+    --session "<session_dir>" \
     --label lanes
 ```
 
 `"violation": false` ends the step. Otherwise the checkout differs from the
 snapshot taken before dispatch. The engine changed nothing, and recorded the
 touched paths, a patch, a copy of each touched file, and a pinned snapshot
-under `$SESSION_DIR/guard/`. List `touched` (`A` added, `M` modified, `D`
+under the session's `guard/` directory. List `touched` (`A` added, `M` modified, `D`
 deleted) and warn that a path the user edited during the run is in the list.
 Ask once with `ask-user-choice`:
 
@@ -179,7 +227,7 @@ Without `ask-user-choice`, keep and report. Apply the choice:
 
 ```console
 $ python3 <engine> guard resolve \
-    --session "$SESSION_DIR" \
+    --session "<session_dir>" \
     --choice <keep|revert|quarantine>
 ```
 
@@ -189,7 +237,7 @@ A moved `HEAD` (`head_changed`) is reported, never undone.
 
 ## Blind judging
 
-Run `python3 <engine> labels --session "$SESSION_DIR" --pass N --participants <ids>`
+Run `python3 <engine> labels --session "<session_dir>" --pass N --participants <ids>`
 with the successful participant IDs. It assigns random labels, writes
 `pass-NNNN/label-map.json`, and copies each output to
 `pass-NNNN/blind/response-<label>.md`.
@@ -294,17 +342,25 @@ Close the guard, mark the session complete, and link `latest`:
 
 ```console
 $ python3 <engine> guard finish \
-    --session "$SESSION_DIR"
+    --session "<session_dir>"
 ```
 
 ```console
 $ python3 <engine> update \
-    --session "$SESSION_DIR" \
+    --session "<session_dir>" \
     --status completed \
     --event session_complete \
     --link-latest
 ```
 
 Record each finished pass with `update --completed-passes <N> --event
-pass_complete --event-json '{"pass": <N>}'`. End the output with
-`**Session artifacts**: $SESSION_DIR`.
+pass_complete --event-json '{"pass": <N>}'`. Then drop pins older than 14 days
+so abandoned sessions leave nothing behind:
+
+```console
+$ python3 <engine> guard prune
+```
+
+A run that stops before results (refused, failed, or declined) replies in one
+sentence that states the result, then what the user needs to do. It renders no
+sections.

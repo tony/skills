@@ -55,15 +55,15 @@ trunk merge-base, discover the project's format, lint, typecheck, and
 test commands from `AGENTS.md`, `CLAUDE.md`, and
 `.github/CONTRIBUTING.md`, calibrate subjective signals against trunk
 history, then run a regex pass and an optional semantic verifier. Both
-write a numbered patch series under `.git/` first. Nothing changes
+write a numbered patch series under the git directory first. Nothing changes
 until you pass an apply flag and confirm.
 
-`/slop:deslop` writes `.git/deslop/<ts>-<pid>/` with a checkpointed
+`/slop:deslop` writes `deslop/<ts>-<pid>/` under the git directory with a checkpointed
 `apply.sh`. `--apply-patches` offers fixup commits on `HEAD`;
 `--apply-rebase` also offers an autosquash, with a backup branch first
 and quality gates inside the conflict loop.
 
-`/slop:scan` writes `.git/slop-scan/<ts>-<pid>/` with `commits.json`.
+`/slop:scan` writes `slop-scan/<ts>-<pid>/` under the git directory with `commits.json`.
 `--apply` offers the per-finding loop: edit, stage the file, run gates,
 commit. A gate failure rolls the file back and the run continues.
 

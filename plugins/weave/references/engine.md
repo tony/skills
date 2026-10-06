@@ -26,7 +26,8 @@ usage error. `engine.py --help` lists the commands and
 ## Commands
 
 Session
-- `flags --command <name>`: reads the raw arguments on stdin; returns `prompt`,
+- `flags --command <name>`: reads the raw arguments on stdin and consumes only
+  the leading block of flags (a bare `--` ends it); returns `prompt`,
   `passes`, `variants`, `timeout`, `mode`, `workers`, `judge`, `preamble`,
   `flags`, `timeout_menu`, `passes_recommended`, `notes`, `errors`. The
   per-command defaults live in `PROFILES`.
@@ -36,9 +37,15 @@ Session
   `--variants N`, `--passes N`, `--timeout`, `--prompt-stdin`. `--bare` makes a
   workerless session with no snapshot. Returns `session_dir`, `toplevel`,
   `trunk`, `baseline_sha`, `participants`, `executors`, `artifacts`, `stash`.
-- `context [--full-diff] [--diff-limit N]`: `trunk`, `branch`, `commits` on the
-  branch, and the repo-state packet sections as `markdown`. Read-only; it needs no
-  session.
+  Without a usable repository (none, no commits, or a toplevel that is `/` or
+  contains `$HOME`), commands outside `execute`, `prompt`, `architecture`,
+  `review`, `fix-review` and `--mutating` run unguarded: `unguarded` is true,
+  `note` says why, and lanes get an empty scratch directory. The others fail,
+  and a failed `init` leaves no session directory behind.
+- `context [--full-diff] [--diff-limit N]`: `repo`, `trunk`, `base` (the ref
+  diffed against: `origin/<trunk>`, else the local trunk), `branch`, `commits`
+  on the branch, and the repo-state packet sections as `markdown`. Read-only; it
+  needs no session. Without a usable repository it returns `repo: false`.
 - `update --session S`: `--status`, `--completed-passes`, `--event` with
   `--event-json`, `--drop <lane>`, `--set key=<json>`, `--link-latest`.
 - `pass-dir --session S --pass N`: creates `pass-NNNN` for a later pass.
@@ -60,7 +67,9 @@ Prompts and lanes
 - `adopt --session S --pass N --pick path=P --delete path`: copies snapshots into
   the main checkout. `--all P` adopts everything `P` captured.
 - `reset-main`, `stash-restore`: discard the main tree's changes only when the
-  user's stash is recorded and present; pop the session's own stash entry.
+  user's stash is recorded and present; pop the session's own stash entry. A
+  refused or conflicting pop returns `ok: false`, `stash_kept`, `stash_sha`,
+  `inspect`, and `apply`; the stash is never dropped.
 
 Judging
 - `labels --session S --pass N --participants a,b [--outputs-dir D]`: random blind
@@ -69,27 +78,30 @@ Judging
   Each judge's `how` is `host`, `native` (fresh sub-agent), or `external`
   (`dispatch --judge`). A panel reports `feasibility`: `full`, `degraded`, or
   `host-fallback`.
-- `judge-parse --file F [--prior F2]`: parses a judge file's scores table;
-  returns `columns`, `scores`, `totals`, `winner`, `winner_score`, `errors`.
+- `judge-parse --file F [--prior F2] [--label-map M]`: parses a judge file's
+  scores table (decimal scores allowed, role suffixes stripped from columns,
+  blind labels mapped through `M`, Winner section optional); returns `columns`,
+  `scores`, `totals`, `winner`, `winner_declared`, `winner_score`, `errors`.
   With `--prior`, `not_improved` is true when the winner's score did not rise.
-- `panel-merge --judge name=path ...`: peer-only averaging over panel judge
-  files; returns `merged`, `totals`, `winner` or `tied`, `peers`, and the
-  judges whose files did not parse.
+- `panel-merge --judge name=path ... [--label-map M]`: peer-only averaging over
+  panel judge files; returns `merged`, `totals`, `winner` or `tied`, `peers`, and
+  the judges whose files did not parse.
 
 Guard
 - `guard check --session S [--label L]`: compares the checkout with the
   pre-dispatch snapshot. Never changes it.
 - `guard resolve --session S --choice keep|revert|quarantine`: applies the user's
   decision.
-- `guard finish --session S`: logs `repo_guard_final`, drops pinned refs when clean.
+- `guard finish --session S`: logs `repo_guard_final`, drops pinned refs when
+  clean, and keeps the `pre-reset-*` pins `reset-main` needs for recovery.
 - `guard prune [--repo R] [--days N]`: drops old pinned refs.
 
 `docs/repo-guard-protocol.md` describes the guard.
 
 ## Session layout
 
-`$SESSION_DIR` is `<root>/repos/<repo>/sessions/<command>/<session-id>`, outside
-the repository.
+`<session_dir>` is `<root>/repos/<repo>/sessions/<command>/<session-id>`, outside
+the repository; skills paste its literal value into each command.
 
 - `session.json`, `events.jsonl`, `metadata.md`, `guard-events.jsonl`.
 - `context-packet.md`, `original.md` (written by the skill).

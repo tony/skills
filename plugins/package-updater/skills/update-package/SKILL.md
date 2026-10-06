@@ -12,9 +12,10 @@ disable-model-invocation: true
 Move one named package to a target version wherever it is pinned, with a
 body that says what the release means for each repository it lands in.
 
-References, all under `../../references/`: `repo-scope.md`,
-`ecosystems.md`, `commit-conventions.md`, `upstream-links.md`,
-`follow-ups.md` and `holds.md`.
+References: `../../references/repo-scope.md`,
+`../../references/ecosystems.md`, `../../references/commit-conventions.md`,
+`../../references/upstream-links.md`, `../../references/follow-ups.md` and
+`../../references/holds.md`.
 
 For a full sweep, use `/package-updater:update`. For a runtime or
 toolchain pin, use `/package-updater:update-toolchain`.

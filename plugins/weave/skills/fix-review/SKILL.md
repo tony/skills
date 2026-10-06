@@ -12,6 +12,8 @@ Process weave code review findings from the conversation context. Validate each 
 
 `<engine>` is `../../scripts/engine.py`, run with `python3`. It prints JSON; `"ok": false` carries the reason.
 
+This command commits to a git repository, so it needs one with at least one commit. Without one, reply in one sentence that `fix-review` needs a git repository with commits, and stop.
+
 ---
 
 ## Orchestration Plan
@@ -64,7 +66,7 @@ For each finding:
    - **Out of scope**: valid but unrelated to this branch's changes
    - **Pre-existing**: valid but older than this branch
 4. Record the verdict. For a valid finding, note the planned fix and test strategy. For any other verdict, cite the code, test, or convention that decides it.
-5. Present each finding with its verdict, compared against the plan's predictions, and highlight changes. Wait for the user's confirmation before Phase 3. A pre-existing finding is fixed only when the user approves it.
+5. Present each finding with its verdict, compared against the plan's predictions, and highlight changes. Wait for the user's confirmation before Phase 3. A pre-existing finding is fixed only when the user approves it. Without an interactive reply, stop here and report the verdicts: nothing is fixed or committed. A request that explicitly says to apply the fixes is that confirmation for the findings judged Valid, never for pre-existing ones and never for pushing.
 
 ---
 
@@ -76,7 +78,7 @@ Process one finding at a time and finish its full cycle before the next. A findi
 2. **Write or extend a test**, following the project's test conventions strictly. Prefer, in order: a new entry in an existing parameterized fixture, a new case in an existing test function, a new test function in an existing file, and a new test file only when nothing covers the area.
 3. **Apply the minimal fix** that addresses the finding, with no unrelated changes, following the project's conventions.
 4. **Run the project's quality gates.** All must pass before committing. On a failure, adjust the fix, or update the test when the finding changes expected behavior.
-5. **Commit** only the files changed for this finding, using the project's commit message format and a reference to the review finding:
+5. **Commit** only the files changed for this finding, using the project's commit message format and a reference to the review finding. Write the message per `../../references/prose-rules.md`, with no `Co-Authored-By` line, no "Generated with" or other tool trailer, and no emoji; hosts add these by default, so strip them:
 
    ```console
    $ git add <specific-files>
@@ -100,15 +102,15 @@ $ python3 <engine> init \
     --bare
 ```
 
-Write the session summary, with each finding, its verdict, and the commit that addressed it, to `$SESSION_DIR/phase-4-summary.md` per `../../references/prose-rules.md`.
+Write the session summary, with each finding, its verdict, and the commit that addressed it, to `<session_dir>/phase-4-summary.md` per `../../references/prose-rules.md`.
 
-Read `../../references/present-results.md` and apply it with `RESULT_KIND` = `fix-review`, `ARTIFACT_PATH` = `$SESSION_DIR/phase-4-summary.md`, `SESSION_DIR` = `$SESSION_DIR`, `PASS_COUNT` = 1, `IN_PLAN_MODE` = false, `WORKER_BACKEND` = null, `PARTICIPANTS` = [], `EXECUTORS` = null, `MODELS` = null, `LABEL_MAP_PATH` = null.
+Read `../../references/present-results.md` and apply it with `RESULT_KIND` = `fix-review`, `ARTIFACT_PATH` = `<session_dir>/phase-4-summary.md`, `SESSION_DIR` = `<session_dir>`, `PASS_COUNT` = 1, `IN_PLAN_MODE` = false, `WORKER_BACKEND` = null, `PARTICIPANTS` = [], `EXECUTORS` = null, `MODELS` = null, `LABEL_MAP_PATH` = null.
 
 After the reference returns, run the full quality gate one last time, show the commit log for the session, report the final pass/fail status, and mark the session complete:
 
 ```console
 $ python3 <engine> update \
-    --session "$SESSION_DIR" \
+    --session "<session_dir>" \
     --status completed \
     --event session_complete \
     --link-latest

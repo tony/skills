@@ -6,7 +6,7 @@ What a ruff release does to a given repository, worked out before touching a fil
 
 Ruff ships breaking changes in minor releases, so a `0.N` bump is not a patch. Three sources, in order of authority:
 
-1. The repository's own `CHANGELOG.md` at the release tag. This is canonical and complete.
+1. The repository's own `CHANGELOG.md` at the release tag, `https://github.com/astral-sh/ruff/blob/<tag>/CHANGELOG.md`. This is canonical and complete.
 2. The vendor's release blog post, when one exists for that version. Better narrative, sometimes omits detail.
 3. The GitHub release page. Usually a rendering of the changelog.
 
@@ -18,11 +18,9 @@ If a local clone of the linter's source is available, reading the changelog at t
 
 **Stabilized behavior inside existing rules.** A rule that already fired now fires in more places, or in fewer. These produce diagnostics on code that has been clean for years, which reads as a false positive until you check the changelog. Record the rule code and what widened.
 
-**Default configuration changes.** Changes to what is selected when the repo does not say. Critical distinction: an explicit `[tool.ruff.lint] select` **replaces** the default set rather than extending it, so a release that dramatically expands the defaults produces no new diagnostics for any repo that sets `select`. It is only an immediate event for repos relying on the default, or using `extend-select` on top of it. Check which case each repo is in before predicting anything.
+**Default configuration changes.** Changes to what is selected when the repo does not say. Check which case each repo is in (explicit `select`, `extend-select` only, or neither) before predicting anything. An explicit `select` opts a repo out; the bucket is a decision for the user, not an inert one, handled in the procedure's default-rule-set step.
 
-Do not report this bucket as inert: a repo with an explicit `select` is opted out of the new defaults. Raise it as a decision in the procedure's default-rule-set step.
-
-**Formatter changes.** New syntax handled, changed output, or — the expensive one — new *file types* brought into the formatter's scope. A formatter that starts formatting embedded code inside documentation files will rewrite files that no formatter has ever touched in that repo, and the diff can dwarf every lint fix combined. Predict this by comparing the file count the formatter reports against the count of source files it used to cover.
+**Formatter changes.** New syntax handled, changed output, or — the expensive one — new *file types* brought into the formatter's scope. A formatter that starts formatting embedded code inside documentation files will rewrite files that no formatter has ever touched in that repo, and the diff can dwarf every lint fix combined. Predict this by running `ruff format --check` before and after the version change and comparing the count of files it would reformat.
 
 **Output and interface changes.** Serialization formats, exit codes, CLI flags, suppression-comment syntax. These break tooling that parses the linter's output — CI annotation scripts, editor integrations, report generators — not the code being linted. Grep the repo for anything that consumes the linter's machine-readable output.
 

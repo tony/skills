@@ -2,13 +2,13 @@
 name: brainstorm
 description: "Use when asked to brainstorm, or a design question or open-ended problem needs multiple independent adversarial ideas."
 allowed-tools: ["Bash", "Read", "Grep", "Glob", "Write", "Task", "AskUserQuestion"]
-argument-hint: "<prompt> [--variants=N] [--timeout=N|none] [--mode=fast|balanced|deep] [--preamble=...] [--workers=subagents|model-clis]"
+argument-hint: "[--variants=N] [--timeout=N|none] [--mode=fast|balanced|deep] [--preamble=...] [--workers=subagents|model-clis] <prompt>"
 user-invocable: true
 ---
 
 # Weave Brainstorm
 
-Generate independent original responses from adversarial participants in parallel, with optional variants per participant. No scoring, ranking, or synthesis: the pool of originals is the product, and it can feed `/weave:refine` or `/weave:brainstorm-and-refine`. Host-native sub-agents are the default; separate model CLIs are optional. This is a **project-read-only** command: no repository file is written, edited, or deleted. Session artifacts live in `$SESSION_DIR`, outside the repository.
+Generate independent original responses from adversarial participants in parallel, with optional variants per participant. No scoring, ranking, or synthesis: the pool of originals is the product, and it can feed `/weave:refine` or `/weave:brainstorm-and-refine`. Host-native sub-agents are the default; separate model CLIs are optional. This is a **project-read-only** command: no repository file is written, edited, or deleted. Session artifacts live in the session directory, outside the repository.
 
 The prompt comes from `$ARGUMENTS`. If there are none, ask the user what they want to brainstorm.
 
@@ -30,7 +30,7 @@ The selected backend governs the whole session: dispatch, retry, judging, refine
 
 ## Phase 1: Start the session
 
-Follow `ensemble-core.md` (Start the session) with `--command brainstorm`. The flags result also reports `variants`, `variants_recommended`, and `preamble`. Through `AskUserQuestion`, ask "How many variants per participant? Each gets a distinct creative direction." when `variants` is null, with options 1 (recommended), 2, and 3; without `AskUserQuestion`, use `variants_recommended`. This command has no passes question. Add `--variants <variants>` to `init`.
+Follow `ensemble-core.md` (Start the session) with `--command brainstorm`, resolving variants per `ensemble-core.md` (Variants), which asks through `AskUserQuestion`. This command has no passes question.
 
 Build the context packet per `ensemble-core.md` (Context packet). Lead with conventions and the files the prompt touches.
 
@@ -38,7 +38,7 @@ Build the context packet per `ensemble-core.md` (Context packet). Lead with conv
 
 ## Phase 2: Generate the originals
 
-The shared worker prompt body, written to `$SESSION_DIR/prompt.md`, is:
+The shared worker prompt body is:
 
 > Respond to the following prompt about this codebase. Read relevant files to give a thorough, original response. Read CLAUDE.md/AGENTS.md for project conventions.
 >
@@ -46,22 +46,15 @@ The shared worker prompt body, written to `$SESSION_DIR/prompt.md`, is:
 >
 > Provide a clear, well-structured response. Cite specific files and line numbers where relevant.
 
-Follow `ensemble-core.md` (Dispatch lanes) with these changes:
-
-- Every lane runs once per variant N of M, as its own invocation. Never combine variants in one call, which would anchor them.
-- Compose each prompt with `--variant <N> --of <M>`, writing `$SESSION_DIR/prompts/<lane>-v<N>.md`. The engine supplies a distinct creative direction per variant and no role preamble. When `preamble` is set, write it to `$SESSION_DIR/preamble.md` and add `--preamble-file` to `prompt` and `dispatch`.
-- Sub-agents write `$SESSION_DIR/outputs/<lane>-v<N>.md`. Add `--variant <N> --of <M>` to `dispatch`, which writes the same path.
-- Launch every lane and variant in the same turn.
-
-Then follow `ensemble-core.md` (Close the repo guard).
+Follow `ensemble-core.md` (Dispatch lanes) and (Variants), then (Close the repo guard).
 
 ---
 
 ## Phase 3: Present the originals
 
-Read `../../references/present-results.md` and apply it with `RESULT_KIND` = `brainstorm`, `ARTIFACT_PATH` = `$SESSION_DIR/outputs/`, `SESSION_DIR`, `PASS_COUNT` = 1, `IN_PLAN_MODE` = false, `LABEL_MAP_PATH` = null. Read `WORKER_BACKEND`, `PARTICIPANTS`, `EXECUTORS`, and `MODELS` from `session.json`.
+Read `../../references/present-results.md` and apply it with `RESULT_KIND` = `brainstorm`, `ARTIFACT_PATH` = the session's `outputs/` directory, `SESSION_DIR`, `PASS_COUNT` = 1, `IN_PLAN_MODE` = false, `LABEL_MAP_PATH` = null. Read `WORKER_BACKEND`, `PARTICIPANTS`, `EXECUTORS`, and `MODELS` from `session.json`.
 
-Head each response with the participant. With more than one variant, add `Variant N` and, unless `preamble` was set, its direction: Conventional, Creative, or Contrarian. Replace a failed variant with a note and its failure class.
+Head each response as `ensemble-core.md` (Variants) step 5 says.
 
 ---
 

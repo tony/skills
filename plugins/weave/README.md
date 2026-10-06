@@ -66,6 +66,8 @@ Worker backends are strictly isolated: retry and fallback stay inside the chosen
 
 ### Command categories
 
+Commands that need commits (`execute`, `prompt`, `architecture`, `review`, `fix-review`) refuse in one sentence without a git repository that has at least one commit. `ask` and `plan` degrade with a stated "no repository" note. `brainstorm`, `brainstorm-and-refine`, `refine`, and `serene-bliss` run anywhere: with no usable repository the repo guard is off and workers start in an empty scratch directory. A checkout rooted at `/`, at your home directory, or at a directory containing your home directory counts as no repository, and a command that snapshots, stashes, or adds worktrees refuses it.
+
 - **Read-only** (`ask`, `plan`, `brainstorm`, `refine`, `brainstorm-and-refine`, `serene-bliss`, `review`): gather perspectives and synthesize. Nothing in the repository changes.
 - **Write**: each participant works in its own worktree. `prompt` picks one winner, `execute` cherry-picks the best parts, `architecture` cherry-picks conventions, skills, and scaffolding per file, and `fix-review` commits findings one by one.
 
@@ -94,17 +96,17 @@ After each CLI attempt and once after all lanes finish, the guard compares per-p
 
 | Flag | Values | Default | Example |
 |------|--------|---------|---------|
-| `--workers=...` | `subagents` or `model-clis` | `subagents` | `/weave:ask question --workers=model-clis` |
-| `--passes=N` | 1-5 | per command | `/weave:plan add auth --passes=2` |
-| `--timeout=N\|none` | seconds or `none` | per command (`model-clis` only) | `/weave:ask question --timeout=300` |
-| `--mode=fast\|balanced\|deep` | preset | `balanced` | `/weave:execute task --mode=deep` |
-| `--cascade` | flag (ask, review) | off | `/weave:ask question --cascade` |
-| `--variants=N` | 1-3 | 1 | `/weave:brainstorm idea --variants=2` |
-| `--judge=host\|round-robin` | who judges each refinement pass | `host` | `/weave:refine draft --judge=round-robin` |
-| `--preamble=...` | text | built-in | `/weave:brainstorm idea --preamble='focus on perf'` |
-| `--no-deslop`, `--quiet-deslop`, `--verbose-deslop` | flags | off | `/weave:ask question --quiet-deslop` |
+| `--workers=...` | `subagents` or `model-clis` | `subagents` | `/weave:ask --workers=model-clis question` |
+| `--passes=N` | 1-5 | per command | `/weave:plan --passes=2 add auth` |
+| `--timeout=N\|none` | seconds or `none` | per command (`model-clis` only) | `/weave:ask --timeout=300 question` |
+| `--mode=fast\|balanced\|deep` | preset | `balanced` | `/weave:execute --mode=deep task` |
+| `--cascade` | flag (ask, review) | off | `/weave:ask --cascade question` |
+| `--variants=N` | 1-3 | 1 | `/weave:brainstorm --variants=2 idea` |
+| `--judge=host\|round-robin` | who judges each refinement pass | `host` | `/weave:refine --judge=round-robin draft` |
+| `--preamble=...` | text | built-in | `/weave:brainstorm --preamble='focus on perf' idea` |
+| `--no-deslop`, `--quiet-deslop`, `--verbose-deslop` | flags | off | `/weave:ask --quiet-deslop question` |
 
-The engine's `PROFILES` table holds each command's defaults. `ask`, `plan`, `prompt`, `execute`, `architecture`, and `review` presets are `fast` (1 pass, 0.5x timeout), `balanced` (1 pass, 1x), and `deep` (2 passes, 1.5x). `brainstorm` presets set variants (`deep` is 2). `refine` presets are 1, 2, and 3 passes. `brainstorm-and-refine` and `serene-bliss` presets set passes the same way, and `brainstorm-and-refine` also sets variants.
+Flags are read only from the start of the arguments; the first word that is not a flag, or a bare `--`, begins the prompt, so flag-like words inside your text stay untouched. The engine's `PROFILES` table holds each command's defaults. `ask`, `plan`, `prompt`, `execute`, `architecture`, and `review` presets are `fast` (1 pass, 0.5x timeout), `balanced` (1 pass, 1x), and `deep` (2 passes, 1.5x). `brainstorm` presets set variants (`deep` is 2). `refine` presets are 1, 2, and 3 passes. `brainstorm-and-refine` and `serene-bliss` presets set passes the same way, and `brainstorm-and-refine` also sets variants.
 
 Default timeouts: ask, brainstorm, refine, brainstorm-and-refine, serene-bliss 450s; plan and prompt 600s; review 900s; execute and architecture 1200s.
 
@@ -151,11 +153,11 @@ The original synthesis stays next to the desloped one as `<artifact>.pre-deslop.
 
 ```console
 $ diff \
-    "$SESSION_DIR/pass-0001/synthesis.pre-deslop.md" \
-    "$SESSION_DIR/pass-0001/synthesis.md"
+    "<session_dir>/pass-0001/synthesis.pre-deslop.md" \
+    "<session_dir>/pass-0001/synthesis.md"
 ```
 
-`$SESSION_DIR/deslop-report.md` records the registry hash, applied, declined, and advisory findings, and the word delta. A 30% word-delta hard abort restores the original. A single edit that would remove 15% or more becomes advisory, and its held trim goes to `<artifact>-deslop-held.md`.
+`<session_dir>/deslop-report.md` records the registry hash, applied, declined, and advisory findings, and the word delta. A 30% word-delta hard abort restores the original. A single edit that would remove 15% or more becomes advisory, and its held trim goes to `<artifact>-deslop-held.md`.
 
 ## Session Artifacts
 
@@ -193,7 +195,7 @@ $AI_AIP_ROOT/repos/<slug>--<hash>/
 
 With the default backend the participants are `maintainer`, `skeptic`, and `builder`; with `model-clis` they are `claude`, `agy`, and `gpt`. Only files that differ from `HEAD` are snapshotted into `files/<participant>/`; deleted files appear in the manifest only, so a later pass can cross-reference files without depending on worktree persistence. Pass directories use zero-padded numbering and mode 700, and stay after the session.
 
-`session.json` records `session_id`, `command`, `status` (`in_progress` or `completed`), `toplevel`, `branch`, `ref`, `mutating`, `worker_backend`, `participants`, `executors` (participant ID to executor), `models` (only for `model-clis`), `completed_passes`, `prompt_summary` (first 120 characters), `guard` (the snapshot), and timestamps. `stash` records the user's stashed changes for a write command. `events.jsonl` holds one JSON object per line: `session_start`, `pass_complete`, `repo_guard_final`, and `session_complete`. The engine updates both atomically.
+`session.json` records `session_id`, `command`, `status` (`in_progress` or `completed`), `toplevel`, `branch`, `ref`, `mutating`, `worker_backend`, `participants`, `executors` (participant ID to executor), `models` (only for `model-clis`), `completed_passes`, `prompt_summary` (first 120 characters), `guard` (the snapshot; absent with `unguarded: true` in no-repo mode), and timestamps. `stash` records the user's stashed changes for a write command. `events.jsonl` holds one JSON object per line: `session_start`, `pass_complete`, `repo_guard_final`, and `session_complete`. The engine updates both atomically.
 
 To list sessions, scan the `session.json` files under `sessions/<command>/`; `latest` points at the most recently completed session.
 

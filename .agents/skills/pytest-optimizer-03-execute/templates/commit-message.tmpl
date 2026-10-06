@@ -1,8 +1,3 @@
-# One speedup per commit. Adapt the type(scope) prefix and the subject limit to
-# the target project's convention (its AGENTS.md / CLAUDE.md). Lines beginning
-# with '#' are stripped by git. Wrap the body at 72 columns. State the measured
-# problem and the measured result, not a narration of the diff.
-
 <type>(<scope>) <imperative summary of the single change>
 
 why: <the measured problem this fixes: what was slow and by how much, e.g.
@@ -10,4 +5,4 @@ why: <the measured problem this fixes: what was slow and by how much, e.g.
 
 what:
 - <the single change applied>
-- <measured delta: suite X.Xs -> Y.Ys (-Z%), above the k*MAD noise band>
+- <measured delta: suite X.Xs -> Y.Ys (-Z%), above the noise band>

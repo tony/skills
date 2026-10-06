@@ -1,8 +1,8 @@
 ---
 name: model-cli-codex
 description: >-
-  Use when asked to delegate a task to Codex, GPT, or the Codex CLI; falls
-  back to agent. Not for sending a message to a running Codex session.
+  Use when asked to use Codex, GPT, OpenAI's model, or the Codex CLI to
+  delegate a task; falls back to agent. Not for messaging a Codex session.
 allowed-tools: ["Bash"]
 metadata:
   argument-hint: "<prompt> [timeout:<seconds>] [mode:plan]"

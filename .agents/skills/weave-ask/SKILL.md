@@ -6,13 +6,13 @@ description: >-
 disable-model-invocation: true
 allowed-tools: ["Bash", "Read", "Grep", "Glob", "Write", "Task", "AskUserQuestion"]
 metadata:
-  argument-hint: "<question> [--cascade] [--passes=N] [--timeout=N|none] [--mode=fast|balanced|deep] [--no-deslop|--quiet-deslop|--verbose-deslop] [--workers=subagents|model-clis]"
+  argument-hint: "[--cascade] [--passes=N] [--timeout=N|none] [--mode=fast|balanced|deep] [--no-deslop|--quiet-deslop|--verbose-deslop] [--workers=subagents|model-clis] <question>"
   source: "plugins/weave/skills/ask/SKILL.md"
 ---
 
 # Weave Ask
 
-Ask independent adversarial workers the same question in parallel, then synthesize the best answer from their responses. Host-native sub-agents are the default; separate model CLIs are optional. This is a **project-read-only** command: no repository file is written, edited, or deleted. Session artifacts live in `$SESSION_DIR`, outside the repository.
+Ask independent adversarial workers the same question in parallel, then synthesize the best answer from their responses. Host-native sub-agents are the default; separate model CLIs are optional. This is a **project-read-only** command: no repository file is written, edited, or deleted. Session artifacts live in the session directory, outside the repository.
 
 The question comes from `$ARGUMENTS`. If there are none, ask the user what they want to know.
 
@@ -36,7 +36,7 @@ The selected backend governs the whole session: dispatch, retry, judging, refine
 
 Follow `ensemble-core.md` (Start the session) with `--command ask`. The flags result also reports `cascade` and the deslop flags in `flags`. It asks each unresolved setting through `ask-user-choice`.
 
-Build the context packet per `ensemble-core.md` (Context packet). Lead with conventions and relevant files, and include changed files only when the question concerns branch changes.
+Build the context packet per `ensemble-core.md` (Context packet). Lead with conventions and relevant files, and include changed files only when the question concerns branch changes. Without a repository, say "no repository" up front and answer from what the question and any files the user names provide; state what could not be checked rather than inventing code.
 
 ---
 
@@ -64,13 +64,13 @@ Follow `ensemble-core.md` (Dispatch lanes) with this body, then (Close the repo 
 
 Apply `ensemble-core.md` (Blind judging, Synthesis protocol, Consensus map) to this pass's outputs. The convergence mode for `ask` is **Merge**: agreed points are the foundation, then adjudicated resolutions, then the best unique contributions ordered by score, with unverified claims stripped.
 
-Write the synthesis to `$SESSION_DIR/pass-NNNN/synthesis.md` per `references/prose-rules.md`.
+Write the synthesis to `<session_dir>/pass-NNNN/synthesis.md` per `references/prose-rules.md`.
 
 Run the deslop pass on the final pass only (pass 1 when `passes` is 1, else the last pass of Phase 5), unless `--no-deslop` was set. Read `references/deslop-pass.md` and apply it with `ARTIFACT_PATH` set to that file, `SESSION_DIR`, `BASELINE_SHA` set to `baseline_sha` from `init`, and `DESLOP_MODE` from the flags (`quiet`, `verbose`, or `default`). Re-read `synthesis.md` for the desloped text and render from it.
 
 ### Present the answer
 
-Read `references/present-results.md` and apply it with `RESULT_KIND` = `ask`, `ARTIFACT_PATH` = `$SESSION_DIR/pass-NNNN/synthesis.md`, `SESSION_DIR`, `PASS_COUNT` = `passes`, `IN_PLAN_MODE` = false, `LABEL_MAP_PATH` = `$SESSION_DIR/pass-NNNN/label-map.json` (null when only one worker answered or the cascade exited early), `CASCADE_STATE` = `early-exit`, `escalated`, or null without `--cascade`. Read `WORKER_BACKEND`, `PARTICIPANTS`, `EXECUTORS`, and `MODELS` from `session.json`.
+Read `references/present-results.md` and apply it with `RESULT_KIND` = `ask`, `ARTIFACT_PATH` = `<session_dir>/pass-NNNN/synthesis.md`, `SESSION_DIR`, `PASS_COUNT` = `passes`, `IN_PLAN_MODE` = false, `LABEL_MAP_PATH` = `<session_dir>/pass-NNNN/label-map.json` (null when only one worker answered or the cascade exited early), `CASCADE_STATE` = `early-exit`, `escalated`, or null without `--cascade`. Read `WORKER_BACKEND`, `PARTICIPANTS`, `EXECUTORS`, and `MODELS` from `session.json`.
 
 ---
 
@@ -78,7 +78,7 @@ Read `references/present-results.md` and apply it with `RESULT_KIND` = `ask`, `A
 
 Skip when `passes` is 1. Read `references/ensemble-techniques.md` (Technique 2). For pass N of 2 to `passes`, do not re-run the task: extract `pass-<N-1>/residuals.md` from the prior pass, and stop on an empty ledger.
 
-1. Create the pass: `python3 <engine> pass-dir --session "$SESSION_DIR" --pass <N>`.
+1. Create the pass: `python3 <engine> pass-dir --session "<session_dir>" --pass <N>`.
 2. Write the residual prompt to `pass-<N>/prompt.md` (ledger entries only), then dispatch as in Phase 3 with pass `<N>`.
 3. Merge resolutions back into the prior synthesis, re-score only affected dimensions, and write `pass-<N>/synthesis.md`.
 4. Stop early when no score moved by more than 1 and no new conflict appeared.

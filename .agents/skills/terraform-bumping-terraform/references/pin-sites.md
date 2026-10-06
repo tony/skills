@@ -126,6 +126,20 @@ invokes the CLI.
 version number and nothing else, so no name-based filter matches it.
 Take every line.
 
+One search covers the first two traps. It matches case-insensitively at
+any depth, and requires a tool or abbreviation name and a version number
+on one line:
+
+```console
+$ git grep -n -I -i -E -e '(terraform|tofu|tf_?version).*[0-9]+\.[0-9]+' -- ':(icase)*justfile' ':(icase)*makefile' '*Dockerfile*' '*devcontainer.json' '*.tool-versions' '*mise.toml' '*.yml' '*.yaml'
+```
+
+Version files take a second search:
+
+```console
+$ git grep -n -I -e '' -- '*.terraform-version'
+```
+
 These drift apart quietly: the configuration says one version, the
 version manager installs another, and CI installs a third. Inventory all
 of them, report every disagreement found before the bump, and move them
@@ -143,7 +157,7 @@ before writing it anywhere. Every registry implements the protocol's
 versions endpoint, so this is the gate:
 
 ```console
-curl -s https://registry.terraform.io/v1/providers/hashicorp/aws/versions | jq -r '.versions[].version'
+$ curl -fsS https://registry.terraform.io/v1/providers/hashicorp/aws/versions | jq -r '.versions[].version'
 ```
 
 Swap the host for `registry.opentofu.org` when OpenTofu drives the
@@ -157,7 +171,7 @@ carrying the release tag and the provider's own repository, which is
 what makes a changelog link derivable for any provider:
 
 ```console
-curl -s https://registry.terraform.io/v1/providers/hashicorp/aws | jq '{version, tag, source, published_at}'
+$ curl -fsS https://registry.terraform.io/v1/providers/hashicorp/aws | jq '{version, tag, source, published_at}'
 ```
 
 That one is an extension, not protocol:
@@ -173,9 +187,19 @@ Where it is unavailable, confirm the version through the versions
 endpoint and find the provider's repository another way before citing a
 changelog. Never construct a repository URL from the source address.
 
-For the CLI itself, releases are enumerated at
-`https://releases.hashicorp.com/terraform/index.json`, and OpenTofu
-publishes GitHub releases.
+For the CLI itself, Terraform releases are enumerated at
+`https://releases.hashicorp.com/terraform/index.json`. OpenTofu releases
+are tags on its GitHub repository; list the latest stable ones with:
+
+```console
+$ git ls-remote --tags --refs https://github.com/opentofu/opentofu.git 'v*' | sed 's#.*refs/tags/v##' | grep -E '^[0-9]+\.[0-9]+\.[0-9]+$' | sort -V | tail -3
+```
+
+Link the CLI changelog at that tag in the repository the release came
+from: `https://github.com/opentofu/opentofu/releases/tag/v<version>` for
+OpenTofu, and the `CHANGELOG.md` of `hashicorp/terraform` at
+`v<version>` for Terraform. If the page cannot be fetched, report no
+changelog link instead of guessing one.
 
 Cite the release notes at the tag the registry reported, not at a
 branch.

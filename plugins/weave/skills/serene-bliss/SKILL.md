@@ -1,14 +1,14 @@
 ---
 name: serene-bliss
-description: "Use when brainstorming and refining developer-experience, documentation, or tooling UX through the Serene DX lenses."
+description: "Use when improving a CLI --help, docs page, error message, or tooling UX for developer experience; returns redesigned text, no file edits."
 allowed-tools: ["Bash", "Read", "Grep", "Glob", "Write", "Task", "AskUserQuestion"]
-argument-hint: "<prompt> [--passes=N] [--timeout=N|none] [--mode=fast|balanced|deep] [--no-deslop|--quiet-deslop|--verbose-deslop] [--workers=subagents|model-clis]"
+argument-hint: "[--passes=N] [--timeout=N|none] [--mode=fast|balanced|deep] [--no-deslop|--quiet-deslop|--verbose-deslop] [--workers=subagents|model-clis] <prompt>"
 user-invocable: true
 ---
 
 # Weave Serene Bliss
 
-A three-lens brainstorm-and-refine pipeline for developer-experience, documentation, and tooling-UX design. Each participant writes three originals, one per serene-DX lens. The user chooses which enter refinement, then every pass is judged by a panel of the participants and merged by peer-only averaging, which cancels self-favoritism. Host-native sub-agents are the default; separate model CLIs are optional. This is a **project-read-only** command: no repository file is written, edited, or deleted. Session artifacts live in `$SESSION_DIR`, outside the repository.
+A three-lens brainstorm-and-refine pipeline for developer-experience, documentation, and tooling-UX design. Each participant writes three originals, one per serene-DX lens. The user chooses which enter refinement, then every pass is judged by a panel of the participants and merged by peer-only averaging, which cancels self-favoritism. Host-native sub-agents are the default; separate model CLIs are optional. This is a **project-read-only** command: no repository file is written, edited, or deleted. Session artifacts live in the session directory, outside the repository.
 
 The prompt comes from `$ARGUMENTS`. If there are none, ask the user which DX artifact, docs page, or tooling surface to brainstorm and refine.
 
@@ -21,7 +21,7 @@ The prompt comes from `$ARGUMENTS`. If there are none, ask the user which DX art
 - Error messages, empty states, and onboarding flows.
 - Component galleries and docs landing pages that humans read.
 
-Do not use it for implementation, or for a prompt with no reference anchor to compare against. For code changes run `/weave:execute` or `/weave:prompt`.
+This command returns design text and edits no files. A request to improve a CLI's `--help` output is in scope: return the redesigned help text and the reasoning behind it. Do not use it for code changes (run `/weave:execute` or `/weave:prompt`) or for a prompt with no reference anchor to compare against.
 
 ## The lenses
 
@@ -33,7 +33,7 @@ Each variant slot is one lens, and the three are exhaustive: "reader happiness" 
 | 2 | **DX Serenity** | Calm, unhurried, clear information architecture | "Make this feel like a quiet library. Does the reader's eye rest naturally?" |
 | 3 | **DX Sublimity** | Awe-inducing, showcase-grade, novel | "Make this feel like a first. Would this be memorable enough to screenshot?" |
 
-Every variant receives the same single-paragraph preamble. The engine prefixes `Variant N of 3:`, which routes the variant to its lens. Write it to `$SESSION_DIR/preamble.md`:
+Every variant receives the same single-paragraph preamble. The engine prefixes `Variant N of 3:`, which routes the variant to its lens. Write it to `<session_dir>/preamble.md`:
 
 ```
 You are a developer-experience design expert. Apply the Serene DX aesthetic lens matching your variant slot. Variant 1 → DX Bliss: frictionless, delightful, zero-friction; make it feel effortless. Variant 2 → DX Serenity: calm, unhurried, information-architectural; make it feel like a quiet library. Variant 3 → DX Sublimity: awe, novel extensions, showcase-grade; make it feel like a first. Compare the current state to any concrete reference implementation named in the prompt, and name what is ugly or broken. Do NOT modify any files — research only.
@@ -55,7 +55,7 @@ The selected backend governs the whole session: dispatch, retry, judging, refine
 
 ## Phase 1: Start the session
 
-Follow `ensemble-core.md` (Start the session) with `--command serene-bliss`. The flags result reports ignored `--variants`, `--preamble`, and `--judge` in `reserved`: this command fixes three variants, the preamble above, and panel judging. If `reserved` is non-empty, tell the user once that those flags were ignored, and that `/weave:brainstorm-and-refine` takes them. Add `--variants 3` to `init`.
+Follow `ensemble-core.md` (Start the session) with `--command serene-bliss`. The flags result reports ignored `--variants`, `--preamble`, and `--judge` in `reserved`: this command fixes three variants, the preamble above, and panel judging. If `reserved` is non-empty, tell the user once that those flags were ignored, and that `/weave:brainstorm-and-refine` takes them. Add `--variants 3` to `init`, which skips the variants question.
 
 Build the context packet per `ensemble-core.md` (Context packet), adding what each lens needs to react to:
 
@@ -70,7 +70,7 @@ Without a reference anchor or a constraint envelope, ask for one: lenses return 
 
 ## Phase 2: Brainstorm the originals
 
-The shared worker prompt body, written to `$SESSION_DIR/prompt.md`, is:
+The shared worker prompt body is:
 
 > Respond to the following prompt about this codebase. Read relevant files to give a thorough, original response. Read CLAUDE.md/AGENTS.md for project conventions.
 >
@@ -78,20 +78,13 @@ The shared worker prompt body, written to `$SESSION_DIR/prompt.md`, is:
 >
 > Provide a clear, well-structured response. Cite specific files and line numbers where relevant.
 
-Follow `ensemble-core.md` (Dispatch lanes) with these changes:
-
-- Every lane runs once per variant N of 3, as its own invocation.
-- Compose each prompt with `--variant <N> --of 3 --preamble-file "$SESSION_DIR/preamble.md"`, writing `$SESSION_DIR/prompts/<lane>-v<N>.md`. There is no role preamble.
-- Sub-agents write `$SESSION_DIR/outputs/<lane>-v<N>.md`. Add `--variant <N> --of 3 --preamble-file "$SESSION_DIR/preamble.md"` to `dispatch`, which writes the same path.
-- Launch every lane and variant in the same turn.
-
-Then follow `ensemble-core.md` (Close the repo guard). Never deslop the originals.
+Follow `ensemble-core.md` (Dispatch lanes) and (Variants) with these changes: M is 3, every variant uses `--preamble-file "<session_dir>/preamble.md"`, and there is no role preamble. Then (Close the repo guard).
 
 ---
 
 ## Phase 3: Show the originals and ask which to refine
 
-Show every original under `<participant> — <lens>`. Replace a failed variant with a note and its failure class.
+Show every original under `<participant>, <lens>`, with a failed variant as a note and its failure class.
 
 Ask through `AskUserQuestion` which originals enter refinement: **All of them (Recommended)**, **Let me pick** (a follow-up multi-select, one option per original), or **None** (stop after the brainstorm). Without `AskUserQuestion`, refine all. Never start refinement without this step.
 
@@ -101,7 +94,7 @@ On **None**, follow `ensemble-core.md` (Finish) and stop with the brainstorm out
 
 ## Phase 4: Refine with a panel
 
-Follow `../../references/refine-cycle.md` with judge mode `panel` for every pass. Pass 1 judges the selected originals in `$SESSION_DIR/outputs/`; later passes judge each participant's `pass-NNNN/outputs/`. With fewer than three participants the cycle reports a degraded panel or a host fallback; name it to the user in one line.
+Follow `../../references/refine-cycle.md` with judge mode `panel` for every pass. Pass 1 judges the selected originals in the session's `outputs/` directory; later passes judge each participant's `pass-NNNN/outputs/`. With fewer than three participants the cycle reports a degraded panel or a host fallback; name it to the user in one line.
 
 The panel is the same participants every pass. For each pass after the first, dispatch the cycle's distribute prompt per `ensemble-core.md` (Dispatch lanes) with the new pass number, then close the repo guard.
 
@@ -109,11 +102,11 @@ The panel is the same participants every pass. For each pass after the first, di
 
 ## Phase 5: Deslop and present
 
-Unless `--no-deslop` was set, read `../../references/deslop-pass.md` and apply it with `ARTIFACT_PATH` = `$SESSION_DIR/pass-<final>/woven.md`, `SESSION_DIR`, `BASELINE_SHA` set to `baseline_sha` from `init`, and `DESLOP_MODE` from the flags (`quiet`, `verbose`, or `default`). Re-read `woven.md` for the desloped text.
+Unless `--no-deslop` was set, read `../../references/deslop-pass.md` and apply it with `ARTIFACT_PATH` = `<session_dir>/pass-<final>/woven.md`, `SESSION_DIR`, `BASELINE_SHA` set to `baseline_sha` from `init`, and `DESLOP_MODE` from the flags (`quiet`, `verbose`, or `default`). Re-read `woven.md` for the desloped text.
 
-Read `../../references/present-results.md` and apply it with `RESULT_KIND` = `serene-bliss`, `ARTIFACT_PATH` = `$SESSION_DIR/pass-<final>/woven.md`, `SESSION_DIR`, `PASS_COUNT` = the completed passes, `IN_PLAN_MODE` = false, `LABEL_MAP_PATH` = null. Read `WORKER_BACKEND`, `PARTICIPANTS`, `EXECUTORS`, and `MODELS` from `session.json`. Add one line: "Judged by: panel of <the participants that judged>, peer-only averaging, across N pass(es)."
+Read `../../references/present-results.md` and apply it with `RESULT_KIND` = `serene-bliss`, `ARTIFACT_PATH` = `<session_dir>/pass-<final>/woven.md`, `SESSION_DIR`, `PASS_COUNT` = the completed passes, `IN_PLAN_MODE` = false, `LABEL_MAP_PATH` = null. Read `WORKER_BACKEND`, `PARTICIPANTS`, `EXECUTORS`, and `MODELS` from `session.json`. Add one line: "Judged by: panel of <the participants that judged>, peer-only averaging, across N pass(es)."
 
-Copy the final woven text to `$SESSION_DIR/final.md`, then follow `ensemble-core.md` (Finish).
+Copy the final woven text to `<session_dir>/final.md`, then follow `ensemble-core.md` (Finish).
 
 ## Rules
 

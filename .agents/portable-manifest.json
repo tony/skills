@@ -184,7 +184,7 @@
         "plugins/disk/skills/disk/SKILL.md"
       ],
       "bundled": {},
-      "bytes": 2286
+      "bytes": 2338
     },
     {
       "name": "disk-reclaim",
@@ -213,7 +213,7 @@
         "references/study-repos.md": "plugins/disk/references/study-repos.md",
         "references/virtual-disks.md": "plugins/disk/references/virtual-disks.md"
       },
-      "bytes": 34316
+      "bytes": 34319
     },
     {
       "name": "double-check",
@@ -401,7 +401,7 @@
       "bundled": {
         "references/dispatch.md": "plugins/model-cli/references/dispatch.md"
       },
-      "bytes": 5624
+      "bytes": 5625
     },
     {
       "name": "model-cli-cursor",
@@ -439,7 +439,7 @@
         "references/prose-rules.md": "plugins/package-updater/references/prose-rules.md",
         "references/repo-scope.md": "plugins/package-updater/references/repo-scope.md"
       },
-      "bytes": 20071
+      "bytes": 20732
     },
     {
       "name": "package-updater-update-package",
@@ -447,10 +447,15 @@
         "plugins/package-updater/skills/update-package/SKILL.md"
       ],
       "bundled": {
+        "references/commit-conventions.md": "plugins/package-updater/references/commit-conventions.md",
+        "references/ecosystems.md": "plugins/package-updater/references/ecosystems.md",
+        "references/follow-ups.md": "plugins/package-updater/references/follow-ups.md",
+        "references/holds.md": "plugins/package-updater/references/holds.md",
         "references/prose-rules.md": "plugins/package-updater/references/prose-rules.md",
-        "references/repo-scope.md": "plugins/package-updater/references/repo-scope.md"
+        "references/repo-scope.md": "plugins/package-updater/references/repo-scope.md",
+        "references/upstream-links.md": "plugins/package-updater/references/upstream-links.md"
       },
-      "bytes": 15141
+      "bytes": 46662
     },
     {
       "name": "package-updater-update-toolchain",
@@ -459,10 +464,12 @@
       ],
       "bundled": {
         "references/commit-conventions.md": "plugins/package-updater/references/commit-conventions.md",
+        "references/ecosystems.md": "plugins/package-updater/references/ecosystems.md",
         "references/prose-rules.md": "plugins/package-updater/references/prose-rules.md",
-        "references/repo-scope.md": "plugins/package-updater/references/repo-scope.md"
+        "references/repo-scope.md": "plugins/package-updater/references/repo-scope.md",
+        "references/upstream-links.md": "plugins/package-updater/references/upstream-links.md"
       },
-      "bytes": 25051
+      "bytes": 38978
     },
     {
       "name": "package-updater-updating-packages",
@@ -478,7 +485,7 @@
         "references/repo-scope.md": "plugins/package-updater/references/repo-scope.md",
         "references/upstream-links.md": "plugins/package-updater/references/upstream-links.md"
       },
-      "bytes": 52375
+      "bytes": 52371
     },
     {
       "name": "pr",
@@ -541,6 +548,7 @@
         "references/durations-parsing.md": "plugins/pytest-optimizer/references/durations-parsing.md",
         "references/fixture-analysis.md": "plugins/pytest-optimizer/references/fixture-analysis.md",
         "references/heuristic-catalog.md": "plugins/pytest-optimizer/references/heuristic-catalog.md",
+        "references/measure.py": "plugins/pytest-optimizer/scripts/measure.py",
         "references/memory-schema.md": "plugins/pytest-optimizer/references/memory-schema.md",
         "references/output-contract.md": "plugins/pytest-optimizer/references/output-contract.md",
         "references/parametrize-convention.md": "plugins/pytest-optimizer/references/parametrize-convention.md",
@@ -551,7 +559,7 @@
         "templates/conftest_cache_snippet.py": "plugins/pytest-optimizer/templates/conftest_cache_snippet.py",
         "templates/pytest_optimizer_plugin.py": "plugins/pytest-optimizer/templates/pytest_optimizer_plugin.py"
       },
-      "bytes": 67957
+      "bytes": 88398
     },
     {
       "name": "pytest-optimizer-00-scan",
@@ -562,6 +570,7 @@
         "references/durations-parsing.md": "plugins/pytest-optimizer/references/durations-parsing.md",
         "references/fixture-analysis.md": "plugins/pytest-optimizer/references/fixture-analysis.md",
         "references/heuristic-catalog.md": "plugins/pytest-optimizer/references/heuristic-catalog.md",
+        "references/measure.py": "plugins/pytest-optimizer/scripts/measure.py",
         "references/memory-schema.md": "plugins/pytest-optimizer/references/memory-schema.md",
         "references/output-contract.md": "plugins/pytest-optimizer/references/output-contract.md",
         "references/parametrize-convention.md": "plugins/pytest-optimizer/references/parametrize-convention.md",
@@ -569,7 +578,7 @@
         "references/version-matrix.md": "plugins/pytest-optimizer/references/version-matrix.md",
         "templates/pytest_optimizer_plugin.py": "plugins/pytest-optimizer/templates/pytest_optimizer_plugin.py"
       },
-      "bytes": 53750
+      "bytes": 74387
     },
     {
       "name": "pytest-optimizer-01-benchmark",
@@ -578,11 +587,13 @@
       ],
       "bundled": {
         "references/heuristic-catalog.md": "plugins/pytest-optimizer/references/heuristic-catalog.md",
+        "references/measure.py": "plugins/pytest-optimizer/scripts/measure.py",
+        "references/memory-schema.md": "plugins/pytest-optimizer/references/memory-schema.md",
         "references/output-contract.md": "plugins/pytest-optimizer/references/output-contract.md",
         "references/prose-rules.md": "plugins/pytest-optimizer/references/prose-rules.md",
         "references/safety-gates.md": "plugins/pytest-optimizer/references/safety-gates.md"
       },
-      "bytes": 28737
+      "bytes": 56562
     },
     {
       "name": "pytest-optimizer-02-plan",
@@ -590,12 +601,14 @@
         "plugins/pytest-optimizer/skills/02-plan/SKILL.md"
       ],
       "bundled": {
+        "references/measure.py": "plugins/pytest-optimizer/scripts/measure.py",
+        "references/memory-schema.md": "plugins/pytest-optimizer/references/memory-schema.md",
         "references/output-contract.md": "plugins/pytest-optimizer/references/output-contract.md",
         "references/prose-rules.md": "plugins/pytest-optimizer/references/prose-rules.md",
         "references/scoring-rubric.md": "plugins/pytest-optimizer/references/scoring-rubric.md",
         "templates/commit-message.tmpl": "plugins/pytest-optimizer/templates/commit-message.tmpl"
       },
-      "bytes": 14867
+      "bytes": 40674
     },
     {
       "name": "pytest-optimizer-03-execute",
@@ -603,11 +616,13 @@
         "plugins/pytest-optimizer/skills/03-execute/SKILL.md"
       ],
       "bundled": {
+        "references/measure.py": "plugins/pytest-optimizer/scripts/measure.py",
+        "references/memory-schema.md": "plugins/pytest-optimizer/references/memory-schema.md",
         "references/output-contract.md": "plugins/pytest-optimizer/references/output-contract.md",
         "references/prose-rules.md": "plugins/pytest-optimizer/references/prose-rules.md",
         "templates/commit-message.tmpl": "plugins/pytest-optimizer/templates/commit-message.tmpl"
       },
-      "bytes": 11257
+      "bytes": 36648
     },
     {
       "name": "rebase",
@@ -627,7 +642,7 @@
       "bundled": {
         "references/release-conventions.md": "plugins/release/references/release-conventions.md"
       },
-      "bytes": 10068
+      "bytes": 11044
     },
     {
       "name": "release-cut",
@@ -638,7 +653,7 @@
         "references/prose-rules.md": "plugins/release/references/prose-rules.md",
         "references/release-conventions.md": "plugins/release/references/release-conventions.md"
       },
-      "bytes": 18619
+      "bytes": 18893
     },
     {
       "name": "release-update-downstream-packages",
@@ -648,7 +663,7 @@
       "bundled": {
         "references/prose-rules.md": "plugins/release/references/prose-rules.md"
       },
-      "bytes": 12684
+      "bytes": 14394
     },
     {
       "name": "research-assess",
@@ -684,7 +699,7 @@
         "references/topic.py": "plugins/research/scripts/topic.py",
         "references/verify.md": "plugins/research/references/verify.md"
       },
-      "bytes": 184514
+      "bytes": 190168
     },
     {
       "name": "research-release",
@@ -692,7 +707,7 @@
         "plugins/research/skills/release/SKILL.md"
       ],
       "bundled": {},
-      "bytes": 810
+      "bytes": 798
     },
     {
       "name": "research-report",
@@ -716,7 +731,7 @@
         "plugins/research/skills/deps/SKILL.md"
       ],
       "bundled": {},
-      "bytes": 7365
+      "bytes": 6191
     },
     {
       "name": "research-verify",
@@ -775,7 +790,7 @@
         "references/prose-rules.md": "plugins/ruff/references/prose-rules.md",
         "references/release-triage.md": "plugins/ruff/references/release-triage.md"
       },
-      "bytes": 27754
+      "bytes": 30549
     },
     {
       "name": "scholar-annotate",
@@ -807,9 +822,10 @@
       ],
       "bundled": {
         "references/output-contract.md": "plugins/scholar/references/output-contract.md",
-        "references/prose-rules.md": "plugins/scholar/references/prose-rules.md"
+        "references/prose-rules.md": "plugins/scholar/references/prose-rules.md",
+        "references/term-metrics.py": "plugins/scholar/references/term-metrics.py"
       },
-      "bytes": 9203
+      "bytes": 21548
     },
     {
       "name": "scholar-contest",
@@ -922,9 +938,10 @@
         "plugins/self-improvement/skills/apply/SKILL.md"
       ],
       "bundled": {
-        "references/prose-rules.md": "plugins/self-improvement/references/prose-rules.md"
+        "references/prose-rules.md": "plugins/self-improvement/references/prose-rules.md",
+        "references/sweep.py": "plugins/self-improvement/scripts/sweep.py"
       },
-      "bytes": 10122
+      "bytes": 26896
     },
     {
       "name": "self-improvement-sweep",
@@ -934,9 +951,10 @@
       "bundled": {
         "references/detecting-invocations.md": "plugins/self-improvement/references/detecting-invocations.md",
         "references/prose-rules.md": "plugins/self-improvement/references/prose-rules.md",
+        "references/sweep.py": "plugins/self-improvement/scripts/sweep.py",
         "references/worked-example-spike.md": "plugins/self-improvement/references/worked-example-spike.md"
       },
-      "bytes": 30866
+      "bytes": 41354
     },
     {
       "name": "situate",
@@ -1003,9 +1021,10 @@
         "plugins/skill-style/skills/skill-style/SKILL.md"
       ],
       "bundled": {
+        "references/prose-rules.md": "plugins/skill-style/references/prose-rules.md",
         "references/skill-rubric.md": "plugins/skill-style/references/skill-rubric.md"
       },
-      "bytes": 18564
+      "bytes": 29048
     },
     {
       "name": "slop-deslop",
@@ -1020,7 +1039,7 @@
         "references/quality-gates.md": "plugins/slop/references/quality-gates.md",
         "references/signatures.yml": "plugins/slop/references/signatures.yml"
       },
-      "bytes": 50822
+      "bytes": 51292
     },
     {
       "name": "slop-scan",
@@ -1034,7 +1053,7 @@
         "references/quality-gates.md": "plugins/slop/references/quality-gates.md",
         "references/signatures.yml": "plugins/slop/references/signatures.yml"
       },
-      "bytes": 42991
+      "bytes": 44224
     },
     {
       "name": "spike-bakeoff",
@@ -1045,7 +1064,7 @@
         "references/prose-rules.md": "plugins/spike/references/prose-rules.md",
         "references/verification-gates.md": "plugins/spike/references/verification-gates.md"
       },
-      "bytes": 21827
+      "bytes": 23001
     },
     {
       "name": "spike-probe",
@@ -1056,7 +1075,7 @@
         "references/prose-rules.md": "plugins/spike/references/prose-rules.md",
         "references/verification-gates.md": "plugins/spike/references/verification-gates.md"
       },
-      "bytes": 20274
+      "bytes": 22591
     },
     {
       "name": "spike-ratchet",
@@ -1067,7 +1086,7 @@
         "references/prose-rules.md": "plugins/spike/references/prose-rules.md",
         "references/verification-gates.md": "plugins/spike/references/verification-gates.md"
       },
-      "bytes": 18399
+      "bytes": 19192
     },
     {
       "name": "tailwind-spacing-audit",
@@ -1078,7 +1097,7 @@
         "references/patterns.md": "plugins/tailwind/skills/spacing-audit/references/patterns.md",
         "references/prose-rules.md": "plugins/tailwind/references/prose-rules.md"
       },
-      "bytes": 18063
+      "bytes": 22765
     },
     {
       "name": "tdd-fix",
@@ -1090,7 +1109,7 @@
         "references/prose-rules.md": "plugins/tdd/references/prose-rules.md",
         "references/xfail-mechanisms.md": "plugins/tdd/references/xfail-mechanisms.md"
       },
-      "bytes": 11350
+      "bytes": 12052
     },
     {
       "name": "tdd-xfail",
@@ -1102,7 +1121,7 @@
         "references/prose-rules.md": "plugins/tdd/references/prose-rules.md",
         "references/xfail-mechanisms.md": "plugins/tdd/references/xfail-mechanisms.md"
       },
-      "bytes": 15584
+      "bytes": 18075
     },
     {
       "name": "terraform-bump-provider",
@@ -1112,7 +1131,7 @@
       "bundled": {
         "references/prose-rules.md": "plugins/terraform/references/prose-rules.md"
       },
-      "bytes": 9380
+      "bytes": 10203
     },
     {
       "name": "terraform-bump-terraform",
@@ -1120,9 +1139,10 @@
         "plugins/terraform/skills/bump-terraform/SKILL.md"
       ],
       "bundled": {
+        "references/pin-sites.md": "plugins/terraform/references/pin-sites.md",
         "references/prose-rules.md": "plugins/terraform/references/prose-rules.md"
       },
-      "bytes": 9714
+      "bytes": 19537
     },
     {
       "name": "terraform-bumping-terraform",
@@ -1135,7 +1155,7 @@
         "references/pin-sites.md": "plugins/terraform/references/pin-sites.md",
         "references/prose-rules.md": "plugins/terraform/references/prose-rules.md"
       },
-      "bytes": 28773
+      "bytes": 34355
     },
     {
       "name": "terraform-refresh-lock",
@@ -1147,7 +1167,7 @@
         "references/lock-and-init.md": "plugins/terraform/references/lock-and-init.md",
         "references/prose-rules.md": "plugins/terraform/references/prose-rules.md"
       },
-      "bytes": 20126
+      "bytes": 22896
     },
     {
       "name": "ticket-draft",
@@ -1190,7 +1210,7 @@
         "references/prose-rules.md": "plugins/weave/references/prose-rules.md",
         "references/worker-backends.md": "plugins/weave/references/worker-backends.md"
       },
-      "bytes": 127367
+      "bytes": 147843
     },
     {
       "name": "weave-ask",
@@ -1207,7 +1227,7 @@
         "references/prose-rules.md": "plugins/weave/references/prose-rules.md",
         "references/worker-backends.md": "plugins/weave/references/worker-backends.md"
       },
-      "bytes": 137155
+      "bytes": 156694
     },
     {
       "name": "weave-brainstorm",
@@ -1221,7 +1241,7 @@
         "references/present-results.md": "plugins/weave/references/present-results.md",
         "references/worker-backends.md": "plugins/weave/references/worker-backends.md"
       },
-      "bytes": 116109
+      "bytes": 134518
     },
     {
       "name": "weave-brainstorm-and-refine",
@@ -1237,7 +1257,7 @@
         "references/refine-cycle.md": "plugins/weave/references/refine-cycle.md",
         "references/worker-backends.md": "plugins/weave/references/worker-backends.md"
       },
-      "bytes": 132984
+      "bytes": 151603
     },
     {
       "name": "weave-execute",
@@ -1252,7 +1272,7 @@
         "references/prose-rules.md": "plugins/weave/references/prose-rules.md",
         "references/worker-backends.md": "plugins/weave/references/worker-backends.md"
       },
-      "bytes": 126067
+      "bytes": 146543
     },
     {
       "name": "weave-fix-review",
@@ -1264,7 +1284,7 @@
         "references/present-results.md": "plugins/weave/references/present-results.md",
         "references/prose-rules.md": "plugins/weave/references/prose-rules.md"
       },
-      "bytes": 97191
+      "bytes": 113197
     },
     {
       "name": "weave-plan",
@@ -1280,7 +1300,7 @@
         "references/prose-rules.md": "plugins/weave/references/prose-rules.md",
         "references/worker-backends.md": "plugins/weave/references/worker-backends.md"
       },
-      "bytes": 131583
+      "bytes": 151118
     },
     {
       "name": "weave-prompt",
@@ -1295,7 +1315,7 @@
         "references/prose-rules.md": "plugins/weave/references/prose-rules.md",
         "references/worker-backends.md": "plugins/weave/references/worker-backends.md"
       },
-      "bytes": 125790
+      "bytes": 146272
     },
     {
       "name": "weave-refine",
@@ -1311,7 +1331,7 @@
         "references/refine-cycle.md": "plugins/weave/references/refine-cycle.md",
         "references/worker-backends.md": "plugins/weave/references/worker-backends.md"
       },
-      "bytes": 131077
+      "bytes": 150867
     },
     {
       "name": "weave-review",
@@ -1328,7 +1348,7 @@
         "references/prose-rules.md": "plugins/weave/references/prose-rules.md",
         "references/worker-backends.md": "plugins/weave/references/worker-backends.md"
       },
-      "bytes": 141167
+      "bytes": 160875
     },
     {
       "name": "weave-serene-bliss",
@@ -1344,7 +1364,7 @@
         "references/refine-cycle.md": "plugins/weave/references/refine-cycle.md",
         "references/worker-backends.md": "plugins/weave/references/worker-backends.md"
       },
-      "bytes": 134906
+      "bytes": 154480
     }
   ],
   "duplication": {
@@ -1364,13 +1384,15 @@
     "plugins/weave/references/deslop-pass.md": 6,
     "plugins/business/references/audiences.md": 5,
     "plugins/pr/references/prose-rules.md": 5,
+    "plugins/pytest-optimizer/references/memory-schema.md": 5,
     "plugins/pytest-optimizer/references/output-contract.md": 5,
     "plugins/pytest-optimizer/references/prose-rules.md": 5,
+    "plugins/pytest-optimizer/scripts/measure.py": 5,
     "plugins/scholar/references/stage-gates.md": 5,
+    "plugins/scholar/references/term-metrics.py": 5,
     "plugins/situate/references/situation-sweep.md": 5,
     "plugins/package-updater/references/prose-rules.md": 4,
     "plugins/package-updater/references/repo-scope.md": 4,
-    "plugins/scholar/references/term-metrics.py": 4,
     "plugins/situate/references/prose-rules.md": 4,
     "plugins/terraform/references/prose-rules.md": 4,
     "plugins/business/references/measurement.md": 3,
@@ -1383,6 +1405,10 @@
     "plugins/github-actions/references/prose-rules.md": 3,
     "plugins/lean/references/prose-rules.md": 3,
     "plugins/model-cli/references/dispatch.md": 3,
+    "plugins/package-updater/references/commit-conventions.md": 3,
+    "plugins/package-updater/references/ecosystems.md": 3,
+    "plugins/package-updater/references/holds.md": 3,
+    "plugins/package-updater/references/upstream-links.md": 3,
     "plugins/pytest-optimizer/references/heuristic-catalog.md": 3,
     "plugins/respond/references/prose-rules.md": 3,
     "plugins/scholar/references/evidence-tiers.md": 3,
@@ -1412,12 +1438,10 @@
     "plugins/lean/references/lean-rubric.md": 2,
     "plugins/merge-pr/references/merge-readiness.md": 2,
     "plugins/merge-pr/references/prose-rules.md": 2,
-    "plugins/package-updater/references/commit-conventions.md": 2,
-    "plugins/package-updater/references/holds.md": 2,
+    "plugins/package-updater/references/follow-ups.md": 2,
     "plugins/pr/references/template-resolution.md": 2,
     "plugins/pytest-optimizer/references/durations-parsing.md": 2,
     "plugins/pytest-optimizer/references/fixture-analysis.md": 2,
-    "plugins/pytest-optimizer/references/memory-schema.md": 2,
     "plugins/pytest-optimizer/references/parametrize-convention.md": 2,
     "plugins/pytest-optimizer/references/safety-gates.md": 2,
     "plugins/pytest-optimizer/references/scoring-rubric.md": 2,
@@ -1430,6 +1454,7 @@
     "plugins/respond/references/screening-rubric.md": 2,
     "plugins/respond/references/verification-gates.md": 2,
     "plugins/self-improvement/references/prose-rules.md": 2,
+    "plugins/self-improvement/scripts/sweep.py": 2,
     "plugins/situate/references/brief.md": 2,
     "plugins/situate/references/prior-conversations.md": 2,
     "plugins/slop/references/detect-pipeline.md": 2,
@@ -1441,6 +1466,7 @@
     "plugins/tdd/references/xfail-mechanisms.md": 2,
     "plugins/terraform/references/layout-discovery.md": 2,
     "plugins/terraform/references/lock-and-init.md": 2,
+    "plugins/terraform/references/pin-sites.md": 2,
     "plugins/ticket/references/altitude.md": 2,
     "plugins/ticket/references/contract.md": 2,
     "plugins/ticket/references/hierarchy.md": 2,
@@ -1458,9 +1484,6 @@
     "plugins/disk/references/study-repos.md": 1,
     "plugins/git-branch/references/rebase-todo.sh": 1,
     "plugins/git-branch/references/rebuild-contract.md": 1,
-    "plugins/package-updater/references/ecosystems.md": 1,
-    "plugins/package-updater/references/follow-ups.md": 1,
-    "plugins/package-updater/references/upstream-links.md": 1,
     "plugins/pytest-optimizer/templates/conftest_cache_snippet.py": 1,
     "plugins/rebase/references/prose-rules.md": 1,
     "plugins/research/references/analysis.md": 1,
@@ -1483,20 +1506,15 @@
     "plugins/self-improvement/references/detecting-invocations.md": 1,
     "plugins/self-improvement/references/worked-example-spike.md": 1,
     "plugins/situate/references/goal-derivation.md": 1,
+    "plugins/skill-style/references/prose-rules.md": 1,
     "plugins/skill-style/references/skill-rubric.md": 1,
     "plugins/slop/references/apply-template.sh": 1,
     "plugins/slop/references/commit-template.md": 1,
     "plugins/slop/references/conflict-loop.md": 1,
     "plugins/tailwind/references/prose-rules.md": 1,
-    "plugins/tailwind/skills/spacing-audit/references/patterns.md": 1,
-    "plugins/terraform/references/pin-sites.md": 1
+    "plugins/tailwind/skills/spacing-audit/references/patterns.md": 1
   },
   "external_paths": {
-    "../../references/": [
-      "package-updater-update-package",
-      "package-updater-update-toolchain",
-      "scholar-compare"
-    ],
     "../etc": [
       "research-foray"
     ],
@@ -1516,9 +1534,6 @@
     "docs/api.md": [
       "slop-scan"
     ],
-    "docs/api.md.": [
-      "slop-scan"
-    ],
     "docs/pull_request_template.md": [
       "pr",
       "pr-rewrite"
@@ -1526,6 +1541,7 @@
   },
   "unresolved_host_commands": {
     "/plugin:skill": [
+      "self-improvement-apply",
       "self-improvement-sweep"
     ]
   }

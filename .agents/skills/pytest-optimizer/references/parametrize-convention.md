@@ -21,7 +21,7 @@ import pytest
 
 
 class CaseFixture(t.NamedTuple):
-    test_id: str       # first field: human-readable id AND a test parameter
+    test_id: str  # first field: human-readable id AND a test parameter
     given: str
     expected: int
 

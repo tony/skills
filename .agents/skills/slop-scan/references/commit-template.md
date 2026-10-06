@@ -27,17 +27,18 @@ from the signature's `rationale`.
 ```
 docs(slop[brittle.line-numbers]) Replace line number in docs/api.md
 
-why: Line-number references rot on every refactor.
+why: "see line 42" breaks as soon as the file above it changes; a
+function name stays valid.
 
 what:
-- Replaced "see line 42" with "see the `parse_config` function" in
-  docs/api.md.
+- Point the parse step at the `parse_config` function, not a line.
 ```
 
-Wrap body lines at 72 characters. Keep the subject at 72 characters or
+Wrap body lines at 72 characters. Keep the subject at 64 characters or
 fewer: when the id and path make it long, shorten `<description>`,
 never the id or the path. Leave out exact counts, emoji, AI signatures,
-and `Co-Authored-By:` lines; the skill removes those.
+and `Co-Authored-By:` lines, "Generated with" trailers, and tool
+signatures; hosts add them by default, so strip them before committing.
 
 ## Advisory only
 

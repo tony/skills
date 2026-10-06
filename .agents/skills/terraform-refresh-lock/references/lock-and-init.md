@@ -10,7 +10,8 @@ the same.
 
 - One run per root module
 - `-backend=false` removes the credential requirement
-- `-upgrade` ignores the lock, by design
+- `-upgrade` moves every provider
+- Moving one provider
 - Selecting a new version narrows the lock to one platform
 - When the resolver cannot see the version
 - Confirm the lock actually moved
@@ -20,10 +21,11 @@ the same.
 
 Each root module owns one `.terraform.lock.hcl`, and `init` only ever
 touches the one in the directory it runs in. Four root modules need
-four runs. Use `-chdir` rather than a subshell `cd`:
+four runs. Use `-chdir` rather than a subshell `cd`. This form keeps
+every locked version and installs what the lock names:
 
 ```console
-terraform -chdir=<root-module-dir> init -backend=false -upgrade -input=false
+$ terraform -chdir=<root-module-dir> init -backend=false -input=false
 ```
 
 Child modules have no lock file. Running `init` in one is not an error,
@@ -40,7 +42,7 @@ credentials present at all.
 Use `-input=false` too, so a missing variable fails instead of waiting
 on a prompt.
 
-## `-upgrade` ignores the lock, by design
+## `-upgrade` moves every provider
 
 > Upgrade all previously-selected plugins to the newest version that
 > complies with the configuration's version constraints. This will
@@ -50,9 +52,43 @@ on a prompt.
 >
 > — [terraform init](https://developer.hashicorp.com/terraform/cli/commands/init)
 
-The constraint edit has to land first: `-upgrade` obeys the constraints.
-A `~> 6.56.0` left in any module holds the whole configuration at
-`6.56.x`.
+`init` has no per-provider upgrade flag, so `-upgrade` moves every
+provider in the root module that a constraint allows to move. Use it
+only where that is the goal (`refresh-lock`):
+
+```console
+$ terraform -chdir=<root-module-dir> init -backend=false -upgrade -input=false
+```
+
+Any constraint left behind (a `~> 6.56.0` in a child module) holds the
+whole configuration at `6.56.x`, so land the constraint edit first.
+
+## Moving one provider
+
+Only the target provider's lock block may change. Remove that block and
+run plain `init`: Terraform keeps the locked version of every provider
+that still has a block and selects the newest allowed version for the
+one that does not.
+
+Drop the block for `<provider-source-address>` (the full address as the
+lock file spells it, such as `registry.terraform.io/hashicorp/aws`):
+
+```console
+$ awk -v src='<provider-source-address>' '$0 ~ "^provider \"" src "\" \\{" {skip=1} !skip{print} skip && /^}/{skip=0}' <root-module-dir>/.terraform.lock.hcl > <root-module-dir>/.terraform.lock.hcl.new && mv <root-module-dir>/.terraform.lock.hcl.new <root-module-dir>/.terraform.lock.hcl
+```
+
+Then run the plain `init` command from "One run per root module". The
+new block holds hashes for the running platform only; restore the
+platforms the old block tracked as the next section describes, naming
+the provider so no other block is touched.
+
+What moves: the target provider's `version`, `constraints`, and
+`hashes` in that root module's lock file. Every other provider block
+stays byte-identical; confirm with `git diff` on the lock file and
+report any other block that changed. Directories with no lock block for
+the provider (it is new there) need no removal.
+
+A CLI bump moves no provider: run plain `init`, never `-upgrade`.
 
 ## Selecting a new version narrows the lock to one platform
 
@@ -76,23 +112,34 @@ of opaque `h1:` and `zh:` strings. How many platforms a provider tracks
 is readable; which ones is not, and `providers lock -platform=` requires
 exact names.
 
-Use the count as a tripwire. Take the highest `h1:` count of any single
-provider before the run, and compare it after:
+Use the count as a tripwire. Print one line per provider before the
+run and again after, then compare them provider by provider. A
+file-wide maximum would let a drop hide behind a provider that tracks
+more platforms:
 
 ```console
-awk '/^provider /{n=0} /"h1:/{n++; if(n>m) m=n} END{print m+0}' <root-module-dir>/.terraform.lock.hcl
+$ awk '/^provider "/{p=$2; gsub(/"/,"",p); o[++k]=p} /^[[:space:]]*"h1:/{c[p]++} END{for(i=1;i<=k;i++) printf "%s\t%d\n", o[i], c[o[i]]+0}' <root-module-dir>/.terraform.lock.hcl
 ```
 
-Count per provider, not per file: seven providers on one platform and
-one provider on seven give the same file total.
+Output is `<source-address><TAB><h1 count>`. On a lock with `aws`
+tracking three platforms and `random` tracking one it prints:
+
+```text
+registry.terraform.io/hashicorp/aws	3
+registry.terraform.io/hashicorp/random	1
+```
 
 If the count dropped, stop and get the platform names from wherever the
 repository actually writes them down — a `providers lock` invocation in
 CI, a Makefile or justfile target, or the user — then restore them:
 
 ```console
-terraform -chdir=<root-module-dir> providers lock -platform=linux_amd64 -platform=darwin_arm64
+$ terraform -chdir=<root-module-dir> providers lock -platform=linux_amd64 -platform=darwin_arm64 <provider-source-address>
 ```
+
+Naming the provider restricts the command to it and leaves other lock
+entries unchanged ([providers lock](https://developer.hashicorp.com/terraform/cli/commands/providers/lock)).
+Omit the address only to restore every provider.
 
 Never infer the list. A repository that only ever tracked one platform
 should keep tracking one, and guessing a set both drops platforms it had
@@ -125,7 +172,7 @@ the lock file and compare it to the target; a zero exit code proves
 nothing:
 
 ```console
-grep -A2 'provider "<provider-source-address>"' <root-module-dir>/.terraform.lock.hcl
+$ grep -A2 'provider "<provider-source-address>"' <root-module-dir>/.terraform.lock.hcl
 ```
 
 Read the file, not `terraform providers`. That subcommand prints the

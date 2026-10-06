@@ -1,2 +1,3 @@
-prose-rules.md: [action, agent-messaging, business, changelog, commit, disk, double-check, gh, git-branch, github-actions, lean, merge-pr, package-updater, pr, pytest-optimizer, rebase, release, research, respond, ruff, scholar, self-improvement, situate, slop, spike, tailwind, tdd, terraform, ticket, weave]
+prose-rules.md: [action, agent-messaging, business, changelog, commit, disk, double-check, gh, git-branch, github-actions, lean, merge-pr, package-updater, pr, pytest-optimizer, rebase, release, research, respond, ruff, scholar, self-improvement, situate, skill-style, slop, spike, tailwind, tdd, terraform, ticket, weave]
 verification-gates.md: [action, respond, spike]
+signatures.yml: [slop, weave]

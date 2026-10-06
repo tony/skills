@@ -5,13 +5,13 @@ description: >-
   a README through repeated critique and improvement.
 allowed-tools: ["Bash", "Read", "Grep", "Glob", "Write", "Task", "AskUserQuestion"]
 metadata:
-  argument-hint: "<text or file path> [--passes=N] [--timeout=N|none] [--mode=fast|balanced|deep] [--judge=host|round-robin] [--no-deslop|--quiet-deslop|--verbose-deslop] [--workers=subagents|model-clis]"
+  argument-hint: "[--passes=N] [--timeout=N|none] [--mode=fast|balanced|deep] [--judge=host|round-robin] [--no-deslop|--quiet-deslop|--verbose-deslop] [--workers=subagents|model-clis] <text or file path>"
   source: "plugins/weave/skills/refine/SKILL.md"
 ---
 
 # Weave Refine
 
-Improve an artifact through independent adversarial critique and weaving. Every pass, all participants critique and improve the artifact, a judge picks the best version, the weave folds in the runners-up's strengths, and the woven result goes back to all participants. Host-native sub-agents are the default; separate model CLIs are optional. This is a **project-read-only** command: no repository file is written, edited, or deleted. Session artifacts live in `$SESSION_DIR`, outside the repository.
+Improve an artifact through independent adversarial critique and weaving. Every pass, all participants critique and improve the artifact, a judge picks the best version, the weave folds in the runners-up's strengths, and the woven result goes back to all participants. Host-native sub-agents are the default; separate model CLIs are optional. This is a **project-read-only** command: no repository file is written, edited, or deleted. Session artifacts live in the session directory, outside the repository.
 
 The artifact comes from `$ARGUMENTS`: an existing file path (read it) or inline text. If there are none, ask the user what to refine.
 
@@ -35,7 +35,7 @@ The selected backend governs the whole session: dispatch, retry, judging, refine
 
 Follow `ensemble-core.md` (Start the session) with `--command refine`. The flags result also reports `judge` (`host` or `round-robin`) and the deslop flags in `flags`. It asks each unresolved setting through `ask-user-choice`.
 
-Read the artifact from `prompt`, and write it to `$SESSION_DIR/original.md`. Build the context packet per `ensemble-core.md` (Context packet), leading with conventions and key snippets from the artifact's domain.
+Read the artifact from `prompt`, and write it to `<session_dir>/original.md`. Build the context packet per `ensemble-core.md` (Context packet), leading with conventions and key snippets from the artifact's domain.
 
 ---
 
@@ -72,11 +72,11 @@ Follow `references/refine-cycle.md` for pass 1, with the candidates in `pass-000
 
 ## Phase 4: Deslop and present
 
-Unless `--no-deslop` was set, read `references/deslop-pass.md` and apply it with `ARTIFACT_PATH` = `$SESSION_DIR/pass-<final>/woven.md`, `SESSION_DIR`, `BASELINE_SHA` set to `baseline_sha` from `init`, and `DESLOP_MODE` from the flags (`quiet`, `verbose`, or `default`). Re-read `woven.md` for the desloped text.
+Unless `--no-deslop` was set, read `references/deslop-pass.md` and apply it with `ARTIFACT_PATH` = `<session_dir>/pass-<final>/woven.md`, `SESSION_DIR`, `BASELINE_SHA` set to `baseline_sha` from `init`, and `DESLOP_MODE` from the flags (`quiet`, `verbose`, or `default`). Re-read `woven.md` for the desloped text.
 
-Read `references/present-results.md` and apply it with `RESULT_KIND` = `refine`, `ARTIFACT_PATH` = `$SESSION_DIR/pass-<final>/woven.md`, `SESSION_DIR`, `PASS_COUNT` = the completed passes, `IN_PLAN_MODE` = false, `LABEL_MAP_PATH` = null. Read `WORKER_BACKEND`, `PARTICIPANTS`, `EXECUTORS`, and `MODELS` from `session.json`.
+Read `references/present-results.md` and apply it with `RESULT_KIND` = `refine`, `ARTIFACT_PATH` = `<session_dir>/pass-<final>/woven.md`, `SESSION_DIR`, `PASS_COUNT` = the completed passes, `IN_PLAN_MODE` = false, `LABEL_MAP_PATH` = null. Read `WORKER_BACKEND`, `PARTICIPANTS`, `EXECUTORS`, and `MODELS` from `session.json`.
 
-Copy the final woven text to `$SESSION_DIR/final.md`, then follow `ensemble-core.md` (Finish).
+Copy the final woven text to `<session_dir>/final.md`, then follow `ensemble-core.md` (Finish).
 
 ## Rules
 

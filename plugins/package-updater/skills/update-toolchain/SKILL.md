@@ -12,9 +12,9 @@ disable-model-invocation: true
 Move the pins that select the tools everything else resolves through —
 one tool per commit, with every release in the span linked.
 
-References, all under `../../references/`: `upstream-links.md` (the
-per-tool link taxonomy this command depends on), `commit-conventions.md`,
-`ecosystems.md` and `repo-scope.md`.
+References: `../../references/upstream-links.md` (the per-tool link
+taxonomy this command depends on), `../../references/commit-conventions.md`,
+`../../references/ecosystems.md` and `../../references/repo-scope.md`.
 
 For dependencies rather than tools, use `/package-updater:update` or
 `/package-updater:update-package`.

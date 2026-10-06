@@ -15,6 +15,8 @@ reset-main, stash-restore, update.
 from __future__ import annotations
 
 import argparse
+import contextlib
+import fcntl
 import hashlib
 import json
 import os
@@ -31,7 +33,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 if t.TYPE_CHECKING:
-    from collections.abc import Callable, Mapping, Sequence
+    from collections.abc import Callable, Generator, Mapping, Sequence
 
 Json = dict[str, t.Any]
 
@@ -44,6 +46,8 @@ MAX_VARIANTS = 3
 TIMEOUT_GROWTH = 1.5
 RATE_LIMIT_WAIT = 10.0
 GUARD_REFS = "refs/weave-guard"
+RECOVERY_PREFIX = "pre-reset-"
+NEEDS_COMMIT = frozenset({"execute", "prompt", "architecture", "review", "fix-review"})
 
 _DESLOP = ("no-deslop", "quiet-deslop", "verbose-deslop")
 
@@ -152,7 +156,7 @@ CREDIT_PATTERNS = (
 )
 CREDIT_RE = re.compile("|".join(CREDIT_PATTERNS), re.IGNORECASE)
 RATE_RE = re.compile(r"rate.?limit|too many requests|\b429\b", re.IGNORECASE)
-_FLAG_RE = re.compile(r"""(?<!\S)--([a-z][a-z-]*)(?:=("[^"]*"|'[^']*'|\S*))?(?!\S)""")
+_FLAG_RE = re.compile(r"""--([a-z][a-z-]*)(?:=("[^"]*"|'[^']*'|\S*))?(?!\S)""")
 
 
 class EngineError(Exception):
@@ -197,9 +201,21 @@ def git_z(top: str | Path, *args: str, env: Mapping[str, str] | None = None) -> 
 
 def write_atomic(path: Path, text: str) -> None:
     """Write ``text`` to ``path`` through a temporary file and a rename."""
-    tmp = path.with_name(path.name + ".tmp")
+    tmp = path.with_name(f".{path.name}.{os.getpid()}.{random.randbytes(3).hex()}.tmp")
     tmp.write_text(text, encoding="utf-8")
     tmp.replace(path)
+
+
+@contextlib.contextmanager
+def session_lock(session_dir: Path) -> Generator[None]:
+    """Serialize read-modify-write updates of ``session.json`` across processes."""
+    session_dir.mkdir(mode=0o700, parents=True, exist_ok=True)
+    with (session_dir / ".lock").open("a", encoding="utf-8") as fh:
+        fcntl.flock(fh, fcntl.LOCK_EX)
+        try:
+            yield
+        finally:
+            fcntl.flock(fh, fcntl.LOCK_UN)
 
 
 def append_jsonl(path: Path, doc: Json) -> None:
@@ -248,7 +264,11 @@ def repo_identity(toplevel: str, origin: str) -> tuple[str, str, str]:
 
 
 def _extract_flags(text: str, prof: Profile) -> tuple[str, dict[str, str], Json]:
-    """Pull the command's flags out of ``text``; return prompt, values, and the rest."""
+    """Consume the leading block of flags; return prompt, values, and the rest.
+
+    The block ends at the first token that is not one of the command's flags, or
+    at a bare ``--``. Everything after it is the prompt, flag-like words included.
+    """
     allowed = {"timeout", "mode", "workers"}
     if prof.passes:
         allowed.add("passes")
@@ -258,9 +278,16 @@ def _extract_flags(text: str, prof: Profile) -> tuple[str, dict[str, str], Json]
         allowed.add("judge")
     values: dict[str, str] = {}
     found: Json = {"flags": [], "reserved": [], "errors": []}
-    out: list[str] = []
-    last = 0
-    for m in _FLAG_RE.finditer(text):
+    pos = 0
+    while True:
+        while pos < len(text) and text[pos].isspace():
+            pos += 1
+        if text.startswith("--", pos) and text[pos + 2 : pos + 3] in ("", " ", "\t", "\n"):
+            pos += 2
+            break
+        m = _FLAG_RE.match(text, pos)
+        if not m:
+            break
         name, val = m.group(1), m.group(2)
         if val and len(val) >= 2 and val[0] in "\"'" and val[-1] == val[0]:  # noqa: PLR2004
             val = val[1:-1]
@@ -274,38 +301,39 @@ def _extract_flags(text: str, prof: Profile) -> tuple[str, dict[str, str], Json]
         elif name in prof.booleans and val is None:
             found["flags"].append(name)
         else:
-            continue
-        out.append(text[last : m.start()])
-        last = m.end()
-        while text[last : last + 1] in (" ", "\t"):
-            last += 1
-    out.append(text[last:])
-    return "".join(out).strip(), values, found
+            break
+        pos = m.end()
+    return text[pos:].strip(), values, found
 
 
 def parse_flags(text: str, command: str, *, default_timeout: int | None = None) -> Json:
-    """Split a command's ``--name[=value]`` flags out of its arguments.
+    """Split a command's leading ``--name[=value]`` flags from its prompt.
 
-    Only the command's own flags are consumed; any other ``--word`` stays in the
-    prompt. A value may be quoted to hold spaces.
+    Only the command's own flags at the start are consumed; the first other
+    token, or a bare ``--``, begins the prompt, so flag-like words inside the
+    prompt are never touched. A value may be quoted to hold spaces.
 
-    >>> doc = parse_flags("why --mode=deep is it slow", "ask")
+    >>> doc = parse_flags("--mode=deep why is it slow", "ask")
     >>> doc["prompt"], doc["passes"], doc["timeout"], doc["mode"]
     ('why is it slow', 2, 675, 'deep')
-    >>> doc = parse_flags("q --passes=9 --timeout=none --cascade", "ask")
+    >>> parse_flags("tool --mode=fast --timeout=30", "refine")["prompt"]
+    'tool --mode=fast --timeout=30'
+    >>> parse_flags("-- --mode=fast is a flag", "ask")["prompt"]
+    '--mode=fast is a flag'
+    >>> doc = parse_flags("--passes=9 --timeout=none --cascade q", "ask")
     >>> doc["prompt"], doc["passes"], doc["timeout"], doc["flags"], doc["notes"]
     ('q', 5, 'none', ['cascade'], ['--passes capped at 5'])
-    >>> doc = parse_flags("q --passes=3 --mode=fast", "execute")
+    >>> doc = parse_flags("--passes=3 --mode=fast q", "execute")
     >>> doc["passes"], doc["timeout"], doc["timeout_menu"]
     (3, 600, {'quick': 600, 'default': 1200, 'long': 1800})
-    >>> parse_flags("--workers=gpu --passes=x", "ask")["errors"]
+    >>> parse_flags("--workers=gpu --passes=x q", "ask")["errors"]
     ['--workers must be subagents or model-clis', '--passes must be an integer >= 1']
     >>> parse_flags("--cascade as-is", "execute")["prompt"]
     '--cascade as-is'
-    >>> doc = parse_flags('x --variants=2 --preamble="be bold" --judge=round-robin', "brainstorm-and-refine")
+    >>> doc = parse_flags('--variants=2 --preamble="be bold" --judge=round-robin x', "brainstorm-and-refine")
     >>> doc["variants"], doc["preamble"], doc["judge"], doc["passes_recommended"]
     (2, 'be bold', 'round-robin', 2)
-    >>> parse_flags("x --variants=4 --judge=panel", "serene-bliss")["reserved"]
+    >>> parse_flags("--variants=4 --judge=panel x", "serene-bliss")["reserved"]
     ['variants', 'judge']
     """  # noqa: E501
     if command not in PROFILES:
@@ -490,6 +518,81 @@ def baseline_sha(top: str | Path, trunk: str) -> str:
     return ""
 
 
+def unsafe_toplevel(top: str | Path, env: Mapping[str, str] | None = None) -> str | None:
+    """Say why ``top`` must never be snapshotted, stashed, or given worktrees.
+
+    A checkout rooted at the filesystem root, at ``$HOME``, or at a directory
+    that contains ``$HOME`` would pull a whole home tree into the object store.
+
+    >>> unsafe_toplevel("/")
+    'the filesystem root'
+    >>> unsafe_toplevel("/home/u", {"HOME": "/home/u"})
+    'your home directory'
+    >>> unsafe_toplevel("/home", {"HOME": "/home/u"})
+    'a directory that contains your home directory'
+    >>> unsafe_toplevel("/home/u/proj", {"HOME": "/home/u"}) is None
+    True
+    """
+    env = os.environ if env is None else env
+    real = Path(top).resolve()
+    if real == Path(real.anchor):
+        return "the filesystem root"
+    try:
+        home = (Path(env["HOME"]) if env.get("HOME") else Path.home()).resolve()
+    except RuntimeError:
+        return None
+    if real == home:
+        return "your home directory"
+    if real in home.parents:
+        return "a directory that contains your home directory"
+    return None
+
+
+def require_safe_toplevel(top: str | Path) -> None:
+    """Raise unless ``top`` is a toplevel the engine may snapshot or stash."""
+    why = unsafe_toplevel(top)
+    if why:
+        msg = f"refusing to snapshot, stash, or add worktrees to {why}; run from a project checkout"
+        raise EngineError(msg)
+
+
+class RepoInfo(t.NamedTuple):
+    """Where a command runs: ``git`` is false when no usable repository exists."""
+
+    top: str
+    git: bool
+    reason: str | None = None
+
+
+def resolve_repo(repo: str) -> RepoInfo:
+    """Find the repository at ``repo``, or explain why the command runs without one.
+
+    A directory that is not a repository, a repository with no commits, and an
+    unsafe toplevel all run in no-repo mode, rooted at the real path of ``repo``.
+    """
+    here = Path(repo).resolve()
+    if not here.is_dir():
+        msg = f"{repo} is not a directory"
+        raise EngineError(msg)
+    top = git(here, "rev-parse", "--show-toplevel", check=False)
+    if not top:
+        return RepoInfo(str(here), git=False, reason="this directory is not a git repository")
+    if not git(top, "rev-parse", "--verify", "--quiet", "HEAD^{commit}", check=False):
+        return RepoInfo(str(here), git=False, reason="this repository has no commits")
+    why = unsafe_toplevel(top)
+    if why:
+        return RepoInfo(str(here), git=False, reason=f"the repository toplevel is {why}")
+    return RepoInfo(str(Path(top).resolve()), git=True)
+
+
+def compare_base(top: str | Path, trunk: str) -> str | None:
+    """Return the ref to diff against: ``origin/<trunk>``, else the local trunk, else ``None``."""
+    for ref in (f"origin/{trunk}", trunk):
+        if git(top, "rev-parse", "--verify", "--quiet", f"{ref}^{{commit}}", check=False):
+            return ref
+    return None
+
+
 # --- repo guard -----------------------------------------------------------
 
 
@@ -500,6 +603,7 @@ def snapshot_tree(top: str | Path) -> str:
     A temporary copy of the index keeps git's stat cache, so unchanged files are
     not rehashed.
     """
+    require_safe_toplevel(top)
     real = Path(top) / git(top, "rev-parse", "--git-path", "index")
     fd, name = tempfile.mkstemp(prefix="weave-index-")
     os.close(fd)
@@ -536,6 +640,7 @@ def pin_tree(top: str | Path, session_id: str, name: str, tree: str, parent: str
 
 def take_guard_snapshot(top: str, session_id: str) -> Json:
     """Record the checkout as ``refs/weave-guard/<session>/pre``."""
+    require_safe_toplevel(top)
     head = git(top, "rev-parse", "HEAD")
     tree = snapshot_tree(top)
     commit = pin_tree(top, session_id, "pre", tree, head)
@@ -565,6 +670,8 @@ def guard_check(session_dir: Path, label: str = "check") -> Json:
     ``post-copy/`` (current content of every touched file), and a pinned post ref.
     """
     session = load_session(session_dir)
+    if session.get("unguarded"):
+        return {"ok": True, "violation": False, "unguarded": True}
     top, pre = session["toplevel"], _guard_of(session)
     post_tree = snapshot_tree(top)
     head = git(top, "rev-parse", "HEAD")
@@ -668,6 +775,8 @@ def guard_resolve(session_dir: Path, action: str) -> Json:
     record the difference, so the post-run state stays recoverable.
     """
     session = load_session(session_dir)
+    if session.get("unguarded"):
+        return {"ok": True, "action": "none", "violation": False, "unguarded": True}
     top = session["toplevel"]
     pre_tree = _guard_of(session)["tree"]
     found = guard_check(session_dir, "resolve")
@@ -700,19 +809,27 @@ def guard_resolve(session_dir: Path, action: str) -> Json:
 
 
 def _drop_session_refs(top: str, session_id: str) -> None:
-    for ref in git(
-        top, "for-each-ref", "--format=%(refname)", f"{GUARD_REFS}/{session_id}/"
-    ).splitlines():
-        git(top, "update-ref", "-d", ref)
+    """Delete the session's pins except the ``pre-reset-*`` ones ``reset-main`` recovers from."""
+    prefix = f"{GUARD_REFS}/{session_id}/"
+    for ref in git(top, "for-each-ref", "--format=%(refname)", prefix).splitlines():
+        if not ref.startswith(prefix + RECOVERY_PREFIX):
+            git(top, "update-ref", "-d", ref)
 
 
 def guard_finish(session_dir: Path) -> Json:
     """Run the last check, log ``repo_guard_final``, and drop the pinned refs when clean.
 
     A mutating session changes the checkout on purpose, so it skips the check.
+    Pins that ``reset-main`` made before discarding changes are always kept.
     """
     session = load_session(session_dir)
     top = session["toplevel"]
+    if session.get("unguarded"):
+        append_jsonl(
+            session_dir / "events.jsonl",
+            {"event": "repo_guard_final", "timestamp": stamp(), "repo_clean": None},
+        )
+        return {"ok": True, "clean": None, "unguarded": True, "refs_pruned": False, "touched": {}}
     if session.get("mutating"):
         event: Json = {"event": "repo_guard_final", "timestamp": stamp(), "repo_clean": None}
         append_jsonl(session_dir / "events.jsonl", event)
@@ -731,7 +848,9 @@ def guard_finish(session_dir: Path) -> Json:
 
 def guard_prune(repo: str, days: float) -> Json:
     """Delete pinned guard refs whose snapshot commit is older than ``days``."""
-    top = git(repo, "rev-parse", "--show-toplevel")
+    top = git(repo, "rev-parse", "--show-toplevel", check=False)
+    if not top:
+        return {"ok": True, "dropped": []}
     cutoff = time.time() - days * 86400
     dropped: list[str] = []
     for line in git(
@@ -749,6 +868,7 @@ def guard_prune(repo: str, days: float) -> Json:
 
 def stash_user_changes(top: str, command: str) -> Json:
     """Stash tracked and untracked changes; report whether a stash was made."""
+    require_safe_toplevel(top)
     if not git(top, "status", "--porcelain"):
         return {"state": "none-needed"}
     message = f"weave-{command}: user-changes stash"
@@ -776,13 +896,22 @@ def init_session(  # noqa: PLR0913
     """Create a session directory, its metadata files, and the guard snapshot.
 
     A ``bare`` session has no workers and no guard snapshot, for commands that
-    edit the repository themselves.
+    edit the repository themselves. A command that does not need commits runs
+    in no-repo mode when the directory has no usable repository: no guard, and
+    workers start in an empty scratch directory. A failed init leaves nothing behind.
     """
     if backend is None and not bare:
         msg = "init needs --backend unless --bare"
         raise EngineError(msg)
-    top = git(repo, "rev-parse", "--show-toplevel")
-    origin = git(top, "remote", "get-url", "origin", check=False)
+    info = resolve_repo(repo)
+    if not info.git and (mutating or bare or command in NEEDS_COMMIT):
+        msg = (
+            f"{command} needs a git repository with at least one commit: {info.reason}."
+            " Run it from a project checkout."
+        )
+        raise EngineError(msg)
+    top = info.top
+    origin = git(top, "remote", "get-url", "origin", check=False) if info.git else ""
     slug, rid, repo_dir = repo_identity(top, origin)
     root = aip_root()
     repo_path = root / "repos" / repo_dir
@@ -791,10 +920,58 @@ def init_session(  # noqa: PLR0913
         f"-{os.getpid()}-{random.randbytes(2).hex()}"
     )
     session_dir = repo_path / "sessions" / command / session_id
+    new_repo = not repo_path.exists()
+    made: Json = {}
+    try:
+        return _build_session(
+            session_dir=session_dir, repo_path=repo_path, info=info, origin=origin,
+            slug=slug, rid=rid, repo_dir=repo_dir, root=root, session_id=session_id,
+            command=command, backend=backend, prompt_summary=prompt_summary,
+            passes=passes, timeout=timeout, mutating=mutating, variants=variants,
+            bare=bare, made=made,
+        )  # fmt: skip
+    except BaseException:
+        shutil.rmtree(session_dir, ignore_errors=True)
+        if info.git:
+            with contextlib.suppress(EngineError):
+                _drop_session_refs(top, session_id)
+            ref = stash_entry(top, made["sha"]) if "sha" in made else None
+            if ref:
+                git(top, "stash", "pop", "--quiet", ref, check=False)
+        if new_repo:
+            shutil.rmtree(repo_path, ignore_errors=True)
+        raise
+
+
+def _build_session(  # noqa: PLR0913
+    *,
+    session_dir: Path,
+    repo_path: Path,
+    info: RepoInfo,
+    origin: str,
+    slug: str,
+    rid: str,
+    repo_dir: str,
+    root: Path,
+    session_id: str,
+    command: str,
+    backend: str | None,
+    prompt_summary: str,
+    passes: int,
+    timeout: str,
+    mutating: bool,
+    variants: int | None,
+    bare: bool,
+    made: Json,
+) -> Json:
+    top = info.top
     make_pass_dir(session_dir, 1, mutating=mutating)
     if variants:
-        for sub in ("outputs", "stderr", "prompts"):
+        for sub in ("outputs", "stderr"):
             (session_dir / sub).mkdir(mode=0o700, exist_ok=True)
+    scratch = session_dir / "scratch"
+    if not info.git:
+        scratch.mkdir(mode=0o700)
 
     repo_json = repo_path / "repo.json"
     if not repo_json.exists():
@@ -807,6 +984,7 @@ def init_session(  # noqa: PLR0913
                     "id": rid,
                     "toplevel": top,
                     "origin": origin or None,
+                    "git": info.git,
                 },
                 indent=2,
             )
@@ -814,11 +992,13 @@ def init_session(  # noqa: PLR0913
         )
 
     stash: Json | None = stash_user_changes(top, command) if mutating else None
-    guard = None if bare else take_guard_snapshot(top, session_id)
-    branch = git(top, "branch", "--show-current")
-    ref = git(top, "rev-parse", "--short", "HEAD")
+    if stash and stash.get("sha"):
+        made["sha"] = stash["sha"]
+    guard = None if bare or not info.git else take_guard_snapshot(top, session_id)
+    branch = git(top, "branch", "--show-current") if info.git else ""
+    ref = git(top, "rev-parse", "--short", "HEAD") if info.git else ""
     participants, executors, models = ([], {}, []) if bare else build_roster(t.cast("str", backend))
-    trunk = detect_trunk(top)
+    trunk = detect_trunk(top) if info.git else None
     created = stamp()
     doc: Json = {
         "schema_version": SCHEMA_VERSION,
@@ -840,6 +1020,9 @@ def init_session(  # noqa: PLR0913
     }
     if guard:
         doc["guard"] = guard
+    if not info.git:
+        doc["unguarded"] = True
+        doc["scratch"] = str(scratch)
     if variants:
         doc["variants"] = variants
     if backend == "model-clis" and not bare:
@@ -868,9 +1051,12 @@ def init_session(  # noqa: PLR0913
     ]
     if doc.get("models"):
         lines += [f"- Models: {json.dumps(models)}", f"- Timeout: {timeout}"]
-    lines += [f"- Branch: {branch or '(detached)'}", f"- Commit: {ref}"]
+    if info.git:
+        lines += [f"- Branch: {branch or '(detached)'}", f"- Commit: {ref}"]
+    else:
+        lines += [f"- No repository: {info.reason}"]
     (session_dir / "metadata.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
-    return {
+    result: Json = {
         "ok": True,
         "session_dir": str(session_dir),
         "session_id": session_id,
@@ -880,29 +1066,42 @@ def init_session(  # noqa: PLR0913
         "branch": branch,
         "ref": ref,
         "trunk": trunk,
-        "baseline_sha": baseline_sha(top, trunk),
+        "baseline_sha": baseline_sha(top, trunk) if trunk else "",
         "participants": participants,
         "executors": executors,
         "artifacts": [f"{p}-v{n}" for p in participants for n in range(1, variants + 1)]
         if variants
         else participants,
         "stash": stash,
+        "repo": info.git,
     }
+    if not info.git:
+        result["unguarded"] = True
+        result["note"] = (
+            f"No repository ({info.reason}): workers start in an empty scratch directory"
+            " and the repo guard is off."
+        )
+    return result
 
 
 def context_sections(top: str, *, full_diff: bool = False, diff_limit: int = 0) -> str:
     """Return the deterministic context-packet sections as Markdown."""
     trunk = detect_trunk(top)
+    base = compare_base(top, trunk)
     status = git(top, "status", "--short") or "(clean)"
-    diff = git(top, "diff", "--stat", f"origin/{trunk}...HEAD", check=False)
-    changes = diff or f"(none against origin/{trunk})"
+    if base is None:
+        changes = f"(no {trunk} branch to compare against)"
+    else:
+        changes = git(top, "diff", "--stat", f"{base}...HEAD", check=False) or (
+            f"(none against {base})"
+        )
     text = (
         f"## Repo state\n\n- Branch: {git(top, 'branch', '--show-current') or '(detached)'}\n"
         f"- HEAD: {git(top, 'rev-parse', '--short', 'HEAD')}\n- Trunk: {trunk}\n\n"
         f"```\n{status}\n```\n\n## Changed files\n\n```\n{changes}\n```\n"
     )
-    if full_diff:
-        body = git(top, "diff", f"origin/{trunk}...HEAD", check=False)
+    if full_diff and base is not None:
+        body = git(top, "diff", f"{base}...HEAD", check=False)
         lines = body.splitlines()
         if diff_limit and len(lines) > diff_limit:
             lines = [*lines[:diff_limit], f"... truncated at {diff_limit} of {len(lines)} lines"]
@@ -1030,6 +1229,18 @@ def classify(*, returncode: int | None, timed_out: bool, output_size: int, stder
     return "empty"
 
 
+def scrub_echo(stderr: str, prompt: str) -> str:
+    r"""Remove the prompt a CLI echoed to stderr, so task text cannot pose as an error.
+
+    >>> scrub_echo("billing\nreal error", "Fix billing\nbilling")
+    'real error'
+    """
+    text = stderr.replace(prompt, "") if prompt else stderr
+    echoed = {line.strip() for line in prompt.splitlines() if line.strip()}
+    kept = [ln for ln in text.splitlines() if ln.strip() not in echoed]
+    return "\n".join(kept)
+
+
 def build_command(
     exe: str, model: str | None, prompt: str, *, mutating: bool, workdir: Path
 ) -> list[str]:
@@ -1060,8 +1271,19 @@ def build_command(
     return [*argv, "--model", t.cast("str", model), prompt]
 
 
-def run_cli(argv: list[str], cwd: Path, timeout: float | None, out: Path, err: Path) -> Json:
-    """Run ``argv`` with a wall-clock limit, killing its whole process group."""
+def run_cli(  # noqa: PLR0913
+    argv: list[str],
+    cwd: Path,
+    timeout: float | None,
+    out: Path,
+    err: Path,
+    *,
+    prompt: str = "",
+) -> Json:
+    """Run ``argv`` with a wall-clock limit, killing its whole process group.
+
+    ``prompt`` is removed from stderr before the failure is classified.
+    """
     started = time.monotonic()
     err_offset = err.stat().st_size if err.exists() else 0
     timed_out = False
@@ -1081,7 +1303,7 @@ def run_cli(argv: list[str], cwd: Path, timeout: float | None, out: Path, err: P
             returncode = None
             os.killpg(proc.pid, signal.SIGKILL)
             proc.wait()
-    stderr = err.read_bytes()[err_offset:].decode("utf-8", "replace")
+    stderr = scrub_echo(err.read_bytes()[err_offset:].decode("utf-8", "replace"), prompt)
     return {
         "returncode": returncode,
         "elapsed": round(time.monotonic() - started, 1),
@@ -1142,6 +1364,7 @@ def lane_task(  # noqa: PLR0913
 def snapshot_worktree(session: Json, session_dir: Path, name: str) -> Path:
     """Create a disposable detached worktree at the pre-dispatch snapshot commit."""
     top = session["toplevel"]
+    require_safe_toplevel(top)
     path = session_dir / "worktrees" / f"{name}-ro"
     git(top, "worktree", "remove", "--force", str(path), check=False)
     shutil.rmtree(path, ignore_errors=True)
@@ -1150,7 +1373,7 @@ def snapshot_worktree(session: Json, session_dir: Path, name: str) -> Path:
     return path
 
 
-def dispatch_lane(  # noqa: PLR0913
+def dispatch_lane(  # noqa: PLR0913, PLR0915
     session_dir: Path,
     lane: str,
     *,
@@ -1203,7 +1426,15 @@ def dispatch_lane(  # noqa: PLR0913
         while True:
             disposable: Path | None = None
             if mutating:
-                workdir = Path(session["worktrees"][task.name]["path"])
+                entry = session.get("worktrees", {}).get(task.name)
+                if entry is None:
+                    msg = f"no worktree registered for {task.name}; run worktrees create first"
+                    raise EngineError(msg)
+                workdir = Path(entry["path"])
+            elif session.get("unguarded"):
+                disposable = workdir = Path(session["scratch"]) / task.name
+                shutil.rmtree(workdir, ignore_errors=True)
+                workdir.mkdir(mode=0o700, parents=True)
             else:
                 try:
                     disposable = workdir = snapshot_worktree(session, session_dir, task.name)
@@ -1212,16 +1443,19 @@ def dispatch_lane(  # noqa: PLR0913
             argv = build_command(exe, model, prompt, mutating=mutating, workdir=workdir)
             with err.open("a", encoding="utf-8") as fe:
                 fe.write(f"--- {exe} {model or ''} timeout={current}\n")
-            result = run_cli(argv, workdir, current, out, err)
+            result = run_cli(argv, workdir, current, out, err, prompt=prompt)
             if disposable is not None:
-                git(
-                    session["toplevel"],
-                    "worktree",
-                    "remove",
-                    "--force",
-                    str(disposable),
-                    check=False,
-                )
+                if session.get("unguarded"):
+                    shutil.rmtree(disposable, ignore_errors=True)
+                else:
+                    git(
+                        session["toplevel"],
+                        "worktree",
+                        "remove",
+                        "--force",
+                        str(disposable),
+                        check=False,
+                    )
                 found = guard_check(session_dir, task.name)
                 if found["violation"] and found.get("id") not in guards:
                     guards.append(found["id"])
@@ -1288,12 +1522,14 @@ def plan_judges(session_dir: Path, mode: str, n: int) -> Json:
     if mode == "host":
         return {"ok": True, "mode": mode, "judges": [{"judge": "host", "how": "host"}]}
     if mode == "round-robin":
-        who = people[(n - 1) % len(people)]
         if len(people) < 2:  # noqa: PLR2004
             return {"ok": True, "mode": "host", "judges": [{"judge": "host", "how": "host"}]}
+        who = people[(n - 1) % len(people)]
         return {"ok": True, "mode": mode, "judges": [{"judge": who, "how": how(who)}]}
     if mode == "panel":
-        feasibility = {1: "host-fallback", 2: "degraded"}.get(len(people), "full")
+        feasibility = (
+            "host-fallback" if len(people) < 2 else "degraded" if len(people) == 2 else "full"  # noqa: PLR2004
+        )
         if feasibility == "host-fallback":
             return {"ok": True, "mode": "host", "feasibility": feasibility,
                     "judges": [{"judge": "host", "how": "host"}]}  # fmt: skip
@@ -1307,11 +1543,46 @@ def plan_judges(session_dir: Path, mode: str, n: int) -> Json:
     raise EngineError(msg)
 
 
-def parse_judge(text: str) -> Json:
+_NUM_RE = re.compile(r"\d+(?:\.\d+)?")
+_LABEL_RE = re.compile(r"(?:response[\s_-]*)?([A-Za-z])", re.IGNORECASE)
+
+
+def _number(cell: str) -> int | float | None:
+    """Parse a score cell: ``8`` is an int, ``8.5`` a float, anything else ``None``."""
+    if not _NUM_RE.fullmatch(cell):
+        return None
+    return float(cell) if "." in cell else int(cell)
+
+
+def normalize_id(raw: str, label_map: Mapping[str, str] | None = None) -> str:
+    """Reduce a scores-table column or winner to a participant id.
+
+    Strips emphasis and a trailing role suffix, and maps a blind label through
+    ``label_map``.
+
+    >>> normalize_id("**claude (Maintainer)**"), normalize_id("agy-v2 - Skeptic")
+    ('claude', 'agy-v2')
+    >>> normalize_id("Response B", {"A": "x", "B": "gpt"}), normalize_id("Response B")
+    ('gpt', 'Response B')
+    """
+    name = raw.strip().strip("*_`").strip()
+    name = re.sub(r"\s*[(\[][^)\]]*[)\]]\s*$", "", name)
+    name = re.sub(r"\s+[-\u2013\u2014:]\s+\S.*$", "", name).strip()
+    if label_map:
+        found = _LABEL_RE.fullmatch(name)
+        if found and found.group(1).upper() in label_map:
+            return label_map[found.group(1).upper()]
+    return name
+
+
+def parse_judge(text: str, label_map: Mapping[str, str] | None = None) -> Json:
     """Parse a judge assessment: scores table, totals, winner.
 
     The table has a header row of participant names, one row per dimension
-    whose cells are integers 0-10, and a ``Total`` row.
+    whose cells are numbers 0-10 (decimals allowed), and a ``Total`` row.
+    Header names may carry a role suffix (``claude (Maintainer)``); blind labels
+    map to participants through ``label_map``. Without a Winner section the
+    winner is the unique highest total.
 
     >>> doc = parse_judge('''
     ... | Dimension | claude | agy |
@@ -1338,42 +1609,53 @@ def parse_judge(text: str) -> Json:
     errors: list[str] = []
     if len(rows) < 3:  # noqa: PLR2004
         return {"ok": False, "errors": ["no scores table"]}
-    columns = rows[0][1:]
-    scores: dict[str, dict[str, int]] = {c: {} for c in columns}
-    totals: dict[str, int] = {}
+    columns = [normalize_id(c, label_map) for c in rows[0][1:]]
+    if len(set(columns)) != len(columns):
+        return {"ok": False, "errors": ["duplicate participant columns"]}
+    scores: dict[str, dict[str, float]] = {c: {} for c in columns}
+    totals: dict[str, float] = {}
     for row in rows[1:]:
         label, cells = row[0], row[1:]
-        if len(cells) != len(columns) or not all(c.isdecimal() for c in cells):
+        nums = [_number(c) for c in cells]
+        if len(cells) != len(columns) or any(n is None for n in nums):
             errors.append(f"unreadable row: {label}")
             continue
+        values = t.cast("list[float]", nums)
         if label.lower().startswith("total"):
-            totals = {c: int(v) for c, v in zip(columns, cells, strict=True)}
+            totals = dict(zip(columns, values, strict=True))
             continue
-        for col, cell in zip(columns, cells, strict=True):
-            if int(cell) > 10:  # noqa: PLR2004
+        for col, num in zip(columns, values, strict=True):
+            if num > 10:  # noqa: PLR2004
                 errors.append(f"{label} for {col} is above 10")
-            scores[col][label] = int(cell)
+            scores[col][label] = num
     errors.extend(
         f"total for {col} is not the sum of its dimensions"
         for col in columns
-        if col in totals and totals[col] != sum(scores[col].values())
+        if col in totals and abs(totals[col] - sum(scores[col].values())) > 1e-6  # noqa: PLR2004
     )
     if not totals:
         totals = {c: sum(v.values()) for c, v in scores.items()}
     winner = None
-    found = re.search(r"##\s*Winner\s*\n+\s*\**([^*\n]+?)\**\s+with a score of\s+(\d+)", text)
+    declared = False
+    found = re.search(r"##\s*Winner\b[^\n]*\n+\s*(\S[^\n]*)", text)
     if found:
-        winner = found.group(1).strip()
+        line = found.group(1)
+        bold = re.search(r"\*\*([^*]+)\*\*", line)
+        winner = normalize_id(bold.group(1) if bold else re.split(r"\s+with\b", line)[0], label_map)
+        declared = True
         if winner not in columns:
             errors.append(f"winner {winner!r} is not a scored participant")
-    else:
-        errors.append("no winner line")
+    elif totals:
+        top = max(totals.values())
+        leaders = [c for c, v in totals.items() if v == top]
+        winner = leaders[0] if len(leaders) == 1 else None
     return {
         "ok": not errors,
         "columns": columns,
         "scores": scores,
         "totals": totals,
         "winner": winner,
+        "winner_declared": declared,
         "winner_score": totals.get(winner or ""),
         "errors": errors,
     }
@@ -1388,17 +1670,18 @@ def producer_of(original: str) -> str:
     return re.sub(r"-v\d+$", "", original)
 
 
-def merge_panel(judges: Mapping[str, Path]) -> Json:
+def merge_panel(judges: Mapping[str, Path], label_map: Mapping[str, str] | None = None) -> Json:
     """Merge panel judge files by peer-only averaging.
 
     A judge's scores for originals its own participant produced are excluded.
-    A judge whose file does not parse is excluded and reported.
+    A judge whose file does not parse is excluded and reported. ``label_map``
+    maps the blind labels the judges scored back to participants.
     """
     parsed: dict[str, Json] = {}
     failed: dict[str, list[str]] = {}
     for judge, path in judges.items():
         doc = (
-            parse_judge(path.read_text(encoding="utf-8"))
+            parse_judge(path.read_text(encoding="utf-8"), label_map)
             if path.is_file()
             else {"ok": False, "errors": ["missing file"]}
         )
@@ -1449,11 +1732,27 @@ def create_worktrees(
     ``weave/<name>/<when>``). The default is ``head`` for mutating sessions and
     ``pre`` for read-only ones, so read-only workers see the user's uncommitted work.
     """
+    with session_lock(session_dir):
+        return _create_worktrees(session_dir, participants, when, base)
+
+
+def _create_worktrees(
+    session_dir: Path, participants: Sequence[str], when: str | None, base: str | None
+) -> Json:
     session = load_session(session_dir)
     top = session["toplevel"]
+    made: Json = session.setdefault("worktrees", {})
+    if session.get("unguarded"):
+        for name in participants:
+            path = session_dir / "worktrees" / name
+            shutil.rmtree(path, ignore_errors=True)
+            path.mkdir(mode=0o700, parents=True)
+            made[name] = {"path": str(path), "branch": None}
+        save_session(session_dir, session)
+        return {"ok": True, "worktrees": made}
+    require_safe_toplevel(top)
     base = base or ("head" if session.get("mutating") else "pre")
     when = when or datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S")  # noqa: UP017 - 3.9
-    made: Json = session.setdefault("worktrees", {})
     for name in participants:
         path = session_dir / "worktrees" / name
         git(top, "worktree", "remove", "--force", str(path), check=False)
@@ -1472,20 +1771,24 @@ def create_worktrees(
 
 def remove_worktrees(session_dir: Path, participants: Sequence[str] | None) -> Json:
     """Remove the session's registered worktrees and delete their branches."""
-    session = load_session(session_dir)
-    top = session["toplevel"]
-    made: Json = session.get("worktrees", {})
-    removed: list[str] = []
-    for name in list(made) if participants is None else participants:
-        entry = made.pop(name, None)
-        if entry is None:
-            continue
-        git(top, "worktree", "remove", "--force", entry["path"], check=False)
-        if entry["branch"]:
-            git(top, "branch", "-D", entry["branch"], check=False)
-        removed.append(name)
-    save_session(session_dir, session)
-    return {"ok": True, "removed": removed}
+    with session_lock(session_dir):
+        session = load_session(session_dir)
+        top = session["toplevel"]
+        made: Json = session.get("worktrees", {})
+        removed: list[str] = []
+        for name in list(made) if participants is None else participants:
+            entry = made.pop(name, None)
+            if entry is None:
+                continue
+            if session.get("unguarded"):
+                shutil.rmtree(entry["path"], ignore_errors=True)
+            else:
+                git(top, "worktree", "remove", "--force", entry["path"], check=False)
+            if entry["branch"]:
+                git(top, "branch", "-D", entry["branch"], check=False)
+            removed.append(name)
+        save_session(session_dir, session)
+        return {"ok": True, "removed": removed}
 
 
 def capture_tree(session_dir: Path, n: int, participant: str, tree: str | None) -> Json:
@@ -1495,7 +1798,11 @@ def capture_tree(session_dir: Path, n: int, participant: str, tree: str | None) 
     The tree's index is not touched.
     """
     session = load_session(session_dir)
-    path = tree or session["worktrees"][participant]["path"]
+    entry = session.get("worktrees", {}).get(participant)
+    if tree is None and entry is None:
+        msg = f"no worktree registered for {participant}; pass --tree or run worktrees create"
+        raise EngineError(msg)
+    path = tree or entry["path"]
     base = session_dir / pass_name(n)
     after = snapshot_tree(path)
     patch = git(path, "diff", "--binary", "--no-renames", "HEAD", after)
@@ -1619,7 +1926,17 @@ def restore_stash(session_dir: Path) -> Json:
         check=False,
     )
     if proc.returncode != 0:
-        return {"ok": False, "restored": False, "conflict": True, "reason": proc.stderr.strip()}
+        sha = stash["sha"]
+        return {
+            "ok": False,
+            "restored": False,
+            "conflict": True,
+            "reason": proc.stderr.strip(),
+            "stash_kept": True,
+            "stash_sha": sha,
+            "inspect": f"git stash show --patch {sha}",
+            "apply": f"git stash apply {sha}",
+        }
     return {"ok": True, "restored": True}
 
 
@@ -1635,14 +1952,39 @@ def update_session(  # noqa: PLR0913
     link_latest: bool,
 ) -> Json:
     """Apply session changes, then append the event, in that order."""
+    with session_lock(session_dir):
+        return _update_session(
+            session_dir, status=status, completed_passes=completed_passes, event=event,
+            event_json=event_json, drop=drop, sets=sets, link_latest=link_latest,
+        )  # fmt: skip
+
+
+def _update_session(  # noqa: PLR0913
+    session_dir: Path,
+    *,
+    status: str | None,
+    completed_passes: int | None,
+    event: str | None,
+    event_json: str | None,
+    drop: Sequence[str],
+    sets: Sequence[str],
+    link_latest: bool,
+) -> Json:
     session = load_session(session_dir)
     if status:
         session["status"] = status
     if completed_passes is not None:
         session["completed_passes"] = completed_passes
     for item in sets:
-        key, _, raw = item.partition("=")
-        session[key] = json.loads(raw)
+        key, sep, raw = item.partition("=")
+        if not sep or not key:
+            msg = f"--set needs key=<json>, got {item!r}"
+            raise EngineError(msg)
+        try:
+            session[key] = json.loads(raw)
+        except ValueError as exc:
+            msg = f"--set {key}: value is not JSON ({exc})"
+            raise EngineError(msg) from exc
     for name in drop:
         session["participants"] = [p for p in session["participants"] if p != name]
         session["executors"].pop(name, None)
@@ -1650,7 +1992,11 @@ def update_session(  # noqa: PLR0913
             session["models"] = [m for m in session["models"] if not m.startswith(f"{name}:")]
     save_session(session_dir, session)
     if event:
-        extra: Json = json.loads(event_json) if event_json else {}
+        try:
+            extra: Json = json.loads(event_json) if event_json else {}
+        except ValueError as exc:
+            msg = f"--event-json is not JSON ({exc})"
+            raise EngineError(msg) from exc
         append_jsonl(session_dir / "events.jsonl", {"event": event, "timestamp": stamp(), **extra})
     if link_latest:
         link = session_dir.parent / "latest"
@@ -1744,9 +2090,11 @@ def build_parser() -> argparse.ArgumentParser:  # noqa: PLR0915
     p = sub.add_parser("judge-parse", help="parse a judge file: scores, totals, winner")
     p.add_argument("--file", required=True)
     p.add_argument("--prior", help="prior pass's judge file; reports whether the winner improved")
+    p.add_argument("--label-map", help="label-map.json; maps blind labels in the table to ids")
 
     p = sub.add_parser("panel-merge", help="merge panel judge files by peer-only averaging")
     p.add_argument("--judge", action="append", default=[], help="participant=path, repeated")
+    p.add_argument("--label-map", help="label-map.json; maps blind labels in the tables to ids")
 
     p = sub.add_parser("worktrees", help="create or remove participant worktrees")
     p.add_argument("action", choices=["create", "remove"])
@@ -1810,6 +2158,42 @@ def _guard_command(args: argparse.Namespace) -> Json:
     return guard_finish(session_dir)
 
 
+def context_doc(repo: str, *, full_diff: bool, diff_limit: int) -> Json:
+    """Return the ``context`` command's JSON; no-repo mode reports the reason instead."""
+    info = resolve_repo(repo)
+    if not info.git:
+        note = f"No repository: {info.reason}. There is no repo state or diff to report."
+        return {
+            "ok": True,
+            "repo": False,
+            "trunk": None,
+            "base": None,
+            "branch": "",
+            "commits": [],
+            "markdown": f"## Repo state\n\n{note}\n",
+        }
+    top = info.top
+    trunk = detect_trunk(top)
+    base = compare_base(top, trunk)
+    log = git(top, "log", "--oneline", f"{base}..HEAD", check=False) if base else ""
+    commits = log.splitlines()
+    return {
+        "ok": True,
+        "repo": True,
+        "trunk": trunk,
+        "base": base,
+        "branch": git(top, "branch", "--show-current"),
+        "commits": commits,
+        "markdown": context_sections(top, full_diff=full_diff, diff_limit=diff_limit),
+    }
+
+
+def _label_map(path: str | None) -> dict[str, str] | None:
+    if not path:
+        return None
+    return t.cast("dict[str, str]", json.loads(Path(path).read_text(encoding="utf-8")))
+
+
 def run(args: argparse.Namespace) -> Json:  # noqa: PLR0911
     """Execute a parsed command."""
     cmd = args.cmd
@@ -1820,17 +2204,7 @@ def run(args: argparse.Namespace) -> Json:  # noqa: PLR0911
     if cmd == "detect":
         return {"ok": True, **detect()}
     if cmd == "context":
-        top = git(args.repo, "rev-parse", "--show-toplevel")
-        trunk = detect_trunk(top)
-        commits = git(top, "log", "--oneline", f"origin/{trunk}..HEAD", check=False).splitlines()
-        md = context_sections(top, full_diff=args.full_diff, diff_limit=args.diff_limit)
-        return {
-            "ok": True,
-            "trunk": trunk,
-            "branch": git(top, "branch", "--show-current"),
-            "commits": commits,
-            "markdown": md,
-        }
+        return context_doc(args.repo, full_diff=args.full_diff, diff_limit=args.diff_limit)
     if cmd == "init":
         summary = " ".join(sys.stdin.read().split()) if args.prompt_stdin else ""
         return init_session(
@@ -1853,11 +2227,17 @@ def run(args: argparse.Namespace) -> Json:  # noqa: PLR0911
         return _guard_command(args)
     if cmd == "panel-merge":
         pairs = [j.partition("=") for j in args.judge]
-        return merge_panel({name: Path(path) for name, _, path in pairs})
+        if any(not sep or not name for name, sep, _ in pairs):
+            msg = "--judge needs participant=path"
+            raise EngineError(msg)
+        return merge_panel(
+            {name: Path(path) for name, _, path in pairs}, _label_map(args.label_map)
+        )
     if cmd == "judge-parse":
-        doc = parse_judge(Path(args.file).read_text(encoding="utf-8"))
+        labels = _label_map(args.label_map)
+        doc = parse_judge(Path(args.file).read_text(encoding="utf-8"), labels)
         if args.prior:
-            prior = parse_judge(Path(args.prior).read_text(encoding="utf-8"))
+            prior = parse_judge(Path(args.prior).read_text(encoding="utf-8"), labels)
             doc["prior_winner_score"] = prior.get("winner_score")
             if doc.get("winner_score") is not None and prior.get("winner_score") is not None:
                 doc["not_improved"] = doc["winner_score"] <= prior["winner_score"]
@@ -1900,13 +2280,21 @@ def run(args: argparse.Namespace) -> Json:  # noqa: PLR0911
     )  # fmt: skip
 
 
+def _describe(exc: Exception) -> str:
+    if isinstance(exc, KeyError):
+        return f"missing key {exc} in session data or input"
+    if isinstance(exc, OSError) and exc.filename:
+        return f"{exc.strerror or type(exc).__name__}: {exc.filename}"
+    return str(exc) or type(exc).__name__
+
+
 def main(argv: Sequence[str] | None = None) -> int:
     """Command-line entry point."""
     args = build_parser().parse_args(argv)
     try:
         doc = run(args)
-    except EngineError as exc:
-        emit({"ok": False, "error": str(exc)})
+    except (EngineError, OSError, KeyError, ValueError) as exc:
+        emit({"ok": False, "error": _describe(exc)})
         return 1
     if doc:
         emit(doc)

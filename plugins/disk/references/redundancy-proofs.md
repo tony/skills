@@ -43,6 +43,7 @@ when the set unique to it is empty.
 ```python
 import os, sys
 
+
 def relpaths(root):
     out = set()
     for dirpath, dirnames, filenames in os.walk(root):
@@ -50,8 +51,10 @@ def relpaths(root):
             out.add(os.path.relpath(os.path.join(dirpath, name), root))
     return out
 
+
 def total(root, paths):
     return sum(os.lstat(os.path.join(root, p)).st_size for p in paths)
+
 
 candidate, keeper = sys.argv[1], sys.argv[2]
 c, k = relpaths(candidate), relpaths(keeper)

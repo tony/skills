@@ -1,243 +1,183 @@
 # Detecting Skill Usage From Local Agent History
 
-Every prompt you have typed and every transcript your agents wrote sits
-in local stores on your disk — Claude Code, Codex, Cursor, Gemini and
-the rest. That pile is the corpus, and `agentgrep` searches it. This
-file is how to turn it into a per-skill invocation count, and the ways
-that count comes back confidently wrong.
+Prompts you typed and transcripts your agents wrote sit in local stores on
+your disk. This file turns them into a per-skill invocation count and lists
+the ways that count comes back confidently wrong. `<sweep.py>`, which is
+`references/sweep.py` from this file, does the counting; this file covers
+getting its inputs and reading its output.
 
 Contents:
 
-- Invocations land in two places, and neither is the whole count
+- Invocations land in two places
+- Run the counter
 - Renames split the history
 - Supersessions split it the other way
 - Spread, not just repetition
-- Cost, and how to not pay it repeatedly
-- Query syntax that bites
-- Hosts do not type alike
+- Cost
+- Other hosts and other search tools
 - Redact before anything ships
 
-## Invocations land in two places, and neither is the whole count
+## Invocations land in two places
 
-A skill gets invoked two different ways and each way is recorded
-somewhere else. Call each one a channel. A count built on a single
-channel is wrong.
+A skill is invoked by typing its slash name or by the model calling the
+skill tool. Each way is recorded somewhere else, and a count from one
+channel alone is wrong.
 
-**Typed slash commands** live in the host's prompt history —
-`~/.claude/history.jsonl`, one JSON object per line carrying
-`.display`, `.project`, and `.timestamp`. Cheap: no search, just `jq`.
+**Typed slash commands** live in the host's prompt history. For Claude Code
+that is `~/.claude/history.jsonl`: one JSON object per line with `display`,
+`project`, and `timestamp` in epoch milliseconds. The counter reads it
+directly and matches only prompts that start with `/plugin:skill`, so a
+prompt that merely mentions one does not score. It misses bare `/skill`
+names of user-level skills; say so in the report.
 
-Everything below writes to a scratch directory outside the repository,
-because a sweep that leaves untracked files in the tree it is measuring
-has edited it:
-
-```console
-SCRATCH=$(mktemp -d)
-```
-
-Extract one dated row per record and keep it:
+**Skill-tool invocations** write a `Launching skill: <plugin>:<skill>` line
+into the conversation transcript, not into prompt history. Collect one line
+per occurrence into a scratch file. Prefer the host's own session-search
+tool. Without one, Claude Code transcripts are searchable with `rg`:
 
 ```console
-jq -r 'select(.display != null) | select(.display | test("^/[a-z0-9-]+:[a-z0-9-]+")) | [(.timestamp / 1000 | todate | .[:10]), (.display | capture("^/(?<s>[a-z0-9-]+:[a-z0-9-]+)").s)] | @tsv' ~/.claude/history.jsonl > "$SCRATCH/slash-channel.tsv"
+$ rg \
+    --only-matching \
+    --no-filename \
+    --no-line-number \
+    --glob '*.jsonl' \
+    'Launching skill: [a-z0-9:-]+' \
+    ~/.claude/projects
 ```
 
-Three things in that one-liner are load-bearing. Carrying `.timestamp`
-through is what makes an era split possible at all — rank straight to
-`uniq -c` and the dates are gone, with no later phase able to recover
-them. Matching against the whole `.display` anchored at `^` is what
-stops a pasted prompt that merely mentions the `action-worktree` skill from
-scoring as an invocation of it. And doing the extraction inside `jq`
-rather than piping through `sed` keeps it identical on BSD and GNU,
-where `\S` and a `\t` replacement are not.
+Redirect the output to a file in the scratch directory. Confirm the line
+form with one search before counting; an empty file means this host does
+not write that line, and the tool channel is unavailable, not zero.
 
-Rank it all-time:
-
-```console
-cut -f2 "$SCRATCH/slash-channel.tsv" | sort | uniq -c | sort -rn
-```
-
-Then re-slice the same file for the current era, using the boundary
-Phase 0 derived from the catalog's birth dates:
-
-```console
-awk -F'\t' '$1 >= "<boundary>"' "$SCRATCH/slash-channel.tsv" | cut -f2 | sort | uniq -c | sort -rn
-```
-
-**Skill-tool invocations** emit a `Launching skill: <plugin>:<skill>`
-line into the conversation transcript. These are *not* in prompt
-history, so a default-depth search finds nothing — `--exhaustive` is
-mandatory.
-
-```console
-uvx agentgrep --color never search --exhaustive '"Launching skill:"' --limit 2000 --no-progress --json
-```
-
-This channel has no usable date, and the `timestamp:` query field
-appears to fix that while silently dropping almost everything. The era
-split is therefore a slash-channel measurement, and the union of both
-channels can only be ranked all-time.
-
-The two disagree, and not by a fixed amount. The ratio between them
-belongs to each skill rather than to the corpus: a skill invoked almost
-only by name outscores its tool-channel count by two or three orders of
-magnitude, and one the model reaches for on its own inverts that
-completely. An aggregate ratio therefore describes no skill in
-particular, and a reader carrying one across will discard whichever
-channel it made look small.
-
-**A skill is only "unused" when it is absent from both.** Reporting
-from the tool channel alone recommends deleting heavily used skills;
-reporting from the slash channel alone erases the ones the model
-invokes without ever being asked by name.
+The tool channel has no usable date, so the era split comes from the slash
+channel alone and a skill the model reaches for on its own is undercounted
+there. A skill is unused only when it is absent from both channels.
+Reporting from the tool channel alone recommends deleting heavily used
+skills; reporting from the slash channel alone erases the ones the model
+invokes unprompted.
 
 Do not predict a skill's channel from its frontmatter:
 `disable-model-invocation: true` does not confine a skill to the slash
-channel. Union the channels; do not model them.
+channel.
+
+## Run the counter
+
+Create the scratch directory outside the repository, because a sweep that
+leaves untracked files in the tree it measures has edited it. Print the
+path and use that literal path in every later command.
+
+```console
+$ mktemp -d "${TMPDIR:-/tmp}/sweep.XXXXXX"
+```
+
+Write the current skill names, one per line, to `catalog.txt` there, then
+count:
+
+```console
+$ python3 <sweep.py> counts \
+    --history ~/.claude/history.jsonl \
+    --boundary <era boundary> \
+    --tool-log <scratch>/tool-log.txt \
+    --catalog <scratch>/catalog.txt \
+    --alias <old-name>=<current-name>
+```
+
+Pass one `--alias` per rename. The output is JSON: per skill `slash_all`,
+`slash_era`, `tool_all`, `all_time`, `projects_all`, `projects_era`, plus
+`rank_all`, `rank_era`, and per-channel `status`. Use `rank_all` for the
+all-time ranking and `rank_era` for the current-era ranking; the second is
+slash-only, so say so.
+
+`complete` is `false` unless the history parsed without malformed lines and
+the tool log held at least one launch. Apply no threshold to an incomplete
+count. A zero from an incomplete channel is not an absence. An archived or
+reclaimed transcript store comes back clean, complete, and wrong, so state
+what the count assumes about the corpus.
 
 ## Renames split the history
 
-A renamed skill keeps its old invocations under the old name forever.
-Counting only the current name undercounts, sometimes by most of the
-total.
-
-Recover the old names from the repository rather than guessing.
+A renamed skill keeps its old invocations under the old name. Counting only
+the current name undercounts, sometimes by most of the total.
 
 ```console
-git log --diff-filter=R --name-status --format='%h %s' -- 'plugins/*/skills/*'
+$ git log \
+    --diff-filter=R \
+    --name-status \
+    --format='%h %s' \
+    -- 'plugins/*/skills/*'
 ```
 
-Also read commit subjects for renames that moved a file the rename
-detector scored below its threshold, and for skills replaced by a
-different set rather than renamed — the successor carries none of the
-predecessor's history either way. Sum across every name a single skill
-has had before applying any threshold, and across nothing else — a
-replacement is not a rename.
+Read commit subjects for renames the detector scored below its threshold.
+Sum across every name one skill has had, via `--alias`, and across nothing
+else; a replacement is not a rename.
 
 ## Supersessions split it the other way
 
-A rename and a supersession look identical in the counts and demand
-opposite handling. A rename you detect and **sum** across. A
-supersession — a skill replaced by a different one, or by a set of
-them — leaves no git trace linking predecessor to successor, and
-summing them is precisely wrong: the predecessor's invocations all
-belong to the era before the successor shipped.
+A rename you detect and sum across. A supersession, a skill replaced by a
+different one or a set, leaves no git trace linking the two, and summing
+them is wrong: the predecessor's invocations all belong to the era before
+the successor shipped.
 
-The tell is cheap once you look for it. A superseded skill has a full
-all-time record and an empty recent half. Confirm it against the
-successor, which carries the mirror image — empty until that date and
-holding the traffic after it. A predecessor that went quiet with no
-sibling picking up its work is abandoned rather than superseded, and
-that is a different finding with a different remedy.
+A superseded skill has a full all-time record and an empty recent half; its
+successor shows the mirror image, empty until its birth date and holding
+the traffic after. A predecessor that went quiet with no sibling picking up
+its work is abandoned, which is a different finding with a different remedy.
 
-Recover the boundary from birth dates, since the rename detector scores
-a supersession at nothing:
-
-```console
-git log --follow --format='%ad' --date=short -- <path to SKILL.md> | sort | head -1
-```
-
-Then window each finding against the birth date of the skill that
-covers it. A procedure typed by hand over and over is a discoverability
-gap only if the typing continued after the skill existed; measured
-against the wrong date it reads as a gap either way.
+Window each finding against the birth date of the skill that covers it. A
+procedure typed by hand is a discoverability gap only if the typing
+continued after the skill existed.
 
 ## Spread, not just repetition
 
-A pattern confined to one project is that project's quirk, so spread
-has to be counted correctly.
+A pattern confined to one project is that project's quirk. In the slash
+channel the counter reports distinct projects per skill from the record's
+top-level `project`. For a pattern, count distinct `project` values over the
+prompts in its cluster by equality, not by prefix: one path can extend
+another.
 
-Project attribution sits in a different field per record type, and
-reading only one of them silently reports zero spread. In `agentgrep`'s
-`--json` output, prompt-history records carry it in `.metadata.project`
-— their `path` is the single history file they all share, so deriving a
-project from the path discards that whole channel. Transcript records
-are the reverse: their metadata comes back empty and the project is the
-`/projects/<slug>` path segment. Union both.
+Transcript results carry the project in the `/projects/<slug>` path
+segment. Some hosts' histories carry no project at all; report their spread
+as not countable instead of scoring it zero.
 
-```console
-uvx agentgrep --color never search --exhaustive '<pattern>' --limit 500 --no-progress --json | jq -r '[.. | objects | select(has("path")) | .metadata.project // (.path | capture("/projects/(?<p>[^/]+)").p) // empty] | .[]' | sort -u
-```
+## Cost
 
-Deduplicate the names it returns before counting them, and compare by
-equality rather than by prefix. The two channels spell the same project
-differently and one slug can extend another, so a raw `wc -l` over that
-union inflates spread for a single project and merges two neighbouring
-ones.
+An exhaustive transcript search reads every store on disk. Run it once,
+save the raw output, and re-slice it locally rather than running one
+search per skill. The slash channel is a single file read and finishes in
+seconds. Say before starting which of the two you are running.
 
-Those field names describe agentgrep's normalization, not the files
-underneath it. The slash-channel query above reads
-`~/.claude/history.jsonl` directly, and there the project is a
-top-level `project` holding an absolute path — that record has no
-`metadata` object at all. Carrying `.metadata.project` across from one
-query to the other returns nothing for every record, which is
-indistinguishable from a pattern that genuinely has no spread.
+## Other hosts and other search tools
 
-Some hosts' prompt histories, Codex and Grok among them, carry neither
-field, so their spread is not countable from a result alone — say so
-rather than scoring it zero.
+The slash extraction is a Claude Code shape. Other hosts record the same
+intent differently, so extract per host. When a host's channel comes back
+near-empty, treat it as "the extraction does not fit this host" until
+proven otherwise, not as "this host does not use skills".
 
-## Cost, and how to not pay it repeatedly
-
-An exhaustive search reads every store on disk. That is the unit cost
-of *one* query. Budget accordingly:
-
-- Run **one** broad exhaustive query and group its results locally,
-  rather than one query per skill. A single `"Launching skill:"` sweep
-  ranks every skill at once.
-- Reach for the slash channel first. It is instant and usually larger.
-- Save raw JSON to a scratch file and re-slice it with `jq` instead of
-  re-running the search.
-
-Confirm the sweep actually completed before drawing conclusions —
-a bounded or partial run looks identical to a genuine absence of
-matches.
+`agentgrep` searches the stores of several hosts at once and is an
+optional alternative to the host's search tool. It runs through `uvx`, so
+`uv` must be installed. Before relying on it:
 
 ```console
-jq -c '.summary.status, .summary.stats, .summary.coverage' <saved.json>
+$ uvx agentgrep search --help
 ```
 
-`status.state` must read `complete`. Do not then threshold on
-`stats.matched`: it counts results after deduplication and after
-`--limit`, so it quietly equals the limit whenever the limit binds and
-`state` still reads `complete`. `coverage.matches_seen` counts every
-match before either, and is the number a threshold belongs on. The two
-can differ for the same query; `matches_seen` is the literal occurrence
-count.
+Use only the flags that help lists. If `uv` or the tool is missing, the
+command fails, or a flag the query needs is absent, stop using it: fall back
+to the host's search tool or the `rg` command above, and report the other
+hosts' stores as not searched.
 
-## Query syntax that bites
-
-- Global flags go **before** the subcommand. `agentgrep search --color
-  never` is an error; `agentgrep --color never search` is not.
-- `depth:exhaustive` as an inline query term is equivalent to
-  `--exhaustive`, but the field is a request-wide directive and cannot
-  itself be negated or joined by `OR`. Boolean operators elsewhere in
-  the query are fine: `depth:exhaustive (a OR b)` runs, while
-  `depth:exhaustive a OR b` is a hard error because the bare `OR` takes
-  the directive as an operand. Parenthesize, or use the flag.
-- Bare terms are AND-combined substrings. `OR`, `NOT`, `( )`, and
-  `"exact phrases"` compose. Fields: `agent:`, `model:`, `role:`,
-  `timestamp:`, `path:`, `scope:`, `cwd:`, `project:`, `branch:`.
-- Default `--scope` is `prompts`. Anything written by the assistant or
-  by a tool needs `--exhaustive` to be reachable at all.
-
-## Hosts do not type alike
-
-The slash-command extraction above is a Claude Code shape. Other hosts
-record the same intent differently — one measured Codex history held a
-single `/plugin:skill` invocation across the whole file, because skills
-there get named bare or with a sigil instead. Extract per host, and
-when a host's channel comes back near-empty, treat that as "the
-extraction does not fit this host" until proven otherwise, never as
-"this host does not use skills".
+Whatever the tool, confirm the run completed before drawing conclusions.
+A bounded or partial result looks identical to a genuine absence. Read the
+tool's own completeness indicator, and threshold on the raw match count it
+reports, not on a count taken after deduplication or after the result
+limit. If the tool exposes no such indicator, mark that channel unverified
+in the report.
 
 ## Redact before anything ships
 
-Corpus results carry the user's absolute paths — project slugs are
-derived from them — and prompts quoted as evidence routinely contain
-local paths, hostnames, and client or employer names. The repository
-forbids all of it in shipped artifacts.
-
-Quote evidence in the report and the proposal, and strip it from
-anything that lands: a `SKILL.md`, a commit message, a pull request
-body, an issue. Name the pattern and its spread ("recurs across four
-language ports") instead of pasting the paths that proved it.
+Corpus results carry absolute paths, project slugs derived from them, and
+prompts quoting local paths, hostnames, and client or employer names. The
+ledger may hold them because it lives outside the working tree. A
+`SKILL.md`, commit message, pull request body, or issue may not. Name the
+pattern and its spread ("recurs across four language ports") instead of
+pasting the paths that proved it.

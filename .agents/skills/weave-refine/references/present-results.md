@@ -1,4 +1,4 @@
-# Weave present-results — unified output rendering and next-step panel
+# Weave present-results: unified output rendering and next-step panel
 
 A shared rendering layer for all `/weave:*` commands. Consolidates
 output presentation into one place: a hero block, prescribed body
@@ -8,9 +8,9 @@ next-step panel with active plan-mode handoff.
 ## Contents
 
 - Caller contract
-- Phase A — Render output
-- Phase B — Next-step panel
-- Phase C — Active plan-mode entry
+- Phase A: Render output
+- Phase B: Next-step panel
+- Phase C: Active plan-mode entry
 - Failure modes
 
 ---
@@ -35,7 +35,7 @@ The caller sets these variables before invoking this reference:
 
 ---
 
-## Phase A — Render output
+## Phase A: Render output
 
 ### Step 1: Read the artifact
 
@@ -61,8 +61,8 @@ content. Emit 1–4 lines.
 | execute | `Best of N implementations` |
 | fix-review | `N fixes applied, M skipped` |
 
-When CASCADE_STATE is `early-exit`, append `— cascade early-exit
-(Maintainer lane only)` in subagent mode or `— cascade early-exit
+When CASCADE_STATE is `early-exit`, append `, cascade early-exit
+(Maintainer lane only)` in subagent mode or `, cascade early-exit
 (Claude lane only)` in model-CLI mode to the hero's first line.
 
 ### Step 3: Render body sections
@@ -105,7 +105,11 @@ single-verified, then unverified). Omit consensus tags when only one lane partic
 >    table.
 > 4. Prefer tables and tight bullets. Narrative paragraphs are allowed
 >    only inside `Adjudication` / `Reviewer Disagreements` and
->    `Critic Findings`.
+>    `Critic Findings`. Bold a bullet's lead-in only where the section
+>    table asks for labels; never bold the lead of every bullet.
+> 5. A run that stopped before producing the artifact (refused, failed, or
+>    declined) renders none of this: one sentence stating the result, then
+>    what the user needs to do next.
 
 ### Step 4: Render Attribution
 
@@ -121,11 +125,12 @@ Shared across all RESULT_KINDs. Render as the final body section:
   from PARTICIPANTS (`claude`, `agy`, `gpt` as available), their actual
   executors from EXECUTORS, and resolved provider/model details from MODELS.
   The `gpt` lane normally runs through `codex`; do not call `gpt` a CLI.
-- End with: `**Session artifacts**: $SESSION_DIR`
+- Name no local paths or temp files. Mention a file only when the user must
+  act on it.
 
 ---
 
-## Phase B — Next-step panel
+## Phase B: Next-step panel
 
 When IN_PLAN_MODE is true, skip Phase B entirely.
 
@@ -144,7 +149,7 @@ path instead of Phase C.
 | brainstorm-and-refine, refine, serene-bliss | **Plan the refined result** · **Refine again** (suggest this skill) · **Done** |
 | architecture | **Plan the chosen architecture** · **Brainstorm alternatives** (suggest the `weave-brainstorm` skill) · **Done** |
 | execute | **Apply the winning implementation** · **Compare with another participant** (suggest the `weave-prompt` skill) · **Done** |
-| prompt | **Use the winner — plan it** · **Re-run with different variants** · **Done** |
+| prompt | **Use the winner - plan it** · **Re-run with different variants** · **Done** |
 | fix-review | **Review the branch again** (suggest the `weave-review` skill) · **Done** |
 
 ### Step 2: Route user choice
@@ -156,12 +161,12 @@ path instead of Phase C.
   and return.
 - **Plan-entry options** (Draft plan, Turn into plan, Plan the refined
   result, Plan the chosen architecture, Pick one and plan it, Use the
-  winner — plan it, Apply the winning implementation) → proceed to
+  winner - plan it, Apply the winning implementation) → proceed to
   Phase C.
 
 ---
 
-## Phase C — Active plan-mode entry
+## Phase C: Active plan-mode entry
 
 Triggered only when the user picks a plan-entry option in Phase B.
 
@@ -170,7 +175,7 @@ Triggered only when the user picks a plan-entry option in Phase B.
 Launch one host-native sub-agent. In Claude Code, use a Task sub-agent
 with `subagent_type: "general-purpose"` and `mode: "default"`. Input:
 ARTIFACT_PATH content plus the extractor instruction from this table.
-Write its output to `$SESSION_DIR/handoff/plan-brief.md`.
+Write its output to `<session_dir>/handoff/plan-brief.md`.
 
 | RESULT_KIND | Extractor instruction |
 |---|---|
@@ -187,7 +192,7 @@ Call `EnterPlanMode`. If unavailable, go to headless fallback.
 
 ### Step 3: Write plan file
 
-In plan mode: read `$SESSION_DIR/handoff/plan-brief.md`, read the
+In plan mode: read `<session_dir>/handoff/plan-brief.md`, read the
 codebase files referenced in the brief, write the plan file at the path
 supplied by the host's plan-mode system message. Format as an
 Implementation Plan (same shape as the `weave-plan` skill Phase 4 output). Call
@@ -198,7 +203,7 @@ Implementation Plan (same shape as the `weave-plan` skill Phase 4 output). Call
 If `EnterPlanMode` is unavailable, emit one line and stop:
 
 ```
-Plan mode unavailable — plan brief written to $SESSION_DIR/handoff/plan-brief.md.
+Plan mode unavailable - plan brief written to <session_dir>/handoff/plan-brief.md.
 Run weave-plan with this context to enter plan mode.
 ```
 

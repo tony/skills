@@ -9,8 +9,10 @@ Distil an ontology of what this codebase calls things. Here's the module I'm sta
 class PortAdapter:
     """Wraps a third-party client behind the port interface."""
 
+
 class EventBus:
     """Publishes domain events to subscribed handlers."""
+
 
 def dispatch_handler(event, handler):
     handler.handle(event)

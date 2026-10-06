@@ -2,8 +2,9 @@
 
 Prompts you typed and transcripts your agents wrote sit in local stores on
 your disk. This file turns them into a per-skill invocation count and lists
-the ways that count comes back confidently wrong. `../scripts/sweep.py counts`
-does the counting; this file covers getting its inputs and reading its output.
+the ways that count comes back confidently wrong. `<sweep.py>`, which is
+`../scripts/sweep.py` from this file, does the counting; this file covers
+getting its inputs and reading its output.
 
 Contents:
 
@@ -73,7 +74,7 @@ Write the current skill names, one per line, to `catalog.txt` there, then
 count:
 
 ```console
-$ python3 ../scripts/sweep.py counts \
+$ python3 <sweep.py> counts \
     --history ~/.claude/history.jsonl \
     --boundary <era boundary> \
     --tool-log <scratch>/tool-log.txt \

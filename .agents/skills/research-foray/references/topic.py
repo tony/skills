@@ -22,12 +22,14 @@ import hashlib
 import html
 import http.client
 import io
+import ipaddress
 import json
 import os
 import platform
 import re
 import shlex
 import shutil
+import socket
 import subprocess
 import sys
 import tempfile
@@ -69,6 +71,8 @@ MIN_CONTAINED = 4
 SUMMARY_WORDS = 150
 MAX_EM_DASHES = 2
 MIN_TITLE_WORDS = 4
+MAX_FETCH_BYTES = 25 * 1024 * 1024
+MAX_REDIRECTS = 5
 USER_AGENT = "topic.py (+https://github.com/tony/skills)"
 YAML_WORDS = frozenset({
     "true", "false", "null", "yes", "no", "on", "off", "y", "n", "~", "nan", "infinity",
@@ -160,7 +164,7 @@ SLOP_PATTERNS = tuple(
         ("recap ending", r"^(?:in conclusion|ultimately|overall)\b"),
     )
 )
-FAILURES = frozenset({"vanished", "moved", "changed", "misquoted", "unreachable"})
+FAILURES = frozenset({"vanished", "moved", "changed", "misquoted", "unreachable", "unverifiable"})
 KINDS = ("vendor", "independent", "measured")
 BRANCH_REFS = frozenset({"main", "master", "head", "trunk", "develop", "dev", "latest", "stable"})
 MOVING_URL = re.compile(
@@ -216,6 +220,7 @@ class Args(argparse.Namespace):
     source_kind: str | None = None
     pattern: str = ""
     offline: bool = False
+    allow_offline: bool = False
     ids: list[str] | None = None
     report: str = ""
     csv: str = ""
@@ -1094,16 +1099,91 @@ def ascii_url(url: str) -> str:
     return urllib.parse.urlunsplit((parts.scheme, netloc, path, query, ""))
 
 
-def http_fetch(url: str) -> tuple[int, str, bytes, dict[str, str]]:
-    """GET ``url``; return ``(status, final_url, body, headers)``, status 0 when unreachable."""
+Resolver = t.Callable[[str], list[str]]
+
+
+def resolve_host(name: str) -> list[str]:
+    """Addresses ``name`` resolves to; empty when it does not resolve."""
+    try:
+        infos = socket.getaddrinfo(name, None, proto=socket.IPPROTO_TCP)
+    except (socket.gaierror, UnicodeError, OSError):
+        return []
+    return sorted({str(i[4][0]).split("%")[0] for i in infos})
+
+
+def is_public_host(name: str, resolve: Resolver = resolve_host) -> bool:
+    """Return whether every address of ``name`` is globally routable.
+
+    Loopback, private, link-local, and other reserved ranges are refused so a
+    captured page cannot steer a fetch at the reader's own network.
+
+    Examples
+    --------
+    >>> is_public_host("example.org", lambda _: ["93.184.216.34"])
+    True
+    >>> is_public_host("example.org", lambda _: ["93.184.216.34", "10.0.0.5"])
+    False
+    >>> is_public_host("169.254.169.254", lambda n: [n])
+    False
+    >>> is_public_host("nowhere.invalid", lambda _: [])
+    False
+    """
+    addrs = resolve(name)
+    try:
+        return bool(addrs) and all(ipaddress.ip_address(a).is_global for a in addrs)
+    except ValueError:
+        return False
+
+
+@t.final
+class PublicRedirects(urllib.request.HTTPRedirectHandler):
+    """Follow at most ``MAX_REDIRECTS`` redirects, each to a public http(s) host."""
+
+    max_redirections: t.ClassVar[int] = MAX_REDIRECTS
+
+    def __init__(self, resolve: Resolver) -> None:
+        """Keep ``resolve`` for checking each redirect target."""
+        super().__init__()
+        self.resolve: Resolver = resolve
+
+    def redirect_request(  # noqa: PLR0913, PLR0917  # pyright: ignore[reportImplicitOverride]
+        self,
+        req: urllib.request.Request,
+        fp: t.IO[bytes],
+        code: int,
+        msg: str,
+        headers: http.client.HTTPMessage,
+        newurl: str,
+    ) -> urllib.request.Request | None:
+        """Refuse a redirect to a non-http(s) scheme or a non-public host."""
+        parts = urllib.parse.urlsplit(newurl)
+        if parts.scheme in ("http", "https") and is_public_host(parts.hostname or "", self.resolve):
+            return super().redirect_request(req, fp, code, msg, headers, newurl)
+        reason = f"redirect to a non-public address: {newurl}"
+        raise urllib.error.URLError(reason)
+
+
+def http_fetch(
+    url: str, resolve: Resolver = resolve_host
+) -> tuple[int, str, bytes, dict[str, str]]:
+    """GET ``url``; return ``(status, final_url, body, headers)``, status 0 on failure.
+
+    Status 0 also covers a refusal: a non-http(s) scheme, a host that resolves to a
+    non-public address (also on each redirect), and a body over ``MAX_FETCH_BYTES``.
+    """
     if not url.startswith(("https://", "http://")):
         return 0, url, b"", {}
     try:
-        req = urllib.request.Request(  # noqa: S310
-            ascii_url(fetch_url(url)), headers={"User-Agent": USER_AGENT}
-        )
-        with t.cast("http.client.HTTPResponse", urllib.request.urlopen(req, timeout=20)) as resp:  # noqa: S310
-            return resp.status, resp.url or url, resp.read(), dict(resp.headers.items())
+        target = ascii_url(fetch_url(url))
+        if not is_public_host(urllib.parse.urlsplit(target).hostname or "", resolve):
+            return 0, url, b"", {}
+        opener = urllib.request.build_opener(PublicRedirects(resolve))
+        req = urllib.request.Request(target, headers={"User-Agent": USER_AGENT})  # noqa: S310
+        with t.cast("http.client.HTTPResponse", opener.open(req, timeout=20)) as resp:
+            body = resp.read(MAX_FETCH_BYTES + 1)
+            if len(body) > MAX_FETCH_BYTES:
+                return 0, url, b"", {}
+            return resp.status, resp.url or url, body, dict(resp.headers.items())
     except urllib.error.HTTPError as e:
         return e.code, url, b"", {}
     except (urllib.error.URLError, http.client.HTTPException, OSError, ValueError):
@@ -1262,6 +1342,8 @@ def cmd_add(a: Args, fetch: Fetch = http_fetch, extra: Row | None = None) -> int
     version = sum(r.get("id") == row["id"] for r in rows) + 1
     warnings = pin_warnings(a.url, _str(row, "ref") or None)
     warnings += capture_warnings(row, got, prev)
+    if data is not None and ref_unseen(_str(row, "ref"), a.url, data):
+        warnings.append(f"ref {row['ref']} is not in the URL or the capture; confirm the pin")
     emit({**row, "duplicate": False, "version": version, "warnings": warnings})
     return 0
 
@@ -1367,6 +1449,24 @@ def pin_warnings(url: str, ref: str | None) -> list[str]:
     if MOVING_URL.search(url) and not exact:
         out.append("the URL is a moving alias; record the exact version the page states as --ref")
     return out
+
+
+def ref_unseen(ref: str, url: str, data: bytes) -> bool:
+    """Return whether ``ref`` appears in neither ``url`` nor the capture.
+
+    Examples
+    --------
+    >>> ref_unseen("3.46.0", "https://x.io/v3.46.0/a", b"")
+    False
+    >>> ref_unseen("3.46.0", "https://x.io/a", b"SQLite 3.46.0 docs")
+    False
+    >>> ref_unseen("9.9", "https://x.io/a", b"SQLite 3.46.0 docs")
+    True
+    >>> ref_unseen("", "https://x.io/a", b"")
+    False
+    """
+    needle = ref.lower()
+    return bool(needle) and needle not in url.lower() and needle not in text_of(data)
 
 
 def capture_warnings(row: Row, got: tuple[bytes, str, str, Row] | None, prev: Row) -> list[str]:
@@ -1670,6 +1770,8 @@ def check_capture(run: Path, row: Row) -> tuple[str, str, bytes | None]:
     data = path.read_bytes()
     if sha256(data) != row.get("sha256"):
         return "changed", "capture bytes differ from the recorded sha256", data
+    if rel.lower().endswith(".pdf") and quotes_of(row):
+        return "unverifiable", "PDF text is not extracted; capture the text you read as .txt", data
     missing = missing_quotes(quotes_of(row), data)
     if missing:
         return "misquoted", f"not in the capture: {missing[0]!r}", data
@@ -2680,6 +2782,9 @@ def evidence_key(row: Row) -> str:
 def cmd_release(a: Args, fetch: Fetch = http_fetch) -> int:
     """Release the report: pass every check fresh, keep that exact version, log who got it."""
     run = run_dir(a.run)
+    if a.offline and not a.allow_offline:
+        msg = "release needs a live check; pass --allow-offline to release on captures alone"
+        raise ValueError(msg)
     result = gate(run, None if a.offline else fetch)
     if not result["ok"]:
         emit({**result, "released": False})
@@ -3237,6 +3342,9 @@ def build_parser() -> argparse.ArgumentParser:  # noqa: PLR0915 - one statement 
     _ = rl.add_argument("--to", required=True, help="who receives it, as a role or group")
     _ = rl.add_argument("--note")
     _ = rl.add_argument("--offline", action="store_true", help="captures only, no network")
+    _ = rl.add_argument(
+        "--allow-offline", action="store_true", help="let --offline release; recorded as offline"
+    )
 
     de = sub.add_parser("decide", help="record a decision taken on a released report")
     _ = de.add_argument("--run", required=True)

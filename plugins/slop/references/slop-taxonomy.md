@@ -16,7 +16,8 @@ reaches the proposal.
 footers, emoji in commit subjects, markdown syntax opening a subject,
 and net-new `TODO: revisit` noise. In an apply mode these change with no
 per-finding confirmation; they are the only findings that do. The
-emoji rule is overridable for gitmoji projects.
+emoji rule flags pictographic emoji only, not status glyphs such as
+check marks, and is overridable for gitmoji projects.
 
 **Tier B: high-confidence, edge cases remain.** Brittle references (line
 numbers, counts, bare SHAs), restated subjects, bullets

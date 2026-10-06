@@ -1,7 +1,10 @@
 # Skill writing rubric
 
 The rules a SKILL.md is held to, and the reasoning behind the ones
-whose reasoning is not obvious.
+whose reasoning is not obvious. The 500-line body, 64-character name,
+and reserved-word limits come from Anthropic's skill authoring best
+practices; the 150-character description limit is this library's own
+CI check.
 
 ## Contents
 
@@ -14,6 +17,7 @@ whose reasoning is not obvious.
 - Degrees of freedom
 - Workflows and feedback loops
 - Terminology
+- Library standards
 - Anti-patterns
 - Trigger testing
 
@@ -96,7 +100,7 @@ improvements" survives line by line and teaches nothing.
 
 Before editing, write one row per proposed cut: the line, and the
 reason nothing breaks. Cuts you cannot justify in a row are cuts you
-have not tested. Under an audit-only run, the ledger is the entire
+have not tested. Under `--audit`, the ledger is the entire
 deliverable.
 
 ## What the test never touches
@@ -107,12 +111,19 @@ The test judges claims. These are not claims:
 before deciding whether to load the body. A perfect body behind a weak
 description is never read.
 
-**Fenced code blocks, and every character inside them.** Never reflow,
-reformat, shorten, modernize, or fix a command, path, flag, or
-snippet. A command in a skill is a quotation: the author verified it
-against a real system, and an edit silently unverifies it. A whole
-fence may be dropped when a sibling fence teaches the same thing —
-never a line out of a fence's middle.
+**Fenced code blocks, and every character of a command inside them.**
+Never reflow, reformat, shorten, modernize, or fix a command, path,
+flag, or snippet; report a flaw in the ledger instead. A command in a
+skill is a quotation: the author verified it against a real system,
+and an edit silently unverifies it. A whole fence may be dropped when
+a sibling fence teaches the same thing, never a line out of a fence's
+middle.
+
+The fence's structure is the one exception, and fixing it edits no
+command character: the tag, the `$ ` prompt, and splitting a
+multi-command fence into one fence per command. A single command run
+as-is is a `console` fence with `$ ` prefixes; a multi-line script is
+a `bash` or `sh` fence with no prompts.
 
 **Literal commands, paths, and flags in prose.** Backtick them and
 leave the characters alone.
@@ -197,7 +208,8 @@ description competes in.
 - State the rule before its exceptions. An agent that meets the edge
   case first has no model to hang it on, and generalizes the exception
   into the rule.
-- One command per fence, comments outside it. Say what the fence is
+- One command per `console` fence with a `$ ` prefix, a script in a
+  `bash` fence, comments outside either. Say what the fence is
   for before it, and what its result means after. Cutting prose that
   restates a command is not the same as shipping a fence with nothing
   telling the agent when to run it.
@@ -279,6 +291,53 @@ execute. Errors surface before anything is touched.
 Pick one term per concept and repeat it. Mixing "field", "box",
 "element", and "control" for one thing forces the reader to prove they
 are the same. Consistency is not style here; it is parseability.
+
+## Library standards
+
+Defects to flag in any SKILL.md, beyond the deletion test.
+
+- **Context expansion.** A `` ! `` immediately followed by a
+  backtick-quoted command never runs, and the form that does run
+  breaks under a scoped `allowed-tools` grant. Write a numbered step
+  that names what it gathers and what a failure means.
+- **Skills, not commands.** A workflow is a `skills/<name>/SKILL.md`.
+  A skill meant only for explicit invocation sets
+  `disable-model-invocation: true` rather than living in `commands/`.
+- **Bundled files.** Address them relative to the skill by
+  by
+  climbing two directories out of the skill, into `references/`. Never use `the plugin root` in a
+  skill (Codex does not substitute it), and never link or read outside
+  the plugin. Where several plugins ship the same file, each holds a
+  vendored copy: edit the source, never the copy.
+- **Frontmatter.** `name` and `description` are required. Add
+  `argument-hint` whenever the body consumes `$ARGUMENTS`.
+- **Tool grants.** `allowed-tools` takes bare tool names (`Bash`, not
+  a language-specific pattern) and pre-approves only what a step
+  uses. `WebFetch` and `WebSearch` stay off a skill that reads
+  untrusted input. Only `disallowed-tools` removes a tool.
+- **No language-specific commands.** A skill that serves any project
+  says "the project's test suite, as AGENTS.md or CLAUDE.md defines
+  it" rather than naming a runner.
+- **Portable shell.** A shipped command works on GNU and BSD/Darwin,
+  or shows both forms labelled: `sed -i` differs between them, `sed`
+  `\+` and `\|` are GNU-only (use `-E`), and `readlink -f`,
+  `stat -c`, `date -d`, and `mapfile` have no BSD equivalent. Temp
+  files use `mktemp` with a template ending in `XXXXXX`.
+- **State between commands.** Shell variables do not survive separate
+  Bash calls. Do the work in one command, or print the value and use
+  the literal afterwards.
+- **Interactive steps.** Every `ask-user-choice` step states what to do
+  without it (Codex, headless runs). An explicit request to do the
+  action authorizes that action only, never a commit or push.
+- **Output contract.** A skill whose output is a report declares a hero
+  line and a fixed section order, plus the shape of a stopped run: one
+  result sentence, then what the user must do. Without a declared
+  shape the agent invents headings and recap endings.
+- **Analysis-then-execute skills** open execution with an
+  orchestration-plan step the user approves, and degrade to the phase
+  order when plan mode is unavailable.
+- **Local paths.** Outputs never name local or temp paths the user does
+  not need to act on.
 
 ## Anti-patterns
 

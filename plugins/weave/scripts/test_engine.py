@@ -531,7 +531,7 @@ def test_profiles_keep_the_timeout_menu_at_half_and_one_and_a_half() -> None:
 def test_cli_flags_and_labels(
     repo: Path, capsys: pytest.CaptureFixture[str], monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    monkeypatch.setattr("sys.stdin", io.StringIO('why --mode=deep it\'s "odd" $HOME --cascade'))
+    monkeypatch.setattr("sys.stdin", io.StringIO('--mode=deep --cascade why it\'s "odd" $HOME'))
     code = engine.main(["flags", "--command", "ask"])
     doc = json.loads(capsys.readouterr().out)
     assert code == 0
@@ -590,7 +590,7 @@ def test_not_a_repo_reports_error(
 ) -> None:
     monkeypatch.chdir(tmp_path)
     monkeypatch.setenv("GIT_CEILING_DIRECTORIES", str(tmp_path.parent))
-    code = engine.main(["init", "--command", "ask", "--backend", "subagents"])
+    code = engine.main(["init", "--command", "execute", "--backend", "subagents", "--mutating"])
     assert code == 1
     assert json.loads(capsys.readouterr().out)["ok"] is False
 
@@ -740,3 +740,290 @@ def test_context_reports_trunk_branch_and_commits(
     assert (doc["trunk"], doc["branch"]) == ("main", "feature")
     assert doc["commits"][0].endswith("change b")
     assert "+b2" in doc["markdown"]
+
+
+# --- safety: stash, unsafe toplevel, no-repo mode, recovery pins -------------
+
+
+def test_failed_stash_pop_keeps_the_stash_and_never_advises_dropping_it(repo: Path) -> None:
+    (repo / "a.txt").write_text("user edit\n")
+    sdir = Path(init(command="execute", mutating=True)["session_dir"])
+    sha = engine.load_session(sdir)["stash"]["sha"]
+    (repo / "a.txt").write_text("synthesis\n")
+    doc = engine.restore_stash(sdir)
+    assert doc["ok"] is False
+    assert doc["stash_kept"] is True
+    assert doc["stash_sha"] == sha
+    assert engine.stash_entry(str(repo), sha) is not None
+    assert "drop" not in json.dumps(doc)
+    sh(repo, "git", "checkout", "--", "a.txt")
+    sh(repo, "git", "stash", "apply", doc["stash_sha"])
+    assert (repo / "a.txt").read_text() == "user edit\n"
+
+
+def test_no_skill_or_reference_advises_stash_drop() -> None:
+    root = Path(__file__).resolve().parents[1]
+    hits = [
+        str(p.relative_to(root))
+        for folder in ("skills", "references")
+        for p in (root / folder).rglob("*.md")
+        if "stash drop" in p.read_text(encoding="utf-8")
+    ]
+    assert hits == []
+
+
+def fake_home_repo(tmp_path: Path, monkeypatch: pytest.MonkeyPatch, *, nested: bool) -> Path:
+    outer = tmp_path / "homes"
+    home = outer / "me" if nested else outer
+    home.mkdir(parents=True)
+    monkeypatch.setenv("HOME", str(home))
+    monkeypatch.setenv("AI_AIP_ROOT", str(tmp_path / "aip"))
+    (outer / "f.txt").write_text("x\n")
+    sh(outer, "git", "init", "-q", "-b", "main")
+    sh(outer, "git", "config", "user.email", "t@example.com")
+    sh(outer, "git", "config", "user.name", "t")
+    sh(outer, "git", "add", "-A")
+    sh(outer, "git", "commit", "-q", "-m", "init")
+    return home if not nested else outer
+
+
+@pytest.mark.parametrize(
+    "nested", [False, True], ids=["home-is-toplevel", "toplevel-contains-home"]
+)
+def test_unsafe_toplevel_is_refused_for_mutating_and_unguarded_when_read_only(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, nested: bool
+) -> None:
+    top = fake_home_repo(tmp_path, monkeypatch, nested=nested)
+    monkeypatch.chdir(top)
+    (top / "dirty.txt").write_text("keep me\n")
+    with pytest.raises(engine.EngineError, match="needs a git repository"):
+        init(command="execute", mutating=True)
+    assert not (tmp_path / "aip").exists()
+    assert sh(top, "git", "stash", "list") == ""
+    assert (top / "dirty.txt").read_text() == "keep me\n"
+    doc = init(command="brainstorm")
+    assert doc["unguarded"] is True
+    assert "No repository" in doc["note"]
+    assert sh(top, "git", "for-each-ref", "refs/weave-guard/") == ""
+    for call in (engine.stash_user_changes, engine.take_guard_snapshot):
+        with pytest.raises(engine.EngineError, match="refusing to snapshot"):
+            call(str(top), "x")
+
+
+def test_unsafe_toplevel_rule() -> None:
+    assert engine.unsafe_toplevel("/") == "the filesystem root"
+    assert engine.unsafe_toplevel("/a/b", {"HOME": "/a/b"}) == "your home directory"
+    assert engine.unsafe_toplevel("/a/b/c", {"HOME": "/a/b"}) is None
+
+
+def test_no_repo_mode_runs_read_only_commands_unguarded(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, bindir: Path
+) -> None:
+    work = tmp_path / "plain"
+    work.mkdir()
+    monkeypatch.setenv("AI_AIP_ROOT", str(tmp_path / "aip"))
+    monkeypatch.chdir(work)
+    monkeypatch.setenv("GIT_CEILING_DIRECTORIES", str(tmp_path))
+    stub(bindir, "codex", "pwd > cwd.txt; ls -A | grep -v cwd.txt > ls.txt; echo ok")
+    doc = init(command="refine", backend="model-clis")
+    sdir = Path(doc["session_dir"])
+    assert doc["repo"] is False
+    assert doc["trunk"] is None
+    assert engine.guard_check(sdir) == {"ok": True, "violation": False, "unguarded": True}
+    assert engine.main(["guard", "check", "--session", str(sdir)]) == 0
+    assert engine.guard_resolve(sdir, "revert")["violation"] is False
+    assert engine.guard_finish(sdir)["unguarded"] is True
+    other = init(command="refine")
+    assert other["session_dir"].split("sessions")[0] == doc["session_dir"].split("sessions")[0]
+    got = dispatch(sdir, "gpt")
+    assert got["ok"] is True
+    assert Path(sdir / "scratch").is_dir()
+    ctx = engine.context_doc(".", full_diff=True, diff_limit=0)
+    assert ctx["repo"] is False
+    assert "No repository" in ctx["markdown"]
+    made = engine.create_worktrees(sdir, ["maintainer"])["worktrees"]
+    assert Path(made["maintainer"]["path"]).is_dir()
+    assert not any(Path(made["maintainer"]["path"]).iterdir())
+    engine.remove_worktrees(sdir, None)
+
+
+def test_no_repo_mode_also_covers_a_repository_without_commits(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    work = tmp_path / "fresh"
+    work.mkdir()
+    sh(work, "git", "init", "-q", "-b", "main")
+    monkeypatch.setenv("AI_AIP_ROOT", str(tmp_path / "aip"))
+    monkeypatch.chdir(work)
+    assert init(command="ask")["unguarded"] is True
+
+
+@pytest.mark.parametrize("command", ["execute", "prompt", "architecture", "review"])
+def test_commands_that_need_commits_refuse_without_a_repository(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, command: str
+) -> None:
+    work = tmp_path / "plain"
+    work.mkdir()
+    monkeypatch.setenv("AI_AIP_ROOT", str(tmp_path / "aip"))
+    monkeypatch.setenv("GIT_CEILING_DIRECTORIES", str(tmp_path))
+    monkeypatch.chdir(work)
+    with pytest.raises(engine.EngineError, match="needs a git repository with at least one"):
+        init(command=command)
+    with pytest.raises(engine.EngineError, match="needs a git repository"):
+        engine.init_session(
+            command="fix-review", backend=None, repo=".", prompt_summary="", passes=1,
+            timeout="default", mutating=False, bare=True,
+        )  # fmt: skip
+
+
+def test_failed_init_leaves_no_session_directory_and_returns_the_stash(
+    repo: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    (repo / "a.txt").write_text("user edit\n")
+
+    def boom(*_a: object, **_k: object) -> engine.Json:
+        msg = "snapshot failed"
+        raise engine.EngineError(msg)
+
+    monkeypatch.setattr(engine, "take_guard_snapshot", boom)
+    with pytest.raises(engine.EngineError, match="snapshot failed"):
+        init(command="execute", mutating=True)
+    aip = Path(engine.aip_root())
+    assert not list(aip.rglob("session.json"))
+    assert not list(aip.rglob("repo.json"))
+    assert not any(p.is_dir() for p in aip.rglob("sessions/*/*"))
+    assert (repo / "a.txt").read_text() == "user edit\n"
+    assert sh(repo, "git", "stash", "list") == ""
+
+
+def test_guard_finish_keeps_the_pins_reset_main_needs(repo: Path) -> None:
+    (repo / "a.txt").write_text("user edit\n")
+    sdir = Path(init(command="execute", mutating=True)["session_dir"])
+    sid = engine.load_session(sdir)["session_id"]
+    (repo / "synth.txt").write_text("discarded synthesis\n")
+    engine.reset_main(sdir)
+    assert engine.guard_finish(sdir)["refs_pruned"] is True
+    refs = sh(repo, "git", "for-each-ref", "--format=%(refname)", f"refs/weave-guard/{sid}/")
+    pins = [r for r in refs.split() if "/pre-reset-" in r]
+    assert len(pins) == 1
+    assert len(refs.split()) == 1
+    assert sh(repo, "git", "show", f"{pins[0]}:synth.txt") == "discarded synthesis\n"
+
+
+# --- judge parsing, flags, errors, context -----------------------------------
+
+
+def test_judge_parse_accepts_decimals_and_a_missing_winner_section() -> None:
+    text = (
+        "| Dimension | claude | agy |\n|---|---|---|\n| Q | 8.5 | 7 |\n| C | 9 | 6.5 |\n"
+        "| **Total** | 17.5 | 13.5 |\n"
+    )
+    doc = engine.parse_judge(text)
+    assert doc["ok"], doc["errors"]
+    assert doc["totals"] == {"claude": 17.5, "agy": 13.5}
+    assert (doc["winner"], doc["winner_declared"], doc["winner_score"]) == ("claude", False, 17.5)
+    assert not engine.parse_judge(text.replace("17.5", "18.5"))["ok"]
+
+
+def test_judge_columns_normalize_role_suffixes_and_blind_labels(tmp_path: Path) -> None:
+    named = (
+        "| Dimension | claude (Maintainer) | agy - Skeptic |\n|---|---|---|\n| Q | 9 | 5 |\n"
+        "| **Total** | 9 | 5 |\n\n## Winner\n\n**claude (Maintainer)** with a score of 9.\n"
+    )
+    assert engine.parse_judge(named)["columns"] == ["claude", "agy"]
+    assert engine.parse_judge(named)["winner"] == "claude"
+    blind = (
+        "| Dimension | Response A | Response B |\n|---|---|---|\n| Q | 4 | 9 |\n"
+        "| **Total** | 4 | 9 |\n\n## Winner\n\nResponse B with a score of 9.\n"
+    )
+    doc = engine.parse_judge(blind, {"A": "claude-v1", "B": "agy-v1"})
+    assert (doc["columns"], doc["winner"]) == (["claude-v1", "agy-v1"], "agy-v1")
+    files: dict[str, Path] = {}
+    for judge, rows in (("claude", "| Q | 10 | 3 |"), ("agy", "| Q | 2 | 8 |")):
+        f = tmp_path / f"{judge}.md"
+        cells = [c.strip() for c in rows.split("|")]
+        head = f"| Dimension | Response A ({judge}) | Response B |\n|---|---|---|\n{rows}\n"
+        f.write_text(head + f"| **Total** | {cells[2]} | {cells[3]} |\n")
+        files[judge] = f
+    doc2 = engine.merge_panel(files, {"A": "claude-v1", "B": "agy-v1"})
+    assert doc2["peers"] == {"agy-v1": ["claude"], "claude-v1": ["agy"]}
+
+
+def test_flags_are_consumed_only_from_the_leading_block() -> None:
+    doc = engine.parse_flags("tool --mode=fast --timeout=30 x", "refine")
+    assert doc["prompt"] == "tool --mode=fast --timeout=30 x"
+    assert doc["mode"] is None
+    assert doc["timeout"] is None
+    doc = engine.parse_flags("--mode=fast refine tool --timeout=30", "refine")
+    assert (doc["mode"], doc["timeout"], doc["prompt"]) == ("fast", 225, "refine tool --timeout=30")
+
+
+def test_bad_inputs_report_json_not_tracebacks(
+    repo: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    sdir = Path(init(command="execute", mutating=True)["session_dir"])
+    cases = [
+        ["prompt", "--lane", "gpt", "--file", "/nonexistent/x", "--out", str(sdir / "o.md")],
+        ["update", "--session", str(sdir), "--set", "x=bad"],
+        ["update", "--session", str(sdir), "--set", "novalue"],
+        ["update", "--session", str(sdir), "--event", "e", "--event-json", "{"],
+        ["capture", "--session", str(sdir), "--participant", "nobody"],
+        ["judge-parse", "--file", "/nonexistent/j.md"],
+        ["pass-dir", "--session", str(sdir / "missing"), "--pass", "2"],
+    ]
+    for argv in cases:
+        assert engine.main(argv) == 1
+        assert json.loads(capsys.readouterr().out)["ok"] is False
+    body = sdir / "p.md"
+    body.write_text("q")
+    assert (
+        engine.main(
+            [
+                "dispatch",
+                "--session",
+                str(sdir),
+                "--lane",
+                "gpt",
+                "--prompt-file",
+                str(body),
+                "--mutating",
+            ]
+        )
+        == 1
+    )
+    assert "no worktree registered" in json.loads(capsys.readouterr().out)["error"]
+
+
+def test_context_falls_back_to_a_local_trunk_without_origin(
+    repo: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    sh(repo, "git", "checkout", "-q", "-b", "feature")
+    (repo / "B").write_text("b2\n")
+    sh(repo, "git", "commit", "-q", "-am", "change b")
+    assert engine.main(["context"]) == 0
+    doc = json.loads(capsys.readouterr().out)
+    assert doc["base"] == "main"
+    assert doc["commits"][0].endswith("change b")
+    assert " B " in doc["markdown"] or "B |" in doc["markdown"]
+
+
+def test_classification_ignores_task_text_echoed_on_stderr(repo: Path, bindir: Path) -> None:
+    stub(bindir, "codex", 'for a in "$@"; do echo "$a" >&2; done; echo boom >&2; exit 2')
+    sdir, _ = read_only_session()
+    sdir_prompt = sdir / "prompt.md"
+    sdir_prompt.write_text("Fix the billing rate limit 429 quota exceeded bug")
+    got = engine.dispatch_lane(
+        sdir, "gpt", n=1, prompt_file=sdir_prompt, timeout=5, mutating=False, rate_wait=0
+    )
+    assert got["failure_class"] == "crash"
+    assert len(got["attempts"]) == 1
+
+
+def test_plan_judges_with_every_participant_dropped(repo: Path) -> None:
+    sdir = Path(init()["session_dir"])
+    engine.update_session(
+        sdir, status=None, completed_passes=None, event=None, event_json=None,
+        drop=["maintainer", "skeptic", "builder"], sets=[], link_latest=False,
+    )  # fmt: skip
+    for mode in ("round-robin", "panel"):
+        assert engine.plan_judges(sdir, mode, 1)["mode"] == "host"

@@ -40,9 +40,9 @@ signatures:
     action: remove
     kind: regex
     target: [message-subject]
-    pattern: '[\x{1F300}-\x{1FAFF}\x{2600}-\x{27BF}]'
+    pattern: '[\x{1F300}-\x{1FAFF}\x{2705}\x{2728}\x{274C}\x{2B50}]'
     rationale: Emoji in commit subjects break terminal rendering and `git log` formatting.
-    fp-guard: 'Project-overridable for gitmoji users via `.claude/slop.local.yml`.'
+    fp-guard: 'Matches pictographic emoji only; plain status glyphs (check marks, warning signs) pass. A project that bans them appends a pattern in `.claude/slop.local.yml`; gitmoji users delete this id there.'
 
   - id: brittle.commit-message-markdown-leak
     tier: A
@@ -72,7 +72,7 @@ signatures:
     action: rewrite
     kind: regex
     target: [diff, message-body]
-    pattern: '(?i)\b(see|at|on)\s+line\s+\d{2,4}\b|\bL\d{2,4}\b'
+    pattern: '(?i)\b(see|at|on)\s+(line\s+\d{2,4}|L\d{3,4})\b|\bL\d{2,4}-L?\d{2,4}\b'
     rationale: Line-number references rot on every refactor.
     fp-guard: 'Skip inside fenced quoted-output blocks (compiler errors, stack traces).'
 
@@ -92,7 +92,7 @@ signatures:
     action: rewrite
     kind: regex
     target: [message-body]
-    pattern: '\b[0-9a-f]{7,40}\b'
+    pattern: '\b(?=[0-9a-f]*\d)(?=[0-9a-f]*[a-f])[0-9a-f]{7,40}\b'
     rationale: Bare SHAs in commit prose age badly; subject lines and bodies should describe behavior, not point at hashes.
     fp-guard: 'Whitelist trailers: `Fixes:`, `Reverts:`, `Co-Authored-By:`, `See-also:`.'
 

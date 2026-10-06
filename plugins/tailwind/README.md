@@ -20,13 +20,13 @@ Install the plugin:
 In Codex, add the marketplace:
 
 ```console
-codex plugin marketplace add tony/skills
+$ codex plugin marketplace add tony/skills
 ```
 
 Install the plugin:
 
 ```console
-codex plugin add tailwind@skills
+$ codex plugin add tailwind@skills
 ```
 
 ## Skills
@@ -42,7 +42,7 @@ The spacing audit follows five steps:
    (`className` vs `class`) and globs.
 2. **Structural audit**: Creates a spacing map of mechanisms acting on
    the element group.
-3. **Classify anti-patterns**: Matches seven patterns (fragmentation,
+3. **Classify anti-patterns**: Matches the catalog's patterns (fragmentation,
    margin/gap mixing, padding asymmetry, fixed widths, wrapper nesting,
    hit targets, space-*/gap collisions), each with a detect command.
 4. **Refactor**: Merges fragmented containers, assigns one spacing
@@ -76,5 +76,7 @@ Target specific files or components:
 
 ## Prerequisites
 
-- A project using **Tailwind CSS** (v4+ recommended, v3 supported)
+- A project using **Tailwind CSS** v3 or v4; the skill reads the installed
+  version and branches Pattern 7 on it
+- `rg` (ripgrep) for the detect commands; without it the skill reads files
 - Template files in any supported framework

@@ -103,7 +103,7 @@ uvx --with pytest-deadfixtures --from pytest pytest --dead-fixtures
 deleting, confirm the fixture is not reached via:
 
 ```bash
-rg "getfixturevalue\([\"']<name>" ; rg "\b<name>\b" tests/
+rg "getfixturevalue\([\"']<name>" tests/ ; rg "\b<name>\b" tests/
 ```
 
 A `getfixturevalue('name')` call or a string-based mark reference keeps the
@@ -135,7 +135,7 @@ delete it (H42).
 ## Autouse audit (H12/H15/H43)
 
 ```bash
-rg 'autouse\s*=\s*True'
+rg 'autouse\s*=\s*True' tests/
 ```
 
 For each autouse fixture, count its setups:
@@ -161,7 +161,7 @@ Before widening scope or parallelizing, check whether the shared resource is
 **mutated**:
 
 ```bash
-rg 'scope="session"|scope="module"' ; rg 'create_all|metadata|\.add\(|writestr|bootstrap'
+rg 'scope="session"|scope="module"' tests/ ; rg 'create_all|metadata|\.add\(|writestr|bootstrap' tests/
 ```
 
 If a session/module-scoped resource is written in more than one module, keep it
