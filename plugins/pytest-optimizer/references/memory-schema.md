@@ -14,26 +14,39 @@ is diffable and language-agnostic.
 
 ## Location resolution
 
-Resolve the memory directory once and record it in `state.json` so all phases
-agree.
+Every phase resolves the memory directory the same way, from the repo root
+(`git rev-parse --show-toplevel`), and never reads its location from a file
+inside it. The first match wins:
 
-1. **Preferred: in-tree, untracked.** `.pytest-optimizer/` at the repo root.
-   Keep it out of `git status` by appending the line to the repo's local
-   exclude file, not `.gitignore`, so the working tree stays clean and no
-   tracked file changes. Add the line only if absent:
+1. `--memory-dir=<path>`, for example in CI.
+2. `.pytest-optimizer/` at the repo root, if it exists.
+3. The per-user cache, if it exists: `$XDG_CACHE_HOME/pytest-optimizer/<repo-id>/`
+   (default `~/.cache/...`) on Linux and macOS, `%LOCALAPPDATA%\pytest-optimizer\<repo-id>\`
+   on Windows. `<repo-id>` hashes the repo path plus the `origin` URL.
+4. None exists: `00-scan` creates one (below); every other phase stops and tells
+   the user to run `00-scan`.
 
-   ```bash
-   git rev-parse --git-path info/exclude
-   ```
+The script resolves it and prints the path to use literally afterwards:
 
-   Append `.pytest-optimizer/` to the file that prints.
-2. **Fallback: per-user cache**, when the tree is read-only or the user
-   declines any in-tree directory:
-   - `$XDG_CACHE_HOME/pytest-optimizer/<repo-id>/` on Linux and macOS (default
-     `~/.cache/...` when unset), or
-   - `%LOCALAPPDATA%\pytest-optimizer\<repo-id>\` on Windows.
-   - `<repo-id>` is a short hash of the repo's absolute path plus git remote.
-3. **Override.** `--memory-dir=<path>` forces a location, for example in CI.
+```console
+$ python3 ../scripts/measure.py memory-dir \
+    --repo-root "$(git rev-parse --show-toplevel)"
+```
+
+The JSON has `path`, `source` (`explicit`, `in-tree`, `cache`, `new`), `exists`,
+and `cache_path`. Run it by its absolute path; the relative `scripts/` path is from the
+file that names it, not from the repo.
+
+`00-scan` creates the in-tree directory and keeps it out of `git status` by
+appending `.pytest-optimizer/` to the local exclude file (not `.gitignore`) when
+that line is absent:
+
+```console
+$ git rev-parse --git-path info/exclude
+```
+
+It creates `cache_path` instead when the tree is read-only or the user declines
+an in-tree directory.
 
 Helpers generated from `templates/` are untracked files too. Append their paths
 to the same exclude file unless the user chooses to commit them.
@@ -47,32 +60,38 @@ token = hash(git HEAD
              + environment fingerprint)
 ```
 
+`measure.py token` computes it; the script sorts the node ids itself.
+
 A phase is a no-op on re-run when `state.json` marks it `completed`, the token
 is unchanged, and its output file exists. `--force` overrides all three.
 
-The environment fingerprint (Python version, OS, CPU model) is included because
+The environment fingerprint (Python version, OS, machine architecture) is included because
 timings are machine-specific. `git HEAD` is included so the commits
 `03-execute` makes change the token, and the next `00-scan` re-baselines.
 
 ## Baseline-diff rule
 
-The noise band is `k * MAD`, measured per project in `00-scan` from N serial,
-cache-disabled runs. A candidate is a real speedup only when its median saving
-exceeds the band:
+The noise band is `max(k * MAD, trust floor)` (`k = 3`, floor `0.05` s), measured
+per project in `00-scan` from N serial, cache-disabled runs. A candidate is a real
+speedup only when every run exits 0, its passed and collected-test counts match
+the baseline, and its median saving exceeds the band:
 
 ```
-real_speedup  <=>  baseline_median - candidate_median > k * MAD    (default k = 3)
+real_speedup  <=>  baseline_median - candidate_median > band
 ```
 
-Never quote the band as a fixed number.
+`measure.py band` and `measure.py compare` apply this; never do the arithmetic by
+hand or quote the band as a fixed number.
 
 ## Files and shapes
 
 Paths are relative to the memory directory. Every skill writes exactly these
 fields.
 
-- `state.json` (all phases): phase cursor, tokens, memory path.
+- `state.json` (all phases): phase cursor, tokens, plan hash.
 - `baseline.json` (`00-scan`): environment, noise band, per-phase timings.
+- `collection.txt` (`00-scan`): baseline `--collect-only -q` output, in collection
+  order.
 - `capabilities.json` (`00-scan`): resolved version-matrix probes.
 - `hypotheses.json` (`00-scan`): candidate speedups with heuristic id and
   evidence.
@@ -87,7 +106,6 @@ fields.
 {
   "phase": "benchmark",
   "run_id": "string",
-  "memory_dir": ".pytest-optimizer",
   "collection_hash": "string",
   "env_token": "string",
   "completed": { "scan": true, "benchmark": false, "plan": false, "execute": false },
@@ -96,18 +114,22 @@ fields.
 }
 ```
 
+`plan_hash` stays `null` until the user approves `plan.json`; then it holds the
+`measure.py hash` of that file, and `03-execute` refuses a plan whose hash differs.
+
 ### `baseline.json`
 
 ```json
 {
   "captured_at": "ISO-8601",
   "python": "3.13.x",
-  "pytest_version": "9.1.1",
+  "pytest_version": "<version>",
   "plugins": { "pytest-xdist": "3.x", "pytest-randomly": "3.x" },
   "test_command": "<project test command>",
   "capabilities": { "durations_min": true, "stash": true },
   "runs": [ { "wall_seconds": 12.4 }, { "wall_seconds": 12.6 } ],
-  "noise": { "median": 12.5, "mad": 0.15, "floor": 0.05, "k": 3 },
+  "noise": { "median": 12.5, "mad": 0.15, "floor": 0.05, "k": 3, "band": 0.45 },
+  "tests": { "passed": 240, "total": 242 },
   "timings": [ { "nodeid": "tests/test_x.py::test_a", "phase": "setup", "seconds": 0.42 } ]
 }
 ```
@@ -158,7 +180,7 @@ re-baseline after `03-execute` re-opens all candidates.
   {
     "order": 1,
     "id": "H10-conftest-make_config",
-    "score": { "safety": 0.9, "impact": 0.7, "effort": 1.0, "confidence": 0.9, "reversibility": 0.9, "total": 0.855 },
+    "score": { "safety": 0.9, "impact": 0.75, "effort": 1.0, "confidence": 0.9, "reversibility": 0.9, "total": 0.87 },
     "files": ["tests/conftest.py"],
     "commit": { "subject": "test(fixtures) widen make_config to session scope", "body": "why: ...\n\nwhat:\n- ..." },
     "verify": "<project test command>",

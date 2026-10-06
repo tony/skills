@@ -1,8 +1,8 @@
 ---
 name: pytest-optimizer
-description: "Use when a pytest suite or its fixtures are slow and need measured, safety-gated optimization across the full pipeline."
+description: "Use when pytest tests or fixtures are slow and you want them faster: speed up the suite with measured, safety-gated optimization."
 user-invocable: true
-allowed-tools: ["Bash", "Read", "Grep", "Glob", "Edit", "Write", "AskUserQuestion", "Task"]
+allowed-tools: ["Bash", "Read", "Grep", "Glob", "AskUserQuestion"]
 argument-hint: "[test-path-or-marker] [--phase=scan|benchmark|plan|execute] [--force] [--memory-dir=<path>]"
 ---
 
@@ -13,7 +13,7 @@ commit through a resumable, idempotent four-phase loop.
 
 Measure before you mutate, and prove a speedup against the project's own timing
 noise before you trust it. A change whose measured saving falls inside the noise
-band is never committed.
+band, whose run exits non-zero, or whose test count changes is never committed.
 
 `$ARGUMENTS` may name a test path or marker to scope the run, a `--phase` to jump
 to, `--force` to ignore idempotency tokens and re-run, and `--memory-dir` to
@@ -30,41 +30,39 @@ resolved memory directory. Re-running resumes at the first incomplete phase.
 After `03-execute`, re-scanning measures the new baseline; loop until no
 candidate clears the rubric.
 
-- `/pytest-optimizer:00-scan` reads `AGENTS.md`/`CLAUDE.md` and prior
-  `state.json`; writes `baseline.json`, `capabilities.json`, `hypotheses.json`.
-- `/pytest-optimizer:01-benchmark` reads `baseline.json`, `hypotheses.json`;
-  writes `benchmarks.json`.
-- `/pytest-optimizer:02-plan` reads `benchmarks.json`, `baseline.json`; writes
+The phase skills set `disable-model-invocation`, so this skill cannot invoke
+them. To run a phase, read its file and follow it:
+
+- `../00-scan/SKILL.md` reads `AGENTS.md`/`CLAUDE.md` and prior `state.json`;
+  writes `baseline.json`, `capabilities.json`, `collection.txt`,
+  `hypotheses.json`.
+- `../01-benchmark/SKILL.md` reads `baseline.json`, `hypotheses.json`; writes
+  `benchmarks.json`.
+- `../02-plan/SKILL.md` reads `benchmarks.json`, `baseline.json`; writes
   `plan.json`.
-- `/pytest-optimizer:03-execute` reads `plan.json`, `baseline.json`; writes
+- `../03-execute/SKILL.md` reads `plan.json`, `baseline.json`; writes
   `execution-log.json` and commits.
 
-## Step 1: Detect preferred tools and the project test command
+## Step 1: Read-only preflight
 
-Read the project's own test and quality-check commands. Never hardcode the
-runner: `pytest`, `uv run`, `tox`, `nox`, and `hatch` are all valid and the
-project declares which it uses.
+Make no writes here; `00-scan` owns capability probing and creating the memory
+directory.
 
-```bash
-for tool in rg ag fd jq uv uvx; do command -v "$tool" >/dev/null 2>&1 && echo "$tool:available" || echo "$tool:missing"; done
-```
+1. Read the project's own test and quality-check commands from `AGENTS.md`,
+   `CLAUDE.md`, `justfile`, `tox.ini`, and `pyproject.toml`. Never hardcode the
+   runner: `pytest`, `uv run`, `tox`, `nox`, and `hatch` are all valid and the
+   project declares which it uses.
+2. Resolve the memory directory by the lookup order in
+   `../../references/memory-schema.md`. If one exists, read `state.json` for the
+   resume point.
+3. Read the installed pytest version, for the plan only:
 
-Read `AGENTS.md`, `CLAUDE.md`, `justfile`, `tox.ini`, and `pyproject.toml` for the
-commands that run the suite, the formatter, the linter, and the type checker.
-Record the test command verbatim; every phase reuses it.
+   ```console
+   $ python3 -c "import pytest; print(pytest.__version__)"
+   ```
 
-## Step 2: Detect pytest capabilities
-
-Run the detection procedure in `../../references/version-matrix.md` once and
-write the resolved matrix to `capabilities.json`, so later phases use only
-features that exist.
-
-## Step 3: Resolve the memory directory
-
-Follow `../../references/memory-schema.md`: prefer `.pytest-optimizer/` at the
-repo root, excluded through the repo's local git exclude file so the working tree
-stays clean. Fall back to the XDG cache path when the tree is read-only or the
-user declines an in-tree directory. Record the path in `state.json`.
+If there is no pytest suite, stop with the halted-run shape in
+`../../references/output-contract.md`.
 
 ## Orchestration Plan
 
@@ -75,31 +73,32 @@ Before any measurement or edit, present a plan and get approval.
    below still forces analysis before any write.
 2. **The orchestration plan must state:**
    - the resolved test command and quality-check commands (Step 1);
-   - the detected pytest and plugin versions and which capabilities are gated off
-     (Step 2);
-   - the resolved memory directory;
+   - the pytest version, and that `00-scan` will probe plugins and gate
+     capabilities;
+   - the resolved memory directory, or that `00-scan` will create it;
    - which phase the run starts at (fresh `00-scan`, or resume) and the scope
      (`$ARGUMENTS` path/marker, or the whole suite);
    - that suite edits happen only in `03-execute`, one commit per speedup, each
-     verified green.
+     verified green with unchanged test counts.
 3. **Present the plan and wait for approval.** Let the user narrow scope, exclude
-   risky heuristics, or cap the number of commits.
+   risky heuristics, or cap the number of commits. Without an interactive
+   session, stop after presenting the plan.
 4. **Exit plan mode** before running any phase.
 
-## Step 4: Run the phases
+## Step 2: Run the phases
 
-Run the four skills in order, honoring `--phase` and resume state. Each skill
-carries its own procedure; this skill passes along the test command,
-capabilities, and memory directory. Within `00-scan`, `01-benchmark`, and
-`02-plan`, never edit the user's working tree.
+Read and follow each phase file in order, honoring `--phase` and resume state.
+Pass along the test command and memory directory. `00-scan`, `01-benchmark`, and
+`02-plan` never edit the user's working tree. Stop for the user's decision at
+each phase's panel.
 
-## Step 5: Report and decide whether to loop again
+## Step 3: Report and decide whether to loop again
 
-After `03-execute`, re-measure total wall-time against `baseline.json` and present
-the result per `../../references/output-contract.md`: a hero block, the
-applied and skipped speedups with measured deltas, and an `AskUserQuestion`
-panel (re-scan for a second pass, scaffold the opt-in cache/plugin, or stop).
-Write the report per `../../references/prose-rules.md`.
+After `03-execute`, present the result per `../../references/output-contract.md`:
+a hero block, the applied and skipped speedups with measured deltas, and an
+`AskUserQuestion` panel (re-scan for a second pass, scaffold the opt-in
+cache/plugin, or stop). Without an interactive question tool, stop after the
+report. Write the report per `../../references/prose-rules.md`.
 
 ## Opt-in scaffolds
 
@@ -107,18 +106,18 @@ When profiling shows it would help, offer (never impose) a project-owned helper:
 
 - A timing plugin (`../../templates/pytest_optimizer_plugin.py`) that wraps
   `pytest_fixture_setup` to attribute setup cost to the individual fixture, which
-  pytest core cannot do.
+  pytest core cannot do. It loads from the rootdir `conftest.py` only.
 - A `config.cache` memoization snippet (`../../templates/conftest_cache_snippet.py`)
   with an invalidation token and an xdist write-guard, for expensive build
-  artifacts recomputed every run.
+  artifacts recomputed every run. It raises until `INPUTS` is set.
 
 Generate only on explicit confirmation. The output is untracked; exclude it per
 the memory-schema reference unless the user chooses to commit it.
 
 ## Graceful degradation
 
-- **Old pytest:** gate features via the version matrix; widen the noise band when
-  duration precision is coarser (pre-6.0 used `time.time()`).
+- **Old pytest:** gate features via the version matrix; widen `k` when duration
+  precision is coarser (pre-6.0 used `time.time()`).
 - **No xdist, randomly, or deadfixtures:** fall back to serial runs, manual
   reversed-order isolation checks, and the built-in `--fixtures` vs
   `--fixtures-per-test` diff.
@@ -136,6 +135,8 @@ the memory-schema reference unless the user chooses to commit it.
   token, baseline-diff rule.
 - `../../references/durations-parsing.md`: invoking and parsing `--durations`,
   phase bucketing, JUnit XML, the noise band.
+- `../../scripts/measure.py`: median, MAD, noise band, outcome counts, order
+  comparison, token, rubric arithmetic, memory-dir lookup.
 - `../../references/fixture-analysis.md`: scope model and the
   unused/duplicate/mis-scope recipes.
 - `../../references/safety-gates.md`: order independence, collection determinism,

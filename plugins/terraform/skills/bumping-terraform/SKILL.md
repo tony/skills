@@ -1,7 +1,7 @@
 ---
 name: bumping-terraform
-description: "Use when Terraform or OpenTofu provider constraints, CLI pins, or lockfiles are stale across repository root modules."
-allowed-tools: ["Bash", "Read", "Grep", "Glob", "Edit", "WebSearch", "WebFetch", "AskUserQuestion"]
+description: "Use when Terraform or OpenTofu providers, CLI pins, or lockfiles are outdated or behind; bump or upgrade them across root modules."
+allowed-tools: ["Bash", "Read", "Grep", "Glob", "Edit", "AskUserQuestion"]
 ---
 
 # Bumping Terraform
@@ -18,6 +18,46 @@ The references own the rules; read each before the phase that cites it:
   preservation, and registry lookups.
 - `../../references/lock-and-init.md` for `init`, platform narrowing, and
   verification.
+
+## Conversational requests
+
+The three slash-command skills are gated, so the model cannot invoke
+them. Match the request to one, read its file, and follow its Procedure
+and Output, taking its arguments from the request's wording:
+
+- A provider to move: `../bump-provider/SKILL.md`.
+- The CLI version to move: `../bump-terraform/SKILL.md`.
+- Locks to refresh inside existing constraints:
+  `../refresh-lock/SKILL.md`.
+
+A request that names none ("everything here is behind") is a provider
+bump unless the user says the CLI. One run does one of them; offer the
+others as next steps. Do not invent a layout of your own.
+
+## Conventions for every run
+
+- Name the current branch in the plan. Before the first commit, run
+  `git status --porcelain`; if it shows changes the run did not make,
+  commit only this run's paths with `git commit -- <paths>`, or stop.
+- Commit messages carry no `Co-Authored-By`, no "Generated with" or other
+  tool trailers, and no emoji.
+- Where there is no interactive question tool (Codex, headless runs),
+  state each question in the reply with the narrower answer as the
+  default (fewest modules, `--no-commit`) and proceed on it. A request
+  that authorises an action covers that action only, never a commit or
+  push.
+- Reports use prose and plain bullets. No bold label on each bullet, a
+  table only for matrix-shaped data, and no section that would hold
+  nothing. Name paths relative to the repository, never local absolute
+  or temporary paths.
+- A run that cannot proceed (nothing declared, no version named and the
+  release list unreachable, a dirty tree it cannot work around) ends
+  with `⚠ Stopped: <one result sentence>`, then the step the user must
+  take. No sections and no recap. `Audit only` is a different state: the
+  user asked for no writes.
+- When the target crosses a major version, find the upgrade guide the
+  project publishes for it and link it in the report; say none was found
+  if there is none.
 
 ## Core principle
 
@@ -49,7 +89,9 @@ exists.
 Ask the registry, not memory. Confirm the version is published and
 record its tag and source repository, which is where the changelog link
 comes from. Use the registry the detected tool resolves against. Write
-no version string before this phase confirms the version exists.
+no version string before this phase confirms the version exists. If it
+cannot be confirmed, stop and ask the user which version to use; if the
+version was only stated, not confirmed, say so plainly.
 
 ## Phase 3 - Inventory the pin sites and predict the change
 
@@ -96,9 +138,9 @@ own commit conventions in AGENTS.md or CLAUDE.md. Write it per
 
 ## Phase 5 - Refresh the locks
 
-Per root module, per the lock reference. Compare each lock's
-per-provider platform count against its count before the run; a drop is
-a stop signal.
+Per root module, per the lock reference, without `-upgrade` when one
+provider or the CLI moves. Compare each provider's platform count
+against its count before the run; a drop is a stop signal.
 
 Lock files land as their own commit, separate from the constraints.
 

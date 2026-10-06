@@ -1,27 +1,26 @@
 """Opt-in cross-run memoization via pytest's ``config.cache``.
 
 Use when an expensive artifact (a built dataset, a compiled schema, a downloaded
-corpus) is recomputed every run but rarely actually changes. ``config.cache``
-persists JSON under ``.pytest_cache/`` across runs.
+corpus) is recomputed every run but rarely changes. ``config.cache`` persists
+JSON under ``.pytest_cache/`` across runs.
 
 Two correctness rules this snippet enforces:
 
-1. **Invalidation** -- the artifact is cached under a key that includes an
-   *invalidation token* derived from its inputs, so a stale entry is never
-   served (the classic cache bug).
+1. **Invalidation** -- the artifact is cached under a token hashed from its
+   inputs, so a stale entry is never served. With no inputs the token cannot
+   invalidate, so the fixture raises instead of caching forever.
 2. **xdist write-guard** -- the cache is written only on a *serial* run. Under
-   pytest-xdist the fixture runs inside the workers (which carry
-   ``config.workerinput``), so the guard makes every worker skip the write: the
-   entry is simply never populated in parallel -- a safe read-only no-op rather
-   than a concurrent-write race. To also populate the cache under xdist, replace
-   the guard with a single-writer ``FileLock`` over a shared file in
-   ``tmp_path_factory.getbasetemp().parent``.
+   pytest-xdist the fixture runs inside workers (which carry
+   ``config.workerinput``), so every worker skips the write: the entry is never
+   populated in parallel, a safe read-only no-op rather than a concurrent-write
+   race. To populate it under xdist, replace the guard with a single-writer
+   ``FileLock`` over a shared file in ``tmp_path_factory.getbasetemp().parent``.
 
 ``config.cache`` values must be JSON-serializable. For a binary or large
-artifact, cache a *path* to an on-disk file (plus the token) instead of the
-value itself.
+artifact, cache a *path* to an on-disk file (plus the token) instead.
 
-Adapt the TODOs to your artifact, then drop this into a ``conftest.py``.
+Set ``INPUTS`` and implement ``_build_expensive_artifact``, then drop this into a
+``conftest.py``.
 """
 
 from __future__ import annotations
@@ -32,54 +31,38 @@ import typing as t
 
 import pytest
 
-# Namespace the cache key so it never collides with another plugin's entries.
 CACHE_KEY = "pytest_optimizer/expensive_artifact"
+
+# Bump when the build code changes but the input files do not.
+BUILD_VERSION = "1"
+
+# Files the artifact derives from; any content change invalidates the cache.
+INPUTS: tuple[pathlib.Path, ...] = ()
 
 
 def _invalidation_token(inputs: t.Sequence[pathlib.Path]) -> str:
-    """Return a token that changes whenever the cached artifact must be rebuilt.
-
-    The default below hashes each input file's
-    path + size + mtime_ns: cheap, and correct for "rebuild when a source file
-    changes". It is *wrong* in environments where checkouts reset mtimes (some
-    CI caches, ``git clone`` on a fresh runner) -- there, a content hash is
-    safer but reads every byte.
-
-    TODO(you): pick the policy that matches how your inputs change. Options:
-      - mtime + size (default below)  -- fast, good for local dev
-      - content hash (read bytes)     -- slow, certain; survives mtime resets
-      - an explicit version constant  -- bump by hand when the build logic changes
-      - the package/tool version      -- invalidate when the producer upgrades
-    Often the right answer is a combination (e.g. content hash of inputs + a
-    BUILD_VERSION constant you bump when the build *code* changes).
-    """
-    h = hashlib.sha256()
+    """Return a token that changes whenever the cached artifact must be rebuilt."""
+    if not inputs:
+        msg = "set INPUTS: with no inputs the cache token can never invalidate"
+        raise ValueError(msg)
+    h = hashlib.sha256(BUILD_VERSION.encode())
     for p in sorted(inputs):
-        st = p.stat()
         h.update(str(p).encode())
-        h.update(str(st.st_size).encode())
-        h.update(str(st.st_mtime_ns).encode())
+        h.update(p.read_bytes())
     return h.hexdigest()
 
 
 def _build_expensive_artifact() -> dict[str, t.Any]:
-    """Produce the artifact. Must return a JSON-serializable value.
-
-    TODO(you): replace with the real, costly build this fixture is caching.
-    """
+    """Produce the artifact as a JSON-serializable value."""
     raise NotImplementedError
 
 
 @pytest.fixture(scope="session")
 def expensive_artifact(request: pytest.FixtureRequest) -> dict[str, t.Any]:
     """Build the artifact once, reuse across runs while its inputs are unchanged."""
-    # cacheprovider may be off (the optimizer measures with `-p no:cacheprovider`);
-    # fall back to building uncached when no cache is available.
+    token = _invalidation_token(INPUTS)
+    # None when cacheprovider is disabled (`-p no:cacheprovider`): build uncached.
     cache = getattr(request.config, "cache", None)
-
-    # TODO(you): the files this artifact derives from (drives invalidation).
-    inputs: list[pathlib.Path] = []
-    token = _invalidation_token(inputs) if inputs else "no-inputs"
 
     if cache is not None:
         stored = cache.get(CACHE_KEY, None)
@@ -88,9 +71,6 @@ def expensive_artifact(request: pytest.FixtureRequest) -> dict[str, t.Any]:
 
     value = _build_expensive_artifact()
 
-    # xdist write-guard: write only on serial runs. Workers carry workerinput,
-    # so under -n they skip the write (no concurrent writers); see the module
-    # docstring for a FileLock single-writer if you want caching under xdist too.
     if cache is not None and not hasattr(request.config, "workerinput"):
         cache.set(CACHE_KEY, {"token": token, "value": value})
 

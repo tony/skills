@@ -7,9 +7,10 @@ attribute setup cost to the *individual* fixture, then prints the slowest
 fixtures (aggregated by name + scope) in the terminal summary -- filling the one
 gap the stock durations table cannot.
 
-Load it from a ``conftest.py`` via ``pytest_plugins``, or register it under
-``[project.entry-points.pytest11]``. Remove it once you have the timings you
-need; it adds a small per-fixture overhead.
+Load it from the rootdir ``conftest.py`` with
+``pytest_plugins = ["pytest_optimizer_plugin"]`` (pytest rejects ``pytest_plugins``
+in any other conftest), or register it under ``[project.entry-points.pytest11]``.
+Remove it once you have the timings you need; it adds a small per-fixture overhead.
 
 Notes
 -----
@@ -27,25 +28,16 @@ from collections import defaultdict
 
 import pytest
 
-if t.TYPE_CHECKING:
-    from _pytest.fixtures import FixtureDef, SubRequest
-    from _pytest.terminal import TerminalReporter
-
-
 # (fixture_name, scope) -> list of per-setup wall seconds
 _TIMINGS: dict[tuple[str, str], list[float]] = defaultdict(list)
 
 
 @pytest.hookimpl(hookwrapper=True)
 def pytest_fixture_setup(
-    fixturedef: FixtureDef[t.Any],
-    request: SubRequest,
+    fixturedef: pytest.FixtureDef[t.Any],
+    request: pytest.FixtureRequest,
 ) -> t.Generator[None, t.Any, None]:
-    """Record the wall time of one fixture's setup.
-
-    ``hookwrapper`` is used (rather than the newer ``wrapper``) so the same file
-    works on pytest 6 through 9.
-    """
+    """Record the wall time of one fixture's setup."""
     start = time.perf_counter()
     yield
     elapsed = time.perf_counter() - start
@@ -53,7 +45,7 @@ def pytest_fixture_setup(
 
 
 def pytest_terminal_summary(
-    terminalreporter: TerminalReporter,
+    terminalreporter: pytest.TerminalReporter,
     exitstatus: int,
     config: pytest.Config,
 ) -> None:

@@ -10,25 +10,25 @@ also clones a project's dependencies at the versions it installs.
 In Claude Code, add the marketplace:
 
 ```console
-/plugin marketplace add tony/skills
+$ /plugin marketplace add tony/skills
 ```
 
 Install the plugin:
 
 ```console
-/plugin install research@skills
+$ /plugin install research@skills
 ```
 
 In Codex, add the marketplace:
 
 ```console
-codex plugin marketplace add tony/skills
+$ codex plugin marketplace add tony/skills
 ```
 
 Install the plugin:
 
 ```console
-codex plugin add research@skills
+$ codex plugin add research@skills
 ```
 
 ## Skills
@@ -51,40 +51,20 @@ sources". The others run when you name them, and each hands its step to
 
 ## Topics
 
-A topic lives in one folder per run:
+A topic is one dated folder per run, `<root>/<YYYY-MM-DD>/<namespace>/<topic>/`,
+holding the question, the report, and a `references/` ledger of sources with
+their hashes and captures. The root defaults to `~/Documents` (the Windows
+Documents folder on WSL); `--root` puts it elsewhere. A later day opens a new run
+that carries sources forward, unverified until re-checked; `--resume` keeps
+writing in the latest run.
 
-```text
-<root>/<YYYY-MM-DD>/<namespace>/<topic>/
-├── index.md          question, scope, open questions, log
-├── report.md
-├── releases/         each released report, named by hash
-├── data/  charts/
-└── references/
-    ├── sources.jsonl  one row per source version: url, ref, author, retrieved, sha256
-    ├── checks.jsonl   re-verification results
-    ├── searches.jsonl, conflicts.jsonl, releases.jsonl, decisions.jsonl
-    ├── S<n>-<title>.md  a card per source: its provenance, then your notes
-    └── raw/           captures exactly as retrieved
-```
-
-The root defaults to `~/Documents`, or the Windows Documents folder on WSL.
-The default is never the temp directory; `--root` puts it anywhere else.
-
-- **Same day:** reopening returns the same run and changes nothing.
-- **A later day:** a new run. Sources, captures, and notes carry forward,
-  marked unverified until re-checked. Derived numbers and the report stay
-  behind.
-- **`--resume`:** keep working in the latest run, for work that spans days in
-  one place.
-- **Audience:** private, internal, or public. A scan blocks local paths and
-  emails, and at wider audiences names and ticket ids, before a report ships.
-
-Every finding and recommendation states its confidence, graded by the kind
-and number of sources behind it. Disagreeing sources, searches, and sources
-that could not be retrieved are recorded rather than smoothed over.
-A report ships only when `check` passes in the same session; `release` keeps
-the exact version each reader got, `decide` ties decisions to it, and
-`status` flags released reports whose sources have since moved.
+Every finding states its confidence, graded by the kind and number of sources
+behind it. Disagreeing sources, searches, and sources that could not be
+retrieved are recorded rather than smoothed over. A report ships only when
+`check` passes in the same session and the scan for its audience (private,
+internal, or public) is clean; `release` keeps the exact version each reader
+got, `decide` ties decisions to it, and `status` flags released reports whose
+sources have since moved.
 [references/analysis.md](references/analysis.md) is the analytic standard.
 
 [references/layout.md](references/layout.md) is the full contract, including
@@ -109,7 +89,6 @@ Record a source and download its capture:
 $ python3 plugins/research/scripts/topic.py add \
     --run ~/Documents/2026-10-03/research/sqlite-wal \
     --url https://sqlite.org/wal.html \
-    --ref 3.46.0 \
     --kind vendor \
     --fetch \
     --quote "readers do not block writers"
@@ -140,14 +119,11 @@ installs, to read their source. A topic can then cite that source at its tag.
 
 ### How It Works
 
-1. **Scan manifests**: Finds `package.json`, `pyproject.toml`, `Cargo.toml`, etc.
-2. **Filter**: Applies user filter (package, "all", category).
-3. **Resolve repos**: Uses metadata, registry, or search.
-4. **Confirm**: Presents plan for approval.
-5. **Clone**: Clones/fetches to `~/study/<language>/<repo>/`.
-6. **Resolve version**: Matches tags or branches (prefers lockfiles).
-7. **Create worktree**: Pins to resolved version.
-8. **Report**: Summarizes results.
+The skill reads the project's manifests and lockfiles, resolves each dependency's
+source repository, shows the plan, and waits for confirmation before cloning.
+Only `https://` repositories are cloned. When no tag matches the resolved version,
+the worktree is named for the default branch and its commit, and the report says it
+is unpinned. Without an interactive host it prints the plan and stops.
 
 ### Supported Manifests
 

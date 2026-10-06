@@ -12,8 +12,8 @@ execution:
   prompt: >-
     /research:foray research when SQLite WAL readers and writers block each
     other. Use topic sqlite-wal, --root out, and --date 2026-01-15. There is no
-    network access here: record https://sqlite.org/wal.html at ref 3.46.0 from
-    the capture in caps/wal.md, then write the report.
+    network access here: record https://sqlite.org/wal.html (an unversioned
+    page) from the capture in caps/wal.md, then write the report.
   max_turns: 40
   timeout_seconds: 900
   allowed_tools: [Bash, Read, Write, Edit, Glob, Grep, Skill]

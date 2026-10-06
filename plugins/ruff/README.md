@@ -41,11 +41,12 @@ a PR from a throwaway worktree.
 
 **Arguments:**
 - `--root <dir>`: Sweep every repository beneath a directory.
-- `--repo`: Target specific repositories.
+- `--repo <path|slug>...`: Target specific repositories.
 - `--owner <name>`: Filter by account ownership.
+- `--branch <name>`: Name the working branch.
 - `--audit-only`: Report predicted work without making changes.
 - `--adopt-defaults`: Carry through the default-rule-set change.
-- `--no-pr`: Commit and push without opening a PR.
+- `--no-pr`: Push without opening a PR. Pushes ask for confirmation first.
 - `--no-changelog`: Skip the changelog entry.
 
 ## Components
@@ -56,6 +57,7 @@ a PR from a throwaway worktree.
 | `references/release-triage.md` | Sorting a release, intersecting with configuration, and grading fixes |
 | `references/pin-sites-and-gating.md` | Pin sites, diagnosing, and gating resolvers |
 | `references/default-rule-set.md` | Measuring default rule set cost and curating adoption |
+| `references/prose-rules.md` | Rules for commit, PR, and report prose |
 
 ## Prerequisites
 

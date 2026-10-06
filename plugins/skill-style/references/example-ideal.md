@@ -7,7 +7,7 @@ a model that already knows it.
 ````markdown
 ---
 name: restoring-postgres-backups
-description: Restores a PostgreSQL database from a nightly pg_dump, into a scratch database first and then over the target. Use when restoring a Postgres backup, recovering a dropped table, loading a production dump into a local or staging database, or when the user mentions pg_restore, pg_dump, a .dump file, or a nightly backup.
+description: Restores a Postgres dump into a scratch database, then the target. Use when restoring a Postgres backup, running pg_restore, or loading a .dump file.
 allowed-tools: ["Bash", "Read"]
 ---
 

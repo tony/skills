@@ -1,7 +1,7 @@
 ---
 name: release
 description: "Pass every check fresh, release the exact report to its readers, record decisions taken on it, and export the run as a fixity-checked bag"
-allowed-tools: ["Skill", "Bash", "Read", "Write", "Edit", "Grep", "Glob", "WebFetch", "AskUserQuestion"]
+allowed-tools: ["Skill", "Bash", "Read", "Write", "Edit", "Grep", "Glob", "AskUserQuestion"]
 argument-hint: "[topic or run directory] [--to=<readers>] [--offline]"
 user-invocable: true
 disable-model-invocation: true

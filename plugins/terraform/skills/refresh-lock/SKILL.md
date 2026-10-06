@@ -15,8 +15,9 @@ allow, in every root module, and report what moved.
 This changes no constraint. When a provider will not move, a constraint
 is holding it; use `/terraform:bump-provider`.
 
-Follow the phase structure in `../bumping-terraform/SKILL.md`. This
-skill relies on `../../references/layout-discovery.md` and
+Follow the phase structure and conventions in
+`../bumping-terraform/SKILL.md` (clean tree, commit message rules,
+non-interactive defaults, stopped runs). This skill relies on `../../references/layout-discovery.md` and
 `../../references/lock-and-init.md`.
 
 User arguments: $ARGUMENTS
@@ -52,7 +53,8 @@ tracks. With `--audit-only`, stop here and write nothing.
 
 ### 4. Refresh, one root module at a time
 
-Run the lock reference's `init` command per root module, then compare
+Run the lock reference's `init -upgrade` command per root module (this
+skill moves every provider its constraints allow), then compare
 each lock's per-provider platform count against its count before.
 
 A root module that fails to refresh does not stop the others. Record the
@@ -78,18 +80,22 @@ gate as passing without reading the output that says so.
 ## Output
 
 Open with a one-line hero (`✓ N of M lock files moved` or `⚠ Audit
-only: M lock files found`), then exactly these sections:
+only: M lock files found`), then these sections in order:
 
-1. `## Root modules` — every one discovered, and any directory with a
+1. `## Root modules`: every one discovered, and any directory with a
    backend but no committed lock file.
-2. `## Changes` — per root module and provider: the version before and
+2. `## Changes`: per root module and provider: the version before and
    after, and the platform count tracked before and after.
-3. `## Held back` — providers that did not move, and the constraint
+3. `## Held back`: providers that did not move, and the constraint
    holding each.
-4. `## Verification` — the gates run and their real results.
-5. `## Failures` — root modules that could not be refreshed, and why.
+4. `## Verification`: the gates run and their real results.
+5. `## Failures`: root modules that could not be refreshed, and why.
+
+Omit a section that would be empty. A run that cannot proceed ends with
+the stopped line from `../bumping-terraform/SKILL.md`, not this shape.
 
 End with an `AskUserQuestion` panel offering next steps, for example:
 bump a constraint that is holding a provider back, restore
 multi-platform coverage, commit an untracked lock file, or stop here.
-Skip the panel only in plan mode.
+Skip the panel only in plan mode. Without a question tool, list the
+options and take the default: stop here.

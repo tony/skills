@@ -10,10 +10,13 @@ Each dimension is scored `0.0`–`1.0`. The total is their weighted sum.
 | Dimension | Weight | `1.0` means | `0.0` means |
 |-----------|-------:|-------------|-------------|
 | `safety` | 0.35 | Behavior-preserving: pure config/selection, or widening the scope of read-only setup that passed the order-independence (H17) and collection-determinism (H18) gates. | Parallelizing across known shared mutable state, or deleting a fixture reachable only via `getfixturevalue`. |
-| `impact` | 0.30 | **Measured** in `01-benchmark`: recovers > 40% of suite wall-time, or removes the single dominant test/fixture. | Saving within the noise band (`k·MAD`) — indistinguishable from jitter. |
+| `impact` | 0.30 | **Measured** in `01-benchmark`: recovers > 40% of suite wall-time, or removes the single dominant test/fixture. | Saving within the noise band — indistinguishable from jitter. |
 | `effort` | 0.15 | Trivial: `addopts`/marker/flag, or a one-line scope change. | Restructuring shared global state across modules. |
 | `confidence` | 0.12 | Serial, cache-disabled, repeated runs; delta many multiples of the noise floor. | Collection-bound or xdist-contended numbers known to be distorted, or sub-50ms rows. |
 | `reversibility` | 0.08 | A single isolated commit, config-only revert. | An entangled multi-file refactor. |
+
+`measure.py score` computes the total and applies the hard gates below; do not
+sum by hand.
 
 ```
 total = 0.35*safety + 0.30*impact + 0.15*effort
@@ -24,7 +27,9 @@ Mid-scale anchors keep scoring consistent:
 
 - `safety = 0.5` — scope change on a possibly-mutated resource, autouse removal,
   or xdist with grouping.
-- `impact = 0.5` — recovers 5–15% of suite wall-time.
+- `impact` anchors, from the measured saving as a share of baseline wall-time:
+  `0` within the noise band, `0.25` clears the band but under 5%, `0.5` for
+  5–15%, `0.75` for 15–40%, `1.0` above 40%. `measure.py impact` applies them.
 - `effort = 0.6` — hoist a build into a fixture and add a reset; `0.3` — introduce
   a factory fixture or a filelock single-exec pattern.
 
@@ -61,12 +66,12 @@ Score sets the priority, but some changes must precede others regardless of scor
 | Dimension | Score | Reason |
 |-----------|------:|--------|
 | safety | 0.9 | Setup is read-only; passed H17 across 3 seeds and H18. |
-| impact | 0.7 | Measured 22% suite reduction (setup ran 40×, now once). |
+| impact | 0.75 | Measured 22% suite reduction (setup ran 40×, now once). |
 | effort | 1.0 | One-line `scope=` change. |
 | confidence | 0.9 | Serial, 5 runs, delta ≫ noise floor. |
 | reversibility | 0.9 | Single fixture line. |
 
-`total = 0.855` → top of the plan.
+`total = 0.87` → top of the plan.
 
 **Enable `-n auto` over a suite sharing one on-disk SQLite file** (H19/H16):
 
@@ -84,9 +89,10 @@ benchmark, not as an auto-applied speedup.
 These defaults are deliberately conservative; a project may override them in the
 orchestration plan:
 
-- **Noise-band multiplier `k`** (default `3`) in the band `k·MAD`. Lower `k`
+- **Noise-band multiplier `k`** (default `3`) in the band `max(k·MAD, trust floor)`. Lower `k`
   credits smaller deltas as real; higher `k` demands a larger, surer win.
 - **Safety-gate cutoff** (default `0.4`). Raise it to be stricter about which
   changes may be applied at all.
-- **Trust floor** (default `~50ms`). Duration rows below this are too noisy to
-  rank; `confidence` is penalized for candidates resting on them.
+- **Trust floor** (default `50ms`). Duration rows below this are too noisy to
+  rank, and it is the minimum noise band; `confidence` is penalized for
+  candidates resting on them.

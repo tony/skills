@@ -74,7 +74,7 @@ $ python3 <topic.py> add \
 
    Each `--quote` must appear in the capture; case, line breaks, markdown marks, and spaces before punctuation are ignored. Repeat `--quote` for each claim the source supports; a later re-add adds quotes to the ones recorded. `python3 <topic.py> find --run <run_dir> "<words>"` shows where text occurs in your captures, in the capture's own case, ready to quote.
 
-   `--kind` says whose word it is: vendor (the subject's own), independent, or measured (your own test); confidence is capped by it, so always pass it. A fetched capture also records the server's status, final URL, content type, and dating headers. `add` prints `warnings` for a moving ref or URL, a capture you supplied, a missing capture, or a missing kind; fix the source or say in the report why it stands.
+   `--kind` says whose word it is: vendor (the subject's own), independent, or measured (your own test); confidence is capped by it, so always pass it. A fetched capture also records the server's status, final URL, content type, and dating headers. `add` prints `warnings` for a moving ref or URL, a ref that appears in neither the URL nor the capture, a capture you supplied, a missing capture, or a missing kind; fix the source or say in the report why it stands.
 
 4. Write what the source supports, and where, in its card's body.
 

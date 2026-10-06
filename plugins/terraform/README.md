@@ -30,6 +30,14 @@ Install the plugin:
 codex plugin add terraform@skills
 ```
 
+## When to use this instead of Renovate or Dependabot
+
+Those bots open one pull request per dependency per directory. This
+plugin fits when one bump must land across several root modules and their
+child modules together, or when a lock file must keep the platforms it
+already tracks. It is an on-demand run by an agent, not a scheduled
+service.
+
 ## Skills
 
 | Claude Code | Codex | Description |

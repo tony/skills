@@ -39,7 +39,7 @@ codex plugin add spike@skills
 | `/spike:ratchet [<goal>]` | `spike:ratchet [<goal>]` | Run probes and bakeoffs in rounds until the design stops fighting back, accumulating a ledger of stumbling blocks and locked decisions |
 
 The goal can be typed or inferred from conversation context (review
-findings, failing tests) — the plan-mode brief confirms it.
+findings, failing tests); the plan-mode brief confirms it.
 
 `/spike:probe` flags: `--branch=<name>` (spike on scratch branch),
 `--keep-tree` (skip stash, leave changes), `--replay` (implement
@@ -59,25 +59,27 @@ rather than the strategy, use the weave plugin.
 
 ## Workflow
 
-1. **Situational awareness** — read AGENTS.md / CLAUDE.md to discover
+1. **Situational awareness**: confirm the repository has a commit, read AGENTS.md / CLAUDE.md to discover
    format / lint / test / build commands and post-push CI coverage.
-2. **Spike brief** — confirm goal, "proven" criterion, and exit path.
-3. **Probe** — shortest path to proven; cheapest verification signal
+2. **Spike brief**: confirm goal, "proven" criterion, and exit path.
+3. **Probe**: shortest path to proven; cheapest verification signal
    only; shortcuts marked `SPIKE:`; stumbling blocks recorded.
-4. **Exit gate** — fast local gates pass to ensure known state.
-5. **Stash** — `git stash push -u` with descriptive message and
-   recorded immutable SHA for recovery.
-6. **Replay plan** — numbered commit sequence mapping stash hunks to
+4. **Exit gate**: fast local gates pass to ensure known state.
+5. **Stash**: untracked files included, with a descriptive message and
+   the stash's own SHA recorded for recovery. An unchanged tree records
+   "no changes" instead of a SHA.
+6. **Replay plan**: numbered commit sequence mapping stash hunks to
    commits, resolving decisions, and noting per-commit gates.
 
 A bakeoff runs steps 3–5 once per contender in isolated worktrees,
 adds an adversarial judging pass (correctness, blast radius, idiom
 fit, gate status), then proposes a replay plan for the winner. Every
-contender is stashed for recovery before its worktree is removed.
+contender is stashed for recovery before its worktree is removed. Files
+matched by `.gitignore` are not stashed and are lost with the worktree.
 
-A ratchet repeats that cycle in rounds — probe, bake off the approaches
+A ratchet repeats that cycle in rounds: probe, bake off the approaches
 the probe's stumbling blocks put in doubt, re-probe the winner with
-its grafts applied — and stops when a round surfaces nothing new, the
+its grafts applied. It stops when a round surfaces nothing new, the
 round cap is reached, or the same blocks keep recurring. Each round
 appends to a ledger under the repository's git common directory,
 where `git stash -u` and `git clean` cannot reach it and every
@@ -97,8 +99,8 @@ CI-covered work to `gh pr checks --watch`.
 
 ## Prerequisites
 
-- **git** — stash-based workflow; `/spike:bakeoff` and `/spike:ratchet`
+- **git**: stash-based workflow; `/spike:bakeoff` and `/spike:ratchet`
   use `git worktree`. `/spike:ratchet` also needs git 2.31 or newer,
   which is where `git rev-parse --path-format` arrived; it resolves
   the ledger path with it.
-- **gh** (optional) — enables watching CI checks after a push
+- **gh** (optional): enables watching CI checks after a push

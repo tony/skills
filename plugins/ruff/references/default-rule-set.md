@@ -15,24 +15,29 @@ records the opt-out, so turn it into an explicit decision.
 ## Measure first
 
 The blast radius decides whether adoption is a five-minute change or a
-project. Measure it without editing anything. Take the default codes from
-the binary, which is authoritative for the version in the lockfile. Run
-this from any directory, with any Python file as the argument:
-
-```console
-$ DEFAULT_CODES=$(ruff check --isolated --show-settings <file.py> | awk '/^linter.rules.enabled/{f=1;next} /^\]/{f=0} f' | grep -oE '\([A-Z]+[0-9]+\)' | tr -d '()' | paste -sd, -)
-```
+project. Measure it without editing anything. Run every command below
+through the project's own runner (for example `uv run ruff`), so the
+binary is the version the lockfile resolves; a `ruff` on `PATH` may
+differ. Confirm with `<runner> ruff --version` first.
 
 Count findings per rule as configured:
 
 ```console
-$ ruff check --statistics
+$ uv run ruff check --statistics
 ```
 
-Count them again with the default codes added:
+Count them again with the binary's default codes added. The default
+codes come from the same binary, with any Python file as `<file.py>`; one
+command computes them and uses them, because shell variables do not
+survive between separate Bash calls:
 
-```console
-$ ruff check --statistics --extend-select "$DEFAULT_CODES"
+```bash
+uv run ruff check --statistics \
+  --extend-select "$(uv run ruff check --isolated --show-settings <file.py> \
+    | awk '/^linter.rules.enabled/{f=1;next} /^\]/{f=0} f' \
+    | grep -oE '\([A-Z]+[0-9]+\)' \
+    | tr -d '()' \
+    | paste -sd, -)"
 ```
 
 The per-rule difference is the cost. Measure every repository in scope
@@ -101,7 +106,7 @@ rule fixed and one per ignore added, each body carrying the rule's
 documentation URL. Resolve the slug from the rule's name, not its code:
 
 ```console
-$ ruff rule <CODE> --output-format json | jq -r .name
+$ uv run ruff rule <CODE> --output-format json | jq -r .name
 ```
 
 The URL is `https://docs.astral.sh/ruff/rules/<name>/`.

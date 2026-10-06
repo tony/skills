@@ -133,3 +133,7 @@ gathered — never one directory at a time.
   or move only the selected one and report the rest as drift.
 
 Decide everything else from the signals.
+
+Without an interactive question tool, take the narrower answer to each
+(the one root module containing the working directory, the binary on
+`PATH`, no wrapper) and say so in the reply.

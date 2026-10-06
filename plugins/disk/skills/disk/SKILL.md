@@ -2,6 +2,7 @@
 name: disk
 description: "Use when disk space is low; find large directories, free space, decide if Claude sessions or npm cache are safe to remove, or shrink WSL."
 allowed-tools: Bash, Read, Glob, Grep, AskUserQuestion, TodoWrite
+argument-hint: "[path or filesystem to focus on]"
 ---
 
 # Disk

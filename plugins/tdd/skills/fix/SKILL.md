@@ -1,6 +1,6 @@
 ---
 name: fix
-description: TDD bug-fix workflow — reproduce a bug as a failing test, find root cause, fix, and verify
+description: "Use when fixing a bug test-first: reproduce it as an xfail test, find the root cause, fix, and verify."
 allowed-tools: ["Bash", "Read", "Grep", "Glob", "Edit", "Write", "Task"]
 argument-hint: Paste or describe the bug to reproduce and fix
 user-invocable: true
@@ -16,7 +16,8 @@ Initial bug report: $ARGUMENTS
 
 Shared rules: [xfail mechanisms](../../references/xfail-mechanisms.md) and
 [gates, commits, recovery](../../references/gates-and-commits.md). Write
-commit messages per `../../references/prose-rules.md`.
+commit messages per `../../references/prose-rules.md`, with no
+`Co-Authored-By`, no "Generated with" or other tool trailers, and no emoji.
 
 ## Phase 1: Understand the Bug
 
@@ -27,7 +28,13 @@ commit messages per `../../references/prose-rules.md`.
    commands, and commit format.
 4. Use Explore agents to find the test file for this area, the suspected source
    file, and fixtures that help reproduce the scenario. Read them.
-5. Summarize the bug and confirm with the user before proceeding.
+5. Confirm `git rev-parse --show-toplevel` is the project the bug lives in
+   and `git status --porcelain` prints nothing. Otherwise stop and tell the
+   user; never commit unrelated changes.
+6. Summarize the bug and confirm with the user before proceeding. Without an
+   interactive question tool, the request to fix the bug is the confirmation;
+   stop at any other question with a one-sentence result and what the user
+   must do.
 
 ## Phase 2: Write a Failing Test (xfail)
 
@@ -40,8 +47,8 @@ writing one. Pick the mechanism from the xfail-mechanisms reference.
    behavior), and carries the expected-failure marker.
 3. Run it and confirm it fails as expected:
 
-   ```
-   <project's test command> <test_file>::<test_name>
+   ```console
+   $ <project's test command> <test_file>::<test_name>
    ```
 4. Run the full test file.
 5. Run the quality gates.

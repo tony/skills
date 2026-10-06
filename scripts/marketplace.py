@@ -883,7 +883,7 @@ def _check_estate_rules(plugin_dir: Path) -> list[str]:
 
     for path in texts:
         rel = path.relative_to(plugin_dir)
-        if rel.parts[0] not in (*RESOURCE_DIRS, "scripts"):
+        if rel.parts[0] not in (*RESOURCE_DIRS, "scripts") or path.name.startswith("test_"):
             continue
         # A README may name a contributor file, but a vendored copy must be
         # read by some skill, or it ships unused.

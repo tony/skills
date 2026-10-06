@@ -52,6 +52,8 @@ For a reader who decides and moves on, add `brief.md` beside the report: the tit
 
 `scan` runs at the run's audience before a report ships. It covers what ships: the report, `index.md`, and other authored markdown, CSV, SVG, and text files. The Sources section `sources --write` generates is scrubbed for the audience; the ledgers keep what was recorded. Source cards under `<run>/references/` and report snapshots under `history/` are working notes, skipped unless `--include-references` is given; keep them out of anything you publish.
 
+The audience is who can read the report where it ends up, not who it is addressed to. A report sent to one team but stored or forwarded where more people read it takes the wider audience; a narrow recipient never lowers it.
+
 - **private**: no local paths or emails in authored files.
 - **internal**: also no personal names; roles instead ("a senior engineer").
 - **public**: also no organization, repository, team, or ticket identifiers and no internal URLs. Aggregates and ranges only.
@@ -71,7 +73,7 @@ Write for a reader who was not there and will judge the report by whether they c
 
 ## Output
 
-Open with a one-line hero (`✓ <report path>: <n> findings, <n> sources, check ok` or `⚠ Not shippable: <failing checks>`), then exactly these sections:
+Open with a one-line hero (`✓ <report path>: <n> findings, <n> sources, check ok` (`check ok, offline` when `check` ran with `--offline`) or `⚠ Not shippable: <failing checks>`), then exactly these sections:
 
 1. `## Answer`: the report's title and summary, verbatim.
 2. `## Checks`: the `check` result from this session, each gate with its counts.

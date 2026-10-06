@@ -39,29 +39,23 @@ Claude Code uses a leading slash (`/skill-style:…`). Codex omits it
 
 Routes automatically while a SKILL.md is being written, and takes
 targets when invoked by name (`/skill-style:skill-style <paths>`).
-Auditing edits files in place and prints a diff; it never commits,
-never pushes, and never scans the repository on its own initiative.
+Invoked with targets, it trims the files in place and shows the diff;
+it never commits, never pushes, and never scans the repository on its
+own initiative.
 
 Flags: `--audit` (report the ledger, change nothing), `--diff-only`
-(show the edits without writing them).
+(show the proposed edits as a diff without writing them).
 
 ## The deletion test
 
-Read the body one line at a time and name the behavior that changes
-when the line is gone — a command that would not run, a constraint the
-agent would violate, a trigger that would stop firing, an output whose
-shape would drift, a fork it would take wrong. Name one and the line
-stays. Name none and it goes.
+A line stays only when its removal would change what the agent does.
+Every line the test cuts is *true*; truth is not the bar.
 
-Every line the test cuts is *true*. Truth is not the bar; changed
-behavior is. That is why "adds context" and "reads better" are not
-answers.
-
-The test judges claims, so it never reaches frontmatter, fenced code
-blocks, literal commands, section headings, or a warning on a
-destructive step. A command in a skill is a quotation — the author
-verified it against a real system, and editing its characters silently
-unverifies it.
+The test never reaches frontmatter, fenced commands, literal commands,
+section headings, or a warning on a destructive step. A command in a
+skill is a quotation: editing its characters silently unverifies it,
+so a flawed command is reported, not corrected. Only a fence's tag,
+`$ ` prompt, and one-command-per-fence split follow the house policy.
 
 ## References
 
@@ -75,7 +69,7 @@ OpenAI's [build skills][openai-build-skills] guidance.
 named. `references/example-ideal.md` is the same skill after the test.
 
 [anthropic-best-practices]: https://platform.claude.com/docs/en/agents-and-tools/agent-skills/best-practices
-[openai-build-skills]: https://learn.chatgpt.com/docs/build-skills
+[openai-build-skills]: https://developers.openai.com/plugins/build/skills
 
 ## Prerequisites
 

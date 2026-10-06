@@ -33,7 +33,7 @@ row() {
 }
 
 row S1 docs.md wal-docs "Write-Ahead Logging" SQLite vendor \
-  https://sqlite.org/wal.html 3.46.0 "checkpoint when the WAL file reaches 1000 pages"
+  https://sqlite.org/wal.html "" "checkpoint when the WAL file reaches 1000 pages"
 row S2 blog.md wal-blog "Tuning SQLite WAL on our servers" "An operator" independent \
   https://blog.example.org/sqlite-wal-tuning 2026-05-01 "the automatic checkpoint ran every 100 pages"
 

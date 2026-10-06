@@ -1,7 +1,7 @@
 ---
 name: bump-terraform
 description: "Use when updating the Terraform or OpenTofu CLI across module constraints, version-manager files, CI, and images."
-allowed-tools: ["Bash", "Read", "Grep", "Glob", "Edit", "WebSearch", "WebFetch", "AskUserQuestion"]
+allowed-tools: ["Bash", "Read", "Grep", "Glob", "Edit", "AskUserQuestion"]
 argument-hint: "[version] [--root-module <dir>...] [--audit-only] [--no-lock] [--no-commit]"
 user-invocable: true
 disable-model-invocation: true
@@ -13,8 +13,10 @@ Move `required_version` across every module that declares one, along
 with the version manager files, CI workflows, and images that pin the
 same CLI somewhere else.
 
-Follow the phase structure in `../bumping-terraform/SKILL.md`, which
-points to the three references this skill relies on. To move a provider,
+Follow the phase structure and conventions in
+`../bumping-terraform/SKILL.md` (clean tree, commit message rules,
+non-interactive defaults, stopped runs), which points to the three
+references this skill relies on. To move a provider,
 use `/terraform:bump-provider`.
 
 User arguments: $ARGUMENTS
@@ -28,13 +30,15 @@ Find the installed CLI version with `terraform -version` or
 it is published. Otherwise list the latest stable releases:
 
 ```console
-curl -s https://releases.hashicorp.com/terraform/index.json | jq -r '.versions | keys_unsorted[]' | grep -vE 'alpha|beta|rc' | sort -V | tail -3
+$ curl -fsS https://releases.hashicorp.com/terraform/index.json | jq -r '.versions | keys_unsorted[]' | grep -vE 'alpha|beta|rc' | sort -V | tail -3
 ```
 
-Resolve against OpenTofu's releases instead when `tofu` drives the
-repository. Present the latest stable alongside the installed version
-and confirm which to write; they often differ. If the release list is
-unreachable, resolve the version before writing anything.
+When `tofu` drives the repository, list OpenTofu's releases with the
+command in `../../references/pin-sites.md`. Present the latest stable
+alongside the installed version and confirm which to write; they often
+differ. If the release list is unreachable and the user named no
+version, stop and ask which version to write. When the target crosses a
+major version, add the CLI's upgrade guide to the report.
 
 ### 2. Discover the layout
 
@@ -76,33 +80,42 @@ refreshed. With `--audit-only`, stop here and write nothing.
 
 All pin sites in one commit. Then, unless `--no-lock`, refresh each
 root module's lock as a separate commit, since a CLI bump can change the
-lock file's own format. With `--no-commit`, leave the working tree alone
+lock file's own format. Run plain `init` per the lock reference, never
+`-upgrade`: a CLI bump moves no provider. With `--no-commit`, leave the working tree alone
 and say what would have been committed. Write commit messages and the
 report per `../../references/prose-rules.md`.
 
 Verify by initialising each root module and confirming it accepts the
-new version, then run the repository's own gates.
+new version, but only when the installed CLI satisfies the new
+`required_version` and `--no-lock` is absent (`init` writes the lock).
+Otherwise report init as unverifiable, name the installed version, and
+edit nothing to work around it. Then run the repository's own gates.
 
 ## Output
 
 Open with a one-line hero (`✓ terraform <old> -> <new> across N pin
-sites` or `⚠ Audit only: N sites disagree`), then exactly these
-sections:
+sites` or `⚠ Audit only: N sites disagree`), then these sections in
+order:
 
-1. `## Target` — the resolved version, how it was confirmed, the
-   version installed locally, and the changelog link.
-2. `## Layout` — root modules and child modules discovered, and which
+1. `## Target`: the resolved version, how it was confirmed, the
+   version installed locally, and the changelog link (or that none
+   was confirmed).
+2. `## Layout`: root modules and child modules discovered, and which
    tool drives the repository.
-3. `## Sites` — every pin found, inside the configuration and outside
+3. `## Sites`: a list of every pin found, inside the configuration and outside
    it, and whether each was edited or left alone with the reason.
-4. `## Locks` — per root module: whether the lock was refreshed, and
+4. `## Locks`: per root module: whether the lock was refreshed, and
    the platform count tracked before and after.
-5. `## Verification` — the gates run and their real results, including
+5. `## Verification`: the gates run and their real results, including
    whether each root module now initialises.
-6. `## Drift` — every disagreement found before the bump, and every one
+6. `## Drift`: every disagreement found before the bump, and every one
    still outstanding after it.
+
+Omit a section that would be empty. A run that cannot proceed ends with
+the stopped line from `../bumping-terraform/SKILL.md`, not this shape.
 
 End with an `AskUserQuestion` panel offering next steps, for example:
 converge the root modules still on an older pin, add the version to a
 version manager file the repository lacks, align the CI workflow, or
-stop here. Skip the panel only in plan mode.
+stop here. Skip the panel only in plan mode. Without a question tool, list the
+options and take the default: stop here.

@@ -4,7 +4,7 @@
 Each command prints one JSON object on stdout. Exit codes: 0 success, 1 a
 reported failure (the JSON says why), 2 a usage error. Standard library only.
 
-Commands: run, band, compare, order, token, impact, score, memory-dir.
+Commands: run, band, compare, order, token, hash, impact, score, memory-dir.
 Run ``measure.py <command> --help`` for arguments.
 """
 
@@ -106,15 +106,20 @@ def run_once(argv: Sequence[str], cwd: str | None = None) -> dict[str, t.Any]:
     (0, 2, 2)
     >>> run_once([sys.executable, "-c", "raise SystemExit(3)"])["exit"]
     3
+    >>> run_once(["no-such-command-here"])["exit"]
+    127
     """
     start = time.perf_counter()
-    proc = subprocess.run(  # noqa: S603
-        list(argv),
-        cwd=cwd,
-        capture_output=True,
-        text=True,
-        check=False,
-    )
+    try:
+        proc = subprocess.run(  # noqa: S603
+            list(argv),
+            cwd=cwd,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+    except OSError:
+        return {"seconds": 0.0, "exit": 127, "passed": 0, "total": 0}
     seconds = time.perf_counter() - start
     counts = parse_summary(proc.stdout + "\n" + proc.stderr)
     return {
@@ -373,8 +378,9 @@ def memory_dir(
     >>> (first["source"], second["source"], third["source"])
     ('new', 'in-tree', 'explicit')
     """
+    repo_root = repo_root.resolve()
     in_tree = repo_root / MEMORY_DIRNAME
-    repo_id = hashlib.sha256(f"{repo_root.resolve()}\0{remote}".encode()).hexdigest()[:12]
+    repo_id = hashlib.sha256(f"{repo_root}\0{remote}".encode()).hexdigest()[:12]
     if os.name == "nt" and "LOCALAPPDATA" in environ:
         base = pathlib.Path(environ["LOCALAPPDATA"])
     else:
@@ -448,6 +454,9 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--collection", required=True, help="collect-only -q output file")
     p.add_argument("--version", action="append", default=[], help="NAME=VERSION")
 
+    p = sub.add_parser("hash", help="sha256 of a file, for plan_hash")
+    p.add_argument("file")
+
     p = sub.add_parser("impact", help="rubric impact anchor for a measured saving")
     p.add_argument("--delta", type=float, required=True)
     p.add_argument("--baseline", type=float, required=True)
@@ -491,6 +500,8 @@ def main(argv: Sequence[str] | None = None) -> int:  # noqa: PLR0911
     if cmd == "token":
         digest = token(args.head, _read_text(args.collection), args.version, env_fingerprint())
         return _emit({"token": digest})
+    if cmd == "hash":
+        return _emit({"hash": hashlib.sha256(pathlib.Path(args.file).read_bytes()).hexdigest()})
     if cmd == "impact":
         return _emit({"impact": impact(args.delta, args.baseline, args.clears_noise)})
     if cmd == "score":

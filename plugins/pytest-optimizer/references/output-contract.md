@@ -8,14 +8,23 @@ feeling like one pipeline and makes the JSON memory legible at a glance.
 
 1. **Hero block** (1–4 lines, optional). A `⚠`/`✓` prefix or a one-line summary.
    No prose paragraphs. Examples:
-   - `✓ scan complete — baseline 12.5s ± 0.15s (MAD), 7 hypotheses, 0 suite edits`
+   - `✓ scan complete — baseline 12.5s, noise band 0.45s, 7 hypotheses, 0 suite edits`
    - `⚠ 1 hypothesis dropped at the safety gate (xdist over shared SQLite)`
 2. **Body sections** in the order each command declares (below). Skip a section
    only when it is genuinely empty, and say so in one line rather than inventing
    filler.
 3. **Next-step panel** — an `AskUserQuestion` so the user can act without composing
    a follow-up command. Skip the panel only when the command is already running
-   inside plan mode (where the plan itself is the decision point).
+   inside plan mode (where the plan itself is the decision point). Without an
+   interactive question tool, list the options as text and take the stated
+   non-interactive default.
+
+## Halted run
+
+When a phase stops before its work (missing input, dirty tree, plan hash
+mismatch, no suite), print one result sentence naming what stopped it, then one
+sentence on what the user must do. No body sections, no panel, no projected
+timings or results.
 
 ## Per-command body sections
 
@@ -23,7 +32,7 @@ feeling like one pipeline and makes the JSON memory legible at a glance.
 
 - `## Environment` — pytest + plugin versions, gated-off capabilities, resolved
   test command, memory dir.
-- `## Baseline` — median wall-time, noise band (MAD), trust floor.
+- `## Baseline` — median wall-time, noise band, trust floor.
 - `## Slowest tests` — top `call` rows with root-cause notes.
 - `## Slowest fixtures` — top `setup`/`teardown` rows; note shared-scope
   attribution.

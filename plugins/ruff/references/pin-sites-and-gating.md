@@ -32,11 +32,15 @@ Pre-commit is the exception — its `rev:` is a single tag by design, so it take
 
 A newly published version can be invisible to the resolver for reasons that have nothing to do with your constraint. Diagnose which one before working around it:
 
-**Publication cooldown.** Some resolvers hide releases younger than a configured threshold. A release inside the window does not exist as far as resolution is concerned, though the package index shows it. This is the most common cause. For uv, look for `exclude-newer` in the user and project config:
+**Publication cooldown.** Some resolvers hide releases younger than a configured threshold. A release inside the window does not exist as far as resolution is concerned, though the package index shows it. This is the most common cause. For uv, a cooldown can live in the user config, a `uv.toml`, a `[tool.uv]` table in any `pyproject.toml` (workspace members included), or the `UV_EXCLUDE_NEWER` environment variable, and per-package forms (`exclude-newer-package`) match the same search. Search the tree and the user config in one command; a missing file is not an error:
 
 ```console
-$ cat "${UV_CONFIG_FILE:-$HOME/.config/uv/uv.toml}" uv.toml | grep -i exclude-newer
+$ grep -rIiH --include=uv.toml --include=pyproject.toml exclude-newer . "${UV_CONFIG_FILE:-${XDG_CONFIG_HOME:-$HOME/.config}/uv/uv.toml}" 2>/dev/null
 ```
+
+Then check `UV_EXCLUDE_NEWER` in the environment. Settings merge, so the search shows candidates, not the effective value. Run `uv lock --dry-run` and read the refusal for the effective cause.
+
+Other resolvers (pip, poetry, pdm) have their own cooldown settings; find them in the resolver's documentation, and apply the same gating rules below.
 
 **Index lag.** A private mirror or proxy has not synchronized yet. Nothing to work around; wait or repoint the index.
 

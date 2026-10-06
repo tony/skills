@@ -19,13 +19,13 @@ profile      prove each        rank by       apply each speedup
 
 In Claude Code, add the marketplace:
 
-```console
+```text
 /plugin marketplace add tony/skills
 ```
 
 Install the plugin:
 
-```console
+```text
 /plugin install pytest-optimizer@skills
 ```
 
@@ -73,7 +73,7 @@ Candidates are ranked and gated (see `references/scoring-rubric.md`):
 | Dimension | Weight | Meaning |
 |-----------|-------:|---------|
 | safety | 0.35 | **Hard gate: score < 0.4 is dropped.** Inverse of correctness risk. |
-| impact | 0.30 | Measured wall-clock delta vs the noise band. (Within-noise scores 0.) |
+| impact | 0.30 | Measured wall-clock delta vs the noise band, as a share of the baseline. (Within-noise scores 0.) |
 | effort | 0.15 | Inverse of refactor cost. |
 | confidence | 0.12 | Quality of timing evidence (e.g., serial, repeated, above noise floor). |
 | reversibility | 0.08 | How cleanly the change is undone if green-verify fails. |
@@ -82,22 +82,26 @@ Candidates are ranked and gated (see `references/scoring-rubric.md`):
 
 | Skill | Phase | Writes |
 |---------|-------|--------|
-| `/pytest-optimizer:00-scan` | Profile, detect, hypothesize (plan-mode gated) | `baseline.json`, `capabilities.json`, `hypotheses.json` |
+| `/pytest-optimizer:00-scan` | Profile, detect, hypothesize | `baseline.json`, `capabilities.json`, `collection.txt`, `hypotheses.json` |
 | `/pytest-optimizer:01-benchmark` | Prove each hypothesis vs the noise band | `benchmarks.json` |
 | `/pytest-optimizer:02-plan` | Rank into a commit plan (plan-mode gated) | `plan.json` |
 | `/pytest-optimizer:03-execute` | Apply each speedup as a commit, verify, resume | `execution-log.json` |
 
 Use `pytest-optimizer` as an orchestrator for conversational phrases like
-"speed up my tests".
+"speed up my tests". The four phase skills are invoked by name only, so the
+orchestrator reads each phase's `SKILL.md` and follows it.
 
 ## Memory
 
-Durable state lives in `.pytest-optimizer/` at the repo root. It falls back
-to XDG cache dirs if the tree is read-only. See `references/memory-schema.md`.
+Durable state lives in `.pytest-optimizer/` at the repo root, or in a per-user
+cache directory when the tree is read-only. Every phase looks it up in the same
+order: `--memory-dir`, the in-tree directory, the cache directory. See
+`references/memory-schema.md`.
 
 ## Prerequisites
 
 - A git repository with a pytest suite.
+- Python 3 on `PATH` for `scripts/measure.py`, which does the timing arithmetic.
 - Test commands configured via `AGENTS.md` or `CLAUDE.md`.
 - Optional auto-detected plugins: `pytest-xdist`, `pytest-randomly`,
   `pytest-deadfixtures` (via `uvx`), `pytest-timeout`.
@@ -108,6 +112,7 @@ to XDG cache dirs if the tree is read-only. See `references/memory-schema.md`.
 - `skills/pytest-optimizer/SKILL.md` — Orchestrator with planning and
   degradation.
 - `references/` — Recipes, schemas, rubric, and capabilities.
+- `scripts/measure.py` — Median, MAD, noise band, test-count and order gates, rubric arithmetic, memory lookup.
 - `templates/` — Opt-in scaffolds (timing plugin, cache snippet) and the commit message template.
 
 ## Scope

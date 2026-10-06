@@ -1,7 +1,7 @@
 ---
 name: bump
 description: "Use when upgrading Ruff in one repository or a fleet and evaluating newly applicable rules before committing each change."
-allowed-tools: ["Bash", "Read", "Grep", "Glob", "Edit", "Write", "WebSearch", "WebFetch", "Task", "AskUserQuestion"]
+allowed-tools: ["Bash", "Read", "Grep", "Glob", "Edit", "WebFetch", "AskUserQuestion"]
 argument-hint: "[version] [--root <dir>] [--repo <path|slug>...] [--owner <name>...] [--branch <name>] [--adopt-defaults] [--audit-only] [--no-pr] [--no-changelog]"
 user-invocable: true
 disable-model-invocation: true
@@ -25,11 +25,11 @@ User arguments: $ARGUMENTS
 
 If the user named a version, use it. Otherwise take the latest stable release. Confirm the version exists on the package index and record its publication timestamp; phase 6 needs it to compute when a cooldown lapses. Write no version string before the version is confirmed.
 
-Find the version currently resolved with `ruff --version`, or through the project's environment when ruff is not on `PATH`.
+Find the version the project resolves by running ruff through the project's own runner (for example `uv run ruff --version`, chosen from what the repository uses), not a `ruff` found on `PATH`. Run every later ruff command, including measurements, the same way.
 
 ### 2. Establish scope
 
-Default scope is the current repository. `--root` walks a directory for git repositories; `--repo` names individual ones; `--owner` keeps only those whose remote belongs to the given accounts or organisations. Exclude forks (check the fork flag, not the owner name) and repositories you cannot push to. Say which repositories were excluded and why.
+Default scope is the current repository. `--root` walks a directory for git repositories; `--repo` names individual ones; `--owner` keeps only those whose remote belongs to the given accounts or organisations. Exclude forks (check the fork flag, not the owner name) and repositories you cannot push to. Say which repositories were excluded and why. List each repository's resolved ruff version in the plan.
 
 Within scope, drop repositories that have no ruff configuration and repositories that already satisfy the target floor. Skip a repository where a branch or worktree of the intended name already exists, and list it as skipped.
 
@@ -37,23 +37,23 @@ Within scope, drop repositories that have no ruff configuration and repositories
 
 Follow the triage reference: read the release's changelog at its tag, sort every change into the five buckets, then intersect those buckets with each repository's effective rule selection to predict which diagnostics it can produce. Repositories that share a configuration share a prediction.
 
-A release that expands the default rule set produces no new diagnostics for a repository with an explicit `select`; phase 8 raises that as a finding. A formatter change that widens which file types are covered applies everywhere regardless of rule selection, and is usually the largest single source of diff.
+A repository with an explicit `select` gets nothing from an expanded default set; phase 8 raises that as a finding. A formatter change that widens which file types are covered applies everywhere regardless of rule selection, and is usually the largest single source of diff.
 
-Dispatch a subagent per repository where the host supports it.
+Dispatch a subagent per repository where the host supports it. A repository that fails partway (resolver refusal that gating does not cover, failing checks that are not pre-existing, push rejected) stops there: leave its branch and worktree in place, record the failing phase and the error, and continue with the remaining repositories. Do not retry it in a loop. Report it under `## Per repo` as halted.
 
 ### 4. Present the plan and wait
 
-Show the predicted work per repository: the rules expected to fire, whether the formatter's scope widens, which pin sites need editing, and whether a resolver gate is needed. With `--audit-only`, stop here and write nothing.
+Show the predicted work per repository: the rules expected to fire, whether the formatter's scope widens, which pin sites need editing, and whether a resolver gate is needed. With `--audit-only`, stop here and write nothing. Without an interactive question tool (Codex, headless runs), print the plan and stop before phase 5.
 
 ### 5. Isolate
 
-Work on a branch off the remote default branch, in a throwaway worktree, never in the primary checkout and never on the default branch. Find the default branch with:
+Work on a branch off the remote default branch, in a throwaway worktree, never in the primary checkout and never on the default branch. Fetch first so the branch starts from the current remote head. Find the default branch with:
 
 ```console
 $ git symbolic-ref --short refs/remotes/origin/HEAD
 ```
 
-If that fails, read it from `git ls-remote --symref origin HEAD`. `--branch` overrides the branch name.
+If that fails, read the `ref: refs/heads/<name>\tHEAD` line of `git ls-remote --symref origin HEAD`. `--branch` overrides the branch name. Create the worktree beside the repository with `git worktree add -b <branch> <path> origin/<default>`, and remove it with `git worktree remove <path>` once the pull request is open or the repository halts without commits.
 
 ### 6. Gate the resolver, if and only if it is blocked
 
@@ -69,7 +69,7 @@ If the release changed the default rule set and a repository sets an explicit `s
 
 ### 9. One rule, one commit
 
-Enumerate the distinct rule codes the linter now reports. For each, in its own commit: apply that rule's safe fixes alone, hand-fix what the autofix leaves, re-run the project's quality checks, and commit with a body that explains why the rule exists, what changed, and, for behavior-changing rules, the behavior delta. Close each body with the rule's documentation URL. Write each per `../../references/prose-rules.md`.
+Enumerate the distinct rule codes the linter now reports. For each, in its own commit: apply that rule's safe fixes alone, hand-fix what the autofix leaves, re-run the project's quality checks, and commit with a body that explains why the rule exists, what changed, and, for behavior-changing rules, the behavior delta. Close each body with the rule's documentation URL. Write each per `../../references/prose-rules.md`. Commit messages carry no `Co-Authored-By` line, no "Generated with" or other tool trailer, and no emoji.
 
 A rule with a large mechanical diff is still one commit. Run the formatter last, as its own commit, and say so when it rewrote file types it never covered before.
 
@@ -85,13 +85,15 @@ If tests fail, check whether they fail on the default branch too before attribut
 
 ### 11. Push, open, watch, record
 
-Push the branch and open a pull request unless `--no-pr`. The body states which rules moved and links each to its documentation. When phase 6 applied, it carries a pre-merge instruction to drop the exemption and re-resolve, with the time the block lapses. Write it per `../../references/prose-rules.md`.
+Pushing and opening a pull request publish work, and plan approval in phase 4 does not cover them. Before the first push, ask the user to confirm, naming each repository and branch to be pushed and whether a pull request follows; with more than one repository, confirm once for the whole fleet and let the user drop repositories from it. `--no-pr` skips only the pull request: the branch is still pushed after confirmation. Without an interactive question tool, commit locally, push nothing, and report the pending pushes.
+
+Push the branch and open a pull request unless `--no-pr`. The body states which rules moved and links each to its documentation. When phase 6 applied, it carries a pre-merge instruction to drop the exemption and re-resolve, with the time the block lapses. Write it per `../../references/prose-rules.md`, with no `Co-Authored-By` line, tool trailer, or emoji.
 
 Watch CI to a conclusion, and attribute failures before blaming the bump. Then, unless `--no-changelog` or the repository keeps no changelog, add an entry following that repository's own conventions. A linter floor is development tooling: file it wherever that repository files development-tooling changes, and only if it documents such changes.
 
 ## Output
 
-Open with a one-line hero (`✓ N repos on ruff X.Y.Z` or `⚠ Audit only: N repos behind`), then exactly these sections:
+Write the report per `../../references/prose-rules.md`. Open with a one-line hero (`✓ N repos on ruff X.Y.Z`, `⚠ Audit only: N repos behind`, or `⚠ M of N repos halted`), then exactly these sections:
 
 1. `## Release` — what the target version changes, sorted into the triage buckets, with the formatter's scope change called out separately if there is one.
 2. `## Scope` — repositories in scope with their current and target versions, and what was excluded as fork, unowned, already-current, or already-branched.
@@ -101,4 +103,6 @@ Open with a one-line hero (`✓ N repos on ruff X.Y.Z` or `⚠ Audit only: N rep
 6. `## Pre-merge` — every repository carrying a temporary resolver exemption, and when its block lapses.
 7. `## Drift` — pin sites found disagreeing with each other before the bump, repositories with no lint configuration, and repositories relying on the default rule set.
 
-End with an `AskUserQuestion` panel offering next steps, for example: drop the resolver exemptions now that the block has lapsed, merge the green pull requests, adopt a newly stabilized rule that is currently unselected, or stop here. Skip the panel only in plan mode.
+Omit a section with nothing to report, except `## Per repo` and `## Verification`. Cite the changelog URL at the tag and the ruff version used for measurement under `## Release`. A run that stops before any change (audit only, nothing behind, every repository skipped or the user declined) is one result sentence under the hero, then what the user must do to proceed.
+
+End with an `AskUserQuestion` panel (headless: no panel, end after the last section) offering next steps, for example: drop the resolver exemptions now that the block has lapsed, merge the green pull requests, adopt a newly stabilized rule that is currently unselected, or stop here. Skip the panel only in plan mode.

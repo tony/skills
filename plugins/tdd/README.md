@@ -8,25 +8,25 @@ fix, and verify.
 In Claude Code, add the marketplace:
 
 ```console
-/plugin marketplace add tony/skills
+$ /plugin marketplace add tony/skills
 ```
 
 Install the plugin:
 
 ```console
-/plugin install tdd@skills
+$ /plugin install tdd@skills
 ```
 
 In Codex, add the marketplace:
 
 ```console
-codex plugin marketplace add tony/skills
+$ codex plugin marketplace add tony/skills
 ```
 
 Install the plugin:
 
 ```console
-codex plugin add tdd@skills
+$ codex plugin add tdd@skills
 ```
 
 The skills below are written with Claude Code's leading slash. Codex uses
@@ -61,7 +61,7 @@ A strict TDD variant enforcing proof at each boundary:
 5. **Remove xfail**: Edit test file only.
 6. **Final Verification**: Ensure full suite passes.
 
-*Enforces separation via `git diff --stat` gates.*
+*Enforces separation via `git status --porcelain` gates, which include untracked files.*
 
 ## Cross-Dependency Bugs
 

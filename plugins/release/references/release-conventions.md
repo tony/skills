@@ -30,7 +30,13 @@ Scan the repo root for manifests, in order of precedence:
 Then find stray version literals the manifest scan misses:
 
 ```console
-$ rg -n -F --hidden -g '!.git' -g '!*.lock' -g '!package-lock.json' -g '!pnpm-lock.yaml' '<current-version>'
+$ rg -n -F --hidden \
+    -g '!.git' \
+    -g '!*.lock' \
+    -g '!package-lock.json' \
+    -g '!pnpm-lock.yaml' \
+    '<current-version>' \
+    .
 ```
 
 Include a stray literal in the bump only when it clearly tracks the
