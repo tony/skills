@@ -1,7 +1,7 @@
 ---
 name: disk
 description: "Use when disk space is low; find large directories, free space, decide if Claude sessions or npm cache are safe to remove, or shrink WSL."
-allowed-tools: Bash, Read, Write, Edit, Glob, Grep, AskUserQuestion, TodoWrite
+allowed-tools: Bash, Read, Glob, Grep, AskUserQuestion, TodoWrite
 ---
 
 # Disk
@@ -26,12 +26,15 @@ anything the user cannot get back.
 
 ## Route
 
-Treat any path the user named as the scope.
+Read the sibling file and follow it. Both siblings open with
+`Scope: $ARGUMENTS`, which a file read never substitutes: the scope is
+the path the user named, or every mounted filesystem when none.
 
 - Survey, "where did my space go", or no request to delete: follow
-  `../usage/SKILL.md`. It is read-only.
+  `../usage/SKILL.md`. It is read-only, and the router run does not end
+  with an offer to reclaim.
 - Free space, clean up, or shrink WSL: follow `../usage/SKILL.md`, then
-  `../reclaim/SKILL.md`.
+  `../reclaim/SKILL.md`, which reuses that survey instead of repeating it.
 
 ## Orchestration plan
 

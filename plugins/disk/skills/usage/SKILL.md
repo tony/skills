@@ -13,7 +13,8 @@ Survey this machine's disk usage and report where the space went.
 Scope: $ARGUMENTS — when empty, survey every mounted filesystem.
 
 This command is read-only. Do not delete, move, compress, or modify
-anything, and never halt a virtual machine or WSL guest. End by offering
+anything, and never halt a virtual machine or WSL guest. When run
+directly rather than through the `disk` skill, end by offering
 `/disk:reclaim`.
 
 ## Establish the layer structure
@@ -22,7 +23,7 @@ Read `../../references/virtual-disks.md` first.
 
 Run `df -h` and identify every distinct filesystem with its used and
 available space. Determine which of them is the binding constraint —
-the one closest to full — because that governs which findings matter.
+the one closest to full, because that governs which findings matter.
 
 When a filesystem is a virtual disk, find its backing file on the host
 and compare that file's allocated size against the used space reported

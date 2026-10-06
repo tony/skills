@@ -4,7 +4,7 @@ description: >-
   Record a correction to a standing claim — what was believed, what it
   rested on, and why it failed — rather than editing it away
 disable-model-invocation: true
-allowed-tools: ["Bash", "Read", "Glob", "Edit", "Write"]
+allowed-tools: ["Bash", "Read", "Glob", "Edit", "Write", "AskUserQuestion"]
 metadata:
   argument-hint: "<term-or-claim> [--study=<dir>]"
   source: "plugins/scholar/skills/revise/SKILL.md"

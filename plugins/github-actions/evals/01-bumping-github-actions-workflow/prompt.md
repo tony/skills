@@ -1,7 +1,7 @@
 ---
 max_turns: 15
 timeout_seconds: 420
-allowed_tools: [Read, Glob, Grep, Skill]
+allowed_tools: [Bash, Read, Glob, Grep, Skill]
 ---
 Dependabot opened a stack of PRs to bump the actions in my workflows. Instead of merging those one at a time, go through this workflow and get everything current:
 

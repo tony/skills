@@ -4,7 +4,7 @@ description: >-
   Write a study's brief and evidence documents, then enforce the brief's
   citation prohibition with the analyzer
 disable-model-invocation: true
-allowed-tools: ["Bash", "Read", "Glob", "Edit", "Write"]
+allowed-tools: ["Bash", "Read", "Glob", "Edit", "Write", "AskUserQuestion"]
 metadata:
   argument-hint: "[--out=<dir>]"
   source: "plugins/scholar/skills/render/SKILL.md"
@@ -27,7 +27,9 @@ The brief carries no citation, no permalink, and no bare number. Where it
 wants one, it links into `evidence/`. A brief with its appendices inlined is a
 report, and nobody reads it start to finish.
 
-The analyzer enforces the rule. Run it before reporting success:
+The analyzer enforces the rule. Run it before reporting success. A missing
+`brief.md` exits 2: write the brief first. A brief the user asked to keep
+unchanged is gated as is; report its findings and leave it.
 
 ```console
 $ <analyzer> notes/ontology/<subject>/ --check-brief
@@ -45,9 +47,8 @@ support:
 4. What `contest` overturned, and what the kills revealed.
 
 Write it per `references/prose-rules.md`, for a reader who was not
-present. They do not have the corpus open,
-they do not know the analyst, and they will judge the study by whether they
-can disagree with it.
+present. They do not have the corpus open, they do not know the analyst, and
+they will judge the study by whether they can disagree with it.
 
 ## What the evidence documents hold
 
@@ -78,9 +79,12 @@ Per `references/output-contract.md`. Hero: `✓ rendered <subject>: brief +
 
 1. `## Brief` — the path, and the four movements in one line each.
 2. `## Evidence` — each document written and what it holds.
-3. `## Gate` — the brief check's output, verbatim.
+3. `## Gate` — the brief check's output, verbatim, with absolute paths
+   stripped.
 
-Next-step options: publish via gh, compare against another study, stop here.
+Next-step options: publish the brief, compare against another study, stop here.
+
+Write it per `references/prose-rules.md`.
 
 
 ## Portability notes

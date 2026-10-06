@@ -21,8 +21,7 @@ Read `references/interim-format.md` first for the run location
 and output frame; there is no completeness gate here. Defer these
 until the firewall (the public case study) is located:
 
-- `references/provenance.md`: tag rendering, denominators, the
-  no-currency contract.
+- `references/provenance.md`
 - `references/audiences.md`: the tier-3 contract and the
   firewall sweep.
 
@@ -40,7 +39,9 @@ Locating an existing run.
 Check for `<run>/reports/case-study-public.md`. If it is missing,
 ask via `ask-user-choice` whether to run
 the `business-case-study-public` skill now or stop; never draft the release
-straight from the interim package. If present, run the firewall
+straight from the interim package. Without a question tool, halt
+with `⚠ Refused: no public case study for this run` and tell the user
+to run the `business-case-study-public` skill. If present, run the firewall
 sweep from `audiences.md`; a sweep failure routes back to
 the `business-case-study-public` skill, never into hand-patching here.
 
@@ -60,12 +61,14 @@ From the public case study only:
 Write `<run>/reports/pr-release.md`. Every figure must trace to the
 public case study verbatim or by stated rounding; if a wanted figure
 is not there, extend the case study first instead of reaching into
-the run. Write it per `references/prose-rules.md`.
+the run.
+
+Write it per `references/prose-rules.md`.
 
 ## Output
 
-Hero success form: `✓ PR release: <headline>`; failure form
-`⚠ Refused: <reason>`. Sections:
+Hero success form: `✓ PR release: <headline>`; a stopped run follows
+`interim-format.md` § Rendering a report. Sections:
 
 1. `## Run`: the run chosen.
 2. `## Firewall`: the public case study used, and confirmation that

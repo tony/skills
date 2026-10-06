@@ -59,7 +59,7 @@ Present the plan and wait for approval, then exit plan mode (`ExitPlanMode`). If
 
 ## Phase 1: Start the session
 
-Follow `ensemble-core.md` (Start the session) with `--command review`. The flags result also reports `cascade` and the deslop flags in `flags`.
+Follow `ensemble-core.md` (Start the session) with `--command review`. The flags result also reports `cascade` and the deslop flags in `flags`. It asks each unresolved setting through `AskUserQuestion`.
 
 Build the context packet per `ensemble-core.md` (Context packet), using the approved plan to choose what goes in. Run `context --full-diff` so external reviewers get the diff. Lead with conventions, the changed files with their diff stats, and key snippets of modified code. Known unknowns name the parts of the diff that are hard to review without more context.
 

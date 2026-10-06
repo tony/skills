@@ -20,10 +20,9 @@ Read `references/interim-format.md` first. It defines the run
 location, the completeness gate, and the output frame. Defer these
 until the gate passes:
 
-- `references/provenance.md`: tag rendering, anti-inflation
-  rules, the no-currency contract.
+- `references/provenance.md`
 - `references/evidence.md`: the external evidence table and the
-  triangulation procedure.
+  triangulation procedure. Re-verify the sources you cite first.
 - `references/audiences.md`: the tier-3 contract and the final
   checklist.
 
@@ -58,13 +57,15 @@ each outcome.
 ### 4. Final checklist pass
 
 Run the tier-3 final checklist from `audiences.md` over the finished
-draft, item by item. Fix every hit, then write
-`<run>/reports/case-study-public.md`. Write it per `references/prose-rules.md`.
+draft, item by item, including the scanner. Fix every hit, then write
+`<run>/reports/case-study-public.md`.
+
+Write it per `references/prose-rules.md`.
 
 ## Output
 
 Hero success form: `✓ Public case study: <headline with tag>`.
-Sections as in `interim-format.md`, with `## Sanitization` between
+Sections and stopped-run shape as in `interim-format.md`, with `## Sanitization` between
 `## Gate` and `## Report`: the checklist results item by item and the
 triangulation outcome per headline claim. Panel options: derive the PR
 release next, tighten a claim, or stop.

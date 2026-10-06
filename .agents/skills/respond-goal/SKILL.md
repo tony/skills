@@ -4,9 +4,9 @@ description: >-
   Use when the review-and-CI loop should continue through bounded rounds
   until no new actionable feedback remains.
 disable-model-invocation: true
-allowed-tools: ["Bash", "Read", "Grep", "Glob", "Edit", "Write", "AskUserQuestion", "Task"]
+allowed-tools: ["Bash", "Read", "Grep", "Glob", "Edit", "Write", "AskUserQuestion"]
 metadata:
-  argument-hint: "[--pr=<num>] [--max-rounds=<n>] [--wait=<minutes>] [--no-push] [--reply]"
+  argument-hint: "[--pr=<num>] [--max-rounds=<n>] [--wait=<minutes>] [--ci-wait=<minutes>] [--no-push] [--reply]"
   source: "plugins/respond/skills/goal/SKILL.md"
 ---
 
@@ -17,14 +17,15 @@ and the repository's review agents, screen what they say, and repeat
 until the pull request goes quiet.
 
 Invoked by name, never routed to on the model's initiative: it commits,
-pushes, and holds the session open across waits.
+pushes, and holds the session open across waits. Invoking it authorizes
+the rounds, commits, and pushes described below, and nothing broader.
 
 ## Core thesis
 
 The round is easy; stopping is the hard part.
 
-A review loop with no exit condition either quits early — pushing and
-declaring victory before any reviewer has looked at the new head — or
+A review loop with no exit condition either quits early, pushing and
+declaring victory before any reviewer has looked at the new head, or
 never quits at all, re-screening findings the last round already
 declined while bots re-post them on every push. Both look like
 progress.
@@ -50,15 +51,16 @@ loop honest.
 | `--pr=<num>` | current branch's PR | The pull request the loop runs against. |
 | `--max-rounds=<n>` | `3` | Hard cap on rounds. Reached means stop and report, not raise. |
 | `--wait=<minutes>` | `10` | Cap on waiting for review agents per round. |
-| `--no-push` | off | Run rounds locally; never push. The loop then finishes after one round, since nothing new can arrive. |
-| `--reply` | off | Post the drafted replies for declined and deferred findings, on confirmation, at the end of each round. |
+| `--ci-wait=<minutes>` | `30` | Cap on waiting for CI per round. |
+| `--no-push` | off | Run rounds locally; never push. The loop ends after one round, finished when the local gates are green; the CI and review-agent conditions do not apply. |
+| `--reply` | off | Post the drafted replies for declined and deferred findings once, when the loop ends. Confirm first; a non-interactive run treats the flag as that confirmation, for the replies shown in the report only. |
 
 ## Phase 0: Reconnaissance
 
 1. Resolve the pull request and its head SHA:
    `gh pr view --json number,title,headRefOid,state,isDraft,reviewDecision,statusCheckRollup`.
-   No pull request means there is nothing for agents to review — say
-   so and offer a single local round instead of a loop.
+   No pull request means there is nothing for agents to review: halt
+   (see Stopping).
 2. Build the review-agent roster per
    `references/review-agents.md`: who reviews this repository,
    through which surface, and whether their arrival is observable. An
@@ -66,7 +68,8 @@ loop honest.
    error.
 3. Resolve the gate buckets and the CI-coverage split per
    `references/verification-gates.md`.
-4. Confirm a clean working tree and note the push state.
+4. Run `git fetch origin`, confirm a clean working tree, and note the
+   push state.
 
 ## Phase 1: Orchestration plan
 
@@ -77,7 +80,8 @@ commands, and what the loop will never do without asking: force-push,
 merge, resolve a thread, or rewrite pushed history.
 
 Wait for approval, then exit plan mode. Without plan mode, present the
-same inline and proceed on confirmation.
+same inline and proceed on confirmation. In a non-interactive run,
+record the plan in the report and proceed.
 
 ## Phase 2: The round
 
@@ -95,12 +99,25 @@ settle what this round does.
 one gated commit each. A round with no accepted findings skips
 straight to the exit test.
 
-**4. Push.** Record the head SHA and the time first — the wait in step
-6 depends on both. Push normally; a rejected push means the remote
-moved, which is a halt condition, not something to force through.
+Both skills run in loop mode here: this loop's plan approval stands, so
+neither enters plan mode or ends with its panel, and the `respond-action` skill
+neither pushes nor posts replies. Step 4 pushes and the end of the loop
+posts.
 
-**5. Watch CI.** `gh pr checks --watch --fail-fast`. A failure becomes
-next round's feedback, with the failing log as its evidence.
+**4. Push.** Print the head SHA and the time first and keep the literal
+values, since the wait in step 6 depends on both. Push normally; a
+rejected push means the remote moved, which is a halt condition, not
+something to force through.
+
+**5. Watch CI.** Poll at a steady interval until no check is pending or
+`--ci-wait` elapses; stop at the first failure:
+
+```console
+$ gh pr checks --json name,bucket,state
+```
+
+A failure becomes next round's feedback, with the failing log as its
+evidence. Checks still pending at the cap halt the loop.
 
 **6. Wait for the agents.** Poll for reviews and comments against the
 new head, bounded by `--wait`, stopping early once every roster agent
@@ -114,13 +131,14 @@ Then test the exit condition. Not met and rounds remain → next round.
 
 **Finished** — a round landed no new fixes, CI is green on the current
 head, and the roster has weighed in on it.
+Under `--no-push`, the local gates are green instead.
 
 **Capped** — `--max-rounds` reached. Report what is still open and what
 the next round would do.
 
 **Quiet** — two consecutive rounds that landed no new fixes while the
 exit condition stayed unmet because a roster agent never arrived.
-More rounds will not change that. Report it as finished, listing who
+More rounds will not change that. Report it as quiet, listing who
 never weighed in.
 
 **Halted** — stop the loop and report, without another round:
@@ -131,8 +149,8 @@ never weighed in.
 - A push is rejected, or the branch needs a rebase or a force-push.
 - Screening returns an `ask` verdict that needs the author's intent.
 - The working tree is dirty from something the loop did not do.
-- CI fails for a reason outside the branch — a flaky job, an outage, a
-  missing secret.
+- CI fails for a reason outside the branch, such as a flaky job, an
+  outage, or a missing secret, or is still pending after `--ci-wait`.
 
 Halting is a result. A loop that works around its own halt conditions
 is the failure mode this section exists to prevent.
@@ -144,6 +162,11 @@ behalf.
 ## Phase 3: Report — the output contract
 
 Write the report and replies per `references/prose-rules.md`.
+Never name local absolute paths or temp files.
+
+A halted run reports one result sentence naming the halt condition,
+then what the user needs to do, then `## Still open`; the other
+sections appear only when they have content.
 
 1. Hero block (1–3 lines): the outcome (finished, capped, quiet, or
    halted), rounds run, and total fixed / deferred / declined.

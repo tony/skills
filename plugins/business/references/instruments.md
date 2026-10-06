@@ -86,7 +86,7 @@ unavailable, not worked around.
   full query output that shows the zero, so the absence is MEASURED.
 - Compute distributions client-side from the raw snapshots: the API
   returns events; medians, IQRs, and intervals are computed locally
-  per `measurement.md`.
+  with `../scripts/business.py stats` per `measurement.md`.
 - A snapshot found defective is never edited: add a superseding
   snapshot and record the supersession in the run README and
   `sources.md`.
@@ -103,7 +103,7 @@ marker → the segmentation is unknown; do not guess from prose style.
 ### Rework signals
 
 Reverts (revert markers in `git log` plus forge revert links),
-reopened issues and PRs — across all items, not only merged ones —
+reopened issues and PRs (across all items, not only merged ones),
 CI failure and retry rates, PR-size drift across the window.
 
 ### Per-task timing
@@ -122,8 +122,8 @@ numbers; report both or mark the missing one unknown.
 
 ### Build and maintenance time
 
-Reconstruct from history — commits, PRs, and doc edits on the skill
-itself — when possible. Reconstruction yields MEASURED counts and
+Reconstruct from history (commits, PRs, and doc edits on the skill
+itself) when possible. Reconstruction yields MEASURED counts and
 calendar spans only; engineer-hours inferred from spans are DERIVED
 with the inference method stated, or ESTIMATED with rationale and a
 named owner in the assumptions register. Commit timestamps alone

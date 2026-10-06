@@ -1,14 +1,22 @@
 # Audience Sensitivity Ladder
 
+## Contents
+
+- When the package holds no committable savings figure
+- Tiers 0 to 3
+- Tier-3 final checklist
+- Firewall sweep
+
 Four disclosure tiers, from tier 0 (internal leadership, full
 detail) to tier 3 (fully external). The binding rule: **an artifact
 may never contain detail its tier's contract excludes, even though
 the run directory has it.** Sanitization is a property of the
-artifact, not of the data.
+artifact, not of the data. Script paths below resolve relative to
+this file.
 
 ## When the package holds no committable savings figure
 
-A complete package may still contain no defensible savings number —
+A complete package may still contain no defensible savings number:
 early instrumentation, unknowns blocking `S_inst`, no counterfactual
 yet. That is not a rendering failure at any tier: render an evidence
 report. The answer or headline states plainly what the data does and
@@ -21,7 +29,7 @@ gate failures, never for honest absence.
 Command: the `business-report-leadership` skill.
 
 Full detail: names, raw links, registers inline. Provenance tags
-render with complete source refs — manifest entry names, file paths,
+render with complete source refs: manifest entry names, file paths,
 assumption ids.
 
 ## Tier 1 — org-wide
@@ -30,7 +38,7 @@ Command: the `business-report-org-wide` skill.
 
 Team-level aggregates only; no individual names anywhere. Internal
 team and system names allowed. Ends with a plain-language summary
-readable by the whole company — no methodology jargon, figures still
+readable by the whole company: no methodology jargon, figures still
 tagged and true.
 
 ## Tier 2 — internal case study
@@ -49,14 +57,19 @@ Hard sanitization contract:
 
 - No organization, repository, team, or person names; no ticket
   IDs; no internal URLs; no internal or local file paths.
-- Aggregates and ranges only. Round to honest precision — a
+- Aggregates and ranges only. Round to honest precision: a
   number's precision must not exceed what its interval supports.
 - Every headline claim triangulated per `evidence.md`.
-- A candid limitations section is mandatory — credibility is the PR
+- A candid limitations section is mandatory; credibility is the PR
   asset.
 - Provenance tags remain on every figure, rendered as tag plus
   method phrase ("MEASURED over a 12-week window, n=41 PRs") with
   internal source refs stripped.
+- Re-identification: a small team plus an exact window can name the
+  team. Describe teams of fewer than 10 people by kind only ("a
+  small product team"), round the window to a month or quarter, and
+  drop any combination of team size, window, and domain that points
+  at one group.
 
 ## Tier-3 final checklist
 
@@ -64,9 +77,18 @@ the `business-case-study-public` skill runs this as an explicit final pass
 over the finished draft. this skill inherits the result
 by sourcing figures only from the public case study.
 
-1. Scan the draft for everything the tier-3 contract excludes
-   (organization, repository, team, and person names, ticket IDs,
-   internal URLs, internal or local paths) and remove every hit.
+1. Run the scanner over the draft, passing each organization,
+   repository, team, and person name from the run as `--deny`:
+
+   ```console
+   $ references/business.py scan --deny <name> <draft file>
+   ```
+
+   It flags ticket IDs, URLs, local paths, emails, currency, and
+   money terms (exit 1 on any hit). Remove or reword every hit; a
+   false positive such as `UTF-8` is noted, not removed. Then read
+   the draft once for names the scanner cannot know and for the
+   re-identification rule above.
 2. Confirm every figure is an aggregate or a range, rounded to
    honest precision, with its provenance tag and denominator.
 3. Confirm every headline claim passed triangulation or carries its
@@ -75,17 +97,18 @@ by sourcing figures only from the public case study.
 5. Confirm no currency appears (`provenance.md` bans it at every
    tier; re-check here because external text travels furthest).
 
-Report the checklist results in the command output: pass per item,
-with what was removed or reworded.
+Report the checklist in the `## Sanitization` section of the
+command output: pass per item, with what was removed or reworded.
 
 ## Firewall sweep
 
 this skill treats the public case study as its
 sanitization firewall, and verifies it rather than trusting it.
 Before deriving the announcement, run checklist items 1, 2, 4, and 5
-over the located case study, plus a scan for money-adjacent terms.
-Triangulation was the case study's job.
+over the located case study (the scanner already covers money terms
+in item 1). Triangulation was the case study's job.
 
-Any failure means the case study is regenerated via
+Any failure stops the run: the case study is regenerated via
 the `business-case-study-public` skill, never patched around in the release.
-Report the sweep result in the command output.
+Report a passing sweep in `## Firewall`; a failing one is a stopped
+run that names the failed items.

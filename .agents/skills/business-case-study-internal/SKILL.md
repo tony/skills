@@ -21,8 +21,7 @@ Read `references/interim-format.md` first. It defines the run
 location, the completeness gate, and the output frame. Defer these
 until the gate passes:
 
-- `references/provenance.md`: tag rendering, anti-inflation
-  rules, the no-currency contract.
+- `references/provenance.md`
 - `references/audiences.md`: the tier-2 contract.
 
 User arguments: $ARGUMENTS
@@ -51,12 +50,14 @@ fixed order:
    ramp (and the excluded novelty window), and where results are
    likely to differ.
 
-Anonymize individuals to roles. Team and repo names stay. Write it per `references/prose-rules.md`.
+Anonymize individuals to roles. Team and repo names stay.
+
+Write it per `references/prose-rules.md`.
 
 ## Output
 
 Hero success form: `✓ Case study: <one-line outcome with tag>`.
-Sections as in `interim-format.md`. Panel options: write the public
+Sections and stopped-run shape as in `interim-format.md`. Panel options: write the public
 case study next, adjust the narrative, or stop.
 
 

@@ -1,7 +1,7 @@
 ---
 name: revise
 description: "Record a correction to a standing claim — what was believed, what it rested on, and why it failed — rather than editing it away"
-allowed-tools: ["Bash", "Read", "Glob", "Edit", "Write"]
+allowed-tools: ["Bash", "Read", "Glob", "Edit", "Write", "AskUserQuestion"]
 argument-hint: "<term-or-claim> [--study=<dir>]"
 user-invocable: true
 disable-model-invocation: true

@@ -8,26 +8,26 @@ the `slop` plugin.
 
 In Claude Code, add the marketplace:
 
-```console
+```text
 /plugin marketplace add tony/skills
 ```
 
 Install the plugin:
 
-```console
+```text
 /plugin install pr@skills
 ```
 
 In Codex, add the marketplace:
 
 ```console
-codex plugin marketplace add tony/skills
+$ codex plugin marketplace add tony/skills
 ```
 
 Install the plugin:
 
 ```console
-codex plugin add pr@skills
+$ codex plugin add pr@skills
 ```
 
 ## Skills
@@ -44,7 +44,7 @@ codex plugin add pr@skills
 
 - **`/pr`**: Gathers diff/log context, reads conventions (`AGENTS.md`/`CLAUDE.md`,
   templates), applies the section patterns below, and optionally creates the PR via `gh`.
-- **`/pr:refresh`**: Stack-aware diff against base, backs up to `.git/pr-backups/`,
+- **`/pr:refresh`**: Stack-aware diff against base, backs up to `pr-backups/` in the git directory,
   updates content while preserving hand-written text/structure, and applies via `gh`.
 - **`/pr:rewrite`**: Backs up PR, mines old description for manual context, resolves
   templates, drafts fresh description, and applies via `gh`.
@@ -57,14 +57,14 @@ codex plugin add pr@skills
 
 Generate PR description (optional hint):
 
-```
+```text
 /pr
 /pr fixes the race condition in new_session
 ```
 
 Refresh/rewrite existing PR (defaults to current branch's PR):
 
-```
+```text
 /pr:refresh
 /pr:refresh #42
 /pr:refresh the retry logic was dropped
@@ -74,7 +74,7 @@ Refresh/rewrite existing PR (defaults to current branch's PR):
 
 Generate merge commit message (optional hint):
 
-```
+```text
 /pr:merge-commit
 /pr:merge-commit version bump
 /pr:merge-commit breaking change in the session API
@@ -82,7 +82,7 @@ Generate merge commit message (optional hint):
 
 Review PR:
 
-```
+```text
 /pr:review-pr
 /pr:review-pr #42
 /pr:review-pr https://github.com/owner/repo/pull/42
@@ -110,10 +110,11 @@ existing structure without applying templates.
 
 - Never force-pushes or runs destructive git commands.
 - Never pushes to main/master.
-- Always presents before modifying.
+- `/pr:refresh` and `/pr:rewrite` edit a PR only after you approve the proposal; `/pr` creates one only on request.
 - Backs up existing descriptions before editing.
+- Stops without changing anything when `gh` is unauthenticated, the PR is missing, or the PR's head branch is not checked out.
 
 ## Prerequisites
 
 - **git**: For diff/log.
-- **gh**: For PR creation/fetching.
+- **gh**: For PR creation/fetching; run `gh auth login` once.

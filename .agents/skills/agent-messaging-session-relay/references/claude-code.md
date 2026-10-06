@@ -1,8 +1,8 @@
 # Adapter: Claude Code
 
-Run `claude --version` first. Cross-session messaging, `ListAgents`, and the inbox socket
-need a build that ships them; if `ListAgents` is not a tool in this session, use the
-socket or tmux route.
+Cross-session messaging, `ListAgents`, and the inbox socket need a build that ships them.
+If `ListAgents` is not a tool in this session, use the socket or tmux route; if
+`claude agents --json` fails, use tmux.
 
 Upstream: [cross-session messaging](https://code.claude.com/docs/en/cross-session-messaging).
 
@@ -49,27 +49,22 @@ The model calls `SendMessage` with a `ListAgents` name. The receiver gets a stru
 - **Preconditions**: live compatible Claude sessions and the cross-session feature enabled.
 - **Success signal**: the tool returns a message ID; the receiver starts a turn if idle or
   receives it at a tool boundary if busy.
-- **Failure modes**: feature, provider, and version gates are `UNKNOWN`.
 
 ### claude-code-socket (receive from any same-UID process; send through a shell)
 
-Resolve the target's inbox into `TARGET_SOCKET` from its `messagingSocketPath` (Discovery
-above), then write one newline-delimited JSON user frame to it. No auth line is needed on
-Linux; native Windows requires `{"type":"auth","token":"..."}` first
-`(unverified — from docs)`.
+Resolve the target's inbox path from its `messagingSocketPath` (Discovery above), then send
+one newline-delimited JSON user frame with the helper. No auth line is needed on Linux;
+native Windows requires `{"type":"auth","token":"..."}` first `(unverified — from docs)`.
 
 ```console
-$ TARGET_SOCKET=$(jq -r .messagingSocketPath \
-    "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/sessions/<pid>.json") \
-  && jq -nc \
-    --arg content '<message>' \
-    '{type:"user",message:{role:"user",content:$content}}' \
-  | nc \
-      -U \
-      -N \
-      -w 3 \
-      "$TARGET_SOCKET"
+$ references/relay.sh socket-send \
+    --socket "$(jq -r .messagingSocketPath "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/sessions/<pid>.json")" \
+    --line -
 ```
+
+Pass the envelope from `relay.sh envelope` on stdin. The helper exits 6 when the sandbox
+blocks sockets (`CODEX_SANDBOX_NETWORK_DISABLED`) or `nc` is missing, and 7 when the socket
+path is stale.
 
 Valid and invalid frames are both silent on the socket, so exit 0 proves only that bytes were
 accepted. Verify delivery at the receiver or in its transcript.
@@ -81,8 +76,9 @@ before typing at an idle prompt.
 
 ### codex-queue (send to Codex)
 
-Claude can shell out to `codex queue --thread <uuid-or-name> --message <text>`. It returns a
-durable item receipt and delivers once the target is idle.
+Claude can shell out to `codex queue`, which returns a durable item receipt and delivers once
+the target is idle. Pass the message through a quoted heredoc, never `--message '<text>'`,
+which breaks on an apostrophe in the body. The Codex adapter owns the exact command.
 
 ## 4. Delivery semantics
 
@@ -92,7 +88,6 @@ durable item receipt and delivers once the target is idle.
 - **Busy receiver**: queues, and enters the active turn at a later tool boundary without
   interrupting the running tool.
 - **Target not running**: live-only `(unverified — from docs)`.
-- **Ordering, caps, and interrupt behavior**: `UNKNOWN`.
 
 ### claude-code-socket
 
@@ -100,7 +95,6 @@ durable item receipt and delivers once the target is idle.
 - **Acknowledgment**: none. The sender cannot tell a valid frame from a discarded one without
   receiver cooperation.
 - **Self-targeting**: allowed; native `SendMessage` refuses it.
-- **Target not running, rapid-send ordering, and caps**: `UNKNOWN`.
 
 ### tmux
 

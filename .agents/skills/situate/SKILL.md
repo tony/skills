@@ -67,9 +67,10 @@ these sections:
 2. `## Change` — what the branch does and how far along it is, grouped
    by area, with the commit sequence's shape.
 3. `## Pull request` — state, checks by job name, unresolved review
-   threads and what they ask for; or that none is open.
+   threads and what they ask for; or `none is open` (with no remote:
+   `no remote, so no pull request is open or checkable`).
 4. `## Tickets` — each linked issue with its state and what it asks
-   for; or that none is referenced.
+   for; or `none is referenced`.
 5. `## Conventions` — the rules from AGENTS.md / CLAUDE.md that bear on
    this change, and the quality gates it must pass.
 6. `## Prior work` — only when `--with-agentgrep` ran: what was decided
@@ -78,10 +79,13 @@ these sections:
    contradictory, and what a resumed session would most likely get
    wrong.
 
+Write an empty layer as "none", never "not available"; reserve
+"unavailable" for a lookup that could not run, with the reason.
+
 End with an `ask-user-choice` panel offering next steps (for example:
 continue the branch's work, address the review threads, open a pull
 request, widen the sweep to prior conversations) — skip the panel only
-in plan mode.
+in plan mode. When the tool is absent, end with numbered options.
 
 
 ## Portability notes

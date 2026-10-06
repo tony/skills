@@ -2,9 +2,9 @@
 # apply-template.sh — POSIX shell template for the per-run apply.sh of
 # /slop:deslop.
 #
-# The skill copies this file to `.git/deslop/<ts>-<pid>/apply.sh`,
-# substituting these placeholders:
-#   __DESLOP_TS_PID__    — run directory name (e.g. `20260509-110825Z-1234`)
+# The skill copies this file to `<run-dir>/apply.sh`, where `<run-dir>`
+# is `git rev-parse --git-path deslop/<ts>-<pid>` (so linked worktrees
+# work), substituting these placeholders:
 #   __REGISTRY_PATH__    — built-in or `--taxonomy=<path>` registry source
 #   __REGISTRY_SHA256__  — SHA-256 of the registry at materialization
 #   __BASELINE_SHA__     — trunk merge-base SHA locked at Step 1
@@ -20,6 +20,9 @@
 # is the one intentionally empty commit; `reword-map.tsv` records it for
 # audit.
 #
+# A failed fixup commit rolls the patch back (index and worktree), so
+# the tree is clean again and a re-run retries the same step.
+#
 # Exit codes:
 #   0  all steps complete
 #   1  registry SHA-256 changed since materialization, or is unreadable
@@ -33,7 +36,8 @@
 
 set -eu
 
-run_dir=".git/deslop/__DESLOP_TS_PID__"
+run_dir=$(cd "$(dirname -- "$0")" && pwd)
+cd "$(git rev-parse --show-toplevel)"
 checkpoint_dir="$run_dir/.checkpoint"
 mkdir -p "$checkpoint_dir"
 
@@ -106,7 +110,7 @@ for entry in "$run_dir"/[0-9]*; do
 
     case "$base" in
         *-fixup-*.patch|*-amend-*.patch)
-            target_sha=$(echo "$base" | sed -E 's/^[0-9]+-(fixup|amend)-([0-9a-f]+)(-[^.]+)?\.patch$/\2/')
+            target_sha=$(echo "$base" | sed -nE 's/^[0-9]+-(fixup|amend)-([0-9a-f]+)(-.*)?\.patch$/\2/p')
             if [ -z "$target_sha" ]; then
                 echo "apply.sh: cannot extract target SHA from $base" >&2
                 exit 3
@@ -118,19 +122,24 @@ for entry in "$run_dir"/[0-9]*; do
                 exit 3
             fi
 
-            paths=$(git diff --name-only)
+            paths=$(
+                git diff --name-only
+                git ls-files --others --exclude-standard
+            )
             if [ -z "$paths" ]; then
                 mark_done "$step_num"
                 continue
             fi
 
-            echo "$paths" | while IFS= read -r p; do
+            printf '%s\n' "$paths" | while IFS= read -r p; do
                 [ -n "$p" ] && git add -- "$p"
             done
 
             if ! git commit --no-edit --fixup="$target_sha"; then
+                git apply -R --index -- "$entry" ||
+                    git reset -q --hard HEAD
                 echo "apply.sh: git commit --fixup=$target_sha failed" >&2
-                echo "  if a hook rejected the commit, repair and re-run" >&2
+                echo "  patch rolled back; repair the cause and re-run" >&2
                 exit 6
             fi
 

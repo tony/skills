@@ -9,16 +9,18 @@ downstream, where the cause is no longer visible.
 
 ## gather
 
-Every source in `sources.jsonl` has a resolved ref, and every source recorded
-as not read has a stated reason in `why`.
+Every source in `sources.jsonl` has a resolved ref and, for a git source, the
+`commit` that ref pointed at, and every source recorded as not read has a
+stated reason in `why`.
 
-An unresolved ref means a citation cannot be pinned later. An unexplained
+An unresolved ref means a citation cannot be pinned later. A missing `commit`
+means `verify` cannot tell a moved tag from an unmoved one. An unexplained
 omission means the study cannot state its own coverage boundary.
 
 ## extract
 
 Every row in `terms.jsonl` has a non-empty `definition` and at least one entry
-in `cites`.
+in `cites`. `term-metrics.py <study> --check-terms` lists the rows that fail.
 
 A term with no definition is a word the corpus happens to contain. A
 definition with no citation is the analyst's summary of the corpus, which is
@@ -48,5 +50,6 @@ $ <analyzer> notes/ontology/<subject>/ --check-brief
 
 `<analyzer>` is the path to `term-metrics.py`, which ships beside this file.
 
-A non-zero exit means the brief is not renderable yet. Fix the brief, not the
+A non-zero exit means the brief is not renderable yet (exit 2 means the file
+is missing). Fix the brief, not the
 checker.

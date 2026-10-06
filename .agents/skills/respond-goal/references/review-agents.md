@@ -12,7 +12,7 @@ repository's pull requests beats any configuration file, because a
 configured app that never fires is not a reviewer:
 
 ```console
-gh pr list --state all --limit 20 --json reviews,comments --jq '[.[] | (.reviews[]?.author.login, .comments[]?.author.login)] | unique'
+$ gh pr list --state all --limit 20 --json reviews,comments --jq '[.[] | (.reviews[]?.author.login, .comments[]?.author.login)] | unique'
 ```
 
 Logins ending in `[bot]`, plus the app accounts that do not use the
@@ -39,7 +39,7 @@ Reviews carry the commit they were submitted against, which is the
 only reliable "has looked at this" signal:
 
 ```console
-gh api repos/{owner}/{repo}/pulls/<n>/reviews --jq '.[] | {login: .user.login, commit: .commit_id, at: .submitted_at}'
+$ gh api repos/{owner}/{repo}/pulls/<n>/reviews --paginate --jq '.[] | {login: .user.login, commit: .commit_id, at: .submitted_at}'
 ```
 
 An agent has weighed in on the current head when a review of theirs
@@ -55,10 +55,12 @@ window is absence, and the report says which agent never arrived.
 
 Two waits, in this order, both bounded.
 
-**CI**, which has a completion signal and can be blocked on directly:
+**CI**, which has a completion signal but no cap of its own. Poll at a
+steady interval until no check is pending, stopping at the first
+failure or at `--ci-wait` in this skill:
 
 ```console
-gh pr checks --watch --fail-fast
+$ gh pr checks --json name,bucket,state
 ```
 
 **The agents**, which have none. Record the head SHA and the time

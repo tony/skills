@@ -11,6 +11,8 @@ tiers.
    prescribed width.
 2. With no documented convention, use `docs(CHANGES) <description>` and no body.
 3. Always:
+   - No `Co-Authored-By` or other trailer naming a tool, no "Generated with"
+     footer, no emoji. Hosts add them by default; leave them out.
    - No `#123` in the message. CHANGES entries reference PRs; a commit may
      predate its PR, and merge history already links commits to PRs.
    - The subject names what the changelog covers, not that one was added.

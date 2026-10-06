@@ -1,7 +1,7 @@
 ---
 name: reclaim
 description: Reclaim disk space through a proof-gated plan — clears regenerable caches, merges proved-redundant copies, and protects agent history
-allowed-tools: Bash, Read, Write, Edit, Glob, Grep, AskUserQuestion, TodoWrite
+allowed-tools: Bash, Read, Glob, Grep, AskUserQuestion, TodoWrite
 argument-hint: "[path or filesystem to focus on]"
 user-invocable: true
 disable-model-invocation: true
@@ -15,17 +15,14 @@ Scope: $ARGUMENTS — when empty, consider every mounted filesystem.
 
 ## Before anything else
 
-Never halt the environment (`wsl --shutdown`, `wsl --terminate`, VM stop,
-container-runtime restart): print the command, state what it interrupts,
-and stop, per `../../references/virtual-disks.md`. Never delete on the
-strength of a name. Agent history is protected: reclaim from it only
-through the owning tool's archival path, or by proving one copy redundant.
+Read the non-negotiables in `../disk/SKILL.md` and obey them, including
+when this skill is invoked directly.
 
 ## Survey and classify
 
-Run the same analysis `/disk:usage` performs. Do not shortcut it
-because this command will execute — the classification is what makes
-execution safe.
+Follow `../usage/SKILL.md` and reuse its survey when one already ran
+this session. Do not shortcut it because this skill will execute: the
+classification is what makes execution safe.
 
 Carry forward, for every candidate: its tier, its size, the layer it
 sits on, and for anything in the redundant tier, the proof outcome.
@@ -68,6 +65,10 @@ source now holds nothing unique. Only then may the source be removed.
 Prefer a tool's own prune or archive command over `rm`. It understands
 its own reference counting and leaves the store consistent.
 
+Before any `rm`, resolve the path with `realpath`, print the exact
+target, and check that no process holds it open (`lsof +D <path>` or
+`fuser -v <path>`). Stop if the resolved path leaves the approved scope.
+
 Stop and report rather than improvising when a proof fails, a candidate
 turns out to hold unique data, or a repository has unpushed work. A
 surprise is a signal the classification was wrong, not an obstacle to
@@ -84,8 +85,10 @@ two.
 ## Hand off
 
 Finish with the steps only the user can run: the guest shutdown, and any
-host-side compaction. Give exact commands, one per block, with their
-consequences stated.
+host-side compaction. Take the exact commands from
+`../../references/virtual-disks.md`, one per block, with where each runs
+and what it interrupts stated before it. Where that file cites no
+command for the user's host, say so rather than writing one from memory.
 
 Report host recovery as pending rather than achieved, and say plainly
 which numbers are measured and which are projected.

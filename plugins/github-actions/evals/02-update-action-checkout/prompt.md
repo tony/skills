@@ -1,7 +1,7 @@
 ---
 max_turns: 10
 timeout_seconds: 300
-allowed_tools: [Read, Glob, Grep, Skill]
+allowed_tools: [Bash, Read, Glob, Grep, Skill]
 ---
 /github-actions:update-action actions/checkout
 

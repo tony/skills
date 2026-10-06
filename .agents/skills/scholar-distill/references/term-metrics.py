@@ -48,6 +48,15 @@ A citation that quotes the term it is meant to support:
 ...            "cites": [{"quote": "the ratchet stops advancing"}]}])
 ['ratchet']
 
+A quote that shares only one word of a multi-word term does not name it:
+
+>>> circular([{"term": "update-action", "definition": "bump one pin",
+...            "cites": [{"quote": "update the lockfile before release"}]}])
+[]
+>>> circular([{"term": "update-action", "definition": "bump one pin",
+...            "cites": [{"quote": "each update actions step runs once"}]}])
+['update-action']
+
 The brief may not carry citations, permalinks, or bare numbers:
 
 >>> check_brief("Names split three ways.")
@@ -58,6 +67,36 @@ The brief may not carry citations, permalinks, or bare numbers:
 ['line 1: bare number belongs in evidence/, not the brief']
 >>> check_brief("Similarity is [0.575](evidence/metrics.md).")
 []
+
+List markers and code spans are not numbers:
+
+>>> check_brief("1. Names split.")
+[]
+>>> check_brief("2) Parents differ.")
+[]
+>>> check_brief("- Use `v2` here.")
+[]
+>>> check_brief("Anchor #L12 is a number.")
+['line 1: bare number belongs in evidence/, not the brief']
+
+A missing file is a usage error, not a traceback:
+
+>>> import contextlib, sys
+>>> with contextlib.redirect_stderr(sys.stdout):
+...     main(["/nonexistent-study", "--check-brief"])
+no brief.md in /nonexistent-study
+2
+>>> with contextlib.redirect_stderr(sys.stdout):
+...     main(["/nonexistent-study"])
+no terms.jsonl in /nonexistent-study
+2
+
+Every term row needs a definition and at least one citation:
+
+>>> check_terms([{"term": "a", "definition": "x", "cites": [{"quote": "q"}]}])
+[]
+>>> check_terms([{"term": "a", "definition": " "}, {"term": "b", "definition": "y"}])
+['a: empty definition', 'a: no citation', 'b: no citation']
 """
 
 from __future__ import annotations
@@ -66,6 +105,25 @@ import json
 import math
 import re
 import sys
+from pathlib import Path
+from typing import TypedDict, cast
+
+
+class _Cite(TypedDict, total=False):
+    quote: str
+
+
+class _RowBase(TypedDict):
+    term: str
+
+
+class _Row(_RowBase, total=False):
+    parent: str
+    definition: str
+    cites: list[_Cite]
+
+
+Vector = dict[str, float]
 
 SYNONYMY_THRESHOLD = 0.5
 """Sibling definitions at or above this are candidates for one term, not two."""
@@ -75,21 +133,25 @@ POLYSEMY_THRESHOLD = 0.3
 
 _WORD = re.compile(r"[a-z0-9]+")
 _URL = re.compile(r"https?://")
-_ANCHOR = re.compile(r"#L\d")
 _EVIDENCE_LINK = re.compile(r"\[[^\]]*\]\(evidence/[^)]*\)")
+_CODE_SPAN = re.compile(r"`[^`]*`")
+_LIST_MARKER = re.compile(r"^\s*(?:\d+[.)]|[-*+])\s+")
 _DIGIT = re.compile(r"\d")
+_SUFFIX = re.compile(r"(?:ing|ed|es|s)$")
+_LEMMA_MIN = 5
 
 
-def tokenize(text):
+def tokenize(text: object) -> list[str]:
     """Lowercase, split on non-alphanumerics, drop one-character tokens.
 
     >>> tokenize("Update-Action, v2!")
     ['update', 'action', 'v2']
     """
-    return [tok for tok in _WORD.findall(str(text).lower()) if len(tok) > 1]
+    tokens = cast("list[str]", _WORD.findall(str(text).lower()))
+    return [tok for tok in tokens if len(tok) > 1]
 
 
-def idf(docs):
+def idf(docs: list[list[str]]) -> dict[str, float]:
     """Smoothed inverse document frequency per token across *docs*.
 
     Computed as ``log((N + 1) / (1 + df)) + 1`` so a token in every row keeps
@@ -102,14 +164,14 @@ def idf(docs):
     1.405
     """
     total = len(docs)
-    df = {}
+    df: dict[str, int] = {}
     for doc in docs:
         for token in set(doc):
             df[token] = df.get(token, 0) + 1
     return {tok: math.log((total + 1) / (1 + n)) + 1 for tok, n in df.items()}
 
 
-def cosine(a, b):
+def cosine(a: Vector, b: Vector) -> float:
     """Cosine similarity of two token-weight maps.
 
     >>> cosine({"a": 1.0}, {"a": 1.0})
@@ -126,20 +188,23 @@ def cosine(a, b):
     return dot / (norm_a * norm_b)
 
 
-def _vectors(terms):
+def _vectors(terms: list[_Row]) -> list[Vector]:
     """Map each row index to its tf-idf weighted definition vector."""
     docs = [tokenize(row.get("definition", "")) for row in terms]
     weights = idf(docs)
-    out = []
+    out: list[Vector] = []
     for doc in docs:
-        vec = {}
+        vec: Vector = {}
         for token in doc:
             vec[token] = vec.get(token, 0.0) + weights.get(token, 1.0)
         out.append(vec)
     return out
 
 
-def synonymy(terms, threshold=SYNONYMY_THRESHOLD):
+def synonymy(
+    terms: list[_Row],
+    threshold: float = SYNONYMY_THRESHOLD,
+) -> list[tuple[str, str, float]]:
     """Sibling pairs whose definitions score at or above *threshold*.
 
     Only rows sharing a parent are compared. Two terms under different parents
@@ -147,7 +212,7 @@ def synonymy(terms, threshold=SYNONYMY_THRESHOLD):
     concept wearing two names.
     """
     vecs = _vectors(terms)
-    hits = []
+    hits: list[tuple[str, str, float]] = []
     for i, left in enumerate(terms):
         for j in range(i + 1, len(terms)):
             right = terms[j]
@@ -160,19 +225,19 @@ def synonymy(terms, threshold=SYNONYMY_THRESHOLD):
     return hits
 
 
-def polysemy(terms):
+def polysemy(terms: list[_Row]) -> list[tuple[str, list[str]]]:
     """Terms appearing more than once with definitions that do not match.
 
     Two rows sharing a term whose definitions score alike are a duplicate
     entry, not polysemy. The finding is one term standing for two concepts.
     """
     vecs = _vectors(terms)
-    by_term = {}
+    by_term: dict[str, list[int]] = {}
     for index, row in enumerate(terms):
         by_term.setdefault(row["term"], []).append(index)
-    hits = []
+    hits: list[tuple[str, list[str]]] = []
     for term, indexes in by_term.items():
-        if len(indexes) < 2:
+        if len(indexes) <= 1:
             continue
         distant = any(
             cosine(vecs[a], vecs[b]) < POLYSEMY_THRESHOLD
@@ -185,19 +250,19 @@ def polysemy(terms):
     return hits
 
 
-def orphans(terms):
+def orphans(terms: list[_Row]) -> list[str]:
     """Terms whose parent is unassigned, or neither another term nor ``root``."""
     known = {row["term"] for row in terms} | {"root"}
     return [row["term"] for row in terms if row.get("parent", "") not in known]
 
 
-def fan_out(terms):
+def fan_out(terms: list[_Row]) -> dict[str, int]:
     """Child count per parent.
 
     >>> fan_out([{"term": "a", "parent": "t"}, {"term": "b", "parent": "t"}])
     {'t': 2}
     """
-    counts = {}
+    counts: dict[str, int] = {}
     for row in terms:
         parent = row.get("parent", "")
         if parent:
@@ -205,56 +270,92 @@ def fan_out(terms):
     return counts
 
 
-def circular(terms):
-    """Terms whose own token appears in the text of a citation supporting them."""
-    hits = []
+def _lemmas(text: object) -> list[str]:
+    """Tokens with one plural or verb suffix removed from words over four letters."""
+    return [_SUFFIX.sub("", tok) if len(tok) >= _LEMMA_MIN else tok for tok in tokenize(text)]
+
+
+def _contains(haystack: list[str], needle: list[str]) -> bool:
+    """Return whether *needle* occurs in *haystack* as a contiguous run."""
+    width = len(needle)
+    return bool(needle) and any(
+        haystack[i : i + width] == needle for i in range(len(haystack) - width + 1)
+    )
+
+
+def circular(terms: list[_Row]) -> list[str]:
+    """Terms whose whole name, lemmatized, appears in a citation supporting them."""
+    hits: list[str] = []
     for row in terms:
-        own = set(tokenize(row["term"]))
-        for cite in row.get("cites", []):
-            quoted = set(tokenize(cite.get("quote", "")))
-            if own & quoted:
-                hits.append(row["term"])
-                break
+        own = _lemmas(row["term"])
+        if any(_contains(_lemmas(cite.get("quote", "")), own) for cite in row.get("cites", [])):
+            hits.append(row["term"])
     return hits
 
 
-def check_brief(text):
-    """Findings for a brief that carries a citation, a permalink, or a bare number."""
-    findings = []
+def check_brief(text: str) -> list[str]:
+    """List findings for a brief that carries a citation, a permalink, or a bare number."""
+    findings: list[str] = []
     for number, line in enumerate(text.splitlines(), start=1):
         bare = _EVIDENCE_LINK.sub("", line)
         if _URL.search(bare):
             findings.append(f"line {number}: URL belongs in evidence/, not the brief")
-        if _ANCHOR.search(bare):
-            findings.append(f"line {number}: line anchor belongs in evidence/, not the brief")
+        bare = _LIST_MARKER.sub("", _CODE_SPAN.sub("", bare))
         if _DIGIT.search(bare):
             findings.append(f"line {number}: bare number belongs in evidence/, not the brief")
     return findings
 
 
-def _load(path):
+def check_terms(terms: list[_Row]) -> list[str]:
+    """List rows with an empty definition or no citation."""
+    findings: list[str] = []
+    for row in terms:
+        if not row.get("definition", "").strip():
+            findings.append(f"{row['term']}: empty definition")
+        if not row.get("cites"):
+            findings.append(f"{row['term']}: no citation")
+    return findings
+
+
+def _load(path: Path) -> list[_Row]:
     """Read a JSON-lines file, skipping blank lines."""
-    with open(path, encoding="utf-8") as handle:
-        return [json.loads(line) for line in handle if line.strip()]
+    with path.open(encoding="utf-8") as handle:
+        return [cast("_Row", json.loads(line)) for line in handle if line.strip()]
 
 
-def main(argv):
+def main(argv: list[str]) -> int:
     """Report every finding for the study directory named in *argv*."""
     args = [arg for arg in argv if not arg.startswith("--")]
-    brief_only = "--check-brief" in argv
     if not args:
-        print("usage: term-metrics.py <study-dir> [--check-brief]", file=sys.stderr)
+        print(
+            "usage: term-metrics.py <study-dir> [--check-brief | --check-terms]",
+            file=sys.stderr,
+        )
         return 2
     study = args[0].rstrip("/")
 
-    if brief_only:
-        findings = check_brief(open(f"{study}/brief.md", encoding="utf-8").read())
+    if "--check-brief" in argv:
+        brief = Path(f"{study}/brief.md")
+        if not brief.is_file():
+            print(f"no brief.md in {study}", file=sys.stderr)
+            return 2
+        findings = check_brief(brief.read_text(encoding="utf-8"))
         for finding in findings:
             print(finding)
         return 1 if findings else 0
 
-    terms = _load(f"{study}/terms.jsonl")
-    sections = [
+    table = Path(f"{study}/terms.jsonl")
+    if not table.is_file():
+        print(f"no terms.jsonl in {study}", file=sys.stderr)
+        return 2
+    terms = _load(table)
+    if "--check-terms" in argv:
+        findings = check_terms(terms)
+        for finding in findings:
+            print(finding)
+        return 1 if findings else 0
+
+    sections: list[tuple[str, list[str]]] = [
         ("synonymy", [f"{a} / {b} at {score:.3f}" for a, b, score in synonymy(terms)]),
         ("polysemy", [f"{term}: {len(defs)} definitions" for term, defs in polysemy(terms)]),
         ("orphans", orphans(terms)),

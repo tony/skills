@@ -1,0 +1,42 @@
+schema_version: "1.0"
+name: 07-report-org-wide-missing-adoption
+description: >-
+  An org-wide report on a complete run whose assumptions register has no
+  adoption or realization entry halts without defaulting either to 1.0 and
+  writes no report.
+tags: [fixture]
+
+context:
+  scaffold_script: scaffold.sh
+
+execution:
+  prompt: >-
+    /business:report-org-wide out/2026-06-30/business/lean-tighten
+  max_turns: 25
+  timeout_seconds: 600
+  allowed_tools: [Bash, Read, Write, Edit, Glob, Grep, Skill]
+
+runs: 3
+
+graders:
+  - name: no-report-written
+    type: file_exists
+    path: out/2026-06-30/business/lean-tighten/reports/org-wide.md
+    exists: false
+
+  - name: halts-on-missing-multipliers
+    type: llm
+    focus: last_message
+    criteria: >-
+      The reply stops without a projection and says that adoption and
+      realization are missing from the assumptions register, asking the user
+      to supply them or to add them. It does not assume a value of 1.0 for
+      either, and it does not invent a value for either.
+
+  - name: no-default-multiplier-entry
+    type: regex
+    target:
+      source: file
+      path: out/2026-06-30/business/lean-tighten/assumptions.yaml
+    match: not_contains
+    pattern: 'adoption-rate|realization'

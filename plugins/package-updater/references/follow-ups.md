@@ -17,7 +17,7 @@ was written against. A stale one makes Biome emit a version notice and
 makes editor JSON validation disagree with the running binary. Run
 `biome migrate` and land the config change separately:
 
-```
+```text
 biome.jsonc: Update to 2.5.5
 ```
 
@@ -48,7 +48,7 @@ commit that fails for reasons its message does not mention.
 
 An exemplar of the pair:
 
-```
+```text
 js(deps[dev]) bump tailwind, vite, babylon
 
 why: Routine refresh from `ncu -u`. Tailwind 4.3.3 resolves CSS
@@ -67,7 +67,7 @@ what:
 And the follow-up, which earns its length by proving the churn is
 cosmetic rather than asserting it:
 
-```
+```text
 test(tailwind-plugin) regenerate CSS snapshots
 
 why: Tailwind 4.3.3 flattens CSS nesting into `:is()` selectors and

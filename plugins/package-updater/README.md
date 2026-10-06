@@ -32,17 +32,20 @@ codex plugin add package-updater@skills
 
 ## Skills
 
-| Claude Code | Codex | Description |
-|---|---|---|
-| `/package-updater:update` | `package-updater:update` | Find everything outdated in scope and bring it current, in commit order |
-| `/package-updater:update-package <name>` | `package-updater:update-package <name>` | Take one named package to a target version everywhere it is pinned |
-| `/package-updater:update-toolchain [tool]` | `package-updater:update-toolchain [tool]` | Move `.tool-versions`, `.nvmrc`, `packageManager` and `engines`, one tool per commit |
+Each skill runs as `/package-updater:<name>` in Claude Code and
+`package-updater:<name>` in Codex.
 
-- `update`: Update everything outdated. Use `--audit-only` to report
-  without writing. Use `--issue github|linear` to file an audit issue
-  before starting and work on a derived branch.
-- `update-package`: Update a single named package.
-- `update-toolchain`: Update a runtime or CLI tool.
+- `update`: Find everything outdated in scope and bring it current, in
+  commit order. Use `--audit-only` to report without writing. Use
+  `--issue github|linear` to file an audit issue before starting and
+  work on a derived branch.
+- `update-package <name>`: Take one named package to a target version
+  everywhere it is pinned.
+- `update-toolchain [tool]`: Move `.tool-versions`, `.nvmrc`,
+  `packageManager` and `engines`, one tool per commit.
+- `updating-packages`: The shared procedure the three above follow
+  (inventory, discovery, research, plan gate, land in order, verify,
+  report). Claude invokes it when packages are out of date.
 
 Defaults: Current repository, commit on default branch.
 Flags:
@@ -65,7 +68,7 @@ tracks:
 3. **Named package bumps** — One per package (or coupled release train).
    Body includes `why:` and `what:` with verified links.
 4. **Bulk lockfile refresh** — Everything routine in one commit with an
-   **empty body**. The lockfile diff speaks for itself.
+   empty body. The lockfile diff speaks for itself.
 
 Fallout (e.g., schema bumps, migrations) lands after in a separate commit.
 
@@ -74,9 +77,10 @@ Fallout (e.g., schema bumps, migrations) lands after in a separate commit.
 Checks for a cooldown before reporting anything as current to prevent
 pulling risky, fresh releases. Exemptions are narrow, annotated,
 committed alone, and reverted when the block lapses.
-- `uv`: Reads `exclude-newer` as a duration.
-- `pnpm`: Reads `minimumReleaseAge` (minutes) from `pnpm-workspace.yaml`.
-- `npm`: Reads `min-release-age` (days) from `.npmrc`.
+
+Each tool names, scales and enforces its cooldown differently. The
+plugin reads the setting and its units from the installed tool's help and
+documentation at run time, so no key or unit is fixed here.
 
 ## Repository Scope
 
@@ -99,11 +103,11 @@ Audits `.ncurc` `reject` entries on every sweep:
 - Surfaces holds with unrecoverable reasons.
 - To properly document a hold, name the condition in the subject:
 
-```
+```text
 .ncurc: Ignore `@biomejs/biome` 2.3.5 -> 2.3.6 until they fix class methods
 ```
 
-```
+```text
 .ncurc: Unignore `@biomejs/biome` (2.3.7 fixed issue)
 ```
 
@@ -114,14 +118,20 @@ Handled by sibling plugins:
 - ruff's floor and rule fallout → `/ruff:bump`
 - Terraform versions, providers, and lock files → `/terraform:bump-provider`
 
+## Ecosystem coverage
+
+uv, pnpm, npm and Cargo flows are exercised. The Poetry, pip and Go
+procedures come from each tool's own documentation and are experimental:
+the plugin proposes the command and waits for confirmation before the
+first run in a repository.
+
 ## Components
 
-- **Commands** — `update`, `update-package`, `update-toolchain`.
-- **Skill** — `updating-packages` (inventory, discovery, research, plan
-  gate, land in order, verify, report).
-- **References** — `repo-scope.md`, `ecosystems.md`,
-  `commit-conventions.md`, `upstream-links.md`, `follow-ups.md`,
-  `holds.md`.
+- Skills: `update`, `update-package`, `update-toolchain`, and
+  `updating-packages` (inventory, discovery, research, plan gate, land
+  in order, verify, report).
+- References: `repo-scope.md`, `ecosystems.md`, `commit-conventions.md`,
+  `upstream-links.md`, `follow-ups.md`, `holds.md`.
 
 ## Prerequisites
 

@@ -39,6 +39,11 @@ Gather three signals and check they agree:
 If the signals disagree (manifest ahead of tags, CHANGES targeting a
 different series), surface the discrepancy before proposing anything.
 
+If a signal is missing and the current version cannot be established
+(no manifest version, no tags, no changelog), stop. Name the three
+signals, say which are absent, and propose no version, bump type, or
+example. Ask the user for the current version or the project root.
+
 ## Phase 2: Enumerate Candidates
 
 Classify the scheme per the conventions reference and build the
@@ -64,22 +69,33 @@ names one.
   ambiguous for this scheme (`prerelease` on a stable track could
   mean `0.1.10a0` or `0.2.0a0`; `patch` on a prerelease track could
   mean the next prerelease or the graduated final), do not guess —
-  present the interpretations via `AskUserQuestion`.
+  present the interpretations via `AskUserQuestion`. Without
+  `AskUserQuestion` (Codex, headless runs), list the interpretations
+  and stop.
 - **No argument** — present the Phase 2 candidates via
   `AskUserQuestion`. Recommend the increment the project performed
   most recently (its last two tags show the habitual step). Label
   each option with the concrete version and a one-line description of
-  when it is the right choice.
+  when it is the right choice. Without `AskUserQuestion`, list the
+  candidates and stop.
 
 Never proceed on an inferred version. The user picks; the panel
-selection is the confirmation.
+selection confirms the version only. It never authorizes a tag or a
+push; only the literal flags do.
 
 ## Phase 4: Cut
 
 Run the complete `/release:cut` procedure
 (`../cut/SKILL.md`, Phase 1 onward) with the
 chosen version, forwarding any `--push` / `--tag` / `--push-tag`
-flags the user passed.
+flags the user passed. `--push-tag` without `--tag` is refused before
+Phase 1 starts, as `cut` specifies.
 
 The CHANGES step opens the next unreleased header as the conventions
 reference specifies.
+
+## Output
+
+Never name local or temp paths. A completed run ends with `cut`'s
+output. A stopped run (missing signals, unresolved version, refused
+flag) is one result sentence, then what the user needs to do.

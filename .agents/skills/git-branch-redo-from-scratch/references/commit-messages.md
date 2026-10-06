@@ -165,9 +165,8 @@ When the repository does not explain itself — an approach with no
 recorded rationale, work resumed after a gap — the conversation that
 produced the code may still exist locally.
 
-```
-uvx agentgrep search --only-here --branch "$(git branch --show-current)" --limit 20 <terms>
-```
+Use the session-search tool the host provides, scoped to this
+repository and branch, if one exists.
 
 Derive the search terms from what the earlier sources already found:
 the feature name, the ticket ID, the module the diff concentrates in.

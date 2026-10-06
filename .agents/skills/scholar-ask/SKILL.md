@@ -4,7 +4,7 @@ description: >-
   Answer a question from a finished study, citing back into its evidence,
   and say plainly when the study does not cover it
 disable-model-invocation: true
-allowed-tools: ["Bash", "Read", "Grep", "Glob"]
+allowed-tools: ["Bash", "Read", "Grep", "Glob", "AskUserQuestion"]
 metadata:
   argument-hint: "<question> [--study=<dir>]"
   source: "plugins/scholar/skills/ask/SKILL.md"

@@ -32,23 +32,23 @@ reports in the same run, and the lockfile diff is the report. Use a
 separate discovery pass when you need to decide before writing:
 
 ```console
-uv lock --upgrade --dry-run
+$ uv lock --upgrade --dry-run
 ```
 
 ```console
-uv tree --outdated --depth 1
+$ uv tree --outdated --depth 1
 ```
 
 **Apply** the bulk refresh:
 
 ```console
-uv sync --all-extras --dev --upgrade
+$ uv sync --all-extras --dev --upgrade
 ```
 
 **Apply** to one package, leaving everything else pinned:
 
 ```console
-uv lock --upgrade-package <name>
+$ uv lock --upgrade-package <name>
 ```
 
 The lockfile is `uv.lock` and it is the only artifact the bulk refresh
@@ -73,31 +73,28 @@ Marked by `pnpm-lock.yaml`.
 tree. Run it bare to report without writing:
 
 ```console
-ncu
+$ ncu
 ```
 
 `pnpm outdated` reads the installed tree instead and reports a different
 set; prefer `ncu` so discovery and apply agree on what "outdated" means.
 
-**Apply** the manifest bump, then rebuild the tree from clean:
+**Apply** the manifest bump, then install:
 
 ```console
-ncu -u
+$ ncu -u
 ```
 
 ```console
-rm -rf node_modules packages/*/node_modules
+$ pnpm install
 ```
 
-```console
-pnpm install
-```
-
-In a workspace, `ncu -u` only reaches the root manifest. Recurse to the
-members:
+`ncu -u` acts on the manifest in the current directory unless told
+otherwise. Confirm the workspace options with `ncu --help`, or recurse
+to the members:
 
 ```console
-pnpm --recursive exec ncu -u
+$ pnpm --recursive exec ncu -u
 ```
 
 Projects that do this often wrap both halves in a script — an
@@ -108,12 +105,29 @@ the project's script when it has one.
 any manifest:
 
 ```console
-pnpm update
+$ pnpm update
 ```
 
 Those are two different commits with two different meanings. `ncu -u`
 edits `package.json` and lands as a dependency bump; `pnpm update` edits
 only the lockfile and lands as an in-range transitive refresh.
+
+### Clean reinstall
+
+Not part of the routine apply: `pnpm install` reconciles the tree
+itself. Reach for a clean reinstall only when an install fails or leaves
+a stale tree, and treat it as destructive. Put it in the plan, name the
+directories it deletes, and run it only after the user confirms.
+
+Derive the directories from the manager's own workspace config, never
+from a layout assumed by name. This lists the root and every member:
+
+```console
+$ pnpm ls --recursive --depth -1 --parseable
+```
+
+Delete `node_modules` under exactly the directories that command lists,
+the user-confirmed set, then run `pnpm install`.
 
 ### What ncu cannot see
 
@@ -146,11 +160,11 @@ pnpm section applies unchanged, except the cooldown key.
 
 Marked by `Cargo.lock`.
 
-Never run `cargo-outdated`; it exhausts memory on constrained hosts.
-Discover with the resolver instead:
+Do not run `cargo-outdated` (the skill body states why). Discover with
+the resolver instead:
 
 ```console
-cargo update --dry-run
+$ cargo update --dry-run
 ```
 
 `cargo update` applies an in-range refresh, touching only the lockfile.
@@ -180,7 +194,7 @@ move first and on their own, one tool per commit.
 Discover with the version manager that reads the file:
 
 ```console
-mise outdated
+$ mise outdated
 ```
 
 For a tool with no manager entry, ask the vendor's own release feed
@@ -194,35 +208,47 @@ bump.
 
 A cooldown makes the resolver ignore releases younger than a threshold,
 which limits exposure to compromised uploads that get yanked within
-hours. It is configured per ecosystem and the keys are not
-interchangeable.
+hours. Each ecosystem configures it with its own key, unit, and
+strictness, and those change between releases. Read them from the
+installed tool before relying on one, and do not copy a key or unit from
+another repository's config.
 
-**uv** reads `exclude-newer` as a duration string (`"3 days"`), from
-`uv.toml` in the project or from the user's config file. A uv too old
-for the duration form rejects or ignores it; confirm the window landed
-by finding `exclude-newer-span` in `uv.lock` after a lock run. The
-lockfile records the cooldown it was resolved under.
+Find the setting, then read its documentation:
 
-**pnpm** reads `minimumReleaseAge` from `pnpm-workspace.yaml`, in
-**minutes**. Setting it explicitly forces strict mode, which fails an
-install when a pinned range's only matches are too young; pair it with
-`minimumReleaseAgeStrict: false` to fall back to the newest available
-instead. Individual versions are let through with
-`minimumReleaseAgeExclude`.
+```console
+$ uv lock --help
+```
 
-**npm** reads `min-release-age` from `.npmrc`, as an **integer number of
-days**. Check `npm --version` against npm's docs for the key. pnpm
-ignores it entirely, so a repository using pnpm must set its own.
+```console
+$ pnpm --help
+```
 
-`ncu` honours npm's key and says so in its output — a run that prints
-`Using min-release-age from .npmrc: 3 days` is filtering, and versions
-it marks `[cooldown]` exist but are gated. Do not report those as
-current.
+```console
+$ npm help config
+```
+
+```console
+$ ncu --help
+```
+
+Search the output and the vendor's settings page for `exclude-newer`
+(uv), `minimumReleaseAge` (pnpm), `min-release-age` (npm), and
+`cooldown` (ncu). A tool that lists none has no cooldown support in the
+installed version. Settings pages:
+[uv](https://docs.astral.sh/uv/reference/settings/),
+[pnpm](https://pnpm.io/settings),
+[npm](https://docs.npmjs.com/cli/using-npm/config).
+
+Before computing a lapse time, confirm from those sources the unit
+(minutes, days, or a duration string), whether a too-young pinned range
+fails the install or falls back, and whether the lockfile records the
+window. Read what the tool prints on a run to confirm the window is in
+effect, and do not report versions it gates as current.
 
 Check for a cooldown before reporting a package as current. A release
-published inside the window is invisible to the resolver, and an update
-run that does not know this will report the tree as up to date when it
-is merely gated.
+published inside the window is invisible to the resolver, so an update
+run that does not know this reports the tree as up to date when it is
+merely gated.
 
 ### Exempting a package
 
@@ -231,8 +257,8 @@ exemption is a hole in a supply-chain guard, so keep it small and
 temporary. Skip it when the resolver already sees the release or the
 window is short enough to wait out.
 
-- Exempt the one package, never the cooldown globally. Resolvers that
-  support a cooldown support a per-package override.
+- Exempt the one package, never the cooldown globally. Use the
+  per-package override the tool documents; a tool with none means waiting.
 - Prefer an override form that carries no date. A dated override ages
   into the lockfile and stops meaning anything.
 - Annotate it in the file with the reason and the condition for removal.

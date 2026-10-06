@@ -2,7 +2,8 @@
 
 Shared by `/situate` and the `situational-awareness` skill. This layer
 runs only when the user passes `--with-agentgrep` or asks for it in
-words.
+words. A request to resume after a gap ("I'm back after a break", "where
+did I leave off") counts as asking: run one capped search.
 
 ## Contents
 
@@ -30,10 +31,16 @@ that left no artifact, work resumed after a gap.
 and OpenCode stores. Run it through `uvx` so no install is needed:
 
 ```console
-uvx agentgrep search --only-here --limit 20 <terms>
+$ uvx agentgrep search --only-here --limit 20 <terms>
 ```
 
-Absent network or a `uvx` failure, report the layer unavailable and
+The flags below change between releases; run `uvx agentgrep search
+--help` first and adjust to what it lists.
+
+Absent network or a `uvx` failure, fall back to `Grep` over the current
+project's Claude Code session store (`~/.claude/projects/`, the
+directory named for this repository), capped at the same twenty
+matches. When that is unreadable too, report the layer unavailable and
 continue with the rest of the sweep. It is never a hard dependency.
 
 ## Scoping
@@ -43,7 +50,7 @@ current repository; `--here` merely boosts them and will drag in
 unrelated projects.
 
 ```console
-uvx agentgrep search --only-here --branch "$(git branch --show-current)" --limit 20 <terms>
+$ uvx agentgrep search --only-here --branch "$(git branch --show-current)" --limit 20 <terms>
 ```
 
 `--only-here` matches on each record's working directory. In a git
@@ -53,7 +60,7 @@ the layer comes back empty — a dry result indistinguishable from a real
 one. Resolve the primary checkout before scoping:
 
 ```console
-dirname "$(git rev-parse --path-format=absolute --git-common-dir)"
+$ dirname "$(git rev-parse --path-format=absolute --git-common-dir)"
 ```
 
 That returns the current directory in an ordinary clone and the primary
@@ -61,7 +68,7 @@ checkout from a worktree. When it differs from the current directory,
 scope to it explicitly:
 
 ```console
-uvx agentgrep search --repo <primary-checkout> --limit 20 <terms>
+$ uvx agentgrep search --repo <primary-checkout> --limit 20 <terms>
 ```
 
 Search prompts before conversations. The default `--scope prompts`
@@ -74,7 +81,7 @@ name, the ticket ID, the module the diff concentrates in. A query
 composed of generic words returns generic noise.
 
 ```console
-uvx agentgrep search --only-here 'ENG-123 OR "retry backoff"' --limit 20
+$ uvx agentgrep search --only-here 'ENG-123 OR "retry backoff"' --limit 20
 ```
 
 Cap the layer. Twenty ranked results is enough to establish whether

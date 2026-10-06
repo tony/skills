@@ -6,8 +6,8 @@
 - Cost two: build artifacts
 - What to report
 
-A directory of upstream clones kept for reading — vendored source,
-reference checkouts, dependency study trees — is usually among the
+A directory of upstream clones kept for reading (vendored source,
+reference checkouts, dependency study trees) is usually among the
 largest reclaimable areas on a developer machine. Clones are
 re-fetchable from a remote, except any local work they hold; check for
 that before converting or deleting one.
@@ -86,14 +86,26 @@ proposing anything, so the total is visible as one number rather than
 scattered across dozens of clones. With GNU coreutils:
 
 ```console
-$ find <study-root> -maxdepth 3 -type d \( -name target -o -name node_modules -o -name build \) -prune -print0 | du -sch --files0-from=- | tail -1
+$ find <study-root> \
+    -maxdepth 3 \
+    -type d \( -name target -o -name node_modules -o -name build \) \
+    -prune \
+    -print0 \
+  | du -sch --files0-from=- \
+  | tail -1
 ```
 
 BSD/Darwin `du` has no `--files0-from`, so sum the per-directory sizes
 instead. This reports GiB:
 
 ```console
-$ find <study-root> -maxdepth 3 -type d \( -name target -o -name node_modules -o -name build \) -prune -print0 | xargs -0 du -sk | awk '{total += $1} END {printf "%.1f GiB\n", total / 1048576}'
+$ find <study-root> \
+    -maxdepth 3 \
+    -type d \( -name target -o -name node_modules -o -name build \) \
+    -prune \
+    -print0 \
+  | xargs -0 du -sk \
+  | awk '{total += $1} END {printf "%.1f GiB\n", total / 1048576}'
 ```
 
 Restrict the depth. An unbounded search descends into vendored

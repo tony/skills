@@ -1,11 +1,15 @@
 # Resolving a work item's provider and context
 
-Contents: Detect the provider before interpreting any noun; Capture native type and semantic role separately; Traverse only actual hierarchy relations; Collect orthogonal context separately; Never synthesize a missing level; Prefer native nouns in output; Respect instance configuration over defaults; Capture model; Reporting context back.
+Contents: Detect the provider before interpreting any noun; Capture native type and semantic role separately; Traverse only actual hierarchy relations; Collect orthogonal context separately; Never synthesize a missing level; Prefer native nouns in output; Respect instance configuration over defaults; Reporting context back; Provider files.
 
 Procedure for working out what an object actually is before writing about
 it. The taxonomy it resolves against is in `hierarchy.md`.
 
 ## Detect the provider before interpreting any noun
+
+To tell which backend is connected, check the available tools for the
+provider's MCP server, then `which` for its CLI (`gh`, `glab`, `jira`, and so
+on). Prefer what is connected; if neither is present, no write backend exists.
 
 Use evidence in this order, stopping at the first that answers:
 
@@ -102,7 +106,7 @@ Space, it is not the root work container.`
 
 ## Respect instance configuration over defaults
 
-Provider defaults, in the files indexed by `hierarchy.md`, are fallback
+Provider defaults, in the provider files below, are fallback
 guidance and not proof
 of how an installation is set up. Inspect real metadata when it is
 reachable — Jira's configured hierarchy and renamed work types, GitHub custom
@@ -113,60 +117,6 @@ fields.
 
 When observation conflicts with the default map, keep the observation and
 record the deviation.
-
-## Capture model
-
-Fill what the provider data supports. Leave the rest out rather than
-guessing.
-
-```yaml
-provider: github | gitlab | linear | trello | jira | azure_devops | shortcut | asana
-source_url: string
-
-native:
-  object_type: string
-  display_type: string | null
-  id: string
-  title: string
-  aliases: [string]
-
-semantic:
-  role: scope_container | strategic_goal | strategic_measure | delivery_group |
-        work_item | sub_item | timebox | release_group | checkpoint | view |
-        document | review_artifact
-  mapping_basis: native | native_tier_gated | configurable | convention | external
-  confidence: explicit | configured | inferred
-
-scope:
-  container: { provider, type, id, title }
-
-hierarchy:
-  parent: object | null
-  ancestors: []
-  children: []
-
-associations:
-  strategic_goals: []
-  strategic_measures: []
-  timeboxes: []
-  release_groups: []
-  checkpoints: []
-  views: []
-  documents: []
-  implementation: []
-  dependencies: []
-
-availability:
-  support_status: native | native_tier_gated | configurable | convention | external | absent
-  requirement: required | optional | not_applicable
-  tier_or_configuration_notes: string | null
-
-evidence:
-  provider_metadata: []
-  explicit_links: []
-  conventions: []
-  unresolved_ambiguities: []
-```
 
 ## Reporting context back
 
@@ -192,3 +142,24 @@ Release:        GitHub Milestone "v3.0"
 Planning view:  GitHub Project "Authentication Roadmap"
 Implementation: GitHub Pull Request #456
 ```
+
+## Provider files
+
+One per tracker. Each carries that provider's real hierarchy, its native-to-
+canonical role map with support status and requirement, what its renderer
+auto-detects, which reference forms fire a backreference, and what a local
+agent can actually read and write.
+
+- `providers/github.md`
+- `providers/gitlab.md`
+- `providers/linear.md`
+- `providers/jira.md`
+- `providers/azure-devops.md`
+- `providers/shortcut.md`
+- `providers/trello.md`
+- `providers/asana.md`
+- `providers/generic.md` — the fallback for anything else, which
+  assumes nothing is auto-detected and no write backend exists.
+
+The defaults in those files are fallback guidance. An instance's own
+configuration beats them.

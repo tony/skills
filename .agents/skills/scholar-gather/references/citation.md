@@ -23,7 +23,8 @@ reStructuredText — the anchor needs `?plain=1` before the fragment or it has
 nothing to attach to.
 
 Resolve a tag to the commit it points at, so a moved tag cannot silently
-change what a quotation says:
+change what a quotation says. Record the result as `commit` in
+`sources.jsonl`; `verify` compares it against the tag later:
 
 ```console
 $ gh api repos/OWNER/REPO/commits/v2.40.0 --jq .sha

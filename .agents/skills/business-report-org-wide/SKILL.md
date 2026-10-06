@@ -20,8 +20,7 @@ Read `references/interim-format.md` first. It defines the run
 location, the completeness gate, and the output frame. Defer these
 until the gate passes:
 
-- `references/provenance.md`: tag rendering, anti-inflation
-  rules, the no-currency contract.
+- `references/provenance.md`
 - `references/measurement.md`: the projection chain, the
   population segments, and the multiplier rule.
 - `references/audiences.md`: the tier-1 contract.
@@ -39,8 +38,11 @@ Per `interim-format.md` § Rendering a report.
 Read adoption `a` and realization `r` from `assumptions.yaml`. If
 either is absent, ask the user via `ask-user-choice`, explaining what
 each means per `measurement.md`, and append the answer to the register
-as an ESTIMATED entry with rationale and owner. Never proceed with a
-default of 1.0.
+with rationale and owner (ESTIMATED, or MEASURED when an instrument
+export gives it). Never proceed with a default of 1.0. Without a
+question tool, or without an answer, halt with `⚠ Refused: <factor>
+missing from the assumptions register` and tell the user to add it
+(the `business-research` skill or editing `assumptions.yaml`).
 
 ### 3. Render the report
 
@@ -61,12 +63,14 @@ Write `<run>/reports/org-wide.md` with this fixed structure:
    true.
 
 Team-level aggregates only. If any measurement is per-person, roll
-it up before it appears here. Write it per `references/prose-rules.md`.
+it up before it appears here.
+
+Write it per `references/prose-rules.md`.
 
 ## Output
 
 Hero success form: `✓ Org-wide projection: <conservative figure with
-tag>`. Sections as in `interim-format.md`; `## Gate` also gives the
+tag>`. Sections and stopped-run shape as in `interim-format.md`; `## Gate` also gives the
 `a` and `r` values used with their register ids, and `## Report` names
 the most sensitive input. Panel options: write an internal case study
 next, revisit an assumption, or stop.

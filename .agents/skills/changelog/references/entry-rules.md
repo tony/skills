@@ -131,7 +131,8 @@ Rewrite a draft entry that contains any of these:
 - Phantom fixes: a Fixes entry, or "no longer raises" phrasing, for behavior no
   published release had. Ask whether users of the most recent release ever hit
   the bug. If not, fold it into the paragraph of the feature that introduced
-  the contract.
+  the contract. If the introducing change is already on the base branch,
+  omit the fix.
 - The section heading repeated in the entry text.
 
 ## Proportionality

@@ -4,7 +4,7 @@ description: >-
   Harvest terms and their definitions from a gathered corpus into
   terms.jsonl, each with the citation that supports it
 disable-model-invocation: true
-allowed-tools: ["Bash", "Read", "Grep", "Glob", "Write", "Task"]
+allowed-tools: ["Bash", "Read", "Grep", "Glob", "Write", "AskUserQuestion"]
 metadata:
   argument-hint: "[--out=<dir>] [--from=<sources.jsonl>]"
   source: "plugins/scholar/skills/extract/SKILL.md"
@@ -17,7 +17,9 @@ citation that shows the term in use.
 
 Read `references/citation.md` for what a citation must carry, including
 why a quotation containing its own term is circular, and
-`references/stage-gates.md` for this stage's exit condition.
+`references/stage-gates.md` for this stage's exit condition. The
+analyzer ships at `references/term-metrics.py`; `<analyzer>` below is
+that path.
 
 User arguments: $ARGUMENTS
 
@@ -45,7 +47,12 @@ Take `sources.jsonl` from `gather`. Harvest only from sources marked
 For code, the cheapest high-yield passes, all portable:
 
 ```console
-$ rg -o --no-filename -r '$1' '\b(?:class|struct|interface|type)\s+(\w+)' | sort | uniq -c | sort -rn
+$ rg \
+    -o \
+    --no-filename \
+    -r '$1' \
+    '\b(?:class|struct|interface|type)\s+(\w+)' \
+    | sort | uniq -c | sort -rn
 ```
 
 ```console
@@ -59,7 +66,7 @@ candidate, the corpus's own definition confirms it.
 
 One row per term as the corpus spells it:
 
-```
+```json
 {"schema": 1, "term": "adapter", "definition": "wraps a third-party client behind the port interface", "parent": "", "kind": "role", "tier": "structural", "cites": [{"url": "https://github.com/OWNER/REPO/blob/v2.40.0/src/ports.py#L12-L18", "locator": "src/ports.py:12-18", "quote": "every third-party client enters through a port"}]}
 ```
 
@@ -87,9 +94,16 @@ Per `references/output-contract.md`. Hero: `✓ <n> terms extracted from
 1. `## Terms` — count by `kind`, and the ten most frequent with their
    definitions.
 2. `## Rejected` — candidates that looked like terms and were not, with why.
-3. `## Gate` — confirmation that every row has a definition and a citation.
+3. `## Gate` — the output of the term check, which exits zero only when every
+   row has a definition and a citation:
+
+   ```console
+   $ <analyzer> notes/ontology/<subject>/ --check-terms
+   ```
 
 Next-step options: run distill, harvest another source, stop here.
+
+Write it per `references/prose-rules.md`.
 
 
 ## Portability notes

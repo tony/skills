@@ -4,16 +4,16 @@ description: >-
   Use when invoking Google's Gemini directly through the Antigravity or
   agent fallback chain.
 disable-model-invocation: true
-allowed-tools: ["Bash", "Read", "Grep", "Glob", "Write", "Edit"]
+allowed-tools: ["Bash"]
 metadata:
-  argument-hint: "<prompt> [timeout:<seconds>]"
+  argument-hint: "<prompt> [timeout:<seconds>] [mode:plan]"
   source: "plugins/model-cli/skills/gemini/SKILL.md"
 ---
 
 # Gemini CLI Skill
 
-Alias for the `model-cli-agy` skill. Invoke the Antigravity (agy) CLI skill with
-`$ARGUMENTS`, passing every trigger through.
+Read the `model-cli-agy` skill and follow it with `$ARGUMENTS`, passing every trigger
+through.
 
 
 ## Portability notes

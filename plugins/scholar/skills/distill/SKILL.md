@@ -1,7 +1,7 @@
 ---
 name: distill
 description: "Build the three ontology layers from a term table — types, members with discriminators, and the controlled vocabulary"
-allowed-tools: ["Bash", "Read", "Grep", "Glob", "Edit", "Write"]
+allowed-tools: ["Bash", "Read", "Grep", "Glob", "Edit", "Write", "AskUserQuestion"]
 argument-hint: "[--out=<dir>]"
 user-invocable: true
 disable-model-invocation: true

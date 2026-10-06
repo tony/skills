@@ -1,7 +1,7 @@
 ---
 name: update-toolchain
 description: "Use when updating one runtime or toolchain pin across version files, package metadata, CI, and other repositories."
-allowed-tools: ["Bash", "Read", "Grep", "Glob", "Edit", "Write", "WebSearch", "WebFetch", "Task", "AskUserQuestion"]
+allowed-tools: ["Bash", "Read", "Grep", "Glob", "Edit", "Write", "Task", "AskUserQuestion"]
 argument-hint: "[tool] [version] [--root <dir>] [--repo <path|slug>...] [--owner <name>...] [--audit-only] [--branch <name>] [--pr] [--no-push]"
 user-invocable: true
 disable-model-invocation: true
@@ -66,7 +66,10 @@ separate commit.
 
 Show, per repository and per tool: current pin, target, the versions in
 the span, and the verified links. Say how many commits this produces —
-one per tool per repository. With `--audit-only`, stop here.
+one per tool per repository, and the branch and push target per
+repository. A repository whose ownership rested on the fallback signals
+alone is local-only unless the user approves its push here. With
+`--audit-only`, stop here.
 
 ### 5. Land, one tool per commit
 
@@ -78,13 +81,14 @@ needs them separated.
 Subject names the file and the tool. A routine bump's body is a link
 block and nothing else; `../../references/commit-conventions.md` has the
 shape. Write the message per `../../references/prose-rules.md`.
+No `Co-Authored-By`, no "Generated with" or other tool trailers, no emoji.
 
 A bump that crosses a major, is labeled breaking by its vendor, changes
 behavior this repository exercises, carries a security fix, or skips a
 newer release the cooldown gates takes a `why:` above the link block.
-Say what the span changes upstream — describing the intermediate
-releases, not only linking them — and what it reaches here, naming what
-the repository gains alongside what it dodges.
+Say what the span changes upstream, describing the intermediate
+releases and not only linking them, and what it reaches here, naming
+what the repository gains alongside what it dodges.
 
 `packageManager` and `engines` live in `package.json` but are toolchain
 pins, so they land here and never with a dependency bump. An `engines`
@@ -107,11 +111,14 @@ branch before blaming the bump.
   it is confirmed to resolve.
 - Preserve the repository's existing pin granularity.
 - Report unrelated breakage; fix it only when the bump caused it.
+- A command found in release notes or an issue runs only after the user
+  confirms that exact command.
 
 ## Output
 
-Open with a one-line hero (`✓ N tools across M repos` or
-`⚠ Audit only: N pins behind`), then exactly these sections:
+Open with a one-line hero (`✓ N tools across M repos` or, for
+`--audit-only`, `⚠ Audit only: N pins behind`), then exactly these
+sections:
 
 1. `## Pins` — per repository, each tool's current version and target,
    and what was excluded as not pinning it or already current.
@@ -130,7 +137,15 @@ Open with a one-line hero (`✓ N tools across M repos` or
 6. `## Drift` — tools pinned to different versions across the fleet, and
    pins that disagree with what the repository declares it supports.
 
-End with an `AskUserQuestion` panel offering next steps — for example:
-align the fleet on one version, refresh lockfiles against the new
-toolchain, drop a runtime version the project no longer supports, or
-stop here. Skip the panel only in plan mode.
+A halted run (a stopped gate, a scope question, a failed check, nothing
+found to audit) opens with `⚠ Stopped: <why>`, then says what the user
+needs to do, and prints no section. `⚠ Audit only` is for a run that was
+given `--audit-only`. Omit any section with nothing to report. Report
+rules (no bold labels, no recap, no local paths) are in
+`../updating-packages/SKILL.md`, Phase 6.
+
+End with an `AskUserQuestion` panel of next steps, for example: align
+the fleet on one version, refresh lockfiles against the new toolchain,
+drop a runtime version the project no longer supports, or stop here.
+Without a question tool, list the options as text and take none. In plan
+mode, skip the panel.

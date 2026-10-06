@@ -12,6 +12,10 @@ The package this skill writes and every report command
 reads. Commands resolve run locations and verify completeness by
 this file.
 
+Script paths in this plugin's files (`references/business.py`)
+resolve relative to the file that names them; run the script by its
+absolute location.
+
 ## Where runs live
 
 `<root>/<YYYY-MM-DD>/business/<workflow>/`, where the date is today's
@@ -23,11 +27,8 @@ Root: the user's choice, else `~/Documents`; on WSL, the Windows user's
 `/mnt/c/Users/<user>/Documents`. These are defaults, not decisions:
 always ask the user where to write before creating a run. Running
 non-interactively: use the default root and record that decision in the
-run README.
-
-Where the `research` plugin is installed, `research:foray` with
-`--namespace business` and the workflow as the topic opens the same
-folder and writes the same `index.md`.
+run README. Nothing is written to disk before the user confirms the
+root.
 
 ## Layout
 
@@ -77,18 +78,21 @@ A list of entries:
   description: Fraction of eligible engineers actively using the skill
   value: 0.6
   unit: ratio
-  source_type: ESTIMATED
+  source_type: MEASURED
   confidence: medium
-  rationale: Seat admin export shows 60% weekly active in June
-  source_ref: sources.md#gh-user-activity
-  retrieved: 2026-07-24
+  rationale: Seat admin export, share of eligible seats active weekly
+  source_ref: sources.md#seat-admin-export
+  retrieved: <YYYY-MM-DD>
   owner: eng-productivity lead
-  updated: 2026-07-24
+  updated: <YYYY-MM-DD>
 ```
 
 `source_type` is one of MEASURED | DERIVED | BENCHMARKED |
 ESTIMATED; `confidence` is high | medium | low. Every field above is
-required on every entry.
+required on every entry; `references/business.py assumptions <file>`
+checks that and the two enumerations. A MEASURED entry's `source_ref`
+names a `sources.md` entry; an assumption with no instrument behind
+it is ESTIMATED.
 
 ### raw/
 
@@ -117,15 +121,17 @@ absent creates it rather than failing.
 
 Precedence: an explicit path argument, else the newest run of the
 named workflow, else the newest business run. List runs newest
-first:
+first, ordered by the date in the path:
 
 ```console
-$ sh -c 'ls -dt "$HOME"/Documents/*/business/*/ /mnt/c/Users/*/Documents/*/business/*/ 2>/dev/null' | head -5
+$ references/business.py runs
 ```
 
-Confirm the chosen run with the user before rendering anything from
-it. Running non-interactively: proceed with the newest run and record
-the choice in the output's Run section instead of asking.
+It searches `~/Documents` and, on WSL, the Windows users' Documents
+folders; `--root <dir>` adds one. Confirm the chosen run with the
+user before rendering anything from it. Running non-interactively:
+proceed with the newest run and say which one in the output's Run
+section instead of asking.
 
 ## Completeness gate
 
@@ -135,8 +141,7 @@ in order:
 1. `README.md` exists and states a pinned window.
 2. `sources.md` exists and every entry carries a verbatim query,
    timestamp, tool version, and output file.
-3. `assumptions.yaml` parses and every entry has every required
-   field.
+3. `assumptions.yaml` passes `references/business.py assumptions`.
 4. Every figure in `measurements/` and `findings.md` carries one of
    the four provenance tags, and every MEASURED figure's citation
    resolves: collect the cited manifest names and verify each names
@@ -144,8 +149,8 @@ in order:
    judgment call.
 5. Every unknown in `findings.md` states what data would resolve it.
 
-On any failure: do not render. List exactly what is missing and
-point at this skill to fill the gaps.
+On any failure: do not render, and treat it as a stopped run (see
+Rendering a report).
 
 ## Rendering a report
 
@@ -156,18 +161,40 @@ Value is engineer-hours, cycle time, and capacity, never money.
 
 1. Locate the run: the `$ARGUMENTS` path if given, else per "Locating
    an existing run".
-2. Run the completeness gate. Load the skill's deferred references only
-   after it passes; a refused render never loads them.
+2. Run the completeness gate. Load the skill's other references only
+   after it passes.
 3. Render the body, then write the report to `<run>/reports/<name>.md`.
 
-Open the output with one hero line: the skill's success form, `✓
-Evidence report: <supported claim, unknowns named>` when the package
-holds no committable figure (`audiences.md` defines it), or `⚠
-Refused: <reason>`. Then these sections, with any the skill adds:
+### Finished run
+
+Open with one hero line: the skill's success form, or `✓ Evidence
+report: <supported claim, unknowns named>` when the package holds no
+committable figure (`audiences.md` defines it). Then these sections,
+with any the skill adds:
 
 1. `## Run`: the run chosen and its pinned window.
 2. `## Gate`: the completeness result.
 3. `## Report`: where it was written and the headline.
 
 End with an `ask-user-choice` panel offering the skill's next steps.
-Skip it in plan mode or when running non-interactively.
+Skip it in plan mode or when running non-interactively, where the
+output ends after `## Report`.
+
+### Stopped run
+
+A run that halts (run not found, gate failed, missing input, failed
+sweep) is one hero line `⚠ Refused: <reason in one sentence>`, then
+one short paragraph or list of what the user must do next. No `Run`,
+`Gate`, or `Report` sections, no panel. State only what happened:
+never claim a check failed that did not run, and never describe
+references that were not loaded.
+
+### Paths and commits
+
+Name a run as `<date>/business/<workflow>` relative to its root.
+Print an absolute or temporary path only when the user must act on
+that file.
+
+Steps that ask the user (`ask-user-choice`) state their
+non-interactive default; an explicit authorization in the request
+covers only the action named.

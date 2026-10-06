@@ -14,7 +14,7 @@ metadata:
 
 Merge a single pull request (the one this conversation is about, or the one
 the current branch belongs to) via `gh pr merge`. Nothing merges until the
-readiness gate passes.
+readiness gate passes. Report only what a command in this run verified.
 
 Read `references/merge-readiness.md` before touching the PR.
 
@@ -28,34 +28,39 @@ Precedence: an explicit argument (number or URL) > the PR this
 conversation has been working on > the current branch's PR. If the
 candidates disagree, ask via `ask-user-choice` before proceeding.
 
+With no argument and no conversation PR, run `git branch --show-current`
+and `gh pr view --json number` to find the current branch's PR.
+
 Gather the PR's state. A failure here means no PR exists for the branch or
 `gh` is unavailable or unauthenticated: report it and stop.
 
 ```console
-gh pr view <n> --json number,title,url,state,isDraft,baseRefName,mergeable,mergeStateStatus,reviewDecision
+$ gh pr view <n> --json number,title,url,state,isDraft,baseRefName,mergeable,mergeStateStatus,reviewDecision
 ```
 
-Trunk is the PR's `baseRefName`. With no argument and no conversation PR,
-run `git branch --show-current` and `gh pr view` without `<n>` to find the
-current branch's PR.
+Trunk is the PR's `baseRefName`.
 
 ### 2. Run the readiness gate
 
 Apply the readiness gate from the reference. If the PR is `BEHIND` or
 `DIRTY`, confirm with the user, then follow the reference's rebase procedure.
+Without a question tool, halt instead of rebasing.
 
 ### 3. Compose the merge commit message
 
-Follow the reference's merge-commit-message section, which also says when to
-skip it. Write the message per `references/prose-rules.md`.
+Follow the reference's merge-commit-message section, which also says when
+to skip it (`--rebase`, or a message flag from the user). Write the message
+per `references/prose-rules.md`.
 
 ### 4. Merge
 
 Pass the user's `gh pr merge` flags through verbatim. The strategy flag is
-`--merge` unless the user passed `--squash` or `--rebase`:
+`--merge` unless the user passed `--squash` or `--rebase`. Add
+`--match-head-commit <sha>` per the reference. Add `-t`/`-b` only under the
+reference's condition:
 
 ```console
-gh pr merge <n> <strategy flag> -t "<subject>" -b "<body>"
+$ gh pr merge <n> <strategy flag> --match-head-commit <sha> -t "<subject>" -b "<body>"
 ```
 
 Use `--admin` only within the reference's policy.
@@ -68,19 +73,23 @@ Then stop.
 ## Output
 
 Open with a one-line hero (`✓ Merged #N: <title>` or
-`⚠ Blocked: <reason>`), then exactly these sections:
+`⚠ Blocked: <reason>`), then exactly these sections. A run that stops before
+the merge gives the hero, `## Merge readiness`, and one sentence on what the
+user must do; nothing else.
 
 1. `## Merge readiness` — the gate results, including anything that
    required a rebase or a wait on CI.
 2. `## Merge` — strategy used, flags passed through, and the merge
    commit subject (or why no merge happened).
-3. `## Trunk` — the post-merge trunk state after checkout and pull.
+3. `## Trunk` — the post-merge trunk state after checkout and pull, or
+   that the sync was skipped.
 
 Write the sections per `references/prose-rules.md`.
 
 End with an `ask-user-choice` panel offering next steps (for example:
 cut a release from the merged trunk, merge another PR, delete the
-local branch, stop here) — skip the panel only in plan mode.
+local branch, stop here) — skip the panel in plan mode. Without a question
+tool, end after the sections: no `## Next steps` section.
 
 Offer the release only when the merged trunk is in a releasable state and
 the repo carries the version files a release touches. Name the project's

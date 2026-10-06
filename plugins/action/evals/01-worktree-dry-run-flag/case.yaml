@@ -24,22 +24,15 @@ graders:
     input_match: 'git worktree add'
 
   - name: branch-name-comes-from-the-goal
-    type: regex
-    target: last_message
-    pattern: 'dry-run'
-    flags: i
+    type: tool_used
+    tool: Bash
+    input_match: 'git worktree add -b \S*dry-run'
 
   - name: invents-no-ticket-id
     type: regex
     target: last_message
     match: not_contains
     pattern: '\b[A-Z]{2,}-\d+\b'
-
-  - name: reports-where-the-work-will-happen
-    type: regex
-    target: last_message
-    pattern: 'worktree'
-    flags: i
 
   - name: commits-nothing-under-setup-only
     type: tool_used

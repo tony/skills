@@ -29,8 +29,8 @@ Scan the repo root for manifests, in order of precedence:
 
 Then find stray version literals the manifest scan misses:
 
-```
-rg -n --hidden -g '!*.lock' '<current-version>'
+```console
+$ rg -n -F --hidden -g '!.git' -g '!*.lock' -g '!package-lock.json' -g '!pnpm-lock.yaml' '<current-version>'
 ```
 
 Include a stray literal in the bump only when it clearly tracks the
@@ -123,7 +123,8 @@ _Notes on the upcoming release will go here._
 At release time:
 
 1. Retitle the unreleased header to the concrete version with today's
-   date: `## <project> <version> (YYYY-MM-DD)`.
+   date (`date +%Y-%m-%d`), in the shape the file's released headings
+   use; with no precedent, `## <project> <version> (YYYY-MM-DD)`.
 2. Remove the maintainer comment and placeholder lines from the
    now-released section (they move up, not stay behind).
 3. If the project's released sections open with a short prose lead

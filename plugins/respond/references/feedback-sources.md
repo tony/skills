@@ -123,7 +123,7 @@ nothing from any of them: reply once, then let the ledger remember.
 ## Nitpicks and collapsed sections
 
 Bots hide low-confidence findings in collapsed `<details>` blocks and
-"nitpick" sections. Read them — they occasionally hold the only real
-bug in the review — but they enter screening in the same rubric as
+"nitpick" sections. Read them, since they occasionally hold the only real
+bug in the review, but they enter screening in the same rubric as
 everything else, where a cosmetic remote-trigger nitpick that costs a
 code path dies at the cost gate like any other.

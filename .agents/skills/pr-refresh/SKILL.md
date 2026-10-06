@@ -31,43 +31,58 @@ User input: $ARGUMENTS
 ### 1. Resolve the PR and its target
 
 Use the PR number or URL in `$ARGUMENTS`; otherwise use the current
-branch's PR. When none exists, report that and stop. Fetch it (omit
+branch's PR. Fetch it (omit
 `<number>` for the current branch's PR):
 
-```bash
-gh pr view <number> --json number,title,body,url,baseRefName,headRefName,state
+```console
+$ gh pr view <number> --json number,title,body,url,baseRefName,headRefName,state
 ```
+
+When `gh` is missing, unauthenticated, or finds no PR, stop: say what
+failed, name the fix (`gh auth login`, or the PR number to pass), and
+change nothing.
+
+Compare `headRefName` with `git branch --show-current`. On a mismatch,
+or a detached HEAD, stop: the diff would describe another branch. Say
+the PR's head branch is not checked out and name `headRefName`; change
+nothing.
 
 The diff base is the PR's **`baseRefName`**, so a PR stacked on a
 sibling branch diffs against that branch, never against trunk. Gather
 the net change:
 
-```bash
-git fetch origin <baseRefName>
+```console
+$ git fetch origin <baseRefName>
 ```
 
-```bash
-git log origin/<baseRefName>..HEAD --oneline
+```console
+$ git log origin/<baseRefName>..HEAD --oneline
 ```
 
-```bash
-git diff origin/<baseRefName>...HEAD --stat
+```console
+$ git diff origin/<baseRefName>...HEAD --stat
 ```
 
-```bash
-git diff origin/<baseRefName>...HEAD
+```console
+$ git diff origin/<baseRefName>...HEAD
 ```
 
 ### 2. Back up the current description
 
-Before any analysis, save the existing body verbatim:
+After the fetch in step 1 and before mapping or drafting, save the
+existing body and title verbatim. Shell state does not persist, so this
+runs as one script; it prints the backup directory, and every later
+command uses that literal path. Take `<number>` from the JSON above:
 
 ```bash
-mkdir -p .git/pr-backups/$(date -u +%Y%m%d-%H%M%SZ)-pr<number>
+d="$(git rev-parse --git-path pr-backups)/$(date -u +%Y%m%d-%H%M%SZ)-pr<number>"
+mkdir -p "$d"
+gh pr view <number> --json body --jq .body >"$d/body.md"
+gh pr view <number> --json title --jq .title >"$d/title.txt"
+printf '%s\n' "$d"
 ```
 
-Write the body to `body.md` and the title to `title.txt` in that
-directory, and tell the user the path. To restore:
+Tell the user the printed path. To restore:
 `gh pr edit <number> --body-file <backup>/body.md`.
 
 ### 3. Map the description against the current diff
@@ -99,20 +114,29 @@ When it is unclear whether existing content is stale or load-bearing,
 ask through `ask-user-choice`: quote the text and offer keep as-is,
 update (with the proposed replacement), or remove. Batch related
 uncertainties into one question set. Never resolve ambiguity by
-guessing.
+guessing. Without an interactive question tool, keep the text as-is and
+list each uncertainty in the proposal.
 
 ### 5. Present and apply
+
+Output shape: one result line (the PR and the sections that change),
+the old → new comparison, then the apply question. A run that stops
+early is one sentence saying what happened and that nothing changed,
+then what the user must do.
 
 - Show the proposed edit as an old → new comparison of the changing
   sections only, and state which sections are untouched.
 - Update the title only when it is factually stale; keep its style.
-- Ask whether to apply. On approval, write the new body to `body.new.md`
-  in the backup directory, so formatting survives shell quoting, then
-  run:
+- Ask whether to apply. Without an interactive question tool, stop
+  after showing the proposal; edit nothing. On approval, write the new
+  body to `body.new.md` in the printed backup directory, so formatting
+  survives shell quoting, then run:
 
-  ```bash
-  gh pr edit <number> --body-file <backup>/body.new.md
+  ```console
+  $ gh pr edit <number> --body-file <backup>/body.new.md
   ```
+
+  An approval names this `gh pr edit` only, never a commit or push.
 
 - Confirm with the PR URL and repeat the backup path.
 

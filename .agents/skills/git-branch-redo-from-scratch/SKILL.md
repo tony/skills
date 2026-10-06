@@ -3,7 +3,7 @@ name: git-branch-redo-from-scratch
 description: >-
   Use when a branch or proof of concept should be redone from scratch: throw
   away the approach, start implementation over, and treat tests as the spec.
-allowed-tools: ["Bash", "Read", "Write", "Edit", "Grep", "Glob", "AskUserQuestion", "WebFetch"]
+allowed-tools: ["Bash", "Read", "Write", "Edit", "Grep", "Glob", "AskUserQuestion"]
 metadata:
   argument-hint: "[PR number, branch, or what should change about the approach]"
   source: "plugins/git-branch/skills/redo-from-scratch/SKILL.md"
@@ -108,7 +108,9 @@ The plan states:
 When more than one approach is genuinely in contention, say so and
 offer a bakeoff rather than picking silently.
 
-Wait for approval. Exit plan mode before executing.
+Wait for approval. Exit plan mode before executing. Without an
+interactive question tool, stop after presenting the plan; an
+instruction to redo authorizes the redo, not a push.
 
 ## Phase 4 — Rebuild
 
@@ -116,7 +118,7 @@ Work in a worktree so the original branch is untouched and remains
 runnable for comparison:
 
 ```
-git worktree add -b <branch>-redo /tmp/redo <base-sha>
+git worktree add -b <branch>-redo /tmp/<branch>-redo <base-sha>
 ```
 
 Rebuild against the ledger, in the project's idiom, with no commits
@@ -142,7 +144,8 @@ changes. Never edit a spec test to make a rebuild green.
 
 Commit the rebuild as an atomic series in the project's own format,
 per `commit-messages.md` (write the messages per
-`references/prose-rules.md`), carving the working tree into commits with
+`references/prose-rules.md`; no `Co-Authored-By`, "Generated
+with" or other tool trailer, and no emoji), carving the working tree into commits with
 `split-mechanics.md` ("Commit whole files", "Split one file across
 several commits").
 
@@ -168,7 +171,12 @@ Each hunk where the old branch did something the new one does not is a
 question for the user. This is where a lost workaround surfaces.
 
 Report the ledger outcome, the contract result, the backup branch, and
-every deliberate drop. Write it per `references/prose-rules.md`.
+every deliberate drop. Write it per `references/prose-rules.md`:
+one result sentence first, then a plain list; no bold lead-ins and no
+absolute paths.
+
+A run stopped at Phase 1 or a refusal is one result sentence naming
+why, then what the user must do. It claims no work that was not done.
 
 Pushing is a separate decision, with the flags from
 `branch-safety.md`. The old branch stays until the user retires it.

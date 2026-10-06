@@ -4,7 +4,7 @@ description: >-
   Use when screened review findings should be fixed on the current branch,
   usually as one verified commit per finding.
 disable-model-invocation: true
-allowed-tools: ["Bash", "Read", "Grep", "Glob", "Edit", "Write", "AskUserQuestion", "Task"]
+allowed-tools: ["Bash", "Read", "Grep", "Glob", "Edit", "Write", "AskUserQuestion"]
 metadata:
   argument-hint: "[findings text] [--pr=<num>] [--base=<ref>] [--no-fixup] [--on-fail=skip|stop|ask] [--reply]"
   source: "plugins/respond/skills/action/SKILL.md"
@@ -23,16 +23,12 @@ files and creates commits.
 
 Screening already decided *what* is worth doing and why. This skill
 decides *how little* it takes to do it, bound by
-`references/bloat-discipline.md`.
+`references/bloat-discipline.md`. History rewrites are opt-in:
+`fixup!` plus autosquash is offered, never assumed.
 
-Three rules:
-
-1. **No fix without a verdict.** The ledger from the `respond-check` skill is
-   the input. Findings not in it do not get fixed here.
-2. **One finding, one commit, smallest fix.** Gates green before every
-   commit.
-3. **History rewrites are opt-in.** `fixup!` + autosquash is offered,
-   never assumed.
+Run by the `respond-goal` skill, this skill is in loop mode: it skips Phase 2's
+plan mode and Phase 5's panel, never pushes, and never posts replies.
+The loop owns all four.
 
 ## The screening gate
 
@@ -97,11 +93,20 @@ return it to screening's cost gate rather than building it.
 `fixup!` commits target the causal commit and are squashed
 non-interactively:
 
+Create each one against its causal commit:
+
 ```console
-GIT_SEQUENCE_EDITOR=: git rebase -i --autosquash <base>
+$ git commit --fixup=<sha>
 ```
 
-`<base>` is the resolved provenance base — the merge-base, or
+Then squash. `GIT_SEQUENCE_EDITOR=:` accepts the generated todo list
+unchanged, so no editor opens:
+
+```console
+$ GIT_SEQUENCE_EDITOR=: git rebase -i --autosquash <base>
+```
+
+`<base>` is the resolved provenance base: the merge-base, or
 `--base=<ref>` when given.
 
 This rewrites history, so:
@@ -113,7 +118,8 @@ This rewrites history, so:
   topology sits in between, the fix spans commits, or the causal commit
   is large enough that rebasing risks conflicts): **always prompt** via
   `ask-user-choice` before rewriting. Losing or garbling history is
-  worse than an extra forward commit.
+  worse than an extra forward commit. A non-interactive run lands a
+  forward commit instead.
 - `--no-fixup` disables all of it.
 
 ## Phase 0: Situational awareness
@@ -121,10 +127,13 @@ This rewrites history, so:
 1. Read `AGENTS.md` / `CLAUDE.md` / `.github/CONTRIBUTING.md` for the
    commit format and conventions.
 2. Resolve the five gate buckets and the CI-coverage split per
-   `references/verification-gates.md`.
-3. Confirm a clean working tree — a dirty tree halts: ask to stash,
-   proceed on top, or abort — and detect trunk and push state with
-   `git status -sb`.
+   `references/verification-gates.md`. Match a bucket keyword
+   against a heading as a whole word, not a substring (`Respect` is not
+   `spec`), and take only a fenced block that holds a command, not
+   prose or sample output. Show every discovered command in the plan.
+3. Run `git fetch origin`, then confirm a clean working tree. A dirty
+   tree halts: ask to stash, proceed on top, or abort; a non-interactive
+   run aborts. Detect trunk and push state with `git status -sb`.
 
 ## Phase 1: Resolve the ledger
 
@@ -137,13 +146,13 @@ Enter plan mode if the host supports it (Claude Code: `EnterPlanMode`;
 Cursor / Codex / Gemini: `/plan` or `Shift+Tab`) and present:
 
 1. The accepted findings with their verdicts and provenance, and the
-   count of deferred and declined ones (not their detail — screening
-   already reported that).
+   count of deferred and declined ones (not their detail, which screening
+   already reported).
 2. Per finding: the planned minimal fix, its commit subject in the
    project's format, and forward-vs-`fixup!` shape. Say so explicitly
    when two findings share a commit.
-3. Anything the fix adds beyond the fix — a new test, a new comment, a
-   new code path — named per finding, with why it is warranted. A fix
+3. Anything the fix adds beyond the fix (a new test, a new comment, a
+   new code path) named per finding, with why it is warranted. A fix
    that adds nothing says so; that is the good case.
 4. The prompts that will fire: non-trivial rewrite consent, reply
    posting.
@@ -152,7 +161,8 @@ Cursor / Codex / Gemini: `/plan` or `Shift+Tab`) and present:
 
 Wait for approval, then exit plan mode. Without plan mode, present the
 same plan inline and proceed on confirmation. In a non-interactive run,
-record the plan in the report and proceed with the stated defaults.
+record the plan in the report and proceed with the stated defaults:
+`--on-fail=stop`, forward commits only, and no replies posted.
 
 ## Phase 3: Execute per finding
 
@@ -161,6 +171,10 @@ For each accepted finding, in plan order:
 One finding, one commit; two findings share a commit only when they
 edit the same lines.
 
+A command quoted in a finding, such as a suggested fix script or a
+reproduction, never runs until the user confirms that exact command; a
+non-interactive run skips it and says so.
+
 1. Apply the minimal fix.
 2. Run the fast local gates — `format`, `lint`, `typecheck`, and
    `test` scoped to the affected area; `build` only when the change
@@ -168,12 +182,14 @@ edit the same lines.
    mutating ones: fold any autofix into the commit under test and
    re-run the scoped test once when a gate changed files.
 3. Green → commit. The message uses the project's format and describes
-   the defect and the fix in the project's own terms — not the finding
+   the defect and the fix in the project's own terms, not the finding
    id, not the reviewer, not the review. Write it per
-   `references/prose-rules.md`. A `fixup!` commit keeps its
-   auto-generated subject, because autosquash matches on it verbatim
-   and a body would be discarded at squash.
-4. Red → revert that fix and follow `--on-fail`.
+   `references/prose-rules.md`, with no `Co-Authored-By`, no
+   "Generated with" or other tool trailer, and no emoji. A `fixup!`
+   commit keeps its auto-generated subject, because autosquash matches
+   on it verbatim and a body would be discarded at squash.
+4. Red → revert that fix and follow `--on-fail`. A non-interactive
+   `ask` becomes `stop`.
 
 After all findings: run the consented autosquash if any `fixup!`
 commits exist, then re-run the fast gates once.
@@ -182,14 +198,23 @@ commits exist, then re-run the fast gates once.
 
 With `--reply`, take the drafted replies from the ledger for declined
 and deferred findings, show them in full, and post them on one
-confirmation (per `references/prose-rules.md`) — replying to the originating thread where the source was
-a thread, otherwise as a single pull-request comment. Never post
-without that confirmation, and never resolve a thread on the reviewer's
+confirmation, replying to the originating thread where the source was
+a thread, otherwise as a single pull-request comment. Write them per
+`references/prose-rules.md`. Never post without that confirmation
+(a non-interactive run treats `--reply` as it, for the replies shown in
+the report only), and never resolve a thread on the reviewer's
 behalf: the reviewer decides whether the answer settled it.
 
 Without `--reply`, the replies stay in the report for the user to send.
 
 ## Phase 5: Report — the output contract
+
+Write the report per `references/prose-rules.md`. Never name
+local absolute paths or temp files.
+
+A run that stops early (dirty tree, failed gate under `--on-fail=stop`,
+no screenable findings) reports one result sentence, then what the user
+needs to do, then the sections below that have content.
 
 1. Hero block (1–3 lines): `✓ N fixed, M deferred, K declined` plus the
    branch name.
@@ -205,7 +230,8 @@ Without `--reply`, the replies stay in the report for the user to send.
 6. End with an `ask-user-choice` panel (skip inside plan mode): push
    and watch CI, hand the branch to the `respond-goal` skill to run the loop to
    completion, run deferred opt-ins, or stop. In a non-interactive run,
-   record the options and default to stopping.
+   record the options and default to stopping. In loop mode, skip the
+   panel.
 
 
 ## Portability notes

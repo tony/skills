@@ -76,12 +76,22 @@ Compare the branch-owned entries against the recomputed ones.
 
 ## Phase 4: Present, edit, commit
 
-Approval gate. Do not edit or commit without explicit approval.
+Approval gate. Do not edit or commit without approval. Approval comes from,
+in order:
+
+- `--commit` in `$ARGUMENTS`: approves the edit and the commit.
+- An invoking message that asks to refresh, update, or fix the entries:
+  approves the edit only.
+- `ask-user-choice`, when the host has it and neither of the above applies.
+- Otherwise, present the proposal and stop; never wait for a reply.
 
 1. Present the summary line
-   (`Branch: <name> | Base: <base> | Changelog commits: <shas>`), the proposed
+   (`Branch: <name> | Base: <base> | Changelog commits: <count>`), the proposed
    old to new markdown for each touched entry, the statement that everything
    else in the file is untouched, and the `Target` line from `entry-rules.md`.
+   Refer to commits by subject in prose, never by bare SHA. Close with the
+   question, or when stopping, one line: nothing was edited; re-run with
+   `--commit` to apply and commit.
 2. On approval, apply with Edit, confined to the branch's footprint plus
    approved insertions in the unreleased block.
 3. Show the modified region. Then check the scope guard: the diff of

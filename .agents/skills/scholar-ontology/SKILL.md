@@ -3,7 +3,7 @@ name: scholar-ontology
 description: >-
   Use when distilling an ontology, controlled vocabulary, or glossary of
   what a codebase, a repository set, or a written corpus calls things.
-allowed-tools: ["Bash", "Read", "Grep", "Glob", "Edit", "Write", "AskUserQuestion", "Task", "WebFetch"]
+allowed-tools: ["Bash", "Read", "Grep", "Glob", "Edit", "Write", "AskUserQuestion"]
 metadata:
   argument-hint: "[<target>...] [--kind=code|prose|fleet] [--out=<dir>] [--resume=<stage>]"
   source: "plugins/scholar/skills/ontology/SKILL.md"
@@ -35,22 +35,24 @@ User arguments: $ARGUMENTS
 
 ## Stages
 
-Five stages, run in order. Each is separately invocable, so a study resumes
-where it stopped rather than restarting.
+Five stages, run in order. Stage skills are invoked by name only, so the model
+cannot call them. To run a stage, read `../<stage>/SKILL.md` (for example
+the `scholar-gather` skill) and follow it. A user resumes a study by invoking a
+stage directly.
 
-1. the `scholar-gather` skill — resolve and pin the corpus, inventory it, and record
+1. `gather` — resolve and pin the corpus, inventory it, and record
    what was read and what was skipped, into `sources.jsonl`.
-2. the `scholar-extract` skill — harvest the terms the corpus uses, with a citation and
+2. `extract` — harvest the terms the corpus uses, with a citation and
    a locator each, into `terms.jsonl`.
-3. the `scholar-distill` skill — build the three layers: types, members with
+3. `distill` — build the three layers: types, members with
    discriminators, and the controlled vocabulary.
-4. the `scholar-contest` skill — judge the ontology adversarially, one candidate at a
+4. `contest` — judge the ontology adversarially, one candidate at a
    time, recording the kills.
-5. the `scholar-render` skill — write `brief.md` and the evidence documents, and gate
+5. `render` — write `brief.md` and the evidence documents, and gate
    the brief.
 
-For prose, run the `scholar-annotate` skill before `extract` to produce quotations with
-stable locators.
+For prose, follow the `scholar-annotate` skill before `extract` to produce quotations
+with stable locators.
 
 `--resume=<stage>` starts at that stage against an existing study directory.
 
@@ -69,12 +71,17 @@ The plan states:
   already satisfies them.
 - The coverage boundary: what will deliberately not be read, and why.
 
-Present it, wait for approval, then exit plan mode and run stage 1.
+Present it, wait for approval, then exit plan mode and run stage 1. Where no
+question tool exists (Codex, headless runs), print the plan and stop; do not
+start stage 1 without approval.
 
 ## Rules
 
 - Never write into the corpus being studied. Output lands under `--out`,
   defaulting to `notes/ontology/<subject>/` in the current repository.
+- A pasted snippet is not a corpus. With no repository, directory, or document
+  on disk to pin, report `⚠ Blocked` at stage 1 and say what to point the
+  study at.
 
 ## Output
 

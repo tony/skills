@@ -10,6 +10,16 @@ and the `slop-scan` skill (mutates working-tree files via forward-going atomic
 commits). Weave deslop edits **one** file, **once**, in `$SESSION_DIR`.
 The repo guard never triggers — no project-tree changes occur.
 
+## Contents
+
+- Caller contract
+- Step 1 — Resolve the registry
+- Step 2 — Tone calibration
+- Step 3 — Detect
+- Step 4 — Decide
+- Step 5 — Rewrite
+- Step 6 — Report
+
 ---
 
 ## Caller contract
@@ -35,7 +45,7 @@ or the no-op line replaces it.
 
 ## Step 1 — Resolve the registry
 
-Read the registry at `../../references/signatures.yml`. If it is
+Read `signatures.yml` from the directory that holds this file. If it is
 missing, emit one line and return:
 
 ```
@@ -221,5 +231,3 @@ with one line and emit no block:
 ```
 Synthesis already clean (no deslop edits applied)
 ```
-
----

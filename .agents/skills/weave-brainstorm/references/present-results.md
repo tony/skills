@@ -5,6 +5,14 @@ output presentation into one place: a hero block, prescribed body
 sections per result kind, an attribution footer, and an interactive
 next-step panel with active plan-mode handoff.
 
+## Contents
+
+- Caller contract
+- Phase A — Render output
+- Phase B — Next-step panel
+- Phase C — Active plan-mode entry
+- Failure modes
+
 ---
 
 ## Caller contract

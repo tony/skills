@@ -7,6 +7,12 @@ with no remote still has commits, a branch with no pull request still
 has a diff. A layer that cannot be gathered is reported as unavailable,
 never dropped.
 
+Two different findings, never blurred: nothing found is stated as
+"none" (`none is open`, `none is referenced`); a lookup that could not
+run is stated as `unavailable` with the reason. A repository with no
+remote has no pull request to check, so write `no remote, so no pull
+request is open or checkable`.
+
 ## Contents
 
 - Read-only contract
@@ -16,6 +22,7 @@ never dropped.
 - 4. Tickets
 - 5. Conventions
 - 6. Prior conversations
+- Report shape
 - Evidence discipline
 
 ## Read-only contract
@@ -29,7 +36,7 @@ other command in the session sees: a mutation dressed as a read. Work
 from the refs already in the repository and say how old they are:
 
 ```console
-git log -1 --format='%cr' "$(git symbolic-ref --short refs/remotes/origin/HEAD 2>/dev/null || echo origin/main)" 2>/dev/null || echo "(unknown)"
+$ git log -1 --format='%cr' "$(git symbolic-ref --short refs/remotes/origin/HEAD 2>/dev/null || echo origin/main)" 2>/dev/null || echo "(unknown)"
 ```
 
 If that date is old, the comparison against trunk may be stale. Say so
@@ -42,7 +49,7 @@ Where the working tree sits relative to trunk.
 Resolve trunk from the remote's own HEAD rather than assuming `main`:
 
 ```console
-git symbolic-ref --short refs/remotes/origin/HEAD
+$ git symbolic-ref --short refs/remotes/origin/HEAD
 ```
 
 When that ref is absent — a fresh clone, a repo cloned with
@@ -69,7 +76,7 @@ only when it names a *different* branch — a stacked branch whose
 upstream is its parent. Check which one it is:
 
 ```console
-git rev-parse --abbrev-ref '@{upstream}'
+$ git rev-parse --abbrev-ref '@{upstream}'
 ```
 
 When that comes back as the branch's own remote counterpart —
@@ -82,14 +89,16 @@ everything already on the remote.
 For a stacked branch, take the parent:
 
 ```console
-git merge-base HEAD '@{upstream}' 2>/dev/null
+$ git merge-base HEAD '@{upstream}' 2>/dev/null
 ```
 
 Otherwise, and whenever that lookup fails or returns `HEAD`, take
-trunk:
+trunk. Shell state does not persist between Bash calls, so substitute
+the trunk name found in the Position layer (for example `origin/main`)
+for `<trunk>`:
 
 ```console
-git merge-base HEAD "$TRUNK" 2>/dev/null
+$ git merge-base HEAD <trunk> 2>/dev/null
 ```
 
 Guard both lookups. Both fail in practice — a branch pushed with no
@@ -102,10 +111,10 @@ layer unavailable and say which lookups failed. Do not substitute
 `HEAD` and log an empty range: that reports a branch with commits as
 having none, which is worse than reporting nothing at all.
 
-With a base in hand:
+With the base commit printed by that command in hand:
 
 ```console
-git log --no-merges --format='%h %s' "$BASE..HEAD"
+$ git log --no-merges --format='%h %s' <base>..HEAD
 ```
 
 Read the diff, not just the stat. A file list is an inventory; the
@@ -123,11 +132,24 @@ the work stands.
 ## 3. Pull request
 
 ```console
-gh pr view --json number,title,state,isDraft,url,headRefName,body,statusCheckRollup,reviewDecision
+$ gh pr view --json number,title,state,isDraft,url,headRefName,body,statusCheckRollup,reviewDecision
 ```
 
 No pull request for the branch is a finding, not an error — it means
-the work has not been proposed yet.
+the work has not been proposed yet. With no remote, no pull request can
+exist or be checked.
+
+`gh pr view` cannot return review threads. Read them with one GraphQL
+call, taking `<number>` from the output above (`-F` sends it as an
+integer and fills `{owner}` and `{repo}` from the repository):
+
+```console
+$ gh api graphql -F owner='{owner}' -F repo='{repo}' -F number=<number> -f query='query($owner: String!, $repo: String!, $number: Int!) { repository(owner: $owner, name: $repo) { pullRequest(number: $number) { reviewThreads(first: 100) { nodes { isResolved isOutdated path comments(first: 1) { nodes { author { login } body } } } } } } }'
+```
+
+Keep the nodes where `isResolved` is false. A repository with more
+than 100 threads needs `--paginate` and an `after` cursor; say the
+list is partial instead.
 
 Report failing checks by job name, and unresolved review threads by
 what they ask for. A green rollup on a run from before the last push is
@@ -150,8 +172,10 @@ Linear-style keys (`ENG-123`), and full issue URLs.
 Resolve GitHub issues:
 
 ```console
-gh issue view <n> --json number,title,state,labels,body,url
+$ gh issue view <n> --repo <owner/repo> --json number,title,state,labels,body,url
 ```
+
+Omit `--repo` for a bare `#123`, which belongs to the current repository.
 
 Resolve Linear and other trackers through whatever MCP server the
 session has connected. When no such server is available, report the ID
@@ -179,6 +203,41 @@ commands named in those files or in the project's manifest.
 ## 6. Prior conversations
 
 Opt-in only, through `--with-agentgrep` or an explicit request.
+
+## Report shape
+
+One hero line, then these sections in this order, then a next-step
+panel. No other headings, no bold label on every bullet, no recap ending.
+
+The hero is `✓ <branch>: <what it does> · <n> commits · PR #<n> <state>`,
+or `⚠ <what is blocking or unclear>`. A run that stops early gets one
+result sentence, then what the user needs to do.
+
+1. `## Position` — branch, trunk, ahead/behind, uncommitted work,
+   stashes, and how stale the trunk ref is.
+2. `## Change` — what the branch does and how far along it is, grouped
+   by area, with the commit sequence's shape.
+3. `## Pull request` — state, checks by job name, unresolved review
+   threads and what they ask for; or `none is open`.
+4. `## Tickets` — each linked issue with its state and what it asks
+   for; or `none is referenced`.
+5. `## Conventions` — the rules that bear on this change and the gates
+   it must pass.
+6. `## Prior work` — only when the prior-conversations layer ran: what
+   was decided earlier, when, and whether the repository agrees.
+7. `## Open questions` — what is unresolved, mid-flight, or
+   contradictory, and what a resumed session would most likely get
+   wrong. Anything decided in an earlier conversation and still open
+   belongs here, with its date.
+
+Mark an inference with one hedging word ("probably", "appears"); an
+unmarked statement was read. Do not state a blocker unless something is
+actually blocked: an undecided question that blocks nothing is not one.
+
+The panel is an `ask-user-choice` offering next steps (continue the
+work, address the review threads, open a pull request, widen the sweep
+to prior conversations). Skip it in plan mode. When the tool is absent,
+end with numbered options instead.
 
 ## Evidence discipline
 

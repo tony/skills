@@ -3,7 +3,7 @@ name: disk
 description: >-
   Use when disk space is low; find large directories, free space, decide if
   Claude sessions or npm cache are safe to remove, or shrink WSL.
-allowed-tools: "Bash, Read, Write, Edit, Glob, Grep, AskUserQuestion, TodoWrite"
+allowed-tools: "Bash, Read, Glob, Grep, AskUserQuestion, TodoWrite"
 metadata:
   source: "plugins/disk/skills/disk/SKILL.md"
 ---
@@ -30,12 +30,15 @@ anything the user cannot get back.
 
 ## Route
 
-Treat any path the user named as the scope.
+Read the sibling file and follow it. Both siblings open with
+`Scope: $ARGUMENTS`, which a file read never substitutes: the scope is
+the path the user named, or every mounted filesystem when none.
 
 - Survey, "where did my space go", or no request to delete: follow
-  the `disk-usage` skill. It is read-only.
+  the `disk-usage` skill. It is read-only, and the router run does not end
+  with an offer to reclaim.
 - Free space, clean up, or shrink WSL: follow the `disk-usage` skill, then
-  the `disk-reclaim` skill.
+  the `disk-reclaim` skill, which reuses that survey instead of repeating it.
 
 ## Orchestration plan
 
@@ -43,3 +46,8 @@ Enter plan mode before proposing anything destructive. In Claude Code call
 `EnterPlanMode`; in Cursor, Codex, or Gemini use `/plan` or `Shift+Tab`.
 Where plan mode is unavailable, present the plan as text and wait for
 approval. the `disk-reclaim` skill defines the plan's contents.
+
+
+## Portability notes
+
+- `$ARGUMENTS` — the text the user passed when invoking this skill. If your host does not substitute it, read it as the user's request in the current turn, and ask when there is none.

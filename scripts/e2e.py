@@ -37,6 +37,7 @@ import os
 import re
 import shutil
 import subprocess
+import sys
 import tempfile
 import typing as t
 from pathlib import Path
@@ -74,6 +75,9 @@ WEAVE_PRESENT_RESULTS = "../../references/present-results.md"
 WEAVE_WORKER_REFERENCE = "../../references/worker-backends.md"
 PORTABLE_HEADLESS_DEFAULT_MARKER = "<!-- portable: ask-user-choice=headless-default -->"
 WEAVE_MUTATING_SKILLS = frozenset({"architecture", "execute", "prompt"})
+GIT_SHA_EXAMPLE = "0" * 40
+WEAVE_DIR = REPO_ROOT / "plugins" / "weave"
+WEAVE_ENGINE = WEAVE_DIR / "scripts" / "engine.py"
 
 app = typer.Typer(help="E2E plugin lifecycle tests for tony/skills.")
 console = rich.console.Console()
@@ -511,6 +515,42 @@ def _assert_weave_fix_review_contract(command_path: Path) -> None:
         )
 
 
+def _weave_uses_engine(text: str) -> bool:
+    """Return True for a skill whose deterministic steps run through the weave engine."""
+    return "<engine>" in text
+
+
+def _assert_weave_engine_body(command_path: Path, text: str) -> None:
+    """Assert an engine-based skill gates its CLI lanes and starts through the engine."""
+    rel = command_path.relative_to(REPO_ROOT)
+    name = command_path.parent.name
+    _assert(
+        "worker_backend == subagents" in text and "**model-clis**" in text,
+        f"{rel}: the model-clis instructions are not gated on the worker backend",
+    )
+    core = (WEAVE_DIR / "references" / "ensemble-core.md").read_text(encoding="utf-8")
+    _assert(f"--command {name}" in text, f"{rel}: the session does not start with --command {name}")
+    _assert(
+        core.index("**subagents**")
+        < core.index("**model-clis**")
+        < core.index("<engine> dispatch"),
+        "ensemble-core: dispatch must sit under the model-clis branch, after subagents",
+    )
+    if name in WEAVE_MUTATING_SKILLS:
+        _assert(
+            "--mutating" in text, f"{rel}: a mutating skill must start its session with --mutating"
+        )
+        _assert("## Orchestration Plan" in text, f"{rel}: mutating skill has no Orchestration Plan")
+        required = ("capture", "adopt", "worktrees remove", "stash-restore", "reset-main")
+        missing = [cmd for cmd in required if f"<engine> {cmd}" not in text]
+        _assert(not missing, f"{rel}: mutating lifecycle calls are missing: {', '.join(missing)}")
+    else:
+        _assert(
+            "Close the repo guard" in text,
+            f"{rel}: a read-only skill must close the repo guard after its lanes",
+        )
+
+
 def _assert_weave_worker_command(command_path: Path) -> None:
     """Assert one weave command resolves and gates its worker backend."""
     text = command_path.read_text(encoding="utf-8")
@@ -530,12 +570,16 @@ def _assert_weave_worker_command(command_path: Path) -> None:
         "--workers=subagents|model-clis" in text,
         f"{rel}: argument hint must expose --workers",
     )
-    _assert(
-        "`worker_backend == model-clis`" in text,
-        f"{rel}: external model instructions are not gated",
-    )
-    _assert("agy --model" in text, f"{rel}: Antigravity CLI path was removed")
-    _assert("codex exec" in text, f"{rel}: Codex CLI path was removed")
+    engine_based = _weave_uses_engine(text)
+    if engine_based:
+        _assert_weave_engine_body(command_path, text)
+    else:
+        _assert(
+            "`worker_backend == model-clis`" in text,
+            f"{rel}: external model instructions are not gated",
+        )
+        _assert("agy --model" in text, f"{rel}: Antigravity CLI path was removed")
+        _assert("codex exec" in text, f"{rel}: Codex CLI path was removed")
 
     selection = _worker_selection(text, rel)
     lifecycle_terms = (
@@ -558,43 +602,32 @@ def _assert_weave_worker_command(command_path: Path) -> None:
         f"{rel}: portable headless default needs a structured source marker",
     )
 
-    session_text = _session_contract_text(command_path, text)
-    session_lines = session_text.splitlines()
-    session_id_line = next(
-        (index for index, line in enumerate(session_lines) if '"session_id"' in line),
-        -1,
-    )
-    session_start_line = next(
-        (index for index, line in enumerate(session_lines) if '"event":"session_start"' in line),
-        -1,
-    )
-    _assert(session_id_line >= 0, f"{rel}: session.json template is missing")
-    _assert(session_start_line >= 0, f"{rel}: session_start event template is missing")
-    session_template = "\n".join(session_lines[session_id_line : session_id_line + 24])
-    session_event = "\n".join(session_lines[session_start_line : session_start_line + 4])
-    for field in ('"worker_backend"', '"participants"'):
-        _assert(field in session_template, f"{rel}: session.json omits {field}")
-        _assert(field in session_event, f"{rel}: session_start event omits {field}")
+    if not engine_based:
+        _assert_weave_session_template(command_path, text)
 
     result_call = _result_call(text, rel)
-    _assert(
-        "`WORKER_BACKEND`" in result_call and "`worker_backend`" in result_call,
-        f"{rel}: present-results omits WORKER_BACKEND",
-    )
-    _assert(
-        "`PARTICIPANTS`" in result_call,
-        f"{rel}: present-results omits PARTICIPANTS",
-    )
-    models_line = next(
-        (line for line in result_call.splitlines() if "`MODELS`" in line),
-        "",
-    )
-    _assert(
-        "model-clis" in models_line and "null" in models_line,
-        f"{rel}: MODELS must be conditional on model-clis and null otherwise",
-    )
+    _assert("`PARTICIPANTS`" in result_call, f"{rel}: present-results omits PARTICIPANTS")
+    models_line = next((line for line in result_call.splitlines() if "`MODELS`" in line), "")
+    if engine_based:
+        _assert(
+            "`WORKER_BACKEND`" in result_call and "session.json" in result_call,
+            f"{rel}: present-results omits WORKER_BACKEND or does not read it from session.json",
+        )
+        _assert(
+            "`MODELS`" in result_call,
+            f"{rel}: present-results omits MODELS",
+        )
+    else:
+        _assert(
+            "`WORKER_BACKEND`" in result_call and "`worker_backend`" in result_call,
+            f"{rel}: present-results omits WORKER_BACKEND",
+        )
+        _assert(
+            "model-clis" in models_line and "null" in models_line,
+            f"{rel}: MODELS must be conditional on model-clis and null otherwise",
+        )
 
-    if command_path.parent.name in WEAVE_MUTATING_SKILLS:
+    if command_path.parent.name in WEAVE_MUTATING_SKILLS and not engine_based:
         heading = "## Native mutating lifecycle"
         _assert(heading in text, f"{rel}: native mutating lifecycle is missing")
         native_lifecycle = text.split(heading, 1)[1].split("\n## ", 1)[0].lower()
@@ -612,6 +645,28 @@ def _assert_weave_worker_command(command_path: Path) -> None:
             not missing,
             f"{rel}: native mutating lifecycle is incomplete: {', '.join(missing)}",
         )
+
+
+def _assert_weave_session_template(command_path: Path, text: str) -> None:
+    """Assert a skill that writes session.json itself records the backend and roster."""
+    rel = command_path.relative_to(REPO_ROOT)
+    session_text = _session_contract_text(command_path, text)
+    session_lines = session_text.splitlines()
+    session_id_line = next(
+        (index for index, line in enumerate(session_lines) if '"session_id"' in line),
+        -1,
+    )
+    session_start_line = next(
+        (index for index, line in enumerate(session_lines) if '"event":"session_start"' in line),
+        -1,
+    )
+    _assert(session_id_line >= 0, f"{rel}: session.json template is missing")
+    _assert(session_start_line >= 0, f"{rel}: session_start event template is missing")
+    session_template = "\n".join(session_lines[session_id_line : session_id_line + 24])
+    session_event = "\n".join(session_lines[session_start_line : session_start_line + 4])
+    for field in ('"worker_backend"', '"participants"'):
+        _assert(field in session_template, f"{rel}: session.json omits {field}")
+        _assert(field in session_event, f"{rel}: session_start event omits {field}")
 
 
 def _assert_weave_worker_portable_contract(commands_dir: Path) -> None:
@@ -655,6 +710,20 @@ def _assert_weave_worker_portable_contract(commands_dir: Path) -> None:
             bundled_worker_reference == source_worker_reference,
             f"{rel}: bundled worker backend reference is stale",
         )
+        if _weave_uses_engine(command_path.read_text(encoding="utf-8")):
+            bundled_engine = skill_dir / "references" / "engine.py"
+            _assert(bundled_engine.is_file(), f"{rel}: engine.py was not bundled")
+            _assert(
+                bundled_engine.read_text(encoding="utf-8")
+                == WEAVE_ENGINE.read_text(encoding="utf-8"),
+                f"{rel}: bundled engine.py is stale",
+            )
+            core = skill_dir / "references" / "ensemble-core.md"
+            _assert(core.is_file(), f"{rel}: ensemble-core.md was not bundled")
+            _assert(
+                "guard resolve" in core.read_text(encoding="utf-8"),
+                f"{rel}: bundled ensemble-core.md is stale",
+            )
 
 
 def _test_static_weave_worker_backends() -> list[TestCase]:
@@ -702,6 +771,18 @@ def _test_static_weave_worker_backends() -> list[TestCase]:
     return tests
 
 
+def _weave_flags(command: str) -> dict[str, object]:
+    """Run the engine's flag parser on an empty argument string."""
+    proc = subprocess.run(  # noqa: S603
+        [sys.executable, str(WEAVE_ENGINE), "flags", "--command", command],
+        input="x",
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    return t.cast("dict[str, object]", json.loads(proc.stdout))
+
+
 def _test_static_weave_timeouts() -> list[TestCase]:
     """Verify weave command timeout multipliers are consistent (0.5x/1.5x)."""
     tests: list[TestCase] = []
@@ -718,17 +799,19 @@ def _test_static_weave_timeouts() -> list[TestCase]:
         def _check_timeouts(p: Path = cmd_file) -> None:
             rel = p.relative_to(REPO_ROOT)
             text = p.read_text(encoding="utf-8")
-            # A command may carry the block itself or inherit the phase that
-            # holds it. Returning on a miss would exempt whichever commands the
-            # pattern cannot follow, which is the opposite of a check.
-            found = timeout_pattern.search(text) or timeout_pattern.search(
-                _session_contract_text(p, text),
-            )
-            _assert(found is not None, f"{rel}: no timeout block, local or inherited")
-            m = t.cast("re.Match[str]", found)
-            default = int(m.group(1))
-            quick = int(m.group(2))
-            long_ = int(m.group(3))
+            if _weave_uses_engine(text):
+                menu = t.cast("dict[str, int]", _weave_flags(p.parent.name)["timeout_menu"])
+                default, quick, long_ = menu["default"], menu["quick"], menu["long"]
+            else:
+                # A command may carry the block itself or inherit the phase that
+                # holds it. Returning on a miss would exempt whichever commands the
+                # pattern cannot follow, which is the opposite of a check.
+                found = timeout_pattern.search(text) or timeout_pattern.search(
+                    _session_contract_text(p, text),
+                )
+                _assert(found is not None, f"{rel}: no timeout block, local or inherited")
+                m = t.cast("re.Match[str]", found)
+                default, quick, long_ = int(m.group(1)), int(m.group(2)), int(m.group(3))
             _assert(
                 quick == default // 2,
                 f"{rel}: Quick={quick}s but expected {default // 2}s (0.5x {default}s)",
@@ -742,6 +825,228 @@ def _test_static_weave_timeouts() -> list[TestCase]:
         tests.append((f"weave timeouts: {cmd_file.parent.name}", _check_timeouts))
 
     return tests
+
+
+def _engine_eval(expression: str) -> object:
+    """Evaluate a JSON-serialisable expression against the weave engine module."""
+    code = (
+        "import json, sys, pathlib\n"
+        f"sys.path.insert(0, {str(WEAVE_ENGINE.parent)!r})\n"
+        "import engine\n"
+        f"print(json.dumps({expression}))\n"
+    )
+    proc = subprocess.run(  # noqa: S603
+        [sys.executable, "-c", code],
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    result: object = json.loads(proc.stdout)  # pyright: ignore[reportAny]
+    return result
+
+
+def _engine_argv(exe: str, model: str | None, *, mutating: bool) -> list[str]:
+    """Return the engine's argv for one lane step."""
+    work = "workdir=pathlib.Path('/w')"
+    call = f"engine.build_command({exe!r}, {model!r}, 'P', mutating={mutating}, {work})"
+    return t.cast("list[str]", _engine_eval(call))
+
+
+def _weave_engine_git_repo(root: Path) -> Path:
+    """Create a two-commit repository with a dirty file and an untracked file."""
+    repo = root / "repo"
+    repo.mkdir()
+    env = {**os.environ, "GIT_AUTHOR_NAME": "t", "GIT_AUTHOR_EMAIL": "t@t"}
+    env |= {"GIT_COMMITTER_NAME": "t", "GIT_COMMITTER_EMAIL": "t@t"}
+    steps = (
+        ["init", "-q", "-b", "main"],
+        ["commit", "-q", "--allow-empty", "-m", "init"],
+        ["__write", "a.txt", "one\n"],
+        ["add", "a.txt"],
+        ["commit", "-q", "-m", "a"],
+        ["__write", "a.txt", "one\nUSER-DIRTY\n"],
+        ["__write", "u.txt", "user untracked\n"],
+    )
+    for step in steps:
+        if step[0] == "__write":
+            _ = (repo / step[1]).write_text(step[2], encoding="utf-8")
+        else:
+            _ = subprocess.run(["git", "-C", str(repo), *step], check=True, env=env)  # noqa: S603, S607
+    return repo
+
+
+def _weave_engine(repo: Path, aip: Path, *args: str, stdin: str = "") -> dict[str, object]:
+    """Run one engine command in ``repo`` and return its JSON."""
+    proc = subprocess.run(  # noqa: S603
+        [sys.executable, str(WEAVE_ENGINE), *args],
+        cwd=repo,
+        input=stdin,
+        capture_output=True,
+        text=True,
+        check=False,
+        env={**os.environ, "AI_AIP_ROOT": str(aip)},
+    )
+    return t.cast("dict[str, object]", json.loads(proc.stdout))
+
+
+def _check_weave_engine_lanes() -> None:
+    lanes = t.cast("dict[str, list[list[str | None]]]", _engine_eval("engine.LANES"))
+    _assert(
+        set(lanes) == {"agy", "gpt"}, f"weave engine: lanes are {sorted(lanes)}, not agy and gpt"
+    )
+    for lane, chain in lanes.items():
+        executables = [step[0] for step in chain]
+        _assert(
+            set(executables) <= {"agy", "codex", "agent"},
+            f"weave engine: lane {lane} uses an unknown executable: {executables}",
+        )
+    _assert(lanes["agy"][0][0] == "agy", "weave engine: the agy lane must start with agy")
+    _assert(lanes["gpt"][0][0] == "codex", "weave engine: the gpt lane must start with codex")
+    gpt_models = [str(step[1]) for step in lanes["gpt"]]
+    _assert(
+        not any("gemini" in m.lower() for m in gpt_models),
+        "weave engine: the gpt lane must not fall back to a Gemini model",
+    )
+
+
+def _check_weave_engine_argv() -> None:
+    agy = _engine_argv("agy", "M", mutating=False)
+    _assert(agy[:2] == ["agy", "--model"], f"weave engine: agy argv is {agy}")
+    _assert(agy[-2:] == ["-p", "P"], "weave engine: agy -p must come after every other flag")
+    _assert("--add-dir" in agy, "weave engine: agy must scope its workspace with --add-dir")
+    codex = _engine_argv("codex", None, mutating=False)
+    _assert(
+        codex[:4] == ["codex", "exec", "-s", "read-only"],
+        f"weave engine: read-only codex argv is {codex[:4]}",
+    )
+    agent = _engine_argv("agent", "M", mutating=False)
+    _assert(
+        agent[:4] == ["agent", "-p", "--mode", "plan"] and "-f" not in agent,
+        f"weave engine: read-only agent argv is {agent}",
+    )
+    _assert(
+        "--yolo" in _engine_argv("codex", None, mutating=True),
+        "weave engine: mutating codex must run with --yolo in its worktree",
+    )
+
+
+def _check_weave_engine_runner() -> None:
+    exit_status = 3
+    with tempfile.TemporaryDirectory(prefix="weave-run-") as tmp:
+        root = Path(tmp)
+        out, err = root / "out", root / "err"
+        script = "read x; echo got:$x; echo oops >&2; exit 3"
+        paths = f"pathlib.Path({tmp!r}), %s, pathlib.Path({str(out)!r}), pathlib.Path({str(err)!r})"
+        runs = t.cast(
+            "list[dict[str, int | None]]",
+            _engine_eval(
+                f"[engine.run_cli(['sh', '-c', {script!r}], {paths % 5}) for _ in (1, 2)]"
+            ),
+        )
+        _assert(out.read_text(encoding="utf-8") == "got:\n", "weave engine: stdin must be closed")
+        _assert(
+            err.read_text(encoding="utf-8") == "oops\noops\n",
+            "weave engine: stderr must be appended, not overwritten",
+        )
+        _assert(
+            runs[0]["returncode"] == exit_status,
+            "weave engine: the CLI exit status must be preserved",
+        )
+        slow = t.cast(
+            "dict[str, str]",
+            _engine_eval(f"engine.run_cli(['sleep', '30'], {paths % '0.2'})"),
+        )
+        _assert(slow["class"] == "timeout", "weave engine: the timeout must kill a hung CLI")
+
+
+def _check_weave_engine_credit_strings() -> None:
+    patterns = t.cast("list[str]", _engine_eval("list(engine.CREDIT_PATTERNS)"))
+    known = {item.lower() for item in patterns}
+    lists: list[tuple[Path, list[str]]] = []
+    for path in sorted((REPO_ROOT / "plugins" / "model-cli").rglob("*.md")):
+        blocks = t.cast(
+            "list[str]",
+            re.findall(
+                r"stderr patterns:?(.*?)(?:\n\n|\.\s)", path.read_text(encoding="utf-8"), re.DOTALL
+            ),
+        )
+        lists.extend((path, t.cast("list[str]", re.findall(r"`([^`]+)`", b))) for b in blocks)
+    _assert(bool(lists), "model-cli: no credit-exhaustion string list found to compare with")
+    for path, listed in lists:
+        missing = [item for item in listed if item.lower() not in known]
+        _assert(
+            not missing,
+            f"weave engine: credit strings in {path.relative_to(REPO_ROOT)} are missing: {missing}",
+        )
+
+
+def _check_weave_engine_session_record() -> None:
+    with tempfile.TemporaryDirectory(prefix="weave-init-") as tmp:
+        root = Path(tmp)
+        repo = _weave_engine_git_repo(root)
+        for backend in ("subagents", "model-clis"):
+            doc = _weave_engine(
+                repo, root / "aip", "init", "--command", "ask", "--backend", backend,
+                stdin="",
+            )  # fmt: skip
+            sdir = Path(t.cast("str", doc["session_dir"]))
+            session = t.cast("dict[str, object]", json.loads((sdir / "session.json").read_text()))
+            first = (sdir / "events.jsonl").read_text().splitlines()[0]
+            event = t.cast("dict[str, object]", json.loads(first))
+            for field in ("worker_backend", "participants"):
+                _assert(field in session, f"weave engine: session.json omits {field}")
+                _assert(field in event, f"weave engine: session_start omits {field}")
+            _assert(session["worker_backend"] == backend, "weave engine: wrong worker_backend")
+            _assert("guard" in session, "weave engine: init must record the guard snapshot")
+            _assert(
+                len(t.cast("str", doc["baseline_sha"])) == len(GIT_SHA_EXAMPLE),
+                "weave engine: init must capture baseline_sha",
+            )
+            _assert(
+                ("models" in session) == (backend == "model-clis"), "weave engine: models field"
+            )
+
+
+def _check_weave_engine_guard() -> None:
+    with tempfile.TemporaryDirectory(prefix="weave-guard-") as tmp:
+        root = Path(tmp)
+        repo = _weave_engine_git_repo(root)
+        aip = root / "aip"
+        doc = _weave_engine(repo, aip, "init", "--command", "ask", "--backend", "subagents")
+        sdir = t.cast("str", doc["session_dir"])
+        _assert(
+            _weave_engine(repo, aip, "guard", "check", "--session", sdir)["violation"] is False,
+            "weave guard: a clean run must not report a violation",
+        )
+        _ = (repo / "a.txt").write_text("one\nUSER-DIRTY\nCLI\n", encoding="utf-8")
+        _ = (repo / "new.txt").write_text("cli\n", encoding="utf-8")
+        found = _weave_engine(repo, aip, "guard", "check", "--session", sdir)
+        _assert(found["violation"] is True, "weave guard: a further edit of a dirty file is missed")
+        _assert(
+            (repo / "a.txt").read_text(encoding="utf-8").endswith("CLI\n"),
+            "weave guard: detection must not modify the checkout",
+        )
+        _ = _weave_engine(repo, aip, "guard", "resolve", "--session", sdir, "--choice", "revert")
+        _assert(
+            (repo / "a.txt").read_text(encoding="utf-8") == "one\nUSER-DIRTY\n"
+            and not (repo / "new.txt").exists()
+            and (repo / "u.txt").exists(),
+            "weave guard: revert must restore only the touched paths from the snapshot",
+        )
+
+
+def _test_static_weave_engine() -> list[TestCase]:
+    """Verify the weave engine keeps the lanes, argv, runner, session record, and repo guard."""
+    if not WEAVE_ENGINE.is_file():
+        return []
+    return [
+        ("weave engine: lanes", _check_weave_engine_lanes),
+        ("weave engine: CLI argv", _check_weave_engine_argv),
+        ("weave engine: CLI runner", _check_weave_engine_runner),
+        ("weave engine: credit strings", _check_weave_engine_credit_strings),
+        ("weave engine: session record", _check_weave_engine_session_record),
+        ("weave engine: repo guard", _check_weave_engine_guard),
+    ]
 
 
 def _test_static_weave_stderr_redirects() -> list[TestCase]:
@@ -1278,6 +1583,7 @@ def main(
     static_tests.extend(_test_static_marketplace_json())
     static_tests.extend(_test_static_codex_manifests())
     static_tests.extend(_test_static_weave_worker_backends())
+    static_tests.extend(_test_static_weave_engine())
     static_tests.extend(_test_static_weave_timeouts())
     static_tests.extend(_test_static_weave_stderr_redirects())
     static_tests.extend(_test_static_agy_invocations())

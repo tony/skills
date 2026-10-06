@@ -18,22 +18,32 @@ not say otherwise.
 
 ## Subject grammar
 
-```
+Three forms cover every commit this plugin writes.
+
+Dependencies, in the ecosystem's scope:
+
+```text
 <scope>(deps[<group>]) <what moved>
 ```
 
 The scope names the ecosystem, not the tool: `py` for Python, `js` for
 JavaScript and TypeScript, `rs`, `go`. The bracketed group names the
-dependency group the change lands in — `dev`, `docs`, `lint` — and is
-omitted when the change is not scoped to one.
+dependency group the change lands in (`dev`, `docs`, `lint`, `catalog`)
+and is omitted when the change is not scoped to one. `packageManager`
+and `engines` take this form too, with `deps` and `engines` as the
+keyword.
 
-Toolchain pins are scoped by the file they live in instead, because the
-file is what the reader greps for:
+Toolchain version files and config files, scoped by the file, because
+the file is what the reader greps for:
 
-```
+```text
 .tool-versions(<tool>) <tool> <old> -> <new>
 .nvmrc(nodejs) <old> -> <new>
+.ncurc: <what and why>
 ```
+
+Follow-ups use the project's own `type(scope)` form, for example
+`test(<package>) regenerate snapshots`.
 
 Use an ASCII `->` for a version transition. Keep the subject at 64
 characters or fewer.
@@ -85,9 +95,9 @@ span genuinely touches nothing here, one line saying so is the finding.
 `packageManager` and `engines` in `package.json` pin the toolchain, so
 they move on their own:
 
-```
+```text
 js(deps) pnpm <old> -> <new>
-chore(package[engines]) require Node >=<version>
+js(engines) require Node >=<version>
 ```
 
 A package-manager bump takes a link block. An `engines` bump takes a
@@ -97,8 +107,8 @@ is not recoverable from the diff.
 ### Named package bumps
 
 One commit per package, or per release train when packages must move
-together. A release train needs the body to say *why* they are coupled —
-a peer contract, a bundled dependency, a shared compiler — otherwise the
+together. A release train needs the body to say *why* they are coupled
+(a peer contract, a bundled dependency, a shared compiler), otherwise the
 next reader will split them.
 
 The body is `why:` then `what:`. The `why:` explains what the release
@@ -120,29 +130,28 @@ Everything else belongs in the bulk refresh.
 
 ### Bulk lockfile refresh
 
-```
+```text
 py(deps[dev]) Bump dev packages
 js(deps[dev]) Bump dev packages
+js(deps) Refresh in-range transitives
 ```
 
-**The body is empty.** Nothing worth saying is not already in the
-lockfile diff, and a generated inventory of package names is noise that
-makes the commits that *do* carry reasoning harder to find.
-
-An in-range refresh that touches no manifest is a different commit
-again, and it does take a short body naming what moved:
-
-```
-chore(deps) pnpm update: refresh in-range transitives
-```
+**The body is empty,** for every ecosystem: `uv sync --upgrade`,
+`ncu -u` with no named package, and `pnpm update` alike. Nothing worth
+saying is not already in the lockfile diff, and a generated inventory of
+package names is noise that makes the commits that *do* carry reasoning
+harder to find. The subject says which kind of refresh it is: manifest
+bumps, or in-range transitives with no manifest edit. A package that
+needs words (a major, a follow-up, a floor) leaves the bulk refresh and
+takes its own commit.
 
 ### Catalog and override pins
 
 A version pinned in `pnpm-workspace.yaml` under `catalog:` is invisible
 to `ncu`, so it is bumped by hand and scoped to the file it lives in:
 
-```
-deps(catalog) @biomejs/biome 2.5.3 -> 2.5.4
+```text
+js(deps[catalog]) @biomejs/biome 2.5.3 -> 2.5.4
 ```
 
 Say in the body that the tool missed it. A reader who runs `ncu` and
@@ -159,14 +168,14 @@ Style follows link count, not preference.
 
 **One link** goes inline on a single line:
 
-```
+```text
 See also: https://nodejs.org/en/blog/release/v25.2.0
 ```
 
 **Two or more** put `See also:` on its own line, then one hyphen bullet
 per URL:
 
-```
+```text
 See also:
 - https://pnpm.io/blog/releases/11.17
 - https://github.com/pnpm/pnpm/releases/tag/v11.17.0
@@ -188,9 +197,9 @@ Never write a claim into a body that has not been checked against the
 repository the commit lands in. A fleet-wide fact is not a per-repo
 fact, and a false claim committed to history stays false.
 
-Never add an AI signature, a generated-by footer, or a tool URL. These
-have shipped into permanent history before and cannot be removed without
-a rewrite.
+Never add a `Co-Authored-By` trailer, a "Generated with" line or other
+tool trailer, a tool URL, or an emoji. Hosts add them by default and
+they cannot be removed from history without a rewrite.
 
 ## Writing the message
 
@@ -199,12 +208,12 @@ multi-line string to `git commit -m` through an interactive shell has
 collapsed bodies into the subject line, producing commits whose subject
 runs to several hundred characters with the link block inlined.
 
-```console
+```bash
 git commit -F - <<'EOF'
 js(deps[dev]) @biomejs/biome 2.5.3 -> 2.5.4
 
-why: Track latest Biome patch release (published 2026-07-15, now past
-the 3-day supply-chain cooldown).
+why: Track latest Biome patch release (published <date>, now past
+the <N>-day supply-chain cooldown).
 
 what:
 - Bump @biomejs/biome in root, lib, wc (exact) and site (caret)
@@ -218,7 +227,7 @@ Match their density, not their length.
 
 A named bump whose body earns its place by naming the coupling:
 
-```
+```text
 js(deps) Astro 7.0.9 + MDX 7.0.3 + Satteri 0.3.4
 
 why: These ship as one release train: astro 7.0.8 bundles
@@ -240,7 +249,7 @@ what:
 
 A routine toolchain bump, link block only:
 
-```
+```text
 .tool-versions(just) just 1.55.1 -> 1.57.0
 
 - just
@@ -251,7 +260,7 @@ A routine toolchain bump, link block only:
 
 A drift consolidation, where the reason is the drift itself:
 
-```
+```text
 js(deps[dev]) Unify Biome to 2.5.3
 
 why: Biome versions had drifted (2.4.16 in colors +

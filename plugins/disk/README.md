@@ -46,19 +46,12 @@ The `disk` skill triggers either flow automatically under disk pressure.
 - **Agent history**: Transcripts and session stores are protected unless
   proven redundant or archived through the owning tool.
 - **Running environments**: Never runs environment-halting commands (e.g.,
-  `wsl --shutdown`). Prints such commands for you to run manually.
+  `wsl --shutdown`). Prints such commands for you to run manually. The
+  WSL and Windows commands it prints (`wsl --shutdown`, `Optimize-VHD`)
+  are single-platform: they run in Windows PowerShell on the host, not in
+  the Linux guest.
 - **Unproved directories**: Directories like `*-backup-*` or `archive-*`
   are not assumed redundant.
-
-## Classification Tiers
-
-- **Regenerable**: Caches, package stores, build outputs (One blanket
-  approval).
-- **Redundant**: Secondary copies proven via path-set comparison.
-- **Stale but unique**: Trash, old toolchains, superseded installs
-  (Decided per directory).
-- **Protected**: Agent transcripts, local databases with no remote
-  (Never deleted).
 
 ## Inspection Scope
 
@@ -69,6 +62,11 @@ The `disk` skill triggers either flow automatically under disk pressure.
 
 ## Prerequisites
 
-- `df`, `du`, `find`
-- (Optional) `dust` for faster surveying, `rg` for binary inspection,
-  `rsync` for checksum-verified merges
+- `df`, `du`, `find`, `findmnt` (Linux), `git`, `python3`
+- (Optional) `dust` for faster surveying, `strings` and `rg` for binary
+  inspection, `zstd` for compressing history, `rsync` for
+  checksum-verified comparison and merges
+
+Scope is WSL-first: virtual-disk guidance covers WSL, with pointers for
+Docker Desktop and Hyper-V. macOS APFS and Time Machine snapshots are not
+covered.

@@ -4,16 +4,16 @@ description: >-
   Use when invoking OpenAI GPT directly through the same Codex CLI or agent
   fallback used by the codex skill.
 disable-model-invocation: true
-allowed-tools: ["Bash", "Read", "Grep", "Glob", "Write", "Edit"]
+allowed-tools: ["Bash"]
 metadata:
-  argument-hint: "<prompt> [timeout:<seconds>]"
+  argument-hint: "<prompt> [timeout:<seconds>] [mode:plan]"
   source: "plugins/model-cli/skills/gpt/SKILL.md"
 ---
 
 # GPT CLI Skill
 
-Alias for the `model-cli-codex` skill. Invoke the Codex CLI skill with `$ARGUMENTS`,
-passing every trigger through.
+Read the `model-cli-codex` skill and follow it with `$ARGUMENTS`, passing every
+trigger through.
 
 
 ## Portability notes

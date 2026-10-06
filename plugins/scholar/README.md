@@ -63,7 +63,7 @@ A study is a directory, not a document:
 notes/ontology/<subject>/
 ├── brief.md              the only file meant to be read start to finish
 ├── terms.jsonl           interchange: {schema, term, definition, parent, kind, cites, tier}
-├── sources.jsonl         {source, ref, scope, read, why}
+├── sources.jsonl         {source, ref, commit, scope, read, why}
 └── evidence/
     ├── hierarchy.md      the type hierarchy, one citation per is-a claim
     ├── vocabulary.md     preferred and deprecated terms, disjointness constraints
@@ -88,15 +88,16 @@ Every one of these is optional. `scholar` works standalone.
 `weave` — `contest --panel` hands one contested claim to independent
 adversarial participants and records their verdicts beside the serial one.
 
-`research:deps` — pinned worktrees at an installed version, when the corpus is
-a dependency of the current project.
+`research:deps` — `gather` can take a pinned worktree at an installed version
+as its corpus, when the corpus is a dependency of the current project.
 
-`gh` — the rendered-markdown and source-link disciplines when a study is
-published as an issue or a comment.
+`gh` — `render`'s publish option uses its rendered-markdown and source-link
+disciplines when a study is published as an issue or a comment.
 
 ## Prerequisites
 
 - **git** — resolving and pinning a corpus to a ref
+- **gh** — resolving a tag to its commit, and checking it again in `verify`
 - **rg** — inventorying a corpus without reading all of it
-- **Python 3.12** — `references/term-metrics.py`, standard library only, so it
+- **Python 3** — `references/term-metrics.py`, standard library only, so it
   runs inside any corpus checkout with no package manager present

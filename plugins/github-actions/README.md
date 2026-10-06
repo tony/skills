@@ -63,39 +63,39 @@ reference to that commit. (The PR references the commit, not vice versa).
 2. **Verify** — Confirm the target tag exists before writing.
 3. **Research** — Collect major releases and breaking changes between
    pin and target with verified links.
-4. **Plan gate** — Confirm scope, targets, evidence, and commit count
-   before writing.
+4. **Plan gate** — Confirm scope, targets, evidence, commit count, and
+   the dependabot PRs to close before writing.
 5. **Commit** — One per repository and action, with upgrade rationale
    and release links in the body.
 6. **Close out** — Watch CI, attribute failures, and close superseded
-   dependabot PRs.
+   dependabot PRs after you confirm the exact commands.
 
 ## Pinning
 
 - **Major-level floats (`@v7`)** (default): Preserve existing shape. Exact
   patch pins repin to the float if available.
-- **Commit SHA pins**: Keep their shape, moving the trailing version
-  comment alongside the SHA.
+- **Commit SHA pins**: Keep their shape, resolving the tag's commit SHA
+  (annotated tags dereferenced) and moving the trailing version comment
+  alongside it.
 - **No floating major**: Pin to the exact release, explaining why in the
   commit body.
 
 ## Shared references
 
-Both commands and the skill read the same files to prevent drift:
-- `references/action-pinning.md` — Inventory, tag verification, pin
-  granularity, and per-repository gates.
-- `references/dependabot-closeout.md` — Closing protocol, CI attribution,
-  and scope discipline.
+All three skills read the same two files:
+- `references/action-pinning.md`
+- `references/dependabot-closeout.md`
 
 ## Skill
 
 `bumping-github-actions` triggers automatically when discussing out-of-date
-actions or dependabot's action PRs. The commands are explicit entry points
-to the same procedure.
+actions or dependabot's action PRs. `update-action` and `update-actions`
+are explicit entry points to the same procedure.
 
 ## Scope
 
-- **Own repositories only**: Forks are detected and skipped.
+- **Own repositories only**: Forks are detected and skipped. Local
+  (`./`) and `docker://` references are skipped.
 - **Fixes only bumps**: Pre-existing breakage (e.g., lint failures) is
   reported, not fixed.
 

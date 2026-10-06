@@ -14,8 +14,12 @@ and toolchain caches; browser engine downloads for test harnesses;
 build output directories (`target/`, `build/`, `dist/`, `.venv`,
 `node_modules`).
 
-Two cautions apply even here:
+Three cautions apply even here:
 
+- **Active projects.** Skip a `.venv`, `node_modules`, `dist/`, or
+  `build/` in a project with recent activity or tracked files in that
+  directory (`git ls-files <dir>`): `dist/` and `build/` can hold
+  committed or hand-made content.
 - **Offline capability.** A store that is the only local copy of a
   dependency set stops being regenerable the moment the user is
   offline or the upstream registry removes a version. Ask before

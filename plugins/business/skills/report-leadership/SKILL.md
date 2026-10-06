@@ -16,12 +16,11 @@ Read `../../references/interim-format.md` first. It defines the run
 location, the completeness gate, and the output frame. Defer these
 until the gate passes:
 
-- `../../references/provenance.md`: tag rendering, anti-inflation
-  rules, the no-currency contract.
+- `../../references/provenance.md`
 - `../../references/measurement.md`: the value build, break-even,
   guardrails, the counterfactual ladder.
 - `../../references/evidence.md`: external context for the
-  pre-answered objections.
+  pre-answered objections. Re-verify the sources you cite first.
 - `../../references/audiences.md`: the tier-0 contract.
 
 User arguments: $ARGUMENTS
@@ -55,11 +54,13 @@ Write `<run>/reports/leadership.md` with this fixed structure:
    savings rate survive the verification tax; who maintains the
    skill.
 
+Compute interval figures with `../../scripts/business.py stats`.
+
 Write it per `../../references/prose-rules.md`.
 
 ## Output
 
 Hero success form: `✓ Leadership report: <committed figure with
-tag>`. Sections as in `interim-format.md`; `## Report` also names the
+tag>`. Sections and stopped-run shape as in `interim-format.md`; `## Report` also names the
 strongest limitation. Panel options: render the org-wide projection
 next, adjust assumptions and re-render, or stop.

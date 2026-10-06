@@ -22,8 +22,8 @@ the rounds, commits, and pushes described below, and nothing broader.
 
 The round is easy; stopping is the hard part.
 
-A review loop with no exit condition either quits early — pushing and
-declaring victory before any reviewer has looked at the new head — or
+A review loop with no exit condition either quits early, pushing and
+declaring victory before any reviewer has looked at the new head, or
 never quits at all, re-screening findings the last round already
 declined while bots re-post them on every push. Both look like
 progress.

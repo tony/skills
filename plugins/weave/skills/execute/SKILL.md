@@ -50,7 +50,7 @@ Present the plan and wait for approval, then exit plan mode (`ExitPlanMode`). If
 
 ## Phase 1: Start the session
 
-Follow `ensemble-core.md` (Start the session) with `--command execute --mutating`. The stash holds the user's uncommitted work until Phase 5.
+Follow `ensemble-core.md` (Start the session) with `--command execute --mutating`. The stash holds the user's uncommitted work until Phase 5. It asks each unresolved setting through `AskUserQuestion`.
 
 Explore the code the task touches, then build the context packet per `ensemble-core.md` (Context packet). Include snippets of code the implementations must integrate with, the relevant file list, test patterns, and known unknowns.
 

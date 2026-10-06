@@ -48,6 +48,15 @@ A citation that quotes the term it is meant to support:
 ...            "cites": [{"quote": "the ratchet stops advancing"}]}])
 ['ratchet']
 
+A quote that shares only one word of a multi-word term does not name it:
+
+>>> circular([{"term": "update-action", "definition": "bump one pin",
+...            "cites": [{"quote": "update the lockfile before release"}]}])
+[]
+>>> circular([{"term": "update-action", "definition": "bump one pin",
+...            "cites": [{"quote": "each update actions step runs once"}]}])
+['update-action']
+
 The brief may not carry citations, permalinks, or bare numbers:
 
 >>> check_brief("Names split three ways.")
@@ -58,6 +67,36 @@ The brief may not carry citations, permalinks, or bare numbers:
 ['line 1: bare number belongs in evidence/, not the brief']
 >>> check_brief("Similarity is [0.575](evidence/metrics.md).")
 []
+
+List markers and code spans are not numbers:
+
+>>> check_brief("1. Names split.")
+[]
+>>> check_brief("2) Parents differ.")
+[]
+>>> check_brief("- Use `v2` here.")
+[]
+>>> check_brief("Anchor #L12 is a number.")
+['line 1: bare number belongs in evidence/, not the brief']
+
+A missing file is a usage error, not a traceback:
+
+>>> import contextlib, sys
+>>> with contextlib.redirect_stderr(sys.stdout):
+...     main(["/nonexistent-study", "--check-brief"])
+no brief.md in /nonexistent-study
+2
+>>> with contextlib.redirect_stderr(sys.stdout):
+...     main(["/nonexistent-study"])
+no terms.jsonl in /nonexistent-study
+2
+
+Every term row needs a definition and at least one citation:
+
+>>> check_terms([{"term": "a", "definition": "x", "cites": [{"quote": "q"}]}])
+[]
+>>> check_terms([{"term": "a", "definition": " "}, {"term": "b", "definition": "y"}])
+['a: empty definition', 'a: no citation', 'b: no citation']
 """
 
 from __future__ import annotations
@@ -94,9 +133,12 @@ POLYSEMY_THRESHOLD = 0.3
 
 _WORD = re.compile(r"[a-z0-9]+")
 _URL = re.compile(r"https?://")
-_ANCHOR = re.compile(r"#L\d")
 _EVIDENCE_LINK = re.compile(r"\[[^\]]*\]\(evidence/[^)]*\)")
+_CODE_SPAN = re.compile(r"`[^`]*`")
+_LIST_MARKER = re.compile(r"^\s*(?:\d+[.)]|[-*+])\s+")
 _DIGIT = re.compile(r"\d")
+_SUFFIX = re.compile(r"(?:ing|ed|es|s)$")
+_LEMMA_MIN = 5
 
 
 def tokenize(text: object) -> list[str]:
@@ -228,16 +270,26 @@ def fan_out(terms: list[_Row]) -> dict[str, int]:
     return counts
 
 
+def _lemmas(text: object) -> list[str]:
+    """Tokens with one plural or verb suffix removed from words over four letters."""
+    return [_SUFFIX.sub("", tok) if len(tok) >= _LEMMA_MIN else tok for tok in tokenize(text)]
+
+
+def _contains(haystack: list[str], needle: list[str]) -> bool:
+    """Return whether *needle* occurs in *haystack* as a contiguous run."""
+    width = len(needle)
+    return bool(needle) and any(
+        haystack[i : i + width] == needle for i in range(len(haystack) - width + 1)
+    )
+
+
 def circular(terms: list[_Row]) -> list[str]:
-    """Terms whose own token appears in the text of a citation supporting them."""
+    """Terms whose whole name, lemmatized, appears in a citation supporting them."""
     hits: list[str] = []
     for row in terms:
-        own = set(tokenize(row["term"]))
-        for cite in row.get("cites", []):
-            quoted = set(tokenize(cite.get("quote", "")))
-            if own & quoted:
-                hits.append(row["term"])
-                break
+        own = _lemmas(row["term"])
+        if any(_contains(_lemmas(cite.get("quote", "")), own) for cite in row.get("cites", [])):
+            hits.append(row["term"])
     return hits
 
 
@@ -248,10 +300,20 @@ def check_brief(text: str) -> list[str]:
         bare = _EVIDENCE_LINK.sub("", line)
         if _URL.search(bare):
             findings.append(f"line {number}: URL belongs in evidence/, not the brief")
-        if _ANCHOR.search(bare):
-            findings.append(f"line {number}: line anchor belongs in evidence/, not the brief")
+        bare = _LIST_MARKER.sub("", _CODE_SPAN.sub("", bare))
         if _DIGIT.search(bare):
             findings.append(f"line {number}: bare number belongs in evidence/, not the brief")
+    return findings
+
+
+def check_terms(terms: list[_Row]) -> list[str]:
+    """List rows with an empty definition or no citation."""
+    findings: list[str] = []
+    for row in terms:
+        if not row.get("definition", "").strip():
+            findings.append(f"{row['term']}: empty definition")
+        if not row.get("cites"):
+            findings.append(f"{row['term']}: no citation")
     return findings
 
 
@@ -264,19 +326,35 @@ def _load(path: Path) -> list[_Row]:
 def main(argv: list[str]) -> int:
     """Report every finding for the study directory named in *argv*."""
     args = [arg for arg in argv if not arg.startswith("--")]
-    brief_only = "--check-brief" in argv
     if not args:
-        print("usage: term-metrics.py <study-dir> [--check-brief]", file=sys.stderr)
+        print(
+            "usage: term-metrics.py <study-dir> [--check-brief | --check-terms]",
+            file=sys.stderr,
+        )
         return 2
     study = args[0].rstrip("/")
 
-    if brief_only:
-        findings = check_brief(Path(f"{study}/brief.md").read_text(encoding="utf-8"))
+    if "--check-brief" in argv:
+        brief = Path(f"{study}/brief.md")
+        if not brief.is_file():
+            print(f"no brief.md in {study}", file=sys.stderr)
+            return 2
+        findings = check_brief(brief.read_text(encoding="utf-8"))
         for finding in findings:
             print(finding)
         return 1 if findings else 0
 
-    terms = _load(Path(f"{study}/terms.jsonl"))
+    table = Path(f"{study}/terms.jsonl")
+    if not table.is_file():
+        print(f"no terms.jsonl in {study}", file=sys.stderr)
+        return 2
+    terms = _load(table)
+    if "--check-terms" in argv:
+        findings = check_terms(terms)
+        for finding in findings:
+            print(finding)
+        return 1 if findings else 0
+
     sections: list[tuple[str, list[str]]] = [
         ("synonymy", [f"{a} / {b} at {score:.3f}" for a, b, score in synonymy(terms)]),
         ("polysemy", [f"{term}: {len(defs)} definitions" for term, defs in polysemy(terms)]),

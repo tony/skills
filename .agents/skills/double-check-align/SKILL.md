@@ -16,7 +16,7 @@ Recovery for a broken double-check. The chat holds a revision log:
 verdicts about prior claims, deltas against text the user never read.
 Replace it with the analysis itself.
 
-Read `references/verification-contract.md` first.
+Phrases to avoid: `references/verification-contract.md`.
 
 ## `$ARGUMENTS`
 

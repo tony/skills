@@ -60,8 +60,10 @@ Annual_hours_saved = V * F * t * s * a * r
   < 1.0.
 
 Refuse to default `a` or `r` to 1.0. If either is absent from the
-assumptions register, stop and ask the user, then append the answer
-as an ESTIMATED entry with rationale and owner before projecting.
+assumptions register, ask the user, then append the answer as an
+ESTIMATED entry (or MEASURED, when an instrument export gives it)
+with rationale and owner before projecting. With no one to ask,
+halt and name the missing input.
 
 Segment the population: addressable ⊃ served ⊃ realized. Reporting
 only the addressable figure is the most common inflation — always
@@ -71,14 +73,16 @@ show all three segments.
 
 - Medians plus IQR, not means: task durations are right-skewed,
   roughly log-normal, and means chase the tail.
-- Bootstrapped intervals for medians, BCa preferred. Percentile
-  methods want roughly n ≥ 60 for stable coverage; small n gets wide
-  intervals and honesty, not precision. Deterministic seed, recorded
-  with the result.
-- Fewer than ~12–20 observations — paired comparisons and single
-  distributions alike: present the raw values, the median (or median
-  difference), and a wide interval, and label the result
-  **DIRECTIONAL**. Never single-decimal percentages from 5 tasks.
+- Bootstrapped BCa intervals for medians, computed by
+  `../scripts/business.py stats` (one number per line on stdin or
+  in files). It prints n, median, quartiles, the 95% interval, the
+  seed, and the resample count; paste them next to the result.
+  Small n gets wide intervals and honesty, not precision.
+- Fewer than 20 observations, whether paired comparisons or single
+  distributions: present the raw values, the median (or median
+  difference), and the wide interval, and label the result
+  **DIRECTIONAL** (the script sets the label). Never
+  single-decimal percentages from 5 tasks.
 - Exclude the novelty ramp window; measure steady state. State the
   excluded window in the run README. No identifiable introduction
   event to anchor a ramp on → state "none excluded" with the
@@ -106,6 +110,8 @@ any savings claim:
 - PR-size drift.
 - CI failure and retry rates.
 
-Activity metrics — lines of code, commit counts, PR counts — never
-stand alone; that is SPACE's core warning. They may appear only next
+Activity metrics (lines of code, commit counts, PR counts) never
+stand alone, per Forsgren et al., "The SPACE of Developer
+Productivity" (ACM Queue 19(1), 2021,
+https://queue.acm.org/detail.cfm?id=3454124). They may appear only next
 to a quality or outcome metric.

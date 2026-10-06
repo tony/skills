@@ -21,14 +21,15 @@ Read these first; they bind every step:
 
 - `references/interim-format.md`: the run package layout, where
   runs live, and the value units (never money).
-- `references/provenance.md`: the four tags, the anti-inflation
-  rules, and the no-currency contract.
-- `references/measurement.md`: what the data must feed: the
-  saving formulas, statistics discipline, the counterfactual ladder,
-  and the quality guardrails.
+- `references/provenance.md`: the four tags and the
+  anti-inflation rules.
 - `references/instruments.md`: per-instrument probes,
-  collection discipline, and the collection targets in query-ready
-  form.
+  collection discipline, and the targets to collect (prose, not
+  ready-made queries).
+
+Load `references/measurement.md` only for the counterfactual
+ladder and the statistics discipline. Intervals come from
+`references/business.py stats`.
 
 User arguments: $ARGUMENTS
 
@@ -42,7 +43,10 @@ which output directory. Enter plan mode if the host supports it:
 Claude Code `EnterPlanMode`; Cursor, Codex, or Gemini via `/plan` or
 Shift+Tab; otherwise present the plan as plain text and pause. Ask
 where to write the run, defaulting per `interim-format.md` § Where
-runs live, and open it there. Wait for confirmation.
+runs live. Write nothing, including `index.md`, until the user
+approves; then open the run there. Hosts without a question tool use
+the default root and record that in the run README, as
+`interim-format.md` allows.
 
 ### 2. Instrument discovery
 
@@ -65,20 +69,23 @@ unknown.
 Emit the full interim format from `interim-format.md`: run README,
 source manifest with verbatim queries, assumptions register, raw
 snapshots, per-topic measurements, and `findings.md`. Every figure
-tagged; every unknown listed with what data would resolve it. Write
-prose per `references/prose-rules.md`.
+tagged; every unknown listed with what data would resolve it. Compute
+medians, quartiles, and intervals with `business.py stats` and check
+the register with `business.py assumptions`. Write prose per
+`references/prose-rules.md`.
 
 ## Output
 
-Hero success form: `✓ Run written: <run path>, window <start>..<end>`;
-failure form `⚠ Refused: <reason>`. Then exactly these sections:
+Hero success form: `✓ Run written: <date>/business/<workflow>, window
+<start>..<end>`; a stopped run follows `interim-format.md` §
+Rendering a report. Then exactly these sections:
 
 1. `## Scope`: what was measured and the pinned window.
 2. `## Instruments`: available vs unavailable, and what each
    unavailable one leaves unknown.
 3. `## Collected`: per instrument, what landed in `raw/` and
    `measurements/`.
-4. `## Package`: the run path, count of registered assumptions, and
+4. `## Package`: the run location, count of registered assumptions, and
    the open unknowns.
 
 End with an `ask-user-choice` panel: generate a report (ask which

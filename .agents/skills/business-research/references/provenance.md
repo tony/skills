@@ -1,7 +1,7 @@
 # Provenance and Anti-Inflation Contract
 
 Shared contract for every `/business:*` command. Every figure in
-every artifact — interim package, report, chat output — obeys this
+every artifact (interim package, report, chat output) obeys this
 file. A figure that cannot satisfy it does not ship.
 
 ## The four tags
@@ -12,10 +12,10 @@ Every figure carries exactly one tag:
   source-manifest entry in the run's `sources.md` by its stable name.
 - **DERIVED** — computed from measured inputs. Show the formula
   inline next to the figure; each input keeps its own tag.
-- **BENCHMARKED** — from an external source. Citation plus retrieval
-  date. Vendor sources carry an additional `(vendor)` flag and are
-  never used as internal inputs — `evidence.md` holds the vetted
-  table and the usage rules.
+- **BENCHMARKED** — from an external source. Pinned link (URL, DOI,
+  or report ID) plus retrieval date. Vendor sources carry an
+  additional `(vendor)` flag and are never used as internal inputs;
+  `evidence.md` holds the vetted table and the usage rules.
 - **ESTIMATED** — an assumption. Rationale plus confidence
   (high | medium | low); the entry lives in `assumptions.yaml` and
   the figure cites its assumption id.

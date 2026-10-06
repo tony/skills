@@ -113,7 +113,12 @@ Measure the artifact share before classifying a snapshot store. With
 GNU coreutils:
 
 ```console
-$ find <store> -type d \( -name target -o -name node_modules -o -name .venv \) -prune -print0 | du -sch --files0-from=- | tail -1
+$ find <store> \
+    -type d \( -name target -o -name node_modules -o -name .venv \) \
+    -prune \
+    -print0 \
+  | du -sch --files0-from=- \
+  | tail -1
 ```
 
 BSD/Darwin `du` has no `--files0-from`, so sum the per-directory sizes
@@ -121,5 +126,10 @@ instead. This reports GiB, and a snapshot store that hardlinks across
 directories will read high, since each batch dedups only within itself:
 
 ```console
-$ find <store> -type d \( -name target -o -name node_modules -o -name .venv \) -prune -print0 | xargs -0 du -sk | awk '{total += $1} END {printf "%.1f GiB\n", total / 1048576}'
+$ find <store> \
+    -type d \( -name target -o -name node_modules -o -name .venv \) \
+    -prune \
+    -print0 \
+  | xargs -0 du -sk \
+  | awk '{total += $1} END {printf "%.1f GiB\n", total / 1048576}'
 ```

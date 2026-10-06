@@ -14,8 +14,8 @@ metadata:
 File an issue a maintainer three years from now can act on without
 asking you anything.
 
-Argument: $ARGUMENTS — a description, a repository, a pasted finding,
-or nothing.
+Argument: $ARGUMENTS (a description, a repository, a pasted finding,
+or nothing).
 
 The body follows `references/rendered-markdown.md`
 and every link in it follows
@@ -70,12 +70,12 @@ before anything else:
 $ gh repo view OWNER/REPO --json isSecurityPolicyEnabled,securityPolicyUrl
 ```
 
-That covers `SECURITY.md` wherever the project keeps it — root,
-`.github/`, or `docs/` — including in a repository you have not
+That covers `SECURITY.md` wherever the project keeps it (root,
+`.github/`, or `docs/`), including in a repository you have not
 cloned. When a policy exists and the finding is a security defect,
 read it, follow its private reporting path, and stop.
 
-Also stop and ask when the evidence cannot be sanitized — an internal
+Also stop and ask when the evidence cannot be sanitized: an internal
 log that carries customer data does not become fileable by trimming
 it.
 
@@ -88,7 +88,7 @@ which sections the body carries.
 $ gh repo view OWNER/REPO --json hasIssuesEnabled,isBlankIssuesEnabled,issueTemplates,contactLinks
 ```
 
-Issues disabled means the project takes reports somewhere else — read
+Issues disabled means the project takes reports somewhere else. Read
 `contactLinks` and `CONTRIBUTING.md` and report where, rather than
 filing.
 
@@ -104,7 +104,7 @@ $ gh api repos/OWNER/REPO/contents/.github/ISSUE_TEMPLATE --jq '.[].name'
 $ gh api repos/OWNER/REPO/contents/.github/ISSUE_TEMPLATE/bug_report.yml -H 'Accept: application/vnd.github.raw'
 ```
 
-Templates live on the default branch only. When several fit, ask —
+Templates live on the default branch only. When several fit, ask:
 their file order is a filename artifact, not the maintainer's ranking,
 so never take the first one as the intended default.
 
@@ -124,7 +124,7 @@ $ gh issue list --repo OWNER/REPO --state all --search "KEYWORDS in:title" --lim
 $ gh search issues "KEYWORDS" --repo OWNER/REPO --match body --json number,title,url,state
 ```
 
-Search closed issues too — a closed one is often the answer, and a
+Search closed issues too. A closed one is often the answer, and a
 duplicate of a closed issue is a regression report, which is a
 different and more useful issue.
 
@@ -150,7 +150,7 @@ For a proposal or task: what is impossible or awkward today, shown
 concretely; what the project already does that is adjacent; and what
 the change would touch.
 
-For every open-source project the issue names, research its link set —
+For every open-source project the issue names, research its link set:
 repository, homepage, docs, the changelog at the release in question,
 registry page — rather than reconstructing URLs from memory.
 
@@ -217,7 +217,7 @@ and do not file; a request that explicitly says to file the issue is
 the approval. To let the user submit it themselves, add `--web` to
 `gh issue create` so it opens the prefilled form.
 
-`NAME` is optional and validated first — an unknown label aborts the
+`NAME` is optional and validated first. An unknown label aborts the
 create and files nothing:
 
 ```console
@@ -232,7 +232,7 @@ $ gh issue create --repo OWNER/REPO --title "TITLE" --body-file PATH [--label NA
 ```
 
 Remove the scratch file on the way out, whichever branch the user
-picked — filed, printed, or dropped:
+picked (filed, printed, or dropped):
 
 ```console
 $ rm -f PATH

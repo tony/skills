@@ -9,6 +9,7 @@ Read before writing any version string into a workflow.
 - Resolve the latest version
 - Verify the target tag exists
 - Dereference annotated tags before comparing
+- Resolve a tag to its commit SHA
 - Choose the pin, preserving the repo's shape
 - Check the gates the research surfaces
 
@@ -17,7 +18,7 @@ Read before writing any version string into a workflow.
 Own repositories only. Check the fork flag, not the owner name:
 
 ```console
-gh repo view <owner>/<name> --json isFork
+$ gh repo view <owner>/<name> --json isFork
 ```
 
 A fork (`isFork: true`) and an upstream project are out of scope, with
@@ -26,26 +27,45 @@ repositories were excluded and why.
 
 ## Inventory pins from trunk, not the working tree
 
-Read workflow content through `git show <trunk>:<path>`. A checkout
-may sit on a feature branch, and auditing that branch reports pins the
-default branch does not have.
+Resolve the default branch from the API (`origin/HEAD` may be unset),
+then fetch so `origin/<default>` is current. Without the fetch the
+audit reads a stale branch and says so in the report.
 
-Cover `.github/workflows/**` and `.github/actions/**` — composite
-actions pin versions too, and they are the ones most often missed.
+```console
+$ gh repo view --json defaultBranchRef --jq .defaultBranchRef.name
+```
 
-**Word-splitting trap.** In zsh, an unquoted scalar expands as a single
-word; in bash it splits on IFS. A loop over a captured file list
-therefore works for repos with one workflow file and silently produces
-a bogus multi-line ref for repos with two, dropping them from the audit
-with no error. The audit then reports the fleet is clean. Always pipe
-into `while read -r` instead of iterating an unquoted variable.
+```console
+$ git fetch origin
+```
+
+Read workflow content from `origin/<default>`, not the checkout: a
+feature branch reports pins the default branch does not have. Cover
+`.github/workflows/**` and `.github/actions/**`; composite actions pin
+versions too and are the ones most often missed.
+
+Loop over the file list with `while read -r`. An unquoted captured list
+expands as one word in zsh, so a repo with two workflow files yields a
+bogus multi-line ref, drops out of the audit with no error, and the
+fleet reads as clean.
+
+```bash
+git ls-tree -r --name-only origin/<default> .github | while read -r f; do
+  git show "origin/<default>:$f" | grep -n 'uses:' | sed "s|^|$f:|"
+done
+```
+
+Skip `uses: ./path` (local) and `uses: docker://...` (no tag to verify)
+and say so in the report. For `owner/repo/subpath@ref`, look up tags on
+`owner/repo`. On a host other than github.com, set `GH_HOST` and use
+that host's URL for `git ls-remote`.
 
 ## Resolve the latest version
 
 Ask the registry, not memory:
 
 ```console
-gh api repos/<owner>/<action>/releases/latest --jq .tag_name
+$ gh api repos/<owner>/<action>/releases/latest --jq .tag_name
 ```
 
 Some actions publish no releases at all, only tags. Fall back to
@@ -57,7 +77,7 @@ A pin naming a tag that does not exist breaks every workflow that
 references it. Confirm before writing, and gate on exit status:
 
 ```console
-gh api repos/<owner>/<action>/git/ref/tags/<tag> >/dev/null 2>&1
+$ gh api repos/<owner>/<action>/git/ref/tags/<tag> >/dev/null 2>&1
 ```
 
 Piping `gh api` into `jq` or `sed` before checking the status swallows
@@ -75,12 +95,25 @@ tags look different — and can lead to "correcting" research that was
 right. Dereference when the type is `tag`:
 
 ```console
-gh api repos/<owner>/<action>/git/tags/<tag-object-sha> --jq .object.sha
+$ gh api repos/<owner>/<action>/git/tags/<tag-object-sha> --jq .object.sha
 ```
 
 This is how to confirm claims like "the floating v6 tag now points at
 the v7 commit", which change whether a bump is a behaviour change or a
 label correction.
+
+## Resolve a tag to its commit SHA
+
+A SHA pin needs the commit, not the tag object. Ask for the tag and its
+peeled form together; an annotated tag prints two lines and the `^{}`
+line is the commit, a lightweight tag prints one line that is already
+the commit. `tail -n 1` takes the right line in both cases:
+
+```console
+$ git ls-remote https://github.com/<owner>/<action>.git "refs/tags/<tag>" "refs/tags/<tag>^{}" | awk '{print $1}' | tail -n 1
+```
+
+An empty result means the tag does not exist; stop.
 
 ## Choose the pin, preserving the repo's shape
 

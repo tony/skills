@@ -4,7 +4,7 @@ description: >-
   Adversarially judge a distilled ontology one candidate at a time —
   synonymy, polysemy, orphans, circular evidence, and coverage
 disable-model-invocation: true
-allowed-tools: ["Bash", "Read", "Grep", "Glob", "Edit", "Write", "Task", "AskUserQuestion"]
+allowed-tools: ["Bash", "Read", "Grep", "Glob", "Edit", "Write", "AskUserQuestion"]
 metadata:
   argument-hint: "[--out=<dir>] [--rounds=<n>] [--panel]"
   source: "plugins/scholar/skills/contest/SKILL.md"
@@ -34,8 +34,9 @@ It reports synonymy candidates, polysemy candidates, orphans, circular
 evidence, and fan-out per type.
 
 The analyzer proposes; it never decides. A high similarity score is a
-question — *are these one concept?* — not an answer. Record the number in `evidence/metrics.md` with the command that
-produced it, per the evidence tiers.
+question (*are these one concept?*), not an answer. Record the number in
+`evidence/metrics.md` with the command that produced it, per the evidence
+tiers.
 
 ## Pass 2 — serial judgment
 
@@ -47,8 +48,8 @@ One candidate at a time. For each, write to `evidence/contested.md`:
 - **Evidence** — what settles it, cited or measured.
 - **Verdict** — upheld, revised, or killed.
 
-Record kills; do not discard them. A kill often carries more than a survivor, because it names a boundary the
-ontology drew in the wrong place. A candidate rejected for the wrong reason
+Record kills; do not discard them. A kill often carries more than a survivor, because it names a boundary
+the ontology drew in the wrong place. A candidate rejected for the wrong reason
 tells you the type above it is mis-specified.
 
 Judge one candidate fully before starting the next. Batching them produces

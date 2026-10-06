@@ -7,26 +7,26 @@ conventions, lands gated commits, and supports parallel tickets.
 
 In Claude Code, add the marketplace:
 
-```console
+```text
 /plugin marketplace add tony/skills
 ```
 
 Install the plugin:
 
-```console
+```text
 /plugin install action@skills
 ```
 
 In Codex, add the marketplace:
 
 ```console
-codex plugin marketplace add tony/skills
+$ codex plugin marketplace add tony/skills
 ```
 
 Install the plugin:
 
 ```console
-codex plugin add action@skills
+$ codex plugin add action@skills
 ```
 
 ## Skills
@@ -63,8 +63,7 @@ Multi-ticket branches share a theme slug; ticket IDs ride in commits/PRs for lin
 
 ## Zero Ticket Write-Back
 
-The plugin performs **zero writes** to trackers. Links form server-side via branch
-or PR names. Abandoned branches unwind cleanly.
+Neither skill writes to a tracker. Links form server-side from branch and PR names.
 
 ## Shared References
 

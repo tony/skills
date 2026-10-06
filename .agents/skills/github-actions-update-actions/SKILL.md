@@ -4,7 +4,7 @@ description: >-
   Use when updating every outdated GitHub Action across one repository or a
   fleet, one researched change at a time.
 disable-model-invocation: true
-allowed-tools: ["Bash", "Read", "Grep", "Glob", "Edit", "WebSearch", "WebFetch", "Task", "AskUserQuestion"]
+allowed-tools: ["Bash", "Read", "Grep", "Glob", "Edit", "Task", "AskUserQuestion"]
 metadata:
   argument-hint: "[--root <dir>] [--owner <name>...] [--repo <path|slug>...] [--audit-only] [--pr] [--no-push]"
   source: "plugins/github-actions/skills/update-actions/SKILL.md"
@@ -13,20 +13,19 @@ metadata:
 # Update All GitHub Actions
 
 Audit every `uses:` pin across the repositories in scope, then bring
-the out-of-date ones current — one commit per repository and action,
+the out-of-date ones current: one commit per repository and action,
 each justified against the vendor's own release notes.
 
-Run the phases of the `github-actions-bumping-github-actions` skill across the scope;
-it names the references and owns the phase structure.
-
-For a single named action, use the `github-actions-update-action` skill instead.
+Read the `github-actions-bumping-github-actions` skill and run its phases across the
+scope. It owns the phase structure, the references, the Orchestration
+Plan, and the output shape. For a single named action, use
+the `github-actions-update-action` skill instead.
 
 User arguments: $ARGUMENTS
 
 ## Procedure
 
-Follow the skill's phases. This command supplies the scope and the
-fan-out.
+This skill supplies the scope and the fan-out.
 
 ### 1. Scope
 
@@ -38,22 +37,15 @@ individual ones. The fork rule is in
 
 ### 2. Inventory and verify
 
-Run the skill's inventory and verification phases across the whole
-scope before touching anything. Also list open dependabot pull requests
-per repository for the close-out; a failed `gh` call means none can be
-listed, so say so:
-
-```console
-gh pr list --author app/dependabot --state open --limit 50 --json number,title
-```
-
- Every target tag is confirmed to exist
-first; a dangling ref written fleet-wide is the expensive failure this
-sequencing prevents.
+Run the inventory and verification phases across the whole scope before
+touching anything, so a dangling ref is never written fleet-wide. Also
+list open dependabot pull requests per repository for the close-out,
+with the command in `references/dependabot-closeout.md`. A failed
+`gh` call means none can be listed; say so.
 
 ### 3. Research, one chain per distinct upgrade
 
-Group the work by upgrade chain rather than by repository — twenty
+Group the work by upgrade chain rather than by repository: twenty
 repositories moving `actions/checkout` from the same major share one
 piece of research. Dispatch a subagent per chain where the host
 supports it. Validate every release URL before it reaches a commit
@@ -61,22 +53,25 @@ message.
 
 ### 4. Orchestration plan
 
-Present the plan the skill defines and wait for approval. With
-`--audit-only`, stop here and report; nothing is written.
+Present the plan the skill defines, including the PRs to close, and wait
+for approval. With `--audit-only`, stop here and report; nothing is
+written.
 
 ### 5. Commit and push
 
 One commit per repository and action. Work through repositories one at
 a time, pushing as each completes, so an interrupted run resumes
-cleanly. Write commit messages, pull-request comments and the report per
-`references/prose-rules.md`.
+cleanly. Write commit messages, pull-request comments, and the report per
+`references/prose-rules.md`. No `Co-Authored-By`, no "Generated
+with" or other tool trailer, no emoji.
 
 ### 6. Verify and close out
 
-Watch CI per repository. Attribute failures before blaming the bumps.
-Close every dependabot pull request whose action was bumped, citing the
-commit that superseded it; close as obsolete any whose action no longer
-appears in a workflow.
+Watch CI per repository and attribute failures before blaming the
+bumps. Then close the dependabot pull requests per the closing
+protocol: show the user the exact commands for every PR whose action was
+bumped (citing its commit) or is no longer in any workflow (obsolete),
+and run them only after the user confirms.
 
 ## Rules
 
@@ -89,28 +84,13 @@ appears in a workflow.
 
 ## Output
 
-Open with a one-line hero (`✓ N commits across M repos` or
-`⚠ Audit only: N pins out of date`), then exactly these sections:
-
-1. `## Audit` — every action in scope with its current pins and the
-   latest version, and what was excluded as fork, upstream, or already
-   current.
-2. `## Upgrades` — one entry per distinct chain: what changed, release
-   links, and which repositories the breaking changes reach.
-3. `## Commits` — per repository, the commits made and whether they
-   were pushed.
-4. `## Close-out` — CI results, dependabot pull requests closed with
-   the commit each cited, and any failure shown to predate the bumps.
-5. `## Drift` — repositories with no dependabot configuration, and
-   actions pinned to a moving branch.
-
-End with an `ask-user-choice` panel offering next steps (for example:
-add dependabot configuration to the repos lacking it, pin the moving
-branches, stop here) — skip the panel only in plan mode.
+Use the output shape in the `github-actions-bumping-github-actions` skill. The hero is
+`✓ N commits across M repos`, or `⚠ Audit only: N pins out of date` with
+`--audit-only`, or `⚠ Blocked: <reason>` with one sentence on what the
+user must do when the run halts.
 
 
 ## Portability notes
 
-- `ask-user-choice` — present the listed options and wait for the user to pick one. Hosts with a structured multiple-choice tool (Claude Code's `AskUserQuestion`) should use it; otherwise print a numbered list and wait for a numbered reply. Never proceed on an assumed answer.
 - `$ARGUMENTS` — the text the user passed when invoking this skill. If your host does not substitute it, read it as the user's request in the current turn, and ask when there is none.
 - Bundled files — every relative path in this skill points at a file shipped inside this skill directory. Read them from here, not from the host's plugin tree.

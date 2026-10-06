@@ -21,6 +21,10 @@ cleaned up later.
 - Preserve what `references/lean-rubric.md` lists when editing
   existing text: links, citations, anchors, warnings, and comments that
   document an invariant or a "why".
+- Add no fact the source lacks, such as a symptom, cause, or number.
+  When the text needs one, leave a placeholder and say so.
+- A commit message carries no `Co-Authored-By`, no "Generated with" or
+  other tool trailer, and no emoji.
 - Read `./AGENTS.md` and `./CLAUDE.md`. When they define a slop rubric
   or a house voice, that governs.
 

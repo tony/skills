@@ -4,7 +4,7 @@ description: >-
   Take reading notes on a prose corpus — quotations with stable locators and
   margin notes, as a term source for extract
 disable-model-invocation: true
-allowed-tools: ["Bash", "Read", "Grep", "Glob", "Write"]
+allowed-tools: ["Bash", "Read", "Grep", "Glob", "Write", "AskUserQuestion"]
 metadata:
   argument-hint: "<source> [--locator=chapter|section|page|line] [--out=<dir>]"
   source: "plugins/scholar/skills/annotate/SKILL.md"
@@ -25,7 +25,8 @@ User arguments: $ARGUMENTS
 ### 1. Confirm the edition
 
 Read the source's row in `sources.jsonl`. If the locator scheme is `page` and
-the edition is unrecorded, stop and record the edition first.
+the edition is unrecorded, or the source has no row, stop. `gather` writes
+`sources.jsonl` and records the edition; the user may also add the row by hand.
 
 ### 2. Extract quotations
 
@@ -41,7 +42,7 @@ the two into a paraphrase; `extract` needs to know which is which.
 
 ### 4. Write the quotation set
 
-```
+```json
 {"source": "<source id from sources.jsonl>", "locator": "ch.3 §2", "quote": "...", "note": "the author's own term for the boundary"}
 ```
 
@@ -65,6 +66,8 @@ Per `references/output-contract.md`. Hero: `✓ <n> quotations from
    will have to infer from usage.
 
 Next-step options: run extract, annotate another source, stop here.
+
+Write it per `references/prose-rules.md`.
 
 
 ## Portability notes

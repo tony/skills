@@ -1,8 +1,8 @@
 # Ticket Detection, Branch Naming & Worktree Placement
 
 How `/action:worktree` and `/action:worktrees` resolve tickets into
-branch names and worktree paths at runtime. Tracker-agnostic: Linear and GitHub are fully supported, everything
-else degrades gracefully.
+branch names and worktree paths at runtime. Tracker-agnostic: Linear
+and GitHub are fully supported, everything else degrades gracefully.
 
 Contents:
 
@@ -92,8 +92,8 @@ other system; if both claim it, ask.
   URLs, `owner/repo#123`.
 - **Fetch**:
 
-```
-gh issue view <num> --json number,title,body,labels,url
+```console
+$ gh issue view <num> --json number,title,body,labels,url
 ```
 
   Add `--repo <owner>/<repo>` for cross-repo references.
@@ -134,12 +134,12 @@ Resolve the branch name by the first rung that yields one:
    (see below).
 4. **Observed repo norms** — mine the team's actual pattern:
 
-```
-git branch -r
+```console
+$ git branch -r
 ```
 
-```
-git log --merges --oneline -50
+```console
+$ git log --merges --oneline -50
 ```
 
    Look for prefix families (`feat/`, `fix/`, `username/`), where the
@@ -154,13 +154,14 @@ git log --merges --oneline -50
 
 Whatever rung wins, validate the name before deriving paths from it:
 
-```
-git check-ref-format --branch <name>
+```console
+$ git check-ref-format --branch <name>
 ```
 
 An invalid name from a slugged title (illegal characters, trailing
 dot, `..`) is re-slugged and re-validated; an invalid explicit name
-(rung 1) is a question back to the user, never a silent rewrite.
+(rung 1) is a question back to the user, never a silent rewrite
+(non-interactive: report `⚠ blocked`, change nothing).
 
 **Multi-ticket (crosscutting) branches** skip rung 3: no single
 ticket's name should claim a branch that carries several. Propose a
@@ -175,32 +176,34 @@ Two placements — the placement axis:
 
 - **`--local` (default)** — a visible sibling of the repo:
 
-```
+```text
 {repo_path}-{sanitized_branch}/
 ```
 
-  Derivation: take the absolute repo path
-  (`git rev-parse --show-toplevel`), strip any trailing slash, append
-  `-`, then append the branch name with every `/` flattened to `-`.
-  The flattening applies to the **directory name only** — the git
-  branch keeps its slashes.
+  Derivation: take the absolute path of the **main checkout**, the
+  first `worktree` line of `git worktree list --porcelain` (not
+  `git rev-parse --show-toplevel`, which returns the linked worktree
+  when run inside one and would nest sibling names). Strip any
+  trailing slash, append `-`, then append the branch name with every
+  `/` flattened to `-`. The flattening applies to the directory name
+  only; the git branch keeps its slashes.
 
   Example: repo at `/work/shop`, branch `feat/tea-123-login` →
   worktree `/work/shop-feat-tea-123-login/`, branch still
   `feat/tea-123-login`.
 
 - **`--temp`** — the host's native temp-worktree mechanism when one
-  exists (e.g. Claude Code's worktree isolation for subagents) —
-  **but only if it can put the work on the computed branch name**.
+  exists, **but only if it can put the work on the computed branch name**.
   Branch naming is load-bearing (it is how Linear auto-attaches); a
   mechanism that cannot honor it is disqualified. Otherwise a temp
   root outside the repo:
 
-```
+```text
 ${TMPDIR:-/tmp}/action-worktrees/<repo-name>/<sanitized-branch>/
 ```
 
-  Same sanitization rule for `<sanitized-branch>`. The path is
+  `<repo-name>` is the basename of the main checkout. Same
+  sanitization rule for `<sanitized-branch>`. The path is
   deterministic, so `--temp` re-runs land on the same worktree and
   resume per the idempotency ladder.
 

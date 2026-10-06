@@ -6,8 +6,6 @@ The writing rules for text a renderer will show a human: issue, pull
 request, discussion and review-comment bodies, release notes, tracker
 tickets, and a repository's own markdown files.
 
-Shared by the `rendered-markdown` skill and the `gh-create-issue` skill.
-
 ## The test
 
 Will a maintainer three years from now find this helpful?

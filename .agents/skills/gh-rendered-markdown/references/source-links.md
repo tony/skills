@@ -60,6 +60,10 @@ A line-range permalink unfurls into a code snippet only inside its own
 repository. Filing across repositories, quote the lines in a fence
 next to the link.
 
+When a pin cannot be resolved (no network, no release), keep the
+unresolved ref visibly marked in the draft, such as `<SHA>`, and list
+it in the reply as unverified. Never substitute a guess.
+
 ### Resolving the ref
 
 Newest tag of a repository you have not cloned:
@@ -125,8 +129,8 @@ not GitHub, and in a body someone copies elsewhere.
 ### Tracker keys: check whether the repository resolves them
 
 A key like `TIK-111` renders as plain text unless a repository admin
-configured a custom autolink for that prefix. When it is configured, write the bare key. When it
-is not, write a full markdown link.
+configured a custom autolink for that prefix. When it is configured, write the
+bare key. When it is not, write a full markdown link.
 
 `GET /repos/{owner}/{repo}/autolinks` needs admin and returns 404 for
 everyone else, which is indistinguishable from "none configured".
@@ -151,10 +155,10 @@ package-registry page. Research it — do not reconstruct URLs from
 memory.
 
 Render it as the project name linked to its primary home, with the
-rest in parentheses:
+rest in parentheses (the project and version below are illustrative):
 
 ```
-[vitest](https://vitest.dev) — [repo](https://github.com/vitest-dev/vitest), [docs](https://vitest.dev/guide/), [v4.1.10 release notes](https://github.com/vitest-dev/vitest/releases/tag/v4.1.10), [npm](https://www.npmjs.com/package/vitest)
+[vitest](https://vitest.dev) — [repo](https://github.com/vitest-dev/vitest), [docs](https://vitest.dev/guide/), [v1.2.3 release notes](https://github.com/vitest-dev/vitest/releases/tag/v1.2.3), [npm](https://www.npmjs.com/package/vitest)
 ```
 
 Drop a slot that genuinely does not exist rather than pointing two

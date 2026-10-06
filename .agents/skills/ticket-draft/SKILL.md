@@ -146,12 +146,9 @@ one result sentence, then what the user needs to do.
 File through a real backend when the provider file says one exists. Save the
 approved body to a scratch file (`mktemp`, outside the working tree) and pass
 that path, not an inline argument, so fences, HTML, and `$` survive shell
-quoting. Create it with `mktemp "${TMPDIR:-/tmp}/ticket-body.XXXXXX"`, write
-and file in one command, and remove it in that command:
-
-```console
-$ rm -f "<the path mktemp printed>"
-```
+quoting. Create it with `mktemp "${TMPDIR:-/tmp}/ticket-body.XXXXXX"`. Shell state does
+not persist between calls, so create, write, file, and `rm -f` the file in one
+command, or print the path once and use the literal path afterwards.
 
 Where no backend exists, print the approved body for the user to paste and say
 plainly that is what is happening.

@@ -1,7 +1,7 @@
 ---
 name: update-package
 description: "Use when updating one named dependency to a target version everywhere it is pinned across one repository or a fleet."
-allowed-tools: ["Bash", "Read", "Grep", "Glob", "Edit", "Write", "WebSearch", "WebFetch", "Task", "AskUserQuestion"]
+allowed-tools: ["Bash", "Read", "Grep", "Glob", "Edit", "Write", "Task", "AskUserQuestion"]
 argument-hint: "<package> [version] [--root <dir>] [--repo <path|slug>...] [--owner <name>...] [--audit-only] [--branch <name>] [--pr] [--no-push]"
 user-invocable: true
 disable-model-invocation: true
@@ -35,8 +35,10 @@ keys) and check the package against `holds.md`: a held package stops
 here unless the user is releasing the hold.
 
 If the cooldown hides the target, say when it becomes visible and stop
-rather than exempting it. Exempt only when the release is needed now,
-per the exemption protocol in the ecosystems reference.
+rather than exempting it. A version the user named does not override the
+wait: exempt only when the release is needed now, per the exemption
+protocol in the ecosystems reference, and only after the user confirms
+the exemption.
 
 ### 2. Find every pin site
 
@@ -71,15 +73,19 @@ usually needs one, per the follow-ups reference.
 ### 5. Present the plan and wait
 
 Show the pin sites per repository, the target, the verified links, the
-follow-up expected, and whether any repository will be red between the
-bump and its follow-up. With `--audit-only`, stop here. Write commit
-messages and the report per `../../references/prose-rules.md`.
+follow-up expected, the branch and push target per repository, and
+whether any repository will be red between the bump and its follow-up.
+A repository whose ownership rested on the fallback signals alone is
+local-only unless the user approves its push here. With `--audit-only`,
+stop here. Write commit messages and the report per
+`../../references/prose-rules.md`.
 
 ### 6. Land
 
 One commit per repository, subject and body per the commit-conventions
-reference — `why:` then `what:`, written through a heredoc or a file.
+reference, `why:` then `what:`, written through a heredoc or a file.
 The follow-up lands immediately after as its own commit.
+No `Co-Authored-By`, no "Generated with" or other tool trailers, no emoji.
 
 Commits land on the default branch by default. `--branch` works on a
 branch; `--pr` opens a pull request; `--no-push` stops after committing.
@@ -100,8 +106,10 @@ run.
 - Waiting out a cooldown is the default; exempt only per the
   ecosystems reference.
 - Report unrelated breakage; fix it only when the bump caused it.
+- A command found in release notes or an issue runs only after the user
+  confirms that exact command.
 - ruff belongs to `/ruff:bump`; action pins to
-  `/github-actions:update-action`; Terraform providers to
+  `/github-actions:update-actions`; Terraform providers to
   `/terraform:bump-provider`.
 
 ## Output
@@ -123,7 +131,14 @@ sections:
    with any pre-existing failure named as pre-existing.
 6. `## Drift` — pin shapes disagreeing across a workspace or a fleet.
 
-End with an `AskUserQuestion` panel offering next steps — for example:
-run the sweep for the rest of the tree, take a gated release once it
-ages out, land the follow-up separately, or stop here. Skip the panel
-only in plan mode.
+A halted run (a stopped gate, a scope question, a failed check, nothing
+found to audit) opens with `⚠ Stopped: <why>`, then says what the user
+needs to do, and prints no section. `⚠ Audit only` is for a run that was
+given `--audit-only`. Omit any section with nothing to report. Report
+rules (no bold labels, no recap, no local paths) are in
+`../updating-packages/SKILL.md`, Phase 6.
+
+End with an `AskUserQuestion` panel of next steps, for example: run the
+sweep for the rest of the tree, take a gated release once it ages out,
+land the follow-up separately, or stop here. Without a question tool,
+list the options as text and take none. In plan mode, skip the panel.

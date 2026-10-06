@@ -9,8 +9,8 @@ session.
 
 - Caller contract
 - Backend adapter
-- Adversarial sub-agents
-- Separate model CLIs
+- Sub-agent backend
+- Model-CLI backend
 - Shared execution semantics
 
 ## Caller contract
@@ -129,11 +129,11 @@ User-facing output names the role and identifies the worker backend as
 executor of every role is `host-native`; record a provider or model only when
 the host reports one.
 
-For project-read-only commands, give every role its own disposable isolated
-worktree under the session directory, created from the pre-dispatch snapshot
-(`worktrees create`), so the role sees the user's uncommitted work. Point the
-worker at that worktree, never the user's working tree. Prompt hardening still
-forbids project writes, so an accidental write is contained in a disposable tree.
+For project-read-only commands, give every role its own disposable isolated worktree
+under the session directory, created from the pre-dispatch snapshot (`worktrees
+create`), so the role sees the user's uncommitted work. Point the worker at that
+worktree, never the user's working tree. Prompt hardening still forbids project
+writes, so an accidental write is contained in a disposable tree.
 
 For mutating commands, give every role its own isolated worktree on a
 dedicated branch, including the Maintainer. A sub-agent may modify only its
@@ -145,7 +145,7 @@ After a read-only WorkItem returns, or after a mutating participant's diffs
 and snapshots have been captured, remove only that participant's exact
 session-scoped worktree. Native workers never run `checkout`, `clean`, or
 `reset` against the user's checkout. The repo guard reports any change to the
-checkout and never repairs it on its own (see the plugin's `docs/repo-guard-protocol.md`).
+checkout and never repairs it on its own (see `docs/repo-guard-protocol.md`).
 
 If the host cannot create native sub-agents, stop with a direct explanation.
 In an interactive session, offer a new explicit choice to use separate model

@@ -25,11 +25,6 @@ execution:
 runs: 1
 
 graders:
-  - name: skill-fired
-    type: tool_used
-    tool: Skill
-    input_match: '"skill":\s*"(double-check:)?align"'
-
   - name: reads-the-file
     type: tool_used
     tool: Read

@@ -36,8 +36,9 @@ Session
   `--variants N`, `--passes N`, `--timeout`, `--prompt-stdin`. `--bare` makes a
   workerless session with no snapshot. Returns `session_dir`, `toplevel`,
   `trunk`, `baseline_sha`, `participants`, `executors`, `artifacts`, `stash`.
-- `context [--full-diff] [--diff-limit N]`: repo-state packet sections as Markdown.
-  Read-only; it needs no session.
+- `context [--full-diff] [--diff-limit N]`: `trunk`, `branch`, `commits` on the
+  branch, and the repo-state packet sections as `markdown`. Read-only; it needs no
+  session.
 - `update --session S`: `--status`, `--completed-passes`, `--event` with
   `--event-json`, `--drop <lane>`, `--set key=<json>`, `--link-latest`.
 - `pass-dir --session S --pass N`: creates `pass-NNNN` for a later pass.

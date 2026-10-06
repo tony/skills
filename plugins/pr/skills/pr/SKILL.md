@@ -1,7 +1,7 @@
 ---
 name: pr
 description: "Use when drafting a pull request description from the current branch's diff, optionally creating the PR with gh."
-allowed-tools: ["Bash", "Read"]
+allowed-tools: ["Bash", "Read", "AskUserQuestion"]
 argument-hint: "[optional hint about the PR, e.g. 'fixes the race condition']"
 user-invocable: true
 disable-model-invocation: true
@@ -20,29 +20,33 @@ User hint: $ARGUMENTS
 
 Find the trunk without touching the network:
 
-```bash
-git symbolic-ref --short refs/remotes/origin/HEAD
+```console
+$ git symbolic-ref --short refs/remotes/origin/HEAD
 ```
 
-It prints `origin/<trunk>`; call that `BASE`. When it fails, use the
+It prints `origin/<trunk>`; that is the base. When it fails, use the
 first of `origin/main` or `origin/master` that
 `git rev-parse --verify --quiet` accepts; when neither exists, ask the
-user for the base. Then gather the branch's change:
+user for the base, or stop and name the missing base when you cannot
+ask. The local `origin/<trunk>` may be stale; run `git fetch origin
+<trunk>` first when the user wants it current. Shell variables do not
+survive between commands, so write the literal `origin/<trunk>` in each
+command below. Gather the branch's change:
 
-```bash
-git branch --show-current
+```console
+$ git branch --show-current
 ```
 
-```bash
-git log "${BASE}..HEAD" --oneline
+```console
+$ git log origin/<trunk>..HEAD --oneline
 ```
 
-```bash
-git diff "${BASE}...HEAD" --stat
+```console
+$ git diff origin/<trunk>...HEAD --stat
 ```
 
-```bash
-git diff "${BASE}...HEAD"
+```console
+$ git diff origin/<trunk>...HEAD
 ```
 
 An empty log means the branch has nothing ahead of the base; say so and
@@ -86,6 +90,7 @@ Use only the sections that fit the change, in proportion to the diff: a one-file
 **`## Design decisions`** — when trade-offs were made:
 - Explain rationale with **bold-label** entries
 - Include "why not" for alternatives considered
+- Omit the section when no alternative was weighed; never invent an alternative or speculate about future needs
 - Example: **Errors as values, not exceptions**: `SyncResult` follows the structured result pattern because...
 
 **`## Verification`** — copyable commands proving completeness:
@@ -93,7 +98,7 @@ Use only the sections that fit the change, in proportion to the diff: a one-file
 - Commands should return zero matches for removed patterns or expected matches for added patterns
 - Example: verify no f-strings remain in log calls
 
-**`## Test plan`** — a `- [x]` checklist:
+**`## Test plan`** — a checklist; mark `- [x]` only for what you ran this session and `- [ ]` for the rest:
 - Each item describes **what is validated**, not just the command
 - Include project test/lint/typecheck commands as discovered from AGENTS.md
 - Include specific test names when they exist
@@ -108,16 +113,9 @@ Use only the sections that fit the change, in proportion to the diff: a one-file
 
 #### Tables
 
-Use tables when they improve scannability:
-
-| Use case | Format |
-|---|---|
-| Parameter/flag mappings | `Parameter \| Flag \| Description` |
-| Old-to-new renames | `Method \| Old \| New` |
-| File inventories | `Path \| Description` |
-| Environment matrices | `Environment \| Result` |
-| Sync/async API pairs | `Sync \| Async` |
-| Before/after comparisons | `Before \| After` |
+Use a table only for matrix-shaped data: parameter or flag maps,
+old-to-new renames, environment matrices, sync/async pairs, or
+before/after comparisons. Prefer prose or a list otherwise.
 
 #### Line wrapping
 
@@ -149,7 +147,7 @@ For removal or migration PRs, include "verify zero matches for X" items proving 
 - Number of files or lines changed ("updated 12 files", "adds 340 lines")
 - Details the reviewer can see in the diff
 - Redundant context already visible in `git log`
-- `Fixes #N` hardcoded in the body — link the issue through `gh pr create` flags or let GitHub auto-link. (The merge commit title takes ` (#N)`; see the merge-commit skill.)
+- An invented issue link. Write `Fixes #N` only for an issue number the user, the branch name, or a commit supplied. (The merge commit title takes ` (#N)`; see the merge-commit skill.)
 - **Within-branch tactical narrative** — renames of unshipped symbols, "no longer X" / "previously Y" phrasing, diff paraphrases, or `### Fixes` framing for behavior that never shipped. Belongs in the commit messages of the commits that did the work. Keep such text only when a user of the latest published release experienced the old name, behavior, or bug.
 
 #### Whole-branch perspective
@@ -159,23 +157,36 @@ Ignore fixup commits, reverts-then-re-adds, and intermediate WIP states.
 
 ### 4. Present and Create
 
-- **Show the proposed title and body** to the user in full
+Output shape: the proposed title and full body, then one question. The
+chat text around the body is plain prose with no bold labels, and never
+asks for an issue number.
+
 - Ask whether to:
   1. Create the PR via `gh pr create`
   2. Just output the description (user will create manually)
+- Without an interactive question tool, take option 2: output the
+  description and stop. A request that says to create the PR authorizes
+  `gh pr create` and the push it needs, nothing else.
 - **If creating the PR:**
   - Check if the branch has been pushed; if not, push it with `git push -u origin <branch>`
   - Never push to `main` or `master`
   - Use heredoc for the body to preserve formatting:
-    ```
+
+    ```bash
     gh pr create --title "the title" --body "$(cat <<'EOF'
     ## Summary
     ...
     EOF
     )"
     ```
+
   - If the user provided `$ARGUMENTS` containing a hint about a linked issue, add `--body` content accordingly
+  - When `gh` is missing or unauthenticated, stop: say the PR was not created and name the fix (`gh auth login`); the drafted description stays valid
 - Return the PR URL when done
+
+A run that stops early (empty log, no base, `gh` failure) is one
+sentence saying what happened and that nothing changed, then what the
+user must do.
 
 ---
 

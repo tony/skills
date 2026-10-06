@@ -21,53 +21,46 @@ problem it was added for.
 
 ## Where holds live
 
-npm-check-updates reads `.ncurc`, or `.ncurc.json`, `.ncurc.yaml`,
-`.ncurc.yml`, `.ncurc.js`, `.ncurc.mjs`, `.ncurc.cjs`. The `reject`
-array names packages `ncu` must not offer. Entries may be exact names,
-globs (`*gatsby*`), or regex literals (`/.*react.*/`) — the regex form
-is how a family of packages gets held together.
+npm-check-updates reads an `.ncurc` config file in one of several
+formats; `ncu --help` and its documentation list the names and the
+`reject` option's accepted forms (exact names, and patterns for holding
+a family together). The `reject` array names packages `ncu` must not
+offer.
 
-**A `"ncu"` key in `package.json` is not config.** Unlike most tools in
-this ecosystem, `ncu` does not look there, so a `reject` array written
-into `package.json` is silently ignored and the package keeps being
-offered. Confirm a hold works rather than assuming the file was read.
+**Do not assume a `"ncu"` key in `package.json` is read.** Confirm any
+hold works: run `ncu` after writing it and check the package is no
+longer offered.
 
-**Config resolves next to the package file, not at the repository
-root.** A workspace can therefore hold a package in one member and not
-another, for example two members that need a preview build while the
-rest of the tree tracks releases.
-
-So a root-only scan under-reports holds. Enumerate every config in the
-tree:
+**Config can sit beside each package file, not only at the repository
+root.** Check the documentation for the installed `ncu`. A workspace can
+then hold a package in one member and not another, for example two
+members that need a preview build while the rest of the tree tracks
+releases, and a root-only scan under-reports holds. Enumerate every
+config in the tree:
 
 ```console
-fd -H -t f '^\.ncurc' .
+$ fd -H -t f '^\.ncurc' .
 ```
 
-Releasing the last hold ends one of two ways, and both are in use:
-`{"reject": []}` left in place so the next hold has somewhere to go, or
-the file deleted outright. Neither is dead config to clean up. Follow
-whichever the repository already does, and do not "tidy" an empty
-`reject` array away — its absence and its emptiness mean the same thing
-to `ncu` but not to the next reader.
+Releasing the last hold ends one of two ways: `{"reject": []}` left in
+place so the next hold has somewhere to go, or the file deleted outright.
+Follow whichever the repository already does, and do not "tidy" an empty
+`reject` array away, since the next reader sees a difference that `ncu`
+does not.
 
 ## The reason cannot live in the file
 
-`ncu` rejects unknown keys. Adding a `$comment` to a JSON `.ncurc` does
-not document the hold, it breaks the tool:
-
-```
-Unknown option found in config file: $comment
-error: unknown option '--$comment'
-```
+A JSON config cannot carry comments, and `ncu` may reject keys it does
+not know, so a `$comment` entry can break the tool instead of documenting
+the hold. Run `ncu` after any edit to the file and confirm it still
+loads.
 
 The commit message is therefore the only durable record of why a package
 is held, which makes it load-bearing in a way most config commits are
 not. Write it accordingly.
 
-If a hold genuinely needs an inline explanation, use a format that
-supports comments — `.ncurc.yml` or `.ncurc.js` — rather than inventing
-a key the JSON parser will reject.
+If a hold genuinely needs an inline explanation, use a config format
+that supports comments rather than inventing a key.
 
 ## Commit grammar
 
@@ -75,13 +68,13 @@ Scope by the file, and name the condition in the subject.
 
 Adding a hold:
 
-```
+```text
 .ncurc: Ignore `@biomejs/biome` 2.3.5 -> 2.3.6 until they fix class methods
 ```
 
 Releasing one, naming what fixed it:
 
-```
+```text
 .ncurc: Unignore `@biomejs/biome` (2.3.7 fixed issue)
 ```
 
@@ -129,7 +122,7 @@ re-enumerate the configs after the pass.
 
 ## Cooldown is not a hold
 
-`ncu --cooldown <period>` and the ecosystem cooldown settings gate
+The ecosystem cooldown settings (see `ecosystems.md`) gate
 releases by age, automatically, for every package. A hold names one
 package and one condition. Do not use a `reject` entry to wait out a
 cooldown — it will still be there long after the release ages in.

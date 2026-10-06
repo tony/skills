@@ -39,6 +39,8 @@ Write entries and the commit message per `references/prose-rules.md`.
    - Working tree dirty (`git status --porcelain` non-empty).
    - Detached HEAD, or an in-progress rebase, merge, or cherry-pick.
    - Currently on the base branch.
+   - A merge commit between the base and HEAD (`git rev-list --merges
+     origin/<base>..HEAD` non-empty): the rebase would flatten it.
 
 2. Detect the base and find the changelog file per `branch-scope.md`.
 
@@ -58,14 +60,22 @@ Write entries and the commit message per `references/prose-rules.md`.
      the `changelog-refresh` skill and stop.
 
 4. **Approve the rewrite.** Nothing in git changes before this approval,
-   whether or not the branch was pushed. Via `ask-user-choice`, show:
+   whether or not the branch was pushed. `--commit` does not approve the
+   rewrite, and an invoking request to "rewrite" or "clean up" the changelog
+   does not either; only explicit approval of the history rewrite itself
+   does (for example "yes, drop those commits"). Via `ask-user-choice`, or
+   in the invoking message when the host has no such tool, show:
    - the commits Phase 2 will drop (SHA and subject);
    - the backup branch it will create first;
+   - that a failed invariant check restores the backup with
+     `git reset --hard`;
    - when the dropped commits are pushed (the branch exists on the remote),
      that the rewrite needs a later `git push --force-with-lease` by the
      user. This skill never pushes.
 
-   Proceed only on an explicit yes. Otherwise stop with the tree unchanged.
+   Proceed only on an explicit yes. Without one, including when the host has
+   no `ask-user-choice` and the message holds no such approval, stop with the
+   list above and the tree unchanged; never wait.
 
 ## Phase 2: Back up and rebase out the old changelog commits
 
@@ -106,7 +116,15 @@ Write entries and the commit message per `references/prose-rules.md`.
 
 ## Phase 3: Regenerate entries and present
 
-Approval gate. Do not edit or commit before explicit approval.
+Approval gate. The Phase 1 approval covers the rebase only. Do not edit
+before approval, which comes from, in order:
+
+- `--commit` in `$ARGUMENTS`: approves the edit and the commit.
+- An invoking message that asks to insert or regenerate the entries: approves
+  the edit only.
+- `ask-user-choice`, when the host has it and neither of the above applies.
+- Otherwise, present the entries and stop; never wait. The tree then holds
+  the rebased history with no entries; say so and name the backup.
 
 Generate entries from the branch's current net change against
 `origin/<base>`, per `entry-rules.md`. Entries superseding a mixed commit's
@@ -119,8 +137,8 @@ Present:
    `Branch: <name> | Base: <base> | Dropped: <shas> | Backup: <branch>`.
 2. The proposed entries as exact markdown, the insertion point, and the voice
    check and target line from `entry-rules.md`.
-3. An `ask-user-choice` with **Insert** and **Edit first** (return to
-   generation). `--commit` alone decides what lands, so offer no commit
+3. When asking, an `ask-user-choice` with **Insert** and **Edit first** (return
+   to generation). `--commit` alone decides what lands, so offer no commit
    choice: the rebase has already run, and a yes here would mean something
    different from the one a fresh commit needs.
 

@@ -4,7 +4,7 @@ description: >-
   Build the three ontology layers from a term table — types, members with
   discriminators, and the controlled vocabulary
 disable-model-invocation: true
-allowed-tools: ["Bash", "Read", "Grep", "Glob", "Edit", "Write"]
+allowed-tools: ["Bash", "Read", "Grep", "Glob", "Edit", "Write", "AskUserQuestion"]
 metadata:
   argument-hint: "[--out=<dir>]"
   source: "plugins/scholar/skills/distill/SKILL.md"

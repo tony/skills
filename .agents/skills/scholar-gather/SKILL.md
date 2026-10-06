@@ -4,7 +4,7 @@ description: >-
   Resolve and pin a corpus, inventory it, and record what was read and what
   was deliberately skipped, into sources.jsonl
 disable-model-invocation: true
-allowed-tools: ["Bash", "Read", "Grep", "Glob", "Write", "AskUserQuestion", "WebFetch"]
+allowed-tools: ["Bash", "Read", "Grep", "Glob", "Write", "AskUserQuestion"]
 metadata:
   argument-hint: "<target>... [--kind=code|prose|fleet] [--out=<dir>]"
   source: "plugins/scholar/skills/gather/SKILL.md"
@@ -12,7 +12,7 @@ metadata:
 
 # this skill
 
-Stage 1. Turn a loose target — a repository, a set of them, a book — into a
+Stage 1. Turn a loose target (a repository, a set of them, a book) into a
 pinned, inventoried source list a later stage can cite against.
 
 Read `references/citation.md` for how to pin, and
@@ -44,14 +44,24 @@ on it rots silently.
 Newest tag of a repository you have not cloned:
 
 ```console
-$ gh release list --repo OWNER/REPO --limit 1 --exclude-drafts --exclude-pre-releases --json tagName --jq '.[0].tagName'
+$ gh release list \
+    --repo OWNER/REPO \
+    --limit 1 \
+    --exclude-drafts \
+    --exclude-pre-releases \
+    --json tagName \
+    --jq '.[0].tagName'
 ```
 
 A repository can have thousands of tags and no releases, in which case that
 prints nothing. Fall back to the tags:
 
 ```console
-$ git ls-remote --tags --refs --sort=-v:refname https://github.com/OWNER/REPO
+$ git ls-remote \
+    --tags \
+    --refs \
+    --sort=-v:refname \
+    https://github.com/OWNER/REPO
 ```
 
 For a local checkout, record both the remote and the exact ref:
@@ -60,7 +70,17 @@ For a local checkout, record both the remote and the exact ref:
 $ git rev-parse --short HEAD
 ```
 
-For prose, the ref is the edition: publisher, year, and printing.
+Resolve the ref to the commit it points at, and record that as `commit`, so
+`verify` can later tell a moved tag from an unmoved one:
+
+```console
+$ gh api repos/OWNER/REPO/commits/v2.40.0 --jq .sha
+```
+
+For a local checkout, `git rev-parse HEAD` gives the commit.
+
+For prose, the ref is the edition: publisher, year, and printing. It has no
+`commit`; leave it empty.
 
 ### 3. Inventory without reading everything
 
@@ -75,15 +95,17 @@ rather than a guess.
 
 Present the inventory via `ask-user-choice` and settle what will be read. Most
 studies should not read everything; the point is to decide deliberately rather
-than to run out of attention silently.
+than to run out of attention silently. Where no question tool exists, print the
+inventory and a proposed scope, then stop without writing `sources.jsonl`.
+A scope the user named in the request is already settled; do not ask again.
 
 ### 5. Write sources.jsonl
 
 One row per source, including every source deliberately not read:
 
-```
-{"source": "https://github.com/OWNER/REPO", "ref": "v2.40.0", "scope": "src/parser/", "read": true, "why": ""}
-{"source": "https://github.com/OWNER/REPO", "ref": "v2.40.0", "scope": "test/", "read": false, "why": "tests name fixtures, not domain concepts"}
+```json
+{"source": "https://github.com/OWNER/REPO", "ref": "v2.40.0", "commit": "<40-character SHA>", "scope": "src/parser/", "read": true, "why": ""}
+{"source": "https://github.com/OWNER/REPO", "ref": "v2.40.0", "commit": "<40-character SHA>", "scope": "test/", "read": false, "why": "tests name fixtures, not domain concepts"}
 ```
 
 A study that does not state its coverage boundary is not honest about what it
@@ -104,6 +126,8 @@ pinned, <n> skipped` or `⚠ Blocked: <reason>`. Sections:
 3. `## Shape` — the inventory that informed the scope decision.
 
 Next-step options: run extract, widen scope, stop here.
+
+Write it per `references/prose-rules.md`.
 
 
 ## Portability notes

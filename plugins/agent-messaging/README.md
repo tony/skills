@@ -40,9 +40,16 @@ codex plugin add agent-messaging@skills
 
 ## Skills
 
-| Claude Code | Codex | Description |
-|---|---|---|
-| `/agent-messaging:session-relay` | `agent-messaging:session-relay` | Find reachable sessions, pick a transport, deliver through a safe state machine, confirm arrival, and verify sender identity. |
+`session-relay` finds reachable sessions, picks a transport, delivers through a safe state
+machine, confirms arrival, and verifies sender identity. Invoke it as
+`/agent-messaging:session-relay` in Claude Code or `agent-messaging:session-relay` in Codex.
+
+## Helper script
+
+`scripts/relay.sh` composes the one-line envelope (header encoding, unique id, hop cap, body
+limit), sends a frame to a Claude inbox socket, and audits a transcript for the origin of a
+relay id. It needs `jq` and runs on GNU and BSD/Darwin. Run `scripts/relay.sh selftest` to
+check it.
 
 ## Transports
 
@@ -67,11 +74,12 @@ skill — if the skill needs changing, the adapter boundary is wrong.
 `references/agents/_template.md` is the contract. `UNKNOWN` is a valid
 answer and is preferred over an inferred one.
 
-## Verified
+## Support
 
-Two Codex and two Claude Code sessions messaged each other across all four transports on one
-machine. Provenance comes from the transcript `origin` record, never from the rendered
-wrapper; delivery is confirmed at the receiver, not from `send-keys` or socket exit status.
+The plugin relies on undocumented internals: the `queue_1.sqlite` schema, transcript
+`origin` records, and the session registry layout. A release of either CLI can change them,
+so the skill checks each route at run time (`codex queue --help`, `claude agents --json`)
+instead of assuming a version.
 
 ## Upstream
 

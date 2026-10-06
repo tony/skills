@@ -30,7 +30,9 @@ Ask through `AskUserQuestion`, never guess, when:
 - Templates in more than one standard location differ.
 - The user's mention is ambiguous (a name that matches several files).
 
-Offer the candidates as options, plus the `/pr` section patterns.
+Offer the candidates as options, plus the `/pr` section patterns. Without
+an interactive question tool, use the `/pr` section patterns and say
+which templates were skipped.
 
 ## Blending
 

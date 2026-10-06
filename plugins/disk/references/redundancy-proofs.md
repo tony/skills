@@ -45,14 +45,13 @@ import os, sys
 
 def relpaths(root):
     out = set()
-    for dirpath, _, filenames in os.walk(root):
-        for name in filenames:
-            full = os.path.join(dirpath, name)
-            out.add(os.path.relpath(full, root))
+    for dirpath, dirnames, filenames in os.walk(root):
+        for name in filenames + [d for d in dirnames if os.path.islink(os.path.join(dirpath, d))]:
+            out.add(os.path.relpath(os.path.join(dirpath, name), root))
     return out
 
 def total(root, paths):
-    return sum(os.path.getsize(os.path.join(root, p)) for p in paths)
+    return sum(os.lstat(os.path.join(root, p)).st_size for p in paths)
 
 candidate, keeper = sys.argv[1], sys.argv[2]
 c, k = relpaths(candidate), relpaths(keeper)
@@ -63,6 +62,10 @@ print(f"UNIQUE to candidate: {len(only_c)} ({total(candidate, only_c) / 2**30:.2
 print("REDUNDANT" if not only_c else "NOT REDUNDANT - candidate holds unique data")
 ```
 
+Symlinks (including broken ones) count as entries sized by `lstat`.
+Empty directories are not compared: list them with `find <candidate> -type d -empty`
+and report them as skipped.
+
 Shared paths must then be confirmed identical by content, not by size
 or mtime. Size collisions are common in append-structured formats such
 as JSONL transcripts.
@@ -71,14 +74,30 @@ as JSONL transcripts.
 $ rsync -rcn --itemize-changes <candidate>/ <keeper>/
 ```
 
-The `-c` flag forces a checksum comparison. Any output line means the
-two trees disagree on a shared path; silence means they match.
+The `-c` flag forces a checksum comparison. Output lines show how the
+trees differ, not only whether they do:
+
+- `>f+++++++++ <path>`: the candidate holds a file the keeper lacks.
+- `>fcsT...... <path>`: a shared path differs in content.
+- No lines: nothing in the candidate is missing from or different in the
+  keeper.
+- `skipping non-regular file "<name>"`: a symlink was not compared.
+  Report it as skipped.
+
+An empty rsync output plus an empty unique set from the script above
+proves redundancy. Either one alone does not.
 
 ## Required proof for "mergeable"
 
 A candidate is mergeable into a keeper when it holds unique files and
 no shared path differs in content. The merge is then additive — no
 existing file is written.
+
+Never write into an agent history store with `rsync`: the owning tool
+indexes sessions in a state database and does not see files it did not
+write (see `agent-history.md`). Merge history only through the tool's
+own import path, or after confirming its discovery glob and state
+database. For any other tree, an additive merge is:
 
 ```console
 $ rsync -a --ignore-existing <candidate>/ <keeper>/

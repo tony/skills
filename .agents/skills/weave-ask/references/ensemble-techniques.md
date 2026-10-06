@@ -12,6 +12,11 @@ Throughout, `M` = the number of lanes that produced an output this
 pass. When `M` = 1 (single-participant fallback or cascade early-exit)
 the residual procedure is skipped; it needs multiple lanes to mean anything.
 
+## Contents
+
+- Technique 1 — Cascade gate
+- Technique 2 — Residual re-attack
+
 ---
 
 ## Technique 1 — Cascade gate (`--cascade`)

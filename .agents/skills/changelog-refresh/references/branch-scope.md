@@ -58,7 +58,8 @@ $ gh pr view --json baseRefName
 
 Without a PR, take trunk from `git symbolic-ref refs/remotes/origin/HEAD`
 (strip `refs/remotes/origin/`). If that fails, use `main`, then `master`,
-whichever exists. Compare against `origin/<base>`. When the current branch is
+whichever exists. Run `git fetch origin <base>` before comparing against
+`origin/<base>`; if the fetch fails, say the comparison may be stale. When the current branch is
 the base, report "Already on the base branch, nothing to generate" and stop.
 
 ## Changelog file

@@ -1,10 +1,9 @@
 ---
 name: respond-check
 description: >-
-  Use when screening or replying to pull-request review comments and bot
-  findings; decide if each comment is real, worth fixing, deferred, or
-  declined.
-allowed-tools: ["Bash", "Read", "Grep", "Glob", "AskUserQuestion", "Task"]
+  Use when screening pull-request review comments and bot findings; decide
+  fix, defer, or decline for each, and draft (not post) replies.
+allowed-tools: ["Bash", "Read", "Grep", "Glob", "AskUserQuestion"]
 metadata:
   argument-hint: "[findings text] [--pr=<num>] [--base=<ref>] [--include-resolved]"
   source: "plugins/respond/skills/check/SKILL.md"
@@ -12,25 +11,19 @@ metadata:
 
 # this skill
 
-Screen review feedback and decide what deserves a fix. Every claim —
-from a colleague, from a bot, from a review command run earlier in this
-session — is tested against six gates and leaves with a verdict, its
+Screen review feedback and decide what deserves a fix. Every claim,
+from a colleague, a bot, or a review command run earlier in this
+session, is tested against six gates and leaves with a verdict, its
 evidence, and a reply the reviewer can argue with.
 
 **This skill changes nothing.** No edits, no commits, no comments
 posted, no threads resolved. Its entire output is a ledger and a
 recommendation; acting on it is the `respond-action` skill's job.
 
-That is also why this skill can be routed to on the model's initiative
-while the `respond-action` skill and the `respond-goal` skill cannot: reaching for
-screening when someone pastes a review costs a report and nothing else.
-
 ## Core thesis
 
-A review is a set of claims, and a claim is not a work order. Screening
-separates the real ones from the rest before any code moves, and does
-it on the record: every verdict carries its evidence, so a reviewer who
-disagrees can attack the evidence instead of the judgment.
+A claim is not a work order. Every verdict carries its evidence, so a
+reviewer who disagrees can attack the evidence instead of the judgment.
 
 `references/screening-rubric.md` is the authority on the gates,
 verdicts, and ledger; this skill collects the inputs and reports the
@@ -57,7 +50,9 @@ branch's own stated purpose — its pull request body, its commit
 messages, its ticket.
 
 Resolve the provenance base here too (see the rubric's Provenance
-gate), and note the branch's push state with `git status -sb`.
+gate), and note the branch's push state with `git status -sb`. This
+skill does not fetch, so `origin/<trunk>` is read as last fetched; say
+in the report that provenance may be stale when the remote has moved.
 
 A project with nothing written down has made no decisions to cite,
 which means the alignment gate will rarely fire. That is the correct
@@ -81,17 +76,30 @@ the diff that settled provenance, the citation that settled alignment,
 the trigger that settled odds. A verdict with no evidence behind it is
 not a verdict, and the report must not contain one.
 
-Two disciplines while screening:
+Disciplines while screening:
 
 - **Read the code, do not trust the claim.** Automated reviewers assert
   with total confidence regardless of whether they are right.
 - **Cost the smallest fix that works**, per the rubric's cost gate.
+- **One verdict per finding.** "Fix if X" is not a verdict; when the
+  code cannot be read, the verdict is `ask`.
+- **Decline on evidence only**: a cited decision, a code path read, a
+  trigger named. "That isn't long" is a preference, not evidence.
+- **Add no support the code and the reviewer's text do not give.** No
+  standards, library functions, or rationale you have not verified, per
+  `references/prose-rules.md`.
 
-Use `ask-user-choice` for `ask` verdicts only — findings where the
-truth depends on intent only the author has, or where the alignment
-citation is genuinely contested. Everything else is decided here.
+Use `ask-user-choice` for `ask` verdicts only: findings where the
+truth depends on intent only the author has, where the alignment
+citation is genuinely contested, or where the code is not available.
+Everything else is decided here. In a non-interactive run, leave them
+as `ask` in the ledger.
 
 ## Phase 3: Report — the output contract
+
+Write the report and replies per `references/prose-rules.md`. Use
+exactly the headings below, in this order, and no others. Never name
+local absolute paths or temp files.
 
 1. Hero block (1–3 lines): `N to fix, M deferred, K declined` plus the
    branch name and the feedback sources screened.
@@ -101,7 +109,8 @@ citation is genuinely contested. Everything else is decided here.
    list all their sources on one entry.
 3. `## To fix` — the accepted findings in the order they should land,
    each with the minimal fix and whether it wants a forward commit or a
-   `fixup!`.
+   `fixup!`. Name a `fixup!` target only when the branch's log shows
+   the causal commit; otherwise it is a forward commit.
 4. `## Deferred & declined` — with the follow-up recommendation or the
    drafted reply. A declined `improbable` reply states the trigger the
    scenario needs, so a reviewer who knows a caller that produces it
@@ -109,12 +118,14 @@ citation is genuinely contested. Everything else is decided here.
 5. `## Ledger key` — branch, `HEAD` SHA, and the feedback digest, as
    the rubric's ledger section defines them. the `respond-action` skill checks
    this key to know the screening still describes the current tree.
-   Write replies per `references/prose-rules.md`.
 6. End with an `ask-user-choice` panel: run the `respond-action` skill on the
    accepted findings, run it with `--reply` so the drafted replies get
    posted too, re-screen with the deferred findings opted in, or stop.
    In a non-interactive run (CI, subagent) record the panel's options
-   in the report and stop.
+   in the report and stop. Invoked by the `respond-goal` skill, skip the panel.
+
+A stopped run (no findings to screen, no readable feedback) reports one
+result sentence, then what the user needs to provide.
 
 Nothing in this phase edits, commits, or posts. If the run reaches a
 point where a fix seems obvious enough to just do, that is the failure

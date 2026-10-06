@@ -1,8 +1,8 @@
 # business
 
 Measure and report the business value of AI workflows with
-provenance-tagged data — metrics in engineer-hours and cycle time, never
-currency.
+provenance-tagged data: metrics in engineer-hours and cycle time,
+never currency.
 
 > **Never use money.** Value is stated in engineer-hours, cycle-time
 > deltas, throughput, quality rates, and capacity language. All figures
@@ -11,69 +11,90 @@ currency.
 
 ## Installation
 
-In Claude Code, add the marketplace:
+In Claude Code, add the marketplace and install the plugin with these
+two slash commands:
 
-```console
+```text
 /plugin marketplace add tony/skills
 ```
 
-Install the plugin:
-
-```console
+```text
 /plugin install business@skills
 ```
 
 In Codex, add the marketplace:
 
 ```console
-codex plugin marketplace add tony/skills
+$ codex plugin marketplace add tony/skills
 ```
 
 Install the plugin:
 
 ```console
-codex plugin add business@skills
+$ codex plugin add business@skills
 ```
 
-*Note: The skills below use Claude Code's leading slash. Codex uses the
-same names without it.*
+The skills below use Claude Code's leading slash. Codex uses the same
+names without it.
 
-## Components
+## Skills
 
-### `/business:research` (skill)
-Collects cycle times, review latency, and telemetry into a run directory
-(`~/Documents/<date>/business/<workflow>/`). Writes a tagged interim package.
-Unavailabilities are recorded as unknown.
+### `/business:research`
 
-### Report Commands (Bound to Disclosure Tiers)
-- **`/business:report-leadership` (tier 0):** Full-detail leadership
-  report (SCQA, exhibits, explicit multipliers, conservative scenarios,
-  inline assumptions).
-- **`/business:report-org-wide` (tier 1):** Org-wide projection
-  (`V * F * t * s * a * r`). Includes adoption/realization inputs,
-  segmentations, and sensitivity rankings. Team aggregates only.
-- **`/business:case-study-internal` (tier 2):** Internal narrative case
-  study (situation, outcomes, lessons, replication guide). Anonymizes
-  individuals to roles.
-- **`/business:case-study-public` (tier 3):** Public external case study.
-  Strictly sanitized (no names, ticket IDs, or internal URLs). Outcomes
-  are triangulated against external evidence.
-- **`/business:pr-release` (tier 3):** One-page sanitized announcement
-  derived from the public case study.
+Collects cycle times, review latency, and telemetry into a run
+directory (`~/Documents/<date>/business/<workflow>/`) and writes a
+tagged interim package. Unavailable data is recorded as unknown.
 
-## Shared References
+### Report skills, one per disclosure tier
+
+- `/business:report-leadership` (tier 0): full-detail leadership
+  report with SCQA, exhibits, explicit multipliers, conservative
+  scenarios, and inline assumptions.
+- `/business:report-org-wide` (tier 1): org-wide projection
+  (`V * F * t * s * a * r`) with adoption and realization inputs,
+  segmentation, and sensitivity ranking. Team aggregates only.
+- `/business:case-study-internal` (tier 2): internal narrative
+  (situation, outcomes, lessons, replication guide). Individuals
+  appear as roles.
+- `/business:case-study-public` (tier 3): public case study.
+  Sanitized of names, ticket IDs, and internal URLs, with outcomes
+  triangulated against external evidence.
+- `/business:pr-release` (tier 3): one-page announcement derived from
+  the public case study.
+
+### Handing hours to finance
+
+Reports stop at engineer-hours, cycle time, and capacity. To compare
+against a budget, give finance the hours with their interval, the
+pinned window, and the population (engineers and period). Finance
+converts them with its own rates outside this plugin's artifacts.
+
+## Shared references
+
 Read from `references/`:
-- **`provenance.md`**: Tags, anti-inflation rules, no-currency contract.
-- **`measurement.md`**: Saving/projection formulas, statistics discipline,
-  quality guardrails.
-- **`evidence.md`**: External study tables and triangulation.
-- **`instruments.md`**: Probes, pinned-window conventions, absence
+
+- `provenance.md`: tags, anti-inflation rules, the no-currency
+  contract.
+- `measurement.md`: saving and projection formulas, statistics
+  discipline, quality guardrails.
+- `evidence.md`: external studies with pinned links and a re-verify
+  step.
+- `instruments.md`: probes, pinned-window conventions, absence
   snapshots.
-- **`interim-format.md`**: Run-directory layout and completeness gates.
-- **`audiences.md`**: Disclosure ladder and tier-3 sanitization checklist.
+- `interim-format.md`: run-directory layout, completeness gate, and
+  report shapes.
+- `audiences.md`: disclosure ladder and tier-3 sanitization checklist.
+
+## Script
+
+`scripts/business.py` (Python 3 standard library) does the
+deterministic work: `stats` (median, quartiles, seeded BCa interval),
+`scan` (tier-3 identifier and money-term scan), `assumptions`
+(register check), and `runs` (newest-first run listing).
 
 ## Prerequisites
 
+- `python3` for `scripts/business.py`.
 - `git` for history-based collection.
 - `gh` CLI (optional) for PR/review telemetry.
 - Ticket-tracker MCPs/CLIs are probed at runtime but not required.

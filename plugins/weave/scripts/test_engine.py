@@ -698,3 +698,45 @@ def test_pass_dir_creates_mutating_subdirs(repo: Path) -> None:
     sdir = Path(init(command="execute", mutating=True)["session_dir"])
     done = engine.make_pass(sdir, 2)
     assert (Path(done["pass_dir"]) / "diffs").is_dir()
+
+
+def test_bare_session_has_no_workers_or_guard(repo: Path) -> None:
+    doc = engine.init_session(
+        command="fix-review", backend=None, repo=".", prompt_summary="", passes=1,
+        timeout="default", mutating=False, bare=True,
+    )  # fmt: skip
+    session = engine.load_session(doc["session_dir"])
+    assert session["worker_backend"] is None
+    assert session["participants"] == []
+    assert "guard" not in session
+    with pytest.raises(engine.EngineError, match="no guard snapshot"):
+        engine.guard_check(Path(doc["session_dir"]))
+    with pytest.raises(engine.EngineError, match="needs --backend"):
+        engine.init_session(
+            command="ask", backend=None, repo=".", prompt_summary="", passes=1,
+            timeout="default", mutating=False,
+        )  # fmt: skip
+
+
+def test_mutating_session_finish_skips_the_comparison_and_drops_refs(repo: Path) -> None:
+    sdir = Path(init(command="execute", mutating=True)["session_dir"])
+    sid = engine.load_session(sdir)["session_id"]
+    (repo / "adopted.txt").write_text("synthesis\n")
+    done = engine.guard_finish(sdir)
+    assert done["clean"] is None
+    assert done["refs_pruned"] is True
+    assert sh(repo, "git", "for-each-ref", f"refs/weave-guard/{sid}/") == ""
+
+
+def test_context_reports_trunk_branch_and_commits(
+    repo: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    sh(repo, "git", "update-ref", "refs/remotes/origin/main", "main")
+    sh(repo, "git", "checkout", "-q", "-b", "feature")
+    (repo / "B").write_text("b2\n")
+    sh(repo, "git", "commit", "-q", "-am", "change b")
+    assert engine.main(["context", "--full-diff"]) == 0
+    doc = json.loads(capsys.readouterr().out)
+    assert (doc["trunk"], doc["branch"]) == ("main", "feature")
+    assert doc["commits"][0].endswith("change b")
+    assert "+b2" in doc["markdown"]

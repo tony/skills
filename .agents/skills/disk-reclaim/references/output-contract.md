@@ -2,12 +2,17 @@
 
 Every command reports in the same fixed order. A hero block may precede
 it. Omit a section that has no findings rather than writing that it is
-empty.
+empty. No bold labels on bullets, no recap ending.
+
+A blocked or halted run (no shell, a failed proof, a declined approval)
+skips the sections: one sentence stating the result, then what the user
+needs to do next. Name what was not measured; never estimate it.
 
 ## Hero block
 
-One to four lines naming the binding constraint. Prefix with `⚠` when a
-layer is critically full, `✓` otherwise. No prose paragraphs.
+One to four lines naming the binding constraint. Prefix with `⚠` when
+a layer is 90% used or more, `✓` otherwise. No prose paragraphs. Name a
+host layer as the constraint only from a measurement.
 
 The binding constraint is the filesystem closest to full, which is not
 always the one the user asked about. When a guest filesystem is
@@ -42,7 +47,8 @@ where it bears on a proposal.
 
 **## Needs a decision** — stale-but-unique data and anything that
 resisted classification, each with size, age, and origin. These are
-questions, not candidates.
+questions, not candidates. Layers that could not be measured go under
+`## Layers` as "not measured".
 
 **## Only you can run this** — commands requiring the environment to be
 halted, or a host-side administrator shell. One command per block, with
@@ -75,6 +81,7 @@ Name what was skipped. A report that silently omits protected history
 reads as having missed it rather than having preserved it.
 
 End with an `ask-user-choice` panel offering the next step, unless
-already inside plan mode. After the `disk-usage` skill, that is proceeding to
+already inside plan mode. Without an interactive question tool, print
+the question and stop. After the `disk-usage` skill, that is proceeding to
 this skill. After this skill, it is the handoff steps or a
 narrower follow-up pass.

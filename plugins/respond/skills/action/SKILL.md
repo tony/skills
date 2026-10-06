@@ -144,13 +144,13 @@ Enter plan mode if the host supports it (Claude Code: `EnterPlanMode`;
 Cursor / Codex / Gemini: `/plan` or `Shift+Tab`) and present:
 
 1. The accepted findings with their verdicts and provenance, and the
-   count of deferred and declined ones (not their detail — screening
-   already reported that).
+   count of deferred and declined ones (not their detail, which screening
+   already reported).
 2. Per finding: the planned minimal fix, its commit subject in the
    project's format, and forward-vs-`fixup!` shape. Say so explicitly
    when two findings share a commit.
-3. Anything the fix adds beyond the fix — a new test, a new comment, a
-   new code path — named per finding, with why it is warranted. A fix
+3. Anything the fix adds beyond the fix (a new test, a new comment, a
+   new code path) named per finding, with why it is warranted. A fix
    that adds nothing says so; that is the good case.
 4. The prompts that will fire: non-trivial rewrite consent, reply
    posting.

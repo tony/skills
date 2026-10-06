@@ -1,7 +1,7 @@
 # model-cli
 
-Run prompts through individual AI CLIs — Antigravity/agy (Gemini),
-codex/GPT, and cursor/agent with fallback support.
+Run a prompt through another vendor's AI CLI (Antigravity/agy for Gemini,
+codex for GPT, Cursor's agent) with a fallback chain.
 
 ## Installation
 
@@ -31,85 +31,66 @@ codex plugin add model-cli@skills
 
 ## Skills
 
-| Skill | Claude Code | Codex | Description |
-|---|---|---|---|
-| Antigravity CLI | `/model-cli:agy` | `model-cli:agy` | Run a prompt through the Antigravity (`agy`) CLI for Gemini, fall back to agent |
-| Codex CLI | `/model-cli:codex` | `model-cli:codex` | Run a prompt through the Codex CLI (OpenAI GPT), fall back to agent |
-| GPT CLI | `/model-cli:gpt` | `model-cli:gpt` | Alias for codex — same backend, same fallback |
-| Gemini CLI | `/model-cli:gemini` | `model-cli:gemini` | Alias for agy — same backend chain |
-| Cursor Agent CLI | `/model-cli:cursor` | `model-cli:cursor` | Run a prompt through Cursor's agent CLI directly |
+- `/model-cli:agy` (`model-cli:agy` in Codex): Gemini through `agy`, falling
+  back to `agent`.
+- `/model-cli:codex` (`model-cli:codex`): GPT through `codex`, falling back to
+  `agent`.
+- `/model-cli:cursor` (`model-cli:cursor`): Cursor's `agent` only.
+- `/model-cli:gemini` and `/model-cli:gpt`: user-invocable aliases for `agy`
+  and `codex`, so the model does not route to two skills for one request.
 
-The agy, codex, and cursor skills trigger automatically during delegation.
-The gpt and gemini aliases are user-invocable only to avoid duplicate
-auto-triggering.
+Each skill follows `references/dispatch.md`, which owns triggers, failure
+classes, and the report format.
 
-## How It Works
+## Risks
 
-Each skill detects its CLI, then follows the shared protocol in
-`references/dispatch.md`: parse triggers, detect `timeout` or `gtimeout`, run
-the prompt from a temporary file, classify failures (timeout, rate-limit,
-credit exhaustion, crash, empty output), retry transients once, fall to the
-next tier, clean up, and report every tier that ran.
+Your prompt, and any code in it, is sent to the vendor behind the CLI. A normal
+run is write-enabled in the live working tree (`codex --yolo`,
+`agy --dangerously-skip-permissions`, `agent -f`), so the delegated model can
+edit files and run commands there. That is the design; commit or stash first
+if the tree matters.
 
-### Fallback Resolution
+## Plan mode
 
-| Skill | Primary CLI | Fallback chain | Agent model |
-|-------|------------|----------------|-------------|
-| `agy` / `gemini` | `agy --model "Gemini 3.1 Pro (High)" --dangerously-skip-permissions -p` | `agent --model gemini-3.1-pro` → `agy --model "Gemini 3.5 Flash (High)"` | `gemini-3.1-pro` |
-| `codex` / `gpt` | `codex` | `agent --model gpt-5.4-high` → `agent --model gpt-5.4-mini` | `gpt-5.4-high` |
-| `cursor` | `agent` | none | — |
+Add `mode:plan` (for example `/model-cli:codex review the auth flow mode:plan`)
+to get a plan without edits. Plan mode swaps each tier's flags for the CLI's
+own read-only mode:
 
-### Timeout
+- `codex exec --sandbox read-only` for Codex.
+- `agent --mode plan` for Cursor's agent.
+- `agy --mode plan` for Antigravity, without the permission-skipping flag, so
+  headless runs auto-deny any edit or command.
 
-Defaults to 600 seconds. Override with `timeout:<seconds>` or disable with
-`timeout:none`.
+## Models and fallback
 
-## Prerequisites
+The model IDs in the skills are defaults. A model you name in the request
+replaces the default for the tier it fits, and an unknown ID triggers a lookup
+with `agy models` or `agent --list-models`.
 
-Install at least one external CLI:
+- `agy` and `gemini`: `agy` with Gemini 3.1 Pro, then `agent` with
+  `gemini-3.1-pro`, then `agy` with Gemini 3.8 Flash.
+- `codex` and `gpt`: `codex`, then `agent` with `gpt-5.4-high`, then `agent`
+  with `gpt-5.4-mini-medium`.
+- `cursor`: `agent`, no fallback.
 
-| CLI | Model | Install |
-|-----|-------|---------|
-| `agy` | Gemini (via Antigravity) | [Antigravity CLI](https://antigravity.google/product/antigravity-cli) |
-| `codex` | GPT | [Codex CLI](https://github.com/openai/codex) |
-| `agent` | Cursor (fallback) | [Agent CLI](https://cursor.com/cli) |
+A tier that crashes (for example, not logged in) falls through to the next
+tier that uses a different binary.
 
-Install the Antigravity CLI:
+## Timeout
 
-```console
-curl -fsSL https://antigravity.google/cli/install.sh | bash
-```
-
-### macOS timeout support
-
-On macOS, install GNU coreutils to enable `gtimeout`:
+The default is 600 seconds. Override with `timeout:<seconds>` or disable with
+`timeout:none`. On macOS, install GNU coreutils for `gtimeout`:
 
 ```console
 brew install coreutils
 ```
 
-If neither `timeout` nor `gtimeout` is found, commands run without time limits.
+Without `timeout` or `gtimeout`, runs have no time limit.
 
-## Plan-Only Mode
+## Prerequisites
 
-Add `mode:plan` to any invocation (e.g., `/model-cli:codex analyze mode:plan`)
-for a detailed implementation plan without making changes. This triggers a
-preamble instructing the model to analyze and describe rather than execute.
+Install at least one CLI:
 
-## Comparison with weave
-
-| Feature | weave | model-cli |
-|---------|------|-----------|
-| Parallel execution | All models at once | Single model |
-| Synthesis | Best-of-all merge | Direct output |
-| Multi-pass refinement | Supported | Not applicable |
-| Worktree isolation | For write commands | Not needed |
-
-## Shell Resilience
-
-- **Portable detection:** Uses `command -v` instead of `which`.
-- **Injection prevention:** Writes prompts to temporary files
-  (`mktemp` files).
-- **Diagnostics:** Captures stderr to a `mktemp` file.
-- **Retry protocol:** Classifies failures (timeout, rate-limit, credit
-  exhaustion, crash, empty output) and retries transient errors once.
+- `agy`: [Antigravity CLI](https://antigravity.google/product/antigravity-cli)
+- `codex`: [Codex CLI](https://github.com/openai/codex)
+- `agent`: [Cursor CLI](https://cursor.com/cli)

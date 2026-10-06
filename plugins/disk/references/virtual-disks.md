@@ -1,5 +1,14 @@
 # Virtual disks and nested filesystems
 
+## Contents
+
+- Detect the nesting first
+- Why balloon accumulates
+- Never run the shutdown yourself
+- Ordering
+- WSL: shutdown, compact, sparse
+- Docker Desktop and Hyper-V
+
 When the filesystem being cleaned lives inside a virtual disk, deleting
 files frees nothing on the host until the disk is compacted. Getting
 this wrong costs hours of cleanup and leaves the host disk still full.
@@ -20,7 +29,12 @@ file and compare its on-disk size against the used space reported
 inside it. This command is WSL-only and needs GNU `find` and `numfmt`:
 
 ```console
-$ find /mnt/c/Users/*/AppData/Local -iname '*.vhdx' -size +1G -printf '%s\t%p\n' | sort -rn | numfmt --field=1 --to=iec
+$ find /mnt/c/Users/*/AppData/Local \
+    -iname '*.vhdx' \
+    -size +1G \
+    -printf '%s\t%p\n' \
+  | sort -rn \
+  | numfmt --field=1 --to=iec
 ```
 
 The gap between a backing file's allocated size and the guest's used
@@ -55,13 +69,11 @@ command.** It kills every running shell, editor server, language
 server, container, and background job on the machine — including the
 session issuing the command, and including work the user has not saved.
 
-Present it as a step the user runs. Give the exact command, say what it
-will interrupt, and stop. This holds even when the user has approved
-the surrounding cleanup: approval to delete caches is not approval to
-terminate the environment.
-
-The same restraint applies to any host-side compaction command, since
-those run from a Windows administrator shell the agent does not own.
+Present it as a step the user runs, with the command below, what it
+interrupts, and stop. Approval to delete caches is not approval to
+terminate the environment. The same restraint applies to host-side
+compaction, which runs from a Windows administrator shell the agent does
+not own.
 
 ## Ordering
 
@@ -73,7 +85,58 @@ so sequence matters:
 2. Hand the user the shutdown command and wait.
 3. Hand the user the compaction command.
 
-Setting the disk sparse is a durable fix rather than a one-time
-recovery — it makes future TRIM self-reclaiming, so the balloon stops
-re-accumulating. Offer it alongside a plain compact and let the user
-choose.
+Sparse is a durable fix rather than a one-time recovery. It makes
+future TRIM self-reclaiming, so the balloon stops re-accumulating. Offer
+it alongside a plain compact and let the user choose.
+
+## WSL: shutdown, compact, sparse
+
+These commands are single-platform: they run on the Windows host, not in
+the Linux guest, and only the user runs them. Each halts WSL or needs
+the WSL VM stopped, so they sit behind the never-halt rule above.
+
+Sources:
+[Basic commands for WSL](https://learn.microsoft.com/en-us/windows/wsl/basic-commands)
+(`wsl --shutdown`),
+[How to manage WSL disk space](https://learn.microsoft.com/en-us/windows/wsl/disk-space)
+(locating the vhdx),
+[Advanced settings configuration in WSL](https://learn.microsoft.com/en-us/windows/wsl/wsl-config)
+(`sparseVhd`), and
+[Optimize-VHD](https://learn.microsoft.com/en-us/powershell/module/hyper-v/optimize-vhd)
+(compact). Re-check them with `wsl --help` before relying on a command.
+
+Run in PowerShell. It terminates every running distribution and the WSL 2
+VM, killing all shells, servers, and containers in them:
+
+```powershell
+wsl --shutdown
+```
+
+Run in PowerShell to print a distribution's vhdx path:
+
+```powershell
+(Get-ChildItem -Path HKCU:\Software\Microsoft\Windows\CurrentVersion\Lxss | Where-Object { $_.GetValue("DistributionName") -eq '<distribution-name>' }).GetValue("BasePath") + "\ext4.vhdx"
+```
+
+Run in an elevated PowerShell after the shutdown. `Optimize-VHD` is in
+the Hyper-V PowerShell module, which not every Windows edition installs,
+and requires the disk to be detached or attached read-only. On a detached
+VHDX, `-Mode Full` falls back to Prezeroed per the cmdlet page:
+
+```powershell
+Optimize-VHD -Path <path-to-ext4.vhdx> -Mode Full
+```
+
+The Microsoft pages cite no command that sets an existing distribution's
+disk sparse. They document only `sparseVhd=true` under `[experimental]`
+in `%UserProfile%\.wslconfig`, which applies to newly created VHDs. For
+an existing disk, tell the user no cited command exists here and have
+them check `wsl --manage --help` on their WSL version.
+
+## Docker Desktop and Hyper-V
+
+The same principle holds: free space inside, stop the VM, compact the
+backing file. Docker Desktop keeps its own disk image and Hyper-V keeps
+its own `.vhdx` files, each with a vendor-specific shutdown. Locate the
+file as above, give no command not found in the vendor's documentation,
+and treat stopping the VM as a halt the user runs.

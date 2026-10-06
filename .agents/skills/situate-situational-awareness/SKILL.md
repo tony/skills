@@ -17,9 +17,10 @@ ask for, and what the project's own rules require of the work.
 Read `references/situation-sweep.md` first. It defines the six
 evidence layers, how each degrades, and the read-only contract. Read
 `references/prior-conversations.md` before searching local AI
-transcripts, which is warranted only when the repository does not
-explain itself: an approach with no recorded rationale, work resumed
-after a gap, a decision that left no artifact.
+transcripts. Search them when the repository does not explain itself
+(an approach with no recorded rationale, a decision that left no
+artifact) and always when the request is to resume after a gap: that
+request counts as asking.
 
 A bare "huh" or "what?" is not this skill; `brief` answers it. This one
 runs when someone can already say what they want caught up on.
@@ -30,11 +31,19 @@ runs when someone can already say what they want caught up on.
    reinterpret each other: a ticket's acceptance criteria change what
    the diff means, and an unresolved review thread explains a commit
    that otherwise looks like a detour.
-2. Report per `references/prose-rules.md`. Lead with what is
+2. When the user is resuming after a gap, run the capped
+   prior-conversations search before reporting, deriving terms from what
+   the repository layers found.
+3. Report in the shape under "Report shape" in the sweep reference: hero
+   line, the declared sections in order, then the next-step panel. Write
+   it per `references/prose-rules.md`. Lead with what is
    unresolved: the open questions, the failing check, the half-finished
-   edit. Someone asking to be caught up does not want a narration of
-   what already works.
-3. Say which layers were unavailable and why.
+   edit, and any decision an earlier conversation left open (cite it as
+   the earlier conversation, with its date). Someone asking to be caught
+   up does not want a narration of what already works.
+4. Say which layers were unavailable and why. State an empty layer as
+   "none" (`none is open`, `none is referenced`), never as "not
+   available".
 
 
 ## Portability notes

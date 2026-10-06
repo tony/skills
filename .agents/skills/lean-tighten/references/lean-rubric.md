@@ -7,8 +7,7 @@ patterns to cut live in `prose-rules.md`.
 
 - Links, citations, anchors, and warnings that still substantiate a
   claim.
-- Comments documenting an invariant, protocol constraint, platform
-  quirk, security boundary, or upstream workaround.
+- Comments that pass the Keep list in `comment-policy.md`.
 - Exact counts, dates, and SHAs used as evidence (benchmarks, release
   notes, stack traces, lockfiles).
 

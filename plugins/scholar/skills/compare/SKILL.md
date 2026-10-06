@@ -35,11 +35,11 @@ is meaningless.
 
 ### 2. Report three sections
 
-**Same concept, different term.** Definitions that score high against each
-other while the terms differ. These are the translation table.
+**Same concept, different term.** Definitions that say the same thing
+while the terms differ. These are the translation table.
 
-**Same term, different concept.** Identical terms whose definitions score low.
-These are the traps — the reader who knows one project will be confidently
+**Same term, different concept.** Identical terms whose definitions describe
+different things. These are the traps — the reader who knows one project will be confidently
 wrong about the other.
 
 **Coverage.** What each table has that the other has no counterpart for. A
@@ -47,21 +47,17 @@ concept present in one and absent in the other is either a genuine difference
 in what the projects do, or a gap in one of the studies. Say which you think
 it is and why.
 
-### 3. Record the numbers
+### 3. Judge by reading
 
-Every score is a distributional claim, so it carries the command that produced
-it. Run the analyzer at `../../references/term-metrics.py` against each table
-rather than eyeballing the definitions:
-
-```console
-$ <analyzer> <study-dir>
-```
+Compare definitions side by side. The analyzer in `../../references/` scores
+one table at a time, so no cross-table similarity exists; do not report one.
+The hero counts are counts of findings, not scores.
 
 ## Rules
 
 - Do not merge the tables. A comparison is a third document; the two studies
   stay as they are.
-- A high similarity between two terms is a candidate mapping, not a mapping.
+- Two terms with alike definitions are a candidate mapping, not a mapping.
   Say what the definitions have in common and where they part.
 - Where the two studies read corpora at different depths, say so. A coverage
   gap between an exhaustive study and a shallow one is a fact about the

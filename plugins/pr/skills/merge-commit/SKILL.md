@@ -1,7 +1,7 @@
 ---
 name: merge-commit
 description: "Use when drafting a merge or squash-merge commit message for the current branch, to copy into the merge workflow."
-allowed-tools: ["Bash", "Read"]
+allowed-tools: ["Bash", "Read", "AskUserQuestion"]
 argument-hint: "[optional hint, e.g. 'version bump' or 'breaking change']"
 user-invocable: true
 disable-model-invocation: true
@@ -21,29 +21,33 @@ User hint: $ARGUMENTS
 
 Find the trunk without touching the network:
 
-```bash
-git symbolic-ref --short refs/remotes/origin/HEAD
+```console
+$ git symbolic-ref --short refs/remotes/origin/HEAD
 ```
 
-It prints `origin/<trunk>`; call that `BASE`. When it fails, use the
+It prints `origin/<trunk>`; that is the base. When it fails, use the
 first of `origin/main` or `origin/master` that
 `git rev-parse --verify --quiet` accepts; when neither exists, ask the
-user for the base. Then gather the branch's change:
+user for the base, or stop and name the missing base when you cannot
+ask. The local `origin/<trunk>` may be stale; run `git fetch origin
+<trunk>` first when the user wants it current. Shell variables do not
+survive between commands, so write the literal `origin/<trunk>` in each
+command below. Gather the branch's change:
 
-```bash
-git branch --show-current
+```console
+$ git branch --show-current
 ```
 
-```bash
-git log "${BASE}..HEAD" --oneline
+```console
+$ git log origin/<trunk>..HEAD --oneline
 ```
 
-```bash
-git diff "${BASE}...HEAD" --stat
+```console
+$ git diff origin/<trunk>...HEAD --stat
 ```
 
-```bash
-git diff "${BASE}...HEAD"
+```console
+$ git diff origin/<trunk>...HEAD
 ```
 
 An empty log means nothing is ahead of the base; say so and stop.
@@ -85,6 +89,9 @@ the title.
   bullets with **bold labels** for specific changes.
 - **Large change** (multi-module feature, major refactor, migration): a
   structured body from the patterns below.
+
+End the message with no `Co-Authored-By`, "Generated with", or other
+tool trailer, and use no emoji.
 
 Wrap body lines at 72 characters. Never break a URL, hash, path, stack
 trace, or long identifier mid-token; let that line run long.
@@ -138,6 +145,8 @@ trace, or long identifier mid-token; let that line run long.
   their merge workflow (GitHub merge button, `git merge --edit`, the
   squash-and-merge dialog).
 - When the PR number is unknown, note where ` (#N)` goes.
+- A run that stops early (empty log, no base) is one sentence saying
+  what happened, then what the user must do.
 
 ## Rules
 

@@ -64,11 +64,11 @@ and `https://github.com/python-poetry/poetry/releases/tag/<version>`
 changelog is not at the repository root. The tag is
 `@biomejs/biome@<version>`, which needs percent-encoding in a URL:
 
-```
+```text
 https://github.com/biomejs/biome/releases/tag/%40biomejs%2Fbiome%40<version>
 ```
 
-```
+```text
 https://github.com/biomejs/biome/blob/%40biomejs%2Fbiome%40<version>/packages/%40biomejs/biome/CHANGELOG.md
 ```
 

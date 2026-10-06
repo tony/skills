@@ -31,7 +31,7 @@ The selected backend governs the whole session: dispatch, retry, judging, refine
 
 ## Phase 1: Start the session
 
-Follow `ensemble-core.md` (Start the session) with `--command ask`. The flags result also reports `cascade` and the deslop flags in `flags`.
+Follow `ensemble-core.md` (Start the session) with `--command ask`. The flags result also reports `cascade` and the deslop flags in `flags`. It asks each unresolved setting through `AskUserQuestion`.
 
 Build the context packet per `ensemble-core.md` (Context packet). Lead with conventions and relevant files, and include changed files only when the question concerns branch changes.
 
@@ -67,7 +67,7 @@ Run the deslop pass on the final pass only (pass 1 when `passes` is 1, else the 
 
 ### Present the answer
 
-Read `../../references/present-results.md` and apply it with `RESULT_KIND` = `ask`, `ARTIFACT_PATH` = `$SESSION_DIR/pass-NNNN/synthesis.md`, `SESSION_DIR`, `PASS_COUNT` = `passes`, `IN_PLAN_MODE` = false, `LABEL_MAP_PATH` = `$SESSION_DIR/pass-NNNN/label-map.json` (null when only one worker answered), `CASCADE_STATE` = `early-exit`, `escalated`, or null without `--cascade`. Read `WORKER_BACKEND`, `PARTICIPANTS`, `EXECUTORS`, and `MODELS` from `session.json`.
+Read `../../references/present-results.md` and apply it with `RESULT_KIND` = `ask`, `ARTIFACT_PATH` = `$SESSION_DIR/pass-NNNN/synthesis.md`, `SESSION_DIR`, `PASS_COUNT` = `passes`, `IN_PLAN_MODE` = false, `LABEL_MAP_PATH` = `$SESSION_DIR/pass-NNNN/label-map.json` (null when only one worker answered or the cascade exited early), `CASCADE_STATE` = `early-exit`, `escalated`, or null without `--cascade`. Read `WORKER_BACKEND`, `PARTICIPANTS`, `EXECUTORS`, and `MODELS` from `session.json`.
 
 ---
 

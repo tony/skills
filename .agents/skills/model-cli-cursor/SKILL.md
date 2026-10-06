@@ -3,33 +3,35 @@ name: model-cli-cursor
 description: >-
   Use when asked to use Cursor, Cursor's CLI, or the agent binary to
   delegate a prompt or task; no fallback is available.
-allowed-tools: ["Bash", "Read", "Grep", "Glob", "Write", "Edit"]
+allowed-tools: ["Bash"]
 metadata:
-  argument-hint: "<prompt> [timeout:<seconds>]"
+  argument-hint: "<prompt> [timeout:<seconds>] [mode:plan]"
   source: "plugins/model-cli/skills/cursor/SKILL.md"
 ---
 
 # Cursor Agent CLI Skill
 
-Run a prompt through Cursor's `agent` CLI. There is no fallback tier.
+Run a prompt through Cursor's `agent` CLI. There is no fallback tier. Follow
+`references/dispatch.md` for triggers, running a tier, failure handling,
+and the report.
 
-Follow `references/dispatch.md` for triggers, the timeout command, the
-prompt file, running a tier, failure handling, and return. Stderr file prefix:
-`cursor`.
+## Step 1: Detect the CLI
 
-## Step 1: Detect CLI
-
-```bash
-command -v agent >/dev/null 2>&1 && echo "agent:available" || echo "agent:missing"
+```console
+$ command -v agent
 ```
 
 If `agent` is not found, report it unavailable and stop.
 
 ## Step 2: Run the tier
 
-1. `agent -p -f`
+Normal runs are write-enabled. `mode:plan` runs use `agent --mode plan`,
+Cursor's read-only plan mode.
 
-Credit exhaustion has no next tier: report it and stop.
+1. Normal: `agent -p -f --`
+   Plan: `agent -p --mode plan --`
+
+Failure of this tier, including credit exhaustion, ends the run: report it.
 
 
 ## Portability notes
