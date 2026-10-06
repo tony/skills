@@ -41,25 +41,25 @@ use only what exists.
 |---------|-------------|--------|----------------------|
 | `--durations=N` profiler | pytest 2.2 | always present in modern pytest | none needed |
 | `perf_counter`-based `CallInfo.duration` | pytest 6.0 | `pytest --version` ≥ 6.0 | pre-6.0 duration is `time.time()` delta (coarser) — widen the noise band |
-| `--durations-min` | pytest 6.1 | `pytest --help \| rg -- '--durations-min'` | threshold hard-coded at `0.005s`; post-filter rows yourself |
+| `--durations-min` | pytest 6.1 | `--durations-min` listed in `pytest --help` | threshold hard-coded at `0.005s`; post-filter rows yourself |
 | Explicit `--durations-min` respected under `-vv` | pytest 8.4 | `pytest --version` ≥ 8.4 | drop `-vv`, rely on explicit `--durations-min` |
 | In-core subtests (extra per-subtest `call` rows) | probe only | `python -c 'import pytest; print(hasattr(pytest, "Subtests"))'`, or `pytest-subtests` installed | one `call` row per item; de-dup nodeids when bucketing |
-| `junit_duration_report` ini (`call` vs total) | pytest 4.1 | `pytest --help \| rg junit_duration_report` | older JUnit reports total (setup+call+teardown) only |
-| `--import-mode=importlib` | pytest 6.0 | `pytest --help \| rg -- '--import-mode'` | default `prepend` mode (mutates `sys.path`; needs unique test filenames) |
+| `junit_duration_report` ini (`call` vs total) | pytest 4.1 | `junit_duration_report` listed in `pytest --help` | older JUnit reports total (setup+call+teardown) only |
+| `--import-mode=importlib` | pytest 6.0 | `--import-mode` listed in `pytest --help` | default `prepend` mode (mutates `sys.path`; needs unique test filenames) |
 | `Stash` / `StashKey` (typed per-run store) | pytest 7.0 | `python -c 'import pytest; print(pytest.StashKey)'` | `config.cache` (JSON) cross-run; attach attrs to config/session within-run |
-| `--sw-reset` (stepwise reset) | pytest 8.4 | `pytest --help \| rg -- '--sw-reset'` | `--sw` / `--sw-skip` (stepwise itself dates to 5.x) |
+| `--sw-reset` (stepwise reset) | pytest 8.4 | `--sw-reset` listed in `pytest --help` | `--sw` / `--sw-skip` (stepwise itself dates to 5.x) |
 | Callable (dynamic) fixture `scope` | pytest 5.2 | `@pytest.fixture(scope=<callable>)` | hardcode the scope, or gate via a CLI flag read inside the fixture |
 | Mark-on-fixture is a hard collection error | probe only | `pytest --collect-only -q` fails with "Marks cannot be applied to fixtures" | where it only warns, the fix (skip in body) is identical |
 | `pytest.register_fixture` (imperative) | probe only | `python -c 'import pytest; print(hasattr(pytest, "register_fixture"))'` | `@pytest.fixture` decorator (declarative) |
-| `tmp_path` / `tmp_path_factory` | pytest 3.9 | `rg 'tmp_path\|tmp_path_factory' tests/` | legacy `tmpdir`/`tmpdir_factory` (`py.path.local`) on very old pytest |
-| `--strict-markers` | pytest 4.5 | `rg 'strict-markers\|--strict' pyproject.toml` addopts | older pytest used `--strict`; or `PytestUnknownMarkWarning` |
+| `tmp_path` / `tmp_path_factory` | pytest 3.9 | `rg 'tmp_path' tests/` | legacy `tmpdir`/`tmpdir_factory` (`py.path.local`) on very old pytest |
+| `--strict-markers` | pytest 4.5 | `rg -e 'strict-markers' -e '--strict' pyproject.toml` addopts | older pytest used `--strict`; or `PytestUnknownMarkWarning` |
 | `pytest11` entry point (ship fixtures as a plugin) | all modern | `[project.entry-points.pytest11]` in pyproject | `pytest_plugins = ('pkg.module',)` explicit import |
 | `pytest-xdist` parallel (`-n auto`, `workerinput`) | pytest-xdist 2.1 | `importlib.metadata.version('pytest-xdist')` | run serially; `worker_id` returns `master` when `workerinput` absent |
-| `--dist=loadgroup` + `xdist_group` mark | pytest-xdist 2.5 | `pytest --help \| rg -- '--dist'` | `loadscope` (group by module/class) or `loadfile` |
+| `--dist=loadgroup` + `xdist_group` mark | pytest-xdist 2.5 | `--dist` listed in `pytest --help` | `loadscope` (group by module/class) or `loadfile` |
 | `--dist=worksteal` + `-n logical` | pytest-xdist 3.0 | `pytest -n2 --dist=worksteal --co` | `--dist=load` (default); `-n auto` (physical cores) |
 | `pytest-randomly` (order-independence detector) | plugin install | `importlib.metadata.version('pytest-randomly')` | run subsets/single tests in isolation and reversed order manually |
 | `pytest-deadfixtures` (`--dead-fixtures`/`--dup-fixtures`) | run via `uvx` | `uvx --with pytest-deadfixtures --from pytest pytest --dead-fixtures` | built-in `--fixtures` vs `--fixtures-per-test` diff (zero-dependency) |
-| `pytest-timeout` (`--timeout-method=thread`) | pytest-timeout 2.0 | `rg 'pytest-timeout\|^timeout =\|--timeout' pyproject.toml` | no global timeout; rely on the CI job timeout |
+| `pytest-timeout` (`--timeout-method=thread`) | pytest-timeout 2.0 | `rg -e 'pytest-timeout' -e '^timeout =' -e '--timeout' pyproject.toml` | no global timeout; rely on the CI job timeout |
 | Strict type checker covers `tests/` | tooling (not pytest) | `[tool.mypy] strict=true` incl. tests, or pyright config incl. tests | phrase the gate as "the project strict checker includes the test directory" |
 
 ## Notes

@@ -1,5 +1,5 @@
 ---
 type: tool_used
 tool: Skill
-input_match: '"skill":\s*"(research:)?deps"'
+input_match: '"skill":\s*"(research:)?study-deps"'
 ---

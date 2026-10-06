@@ -8,27 +8,29 @@ lockfile refreshes separately with release notes cited.
 
 In Claude Code, add the marketplace:
 
-```console
+```text
 /plugin marketplace add tony/skills
 ```
 
 Install the plugin:
 
-```console
+```text
 /plugin install package-updater@skills
 ```
 
 In Codex, add the marketplace:
 
 ```console
-codex plugin marketplace add tony/skills
+$ codex plugin marketplace add tony/skills
 ```
 
 Install the plugin:
 
 ```console
-codex plugin add package-updater@skills
+$ codex plugin add package-updater@skills
 ```
+
+Claude Code uses a leading slash (`/package-updater:…`). Codex omits it (`package-updater:…`).
 
 ## Skills
 
@@ -47,11 +49,11 @@ Each skill runs as `/package-updater:<name>` in Claude Code and
   (inventory, discovery, research, plan gate, land in order, verify,
   report). Claude invokes it when packages are out of date.
 
-Defaults: Current repository, commit on default branch.
+Defaults: Current repository, commit on default branch, no push.
 Flags:
 - `--branch <name>`: Work on a specific branch.
 - `--pr`: Open a pull request.
-- `--no-push`: Commit locally and stop.
+- `--push`: Push the commits; without `--push` or `--pr`, commit locally and print the push command.
 - `--root <dir>`: Sweep every repo beneath a directory.
 - `--repo <path|slug>`: Target individual repositories.
 - `--owner <name>`: Keep only repos belonging to given accounts.

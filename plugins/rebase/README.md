@@ -6,27 +6,29 @@ Automated rebase onto trunk with conflict prediction, resolution, and quality ga
 
 In Claude Code, add the marketplace:
 
-```console
+```text
 /plugin marketplace add tony/skills
 ```
 
 Install the plugin:
 
-```console
+```text
 /plugin install rebase@skills
 ```
 
 In Codex, add the marketplace:
 
 ```console
-codex plugin marketplace add tony/skills
+$ codex plugin marketplace add tony/skills
 ```
 
 Install the plugin:
 
 ```console
-codex plugin add rebase@skills
+$ codex plugin add rebase@skills
 ```
+
+Claude Code uses a leading slash (`/rebase:…`). Codex omits it (`rebase:…`).
 
 ## Skills
 

@@ -7,27 +7,29 @@ brainstorm, refine, plan, execute, architect, review, and synthesize.
 
 In Claude Code, add the marketplace:
 
-```console
+```text
 /plugin marketplace add tony/skills
 ```
 
 Install the plugin:
 
-```console
+```text
 /plugin install weave@skills
 ```
 
 In Codex, add the marketplace:
 
 ```console
-codex plugin marketplace add tony/skills
+$ codex plugin marketplace add tony/skills
 ```
 
 Install the plugin:
 
 ```console
-codex plugin add weave@skills
+$ codex plugin add weave@skills
 ```
+
+Claude Code uses a leading slash (`/weave:…`). Codex omits it (`weave:…`).
 
 ## Skills
 

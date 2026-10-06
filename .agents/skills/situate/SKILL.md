@@ -7,7 +7,7 @@ description: >-
 disable-model-invocation: true
 allowed-tools: ["Bash", "Read", "Grep", "Glob", "AskUserQuestion"]
 metadata:
-  argument-hint: "[--pr <number|url>] [--with-agentgrep [terms]]"
+  argument-hint: "[<pr-number|url>] [--with-agentgrep [terms]]"
   source: "plugins/situate/skills/situate/SKILL.md"
 ---
 
@@ -31,7 +31,7 @@ User arguments: $ARGUMENTS
 Default scope is the current branch measured against trunk, plus its
 pull request if one is open.
 
-`--pr <number|url>` switches the subject to that pull request and its
+A positional pull request number or URL switches the subject to that pull request and its
 head branch instead — for reviewing someone else's work, or returning
 to a branch not currently checked out. Read it through `gh`; do not
 check it out.

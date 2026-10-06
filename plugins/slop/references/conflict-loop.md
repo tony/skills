@@ -21,12 +21,12 @@ Three rules shape it:
 
 1. Inspect unmerged and staged files:
 
-   ```bash
-   git diff --name-only --diff-filter=U
+   ```console
+   $ git diff --name-only --diff-filter=U
    ```
 
-   ```bash
-   git diff --name-only --cached
+   ```console
+   $ git diff --name-only --cached
    ```
 
    The first list holds unresolved conflicts. The second holds manual
@@ -36,48 +36,48 @@ Three rules shape it:
    (`<<<<<<<` / `=======` / `>>>>>>>`). Prefer the incoming (fixup) side
    for the targeted lines and keep other structural changes from the
    trunk side. When uncertain, ask through `AskUserQuestion` rather than
-   guess.
+   guess. Without a question tool, go to step 7.
 
 3. Stage explicit paths only; never `git add -A` or `git add .`:
 
-   ```bash
-   git add -- <file>
+   ```console
+   $ git add -- <file>
    ```
 
 4. Run the gates on the union of both lists, limited to those files
    where the tool takes a path argument and project-wide otherwise.
    Skip empty buckets:
 
-   ```bash
-   ${FORMAT_CMD}
+   ```console
+   $ ${FORMAT_CMD}
    ```
 
-   ```bash
-   ${LINT_CMD}
+   ```console
+   $ ${LINT_CMD}
    ```
 
-   ```bash
-   ${TYPECHECK_CMD}
+   ```console
+   $ ${TYPECHECK_CMD}
    ```
 
    If `--run-tests` was passed:
 
-   ```bash
-   ${TEST_CMD}
+   ```console
+   $ ${TEST_CMD}
    ```
 
    - The formatter applies its changes; re-stage what it touched.
    - A linter with `--fix` applies fixes; re-stage. A hard error goes
      to the user through `AskUserQuestion`: **Edit and continue**,
      **Skip this fixup** (`git rebase --skip`), or **Abort**
-     (`git rebase --abort`).
+     (`git rebase --abort`). Without a question tool, abort.
    - A type checker never modifies files; its errors are hard errors.
    - Test failures get the same triage.
 
 5. Continue:
 
-   ```bash
-   git rebase --continue
+   ```console
+   $ git rebase --continue
    ```
 
 6. If the next pick conflicts, or `rerere` resolves another, loop from
@@ -85,8 +85,8 @@ Three rules shape it:
 
 7. When recovery is impossible:
 
-   ```bash
-   git rebase --abort
+   ```console
+   $ git rebase --abort
    ```
 
    Report the failing pick and remind the user that the backup branch

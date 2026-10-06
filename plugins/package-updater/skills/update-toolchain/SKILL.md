@@ -2,7 +2,7 @@
 name: update-toolchain
 description: "Use when updating one runtime or toolchain pin across version files, package metadata, CI, and other repositories."
 allowed-tools: ["Bash", "Read", "Grep", "Glob", "Edit", "Write", "Task", "AskUserQuestion"]
-argument-hint: "[tool] [version] [--root <dir>] [--repo <path|slug>...] [--owner <name>...] [--audit-only] [--branch <name>] [--pr] [--no-push]"
+argument-hint: "[tool] [version] [--root <dir>] [--repo <path|slug>...] [--owner <name>...] [--audit-only] [--branch <name>] [--pr] [--push]"
 user-invocable: true
 disable-model-invocation: true
 ---
@@ -96,7 +96,8 @@ floor takes a `why:`/`what:` body instead of a link block, because a
 floor exists for a reason the diff does not record.
 
 Commits land on the default branch by default. `--branch` works on a
-branch; `--pr` opens a pull request; `--no-push` stops after committing.
+branch; `--push` pushes the commits; `--pr` pushes a branch and opens a pull
+request. Without either, stop after committing and print the push command.
 
 ### 6. Verify
 

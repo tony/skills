@@ -2,7 +2,7 @@
 name: goal
 description: "Use when the review-and-CI loop should continue through bounded rounds until no new actionable feedback remains."
 allowed-tools: ["Bash", "Read", "Grep", "Glob", "Edit", "Write", "AskUserQuestion"]
-argument-hint: "[--pr=<num>] [--max-rounds=<n>] [--wait=<minutes>] [--ci-wait=<minutes>] [--no-push] [--reply]"
+argument-hint: "[<pr-number|url>] [--max-rounds=<n>] [--wait=<minutes>] [--ci-wait=<minutes>] [--push] [--reply]"
 user-invocable: true
 disable-model-invocation: true
 ---
@@ -10,13 +10,14 @@ disable-model-invocation: true
 
 # `/respond:goal`
 
-Run the review loop to a stated finish: screen, fix, push, wait for CI
-and the repository's review agents, screen what they say, and repeat
-until the pull request goes quiet.
+Run the review loop to a stated finish: screen, fix, push (with
+`--push`), wait for CI and the repository's review agents, screen what
+they say, and repeat until the pull request goes quiet.
 
-Invoked by name, never routed to on the model's initiative: it commits,
-pushes, and holds the session open across waits. Invoking it authorizes
-the rounds, commits, and pushes described below, and nothing broader.
+Invoked by name, never routed to on the model's initiative: it commits
+and, with `--push`, pushes and holds the session open across waits.
+Invoking it authorizes the rounds and commits described below, and
+nothing broader; only `--push` authorizes pushes.
 
 ## Core thesis
 
@@ -46,11 +47,11 @@ loop honest.
 
 | Flag | Default | Effect |
 |---|---|---|
-| `--pr=<num>` | current branch's PR | The pull request the loop runs against. |
+| `<pr-number\|url>` | current branch's PR | Positional. The pull request the loop runs against. |
 | `--max-rounds=<n>` | `3` | Hard cap on rounds. Reached means stop and report, not raise. |
 | `--wait=<minutes>` | `10` | Cap on waiting for review agents per round. |
 | `--ci-wait=<minutes>` | `30` | Cap on waiting for CI per round. |
-| `--no-push` | off | Run rounds locally; never push. The loop ends after one round, finished when the local gates are green; the CI and review-agent conditions do not apply. |
+| `--push` | off | Push after each round and run the CI and review-agent conditions. Without it, run one local round, finished when the local gates are green; the CI and review-agent conditions do not apply, and the report prints the push command. |
 | `--reply` | off | Post the drafted replies for declined and deferred findings once, when the loop ends. Confirm first; a non-interactive run treats the flag as that confirmation, for the replies shown in the report only. |
 
 ## Phase 0: Reconnaissance
@@ -99,10 +100,10 @@ straight to the exit test.
 
 Both skills run in loop mode here: this loop's plan approval stands, so
 neither enters plan mode or ends with its panel, and `/respond:action`
-neither pushes nor posts replies. Step 4 pushes and the end of the loop
-posts.
+neither pushes nor posts replies. With `--push`, step 4 pushes; the end of
+the loop posts.
 
-**4. Push.** Print the head SHA and the time first and keep the literal
+**4. Push.** Only with `--push`. Print the head SHA and the time first and keep the literal
 values, since the wait in step 6 depends on both. Push normally; a
 rejected push means the remote moved, which is a halt condition, not
 something to force through.
@@ -129,7 +130,7 @@ Then test the exit condition. Not met and rounds remain → next round.
 
 **Finished** — a round landed no new fixes, CI is green on the current
 head, and the roster has weighed in on it.
-Under `--no-push`, the local gates are green instead.
+Without `--push`, the local gates are green instead.
 
 **Capped** — `--max-rounds` reached. Report what is still open and what
 the next round would do.
@@ -182,6 +183,6 @@ sections appear only when they have content.
 6. End with an `AskUserQuestion` panel (skip inside plan mode): run
    another round past the cap, post the drafted replies, open the
    follow-ups, or stop. When the loop halted for lack of a pull request,
-   the first option is one local round with `--no-push`. In a
+   the first option is one local round without `--push`. In a
    non-interactive run, list the options in the report and default to
    stopping.

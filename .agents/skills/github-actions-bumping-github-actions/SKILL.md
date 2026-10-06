@@ -125,13 +125,13 @@ $ mktemp -d "${TMPDIR:-/tmp}/bump.XXXXXX"
 $ git worktree add --detach <printed-path> origin/<default>
 ```
 
-Commit there and push with `git push origin HEAD:<default>`. Remove it
-afterwards with `git worktree remove <printed-path>`.
+Commit there. Push with `git push origin HEAD:<default>` only when the
+request asks to push; otherwise print that command in the report. Remove
+the worktree afterwards with `git worktree remove <printed-path>`.
 
-Make the run resumable: push whenever the local branch is ahead of the
-remote, not only when this invocation made the commits, so an
-interrupted run can be re-invoked without hand repair. Stop the fleet
-loop on a rate-limit error or a rejected push and report which
+When pushing is requested, make the run resumable: push whenever the
+local branch is ahead of the remote, not only when this invocation made
+the commits. Stop the fleet loop on a rate-limit error or a rejected push and report which
 repositories remain.
 
 ## Phase 5: Verify and close out

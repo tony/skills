@@ -6,7 +6,7 @@ description: >-
 disable-model-invocation: true
 allowed-tools: ["Bash", "Read", "Grep", "Glob", "Edit", "AskUserQuestion", "Task"]
 metadata:
-  argument-hint: "<package> [<version>] [--roots <glob>...] [--no-push]"
+  argument-hint: "<package> [<version>] [--roots <glob>...] [--push]"
   source: "plugins/release/skills/update-downstream-packages/SKILL.md"
 ---
 
@@ -14,15 +14,16 @@ metadata:
 
 A new release of one of the user's packages is published. Find every
 repo of theirs that consumes it, bump the pin (and sibling workspace
-packages released together with it), refresh lockfiles, commit, push
-to trunk, and verify CI end to end.
+packages released together with it), refresh lockfiles, commit, optionally
+push to trunk, and verify CI end to end.
 
 Arguments: $ARGUMENTS
 
-This command pushes to trunk of many repos. Nothing is mutated
+This command can push to trunk of many repos. Nothing is mutated
 before the Phase 3 confirmation gate: Phases 1 and 2 only read, and
 every cache clean, commit, push, and CI rerun waits for the gate.
-`--no-push` runs the whole procedure but leaves commits local.
+Without `--push` it leaves commits local and prints the push command per
+repo; CI verification then does not apply.
 
 ---
 
@@ -88,7 +89,7 @@ Present the plan before mutating anything:
   and any prep commits needed (source-override removal, cooldown
   exemption additions).
 - Skipped repos with reasons (worktree, dirty, org out of scope).
-- Whether pushes will happen (`--no-push` inverts the default).
+- Whether pushes will happen (only with `--push`).
 - Every mutation outside the repos' working trees: the resolver cache
   clean, the `gh cache delete --all` per pushed repo, and the failed-run
   `gh run rerun` (at most once per run).
@@ -165,7 +166,8 @@ unavailable. Each repo, on each of its confirmed branches:
    entry for the version. Write it per
    `references/prose-rules.md`. No `Co-Authored-By` line, no
    "Generated with" or other tool trailer, no emoji.
-8. **Push** — `git push` (skip with `--no-push`). Never force.
+8. **Push** — With `--push`, `git push`; otherwise skip it and print the command
+   in the report. Never force.
 
 ## Phase 5: Verify with gh
 
@@ -207,7 +209,7 @@ For every pushed repo:
    trees, or persistent CI failures, each with what the user should
    look at.
 4. Next-step `ask-user-choice` panel: rerun failed CI checks / retry
-   stopped repos / push the `--no-push` commits / done. Each choice
+   stopped repos / push the local commits / done. Each choice
    needs its own confirmation of the exact repos. Without
    `ask-user-choice`, list the options and stop.
 

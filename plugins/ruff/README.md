@@ -8,27 +8,29 @@ rule doc.
 
 In Claude Code, add the marketplace:
 
-```console
+```text
 /plugin marketplace add tony/skills
 ```
 
 Install the plugin:
 
-```console
+```text
 /plugin install ruff@skills
 ```
 
 In Codex, add the marketplace:
 
 ```console
-codex plugin marketplace add tony/skills
+$ codex plugin marketplace add tony/skills
 ```
 
 Install the plugin:
 
 ```console
-codex plugin add ruff@skills
+$ codex plugin add ruff@skills
 ```
+
+Claude Code uses a leading slash (`/ruff:…`). Codex omits it (`ruff:…`).
 
 ## Skills
 
@@ -46,7 +48,8 @@ a PR from a throwaway worktree.
 - `--branch <name>`: Name the working branch.
 - `--audit-only`: Report predicted work without making changes.
 - `--adopt-defaults`: Carry through the default-rule-set change.
-- `--no-pr`: Push without opening a PR. Pushes ask for confirmation first.
+- `--push`: Push each branch after confirmation; without `--push` or `--pr`, stop after local commits and print the push command.
+- `--pr`: Push and open a pull request.
 - `--no-changelog`: Skip the changelog entry.
 
 ## Components

@@ -2,7 +2,7 @@
 name: action
 description: "Use when screened review findings should be fixed on the current branch, usually as one verified commit per finding."
 allowed-tools: ["Bash", "Read", "Grep", "Glob", "Edit", "Write", "AskUserQuestion"]
-argument-hint: "[findings text] [--pr=<num>] [--base=<ref>] [--no-fixup] [--on-fail=skip|stop|ask] [--reply]"
+argument-hint: "[findings text] [<pr-number|url>] [--base=<ref>] [--no-fixup] [--on-fail=skip|stop|ask] [--reply]"
 user-invocable: true
 disable-model-invocation: true
 ---
@@ -54,7 +54,7 @@ pre-existing, already fixed, or a fix costing ten times the defect.
 
 | Flag | Default | Effect |
 |---|---|---|
-| `--pr=<num>` | current branch's PR when one exists | Passed through to screening: collect findings from the PR. |
+| `<pr-number\|url>` | current branch's PR when one exists | Positional, passed through to screening: collect findings from the PR. |
 | `--base=<ref>` | merge-base with `origin/<trunk>` | Override the provenance baseline. |
 | `--no-fixup` | off | Never propose `fixup!` commits; everything lands as a forward commit. |
 | `--on-fail=<mode>` | `ask` | Per-finding gate failure: `skip` (revert that fix, continue), `stop` (revert, halt), `ask` (surface via `AskUserQuestion`). |

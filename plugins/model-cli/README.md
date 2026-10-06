@@ -7,27 +7,29 @@ codex for GPT, Cursor's agent) with a fallback chain.
 
 In Claude Code, add the marketplace:
 
-```console
+```text
 /plugin marketplace add tony/skills
 ```
 
 Install the plugin:
 
-```console
+```text
 /plugin install model-cli@skills
 ```
 
 In Codex, add the marketplace:
 
 ```console
-codex plugin marketplace add tony/skills
+$ codex plugin marketplace add tony/skills
 ```
 
 Install the plugin:
 
 ```console
-codex plugin add model-cli@skills
+$ codex plugin add model-cli@skills
 ```
+
+Claude Code uses a leading slash (`/model-cli:…`). Codex omits it (`model-cli:…`).
 
 ## Skills
 

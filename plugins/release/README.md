@@ -10,14 +10,14 @@ MIGRATION files, and quality gates (`AGENTS.md` / `CLAUDE.md`).
 
 In Claude Code, add the marketplace:
 
-```console
-$ /plugin marketplace add tony/skills
+```text
+/plugin marketplace add tony/skills
 ```
 
 Install the plugin:
 
-```console
-$ /plugin install release@skills
+```text
+/plugin install release@skills
 ```
 
 In Codex, add the marketplace:
@@ -64,14 +64,14 @@ not a tool restriction.
 Like `cut`, but calculates the next version first based on current version,
 tags, and changelog headers. Asks on ambiguity.
 
-### `/release:update-downstream-packages <package> [<version>] [--roots <glob>...] [--no-push]`
+### `/release:update-downstream-packages <package> [<version>] [--roots <glob>...] [--push]`
 
 Rolls out published releases to local consumer repos.
 - Syncs trunk, updates pins, re-locks, and commits.
 - Verifies CI with `gh`.
 - Requires confirmation before mutating.
 - `--roots` names the directories that hold your checkouts.
-- `--no-push` keeps commits local.
+- `--push` pushes the commits to trunk; without it they stay local.
 
 ## Shared reference
 

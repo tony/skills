@@ -2,7 +2,7 @@
 name: situate
 description: Gain situational awareness — read the branch, its diff, its PR, its tickets, and the project's own conventions, and report where the work stands
 allowed-tools: ["Bash", "Read", "Grep", "Glob", "AskUserQuestion"]
-argument-hint: "[--pr <number|url>] [--with-agentgrep [terms]]"
+argument-hint: "[<pr-number|url>] [--with-agentgrep [terms]]"
 user-invocable: true
 disable-model-invocation: true
 ---
@@ -28,7 +28,7 @@ User arguments: $ARGUMENTS
 Default scope is the current branch measured against trunk, plus its
 pull request if one is open.
 
-`--pr <number|url>` switches the subject to that pull request and its
+A positional pull request number or URL switches the subject to that pull request and its
 head branch instead — for reviewing someone else's work, or returning
 to a branch not currently checked out. Read it through `gh`; do not
 check it out.

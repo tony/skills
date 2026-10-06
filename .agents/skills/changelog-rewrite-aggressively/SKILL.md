@@ -70,7 +70,7 @@ Write entries and the commit message per `references/prose-rules.md`.
    - that a failed invariant check restores the backup with
      `git reset --hard`;
    - when the dropped commits are pushed (the branch exists on the remote),
-     that the rewrite needs a later `git push --force-with-lease` by the
+     that the rewrite needs a later `git push --force-with-lease --force-if-includes` by the
      user. This skill never pushes.
 
    Proceed only on an explicit yes. Without one, including when the host has
@@ -153,8 +153,8 @@ Run only after the Phase 3 approval.
    - the backup branch, to delete once satisfied (`git branch -D <backup>`);
    - an uncommitted changelog edit awaiting the user's commit, when `--commit`
      was not passed;
-   - for a pushed branch, that the user needs `git push --force-with-lease` to
-     publish the rewrite.
+   - for a pushed branch, that the user needs `git push --force-with-lease --force-if-includes`
+     to publish the rewrite.
 
 
 ## Portability notes

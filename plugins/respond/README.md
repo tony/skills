@@ -30,6 +30,8 @@ Install the plugin:
 $ codex plugin add respond@skills
 ```
 
+Claude Code uses a leading slash (`/respond:…`). Codex omits it (`respond:…`).
+
 ## Skills
 
 Screen every claim against six gates and emit a ledger of verdicts with
@@ -71,11 +73,11 @@ In Codex:
 respond:goal
 ```
 
-Flags: `--pr=<num>` (collect from a pull request), `--base=<ref>`
+Arguments: a pull request number or URL (collect from that PR), `--base=<ref>`
 (override provenance baseline), `--include-resolved` (screen settled
 threads), `--no-fixup` (forward commits only), `--on-fail=skip|stop|ask`
 (per-finding gate failure), `--reply` (post drafted replies),
-`--max-rounds=<n>`, `--wait=<minutes>`, `--ci-wait=<minutes>`, `--no-push`.
+`--max-rounds=<n>`, `--wait=<minutes>`, `--ci-wait=<minutes>`, `--push` (push each round and watch CI; without it, one local round).
 
 ## What gets screened
 

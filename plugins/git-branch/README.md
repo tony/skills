@@ -8,30 +8,29 @@ toolkit.
 
 In Claude Code, add the marketplace:
 
-```console
+```text
 /plugin marketplace add tony/skills
 ```
 
 Install the plugin:
 
-```console
+```text
 /plugin install git-branch@skills
 ```
 
 In Codex, add the marketplace:
 
 ```console
-codex plugin marketplace add tony/skills
+$ codex plugin marketplace add tony/skills
 ```
 
 Install the plugin:
 
 ```console
-codex plugin add git-branch@skills
+$ codex plugin add git-branch@skills
 ```
 
-The skills below use Claude Code's leading slash. Codex uses the same names
-without it (`git-branch:…`).
+Claude Code uses a leading slash (`/git-branch:…`). Codex omits it (`git-branch:…`).
 
 ## Components
 

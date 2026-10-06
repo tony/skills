@@ -32,17 +32,16 @@ Install the plugin:
 In Codex, add the marketplace:
 
 ```console
-codex plugin marketplace add tony/skills
+$ codex plugin marketplace add tony/skills
 ```
 
 Install the plugin:
 
 ```console
-codex plugin add pytest-optimizer@skills
+$ codex plugin add pytest-optimizer@skills
 ```
 
-The skills below use Claude Code's leading slash. Codex uses the same names
-without it (`pytest-optimizer:…`).
+Claude Code uses a leading slash (`/pytest-optimizer:…`). Codex omits it (`pytest-optimizer:…`).
 
 ## Why four skills instead of one loop
 

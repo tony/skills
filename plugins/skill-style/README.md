@@ -8,30 +8,29 @@ blocks, and sections survive verbatim.
 
 In Claude Code, add the marketplace:
 
-```console
+```text
 /plugin marketplace add tony/skills
 ```
 
 Install the plugin:
 
-```console
+```text
 /plugin install skill-style@skills
 ```
 
 In Codex, add the marketplace:
 
 ```console
-codex plugin marketplace add tony/skills
+$ codex plugin marketplace add tony/skills
 ```
 
 Install the plugin:
 
 ```console
-codex plugin add skill-style@skills
+$ codex plugin add skill-style@skills
 ```
 
-Claude Code uses a leading slash (`/skill-style:…`). Codex omits it
-(`skill-style:…`).
+Claude Code uses a leading slash (`/skill-style:…`). Codex omits it (`skill-style:…`).
 
 ## Components
 

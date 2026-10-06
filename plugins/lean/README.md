@@ -7,26 +7,26 @@ Keeps slop out of drafts and tidies working trees without commits.
 
 In Claude Code, add the marketplace:
 
-```console
+```text
 /plugin marketplace add tony/skills
 ```
 
 Install the plugin:
 
-```console
+```text
 /plugin install lean@skills
 ```
 
 In Codex, add the marketplace:
 
 ```console
-codex plugin marketplace add tony/skills
+$ codex plugin marketplace add tony/skills
 ```
 
 Install the plugin:
 
 ```console
-codex plugin add lean@skills
+$ codex plugin add lean@skills
 ```
 
 Claude Code uses a leading slash (`/lean:…`). Codex omits it (`lean:…`).

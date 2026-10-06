@@ -8,27 +8,29 @@ refreshes lock files.
 
 In Claude Code, add the marketplace:
 
-```console
+```text
 /plugin marketplace add tony/skills
 ```
 
 Install the plugin:
 
-```console
+```text
 /plugin install terraform@skills
 ```
 
 In Codex, add the marketplace:
 
 ```console
-codex plugin marketplace add tony/skills
+$ codex plugin marketplace add tony/skills
 ```
 
 Install the plugin:
 
 ```console
-codex plugin add terraform@skills
+$ codex plugin add terraform@skills
 ```
+
+Claude Code uses a leading slash (`/terraform:…`). Codex omits it (`terraform:…`).
 
 ## When to use this instead of Renovate or Dependabot
 

@@ -7,30 +7,29 @@ Enforces a markdown writing discipline reusable for any PR, comment, or ticket.
 
 In Claude Code, add the marketplace:
 
-```console
+```text
 /plugin marketplace add tony/skills
 ```
 
 Install the plugin:
 
-```console
+```text
 /plugin install gh@skills
 ```
 
 In Codex, add the marketplace:
 
 ```console
-codex plugin marketplace add tony/skills
+$ codex plugin marketplace add tony/skills
 ```
 
 Install the plugin:
 
 ```console
-codex plugin add gh@skills
+$ codex plugin add gh@skills
 ```
 
-The skills below use Claude Code's leading slash. Codex uses the same names
-without it (`gh:…`).
+Claude Code uses a leading slash (`/gh:…`). Codex omits it (`gh:…`).
 
 ## Components
 

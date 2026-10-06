@@ -14,14 +14,14 @@ claim, find what it rests on, and re-derive it?
 
 In Claude Code, add the marketplace:
 
-```console
-$ /plugin marketplace add tony/skills
+```text
+/plugin marketplace add tony/skills
 ```
 
 Install the plugin:
 
-```console
-$ /plugin install scholar@skills
+```text
+/plugin install scholar@skills
 ```
 
 In Codex, add the marketplace:
@@ -35,6 +35,8 @@ Install the plugin:
 ```console
 $ codex plugin add scholar@skills
 ```
+
+Claude Code uses a leading slash (`/scholar:…`). Codex omits it (`scholar:…`).
 
 ## Skills
 
@@ -88,7 +90,7 @@ Every one of these is optional. `scholar` works standalone.
 `weave` — `contest --panel` hands one contested claim to independent
 adversarial participants and records their verdicts beside the serial one.
 
-`research:deps` — `gather` can take a pinned worktree at an installed version
+`research:study-deps` — `gather` can take a pinned worktree at an installed version
 as its corpus, when the corpus is a dependency of the current project.
 
 `gh` — `render`'s publish option uses its rendered-markdown and source-link

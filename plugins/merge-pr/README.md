@@ -10,26 +10,26 @@ edits changelogs, or claims releases.
 
 In Claude Code, add the marketplace:
 
-```console
+```text
 /plugin marketplace add tony/skills
 ```
 
 Install the plugin:
 
-```console
+```text
 /plugin install merge-pr@skills
 ```
 
 In Codex, add the marketplace:
 
 ```console
-codex plugin marketplace add tony/skills
+$ codex plugin marketplace add tony/skills
 ```
 
 Install the plugin:
 
 ```console
-codex plugin add merge-pr@skills
+$ codex plugin add merge-pr@skills
 ```
 
 Claude Code uses a leading slash (`/merge-pr:…`). Codex omits it (`merge-pr:…`).

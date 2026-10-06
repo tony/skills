@@ -166,7 +166,7 @@
         "references/entry-rules.md": "plugins/changelog/references/entry-rules.md",
         "references/prose-rules.md": "plugins/changelog/references/prose-rules.md"
       },
-      "bytes": 23793
+      "bytes": 23833
     },
     {
       "name": "commit",
@@ -301,7 +301,7 @@
         "references/dependabot-closeout.md": "plugins/github-actions/references/dependabot-closeout.md",
         "references/prose-rules.md": "plugins/github-actions/references/prose-rules.md"
       },
-      "bytes": 21743
+      "bytes": 21795
     },
     {
       "name": "github-actions-update-action",
@@ -313,7 +313,7 @@
         "references/dependabot-closeout.md": "plugins/github-actions/references/dependabot-closeout.md",
         "references/prose-rules.md": "plugins/github-actions/references/prose-rules.md"
       },
-      "bytes": 20044
+      "bytes": 20116
     },
     {
       "name": "github-actions-update-actions",
@@ -325,7 +325,7 @@
         "references/dependabot-closeout.md": "plugins/github-actions/references/dependabot-closeout.md",
         "references/prose-rules.md": "plugins/github-actions/references/prose-rules.md"
       },
-      "bytes": 18465
+      "bytes": 18513
     },
     {
       "name": "lean-tighten",
@@ -370,7 +370,7 @@
         "references/merge-readiness.md": "plugins/merge-pr/references/merge-readiness.md",
         "references/prose-rules.md": "plugins/merge-pr/references/prose-rules.md"
       },
-      "bytes": 17175
+      "bytes": 17195
     },
     {
       "name": "merge-pr-this",
@@ -381,7 +381,7 @@
         "references/merge-readiness.md": "plugins/merge-pr/references/merge-readiness.md",
         "references/prose-rules.md": "plugins/merge-pr/references/prose-rules.md"
       },
-      "bytes": 16416
+      "bytes": 16436
     },
     {
       "name": "model-cli-agy",
@@ -439,7 +439,7 @@
         "references/prose-rules.md": "plugins/package-updater/references/prose-rules.md",
         "references/repo-scope.md": "plugins/package-updater/references/repo-scope.md"
       },
-      "bytes": 20732
+      "bytes": 20813
     },
     {
       "name": "package-updater-update-package",
@@ -455,7 +455,7 @@
         "references/repo-scope.md": "plugins/package-updater/references/repo-scope.md",
         "references/upstream-links.md": "plugins/package-updater/references/upstream-links.md"
       },
-      "bytes": 46662
+      "bytes": 46738
     },
     {
       "name": "package-updater-update-toolchain",
@@ -469,7 +469,7 @@
         "references/repo-scope.md": "plugins/package-updater/references/repo-scope.md",
         "references/upstream-links.md": "plugins/package-updater/references/upstream-links.md"
       },
-      "bytes": 38978
+      "bytes": 39054
     },
     {
       "name": "package-updater-updating-packages",
@@ -485,7 +485,7 @@
         "references/repo-scope.md": "plugins/package-updater/references/repo-scope.md",
         "references/upstream-links.md": "plugins/package-updater/references/upstream-links.md"
       },
-      "bytes": 52371
+      "bytes": 52403
     },
     {
       "name": "pr",
@@ -559,7 +559,7 @@
         "templates/conftest_cache_snippet.py": "plugins/pytest-optimizer/templates/conftest_cache_snippet.py",
         "templates/pytest_optimizer_plugin.py": "plugins/pytest-optimizer/templates/pytest_optimizer_plugin.py"
       },
-      "bytes": 88398
+      "bytes": 88518
     },
     {
       "name": "pytest-optimizer-00-scan",
@@ -578,7 +578,7 @@
         "references/version-matrix.md": "plugins/pytest-optimizer/references/version-matrix.md",
         "templates/pytest_optimizer_plugin.py": "plugins/pytest-optimizer/templates/pytest_optimizer_plugin.py"
       },
-      "bytes": 74387
+      "bytes": 74507
     },
     {
       "name": "pytest-optimizer-01-benchmark",
@@ -593,7 +593,7 @@
         "references/prose-rules.md": "plugins/pytest-optimizer/references/prose-rules.md",
         "references/safety-gates.md": "plugins/pytest-optimizer/references/safety-gates.md"
       },
-      "bytes": 56562
+      "bytes": 56672
     },
     {
       "name": "pytest-optimizer-02-plan",
@@ -663,7 +663,7 @@
       "bundled": {
         "references/prose-rules.md": "plugins/release/references/prose-rules.md"
       },
-      "bytes": 14394
+      "bytes": 14487
     },
     {
       "name": "research-assess",
@@ -728,10 +728,10 @@
     {
       "name": "research-study-deps",
       "sources": [
-        "plugins/research/skills/deps/SKILL.md"
+        "plugins/research/skills/study-deps/SKILL.md"
       ],
       "bundled": {},
-      "bytes": 6191
+      "bytes": 6197
     },
     {
       "name": "research-verify",
@@ -752,7 +752,7 @@
         "references/screening-rubric.md": "plugins/respond/references/screening-rubric.md",
         "references/verification-gates.md": "plugins/respond/references/verification-gates.md"
       },
-      "bytes": 32460
+      "bytes": 32483
     },
     {
       "name": "respond-check",
@@ -764,7 +764,7 @@
         "references/prose-rules.md": "plugins/respond/references/prose-rules.md",
         "references/screening-rubric.md": "plugins/respond/references/screening-rubric.md"
       },
-      "bytes": 25587
+      "bytes": 25646
     },
     {
       "name": "respond-goal",
@@ -777,7 +777,7 @@
         "references/review-agents.md": "plugins/respond/references/review-agents.md",
         "references/verification-gates.md": "plugins/respond/references/verification-gates.md"
       },
-      "bytes": 26105
+      "bytes": 26287
     },
     {
       "name": "ruff-bump",
@@ -790,7 +790,7 @@
         "references/prose-rules.md": "plugins/ruff/references/prose-rules.md",
         "references/release-triage.md": "plugins/ruff/references/release-triage.md"
       },
-      "bytes": 30549
+      "bytes": 30524
     },
     {
       "name": "scholar-annotate",
@@ -966,7 +966,7 @@
         "references/prose-rules.md": "plugins/situate/references/prose-rules.md",
         "references/situation-sweep.md": "plugins/situate/references/situation-sweep.md"
       },
-      "bytes": 22866
+      "bytes": 22884
     },
     {
       "name": "situate-brief",
@@ -1013,7 +1013,7 @@
         "references/prose-rules.md": "plugins/situate/references/prose-rules.md",
         "references/situation-sweep.md": "plugins/situate/references/situation-sweep.md"
       },
-      "bytes": 23821
+      "bytes": 23889
     },
     {
       "name": "skill-style",
@@ -1036,10 +1036,10 @@
         "references/conflict-loop.md": "plugins/slop/references/conflict-loop.md",
         "references/detect-pipeline.md": "plugins/slop/references/detect-pipeline.md",
         "references/prose-rules.md": "plugins/slop/references/prose-rules.md",
-        "references/quality-gates.md": "plugins/slop/references/quality-gates.md",
-        "references/signatures.yml": "plugins/slop/references/signatures.yml"
+        "references/signatures.yml": "plugins/slop/references/signatures.yml",
+        "references/verification-gates.md": "plugins/slop/references/verification-gates.md"
       },
-      "bytes": 51292
+      "bytes": 53110
     },
     {
       "name": "slop-scan",
@@ -1050,10 +1050,10 @@
         "references/commit-template.md": "plugins/slop/references/commit-template.md",
         "references/detect-pipeline.md": "plugins/slop/references/detect-pipeline.md",
         "references/prose-rules.md": "plugins/slop/references/prose-rules.md",
-        "references/quality-gates.md": "plugins/slop/references/quality-gates.md",
-        "references/signatures.yml": "plugins/slop/references/signatures.yml"
+        "references/signatures.yml": "plugins/slop/references/signatures.yml",
+        "references/verification-gates.md": "plugins/slop/references/verification-gates.md"
       },
-      "bytes": 44224
+      "bytes": 45809
     },
     {
       "name": "spike-bakeoff",
@@ -1459,8 +1459,8 @@
     "plugins/situate/references/prior-conversations.md": 2,
     "plugins/slop/references/detect-pipeline.md": 2,
     "plugins/slop/references/prose-rules.md": 2,
-    "plugins/slop/references/quality-gates.md": 2,
     "plugins/slop/references/signatures.yml": 2,
+    "plugins/slop/references/verification-gates.md": 2,
     "plugins/tdd/references/gates-and-commits.md": 2,
     "plugins/tdd/references/prose-rules.md": 2,
     "plugins/tdd/references/xfail-mechanisms.md": 2,

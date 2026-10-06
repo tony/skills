@@ -7,14 +7,14 @@ and safety checks.
 
 In Claude Code, add the marketplace:
 
-```console
-$ /plugin marketplace add tony/skills
+```text
+/plugin marketplace add tony/skills
 ```
 
 Install the plugin:
 
-```console
-$ /plugin install commit@skills
+```text
+/plugin install commit@skills
 ```
 
 In Codex, add the marketplace:
@@ -28,6 +28,8 @@ Install the plugin:
 ```console
 $ codex plugin add commit@skills
 ```
+
+Claude Code uses a leading slash (`/commit:…`). Codex omits it (`commit:…`).
 
 ## Skills
 

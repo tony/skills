@@ -194,9 +194,9 @@ on the remote default branch, not the local one, which may be stale and
 will be rejected as a non-fast-forward after the work is done.
 
 Make the run resumable. Push whenever the local branch is ahead of the
-remote and the plan approved the push, rather than only when this
-invocation created the commits, so an interrupted run can be re-invoked
-without hand repair.
+remote, `--push` or `--pr` was passed, and the plan approved the push,
+rather than only when this invocation created the commits, so an
+interrupted run can be re-invoked without hand repair.
 
 ### Trunk or a pull request
 

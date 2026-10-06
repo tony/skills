@@ -2,7 +2,7 @@
 name: bump
 description: "Use when upgrading Ruff in one repository or a fleet and evaluating newly applicable rules before committing each change."
 allowed-tools: ["Bash", "Read", "Grep", "Glob", "Edit", "WebFetch", "AskUserQuestion"]
-argument-hint: "[version] [--root <dir>] [--repo <path|slug>...] [--owner <name>...] [--branch <name>] [--adopt-defaults] [--audit-only] [--no-pr] [--no-changelog]"
+argument-hint: "[version] [--root <dir>] [--repo <path|slug>...] [--owner <name>...] [--branch <name>] [--adopt-defaults] [--audit-only] [--push] [--pr] [--no-changelog]"
 user-invocable: true
 disable-model-invocation: true
 ---
@@ -85,9 +85,9 @@ If tests fail, check whether they fail on the default branch too before attribut
 
 ### 11. Push, open, watch, record
 
-Pushing and opening a pull request publish work, and plan approval in phase 4 does not cover them. Before the first push, ask the user to confirm, naming each repository and branch to be pushed and whether a pull request follows; with more than one repository, confirm once for the whole fleet and let the user drop repositories from it. `--no-pr` skips only the pull request: the branch is still pushed after confirmation. Without an interactive question tool, commit locally, push nothing, and report the pending pushes.
+Without `--push` or `--pr`, stop after the local commits and print the push command per repository in the report. `--push` pushes each branch; `--pr` pushes it and opens a pull request. Plan approval in phase 4 does not cover publishing: before the first push, ask the user to confirm, naming each repository and branch and whether a pull request follows; with more than one repository, confirm once for the whole fleet and let the user drop repositories from it. Without an interactive question tool, a passed flag is the confirmation.
 
-Push the branch and open a pull request unless `--no-pr`. The body states which rules moved and links each to its documentation. When phase 6 applied, it carries a pre-merge instruction to drop the exemption and re-resolve, with the time the block lapses. Write it per `../../references/prose-rules.md`, with no `Co-Authored-By` line, tool trailer, or emoji.
+The pull request body states which rules moved and links each to its documentation. When phase 6 applied, it carries a pre-merge instruction to drop the exemption and re-resolve, with the time the block lapses. Write it per `../../references/prose-rules.md`, with no `Co-Authored-By` line, tool trailer, or emoji.
 
 Watch CI to a conclusion, and attribute failures before blaming the bump. Then, unless `--no-changelog` or the repository keeps no changelog, add an entry following that repository's own conventions. A linter floor is development tooling: file it wherever that repository files development-tooling changes, and only if it documents such changes.
 

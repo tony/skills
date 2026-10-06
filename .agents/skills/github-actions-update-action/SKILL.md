@@ -6,7 +6,7 @@ description: >-
 disable-model-invocation: true
 allowed-tools: ["Bash", "Read", "Grep", "Glob", "Edit", "AskUserQuestion"]
 metadata:
-  argument-hint: "<owner/action> [target version] [--repo <path|slug>...] [--pr] [--no-push]"
+  argument-hint: "<owner/action> [target version] [--repo <path|slug>...] [--pr] [--push]"
   source: "plugins/github-actions/skills/update-action/SKILL.md"
 ---
 
@@ -75,7 +75,8 @@ what it means for that repository, and links every major release in the
 span. Never cite a dependabot pull request. No `Co-Authored-By`, no
 "Generated with" or other tool trailer, no emoji.
 
-Push unless `--no-push`. With `--pr`, branch and open a pull request
+Commit locally; push only with `--push`, and otherwise print the push
+command in the report. With `--pr`, branch, push, and open a pull request
 instead of committing to the default branch.
 
 ### 7. Verify and close out

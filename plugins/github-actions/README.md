@@ -7,27 +7,29 @@ notes, commits each action separately, and supersedes Dependabot PRs.
 
 In Claude Code, add the marketplace:
 
-```console
+```text
 /plugin marketplace add tony/skills
 ```
 
 Install the plugin:
 
-```console
+```text
 /plugin install github-actions@skills
 ```
 
 In Codex, add the marketplace:
 
 ```console
-codex plugin marketplace add tony/skills
+$ codex plugin marketplace add tony/skills
 ```
 
 Install the plugin:
 
 ```console
-codex plugin add github-actions@skills
+$ codex plugin add github-actions@skills
 ```
+
+Claude Code uses a leading slash (`/github-actions:…`). Codex omits it (`github-actions:…`).
 
 ## Skills
 
@@ -40,10 +42,10 @@ codex plugin add github-actions@skills
 - `update-actions`: Audit across a repo or fleet. Use `--audit-only` to
   report without writing.
 
-Defaults: Current repository, commit on default branch.
+Defaults: Current repository, commit on default branch, no push.
 Flags:
 - `--pr`: Branch and open a PR.
-- `--no-push`: Commit locally and stop.
+- `--push`: Push the commits; without it, the report prints the push command.
 - `--root <dir>`: Sweep every repo beneath a directory
   (`update-actions` only).
 - `--owner <name>`: Keep only repos belonging to given accounts

@@ -29,6 +29,8 @@ Install the plugin:
 $ codex plugin add self-improvement@skills
 ```
 
+Claude Code uses a leading slash (`/self-improvement:…`). Codex omits it (`self-improvement:…`).
+
 ## Skills
 
 | Claude Code | Codex | Description |

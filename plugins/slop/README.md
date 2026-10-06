@@ -7,27 +7,29 @@ or in the tracked files at HEAD, and fix them with reviewable patches.
 
 In Claude Code, add the marketplace:
 
-```console
+```text
 /plugin marketplace add tony/skills
 ```
 
 Install the plugin:
 
-```console
+```text
 /plugin install slop@skills
 ```
 
 In Codex, add the marketplace:
 
 ```console
-codex plugin marketplace add tony/skills
+$ codex plugin marketplace add tony/skills
 ```
 
 Install the plugin:
 
 ```console
-codex plugin add slop@skills
+$ codex plugin add slop@skills
 ```
+
+Claude Code uses a leading slash (`/slop:…`). Codex omits it (`slop:…`).
 
 ## Skills
 

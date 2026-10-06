@@ -8,27 +8,29 @@ required.
 
 In Claude Code, add the marketplace:
 
-```console
+```text
 /plugin marketplace add tony/skills
 ```
 
 Install the plugin:
 
-```console
+```text
 /plugin install situate@skills
 ```
 
 In Codex, add the marketplace:
 
 ```console
-codex plugin marketplace add tony/skills
+$ codex plugin marketplace add tony/skills
 ```
 
 Install the plugin:
 
 ```console
-codex plugin add situate@skills
+$ codex plugin add situate@skills
 ```
+
+Claude Code uses a leading slash (`/situate:…`). Codex omits it (`situate:…`).
 
 ## Skills
 
@@ -40,7 +42,7 @@ codex plugin add situate@skills
 
 **Arguments:**
 - `/situate`: 
-  - `--pr <number|url>`: Target a PR without checking it out.
+  - `<pr-number|url>`: Target a PR without checking it out.
   - `--with-agentgrep [terms]`: Search local AI transcripts for
     unrecorded decisions.
 - `/situate:what`: Accepts an optional subject (e.g., `/situate:what the

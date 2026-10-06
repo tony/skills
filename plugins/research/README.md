@@ -9,14 +9,14 @@ also clones a project's dependencies at the versions it installs.
 
 In Claude Code, add the marketplace:
 
-```console
-$ /plugin marketplace add tony/skills
+```text
+/plugin marketplace add tony/skills
 ```
 
 Install the plugin:
 
-```console
-$ /plugin install research@skills
+```text
+/plugin install research@skills
 ```
 
 In Codex, add the marketplace:
@@ -31,6 +31,8 @@ Install the plugin:
 $ codex plugin add research@skills
 ```
 
+Claude Code uses a leading slash (`/research:…`). Codex omits it (`research:…`).
+
 ## Skills
 
 | Skill | Claude Code | Codex | Description |
@@ -42,7 +44,7 @@ $ codex plugin add research@skills
 | Verify | `/research:verify` | `research:verify` | Re-check sources, look for missed ones, lint the report |
 | Report | `/research:report` | `research:report` | Write the report: answer first, sources and exhibits last |
 | Release | `/research:release` | `research:release` | Pass every check fresh, release the exact report, record decisions, export a bag |
-| Study Dependencies | `/research:deps` | `research:study-deps` | Clone deps and create version-pinned worktrees in `~/study/` |
+| Study Dependencies | `/research:study-deps` | `research:study-deps` | Clone deps and create version-pinned worktrees in `~/study/` |
 
 Of the topic skills, `foray` is the only one the model picks up on its own,
 from requests like "research how SQLite WAL handles checkpoints and keep the
@@ -151,23 +153,23 @@ branches, major branches.
 | `--no-worktree` | Clone only, no worktree |
 
 ```console
-/research:deps vite
+/research:study-deps vite
 ```
 
 ```console
-/research:deps all
+/research:study-deps all
 ```
 
 ```console
-/research:deps dev
+/research:study-deps dev
 ```
 
 ```console
-/research:deps react --lang typescript
+/research:study-deps react --lang typescript
 ```
 
 ```console
-/research:deps tokio --no-worktree
+/research:study-deps tokio --no-worktree
 ```
 
 ### Study Directory Layout

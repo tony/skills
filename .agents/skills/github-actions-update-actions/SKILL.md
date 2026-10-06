@@ -6,7 +6,7 @@ description: >-
 disable-model-invocation: true
 allowed-tools: ["Bash", "Read", "Grep", "Glob", "Edit", "Task", "AskUserQuestion"]
 metadata:
-  argument-hint: "[--root <dir>] [--owner <name>...] [--repo <path|slug>...] [--audit-only] [--pr] [--no-push]"
+  argument-hint: "[--root <dir>] [--owner <name>...] [--repo <path|slug>...] [--audit-only] [--pr] [--push]"
   source: "plugins/github-actions/skills/update-actions/SKILL.md"
 ---
 
@@ -57,11 +57,11 @@ Present the plan the skill defines, including the PRs to close, and wait
 for approval. With `--audit-only`, stop here and report; nothing is
 written.
 
-### 5. Commit and push
+### 5. Commit
 
 One commit per repository and action. Work through repositories one at
-a time, pushing as each completes, so an interrupted run resumes
-cleanly. Write commit messages, pull-request comments, and the report per
+a time. With `--push`, push as each completes so an interrupted run
+resumes cleanly; otherwise print the push commands in the report. Write commit messages, pull-request comments, and the report per
 `references/prose-rules.md`. No `Co-Authored-By`, no "Generated
 with" or other tool trailer, no emoji.
 

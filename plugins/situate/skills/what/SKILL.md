@@ -56,16 +56,16 @@ Go beyond that only for the paid tier in the brief reference.
 
 ### 3. Write the brief
 
-Five lines maximum, ranked as the brief reference sets out. Stop early
-when the situation runs out. Then numbered single-line options, only
-when there is a real fork. Stay read-only, per the contract in
+Five lines is a ceiling, not a target; three good lines beat five, and a
+narrow question usually needs two. Rank lines as the brief reference sets
+out. Then numbered single-line options, only when there is a real fork. Stay read-only, per the contract in
 `../../references/situation-sweep.md`, and write per
 `../../references/prose-rules.md`.
 
 Before sending, check each line:
 
-- One sentence per line, short enough to read in one breath. Cut a
-  second sentence or a stacked clause.
+- One sentence per line, at most about 20 words. Cut a second sentence
+  or a stacked "so", "because", or "which" clause.
 - A narrow question gets only the causal answer. No line on branch
   position, trunk, or repository location unless the answer needs it.
 - No headings, bullets, bold, preamble, closing summary, or offer to go

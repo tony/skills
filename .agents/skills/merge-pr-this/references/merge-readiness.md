@@ -79,7 +79,7 @@ its disclosed core loop, covered by the roster shown up front.
    — format, lint, typecheck, scoped tests, discovered from its
    AGENTS.md/CLAUDE.md — and fix failures before pushing.
 6. Force-push the PR branch, and only that branch, with
-   `git push --force-with-lease` — never bare `--force`.
+   `git push --force-with-lease --force-if-includes` — never bare `--force`.
 7. Wait for CI on the rebased head: `gh pr checks <n> --watch`.
 
 ## Merge commit message

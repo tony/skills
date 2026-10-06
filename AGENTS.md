@@ -1,4 +1,4 @@
-# AGENTS.md — claude-plugins
+# AGENTS.md — skills
 
 Project conventions and standards for AI-assisted development.
 
@@ -26,11 +26,54 @@ Claude Code:
 - [Plugin reference](https://code.claude.com/docs/en/plugins-reference.md) — component types, frontmatter schemas, directory structure
 - [Plugin marketplaces](https://code.claude.com/docs/en/plugin-marketplaces.md) — marketplace.json schema, source types, publishing
 - [Skills](https://code.claude.com/docs/en/skills.md) — skill authoring, SKILL.md format, `$ARGUMENTS`
-- [Hooks](https://code.claude.com/docs/en/hooks.md) — hook events, types (command/prompt/agent), hooks.json
-- [MCP servers](https://code.claude.com/docs/en/mcp.md) — MCP server configuration, .mcp.json, server types
 - [Settings](https://code.claude.com/docs/en/settings.md) — plugin settings, permissions, scopes
 - [Sub-agents](https://code.claude.com/docs/en/sub-agents.md) — agent frontmatter, delegation patterns, tool restrictions
-- [Agent teams](https://code.claude.com/docs/en/agent-teams.md) — multi-agent coordination (experimental)
+
+## Quality gates
+
+CI runs each check below on every pull request; run them before committing.
+
+### Format
+
+```console
+$ uv run ruff format
+```
+
+### Lint
+
+```console
+$ uv run ruff check
+```
+
+### Type check
+
+```console
+$ uv run basedpyright
+```
+
+### Test
+
+Doctests and script tests, then the plugin lint, manifest sync,
+generated-file drift, and description-routing checks:
+
+```console
+$ uv run pytest -q \
+    && uv run scripts/marketplace.py lint \
+    && uv run scripts/marketplace.py sync --check \
+    && uv run scripts/marketplace.py portable --check \
+    && uv run scripts/skill_evals.py check
+```
+
+### End-to-end install
+
+Installs every plugin into both hosts under a throwaway `HOME`; needs
+`claude` and `codex` on `PATH`. Outer loop only:
+
+```console
+$ uv run scripts/e2e.py \
+    --source local \
+    --host both
+```
 
 ## Git Commit Standards
 
@@ -59,29 +102,21 @@ Common commit types:
 - **style**: Code style and formatting
 - **ai(rules[AGENTS])**: AI rule updates
 - **ai(claude[rules])**: Claude Code rules (CLAUDE.md)
-- **ai(claude[command])**: Claude Code command changes
 
 ### Project Component Naming
 
-This repo contains Claude Code plugins, commands, skills, hooks, and agents. Use the
+This repo contains Claude Code and Codex plugins built from skills. Use the
 `ai(claude[...])` component pattern:
 
 - `ai(claude[plugin])` — plugin manifest, structure, or multi-component changes
 - `ai(claude[plugins])` — changes spanning multiple plugins
-- `ai(claude[command])` — a single slash command
-- `ai(claude[commands])` — changes spanning multiple commands
 - `ai(claude[skill])` — a single skill
 - `ai(claude[skills])` — changes spanning multiple skills
-- `ai(claude[hook])` — a single hook
-- `ai(claude[hooks])` — changes spanning multiple hooks
-- `ai(claude[agent])` — a single agent definition
-- `ai(claude[agents])` — changes spanning multiple agents
 - `ai(rules)` — AGENTS.md or other AI convention files
 
 When a change targets a specific named component, include it:
 - `ai(claude[skill{commit}])` — the `commit` skill specifically
-- `ai(claude[hook{PreToolUse}])` — a PreToolUse hook specifically
-- `ai(claude[command{review-pr}])` — the `review-pr` command specifically
+- `ai(claude[plugin{weave}])` — the `weave` plugin specifically
 
 Examples:
 ```
@@ -95,13 +130,13 @@ what:
 ```
 
 ```
-ai(claude[hooks]) Add PreToolUse validation for Bash commands
+ai(claude[skill{deslop}]) Halt on a dirty tree before rewriting
 
-why: Prevent accidental destructive shell commands
+why: A rebase over uncommitted edits can lose them
 
 what:
-- Add PreToolUse hook to intercept Bash tool calls
-- Block rm -rf and git push --force without confirmation
+- Check git status before any apply mode
+- Name the dirty files and stop
 ```
 
 ```
@@ -110,7 +145,7 @@ ai(rules) Add project-specific commit component conventions
 why: Claude Code plugins need distinct component prefixes
 
 what:
-- Add ai(claude[...]) naming scheme for plugins, commands, skills, hooks
+- Add ai(claude[...]) naming scheme for plugins and skills
 - Include examples for single and multi-component changes
 ```
 
@@ -422,8 +457,7 @@ lines, and that every resource is named by some file in its plugin.
 
 ### Plugin Directory Structure
 
-Every plugin directory under `plugins/` must contain `.claude-plugin/plugin.json` and
-`README.md`. Beyond that, include any combination of component directories:
+Every plugin directory under `plugins/` has this shape:
 
 ```
 plugins/<name>/
@@ -435,15 +469,11 @@ plugins/<name>/
 ├── skills/              # skills (skill-name/SKILL.md)
 ├── references/          # files skills read on demand
 ├── scripts/             # tested scripts skills run
-├── agents/              # sub-agents (*.md with name, description, tools)
-├── hooks/               # hooks (hooks.json)
-├── .mcp.json            # MCP server configuration
-└── .lsp.json            # LSP server configuration
+└── evals/               # eval cases for `claude plugin eval`
 ```
 
-At least one component directory (`skills/`, `agents/`, or `hooks/`) or
-configuration file (`.mcp.json`, `.lsp.json`) is expected. Claude Code also
-accepts `commands/`; this repo does not use it, for the reasons below.
+Hosts also accept `agents/`, `hooks/`, `.mcp.json`, and `.lsp.json`; no plugin
+here ships them, and the plugin reference linked above holds their schemas.
 
 `.codex-plugin/plugin.json` is written by `scripts/marketplace.py portable` and
 verified by `portable --check`. Never hand-edit it; change
@@ -458,17 +488,11 @@ differs. Edit the file in `shared/`, never a copy.
 
 ### Skills Are the Only Workflow Component
 
-Claude Code still supports `commands/`, but this repo does not use it. Every
-workflow is a skill, for three reasons:
-
-- Claude Code folds commands into skills already. A command-only plugin reports
-  `Skills (1)` in `claude plugin details`, and there is no Commands row at all.
-  A plugin shipping both a command and a skill under one name lists that name
-  twice.
-- Codex reads only `skills/`. It migrates `commands/` on its own, but silently
-  drops any command over roughly 3.9KB, which is most of them.
-- A skill is invoked the same way from either host: `/slop:deslop` in Claude
-  Code, `slop:deslop` in Codex.
+Every workflow is a skill; no plugin ships `commands/`. Codex reads only
+`skills/`, and a skill is invoked the same way from either host:
+`/slop:deslop` in Claude Code, `slop:deslop` in Codex. A skill's directory
+name and its frontmatter `name` match, or the two hosts invoke it by
+different names.
 
 A skill carrying a workflow that only makes sense when the user asks for it by
 name sets `disable-model-invocation: true`. That keeps a command's semantics —
@@ -477,47 +501,10 @@ of a routing corpus where it would crowd skills meant to be discovered.
 
 Address bundled files by climbing out of the skill directory
 (`../../references/x.md`), never through `${CLAUDE_PLUGIN_ROOT}`. Codex performs
-no substitution on that variable, and Anthropic's own plugins do not use it in
-skills either.
+no substitution on that variable.
 
-### Component Frontmatter Schemas
+### Skill Frontmatter
 
-Each component type has specific frontmatter requirements:
-
-**Commands** (`commands/*.md`) — supported by Claude Code, unused here:
-- `description` (required) — shown in `/` menu
-- `allowed-tools` (optional) — tool access list (bare names, e.g. `Bash`)
-- `argument-hint` (optional) — placeholder text for command argument
-- `model` (optional) — model override for this command
-- `disable-model-invocation` (optional) — if true, command runs without model invocation
-
-**Agents** (`agents/*.md`):
-- `name` (required) — agent identifier (lowercase letters and hyphens)
-- `description` (required) — when to delegate to this agent; include `<example>` blocks
-- `tools` (optional) — comma-separated tool access list; inherits every
-  tool available to subagents when omitted
-- `disallowedTools` (optional) — comma-separated tools to deny
-- `model` (optional) — `sonnet`, `opus`, `haiku`, `fable`, a full model
-  ID, or `inherit`; defaults to `inherit`
-- `effort` (optional) — `low`, `medium`, `high`, `xhigh`, or `max`;
-  inherits the session level when unset
-- `maxTurns` (optional) — max agentic turns before agent stops
-- `skills` (optional) — skill names to preload into agent context
-- `memory` (optional) — persistent memory scope: `user`, `project`, `local`
-- `background` (optional) — `true` always runs the agent as a background
-  task; Claude chooses when unset
-- `isolation` (optional) — `worktree`, the only valid value, runs the
-  agent in a temporary git worktree off the default branch
-- `color` (optional) — visual indicator: `red`, `blue`, `green`,
-  `yellow`, `purple`, `orange`, `pink`, or `cyan`
-
-Plugin subagents drop `hooks`, `mcpServers`, and `permissionMode` — the
-host ignores all three when an agent loads from a plugin, for security.
-An agent shipped from this marketplace is a plugin subagent, so setting
-them here does nothing; they only take effect once the file is copied
-into a project's `.claude/agents/` or a user's `~/.claude/agents/`.
-
-**Skills** (`skills/*/SKILL.md`):
 - `name` (required here) — skill display name; upstream it defaults to
   the directory name, but this repo's gates expect it written out
 - `description` (required here) — when and how to invoke the skill
@@ -530,59 +517,9 @@ into a project's `.claude/agents/` or a user's `~/.claude/agents/`.
 - `disable-model-invocation` (optional) — if true, runs without model invocation
 - Content can reference `$ARGUMENTS` to access arguments passed to the skill
 
-Skills hyphenate both tool fields while the Agents schema above uses
-camelCase `tools`/`disallowedTools` — a real difference between the two
-components, not a typo in one of them. And `allowed-tools` grants
-pre-approval rather than sandboxing: every tool stays callable either
-way, so listing tools only skips the permission prompt for those. Only
-`disallowed-tools` removes a tool from the pool.
-
-**Hooks** (`hooks/hooks.json`):
-```json
-{
-  "hooks": {
-    "PreToolUse": [
-      { "matcher": "Write|Edit", "hooks": [{ "type": "command", "command": "..." }] }
-    ]
-  }
-}
-```
-- Events: `PreToolUse`, `PostToolUse`, `PostToolUseFailure`, `Stop`,
-  `SubagentStart`, `SubagentStop`, `UserPromptSubmit`, `PermissionRequest`,
-  `SessionStart`, `SessionEnd`, `PreCompact`, `Notification`,
-  `TeammateIdle`, `TaskCompleted`
-- Hook types: `command` (shell script), `prompt` (LLM evaluation), `agent` (agentic verifier)
-- Use `${CLAUDE_PLUGIN_ROOT}` for portable paths in command hooks
-
-**MCP Servers** (`.mcp.json`):
-```json
-{
-  "server-name": {
-    "type": "http",
-    "url": "https://api.example.com/mcp",
-    "headers": { "Authorization": "Bearer ${API_KEY}" }
-  }
-}
-```
-- Server types: `http` (remote REST), `stdio` (local subprocess), `sse` (server-sent events)
-- `stdio` servers use `command` and `args` instead of `url`
-- Environment variables expanded with `${VAR_NAME}` syntax
-- Use `${CLAUDE_PLUGIN_ROOT}` for portable paths to local server binaries
-
-**LSP Servers** (`.lsp.json`):
-```json
-{
-  "server-name": {
-    "command": "pyright-langserver",
-    "args": ["--stdio"],
-    "extensionToLanguage": { ".py": "python", ".pyi": "python" }
-  }
-}
-```
-- Required: `command`, `extensionToLanguage`
-- Optional: `args`, `transport` (`stdio`/`socket`), `env`, `initializationOptions`,
-  `settings`, `startupTimeout`, `shutdownTimeout`, `restartOnCrash`, `maxRestarts`
-- Users must install the language server binary separately
+`allowed-tools` grants pre-approval rather than sandboxing: every tool
+stays callable either way, so listing tools only skips the permission
+prompt for those. Only `disallowed-tools` removes a tool from the pool.
 
 ### Marketplace Manifest
 
@@ -609,11 +546,11 @@ the other's spelling.
 
 ### Language-Agnostic Design
 
-Plugins in this repository are designed to work with **any** programming language or
-framework. Commands discover project-specific tooling by reading AGENTS.md / CLAUDE.md
-at runtime rather than assuming a particular ecosystem. When listing examples of tools
-or frameworks, present them as illustrative examples (e.g., in lists or short prose), never
-as hardcoded instructions.
+A plugin not named for a tool works with any language or framework. Its
+skills discover project tooling by reading AGENTS.md / CLAUDE.md at run time
+rather than assuming an ecosystem, and name tools only as examples. Plugins
+named for a tool (pytest-optimizer, ruff, tailwind, terraform) target that
+tool and still read the project's own gates.
 
 ### Portable Shell Examples
 
@@ -657,18 +594,14 @@ Skills with analysis-then-execute phases should include a portable
 3. Requires presenting the plan and waiting for user approval
 4. Instructs exiting plan mode before execution
 
-The orchestration plan is the host's STRATEGY for the task — not just
-write-prevention. It demonstrates understanding of the task and lets the
-user course-correct before work begins.
-
 Include graceful degradation: if plan mode is unavailable, the skill's
 phase structure still guides analysis before execution.
 
 ### Output Contract Convention
 
-Commands that produce structured output for users should declare their
-sections in a fixed order. When multiple commands share the same output
-pattern, extract the template into a portable reference file.
+Skills that produce structured output for users declare their sections in
+a fixed order. When several skills in a plugin share the output pattern, the
+template lives in one reference file.
 
 1. A hero block is allowed at the top (1–4 lines, `⚠`/`✓` prefix or
    short summary; no prose paragraphs).
@@ -676,8 +609,10 @@ pattern, extract the template into a portable reference file.
    headings. No invented sections.
 3. After the prescribed sections, end with an interactive next-step panel
    (via `AskUserQuestion`) where the user can act on the result without
-   composing a follow-up command. Skip the panel only when the command
-   is already running inside plan mode.
+   composing a follow-up command. Skip the panel only when the skill
+   is already running inside plan mode. Where no question tool exists
+   (Codex, headless runs), print the options as a plain list and stop.
+4. A halted run prints one result sentence, then what the user must do.
 
 ### Accessible Formatting
 
@@ -685,7 +620,3 @@ pattern, extract the template into a portable reference file.
   only when the data is genuinely matrix-shaped and stable. Repeated
   semantic headings (e.g., "Use when / Avoid when / Tradeoff") diff,
   wrap, and edit more cleanly than a table.
-- **One command per code block** — never combine multiple commands in a single
-  fenced block; use separate blocks with explanatory text between them
-- **No comments inside code blocks** — explanatory text goes outside as
-  regular markdown, not as `#` comments inside the fence

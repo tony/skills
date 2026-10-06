@@ -5,7 +5,7 @@ description: >-
   fix, defer, or decline for each, and draft (not post) replies.
 allowed-tools: ["Bash", "Read", "Grep", "Glob", "AskUserQuestion"]
 metadata:
-  argument-hint: "[findings text] [--pr=<num>] [--base=<ref>] [--include-resolved]"
+  argument-hint: "[findings text] [<pr-number|url>] [--base=<ref>] [--include-resolved]"
   source: "plugins/respond/skills/check/SKILL.md"
 ---
 
@@ -31,13 +31,14 @@ outputs.
 
 ## `$ARGUMENTS` contract
 
-Non-flag text is the findings list. With no arguments and no `--pr`,
+A leading pull request number or URL names the PR to collect from
+(default: the current branch's PR when one exists); other non-flag text
+is the findings list. With no arguments and no PR,
 look for review output already in this session; if there is none, ask
 for the feedback rather than inventing a review.
 
 | Flag | Default | Effect |
 |---|---|---|
-| `--pr=<num>` | current branch's PR when one exists | Collect from the PR's reviews, inline comments, and threads. |
 | `--base=<ref>` | merge-base with `origin/<trunk>` | Override the provenance baseline (a stacked branch's parent, for instance). |
 | `--include-resolved` | off | Screen resolved and outdated threads too, instead of treating them as already settled. |
 
@@ -121,8 +122,9 @@ local absolute paths or temp files.
 6. End with an `ask-user-choice` panel: run the `respond-action` skill on the
    accepted findings, run it with `--reply` so the drafted replies get
    posted too, re-screen with the deferred findings opted in, or stop.
-   In a non-interactive run (CI, subagent) record the panel's options
-   in the report and stop. Invoked by the `respond-goal` skill, skip the panel.
+   In a non-interactive run (CI, subagent), list the panel's options as
+   plain numbered lines after `## Ledger key`, with no heading, and stop.
+   Invoked by the `respond-goal` skill, skip the panel.
 
 A stopped run (no findings to screen, no readable feedback) reports one
 result sentence, then what the user needs to provide.

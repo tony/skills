@@ -34,8 +34,7 @@ Install the plugin:
 $ codex plugin add business@skills
 ```
 
-The skills below use Claude Code's leading slash. Codex uses the same
-names without it.
+Claude Code uses a leading slash (`/business:…`). Codex omits it (`business:…`).
 
 ## Skills
 

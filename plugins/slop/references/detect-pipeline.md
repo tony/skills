@@ -33,10 +33,11 @@ The final report holds post-hoc exact counts, not the plan's ranges.
 
 ## Baseline
 
-Find the trunk ref without touching the network:
+Find the trunk ref without touching the network. It reflects the last
+fetch and may be stale:
 
-```bash
-git symbolic-ref --short refs/remotes/origin/HEAD
+```console
+$ git symbolic-ref --short refs/remotes/origin/HEAD
 ```
 
 It prints `origin/<trunk>`. When `origin/HEAD` is unset, use the first of
@@ -45,8 +46,8 @@ accepts. When neither exists, ask the user for the trunk.
 
 Lock the baseline as a SHA so a background fetch cannot move it mid-run:
 
-```bash
-git merge-base HEAD "origin/${TRUNK}"
+```console
+$ git merge-base HEAD "origin/${TRUNK}"
 ```
 
 Store it as `BASELINE_SHA` and use it everywhere. On the trunk itself it
@@ -64,8 +65,8 @@ whitelist itself.
    `prose`, `writing`, `voice`. Capture any directives.
 2. Read the last 50 commit messages before the baseline:
 
-   ```bash
-   git log -n 50 --format='%B%n--END--' "${BASELINE_SHA}"
+   ```console
+   $ git log -n 50 --format='%B%n--END--' "${BASELINE_SHA}"
    ```
 
 3. Count Tier C signal phrases. A phrase with at least 3 occurrences in
@@ -179,6 +180,7 @@ signature_id ASC)` and take the top N. The rest go to the run's
 Audit mode, the default, applies nothing: every proposed finding becomes
 a patch for review. When an apply flag was passed, the user confirms
 each proposed Tier B finding with `AskUserQuestion` before
-materialization, and a declined finding moves to `advisory.md`. Tier A
+materialization, and a declined finding moves to `advisory.md`. Without a
+question tool, every Tier B finding counts as declined. Tier A
 findings apply with no per-finding prompt once the user picks an apply
 choice. Tier C never applies.

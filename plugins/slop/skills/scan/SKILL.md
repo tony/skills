@@ -63,20 +63,21 @@ plan contains:
 ## Step 1: Snapshot state and lock the baseline
 
 Resolve `BASELINE_SHA` per `../../references/detect-pipeline.md` §
-Baseline, then record the starting commit:
+Baseline; it comes from the last fetch and may be stale, which only
+affects tone calibration. Then record the starting commit:
 
-```bash
-git rev-parse HEAD
+```console
+$ git rev-parse HEAD
 ```
 
 Store it as `START_SHA`; the final report lists commits after it.
 
-```bash
-git rev-parse --abbrev-ref HEAD
+```console
+$ git rev-parse --abbrev-ref HEAD
 ```
 
-```bash
-git status --porcelain
+```console
+$ git status --porcelain
 ```
 
 With `--allow-dirty`, keep the paths from `git status --porcelain` as
@@ -91,14 +92,14 @@ Halt with a clear message when any of these holds:
 
 ## Step 2: Resolve scan scope
 
-```bash
-git ls-files
+```console
+$ git ls-files
 ```
 
 With `--paths=<glob>`, pass each glob through:
 
-```bash
-git ls-files -- "<glob>"
+```console
+$ git ls-files -- "<glob>"
 ```
 
 Refuse an empty set with "scope is empty"; a misspelled glob must not
@@ -106,21 +107,24 @@ silently no-op.
 
 With `--with-history=N`, first cap N at the commit count:
 
-```bash
-git rev-list --count HEAD
+```console
+$ git rev-list --count HEAD
 ```
 
 Then collect the history, from `HEAD` so it also works on the trunk:
 
-```bash
-git log -n "${N}" -p HEAD
+```console
+$ git log -n "${N}" -p HEAD
 ```
 
 Feed it to Pass A with a `historical_only=true` marker.
 
 ## Step 3: Discover quality gates
 
-Follow `../../references/quality-gates.md`. Skip empty buckets in the
+Follow `../../references/verification-gates.md` § Local gate buckets;
+this skill ignores `build` and the CI-coverage pass. With no question
+tool and no conventions file, treat the answer as `skip` and warn that
+no gate will run. Skip empty buckets in the
 apply loop and final verification. When every bucket is `unset` and
 `--apply` was passed, warn before continuing that commits will land
 without gate validation.
@@ -231,6 +235,10 @@ Reached only with `--apply`. Ask through `AskUserQuestion`:
 | **Apply and commit** | Run the per-finding commit loop. |
 | **Cancel** | Delete `<run-dir>/` and exit. |
 
+Without a question tool (Codex, headless), take **Patches only**. A
+request that explicitly says to apply and commit approves that choice
+only, never a push.
+
 ## Step 10: Per-finding commit loop
 
 Take findings in order of `(file ASC, signature_id ASC,
@@ -244,8 +252,8 @@ in the finding's `.patch` file.
 
 ### 10b. Stage explicit paths
 
-```bash
-git add -- "<file>"
+```console
+$ git add -- "<file>"
 ```
 
 Never `git add -A` or `git add .`.
@@ -257,22 +265,22 @@ argument; otherwise run project-wide. With `--allow-dirty`, run only
 gates that take a path, skip the others, and report them as skipped, so
 a project-wide formatter cannot rewrite the user's dirty files.
 
-```bash
-${FORMAT_CMD}
+```console
+$ ${FORMAT_CMD}
 ```
 
-```bash
-${LINT_CMD}
+```console
+$ ${LINT_CMD}
 ```
 
-```bash
-${TYPECHECK_CMD}
+```console
+$ ${TYPECHECK_CMD}
 ```
 
 With `--run-tests`:
 
-```bash
-${TEST_CMD}
+```console
+$ ${TEST_CMD}
 ```
 
 - The formatter applies its changes; re-stage only `<file>` with
@@ -293,8 +301,8 @@ Roll the file back with a command that drops both the index and worktree
 change. The file is never one of `DIRTY_AT_START`, so no user edit is
 lost:
 
-```bash
-git restore --source=HEAD --staged --worktree -- "<file>"
+```console
+$ git restore --source=HEAD --staged --worktree -- "<file>"
 ```
 
 Then apply `--on-fail`:
@@ -304,7 +312,8 @@ Then apply `--on-fail`:
 - `stop`: record stderr and halt.
 - `ask`: ask through `AskUserQuestion`: **Edit and continue** (the user
   fixes the file; re-run the gates), **Skip this finding** (roll back
-  and continue), or **Stop the run** (roll back and halt).
+  and continue), or **Stop the run** (roll back and halt). Without a
+  question tool, behave as `skip`.
 
 ### 10e. On gate pass
 
@@ -329,35 +338,39 @@ Mark the finding `committed`.
 
 ## Step 11: Final verification and report
 
-```bash
-git log --oneline "${START_SHA}..HEAD"
+```console
+$ git log --oneline "${START_SHA}..HEAD"
 ```
 
-```bash
-git status --porcelain
+```console
+$ git status --porcelain
 ```
 
 Run the full gate set on the tip, skipping empty buckets:
 
-```bash
-${FORMAT_CMD}
+```console
+$ ${FORMAT_CMD}
 ```
 
-```bash
-${LINT_CMD}
+```console
+$ ${LINT_CMD}
 ```
 
-```bash
-${TYPECHECK_CMD}
+```console
+$ ${TYPECHECK_CMD}
 ```
 
 With `--run-tests`:
 
-```bash
-${TEST_CMD}
+```console
+$ ${TEST_CMD}
 ```
 
-Report:
+The hero line is `Slop scan summary`; sections follow in the template's
+order: summary block, `Quality gates (final)`, `Per-finding commits`,
+`Gate-failed findings`, then the `Patch series:` line. A halted run
+prints one sentence naming the cause, then what the user must do (commit
+or stash, or pass `--allow-dirty`).
 
 ```
 Slop scan summary
@@ -367,10 +380,10 @@ Budget: <level>
 Findings: <total> (<a> Tier A, <b> Tier B, <c> Tier C, <h> historical-only)
 
 Committed: <committed> findings landed as commits
-Gate-failed (rolled back): <gate-failed> — see report below
+Gate-failed (rolled back): <gate-failed> (details below)
 Hook-failed (rolled back): <hook-failed>
-Advisory: <advisory> — see advisory.md
-Historical-only: <h> — run /slop:deslop --message-only on the current branch for fixable commit-message slop
+Advisory: <advisory> (see advisory.md)
+Historical-only: <h> (run /slop:deslop --message-only on the current branch for fixable commit-message slop)
 
 Tone calibration: demoted <phrases>
 Verifier: <enabled|skipped> (<scanned> files scanned; <skipped-per-file> skipped)
@@ -385,7 +398,7 @@ Per-finding commits:
   …
 
 Gate-failed findings:
-  <signature-id> in <file>:<line> — <gate>: <stderr summary>
+  <signature-id> in <file>:<line>, <gate>: <stderr summary>
   …
 
 Patch series: <run-dir>/

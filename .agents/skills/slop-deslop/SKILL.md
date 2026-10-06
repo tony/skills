@@ -66,30 +66,38 @@ plan contains:
 
 ## Step 1: Lock the baseline and snapshot the branch
 
+Fetch first so `origin/<trunk>` and the upstream are current. An offline
+failure is not fatal: continue and note in the report that the
+comparison may be stale.
+
+```console
+$ git fetch origin
+```
+
 Resolve `BASELINE_SHA` per `references/detect-pipeline.md` §
 Baseline; `--since=<ref>` overrides it with `git rev-parse <ref>`.
 
-```bash
-git rev-parse --abbrev-ref HEAD
+```console
+$ git rev-parse --abbrev-ref HEAD
 ```
 
-```bash
-git status --porcelain
+```console
+$ git status --porcelain
 ```
 
-```bash
-git log --oneline "${BASELINE_SHA}..HEAD"
+```console
+$ git log --oneline "${BASELINE_SHA}..HEAD"
 ```
 
-```bash
-git log --merges --oneline "${BASELINE_SHA}..HEAD"
+```console
+$ git log --merges --oneline "${BASELINE_SHA}..HEAD"
 ```
 
 With `--since=<ref>` and `--apply-rebase`, confirm the ref precedes
 `HEAD`; autosquash on a sibling branch destroys topology:
 
-```bash
-git merge-base --is-ancestor "<ref>" HEAD
+```console
+$ git merge-base --is-ancestor "<ref>" HEAD
 ```
 
 Halt with a clear message when any of these holds:
@@ -107,14 +115,14 @@ Halt with a clear message when any of these holds:
 
 ## Step 2: Pushed-branch gate
 
-```bash
-git rev-parse --abbrev-ref --symbolic-full-name '@{u}' 2>/dev/null
+```console
+$ git rev-parse --abbrev-ref --symbolic-full-name '@{u}' 2>/dev/null
 ```
 
 No upstream means a local-only branch; continue. With an upstream:
 
-```bash
-git merge-base --is-ancestor "$(git rev-parse '@{u}')" HEAD
+```console
+$ git merge-base --is-ancestor "$(git rev-parse '@{u}')" HEAD
 ```
 
 Exit 0 means the upstream is reachable from `HEAD`: the branch was
@@ -129,8 +137,10 @@ With the flag, record the upstream in the final report and continue.
 
 ## Step 3: Discover quality gates
 
-Follow `references/quality-gates.md`. Skip empty buckets in Steps
-11 and 12. When every bucket is `unset` and an apply flag was passed,
+Follow `references/verification-gates.md` § Local gate buckets;
+this skill ignores `build` and the CI-coverage pass. Skip empty buckets
+in Steps 11 and 12. With no question tool and no conventions file,
+treat the answer as `skip` and warn that no gate will run. When every bucket is `unset` and an apply flag was passed,
 warn before Step 10 that no gate will validate the result.
 
 ## Step 4: Read project tone
@@ -240,6 +250,10 @@ through `ask-user-choice`:
 | **Apply and autosquash** | Full rewrite. Offered only with `--apply-rebase`, and only when Step 1 found no merge commits. |
 | **Cancel** | Delete `<run-dir>/` and exit. |
 
+Without a question tool (Codex, headless), take **Patches only**. A
+request that explicitly says to apply patches, or to apply and
+autosquash, approves that choice only, never a push.
+
 Before "Apply patches now", show this warning:
 
 > Fixup commits will be on `HEAD`. Run `git rebase -i --autosquash
@@ -252,15 +266,15 @@ Before "Apply patches now", show this warning:
 Before any history-affecting action, including "Apply patches now",
 create the backup branch:
 
-```bash
-git branch "$(git branch --show-current)-pre-deslop-$(date -u +%Y%m%d-%H%M%S)"
+```console
+$ git branch "$(git branch --show-current)-pre-deslop-$(date -u +%Y%m%d-%H%M%S)"
 ```
 
 Record its name in the final report and tell the user that
 `git reset --hard <backup>` restores the original state.
 
-```bash
-bash "<run-dir>/apply.sh"
+```console
+$ bash "<run-dir>/apply.sh"
 ```
 
 `apply.sh` stages explicit paths
@@ -273,8 +287,11 @@ autosquash" only.
 Autosquash runs with `rerere` enabled. Reword commits carry their
 replacement message in the body, so no editor is needed:
 
-```bash
-GIT_SEQUENCE_EDITOR=: git -c rerere.enabled=true -c rerere.autoupdate=true rebase -i --autosquash "${BASELINE_SHA}"
+```console
+$ GIT_SEQUENCE_EDITOR=: git \
+    -c rerere.enabled=true \
+    -c rerere.autoupdate=true \
+    rebase -i --autosquash "${BASELINE_SHA}"
 ```
 
 `GIT_SEQUENCE_EDITOR=:` accepts the generated todo list unattended.
@@ -288,35 +305,39 @@ exists.
 
 ## Step 12: Final verification and report
 
-```bash
-git log --oneline "${BASELINE_SHA}..HEAD"
+```console
+$ git log --oneline "${BASELINE_SHA}..HEAD"
 ```
 
-```bash
-git status --porcelain
+```console
+$ git status --porcelain
 ```
 
 Run the full gate set on the tip, skipping empty buckets:
 
-```bash
-${FORMAT_CMD}
+```console
+$ ${FORMAT_CMD}
 ```
 
-```bash
-${LINT_CMD}
+```console
+$ ${LINT_CMD}
 ```
 
-```bash
-${TYPECHECK_CMD}
+```console
+$ ${TYPECHECK_CMD}
 ```
 
 With `--run-tests`:
 
-```bash
-${TEST_CMD}
+```console
+$ ${TEST_CMD}
 ```
 
-Report exact counts, not the plan's ranges:
+Report exact counts, not the plan's ranges. The hero line is `Slop
+summary`; sections follow in the template's order: summary block,
+`Quality gates (final)`, then the `Patch series:` line. A halted or
+refused run prints one sentence naming the cause, then what the user
+must do (commit or stash, or re-run with `--force-rewrite-pushed`):
 
 ```
 Slop summary
@@ -325,7 +346,7 @@ Budget: <level>
 Findings: <total> (<a> Tier A, <b> Tier B, <c> Tier C)
 Applied: <a> Tier A
 Proposed and accepted: <accepted> Tier B (<declined> declined)
-Advisories: <c> Tier C — see advisory.md
+Advisories: <c> Tier C (see advisory.md)
 
 Tone calibration: demoted <phrases>
 Verifier: <enabled|skipped> (<scanned> commits scanned; <skipped-per-sha> skipped)
@@ -344,7 +365,7 @@ Patch series: <run-dir>/
 In audit mode, "Applied" is 0 and the Commits and gate lines are omitted.
 
 Do not push; the user decides. After `--force-rewrite-pushed`, recommend
-`git push --force-with-lease` over `git push --force`.
+`git push --force-with-lease --force-if-includes` over `git push --force`.
 
 ## Edge cases
 
@@ -356,7 +377,7 @@ Do not push; the user decides. After `--force-rewrite-pushed`, recommend
 | Single-commit branch, no body | A reword commit autosquashes cleanly. |
 | `--message-only` and diff slop exists | Report the skipped diff findings; build reword commits only. |
 | Linked worktrees | Permitted; run directories resolve through `git rev-parse --git-path`. |
-| Existing `fixup!` or `amend!` commits on the branch | Detect with `git log -E --grep='^(fixup\|amend)!'`; offer to autosquash them first. |
+| Existing `fixup!` or `amend!` commits on the branch | Detect with `git log --grep='^fixup!' --grep='^amend!'`; offer to autosquash them first. |
 | Non-UTF-8 commit message | Skip message checks for it; warn. |
 | Pre-commit hook changes staged content during a fixup | `apply.sh` aborts that step with the hook's stderr; the user fixes it and re-runs. The skill never uses `--no-verify`. |
 | `.gitignore` covers a file a patch modifies | `git add` fails; `apply.sh` aborts that step. |

@@ -7,14 +7,14 @@ fix, and verify.
 
 In Claude Code, add the marketplace:
 
-```console
-$ /plugin marketplace add tony/skills
+```text
+/plugin marketplace add tony/skills
 ```
 
 Install the plugin:
 
-```console
-$ /plugin install tdd@skills
+```text
+/plugin install tdd@skills
 ```
 
 In Codex, add the marketplace:
@@ -29,8 +29,7 @@ Install the plugin:
 $ codex plugin add tdd@skills
 ```
 
-The skills below are written with Claude Code's leading slash. Codex uses
-the same names without it, so `/tdd:…` there is `tdd:…`.
+Claude Code uses a leading slash (`/tdd:…`). Codex omits it (`tdd:…`).
 
 ## Components
 

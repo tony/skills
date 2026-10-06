@@ -2,7 +2,7 @@
 name: update-package
 description: "Use when updating one named dependency to a target version everywhere it is pinned across one repository or a fleet."
 allowed-tools: ["Bash", "Read", "Grep", "Glob", "Edit", "Write", "Task", "AskUserQuestion"]
-argument-hint: "<package> [version] [--root <dir>] [--repo <path|slug>...] [--owner <name>...] [--audit-only] [--branch <name>] [--pr] [--no-push]"
+argument-hint: "<package> [version] [--root <dir>] [--repo <path|slug>...] [--owner <name>...] [--audit-only] [--branch <name>] [--pr] [--push]"
 user-invocable: true
 disable-model-invocation: true
 ---
@@ -89,7 +89,8 @@ The follow-up lands immediately after as its own commit.
 No `Co-Authored-By`, no "Generated with" or other tool trailers, no emoji.
 
 Commits land on the default branch by default. `--branch` works on a
-branch; `--pr` opens a pull request; `--no-push` stops after committing.
+branch; `--push` pushes the commits; `--pr` pushes a branch and opens a pull
+request. Without either, stop after committing and print the push command.
 
 ### 7. Verify
 

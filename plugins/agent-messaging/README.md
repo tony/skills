@@ -16,27 +16,29 @@ merely unreachable. The `codex-queue` route needs a Codex build that ships
 
 In Claude Code, add the marketplace:
 
-```console
+```text
 /plugin marketplace add tony/skills
 ```
 
 Install the plugin:
 
-```console
+```text
 /plugin install agent-messaging@skills
 ```
 
 In Codex, add the marketplace:
 
 ```console
-codex plugin marketplace add tony/skills
+$ codex plugin marketplace add tony/skills
 ```
 
 Install the plugin:
 
 ```console
-codex plugin add agent-messaging@skills
+$ codex plugin add agent-messaging@skills
 ```
+
+Claude Code uses a leading slash (`/agent-messaging:…`). Codex omits it (`agent-messaging:…`).
 
 ## Skills
 

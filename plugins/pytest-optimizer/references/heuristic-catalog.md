@@ -32,16 +32,16 @@ Replace `pytest` with the project's resolved test command.
 | H10 | Expensive function-scoped fixture re-runs once per test | `pytest --setup-plan`; count `SETUP` rows per `F` fixture; > 1 with an I/O body (net/db/docker/subprocess/sleep/build) | Raise scope to module/session (or class/package) when the value is shared and not test-mutated; verify the `SETUP` count drops | medium / small |
 | H11 | Two fixtures with identical/near-identical bodies | `uvx pytest-deadfixtures --dup-fixtures`; or name collisions: `pytest --fixtures -v` names, `sort`, `uniq -d` | Consolidate into one fixture in the nearest shared conftest; document intentional overrides | medium / small |
 | H12 | Autouse fixture runs for every test but most don't need it | `rg 'autouse\s*=\s*True' tests/`; `pytest --setup-plan`, its `SETUP` count ≈ total tests | Drop autouse, opt-in the subset via `@pytest.mark.usefixtures`; keep autouse only for cheap universal setup (env/time/global reset) | high / medium |
-| H13 | Parametrized/indirect fixture pays setup once per param per test | `pytest --setup-show \| rg 'SETUP .* <name>\['`; many repeated `[param]` setups | Move the param to a higher-scoped fixture, or cache the per-param resource at module/session scope and select from it | medium / medium |
+| H13 | Parametrized/indirect fixture pays setup once per param per test | `SETUP .* <name>[` lines in `pytest --setup-show` output; many repeated `[param]` setups | Move the param to a higher-scoped fixture, or cache the per-param resource at module/session scope and select from it | medium / medium |
 | H41 | Fixture/test requests a dependency it never uses | Diff signature params against names used in the body; flag params with 0 in-body uses that are not autouse side-effect fixtures | Drop unused params; if a side-effect is intended, make it `autouse`/`usefixtures` and document it | low / trivial |
-| H42 | conftest with no fixtures/hooks, or dead assign-then-overwrite | Per conftest: `rg -c 'def \|@pytest.fixture\|pytest_' <conftest>` == 0; `ruff` `F841` for computed-then-overwritten bindings | Delete the empty conftest; remove the dead first assignment (preserve dropped kwargs) | low / trivial |
+| H42 | conftest with no fixtures/hooks, or dead assign-then-overwrite | Per conftest: `rg -c -e 'def ' -e '@pytest.fixture' -e 'pytest_' <conftest>` == 0; `ruff` `F841` for computed-then-overwritten bindings | Delete the empty conftest; remove the dead first assignment (preserve dropped kwargs) | low / trivial |
 | H43 | `@pytest.mark.*` stacked on a `@pytest.fixture` | Scan for a `@pytest.mark` line immediately preceding `@pytest.fixture` | Remove the mark from the fixture; gate inside the consuming test/fixture body. Silent no-op pre-9, hard error 9+ | low / trivial |
 
 ## C. Collection, plugins, capability errors
 
 | ID | Signal | Detect | Action | Risk / Effort |
 |----|--------|--------|--------|---------------|
-| H14 | Collection aborts: "Marks cannot be applied to fixtures" | `pytest --collect-only -q 2>&1 \| tail -5` | Move the mark's condition into the fixture body via `pytest.skip()`; never stack `@pytest.mark.*` above `@pytest.fixture` | low / trivial |
+| H14 | Collection aborts: "Marks cannot be applied to fixtures" | the last lines of `pytest --collect-only -q` | Move the mark's condition into the fixture body via `pytest.skip()`; never stack `@pytest.mark.*` above `@pytest.fixture` | low / trivial |
 | H22 | Collection/import-bound (`--co` itself slow) | `time pytest --co -q` is a large fraction of total | Do **not** xdist (each worker re-collects). Disable unused autoload plugins (`-p no:` / `PYTEST_DISABLE_PLUGIN_AUTOLOAD`), narrow `testpaths`, reduce parametrize explosion, defer heavy top-level imports | low / medium |
 | H44 | Third-party `pytest11` plugin error blocks an unrelated suite | Traceback names `site-packages/<pkg>/pytest_plugin.py` during `load_setuptools_entrypoints` | Temporarily `-p no:<entrypoint_name>` to keep measuring; report the upstream plugin as the real blocker | low / trivial |
 
@@ -54,14 +54,14 @@ Replace `pytest` with the project's resolved test command.
 | H19 | Suite slow, tests independent, runtime-bound | `time pytest --co -q` fast **and** H17/H18 pass | Enable `-n auto` (cap `--maxprocesses` if I/O-bound on one shared resource) | medium / small |
 | H20 | Green serially but flakes under `-n auto` | Run `-n auto` 5–10×; failures move between workers | `--dist=loadscope`/`loadfile` to co-locate module/class state, and/or `@pytest.mark.xdist_group`; refactor only if grouping is insufficient | low / small |
 | H21 | Session fixture assumed once but runs once per xdist worker | Add a counter/log to the fixture; run `-n2`; it fires per worker | Use `tmp_path_factory.getbasetemp().parent` + `FileLock` single-exec, or `testrun_uid` for per-run-unique resources | medium / medium |
-| H16 | Session/module-scoped mutable resource mutated across modules | `rg 'scope="session"\|scope="module"' tests/` (conftest files); then `rg 'create_all\|metadata\|\.add\(\|writestr\|bootstrap' tests/` across consumers | Keep the shared resource read-only and isolate writes behind a function-scoped transaction-rollback fixture, or drop to function scope | medium / medium |
+| H16 | Session/module-scoped mutable resource mutated across modules | `rg -e 'scope="session"' -e 'scope="module"' tests/` (conftest files); then `rg -e create_all -e metadata -e '\.add\(' -e writestr -e bootstrap tests/` across consumers | Keep the shared resource read-only and isolate writes behind a function-scoped transaction-rollback fixture, or drop to function scope | medium / medium |
 
 ## E. Caching and recomputation
 
 | ID | Signal | Detect | Action | Risk / Effort |
 |----|--------|--------|--------|---------------|
 | H24 | Expensive computation recomputed every run (build/schema/dataset) | `--durations` shows the same costly setup each invocation | Memoize cross-run via `config.cache.set/get` under a namespaced key + invalidation token (input hash/mtime); guard writes with `if not hasattr(config, "workerinput")` | medium / medium |
-| H35 | Per-test `tmp_path` rebuilds an identical file tree | `rg 'tmp_path /'` tests/; same files written across many tests | Build the tree once with a module/session `tmp_path_factory` fixture; share read-only | low / small |
+| H35 | Per-test `tmp_path` rebuilds an identical file tree | `rg 'tmp_path /' tests/`; same files written across many tests | Build the tree once with a module/session `tmp_path_factory` fixture; share read-only | low / small |
 | H34 | Expensive object built in body/function fixture and reused unchanged | `pytest --durations=25` + `rg` repeated construction of the same heavy type | Hoist construction to a session/module fixture + a cheap function-scoped reset (`.clear()`/`.reset()`); or content-hash a build cache | medium / medium |
 
 ## F. External I/O, timing, markers
@@ -69,9 +69,9 @@ Replace `pytest` with the project's resolved test command.
 | ID | Signal | Detect | Action | Risk / Effort |
 |----|--------|--------|--------|---------------|
 | H15 | Autouse/default-path fixture does real network I/O, unguarded | `rg 'autouse=True' tests/` then follow to `urlretrieve`/`requests`/`urlopen`/`.download`; check for a network/slow marker | Make the heavy fixture opt-in behind a registered marker or env var with `pytest.skip`; split unit vs integration paths | medium / medium |
-| H33 | Tests call real `time.sleep`/`asyncio.sleep` for non-trivial durations | `rg 'time\.sleep\(\|asyncio\.sleep\('` tests/, then `pytest --durations=25` | Route production timing through an indirection and monkeypatch a `FakeClock` fixture (advance a counter); or cap with `pytest-timeout` | low / small |
-| H37 | Slow/networked/subprocess tests run by default (no marker/gate) | `rg 'requests\.\|httpx\.\|subprocess\.\|socket\.\|docker\|\.connect\('` tests/; check markers/addopts | Register a marker (slow/integration/network), apply it (hand or folder-based auto-mark in `pytest_collection_modifyitems`), deselect by default via `addopts '-m "not integration"'` or a `--runslow` flag | low / small |
-| H39 | Optional/heavy dependency imported at module top | `rg '^import \|^from '` tests/ for heavy/optional libs; `pytest --collect-only` | Replace the top-level import with `pytest.importorskip('pkg', minversion=...)` so the module skips cleanly when absent | low / trivial |
+| H33 | Tests call real `time.sleep`/`asyncio.sleep` for non-trivial durations | `rg -e 'time\.sleep\(' -e 'asyncio\.sleep\(' tests/`, then `pytest --durations=25` | Route production timing through an indirection and monkeypatch a `FakeClock` fixture (advance a counter); or cap with `pytest-timeout` | low / small |
+| H37 | Slow/networked/subprocess tests run by default (no marker/gate) | `rg -e 'requests\.' -e 'httpx\.' -e 'subprocess\.' -e 'socket\.' -e docker -e '\.connect\(' tests/`; check markers/addopts | Register a marker (slow/integration/network), apply it (hand or folder-based auto-mark in `pytest_collection_modifyitems`), deselect by default via `addopts '-m "not integration"'` or a `--runslow` flag | low / small |
+| H39 | Optional/heavy dependency imported at module top | `rg -e '^import ' -e '^from ' tests/` for heavy/optional libs; `pytest --collect-only` | Replace the top-level import with `pytest.importorskip('pkg', minversion=...)` so the module skips cleanly when absent | low / trivial |
 | H40 | No per-test timeout / warnings ignored / unregistered markers | Check pyproject for `timeout`, `filterwarnings`, `strict-markers`, `markers`; run `pytest -W error` locally | Add `pytest-timeout` (`--timeout-method=thread` for async), `filterwarnings=['error']`, `--strict-markers`, and register every custom marker | low / trivial |
 
 ## G. Consolidation and packaging
@@ -79,17 +79,17 @@ Replace `pytest` with the project's resolved test command.
 | ID | Signal | Detect | Action | Risk / Effort |
 |----|--------|--------|--------|---------------|
 | H25 | Duplicate tracks: in-body data loop, or duplicated helpers | `rg` duplicated helper defs in sibling conftests; tests looping a data list inside the body instead of parametrize | Consolidate into one `NamedTuple` + `test_id` parametrized track; hoist shared helpers into one support module/`pytest11` plugin | medium / small |
-| H36 | Repeated near-identical object construction across tests/params | `rg 'SomeType\('` tests/; duplicated builder boilerplate | Introduce a factory (callable) fixture that yields a closure, tracks instances, tears down in reverse order | low / small |
-| H38 | Shared expensive fixtures copy-pasted across conftests/repos | Diff conftest fixtures across packages; `rg 'pytest_plugins'` | Package fixtures as an installable `pytest11` plugin (`entry-points.pytest11`) or `pytest_plugins = ('pkg.module',)`; register markers via `addinivalue_line` | low / medium |
+| H36 | Repeated near-identical object construction across tests/params | `rg 'SomeType\(' tests/`; duplicated builder boilerplate | Introduce a factory (callable) fixture that yields a closure, tracks instances, tears down in reverse order | low / small |
+| H38 | Shared expensive fixtures copy-pasted across conftests/repos | Diff conftest fixtures across packages; `rg 'pytest_plugins' .` | Package fixtures as an installable `pytest11` plugin (`entry-points.pytest11`) or `pytest_plugins = ('pkg.module',)`; register markers via `addinivalue_line` | low / medium |
 
 ## H. Typing and parametrize convention
 
 | ID | Signal | Detect | Action | Risk / Effort |
 |----|--------|--------|--------|---------------|
-| H26 | Legacy `tmpdir`/`tmpdir_factory` (often mis-typed as `pathlib.Path`) | `rg '\btmpdir\b\|tmpdir_factory'` tests/ conftest.py | Replace with `tmp_path`/`tmp_path_factory` (true `pathlib.Path`); fix annotations | low / trivial |
+| H26 | Legacy `tmpdir`/`tmpdir_factory` (often mis-typed as `pathlib.Path`) | `rg -e '\btmpdir\b' -e tmpdir_factory tests/ conftest.py` | Replace with `tmp_path`/`tmp_path_factory` (true `pathlib.Path`); fix annotations | low / trivial |
 | H27 | Untyped test/fixture (missing return type or unannotated params) | Run the project strict checker over tests/, or grep `def test_` lacking `-> None` | Annotate every param and return; type pytest builtins (`monkeypatch: pytest.MonkeyPatch`, `tmp_path: pathlib.Path`, `request: pytest.FixtureRequest`, `capsys: pytest.CaptureFixture[str]`, `pytester: pytest.Pytester`) | low / medium |
 | H28 | `parametrize` with comma-joined argname string + bare tuples (3+ fields) | `rg 'parametrize\(\s*["\x27][^"\x27]*,[^"\x27]*["\x27]' tests/` (first arg is a quoted multi-name string) | Introduce `class NameFixture(t.NamedTuple)` with `test_id: str` first + a module-level fixtures list; wire the unpacked-fields form (`Fixture._fields`, `ids=[f.test_id for f in ...]`) or a single case argument | low / small |
 | H29 | `parametrize` without `ids=` (auto `param0`/`param1`) | `pytest --collect-only -q` showing `test_x[0]`; or grep parametrize bodies lacking `ids=` | Add a stable `test_id` and `ids=[f.test_id for f in FIXTURES]` (or `ids=lambda c: c.test_id`) so failures name the scenario | low / trivial |
-| H30 | NamedTuple/dataclass case struct lacking a `test_id` field | `rg 'class \w+(Fixture\|Case)\(.*NamedTuple' tests/` then inspect for `test_id: str` | Add `test_id: str` as the first field and derive ids from it | low / small |
+| H30 | NamedTuple/dataclass case struct lacking a `test_id` field | `rg -e 'class \w+Fixture\(.*NamedTuple' -e 'class \w+Case\(.*NamedTuple' tests/` then inspect for `test_id: str` | Add `test_id: str` as the first field and derive ids from it | low / small |
 | H31 | Test module missing `from __future__ import annotations` or using `Tuple`/`List` | `rg --files-without-match 'from __future__ import annotations' tests/` over the test glob (exclude `__init__.py`) | Add the future import; prefer builtin generics (`list[FooFixture]`) and namespace typing (`import typing as t`, `t.NamedTuple`) | low / trivial |
 | H32 | Class-based test groupings (`class TestFoo`) | `rg '^class Test[A-Z]' tests/` over the test glob | Flatten into module-level `def test_*` functions with descriptive names (functional-tests convention) | medium / medium |

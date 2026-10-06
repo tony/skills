@@ -7,30 +7,29 @@ against prior turns. Includes an alignment tool for repairing chats.
 
 In Claude Code, add the marketplace:
 
-```console
+```text
 /plugin marketplace add tony/skills
 ```
 
 Install the plugin:
 
-```console
+```text
 /plugin install double-check@skills
 ```
 
 In Codex, add the marketplace:
 
 ```console
-codex plugin marketplace add tony/skills
+$ codex plugin marketplace add tony/skills
 ```
 
 Install the plugin:
 
 ```console
-codex plugin add double-check@skills
+$ codex plugin add double-check@skills
 ```
 
-*Note: The skills below use Claude Code's leading slash. Codex uses the
-same names without it.*
+Claude Code uses a leading slash (`/double-check:…`). Codex omits it (`double-check:…`).
 
 ## Components
 

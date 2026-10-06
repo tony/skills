@@ -99,7 +99,7 @@ PLUGINS_DIR = REPO_ROOT / "plugins"
 README_PATH = REPO_ROOT / "README.md"
 
 README_ROW_RE = re.compile(
-    r"^\| \[(?P<name>[^\]]+)\]\(plugins/[^)]*\) \| (?P<cat>[^|]+) \| (?P<desc>.+?) \|[ \t]*\r?$",
+    r"^\| \[(?P<name>[^\]]+)\]\(plugins/[^)]*\) \| (?P<desc>.+?) \|[ \t]*\r?$",
     re.MULTILINE,
 )
 """A plugin row in the README table. The table is hand-maintained, so it
@@ -524,6 +524,9 @@ def _validate_skills_dir(plugin_name: str, skills_dir: Path) -> list[str]:
                 for field in ("name", "description")
                 if field not in fm
             )
+            # Claude Code invokes a plugin skill by directory, Codex by name.
+            if "name" in fm and fm["name"] != skill_subdir.name:
+                errors.append(f"{prefix}: name '{fm['name']}' differs from its directory")
     return errors
 
 
@@ -844,6 +847,7 @@ def _check_estate_rules(plugin_dir: Path) -> list[str]:
     - A markdown resource longer than ``REFERENCE_CONTENTS_MIN_LINES`` opens
       with a contents list.
     - Every resource file is named by some other file in the plugin.
+    - Every eval grader declares its ``type``.
     """
     name = plugin_dir.name
     errors: list[str] = []
@@ -896,6 +900,12 @@ def _check_estate_rules(plugin_dir: Path) -> list[str]:
         )
         if not named:
             errors.append(f"[{name}] {rel}: no skill or resource in the plugin names it")
+
+    # The eval runner rejects the whole case when one grader lacks a type.
+    for grader in sorted(plugin_dir.glob("evals/*/graders/*.md")):
+        if not (parse_frontmatter(grader) or {}).get("type"):
+            rel = grader.relative_to(plugin_dir)
+            errors.append(f"[{name}] {rel}: grader frontmatter has no 'type'")
     return errors
 
 
@@ -1091,9 +1101,9 @@ def check_readme_table(manifest: MarketplaceManifest, readme: str) -> list[str]:
     the table silently under-reports what the marketplace ships. Nothing else
     in CI reads it.
 
-    Rows are matched on name, then on the two fields a reader acts on:
-    category and description. A row that disagrees is worse than a missing
-    one, because it looks authoritative.
+    Rows are matched on name, then on the description a reader acts on. A
+    row that disagrees is worse than a missing one, because it looks
+    authoritative. The table may be split across several grouped tables.
 
     Examples
     --------
@@ -1112,7 +1122,7 @@ def check_readme_table(manifest: MarketplaceManifest, readme: str) -> list[str]:
     ...     source="./plugins/commit",
     ...     category="development",
     ... )
-    >>> row = "| [commit](plugins/commit/) | Development | Create git commits |"
+    >>> row = "| [commit](plugins/commit/) | Create git commits |"
     >>> check_readme_table(_manifest(entry), row)
     []
 
@@ -1123,13 +1133,13 @@ def check_readme_table(manifest: MarketplaceManifest, readme: str) -> list[str]:
 
     So is a row whose description drifted from the manifest:
 
-    >>> stale = "| [commit](plugins/commit/) | Development | Old blurb |"
+    >>> stale = "| [commit](plugins/commit/) | Old blurb |"
     >>> check_readme_table(_manifest(entry), stale)
     ["README row 'commit': description does not match marketplace.json"]
 
     And a row naming a plugin the marketplace does not list:
 
-    >>> ghost = "| [gone](plugins/gone/) | Development | Removed |"
+    >>> ghost = "| [gone](plugins/gone/) | Removed |"
     >>> check_readme_table(_manifest(entry), ghost + "\n" + row)
     ["README row 'gone' names a plugin that is not in marketplace.json"]
 
@@ -1173,8 +1183,6 @@ def check_readme_table(manifest: MarketplaceManifest, readme: str) -> list[str]:
         row = rows.get(entry.name)
         if row is None:
             continue
-        if row["cat"].strip().casefold() != entry.category.casefold():
-            errors.append(f"README row '{entry.name}': category does not match marketplace.json")
         if row["desc"].strip() != entry.description.strip():
             errors.append(f"README row '{entry.name}': description does not match marketplace.json")
     return errors

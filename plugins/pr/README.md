@@ -30,6 +30,8 @@ Install the plugin:
 $ codex plugin add pr@skills
 ```
 
+Claude Code uses a leading slash (`/pr:…`). Codex omits it (`pr:…`).
+
 ## Skills
 
 | Claude Code | Codex | Description |

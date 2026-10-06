@@ -6,7 +6,7 @@ description: >-
 allowed-tools: ["Bash", "Read", "Grep", "Glob", "WebSearch", "AskUserQuestion"]
 metadata:
   argument-hint: "<package-name|\"all\"|category> [--lang <language>] [--no-worktree]"
-  source: "plugins/research/skills/deps/SKILL.md"
+  source: "plugins/research/skills/study-deps/SKILL.md"
 ---
 
 # Study Dependencies

@@ -7,13 +7,13 @@ asymmetry in Tailwind CSS layouts.
 
 In Claude Code, add the marketplace:
 
-```console
+```text
 /plugin marketplace add tony/skills
 ```
 
 Install the plugin:
 
-```console
+```text
 /plugin install tailwind@skills
 ```
 
@@ -28,6 +28,8 @@ Install the plugin:
 ```console
 $ codex plugin add tailwind@skills
 ```
+
+Claude Code uses a leading slash (`/tailwind:…`). Codex omits it (`tailwind:…`).
 
 ## Skills
 

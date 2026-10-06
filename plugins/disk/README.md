@@ -7,30 +7,29 @@ or history, deleting only what is proven safe.
 
 In Claude Code, add the marketplace:
 
-```console
+```text
 /plugin marketplace add tony/skills
 ```
 
 Install the plugin:
 
-```console
+```text
 /plugin install disk@skills
 ```
 
 In Codex, add the marketplace:
 
 ```console
-codex plugin marketplace add tony/skills
+$ codex plugin marketplace add tony/skills
 ```
 
 Install the plugin:
 
 ```console
-codex plugin add disk@skills
+$ codex plugin add disk@skills
 ```
 
-*Note: The skills below use Claude Code's leading slash. Codex uses the
-same names without it.*
+Claude Code uses a leading slash (`/disk:…`). Codex omits it (`disk:…`).
 
 ## Skills
 

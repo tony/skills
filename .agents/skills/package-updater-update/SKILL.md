@@ -6,7 +6,7 @@ description: >-
 disable-model-invocation: true
 allowed-tools: ["Bash", "Read", "Grep", "Glob", "Edit", "Write", "Task", "AskUserQuestion"]
 metadata:
-  argument-hint: "[--root <dir>] [--repo <path|slug>...] [--owner <name>...] [--audit-only] [--branch <name>] [--pr] [--issue github|linear] [--no-push]"
+  argument-hint: "[--root <dir>] [--repo <path|slug>...] [--owner <name>...] [--audit-only] [--branch <name>] [--pr] [--issue github|linear] [--push]"
   source: "plugins/package-updater/skills/update/SKILL.md"
 ---
 
@@ -64,17 +64,18 @@ Present the plan the skill defines and wait for approval. The plan
 lists each repository with the branch it lands on and its push target.
 With `--audit-only`, stop here and report; nothing is written.
 
-### 5. Land and push
+### 5. Land
 
 Work through repositories one at a time in the skill's commit order,
-pushing as each completes so an interrupted run resumes cleanly, except
-where the plan marked a repository local-only. Write commit messages and
+with `--push`, pushing as each completes so an interrupted run resumes
+cleanly, except where the plan marked a repository local-only. Write commit messages and
 the report per `references/prose-rules.md`.
 No `Co-Authored-By`, no "Generated with" or other tool trailers, no emoji.
 
 Commits land on the default branch by default. `--branch <name>` works
-on a branch instead; `--pr` opens a pull request from it; `--no-push`
-commits locally and stops.
+on a branch instead; `--push` pushes the commits; `--pr` pushes the branch and opens a pull
+request from it. Without either, commit locally, stop, and print the push
+command.
 
 With `--issue`, the audit is filed before the work starts: create the
 issue or Linear card listing what is outstanding, derive the branch name

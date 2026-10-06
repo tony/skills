@@ -29,6 +29,8 @@ Install the plugin:
 $ codex plugin add action@skills
 ```
 
+Claude Code uses a leading slash (`/action:…`). Codex omits it (`action:…`).
+
 ## Skills
 
 | Claude Code | Codex | Description |

@@ -8,27 +8,29 @@ implementation plan.
 
 In Claude Code, add the marketplace:
 
-```console
+```text
 /plugin marketplace add tony/skills
 ```
 
 Install the plugin:
 
-```console
+```text
 /plugin install spike@skills
 ```
 
 In Codex, add the marketplace:
 
 ```console
-codex plugin marketplace add tony/skills
+$ codex plugin marketplace add tony/skills
 ```
 
 Install the plugin:
 
 ```console
-codex plugin add spike@skills
+$ codex plugin add spike@skills
 ```
+
+Claude Code uses a leading slash (`/spike:…`). Codex omits it (`spike:…`).
 
 ## Skills
 
