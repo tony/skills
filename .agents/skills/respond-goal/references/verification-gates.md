@@ -1,19 +1,8 @@
 # Verification-Gate & CI Discovery
 
-> **Lockstep note**: this file is identical to
-> the spike plugin's verification-gates reference and
-> the action plugin's verification-gates reference. When you change
-> discovery behavior in one copy, mirror the change in the others in
-> the same PR. It extends the four-bucket algorithm shared by
-> the `pr-deslop` skill and the `slop-scan` skill
-> (the pr plugin's quality-gates reference) with a `build` bucket and
-> a CI-coverage pass.
-
-How the `spike-probe` skill, the `spike-bakeoff` skill, the `spike-ratchet` skill,
-the `respond-action` skill, this skill, the `action-worktree` skill, and
-the `action-worktrees` skill learn, at runtime, which verification the project
-expects — and how much of it to run locally versus observe in CI after
-pushing. Language-agnostic, never hardcoded.
+How a skill learns, at runtime, which verification the project expects
+and how much of it to run locally versus observe in CI after pushing.
+Language-agnostic, never hardcoded.
 
 ## Local gate buckets
 

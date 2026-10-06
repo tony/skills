@@ -1,19 +1,9 @@
+<!-- Vendored from shared/verification-gates.md; edit that file, then run 'scripts/marketplace.py portable'. -->
 # Verification-Gate & CI Discovery
 
-> **Lockstep note**: this file is identical to
-> `plugins/spike/references/verification-gates.md` and
-> `plugins/respond/references/verification-gates.md`. When you change
-> discovery behavior in one copy, mirror the change in the others in
-> the same PR. It extends the four-bucket algorithm shared by
-> `/pr:deslop` and `/slop:scan`
-> (`plugins/pr/references/quality-gates.md`) with a `build` bucket and
-> a CI-coverage pass.
-
-How `/spike:probe`, `/spike:bakeoff`, `/spike:ratchet`,
-`/respond:action`, `/respond:goal`, `/action:worktree`, and
-`/action:worktrees` learn, at runtime, which verification the project
-expects — and how much of it to run locally versus observe in CI after
-pushing. Language-agnostic, never hardcoded.
+How a skill learns, at runtime, which verification the project expects
+and how much of it to run locally versus observe in CI after pushing.
+Language-agnostic, never hardcoded.
 
 ## Local gate buckets
 

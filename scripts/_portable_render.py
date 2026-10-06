@@ -42,6 +42,9 @@ SPEC_FRONTMATTER_KEYS = (
 RESOURCE_DIRS = ("references", "templates", "docs", "assets")
 """Plugin subdirectories whose files are vendored into an output skill."""
 
+VENDOR_MARKER = "Vendored from shared/"
+"""Text in the first line of a plugin file copied from the repo's ``shared/``."""
+
 _MARKDOWN_SUFFIX = ".md"
 _VENDOR_ROOT = "references"
 _COMPONENT_DEPTH = 2
@@ -226,6 +229,23 @@ def strip_frontmatter(text: str) -> str:
         return text
     end = text.find("---", 3)
     return text if end == -1 else text[end + 3 :].lstrip("\n")
+
+
+def strip_vendor_banner(text: str) -> str:
+    r"""Drop the editor banner a plugin's copy of a ``shared/`` file opens with.
+
+    The banner tells a repo contributor where to edit; a bundled skill has no
+    ``shared/`` directory, so the line would point nowhere.
+
+    Examples
+    --------
+    >>> strip_vendor_banner("<!-- Vendored from shared/a.md; edit that -->\n# A\n")
+    '# A\n'
+    >>> strip_vendor_banner("# A\n")
+    '# A\n'
+    """
+    first, sep, rest = text.partition("\n")
+    return rest if sep and VENDOR_MARKER in first else text
 
 
 def _read_body(path: Path) -> str:
@@ -618,6 +638,7 @@ class SkillBuilder:
                 # through untouched rather than failing the whole export.
                 self._files[rel] = (src.read_bytes(), mode)
                 continue
+            raw = strip_vendor_banner(raw)
             # A resource resolves its own relative links from where it sits, not
             # from the plugin root. ``_resolve`` still falls back to the plugin
             # root, so a root-relative link in the same file keeps working.

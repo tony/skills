@@ -57,6 +57,7 @@ from _portable_render import (  # pyright: ignore[reportImplicitRelativeImport]
     RESOURCE_DIRS,
     SPEC_FRONTMATTER_KEYS,
     TOKEN_RE,
+    VENDOR_MARKER,
     BuiltSkill,
     OutputSkill,
     PortableIndex,
@@ -1967,6 +1968,75 @@ def _check_codex_drift(files: dict[str, bytes]) -> list[str]:
     return errors
 
 
+SHARED_DIR = REPO_ROOT / "shared"
+VENDOR_MANIFEST_PATH = SHARED_DIR / "vendor.yml"
+
+
+def _vendor_banner(name: str) -> str:
+    """Return the first line a plugin's copy of ``shared/<name>`` carries.
+
+    Examples
+    --------
+    >>> _vendor_banner("a.md").startswith("<!-- Vendored from shared/a.md;")
+    True
+    >>> _vendor_banner("a.yml").startswith("# Vendored from shared/a.yml;")
+    True
+    """
+    text = f"{VENDOR_MARKER}{name}; edit that file, then run 'scripts/marketplace.py portable'."
+    return f"<!-- {text} -->\n" if name.endswith(".md") else f"# {text}\n"
+
+
+def _vendor_plan() -> tuple[dict[Path, str], list[str]]:
+    """Map each vendored destination to its fresh render, plus manifest errors.
+
+    ``shared/vendor.yml`` maps a file name under ``shared/`` to the plugins that
+    ship it. Each plugin carries its own copy in ``references/`` so it installs
+    standalone.
+    """
+    if not VENDOR_MANIFEST_PATH.is_file():
+        return {}, []
+    try:
+        loaded = t.cast("object", yaml.safe_load(VENDOR_MANIFEST_PATH.read_text(encoding="utf-8")))
+    except yaml.YAMLError as exc:
+        return {}, [f"vendor: cannot parse shared/vendor.yml: {exc}"]
+    if not isinstance(loaded, dict):
+        return {}, ["vendor: shared/vendor.yml must map file names to plugin lists"]
+    errors: list[str] = []
+    plan: dict[Path, str] = {}
+    for name, plugins in sorted(t.cast("dict[str, list[str]]", loaded).items()):
+        source = SHARED_DIR / name
+        if not source.is_file():
+            errors.append(f"vendor: shared/{name} is listed in vendor.yml but missing")
+            continue
+        text = _vendor_banner(name) + source.read_text(encoding="utf-8")
+        for plugin in plugins:
+            if not (PLUGINS_DIR / plugin).is_dir():
+                errors.append(f"vendor: shared/{name} names unknown plugin '{plugin}'")
+                continue
+            plan[PLUGINS_DIR / plugin / "references" / name] = text
+    return plan, errors
+
+
+def _check_vendor(plan: dict[Path, str]) -> list[str]:
+    """Compare vendored copies with a fresh render; flag stray banners."""
+    errors: list[str] = []
+    for dest, content in sorted(plan.items()):
+        rel = dest.relative_to(REPO_ROOT)
+        source = f"shared/{dest.name}"
+        if not dest.is_file():
+            errors.append(f"vendor: '{rel}' is missing; run 'scripts/marketplace.py portable'")
+        elif dest.read_text(encoding="utf-8") != content:
+            fix = f"edit {source}, not the copy, then run 'scripts/marketplace.py portable'"
+            errors.append(f"vendor: '{rel}' differs from {source}; {fix}")
+    for path in sorted(PLUGINS_DIR.glob("*/references/*")):
+        if path.is_file() and path not in plan:
+            head = path.read_text(encoding="utf-8", errors="replace").partition("\n")[0]
+            if VENDOR_MARKER in head:
+                rel = path.relative_to(REPO_ROOT)
+                errors.append(f"vendor: '{rel}' carries a banner but shared/vendor.yml omits it")
+    return errors
+
+
 @app.command()
 def portable(*, check: bool = False) -> None:
     """Emit ``.agents/skills/`` and the Codex manifests this repo ships.
@@ -1981,16 +2051,28 @@ def portable(*, check: bool = False) -> None:
     it takes is a ``.codex-plugin/plugin.json`` per plugin naming that directory
     and a marketplace manifest in Codex's own format.
 
+    Files under ``shared/`` are written into each plugin listed for them in
+    ``shared/vendor.yml`` before anything is rendered.
+
     Parameters
     ----------
     check : bool
         If True, verify the committed tree matches a fresh render and satisfies
         the portable contract; exit 1 on any finding.
     """
+    vendor_plan, vendor_errors = _vendor_plan()
+    if not check and not vendor_errors:
+        for dest, content in sorted(vendor_plan.items()):
+            dest.parent.mkdir(parents=True, exist_ok=True)
+            _ = dest.write_text(content, encoding="utf-8")
     sources = _collect_sources()
     built = _build_portable()
     codex_files = _codex_files()
     if not check:
+        if vendor_errors:
+            for error in vendor_errors:
+                console.print(f"[red]Error:[/red] {rich.markup.escape(error)}")
+            raise SystemExit(1)
         _write_portable(built, PORTABLE_SKILLS_DIR, PORTABLE_MANIFEST_PATH)
         for rel, content in sorted(codex_files.items()):
             path = REPO_ROOT / rel
@@ -2006,7 +2088,8 @@ def portable(*, check: bool = False) -> None:
         console.print(summary)
         return
 
-    errors = _check_invariants(built, sources) + _check_drift(built)
+    errors = vendor_errors + _check_vendor(vendor_plan)
+    errors += _check_invariants(built, sources) + _check_drift(built)
     errors.extend(_check_codex_drift(codex_files))
     manifest = json.dumps(_portable_manifest(built), indent=2) + "\n"
     if not PORTABLE_MANIFEST_PATH.exists():
