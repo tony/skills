@@ -9,15 +9,13 @@ Audit `uses:` pins, research each upgrade against real release notes,
 land one commit per action, and close dependabot's pull requests by
 citing the commit that superseded them.
 
-Two reference files carry the parts that must not drift between this
-skill and the plugin's commands:
+References:
 
-- `../../references/action-pinning.md` — inventory,
-  tag verification, annotated-tag dereferencing, pin granularity, and
-  the per-repo gates to check before claiming an upgrade is safe.
-- `../../references/dependabot-closeout.md` — the
-  one-way citation rule, the closing protocol, CI attribution, and
-  scope discipline.
+- `../../references/action-pinning.md` — scope, inventory, tag
+  verification, annotated-tag dereferencing, pin granularity, and the
+  per-repo gates to check before claiming an upgrade is safe.
+- `../../references/dependabot-closeout.md` — the one-way citation rule,
+  the closing protocol, CI attribution, and scope discipline.
 
 ## Core principle
 
@@ -27,10 +25,7 @@ breaks every workflow that references it, in every repo, at once.
 
 ## Scope
 
-Own repositories only. Ownership by account name is not enough — a fork
-you own is still someone else's project, and its workflows belong
-upstream. Check whether the repository is a fork and skip it unless the
-user says otherwise.
+Repository scope, including the fork rule, is in the pinning reference.
 
 ## Phase 1 — Inventory
 
@@ -113,6 +108,9 @@ remote, rather than only when the current invocation created the
 commits, so a run interrupted by a network failure can be re-invoked
 without hand-repair.
 
+Write each commit message, pull-request comment and report per
+`../../references/prose-rules.md`.
+
 ## Phase 5 — Verify and close out
 
 Watch CI, attribute any failure before blaming the bump, and close the
@@ -122,27 +120,3 @@ close-out reference.
 Report what was excluded and why, along with the two findings that
 explain fleet-wide drift: repositories with no dependabot
 configuration, and actions pinned to a moving branch.
-
-## Common mistakes
-
-**Assuming every action publishes a floating major.** It does not
-follow from the action being popular or well maintained.
-
-**Comparing annotated tags by `.object.sha`.** That compares tag
-objects, not commits, and makes identical tags look different.
-
-**Auditing the working tree.** Feature-branch content gets audited
-instead of the branch that actually runs.
-
-**One commit for all of a repository's bumps.** No independent revert,
-and no per-action rationale.
-
-**A generic commit body containing a repository-specific claim.** The
-claim is false for the repositories the generalization does not fit,
-permanently, in their history.
-
-**Trusting a stale baseline CI run.** Leads to reverting changes that
-were never the cause.
-
-**Citing a dependabot pull request from a commit message.** The
-citation runs one way: the pull request points at the commit.

@@ -68,14 +68,15 @@ Four categories, because the remedy differs:
 
 ## Output
 
-Open with a one-line hero (`✓ <n> citations checked, <n> stale` or
-`⚠ <n> misquoted`), then exactly these sections:
+Per `../../references/output-contract.md`. Hero: `✓ <n> citations checked, <n>
+stale` or `⚠ <n> misquoted`. Sections:
 
 1. `## Moved` — each citation whose ref advanced, with the new ref.
 2. `## Vanished` — each source that is gone.
 3. `## Misquoted` — each locator whose text no longer matches, with both texts.
 4. `## Changed` — each measurement that produced a different number, with both.
 
-End with an `AskUserQuestion` panel offering next steps (for example: revise
-the overturned claims, re-pin the moved ones, stop here) — skip the panel only
-in plan mode.
+Next-step options: revise the overturned claims, re-pin the moved ones, stop
+here.
+
+Write it per `../../references/prose-rules.md`.

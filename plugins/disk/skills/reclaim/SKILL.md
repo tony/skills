@@ -15,44 +15,17 @@ Scope: $ARGUMENTS — when empty, consider every mounted filesystem.
 
 ## Before anything else
 
-**Never halt the environment.** `wsl --shutdown`, `wsl --terminate`, VM
-stop commands, and container-runtime restarts are the user's to run.
-They destroy unsaved work across every shell, editor, and background job
-on the machine. Print the command, state what it interrupts, and stop.
-Approval to delete caches is not approval to terminate the environment.
-
-**Never delete on the strength of a name.** Run the proof.
-
-**Agent history is protected.** Reclaim from it only through the owning
-tool's own archival path, or by proving one copy redundant against
-another.
+Never halt the environment (`wsl --shutdown`, `wsl --terminate`, VM stop,
+container-runtime restart): print the command, state what it interrupts,
+and stop, per `../../references/virtual-disks.md`. Never delete on the
+strength of a name. Agent history is protected: reclaim from it only
+through the owning tool's archival path, or by proving one copy redundant.
 
 ## Survey and classify
 
 Run the same analysis `/disk:usage` performs. Do not shortcut it
 because this command will execute — the classification is what makes
 execution safe.
-
-Establish the layer structure first, per
-`../../references/virtual-disks.md`, so no guest-side
-figure is mistaken for space recovered on the host.
-
-Assign every candidate to a tier from
-`../../references/candidate-catalog.md`, classifying
-where content is homogeneous rather than propagating a parent's tier.
-
-Prove every apparent duplicate with the path-set comparison in
-`../../references/redundancy-proofs.md`. A `diff`
-reporting no differing files proves nothing on its own.
-
-Treat transcripts and session stores per
-`../../references/agent-history.md`, resolving each
-tool's discovery glob and native compression support before proposing
-anything.
-
-Handle directories of upstream clones per
-`../../references/study-repos.md`, checking each for
-unpushed work before calling it a conversion candidate.
 
 Carry forward, for every candidate: its tier, its size, the layer it
 sits on, and for anything in the redundant tier, the proof outcome.
@@ -77,11 +50,9 @@ Stale-but-unique data is decided per directory — a blanket approval
 never covers this tier. Protected history appears as an inventory, or
 as a compression proposal with its access tradeoff stated.
 
-Never present compression as free. When a tool cannot read its own
-compressed history, compression converts sessions from resumable to
-archive-only. Offer an age cutoff so recent sessions stay live, and let
-the user choose. When a tool *can* compress natively, propose enabling
-that instead of compressing by hand.
+Never present compression as free. Follow
+`../../references/agent-history.md`: propose native compression where the
+tool has it, otherwise an age cutoff the user chooses.
 
 Exit plan mode once approved.
 
@@ -119,4 +90,4 @@ consequences stated.
 Report host recovery as pending rather than achieved, and say plainly
 which numbers are measured and which are projected.
 
-Follow `../../references/output-contract.md`.
+Follow `../../references/output-contract.md`. Write it per `../../references/prose-rules.md`.

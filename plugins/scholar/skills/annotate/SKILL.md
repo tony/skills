@@ -14,32 +14,9 @@ The prose path. Without it, a written corpus enters the pipeline as
 unstructured text and its citations degrade to "somewhere in chapter 3".
 
 Read `../../references/citation.md` for the locator rules this stage
-implements.
+implements: take the most stable locator the source supports.
 
 User arguments: $ARGUMENTS
-
-## Locator precedence
-
-Take the most stable locator the source actually supports. In order:
-
-**A pinned line anchor** — where the source is a text file in version control.
-Most stable, and `verify` can check it mechanically.
-
-**Chapter and section** — where the work is structured. Survives repagination
-and translation between print and digital.
-
-**Page** — only where `sources.jsonl` records the edition. A page number
-without an edition is not a locator; it is a number that happens to be true of
-one printing.
-
-**A search string** — where the source has no stable anchor at all: a PDF
-without pagination, an audio transcript, a scanned document. Quote enough
-unique text to be found by search, and record in `sources.jsonl` that this
-source's locator is a search string rather than a position, so `verify` checks
-it by search rather than by position.
-
-Never invent a position the source does not have. A confident wrong locator
-costs a reader more than an honest search string.
 
 ## Procedure
 
@@ -69,7 +46,6 @@ the two into a paraphrase; `extract` needs to know which is which.
 ## Rules
 
 - The quotation is verbatim. An ellipsis marks every omission.
-- The note is the analyst's; the quote is the author's. They never merge.
 - A term the author uses without defining is still a term. Quote a passage
   showing the usage rather than skipping it.
 - Where the author defines a term explicitly, quote the definition and mark it,
@@ -77,8 +53,8 @@ the two into a paraphrase; `extract` needs to know which is which.
 
 ## Output
 
-Open with a one-line hero (`✓ <n> quotations from <source>` or `⚠ Blocked:
-<reason>`), then exactly these sections:
+Per `../../references/output-contract.md`. Hero: `✓ <n> quotations from
+<source>`. Sections:
 
 1. `## Quotations` — count by locator kind, and the concepts they name.
 2. `## Locator` — which scheme this source uses and why, including any
@@ -86,6 +62,4 @@ Open with a one-line hero (`✓ <n> quotations from <source>` or `⚠ Blocked:
 3. `## Undefined` — terms the author uses without defining, which `extract`
    will have to infer from usage.
 
-End with an `AskUserQuestion` panel offering next steps (for example: run
-extract, annotate another source, stop here) — skip the panel only in plan
-mode.
+Next-step options: run extract, annotate another source, stop here.

@@ -24,28 +24,13 @@ screening when someone pastes a review costs a report and nothing else.
 
 ## Core thesis
 
-A review is a set of claims, and a claim is not a work order. The
-expensive mistakes are symmetrical: a branch that fixes everything a
-reviewer says grows tests, guards, and comments that nobody can later
-justify; a branch that dismisses what a reviewer says ships the bug.
+A review is a set of claims, and a claim is not a work order. Screening
+separates the real ones from the rest before any code moves, and does
+it on the record: every verdict carries its evidence, so a reviewer who
+disagrees can attack the evidence instead of the judgment.
 
-Screening separates the two before any code moves, and it separates
-them *on the record* — every verdict carries the evidence that produced
-it, so a reviewer who disagrees can attack the evidence instead of the
-judgment.
-
-The screening question is never only "is this correct?" It is:
-
-1. Is it **true** of the code as written?
-2. Did **this branch** cause it?
-3. Is it right **for this project**, against the decisions the project
-   has already made and written down?
-4. How **often** does the scenario it describes actually fire, and what
-   happens when it does?
-5. What would the fix **cost** everyone who reads the file afterward?
-
-The rubric that answers these is `../../references/screening-rubric.md`
-and it is the authority; this skill collects the inputs and reports the
+`../../references/screening-rubric.md` is the authority on the gates,
+verdicts, and ledger; this skill collects the inputs and reports the
 outputs.
 
 ## `$ARGUMENTS` contract
@@ -82,14 +67,8 @@ describes that applies to this run: pasted text, this session's earlier
 review output, the pull request's three comment surfaces, and failing
 CI.
 
-Normalize each claim into a finding record, split multi-claim comments
-into separate findings, drop the approvals and summaries that assert
-nothing, and merge duplicates — the same defect from four reviewers is
-one finding with four sources.
-
-Carry forward the declines from any previous round in this session: a
-bot re-posting a finding that was already declined, against code that
-has not changed since, does not get screened twice.
+Normalize, split, drop, and merge per that file, including its rule
+for re-posts of findings declined earlier in this session.
 
 ## Phase 2: Screen
 
@@ -102,11 +81,8 @@ not a verdict, and the report must not contain one.
 Two disciplines while screening:
 
 - **Read the code, do not trust the claim.** Automated reviewers assert
-  with total confidence regardless of whether they are right, and three
-  bots agreeing is one opinion repeated, not corroboration.
-- **Cost the smallest fix that works**, not the one the reviewer
-  proposed. Reviewers routinely propose a mechanism where a condition
-  would do, and the cost gate should judge the cheaper option.
+  with total confidence regardless of whether they are right.
+- **Cost the smallest fix that works**, per the rubric's cost gate.
 
 Use `AskUserQuestion` for `ask` verdicts only — findings where the
 truth depends on intent only the author has, or where the alignment
@@ -127,9 +103,10 @@ citation is genuinely contested. Everything else is decided here.
    drafted reply. A declined `improbable` reply states the trigger the
    scenario needs, so a reviewer who knows a caller that produces it
    can say so.
-5. `## Ledger key` — branch, `HEAD` SHA, and the feedback digest. This
-   is what `/respond:action` checks to know the screening still
-   describes the current tree.
+5. `## Ledger key` — branch, `HEAD` SHA, and the feedback digest, as
+   the rubric's ledger section defines them. `/respond:action` checks
+   this key to know the screening still describes the current tree.
+   Write replies per `../../references/prose-rules.md`.
 6. End with an `AskUserQuestion` panel: run `/respond:action` on the
    accepted findings, run it with `--reply` so the drafted replies get
    posted too, re-screen with the deferred findings opted in, or stop.

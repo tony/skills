@@ -1,7 +1,17 @@
 # Fixture analysis
 
-Recipes for goals 2, 4, and 5: slowest fixtures, unused fixtures, and proper
-scope. Backs heuristics `H03`, `H08`–`H13`, `H41`–`H43`.
+Recipes for slowest fixtures, unused fixtures, and proper scope. Backs
+heuristics `H03`, `H08`–`H13`, `H16`, `H21`, `H41`–`H43`.
+
+## Contents
+
+- Scope and caching model
+- Slowest fixtures and root cause
+- Mis-scoped fixture
+- Unused fixtures
+- Duplicate fixtures
+- Autouse audit
+- Shared mutable state
 
 ## Scope and caching model
 
@@ -22,7 +32,7 @@ shared and not mutated** re-runs N times when one setup would do. Widening the
 scope is often the single highest-impact, lowest-risk speedup — *if* the value is
 read-only across tests (otherwise see "shared mutable state" below).
 
-## Slowest fixtures and root cause (goal 2)
+## Slowest fixtures and root cause
 
 The `--durations` table cannot name the costly fixture (a `setup` row is the whole
 chain). Two complementary tools:
@@ -45,7 +55,7 @@ For true per-fixture timing, generate the opt-in plugin
 (`templates/pytest_optimizer_plugin.py`); it wraps `pytest_fixture_setup` and
 records each fixture's own setup seconds, filling the gap pytest core leaves.
 
-## Mis-scoped fixture (goal 5, H10/H13)
+## Mis-scoped fixture (H10/H13)
 
 ```bash
 pytest --setup-plan | rg 'SETUP +F '
@@ -57,13 +67,13 @@ does real work (network/db/docker/subprocess/sleep/build) is a scope candidate:
 1. Confirm the value is **not mutated** by tests (read the body and consumers).
 2. Raise `scope` to `module`/`session` (or `class`/`package`).
 3. Verify the `SETUP` count drops with `--setup-plan` again.
-4. Run the order-independence gate (`safety-gates.md`) before trusting it.
+4. Run the order-independence gate before trusting it.
 
 For indirect/parametrized fixtures that pay setup once per param per test (H13),
 move the param to a higher-scoped fixture or cache the per-param resource at
 module/session scope and select from it.
 
-## Unused fixtures (goal 4, H08/H09/H41)
+## Unused fixtures (H08/H09/H41)
 
 Diff **defined** fixtures against **used** fixtures:
 
@@ -105,7 +115,7 @@ Related: a test/fixture that lists a parameter it never uses in its body (H41) i
 either a dead dependency (drop it) or an intended side-effect fixture (make it
 `autouse`/`usefixtures` and document why).
 
-## Duplicate fixtures (goal 3/4, H11/H42)
+## Duplicate fixtures (H11/H42)
 
 ```bash
 uvx --with pytest-deadfixtures --from pytest pytest --dup-fixtures
@@ -122,7 +132,7 @@ any **intentional** override (a child conftest deliberately shadowing a parent
 fixture is legitimate). An empty conftest (no fixtures, no hooks) is dead weight —
 delete it (H42).
 
-## Autouse audit (goal 4/5, H12/H15/H43)
+## Autouse audit (H12/H15/H43)
 
 ```bash
 rg 'autouse\s*=\s*True'
@@ -145,7 +155,7 @@ A `@pytest.mark.*` decorator stacked directly on a `@pytest.fixture` (H43) is a
 silent no-op before pytest 9 and a hard collection error from 9 on — remove it and
 move the condition into the body (`pytest.skip()` / `request.getfixturevalue`).
 
-## Shared mutable state (H16/H21)
+## Shared mutable state (H16, H21)
 
 Before widening scope or parallelizing, check whether the shared resource is
 **mutated**:

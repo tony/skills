@@ -2,7 +2,15 @@
 
 A recommit rewrites history that may already be published and may be the
 only copy of a day's work. Every gate here exists because skipping it
-loses something silently. Verified against git 2.43.
+loses something silently.
+
+## Contents
+
+- Refuse before starting
+- The pushed-branch gate
+- Back up before touching anything
+- Recovery
+- Pushing the result
 
 ## Refuse before starting
 

@@ -1,5 +1,11 @@
 # Instrument discovery and collection queries
 
+## Contents
+
+- Discovery: probe, record, classify
+- Collection discipline
+- Collection targets
+
 How `/business:research` probes what exists and queries it without
 sampling, truncating, or mislabeling. Discovery is always probe-based:
 never infer availability from convention or from the project's
@@ -16,13 +22,13 @@ or unavailable.
 Probe each candidate repository:
 
 ```console
-git -C <repo> log -1 --format=%H
+$ git -C <repo> log -1 --format=%H
 ```
 
 Record the git version for the manifest:
 
 ```console
-git --version
+$ git --version
 ```
 
 ### gh
@@ -30,13 +36,13 @@ git --version
 Probe authentication:
 
 ```console
-gh auth status
+$ gh auth status
 ```
 
 Probe rate-limit headroom before any bulk collection:
 
 ```console
-gh api rate_limit
+$ gh api rate_limit
 ```
 
 If the remaining GraphQL budget cannot cover the planned pagination,

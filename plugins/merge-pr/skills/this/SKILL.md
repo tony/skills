@@ -7,32 +7,15 @@ user-invocable: true
 disable-model-invocation: true
 ---
 
-
 # Merge This PR
 
-Merge a single pull request — the one this conversation is about, or
-the one the current branch belongs to — via `gh pr merge`, with a
-merge commit whose message matches the repository's own
-`git log --merges` history. Nothing merges until the readiness gate
-passes.
+Merge a single pull request (the one this conversation is about, or the one
+the current branch belongs to) via `gh pr merge`. Nothing merges until the
+readiness gate passes.
 
-Read `../../references/merge-readiness.md` first; it
-defines the readiness gate, the rebase procedure, the merge-message
-derivation, flag passthrough, the `--admin` policy, and the rule that
-merging is not releasing.
+Read `../../references/merge-readiness.md` before touching the PR.
 
 User arguments: $ARGUMENTS
-
-## Context
-
-Current branch:
-`!git branch --show-current`
-
-PR for the current branch:
-`!gh pr view --json number,title,url,state,isDraft,baseRefName,mergeable,mergeStateStatus,reviewDecision 2>/dev/null || echo "(no PR for current branch)"`
-
-Checks:
-`!gh pr checks 2>/dev/null || echo "(no PR or no checks)"`
 
 ## Procedure
 
@@ -40,55 +23,44 @@ Checks:
 
 Precedence: an explicit argument (number or URL) > the PR this
 conversation has been working on > the current branch's PR. If the
-candidates disagree — the argument names one PR while the
-conversation is about another — ask via `AskUserQuestion` before
-proceeding.
+candidates disagree, ask via `AskUserQuestion` before proceeding.
+
+Gather the PR's state. A failure here means no PR exists for the branch or
+`gh` is unavailable or unauthenticated: report it and stop.
+
+```console
+gh pr view <n> --json number,title,url,state,isDraft,baseRefName,mergeable,mergeStateStatus,reviewDecision
+```
+
+Trunk is the PR's `baseRefName`. With no argument and no conversation PR,
+run `git branch --show-current` and `gh pr view` without `<n>` to find the
+current branch's PR.
 
 ### 2. Run the readiness gate
 
-Apply the readiness gate from the reference. Pending checks are
-waited on with `gh pr checks <n> --watch`; failing checks, a draft
-state, or `CHANGES_REQUESTED` halt with a report. If the PR is
-`BEHIND` or `DIRTY`, confirm with the user, then follow the rebase
-procedure: rebase, resolve conflicts, verify content did not drift,
-`git push --force-with-lease`, and watch CI again.
+Apply the readiness gate from the reference. If the PR is `BEHIND` or
+`DIRTY`, confirm with the user, then follow the reference's rebase procedure.
 
 ### 3. Compose the merge commit message
 
-Follow the merge-message section of the reference: study
-`git log --merges` on trunk, match the observed format, keep the body
-proportional to the change, and stay provincial — no release or
-version claims unless the PR itself is release work. Skip this step
-when the user's flags make the message theirs to control (their own
-`-t`/`-b`, or `--rebase`, which produces no merge commit).
+Follow the reference's merge-commit-message section, which also says when to
+skip it. Write the message per `../../references/prose-rules.md`.
 
 ### 4. Merge
 
-Default to a merge commit; pass the user's `gh pr merge` flags
-through verbatim:
+Pass the user's `gh pr merge` flags through verbatim. The strategy flag is
+`--merge` unless the user passed `--squash` or `--rebase`:
 
 ```console
-gh pr merge <n> --merge -t "<subject>" -b "<body>"
+gh pr merge <n> <strategy flag> -t "<subject>" -b "<body>"
 ```
 
-Use `--admin` only within the reference's policy — CI green, blocked
-purely by branch protection, nothing violating AGENTS.md — and ask
-first if the user did not pass it.
+Use `--admin` only within the reference's policy.
 
 ### 5. Sync trunk and stand by
 
-Checkout trunk, pull, and confirm the PR reports merged. Then stop:
-no tagging, no releasing, no follow-on work.
-
-## Rules
-
-- The merge goes through `gh pr merge`, never a local `git merge`
-  pushed to trunk.
-- Never merge over failing or pending CI, with or without `--admin`.
-- Force-pushes use `--force-with-lease` and only ever target the PR
-  branch.
-- When in doubt at any step, ask — an unnecessary question costs a
-  moment; a wrong merge costs an afternoon.
+Sync trunk and confirm the merge, per the reference's "After each merge".
+Then stop.
 
 ## Output
 
@@ -101,11 +73,13 @@ Open with a one-line hero (`✓ Merged #N: <title>` or
    commit subject (or why no merge happened).
 3. `## Trunk` — the post-merge trunk state after checkout and pull.
 
+Write the sections per `../../references/prose-rules.md`.
+
 End with an `AskUserQuestion` panel offering next steps (for example:
 cut a release from the merged trunk, merge another PR, delete the
 local branch, stop here) — skip the panel only in plan mode.
 
-Offer the release when the merged trunk is a releasable state and the
-repo carries the version files a release touches; name the skill that
-cuts it rather than the git commands. Tagging and pushing stay the
-user's explicit act either way.
+Offer the release only when the merged trunk is in a releasable state and
+the repo carries the version files a release touches. Name the project's
+release skill or command if one exists; tagging and pushing stay the user's
+explicit act.

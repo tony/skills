@@ -16,11 +16,7 @@ study already earned.
 
 User arguments: $ARGUMENTS
 
-## The discipline that gives this skill its value
-
-```
-ANSWER FROM THE EVIDENCE, OR NAME THE GAP
-```
+## Answer from the evidence, or name the gap
 
 An agent asked a question about a corpus it has partly read will reason from
 the parts it has to the parts it has not, and the result is indistinguishable
@@ -62,7 +58,6 @@ Distinguish three cases, because they mean different things:
 
 ## Rules
 
-- Never answer past the evidence. Plausibility is not coverage.
 - Never cite the corpus directly. If the answer needs a source the study did
   not read, that is case three — report it and stop.
 - Quote the study's own words for a definition rather than paraphrasing; a
@@ -70,8 +65,8 @@ Distinguish three cases, because they mean different things:
 
 ## Output
 
-Open with a one-line hero (`✓ answered from <n> terms` or `⚠ Not covered:
-<what would have to be read>`), then exactly these sections:
+Per `../../references/output-contract.md`. Hero: `✓ answered from <n> terms` or
+`⚠ Not covered: <what would have to be read>`. Sections:
 
 1. `## Answer` — the answer, each claim citing its evidence file and row.
 2. `## Evidence` — the chain: definitions, citations with locators, and any
@@ -79,6 +74,7 @@ Open with a one-line hero (`✓ answered from <n> terms` or `⚠ Not covered:
 3. `## Gaps` — what the study does not settle, and which of the three cases
    applies.
 
-End with an `AskUserQuestion` panel offering next steps (for example: widen
-the study to cover the gap, ask another question, stop here) — skip the panel
-only in plan mode.
+Next-step options: widen the study to cover the gap, ask another question, stop
+here.
+
+Write it per `../../references/prose-rules.md`.

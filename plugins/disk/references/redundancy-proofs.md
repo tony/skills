@@ -1,5 +1,13 @@
 # Redundancy proofs
 
+## Contents
+
+- The vacuous-truth trap
+- Required proof for "redundant"
+- Required proof for "mergeable"
+- Classification outcomes
+- Naming is not evidence
+
 A directory may only be classified redundant when a command has *proved*
 it. This file defines what counts as proof, and the near-misses that
 have masqueraded as proof.
@@ -59,8 +67,8 @@ Shared paths must then be confirmed identical by content, not by size
 or mtime. Size collisions are common in append-structured formats such
 as JSONL transcripts.
 
-```
-rsync -rcn --itemize-changes <candidate>/ <keeper>/
+```console
+$ rsync -rcn --itemize-changes <candidate>/ <keeper>/
 ```
 
 The `-c` flag forces a checksum comparison. Any output line means the
@@ -72,8 +80,8 @@ A candidate is mergeable into a keeper when it holds unique files and
 no shared path differs in content. The merge is then additive — no
 existing file is written.
 
-```
-rsync -a --ignore-existing <candidate>/ <keeper>/
+```console
+$ rsync -a --ignore-existing <candidate>/ <keeper>/
 ```
 
 Re-run the path-set comparison afterward with the arguments reversed.

@@ -1,5 +1,7 @@
 # Source links
 
+Contents: Link everything that has a URL, Pin every reference into a repository, Let GitHub do the linking where it already does, Naming an open-source project, What rots.
+
 How to link so the link still works. Shared by the
 `rendered-markdown` skill and `/gh:create-issue`.
 
@@ -123,8 +125,7 @@ not GitHub, and in a body someone copies elsewhere.
 ### Tracker keys: check whether the repository resolves them
 
 A key like `TIK-111` renders as plain text unless a repository admin
-configured a custom autolink for that prefix, and the feature exists
-only on paid plans. When it is configured, write the bare key. When it
+configured a custom autolink for that prefix. When it is configured, write the bare key. When it
 is not, write a full markdown link.
 
 `GET /repos/{owner}/{repo}/autolinks` needs admin and returns 404 for

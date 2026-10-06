@@ -1,8 +1,7 @@
-# Adapter: <agent name> <version>
+# Adapter: <agent name>
 
 Copy this file to a new file named for the agent, beside the existing adapters, and fill
-every section. Any section you
-cannot answer stays in the file marked `UNKNOWN` with a note on what you tried — a blank is a
+every section. Any section you cannot answer stays in the file marked `UNKNOWN` with a note on what you tried — a blank is a
 bug, `UNKNOWN` is data.
 
 The skill reads adapters, never agent-specific code paths. If supporting your agent requires
@@ -37,7 +36,7 @@ One block per transport this agent supports, sender side and receiver side.
 ## 4. Delivery semantics
 
 - **When a message reaches the model**: immediately, between tool calls, only when idle.
-- **Latency**: measured, idle and mid-turn.
+- **Latency**: idle and mid-turn.
 - **Target not running**: dropped, or durable and delivered on resume.
 - **Ordering** under rapid sends.
 - **Caps**: message size, queue depth, burst limits, and the behavior at each.
@@ -86,9 +85,5 @@ auth token, home directory, sandbox indicators. Name each and say what sets it.
 What this agent cannot do that others can, what is undocumented, and what the skill must work
 around. End with the single sentence a future maintainer most needs to know.
 
-## Evidence
-
-Link each non-obvious claim to the experiment ID in the findings files that established it.
-Claims with no experiment ID are marked `(unverified — from source)` when the agent is open
-source and the claim comes from reading its code, or `(unverified — from docs)` when it comes
-from vendor documentation instead.
+Mark each claim you did not test `(unverified — from source)` when read from the agent's
+code, or `(unverified — from docs)` when read from vendor documentation.

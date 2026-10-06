@@ -18,107 +18,53 @@ defines the precedence for deriving the goal, why nothing is stored
 between runs, the three-way classification, and the four correctives.
 Read `../../references/situation-sweep.md` for how to
 resolve trunk, the base commit, tickets, and the pull request, and for
-the read-only contract both commands share.
+the read-only contract.
 
 User arguments: $ARGUMENTS
-
-## Context
-
-Current branch:
-`!git branch --show-current 2>/dev/null || echo "(detached HEAD)"`
-
-Ahead / behind trunk:
-`!git rev-list --left-right --count "$(git symbolic-ref --short refs/remotes/origin/HEAD 2>/dev/null || echo origin/main)"...HEAD 2>/dev/null || echo "(no comparison available)"`
-
-Working tree:
-`!git status --short 2>/dev/null | head -20 || echo "(unavailable)"`
-
-The commit range is not precomputed here. Resolve the base through the
-sweep reference in step 2 — a branch stacked on another branch takes its
-parent as the base, and a trunk-measured range would hand this command
-the parent's commits to classify as this branch's drift.
 
 ## Procedure
 
 ### 1. Derive the goal
 
-`$ARGUMENTS`, when given, is the goal. It is a statement from the user
-and outranks every artifact.
+`$ARGUMENTS`, when given, is the goal and outranks every artifact.
+Otherwise take the first source in the goal-derivation precedence.
 
-Otherwise work down the precedence in the goal-derivation reference:
-what the user stated earlier in this session, then the linked ticket's
-acceptance criteria, then the pull request body, then the branch name
-and its first commit.
-
-Resolve ticket IDs only from commits, the branch name, and the pull
-request body. Read the ticket body rather than its title — a title names
-a topic, the criteria say what done means.
-
-Say which source the goal came from. A goal from acceptance criteria and
-a goal from a branch name are both goals, and the reader must be able to
-tell them apart before acting on the assessment.
-
-If no source yields one, stop and ask. Do not infer the goal from the
-diff: a goal derived from the work cannot detect drift in that work,
-because every commit matches it by construction.
+Say which source the goal came from and how confident it is; a goal from
+acceptance criteria and a goal from a branch name are not the same
+evidence. If no source yields one, stop and ask. Do not infer the goal
+from the diff.
 
 ### 2. Read what was actually done
 
-Resolve the base first, by the sweep reference's rules rather than by
-assuming trunk: a stacked branch takes its parent, and only then does
-the range hold this branch's own work. Report the layer unavailable, and
-which lookup failed, when neither resolves.
+Resolve the base by the sweep reference's rules rather than assuming
+trunk: a stacked branch takes its parent, so the range holds only this
+branch's work. Report the layer unavailable, and which lookup failed,
+when neither resolves.
 
-Then the commits since that base, the diff behind them, and the
-uncommitted changes. Uncommitted work counts — drift often lives there
-first, because it has not yet had to justify itself in a commit message.
+Then read the commits since that base, the diff behind them, and the
+uncommitted changes. Uncommitted work counts: drift often lives there
+first.
 
 ### 3. Classify
 
-Sort each commit and each uncommitted change: on goal, load-bearing
-detour, or off goal. Take the middle category seriously — a fixture
-repair that unblocked the feature is correct work, and reporting it as
-drift teaches the user to distrust the command.
-
-For off-goal work, find the first commit where it started. That commit
-usually explains the whole excursion.
+Sort each commit and each uncommitted change into the three buckets in
+the goal-derivation reference. For off-goal work, find the first commit
+where it started.
 
 ### 4. Find the gap
 
 Walk the goal's criteria one at a time and check each against the
-branch. What was asked for and has no work behind it is drift as much as
-work nobody asked for, and on a resumed ticket it is the half that is
-invisible — the branch looks busy either way.
+branch. Criteria with no work behind them are drift too.
 
 ### 5. Propose the correction
 
-Finish the gap, defer the off-goal work, drop it, or widen the goal.
-Recommend one and say why.
-
-Do not assume the goal wins. When the excursion was the better instinct,
-the correction is to update the ticket or the pull request body to
-match what is being built, not to revert good work for disagreeing with
-a stale description.
-
-## Rules
-
-- Read-only. No commits, no pushes, no edits, no stashes, no branch
-  switches, no `git fetch`. This runs when the user's read of the
-  situation is itself in question; changing the situation mid-assessment
-  is the one thing that cannot be undone by disagreeing with the report.
-- Never write the goal to a file. It is re-derived every run.
-- Cite only ticket IDs found in the commits, the branch name, or the
-  pull request body.
-- When the ticket and the pull request describe different things, report
-  both readings rather than silently picking one.
-- Separate what was read from what was inferred. "This commit does not
-  serve the criteria" is read; "this was probably a rabbit hole" is
-  inferred and gets marked.
-- No local absolute paths, no third-party personal details.
+Recommend one of the four correctives in the goal-derivation reference
+and say why. Do not assume the goal wins: when the excursion was the
+better instinct, update the ticket or pull request body to match.
 
 ## Output
 
-Open with a one-line hero — `✓ On goal: <goal> · <n> commits`, or
+Write it per `../../references/prose-rules.md`. Open with a one-line hero — `✓ On goal: <goal> · <n> commits`, or
 `⚠ Drift: <what wandered>`, or `⚠ No goal recoverable` — then exactly
 these sections:
 

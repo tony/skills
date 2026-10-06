@@ -1,6 +1,6 @@
 # Check, release, decide, export
 
-What happens between a finished report and the people who act on it. `<topic.py>` is the script path from the skill that sent you here; `<run_dir>` is the run that holds the report, usually the newest. These steps record what became of that run's own report, so they write into it even when it is dated before today; they never change its report, sources, or captures.
+What happens between a finished report and the people who act on it. `<run_dir>` is the run that holds the report, usually the newest. These steps record what became of that run's own report, so they write into it even when it is dated before today; they never change its report, sources, or captures.
 
 ## 1. Check, fresh
 
@@ -8,7 +8,7 @@ What happens between a finished report and the people who act on it. `<topic.py>
 $ python3 <topic.py> check --run <run_dir>
 ```
 
-`check` reruns every ship check in one call: each source against its capture and live URL, the report's Sources table against the manifest, `lint-report --strict`, and the leak scan. `ok: true` is the only evidence that a report is ready. A check from an earlier call, a passing lint alone, or a reply that "looks right" is not.
+`check` reruns every ship check in one call: each source against its capture and live URL, the report's Sources table against the manifest, `lint-report --strict`, and the leak scan. `ok: true` is the only evidence that a report is ready.
 
 When it fails, `next` lists the fixes in order. The usual loop: fix, `sources --write`, `claims --reviewed`, then `check` again. When `<run_dir>` is dated before today, do not fix its report in place: continue the topic per `continue.md` and release from today's run. Without network, `--offline` checks the captures only and says so in its output.
 
@@ -62,4 +62,4 @@ Open with a one-line hero (`✓ Released <hash> to <who>`, `✓ Bag <file>: <n> 
 2. `## Trail`: the release, decision, or bag written, with its hash.
 3. `## Next`: affected releases and decisions to revisit, or the fix `check` listed.
 
-End with an `AskUserQuestion` panel (for example: fix and check again, record the decision, export, stop). Skip it in plan mode; without an interactive host, print the options as a numbered list.
+Panel options: fix and check again, record the decision, export, stop.

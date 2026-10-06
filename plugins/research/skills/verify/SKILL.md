@@ -10,8 +10,6 @@ disable-model-invocation: true
 
 # /research:verify
 
-Check that a topic's references still say what the report cites them for, that no source it should rest on is missing, and that the report reads cleanly.
-
 Invoke /research:foray with `verify` followed by the user arguments, and follow it.
 
 User arguments: $ARGUMENTS

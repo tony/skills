@@ -37,7 +37,7 @@ codex plugin add action@skills
 | `/action:worktrees [<ticket>...]` | `action:worktrees [<ticket>...]` | Discover and group several tickets, then fan out one worktree per unit — parallel subagents where the host supports them, sequential otherwise |
 
 One ticket (or related set) → `worktree`. Independent tickets → `worktrees`.
-(Use the review plugin to land findings on the current branch; this plugin
+(Use a review-response skill to land findings on the current branch; this plugin
 creates new branches).
 
 Flag axes:
@@ -70,6 +70,7 @@ or PR names. Abandoned branches unwind cleanly.
 
 Both commands share runtime procedures:
 - `ticket-detection.md`: Tracker detection, branch naming, linking.
+- `implement-and-commit.md`: Per-unit implement, gate, and commit procedure.
 - `verification-gates.md`: Quality-gate and CI discovery.
 
 ## Verification Discovery

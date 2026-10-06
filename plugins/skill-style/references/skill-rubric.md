@@ -1,9 +1,7 @@
 # Skill writing rubric
 
 The rules a SKILL.md is held to, and the reasoning behind the ones
-whose reasoning is not obvious. Drawn from Anthropic's skill-authoring
-best practices and OpenAI's build-skills guidance, which agree on every
-point that matters here.
+whose reasoning is not obvious.
 
 ## Contents
 
@@ -18,7 +16,6 @@ point that matters here.
 - Terminology
 - Anti-patterns
 - Trigger testing
-- Pre-ship checklist
 
 ## The deletion test, worked
 
@@ -212,10 +209,9 @@ description competes in.
 
 ## Progressive disclosure
 
-Only the metadata of every installed skill is preloaded; OpenAI's
-runtime caps that shared listing at 2% of the context window, or 8,000
-characters where the window is unknown. The body loads when the skill
-is selected, and bundled files load only when something reads them.
+Only the metadata of every installed skill is preloaded, and hosts cap
+that shared listing. The body loads when the skill is selected, and
+bundled files load only when something reads them.
 
 That gives a budget shaped like a funnel:
 
@@ -332,17 +328,3 @@ written from imagined failures document problems nobody has.
 Test with every model tier the skill will run on. Opus needs less
 explanation than Haiku, and a body tuned to one is wrong for the
 other.
-
-## Pre-ship checklist
-
-- Description is third person, states what and when, and carries the
-  user's literal words.
-- Every body line survives the deletion test.
-- Body is under 500 lines; the rest is in reference files.
-- References are one level deep, and any over 100 lines opens with a
-  contents list.
-- Code fences are byte-identical to what was verified.
-- Sections are headed, and ordered work is numbered.
-- One term per concept.
-- No time-sensitive claims, no option menus, no backslash paths.
-- Three positive trigger prompts and one negative all land correctly.

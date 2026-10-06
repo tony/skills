@@ -1,6 +1,6 @@
 # Start or reopen a topic
 
-`<topic.py>` is the script path from the skill that sent you here; run it with `python3`. Every command prints JSON.
+Run `<topic.py>` with `python3`. Every command prints JSON.
 
 ## 1. Parse the request
 

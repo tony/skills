@@ -1,10 +1,16 @@
 # Study repositories
 
+## Contents
+
+- Cost one: full history nobody reads
+- Cost two: build artifacts
+- What to report
+
 A directory of upstream clones kept for reading — vendored source,
 reference checkouts, dependency study trees — is usually among the
-largest reclaimable areas on a developer machine, and among the safest.
-Nothing in it is authored locally; every byte is re-fetchable from a
-remote.
+largest reclaimable areas on a developer machine. Clones are
+re-fetchable from a remote, except any local work they hold; check for
+that before converting or deleting one.
 
 Two independent costs dominate, and they need separate treatment.
 
@@ -22,8 +28,8 @@ candidate even when a larger repository sits above it.
 Report, for each clone: total size, `.git` size, whether it is shallow,
 and the remote it came from.
 
-```
-git -C <repo> rev-parse --is-shallow-repository
+```console
+$ git -C <repo> rev-parse --is-shallow-repository
 ```
 
 A repository reporting `false` with a large `.git` is a conversion
@@ -44,27 +50,27 @@ purely as a source-reading reference.
 Converting in place is possible, but re-cloning is more predictable and
 costs only bandwidth:
 
-```
-git clone --filter=blob:none <remote> <destination>
+```console
+$ git clone --filter=blob:none <remote> <destination>
 ```
 
 Never convert a repository holding work that is not on a remote. Check
 first, on every candidate, without exception.
 
-```
-git -C <repo> status --porcelain --branch
+```console
+$ git -C <repo> status --porcelain --branch
 ```
 
 Uncommitted changes, stashes, unpushed commits, or a branch with no
 upstream all disqualify a repository from any destructive conversion.
 Report it and move on.
 
-```
-git -C <repo> stash list
+```console
+$ git -C <repo> stash list
 ```
 
-```
-git -C <repo> log --branches --not --remotes --oneline
+```console
+$ git -C <repo> log --branches --not --remotes --oneline
 ```
 
 ## Cost two: build artifacts
@@ -79,15 +85,15 @@ Aggregate artifact directories across the whole study root before
 proposing anything, so the total is visible as one number rather than
 scattered across dozens of clones. With GNU coreutils:
 
-```
-find <study-root> -maxdepth 3 -type d \( -name target -o -name node_modules -o -name build \) -prune -print0 | du -sch --files0-from=- | tail -1
+```console
+$ find <study-root> -maxdepth 3 -type d \( -name target -o -name node_modules -o -name build \) -prune -print0 | du -sch --files0-from=- | tail -1
 ```
 
 BSD/Darwin `du` has no `--files0-from`, so sum the per-directory sizes
 instead. This reports GiB:
 
-```
-find <study-root> -maxdepth 3 -type d \( -name target -o -name node_modules -o -name build \) -prune -print0 | xargs -0 du -sk | awk '{total += $1} END {printf "%.1f GiB\n", total / 1048576}'
+```console
+$ find <study-root> -maxdepth 3 -type d \( -name target -o -name node_modules -o -name build \) -prune -print0 | xargs -0 du -sk | awk '{total += $1} END {printf "%.1f GiB\n", total / 1048576}'
 ```
 
 Restrict the depth. An unbounded search descends into vendored
@@ -100,7 +106,7 @@ Call out three groups explicitly, largest first within each:
 - **Huge clones** — the largest by total size, with the `.git` share
   shown so the user can see where the weight sits.
 - **Unshallow clones** — those reporting `false` with a `.git`
-  directory above a threshold, ranked by `.git` size. These are the
+  directory above the survey's size floor (about one percent of the filesystem's capacity), ranked by `.git` size. These are the
   conversion candidates.
 - **Artifact directories** — build output, aggregated per language, as
   a single reclaimable figure.

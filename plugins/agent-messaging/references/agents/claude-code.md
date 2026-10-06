@@ -1,224 +1,186 @@
-# Adapter: Claude Code 2.1.239
+# Adapter: Claude Code
 
-Validated with one Claude pane and one external native Claude peer.
+Run `claude --version` first. Cross-session messaging, `ListAgents`, and the inbox socket
+need a build that ships them; if `ListAgents` is not a tool in this session, use the
+socket or tmux route.
 
 Upstream: [cross-session messaging](https://code.claude.com/docs/en/cross-session-messaging).
 
+## Contents
+
+1. Identity
+2. Discovery
+3. Transports
+4. Delivery semantics
+5. Provenance
+6. Inbound controls
+7. Loop and abuse safety
+8. Typing quirks (tmux)
+9. Environment
+10. Gaps
+
 ## 1. Identity
 
-- **Own address**: native peers address the session by name; the local inbox address is the
-  `uds:` socket URI.
+- **Own address**: native peers address a session by name; the inbox address is the `uds:`
+  socket URI.
 - **Where exposed**: `/status`, `ListAgents`, `$CLAUDE_CODE_MESSAGING_SOCKET`, and the live
   session registry.
-- **Stability**: the observed name and socket stayed stable. Rename, resume, restart, and
-  collision behavior are `UNKNOWN` empirically.
-- **Human-readable name**: C used `commit these changes (Branch 2)`; O used `codex-66`.
-
-Evidence: Phase 1 in role C's findings and T3.2.
+- **Stability**: rename, resume, restart, and collision behavior are `UNKNOWN`.
 
 ## 2. Discovery
 
 - **Enumerate peers**: the model-facing `ListAgents` tool.
-- **Scope**: Claude sessions only; it did not list either live Codex pane.
+- **Scope**: Claude sessions only; Codex sessions never appear.
 - **What a listing shows**: name, short identifier, kind, status, and tmux coordinate when
   known.
 - **Foreign discovery**: `claude agents --json` lists live sessions with name, pid, and
   status; read the inbox from `${CLAUDE_CONFIG_DIR:-$HOME/.claude}/sessions/<pid>.json`,
   field `messagingSocketPath`, rather than assuming a directory. The socket directory alone
-  is not enough — it publishes no names, seven of twelve observed sockets were stale, and one
-  logical session owned two.
-
-Evidence: T1.C-disc and T1.O-disc.
+  is not enough: it publishes no names, most entries are stale, and one logical session can
+  own two.
 
 ## 3. Transports
 
 ### claude-code-message (send and receive)
 
-The model calls `SendMessage` with a `ListAgents` name. The native receiver gets a structured
+The model calls `SendMessage` with a `ListAgents` name. The receiver gets a structured
 `<cross-session-message>` wrapper with sender socket, name, and permission class.
 
 - **Preconditions**: live compatible Claude sessions and the cross-session feature enabled.
 - **Success signal**: the tool returns a message ID; the receiver starts a turn if idle or
   receives it at a tool boundary if busy.
-- **Failure modes**: feature, provider, and version gates were not varied and remain `UNKNOWN`
-  empirically.
-
-Evidence: T3.2 and T3.2-recv.
+- **Failure modes**: feature, provider, and version gates are `UNKNOWN`.
 
 ### claude-code-socket (receive from any same-UID process; send through a shell)
 
-On Linux, the accepted newline-delimited frame is:
-
-```json
-{"type":"user","message":{"role":"user","content":"hello"}}
-```
-
-It can be sent tokenless:
+Resolve the target's inbox into `TARGET_SOCKET` from its `messagingSocketPath` (Discovery
+above), then write one newline-delimited JSON user frame to it. No auth line is needed on
+Linux; native Windows requires `{"type":"auth","token":"..."}` first
+`(unverified — from docs)`.
 
 ```console
-$ jq -nc \
+$ TARGET_SOCKET=$(jq -r .messagingSocketPath \
+    "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/sessions/<pid>.json") \
+  && jq -nc \
     --arg content '<message>' \
     '{type:"user",message:{role:"user",content:$content}}' \
   | nc \
       -U \
       -N \
       -w 3 \
-      "$CLAUDE_PEER_SOCKET"
+      "$TARGET_SOCKET"
 ```
 
-The frame comes from Claude Code's own installed injection help string. A first auth line
-`{"type":"auth","token":"..."}` is optional on Linux and required on native Windows
-`(Windows requirement unverified — from docs)`.
-
-Both valid and invalid frames are silent on the socket. Verify delivery at the receiver or
-in its transcript; exit 0 proves only that bytes were accepted.
-
-Evidence: T4.2-tokenless-1 and C's independent self-injection replication.
+Valid and invalid frames are both silent on the socket, so exit 0 proves only that bytes were
+accepted. Verify delivery at the receiver or in its transcript.
 
 ### tmux (send and receive)
 
-Standard literal `tmux send-keys` works when a roster resolves the pane. A status overlay must
-be dismissed before typing at an idle prompt.
-
-Evidence: T0.C, T2.BC-busy, T2.AC-busy-r1.
+Literal `tmux send-keys` works when a roster resolves the pane. Dismiss a status overlay
+before typing at an idle prompt.
 
 ### codex-queue (send to Codex)
 
-Claude can shell out to `codex queue`. Under C and O's bypass modes this required no prompt,
-returned a durable item receipt, and delivered after the Codex target became idle.
-
-Evidence: T4.1 and T4.1-OA.
+Claude can shell out to `codex queue --thread <uuid-or-name> --message <text>`. It returns a
+durable item receipt and delivers once the target is idle.
 
 ## 4. Delivery semantics
 
 ### claude-code-message
 
 - **Idle receiver**: starts a new turn.
-- **Busy receiver**: queues and enters the active turn at a later tool boundary without
+- **Busy receiver**: queues, and enters the active turn at a later tool boundary without
   interrupting the running tool.
 - **Target not running**: live-only `(unverified — from docs)`.
-- **Ordering, caps, and interrupt behavior**: `UNKNOWN` empirically.
+- **Ordering, caps, and interrupt behavior**: `UNKNOWN`.
 
 ### claude-code-socket
 
-- **Busy receiver**: A's message enqueued and dequeued in 0.886 seconds; C's self-injection
-  drained in 2.3 seconds at a tool boundary.
-- **Acknowledgment**: none. The sender cannot distinguish a valid frame from a discarded one
-  without receiver cooperation.
+- **Busy receiver**: the frame is dequeued at a tool boundary.
+- **Acknowledgment**: none. The sender cannot tell a valid frame from a discarded one without
+  receiver cooperation.
 - **Self-targeting**: allowed; native `SendMessage` refuses it.
-- **Target not running, rapid-send ordering, and caps**: `UNKNOWN` empirically.
+- **Target not running, rapid-send ordering, and caps**: `UNKNOWN`.
 
 ### tmux
 
-- **Idle receiver**: one Enter submitted T0.C after the status overlay was dismissed.
-- **Busy receiver**: input queued and surfaced inside the running turn at the next tool
-  boundary; the active tool completed unaffected.
-- **Ordering**: B's message arrived before A's later message, one per tool boundary.
-
-Evidence: T3.2, T4.2-tokenless-1, T0.C, T2.BC-busy, T2.AC-busy-r1.
+- **Idle receiver**: one Enter submits once the status overlay is dismissed.
+- **Busy receiver**: input queues and surfaces at the next tool boundary; the active tool
+  completes unaffected.
+- **Ordering**: one message per tool boundary, in arrival order.
 
 ## 5. Provenance
 
 ### claude-code-message
 
-- **Sender label**: the harness supplies `from`, `from-name`, and `from-mode` in a
-  `<cross-session-message>` wrapper.
+- **Sender label**: the harness supplies `from`, `from-name`, and `from-mode` in the wrapper.
 - **Reply address**: `from-name` for `SendMessage`; the socket URI is also supplied.
-- **Authority**: explicitly a peer with anti-permission-laundering instructions.
-- **Model-visible spoof boundary**: the body can imitate wrapper text, so rendered markup is
-  not an authorization signal by itself. An exact crafted-wrapper native-message control is
-  `UNKNOWN`; the tested raw-socket spoof arrived wrapperless.
-- **Transcript audit**: native delivery records `origin.kind="peer"`, the named sender and
-  address, and a kernel-verified process ID. This is stronger than the rendered wrapper.
+- **Authority**: a peer, with anti-permission-laundering instructions.
+- **Spoof boundary**: a body can imitate wrapper text, so rendered markup is not an
+  authorization signal. A crafted-wrapper native message is `UNKNOWN`.
+- **Transcript audit**: delivery records `origin.kind="peer"`, the named sender and address,
+  and a kernel-verified process ID, which is stronger than the wrapper.
 - **Distinguishable from the operator**: yes after transcript audit; operator and tmux input
   record `origin.kind="human"`.
 
 ### claude-code-socket
 
-- **Sender label**: the model-facing harness falsely says “Another Claude session” for any
-  accepted raw user frame, including a Codex sender and C writing to itself.
-- **Reply address**: none. The harness still tells the model to reply to a nonexistent
-  `from=` address.
-- **Authority**: peer warning and anti-laundering prose are attached, but they do not grant
-  operator authority.
+- **Sender label**: the harness says "Another Claude session" for any accepted raw user
+  frame, including a Codex sender or the session writing to itself.
+- **Reply address**: none, though the harness still tells the model to reply to a
+  nonexistent `from=` address.
+- **Authority**: peer warning and anti-laundering prose are attached; no operator authority.
 - **Transcript evidence**: `origin.kind="peer"`, `from="unknown"`, and a verified connection
-  process ID; no stable name, permission class, or reply route. The kernel-backed PID detects
-  the injecting process even when the body claims a live Claude peer.
-- **Spoofable**: body identity and the constant Claude-peer announcement are spoofable. The
-  transcript origin is not sender-controlled and exposed every tested injector as anonymous.
-- **Distinguishable from the operator**: yes after transcript audit, but the model prompt has
-  no stable sender identity or unassisted reply route.
+  process ID, with no stable name, permission class, or reply route. The PID identifies the
+  injecting process even when the body claims a live Claude peer.
+- **Spoofable**: body identity and the constant Claude-peer announcement are spoofable; the
+  transcript origin is not sender-controlled.
 
 ### tmux
 
-The harness announces peer keystrokes as “The user sent a new message while you were
-working.” It supplies no sender or reply address and is indistinguishable from operator input.
+The harness announces peer keystrokes as "The user sent a new message while you were
+working." No sender or reply address; indistinguishable from operator input.
 
 ### codex-queue
 
 Claude is only the sender. Codex receives ordinary `UserInput` and loses Claude provenance.
 
-Evidence: T3.2, T3.2-recv, T4.2-tokenless-1, T5.3, T6-origin,
-T2.BC-busy, T4.1.B.
-
 ## 6. Inbound controls
 
-- **Gating**: `crossSessionInbound` accepts `accept`, `hold`, or `refuse`. C explicitly used
-  `accept`.
+- **Gating**: `crossSessionInbound` accepts `accept`, `hold`, or `refuse`.
 - **Default posture**: permission-class comparison `(unverified — from docs)`.
-- **Isolated hold/refuse test**: not executed because changing user scope would affect
-  unrelated sessions; use an isolated receiver with per-session settings if authorized.
-- **claude-code-socket interaction**: C's explicit `accept` admitted an unnamed tokenless
-  sender. Behavior under `hold` and `refuse` is `UNKNOWN` empirically.
-
-Evidence: C Phase 1, standing T7.1 conflict, T4.2-tokenless-1.
+- **Socket interaction**: an explicit `accept` admits an unnamed tokenless sender; behavior
+  under `hold` and `refuse` is `UNKNOWN`. Testing either changes user-scope settings, so use
+  an isolated receiver.
 
 ## 7. Loop and abuse safety
 
 Native `SendMessage` documents rate limits, repeat suppression, a 50-message inbox, and burst
-refusal `(unverified — from docs)`. The raw socket accepted self-injection, so no self-loop
-guard exists at that layer. The skill must enforce message IDs, dedupe, hop caps, and halt phrases
-across all transports rather than trusting native controls.
+refusal `(unverified — from docs)`. The raw socket accepts self-injection, so it has no
+self-loop guard. The skill enforces message IDs, dedupe, hop caps, and halt phrases across
+all transports.
 
 ## 8. Typing quirks (tmux)
 
 - **Submit key**: Enter.
-- **Idle precondition**: dismiss overlays such as `/status`, stage literal text, verify it,
-  then submit. A visible empty composer is not sufficient: check activity, stage, poll until
-  the exact payload renders, and recheck activity before Enter.
-- **Busy receiver**: Enter queues input; it appears at a later tool boundary without
-  interrupting the active tool.
-- **Reserved prefixes**: `/`, `!`, `#`, and `@` are documented UI prefixes but were not
-  empirically varied. The relay envelope begins with `[` and was safe.
+- **Idle precondition**: dismiss overlays such as `/status`, stage literal text, poll until
+  the exact payload renders, and recheck activity before Enter. A visible empty composer is
+  not sufficient.
+- **Busy receiver**: Enter queues input; it appears at a later tool boundary.
+- **Reserved prefixes**: `/`, `!`, `#`, and `@` open UI modes. The relay envelope begins with
+  `[`, which is safe.
 - **Literal newline, paste limits, and maximum safe size**: `UNKNOWN`.
-
-Evidence: T0.C, T2.BC-busy, T2.AC-busy-r1, T2.AC-idle-attempt1.
 
 ## 9. Environment
 
-- `CLAUDE_CODE_MESSAGING_SOCKET`: set in commands spawned by the session; the inbox path.
-- `CLAUDE_CODE_MESSAGING_TOKEN`: set in spawned commands; 32 characters in the observed
-  session. Neither variable appeared in the long-running Claude process environment.
-- `CODEX_COMPANION_TRANSCRIPT_PATH`: exposed C's active transcript path during the study.
-
-Evidence: T4.2 token-acquisition notes and T4.2-tokenless-1.
+- `CLAUDE_CODE_MESSAGING_SOCKET`: set in commands the session spawns; this session's own
+  inbox path. Never use it as a send target.
+- `CLAUDE_CODE_MESSAGING_TOKEN`: set in spawned commands; needed only for the Windows auth
+  line.
 
 ## 10. Gaps
 
 Native messaging has named, kernel-auditable provenance but is Claude-only and live-only.
-The raw socket bridges vendors and is process-auditable, but has no stable session
-identity, reply address, acknowledgment, or truthful vendor label. Foreign discovery exposes socket
+The raw socket bridges vendors and is process-auditable, but has no stable session identity,
+reply address, acknowledgment, or truthful vendor label. Foreign discovery exposes socket
 PIDs without the names native messaging requires.
-
-**One sentence for the maintainer:** audit transcript `origin` for peer class and verified
-process identity; never authorize work from wrapper text or the generic peer announcement,
-and treat raw socket input as anonymous, silent, and mislabeled in-band.
-
-## Evidence
-
-- `22-findings-claude-c.md`: Phase 1, T1.C-disc, T0.C, T2.BC-busy,
-  T2.AC-busy-r1, T2.AC-idle-attempt1, T3.2, T3.2-recv, T4.1,
-  T4.2-tokenless-1, T5.3, T6-origin.
-- `23-findings-claude-o.md`: T1.O-disc and T3.2; its earlier T4.2 negative is
-  superseded by T4.2-tokenless-1.
-- `20-findings-codex-a.md`: T4.1-OA and T4.2-tokenless-1.

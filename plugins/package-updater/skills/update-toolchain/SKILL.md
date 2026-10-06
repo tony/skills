@@ -7,52 +7,31 @@ user-invocable: true
 disable-model-invocation: true
 ---
 
-
 # Update the toolchain
 
 Move the pins that select the tools everything else resolves through —
 one tool per commit, with every release in the span linked.
 
-Use `../updating-packages/SKILL.md` for the
-phase structure, and in particular
-`../../references/upstream-links.md`, which carries the
-per-tool link taxonomy this command depends on. Also read
-`../../references/commit-conventions.md`,
-`../../references/ecosystems.md`, and
-`../../references/repo-scope.md`.
+References, all under `../../references/`: `upstream-links.md` (the
+per-tool link taxonomy this command depends on), `commit-conventions.md`,
+`ecosystems.md` and `repo-scope.md`.
 
 For dependencies rather than tools, use `/package-updater:update` or
 `/package-updater:update-package`.
 
 User arguments: $ARGUMENTS
 
-## Context
-
-Repository:
-`!git remote get-url origin 2>/dev/null || echo "(not a git repository)"`
-
-Default branch:
-`!git symbolic-ref --short refs/remotes/origin/HEAD 2>/dev/null || echo "(unknown)"`
-
-Pin files on this branch:
-`!out=$(for f in .tool-versions .nvmrc .python-version mise.toml .mise.toml; do [ -f "$f" ] && { echo "--- $f"; cat "$f"; }; done 2>/dev/null); if [ -n "$out" ]; then echo "$out"; else echo "(no toolchain pin files)"; fi`
-
-Package manager and engines:
-`!out=$(grep -hE '"(packageManager|engines|node|npm|pnpm)"[[:space:]]*:' package.json 2>/dev/null); if [ -n "$out" ]; then echo "$out"; else echo "(none declared)"; fi`
-
-What the version manager reports as outdated:
-`!if ! command -v mise >/dev/null 2>&1; then echo "(mise not on PATH — resolve each tool against its own release feed)"; else out=$(mise outdated 2>&1); if [ -n "$out" ]; then echo "$out"; else echo "(mise reports nothing outdated)"; fi; fi`
-
-Installed versions, for comparison:
-`!out=$(for c in uv just node python go pnpm; do command -v "$c" >/dev/null 2>&1 && printf '%s: %s\n' "$c" "$($c --version 2>&1 | head -1)"; done 2>/dev/null); if [ -n "$out" ]; then echo "$out"; else echo "(none on PATH)"; fi`
-
 ## Procedure
 
 ### 1. Resolve targets
 
 If the user named a tool, work on that one. Otherwise take every tool in
-the pin files. For each, resolve the latest release from the vendor's
-own feed rather than memory, and confirm it exists before writing it.
+the pin files (`.tool-versions`, `.nvmrc`, `.python-version`,
+`mise.toml`) plus `packageManager` and `engines` in `package.json`. Run
+`mise outdated` when `mise` is on PATH; without it, resolve each tool
+against its own release feed. Resolve the latest release from the
+vendor's feed rather than memory, and confirm it exists before writing
+it.
 
 Prefer the pin granularity the repository already uses. A repository
 pinning `3.14` rather than `3.14.2` has chosen to track the latest patch
@@ -60,14 +39,8 @@ deliberately — do not "fix" it to an exact version.
 
 ### 2. Establish scope
 
-Default scope is the current repository. `--root`, `--repo` and
-`--owner` widen it as in `/package-updater:update`. Drop repositories
-that do not pin the tool and those already at the target.
-
-A widened scope goes through
-`../../references/repo-scope.md` first: worktrees and
-forks are out, and a repository whose ownership is unclear is a question
-for the user, not a guess.
+Set the scope per `../../references/repo-scope.md`, which owns the
+flags, the fork rule and the ask-first rule.
 
 A toolchain sweep is where pins most often disagree across a fleet.
 Record the current version per repository before changing anything; the
@@ -103,27 +76,15 @@ Each reverts on its own, and a reader bisecting a runtime regression
 needs them separated.
 
 Subject names the file and the tool. A routine bump's body is a link
-block and nothing else:
-
-```console
-git commit -F - <<'EOF'
-.tool-versions(just) just 1.55.1 -> 1.57.0
-
-- just
-  - https://github.com/casey/just/blob/1.57.0/CHANGELOG.md
-  - https://github.com/casey/just/releases/tag/1.56.0
-  - https://github.com/casey/just/releases/tag/1.57.0
-EOF
-```
+block and nothing else; `../../references/commit-conventions.md` has the
+shape. Write the message per `../../references/prose-rules.md`.
 
 A bump that crosses a major, is labeled breaking by its vendor, changes
 behavior this repository exercises, carries a security fix, or skips a
 newer release the cooldown gates takes a `why:` above the link block.
 Say what the span changes upstream — describing the intermediate
 releases, not only linking them — and what it reaches here, naming what
-the repository gains alongside what it dodges. See
-`../../references/commit-conventions.md` for the
-threshold and the shape.
+the repository gains alongside what it dodges.
 
 `packageManager` and `engines` live in `package.json` but are toolchain
 pins, so they land here and never with a dependency bump. An `engines`
@@ -142,14 +103,9 @@ branch before blaming the bump.
 
 ## Rules
 
-- One tool per commit, always, even from a single file edit.
-- Every release in the span is linked, not just the endpoint.
 - No version is written before it is confirmed to exist; no URL before
   it is confirmed to resolve.
 - Preserve the repository's existing pin granularity.
-- `packageManager` and `engines` are toolchain, never dependencies.
-- Dropping a supported runtime version is a separate decision and a
-  separate commit.
 - Report unrelated breakage; fix it only when the bump caused it.
 
 ## Output

@@ -2,6 +2,16 @@
 
 Used by `/situate:refocus`.
 
+## Contents
+
+- The goal is derived, never stored
+- Precedence
+- When sources disagree
+- Drift has two sides
+- Classify, do not just flag
+- Why it happened
+- Realigning
+
 ## The goal is derived, never stored
 
 Every invocation re-reads the goal from the project's own artifacts.
@@ -29,8 +39,8 @@ Confidence differs enormously between them.
    scope without editing the ticket first.
 2. **The linked ticket's acceptance criteria.** The body, not the title.
    A title names a topic; the criteria say what done means. Resolve
-   ticket IDs the way `situation-sweep.md` does — from commits, the
-   branch name, and the pull request body only.
+   ticket IDs from commits, the branch name, and the pull request body
+   only.
 3. **The pull request body.** What the branch claims to deliver, in the
    author's own words. Fall back to its title only if the body is empty
    or a template.
@@ -94,10 +104,8 @@ predicts whether it will recur:
 
 ## Realigning
 
-Read-only. Produce the assessment and the corrective options; execute
-nothing. Branch surgery, reverts, and scope edits are the user's call,
-and this command runs precisely when their judgment of the situation is
-the thing in question.
+Produce the assessment and the corrective options; execute nothing.
+Branch surgery, reverts, and scope edits are the user's call.
 
 Four correctives, and the last one is not a consolation prize:
 

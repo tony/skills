@@ -17,21 +17,7 @@ or nothing.
 The body follows `../../references/rendered-markdown.md`
 and every link in it follows
 `../../references/source-links.md`. Read both before
-drafting.
-
-The `ticket` plugin, when installed, owns the content contract these bodies
-follow — what past-tense provenance is worth carrying, and how to state what
-"done" means without hard-coding the implementation. Read it from
-`../../../ticket/references/contract.md`.
-
-An installed plugin caches under a version directory, so that sibling sits
-one level further out than the path suggests. Glob the version segment rather
-than hard-coding it, and run the glob through `sh` — zsh treats an unmatched
-glob as a fatal error and would abort before reaching the flat-layout
-fallback.
-
-No hit means the contract is unavailable. Continue with the rules below; the
-resolve is an enhancement, never a prerequisite.
+drafting. Write it per `../../references/prose-rules.md`.
 
 ## Core principle
 
@@ -185,12 +171,6 @@ Include only the ones you have content for; never invent another.
 9. `### References` — pinned links to code, related issues, upstream
    releases, and specs.
 
-Start at `###`. The title is a separate field, and `##` draws a
-full-width rule across the body.
-
-Match the detail to the finding. A one-line typo report does not get
-nine sections.
-
 ## Phase 7 — Sanitize, then preview
 
 Reread the whole body for local absolute paths, hostnames, emails,
@@ -204,15 +184,9 @@ lands in the user's checkout:
 BODY=$(mktemp "${TMPDIR:-/tmp}"/gh-issue-XXXXXX.md)
 ```
 
-Then render it the way GitHub will:
-
-```
-gh api --method POST /markdown -f mode=gfm -f context=OWNER/REPO -f text="$(cat "$BODY")"
-```
-
-Literal `**` or backticks in that output mean a `<details>` block lost
-its blank line after `</summary>`. A `<br>` inside a prose paragraph
-means the body is hard-wrapped. Fix and re-render.
+Then render it with the preview command in
+`../../references/rendered-markdown.md` (pass `"$(cat "$BODY")"` as the
+text), read the output, fix, and re-render.
 
 ## Phase 8 — Present, then file
 
@@ -250,7 +224,6 @@ comment, or start a branch for it.
 - Never file without showing the full title and body first.
 - Never invent a version, an error string, a line number, or a link.
   Unverified goes in as unverified, or comes out.
-- Never `@mention` anyone in a generated body. Mentions send mail.
 - Language-agnostic: discover how to build, run, and test from
   `AGENTS.md` / `CLAUDE.md` / `CONTRIBUTING.md`.
 
@@ -274,9 +247,6 @@ for every repository that uses YAML issue forms.
 
 **Filing a duplicate because only open issues were searched.** The
 default is `--state open`, capped at 30.
-
-**Pasting a full log because it was easier.** Fold it into
-`<details>`, and read it for secrets first.
 
 **Reporting a symptom with no version.** It ages into an issue nobody
 can close, because nobody can tell whether it still happens.

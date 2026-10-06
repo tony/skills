@@ -1,5 +1,7 @@
 # Trello
 
+Contents: Scope; Native hierarchy; Semantic roles; Orthogonal objects; References and autolinks; Reading and writing; Naming traps.
+
 ## Scope
 
 Enterprise (Enterprise plan only) > Workspace > Board > List > Card > Checklist >
@@ -55,8 +57,6 @@ no URL you can hand to someone. Promote it to a Card before treating it as work_
   Workspace evidence. Trello has comments, not reviews.
 
 ## Orthogonal objects
-
-None of these are parents of a Card, and none may be converted to `parent_of`:
 
 - **Due date and start date** — per-Card scheduling fields, not a timebox object. There
   is no Sprint, so `scheduled_in` has no native target to point at.
@@ -119,7 +119,7 @@ Emoji use `:shortcode:`. Wrap a URL in backticks to show it raw inside a checkli
 
 ## Reading and writing
 
-A local agent has two real backends. The
+The
 [REST API](https://developer.atlassian.com/cloud/trello/rest/) is at
 `https://api.trello.com/1/`, authenticated with an API key plus token. Create with
 `POST /cards` (requires `idList`), update with `PUT /cards/{id}`, comment with
@@ -135,7 +135,7 @@ is at `https://mcp.trello.com/v1`, OAuth 2.0 only (API tokens are not accepted f
 and covers boards, lists, cards, and checklists. It refuses destructive deletes: an
 assistant can archive a Card or List but cannot permanently delete one.
 
-No first-party Trello CLI is documented. With neither backend configured, draft the Card
+With neither backend configured, draft the Card
 title, description, and checklist as Trello-flavored Markdown and emit the approved text
 for the user to paste. That is a normal outcome, not a degraded one.
 

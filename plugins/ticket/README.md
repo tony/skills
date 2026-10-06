@@ -67,4 +67,3 @@ Trackers use different native nouns. The plugin maps objects to canonical roles 
 
 - **gh**: For GitHub.
 - Works locally for other providers or falls back to text emission.
-- Integrates with `pr` or `slop` plugins for mechanical checks, skipping gracefully if missing.

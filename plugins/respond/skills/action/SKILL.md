@@ -20,15 +20,8 @@ files and creates commits.
 ## Core thesis
 
 Screening already decided *what* is worth doing and why. This skill
-decides *how little* it takes to do it.
-
-That framing matters because the review loop runs on every branch,
-forever. Each round leaves behind guards, tests, and comments that were
-individually defensible, and their sum is how a readable codebase
-becomes an unreadable one without anyone ever writing anything bad. The
-discipline that prevents it is `../../references/bloat-discipline.md`,
-and it binds every fix here: why now, why this, and what does the next
-reader inherit.
+decides *how little* it takes to do it, bound by
+`../../references/bloat-discipline.md`.
 
 Three rules:
 
@@ -47,18 +40,19 @@ NO FIX WITHOUT A VERDICT
 
 This skill does not triage. Before any edit, resolve a ledger:
 
-- **A ledger exists for this branch, this `HEAD`, and this feedback** —
-  use it. Its verdicts are settled; do not re-argue them.
-- **No ledger, or a stale one** — `HEAD` moved, or feedback arrived
+- **A ledger exists whose key matches** — use it. Collect the feedback,
+  recompute the branch, `HEAD`, and digest as the rubric's ledger
+  section defines them, and compare them with the `## Ledger key` of the
+  `/respond:check` report earlier in this session. Its verdicts are
+  settled; do not re-argue them.
+- **No ledger, or a key mismatch** — `HEAD` moved, or feedback arrived
   that it never screened. Run `/respond:check` now with the same
   arguments and use its ledger. When the host cannot invoke it, follow
   `../../references/screening-rubric.md` end to end first, and say in
   the report that screening ran inline.
 
-Skipping screening because the findings "look obviously right" is the
-failure this gate exists for. Obvious-looking findings are exactly the
-ones that turn out to be pre-existing, already fixed, or a fix costing
-ten times the defect.
+Obvious-looking findings are exactly the ones that turn out to be
+pre-existing, already fixed, or a fix costing ten times the defect.
 
 ## `$ARGUMENTS` contract
 
@@ -144,9 +138,8 @@ Cursor / Codex / Gemini: `/plan` or `Shift+Tab`) and present:
    count of deferred and declined ones (not their detail — screening
    already reported that).
 2. Per finding: the planned minimal fix, its commit subject in the
-   project's format, and forward-vs-`fixup!` shape. Two findings share
-   a commit **only** when they edit the same lines, and the plan says
-   so explicitly.
+   project's format, and forward-vs-`fixup!` shape. Say so explicitly
+   when two findings share a commit.
 3. Anything the fix adds beyond the fix — a new test, a new comment, a
    new code path — named per finding, with why it is warranted. A fix
    that adds nothing says so; that is the good case.
@@ -163,6 +156,9 @@ record the plan in the report and proceed with the stated defaults.
 
 For each accepted finding, in plan order:
 
+One finding, one commit; two findings share a commit only when they
+edit the same lines.
+
 1. Apply the minimal fix.
 2. Run the fast local gates — `format`, `lint`, `typecheck`, and
    `test` scoped to the affected area; `build` only when the change
@@ -171,7 +167,8 @@ For each accepted finding, in plan order:
    re-run the scoped test once when a gate changed files.
 3. Green → commit. The message uses the project's format and describes
    the defect and the fix in the project's own terms — not the finding
-   id, not the reviewer, not the review. A `fixup!` commit keeps its
+   id, not the reviewer, not the review. Write it per
+   `../../references/prose-rules.md`. A `fixup!` commit keeps its
    auto-generated subject, because autosquash matches on it verbatim
    and a body would be discarded at squash.
 4. Red → revert that fix and follow `--on-fail`.
@@ -183,7 +180,7 @@ commits exist, then re-run the fast gates once.
 
 With `--reply`, take the drafted replies from the ledger for declined
 and deferred findings, show them in full, and post them on one
-confirmation — replying to the originating thread where the source was
+confirmation (per `../../references/prose-rules.md`) — replying to the originating thread where the source was
 a thread, otherwise as a single pull-request comment. Never post
 without that confirmation, and never resolve a thread on the reviewer's
 behalf: the reviewer decides whether the answer settled it.

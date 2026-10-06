@@ -7,7 +7,6 @@ user-invocable: true
 disable-model-invocation: true
 ---
 
-
 # Bump to the Next Version
 
 Discover the project's current version and versioning scheme, work out
@@ -16,10 +15,9 @@ what "next" means, get the user's explicit choice, then run the full
 
 Arguments: $ARGUMENTS
 
-First, read `../../references/release-conventions.md`.
-The safety contract in `../cut/SKILL.md` applies
-here unchanged: no push, no tag, no tag push without the explicit
-flags.
+First, read `../../references/release-conventions.md`. The safety
+contract in `../cut/SKILL.md` applies unchanged. This skill writes no
+prose of its own; `cut` writes the changelog and commit message.
 
 ---
 
@@ -43,25 +41,17 @@ different series), surface the discrepancy before proposing anything.
 
 ## Phase 2: Enumerate Candidates
 
-Build the candidate list from the project's scheme — concrete
-versions, not abstract bump names:
+Classify the scheme per the conventions reference and build the
+candidate list from it as concrete versions, not abstract bump names.
+With current `0.1.9a1` on a prerelease track: next prerelease `0.1.9a2`
+(the routine increment), graduate to final `0.1.9`, and segment
+promotion (`a` → `b` → `rc`) only if the tag history uses those
+segments. With current `0.1.9` on a stable track: patch `0.1.10`, minor
+`0.2.0`, major `1.0.0`, or a new prerelease series (`0.2.0a0`, or
+`0.2.0-next.0` on npm) in the project's own vocabulary.
 
-- **Prerelease track** (e.g. current `0.1.9a1`):
-  - Next prerelease: `0.1.9a2` — the routine increment
-  - Graduate to final: `0.1.9`
-  - Promote the segment (`a` → `b` → `rc`) — only if the project's
-    tag history uses those segments
-- **Stable track** (e.g. current `0.1.9`):
-  - Patch: `0.1.10`
-  - Minor: `0.2.0`
-  - Major: `1.0.0`
-  - Start a prerelease series: `0.2.0a0` (PEP 440) or the npm
-    equivalent (`0.2.0-next.0`) — matching the project's vocabulary
-- **npm prerelease track** (e.g. `0.1.0-next.11`): next prerelease
-  `0.1.0-next.12`, or graduate to `0.1.0`.
-
-Do not offer `post`/`dev` releases unless the user asks or the
-argument names one.
+Do not offer `post`/`dev` releases unless the user asks or the argument
+names one.
 
 ## Phase 3: Resolve the Version
 
@@ -91,11 +81,5 @@ Run the complete `/release:cut` procedure
 chosen version, forwarding any `--push` / `--tag` / `--push-tag`
 flags the user passed.
 
-The CHANGES step must leave the **next** unreleased header in
-`MAJOR.MINOR.x` form on stable-track projects. The typical precedent
-is the next minor series — after cutting `1.70.1` the fresh
-placeholder reads `## <project> 1.71.x (unreleased)` — but the file's
-own past release-to-placeholder transitions are the specification;
-mirror them. Prerelease-track projects instead name the full next
-prerelease (after `0.0.1a35`, the placeholder is
-`## <project> 0.0.1a36 (unreleased)`).
+The CHANGES step opens the next unreleased header as the conventions
+reference specifies.

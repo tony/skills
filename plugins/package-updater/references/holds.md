@@ -10,6 +10,15 @@ you add the hold, and release the hold when the condition is met. A hold
 with no condition is indistinguishable from neglect, and outlives the
 problem it was added for.
 
+## Contents
+
+- Where holds live
+- The reason cannot live in the file
+- Commit grammar
+- What earns a hold
+- Auditing holds
+- Cooldown is not a hold
+
 ## Where holds live
 
 npm-check-updates reads `.ncurc`, or `.ncurc.json`, `.ncurc.yaml`,
@@ -25,9 +34,8 @@ offered. Confirm a hold works rather than assuming the file was read.
 
 **Config resolves next to the package file, not at the repository
 root.** A workspace can therefore hold a package in one member and not
-another, and often does — a monorepo may reject `@babylonjs/inspector`
-in two packages that need a preview build while the rest of the tree
-tracks releases normally.
+another, for example two members that need a preview build while the
+rest of the tree tracks releases.
 
 So a root-only scan under-reports holds. Enumerate every config in the
 tree:
@@ -83,8 +91,8 @@ reason.
 
 ## What earns a hold
 
-Each of these has been a real one. The shape they share is a condition
-outside the repository that has not happened yet:
+Each shares one shape: a condition outside the repository that has not
+happened yet.
 
 - **Upstream bug** — the release is broken for a use this project makes.
   Released when the fixing version ships.
@@ -116,9 +124,8 @@ For each entry in every `reject` array, report:
   than intent.
 
 A fleet-wide hold is added and released across every repository that
-carries it. Both directions fan out, and both are easy to half-finish —
-one real hold-release pair had to be applied twice, days apart, because
-the first pass missed a file.
+carries it. Both directions fan out, and both are easy to half-finish:
+re-enumerate the configs after the pass.
 
 ## Cooldown is not a hold
 

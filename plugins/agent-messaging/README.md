@@ -9,8 +9,8 @@ Both sessions run on the same machine under the same user; every route is
 local, and the socket route trusts that boundary. Reaching a Claude session
 needs the `claude` CLI on PATH, and reaching a Codex thread needs it to
 share your `CODEX_HOME` — a thread under a different one is invisible, not
-merely unreachable. The `codex-queue` route needs Codex 0.149 or newer, the
-release that added `codex queue`; the trial ran on 0.149.0.
+merely unreachable. The `codex-queue` route needs a Codex build that ships
+`codex queue`; check with `codex queue --help`.
 
 ## Installation
 
@@ -67,40 +67,16 @@ skill — if the skill needs changing, the adapter boundary is wrong.
 `references/agents/_template.md` is the contract. `UNKNOWN` is a valid
 answer and is preferred over an inferred one.
 
-## Evidence
+## Verified
 
-Four sessions — two Codex, two Claude Code — messaging each other across
-four transports on one machine. Every claim in the skill traces to a
-numbered experiment in [`notes/`](notes/): the transport matrix in
-[`30-matrix.md`](notes/30-matrix.md), the full design spec in
-[`40-skill-design.md`](notes/40-skill-design.md), and each session's
-raw findings alongside them.
-
-These are a record, not instructions. They sit outside `references/` so
-the skill never loads them and no export check ever rewrites them.
-
-Three results worth knowing before using any of it:
-
-- Provenance comes from the transcript `origin` record, never from the
-  rendered wrapper or the "Another Claude session sent a message"
-  announcement, which fires even for a Codex process.
-  `origin.verifiedPeerPid` is kernel-supplied; the wrapper is not.
-- `tmux send-keys` into a busy Codex pane parks the payload unsubmitted.
-  `send-keys` exits 0 and the text is visible, so exit status is not
-  delivery.
-- Measured latency ran from 0.886s over the socket to 7m45s for a queued
-  message behind a busy receiver — bounded by the receiver's idle
-  transition, not by the transport.
-
-Untested areas are listed rather than inferred: cap failures, restart
-behavior, inbound `hold`/`refuse`, and name-collision stability.
+Two Codex and two Claude Code sessions messaged each other across all four transports on one
+machine. Provenance comes from the transcript `origin` record, never from the rendered
+wrapper; delivery is confirmed at the receiver, not from `send-keys` or socket exit status.
 
 ## Upstream
 
 - Claude Code — [cross-session messaging][ccm]
-- Codex — [repository][codex], [`rust-v0.149.0`][codex-149], the release
-  that introduced `codex queue`
+- Codex — [repository][codex]
 
 [ccm]: https://code.claude.com/docs/en/cross-session-messaging
 [codex]: https://github.com/openai/codex
-[codex-149]: https://github.com/openai/codex/releases/tag/rust-v0.149.0

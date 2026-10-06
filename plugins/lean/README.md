@@ -50,12 +50,6 @@ maintainer in three years, would an elite library write it this tersely, will it
 stay true without hand-syncing — and deletes or rewrites the failures in place.
 Defaults to the files the branch changed. Prints a diff, never commits.
 
-## Related Plugins
-
-- **`lean`**: For real-time writing guidance or quick, commit-free tidying of working trees.
-- **`/slop:scan`**: For repo-wide, commit-based reviews on clean trees.
-- **`/pr:deslop`**: For fixing commits about to ship (via autosquash).
-
 ## Prerequisites
 
 - None. Reads `AGENTS.md` / `CLAUDE.md` at runtime to match repo voice.

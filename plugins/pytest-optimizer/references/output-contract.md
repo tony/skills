@@ -27,7 +27,7 @@ feeling like one pipeline and makes the JSON memory legible at a glance.
 - `## Slowest tests` — top `call` rows with root-cause notes.
 - `## Slowest fixtures` — top `setup`/`teardown` rows; note shared-scope
   attribution.
-- `## Hypotheses` — candidate table: id, heuristic, goal(s), evidence, prior
+- `## Hypotheses` — candidate table: id, heuristic, evidence, prior
   risk/effort.
 
 **`01-benchmark`**
@@ -52,13 +52,3 @@ feeling like one pipeline and makes the JSON memory legible at a glance.
 - `## Applied` — per item: commit SHA, measured verify result.
 - `## Skipped` — per item: revert reason (failed green-verify, conflict).
 - `## Result` — post-suite wall-time vs `baseline.json`, total recovered.
-
-## Next-step panel
-
-After the body (outside plan mode), offer the natural continuations, e.g.:
-
-- `00-scan` → "Benchmark the hypotheses now", "Narrow scope", "Stop".
-- `01-benchmark` → "Build the plan", "Re-benchmark a subset", "Stop".
-- `02-plan` → "Execute the plan", "Cap the number of commits", "Edit the plan".
-- `03-execute` → "Re-scan for a second pass", "Scaffold the cache/timing plugin",
-  "Stop".

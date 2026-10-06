@@ -10,8 +10,6 @@ disable-model-invocation: true
 
 # /research:assess
 
-Answer a decision question against criteria fixed before the evidence: rate each criterion from captured sources, then reach the verdict those ratings support.
-
 Invoke /research:foray with `assess` followed by the user arguments, and follow it.
 
 User arguments: $ARGUMENTS

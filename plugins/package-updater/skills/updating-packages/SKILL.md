@@ -9,22 +9,21 @@ Find what is actually out of date, research each move against the
 vendor's own release notes, and land it as commits that separate the
 toolchain from the dependencies from their fallout.
 
-Six references carry the parts that must not drift between this skill
-and the plugin's commands:
+References:
 
-- `../../references/repo-scope.md` — deciding which
-  repositories are yours to commit to, and when to stop and ask.
-- `../../references/ecosystems.md` — how to detect each
-  ecosystem, its discovery and apply commands, and the supply-chain
-  cooldown that can hide a release from the resolver.
-- `../../references/commit-conventions.md` — the four
-  commit tracks, subject grammar, body anatomy, and the empty-body rule.
-- `../../references/upstream-links.md` — which URLs each
-  tool's bump cites, and how to verify them.
-- `../../references/follow-ups.md` — which bumps need a
-  second commit, and how to declare a knowingly-red intermediate.
-- `../../references/holds.md` — deliberately staying
-  behind on a package, and releasing the hold when its condition is met.
+- `../../references/repo-scope.md` — scope flags, which repositories
+  are yours to commit to, and when to stop and ask.
+- `../../references/ecosystems.md` — per-ecosystem detection, discovery
+  and apply commands, and the supply-chain cooldown, including the
+  exemption protocol.
+- `../../references/commit-conventions.md` — commit tracks, subject
+  grammar, body anatomy, and the empty-body rule.
+- `../../references/upstream-links.md` — which URLs each tool's bump
+  cites, and how to verify them.
+- `../../references/follow-ups.md` — which bumps need a second commit,
+  and how to declare a knowingly-red intermediate.
+- `../../references/holds.md` — staying behind on a package on purpose,
+  and releasing the hold.
 
 ## Never run cargo-outdated
 
@@ -34,8 +33,7 @@ starting the process, so there is no safe probe: do not run it to check
 whether the problem still reproduces, and do not offer it as an option.
 
 `cargo update --dry-run` reports the same thing safely. This holds until
-someone explicitly lifts the restriction — see the Rust section of the
-ecosystems reference.
+the user explicitly lifts the restriction.
 
 ## Core principle
 
@@ -46,16 +44,9 @@ years later when someone needs exactly that.
 
 ## Scope
 
-Repositories you maintain. Follow
-`../../references/repo-scope.md` before any sweep that
-walks a directory: skip worktrees and duplicate clones, ask the forge
-for `isFork` and `viewerPermission`, and fall back to the remote owner
-plus trunk authorship only when it cannot answer.
-
-**When ownership is unclear, stop and ask the user.** Do not infer it
-from the account name and proceed. A fork you own is still someone
-else's project, and a commit landing in a colleague's history under your
-name is not recoverable.
+Repositories the user maintains. Follow `../../references/repo-scope.md`
+before any sweep that walks a directory; it owns the fork, ownership and
+ask-first rules.
 
 Three dependency classes belong to sibling plugins. Report them as
 findings with the command that handles them, and do not do the work:
@@ -159,11 +150,12 @@ before writing anything.
 
 ## Phase 4 — Land, in order
 
-Follow the commit-conventions reference for subject and body. Write
-multi-line messages through a heredoc or a file, never as a multi-line
-`-m` argument.
+Follow the commit-conventions reference for subject and body, and write
+each message per `../../references/prose-rules.md`. Write multi-line
+messages through a heredoc or a file, never as a multi-line `-m`
+argument.
 
-The order within a repository:
+The four tracks land in this order within a repository:
 
 1. **Toolchain and runtime** — `.tool-versions`, `.nvmrc`,
    `.python-version`. One tool per commit, even when one edit moves
@@ -173,8 +165,9 @@ The order within a repository:
 3. **Named package bumps** — one per package, or per release train when
    the body can say why they are coupled.
 4. **Bulk lockfile refresh** — empty body.
-5. **Follow-ups** — config schema, snapshots, migrations, in that order
-   after the bump each belongs to.
+
+A follow-up (config schema, snapshots, migrations) lands immediately
+after the bump it belongs to, as its own commit.
 
 A hold added or released is its own commit too, naming the condition
 that started or ended it. Releasing a hold comes before the bump it
@@ -198,10 +191,8 @@ for the bumps whose consequences reach past the repository: a first-party
 sibling package a downstream project consumes, a linter or type-checker
 floor that changes what CI accepts, or a supported-runtime constraint.
 
-Where the project's branch naming is not already documented, follow what
-its own history shows — dependency branches are commonly named for the
-package and version they carry (`libtmux-v0.60.0`), sometimes behind a
-`deps/` prefix. Read the existing branch names before inventing a scheme.
+Follow the project's documented branch naming; otherwise read its
+existing branch names before inventing a scheme.
 
 A sibling bump PR usually carries a second commit: the changelog entry
 for the bump, following that repository's own changelog conventions.
@@ -239,54 +230,20 @@ that says so.
 ## Phase 6 — Report
 
 Say what moved, what was deliberately held, and what belongs to a
-sibling plugin. Two findings explain most drift and are worth surfacing
+sibling plugin, per `../../references/prose-rules.md`. Two findings explain most drift and are worth surfacing
 every run: pins that disagree with each other across a workspace, and
 packages held back with no recorded reason.
 
 ## Common mistakes
 
-**Bundling the toolchain with the dependencies it resolves.** No
-independent revert, and a runtime regression bisects onto a commit that
-also moved forty packages.
-
-**Writing an inventory of package names into a bulk refresh body.** The
-lockfile diff already says it, and the noise buries the commits that
-carry real reasoning.
-
-**Leaving the intersection in the session report.** The chat scrolls
-away; `git log` does not. A body that links three releases and describes
-none of them sends the next reader back to the release notes to redo
-work that was already done once.
-
-**An impact paragraph built only from negatives.** A list of everything
-that does not apply proves the bump was safe and never says what it was
-for. Name the behavior that changed underneath the repository too.
-
-**Reporting a tree as current when it is only gated.** The cooldown
-hides fresh releases from the resolver; a discovery pass that does not
-check for one draws the wrong conclusion.
-
 **Trusting one discovery tool to see every pin.** `ncu` reads
 `package.json` and nothing else, so catalog entries, overrides and
-`.ncurc` holds are invisible to it. A clean report is not the same as a
-current tree.
-
-**Passing a multi-line message to `git commit -m`.** Shell quoting has
-collapsed bodies into subject lines, producing commits whose subject
-runs several hundred characters with the link block inlined.
-
-**A generic body containing a repository-specific claim.** False for
-every repository the generalization does not fit, permanently, in their
-history.
+`.ncurc` holds are invisible to it. A clean report is not a current
+tree.
 
 **Regenerating a snapshot without reading why it moved.** That records a
 regression as the new expected value.
 
-**`blob/main/CHANGELOG.md` in a link block.** It drifts to describe a
-release the commit never took.
-
-**An AI signature or generated-by footer.** These have shipped into
-permanent history before and need a rewrite to remove.
-
-**A cooldown exemption that outlives its reason.** Narrow it, annotate
-it, commit it alone, and revert it when the block lapses.
+**A cooldown exemption that outlives its reason.** Follow the exemption
+protocol in the ecosystems reference and revert it when the block
+lapses.

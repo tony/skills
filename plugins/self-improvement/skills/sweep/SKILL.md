@@ -9,333 +9,226 @@ user-invocable: true
 
 # `/self-improvement:sweep`
 
-The corpus of your own prompts records what you actually did, not what
-the skills were designed to do. Where those two disagree, the prompts
-are right.
+Your prompt history records what you did, not what the skills were
+designed to do. Where the two disagree, the prompts are right. This
+skill reports where the catalog loses to them: instructions retyped
+around a skill, follow-ups appended because a skill stopped early, and
+procedures run by hand because no skill exists.
 
-This skill reads that record and reports where the catalog is losing
-to it: instructions retyped around a skill that should have been in
-it, follow-ups appended because the skill stopped a step early, and
-procedures run entirely by hand because no skill exists for them.
+It changes nothing: no edits, no commits, no pushes. Its output is a
+ledger of findings with their evidence. `/self-improvement:apply` acts
+on it.
 
-## This skill changes nothing
+## Two shapes carry the signal
 
-No edits, no commits, no pushes. Its whole output is a ledger: every
-finding written down with the evidence that produced it, and nothing
-acted on. Acting on it is `/self-improvement:apply`'s job. That is also
-why this one is safe to route to on the model's initiative and the
-apply half is not: reaching for a sweep costs a report.
+**Typed around an invocation**: the prompt names a skill and adds
+something. The addition is the skill's gap. The remedy is inside that
+skill.
 
-## Core thesis
+**Typed instead of an invocation**: a procedure restated near verbatim,
+session after session, with no skill named. The remedy is a new skill.
 
-Two shapes carry almost all the signal, and they point opposite ways.
-
-**Typed around an invocation** — the prompt names a skill and then
-adds something. That addition is the skill's gap, stated by the person
-who hit it. The remedy is inside the skill that was already invoked.
-
-**Typed instead of an invocation** — a procedure restated near
-verbatim, session after session, with no skill named anywhere. The
-remedy is a skill that does not exist yet.
-
-A pattern that is neither is usually not a finding.
-
-A worked example of the whole pass — the prompts that were mined,
-the verdicts, and the edits they became — is
-`../../references/worked-example-spike.md`. It was run by hand
-before this skill existed.
+A pattern that is neither is usually not a finding. A worked example of
+the whole pass is `../../references/worked-example-spike.md`.
 
 ## The evidence bar
 
-A finding needs repetition, spread, **and currency**: several
-occurrences, across more than one project or ecosystem, in the era of
-the catalog you are about to change. One project's friction is that
-project's quirk. One dead era's friction is history. Proposing a
-catalog change from either is how a catalog gets bloated.
+A finding needs repetition, spread, and currency: several occurrences,
+across more than one project or ecosystem, in the era of the catalog
+you are about to change. One project's friction is that project's
+quirk; one dead era's friction is history.
 
-Currency and repetition pull against each other, and that tension is
-what stops the window from being drawn wherever the numbers look best.
-A skill young enough to have accumulated a handful of invocations
-cannot clear repetition however the window is drawn — two of three is
-not a ratio.
+Every window is anchored to a date the catalog supplies, never to one
+chosen because it flatters a number:
 
-The window is not a free parameter. Every window is anchored to a date
-the catalog supplies — a skill's birth date, or the era boundary Phase
-0 fixes for the whole sweep — never to a date chosen because it makes a
-number look better.
+- A pattern typed around an existing skill is windowed on that skill's
+  birth date. That separates a discoverability gap from a rule people
+  read and ignored.
+- A pattern typed with no skill named is windowed on the era boundary
+  Phase 0 fixes. The question is whether the typing is still happening.
+- The Usage ranking uses the era boundary, so retired skills do not
+  outvote live ones.
+- The supersession check uses the successor's birth date.
 
-Which anchor follows from what is being measured. A pattern typed
-around an existing skill is windowed on that skill's birth date, which
-separates a discoverability gap from a rule people read and ignored. A
-pattern typed with no skill named has no such date, so it is windowed
-on the era boundary: the question there is whether the typing is still
-happening, not whether it predates something. The Usage ranking uses
-the era boundary too, which is what stops retired skills outvoting live
-ones. The supersession check uses the successor's birth date, because
-that is the day the behavior moved.
+A skill too young to have a handful of invocations cannot clear
+repetition however the window is drawn. Report the window and its
+anchor beside every ratio.
 
-Report the window beside every ratio, and the anchor it hangs on. A
-window with no anchor is gerrymandered, and a finding that needs one is
-not a finding.
+Report ratios, not counts. The same "instructions appended to
+`changelog`" evidence means "make this a checked gate" at half of all
+invocations and "offer an opt-out default" at a fifth.
 
-Report **ratios, not counts.** Every useful finding here is a
-denominator away from its opposite: the same "instructions appended to
-`changelog`" evidence says *make this a checked gate* at half of all
-invocations and *offer it as an opt-out default* at a fifth. A bare
-numerator cannot tell those apart, and a ledger full of bare
-numerators leaves the reader unable to sort majority behavior from a
-5% tail.
-
-Getting the denominator right is the hard part, and its traps have
-measured consequences. Read `../../references/detecting-invocations.md`
-before counting anything: it covers the two invocation channels and
-why either alone is wrong, why renames split a skill's history and why
-supersessions split it the other way, how to tell a truncated query
-from a real absence, and what one exhaustive query costs.
+Read `../../references/detecting-invocations.md` before counting: it
+covers the two invocation channels, renames, supersessions, truncated
+queries, and query cost.
 
 ## What counts as a signal
 
-Around an invocation, sorted by how the tail behaves:
+Around an invocation:
 
-- **Paste** — the same preamble reappears after the skill name:
-  reference directories, tool preferences, a quality bar, a
-  constraint. Changes *how* the skill works. Becomes a default, a
-  resolved input, or a reference example.
-- **Continuation** — the next prompt asks for a step the skill stopped
-  short of. Changes *what comes after*. Becomes a terminal step with
-  an opt-out, or a named handoff.
-- **Override** — the argument re-scopes the target: a set where the
+- **Paste**: the same preamble reappears after the skill name
+  (directories, tool preferences, a quality bar, a constraint). Becomes
+  a default, a resolved input, or a reference example.
+- **Continuation**: the next prompt asks for a step the skill stopped
+  short of. Becomes a terminal step with an opt-out, or a named
+  handoff.
+- **Override**: the argument re-scopes the target (a set where the
   skill assumed one, a different target type, a state it appeared to
-  refuse. Changes *what it runs on*. Becomes an argument, or
-  detect-and-echo.
+  refuse). Becomes an argument, or detect-and-echo.
 
 Without an invocation:
 
-- **Unnamed procedure** — a multi-step instruction restated with only
-  a slot or two varying. Only this category may propose a new skill,
-  and the bar is high because a skill costs a marketplace entry, a
-  README row, and a description that must survive the collision check.
-  Someone asking for "the usual" or "same as last time" is trying to
-  name something that has no name; that is stronger evidence than raw
-  repetition.
-- **Host asymmetry** — the same skill measured per host, then
-  differenced. The finding is the gap, not either count. A host whose
-  channel comes back near-empty means the extraction does not fit that
-  host until proven otherwise, never that the host has no users.
-- **Correction** — a prompt shortly after an invocation saying the
-  agent did the wrong thing. Highest severity, weakest attribution:
-  binding a correction to a skill is same-session adjacency, a
-  heuristic. State the anchoring method and its window in the ledger
-  rather than presenting adjacency as attribution, and confirm against
-  the transcript before proposing anything expensive.
+- **Unnamed procedure**: a multi-step instruction restated with a slot
+  or two varying. Only this category may propose a new skill, because a
+  skill costs a marketplace entry, a README row, and a description that
+  must survive the collision check. "The usual" or "same as last time"
+  is stronger evidence than raw repetition.
+- **Host asymmetry**: the same skill measured per host, then
+  differenced. The finding is the gap. A near-empty host channel means
+  the extraction does not fit that host.
+- **Correction**: a prompt shortly after an invocation saying the agent
+  did the wrong thing. Highest severity, weakest attribution: binding a
+  correction to a skill is same-session adjacency. State the anchoring
+  method and window, and confirm against the transcript before
+  proposing anything expensive.
 
 ## A superseded skill is not a gap
 
-Check this before the verdicts, because it disqualifies the pattern
-rather than judging it. A predecessor keeps its invocations forever and
-stops earning new ones the day a successor ships, so its ratio stays
-high while its present-tense usage is zero.
+Check this before the verdicts. A predecessor keeps its invocations
+forever and stops earning new ones when a successor ships, so its ratio
+stays high while its current usage is zero.
 
-A full record with an empty recent half is the symptom, not the
-diagnosis. Name the successor before calling it superseded, and confirm
-that skill carries the mirror image: empty until its birth date, and
-holding the traffic after it. Only then is the pattern a historical
-record rather than a gap — say so and move on, because the remedy
-already shipped and a handoff proposed here would point a skill nobody
-invokes at the one that replaced it.
+A full record with an empty recent half is the symptom. Name the
+successor and confirm it shows the mirror image: empty until its birth
+date, then holding the traffic. Only then is the pattern history; say
+so and move on.
 
-A predecessor that went quiet with **no** sibling picking up its work
-is abandoned, not superseded. That is a live finding with a different
-remedy, and it is the one this check exists to avoid burying.
+A predecessor that went quiet with no sibling picking up its work is
+abandoned, not superseded. That is a live finding.
 
 ## The three verdicts
 
-For every pattern that survives that check, ask what the skill already
-says. There are three answers, and the middle one is the trap:
+For every surviving pattern, ask what the skill already says:
 
-1. **Absent** — the skill never covered it. Propose it.
-2. **Present and binding** — the skill covers it and the pastes stop
-   after it started saying so. Solved; the residue is noise.
-3. **Present but not binding** — the skill says it and people keep
-   retyping it anyway.
+1. **Absent**: the skill never covered it. Propose it.
+2. **Present and binding**: the pastes stopped after the skill started
+   saying so. Solved.
+3. **Present but not binding**: the skill says it and people keep
+   retyping it. The most-pasted constraints are usually already
+   written in the skill they concern, so reading alone never reaches
+   this verdict.
 
-The third verdict is unreachable by reading alone, and skipping it
-throws away the best findings in a typical sweep: the most-pasted
-constraints are usually already written in the skill they concern. Get
-to it by dating the rule and splitting the evidence around it.
+Reach the third by dating the rule and splitting the evidence around
+it.
 
 ```console
 git log --follow --format='%h %ad' --date=short -S '<phrase from the rule>' -- <path to SKILL.md> | tail -1
 ```
 
-`--follow` because a rename otherwise dates every phrase in the file
-to the rename, which is the same history-splitting this skill builds a
-rename map to avoid. `tail -1` because `-S` lists newest first, and
-`-1` would return the rule's latest edit rather than its introduction.
-`--reverse` is not the fix: `-n` applies before the reversal, and
-`--follow --reverse` returns nothing.
+`--follow` keeps a rename from dating every phrase to the rename. `tail
+-1` returns the rule's introduction, because `-S` lists newest first.
 
-Compare the paste rate before that date against after. A rate that did
-not drop is proof that prose guidance failed, and the remedy is a
-checked output gate or a resolved-and-echoed value — never another
-sentence saying the same thing. A rate that dropped means it worked.
+A paste rate that did not drop after that date proves prose guidance
+failed. The remedy is a checked output gate or a resolved-and-echoed
+value, never another sentence. A rate that dropped means it worked.
 
-The same split separates two findings that look identical: a behavior
-the skill performs but never announces is a **trust gap**, fixed by
-echoing it; a behavior it never performs is a **capability gap**.
+The same split separates a **trust gap** (the skill performs a behavior
+but never announces it; echo it) from a **capability gap** (it never
+performs it).
 
 ## `$ARGUMENTS` contract
 
 Non-flag text narrows the sweep to named plugins or skills. Empty
 sweeps the whole catalog of the repository you are in; outside a skill
-repository, ask what to sweep rather than guessing.
+repository, ask what to sweep.
 
 ## Phase 0: Inventory, rename map, and birth dates
 
-1. List the catalog: every `plugins/*/skills/*/SKILL.md`, its name,
-   and whether it sets `disable-model-invocation`.
-2. Build the rename map before counting. A renamed skill keeps its old
-   invocations under its old name, and summing across every name a
-   skill has had is the difference between a real count and an 82%
-   undercount.
+1. List the catalog: every `plugins/*/skills/*/SKILL.md`, its name, and
+   whether it sets `disable-model-invocation`.
+2. Build the rename map before counting, so a renamed skill's old
+   invocations are summed in.
 
 ```console
 git log --diff-filter=R --name-status --format='%h %s' -- 'plugins/*/skills/*'
 ```
 
    Read commit subjects too, for renames the detector scored below its
-   threshold and for skills replaced by a different set rather than
-   renamed. The successor inherits none of the history either way.
+   threshold and for skills replaced by a different set.
 
-3. Date every skill. A rename map says which names are one skill; it
-   cannot say when a behavior first became reachable, and months a
-   skill did not exist for are nobody's denominator.
+3. Date every skill, one path per run. `--follow` requires a single
+   file and silently returns the oldest commit touching any skill when
+   given a glob.
 
 ```console
 git log --follow --format='%ad' --date=short -- <path to SKILL.md> | sort | head -1
 ```
 
-   One path per run, never a glob. `--follow` requires a single file
-   and goes silently inert against a pattern, returning the oldest
-   commit that touched any skill — a plausible date, no error, and the
-   same wrong answer for every skill in the catalog.
+   Birth dates cluster on the days the catalog changed shape. A cluster
+   holding at least a tenth of the catalog is a rebuild; smaller ones
+   are batches of arrivals. Take the most recent rebuild as the era
+   boundary, and report it with the runners-up so the next sweep can
+   disagree.
 
-   Birth dates cluster on the days the catalog changed shape, and there
-   will be several such days rather than one. A cluster counts as a
-   rebuild when it holds at least a tenth of the catalog; anything
-   smaller is a batch of arrivals. Take the most recent rebuild — an
-   earlier boundary buries the era you are about to change under one
-   you cannot. State the chosen date and the runners-up in the report,
-   because the choice decides the current-era ranking and the next
-   sweep has to be able to disagree with it.
-
-   Then check the era is long enough to rank against at all. If its
-   leading skill holds too few invocations to form a ratio, the
-   current-era ranking is noise: say so and rank all-time only. Printing
-   a noise ranking beside a real one gives them equal weight, and the
-   reader has no way to tell which is which.
+   If the era's leading skill holds too few invocations to form a
+   ratio, rank all-time only and say so.
 
 ## Phase 1: Count every skill
 
 Extract both channels per `../../references/detecting-invocations.md`,
 union them, and sum across renames. Keep the timestamp on every
-occurrence that has one — the era split below cannot be recovered once
-a query has collapsed the corpus to name and count. Confirm the sweep
-completed before applying any threshold: a bounded run and a genuine
-zero look identical.
+occurrence that has one, because the era split cannot be recovered
+after a query collapses to name and count. Confirm the sweep completed
+before applying any threshold.
 
-Then split the counts on the boundary from Phase 0 and carry both
-halves forward. A corpus that accumulated across a catalog rebuild is
-mostly a record of skills that no longer carry the behavior, and the
-older half can outweigh the newer one by enough to decide the ranking
-on its own.
+Split the counts on the era boundary and carry both halves. Only the
+slash channel carries a usable date, so the era ranking comes from one
+channel and must say so: a skill the model reaches for on its own is
+undercounted there.
 
-Only the slash channel can be split — the tool channel records no
-usable date. The era ranking is therefore built from one channel and
-must say so, because a skill the model reaches for on its own is
-undercounted there by construction.
+State what the count assumes about the corpus. An archived or reclaimed
+transcript store comes back clean, complete, and wrong.
 
-State what the count assumes about the corpus: an archived or reclaimed
-transcript store comes back clean, complete, and wrong, so the
-completeness gate is necessary and not sufficient.
-
-Budget deliberately. One exhaustive query reads the whole corpus, so
-fan out per skill and the sweep costs hours. Run one broad query, save
-the raw JSON, and re-slice it locally for every question after that.
+Run one broad exhaustive query, save the raw JSON, and re-slice it
+locally.
 
 ## Phase 2: Cluster
 
-Group the text that surrounds each invocation and cluster it by shared
-phrasing. Sort each cluster into paste, continuation, or override by
-what its tail does. Cluster the no-invocation corpus separately, where
-near-verbatim repetition — not frequency — is the signal.
+Group the text around each invocation by shared phrasing and sort each
+cluster into paste, continuation, or override by what its tail does.
+Cluster the no-invocation corpus separately, where near-verbatim
+repetition, not frequency, is the signal.
 
 ## Phase 3: Verdicts
 
-Drop the superseded clusters first, then run the three verdicts against
-each one that clears the evidence bar, and record the ratio, the
-spread, the window that denominator covers, and the mechanic that
-produced the verdict.
-
-Window each finding on the anchor the evidence bar assigns it: the
-covering skill's birth date where there is one, the era boundary where
-there is not. Skills arrive on different days, and measuring a
-hand-typed procedure against the day its skill shipped is the
-difference between *nobody knows this exists* and *this shipped and the
-typing stopped*.
-
-Where a finding could be answered two plausible ways, do not judge it
-here — record both shapes and let the proposal say so.
+Drop superseded clusters, then run the three verdicts on each cluster
+that clears the evidence bar. Record the ratio, spread, window, and the
+mechanic that produced the verdict. Where a finding has two plausible
+answers, record both shapes and let the proposal say so.
 
 ## Output contract
 
-1. Hero block (1–3 lines): `N findings across M skills` plus how much
-   of the corpus the search actually reached.
-2. `## Usage` — the catalog ranked twice by real invocation count,
-   all-time and current-era, because a skill can lead the first and be
-   absent from the second. Channels unioned and renames summed. Name
-   the never-invoked ones as exactly that rather than as dead, each
-   with its age: zero invocations in three weeks and zero in six months
-   are different facts, and only the second is about the skill.
-3. `## Findings` — one entry per pattern: category, the ratio and its
-   denominator, the window that denominator covers and the date it is
-   anchored to, spread, the verdict with the evidence that produced it,
-   and the change class it implies. Quote one representative prompt,
-   trimmed.
-4. `## Not proposed` — clusters that failed the evidence bar, and
-   which leg they failed. This is the section that keeps the catalog
-   small, so it is never omitted.
-5. `## Corpus` — what was searched, what completed, and what the count
-   assumes about it. State the era boundary here with the birth-date
-   clusters it was chosen over: it decides the current-era ranking and
-   every finding's window, and a ledger that hides it cannot be
-   audited or reproduced. Close with the ledger key: the catalog's `HEAD`
-   and a digest of the finding set. `/self-improvement:apply`
-   recomputes that key, and a mismatch means the catalog moved since
-   the sweep and the ledger describes a picture that no longer holds.
+Write the report per `../../references/prose-rules.md`.
+
+1. Hero block (1-3 lines): `N findings across M skills` plus how much
+   of the corpus the search reached.
+2. `## Usage`: the catalog ranked twice by invocation count, all-time
+   and current-era. Channels unioned, renames summed. Name never-invoked
+   skills as that, each with its age.
+3. `## Findings`: one entry per pattern: category, ratio and
+   denominator, window and anchor date, spread, verdict with its
+   evidence, and the change class it implies. Quote one representative
+   prompt, trimmed.
+4. `## Not proposed`: clusters that failed the evidence bar, and which
+   leg they failed. Never omitted.
+5. `## Corpus`: what was searched, what completed, what the count
+   assumes, and the era boundary with the clusters it was chosen over.
+   Close with the ledger key: the catalog's `HEAD` and a digest of the
+   finding set. `/self-improvement:apply` recomputes it, and a mismatch
+   means the catalog moved since the sweep.
 6. End with an `AskUserQuestion` panel: hand the ledger to
-   `/self-improvement:apply`, narrow the sweep and rerun, or stop. In
-   a non-interactive run, record the options and stop.
+   `/self-improvement:apply`, narrow the sweep and rerun, or stop. In a
+   non-interactive run, record the options and stop.
 
-Evidence is quoted here and stripped from anything that lands. Prompts
-carry absolute paths, hostnames, and client names; the ledger may show
-them, a `SKILL.md`, commit, pull request, or issue may not.
-
-## What this is not
-
-- **Not a description grader.** `scripts/skill_evals.py route` ranks a
-  prompt against the live catalog and `check` enforces the collision
-  ceiling and description limits. Mined prompts are the ground truth
-  those were missing — feed them in and report disagreements rather
-  than inventing a second opinion about routing.
-- **Not a prose auditor.** A finding with no usage fact behind it is
-  `/lean:tighten`'s or `/slop:scan`'s work; say so and route there.
-- **Not a bakeoff.** When a finding has two plausible shapes, that is
-  `/spike:bakeoff`.
-- **Not a diff against the last sweep.** Re-derive from the corpus and
-  report standalone. A sweep that reports itself as a delta against
-  its own previous run is the failure `/double-check:double-check`
-  exists to prevent.
-- **Not a read of one project's history.** Reading a single project's
-  history to explain the branch in front of you is `/situate:situate`,
-  which reconciles against the repository and wins there.
+The ledger may quote prompts with absolute paths, hostnames, and client
+names. A `SKILL.md`, commit, pull request, or issue may not.

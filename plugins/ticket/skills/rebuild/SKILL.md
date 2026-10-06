@@ -105,22 +105,14 @@ Absence is a finding. Report it with the rest.
 Write the new body from the audit, not by editing the old text. Take the
 section list from `altitude.md` for the role the item should be.
 
-Then verify the future tense specifically. Every surviving invariant passes
-the test: *if violated, is the work pointless, or is a neighbour broken?*
+Then check the future tense against `contract.md`.
 
-Sanitize for local paths, hostnames, emails, tokens, and internal URLs. Then
-run the mechanical checks, resolving the registry at the first hit:
+Sanitize for local paths, hostnames, emails, tokens, and internal URLs.
 
-1. `../../../pr/references/signatures.yml`
-2. `../../../slop/references/signatures.yml`
+Write it per `../../references/prose-rules.md`.
 
-An installed plugin caches under a version directory, so a sibling sits one
-level further out than those paths suggest. Glob the version segment rather
-than hard-coding it, and run the glob through `sh` — zsh treats an unmatched
-glob as a fatal error and would abort before reaching the flat-layout
-fallback.
-
-No hit means one line saying so, then continue on judgment.
+Save the new body to a scratch file created like the original, so Phase 7
+passes it from a file.
 
 Render the new body the way the provider will.
 
@@ -157,29 +149,10 @@ remove it.
 ## Rules
 
 - One item per run. No bulk passes.
-- Never update without showing the full diff and the bucket breakdown.
+- Never update without showing the bucket breakdown and the full rebuilt body.
 - Never delete content that belongs in the relocate bucket. If the user
   declines the document, keep the content in place and say it is staying.
 - Never rewrite comments, only the body. Comments are other people's words.
 - Never close, reassign, relabel, or reparent the item. Rewriting a body is
   the whole mandate.
-- Never `@mention` anyone in a rebuilt body, including mentions that were in
-  the original. Re-saving a body can re-send mail.
 - Never invent a reference syntax or a link that was not verifiable.
-
-## Common mistakes
-
-**Compressing instead of separating.** A 40,000-character research issue does
-not become a good issue by getting shorter. It becomes a document plus a
-short issue that links to it.
-
-**Deleting the retraction.** A note saying which circulating numbers are
-wrong looks like clutter and is the most expensive thing in the body.
-
-**Treating every checklist item as an invariant.** Most are intent. Keeping
-them all as invariants is the failure being fixed, restated in new
-vocabulary.
-
-**Rewriting at the altitude it was filed at.** If the audit says it is the
-wrong kind of object, rebuilding it as a better version of the wrong kind of
-object solves nothing.

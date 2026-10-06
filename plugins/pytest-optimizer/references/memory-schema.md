@@ -1,36 +1,44 @@
 # Memory schema
 
-The four phases communicate only through durable JSON files. This is what makes
-the pipeline **idempotent** (re-running a completed phase is a no-op while inputs
-are unchanged) and **resumable** (a crash mid-execute picks up at the next item).
+The four phases communicate only through durable JSON files. That makes the
+pipeline idempotent (re-running a completed phase is a no-op while inputs are
+unchanged) and resumable (a crash mid-execute picks up at the next item). JSON
+is diffable and language-agnostic.
 
-JSON is chosen over pickle on purpose: it is diffable, language-agnostic, and safe
-to inspect in a PR.
+## Contents
+
+- Location resolution
+- Idempotency token
+- Baseline-diff rule
+- Files and shapes
 
 ## Location resolution
 
-Resolve the memory directory **once** and record it in `state.json` so all phases
+Resolve the memory directory once and record it in `state.json` so all phases
 agree.
 
-1. **Preferred — project-owned, gitignored.** `.pytest-optimizer/` at the repo
-   root. Append `.pytest-optimizer/` to `.gitignore` idempotently (check first;
-   never duplicate the line). This keeps the durable artifacts next to the code
-   they describe and lets the run resume on the same checkout across sessions.
-2. **Fallback — per-user cache.** When the tree is read-only, or the user declines
-   any in-tree file, use:
-   - `$XDG_CACHE_HOME/pytest-optimizer/<repo-id>/` (Linux/macOS; default
-     `~/.cache/...` when `XDG_CACHE_HOME` is unset), or
-   - `%LOCALAPPDATA%\pytest-optimizer\<repo-id>\` (Windows).
-   - `<repo-id>` is a short hash of the repo's absolute path + git remote, so two
-     checkouts of the same repo do not collide and two different repos do not
-     share state.
-3. **Override.** `--memory-dir=<path>` forces a location (useful in CI).
+1. **Preferred: in-tree, untracked.** `.pytest-optimizer/` at the repo root.
+   Keep it out of `git status` by appending the line to the repo's local
+   exclude file, not `.gitignore`, so the working tree stays clean and no
+   tracked file changes. Add the line only if absent:
 
-The fallback needs no `.gitignore` edit because it lives outside the tree.
+   ```bash
+   git rev-parse --git-path info/exclude
+   ```
+
+   Append `.pytest-optimizer/` to the file that prints.
+2. **Fallback: per-user cache**, when the tree is read-only or the user
+   declines any in-tree directory:
+   - `$XDG_CACHE_HOME/pytest-optimizer/<repo-id>/` on Linux and macOS (default
+     `~/.cache/...` when unset), or
+   - `%LOCALAPPDATA%\pytest-optimizer\<repo-id>\` on Windows.
+   - `<repo-id>` is a short hash of the repo's absolute path plus git remote.
+3. **Override.** `--memory-dir=<path>` forces a location, for example in CI.
+
+Helpers generated from `templates/` are untracked files too. Append their paths
+to the same exclude file unless the user chooses to commit them.
 
 ## Idempotency token
-
-Each phase is keyed by:
 
 ```
 token = hash(git HEAD
@@ -39,52 +47,39 @@ token = hash(git HEAD
              + environment fingerprint)
 ```
 
-A phase is a **no-op** on re-run when all three hold:
+A phase is a no-op on re-run when `state.json` marks it `completed`, the token
+is unchanged, and its output file exists. `--force` overrides all three.
 
-- `state.json` marks the phase `completed`, **and**
-- the token is unchanged, **and**
-- the phase's output file exists.
+The environment fingerprint (Python version, OS, CPU model) is included because
+timings are machine-specific. `git HEAD` is included so the commits
+`03-execute` makes change the token, and the next `00-scan` re-baselines.
 
-`--force` overrides all three. The environment fingerprint (Python version, OS,
-CPU model) is included because the noise band and absolute timings are
-machine-specific; moving machines re-baselines automatically. **`git HEAD` is
-included so the commits `03-execute` produces change the token** — the next
-`00-scan` re-measures a fresh baseline on its own, which is what lets the loop
-continue for a second pass instead of short-circuiting as already-completed.
+## Baseline-diff rule
 
-## Baseline-diff strategy
-
-A candidate counts as a real speedup only when its measured median delta
-(`baseline_median − candidate_median`, the seconds saved) exceeds the **half-width
-of the noise band** (`k · MAD`) recorded in `baseline.json`:
+The noise band is `k * MAD`, measured per project in `00-scan` from N serial,
+cache-disabled runs. A candidate is a real speedup only when its median saving
+exceeds the band:
 
 ```
-real_speedup  <=>  median_delta > k * MAD     (default k = 3)
+real_speedup  <=>  baseline_median - candidate_median > k * MAD    (default k = 3)
 ```
 
-Equivalently, in absolute terms: `candidate_median < baseline_median − k · MAD`.
-The `median ± k·MAD` band describes total wall-time jitter; the threshold on the
-*improvement* is that band's half-width, `k · MAD` — not the absolute median.
+Never quote the band as a fixed number.
 
-This is the single rule that prevents the loop from committing jitter. The band is
-measured per project in `00-scan` (N serial, cache-disabled runs), never quoted as
-a fixed number.
+## Files and shapes
 
-## Files
+Paths are relative to the memory directory. Every skill writes exactly these
+fields.
 
-All paths are relative to the resolved memory directory.
-
-| File | Written by | Purpose |
-|------|-----------|---------|
-| `state.json` | all phases | Phase cursor + idempotency tokens + resolved memory path |
-| `baseline.json` | `00-scan` | Env fingerprint, versions, capability gates, per-phase timings, noise band |
-| `capabilities.json` | `00-scan` | Resolved version-matrix probes → available features + fallbacks |
-| `hypotheses.json` | `00-scan` | Candidate speedups tagged with heuristic id + goals + evidence |
-| `benchmarks.json` | `01-benchmark` | Per-hypothesis measured delta vs noise + safety-gate outcomes |
-| `plan.json` | `02-plan` | Ranked commit plan: score breakdown, files, draft message, verify |
-| `execution-log.json` | `03-execute` | Durable per-item checkpoint: applied/verified/committed or skipped |
-
-The canonical JSON Schema for these lives in `templates/state.schema.json`.
+- `state.json` (all phases): phase cursor, tokens, memory path.
+- `baseline.json` (`00-scan`): environment, noise band, per-phase timings.
+- `capabilities.json` (`00-scan`): resolved version-matrix probes.
+- `hypotheses.json` (`00-scan`): candidate speedups with heuristic id and
+  evidence.
+- `benchmarks.json` (`01-benchmark`): measured delta and gate outcomes per
+  hypothesis.
+- `plan.json` (`02-plan`): ranked commit plan.
+- `execution-log.json` (`03-execute`): per-item checkpoint.
 
 ### `state.json`
 
@@ -96,6 +91,7 @@ The canonical JSON Schema for these lives in `templates/state.schema.json`.
   "collection_hash": "string",
   "env_token": "string",
   "completed": { "scan": true, "benchmark": false, "plan": false, "execute": false },
+  "plan_hash": null,
   "last_applied_index": -1
 }
 ```
@@ -108,6 +104,7 @@ The canonical JSON Schema for these lives in `templates/state.schema.json`.
   "python": "3.13.x",
   "pytest_version": "9.1.1",
   "plugins": { "pytest-xdist": "3.x", "pytest-randomly": "3.x" },
+  "test_command": "<project test command>",
   "capabilities": { "durations_min": true, "stash": true },
   "runs": [ { "wall_seconds": 12.4 }, { "wall_seconds": 12.6 } ],
   "noise": { "median": 12.5, "mad": 0.15, "floor": 0.05, "k": 3 },
@@ -117,19 +114,16 @@ The canonical JSON Schema for these lives in `templates/state.schema.json`.
 
 ### `hypotheses.json`
 
-Each `id` is **derived from content** — `<heuristic>-<sorted target files>-<short
-evidence digest>` — not a sequential counter. So an unchanged candidate keeps the
-same id across re-scans (and `01-benchmark` can correctly skip it), while a
-genuinely new candidate gets a new id. Benchmarks are scoped to the baseline
-token: a re-baseline after `03-execute` re-opens all candidates for fresh
-measurement.
+Each `id` derives from content, `<heuristic>-<sorted target files>-<short
+evidence digest>`, not a counter. An unchanged candidate keeps its id across
+re-scans, so `01-benchmark` skips it; a new candidate gets a new id. A
+re-baseline after `03-execute` re-opens all candidates.
 
 ```json
 [
   {
     "id": "H10-conftest-make_config",
     "heuristic": "H10",
-    "addresses": [5, 6],
     "evidence": "make_config SETUP runs 40x at function scope, body ~0.3s",
     "est_risk": "medium",
     "est_effort": "small",
@@ -144,13 +138,15 @@ measurement.
 [
   {
     "id": "H10-conftest-make_config",
+    "diff_summary": "scope=\"function\" -> scope=\"session\" on make_config",
     "runs": 5,
     "median_delta": 2.7,
     "clears_noise": true,
     "gates": { "order_indep": true, "collection_det": true, "green": true },
     "confidence": 0.9,
     "observed_risk": "low",
-    "verdict": "validated"
+    "verdict": "validated",
+    "reason": null
   }
 ]
 ```
@@ -186,10 +182,3 @@ measurement.
   }
 ]
 ```
-
-## gitignore handling
-
-- Append `.pytest-optimizer/` to `.gitignore` only if not already present.
-- The opt-in project-owned pytest plugin/cache scaffold (`templates/`) is also
-  gitignored by default; the user may choose to commit it instead.
-- When the XDG/LOCALAPPDATA fallback is used, no `.gitignore` edit happens.

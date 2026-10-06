@@ -52,12 +52,6 @@ Both components enforce `references/verification-contract.md`:
 - **Exception:** Explicit corrections are stated once if you acted on a
   prior claim.
 
-## Relationship to `lean`
-
-While `lean` keeps drafts free of journey-narration in artifacts,
-`double-check` applies this discipline to conversation turns. Explicit
-comparison requests are out of scope.
-
 ## Prerequisites
 
 - None

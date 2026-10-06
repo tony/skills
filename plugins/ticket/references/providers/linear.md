@@ -1,5 +1,7 @@
 # Linear
 
+Contents: Scope; Native hierarchy; Semantic roles; Orthogonal objects; References and autolinks; Reading and writing; Naming traps.
+
 ## Scope
 
 Workspace (scope_container) > Team (scope_container) > optional Sub-team
@@ -55,8 +57,6 @@ metric or key-result object.
 - release_group — absent. Convention: a label, or a Project per release.
 
 ## Orthogonal objects
-
-None of these is a parent, and none belongs in the containment chain.
 
 - Cycle — a Team's repeating planning period; Issues are scheduled_in one.
 - Project Milestone — a stage inside one Project. Record it as checkpoint_of
@@ -117,8 +117,6 @@ commit refs as full git-host URLs.
 
 ## Reading and writing
 
-A local agent has a real backend here; drafting for paste is the fallback.
-
 - Official remote MCP server at `https://mcp.linear.app/mcp` over Streamable
   HTTP, read-only variant at `https://mcp.linear.app/mcp/readonly`. Auth is
   OAuth 2.1 with dynamic client registration, or a bearer API key; tools find,
@@ -129,8 +127,7 @@ A local agent has a real backend here; drafting for paste is the fallback.
   shorthand `ENG-123` as well as a UUID, and property changes within three
   minutes of creation fold into creation rather than the activity log, so
   create-then-correct stays clean.
-- Official TypeScript SDK, `@linear/sdk`. No first-party CLI is documented;
-  community CLIs exist, are unofficial, and may not be installed.
+- Official TypeScript SDK, `@linear/sdk`.
 
 ## Naming traps
 
@@ -139,9 +136,7 @@ Never say, in Linear-native output:
 - "Epic" — Linear has none. Say Project, or Initiative if strategic.
 - "Team" or "Sub-team" as a delivery level — both are ownership and workflow.
 - `#123` — `#` opens a heading, and Linear has no `#N`. Write `ENG-123`.
-- "Milestone" unqualified — say Project Milestone. GitHub's is repo-level;
-  GitLab's is a release group over a Group's issues, epics and merge requests,
-  and the GitLab timebox is an Iteration. Linear's lives inside one Project.
+- "Milestone" unqualified — say Project Milestone.
 - "Sprint" — the timebox is a Cycle, and it is not tied to a release.
 - "Release", "Fix Version", "Version" — no such object exists.
 - "Board" as an object — it is a display mode of a View.

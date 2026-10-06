@@ -2,12 +2,22 @@
 
 The mechanics of the recommit motion: resolve the base, collapse the
 branch into the index, then carve the index up one logical change at a
-time. Verified against git 2.43.
+time.
 
 The whole motion happens in the index. The working tree stays pinned
 at the branch's final content from start to finish, so it never
 matches any intermediate commit — which is why intermediate commits
 are tested in a separate worktree, not this one.
+
+## Contents
+
+- Resolve the base first, once, to a SHA
+- Refuse before collapsing
+- Collapse
+- Commit whole files
+- Split one file across several commits
+- Preserve authorship
+- Prove the recommit changed nothing
 
 ## Resolve the base first, once, to a SHA
 

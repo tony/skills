@@ -15,19 +15,15 @@ and the change class per finding; this skill turns each one into the
 smallest edit that removes the gap, behind the gates that catch a bad
 one.
 
-Invoked by name only: it edits the `SKILL.md` files that route the
-whole catalog, and a bad edit there degrades skills that were working.
-
 ## The rule that makes this safe
 
 ```
 NO EDIT WITHOUT A LEDGER ENTRY
 ```
 
-Every edit traces to a finding with a ratio, a spread, a window, and a verdict.
-An improvement noticed while working here is not in scope — it has no
-usage evidence, which is exactly what separates this skill from
-rewriting prose because it could read better.
+Every edit traces to a finding with a ratio, a spread, a window, and a
+verdict. An improvement noticed while working here is out of scope: it
+has no usage evidence.
 
 Recompute the ledger key the sweep recorded — the catalog's `HEAD` and
 the finding-set digest. A mismatch means the catalog moved since the
@@ -56,9 +52,8 @@ Cursor / Codex / Gemini: `/plan` or `Shift+Tab`) and present, per
 finding: the id, the smallest edit that removes the gap, the files it
 touches, and the gate it must clear. Then the commit sequence.
 
-Say plainly which findings you are **not** applying and why. A sweep
-proposes more than a catalog should absorb at once, and the restraint
-is the point.
+Say which findings you are **not** applying and why. A sweep proposes
+more than a catalog should absorb at once.
 
 Wait for approval, then exit plan mode.
 
@@ -75,66 +70,50 @@ reviewer's instinct:
   gate, a resolved-and-echoed value, or an argument.
 
 Prefer the smallest shape that works: a default over an argument, an
-argument over a new skill. A new skill is the last resort and needs
-its marketplace entry, its README row, and a description that survives
-the collision check.
+argument over a new skill. A new skill is the last resort and needs its
+marketplace entry, README row, and a description that survives the
+collision check.
 
-Strip evidence before it lands. The ledger may quote absolute paths,
-hostnames, and client names; a `SKILL.md`, a commit message, a pull
-request body, and an issue may not.
+Strip evidence before it lands: the ledger may quote absolute paths,
+hostnames, and client names; a `SKILL.md`, commit, pull request body, or
+issue may not.
 
 ## Phase 3: Gate each edit
 
-Any edit that touches a `description` is gated on the catalog's own
-routing checks before it is committed — the collision ceiling and
-description limits are enforced there, and a description that reads
-better while colliding with a sibling makes both skills worse.
+Gate any edit that touches a `description` on the catalog's routing
+checks (collision ceiling, description limits) before committing; a
+description that reads better while colliding with a sibling makes both
+worse. When the catalog ships a router or eval command, feed a redacted
+mined prompt through it to confirm the ranking moved as the finding
+predicted.
 
-```console
-uv run scripts/skill_evals.py check
-```
-
-Feed the mined prompts back through the router to confirm the edit
-moved the ranking the way the finding predicted.
-
-```console
-uv run scripts/skill_evals.py route "<a redacted prompt from the finding>"
-```
-
-Then the project's own gates as its conventions define them, plus
+Then run the project's own gates as its conventions define them, plus
 whatever regenerates derived manifests. A red gate stops the run at
-that finding; report and hand back rather than pressing on.
+that finding; report and hand back.
 
 ## Phase 4: Commit
 
-One finding, one commit, in the project's commit format, describing
-the defect and the fix in the project's own terms. It does not cite
-the finding id or the sweep — a future reader wants to know what was
-wrong, not who noticed. The ledger holds that mapping.
-
-When the `slop` plugin is installed, `/slop:scan` already defines the
-one-finding-one-commit loop and its gate discipline; follow it rather
-than inventing a second version. Without it, the rule is the whole of
-it: one finding per commit, each behind its own green gate.
+One finding, one commit, each behind its own green gate, in the
+project's commit format. Describe the defect and the fix in the
+project's own terms and do not cite the finding id or the sweep; the
+ledger holds that mapping. Write the message per
+`../../references/prose-rules.md`.
 
 ## Phase 5: Verify what you wrote
 
-Skill prose is written in one pass and reviewed by reading, so it
-carries contradictions that gates cannot see: a phase that promises
-what another phase forbids, a flag documented as absolute that a panel
-overrides, a handoff to a skill that cannot accept the input.
+Gates cannot see contradictions in skill prose: a phase that promises
+what another forbids, a flag documented as absolute that a panel
+overrides, a handoff to a skill that cannot accept the input. Re-read
+the edits against the skills they landed in, as an independent
+adversarial pass when the host supports sub-agents.
 
-Before handing back, re-read the edits against the skills they landed
-in and look specifically for those. When the host supports sub-agents,
-run this as an independent adversarial pass rather than re-reading
-your own work.
-
-Findings from this pass are fixed before handing back, not left for a
-later review. While the branch is unpushed, amend the commit that
-introduced the defect so the history stays one-finding-one-commit;
-once it is pushed, the fix lands as its own commit.
+Fix what it finds before handing back. While the branch is unpushed,
+amend the commit that introduced the defect; once pushed, the fix lands
+as its own commit.
 
 ## Output contract
+
+Write the report per `../../references/prose-rules.md`.
 
 1. Hero block (1–3 lines): `N applied, M skipped` plus the branch.
 2. `## Applied` — per finding: the edit, the gates it cleared, and its

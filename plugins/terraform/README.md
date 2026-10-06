@@ -48,40 +48,17 @@ before writing.
 The `bumping-terraform` skill executes without a slash command when the
 request is conversational (e.g., "the providers here are ancient").
 
-## Why this isn't just editing a version string
-
-- **Multiple root modules:** A repo often has multiple root modules, each
-  needing its own `init` and `.terraform.lock.hcl`. The plugin identifies them
-  by signals (backend/cloud blocks, committed lock files) rather than relying
-  on directory conventions.
-- **Combined constraints:** Terraform combines constraints from root and child
-  modules. Updating partially leads to conflicting versions or initialization
-  failures. All declarations must move together.
-- **Platform narrowing:** Selecting a new version replaces multi-platform
-  coverage with a single platform in the lock file. The plugin preserves
-  platform hashes per provider to avoid silent coverage drops.
-- **Operator preservation:** Existing operators (e.g., `~>`, `>=`) are
-  intentional policies, not drift. The plugin preserves them.
-- **CLI pinned externally:** The CLI version is pinned across various
-  non-Terraform files (`.terraform-version`, `mise.toml`, CI steps). The
-  plugin ensures consistency across all pin sites.
-- **Ignored `.terraform/modules/`:** Naive searches edit cached module copies
-  that get deleted on the next `init`. The plugin avoids these cached
-  directories.
-- **OpenTofu `.tofu` files:** OpenTofu prioritizes `.tofu` over `.tf`. The
-  plugin respects this precedence.
-
 ## Components
 
 | Path | Purpose |
 |------|---------|
-| `commands/bump-provider.md` | Move one provider across every module that declares it |
-| `commands/bump-terraform.md` | Move the CLI version across configuration and non-configuration pin sites |
-| `commands/refresh-lock.md` | Re-resolve within existing constraints, every root module |
+| `skills/bump-provider/SKILL.md` | Move one provider across every module that declares it |
+| `skills/bump-terraform/SKILL.md` | Move the CLI version across configuration and non-configuration pin sites |
+| `skills/refresh-lock/SKILL.md` | Re-resolve within existing constraints, every root module |
 | `skills/bumping-terraform/SKILL.md` | The shared phase structure, model-invocable without a slash command |
-| `references/layout-discovery.md` | Classifying root and child modules by signal, the `.terraform/` cache trap, `.tofu` shadowing, Terragrunt and stacks, and what to ask about |
-| `references/pin-sites.md` | Every file a provider or CLI version is pinned in, how constraints combine, operator preservation, and registry lookups |
-| `references/lock-and-init.md` | Per-root-module `init`, `-backend=false`, the platform-narrowing trap, blocked resolvers, and verification gates |
+| `references/layout-discovery.md` | Root and child module classification, the `.terraform/` cache trap, `.tofu` shadowing, Terragrunt and stacks |
+| `references/pin-sites.md` | Every file a provider or CLI version is pinned in, operator preservation, registry lookups |
+| `references/lock-and-init.md` | Per-root-module `init`, the platform-narrowing trap, blocked resolvers, verification gates |
 
 ## Prerequisites
 

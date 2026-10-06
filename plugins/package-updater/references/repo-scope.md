@@ -1,18 +1,35 @@
 # Choosing which repositories are in scope
 
-Shared by every command in this plugin. Run this before any sweep that
-walks a directory rather than acting on one named repository.
+Run this before any sweep that walks a directory rather than acting on
+one named repository.
 
-A dependency sweep is exactly the kind of run that quietly widens. A
-directory of checkouts holds worktrees, forks, vendored clones and
-upstream projects read for reference, and every one of them looks like a
-git repository. Committing to somebody else's project because it
-happened to sit under the same root is not a recoverable mistake — it
-lands in a colleague's history, under your name, unasked.
+A directory of checkouts holds worktrees, forks, vendored clones and
+upstream projects read for reference, and every one looks like a git
+repository. A commit to someone else's project lands in their history
+under the user's name, unasked, and cannot be taken back.
 
 **When ownership is unclear, stop and ask.** A skipped repository costs
-one question. A wrong commit costs someone else's review time and your
-standing with them.
+one question. A wrong commit costs someone else's review time.
+
+## Contents
+
+- Set the scope
+- Skip worktrees
+- Ask the forge first
+- When the forge cannot answer
+- What to report
+
+## Set the scope
+
+Default scope is the current repository. `--root <dir>` walks a
+directory for git repositories, `--repo <path|slug>` names individual
+ones, and `--owner <name>` keeps only those whose remote belongs to the
+given accounts or organisations.
+
+Run the rules below on every repository a widened scope turns up. Drop
+repositories that do not pin the package or tool being moved and those
+already at the target. Excluded repositories never come back in through
+a flag or a user request: forks are out of scope, with no override.
 
 ## Skip worktrees
 
@@ -42,9 +59,8 @@ inference below:
 gh repo view <owner>/<name> --json isFork,viewerPermission
 ```
 
-**`isFork: true`** — out of scope. A fork you own is still someone
-else's project, and its dependencies belong upstream. Owning the fork
-does not make the dependency decision yours.
+**`isFork: true`** — out of scope, whoever owns the fork. Its
+dependencies belong upstream.
 
 **`viewerPermission: ADMIN` or `MAINTAIN`** — in scope, provided it is
 not a fork.
@@ -61,9 +77,8 @@ No `gh`, no network, a non-GitHub remote, or no remote at all. Fall back
 to two weaker signals and require them to agree.
 
 **The owner segment of the remote.** Necessary but not sufficient: an
-organisation you maintain and an organisation you merely contribute to
-are indistinguishable by name. `tmux-python/libtmux` and
-`pytest-dev/pytest-django` look alike and are not.
+organisation the user maintains and one they merely contribute to are
+indistinguishable by name.
 
 **Authorship of the default branch.** Read the last ten commits on
 trunk, not on the working tree's branch:
@@ -79,18 +94,16 @@ organisation's own address is still theirs.
 Agreeing signals decide it. **Disagreeing signals mean ask**, and so
 does either of these on its own:
 
-- Trunk's recent commits are entirely from bots or coding agents. A repo
-  whose last ten commits are all `Gemini Agent <gemini@google.com>` says
-  nothing about who owns it — this is a real case, and the forge
-  reported ADMIN for it.
+- Trunk's recent commits are entirely from bots or coding agents, which
+  says nothing about who owns the repository.
 - The remote's owner is an organisation and nothing else corroborates
   maintainership.
 
 ## What to report
 
-Say which repositories were excluded and under which rule — fork,
+Say which repositories were excluded and under which rule: fork,
 permission, worktree, duplicate clone. A sweep that silently drops
-repositories reads as a sweep that found them all current.
+repositories reads as one that found them all current.
 
 List the ones you stopped to ask about separately from the ones you
 excluded outright. Those are a decision waiting on the user, not a

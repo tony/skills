@@ -1,44 +1,35 @@
 #!/bin/sh
-# apply-template.sh — POSIX shell template for /pr:deslop apply.sh.
+# apply-template.sh — POSIX shell template for the per-run apply.sh of
+# /slop:deslop.
 #
-# The skill copies this file to `.git/deslop/<ts>-<pid>/apply.sh` per
-# run, substituting the placeholders below before writing it. It is
-# the single artifact the user runs to apply the proposed fixups.
+# The skill copies this file to `.git/deslop/<ts>-<pid>/apply.sh`,
+# substituting these placeholders:
+#   __DESLOP_TS_PID__    — run directory name (e.g. `20260509-110825Z-1234`)
+#   __REGISTRY_PATH__    — built-in or `--taxonomy=<path>` registry source
+#   __REGISTRY_SHA256__  — SHA-256 of the registry at materialization
+#   __BASELINE_SHA__     — trunk merge-base SHA locked at Step 1
+#   __TRUNK_REF__        — `origin/<trunk>`, for the autosquash hint
 #
-# Substituted by the skill at materialization time (Step 8):
-#   __DESLOP_TS_PID__       — directory name (e.g. `20260509-110825Z-1234`)
-#   __REGISTRY_PATH__       — built-in or `--taxonomy=<path>` source
-#   __REGISTRY_SHA256__     — SHA-256 of the registry at materialize time
-#   __BASELINE_SHA__        — trunk SHA locked at Step 1
-#   __TRUNK_REF__           — `origin/<trunk>` for force-with-lease reminders
+# Each step writes `.checkpoint/<NNNN>.done`; re-runs skip finished
+# steps, and removing a marker re-runs that step. Numbered artifacts are
+# processed in lexical order; each patch becomes one fixup commit, and
+# autosquash folds fixups that share a target.
 #
-# Idempotency:
-#   * Each step writes `.checkpoint/<NNNN>.done` on success. Re-runs
-#     skip completed steps. To force re-application of a single step,
-#     remove its checkpoint file.
-#   * Patches are applied per target SHA, in lexical order of the
-#     numbered patch files. All `.patch` files for one target SHA are
-#     applied to the working tree before the single `git commit
-#     --fixup=<target-sha>` for that target.
-#   * Reword messages are pre-staged in each fixup commit's body
-#     with an `amend! <subject>` prefix line; autosquash strips the
-#     prefix and uses the remainder as the new commit message.
-#     `reword-map.tsv` records the mapping for audit/provenance only.
-#
-# Stages explicit paths only — never `git add -A` / `git add .` per
-# `plugins/commit/skills/commit/SKILL.md`.
+# A reword step commits with `--allow-empty`: the commit carries only an
+# `amend! <subject>` message, and autosquash uses the body verbatim. It
+# is the one intentionally empty commit; `reword-map.tsv` records it for
+# audit.
 #
 # Exit codes:
-#   0  — all checkpointed steps complete.
-#   1  — registry SHA-256 diverged since materialization (live registry
-#        was edited between materialize and apply).
-#   2  — clean-tree precondition failed (working tree dirty).
-#   3  — `git apply` failed for a patch step; checkpoint not written.
-#   4  — fixup commit creation failed (`git commit` rejected, e.g.
-#        by a pre-commit hook).
-#   5  — failed to write reword file or reword-map row.
-#   6  — pre-commit / commit-msg hook rejected a fixup (do not bypass —
-#        the user repairs and re-runs).
+#   0  all steps complete
+#   1  registry SHA-256 changed since materialization, or is unreadable
+#   2  working tree is dirty
+#   3  `git apply` failed, or the target SHA could not be read from a
+#      patch name
+#   4  the reword commit failed (for example, a hook rejected it)
+#   5  a reword artifact could not be processed
+#   6  the fixup commit failed (for example, a hook rejected it)
+# Hooks are never bypassed; repair the cause and re-run.
 
 set -eu
 
@@ -62,7 +53,7 @@ if [ "$current_sha256" != "__REGISTRY_SHA256__" ]; then
     echo "apply.sh: registry SHA-256 changed since materialization" >&2
     echo "  expected: __REGISTRY_SHA256__" >&2
     echo "  current:  $current_sha256" >&2
-    echo "  re-run /pr:deslop to materialize a fresh patch series" >&2
+    echo "  re-run /slop:deslop to materialize a fresh patch series" >&2
     exit 1
 fi
 
@@ -90,12 +81,9 @@ mark_done() {
 
 # ── patch application loop ────────────────────────────────────────
 #
-# For each target SHA, apply its diff patches (if any), then create a
-# single fixup commit. The skill writes the patch files in numeric
-# order; we group them by target SHA via the embedded SHA in the
-# filename (`NNNN-fixup-<sha>-<finding-id>.patch`,
-# `NNNN-amend-<sha>.patch`, `NNNN-reword-<sha>.txt`,
-# `NNNN-drop-<sha>.note`).
+# The target SHA is embedded in each filename
+# (`NNNN-fixup-<sha>-<finding-id>.patch`, `NNNN-amend-<sha>.patch`,
+# `NNNN-reword-<sha>.txt`).
 
 step_num=0
 
@@ -105,7 +93,7 @@ for entry in "$run_dir"/[0-9]*; do
     base=$(basename -- "$entry")
 
     case "$base" in
-        0000-*|0005-advisory.md)
+        0000-*)
             continue
             ;;
     esac
@@ -165,10 +153,8 @@ for entry in "$run_dir"/[0-9]*; do
                 exit 5
             fi
 
-            # Pre-stage the new message in the fixup commit body.
-            # Autosquash strips the `amend! <subject>` prefix line and
-            # uses the rest of the body as the new commit message —
-            # no editor invocation, no shim required.
+            # Autosquash strips the `amend! <subject>` line and uses the
+            # rest of the body as the message; no editor runs.
             msg_tmp=$(mktemp "$run_dir/.amend-msg.XXXXXX")
             printf 'amend! %s\n\n' "$subject_line" > "$msg_tmp"
             cat -- "$entry" >> "$msg_tmp"
@@ -188,19 +174,6 @@ for entry in "$run_dir"/[0-9]*; do
             mark_done "$step_num"
             ;;
 
-        *-drop-*.note)
-            target_sha=$(echo "$base" | sed -E 's/^[0-9]+-drop-([0-9a-f]+)\.note$/\1/')
-            if [ -z "$target_sha" ]; then
-                echo "apply.sh: cannot extract target SHA from $base" >&2
-                exit 5
-            fi
-
-            map_row=$(printf 'drop\t%s\t%s' "$target_sha" "$base")
-            echo "$map_row" >> "$run_dir/reword-map.tsv"
-
-            mark_done "$step_num"
-            ;;
-
         *)
             echo "apply.sh: unrecognized artifact $base — skipping" >&2
             mark_done "$step_num"
@@ -210,5 +183,5 @@ done
 
 echo "apply.sh: $step_num steps complete"
 echo "apply.sh: fixup commits visible via: git log --oneline '__BASELINE_SHA__..HEAD'"
-echo "apply.sh: to autosquash, run /pr:deslop --apply-rebase or:"
+echo "apply.sh: to autosquash, run /slop:deslop --apply-rebase or:"
 echo "          GIT_SEQUENCE_EDITOR=: git rebase -i --autosquash __TRUNK_REF__"

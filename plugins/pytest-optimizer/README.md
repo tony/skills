@@ -44,7 +44,7 @@ codex plugin add pytest-optimizer@skills
 The skills below use Claude Code's leading slash. Codex uses the same names
 without it (`pytest-optimizer:…`).
 
-## Why four commands instead of one loop
+## Why four skills instead of one loop
 
 A single autonomous loop cannot be re-entered safely on failure. Each phase
 reads and writes a durable JSON file under `.pytest-optimizer/`, keeping the
@@ -56,22 +56,15 @@ pipeline:
 
 ## What it looks for
 
-The detection rules map to specific optimization goals (defined in
-`references/heuristic-catalog.md`):
+The detection rules are in `references/heuristic-catalog.md`:
 
-| Goal | Approach |
-|------|----------|
-| 1. Slowest tests + root cause | Rank `--durations` rows for `call` phase; attribute in-test costs. |
-| 2. Slowest fixtures + root cause | Rank `setup`/`teardown` rows; optionally use `pytest11` timing plugin. |
-| 3. Consolidate tracks | Merge duplicate test loops/fixtures into a parametrized track. |
-| 4. Detect unused fixtures | Diff defined fixtures vs used closures with a `getfixturevalue` guard. |
-| 5. Proper fixture scope | Analyze setup counts to flag expensive function-scoped fixtures. |
-| 6. Safe speedups | Score candidates with a weighted rubric; enforce a hard safety gate. |
-| 7. Try ideas + report | Prove hypotheses against noise bands in throwaway copies (`01-benchmark`). |
-| 8. Apply speedups safely | Commit changes independently with verification (`03-execute`). |
-| 9. Typings | Detect untyped tests/fixtures and legacy `tmpdir`; add types. |
-| 10. Typed parametrize | Migrate to `class XFixture(t.NamedTuple)` for test params. |
-| 11. Project-owned cache | Scaffold a `pytest11` plugin and `config.cache` memoization. |
+- Slowest test bodies and fixture setup, ranked from `--durations` rows.
+- Unused, duplicate, and mis-scoped fixtures, with a `getfixturevalue` guard.
+- Duplicate tests and loops that belong in one parametrized track.
+- Safe parallelism, gated on order independence and deterministic collection.
+- Untyped tests and fixtures, and untyped `parametrize` data.
+- Opt-in project-owned helpers: a per-fixture timing plugin and a
+  `config.cache` memoization snippet.
 
 ## The safety rubric
 
@@ -111,11 +104,11 @@ to XDG cache dirs if the tree is read-only. See `references/memory-schema.md`.
 
 ## Component reference
 
-- `commands/` — The four phase commands.
+- `skills/00-scan`, `01-benchmark`, `02-plan`, `03-execute` — The four phase skills.
 - `skills/pytest-optimizer/SKILL.md` — Orchestrator with planning and
   degradation.
 - `references/` — Recipes, schemas, rubric, and capabilities.
-- `templates/` — Opt-in scaffolds (timing plugins, caches, gitignores).
+- `templates/` — Opt-in scaffolds (timing plugin, cache snippet) and the commit message template.
 
 ## Scope
 

@@ -10,8 +10,6 @@ disable-model-invocation: true
 
 # /research:release
 
-Hand a topic's report to the people who act on it, with a trail from each decision back to the exact report version and the sources it rested on.
-
 Invoke /research:foray with `release` followed by the user arguments, and follow it.
 
 User arguments: $ARGUMENTS

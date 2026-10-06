@@ -1,9 +1,15 @@
-# A bloated skill, with every defect named
+# A bloated skill, with its defects named
 
 Below is a SKILL.md of the kind the deletion test exists for. It is
 not a strawman: everything in it is true, well-meant, and grammatical.
 That is what makes it expensive. `example-ideal.md` is the same skill
 after the test.
+
+## Contents
+
+- The file
+- What the test cuts, and why
+- What survives
 
 ## The file
 
@@ -136,9 +142,6 @@ make. One default and one named escape hatch replaces the whole table
 — and the table was not matrix-shaped to begin with, so prose reads
 better even after the cut.
 
-**`A1` through `A5` are coded labels.** The reader has to hold an
-index in their head to follow the paragraph underneath.
-
 **The prose under each fence repeats the fence.** `The command above
 uses the --dbname flag to specify which database to restore into` is
 the command, in English, one line lower. Where a fence and its prose
@@ -152,18 +155,6 @@ constraint, and no mention that it overwrites. These are defects to
 characters inside a fence on style grounds. The deletion test cuts
 prose; it does not touch what is inside a fence.
 
-**`query_database` is an unqualified tool name.** Once a second server
-is connected the agent cannot resolve it. Qualify it as
-`ServerName:query_database`.
-
-**`as of the 2024 release` rots.** Any sentence anchored to a date is
-wrong on a schedule.
-
-**The reference chain is two levels deep.** The body links
-`reference/advanced.md`, which links `reference/internals.md`, where
-the answer actually is. An agent that follows the second link tends to
-preview the file rather than read it, then act on the fragment.
-
 **`Conclusion` is postamble.** `That's it!`, `feel free to ask`, and
 `Happy restoring!` are conversational filler in a file no human reads
 conversationally.
@@ -172,5 +163,5 @@ conversationally.
 
 Three things: the name of the tool to run, the fact that a restore
 overwrites, and the requirement to verify afterward. Everything else
-in 110 lines was scaffolding around those three facts — which is the
+was scaffolding around those three facts — which is the
 usual ratio, and the reason the test is worth running.

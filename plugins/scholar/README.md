@@ -94,8 +94,6 @@ a dependency of the current project.
 `gh` — the rendered-markdown and source-link disciplines when a study is
 published as an issue or a comment.
 
-`spike:ratchet` — the convergence rule `contest`'s stop condition names.
-
 ## Prerequisites
 
 - **git** — resolving and pinning a corpus to a ref

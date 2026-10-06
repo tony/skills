@@ -3,12 +3,10 @@
 What a fix is allowed to add. Screening decides *whether* a finding is
 worth acting on; this decides what the action costs once it is.
 
-The premise is that this loop runs constantly. A project that reviews
-every branch with humans and machines accumulates fixes at a rate no
-single reviewer sees, and every one of them leaves behind a guard, a
-test, or a comment. Individually each is defensible. In aggregate they
-are the reason a codebase becomes hard to read without anyone having
-written anything bad.
+The premise is that this loop runs on every branch. Each round leaves
+behind guards, tests, and comments that are individually defensible, and
+their sum is how a codebase becomes hard to read without anyone writing
+anything bad.
 
 ## Why now, why this
 
@@ -21,9 +19,7 @@ welcome next month is a backlog item, and the honest response is a
 follow-up, not a commit stapled to unrelated work.
 
 **Why this** — what is the smallest change that removes the defect?
-Not the change the reviewer proposed; reviewers propose mechanisms
-where a condition would do. Cost the smaller fix, and say so in the
-reply when the difference matters.
+Say so in the reply when it differs from the reviewer's proposal.
 
 ## Test bloat
 
@@ -95,14 +91,3 @@ Each of these is a fix that costs more than the defect:
 When a finding's only available fix is one of these, the finding is
 answered in the reply, not in the code — and the reply says which
 scenario would change the answer.
-
-## Commit shape
-
-One finding, one commit. Two findings share a commit only when they
-edit the same lines, and the plan says so before it happens.
-
-The commit message uses the project's own format and describes the
-defect and the fix in the project's terms. It does not cite the finding
-id, the reviewer, or the review — a future reader wants to know what
-was wrong, not who noticed. The ledger holds the mapping from finding
-to commit for as long as anyone needs it.

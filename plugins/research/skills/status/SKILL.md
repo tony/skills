@@ -10,8 +10,6 @@ disable-model-invocation: true
 
 # /research:status
 
-Show where every topic stands and what to do next. Read-only.
-
 Invoke /research:foray with `status` followed by the user arguments, and follow it.
 
 User arguments: $ARGUMENTS

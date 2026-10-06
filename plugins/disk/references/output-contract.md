@@ -1,6 +1,6 @@
 # Output contract
 
-Both commands report in the same fixed order. A hero block may precede
+Every command reports in the same fixed order. A hero block may precede
 it. Omit a section that has no findings rather than writing that it is
 empty.
 
@@ -62,7 +62,10 @@ declined approval each belong here.
 
 ## Rules
 
-Attach every figure to a layer. A guest-side number presented as
+Attach every figure to a layer. State three numbers for a virtual disk:
+what the cleanup frees inside the guest, what the balloon already holds,
+and what the host gains once the user completes the steps only they can
+run. A guest-side number presented as
 machine-wide recovery is wrong even when the arithmetic is right.
 
 Distinguish measured from projected in the words themselves. "Frees

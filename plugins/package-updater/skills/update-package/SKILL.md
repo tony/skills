@@ -7,38 +7,19 @@ user-invocable: true
 disable-model-invocation: true
 ---
 
-
 # Update one package
 
 Move one named package to a target version wherever it is pinned, with a
 body that says what the release means for each repository it lands in.
 
-Use `../updating-packages/SKILL.md` for the
-phase structure, and its references:
-`../../references/repo-scope.md`,
-`../../references/ecosystems.md`,
-`../../references/commit-conventions.md`,
-`../../references/upstream-links.md`, and
-`../../references/follow-ups.md`.
+References, all under `../../references/`: `repo-scope.md`,
+`ecosystems.md`, `commit-conventions.md`, `upstream-links.md`,
+`follow-ups.md` and `holds.md`.
 
 For a full sweep, use `/package-updater:update`. For a runtime or
 toolchain pin, use `/package-updater:update-toolchain`.
 
 User arguments: $ARGUMENTS
-
-## Context
-
-Repository:
-`!git remote get-url origin 2>/dev/null || echo "(not a git repository)"`
-
-Default branch:
-`!git symbolic-ref --short refs/remotes/origin/HEAD 2>/dev/null || echo "(unknown)"`
-
-Manifests that could pin it:
-`!out=$(git ls-files -- 'pyproject.toml' '**/pyproject.toml' 'requirements*.txt' 'package.json' '**/package.json' 'Cargo.toml' 'go.mod' 2>/dev/null | grep -v node_modules | head -30); if [ -n "$out" ]; then echo "$out"; else echo "(none found)"; fi`
-
-Cooldown configuration:
-`!out=$({ grep -hi 'minimumReleaseAge\|min-release-age' pnpm-workspace.yaml .npmrc; grep -hi 'exclude-newer' uv.toml pyproject.toml "${UV_CONFIG_FILE:-$HOME/.config/uv/uv.toml}"; } 2>/dev/null); if [ -n "$out" ]; then echo "$out"; else echo "(no cooldown configured)"; fi`
 
 ## Procedure
 
@@ -46,14 +27,16 @@ Cooldown configuration:
 
 If the user named a version, use it. Otherwise take the latest stable
 release. Either way confirm it is published and record its publication
-timestamp — you need it to reason about the cooldown, and a version
-written before it is confirmed to exist is the expensive failure this
-ordering prevents.
+timestamp for the cooldown check. A version written before it is
+confirmed to exist is the expensive failure this ordering prevents.
 
-If the cooldown currently hides it, say when it becomes visible and stop
+Read the cooldown configuration (the ecosystems reference lists the
+keys) and check the package against `holds.md`: a held package stops
+here unless the user is releasing the hold.
+
+If the cooldown hides the target, say when it becomes visible and stop
 rather than exempting it. Exempt only when the release is needed now,
-and then per the exemption protocol in the ecosystems reference: narrow,
-annotated, its own commit, reverted when the block lapses.
+per the exemption protocol in the ecosystems reference.
 
 ### 2. Find every pin site
 
@@ -68,14 +51,8 @@ to the same version.
 
 ### 3. Establish scope
 
-Default scope is the current repository. `--root`, `--repo` and
-`--owner` widen it as in `/package-updater:update`. Drop repositories
-that do not pin the package and those already at the target.
-
-A widened scope goes through
-`../../references/repo-scope.md` first: worktrees and
-forks are out, and a repository whose ownership is unclear is a question
-for the user, not a guess.
+Set the scope per `../../references/repo-scope.md`, which owns the
+flags, the fork rule and the ask-first rule.
 
 ### 4. Research the span once
 
@@ -95,7 +72,8 @@ usually needs one, per the follow-ups reference.
 
 Show the pin sites per repository, the target, the verified links, the
 follow-up expected, and whether any repository will be red between the
-bump and its follow-up. With `--audit-only`, stop here.
+bump and its follow-up. With `--audit-only`, stop here. Write commit
+messages and the report per `../../references/prose-rules.md`.
 
 ### 6. Land
 
@@ -117,12 +95,10 @@ run.
 
 - No version is written before it is confirmed published; no URL before
   it is confirmed to resolve.
-- Every pin site in a repository moves in one commit, or none does.
 - The body says what the release means for *this* repository, never a
   generalization that does not hold here.
-- A follow-up is its own commit, never folded into the bump.
-- Waiting out a cooldown is the default; an exemption is narrow,
-  annotated, separately committed and reverted.
+- Waiting out a cooldown is the default; exempt only per the
+  ecosystems reference.
 - Report unrelated breakage; fix it only when the bump caused it.
 - ruff belongs to `/ruff:bump`; action pins to
   `/github-actions:update-action`; Terraform providers to

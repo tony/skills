@@ -26,9 +26,6 @@ Two cautions apply even here:
   are dead weight; the current one is hot. Identify which generation
   the installed tool version writes to before deleting any of them.
 
-Prefer a tool's own prune command over `rm` where one exists. It
-understands its own reference counting and leaves the store consistent.
-
 ## Redundant
 
 A second copy of data that exists elsewhere. Safe to delete only once

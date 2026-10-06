@@ -32,8 +32,8 @@ and every round is measured against it:
 
 > The loop is finished when a round lands no new fixes, CI is green on
 > the current head, and every review agent on the roster has weighed in
-> on that head — or when the round cap is reached, whichever comes
-> first.
+> on that head — or when the round cap is reached or the loop goes
+> quiet (see Stopping), whichever comes first.
 
 When the host has a standing-goal or stop-condition mechanism, register
 that sentence with it so the session cannot quietly stop halfway
@@ -84,7 +84,7 @@ Each round is the same six steps.
 **1. Collect.** Gather this round's feedback per
 `../../references/feedback-sources.md` — the pull request's reviews,
 inline comments, and threads, plus any failing CI. Carry forward the
-previous rounds' declines so a re-post is not re-screened.
+previous rounds' declines per the re-post rule there.
 
 **2. Screen.** Run `/respond:check` on what collected. Its verdicts
 settle what this round does.
@@ -116,9 +116,10 @@ head, and the roster has weighed in on it.
 **Capped** — `--max-rounds` reached. Report what is still open and what
 the next round would do.
 
-**Quiet** — two consecutive rounds where everything new was declined.
-The reviewers are repeating themselves; more rounds will not change
-that. Report it as finished, with the repeats listed once.
+**Quiet** — two consecutive rounds that landed no new fixes while the
+exit condition stayed unmet because a roster agent never arrived.
+More rounds will not change that. Report it as finished, listing who
+never weighed in.
 
 **Halted** — stop the loop and report, without another round:
 
@@ -137,6 +138,8 @@ resolves a review thread, and never approves anything on a reviewer's
 behalf.
 
 ## Phase 3: Report — the output contract
+
+Write the report and replies per `../../references/prose-rules.md`.
 
 1. Hero block (1–3 lines): the outcome (finished, capped, quiet, or
    halted), rounds run, and total fixed / deferred / declined.

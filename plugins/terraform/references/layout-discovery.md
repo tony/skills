@@ -1,7 +1,17 @@
 # Finding the modules, and knowing which kind they are
 
-Shared by `/terraform:bump-provider`, `/terraform:bump-terraform`, and
-`/terraform:refresh-lock`. Read before deciding what is in scope.
+Read before deciding what is in scope.
+
+## Contents
+
+- Search tracked files only
+- Classify by signal, never by name
+- The lock file belongs to the configuration, not the module
+- `.tofu` shadows `.tf`
+- JSON syntax is not a text edit
+- Other drivers wrap the CLI
+- Repositories with no root module
+- What to ask
 
 Terraform imposes no directory convention. A repository may keep one
 root module at its top level, one in a subdirectory, one per
@@ -61,9 +71,8 @@ per directory, not per repository.
 > — [Dependency Lock File](https://developer.hashicorp.com/terraform/language/files/dependency-lock)
 
 A repository with four root modules has four lock files and needs four
-`init` runs. A command that refreshes one of them and reports success
-has left the other three pinned to whatever they were, and the drift is
-invisible until somebody applies from a different directory.
+`init` runs. Refreshing one and reporting success leaves the other three
+stale.
 
 ## `.tofu` shadows `.tf`
 
@@ -74,11 +83,10 @@ OpenTofu reads both extensions, and same-named files do not merge:
 >
 > — [OpenTofu Files](https://opentofu.org/docs/language/files/)
 
-So a repository can carry a `versions.tf` that OpenTofu never reads.
-Editing it changes nothing, `init` reports no drift, and the bump
-appears to have worked. Whenever a directory holds any `.tofu` file,
-resolve each base name before editing and write to the file the tool
-actually loads.
+A repository can carry a `versions.tf` that OpenTofu never reads;
+editing it changes nothing and `init` reports no drift. Whenever a
+directory holds any `.tofu` file, resolve each base name before editing
+and write to the file the tool loads.
 
 ## JSON syntax is not a text edit
 
@@ -106,7 +114,7 @@ lifecycle:
 
 A published module repository has provider constraints and no lock file
 anywhere. Constraint bumps apply normally; there is nothing to refresh.
-Say that plainly instead of reporting an empty run as a failure.
+Report that, not an empty run as a failure.
 
 ## What to ask
 
@@ -124,5 +132,4 @@ gathered — never one directory at a time.
 - Root modules that disagree about the CLI version: converge them all,
   or move only the selected one and report the rest as drift.
 
-Everything else is a judgment you can make from the signals. Asking
-about all of it is as unhelpful as asking about none of it.
+Decide everything else from the signals.

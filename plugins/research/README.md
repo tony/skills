@@ -140,15 +140,14 @@ installs, to read their source. A topic can then cite that source at its tag.
 
 ### How It Works
 
-1. **Detect tools**: Checks for `rg`, `fd`, `jq`.
-2. **Scan manifests**: Finds `package.json`, `pyproject.toml`, `Cargo.toml`, etc.
-3. **Filter**: Applies user filter (package, "all", category).
-4. **Resolve repos**: Uses metadata, registry, or search.
-5. **Confirm**: Presents plan for approval.
-6. **Clone**: Clones/fetches to `~/study/<language>/<repo>/`.
-7. **Resolve version**: Matches tags or branches (prefers lockfiles).
-8. **Create worktree**: Pins to resolved version.
-9. **Report**: Summarizes results.
+1. **Scan manifests**: Finds `package.json`, `pyproject.toml`, `Cargo.toml`, etc.
+2. **Filter**: Applies user filter (package, "all", category).
+3. **Resolve repos**: Uses metadata, registry, or search.
+4. **Confirm**: Presents plan for approval.
+5. **Clone**: Clones/fetches to `~/study/<language>/<repo>/`.
+6. **Resolve version**: Matches tags or branches (prefers lockfiles).
+7. **Create worktree**: Pins to resolved version.
+8. **Report**: Summarizes results.
 
 ### Supported Manifests
 

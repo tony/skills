@@ -39,7 +39,7 @@ codex plugin add changelog@skills
 
 ## Workflow
 
-1. **Gather context**: Detect project info, read conventions (`AGENTS.md`), find changelog, and collect commits.
+1. **Gather context**: Detect project info, read conventions (`AGENTS.md`, `CLAUDE.md`), find changelog, and collect commits.
 2. **Categorize**: Parse commit types and group related commits.
 3. **Generate**: Draft markdown matching the existing changelog style.
 4. **Review**: Present proposed entries for approval, each named with the reader question it answers, alongside the commit message they would land under.
@@ -50,7 +50,7 @@ codex plugin add changelog@skills
 Both follow-up commands are hard-scoped to the current branch's net change. They use the PR base (or trunk) and avoid committing by default unless `--commit` is passed.
 
 - **`/changelog:refresh`**: Recomputes entries from the net change and applies the diff in place without rewriting history.
-- **`/changelog:rewrite-aggressively`**: Rebuilds history by dropping pure-changelog commits via non-interactive rebase, then regenerates entries. (Does not run `git push`).
+- **`/changelog:rewrite-aggressively`**: Asks approval, backs up the branch, drops pure-changelog commits via non-interactive rebase, then regenerates entries. It never runs `git push`.
 
 ## Release Scope
 
@@ -94,8 +94,6 @@ The command reads `AGENTS.md` and `CLAUDE.md` to discover project rules. Priorit
 2. **Implicit Rules**: The existing changelog file (mirrors formatting of the latest release).
 3. **Defaults**: Used if no precedent exists.
 
-Follows project-specific commit formats prescribed in conventions.
-
 ## Prerequisites
 
 - **git**: For commit history analysis.
@@ -103,4 +101,4 @@ Follows project-specific commit formats prescribed in conventions.
 
 ## Language-Agnostic Design
 
-Detects project details across ecosystems (`pyproject.toml`, `package.json`, etc.) and seamlessly adapts to existing changelog formats.
+Works in any ecosystem; the existing changelog file sets the format.

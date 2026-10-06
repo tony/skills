@@ -33,18 +33,18 @@ codex plugin add tailwind@skills
 
 | Skill | Claude Code | Codex | Description |
 |---|---|---|---|
-| Tailwind Spacing Audit | `/tailwind:spacing-audit` | `tailwind:spacing-audit` | Systematically detect and fix inconsistent spacing in Tailwind CSS v4+ layouts |
+| Spacing Audit | `/tailwind:spacing-audit` | `tailwind:spacing-audit` | Detect and fix inconsistent spacing in Tailwind CSS layouts |
 
 ## How It Works
 
-The spacing audit follows a 5-step workflow:
+The spacing audit follows five steps:
 1. **Detect framework**: Scans extensions to determine attribute names
    (`className` vs `class`) and globs.
 2. **Structural audit**: Creates a spacing map of mechanisms acting on
    the element group.
-3. **Classify anti-patterns**: Matches against seven heuristics
-   (fragmentation, margin/gap mixing, padding asymmetry, wrapper
-   nesting, etc.).
+3. **Classify anti-patterns**: Matches seven patterns (fragmentation,
+   margin/gap mixing, padding asymmetry, fixed widths, wrapper nesting,
+   hit targets, space-*/gap collisions), each with a detect command.
 4. **Refactor**: Merges fragmented containers, assigns one spacing
    authority, and flattens wrappers.
 5. **Validate**: Re-evaluates the spacing map to confirm uniform

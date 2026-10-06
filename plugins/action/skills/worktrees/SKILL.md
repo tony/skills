@@ -19,33 +19,6 @@ implementation, gates, commits, the exit axis — is
 `/action:worktree`'s procedure, followed by reference, never
 restated here.
 
-This skill is invoked by name, never routed to on the model’s initiative: it creates
-worktrees and branches, modifies files, and creates commits, so it
-must be user-explicit, not router-inferred.
-
-## Core thesis
-
-N tickets rarely need N decisions — they need one plan and N
-executions. The plural command's value is the plan: the right ticket
-set, the right grouping (1:1 by default, shared branches only on
-clear overlap), and a fan-out that parallelizes the safe part
-(implementation inside isolated worktrees) while serializing the
-unsafe part (mutation of shared git state).
-
-Three disciplines:
-
-1. **Delegate, don't duplicate.** The per-unit procedure lives in
-   `../worktree/SKILL.md` and the shared
-   references — this file never paraphrases it. If the two files ever
-   disagree, `worktree.md` wins; if `worktree.md` cannot be read at
-   runtime, stop and say so — never reconstruct its procedure from
-   memory.
-2. **Group by evidence, confirm at the gate.** Default 1:1
-   ticket-to-branch; propose a group only when tickets clearly
-   overlap; every grouping is confirmed at the plan gate.
-3. **Shared git state mutates only in the main loop** (see The Iron
-   Rule).
-
 ## The Iron Rule
 
 ```
@@ -181,18 +154,12 @@ human at the gate.
 2. **Delegate the work.** For each unit, hand the executor — a
    subagent (Task) where supported, the main loop otherwise — the
    unit's parameters (tickets and primer content, branch, worktree
-   path, exit axis, resolved gate commands) plus the per-unit
-   procedure: `/action:worktree` Phases 4–5 (Implement; Gates &
-   commit) and its Iron Rule, read from
-   `../worktree/SKILL.md` and quoted to the
-   executor — not paraphrased from memory — with this standing
-   instruction: *work inside your assigned worktree only; never run
-   `git fetch`, `git stash`, or `git worktree` subcommands; never
-   touch paths outside your worktree.*
+   path, exit axis, resolved gate commands) plus the text of
+   `../../references/implement-and-commit.md`, and nothing else from
+   `/action:worktree`.
 3. **Contain failures.** A unit that cannot reach green exits with a
-   failure note (`/action:worktree` Phase 5, Gates & commit — red
-   path): it never blocks other units, and its worktree stays in
-   place for inspection.
+   failure note (the red path in that reference): it never blocks
+   other units, and its worktree stays in place for inspection.
 4. **Serialize the exit axis.** Remote operations are excluded from
    subagent scope: after the units report, run each green unit's
    `/action:worktree` Phase 6 (Exit axis — push, PR) one unit at a
@@ -203,6 +170,9 @@ human at the gate.
    the main loop.
 
 ## Output contract
+
+Write the report per `../../references/prose-rules.md`; units write
+their commit messages and PR text the same way.
 
 1. Hero block (1–4 lines): `✓ N units done, M blocked` + execution
    mode + exit axis.

@@ -791,6 +791,110 @@ def _validate_path_citations(plugin_name: str, plugin_dir: Path) -> list[str]:
     return errors
 
 
+_BANG_CONTEXT_RE = re.compile(r"`![a-z]|(?:^|\s)!`[a-z]")
+_RELATIVE_LINK_RE = re.compile(r"(?:\.\./)+[A-Za-z0-9._/-]+")
+_CONTENTS_RE = re.compile(r"^(?:#{1,3} |\*\*)?Contents\b", re.MULTILINE)
+_LINTED_SUFFIXES = frozenset({".md", ".yml", ".yaml", ".sh", ".py", ".json", ".tmpl", ".txt"})
+SKILL_BODY_MAX_LINES = 500
+REFERENCE_CONTENTS_MIN_LINES = 100
+
+
+def _prose_lines(text: str) -> list[tuple[int, str]]:
+    r"""Return ``(line number, line)`` pairs that sit outside fenced code blocks.
+
+    Examples
+    --------
+    >>> _prose_lines("a\n```\nb\n```\nc\n")
+    [(1, 'a'), (5, 'c')]
+    """
+    out: list[tuple[int, str]] = []
+    fenced = False
+    for number, line in enumerate(text.splitlines(), start=1):
+        if line.lstrip().startswith("```"):
+            fenced = not fenced
+            continue
+        if not fenced:
+            out.append((number, line))
+    return out
+
+
+def _escapes_plugin(source: Path, link: str, plugin_dir: Path) -> bool:
+    """Return True when ``link``, relative to ``source``, resolves outside ``plugin_dir``.
+
+    Examples
+    --------
+    >>> root = Path("/r/plugins/p")
+    >>> _escapes_plugin(root / "skills/s/SKILL.md", "../../references/x.md", root)
+    False
+    >>> _escapes_plugin(root / "skills/s/SKILL.md", "../../../q/references/x.md", root)
+    True
+    """
+    target = (source.parent / link).resolve()
+    return not target.is_relative_to(plugin_dir.resolve())
+
+
+def _check_estate_rules(plugin_dir: Path) -> list[str]:
+    """Enforce the skill-library rules that keep plugins standalone and lean.
+
+    - No ``!`` context expansion: it never expands on Codex, and on Claude Code a
+      failing or ungranted command empties the whole skill without an error.
+    - No relative link that resolves outside the plugin; installs are standalone.
+    - Skill bodies stay within ``SKILL_BODY_MAX_LINES``.
+    - A markdown resource longer than ``REFERENCE_CONTENTS_MIN_LINES`` opens
+      with a contents list.
+    - Every resource file is named by some other file in the plugin.
+    """
+    name = plugin_dir.name
+    errors: list[str] = []
+    texts = {
+        path: path.read_text(encoding="utf-8", errors="replace")
+        for path in sorted(plugin_dir.rglob("*"))
+        if path.is_file()
+        and path.suffix in _LINTED_SUFFIXES
+        and path.relative_to(plugin_dir).parts[0]
+        not in {"evals", ".claude-plugin", ".codex-plugin"}
+    }
+
+    for path, text in texts.items():
+        rel = path.relative_to(plugin_dir)
+        if path.suffix != ".md" or path.name == "README.md":
+            continue
+        for number, line in _prose_lines(text):
+            if _BANG_CONTEXT_RE.search(line):
+                errors.append(f"[{name}] {rel}:{number}: '!' context expansion is not allowed")
+            links = t.cast("list[str]", _RELATIVE_LINK_RE.findall(line))
+            errors.extend(
+                f"[{name}] {rel}:{number}: '{link}' leaves the plugin"
+                for link in links
+                if _escapes_plugin(path, link, plugin_dir)
+            )
+        if path.name == "SKILL.md":
+            body_lines = strip_frontmatter(text).count("\n")
+            if body_lines > SKILL_BODY_MAX_LINES:
+                errors.append(
+                    f"[{name}] {rel}: body is {body_lines} lines (max {SKILL_BODY_MAX_LINES})"
+                )
+        elif text.count("\n") > REFERENCE_CONTENTS_MIN_LINES and not _CONTENTS_RE.search(
+            "\n".join(text.splitlines()[:40])
+        ):
+            errors.append(
+                f"[{name}] {rel}: over {REFERENCE_CONTENTS_MIN_LINES} lines and no Contents list"
+            )
+
+    for path in texts:
+        rel = path.relative_to(plugin_dir)
+        if rel.parts[0] not in (*RESOURCE_DIRS, "scripts"):
+            continue
+        named = any(
+            path.name in other_text
+            for other, other_text in texts.items()
+            if other != path and other.name != "README.md"
+        )
+        if not named:
+            errors.append(f"[{name}] {rel}: no skill or resource in the plugin names it")
+    return errors
+
+
 def validate_plugin_dir(plugin_dir: Path) -> list[str]:
     """Validate a single plugin directory structure.
 
@@ -851,6 +955,8 @@ def validate_plugin_dir(plugin_dir: Path) -> list[str]:
     skills_dir = plugin_dir / "skills"
     if skills_dir.exists():
         errors.extend(_validate_skills_dir(name, skills_dir))
+
+    errors.extend(_check_estate_rules(plugin_dir))
 
     # Validate hooks/hooks.json exists when hooks/ is present
     hooks_dir = plugin_dir / "hooks"

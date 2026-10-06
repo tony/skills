@@ -20,27 +20,20 @@ User arguments: $ARGUMENTS
 
 ## The invariant
 
-```
-GATHER NEVER WRITES INTO THE CORPUS IT READS
-```
-
-Studying a project must not dirty its checkout. Output lands under `--out`,
-defaulting to `notes/ontology/<subject>/` in the current repository. For a
-study kept outside any repository, open a dated run with the `research:foray`
-skill (`--namespace scholar`, the subject as topic) and pass its directory as
-`--out`. The corpus is recorded by URL and ref, not by local path.
-
-## Context
-
-Current repository:
-`!git remote get-url origin 2>/dev/null || echo "(not a git repository)"`
-
-Existing studies:
-`!ls notes/ontology/ 2>/dev/null || echo "(none)"`
+Never write into the corpus being read: no `git checkout`, no `git clean`, no
+edit inside a target. Studying a project must not dirty its checkout. Output
+lands under `--out`, defaulting to `notes/ontology/<subject>/` in the current
+repository. The corpus is recorded by URL and ref, not by local path.
 
 ## Procedure
 
-### 1. Resolve each target to a ref
+### 1. Survey the workspace
+
+Run `git remote get-url origin` to name the current repository; a failure
+means the working directory is not a git repository. Run `ls notes/ontology/`
+to list existing studies; a failure means there are none.
+
+### 2. Resolve each target to a ref
 
 For a git repository, prefer a release tag; fall back to a 7-character commit
 reachable from trunk. Never a branch name — it moves, and every citation built
@@ -65,26 +58,24 @@ For a local checkout, record both the remote and the exact ref:
 $ git rev-parse --short HEAD
 ```
 
-For prose, the ref is the edition — publisher, year, and printing where the
-locator scheme depends on it. A page number without an edition is not a
-locator.
+For prose, the ref is the edition: publisher, year, and printing.
 
-### 2. Inventory without reading everything
+### 3. Inventory without reading everything
 
 Establish the shape of the corpus cheaply. For code, the module or package
 list and the size of each. For prose, the table of contents. For a fleet, the
 repository list and what each one is for.
 
-The inventory is what makes the coverage decision in step 3 an informed one
+The inventory is what makes the coverage decision in step 4 an informed one
 rather than a guess.
 
-### 3. Decide scope with the user
+### 4. Decide scope with the user
 
 Present the inventory via `AskUserQuestion` and settle what will be read. Most
 studies should not read everything; the point is to decide deliberately rather
 than to run out of attention silently.
 
-### 4. Write sources.jsonl
+### 5. Write sources.jsonl
 
 One row per source, including every source deliberately not read:
 
@@ -98,22 +89,16 @@ does not know. `contest`'s completeness pass reads exactly this file.
 
 ## Rules
 
-- Never write into the corpus. Never `git checkout`, `git clean`, or edit
-  inside a target.
-- Every source has a resolved ref before this stage hands off.
-- Every skipped source has a reason in `why`. "Out of scope" is not a reason;
-  say what it contains and why that does not bear on the vocabulary.
-- Where a corpus has no stable anchors, record that the locator is a search
-  string rather than a position, so `annotate` and `extract` know.
+- "Out of scope" is not a reason in `why`. Say what the source contains and why
+  that does not bear on the vocabulary.
 
 ## Output
 
-Open with a one-line hero (`✓ <subject>: <n> sources pinned, <n> skipped` or
-`⚠ Blocked: <reason>`), then exactly these sections:
+Per `../../references/output-contract.md`. Hero: `✓ <subject>: <n> sources
+pinned, <n> skipped` or `⚠ Blocked: <reason>`. Sections:
 
 1. `## Pinned` — each source read, its ref, and how the ref was resolved.
 2. `## Skipped` — each source not read, and why.
 3. `## Shape` — the inventory that informed the scope decision.
 
-End with an `AskUserQuestion` panel offering next steps (for example: run
-extract, widen scope, stop here) — skip the panel only in plan mode.
+Next-step options: run extract, widen scope, stop here.

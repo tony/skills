@@ -1,8 +1,10 @@
 # Altitude — what each kind of body carries
 
+Contents: Roles that are never authored; strategic_goal; strategic_measure; delivery_group; work_item; sub_item; document; review_artifact.
+
 Which sections a body carries depends on its semantic role, not on which
-provider hosts it. Resolve the role first with `hierarchy.md`, then look it
-up here. The rules for what goes *inside* those sections are in
+provider hosts it. Resolve the role first with `hierarchy.md`, which lists
+each provider's native objects per role, then look it up here. The rules for what goes *inside* those sections are in
 `contract.md`.
 
 **The gradient:** as altitude rises, the future tense shrinks and the linking
@@ -26,23 +28,15 @@ If someone asks for "a ticket for the Q3 milestone", they mean a
 
 ## `strategic_goal`
 
-Linear Initiative, Shortcut Objective, a Jira work item above Epic.
-
 Carries: **Outcome** — one paragraph on what changes and for whom.
 **Why now** — what makes this the moment, when there is an answer.
 **Not doing** — the adjacent things it will be mistaken for.
 **Delivery groups** — links to children.
 
-Invariants only when genuinely existential. A strategic goal naming three
-invariants has almost certainly encoded implementation votes as constraints.
-Most name none.
-
-No technical content. No dates as gates. No evidence section — a goal is not
+Invariants only when existential; most name none. No technical content. No dates as gates. No evidence section — a goal is not
 a defect report.
 
 ## `strategic_measure`
-
-Shortcut Key Result, GitLab Key Result.
 
 Carries one measurable statement, how it is observed, and which goal it
 measures. Nothing else. No work plan, no invariants, no children.
@@ -51,9 +45,6 @@ A measure is `measured_by` its goal. It is never a delivery parent, and it
 never grows a task list.
 
 ## `delivery_group`
-
-Jira Epic, Linear Project, GitLab Epic, Shortcut Epic, Azure DevOps Feature,
-a GitHub parent issue used as an epic by convention.
 
 Carries: **Outcome** — the user-visible result, in a paragraph.
 **Evidence** — only when the group exists because something is broken, and
@@ -71,9 +62,6 @@ This is the altitude where over-specification does the most damage, because
 everything below inherits it.
 
 ## `work_item`
-
-GitHub Issue, GitLab Issue, Linear Issue, Jira Story or Bug, Shortcut Story,
-Trello Card, Azure DevOps User Story.
 
 The full contract shape, and where most of the work happens.
 
@@ -94,9 +82,6 @@ not get nine headings. Match the shape to the finding.
 
 ## `sub_item`
 
-GitHub Sub-issue, Jira Subtask, GitLab Task, Linear Sub-issue, Azure DevOps
-Task, Shortcut Sub-task.
-
 Short. What to do, and a link to the parent. Concrete and technical is
 correct here — this is the altitude that specifics belong to.
 
@@ -108,9 +93,6 @@ its own intent section is a `work_item` that was filed in the wrong place.
 
 ## `document`
 
-Linear Document, Shortcut Doc, ADR, RFC, Confluence page, a spec in the
-repository.
-
 Carries: **What this decides** — the decisions, each with what it chose
 against. **What it leaves open** — named explicitly, so nobody reads silence
 as settled. **References** — pinned.
@@ -118,15 +100,11 @@ as settled. **References** — pinned.
 No acceptance criteria. No schedule. No assignee. A document is not tracked
 work; it is the thing tracked work points at.
 
-This is the escape valve for `contract.md`'s rule that a body must never
-contain the design. Depth that does not belong in a ticket belongs here, and
-the ticket links to it. When a `delivery_group` starts growing a design,
-that is the signal to write one of these and cut the group back to an
-outcome.
+Depth that does not belong in a ticket belongs here, and the ticket links to
+it. When a `delivery_group` starts growing a design, write one of these and
+cut the group back to an outcome.
 
 ## `review_artifact`
-
-GitHub Pull Request, GitLab Merge Request, Azure Repos Pull Request.
 
 Describes the net shipped result of the branch. **No future tense at all** —
 this is the one role where the work is already done and the body is a report,
@@ -143,6 +121,3 @@ reverts-then-re-adds, and intermediate states belong in the commits that made
 them. Apply the published-release test: if users of the last release never
 experienced the old behavior, describing the change from it is
 branch-internal narrative.
-
-When the `pr` plugin is installed, it owns this role in more depth. Hand off
-rather than duplicating.

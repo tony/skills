@@ -21,10 +21,6 @@ gates, full bakes. What no contender ever touches is history: the
 kitchens are torn down after judging, and only stashes (all
 recoverable by SHA) and the verdict survive.
 
-This skill is invoked by name, never routed to on the model’s initiative: it creates
-worktrees, mutates them, and (in `--replay`) creates commits, so it
-must be user-explicit, not router-inferred.
-
 ## Core thesis
 
 One spike answers "does this path work?" — it cannot answer "which
@@ -38,11 +34,8 @@ probe discipline (cheapest verification, `SPIKE:` markers, stay in
 goal); the bakeoff adds isolation (worktrees), blindness (contenders
 do not see each other), and adversarial judging.
 
-**Bakeoff vs weave**: a bakeoff varies the *strategy* with one model;
-the weave plugin varies the *model* with one prompt. Reaching for
-"three models, one approach" → weave. "One model, three approaches"
-→ bakeoff. Reaching for a second bakeoff because the first winner hit
-new resistance → `/spike:ratchet`, which runs the rounds and carries a
+Reaching for a second bakeoff because the first winner hit new
+resistance means `/spike:ratchet`, which runs the rounds and carries a
 ledger across them.
 
 ## The Iron Rule
@@ -272,6 +265,9 @@ dropped from the plan and recorded as dropped; a replay is not the
 place to debug an idea that was only ever judged on paper.
 
 ## Output contract
+
+Write the report, and any replay commit message, per
+`../../references/prose-rules.md`.
 
 1. Hero block (1–3 lines): `✓ bakeoff judged — <winner>` /
    `⚠ bakeoff inconclusive` + goal + exit path taken.

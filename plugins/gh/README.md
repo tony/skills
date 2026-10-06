@@ -60,7 +60,7 @@ Provides rendering guidance for human-readable markdown. Never edits files.
 - Prevents hard-wrapping in comment bodies.
 - Enforces backticks for symbols and one shell command per fence.
 - Requires long output in `<details>` and pinned source links.
-- Rules sync with `references/rendered-markdown.md` and
+- Rules live in `references/rendered-markdown.md` and
   `references/source-links.md`.
 
 ## The wrapping rule exception

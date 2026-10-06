@@ -20,10 +20,6 @@ the code is the sensing instrument. What it never touches is history:
 like an attached kprobe, it patches the live system to take its
 measurement and detaches without a trace in `git log`.
 
-This skill is invoked by name, never routed to on the model’s initiative: it mutates the
-working tree and (in `--replay`) creates commits, so it must be
-user-explicit, not router-inferred.
-
 ## Core thesis
 
 A spike answers "does this path work?" — it is **evidence, not a
@@ -31,17 +27,9 @@ deliverable**. The probe's value survives as (a) a stash you can
 reapply and (b) decisions the plan records. Committing spike code
 converts unreviewed exploration into history.
 
-Three disciplines:
-
-1. **Zero commits during the spike.** The probe ends in a stash and a
-   plan, never in `git commit`.
-2. **Right-sized verification.** During the probe, run only what
-   proves the path (a smoke test, a scoped test run). At spike exit,
-   run the project's fast gates once so the plan starts from
-   known-green knowledge. Defer what CI covers to CI.
-3. **The plan is the product.** Every probe ends with a numbered
-   commit sequence mapping stash contents to commits, with the
-   discovered gate commands attached to each.
+Verify with the cheapest signal while probing, run the project's fast
+gates once at exit, and defer what CI covers to CI. The plan is the
+product: a numbered commit sequence mapping stash contents to commits.
 
 ## The Iron Rule
 
@@ -65,8 +53,8 @@ time, each behind a green gate).
 
 **Red flags — STOP, you are about to violate the Iron Rule:**
 typing `git commit` in any form; "checkpoint commit"; "WIP commit";
-"temporary commit"; "I'll squash it later"; creating a branch in order
-to commit to it. All of these mean: stash and write the plan.
+"temporary commit"; "I'll squash it later"; creating a branch to
+commit to it. All of these mean: stash and write the plan.
 
 ## `$ARGUMENTS` contract
 
@@ -117,8 +105,7 @@ Before writing any code:
 
 Enter plan mode if the host supports it (Claude Code: `EnterPlanMode`;
 Cursor / Codex / Gemini: `/plan` or `Shift+Tab`) and present a
-**short** spike brief — the full brief format is defined right here;
-no external convention document is required:
+**short** spike brief:
 
 1. The goal, restated in one line, with its provenance (typed, or
    inferred from what).
@@ -229,6 +216,9 @@ remote)" so the deferral is visible rather than implied.
    and watch CI.
 
 ## Output contract
+
+Write the report, and any replay commit message, per
+`../../references/prose-rules.md`.
 
 1. Hero block (1–3 lines): `✓ spike proven` / `⚠ spike blocked` +
    goal + exit path taken.

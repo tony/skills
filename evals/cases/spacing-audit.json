@@ -1,5 +1,5 @@
 {
-  "skill_name": "tailwind-spacing-audit",
+  "skill_name": "spacing-audit",
   "trigger": {
     "positive": [
       { "prompt": "the gaps between these navbar items look uneven", "top_k": 3 },

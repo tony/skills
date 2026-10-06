@@ -125,8 +125,8 @@ sh ${CLAUDE_PLUGIN_ROOT}/references/rebase-todo.sh squash <base>
 
 ## Prerequisites
 
-- **git** — 2.43+ for verified `--keep-base`, `git restore`, and
-  `--force-if-includes` behavior.
+- **git** — 2.30+ for `--keep-base`, `git restore`, and
+  `--force-if-includes` (check with `git --version`).
 - **gh** — (Optional) to read PRs, reviews, and linked issues. Degrades to
   git-only if missing.
 - **uvx** — (Optional) for the prior-conversation layer.

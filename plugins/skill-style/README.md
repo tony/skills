@@ -67,21 +67,15 @@ unverifies it.
 
 `references/skill-rubric.md` carries the full rule catalog: naming,
 descriptions, progressive-disclosure budgets, degrees of freedom,
-anti-patterns, and a pre-ship checklist, merged from Anthropic's
+and anti-patterns, merged from Anthropic's
 [skill authoring best practices][anthropic-best-practices] and
 OpenAI's [build skills][openai-build-skills] guidance.
 
-`references/example-bloated.md` is a full skill with every defect
+`references/example-bloated.md` is a full skill with its defects
 named. `references/example-ideal.md` is the same skill after the test.
 
 [anthropic-best-practices]: https://platform.claude.com/docs/en/agents-and-tools/agent-skills/best-practices
 [openai-build-skills]: https://learn.chatgpt.com/docs/build-skills
-
-## Related Plugins
-
-- **`lean`**: writing discipline for prose and code generally, rather
-  than for the SKILL.md format.
-- **`slop`**: repo-wide, commit-per-finding cleanup on a clean tree.
 
 ## Prerequisites
 

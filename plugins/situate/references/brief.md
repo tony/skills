@@ -6,9 +6,19 @@ Five lines, maximum. The reader is disoriented and wants to stop being
 disoriented — every line they have to read before that happens is a
 cost, not a service.
 
-This is a different contract from `situation-sweep.md`. The sweep is
-exhaustive because its reader is about to touch the code. The brief is
-ruthless because its reader has just said "huh".
+The full sweep is exhaustive because its reader is about to touch the
+code. The brief is ruthless because its reader has just said "huh".
+
+## Contents
+
+- The budget
+- What earns a line
+- Drop, do not pad
+- Options
+- Evidence budget
+- Confidence
+- Banned
+- When nothing is going on
 
 ## The budget
 
@@ -44,8 +54,9 @@ A fact that fits two slots is stated once, in the higher one.
 
 ## Drop, do not pad
 
-The sweep reports absence explicitly, because a missing section there is
-indistinguishable from an unchecked one. The brief does the opposite.
+The full sweep reports absence explicitly, because a missing section
+there is indistinguishable from an unchecked one. The brief does the
+opposite.
 
 Report absence only when it is load-bearing. "No pull request open" on a
 finished branch is the finding. "No pull request open" on a branch one
@@ -65,10 +76,9 @@ one path is the bloat this command exists to avoid.
 Two to four options. Each names an action, not a topic: `2. Resolve the
 three review threads on PR #12`, never `2. Review feedback`.
 
-Do not use `AskUserQuestion` here. A modal panel is heavier than the
-five lines it follows, and the brief is often produced ambiently, mid
-thought, where interrupting with a dialog is worse than the confusion it
-answers.
+Do not use `AskUserQuestion`. A modal panel is heavier than the five
+lines it follows, and the brief is often produced ambiently, mid
+thought.
 
 ## Evidence budget
 
@@ -91,8 +101,7 @@ the branch name, a commit, or the pull request body. Skip both when the
 session already knows their state.
 
 **Never.** `git fetch`, full diff reads, transcript search, convention
-files. Nothing here writes, switches branches, or stages anything — the
-read-only contract in `situation-sweep.md` applies unchanged.
+files.
 
 When a paid layer is unreachable — no `gh`, no network — say so inside
 an existing line rather than spending a line on the tooling.
@@ -113,6 +122,8 @@ say what it does not know instead.
 - References to earlier turns: "as I mentioned", "as noted above".
 - Apology or self-assessment about the confusion that prompted the ask.
 - Any line that would be true in every repository on any day.
+- Diagnosing drift. If the work has wandered from what it was for, say
+  so in one line and offer `/situate:refocus` as an option.
 
 ## When nothing is going on
 
