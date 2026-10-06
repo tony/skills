@@ -32,9 +32,8 @@ Argument: `$ARGUMENTS` — a URL, an identifier, or nothing (then ask).
 
 Nothing valuable is deleted. It is kept, relocated, or demoted.
 
-An overgrown ticket is usually not padded. It is a document, a research note,
-and a work item that got filed as one object. The fix is to separate them,
-not to compress them.
+An overgrown ticket is a document, a research note, and a work item filed as
+one object. Separate them; do not compress them.
 
 ## Phase 1 — Fetch and preserve
 
@@ -52,21 +51,19 @@ use the literal path afterwards.
 $ umask 077 && mktemp "${TMPDIR:-/tmp}/ticket-original.XXXXXX"
 ```
 
-Some providers keep edit history and some do not. Do not rely on the tracker
-to hold your undo.
+Do not rely on the tracker's edit history as the undo.
 
 ## Phase 2 — Resolve the altitude it should be
 
 Establish the current semantic role, then ask whether the content matches it.
 A `work_item` carrying a nine-section design is a `delivery_group` plus a
-`document` that were filed as one issue.
-
-The altitude the item *should* be is the finding, not a detail. State it.
+`document` filed as one issue. State the altitude the item should be; it is
+the finding.
 
 ## Phase 3 — Audit
 
-Classify every part of the existing body into exactly one bucket. Do not skip
-this into a rewrite; the buckets are what you show the user.
+Classify every part of the existing body into exactly one bucket; the
+buckets are what you show the user.
 
 **Keep.** Passes the cost-to-relearn filter — a measurement with its
 conditions, a dead end with its reason, a retracted number with what was
@@ -97,7 +94,7 @@ provider file before assuming an edit is silent.
 
 ## Phase 4 — Find what is missing
 
-Most overgrown items are also missing something. Check for all of these:
+Check for each of these:
 
 - No invariants at all, because everything was stated as a requirement.
 - An outcome that never says what changes for whom.
@@ -106,23 +103,17 @@ Most overgrown items are also missing something. Check for all of these:
 - A superseding decision that lives only in a comment. Comments are never
   rewritten, so report it under Missing and propose carrying it into the body.
 
-Absence is a finding. Report it with the rest.
-
 ## Phase 5 — Rebuild
 
-Write the new body from the audit, not by editing the old text. Take the
-section list from `altitude.md` for the role the item should be.
-
-Then check the future tense against `contract.md`.
-
-Sanitize for local paths, hostnames, emails, tokens, and internal URLs.
+Write the new body from the audit, not by editing the old text, using the
+section list from `altitude.md` for the role the item should be. Check the
+future tense against `contract.md`, and sanitize for local paths, hostnames,
+emails, tokens, and internal URLs.
 
 Write it per `references/prose-rules.md`.
 
 Save the new body to a scratch file created the same way, so Phase 7 passes
-it from a file.
-
-Render the new body the way the provider will.
+it from a file, and render it the way the provider will.
 
 ## Phase 6 — Present
 
@@ -137,6 +128,37 @@ Do not name scratch-file paths. Show, in this order:
 5. `## Demoted` — the old definition of done, then the new invariants.
 6. `## Missing` — what the item never had.
 7. `## Rebuilt title and body` — the full title and body.
+
+Reply in this shape, as plain text outside any code fence, with plain
+bullets and no bold (never `- **Label:** ...`):
+
+```text
+WIDGET-482 is a Rework (Epic) written as an implementation spec; rebuilt as an Epic.
+
+## Kept
+
+- The 30s backoff cap: it is an invariant, not derivable from code.
+
+## Cut
+
+- Line counts and file names: the diff holds them.
+
+## Relocated
+
+- Token-bucket rejection story: moves to a linked design Document.
+
+## Demoted
+
+- Old definition of done, "add breaker.js", becomes the invariant "retries never storm a failing dependency".
+
+## Missing
+
+- A reason why now.
+
+## Rebuilt title and body
+
+<the full title and body>
+```
 
 A halted run (no readable item, unsanitizable evidence) is one result
 sentence, then what the user needs to do.
@@ -163,7 +185,6 @@ Report the URL, then remove both scratch files.
 ## Rules
 
 - One item per run. No bulk passes.
-- Never update without showing the bucket breakdown and the full rebuilt body.
 - Never delete content that belongs in the relocate bucket. If the user
   declines the document, keep the content in place and say it is staying.
 - Never rewrite comments, only the body. Comments are other people's words.

@@ -21,9 +21,9 @@ The references own the rules; read each before the phase that cites it:
 
 ## Conversational requests
 
-The three slash-command skills are gated, so the model cannot invoke
-them. Match the request to one, read its file, and follow its Procedure
-and Output, taking its arguments from the request's wording:
+The three slash-command skills are gated, so the model cannot invoke them.
+Match the request to one, read its file, and follow its Procedure and
+Output, taking its arguments from the request's wording:
 
 - A provider to move: `../bump-provider/SKILL.md`.
 - The CLI version to move: `../bump-terraform/SKILL.md`.
@@ -32,7 +32,7 @@ and Output, taking its arguments from the request's wording:
 
 A request that names none ("everything here is behind") is a provider
 bump unless the user says the CLI. One run does one of them; offer the
-others as next steps. Do not invent a layout of your own.
+others as next steps.
 
 ## Conventions for every run
 
@@ -46,33 +46,30 @@ others as next steps. Do not invent a layout of your own.
   default (fewest modules, `--no-commit`) and proceed on it. A request
   that authorises an action covers that action only, never a commit or
   push.
-- Reports use prose and plain bullets. No bold label on each bullet, a
-  table only for matrix-shaped data, and no section that would hold
-  nothing. Name paths relative to the repository, never local absolute
-  or temporary paths.
+- Reply in the shape each skill's Output declares, as plain text outside
+  any code fence, with plain bullets and no bold (never
+  `- **Label:** ...`), and no section that would hold nothing. Name paths
+  relative to the repository, never local absolute or temporary paths.
 - A run that cannot proceed (nothing declared, no version named and the
   release list unreachable, a dirty tree it cannot work around) ends
   with `⚠ Stopped: <one result sentence>`, then the step the user must
   take. No sections and no recap. `Audit only` is a different state: the
   user asked for no writes.
-- When the target crosses a major version, find the upgrade guide the
-  project publishes for it and link it in the report; say none was found
-  if there is none.
+- When the target crosses a major version, link the project's upgrade
+  guide in the report, or say none was found.
 
 ## Core principle
 
-Constraints from every module in a configuration must all be satisfied
-at once, so the unit of work is the configuration, not the file. Every
+Constraints from every module in a configuration must all be satisfied at
+once, so the unit of work is the configuration, not the file. Every
 declaration moves in one commit, or none does.
 
 ## Scope
 
-The current repository. Discover its root modules rather than assuming
-one, and confirm the set with the user when there is more than one.
-
-Never widen scope as a side effect: a bump is not the moment to
-normalise operators repository-wide, adopt platforms the lock never
-tracked, or reformat modules the change did not touch.
+The current repository. Discover its root modules and confirm the set with
+the user when there is more than one. Never widen scope as a side effect:
+no repository-wide operator normalising, no platforms the lock never
+tracked, no reformatting of modules the change did not touch.
 
 ## Phase 1 - Discover the layout
 
@@ -81,17 +78,16 @@ file presence, how many platforms that lock tracks per provider, and the
 providers and `required_version` it declares. That inventory is the unit
 of work for everything after.
 
-Ask the reference's ambiguity questions all at once, after the inventory
-exists.
+Ask the reference's ambiguity questions together, after the inventory exists.
 
 ## Phase 2 - Resolve the target and confirm it exists
 
-Ask the registry, not memory. Confirm the version is published and
-record its tag and source repository, which is where the changelog link
-comes from. Use the registry the detected tool resolves against. Write
-no version string before this phase confirms the version exists. If it
-cannot be confirmed, stop and ask the user which version to use; if the
-version was only stated, not confirmed, say so plainly.
+Ask the registry the detected tool resolves against, not memory. Confirm
+the version is published and record its tag and source repository, which
+is where the changelog link comes from. Write no version string before
+this phase confirms it. If it cannot be confirmed, stop and ask the user
+which version to use, and say plainly when a version was stated but not
+confirmed.
 
 ## Phase 3 - Inventory the pin sites and predict the change
 
@@ -107,9 +103,9 @@ overwrites that evidence.
 
 ## Orchestration Plan
 
-Before any file is written, enter plan mode (`EnterPlanMode` in Claude
-Code, `/plan` or `Shift+Tab` in Cursor, Codex, and Gemini) and present a
-plan covering:
+Enter plan mode before the first edit. In Claude Code call `EnterPlanMode`; in Cursor, Codex, or Gemini use `/plan` or `Shift+Tab`. Where plan mode is unavailable, present the plan as text.
+
+Present a plan covering:
 
 - The root modules in scope, and any directory whose classification the
   user settled.
@@ -121,10 +117,9 @@ plan covering:
 - The commits this produces and whether they will be pushed.
 - Drift found that this run will not fix.
 
-Wait for approval. Exit plan mode before Phase 4.
-
-If plan mode is unavailable, finish discovery, resolution, and inventory,
-and confirm scope with the user before writing anything.
+Wait for approval, then exit plan mode before Phase 4. Without plan mode,
+finish discovery, resolution, and inventory, and confirm scope with the
+user before writing anything.
 
 ## Phase 4 - Edit the constraints
 
@@ -155,5 +150,4 @@ then the repository's own gates. If something fails, establish whether it
 failed before the bump; report pre-existing failures, and fix none as a
 side effect.
 
-Never report a gate as passing without having read the output that says
-so.
+Never report a gate as passing without reading the output that says so.

@@ -89,6 +89,23 @@ in order:
    Refer to commits by subject in prose, never by bare SHA. Close with the
    question, or when stopping, one line: nothing was edited; re-run with
    `--commit` to apply and commit.
+
+   Reply in this shape, as plain text outside any code fence, with plain
+bullets and no bold (never `- **Label:** ...`):
+
+```text
+Branch: feat/cache-evict | Base: main | Changelog commits: 2
+
+Old:
+- Add `Cache.evict()` (#212)
+
+New:
+- Add `Cache.evict()` to drop a cached key (#212)
+
+- Everything else in CHANGES.md is untouched.
+- Target: Unreleased, Features.
+```
+
 2. On approval, apply with Edit, confined to the branch's footprint plus
    approved insertions in the unreleased block.
 3. Show the modified region. Then check the scope guard: the diff of

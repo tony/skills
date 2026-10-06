@@ -3,33 +3,26 @@
 Contents: Channels, Normalizing, Merging duplicates, Re-posts across rounds, Nitpicks and collapsed sections.
 
 Where review feedback comes from, how each channel is read, and how the
-same defect reported four times becomes one finding. Every channel
-produces the same record shape, so screening never has to know which
-reviewer it is arguing with.
+same defect reported four times becomes one finding.
 
 ## Channels
 
 ### Pasted text or a file
 
-Non-flag `$ARGUMENTS`, or a path to a file holding the findings. The
-lowest-ceremony channel and the one to fall back on when `gh` is
-unavailable. Text with no structure is still parsed into findings — one
-per assertion, not one per paragraph.
+Non-flag `$ARGUMENTS`, or a path to a file holding the findings; the
+fallback when `gh` is unavailable. Parse unstructured text into one
+finding per assertion, not one per paragraph.
 
 ### This session
 
 A review skill that already ran in the conversation is a source: the
 host's own code-review command, a review command from an installed
-plugin, a security review, a subagent's report. Read its structured findings if
-it emitted any; otherwise read its report as text.
-
-This is the channel that makes screening cheap — the findings are
-already in context, and the code they describe usually is too.
+plugin, a security review, a subagent's report. Read its structured
+findings if it emitted any; otherwise read its report as text.
 
 ### The pull request
 
-Three GitHub surfaces carry three different things, and reading only
-one loses findings:
+Three GitHub surfaces carry different things; read all three:
 
 Reviews and their verdicts:
 
@@ -54,9 +47,8 @@ $ gh api graphql \
     -f query='query($owner: String!, $repo: String!, $number: Int!, $endCursor: String) { repository(owner: $owner, name: $repo) { pullRequest(number: $number) { reviewThreads(first: 100, after: $endCursor) { pageInfo { hasNextPage endCursor } nodes { isResolved isOutdated path comments(first: 20) { pageInfo { hasNextPage } nodes { author { login } body createdAt } } } } } } }'
 ```
 
-Resolved and outdated threads are skipped by default, since someone
-already decided. `--include-resolved` reads them anyway, for the case where the
-resolution is what is being questioned.
+Skip resolved and outdated threads by default; `--include-resolved`
+reads them anyway.
 
 `--paginate` follows `reviewThreads`. A thread whose `comments` reports
 `hasNextPage` is truncated at 20: read the rest from the REST comments
@@ -67,8 +59,7 @@ only after the user confirms that exact command.
 
 ### Continuous integration
 
-A failing check is feedback with no opinion in it. Pull the failure
-itself rather than the summary:
+Pull the failure itself rather than the summary:
 
 ```console
 $ gh run view <run-id> --log-failed
@@ -85,11 +76,10 @@ Each finding becomes one record: source (author login, whether the
 author is a bot, and the thread or run it came from), the claim quoted
 and trimmed to its assertion, the location it names, and the severity
 the reviewer gave it. Severity is recorded as given and re-derived by
-the rubric — a bot's "critical" buys no priority.
+the rubric.
 
-Split a comment that makes several claims into several findings. A
-reviewer who writes one paragraph about a null check and a naming
-preference has made two claims with two different fates.
+Split a comment that makes several claims into several findings: a null
+check and a naming preference have different fates.
 
 Drop what is not a claim: approvals, summaries, walkthroughs, "LGTM",
 diagrams, and the coverage tables bots emit. A comment with no
@@ -101,10 +91,6 @@ The same defect from four reviewers is **one** record with four
 sources. Merge on location plus claim shape, not on wording — bots
 paraphrase each other constantly.
 
-Merging is what keeps the loop from inflating: without it, a round with
-three bots produces three commits for one fix, three replies, and a
-ledger that looks three times as busy as the branch is.
-
 Where merged sources disagree on severity, keep the highest as input
 and let the rubric settle it.
 
@@ -115,15 +101,11 @@ round declined stays declined unless the code at that location changed
 since the decline — in which case it is genuinely new and screens
 again.
 
-Carry declines forward across rounds by location plus claim shape. A
-loop that re-screens the same rejected finding every round never
-terminates, and a reviewer who reads four identical replies learns
-nothing from any of them: reply once, then let the ledger remember.
+Carry declines forward by location plus claim shape. Reply once, then
+let the ledger remember.
 
 ## Nitpicks and collapsed sections
 
 Bots hide low-confidence findings in collapsed `<details>` blocks and
 "nitpick" sections. Read them, since they occasionally hold the only real
-bug in the review, but they enter screening in the same rubric as
-everything else, where a cosmetic remote-trigger nitpick that costs a
-code path dies at the cost gate like any other.
+bug in the review; they screen like everything else.

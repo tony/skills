@@ -107,5 +107,27 @@ When every tier fails or none is installed:
 2. One line per tier tried, with its class and the stderr line that shows it.
 3. What the user must do (install, log in, raise a quota).
 
+Reply in this shape, as plain text outside any code fence, with plain
+bullets and no bold (never `- **Label:** ...`):
+
+```text
+agy (Gemini 3.1 Pro, tier 1) exited 0.
+
+<the CLI output, unedited>
+
+- Tier 1 skipped: agy not installed.
+```
+
+A failed run:
+
+```text
+No tier returned output.
+
+- agy: auth failure, "Authentication required".
+- agent: not installed.
+
+Log agy in from your own terminal, then ask again.
+```
+
 Add your own answer only if the user asked, under the label "Assistant's own
 answer:".

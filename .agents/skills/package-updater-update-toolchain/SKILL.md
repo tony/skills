@@ -141,11 +141,35 @@ sections:
 6. `## Drift` — tools pinned to different versions across the fleet, and
    pins that disagree with what the repository declares it supports.
 
-A halted run (a stopped gate, a scope question, a failed check, nothing
-found to audit) opens with `⚠ Stopped: <why>`, then says what the user
-needs to do, and prints no section. `⚠ Audit only` is for a run that was
-given `--audit-only`. Omit any section with nothing to report. Report
-rules (no bold labels, no recap, no local paths) are in
+Reply in this shape, as plain text outside any code fence, with plain
+bullets and no bold (never `- **Label:** ...`):
+
+```text
+✓ 2 tools across 1 repo
+
+## Pins
+
+- uv 0.7.8 to 0.8.4 and just 1.36.0 to 1.40.0 in .tool-versions.
+
+## Spans
+
+- uv 0.8.0 changes the default resolver; 0.8.4 fixes a lockfile rewrite bug.
+
+## Impact
+
+- The default resolver change leaves this repo's uv.lock unchanged; the 0.8.4 fix removes a spurious lockfile rewrite on CI.
+
+## Commits
+
+- 5d12e8f Bump uv to 0.8.4, c07a9b3 Bump just to 1.40.0. Not pushed.
+
+## Verification
+
+- Tests and lint pass; uv.lock still resolves.
+```
+
+A halted run opens with `⚠ Stopped: <why>`, then what the user needs to
+do, and no section. The halt and report rules are in
 the `package-updater-updating-packages` skill, Phase 6.
 
 End with an `ask-user-choice` panel of next steps, for example: align

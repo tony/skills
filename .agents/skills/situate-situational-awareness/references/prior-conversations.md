@@ -15,15 +15,12 @@ did I leave off") counts as asking: run one capped search.
 
 ## Why it is opt-in
 
-The first five layers read the repository — a bounded, current, shared
-artifact. This one reads local transcripts from every AI CLI on the
-machine: other projects, other people's names, credentials pasted into
-a terminal two months ago. It is slower, noisier, and carries material
-the repository never agreed to hold.
-
-It earns its place when the repository does not explain itself: a
-branch whose commits do not say why an approach was chosen, a decision
-that left no artifact, work resumed after a gap.
+The first five layers read the repository. This one reads local
+transcripts from every AI CLI on the machine: other projects, other
+people's names, credentials pasted into a terminal two months ago. It
+earns its place when the repository does not explain itself: a branch
+whose commits do not say why an approach was chosen, a decision that
+left no artifact, work resumed after a gap.
 
 ## Requirements
 
@@ -54,10 +51,9 @@ $ uvx agentgrep search --only-here --branch "$(git branch --show-current)" --lim
 ```
 
 `--only-here` matches on each record's working directory. In a git
-worktree that is not the directory the project's earlier sessions ran
-in, so the filter excludes the very history it was meant to select and
-the layer comes back empty — a dry result indistinguishable from a real
-one. Resolve the primary checkout before scoping:
+worktree that is not where earlier sessions ran, so the layer comes back
+empty, indistinguishable from a real dry result. Resolve the primary
+checkout before scoping:
 
 ```console
 $ dirname "$(git rev-parse --path-format=absolute --git-common-dir)"
@@ -71,34 +67,27 @@ scope to it explicitly:
 $ uvx agentgrep search --repo <primary-checkout> --limit 20 <terms>
 ```
 
-Search prompts before conversations. The default `--scope prompts`
-returns what the user asked for, which is the record of intent;
-`--scope conversations` adds every assistant reply and buries it.
-Widen only when prompts return nothing.
+Search prompts before conversations: the default `--scope prompts` is
+the record of intent; `--scope conversations` adds every assistant reply
+and buries it. Widen only when prompts return nothing.
 
-Derive terms from what the earlier layers already found — the feature
-name, the ticket ID, the module the diff concentrates in. A query
-composed of generic words returns generic noise.
+Derive terms from what the earlier layers found: the feature name, the
+ticket ID, the module the diff concentrates in.
 
 ```console
 $ uvx agentgrep search --only-here 'ENG-123 OR "retry backoff"' --limit 20
 ```
 
-Cap the layer. Twenty ranked results is enough to establish whether
-prior context exists; if it does and matters, say so and let the user
-ask for more.
+Cap the layer at twenty ranked results; if more context exists and
+matters, say so and let the user ask for more.
 
 ## Reconciling with the repository
 
-A prior conversation is evidence of **intent**, not of **state**. A
-plan discussed three weeks ago may have been implemented, abandoned,
-or reversed by a commit since — and the transcript will look exactly
-the same either way.
-
-Every finding from this layer gets checked against the repository
-before it is reported. When they disagree, the repository wins and the
-disagreement itself is the finding: an approach discussed but never
-landed is more useful to know than either fact alone.
+A prior conversation is evidence of intent, not of state: a plan
+discussed three weeks ago may have been implemented, abandoned, or
+reversed since. Check every finding against the repository before
+reporting it. When they disagree, the repository wins and the
+disagreement is the finding.
 
 Order findings by recency and say when each was. A decision's age is
 most of its weight.
@@ -114,5 +103,3 @@ Report what was decided, not the transcript.
 - Quote the user's own words only when the exact phrasing is the point,
   and keep it to a line.
 
-The report is something the user may paste into an issue or hand to a
-teammate. Everything in it should survive that.

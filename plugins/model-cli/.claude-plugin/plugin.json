@@ -1,6 +1,6 @@
 {
   "name": "model-cli",
-  "description": "Run prompts through individual AI CLIs — Antigravity/agy (Gemini), codex/GPT, and cursor/agent with fallback support.",
+  "description": "Run a prompt through one AI CLI at a time: agy (Gemini), codex (GPT), or cursor's agent, with fallback between tiers.",
   "version": "0.0.2",
   "author": {
     "name": "Tony Narlock",

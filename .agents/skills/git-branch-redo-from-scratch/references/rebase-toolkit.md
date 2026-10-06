@@ -4,9 +4,6 @@
 todo list, one per reworded message. An agent has no editor and no
 TTY, so both must be replaced before any of it is usable.
 
-Where a behavior depends on the user's config rather than git's default,
-the config is named.
-
 ## Contents
 
 - The two hooks
@@ -24,9 +21,8 @@ the config is named.
 `GIT_EDITOR` is invoked with the path to a commit message.
 
 Git runs each through the shell, appending the file path as the last
-argument. So a sequence editor of `cp -- plan.txt` becomes
-`cp -- plan.txt <todo-path>` — which overwrites the todo with your
-plan. That one substitution is the whole mechanism.
+argument: a sequence editor of `cp -- plan.txt` runs
+`cp -- plan.txt <todo-path>`, overwriting the todo with your plan.
 
 Set `GIT_EDITOR=false`, never `true`, for any step that should not
 need a message editor. `false` turns a step that would have blocked
@@ -35,10 +31,9 @@ message.
 
 ## The toolkit script
 
-`rebase-todo.sh`, next to this file, wraps the idioms
-below with a preflight and a consistent exit code. It refuses to run
-on a dirty tree or over an operation already in progress, and it
-reports rather than hides a rebase it left stopped.
+`rebase-todo.sh`, next to this file, wraps the idioms below. It refuses
+a dirty tree or an operation in progress, and reports a rebase it left
+stopped.
 
 `<toolkit>` is the absolute path to `rebase-todo.sh`. A shell runs in the
 project's working directory, not this plugin's, so resolve the full path
@@ -85,9 +80,8 @@ commits.
 
 ## Reading the todo without side effects
 
-Driving a real `git rebase -i` just to capture its todo list replays
-every commit in the range and changes their SHAs. Generate the list
-instead — for a plain pick list this is exactly what git would write:
+Capturing the todo from a real `git rebase -i` replays the range and
+changes SHAs. Generate the plain pick list instead:
 
 ```
 git log --reverse --no-merges --format='pick %h %s' <base>..HEAD
@@ -95,8 +89,7 @@ git log --reverse --no-merges --format='pick %h %s' <base>..HEAD
 
 ## Config that changes the rules
 
-Three user settings silently change what a scripted rebase does. Pin
-all three rather than reading them.
+Three user settings silently change a scripted rebase. Pin all three.
 
 `rebase.rebaseMerges=true` turns the todo from a flat pick list into
 one containing `label`, `reset`, and `merge` lines. Code that assumes
@@ -106,10 +99,9 @@ every line is a `pick` will corrupt the rebase.
 todo line goes missing disappears with exit 0 and no warning. Set it
 to `error` for any generated plan.
 
-`rebase.autoStash=true` suppresses git's own refusal to rebase a dirty
-tree — it stashes, rebases, and pops. Worse, a conflict while
-reapplying the autostash still reports success and exits 0, leaving
-conflict markers behind. Check `git status --porcelain` yourself.
+`rebase.autoStash=true` suppresses git's refusal to rebase a dirty tree,
+and a conflict while reapplying the autostash still exits 0, leaving
+conflict markers. Check `git status --porcelain` yourself.
 
 ```
 git -c rebase.rebaseMerges=false -c rebase.missingCommitsCheck=error -c rebase.autoStash=false rebase -i <base>
@@ -117,9 +109,8 @@ git -c rebase.rebaseMerges=false -c rebase.missingCommitsCheck=error -c rebase.a
 
 ## Verifying every commit
 
-`--exec` runs a command after each commit and stops the rebase at the
-first failure, with no editor involved. It is the per-commit quality
-gate.
+`--exec` runs a command after each commit and stops at the first
+failure: the per-commit gate.
 
 ```
 git rebase --keep-base --exec 'make test' <base>
@@ -131,12 +122,10 @@ silently drops any commit that becomes empty, while still exiting 0.
 With it, the tip SHA is unchanged and the run is a true in-place
 check.
 
-Two further cautions. The command runs against the worktree as of each
-commit, so a relative path like `./run-tests.sh` resolves to that
-commit's version of the script — copy the harness outside the repo and
-call it by absolute path. And a harness must tolerate the early states
-of the series: a runner that fails when no tests exist yet reports
-every early commit as broken.
+The command runs against each commit's worktree, so copy the harness
+outside the repo and call it by absolute path. It must tolerate early
+states of the series: a runner that fails when no tests exist yet
+reports every early commit as broken.
 
 ## Rewriting a message with no editor
 
@@ -160,14 +149,11 @@ A failed `--exec` or a conflict leaves the rebase in progress on a
 detached HEAD, which poisons every later git command until it is
 cleared.
 
-`git rebase --abort` restores the branch. `git rebase --quit` clears
-the state and leaves HEAD detached at the half-rewritten result,
-restoring nothing — it never fails, which makes it tempting and wrong.
+`git rebase --abort` restores the branch. `git rebase --quit` leaves HEAD
+detached at the half-rewritten result and restores nothing.
 
-Detect an in-progress operation by probing the git dir, never by
-inspecting HEAD: during a rebase `git symbolic-ref -q HEAD` fails and
-`git status` reports a detached HEAD with no indication that anything
-is underway.
+Detect an in-progress operation by probing the git dir, never HEAD:
+`git status` reports a detached HEAD with no sign a rebase is underway.
 
 ```
 git rev-parse --git-path rebase-merge
@@ -175,8 +161,8 @@ git rev-parse --git-path rebase-merge
 
 The names worth probing are `rebase-merge`, `rebase-apply`,
 `MERGE_HEAD`, `CHERRY_PICK_HEAD`, `REVERT_HEAD`, `BISECT_LOG`, and
-`sequencer`. Resolve each through `git rev-parse --git-path` — in a
-linked worktree `.git` is a file and the state lives elsewhere.
+`sequencer`. Resolve each through `git rev-parse --git-path`; in a
+linked worktree `.git` is a file.
 
 ## Things that eat commits
 

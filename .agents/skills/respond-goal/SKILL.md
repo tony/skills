@@ -16,34 +16,27 @@ Run the review loop to a stated finish: screen, fix, push (with
 `--push`), wait for CI and the repository's review agents, screen what
 they say, and repeat until the pull request goes quiet.
 
-Invoked by name, never routed to on the model's initiative: it commits
-and, with `--push`, pushes and holds the session open across waits.
-Invoking it authorizes the rounds and commits described below, and
-nothing broader; only `--push` authorizes pushes.
+It commits and, with `--push`, pushes and holds the session open across
+waits, so it runs only when invoked by name. Invoking it authorizes the
+rounds and commits described below, and nothing broader; only `--push`
+authorizes pushes.
 
-## Core thesis
+## Exit condition
 
-The round is easy; stopping is the hard part.
-
-A review loop with no exit condition either quits early, pushing and
-declaring victory before any reviewer has looked at the new head, or
-never quits at all, re-screening findings the last round already
-declined while bots re-post them on every push. Both look like
-progress.
-
-So the exit condition is stated **first**, before the first round runs,
-and every round is measured against it:
+The round is easy; stopping is the hard part. A loop with no exit
+condition either declares victory before any reviewer has looked at the
+new head, or never quits, re-screening findings the last round declined
+while bots re-post them on every push. State the condition before the
+first round runs and measure every round against it:
 
 > The loop is finished when a round lands no new fixes, CI is green on
 > the current head, and every review agent on the roster has weighed in
 > on that head — or when the round cap is reached or the loop goes
 > quiet (see Stopping), whichever comes first.
 
-When the host has a standing-goal or stop-condition mechanism, register
-that sentence with it so the session cannot quietly stop halfway
-(Claude Code: `/goal`). Where there is no such mechanism, restate the
-condition at the top of every round; it is the only thing keeping the
-loop honest.
+When the host has a standing-goal mechanism (Claude Code: `/goal`),
+register that sentence with it; otherwise restate the condition at the
+top of every round.
 
 ## `$ARGUMENTS` contract
 
@@ -60,13 +53,11 @@ loop honest.
 
 1. Resolve the pull request and its head SHA:
    `gh pr view --json number,title,headRefOid,state,isDraft,reviewDecision,statusCheckRollup`.
-   No pull request means there is nothing for agents to review: halt
-   (see Stopping).
+   No pull request means nothing for agents to review: halt.
 2. Build the review-agent roster per
    `references/review-agents.md`: who reviews this repository,
    through which surface, and whether their arrival is observable. An
-   empty roster shortens the loop to CI alone; it is a finding, not an
-   error.
+   empty roster shortens the loop to CI alone.
 3. Resolve the gate buckets and the CI-coverage split per
    `references/verification-gates.md`.
 4. Run `git fetch origin`, confirm a clean working tree, and note the
@@ -74,24 +65,21 @@ loop honest.
 
 ## Phase 1: Orchestration plan
 
-Enter plan mode if the host supports it (Claude Code: `EnterPlanMode`;
-Cursor / Codex / Gemini: `/plan` or `Shift+Tab`) and present the exit
+Enter plan mode before the first edit. In Claude Code call `EnterPlanMode`; in Cursor, Codex, or Gemini use `/plan` or `Shift+Tab`. Where plan mode is unavailable, present the plan as text.
+
+The plan covers the exit
 condition, the roster, the caps in effect, the discovered gate
 commands, and what the loop will never do without asking: force-push,
 merge, resolve a thread, or rewrite pushed history.
 
-Wait for approval, then exit plan mode. Without plan mode, present the
-same inline and proceed on confirmation. In a non-interactive run,
+Wait for approval, then exit plan mode. In a non-interactive run,
 record the plan in the report and proceed.
 
 ## Phase 2: The round
 
-Each round is the same six steps.
-
 **1. Collect.** Gather this round's feedback per
-`references/feedback-sources.md` — the pull request's reviews,
-inline comments, and threads, plus any failing CI. Carry forward the
-previous rounds' declines per the re-post rule there.
+`references/feedback-sources.md`, including failing CI. Carry
+forward the previous rounds' declines per the re-post rule there.
 
 **2. Screen.** Run the `respond-check` skill on what collected. Its verdicts
 settle what this round does.
@@ -105,10 +93,9 @@ neither enters plan mode or ends with its panel, and the `respond-action` skill
 neither pushes nor posts replies. With `--push`, step 4 pushes; the end of
 the loop posts.
 
-**4. Push.** Only with `--push`. Print the head SHA and the time first and keep the literal
-values, since the wait in step 6 depends on both. Push normally; a
-rejected push means the remote moved, which is a halt condition, not
-something to force through.
+**4. Push.** Only with `--push`. Print the head SHA and the time first and
+keep the literal values, since the wait in step 6 depends on both. Push
+normally; a rejected push is a halt condition, never forced.
 
 **5. Watch CI.** Poll at a steady interval until no check is pending or
 `--ci-wait` elapses; stop at the first failure:
@@ -123,8 +110,7 @@ evidence. Checks still pending at the cap halt the loop.
 **6. Wait for the agents.** Poll for reviews and comments against the
 new head, bounded by `--wait`, stopping early once every roster agent
 has weighed in. Report who never arrived rather than waiting past the
-cap — a late agent is picked up by the next round, or by re-entering
-the loop later.
+cap; a late agent is picked up by the next round.
 
 Then test the exit condition. Not met and rounds remain → next round.
 
@@ -153,10 +139,7 @@ never weighed in.
 - CI fails for a reason outside the branch, such as a flaky job, an
   outage, or a missing secret, or is still pending after `--ci-wait`.
 
-Halting is a result. A loop that works around its own halt conditions
-is the failure mode this section exists to prevent.
-
-The loop never merges the pull request, never force-pushes, never
+Halting is a result; never work around a halt condition. The loop never merges the pull request, never force-pushes, never
 resolves a review thread, and never approves anything on a reviewer's
 behalf.
 
@@ -175,8 +158,7 @@ sections appear only when they have content.
    commits landed, CI result, and which agents weighed in.
 3. `## What the fixes added` — the aggregate of every test, comment,
    code path, and dependency the loop introduced, with the finding that
-   justified each. This is the number that grows quietly across rounds,
-   which is why it is reported across rounds.
+   justified each.
 4. `## Still open` — deferred findings with follow-up recommendations,
    declined findings with their replies, and any agent that never
    weighed in.
@@ -185,9 +167,38 @@ sections appear only when they have content.
 6. End with an `ask-user-choice` panel (skip inside plan mode): run
    another round past the cap, post the drafted replies, open the
    follow-ups, or stop. When the loop halted for lack of a pull request,
-   the first option is one local round without `--push`. In a
+   the first option is one local round without `--push`, and no option
+   proposes `--push` until a pull request exists. In a
    non-interactive run, list the options in the report and default to
    stopping.
+
+Reply in this shape, as plain text outside any code fence, with plain
+bullets and no bold (never `- **Label:** ...`):
+
+```text
+Finished after 2 rounds on feat/retry-after: 3 fixed, 1 deferred, 1 declined.
+
+## Rounds
+
+- Round 1: 4 findings from alex and lint-bot; 2 accepted, 2 not. 2 commits, CI green, both agents weighed in.
+- Round 2: 1 new finding from review-bot; accepted. 1 commit, CI green on the head.
+
+## What the fixes added
+
+- One regression test for the non-numeric header case, justified by round 1 finding 1.
+
+## Still open
+
+- Deferred: split sync_all in a follow-up.
+- Declined as improbable: the cache lock; the reply is drafted and not posted.
+
+## Verification
+
+- Head 4f2a9c1e7b05d83a6c1f9e204b7d5a38c0e1f692, CI green. Ran format, lint, typecheck, and tests.
+
+1. Post the drafted replies
+2. Stop
+```
 
 
 ## Portability notes

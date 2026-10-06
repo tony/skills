@@ -36,8 +36,9 @@ fails: `references/verification-contract.md`.
    if Y", never "X was overstated".
 5. **Check for adopted state.** If the user acted on a prior claim
    (committed, filed, sent, built on it), name that correction
-   explicitly, once, briefly. Otherwise the prior turn does not
-   exist in your output.
+   explicitly, once, briefly: the user's figure is wrong, the source says
+   X. Do not say how the error arose or mark other earlier claims right
+   or wrong. Otherwise the prior turn does not exist in your output.
 
 If the chat holds no prior answer, treat the request as a first ask and
 verify the claim the user names. If the claim has no checkable artifact

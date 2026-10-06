@@ -102,7 +102,6 @@ For each headline claim:
    nearest comparable study and how the settings differ.
 3. Outside the range: remove the claim, or keep it with an explicit
    methodology defense. Name what makes this setting different and
-   which rung of the counterfactual ladder (`measurement.md`) the
-   comparison sits on.
+   which rung of the counterfactual ladder the comparison sits on.
 4. Record the triangulation outcome next to the claim so a reviewer
    can retrace it.

@@ -86,14 +86,10 @@ Establish the shape of the corpus cheaply. For code, the module or package
 list and the size of each. For prose, the table of contents. For a fleet, the
 repository list and what each one is for.
 
-The inventory is what makes the coverage decision in step 4 an informed one
-rather than a guess.
-
 ### 4. Decide scope with the user
 
 Present the inventory via `AskUserQuestion` and settle what will be read. Most
-studies should not read everything; the point is to decide deliberately rather
-than to run out of attention silently. Where no question tool exists, print the
+studies should not read everything. Where no question tool exists, print the
 inventory and a proposed scope, then stop without writing `sources.jsonl`.
 A scope the user named in the request is already settled; do not ask again.
 
@@ -106,8 +102,7 @@ One row per source, including every source deliberately not read:
 {"source": "https://github.com/OWNER/REPO", "ref": "v2.40.0", "commit": "<40-character SHA>", "scope": "test/", "read": false, "why": "tests name fixtures, not domain concepts"}
 ```
 
-A study that does not state its coverage boundary is not honest about what it
-does not know. `contest`'s completeness pass reads exactly this file.
+`contest`'s completeness pass reads exactly this file.
 
 ## Rules
 
@@ -119,7 +114,8 @@ does not know. `contest`'s completeness pass reads exactly this file.
 Per `../../references/output-contract.md`. Hero: `✓ <subject>: <n> sources
 pinned, <n> skipped` or `⚠ Blocked: <reason>`. Sections:
 
-1. `## Pinned` — each source read, its ref, and how the ref was resolved.
+1. `## Pinned` — the `sources.jsonl` written, as a path under `--out`, then
+   each source read, its ref, and how the ref was resolved.
 2. `## Skipped` — each source not read, and why.
 3. `## Shape` — the inventory that informed the scope decision.
 

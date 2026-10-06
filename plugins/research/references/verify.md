@@ -1,6 +1,6 @@
 # Verify a topic
 
-Three checks, in this order: the references still say what you cite them for, no source you should have used is missing, and the report reads cleanly. `<run_dir>` is the newest run that `python3 <topic.py> prior --topic <topic>` lists. When that run is dated before today, open today's run per `continue.md` step 2 and check there; only `--resume` keeps writing in the earlier run. With no topic named, run `status.md` and verify the topic with failed or unverified sources.
+Three checks, in this order: the references still say what you cite them for, no source you should have used is missing, and the report reads cleanly. `<run_dir>` is the newest run that `python3 <topic.py> prior --topic <topic>` lists. With no topic named, run `status.md` and verify the topic with failed or unverified sources.
 
 ## 1. References
 

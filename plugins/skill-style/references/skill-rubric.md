@@ -107,9 +107,8 @@ deliverable.
 
 The test judges claims. These are not claims:
 
-**YAML frontmatter.** The host injects `name` and `description` alone
-before deciding whether to load the body. A perfect body behind a weak
-description is never read.
+**YAML frontmatter.** The host reads `name` and `description` alone
+before loading the body, so a weak description hides a perfect body.
 
 **Fenced code blocks, and every character of a command inside them.**
 Never reflow, reformat, shorten, modernize, or fix a command, path,
@@ -144,10 +143,8 @@ is what goes.
 fewer. It cannot contain XML tags, and it cannot contain the reserved
 words `anthropic` or `claude`.
 
-Gerunds read best — `processing-pdfs`, `analyzing-spreadsheets`,
-`writing-documentation`. Noun phrases (`pdf-processing`) and
-imperatives (`process-pdfs`) are both fine. Pick one shape and keep it
-across a catalog.
+Pick one shape (`processing-pdfs`, `pdf-processing`, `process-pdfs`)
+and keep it across a catalog.
 
 `helper`, `utils`, `tools`, `documents`, `data`, and `files` name
 nothing. A name that would fit twenty skills identifies none of them.
@@ -172,16 +169,6 @@ attention. It decides whether the skill is ever used.
 - **Front-load the trigger.** The first clause is what survives
   truncation and skimming.
 - **150 characters or fewer**, non-empty, no XML tags.
-
-Working descriptions:
-
-```yaml
-description: Extract text and tables from PDF files, fill forms, merge documents. Use when working with PDF files or when the user mentions PDFs, forms, or document extraction.
-```
-
-```yaml
-description: Generate descriptive commit messages by analyzing git diffs. Use when the user asks for help writing commit messages or reviewing staged changes.
-```
 
 Descriptions that route nothing: `Helps with documents`, `Processes
 data`, `Does stuff with files`.
@@ -269,13 +256,9 @@ Under-specifying a narrow bridge is how data gets lost.
 
 Reach for instructions before scripts. Ship a script when the work
 needs deterministic behavior or external tooling the agent cannot
-reproduce — not to spare it work it would do correctly anyway.
+reproduce.
 
 ## Workflows and feedback loops
-
-For a multi-step procedure, give a checklist the agent can copy and
-tick off, then a section per step. Steps skipped silently are steps
-that were never made checkable.
 
 Pair anything quality-critical with a loop: produce, validate, fix,
 re-validate, and only then proceed. The validator can be a script or a
@@ -303,11 +286,10 @@ Defects to flag in any SKILL.md, beyond the deletion test.
 - **Skills, not commands.** A workflow is a `skills/<name>/SKILL.md`.
   A skill meant only for explicit invocation sets
   `disable-model-invocation: true` rather than living in `commands/`.
-- **Bundled files.** Address them relative to the skill by
-  by
-  climbing two directories out of the skill, into `references/`. Never use `${CLAUDE_PLUGIN_ROOT}` in a
-  skill (Codex does not substitute it), and never link or read outside
-  the plugin. Where several plugins ship the same file, each holds a
+- **Bundled files.** Address them relative to the skill, climbing two
+  directories out of it into `references/`. Never use
+  `${CLAUDE_PLUGIN_ROOT}` in a skill (Codex does not substitute it),
+  and never link or read outside the plugin. Where several plugins ship the same file, each holds a
   vendored copy: edit the source, never the copy.
 - **Frontmatter.** `name` and `description` are required. Add
   `argument-hint` whenever the body consumes `$ARGUMENTS`.
@@ -349,12 +331,6 @@ patterns" section, or leave it out.
 makes the agent choose badly. Give one default and one named escape
 hatch for the case that needs it.
 
-**Windows-style paths.** `scripts\helper.py` breaks on Unix.
-Forward slashes everywhere.
-
-**Assumed installs.** Say what to install before showing what to
-import.
-
 **Bare MCP tool names.** Qualify them as `ServerName:tool_name`, or
 the agent fails to find the tool once a second server is connected.
 
@@ -384,6 +360,3 @@ task without the skill first and record where the agent actually
 fails; write only enough instruction to close those gaps. Skills
 written from imagined failures document problems nobody has.
 
-Test with every model tier the skill will run on. Opus needs less
-explanation than Haiku, and a body tuned to one is wrong for the
-other.

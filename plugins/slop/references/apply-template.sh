@@ -7,7 +7,7 @@
 # work), substituting these placeholders:
 #   __REGISTRY_PATH__    — built-in or `--taxonomy=<path>` registry source
 #   __REGISTRY_SHA256__  — SHA-256 of the registry at materialization
-#   __BASELINE_SHA__     — trunk merge-base SHA locked at Step 1
+#   __BASELINE_SHA__     — trunk merge-base SHA at the start of the run
 #   __TRUNK_REF__        — `origin/<trunk>`, for the autosquash hint
 #
 # Each step writes `.checkpoint/<NNNN>.done`; re-runs skip finished

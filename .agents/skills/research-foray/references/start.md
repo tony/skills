@@ -90,10 +90,10 @@ A claim with no source goes under `## Open questions` as `- [ ]`, with what woul
 
 ## 6. Report
 
-Follow `report.md`. Before calling the work done, run `check` in this session and quote its result:
+Follow `report.md`, then run `check`:
 
 ```console
 $ python3 <topic.py> check --run <run_dir>
 ```
 
-`ok: true`, or the report does not ship. To hand it to a reader, follow `release.md`.
+To hand the report to a reader, follow `release.md`.

@@ -22,50 +22,19 @@ User hint: $ARGUMENTS
 
 ### 1. Gather context
 
-Find the trunk without touching the network:
-
-```console
-$ git symbolic-ref --short refs/remotes/origin/HEAD
-```
-
-It prints `origin/<trunk>`; that is the base. When it fails, use the
-first of `origin/main` or `origin/master` that
-`git rev-parse --verify --quiet` accepts; when neither exists, ask the
-user for the base, or stop and name the missing base when you cannot
-ask. The local `origin/<trunk>` may be stale; run `git fetch origin
-<trunk>` first when the user wants it current. Shell variables do not
-survive between commands, so write the literal `origin/<trunk>` in each
-command below. Gather the branch's change:
-
-```console
-$ git branch --show-current
-```
-
-```console
-$ git log origin/<trunk>..HEAD --oneline
-```
-
-```console
-$ git diff origin/<trunk>...HEAD --stat
-```
-
-```console
-$ git diff origin/<trunk>...HEAD
-```
-
-An empty log means nothing is ahead of the base; say so and stop.
+Follow `references/branch-context.md` to find the base and gather the branch's change.
 
 ### 2. Analyze changes
 
 - Review the full diff and **all** commits, not only the latest.
 - Classify the change: feature, fix, refactor, version bump, CI, docs,
-  breaking change, runtime version drop. Assess its scope.
+  breaking change, runtime version drop.
 - Note any PR number visible in the branch name or commits.
 - Describe the **net shipped result**: collapse fixups,
-  reverts-then-re-adds, and WIP states. Keep rename history, `### Fixes`
-  for behavior that never shipped, and "no longer X" framing out unless a
-  user of the latest published release experienced the old name,
-  behavior, or bug.
+  reverts-then-re-adds, and WIP states. Leave out rename history,
+  `### Fixes` for behavior that never shipped, and "no longer X" framing
+  unless a user of the latest published release experienced the old
+  name, behavior, or bug.
 
 ### 3. Read project conventions
 
@@ -80,7 +49,6 @@ the title.
 - Under 70 characters.
 - Ends with ` (#N)` when the PR number is known. The suffix belongs to
   the merge commit title only; commits on the branch never carry `#N`.
-- Matches the project's scope format when one exists.
 - Describes the **impact**, what changed for the user, not the
   implementation.
 
@@ -101,61 +69,61 @@ trace, or long identifier mid-token; let that line run long.
 
 #### Body patterns, use only what applies
 
-**Features, refactors, bug fixes:**
-- Opening paragraph: what and why.
-- Bullets with **bold labels** for specific changes.
-- `Breaking changes:` with migration guidance, when applicable.
-- Cross-references: `Fixes #N`, `See also:`, companion PR links.
-- Version compatibility notes (environment tables, test matrices).
-
-**Bug fixes with a non-obvious root cause:**
-- A root-cause paragraph, numbered reproduction steps if they help,
-  and environment or version tables when the bug is version-specific.
-
-**API refactors with migration paths:**
-- Old/new tables for renamed methods, parameters, or modules.
-- Deprecation notices with a timeline, and `Breaking changes:`.
-
-**Version bumps:**
-- Arrow notation: `v1.2.3 -> v1.3.0` or `v1.2.3 → v1.3.0`.
-- A release tag URL and changelog URL per package, and the release date
-  when known.
-- Per-file scope notes when files change different dependencies.
-
-**Runtime version drops:**
-- The EOL date and links to the PEP and devguide references.
-
-**Build and infra migrations:**
-- Before/after tooling and why the migration was needed.
-
-**Multi-module sync results:**
-- Companion PR links, design decisions and trade-offs, and a qualitative
-  test coverage summary.
+- **Features, refactors, bug fixes:** opening paragraph (what and why),
+  bold-labeled bullets, `Breaking changes:` with migration guidance,
+  cross-references (`Fixes #N`, `See also:`, companion PR links), and
+  version compatibility notes.
+- **Bug fixes with a non-obvious root cause:** a root-cause paragraph,
+  numbered reproduction steps if they help, environment or version
+  tables when the bug is version-specific.
+- **API refactors with migration paths:** old/new tables for renamed
+  methods, parameters, or modules; deprecation notices with a timeline.
+- **Version bumps:** `v1.2.3 -> v1.3.0` notation, a release tag URL and
+  changelog URL per package, the release date when known, and per-file
+  scope notes when files change different dependencies.
+- **Runtime version drops:** the EOL date and links to the PEP and
+  devguide references.
+- **Build and infra migrations:** before/after tooling and why.
+- **Multi-module sync results:** companion PR links, design decisions
+  and trade-offs, and a qualitative test coverage summary.
 
 #### What not to include
 
 - Test counts or passing numbers ("875 tests pass")
-- Git SHAs or commit hashes
-- File-level line numbers
-- The number of files changed
-- Details the reviewer can see in the diff
-- Context already visible in `git log`
+- Git SHAs, file-level line numbers, or the number of files changed
+- Details the reviewer can see in the diff or `git log`
 
 ### 5. Present the message
 
-- Show the complete message in one fenced code block.
-- Do not run any git write command; the user pastes the message into
-  their merge workflow (GitHub merge button, `git merge --edit`, the
-  squash-and-merge dialog).
-- When the PR number is unknown, note where ` (#N)` goes.
-- A run that stops early (empty log, no base) is one sentence saying
-  what happened, then what the user must do.
+Do not run any git write command; the user pastes the message into
+their merge workflow (GitHub merge button, `git merge --edit`, the
+squash-and-merge dialog). When the PR number is unknown, note where
+` (#N)` goes. A run that stops early (empty log, no base) is one
+sentence saying what happened, then what the user must do.
+
+Reply in this shape, as plain text outside any code fence, with plain
+bullets and no bold (never `- **Label:** ...`). The message is one
+fenced block:
+
+````text
+Merge commit message for 3 commits on chore/bump-ruff:
+
+```text
+deps(chore[ruff]) Bump ruff to 0.9.2 (#58)
+
+Picks up the fix for false positives in the import-sorting rule.
+
+- Bump ruff from v0.8.6 -> v0.9.2 in the lint extra.
+- Reformat two files the new release now flags.
+```
+
+The PR number was taken from the branch name; correct it if wrong.
+````
 
 ## Rules
 
-- **Never** run `git merge`, `git commit`, or any write operation; output only.
-- **Never** force-push or run destructive git commands.
-- **Language-agnostic**: discover conventions from `AGENTS.md` / `CLAUDE.md`; never hardcode a tool's commands.
+Never run `git merge`, `git commit`, or any write operation; output only.
+Never force-push or run destructive git commands.
 
 
 ## Portability notes

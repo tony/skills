@@ -83,12 +83,6 @@ rebuild addressed it. Gather:
   schema changes.
 - **Dependencies** — anything added, removed, or pinned.
 
-`commit-messages.md` Part 2 already covers how to mine commits,
-trailers, review threads, tickets, and session transcripts, along with
-the privacy rules for the last of those. The difference here is what
-the material is for: a recommit uses it to write messages, a redo
-uses it to reconstruct requirements.
-
 ## Reconciling
 
 Two passes, in this order.

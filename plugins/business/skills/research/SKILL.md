@@ -88,3 +88,27 @@ Rendering a report. Then exactly these sections:
 End with an `AskUserQuestion` panel: generate a report (ask which
 tier), collect more, or stop. Skip the panel in plan mode or when
 running non-interactively.
+
+Reply in this shape, as plain text outside any code fence, with plain
+bullets and no bold (never `- **Label:** ...`):
+
+```text
+✓ Run written: 2026-07-14/business/review-skill, window 2026-04-01..2026-06-30
+
+## Scope
+
+- Review latency and rework rate for the review skill, 41 PRs.
+
+## Instruments
+
+- Available: git history, gh pull-request data.
+- Unavailable: timing logs; per-use verification time stays unknown.
+
+## Collected
+
+- raw/ holds 2 snapshots; measurements/ holds latency and rework.
+
+## Package
+
+- Run at 2026-07-14/business/review-skill, 3 assumptions, 1 open unknown.
+```

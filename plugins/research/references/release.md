@@ -8,7 +8,7 @@ What happens between a finished report and the people who act on it. `<run_dir>`
 $ python3 <topic.py> check --run <run_dir>
 ```
 
-`check` reruns every ship check in one call: each source against its capture and live URL, the report's Sources table against the manifest, `lint-report --strict`, and the leak scan. `ok: true` is the only evidence that a report is ready.
+`check` reruns every ship check in one call: each source against its capture and live URL, the report's Sources table against the manifest, `lint-report --strict`, and the leak scan.
 
 When it fails, `next` lists the fixes in order. The usual loop: fix, `sources --write`, `claims --reviewed`, then `check` again. When `<run_dir>` is dated before today, do not fix its report in place: continue the topic per `continue.md` and release from today's run. Without network, `--offline` checks the captures only; `live: false` in the result says so, and a hero that reports it names the check as offline.
 

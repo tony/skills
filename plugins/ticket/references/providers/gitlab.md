@@ -20,7 +20,7 @@ with no Epic is a complete Issue. Epic is Premium and Ultimate, group-level only
 "Epics can contain multiple nested child epics, up to a total of 7 levels deep",
 multi-level hierarchies are Ultimate, single-level child items are Free, and an Issue "can
 be set as a child item of at most one epic" ([child items][child]). Task is the sub-item
-beneath an Issue, on Free. GitLab has NO native level above Epic other than another Epic —
+beneath an Issue, on Free. GitLab has no native level above Epic other than another Epic —
 express an Initiative as a top-level Epic and record `mapping_basis: convention`.
 
 Type names are instance-dependent. Configurable work item types are Premium and Ultimate,
@@ -30,8 +30,7 @@ ship a type called Story or Bug that behaves exactly like an Issue. Resolve the 
 the instance.
 
 The strategic family stays separate: Objective > child Objective, and Objective > Key
-Result. OKRs are Ultimate and still an experiment behind the `okrs_mvc` flag, disabled by
-default; key results cannot have children, and "issues cannot be children of objectives or
+Result. OKRs are Ultimate and may sit behind a feature flag; check that the instance has them. Key results cannot have children, and "issues cannot be children of objectives or
 key results" ([OKRs][okr]). An Objective states intent; an Epic coordinates delivery.
 Never translate one into the other.
 
@@ -101,12 +100,7 @@ cross-reference on the target: "When mentioning issue `#111` in issue `#222`, is
 also displays a notification in its **Activity** feed", shown as `(Username) mentioned in
 issue #(number)` ([crosslinking][cross]). A full URL creates the same event as the sigil.
 
-An explicit titled markdown link does NOT suppress it. GitLab's reference filter rewrites
-any anchor whose href matches a GitLab object URL into a reference node carrying
-`data-reference-type`, keeping your link text, and cross-reference extraction selects
-exactly those anchors ([reference processing][proc];
-`Banzai::Filter::References::AbstractReferenceFilter` and
-`Banzai::ReferenceParser::BaseParser` in [GitLab source][src]). There is no documented
+An explicit titled markdown link does not suppress it: GitLab rewrites any anchor whose href matches a GitLab object URL into a reference and extracts cross-references from those anchors ([reference processing][proc]). There is no documented
 GitLab equivalent of a no-backlink host. The only documented suppressor is escaping — "If
 you don't want `#123` to link to an issue, add a leading backslash `\#123`" — which also
 kills the link.
@@ -173,5 +167,4 @@ sigil for one that has none.
 [proc]: https://docs.gitlab.com/development/gitlab_flavored_markdown/reference_processing/
 [refs]: https://docs.gitlab.com/user/markdown/#gitlab-specific-references
 [restapi]: https://docs.gitlab.com/api/issues/
-[src]: https://github.com/gitlabhq/gitlabhq/blob/v19.2.1/lib/banzai/filter/references/abstract_reference_filter.rb
 [weight]: https://docs.gitlab.com/user/work_items/weight/

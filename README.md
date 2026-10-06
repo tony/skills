@@ -62,7 +62,7 @@ changes, and `respond` to screen review feedback.
 | [lean](plugins/lean/) | Writing discipline and cleanup tools for tight, slop-free prose and code. |
 | [double-check](plugins/double-check/) | Forces verification requests to return re-derived answers instead of diffs against prior turns. Includes an alignment tool for repairing chats. |
 | [gh](plugins/gh/) | File durable GitHub issues with reproductions, pinned links, and stripped PII. Enforces a markdown writing discipline reusable for any PR, comment, or ticket. |
-| [skill-style](plugins/skill-style/) | Hold SKILL.md files to a deletion test — a line stays only when its removal would change what the agent does — while frontmatter, code blocks, and sections survive verbatim. |
+| [skill-style](plugins/skill-style/) | Hold SKILL.md files to a deletion test: a line stays only when removing it would change what the agent does. Frontmatter, code blocks, and sections survive verbatim. |
 
 ### Research
 
@@ -70,15 +70,15 @@ changes, and `respond` to screen review feedback.
 |--------|-------------|
 | [research](plugins/research/) | Research topics and assess decisions with pinned, captured sources in dated folders. Resume, re-verify, report. Clones dependencies at pinned versions. |
 | [scholar](plugins/scholar/) | Distil a checkable ontology from a codebase, a repository set, or a written corpus. Types, controlled vocabulary, cited and measured evidence. |
-| [business](plugins/business/) | Measure and report the business value of AI workflows with provenance-tagged data — metrics in engineer-hours and cycle time, never currency. |
+| [business](plugins/business/) | Measure and report the business value of AI workflows from provenance-tagged data, in engineer-hours and cycle time, never currency. |
 
 ### Agents and models
 
 | Plugin | Description |
 |--------|-------------|
 | [weave](plugins/weave/) | Run independent, adversarial AI participants via sub-agents or model CLIs to brainstorm, refine, plan, execute, architect, review, and synthesize. |
-| [model-cli](plugins/model-cli/) | Run prompts through individual AI CLIs — Antigravity/agy (Gemini), codex/GPT, and cursor/agent with fallback support. |
-| [agent-messaging](plugins/agent-messaging/) | Message another running agent session — Claude Code or Codex — and verify who actually sent an incoming message. |
+| [model-cli](plugins/model-cli/) | Run a prompt through one AI CLI at a time: agy (Gemini), codex (GPT), or cursor's agent, with fallback between tiers. |
+| [agent-messaging](plugins/agent-messaging/) | Message another running Claude Code or Codex session, and verify who actually sent an incoming message. |
 | [self-improvement](plugins/self-improvement/) | Mine local agent prompt history for how the skill catalog is really used, then land the changes that usage evidence supports. |
 
 ### Machine upkeep

@@ -78,18 +78,8 @@ Step 4 and commit anyway; the commit stays local.
 
 #### Line wrapping
 
-Wrap commit message body lines at 72 characters.
-
-Overflow exceptions: never break these tokens across lines; place them at the
-end of a line or on their own line:
-
-- URLs
-- commit hashes
-- stack traces
-- file paths
-- long identifiers (class names, function signatures)
-
-Let such a line run long rather than wrapping mid-token.
+Wrap body lines at 72 characters. Never break a URL, commit hash, stack
+trace, file path, or long identifier across lines; let that line run long.
 
 ### 5. Version and Dependency Bumps
 
@@ -121,10 +111,8 @@ Confirm each tag and its date exist (`gh release view <tag> --repo owner/repo`,
 or `git ls-remote --tags <url> <tag>`) before writing the URLs. Omit a date or
 URL that cannot be confirmed.
 
-URL guidelines:
-- Use `/releases/tag/` for release pages
-- Use `/blob/<tag>/CHANGELOG.md` for changelogs pinned to the release tag — not `/blob/main/` unless no tags exist
-- Write version transitions with `->`: `1.2.0 -> 1.3.0`
+Pin changelog links to the release tag, not `/blob/main/`, unless no tags
+exist.
 
 ### 6. Commit
 
@@ -155,10 +143,18 @@ URL guidelines:
 - Run `git log --oneline -1` to show the created commit
 - Run `git status` to show the remaining working tree state
 
-Reply shape: one result line (`<short hash> <subject>`, local and not pushed),
-then plain bullets for files staged, files skipped or left unstaged, and the
-remaining working tree. A stopped run is one result sentence, then what the
-user needs to do. No bold lead-ins, no recap.
+Reply in this shape, as plain text outside any code fence, with plain
+bullets and no bold (never `- **Staged:** ...`):
+
+```text
+42881ff auth(fix[token]) Reject expired tokens (local, not pushed)
+
+- Staged src/auth.py and tests/test_auth.py.
+- Left .env unstaged: it holds credentials.
+- Working tree is clean.
+```
+
+A stopped run is one result sentence, then what the user needs to do.
 
 ---
 
@@ -166,23 +162,17 @@ user needs to do. No bold lead-ins, no recap.
 
 ### Do
 
-- Match detail to the change: a small fix gets a concise body; a large feature
-  gets structured sub-sections.
-- Put motivation in `why:` and specific technical changes in `what:`.
+- Match detail to the change: a small fix gets a concise body.
 - Give before/after numbers for performance changes.
 - Show broken vs fixed behavior inline for bug fixes when it helps.
 - Name an issue the commit closes with `Fixes #N`; link anything else with
   `See also: <URL>`.
-- List the files changed when several modules are touched.
 
 ### Don't
 
 - Vague subjects: "update code", "fix bug", "misc changes".
-- Type repeated in the description: "feat: add new feature".
 - The branch's own PR number in a branch commit. Only the merge commit's
   subject carries ` (#N)`, and changelog entries cite it.
-- Bodies longer than the change warrants, or no body when changes span multiple
-  files or the diff is non-obvious.
 - Counts of files, lines, or tests; they duplicate `git diff --stat` and go
   stale.
 

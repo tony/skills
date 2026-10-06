@@ -334,32 +334,35 @@ $ ${TEST_CMD}
 ```
 
 Report exact counts, not the plan's ranges. The hero line is `Slop
-summary`; sections follow in the template's order: summary block,
+summary`; sections follow in the order shown: summary block,
 `Quality gates (final)`, then the `Patch series:` line. A halted or
 refused run prints one sentence naming the cause, then what the user
 must do (commit or stash, or re-run with `--force-rewrite-pushed`):
 
-```
+Reply in this shape, as plain text outside any code fence, with plain
+bullets and no bold (never `- **Label:** ...`):
+
+```text
 Slop summary
 ============
-Budget: <level>
-Findings: <total> (<a> Tier A, <b> Tier B, <c> Tier C)
-Applied: <a> Tier A
-Proposed and accepted: <accepted> Tier B (<declined> declined)
-Advisories: <c> Tier C (see advisory.md)
+Budget: default
+Findings: 4 (2 Tier A, 1 Tier B, 1 Tier C)
+Applied: 2 Tier A
+Proposed and accepted: 1 Tier B (0 declined)
+Advisories: 1 Tier C (see advisory.md)
 
-Tone calibration: demoted <phrases>
-Verifier: <enabled|skipped> (<scanned> commits scanned; <skipped-per-sha> skipped)
+Tone calibration: demoted "robust"
+Verifier: enabled (6 commits scanned; 0 skipped)
 
-Commits: <m> → <n>
-  - <k> fixups squashed
-Backup branch: <branch>-pre-deslop-<ts>
+Commits: 6 -> 5
+  - 1 fixup squashed
+Backup branch: feat-login-pre-deslop-20261005
 
 Quality gates (final)
 =====================
-format=<status> | lint=<status> | typecheck=<status> | tests=<status>
+format=pass | lint=pass | typecheck=pass | tests=skipped
 
-Patch series: <run-dir>/
+Patch series: .git/slop/run-1/
 ```
 
 In audit mode, "Applied" is 0 and the Commits and gate lines are omitted.

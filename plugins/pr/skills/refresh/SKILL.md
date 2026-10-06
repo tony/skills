@@ -25,64 +25,13 @@ User input: $ARGUMENTS
 
 ## Procedure
 
-### 1. Resolve the PR and its target
+### 1. Resolve the PR and back up its description
 
-Use the PR number or URL in `$ARGUMENTS`; otherwise use the current
-branch's PR. Fetch it (omit
-`<number>` for the current branch's PR):
+Follow `../../references/resolve-and-backup.md`: resolve the PR, diff
+against its `baseRefName`, and save the backup before mapping or
+drafting.
 
-```console
-$ gh pr view <number> --json number,title,body,url,baseRefName,headRefName,state
-```
-
-When `gh` is missing, unauthenticated, or finds no PR, stop: say what
-failed, name the fix (`gh auth login`, or the PR number to pass), and
-change nothing.
-
-Compare `headRefName` with `git branch --show-current`. On a mismatch,
-or a detached HEAD, stop: the diff would describe another branch. Say
-the PR's head branch is not checked out and name `headRefName`; change
-nothing.
-
-The diff base is the PR's **`baseRefName`**, so a PR stacked on a
-sibling branch diffs against that branch, never against trunk. Gather
-the net change:
-
-```console
-$ git fetch origin <baseRefName>
-```
-
-```console
-$ git log origin/<baseRefName>..HEAD --oneline
-```
-
-```console
-$ git diff origin/<baseRefName>...HEAD --stat
-```
-
-```console
-$ git diff origin/<baseRefName>...HEAD
-```
-
-### 2. Back up the current description
-
-After the fetch in step 1 and before mapping or drafting, save the
-existing body and title verbatim. Shell state does not persist, so this
-runs as one script; it prints the backup directory, and every later
-command uses that literal path. Take `<number>` from the JSON above:
-
-```bash
-d="$(git rev-parse --git-path pr-backups)/$(date -u +%Y%m%d-%H%M%SZ)-pr<number>"
-mkdir -p "$d"
-gh pr view <number> --json body --jq .body >"$d/body.md"
-gh pr view <number> --json title --jq .title >"$d/title.txt"
-printf '%s\n' "$d"
-```
-
-Tell the user the printed path. To restore:
-`gh pr edit <number> --body-file <backup>/body.md`.
-
-### 3. Map the description against the current diff
+### 2. Map the description against the current diff
 
 Read the body section by section and classify every claim:
 
@@ -105,7 +54,7 @@ Preserve section order and headings, link targets and text, images,
 badges, HTML comments, task-list check states, issue keywords
 (`Fixes #N`), and @-mentions.
 
-### 4. Ambiguity gate
+### 3. Ambiguity gate
 
 When it is unclear whether existing content is stale or load-bearing,
 ask through `AskUserQuestion`: quote the text and offer keep as-is,
@@ -114,20 +63,35 @@ uncertainties into one question set. Never resolve ambiguity by
 guessing. Without an interactive question tool, keep the text as-is and
 list each uncertainty in the proposal.
 
-### 5. Present and apply
+### 4. Present and apply
 
 Output shape: one result line (the PR and the sections that change),
 the old → new comparison, then the apply question. A run that stops
 early is one sentence saying what happened and that nothing changed,
 then what the user must do.
 
-- Show the proposed edit as an old → new comparison of the changing
-  sections only, and state which sections are untouched.
+Reply in this shape, as plain text outside any code fence, with plain
+bullets and no bold (never `- **Label:** ...`):
+
+```text
+PR #17: Summary and Test plan change, Setup Required untouched.
+
+Old:
+- Add retry logic to the sync client
+
+New:
+- Add retry logic for transient network errors to the sync client
+
+- Left unchanged: the screenshot and the checked task-list items.
+
+Apply with gh pr edit?
+```
+
+- Compare only the changing sections; state which are untouched.
 - Update the title only when it is factually stale; keep its style.
 - Ask whether to apply. Without an interactive question tool, stop
   after showing the proposal; edit nothing. On approval, write the new
-  body to `body.new.md` in the printed backup directory, so formatting
-  survives shell quoting, then run:
+  body to `body.new.md` in the backup directory, then run:
 
   ```console
   $ gh pr edit <number> --body-file <backup>/body.new.md
@@ -139,11 +103,9 @@ then what the user must do.
 
 ## Rules
 
-- **Back up first**: every run saves the body before editing; the
-  smallest edit that restores accuracy wins.
-- **Content-only**: never add, remove, rename, or reorder sections.
-- **Describe the net result** against the base, never the branch's
-  internal history, and add no test counts, SHAs, line numbers, or
+- Never add, remove, rename, or reorder sections.
+- Describe the net result against the base, never the branch's internal
+  history, and add no test counts, SHAs, line numbers, or
   file-changed counts.
-- **Never** force-push, push, or run destructive git commands; the only
+- Never force-push, push, or run destructive git commands; the only
   write is `gh pr edit` after approval.

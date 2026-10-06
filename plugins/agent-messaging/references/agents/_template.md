@@ -1,12 +1,9 @@
 # Adapter: <agent name>
 
 Copy this file to a new file named for the agent, beside the existing adapters, and fill
-every section. Any section you cannot answer stays in the file marked `UNKNOWN` with a note on what you tried — a blank is a
-bug, `UNKNOWN` is data.
-
-The skill reads adapters, never agent-specific code paths. If supporting your agent requires
-changing the skill rather than this file, say so under **Gaps** — that is a finding about the
-skill's design.
+every section. Mark an unanswerable section `UNKNOWN` with a note on what you tried; a blank
+is a bug. If supporting your agent requires changing the skill rather than this file, say so
+under **Gaps**.
 
 ## 1. Identity
 
@@ -83,7 +80,7 @@ auth token, home directory, sandbox indicators. Name each and say what sets it.
 ## 10. Gaps
 
 What this agent cannot do that others can, what is undocumented, and what the skill must work
-around. End with the single sentence a future maintainer most needs to know.
+around.
 
 Mark each claim you did not test `(unverified — from source)` when read from the agent's
 code, or `(unverified — from docs)` when read from vendor documentation.

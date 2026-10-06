@@ -2,12 +2,10 @@
 
 Shared by the `situate-what` skill and the `brief` skill.
 
-Five lines, maximum. The reader is disoriented and wants to stop being
-disoriented — every line they have to read before that happens is a
-cost, not a service.
-
-The full sweep is exhaustive because its reader is about to touch the
-code. The brief is ruthless because its reader has just said "huh".
+Five lines, maximum. The reader is disoriented; every line they read
+before that ends is a cost. The full sweep is exhaustive because its
+reader is about to touch the code; the brief is ruthless because its
+reader has just said "huh".
 
 ## Contents
 
@@ -28,9 +26,7 @@ preamble, no closing summary.
 
 Option lines are separate and do not count. Everything else does.
 
-Fewer than five lines is a better brief, not an incomplete one. Three
-lines that land beat five that pad. There is no obligation to fill the
-budget and no template to satisfy.
+Three lines that land beat five that pad.
 
 ## What earns a line
 
@@ -54,42 +50,32 @@ A fact that fits two slots is stated once, in the higher one.
 
 ## Drop, do not pad
 
-The full sweep reports absence explicitly, because a missing section
-there is indistinguishable from an unchecked one. The brief does the
-opposite.
-
-Report absence only when it is load-bearing. "No pull request open" on a
-finished branch is the finding. "No pull request open" on a branch one
-commit old is noise that costs a fifth of the answer.
-
-Never spend a line saying a layer was checked and was boring.
+Unlike the full sweep, report absence only when it is load-bearing:
+"No pull request open" on a finished branch is the finding; on a branch
+one commit old it is noise. Never spend a line saying a layer was
+checked and was boring.
 
 ## Options
 
 After the body, optionally offer choices — each exactly one line,
 numbered, so the reader can answer with a digit instead of a sentence.
 
-Offer them only when there is a real fork. A brief whose next step is
-obvious ends at the body; appending three choices to a situation with
-one path is the bloat this command exists to avoid.
+Offer them only when there is a real fork; an obvious next step ends at
+the body.
 
 Two to four options. Each names an action, not a topic: `2. Resolve the
 three review threads on PR #12`, never `2. Review feedback`.
 
-Do not use `ask-user-choice`. A modal panel is heavier than the five
-lines it follows, and the brief is often produced ambiently, mid
-thought.
+Do not use `ask-user-choice`; a modal panel is heavier than the five
+lines it follows.
 
 ## Evidence budget
 
-The brief is asked casually and must stay cheap enough to answer that
-way. Work outward in tiers and stop as soon as the five lines are
-earned.
+Work outward in tiers and stop as soon as the five lines are earned.
 
 **Free — always.** What this session already knows. If a sweep already
-ran, or the session has been working in this repo, that is the evidence.
-Re-reading what is already in context to look thorough is the most
-common way this command gets slow.
+ran, or the session has been working in this repo, that is the evidence;
+re-reading what is already in context is the common way this gets slow.
 
 **Cheap — run when the session's own memory is thin.** Current branch,
 trunk from `refs/remotes/origin/HEAD`, ahead/behind, `git status
@@ -108,11 +94,9 @@ an existing line rather than spending a line on the tooling.
 
 ## Confidence
 
-Five lines leave no room to separate what was read from what was
-inferred in prose. Use a tighter rule instead: state only what the
-evidence supports, and mark at most one inference per brief with a
-single hedging word. Two hedges means the brief is guessing and should
-say what it does not know instead.
+State only what the evidence supports, and mark at most one inference
+per brief with a single hedging word. Two hedges means the brief is
+guessing and should say what it does not know instead.
 
 ## Banned
 

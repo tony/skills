@@ -13,14 +13,13 @@ metadata:
 # Rewrite Changelog Entries Aggressively
 
 Remove the changelog commits this branch accumulated, then regenerate its
-entries from the branch's current net change. With `--commit`, the regenerated
-entries land as one fresh commit at the tip; otherwise they stay as an
-uncommitted edit. the `changelog-refresh` skill stacks a correcting commit on top; this
-skill rewrites the branch so its changelog history collapses to one commit.
+entries from the branch's current net change. With `--commit`, the entries
+land as one fresh commit at the tip; otherwise they stay an uncommitted edit.
+the `changelog-refresh` skill stacks a correcting commit instead.
 
 Scope: only the branch's own changelog content is rewritten. Base-branch
-changelog content and the branch's code history are never modified; only pure
-changelog commits are dropped.
+changelog content and code history are never modified; only pure changelog
+commits are dropped.
 
 Additional context from user: $ARGUMENTS
 
@@ -52,30 +51,30 @@ Write entries and the commit message per `references/prose-rules.md`.
 
    - **Pure changelog commits** touch only the changelog file. Phase 2 drops
      them.
-   - **Mixed commits** entangle changelog hunks with code. They cannot be
+   - **Mixed commits** entangle changelog hunks with code and cannot be
      dropped. Ask via `ask-user-choice` per commit: leave it intact and let the
      new tip commit supersede its entries (recommended), or abort so the user
      can split it.
    - No changelog commits: nothing to rewrite. Suggest `/changelog` or
      the `changelog-refresh` skill and stop.
 
-4. **Approve the rewrite.** Nothing in git changes before this approval,
-   whether or not the branch was pushed. `--commit` does not approve the
-   rewrite, and an invoking request to "rewrite" or "clean up" the changelog
-   does not either; only explicit approval of the history rewrite itself
-   does (for example "yes, drop those commits"). Via `ask-user-choice`, or
-   in the invoking message when the host has no such tool, show:
+4. **Approve the rewrite.** Nothing in git changes before this approval.
+   `--commit` does not approve the rewrite, and neither does an invoking
+   request to "rewrite" or "clean up" the changelog; only explicit approval of
+   the history rewrite itself does (for example "yes, drop those commits").
+   Via `ask-user-choice`, or in the invoking message when the host has no such
+   tool, show:
    - the commits Phase 2 will drop (SHA and subject);
    - the backup branch it will create first;
    - that a failed invariant check restores the backup with
      `git reset --hard`;
-   - when the dropped commits are pushed (the branch exists on the remote),
-     that the rewrite needs a later `git push --force-with-lease --force-if-includes` by the
-     user. This skill never pushes.
+   - when the dropped commits are pushed, that publishing needs a later
+     `git push --force-with-lease --force-if-includes` by the user. This skill
+     never pushes.
 
-   Proceed only on an explicit yes. Without one, including when the host has
-   no `ask-user-choice` and the message holds no such approval, stop with the
-   list above and the tree unchanged; never wait.
+   Proceed only on an explicit yes. Without one (including with no
+   `ask-user-choice` and no approval in the message), stop with the list above
+   and the tree unchanged; never wait.
 
 ## Phase 2: Back up and rebase out the old changelog commits
 
@@ -94,8 +93,7 @@ Write entries and the commit message per `references/prose-rules.md`.
    GIT_SEQUENCE_EDITOR='sed -i -E "s/^pick (<sha1>|<sha2>)/drop \1/"' git rebase -i origin/<base>
    ```
 
-   On BSD/Darwin, `-i` requires an explicit backup suffix; without the empty
-   one it consumes `-E` as the suffix and litters the rebase directory:
+   On BSD/Darwin, `-i` needs an explicit (here empty) suffix:
 
    ```
    GIT_SEQUENCE_EDITOR='sed -i "" -E "s/^pick (<sha1>|<sha2>)/drop \1/"' git rebase -i origin/<base>
@@ -116,8 +114,8 @@ Write entries and the commit message per `references/prose-rules.md`.
 
 ## Phase 3: Regenerate entries and present
 
-Approval gate. The Phase 1 approval covers the rebase only. Do not edit
-before approval, which comes from, in order:
+Approval gate. The Phase 1 approval covers the rebase only. Approval to
+edit comes from, in order:
 
 - `--commit` in `$ARGUMENTS`: approves the edit and the commit.
 - An invoking message that asks to insert or regenerate the entries: approves
@@ -138,9 +136,17 @@ Present:
 2. The proposed entries as exact markdown, the insertion point, and the voice
    check and target line from `entry-rules.md`.
 3. When asking, an `ask-user-choice` with **Insert** and **Edit first** (return
-   to generation). `--commit` alone decides what lands, so offer no commit
-   choice: the rebase has already run, and a yes here would mean something
-   different from the one a fresh commit needs.
+   to generation). Offer no commit choice: `--commit` alone decides what lands.
+
+Reply in this shape, as plain text outside any code fence, with plain
+bullets and no bold (never `- **Label:** ...`):
+
+```text
+Branch: feat/cache-evict | Base: main | Dropped: 3 | Backup: backup/feat-cache-evict
+
+- Proposed entry: add `Cache.evict()` to drop a cached key, under Features.
+- Insertion point: top of Unreleased in CHANGES.md.
+```
 
 ## Phase 4: Insert, commit, report
 
@@ -149,12 +155,21 @@ Run only after the Phase 3 approval.
 1. Apply with Edit. With `--commit` in `$ARGUMENTS`, commit once at the tip per
    `commit-message.md`. Without it, leave the edit uncommitted and show a
    ready-to-use commit message.
-2. Report:
-   - the backup branch, to delete once satisfied (`git branch -D <backup>`);
-   - an uncommitted changelog edit awaiting the user's commit, when `--commit`
-     was not passed;
-   - for a pushed branch, that the user needs `git push --force-with-lease --force-if-includes`
-     to publish the rewrite.
+2. Report the backup branch (to delete once satisfied with
+   `git branch -D <backup>`), an uncommitted edit awaiting the user's commit
+   when `--commit` was not passed, and for a pushed branch the
+   `git push --force-with-lease --force-if-includes` the user needs.
+
+   Reply in this shape, as plain text outside any code fence, with plain
+   bullets and no bold (never `- **Backup:** ...`):
+
+   ```text
+   Rewrote the changelog history of feat/cache-evict: 3 commits dropped, 1 added.
+
+   - Backup: backup/feat-cache-evict; delete it once satisfied.
+   - The entry is committed at the tip as docs(CHANGES) Cache key eviction.
+   - The branch is pushed; publish with git push --force-with-lease --force-if-includes.
+   ```
 
 
 ## Portability notes

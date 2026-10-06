@@ -40,21 +40,10 @@ $ grep -rIiH --include=uv.toml --include=pyproject.toml exclude-newer . "${UV_CO
 
 Then check `UV_EXCLUDE_NEWER` in the environment. Settings merge, so the search shows candidates, not the effective value. Run `uv lock --dry-run` and read the refusal for the effective cause.
 
-Other resolvers (pip, poetry, pdm) have their own cooldown settings; find them in the resolver's documentation, and apply the same gating rules below.
+Other resolvers (pip, poetry, pdm) have their own cooldown settings; find them in the resolver's documentation. The same exemption rules apply.
 
 **Index lag.** A private mirror or proxy has not synchronized yet. Nothing to work around; wait or repoint the index.
 
 **Constraint conflict.** A transitive dependency or a constraints file caps the version. The resolver usually says so, but the message can be buried.
 
 **Platform gaps.** The release exists but has no wheel for a platform in the resolution matrix.
-
-### Gating on a cooldown, correctly
-
-If the blocker is a cooldown and the work genuinely cannot wait for it to lapse, the exemption must be explicit, narrow, and *temporary*:
-
-- Exempt only the one package, never the cooldown globally. A resolver that supports cooldowns generally supports a per-package override.
-- Prefer an override form that does not bake a date into the repository. A date ages into the lockfile and quietly stops meaning anything; a boolean exemption does not.
-- Mark it in the file as temporary, with the reason and the removal condition.
-- Land it as its own commit, first in the branch, so reverting it is a single revert rather than a surgical edit.
-- State the removal as a pre-merge requirement in the pull request body. A permanent exemption opts the package out of the supply-chain guard for good.
-- Compute when the cooldown lapses (publication timestamp plus the configured window) and say so.

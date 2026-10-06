@@ -28,10 +28,9 @@ override where durable state is written.
 00-scan  ->  01-benchmark  ->  02-plan  ->  03-execute  ->  (re-scan)
 ```
 
-Each phase is a separate skill that reads and writes durable JSON under the
-resolved memory directory. Re-running resumes at the first incomplete phase.
-After `03-execute`, re-scanning measures the new baseline; loop until no
-candidate clears the rubric.
+Each phase reads and writes durable JSON under the resolved memory directory;
+re-running resumes at the first incomplete phase. After `03-execute`, re-scan and
+loop until no candidate clears the rubric.
 
 The phase skills set `disable-model-invocation`, so this skill cannot invoke
 them. To run a phase, read its file and follow it:
@@ -52,9 +51,8 @@ Make no writes here; `00-scan` owns capability probing and creating the memory
 directory.
 
 1. Read the project's own test and quality-check commands from `AGENTS.md`,
-   `CLAUDE.md`, `justfile`, `tox.ini`, and `pyproject.toml`. Never hardcode the
-   runner: `pytest`, `uv run`, `tox`, `nox`, and `hatch` are all valid and the
-   project declares which it uses.
+   `CLAUDE.md`, `justfile`, `tox.ini`, and `pyproject.toml`; the runner
+   (`pytest`, `uv run`, `tox`, `nox`, `hatch`) is the project's choice.
 2. Resolve the memory directory by the lookup order in
    `references/memory-schema.md`. If one exists, read `state.json` for the
    resume point.
@@ -71,22 +69,23 @@ If there is no pytest suite, stop with the halted-run shape in
 
 Before any measurement or edit, present a plan and get approval.
 
-1. **Enter plan mode.** In Claude Code call `EnterPlanMode`. In Cursor/Codex/Gemini
-   use `/plan` or `Shift+Tab`. If plan mode is unavailable, the phase structure
-   below still forces analysis before any write.
-2. **The orchestration plan must state:**
-   - the resolved test command and quality-check commands (Step 1);
-   - the pytest version, and that `00-scan` will probe plugins and gate
-     capabilities;
-   - the resolved memory directory, or that `00-scan` will create it;
-   - which phase the run starts at (fresh `00-scan`, or resume) and the scope
-     (`$ARGUMENTS` path/marker, or the whole suite);
-   - that suite edits happen only in `03-execute`, one commit per speedup, each
-     verified green with unchanged test counts.
-3. **Present the plan and wait for approval.** Let the user narrow scope, exclude
-   risky heuristics, or cap the number of commits. Without an interactive
-   session, stop after presenting the plan.
-4. **Exit plan mode** before running any phase.
+Enter plan mode before the first edit. In Claude Code call `EnterPlanMode`; in Cursor, Codex, or Gemini use `/plan` or `Shift+Tab`. Where plan mode is unavailable, present the plan as text.
+
+Present a plan stating:
+
+- the resolved test and quality-check commands (Step 1);
+- the pytest version, and that `00-scan` will probe plugins and gate
+  capabilities;
+- the resolved memory directory, or that `00-scan` will create it;
+- the starting phase (fresh `00-scan`, or resume) and the scope (`$ARGUMENTS`
+  path or marker, or the whole suite);
+- that suite edits happen only in `03-execute`, one commit per speedup, each
+  verified green with unchanged test counts.
+
+Let the user narrow scope, exclude risky heuristics, or cap the commit count.
+Wait for approval, then exit plan mode before running any phase. Without plan
+mode, the phase structure still forces analysis before any write; without an
+interactive session, stop after presenting the plan.
 
 ## Step 2: Run the phases
 
@@ -97,11 +96,10 @@ each phase's panel.
 
 ## Step 3: Report and decide whether to loop again
 
-After `03-execute`, present the result per `references/output-contract.md`:
-a hero block, the applied and skipped speedups with measured deltas, and an
-`ask-user-choice` panel (re-scan for a second pass, scaffold the opt-in
-cache/plugin, or stop). Without an interactive question tool, stop after the
-report. Write the report per `references/prose-rules.md`.
+After `03-execute`, present the result per `references/output-contract.md`
+and write it per `references/prose-rules.md`, then offer a re-scan, the
+opt-in scaffolds, or stop. Without an interactive question tool, stop after the
+report.
 
 ## Opt-in scaffolds
 
@@ -124,9 +122,8 @@ the memory-schema reference unless the user chooses to commit it.
 - **No xdist, randomly, or deadfixtures:** fall back to serial runs, manual
   reversed-order isolation checks, and the built-in `--fixtures` vs
   `--fixtures-per-test` diff.
-- **Dirty working tree:** `00-scan` may run. `01-benchmark` and `03-execute`
-  refuse until the tree is clean, since a benchmark copy and a one-commit-per-
-  speedup history both need a clean base. The memory directory does not count.
+- **Dirty working tree:** `00-scan` may run; `01-benchmark` and `03-execute`
+  refuse until it is clean. The memory directory does not count.
 
 ## References
 
@@ -151,6 +148,5 @@ the memory-schema reference unless the user chooses to commit it.
 
 ## Portability notes
 
-- `ask-user-choice` — present the listed options and wait for the user to pick one. Hosts with a structured multiple-choice tool (Claude Code's `AskUserQuestion`) should use it; otherwise print a numbered list and wait for a numbered reply. Never proceed on an assumed answer.
 - `$ARGUMENTS` — the text the user passed when invoking this skill. If your host does not substitute it, read it as the user's request in the current turn, and ask when there is none.
 - Bundled files — every relative path in this skill points at a file shipped inside this skill directory. Read them from here, not from the host's plugin tree.

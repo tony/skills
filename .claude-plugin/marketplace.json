@@ -76,7 +76,7 @@
     },
     {
       "name": "model-cli",
-      "description": "Run prompts through individual AI CLIs — Antigravity/agy (Gemini), codex/GPT, and cursor/agent with fallback support.",
+      "description": "Run a prompt through one AI CLI at a time: agy (Gemini), codex (GPT), or cursor's agent, with fallback between tiers.",
       "version": "0.0.2",
       "author": {
         "name": "Tony Narlock",
@@ -232,7 +232,7 @@
     },
     {
       "name": "business",
-      "description": "Measure and report the business value of AI workflows with provenance-tagged data — metrics in engineer-hours and cycle time, never currency.",
+      "description": "Measure and report the business value of AI workflows from provenance-tagged data, in engineer-hours and cycle time, never currency.",
       "version": "0.0.2",
       "author": {
         "name": "Tony Narlock",
@@ -388,7 +388,7 @@
     },
     {
       "name": "agent-messaging",
-      "description": "Message another running agent session — Claude Code or Codex — and verify who actually sent an incoming message.",
+      "description": "Message another running Claude Code or Codex session, and verify who actually sent an incoming message.",
       "version": "0.0.1",
       "author": {
         "name": "Tony Narlock",
@@ -401,7 +401,7 @@
     },
     {
       "name": "skill-style",
-      "description": "Hold SKILL.md files to a deletion test — a line stays only when its removal would change what the agent does — while frontmatter, code blocks, and sections survive verbatim.",
+      "description": "Hold SKILL.md files to a deletion test: a line stays only when removing it would change what the agent does. Frontmatter, code blocks, and sections survive verbatim.",
       "version": "0.0.1",
       "author": {
         "name": "Tony Narlock",

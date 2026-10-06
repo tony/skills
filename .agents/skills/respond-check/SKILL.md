@@ -24,10 +24,8 @@ recommendation; acting on it is the `respond-action` skill's job.
 
 A claim is not a work order. Every verdict carries its evidence, so a
 reviewer who disagrees can attack the evidence instead of the judgment.
-
-`references/screening-rubric.md` is the authority on the gates,
-verdicts, and ledger; this skill collects the inputs and reports the
-outputs.
+`references/screening-rubric.md` owns the gates, verdicts, and
+ledger.
 
 ## `$ARGUMENTS` contract
 
@@ -47,17 +45,14 @@ for the feedback rather than inventing a review.
 The alignment gate needs citations, so gather them before reading a
 single finding: `AGENTS.md` / `CLAUDE.md` and any nested equivalents
 covering the touched directories, `.github/CONTRIBUTING.md`, and the
-branch's own stated purpose — its pull request body, its commit
-messages, its ticket.
+branch's own stated purpose (pull request body, commit messages,
+ticket). A project with nothing written down has no decisions to cite;
+never substitute a preference for a citation.
 
 Resolve the provenance base here too (see the rubric's Provenance
 gate), and note the branch's push state with `git status -sb`. This
 skill does not fetch, so `origin/<trunk>` is read as last fetched; say
 in the report that provenance may be stale when the remote has moved.
-
-A project with nothing written down has made no decisions to cite,
-which means the alignment gate will rarely fire. That is the correct
-outcome, not a reason to substitute a preference for a citation.
 
 ## Phase 1: Collect
 
@@ -72,23 +67,18 @@ for re-posts of findings declined earlier in this session.
 ## Phase 2: Screen
 
 Run the six gates on every finding, in the rubric's order, stopping at
-the first gate that settles it. Record each gate's evidence as you go —
-the diff that settled provenance, the citation that settled alignment,
-the trigger that settled odds. A verdict with no evidence behind it is
-not a verdict, and the report must not contain one.
+the first gate that settles it. Record each gate's evidence as you go; a
+verdict with no evidence behind it is not a verdict, and the report must
+not contain one.
 
-Disciplines while screening:
-
-- **Read the code, do not trust the claim.** Automated reviewers assert
-  with total confidence regardless of whether they are right.
-- **Cost the smallest fix that works**, per the rubric's cost gate.
-- **One verdict per finding.** "Fix if X" is not a verdict; when the
-  code cannot be read, the verdict is `ask`.
-- **Decline on evidence only**: a cited decision, a code path read, a
+- Read the code, do not trust the claim: automated reviewers assert with
+  total confidence regardless of whether they are right.
+- One verdict per finding. "Fix if X" is not a verdict; when the code
+  cannot be read, the verdict is `ask`.
+- Decline on evidence only: a cited decision, a code path read, a
   trigger named. "That isn't long" is a preference, not evidence.
-- **Add no support the code and the reviewer's text do not give.** No
-  standards, library functions, or rationale you have not verified, per
-  `references/prose-rules.md`.
+- Add no standards, library functions, or rationale you have not
+  verified, per `references/prose-rules.md`.
 
 Use `ask-user-choice` for `ask` verdicts only: findings where the
 truth depends on intent only the author has, where the alignment
@@ -126,13 +116,44 @@ local absolute paths or temp files.
    plain numbered lines after `## Ledger key`, with no heading, and stop.
    Invoked by the `respond-goal` skill, skip the panel.
 
+Reply in this shape, as plain text outside any code fence, with plain
+bullets and no bold (never `- **Label:** ...`):
+
+```text
+2 to fix, 1 deferred, 1 declined on feat/retry-after. Screened 4 comments from the PR and 1 bot.
+
+## Ledger
+
+- #1 alex: "parse_retry_after throws on a non-numeric header". Location: parse_retry_after in client.py. Provenance in-branch (added in the branch's second commit); truth confirmed by reading the code. Verdict fix.
+- #2 lint-bot and alex: "session.token is read before the None check". Location: refresh_session in auth.py. Provenance in-branch. Verdict fix.
+- #3 style-bot: "split this 45-line function". Location: sync_all in sync.py. Provenance pre-existing at the base. Verdict defer.
+- #4 alex: "wrap the cache read in a lock". Location: Cache.get in cache.py. Trigger: needs two writers on a single-threaded path; damage cosmetic. Verdict decline, improbable.
+
+## To fix
+
+- #1: fall back to the default delay when the header is not numeric; forward commit.
+- #2: return early when `session` is None; fixup! of the commit that added refresh_session.
+
+## Deferred & declined
+
+- #3: open a follow-up to split sync_all; it predates this branch.
+- #4: "This needs two concurrent writers, and Cache is only called from the main loop. If you know a caller that writes from another thread, say so and it comes back."
+
+## Ledger key
+
+- Branch feat/retry-after, HEAD 4f2a9c1e7b05d83a6c1f9e204b7d5a38c0e1f692, digest 9b3e07a1c4d2.
+
+1. Run respond-action on the accepted findings
+2. Run it with --reply to post the drafted replies
+3. Re-screen with the deferred findings included
+4. Stop
+```
+
 A stopped run (no findings to screen, no readable feedback) reports one
 result sentence, then what the user needs to provide.
 
-Nothing in this phase edits, commits, or posts. If the run reaches a
-point where a fix seems obvious enough to just do, that is the failure
-mode this skill exists to prevent — write it in `## To fix` and hand
-off.
+If a fix seems obvious enough to just do, write it in `## To fix` and
+hand off.
 
 
 ## Portability notes

@@ -10,16 +10,14 @@ tickets, and a repository's own markdown files.
 
 Will a maintainer three years from now find this helpful?
 
-They will not have the conversation that produced the text, the tab
-that was open, or the branch it was written on. What survives is what
-was written down and what it links to. Everything below follows from
-that: pin the links, name the symbols exactly, show the command that
-was actually run, and cut the sentences that only made sense on the
-day.
+They will not have the conversation that produced the text. What
+survives is what was written down and what it links to: pin the links,
+name the symbols exactly, show the command that was actually run, and
+cut sentences that only made sense on the day.
 
-For a pull request, the same test picks the subject: describe the
-branch's **net** change, not the route it took. Intermediate renames,
-reverted attempts, and fixups are history the commits already carry.
+For a pull request, describe the branch's **net** change, not the route
+it took; the commits already carry renames, reverted attempts, and
+fixups.
 
 ## Two surfaces, one difference
 
@@ -27,21 +25,18 @@ In issue, pull request, discussion, and comment bodies GitHub renders
 a single newline inside a paragraph as a line break. In a markdown
 file it renders as a space.
 
-That difference decides wrapping. Three rules below are body-only and
-say so — heading level, table of contents, and mentions. Everything
-else applies to both surfaces.
+That decides wrapping. Heading level, table of contents, and mentions
+are body-only; everything else applies to both surfaces.
 
 ### Comment bodies are never hard-wrapped
 
 Write each paragraph as one long line and separate paragraphs with a
-blank line. A body wrapped at 72 or 80 columns renders as a column of
-ragged short lines, and every later edit re-wraps a whole paragraph
-into unreadable diffs.
+blank line. A body wrapped at 72 or 80 columns renders as ragged short
+lines.
 
 ### Repository files follow the repository
 
-Wrapping a `.md` file is safe and most repositories do it. Match
-whatever the repository already does; never re-wrap a file just because
+Match whatever the repository already does; never re-wrap a file because
 a body nearby is unwrapped.
 
 ### Commit messages wrap
@@ -74,16 +69,14 @@ Strip before publishing, every time:
 - Internal-only URLs a reader outside the org cannot open. Say what
   they contain instead of linking them.
 
-Pasted output is where these leak. Read every line of a log before it
-goes into a body, not just the first and last.
+Pasted output is where these leak: read every line of a log before it
+goes into a body.
 
 ## Code blocks
 
-Reach for a fenced block whenever the text is something a reader would
-otherwise have to retype.
+Use a fenced block for anything a reader would otherwise retype.
 
-- One command per block. Two commands in one fence cannot be copied
-  independently, and the reader cannot tell which one failed.
+- One command per block, so each copies independently.
 - No comments inside a fence. Explanation goes above the block as
   ordinary prose.
 - A single long command may span lines with a trailing `\`, and a
@@ -123,25 +116,20 @@ matrices, and anything else a reader scrolls past to reach the point.
 
 ### No tables
 
-Rendered tables are `width: max-content` with `overflow: auto` — they
-scroll sideways instead of reflowing, so a narrow viewport silently
-hides the right-hand columns. Use nested sections, or a list with a
-repeated leading label. Both reflow, diff cleanly, and survive being
-quoted in a reply.
+Rendered tables scroll sideways instead of reflowing, so a narrow
+viewport silently hides the right-hand columns. Use nested sections, or a
+list with a repeated leading label.
 
 ### Start a body's headings at `###`
 
 In an issue the title is a separate field, so a `#` in the body
-duplicates it. `##` draws a full-width horizontal rule; `###` does
-not. GitHub's own templates and issue forms emit `###` per section,
-so it is what readers expect. A repository file has no title field
-and keeps its `#`.
+duplicates it, and `##` draws a full-width horizontal rule. GitHub's own
+templates emit `###` per section. A repository file keeps its `#`.
 
 ### No table of contents in a body
 
 Headings in an issue body receive no anchor ids, so a `[jump](#repro)`
-link is dead on arrival. Link to another issue or a pinned file
-instead. A repository file's headings do get ids, and a table of
+link is dead. A repository file's headings do get ids, and a table of
 contents there resolves.
 
 ### Alerts stay at the top level
@@ -154,9 +142,8 @@ body, at most.
 
 ## In a body, mentions are notifications
 
-`@person` and `@org/team` send mail. They are not a way to attribute
-work or decorate a body. Name someone only when you are asking them
-for something.
+`@person` and `@org/team` send mail. Name someone only when you are
+asking them for something.
 
 Every rendered issue reference also writes a backlink onto the target
 issue. Citing twenty related issues notifies twenty threads.
@@ -167,8 +154,7 @@ plain text.
 ## What to leave out
 
 - Preamble and sign-off. Start at the finding.
-- Test counts, file counts, line counts, and "as of" dates. They are
-  wrong within a week and nobody updates them.
+- Test counts, file counts, line counts, and "as of" dates.
 - Line numbers in prose. Pin a permalink instead.
 - Narration of the draft itself — "I have updated the section above".
 - `comprehensive`, `robust`, `seamless`, `production-ready`,

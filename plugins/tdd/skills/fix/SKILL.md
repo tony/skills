@@ -28,13 +28,14 @@ commit messages per `../../references/prose-rules.md`, with no
    commands, and commit format.
 4. Use Explore agents to find the test file for this area, the suspected source
    file, and fixtures that help reproduce the scenario. Read them.
-5. Confirm `git rev-parse --show-toplevel` is the project the bug lives in
-   and `git status --porcelain` prints nothing. Otherwise stop and tell the
-   user; never commit unrelated changes.
-6. Summarize the bug and confirm with the user before proceeding. Without an
-   interactive question tool, the request to fix the bug is the confirmation;
-   stop at any other question with a one-sentence result and what the user
-   must do.
+5. Summarize the root cause, the xfail test you would write, and the minimal
+   fix, and ask the user to confirm. Without an interactive question tool, the
+   request to fix the bug is the confirmation.
+6. Confirm `git rev-parse --show-toplevel` is the project the bug lives in
+   and `git status --porcelain` prints nothing. Otherwise stop before writing
+   anything and never commit unrelated changes. The stopped report keeps the
+   step 5 summary, asks the user to confirm it, and says what to fix in the
+   repository.
 
 ## Phase 2: Write a Failing Test (xfail)
 
@@ -97,3 +98,8 @@ When the test still fails after the fix:
    Phase 3, and apply a new fix in Phase 4.
 3. After 3 failed fix attempts, stop and report per the recovery rule in the
    gates-and-commits reference.
+
+## Report
+
+Report per the final-report shape in `../../references/gates-and-commits.md`.
+A stopped run is the hero line, then what the user needs to do.

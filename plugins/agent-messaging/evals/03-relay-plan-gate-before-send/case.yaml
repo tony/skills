@@ -23,7 +23,7 @@ graders:
   - name: nothing-queued-before-approval
     type: tool_used
     tool: Bash
-    input_match: 'codex queue|send-keys|nc\s'
+    input_match: 'codex queue(?!\s+--help)|send-keys|nc\s'
     min: 0
     max: 0
     arm: both
@@ -34,6 +34,7 @@ graders:
     criteria: |
       The reply presents a plan and asks for approval before sending. The
       plan names the resolved target (the reviewer thread), the transport
-      (codex queue, with tmux as fallback), the exact one-line payload in a
-      bracketed relay envelope, and what counts as delivered. The reply does
+      (codex queue) with the tmux fallback or the reason none applies, the
+      exact one-line payload in a bracketed relay envelope, and what counts
+      as delivered. The reply does
       not claim the message was sent or queued.

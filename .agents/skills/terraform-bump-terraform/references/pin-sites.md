@@ -19,28 +19,21 @@ Read before writing any version string.
 >
 > — [Version Constraints](https://developer.hashicorp.com/terraform/language/expressions/version-constraints)
 
-A partial edit is worse than no edit. Raise the root module's `aws`
-constraint to `~> 6.57.0` while a child module still says `~> 6.56.0`,
-and the two cannot both be satisfied: `init` fails, or, where the
-constraints merely overlap, resolves to a version neither file names.
-
-Every declaration of a provider moves in one commit, or none does.
+A partial edit is worse than no edit: raise the root module's `aws`
+constraint to `~> 6.57.0` while a child module says `~> 6.56.0` and `init`
+fails, or, where the constraints overlap, resolves to a version neither file
+names. Every declaration of a provider moves in one commit, or none does.
 
 ## Finding the declarations
 
-Constraints live in a `terraform` block's `required_providers`, in any
-`.tf` or `.tofu` file under any filename. Search for the block, not the
-filename.
+Constraints live in a `terraform` block's `required_providers`, in any `.tf`
+or `.tofu` file under any filename. Search for the block, not the filename.
 
-Identity is the source address, not the local name. Two modules can call
-the same provider by different local names, and the same local name can
-point at different source addresses in different modules. Match on
-`source`.
-
-Source addresses take the form `[<HOSTNAME>/]<NAMESPACE>/<TYPE>` and
-default to `registry.terraform.io`. Resolve a loosely named provider
-against the addresses the repository declares, and ask if more than one
-matches.
+Identity is the source address, not the local name: modules can call one
+provider by different local names, and one local name can point at different
+sources. Source addresses take the form `[<HOSTNAME>/]<NAMESPACE>/<TYPE>` and
+default to `registry.terraform.io`. Resolve a loosely named provider against
+the declared addresses, and ask if more than one matches.
 
 ## Read the operator before replacing it
 
@@ -76,11 +69,10 @@ one was not requested.
 >
 > — [Provider Requirements](https://developer.hashicorp.com/terraform/language/providers/requirements)
 
-A floor in a reusable module is correct, not drift. Raising it to a
-ceiling constrains every configuration that consumes the module,
-including ones outside this repository. Leave floors alone unless the
-new version is the minimum the module now needs, and say why in the
-commit body when you move one.
+A floor in a reusable module is correct, not drift; a ceiling constrains
+every consumer, including ones outside this repository. Leave floors alone
+unless the new version is the minimum the module now needs, and say why in
+the commit body when you move one.
 
 ## The CLI version has pin sites outside `.tf` entirely
 
@@ -97,38 +89,23 @@ rule. Beyond those:
 - `Dockerfile` and `devcontainer.json` image tags, and task-runner
   variables in a `Makefile` or `justfile`.
 
-Three things make these easy to miss. Get all three right or the search
-reports a clean repository that is not one.
+Three traps make a search report a clean repository that is not one.
 
-**Match at any depth.** A git pathspec with no leading wildcard anchors
-to the repository root, so `Makefile` finds the top-level one and
-silently skips the per-module one sitting beside a root module — which,
-in a repository whose root modules live in subdirectories, is the one
-that matters. A leading `*` covers both. `just` also searches
-case-insensitively and accepts a leading dot, so `justfile`, `Justfile`,
-and `.justfile` are all live names; `:(icase)` handles the variants
-without listing them.
+**Match at any depth.** A git pathspec with no leading wildcard anchors to the
+repository root, so `Makefile` skips the per-module one beside a root module.
+A leading `*` covers both. `just` accepts `justfile`, `Justfile`, and
+`.justfile`; `:(icase)` handles the variants.
 
-**Filter on a version, not on the tool's name.** A task runner pins
-through a variable named for the tool's abbreviation rather than the
-tool, so `TF_VERSION := 1.11.0` contains no substring a
-`terraform|tofu` filter matches, and the file is found and then
-discarded. Widening the filter to the abbreviation alone fails the
-other way: a `justfile` that wraps `terraform init`, `terraform plan`,
-and `terraform apply` matches on every line and buries the real pins.
+**Filter on a version, not on the tool's name.** A task runner pins through a
+variable named for an abbreviation (`TF_VERSION := 1.11.0`), which a
+`terraform|tofu` filter misses, while a filter on the abbreviation alone
+matches every `terraform plan` line in a `justfile`. Require the tool name
+*and* a version-shaped number on one line.
 
-Require the tool name *and* a version-shaped number on the same line.
-That keeps `TF_VERSION := 1.11.0`, `terraform_version: 1.14.0`, and
-`FROM hashicorp/terraform:1.13.0`, and drops a task runner that only
-invokes the CLI.
+**Read version files by path.** `.terraform-version` holds a bare version
+number, so no name-based filter matches it. Take every line.
 
-**Read version files by path.** `.terraform-version` holds a bare
-version number and nothing else, so no name-based filter matches it.
-Take every line.
-
-One search covers the first two traps. It matches case-insensitively at
-any depth, and requires a tool or abbreviation name and a version number
-on one line:
+One search covers the first two traps, case-insensitively at any depth:
 
 ```console
 $ git grep -n -I -i -E -e '(terraform|tofu|tf_?version).*[0-9]+\.[0-9]+' -- ':(icase)*justfile' ':(icase)*makefile' '*Dockerfile*' '*devcontainer.json' '*.tool-versions' '*mise.toml' '*.yml' '*.yaml'
@@ -140,35 +117,31 @@ Version files take a second search:
 $ git grep -n -I -e '' -- '*.terraform-version'
 ```
 
-These drift apart quietly: the configuration says one version, the
-version manager installs another, and CI installs a third. Inventory all
-of them, report every disagreement found before the bump, and move them
-together.
+These drift apart quietly: the configuration says one version, the version
+manager another, CI a third. Inventory all of them, report every
+disagreement found before the bump, and move them together.
 
-An exact `required_version` is a hard gate, not a preference. A module
-pinned `= 1.14.5` refuses to initialise under 1.15.8 with `Unsupported
-Terraform Core version`, so a repository whose root modules disagree
-about the CLI has root modules that cannot all be run from one machine.
+An exact `required_version` is a hard gate: a module pinned `= 1.14.5`
+refuses to initialise under 1.15.8 (`Unsupported Terraform Core version`),
+so root modules that disagree about the CLI cannot all run from one machine.
 
 ## Resolve the version and its changelog from the registry
 
-Ask the registry rather than recalling a version, and confirm it exists
-before writing it anywhere. Every registry implements the protocol's
-versions endpoint, so this is the gate:
+Ask the registry, not memory, and confirm the version exists before writing
+it anywhere. Every registry implements the protocol's versions endpoint:
 
 ```console
 $ curl -fsS https://registry.terraform.io/v1/providers/hashicorp/aws/versions | jq -r '.versions[].version'
 ```
 
 Swap the host for `registry.opentofu.org` when OpenTofu drives the
-repository. A source address carrying a non-default hostname is a
-private registry: read `providers.v1` out of
-`https://<hostname>/.well-known/terraform.json` and build the path from
-that prefix rather than assuming the public one.
+repository. A source address with a non-default hostname is a private
+registry: read `providers.v1` out of
+`https://<hostname>/.well-known/terraform.json` and build the path from that
+prefix.
 
-`registry.terraform.io` additionally serves a metadata endpoint
-carrying the release tag and the provider's own repository, which is
-what makes a changelog link derivable for any provider:
+`registry.terraform.io` also serves a metadata endpoint with the release tag
+and the provider's own repository, which makes a changelog link derivable:
 
 ```console
 $ curl -fsS https://registry.terraform.io/v1/providers/hashicorp/aws | jq '{version, tag, source, published_at}'
@@ -182,10 +155,10 @@ That one is an extension, not protocol:
 >
 > — [Provider Registry Protocol](https://developer.hashicorp.com/terraform/internals/provider-registry-protocol)
 
-It returns 404 on `registry.opentofu.org` and on private registries.
-Where it is unavailable, confirm the version through the versions
-endpoint and find the provider's repository another way before citing a
-changelog. Never construct a repository URL from the source address.
+It returns 404 on `registry.opentofu.org` and on private registries. Where it
+is unavailable, confirm the version through the versions endpoint and find the
+provider's repository another way before citing a changelog; never construct a
+repository URL from the source address.
 
 For the CLI itself, Terraform releases are enumerated at
 `https://releases.hashicorp.com/terraform/index.json`. OpenTofu releases
@@ -195,11 +168,8 @@ are tags on its GitHub repository; list the latest stable ones with:
 $ git ls-remote --tags --refs https://github.com/opentofu/opentofu.git 'v*' | sed 's#.*refs/tags/v##' | grep -E '^[0-9]+\.[0-9]+\.[0-9]+$' | sort -V | tail -3
 ```
 
-Link the CLI changelog at that tag in the repository the release came
-from: `https://github.com/opentofu/opentofu/releases/tag/v<version>` for
-OpenTofu, and the `CHANGELOG.md` of `hashicorp/terraform` at
-`v<version>` for Terraform. If the page cannot be fetched, report no
-changelog link instead of guessing one.
-
-Cite the release notes at the tag the registry reported, not at a
+Link the CLI changelog at that tag: `https://github.com/opentofu/opentofu/releases/tag/v<version>`
+for OpenTofu, the `CHANGELOG.md` of `hashicorp/terraform` at `v<version>` for
+Terraform. If the page cannot be fetched, report no changelog link instead of
+guessing one. Cite release notes at the tag the registry reported, not at a
 branch.

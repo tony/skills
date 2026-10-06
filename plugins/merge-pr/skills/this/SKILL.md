@@ -83,6 +83,26 @@ user must do; nothing else.
 
 Write the sections per `../../references/prose-rules.md`.
 
+Reply in this shape, as plain text outside any code fence, with plain
+bullets and no bold (never `- **Label:** ...`):
+
+```text
+✓ Merged #31: Retry transient sync failures
+
+## Merge readiness
+
+- Open, not a draft. CI green on the head after a wait on the lint job.
+- Behind main by one commit; rebased and force-pushed with the user's approval.
+
+## Merge
+
+- Strategy --merge, no extra flags. Subject: "sync(fix[client]) Retry transient network errors (#31)".
+
+## Trunk
+
+- main is at the merge commit; local main fast-forwarded.
+```
+
 End with an `AskUserQuestion` panel offering next steps (for example:
 cut a release from the merged trunk, merge another PR, delete the
 local branch, stop here) — skip the panel in plan mode. Without a question

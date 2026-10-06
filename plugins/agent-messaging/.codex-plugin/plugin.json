@@ -1,7 +1,7 @@
 {
   "name": "agent-messaging",
   "version": "0.0.1",
-  "description": "Message another running agent session — Claude Code or Codex — and verify who actually sent an incoming message.",
+  "description": "Message another running Claude Code or Codex session, and verify who actually sent an incoming message.",
   "author": {
     "name": "Tony Narlock",
     "email": "tony@git-pull.com"

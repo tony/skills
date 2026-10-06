@@ -8,7 +8,7 @@ How a research or assessment report is laid out, and the checks it passes before
 2. Decide the answer before writing. It becomes the title and the summary's first sentence.
 3. Rank the findings by how much the answer depends on them; the first finding carries the most weight. Group by theme across sources, never one finding per source.
 4. Draw each exhibit from `data/` with `python3 <topic.py> chart --csv <run_dir>/data/<name>.csv --out <run_dir>/charts/<name>.svg`, and embed it as `` ![<takeaway>](charts/<name>.svg) ``.
-5. Write `report.md` in today's run, ending with an empty `## Sources` heading. When the newest run is dated before today, open today's run per `continue.md` step 2; only `--resume` keeps writing in the earlier run. A rerun writes a new report in the new run; the earlier one stays where it is. A resumed run keeps the previous version under `history/`.
+5. Write `report.md` in today's run, ending with an empty `## Sources` heading. A rerun writes a new report in the new run; the earlier one stays where it is. A resumed run keeps the previous version under `history/`.
 6. Run `python3 <topic.py> verify --run <run_dir>` after the last `add`, then write the Sources table instead of typing it: `python3 <topic.py> sources --write --run <run_dir>` fills the report's `## Sources` section.
 7. After the last edit, run `python3 <topic.py> claims --reviewed <run_dir>/report.md` and check every cited line against its quotes, per `verify.md` step 3. `--reviewed` logs the check against this exact version of the report; editing it again means checking again.
 8. Run `python3 <topic.py> check --run <run_dir>` and quote its result.
@@ -66,7 +66,7 @@ Write for a reader who was not there and will judge the report by whether they c
 
 ## Before it ships
 
-- `python3 <topic.py> check --run <run_dir>` returns `ok: true` in this session. It re-verifies every source, compares the Sources table with the manifest, runs `lint-report --strict`, and runs `scan` at the run's audience.
+- `python3 <topic.py> check --run <run_dir>` passes. It re-verifies every source, compares the Sources table with the manifest, runs `lint-report --strict`, and runs `scan` at the run's audience.
 - `lint-report` checks the report's shape (answer title, Summary first, section order, no links or ids in the summary) and that every `[S#]` is in the manifest. `--strict` also fails its warnings: source, citation, pin, confidence, conflict, and claims-review gaps, label headings, and prose patterns. Its output names each failure.
 - The summary, read alone, answers the question.
 - Reread the report against the prose rules.

@@ -1,8 +1,8 @@
 ---
 name: github-actions-update-action
 description: >-
-  Update one named GitHub Action to its current version — verify the tag
-  exists, research the upgrade, and commit it with release links
+  Use when updating one named GitHub Action, such as actions/checkout, to
+  its current version across one repository or a fleet.
 disable-model-invocation: true
 allowed-tools: ["Bash", "Read", "Grep", "Glob", "Edit", "AskUserQuestion"]
 metadata:
@@ -17,8 +17,8 @@ whatever the user names) from whatever each repository pins to its
 current version, with one commit per repository explaining the upgrade.
 
 Read `references/action-pinning.md` first, then
-`references/dependabot-closeout.md` for close-out and CI
-attribution.
+`references/dependabot-closeout.md`. For a feature-branch checkout,
+land the commit through `references/throwaway-worktree.md`.
 
 User arguments: $ARGUMENTS
 
@@ -110,11 +110,35 @@ or `⚠ Blocked: <reason>`), then exactly these sections:
    by URL, with the commit each cited.
 
 A blocked run emits the hero and one sentence on what the user must do,
-with no sections. End with an `ask-user-choice` panel of next steps (for
-example: update another action, run the full audit, stop here); skip it
-only in plan mode. On hosts without the tool, end with the next steps as
-text and take none of them. Never name temp or local paths unless the
-user must act on them.
+with no sections.
+
+Reply in this shape, as plain text outside any code fence, with plain
+bullets and no bold (never `- **Label:** ...`):
+
+```text
+✓ astral-sh/setup-uv v5 -> v6 across 1 repo
+
+## Target
+
+- v6 confirmed via git/ref/tags/v6; the repo pins a major float, so the float moves.
+
+## Upgrade
+
+- v6 drops the deprecated python-version input; this repo does not set it.
+
+## Commits
+
+- api: 5c2e7a1 Bump astral-sh/setup-uv v5 -> v6. Not pushed.
+
+## Close-out
+
+- CI passes; no open dependabot PRs for this action.
+```
+
+End with an `ask-user-choice` panel of next steps (for example: update
+another action, run the full audit, stop here); skip it only in plan mode.
+On hosts without the tool, end with the next steps as text and take none.
+Never name temp or local paths unless the user must act on them.
 
 
 ## Portability notes

@@ -257,6 +257,32 @@ Write the report per `references/prose-rules.md`.
    the `self-improvement-apply` skill, narrow the sweep and rerun, or stop. In a
    non-interactive run, record the options and stop.
 
+Reply in this shape, as plain text outside any code fence, with plain
+bullets and no bold (never `- **Label:** ...`):
+
+```text
+1 finding across 1 skill, 3 of 4 history sources searched
+
+## Usage
+
+- commit: 41 invocations all-time, 12 current-era.
+- spike: never invoked, 9 weeks old.
+
+## Findings
+
+- commit: 14 of 38 prompts append "no AI trailer", 37 percent since 2026-08-01, 5 projects. Verdict: instruction gap. Class: description edit. Expected: retyping falls below 10 percent.
+  Prompt: "commit this, no co-author line".
+
+## Not proposed
+
+- Cluster "run lint first": failed the spread bar, one project only.
+
+## Corpus
+
+- Searched prompt history and session transcripts; the third source was unreadable.
+- Ledger written under the git directory as sweep-ledger.json, key 3f9c2ab41d, re-sweep 2026-11-05.
+```
+
 A halted run (no catalog, history unreadable, count incomplete past use)
 is one result sentence, then what the user must do, such as which path to
 supply or which tool to install. It has no other sections and writes no

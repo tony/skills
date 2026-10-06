@@ -61,10 +61,12 @@ sections.
 
 ## Phase 1: Orchestration plan
 
-Enter plan mode if the host supports it (Claude Code: `EnterPlanMode`;
-Cursor / Codex / Gemini: `/plan` or `Shift+Tab`) and present, per finding:
-the id, the smallest edit that removes the gap, the files it touches, the
-gate it must clear, and its `expected_change`. Then the commit sequence.
+Enter plan mode before the first edit. In Claude Code call
+`EnterPlanMode`; in Cursor, Codex, or Gemini use `/plan` or `Shift+Tab`.
+Where plan mode is unavailable, present the plan as text. The plan gives,
+per finding: the id, the smallest edit that removes the gap, the files it
+touches, the gate it must clear, and its `expected_change`. Then the commit
+sequence.
 
 Say which findings you are not applying and why. A sweep proposes more
 than a catalog should absorb at once.
@@ -151,6 +153,25 @@ Write the report per `references/prose-rules.md`.
    Phase 5 pass found and fixed. Name no temp directory or local path.
 5. End with an `ask-user-choice` panel: open a pull request, sweep again,
    or stop. In a non-interactive run, record the options and stop.
+
+Reply in this shape, as plain text outside any code fence, with plain
+bullets and no bold (never `- **Label:** ...`):
+
+```text
+1 applied, 1 skipped on sweep/commit-trailer
+
+## Applied
+
+- finding-3: added the no-trailer rule to the commit skill; lint and eval gates pass; subject "Forbid tool trailers in commit messages"; expected retyping under 10 percent by 2026-11-05.
+
+## Skipped
+
+- finding-7: held back, the plan marked it as a description change that needs a routing eval first.
+
+## Verification
+
+- Eval check and lint pass; the final pass found nothing to fix.
+```
 
 
 ## Portability notes

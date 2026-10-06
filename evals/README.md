@@ -31,17 +31,10 @@ runs it.
 
 ### What it costs
 
-Measured over a full pass of 52 cases:
-
-- **62 minutes** wall clock, run serially
-- **$19** of API-equivalent usage
-- **43 s** median per case, 69 s mean
-
-Raising `FAST_EVAL_JOBS` cuts the wall clock but not the cost.
-
-The spread matters more than the mean. One ensemble case (`weave`) takes ten
-minutes on its own — a sixth of the total — while half the suite finishes inside
-45 seconds. Budget for the tail, not the average.
+Each case runs once, serially by default. A typical case finishes in under a
+minute; an ensemble case (`weave`) can take ten, so budget for the tail rather
+than the average. `scripts/fast_evals.sh --list` shows how many cases the
+current tree selects. Raising `FAST_EVAL_JOBS` cuts wall-clock time, not usage.
 
 ### Reading a verdict
 

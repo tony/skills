@@ -10,8 +10,8 @@
 # throwaway repository, which is the slow suite's job. Run those with the
 # command in each plugin's eval directory.
 #
-# Requires a logged-in Claude Code on the runner. Budget roughly one minute
-# and a few cents of API-equivalent usage per case.
+# Requires a logged-in Claude Code on the runner. Budget about a minute per
+# case; ensemble cases take longer.
 # No -e on purpose: a failing case must be judged by its verdict and the pass
 # must continue, unlike the scaffolds, which abort on the first error.
 set -uo pipefail

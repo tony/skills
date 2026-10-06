@@ -18,23 +18,18 @@ this file.
 
 A complete package may still contain no defensible savings number:
 early instrumentation, unknowns blocking `S_inst`, no counterfactual
-yet. That is not a rendering failure at any tier: render an evidence
-report. The answer or headline states plainly what the data does and
-does not yet support; where a committed number would go, name the
-open unknowns and the data that would resolve them. Refusal is for
-gate failures, never for honest absence.
+yet. Render an evidence report at any tier: the headline states what
+the data does and does not yet support, and where a committed number
+would go, the open unknowns and the data that would resolve them.
+Refusal is for gate failures, never for honest absence.
 
 ## Tier 0 — leadership
-
-Command: the `business-report-leadership` skill.
 
 Full detail: names, raw links, registers inline. Provenance tags
 render with complete source refs: manifest entry names, file paths,
 assumption ids.
 
 ## Tier 1 — org-wide
-
-Command: the `business-report-org-wide` skill.
 
 Team-level aggregates only; no individual names anywhere. Internal
 team and system names allowed. Ends with a plain-language summary
@@ -43,15 +38,11 @@ tagged and true.
 
 ## Tier 2 — internal case study
 
-Command: the `business-case-study-internal` skill.
-
 Internal team and repo names allowed; individuals anonymized to
 roles ("a senior engineer", never a name). Tags with internal source
 refs allowed.
 
 ## Tier 3 — public
-
-Commands: this skill, the `business-pr-release` skill.
 
 Hard sanitization contract:
 
@@ -59,7 +50,7 @@ Hard sanitization contract:
   IDs; no internal URLs; no internal or local file paths.
 - Aggregates and ranges only. Round to honest precision: a
   number's precision must not exceed what its interval supports.
-- Every headline claim triangulated per `evidence.md`.
+- Every headline claim triangulated against the field range.
 - A candid limitations section is mandatory; credibility is the PR
   asset.
 - Provenance tags remain on every figure, rendered as tag plus
@@ -94,21 +85,18 @@ by sourcing figures only from the public case study.
 3. Confirm every headline claim passed triangulation or carries its
    methodology defense.
 4. Confirm the limitations section is present and candid.
-5. Confirm no currency appears (`provenance.md` bans it at every
-   tier; re-check here because external text travels furthest).
+5. Confirm no currency appears; external text travels furthest.
 
 Report the checklist in the `## Sanitization` section of the
 command output: pass per item, with what was removed or reworded.
 
 ## Firewall sweep
 
-the `business-pr-release` skill treats the public case study as its
-sanitization firewall, and verifies it rather than trusting it.
-Before deriving the announcement, run checklist items 1, 2, 4, and 5
-over the located case study (the scanner already covers money terms
-in item 1). Triangulation was the case study's job.
+the `business-pr-release` skill verifies the public case study instead of
+trusting it. Before deriving the announcement, run checklist items 1,
+2, 4, and 5 over it; triangulation was the case study's job.
 
-Any failure stops the run: the case study is regenerated via
-this skill, never patched around in the release.
-Report a passing sweep in `## Firewall`; a failing one is a stopped
-run that names the failed items.
+Any failure stops the run: regenerate via this skill,
+never patch around it in the release. Report a passing sweep in
+`## Firewall`; a failing one is a stopped run that names the failed
+items.

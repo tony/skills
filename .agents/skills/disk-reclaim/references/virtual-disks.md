@@ -10,8 +10,7 @@
 - Docker Desktop and Hyper-V
 
 When the filesystem being cleaned lives inside a virtual disk, deleting
-files frees nothing on the host until the disk is compacted. Getting
-this wrong costs hours of cleanup and leaves the host disk still full.
+files frees nothing on the host until the disk is compacted.
 
 ## Detect the nesting first
 
@@ -65,15 +64,13 @@ signalling correctly and the host is ignoring it.
 
 Compacting requires the guest to be stopped. **Do not run
 `wsl --shutdown`, `wsl --terminate`, or any equivalent guest-halting
-command.** It kills every running shell, editor server, language
-server, container, and background job on the machine — including the
-session issuing the command, and including work the user has not saved.
+command.** It kills every running shell, server, container, and
+background job, including the session issuing the command and any
+unsaved work.
 
-Present it as a step the user runs, with the command below, what it
-interrupts, and stop. Approval to delete caches is not approval to
-terminate the environment. The same restraint applies to host-side
-compaction, which runs from a Windows administrator shell the agent does
-not own.
+Present it as a step the user runs, with what it interrupts, and stop.
+The same applies to host-side compaction, which runs from a Windows
+administrator shell the agent does not own.
 
 ## Ordering
 
@@ -85,15 +82,13 @@ so sequence matters:
 2. Hand the user the shutdown command and wait.
 3. Hand the user the compaction command.
 
-Sparse is a durable fix rather than a one-time recovery. It makes
-future TRIM self-reclaiming, so the balloon stops re-accumulating. Offer
-it alongside a plain compact and let the user choose.
+Sparse is a durable fix: future TRIM self-reclaims, so the balloon stops
+re-accumulating. Offer it alongside a plain compact.
 
 ## WSL: shutdown, compact, sparse
 
-These commands are single-platform: they run on the Windows host, not in
-the Linux guest, and only the user runs them. Each halts WSL or needs
-the WSL VM stopped, so they sit behind the never-halt rule above.
+These commands run on the Windows host, not in the Linux guest, and only
+the user runs them; each halts WSL or needs the VM stopped.
 
 Sources:
 [Basic commands for WSL](https://learn.microsoft.com/en-us/windows/wsl/basic-commands)
@@ -135,8 +130,7 @@ them check `wsl --manage --help` on their WSL version.
 
 ## Docker Desktop and Hyper-V
 
-The same principle holds: free space inside, stop the VM, compact the
-backing file. Docker Desktop keeps its own disk image and Hyper-V keeps
-its own `.vhdx` files, each with a vendor-specific shutdown. Locate the
-file as above, give no command not found in the vendor's documentation,
-and treat stopping the VM as a halt the user runs.
+Free space inside, stop the VM, compact the backing file. Each has a
+vendor-specific shutdown: locate the file as above, give no command not
+found in the vendor's documentation, and treat stopping the VM as a halt
+the user runs.

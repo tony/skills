@@ -22,7 +22,7 @@ default to task, bug and feature, and cap at 25 per organization
 ([issue types][types]), so personal-account repositories have none. Which paid
 plans expose issue types is UNVERIFIED — that page states no gate.
 
-GitHub has NO native Initiative or Epic level. Express one as a parent Issue
+GitHub has no native Initiative or Epic level. Express one as a parent Issue
 with sub-issues, a custom issue type, a label, a Project field or a tracking
 Issue, recording `native_type: issue`, `native_display_type: Epic`,
 `mapping_basis: convention`. A custom issue type named Epic is still an Issue.
@@ -80,7 +80,7 @@ is the host, not the link form: "you can use `redirect.github.com` instead of
 appearing, and the technique is unsupported on GitHub Enterprise Cloud with data
 residency (`ghe.com`) ([avoiding backlinks][back]).
 
-So wrapping a `github.com` URL in `[text](url)` does NOT suppress the
+So wrapping a `github.com` URL in `[text](url)` does not suppress the
 cross-reference — that titled link is exactly the "manually linking" case the
 docs say generates one — and a bare `#N` has no URL to rewrite at all. Use a
 titled link for disambiguation, `redirect.github.com` to avoid the event.

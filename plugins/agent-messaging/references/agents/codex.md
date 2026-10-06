@@ -28,11 +28,14 @@ Upstream: [openai/codex](https://github.com/openai/codex).
 
 ## 2. Discovery
 
-Paths below are relative to `${CODEX_HOME:-$HOME/.codex}`.
+Paths below are relative to `${CODEX_HOME:-$HOME/.codex}`; resolve it once and reuse it,
+because a non-default `CODEX_HOME` makes live threads look missing.
 
 - **Enumerate peers**: no model-facing peer tool was found. A same-UID helper can join
-  `session_index.jsonl` with held files under `thread-writer-locks/`; `fuser` supplies the
-  owning process ID.
+  `session_index.jsonl` (thread id to the `thread_name` field; a rename takes a few seconds
+  to appear) with `thread-writer-locks/<uuid>.lock`, which its owner holds under `flock`, so
+  `fuser` gives liveness and the owning process ID. `codex app-server` also answers
+  `thread/list` over stdio.
 - **Scope**: threads sharing a `CODEX_HOME`.
 - **What a listing shows**: thread UUID and name from the index; liveness and process ID from
   the writer lock. Queue depth is readable from `queue_1.sqlite`.

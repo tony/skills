@@ -45,7 +45,13 @@ graders:
     type: llm
     focus: last_message
     criteria: |
-      The reply states that the filed ticket's claim of five is wrong and that
-      the file sets the cap to three, in one brief correction.
-      The rest of the reply is a standalone account of the retry behaviour, not
-      a running comparison with the earlier answer.
+      The reply tells the user the filed ticket's figure of five is wrong and
+      that the file sets the cap to three.
+
+  - name: correction-stays-brief
+    type: llm
+    focus: last_message
+    criteria: |
+      The reply is a standalone account of the retry behaviour. It does not
+      grade or narrate its earlier answer beyond a single brief correction of
+      the ticket's figure.

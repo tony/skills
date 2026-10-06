@@ -5,11 +5,7 @@ Contents: The gates, Verdicts, The ledger, Rationalizations.
 Every claim a reviewer makes, human or machine, passes six gates
 before a single file is edited. the `respond-check` skill runs them and writes
 the ledger; this skill reads that ledger and does not
-re-litigate it.
-
-Fixing everything a reviewer says bloats the branch; dismissing it
-ships bugs. Neither compliance nor reflex is a screening method —
-evidence is, and every verdict below carries some.
+re-litigate it. Every verdict carries evidence.
 
 ## The gates
 
@@ -36,8 +32,7 @@ callers. Reviewers assert; the ledger records what you verified.
 A claim is `wrong` when the code already does the thing, when the path
 the claim depends on is unreachable, when it rests on a misread of an
 API's contract, or when it describes a version of the file that no
-longer exists. Automated reviewers produce this class constantly:
-their confidence is a rendering choice, not a measurement.
+longer exists. Automated reviewers produce this class constantly.
 
 ### 3. Provenance
 
@@ -69,9 +64,8 @@ ambiguous. Classify:
   branch's part proceeds, the remainder defers.
 - `disputed` — settled at gate 2 already.
 
-A reviewer flags; the branch owner scopes. Pre-existing findings are
-real work, and real work deserves its own branch and its own review
-rather than a ride on this one.
+A reviewer flags; the branch owner scopes. Pre-existing findings get
+their own branch and review.
 
 ### 4. Alignment
 
@@ -82,14 +76,10 @@ nested equivalent, the purpose the branch states in its pull request or
 commits, a design the surrounding code visibly and deliberately
 encodes, or the convention every sibling module follows.
 
-The guard against abusing this verdict: **a misaligned verdict must
-cite a written or demonstrated project decision.** A preference
-invented while screening is not a decision. If the citation cannot be
-produced, the finding has not been declined — it has been resisted, and
-it goes back to gate 5 on its merits.
-
-The reply for a misaligned finding names the decision, so the reviewer
-can argue with the decision itself rather than with the triage.
+**A misaligned verdict must cite a written or demonstrated project
+decision.** A preference invented while screening is not a decision;
+without a citation the finding goes back to gate 5 on its merits. The
+reply names the decision, so the reviewer can argue with it.
 
 ### 5. Odds
 
@@ -114,14 +104,13 @@ Damage:
   can report it.
 - **Cosmetic.** Style, an internal log line, a message no user reads.
 
-Severe damage clears this gate at any trigger — a remote security bug
-is still a security bug, and the cost of being wrong is unbounded.
-Otherwise: routine and occasional triggers clear the gate; a **remote
-trigger with non-severe damage is declined as `improbable`.**
+Severe damage clears this gate at any trigger. Otherwise routine and
+occasional triggers clear it; a **remote trigger with non-severe damage
+is declined as `improbable`.**
 
-The ledger records the trigger the scenario requires, in one clause.
-That is what makes the verdict falsifiable: a reviewer who knows a
-caller that produces it says so, and the finding comes straight back.
+The ledger records the trigger the scenario requires, in one clause, so
+a reviewer who knows a caller that produces it can say so and the
+finding comes straight back.
 
 ### 6. Cost
 
@@ -131,14 +120,13 @@ abstraction with one caller, a configuration knob, or a concept they
 must learn to follow the function.
 
 Weigh that against the damage from gate 5. A guard against a cosmetic
-remote scenario that costs a new code path and a test to hold it up is
-declined as `cost-exceeds-value`. So is a defensive wrapper with no
-reachable failure mode — that is the same claim gate 5 already
-rejected, wearing a fix's clothes.
+remote scenario that costs a new code path and a test is declined as
+`cost-exceeds-value`, as is a defensive wrapper with no reachable
+failure mode.
 
-Cost is measured against the smallest fix that would work, not the one
-the reviewer proposed. Reviewers routinely propose a mechanism when
-the defect only needed a condition. Cost the smaller fix and offer it.
+Cost the smallest fix that would work, not the one the reviewer
+proposed: reviewers often propose a mechanism when the defect only
+needed a condition. Offer the smaller fix.
 
 ## Verdicts
 
@@ -157,9 +145,7 @@ Every finding leaves screening with exactly one, never a conditional
   on intent only the author has, or the alignment citation is
   contested. Goes to the user, not to a coin flip.
 
-Severity labels supplied by the reviewer are inputs, not verdicts. A
-bot's "critical" and a human's "nit" both enter the rubric and leave
-with whatever the six gates produced.
+Reviewer-supplied severity labels are inputs, not verdicts.
 
 ## The ledger
 
@@ -197,18 +183,15 @@ Each record carries:
 
 - **id** — stable within the run; the reviewer's own id when it has
   one.
-- **source** — who said it and where: the author's login, whether that
-  author is a bot, and the thread or review it came from.
+- **source** — the author's login, whether that author is a bot, and the
+  thread or review it came from.
 - **claim** — the reviewer's words, quoted and trimmed to the assertion.
 - **location** — file and symbol.
-- **gates** — the result of each gate that ran, with its evidence: the
-  commit or diff that settled provenance, the citation that settled
-  alignment, the trigger that settled odds.
+- **gates** — each gate that ran, with its evidence.
 - **verdict** — one of the four above, with its reason.
-- **fix shape** — for `fix`: the minimal change, and whether it lands
-  as a forward commit or a `fixup!`.
-- **reply** — for `decline` and `defer`: the text a reviewer would find
-  answerable.
+- **fix shape** — for `fix`: the minimal change, forward commit or
+  `fixup!`.
+- **reply** — for `decline` and `defer`: text a reviewer can answer.
 
 ## Rationalizations
 

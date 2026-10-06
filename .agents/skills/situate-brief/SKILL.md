@@ -24,9 +24,7 @@ The signal is a question with no subject: a bare interrogative, a
 request to back up, or an admission of being lost. "What does the parser
 do" names its object and is an ordinary question; answer it normally.
 
-When unsure, answer briefly rather than asking which they meant. A
-five-line answer to the wrong reading costs less than a clarifying
-round-trip.
+When unsure, answer briefly rather than asking which they meant.
 
 A request to be caught up ("bring me up to speed on this branch", "what
 is this pull request waiting on") names what it wants and wants it in

@@ -50,32 +50,49 @@ Check each dimension that applies; a one-line typo fix needs no Design
 decisions section.
 
 - Structure: `## Summary`, `## Changes`, `## Test plan` headings where the change size warrants them.
-- Proportionality: detail matches the diff; a small fix does not carry 20 bullets, and a large feature is not one sentence.
+- Proportionality: a small fix does not carry 20 bullets, and a large feature is not one sentence.
 - Bold impact labels: Summary bullets open with a **bold verb** (Fix, Add, Remove, Replace, Migrate).
 - Tables: comparison-heavy sections (renames, parameter maps, environment matrices) use tables, not prose.
 - Code blocks: one command per block, no comments inside, explanation outside.
 - Test plan: a `- [x]` or `- [ ]` checklist whose items say what is validated, not only the command.
 - Design decisions: non-trivial changes explain their trade-offs.
-- Verification: copyable `rg` or `grep` commands prove the change is complete.
-- Negative assertions: removal and migration PRs include "verify zero matches for X" items.
+- Verification: copyable `rg` or `grep` commands prove the change is complete; removal and migration PRs include "verify zero matches for X" items.
 - Cross-references: companion PRs, related issues, and tracking links, where relevant. Suggest `Fixes #<issue>` only for an issue number the PR, branch, or user names; never invent one.
 - Before/After: behavioral changes show both states in labeled code blocks.
-- No brittle details: no test counts, SHAs, line numbers, or file or line-changed counts; the diff already shows them.
-- No branch-internal narrative: no rename history, "no longer X" or "previously Y" phrasing, or `### Fixes` framing for behavior that never appeared in a published release. Keep such text only when a user of the latest release experienced the old name, behavior, or bug.
-- Whole-branch perspective: describes the net shipped result, not the branch's commit-by-commit evolution. Suggest a rewrite when it narrates.
+- No brittle details: no test counts, SHAs, line numbers, or file or line-changed counts.
+- No branch-internal narrative: no first-person diary ("first I tried X, but Y"; suggest cutting it or moving it to a commit message), no rename history, "no longer X" or "previously Y" phrasing, or `### Fixes` framing for behavior that never appeared in a published release. Keep such text only when a user of the latest release experienced the old name, behavior, or bug.
+- Whole-branch perspective: describes the net shipped result, not the commit-by-commit evolution. Suggest a rewrite when it narrates.
 
 ### 4. Report
 
 Use these `##` headings verbatim, in this order, and end after the last
-one. Write plain bullets, with no bold label on each bullet.
+one.
+
+Reply in this shape, as plain text outside any code fence, with plain
+bullets and no bold (never `- **Label:** ...`):
+
+```text
+## What works
+
+- Each Summary bullet gives the reason for the change.
+- The timeout bullet names both values.
+
+## Suggested improvements
+
+- Add a verification command to the Test plan:
+  `- [ ] Run the sync client against a flaky endpoint`
+
+## Overall assessment
+
+Good; adding a runnable verification step is the highest-impact fix.
+```
 
 `## What works`: specific strengths, so the author keeps them.
 
 `## Suggested improvements`: one action per suggestion, each with a
-**concrete markdown snippet**, never vague advice like "add more
-detail". Draft a missing section the diff warrants as ready-to-paste
-text. Show the improved version of a weak one. Flag brittle details as
-concrete edits.
+concrete markdown snippet, never vague advice like "add more detail".
+Draft a missing section the diff warrants as ready-to-paste text, show
+the improved version of a weak one, and flag brittle details as edits.
 
 `## Overall assessment`: one sentence: adequate, good, or complete. For
 adequate or good, name the single highest-impact improvement.
@@ -85,5 +102,4 @@ the user must do.
 
 ## Rules
 
-- **Never** modify the PR; only report findings.
-- **Never** run destructive git or gh commands.
+Never modify the PR or run destructive git or gh commands; only report findings.

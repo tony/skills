@@ -6,16 +6,19 @@ set -euo pipefail
 cat >client.py <<'PY'
 """HTTP client with a bounded retry loop."""
 
+import time
+
 MAX_RETRIES = 3
 RETRY_BACKOFF_SECONDS = 2
 
 
 def send_with_retry(request):
     attempts = 0
-    while attempts <= MAX_RETRIES:
+    while attempts < MAX_RETRIES:
         attempts += 1
         response = request.send()
         if response.ok:
             return response
+        time.sleep(RETRY_BACKOFF_SECONDS)
     return None
 PY

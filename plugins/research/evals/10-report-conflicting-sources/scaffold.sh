@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# Today's run holds two captured sources that disagree on one default.
+# The 2026-01-15 run holds two captured sources that disagree on one default.
 set -euo pipefail
 
-day=$(date +%F)
+day=2026-01-15
 run="out/$day/research/wal-threshold"
 mkdir -p "$run/references/raw"
 

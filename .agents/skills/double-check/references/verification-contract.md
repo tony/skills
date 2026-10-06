@@ -29,14 +29,14 @@ the user had not committed to the first answer, so the output is
   answer; the reader must hold the old text in memory and apply a
   patch by hand.
 - **Process leakage.** "My earlier warning was about implementation
-  fashion" is inner monologue — the agent managing its own record
-  instead of describing the subject.
+  fashion" is the agent managing its own record instead of describing
+  the subject.
 - **Scaffolding survives.** Inheriting the original's numbering and
   framing means the pass can only revise existing items, never notice
   a missing one. Omissions are structurally invisible to a diff pass.
 
-"Double check" is ambiguous between *process* (verify) and *product*
-(the verified answer). The deliverable is the product.
+"Double check" is ambiguous between *process* and *product*; the
+deliverable is the product.
 
 ## The contract
 
@@ -75,12 +75,9 @@ answering for the first time.
 
 ## The adopted-state exception
 
-The Published-Release Test, applied to conversation (a correction
-belongs in the answer only if a reader of the published text saw the
-old claim): did the user
-**act** on a prior claim — commit it, file it, send it, build on it?
-Then the correction describes something they experienced. Say so
-explicitly, once, briefly ("the issue filed earlier claims X; that is
+A correction belongs in the answer only if the user saw and relied on
+the old claim: did they **act** on it — commit it, file it, send it,
+build on it? Then say so explicitly, once, briefly ("the issue filed earlier claims X; that is
 wrong because Y"), then continue standalone. Adoption is the only
 thing that turns a prior turn into a baseline.
 
@@ -91,9 +88,8 @@ thing that turns a prior turn into a baseline.
   produce one. The same goes for delta sections another workflow
   explicitly mandates (a refine pass's change-notes section is a
   requested comparison artifact, not leakage).
-- Not a ban on admitting error. When the user points out a mistake,
-  acknowledge it in one sentence, then deliver the corrected answer
-  whole — not as a patch narrative.
+- Not a ban on admitting error: acknowledge a user-pointed mistake in
+  one sentence, then deliver the corrected answer whole.
 
 ## AGENTS.md fragment
 

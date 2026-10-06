@@ -32,16 +32,13 @@ Four references carry the parts that must not drift:
 
 The tree is the invariant. The history is the deliverable.
 
-A recommit that changes what the branch produces is a bug, no matter how
-good the commits look. Every decision below is subordinate to proving
-the final tree is identical to the one it replaced.
+A recommit that changes what the branch produces is a bug, however good
+the commits look.
 
 ## Phase 1 — Gather intent, before anything destructive
 
-The collapse destroys the original commit boundaries. Everything worth
-knowing has to be read first.
-
-Read every original message whole, the trailers, the pull request body
+The collapse destroys the original commit boundaries. Read first:
+every original message whole, the trailers, the pull request body
 and its review threads, the linked tickets, and — when the repository
 does not explain itself — the session that wrote the code. Follow
 `commit-messages.md` Part 2, including its privacy gate: extract
@@ -52,27 +49,23 @@ material for every message written later.
 
 ## Phase 2 — Resolve the base and run the gates
 
-Resolve the base to a SHA once, per `split-mechanics.md`: fork point
-first, plain merge-base as fallback, and refuse unless exactly one
-merge base exists. On a stacked branch the base is the parent branch
-tip, never trunk.
+Resolve the base to a SHA once, per `split-mechanics.md`. On a stacked
+branch the base is the parent branch tip, never trunk.
 
 Then run every refusal in `branch-safety.md`: dirty tree, operation in
 progress, merge commits in the range, branch held by another worktree,
 shallow clone. Detect a pushed branch and whether anyone else has
 pushed to it — without `git fetch`.
 
-A refusal is a report and a stop, not a warning to proceed past.
+A refusal is a report and a stop.
 
 ## Phase 3 — Discover the conventions
 
-The commit format, per `commit-messages.md` Part 1: declared first,
-mined from history at the fork point otherwise, and reported as
-`mixed` with a question when the repository has no single style.
+The commit format, per `commit-messages.md` Part 1.
 
 The project's quality gates, from `AGENTS.md`, `CLAUDE.md`, or
-`CONTRIBUTING.md` — the format, lint, typecheck, and test commands as
-the project defines them. Never invent one. These become the
+`CONTRIBUTING.md`: format, lint, typecheck, and test commands as the
+project defines them. Never invent one. These become the
 per-commit gate in Phase 6, so copy any harness outside the repository
 and call it by absolute path.
 
@@ -95,11 +88,8 @@ The plan states:
 - Anything the gates flagged but did not halt on.
 
 Order the series so it builds: a refactor before the behavior that
-depends on it, a fixture before the test that uses it. Declare any
-dependency between commits.
-
-Split when a commit does two things. The signal is the message — if
-the body needs to describe two concerns, it is two commits.
+depends on it. Declare any dependency between commits. Split a commit
+whose body needs to describe two concerns.
 
 Wait for approval. Exit plan mode before executing. Without an
 interactive question tool, stop after presenting the plan; an
@@ -117,9 +107,9 @@ git reset --soft <base-sha>
 ## Phase 6 — Rebuild, one commit at a time
 
 Per `split-mechanics.md`: whole files with `git commit -m "..." --only
--- <paths>` (message flags before the `--`), a single file split
-across commits through the regenerate-filter-apply loop, and the
-staged set asserted before every commit.
+-- <paths>` (message flags before the `--`), one file split across
+commits through the regenerate-filter-apply loop, the staged set
+asserted before every commit.
 
 Write each message from the intent gathered in Phase 1, in the format
 discovered in Phase 3, preserving each original author's name, email,
@@ -158,10 +148,20 @@ Then show the user how the history was regrouped:
 git range-diff <base-sha> backup/<branch>-<ts> HEAD
 ```
 
-Report the new series, the backup branch name, the gate results, and
-what was deferred, per `references/prose-rules.md`. Open with one
-result sentence, then the series as a plain list; no bold lead-ins and
-no absolute paths.
+Write the report per `references/prose-rules.md`. Reply in this
+shape, as plain text outside any code fence, with plain bullets and no
+bold (never `- **Backup:** ...`):
+
+```text
+Rebuilt feature/auth-rework as 3 commits; the tree matches the original.
+
+- 7c1e9a2 auth(refactor[session]) Extract token store
+- b40d3f8 auth(feat[refresh]) Add refresh-token rotation
+- e9a6150 auth(test[refresh]) Cover rotation and expiry
+- Backup: backup/feature/auth-rework-20261005.
+- Gates: lint, typecheck, and tests pass on every commit.
+- Deferred: the push; run it when ready.
+```
 
 A refused or halted run is one result sentence naming the gate that
 stopped it, then what the user must do. It states no commit list,
@@ -178,18 +178,15 @@ git push --force-with-lease --force-if-includes origin <branch>
 
 ## Rules
 
-- Prove tree equality before reporting success. Without it there is no
-  claim to make.
+- Prove tree equality before reporting success.
 - Never rewrite a pushed branch without explicit consent, and never
   when someone else has pushed to it.
-- Never `git add -A` or `git add .` — explicit paths only.
+- Never `git add -A` or `git add .`.
 - Never delete the backup branch. The user does that when they are
   satisfied.
 - Never bare `--force`, and never `git fetch` while a lease is being
   relied on.
-- Never invent a test command, a version, or a ticket ID.
-- Language-agnostic: every gate command comes from the project's own
-  conventions files.
+- Never invent a version or a ticket ID.
 
 
 ## Portability notes

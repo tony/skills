@@ -37,6 +37,7 @@ that has nothing to do with the manifest.
 
 from __future__ import annotations
 
+import ast
 import concurrent.futures
 import json
 import os
@@ -944,6 +945,58 @@ def _check_testpaths() -> list[str]:
     ]
 
 
+def _engine_strings(source: str) -> list[str]:
+    """Return the model IDs and credit-exhaustion patterns the weave engine hard-codes.
+
+    Examples
+    --------
+    >>> src = 'LANES = {"x": (("agy", "Pro"), ("codex", None))}; CREDIT_PATTERNS = ("quota",)'
+    >>> _engine_strings(src)
+    ['Pro', 'quota']
+    """
+    models: list[str] = []
+    patterns: list[str] = []
+    for node in ast.walk(ast.parse(source)):
+        if isinstance(node, ast.AnnAssign) and isinstance(node.target, ast.Name):
+            name, value = node.target.id, node.value
+        elif isinstance(node, ast.Assign) and isinstance(node.targets[0], ast.Name):
+            name, value = node.targets[0].id, node.value
+        else:
+            continue
+        if value is None:
+            continue
+        if name == "LANES":
+            for pair in ast.walk(value):
+                if isinstance(pair, ast.Tuple) and len(pair.elts) > 1:
+                    model = pair.elts[1]
+                    if isinstance(model, ast.Constant) and isinstance(model.value, str):
+                        models.append(model.value)
+        elif name == "CREDIT_PATTERNS":
+            patterns.extend(
+                c.value
+                for c in ast.walk(value)
+                if isinstance(c, ast.Constant) and isinstance(c.value, str)
+            )
+    return [*dict.fromkeys(models), *patterns]
+
+
+def _check_engine_parity() -> list[str]:
+    """Fail when the weave engine names a model or credit pattern model-cli never mentions."""
+    engine = PLUGINS_DIR / "weave" / "scripts" / "engine.py"
+    model_cli = PLUGINS_DIR / "model-cli"
+    if not engine.exists() or not model_cli.exists():
+        return []
+    haystack = "\n".join(
+        path.read_text(encoding="utf-8")
+        for path in [model_cli / "references" / "dispatch.md", *model_cli.glob("skills/*/SKILL.md")]
+    )
+    return [
+        f"weave engine.py: '{s}' appears in neither model-cli dispatch.md nor its skills"
+        for s in _engine_strings(engine.read_text(encoding="utf-8"))
+        if s not in haystack
+    ]
+
+
 def validate_plugin_dir(plugin_dir: Path) -> list[str]:
     """Validate a single plugin directory structure.
 
@@ -1253,6 +1306,7 @@ def lint() -> None:
             console.print(f"  Table: [green]OK[/green] ({len(manifest.plugins)} rows)")
 
     errors.extend(_check_testpaths())
+    errors.extend(_check_engine_parity())
 
     # Run claude plugin validate if CLI is available
     cli_errors, cli_warnings = _lint_claude_validate()

@@ -26,7 +26,7 @@ nest Initiatives and are Enterprise-only
 outcome-oriented delivery unit that can span Teams. An Issue is the primary work
 item; a Sub-issue decomposes one and is itself a full Issue.
 
-Linear has NO native Epic level. A Linear Project is normally the closest
+Linear has no native Epic level. A Linear Project is normally the closest
 analogue to a Jira, GitLab or Shortcut Epic — but it is not one, and Linear does
 not use the word. There is likewise no native release object and no native
 metric or key-result object.

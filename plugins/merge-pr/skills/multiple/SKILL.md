@@ -99,6 +99,27 @@ a command in this run verified:
 
 Write the sections per `../../references/prose-rules.md`.
 
+Reply in this shape, as plain text outside any code fence, with plain
+bullets and no bold (never `- **Label:** ...`):
+
+```text
+⚠ Halted at #32: CI failed on the rebased head.
+
+## Roster
+
+- Stack of 3 PRs, merged bottom-up: #31, #32, #33.
+
+## Merges
+
+- #31: gate passed, CI green, merged as "sync(fix[client]) Retry transient network errors (#31)".
+- #32: rebased onto main; the type-check job failed. Not merged.
+- #33: not attempted.
+
+## Trunk
+
+- main is at the #31 merge commit.
+```
+
 End with an `AskUserQuestion` panel offering next steps (for
 example: continue with a halted PR after a fix, merge another set,
 stop here) — skip the panel in plan mode. Without a question tool, end

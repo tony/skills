@@ -14,8 +14,7 @@ Every figure carries exactly one tag:
   inline next to the figure; each input keeps its own tag.
 - **BENCHMARKED** — from an external source. Pinned link (URL, DOI,
   or report ID) plus retrieval date. Vendor sources carry an
-  additional `(vendor)` flag and are never used as internal inputs;
-  `evidence.md` holds the vetted table and the usage rules.
+  additional `(vendor)` flag and are never used as internal inputs.
 - **ESTIMATED** — an assumption. Rationale plus confidence
   (high | medium | low); the entry lives in `assumptions.yaml` and
   the figure cites its assumption id.
@@ -32,7 +31,7 @@ Write the tag with the figure, followed by what the tag requires:
 > inputs MEASURED per measurements/timing.md).
 
 Tier-3 artifacts keep the tag and the method phrase but strip
-internal source refs — `audiences.md` defines per-tier rendering.
+internal source refs.
 
 ## No currency, ever
 

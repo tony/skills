@@ -121,7 +121,7 @@ Each external lane has a fallback chain. A step whose executable is missing is
 skipped; the last step is the lesser model.
 
 - `agy`: `agy` (Gemini 3.1 Pro), then `agent` (gemini-3.1-pro), then `agy`
-  (Gemini 3.5 Flash).
+  (Gemini 3.8 Flash).
 - `gpt`: `codex`, then `agent` (gpt-5.4-high), then `agent` (gpt-5.4-mini).
 
 Each attempt is classified: `ok`, `timeout`, `rate-limit`, `credit`, `crash`, or

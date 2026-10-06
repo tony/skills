@@ -1,12 +1,8 @@
 # Dependency commit conventions
 
-A dependency commit is read years later by someone deciding whether a
-version is safe to move again, so the body carries the reasoning and the
-links, not an inventory of the diff.
-
-Defer to the project's own `AGENTS.md` or `CLAUDE.md` when it states a
-subject format. What follows is the shape to use when the project does
-not say otherwise.
+The body carries the reasoning and the links, not an inventory of the
+diff. Defer to the project's own `AGENTS.md` or `CLAUDE.md` when it
+states a subject format; what follows applies when it does not.
 
 ## Contents
 
@@ -50,19 +46,14 @@ characters or fewer.
 
 ## The four tracks
 
-Each track has its own commit, and each follow-up and hold change is a
-further commit. None are merged, and tracks land in this order within a
-session.
+Each track has its own commit, as does each follow-up and hold change.
+Tracks land in this order within a session.
 
 ### Toolchain and runtime
 
 One tool per commit, even when a single edit to `.tool-versions` moves
-three tools. Each bump reverts on its own, and a reader bisecting a
-runtime regression needs the tools separated.
-
-A single commit may span several releases of that one tool. When it
-does, link every release in the span, not just the endpoint — the
-intermediate ones are where the regression usually is.
+three tools. A commit may span several releases of that one tool; link
+every release in the span, not just the endpoint.
 
 A routine bump takes a link block and nothing else: a patch or minor
 inside the same series, with nothing in the span the repository
@@ -81,14 +72,13 @@ That `why:` answers two questions and stops: what the span changes
 upstream, describing the intermediate releases rather than only linking
 them; and what those changes reach in *this* repository.
 
-Write the intersection where it survives. Analysis that lands only in
-the session report dies with the session — the commit is what a reader
-finds in `git log` two years later.
+Write the intersection in the commit; analysis left in the session
+report dies with the session.
 
-Negatives alone are half a body. "Does not apply, no such files, inert"
-proves the bump is safe and says nothing about why it was worth taking.
-Name what the repository gains as concretely as what it dodges. When a
-span genuinely touches nothing here, one line saying so is the finding.
+Negatives alone are half a body. "Does not apply, inert" says nothing
+about why the bump was worth taking. Name what the repository gains as
+concretely as what it dodges. When a span touches nothing here, one line
+saying so is the finding.
 
 ### Package manager and engines
 
@@ -101,8 +91,7 @@ js(engines) require Node >=<version>
 ```
 
 A package-manager bump takes a link block. An `engines` bump takes a
-`why:`/`what:` body, because a floor exists for a reason and the reason
-is not recoverable from the diff.
+`why:`/`what:` body: the reason for a floor is not in the diff.
 
 ### Named package bumps
 
@@ -137,13 +126,12 @@ js(deps) Refresh in-range transitives
 ```
 
 **The body is empty,** for every ecosystem: `uv sync --upgrade`,
-`ncu -u` with no named package, and `pnpm update` alike. Nothing worth
-saying is not already in the lockfile diff, and a generated inventory of
-package names is noise that makes the commits that *do* carry reasoning
-harder to find. The subject says which kind of refresh it is: manifest
-bumps, or in-range transitives with no manifest edit. A package that
-needs words (a major, a follow-up, a floor) leaves the bulk refresh and
-takes its own commit.
+`ncu -u` with no named package, and `pnpm update` alike. The lockfile
+diff already says it, and a generated package inventory buries the
+commits that carry reasoning. The subject says which kind of refresh it
+is: manifest bumps, or in-range transitives with no manifest edit. A
+package that needs words (a major, a follow-up, a floor) takes its own
+commit.
 
 ### Catalog and override pins
 
@@ -154,8 +142,8 @@ to `ncu`, so it is bumped by hand and scoped to the file it lives in:
 js(deps[catalog]) @biomejs/biome 2.5.3 -> 2.5.4
 ```
 
-Say in the body that the tool missed it. A reader who runs `ncu` and
-sees nothing outstanding needs to know why this commit exists.
+Say in the body that the tool missed it, so a reader who runs `ncu` and
+sees nothing outstanding knows why the commit exists.
 
 ## Body anatomy
 
@@ -187,26 +175,20 @@ hostname.
 
 ### Cooldown
 
-State the cooldown when it is load-bearing — that a release is being
-taken now because it cleared the window, or that a newer release exists
-and is deliberately excluded because it has not. A reader comparing the
-commit against the registry will otherwise think the bump was stale on
-arrival.
+State the cooldown when it is load-bearing: a release taken now because
+it cleared the window, or a newer release deliberately excluded because
+it has not, so the commit does not read as stale against the registry.
 
-Never write a claim into a body that has not been checked against the
-repository the commit lands in. A fleet-wide fact is not a per-repo
-fact, and a false claim committed to history stays false.
+Never write a claim into a body that was not checked against the
+repository the commit lands in; a fleet-wide fact is not a per-repo fact.
 
 Never add a `Co-Authored-By` trailer, a "Generated with" line or other
-tool trailer, a tool URL, or an emoji. Hosts add them by default and
-they cannot be removed from history without a rewrite.
+tool trailer, a tool URL, or an emoji. Hosts add them by default.
 
 ## Writing the message
 
-Multi-line messages go through a heredoc or a file. Passing a
-multi-line string to `git commit -m` through an interactive shell has
-collapsed bodies into the subject line, producing commits whose subject
-runs to several hundred characters with the link block inlined.
+Multi-line messages go through a heredoc or a file; a multi-line
+`git commit -m` string has collapsed bodies into the subject line.
 
 ```bash
 git commit -F - <<'EOF'

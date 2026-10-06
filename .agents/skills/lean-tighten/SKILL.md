@@ -57,7 +57,13 @@ names, never a commit.
 7. **Report and hand off.** Write it per
    `references/prose-rules.md`: a one-line count of findings
    resolved and skipped, with no section labels and no recap of what
-   changed. Then offer next steps via `ask-user-choice`: commit, or
+   changed, in this shape:
+
+   ```text
+   5 findings resolved, 1 skipped.
+   ```
+
+   Then offer next steps via `ask-user-choice`: commit, or
    discard the edits. Review the printed diff first, since
    `git checkout -- <file>` resets the whole file to HEAD and drops any
    other uncommitted work in it. A commit message carries no

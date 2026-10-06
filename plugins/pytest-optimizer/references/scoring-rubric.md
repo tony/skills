@@ -1,7 +1,7 @@
 # Scoring rubric
 
-How `02-plan` ranks benchmarked speedup candidates. The rubric is **safety-first**:
-it answers "which changes are worth the risk?", not "which are fastest?".
+How `02-plan` ranks benchmarked speedup candidates, safety first: which
+changes are worth the risk, not which are fastest.
 
 ## Dimensions and weights
 
@@ -37,10 +37,9 @@ Mid-scale anchors keep scoring consistent:
 
 A candidate is **dropped from the plan, never auto-applied**, when either holds:
 
-1. **Safety gate:** `safety < 0.4`. Correctness risk outweighs any speed.
-2. **Noise gate:** `impact == 0` — the measured delta did not clear the project's
-   noise band in `01-benchmark`. A speedup that cannot be distinguished from
-   jitter is not a speedup.
+1. **Safety gate:** `safety < 0.4`.
+2. **Noise gate:** `impact == 0`: the measured delta did not clear the noise band
+   in `01-benchmark`.
 
 Surviving candidates are ordered by `total` descending, then by the ordering
 constraints below.
@@ -49,15 +48,14 @@ constraints below.
 
 Score sets the priority, but some changes must precede others regardless of score:
 
-1. **Safety-gate fixes first** — make collection deterministic (H18) and prove
+1. **Safety-gate fixes first**: make collection deterministic (H18) and prove
    order independence (H17) before any parallel or reorder speedup.
-2. **Typing and parametrize migrations early** — they are low-risk, make later
-   diffs readable, and rarely conflict (H26–H32).
-3. **Scope and consolidation before parallelism** — fix fixture scope (H10) and
-   merge duplicates (H11, H25) before introducing `-n auto` (H19), so xdist runs
-   over an already-lean suite.
-4. **One speedup per commit** — never bundle; `reversibility` exists so a failed
-   green-verify reverts exactly one change.
+2. **Typing and parametrize migrations early** (H26-H32): low-risk, and they make
+   later diffs readable.
+3. **Scope and consolidation before parallelism**: fix fixture scope (H10) and
+   merge duplicates (H11, H25) before `-n auto` (H19).
+4. **One speedup per commit**, so a failed green-verify reverts exactly one
+   change.
 
 ## Worked examples
 
@@ -79,20 +77,17 @@ Score sets the priority, but some changes must precede others regardless of scor
 |-----------|------:|--------|
 | safety | 0.1 | Parallel writes to one shared mutable DB file. |
 
-`safety < 0.4` → **dropped at the gate**. The plan instead surfaces the
-prerequisite refactor (isolate the DB per worker via `tmp_path_factory` +
-`worker_id`, or a transaction-rollback fixture) as a *separate* hypothesis to
-benchmark, not as an auto-applied speedup.
+`safety < 0.4` → **dropped at the gate**. The plan surfaces the prerequisite
+refactor (isolate the DB per worker via `tmp_path_factory` + `worker_id`, or a
+transaction-rollback fixture) as a separate hypothesis, not an auto-applied
+speedup.
 
 ## Tunable knobs
 
-These defaults are deliberately conservative; a project may override them in the
-orchestration plan:
+A project may override these defaults in the orchestration plan:
 
-- **Noise-band multiplier `k`** (default `3`) in the band `max(k·MAD, trust floor)`. Lower `k`
-  credits smaller deltas as real; higher `k` demands a larger, surer win.
-- **Safety-gate cutoff** (default `0.4`). Raise it to be stricter about which
-  changes may be applied at all.
-- **Trust floor** (default `50ms`). Duration rows below this are too noisy to
-  rank, and it is the minimum noise band; `confidence` is penalized for
-  candidates resting on them.
+- **Noise-band multiplier `k`** (default `3`): lower credits smaller deltas as
+  real, higher demands a surer win.
+- **Safety-gate cutoff** (default `0.4`): raise it to be stricter.
+- **Trust floor** (default `50ms`): rows below it are too noisy to rank, and
+  `confidence` is penalized for candidates resting on them.

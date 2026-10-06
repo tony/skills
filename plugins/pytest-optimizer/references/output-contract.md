@@ -1,23 +1,78 @@
 # Output contract
 
-Every phase command prints its result in this fixed shape. Verbatim level-2
-headings, declared order, no invented sections. This keeps four separate commands
-feeling like one pipeline and makes the JSON memory legible at a glance.
+Every phase command prints its result in this fixed shape: verbatim level-2
+headings, declared order, no invented sections.
+
+## Contents
+
+- Shape
+- Halted run
+- Per-command body sections
 
 ## Shape
 
-1. **Hero block** (1–4 lines, optional). A `⚠`/`✓` prefix or a one-line summary.
-   No prose paragraphs. Examples:
-   - `✓ scan complete — baseline 12.5s, noise band 0.45s, 7 hypotheses, 0 suite edits`
-   - `⚠ 1 hypothesis dropped at the safety gate (xdist over shared SQLite)`
+1. **Hero block** (1-4 lines, optional): a `⚠`/`✓` prefix or a one-line summary,
+   no prose paragraphs.
 2. **Body sections** in the order each command declares (below). Skip a section
-   only when it is genuinely empty, and say so in one line rather than inventing
-   filler.
-3. **Next-step panel** — an `AskUserQuestion` so the user can act without composing
-   a follow-up command. Skip the panel only when the command is already running
-   inside plan mode (where the plan itself is the decision point). Without an
-   interactive question tool, list the options as text and take the stated
-   non-interactive default.
+   only when it is empty, and say so in one line.
+3. **Next-step panel**: an `AskUserQuestion` so the user can act without composing
+   a follow-up command. Skip it inside plan mode, where the plan is the decision
+   point. Without an interactive question tool, list the options as text and take
+   the stated non-interactive default.
+
+Name every heuristic in words with its id, never the id alone.
+
+Reply in this shape, as plain text outside any code fence, with plain
+bullets and no bold (never `- **Label:** ...`). A `00-scan` reply:
+
+```text
+✓ scan complete: baseline 12.5s, noise band 0.45s, 2 hypotheses
+
+## Environment
+
+- pytest 8.3.2 with xdist 3.6.1; deadfixtures not installed, so its check is skipped.
+
+## Baseline
+
+- Median 12.5s over 5 runs; trust floor 50ms.
+
+## Hypotheses
+
+- H10 mis-scoped fixture: widen db_session to session scope, 4.8s of setup repeated per test.
+- H01 slow test body: test_export_large spends 0.61s in one call.
+```
+
+A `01-benchmark` reply:
+
+```text
+✓ 1 validated, 1 rejected
+
+## Validated
+
+- H10 mis-scoped fixture: db_session to session scope saves 4.6s, above the 0.45s band, confidence 0.9.
+
+## Rejected
+
+- H01 slow test body: test_export_large saves 0.02s, inside the noise band.
+
+## Safety-gate results
+
+- Order independence held across 3 seeds; collection is deterministic.
+```
+
+A `03-execute` reply:
+
+```text
+✓ 1 applied, 1 skipped
+
+## Applied
+
+- 7c1e9d4 Share db_session across the session, verify green, 12.5s to 7.9s.
+
+## Result
+
+- 7.9s against a 12.5s baseline, 4.6s recovered.
+```
 
 ## Halted run
 
@@ -36,8 +91,8 @@ timings or results.
 - `## Slowest tests` — top `call` rows with root-cause notes.
 - `## Slowest fixtures` — top `setup`/`teardown` rows; note shared-scope
   attribution.
-- `## Hypotheses` — candidate table: id, heuristic, evidence, prior
-  risk/effort.
+- `## Hypotheses` — candidates as bullets: heuristic id and name, evidence,
+  prior risk/effort.
 
 **`01-benchmark`**
 

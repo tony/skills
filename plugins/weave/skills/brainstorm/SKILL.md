@@ -30,7 +30,7 @@ The selected backend governs the whole session: dispatch, retry, judging, refine
 
 ## Phase 1: Start the session
 
-Follow `ensemble-core.md` (Start the session) with `--command brainstorm`, resolving variants per `ensemble-core.md` (Variants), which asks through `AskUserQuestion`. This command has no passes question.
+Follow `ensemble-core.md` (Start the session) with `--command brainstorm`, resolving variants per `ensemble-core.md` (Variants), which asks through `AskUserQuestion`. This command has no passes question. When the prompt asks for several distinct approaches and sets no variant count, use 3 variants without asking: one variant per participant would converge on the conventional design.
 
 Build the context packet per `ensemble-core.md` (Context packet). Lead with conventions and the files the prompt touches.
 

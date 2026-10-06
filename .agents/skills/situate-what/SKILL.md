@@ -33,8 +33,7 @@ spends no lines on branch position.
 
 ### 2. Answer from the session first
 
-The conversation is the highest-value evidence and the cheapest. When
-the confusion is about what just happened (a command that ran, a
+When the confusion is about what just happened (a command that ran, a
 decision taken, why the work moved), the answer is already in context
 and needs no tools.
 
@@ -58,9 +57,9 @@ Go beyond that only for the paid tier in the brief reference.
 
 ### 3. Write the brief
 
-Five lines is a ceiling, not a target; three good lines beat five, and a
-narrow question usually needs two. Rank lines as the brief reference sets
-out. Then numbered single-line options, only when there is a real fork. Stay read-only, per the contract in
+Five lines is a ceiling; a narrow question usually needs two. Rank lines
+as the brief reference sets out, then add numbered single-line options
+only when there is a real fork. Stay read-only, per the contract in
 `references/situation-sweep.md`, and write per
 `references/prose-rules.md`.
 
@@ -81,10 +80,13 @@ Before sending, check each line:
 
 ## Output
 
-The body, then the options. Nothing else — no title, no framing
+The body, then the options. Nothing else: no title, no framing
 sentence, no offer to go deeper.
 
-```
+Reply in this shape, as plain text outside any code fence, with plain
+bullets and no bold (never `- **Label:** ...`):
+
+```text
 ⚠ CI is red on PR #12: the type-check job fails on three files this branch added.
 feat-brief-mode, 4 commits ahead of main, 2 files uncommitted.
 This session rewrote the output contract and has not re-run the gates since.

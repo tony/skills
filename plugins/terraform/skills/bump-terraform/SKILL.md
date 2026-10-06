@@ -15,9 +15,8 @@ same CLI somewhere else.
 
 Follow the phase structure and conventions in
 `../bumping-terraform/SKILL.md` (clean tree, commit message rules,
-non-interactive defaults, stopped runs), which points to the three
-references this skill relies on. To move a provider,
-use `/terraform:bump-provider`.
+non-interactive defaults, stopped runs), which names the references this
+skill uses. To move a provider, use `/terraform:bump-provider`.
 
 User arguments: $ARGUMENTS
 
@@ -111,8 +110,32 @@ order:
 6. `## Drift`: every disagreement found before the bump, and every one
    still outstanding after it.
 
-Omit a section that would be empty. A run that cannot proceed ends with
-the stopped line from `../bumping-terraform/SKILL.md`, not this shape.
+Reply in this shape, as plain text outside any code fence, with plain
+bullets and no bold (never `- **Label:** ...`):
+
+```text
+✓ terraform 1.14.5 -> 1.15.8 across 4 pin sites
+
+## Target
+
+- 1.15.8 confirmed on releases.hashicorp.com; 1.15.8 installed locally; changelog linked at v1.15.8.
+
+## Sites
+
+- envs/prod/versions.tf, .tool-versions, and the Dockerfile image tag edited.
+- .github/workflows/plan.yml pinned 1.14.0, a third version, and was edited.
+
+## Locks
+
+- envs/prod: refreshed, 3 platforms before and after.
+
+## Verification
+
+- envs/prod initialises under 1.15.8; fmt -check passes.
+```
+
+A run that cannot proceed ends with the stopped line from
+`../bumping-terraform/SKILL.md`, not this shape.
 
 End with an `AskUserQuestion` panel offering next steps, for example:
 converge the root modules still on an older pin, add the version to a

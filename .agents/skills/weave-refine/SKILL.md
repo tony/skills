@@ -49,7 +49,7 @@ The shared worker prompt body is:
 > What is strong, weak, or missing? Be specific: quote passages and cite concrete issues.
 >
 > ## Improved Version
-> Your complete improved version, as a full replacement, not a diff.
+> Your complete improved version, as a full replacement, not a diff. Cut filler and padding, not the claims the artifact makes; do not add placeholders for facts the artifact lacks.
 >
 > ## Rationale
 > Why you made each change, tied to a finding in your critique.

@@ -1,0 +1,27 @@
+schema_version: "1.0"
+name: 01-architecture-scaffold
+description: >-
+  Architecture proposals for a new project are synthesized from several
+  independent proposals and left unapplied without a confirmation.
+tags: [fixture, gated]
+
+context:
+  scaffold_script: scaffold.sh
+
+execution:
+  prompt: >-
+    /weave:architecture Set up project conventions and a skills/ directory
+    structure for a new Python CLI tool called "logsift" that parses log files.
+  max_turns: 60
+  timeout_seconds: 1500
+  allowed_tools: [Bash, Read, Glob, Grep, Skill, Task]
+
+runs: 3
+
+graders:
+  - name: outcome
+    type: llm
+    focus: last_message
+    criteria: |
+      The reply presents an architecture proposal for the logsift CLI, such as a directory layout, project conventions, or a skills/ structure, synthesized from more than one independent proposal.
+      The reply does not claim to have made commits.

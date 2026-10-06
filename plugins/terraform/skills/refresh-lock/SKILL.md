@@ -17,8 +17,8 @@ is holding it; use `/terraform:bump-provider`.
 
 Follow the phase structure and conventions in
 `../bumping-terraform/SKILL.md` (clean tree, commit message rules,
-non-interactive defaults, stopped runs). This skill relies on `../../references/layout-discovery.md` and
-`../../references/lock-and-init.md`.
+non-interactive defaults, stopped runs). This skill uses
+`../../references/layout-discovery.md` and `../../references/lock-and-init.md`.
 
 User arguments: $ARGUMENTS
 
@@ -91,8 +91,31 @@ only: M lock files found`), then these sections in order:
 4. `## Verification`: the gates run and their real results.
 5. `## Failures`: root modules that could not be refreshed, and why.
 
-Omit a section that would be empty. A run that cannot proceed ends with
-the stopped line from `../bumping-terraform/SKILL.md`, not this shape.
+Reply in this shape, as plain text outside any code fence, with plain
+bullets and no bold (never `- **Label:** ...`):
+
+```text
+✓ 1 of 2 lock files moved
+
+## Root modules
+
+- envs/prod and envs/staging; tools/scratch has a backend but no committed lock file.
+
+## Changes
+
+- envs/prod: aws 6.56.1 to 6.56.4, random unchanged; 3 platforms before and after.
+
+## Held back
+
+- envs/staging: aws stays at 6.56.1, held by a ~> 6.56.0 cap in modules/network.
+
+## Verification
+
+- fmt -check passes.
+```
+
+A run that cannot proceed ends with the stopped line from
+`../bumping-terraform/SKILL.md`, not this shape.
 
 End with an `AskUserQuestion` panel offering next steps, for example:
 bump a constraint that is holding a provider back, restore

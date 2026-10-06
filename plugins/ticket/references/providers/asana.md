@@ -23,13 +23,14 @@ and grouping — a phase, column, or category; a Task occupies one Section per P
 homed in, and a Section is not a container of record. Subtask is itself a full Task with
 the same fields.
 
-There is NO native timebox: Asana ships no Sprint, Iteration, or Cycle object. There is
-NO native release group: nothing corresponds to a GitHub Milestone, a GitLab Milestone,
+There is no native timebox: Asana ships no Sprint, Iteration, or Cycle object. There is
+no native release group: nothing corresponds to a GitHub Milestone, a GitLab Milestone,
 or a Jira Version. Do not invent one. Teams approximate both with a Section, a
 dedicated Project, a Portfolio, or a custom field — convention, not a native level.
 
 Task subtypes are a field, not a label: `resource_subtype` takes `approval`, `custom`,
-`default_task`, or `milestone`. Source: https://developers.asana.com/reference/tasks
+`default_task`, or `milestone`
+([Tasks](https://developers.asana.com/reference/tasks)).
 
 ## Semantic roles
 
@@ -123,8 +124,8 @@ render a confirmation UI before committing. Tokens issued for MCP apps work only
 the MCP server, not the standard REST API. Otherwise use the REST API at
 `https://app.asana.com/api/1.0` with a personal access token or OAuth, plus the official
 Python or JavaScript client library.
-Sources: https://developers.asana.com/docs/mcp-tools-reference and
-https://developers.asana.com/docs/client-libraries
+([MCP tools](https://developers.asana.com/docs/mcp-tools-reference),
+[client libraries](https://developers.asana.com/docs/client-libraries)).
 
 The writing gotcha that outranks the rest: send HTML, never markdown. A body drafted in
 markdown is stored and displayed as literal asterisks and brackets. Convert before the

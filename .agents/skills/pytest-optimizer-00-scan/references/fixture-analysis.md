@@ -26,25 +26,22 @@ cached:
 | `package` | once per package | the package |
 | `session` | once per test run | the whole run |
 
-pytest caches a fixture's result and reuses it within its scope (`cached_result`).
-The core mis-scope smell: an **expensive `function`-scoped fixture whose value is
-shared and not mutated** re-runs N times when one setup would do. Widening the
-scope is often the single highest-impact, lowest-risk speedup — *if* the value is
-read-only across tests (otherwise see "shared mutable state" below).
+The core mis-scope smell: an **expensive `function`-scoped fixture whose value
+is shared and not mutated** re-runs N times when one setup would do. Widening
+the scope is often the highest-impact, lowest-risk speedup, *if* the value is
+read-only across tests (otherwise see "Shared mutable state").
 
 ## Slowest fixtures and root cause
 
-The `--durations` table cannot name the costly fixture (a `setup` row is the whole
-chain). Two complementary tools:
-
-`--setup-show` runs the suite and prints each fixture as it is set up/torn down,
-with a scope letter (`F`/`C`/`M`/`P`/`S`):
+The `--durations` table cannot name the costly fixture (a `setup` row is the
+whole chain). `--setup-show` runs the suite and prints each fixture as it is set
+up and torn down, with a scope letter (`F`/`C`/`M`/`P`/`S`):
 
 ```bash
 pytest --setup-show -q
 ```
 
-`--setup-plan` shows the same plan **without running tests** — fast, and ideal for
+`--setup-plan` shows the same plan **without running tests**, which suits
 counting setups:
 
 ```bash
@@ -52,8 +49,8 @@ pytest --setup-plan
 ```
 
 For true per-fixture timing, generate the opt-in plugin
-(`templates/pytest_optimizer_plugin.py`); it wraps `pytest_fixture_setup` and
-records each fixture's own setup seconds, filling the gap pytest core leaves.
+(`templates/pytest_optimizer_plugin.py`), which records each fixture's own setup
+seconds.
 
 ## Mis-scoped fixture (H10/H13)
 
@@ -92,7 +89,7 @@ has no `.function`) and `2>/dev/null` does not hide it — so override addopts w
 `-o addopts=''` as above. Fixture introspection does not run the suite, so
 clearing addopts here is safe.
 
-A fixture in the first set but not the second, and **not** `autouse`, is a
+A fixture in the first set but not the second, and not `autouse`, is a
 candidate. Cross-check with the dedicated tool when available:
 
 ```bash
@@ -100,20 +97,18 @@ uvx --with pytest-deadfixtures --from pytest pytest --dead-fixtures
 ```
 
 **Mandatory guard (H09).** Static analysis cannot see dynamic requests. Before
-deleting, confirm the fixture is not reached via:
+deleting, search for dynamic references:
 
 ```bash
 rg "getfixturevalue\([\"']<name>" tests/ ; rg "\b<name>\b" tests/
 ```
 
 A `getfixturevalue('name')` call or a string-based mark reference keeps the
-fixture alive even though no signature names it. When any dynamic reference
-exists, **keep the fixture** and have a human confirm — this is the one detection
-that cannot be fully automated.
+fixture alive. When any exists, **keep the fixture** and have a human confirm.
 
-Related: a test/fixture that lists a parameter it never uses in its body (H41) is
-either a dead dependency (drop it) or an intended side-effect fixture (make it
-`autouse`/`usefixtures` and document why).
+A parameter a test or fixture never uses (H41) is a dead dependency (drop it)
+or an intended side-effect fixture (make it `autouse`/`usefixtures` and document
+why).
 
 ## Duplicate fixtures (H11/H42)
 
@@ -127,10 +122,9 @@ Or find name collisions across conftests with the built-ins:
 pytest --fixtures -v 2>/dev/null | rg '^\w' | awk '{print $1}' | sort | uniq -d
 ```
 
-Consolidate duplicates into one fixture in the nearest shared conftest; document
-any **intentional** override (a child conftest deliberately shadowing a parent
-fixture is legitimate). An empty conftest (no fixtures, no hooks) is dead weight —
-delete it (H42).
+Consolidate duplicates into one fixture in the nearest shared conftest; a child
+conftest deliberately shadowing a parent fixture is legitimate, so document it.
+Delete an empty conftest (H42).
 
 ## Autouse audit (H12/H15/H43)
 
@@ -144,29 +138,28 @@ For each autouse fixture, count its setups:
 pytest --setup-plan | rg '<name>' | rg -c SETUP
 ```
 
-When the count ≈ total tests **and** the body is expensive or side-effecting, drop
-`autouse` and opt the real consumers in via `@pytest.mark.usefixtures`. Keep
-autouse only for genuinely universal, cheap setup (env reset, time freezing,
-global state reset). If an autouse fixture does unguarded network I/O (H15), gate
-it behind a registered marker or env var with `pytest.skip` and split the unit and
-integration paths.
+When the count is about the total tests **and** the body is expensive or
+side-effecting, drop `autouse` and opt the real consumers in via
+`@pytest.mark.usefixtures`. Keep autouse only for universal, cheap setup (env
+reset, time freezing, global state reset). If it does unguarded network I/O
+(H15), gate it behind a registered marker or env var with `pytest.skip`.
 
-A `@pytest.mark.*` decorator stacked directly on a `@pytest.fixture` (H43) is a
-silent no-op before pytest 9 and a hard collection error from 9 on — remove it and
-move the condition into the body (`pytest.skip()` / `request.getfixturevalue`).
+A `@pytest.mark.*` stacked on a `@pytest.fixture` (H43) is a silent no-op before
+pytest 9 and a collection error from 9 on: remove it and move the condition into
+the body (`pytest.skip()`).
 
 ## Shared mutable state (H16, H21)
 
 Before widening scope or parallelizing, check whether the shared resource is
-**mutated**:
+mutated:
 
 ```bash
 rg 'scope="session"|scope="module"' tests/ ; rg 'create_all|metadata|\.add\(|writestr|bootstrap' tests/
 ```
 
-If a session/module-scoped resource is written in more than one module, keep it
-read-only and isolate writes behind a function-scoped transaction-rollback
+If a session or module-scoped resource is written in more than one module, keep
+it read-only and isolate writes behind a function-scoped transaction-rollback
 fixture, or drop it to function scope. Under xdist a session fixture runs **once
-per worker**, not once per run (H21) — for a single shared resource (DB, port,
-file) use the `tmp_path_factory.getbasetemp().parent` + `FileLock` single-exec
-pattern, or a `testrun_uid`-keyed per-run resource.
+per worker** (H21): for a single shared resource use the
+`tmp_path_factory.getbasetemp().parent` + `FileLock` single-exec pattern, or a
+`testrun_uid`-keyed resource.

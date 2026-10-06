@@ -83,17 +83,8 @@ in this file and name the gap in the report.
 
 ## Phase 0: Situational awareness
 
-1. Read `AGENTS.md` / `CLAUDE.md` / `.github/CONTRIBUTING.md` for
-   quality checks, commit format, and any branch-naming conventions
-   (these feed rung 2 of the ladder).
-2. Resolve the five gate buckets and the CI-coverage split per
-   `references/verification-gates.md`.
-3. Inventory ticket tooling: tracker MCP tools, the `gh` CLI. Detect
-   the trunk branch and remotes (`git remote -v`,
-   `git symbolic-ref refs/remotes/origin/HEAD`).
-4. Record main-checkout state (`git status -sb`). A dirty main tree
-   is not a blocker, because the worktree isolates the work. Note it,
-   and never stash or otherwise touch the user's uncommitted work.
+Per `references/worktree-setup.md` (Situational awareness), with
+the gate buckets resolved per `references/verification-gates.md`.
 
 ## Phase 1: Ticket resolution
 
@@ -142,49 +133,9 @@ its own plan gate), record the plan in the report and proceed.
 
 ## Phase 3: Worktree & branch
 
-Start point: the remote trunk head (`git fetch origin`, then
-`origin/<trunk>`), falling back to the local trunk, then `HEAD`. The
-plan states which; a fallback may be stale.
-
-Resolve **idempotently**, first match wins. Collision checks come
-before any attach or create:
-
-1. **Branch checked out in a linked worktree.** The first entry of
-   `git worktree list --porcelain` is the main checkout; every later
-   entry is a linked worktree. If a linked entry holds the branch, its
-   path wins even when it differs from the computed target.
-   **Resume**: inspect its state (`git -C <path> status --short`,
-   commits ahead of the start point) and continue from the first
-   incomplete phase: uncommitted changes, resume Phase 4; green
-   commits present, continue to Phase 6; primer only, start Phase 4
-   (or report a no-op under `--setup-only`). Report "resumed", not
-   "created".
-2. **Branch checked out in the main checkout.** Not a resume: the work
-   would not be isolated. Ask for another branch name or abort.
-   Non-interactive: report `⚠ blocked at Phase 3`, change nothing.
-3. **Directory collision.** The computed path exists on disk but is
-   not a worktree of this branch (unregistered directory, or
-   registered to a different branch). Ask with `ask-user-choice`:
-   another path, the user clears it, or abort. Non-interactive:
-   report `⚠ blocked at Phase 3`, change nothing. Never delete or
-   overwrite a directory this command did not create.
-4. **Branch exists, no worktree.** Attach one:
-
-```console
-$ git worktree add <path> <branch>
-```
-
-5. **Fresh.** Create both:
-
-```console
-$ git worktree add -b <branch> <path> <start-point>
-```
-
-Then assemble the **ticket primer** — per ticket: ID, title,
-description, acceptance criteria, link. The primer lives in this
-command's report (`## Primer`), not in files inside the worktree: an
-untracked primer file would show in `git status` and could ride into
-a commit. With `--setup-only`, skip ahead to the output contract now.
+Per `references/worktree-setup.md` (Worktree and branch). With
+`--setup-only`, skip to the output contract once the `## Primer` is
+assembled.
 
 ## Phase 4: Implement
 
@@ -198,26 +149,7 @@ red path stops the exit axis before any push or PR.
 
 ## Phase 6: Exit axis
 
-- **Default:** stop after the gated commit(s). No push; the branch
-  and worktree stay local for the user.
-- **`--push`:** publish with an upstream:
-
-```console
-$ git push -u origin <branch>
-```
-
-- **`--pr`:** push as above, then open the PR with the tickets
-  linked per ticket-detection.md § Server-side linking: GitHub
-  closing keywords (`Fixes #123`) in the body; Linear IDs already in
-  the branch name and repeated in the PR title for auto-attach:
-
-```console
-$ gh pr create --title "<title>" --body "<body linking the tickets>"
-```
-
-  On non-GitHub forges use the forge's CLI equivalent when present;
-  otherwise report the prepared title and body for manual creation.
-  After opening, offer `gh pr checks --watch` when CI is observable.
+Per `references/worktree-setup.md` (Exit axis).
 
 ## Output contract
 
@@ -247,6 +179,32 @@ label on every bullet, no table cell holding prose, no closing recap.
    mode): push now / open a PR / keep it local / remove the worktree.
    In a non-interactive run, record the question and options in the
    report instead of asking, and default to keeping the branch local.
+
+Reply in this shape, as plain text outside any code fence, with plain
+bullets and no bold (never `- **Label:** ...`):
+
+```text
+✓ add-signup-validation ready: 2 commits, kept local
+TEA-45, worktree ../app-add-signup-validation
+
+## Tickets
+
+- TEA-45 Validate signup form input (Linear). Nothing written back.
+
+## Worktree
+
+- Created ../app-add-signup-validation on add-signup-validation from origin/main.
+
+## Commits
+
+- 3f9c2ab Validate signup email and password (TEA-45), gates pass.
+- 81d0e4c Cover empty-field errors (TEA-45), gates pass.
+
+## Verification
+
+- Ran the project's test and lint gates locally: green.
+- CI not run yet; no push.
+```
 
 A blocked run writes only the `⚠ blocked` hero line, naming the cause
 and that nothing changed, then one `## To continue` section listing

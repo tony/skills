@@ -11,23 +11,21 @@ metadata:
 
 # this skill
 
-Convergence harness. the `spike-probe` skill answers "does this path work?".
-the `spike-bakeoff` skill answers "which path is best?". Neither answers "what
-is the right design?" That only emerges from hitting real code
-several times and watching which parts keep fighting back. The ratchet
-runs both in rounds until the design stops resisting.
+Convergence harness. the `spike-probe` skill answers "does this path work?",
+the `spike-bakeoff` skill "which path is best?". Neither answers "what is the
+right design?", which emerges from hitting real code several times and
+watching what keeps fighting back. The ratchet runs both in rounds until
+the design stops resisting.
 
 ## Core thesis
 
 Across rounds the code is disposable and **the ledger is the
-product**. Each round throws away its implementation and keeps what it
-learned: which approaches the code rejected, which decisions are now
-settled, which questions are still open.
+product**: each round keeps what it learned (approaches rejected,
+decisions settled, questions open) and discards its implementation.
 
 Run a ratchet when the shape of the answer is unknown, such as a port
-to another language or an API whose ergonomics only show up in use. One
-clear approach is the `spike-probe` skill; two or three named approaches
-competing once is the `spike-bakeoff` skill.
+to another language. One clear approach is the `spike-probe` skill; two or three
+named approaches competing once is the `spike-bakeoff` skill.
 
 ## The Iron Rule
 
@@ -36,9 +34,8 @@ EVERY ROUND PRODUCES ZERO COMMITS
 ```
 
 Inherited whole from the `spike-probe` skill, including its rationalization
-table, and unchanged by round count: five rounds of exploration is
-five times the reason not to put it in history. Rounds end in stashes;
-commits happen only in `--replay`, after the final plan is approved.
+table, regardless of round count. Rounds end in stashes; commits happen
+only in `--replay`, after the final plan is approved.
 
 **Red flag** unique to this skill: "round 3 is basically final, commit
 it as a checkpoint so round 4 has a base." Round 4 starts from the
@@ -53,18 +50,14 @@ directory it lives in:
 $ git rev-parse --path-format=absolute --git-common-dir
 ```
 
-The ledger lives at `<that path>/spike/<goal-slug>.md`. That location
-is load-bearing, not a preference: a ledger kept in the working tree
-gets swallowed by the round's own `git stash push -u`, erased by
-`git clean -xdf`, and shows up as an untracked file in every
-`git status` the user reads. The common dir also resolves to the same
-absolute path from every bakeoff worktree, so contenders and the main
-checkout write to one file.
+The ledger lives at `<that path>/spike/<goal-slug>.md`. A ledger in the
+working tree gets swallowed by the round's `git stash push -u` or erased
+by `git clean -xdf`; the common dir resolves to one path from every
+bakeoff worktree.
 
 Name the ledger in the Phase 1 brief as `spike/<goal-slug>.md` under
-the repository's git directory, and show the absolute path only if the
-user asks. Append to whatever ledger is already there rather than
-truncating it.
+the repository's git directory; show the absolute path only if asked.
+Append to an existing ledger; never truncate it.
 
 Each round appends one section:
 
@@ -77,8 +70,7 @@ Each round appends one section:
   that settled them.
 - **Open**: questions carried into the next round.
 
-Keep every entry to a line or two. The ledger is read by the next
-round and by the final rewrite; it is not a transcript.
+Keep every entry to a line or two.
 
 ## `$ARGUMENTS` contract
 
@@ -88,8 +80,8 @@ provenance recorded in the brief.
 
 | Flag | Default | Effect |
 |---|---|---|
-| `--rounds=<n>` | 3 | Cap on the rounds the ratchet runs on its own. It may stop earlier by converging; only an explicit choice from the closing panel takes it further. |
-| `--replay` | off | At Phase 4, land the approved plan immediately instead of stopping at the panel, following Phase 6 of the `spike-probe` skill. Never applies to a round. |
+| `--rounds=<n>` | 3 | Cap on rounds run unprompted; only the closing panel takes it further. |
+| `--replay` | off | At Phase 4, land the approved plan per Phase 6 of the `spike-probe` skill instead of stopping at the panel. Never applies to a round. |
 
 ## Phase 0: Situational awareness
 
@@ -124,71 +116,58 @@ non-interactive run, record the brief and proceed.
 
 Repeat until Phase 3 says stop. Each round:
 
-1. **Probe.** Read the `spike-probe` skill and follow its Phases 2
-   through 4 against the goal as sharpened by the ledger's open
-   questions: shortest path to
-   proven, cheapest verification signal, `SPIKE:` markers, stumbling
-   blocks, the exit gate, and a stash with a recorded SHA. Probe's
-   Phase 0 and Phase 1 brief already ran above, and its plan and
-   replay phases belong to the ratchet's exit, so `--replay` never
-   reaches a round.
-2. **Branch on what fought back.** A stumbling block that admits two
-   or more genuinely different resolutions is what the `spike-bakeoff` skill
-   exists for. Read the `spike-bakeoff` skill and follow its Phases 2
-   through 5 with those resolutions as the contender list; the
-   ratchet's own Phase 0 and brief stand in for the bakeoff's. A
-   stumbling block with one obvious fix is not a bakeoff; fold it into
-   the next probe. Stashing is always serial: one stash command at a
-   time, in one worktree, never from parallel contenders.
-3. **Re-probe the graft.** Grafts leave a bakeoff unproven in
-   combination. When a round takes them, the ratchet seeds the next
-   round's tree itself (apply the winner's stash, then the graft
-   hunks) and that round probes from there, so the proving check runs
-   on the tree actually chosen. Probe's dirty-tree halt does not fire
-   on a tree the ratchet seeded itself. A graft that fails the check
-   is dropped and recorded as dropped.
-4. **Record.** Append the round's ledger section before starting the
-   next one. A round that ends without its ledger entry written did
-   not happen; the next round has no other memory of it.
+1. **Probe.** Read the `spike-probe` skill and follow its Phases 2 through 4
+   against the goal as sharpened by the ledger's open questions. Probe's
+   Phase 0 and brief already ran above; its plan and replay phases
+   belong to the ratchet's exit.
+2. **Branch on what fought back.** A stumbling block with two or more
+   genuinely different resolutions calls for the `spike-bakeoff` skill: read
+   the `spike-bakeoff` skill and follow its Phases 2 through 5 with those
+   resolutions as contenders; the ratchet's Phase 0 and brief stand in
+   for the bakeoff's. A block with one obvious fix folds into the next
+   probe. Stash serially: one stash command at a time, never from
+   parallel contenders.
+3. **Re-probe the graft.** Grafts are unproven in combination, so the
+   ratchet seeds the next round's tree (apply the winner's stash, then
+   the graft hunks) and that round probes from there. Probe's
+   dirty-tree halt does not fire on a tree the ratchet seeded. A graft
+   that fails the check is dropped and recorded as dropped.
+4. **Record.** Append the round's ledger section before the next round;
+   a round without its entry did not happen.
 
-Except when carrying grafts, a round starts from a clean tree. What it
-inherits from round N-1 is the ledger's locked decisions, not its code.
+Except when carrying grafts, a round starts from a clean tree and
+inherits the ledger's locked decisions, not the code.
 
 ## Phase 3: Convergence test
 
-Stop when any of these holds, tested in this order because a
-repeats-only round satisfies more than one. Say which one in the
-report:
+Stop when any of these holds, tested in this order (a repeats-only round
+satisfies more than one). Say which one in the report:
 
-- **Thrashing**: the round surfaced stumbling blocks, but every one
-  was already recorded and decided in an earlier round. Repetition is
-  evidence that more spiking cannot settle the question; stop and
-  surface it rather than spending another round.
-- **Converged**: the round surfaced no stumbling block at all.
-- **Capped**: `--rounds` is exhausted. Report the still-open
-  questions plainly; a capped ratchet is an honest partial result, not a
-  failure to hide.
+- **Thrashing**: every stumbling block this round was already recorded
+  and decided earlier. More spiking cannot settle the question; stop and
+  surface it.
+- **Converged**: the round surfaced no stumbling block.
+- **Capped**: `--rounds` is exhausted. Report the open questions
+  plainly.
 
 Otherwise start the next round from the ledger's open questions.
 
 ## Phase 4: Exit
 
-The surviving artifacts are the ledger, the final round's stash SHA,
-and every earlier round's stash SHA. Offer the two exits. Write any commit message per
+The surviving artifacts are the ledger and every round's stash SHA.
+Offer the two exits. Write any commit message per
 `references/prose-rules.md`, with no `Co-Authored-By`, no
 "Generated with" or other tool trailers, and no emoji:
 
 - **Clean rewrite**: write the final implementation from the ledger's
-  locked decisions rather than from the accumulated code, keeping the
-  final stash as reference and fallback. This is the right exit when
-  the code carries the marks of rounds that were later abandoned.
+  locked decisions, keeping the final stash as reference. Right when
+  the code carries the marks of abandoned rounds.
 - **Landing plan**: a commit-by-commit plan for the final stash, built
-  as Phase 5 of the `spike-probe` skill, and landed under `--replay` as
-  its Phase 6. This is the right exit when the last round's code is
-  already what the design wants.
+  as Phase 5 of the `spike-probe` skill, landed under `--replay` as its
+  Phase 6. Right when the last round's code is what the design wants.
 
-Recommend one and say why. Never drop earlier stashes; the ledger
-cites them by SHA as the evidence for its locked decisions.
+Recommend one and say why. Never drop earlier stashes; the ledger cites
+them by SHA.
 
 ## Output contract
 
@@ -204,17 +183,13 @@ Write the report per `references/prose-rules.md`.
    next. No sections, no panel, no stash SHAs, no local or temp paths.
 2. `## Rounds`: one block per round: what was probed, what fought
    back, bakeoff winner if any, what got locked.
-3. `## Design`: the locked decisions as they now stand, read as a
-   specification rather than a history. This is what the rewrite
-   consumes.
+3. `## Design`: the locked decisions as a specification, not a history.
 4. `## Open`: questions the ratchet did not settle, and for a thrashing
    stop, why spiking cannot settle them.
 5. `## Stashes`: table: round, stash message, SHA, restore
    command. Every round appears (a round that changed nothing shows
-   "no changes" for its SHA), and so does every contender a round's
-   bakeoff stashed: a ratchet never runs bakeoff's own replay, so those
-   stashes outlive it and belong in the accounting rather than in
-   `git stash list` alone.
+   "no changes"), and so does every contender a round's bakeoff
+   stashed; those stashes outlive the ratchet.
 6. `## Next`: the recommended exit, and the landing plan when one was
    produced.
 7. End with an `ask-user-choice` panel: rewrite from the ledger / land
@@ -222,6 +197,34 @@ Write the report per `references/prose-rules.md`.
    unless already in plan mode or `--replay` was given. In a
    non-interactive run, record the question and default to stopping
    with the ledger kept.
+
+Reply in this shape, as plain text outside any code fence, with plain
+bullets and no bold (never `- **Round 1:** ...`), the `## Stashes`
+table aside:
+
+```text
+✓ converged in 3 rounds: port the sync worker to asyncio
+
+## Rounds
+- Round 1: probed a direct await conversion; the DB client blocks the loop.
+- Round 2: bakeoff of thread executor vs async driver; async driver won. Locked: async driver.
+- Round 3: no new stumbling blocks.
+
+## Design
+- Use the async driver behind a thin repository interface.
+- Cancellation propagates through the worker's task group.
+
+## Open
+- Whether the metrics exporter needs its own loop.
+
+## Stashes
+| Round | Stash message | SHA | Restore |
+|---|---|---|---|
+| 1 | spike: asyncio port, round 1 | 1d8e0b7 | git stash apply 1d8e0b7 |
+
+## Next
+- Recommended: clean rewrite from the ledger; the final stash still carries round 2's abandoned executor shim.
+```
 
 
 ## Portability notes

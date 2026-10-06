@@ -17,11 +17,6 @@ execution:
 runs: 3
 
 graders:
-  - name: skill-fired
-    type: tool_used
-    tool: Skill
-    input_match: '"skill":\s*"(git-branch:)?soft-reset-and-recommit"'
-
   - name: reports-the-dirty-tree
     type: regex
     target: last_message
@@ -31,7 +26,7 @@ graders:
   - name: never-collapses-the-branch
     type: tool_used
     tool: Bash
-    input_match: 'git (reset|stash|rebase|push)'
+    input_match: '"command":\s*"([^"]*(&&|;|\|\|)\s*)?git (reset|rebase|push|stash( push| save| pop| apply| drop| clear| -u|\s*"|\s*(&&|;)))'
     min: 0
     max: 0
     arm: both

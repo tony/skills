@@ -450,6 +450,10 @@ Treat this file like code and prune it.
 - Put deterministic machinery (argument parsing, process control, git
   plumbing) in a tested script under the plugin's `scripts/`; keep judgment in
   prose.
+- Never `git push` unless the user passed `--push` or asked to push; otherwise
+  finish local and print the push command. `--pr` means "open a pull request";
+  a pull request to act on is a positional argument. A force-push is
+  `--force-with-lease --force-if-includes`.
 
 `scripts/marketplace.py lint` enforces the `!` and plugin-boundary rules, a
 500-line ceiling on skill bodies, a contents list on any resource over 100
@@ -588,14 +592,14 @@ inventing an equivalent.
 Skills with analysis-then-execute phases should include a portable
 "Orchestration Plan" section before execution begins. This section:
 
-1. Instructs the host to enter plan mode with tool-specific activation hints:
-   Claude Code (`EnterPlanMode`), Cursor/Codex/Gemini (`/plan` or `Shift+Tab`)
+1. Opens with this prelude, verbatim: "Enter plan mode before the first
+   edit. In Claude Code call `EnterPlanMode`; in Cursor, Codex, or Gemini
+   use `/plan` or `Shift+Tab`. Where plan mode is unavailable, present the
+   plan as text."
 2. Defines what the orchestration plan should contain (skill-specific checklist)
 3. Requires presenting the plan and waiting for user approval
 4. Instructs exiting plan mode before execution
 
-Include graceful degradation: if plan mode is unavailable, the skill's
-phase structure still guides analysis before execution.
 
 ### Output Contract Convention
 

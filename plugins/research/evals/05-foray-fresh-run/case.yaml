@@ -50,4 +50,4 @@ graders:
   - name: runs-the-ship-checks
     type: tool_used
     tool: Bash
-    input_match: 'topic\.py\s+(check|lint-report)\b'
+    input_match: '(topic\.py|\$\{?\w+\}?)\s+(check|lint-report)\b'

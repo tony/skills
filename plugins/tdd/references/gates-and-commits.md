@@ -41,3 +41,29 @@ When the bug spans this project and a dependency:
 
 After 3 failed attempts, stop and report what was tried, what the output shows,
 and the suspected cause. Ask for guidance.
+
+## Final report
+
+One hero line (`✓` finished or `⚠` stopped, with the result in one sentence),
+then `## Evidence` (the three commit subjects with short hashes, the xfail
+line from the reproduction run, and for `xfail` the fix-isolation result), then
+`## Follow-ups` (omit when empty). Name no local paths or temp files.
+
+Reply in this shape, as plain text outside any code fence, with plain bullets
+and no bold (never `- **Commit:** ...`):
+
+```text
+✓ Fixed the business-day off-by-one in add_days; three commits, all gates green.
+
+## Evidence
+
+- 3f9c2ab tests(fix[add_days]) Add xfail test for weekend rollover
+- 81d0e4c fix(add_days) Skip weekends when rolling over
+- c0a7e55 tests(add_days) Remove xfail marker
+- Reproduction: 1 xfailed (AssertionError: expected Monday, got Saturday).
+- With the fix stashed the test xfails again; with it restored it XPASSes.
+
+## Follow-ups
+
+- add_hours has the same weekend handling; not changed.
+```

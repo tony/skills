@@ -130,11 +130,33 @@ sections:
 9. `## Drift` — pins disagreeing across a workspace, and holds applied
    unevenly across workspace members.
 
-A halted run (a stopped gate, a scope question, a failed check, nothing
-found to audit) opens with `⚠ Stopped: <why>`, then says what the user
-needs to do, and prints no section. `⚠ Audit only` is for a run that was
-given `--audit-only`. Omit any section with nothing to report. Report
-rules (no bold labels, no recap, no local paths) are in
+Reply in this shape, as plain text outside any code fence, with plain
+bullets and no bold (never `- **Label:** ...`):
+
+```text
+✓ 3 commits across 2 repos
+
+## Audit
+
+- api: requests 2.31.0 to 2.32.3 in range, pytest 7.4.4 to 8.3.2 needs a manifest edit.
+- web: left-pad excluded, already current.
+
+## Moves
+
+- requests 2.32.3 fixes a proxy-auth regression; reaches api only.
+
+## Commits
+
+- api: 9a3f1c2 Bump requests to 2.32.3, 4be0d71 Bump pytest to 8.3.2. Not pushed.
+
+## Verification
+
+- api: tests and lint pass.
+- web: no change.
+```
+
+A halted run opens with `⚠ Stopped: <why>`, then what the user needs to
+do, and no section. The halt and report rules are in
 `../updating-packages/SKILL.md`, Phase 6.
 
 End with an `AskUserQuestion` panel of next steps, for example: run the

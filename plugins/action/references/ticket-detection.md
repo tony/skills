@@ -1,8 +1,8 @@
 # Ticket Detection, Branch Naming & Worktree Placement
 
 How `/action:worktree` and `/action:worktrees` resolve tickets into
-branch names and worktree paths at runtime. Tracker-agnostic: Linear
-and GitHub are fully supported, everything else degrades gracefully.
+branch names and worktree paths. Linear and GitHub are first-class;
+other trackers use the generic fallback.
 
 Contents:
 
@@ -19,40 +19,33 @@ Contents:
 TICKETS ARE READ-ONLY
 ```
 
-Neither command ever assigns, comments, transitions, labels,
-estimates, or otherwise mutates a ticket — in any tracker, through
-any tool. Every ticket operation is a read: title, description,
-acceptance criteria, the ticket's branch-name field.
+Neither command assigns, comments, transitions, labels, estimates, or
+otherwise mutates a ticket, in any tracker through any tool. Every
+ticket operation is a read. A branch that goes nowhere unwinds with
+`git worktree remove` and `git branch -D`; linking happens server-side
+from naming (see § Server-side linking).
 
-A branch that goes nowhere unwinds with `git worktree remove` and
-`git branch -D`; nothing else needs undoing. Linking still happens
-server-side, from naming (see § Server-side linking).
-
-Concretely forbidden (non-exhaustive): tracker MCP mutation tools
-(create/update comment, state change, assignee change),
-`gh issue edit`, `gh issue comment`, `gh issue close`, and
-`gh issue develop` — that last one *writes a linked-branch record to
-the issue*; construct the same branch name locally instead. Jira and
+Forbidden (non-exhaustive): tracker MCP mutation tools (comment, state
+change, assignee change), `gh issue edit`, `gh issue comment`,
+`gh issue close`, and `gh issue develop`, which *writes a linked-branch
+record to the issue*; construct the same branch name locally. Jira and
 GitLab equivalents are equally off-limits.
 
 ## Detection source ladder
 
-Resolve which tracker and which ticket(s), in this order — the first
-source that yields a concrete ticket wins:
+The first source that yields a concrete ticket wins:
 
-1. **Explicit URL or ID in the user's prompt** — `TEA-123`, `#45`,
-   a full issue URL, `owner/repo#45`.
-2. **Conversation context** — the ticket already under discussion:
-   pasted issue text, a link shared earlier, the item the user just
-   agreed to work.
-3. **Available MCP tools** — a tracker MCP server (Linear or
-   otherwise) whose read tools can fetch or search issues.
-4. **CLIs** — `gh` preferred (`gh issue view`, `gh issue list`);
-   other tracker CLIs generically, read-only subcommands only.
-5. **Repo remote heuristics** — `git remote get-url origin` pointing
-   at github.com suggests GitHub issues; a tracker ID pattern
-   recurring in recent branch names or commit trailers suggests that
-   tracker.
+1. **Explicit URL or ID in the prompt**: `TEA-123`, `#45`, a full issue
+   URL, `owner/repo#45`.
+2. **Conversation context**: pasted issue text, a link shared earlier,
+   the item the user just agreed to work.
+3. **Available MCP tools**: a tracker MCP server whose read tools can
+   fetch or search issues.
+4. **CLIs**: `gh` preferred (`gh issue view`, `gh issue list`); other
+   tracker CLIs, read-only subcommands only.
+5. **Repo remote heuristics**: an `origin` on github.com suggests GitHub
+   issues; a tracker ID pattern in recent branch names or commit
+   trailers suggests that tracker.
 
 When no source yields a ticket, ask — never invent an ID or fetch a
 guessed one.
@@ -67,24 +60,20 @@ guessed one.
 | GitLab | `#\d+`, `!\d+`, issue URL | `#17` | GitLab remote |
 | Other | whatever the tool exposes | — | generic fallback below |
 
-Linear and Jira share the `KEY-123` shape. When both integrations
-are present and the prompt gives no URL, try the Linear MCP lookup
-first (cheaper, structured); if the ID is unknown there, try the
-other system; if both claim it, ask.
+Linear and Jira share the `KEY-123` shape. With both integrations
+present and no URL, try Linear first; if the ID is unknown there, try
+the other; if both claim it, ask.
 
 ### Linear
 
-- **ID pattern**: per the table above. Match case-insensitively in
-  prompts; display uppercased.
-- **Fetch**: the Linear MCP server's read tools, when available —
-  pull title, description, acceptance criteria, and the issue's
-  `gitBranchName` field.
-- **Branch name**: prefer `gitBranchName` — the copyable branch name
-  from Linear's UI, which already encodes the team's Linear-side
-  settings. Without MCP, reconstruct from the pattern: lowercased ID
-  plus a kebab slug of the title (`tea-123-fix-login-redirect`),
-  subject to the observed-norms adjustment below (teams commonly add
-  or drop a `username/` prefix).
+- **ID pattern**: per the table above; match case-insensitively, display
+  uppercased.
+- **Fetch**: the Linear MCP read tools: title, description, acceptance
+  criteria, and `gitBranchName`.
+- **Branch name**: prefer `gitBranchName`. Without MCP, use the
+  lowercased ID plus a kebab slug of the title
+  (`tea-123-fix-login-redirect`), subject to the observed-norms
+  adjustment below.
 
 ### GitHub
 
@@ -105,9 +94,9 @@ $ gh issue view <num> --json number,title,body,labels,url
 
 - **ID patterns**: `[A-Z]+-\d+` (Jira-style), `#\d+` (GitLab issues),
   or whatever pattern the conversation supplies.
-- **Fetch**: whatever CLI or MCP server is present (`jira`, `glab`,
-  …), read-only subcommands only. When none exists, ask the user to
-  paste the ticket body rather than skipping context.
+- **Fetch**: whatever CLI or MCP server is present (`jira`, `glab`),
+  read-only subcommands only. When none exists, ask the user to paste
+  the ticket body.
 - **Branch name**: generic kebab slug — `<id-lowercased>-<kebab-title>`.
 
 ### Kebab-slug algorithm
@@ -124,15 +113,14 @@ Wherever a `<kebab-title-slug>` is called for:
 
 Resolve the branch name by the first rung that yields one:
 
-1. **Explicit user prompt** — `--branch=<name>` or a name stated in
-   the request. Verbatim, no adjustment.
-2. **User/project system instructions** — branch-naming conventions
-   in the project's AGENTS.md / CLAUDE.md / CONTRIBUTING first, then
-   the user's global norms.
-3. **Ticket-system default** — Linear's `gitBranchName`; GitHub's
-   `<number>-<kebab-title-slug>`. *Skipped for multi-ticket branches*
-   (see below).
-4. **Observed repo norms** — mine the team's actual pattern:
+1. **Explicit user prompt**: `--branch=<name>` or a name stated in the
+   request. Verbatim, no adjustment.
+2. **User/project instructions**: branch-naming conventions in the
+   project's AGENTS.md / CLAUDE.md / CONTRIBUTING first, then the user's
+   global norms.
+3. **Ticket-system default**: Linear's `gitBranchName`; GitHub's
+   `<number>-<kebab-title-slug>`. *Skipped for multi-ticket branches.*
+4. **Observed repo norms**: mine the team's actual pattern:
 
 ```console
 $ git branch -r
@@ -143,14 +131,12 @@ $ git log --merges --oneline -50
 ```
 
    Look for prefix families (`feat/`, `fix/`, `username/`), where the
-   ticket ID sits, and slug style. Observed norms are also an
-   **adjuster** for rung 3: when history shows no `username/`
-   prefixes, offer the Linear name with the prefix trimmed; when
-   every branch carries a `feat/`-style prefix, offer the ticket
-   default with one. Name the adjustment in the plan so the user sees
-   what was inferred.
-5. **Kebab-slug fallback** — a kebab slug of the goal, when no
-   ticket, no convention, and no norms exist.
+   ticket ID sits, and slug style. Norms also **adjust** rung 3: with
+   no `username/` prefixes in history, trim the prefix from the Linear
+   name; with a `feat/`-style prefix on every branch, add one to the
+   ticket default. Name the adjustment in the plan.
+5. **Kebab-slug fallback**: a kebab slug of the goal, when no ticket,
+   convention, or norms exist.
 
 Whatever rung wins, validate the name before deriving paths from it:
 
@@ -163,12 +149,10 @@ dot, `..`) is re-slugged and re-validated; an invalid explicit name
 (rung 1) is a question back to the user, never a silent rewrite
 (non-interactive: report `⚠ blocked`, change nothing).
 
-**Multi-ticket (crosscutting) branches** skip rung 3: no single
-ticket's name should claim a branch that carries several. Propose a
-**theme slug** instead (e.g. `auth-error-handling` for three auth
-tickets) and confirm it at the plan gate. The ticket IDs still ride
-in commit messages and the PR title/body, so server-side linking
-fires for every ticket on the branch.
+**Multi-ticket (crosscutting) branches** skip rung 3. Propose a
+**theme slug** (e.g. `auth-error-handling`) and confirm it at the plan
+gate. Ticket IDs still ride in commit messages and the PR title/body,
+so server-side linking fires for every ticket.
 
 ## Worktree placement & path sanitization
 
@@ -183,34 +167,28 @@ Two placements — the placement axis:
   Derivation: take the absolute path of the **main checkout**, the
   first `worktree` line of `git worktree list --porcelain` (not
   `git rev-parse --show-toplevel`, which returns the linked worktree
-  when run inside one and would nest sibling names). Strip any
-  trailing slash, append `-`, then append the branch name with every
-  `/` flattened to `-`. The flattening applies to the directory name
-  only; the git branch keeps its slashes.
+  inside one). Strip any trailing slash, append `-`, then the branch
+  name with every `/` flattened to `-`. The git branch keeps its
+  slashes.
 
   Example: repo at `/work/shop`, branch `feat/tea-123-login` →
   worktree `/work/shop-feat-tea-123-login/`, branch still
   `feat/tea-123-login`.
 
 - **`--temp`** — the host's native temp-worktree mechanism when one
-  exists, **but only if it can put the work on the computed branch name**.
-  Branch naming is load-bearing (it is how Linear auto-attaches); a
-  mechanism that cannot honor it is disqualified. Otherwise a temp
-  root outside the repo:
+  exists, **but only if it can put the work on the computed branch
+  name** (Linear auto-attaches by name). Otherwise a temp root outside
+  the repo:
 
 ```text
 ${TMPDIR:-/tmp}/action-worktrees/<repo-name>/<sanitized-branch>/
 ```
 
-  `<repo-name>` is the basename of the main checkout. Same
-  sanitization rule for `<sanitized-branch>`. The path is
-  deterministic, so `--temp` re-runs land on the same worktree and
-  resume per the idempotency ladder.
+  `<repo-name>` is the basename of the main checkout. The path is
+  deterministic, so `--temp` re-runs resume the same worktree.
 
-Branch names are git-valid before they reach this section
-(`git check-ref-format` runs at the end of the precedence ladder), so
-`/` is the only character that needs flattening — do not otherwise
-rewrite the name.
+Branch names are git-valid by here, so `/` is the only character to
+flatten.
 
 ## Server-side linking (how zero write-back still links)
 
@@ -220,6 +198,6 @@ rewrite the name.
 | GitHub | closing keyword in the PR body (`Fixes #123`) | issue links immediately, closes when a human merges |
 | Generic | ID in the branch name, PR title, and commit bodies | whatever the tracker's own git integration picks up |
 
-Commit bodies name the ticket ID(s) they advance — the project's
-commit conventions win on exact form. Closing keywords belong in the
-PR body, never in commit subjects.
+Commit bodies name the ticket ID(s) they advance, in the project's
+form. Closing keywords belong in the PR body, never in commit
+subjects.

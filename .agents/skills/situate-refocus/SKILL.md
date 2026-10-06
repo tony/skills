@@ -31,10 +31,9 @@ User arguments: $ARGUMENTS
 `$ARGUMENTS`, when given, is the goal and outranks every artifact.
 Otherwise take the first source in the goal-derivation precedence.
 
-Say which source the goal came from and how confident it is; a goal from
-acceptance criteria and a goal from a branch name are not the same
-evidence. If no source yields one, stop and ask. Do not infer the goal
-from the diff.
+Say which source the goal came from and how confident it is: acceptance
+criteria and a branch name are not the same evidence. If no source
+yields one, stop and ask; never infer the goal from the diff.
 
 ### 2. Read what was actually done
 
@@ -81,10 +80,45 @@ these sections:
 5. `## Realign` — the recommended correction and the reasoning, followed
    by the alternatives that were not recommended.
 
+Reply in this shape, as plain text outside any code fence, with plain
+bullets and no bold (never `- **Label:** ...`):
+
+```text
+⚠ Drift: the login rate limiter was refactored before the throttling work started.
+
+## Goal
+
+- Ship password-reset email throttling. The goal came from the ticket's acceptance criteria.
+
+## On track
+
+- Throttle config and the per-address counter in the reset handler.
+
+## Drift
+
+- Four commits restructure the login rate limiter. Off-goal work started at the "Extract limiter interface" commit.
+- Pattern: each throttling change pulled in a limiter change first.
+
+## Gap
+
+- The ticket asks for a test of the throttled response; nothing on the branch covers it.
+
+## Realign
+
+- Split the limiter commits to a follow-up branch and finish the test here. The refactor is sound but belongs in its own review.
+- Not recommended: widening the goal to include the refactor.
+
+1. Finish the gap
+2. Split the off-goal work to a follow-up
+3. Drop the off-goal work
+4. Widen the goal to match
+```
+
 End with an `ask-user-choice` panel offering the correctives as actions
 — finish the gap, split the off-goal work to a follow-up, drop it, widen
 the goal to match the work — so the user can choose without composing a
-command. Skip the panel only in plan mode.
+command. Skip the panel only in plan mode; without the tool, end with
+those options as numbered lines.
 
 
 ## Portability notes

@@ -38,10 +38,9 @@ single issue.
 
 Evidence before prose, and altitude before evidence.
 
-Most bad tickets are not badly written. They are written at the wrong
-altitude — a design document filed as an epic, a research note filed as an
-issue, an implementation plan filed as a goal. Settle what the object is
-before deciding what goes in it.
+Most bad tickets are written at the wrong altitude: a design document
+filed as an epic, a research note filed as an issue, an implementation plan
+filed as a goal. Settle what the object is before deciding what goes in it.
 
 ## Phase 1 — Resolve the target
 
@@ -49,9 +48,8 @@ Establish the provider, the scope container, and the semantic role, following
 `resolve.md`. Do not infer the provider from key shape: `#123` and `ENG-123`
 each fit several trackers.
 
-When the role is ambiguous between two levels, ask. The difference between a
-`delivery_group` and a `work_item` changes almost every section, and guessing
-wrong produces a body that reads as either bloated or empty.
+When the role is ambiguous between two levels, ask: a `delivery_group` and a
+`work_item` share almost no sections.
 
 ## Phase 2 — Decide it belongs in this tracker, publicly
 
@@ -76,12 +74,10 @@ its fields.
 
 ## Phase 4 — Look for the thing that already exists
 
-Search open and closed items. A closed one is often the answer, and a
-duplicate of a closed item is a regression report, which is a better and
-different thing to file.
-
-Read the candidate before dismissing it. When one matches, say so, stop, and
-offer to comment on it with the new evidence instead.
+Search open and closed items, and read each candidate before dismissing it.
+A duplicate of a closed item is a regression report, a different thing to
+file. When one matches, say so, stop, and offer to comment on it with the new
+evidence instead.
 
 ## Phase 5 — Gather
 
@@ -99,8 +95,6 @@ cannot be recovered from the repository — measurements with their conditions,
 dead ends with reasons, retracted numbers with what was actually measured.
 Drop everything a reader gets by opening the file or reading the log.
 
-An unreproduced defect is filed as an observation, and says so.
-
 ## Phase 6 — Draft
 
 Take the section list from `altitude.md` for the resolved role. Include only
@@ -108,10 +102,9 @@ sections you have content for; never invent one.
 
 Write references per `contract.md`'s two-axis rule and the provider file:
 bare where the renderer resolves it, fully qualified across containers, and
-titled where a bare identifier would be ambiguous. Suppressing the
-backreference is a separate question with a per-provider answer — do not
-assume a titled link is the quiet form, because on GitHub and GitLab it is
-not.
+titled where a bare identifier would be ambiguous. A titled link is not the
+quiet form on GitHub or GitLab; the provider file says how to suppress a
+backreference.
 
 Use the provider's native noun for every object you name. Never write `Epic`
 for a Linear Project or `Pull Request` for a GitLab merge request.
@@ -126,9 +119,8 @@ Write it per `references/prose-rules.md`.
 Reread the whole body for local absolute paths, hostnames, emails, tokens,
 and internal URLs, including inside every pasted log. This is a gate.
 
-Render the body the way the provider will before showing it. Markdown
-dialects differ, and a details block that lost its blank line renders as
-literal asterisks.
+Render the body the way the provider will before showing it: a details
+block that lost its blank line renders as literal asterisks.
 
 ## Phase 8 — Present, then file
 
@@ -139,6 +131,26 @@ concrete point, with no recap. Then offer, via `ask-user-choice`: file it,
 print the body only, revise a named section, or drop it. Where no interactive
 question tool exists, print the draft and stop; filing needs an explicit
 instruction naming the action.
+
+Reply in this shape, as plain text outside any code fence, with plain
+bullets and no bold (never `- **Label:** ...`):
+
+```text
+Linear Project description (delivery group), not filed yet.
+
+## Title
+
+Search rework: faster results that survive typos
+
+## Body
+
+<the full body, as it will render in the provider>
+
+## Unverified
+
+- Why now: no reason was given, so there is no Evidence section.
+- Not doing: left out rather than guessed.
+```
 
 A halted run (a vulnerability, unsanitizable evidence, a duplicate found) is
 one result sentence, then what the user needs to do.
@@ -160,7 +172,6 @@ comment, or start a branch for it.
 
 - No tracker or repository writes until the filing gate. No commits, no
   pushes, no edits to existing items.
-- Never file without showing the full title and body first.
 - Never invent a version, an error string, a line number, a link, or a
   reference syntax. Unverified goes in marked unverified, or comes out.
 - Never synthesize a hierarchy level the provider does not have.

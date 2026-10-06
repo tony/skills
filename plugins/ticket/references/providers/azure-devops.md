@@ -26,7 +26,7 @@ Canonical form: Epic > Feature > requirement-level Work Item > Task, joined by P
   level, but levels cannot be reordered and a Work Item Type belongs to exactly one level
   ([Customize backlogs and boards](https://learn.microsoft.com/en-us/azure/devops/organizations/settings/work/customize-process-backlogs-boards?view=azure-devops)).
   Inherited processes also add and rename types, so inspect the process configuration before naming one.
-- There is NO native level above Epic and no native goal or key-result object. A level above Epic exists
+- There is no native level above Epic and no native goal or key-result object. A level above Epic exists
   only where someone added a custom portfolio backlog.
 
 ## Semantic roles
@@ -126,9 +126,8 @@ az boards work-item create --title "..." --type "User Story" --project "..." --d
 - REST API: Work Item Tracking. Work items are created and patched with JSON Patch; comments use a
   separate endpoint, versioned independently, whose body is `{"text": "..."}`
   ([Comments - Add](https://learn.microsoft.com/en-us/rest/api/azure/devops/wit/comments/add?view=azure-devops-rest-7.1)).
-- MCP: Microsoft ships an official Azure DevOps MCP Server, remote and local. Use the local one from Claude
-  Code, Claude Desktop, Cursor and Codex, which cannot authenticate to the remote server with Microsoft
-  Entra ID.
+- MCP: Microsoft ships an official Azure DevOps MCP Server, remote and local. Check the server docs for which
+  clients the remote server's Microsoft Entra ID sign-in supports, and use the local one where it does not
   ([Azure DevOps MCP Server](https://learn.microsoft.com/en-us/azure/devops/mcp-server/mcp-server-overview)).
 
 A field is either Markdown or HTML, and a Markdown comment cannot be converted back to HTML. Detect

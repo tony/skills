@@ -12,16 +12,13 @@
 
 Changelog skills document changes; they do not ship them. Every run is
 release-agnostic unless the user explicitly asks for a release (see below),
-whatever the branch is named and however release-shaped the commits look.
+whatever the branch is named.
 
 - Never create, rename, or date a version heading (`## v1.53.0`,
   `## [1.2.3] - YYYY-MM-DD`). Entries land in the unreleased section.
-- Never state or predict the version the changes will land in: not in entry
-  text, headings, the commit message, or the summary shown to the user. Other
-  work may land first, and the maintainer decides when to cut.
-- Never derive a version from the commits. A breaking change does not make
-  this `2.0.0`, and a `feat` does not make it a minor bump. Do not reason
-  about SemVer.
+- Never state, predict, or derive the version the changes will land in, in
+  any text you write (entries, headings, commit message, summary). A breaking
+  change does not make this `2.0.0`; do not reason about SemVer.
 - Never edit version files (`pyproject.toml`, `package.json`, `Cargo.toml`,
   `__about__.py`, `version.*`), create tags, or convert an `Unreleased` or
   placeholder heading into a version heading.
@@ -59,8 +56,8 @@ $ gh pr view --json baseRefName
 Without a PR, take trunk from `git symbolic-ref refs/remotes/origin/HEAD`
 (strip `refs/remotes/origin/`). If that fails, use `main`, then `master`,
 whichever exists. Run `git fetch origin <base>` before comparing against
-`origin/<base>`; if the fetch fails, say the comparison may be stale. When the current branch is
-the base, report "Already on the base branch, nothing to generate" and stop.
+`origin/<base>`; if the fetch fails, say the comparison may be stale. When
+the current branch is the base, report "Already on the base branch, nothing to generate" and stop.
 
 ## Changelog file
 

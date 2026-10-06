@@ -139,7 +139,7 @@ LANES: dict[str, tuple[tuple[str, str | None], ...]] = {
     "agy": (
         ("agy", "Gemini 3.1 Pro (High)"),
         ("agent", "gemini-3.1-pro"),
-        ("agy", "Gemini 3.5 Flash (High)"),
+        ("agy", "Gemini 3.8 Flash (High)"),
     ),
     "gpt": (("codex", None), ("agent", "gpt-5.4-high"), ("agent", "gpt-5.4-mini")),
 }
@@ -415,7 +415,7 @@ def lane_chain(
     >>> lane_chain("gpt", lambda n: "/bin/agent" if n == "agent" else None)
     [('agent', 'gpt-5.4-high'), ('agent', 'gpt-5.4-mini')]
     >>> [m for _, m in lane_chain("agy", lambda n: "/bin/agy" if n == "agy" else None)]
-    ['Gemini 3.1 Pro (High)', 'Gemini 3.5 Flash (High)']
+    ['Gemini 3.1 Pro (High)', 'Gemini 3.8 Flash (High)']
     """
     return [(exe, model) for exe, model in LANES[lane] if which(exe)]
 

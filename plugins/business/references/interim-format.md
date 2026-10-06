@@ -103,7 +103,7 @@ adding a new snapshot, never by editing an old one.
 ### measurements/
 
 Per-topic tables (timing, cycle times, rework, adoption, ...).
-Every figure tagged per `provenance.md`, denominator stated.
+Every figure tagged MEASURED, DERIVED, BENCHMARKED, or ESTIMATED, denominator stated.
 
 ### findings.md
 
@@ -169,7 +169,7 @@ Value is engineer-hours, cycle time, and capacity, never money.
 
 Open with one hero line: the skill's success form, or `✓ Evidence
 report: <supported claim, unknowns named>` when the package holds no
-committable figure (`audiences.md` defines it). Then these sections,
+committable figure (early instrumentation, open unknowns). Then these sections,
 with any the skill adds:
 
 1. `## Run`: the run chosen and its pinned window.
@@ -180,6 +180,26 @@ End with an `AskUserQuestion` panel offering the skill's next steps.
 Skip it in plan mode or when running non-interactively, where the
 output ends after `## Report`.
 
+Reply in this shape, as plain text outside any code fence, with plain
+bullets and no bold (never `- **Label:** ...`):
+
+```text
+✓ Leadership report: 310 engineer-hours per quarter saved (DERIVED)
+
+## Run
+
+- 2026-07-14/business/review-skill, window 2026-04-01..2026-06-30.
+
+## Gate
+
+- Passed: sources, assumptions, tags, and unknowns complete.
+
+## Report
+
+- Written to reports/leadership.md.
+- Strongest limitation: review latency covers 41 PRs, one team.
+```
+
 ### Stopped run
 
 A run that halts (run not found, gate failed, missing input, failed
@@ -188,6 +208,12 @@ one short paragraph or list of what the user must do next. No `Run`,
 `Gate`, or `Report` sections, no panel. State only what happened:
 never claim a check failed that did not run, and never describe
 references that were not loaded.
+
+```text
+⚠ Refused: sources.md has an entry with no output file.
+
+Add the missing snapshot or remove the entry, then render again.
+```
 
 ### Paths and commits
 

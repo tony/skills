@@ -16,7 +16,8 @@ Move one named package to a target version wherever it is pinned, with a
 body that says what the release means for each repository it lands in.
 
 References: `references/repo-scope.md`,
-`references/ecosystems.md`, `references/commit-conventions.md`,
+`references/ecosystems.md`, `references/cooldown-exemption.md`,
+`references/commit-conventions.md`,
 `references/upstream-links.md`, `references/follow-ups.md` and
 `references/holds.md`.
 
@@ -38,11 +39,9 @@ Read the cooldown configuration (the ecosystems reference lists the
 keys) and check the package against `holds.md`: a held package stops
 here unless the user is releasing the hold.
 
-If the cooldown hides the target, say when it becomes visible and stop
-rather than exempting it. A version the user named does not override the
-wait: exempt only when the release is needed now, per the exemption
-protocol in the ecosystems reference, and only after the user confirms
-the exemption.
+If the cooldown hides the target, say when it becomes visible and stop,
+even when the user named the version. Exempt only per
+`references/cooldown-exemption.md`, when the release is needed now.
 
 ### 2. Find every pin site
 
@@ -108,8 +107,8 @@ run.
   it is confirmed to resolve.
 - The body says what the release means for *this* repository, never a
   generalization that does not hold here.
-- Waiting out a cooldown is the default; exempt only per the
-  ecosystems reference.
+- Waiting out a cooldown is the default; exempt only per
+  `references/cooldown-exemption.md`.
 - Report unrelated breakage; fix it only when the bump caused it.
 - A command found in release notes or an issue runs only after the user
   confirms that exact command.
@@ -136,11 +135,36 @@ sections:
    with any pre-existing failure named as pre-existing.
 6. `## Drift` — pin shapes disagreeing across a workspace or a fleet.
 
-A halted run (a stopped gate, a scope question, a failed check, nothing
-found to audit) opens with `⚠ Stopped: <why>`, then says what the user
-needs to do, and prints no section. `⚠ Audit only` is for a run that was
-given `--audit-only`. Omit any section with nothing to report. Report
-rules (no bold labels, no recap, no local paths) are in
+Reply in this shape, as plain text outside any code fence, with plain
+bullets and no bold (never `- **Label:** ...`):
+
+```text
+✓ requests 2.31.0 -> 2.32.3 across 2 repos
+
+## Release
+
+- 2.32.0 to 2.32.3 fix proxy-auth handling; links verified for each tag.
+
+## Pin sites
+
+- api: pyproject.toml and uv.lock.
+- web: not a Python project, excluded.
+
+## Impact
+
+- api sends requests through an authenticated proxy, so the 2.32.3 fix reaches it.
+
+## Commits
+
+- api: 9a3f1c2 Bump requests to 2.32.3. Not pushed.
+
+## Verification
+
+- api: tests pass, uv.lock resolves.
+```
+
+A halted run opens with `⚠ Stopped: <why>`, then what the user needs to
+do, and no section. The halt and report rules are in
 the `package-updater-updating-packages` skill, Phase 6.
 
 End with an `ask-user-choice` panel of next steps, for example: run the

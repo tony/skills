@@ -1,3 +1,5 @@
 prose-rules.md: [action, agent-messaging, business, changelog, commit, disk, double-check, gh, git-branch, github-actions, lean, merge-pr, package-updater, pr, pytest-optimizer, rebase, release, research, respond, ruff, scholar, self-improvement, situate, skill-style, slop, spike, tailwind, tdd, terraform, ticket, weave]
+cooldown-exemption.md: [package-updater, ruff]
+throwaway-worktree.md: [github-actions, package-updater, ruff]
 verification-gates.md: [action, respond, slop, spike]
 signatures.yml: [slop, weave]

@@ -23,20 +23,16 @@ runs when someone can already say what they want caught up on.
 
 ## Procedure
 
-1. Gather every layer of the sweep before reporting anything. The layers
-   reinterpret each other: a ticket's acceptance criteria change what
-   the diff means, and an unresolved review thread explains a commit
-   that otherwise looks like a detour.
+1. Gather every layer of the sweep before reporting anything: a ticket's
+   acceptance criteria change what the diff means, and an unresolved
+   review thread explains a commit that looks like a detour.
 2. When the user is resuming after a gap, run the capped
    prior-conversations search before reporting, deriving terms from what
    the repository layers found.
-3. Report in the shape under "Report shape" in the sweep reference: hero
-   line, the declared sections in order, then the next-step panel. Write
-   it per `../../references/prose-rules.md`. Lead with what is
+3. Report in the shape in `../../references/report-shape.md`, written
+   per `../../references/prose-rules.md`. Lead with what is
    unresolved: the open questions, the failing check, the half-finished
    edit, and any decision an earlier conversation left open (cite it as
    the earlier conversation, with its date). Someone asking to be caught
    up does not want a narration of what already works.
-4. Say which layers were unavailable and why. State an empty layer as
-   "none" (`none is open`, `none is referenced`), never as "not
-   available".
+4. Say which layers were unavailable and why.

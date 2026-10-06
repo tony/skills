@@ -14,10 +14,9 @@ owning tool's own archival path, or by proving a copy redundant.
 
 ## The state-database rule
 
-Agent CLIs do not treat the file on disk as the source of truth.
-They index sessions in a sidecar database and reconcile it against the
-filesystem. Renaming, moving, or compressing a transcript by hand can
-therefore orphan a session even when every byte survives.
+Agent CLIs index sessions in a sidecar database and reconcile it
+against the filesystem, so renaming, moving, or compressing a transcript
+by hand can orphan a session even when every byte survives.
 
 Before touching any transcript, establish two things:
 
@@ -46,11 +45,10 @@ one alone is misleading:
   `archive_thread.rs`, or a job emitting counters such as `scanned`,
   `compressed`, `skipped_already_compressed`, `skipped_referenced`.
 
-A codec alone proves nothing. Agent binaries link zstd and gzip for
-HTTP transport, OpenTelemetry export, and tarball handling; a runtime's
-standard library (Bun, Node) exposes `zstdCompress` to every binary
-built on it. Only the extension string plus an archive routine shows
-the codec is wired to *history*.
+A codec alone proves nothing: binaries link zstd and gzip for HTTP
+transport and tarballs, and runtimes (Bun, Node) expose `zstdCompress`
+to every binary built on them. Only the extension string plus an
+archive routine shows the codec is wired to *history*.
 
 When native support exists, it is usually behind a feature flag. Find
 the flag name and enable it in the tool's own config rather than
@@ -71,13 +69,10 @@ stay resumable:
 
 - Sessions older than a cutoff (90 days is a reasonable default) become
   archives, and everything newer stays live.
-- Compression is reversible; the tradeoff is only about access, never
-  about fidelity.
+- Compression is reversible; the tradeoff is access, never fidelity.
 
-LLM transcripts compress unusually well — the system prompt, tool
-schemas, and file contents repeat across every turn's context. Measure
-rather than assume, because inline base64 image data destroys the
-ratio.
+Transcripts usually compress well. Measure rather than assume, because
+inline base64 image data destroys the ratio.
 
 ```console
 $ zstd -19 -T0 -c <sample-transcript> | wc -c
@@ -99,15 +94,15 @@ Common roots include `~/.codex/sessions`, `~/.claude/projects`,
 `~/.config/cursor/chats`, and per-tool state under `~/.local/state`.
 On WSL, the Windows-side profile holds a second, independent set.
 
-Two classes of file sit *beside* history and are frequently mistaken
-for it. Both are reclaimable:
+Two reclaimable classes of file sit *beside* history and are mistaken
+for it:
 
 - **Debug logs** — `*-tui.log`, `logs*.sqlite`. These record tool
   internals, not conversation. Multi-gigabyte logs are common.
 - **Workspace snapshots** — an agent that checkpoints a working tree
   captures whatever the tree contained, including `target/`,
-  `node_modules/`, and build output. The transcript is a rounding error
-  against the artifacts. Strip the artifacts and keep the session.
+  `node_modules/`, and build output. Strip the artifacts and keep the
+  session.
 
 Measure the artifact share before classifying a snapshot store. With
 GNU coreutils:

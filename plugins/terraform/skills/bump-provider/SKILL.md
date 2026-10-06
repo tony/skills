@@ -14,10 +14,9 @@ commit, then refresh the lock file of every affected root module.
 
 Follow the phase structure and conventions in
 `../bumping-terraform/SKILL.md` (clean tree, commit message rules,
-non-interactive defaults, stopped runs), which points to the three
-references this skill relies on. To move the CLI
-itself, use `/terraform:bump-terraform`. To refresh locks within the
-constraints already written, use `/terraform:refresh-lock`.
+non-interactive defaults, stopped runs), which names the references this
+skill uses. To move the CLI, use `/terraform:bump-terraform`. To refresh
+locks within existing constraints, use `/terraform:refresh-lock`.
 
 User arguments: $ARGUMENTS
 
@@ -106,8 +105,37 @@ order:
    bump, root modules that did not move and why, and modules whose
    constraints already admitted the target.
 
-Omit a section that would be empty. A run that cannot proceed ends with
-the stopped line from `../bumping-terraform/SKILL.md`, not this shape.
+Reply in this shape, as plain text outside any code fence, with plain
+bullets and no bold (never `- **Label:** ...`):
+
+```text
+✓ hashicorp/aws 6.56.1 -> 6.57.0 across 2 root modules
+
+## Target
+
+- registry.terraform.io/hashicorp/aws 6.57.0, published 2026-09-30; changelog taken from the registry's source at v6.57.0.
+
+## Layout
+
+- Root modules: envs/prod, envs/staging. Child module: modules/network. Driven by terraform.
+
+## Sites
+
+- envs/prod/versions.tf and modules/network/versions.tf edited, keeping ~>.
+- envs/staging/versions.tf already admits 6.57.0, left alone.
+
+## Locks
+
+- envs/prod: 6.56.1 to 6.57.0, 3 platforms before and after.
+- envs/staging: 6.56.1 to 6.57.0, 1 platform before and after.
+
+## Verification
+
+- fmt -check and validate pass in both root modules.
+```
+
+A run that cannot proceed ends with the stopped line from
+`../bumping-terraform/SKILL.md`, not this shape.
 
 End with an `AskUserQuestion` panel offering next steps, for example:
 converge the pin sites that disagree, refresh the lock files this run

@@ -11,8 +11,8 @@ context:
 
 execution:
   prompt: >-
-    /research:report wal-threshold. Use --root out. There is no network
-    access here, so check offline.
+    /research:report wal-threshold. Use --root out and --date 2026-01-15.
+    There is no network access here, so check offline.
   max_turns: 40
   timeout_seconds: 900
   allowed_tools: [Bash, Read, Write, Edit, Glob, Grep, Skill]
@@ -23,13 +23,13 @@ graders:
   - name: records-the-conflict
     type: tool_used
     tool: Bash
-    input_match: 'topic\.py\s+conflict\b'
+    input_match: '(topic\.py|\$\{?\w+\}?)\s+conflict\b'
 
   - name: report-has-a-conflicts-section
     type: regex
     target:
       source: file
-      path: out/*/research/wal-threshold/report.md
+      path: out/2026-01-15/research/wal-threshold/report.md
     pattern: '^## Conflicts'
     flags: m
 
@@ -37,7 +37,7 @@ graders:
     type: regex
     target:
       source: file
-      path: out/*/research/wal-threshold/report.md
+      path: out/2026-01-15/research/wal-threshold/report.md
     pattern: '\[S1\][^\n]*\[S2\]|\[S2\][^\n]*\[S1\]'
 
   - name: weighs-the-readings

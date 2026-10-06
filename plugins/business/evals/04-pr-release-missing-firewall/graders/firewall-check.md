@@ -1,6 +1,6 @@
 ---
 type: llm
 ---
-The reply says it cannot locate a public case study report to use as its source, rather than drafting a release straight from a raw interim package or from nothing.
-The reply offers to produce the public case study first instead of fabricating headline figures.
+The reply refuses to draft a release because the run or its public case study cannot be found, rather than drafting from a raw interim package or from nothing.
+The reply tells the user what to do next, such as passing the full run path or producing the public case study first.
 The reply does not invent a headline number, supporting figures, or a quote as if sourced from a real case study.

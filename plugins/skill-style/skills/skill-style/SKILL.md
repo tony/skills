@@ -192,11 +192,29 @@ A stopped run (no targets, missing file, edit not authorized) is one
 sentence stating the result, then what the user must supply or
 authorize. No sections.
 
+Reply in this shape, as plain text outside any code fence, with plain
+bullets and no bold (never `- **Label:** ...`):
+
+```text
+db-helper loses its explanatory padding; commands and warnings stay.
+
+## Ledger
+
+- "A database is a system for storing data": the agent knows this.
+- "This section explains how to restore": restates the heading.
+- Description says "I can help you"; rewrite in third person.
+
+## Diff
+
+<the git diff from step 6>
+```
+
 ## References
 
 `../../references/skill-rubric.md` is the rule catalog;
-`example-bloated.md` and `example-ideal.md` beside it show a skill
-before and after the test.
+`../../references/example-bloated.md` and
+`../../references/example-ideal.md` show a skill before and after the
+test.
 
 ## While trimming, do not add bloat
 

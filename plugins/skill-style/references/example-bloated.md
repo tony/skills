@@ -2,8 +2,7 @@
 
 Below is a SKILL.md of the kind the deletion test exists for. It is
 not a strawman: everything in it is true, well-meant, and grammatical.
-That is what makes it expensive. `example-ideal.md` is the same skill
-after the test.
+That is what makes it expensive.
 
 ## Contents
 

@@ -6,11 +6,9 @@
 - Required proof for "redundant"
 - Required proof for "mergeable"
 - Classification outcomes
-- Naming is not evidence
 
 A directory may only be classified redundant when a command has *proved*
-it. This file defines what counts as proof, and the near-misses that
-have masqueraded as proof.
+it. A name such as `*-backup-*` or `*.old` is not proof.
 
 ## The vacuous-truth trap
 
@@ -29,10 +27,8 @@ meanings, and they point in opposite directions:
 2. There are no shared paths at all. A and B are disjoint, and A is
    entirely unique.
 
-Reading case 2 as case 1 concludes "safe to delete" about a directory
-that is the only copy of its contents. The `differ` count alone cannot
-distinguish them. **Never classify on a `differ` count without also
-establishing the size of the intersection.**
+Reading case 2 as case 1 deletes the only copy. **Never classify on a
+`differ` count without also establishing the size of the intersection.**
 
 ## Required proof for "redundant"
 
@@ -98,9 +94,8 @@ existing file is written.
 
 Never write into an agent history store with `rsync`: the owning tool
 indexes sessions in a state database and does not see files it did not
-write (see `agent-history.md`). Merge history only through the tool's
-own import path, or after confirming its discovery glob and state
-database. For any other tree, an additive merge is:
+write. Merge history only through the tool's own import path. For any
+other tree, an additive merge is:
 
 ```console
 $ rsync -a --ignore-existing <candidate>/ <keeper>/
@@ -125,11 +120,3 @@ session, and picking a winner is the user's call.
 
 **Unique** — no overlap with any keeper. Not a backup at all, despite
 its name. Treat as primary data.
-
-## Naming is not evidence
-
-A directory called `*-backup-*`, `*.old`, `*.bak`, or `archive-*`
-carries no information about redundancy. Backups are routinely taken,
-then diverge as the live tree is rotated, pruned, or re-slugged — after
-which the "backup" is the only copy of everything the live tree
-dropped. Run the proof.

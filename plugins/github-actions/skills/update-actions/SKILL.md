@@ -56,11 +56,11 @@ written.
 
 ### 5. Commit
 
-One commit per repository and action. Work through repositories one at
-a time. With `--push`, push as each completes so an interrupted run
-resumes cleanly; otherwise print the push commands in the report. Write commit messages, pull-request comments, and the report per
-`../../references/prose-rules.md`. No `Co-Authored-By`, no "Generated
-with" or other tool trailer, no emoji.
+One commit per repository and action, one repository at a time. With
+`--push`, push as each completes so an interrupted run resumes; otherwise
+print the push commands in the report. Write commit messages,
+pull-request comments, and the report per `../../references/prose-rules.md`.
+No `Co-Authored-By`, no "Generated with" or other tool trailer, no emoji.
 
 ### 6. Verify and close out
 

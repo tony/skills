@@ -70,6 +70,23 @@ Present, in this order:
 4. The commit message the entries would land under, built per
    `commit-message.md`.
 
+Reply in this shape, as plain text outside any code fence, with plain
+bullets and no bold (never `- **Label:** ...`):
+
+````text
+Branch: feat/cache-evict | Commits: 3 | PR: #212
+
+```markdown
+- Add `Cache.evict()` to drop a cached key (#212)
+```
+
+Voice check passed. Target: CHANGES.md under Unreleased, Features.
+
+Commit message: docs(CHANGES) Cache key eviction
+
+- Left the get() empty-value fix out: no release shipped that bug.
+````
+
 When asking, use `AskUserQuestion`: "Insert into `<changelog-file>`?" Offer:
    - **Insert only**: apply the edit and leave it uncommitted.
    - **Insert and commit**: apply the edit and commit the changelog file with

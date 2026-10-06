@@ -22,8 +22,7 @@ order of magnitude. Converting to a shallow or blobless clone keeps the
 readable checkout and discards history the user never opens.
 
 Rank clones by the ratio of `.git` to working tree, not by absolute
-size. A repository whose `.git` is 90% of its footprint is the best
-candidate even when a larger repository sits above it.
+size.
 
 Report, for each clone: total size, `.git` size, whether it is shallow,
 and the remote it came from.
@@ -55,7 +54,7 @@ $ git clone --filter=blob:none <remote> <destination>
 ```
 
 Never convert a repository holding work that is not on a remote. Check
-first, on every candidate, without exception.
+every candidate first.
 
 ```console
 $ git -C <repo> status --porcelain --branch
@@ -75,15 +74,11 @@ $ git -C <repo> log --branches --not --remotes --oneline
 
 ## Cost two: build artifacts
 
-Compiled output under a study tree is pure waste — the repository is
-kept for reading, and the artifacts were a side effect of one
-exploratory build. Rust `target/` directories are the usual worst
-offender, since a debug build of a large workspace routinely exceeds
-the source it was built from.
+Compiled output under a study tree is a side effect of one exploratory
+build; Rust `target/` directories are the usual worst offender.
 
 Aggregate artifact directories across the whole study root before
-proposing anything, so the total is visible as one number rather than
-scattered across dozens of clones. With GNU coreutils:
+proposing anything, so the total is one number. With GNU coreutils:
 
 ```console
 $ find <study-root> \
@@ -123,5 +118,5 @@ Call out three groups explicitly, largest first within each:
 - **Artifact directories** — build output, aggregated per language, as
   a single reclaimable figure.
 
-A clone can appear in more than one group. Say so rather than picking
-one, since the reclaim actions differ and the user may want both.
+A clone can appear in more than one group; say so, since the reclaim
+actions differ.

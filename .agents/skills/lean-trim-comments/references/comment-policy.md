@@ -53,9 +53,6 @@ on public API are exempt from the loss gate — they serve the caller,
 not the maintainer. They are exempt from nothing else. Ceiling: a good
 man page entry.
 
-Doctests are the one comment form with built-in upkeep. They execute,
-so they cannot silently lie.
-
 ## Keep
 
 - Why over how: upstream quirks, protocol and compatibility
@@ -131,12 +128,6 @@ frozen external fact, not a value tracking your own code:
 
 ```python
 # CPython < 3.11 has no ExceptionGroup, so this branch stays.
-```
-
-Keep — exempt from the loss gate, passes concision:
-
-```python
-:param timeout: Maximum seconds to wait for the tmux command.
 ```
 
 Rewrite — the same fact, with the argument cut away (GCC 13 added

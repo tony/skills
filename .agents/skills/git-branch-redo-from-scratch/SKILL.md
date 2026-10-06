@@ -35,21 +35,16 @@ Five references carry the parts that must not drift:
 
 The old branch is the specification, not the source.
 
-A redo that reads the old implementation line by line and retypes
-it has reproduced the shape it was called in to replace. Work from
-what the branch had to *achieve*; consult how it achieved it only when
-the requirement is ambiguous.
+Work from what the branch had to *achieve*; read how it achieved it
+only when the requirement is ambiguous. Retyping the old code
+reproduces the shape the redo exists to replace.
 
 ## Boundary
 
 the `git-branch-soft-reset-and-recommit` skill keeps the net change identical
-and rebuilds only the history. Reach for it when the code is right and
-the commits are wrong.
-
-This skill is the opposite trade: the history and the code are both
-replaced, and the net change may differ. That makes it strictly
-riskier, so it earns its safety from the contract rather than from a
-tree comparison.
+and rebuilds only the history; use it when the code is right and the
+commits are wrong. This skill replaces both, and the net change may
+differ, so the contract replaces the tree comparison as the safety.
 
 ## Phase 1 — Establish the contract before anything else
 
@@ -71,21 +66,18 @@ Build the coverage ledger from `rebuild-contract.md`: behavior
 changes, tests, edge cases and workarounds, review requests, ticket
 acceptance criteria, public surface, dependencies.
 
-Mine intent per `commit-messages.md` Part 2 — commits, trailers, the
+Mine intent per `commit-messages.md` Part 2, to reconstruct requirements: commits, trailers, the
 pull request and its review threads, linked tickets, and optionally
 the session that wrote the code, under the privacy rules there.
 
-Give the workarounds disproportionate attention. A guard with no test
-and no comment is the single most likely thing a clean rewrite drops,
-and the original author usually had a reason they never wrote down.
+Give the workarounds disproportionate attention: a guard with no test
+and no comment is the thing a clean rewrite most likely drops.
 
 ## Phase 3 — Gate and back up
 
-Every refusal in `branch-safety.md`. Then record the original tip in a
-backup branch, per `branch-safety.md`, so it cannot be lost.
-
-The old branch is never deleted, never force-moved, and never the
-place the rebuild happens.
+Every refusal in `branch-safety.md`, then the backup branch for the
+original tip, per `branch-safety.md`. Never delete or force-move the old
+branch, and never rebuild on it.
 
 ## Orchestration Plan
 
@@ -105,8 +97,8 @@ The plan states:
 - Anything the branch does that the rebuild intends to drop, as an
   explicit list to be approved rather than discovered later.
 
-When more than one approach is genuinely in contention, say so and
-offer a bakeoff rather than picking silently.
+When several approaches contend, offer a bakeoff rather than picking
+silently.
 
 Wait for approval. Exit plan mode before executing. Without an
 interactive question tool, stop after presenting the plan; an
@@ -114,17 +106,15 @@ instruction to redo authorizes the redo, not a push.
 
 ## Phase 4 — Rebuild
 
-Work in a worktree so the original branch is untouched and remains
-runnable for comparison:
+Work in a worktree so the original branch stays runnable for
+comparison:
 
 ```
 git worktree add -b <branch>-redo /tmp/<branch>-redo <base-sha>
 ```
 
 Rebuild against the ledger, in the project's idiom, with no commits
-until the contract is met — the exploration is a spike, and unreviewed
-exploration does not belong in history. Mark shortcuts in place as you
-take them so they become commits or decisions, not silent debt.
+until the contract is met. Mark shortcuts in place as you take them.
 
 When the plan called for a bakeoff and a bakeoff skill is available,
 run the competing strategies in isolated worktrees and compare them.
@@ -170,10 +160,19 @@ git diff <backup-branch> <branch>-redo
 Each hunk where the old branch did something the new one does not is a
 question for the user. This is where a lost workaround surfaces.
 
-Report the ledger outcome, the contract result, the backup branch, and
-every deliberate drop. Write it per `references/prose-rules.md`:
-one result sentence first, then a plain list; no bold lead-ins and no
-absolute paths.
+Write the report per `references/prose-rules.md`. Reply in this
+shape, as plain text outside any code fence, with plain bullets and no
+bold (never `- **Ledger:** ...`):
+
+```text
+Rebuilt feature/export-v2 as feature/export-v2-redo; the contract holds.
+
+- Contract: 48 trunk and branch tests pass unmodified.
+- Ledger: 14 of 15 entries covered; 1 dropped on purpose.
+- Dropped: the CSV retry shim, recorded in commit 3f9a0c1.
+- Backup: backup/feature/export-v2-20261005.
+- Not pushed.
+```
 
 A run stopped at Phase 1 or a refusal is one result sentence naming
 why, then what the user must do. It claims no work that was not done.

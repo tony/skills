@@ -34,23 +34,23 @@ The plan must contain:
 4. Framework detection: which mechanism applies (xfail-mechanisms reference).
 5. Diff-gate file sets: the test-file pathspecs and what counts as source.
 6. Quality gates: commands from the project's AGENTS.md/CLAUDE.md.
+7. Reproduction proof: how you will show the test fails for the bug's reason and
+   not the setup (the failure message at the marker-removed run, the stash round-trip).
 
 Present the plan to the user and wait for approval before executing.
 
 If plan mode is unavailable, write the plan as numbered steps in your
 response and confirm with the user before proceeding. A headless run with no
-user to ask treats the request to fix the bug as approval of the plan, and
-stops at any other question (dirty tree, wrong repository) with a one-sentence
-result and what the user must do.
+user to ask treats the request to fix the bug as approval of the plan. The
+plan needs no repository: when a Phase 0 gate (dirty tree, wrong repository)
+stops the run, the stopped report still states the plan, asks the user to
+approve it, and says what to fix in the repository.
 
 ## Output shape
 
-Report in this order: one hero line (`✓` finished or `⚠` stopped, with the
-result in one sentence), then `## Evidence` (the three commit subjects with
-short hashes, the xfail line from Gate 1, the stash round-trip result), then
-`## Follow-ups` (omit when empty). A stopped run is the hero line plus what the
-user needs to do. Do not name local paths or temp files, and do not bold every
-bullet.
+Report per the final-report shape in
+`../../references/gates-and-commits.md`. A stopped run is the hero line, the
+plan when no one has approved it yet, and what the user needs to do.
 
 ## Phase 0: Discover Conventions
 
@@ -94,9 +94,9 @@ The diff gates and three-commit structure are unchanged.
 Create a test that reproduces the bug, marked expected-to-fail.
 
 The test must exercise real code paths. When mocking is unavoidable (network,
-filesystem, external services), the test must show the failure matches the
-bug's actual symptom: same exception type, message, or wrong-value pattern. If
-the mock causes the failure instead of the bug, discard the test and start over.
+filesystem, external services), the failure must match the bug's actual
+symptom (exception type, message, or wrong-value pattern). If the mock causes
+the failure, discard the test and start over.
 
 1. Study existing test patterns in the target file.
 2. Write a test with a descriptive name, existing fixtures, the strict
@@ -231,13 +231,9 @@ minimal fix and re-run from Phase 3.
 
 ## Recovery
 
-- Phase 2 fails (the test fails, but not because of the bug): delete the test
-  and return to Phase 1.
 - Phase 3 fails (the test still xfails after the fix): revert the fix,
   re-examine whether the test exercises the code path you fixed, and redo the
   root cause analysis.
-- Phase 4 fails (the test does not return to xfail with the fix stashed): find
-  the true cause before proceeding.
 - After 3 failed attempts at any phase, stop per the recovery rule in the
   gates-and-commits reference.
 

@@ -39,9 +39,9 @@ this tier is reclaimed on the strength of a directory's name.
 Backup directories, snapshot trees, pre-migration copies, and
 duplicated stores under both a real path and a symlinked one.
 
-Resolve symlinks before measuring. A dotfiles-managed config directory
-commonly appears under two paths, and counting both inflates the total
-while implying a duplicate that does not exist.
+Resolve symlinks before measuring: a dotfiles-managed directory appears
+under two paths, and counting both implies a duplicate that does not
+exist.
 
 ## Stale but unique
 
@@ -65,9 +65,6 @@ owning tool's index. See `agent-history.md`.
 Agent transcripts and session stores; local databases not backed by a
 remote; anything under a path the user has named as history.
 
-Reclaim within this tier only through the owning tool's own archival
-mechanism, or by proving one copy redundant against another.
-
 ## Classification rules
 
 **Default to the highest tier that plausibly applies.** A directory
@@ -86,8 +83,6 @@ it never influences classification.
 
 ## Ambiguity
 
-When a directory resists classification, report it as unclassified with
-its size, creation source if determinable, and the reason it is
-ambiguous. Do not guess, and do not fold it into a blanket approval
-group. An unclassified 30 GB directory named after a tool the user no
-longer runs is a question, not a candidate.
+Report a directory that resists classification as unclassified, with its
+size, creation source if determinable, and why it is ambiguous. Do not
+guess or fold it into a blanket approval group.

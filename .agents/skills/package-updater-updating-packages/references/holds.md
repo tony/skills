@@ -1,14 +1,12 @@
 # Holding a package back
 
-A hold is a decision to stay behind on purpose. It is the one part of a
-dependency sweep that adds no version and still needs the most
-explanation, because the next person to run the updater will see a
-package that looks stale and try to fix it.
+A hold is a decision to stay behind on purpose. The next person to run
+the updater will see a package that looks stale and try to fix it, so a
+hold needs more explanation than any version bump.
 
-Every hold has a **condition that ends it**. Record the condition when
-you add the hold, and release the hold when the condition is met. A hold
-with no condition is indistinguishable from neglect, and outlives the
-problem it was added for.
+Every hold has a **condition that ends it**. Record it when you add the
+hold, and release the hold when it is met. A hold with no condition is
+indistinguishable from neglect.
 
 ## Contents
 
@@ -55,12 +53,9 @@ not know, so a `$comment` entry can break the tool instead of documenting
 the hold. Run `ncu` after any edit to the file and confirm it still
 loads.
 
-The commit message is therefore the only durable record of why a package
-is held, which makes it load-bearing in a way most config commits are
-not. Write it accordingly.
-
-If a hold genuinely needs an inline explanation, use a config format
-that supports comments rather than inventing a key.
+The commit message is the only durable record of why a package is held.
+If a hold needs an inline explanation, use a config format that supports
+comments rather than inventing a key.
 
 ## Commit grammar
 
@@ -78,10 +73,6 @@ Releasing one, naming what fixed it:
 .ncurc: Unignore `@biomejs/biome` (2.3.7 fixed issue)
 ```
 
-The pair is the point. A reader finding the hold can search forward for
-its release; a reader finding the release can search back for the
-reason.
-
 ## What earns a hold
 
 Each shares one shape: a condition outside the repository that has not
@@ -98,8 +89,8 @@ happened yet.
 - **Maintainer broke the package** — a release that changed something
   fundamental in a way that is not going to be reverted.
 
-A hold is not a way to avoid reading release notes. If the reason is
-"this looked risky", read the notes instead.
+A hold is not a way to skip release notes: "this looked risky" is a
+reason to read them.
 
 ## Auditing holds
 
@@ -122,7 +113,6 @@ re-enumerate the configs after the pass.
 
 ## Cooldown is not a hold
 
-The ecosystem cooldown settings (see `ecosystems.md`) gate
-releases by age, automatically, for every package. A hold names one
-package and one condition. Do not use a `reject` entry to wait out a
-cooldown — it will still be there long after the release ages in.
+An ecosystem cooldown gates every package by release age. A hold names
+one package and one condition. Never use a `reject` entry to wait out a
+cooldown: it outlives the window.

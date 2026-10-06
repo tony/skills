@@ -11,8 +11,7 @@ user-invocable: true
 
 Judge every comment and docstring in the target files against
 `../../references/comment-policy.md`, then delete or rewrite the ones
-that fail. Edits in place and prints a diff. Never commits, never
-pushes, never requires a clean tree.
+that fail. Edits in place and prints a diff. Never commits or pushes.
 
 ## Confirm before the first edit
 
@@ -80,9 +79,8 @@ With no paths, the target set is the files this branch changed.
    — keep, rewrite, or delete — and a failing gate by name for
    anything not kept. A verdict you cannot attach to a gate is a keep.
 
-   Read the surrounding code before judging. A comment that looks like
-   narration but pins an invariant is a keep, and the loss gate is
-   what protects it.
+   Read the surrounding code first: a comment that looks like narration
+   but pins an invariant is a keep.
 
 4. **Preview and confirm.** List one verdict per comment, keeps
    included, grouped by file: old and new text for each rewrite, the
@@ -99,12 +97,27 @@ With no paths, the target set is the files this branch changed.
 6. **Diff.** Print `git diff -- <targets>`. Skip for `--stdin`.
 
 7. **Report and hand off.** Write it per
-   `../../references/prose-rules.md`, in this order:
+   `../../references/prose-rules.md`. A hero line `N comments: K kept, R rewritten, D deleted` (the
+   counts sum to N), `## Verdicts` with the step 4 list, then `## For
+   the commit message` with the moved rationale, omitted when none.
 
-   1. A hero line: `N comments: K kept, R rewritten, D deleted`. The
-      three counts sum to N.
-   2. `## Verdicts`: the step 4 list.
-   3. `## For the commit message`: the moved rationale. Omit when none.
+   Reply in this shape, as plain text outside any code fence, with plain
+   bullets and no bold (never `- **Label:** ...`):
+
+   ```text
+   4 comments: 1 kept, 1 rewritten, 2 deleted
+
+   ## Verdicts
+
+   - Deleted "fetches a URL with retries": the name says it.
+   - Deleted "retries up to 3 times": repeats MAX_RETRIES.
+   - Kept the monotonic-clock note: the loss gate protects it.
+   - Rewrote the Windows DNS note to name MAX_RETRIES.
+
+   ## For the commit message
+
+   - Windows runners see a cold DNS cache on the first request.
+   ```
 
    Then offer next steps through `AskUserQuestion`: commit, tighten
    the prose too with `/lean:tighten`, or discard. Review the printed
@@ -116,6 +129,5 @@ With no paths, the target set is the files this branch changed.
 
 ## What this does not do
 
-- Edit code, only its comments.
 - Rewrite prose files; that is `/lean:tighten`.
 - Add missing comments. Absence is not a finding here.

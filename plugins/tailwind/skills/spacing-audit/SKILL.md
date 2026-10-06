@@ -104,6 +104,36 @@ in order, with these headings:
 3. Proposed refactor: a focused diff or before/after
 4. Validation checklist: Step 4 filled in
 
+Reply in this shape, as plain text outside any code fence, with plain
+bullets and no bold (never `- **Label:** ...`):
+
+````text
+## Spacing map
+
+nav (p-4, no gap)
+- Docs, gap-2, Pricing
+- ms-3 on the second group
+- Sign in (px-2 h-8), nothing, Sign up (h-8)
+
+## Anti-patterns found
+
+- The `ms-3` on the second group sets the space between groups with a margin (Pattern 2).
+- "Sign in" has `px-2` and "Sign up" has none, so the buttons differ in width (Pattern 3).
+
+## Proposed refactor
+
+```tsx
+<nav className="flex items-center gap-3 p-4">
+  ...
+</nav>
+```
+
+## Validation checklist
+
+- [x] Every adjacent pair has one spacing authority.
+- [x] Peer buttons share `h-8 px-2`.
+````
+
 For a straightforward fix, collapse this to a short explanation and the
 code. Do not restate that distances stay the same.
 

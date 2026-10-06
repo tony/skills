@@ -191,6 +191,27 @@ Never name local or temp paths. A completed run ends with these, in order:
 A stopped or refused run is one result sentence (what stopped and why),
 then what the user needs to do. Nothing else.
 
+Reply in this shape, as plain text outside any code fence, with plain
+bullets and no bold (never `- **Label:** ...`):
+
+```text
+✓ Cut v0.4.0; nothing pushed, no tag created
+
+## Release summary
+
+- 0.3.2 to 0.4.0, CHANGES dated 2026-10-05, next unreleased target 0.4.x.
+
+## Files changed
+
+- pyproject.toml, uv.lock, CHANGES.
+
+## Next steps
+
+- git tag -a v0.4.0 -m "v0.4.0"
+- git push --no-follow-tags
+- git push --no-follow-tags origin refs/tags/v0.4.0
+```
+
 Then, unless running in plan mode, `AskUserQuestion` may offer only
 non-mutating choices: show the next-step commands, or done. No option
 creates a tag or pushes, and no answer authorizes either; the user

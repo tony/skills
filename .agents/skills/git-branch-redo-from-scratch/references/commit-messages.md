@@ -1,10 +1,5 @@
 # Writing the replacement messages
 
-A recommit is only worth doing if the new messages are better than the
-ones they replace. That takes two things the original commits do not
-carry on their own: the project's own conventions, and the reasoning
-behind the code.
-
 ## Contents
 
 - Part 1 — Match the project's style
@@ -13,9 +8,8 @@ behind the code.
 
 ## Part 1 — Match the project's style
 
-Never impose a house style. Discover the one already in use, and when
-the repository has no single style, say so and ask rather than forcing
-a plurality rule onto every commit.
+Never impose a house style. Discover the one in use; when the repository
+has no single style, report `mixed` and ask.
 
 ### Declared conventions win
 
@@ -23,13 +17,11 @@ Read these in order and stop at the first that actually specifies a
 format: `AGENTS.md`, `CLAUDE.md`, `CONTRIBUTING.md` (root and
 `.github/`), then a `commit.template` file.
 
-The convention doc is often at a path no fixed list contains, linked
-from `CONTRIBUTING.md` rather than inlined. Follow markdown links one
-hop before concluding nothing is declared.
+Follow markdown links from `CONTRIBUTING.md` one hop before concluding
+nothing is declared.
 
-A checked-in `.gitmessage` is a specification to read, not a message
-to reuse: `commit.template` has no effect at all when the message
-comes from `-m` or `-F`.
+A checked-in `.gitmessage` is a specification to read, not a message to
+reuse: `commit.template` has no effect on `-m` or `-F` messages.
 
 Machine-enforced conventions are declarations too. Probe for
 commitlint (its config may live in `package.json`, `package.yaml`,
@@ -37,8 +29,7 @@ commitlint (its config may live in `package.json`, `package.yaml`,
 `cz.toml`, `.cz.json`, `cz.yaml`, `pyproject.toml`), `.gitlint`,
 `.conform.yaml`, and a `conventional-pre-commit` hook in
 `.pre-commit-config.yaml`. A checked-in `.githooks/` directory is
-evidence of intent, not an active gate — it does nothing until someone
-sets `core.hooksPath` locally.
+evidence of intent, not an active gate, until `core.hooksPath` is set.
 
 ### Otherwise mine the history
 
@@ -49,9 +40,8 @@ branch under recommit samples the mess you were asked to fix.
 git log --no-merges -n 200 --format='%B' "$(git merge-base HEAD <base-ref>)"
 ```
 
-Sample 100 to 200 non-merge commits. Twenty can invert a binary signal
-outright — one real repository reads a 0% PR-suffix rate at 20 commits
-and 87% at 200.
+Sample 100 to 200 non-merge commits; twenty can invert a binary signal
+(0% PR-suffix rate at 20 commits, 87% at 200 in one repository).
 
 What to measure, and the trap in each:
 
@@ -69,20 +59,17 @@ What to measure, and the trap in each:
 - **Trailers.** Filter keys against a `^[A-Za-z][A-Za-z0-9-]*$` shape,
   or a bare URL on the last line parses as a trailer with key `https`.
 
-Exclude bot authors, whose machine style skews every statistic. And
-check `git rev-parse --is-shallow-repository` first: a shallow clone
-yields a one-commit sample and a confident, wrong profile.
+Exclude bot authors. Check `git rev-parse --is-shallow-repository`
+first: a shallow clone yields a one-commit sample and a wrong profile.
 
 ### Writing the message so it survives
 
 `git commit -F -` with a quoted heredoc is the editor-free way to
 supply a multi-paragraph message.
 
-Two settings can silently mangle it. `commit.cleanup=strip` deletes
-body lines beginning with the comment character — a line starting
-`#123` simply vanishes, with no warning and no editor involved. Read
-`commit.cleanup` and `core.commentChar`, or pass `--cleanup=verbatim`
-and own message hygiene entirely.
+`commit.cleanup=strip` silently deletes body lines beginning with the
+comment character, so a line starting `#123` vanishes. Read
+`commit.cleanup` and `core.commentChar`, or pass `--cleanup=verbatim`.
 
 `prepare-commit-msg` runs on `-m` and `-F` commits and is **not**
 suppressed by `--no-verify`, so a repo hook can rewrite what you
@@ -92,9 +79,8 @@ wrote. Re-read what actually landed:
 git log -1 --format=%B
 ```
 
-Rebase replay never fires the `commit-msg` hook, so a recommit can land
-messages the project's own linter would reject. Run the linter
-yourself as a per-commit gate.
+Rebase replay never fires `commit-msg`, so run the project's message
+linter yourself as a per-commit gate.
 
 ## Part 2 — Recover the intent
 
@@ -117,14 +103,9 @@ especially, which is how GitHub assigns credit:
 git log --format='%(trailers:only=true,unfold=true)' <base>..HEAD
 ```
 
-Two more git-native sources are usually ignored. `git notes` may carry
-rationale, and `git stash list` may hold abandoned approaches that
-explain why the landed approach looks the way it does. Notes do not
-survive the recommit on their own: `reset --soft` plus `commit` is not a
-rewrite as far as git is concerned, so no note is copied. Carry
-anything worth keeping into the message itself, which is the only
-place that is durable and visible to everyone — notes are neither
-pushed nor fetched without an explicit refspec.
+`git notes` may carry rationale, and `git stash list` may hold abandoned
+approaches. Notes are not copied by `reset --soft` plus `commit`, and
+are not pushed by default: carry anything worth keeping into the message.
 
 ### The pull request and its review
 
@@ -132,13 +113,10 @@ pushed nor fetched without an explicit refspec.
 gh pr view <n> --json title,body,commits,reviews,comments,closingIssuesReferences
 ```
 
-Review threads carry the reasoning that never made it into a commit,
-and they are the one source holding another person's opinion. Grouping
-and the resolved/outdated flags are only exposed through GraphQL;
-REST returns the comments ungrouped.
+Review threads carry reasoning that never reached a commit. Thread
+grouping and the resolved/outdated flags exist only in GraphQL.
 
-An empty `closingIssuesReferences` does not mean there is no ticket —
-it means GitHub never resolved a link. Also scan the PR body, commit
+An empty `closingIssuesReferences` does not mean no ticket. Also scan the PR body, commit
 trailers, subject prefixes, and the branch name.
 
 ### Linked tickets
@@ -161,34 +139,22 @@ actually closes on merge. Leave a closing keyword where it was.
 
 ### The session that wrote the code
 
-When the repository does not explain itself — an approach with no
-recorded rationale, work resumed after a gap — the conversation that
-produced the code may still exist locally.
+When the repository does not explain itself, the conversation that
+produced the code may still exist locally. Use the host's session-search
+tool, scoped to this repository and branch, if one exists. Search for
+the feature name, ticket ID, or module the diff concentrates in, and
+search prompts before conversations.
 
-Use the session-search tool the host provides, scoped to this
-repository and branch, if one exists.
+This layer is opt-in; transcripts age out, and a missing one does not
+mean there was no intent.
 
-Derive the search terms from what the earlier sources already found:
-the feature name, the ticket ID, the module the diff concentrates in.
-Generic words return generic noise. Search prompts before
-conversations — the default scope returns what the user asked for,
-which is the record of intent.
-
-This layer is opt-in and never a hard dependency. Transcripts also age
-out; a branch older than the retention window simply has none, which
-is not the same as there having been no intent.
-
-A prior conversation is evidence of **intent**, not of **state**. A
-plan discussed three weeks ago may have shipped, been abandoned, or
-been reversed, and the transcript reads identically in all three
-cases. Check every finding against the diff in front of you; when they
-disagree, the code wins.
+A prior conversation is evidence of **intent**, not of **state**: check
+every finding against the diff; when they disagree, the code wins.
 
 ### Privacy — this is a hard gate
 
 A transcript is an unredacted record of everything that passed through
-a tool: file contents, command output, pasted text, environment. The
-base rate of leakable material in one is high, not hypothetical.
+a tool: file contents, command output, pasted text, environment.
 
 **Extract the claim and re-state it in your own words. Never copy a
 span.**
@@ -199,21 +165,15 @@ private URLs; the contents of `.env`, key, or config files; verbatim
 command output; third-party names, emails, and customer data;
 unredacted stack traces; or any file body quoted by a tool result.
 
-The same applies to the reasoning itself. Abandoned approaches and
-intermediate branch states shape the message but do not belong in it
-unless users of a published release actually experienced the old
-behavior.
+Abandoned approaches and intermediate branch states shape the message
+but stay out of it unless users of a published release experienced them.
 
 ## What a recommit message owes the reader
 
 The subject says what changed. The body says why it had to, in the
 project's own format, at a length proportional to the change.
 
-The commit message is the right home for branch-internal narrative —
-the renames, the attempt that was reverted, the reason a simpler
-approach did not work. That material belongs here precisely because it
-does not belong in the code, the README, or the pull request
-description.
-
-If the body is getting long enough to describe two things, that is the
-signal to split the commit rather than to keep writing.
+The commit message is the home for branch-internal narrative (renames,
+reverted attempts, why a simpler approach failed); keep it out of the
+code, README, and PR description. A body that describes two things means
+two commits.

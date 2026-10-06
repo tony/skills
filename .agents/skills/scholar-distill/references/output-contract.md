@@ -12,12 +12,40 @@ Every scholar skill reports in this shape.
    the panel only in plan mode. Where no question tool exists (Codex, headless
    runs), print the options as a plain list and stop; never pick one.
 
+Reply in this shape, as plain text outside any code fence, with plain
+bullets and no bold (never `- **Label:** ...`). This is `gather`; other skills
+swap in their own hero and sections:
+
+```text
+✓ http-client: 3 sources pinned, 1 skipped
+
+## Pinned
+
+- notes/ontology/http-client/sources.jsonl
+- https://github.com/acme/http-client at v2.40.0, from the newest release.
+- https://github.com/acme/http-core at 9a29b1a, a commit on trunk; no releases.
+
+## Skipped
+
+- http-client test/: names fixtures, not domain concepts.
+
+## Shape
+
+- http-client: 14 modules, most under src/parser/.
+```
+
 ## A halted run
 
 When a prerequisite is missing or a gate fails, report only the hero line
 (`⚠ Blocked: <reason>`), one sentence naming what is missing, and the step the
 user takes to unblock it. Print none of the skill's sections and no empty
 placeholders. Do not list files you did not create.
+
+```text
+⚠ Blocked: no sources.jsonl for this study.
+
+Run scholar-gather on the corpus first.
+```
 
 ## Content
 

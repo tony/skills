@@ -21,15 +21,14 @@ Own repositories only. Check the fork flag, not the owner name:
 $ gh repo view <owner>/<name> --json isFork
 ```
 
-A fork (`isFork: true`) and an upstream project are out of scope, with
-no override: a fork's workflows belong upstream. Report which
-repositories were excluded and why.
+A fork (`isFork: true`) and an upstream project are out of scope, with no
+override. Report which repositories were excluded and why.
 
 ## Inventory pins from trunk, not the working tree
 
-Resolve the default branch from the API (`origin/HEAD` may be unset),
-then fetch so `origin/<default>` is current. Without the fetch the
-audit reads a stale branch and says so in the report.
+Resolve the default branch from the API (`origin/HEAD` may be unset), then
+fetch so `origin/<default>` is current; without the fetch, say the audit may
+be stale.
 
 ```console
 $ gh repo view --json defaultBranchRef --jq .defaultBranchRef.name
@@ -39,15 +38,13 @@ $ gh repo view --json defaultBranchRef --jq .defaultBranchRef.name
 $ git fetch origin
 ```
 
-Read workflow content from `origin/<default>`, not the checkout: a
-feature branch reports pins the default branch does not have. Cover
+Read workflow content from `origin/<default>`, not the checkout. Cover
 `.github/workflows/**` and `.github/actions/**`; composite actions pin
-versions too and are the ones most often missed.
+versions too and are the most often missed.
 
-Loop over the file list with `while read -r`. An unquoted captured list
-expands as one word in zsh, so a repo with two workflow files yields a
-bogus multi-line ref, drops out of the audit with no error, and the
-fleet reads as clean.
+Loop over the file list with `while read -r`: an unquoted captured list
+expands as one word in zsh, so a repo with two workflow files drops out of
+the audit with no error and the fleet reads as clean.
 
 ```bash
 git ls-tree -r --name-only origin/<default> .github | while read -r f; do
@@ -68,46 +65,39 @@ Ask the registry, not memory:
 $ gh api repos/<owner>/<action>/releases/latest --jq .tag_name
 ```
 
-Some actions publish no releases at all, only tags. Fall back to
-listing refs when `releases/latest` returns nothing.
+Some actions publish only tags; list refs when `releases/latest` returns
+nothing.
 
 ## Verify the target tag exists
 
-A pin naming a tag that does not exist breaks every workflow that
-references it. Confirm before writing, and gate on exit status:
+Confirm before writing, and gate on exit status:
 
 ```console
 $ gh api repos/<owner>/<action>/git/ref/tags/<tag> >/dev/null 2>&1
 ```
 
-Piping `gh api` into `jq` or `sed` before checking the status swallows
-the 404 and reports a missing tag as present. Check the exit code.
-
-Not every action publishes a floating major. Run the same check against
-the major tag (`git/ref/tags/v<major>`) per action before choosing a
-float.
+Piping `gh api` into `jq` or `sed` first swallows the 404 and reports a
+missing tag as present. Not every action publishes a floating major; run
+the same check against `git/ref/tags/v<major>` before choosing a float.
 
 ## Dereference annotated tags before comparing
 
-`.object.sha` on an annotated tag returns the tag object, not the
-commit it points at. Comparing two tags by that field makes identical
-tags look different — and can lead to "correcting" research that was
-right. Dereference when the type is `tag`:
+`.object.sha` on an annotated tag is the tag object, not the commit, so
+comparing two tags by it makes identical tags look different. Dereference
+when the type is `tag`:
 
 ```console
 $ gh api repos/<owner>/<action>/git/tags/<tag-object-sha> --jq .object.sha
 ```
 
-This is how to confirm claims like "the floating v6 tag now points at
-the v7 commit", which change whether a bump is a behaviour change or a
-label correction.
+This confirms claims like "the floating v6 tag now points at the v7 commit",
+which decide whether a bump is a behaviour change or a label correction.
 
 ## Resolve a tag to its commit SHA
 
 A SHA pin needs the commit, not the tag object. Ask for the tag and its
-peeled form together; an annotated tag prints two lines and the `^{}`
-line is the commit, a lightweight tag prints one line that is already
-the commit. `tail -n 1` takes the right line in both cases:
+peeled form together: an annotated tag prints two lines (the `^{}` line is
+the commit), a lightweight tag one. `tail -n 1` takes the right line:
 
 ```console
 $ git ls-remote https://github.com/<owner>/<action>.git "refs/tags/<tag>" "refs/tags/<tag>^{}" | awk '{print $1}' | tail -n 1
@@ -117,9 +107,8 @@ An empty result means the tag does not exist; stop.
 
 ## Choose the pin, preserving the repo's shape
 
-Default to the major-level float: it collects security and bug-fix
-patches without a commit per patch release, and keeps dependabot noise
-down.
+Default to the major-level float: it collects patches without a commit per
+patch release.
 
 **Currently a major float** (`@v6`) — move to the next major float
 (`@v7`).
@@ -128,13 +117,12 @@ down.
 when it exists and resolves to at least that patch. Say `repin X -> Y`
 in the subject; "from 4.0.1 to 4" reads as a downgrade otherwise.
 
-**Currently a commit SHA with a version comment** — move the SHA *and*
-the trailing comment together. Leaving a stale `# v8.1.0` next to a v9
-SHA is worse than no comment.
+**Currently a commit SHA with a version comment** — move the SHA *and* the
+trailing comment together; a stale `# v8.1.0` beside a v9 SHA is worse than
+no comment.
 
-**No major tag upstream** — pin the exact release and explain why in
-the commit body, so a later reader does not "fix" it to a float that
-does not exist.
+**No major tag upstream** — pin the exact release and say why in the commit
+body, so no one "fixes" it to a float that does not exist.
 
 ## Check the gates the research surfaces
 
@@ -148,7 +136,5 @@ workflows for each breaking change the release notes name:
   bump to a newer Node runtime.
 - Package-manager declaration and lockfile requirements.
 
-A fleet-wide fact is not a per-repo fact. If the body says "this repo
-authenticates via OIDC" and one repo uses static keys, that is a false
-statement committed permanently to that repo's history. Override the
-body wherever the general claim does not hold.
+A fleet-wide fact is not a per-repo fact: where a general claim ("this repo
+authenticates via OIDC") does not hold, override the body for that repo.

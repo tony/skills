@@ -369,42 +369,43 @@ With `--run-tests`:
 $ ${TEST_CMD}
 ```
 
-The hero line is `Slop scan summary`; sections follow in the template's
-order: summary block, `Quality gates (final)`, `Per-finding commits`,
+The hero line is `Slop scan summary`; sections follow in the order
+shown: summary block, `Quality gates (final)`, `Per-finding commits`,
 `Gate-failed findings`, then the `Patch series:` line. A halted run
 prints one sentence naming the cause, then what the user must do (commit
 or stash, or pass `--allow-dirty`).
 
-```
+Reply in this shape, as plain text outside any code fence, with plain
+bullets and no bold (never `- **Label:** ...`):
+
+```text
 Slop scan summary
 =================
-Scope: <count> files (paths: <globs>)
-Budget: <level>
-Findings: <total> (<a> Tier A, <b> Tier B, <c> Tier C, <h> historical-only)
+Scope: 42 files (paths: src/**, docs/**)
+Budget: default
+Findings: 5 (2 Tier A, 2 Tier B, 1 Tier C, 0 historical-only)
 
-Committed: <committed> findings landed as commits
-Gate-failed (rolled back): <gate-failed> (details below)
-Hook-failed (rolled back): <hook-failed>
-Advisory: <advisory> (see advisory.md)
-Historical-only: <h> (run slop-deslop --message-only on the current branch for fixable commit-message slop)
+Committed: 3 findings landed as commits
+Gate-failed (rolled back): 1 (details below)
+Hook-failed (rolled back): 0
+Advisory: 1 (see advisory.md)
+Historical-only: 0
 
-Tone calibration: demoted <phrases>
-Verifier: <enabled|skipped> (<scanned> files scanned; <skipped-per-file> skipped)
+Tone calibration: demoted "robust", "seamless"
+Verifier: enabled (42 files scanned; 0 skipped)
 
 Quality gates (final)
 =====================
-format=<status> | lint=<status> | typecheck=<status> | tests=<status>
+format=pass | lint=pass | typecheck=pass | tests=skipped
 
 Per-finding commits:
-  <sha-short> chore(slop[low-value.todo-noise]) Remove vague TODO from src/utils.py
-  <sha-short> docs(slop[brittle.line-numbers]) Replace line number in CONTRIBUTING.md
-  …
+  7c1e9d4 chore(slop[low-value.todo-noise]) Remove vague TODO from src/utils.py
+  a02b5f1 docs(slop[brittle.line-numbers]) Replace line number in CONTRIBUTING.md
 
 Gate-failed findings:
-  <signature-id> in <file>:<line>, <gate>: <stderr summary>
-  …
+  brittle.test-count in docs/guide.md:12, lint: line too long
 
-Patch series: <run-dir>/
+Patch series: .git/slop/run-1/
 ```
 
 Do not push; the user decides. A plain `git push` suffices because no

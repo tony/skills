@@ -12,7 +12,7 @@ cat >bin/codex <<'SH'
 #!/usr/bin/env bash
 printf '%s\n' "$*" >>"$(dirname "$0")/../codex-calls.log"
 case "${1-}" in
-  queue) echo "queued item 7d1c2a90-0000-4000-8000-000000000001 for thread 0b6f2d1e-4c1a-4f7e-9a53-2d8e7a1c9b10" ;;
+  queue) [[ " $* " == *" --help "* ]] || echo "queued item 7d1c2a90-0000-4000-8000-000000000001 for thread 0b6f2d1e-4c1a-4f7e-9a53-2d8e7a1c9b10" ;;
 esac
 SH
 chmod +x bin/codex

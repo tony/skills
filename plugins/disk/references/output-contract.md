@@ -1,5 +1,12 @@
 # Output contract
 
+## Contents
+
+- Hero block
+- Sections
+- After execution
+- Rules
+
 Every command reports in the same fixed order. A hero block may precede
 it. Omit a section that has no findings rather than writing that it is
 empty. No bold labels on bullets, no recap ending.
@@ -14,10 +21,8 @@ One to four lines naming the binding constraint. Prefix with `⚠` when
 a layer is 90% used or more, `✓` otherwise. No prose paragraphs. Name a
 host layer as the constraint only from a measurement.
 
-The binding constraint is the filesystem closest to full, which is not
-always the one the user asked about. When a guest filesystem is
-comfortable and its host is full, the host is the constraint and the
-hero block says so.
+The binding constraint is the filesystem closest to full, which may not be
+the one the user asked about: a full host beats a comfortable guest.
 
 ## Sections
 
@@ -53,6 +58,32 @@ questions, not candidates. Layers that could not be measured go under
 **## Only you can run this** — commands requiring the environment to be
 halted, or a host-side administrator shell. One command per block, with
 what it interrupts stated before it. Present these as pending.
+
+Reply in this shape, as plain text outside any code fence, with plain
+bullets and no bold (never `- **Label:** ...`):
+
+```text
+⚠ C: (host) is 94% full; the WSL guest is 61% used.
+
+## Layers
+
+- C: 931 GiB, 876 used, 55 available, 94%.
+- WSL guest ext4: 1007 GiB, 612 used, 344 available, 61%; ext4.vhdx
+  allocated 780 GiB, so 168 GiB is balloon.
+
+## Biggest consumers
+
+- ~/.cache: 38 GiB, guest.
+- ~/study: 71 GiB, guest.
+
+## Regenerable
+
+- npm and uv caches: 22 GiB; rebuilt by the next install.
+
+## Protected
+
+- Agent transcripts: 14 GiB, kept; no native compression found.
+```
 
 ## After execution
 

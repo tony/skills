@@ -84,7 +84,7 @@ The default is 600 seconds. Override with `timeout:<seconds>` or disable with
 `timeout:none`. On macOS, install GNU coreutils for `gtimeout`:
 
 ```console
-brew install coreutils
+$ brew install coreutils
 ```
 
 Without `timeout` or `gtimeout`, runs have no time limit.

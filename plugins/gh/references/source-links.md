@@ -5,19 +5,15 @@ Contents: Link everything that has a URL, Pin every reference into a repository,
 How to link so the link still works. Shared by the
 `rendered-markdown` skill and `/gh:create-issue`.
 
-A link that has rotted is worse than no link: it resolves, it looks
-authoritative, and it points at unrelated code. Three years is the
-horizon to write for.
+A rotted link is worse than no link: it resolves, looks authoritative,
+and points at unrelated code. Write for a three-year horizon.
 
 ## Link everything that has a URL
 
 Every project, package, specification, standard, command, error code,
 issue, commit, release, and document that names a thing a reader could
 look up. The first mention carries the link; later mentions do not
-need to repeat it.
-
-A reader who has to search for what you meant is a reader you sent
-away.
+repeat it.
 
 ## Pin every reference into a repository
 
@@ -27,8 +23,8 @@ away.
 https://github.com/OWNER/REPO/blob/v2.40.0/README.md
 ```
 
-Most durable, and it tells the reader which released version the claim
-held for.
+Most durable; it tells the reader which released version the claim held
+for.
 
 ### Otherwise a 7-character commit reachable from trunk
 
@@ -41,10 +37,9 @@ a pull-request head — it can be rebased or garbage-collected.
 
 ### Never a branch
 
-`blob/main/…` rots silently. The file moves, the lines shift, and the
-anchor lands on unrelated code while still returning 200. Reserve it
-for a living document meant to always show the latest state, such as a
-contributing guide.
+`blob/main/…` rots silently: the anchor lands on unrelated code while
+still returning 200. Reserve it for a living document meant to always
+show the latest state, such as a contributing guide.
 
 ### Line anchors only on a pinned ref
 
@@ -72,28 +67,25 @@ Newest tag of a repository you have not cloned:
 $ gh release list --repo OWNER/REPO --limit 1 --exclude-drafts --exclude-pre-releases --json tagName --jq '.[0].tagName'
 ```
 
-A repository can have thousands of tags and no releases at all, in
-which case that command prints nothing. Fall back to the tags
-themselves:
+A repository with no releases prints nothing; fall back to the tags:
 
 ```console
 $ git ls-remote --tags --refs --sort=-v:refname https://github.com/OWNER/REPO
 ```
 
-Version sort puts a prerelease above its own release, so `v1.2.0-rc1`
-outranks `v1.2.0`. Read the list, do not take the first line.
+Version sort ranks `v1.2.0-rc1` above `v1.2.0`; read the list, do not
+take the first line.
 
-A tag pins content only by convention — git allows a tag to be moved,
-and a move never propagates to anyone who already fetched it. When the
-link is evidence for a quoted line, resolve it to a commit:
+A tag pins content only by convention: git allows a tag to be moved.
+When the link is evidence for a quoted line, resolve it to a commit:
 
 ```console
 $ gh api repos/OWNER/REPO/commits/v2.40.0 --jq .sha
 ```
 
-That endpoint resolves lightweight and annotated tags alike. Do not
-use `git/ref/tags/<tag>`: on an annotated tag it returns the tag
-object's SHA, and a blob URL built on it 404s.
+That endpoint resolves lightweight and annotated tags alike. Do not use
+`git/ref/tags/<tag>`: on an annotated tag it returns the tag object's
+SHA, and a blob URL built on it 404s.
 
 Confirm before publishing:
 
@@ -103,8 +95,8 @@ $ curl -s -o /dev/null -w '%{http_code}\n' -L 'https://github.com/OWNER/REPO/blo
 
 ## Let GitHub do the linking where it already does
 
-Inside issue, pull request, discussion, and comment bodies — not in
-repository files, and not in wikis.
+Inside issue, pull request, discussion, and comment bodies; not in
+repository files or wikis.
 
 ### Same repository: write the bare reference
 
@@ -122,9 +114,8 @@ wrapping it in backticks suppresses the link. Use both deliberately.
 [REPO#123](https://github.com/OWNER/REPO/issues/123)
 ```
 
-GitHub would also autolink a bare `OWNER/REPO#123`, but the explicit
-form says the same thing in a repository file, in a tracker that is
-not GitHub, and in a body someone copies elsewhere.
+The explicit form also survives in a repository file, a non-GitHub
+tracker, or a body someone copies elsewhere.
 
 ### Tracker keys: check whether the repository resolves them
 
@@ -133,9 +124,8 @@ configured a custom autolink for that prefix. When it is configured, write the
 bare key. When it is not, write a full markdown link.
 
 `GET /repos/{owner}/{repo}/autolinks` needs admin and returns 404 for
-everyone else, which is indistinguishable from "none configured".
-Render the token instead — the preview applies the repository's real
-autolinks:
+everyone else, the same as "none configured". Render the token instead;
+the preview applies the repository's real autolinks:
 
 ```console
 $ gh api --method POST /markdown -f mode=gfm -f context=OWNER/REPO -f text='TIK-111'
@@ -149,13 +139,11 @@ page.
 
 ## Naming an open-source project
 
-On first mention, give the reader the whole set: repository, homepage,
+On first mention, give the whole set: repository, homepage,
 documentation, the changelog at the release in question, and the
-package-registry page. Research it — do not reconstruct URLs from
-memory.
-
-Render it as the project name linked to its primary home, with the
-rest in parentheses (the project and version below are illustrative):
+package-registry page. Research it; do not reconstruct URLs from memory.
+Render the project name linked to its primary home, with the rest
+alongside (project and version below are illustrative):
 
 ```
 [vitest](https://vitest.dev) — [repo](https://github.com/vitest-dev/vitest), [docs](https://vitest.dev/guide/), [v1.2.3 release notes](https://github.com/vitest-dev/vitest/releases/tag/v1.2.3), [npm](https://www.npmjs.com/package/vitest)
@@ -209,19 +197,19 @@ $ gh repo view OWNER/REPO --json url,homepageUrl,description,isArchived
 https://github.com/OWNER/REPO/releases/tag/v2.40.0
 ```
 
-Copy that URL from the API rather than building it. Monorepo tags
-carry prefixes and encodings that are not derivable from a version
-number — `@changesets/cli@2.31.1` becomes `%40changesets/cli%402.31.1`
-in a URL, Go submodules tag as `module1/v1.2.3`.
+Copy that URL from the API rather than building it: monorepo tags carry
+prefixes and encodings not derivable from a version number
+(`@changesets/cli@2.31.1` becomes `%40changesets/cli%402.31.1`, Go
+submodules tag as `module1/v1.2.3`).
 
 ```console
 $ gh api repos/OWNER/REPO/releases/tags/v2.40.0 --jq '{tag_name, html_url}'
 ```
 
-`/releases/latest` moves on every publish and means different things
-in the API and the web UI. It is never the right link for a claim
-about a specific version. When a project publishes no releases, link a
-tag-pinned `CHANGELOG` file, or a `/compare/<old>...<new>` URL.
+`/releases/latest` moves on every publish and means different things in
+the API and the web UI; never use it for a claim about a specific
+version. When a project publishes no releases, link a tag-pinned
+`CHANGELOG` file, or a `/compare/<old>...<new>` URL.
 
 ## What rots
 

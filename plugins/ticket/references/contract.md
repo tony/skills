@@ -2,13 +2,10 @@
 
 Contents: Past — the cost-to-relearn filter; Present — nothing that rots; Future — invariants and intent; The rule that catches the worst failure.
 
-Every body this plugin writes is governed by three rules, one per tense. The
-rules are the same for a GitHub issue, a Linear project, a Confluence page,
-and a merge request.
-
-How much of each a given object carries is in `altitude.md`. How a specific
-renderer expresses a reference is in that provider's file, indexed in
-`hierarchy.md`.
+Every body this plugin writes follows three rules, one per tense, the same
+for a GitHub issue, a Linear project, a Confluence page, and a merge request.
+How much of each an object carries is in `altitude.md`; how a renderer
+expresses a reference is in the provider's file, indexed in `hierarchy.md`.
 
 ## Past — the cost-to-relearn filter
 
@@ -24,8 +21,7 @@ startup was counted" saves a week. "We considered concurrency" saves nothing.
 
 Keep a retracted number, with what was actually measured. A figure that
 circulated and turned out to be a COUNT-only query against a contentless
-index is worth more written down than deleted, because deleting it does not
-delete it from anyone's memory.
+index is worth more written down than deleted.
 
 Keep an upstream constraint, a platform quirk, or a decision that closed off
 an obvious-looking road.
@@ -34,12 +30,8 @@ Drop anything a reader recovers by opening the file, reading the log, or
 looking at the diff. File sizes. What got renamed. Which module was split.
 That a draft was long before it was short.
 
-Drop the sequence of hypotheses that led to the finding. The reader needs
-what reproduces it, not the search that found it.
-
-Drop revisions that happened while drafting. A position that moved during a
-conversation was never published; carry the final form and do not narrate the
-move.
+Drop the sequence of hypotheses that led to the finding, and revisions that
+happened while drafting: carry the final form, not the move.
 
 The test: **if this were deleted, would the reader have to redo work to get
 it back?** Yes, keep it. No, cut it.
@@ -72,11 +64,10 @@ on two questions, in order:
    and usually the link form does not change that. Wrapping a URL in
    `[text](url)` is still a reference, so it still fires the event.
 
-The second axis is the one people miss, in both directions. Referencing is
-not free — it posts a visible event onto the thing you named, which is
+Referencing is not free: it posts a visible event onto the thing you named,
 welcome on a sibling issue and unwelcome on bot traffic or a stranger's
-repository. And the instinct that an explicit link is the polite, quiet form
-is backwards: it is exactly the case the trackers describe as manual linking.
+repository. An explicit link is not the quiet form; trackers describe it as
+manual linking.
 
 **How to actually suppress it is provider-specific, and it is rarely the link
 form.** GitHub documents a host swap. GitLab documents nothing short of
@@ -104,9 +95,8 @@ violated, is the work pointless, or is a neighbour broken?* Anything that
 fails the test is not an invariant.
 
 Say plainly that the invariants are the non-negotiable part and everything
-else is open. A reader who cannot tell which constraints are load-bearing
-treats all of them as load-bearing, which is how a ticket ends up dictating a
-storage engine.
+else is open; otherwise a reader treats every constraint as load-bearing and
+the ticket ends up dictating a storage engine.
 
 **Intent.** Everything else, labelled non-binding. The current thinking, the
 direction being leaned toward, what is still undecided. Intent is where a

@@ -14,31 +14,25 @@ metadata:
 
 Multi-strategy spike harness. Where the `spike-probe` skill sends one
 instrument down one path, a bakeoff enters 2–4 **deliberately
-different strategies** for the same goal, builds each one for real in
-its own git worktree, judges them adversarially, and hands back a
-verdict plus a commit-by-commit plan for the winner.
+different strategies** for the same goal, builds each in its own git
+worktree, judges them adversarially, and hands back a verdict plus a
+commit-by-commit plan for the winner.
 
-Every contender **mutates its worktree freely**: real code, real
-gates, full bakes. What no contender ever touches is history: the
-kitchens are torn down after judging, and only stashes (all
-recoverable by SHA) and the verdict survive.
+Every contender mutates its worktree freely. No contender touches
+history: the worktrees are torn down after judging, and only stashes
+(recoverable by SHA) and the verdict survive.
 
 ## Core thesis
 
-One spike answers "does this path work?", and it cannot answer "which
-path is best?". When the approach is genuinely uncertain, arguing
-about strategies in the abstract is slower and less reliable than
-building each one small and comparing **real, judgeable evidence**:
-diffs, gate results, blast radius, idiom fit.
+When the approach is uncertain, building each strategy small and
+comparing real evidence (diffs, gate results, blast radius, idiom fit)
+beats arguing in the abstract. A bakeoff is N probes plus a judgment:
+each contender follows the probe discipline (cheapest verification,
+`SPIKE:` markers, stay in goal), and the bakeoff adds isolation,
+blindness (contenders do not see each other), and adversarial judging.
 
-A bakeoff is N probes plus a judgment. Each contender follows the
-probe discipline (cheapest verification, `SPIKE:` markers, stay in
-goal); the bakeoff adds isolation (worktrees), blindness (contenders
-do not see each other), and adversarial judging.
-
-Reaching for a second bakeoff because the first winner hit new
-resistance means the `spike-ratchet` skill, which runs the rounds and carries a
-ledger across them.
+A second bakeoff because the first winner hit new resistance means
+the `spike-ratchet` skill, which carries a ledger across rounds.
 
 ## The Iron Rule
 
@@ -46,10 +40,8 @@ ledger across them.
 A BAKEOFF PRODUCES ZERO COMMITS
 ```
 
-Inherited from the `spike-probe` skill, and worktrees change nothing: not in
-any worktree, not on any contender branch, not "just to snapshot a
-contender". Worktrees isolate contenders; they do not license
-commits.
+Inherited from the `spike-probe` skill: no commits in any worktree or on any
+contender branch, not even to snapshot a contender.
 
 | Rationalization | Reality |
 |---|---|
@@ -69,26 +61,21 @@ Non-flag text is the goal. Resolve it by the same ladder as
 the `spike-probe` skill:
 
 1. **Typed goal wins**: non-flag `$ARGUMENTS` text, verbatim.
-2. **Empty → mine the conversation**: review findings, a failing
-   test under discussion, a problem the user agreed needs handling.
-   One strong candidate: adopt it (the Phase 1 brief is the
-   confirmation gate). Several: `ask-user-choice`. None: ask.
+2. **Empty → mine the conversation** (review findings, a failing
+   test, an agreed problem). One strong candidate: adopt it (the
+   Phase 1 brief is the confirmation gate). Several:
+   `ask-user-choice`. None: ask.
 3. **Record provenance** in the Phase 1 brief.
 
 **Strategies** resolve by their own ladder:
 
 1. `--strategies="a; b; c"`: semicolon-separated, verbatim, one
    contender each.
-2. Otherwise, mine the conversation: a bakeoff is usually reached
-   for right after a discussion that surfaced competing options
-   ("we could do A or B"). Those options become the contenders,
-   listed in the brief with provenance.
-3. Otherwise, propose 2–4 genuinely distinct strategies yourself in
-   the brief (different architecture, different layer, different
-   dependency posture, not cosmetic variants of one idea).
-
-`--prongs=<2-4>` caps the contender count (default: however many
-distinct strategies survive the brief, minimum 2, maximum 4).
+2. Otherwise, mine the conversation for competing options ("we could
+   do A or B"); they become the contenders, with provenance.
+3. Otherwise, propose 2–4 genuinely distinct strategies in the brief
+   (different architecture, layer, or dependency posture, not cosmetic
+   variants).
 
 | Flag | Default | Effect |
 |---|---|---|
@@ -119,9 +106,7 @@ present the **bakeoff brief**:
 
 1. The goal, one line, with provenance (typed / inferred from what).
 2. The contenders: one line per strategy stating what makes it
-   *distinct* from the others. If two entries differ only
-   cosmetically, merge them; a bakeoff of near-identical bakes is
-   waste.
+   *distinct*; merge entries that differ only cosmetically.
 3. What "proven" means per contender: the shared smoke check every
    contender must pass to reach judging.
 4. The judging rubric (Phase 4 lenses, plus any goal-specific
@@ -145,29 +130,24 @@ $ git worktree add <root>/<n>-<slug> HEAD
 ```
 
 Each contender follows the Phase 2 discipline in the `spike-probe` skill
-inside its own worktree: shortest path to the shared "proven" check, cheapest
-verification signal while iterating, `SPIKE:` markers on shortcuts,
-adjacent problems recorded but not chased.
+inside its own worktree, aiming at the shared "proven" check.
 
 Contenders are **blind to each other**: no shared scratch files, no
-peeking at another kitchen. Contenders bake in parallel but never
-stash: stashing is Phase 5, done by the coordinator one contender at a
-time, because every worktree shares one stash stack. Convergent shortcuts are signal for the
-judges; copied ones are noise.
+peeking. They bake in parallel but never stash: the coordinator stashes
+in Phase 5, one contender at a time, because every worktree shares one
+stash stack.
 
-A contender that cannot reach "proven" is not disqualified silently:
-it exits with a failure note (what blocked it), which is itself
-evidence for the verdict.
+A contender that cannot reach "proven" exits with a failure note (what
+blocked it), which is evidence for the verdict.
 
 ## Phase 3: Contest exit gate
 
 In each worktree, run the fast local buckets exactly as discovered:
-`format`, `lint`, `typecheck`, scoped `test`: per
-verification-gates.md right-sizing. Gate results here are **judging
-inputs, not work**: fix only trivialities (formatting); everything
-else is recorded on the contender's scorecard. If a mutating gate
-changes files, re-run the shared proving check once, as in the probe's
-Phase 3.
+`format`, `lint`, `typecheck`, scoped `test`, right-sized per
+`references/verification-gates.md`. Gate results are **judging
+inputs, not work**: fix only formatting; record everything else on the
+scorecard. If a mutating gate changes files, re-run the shared proving
+check once.
 
 ## Phase 4: Judging
 
@@ -184,19 +164,17 @@ Adversarial comparison, one pass per lens, each judge trying to
 - Any goal-specific lenses from the brief (performance, migration
   cost, dependency posture).
 
-When the host supports sub-agents, run the lenses as independent
-judges and aggregate; otherwise evaluate the lenses sequentially.
-Produce a scorecard per contender, a **winner**, and a **graft
-list**: ideas from runners-up worth carrying into the winner's plan
-(a test case, an edge-case guard, a cleaner interface).
+Run the lenses as independent sub-agent judges when the host supports
+them, otherwise sequentially. Produce a scorecard per contender, a
+**winner**, and a **graft list**: ideas from runners-up worth carrying
+into the winner's plan (a test case, an edge-case guard).
 
-A split verdict is a valid verdict: report it as `⚠ inconclusive`
-with the scorecards and let the user decide.
+A split verdict is valid: report `⚠ inconclusive` with the scorecards.
 
 ## Phase 5: Stash all contenders, then tear down
 
-Teardown order is non-negotiable: **stash first, prune second**,
-one contender at a time, never in parallel. For each contender:
+**Stash first, prune second**, one contender at a time, never in
+parallel. For each contender:
 
 1. In its worktree, run the stash sequence from the `spike-probe` skill
    Phase 4 with the message
@@ -205,9 +183,8 @@ one contender at a time, never in parallel. For each contender:
    is another contender's entry when this one changed nothing. A
    contender that printed `no changes` is recorded as "no changes",
    not given a SHA.
-2. Record the printed SHA. Stashes are repo-global, shared across all
-   worktrees, so every contender stays recoverable from the main
-   checkout after its worktree is gone, via `git stash apply <sha>`.
+2. Record the printed SHA; `git stash apply <sha>` recovers it from the
+   main checkout after its worktree is gone.
 3. Only after the SHA is recorded, check what removal will delete.
    Files matched by `.gitignore` (build output, `.env`, local caches)
    are not stashed and go with the worktree:
@@ -226,9 +203,6 @@ $ git worktree remove <root>/<n>-<slug>
 4. After all contenders: `git worktree prune`, and verify the main
    tree is untouched (`git status`).
 
-Losers are stashed too, not just the winner; the graft list points
-into their stashes by SHA.
-
 ## Phase 6: The verdict and replay plan
 
 Produce the verdict, then a commit-by-commit plan for the **winner's
@@ -237,20 +211,15 @@ stash**, built as the probe's Phase 5 in the `spike-probe` skill
 `SPIKE:` decisions to resolve, per-commit gates), plus:
 
 - **Grafts**: plan items that pull specific hunks from runner-up
-  stashes (identified by SHA and file), stated as recommendations.
-  Mark them **unproven in combination**: the winner's stash was proven
-  without them and no contender was ever built with them, so a graft
-  is a hypothesis judged on paper until the shared proving check runs
-  on the combined tree. When the grafts are substantial enough that
-  landing them blind is the wrong call, recommend re-probing instead:
-  apply the winner's stash and the graft hunks, then follow
+  stashes (by SHA and file), stated as recommendations. Mark them
+  **unproven in combination**: no contender was built with them. When
+  they are too substantial to land blind, recommend re-probing: apply
+  the winner's stash and the graft hunks, then follow
   the `spike-probe` skill on that tree, answering its dirty-tree halt with
-  *probe on top of it*. The seeded tree is the intended starting
-  point, not stray work. That proves winner-plus-grafts as one tree at
-  zero commits and returns a plan for what actually ran.
-- The losing strategies, one line each: why they lost, and under
-  what future conditions they would have won (this is the decision
-  record the bakeoff existed to produce).
+  *probe on top of it*. That proves winner-plus-grafts as one tree at
+  zero commits.
+- The losing strategies, one line each: why they lost, and under what
+  conditions they would have won.
 
 Close with the local-vs-CI table and the post-push watch command
 when observable, as in probe.
@@ -265,13 +234,11 @@ stashes by SHA, using the SHA-matching drop in that phase. Commit
 messages follow the probe's rules: no `Co-Authored-By`, no "Generated
 with" or other tool trailers, no emoji.
 
-Grafts get their one real test here: re-run the shared proving check
-before committing **each** plan item that carries a graft, not once
-after the last one: a graft that lands in an early item is already
-history by the time a later check fails, and dropping it would mean
-rewriting commits this phase never authorizes. A graft that fails is
-dropped from the plan and recorded as dropped; a replay is not the
-place to debug an idea that was only ever judged on paper.
+Re-run the shared proving check before committing **each** plan item
+that carries a graft, not once after the last: a graft in an early
+commit is already history when a later check fails, and this phase never
+rewrites commits. A graft that fails is dropped from the plan and
+recorded as dropped; do not debug it here.
 
 ## Output contract
 
@@ -303,6 +270,37 @@ Write the report, and any replay commit message, per
    was given. Recommend the probe exit when Phase 6 judged the grafts
    too substantial to land blind. In a non-interactive run, record the
    question in the report and default to keeping the stashes.
+
+Reply in this shape, as plain text outside any code fence, with plain
+bullets and no bold (never `- **Winner:** ...`), the `## Stashes`
+table aside:
+
+```text
+✓ bakeoff judged: B (write-behind cache)
+Goal: cut p99 latency of the export endpoint. Exit path: stash and teardown.
+
+## Contenders
+- A, in-process LRU: proven; format, lint, and typecheck pass, 2 tests fail.
+- B, write-behind cache: proven; all gates pass.
+- C, query rewrite: blocked; the planner ignores the new index.
+
+## Verdict
+- Winner B: smallest blast radius and the closest fit to the existing
+  cache module.
+- Graft from A: its eviction test.
+
+## Verification
+- Local: format, lint, typecheck, scoped tests. CI-only: integration suite.
+
+## Stashes
+| Contender | Strategy | Stash message | SHA | Restore |
+|---|---|---|---|---|
+| A | LRU | bakeoff/1-lru: in-process LRU (lost) | 9f2c4d1 | git stash apply 9f2c4d1 |
+
+## Replay plan
+1. cache(feat[store]) Add write-behind store
+2. cache(test[store]) Cover flush and eviction (graft from A, unproven)
+```
 
 
 ## Portability notes

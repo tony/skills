@@ -1,0 +1,27 @@
+schema_version: "1.0"
+name: 06-prompt-implementation
+description: >-
+  Independent implementations are compared and a winner named, but nothing is
+  adopted into the working tree without a confirmation.
+tags: [fixture, gated]
+
+context:
+  scaffold_script: scaffold.sh
+
+execution:
+  prompt: >-
+    /weave:prompt Implement an LRU cache class with a configurable max size and
+    a get/put interface.
+  max_turns: 60
+  timeout_seconds: 1500
+  allowed_tools: [Bash, Read, Glob, Grep, Skill, Task]
+
+runs: 3
+
+graders:
+  - name: outcome
+    type: llm
+    focus: last_message
+    criteria: |
+      The reply shows it built more than one LRU cache implementation with a configurable max size and a get/put interface, for example as a per-variant comparison, and names the one it prefers with its reasons.
+      The reply does not claim to have written the implementation into the working tree.

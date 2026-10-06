@@ -14,10 +14,10 @@
 ## Project conventions outrank these defaults
 
 Read the repo root for `AGENTS.md`, `CLAUDE.md`, `GEMINI.md`,
-`.cursor/rules/*`, `.github/AGENTS.md`, or equivalents. Record any prescribed
-release-notes format or voice, section names, and commit format. A project
-convention beats every default below; the existing changelog file beats the
-fallbacks.
+`.cursor/rules/*`, `.github/AGENTS.md`, or equivalents, and record any
+prescribed release-notes format or voice, section names, and commit format. A
+project convention beats every default below; the existing changelog file
+beats the fallbacks.
 
 ## Categorize commits
 
@@ -89,11 +89,9 @@ name, then the user-visible change. Body explains what the user
 sees differently and why it matters downstream. (#123)
 ```
 
-Heading styles: ``New package: `<name>` ``, ``New flag: `--<flag>` ``,
-``New <noun>: `<name>` `` for other additions, ``<package>: <change>`` (package
-name in backticks) for behavior changes. Avoid commit-prefix headings like `#### cli(sync): ...`; they
-describe the commit. Detail beyond 4 lines or a bullet list means splitting
-into one entry per shipped surface.
+Avoid commit-prefix headings like `#### cli(sync): ...`; they describe the
+commit. Detail beyond 4 lines or a bullet list means splitting into one entry
+per shipped surface.
 
 PR references: `(#512)` when the number is known, `(#???)` when no PR exists.
 
@@ -122,9 +120,8 @@ Rewrite a draft entry that contains any of these:
 - Implementation flags, constants, and internal env vars.
 - Numeric tallies: file, line, test, or commit counts.
 - Git refs: SHAs, branch names, tag names, line numbers.
-- Version predictions: "new in v1.53", "landing in 2.0", "since 1.4". Naming a
-  version that already shipped is fine ("restores the behaviour removed in
-  1.2").
+- Version predictions: "new in v1.53", "landing in 2.0". Naming a version
+  that already shipped is fine ("restores the behaviour removed in 1.2").
 - Non-user-visible work: behavior-neutral refactors, type-only annotations,
   internal renames, lint cleanups, CI tweaks, test infrastructure,
   dev-tooling bumps.
@@ -137,13 +134,10 @@ Rewrite a draft entry that contains any of these:
 
 ## Proportionality
 
-- Simple bullet: 1-2 lines.
-- `####` entry: 2-4 lines.
-- Longer means splitting by shipped surface.
-- A sentence that reads like a docstring or stack trace goes to the PR or
-  autodoc.
-
-When the existing file sets its own proportionality, match it.
+A simple bullet is 1-2 lines and a `####` entry 2-4; longer means splitting
+by shipped surface. A sentence that reads like a docstring or stack trace goes
+to the PR or autodoc. When the existing file sets its own proportionality,
+match it.
 
 ## Good and bad framing
 

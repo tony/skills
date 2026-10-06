@@ -13,23 +13,20 @@ disable-model-invocation: true
 Rapid spike harness. Probe the goal in the working tree with the
 lightest verification that proves the path, exit through the project's
 fast quality gates, stash everything with a recovery ref, and hand back
-a neat commit-by-commit plan, optionally replaying it immediately.
+a commit-by-commit plan, optionally replaying it immediately.
 
-A probe **mutates the working tree freely**; mutation is the point:
-the code is the sensing instrument. What it never touches is history:
-like an attached kprobe, it patches the live system to take its
-measurement and detaches without a trace in `git log`.
+A probe **mutates the working tree freely** and never touches history.
 
 ## Core thesis
 
 A spike answers "does this path work?" It is **evidence, not a
-deliverable**. The probe's value survives as (a) a stash you can
-reapply and (b) decisions the plan records. Committing spike code
-converts unreviewed exploration into history.
+deliverable**: its value survives as a stash you can reapply and the
+decisions the plan records. Committing spike code turns unreviewed
+exploration into history.
 
-Verify with the cheapest signal while probing, run the project's fast
-gates once at exit, and defer what CI covers to CI. The plan is the
-product: a numbered commit sequence mapping stash contents to commits.
+Verify with the cheapest signal while probing, run the fast gates once
+at exit, and defer what CI covers to CI. The plan is the product: a
+numbered commit sequence mapping stash contents to commits.
 
 ## The Iron Rule
 
@@ -37,11 +34,10 @@ product: a numbered commit sequence mapping stash contents to commits.
 A SPIKE PRODUCES ZERO COMMITS
 ```
 
-Not on trunk, not on the feature branch, not on a scratch branch,
-not "just to checkpoint". The exit paths are: stash (default),
-`--keep-tree` (leave changes unstaged), or `--replay` (commits happen
-only *after* the plan is presented and approved, one plan item at a
-time, each behind a green gate).
+Not on trunk, the feature branch, or a scratch branch, and not "just to
+checkpoint". Exit paths: stash (default), `--keep-tree` (leave changes
+unstaged), or `--replay` (commits only *after* the plan is approved, one
+plan item at a time, each behind a green gate).
 
 | Rationalization | Reality |
 |---|---|
@@ -61,30 +57,25 @@ commit to it. All of these mean: stash and write the plan.
 Non-flag text is the probe goal. Resolve the goal by this ladder:
 
 1. **Typed goal wins.** Non-flag `$ARGUMENTS` text is the goal,
-   verbatim. Conversation context may enrich it (file paths, error
-   messages already discussed) but never overrides it.
-2. **Empty → mine the conversation.** Candidate goals are review
-   findings just presented, a failing test under discussion, a pasted
-   stack trace, or a suggestion the user agreed with.
-   - Exactly one strong candidate: adopt it and proceed to Phase 1;
-     the brief there is the confirmation gate.
-   - Several candidates: `AskUserQuestion` (multi-select), one option
-     per candidate plus "all of them".
+   verbatim; conversation context may enrich it but never overrides it.
+2. **Empty → mine the conversation** (review findings just presented, a
+   failing test, a pasted stack trace, an agreed suggestion).
+   - One strong candidate: adopt it; the Phase 1 brief is the
+     confirmation gate.
+   - Several: `AskUserQuestion` (multi-select), one option per
+     candidate plus "all of them".
    - None: ask what to probe before touching anything.
-3. **Record provenance.** The Phase 1 brief states where the goal
-   came from: typed, or inferred from which part of the
-   conversation.
+3. **Record provenance** in the Phase 1 brief.
 
-When the inferred goal is a set of review findings, note the boundary
-in the brief: a probe explores fixes with zero commits; screening those
-findings is `/respond:check` and landing them commit-by-commit is
-`/respond:action`.
+For a set of review findings, the brief notes the boundary: a probe
+explores fixes with zero commits; screening them is `/respond:check` and
+landing them is `/respond:action`.
 
 | Flag | Default | Effect |
 |---|---|---|
-| `--branch=<name>` | off | Run the probe on a new scratch branch from the current HEAD instead of the current branch's tree. Still zero commits; the branch only isolates the working tree. |
-| `--keep-tree` | off | Skip the stash at spike exit; leave changes in the working tree for the user to inspect. The plan is still produced. |
-| `--replay` | off | After the plan is approved, immediately implement it: apply the stash, land plan items one commit at a time, each behind a green gate. |
+| `--branch=<name>` | off | Probe on a new scratch branch from HEAD. Still zero commits. |
+| `--keep-tree` | off | Skip the stash at exit; leave changes in the working tree. The plan is still produced. |
+| `--replay` | off | After the plan is approved, apply the stash and land plan items one gated commit at a time. |
 
 ## Phase 0: Situational awareness
 
@@ -96,8 +87,7 @@ Before writing any code:
 $ git rev-parse --verify HEAD
 ```
 
-   A failure means no repository or no commits, and stash and
-   worktrees both need a commit to hang on. Halt before touching
+   A failure means no repository or no commits. Halt before touching
    anything: say what is missing and that the user must make the
    initial commit (a spike never commits).
 2. Read `AGENTS.md` / `CLAUDE.md` / `.github/CONTRIBUTING.md` for
@@ -105,10 +95,9 @@ $ git rev-parse --verify HEAD
 3. Resolve the five gate buckets (`format`, `lint`, `typecheck`,
    `test`, `build`) and the CI-coverage split per
    `../../references/verification-gates.md`.
-4. Record the working tree state with `git status --porcelain`. A
-   dirty tree halts here: ask the user whether to stash their work
-   first, probe on top of it, or abort. Never mix the probe with
-   uncommitted user work silently. Non-interactive default: abort.
+4. Run `git status --porcelain`. A dirty tree halts here: ask whether to
+   stash their work first, probe on top of it, or abort. Non-interactive
+   default: abort.
    - **Stash first:** save their work with the stash sequence in
      Phase 4 under the message `user work before spike`, record its
      SHA, and tell the user it.
@@ -122,8 +111,8 @@ $ git rev-parse --verify HEAD
 ## Phase 1: Orchestration plan
 
 Enter plan mode if the host supports it (Claude Code: `EnterPlanMode`;
-Cursor / Codex / Gemini: `/plan` or `Shift+Tab`) and present a
-**short** spike brief:
+Cursor / Codex / Gemini: `/plan` or `Shift+Tab`) and present a short
+spike brief:
 
 1. The goal, restated in one line, with its provenance (typed, or
    inferred from what).
@@ -136,29 +125,25 @@ Cursor / Codex / Gemini: `/plan` or `Shift+Tab`) and present a
 
 Wait for approval, then exit plan mode. If plan mode is unavailable,
 present the same brief inline and proceed on confirmation. In a
-non-interactive run (CI, subagent), record the brief in the report
-and proceed. Keep this to seconds, not minutes; it is a probe.
+non-interactive run, record the brief in the report and proceed.
 
 ## Phase 2: The probe
 
 Code the shortest path to "proven". During this phase:
 
-- Verify with the **cheapest signal that moves you forward**: run the
-  one test file or smoke command that exercises the new code. Do not
-  run the full suite, the build, or repeated broad test passes while
-  iterating.
-- Mark shortcuts as you take them (a `SPIKE:` comment on hardcoded
-  values, skipped edge cases, undecided semantics). These become plan
+- Verify with the **cheapest signal that moves you forward**: the one
+  test file or smoke command that exercises the new code, not the full
+  suite or the build.
+- Mark shortcuts as you take them with a `SPIKE:` comment (hardcoded
+  values, skipped edge cases, undecided semantics). They become plan
   items, not debt to fix during the probe.
-- Stay inside the goal. Adjacent problems you notice go in the plan's
-  "observed, not addressed" list.
-- Record **stumbling blocks**, the places the approach itself fought
-  back: an API that will not compose, a type that cannot be expressed,
-  a constraint that surfaced too late to design around. A stumbling
-  block is neither a `SPIKE:` marker (a shortcut you chose) nor an
-  adjacent problem (out of scope); it is evidence the *approach* may be
-  wrong, which makes it the reason to reach for `/spike:bakeoff` and
-  the input the next probe sharpens against.
+- Stay inside the goal. Adjacent problems go in the plan's "observed,
+  not addressed" list.
+- Record **stumbling blocks**: places the approach itself fought back
+  (an API that will not compose, a constraint that surfaced too late).
+  Unlike a `SPIKE:` marker (a shortcut you chose) or an adjacent
+  problem, a stumbling block is evidence the *approach* may be wrong:
+  the reason to reach for `/spike:bakeoff`.
 
 ## Phase 3: Spike exit gate
 
@@ -167,25 +152,21 @@ Once proven, run the fast local buckets exactly as discovered:
 `build` only if the change plausibly affects build output; otherwise
 note it as CI-deferred.
 
-Gate failures here are **information, not work**: fix trivial ones
-(formatting), and record non-trivial ones as plan items. The point is
-that the plan below describes code whose gate status is *known*, not
-guessed.
+Gate failures here are **information, not work**: fix formatting, and
+record the rest as plan items.
 
-Gate commands run **as discovered**, including mutating ones
-(`--fix`-style linters, formatters). If a gate changes any file,
-re-run the proving smoke check from Phase 2 once before moving on;
-the stash must contain code that was proven *after* its last
+Run gates as discovered, including mutating ones (`--fix` linters,
+formatters). If a gate changes any file, re-run the Phase 2 proving
+check once: the stash must hold code proven *after* its last
 modification.
 
 ## Phase 4: Stash with a recovery ref
 
-Unless `--keep-tree`, stash everything, untracked files included,
-and capture the stash's own SHA in the same command. Never read
-`stash@{0}`: `git stash push` prints "No local changes to save" and
-exits 0 on an unchanged tree, and `stash@{0}` is then another stash's
-entry. Never run it as two commands, and never in parallel with
-another stash in the same repository.
+Unless `--keep-tree`, stash everything, untracked files included, and
+capture the stash's own SHA in the same command. Never read
+`stash@{0}`: on an unchanged tree `git stash push` exits 0 and
+`stash@{0}` is another stash's entry. Never split it into two commands
+or run it in parallel with another stash in the repository.
 
 Replace `<message>` with `spike: <goal> (<what passed, what's undecided>)`:
 
@@ -199,11 +180,9 @@ else
 fi
 ```
 
-1. Record the printed SHA in the report. A dropped or popped stash is
-   otherwise unrecoverable; with the SHA it can be restored with
-   `git stash apply <sha>`. The output `no changes` means the probe
-   changed nothing: record "no changes", not a SHA. Files matched by
-   `.gitignore` are not stashed.
+1. Record the printed SHA in the report; `git stash apply <sha>`
+   restores it. The output `no changes` means record "no changes", not a
+   SHA. Files matched by `.gitignore` are not stashed.
 2. Verify the tree is back to its pre-spike state with `git status`.
    After a probe on top, run `git stash apply -q <baseline sha>`
    and then `git reset -q` to put the user's work back, and report
@@ -214,18 +193,16 @@ fi
 Produce the commit-by-commit plan. For each planned commit:
 
 - **Subject** in the project's commit format (from Phase 0).
-- **Contents**: which files/hunks from the stash it takes, and what
-  gets rewritten rather than replayed (e.g. test-first where the
-  project's conventions demand it).
-- **Decisions to resolve**: every `SPIKE:` marker that lands in this
-  commit, stated as a question with a recommendation.
-- **Gates**: the per-commit gate commands (fast buckets, scoped
-  tests), per verification-gates.md right-sizing.
+- **Contents**: which files/hunks from the stash it takes, and what gets
+  rewritten rather than replayed.
+- **Decisions to resolve**: each `SPIKE:` marker landing in this commit,
+  as a question with a recommendation.
+- **Gates**: the per-commit gate commands, right-sized per
+  `../../references/verification-gates.md`.
 
 Close the plan with the local-vs-CI table and the post-push watch
-command when one is observable: `gh pr checks --watch` for a PR,
-`gh run watch` when no PR exists yet, or an explicit "none (no
-remote)" so the deferral is visible rather than implied.
+command: `gh pr checks --watch` for a PR, `gh run watch` when no PR
+exists yet, or "none (no remote)".
 
 ## Phase 6: Replay (only with `--replay`, after approval)
 
@@ -235,15 +212,12 @@ remote)" so the deferral is visible rather than implied.
    gates, commit with the planned message, written per
    `../../references/prose-rules.md`, with no `Co-Authored-By`, no
    "Generated with" or other tool trailers, and no emoji. A red gate
-   stops the replay; report and hand back. Prefer plan items that split at
-   **file level**; when one file must split across commits,
-   materialize per-commit patch slices (`git diff` the relevant
-   hunks to a file, then `git apply --cached <patch>`). Interactive
-   staging (`git add -p`) is not available to an agent.
+   stops the replay; report and hand back. Prefer file-level splits;
+   to split one file, write the relevant hunks to a patch file and
+   `git apply --cached <patch>` (`git add -p` is interactive).
 3. After the final item: run any end-of-run `build` bucket, drop the
    stash by SHA, and if the branch has a remote counterpart offer to
-   push and watch CI. `stash@{n}` indexes shift as entries drop, so
-   find the entry whose SHA matches and drop only that one:
+   push and watch CI. Indexes shift as entries drop, so match the SHA:
 
 ```sh
 ref=$(git stash list --format='%H %gd' | awk -v sha="<sha>" '$1 == sha {print $2; exit}')
@@ -265,10 +239,9 @@ Write the report, and any replay commit message, per
    is missing, then what the user must do next. No sections, no panel,
    no stash SHA, no local or temp paths.
 2. `## Spike findings`: what was proven, stumbling blocks, `SPIKE:`
-   markers, observed-not-addressed list. State the stumbling blocks
-   even when the probe succeeded: a path that worked while fighting
-   you the whole way is the case for `/spike:bakeoff` or
-   `/spike:ratchet`, and reporting only the success buries it.
+   markers, observed-not-addressed list. State stumbling blocks even
+   when the probe succeeded: a path that fought you throughout is the
+   case for `/spike:bakeoff` or `/spike:ratchet`.
 3. `## Verification`: gate commands run and their results; the
    local-vs-CI split; what was deferred and why.
 4. `## Stash`: message, SHA, restore command (omit with
@@ -281,3 +254,29 @@ Write the report, and any replay commit message, per
    `--replay` was given. In a non-interactive run (CI, subagent),
    record the panel's question and options in the report instead of
    asking, and default to keeping the stash.
+
+Reply in this shape, as plain text outside any code fence, with plain
+bullets and no bold (never `- **Proven:** ...`), the numbered plan
+aside:
+
+```text
+✓ spike proven: stream the NDJSON export instead of buffering it. Exit path: stash.
+
+## Spike findings
+- Proven: a 2 GB export runs in constant memory.
+- Stumbling block: the serializer assumes a full list, so it needed a generator wrapper.
+- SPIKE: batch size hardcoded to 500 in export.py.
+- Observed, not addressed: the CSV exporter buffers the same way.
+
+## Verification
+- Ran format, lint, typecheck, and the export tests; all pass.
+- Deferred to CI: integration suite and build.
+
+## Stash
+- spike: stream export (all gates pass; batch size undecided)
+- 4be09c7, restore with git stash apply 4be09c7
+
+## Replay plan
+1. export(refactor[serializer]) Accept an iterator
+2. export(feat[stream]) Stream NDJSON in batches
+```
