@@ -20,11 +20,9 @@ commit messages per `../../references/prose-rules.md`.
 
 ## Orchestration Plan
 
-Before executing any phase, enter plan mode and produce an orchestration
-plan. Plan-mode activation varies by host:
-
-- Claude Code: `EnterPlanMode` tool
-- Cursor / Codex / Gemini: `/plan` or `Shift+Tab`
+Enter plan mode before the first edit. In Claude Code call `EnterPlanMode`;
+in Cursor, Codex, or Gemini use `/plan` or `Shift+Tab`. Where plan mode is
+unavailable, present the plan as text.
 
 The plan must contain:
 

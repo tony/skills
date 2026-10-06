@@ -112,9 +112,11 @@ $ git rev-parse --verify HEAD
 
 ## Phase 1: Orchestration plan
 
-Enter plan mode if the host supports it (Claude Code: `EnterPlanMode`;
-Cursor / Codex / Gemini: `/plan` or `Shift+Tab`) and present a short
-spike brief:
+Enter plan mode before the first edit. In Claude Code call `EnterPlanMode`;
+in Cursor, Codex, or Gemini use `/plan` or `Shift+Tab`. Where plan mode is
+unavailable, present the plan as text.
+
+Present a short spike brief:
 
 1. The goal, restated in one line, with its provenance (typed, or
    inferred from what).

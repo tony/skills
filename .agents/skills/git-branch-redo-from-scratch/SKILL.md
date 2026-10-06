@@ -81,9 +81,9 @@ branch, and never rebuild on it.
 
 ## Orchestration Plan
 
-Enter plan mode before writing any code. In Claude Code that is
-`EnterPlanMode`; in other hosts `/plan` or Shift+Tab. If plan mode is
-unavailable, present the same plan inline and wait for a go-ahead.
+Enter plan mode before the first edit. In Claude Code call `EnterPlanMode`;
+in Cursor, Codex, or Gemini use `/plan` or `Shift+Tab`. Where plan mode is
+unavailable, present the plan as text.
 
 The plan states:
 

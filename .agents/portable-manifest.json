@@ -13,7 +13,7 @@
         "references/verification-gates.md": "plugins/action/references/verification-gates.md",
         "references/worktree-setup.md": "plugins/action/references/worktree-setup.md"
       },
-      "bytes": 31926
+      "bytes": 32235
     },
     {
       "name": "action-worktrees",
@@ -27,7 +27,7 @@
         "references/verification-gates.md": "plugins/action/references/verification-gates.md",
         "references/worktree-setup.md": "plugins/action/references/worktree-setup.md"
       },
-      "bytes": 32694
+      "bytes": 32760
     },
     {
       "name": "agent-messaging-session-relay",
@@ -40,7 +40,7 @@
         "references/prose-rules.md": "plugins/agent-messaging/references/prose-rules.md",
         "references/relay.sh": "plugins/agent-messaging/scripts/relay.sh"
       },
-      "bytes": 37690
+      "bytes": 37881
     },
     {
       "name": "business-case-study-internal",
@@ -249,7 +249,7 @@
         "references/rendered-markdown.md": "plugins/gh/references/rendered-markdown.md",
         "references/source-links.md": "plugins/gh/references/source-links.md"
       },
-      "bytes": 30333
+      "bytes": 30504
     },
     {
       "name": "gh-rendered-markdown",
@@ -276,7 +276,7 @@
         "references/rebuild-contract.md": "plugins/git-branch/references/rebuild-contract.md",
         "references/split-mechanics.md": "plugins/git-branch/references/split-mechanics.md"
       },
-      "bytes": 38720
+      "bytes": 38709
     },
     {
       "name": "git-branch-soft-reset-and-recommit",
@@ -291,7 +291,7 @@
         "references/rebase-toolkit.md": "plugins/git-branch/references/rebase-toolkit.md",
         "references/split-mechanics.md": "plugins/git-branch/references/split-mechanics.md"
       },
-      "bytes": 38735
+      "bytes": 38709
     },
     {
       "name": "github-actions-bumping-github-actions",
@@ -1080,7 +1080,7 @@
         "references/prose-rules.md": "plugins/spike/references/prose-rules.md",
         "references/verification-gates.md": "plugins/spike/references/verification-gates.md"
       },
-      "bytes": 22127
+      "bytes": 22194
     },
     {
       "name": "spike-probe",
@@ -1091,7 +1091,7 @@
         "references/prose-rules.md": "plugins/spike/references/prose-rules.md",
         "references/verification-gates.md": "plugins/spike/references/verification-gates.md"
       },
-      "bytes": 21573
+      "bytes": 21640
     },
     {
       "name": "spike-ratchet",
@@ -1102,7 +1102,7 @@
         "references/prose-rules.md": "plugins/spike/references/prose-rules.md",
         "references/verification-gates.md": "plugins/spike/references/verification-gates.md"
       },
-      "bytes": 18405
+      "bytes": 18472
     },
     {
       "name": "tailwind-spacing-audit",
@@ -1137,7 +1137,7 @@
         "references/prose-rules.md": "plugins/tdd/references/prose-rules.md",
         "references/xfail-mechanisms.md": "plugins/tdd/references/xfail-mechanisms.md"
       },
-      "bytes": 18801
+      "bytes": 18788
     },
     {
       "name": "terraform-bump-provider",
@@ -1380,7 +1380,7 @@
         "references/refine-cycle.md": "plugins/weave/references/refine-cycle.md",
         "references/worker-backends.md": "plugins/weave/references/worker-backends.md"
       },
-      "bytes": 154480
+      "bytes": 154596
     }
   ],
   "duplication": {

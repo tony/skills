@@ -83,7 +83,8 @@ in this file and name the gap in the report.
 
 ## Phase 0: Situational awareness
 
-Per `references/worktree-setup.md` (Situational awareness), with
+Read `references/worktree-setup.md` and run its Situational
+awareness steps now (they are `git` and tool-inventory commands), with
 the gate buckets resolved per `references/verification-gates.md`.
 
 ## Phase 1: Ticket resolution
@@ -106,9 +107,11 @@ Non-interactive: report `⚠ blocked at Phase 1` and change nothing.
 
 ## Phase 2: Orchestration plan
 
-Enter plan mode if the host supports it (Claude Code:
-`EnterPlanMode`; Cursor / Codex / Gemini: the host's plan command) and
-present:
+Enter plan mode before the first edit. In Claude Code call `EnterPlanMode`;
+in Cursor, Codex, or Gemini use `/plan` or `Shift+Tab`. Where plan mode is
+unavailable, present the plan as text.
+
+Present:
 
 1. Ticket(s): ID, title, source (prompt / conversation / lookup),
    one line each; for multi-ticket, why they share a branch.
@@ -133,9 +136,11 @@ its own plan gate), record the plan in the report and proceed.
 
 ## Phase 3: Worktree & branch
 
-Per `references/worktree-setup.md` (Worktree and branch). With
-`--setup-only`, skip to the output contract once the `## Primer` is
-assembled.
+Read `references/worktree-setup.md` and run its Worktree and
+branch steps: the collision checks first, then the create or attach
+command (a fresh branch is `git worktree add -b <branch> <path>
+<start-point>`). Do not stop at the plan: with `--setup-only`, skip to
+the output contract once the `## Primer` is assembled.
 
 ## Phase 4: Implement
 

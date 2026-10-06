@@ -227,6 +227,8 @@ Title: `widgets build --target=wasm` throws TypeError in `resolveTarget()`
 File it, print the body only, revise a section, or drop it?
 ````
 
+When `gh` is unavailable, the first line says the draft is unverified and that duplicates, security policy, templates, and pins could not be checked without `gh` access.
+
 After filing, the reply is the issue URL. A halted run (a duplicate found, a security policy, unsanitizable evidence) is one result sentence naming the duplicate or the private path, then what the user needs to do.
 
 `NAME` is optional and validated first. An unknown label aborts the

@@ -100,9 +100,11 @@ Then the bakeoff-specific checks:
 
 ## Phase 1: Orchestration plan
 
-Enter plan mode if the host supports it (Claude Code:
-`EnterPlanMode`; Cursor / Codex / Gemini: `/plan` or `Shift+Tab`) and
-present the **bakeoff brief**:
+Enter plan mode before the first edit. In Claude Code call `EnterPlanMode`;
+in Cursor, Codex, or Gemini use `/plan` or `Shift+Tab`. Where plan mode is
+unavailable, present the plan as text.
+
+Present the **bakeoff brief**:
 
 1. The goal, one line, with provenance (typed / inferred from what).
 2. The contenders: one line per strategy stating what makes it

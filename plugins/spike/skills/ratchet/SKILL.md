@@ -94,9 +94,11 @@ halt. Then:
 
 ## Phase 1: Orchestration plan
 
-Enter plan mode if the host supports it (Claude Code: `EnterPlanMode`;
-Cursor / Codex / Gemini: `/plan` or `Shift+Tab`) and present the
-**ratchet brief**:
+Enter plan mode before the first edit. In Claude Code call `EnterPlanMode`;
+in Cursor, Codex, or Gemini use `/plan` or `Shift+Tab`. Where plan mode is
+unavailable, present the plan as text.
+
+Present the **ratchet brief**:
 
 1. The goal, one line, with provenance.
 2. What "converged" means for this goal: the demo or property the

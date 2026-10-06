@@ -120,9 +120,11 @@ Phase 3 plan gate confirms every grouping, proposed or explicit.
 
 ## Phase 3: Orchestration plan
 
-Enter plan mode if the host supports it (Claude Code:
-`EnterPlanMode`; Cursor / Codex / Gemini: the host's plan command) and
-present:
+Enter plan mode before the first edit. In Claude Code call `EnterPlanMode`;
+in Cursor, Codex, or Gemini use `/plan` or `Shift+Tab`. Where plan mode is
+unavailable, present the plan as text.
+
+Present:
 
 1. The unit table: unit → ticket(s) → branch name (with its ladder
    rung) → worktree path → exit axis.

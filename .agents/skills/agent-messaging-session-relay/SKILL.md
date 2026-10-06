@@ -65,8 +65,9 @@ A new adapter exposing a stronger transport wins the same ranking. Modifiers:
 Whenever you resolved the target or route yourself rather than being handed it, present
 the plan and wait for approval before the first side effect.
 
-Enter plan mode first (`EnterPlanMode` in Claude Code, `/plan` or `Shift+Tab` in Codex,
-Cursor, and Gemini) and exit it before sending. Without plan mode, ask in plain text. In a
+Enter plan mode before the first edit. In Claude Code call `EnterPlanMode`;
+in Cursor, Codex, or Gemini use `/plan` or `Shift+Tab`. Where plan mode is
+unavailable, present the plan as text. Exit plan mode before sending. In a
 headless run, present the plan and stop without sending. A request that names the target and
 route and says to send is approval for that one send, nothing broader.
 
@@ -226,7 +227,9 @@ Delivered to reviewer (relay id 019a3c-2, hop 0); acknowledgment pending.
 - Next: ask me to check the reviewer's reply later.
 ```
 
-A stopped run is the result sentence plus what the user must do, nothing else.
+A stopped run is the result sentence plus what the user must do, nothing else. When no
+route works, that is pasting the message into the target session by hand, so print the
+composed single-line envelope for them to paste.
 
 
 ## Portability notes

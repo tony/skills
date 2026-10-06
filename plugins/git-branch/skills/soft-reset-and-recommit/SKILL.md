@@ -68,10 +68,9 @@ and call it by absolute path.
 
 ## Phase 4 — Plan the series, and get it approved
 
-Enter plan mode before any destructive step. In Claude Code that is
-`EnterPlanMode`; in other hosts `/plan` or Shift+Tab. If plan mode is
-unavailable, present the same plan as text and wait for an explicit
-go-ahead.
+Enter plan mode before the first edit. In Claude Code call `EnterPlanMode`;
+in Cursor, Codex, or Gemini use `/plan` or `Shift+Tab`. Where plan mode is
+unavailable, present the plan as text.
 
 The plan states:
 
