@@ -1,0 +1,1416 @@
+{
+  "generator": "scripts/marketplace.py portable",
+  "skills": [
+    {
+      "name": "action-worktree",
+      "sources": [
+        "plugins/action/skills/worktree/SKILL.md"
+      ],
+      "bundled": {
+        "references/ticket-detection.md": "plugins/action/references/ticket-detection.md",
+        "references/verification-gates.md": "plugins/action/references/verification-gates.md"
+      },
+      "bytes": 26986
+    },
+    {
+      "name": "action-worktrees",
+      "sources": [
+        "plugins/action/skills/worktrees/SKILL.md"
+      ],
+      "bundled": {
+        "references/verification-gates.md": "plugins/action/references/verification-gates.md"
+      },
+      "bytes": 15451
+    },
+    {
+      "name": "agent-messaging-session-relay",
+      "sources": [
+        "plugins/agent-messaging/skills/session-relay/SKILL.md"
+      ],
+      "bundled": {
+        "references/_template.md": "plugins/agent-messaging/references/agents/_template.md",
+        "references/claude-code.md": "plugins/agent-messaging/references/agents/claude-code.md",
+        "references/codex.md": "plugins/agent-messaging/references/agents/codex.md"
+      },
+      "bytes": 38426
+    },
+    {
+      "name": "business-case-study-internal",
+      "sources": [
+        "plugins/business/skills/case-study-internal/SKILL.md"
+      ],
+      "bundled": {
+        "references/audiences.md": "plugins/business/references/audiences.md",
+        "references/interim-format.md": "plugins/business/references/interim-format.md",
+        "references/provenance.md": "plugins/business/references/provenance.md"
+      },
+      "bytes": 15040
+    },
+    {
+      "name": "business-case-study-public",
+      "sources": [
+        "plugins/business/skills/case-study-public/SKILL.md"
+      ],
+      "bundled": {
+        "references/audiences.md": "plugins/business/references/audiences.md",
+        "references/evidence.md": "plugins/business/references/evidence.md",
+        "references/interim-format.md": "plugins/business/references/interim-format.md",
+        "references/provenance.md": "plugins/business/references/provenance.md"
+      },
+      "bytes": 18687
+    },
+    {
+      "name": "business-pr-release",
+      "sources": [
+        "plugins/business/skills/pr-release/SKILL.md"
+      ],
+      "bundled": {
+        "references/audiences.md": "plugins/business/references/audiences.md",
+        "references/interim-format.md": "plugins/business/references/interim-format.md",
+        "references/provenance.md": "plugins/business/references/provenance.md"
+      },
+      "bytes": 15322
+    },
+    {
+      "name": "business-report-leadership",
+      "sources": [
+        "plugins/business/skills/report-leadership/SKILL.md"
+      ],
+      "bundled": {
+        "references/audiences.md": "plugins/business/references/audiences.md",
+        "references/evidence.md": "plugins/business/references/evidence.md",
+        "references/interim-format.md": "plugins/business/references/interim-format.md",
+        "references/measurement.md": "plugins/business/references/measurement.md",
+        "references/provenance.md": "plugins/business/references/provenance.md"
+      },
+      "bytes": 22551
+    },
+    {
+      "name": "business-report-org-wide",
+      "sources": [
+        "plugins/business/skills/report-org-wide/SKILL.md"
+      ],
+      "bundled": {
+        "references/audiences.md": "plugins/business/references/audiences.md",
+        "references/interim-format.md": "plugins/business/references/interim-format.md",
+        "references/measurement.md": "plugins/business/references/measurement.md",
+        "references/provenance.md": "plugins/business/references/provenance.md"
+      },
+      "bytes": 19518
+    },
+    {
+      "name": "business-research",
+      "sources": [
+        "plugins/business/skills/research/SKILL.md"
+      ],
+      "bundled": {
+        "references/instruments.md": "plugins/business/references/instruments.md",
+        "references/interim-format.md": "plugins/business/references/interim-format.md",
+        "references/measurement.md": "plugins/business/references/measurement.md",
+        "references/provenance.md": "plugins/business/references/provenance.md"
+      },
+      "bytes": 21651
+    },
+    {
+      "name": "changelog",
+      "sources": [
+        "plugins/changelog/skills/changelog/SKILL.md"
+      ],
+      "bundled": {},
+      "bytes": 26299
+    },
+    {
+      "name": "changelog-refresh",
+      "sources": [
+        "plugins/changelog/skills/refresh/SKILL.md"
+      ],
+      "bundled": {},
+      "bytes": 6323
+    },
+    {
+      "name": "changelog-rewrite-aggressively",
+      "sources": [
+        "plugins/changelog/skills/rewrite-aggressively/SKILL.md"
+      ],
+      "bundled": {},
+      "bytes": 8148
+    },
+    {
+      "name": "commit",
+      "sources": [
+        "plugins/commit/skills/commit/SKILL.md"
+      ],
+      "bundled": {},
+      "bytes": 7789
+    },
+    {
+      "name": "disk",
+      "sources": [
+        "plugins/disk/skills/disk/SKILL.md"
+      ],
+      "bundled": {
+        "references/agent-history.md": "plugins/disk/references/agent-history.md",
+        "references/candidate-catalog.md": "plugins/disk/references/candidate-catalog.md",
+        "references/output-contract.md": "plugins/disk/references/output-contract.md",
+        "references/redundancy-proofs.md": "plugins/disk/references/redundancy-proofs.md",
+        "references/study-repos.md": "plugins/disk/references/study-repos.md",
+        "references/virtual-disks.md": "plugins/disk/references/virtual-disks.md"
+      },
+      "bytes": 29454
+    },
+    {
+      "name": "disk-reclaim",
+      "sources": [
+        "plugins/disk/skills/reclaim/SKILL.md"
+      ],
+      "bundled": {
+        "references/agent-history.md": "plugins/disk/references/agent-history.md",
+        "references/candidate-catalog.md": "plugins/disk/references/candidate-catalog.md",
+        "references/output-contract.md": "plugins/disk/references/output-contract.md",
+        "references/redundancy-proofs.md": "plugins/disk/references/redundancy-proofs.md",
+        "references/study-repos.md": "plugins/disk/references/study-repos.md",
+        "references/virtual-disks.md": "plugins/disk/references/virtual-disks.md"
+      },
+      "bytes": 28092
+    },
+    {
+      "name": "disk-usage",
+      "sources": [
+        "plugins/disk/skills/usage/SKILL.md"
+      ],
+      "bundled": {
+        "references/agent-history.md": "plugins/disk/references/agent-history.md",
+        "references/candidate-catalog.md": "plugins/disk/references/candidate-catalog.md",
+        "references/output-contract.md": "plugins/disk/references/output-contract.md",
+        "references/redundancy-proofs.md": "plugins/disk/references/redundancy-proofs.md",
+        "references/study-repos.md": "plugins/disk/references/study-repos.md",
+        "references/virtual-disks.md": "plugins/disk/references/virtual-disks.md"
+      },
+      "bytes": 26647
+    },
+    {
+      "name": "double-check",
+      "sources": [
+        "plugins/double-check/skills/double-check/SKILL.md"
+      ],
+      "bundled": {
+        "references/verification-contract.md": "plugins/double-check/references/verification-contract.md"
+      },
+      "bytes": 7767
+    },
+    {
+      "name": "double-check-align",
+      "sources": [
+        "plugins/double-check/skills/align/SKILL.md"
+      ],
+      "bundled": {
+        "references/verification-contract.md": "plugins/double-check/references/verification-contract.md"
+      },
+      "bytes": 7198
+    },
+    {
+      "name": "gh-create-issue",
+      "sources": [
+        "plugins/gh/skills/create-issue/SKILL.md"
+      ],
+      "bundled": {
+        "references/contract.md": "plugins/ticket/references/contract.md",
+        "references/rendered-markdown.md": "plugins/gh/references/rendered-markdown.md",
+        "references/source-links.md": "plugins/gh/references/source-links.md"
+      },
+      "bytes": 32335
+    },
+    {
+      "name": "gh-rendered-markdown",
+      "sources": [
+        "plugins/gh/skills/rendered-markdown/SKILL.md"
+      ],
+      "bundled": {
+        "references/rendered-markdown.md": "plugins/gh/references/rendered-markdown.md",
+        "references/source-links.md": "plugins/gh/references/source-links.md"
+      },
+      "bytes": 20500
+    },
+    {
+      "name": "git-branch-redo-from-scratch",
+      "sources": [
+        "plugins/git-branch/skills/redo-from-scratch/SKILL.md"
+      ],
+      "bundled": {
+        "references/branch-safety.md": "plugins/git-branch/references/branch-safety.md",
+        "references/commit-messages.md": "plugins/git-branch/references/commit-messages.md",
+        "references/rebase-todo.sh": "plugins/git-branch/references/rebase-todo.sh",
+        "references/rebase-toolkit.md": "plugins/git-branch/references/rebase-toolkit.md",
+        "references/rebuild-contract.md": "plugins/git-branch/references/rebuild-contract.md"
+      },
+      "bytes": 38116
+    },
+    {
+      "name": "git-branch-soft-reset-and-recommit",
+      "sources": [
+        "plugins/git-branch/skills/soft-reset-and-recommit/SKILL.md"
+      ],
+      "bundled": {
+        "references/branch-safety.md": "plugins/git-branch/references/branch-safety.md",
+        "references/commit-messages.md": "plugins/git-branch/references/commit-messages.md",
+        "references/rebase-todo.sh": "plugins/git-branch/references/rebase-todo.sh",
+        "references/rebase-toolkit.md": "plugins/git-branch/references/rebase-toolkit.md",
+        "references/split-mechanics.md": "plugins/git-branch/references/split-mechanics.md"
+      },
+      "bytes": 39827
+    },
+    {
+      "name": "github-actions-bumping-github-actions",
+      "sources": [
+        "plugins/github-actions/skills/bumping-github-actions/SKILL.md"
+      ],
+      "bundled": {
+        "references/action-pinning.md": "plugins/github-actions/references/action-pinning.md",
+        "references/dependabot-closeout.md": "plugins/github-actions/references/dependabot-closeout.md"
+      },
+      "bytes": 13840
+    },
+    {
+      "name": "github-actions-update-action",
+      "sources": [
+        "plugins/github-actions/skills/update-action/SKILL.md"
+      ],
+      "bundled": {
+        "references/action-pinning.md": "plugins/github-actions/references/action-pinning.md",
+        "references/dependabot-closeout.md": "plugins/github-actions/references/dependabot-closeout.md"
+      },
+      "bytes": 12989
+    },
+    {
+      "name": "github-actions-update-actions",
+      "sources": [
+        "plugins/github-actions/skills/update-actions/SKILL.md"
+      ],
+      "bundled": {
+        "references/action-pinning.md": "plugins/github-actions/references/action-pinning.md",
+        "references/dependabot-closeout.md": "plugins/github-actions/references/dependabot-closeout.md"
+      },
+      "bytes": 13354
+    },
+    {
+      "name": "lean-tighten",
+      "sources": [
+        "plugins/lean/skills/tighten/SKILL.md"
+      ],
+      "bundled": {
+        "references/lean-rubric.md": "plugins/lean/references/lean-rubric.md"
+      },
+      "bytes": 6554
+    },
+    {
+      "name": "lean-trim-comments",
+      "sources": [
+        "plugins/lean/skills/trim-comments/SKILL.md"
+      ],
+      "bundled": {
+        "references/comment-policy.md": "plugins/lean/references/comment-policy.md"
+      },
+      "bytes": 10352
+    },
+    {
+      "name": "lean-writing",
+      "sources": [
+        "plugins/lean/skills/lean-writing/SKILL.md"
+      ],
+      "bundled": {
+        "references/comment-policy.md": "plugins/lean/references/comment-policy.md",
+        "references/lean-rubric.md": "plugins/lean/references/lean-rubric.md"
+      },
+      "bytes": 10760
+    },
+    {
+      "name": "merge-pr-multiple",
+      "sources": [
+        "plugins/merge-pr/skills/multiple/SKILL.md"
+      ],
+      "bundled": {
+        "references/merge-readiness.md": "plugins/merge-pr/references/merge-readiness.md"
+      },
+      "bytes": 10679
+    },
+    {
+      "name": "merge-pr-this",
+      "sources": [
+        "plugins/merge-pr/skills/this/SKILL.md"
+      ],
+      "bundled": {
+        "references/merge-readiness.md": "plugins/merge-pr/references/merge-readiness.md"
+      },
+      "bytes": 10420
+    },
+    {
+      "name": "model-cli-agy",
+      "sources": [
+        "plugins/model-cli/skills/agy/SKILL.md"
+      ],
+      "bundled": {},
+      "bytes": 6085
+    },
+    {
+      "name": "model-cli-codex",
+      "sources": [
+        "plugins/model-cli/skills/codex/SKILL.md"
+      ],
+      "bundled": {},
+      "bytes": 4873
+    },
+    {
+      "name": "model-cli-cursor",
+      "sources": [
+        "plugins/model-cli/skills/cursor/SKILL.md"
+      ],
+      "bundled": {},
+      "bytes": 3340
+    },
+    {
+      "name": "model-cli-gemini",
+      "sources": [
+        "plugins/model-cli/skills/gemini/SKILL.md"
+      ],
+      "bundled": {},
+      "bytes": 1245
+    },
+    {
+      "name": "model-cli-gpt",
+      "sources": [
+        "plugins/model-cli/skills/gpt/SKILL.md"
+      ],
+      "bundled": {},
+      "bytes": 926
+    },
+    {
+      "name": "package-updater-update",
+      "sources": [
+        "plugins/package-updater/skills/update/SKILL.md"
+      ],
+      "bundled": {
+        "references/commit-conventions.md": "plugins/package-updater/references/commit-conventions.md",
+        "references/ecosystems.md": "plugins/package-updater/references/ecosystems.md",
+        "references/follow-ups.md": "plugins/package-updater/references/follow-ups.md",
+        "references/repo-scope.md": "plugins/package-updater/references/repo-scope.md",
+        "references/upstream-links.md": "plugins/package-updater/references/upstream-links.md"
+      },
+      "bytes": 38069
+    },
+    {
+      "name": "package-updater-update-package",
+      "sources": [
+        "plugins/package-updater/skills/update-package/SKILL.md"
+      ],
+      "bundled": {
+        "references/commit-conventions.md": "plugins/package-updater/references/commit-conventions.md",
+        "references/ecosystems.md": "plugins/package-updater/references/ecosystems.md",
+        "references/follow-ups.md": "plugins/package-updater/references/follow-ups.md",
+        "references/repo-scope.md": "plugins/package-updater/references/repo-scope.md",
+        "references/upstream-links.md": "plugins/package-updater/references/upstream-links.md"
+      },
+      "bytes": 36417
+    },
+    {
+      "name": "package-updater-update-toolchain",
+      "sources": [
+        "plugins/package-updater/skills/update-toolchain/SKILL.md"
+      ],
+      "bundled": {
+        "references/commit-conventions.md": "plugins/package-updater/references/commit-conventions.md",
+        "references/ecosystems.md": "plugins/package-updater/references/ecosystems.md",
+        "references/repo-scope.md": "plugins/package-updater/references/repo-scope.md",
+        "references/upstream-links.md": "plugins/package-updater/references/upstream-links.md"
+      },
+      "bytes": 33883
+    },
+    {
+      "name": "package-updater-updating-packages",
+      "sources": [
+        "plugins/package-updater/skills/updating-packages/SKILL.md"
+      ],
+      "bundled": {
+        "references/commit-conventions.md": "plugins/package-updater/references/commit-conventions.md",
+        "references/ecosystems.md": "plugins/package-updater/references/ecosystems.md",
+        "references/follow-ups.md": "plugins/package-updater/references/follow-ups.md",
+        "references/holds.md": "plugins/package-updater/references/holds.md",
+        "references/repo-scope.md": "plugins/package-updater/references/repo-scope.md",
+        "references/upstream-links.md": "plugins/package-updater/references/upstream-links.md"
+      },
+      "bytes": 47234
+    },
+    {
+      "name": "pr",
+      "sources": [
+        "plugins/pr/skills/pr/SKILL.md"
+      ],
+      "bundled": {
+        "references/contract.md": "plugins/ticket/references/contract.md",
+        "references/template-resolution.md": "plugins/pr/references/template-resolution.md"
+      },
+      "bytes": 16528
+    },
+    {
+      "name": "pr-deslop",
+      "sources": [
+        "plugins/pr/skills/deslop/SKILL.md"
+      ],
+      "bundled": {
+        "references/apply-template.sh": "plugins/pr/references/apply-template.sh",
+        "references/conflict-loop.md": "plugins/pr/references/conflict-loop.md",
+        "references/quality-gates.md": "plugins/pr/references/quality-gates.md",
+        "references/signatures.yml": "plugins/pr/references/signatures.yml",
+        "references/slop-taxonomy.md": "plugins/pr/references/slop-taxonomy.md"
+      },
+      "bytes": 72161
+    },
+    {
+      "name": "pr-merge-commit",
+      "sources": [
+        "plugins/pr/skills/merge-commit/SKILL.md"
+      ],
+      "bundled": {},
+      "bytes": 6623
+    },
+    {
+      "name": "pr-refresh",
+      "sources": [
+        "plugins/pr/skills/refresh/SKILL.md"
+      ],
+      "bundled": {},
+      "bytes": 6088
+    },
+    {
+      "name": "pr-review-pr",
+      "sources": [
+        "plugins/pr/skills/review-pr/SKILL.md"
+      ],
+      "bundled": {},
+      "bytes": 4872
+    },
+    {
+      "name": "pr-rewrite",
+      "sources": [
+        "plugins/pr/skills/rewrite/SKILL.md"
+      ],
+      "bundled": {
+        "references/template-resolution.md": "plugins/pr/references/template-resolution.md"
+      },
+      "bytes": 7471
+    },
+    {
+      "name": "pytest-optimizer",
+      "sources": [
+        "plugins/pytest-optimizer/skills/pytest-optimizer/SKILL.md"
+      ],
+      "bundled": {
+        "references/durations-parsing.md": "plugins/pytest-optimizer/references/durations-parsing.md",
+        "references/fixture-analysis.md": "plugins/pytest-optimizer/references/fixture-analysis.md",
+        "references/heuristic-catalog.md": "plugins/pytest-optimizer/references/heuristic-catalog.md",
+        "references/memory-schema.md": "plugins/pytest-optimizer/references/memory-schema.md",
+        "references/output-contract.md": "plugins/pytest-optimizer/references/output-contract.md",
+        "references/parametrize-convention.md": "plugins/pytest-optimizer/references/parametrize-convention.md",
+        "references/safety-gates.md": "plugins/pytest-optimizer/references/safety-gates.md",
+        "references/scoring-rubric.md": "plugins/pytest-optimizer/references/scoring-rubric.md",
+        "references/version-matrix.md": "plugins/pytest-optimizer/references/version-matrix.md",
+        "templates/conftest_cache_snippet.py": "plugins/pytest-optimizer/templates/conftest_cache_snippet.py",
+        "templates/pytest_optimizer_plugin.py": "plugins/pytest-optimizer/templates/pytest_optimizer_plugin.py",
+        "templates/state.schema.json": "plugins/pytest-optimizer/templates/state.schema.json"
+      },
+      "bytes": 75926
+    },
+    {
+      "name": "pytest-optimizer-00-scan",
+      "sources": [
+        "plugins/pytest-optimizer/skills/00-scan/SKILL.md"
+      ],
+      "bundled": {
+        "references/durations-parsing.md": "plugins/pytest-optimizer/references/durations-parsing.md",
+        "references/fixture-analysis.md": "plugins/pytest-optimizer/references/fixture-analysis.md",
+        "references/heuristic-catalog.md": "plugins/pytest-optimizer/references/heuristic-catalog.md",
+        "references/memory-schema.md": "plugins/pytest-optimizer/references/memory-schema.md",
+        "references/output-contract.md": "plugins/pytest-optimizer/references/output-contract.md",
+        "references/parametrize-convention.md": "plugins/pytest-optimizer/references/parametrize-convention.md",
+        "references/version-matrix.md": "plugins/pytest-optimizer/references/version-matrix.md",
+        "templates/pytest_optimizer_plugin.py": "plugins/pytest-optimizer/templates/pytest_optimizer_plugin.py",
+        "templates/state.schema.json": "plugins/pytest-optimizer/templates/state.schema.json"
+      },
+      "bytes": 58427
+    },
+    {
+      "name": "pytest-optimizer-01-benchmark",
+      "sources": [
+        "plugins/pytest-optimizer/skills/01-benchmark/SKILL.md"
+      ],
+      "bundled": {
+        "references/heuristic-catalog.md": "plugins/pytest-optimizer/references/heuristic-catalog.md",
+        "references/output-contract.md": "plugins/pytest-optimizer/references/output-contract.md",
+        "references/safety-gates.md": "plugins/pytest-optimizer/references/safety-gates.md"
+      },
+      "bytes": 25853
+    },
+    {
+      "name": "pytest-optimizer-02-plan",
+      "sources": [
+        "plugins/pytest-optimizer/skills/02-plan/SKILL.md"
+      ],
+      "bundled": {
+        "references/output-contract.md": "plugins/pytest-optimizer/references/output-contract.md",
+        "references/scoring-rubric.md": "plugins/pytest-optimizer/references/scoring-rubric.md",
+        "templates/commit-message.tmpl": "plugins/pytest-optimizer/templates/commit-message.tmpl"
+      },
+      "bytes": 11320
+    },
+    {
+      "name": "pytest-optimizer-03-execute",
+      "sources": [
+        "plugins/pytest-optimizer/skills/03-execute/SKILL.md"
+      ],
+      "bundled": {
+        "references/output-contract.md": "plugins/pytest-optimizer/references/output-contract.md",
+        "templates/commit-message.tmpl": "plugins/pytest-optimizer/templates/commit-message.tmpl"
+      },
+      "bytes": 7363
+    },
+    {
+      "name": "rebase",
+      "sources": [
+        "plugins/rebase/skills/rebase/SKILL.md"
+      ],
+      "bundled": {},
+      "bytes": 4691
+    },
+    {
+      "name": "release-bump",
+      "sources": [
+        "plugins/release/skills/bump/SKILL.md"
+      ],
+      "bundled": {
+        "references/release-conventions.md": "plugins/release/references/release-conventions.md"
+      },
+      "bytes": 12144
+    },
+    {
+      "name": "release-cut",
+      "sources": [
+        "plugins/release/skills/cut/SKILL.md"
+      ],
+      "bundled": {
+        "references/release-conventions.md": "plugins/release/references/release-conventions.md"
+      },
+      "bytes": 14209
+    },
+    {
+      "name": "release-update-downstream-packages",
+      "sources": [
+        "plugins/release/skills/update-downstream-packages/SKILL.md"
+      ],
+      "bundled": {},
+      "bytes": 8170
+    },
+    {
+      "name": "research-assess",
+      "sources": [
+        "plugins/research/skills/assess/SKILL.md"
+      ],
+      "bundled": {},
+      "bytes": 992
+    },
+    {
+      "name": "research-continue",
+      "sources": [
+        "plugins/research/skills/continue/SKILL.md"
+      ],
+      "bundled": {},
+      "bytes": 1015
+    },
+    {
+      "name": "research-foray",
+      "sources": [
+        "plugins/research/skills/foray/SKILL.md"
+      ],
+      "bundled": {
+        "references/analysis.md": "plugins/research/references/analysis.md",
+        "references/assessment.md": "plugins/research/references/assessment.md",
+        "references/continue.md": "plugins/research/references/continue.md",
+        "references/layout.md": "plugins/research/references/layout.md",
+        "references/release.md": "plugins/research/references/release.md",
+        "references/report.md": "plugins/research/references/report.md",
+        "references/start.md": "plugins/research/references/start.md",
+        "references/status.md": "plugins/research/references/status.md",
+        "references/topic.py": "plugins/research/scripts/topic.py",
+        "references/verify.md": "plugins/research/references/verify.md"
+      },
+      "bytes": 182801
+    },
+    {
+      "name": "research-release",
+      "sources": [
+        "plugins/research/skills/release/SKILL.md"
+      ],
+      "bundled": {},
+      "bytes": 957
+    },
+    {
+      "name": "research-report",
+      "sources": [
+        "plugins/research/skills/report/SKILL.md"
+      ],
+      "bundled": {},
+      "bytes": 891
+    },
+    {
+      "name": "research-status",
+      "sources": [
+        "plugins/research/skills/status/SKILL.md"
+      ],
+      "bundled": {},
+      "bytes": 758
+    },
+    {
+      "name": "research-study-deps",
+      "sources": [
+        "plugins/research/skills/deps/SKILL.md"
+      ],
+      "bundled": {},
+      "bytes": 8149
+    },
+    {
+      "name": "research-verify",
+      "sources": [
+        "plugins/research/skills/verify/SKILL.md"
+      ],
+      "bundled": {},
+      "bytes": 931
+    },
+    {
+      "name": "respond-action",
+      "sources": [
+        "plugins/respond/skills/action/SKILL.md"
+      ],
+      "bundled": {
+        "references/bloat-discipline.md": "plugins/respond/references/bloat-discipline.md",
+        "references/screening-rubric.md": "plugins/respond/references/screening-rubric.md",
+        "references/verification-gates.md": "plugins/respond/references/verification-gates.md"
+      },
+      "bytes": 27546
+    },
+    {
+      "name": "respond-check",
+      "sources": [
+        "plugins/respond/skills/check/SKILL.md"
+      ],
+      "bundled": {
+        "references/feedback-sources.md": "plugins/respond/references/feedback-sources.md",
+        "references/screening-rubric.md": "plugins/respond/references/screening-rubric.md"
+      },
+      "bytes": 20402
+    },
+    {
+      "name": "respond-goal",
+      "sources": [
+        "plugins/respond/skills/goal/SKILL.md"
+      ],
+      "bundled": {
+        "references/feedback-sources.md": "plugins/respond/references/feedback-sources.md",
+        "references/review-agents.md": "plugins/respond/references/review-agents.md",
+        "references/verification-gates.md": "plugins/respond/references/verification-gates.md"
+      },
+      "bytes": 19892
+    },
+    {
+      "name": "ruff-bump",
+      "sources": [
+        "plugins/ruff/skills/bump/SKILL.md"
+      ],
+      "bundled": {
+        "references/default-rule-set.md": "plugins/ruff/references/default-rule-set.md",
+        "references/pin-sites-and-gating.md": "plugins/ruff/references/pin-sites-and-gating.md",
+        "references/release-triage.md": "plugins/ruff/references/release-triage.md"
+      },
+      "bytes": 32238
+    },
+    {
+      "name": "scholar-annotate",
+      "sources": [
+        "plugins/scholar/skills/annotate/SKILL.md"
+      ],
+      "bundled": {
+        "references/citation.md": "plugins/scholar/references/citation.md"
+      },
+      "bytes": 6495
+    },
+    {
+      "name": "scholar-ask",
+      "sources": [
+        "plugins/scholar/skills/ask/SKILL.md"
+      ],
+      "bundled": {},
+      "bytes": 3638
+    },
+    {
+      "name": "scholar-compare",
+      "sources": [
+        "plugins/scholar/skills/compare/SKILL.md"
+      ],
+      "bundled": {
+        "references/term-metrics.py": "plugins/scholar/references/term-metrics.py"
+      },
+      "bytes": 13218
+    },
+    {
+      "name": "scholar-contest",
+      "sources": [
+        "plugins/scholar/skills/contest/SKILL.md"
+      ],
+      "bundled": {
+        "references/evidence-tiers.md": "plugins/scholar/references/evidence-tiers.md",
+        "references/term-metrics.py": "plugins/scholar/references/term-metrics.py"
+      },
+      "bytes": 15829
+    },
+    {
+      "name": "scholar-distill",
+      "sources": [
+        "plugins/scholar/skills/distill/SKILL.md"
+      ],
+      "bundled": {
+        "references/evidence-tiers.md": "plugins/scholar/references/evidence-tiers.md",
+        "references/stage-gates.md": "plugins/scholar/references/stage-gates.md",
+        "references/term-metrics.py": "plugins/scholar/references/term-metrics.py"
+      },
+      "bytes": 16875
+    },
+    {
+      "name": "scholar-extract",
+      "sources": [
+        "plugins/scholar/skills/extract/SKILL.md"
+      ],
+      "bundled": {
+        "references/citation.md": "plugins/scholar/references/citation.md",
+        "references/stage-gates.md": "plugins/scholar/references/stage-gates.md"
+      },
+      "bytes": 8403
+    },
+    {
+      "name": "scholar-gather",
+      "sources": [
+        "plugins/scholar/skills/gather/SKILL.md"
+      ],
+      "bundled": {
+        "references/citation.md": "plugins/scholar/references/citation.md",
+        "references/stage-gates.md": "plugins/scholar/references/stage-gates.md"
+      },
+      "bytes": 8961
+    },
+    {
+      "name": "scholar-ontology",
+      "sources": [
+        "plugins/scholar/skills/ontology/SKILL.md"
+      ],
+      "bundled": {
+        "references/citation.md": "plugins/scholar/references/citation.md",
+        "references/evidence-tiers.md": "plugins/scholar/references/evidence-tiers.md",
+        "references/stage-gates.md": "plugins/scholar/references/stage-gates.md"
+      },
+      "bytes": 10978
+    },
+    {
+      "name": "scholar-render",
+      "sources": [
+        "plugins/scholar/skills/render/SKILL.md"
+      ],
+      "bundled": {
+        "references/term-metrics.py": "plugins/scholar/references/term-metrics.py"
+      },
+      "bytes": 13153
+    },
+    {
+      "name": "scholar-revise",
+      "sources": [
+        "plugins/scholar/skills/revise/SKILL.md"
+      ],
+      "bundled": {},
+      "bytes": 3512
+    },
+    {
+      "name": "scholar-verify",
+      "sources": [
+        "plugins/scholar/skills/verify/SKILL.md"
+      ],
+      "bundled": {
+        "references/citation.md": "plugins/scholar/references/citation.md"
+      },
+      "bytes": 6202
+    },
+    {
+      "name": "self-improvement-apply",
+      "sources": [
+        "plugins/self-improvement/skills/apply/SKILL.md"
+      ],
+      "bundled": {},
+      "bytes": 6412
+    },
+    {
+      "name": "self-improvement-sweep",
+      "sources": [
+        "plugins/self-improvement/skills/sweep/SKILL.md"
+      ],
+      "bundled": {
+        "references/2026-08-12-one-project-three-spellings.md": "plugins/self-improvement/references/2026-08-12-one-project-three-spellings.md",
+        "references/2026-08-12-superseded-skill-leads-all-time.md": "plugins/self-improvement/references/2026-08-12-superseded-skill-leads-all-time.md",
+        "references/2026-08-12-tool-channel-has-no-date.md": "plugins/self-improvement/references/2026-08-12-tool-channel-has-no-date.md",
+        "references/detecting-invocations.md": "plugins/self-improvement/references/detecting-invocations.md",
+        "references/worked-example-spike.md": "plugins/self-improvement/references/worked-example-spike.md"
+      },
+      "bytes": 48518
+    },
+    {
+      "name": "situate",
+      "sources": [
+        "plugins/situate/skills/situate/SKILL.md"
+      ],
+      "bundled": {
+        "references/prior-conversations.md": "plugins/situate/references/prior-conversations.md",
+        "references/situation-sweep.md": "plugins/situate/references/situation-sweep.md"
+      },
+      "bytes": 16391
+    },
+    {
+      "name": "situate-brief",
+      "sources": [
+        "plugins/situate/skills/brief/SKILL.md"
+      ],
+      "bundled": {
+        "references/brief.md": "plugins/situate/references/brief.md"
+      },
+      "bytes": 9279
+    },
+    {
+      "name": "situate-refocus",
+      "sources": [
+        "plugins/situate/skills/refocus/SKILL.md"
+      ],
+      "bundled": {
+        "references/goal-derivation.md": "plugins/situate/references/goal-derivation.md",
+        "references/situation-sweep.md": "plugins/situate/references/situation-sweep.md"
+      },
+      "bytes": 18565
+    },
+    {
+      "name": "situate-situational-awareness",
+      "sources": [
+        "plugins/situate/skills/situational-awareness/SKILL.md"
+      ],
+      "bundled": {
+        "references/prior-conversations.md": "plugins/situate/references/prior-conversations.md",
+        "references/situation-sweep.md": "plugins/situate/references/situation-sweep.md"
+      },
+      "bytes": 15833
+    },
+    {
+      "name": "situate-what",
+      "sources": [
+        "plugins/situate/skills/what/SKILL.md"
+      ],
+      "bundled": {
+        "references/brief.md": "plugins/situate/references/brief.md"
+      },
+      "bytes": 10056
+    },
+    {
+      "name": "skill-style",
+      "sources": [
+        "plugins/skill-style/skills/skill-style/SKILL.md"
+      ],
+      "bundled": {
+        "references/example-bloated.md": "plugins/skill-style/references/example-bloated.md",
+        "references/example-ideal.md": "plugins/skill-style/references/example-ideal.md",
+        "references/skill-rubric.md": "plugins/skill-style/references/skill-rubric.md"
+      },
+      "bytes": 28865
+    },
+    {
+      "name": "slop-scan",
+      "sources": [
+        "plugins/slop/skills/scan/SKILL.md"
+      ],
+      "bundled": {
+        "references/commit-template.md": "plugins/slop/references/commit-template.md",
+        "references/quality-gates.md": "plugins/slop/references/quality-gates.md",
+        "references/signatures.yml": "plugins/slop/references/signatures.yml",
+        "references/slop-taxonomy.md": "plugins/slop/references/slop-taxonomy.md"
+      },
+      "bytes": 63169
+    },
+    {
+      "name": "spike-bakeoff",
+      "sources": [
+        "plugins/spike/skills/bakeoff/SKILL.md"
+      ],
+      "bundled": {
+        "references/verification-gates.md": "plugins/spike/references/verification-gates.md"
+      },
+      "bytes": 18058
+    },
+    {
+      "name": "spike-probe",
+      "sources": [
+        "plugins/spike/skills/probe/SKILL.md"
+      ],
+      "bundled": {
+        "references/verification-gates.md": "plugins/spike/references/verification-gates.md"
+      },
+      "bytes": 16720
+    },
+    {
+      "name": "spike-ratchet",
+      "sources": [
+        "plugins/spike/skills/ratchet/SKILL.md"
+      ],
+      "bundled": {
+        "references/verification-gates.md": "plugins/spike/references/verification-gates.md"
+      },
+      "bytes": 14518
+    },
+    {
+      "name": "tailwind-spacing-audit",
+      "sources": [
+        "plugins/tailwind/skills/spacing-audit/SKILL.md"
+      ],
+      "bundled": {
+        "references/heuristics.md": "plugins/tailwind/skills/spacing-audit/references/heuristics.md",
+        "references/patterns.md": "plugins/tailwind/skills/spacing-audit/references/patterns.md"
+      },
+      "bytes": 28001
+    },
+    {
+      "name": "tdd-fix",
+      "sources": [
+        "plugins/tdd/skills/fix/SKILL.md"
+      ],
+      "bundled": {},
+      "bytes": 8665
+    },
+    {
+      "name": "tdd-xfail",
+      "sources": [
+        "plugins/tdd/skills/xfail/SKILL.md"
+      ],
+      "bundled": {},
+      "bytes": 12584
+    },
+    {
+      "name": "terraform-bump-provider",
+      "sources": [
+        "plugins/terraform/skills/bump-provider/SKILL.md"
+      ],
+      "bundled": {
+        "references/layout-discovery.md": "plugins/terraform/references/layout-discovery.md",
+        "references/lock-and-init.md": "plugins/terraform/references/lock-and-init.md",
+        "references/pin-sites.md": "plugins/terraform/references/pin-sites.md"
+      },
+      "bytes": 28107
+    },
+    {
+      "name": "terraform-bump-terraform",
+      "sources": [
+        "plugins/terraform/skills/bump-terraform/SKILL.md"
+      ],
+      "bundled": {
+        "references/layout-discovery.md": "plugins/terraform/references/layout-discovery.md",
+        "references/lock-and-init.md": "plugins/terraform/references/lock-and-init.md",
+        "references/pin-sites.md": "plugins/terraform/references/pin-sites.md"
+      },
+      "bytes": 28350
+    },
+    {
+      "name": "terraform-bumping-terraform",
+      "sources": [
+        "plugins/terraform/skills/bumping-terraform/SKILL.md"
+      ],
+      "bundled": {
+        "references/layout-discovery.md": "plugins/terraform/references/layout-discovery.md",
+        "references/lock-and-init.md": "plugins/terraform/references/lock-and-init.md",
+        "references/pin-sites.md": "plugins/terraform/references/pin-sites.md"
+      },
+      "bytes": 28624
+    },
+    {
+      "name": "terraform-refresh-lock",
+      "sources": [
+        "plugins/terraform/skills/refresh-lock/SKILL.md"
+      ],
+      "bundled": {
+        "references/layout-discovery.md": "plugins/terraform/references/layout-discovery.md",
+        "references/lock-and-init.md": "plugins/terraform/references/lock-and-init.md"
+      },
+      "bytes": 18575
+    },
+    {
+      "name": "ticket-draft",
+      "sources": [
+        "plugins/ticket/skills/draft/SKILL.md"
+      ],
+      "bundled": {
+        "references/altitude.md": "plugins/ticket/references/altitude.md",
+        "references/asana.md": "plugins/ticket/references/providers/asana.md",
+        "references/azure-devops.md": "plugins/ticket/references/providers/azure-devops.md",
+        "references/contract.md": "plugins/ticket/references/contract.md",
+        "references/generic.md": "plugins/ticket/references/providers/generic.md",
+        "references/github.md": "plugins/ticket/references/providers/github.md",
+        "references/gitlab.md": "plugins/ticket/references/providers/gitlab.md",
+        "references/hierarchy.md": "plugins/ticket/references/hierarchy.md",
+        "references/jira.md": "plugins/ticket/references/providers/jira.md",
+        "references/linear.md": "plugins/ticket/references/providers/linear.md",
+        "references/resolve.md": "plugins/ticket/references/resolve.md",
+        "references/shortcut.md": "plugins/ticket/references/providers/shortcut.md",
+        "references/signatures.yml": "plugins/pr/references/signatures.yml",
+        "references/slop-signatures.yml": "plugins/slop/references/signatures.yml",
+        "references/trello.md": "plugins/ticket/references/providers/trello.md"
+      },
+      "bytes": 143897
+    },
+    {
+      "name": "ticket-rebuild",
+      "sources": [
+        "plugins/ticket/skills/rebuild/SKILL.md"
+      ],
+      "bundled": {
+        "references/altitude.md": "plugins/ticket/references/altitude.md",
+        "references/asana.md": "plugins/ticket/references/providers/asana.md",
+        "references/azure-devops.md": "plugins/ticket/references/providers/azure-devops.md",
+        "references/contract.md": "plugins/ticket/references/contract.md",
+        "references/generic.md": "plugins/ticket/references/providers/generic.md",
+        "references/github.md": "plugins/ticket/references/providers/github.md",
+        "references/gitlab.md": "plugins/ticket/references/providers/gitlab.md",
+        "references/hierarchy.md": "plugins/ticket/references/hierarchy.md",
+        "references/jira.md": "plugins/ticket/references/providers/jira.md",
+        "references/linear.md": "plugins/ticket/references/providers/linear.md",
+        "references/resolve.md": "plugins/ticket/references/resolve.md",
+        "references/shortcut.md": "plugins/ticket/references/providers/shortcut.md",
+        "references/signatures.yml": "plugins/pr/references/signatures.yml",
+        "references/slop-signatures.yml": "plugins/slop/references/signatures.yml",
+        "references/trello.md": "plugins/ticket/references/providers/trello.md"
+      },
+      "bytes": 143587
+    },
+    {
+      "name": "weave-architecture",
+      "sources": [
+        "plugins/weave/skills/architecture/SKILL.md"
+      ],
+      "bundled": {
+        "docs/repo-guard-protocol.md": "plugins/weave/docs/repo-guard-protocol.md",
+        "references/ensemble-techniques.md": "plugins/weave/references/ensemble-techniques.md",
+        "references/present-results.md": "plugins/weave/references/present-results.md",
+        "references/worker-backends.md": "plugins/weave/references/worker-backends.md"
+      },
+      "bytes": 85733
+    },
+    {
+      "name": "weave-ask",
+      "sources": [
+        "plugins/weave/skills/ask/SKILL.md"
+      ],
+      "bundled": {
+        "docs/repo-guard-protocol.md": "plugins/weave/docs/repo-guard-protocol.md",
+        "references/deslop-pass.md": "plugins/weave/references/deslop-pass.md",
+        "references/ensemble-techniques.md": "plugins/weave/references/ensemble-techniques.md",
+        "references/present-results.md": "plugins/weave/references/present-results.md",
+        "references/signatures.yml": "plugins/pr/references/signatures.yml",
+        "references/slop-signatures.yml": "plugins/slop/references/signatures.yml",
+        "references/worker-backends.md": "plugins/weave/references/worker-backends.md"
+      },
+      "bytes": 115148
+    },
+    {
+      "name": "weave-brainstorm",
+      "sources": [
+        "plugins/weave/skills/brainstorm/SKILL.md"
+      ],
+      "bundled": {
+        "docs/repo-guard-protocol.md": "plugins/weave/docs/repo-guard-protocol.md",
+        "references/ensemble-techniques.md": "plugins/weave/references/ensemble-techniques.md",
+        "references/present-results.md": "plugins/weave/references/present-results.md",
+        "references/worker-backends.md": "plugins/weave/references/worker-backends.md"
+      },
+      "bytes": 73037
+    },
+    {
+      "name": "weave-brainstorm-and-refine",
+      "sources": [
+        "plugins/weave/skills/brainstorm-and-refine/SKILL.md"
+      ],
+      "bundled": {
+        "docs/repo-guard-protocol.md": "plugins/weave/docs/repo-guard-protocol.md",
+        "references/deslop-pass.md": "plugins/weave/references/deslop-pass.md",
+        "references/ensemble-techniques.md": "plugins/weave/references/ensemble-techniques.md",
+        "references/present-results.md": "plugins/weave/references/present-results.md",
+        "references/signatures.yml": "plugins/pr/references/signatures.yml",
+        "references/slop-signatures.yml": "plugins/slop/references/signatures.yml",
+        "references/worker-backends.md": "plugins/weave/references/worker-backends.md"
+      },
+      "bytes": 127638
+    },
+    {
+      "name": "weave-execute",
+      "sources": [
+        "plugins/weave/skills/execute/SKILL.md"
+      ],
+      "bundled": {
+        "docs/repo-guard-protocol.md": "plugins/weave/docs/repo-guard-protocol.md",
+        "references/ensemble-techniques.md": "plugins/weave/references/ensemble-techniques.md",
+        "references/present-results.md": "plugins/weave/references/present-results.md",
+        "references/worker-backends.md": "plugins/weave/references/worker-backends.md"
+      },
+      "bytes": 83139
+    },
+    {
+      "name": "weave-fix-review",
+      "sources": [
+        "plugins/weave/skills/fix-review/SKILL.md"
+      ],
+      "bundled": {
+        "references/ensemble-techniques.md": "plugins/weave/references/ensemble-techniques.md",
+        "references/present-results.md": "plugins/weave/references/present-results.md"
+      },
+      "bytes": 31230
+    },
+    {
+      "name": "weave-plan",
+      "sources": [
+        "plugins/weave/skills/plan/SKILL.md"
+      ],
+      "bundled": {
+        "docs/repo-guard-protocol.md": "plugins/weave/docs/repo-guard-protocol.md",
+        "references/deslop-pass.md": "plugins/weave/references/deslop-pass.md",
+        "references/ensemble-techniques.md": "plugins/weave/references/ensemble-techniques.md",
+        "references/present-results.md": "plugins/weave/references/present-results.md",
+        "references/signatures.yml": "plugins/pr/references/signatures.yml",
+        "references/slop-signatures.yml": "plugins/slop/references/signatures.yml",
+        "references/worker-backends.md": "plugins/weave/references/worker-backends.md"
+      },
+      "bytes": 120731
+    },
+    {
+      "name": "weave-prompt",
+      "sources": [
+        "plugins/weave/skills/prompt/SKILL.md"
+      ],
+      "bundled": {
+        "docs/repo-guard-protocol.md": "plugins/weave/docs/repo-guard-protocol.md",
+        "references/ensemble-techniques.md": "plugins/weave/references/ensemble-techniques.md",
+        "references/present-results.md": "plugins/weave/references/present-results.md",
+        "references/worker-backends.md": "plugins/weave/references/worker-backends.md"
+      },
+      "bytes": 81022
+    },
+    {
+      "name": "weave-refine",
+      "sources": [
+        "plugins/weave/skills/refine/SKILL.md"
+      ],
+      "bundled": {
+        "docs/repo-guard-protocol.md": "plugins/weave/docs/repo-guard-protocol.md",
+        "references/deslop-pass.md": "plugins/weave/references/deslop-pass.md",
+        "references/ensemble-techniques.md": "plugins/weave/references/ensemble-techniques.md",
+        "references/present-results.md": "plugins/weave/references/present-results.md",
+        "references/signatures.yml": "plugins/pr/references/signatures.yml",
+        "references/slop-signatures.yml": "plugins/slop/references/signatures.yml",
+        "references/worker-backends.md": "plugins/weave/references/worker-backends.md"
+      },
+      "bytes": 126398
+    },
+    {
+      "name": "weave-review",
+      "sources": [
+        "plugins/weave/skills/review/SKILL.md"
+      ],
+      "bundled": {
+        "docs/repo-guard-protocol.md": "plugins/weave/docs/repo-guard-protocol.md",
+        "references/deslop-pass.md": "plugins/weave/references/deslop-pass.md",
+        "references/ensemble-techniques.md": "plugins/weave/references/ensemble-techniques.md",
+        "references/present-results.md": "plugins/weave/references/present-results.md",
+        "references/signatures.yml": "plugins/pr/references/signatures.yml",
+        "references/slop-signatures.yml": "plugins/slop/references/signatures.yml",
+        "references/worker-backends.md": "plugins/weave/references/worker-backends.md"
+      },
+      "bytes": 120274
+    },
+    {
+      "name": "weave-serene-bliss",
+      "sources": [
+        "plugins/weave/skills/serene-bliss/SKILL.md"
+      ],
+      "bundled": {
+        "docs/repo-guard-protocol.md": "plugins/weave/docs/repo-guard-protocol.md",
+        "references/deslop-pass.md": "plugins/weave/references/deslop-pass.md",
+        "references/ensemble-techniques.md": "plugins/weave/references/ensemble-techniques.md",
+        "references/present-results.md": "plugins/weave/references/present-results.md",
+        "references/signatures.yml": "plugins/pr/references/signatures.yml",
+        "references/slop-signatures.yml": "plugins/slop/references/signatures.yml",
+        "references/worker-backends.md": "plugins/weave/references/worker-backends.md"
+      },
+      "bytes": 111445
+    }
+  ],
+  "duplication": {
+    "plugins/weave/references/ensemble-techniques.md": 11,
+    "plugins/weave/references/present-results.md": 11,
+    "plugins/weave/docs/repo-guard-protocol.md": 10,
+    "plugins/weave/references/worker-backends.md": 10,
+    "plugins/pr/references/signatures.yml": 9,
+    "plugins/slop/references/signatures.yml": 9,
+    "plugins/business/references/interim-format.md": 6,
+    "plugins/business/references/provenance.md": 6,
+    "plugins/weave/references/deslop-pass.md": 6,
+    "plugins/business/references/audiences.md": 5,
+    "plugins/pytest-optimizer/references/output-contract.md": 5,
+    "plugins/scholar/references/citation.md": 5,
+    "plugins/package-updater/references/commit-conventions.md": 4,
+    "plugins/package-updater/references/ecosystems.md": 4,
+    "plugins/package-updater/references/repo-scope.md": 4,
+    "plugins/package-updater/references/upstream-links.md": 4,
+    "plugins/scholar/references/stage-gates.md": 4,
+    "plugins/scholar/references/term-metrics.py": 4,
+    "plugins/terraform/references/layout-discovery.md": 4,
+    "plugins/terraform/references/lock-and-init.md": 4,
+    "plugins/ticket/references/contract.md": 4,
+    "plugins/business/references/measurement.md": 3,
+    "plugins/disk/references/agent-history.md": 3,
+    "plugins/disk/references/candidate-catalog.md": 3,
+    "plugins/disk/references/output-contract.md": 3,
+    "plugins/disk/references/redundancy-proofs.md": 3,
+    "plugins/disk/references/study-repos.md": 3,
+    "plugins/disk/references/virtual-disks.md": 3,
+    "plugins/github-actions/references/action-pinning.md": 3,
+    "plugins/github-actions/references/dependabot-closeout.md": 3,
+    "plugins/package-updater/references/follow-ups.md": 3,
+    "plugins/pytest-optimizer/references/heuristic-catalog.md": 3,
+    "plugins/scholar/references/evidence-tiers.md": 3,
+    "plugins/situate/references/situation-sweep.md": 3,
+    "plugins/spike/references/verification-gates.md": 3,
+    "plugins/terraform/references/pin-sites.md": 3,
+    "plugins/action/references/verification-gates.md": 2,
+    "plugins/business/references/evidence.md": 2,
+    "plugins/double-check/references/verification-contract.md": 2,
+    "plugins/gh/references/rendered-markdown.md": 2,
+    "plugins/gh/references/source-links.md": 2,
+    "plugins/git-branch/references/branch-safety.md": 2,
+    "plugins/git-branch/references/commit-messages.md": 2,
+    "plugins/git-branch/references/rebase-todo.sh": 2,
+    "plugins/git-branch/references/rebase-toolkit.md": 2,
+    "plugins/lean/references/comment-policy.md": 2,
+    "plugins/lean/references/lean-rubric.md": 2,
+    "plugins/merge-pr/references/merge-readiness.md": 2,
+    "plugins/pr/references/template-resolution.md": 2,
+    "plugins/pytest-optimizer/references/durations-parsing.md": 2,
+    "plugins/pytest-optimizer/references/fixture-analysis.md": 2,
+    "plugins/pytest-optimizer/references/memory-schema.md": 2,
+    "plugins/pytest-optimizer/references/parametrize-convention.md": 2,
+    "plugins/pytest-optimizer/references/safety-gates.md": 2,
+    "plugins/pytest-optimizer/references/scoring-rubric.md": 2,
+    "plugins/pytest-optimizer/references/version-matrix.md": 2,
+    "plugins/pytest-optimizer/templates/commit-message.tmpl": 2,
+    "plugins/pytest-optimizer/templates/pytest_optimizer_plugin.py": 2,
+    "plugins/pytest-optimizer/templates/state.schema.json": 2,
+    "plugins/release/references/release-conventions.md": 2,
+    "plugins/respond/references/feedback-sources.md": 2,
+    "plugins/respond/references/screening-rubric.md": 2,
+    "plugins/respond/references/verification-gates.md": 2,
+    "plugins/situate/references/brief.md": 2,
+    "plugins/situate/references/prior-conversations.md": 2,
+    "plugins/ticket/references/altitude.md": 2,
+    "plugins/ticket/references/hierarchy.md": 2,
+    "plugins/ticket/references/providers/asana.md": 2,
+    "plugins/ticket/references/providers/azure-devops.md": 2,
+    "plugins/ticket/references/providers/generic.md": 2,
+    "plugins/ticket/references/providers/github.md": 2,
+    "plugins/ticket/references/providers/gitlab.md": 2,
+    "plugins/ticket/references/providers/jira.md": 2,
+    "plugins/ticket/references/providers/linear.md": 2,
+    "plugins/ticket/references/providers/shortcut.md": 2,
+    "plugins/ticket/references/providers/trello.md": 2,
+    "plugins/ticket/references/resolve.md": 2,
+    "plugins/action/references/ticket-detection.md": 1,
+    "plugins/agent-messaging/references/agents/_template.md": 1,
+    "plugins/agent-messaging/references/agents/claude-code.md": 1,
+    "plugins/agent-messaging/references/agents/codex.md": 1,
+    "plugins/business/references/instruments.md": 1,
+    "plugins/git-branch/references/rebuild-contract.md": 1,
+    "plugins/git-branch/references/split-mechanics.md": 1,
+    "plugins/package-updater/references/holds.md": 1,
+    "plugins/pr/references/apply-template.sh": 1,
+    "plugins/pr/references/conflict-loop.md": 1,
+    "plugins/pr/references/quality-gates.md": 1,
+    "plugins/pr/references/slop-taxonomy.md": 1,
+    "plugins/pytest-optimizer/templates/conftest_cache_snippet.py": 1,
+    "plugins/research/references/analysis.md": 1,
+    "plugins/research/references/assessment.md": 1,
+    "plugins/research/references/continue.md": 1,
+    "plugins/research/references/layout.md": 1,
+    "plugins/research/references/release.md": 1,
+    "plugins/research/references/report.md": 1,
+    "plugins/research/references/start.md": 1,
+    "plugins/research/references/status.md": 1,
+    "plugins/research/references/verify.md": 1,
+    "plugins/research/scripts/topic.py": 1,
+    "plugins/respond/references/bloat-discipline.md": 1,
+    "plugins/respond/references/review-agents.md": 1,
+    "plugins/ruff/references/default-rule-set.md": 1,
+    "plugins/ruff/references/pin-sites-and-gating.md": 1,
+    "plugins/ruff/references/release-triage.md": 1,
+    "plugins/self-improvement/references/2026-08-12-one-project-three-spellings.md": 1,
+    "plugins/self-improvement/references/2026-08-12-superseded-skill-leads-all-time.md": 1,
+    "plugins/self-improvement/references/2026-08-12-tool-channel-has-no-date.md": 1,
+    "plugins/self-improvement/references/detecting-invocations.md": 1,
+    "plugins/self-improvement/references/worked-example-spike.md": 1,
+    "plugins/situate/references/goal-derivation.md": 1,
+    "plugins/skill-style/references/example-bloated.md": 1,
+    "plugins/skill-style/references/example-ideal.md": 1,
+    "plugins/skill-style/references/skill-rubric.md": 1,
+    "plugins/slop/references/commit-template.md": 1,
+    "plugins/slop/references/quality-gates.md": 1,
+    "plugins/slop/references/slop-taxonomy.md": 1,
+    "plugins/tailwind/skills/spacing-audit/references/heuristics.md": 1,
+    "plugins/tailwind/skills/spacing-audit/references/patterns.md": 1
+  },
+  "external_paths": {
+    "../etc": [
+      "research-foray"
+    ],
+    "../myproject-weave-agy": [
+      "weave-architecture",
+      "weave-execute",
+      "weave-prompt"
+    ],
+    "../myproject-weave-gpt": [
+      "weave-architecture",
+      "weave-execute",
+      "weave-prompt"
+    ],
+    "docs/architecture.md": [
+      "slop-scan"
+    ],
+    "docs/architecture.md.": [
+      "slop-scan"
+    ],
+    "docs/install.md": [
+      "slop-scan"
+    ],
+    "docs/pull_request_template.md": [
+      "pr",
+      "pr-rewrite"
+    ]
+  },
+  "unresolved_host_commands": {
+    "/codex:review": [
+      "respond-check",
+      "respond-goal"
+    ],
+    "/plugin:skill": [
+      "self-improvement-sweep"
+    ]
+  }
+}

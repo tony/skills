@@ -1,0 +1,9 @@
+{
+  "name": "merge-pr",
+  "description": "Merge PRs matching repo history conventions. Includes readiness checks, CI watching, stack detection, and automated rebasing.",
+  "version": "0.0.1",
+  "author": {
+    "name": "Tony Narlock",
+    "email": "tony@git-pull.com"
+  }
+}

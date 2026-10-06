@@ -1,0 +1,9 @@
+{
+  "name": "agent-messaging",
+  "description": "Message another running agent session — Claude Code or Codex — and verify who actually sent an incoming message.",
+  "version": "0.0.1",
+  "author": {
+    "name": "Tony Narlock",
+    "email": "tony@git-pull.com"
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "name": "slop",
+  "description": "Scan tracked files for AI slop and verbose noise, resolving each finding with atomic, verified commits.",
+  "version": "0.1.0",
+  "author": {
+    "name": "Tony Narlock",
+    "email": "tony@git-pull.com"
+  }
+}

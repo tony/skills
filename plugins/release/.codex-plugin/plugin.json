@@ -1,0 +1,12 @@
+{
+  "name": "release",
+  "version": "0.0.1",
+  "description": "Cut and bump releases with safe defaults (no automatic push/tag). Rolls out releases to downstream consumers with CI verification.",
+  "author": {
+    "name": "Tony Narlock",
+    "email": "tony@git-pull.com"
+  },
+  "homepage": "https://github.com/tony/skills/tree/main/plugins/release",
+  "license": "MIT",
+  "skills": "./skills/"
+}

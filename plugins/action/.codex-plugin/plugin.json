@@ -1,0 +1,12 @@
+{
+  "name": "action",
+  "version": "0.0.1",
+  "description": "Convert tickets to branches in isolated worktrees. Uses team branch conventions, lands gated commits, and supports parallel tickets.",
+  "author": {
+    "name": "Tony Narlock",
+    "email": "tony@git-pull.com"
+  },
+  "homepage": "https://github.com/tony/skills/tree/main/plugins/action",
+  "license": "MIT",
+  "skills": "./skills/"
+}

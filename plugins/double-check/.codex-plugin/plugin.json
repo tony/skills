@@ -1,0 +1,12 @@
+{
+  "name": "double-check",
+  "version": "0.0.1",
+  "description": "Forces verification requests to return re-derived answers instead of diffs against prior turns. Includes an alignment tool for repairing chats.",
+  "author": {
+    "name": "Tony Narlock",
+    "email": "tony@git-pull.com"
+  },
+  "homepage": "https://github.com/tony/skills/tree/main/plugins/double-check",
+  "license": "MIT",
+  "skills": "./skills/"
+}

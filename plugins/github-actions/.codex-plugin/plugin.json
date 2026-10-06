@@ -1,0 +1,12 @@
+{
+  "name": "github-actions",
+  "version": "0.0.1",
+  "description": "Update GitHub Actions pins fleet-wide. Verifies tags, researches release notes, commits each action separately, and supersedes Dependabot PRs.",
+  "author": {
+    "name": "Tony Narlock",
+    "email": "tony@git-pull.com"
+  },
+  "homepage": "https://github.com/tony/skills/tree/main/plugins/github-actions",
+  "license": "MIT",
+  "skills": "./skills/"
+}

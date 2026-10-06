@@ -1,0 +1,12 @@
+{
+  "name": "lean",
+  "version": "0.0.1",
+  "description": "Writing discipline and cleanup tools for tight, slop-free prose and code.",
+  "author": {
+    "name": "Tony Narlock",
+    "email": "tony@git-pull.com"
+  },
+  "homepage": "https://github.com/tony/skills/tree/main/plugins/lean",
+  "license": "MIT",
+  "skills": "./skills/"
+}

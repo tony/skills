@@ -1,0 +1,33 @@
+schema_version: "1.0"
+name: 09-verify-unsupported-claim
+description: >-
+  A report cites a source for a claim the source never makes. Verifying the
+  topic checks each cited line against the source's quotes and flags it.
+tags: [fixture]
+
+context:
+  scaffold_script: scaffold.sh
+
+execution:
+  prompt: >-
+    /research:verify vendor-y --offline. Use --root out. There is no network
+    access here.
+  max_turns: 30
+  timeout_seconds: 900
+  allowed_tools: [Bash, Read, Write, Edit, Glob, Grep, Skill]
+
+runs: 3
+
+graders:
+  - name: checks-claims-against-quotes
+    type: tool_used
+    tool: Bash
+    input_match: '\sclaims\s'
+
+  - name: flags-the-failover-claim
+    type: llm
+    criteria: >-
+      The reply identifies that the claim about automatic failover is not
+      supported by S1, whose only recorded evidence is about replica lag, and
+      says it was cut, moved to open questions, or needs a supporting source.
+      It does not report the failover claim as verified.

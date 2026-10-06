@@ -1,0 +1,50 @@
+schema_version: "1.0"
+name: 10-report-conflicting-sources
+description: >-
+  Two captured sources disagree on a default. The report records the
+  conflict, sets out both readings with their ids, and weighs them instead of
+  silently picking one.
+tags: [fixture]
+
+context:
+  scaffold_script: scaffold.sh
+
+execution:
+  prompt: >-
+    /research:report wal-threshold. Use --root out. There is no network
+    access here, so check offline.
+  max_turns: 40
+  timeout_seconds: 900
+  allowed_tools: [Bash, Read, Write, Edit, Glob, Grep, Skill]
+
+runs: 3
+
+graders:
+  - name: records-the-conflict
+    type: tool_used
+    tool: Bash
+    input_match: 'topic\.py\s+conflict\b'
+
+  - name: report-has-a-conflicts-section
+    type: regex
+    target:
+      source: file
+      path: out/*/research/wal-threshold/report.md
+    pattern: '^## Conflicts'
+    flags: m
+
+  - name: report-cites-both-readings-together
+    type: regex
+    target:
+      source: file
+      path: out/*/research/wal-threshold/report.md
+    pattern: '\[S1\][^\n]*\[S2\]|\[S2\][^\n]*\[S1\]'
+
+  - name: weighs-the-readings
+    type: llm
+    criteria: >-
+      The reply or report presents both readings, 1000 pages from the SQLite
+      documentation and 100 pages from the operator's blog, says which carries
+      more weight and why (for example, the blog describes a patched build),
+      and does not state either figure as settled without noting the
+      disagreement.

@@ -1,0 +1,16 @@
+{
+  "skill_name": "check",
+  "trigger": {
+    "positive": [
+      { "prompt": "screen the review comments on my PR and tell me which are worth fixing", "top_k": 1 },
+      { "prompt": "which of these bot findings are actually worth doing", "top_k": 3 },
+      { "prompt": "is the bot finding real or should we decline it", "top_k": 3 },
+      { "prompt": "triage the reviewer feedback on this pull request before I touch anything", "top_k": 3 }
+    ],
+    "negative": [
+      { "prompt": "check what state this repo is in before I start working", "owner": "situational-awareness" },
+      { "prompt": "are you sure about that? go work it out again from the source", "owner": "double-check" },
+      { "prompt": "file an issue for the bug we just found", "owner": "create-issue" }
+    ]
+  }
+}

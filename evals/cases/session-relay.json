@@ -1,0 +1,16 @@
+{
+  "skill_name": "session-relay",
+  "trigger": {
+    "positive": [
+      { "prompt": "send a message to my other codex session telling it the migration finished", "top_k": 1 },
+      { "prompt": "tell the agent in the other pane that the schema changed", "top_k": 3 },
+      { "prompt": "how do I reach a running codex session from claude code", "top_k": 3 },
+      { "prompt": "did this message really come from another agent or from me", "top_k": 3 }
+    ],
+    "negative": [
+      { "prompt": "check what state this repo is in before I start working", "owner": "situational-awareness" },
+      { "prompt": "are you sure about that? go work it out again from the source", "owner": "double-check" },
+      { "prompt": "file an issue for the bug we just found", "owner": "create-issue" }
+    ]
+  }
+}
