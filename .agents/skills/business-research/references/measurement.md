@@ -1,5 +1,7 @@
 # Measurement Contract
 
+Script paths here (`../scripts/...`) resolve from this file's directory; print the absolute path once and write it literally in each command.
+
 ## Contents
 
 - Net per-instance saving

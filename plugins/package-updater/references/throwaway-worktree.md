@@ -10,9 +10,15 @@ Refuse when `git rev-parse --show-toplevel` prints `$HOME` or a
 directory containing it: a dotfile repository rooted at home would pull
 the whole home directory into the worktree.
 
-Fetch, then create the directory. The command prints its path; use that
-literal path in every later command, because shell state does not
-persist between calls:
+Fetch the default branch first:
+
+```console
+$ git fetch origin <default>
+```
+
+Then create the directory. The command prints its path; use that literal
+path in every later command, because shell state does not persist between
+calls:
 
 ```console
 $ mktemp -d "${TMPDIR:-/tmp}/worktree.XXXXXX"
@@ -32,8 +38,13 @@ $ git worktree add \
 
 Commit there. Push only when the request asks to push, and only to the
 target the calling skill names. A skill that lands commits on the default
-branch directly pushes `HEAD:<default>`; a skill that opens a pull request
-pushes its own branch:
+branch directly pushes `HEAD` to it:
+
+```console
+$ git push origin HEAD:<default>
+```
+
+A skill that opens a pull request pushes its own branch:
 
 ```console
 $ git push \
@@ -48,7 +59,8 @@ $ git worktree remove <printed-path>
 ```
 
 Without a push request, report the branch name and print the push
-command for the user to run, using the same target (`<target>` is `<default>` or `<branch>`):
+command for the user to run, using the same target (`<target>` is
+`<default>` or `<branch>`):
 
 ```console
 $ git push origin <branch>:<target>

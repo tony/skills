@@ -54,7 +54,7 @@
         "references/prose-rules.md": "plugins/business/references/prose-rules.md",
         "references/provenance.md": "plugins/business/references/provenance.md"
       },
-      "bytes": 52632
+      "bytes": 52775
     },
     {
       "name": "business-case-study-public",
@@ -69,7 +69,7 @@
         "references/prose-rules.md": "plugins/business/references/prose-rules.md",
         "references/provenance.md": "plugins/business/references/provenance.md"
       },
-      "bytes": 58102
+      "bytes": 58245
     },
     {
       "name": "business-pr-release",
@@ -83,7 +83,7 @@
         "references/prose-rules.md": "plugins/business/references/prose-rules.md",
         "references/provenance.md": "plugins/business/references/provenance.md"
       },
-      "bytes": 53815
+      "bytes": 53958
     },
     {
       "name": "business-report-leadership",
@@ -99,7 +99,7 @@
         "references/prose-rules.md": "plugins/business/references/prose-rules.md",
         "references/provenance.md": "plugins/business/references/provenance.md"
       },
-      "bytes": 63248
+      "bytes": 63534
     },
     {
       "name": "business-report-org-wide",
@@ -114,7 +114,7 @@
         "references/prose-rules.md": "plugins/business/references/prose-rules.md",
         "references/provenance.md": "plugins/business/references/provenance.md"
       },
-      "bytes": 59151
+      "bytes": 59437
     },
     {
       "name": "business-research",
@@ -129,7 +129,7 @@
         "references/prose-rules.md": "plugins/business/references/prose-rules.md",
         "references/provenance.md": "plugins/business/references/provenance.md"
       },
-      "bytes": 61965
+      "bytes": 62251
     },
     {
       "name": "changelog",
@@ -216,7 +216,7 @@
         "references/study-repos.md": "plugins/disk/references/study-repos.md",
         "references/virtual-disks.md": "plugins/disk/references/virtual-disks.md"
       },
-      "bytes": 40427
+      "bytes": 40570
     },
     {
       "name": "double-check",
@@ -308,7 +308,7 @@
         "references/prose-rules.md": "plugins/github-actions/references/prose-rules.md",
         "references/throwaway-worktree.md": "plugins/github-actions/references/throwaway-worktree.md"
       },
-      "bytes": 24484
+      "bytes": 24601
     },
     {
       "name": "github-actions-update-action",
@@ -321,7 +321,7 @@
         "references/prose-rules.md": "plugins/github-actions/references/prose-rules.md",
         "references/throwaway-worktree.md": "plugins/github-actions/references/throwaway-worktree.md"
       },
-      "bytes": 23015
+      "bytes": 23132
     },
     {
       "name": "github-actions-update-actions",
@@ -501,7 +501,7 @@
         "references/throwaway-worktree.md": "plugins/package-updater/references/throwaway-worktree.md",
         "references/upstream-links.md": "plugins/package-updater/references/upstream-links.md"
       },
-      "bytes": 54344
+      "bytes": 54461
     },
     {
       "name": "pr",
@@ -818,7 +818,7 @@
         "references/release-triage.md": "plugins/ruff/references/release-triage.md",
         "references/throwaway-worktree.md": "plugins/ruff/references/throwaway-worktree.md"
       },
-      "bytes": 36461
+      "bytes": 36578
     },
     {
       "name": "scholar-annotate",
@@ -992,12 +992,13 @@
         "plugins/situate/skills/situate/SKILL.md"
       ],
       "bundled": {
+        "references/position.py": "plugins/situate/scripts/position.py",
         "references/prior-conversations.md": "plugins/situate/references/prior-conversations.md",
         "references/prose-rules.md": "plugins/situate/references/prose-rules.md",
         "references/report-shape.md": "plugins/situate/references/report-shape.md",
         "references/situation-sweep.md": "plugins/situate/references/situation-sweep.md"
       },
-      "bytes": 21881
+      "bytes": 28563
     },
     {
       "name": "situate-brief",
@@ -1009,7 +1010,7 @@
         "references/position.py": "plugins/situate/scripts/position.py",
         "references/situation-sweep.md": "plugins/situate/references/situation-sweep.md"
       },
-      "bytes": 20132
+      "bytes": 20415
     },
     {
       "name": "situate-refocus",
@@ -1018,10 +1019,11 @@
       ],
       "bundled": {
         "references/goal-derivation.md": "plugins/situate/references/goal-derivation.md",
+        "references/position.py": "plugins/situate/scripts/position.py",
         "references/prose-rules.md": "plugins/situate/references/prose-rules.md",
         "references/situation-sweep.md": "plugins/situate/references/situation-sweep.md"
       },
-      "bytes": 22124
+      "bytes": 28806
     },
     {
       "name": "situate-situational-awareness",
@@ -1029,12 +1031,13 @@
         "plugins/situate/skills/situational-awareness/SKILL.md"
       ],
       "bundled": {
+        "references/position.py": "plugins/situate/scripts/position.py",
         "references/prior-conversations.md": "plugins/situate/references/prior-conversations.md",
         "references/prose-rules.md": "plugins/situate/references/prose-rules.md",
         "references/report-shape.md": "plugins/situate/references/report-shape.md",
         "references/situation-sweep.md": "plugins/situate/references/situation-sweep.md"
       },
-      "bytes": 21727
+      "bytes": 28409
     },
     {
       "name": "situate-what",
@@ -1047,7 +1050,7 @@
         "references/prose-rules.md": "plugins/situate/references/prose-rules.md",
         "references/situation-sweep.md": "plugins/situate/references/situation-sweep.md"
       },
-      "bytes": 27764
+      "bytes": 28047
     },
     {
       "name": "skill-style",
@@ -1093,7 +1096,7 @@
         "references/signatures.yml": "plugins/slop/references/signatures.yml",
         "references/verification-gates.md": "plugins/slop/references/verification-gates.md"
       },
-      "bytes": 65289
+      "bytes": 65265
     },
     {
       "name": "spike-bakeoff",
@@ -1175,7 +1178,7 @@
         "references/pin-sites.md": "plugins/terraform/references/pin-sites.md",
         "references/prose-rules.md": "plugins/terraform/references/prose-rules.md"
       },
-      "bytes": 29019
+      "bytes": 29156
     },
     {
       "name": "terraform-bump-terraform",
@@ -1187,7 +1190,7 @@
         "references/pin-sites.md": "plugins/terraform/references/pin-sites.md",
         "references/prose-rules.md": "plugins/terraform/references/prose-rules.md"
       },
-      "bytes": 28844
+      "bytes": 28981
     },
     {
       "name": "terraform-bumping-terraform",
@@ -1201,7 +1204,7 @@
         "references/pin-sites.md": "plugins/terraform/references/pin-sites.md",
         "references/prose-rules.md": "plugins/terraform/references/prose-rules.md"
       },
-      "bytes": 47351
+      "bytes": 47469
     },
     {
       "name": "terraform-refresh-lock",
@@ -1214,7 +1217,7 @@
         "references/lockctl.py": "plugins/terraform/scripts/lockctl.py",
         "references/prose-rules.md": "plugins/terraform/references/prose-rules.md"
       },
-      "bytes": 34037
+      "bytes": 34018
     },
     {
       "name": "ticket-draft",
@@ -1427,6 +1430,7 @@
     "plugins/pytest-optimizer/scripts/measure.py": 5,
     "plugins/scholar/references/stage-gates.md": 5,
     "plugins/situate/references/situation-sweep.md": 5,
+    "plugins/situate/scripts/position.py": 5,
     "plugins/package-updater/references/prose-rules.md": 4,
     "plugins/package-updater/references/repo-scope.md": 4,
     "plugins/situate/references/prose-rules.md": 4,
@@ -1506,7 +1510,6 @@
     "plugins/situate/references/brief.md": 2,
     "plugins/situate/references/prior-conversations.md": 2,
     "plugins/situate/references/report-shape.md": 2,
-    "plugins/situate/scripts/position.py": 2,
     "plugins/slop/references/detect-pipeline.md": 2,
     "plugins/slop/references/prose-rules.md": 2,
     "plugins/slop/references/signatures.yml": 2,
@@ -1576,9 +1579,6 @@
     "plugins/tailwind/skills/spacing-audit/references/patterns.md": 1
   },
   "external_paths": {
-    "../../references/": [
-      "slop-scan"
-    ],
     "../../scripts/": [
       "business-case-study-internal",
       "business-case-study-public",
@@ -1598,19 +1598,6 @@
       "terraform-bump-terraform",
       "terraform-bumping-terraform"
     ],
-    "../../scripts/lockctl.py": [
-      "terraform-bump-provider",
-      "terraform-bump-terraform",
-      "terraform-bumping-terraform",
-      "terraform-refresh-lock"
-    ],
-    "../../scripts/position.py": [
-      "situate",
-      "situate-brief",
-      "situate-refocus",
-      "situate-situational-awareness",
-      "situate-what"
-    ],
     "../app-add-signup-validation": [
       "action-worktree"
     ],
@@ -1626,6 +1613,23 @@
     ],
     "../etc": [
       "research-foray"
+    ],
+    "../scripts/...": [
+      "business-case-study-internal",
+      "business-case-study-public",
+      "business-pr-release",
+      "business-report-leadership",
+      "business-report-org-wide",
+      "business-research",
+      "disk-usage",
+      "situate",
+      "situate-brief",
+      "situate-refocus",
+      "situate-situational-awareness",
+      "situate-what",
+      "terraform-bump-provider",
+      "terraform-bump-terraform",
+      "terraform-bumping-terraform"
     ],
     "../x": [
       "weave-architecture",

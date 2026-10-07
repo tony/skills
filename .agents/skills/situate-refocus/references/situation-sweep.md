@@ -16,6 +16,8 @@ branch name, or a pull request body`.
 Never print an absolute path, a temp directory, or a host-sandbox
 detail; say "the home directory" or "the project root" instead.
 
+Script paths here (`../scripts/...`) resolve from this file's directory; print the absolute path once and write it literally in each command.
+
 ## Contents
 
 - Read-only contract
@@ -45,7 +47,7 @@ JSON with no paths; the path resolves from the skill directory like the
 other bundled files:
 
 ```console
-$ python3 ../../scripts/position.py
+$ python3 references/position.py
 ```
 
 Add `--trunk origin/<baseRefName>` when a pull request is the subject.

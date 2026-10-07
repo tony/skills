@@ -173,7 +173,7 @@ Regex first (cheap, deterministic), semantic verification only on
 flagged files (expensive, precise).
 
 **Pass A.** Follow `../../references/detect-pipeline.md` § Pass A. Paths
-under `../../scripts/` and `../../references/` resolve from this skill's
+under `../../scripts/` resolve from this skill's
 directory: print the absolute path once and write it literally in each
 command, since shell variables do not persist between Bash calls.
 

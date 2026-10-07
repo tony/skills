@@ -26,10 +26,10 @@ that must not be retyped: `state` prints one line per provider (source
 address, selected version, `h1:` hash count), `drop` removes one provider
 block, `stable` filters a version list, and `platforms` lists the
 `-platform=` values the repository's CI and task files pass to
-`providers lock`. The commands below name it by its path relative to the
-running skill's directory, two levels up. Print its absolute path once and
-write that path literally in each command, since shell variables do not
-persist between Bash calls.
+`providers lock`. The commands below name it as `references/lockctl.py`,
+relative to this file's directory. Print its absolute path once and write
+that path literally in each command, since shell variables do not persist
+between Bash calls.
 
 ## Guard every `init`
 
@@ -129,7 +129,7 @@ the command prints `dropped`, or `absent` when the provider is new in
 this directory:
 
 ```console
-$ python3 ../../scripts/lockctl.py drop \
+$ python3 references/lockctl.py drop \
     <root-module-dir>/.terraform.lock.hcl \
     <provider-source-address>
 ```
@@ -167,7 +167,7 @@ file-wide maximum would let a drop hide behind a provider that tracks more
 platforms:
 
 ```console
-$ python3 ../../scripts/lockctl.py state \
+$ python3 references/lockctl.py state \
     <root-module-dir>/.terraform.lock.hcl
 ```
 
@@ -183,7 +183,7 @@ If the count dropped, find the platform names where the repository writes
 them down:
 
 ```console
-$ python3 ../../scripts/lockctl.py platforms
+$ python3 references/lockctl.py platforms
 ```
 
 It prints each CI or task file (workflows, a Makefile or justfile
@@ -243,7 +243,7 @@ Read the version out of the lock file and compare it to the target; a zero
 exit code proves nothing:
 
 ```console
-$ python3 ../../scripts/lockctl.py state \
+$ python3 references/lockctl.py state \
     <root-module-dir>/.terraform.lock.hcl
 ```
 

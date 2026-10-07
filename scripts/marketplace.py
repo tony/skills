@@ -848,7 +848,7 @@ def _check_estate_rules(plugin_dir: Path) -> list[str]:
     - A markdown resource longer than ``REFERENCE_CONTENTS_MIN_LINES`` opens
       with a contents list.
     - Every resource file is named by some other file in the plugin.
-    - A skill running ``../../scripts/`` says how that path resolves.
+    - A skill or reference running a bundled script says how its path resolves.
     - Every eval grader declares its ``type``.
     """
     name = plugin_dir.name
@@ -876,12 +876,11 @@ def _check_estate_rules(plugin_dir: Path) -> list[str]:
                 if _escapes_plugin(path, link, plugin_dir)
             )
         # The agent's shell runs in the user's project, not the skill directory.
-        if (
-            path.name == "SKILL.md"
-            and "../../scripts/" in text
-            and not re.search(r"skill's (own |base )?director|absolute path", text, re.IGNORECASE)
+        script_ref = "../../scripts/" if path.name == "SKILL.md" else "../scripts/"
+        if script_ref in text and not re.search(
+            r"(skill|file)'s (own |base )?director|absolute path", text, re.IGNORECASE
         ):
-            errors.append(f"[{name}] {rel}: runs ../../scripts/ with no path-resolution note")
+            errors.append(f"[{name}] {rel}: runs {script_ref} with no path-resolution note")
         if path.name == "SKILL.md":
             body_lines = strip_frontmatter(text).count("\n")
             if body_lines > SKILL_BODY_MAX_LINES:

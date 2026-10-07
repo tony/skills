@@ -1,5 +1,7 @@
 # Audience Sensitivity Ladder
 
+Script paths here (`../scripts/...`) resolve from this file's directory; print the absolute path once and write it literally in each command.
+
 ## Contents
 
 - When the package holds no committable savings figure

@@ -450,7 +450,8 @@ Treat this file like code and prune it.
 - Put deterministic machinery (argument parsing, process control, git
   plumbing) in a tested script under the plugin's `scripts/`; keep judgment in
   prose. A skill that runs one says its `../../scripts/` path resolves from
-  the skill's directory to an absolute path written literally in each command.
+  the skill's directory (a reference writes `../scripts/`, from its own
+  directory) to an absolute path written literally in each command.
 - Never `git push` unless the user passed `--push` or asked to push; otherwise
   finish local and print the push command. `--pr` means "open a pull request";
   a pull request to act on is a positional argument. A force-push is
