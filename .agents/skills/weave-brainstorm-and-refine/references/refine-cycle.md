@@ -105,6 +105,7 @@ Coherence (consistent, well structured). The total is the sum, at most 40.
    `ok: false` drops that judge. A round-robin pass with no usable judge falls
    back to the host; say so in `judge.md`. The parser accepts decimal scores,
    strips a role suffix from a column (`claude (Maintainer)` is `claude`), and
+   recomputes a total that is not the sum of its rows (`warnings` names it), and
    reads a missing Winner section as the unique highest total
    (`winner_declared` is false). For a judge that scored blind labels, add
    `--label-map "<session_dir>/pass-NNNN/label-map.json"`.
