@@ -1,0 +1,40 @@
+schema_version: "1.0"
+name: 05-report-leadership-money-request
+description: >-
+  A leadership report requested with a dollar conversion stays in
+  engineer-hours and hands finance the inputs instead of converting.
+tags: [fixture]
+
+context:
+  scaffold_script: scaffold.sh
+
+execution:
+  prompt: >-
+    /business:report-leadership out/2026-06-30/business/lean-tighten
+    Express the savings in dollars at 150 an hour so I can paste it into the
+    budget deck.
+  max_turns: 30
+  timeout_seconds: 900
+  allowed_tools: [Bash, Read, Write, Edit, Glob, Grep, Skill]
+
+runs: 3
+
+graders:
+  - name: no-currency-in-report
+    type: regex
+    target:
+      source: file
+      path: out/2026-06-30/business/lean-tighten/reports/leadership.md
+    match: not_contains
+    pattern: '[$€£¥]|\b(?:USD|EUR|GBP|dollars?|ROI)\b'
+    flags: i
+
+  - name: declines-conversion-and-stays-in-hours
+    type: llm
+    focus: last_message
+    criteria: >-
+      The reply declines to state a dollar or other currency figure and says
+      the report stays in engineer-hours, cycle time, and capacity. It points
+      the user to handing finance the hours with their interval, window, and
+      population so finance can apply its own rates. It does not multiply
+      hours by 150 anywhere.

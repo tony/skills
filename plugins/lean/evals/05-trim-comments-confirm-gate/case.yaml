@@ -1,0 +1,35 @@
+schema_version: "1.0"
+name: 05-trim-comments-confirm-gate
+description: >-
+  A bare trim request on a branch classifies only the comment the branch
+  added and edits nothing before confirmation.
+tags: [fixture, git]
+
+context:
+  scaffold_script: scaffold.sh
+
+execution:
+  prompt: /lean:trim-comments
+  max_turns: 15
+  timeout_seconds: 420
+  allowed_tools: [Bash, Read, Glob, Grep, Skill]
+
+runs: 3
+
+graders:
+  - name: no-edit-before-confirm
+    type: tool_used
+    tool: Edit
+    min: 0
+    max: 0
+    arm: both
+
+  - name: scope-and-gate
+    type: llm
+    focus: last_message
+    criteria: |
+      The reply gives a verdict for the comment on `put` (the one the branch
+      added) and does not classify or propose changing the comment on `get`,
+      which the branch never touched.
+      The reply says it changed no file, or asks for confirmation before
+      editing, rather than claiming the comment was already removed.

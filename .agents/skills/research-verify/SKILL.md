@@ -4,7 +4,7 @@ description: >-
   Re-check a topic's sources (vanished, moved, changed, misquoted), look for
   missed sources, and lint the report
 disable-model-invocation: true
-allowed-tools: ["Skill", "Bash", "Read", "Write", "Edit", "Grep", "Glob", "WebFetch", "WebSearch", "AskUserQuestion"]
+allowed-tools: ["Skill", "Bash", "Read", "Write", "Edit", "Grep", "Glob", "WebSearch", "AskUserQuestion"]
 metadata:
   argument-hint: "[topic or run directory] [--offline]"
   source: "plugins/research/skills/verify/SKILL.md"

@@ -19,11 +19,14 @@ and every link in it follows
 drafting. Write it per `../../references/prose-rules.md`.
 
 When `gh auth status` fails or `gh` is missing, you cannot run the
-checks below. Say so first, then produce a draft headed "Unverified
-draft", with each unchecked item (duplicates, security policy,
-templates, pins) listed as unchecked. Do not file. A suspected security
-vulnerability gets no draft at all, since the exploit details are the
-deliverable: say why, and point to the project's private reporting path.
+checks below. Say so first, then produce a draft whose first line starts
+"Unverified draft", with each unchecked item (duplicates, security
+policy, templates, pins) named as unchecked. Do not file, and do not
+offer `--web` or an issue form: neither was checked. A suspected
+security vulnerability gets no draft at all, since the exploit details
+are the deliverable: say why, and name the places to look for the
+project's private reporting path (the repository's Security tab,
+`SECURITY.md`).
 
 ## Core principle
 
@@ -37,7 +40,15 @@ Take it from the argument when given; otherwise resolve it from the
 checkout's remote:
 
 ```console
-$ gh repo view "$(git remote get-url origin)" --json nameWithOwner --jq .nameWithOwner
+$ git remote get-url origin
+```
+
+Reduce the URL to `OWNER/REPO` by dropping the scheme or `git@host:`
+prefix and a trailing `.git`; this handles both `https://` and
+scp-style `git@github.com:o/r.git` remotes. Then confirm it:
+
+```console
+$ gh repo view OWNER/REPO --json nameWithOwner --jq .nameWithOwner
 ```
 
 With more than one GitHub remote, list them with `git remote -v` and
@@ -49,8 +60,11 @@ configured, so empty output there means "no default", not "no
 repository".)
 
 Pass `--repo OWNER/REPO` on every command from here. To file against
-a fork's upstream, resolve the upstream `OWNER/REPO` instead of the
-fork.
+a fork's upstream, resolve the parent and use it instead of the fork:
+
+```console
+$ gh repo view OWNER/REPO --json parent --jq '.parent | select(. != null) | .owner.login + "/" + .name'
+```
 
 ## Phase 2 — Decide it belongs in a public issue
 
@@ -64,6 +78,19 @@ $ gh repo view OWNER/REPO --json isSecurityPolicyEnabled,securityPolicyUrl
 That covers `SECURITY.md` wherever the project keeps it, including in a
 repository you have not cloned. When a policy exists and the finding is
 a security defect, read it, follow its private reporting path, and stop.
+
+When no policy exists, check for private vulnerability reporting:
+
+```console
+$ gh api repos/OWNER/REPO/private-vulnerability-reporting --jq .enabled
+```
+
+`true` means the user reports through the repository's Security tab
+("Report a vulnerability"). Otherwise look for a maintainer contact in
+the README or `CONTRIBUTING.md`. With no private channel at all, the
+only public issue allowed asks for a security contact and names no
+endpoint, parameter, or exploit.
+
 Also stop and ask when the evidence cannot be sanitized: a log that
 carries customer data does not become fileable by trimming it.
 
@@ -155,7 +182,8 @@ the project uses one.
 Include only the ones you have content for; never invent another.
 
 1. `### Summary` — what happens and who it affects, in two or three
-   sentences. Always present.
+   sentences. Always present. Claim only what the evidence shows: no
+   "every build" or "all users" unless something checked it.
 2. `### Motivation` — proposals and tasks: what is impossible or
    awkward today.
 3. `### Reproduction` — defects: numbered steps, one command per
@@ -189,17 +217,18 @@ $ mktemp "${TMPDIR:-/tmp}/gh-issue.XXXXXX"
 
 Write the body to that path with a Bash heredoc using a quoted
 delimiter (`<<'EOF'`). Then render it with the preview command in
-`../../references/rendered-markdown.md`, substituting the path for
-`body.md`. Read the output, fix, and re-render.
+`../../references/rendered-markdown.md`, using `-f text="$(cat PATH)"`
+with the literal path. Read the output, fix, and re-render.
 
 ## Phase 8 — Present, then file
+
+### Present
 
 Show the full title and body. Then offer, via `AskUserQuestion`:
 file it, print the body only, revise a named section, or drop it.
 Without that tool (Codex, headless runs), stop after showing the draft
 and do not file; a request that explicitly says to file the issue is
-the approval. To let the user submit it themselves, add `--web` to
-`gh issue create` so it opens the prefilled form.
+the approval, for filing only.
 
 Reply in this shape, as plain text outside any code fence, with plain
 bullets and no bold (never `- **Label:** ...`). The result comes first;
@@ -223,9 +252,15 @@ Title: `widgets build --target=wasm` throws TypeError in `resolveTarget()`
 File it, print the body only, revise a section, or drop it?
 ````
 
-When `gh` is unavailable, the first line says the draft is unverified and that duplicates, security policy, templates, and pins could not be checked without `gh` access.
+When `gh` is unavailable, the first line reads `Unverified draft for OWNER/REPO, not filed.` and one sentence says duplicates, security policy, templates, and pins could not be checked without `gh auth login`. Close with one sentence naming the fields only the user has (OS, exact versions, full trace) instead of a request list.
 
-After filing, the reply is the issue URL. A halted run (a duplicate found, a security policy, unsanitizable evidence) is one result sentence naming the duplicate or the private path, then what the user needs to do.
+A halted run (a duplicate found, a security policy, unsanitizable evidence) is one result sentence naming the duplicate or the private path, then what the user needs to do.
+
+### File
+
+Run only after the user approves filing. To let the user submit it
+themselves instead, add `--web` to `gh issue create` so it opens the
+prefilled form; that needs `gh auth login`.
 
 `NAME` is optional and validated first. An unknown label aborts the
 create and files nothing:
@@ -248,7 +283,7 @@ picked (filed, printed, or dropped):
 $ rm -f PATH
 ```
 
-Return the issue URL.
+After filing, the reply is the issue URL.
 
 ## Rules
 

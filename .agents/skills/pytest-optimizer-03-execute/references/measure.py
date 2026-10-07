@@ -4,7 +4,8 @@
 Each command prints one JSON object on stdout. Exit codes: 0 success, 1 a
 reported failure (the JSON says why), 2 a usage error. Standard library only.
 
-Commands: run, band, compare, order, token, hash, impact, score, memory-dir.
+Commands: run, band, compare, order, token, hash, impact, score, memory-dir,
+restore.
 Run ``measure.py <command> --help`` for arguments.
 """
 
@@ -426,6 +427,49 @@ def _git_remote(root: pathlib.Path) -> str:
     return proc.stdout.strip()
 
 
+def _git(root: pathlib.Path, *args: str) -> subprocess.CompletedProcess[str]:
+    return subprocess.run(  # noqa: S603
+        ["git", "-C", str(root), *args],  # noqa: S607
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+
+def restore(memory: pathlib.Path, cwd: pathlib.Path, home: pathlib.Path) -> dict[str, t.Any]:
+    """Reset tracked files and delete untracked ones, never touching ``memory``.
+
+    Refuses when the repo toplevel is ``home`` or contains it, and when
+    ``memory`` is inside the tree without being git-ignored.
+
+    >>> import tempfile
+    >>> with tempfile.TemporaryDirectory() as d:
+    ...     root = pathlib.Path(d).resolve()
+    ...     _ = _git(root, "init", "-q")
+    ...     out = restore(root / ".mem", root, root)
+    >>> out["restored"], out["reason"]
+    (False, 'repo toplevel is or contains the home directory')
+    """
+    top = _git(cwd, "rev-parse", "--show-toplevel").stdout.strip()
+    if not top:
+        return {"restored": False, "reason": "not a git repository"}
+    root = pathlib.Path(top).resolve()
+    home = home.resolve()
+    if root == home or root in home.parents:
+        return {"restored": False, "reason": "repo toplevel is or contains the home directory"}
+    memory = memory.resolve()
+    if root in memory.parents:
+        rel = memory.relative_to(root).as_posix()
+        if _git(root, "check-ignore", "-q", rel + "/").returncode != 0:
+            return {
+                "restored": False,
+                "reason": "memory directory is inside the tree and not ignored",
+            }
+    _git(root, "reset", "--hard", "HEAD")
+    proc = _git(root, "clean", "-fd")
+    return {"restored": proc.returncode == 0, "reason": proc.stderr.strip() or None}
+
+
 def build_parser() -> argparse.ArgumentParser:
     """Build the command-line parser."""
     parser = argparse.ArgumentParser(description=__doc__)
@@ -465,6 +509,10 @@ def build_parser() -> argparse.ArgumentParser:
     p = sub.add_parser("score", help="weighted rubric total and hard gates")
     for name in WEIGHTS:
         p.add_argument(f"--{name}", type=float, required=True)
+
+    p = sub.add_parser("restore", help="git reset --hard and clean, with home and memory guards")
+    p.add_argument("--memory-dir", dest="explicit", required=True)
+    p.add_argument("--cwd", default=".")
 
     p = sub.add_parser("memory-dir", help="resolve the memory directory")
     p.add_argument("--memory-dir", dest="explicit")
@@ -506,6 +554,9 @@ def main(argv: Sequence[str] | None = None) -> int:  # noqa: PLR0911
         return _emit({"impact": impact(args.delta, args.baseline, args.clears_noise)})
     if cmd == "score":
         return _emit(score({name: getattr(args, name) for name in WEIGHTS}))
+    if cmd == "restore":
+        out = restore(pathlib.Path(args.explicit), pathlib.Path(args.cwd), pathlib.Path.home())
+        return _emit(out, out["restored"])
     root = pathlib.Path(args.repo_root)
     return _emit(memory_dir(args.explicit, root, os.environ, _git_remote(root)))
 

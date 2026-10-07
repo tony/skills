@@ -868,6 +868,12 @@ def cmd_open(a: Args) -> int:
     runs = list_runs(root, namespace, topic)
     if a.resume and runs:
         run = runs[0][1]
+        meta = read_meta(run)
+        for flag, given in (("mode", a.mode), ("audience", a.audience)):
+            if given and given != _str(meta, flag):
+                kept = _str(meta, flag)
+                msg = f"--resume keeps the run's {flag} ({kept}); drop --{flag} or open a new run"
+                raise ValueError(msg)
         visited = f"- {day}: resumed" in (run / "index.md").read_text(encoding="utf-8")
         if runs[0][0] != day and not visited:
             snapshot_report(run)

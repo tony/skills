@@ -21,8 +21,8 @@ Own repositories only. Check the fork flag, not the owner name:
 $ gh repo view <owner>/<name> --json isFork
 ```
 
-A fork (`isFork: true`) and an upstream project are out of scope, with no
-override. Report which repositories were excluded and why.
+A fork (`isFork: true`) is out of scope unless the user names it with
+`--repo`. Report which repositories were excluded and why.
 
 ## Inventory pins from trunk, not the working tree
 
@@ -48,7 +48,7 @@ the audit with no error and the fleet reads as clean.
 
 ```bash
 git ls-tree -r --name-only origin/<default> .github | while read -r f; do
-  git show "origin/<default>:$f" | grep -n 'uses:' | sed "s|^|$f:|"
+  git show "origin/<default>:$f" | grep -n -E '^[[:space:]]*-?[[:space:]]*uses:' | sed "s|^|$f:|"
 done
 ```
 
@@ -120,6 +120,9 @@ in the subject; "from 4.0.1 to 4" reads as a downgrade otherwise.
 **Currently a commit SHA with a version comment** — move the SHA *and* the
 trailing comment together; a stale `# v8.1.0` beside a v9 SHA is worse than
 no comment.
+
+**Currently a moving branch** (`@main`, `@master`) — leave it and report
+it as drift; bump it only when the user names a target.
 
 **No major tag upstream** — pin the exact release and say why in the commit
 body, so no one "fixes" it to a float that does not exist.

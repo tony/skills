@@ -40,9 +40,29 @@ what someone called a function once.
 Take `sources.jsonl` from `gather`. Harvest only from sources marked
 `"read": true`.
 
-### 2. Harvest
+### 2. Put the corpus on disk, read-only
 
-For code, the cheapest high-yield passes, all portable:
+Read each code source at its recorded `commit`, never at a moving branch. A
+checkout already on disk is read in place once `git rev-parse HEAD` matches
+the row's `commit`; a mismatch is reported, not harvested. A remote source
+gets a throwaway checkout outside the study and outside the current
+repository. This command prints its path; use that literal path afterwards:
+
+```console
+$ dir=$(mktemp -d "${TMPDIR:-/tmp}/scholar-corpus.XXXXXX") \
+    && git -C "$dir" init --quiet \
+    && git -C "$dir" fetch --quiet --depth 1 https://github.com/OWNER/REPO COMMIT \
+    && git -C "$dir" checkout --quiet FETCH_HEAD \
+    && echo "$dir"
+```
+
+A failed fetch means the source is unreachable; mark it unharvested and say
+so. Prose sources need no checkout: harvest from `annotate`'s quotation set.
+
+### 3. Harvest
+
+For code, the cheapest high-yield passes, all portable. `<corpus>` is the
+checkout path from step 2:
 
 ```console
 $ rg \
@@ -50,25 +70,34 @@ $ rg \
     --no-filename \
     -r '$1' \
     '\b(?:class|struct|interface|type)\s+(\w+)' \
+    <corpus> \
     | sort | uniq -c | sort -rn
 ```
 
+Commit subjects need history, which the shallow checkout lacks; run this only
+on a full local checkout:
+
 ```console
-$ git log --format=%s | rg -o '^\w+' | sort | uniq -c | sort -rn
+$ git -C <corpus> log --format=%s | rg -o '^\w+' | sort | uniq -c | sort -rn
 ```
 
 Read the results; do not paste them into the table. Frequency proposes a
 candidate, the corpus's own definition confirms it.
 
-### 3. Write terms.jsonl
+### 4. Write terms.jsonl
 
-One row per term as the corpus spells it:
+One row per sense, in the corpus's spelling. A word the corpus uses for two
+concepts gets two rows with the same `term`; `contest` tests that pair for
+polysemy.
 
 ```json
-{"schema": 1, "term": "adapter", "definition": "wraps a third-party client behind the port interface", "parent": "", "kind": "role", "tier": "structural", "cites": [{"url": "https://github.com/OWNER/REPO/blob/v2.40.0/src/ports.py#L12-L18", "locator": "src/ports.py:12-18", "quote": "every third-party client enters through a port"}]}
+{"schema": 1, "term": "adapter", "definition": "wraps a third-party client behind the port interface", "parent": "", "kind": "role", "cites": [{"url": "https://github.com/OWNER/REPO/blob/v2.40.0/src/ports.py#L12-L18", "locator": "src/ports.py:12-18", "quote": "every third-party client enters through a port"}]}
 ```
 
 `parent` stays empty here. `distill` assigns it.
+
+`kind` is one of `type`, `module`, `verb`, `role`, `message`, or `concept`
+(prose).
 
 `schema` is the row format's version. It costs one integer now and cannot be
 added later without guessing what unversioned rows meant.
@@ -81,8 +110,9 @@ citation's quote by choosing a passage that shows the usage.
 
 - Do not normalize spellings. `bump` and `update` staying separate is what
   lets `contest` find the synonymy; merging them here destroys the evidence.
-- Set `tier` to `structural`. Distributional claims are `contest`'s to make,
-  and they go in `evidence/metrics.md`, not on a term row.
+- Distributional claims are `contest`'s to make, and they go in
+  `evidence/metrics.md`, not on a term row.
+- Every cite carries a verbatim `quote`; the gate rejects a cite without one.
 
 ## Output
 
@@ -93,11 +123,14 @@ Per `../../references/output-contract.md`. Hero: `✓ <n> terms extracted from
    definitions.
 2. `## Rejected` — candidates that looked like terms and were not, with why.
 3. `## Gate` — the output of the term check, which exits zero only when every
-   row has a definition and a citation:
+   row has a definition and a quoted citation:
 
    ```console
    $ <analyzer> notes/ontology/<subject>/ --check-terms
    ```
+
+A halted run follows the halted-run shape in the output contract. Do not name
+the checkout path.
 
 Next-step options: run distill, harvest another source, stop here.
 

@@ -72,10 +72,16 @@ out.
 
 ## Panels
 
-`--panel` hands one contested claim to independent adversarial participants
-via `/weave:ask`, recording their verdicts in `evidence/contested.md` beside
-the serial one. Where `weave` is not installed, say so and continue serially —
-the panel is an amplifier, not a dependency.
+`--panel` prints one contested claim, ready to paste, followed by this line
+for the user to run when the `weave` plugin is installed:
+
+```text
+/weave:ask <the claim, stated as a question>
+```
+
+Do not run it, and do not read another plugin's files. Continue serially;
+record any panel verdicts the user pastes back in `evidence/contested.md`
+beside the serial one.
 
 ## Rules
 
@@ -89,7 +95,9 @@ the panel is an amplifier, not a dependency.
 ## Output
 
 Per `../../references/output-contract.md`. Hero: `✓ <n> candidates judged, <n>
-killed, <n> open` or `⚠ Blocked: <reason>`. Sections:
+killed, <n> open` or `⚠ Blocked: <reason>`. With no distilled ontology on disk,
+the reason names distill as the missing stage and the one sentence after it
+says to run it. Sections:
 
 1. `## Findings` — what the analyzer proposed, by kind.
 2. `## Verdicts` — each candidate, its objection, and how it resolved.

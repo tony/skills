@@ -4,7 +4,7 @@ description: >-
   Assess a decision against stated criteria: sourced ratings per criterion
   and a verdict, kept in a dated topic folder
 disable-model-invocation: true
-allowed-tools: ["Skill", "Bash", "Read", "Write", "Edit", "Grep", "Glob", "WebFetch", "WebSearch", "AskUserQuestion"]
+allowed-tools: ["Skill", "Bash", "Read", "Write", "Edit", "Grep", "Glob", "WebSearch", "AskUserQuestion"]
 metadata:
   argument-hint: "[decision or question] [--root=<dir>] [--resume] [--audience=private|internal|public]"
   source: "plugins/research/skills/assess/SKILL.md"

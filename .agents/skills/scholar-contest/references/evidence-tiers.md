@@ -1,8 +1,7 @@
 # Evidence tiers
 
 Every claim a study makes sits in one of two tiers, and the tier decides what
-the claim must carry. The tier is recorded on the term's row in `terms.jsonl`
-and honored by the evidence documents.
+the claim must carry.
 
 ## Structural
 
@@ -34,6 +33,7 @@ without the corpus it was computed over says nothing.
 
 A claim that fits neither tier does not go in the brief.
 
-Impressions are worth having. They belong in `evidence/contested.md` as claims
-that were raised and not settled, where a later round can pick them up. What they may not do is appear in the
-brief in the same voice as a claim that carries its evidence.
+Impressions are worth having. They belong in `evidence/contested.md` as
+claims that were raised and not settled, where a later round can pick them
+up. They may not appear in the brief in the same voice as a claim that
+carries its evidence.

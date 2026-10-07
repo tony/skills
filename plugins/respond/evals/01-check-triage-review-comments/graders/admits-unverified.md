@@ -1,4 +1,4 @@
 ---
 type: llm
 ---
-The reply says it cannot confirm the claims because the relevant code is not in this repository, and does not assert any bug is confirmed.
+The reply does not assert that any bug is confirmed, and it names what it needs to verify the claims, such as the code, the branch, or the pull request.

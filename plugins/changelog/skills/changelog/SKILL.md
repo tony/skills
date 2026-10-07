@@ -36,14 +36,18 @@ Write entries and the commit message per `../../references/prose-rules.md`.
    - Insertion point: after a placeholder, under an unreleased heading, or at
      the top. Never under a versioned heading. If the topmost heading is a
      release, entries go above it in an unreleased block; ask the user for
-     the project's wording.
+     the project's wording, or without a question tool propose
+     `## Unreleased` and flag it as a guess.
    - Section names, order, and capitalization of the most recent populated
      release.
    - Entry shape and typical length.
 5. **Check for a PR.** `gh pr view --json number,title,body,labels` returns the
    number, title, body, and labels. A failure means no PR; use `(#???)`
    placeholders.
-6. **Get commits.** Fetch per `branch-scope.md` first. `git log origin/<base>..HEAD --format='%H %s%n%b---'`
+6. **Check the changelog is clean.** `git status --porcelain -- <changelog-file>`
+   output means earlier uncommitted edits: a commit would sweep them in, so
+   never commit; insert only, and say why.
+7. **Get commits.** Fetch per `branch-scope.md` first. `git log origin/<base>..HEAD --format='%H %s%n%b---'`
    gives subjects and bodies. No commits ahead: report "No commits ahead of
    the base branch" and stop.
 
@@ -80,10 +84,14 @@ Branch: feat/cache-evict | Commits: 3 | PR: #212
 - Add `Cache.evict()` to drop a cached key (#212)
 ```
 
-Voice check passed. Target: CHANGES.md under Unreleased, Features.
+Voice check:
+- Add `Cache.evict()` to drop a cached key: can I take a new affordance?
+
+Target: CHANGES.md, Unreleased, Features, after the "### Features" heading. No version assigned, no release cut.
 
 Commit message: docs(CHANGES) Cache key eviction
 
+Notes:
 - Left the get() empty-value fix out: no release shipped that bug.
 ````
 
@@ -95,7 +103,7 @@ When asking, use `AskUserQuestion`: "Insert into `<changelog-file>`?" Offer:
 
 Without approval already given and without `AskUserQuestion`, end with one
 line: nothing was edited; re-run with "add the entries" to insert, or with
-`--commit` to insert and commit.
+`--commit` to insert and commit. Name no temp files or local paths.
 
 A stopped run (no commits ahead, on the base branch) is one result sentence,
 then what the user needs to do.
@@ -114,5 +122,27 @@ never commit.
    - Insert a new section in the section order from `entry-rules.md`.
 3. Read the modified region back and show it.
 4. Commit only if Phase 3 chose it, per `commit-message.md`, once, with the
-   message already shown. Otherwise say the edit is uncommitted and repeat the
-   message so committing is one paste.
+   message already shown: no `Co-Authored-By`, no "Generated with" or other
+   tool trailer, no emoji. Otherwise say the edit is uncommitted and give the
+   commit as one `console` command with the message, so committing is one paste.
+
+Reply in this shape, as plain text outside any code fence, with plain
+bullets and no bold:
+
+````text
+Inserted 1 entry into CHANGES.md under Unreleased; it is uncommitted.
+
+```markdown
+### Features
+
+- Add `Cache.evict()` to drop a cached key (#212)
+```
+
+To commit it, run:
+
+```console
+$ git commit \
+    --message "docs(CHANGES) Cache key eviction" \
+    -- CHANGES.md
+```
+````

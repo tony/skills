@@ -5,11 +5,11 @@ description: >-
   that the test fails for the intended reason.
 allowed-tools: ["Bash", "Read", "Grep", "Glob", "Edit", "Write", "Task"]
 metadata:
-  argument-hint: "Paste or describe the bug to reproduce and fix with hermetic xfail guards"
+  argument-hint: "Paste or describe the bug to reproduce and fix with strict xfail guards"
   source: "plugins/tdd/skills/xfail/SKILL.md"
 ---
 
-# Hermetic xfail TDD Workflow
+# Strict xfail TDD Workflow
 
 Fix a bug with strict reproduction guards. Each phase has a gate that passes
 before the next begins. The result is proof that the test fails for the right
@@ -38,20 +38,27 @@ The plan must contain:
 7. Reproduction proof: how you will show the test fails for the bug's reason and
    not the setup (the failure message at the marker-removed run, the stash round-trip).
 
-Present the plan to the user and wait for approval before executing.
+Present the plan to the user and wait for approval before executing. Exit plan
+mode once approved; Phase 0 stashes and Phase 1 commits, which plan mode
+blocks.
+
+When the user asked only for the failing test, the plan covers Phases 0 to 2
+and the run stops after Gate 2 with the test committed. Never start Phase 3
+unasked.
 
 If plan mode is unavailable, write the plan as numbered steps in your
 response and confirm with the user before proceeding. A headless run with no
-user to ask treats the request to fix the bug as approval of the plan. The
+user to ask treats the request as approval of the plan, for the phases the
+request covers. The
 plan needs no repository: when a Phase 0 gate (dirty tree, wrong repository)
 stops the run, the stopped report still states the plan, asks the user to
 approve it, and says what to fix in the repository.
 
 ## Output shape
 
-Report per the final-report shape in
-`references/gates-and-commits.md`. A stopped run is the hero line, the
-plan when no one has approved it yet, and what the user needs to do.
+Report per the final-report and stopped-run shapes in
+`references/gates-and-commits.md`. Name commits by purpose (xfail test,
+fix, xfail removal), never by phase or number. Name no local paths.
 
 ## Phase 0: Discover Conventions
 
@@ -129,8 +136,10 @@ Prove the test fails because of the bug, not the test setup.
 ### Gate 2: genuine-failure confirmation
 
 If the failure does not match the symptom, the reproduction is contaminated.
-Delete the test and return to Phase 1; do not tweak the mock setup until it
-looks right. This phase produces no commit.
+Rewrite the test in place without tweaking the mock setup until it looks
+right, rerun Phase 1, and replace the Phase 1 commit with
+`git commit --amend`. When that commit was already pushed, add a new commit
+instead of amending. This phase otherwise produces no commit.
 
 ## Phase 3: Apply Fix
 
@@ -182,7 +191,8 @@ Prove the fix, not an unrelated change, resolved the test.
    ```console
    $ git stash pop
    ```
-   On a pop conflict, stop and report; do not discard either side.
+   On a pop conflict, stop. Keep the stash, report the SHA
+   printed by `git rev-parse refs/stash`, and never run `git stash drop`.
 6. Run the xfail test; it must XPASS again.
 
 ### Gate 4: stash round-trip confirmation
@@ -227,16 +237,15 @@ Then commit, with no `Co-Authored-By`, tool trailers, or emoji.
 
 ### Gate 6: full suite green
 
-If any test fails, check whether the fix introduced a regression. Apply a
-minimal fix and re-run from Phase 3.
+If any test fails, check whether the fix introduced a regression. Add a
+minimal fix as a new commit and re-run the suite; never rewrite the three
+commits.
 
 ## Recovery
 
-- Phase 3 fails (the test still xfails after the fix): revert the fix,
-  re-examine whether the test exercises the code path you fixed, and redo the
-  root cause analysis.
-- After 3 failed attempts at any phase, stop per the recovery rule in the
-  gates-and-commits reference.
+When the test still xfails after the fix, revert the fix, re-examine whether
+the test exercises the code path you fixed, and redo the root cause analysis.
+The 3-attempt stop rule is in the gates-and-commits reference.
 
 ## CI Integration
 
@@ -244,9 +253,9 @@ Push only when the user asks. The fix commit is red on purpose (strict XPASS),
 so never push it unasked; without an answer, push nothing. When the user
 opts in and the project has CI, push after each commit to verify the sequence:
 
-- Phase 1 commit: green. The xfail is an expected failure.
-- Phase 4 commit: red. A strict mechanism makes the XPASS a failure.
-- Phase 5 commit: green. The marker is gone and the test passes.
+- xfail test commit: green. The xfail is an expected failure.
+- Fix commit: red. A strict mechanism makes the XPASS a failure.
+- xfail removal commit: green. The marker is gone and the test passes.
 
 Without CI, the diff gates and stash round-trip give equivalent confidence.
 

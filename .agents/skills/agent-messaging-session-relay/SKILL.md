@@ -18,7 +18,10 @@ adapter: `references/codex.md` and `references/claude-code.md`.
 Read the one for the agent you are talking to. This file is the procedure.
 
 `references/relay.sh` composes envelopes, sends to an inbox socket, and audits
-transcripts. Run it instead of hand-encoding. Exit codes: 2 usage, 3 no reply address,
+transcripts. Run it instead of hand-encoding. Your shell's working directory is the
+project, not this skill, so resolve that path against this skill's base directory (given
+when the skill loads) and run the helper by its absolute path. Below and in the adapters,
+`relay.sh` means that absolute path. Exit codes: 2 usage, 3 no reply address,
 4 hop cap, 5 body too long, 6 transport unavailable, 7 stale socket.
 
 ## 1. Know your own address
@@ -56,7 +59,7 @@ A new adapter exposing a stronger transport wins the same ranking. Modifiers:
   receiver-side verification; the sender gets no acknowledgment.
 - Never silently downgrade a requested durable path to a live-only one when the target is
   offline. Report it instead.
-- If `relay.sh socket-send` exits 6 (sandbox blocks sockets or `nc` is missing), report the
+- If `relay.sh socket-send` exits 6 (sandbox blocks sockets, or `nc` is missing or fails), report the
   route unavailable and offer tmux or codex-queue. Do not retry.
 - Never use tmux against a session with no rostered pane.
 
@@ -73,16 +76,18 @@ route and says to send is approval for that one send, nothing broader.
 
 Say four things: the resolved target and what identified it, the transport and its fallback,
 the exact envelope line (compose it per step 5 first; a
-`<payload>` placeholder is not a plan), and what counts as delivered.
+`<payload>` placeholder is not a plan), and what counts as delivered. Send that exact line
+after approval; never compose a second envelope for the send.
 
 ## 5. Compose
 
-One line, because Enter submits in both TUIs. The helper encodes header values, builds a
+One line, because Enter submits in both TUIs. Compose once, before the plan. The helper
+encodes header values, builds a
 unique id, increments the hop, and refuses a multi-line body, one over 800 characters, or
 `want=reply` with no address:
 
 ```console
-$ references/relay.sh envelope \
+$ relay.sh envelope \
     --from planner:codex@<address> \
     --to reviewer \
     --hop 0 \
@@ -90,7 +95,9 @@ $ references/relay.sh envelope \
     --body -
 ```
 
-Read the body on stdin (a quoted heredoc) so an apostrophe cannot break the shell. Output:
+Read the body on stdin (a quoted heredoc) so an apostrophe cannot break the shell. The id
+defaults to a time-based value, so re-running `envelope` yields a different id; to recompose,
+pass `--seq` from the planned id. Output:
 
 ```text
 [relay/1 from=<role>:<agent>@<addr> to=<role> id=<addr>-<n> hop=<k> want=<reply|ack|none>] <body>
@@ -117,20 +124,19 @@ before typing; receiver state is perishable.
 
 Stage. Send literal bytes without Enter. Poll captures until the complete exact payload is
 visible or a bounded timeout expires. If it never appears, do not press Enter: leave the pane
-untouched and report a pending staged state. Text and Enter issued back-to-back in one
-command can leave the payload unsubmitted.
+untouched and report a pending staged state.
 
-Submit. Reclassify first; a target idle at preflight may be busy now. Then follow the adapter's idle and busy recipes (Enter, and for Codex the
-conditional Tab). Never use Escape as a recovery key; it may interrupt the receiver.
-
-Confirm. Classify from receiver evidence, not from `send-keys` exit status.
+Submit. Reclassify first; a target idle at preflight may be busy now. Then follow the
+adapter's idle and busy recipes. Never use Escape as a recovery key; it may interrupt the
+receiver.
 
 A target may never go idle (a Codex session under a goal controller auto-resumes). Do not
 block waiting; withhold and report, or switch to a durable transport.
 
 ## 7. Confirm delivery
 
-Sending is not arriving; see Confirm in step 6.
+Sending is not arriving. Classify delivery from receiver evidence, not from a `send-keys`
+or `nc` exit status.
 
 - To Codex, read back the exact item whose id `codex queue` printed. Matching on thread or
   recency picks up an unrelated row when the target already has a backlog:
@@ -173,7 +179,7 @@ helper searches both paths, matches the whole `id=` field, and prints the conten
 origin. More than one match means the id was not unique; resolve that before trusting either.
 
 ```console
-$ references/relay.sh audit \
+$ relay.sh audit \
     --id <relay-id> \
     --transcript "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/projects/<project>/<session-id>.jsonl"
 ```
@@ -227,9 +233,17 @@ Delivered to reviewer (relay id 019a3c-2, hop 0); acknowledgment pending.
 - Next: ask me to check the reviewer's reply later.
 ```
 
-A stopped run is the result sentence plus what the user must do, nothing else. When no
-route works, that is pasting the message into the target session by hand, so print the
-composed single-line envelope for them to paste.
+A stopped run is the result sentence plus what the user must do, nothing else: no Target,
+Route, or Next bullets, and no narration of the sandbox or missing tools beyond the reason in
+the sentence. When no route works, the user pastes the message into the target session by
+hand, so print the composed single-line envelope for them to paste:
+
+```text
+Not sent (relay id unknown-1791346278-3): no route to the other session could be verified.
+
+Paste this line into the target session yourself:
+[relay/1 from=notifier:claude-code@unknown to=peer id=unknown-1791346278-3 hop=0 want=none] Schema change: orders now has a fulfilled_at column.
+```
 
 
 ## Portability notes

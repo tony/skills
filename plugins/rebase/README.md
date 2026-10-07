@@ -33,20 +33,21 @@ Claude Code uses a leading slash (`/rebase:…`). Codex omits it (`rebase:…`).
 ## Skills
 
 `/rebase` in Claude Code, `rebase` in Codex: rebase the current branch onto
-trunk, resolve conflicts, verify quality gates.
+trunk, resolve conflicts, verify quality gates. It never pushes, and it runs
+only when you invoke it by name.
 
 ## Workflow
 
 1. **Detect Trunk**: Identify the remote trunk branch (the remote's default branch).
 2. **Analyze**: Fetch latest, identify changed files, and predict conflict zones.
-3. **Rebase**: Record the pre-rebase tip, then run `git pull --rebase origin <trunk> --autostash`.
-4. **Resolve**: Resolve conflicts file-by-file, preserving both sides' intent.
+3. **Rebase**: Record the pre-rebase tip, then run `git rebase --autostash origin/<trunk>`. Branches with merge commits stop for your decision.
+4. **Resolve**: Resolve conflicts file-by-file: mechanical ones directly, and ask you when the two sides change the same code in competing ways.
 5. **Verify**: Confirm clean history, compare patches with `git range-diff`, and run the quality gates once.
 
 ## Quality Gates & Design
 
-- **Dynamic Discovery**: Reads `AGENTS.md` / `CLAUDE.md` to discover required checks.
-- **Language-Agnostic**: Does not hardcode linters or test runners; works with whatever the project uses.
+- Reads `AGENTS.md` / `CLAUDE.md` to discover required checks.
+- Does not hardcode linters or test runners; works with whatever the project uses.
 
 ## Prerequisites
 

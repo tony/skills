@@ -30,7 +30,7 @@ next `terraform init` erases.
 Scope the search to tracked files:
 
 ```console
-git ls-files -z -- '*.tf' '*.tofu' '*.tf.json'
+$ git ls-files -z -- '*.tf' '*.tofu' '*.tf.json'
 ```
 
 Apply the same exclusion to `.terragrunt-cache/`, and to any vendor
@@ -103,8 +103,7 @@ lifecycle:
 ## Repositories with no root module
 
 A published module repository has provider constraints and no lock file.
-Constraint bumps apply normally; report that there is nothing to refresh, not
-an empty run as a failure.
+Constraint bumps apply normally; report that there is nothing to refresh.
 
 ## What to ask
 

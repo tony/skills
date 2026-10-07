@@ -30,7 +30,11 @@ pull request if one is open.
 
 A positional pull request number or URL switches the subject to that
 pull request and its head branch. Read it through `gh`; do not check it
-out.
+out. The sweep reference's pull-request-as-subject section gives the
+commands.
+
+The full sweep runs several git and `gh` calls; `/situate:what` is the
+cheap alternative.
 
 ### 2. Sweep the layers
 
@@ -41,13 +45,14 @@ acceptance criteria reframe the diff that implements them.
 
 ### 3. Search prior conversations
 
-Only with `--with-agentgrep`, under the prior-conversations reference.
+Only with `--with-agentgrep` or when the user asks for it in words,
+under the prior-conversations reference.
 Derive the search terms from what the first five layers found unless
 the user supplied them.
 
 ### 4. Report
 
 Report in the shape in `../../references/report-shape.md`, per
-`../../references/prose-rules.md`, with `## Prior work` only when
-`--with-agentgrep` ran. Then hand back; this command ends at
+`../../references/prose-rules.md`, with `## Prior work` only when the
+prior-conversations layer ran. Then hand back; this command ends at
 understanding.

@@ -55,28 +55,15 @@ if the tree matters.
 ## Plan mode
 
 Add `mode:plan` (for example `/model-cli:codex review the auth flow mode:plan`)
-to get a plan without edits. Plan mode swaps each tier's flags for the CLI's
-own read-only mode:
-
-- `codex exec --sandbox read-only` for Codex.
-- `agent --mode plan` for Cursor's agent.
-- `agy --mode plan` for Antigravity, without the permission-skipping flag, so
-  headless runs auto-deny any edit or command.
+to get a plan without edits. Each tier swaps its write-enabled flags for the
+CLI's own read-only mode; the flags are in each skill's `SKILL.md`.
 
 ## Models and fallback
 
-The model IDs in the skills are defaults. A model you name in the request
+Each skill lists its tiers and default models. A model you name in the request
 replaces the default for the tier it fits, and an unknown ID triggers a lookup
-with `agy models` or `agent --list-models`.
-
-- `agy` and `gemini`: `agy` with Gemini 3.1 Pro, then `agent` with
-  `gemini-3.1-pro`, then `agy` with Gemini 3.8 Flash.
-- `codex` and `gpt`: `codex`, then `agent` with `gpt-5.4-high`, then `agent`
-  with `gpt-5.4-mini-medium`.
-- `cursor`: `agent`, no fallback.
-
-A tier that crashes (for example, not logged in) falls through to the next
-tier that uses a different binary.
+with `agy models` or `agent --list-models`. A tier that crashes (for example,
+not logged in) falls through to the next tier that uses a different binary.
 
 ## Timeout
 

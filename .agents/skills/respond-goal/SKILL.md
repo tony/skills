@@ -46,14 +46,17 @@ top of every round.
 | `--max-rounds=<n>` | `3` | Hard cap on rounds. Reached means stop and report, not raise. |
 | `--wait=<minutes>` | `10` | Cap on waiting for review agents per round. |
 | `--ci-wait=<minutes>` | `30` | Cap on waiting for CI per round. |
-| `--push` | off | Push after each round and run the CI and review-agent conditions. Without it, run one local round, finished when the local gates are green; the CI and review-agent conditions do not apply, and the report prints the push command. |
+| `--push` | off | Push after each round and run the CI and review-agent conditions. Without it, run one local round on session or pasted feedback with steps 4-6 skipped, finished when the local gates are green; the report prints the push command. |
 | `--reply` | off | Post the drafted replies for declined and deferred findings once, when the loop ends. Confirm first; a non-interactive run treats the flag as that confirmation, for the replies shown in the report only. |
 
 ## Phase 0: Reconnaissance
 
 1. Resolve the pull request and its head SHA:
    `gh pr view --json number,title,headRefOid,state,isDraft,reviewDecision,statusCheckRollup`.
-   No pull request means nothing for agents to review: halt.
+   With `--push`, no pull request means nothing for agents to review:
+   halt. Without `--push`, continue on session or pasted feedback,
+   skip the roster in step 2 and push, CI, and agent steps 4 to 6 of
+   the round; with no feedback either, halt.
 2. Build the review-agent roster per
    `references/review-agents.md`: who reviews this repository,
    through which surface, and whether their arrival is observable. An
@@ -84,33 +87,42 @@ forward the previous rounds' declines per the re-post rule there.
 **2. Screen.** Run the `respond-check` skill on what collected. Its verdicts
 settle what this round does.
 
-**3. Act.** Run the `respond-action` skill on the accepted findings, which lands
-one gated commit each. A round with no accepted findings skips
+**3. Act.** Read the `respond-action` skill and follow it in loop mode on the
+accepted findings, which lands one gated commit each. A round with no accepted findings skips
 straight to the exit test.
 
 Both skills run in loop mode here: this loop's plan approval stands, so
-neither enters plan mode or ends with its panel, and the `respond-action` skill
-neither pushes nor posts replies. With `--push`, step 4 pushes; the end of
+neither enters plan mode or ends with its panel, and the action steps
+neither push nor post replies. With `--push`, step 4 pushes; the end of
 the loop posts.
 
 **4. Push.** Only with `--push`. Print the head SHA and the time first and
 keep the literal values, since the wait in step 6 depends on both. Push
 normally; a rejected push is a halt condition, never forced.
 
-**5. Watch CI.** Poll at a steady interval until no check is pending or
-`--ci-wait` elapses; stop at the first failure:
+**5. Watch CI.** The script polls until at least one check exists on
+the head and none is pending, stopping at the first failure or at the
+cap. It prints a JSON status and exits 0 (green), 1 (failed), 2
+(timeout), or 3 (no check ever appeared, which means the repository has
+no CI):
 
 ```console
-$ gh pr checks --json name,bucket,state
+$ python3 references/wait_pr.py ci <pr> --timeout <ci-wait>
 ```
 
 A failure becomes next round's feedback, with the failing log as its
-evidence. Checks still pending at the cap halt the loop.
+evidence. A timeout halts the loop.
 
-**6. Wait for the agents.** Poll for reviews and comments against the
-new head, bounded by `--wait`, stopping early once every roster agent
-has weighed in. Report who never arrived rather than waiting past the
-cap; a late agent is picked up by the next round.
+**6. Wait for the agents.** The script polls reviews and comments until
+every named roster login has reviewed the head SHA or commented since
+the push time, bounded by `--wait`. It prints the logins still missing:
+
+```console
+$ python3 references/wait_pr.py agents <pr> --sha <head-sha> --since <push-time-utc> --agents <login> <login> --timeout <wait>
+```
+
+Report who never arrived rather than waiting past the cap; a late agent
+is picked up by the next round.
 
 Then test the exit condition. Not met and rounds remain → next round.
 
@@ -130,8 +142,8 @@ never weighed in.
 
 **Halted** — stop the loop and report, without another round:
 
-- No pull request exists (Phase 0). The report offers one local round
-  as its first next step.
+- No pull request exists with `--push`, or no pull request and no
+  feedback to screen (Phase 0).
 - A quality gate fails in a way no accepted fix resolves.
 - A push is rejected, or the branch needs a rebase or a force-push.
 - Screening returns an `ask` verdict that needs the author's intent.
@@ -150,7 +162,8 @@ Never name local absolute paths or temp files.
 
 A halted run reports one result sentence naming the halt condition,
 then what the user needs to do, then `## Still open`; the other
-sections appear only when they have content.
+sections appear only when they have content. The last example below
+shows it.
 
 1. Hero block (1–3 lines): the outcome (finished, capped, quiet, or
    halted), rounds run, and total fixed / deferred / declined.
@@ -167,8 +180,7 @@ sections appear only when they have content.
 6. End with an `ask-user-choice` panel (skip inside plan mode): run
    another round past the cap, post the drafted replies, open the
    follow-ups, or stop. When the loop halted for lack of a pull request,
-   the first option is one local round without `--push`, and no option
-   proposes `--push` until a pull request exists. In a
+   no option proposes `--push` until a pull request exists. In a
    non-interactive run, list the options in the report and default to
    stopping.
 
@@ -198,6 +210,20 @@ Finished after 2 rounds on feat/retry-after: 3 fixed, 1 deferred, 1 declined.
 
 1. Post the drafted replies
 2. Stop
+```
+
+A halted run replies in this shape, with the same plain bullets:
+
+```text
+Halted before round 1: feat/retry-after has no pull request, and --push was passed.
+
+Open a pull request for the branch, then run respond-goal again.
+
+## Still open
+
+- Nothing was collected or screened, so nothing is fixed, deferred, or declined.
+
+1. Stop
 ```
 
 

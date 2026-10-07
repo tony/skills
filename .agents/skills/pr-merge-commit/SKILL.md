@@ -4,7 +4,7 @@ description: >-
   Use when drafting a merge or squash-merge commit message for the current
   branch, to copy into the merge workflow.
 disable-model-invocation: true
-allowed-tools: ["Bash", "Read", "AskUserQuestion"]
+allowed-tools: ["Bash", "Read"]
 metadata:
   argument-hint: "[optional hint, e.g. 'version bump' or 'breaking change']"
   source: "plugins/pr/skills/merge-commit/SKILL.md"
@@ -29,7 +29,7 @@ Follow `references/branch-context.md` to find the base and gather the branch's c
 - Review the full diff and **all** commits, not only the latest.
 - Classify the change: feature, fix, refactor, version bump, CI, docs,
   breaking change, runtime version drop.
-- Note any PR number visible in the branch name or commits.
+- Note any PR number visible in the branch name or the user's hint.
 - Describe the **net shipped result**: collapse fixups,
   reverts-then-re-adds, and WIP states. Leave out rename history,
   `### Fixes` for behavior that never shipped, and "no longer X" framing
@@ -78,11 +78,12 @@ trace, or long identifier mid-token; let that line run long.
   tables when the bug is version-specific.
 - **API refactors with migration paths:** old/new tables for renamed
   methods, parameters, or modules; deprecation notices with a timeline.
-- **Version bumps:** `v1.2.3 -> v1.3.0` notation, a release tag URL and
-  changelog URL per package, the release date when known, and per-file
-  scope notes when files change different dependencies.
-- **Runtime version drops:** the EOL date and links to the PEP and
-  devguide references.
+- **Version bumps:** `v1.2.3 -> v1.3.0` notation, and per-file scope
+  notes when files change different dependencies.
+- **Runtime version drops:** the dropped version and why.
+
+Use only URLs, versions, and dates present in the diff, lockfile, or
+fetched this run; omit the rest.
 - **Build and infra migrations:** before/after tooling and why.
 - **Multi-module sync results:** companion PR links, design decisions
   and trade-offs, and a qualitative test coverage summary.
@@ -99,7 +100,8 @@ Do not run any git write command; the user pastes the message into
 their merge workflow (GitHub merge button, `git merge --edit`, the
 squash-and-merge dialog). When the PR number is unknown, note where
 ` (#N)` goes. A run that stops early (empty log, no base) is one
-sentence saying what happened, then what the user must do.
+sentence stating the stop and what the user must do, with no
+colon-delimited aside.
 
 Reply in this shape, as plain text outside any code fence, with plain
 bullets and no bold (never `- **Label:** ...`). The message is one

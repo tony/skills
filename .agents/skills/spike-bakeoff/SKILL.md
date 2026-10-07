@@ -86,15 +86,25 @@ the `spike-probe` skill:
 
 ## Phase 0: Situational awareness
 
-Read the `spike-probe` skill and follow its Phase 0: commit check,
-conventions files, the five gate buckets and CI split per
-`references/verification-gates.md`, and the dirty-tree halt.
+Read the `spike-probe` skill and follow its Phase 0: commit check and
+home-directory refusal, conventions files, the five gate buckets and CI
+split per `references/verification-gates.md`, and the dirty-tree
+halt. A bakeoff never probes on top of the user's work, because
+`git worktree add ... HEAD` carries none of it: offer only stash first
+or abort (non-interactive default: abort). It also takes no `--branch`.
 Then the bakeoff-specific checks:
 
 1. Confirm `git worktree` is usable and there is disk headroom for N
    checkouts.
-2. Choose a worktree root outside the repo (e.g. a sibling temp
-   directory) and contender names: `bakeoff/<n>-<slug>`.
+2. Create a worktree root outside the repo and print it; use the
+   printed path literally afterwards. Name each contender `<n>-<slug>`:
+   that is its directory and its stash message prefix. Worktrees are
+   detached, so no contender has a branch.
+
+```sh
+mktemp -d "${TMPDIR:-/tmp}/bakeoff.XXXXXX"
+```
+
 3. Note any setup a fresh checkout needs to run gates (dependency
    install, codegen), because each kitchen must be able to bake.
 
@@ -108,7 +118,8 @@ Present the **bakeoff brief**:
 
 1. The goal, one line, with provenance (typed / inferred from what).
 2. The contenders: one line per strategy stating what makes it
-   *distinct*; merge entries that differ only cosmetically.
+   *distinct*; merge entries that differ only cosmetically. Each is a
+   full probe plus judge sub-agents, so state N and let the user trim.
 3. What "proven" means per contender: the shared smoke check every
    contender must pass to reach judging.
 4. The judging rubric (Phase 4 lenses, plus any goal-specific
@@ -180,7 +191,7 @@ parallel. For each contender:
 
 1. In its worktree, run the stash sequence from the `spike-probe` skill
    Phase 4 with the message
-   `bakeoff/<n>-<slug>: <strategy> (<verdict>)`. It captures the
+   `bakeoff <n>-<slug>: <strategy> (<verdict>)`. It captures the
    stash's own SHA in the same command; never read `stash@{0}`, which
    is another contender's entry when this one changed nothing. A
    contender that printed `no changes` is recorded as "no changes",
@@ -250,11 +261,12 @@ Write the report, and any replay commit message, per
 1. Hero block (1–3 lines): `✓ bakeoff judged: <winner>` /
    `⚠ bakeoff inconclusive` + goal + exit path taken.
 
-   A run that halts before any worktree exists (no commit, dirty tree
-   declined, missing code or goal) is a `⚠ bakeoff halted` hero line
-   and one result sentence naming what is missing, then what the user
-   must do next. No sections, no panel, no stash SHAs, no local or
-   temp paths.
+   A run that halts before any worktree exists (no commit, repository
+   rooted at home, dirty tree declined, missing code or goal) is a
+   `⚠ bakeoff halted` hero line and one result sentence naming what is
+   missing, then what the user must do next. No sections, no panel, no
+   stash SHAs, no local or temp paths, no command echo, no description
+   of the environment.
 2. `## Contenders`: one line per strategy: what it tried, proven or
    blocked, headline gate status.
 3. `## Verdict`: scorecards per lens, the winner, the graft list,
@@ -272,6 +284,13 @@ Write the report, and any replay commit message, per
    was given. Recommend the probe exit when Phase 6 judged the grafts
    too substantial to land blind. In a non-interactive run, record the
    question in the report and default to keeping the stashes.
+
+A halted run replies in this shape:
+
+```text
+⚠ bakeoff halted: compare an LRU dict with a Redis-backed session cache.
+The working tree has uncommitted changes that a worktree would not carry. Commit or stash them yourself, then run spike-bakeoff again.
+```
 
 Reply in this shape, as plain text outside any code fence, with plain
 bullets and no bold (never `- **Winner:** ...`), the `## Stashes`
@@ -297,7 +316,7 @@ Goal: cut p99 latency of the export endpoint. Exit path: stash and teardown.
 ## Stashes
 | Contender | Strategy | Stash message | SHA | Restore |
 |---|---|---|---|---|
-| A | LRU | bakeoff/1-lru: in-process LRU (lost) | 9f2c4d1 | git stash apply 9f2c4d1 |
+| A | LRU | bakeoff 1-lru: in-process LRU (lost) | 9f2c4d1 | git stash apply 9f2c4d1 |
 
 ## Replay plan
 1. cache(feat[store]) Add write-behind store

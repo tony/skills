@@ -31,20 +31,26 @@ Output, taking its arguments from the request's wording:
   `../refresh-lock/SKILL.md`.
 
 A request that names none ("everything here is behind") is a provider
-bump unless the user says the CLI. One run does one of them; offer the
-others as next steps.
+bump with no provider named unless the user says the CLI: list the
+declared providers and ask which (headless default: stop). One run does
+one of them; offer the others as next steps.
 
 ## Conventions for every run
 
-- Name the current branch in the plan. Before the first commit, run
-  `git status --porcelain`; if it shows changes the run did not make,
-  commit only this run's paths with `git commit -- <paths>`, or stop.
+- Name the current branch in the plan. Before the run's first edit, run
+  `git status --porcelain` and print the result: that list is the
+  changes the run did not make. Never rely on it from memory in later
+  commands. Commit only this run's paths with `git commit -- <paths>`,
+  after `git add <path>` for any new file such as a lock file (`git
+  commit -- <untracked path>` fails). Stop when a path to commit is
+  already in the recorded list.
 - Commit messages carry no `Co-Authored-By`, no "Generated with" or other
   tool trailers, and no emoji.
 - Where there is no interactive question tool (Codex, headless runs),
   state each question in the reply with the narrower answer as the
-  default (fewest modules, `--no-commit`) and proceed on it. A request
-  that authorises an action covers that action only, never a commit or
+  default (fewest modules, `--no-commit`). A headless run presents the
+  plan and stops, unless the request itself authorises the edit ("go
+  ahead and bump it"); that covers the edit only, never a commit or
   push.
 - Reply in the shape each skill's Output declares, as plain text outside
   any code fence, with plain bullets and no bold (never
@@ -53,8 +59,13 @@ others as next steps.
 - A run that cannot proceed (nothing declared, no version named and the
   release list unreachable, a dirty tree it cannot work around) ends
   with `⚠ Stopped: <one result sentence>`, then the step the user must
-  take. No sections and no recap. `Audit only` is a different state: the
-  user asked for no writes.
+  take. No sections and no recap. Findings that change that step follow
+  as plain bullets, with no lead-in sentence.
+- `--audit-only` writes nothing and is a result, not a stop. Its hero is
+  `Audit only: <result>` with no `⚠`, the skill's own sections follow
+  (omit the empty ones), and no sentence restates that nothing was
+  written. An audit with nothing to audit (no Terraform files) is a
+  stopped run.
 - When the target crosses a major version, link the project's upgrade
   guide in the report, or say none was found.
 
@@ -119,7 +130,7 @@ Present a plan covering:
 
 Wait for approval, then exit plan mode before Phase 4. Without plan mode,
 finish discovery, resolution, and inventory, and confirm scope with the
-user before writing anything.
+user before writing anything. Headless, the plan is the reply.
 
 ## Phase 4 - Edit the constraints
 
@@ -134,8 +145,11 @@ own commit conventions in AGENTS.md or CLAUDE.md. Write it per
 ## Phase 5 - Refresh the locks
 
 Per root module, per the lock reference, without `-upgrade` when one
-provider or the CLI moves. Compare each provider's platform count
-against its count before the run; a drop is a stop signal.
+provider or the CLI moves. Apply the reference's guard first: a root
+module with no committed lock, or an edited one, is skipped and reported,
+never initialised on its own. Compare each provider's platform count
+against its count before the run; a drop is a stop signal. A failed
+`init` restores the lock from git.
 
 Lock files land as their own commit, separate from the constraints.
 

@@ -61,7 +61,9 @@ written.
 
 One commit per repository and action, one repository at a time. With
 `--push`, push as each completes so an interrupted run resumes; otherwise
-print the push commands in the report. Write commit messages,
+report each local branch holding commits and print its push command. With
+`--pr`, branch, push, and open a pull request per repository, then close
+dependabot pull requests only after those merge. Write commit messages,
 pull-request comments, and the report per `references/prose-rules.md`.
 No `Co-Authored-By`, no "Generated with" or other tool trailer, no emoji.
 

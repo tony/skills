@@ -58,20 +58,6 @@ researches the span between your pin and the target, writes the rationale
 into a commit on the default branch, and closes the bot's PR with a
 reference to that commit. (The PR references the commit, not vice versa).
 
-## Workflow
-
-1. **Inventory** — Read `uses:` lines from `.github/workflows/` and
-   `.github/actions/` on the default branch.
-2. **Verify** — Confirm the target tag exists before writing.
-3. **Research** — Collect major releases and breaking changes between
-   pin and target with verified links.
-4. **Plan gate** — Confirm scope, targets, evidence, commit count, and
-   the dependabot PRs to close before writing.
-5. **Commit** — One per repository and action, with upgrade rationale
-   and release links in the body.
-6. **Close out** — Watch CI, attribute failures, and close superseded
-   dependabot PRs after you confirm the exact commands.
-
 ## Pinning
 
 - **Major-level floats (`@v7`)** (default): Preserve existing shape. Exact
@@ -84,9 +70,8 @@ reference to that commit. (The PR references the commit, not vice versa).
 
 ## Shared references
 
-All three skills read the same two files:
-- `references/action-pinning.md`
-- `references/dependabot-closeout.md`
+All three skills read `references/action-pinning.md` and
+`references/dependabot-closeout.md`; the worktree and prose rules are shared references.
 
 ## Skill
 

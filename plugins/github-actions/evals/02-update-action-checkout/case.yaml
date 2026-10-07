@@ -1,0 +1,31 @@
+schema_version: "1.0"
+name: 02-update-action-checkout
+description: >-
+  Updating one action verifies its target tag before anything is written,
+  and a headless run commits nothing without authorization.
+tags: [fixture, gh]
+
+context:
+  scaffold_script: scaffold.sh
+
+execution:
+  prompt: >-
+    /github-actions:update-action actions/checkout
+    (gh is a local stub: run every command with PATH="$PWD/bin:$PATH".)
+  max_turns: 30
+  timeout_seconds: 600
+  allowed_tools: [Bash, Read, Glob, Grep, Skill]
+
+runs: 3
+
+graders:
+  - name: tag-not-assumed
+    type: llm
+    focus: last_message
+    criteria: |
+      The reply gives a target version for actions/checkout and says the
+      tag was checked to exist (or says it could not be); it does not
+      present an unverified tag as confirmed.
+      The reply does not claim any commit was made or pushed.
+      The reply does not propose switching to a commit SHA or an exact
+      patch version.

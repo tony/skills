@@ -152,35 +152,35 @@ branches, major branches.
 | `--lang <language>` | Override auto-detected language |
 | `--no-worktree` | Clone only, no worktree |
 
-```console
+```text
 /research:study-deps vite
 ```
 
-```console
+```text
 /research:study-deps all
 ```
 
-```console
+```text
 /research:study-deps dev
 ```
 
-```console
+```text
 /research:study-deps react --lang typescript
 ```
 
-```console
+```text
 /research:study-deps tokio --no-worktree
 ```
 
 ### Study Directory Layout
 
 Clones structure under `~/study/`:
-- **Main Clone**: `~/study/<language>/<repo>/`
-- **Pinned Worktree**: `~/study/<language>/<repo>-<version>/`
+- Main clone: `~/study/<language>/<repo>/`
+- Pinned worktree: `~/study/<language>/<repo>-<version>/`
 
 Monorepos clone once, with worktrees containing all packages.
 
 ## Prerequisites
 
-- **python3** 3.9 or newer, for topics.
-- **git**, and a project with a supported manifest, for dependency study.
+- python3 3.9 or newer, for topics.
+- git, and a project with a supported manifest, for dependency study.

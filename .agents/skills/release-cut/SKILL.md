@@ -64,7 +64,7 @@ tag it was cut for.
    the Safety Contract, before any other step.
 2. **Version argument.** The first non-flag argument is the version
    (accept with or without a leading `v`; strip it — files and CHANGES
-   use the bare version, only the tag is `v`-prefixed). If no version
+   use the bare version, only the tag carries the prefix). If no version
    was given, stop and tell the user to either supply one or run
    the `release-bump` skill to discover the next version interactively.
 3. **Clean tree.** `git status --porcelain` must be empty. If not,
@@ -75,15 +75,18 @@ tag it was cut for.
    stop and ask; releases are normally cut from trunk, but the user
    may confirm a maintenance branch. Without `ask-user-choice`, stop.
 5. **Up to date.** `git pull --ff-only` (skip if no remote).
-6. **Version sanity.** Read the current version from the manifest.
+6. **Tag name.** Take the prefix from the repo's latest tags
+   (`git tag --sort=-creatordate | head -5`); use `v` when there are none.
+   `<tag>` below is that prefix plus the version.
+7. **Version sanity.** Read the current version from the manifest.
    The new version must sort after it under the project's scheme
-   (see the conventions reference). If `git tag -l 'v<version>'`
-   (matching the repo's tag prefix convention) already exists, stop.
+   (see the conventions reference). If `git tag -l '<tag>'` already exists, stop.
    With `--push-tag`, also stop if this prints anything, because the
-   remote already has the tag:
+   remote already has the tag (`<remote>` is trunk's upstream remote,
+   `origin` by default):
 
    ```console
-   $ git ls-remote --tags origin refs/tags/v<version>
+   $ git ls-remote --tags <remote> refs/tags/<tag>
    ```
 
 ## Phase 2: Discovery
@@ -125,7 +128,8 @@ Following the conventions reference, record:
 Run the project's quality gates discovered in Phase 2. All must pass
 before committing. If a gate fails, stop and report the failure —
 never commit a release on a red gate, and never weaken a gate to get
-to green.
+to green. Delete untracked files the gates created (bytecode caches, build output)
+before Phase 5, so the Phase 6 tree check passes.
 
 ## Phase 5: Commit
 
@@ -143,7 +147,7 @@ Run only what the flags authorize, in this order, one command at a time.
 The first failure stops the run: report it and run none of the later steps.
 
 1. Confirm `HEAD` is the release commit: its subject starts with
-   `Tag v<version>` and the tree is clean.
+   `Tag <tag>` and the tree is clean.
 
    ```console
    $ git log -1 --format=%s
@@ -158,7 +162,7 @@ The first failure stops the run: report it and run none of the later steps.
    An annotated tag works with or without `tag.gpgSign`:
 
    ```console
-   $ git tag -a v<version> -m "v<version>"
+   $ git tag -a <tag> -m "<tag>"
    ```
 
 3. `--push`:
@@ -174,7 +178,7 @@ The first failure stops the run: report it and run none of the later steps.
    requested. This pushes the tag and the commit it points at:
 
    ```console
-   $ git push --no-follow-tags origin refs/tags/v<version>
+   $ git push --no-follow-tags <remote> refs/tags/<tag>
    ```
 
 ---
@@ -183,13 +187,17 @@ The first failure stops the run: report it and run none of the later steps.
 
 Never name local or temp paths. A completed run ends with these, in order:
 
-1. Hero line: `✓ Cut v<version>` plus what was and was not pushed.
+1. Hero line: `✓ Cut <tag>` plus whether the release commit and the tag
+   were created and whether each was pushed.
 2. `## Release summary`: old to new version, CHANGES section dated, next
-   unreleased target.
+   unreleased target. Nothing else: no gate output, cleanup, skipped files,
+   or skill mechanics.
 3. `## Files changed`: the files in the release commit.
 4. `## Next steps`: the exact `git tag -a` / `git push --no-follow-tags` /
-   `git push --no-follow-tags origin refs/tags/v<version>` commands for
+   `git push --no-follow-tags <remote> refs/tags/<tag>` commands for
    whatever the flags did not authorize.
+
+No paragraph between the hero line and the first heading.
 
 A stopped or refused run is one result sentence (what stopped and why),
 then what the user needs to do. Nothing else.
@@ -198,7 +206,7 @@ Reply in this shape, as plain text outside any code fence, with plain
 bullets and no bold (never `- **Label:** ...`):
 
 ```text
-✓ Cut v0.4.0; nothing pushed, no tag created
+✓ Cut v0.4.0 as a local commit; no tag created, nothing pushed
 
 ## Release summary
 
@@ -213,6 +221,16 @@ bullets and no bold (never `- **Label:** ...`):
 - git tag -a v0.4.0 -m "v0.4.0"
 - git push --no-follow-tags
 - git push --no-follow-tags origin refs/tags/v0.4.0
+```
+
+A stopped run uses the same plain-text shape, for example after a failed
+commit. The edits stay in the tree; give no discard command:
+
+```text
+Stopped: the release commit failed (signing error), so no tag was created and nothing was pushed.
+
+- Fix the commit error, then commit the staged release files with the subject "Tag v0.4.0".
+- Re-run release-cut 0.4.0 with the flags you want.
 ```
 
 Then, unless running in plan mode, `ask-user-choice` may offer only

@@ -34,36 +34,24 @@ Reading case 2 as case 1 deletes the only copy. **Never classify on a
 
 Compare path sets directly and report the intersection, both
 differences, and the byte size of each. A directory is redundant only
-when the set unique to it is empty.
+when the set unique to it is empty and every entry in both trees was
+readable. Run the script, resolved relative to this file:
 
-```python
-import os, sys
-
-
-def relpaths(root):
-    out = set()
-    for dirpath, dirnames, filenames in os.walk(root):
-        for name in filenames + [d for d in dirnames if os.path.islink(os.path.join(dirpath, d))]:
-            out.add(os.path.relpath(os.path.join(dirpath, name), root))
-    return out
-
-
-def total(root, paths):
-    return sum(os.lstat(os.path.join(root, p)).st_size for p in paths)
-
-
-candidate, keeper = sys.argv[1], sys.argv[2]
-c, k = relpaths(candidate), relpaths(keeper)
-only_c, shared = c - k, c & k
-print(f"candidate files : {len(c)}")
-print(f"shared with keeper: {len(shared)} ({total(candidate, shared) / 2**30:.2f} GiB)")
-print(f"UNIQUE to candidate: {len(only_c)} ({total(candidate, only_c) / 2**30:.2f} GiB)")
-print("REDUNDANT" if not only_c else "NOT REDUNDANT - candidate holds unique data")
+```console
+$ python3 ../scripts/redundancy.py \
+    <candidate> \
+    <keeper>
 ```
 
+Exit status 0 is REDUNDANT, 1 is NOT REDUNDANT, 2 is INCONCLUSIVE. An
+unreadable directory or file in either tree makes the result
+INCONCLUSIVE and lists the entries; a subtree that cannot be listed
+cannot be proved empty. Report an INCONCLUSIVE proof as failed and
+classify the candidate as unique until access is fixed.
+
 Symlinks (including broken ones) count as entries sized by `lstat`.
-Empty directories are not compared: list them with `find <candidate> -type d -empty`
-and report them as skipped.
+Empty directories are not compared; the script counts them, and the
+report names them as skipped.
 
 Shared paths must then be confirmed identical by content, not by size
 or mtime. Size collisions are common in append-structured formats such
@@ -83,7 +71,7 @@ trees differ, not only whether they do:
 - `skipping non-regular file "<name>"`: a symlink was not compared.
   Report it as skipped.
 
-An empty rsync output plus an empty unique set from the script above
+An empty rsync output plus a REDUNDANT result from the script
 proves redundancy. Either one alone does not.
 
 ## Required proof for "mergeable"

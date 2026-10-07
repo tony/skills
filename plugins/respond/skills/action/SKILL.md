@@ -92,7 +92,10 @@ unchanged, so no editor opens:
 $ GIT_SEQUENCE_EDITOR=: git rebase -i --autosquash <base>
 ```
 
-`<base>` is the resolved provenance base. This rewrites history, so:
+`<base>` is the resolved provenance base. When the rebase reports a
+conflict, run `git rebase --abort`; the `fixup!` commits stay
+unsquashed as forward commits, and the report says the squash was
+skipped. This rewrites history, so:
 
 - **Trivial and safe** (typo-class fix whose causal commit is
   in-branch, unpushed, and not a merge): offer fixup as the plan's
@@ -116,6 +119,9 @@ $ GIT_SEQUENCE_EDITOR=: git rebase -i --autosquash <base>
 3. Run `git fetch origin`, then confirm a clean working tree. A dirty
    tree halts: ask to stash, proceed on top, or abort; a non-interactive
    run aborts. Detect trunk and push state with `git status -sb`.
+4. Run `git rev-parse --show-toplevel`. When it is `$HOME` or contains
+   it, halt: the commands below stage files, and a repository rooted at
+   home would sweep in credentials.
 
 ## Phase 1: Resolve the ledger
 
@@ -157,7 +163,8 @@ non-interactive run skips it and says so.
    plausibly affects build output. Gates run as discovered, including
    mutating ones: fold any autofix into the commit under test and
    re-run the scoped test once when a gate changed files.
-3. Green → commit. The message uses the project's format and describes
+3. Green → stage only the paths this fix edited (`git add -- <path>`,
+   never `git add -A` or `git add .`) and commit. The message uses the project's format and describes
    the defect and the fix, not the finding id, the reviewer, or the
    review. Write it per
    `../../references/prose-rules.md`, with no `Co-Authored-By`, no
@@ -188,15 +195,20 @@ local absolute paths or temp files.
 
 A run that stops early (dirty tree, failed gate under `--on-fail=stop`,
 no screenable findings) reports one result sentence, then what the user
-needs to do, then the sections below that have content.
+needs to do, then only the sections below that have content; it omits
+the empty ones, as the second example shows. On a run that landed
+commits, keep `## What the fixes added` even when empty. In prose, name
+a commit by its subject; SHAs appear only in `## Commits`. Do not print
+the ledger key; it belongs to the screening report.
 
 1. Hero block (1–3 lines): `✓ N fixed, M deferred, K declined` plus the
    branch name.
 2. `## Commits` — one row per landed commit: finding, SHA, subject,
    gate result.
 3. `## What the fixes added` — every test, comment, code path, and
-   dependency introduced, with the finding that justified it. Show an
-   empty section as empty; that is the good outcome.
+   dependency introduced, with the finding that justified it. When
+   commits landed and it added nothing, write `Nothing.`; that is the
+   good outcome.
 4. `## Deferred & declined` — the follow-up recommendations and the
    replies, marked as posted or not.
 5. `## Verification` — the gate commands run, what was deferred to CI,
@@ -234,4 +246,18 @@ bullets and no bold (never `- **Label:** ...`):
 1. Push and watch CI
 2. Hand the branch to /respond:goal
 3. Stop
+```
+
+A stopped run replies in this shape, with the same plain bullets:
+
+```text
+Stopped before any edit: the working tree has uncommitted changes.
+
+Commit or stash them, then run /respond:action again.
+
+## Verification
+
+- No gates ran, because nothing changed.
+
+1. Stop
 ```

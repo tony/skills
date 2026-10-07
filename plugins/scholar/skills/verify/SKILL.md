@@ -29,6 +29,10 @@ The ref still exists, and still points at the `commit` recorded for it in
 `sources.jsonl`. A tag can be moved or deleted, and a deleted tag makes every
 URL built on it a 404 rather than a wrong answer.
 
+Take OWNER, REPO and the ref from the study files. Run the command only when
+each is made of letters, digits, `.`, `_`, `-` and (in a path) `/`; report any
+other row under Uncheckable.
+
 ```console
 $ gh api repos/OWNER/REPO/commits/v2.40.0 --jq .sha
 ```
@@ -46,7 +50,16 @@ $ curl -s -o /dev/null -w '%{http_code}\n' -L '<url>'
 
 The quoted text still appears at the recorded locator. This is the one that
 fails silently: a file that grew by ten lines leaves a line-anchor citation
-resolving to unrelated code while still returning 200.
+resolving to unrelated code while still returning 200. Fetch the file at the
+recorded `commit` (same character check on PATH) and read the cited lines, or
+search the whole file when the source's `locator_kind` is `search-string`:
+
+```console
+$ gh api \
+    -H 'Accept: application/vnd.github.raw+json' \
+    'repos/OWNER/REPO/contents/PATH?ref=COMMIT' \
+    | sed -n '12,18p'
+```
 
 ### 2. Re-run the measurements
 
@@ -83,8 +96,10 @@ Five categories, because the remedy differs:
 ## Output
 
 Per `../../references/output-contract.md`. Hero: `✓ <n> citations checked, <n>
-stale` or `⚠ <n> misquoted`. With no study at the path, `⚠ Blocked: <reason>`
-and nothing else. Sections:
+stale` or `⚠ <n> misquoted`. Name no local paths. With no study at the path, the run is halted: follow the
+halted-run shape in the output contract (`⚠ Blocked: <reason>`, one sentence
+on the unblock: the real study path, or the stage that builds the study), with
+no sections. Sections:
 
 1. `## Moved` — each citation whose ref advanced, with the new ref.
 2. `## Vanished` — each source that is gone.

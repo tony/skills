@@ -3,11 +3,12 @@
 # is still unstaged, and trunk has moved underneath it.
 set -euo pipefail
 
-# The prompt and history.jsonl both say this work stopped two weeks ago. Date
-# the commits to match, so a skill reading `git log --format=%cr` is not told
-# one thing by the transcript and another by the repository.
-export GIT_AUTHOR_DATE="2026-08-28T09:00:00+00:00"
-export GIT_COMMITTER_DATE="2026-08-28T09:00:00+00:00"
+# Date the commits relative to now (GNU date, then BSD) so the age of the work
+# does not drift with the calendar.
+when=$(date -u -d '14 days ago' +%Y-%m-%dT09:00:00+00:00 2>/dev/null ||
+  date -u -v-14d +%Y-%m-%dT09:00:00+00:00)
+export GIT_AUTHOR_DATE="$when"
+export GIT_COMMITTER_DATE="$when"
 
 git init -b main >/dev/null
 
@@ -73,7 +74,7 @@ git push -q origin main
 
 git switch -q fix/exponential-backoff
 
-# Left unstaged when the work stopped two weeks ago. Switching branches has to
+# Left unstaged when the work stopped a while ago. Switching branches has to
 # happen before this, or git refuses to carry it across.
 cat >>src/backoff.py <<'PY'
 

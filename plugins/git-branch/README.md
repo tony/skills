@@ -77,7 +77,7 @@ Retains original branch as a reference.
 
 ### The interactive-rebase toolkit
 
-`references/rebase-todo.sh` drives `git rebase -i` without an editor or TTY.
+`scripts/rebase-todo.sh` drives `git rebase -i` without an editor or TTY.
 
 Run it from anywhere (substitute `${CLAUDE_PLUGIN_ROOT}` with the plugin's
 install path outside a session):
@@ -85,31 +85,31 @@ install path outside a session):
 Report any git operation in progress:
 
 ```console
-sh ${CLAUDE_PLUGIN_ROOT}/references/rebase-todo.sh status
+$ sh ${CLAUDE_PLUGIN_ROOT}/scripts/rebase-todo.sh status
 ```
 
 Print the todo list for a range:
 
 ```console
-sh ${CLAUDE_PLUGIN_ROOT}/references/rebase-todo.sh show <base>
+$ sh ${CLAUDE_PLUGIN_ROOT}/scripts/rebase-todo.sh show <base>
 ```
 
 Replay the range from an edited plan:
 
 ```console
-sh ${CLAUDE_PLUGIN_ROOT}/references/rebase-todo.sh apply <base> plan.txt
+$ sh ${CLAUDE_PLUGIN_ROOT}/scripts/rebase-todo.sh apply <base> plan.txt
 ```
 
 Run a command after every commit, in place:
 
 ```console
-sh ${CLAUDE_PLUGIN_ROOT}/references/rebase-todo.sh verify <base> 'make test'
+$ sh ${CLAUDE_PLUGIN_ROOT}/scripts/rebase-todo.sh verify <base> 'make test'
 ```
 
 Fold pending `fixup!` and `amend!` commits:
 
 ```console
-sh ${CLAUDE_PLUGIN_ROOT}/references/rebase-todo.sh squash <base>
+$ sh ${CLAUDE_PLUGIN_ROOT}/scripts/rebase-todo.sh squash <base>
 ```
 
 ## Relationship to other git plugins

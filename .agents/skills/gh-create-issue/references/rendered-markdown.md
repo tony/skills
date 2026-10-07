@@ -81,10 +81,9 @@ Use a fenced block for anything a reader would otherwise retype.
   ordinary prose.
 - A single long command may span lines with a trailing `\`, and a
   multi-statement one-liner may use `\;` — that is still one command.
-- Tag the language when highlighting earns it — `python`, `ts`, `rust`
-  for source. Use `console` for a transcript that shows a `$` prompt
-  with its output; it is the only hint that tokenizes the two apart. A
-  lone command needs no tag.
+- Shell commands use `console` with a `$ ` prefix; a multi-line script
+  uses `bash` with no prompts. Tag source `python`, `ts`, `rust` when
+  highlighting earns it. Plain output and logs may stay untagged.
 - To show triple backticks inside a block, fence it with four.
 
 ## Long output goes in `<details>`
@@ -166,11 +165,18 @@ plain text.
 
 ## Preview before publishing
 
-GitHub's own renderer will tell you whether the body works:
+GitHub's own renderer will tell you whether the body works. Put the
+body inside the quoted heredoc, so no file is needed:
 
-```console
-$ gh api --method POST /markdown -f mode=gfm -f context=OWNER/REPO -f text="$(cat body.md)"
+```bash
+gh api --method POST /markdown -f mode=gfm -f context=OWNER/REPO -f text="$(cat <<'EOF'
+BODY
+EOF
+)"
 ```
+
+When the body is already in a file, `-f text="$(cat PATH)"` does the
+same. Needs `gh auth login`.
 
 Literal `**` or ``` ``` ``` in that output means a `<details>` block
 is missing its blank line. A `<br>` inside a prose paragraph means the

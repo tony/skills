@@ -86,7 +86,7 @@ Fast rows are not benchmarks. To judge a later change:
    disabled, **N ≥ 3** times. `measure.py run` times each run and counts outcomes:
 
    ```console
-   $ python3 references/measure.py run \
+   $ python3 <measure.py> run \
        -- pytest -p no:cacheprovider -p no:randomly -q
    ```
 

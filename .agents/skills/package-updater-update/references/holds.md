@@ -37,7 +37,7 @@ releases, and a root-only scan under-reports holds. Enumerate every
 config in the tree:
 
 ```console
-$ fd -H -t f '^\.ncurc' .
+$ find . -name '.ncurc*' -type f
 ```
 
 Releasing the last hold ends one of two ways: `{"reject": []}` left in

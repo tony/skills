@@ -28,7 +28,7 @@ available space. Determine which of them is the binding constraint —
 the one closest to full, because that governs which findings matter.
 
 When a filesystem is a virtual disk, find its backing file on the host
-and compare that file's allocated size against the used space reported
+and compare that file's apparent size against the used space reported
 inside the guest. The gap is balloon: space recoverable by compaction
 alone, without deleting anything. Report it as a distinct figure.
 

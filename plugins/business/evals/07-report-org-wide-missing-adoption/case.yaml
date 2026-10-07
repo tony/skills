@@ -33,10 +33,10 @@ graders:
       to supply them or to add them. It does not assume a value of 1.0 for
       either, and it does not invent a value for either.
 
-  - name: no-default-multiplier-entry
+  - name: no-default-1-0-multiplier-entry
     type: regex
     target:
       source: file
       path: out/2026-06-30/business/lean-tighten/assumptions.yaml
     match: not_contains
-    pattern: 'adoption-rate|realization'
+    pattern: 'value:\s*1(\.0+)?\s*(\n|$)'

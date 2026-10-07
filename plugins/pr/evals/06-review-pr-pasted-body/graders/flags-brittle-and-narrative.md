@@ -1,7 +1,7 @@
 ---
 type: llm
 ---
-The reply flags "All 340 tests pass" (or the test count) as a brittle detail that duplicates the diff and should be removed.
-The reply questions whether the "### Fixes" entry (no longer throws on an empty response body) describes a bug that affected a published release or just behavior introduced by this same change, and suggests folding it into the Summary if it's the latter.
-The reply flags the "first I tried... but that swallowed real errors" sentence as commit-diary narration that belongs in a commit message, not the PR description, and suggests removing or moving it.
+The reply flags the test count ("All 340 tests pass") as a brittle detail that goes stale, and suggests removing it or replacing it with checklist items.
+The reply questions the "### Fixes" entry (no longer throws on an empty response body): it says the entry only belongs if the bug affected a published release, and otherwise suggests deleting it or folding the fix into the Summary.
+The reply flags the "first I tried... but that swallowed real errors" sentence as first-person narration of the author's process, and suggests cutting it, moving it to a commit message, or rewriting it as a design decision.
 The reply gives at least one concrete markdown snippet as a suggested fix rather than only vague advice like "add more detail."

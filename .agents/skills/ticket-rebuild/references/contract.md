@@ -5,7 +5,7 @@ Contents: Past — the cost-to-relearn filter; Present — nothing that rots; Fu
 Every body this plugin writes follows three rules, one per tense, the same
 for a GitHub issue, a Linear project, a Confluence page, and a merge request.
 How much of each an object carries is in `altitude.md`; how a renderer
-expresses a reference is in the provider's file, indexed in `hierarchy.md`.
+expresses a reference is in the provider's file, indexed in `resolve.md`.
 
 ## Past — the cost-to-relearn filter
 

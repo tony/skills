@@ -3,10 +3,6 @@
 Each stage has one exit condition. A stage may not hand off until its gate
 passes, and a failed gate is reported rather than worked around.
 
-The gates exist because the stages do not call each other — they communicate
-through files. A stage that hands off a malformed artifact fails somewhere
-downstream, where the cause is no longer visible.
-
 ## gather
 
 Every source in `sources.jsonl` has a resolved ref and, for a git source, the
@@ -20,11 +16,8 @@ omission means the study cannot state its own coverage boundary.
 ## extract
 
 Every row in `terms.jsonl` has a non-empty `definition` and at least one entry
-in `cites`. `term-metrics.py <study> --check-terms` lists the rows that fail.
-
-A term with no definition is a word the corpus happens to contain. A
-definition with no citation is the analyst's summary of the corpus, which is
-the thing this pipeline exists to avoid producing.
+in `cites`, each with a non-empty `quote`. `term-metrics.py <study>
+--check-terms` lists the rows that fail.
 
 ## distill
 
@@ -51,5 +44,4 @@ $ <analyzer> notes/ontology/<subject>/ --check-brief
 `<analyzer>` is the path to `term-metrics.py`, which ships beside this file.
 
 A non-zero exit means the brief is not renderable yet (exit 2 means the file
-is missing). Fix the brief, not the
-checker.
+is missing). Fix the brief, not the checker.

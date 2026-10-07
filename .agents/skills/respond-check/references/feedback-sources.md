@@ -59,6 +59,12 @@ only after the user confirms that exact command.
 
 ### Continuous integration
 
+Find the failing checks; each `link` ends in `/runs/<run-id>/...`:
+
+```console
+$ gh pr checks <n> --json name,bucket,link
+```
+
 Pull the failure itself rather than the summary:
 
 ```console
@@ -73,7 +79,8 @@ where that gets fixed.
 ## Normalizing
 
 Each finding becomes one record: source (author login, whether the
-author is a bot, and the thread or run it came from), the claim quoted
+author is a bot, and the thread or run it came from; a login without the
+`[bot]` suffix is a bot when `gh api users/<login> --jq .type` says `Bot`), the claim quoted
 and trimmed to its assertion, the location it names, and the severity
 the reviewer gave it. Severity is recorded as given and re-derived by
 the rubric.

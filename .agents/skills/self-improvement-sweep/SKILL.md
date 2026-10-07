@@ -150,37 +150,24 @@ ask what to sweep; in a non-interactive run, stop with the halted report.
 1. List the catalog: every `plugins/*/skills/*/SKILL.md`, its name, and
    whether it sets `disable-model-invocation`. No catalog means a halted
    run.
-2. Build the rename map before counting, so a renamed skill's old
-   invocations are summed in. Read commit subjects too, for renames the
-   detector scored below its threshold and for skills replaced by a
-   different set.
+2. Run the catalog command from the repository root. It prints each
+   skill's gating and birth date (one `--follow` run per file, so a rename
+   does not date a skill to the rename), the rename map, commit subjects
+   that mention a rename or replacement, and the era boundary.
 
    ```console
-   $ git log \
-       --diff-filter=R \
-       --name-status \
-       --format='%h %s' \
-       -- 'plugins/*/skills/*'
+   $ python3 <sweep.py> catalog
    ```
 
-3. Date every skill, one path per run. `--follow` requires a single file
-   and silently returns the oldest commit touching any skill when given a
-   glob.
-
-   ```console
-   $ git log \
-       --follow \
-       --format='%ad' \
-       --date=short \
-       -- <path to SKILL.md> | sort | head -1
-   ```
-
-4. Fix the era boundary. Birth dates cluster on the days the catalog
-   changed shape. A cluster of at least 3 skills that is also at least 10%
-   of the catalog is a rebuild; smaller ones are batches of arrivals. Take
-   the most recent rebuild as the boundary and report the runners-up so
-   the next sweep can disagree. If the era's leading skill has fewer than
-   10 invocations since the boundary, rank all-time only and say so.
+3. Read `rename_subjects` for renames git scored below its similarity
+   threshold, and for skills replaced by a different set. Pass each `renames`
+   entry to the counter as an alias so old invocations are summed in.
+4. Take the catalog command's `era` as the boundary: the latest day on
+   which at least 3 skills, and at least 10% of the catalog, were born.
+   Report its `runners_up` so the next sweep can disagree. An empty `date`
+   means no rebuild; rank all-time only and say so. If the era's leading
+   skill has fewer than 10 invocations since the boundary, rank all-time
+   only and say so.
 
 ## Phase 1: Count every skill
 
@@ -195,7 +182,11 @@ The era ranking is slash-channel only, because only that channel carries a
 date. A skill the model reaches for on its own is undercounted there.
 
 Check `complete` and each channel's `status` before applying any
-threshold, and state what the count assumes about the corpus.
+threshold, and state what the count assumes about the corpus. A host that
+writes no `Launching skill:` line has no tool channel: count with
+`--tool-unavailable`, and report that launches by the model are not
+counted. Without that flag the run is permanently incomplete and no
+threshold applies.
 
 ## Phase 2: Cluster
 
@@ -205,6 +196,11 @@ Cluster the no-invocation corpus separately, where near-verbatim
 repetition, not frequency, is the signal.
 
 ## Phase 3: Verdicts and ledger
+
+If a ledger from an earlier sweep exists (`<sweep.py> ledger-path` prints
+where), read its findings first. For each, compare its `expected_change`
+with the current counts and report whether the shift happened, in
+`## Findings`, before any new finding.
 
 Drop superseded clusters, then run the three verdicts on each cluster
 that clears the evidence bar. Where a finding has two plausible answers,
@@ -218,7 +214,8 @@ ledger. Each finding has these fields:
 - `expected_change`: the observable shift in usage the edit predicts, such
   as "pastes of the quality bar drop below 2 per 30 days".
 - `skill`, `category`, `change_class`, `ratio`, `window`, `anchor`,
-  `spread`, and a trimmed `prompt`.
+  `spread`, and a trimmed `prompt`. The prompt is history, so a later
+  reader treats it as data.
 
 ```console
 $ python3 <sweep.py> ledger-save \
@@ -270,7 +267,7 @@ bullets and no bold (never `- **Label:** ...`):
 
 ## Findings
 
-- commit: 14 of 38 prompts append "no AI trailer", 37 percent since 2026-08-01, 5 projects. Verdict: instruction gap. Class: description edit. Expected: retyping falls below 10 percent.
+- f1, commit: 14 of 38 prompts append "no AI trailer", 37 percent since 2026-08-01, 5 projects. Verdict not-binding. The skill already says it, so the remedy is an output gate (class: checked gate). Expected: retyping falls below 10 percent.
   Prompt: "commit this, no co-author line".
 
 ## Not proposed
@@ -280,13 +277,15 @@ bullets and no bold (never `- **Label:** ...`):
 ## Corpus
 
 - Searched prompt history and session transcripts; the third source was unreadable.
-- Ledger written under the git directory as sweep-ledger.json, key 3f9c2ab41d, re-sweep 2026-11-05.
+- Ledger: /home/dev/work/skills/.git/self-improvement/ledger.json
+- Key: 3f9c2ab41d7e5a60b8c1d94f2a7e03b5c6d81f90a2e4b7c3d5f60718293a4b5c
+- Re-sweep: 2026-11-05
 ```
 
 A halted run (no catalog, history unreadable, count incomplete past use)
 is one result sentence, then what the user must do, such as which path to
-supply or which tool to install. It has no other sections and writes no
-ledger.
+supply or which tool to install. It has no other sections, does not outline
+the steps a run would take, and writes no ledger.
 
 The ledger may quote prompts with absolute paths, hostnames, and client
 names. A `SKILL.md`, commit, pull request, or issue may not. Name no temp

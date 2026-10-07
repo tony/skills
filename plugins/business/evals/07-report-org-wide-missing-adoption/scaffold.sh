@@ -38,14 +38,16 @@ printf 'task,minutes_manual,minutes_ai\n1,30,12\n2,25,14\n3,40,18\n' >"$run/raw/
 cat >"$run/measurements/timing.md" <<'MD'
 # Timing
 
-Median per-instance saving 15 min (DIRECTIONAL, MEASURED: sources.md
+Median per-instance saving 18 min (DIRECTIONAL, MEASURED: sources.md
 `task-timings`, 2026-04-01..2026-06-30, n=3 tasks).
+
+check: median raw/task-timings.csv minutes_manual-minutes_ai = 18
 MD
 
 cat >"$run/findings.md" <<'MD'
 # Findings
 
-Median per-instance saving 15 min (DIRECTIONAL, MEASURED: sources.md
+Median per-instance saving 18 min (DIRECTIONAL, MEASURED: sources.md
 `task-timings`, 2026-04-01..2026-06-30, n=3 tasks).
 
 ## Unknowns

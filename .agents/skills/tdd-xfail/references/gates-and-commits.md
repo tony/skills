@@ -67,3 +67,28 @@ and no bold (never `- **Commit:** ...`):
 
 - add_hours has the same weekend handling; not changed.
 ```
+
+## Stopped run
+
+One hero line (`⚠` plus the result in one sentence), the plan under
+`## Plan` when no one has approved it yet, then `## To continue` with what the
+user must do. Name commits by purpose, never by phase or number, and name no
+local paths.
+
+Reply in this shape, as plain text outside any code fence, with plain bullets
+and no bold:
+
+```text
+⚠ Nothing written: the current directory is not the project's repository.
+
+## Plan
+
+- Add an xfail test for is_business_day(5) in the existing test file.
+- Fix the upper bound in is_business_day as a separate source-only commit.
+- Remove the xfail marker in a final test-only commit.
+
+## To continue
+
+- Run the workflow from the project's repository root.
+- Approve the plan, or say what to change.
+```

@@ -77,8 +77,8 @@ answering for the first time.
 
 A correction belongs in the answer only if the user saw and relied on
 the old claim: did they **act** on it — commit it, file it, send it,
-build on it? Then say so explicitly, once, briefly ("the issue filed earlier claims X; that is
-wrong because Y"), then continue standalone. Adoption is the only
+build on it? Then say so explicitly, once, briefly ("the issue filed
+earlier claims X; that is wrong because Y"), then continue standalone. Adoption is the only
 thing that turns a prior turn into a baseline.
 
 ## What this contract is not

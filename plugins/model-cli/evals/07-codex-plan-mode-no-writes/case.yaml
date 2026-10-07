@@ -27,6 +27,13 @@ graders:
     max: 0
     arm: both
 
+  - name: read-only-sandbox-flag
+    type: tool_used
+    tool: Bash
+    input_match: '--sandbox read-only'
+    min: 1
+    arm: both
+
   - name: plan-only-reply
     type: llm
     focus: last_message

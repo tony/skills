@@ -46,17 +46,21 @@ A plain-SQL dump (`.sql`, not `.dump`) has no custom-format header and
 `pg_restore` will reject it. Pipe those through `psql` instead:
 
 ```console
-$ psql --dbname=restore_scratch --set ON_ERROR_STOP=1 \
+$ psql \
+    --dbname=restore_scratch \
+    --set ON_ERROR_STOP=1 \
     --file=/srv/backups/pg/<db>-<date>.sql
 ```
 
 ## Verify before promoting
 
 Compare row counts against what the dump claimed. Any table at zero is
-a failed restore, not an empty table:
+a failed restore, not an empty table. Count one table:
 
 ```console
-$ psql --dbname=restore_scratch --command='\dt+'
+$ psql \
+    --dbname=restore_scratch \
+    --command='SELECT count(*) FROM <table>'
 ```
 
 If a count is wrong, re-run the restore with `--verbose` and read the

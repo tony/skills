@@ -25,7 +25,8 @@ whatever the branch is named.
 
 If the changelog has no unreleased section, ask the user what to call it,
 mirroring the project's convention, and create that. Never create a version
-heading.
+heading. Without a question tool, propose `## Unreleased` (or the project's
+spelling) in the presented entries and flag it as a guess.
 
 ## The one exception
 
@@ -42,7 +43,8 @@ None of these is an explicit request:
 
 An ambiguous ask ("update the changelog for the release") gets a question:
 which version, and is a release cut intended. Until answered, stay in the
-unreleased section.
+unreleased section. Without a question tool, print the question, stay in the
+unreleased section, and cut nothing.
 
 ## Base branch
 
@@ -56,14 +58,17 @@ $ gh pr view --json baseRefName
 Without a PR, take trunk from `git symbolic-ref refs/remotes/origin/HEAD`
 (strip `refs/remotes/origin/`). If that fails, use `main`, then `master`,
 whichever exists. Run `git fetch origin <base>` before comparing against
-`origin/<base>`; if the fetch fails, say the comparison may be stale. When
-the current branch is the base, report "Already on the base branch, nothing to generate" and stop.
+`origin/<base>`; if the fetch fails, say the comparison may be stale. With no
+`origin` remote, compare against the local `<base>` branch wherever a skill
+says `origin/<base>`, and say so. When the current branch is the base, report
+"Already on the base branch, nothing to generate" and stop.
 
 ## Changelog file
 
 Scan the repo root for `CHANGES`, `CHANGES.md`, `CHANGELOG`, `CHANGELOG.md`,
 `HISTORY`, `HISTORY.md`, `NEWS`, `NEWS.md`. With several, take the one with the
-most content. With none, ask the user which filename to create.
+most content. With none, ask the user which filename to create; without a question tool,
+propose `CHANGES.md` as a guess and create nothing before approval.
 
 ## Whole-branch perspective
 

@@ -41,16 +41,16 @@ stash, and the ledger is the base.
 
 ## The ledger
 
-One markdown file, written outside the working tree. Resolve the
-directory it lives in:
+One markdown file, written outside the working tree. Create and print
+the directory it lives in, and use the printed path literally afterwards:
 
-```console
-$ git rev-parse --path-format=absolute --git-common-dir
+```sh
+d="$(git rev-parse --path-format=absolute --git-common-dir)/spike" && mkdir -p "$d" && echo "$d"
 ```
 
-The ledger lives at `<that path>/spike/<goal-slug>.md`. A ledger in the
-working tree gets swallowed by the round's `git stash push -u` or erased
-by `git clean -xdf`; the common dir resolves to one path from every
+The ledger lives at `<that path>/<goal-slug>.md`. A ledger in the
+working tree gets swallowed by the round's stash or erased by
+`git clean -xdf`; the common dir resolves to one path from every
 bakeoff worktree.
 
 Name the ledger in the Phase 1 brief as `spike/<goal-slug>.md` under
@@ -86,7 +86,9 @@ provenance recorded in the brief.
 Read `../probe/SKILL.md` and follow its Phase 0 once for the whole
 ratchet: commit check, conventions files, the five gate buckets and CI
 split per `../../references/verification-gates.md`, and the dirty-tree
-halt. Then:
+halt. Every round starts from a clean tree, so offer only stash first or
+abort there (non-interactive default: abort); never "probe on top". The
+ratchet takes no `--branch`. Then:
 
 1. Resolve the ledger path and read it if it already exists.
 2. Confirm `git worktree` is usable, since any round may call a
@@ -135,8 +137,9 @@ Repeat until Phase 3 says stop. Each round:
 4. **Record.** Append the round's ledger section before the next round;
    a round without its entry did not happen.
 
-Except when carrying grafts, a round starts from a clean tree and
-inherits the ledger's locked decisions, not the code.
+Except when carrying grafts, a round starts from a clean tree (the
+user's own work waits in the stash from Phase 0) and inherits the
+ledger's locked decisions, not the code.
 
 ## Phase 3: Convergence test
 
@@ -177,10 +180,12 @@ Write the report per `../../references/prose-rules.md`.
    `⚠ capped at <n> rounds` / `⚠ thrashing, stopped at round <n>` +
    the goal.
 
-   A run that halts before round 1 (no commit, dirty tree declined,
-   missing code or goal) is a `⚠ ratchet halted` hero line and one
-   result sentence naming what is missing, then what the user must do
-   next. No sections, no panel, no stash SHAs, no local or temp paths.
+   A run that halts before round 1 (no commit, repository rooted at
+   home, dirty tree declined, missing code or goal) is a
+   `⚠ ratchet halted` hero line and one result sentence naming what is
+   missing, then what the user must do next. No sections, no panel, no
+   stash SHAs, no local or temp paths, no command echo, no description
+   of the environment.
 2. `## Rounds`: one block per round: what was probed, what fought
    back, bakeoff winner if any, what got locked.
 3. `## Design`: the locked decisions as a specification, not a history.
@@ -197,6 +202,13 @@ Write the report per `../../references/prose-rules.md`.
    unless already in plan mode or `--replay` was given. In a
    non-interactive run, record the question and default to stopping
    with the ledger kept.
+
+A halted run replies in this shape:
+
+```text
+⚠ ratchet halted: converge on an async/await port of the retry queue.
+The repository has no commits yet. Make the initial commit yourself, then run /spike:ratchet again with the same goal.
+```
 
 Reply in this shape, as plain text outside any code fence, with plain
 bullets and no bold (never `- **Round 1:** ...`), the `## Stashes`

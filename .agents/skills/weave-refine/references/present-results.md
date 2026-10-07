@@ -105,14 +105,16 @@ single-verified, then unverified). Omit consensus tags when only one lane partic
 >    table.
 > 4. Prefer tables and tight bullets. Narrative paragraphs are allowed
 >    only inside `Adjudication` / `Reviewer Disagreements` and
->    `Critic Findings`. Bold a bullet's lead-in only where the section
->    table asks for labels; never bold the lead of every bullet.
+>    `Critic Findings`. Use plain bullets in every section, including
+>    content carried over from worker responses: write `- Label: text`
+>    or a plain sentence, never `- **Label:** text`.
 > 5. A run that stopped before producing the artifact (refused, failed, or
 >    declined) renders none of this: one sentence stating the result, then
 >    what the user needs to do next.
 
-Reply in this shape, as plain text outside any code fence, with plain
-bullets and no bold (never `- **Label:** ...`):
+Reply in this shape (shown for refine; every RESULT_KIND follows its own
+section list), as plain text outside any code fence, with plain bullets and
+no bold (never `- **Label:** ...`):
 
 ```text
 Refined through 2 passes

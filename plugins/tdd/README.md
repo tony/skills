@@ -33,42 +33,22 @@ Claude Code uses a leading slash (`/tdd:…`). Codex omits it (`tdd:…`).
 
 ## Components
 
-| Component | Description |
-|-----------|-------------|
-| `/tdd:fix` | Standard xfail-driven TDD bug-fix loop |
-| `/tdd:xfail` | Hermetic xfail workflow with diff gates, mock contamination guards, and CI checkpoints |
+`/tdd:fix` is the standard loop: xfail test, root-cause analysis, fix, xfail
+removal. It makes three commits and checks that test commits stage test files
+only.
 
-## `/tdd:fix` Workflow
+`/tdd:xfail` adds proof at every boundary: it removes the marker to confirm the
+test fails for the bug's reason, then stashes the fix to confirm the bug
+returns. Use it when the reproduction needs that proof or the project has CI;
+it costs two extra runs and a stash round trip per bug.
 
-1. **Understand**: Parse bug report (symptom, expected behavior, triggers).
-2. **Reproduce**: Create an xfail-marked test.
-3. **Analyze**: Trace to the root cause.
-4. **Fix**: Apply minimal fix; confirm xfail passes.
-5. **Verify**: Remove xfail, run quality gates.
-6. **Recover**: Retry on failure (up to 3 attempts).
-
-*Produces atomic commits for: xfail test, fix, and xfail removal.*
-
-## `/tdd:xfail` Protocol
-
-A strict TDD variant enforcing proof at each boundary:
-
-1. **Reproduce**: Write strict xfail test.
-2. **Verify Reproduction**: Ensure test fails for the right reason (no mock contamination).
-3. **Apply Fix**: Edit source code only (xfail now XPASSes).
-4. **Verify Isolation**: Stash fix to confirm bug returns, pop to confirm resolution.
-5. **Remove xfail**: Edit test file only.
-6. **Final Verification**: Ensure full suite passes.
-
-*Enforces separation via `git status --porcelain` gates, which include untracked files.*
+Either skill stops after the committed failing test when that is all you asked
+for. Both make three commits per bug and push nothing unless you ask.
 
 ## Cross-Dependency Bugs
 
-For bugs spanning multiple projects:
-1. Fix the dependency first.
-2. Verify dependency tests pass.
-3. Configure local dependency for development.
-4. Fix and test in the main project.
+When a bug spans a dependency, the skills fix the dependency first, then point
+the project at the local fix and finish there.
 
 ## Quality Gates & Frameworks
 
@@ -79,6 +59,6 @@ Adapts dynamically based on `AGENTS.md` / `CLAUDE.md`:
 
 ## Prerequisites
 
-- **git** for atomic commits.
+- git, for the commits.
 - A supported test framework.
 - Quality gate commands defined in conventions.

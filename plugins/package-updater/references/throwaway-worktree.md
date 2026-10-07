@@ -18,15 +18,29 @@ persist between calls:
 $ mktemp -d "${TMPDIR:-/tmp}/worktree.XXXXXX"
 ```
 
+Create the worktree on a named local branch, never detached: commits on a
+detached HEAD are unreachable once the worktree is removed. Use the branch
+name the skill gives, or `wip/<topic>`. If the branch already exists,
+pick another name; never reset an existing one.
+
 ```console
-$ git worktree add --detach <printed-path> origin/<default>
+$ git worktree add \
+    -b <branch> \
+    <printed-path> \
+    origin/<default>
 ```
 
-To work on a branch, replace `--detach` with `-b <branch>`.
-
-Commit there, and push with `git push origin HEAD:<default>` only when
-the request asks to push. Remove the worktree afterwards:
+Commit there. Push with `git push origin HEAD:<default>` only when the
+request asks to push. Remove the worktree afterwards; the branch and its
+commits stay:
 
 ```console
 $ git worktree remove <printed-path>
+```
+
+Without a push request, report the branch name and print the push
+command for the user to run:
+
+```console
+$ git push origin <branch>:<default>
 ```

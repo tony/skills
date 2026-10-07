@@ -27,14 +27,20 @@ Each of these halts the run with a report, not a warning:
   rewritten in place; `git worktree list --porcelain` names the
   holder.
 - **A shallow clone**, which cannot be reasoned about historically.
+- **An unborn HEAD** (`git rev-parse --verify HEAD` fails): there is
+  nothing to rewrite or study.
+- **A repository rooted at `$HOME`, or at a directory containing it.**
+  Compare `git rev-parse --show-toplevel` with `$HOME`; a dotfile repo
+  there makes every untracked file, credentials included, part of the
+  work.
 
 Report but do not necessarily halt on: a stale submodule pointer (a later
 `git add -A` bakes it in); an active sparse checkout (file listings are
 incomplete); and signed commits, which a rebase strips unless signing
 is re-enabled.
 
-```
-git log --format='%h %G? %s' <base>..HEAD
+```console
+$ git log --format='%h %G? %s' <base>..HEAD
 ```
 
 ## The pushed-branch gate
@@ -42,15 +48,18 @@ git log --format='%h %G? %s' <base>..HEAD
 Rewriting a branch someone else may have checked out needs the user's
 explicit consent.
 
-```
-git rev-parse --abbrev-ref --symbolic-full-name '@{u}'
+```console
+$ git rev-parse --abbrev-ref --symbolic-full-name '@{u}'
 ```
 
-No upstream means local-only; proceed. With an upstream, read the
-remote's true tip **without** `git fetch`:
+No upstream means local-only; proceed. With an upstream, take the
+remote name from `git config branch.<branch>.remote` and the remote
+branch from `git config branch.<branch>.merge` (it can differ from the
+local name and need not be `origin`). Read the remote's true tip
+**without** `git fetch`:
 
-```
-git ls-remote --heads origin <branch>
+```console
+$ git ls-remote --heads <remote> <remote-branch>
 ```
 
 `fetch` refreshes the remote-tracking ref and destroys the
@@ -59,21 +68,23 @@ git ls-remote --heads origin <branch>
 Then decide whether rewriting drops commits that exist only on the
 remote:
 
-```
-git merge-base --is-ancestor <remote-tip> HEAD
+```console
+$ git merge-base --is-ancestor <remote-tip> HEAD
 ```
 
 A non-zero exit means someone else pushed, or the remote tip is not
 local yet. Halt. Report the SHA from `ls-remote`. To name who pushed,
 fetch by URL into a scratch ref; a fetch by remote name also refreshes
-`origin/<branch>` and defeats the lease:
+the remote-tracking ref and defeats the lease:
 
-```
-git fetch "$(git remote get-url origin)" <branch>:refs/remote-check/<branch>
+```console
+$ git fetch \
+    "$(git remote get-url <remote>)" \
+    <remote-branch>:refs/remote-check/<remote-branch>
 ```
 
-```
-git log --format='%h %an %s' HEAD..refs/remote-check/<branch>
+```console
+$ git log --format='%h %an %s' HEAD..refs/remote-check/<remote-branch>
 ```
 
 ## Back up before touching anything
@@ -82,13 +93,14 @@ A reflog entry is not a backup: unreachable entries expire after 30
 days. Use a branch, not a tag or raw ref; only a branch is discoverable
 and has a reflog of its own.
 
-```
-git branch "backup/<branch>-$(date -u +%Y%m%dT%H%M%SZ)" <branch>
+```console
+$ git branch "backup/<flat>-$(date -u +%Y%m%dT%H%M%SZ)" <branch>
 ```
 
 Keep the name a single flat segment after `backup/`: git refuses a
 branch whose name is a path prefix of an existing one, so `backup/x` and
-`backup/x/<timestamp>` cannot coexist.
+`backup/x/<timestamp>` cannot coexist. `<flat>` below is the branch name
+with every `/` replaced by `-`.
 
 Do not rely on `ORIG_HEAD`; the next reset, merge, or pull overwrites it.
 
@@ -100,14 +112,14 @@ Undo a rewrite of the checked-out branch from its backup. `<branch>@{1}`
 is only the previous reflog step, correct for a rewrite that moved the
 branch once:
 
-```
-git reset --hard backup/<branch>-<ts>
+```console
+$ git reset --hard backup/<flat>-<ts>
 ```
 
 Restore a branch that is not checked out:
 
-```
-git branch --force <branch> <backup-sha>
+```console
+$ git branch --force <branch> <backup-sha>
 ```
 
 Never delete and recreate a branch to move it — that destroys its
@@ -115,8 +127,8 @@ reflog.
 
 When no ref or reflog points at the work any more:
 
-```
-git fsck --unreachable --no-reflogs
+```console
+$ git fsck --unreachable --no-reflogs
 ```
 
 Never run `git reflog expire --expire-unreachable=now --all` as
@@ -127,8 +139,8 @@ cleanup. It destroys the user's entire stash list.
 Pushing is always an explicit, separate decision. The recommit itself
 stops at the local branch.
 
-```
-git push --force-with-lease --force-if-includes origin <branch>
+```console
+$ git push --force-with-lease --force-if-includes origin <branch>
 ```
 
 Bare `--force-with-lease` compares against your remote-tracking ref, so
@@ -141,8 +153,8 @@ have been integrated locally; it is a no-op unless paired with *bare*
 The alternative, immune to background fetches, is to capture the lease
 SHA before rewriting:
 
-```
-git push --force-with-lease=<branch>:<captured-sha> origin <branch>
+```console
+$ git push --force-with-lease=<branch>:<captured-sha> origin <branch>
 ```
 
 Never bare `--force`: it disables the fast-forward check on every ref

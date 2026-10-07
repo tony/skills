@@ -68,4 +68,6 @@ Open with a one-line hero (`✓ <topic>: <verdict>, <confidence> confidence` or 
 3. `## Open`: unknown ratings and open questions.
 4. `## Run`: run directory and report path.
 
+Write per `prose-rules.md`: plain bullets, no bold labels, no sentence narrating your own edits ("I added…"), no closing recap.
+
 Panel options: fill the unknowns, verify sources, stop.

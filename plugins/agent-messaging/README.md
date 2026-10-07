@@ -1,6 +1,6 @@
 # agent-messaging
 
-Message another running coding-agent session — Claude Code or Codex — on
+Message another running coding-agent session (Claude Code or Codex) on
 this machine, and verify who actually sent an incoming message.
 
 ## Requirements
@@ -8,7 +8,7 @@ this machine, and verify who actually sent an incoming message.
 Both sessions run on the same machine under the same user; every route is
 local, and the socket route trusts that boundary. Reaching a Claude session
 needs the `claude` CLI on PATH, and reaching a Codex thread needs it to
-share your `CODEX_HOME` — a thread under a different one is invisible, not
+share your `CODEX_HOME`; a thread under a different one is invisible, not
 merely unreachable. The `codex-queue` route needs a Codex build that ships
 `codex queue`; check with `codex queue --help`.
 
@@ -57,13 +57,13 @@ check it.
 
 Ranked per sender and receiver, not hardcoded per vendor.
 
-- **`SendMessage`** — Claude Code to Claude Code. The only route that
+- `SendMessage`: Claude Code to Claude Code. The only route that
   carries a sender name and a reply address in-band.
-- **`codex queue`** — anything to Codex. Durable, so it survives a target
+- `codex queue`: anything to Codex. Durable, so it survives a target
   that is not running, and externally auditable from its SQLite queue.
-- **Inbox socket** — anything to Claude Code. One newline-delimited JSON
+- Inbox socket: anything to Claude Code. One newline-delimited JSON
   frame, tokenless within the same operating-system user.
-- **`tmux send-keys`** — universal fallback. Indistinguishable from the
+- `tmux send-keys`: universal fallback. Indistinguishable from the
   operator typing.
 
 ## Adapters

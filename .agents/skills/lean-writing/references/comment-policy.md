@@ -130,8 +130,8 @@ frozen external fact, not a value tracking your own code:
 # CPython < 3.11 has no ExceptionGroup, so this branch stays.
 ```
 
-Rewrite — the same fact, with the argument cut away (GCC 13 added
-`-Wdangling-reference`):
+Rewrite — the same fact, with the argument cut away (illustrative; GCC's
+`-Wdangling-reference` warns on this pattern):
 
 ```cpp
 // By value, though the answer is cached and a reference would be

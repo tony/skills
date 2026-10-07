@@ -234,7 +234,7 @@ bullets and no bold (never `- **Label:** ...`):
 
 ## Commits
 
-- api: 9a3f1c2 Bump requests to 2.32.3, 4be0d71 Bump pytest to 8.3.2.
+- api: 9a3f1c2 py(deps) requests 2.31.0 -> 2.32.3, 4be0d71 py(deps[dev]) pytest 7.4.4 -> 8.3.2.
 
 ## Holds
 
@@ -252,10 +252,25 @@ Shape, which the three commands in this plugin share:
    check, or nothing to audit) prints one result sentence, then what the
    user needs to do, and no section. Nothing to audit is a halt, not a
    clean result.
-4. No bold label on a bullet, no closing recap, no local absolute path,
-   temp directory, or machine fact the user did not need.
+4. No bold label on a bullet, no closing recap or plan preview ("Once
+   X, I'll ..."), no local absolute path, temp directory, or machine
+   fact (installed tool versions, sandbox settings) the user need not
+   act on. No upstream fact from memory, no speculation about the latest
+   release, and no narration of this skill's own rules.
 5. End with the next-step options. Without a question tool, list them
    as text and take none.
+
+Reply to a halt in this shape, as plain text outside any code fence,
+with plain bullets and no bold:
+
+```text
+⚠ Stopped: nothing was changed. requests 2.32.4 could not be confirmed as published, and no file pinning it was found.
+
+To continue:
+- Run the command in the repository that holds the pin, or pass --repo <path>.
+- Allow network access to the package index, or confirm the version from your own source.
+- Stop here.
+```
 
 ## Common mistakes
 

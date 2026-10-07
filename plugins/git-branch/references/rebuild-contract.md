@@ -94,8 +94,8 @@ is a defect in the rebuild.
 
 **Diff as review material.** Then compare the implementations:
 
-```
-git diff <old-branch> <new-branch>
+```console
+$ git diff <old-branch> <new-branch>
 ```
 
 This is not a gate and must not be treated as one — the whole point

@@ -73,19 +73,13 @@ In Codex:
 respond:goal
 ```
 
-Arguments: a pull request number or URL (collect from that PR), `--base=<ref>`
-(override provenance baseline), `--include-resolved` (screen settled
-threads), `--no-fixup` (forward commits only), `--on-fail=skip|stop|ask`
-(per-finding gate failure), `--reply` (post drafted replies),
-`--max-rounds=<n>`, `--wait=<minutes>`, `--ci-wait=<minutes>`, `--push` (push each round and watch CI; without it, one local round).
-
-## What gets screened
-
-Six gates, cheapest first, stopping at the first that settles the finding:
-locate, truth, provenance, alignment, odds, cost. A misaligned verdict must
-cite a written decision, and a remote trigger with non-severe damage is
-declined as improbable. The gates are defined in
-`references/screening-rubric.md`.
+Every skill takes a pull request number or URL to collect feedback from.
+`check` also takes `--base=<ref>` (override the provenance baseline) and
+`--include-resolved` (screen settled threads). `action` takes `--base=<ref>`,
+`--no-fixup` (forward commits only), `--on-fail=skip|stop|ask` (per-finding
+gate failure), and `--reply` (post drafted replies). `goal` takes
+`--max-rounds=<n>`, `--wait=<minutes>`, `--ci-wait=<minutes>`, `--reply`, and
+`--push` (push each round and watch CI; without it, one local round).
 
 ## What a fix is allowed to add
 
@@ -94,15 +88,6 @@ existing test would catch it. A comment only if a reader three years from
 now would be worse off without it. No guard for a state the caller
 excludes. Every commit report names what was added; an empty list is the
 good outcome.
-
-## The loop
-
-`/respond:goal` states its exit condition before the first round: no new
-fixes, CI green, and every review agent having weighed in, or the round
-cap. Waits for CI and for agents are capped, and missing agents are
-reported. It halts rather than working around a failed gate, a rejected
-push, a needed rebase, or a verdict needing the author's intent, and it
-never merges or force-pushes.
 
 ## Verification discovery
 
@@ -116,4 +101,4 @@ and no more verification is run than each fix needs.
 - **git** — provenance uses merge-base, diff, log -L, and blame
 - **gh** (optional) — enables pull-request feedback, CI watching, and
   review-agent detection
-
+- **python3** (goal only) — runs the CI and review-agent wait script

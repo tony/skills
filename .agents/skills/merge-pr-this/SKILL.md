@@ -26,13 +26,15 @@ User arguments: $ARGUMENTS
 
 Precedence: an explicit argument (number or URL) > the PR this
 conversation has been working on > the current branch's PR. If the
-candidates disagree, ask via `ask-user-choice` before proceeding.
+candidates disagree, ask via `ask-user-choice` before proceeding; without a
+question tool, halt and list them.
 
 With no argument and no conversation PR, run `git branch --show-current`
 and `gh pr view --json number` to find the current branch's PR.
 
 Gather the PR's state. A failure here means no PR exists for the branch or
-`gh` is unavailable or unauthenticated: report it and stop.
+`gh` is unavailable or unauthenticated: report it and stop. The readiness
+gate reuses this read.
 
 ```console
 $ gh pr view <n> --json number,title,url,state,isDraft,baseRefName,mergeable,mergeStateStatus,reviewDecision
@@ -68,19 +70,19 @@ Use `--admin` only within the reference's policy.
 ### 5. Sync trunk and stand by
 
 Sync trunk and confirm the merge, per the reference's "After each merge".
-Then stop.
+Then stop. With `--auto` the merge is only queued: say so and skip the sync.
 
 ## Output
 
 Open with a one-line hero (`✓ Merged #N: <title>` or
 `⚠ Blocked: <reason>`), then exactly these sections. A run that stops before
-the merge gives the hero, `## Merge readiness`, and one sentence on what the
-user must do; nothing else.
+the merge gives the hero and one sentence on what the user must do; no
+headings, and no narration of what was not done.
 
 1. `## Merge readiness` — the gate results, including anything that
    required a rebase or a wait on CI.
-2. `## Merge` — strategy used, flags passed through, and the merge
-   commit subject (or why no merge happened).
+2. `## Merge` — strategy used, flags passed through, the merge commit
+   subject and short SHA, and the PR URL.
 3. `## Trunk` — the post-merge trunk state after checkout and pull, or
    that the sync was skipped.
 
@@ -99,11 +101,20 @@ bullets and no bold (never `- **Label:** ...`):
 
 ## Merge
 
-- Strategy --merge, no extra flags. Subject: "sync(fix[client]) Retry transient network errors (#31)".
+- Strategy --merge, no extra flags. Merge commit 4f2a9c1: "sync(fix[client]) Retry transient network errors (#31)".
+- https://github.com/acme/widgets/pull/31
 
 ## Trunk
 
 - main is at the merge commit; local main fast-forwarded.
+```
+
+A stopped run:
+
+```text
+⚠ Blocked: #42 needs an approving review before branch protection allows the merge.
+
+Get the review, or tell me to use --admin; I did not use it.
 ```
 
 End with an `ask-user-choice` panel offering next steps (for example:

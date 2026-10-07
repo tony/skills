@@ -1,6 +1,6 @@
 # Resolving a work item's provider and context
 
-Contents: Detect the provider before interpreting any noun; Capture native type and semantic role separately; Traverse only actual hierarchy relations; Collect orthogonal context separately; Never synthesize a missing level; Prefer native nouns in output; Respect instance configuration over defaults; Reporting context back; Provider files.
+Contents: Detect the provider before interpreting any noun; Capture native type and semantic role separately; Traverse only actual hierarchy relations; Collect orthogonal context separately; Never synthesize a missing level; Prefer native nouns in output; Respect instance configuration over defaults; Provider files.
 
 Procedure for working out what an object actually is before writing about
 it. The taxonomy it resolves against is in `hierarchy.md`.
@@ -8,7 +8,7 @@ it. The taxonomy it resolves against is in `hierarchy.md`.
 ## Detect the provider before interpreting any noun
 
 To tell which backend is connected, check the available tools for the
-provider's MCP server, then `which` for its CLI (`gh`, `glab`, `jira`, and so
+provider's MCP server, then `which` for its CLI (`gh`, `glab`, `acli`, and so
 on). Prefer what is connected; if neither is present, no write backend exists.
 
 Use evidence in this order, stopping at the first that answers:
@@ -30,15 +30,11 @@ DevOps. `ENG-123` fits Jira, Linear, and Shortcut. The words `Epic`,
 Both, always. One keeps output correct; the other permits cross-provider
 reasoning. Neither substitutes for the other.
 
-```yaml
-provider: github
-native_type: issue
-native_display_type: Epic
-semantic_role: delivery_group
-mapping_basis: convention
-```
+Record the provider, the native type, the display type the organization uses,
+the semantic role, and what the mapping rests on (convention, metadata, or
+the user's word).
 
-That reads as a GitHub Issue the organization classifies as an Epic. It does
+For example, a GitHub Issue the organization classifies as an Epic. That does
 not mean GitHub exposes a native Epic object, and the body must not imply
 that it does.
 
@@ -59,19 +55,9 @@ After the parent chain resolves, gather strategic goals, strategic measures,
 timeboxes, release groupings, checkpoints, views, documents, dependencies,
 and implementation artifacts into their own structure.
 
-```yaml
-hierarchy:
-  parent: ENG-100
-  ancestors:
-    - ENG-50
-
-associations:
-  scheduled_in: Cycle 42
-  checkpoint_of: Public Beta
-  visualized_by: Authentication Roadmap
-  documented_by: Login Migration Spec
-  implemented_by: github:acme/api#456
-```
+Record the parent and ancestors apart from associations such as `scheduled_in`
+(a Cycle), `checkpoint_of` (a Milestone), `visualized_by` (a roadmap),
+`documented_by` (a spec), and `implemented_by` (a pull request).
 
 ## Never synthesize a missing level
 
@@ -117,31 +103,6 @@ fields.
 
 When observation conflicts with the default map, keep the observation and
 record the deviation.
-
-## Reporting context back
-
-Summarize in provider-native language, one labelled line per relation.
-
-```text
-Work item:      Linear Issue ENG-142, "Support passkeys"
-Delivery:       Linear Project "Authentication Refresh"
-Strategic:      Linear Initiative "Account Security"
-Checkpoint:     Linear Project Milestone "Public Beta"
-Timebox:        Linear Cycle 42
-Documentation:  Linear Document "Passkey Design"
-Implementation: GitHub Pull Request acme/api#456
-```
-
-For a convention-based hierarchy, say that it is one.
-
-```text
-Work item:      GitHub Issue #142, type Feature
-Parent:         GitHub Issue #100, type Epic
-                delivery group by organization convention
-Release:        GitHub Milestone "v3.0"
-Planning view:  GitHub Project "Authentication Roadmap"
-Implementation: GitHub Pull Request #456
-```
 
 ## Provider files
 

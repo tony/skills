@@ -56,7 +56,7 @@ Compare them with the script, which drops the timing footer and compares node
 ids in order:
 
 ```console
-$ python3 references/measure.py order collection-a.txt collection-b.txt
+$ python3 <measure.py> order collection-a.txt collection-b.txt
 ```
 
 For a candidate that must not change order, compare its collection against the

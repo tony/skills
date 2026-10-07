@@ -87,10 +87,12 @@ The shared worker prompt body is:
 > 5. **Test coverage gaps**: new code paths without tests
 >
 > For each issue found, report:
-> - **Severity**: Critical / Important / Suggestion
-> - **File and line**: exact location
-> - **Description**: what the issue is
-> - **Recommendation**: how to fix it
+> - Severity: Critical / Important / Suggestion
+> - File and line: exact location
+> - Description: what the issue is
+> - Recommendation: how to fix it
+>
+> Use plain bullets with no bold.
 >
 > Assign a confidence score (0-100) to each issue. Only report issues with confidence >= 70.
 

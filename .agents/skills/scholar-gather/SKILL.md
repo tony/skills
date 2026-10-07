@@ -25,7 +25,8 @@ User arguments: $ARGUMENTS
 Never write into the corpus being read: no `git checkout`, no `git clean`, no
 edit inside a target. Studying a project must not dirty its checkout. Output
 lands under `--out`, defaulting to `notes/ontology/<subject>/` in the current
-repository. The corpus is recorded by URL and ref, not by local path.
+repository. The corpus is recorded by URL and ref, not by local path; `extract` fetches a
+pinned checkout when it needs one.
 
 ## Procedure
 
@@ -100,9 +101,14 @@ A scope the user named in the request is already settled; do not ask again.
 One row per source, including every source deliberately not read:
 
 ```json
-{"source": "https://github.com/OWNER/REPO", "ref": "v2.40.0", "commit": "<40-character SHA>", "scope": "src/parser/", "read": true, "why": ""}
-{"source": "https://github.com/OWNER/REPO", "ref": "v2.40.0", "commit": "<40-character SHA>", "scope": "test/", "read": false, "why": "tests name fixtures, not domain concepts"}
+{"source": "https://github.com/OWNER/REPO", "ref": "v2.40.0", "commit": "<40-character SHA>", "scope": "src/parser/", "locator_kind": "line-range", "read": true, "why": ""}
+{"source": "https://github.com/OWNER/REPO", "ref": "v2.40.0", "commit": "<40-character SHA>", "scope": "test/", "locator_kind": "line-range", "read": false, "why": "tests name fixtures, not domain concepts"}
+{"source": "Example Press, Style Guide", "ref": "2024, first printing", "commit": "", "scope": "chapter 2", "locator_kind": "search-string", "read": true, "why": ""}
 ```
+
+`locator_kind` is how citations into the source are located: `line-range`,
+`section`, `page`, or `search-string`, in the order `references/citation.md`
+prefers. `verify` checks each citation by its source's kind.
 
 `contest`'s completeness pass reads exactly this file.
 

@@ -1,8 +1,8 @@
 ---
 name: tailwind-spacing-audit
 description: >-
-  Use when Tailwind UI spacing, alignment, gaps, margins, padding, or
-  toolbar and navbar rhythm looks inconsistent.
+  Use when Tailwind spacing looks uneven or too wide: gap, space-x, margin,
+  or padding mixed on navbars, toolbars, and flex rows.
 metadata:
   argument-hint: "<file-or-directory-to-audit>"
   source: "plugins/tailwind/skills/spacing-audit/SKILL.md"
@@ -29,8 +29,9 @@ Find the template files in scope and the class attribute each uses:
 - `*.vue`: `class=`, `:class=`
 - `*.svelte`, `*.astro`, `*.html`, `*.erb`, `*.blade.php`: `class=`
 
-The detect commands in `references/patterns.md` need `rg` (ripgrep). If
-it is missing, skip them and read the files in scope.
+The detect commands in `references/patterns.md` run
+`references/detect.py` (needs `python3`) and name an `rg` fallback for
+when it cannot run. If neither runs, read the files in scope.
 
 Read the installed Tailwind version: the `tailwindcss` entry in the
 lockfile (`package-lock.json`, `pnpm-lock.yaml`, `yarn.lock`,
@@ -65,7 +66,8 @@ file the user named is not a clean bill: read the file.
 
 Propose the changes as a diff or before/after; edit files only when the
 user asked to fix or apply them. For a pasted snippet, reply with the
-code. Preserve existing breakpoints, and change only spacing classes.
+code. Preserve existing breakpoints, and change only spacing and sizing
+classes.
 Work in this order:
 
 1. Merge fragmented containers. Put one visual group in one flex
@@ -138,7 +140,9 @@ nav (p-4, no gap)
 ````
 
 For a straightforward fix, collapse this to a short explanation and the
-code. Do not restate that distances stay the same.
+code, with no bold anywhere and no counted lead-in ("for three
+reasons:"). State each visible change once. Do not restate that
+distances stay the same.
 
 Halted or empty runs give one result sentence, then what the user does:
 

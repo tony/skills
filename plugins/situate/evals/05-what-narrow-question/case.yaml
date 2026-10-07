@@ -1,0 +1,42 @@
+schema_version: "1.0"
+name: 05-what-narrow-question
+description: >-
+  A narrow question about uncommitted work gets a short causal answer with
+  no branch inventory and no invented session activity.
+tags: [fixture, git]
+
+context:
+  scaffold_script: scaffold.sh
+
+execution:
+  prompt: /situate:what why calc.py hasn't been committed
+  max_turns: 15
+  timeout_seconds: 300
+  allowed_tools: [Bash, Read, Glob, Grep, Skill]
+
+runs: 3
+
+graders:
+  - name: five-line-format
+    type: llm
+    focus: last_message
+    criteria: |
+      Before any options, the reply has at most five lines of prose, each a
+      single sentence, with no headings, bullets, bold, or framing sentence
+      such as "here's what's going on"; any next steps are plain numbered
+      single-line options.
+
+  - name: answers-from-evidence
+    type: llm
+    focus: last_message
+    criteria: |
+      The reply identifies the uncommitted edit to calc.py and says what it
+      changes.
+      The reply spends no line on trunk or branch position.
+
+  - name: no-fabrication
+    type: llm
+    focus: last_message
+    criteria: |
+      The reply does not invent a pull request, a ticket, or commits beyond
+      the one existing commit.

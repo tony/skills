@@ -34,7 +34,8 @@ Write entries and the commit message per `references/prose-rules.md`.
 
 ## Phase 1: Safety checks, scope, approval
 
-1. **Preconditions.** Report why and stop if any fail:
+1. **Preconditions.** Report why and stop if any fail. Name the failed
+   precondition in plain words; mention no local paths or temp directories:
    - Working tree dirty (`git status --porcelain` non-empty).
    - Detached HEAD, or an in-progress rebase, merge, or cherry-pick.
    - Currently on the base branch.
@@ -54,7 +55,7 @@ Write entries and the commit message per `references/prose-rules.md`.
    - **Mixed commits** entangle changelog hunks with code and cannot be
      dropped. Ask via `ask-user-choice` per commit: leave it intact and let the
      new tip commit supersede its entries (recommended), or abort so the user
-     can split it.
+     can split it. Without a question tool, leave it intact and say so.
    - No changelog commits: nothing to rewrite. Suggest `/changelog` or
      the `changelog-refresh` skill and stop.
 
@@ -64,8 +65,9 @@ Write entries and the commit message per `references/prose-rules.md`.
    the history rewrite itself does (for example "yes, drop those commits").
    Via `ask-user-choice`, or in the invoking message when the host has no such
    tool, show:
-   - the commits Phase 2 will drop (SHA and subject);
-   - the backup branch it will create first;
+   - the commits Phase 2 will drop, by subject, never by bare SHA;
+   - the backup branch it will create first, named
+     `changelog-rewrite-backup-` plus the current UTC date and time;
    - that a failed invariant check restores the backup with
      `git reset --hard`;
    - when the dropped commits are pushed, that publishing needs a later
@@ -78,25 +80,27 @@ Write entries and the commit message per `references/prose-rules.md`.
 
 ## Phase 2: Back up and rebase out the old changelog commits
 
-1. **Back up.** Record the current tip and create a backup branch, then report
-   its name and SHA:
+1. **Back up.** Create the backup branch and print its name, its tip SHA, and
+   the merge-base with the base. Use these printed values literally in later
+   commands:
 
-   ```
-   git branch changelog-rewrite-backup-$(date -u +%Y%m%d-%H%M%SZ)
+   ```console
+   $ name=changelog-rewrite-backup-$(date -u +%Y%m%d-%H%M%SZ); git branch "$name" && echo "$name $(git rev-parse HEAD) $(git merge-base origin/<base> HEAD)"
    ```
 
 2. Drop the pure changelog commits non-interactively with a scripted sequence
-   editor that turns their `pick` lines into `drop` by SHA. With GNU
-   coreutils:
+   editor that turns their `pick` lines into `drop` by SHA. Rebase onto the
+   merge-base, not onto `origin/<base>`: the fetch may have moved the base, and
+   the rebase must not also move code onto it. With GNU coreutils:
 
-   ```
-   GIT_SEQUENCE_EDITOR='sed -i -E "s/^pick (<sha1>|<sha2>)/drop \1/"' git rebase -i origin/<base>
+   ```console
+   $ GIT_SEQUENCE_EDITOR='sed -i -E "s/^pick (<sha1>|<sha2>)/drop \1/"' git rebase -i <merge-base>
    ```
 
    On BSD/Darwin, `-i` needs an explicit (here empty) suffix:
 
-   ```
-   GIT_SEQUENCE_EDITOR='sed -i "" -E "s/^pick (<sha1>|<sha2>)/drop \1/"' git rebase -i origin/<base>
+   ```console
+   $ GIT_SEQUENCE_EDITOR='sed -i "" -E "s/^pick (<sha1>|<sha2>)/drop \1/"' git rebase -i <merge-base>
    ```
 
    Use each dropped commit's abbreviated SHA exactly as the todo list shows
@@ -107,7 +111,7 @@ Write entries and the commit message per `references/prose-rules.md`.
    - Code unchanged: `git diff <backup> HEAD -- . ':(exclude)<changelog-file>'`
      must be empty. Intact mixed commits keep this true.
    - With only pure commits dropped and no mixed commits,
-     `git diff origin/<base> HEAD -- <changelog-file>` must now be empty.
+     `git diff <merge-base> HEAD -- <changelog-file>` must now be empty.
 
    If either check fails, restore with `git reset --hard <backup>`, report,
    and stop.
@@ -132,9 +136,9 @@ nothing from the base branch.
 Present:
 
 1. The summary line
-   `Branch: <name> | Base: <base> | Dropped: <shas> | Backup: <branch>`.
-2. The proposed entries as exact markdown, the insertion point, and the voice
-   check and target line from `entry-rules.md`.
+   `Branch: <name> | Base: <base> | Dropped: <count> | Backup: <branch>`.
+2. The proposed entries as exact markdown, then the voice check and `Target`
+   line from `entry-rules.md`.
 3. When asking, an `ask-user-choice` with **Insert** and **Edit first** (return
    to generation). Offer no commit choice: `--commit` alone decides what lands.
 
@@ -142,10 +146,16 @@ Reply in this shape, as plain text outside any code fence, with plain
 bullets and no bold (never `- **Label:** ...`):
 
 ```text
-Branch: feat/cache-evict | Base: main | Dropped: 3 | Backup: backup/feat-cache-evict
+Branch: feat/cache-evict | Base: main | Dropped: 3 | Backup: changelog-rewrite-backup-20261006-142530Z
 
-- Proposed entry: add `Cache.evict()` to drop a cached key, under Features.
-- Insertion point: top of Unreleased in CHANGES.md.
+```markdown
+- Add `Cache.evict()` to drop a cached key (#212)
+```
+
+Voice check:
+- Add `Cache.evict()` to drop a cached key: can I take a new affordance?
+
+Target: CHANGES.md, Unreleased, Features, after the "### Features" heading. No version assigned, no release cut.
 ```
 
 ## Phase 4: Insert, commit, report
@@ -153,7 +163,8 @@ Branch: feat/cache-evict | Base: main | Dropped: 3 | Backup: backup/feat-cache-e
 Run only after the Phase 3 approval.
 
 1. Apply with Edit. With `--commit` in `$ARGUMENTS`, commit once at the tip per
-   `commit-message.md`. Without it, leave the edit uncommitted and show a
+   `commit-message.md`: no `Co-Authored-By`, no "Generated with" or other tool
+   trailer, no emoji. Without it, leave the edit uncommitted and show a
    ready-to-use commit message.
 2. Report the backup branch (to delete once satisfied with
    `git branch -D <backup>`), an uncommitted edit awaiting the user's commit
@@ -166,7 +177,7 @@ Run only after the Phase 3 approval.
    ```text
    Rewrote the changelog history of feat/cache-evict: 3 commits dropped, 1 added.
 
-   - Backup: backup/feat-cache-evict; delete it once satisfied.
+   - Backup: changelog-rewrite-backup-20261006-142530Z; delete it once satisfied.
    - The entry is committed at the tip as docs(CHANGES) Cache key eviction.
    - The branch is pushed; publish with git push --force-with-lease --force-if-includes.
    ```

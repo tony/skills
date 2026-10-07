@@ -9,11 +9,26 @@
 
 Every command reports in the same fixed order. A hero block may precede
 it. Omit a section that has no findings rather than writing that it is
-empty. No bold labels on bullets, no recap ending.
+empty; that includes `## Protected` when no history was found. No bold labels on bullets, no recap ending.
 
-A blocked or halted run (no shell, a failed proof, a declined approval)
-skips the sections: one sentence stating the result, then what the user
-needs to do next. Name what was not measured; never estimate it.
+A blocked or halted run (any layer or path that cannot be read, a failed
+proof, a declined approval) skips the sections: one sentence stating the
+result, then what was measured, what was not, and what the user needs to
+do next. Never estimate what was not measured, and never attribute
+unmeasured space to a path or directory.
+
+Reply in this shape, as plain text outside any code fence, with plain
+bullets and no bold (never `- **Label:** ...`):
+
+```text
+Nothing was reclaimed: the host drive could not be read, so no layer is
+confirmed as the binding constraint.
+
+- Measured: the WSL guest, 61% used, 344 GiB available.
+- Not measured: C: (host) and the ext4.vhdx backing file.
+- To continue: run `df -h /mnt/c` and share the output, or grant access
+  to /mnt/c.
+```
 
 ## Hero block
 
@@ -29,7 +44,7 @@ the one the user asked about: a full host beats a comfortable guest.
 Use these level-2 headings verbatim, in this order.
 
 **## Layers** — every filesystem with size, used, available, and use
-percentage. For virtual disks, the backing file's allocated size beside
+percentage. For virtual disks, the backing file's apparent size beside
 the guest's used space, with the balloon called out as its own figure.
 
 **## Biggest consumers** — ranked by size, with the layer each sits on.
@@ -69,7 +84,7 @@ bullets and no bold (never `- **Label:** ...`):
 
 - C: 931 GiB, 876 used, 55 available, 94%.
 - WSL guest ext4: 1007 GiB, 612 used, 344 available, 61%; ext4.vhdx
-  allocated 780 GiB, so 168 GiB is balloon.
+  apparent size 780 GiB, so 168 GiB is balloon.
 
 ## Biggest consumers
 
@@ -99,6 +114,15 @@ declined approval each belong here.
 
 ## Rules
 
+Report findings about the machine, never about the session's sandbox: no
+stand-in home directories, scratch totals, or tool limits.
+
+Say what rebuilding a regenerable item costs (time, bandwidth); never
+write that deleting it "costs nothing".
+
+Emit a command the user runs as a `console` fence with a `$ ` prefix,
+one command per fence; a Windows command uses a `powershell` fence.
+
 Attach every figure to a layer. State three numbers for a virtual disk:
 what the cleanup frees inside the guest, what the balloon already holds,
 and what the host gains once the user completes the steps only they can
@@ -113,6 +137,6 @@ reads as having missed it rather than having preserved it.
 
 End with an `ask-user-choice` panel offering the next step, unless
 already inside plan mode. Without an interactive question tool, print
-the question and stop. After the `disk-usage` skill, that is proceeding to
-this skill. After this skill, it is the handoff steps or a
+the question and stop. Run standalone, the `disk-usage` skill ends by
+offering this skill; run through the `disk` router it does not. After this skill, it is the handoff steps or a
 narrower follow-up pass.

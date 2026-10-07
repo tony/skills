@@ -45,10 +45,10 @@ or pushes.
 
 ### `/lean:trim-comments`
 
-Judges code comments and docstrings against three gates — would losing it hurt a
+Judges code comments and docstrings against three gates (would losing it hurt a
 maintainer in three years, would an elite library write it this tersely, will it
-stay true without hand-syncing — and deletes or rewrites the failures in place.
-Defaults to the files the branch changed; pasted code is trimmed in the reply
+stay true without hand-syncing) and deletes or rewrites the failures in place.
+Defaults to comments on lines the branch added or changed; pasted code is trimmed in the reply
 with nothing edited. Lists a verdict for every comment, keeps included, and
 confirms before editing. Prints a diff, never commits.
 

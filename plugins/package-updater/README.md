@@ -63,13 +63,13 @@ Flags:
 Dependency commit value lies in reasoning, so work is split into four
 tracks:
 
-1. **Toolchain and runtime** — One tool per commit. Every release in the
+1. Toolchain and runtime: one tool per commit. Every release in the
    span is linked.
-2. **Package manager and engines** — `packageManager` and `engines` are
+2. Package manager and engines: `packageManager` and `engines` are
    committed separately from dependencies.
-3. **Named package bumps** — One per package (or coupled release train).
+3. Named package bumps: one per package (or coupled release train).
    Body includes `why:` and `what:` with verified links.
-4. **Bulk lockfile refresh** — Everything routine in one commit with an
+4. Bulk lockfile refresh: everything routine in one commit with an
    empty body. The lockfile diff speaks for itself.
 
 Fallout (e.g., schema bumps, migrations) lands after in a separate commit.
@@ -89,7 +89,7 @@ documentation at run time, so no key or unit is fixed here.
 For `--root` sweeps, the plugin checks forge APIs (`isFork` and
 `viewerPermission`).
 - Skips forks regardless of ownership.
-- **Stops to ask** when signals disagree (e.g., owned repo with only
+- Stops to ask when signals disagree (e.g., owned repo with only
   agent commits, or contributed-to org repo).
 
 ## Discovery Tool Limitations
@@ -127,17 +127,9 @@ procedures come from each tool's own documentation and are experimental:
 the plugin proposes the command and waits for confirmation before the
 first run in a repository.
 
-## Components
-
-- Skills: `update`, `update-package`, `update-toolchain`, and
-  `updating-packages` (inventory, discovery, research, plan gate, land
-  in order, verify, report).
-- References: `repo-scope.md`, `ecosystems.md`, `commit-conventions.md`,
-  `upstream-links.md`, `follow-ups.md`, `holds.md`.
-
 ## Prerequisites
 
-- **git**
-- **Ecosystem tooling** — `uv`, `pnpm`, `ncu`, `npm`, `cargo`, `go`, or
+- git
+- Ecosystem tooling: `uv`, `pnpm`, `ncu`, `npm`, `cargo`, `go`, or
   `mise` (auto-detected).
-- **gh** — For issue creation and GitHub release URL verification.
+- gh: for issue creation and GitHub release URL verification.

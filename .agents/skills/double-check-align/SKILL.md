@@ -4,7 +4,7 @@ description: >-
   Use when prior verification was framed as a revision log and the user
   wants a clean, standalone restatement.
 disable-model-invocation: true
-allowed-tools: ["Read", "Grep", "Glob", "Bash"]
+allowed-tools: ["Read", "Grep", "Glob"]
 metadata:
   argument-hint: "[topic or question to re-anchor on]"
   source: "plugins/double-check/skills/align/SKILL.md"
@@ -28,19 +28,30 @@ Phrases to avoid: `references/verification-contract.md`.
 
 ## Steps
 
-1. **Recover the request.** From the conversation, reconstruct the
-   original question and every constraint the user has added since —
-   including corrections they made that you agreed with. User turns
-   are binding context; your own answer turns are not.
-2. **Quarantine prior answers.** Everything you previously concluded
-   is untrusted until re-verified against source. Do not reuse prior
-   numbering, category names, or verdict framing.
-3. **Re-derive and restate.** Re-open the source artifacts and write
-   the full analysis, standalone, in the shape the original request
-   implied. State every claim positively and in full, per
-   `references/prose-rules.md`.
-4. **Weakness inline.** If a claim is weak, say why it is weak.
-   Never say it was previously stated differently.
+Follow the contract's four rules.
+
+1. Reconstruct the original question and every constraint the user has
+   added since, including corrections they made that you agreed with.
+   User turns are binding context; your own answer turns are not.
+2. Treat everything you previously concluded as untrusted until
+   re-verified. Do not reuse prior numbering, category names, or
+   verdict framing.
+3. Re-open the source artifacts and write the full analysis,
+   standalone, in the shape the original request implied. State every
+   claim positively and in full, per `references/prose-rules.md`.
+   If a claim is weak, say why it is weak; never say it was previously
+   stated differently.
+
+Reply in this shape, as plain text outside any code fence, with plain
+bullets and no bold (never `- **Label:** ...`):
+
+```text
+client.py sets MAX_RETRIES = 3 and RETRY_BACKOFF_SECONDS = 2.
+
+- The loop makes at most 3 send attempts.
+- Each failed attempt sleeps 2 seconds, so a fully failing call spends
+  6 seconds sleeping before it returns None.
+```
 
 ## What this does not do
 

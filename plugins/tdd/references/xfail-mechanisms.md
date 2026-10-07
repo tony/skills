@@ -18,6 +18,9 @@ fails the suite when the test starts passing (strict).
 - `.todo`, `#[ignore]`, and pending markers do not run the test. Use them only
   as a skip.
 
+Strictness varies by framework version. Confirm the chosen mechanism with a
+throwaway run: a passing test under the marker must fail the suite.
+
 Reading the mechanism: a strict mechanism turns "bug fixed" into a failing
 result, so run only the non-test gates at the fix commit. A skip-based
 mechanism gives no such signal; run the unskipped test directly.

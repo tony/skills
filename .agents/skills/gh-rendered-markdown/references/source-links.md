@@ -120,8 +120,8 @@ tracker, or a body someone copies elsewhere.
 ### Tracker keys: check whether the repository resolves them
 
 A key like `TIK-111` renders as plain text unless a repository admin
-configured a custom autolink for that prefix. When it is configured, write the
-bare key. When it is not, write a full markdown link.
+configured a custom autolink for that prefix. When it is configured,
+write the bare key. When it is not, write a full markdown link.
 
 `GET /repos/{owner}/{repo}/autolinks` needs admin and returns 404 for
 everyone else, the same as "none configured". Render the token instead;

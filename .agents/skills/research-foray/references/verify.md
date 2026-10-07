@@ -1,6 +1,6 @@
 # Verify a topic
 
-Three checks, in this order: the references still say what you cite them for, no source you should have used is missing, and the report reads cleanly. `<run_dir>` is the newest run that `python3 <topic.py> prior --topic <topic>` lists. With no topic named, run `status.md` and verify the topic with failed or unverified sources.
+Three checks, in this order: the references still say what you cite them for, no source you should have used is missing, and the report reads cleanly. `<run_dir>` is the newest run that `python3 <topic.py> prior --topic <topic>` lists. When it is dated before today, verify never rewrites it: run the read-only checks (`verify`, `links`, `claims` without `--reviewed`, `lint-report`, `check`), which append only to `<run_dir>/references/checks.jsonl`, list every fix they call for, and offer `continue` to make the fixes in today's run. Steps below that add sources, log searches, edit the report, or pass `--reviewed` apply only to a run dated today. With no topic named, run `status.md` and verify the topic with failed or unverified sources.
 
 ## 1. References
 
@@ -52,14 +52,16 @@ Finish with `python3 <topic.py> check --run <run_dir>` and quote its result.
 
 ## 4. Keep it fresh
 
-A delivered report goes stale as its sources move. Rerun `verify` on a schedule (a cron job or the host's scheduler), and continue the topic when a check fails. `status` names each released report a failure touches, and the decisions taken on it.
+`status` names each released report a failed check touches, and the decisions taken on it; continue the topic to correct it.
 
 ## Output
 
-Open with a one-line hero (`✓ <n> sources checked, all ok` or `⚠ <n> failed: <counts by status>`), then exactly these sections:
+Open with a one-line hero. After the final `check`: `✓ <n> sources checked, all ok` (`✓ <n> sources checked offline, all ok` when `--offline`) only when `check` returned `ok: true`; otherwise `⚠ <n> failed: <counts by status>` or, when every source passed but the report check failed, `⚠ Not ready: <failing checks>`. Then exactly these sections:
 
 1. `## References`: each failure: source id, status, what was done about it.
 2. `## Missed`: sources found and added, conflicts recorded, and leads not yet followed.
-3. `## Report`: the final `check` result from this session, and the fixes made to reach it.
+3. `## Report`: the final `check` result from this session, and the fixes still needed.
+
+Write per `prose-rules.md`: plain bullets, no bold labels, no sentence between the hero and the first section, no sentence narrating your own edits ("I added…"), no finding recaps.
 
 Panel options: fix the failures, continue the topic, stop.

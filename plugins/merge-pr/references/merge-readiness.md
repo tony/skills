@@ -16,8 +16,12 @@ commands read this file before touching any PR.
 A PR merges only after every check below is confirmed. When any of
 them is ambiguous, do discovery first (read the PR, its checks, and
 its branch), and if the answer is still unclear, ask the user rather
-than guessing. Without a question tool (Codex, headless runs), halt and
-report what is unclear.
+than guessing. Without a question tool (Codex, headless runs), every
+"ask" in this file becomes "halt and list the options".
+
+When the user passes `--repo <owner/name>`, every read below
+(`gh pr view`, `gh pr checks`, `gh pr list`, `gh repo view`) carries the
+same `--repo`, so the gate inspects the repo the merge will hit.
 
 - **Open and not draft**: `gh pr view <n> --json state,isDraft`.
   A draft or closed PR halts the run.
@@ -26,7 +30,8 @@ report what is unclear.
   the failing check and stop. A PR with no checks makes `gh pr checks`
   error with "no checks reported"; treat that as no CI to wait on and say
   so in the report. `--admin` never overrides failing or pending CI.
-- **Mergeability**: `gh pr view <n> --json mergeable,mergeStateStatus`.
+- **Mergeability**: `mergeable,mergeStateStatus` from the PR state already
+  read (re-read after a wait, a rebase, or a push).
   - `CLEAN` and `HAS_HOOKS` pass.
   - `DIRTY` (conflicts with the base) and `BEHIND` (the base has moved)
     route through the rebase procedure below before merging.
@@ -37,7 +42,7 @@ report what is unclear.
     (usually a required review or check); apply the `--admin` policy
     below only if that is the sole blocker.
   - `UNSTABLE` means non-required checks are failing. Surface them and
-    ask before merging.
+    ask before merging; without a question tool, halt and list them.
   - `DRAFT` halts.
 - **Reviews**: `gh pr view <n> --json reviewDecision`. A
   `CHANGES_REQUESTED` decision halts the run and is surfaced to the
@@ -56,7 +61,9 @@ run has moved trunk. Consent differs by command on purpose:
 this PR" — while `/merge-pr:multiple`'s between-merge rebases are
 its disclosed core loop, covered by the roster shown up front.
 
-1. Check that the working tree is clean (`git status --porcelain` prints
+1. Record the branch's diff against its base before touching it
+   (`git diff <base>...<branch>`, kept for step 4). Check that the working
+   tree is clean (`git status --porcelain` prints
    nothing); if not, halt and ask the user to commit or stash. Note the
    current branch (`git branch --show-current`) so it can be restored.
    A fork PR (`gh pr view <n> --json isCrossRepository,maintainerCanModify`)
@@ -70,10 +77,10 @@ its disclosed core loop, covered by the roster shown up front.
    hunks, a list both sides appended to) are resolved directly. A
    conflict that forces a choice between two competing behaviors is
    presented to the user via `AskUserQuestion` — never silently pick
-   a side.
+   a side; without a question tool, halt and list the conflicting files.
 4. Verify the rebase changed history, not content: compare the
-   branch's diff against its base before and after (`git range-diff`
-   or `git diff` of the two three-dot ranges). Unexpected content
+   diff recorded in step 1 with the same three-dot diff after the rebase
+   (`git range-diff` also works). Unexpected content
    drift halts the run.
 5. If conflicts were resolved, run the project's fast quality gates
    — format, lint, typecheck, scoped tests, discovered from its
@@ -134,11 +141,21 @@ fails the merge instead of landing unreviewed commits; on that failure,
 re-run the gate.
 
 The default strategy is a merge commit (`--merge`). `--squash` and
-`--rebase` override it, and every other `gh pr merge` flag the user
-supplies passes through verbatim — `--auto`, `--delete-branch`,
-`--admin`, `--match-head-commit`, `--author-email`, `--body-file`,
-`--repo`, and the rest of `gh pr merge --help`. Do not translate or
-second-guess them.
+`--rebase` override it. Check the repo allows the chosen method:
+
+```console
+$ gh repo view --json mergeCommitAllowed,squashMergeAllowed,rebaseMergeAllowed
+```
+
+When the default is disallowed and the user named no strategy, ask which
+allowed method to use; without a question tool, halt and list the allowed
+methods. A strategy the user named that the repo disallows halts.
+
+Every other `gh pr merge` flag the user supplies passes through verbatim:
+`--delete-branch`, `--admin`, `--match-head-commit`, `--author-email`,
+`--body-file`, `--repo`, and the rest of `gh pr merge --help`. Do not
+translate or second-guess them. `--auto` queues the merge instead of
+performing it: see "After each merge".
 
 ### `--admin` policy
 
@@ -149,7 +166,7 @@ used to merge over failing or pending checks, over a critical error
 found during discovery, or over anything that violates the repo's
 AGENTS.md/CLAUDE.md. If the user did not pass `--admin` and it turns
 out to be needed, ask before using it; without a question tool, halt and
-report the blocker.
+report that `--admin` needs the user's approval and that it was not used.
 
 `--admin` yields to AGENTS.md because it overrides a control the
 repository set for everyone, not because repo rules outrank flags in
@@ -159,9 +176,17 @@ decision and stands.
 
 ## After each merge
 
-1. Confirm the merge landed (`gh pr view <n> --json state,mergedAt`).
+1. Confirm the merge landed and capture its commit:
+
+   ```console
+   $ gh pr view <n> --json state,mergedAt,mergeCommit,baseRefName
+   ```
+
+   Report `mergeCommit.oid` (shortened) and the PR URL. With `--auto`, the
+   state stays `OPEN`: report "queued", skip the sync, and halt a multi-PR
+   run, because the next PR cannot be rebased over an unmerged parent.
 2. If the working tree is dirty, skip the sync and say so. Otherwise
-   `git checkout <trunk>` and `git pull` so the local trunk matches
+   `git checkout <trunk>` and `git pull --ff-only` so the local trunk matches
    what was just merged. If the user started on a different branch that
    was not the merged PR's, return to it afterward.
 3. Report and stand by — never chain into tagging, releasing, or

@@ -3,8 +3,9 @@
 The rules a SKILL.md is held to, and the reasoning behind the ones
 whose reasoning is not obvious. The 500-line body, 64-character name,
 and reserved-word limits come from Anthropic's skill authoring best
-practices; the 150-character description limit is this library's own
-CI check.
+practices. The 150-character description limit, plugin boundaries, and
+`disable-model-invocation` gating are house rules of this marketplace,
+not host facts; check the project's AGENTS.md before applying them.
 
 ## Contents
 
@@ -26,21 +27,10 @@ CI check.
 Delete the line. Name what the agent now does differently. No name, no
 line.
 
-A line survives when its absence costs one of these:
+The five costs that keep a line (command, constraint, trigger, output
+contract, fork) are listed in the skill body.
 
-- **A command.** Without it the agent invents a flag, or runs the right
-  binary the wrong way.
-- **A constraint.** An ordering, a destructive step, a prohibition —
-  something the agent would otherwise violate while behaving
-  reasonably.
-- **A trigger.** Vocabulary in the description that a user's phrasing
-  matches.
-- **An output contract.** The shape, format, or section order of what
-  gets produced.
-- **A fork.** A decision point where both branches look defensible and
-  only one is right here.
-
-Worked examples, all from real skill bodies.
+Worked examples.
 
 Cut — the agent already knows what a lockfile is:
 
@@ -86,8 +76,8 @@ Confirm the plan before writing. An unreviewed batch edit is not
 revertable file by file.
 ```
 
-The trap is that every cut line above is *true*. Truth is not the bar;
-changed behavior is.
+Every cut line above is *true*. Truth is not the bar; changed behavior
+is.
 
 ### Block-level ablation
 
@@ -98,44 +88,25 @@ improvements" survives line by line and teaches nothing.
 
 ### The ledger
 
-Before editing, write one row per proposed cut: the line, and the
-reason nothing breaks. Cuts you cannot justify in a row are cuts you
-have not tested. Under `--audit`, the ledger is the entire
-deliverable.
+Before editing, write one bullet per proposed cut: the line, and the
+reason nothing breaks. A cut you cannot justify in a bullet has not
+been tested. Under `--audit`, the ledger is the whole deliverable.
 
 ## What the test never touches
 
-The test judges claims. These are not claims:
+The skill body lists the exempt lines. The reasons:
 
-**YAML frontmatter.** The host reads `name` and `description` alone
-before loading the body, so a weak description hides a perfect body.
-
-**Fenced code blocks, and every character of a command inside them.**
-Never reflow, reformat, shorten, modernize, or fix a command, path,
-flag, or snippet; report a flaw in the ledger instead. A command in a
-skill is a quotation: the author verified it against a real system,
-and an edit silently unverifies it. A whole fence may be dropped when
-a sibling fence teaches the same thing, never a line out of a fence's
-middle.
-
-The fence's structure is the one exception, and fixing it edits no
-command character: the tag, the `$ ` prompt, and splitting a
-multi-command fence into one fence per command. A single command run
-as-is is a `console` fence with `$ ` prefixes; a multi-line script is
-a `bash` or `sh` fence with no prompts.
-
-**Literal commands, paths, and flags in prose.** Backtick them and
-leave the characters alone.
-
-**Section headings.** An agent skims headings to decide what to read.
-Headings are navigation, not prose, and a body of undifferentiated
-paragraphs gets read partially or not at all.
-
-**Warnings on destructive or irreversible steps.** The cost of cutting
-one is paid by someone else, later, in a way no review catches.
-
-Where a fence and its surrounding prose say the same thing, the prose
-is what goes.
+- **Frontmatter.** The host reads `name` and `description` alone before
+  loading the body, so a weak description hides a perfect body.
+- **Fences and commands.** A command in a skill is a quotation: the
+  author verified it against a real system, and an edit silently
+  unverifies it. Report a flaw in the ledger instead. Fence structure
+  (tag, `$ ` prompt, one command per fence) is the one exception and
+  edits no command character.
+- **Headings.** An agent skims them to decide what to read; a body of
+  undifferentiated paragraphs gets read partially or not at all.
+- **Destructive-step warnings.** The cost of cutting one is paid by
+  someone else, later, in a way no review catches.
 
 ## Naming
 
@@ -157,10 +128,9 @@ skills, and splitting it is what lets either one route.
 The description is the only text that competes for the router's
 attention. It decides whether the skill is ever used.
 
-- **Third person, always.** The description lands in a system prompt.
-  `I can help you process Excel files` and `You can use this to
-  process Excel files` both confuse the point of view. Write
-  `Processes Excel files and generates reports`.
+- **Third person, always.** The description lands in a system prompt,
+  so `I can help you process Excel files` confuses the point of view.
+  Write `Processes Excel files and generates reports`.
 - **What it does and when to reach for it.** Both halves. A
   description with no trigger clause never fires.
 - **The user's literal words.** A router matches text, not meaning. If
@@ -168,43 +138,27 @@ attention. It decides whether the skill is ever used.
   is weaker than it looks. Write both where both get typed.
 - **Front-load the trigger.** The first clause is what survives
   truncation and skimming.
-- **150 characters or fewer**, non-empty, no XML tags.
+- **Non-empty, no XML tags.** This library also caps it at 150
+  characters; use the project's own cap when its AGENTS.md sets one.
 
 Descriptions that route nothing: `Helps with documents`, `Processes
 data`, `Does stuff with files`.
 
-Where a host supports it, set `disable-model-invocation: true` on a
-skill that only makes sense when asked for by name. It keeps the
-skill invocable while removing it from the corpus every other
-description competes in.
+House rule: set `disable-model-invocation: true` on a skill that only
+makes sense when asked for by name. It keeps the skill invocable while
+removing it from the corpus every other description competes in.
 
 ## Sections and headings
 
-- One `#` title. Everything under it is `##`, with `###` only where a
-  section genuinely branches.
-- A heading names the step or the decision — `Resolve targets`, `When
-  the tree is dirty` — not the topic. `Context`, `Details`, `Notes`,
-  `Misc`, and `Thoughts` name a container and promise nothing; an
-  agent skimming headings learns the shape of the file from them, and
-  those four teach it nothing.
-- Ordered steps are a numbered list. For anything else, apply the
-  reorder test: if the items can be resequenced without changing what
-  they mean, they are siblings and belong in bullets. If reordering
-  breaks them, they are an argument — write prose. Bulleting a causal
-  chain hides the causality that was the point.
+The skill body states the section rules. The reasons behind two of them:
+
 - State the rule before its exceptions. An agent that meets the edge
   case first has no model to hang it on, and generalizes the exception
   into the rule.
-- One command per `console` fence with a `$ ` prefix, a script in a
-  `bash` fence, comments outside either. Say what the fence is
-  for before it, and what its result means after. Cutting prose that
-  restates a command is not the same as shipping a fence with nothing
-  telling the agent when to run it.
-- Prefer nested sections over tables. Repeated semantic headings diff
-  and wrap cleanly; a table earns its place only when the data is
-  genuinely matrix-shaped and stable.
-- No coded labels — `[R1]`, `Option B`, `A1`. A reader should not have
-  to decode an index.
+- Apply the reorder test: items that can be resequenced without
+  changing meaning are siblings and belong in bullets. If reordering
+  breaks them, they are an argument; write prose. Bulleting a causal
+  chain hides the causality that was the point.
 
 ## Progressive disclosure
 
@@ -221,7 +175,7 @@ That gives a budget shaped like a funnel:
 
 Keep every reference one level deep from the body. An agent that
 follows a link out of a file it already followed a link into tends to
-preview rather than read it — `head -100` instead of the whole thing —
+preview rather than read it (`head -100` instead of the whole thing)
 and acts on a fragment. Link `reference/forms.md` from the body, and
 never from inside another reference.
 
@@ -262,7 +216,7 @@ reproduce.
 
 Pair anything quality-critical with a loop: produce, validate, fix,
 re-validate, and only then proceed. The validator can be a script or a
-reference file the agent checks itself against — the loop is what
+reference file the agent checks itself against; the loop is what
 raises quality, not the mechanism.
 
 For batch or destructive work, add a verifiable intermediate: have the
@@ -277,49 +231,32 @@ are the same. Consistency is not style here; it is parseability.
 
 ## Library standards
 
-Defects to flag in any SKILL.md, beyond the deletion test.
+The skill body lists the defects and labels each as host fact or house
+rule. The reasoning behind the ones that are not obvious:
 
-- **Context expansion.** A `!` immediately followed by a
-  backtick-quoted command never runs, and the form that does run
-  breaks under a scoped `allowed-tools` grant. Write a numbered step
-  that names what it gathers and what a failure means.
-- **Skills, not commands.** A workflow is a `skills/<name>/SKILL.md`.
-  A skill meant only for explicit invocation sets
-  `disable-model-invocation: true` rather than living in `commands/`.
-- **Bundled files.** Address them relative to the skill, climbing two
-  directories out of it into `references/`. Never use
-  `${CLAUDE_PLUGIN_ROOT}` in a skill (Codex does not substitute it),
-  and never link or read outside the plugin. Where several plugins ship the same file, each holds a
-  vendored copy: edit the source, never the copy.
-- **Frontmatter.** `name` and `description` are required. Add
-  `argument-hint` whenever the body consumes `$ARGUMENTS`.
-- **Tool grants.** `allowed-tools` takes bare tool names (`Bash`, not
-  a language-specific pattern) and pre-approves only what a step
-  uses. `WebFetch` and `WebSearch` stay off a skill that reads
-  untrusted input. Only `disallowed-tools` removes a tool.
-- **No language-specific commands.** A skill that serves any project
-  says "the project's test suite, as AGENTS.md or CLAUDE.md defines
-  it" rather than naming a runner.
-- **Portable shell.** A shipped command works on GNU and BSD/Darwin,
-  or shows both forms labelled: `sed -i` differs between them, `sed`
-  `\+` and `\|` are GNU-only (use `-E`), and `readlink -f`,
+- **Context expansion.** A `!` directly before a command's opening
+  backquote expands on Claude Code, but a failing command or a missing
+  `allowed-tools` grant empties the whole skill without an error. The
+  form with the `!` inside the backquotes never expands, and Codex expands
+  neither form. A numbered step that names what it gathers
+  works everywhere.
+- **Bundled files.** Codex does not substitute `${CLAUDE_PLUGIN_ROOT}`.
+  Where several plugins ship the same file, each holds a vendored copy:
+  edit the source, never the copy.
+- **Tool grants.** `allowed-tools` pre-approves; only `disallowed-tools`
+  removes a tool. `WebFetch` and `WebSearch` stay off a skill that
+  reads untrusted input.
+- **Portable shell.** `sed -i` differs between GNU and BSD/Darwin,
+  `sed` `\+` and `\|` are GNU-only (use `-E`), and `readlink -f`,
   `stat -c`, `date -d`, and `mapfile` have no BSD equivalent. Temp
   files use `mktemp` with a template ending in `XXXXXX`.
 - **State between commands.** Shell variables do not survive separate
   Bash calls. Do the work in one command, or print the value and use
   the literal afterwards.
-- **Interactive steps.** Every `AskUserQuestion` step states what to do
-  without it (Codex, headless runs). An explicit request to do the
-  action authorizes that action only, never a commit or push.
-- **Output contract.** A skill whose output is a report declares a hero
-  line and a fixed section order, plus the shape of a stopped run: one
-  result sentence, then what the user must do. Without a declared
-  shape the agent invents headings and recap endings.
+- **Output contract.** Without a declared hero line, section order, and
+  stopped-run shape, the agent invents headings and recap endings.
 - **Analysis-then-execute skills** open execution with an
-  orchestration-plan step the user approves, and degrade to the phase
-  order when plan mode is unavailable.
-- **Local paths.** Outputs never name local or temp paths the user does
-  not need to act on.
+  orchestration-plan step the user approves.
 
 ## Anti-patterns
 
@@ -347,7 +284,7 @@ the current instruction set.
 A description is not finished until it has been tested as a router
 input.
 
-1. Write three prompts a user would actually type — their words, not
+1. Write three prompts a user would actually type, in their words, not
    the skill's.
 2. Confirm this skill is the right answer to each.
 3. Write one prompt that belongs to a neighboring skill, and confirm

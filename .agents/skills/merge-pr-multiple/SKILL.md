@@ -44,7 +44,9 @@ $ gh pr list --limit 200 --json number,title,headRefName,baseRefName,isDraft
 
 ### 2. Detect the topology
 
-Fetch `baseRefName` and `headRefName` for each PR. If any PR's base
+Fetch `baseRefName`, `headRefName`, and `headRefOid` for each PR
+(`gh pr view <n> --json baseRefName,headRefName,headRefOid`); keep each
+`headRefOid` for the stacked rebase. If any PR's base
 branch is another PR's head branch, the set is a **stack**: order
 bottom-up, each PR merging only after its parent. Otherwise the set
 is **independent**: honor the order the user gave, falling back to
@@ -53,10 +55,9 @@ ascending PR number.
 Trunk is the `baseRefName` of the bottom PR of a stack, or of the
 independent PRs.
 
-For a stack, plan the retarget: merging a parent with
-`--delete-branch` lets GitHub retarget the child to trunk
-automatically; when the branch is kept, retarget explicitly with
-`gh pr edit <child> --base <trunk>` before rebasing the child.
+For a stack, plan the retarget: after each parent merges, read the child's
+`baseRefName` (`gh pr view <child> --json baseRefName`); when it is not
+trunk, run `gh pr edit <child> --base <trunk>` before rebasing the child.
 
 ### 3. Land each PR
 
@@ -67,8 +68,10 @@ order:
    reports what landed and what remains.
 2. **Bring up to date** — when the PR is `BEHIND` or `DIRTY`, or an
    earlier merge in this run moved trunk, follow the reference's rebase
-   procedure. For a stacked child, `git rebase --onto` the new trunk so the
-   parent's merged commits drop out. Ask on any conflict that forces a choice
+   procedure. For a stacked child, run
+   `git rebase --onto <trunk> <parent's recorded headRefOid> <branch>` so
+   the parent's merged commits drop out; a squash merge deletes the
+   parent's old head, so use the roster-time SHA. Ask on any conflict that forces a choice
    between behaviors.
 3. **Wait on CI** — `gh pr checks <n> --watch` on the rebased head.
 4. **Merge** — compose the message per the reference and
@@ -78,7 +81,8 @@ order:
    flags through verbatim. The strategy flag is `--merge` unless the user
    passed `--squash` or `--rebase`. `--admin` only within the reference's
    policy.
-5. **Sync** — per the reference's "After each merge".
+5. **Sync** — per the reference's "After each merge". A queued
+   (`--auto`) merge halts the run here.
 
 ### 4. Halt conditions
 
@@ -92,13 +96,16 @@ where the run stopped and why.
 
 Open with a one-line hero (`✓ Merged N of M PRs` or
 `⚠ Halted at #N: <reason>`), then exactly these sections. Report only what
-a command in this run verified:
+a command in this run verified, and name the merge order only once the
+topology was read. A run halted before any merge (`gh` unavailable, roster
+invalid) gives the hero and one sentence on what the user must do; no
+headings, and no narration of what was not done.
 
 1. `## Roster` — the PRs, detected topology (stack or independent),
    and merge order.
 2. `## Merges` — per PR: gate result, rebase/conflicts if any, CI
-   outcome, merge commit subject.
-3. `## Trunk` — the post-run trunk state.
+   outcome, merge commit subject and short SHA.
+3. `## Trunk` — the post-run trunk state, from the sync's checkout and pull.
 
 Write the sections per `references/prose-rules.md`.
 
@@ -114,7 +121,7 @@ bullets and no bold (never `- **Label:** ...`):
 
 ## Merges
 
-- #31: gate passed, CI green, merged as "sync(fix[client]) Retry transient network errors (#31)".
+- #31: gate passed, CI green, merged as 4f2a9c1 "sync(fix[client]) Retry transient network errors (#31)".
 - #32: rebased onto main; the type-check job failed. Not merged.
 - #33: not attempted.
 

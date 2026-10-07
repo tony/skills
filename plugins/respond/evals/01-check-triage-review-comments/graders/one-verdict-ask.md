@@ -1,4 +1,4 @@
 ---
 type: llm
 ---
-Every ledger entry carries a single verdict. Because no source code is available to read, no entry is marked `fix`; `ask` is the correct verdict.
+Every ledger entry carries a single verdict, never a conditional. No entry is marked `fix` unless the reply cites code it actually read.

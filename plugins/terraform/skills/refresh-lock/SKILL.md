@@ -16,8 +16,8 @@ This changes no constraint. When a provider will not move, a constraint
 is holding it; use `/terraform:bump-provider`.
 
 Follow the phase structure and conventions in
-`../bumping-terraform/SKILL.md` (clean tree, commit message rules,
-non-interactive defaults, stopped runs). This skill uses
+`../bumping-terraform/SKILL.md` (recorded tree state, commit
+message rules, non-interactive defaults, stopped and audit-only runs). This skill uses
 `../../references/layout-discovery.md` and `../../references/lock-and-init.md`.
 
 User arguments: $ARGUMENTS
@@ -29,11 +29,11 @@ User arguments: $ARGUMENTS
 List the committed lock files:
 
 ```console
-git ls-files -- '*.terraform.lock.hcl'
+$ git ls-files -- '*.terraform.lock.hcl'
 ```
 
-No output means a module repository with nothing to refresh. Say so; it
-is not a failure.
+No output means a module repository with nothing to refresh: report
+nothing to refresh.
 
 Run the umbrella's discovery phase. `--root-module` limits the run to the
 named directories. A directory holding a backend block but no committed
@@ -44,7 +44,8 @@ lock file is a finding: its lock is untracked or was never created.
 Per root module: the version selected for each provider, and how many
 platforms each provider's entry tracks (the lock reference has the
 count command). The first reports what moved; the second detects a
-narrowed file.
+narrowed file. In an audit, also report the platform names
+`lockctl.py platforms` finds, or that none are recorded.
 
 ### 3. Present the plan and wait
 
@@ -53,12 +54,15 @@ tracks. With `--audit-only`, stop here and write nothing.
 
 ### 4. Refresh, one root module at a time
 
-Run the lock reference's `init -upgrade` command per root module (this
-skill moves every provider its constraints allow), then compare
-each lock's per-provider platform count against its count before.
+Apply the lock reference's guard to each root module: the lock must be
+committed and unmodified, else skip and report it. Then run its
+`init -upgrade` command (this skill moves every provider its constraints
+allow) and compare each lock's per-provider platform count against its
+count before. When a count dropped, restore the platforms from the
+names `lockctl.py platforms` finds in the repository, or ask.
 
-A root module that fails to refresh does not stop the others. Record the
-failure and continue.
+A root module whose `init` fails has its lock restored from git, and the
+others carry on. Record the failure and continue.
 
 ### 5. Commit
 
@@ -79,7 +83,7 @@ gate as passing without reading the output that says so.
 
 ## Output
 
-Open with a one-line hero (`✓ N of M lock files moved` or `⚠ Audit
+Open with a one-line hero (`✓ N of M lock files moved` or `Audit
 only: M lock files found`), then these sections in order:
 
 1. `## Root modules`: every one discovered, and any directory with a

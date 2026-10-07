@@ -88,8 +88,10 @@ Read from `references/`:
 
 `scripts/business.py` (Python 3 standard library) does the
 deterministic work: `stats` (median, quartiles, seeded BCa interval),
-`scan` (tier-3 identifier and money-term scan), `assumptions`
-(register check), and `runs` (newest-first run listing).
+`scan` (tier-3 identifier and money-term scan, with `--allow` and
+`--allow-url` for false positives and citation links), `gate` (the
+completeness gate, recomputing `check:` figures from `raw/`),
+`assumptions` (register check), and `runs` (newest-first run listing).
 
 ## Prerequisites
 

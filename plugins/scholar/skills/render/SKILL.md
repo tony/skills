@@ -25,6 +25,11 @@ The brief carries no citation, no permalink, and no bare number. Where it
 wants one, it links into `evidence/`. A brief with its appendices inlined is a
 report, and nobody reads it start to finish.
 
+Backticked code spans (`OAuth2`, `v2`) and evidence links are exempt;
+a version or identifier with a digit outside backticks fails. Spelled-out
+counts ("twelve plugins") are numbers too; the analyzer cannot see them, so
+write none.
+
 The analyzer enforces the rule. Run it before reporting success. A missing
 `brief.md` exits 2: write the brief first. A brief the user asked to keep
 unchanged is gated as is; report its findings and leave it.
@@ -80,6 +85,11 @@ Per `../../references/output-contract.md`. Hero: `✓ rendered <subject>: brief 
 3. `## Gate` — the brief check's output, verbatim, with absolute paths
    stripped.
 
-Next-step options: publish the brief, compare against another study, stop here.
+On a failed gate, print the hero, `## Gate`, and the fix: edit the brief, or
+leave it and stop. Omit `## Brief` and `## Evidence` for anything not
+written, and offer no other next step. A missing study follows the halted-run
+shape in the output contract.
+
+Next-step options: compare against another study, stop here.
 
 Write it per `../../references/prose-rules.md`.

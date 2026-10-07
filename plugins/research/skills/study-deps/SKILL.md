@@ -45,7 +45,7 @@ Per dependency, stop at the first hit:
 
 Keep only `https://` URLs of the form `https://<host>/<owner>/<repo>`. Drop any other scheme (`ssh`, `git`, `file`, `ext::`) and report the dependency as having no usable repository.
 
-Derive `<repo-name>` and `<version>` for paths from the last URL segment and the resolved version. Keep only letters, digits, `.`, `_`, and `-`, replace every other character with `-`, and reject a result that is empty, starts with `.`, or contains `..`.
+Derive `<repo-name>`, `<version>`, and (step 7) `<branch>` for paths from the last URL segment, the resolved version, and the branch name (`release/5.2` becomes `release-5.2`). Keep only letters, digits, `.`, `_`, and `-`, replace every other character with `-`, and reject a result that is empty, starts with `.`, or contains `..`.
 
 ## 4. Confirm the plan
 
@@ -89,14 +89,31 @@ Skip with `--no-worktree`. Pinned (tag) worktree, named `<repo-name>-<version>`:
 $ git -C "$HOME/study/<language>/<repo-name>/" worktree add --detach "$HOME/study/<language>/<repo-name>-<version>/" <tag>
 ```
 
-Unpinned fallback or branch worktree, named `<repo-name>-<branch>-<sha7>` so the directory never claims a version it is not. Take `<sha7>` from `git rev-parse --short=7 <branch>`:
+Unpinned fallback or branch worktree, named `<repo-name>-<branch>-<sha7>` so the directory never claims a version it is not. The default branch is already checked out in the main clone, so git refuses to check it out again: detach at the commit instead. Take `<sha7>` from `git rev-parse --short=7 <ref>`, where `<ref>` is `origin/<branch>` (the branch as git names it, not the sanitized form):
 
 ```console
-$ git -C "$HOME/study/<language>/<repo-name>/" worktree add "$HOME/study/<language>/<repo-name>-<branch>-<sha7>/" <branch>
+$ git -C "$HOME/study/<language>/<repo-name>/" worktree add --detach "$HOME/study/<language>/<repo-name>-<branch>-<sha7>/" <sha7>
 ```
 
 Skip an existing path and report it as present. A monorepo clones once; the worktree holds every package.
 
 ## 8. Report
 
-Open with one line: `✓ <n> worktrees ready` or `⚠ <n> failed`. Then one line per package: `<package>@<version> <status> <commit sha7> <path>`, status being `pinned`, `unpinned (<branch>)`, `skipped`, or `failed: <reason>`. Read the commit with `git -C <worktree> rev-parse --short=7 HEAD`; it makes the source citable at that revision. Suggest manual fixes only for failures, such as checking available tags.
+Write it per `../../references/prose-rules.md`. Reply in this shape, as plain text outside any code fence, with plain bullets and no bold (never `- **Label:** ...`):
+
+```text
+✓ 2 worktrees ready
+
+- zod@3.23.8 pinned 1a2b3c4 ~/study/typescript/zod-3.23.8/
+- vite@5.2.0 unpinned (release/5.2) 9f8e7d6 ~/study/typescript/vite-release-5.2-9f8e7d6/
+```
+
+A halted run prints one result sentence, then what the user must do:
+
+```text
+⚠ Nothing was cloned: no interactive host to confirm the plan.
+
+Rerun with the plan approved, or run the listed commands yourself.
+```
+
+Open with `✓ <n> worktrees ready` or `⚠ <n> failed`. Then one line per package: `<package>@<version> <status> <commit sha7> <path>`, status being `pinned`, `unpinned (<branch>)`, `skipped`, or `failed: <reason>`. Read the commit with `git -C <worktree> rev-parse --short=7 HEAD`; it makes the source citable at that revision, and a research run records it with `--ref <sha7>`. Suggest manual fixes only for failures, such as checking available tags.

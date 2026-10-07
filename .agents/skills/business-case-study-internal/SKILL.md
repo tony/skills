@@ -58,7 +58,8 @@ Write it per `references/prose-rules.md`.
 
 Hero success form: `✓ Case study: <one-line outcome with tag>`.
 Sections and stopped-run shape as in `interim-format.md`. Panel options: write the public
-case study next, adjust the narrative, or stop.
+case study next (read the `business-case-study-public` skill and follow it),
+adjust the narrative, or stop.
 
 
 ## Portability notes

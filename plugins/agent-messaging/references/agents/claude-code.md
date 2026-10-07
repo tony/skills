@@ -21,19 +21,19 @@ Upstream: [cross-session messaging](https://code.claude.com/docs/en/cross-sessio
 
 ## 1. Identity
 
-- **Own address**: native peers address a session by name; the inbox address is the `uds:`
+- Own address: native peers address a session by name; the inbox address is the `uds:`
   socket URI.
-- **Where exposed**: `/status`, `ListAgents`, `$CLAUDE_CODE_MESSAGING_SOCKET`, and the live
+- Where exposed: `/status`, `ListAgents`, `$CLAUDE_CODE_MESSAGING_SOCKET`, and the live
   session registry.
-- **Stability**: rename, resume, restart, and collision behavior are `UNKNOWN`.
+- Stability: rename, resume, restart, and collision behavior are `UNKNOWN`.
 
 ## 2. Discovery
 
-- **Enumerate peers**: the model-facing `ListAgents` tool.
-- **Scope**: Claude sessions only; Codex sessions never appear.
-- **What a listing shows**: name, short identifier, kind, status, and tmux coordinate when
+- Enumerate peers: the model-facing `ListAgents` tool.
+- Scope: Claude sessions only; Codex sessions never appear.
+- What a listing shows: name, short identifier, kind, status, and tmux coordinate when
   known.
-- **Foreign discovery**: `claude agents --json` lists live sessions with name, pid, and
+- Foreign discovery: `claude agents --json` lists live sessions with name, pid, and
   status; read the inbox from `${CLAUDE_CONFIG_DIR:-$HOME/.claude}/sessions/<pid>.json`,
   field `messagingSocketPath`, rather than assuming a directory. The socket directory alone
   is not enough: it publishes no names, most entries are stale, and one logical session can
@@ -46,25 +46,27 @@ Upstream: [cross-session messaging](https://code.claude.com/docs/en/cross-sessio
 The model calls `SendMessage` with a `ListAgents` name. The receiver gets a structured
 `<cross-session-message>` wrapper with sender socket, name, and permission class.
 
-- **Preconditions**: live compatible Claude sessions and the cross-session feature enabled.
-- **Success signal**: the tool returns a message ID; the receiver starts a turn if idle or
+- Preconditions: live compatible Claude sessions and the cross-session feature enabled.
+- Success signal: the tool returns a message ID; the receiver starts a turn if idle or
   receives it at a tool boundary if busy.
 
 ### claude-code-socket (receive from any same-UID process; send through a shell)
 
 Resolve the target's inbox path from its `messagingSocketPath` (Discovery above), then send
-one newline-delimited JSON user frame with the helper. No auth line is needed on Linux;
-native Windows requires `{"type":"auth","token":"..."}` first `(unverified — from docs)`.
+the exact line the plan showed as one newline-delimited JSON user frame. No auth line is
+needed on Linux; native Windows requires `{"type":"auth","token":"..."}` first
+`(unverified — from docs)`. Run `relay.sh` by the absolute path resolved in `SKILL.md`:
 
-```console
-$ ../../scripts/relay.sh socket-send \
+```bash
+/path/to/relay.sh socket-send \
     --socket "$(jq -r .messagingSocketPath "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/sessions/<pid>.json")" \
-    --line -
+    --line - <<'RELAY'
+[relay/1 from=planner:claude-code@<address> to=<role> id=<id> hop=0 want=none] <body>
+RELAY
 ```
 
-Pass the envelope from `relay.sh envelope` on stdin. The helper exits 6 when the sandbox
-blocks sockets (`CODEX_SANDBOX_NETWORK_DISABLED`) or `nc` is missing, and 7 when the socket
-path is stale.
+The helper exits 6 when the transport is unavailable (sandbox blocks sockets, `nc` is
+missing, or `nc` fails to send) and 7 when the socket path is stale.
 
 Valid and invalid frames are both silent on the socket, so exit 0 proves only that bytes were
 accepted. Verify delivery at the receiver or in its transcript.
@@ -84,50 +86,50 @@ which breaks on an apostrophe in the body. The Codex adapter owns the exact comm
 
 ### claude-code-message
 
-- **Idle receiver**: starts a new turn.
-- **Busy receiver**: queues, and enters the active turn at a later tool boundary without
+- Idle receiver: starts a new turn.
+- Busy receiver: queues, and enters the active turn at a later tool boundary without
   interrupting the running tool.
-- **Target not running**: live-only `(unverified — from docs)`.
+- Target not running: live-only `(unverified — from docs)`.
 
 ### claude-code-socket
 
-- **Busy receiver**: the frame is dequeued at a tool boundary.
-- **Acknowledgment**: none. The sender cannot tell a valid frame from a discarded one without
+- Busy receiver: the frame is dequeued at a tool boundary.
+- Acknowledgment: none. The sender cannot tell a valid frame from a discarded one without
   receiver cooperation.
-- **Self-targeting**: allowed; native `SendMessage` refuses it.
+- Self-targeting: allowed; native `SendMessage` refuses it.
 
 ### tmux
 
-- **Idle receiver**: one Enter submits once the status overlay is dismissed.
-- **Busy receiver**: input queues and surfaces at the next tool boundary; the active tool
+- Idle receiver: one Enter submits once the status overlay is dismissed.
+- Busy receiver: input queues and surfaces at the next tool boundary; the active tool
   completes unaffected.
-- **Ordering**: one message per tool boundary, in arrival order.
+- Ordering: one message per tool boundary, in arrival order.
 
 ## 5. Provenance
 
 ### claude-code-message
 
-- **Sender label**: the harness supplies `from`, `from-name`, and `from-mode` in the wrapper.
-- **Reply address**: `from-name` for `SendMessage`; the socket URI is also supplied.
-- **Authority**: a peer, with anti-permission-laundering instructions.
-- **Spoof boundary**: a body can imitate wrapper text, so rendered markup is not an
+- Sender label: the harness supplies `from`, `from-name`, and `from-mode` in the wrapper.
+- Reply address: `from-name` for `SendMessage`; the socket URI is also supplied.
+- Authority: a peer, with anti-permission-laundering instructions.
+- Spoof boundary: a body can imitate wrapper text, so rendered markup is not an
   authorization signal. A crafted-wrapper native message is `UNKNOWN`.
-- **Transcript audit**: delivery records `origin.kind="peer"`, the named sender and address,
+- Transcript audit: delivery records `origin.kind="peer"`, the named sender and address,
   and a kernel-verified process ID, which is stronger than the wrapper.
-- **Distinguishable from the operator**: yes after transcript audit; operator and tmux input
+- Distinguishable from the operator: yes after transcript audit; operator and tmux input
   record `origin.kind="human"`.
 
 ### claude-code-socket
 
-- **Sender label**: the harness says "Another Claude session" for any accepted raw user
+- Sender label: the harness says "Another Claude session" for any accepted raw user
   frame, including a Codex sender or the session writing to itself.
-- **Reply address**: none, though the harness still tells the model to reply to a
+- Reply address: none, though the harness still tells the model to reply to a
   nonexistent `from=` address.
-- **Authority**: peer warning and anti-laundering prose are attached; no operator authority.
-- **Transcript evidence**: `origin.kind="peer"`, `from="unknown"`, and a verified connection
+- Authority: peer warning and anti-laundering prose are attached; no operator authority.
+- Transcript evidence: `origin.kind="peer"`, `from="unknown"`, and a verified connection
   process ID, with no stable name, permission class, or reply route. The PID identifies the
   injecting process even when the body claims a live Claude peer.
-- **Spoofable**: body identity and the constant Claude-peer announcement are spoofable; the
+- Spoofable: body identity and the constant Claude-peer announcement are spoofable; the
   transcript origin is not sender-controlled.
 
 ### tmux
@@ -141,9 +143,9 @@ Claude is only the sender. Codex receives ordinary `UserInput` and loses Claude 
 
 ## 6. Inbound controls
 
-- **Gating**: `crossSessionInbound` accepts `accept`, `hold`, or `refuse`.
-- **Default posture**: permission-class comparison `(unverified — from docs)`.
-- **Socket interaction**: an explicit `accept` admits an unnamed tokenless sender; behavior
+- Gating: `crossSessionInbound` accepts `accept`, `hold`, or `refuse`.
+- Default posture: permission-class comparison `(unverified — from docs)`.
+- Socket interaction: an explicit `accept` admits an unnamed tokenless sender; behavior
   under `hold` and `refuse` is `UNKNOWN`. Testing either changes user-scope settings, so use
   an isolated receiver.
 
@@ -156,14 +158,14 @@ all transports.
 
 ## 8. Typing quirks (tmux)
 
-- **Submit key**: Enter.
-- **Idle precondition**: dismiss overlays such as `/status`, stage literal text, poll until
+- Submit key: Enter.
+- Idle precondition: dismiss overlays such as `/status`, stage literal text, poll until
   the exact payload renders, and recheck activity before Enter. A visible empty composer is
   not sufficient.
-- **Busy receiver**: Enter queues input; it appears at a later tool boundary.
-- **Reserved prefixes**: `/`, `!`, `#`, and `@` open UI modes. The relay envelope begins with
+- Busy receiver: Enter queues input; it appears at a later tool boundary.
+- Reserved prefixes: `/`, `!`, `#`, and `@` open UI modes. The relay envelope begins with
   `[`, which is safe.
-- **Literal newline, paste limits, and maximum safe size**: `UNKNOWN`.
+- Send one line of at most 800 characters.
 
 ## 9. Environment
 

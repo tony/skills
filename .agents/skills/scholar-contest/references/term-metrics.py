@@ -91,16 +91,38 @@ no brief.md in /nonexistent-study
 no terms.jsonl in /nonexistent-study
 2
 
-Every term row needs a definition and at least one citation:
+An unknown flag, or a prefix of a real one, is a usage error, never a full
+report:
+
+>>> with contextlib.redirect_stderr(sys.stdout):
+...     main(["/nonexistent-study", "--check-term"])  # doctest: +ELLIPSIS
+usage: term-metrics.py ...
+term-metrics.py: error: unrecognized arguments: --check-term
+2
+
+A malformed row is reported, not a traceback:
+
+>>> import tempfile
+>>> with tempfile.TemporaryDirectory() as tmp:
+...     _ = Path(tmp, "terms.jsonl").write_text("{oops", encoding="utf-8")
+...     with contextlib.redirect_stderr(sys.stdout):
+...         main([tmp, "--check-terms"])
+terms.jsonl line 1: invalid JSON (Expecting property name enclosed in double quotes)
+2
+
+Every term row needs a definition and a quoted citation:
 
 >>> check_terms([{"term": "a", "definition": "x", "cites": [{"quote": "q"}]}])
 []
 >>> check_terms([{"term": "a", "definition": " "}, {"term": "b", "definition": "y"}])
 ['a: empty definition', 'a: no citation', 'b: no citation']
+>>> check_terms([{"term": "a", "definition": "x", "cites": [{"locator": "f:1"}]}])
+['a: citation without a quote']
 """
 
 from __future__ import annotations
 
+import argparse
 import json
 import math
 import re
@@ -307,49 +329,92 @@ def check_brief(text: str) -> list[str]:
 
 
 def check_terms(terms: list[_Row]) -> list[str]:
-    """List rows with an empty definition or no citation."""
+    """List rows with an empty definition, no citation, or a citation with no quote."""
     findings: list[str] = []
     for row in terms:
         if not row.get("definition", "").strip():
             findings.append(f"{row['term']}: empty definition")
-        if not row.get("cites"):
+        cites = row.get("cites")
+        if not cites:
             findings.append(f"{row['term']}: no citation")
+        elif any(not str(cite.get("quote", "")).strip() for cite in cites):
+            findings.append(f"{row['term']}: citation without a quote")
     return findings
 
 
 def _load(path: Path) -> list[_Row]:
-    """Read a JSON-lines file, skipping blank lines."""
+    """Read a JSON-lines file, skipping blank lines.
+
+    Raises ``ValueError`` for invalid JSON and ``TypeError`` for a row that is
+    not an object with a string ``term``, each naming the line.
+    """
+    rows: list[_Row] = []
     with path.open(encoding="utf-8") as handle:
-        return [cast("_Row", json.loads(line)) for line in handle if line.strip()]
+        for number, line in enumerate(handle, start=1):
+            if not line.strip():
+                continue
+            try:
+                row = cast("object", json.loads(line))
+            except json.JSONDecodeError as exc:
+                msg = f"{path.name} line {number}: invalid JSON ({exc.msg})"
+                raise ValueError(msg) from exc
+            if not isinstance(row, dict) or not isinstance(
+                cast("dict[str, object]", row).get("term"), str
+            ):
+                msg = f"{path.name} line {number}: row needs a string 'term'"
+                raise TypeError(msg)
+            rows.append(cast("_Row", cast("object", row)))
+    return rows
+
+
+class _Opts(argparse.Namespace):
+    study: str = ""
+    check_brief: bool = False
+    check_terms: bool = False
+
+
+def _parser() -> argparse.ArgumentParser:
+    parser = argparse.ArgumentParser(prog="term-metrics.py", allow_abbrev=False)
+    _ = parser.add_argument("study", help="study directory")
+    gate = parser.add_mutually_exclusive_group()
+    _ = gate.add_argument("--check-brief", action="store_true", help="gate brief.md")
+    _ = gate.add_argument("--check-terms", action="store_true", help="gate terms.jsonl")
+    return parser
+
+
+def _brief_gate(study: str) -> int:
+    """Print the brief's findings; exit 2 when brief.md is missing."""
+    brief = Path(f"{study}/brief.md")
+    if not brief.is_file():
+        print(f"no brief.md in {study}", file=sys.stderr)
+        return 2
+    findings = check_brief(brief.read_text(encoding="utf-8"))
+    for finding in findings:
+        print(finding)
+    return 1 if findings else 0
 
 
 def main(argv: list[str]) -> int:
     """Report every finding for the study directory named in *argv*."""
-    args = [arg for arg in argv if not arg.startswith("--")]
-    if not args:
-        print(
-            "usage: term-metrics.py <study-dir> [--check-brief | --check-terms]",
-            file=sys.stderr,
-        )
-        return 2
-    study = args[0].rstrip("/")
+    try:
+        opts = _parser().parse_args(argv, namespace=_Opts())
+    except SystemExit as exc:
+        return exc.code if isinstance(exc.code, int) else 2
+    study = opts.study.rstrip("/")
 
-    if "--check-brief" in argv:
-        brief = Path(f"{study}/brief.md")
-        if not brief.is_file():
-            print(f"no brief.md in {study}", file=sys.stderr)
-            return 2
-        findings = check_brief(brief.read_text(encoding="utf-8"))
-        for finding in findings:
-            print(finding)
-        return 1 if findings else 0
+    if opts.check_brief:
+        return _brief_gate(study)
 
     table = Path(f"{study}/terms.jsonl")
     if not table.is_file():
         print(f"no terms.jsonl in {study}", file=sys.stderr)
         return 2
-    terms = _load(table)
-    if "--check-terms" in argv:
+    try:
+        terms = _load(table)
+    except (ValueError, TypeError) as exc:
+        print(exc, file=sys.stderr)
+        return 2
+    if opts.check_terms:
         findings = check_terms(terms)
         for finding in findings:
             print(finding)

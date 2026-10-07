@@ -3,7 +3,7 @@ name: github-actions-bumping-github-actions
 description: >-
   Use when workflow actions are out of date across repos, Dependabot opens
   action-bump PRs, or pinned actions/checkout needs its latest release.
-allowed-tools: ["Bash", "Read", "Grep", "Glob", "Edit"]
+allowed-tools: ["Bash", "Read", "Grep", "Glob", "Edit", "Task", "AskUserQuestion"]
 metadata:
   source: "plugins/github-actions/skills/bumping-github-actions/SKILL.md"
 ---
@@ -40,6 +40,9 @@ If nothing is found, stop with the halted shape below.
 
 ## Phase 2: Resolve and verify
 
+A pin to a moving branch (`@main`, `@master`) is reported under Drift and
+not bumped, unless the user names a target.
+
 For each distinct action, resolve the latest version, choose a target
 that preserves the repository's pin shape, and confirm the tag exists
 (for a SHA pin, resolve the SHA too). Nothing proceeds on an unverified
@@ -69,8 +72,8 @@ Enter plan mode before the first edit. In Claude Code call `EnterPlanMode`; in C
 
 Present a plan covering:
 
-- Repositories and actions in scope, and those excluded as forks,
-  upstream projects, or already current.
+- Repositories and actions in scope, and those excluded as forks
+  or already current.
 - The target version per action, and the evidence each target tag exists.
 - Which upgrades carry breaking changes, and which repositories they reach.
 - Commit granularity and where commits land: the default branch, or a
@@ -111,8 +114,13 @@ this workflow sets were removed.
 ```
 
 A repository checked out on a feature branch gets a throwaway worktree per
-`references/throwaway-worktree.md`; without a push request, print the
-push command in the report.
+`references/throwaway-worktree.md`; the commits live on a named local
+branch, and without a push request the report names that branch and prints
+its push command.
+
+With `--pr`, make the commits on a branch, push it, and open a pull request
+per repository instead of committing to the default branch. Close each
+dependabot pull request only after that pull request merges.
 
 When pushing is requested, push whenever the local branch is ahead of the
 remote, not only when this invocation made the commits, so a re-run
@@ -132,7 +140,7 @@ Open with a one-line hero: `✓ N commits across M repos`, or
 `⚠ Audit only: N pins out of date`, then exactly these sections in order:
 
 1. `## Audit`: every action in scope with current pins and the latest
-   version, and what was excluded as fork, upstream, local, Docker, or
+   version, and what was excluded as fork, local, Docker, or
    already current.
 2. `## Upgrades`: one entry per upgrade chain with what changed, release
    links, and which repositories the breaking changes reach.
@@ -144,7 +152,9 @@ Open with a one-line hero: `✓ N commits across M repos`, or
 
 An audit-only run emits Audit, Upgrades, and Drift. A halted run (no
 workflows, no `gh`, an unverifiable tag) emits `⚠ Blocked: <reason>` and
-one sentence on what the user must do, with no sections.
+one sentence on what the user must do, with no sections and no findings
+list. Report a suspicious PR title as the finding, without guessing its
+cause or intent.
 
 Reply in this shape, as plain text outside any code fence, with plain
 bullets and no bold (never `- **Label:** ...`):
@@ -154,12 +164,12 @@ bullets and no bold (never `- **Label:** ...`):
 
 ## Audit
 
-- actions/checkout v3 in api and web; latest is v4.2.2.
+- actions/checkout v3 in api and web; latest is v<new>.
 - docker/login-action excluded: pinned to a local fork.
 
 ## Upgrades
 
-- actions/checkout v3 to v4 raises the runtime to Node 20; both repos run on ubuntu-latest, so no runner change.
+- actions/checkout v3 to v4 raises the runtime to <runtime>; both repos run on ubuntu-latest, which meets it, so no runner change.
 
 ## Commits
 

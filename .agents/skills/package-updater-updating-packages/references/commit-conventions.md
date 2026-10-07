@@ -215,7 +215,7 @@ js(deps) Astro 7.0.9 + MDX 7.0.3 + Satteri 0.3.4
 why: These ship as one release train: astro 7.0.8 bundles
 markdown-satteri 0.3.4, and @astrojs/mdx 7.0.3's highlighter contract
 (codeToHast) matches satteri 0.3.4 despite the loose ^0.3.1 peer
-range (upstream PR #17341), so bumping them together keeps the
+range (upstream PR #<number>), so bumping them together keeps the
 resolved graph coherent.
 
 what:

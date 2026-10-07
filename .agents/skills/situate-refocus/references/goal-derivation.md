@@ -55,7 +55,9 @@ do not serve the stated outcome.
 
 **Work the goal asked for that has not happened.** Acceptance criteria
 with nothing on the branch addressing them; invisible until something
-checks the criteria one by one.
+checks the criteria one by one. A typed goal or a branch name has no
+criteria: name only what its own words imply, and never add a setting,
+a test, or a definition of "done" it does not state.
 
 ## Classify, do not just flag
 
@@ -87,7 +89,9 @@ When there is off-goal work, name the pattern:
 Produce the assessment and the corrective options; execute nothing.
 Branch surgery, reverts, and scope edits are the user's call.
 
-Four correctives:
+Offer only the correctives that apply: finishing needs a gap, deferring
+or dropping needs off-goal work, widening needs work worth keeping.
+The four:
 
 - **Finish the gap.** Name the unaddressed criteria in priority order.
 - **Defer the off-goal work.** Split it to a follow-up branch or file it

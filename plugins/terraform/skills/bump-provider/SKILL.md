@@ -13,8 +13,8 @@ Raise a provider's version across every module that declares it, in one
 commit, then refresh the lock file of every affected root module.
 
 Follow the phase structure and conventions in
-`../bumping-terraform/SKILL.md` (clean tree, commit message rules,
-non-interactive defaults, stopped runs), which names the references this
+`../bumping-terraform/SKILL.md` (recorded tree state, commit
+message rules, non-interactive defaults, stopped and audit-only runs), which names the references this
 skill uses. To move the CLI, use `/terraform:bump-terraform`. To refresh
 locks within existing constraints, use `/terraform:refresh-lock`.
 
@@ -28,15 +28,25 @@ The argument may be a full source address or a bare name. List the
 source addresses the repository declares:
 
 ```console
-git grep -hE '^[[:space:]]*source[[:space:]]*=' -- '*.tf' '*.tofu'
+$ git grep \
+    -n -E \
+    -e '^[[:space:]]*source[[:space:]]*=' \
+    -- '*.tf' '*.tofu'
 ```
 
-The list mixes provider and module sources. Resolve the argument against
-the addresses inside `required_providers` blocks only. If more than one
-declared address matches, ask which.
+The list mixes provider and module sources, and each hit names its file
+and line. Keep only hits inside a `required_providers` block: read the
+file around the line to tell. As a first cut, a provider address has two
+segments (`hashicorp/aws`) or three with a hostname first
+(`registry.example.com/acme/thing`); a registry module also has three
+(`terraform-aws-modules/vpc/aws`), and a local path or `git::` URL is
+always a module. Resolve the argument against the provider addresses. If
+more than one matches, ask which.
 
-A name that matches nothing declared is a finding, not a typo to correct
-silently: end the run with the stopped line.
+With no provider argument, list the declared provider addresses and ask
+which to move; headless, stop. A name that matches nothing declared is a
+finding, not a typo to correct silently: end the run with the stopped
+line.
 
 ### 2. Discover the layout and settle the ambiguities
 
@@ -69,7 +79,9 @@ here and write nothing.
 All constraint edits in one commit. Then, unless `--no-lock`, refresh
 each affected root module's lock and commit those separately. Move only
 the bumped provider: use the lock reference's "Moving one provider"
-steps, never `init -upgrade`. Compare every provider's platform count
+steps, never `init -upgrade`. A root module with no committed lock is
+skipped and reported, since `init` would create one; run it there only
+after the user approves. A failed `init` restores the lock from git. Compare every provider's platform count
 against its count before, and restore a dropped platform count for the
 bumped provider with `providers lock` naming it. With
 `--no-commit`, leave everything in the working tree and say what would
@@ -86,7 +98,7 @@ Report root modules that did not move, and why.
 ## Output
 
 Open with a one-line hero (`✓ <provider> <old> -> <new> across N root
-modules` or `⚠ Audit only: N sites behind`), then these sections in
+modules` or `Audit only: N sites behind`), then these sections in
 order:
 
 1. `## Target`: the provider's resolved source address, the target

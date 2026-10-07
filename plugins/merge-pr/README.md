@@ -58,11 +58,11 @@ Lands multiple PRs sequentially.
 
 ## Merge strategy and flags
 
-- Defaults to merge commit. `--squash` and `--rebase` override.
-- Passes other `gh pr merge` flags verbatim (e.g., `--delete-branch`, `--admin`).
-- Adheres to `references/merge-readiness.md` rules: discover, ask on ambiguity, halt on surprise.
+Defaults to merge commit; `--squash` and `--rebase` override. Other
+`gh pr merge` flags pass through. The gate, strategy, and flag rules live in
+`references/merge-readiness.md`.
 
 ## Prerequisites
 
-- **gh**: Authenticated with merge permissions.
-- **git**: Fetch/push access to PR branches.
+- gh, authenticated with merge permissions.
+- git, with fetch and push access to PR branches.

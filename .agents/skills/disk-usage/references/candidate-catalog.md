@@ -1,5 +1,14 @@
 # Candidate catalog
 
+## Contents
+
+- Regenerable
+- Redundant
+- Stale but unique
+- Protected
+- Classification rules
+- Ambiguity
+
 Every candidate is classified into exactly one tier. The tier
 determines what proof is required before it may be reclaimed, and
 whether the user is asked first.
@@ -13,6 +22,20 @@ Package manager content-addressed stores and download caches; compiler
 and toolchain caches; browser engine downloads for test harnesses;
 build output directories (`target/`, `build/`, `dist/`, `.venv`,
 `node_modules`).
+
+Prefer the tool's own command over `rm`. Re-check each with `<tool> --help`:
+
+- npm: `npm cache clean --force`; rebuilt by `npm install`.
+- pnpm: `pnpm store prune`; rebuilt by `pnpm install`.
+- yarn: `yarn cache clean`; rebuilt by `yarn install`.
+- pip: `pip cache purge`; rebuilt by the next install.
+- uv: `uv cache prune`; rebuilt by `uv sync`.
+- cargo: `cargo clean` inside a project; rebuilt by `cargo build`.
+- Go: `go clean -cache`; rebuilt by `go build`.
+- Docker: `docker builder prune`; rebuilt by `docker build`.
+- Homebrew: `brew cleanup`; re-downloaded on demand.
+- Playwright browsers: delete the cache directory; `npx playwright install`.
+- `node_modules` and `.venv`: delete the directory; `npm ci` or `uv sync`.
 
 Three cautions apply even here:
 

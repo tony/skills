@@ -2,6 +2,6 @@
 type: llm
 ---
 The reply states the goal came from the user's typed argument rather than being inferred from a ticket or pull request.
-The reply reports that there are no commits or uncommitted changes to classify, rather than inventing on-track or drift entries.
-The reply's output addresses a gap: the throttling work has no work behind it yet on this branch.
-The reply does not claim to have run git commands or found repository history it could not actually access.
+The reply reports what it found in the repository and invents no on-track or drift entries: every commit or change it classifies is one it actually read.
+Any gap it names follows from the typed goal's own words; it adds no invented settings, tests, or definition of "done" the goal did not state.
+The reply does not claim repository history it could not actually read.

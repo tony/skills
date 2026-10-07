@@ -4,7 +4,7 @@ description: >-
   Set two term tables against each other — same concept different term, same
   term different concept, and what each covers that the other lacks
 disable-model-invocation: true
-allowed-tools: ["Bash", "Read", "Glob", "Write"]
+allowed-tools: ["Read", "Glob", "Write", "AskUserQuestion"]
 metadata:
   argument-hint: "<study-dir> <study-dir> [--out=<file>]"
   source: "plugins/scholar/skills/compare/SKILL.md"
@@ -76,7 +76,10 @@ collisions, <n> uncovered` or `⚠ Blocked: <reason>`. Sections:
 3. `## Coverage` — what each side has that the other lacks, and whether that
    is a difference or a gap.
 
-Next-step options: study the uncovered area, publish the mapping, stop here.
+With `--out=<file>`, also write the three sections to that file; without it,
+write nothing.
+
+Next-step options: study the uncovered area, stop here.
 
 Write it per `references/prose-rules.md`.
 

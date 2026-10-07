@@ -18,27 +18,20 @@ fails: `references/verification-contract.md`.
 
 ## Steps
 
-1. **Recover the request, not the answer.** From the conversation,
-   take the original question, its constraints, and any narrowing the
-   user added since. Prior answers of yours are untrusted scratch —
-   good for recalling which sources exist, never citable as evidence.
-2. **Re-derive from source.** Re-open the artifacts — files, issues,
-   specs, data — and rebuild each claim from what they actually say.
-   Verification is performed, not asserted: cite what you re-opened
-   and what it said, or the command you ran and its output. "Verified
-   earlier in this conversation" anchors a claim to transcript
-   position and does not count.
-3. **Rebuild the structure.** Outline from the source material and
-   the request, not from your prior answer's item numbers. A claim
-   that no longer earns a place does not appear; a missing area
-   appears.
-4. **State confidence on claims.** "Weak evidence: X only follows
-   if Y", never "X was overstated".
-5. **Check for adopted state.** If the user acted on a prior claim
-   (committed, filed, sent, built on it), name that correction
-   explicitly, once, briefly: the user's figure is wrong, the source says
-   X. Do not say how the error arose or mark other earlier claims right
-   or wrong. Otherwise the prior turn does not exist in your output.
+Follow the contract's four rules (source baseline, performed
+verification, rebuilt structure, confidence on the claim).
+
+1. Recover the original question, its constraints, and any narrowing
+   the user added since. Treat your prior answers as scratch for
+   recalling which sources exist.
+2. Re-open the artifacts and re-derive each claim. Name what you
+   re-opened and what it said, or the command you ran and its output.
+3. Outline from the source and the request, not from your prior
+   answer's numbering.
+4. Check for adopted state: did the user commit, file, send, or build
+   on a prior claim? Then state that correction once, in one sentence
+   (the user's figure is wrong, the source says X), and continue
+   standalone. Otherwise the prior turn does not exist in your output.
 
 If the chat holds no prior answer, treat the request as a first ask and
 verify the claim the user names. If the claim has no checkable artifact
@@ -47,15 +40,28 @@ cannot; never answer "verified" from recall.
 
 ## Output shape
 
-Same shape the original request implied, as if answering for the
-first time. Name each file you re-opened or command you ran, relative to
-the project. No "what changed" section, no verdict legend, no
-*as noted above*. Write it per `references/prose-rules.md`.
+Same shape the original request implied, as if answering for the first
+time. Name each file you re-opened or command you ran, relative to the
+project. No "what changed" section, no verdict legend, no *as noted
+above*. Write it per `references/prose-rules.md`.
 
-When a narrow request ("are you sure about X?") scopes the answer to
-X, still append anything material you discovered while re-deriving, as a
-standalone fact about the subject ("the ADR also permits Y"), never as
-a correction of your prior answer.
+When a narrow request ("are you sure about X?") scopes the answer to X,
+still append anything material you discovered while re-deriving, as a
+standalone fact about the subject ("the ADR also permits Y"), never as a
+correction of your prior answer.
+
+Reply in this shape, as plain text outside any code fence, with plain
+bullets and no bold (never `- **Label:** ...`):
+
+```text
+client.py sets MAX_RETRIES = 3 and RETRY_BACKOFF_SECONDS = 2.
+
+- send_with_retry loops while attempts < MAX_RETRIES, so it makes 3
+  send attempts in total (client.py, lines 11-13).
+- Backoff is RETRY_BACKOFF_SECONDS = 2, slept after every failed
+  attempt, including the last, so a fully failing call sleeps 6
+  seconds before returning None.
+```
 
 
 ## Portability notes

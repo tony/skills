@@ -4,7 +4,7 @@ description: >-
   Pick up a research topic or assessment: carry sources into today's run,
   re-verify them, then fill gaps or expand scope
 disable-model-invocation: true
-allowed-tools: ["Skill", "Bash", "Read", "Write", "Edit", "Grep", "Glob", "WebFetch", "WebSearch", "AskUserQuestion"]
+allowed-tools: ["Skill", "Bash", "Read", "Write", "Edit", "Grep", "Glob", "WebSearch", "AskUserQuestion"]
 metadata:
   argument-hint: "[topic] [--fill | --expand=<scope>] [--resume] [--root=<dir>]"
   source: "plugins/research/skills/continue/SKILL.md"

@@ -53,11 +53,20 @@ git push -q -u origin feature/child
 mkdir -p bin
 cat >bin/gh <<'SH'
 #!/usr/bin/env bash
+json='{"number":17,"title":"Add the parser","url":"https://example.invalid/pull/17","state":"OPEN","baseRefName":"feature/base","headRefName":"feature/child","headRefOid":"HEADOID","body":"## Summary\n\n- **Add** a key=value parser\n- **Add** retry logic to the client so transient errors do not fail the run\n\n## Reviewer notes\n\nBenchmarks pending, see the dashboard."}'
+json="${json/HEADOID/$(git rev-parse HEAD)}"
 case "$1 $2" in
   "pr view")
-    cat <<'JSON'
-{"number":17,"title":"Add the parser","url":"https://example.invalid/pull/17","state":"OPEN","baseRefName":"feature/base","headRefName":"feature/child","body":"## Summary\n\n- **Add** a key=value parser\n- **Add** retry logic to the client so transient errors do not fail the run\n\n## Reviewer notes\n\nBenchmarks pending, see the dashboard."}
-JSON
+    jq_filter=""
+    while [ $# -gt 0 ]; do
+      [ "$1" = "--jq" ] && jq_filter="$2"
+      shift
+    done
+    if [ -n "$jq_filter" ]; then
+      printf '%s' "$json" | jq -r "$jq_filter"
+    else
+      printf '%s\n' "$json"
+    fi
     ;;
   "pr edit") echo "$*" >>edit.log ;;
   *) echo "unsupported: $*" >&2; exit 1 ;;

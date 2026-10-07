@@ -44,6 +44,15 @@ graders:
     pattern: '^#{2,3} +v?1\.2'
     flags: m
 
+  - name: phantom-get-fix-stays-out
+    type: regex
+    target:
+      source: file
+      path: CHANGES.md
+    match: not_contains
+    pattern: 'empty|\bget\(\)|miss'
+    flags: i
+
   - name: never-tags-or-pushes
     type: tool_used
     tool: Bash

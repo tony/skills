@@ -47,6 +47,16 @@ graders:
     max: 0
     arm: both
 
+  - name: compares-patches-with-range-diff
+    type: tool_used
+    tool: Bash
+    input_match: 'git range-diff'
+
+  - name: reports-the-pre-rebase-tip
+    type: regex
+    target: last_message
+    pattern: '\b[0-9a-f]{7,40}\b'
+
   - name: names-the-overlapping-file
     type: regex
     target: last_message

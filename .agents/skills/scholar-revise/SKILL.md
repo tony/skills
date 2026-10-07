@@ -57,7 +57,15 @@ wrong gets its own entry beneath.
 
 Change the affected row in `terms.jsonl` and the affected evidence document,
 then link the correction from the brief's section so a reader of the brief
-meets it.
+meets it. A brief edit can break the brief gate, so run it and report the
+result in `## Touched`:
+
+```console
+$ <analyzer> notes/ontology/<subject>/ --check-brief
+```
+
+`<analyzer>` is `references/term-metrics.py`. Fix the brief until it
+exits zero.
 
 ## Rules
 

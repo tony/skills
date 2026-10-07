@@ -1,0 +1,60 @@
+"""Run relay.sh's selftest and its transport-failure mapping under pytest."""
+
+# ruff: noqa: S101, S603, INP001, D103, PLR2004
+# pyright: reportUnusedCallResult=false
+
+from __future__ import annotations
+
+import os
+import pathlib
+import shutil
+import socket
+import subprocess
+import tempfile
+
+import pytest
+
+RELAY = pathlib.Path(__file__).with_name("relay.sh")
+
+needs_tools = pytest.mark.skipif(
+    shutil.which("jq") is None or shutil.which("bash") is None,
+    reason="relay.sh needs bash and jq",
+)
+
+
+@needs_tools
+def test_selftest() -> None:
+    result = subprocess.run(
+        [str(RELAY), "selftest"],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert "selftest ok" in result.stdout
+
+
+@needs_tools
+def test_socket_send_maps_nc_failure_to_exit_6() -> None:
+    with tempfile.TemporaryDirectory() as tmp:
+        stub = pathlib.Path(tmp, "bin")
+        stub.mkdir()
+        nc = stub / "nc"
+        nc.write_text("#!/bin/sh\nexit 1\n")
+        nc.chmod(0o755)
+        sock_path = pathlib.Path(tmp, "s.sock")
+        srv = socket.socket(socket.AF_UNIX)
+        srv.bind(str(sock_path))
+        try:
+            env = {**os.environ, "PATH": f"{stub}{os.pathsep}{os.environ['PATH']}"}
+            env.pop("CODEX_SANDBOX_NETWORK_DISABLED", None)
+            result = subprocess.run(
+                [str(RELAY), "socket-send", "--socket", str(sock_path), "--line", "x"],
+                capture_output=True,
+                text=True,
+                env=env,
+                check=False,
+            )
+        finally:
+            srv.close()
+    assert result.returncode == 6, result.stderr

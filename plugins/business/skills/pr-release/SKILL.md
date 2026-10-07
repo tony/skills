@@ -34,13 +34,13 @@ Locating an existing run.
 ### 2. Locate and verify the firewall
 
 Check for `<run>/reports/case-study-public.md`. If it is missing,
-ask via `AskUserQuestion` whether to run
-`/business:case-study-public` now or stop; never draft the release
-straight from the interim package. Without a question tool, halt
-with `⚠ Refused: no public case study for this run` and tell the user
-to run `/business:case-study-public`. If present, run the firewall
-sweep from `audiences.md`; a sweep failure routes back to
-`/business:case-study-public`, never into hand-patching here.
+ask via `AskUserQuestion` whether to write it now (read
+`../case-study-public/SKILL.md` and follow it) or stop; never draft
+the release straight from the interim package. Without a question
+tool, halt with `⚠ Refused: no public case study for this run` and
+tell the user to run `/business:case-study-public`. If present, run
+the firewall sweep from `audiences.md`; a sweep failure routes back
+to the public case study, never into hand-patching here.
 
 ### 3. Compose one page
 
@@ -73,5 +73,5 @@ Hero success form: `✓ PR release: <headline>`; a stopped run follows
 3. `## Report`: where it was written and the headline.
 
 Panel options: revise the headline, regenerate after updating the
-case study, or stop. Skip the panel in plan mode or when running
+case study (read `../case-study-public/SKILL.md` and follow it), or stop. Skip the panel in plan mode or when running
 non-interactively.

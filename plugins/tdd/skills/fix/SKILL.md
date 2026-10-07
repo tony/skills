@@ -30,7 +30,8 @@ commit messages per `../../references/prose-rules.md`, with no
    file, and fixtures that help reproduce the scenario. Read them.
 5. Summarize the root cause, the xfail test you would write, and the minimal
    fix, and ask the user to confirm. Without an interactive question tool, the
-   request to fix the bug is the confirmation.
+   request is the confirmation. When the user asked only for the failing test,
+   stop after Phase 2.
 6. Confirm `git rev-parse --show-toplevel` is the project the bug lives in
    and `git status --porcelain` prints nothing. Otherwise stop before writing
    anything and never commit unrelated changes. The stopped report keeps the
@@ -53,7 +54,8 @@ writing one. Pick the mechanism from the xfail-mechanisms reference.
    ```
 4. Run the full test file.
 5. Run the quality gates.
-6. Commit the failing test, marked as an xfail for a known bug.
+6. Commit the failing test, marked as an xfail for a known bug. Before the
+   commit, `git status --porcelain` lists test files only; stage nothing else.
 
 ## Phase 3: Find the Root Cause
 
@@ -74,7 +76,8 @@ Apply the minimal fix (see the gates-and-commits reference).
    test, and expect a pass.
 4. Run the quality gates. With a strict mechanism, run the non-test gates only;
    the XPASS failure is expected.
-5. Commit the fix with the root cause in the message.
+5. Commit the fix with the root cause in the message. Before the commit,
+   `git status --porcelain` lists no test files.
 
 ## Phase 5: Remove xfail and Verify
 
@@ -96,10 +99,9 @@ When the test still fails after the fix:
    and cached installs can run old code, so confirm module paths point to local
    source and reinstall if not. If the fix is wrong, revert it, return to
    Phase 3, and apply a new fix in Phase 4.
-3. After 3 failed fix attempts, stop and report per the recovery rule in the
-   gates-and-commits reference.
 
 ## Report
 
-Report per the final-report shape in `../../references/gates-and-commits.md`.
-A stopped run is the hero line, then what the user needs to do.
+Report per the final-report and stopped-run shapes in
+`../../references/gates-and-commits.md`. Name commits by purpose, never by
+phase or number.

@@ -1,0 +1,36 @@
+schema_version: "1.0"
+name: 08-codex-auth-fallback-agent
+description: >-
+  When the codex tier fails to authenticate, the run falls through to the
+  agent tier, and the report names both tiers and attributes the answer only
+  to the CLI that returned it.
+tags: [fixture, gated]
+
+context:
+  scaffold_script: scaffold.sh
+
+execution:
+  prompt: >-
+    /model-cli:codex explain what handle() in ./app.py does
+    The codex binary is ./bin/codex and the agent binary is ./bin/agent.
+  max_turns: 20
+  timeout_seconds: 420
+  allowed_tools: [Bash, Read, Glob, Grep, Skill]
+
+runs: 3
+
+graders:
+  - name: agent-tier-ran
+    type: tool_used
+    tool: Bash
+    input_match: 'bin/agent'
+    min: 1
+    arm: both
+
+  - name: names-both-tiers-and-attributes-correctly
+    type: llm
+    focus: last_message
+    criteria: |
+      The reply says the codex tier failed (authentication) and that the
+      agent tier returned the answer, and it shows that answer. It does not
+      attribute the answer to Codex or OpenAI's own CLI.

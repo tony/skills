@@ -149,8 +149,10 @@ pnpm section applies unchanged, except the cooldown key.
 
 Marked by `Cargo.lock`.
 
-Do not run `cargo-outdated` (the skill body states why). Discover with
-the resolver instead:
+Never run `cargo-outdated`: it exhausts memory and the OOM killer can
+take a constrained host down, and merely starting it is the cost, so
+there is no safe probe and it is never offered. Only the user can lift
+this. Discover with the resolver instead:
 
 ```console
 $ cargo update --dry-run

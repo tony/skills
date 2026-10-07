@@ -1,6 +1,6 @@
 # PR Template Resolution
 
-Procedure for skills that draft a PR description from scratch (`/pr` and
+Procedure for skills that draft a PR description from scratch (the `pr` skill and
 this skill). the `pr-refresh` skill never resolves templates; it keeps the
 existing structure and does not discuss templates at all.
 
@@ -18,8 +18,9 @@ existing structure and does not discuss templates at all.
    - `docs/pull_request_template.md`
    - `.github/PULL_REQUEST_TEMPLATE/*.md` (multi-template directory)
 
-3. **No template.** Use the section patterns in `/pr` (the `pr` skill,
-   step 3). Do not mention templates to the user.
+3. **No template.** Use the section patterns in the `pr` skill (the `pr` skill,
+   step 3). Do not mention templates to the user: no "no template
+   found", no "I used the default sections".
 
 ## When to ask
 
@@ -30,14 +31,14 @@ Ask through `ask-user-choice`, never guess, when:
 - Templates in more than one standard location differ.
 - The user's mention is ambiguous (a name that matches several files).
 
-Offer the candidates as options, plus the `/pr` section patterns. Without
-an interactive question tool, use the `/pr` section patterns and say
+Offer the candidates as options, plus the `pr` skill section patterns. Without
+an interactive question tool, use the `pr` skill section patterns and say
 which templates were skipped.
 
 ## Blending
 
 A template supplies the structure: its sections, order, and headings
-stay verbatim, including HTML comments and checklists. The `/pr` patterns
+stay verbatim, including HTML comments and checklists. The the `pr` skill patterns
 (bold impact labels, tables, verification commands, proportionality) fill
 the content inside that structure. Add a section the template lacks only
 when the diff clearly warrants it, and say so when presenting the draft.

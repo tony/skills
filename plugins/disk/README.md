@@ -55,16 +55,17 @@ The `disk` skill triggers either flow automatically under disk pressure.
 ## Inspection Scope
 
 - **Filesystem layers**: Evaluates guest vs. host footprint to identify
-  gaps in allocated size vs. used space.
+  gaps in backing-file size vs. used space.
 - **Upstream clones**: Ranks clones by size and shallow vs. full history.
   Checks for unpushed commits and uncommitted changes.
 
 ## Prerequisites
 
-- `df`, `du`, `find`, `findmnt` (Linux), `git`, `python3`
+- `df`, `du`, `find`, `findmnt` (Linux), `git`, `python3`, `realpath`,
+  `rsync` (checksum comparison in the redundancy proof), and `lsof` or
+  `fuser` (open-file check before deleting)
 - (Optional) `dust` for faster surveying, `strings` and `rg` for binary
-  inspection, `zstd` for compressing history, `rsync` for
-  checksum-verified comparison and merges
+  inspection, `zstd` for compressing history
 
 Scope is WSL-first: virtual-disk guidance covers WSL, with pointers for
 Docker Desktop and Hyper-V. macOS APFS and Time Machine snapshots are not

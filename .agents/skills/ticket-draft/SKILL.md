@@ -15,7 +15,7 @@ Write work into a tracker so that someone picking it up in a year needs
 nothing from you, and so that the code still gets to make the decisions the
 code should make.
 
-Argument: `$ARGUMENTS` — a description, a URL, a provider name, a pasted
+Argument: `$ARGUMENTS`, a description, a URL, a provider name, a pasted
 finding, or nothing.
 
 For a plain GitHub bug report, `gh:create-issue` is more specialized; hand
@@ -25,11 +25,11 @@ single issue.
 
 ## Read first
 
-- `references/contract.md` — the three tenses.
-- `references/altitude.md` — which sections each kind of object carries.
-- `references/resolve.md` — how to establish the provider and role from
+- `references/contract.md`: the three tenses.
+- `references/altitude.md`: which sections each kind of object carries.
+- `references/resolve.md`: how to establish the provider and role from
   evidence, and the index of provider files.
-- Only the matched provider's file from that index — its hierarchy, reference
+- Only the matched provider's file from that index: its hierarchy, reference
   syntax, and filing mechanics.
 - `references/hierarchy.md` only when the role is ambiguous or a native
   noun collides across providers.
@@ -42,7 +42,7 @@ Most bad tickets are written at the wrong altitude: a design document
 filed as an epic, a research note filed as an issue, an implementation plan
 filed as a goal. Settle what the object is before deciding what goes in it.
 
-## Phase 1 — Resolve the target
+## Phase 1: Resolve the target
 
 Establish the provider, the scope container, and the semantic role, following
 `resolve.md`. Do not infer the provider from key shape: `#123` and `ENG-123`
@@ -51,7 +51,7 @@ each fit several trackers.
 When the role is ambiguous between two levels, ask: a `delivery_group` and a
 `work_item` share almost no sections.
 
-## Phase 2 — Decide it belongs in this tracker, publicly
+## Phase 2: Decide it belongs in this tracker, publicly
 
 A vulnerability does not. For a public repository, check the security policy
 before anything else and follow its private path if the finding is a security
@@ -60,7 +60,7 @@ defect.
 Stop and ask when the evidence cannot be sanitized. An internal log carrying
 customer data does not become fileable by trimming it.
 
-## Phase 3 — Preflight the container
+## Phase 3: Preflight the container
 
 Read the project's own conventions before imposing any: issue templates and
 forms, required fields, work types actually configured in this instance,
@@ -72,14 +72,17 @@ A template's structure wins over the section order in `altitude.md`. Fill it
 in rather than restructuring it, and apply the contract to what you put in
 its fields.
 
-## Phase 4 — Look for the thing that already exists
+## Phase 4: Look for the thing that already exists
 
 Search open and closed items, and read each candidate before dismissing it.
 A duplicate of a closed item is a regression report, a different thing to
 file. When one matches, say so, stop, and offer to comment on it with the new
 evidence instead.
 
-## Phase 5 — Gather
+When no tracker is reachable to search, put "Duplicate check not run" under
+Unverified.
+
+## Phase 5: Gather
 
 For a defect: the smallest sequence that reproduces it; exact versions; the
 verbatim error; the code that causes it, pinned. Show the user every command
@@ -91,11 +94,11 @@ For a proposal: what is awkward or impossible today, shown concretely.
 
 For provenance: apply the cost-to-relearn filter from `contract.md`. Mine
 merged changes, closed items, and the current conversation for findings that
-cannot be recovered from the repository — measurements with their conditions,
+cannot be recovered from the repository: measurements with their conditions,
 dead ends with reasons, retracted numbers with what was actually measured.
 Drop everything a reader gets by opening the file or reading the log.
 
-## Phase 6 — Draft
+## Phase 6: Draft
 
 Take the section list from `altitude.md` for the resolved role. Include only
 sections you have content for; never invent one.
@@ -112,9 +115,21 @@ for a Linear Project or `Pull Request` for a GitLab merge request.
 Then check the future tense against `contract.md`: demote every failed
 invariant to intent, and rewrite any checkbox list of technical outcomes.
 
+When the reporter gave only a symptom, restate the symptom and stop: add no
+impact, scope ("smaller exports are fine"), or expected-behavior sentence.
+
+State facts about the work. Never put advice about the document in the body
+("link to a design doc rather than restate it"); write the link, or list
+"Design document: none linked" under Unverified. Use no time-relative words
+("currently", "for now"). Headings inside the body are `###`, so they nest
+under the reply's `## Body`.
+
+Flag any reproduction step that pipes a remote script into a shell or deletes
+data ("runs a remote script; read it first") in the body, beside the step.
+
 Write it per `references/prose-rules.md`.
 
-## Phase 7 — Sanitize, then preview
+## Phase 7: Sanitize, then preview
 
 Reread the whole body for local absolute paths, hostnames, emails, tokens,
 and internal URLs, including inside every pasted log. This is a gate.
@@ -122,12 +137,16 @@ and internal URLs, including inside every pasted log. This is a gate.
 Render the body the way the provider will before showing it: a details
 block that lost its blank line renders as literal asterisks.
 
-## Phase 8 — Present, then file
+## Phase 8: Present, then file
 
-Show the result in this order: a hero line (the role, the provider, and
-"not filed yet"), `## Title`, `## Body`, and `## Unverified` only when the
-draft carries marked-unverified items. Lead with the result; stop at the last
-concrete point, with no recap. Then offer, via `ask-user-choice`: file it,
+Show the result in this order: a hero line (one line, at most 25 words: the
+role, the provider, and "not filed yet"), `## Title`, `## Body`,
+`## Changed from your request` only when you altered something the user asked
+for, and `## Unverified` only when the draft carries marked-unverified items.
+Backend and run status go under Unverified. Explain each change in the user's
+terms ("a checkbox list reads as a requirement"), never by citing this
+skill's rules. Lead with the result; stop at the last concrete point, with no
+recap or "Next step" line. Then offer, via `ask-user-choice`: file it,
 print the body only, revise a named section, or drop it. Where no interactive
 question tool exists, print the draft and stop; filing needs an explicit
 instruction naming the action.
@@ -146,21 +165,27 @@ Search rework: faster results that survive typos
 
 <the full body, as it will render in the provider>
 
+## Changed from your request
+
+- "Storage engine changed to a custom inverted index" is now Intent, so
+  it informs the work without binding it.
+
 ## Unverified
 
 - Why now: no reason was given, so there is no Evidence section.
-- Not doing: left out rather than guessed.
+- Filing: no Linear connection here, so paste the body into the Project.
 ```
 
 A halted run (a vulnerability, unsanitizable evidence, a duplicate found) is
 one result sentence, then what the user needs to do.
 
 File through a real backend when the provider file says one exists. Save the
-approved body to a scratch file (`mktemp`, outside the working tree) and pass
-that path, not an inline argument, so fences, HTML, and `$` survive shell
-quoting. Create it with `mktemp "${TMPDIR:-/tmp}/ticket-body.XXXXXX"`. Shell state does
-not persist between calls, so create, write, file, and `rm -f` the file in one
-command, or print the path once and use the literal path afterwards.
+approved body to a scratch file outside the working tree and pass that path,
+not an inline argument, so fences, HTML, and `$` survive shell quoting. Create
+it with `mktemp "${TMPDIR:-/tmp}/ticket-body.XXXXXX"`. Shell state does not
+persist between calls, so create, write, file, and `rm -f` the file in one
+command, or print the path once and use the literal path afterwards. Never
+show the path to the user.
 
 Where no backend exists, print the approved body for the user to paste and say
 plainly that is what is happening.
@@ -172,8 +197,11 @@ comment, or start a branch for it.
 
 - No tracker or repository writes until the filing gate. No commits, no
   pushes, no edits to existing items.
-- Never invent a version, an error string, a line number, a link, or a
-  reference syntax. Unverified goes in marked unverified, or comes out.
+- Never invent a version, an error string, a line number, a link, a reference
+  syntax, a reproduction step, an inference about scope, cause, or impact,
+  or an Expected or Actual the reporter did not state. Missing repro goes under
+  Unverified as "Repro steps: not provided". Unverified goes in marked
+  unverified, or comes out.
 - Never synthesize a hierarchy level the provider does not have.
 
 

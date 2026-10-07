@@ -4,13 +4,13 @@ What a ruff release does to a given repository, worked out before touching a fil
 
 ## Read the release, not the version number
 
-Ruff ships breaking changes in minor releases, so a `0.N` bump is not a patch. Three sources, in order of authority:
+A bump can carry breaking changes whatever its version number; read the changelog for the target tag. Three sources, in order of authority:
 
 1. The repository's own `CHANGELOG.md` at the release tag, `https://github.com/astral-sh/ruff/blob/<tag>/CHANGELOG.md`. This is canonical and complete.
 2. The vendor's release blog post, when one exists for that version. Better narrative, sometimes omits detail.
 3. The GitHub release page. Usually a rendering of the changelog.
 
-If a local clone of the linter's source is available, reading the changelog at the tag is faster and more reliable than fetching it. Otherwise fetch the changelog from the tag ref, not from the default branch — the default branch describes unreleased work.
+If a local clone of the linter's source is available, reading the changelog at the tag is faster and more reliable than fetching it. Otherwise fetch the changelog from the tag ref, not from the default branch, which describes unreleased work.
 
 ## Sort every change into one of five buckets
 
@@ -18,11 +18,11 @@ If a local clone of the linter's source is available, reading the changelog at t
 
 **Stabilized behavior inside existing rules.** A rule that already fired now fires in more places, or in fewer. These produce diagnostics on code that has been clean for years, which reads as a false positive until you check the changelog. Record the rule code and what widened.
 
-**Default configuration changes.** Changes to what is selected when the repo does not say. Check which case each repo is in (explicit `select`, `extend-select` only, or neither) before predicting anything. An explicit `select` opts a repo out; the bucket is a decision for the user, not an inert one, handled in the procedure's default-rule-set step.
+**Default configuration changes.** Changes to what is selected when the repo does not say. Check which case each repo is in (explicit `select`, `extend-select` only, or neither) before predicting anything. The opt-out rules are in the default-rule-set reference.
 
-**Formatter changes.** New syntax handled, changed output, or — the expensive one — new *file types* brought into the formatter's scope. A formatter that starts formatting embedded code inside documentation files will rewrite files that no formatter has ever touched in that repo, and the diff can dwarf every lint fix combined. Predict this by running `ruff format --check` before and after the version change and comparing the count of files it would reformat.
+**Formatter changes.** New syntax handled, changed output, or, the expensive one, new *file types* brought into the formatter's scope. A formatter that starts formatting embedded code inside documentation files will rewrite files that no formatter has ever touched in that repo, and the diff can dwarf every lint fix combined. Predict this by running `ruff format --check` before and after the version change and comparing the count of files it would reformat.
 
-**Output and interface changes.** Serialization formats, exit codes, CLI flags, suppression-comment syntax. These break tooling that parses the linter's output — CI annotation scripts, editor integrations, report generators — not the code being linted. Grep the repo for anything that consumes the linter's machine-readable output.
+**Output and interface changes.** Serialization formats, exit codes, CLI flags, suppression-comment syntax. These break tooling that parses the linter's output (CI annotation scripts, editor integrations, report generators), not the code being linted. Grep the repo for anything that consumes the linter's machine-readable output.
 
 ## Intersect the release with each repo's configuration
 
@@ -33,7 +33,7 @@ A rule can only fire if the repo selects it. For each repo, read its linter conf
 - A default-set change fires only if the repo has no explicit `select`.
 - Formatter changes apply regardless of rule selection.
 
-Write the prediction down before running anything. A rule you predicted that does not fire is fine — the code was already clean. A rule that fires and you did not predict means your reading of either the release or the config was wrong, and you need to resolve that discrepancy rather than reflexively applying the autofix.
+Write the prediction down before running anything. A rule you predicted that does not fire is fine: the code was already clean. A rule that fires and you did not predict means your reading of either the release or the config was wrong, and you need to resolve that discrepancy rather than reflexively applying the autofix.
 
 ## Per-rule triage before fixing
 
@@ -41,7 +41,7 @@ For each rule that actually fires, fetch its documentation page and read the *wh
 
 **Cosmetic.** Reordering, spelling, redundant syntax. The autofix is safe and the diff is mechanical. Commit it with the rule's rationale in the body.
 
-**Semantic but equivalent.** The fix changes the code's shape but provably not its behavior — comprehension rewrites, path-API migrations, string-formatting changes. Run the project's test suite specifically to confirm the equivalence claim rather than trusting it.
+**Semantic but equivalent.** The fix changes the code's shape but provably not its behavior: comprehension rewrites, path-API migrations, string-formatting changes. Run the project's test suite specifically to confirm the equivalence claim rather than trusting it.
 
 **Behavior-changing.** The current code is subtly wrong, and fixing it changes what the program does. Exception-handling, logging, iterator-protocol and return-type rules land here. Explain the behavior delta in the commit body, ideally with a test that would have caught the old behavior.
 

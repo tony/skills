@@ -26,10 +26,11 @@ wins:
    the user to run `00-scan`.
 
 The script resolves it and prints the path to use literally afterwards. Run it
-by absolute path: the relative `scripts/` path is from the file that names it.
+by the absolute path of `scripts/measure.py` (`<measure.py>`), which the calling
+skill resolves from its own directory.
 
 ```console
-$ python3 references/measure.py memory-dir \
+$ python3 <measure.py> memory-dir \
     --repo-root "$(git rev-parse --show-toplevel)"
 ```
 
@@ -60,7 +61,9 @@ token = hash(git HEAD
 `measure.py token` computes it and sorts the node ids itself. The environment
 fingerprint is Python version, OS, and machine architecture. A phase is a no-op
 on re-run when `state.json` marks it `completed`, the token is unchanged, and its
-output file exists; `--force` overrides all three. Including `git HEAD` means
+output file exists; `--force` overrides all three. `01-benchmark` and `03-execute` recompute the
+token before reading `baseline.json` and halt on a mismatch with `state.json`'s
+`env_token`, naming `00-scan --force` as the fix. Including `git HEAD` means
 `03-execute`'s commits change the token, so the next `00-scan` re-baselines.
 
 ## Baseline-diff rule
@@ -166,10 +169,15 @@ re-scans. A re-baseline after `03-execute` re-opens all candidates.
     "files": ["tests/conftest.py"],
     "commit": { "subject": "test(fixtures) widen make_config to session scope", "body": "why: ...\n\nwhat:\n- ..." },
     "verify": "<project test command>",
+    "expected_total": 40,
     "depends_on": []
   }
 ]
 ```
+
+`expected_total` is the collected-test count after the item applies: the
+baseline `tests.total`, or another number only for an item that removes or adds
+tests on purpose.
 
 ### `execution-log.json`
 

@@ -1,0 +1,86 @@
+schema_version: "1.0"
+name: 05-rewrite-approved-drops-commit
+description: >-
+  With explicit approval of the rewrite and --commit, the skill backs up the
+  branch, drops the changelog-only commit, leaves code untouched, and lands one
+  fresh docs(CHANGES) commit without tool trailers.
+tags: [fixture, git]
+
+context:
+  scaffold_script: scaffold.sh
+
+execution:
+  prompt: >-
+    /changelog:rewrite-aggressively --commit
+    Yes, drop that changelog commit and rewrite the entries.
+  max_turns: 40
+  timeout_seconds: 900
+  allowed_tools: [Bash, Read, Glob, Grep, Skill, Edit, Write]
+
+runs: 3
+
+graders:
+  - name: creates-a-backup-branch-first
+    type: tool_order
+    before:
+      tool: Bash
+      input_match: 'rewrite-backup'
+    after:
+      tool: Bash
+      input_match: 'git rebase'
+
+  - name: drops-the-draft-commit
+    type: tool_used
+    tool: Bash
+    input_match: 'git rebase'
+    min: 1
+    arm: both
+
+  - name: draft-entry-is-gone
+    type: regex
+    target:
+      source: file
+      path: CHANGES.md
+    match: not_contains
+    pattern: 'first draft'
+    flags: i
+
+  - name: changelog-gains-a-ping-entry
+    type: regex
+    target:
+      source: file
+      path: CHANGES.md
+    pattern: 'ping'
+    flags: i
+
+  - name: commits-once
+    type: tool_used
+    tool: Bash
+    input_match: 'git commit'
+    min: 1
+    max: 1
+    arm: both
+
+  - name: no-tool-trailers
+    type: tool_used
+    tool: Bash
+    input_match: 'Co-Authored-By|Generated with'
+    min: 0
+    max: 0
+    arm: both
+
+  - name: never-pushes
+    type: tool_used
+    tool: Bash
+    input_match: 'git push'
+    min: 0
+    max: 0
+    arm: both
+
+  - name: reports-backup-and-clean-code-diff
+    type: llm
+    focus: last_message
+    criteria: |
+      The reply says the old changelog commit was dropped, names the backup
+      branch, and says one new docs(CHANGES) commit was added at the tip. It
+      does not claim a push or tell the user the code changed.

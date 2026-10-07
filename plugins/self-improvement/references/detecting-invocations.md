@@ -49,6 +49,10 @@ Redirect the output to a file in the scratch directory. Confirm the line
 form with one search before counting; an empty file means this host does
 not write that line, and the tool channel is unavailable, not zero.
 
+The match also hits earlier transcripts that quoted the line, such as a
+past sweep's own session, so the tool count is an upper bound. Say so in
+the report, or drop the sessions of this plugin from the search.
+
 The tool channel has no usable date, so the era split comes from the slash
 channel alone and a skill the model reaches for on its own is undercounted
 there. A skill is unused only when it is absent from both channels.
@@ -70,8 +74,17 @@ path and use that literal path in every later command.
 $ mktemp -d "${TMPDIR:-/tmp}/sweep.XXXXXX"
 ```
 
-Write the current skill names, one per line, to `catalog.txt` there, then
-count:
+Run the catalog command from the repository root. It prints the skills with
+their gating and birth dates, the rename map, commit subjects that mention
+a rename or replacement, and the era boundary (Phase 0 of the sweep):
+
+```console
+$ python3 <sweep.py> catalog
+```
+
+Write the skill names it lists, one per line, to `catalog.txt` in the
+scratch directory, then count. `--history` takes any prompt-history file in
+the same JSONL shape, which is how a fixture replaces the real one:
 
 ```console
 $ python3 <sweep.py> counts \
@@ -82,7 +95,7 @@ $ python3 <sweep.py> counts \
     --alias <old-name>=<current-name>
 ```
 
-Pass one `--alias` per rename. The output is JSON: per skill `slash_all`,
+Pass one `--alias` per entry of the catalog command's `renames`. The output is JSON: per skill `slash_all`,
 `slash_era`, `tool_all`, `all_time`, `projects_all`, `projects_era`, plus
 `rank_all`, `rank_era`, and per-channel `status`. Use `rank_all` for the
 all-time ranking and `rank_era` for the current-era ranking; the second is
@@ -90,7 +103,11 @@ slash-only, so say so.
 
 `complete` is `false` unless the history parsed without malformed lines and
 the tool log held at least one launch. Apply no threshold to an incomplete
-count. A zero from an incomplete channel is not an absence. An archived or
+count. When the confirming search showed that this host writes no
+`Launching skill:` line, pass `--tool-unavailable` instead of `--tool-log`:
+the tool channel's status becomes `unavailable`, `complete` rests on the
+slash channel alone, and the report says the model's own launches are not
+counted. A zero from an incomplete channel is not an absence. An archived or
 reclaimed transcript store comes back clean, complete, and wrong, so state
 what the count assumes about the corpus.
 
@@ -99,17 +116,11 @@ what the count assumes about the corpus.
 A renamed skill keeps its old invocations under the old name. Counting only
 the current name undercounts, sometimes by most of the total.
 
-```console
-$ git log \
-    --diff-filter=R \
-    --name-status \
-    --format='%h %s' \
-    -- 'plugins/*/skills/*'
-```
-
-Read commit subjects for renames the detector scored below its threshold.
-Sum across every name one skill has had, via `--alias`, and across nothing
-else; a replacement is not a rename.
+The catalog command's `renames` maps each retired name to its current one,
+following chains. Its `rename_subjects` lists commits whose subject mentions
+a rename or replacement; read them for renames git scored below its
+similarity threshold. Sum across every name one skill has had, via
+`--alias`, and across nothing else; a replacement is not a rename.
 
 ## Supersessions split it the other way
 
@@ -155,13 +166,17 @@ proven otherwise, not as "this host does not use skills".
 
 `agentgrep` searches the stores of several hosts at once and is an
 optional alternative to the host's search tool. It runs through `uvx`, so
-`uv` must be installed. Before relying on it:
+`uv` must be installed. It reads every transcript store, so run only a
+pinned version: `uvx agentgrep@0.1.0a52`, the version this procedure was
+checked against. Before relying on it, show the user this exact command and
+run it only once they confirm:
 
 ```console
-$ uvx agentgrep search --help
+$ uvx agentgrep@0.1.0a52 search --help
 ```
 
-Use only the flags that help lists. If `uv` or the tool is missing, the
+Use only the flags that help lists. Without that confirmation, skip the
+tool and report the other hosts' stores as not searched. If `uv` or the tool is missing, the
 command fails, or a flag the query needs is absent, stop using it: fall back
 to the host's search tool or the `rg` command above, and report the other
 hosts' stores as not searched.

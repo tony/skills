@@ -1,7 +1,7 @@
 ---
 name: rebase
 description: Rebase current branch onto trunk (origin/master or origin/main), predict and resolve conflicts
-allowed-tools: ["Bash", "Read", "Grep", "Glob", "Edit", "AskUserQuestion"]
+allowed-tools: ["Bash", "Read", "Edit", "AskUserQuestion"]
 user-invocable: true
 disable-model-invocation: true
 ---
@@ -25,7 +25,9 @@ Gather the starting state:
    rebase first.
 
 Then determine the trunk name as `TRUNK`, the **bare** name (every use below
-adds `origin/`). Ask the remote first; it answers before any fetch:
+adds `origin/`). Shell state does not persist between Bash calls: write the
+literal name wherever `${TRUNK}` appears below. Ask the remote first; it
+answers before any fetch:
 
 ```console
 $ git ls-remote --symref origin HEAD
@@ -45,6 +47,9 @@ If the current branch is `TRUNK`, stop: there is nothing to rebase onto.
    ahead (`git rev-list --count origin/${TRUNK}..HEAD` prints `0`) or already
    up to date (`git merge-base --is-ancestor origin/${TRUNK} HEAD` exits 0).
 3. Run `git log --oneline origin/${TRUNK}..HEAD` for the commits to rebase.
+   If `git rev-list --merges --count origin/${TRUNK}..HEAD` is not `0`, stop:
+   the rebase would flatten those merge commits. Report them and leave the
+   choice (such as `git rebase --rebase-merges`) to the user.
 4. Run `git diff --name-only origin/${TRUNK}...HEAD` for the files the branch
    changed, then `git diff --name-only HEAD...origin/${TRUNK}` for the files
    trunk changed since the fork. Files in both lists are the potential
@@ -63,20 +68,22 @@ $ git rev-parse HEAD && git merge-base HEAD origin/${TRUNK} && git rev-parse --a
 ```
 
 The first SHA is the pre-rebase tip, the second the old base. A failing third
-command means no upstream; with one, the rebased history diverges and the user
-needs a force-push, which this skill never does. Recovery is `git reset --hard
-<pre-rebase tip>` from the user.
+command means no upstream. Recovery is `git reset --keep <pre-rebase tip>`,
+run by the user from a clean tree (`--keep` refuses to overwrite restored
+autostash changes; `--hard` would discard them).
 
-Then run:
+Then rebase onto the ref Phase 2 fetched:
 
 ```console
-$ git pull --rebase origin ${TRUNK} --autostash
+$ git rebase --autostash origin/${TRUNK}
 ```
 
 If the output says `Applying autostash resulted in conflicts`, the rebase
-finished and the stash is kept. Resolve those files under the Phase 4 rules,
-then run `git stash drop` and `git restore --staged <file>` for each, so the
-changes stay uncommitted.
+finished and the stash is kept. Run `git rev-parse refs/stash` and keep that
+SHA. Resolve those files by the Phase 4 step 2 rules, then run `git restore
+--staged <file>` for each so the changes stay uncommitted. Run `git stash
+drop` only after `git stash show -p` matches what the resolved files now
+hold; if unsure, keep the stash and report its SHA.
 
 If the rebase completes cleanly (exit code 0), skip to Phase 5.
 
@@ -95,7 +102,8 @@ If conflicts are detected:
       side silently. With no question tool (Codex, headless runs), run
       `git rebase --abort` and report both behaviors instead.
    d. Run `git add <file>` to mark it resolved
-3. Run `git rebase --continue`; skip quality checks until Phase 5.
+3. Run `GIT_EDITOR=true git rebase --continue` (a bare `--continue` opens an
+   editor and hangs a headless run); skip quality checks until Phase 5.
 4. If more conflicts appear, repeat from step 1.
 5. If the rebase becomes unrecoverable, run `git rebase --abort` and report.
 
@@ -109,14 +117,18 @@ If conflicts are detected:
 $ git range-diff <old base>..<pre-rebase tip> origin/${TRUNK}..HEAD
 ```
 
-   A commit marked `=` replayed unchanged; `!` shows a changed patch. Every
-   `!` must trace to a conflict resolution you made. An unexplained one is a
-   defect: report it and stop.
+   A commit marked `=` replayed unchanged. For each `!`, run the same command
+   without `--no-patch` and read the inner diff: a difference confined to `@@`
+   hunk headers or context lines is benign (trunk moved the surrounding code);
+   an added or removed line must trace to a conflict resolution you made, and
+   an unexplained one is a defect: report it and stop. A `<` commit was
+   dropped (trunk already holds the patch) and a `>` commit is new; name
+   each, and stop on any you cannot explain.
 3. Run the project's quality checks (formatter, linter, type checker, tests)
    once, as its AGENTS.md or CLAUDE.md defines them. If a check fails, fix it
    in a new commit only when the user asks; report it.
 
-Never force-push. The skill ends here and the user decides the next step.
+Never push. The skill ends with the report and the user decides the next step.
 
 ## Output
 
@@ -127,8 +139,18 @@ exactly these sections:
 1. `## Rebase` - commits replayed, conflicts and how each was resolved.
 2. `## Content check` - the `range-diff` result, naming any `!` commit.
 3. `## Checks` - each quality check and its result.
-4. `## Recovery` - the pre-rebase tip SHA, and whether the branch now needs a
-   force-push.
+4. `## Recovery` - the pre-rebase tip SHA and the `git reset --keep` undo.
+   With an upstream, also print the exact push command (`git push
+   --force-with-lease --force-if-includes origin <branch>`) for the user to
+   run. Without one, say no push is needed.
+
+Write each commit message you create (none is expected) without a
+`Co-Authored-By` line, a "Generated with" or other tool trailer, or emoji.
+
+After the sections, ask what to do next via `AskUserQuestion`: push with the
+printed command, inspect a `!` commit's patch, or done. Where no question
+tool exists (Codex, headless runs), print the options as a plain list and
+stop; never push without an explicit ask.
 
 Reply in this shape, as plain text outside any code fence, with plain
 bullets and no bold (never `- **Label:** ...`):
@@ -150,9 +172,21 @@ bullets and no bold (never `- **Label:** ...`):
 
 ## Recovery
 
-- Pre-rebase tip 4be0d71; undo with `git reset --hard 4be0d71`.
-- No upstream, so no force-push is needed.
+- Pre-rebase tip 4be0d71; undo with `git reset --keep 4be0d71`.
+- Upstream is origin/feature/search; after review, push with
+  `git push --force-with-lease --force-if-includes origin feature/search`.
+
+Next: push the branch, inspect a commit's patch, or done.
 ```
 
 A stopped run is one result sentence (nothing to rebase, rebase aborted,
-conflict needs a decision), then what the user needs to do. It has no sections.
+conflict needs a decision), then what the user needs to do. It has no sections
+and no narration of the host's tools. Reply in this shape:
+
+```text
+⚠ Stopped: rebase aborted on a conflict in src/parser.py that needs your decision.
+
+feature/strict is back at 4a61a04 with a clean tree; nothing was pushed.
+Your commit keeps only known tokens, while trunk returns [""] for blank input.
+Tell me which to keep: both, one side, or another combination.
+```

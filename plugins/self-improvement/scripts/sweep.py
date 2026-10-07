@@ -3,8 +3,9 @@
 
 ``counts`` turns a prompt-history file (and optionally a log of skill-tool
 launches) into per-skill invocation counts, an era split, and project spread.
-``ledger-save`` writes the findings ledger outside the working tree and
-``ledger-verify`` recomputes its key before any edit.
+``catalog`` lists the skills with their rename map, birth dates, and era
+boundary from git history. ``ledger-save`` writes the findings ledger outside
+the working tree and ``ledger-verify`` recomputes its key before any edit.
 
 Run ``sweep.py <command> --help`` for each command.
 """
@@ -44,6 +45,8 @@ class Args(argparse.Namespace):
     resweep_on: str = ""
     out: str | None = None
     ledger: str | None = None
+    tool_unavailable: bool = False
+    root: str = "."
 
 
 class Row(t.NamedTuple):
@@ -293,14 +296,126 @@ def verify_ledger(ledger: object, head: str) -> tuple[bool, str]:
     return True, "ok"
 
 
-def _git(*args: str) -> str:
+SKILL_DIR_RE = re.compile(r"^plugins/([^/]+)/skills/([^/]+)/")
+SKILL_GLOB = "plugins/*/skills/*/SKILL.md"
+FRONTMATTER_PARTS = 3
+RENAME_COLS = 3
+REBUILD_MIN_SKILLS = 3
+RENAME_SUBJECT_RE = "renam|replac|supersed|merge|split"
+
+
+def _git(*args: str, cwd: str | None = None) -> str:
     done = subprocess.run(  # noqa: S603
         ["git", *args],  # noqa: S607
         check=True,
         capture_output=True,
         text=True,
+        cwd=cwd,
     )
     return done.stdout.strip()
+
+
+def skill_name(path: str) -> str | None:
+    """Return ``plugin:skill`` for a path under ``plugins/*/skills/*/``.
+
+    Examples
+    --------
+    >>> root = "plugins"
+    >>> skill_name(f"{root}/a/skills/b/file")
+    'a:b'
+    >>> skill_name(f"{root}/a/file") is None
+    True
+    """
+    m = SKILL_DIR_RE.match(path)
+    return f"{m.group(1)}:{m.group(2)}" if m else None
+
+
+def is_gated(text: str) -> bool:
+    r"""Return whether the frontmatter sets ``disable-model-invocation: true``.
+
+    Examples
+    --------
+    >>> is_gated("---\nname: x\ndisable-model-invocation: true\n---\nbody")
+    True
+    >>> is_gated("---\nname: x\n---\ndisable-model-invocation: true")
+    False
+    """
+    parts = text.split("---", 2)
+    if not text.startswith("---") or len(parts) < FRONTMATTER_PARTS:
+        return False
+    return re.search(r"^disable-model-invocation:\s*true\s*$", parts[1], re.MULTILINE) is not None
+
+
+def parse_renames(log: str, current: Iterable[str]) -> dict[str, str]:
+    r"""Map retired skill names to current ones from ``git log --name-status`` output.
+
+    Chains (a to b to c) resolve to the final name. A name that is still in
+    the catalog is not retired, so it is not mapped.
+
+    Examples
+    --------
+    >>> log = (
+    ...     "R100\tplugins/p/skills/a/SKILL.md\tplugins/p/skills/b/SKILL.md\n"
+    ...     "R090\tplugins/p/skills/a/x.md\tplugins/p/skills/b/x.md\n"
+    ...     "R100\tplugins/p/skills/b/SKILL.md\tplugins/q/skills/c/SKILL.md\n"
+    ...     "R100\tplugins/p/skills/b/y.md\tplugins/p/skills/b/z.md\n"
+    ... )
+    >>> parse_renames(log, ["q:c"])
+    {'p:a': 'q:c', 'p:b': 'q:c'}
+    >>> parse_renames(log, ["q:c", "p:a"])
+    {'p:b': 'q:c'}
+    """
+    step: dict[str, str] = {}
+    for line in log.splitlines():
+        cols = line.split("\t")
+        if len(cols) != RENAME_COLS or not cols[0].startswith("R"):
+            continue
+        old, new = skill_name(cols[1]), skill_name(cols[2])
+        if old and new and old != new:
+            _ = step.setdefault(old, new)
+    live = set(current)
+    out: dict[str, str] = {}
+    for old, first in step.items():
+        if old in live:
+            continue
+        final, hops = first, 0
+        while final in step and final not in live and hops < len(step):
+            final, hops = step[final], hops + 1
+        out[old] = final
+    return out
+
+
+def era_boundary(births: dict[str, str]) -> dict[str, object]:
+    """Pick the era boundary from skill birth dates.
+
+    A rebuild is a day on which at least 3 skills were born and at least 10%
+    of the catalog. The latest rebuild is the boundary; the rest are
+    runners-up, largest first. ``date`` is empty when no day qualifies.
+
+    Examples
+    --------
+    >>> b = {f"p:s{i}": "2026-02-01" for i in range(3)}
+    >>> b.update({f"p:t{i}": "2026-03-01" for i in range(4)})
+    >>> b.update({f"p:u{i}": f"2026-04-{i + 1:02d}" for i in range(13)})
+    >>> era_boundary(b)
+    {'date': '2026-03-01', 'size': 4, 'runners_up': [{'date': '2026-02-01', 'size': 3}]}
+    >>> era_boundary({"p:a": "2026-01-01"})["date"]
+    ''
+    """
+    by_day: Counter[str] = Counter(births.values())
+    total = len(births)
+    rebuilds = {d: n for d, n in by_day.items() if n >= REBUILD_MIN_SKILLS and n * 10 >= total}
+    if not rebuilds:
+        return {"date": "", "size": 0, "runners_up": []}
+    latest = max(rebuilds)
+    others = sorted(
+        ((d, n) for d, n in rebuilds.items() if d != latest), key=lambda x: (-x[1], x[0])
+    )
+    return {
+        "date": latest,
+        "size": rebuilds[latest],
+        "runners_up": [{"date": d, "size": n} for d, n in others],
+    }
 
 
 def default_ledger_path() -> Path:
@@ -318,8 +433,8 @@ def _cmd_counts(args: Args) -> int:
     with history.open(encoding="utf-8", errors="replace") as fh:
         rows, records, malformed = parse_history(fh)
     tool_names: list[str] = []
-    tool_status = "absent"
-    if args.tool_log:
+    tool_status = "unavailable" if args.tool_unavailable else "absent"
+    if args.tool_log and not args.tool_unavailable:
         with Path(args.tool_log).open(encoding="utf-8", errors="replace") as fh:
             tool_names = parse_tool_log(fh)
         tool_status = "read" if tool_names else "empty"
@@ -336,7 +451,51 @@ def _cmd_counts(args: Args) -> int:
         "slash": {"status": slash_status, "records": records, "malformed": malformed},
         "tool": {"status": tool_status, "occurrences": len(tool_names)},
     }
-    out["complete"] = slash_status == "complete" and tool_status == "read"
+    out["complete"] = slash_status == "complete" and tool_status in {"read", "unavailable"}
+    print(json.dumps(out, indent=2))
+    return 0
+
+
+def _cmd_catalog(args: Args) -> int:
+    root = args.root
+    paths = sorted(_git("ls-files", "--", SKILL_GLOB, cwd=root).splitlines())
+    skills: list[dict[str, object]] = []
+    births: dict[str, str] = {}
+    for path in paths:
+        name = skill_name(path)
+        if name is None:
+            continue
+        days = _git("log", "--follow", "--format=%ad", "--date=short", "--", path, cwd=root)
+        born = min(days.splitlines()) if days else ""
+        if born:
+            births[name] = born
+        text = (Path(root) / path).read_text(encoding="utf-8", errors="replace")
+        skills.append({"name": name, "path": path, "gated": is_gated(text), "born": born})
+    renames = _git(
+        "log",
+        "--diff-filter=R",
+        "--name-status",
+        "--format=",
+        "--",
+        SKILL_GLOB.rsplit("/", 1)[0],
+        cwd=root,
+    )
+    subjects = _git(
+        "log",
+        "--extended-regexp",
+        "--regexp-ignore-case",
+        f"--grep={RENAME_SUBJECT_RE}",
+        "--format=%h %s",
+        "--",
+        "plugins/*/skills/*",
+        cwd=root,
+    )
+    out = {
+        "skills": skills,
+        "renames": parse_renames(renames, births),
+        "rename_subjects": subjects.splitlines(),
+        "era": era_boundary(births),
+    }
     print(json.dumps(out, indent=2))
     return 0
 
@@ -386,6 +545,7 @@ def _cmd_ledger_verify(args: Args) -> int:
 
 
 COMMANDS: dict[str, Callable[[Args], int]] = {
+    "catalog": _cmd_catalog,
     "counts": _cmd_counts,
     "ledger-path": _cmd_ledger_path,
     "ledger-save": _cmd_ledger_save,
@@ -398,11 +558,19 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0] if __doc__ else "")
     sub = parser.add_subparsers(dest="cmd", required=True)
 
+    cat = sub.add_parser("catalog", help="skills, rename map, birth dates, era boundary as JSON")
+    _ = cat.add_argument("--root", default=".", help="repository root; default is the cwd")
+
     counts = sub.add_parser("counts", help="per-skill counts, era split, spread as JSON")
     _ = counts.add_argument("--history", required=True, help="prompt-history JSONL file")
     _ = counts.add_argument("--boundary", required=True, help="era boundary, YYYY-MM-DD")
     _ = counts.add_argument(
         "--tool-log", help="text file with one Launching skill: line per launch"
+    )
+    _ = counts.add_argument(
+        "--tool-unavailable",
+        action="store_true",
+        help="host writes no Launching skill: line; count the slash channel only",
     )
     _ = counts.add_argument("--catalog", help="file of current skill names, one per line")
     _ = counts.add_argument(

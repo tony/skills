@@ -9,7 +9,7 @@ Every scholar skill reports in this shape.
    headings. Add none.
 3. End with an `ask-user-choice` panel of next steps, using the options the
    skill suggests, so the reader can act without composing a follow-up. Skip
-   the panel only in plan mode. Where no question tool exists (Codex, headless
+   the panel in plan mode and on a halted run. Where no question tool exists (Codex, headless
    runs), print the options as a plain list and stop; never pick one.
 
 Reply in this shape, as plain text outside any code fence, with plain
@@ -38,8 +38,9 @@ swap in their own hero and sections:
 
 When a prerequisite is missing or a gate fails, report only the hero line
 (`⚠ Blocked: <reason>`), one sentence naming what is missing, and the step the
-user takes to unblock it. Print none of the skill's sections and no empty
-placeholders. Do not list files you did not create.
+user takes to unblock it. Print none of the skill's sections, no empty
+placeholders, no guesses from partial input, and no next-step list. Do not
+list files you did not create.
 
 ```text
 ⚠ Blocked: no sources.jsonl for this study.
@@ -52,7 +53,8 @@ Run scholar-gather on the corpus first.
 - Bullets are plain sentences. Do not put a bold label on every bullet.
 - Report only what happened. Never claim a write, a gate pass, or a command
   run that did not occur.
-- Do not narrate process or justify a step ("this is what the stage exists to
-  prevent").
+- Do not narrate process, justify a step ("this is what the stage exists to
+  prevent"), or say what you did not do ("I wrote no files", "I did not
+  search the corpus").
 - Name no local absolute paths or temp files. Show paths relative to the study
   directory.

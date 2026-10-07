@@ -38,13 +38,13 @@ Claude Code uses a leading slash (`/ruff:…`). Codex omits it (`ruff:…`).
 |---|---|---|
 | `/ruff:bump [version]` | `ruff:bump [version]` | Raise the ruff floor across the repositories in scope and absorb what the release surfaces, one commit per rule |
 
-Defaults to the latest stable release in the current repository, creating
-a PR from a throwaway worktree.
+Defaults to the latest stable release in the current repository, committing
+on a branch in a throwaway worktree. Add `--push` or `--pr` to publish.
 
 **Arguments:**
 - `--root <dir>`: Sweep every repository beneath a directory.
 - `--repo <path|slug>...`: Target specific repositories.
-- `--owner <name>`: Filter by account ownership.
+- `--owner <name>...`: Filter by account ownership.
 - `--branch <name>`: Name the working branch.
 - `--audit-only`: Report predicted work without making changes.
 - `--adopt-defaults`: Carry through the default-rule-set change.
@@ -60,10 +60,12 @@ a PR from a throwaway worktree.
 | `references/release-triage.md` | Sorting a release, intersecting with configuration, and grading fixes |
 | `references/pin-sites-and-gating.md` | Pin sites, diagnosing, and gating resolvers |
 | `references/default-rule-set.md` | Measuring default rule set cost and curating adoption |
+| `references/cooldown-exemption.md` | Exempting one package from a resolver cooldown |
+| `references/throwaway-worktree.md` | Working on a branch in an isolated worktree |
 | `references/prose-rules.md` | Rules for commit, PR, and report prose |
 
 ## Prerequisites
 
-- `git` (with remote push access)
+- `git`; remote push access only for `--push` or `--pr`
 - GitHub CLI, authenticated
 - Project's resolver and quality-check commands (defined in `AGENTS.md`/`CLAUDE.md` or CI workflow)

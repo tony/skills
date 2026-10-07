@@ -8,6 +8,8 @@ the same.
 
 ## Contents
 
+- Helper script
+- Guard every `init`
 - One run per root module
 - `-backend=false` removes the credential requirement
 - `-upgrade` moves every provider
@@ -16,6 +18,58 @@ the same.
 - When the resolver cannot see the version
 - Confirm the lock actually moved
 - Verification gates
+
+## Helper script
+
+`lockctl.py` in this plugin's `scripts/` directory (`../scripts/` from
+this file) does the lock-file work that must not be retyped: `state`
+prints one line per provider (source address, selected version, `h1:`
+hash count), `drop` removes one provider block, `stable` filters a
+version list, and `platforms` lists the `-platform=` values the
+repository's own `providers lock` commands name. Run it with `python3`
+by its path; the commands below write it as `lockctl.py`.
+
+## Guard every `init`
+
+`init` writes the lock file, and a lock the run did not start from cannot
+be put back. Check each root module before running it.
+
+The lock must be committed. This command fails when it is untracked or
+absent:
+
+```console
+$ git ls-files \
+    --error-unmatch \
+    <root-module-dir>/.terraform.lock.hcl
+```
+
+The lock must also be unmodified. This command prints nothing when it is:
+
+```console
+$ git status \
+    --porcelain \
+    -- <root-module-dir>/.terraform.lock.hcl
+```
+
+A root module that fails either check is skipped and reported, and `init`
+does not run there. With no committed lock, `init` writes a new one that
+selects the newest version each constraint allows, so even a plain
+`init` moves providers. Run it only after the user approves that outcome,
+then `git add` the new lock so `git commit -- <paths>` can include it.
+With no interactive question tool, skip the module.
+
+Run `lockctl.py state` on the lock before `init` and again after. When
+`init` fails, or any provider other than the one being moved changes
+version (every provider, on a CLI bump), restore the committed file and
+report why:
+
+```console
+$ git checkout \
+    -- <root-module-dir>/.terraform.lock.hcl
+```
+
+A failed `init` leaves the lock edited (a dropped block stays dropped), so
+restore on every failure path, offline included.
 
 ## One run per root module
 
@@ -35,8 +89,8 @@ Child modules have no lock file; `init` in one produces nothing to commit.
 Provider installation and lock maintenance do not need the backend.
 `-backend=false` skips backend initialisation while still resolving
 providers and writing the lock file, so refreshes work with no cloud
-credentials. Pass `-input=false` too, so a missing variable fails instead
-of prompting.
+credentials. `-input=false` turns any prompt into an error instead of a
+wait ([init options](https://developer.hashicorp.com/terraform/cli/commands/init)).
 
 ## `-upgrade` moves every provider
 
@@ -61,16 +115,21 @@ configuration at `6.56.x`, so land the constraint edit first.
 
 ## Moving one provider
 
-Only the target provider's lock block may change. Remove that block and run
-plain `init`: Terraform keeps the locked version of every provider that
-still has a block and selects the newest allowed version for the one that
-does not.
+Only the target provider's lock block may change. With the guard passed,
+remove that block and run plain `init`: Terraform keeps the locked
+version of every provider that still has a block and selects the newest
+allowed version for the one that does not
+([dependency lock file](https://developer.hashicorp.com/terraform/language/files/dependency-lock)).
 
 Drop the block for `<provider-source-address>` (the full address as the
-lock file spells it, such as `registry.terraform.io/hashicorp/aws`):
+lock file spells it, such as `registry.terraform.io/hashicorp/aws`);
+the command prints `dropped`, or `absent` when the provider is new in
+this directory:
 
 ```console
-$ awk -v src='<provider-source-address>' '$0 ~ "^provider \"" src "\" \\{" {skip=1} !skip{print} skip && /^}/{skip=0}' <root-module-dir>/.terraform.lock.hcl > <root-module-dir>/.terraform.lock.hcl.new && mv <root-module-dir>/.terraform.lock.hcl.new <root-module-dir>/.terraform.lock.hcl
+$ python3 lockctl.py drop \
+    <root-module-dir>/.terraform.lock.hcl \
+    <provider-source-address>
 ```
 
 Then run the plain `init` command from "One run per root module". The new
@@ -79,20 +138,18 @@ old block tracked as the next section describes, naming the provider so no
 other block is touched.
 
 Only the target provider's `version`, `constraints`, and `hashes` move.
-Confirm with `git diff` on the lock file and report any other block that
-changed. A directory with no lock block for the provider (it is new there)
-needs no removal. A CLI bump moves no provider: plain `init`, never
-`-upgrade`.
+Compare `lockctl.py state` before and after, and confirm with `git diff`
+on the lock file; report any other block that changed. A CLI bump moves
+no provider: plain `init`, never `-upgrade`, and any version change in
+`state` is a failure to restore.
 
 ## Selecting a new version narrows the lock to one platform
 
 `h1:` hashes are per-platform. `terraform init` records them only for the
 platform it runs on; teams that need more use
-`terraform providers lock -platform=...`.
-
-Re-running `-upgrade` against an already-selected version preserves the
-recorded platforms. **Selecting a different version does not.** A lock
-tracking `linux_amd64` and `darwin_arm64` comes back tracking only the
+`terraform providers lock -platform=...`
+([dependency lock file](https://developer.hashicorp.com/terraform/language/files/dependency-lock)).
+A provider that moves to a different version comes back tracking only the
 platform that ran the bump, with no warning, and the diff looks like an
 ordinary version change. The next `init` on another platform then rewrites
 the lock, which fails under `-lockfile=readonly` or any CI step that checks
@@ -102,28 +159,41 @@ The lock file names no platforms: each provider block holds a flat list of
 opaque `h1:` and `zh:` strings. The count of platforms is readable; which
 ones is not, and `providers lock -platform=` requires exact names.
 
-Use the count as a tripwire. Print one line per provider before the run and
-again after, and compare provider by provider; a file-wide maximum would let
-a drop hide behind a provider that tracks more platforms:
+Use the count as a tripwire. `lockctl.py state` prints one line per
+provider; compare before and after provider by provider, because a
+file-wide maximum would let a drop hide behind a provider that tracks more
+platforms:
 
 ```console
-$ awk '/^provider "/{p=$2; gsub(/"/,"",p); o[++k]=p} /^[[:space:]]*"h1:/{c[p]++} END{for(i=1;i<=k;i++) printf "%s\t%d\n", o[i], c[o[i]]+0}' <root-module-dir>/.terraform.lock.hcl
+$ python3 lockctl.py state \
+    <root-module-dir>/.terraform.lock.hcl
 ```
 
-Output is `<source-address><TAB><h1 count>`. On a lock with `aws`
-tracking three platforms and `random` tracking one it prints:
+Output is `<source-address><TAB><version><TAB><h1 count>`. On a lock with
+`aws` tracking three platforms and `random` tracking one it prints:
 
 ```text
-registry.terraform.io/hashicorp/aws	3
-registry.terraform.io/hashicorp/random	1
+registry.terraform.io/hashicorp/aws	5.60.0	3
+registry.terraform.io/hashicorp/random	3.6.0	1
 ```
 
-If the count dropped, stop and get the platform names from where the
-repository writes them down (a `providers lock` invocation in CI, a
-Makefile or justfile target) or from the user, then restore them:
+If the count dropped, find the platform names where the repository writes
+them down:
 
 ```console
-$ terraform -chdir=<root-module-dir> providers lock -platform=linux_amd64 -platform=darwin_arm64 <provider-source-address>
+$ python3 lockctl.py platforms
+```
+
+It prints each tracked file that runs `providers lock` and the
+`-platform=` values it names (CI workflows, a Makefile or justfile
+target). Where it prints nothing, ask the user. Restore the platforms with
+them:
+
+```console
+$ terraform -chdir=<root-module-dir> providers lock \
+    -platform=linux_amd64 \
+    -platform=darwin_arm64 \
+    <provider-source-address>
 ```
 
 Naming the provider restricts the command to it
@@ -135,9 +205,9 @@ list: a repository that tracked one platform should keep tracking one.
 
 The registry shows a version the resolver refuses to find. Diagnose the layer:
 
-- A `provider_installation` block in the CLI configuration —
-  `.terraformrc`, `terraform.rc`, or wherever `TF_CLI_CONFIG_FILE`
-  points — with a `filesystem_mirror` or `network_mirror` that only
+- A `provider_installation` block in the CLI configuration
+  (`.terraformrc`, `terraform.rc`, or wherever `TF_CLI_CONFIG_FILE`
+  points) with a `filesystem_mirror` or `network_mirror` that only
   carries what somebody mirrored.
 - `TF_PLUGIN_CACHE_DIR`, which serves a stale copy when the mirror
   cannot be reached.
@@ -156,13 +226,13 @@ Read the version out of the lock file and compare it to the target; a zero
 exit code proves nothing:
 
 ```console
-$ grep -A2 'provider "<provider-source-address>"' <root-module-dir>/.terraform.lock.hcl
+$ python3 lockctl.py state \
+    <root-module-dir>/.terraform.lock.hcl
 ```
 
-Read the file, not `terraform providers`: it prints constraints, which match
-the target by construction, and needs a backend `-backend=false` skipped.
-Report the selected version per root module, including those that did not
-move and why.
+Read the file, not `terraform providers`: it prints the configuration's
+constraints, which match the target by construction. Report the selected
+version per root module, including those that did not move and why.
 
 ## Verification gates
 

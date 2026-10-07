@@ -4,7 +4,7 @@ description: >-
   Use when rendering a tier-0 leadership report from a completed
   business-value run, with SCQA and a conservative value case.
 disable-model-invocation: true
-allowed-tools: ["Bash", "Read", "Write", "Grep", "AskUserQuestion"]
+allowed-tools: ["Bash", "Read", "Write", "Grep", "AskUserQuestion", "WebFetch"]
 metadata:
   argument-hint: "[run directory]"
   source: "plugins/business/skills/report-leadership/SKILL.md"
@@ -66,7 +66,8 @@ Write it per `references/prose-rules.md`.
 Hero success form: `✓ Leadership report: <committed figure with
 tag>`. Sections and stopped-run shape as in `interim-format.md`; `## Report` also names the
 strongest limitation. Panel options: render the org-wide projection
-next, adjust assumptions and re-render, or stop.
+next (read the `business-report-org-wide` skill and follow it), adjust
+assumptions and re-render, or stop.
 
 
 ## Portability notes

@@ -17,8 +17,8 @@ with the version manager files, CI workflows, and images that pin the
 same CLI somewhere else.
 
 Follow the phase structure and conventions in
-the `terraform-bumping-terraform` skill (clean tree, commit message rules,
-non-interactive defaults, stopped runs), which names the references this
+the `terraform-bumping-terraform` skill (recorded tree state, commit
+message rules, non-interactive defaults, stopped and audit-only runs), which names the references this
 skill uses. To move a provider, use the `terraform-bump-provider` skill.
 
 User arguments: $ARGUMENTS
@@ -32,7 +32,9 @@ Find the installed CLI version with `terraform -version` or
 it is published. Otherwise list the latest stable releases:
 
 ```console
-$ curl -fsS https://releases.hashicorp.com/terraform/index.json | jq -r '.versions | keys_unsorted[]' | grep -vE 'alpha|beta|rc' | sort -V | tail -3
+$ curl -fsS https://releases.hashicorp.com/terraform/index.json \
+    | jq -r '.versions | keys_unsorted[]' \
+    | python3 references/lockctl.py stable 3
 ```
 
 When `tofu` drives the repository, list OpenTofu's releases with the
@@ -80,23 +82,29 @@ refreshed. With `--audit-only`, stop here and write nothing.
 
 ### 7. Edit, commit, verify
 
-All pin sites in one commit. Then, unless `--no-lock`, refresh each
-root module's lock as a separate commit, since a CLI bump can change the
-lock file's own format. Run plain `init` per the lock reference, never
-`-upgrade`: a CLI bump moves no provider. With `--no-commit`, leave the working tree alone
-and say what would have been committed. Write commit messages and the
+All pin sites in one commit. Then, unless `--no-lock`, re-run `init` in
+each root module that has a committed, unmodified lock, as a separate
+commit if the lock changes (a CLI bump can change the lock file's own
+format). Use plain `init` per the lock reference, never `-upgrade`: a CLI
+bump moves no provider, so any version change in `lockctl.py state`
+means restore the lock from git and report it. A root module with no
+committed lock is skipped and reported: `init` there would create a lock
+and pick providers. Run it only after the user approves that outcome.
+With `--no-commit`, leave the working tree alone and say what would have
+been committed. Write commit messages and the
 report per `references/prose-rules.md`.
 
-Verify by initialising each root module and confirming it accepts the
-new version, but only when the installed CLI satisfies the new
-`required_version` and `--no-lock` is absent (`init` writes the lock).
-Otherwise report init as unverifiable, name the installed version, and
-edit nothing to work around it. Then run the repository's own gates.
+Verify by initialising each guarded root module and confirming it
+accepts the new version, but only when the installed CLI satisfies the
+new `required_version` and `--no-lock` is absent (`init` writes the
+lock). Otherwise report init as unverifiable (skipped lock-less modules
+included), name the installed version, and edit nothing to work around
+it. Then run the repository's own gates.
 
 ## Output
 
 Open with a one-line hero (`✓ terraform <old> -> <new> across N pin
-sites` or `⚠ Audit only: N sites disagree`), then these sections in
+sites` or `Audit only: N sites disagree`), then these sections in
 order:
 
 1. `## Target`: the resolved version, how it was confirmed, the
@@ -106,8 +114,8 @@ order:
    tool drives the repository.
 3. `## Sites`: a list of every pin found, inside the configuration and outside
    it, and whether each was edited or left alone with the reason.
-4. `## Locks`: per root module: whether the lock was refreshed, and
-   the platform count tracked before and after.
+4. `## Locks`: per root module: whether the lock was re-initialised or
+   skipped (and why), and the platform count tracked before and after.
 5. `## Verification`: the gates run and their real results, including
    whether each root module now initialises.
 6. `## Drift`: every disagreement found before the bump, and every one
@@ -130,7 +138,8 @@ bullets and no bold (never `- **Label:** ...`):
 
 ## Locks
 
-- envs/prod: refreshed, 3 platforms before and after.
+- envs/prod: re-initialised, versions unchanged, 3 platforms before and after.
+- envs/staging: no committed lock, skipped.
 
 ## Verification
 

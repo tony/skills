@@ -72,14 +72,20 @@ by sourcing figures only from the public case study.
    repository, team, and person name from the run as `--deny`:
 
    ```console
-   $ references/business.py scan --deny <name> <draft file>
+   $ references/business.py scan \
+       --deny <name> \
+       --allow-url https://arxiv.org/ \
+       --allow UTF-8 \
+       <draft file>
    ```
 
    It flags ticket IDs, URLs, local paths, emails, currency, and
-   money terms (exit 1 on any hit). Remove or reword every hit; a
-   false positive such as `UTF-8` is noted, not removed. Then read
-   the draft once for names the scanner cannot know and for the
-   re-identification rule above.
+   money terms (exit 1 on any hit). `--allow-url <prefix>` keeps
+   the pinned citation links BENCHMARKED figures need, one prefix
+   per cited host; `--allow <text>` skips a false positive such as
+   `UTF-8` or `GPT-4`. Both repeat. Remove or reword every other
+   hit. Then read the draft once for names the scanner cannot know
+   and for the re-identification rule above.
 2. Confirm every figure is an aggregate or a range, rounded to
    honest precision, with its provenance tag and denominator.
 3. Confirm every headline claim passed triangulation or carries its

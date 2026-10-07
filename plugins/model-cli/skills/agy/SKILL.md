@@ -10,7 +10,8 @@ argument-hint: <prompt> [timeout:<seconds>] [mode:plan]
 
 Run a prompt through the Antigravity CLI (`agy`), falling back to the `agent`
 CLI with a Gemini model. Follow `../../references/dispatch.md` for triggers,
-running a tier, failure handling, and the report.
+running a tier, failure handling, and the report. Write the report per
+`../../references/prose-rules.md`.
 
 ## Step 1: Detect CLIs
 

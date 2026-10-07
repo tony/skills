@@ -20,7 +20,7 @@ $ python3 <topic.py> release \
     --to "<who receives it, as a role or group>"
 ```
 
-`release` runs the same checks and refuses on any failure. It also refuses `--offline`: a report a client reads needs a live check. When no network is reachable and the readers accept captures-only evidence, pass `--offline --allow-offline`; the release row records `live: false`. On a pass it keeps the exact report (and `brief.md`, when there is one) under `releases/`, named by its hash, and appends to `<run_dir>/references/releases.jsonl`: when, to whom, at which audience, the report's sha256, and which version of each cited source it rested on. Name recipients by role at internal and public audiences.
+`release` runs the same checks and refuses on any failure. It also refuses `--offline`: a report a client reads needs a live check. When no network is reachable, pass `--offline --allow-offline` only after the user says the readers accept captures-only evidence; otherwise stop and offer it as a choice (without an interactive host, stop and say so). The release row records `live: false`. On a pass it keeps the exact report (and `brief.md`, when there is one) under `releases/`, named by its hash, and appends to `<run_dir>/references/releases.jsonl`: when, to whom, at which audience, the report's sha256, and which version of each cited source it rested on. Name recipients by role at internal and public audiences.
 
 ## 3. Decide
 
@@ -60,6 +60,8 @@ Open with a one-line hero (`✓ Released <hash> to <who>` or `✓ Released <hash
 
 1. `## Check`: each check's result from this call, verbatim counts.
 2. `## Trail`: the release, decision, or bag written, with its hash.
-3. `## Next`: affected releases and decisions to revisit, or the fix `check` listed.
+3. `## Next`: affected releases and decisions to revisit, or the fix `check` listed; at most three bullets, and the panel never repeats them.
+
+Write per `prose-rules.md`: plain bullets, no bold labels, no sentence narrating your own edits ("I added…"), no closing recap.
 
 Panel options: fix and check again, record the decision, export, stop.

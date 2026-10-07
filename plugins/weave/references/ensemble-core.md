@@ -276,7 +276,8 @@ mode.
    conflict against the code and accept the side the evidence supports. A conflict
    the code cannot settle keeps both positions with their evidence.
 
-4. **Converge** using the caller's mode.
+4. **Converge** using the caller's mode. Write the converged text with plain
+   bullets: drop the bold lead-ins (`- **Label:** ...`) the responses use.
 
 5. **Critic.** Launch a fresh `general-purpose` sub-agent:
 

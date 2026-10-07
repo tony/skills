@@ -73,7 +73,8 @@ Hero success form: `✓ Org-wide projection: <conservative figure with
 tag>`. Sections and stopped-run shape as in `interim-format.md`; `## Gate` also gives the
 `a` and `r` values used with their register ids, and `## Report` names
 the most sensitive input. Panel options: write an internal case study
-next, revisit an assumption, or stop.
+next (read the `business-case-study-internal` skill and follow it), revisit
+an assumption, or stop.
 
 
 ## Portability notes

@@ -75,8 +75,8 @@ what it means for that repository, and links every major release in the
 span. Never cite a dependabot pull request. No `Co-Authored-By`, no
 "Generated with" or other tool trailer, no emoji.
 
-Commit locally; push only with `--push`, and otherwise print the push
-command in the report. With `--pr`, branch, push, and open a pull request
+Commit locally; push only with `--push`, and otherwise report the local
+branch holding the commit and print its push command. With `--pr`, branch, push, and open a pull request
 instead of committing to the default branch.
 
 ### 7. Verify and close out
@@ -96,7 +96,7 @@ the bump PR merges, and only after the user confirms the exact commands.
 
 ## Output
 
-Open with a one-line hero (`✓ <action> <old> → <new> across N repos`
+Open with a one-line hero (`✓ <action> <old> -> <new> across N repos`
 or `⚠ Blocked: <reason>`), then exactly these sections:
 
 1. `## Target`: resolved version, evidence the tag exists, and the
@@ -110,7 +110,8 @@ or `⚠ Blocked: <reason>`), then exactly these sections:
    by URL, with the commit each cited.
 
 A blocked run emits the hero and one sentence on what the user must do,
-with no sections.
+with no sections and no findings list. Report a suspicious PR title as the
+finding, without guessing its cause or intent.
 
 Reply in this shape, as plain text outside any code fence, with plain
 bullets and no bold (never `- **Label:** ...`):
@@ -124,7 +125,7 @@ bullets and no bold (never `- **Label:** ...`):
 
 ## Upgrade
 
-- v6 drops the deprecated python-version input; this repo does not set it.
+- v6 renames the <input> input; this repo does not set it.
 
 ## Commits
 
@@ -136,7 +137,7 @@ bullets and no bold (never `- **Label:** ...`):
 ```
 
 End with an `ask-user-choice` panel of next steps (for example: update
-another action, run the full audit, stop here); skip it only in plan mode.
+another action, run `the `github-actions-update-actions` skill --audit-only`, stop here); skip it only in plan mode.
 On hosts without the tool, end with the next steps as text and take none.
 Never name temp or local paths unless the user must act on them.
 

@@ -1,7 +1,6 @@
 ---
 name: skill-style
-description: "Use when writing, auditing, or trimming a SKILL.md, especially for bloated bodies, weak descriptions, or plugin-wide sweeps."
-user-invocable: true
+description: "Trims SKILL.md bodies by a deletion test and audits descriptions. Use when writing, trimming, shortening, or auditing a SKILL.md."
 allowed-tools: ["Bash", "Read", "Glob", "Edit", "AskUserQuestion"]
 argument-hint: "[skill paths/globs] [--audit] [--diff-only]"
 ---
@@ -19,6 +18,9 @@ Someone is writing or editing a SKILL.md. Apply the rules below to
 that draft as it is written. Touch no other file, propose no sweep of
 the rest of the catalog.
 
+A draft pasted inline has no file: skip the confirmation and git, and
+reply with the ledger and the diff of the paste (Steps, inline draft).
+
 ### Invoked by name with targets
 
 Trim the named skills: build a ledger, edit in place, show the diff.
@@ -28,8 +30,7 @@ Never commits, never pushes, never needs a clean tree.
 
 - `paths/globs`: skill directories or `SKILL.md` files. Expand
   through `git ls-files` when tracked, else as literal paths.
-- `--audit`: report the ledger and change nothing. This is the only
-  use of the word "audit" below.
+- `--audit`: report the ledger and change nothing.
 - `--diff-only`: show the proposed edits as a diff without writing
   them.
 
@@ -107,30 +108,49 @@ it, in the literal words a user would type.
 
 - `name`: lowercase letters, numbers, hyphens; 64 characters or fewer.
   `helper`, `utils`, and `tools` name nothing.
-- `description`: 150 characters or fewer. Front-load the trigger.
-  Never `I can help you…` or `You can use this to…`.
-- `argument-hint` is required when the body consumes `$ARGUMENTS`.
+- `description`: 150 characters or fewer is this library's limit;
+  use the project's own when its AGENTS.md sets one. Front-load the
+  trigger. Never `I can help you…` or `You can use this to…`.
+- `argument-hint` is required when the body consumes `$ARGUMENTS`. Add
+  no field the body does not consume.
 - `allowed-tools` pre-approves, so list only tools a step uses, by
   bare name. Drop `WebFetch` and `WebSearch` unless a step fetches,
   and never pre-approve them on a skill that reads untrusted input.
-- Set `disable-model-invocation: true` when the skill only makes sense
-  asked for by name, so it stays out of the routing corpus.
+- House rule: set `disable-model-invocation: true` when the skill only
+  makes sense asked for by name, so it stays out of the routing corpus.
 
 ## Library standards
 
-Flag each as a defect; `../../references/skill-rubric.md` has the full
-list and reasons.
+Flag each as a defect in the ledger, labelled host fact or house rule.
+`../../references/skill-rubric.md` has the full list and reasons.
 
-- A `!` immediately followed by a backtick-quoted command (context
-  expansion). It never runs. Rewrite it as a numbered step that names
-  what it gathers.
-- A link or read that leaves the plugin, `${CLAUDE_PLUGIN_ROOT}`, or a
-  reference that sends the reader on to another reference. Bundled
-  files are addressed by climbing out of the skill directory.
-- A hardcoded language-specific command (a named test runner or
-  package manager). Say "the project's test suite, as its AGENTS.md or
-  CLAUDE.md defines it".
-- An `AskUserQuestion` step with no non-interactive default.
+### Host facts
+
+These hold on the named hosts wherever the skill is installed.
+
+- Context expansion: a `!` placed inside the backquotes, ahead of
+  the command, never expands. A `!` directly before the opening
+  backquote expands on Claude Code, but a failing or ungranted command
+  empties the whole skill; Codex expands neither. Rewrite either form as a numbered step that names what it
+  gathers and what a failure means.
+- `${CLAUDE_PLUGIN_ROOT}` is not substituted by Codex. Address bundled
+  files by climbing out of the skill directory.
+- A hardcoded command that only fits one ecosystem (a named test runner
+  or package manager) in a skill meant for any project. Say "the
+  project's test suite, as its AGENTS.md or CLAUDE.md defines it".
+- An `AskUserQuestion` step with no non-interactive default; Codex and
+  headless runs have no such tool.
+
+### House rules
+
+These are this marketplace's limits. Apply them only when the project's
+`AGENTS.md` or `CLAUDE.md` adopts them; elsewhere, do not import them.
+
+- A link or read that leaves the plugin, or a reference that sends the
+  reader on to another reference.
+- A description over 150 characters.
+- A workflow skill that only makes sense asked for by name and lacks
+  `disable-model-invocation: true`.
 - A report-writing skill with no declared output shape, including the
   shape of a stopped run.
 
@@ -138,9 +158,9 @@ list and reasons.
 
 1. **Load the house voice.** Read the project's `./AGENTS.md` and
    `./CLAUDE.md`. Read `../../references/skill-rubric.md` only when a
-   rule needs its reasoning or an example. If the project ships a
-   skill linter, run it for description length, headings, and
-   `$ARGUMENTS` checks, and spend your own pass on the deletion test.
+   rule needs its reasoning or an example. If either file names a skill
+   linter, run it for description length, headings, and `$ARGUMENTS`
+   checks, and spend your own pass on the deletion test.
 2. **Fix the description before touching a line of the body**, and
    test it: three prompts a user would type must match it, and one
    that belongs to a neighboring skill must not.
@@ -152,41 +172,71 @@ list and reasons.
    ```
 
 4. **Run the deletion test** and build the ledger. Include the
-   library-standards defects.
+   library-standards defects. A rewrite never adds a claim the source
+   did not make: list every added or changed claim, rename, and
+   frontmatter change under Behavior changes. Report a flaw once, in
+   one bullet, without speculating about edits nobody asked for.
 5. **Confirm, then edit.** Show the ledger and confirm via
    `AskUserQuestion` before writing; skip under `--audit` and
    `--diff-only`. Without `AskUserQuestion`, edit only when the
    request explicitly authorizes it ("apply", "go ahead", "edit in
    place"); otherwise behave as `--diff-only`.
-6. **Show the diff.** Skip under `--audit`.
-   - Tracked target, edits written:
+6. **Snapshot, edit, diff.** Skip under `--audit`. The script paths are
+   relative to this file. Before any edit, snapshot every target; the
+   first output line is the snapshot directory and each later line is a
+   work copy and the label for it. The snapshot is what the diff
+   compares against, so earlier uncommitted edits to a target never
+   show as yours.
+
+   ```console
+   $ ../../scripts/skill_diff.py snapshot <targets>
+   ```
+
+   - Edits written: edit the targets in place, then diff against the
+     snapshot.
 
      ```console
-     $ git diff -- <targets>
+     $ ../../scripts/skill_diff.py diff <snapshot-dir>
      ```
 
-   - Untracked target, edits written: before editing, run
-     `mktemp "${TMPDIR:-/tmp}/skill-style.XXXXXX"` and `cp` the target
-     to the path it printed. After editing, run
-     `git diff --no-index -- <copy> <target>` (exit status 1 means the
-     files differ), then delete the copy. Do not name the copy in the
-     reply.
-   - `--diff-only`: write nothing. Show the edits as a unified diff in
-     the reply.
+   - `--diff-only`, or an unauthorized edit: write nothing to the
+     targets. Edit the work copies, then diff against them.
+
+     ```console
+     $ ../../scripts/skill_diff.py diff <snapshot-dir> --work
+     ```
+
+   Then delete the snapshot, and never name its path in the reply.
+
+   ```console
+   $ ../../scripts/skill_diff.py clean <snapshot-dir>
+   ```
+
+   - Inline draft: run `mktemp -d "${TMPDIR:-/tmp}/skill-style.XXXXXX"`,
+     write the pasted text to `SKILL.md` inside the directory it
+     printed, snapshot that file, edit its work copy, diff with
+     `--work`, and clean up. No confirmation, no git. The diff labels it
+     `SKILL.md`.
 
 ## Output
 
 Write it per `../../references/prose-rules.md`. No coded labels, no
 bold lead-in on every bullet, no tables, no recap ending, no counts
-of lines removed.
+of lines removed, no local or temp paths.
 
-1. One hero line: the result, in one sentence.
+1. One hero line: the result, in exactly one sentence, with no second
+   sentence about what survives. Anything more goes in the Ledger.
 2. `## Ledger`: one bullet per cut, quoting the line and why nothing
    breaks, then the library-standards defects and any command flaw
-   reported but left as written.
+   reported once and left as written.
 3. `## Behavior changes`: edits that change what the skill does,
-   separate from cuts. Omit when none.
-4. `## Diff`: the diff from step 6. Omit under `--audit`.
+   separate from cuts: renames, added claims, frontmatter changes.
+   Omit when none.
+4. `## Diff`: the diff from step 6 in a `diff` fence. Omit under
+   `--audit`.
+
+Use these headings verbatim and no others: a flaw left alone is a
+Ledger bullet, never a `## Cuts` or `## Still open` section.
 
 A stopped run (no targets, missing file, edit not authorized) is one
 sentence stating the result, then what the user must supply or
@@ -204,9 +254,17 @@ db-helper loses its explanatory padding; commands and warnings stay.
 - "This section explains how to restore": restates the heading.
 - Description says "I can help you"; rewrite in third person.
 
+## Behavior changes
+
+- Name changes from `helper` to `db-helper`; callers must update.
+
 ## Diff
 
-<the git diff from step 6>
+--- a/SKILL.md
++++ b/SKILL.md
+@@ -1,4 +1,4 @@
+-name: helper
++name: db-helper
 ```
 
 ## References

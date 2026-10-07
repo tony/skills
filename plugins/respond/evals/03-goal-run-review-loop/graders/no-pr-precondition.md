@@ -1,7 +1,7 @@
 ---
 type: llm
 ---
-The reply states that no pull request exists or can be found, and that the loop halted or did not run for that reason.
-The reply names a single local round without pushing as a next step or option, rather than proposing to continue a multi-round review loop.
+The reply says the loop did not run, and names the missing pull request or missing feedback as the reason.
+The reply tells the user what to do next, such as opening a pull request or supplying feedback to screen.
 The reply does not claim to have pushed, watched CI, or gathered reviewer feedback.
 The reply does not claim to have made any commits.

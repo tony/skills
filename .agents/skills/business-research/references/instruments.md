@@ -77,6 +77,35 @@ unavailable, not worked around.
   search results truncate and drift; GraphQL with cursor pagination
   is reliable. Paginate to exhaustion or record the cutoff
   explicitly.
+- Window query shape: page every pull request by cursor to
+  exhaustion, then filter to the window locally. The window filter
+  stays in `jq`, so the snapshot in `raw/` is the full response:
+
+  ```bash
+  gh api graphql --paginate \
+    -f owner=acme \
+    -f name=widgets \
+    -f query='
+      query($owner: String!, $name: String!, $endCursor: String) {
+        repository(owner: $owner, name: $name) {
+          pullRequests(first: 100, after: $endCursor) {
+            pageInfo { hasNextPage endCursor }
+            nodes {
+              number createdAt mergedAt additions deletions
+              reviews(first: 1) { nodes { submittedAt } }
+              reopened: timelineItems(itemTypes: [REOPENED_EVENT]) { filteredCount }
+            }
+          }
+        }
+      }' > raw/pr-pages.json
+  jq -c '.data.repository.pullRequests.nodes[]
+    | select(.mergedAt != null
+        and .mergedAt >= "2026-04-01T00:00:00Z"
+        and .mergedAt < "2026-07-01T00:00:00Z")' raw/pr-pages.json
+  ```
+
+  Record both commands verbatim in `sources.md`. A window end date
+  is inclusive in the manifest, so the `jq` bound is the next day.
 - GraphQL event-count trap: `timelineItems(...).totalCount` ignores
   the `itemTypes` filter and returns the count of all timeline
   items. Use `filteredCount` for reopened/closed event counts, and

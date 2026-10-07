@@ -62,9 +62,24 @@ plan contains:
 
 ## Step 1: Snapshot state and lock the baseline
 
+Check for an empty repository first: a repo with no commits has no
+`HEAD`, and a repo with no tracked files has nothing to scan.
+
+```console
+$ git ls-files
+```
+
+If it prints nothing, stop with one result sentence, then what the user
+must do. Do not list what was not done:
+
+```text
+No tracked files to scan. Commit the files you want checked, then run /slop:scan again.
+```
+
 Resolve `BASELINE_SHA` per `../../references/detect-pipeline.md` §
 Baseline; it comes from the last fetch and may be stale, which only
-affects tone calibration. Then record the starting commit:
+affects tone calibration. Without a trunk it skips calibration. Then
+record the starting commit:
 
 ```console
 $ git rev-parse HEAD
@@ -86,8 +101,10 @@ With `--allow-dirty`, keep the paths from `git status --porcelain` as
 Halt with a clear message when any of these holds:
 
 - The working tree is dirty and `--allow-dirty` was not passed.
-- A rebase or merge is in progress (`.git/rebase-merge/`,
-  `.git/rebase-apply/`, or `.git/MERGE_HEAD` exists).
+- A rebase or merge is in progress. `.git` is a file in a linked
+  worktree, so resolve each of `rebase-merge`, `rebase-apply`, and
+  `MERGE_HEAD` with `git rev-parse --git-path <name>` and test the
+  printed paths.
 - `HEAD` is detached; every commit needs a branch reference.
 
 ## Step 2: Resolve scan scope
@@ -235,7 +252,8 @@ Reached only with `--apply`. Ask through `AskUserQuestion`:
 | **Apply and commit** | Run the per-finding commit loop. |
 | **Cancel** | Delete `<run-dir>/` and exit. |
 
-Without a question tool (Codex, headless), take **Patches only**. A
+Without a question tool (Codex, headless), take **Patches only** and
+print the `--apply` command. A
 request that explicitly says to apply and commit approves that choice
 only, never a push.
 
@@ -317,9 +335,10 @@ Then apply `--on-fail`:
 
 ### 10e. On gate pass
 
-Read the finding's message from `commits.json` and write it to a temp
-file made with `mktemp "${TMPDIR:-/tmp}/slop-msg.XXXXXX"`. Commit with
-it, then delete the file:
+Read the finding's message from `commits.json`. Make a temp file with
+`mktemp "${TMPDIR:-/tmp}/slop-msg.XXXXXX"`, print its path, write the
+message to it, and reuse the printed path literally. Commit with it,
+then delete it with `rm -f`:
 
 ```console
 $ git commit -F "<temp-message-file>"
@@ -402,17 +421,17 @@ Per-finding commits:
 Gate-failed findings:
   brittle.test-count in docs/guide.md:12, lint: line too long
 
-Patch series: .git/slop/run-1/
+Patch series: <run-dir>
 ```
 
-Do not push; the user decides. A plain `git push` suffices because no
+`<run-dir>` is the path Step 8 printed. Do not push; the user decides. A plain `git push` suffices because no
 history changed.
 
 ## Edge cases
 
 | Case | Behavior |
 |---|---|
-| Empty repo or no tracked files | Exit cleanly: "No tracked files to scan." |
+| Empty repo or no tracked files | Step 1 stops with the one-sentence shape. |
 | All findings advisory (Tier C only at `default` budget) | Print the report; no commits; exit 0. |
 | `--allow-dirty` and a finding sits in a dirty file | Advisory only; never edited. |
 | Finding's edit yields an empty diff (already fixed) | Skip; record "no-op"; never create an empty commit. |

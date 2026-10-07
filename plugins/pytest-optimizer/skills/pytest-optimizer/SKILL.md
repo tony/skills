@@ -53,14 +53,20 @@ directory.
 2. Resolve the memory directory by the lookup order in
    `../../references/memory-schema.md`. If one exists, read `state.json` for the
    resume point.
-3. Read the installed pytest version, for the plan only:
+3. Read the installed pytest version, for the plan only, through the project's
+   runner so the project environment answers, not the system Python:
 
    ```console
-   $ python3 -c "import pytest; print(pytest.__version__)"
+   $ pytest --version
    ```
 
+   Prefix the project's runner when it has one (`uv run pytest --version`,
+   `tox -e py -- --version`).
+
 If there is no pytest suite, stop with the halted-run shape in
-`../../references/output-contract.md`.
+`../../references/output-contract.md`. A saving is a measured number: when
+nothing was run, state no projected timing, and call a scope change a
+hypothesis to benchmark, not a fix.
 
 ## Orchestration Plan
 

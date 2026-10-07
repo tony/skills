@@ -34,16 +34,38 @@ User arguments: $ARGUMENTS
 
 ### 1. Scope and orchestration plan
 
-Present an orchestration plan before touching disk: what will be
-measured, over what pinned date range, with which instruments, to
-which output directory. Enter plan mode if the host supports it:
+Present an orchestration plan before touching disk (shape below).
+Enter plan mode if the host supports it:
 Claude Code `EnterPlanMode`; Cursor, Codex, or Gemini via `/plan` or
 Shift+Tab; otherwise present the plan as plain text and pause. Ask
 where to write the run, defaulting per `interim-format.md` § Where
 runs live. Write nothing, including `index.md`, until the user
 approves; then open the run there. Hosts without a question tool use
 the default root and record that in the run README, as
-`interim-format.md` allows.
+`interim-format.md` allows. An explicit request to run the research
+approves the plan, not a root outside the default.
+
+Reply in this shape, as plain text outside any code fence, with plain
+bullets and no bold (never `- **Label:** ...`). Open with the first
+line, no greeting, and name roots as the user would type them:
+
+```text
+Plan: review-skill, window 2026-04-01..2026-06-30. Nothing is written yet.
+
+## Measure
+
+- Cycle time and first-review latency per PR; rework signals.
+- Adoption and per-task timing only from exports you provide.
+
+## Instruments
+
+- git and gh to probe; no tracker found yet.
+
+## Output
+
+- ~/Documents/2026-07-14/business/review-skill/, default root.
+- Questions: confirm the root and the repo paths.
+```
 
 ### 2. Instrument discovery
 
@@ -67,9 +89,10 @@ Emit the full interim format from `interim-format.md`: run README,
 source manifest with verbatim queries, assumptions register, raw
 snapshots, per-topic measurements, and `findings.md`. Every figure
 tagged; every unknown listed with what data would resolve it. Compute
-medians, quartiles, and intervals with `business.py stats` and check
-the register with `business.py assumptions`. Write prose per
-`../../references/prose-rules.md`.
+medians, quartiles, and intervals with `business.py stats`. Give each
+figure computed from a `raw/` CSV a `check:` line. Run
+`business.py gate <run>` and fix every problem before reporting.
+Write prose per `../../references/prose-rules.md`.
 
 ## Output
 

@@ -3,7 +3,8 @@ name: 02-align-retry-cap-clean-restatement
 description: >-
   A revision-log answer landed and the user asks for the clean version. The
   restatement must come from re-opening the file, state the cap as 3, and
-  carry no verdict language.
+  carry no verdict language. The pasted note holds no values, so the numbers
+  can only come from the file.
 tags: [align]
 
 context:
@@ -13,9 +14,9 @@ execution:
   prompt: |
     /double-check:align the retry cap value
 
-    Here's what you told me in your last message, and I don't want it repeated in this format:
+    Here is a pasted revision-log note, and I don't want it repeated in this format:
 
-    "Verdict update: Item 1 (MAX_RETRIES) - overstated, corrected to 3. Item 2 (backoff seconds) - still holds at 2. As I mentioned before, the retry loop code confirms this."
+    "Verdict update: Item 1 (the retry cap) - overstated. Item 2 (the backoff) - still holds. As I mentioned before, the retry loop code confirms this."
 
     The module is client.py in this directory. Give me the clean version.
   max_turns: 10
@@ -34,12 +35,12 @@ graders:
   - name: states-the-cap
     type: regex
     target: last_message
-    pattern: 'MAX_RETRIES\s*(=|is|of|:)?\s*3'
+    pattern: 'MAX_RETRIES\D{0,12}3|cap\D{0,20}3'
 
   - name: states-the-backoff
     type: regex
     target: last_message
-    pattern: 'RETRY_BACKOFF_SECONDS|backoff'
+    pattern: '(RETRY_BACKOFF_SECONDS|backoff)\D{0,40}2'
     flags: i
 
   - name: no-verdict-language

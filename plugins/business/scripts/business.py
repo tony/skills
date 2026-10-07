@@ -7,6 +7,7 @@ Subcommands:
 - ``scan``: tier-3 sanitization scan of a draft for identifiers and money terms.
 - ``assumptions``: required-field check of an ``assumptions.yaml`` register.
 - ``runs``: list run directories newest first, ordered by the date in the path.
+- ``gate``: the completeness gate for one run package, with figures recomputed from ``raw/``.
 
 Run ``business.py <command> --help`` for each command.
 """
@@ -14,6 +15,9 @@ Run ``business.py <command> --help`` for each command.
 from __future__ import annotations
 
 import argparse
+import contextlib
+import csv
+import datetime as dt
 import math
 import random
 import re
@@ -23,7 +27,7 @@ import typing as t
 from pathlib import Path
 
 if t.TYPE_CHECKING:
-    from collections.abc import Sequence
+    from collections.abc import Collection, Sequence
 
 DIRECTIONAL_BELOW = 20
 MIN_OBSERVATIONS = 2
@@ -56,6 +60,24 @@ ASSUMPTION_FIELDS = (
 SOURCE_TYPES = ("MEASURED", "DERIVED", "BENCHMARKED", "ESTIMATED")
 CONFIDENCES = ("high", "medium", "low")
 DATE_DIR = re.compile(r"\d{4}-\d{2}-\d{2}")
+DATE_RANGE = re.compile(r"\d{4}-\d{2}-\d{2}\s*(?:\.\.|to|\u2013|-)\s*\d{4}-\d{2}-\d{2}")
+TAGS = ("MEASURED", "DERIVED", "BENCHMARKED", "ESTIMATED")
+CITATION = re.compile(r"sources\.md(?:#|\s+`)([\w-]+)")
+FIGURE = re.compile(r"\d(?:\.\d+)?\s*(?:%|min\b|h\b|hours?\b|days?\b|PRs?\b|engineers?\b)")
+UNIT_START = re.compile(r"\s*(?:[-*]|\d+\.|\|)\s?")
+CHECK_LINE = re.compile(r"\s*(?:[-*]\s*)?check:", re.IGNORECASE)
+CHECK_SPEC = re.compile(
+    r"\s*(?:[-*]\s*)?check:\s*(median|mean|min|max|n)\s+(\S+)\s+(\S+)\s*=\s*(-?\d+(?:\.\d+)?)\s*$",
+    re.IGNORECASE,
+)
+SOURCE_FIELDS = (
+    ("query", re.compile(r"^\W*(?:query|command)\s*:\s*\S", re.IGNORECASE)),
+    ("timestamp", re.compile(r"^\W*(?:executed|timestamp|run at)\s*:\s*\d{4}-", re.IGNORECASE)),
+    ("tool version", re.compile(r"^\W*(?:tool )?version\s*:\s*\S", re.IGNORECASE)),
+    ("output file", re.compile(r"^\W*output(?: file)?\s*:\s*\S", re.IGNORECASE)),
+)
+OUTPUT_LINE = re.compile(r"^\W*output(?: file)?\s*:\s*(.+)$", re.IGNORECASE)
+CHECK_TOLERANCE = 0.005
 
 
 def _median(values: list[float]) -> float:
@@ -145,8 +167,16 @@ def parse_numbers(text: str) -> list[float]:
     return [float(line.split("#")[0]) for line in text.splitlines() if line.split("#")[0].strip()]
 
 
-def scan_text(text: str, deny: Sequence[str] = ()) -> list[tuple[int, int, str, str]]:
+def scan_text(
+    text: str,
+    deny: Sequence[str] = (),
+    allow: Sequence[str] = (),
+    allow_url: Sequence[str] = (),
+) -> list[tuple[int, int, str, str]]:
     """Return ``(line, column, kind, match)`` for every tier-3 exclusion in ``text``.
+
+    ``allow`` skips hits whose text equals an entry; ``allow_url`` skips URLs that
+    start with an entry.
 
     Examples
     --------
@@ -158,25 +188,64 @@ def scan_text(text: str, deny: Sequence[str] = ()) -> list[tuple[int, int, str, 
     [(1, 1, 'denied-name', 'Acme')]
     >>> scan_text("Median fell from 26 h to 9 h (MEASURED, n=41).")
     []
+    >>> [h[3] for h in scan_text("GPT-4 and UTF-8.", allow=["UTF-8"])]
+    ['GPT-4']
+    >>> scan_text("See https://arxiv.org/abs/2507.09089", allow_url=["https://arxiv.org/"])
+    []
     """
     rules = [*SCAN_RULES, *(("denied-name", re.compile(re.escape(d), re.IGNORECASE)) for d in deny)]
     hits: list[tuple[int, int, str, str]] = []
     for number, line in enumerate(text.splitlines(), start=1):
         for kind, pattern in rules:
-            hits.extend((number, m.start() + 1, kind, m.group()) for m in pattern.finditer(line))
+            hits.extend(
+                (number, m.start() + 1, kind, m.group())
+                for m in pattern.finditer(line)
+                if m.group() not in allow
+                and not (kind == "url" and m.group().startswith(tuple(allow_url)))
+            )
     return sorted(hits)
 
 
-def check_assumptions(text: str) -> list[str]:
+def _is_date(text: str) -> bool:
+    try:
+        _ = dt.date.fromisoformat(text)
+    except ValueError:
+        return False
+    return True
+
+
+def _is_number(text: str) -> bool:
+    try:
+        _ = float(text)
+    except ValueError:
+        return False
+    return True
+
+
+def check_assumptions(text: str, sources: Collection[str] | None = None) -> list[str]:
     r"""Return problems in an ``assumptions.yaml`` register of flat ``key: value`` entries.
+
+    ``value`` must be numeric, dates ISO, and a MEASURED ``source_ref`` must be
+    ``sources.md#<name>``; with ``sources`` given, that name must be in it.
 
     Examples
     --------
-    >>> vals = {"source_type": "MEASURED", "confidence": "low"}
+    >>> vals = {
+    ...     "source_type": "MEASURED",
+    ...     "confidence": "low",
+    ...     "value": "0.6",
+    ...     "retrieved": "2026-06-30",
+    ...     "updated": "2026-06-30",
+    ...     "source_ref": "sources.md#seats",
+    ... }
     >>> keys = ASSUMPTION_FIELDS[1:]
     >>> good = "\n".join(["- id: a", *[f"  {k}: {vals.get(k, 'x')}" for k in keys]])
     >>> check_assumptions(good)
     []
+    >>> check_assumptions(good, sources=["other"])
+    ['entry a: source_ref names no entry in sources.md']
+    >>> check_assumptions(good.replace("0.6", "most"))
+    ["entry a: value 'most' is not a number"]
     >>> check_assumptions("- id: a\n  value: 1")[0]
     'entry a: missing description'
     >>> check_assumptions("")
@@ -208,6 +277,28 @@ def check_assumptions(text: str) -> list[str]:
             problems.append(
                 f"entry {name}: confidence {entry['confidence']!r} is not one of {CONFIDENCES}"
             )
+        problems.extend(_check_entry_values(name, entry, sources))
+    return problems
+
+
+def _check_entry_values(
+    name: str, entry: dict[str, str], sources: Collection[str] | None
+) -> list[str]:
+    problems: list[str] = []
+    value = entry.get("value")
+    if value and not _is_number(value):
+        problems.append(f"entry {name}: value {value!r} is not a number")
+    problems.extend(
+        f"entry {name}: {k} {entry[k]!r} is not an ISO date"
+        for k in ("retrieved", "updated")
+        if entry.get(k) and not _is_date(entry[k])
+    )
+    if entry.get("source_type") == "MEASURED" and entry.get("source_ref"):
+        match = re.fullmatch(r"sources\.md#([\w-]+)", entry["source_ref"])
+        if not match:
+            problems.append(f"entry {name}: MEASURED source_ref must be sources.md#<name>")
+        elif sources is not None and match.group(1) not in sources:
+            problems.append(f"entry {name}: source_ref names no entry in sources.md")
     return problems
 
 
@@ -225,21 +316,217 @@ def list_runs(roots: Sequence[Path]) -> list[Path]:
     ...     [str(r.relative_to(d)) for r in list_runs([Path(d)])]
     ['2026-02-01/business/b', '2026-02-01/business/a', '2026-01-15/business/a']
     """
-    found = [
-        run
-        for root in roots
-        for run in root.glob("*/business/*")
-        if run.is_dir() and DATE_DIR.fullmatch(run.parent.parent.name)
-    ]
+    found: list[Path] = []
+    for root in roots:
+        try:
+            found.extend(
+                run
+                for run in root.glob("*/business/*")
+                if run.is_dir() and DATE_DIR.fullmatch(run.parent.parent.name)
+            )
+        except OSError:
+            continue
     return sorted(found, key=lambda p: (p.parent.parent.name, p.name), reverse=True)
 
 
-def default_roots() -> list[Path]:
-    """Return the default run roots: the home Documents folder and WSL Windows Documents."""
-    roots = [Path.home() / "Documents"]
-    roots.extend(
-        sorted(Path("/mnt/c/Users").glob("*/Documents")) if Path("/mnt/c/Users").is_dir() else []
+def _units(text: str) -> list[str]:
+    """Split markdown into figure-sized units: a bullet, table row, or paragraph."""
+    units: list[str] = []
+    current: list[str] = []
+    for line in [*text.splitlines(), ""]:
+        if not line.strip() or line.startswith("#") or UNIT_START.match(line):
+            if current:
+                units.append(" ".join(current))
+                current = []
+            if line.strip() and not line.startswith("#"):
+                current.append(line.strip())
+        else:
+            current.append(line.strip())
+    return units
+
+
+def _source_entries(text: str) -> dict[str, list[str]]:
+    entries: dict[str, list[str]] = {}
+    name = ""
+    for line in text.splitlines():
+        if line.startswith("## "):
+            name = line[3:].strip().strip("`")
+            entries[name] = []
+        elif name:
+            entries[name].append(line)
+    return entries
+
+
+def _check_sources(run: Path, entries: dict[str, list[str]]) -> list[str]:
+    if not entries:
+        return ["sources.md has no entries (one `## <name>` heading each)"]
+    problems: list[str] = []
+    for name, lines in entries.items():
+        problems.extend(
+            f"sources.md entry {name}: missing {label}"
+            for label, pattern in SOURCE_FIELDS
+            if not any(pattern.match(line) for line in lines)
+        )
+        for line in lines:
+            found = OUTPUT_LINE.match(line)
+            if not found:
+                continue
+            for raw in found.group(1).split(","):
+                target = raw.strip().strip("`")
+                if target and not (run / target).is_file():
+                    problems.append(f"sources.md entry {name}: output {target} does not exist")
+    return problems
+
+
+def _check_figures(label: str, text: str, names: Collection[str]) -> list[str]:
+    problems: list[str] = []
+    for unit in _units(text):
+        if CHECK_LINE.match(unit):
+            continue
+        if not any(tag in unit for tag in TAGS):
+            if FIGURE.search(unit):
+                problems.append(f"{label}: figure without a provenance tag: {unit[:60]}")
+            continue
+        if "MEASURED" not in unit:
+            continue
+        cited: list[str] = CITATION.findall(unit)
+        if not cited:
+            problems.append(f"{label}: MEASURED figure cites no sources.md entry: {unit[:60]}")
+        problems.extend(
+            f"{label}: cited sources.md entry {c} does not exist" for c in cited if c not in names
+        )
+    return problems
+
+
+def _column(rows: list[dict[str, str]], expr: str) -> list[float] | None:
+    fields: set[str] = set(rows[0]) if rows else set()
+    try:
+        if expr in fields:
+            return [float(r[expr]) for r in rows]
+        left, _, right = expr.partition("-")
+        if left in fields and right in fields:
+            return [float(r[left]) - float(r[right]) for r in rows]
+    except (ValueError, TypeError):
+        return None
+    return None
+
+
+def _recompute(stat: str, values: list[float]) -> float:
+    if stat == "n":
+        return float(len(values))
+    return float(
+        {"median": statistics.median, "mean": statistics.fmean, "min": min, "max": max}[stat](
+            values
+        )
     )
+
+
+def _check_recomputed(run: Path, label: str, text: str) -> list[str]:
+    problems: list[str] = []
+    for line in text.splitlines():
+        if not CHECK_LINE.match(line):
+            continue
+        spec = CHECK_SPEC.match(line)
+        if not spec:
+            problems.append(f"{label}: unparseable check line: {line.strip()[:60]}")
+            continue
+        stat, rel, expr, claimed = spec.groups()
+        target = (run / rel).resolve()
+        if not target.is_relative_to(run.resolve()) or not target.is_file():
+            problems.append(f"{label}: check file {rel} does not exist in the run")
+            continue
+        with target.open(encoding="utf-8", newline="") as handle:
+            rows = list(csv.DictReader(handle))
+        values = _column(rows, expr)
+        if not values:
+            problems.append(f"{label}: check {rel} has no numeric column {expr}")
+            continue
+        actual = _recompute(stat.lower(), values)
+        if abs(actual - float(claimed)) > CHECK_TOLERANCE:
+            problems.append(
+                f"{label}: {stat} of {expr} in {rel} is {actual:g}, claimed {float(claimed):g}"
+            )
+    return problems
+
+
+def check_run(run: Path) -> list[str]:
+    """Return the completeness-gate problems of a run package; empty means it passes.
+
+    Examples
+    --------
+    >>> import tempfile
+    >>> with tempfile.TemporaryDirectory() as d:
+    ...     check_run(Path(d))[0]
+    'README.md is missing'
+    """
+    problems: list[str] = []
+
+    def read(name: str) -> str | None:
+        path = run / name
+        return path.read_text(encoding="utf-8") if path.is_file() else None
+
+    readme = read("README.md")
+    if readme is None:
+        problems.append("README.md is missing")
+    elif not any(
+        "window" in line.lower() and DATE_RANGE.search(line) for line in readme.splitlines()
+    ):
+        problems.append("README.md states no pinned window (start..end dates on a Window line)")
+    sources = read("sources.md")
+    entries: dict[str, list[str]] = {}
+    if sources is None:
+        problems.append("sources.md is missing")
+    else:
+        entries = _source_entries(sources)
+        problems.extend(_check_sources(run, entries))
+    register = read("assumptions.yaml")
+    if register is None:
+        problems.append("assumptions.yaml is missing")
+    else:
+        problems.extend(f"assumptions.yaml: {p}" for p in check_assumptions(register, set(entries)))
+    docs = {f"measurements/{p.name}": p for p in sorted((run / "measurements").glob("*.md"))}
+    findings = read("findings.md")
+    if findings is None:
+        problems.append("findings.md is missing")
+    else:
+        for label, text in (
+            *((k, v.read_text(encoding="utf-8")) for k, v in docs.items()),
+            ("findings.md", findings),
+        ):
+            problems.extend(_check_figures(label, text, set(entries)))
+            problems.extend(_check_recomputed(run, label, text))
+        problems.extend(_check_unknowns(findings))
+    return problems
+
+
+def _check_unknowns(findings: str) -> list[str]:
+    section: list[str] = []
+    inside = False
+    for line in findings.splitlines():
+        if line.startswith("#"):
+            inside = line.lstrip("#").strip().lower().startswith("unknown")
+        elif inside:
+            section.append(line)
+    return [
+        f"findings.md: unknown without the data that would resolve it: {unit[:60]}"
+        for unit in _units("\n".join(section))
+        if UNIT_START.match(unit) and "resolve" not in unit.lower()
+    ]
+
+
+def default_roots() -> list[Path]:
+    """Return the default run roots: the home Documents folder and WSL Windows Documents.
+
+    An unreadable ``/mnt/c/Users`` yields no Windows roots instead of raising.
+
+    Examples
+    --------
+    >>> Path.home() / "Documents" in default_roots()
+    True
+    """
+    roots = [Path.home() / "Documents"]
+    with contextlib.suppress(OSError):
+        roots.extend(sorted(Path("/mnt/c/Users").glob("*/Documents")))
     return roots
 
 
@@ -247,6 +534,18 @@ def _read(paths: list[str]) -> str:
     if not paths:
         return sys.stdin.read()
     return "\n".join(Path(p).read_text(encoding="utf-8") for p in paths)
+
+
+def _gate_command(run: Path) -> int:
+    if not run.is_dir():
+        print(f"no run directory at {run}", file=sys.stderr)
+        return 2
+    problems = check_run(run)
+    for problem in problems:
+        print(problem)
+    if not problems:
+        print("ok")
+    return 1 if problems else 0
 
 
 class Args(argparse.Namespace):
@@ -259,6 +558,9 @@ class Args(argparse.Namespace):
     deny: list[str] = []  # noqa: RUF012
     file: str = ""
     root: list[str] = []  # noqa: RUF012
+    allow: list[str] = []  # noqa: RUF012
+    allow_url: list[str] = []  # noqa: RUF012
+    run: str = ""
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -281,6 +583,19 @@ def main(argv: list[str] | None = None) -> int:
         "--deny", action="append", default=[], help="a name that must not appear; repeatable"
     )
 
+    _ = p_scan.add_argument(
+        "--allow", action="append", default=[], help="a false-positive match to skip; repeatable"
+    )
+    _ = p_scan.add_argument(
+        "--allow-url",
+        action="append",
+        default=[],
+        help="skip URLs starting with this prefix (citation links); repeatable",
+    )
+
+    p_gate = sub.add_parser("gate", help="completeness gate for a run; exit 1 on any problem")
+    _ = p_gate.add_argument("run", help="run directory")
+
     p_assume = sub.add_parser("assumptions", help="check required fields of assumptions.yaml")
     _ = p_assume.add_argument("file")
 
@@ -297,7 +612,7 @@ def main(argv: list[str] | None = None) -> int:
             print(f"{key}: {value}")
         return 0
     if args.command == "scan":
-        hits = scan_text(_read(args.files), args.deny)
+        hits = scan_text(_read(args.files), args.deny, args.allow, args.allow_url)
         for line, col, kind, match in hits:
             print(f"{line}:{col}: {kind}: {match}")
         if not hits:
@@ -310,6 +625,8 @@ def main(argv: list[str] | None = None) -> int:
         if not problems:
             print("ok")
         return 1 if problems else 0
+    if args.command == "gate":
+        return _gate_command(Path(args.run))
     roots = [Path(r) for r in args.root] or default_roots()
     for run in list_runs(roots):
         print(run)

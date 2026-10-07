@@ -65,9 +65,11 @@ source now holds nothing unique. Only then may the source be removed.
 Prefer a tool's own prune or archive command over `rm`. It understands
 its own reference counting and leaves the store consistent.
 
-Before any `rm`, resolve the path with `realpath`, print the exact
-target, and check that no process holds it open (`lsof +D <path>` or
-`fuser -v <path>`). Stop if the resolved path leaves the approved scope.
+Before any `rm`, resolve the path with `realpath`, list what it would
+remove (`ls -A <path>`), print the exact target, and check that no
+process holds it open (`fuser -v <path>`; `lsof +D <path>` walks the
+whole tree, so bound it with `timeout 20` on a large one). Stop if the
+resolved path leaves the approved scope.
 
 Stop and report rather than improvising when a proof fails, a candidate
 turns out to hold unique data, or a repository has unpushed work. A

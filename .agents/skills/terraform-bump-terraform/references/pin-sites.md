@@ -10,6 +10,7 @@ Read before writing any version string.
 - Root modules and reusable modules pin differently
 - The CLI version has pin sites outside `.tf` entirely
 - Resolve the version and its changelog from the registry
+- Upgrade guides on a major jump
 
 ## Constraints combine across the whole configuration
 
@@ -108,7 +109,11 @@ number, so no name-based filter matches it. Take every line.
 One search covers the first two traps, case-insensitively at any depth:
 
 ```console
-$ git grep -n -I -i -E -e '(terraform|tofu|tf_?version).*[0-9]+\.[0-9]+' -- ':(icase)*justfile' ':(icase)*makefile' '*Dockerfile*' '*devcontainer.json' '*.tool-versions' '*mise.toml' '*.yml' '*.yaml'
+$ git grep \
+    -n -I -i -E \
+    -e '(terraform|tofu|tf_?version).*[0-9]+\.[0-9]+' \
+    -- ':(icase)*justfile' ':(icase)*makefile' '*Dockerfile*' \
+    '*devcontainer.json' '*.tool-versions' '*mise.toml' '*.yml' '*.yaml'
 ```
 
 Version files take a second search:
@@ -131,7 +136,18 @@ Ask the registry, not memory, and confirm the version exists before writing
 it anywhere. Every registry implements the protocol's versions endpoint:
 
 ```console
-$ curl -fsS https://registry.terraform.io/v1/providers/hashicorp/aws/versions | jq -r '.versions[].version'
+$ curl -fsS https://registry.terraform.io/v1/providers/hashicorp/aws/versions \
+    | jq -r '.versions[].version'
+```
+
+That list holds every release, prereleases included, in no useful order.
+Pipe it through `lockctl.py stable` (in `../scripts/`) for the newest stable
+versions:
+
+```console
+$ curl -fsS https://registry.terraform.io/v1/providers/hashicorp/aws/versions \
+    | jq -r '.versions[].version' \
+    | python3 lockctl.py stable 3
 ```
 
 Swap the host for `registry.opentofu.org` when OpenTofu drives the
@@ -144,7 +160,8 @@ prefix.
 and the provider's own repository, which makes a changelog link derivable:
 
 ```console
-$ curl -fsS https://registry.terraform.io/v1/providers/hashicorp/aws | jq '{version, tag, source, published_at}'
+$ curl -fsS https://registry.terraform.io/v1/providers/hashicorp/aws \
+    | jq '{version, tag, source, published_at}'
 ```
 
 That one is an extension, not protocol:
@@ -165,11 +182,25 @@ For the CLI itself, Terraform releases are enumerated at
 are tags on its GitHub repository; list the latest stable ones with:
 
 ```console
-$ git ls-remote --tags --refs https://github.com/opentofu/opentofu.git 'v*' | sed 's#.*refs/tags/v##' | grep -E '^[0-9]+\.[0-9]+\.[0-9]+$' | sort -V | tail -3
+$ git ls-remote --tags --refs https://github.com/opentofu/opentofu.git 'v*' \
+    | sed 's#.*refs/tags/v##' \
+    | python3 lockctl.py stable 3
 ```
 
-Link the CLI changelog at that tag: `https://github.com/opentofu/opentofu/releases/tag/v<version>`
-for OpenTofu, the `CHANGELOG.md` of `hashicorp/terraform` at `v<version>` for
-Terraform. If the page cannot be fetched, report no changelog link instead of
+Link the CLI changelog at that tag:
+
+- OpenTofu: `https://github.com/opentofu/opentofu/releases/tag/v<version>`.
+- Terraform: `https://github.com/hashicorp/terraform/blob/v<version>/CHANGELOG.md`.
+
+If the page cannot be fetched, report no changelog link instead of
 guessing one. Cite release notes at the tag the registry reported, not at a
 branch.
+
+## Upgrade guides on a major jump
+
+- Terraform CLI: `https://developer.hashicorp.com/terraform/language/upgrade-guides`.
+- A provider: the registry's guide page for the new major,
+  `https://registry.terraform.io/providers/<namespace>/<type>/<version>/docs/guides/version-<major>-upgrade`.
+  Not every provider ships one; when the page is missing, say none was
+  found.
+- OpenTofu: the release notes at the tag.

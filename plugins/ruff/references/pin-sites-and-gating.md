@@ -6,7 +6,7 @@ Raising a linter's version floor fails two ways: a pin site is missed, so CI kee
 
 A repository frequently pins the same tool in more than one file, and they drift. Find all of them before editing any of them. Search the whole tree for the tool's name, then check each hit against this list:
 
-**Python project metadata.** `pyproject.toml` — dependency groups (`[dependency-groups]`), extras (`[project.optional-dependencies]`), and legacy tool-specific sections. A repo often lists the linter in both a broad `dev` group and a narrow `lint` group; both need raising or CI and local development diverge.
+**Python project metadata.** `pyproject.toml`: dependency groups (`[dependency-groups]`), extras (`[project.optional-dependencies]`), and legacy tool-specific sections. A repo often lists the linter in both a broad `dev` group and a narrow `lint` group; both need raising or CI and local development diverge.
 
 **Requirements files.** `requirements*.txt`, `requirements/*.txt`, constraints files. Frequently the file CI actually installs from, even when `pyproject.toml` looks authoritative.
 
@@ -14,7 +14,7 @@ A repository frequently pins the same tool in more than one file, and they drift
 
 **Runtime and tool-version managers.** `.tool-versions`, `mise.toml`/`.mise.toml`, `.python-version`-adjacent tool pins, `flake.nix`, `Dockerfile` install lines.
 
-**CI workflow files.** A workflow that installs the linter directly — rather than through the project's dependency graph — pins it in the workflow itself, sometimes as a bare version string in a `with:` block or an install command.
+**CI workflow files.** A workflow that installs the linter directly, rather than through the project's dependency graph, pins it in the workflow itself, sometimes as a bare version string in a `with:` block or an install command.
 
 **Node-side wrappers.** Some polyglot repos install the linter through a JavaScript package manager as well; `package.json` will carry its own pin.
 
@@ -26,7 +26,7 @@ Raise every site in the same commit. A partial bump leaves two tools disagreeing
 
 Write `>=` rather than `==` for the version constraint. The lockfile already reproduces one exact version for anyone using the lock; the constraint exists to stop a contributor whose environment resolved something older from producing a locally-clean run that fails CI. An exact pin in the constraint duplicates the lockfile's job and turns every future bump into a wider diff.
 
-Pre-commit is the exception — its `rev:` is a single tag by design, so it takes an exact tag.
+Pre-commit is the exception: its `rev:` is a single tag by design, so it takes an exact tag.
 
 ## When the resolver cannot see the release
 

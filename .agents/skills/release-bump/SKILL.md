@@ -18,8 +18,10 @@ procedure at that version.
 
 Arguments: $ARGUMENTS
 
-First, read `references/release-conventions.md`. The safety
-contract in the `release-cut` skill applies unchanged. This skill writes no
+If `--push-tag` is present without `--tag`, refuse now, before Phase 1:
+reply that `--push-tag` needs `--tag` in the same run and stop. Then read
+`references/release-conventions.md`. The safety contract in
+the `release-cut` skill applies unchanged. This skill writes no
 prose of its own; `cut` writes the changelog and commit message.
 
 ---
@@ -81,14 +83,24 @@ push; only the literal flags do.
 
 Run the complete the `release-cut` skill procedure (the `release-cut` skill, Phase 1
 onward) with the chosen version, forwarding any `--push` / `--tag` /
-`--push-tag` flags the user passed. `--push-tag` without `--tag` is refused
-before Phase 1, as `cut` specifies.
+`--push-tag` flags the user passed. The flag check at the top of this skill already ran.
 
 ## Output
 
 Never name local or temp paths. A completed run ends with `cut`'s
 output. A stopped run (missing signals, unresolved version, refused
 flag) is one result sentence, then what the user needs to do.
+
+Reply to a stop in this shape, as plain text outside any code fence, with
+plain bullets and no bold (never `- **Label:** ...`):
+
+```text
+No version bumped: none of the three signals exist here (a manifest
+version, a git tag, a changelog unreleased header).
+
+- Tell me the current version, or
+- Run release-bump again from the project root.
+```
 
 
 ## Portability notes

@@ -10,6 +10,11 @@ Never blur two findings: nothing found is "none" (`none is open`,
 `none is referenced`); a lookup that could not run is `unavailable`
 with the reason. A repository with no remote has no pull request to
 check, so write `no remote, so no pull request is open or checkable`.
+Say where a "none" was looked: `none is referenced in commits, the
+branch name, or a pull request body`.
+
+Never print an absolute path, a temp directory, or a host-sandbox
+detail; say "the home directory" or "the project root" instead.
 
 ## Contents
 
@@ -17,6 +22,7 @@ check, so write `no remote, so no pull request is open or checkable`.
 - 1. Position
 - 2. Change
 - 3. Pull request
+- Pull request as the subject
 - 4. Tickets
 - 5. Conventions
 - 6. Prior conversations
@@ -38,6 +44,17 @@ If that date is old, say the comparison against trunk may be stale and
 let the user decide whether to fetch.
 
 ## 1. Position
+
+Check the repository root first:
+
+```console
+$ git rev-parse --show-toplevel
+```
+
+A root equal to `$HOME`, or one that contains it, means a dotfile
+repository, not the project. Report that in the hero line, name no
+untracked files, and stop: one result sentence, then ask which directory
+holds the project. The same stop applies when `HEAD` has no commits.
 
 Resolve trunk from the remote's own HEAD rather than assuming `main`:
 
@@ -65,7 +82,7 @@ case; an upstream is better only when it names a *different* branch, a
 stacked branch whose upstream is its parent. Check which:
 
 ```console
-$ git rev-parse --abbrev-ref '@{upstream}'
+$ git rev-parse --abbrev-ref '@{upstream}' 2>/dev/null
 ```
 
 When that is the branch's own remote counterpart (`origin/<branch>`, what
@@ -107,7 +124,7 @@ from trunk mid-branch.
 ## 3. Pull request
 
 ```console
-$ gh pr view --json number,title,state,isDraft,url,headRefName,body,statusCheckRollup,reviewDecision
+$ gh pr view --json number,title,state,isDraft,url,headRefName,headRefOid,baseRefName,body,statusCheckRollup,reviewDecision
 ```
 
 No pull request means the work has not been proposed yet. With no remote,
@@ -127,9 +144,35 @@ list is partial instead.
 
 Report failing checks by job name, and unresolved review threads by
 what they ask for. A green rollup on a run from before the last push is
-not a passing branch; check that the run covers the current head. Review
+not a passing branch. Compare `headRefOid` with the local `HEAD`, and
+list the runs on that commit:
+
+```console
+$ gh run list --commit <headRefOid> --json name,status,conclusion
+```
+
+No run on that commit means the checks have not run against it. Review
 comments are the highest-value layer: another person's opinion, and what
 a resumed session most often forgot.
+
+## Pull request as the subject
+
+A positional pull request number or URL replaces layers 1-2's local
+`HEAD` with the pull request's head. Never check it out. Add `<n>` after
+`gh pr view` in layer 3, and read the change and base from the pull
+request:
+
+```console
+$ gh pr view <n> --json commits,headRefName,baseRefName
+```
+
+```console
+$ gh pr diff <n>
+```
+
+The base is `origin/<baseRefName>`; local ahead/behind, uncommitted work,
+and stashes describe a different branch, so report them as not applying
+unless the current branch is the pull request's head.
 
 ## 4. Tickets
 

@@ -161,26 +161,22 @@ sees.
 
 ## Voice check and target line
 
-Presentation to the user includes both lines, every run.
+Presentation to the user includes both, every run: one voice-check bullet per
+entry, then one `Target` line.
 
-Voice check: name, per entry, the reader question its first sentence answers.
+Voice check: name each entry and the reader question its first sentence
+answers.
 
-```
-New package: cli-sync ............ can I take a new affordance?
-Fix phantom error ................ was my bug just fixed?
-cli sync: errored items .......... was my bug just fixed?
+```text
+Voice check:
+- Add `Cache.evict()` to drop a cached key: can I take a new affordance?
+- `cli sync`: errored items now appear in the summary: was my bug fixed?
+
+Target: CHANGES.md, Unreleased, Features, after the "### Features" heading. No version assigned, no release cut.
 ```
 
 An entry that answers none of the four is a commit summary. Rewrite it before
 presenting; never present it with a blank.
-
-Target line:
-
-```
-Insert after: <identified insertion point>
-Before: <next section or release heading>
-Target: unreleased section, no version assigned, no release cut
-```
 
 A `Target` that names anything but the unreleased section means the user
 explicitly asked for a release. Otherwise stop and re-read the branch-scope

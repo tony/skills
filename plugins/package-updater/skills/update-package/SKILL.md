@@ -12,6 +12,11 @@ disable-model-invocation: true
 Move one named package to a target version wherever it is pinned, with a
 body that says what the release means for each repository it lands in.
 
+Follow `../updating-packages/SKILL.md` for the shared phases: inventory
+(pins read from the default branch, not the working tree), the plan gate
+and plan mode, verification, and the halt shape. This command narrows
+them to one package.
+
 References: `../../references/repo-scope.md`,
 `../../references/ecosystems.md`, `../../references/cooldown-exemption.md`,
 `../../references/commit-conventions.md`,
@@ -41,6 +46,10 @@ even when the user named the version. Exempt only per
 `../../references/cooldown-exemption.md`, when the release is needed now.
 
 ### 2. Find every pin site
+
+Read pins from each repository's default branch, per Phase 1 of
+`../updating-packages/SKILL.md`; a working tree on a feature branch
+reports pins that branch alone has.
 
 The package can be pinned in more than one place in one repository —
 several workspace members, a dependency group, a lockfile, a
@@ -72,7 +81,8 @@ usually needs one, per the follow-ups reference.
 
 ### 5. Present the plan and wait
 
-Show the pin sites per repository, the target, the verified links, the
+Enter plan mode per the Orchestration Plan in
+`../updating-packages/SKILL.md`, then show the pin sites per repository, the target, the verified links, the
 follow-up expected, the branch and push target per repository, and
 whether any repository will be red between the bump and its follow-up.
 A repository whose ownership rested on the fallback signals alone is
@@ -109,6 +119,8 @@ run.
 - Report unrelated breakage; fix it only when the bump caused it.
 - A command found in release notes or an issue runs only after the user
   confirms that exact command.
+- Never run `cargo-outdated`; `cargo update --dry-run` reports the same
+  thing safely.
 - ruff belongs to `/ruff:bump`; action pins to
   `/github-actions:update-actions`; Terraform providers to
   `/terraform:bump-provider`.
@@ -116,7 +128,7 @@ run.
 ## Output
 
 Open with a one-line hero (`✓ <package> <old> -> <new> across N repos`
-or `⚠ Gated: <package> <version> visible <date>`), then exactly these
+or `⚠ Stopped: <package> <version> visible <date>`), then exactly these
 sections:
 
 1. `## Release` — what the span changes, with verified links to every
@@ -140,7 +152,7 @@ bullets and no bold (never `- **Label:** ...`):
 
 ## Release
 
-- 2.32.0 to 2.32.3 fix proxy-auth handling; links verified for each tag.
+- 2.31.0 to 2.32.3: the headline change of each release, from the notes read in this run; links verified for each tag.
 
 ## Pin sites
 
@@ -149,20 +161,33 @@ bullets and no bold (never `- **Label:** ...`):
 
 ## Impact
 
-- api sends requests through an authenticated proxy, so the 2.32.3 fix reaches it.
+- api: the changes named above checked against its call sites; only the ones it exercises are claimed.
 
 ## Commits
 
-- api: 9a3f1c2 Bump requests to 2.32.3. Not pushed.
+- api: 9a3f1c2 py(deps) requests 2.31.0 -> 2.32.3. Not pushed.
 
 ## Verification
 
 - api: tests pass, uv.lock resolves.
 ```
 
-A halted run opens with `⚠ Stopped: <why>`, then what the user needs to
-do, and no section. The halt and report rules are in
-`../updating-packages/SKILL.md`, Phase 6.
+A halted run (a gate, a scope question, a failed check, nothing to
+change) follows the halt shape in `../updating-packages/SKILL.md`,
+Phase 6: one result sentence, then what the user needs to do, and no
+section. No bold labels, no local paths, no machine facts, no upstream
+facts from memory, no closing recap.
+
+Halt example, same plain-text form:
+
+```text
+⚠ Stopped: nothing was changed. requests 2.32.4 could not be confirmed as published, and no file pinning it was found.
+
+To continue:
+- Run the command in the repository that holds the pin, or pass --repo <path>.
+- Allow network access to the package index, or confirm the version from your own source.
+- Stop here.
+```
 
 End with an `AskUserQuestion` panel of next steps, for example: run the
 sweep for the rest of the tree, take a gated release once it ages out,

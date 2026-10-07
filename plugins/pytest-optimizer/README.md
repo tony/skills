@@ -103,7 +103,7 @@ order: `--memory-dir`, the in-tree directory, the cache directory. See
 - Python 3 on `PATH` for `scripts/measure.py`, which does the timing arithmetic.
 - Test commands configured via `AGENTS.md` or `CLAUDE.md`.
 - Optional auto-detected plugins: `pytest-xdist`, `pytest-randomly`,
-  `pytest-deadfixtures` (via `uvx`), `pytest-timeout`.
+  `pytest-deadfixtures` (added to the project environment), `pytest-timeout`.
 
 ## Component reference
 

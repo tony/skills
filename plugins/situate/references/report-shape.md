@@ -4,7 +4,8 @@ Shared by `/situate` and the `situational-awareness` skill.
 
 One hero line, then these sections in this order, then a next-step
 panel. No other headings, no bold label on every bullet, no recap ending.
-An empty layer is "none", never "not available".
+An empty layer is "none", never "not available". Never name an absolute
+path or a temp directory.
 
 The hero is `✓ <branch>: <what it does> · <n> commits · PR #<n> <state>`,
 or `⚠ <what is blocking or unclear>`. A run that stops early gets one

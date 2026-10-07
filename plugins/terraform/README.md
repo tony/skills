@@ -32,10 +32,9 @@ $ codex plugin add terraform@skills
 
 Claude Code uses a leading slash (`/terraform:…`). Codex omits it (`terraform:…`).
 
-## When to use this instead of Renovate or Dependabot
+## When to use it
 
-Those bots open one pull request per dependency per directory. This
-plugin fits when one bump must land across several root modules and their
+Use it when one bump must land across several root modules and their
 child modules together, or when a lock file must keep the platforms it
 already tracks. It is an on-demand run by an agent, not a scheduled
 service.
@@ -53,7 +52,7 @@ before writing.
 - `--audit-only`: Reports the predicted work without writing.
 - `--root-module <dir>`: Limits the run to specific root modules.
 - `--no-commit`: Leaves the result in the working tree.
-- `--no-lock`: Skips the lock refresh.
+- `--no-lock`: Skips the lock refresh (`bump-provider` and `bump-terraform`).
 
 The `bumping-terraform` skill executes without a slash command when the
 request is conversational (e.g., "the providers here are ancient").
@@ -68,11 +67,13 @@ request is conversational (e.g., "the providers here are ancient").
 | `skills/bumping-terraform/SKILL.md` | The shared phase structure, model-invocable without a slash command |
 | `references/layout-discovery.md` | Root and child module classification, the `.terraform/` cache trap, `.tofu` shadowing, Terragrunt and stacks |
 | `references/pin-sites.md` | Every file a provider or CLI version is pinned in, operator preservation, registry lookups |
-| `references/lock-and-init.md` | Per-root-module `init`, the platform-narrowing trap, blocked resolvers, verification gates |
+| `references/lock-and-init.md` | Per-root-module `init` and its guard, the platform-narrowing trap, blocked resolvers, verification gates |
+| `scripts/lockctl.py` | Per-provider lock state, single-block removal, stable-version filter, and platform names from `providers lock` commands |
 
 ## Prerequisites
 
 - `git` and a repository with tracked Terraform or OpenTofu files.
+- `python3` for `scripts/lockctl.py`.
 - `terraform` or `tofu` CLI on `PATH`. The plugin resolves versions against
   the detected tool's registry.
 - Network access to the provider registry or private registry.

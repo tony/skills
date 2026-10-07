@@ -29,7 +29,11 @@ repo, and CI verification does not apply.
 2. **Version** — the second non-flag argument, or the latest published
    version from the package index (PyPI:
    `https://pypi.org/pypi/<package>/json`; npm: `npm view <package> version`).
-   Confirm it exists on the index before touching anything.
+   Confirm it exists on the index before touching anything (PyPI:
+   `https://pypi.org/pypi/<package>/<version>/json` returns 200; npm:
+   `npm view <package>@<version> version` prints it). If the check cannot
+   run, stop and say what could not be confirmed and what the user must
+   supply; do not describe the environment.
 3. **Workspace roots** — from `--roots` globs. If not given, ask the user
    which directories hold their checkouts; assume no layout.
 4. **Sibling packages** — if the package is developed in a workspace repo
@@ -40,7 +44,9 @@ repo, and CI verification does not apply.
 
 Scan each workspace root for repos whose manifest depends on the package.
 Take the manifest names from the ecosystem the package is published to
-(`pyproject.toml` and `package.json` below are one example). Match the whole
+(`pyproject.toml` and `package.json` below are one example; add
+requirements files, `Cargo.toml`, `go.mod`, and lockfile-only consumers where
+the ecosystem uses them). Match the whole
 package name, so `foo` does not hit `foo-bar`, and escape `.` in the name:
 
 ```console
@@ -139,9 +145,10 @@ confirmed branches:
    resolution or would need `--prerelease` flags or config to accept the
    version, add none of them; halt this repo and report. The cause is
    upstream: a stale cache, a missing cooldown exemption, or a bad publish.
-6. **Gates** — run the repo's own quality checks (from its AGENTS.md /
-   CLAUDE.md) when they are quick; on a failure, halt this repo and report.
-   A red local gate must not reach trunk.
+6. **Gates** — before any push, run the repo's own quality checks (from
+   its AGENTS.md / CLAUDE.md). If none are documented, say so in the plan at
+   the gate. On a failure, halt this repo and report. A red local gate must
+   not reach trunk. Parallel agents run exactly the scope the plan names.
 7. **Commit** — mirror the repo's own previous bump commits for this
    package (`git log --oneline --grep '<package>'`). Fallback subject,
    version-arrow form:
@@ -154,8 +161,10 @@ confirmed branches:
    entry for the version. Write it per
    `../../references/prose-rules.md`. No `Co-Authored-By` line, no
    "Generated with" or other tool trailer, no emoji.
-8. **Push** — With `--push`, `git push`; otherwise skip it and print the command
-   in the report. Never force.
+8. **Push** — With `--push`, `git push --no-follow-tags`; otherwise skip it
+   and print the command in the report. Never force. A rejected push
+   (protected trunk, non-fast-forward) halts this repo: report it as
+   stopped, never as pushed, and skip Phase 5 for it.
 
 ## Phase 5: Verify with gh
 
@@ -167,10 +176,11 @@ For every pushed repo:
    $ gh cache delete --all --repo <owner>/<repo>
    ```
 
-2. Find the run for the pushed commit:
+2. Find the run for the pushed commit. Retry until a run appears; a run
+   for an older commit is not this one:
 
    ```console
-   $ gh run list --repo <owner>/<repo> --branch <branch> --limit 1
+   $ gh run list --repo <owner>/<repo> --branch <branch> --commit <pushed-sha> --limit 1
    ```
 
    Then wait for it to conclude:
@@ -190,7 +200,7 @@ For every pushed repo:
    the failure count).
 2. `## Rollout summary`: per repo, branch, prep commits, bump commit,
    pushed or local, CI status.
-3. `## Stopped repos`: any halted on prerelease warnings, dirty trees, or
+3. `## Stopped repos`: any halted on prerelease warnings, dirty trees, rejected pushes, or
    persistent CI failures, each with what the user should look at.
 4. Next-step `AskUserQuestion` panel: rerun failed CI checks, retry stopped
    repos, push the local commits, or done. Each choice needs its own
@@ -198,7 +208,9 @@ For every pushed repo:
    options and stop.
 
 A stopped run (missing package, version not on the index, no gate
-confirmation) is one result sentence, then what the user needs to do.
+confirmation) is one result sentence, then what the user needs to do. Name
+the unconfirmed precondition and what the user supplies, never the sandbox
+or network environment.
 
 Reply in this shape, as plain text outside any code fence, with plain
 bullets and no bold (never `- **Label:** ...`):

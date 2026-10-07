@@ -46,24 +46,25 @@ Relocates depth to linked documents. Updates only on approval.
 
 ## Content Rules
 
-- **Past**: Include unrecoverable context (e.g., dead ends, conditions). Drop info visible in logs.
-- **Present**: Avoid rotting references or unwanted backlinks.
-- **Future**: Focus on invariants (failing tests). Skip checkboxes or measurement thresholds.
+- Past: include unrecoverable context (e.g., dead ends, conditions). Drop info visible in logs.
+- Present: avoid rotting references or unwanted backlinks.
+- Future: focus on invariants (failing tests). Skip checkboxes or measurement thresholds.
 
 ## Provider Object Graphs
 
 Trackers use different native nouns. The plugin maps objects to canonical roles (e.g., Linear Project ≈ Jira Epic).
+
 - `references/hierarchy.md` lists roles and collisions.
 - `references/resolve.md` indexes the provider files under `references/providers/`.
 
 ## When to Use
 
-- **`ticket`**: For non-GitHub trackers, non-issue objects (epics, projects), or rebuilding items.
-- **`gh`**: For standard GitHub issues (`gh:create-issue`).
-- **`pr`**: For branch pull request descriptions.
-- **`lean`**: For shortening already-accurate text.
+- `ticket`: for non-GitHub trackers, non-issue objects (epics, projects), or rebuilding items.
+- `gh`: for standard GitHub issues (`gh:create-issue`).
+- `pr`: for branch pull request descriptions.
+- `lean`: for shortening already-accurate text.
 
 ## Prerequisites
 
-- **gh**: For GitHub.
+- `gh`: for GitHub.
 - Works locally for other providers or falls back to text emission.

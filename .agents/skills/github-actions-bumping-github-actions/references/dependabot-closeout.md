@@ -30,6 +30,11 @@ slug from `gh repo view --json nameWithOwner` and the SHA from `git
 rev-parse`, never from the PR. Never splice a title or body into a
 command.
 
+A bump that already landed before this run (the workflow is at or past
+the PR's target) maps to the commit that landed it: find it with
+`git log -S'<action>@<version>' origin/<default> -- .github`, confirm it
+is on trunk, and cite it. If none is found, report the PR as unmapped.
+
 Then present the mapping to the user, one line per PR: repo, number,
 title, bumped action, commit SHA or "obsolete". Show the exact commands
 below with every placeholder filled in. Run them only after the user

@@ -30,66 +30,44 @@ Install the plugin:
 $ codex plugin add spike@skills
 ```
 
-Claude Code uses a leading slash (`/spike:…`). Codex omits it (`spike:…`).
-
 ## Skills
 
-| Claude Code | Codex | Description |
-|---|---|---|
-| `/spike:probe [<goal>]` | `spike:probe [<goal>]` | Probe the goal with zero commits, stash with a recovery ref, propose a commit-by-commit landing plan |
-| `/spike:bakeoff [<goal>]` | `spike:bakeoff [<goal>]` | Build 2–4 competing strategies in isolated worktrees, judge adversarially, stash contenders, propose landing plan for winner |
-| `/spike:ratchet [<goal>]` | `spike:ratchet [<goal>]` | Run probes and bakeoffs in rounds until the design stops fighting back, accumulating a ledger of stumbling blocks and locked decisions |
+Probe one path with zero commits, stash the result with a recovery ref,
+and get a commit-by-commit landing plan:
+
+```text
+/spike:probe [<goal>]
+```
+
+Build two to four competing strategies in isolated worktrees, judge them
+adversarially, and get a landing plan for the winner:
+
+```text
+/spike:bakeoff [<goal>]
+```
+
+Run probes and bakeoffs in rounds until the design stops fighting back,
+keeping a ledger of stumbling blocks and locked decisions:
+
+```text
+/spike:ratchet [<goal>]
+```
+
+Codex omits the leading slash (`spike:probe`). Each skill's flags are in
+its `SKILL.md`.
 
 The goal can be typed or inferred from conversation context (review
 findings, failing tests); the plan-mode brief confirms it.
 
-`/spike:probe` flags: `--branch=<name>` (spike on scratch branch),
-`--keep-tree` (skip stash, leave changes), `--replay` (implement
-approved plan immediately via gated commits).
-
-`/spike:bakeoff` flags: `--strategies="a; b; c"` (explicit contender
-list), `--prongs=<2-4>` (cap contender count), `--keep-trees` (leave
-worktrees), `--replay` (land winner immediately).
-
-`/spike:ratchet` flags: `--rounds=<n>` (cap rounds, default 3),
-`--replay` (land the converged result immediately).
-
-One approach in mind → `probe`. Genuinely uncertain between two or
-three named approaches → `bakeoff`. Shape of the answer still unknown,
-so one pass of either will not settle it → `ratchet`. To vary the *model*
+One approach in mind: `probe`. Genuinely uncertain between two or
+three named approaches: `bakeoff`. Shape of the answer still unknown, so
+one pass of either will not settle it: `ratchet`. To vary the *model*
 rather than the strategy, use the weave plugin.
 
-## Workflow
-
-1. **Situational awareness**: confirm the repository has a commit, read AGENTS.md / CLAUDE.md to discover
-   format / lint / test / build commands and post-push CI coverage.
-2. **Spike brief**: confirm goal, "proven" criterion, and exit path.
-3. **Probe**: shortest path to proven; cheapest verification signal
-   only; shortcuts marked `SPIKE:`; stumbling blocks recorded.
-4. **Exit gate**: fast local gates pass to ensure known state.
-5. **Stash**: untracked files included, with a descriptive message and
-   the stash's own SHA recorded for recovery. An unchanged tree records
-   "no changes" instead of a SHA.
-6. **Replay plan**: numbered commit sequence mapping stash hunks to
-   commits, resolving decisions, and noting per-commit gates.
-
-A bakeoff runs steps 3–5 once per contender in isolated worktrees,
-adds an adversarial judging pass (correctness, blast radius, idiom
-fit, gate status), then proposes a replay plan for the winner. Every
-contender is stashed for recovery before its worktree is removed. Files
-matched by `.gitignore` are not stashed and are lost with the worktree.
-
-A ratchet repeats that cycle in rounds: probe, bake off the approaches
-the probe's stumbling blocks put in doubt, re-probe the winner with
-its grafts applied. It stops when a round surfaces nothing new, the
-round cap is reached, or the same blocks keep recurring. Each round
-appends to a ledger under the repository's git common directory,
-where `git stash -u` and `git clean` cannot reach it and every
-worktree resolves the same path. The ledger, not the code, is what a
-ratchet is for: it feeds a clean rewrite or the closing landing plan.
-
-The spike never commits locally or in worktrees. Commits only happen
-via `--replay` after plan approval, one item at a time behind green gates.
+A spike never commits. Commits happen only through `--replay`, after plan
+approval, one item at a time behind green gates. A repository whose root
+contains your home directory is refused, and uncommitted work is stashed
+or kept in the tree, never discarded.
 
 ## Verification discovery
 

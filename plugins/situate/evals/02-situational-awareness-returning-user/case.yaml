@@ -11,7 +11,7 @@ context:
 
 execution:
   prompt: >-
-    I'm back after a two-week break. Bring me up to speed on everything — what
+    I'm back after a break. Bring me up to speed on everything — what
     changed, what's still open, and what's blocking me.
   max_turns: 30
   timeout_seconds: 600
@@ -33,7 +33,7 @@ graders:
   - name: surfaces-the-open-decision
     type: regex
     target: last_message
-    pattern: 'retry_budget|per[- ]call|budget'
+    pattern: 'retry_budget|per[- ]call'
     flags: i
 
   - name: does-not-ask-the-user-to-re-explain

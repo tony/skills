@@ -1,7 +1,7 @@
 ---
 name: ask
 description: "Answer a question from a finished study, citing back into its evidence, and say plainly when the study does not cover it"
-allowed-tools: ["Bash", "Read", "Grep", "Glob", "AskUserQuestion"]
+allowed-tools: ["Read", "Grep", "Glob", "AskUserQuestion"]
 argument-hint: "<question> [--study=<dir>]"
 user-invocable: true
 disable-model-invocation: true

@@ -30,7 +30,9 @@ given accounts or organisations.
 Run the rules below on every repository a widened scope turns up. Drop
 repositories that do not pin the package or tool being moved and those
 already at the target. Excluded repositories never come back in through
-a flag or a user request: forks are out of scope, with no override.
+a flag or a user request: a fork named by `--repo` is reported as a
+fork and skipped, with no override. When no repository remains, the
+run halts.
 
 ## Skip worktrees
 

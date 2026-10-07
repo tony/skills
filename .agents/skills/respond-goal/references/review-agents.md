@@ -15,8 +15,14 @@ configured app that never fires is not a reviewer:
 $ gh pr list --state all --limit 20 --json reviews,comments --jq '[.[] | (.reviews[]?.author.login, .comments[]?.author.login)] | unique'
 ```
 
-Logins ending in `[bot]`, plus the app accounts that do not use the
-suffix, are the repository's automated reviewers. Note which ones post
+A login ending in `[bot]` is an automated reviewer. `gh` JSON often
+drops that suffix, so also test each remaining login:
+
+```console
+$ gh api users/<login> --jq .type
+```
+
+`Bot` marks an app account; `User` is a person. Note which ones post
 *reviews* and which post plain comments — that changes how their
 arrival is detected below.
 
@@ -55,27 +61,29 @@ window is absence, and the report says which agent never arrived.
 
 Two waits, in this order, both bounded.
 
-**CI**, which has a completion signal but no cap of its own. Poll at a
-steady interval until no check is pending, stopping at the first
-failure or at `--ci-wait` in this skill:
+**CI**, which has a completion signal but no cap of its own. Right
+after a push `gh pr checks` can list nothing, which is not "none
+pending"; the script waits for a first check, then for none pending,
+and stops at the first failure or at the cap:
 
 ```console
-$ gh pr checks --json name,bucket,state
+$ python3 references/wait_pr.py ci <pr> --timeout <minutes>
 ```
 
-**The agents**, which have none. Record the head SHA and the time
-before pushing, then poll for new reviews and comments at a steady
-interval. Stop early the moment every agent on the roster has weighed
-in on the head SHA; otherwise stop at the cap.
+**The agents**, which have none. Record the head SHA and the UTC time
+before pushing, then let the script poll reviews and comments. It stops
+the moment every named login has weighed in on the head SHA, or at the
+cap, and prints the logins still missing:
+
+```console
+$ python3 references/wait_pr.py agents <pr> --sha <head-sha> --since <push-time-utc> --agents <login> <login> --timeout <minutes>
+```
 
 The cap (`--wait` in this skill) is not optional. Past it, the
 loop is holding a session open in the hope of an event that
 has already failed to happen. Report who was still missing and move on
 — an agent that arrives later is picked up by the next round, and the
 loop can be re-entered at any time.
-
-Poll politely. A tight loop against the API burns the rate limit that
-the next round needs.
 
 ## Ordering
 

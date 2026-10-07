@@ -137,7 +137,7 @@ Reply in this shape, as plain text outside any code fence, with plain
 bullets and no bold (never `- **Label:** ...`):
 
 ```text
-✓ 3 commits across 2 repos
+✓ 2 commits across 1 repo
 
 ## Audit
 
@@ -146,11 +146,11 @@ bullets and no bold (never `- **Label:** ...`):
 
 ## Moves
 
-- requests 2.32.3 fixes a proxy-auth regression; reaches api only.
+- requests 2.31.0 to 2.32.3: the headline change of each release, from the notes read in this run; reaches api only.
 
 ## Commits
 
-- api: 9a3f1c2 Bump requests to 2.32.3, 4be0d71 Bump pytest to 8.3.2. Not pushed.
+- api: 9a3f1c2 py(deps) requests 2.31.0 -> 2.32.3, 4be0d71 py(deps[dev]) pytest 7.4.4 -> 8.3.2. Not pushed.
 
 ## Verification
 
@@ -158,9 +158,22 @@ bullets and no bold (never `- **Label:** ...`):
 - web: no change.
 ```
 
-A halted run opens with `⚠ Stopped: <why>`, then what the user needs to
-do, and no section. The halt and report rules are in
-the `package-updater-updating-packages` skill, Phase 6.
+A halted run (a gate, a scope question, a failed check, nothing to
+change) follows the halt shape in the `package-updater-updating-packages` skill,
+Phase 6: one result sentence, then what the user needs to do, and no
+section. No bold labels, no local paths, no machine facts, no upstream
+facts from memory, no closing recap.
+
+Halt example, same plain-text form:
+
+```text
+⚠ Stopped: nothing was changed. Ownership of the one repository under this root could not be confirmed.
+
+To continue:
+- Confirm you maintain it, and the plan will go ahead locally only.
+- Let GitHub answer the ownership check, then rerun.
+- Stop here.
+```
 
 End with an `ask-user-choice` panel of next steps, for example: run the
 sibling command for the handoff items, drop a cooldown exemption whose

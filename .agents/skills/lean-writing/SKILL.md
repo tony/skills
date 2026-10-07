@@ -22,7 +22,11 @@ cleaned up later.
   existing text: links, citations, anchors, warnings, and comments that
   document an invariant or a "why".
 - Add no fact the source lacks, such as a symptom, cause, or number.
-  When the text needs one, leave a placeholder and say so.
+  When the text needs one, leave a bare placeholder such as
+  `<symptom>` and say so; offer no example text for it.
+- Reply with the rewrite, then at most one line, and only to flag a
+  placeholder or load-bearing text kept. No lead-in ("Here is...") and
+  no account of what was cut.
 - A commit message carries no `Co-Authored-By`, no "Generated with" or
   other tool trailer, and no emoji.
 - Read `./AGENTS.md` and `./CLAUDE.md`. When they define a slop rubric

@@ -32,11 +32,16 @@ $ codex plugin add pr@skills
 
 Claude Code uses a leading slash (`/pr:…`). Codex omits it (`pr:…`).
 
+To describe a branch with no PR yet, use `/pr:pr`. To update a PR whose
+branch moved on, use `/pr:refresh`; to start its description over, use
+`/pr:rewrite`. For a squash-merge message, use `/pr:merge-commit`. To
+critique a description without editing it, use `/pr:review-pr`.
+
 ## Skills
 
 | Claude Code | Codex | Description |
 |---|---|---|
-| `/pr` | `pr` | Generate PR description from branch diff |
+| `/pr:pr` | `pr:pr` | Generate PR description from branch diff |
 | `/pr:refresh` | `pr:refresh` | Update PR description to current branch net change, preserving structure |
 | `/pr:rewrite` | `pr:rewrite` | Rewrite PR description from scratch, keeping relevant context |
 | `/pr:merge-commit` | `pr:merge-commit` | Generate merge commit message from branch diff |
@@ -44,8 +49,8 @@ Claude Code uses a leading slash (`/pr:…`). Codex omits it (`pr:…`).
 
 ## How It Works
 
-- **`/pr`**: Gathers diff/log context, reads conventions (`AGENTS.md`/`CLAUDE.md`,
-  templates), applies the section patterns below, and optionally creates the PR via `gh`.
+- **`/pr:pr`**: Gathers diff/log context, reads conventions (`AGENTS.md`/`CLAUDE.md`,
+  templates), applies the section patterns in `skills/pr/SKILL.md`, and optionally creates the PR via `gh`.
 - **`/pr:refresh`**: Stack-aware diff against base, backs up to `pr-backups/` in the git directory,
   updates content while preserving hand-written text/structure, and applies via `gh`.
 - **`/pr:rewrite`**: Backs up PR, mines old description for manual context, resolves
@@ -60,8 +65,8 @@ Claude Code uses a leading slash (`/pr:…`). Codex omits it (`pr:…`).
 Generate PR description (optional hint):
 
 ```text
-/pr
-/pr fixes the race condition in new_session
+/pr:pr
+/pr:pr fixes the race condition in new_session
 ```
 
 Refresh/rewrite existing PR (defaults to current branch's PR):
@@ -90,29 +95,17 @@ Review PR:
 /pr:review-pr https://github.com/owner/repo/pull/42
 ```
 
-## Section patterns
-
-Generated descriptions use these patterns:
-- **`## Summary`**: Bold impact labels
-- **`## Changes by area`**: Sub-headings for multi-module changes
-- **`## Design decisions`**: Trade-off rationale
-- **`## Verification`**: Copyable `rg`/`grep` commands
-- **`## Test plan`**: `- [x]` checklists
-- **Tables**: For renames, APIs, matrices
-- **Before/After**: Code blocks for behavior changes
-- **Negative assertions**: Proving unwanted patterns are removed
-
 ## PR Templates
 
-`/pr` and `/pr:rewrite` resolve templates in this order: user hint > repo template >
-the `/pr` section patterns. `/pr:review-pr` accepts user hints. `/pr:refresh` preserves
+`/pr:pr` and `/pr:rewrite` resolve templates in this order: user hint > repo template >
+the `/pr:pr` section patterns. `/pr:review-pr` accepts user hints. `/pr:refresh` preserves
 existing structure without applying templates.
 
 ## Safety
 
 - Never force-pushes or runs destructive git commands.
 - Never pushes to main/master.
-- `/pr:refresh` and `/pr:rewrite` edit a PR only after you approve the proposal; `/pr` creates one only on request.
+- `/pr:refresh` and `/pr:rewrite` edit a PR only after you approve the proposal; `/pr:pr` creates one only on request.
 - Backs up existing descriptions before editing.
 - Stops without changing anything when `gh` is unauthenticated, the PR is missing, or the PR's head branch is not checked out.
 

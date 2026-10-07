@@ -33,36 +33,34 @@ Claude Code uses a leading slash (`/commit:…`). Codex omits it (`commit:…`).
 
 ## Skills
 
-`/commit` in Claude Code, `commit` in Codex: analyze changes, draft a
-conventional commit message, and commit.
+`/commit:commit` in Claude Code, `commit:commit` in Codex: analyze changes,
+draft a conventional commit message, and commit.
 
 ## How It Works
 
-1. **Analyze changes** — Review diff, determine type/scope, check topic
+1. Analyze changes: review the diff, determine type and scope, check topic
    coherence.
-2. **Determine staging** — Respect existing staged files. Auto-stage
-   only if nothing is staged. Excludes secrets.
-3. **Draft commit message** — Follow `AGENTS.md`/`CLAUDE.md` and recent
-   commit styles. Apply guidelines: proportional detail, version bump
-   URLs, before/after patterns.
-4. **Commit** — Execute the commit. Handle and retry on pre-commit hook
-   failures.
-5. **Confirm result** — Show the created commit and remaining working
+2. Determine staging: respect existing staged files, and auto-stage only if
+   nothing is staged. A staged secret stops the run.
+3. Draft the commit message: follow `AGENTS.md`/`CLAUDE.md` and recent
+   commit styles, with proportional detail and verified version-bump URLs.
+4. Commit: retry on pre-commit hook failures, never bypassing the hook.
+5. Confirm the result: show the created commit and the remaining working
    tree state.
 
 ## Arguments
 
 Pass an optional hint to influence the commit description:
 
-```console
-$ /commit fix the auth bug
+```text
+/commit:commit fix the auth bug
 ```
 
-```console
-$ /commit add retry logic to the API client
+```text
+/commit:commit add retry logic to the API client
 ```
 
-The hint supplements auto-detection — the project's commit format is
+The hint supplements auto-detection, and the project's commit format is
 always enforced.
 
 ## Commit Format Detection
@@ -73,16 +71,13 @@ last 10 commits for style matching. Falls back to Conventional Commits
 
 ## Safety
 
-- **No destructive commands** — Never runs `git push` or `git reset
-  --hard`.
-- **No history rewriting** — Never uses `--amend`; always creates new
-  commits.
-- **Secret filtering** — Never stages `.env`, credentials, or key files, and names any it skips.
-- **No tool credit** — Commit messages carry no `Co-Authored-By` trailer, tool footer, or emoji.
-- **Explicit staging** — Stages specific files only; never uses
-  `git add -A` or `git add .`.
-- **Heredoc formatting** — Used for multi-line commit messages.
+- No destructive commands: never runs `git push` or `git reset --hard`.
+- No history rewriting: never uses `--amend`, and always creates new commits.
+- Secret filtering: never stages `.env`, credentials, or key files, and names any it skips.
+- No tool credit: commit messages carry no `Co-Authored-By` trailer, tool footer, or emoji.
+- Explicit staging: stages specific files only, never `git add -A` or `git add .`.
+- Heredoc formatting: used for multi-line commit messages.
 
 ## Prerequisites
 
-- **git**
+- git

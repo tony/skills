@@ -2,7 +2,7 @@
 # apply-template.sh — POSIX shell template for the per-run apply.sh of
 # /slop:deslop.
 #
-# The skill copies this file to `<run-dir>/apply.sh`, where `<run-dir>`
+# `scripts/render_apply.py` renders this file to `<run-dir>/apply.sh`, where `<run-dir>`
 # is `git rev-parse --git-path deslop/<ts>-<pid>` (so linked worktrees
 # work), substituting these placeholders:
 #   __REGISTRY_PATH__    — built-in or `--taxonomy=<path>` registry source

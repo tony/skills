@@ -1,6 +1,6 @@
 ---
 name: disk
-description: "Use when disk space is low; find large directories, free space, decide if Claude sessions or npm cache are safe to remove, or shrink WSL."
+description: "Use when disk is full, out of space, or no space left: find large dirs, decide if Claude sessions or npm cache are safe to remove, shrink WSL vhdx."
 allowed-tools: Bash, Read, Glob, Grep, AskUserQuestion, TodoWrite
 argument-hint: "[path or filesystem to focus on]"
 ---
@@ -15,7 +15,9 @@ anything the user cannot get back.
 - **Never halt the environment.** `wsl --shutdown`, `wsl --terminate`, VM
   stop commands, and container-runtime restarts are the user's to run.
   Print the command, say what it interrupts, and stop. Approval to delete
-  caches is not approval to terminate the environment.
+  caches is not approval to terminate the environment, and neither is an
+  explicit "run it yourself". State the refusal as policy ("I won't run
+  it; you run it"), not as a sandbox or tool limit.
 - **Never delete on the strength of a name.** `*-backup-*`, `.old`, `.bak`,
   and `archive-*` say nothing about redundancy. Run the proof.
 - **Agent history is protected.** Reclaim from it only through the owning
@@ -27,9 +29,9 @@ anything the user cannot get back.
 
 ## Route
 
-Read the sibling file and follow it. Both siblings open with
-`Scope: $ARGUMENTS`, which a file read never substitutes: the scope is
-the path the user named, or every mounted filesystem when none.
+Read the sibling file and follow it. A file read never substitutes the
+scope line each sibling opens with: the scope is the path the user
+named, or every mounted filesystem when none.
 
 - Survey, "where did my space go", or no request to delete: follow
   `../usage/SKILL.md`. It is read-only, and the router run does not end

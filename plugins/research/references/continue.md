@@ -36,4 +36,6 @@ Open with a one-line hero (`✓ <topic> <date>: carried <n>, verified <n>, ticke
 2. `## Open`: what is still unanswered.
 3. `## Run`: run directory and report path.
 
+Write per `prose-rules.md`: plain bullets, no bold labels, no sentence narrating your own edits ("I added…"), no closing recap.
+
 Panel options: keep going, write the report, stop.

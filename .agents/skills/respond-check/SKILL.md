@@ -1,8 +1,8 @@
 ---
 name: respond-check
 description: >-
-  Use when screening pull-request review comments and bot findings; decide
-  fix, defer, or decline for each, and draft (not post) replies.
+  Use when asked to address review feedback, reply to review comments, or
+  screen bot findings: decide fix, defer, or decline; draft replies.
 allowed-tools: ["Bash", "Read", "Grep", "Glob", "AskUserQuestion"]
 metadata:
   argument-hint: "[findings text] [<pr-number|url>] [--base=<ref>] [--include-resolved]"
@@ -11,21 +11,16 @@ metadata:
 
 # this skill
 
-Screen review feedback and decide what deserves a fix. Every claim,
-from a colleague, a bot, or a review command run earlier in this
-session, is tested against six gates and leaves with a verdict, its
-evidence, and a reply the reviewer can argue with.
+Screen review feedback and decide what deserves a fix. A claim is not
+a work order: every claim, from a colleague, a bot, or a review command
+run earlier in this session, is tested against six gates and leaves with
+a verdict, its evidence, and a reply the reviewer can argue with.
+`references/screening-rubric.md` owns the gates, verdicts, and
+ledger.
 
 **This skill changes nothing.** No edits, no commits, no comments
 posted, no threads resolved. Its entire output is a ledger and a
 recommendation; acting on it is the `respond-action` skill's job.
-
-## Core thesis
-
-A claim is not a work order. Every verdict carries its evidence, so a
-reviewer who disagrees can attack the evidence instead of the judgment.
-`references/screening-rubric.md` owns the gates, verdicts, and
-ledger.
 
 ## `$ARGUMENTS` contract
 
@@ -89,8 +84,9 @@ as `ask` in the ledger.
 ## Phase 3: Report — the output contract
 
 Write the report and replies per `references/prose-rules.md`. Use
-exactly the headings below, in this order, and no others. Never name
-local absolute paths or temp files.
+exactly the headings below, in this order, and no others. The hero line
+is the first line of the reply; nothing precedes it, including a run
+with no readable code. Never name local absolute paths or temp files.
 
 1. Hero block (1–3 lines): `N to fix, M deferred, K declined` plus the
    branch name and the feedback sources screened.
@@ -151,6 +147,10 @@ bullets and no bold (never `- **Label:** ...`):
 
 A stopped run (no findings to screen, no readable feedback) reports one
 result sentence, then what the user needs to provide.
+
+When the code is not readable, each ledger entry is `ask` with one
+line saying what is missing. Add no hypothetical, no "if X then fix"
+branch, and no claim about code you have not read.
 
 If a fix seems obvious enough to just do, write it in `## To fix` and
 hand off.

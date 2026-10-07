@@ -38,20 +38,22 @@ Claude Code uses a leading slash (`/gh:…`). Codex omits it (`gh:…`).
 Files a GitHub issue from existing descriptions, findings, or conversations.
 Read-only until the final step.
 
-1. **Resolves repository & checks visibility:** Directs vulnerabilities to
-   private reporting paths.
-2. **Preflights repository:** Checks for enabled issues, templates, forms, and
+1. Resolves the target repository, including a fork's upstream.
+2. Checks the security policy and directs vulnerabilities to private
+   reporting.
+3. Preflights the repository: issues enabled, templates and forms,
    `CONTRIBUTING.md` requirements.
-3. **Checks for existing issues:** Searches open and closed issues before
-   drafting.
-4. **Gathers evidence:** Reproduces defects, records versions, pins code, and
+4. Searches open and closed issues for duplicates.
+5. Gathers evidence: reproduces defects, records versions, pins code,
    researches upstream projects.
-5. **Drafts:** Enforces fixed sections, `###` headings, `<details>` for long
-   output, and nested sections.
-6. **Sanitizes and previews:** Strips local paths/PII and validates markup via
-   GitHub's renderer.
-7. **Files on approval:** Previews title/body and opens via
+6. Drafts with fixed sections, `###` headings, and `<details>` for long
+   output.
+7. Strips local paths and PII, then previews through GitHub's renderer.
+8. Presents the draft and, on approval, files it with
    `gh issue create --body-file`.
+
+Without an authenticated `gh`, it produces an unverified draft, lists the
+checks it could not run, and does not file.
 
 ### `rendered-markdown` (skill)
 
@@ -60,6 +62,7 @@ are disallowed while it runs.
 - Prevents hard-wrapping in comment bodies.
 - Enforces backticks for symbols and one shell command per fence.
 - Requires long output in `<details>` and pinned source links.
+- Not for filing an issue; use `create-issue`.
 - Rules live in `references/rendered-markdown.md` and
   `references/source-links.md`. `references/prose-rules.md` is a vendored
   copy; edit `shared/prose-rules.md` in the marketplace repository and
@@ -75,12 +78,13 @@ globally reformatting.
 ## Scope
 
 Use `gh` for filing issues or writing GitHub-rendered markdown (markup and
-links). It does not generate PR descriptions or tighten prose.
+links). It does not write PR descriptions or tighten prose; the rendering
+rules still apply to a PR body written elsewhere.
 
 ## Prerequisites
 
-- **gh** — GitHub CLI, authenticated. Used for repository checks, previews,
-  and creating issues.
-- **git** — for resolving tags and refs when pinning links.
-- **curl** and **jq** — for package-registry lookups and pre-publish link
+- `gh`, authenticated with `gh auth login`. Used for repository checks,
+  previews, and creating issues.
+- `git`, for resolving tags and refs when pinning links.
+- `curl` and `jq`, for package-registry lookups and pre-publish link
   checks.

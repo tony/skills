@@ -53,7 +53,7 @@ js(deps[dev]) bump tailwind, vite, babylon
 
 why: Routine refresh from `ncu -u`. Tailwind 4.3.3 resolves CSS
 nesting inside `compile()` rather than deferring it to Lightning
-CSS (tailwindlabs/tailwindcss#20124), which reshapes the compiled
+CSS (tailwindlabs/tailwindcss#<number>), which reshapes the compiled
 output the tailwind-plugin snapshots capture. The snapshots are
 regenerated in the follow-up commit, so `pnpm test` fails in
 packages/tailwind-plugin at this revision.
@@ -72,7 +72,7 @@ test(tailwind-plugin) regenerate CSS snapshots
 
 why: Tailwind 4.3.3 flattens CSS nesting into `:is()` selectors and
 merges adjacent at-rules while compiling
-(tailwindlabs/tailwindcss#20124), so the recorded output no longer
+(tailwindlabs/tailwindcss#<number>), so the recorded output no longer
 matches. Comparing the two revisions declaration by declaration,
 every CSS declaration is byte identical; only nesting structure and
 at-rule grouping differ. Rendered output is unchanged, since

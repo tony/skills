@@ -1,7 +1,7 @@
 ---
 name: tighten
 description: "Use when tightening named files or pasted text in place by removing verbose prose, brittle references, and low-value noise."
-allowed-tools: ["Bash", "Read", "Grep", "Glob", "Edit", "AskUserQuestion"]
+allowed-tools: ["Bash", "Read", "Grep", "Glob", "AskUserQuestion"]
 argument-hint: "[paths/globs] [--stdin] [--gates] [--diff-only]"
 user-invocable: true
 disable-model-invocation: true
@@ -62,13 +62,15 @@ names, never a commit.
    ```
 
    Then offer next steps via `AskUserQuestion`: commit, or
-   discard the edits. Review the printed diff first, since
+   discard the edits. Without a question tool, print the options as a
+   plain list and stop. Review the printed diff first, since
    `git checkout -- <file>` resets the whole file to HEAD and drops any
    other uncommitted work in it. A commit message carries no
    `Co-Authored-By`, no "Generated with" or other tool trailer, and no
-   emoji. Skip this step for `--stdin`; after the tightened text, add
-   one line only for load-bearing text kept that the user might expect
-   cut.
+   emoji. For `--stdin`, skip the handoff: the reply is the tightened
+   text with no lead-in, then at most one line, and only to name
+   load-bearing text kept that the user might expect cut. Never narrate
+   what was removed.
 
 ## What this does not do
 

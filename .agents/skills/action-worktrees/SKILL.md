@@ -56,8 +56,8 @@ Empty → Phase 1 discovers candidates and asks.
 |---|---|---|
 | `--groups="a b; c"` | off | Explicit grouping: semicolon-separated groups, whitespace-separated tickets within a group. Skips overlap proposals; still confirmed at the plan gate. |
 | `--sequential` | off | Force sequential execution even where subagents are available. |
-| `--local` / `--temp` | `--local` | Placement axis, forwarded to every unit (see the `action-worktree` skill). |
-| `--push` / `--pr` / `--setup-only` | commit only | Exit axis, forwarded to every unit (see the `action-worktree` skill). |
+| `--local` / `--temp` | `--local` | Placement axis, forwarded to every unit (see `references/ticket-detection.md`). |
+| `--push` / `--pr` / `--setup-only` | commit only | Exit axis, forwarded to every unit (see `references/worktree-setup.md`). |
 
 Placement and exit flags apply to every unit; run `worktree`
 separately for a unit that needs different axes. `--setup-only` with

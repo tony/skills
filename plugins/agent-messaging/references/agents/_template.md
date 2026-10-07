@@ -7,53 +7,53 @@ under **Gaps**.
 
 ## 1. Identity
 
-- **Own address**: how a running session learns the string others use to reach it.
-- **Where it is exposed**: env var, slash command, status pane, file on disk.
-- **Stability**: does it survive a resume, a rename, a restart?
-- **Human-readable name**: how one is set, whether names are unique, what happens on collision.
+- Own address: how a running session learns the string others use to reach it.
+- Where it is exposed: env var, slash command, status pane, file on disk.
+- Stability: does it survive a resume, a rename, a restart?
+- Human-readable name: how one is set, whether names are unique, what happens on collision.
 
 ## 2. Discovery
 
-- **Enumerate peers**: exact command or tool.
-- **Scope**: same machine only, or wider? Same home directory? Same container?
-- **What a listing shows**: name, id, cwd, status, liveness.
-- **Blind spots**: which sessions never appear, and why.
+- Enumerate peers: exact command or tool.
+- Scope: same machine only, or wider? Same home directory? Same container?
+- What a listing shows: name, id, cwd, status, liveness.
+- Blind spots: which sessions never appear, and why.
 
 ## 3. Transports
 
 One block per transport this agent supports, sender side and receiver side.
 
 - **Name** (tmux / codex-queue / claude-code-message / claude-code-socket / new).
-- **Direction**: can this agent send on it, receive on it, or both.
-- **Invocation**: the exact command, tool call, or frame. Copy-pasteable.
-- **Preconditions**: daemon running, experimental capability, feature flag, socket bound,
+- Direction: can this agent send on it, receive on it, or both.
+- Invocation: the exact command, tool call, or frame. Copy-pasteable.
+- Preconditions: daemon running, experimental capability, feature flag, socket bound,
   version floor.
-- **Failure mode when the precondition is missing**: verbatim error text.
+- Failure mode when the precondition is missing: verbatim error text.
 
 ## 4. Delivery semantics
 
-- **When a message reaches the model**: immediately, between tool calls, only when idle.
-- **Latency**: idle and mid-turn.
-- **Target not running**: dropped, or durable and delivered on resume.
+- When a message reaches the model: immediately, between tool calls, only when idle.
+- Latency: idle and mid-turn.
+- Target not running: dropped, or durable and delivered on resume.
 - **Ordering** under rapid sends.
-- **Caps**: message size, queue depth, burst limits, and the behavior at each.
-- **Interrupt interaction**: what an interrupted turn does to pending messages.
+- Caps: message size, queue depth, burst limits, and the behavior at each.
+- Interrupt interaction: what an interrupted turn does to pending messages.
 
 ## 5. Provenance
 
 The section the skill depends on most.
 
-- **Sender label**: what the receiver is told, verbatim. `none` is a valid and important answer.
-- **Reply address**: supplied by the harness, or only by convention in the body?
-- **Authority**: does an arriving message carry the operator's authority, or is it marked as
+- Sender label: what the receiver is told, verbatim. `none` is a valid and important answer.
+- Reply address: supplied by the harness, or only by convention in the body?
+- Authority: does an arriving message carry the operator's authority, or is it marked as
   a peer with reduced rights?
-- **Spoofable**: can a sender forge another sender's identity? By what mechanism?
-- **Distinguishable from the operator**: can the receiver tell a peer message from its human
+- Spoofable: can a sender forge another sender's identity? By what mechanism?
+- Distinguishable from the operator: can the receiver tell a peer message from its human
   typing the same text?
 
 ## 6. Inbound controls
 
-- **Gating**: accept / hold / refuse equivalents, and where they are configured.
+- Gating: accept / hold / refuse equivalents, and where they are configured.
 - **Hooks or filters** that can drop a message before the model sees it.
 - **Default posture** when nothing is configured, including anything that varies by
   permission mode.
@@ -68,9 +68,9 @@ The section the skill depends on most.
 
 - **Submit key**, and how to send a literal newline without submitting.
 - **Reserved leading characters** that open a UI mode instead of entering text.
-- **Paste behavior**: bracketed paste support, safe maximum length, `send-keys -l` vs
+- Paste behavior: bracketed paste support, safe maximum length, `send-keys -l` vs
   `load-buffer` + `paste-buffer`.
-- **Racing an active turn**: does typed input queue, interrupt, or get lost?
+- Racing an active turn: does typed input queue, interrupt, or get lost?
 
 ## 9. Environment
 

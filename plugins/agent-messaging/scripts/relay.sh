@@ -24,6 +24,7 @@ enc() { printf '%s' "$1" | sed -e 's/%/%25/g' -e 's/]/%5D/g' -e 's/ /%20/g'; }
 cmd_envelope() {
   local from='' to='' hop='' want='none' seq='' body='' have_body=0
   while [ $# -gt 0 ]; do
+    [ $# -ge 2 ] || die "$1 needs a value"
     case $1 in
       --from) from=${2-}; shift 2 ;;
       --to) to=${2-}; shift 2 ;;
@@ -65,6 +66,7 @@ cmd_envelope() {
 cmd_socket_send() {
   local sock='' line='' have=0
   while [ $# -gt 0 ]; do
+    [ $# -ge 2 ] || die "$1 needs a value"
     case $1 in
       --socket) sock=${2-}; shift 2 ;;
       --line) line=${2-}; have=1; shift 2 ;;
@@ -81,12 +83,14 @@ cmd_socket_send() {
   local flags=(-U -w 3)
   nc -h 2>&1 | grep -q -e '-N' && flags=(-U -N -w 3)
   jq -nc --arg content "$line" '{type:"user",message:{role:"user",content:$content}}' \
-    | nc "${flags[@]}" "$sock"
+    | nc "${flags[@]}" "$sock" \
+    || die "nc could not send (sandbox blocks the socket, or the peer refused); use tmux or codex queue" 6
 }
 
 cmd_audit() {
   local id='' file=''
   while [ $# -gt 0 ]; do
+    [ $# -ge 2 ] || die "$1 needs a value"
     case $1 in
       --id) id=${2-}; shift 2 ;;
       --transcript) file=${2-}; shift 2 ;;

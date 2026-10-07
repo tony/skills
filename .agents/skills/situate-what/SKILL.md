@@ -42,7 +42,7 @@ When the session's memory is thin, gather the cheap tier:
 1. The current branch (`git branch --show-current`; empty means
    detached HEAD).
 2. Trunk (`git symbolic-ref --short refs/remotes/origin/HEAD`, falling
-   back to `origin/main`), then ahead/behind counts
+   back to whichever of `origin/main` or `origin/master` exists), then ahead/behind counts
    (`git rev-list --left-right --count <trunk>...HEAD`).
 3. Uncommitted work (`git status --short`).
 4. Commit subjects since trunk
@@ -53,13 +53,17 @@ existing line. Measuring from trunk is approximate on a branch stacked
 over another branch, because the range carries the parent's commits;
 say so rather than re-resolving the base.
 
+If `git rev-parse --show-toplevel` is `$HOME` or contains it, or `HEAD`
+has no commits, say that in one line and list no files.
+
 Go beyond that only for the paid tier in the brief reference.
 
 ### 3. Write the brief
 
 Five lines is a ceiling; a narrow question usually needs two. Rank lines
 as the brief reference sets out, then add numbered single-line options
-only when there is a real fork. Stay read-only, per the contract in
+only when there is a real fork; each option is a different action, never a
+restatement of another. Stay read-only, per the contract in
 `references/situation-sweep.md`, and write per
 `references/prose-rules.md`.
 

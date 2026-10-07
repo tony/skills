@@ -82,7 +82,7 @@ not introduce `rc`/`post`/`dev` segments into a project whose history
 never used them unless the user asks.
 
 Tags are usually `v`-prefixed (`v0.62.0`); confirm against the repo's
-existing tags.
+existing tags. `<tag>` is that prefix plus the version.
 
 ## CHANGES
 
@@ -155,7 +155,7 @@ If a `MIGRATION` file exists, it follows the same lifecycle:
 The subject is plain, never the `Scope(type[detail])` format:
 
 ```
-Tag v<version>
+Tag <tag>
 ```
 
 An optional short parenthetical is acceptable when the release has one

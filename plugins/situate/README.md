@@ -39,9 +39,11 @@ Claude Code uses a leading slash (`/situate:…`). Codex omits it (`situate:…`
 | `/situate` | `situate` | Sweep current branch, PR, tickets, and conventions; report the situation. Defaults to current branch vs trunk. |
 | `/situate:what` | `situate:what` | Five-line summary of what is going on, with numbered options for real choices. |
 | `/situate:refocus` | `situate:refocus` | Re-derive the goal, sort commits against it, and identify drift and gaps. |
+| (model-invoked) | `situate:brief` | Answers a bare "huh" or "wait, what" in five lines; `/situate:what` is its explicit form. |
+| (model-invoked) | `situate:situational-awareness` | Catches the user up on a branch or pull request they are returning to; `/situate` is its explicit form. |
 
 **Arguments:**
-- `/situate`: 
+- `/situate`:
   - `<pr-number|url>`: Target a PR without checking it out.
   - `--with-agentgrep [terms]`: Search local AI transcripts for
     unrecorded decisions.
@@ -58,7 +60,7 @@ Gathers context in order, degrading gracefully if unavailable:
 3. **Pull request**: PR state, CI checks, unresolved review threads.
 4. **Tickets**: Issue IDs found in commits, branch name, or PR body.
 5. **Conventions**: `AGENTS.md` / `CLAUDE.md` rules and quality gates.
-6. **Prior conversations**: Opt-in via `agentgrep`.
+6. **Prior conversations**: Opt-in via `--with-agentgrep` or a request in words; a resume-after-gap request runs one capped search. Runs a pinned `agentgrep` through `uvx`.
 
 ## Design Principles
 
@@ -82,6 +84,8 @@ Gathers context in order, degrading gracefully if unavailable:
 - `references/brief.md`: Budget, ranking, and formatting for summaries.
 - `references/goal-derivation.md`: Goal precedence, classification, and
   correctives.
+- `references/report-shape.md`: Hero line, section order, and the shape
+  of a stopped run.
 
 ## Prerequisites
 - `git`

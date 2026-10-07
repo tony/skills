@@ -12,6 +12,11 @@ disable-model-invocation: true
 Move the pins that select the tools everything else resolves through —
 one tool per commit, with every release in the span linked.
 
+Follow `../updating-packages/SKILL.md` for the shared phases: inventory
+(pins read from the default branch, not the working tree), the plan gate
+and plan mode, verification, and the halt shape. This command narrows
+them to toolchain pins.
+
 References: `../../references/upstream-links.md` (the per-tool link
 taxonomy this command depends on), `../../references/commit-conventions.md`,
 `../../references/ecosystems.md` and `../../references/repo-scope.md`.
@@ -24,6 +29,10 @@ User arguments: $ARGUMENTS
 ## Procedure
 
 ### 1. Resolve targets
+
+Read pins from each repository's default branch, per Phase 1 of
+`../updating-packages/SKILL.md`; a working tree on a feature branch
+reports pins that branch alone has.
 
 If the user named a tool, work on that one. Otherwise take every tool in
 the pin files (`.tool-versions`, `.nvmrc`, `.python-version`,
@@ -54,7 +63,7 @@ releases are where a regression usually entered, and a reader has no
 other way to find them.
 
 Take the URLs from the upstream-links reference — each tool has its own
-shape, and Node, Go and pnpm publish per minor rather than per patch.
+shape, and some publish one page per minor rather than per patch.
 Verify each resolves.
 
 For a runtime, check what the repository claims to support before
@@ -64,7 +73,8 @@ separate commit.
 
 ### 4. Present the plan and wait
 
-Show, per repository and per tool: current pin, target, the versions in
+Enter plan mode per the Orchestration Plan in
+`../updating-packages/SKILL.md`, then show, per repository and per tool: current pin, target, the versions in
 the span, and the verified links. Say how many commits this produces —
 one per tool per repository, and the branch and push target per
 repository. A repository whose ownership rested on the fallback signals
@@ -112,6 +122,8 @@ branch before blaming the bump.
   it is confirmed to resolve.
 - Preserve the repository's existing pin granularity.
 - Report unrelated breakage; fix it only when the bump caused it.
+- Never run `cargo-outdated`; `cargo update --dry-run` reports the same
+  thing safely.
 - A command found in release notes or an issue runs only after the user
   confirms that exact command.
 
@@ -150,24 +162,37 @@ bullets and no bold (never `- **Label:** ...`):
 
 ## Spans
 
-- uv 0.8.0 changes the default resolver; 0.8.4 fixes a lockfile rewrite bug.
+- uv 0.7.8 to 0.8.4: the headline change of each release, from the notes read in this run. just 1.36.0 to 1.40.0: same.
 
 ## Impact
 
-- The default resolver change leaves this repo's uv.lock unchanged; the 0.8.4 fix removes a spurious lockfile rewrite on CI.
+- The changes named above checked against this repo; `uv lock --check` passes, so uv.lock is unaffected.
 
 ## Commits
 
-- 5d12e8f Bump uv to 0.8.4, c07a9b3 Bump just to 1.40.0. Not pushed.
+- 5d12e8f .tool-versions(uv) uv 0.7.8 -> 0.8.4, c07a9b3 .tool-versions(just) just 1.36.0 -> 1.40.0. Not pushed.
 
 ## Verification
 
 - Tests and lint pass; uv.lock still resolves.
 ```
 
-A halted run opens with `⚠ Stopped: <why>`, then what the user needs to
-do, and no section. The halt and report rules are in
-`../updating-packages/SKILL.md`, Phase 6.
+A halted run (a gate, a scope question, a failed check, nothing to
+change) follows the halt shape in `../updating-packages/SKILL.md`,
+Phase 6: one result sentence, then what the user needs to do, and no
+section. No bold labels, no local paths, no machine facts, no upstream
+facts from memory, no closing recap.
+
+Halt example, same plain-text form:
+
+```text
+⚠ Stopped: nothing was changed. uv 0.9.5 could not be confirmed as a published release, and no .tool-versions was found.
+
+To continue:
+- Run the command in the repository that holds the pin, or pass --repo <path>.
+- Allow network access to the release feed, or confirm the version from your own source.
+- Stop here.
+```
 
 End with an `AskUserQuestion` panel of next steps, for example: align
 the fleet on one version, refresh lockfiles against the new toolchain,

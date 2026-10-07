@@ -20,7 +20,10 @@ headings, declared order, no invented sections.
    point. Without an interactive question tool, list the options as text and take
    the stated non-interactive default.
 
-Name every heuristic in words with its id, never the id alone.
+Name every heuristic in words with its id, never the id alone. Name a path or
+temp file only when the user must act on it; refer to the memory directory and
+the repo by role. Between the hero and the first heading there is no prose: put
+a plan-mode or approval note in the hero line or the closing line.
 
 Reply in this shape, as plain text outside any code fence, with plain
 bullets and no bold (never `- **Label:** ...`). A `00-scan` reply:
@@ -35,6 +38,14 @@ bullets and no bold (never `- **Label:** ...`). A `00-scan` reply:
 ## Baseline
 
 - Median 12.5s over 5 runs; trust floor 50ms.
+
+## Slowest tests
+
+- test_export_large spends 0.61s in one call (H01 slow test body).
+
+## Slowest fixtures
+
+- db_session setup runs 3 times at 4.8s each; the cost is billed to the first test (H03 shared-scope attribution).
 
 ## Hypotheses
 
@@ -60,6 +71,25 @@ A `01-benchmark` reply:
 - Order independence held across 3 seeds; collection is deterministic.
 ```
 
+A `02-plan` reply:
+
+```text
+✓ 1 commit planned, 2.7s of the 12.5s baseline recovered; reply "approve" to record the plan, or name items to drop or reorder
+
+## Ranked plan
+
+- 1. H10 mis-scoped fixture: widen make_config to session scope in tests/conftest.py, total score 0.87, saves 2.7s above the 0.45s band, verified with pytest expecting 40 of 40 passing.
+  Draft subject: tests(fixtures) Widen make_config to session scope
+
+## Dropped at the gate
+
+- H33 fixed sleep in test_report: saves 0.03s, inside the noise band, so impact is 0.
+
+## Ordering rationale
+
+- One commit, so there is nothing to order.
+```
+
 A `03-execute` reply:
 
 ```text
@@ -78,8 +108,20 @@ A `03-execute` reply:
 
 When a phase stops before its work (missing input, dirty tree, plan hash
 mismatch, no suite), print one result sentence naming what stopped it, then one
-sentence on what the user must do. No body sections, no panel, no projected
-timings or results.
+sentence on what the user must do. No body sections, no panel, no bold, no
+projected timings or results. When the user pasted durations or named a
+likely cause, add one sentence saying where the pasted time sits (setup versus
+call, which fixture) as a hypothesis to benchmark; never what a change would save.
+
+```text
+I stopped before measuring because this directory has no pytest suite.
+Run the skill from the project root that holds the tests, or send the path to it.
+```
+
+With pasted durations, insert one sentence after the first: "Your durations put
+most of the time in db_session setup, which is a hypothesis to benchmark once the
+suite is available."
+
 
 ## Per-command body sections
 
@@ -109,7 +151,7 @@ timings or results.
 - `## Dropped at the gate` — candidates below `safety 0.4` or `impact 0`, with the
   prerequisite refactor surfaced separately.
 - `## Ordering rationale` — why safety-gate fixes and typings precede scope and
-  parallelism.
+  parallelism; one line, and "nothing to order" when the plan has one commit.
 
 **`03-execute`**
 

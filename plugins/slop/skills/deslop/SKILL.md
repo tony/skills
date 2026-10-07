@@ -103,8 +103,9 @@ Halt with a clear message when any of these holds:
   covers dirty submodules).
 - The range holds no commits.
 - The current branch is the trunk.
-- A rebase is in progress (`.git/rebase-merge/` or `.git/rebase-apply/`
-  exists).
+- A rebase is in progress. `.git` is a file in a linked worktree, so
+  resolve each path with `git rev-parse --git-path rebase-merge` and
+  `git rev-parse --git-path rebase-apply`, and test the printed paths.
 - `HEAD` is detached.
 - The branch has merge commits and `--apply-rebase` was passed.
 - `--since=<ref>` with `--apply-rebase` names a ref that is not an
@@ -123,7 +124,8 @@ $ git merge-base --is-ancestor "$(git rev-parse '@{u}')" HEAD
 ```
 
 Exit 0 means the upstream is reachable from `HEAD`: the branch was
-pushed. Without `--force-rewrite-pushed`, refuse:
+pushed. A non-zero exit with an upstream set means a local rewrite
+diverged from it; that branch was pushed too. Without `--force-rewrite-pushed`, refuse:
 
 > This branch was already pushed to `<upstream>`. Rewriting its
 > history will require a force-push and may break a reviewer's local
@@ -187,7 +189,9 @@ only from git 2.32 on; check `git --version`, and on older git list each
 reword in `advisory.md` as a manual note and keep the diff fixups.
 
 Write replacement messages per `../../references/prose-rules.md`, in
-the project's commit-message convention from the conventions files.
+the project's commit-message convention from the conventions files. A
+message carries no `Co-Authored-By:` line, no "Generated with" or other
+tool trailer, and no emoji; hosts add these by default, so strip them.
 
 ## Step 8: Materialize the patch series
 
@@ -217,13 +221,28 @@ Layout:
 │   └── <sha>.txt                (one file per target SHA needing reword)
 ├── reword-map.tsv               (autosquash-subject → target-sha → reword-file)
 ├── .checkpoint/                 (per-step markers for apply.sh idempotency)
-└── apply.sh                     (rendered from ../../references/apply-template.sh)
+└── apply.sh                     (rendered by ../../scripts/render_apply.py)
 ```
 
 `0000-PLAN.md` records the registry version, source path, and SHA-256,
 the resolved `FORMAT_CMD` / `LINT_CMD` / `TYPECHECK_CMD` / `TEST_CMD`,
 `BASELINE_SHA`, the commit range, the budget, and the tone-calibration
 result.
+
+Render `apply.sh` with the tested script, passing the literal
+`<run-dir>`, `BASELINE_SHA`, and the trunk ref. It
+hashes the registry, fills the template, marks the file executable, and
+prints its path:
+
+```console
+$ python3 ../../scripts/render_apply.py \
+    --run-dir "<run-dir>" \
+    --baseline "<BASELINE_SHA>" \
+    --trunk-ref "origin/<trunk>"
+```
+
+The registry defaults to the bundled `signatures.yml`; with
+`--taxonomy=<path>`, add `--registry "<path>"`.
 
 `apply.sh` is the one artifact the user runs. It is idempotent through
 checkpoints, recomputes the registry SHA-256 recorded in `0000-PLAN.md`,
@@ -247,7 +266,8 @@ through `AskUserQuestion`:
 | **Apply and autosquash** | Full rewrite. Offered only with `--apply-rebase`, and only when Step 1 found no merge commits. |
 | **Cancel** | Delete `<run-dir>/` and exit. |
 
-Without a question tool (Codex, headless), take **Patches only**. A
+Without a question tool (Codex, headless), take **Patches only** and
+print the `apply.sh` command. A
 request that explicitly says to apply patches, or to apply and
 autosquash, approves that choice only, never a push.
 
@@ -359,10 +379,10 @@ Quality gates (final)
 =====================
 format=pass | lint=pass | typecheck=pass | tests=skipped
 
-Patch series: .git/slop/run-1/
+Patch series: <run-dir>
 ```
 
-In audit mode, "Applied" is 0 and the Commits and gate lines are omitted.
+`<run-dir>` is the path Step 8 printed. In audit mode, "Applied" is 0 and the Commits and gate lines are omitted.
 
 Do not push; the user decides. After `--force-rewrite-pushed`, recommend
 `git push --force-with-lease --force-if-includes` over `git push --force`.

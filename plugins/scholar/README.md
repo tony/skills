@@ -64,8 +64,8 @@ A study is a directory, not a document:
 ```
 notes/ontology/<subject>/
 ├── brief.md              the only file meant to be read start to finish
-├── terms.jsonl           interchange: {schema, term, definition, parent, kind, cites, tier}
-├── sources.jsonl         {source, ref, commit, scope, read, why}
+├── terms.jsonl           interchange: {schema, term, definition, parent, kind, cites}
+├── sources.jsonl         {source, ref, commit, scope, locator_kind, read, why}
 └── evidence/
     ├── hierarchy.md      the type hierarchy, one citation per is-a claim
     ├── vocabulary.md     preferred and deprecated terms, disjointness constraints
@@ -87,19 +87,14 @@ construction rather than by discipline.
 
 Every one of these is optional. `scholar` works standalone.
 
-`weave` — `contest --panel` hands one contested claim to independent
-adversarial participants and records their verdicts beside the serial one.
-
-`research:study-deps` — `gather` can take a pinned worktree at an installed version
-as its corpus, when the corpus is a dependency of the current project.
-
-`gh` — `render`'s publish option uses its rendered-markdown and source-link
-disciplines when a study is published as an issue or a comment.
+`weave` — `contest --panel` prints a contested claim and a `/weave:ask`
+command for you to run; paste the verdicts back and `contest` records them
+beside the serial one.
 
 ## Prerequisites
 
 - **git** — resolving and pinning a corpus to a ref
 - **gh** — resolving a tag to its commit, and checking it again in `verify`
 - **rg** — inventorying a corpus without reading all of it
-- **Python 3** — `references/term-metrics.py`, standard library only, so it
+- **Python 3.9+** — `references/term-metrics.py`, standard library only, so it
   runs inside any corpus checkout with no package manager present

@@ -75,7 +75,7 @@ landing them is the `respond-action` skill.
 
 | Flag | Default | Effect |
 |---|---|---|
-| `--branch=<name>` | off | Probe on a new scratch branch from HEAD. Still zero commits. |
+| `--branch=<name>` | off | Probe on a new scratch branch from HEAD, then return to the original branch and delete the scratch branch at exit. Still zero commits. |
 | `--keep-tree` | off | Skip the stash at exit; leave changes in the working tree. The plan is still produced. |
 | `--replay` | off | After the plan is approved, apply the stash and land plan items one gated commit at a time. |
 
@@ -83,15 +83,24 @@ landing them is the `respond-action` skill.
 
 Before writing any code:
 
-1. Confirm a git repository with at least one commit:
+1. Confirm a git repository with at least one commit, and that its root
+   does not contain the home directory. A dotfile repository rooted at
+   `$HOME` would have `git add -A` and `git reset --hard` sweep the whole
+   home directory, credentials included:
 
-```console
-$ git rev-parse --verify HEAD
+```sh
+git rev-parse --verify HEAD >/dev/null 2>&1 || { echo "no repository or no commits"; exit 1; }
+top=$(git rev-parse --show-toplevel)
+home=$(cd "$HOME" && pwd -P)
+case "$home/" in "${top%/}"/*) echo "repository root contains home: $top"; exit 1;; esac
+echo ok
 ```
 
-   A failure means no repository or no commits. Halt before touching
-   anything: say what is missing and that the user must make the
-   initial commit (a spike never commits).
+   Any output but `ok` halts before touching anything. Say what is
+   missing in plain words, not the command that found it: no commits (the
+   user makes the initial commit, since a spike never commits) or a
+   repository rooted at their home directory (the user opens the project's
+   own repository).
 2. Read `AGENTS.md` / `CLAUDE.md` / `.github/CONTRIBUTING.md` for
    quality checks, commit format, and test conventions.
 3. Resolve the five gate buckets (`format`, `lint`, `typecheck`,
@@ -103,11 +112,31 @@ $ git rev-parse --verify HEAD
    - **Stash first:** save their work with the stash sequence in
      Phase 4 under the message `user work before spike`, record its
      SHA, and tell the user it.
-   - **Probe on top:** save their work the same way, but keep it in
-     the tree and run `git reset -q` afterwards (the sequence stages
-     everything). Record that SHA as the baseline. Phase 4 then
-     restores the user's work and reports the spike's own delta.
-5. Locate the code the goal touches (existing modules, tests,
+   - **Probe on top:** run the sequence without its `reset --hard`;
+     `git reset -q` replaces it, so their files stay in the tree. Record
+     the printed SHA as the baseline:
+
+```sh
+git add -A
+sha=$(git stash create "user work before spike")
+[ -n "$sha" ] && git stash store -m "user work before spike" "$sha" && git reset -q && echo "$sha"
+```
+
+     Their staged edits come back unstaged, and untracked files stay
+     untracked; contents are unchanged. Phase 4 restores their work and
+     reports the spike's own delta.
+5. With `--branch`, create the scratch branch and print where to return.
+   A name that already exists fails; halt and ask for another. Print
+   the original branch (a SHA when HEAD is detached) and use that
+   literal value in Phase 4:
+
+```sh
+orig=$(git branch --show-current)
+[ -n "$orig" ] || orig=$(git rev-parse HEAD)
+git switch -c "<name>" && echo "$orig"
+```
+
+6. Locate the code the goal touches (existing modules, tests,
    fixtures), enough to work in the project's idiom.
 
 ## Phase 1: Orchestration plan
@@ -188,9 +217,31 @@ fi
    restores it. The output `no changes` means record "no changes", not a
    SHA. Files matched by `.gitignore` are not stashed.
 2. Verify the tree is back to its pre-spike state with `git status`.
-   After a probe on top, run `git stash apply -q <baseline sha>`
-   and then `git reset -q` to put the user's work back, and report
-   the spike's own delta with `git diff <baseline sha> <spike sha>`.
+   After a probe on top the sequence never prints `no changes`, because
+   their work is in the tree: restore it, then report the spike's own
+   delta (an empty diff means "no changes"):
+
+```console
+$ git stash apply -q <baseline sha>
+```
+
+```console
+$ git reset -q
+```
+
+```console
+$ git diff <baseline sha> <spike sha>
+```
+
+3. With `--branch`, return to the original branch and delete the
+   scratch branch (it holds no commits, so `-d` succeeds). Use
+   `git switch --detach <sha>` when `orig` was a SHA. Uncommitted work
+   follows you. With `--keep-tree`, stay on the scratch branch and give
+   the user the return command instead.
+
+```sh
+git switch "<orig>" && git branch -d "<name>"
+```
 
 ## Phase 5: The replay plan
 
@@ -210,7 +261,8 @@ exists yet, or "none (no remote)".
 
 ## Phase 6: Replay (only with `--replay`, after approval)
 
-1. `git stash apply <sha>` (apply, not pop). The stash stays until the
+1. From the original branch, never a scratch branch, run
+   `git stash apply <sha>` (apply, not pop). The stash stays until the
    replay finishes green.
 2. Land plan items in order: stage only that item's changes, run its
    gates, commit with the planned message, written per
@@ -238,10 +290,11 @@ Write the report, and any replay commit message, per
 1. Hero block (1–3 lines): `✓ spike proven` / `⚠ spike blocked` +
    goal + exit path taken.
 
-   A run that halts before probing (no commit, dirty tree declined,
-   goal missing) is the hero line and one result sentence naming what
-   is missing, then what the user must do next. No sections, no panel,
-   no stash SHA, no local or temp paths.
+   A run that halts before probing (no commit, repository rooted at
+   home, dirty tree declined, goal missing) is the hero line and one
+   result sentence naming what is missing, then what the user must do
+   next. No sections, no panel, no stash SHA, no local or temp paths, no
+   command echo, no description of the environment.
 2. `## Spike findings`: what was proven, stumbling blocks, `SPIKE:`
    markers, observed-not-addressed list. State stumbling blocks even
    when the probe succeeded: a path that fought you throughout is the
@@ -258,6 +311,13 @@ Write the report, and any replay commit message, per
    `--replay` was given. In a non-interactive run (CI, subagent),
    record the panel's question and options in the report instead of
    asking, and default to keeping the stash.
+
+A halted run replies in this shape:
+
+```text
+⚠ spike blocked: stream the NDJSON export instead of buffering it. Nothing was probed.
+The repository has no commits yet. Make the initial commit yourself, since a spike never commits, then run spike-probe again.
+```
 
 Reply in this shape, as plain text outside any code fence, with plain
 bullets and no bold (never `- **Proven:** ...`), the numbered plan

@@ -14,6 +14,7 @@ import json
 import typing as t
 import urllib.error
 import urllib.request
+import zipfile
 from pathlib import Path
 
 import pytest
@@ -227,3 +228,54 @@ def test_redirect_to_private_address_is_refused() -> None:
         handler.redirect_request(
             req, io.BytesIO(), 302, "Found", t.cast("t.Any", {}), "http://internal/"
         )
+
+
+def test_decide_needs_a_release(run: Path) -> None:
+    code, _ = cli("decide", "--run", str(run), "--decision", "adopt WAL", "--by", "tech lead")
+    assert code == 2
+    assert not (run / topic.DECISIONS).exists()
+
+
+def test_decide_traces_to_the_release(run: Path) -> None:
+    _, rel = cli(
+        "release", "--run", str(run), "--to", "the platform team", "--offline", "--allow-offline"
+    )
+    code, row = cli(
+        "decide", "--run", str(run), "--decision", "adopt WAL", "--by", "tech lead",
+        "--revisit", "a benchmark shows checkpoint stalls",
+    )  # fmt: skip
+    assert code == 0, row
+    assert row["release"] == rel["sha256"]
+    assert topic.read_jsonl(run / topic.DECISIONS)[0]["decision"] == "adopt WAL"
+    assert (
+        cli("decide", "--run", str(run), "--decision", "x", "--by", "y", "--release", "zz")[0] == 2
+    )
+
+
+def test_export_bag_round_trips_and_detects_change(run: Path, tmp_path: Path) -> None:
+    bag = tmp_path / "bag.zip"
+    code, packed = cli("export", "--run", str(run), "--out", str(bag))
+    assert code == 0, packed
+    assert cli("export", "--check", str(bag))[1]["ok"] is True
+
+    bad = tmp_path / "bad.zip"
+    with zipfile.ZipFile(bag) as src, zipfile.ZipFile(bad, "w") as dst:
+        for item in src.infolist():
+            body = src.read(item)
+            dst.writestr(item, b"tampered\n" if item.filename.endswith("report.md") else body)
+    code, result = cli("export", "--check", str(bad))
+    assert code == 1
+    assert result["ok"] is False
+    assert result["changed"]
+
+
+def test_export_refuses_an_out_path_inside_the_run(run: Path) -> None:
+    assert cli("export", "--run", str(run), "--out", str(run / "bag.zip"))[0] == 2
+
+
+def test_resume_refuses_a_conflicting_audience(run: Path) -> None:
+    root = str(run.parents[2])
+    code, _ = cli("open", "--root", root, "--topic", "wal", "--resume", "--audience", "public")
+    assert code == 2
+    code, _ = cli("open", "--root", root, "--topic", "wal", "--resume", "--audience", "private")
+    assert code == 0

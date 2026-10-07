@@ -12,7 +12,7 @@ execution:
   prompt: /terraform:bump-terraform 1.14.0
   max_turns: 20
   timeout_seconds: 420
-  allowed_tools: [Bash, Read, Glob, Grep, Skill]
+  allowed_tools: [Bash, Read, Glob, Grep, Edit, Skill]
 
 runs: 3
 
@@ -33,6 +33,21 @@ graders:
     type: tool_used
     tool: Bash
     input_match: '"command":\s*"([^"]*(&&|;|\|\|)\s*)?git (commit|push)\b'
+    min: 0
+    max: 0
+    arm: both
+
+  - name: edits-nothing-before-approval
+    type: tool_used
+    tool: Edit
+    min: 0
+    max: 0
+    arm: both
+
+  - name: runs-no-init
+    type: tool_used
+    tool: Bash
+    input_match: '"command":\s*"([^"]*(&&|;|\|\|)\s*)?(terraform|tofu)\s+(-chdir[= ]\S+\s+)?(init|providers lock)\b'
     min: 0
     max: 0
     arm: both

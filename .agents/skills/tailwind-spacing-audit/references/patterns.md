@@ -3,29 +3,32 @@
 Each pattern has a signal, a detect command, a before and after, and
 when to leave it alone. Examples use `className`; Vue, Svelte, Astro,
 HTML, ERB, and Blade use `class`. Physical margins (`ml-*`, `mr-*`) and
-logical margins (`ms-*`, `me-*`; Tailwind 3.3 and later) are the same
-anti-pattern.
+logical margins (`ms-*`, `me-*`, added in
+[Tailwind v3.3](https://github.com/tailwindlabs/tailwindcss/releases/tag/v3.3.0))
+are the same anti-pattern.
 
 ## Detect command limits
 
-Every command ends with a search path. Replace the `.` with the target
-from `$ARGUMENTS`. Run them with `rg` (ripgrep); without it, read the
-files in scope instead.
+Each pattern's command is `python3 ../../scripts/detect.py <name> <path>`,
+run from this skill's directory; `<path>` is the target from
+`$ARGUMENTS`. It prints `path:line:text` for each hit and exits 1 when
+there is none. Needs `python3`. If it cannot run, use the `rg` fallback
+under the pattern.
 
 The commands are candidate finders, not proof. They search class tokens
 in single, double, and backtick strings, so `class='...'`, `cn("...")`,
-`clsx(...)`, and template literals match. Patterns 3, 5, and 6 use
-multi-line mode (`-U`) so a tag split over several lines still matches.
+`clsx(...)`, and template literals match. Patterns 3, 5, and 6 match
+tags split over several lines.
 
 They cannot see:
 
 - classes assembled at runtime (`` `gap-${n}` ``), `@apply`, `cva`
   variants, and component-library props
 - `className` values built across several string arguments (Pattern 7
-  has a fallback command for this)
+  has a second command for this)
 - tags whose opening line holds `>` inside an attribute other than
   `=>`, such as a generic `<Foo<T>>`
-- anything in a file outside the glob
+- files outside the template extensions the script scans
 
 Zero hits is not proof of a clean file. When a command returns nothing
 for a file the user named, read that file and apply the pattern by eye.
@@ -55,6 +58,14 @@ skipped). It has no sibling logic; walk the DOM to see which margins
 compensate for a split.
 
 ```console
+$ python3 ../../scripts/detect.py \
+    margin \
+    <path>
+```
+
+Fallback if the script cannot run (replace `.` with the target):
+
+```console
 $ rg -n \
     -e '(?:^|[\s"\x27\x60:])-?m[xesrl]-[0-9\[]' \
     -g '*.{tsx,jsx,vue,svelte,astro,html,erb,blade.php}' \
@@ -65,14 +76,14 @@ Before:
 
 ```tsx
 <div className="me-1 flex gap-1">
-  <a className="flex h-12 items-center" href="/social">
-    <img className="h-6 w-auto" alt="Social" src="..." />
+  <a className="flex h-12 items-center" href="/profile">
+    <img className="h-6 w-auto" alt="Profile" src="..." />
   </a>
   <button className="flex h-12 items-center px-2">
-    <WrenchIcon className="h-5 w-5" />
+    <SettingsIcon className="h-5 w-5" />
   </button>
   <button className="flex h-8 items-center gap-1.5 rounded px-2">
-    <span>B</span><span>Babylon.js</span>
+    <span>B</span><span>Billing</span>
   </button>
 </div>
 
@@ -83,21 +94,21 @@ Before:
 </div>
 ```
 
-The Wrench to Babylon.js gap is `gap-1`. The Babylon.js to Theme gap is
+The Settings to Billing gap is `gap-1`. The Billing to Theme gap is
 `me-1` plus whatever the outer parent adds. They differ.
 
 After:
 
 ```tsx
 <div className="flex items-center gap-1">
-  <a className="flex h-12 items-center px-2" href="/social">
-    <img className="h-6 w-auto" alt="Social" src="..." />
+  <a className="flex h-12 items-center px-2" href="/profile">
+    <img className="h-6 w-auto" alt="Profile" src="..." />
   </a>
   <button className="flex h-12 items-center px-2">
-    <WrenchIcon className="h-5 w-5" />
+    <SettingsIcon className="h-5 w-5" />
   </button>
   <button className="flex h-12 items-center gap-1.5 rounded px-2">
-    <span>B</span><span>Babylon.js</span>
+    <span>B</span><span>Billing</span>
   </button>
   <button className="flex h-12 items-center gap-1.5 rounded px-2">
     <span>Theme</span>
@@ -105,11 +116,11 @@ After:
 </div>
 ```
 
-One container, one `gap-1`: the Wrench to Babylon.js gap is unchanged,
-and the Babylon.js to Theme gap shrinks to match it (it was `me-1` plus
+One container, one `gap-1`: the Settings to Billing gap is unchanged,
+and the Billing to Theme gap shrinks to match it (it was `me-1` plus
 the outer parent's spacing). Pick the gap value you want the whole row
 to have. The `me-*` hacks and `w-24` are gone (Patterns 2 and 4), the
-social link gained `px-2` (Pattern 3), and all four peers share `h-12`
+profile link gained `px-2` (Pattern 3), and all four peers share `h-12`
 (Pattern 6).
 
 ## Pattern 2: Margin and gap mixing
@@ -119,6 +130,14 @@ margin. The margin adds to the gap on that edge.
 
 Detect: find parents with gap, then margins on their children. A file in
 both lists is a candidate:
+
+```console
+$ python3 ../../scripts/detect.py \
+    gap \
+    <path>
+```
+
+Fallback if the script cannot run (replace `.` with the target):
 
 ```console
 $ rg -n \
@@ -131,8 +150,16 @@ Then list margins, numeric and arbitrary values. `mx-auto` is skipped
 because it centers a block instead of spacing peers:
 
 ```console
+$ python3 ../../scripts/detect.py \
+    margin \
+    <path>
+```
+
+Fallback if the script cannot run (replace `.` with the target):
+
+```console
 $ rg -n \
-    -e '(?:^|[\s"\x27\x60:])-?m[trblxyse]?-[0-9\[]' \
+    -e '(?:^|[\s"\x27\x60:])-?m[xesrl]-[0-9\[]' \
     -g '*.{tsx,jsx,vue,svelte,astro,html,erb,blade.php}' \
     .
 ```
@@ -188,6 +215,14 @@ elements with `=>` props. Component names outside the pattern
 (`IconButton` matches; `Action` does not) need a read of the file:
 
 ```console
+$ python3 ../../scripts/detect.py \
+    interactive \
+    <path>
+```
+
+Fallback if the script cannot run (replace `.` with the target):
+
+```console
 $ rg -n \
     -U \
     -o \
@@ -226,6 +261,14 @@ Detect: `w-` followed by a digit or `[`, at the start of a token, so
 `min-w-*` and `max-w-*` do not match:
 
 ```console
+$ python3 ../../scripts/detect.py \
+    width \
+    <path>
+```
+
+Fallback if the script cannot run (replace `.` with the target):
+
+```console
 $ rg -n \
     -e '(?:^|[\s"\x27\x60:])w-[0-9\[]' \
     -g '*.{tsx,jsx,vue,svelte,astro,html,erb,blade.php}' \
@@ -237,7 +280,7 @@ Before:
 ```tsx
 <div className="flex items-center gap-2">
   <button className="flex h-8 items-center gap-1.5 rounded px-2">
-    <span>Babylon.js</span>
+    <span>Billing</span>
   </button>
   <button className="flex h-8 w-24 items-center gap-1.5 rounded px-2">
     <span>Theme</span>
@@ -261,6 +304,14 @@ Detect: divs with `flex` and `items-center` in either order (not
 `inline-flex`, `flex-col`, or `place-items-center`), then check each for
 one child. The command reads the first string inside `cn(...)` or
 `clsx(...)` too:
+
+```console
+$ python3 ../../scripts/detect.py \
+    wrapper \
+    <path>
+```
+
+Fallback if the script cannot run (replace `.` with the target):
 
 ```console
 $ rg -n \
@@ -303,7 +354,7 @@ Before:
   <a className="flex h-6 items-center">
     <img className="h-6" src="icon.svg" alt="" />
   </a>
-  <button className="flex h-12 items-center px-2"><WrenchIcon /></button>
+  <button className="flex h-12 items-center px-2"><SettingsIcon /></button>
   <button className="flex h-8 items-center px-2"><span>Menu</span></button>
 </div>
 ```
@@ -327,14 +378,25 @@ selector depends on the Tailwind version found in Step 0:
 - Version unknown: state the collision (gap plus margin) and make no
   claim about hidden children.
 
-Selector source: the section on the `space-x-*` and `space-y-*` selector change in the
-[Tailwind v4 upgrade guide](https://tailwindcss.com/docs/upgrade-guide).
-It also recommends migrating to `gap` when the selector change causes
-problems. The page is unversioned; fetch it when the version question
+Selector sources: v4 is the section on the `space-x-*` and `space-y-*`
+selector change in the
+[Tailwind v4 upgrade guide](https://tailwindcss.com/docs/upgrade-guide),
+which also recommends migrating to `gap` when the change causes
+problems. v3 is the `space` plugin in
+[`corePlugins.js` at v3.4.0](https://github.com/tailwindlabs/tailwindcss/blob/v3.4.0/src/corePlugins.js).
+The upgrade guide is unversioned; fetch it when the version question
 decides the advice.
 
 Detect: both utilities in one string, in either order. The command also
 reads template literals and `cn()` strings that hold both:
+
+```console
+$ python3 ../../scripts/detect.py \
+    space-gap \
+    <path>
+```
+
+Fallback if the script cannot run (replace `.` with the target):
 
 ```console
 $ rg -n \
@@ -348,6 +410,14 @@ $ rg -n \
 If the utilities sit in different arguments, such as
 `cn("flex gap-2", "space-x-3")`, the command misses them. List every
 space utility and read the surrounding call:
+
+```console
+$ python3 ../../scripts/detect.py \
+    space \
+    <path>
+```
+
+Fallback if the script cannot run (replace `.` with the target):
 
 ```console
 $ rg -n \
@@ -389,22 +459,23 @@ Flag it as a migration opportunity only when the file already uses
 For a spacing issue between items A and B:
 
 ```
-Is A in a different container than B?
-+-- Yes --> Pattern 1. Merge containers.
-+-- No --> Does the parent have gap-*?
-    +-- Yes --> Does A or B also have margin?
-    |   +-- Yes --> Pattern 2. Remove margin.
-    |   +-- No --> Do A and B have different px-*?
-    |       +-- Yes --> Pattern 3. Standardize.
-    |       +-- No --> Does A or B have a fixed w-*?
-    |           +-- Yes --> Pattern 4. Remove w-*.
-    |           +-- No --> Is A or B a single-child wrapper?
-    |               +-- Yes --> Pattern 5. Flatten.
-    |               +-- No --> Do A and B have different h-*?
-    |                   +-- Yes --> Pattern 6. Standardize heights.
-    |                   +-- No --> Does the parent also have space-*?
-    |                       +-- Yes --> Pattern 7. Remove space-*.
-    |                       +-- No --> Spacing may be correct. Verify visually.
-    +-- No --> Is spacing done via margins?
-        +-- Yes --> Add gap-* to parent, remove margins.
+Does the parent have both gap-* and space-*?
++-- Yes --> Pattern 7. Remove space-*.
++-- No --> Is A in a different container than B?
+    +-- Yes --> Pattern 1. Merge containers.
+    +-- No --> Does the parent have gap-*?
+        +-- Yes --> Does A or B also have margin?
+        |   +-- Yes --> Pattern 2. Remove margin.
+        |   +-- No --> Do A and B have different px-*?
+        |       +-- Yes --> Pattern 3. Standardize.
+        |       +-- No --> Does A or B have a fixed w-*?
+        |           +-- Yes --> Pattern 4. Remove w-*.
+        |           +-- No --> Is A or B a single-child wrapper?
+        |               +-- Yes --> Pattern 5. Flatten.
+        |               +-- No --> Do A and B have different h-*?
+        |                   +-- Yes --> Pattern 6. Standardize heights.
+        |                   +-- No --> Spacing may be correct. Verify visually.
+        +-- No --> Is spacing done via margins?
+            +-- Yes --> Pattern 2. Add gap-* to the parent, remove margins.
+            +-- No --> Spacing may be correct. Verify visually.
 ```

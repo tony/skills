@@ -1,7 +1,7 @@
 ---
 name: case-study-public
 description: Write the tier-3 public case study — hard sanitization, every headline claim triangulated against external evidence, candid limitations mandatory
-allowed-tools: ["Bash", "Read", "Write", "Grep", "AskUserQuestion"]
+allowed-tools: ["Bash", "Read", "Write", "Grep", "AskUserQuestion", "WebFetch"]
 argument-hint: "[run directory]"
 user-invocable: true
 disable-model-invocation: true
@@ -65,4 +65,5 @@ Hero success form: `✓ Public case study: <headline with tag>`.
 Sections and stopped-run shape as in `interim-format.md`, with `## Sanitization` between
 `## Gate` and `## Report`: the checklist results item by item and the
 triangulation outcome per headline claim. Panel options: derive the PR
-release next, tighten a claim, or stop.
+release next (read `../pr-release/SKILL.md` and follow it), tighten a
+claim, or stop.

@@ -17,7 +17,10 @@ inclusion threshold, `--force` to recompute, and `--memory-dir` to override the
 memory location.
 
 Arithmetic goes through `../../scripts/measure.py` (Python 3 standard
-library). Run it by absolute path: `../../` is relative to this file.
+library). That path resolves from this skill's own directory, not the
+project's working directory: resolve this file's directory, join
+`../../scripts/measure.py`, print the absolute path once, and write that
+literal path in each command below where `<measure.py>` appears.
 
 ## Step 1: Load and score
 
@@ -49,7 +52,8 @@ target project's convention. Write the message per
 `../../references/prose-rules.md`. No `Co-Authored-By`, no "Generated with" or
 other tool trailer, no emoji: hosts add them by default. Each entry records
 order, heuristic id, score breakdown, target files, draft subject and body, the
-verify command (project tests and quality checks), the expected test total, and
+verify command (project tests and quality checks), `expected_total` (the
+baseline `tests.total`, unless the change removes tests on purpose), and
 `depends_on`. Write `plan.json` with `plan_hash` still `null` in `state.json`
 (`phase=plan`).
 
@@ -69,7 +73,7 @@ plan is not executable.
 Once the user approves, exit plan mode, then record approval:
 
 ```console
-$ python3 ../../scripts/measure.py hash plan.json
+$ python3 <measure.py> hash plan.json
 ```
 
 Store that value as `plan_hash` and set `completed.plan=true` in `state.json`.

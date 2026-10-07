@@ -56,9 +56,7 @@ with stable locators.
 
 ## Orchestration Plan
 
-Enter plan mode before touching anything — `EnterPlanMode` in Claude Code,
-`/plan` or Shift+Tab in Cursor, Codex, and Gemini. Where plan mode is
-unavailable, present the same plan in chat and wait.
+Enter plan mode before the first edit. In Claude Code call `EnterPlanMode`; in Cursor, Codex, or Gemini use `/plan` or `Shift+Tab`. Where plan mode is unavailable, present the plan as text.
 
 The plan states:
 
@@ -94,7 +92,11 @@ types, <n> contested` or `⚠ Blocked: <reason>`. Sections:
    was killed and what the kill revealed.
 4. `## Where it lives` — the study directory path and which stages ran.
 
+A blocked run follows the halted-run shape in the output contract: hero, one
+sentence naming the missing corpus, and what to point the study at. Print no
+sections and no guesses from a pasted snippet. Name no local paths.
+
 Next-step options: contest another round, compare against another study,
-publish the brief, stop here.
+stop here.
 
 Write it per `../../references/prose-rules.md`.

@@ -21,8 +21,9 @@ meant, and never guess at a fix for it.
 
 With no repository or no readable code (findings pasted into a bare
 session), every gate past Locate fails for lack of evidence. Each
-finding gets `ask` with the reason "code not available", no fix shape,
-and no `fixup!`. Merging duplicates and dropping non-claims still apply.
+finding gets `ask` with the reason "code not available" and one line
+naming what is missing, no fix shape, no `fixup!`, and no hypothetical
+about what the code might do. Merging duplicates and dropping non-claims still apply.
 
 ### 2. Truth
 
@@ -198,6 +199,3 @@ Each record carries:
 - "Three bots flagged it, so it must be real." Bots share training data
   and prompt shapes; three agreements are one opinion, and the code is
   the evidence.
-- "It's a real bug, declining feels wrong." Declining `improbable` is a
-  recorded, falsifiable claim about the trigger, published to the
-  reviewer. Ignoring is silence; this is not that.

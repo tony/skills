@@ -31,9 +31,9 @@ message.
 
 ## The toolkit script
 
-`rebase-todo.sh`, next to this file, wraps the idioms below. It refuses
-a dirty tree or an operation in progress, and reports a rebase it left
-stopped.
+`scripts/rebase-todo.sh`, at `../scripts/rebase-todo.sh` from this file,
+wraps the idioms below. It refuses a dirty tree or an operation in
+progress, and reports a rebase it left stopped.
 
 `<toolkit>` is the absolute path to `rebase-todo.sh`. A shell runs in the
 project's working directory, not this plugin's, so resolve the full path
@@ -42,32 +42,32 @@ before invoking it.
 Report any operation in progress, so a later command does not fail
 mysteriously:
 
-```
-sh <toolkit> status
+```console
+$ sh <toolkit> status
 ```
 
 Print the todo list for a range:
 
-```
-sh <toolkit> show <base>
+```console
+$ sh <toolkit> show <base>
 ```
 
 Replay the range using an edited plan as the todo list:
 
-```
-sh <toolkit> apply <base> plan.txt
+```console
+$ sh <toolkit> apply <base> plan.txt
 ```
 
 Run a command after every commit, in place:
 
-```
-sh <toolkit> verify <base> 'make test'
+```console
+$ sh <toolkit> verify <base> 'make test'
 ```
 
 Fold every pending `fixup!` and `amend!` commit:
 
-```
-sh <toolkit> squash <base>
+```console
+$ sh <toolkit> squash <base>
 ```
 
 Exit 0 is success, 1 means git failed and may have left a rebase
@@ -83,8 +83,8 @@ commits.
 Capturing the todo from a real `git rebase -i` replays the range and
 changes SHAs. Generate the plain pick list instead:
 
-```
-git log --reverse --no-merges --format='pick %h %s' <base>..HEAD
+```console
+$ git log --reverse --no-merges --format='pick %h %s' <base>..HEAD
 ```
 
 ## Config that changes the rules
@@ -103,8 +103,12 @@ to `error` for any generated plan.
 and a conflict while reapplying the autostash still exits 0, leaving
 conflict markers. Check `git status --porcelain` yourself.
 
-```
-git -c rebase.rebaseMerges=false -c rebase.missingCommitsCheck=error -c rebase.autoStash=false rebase -i <base>
+```console
+$ git \
+    -c rebase.rebaseMerges=false \
+    -c rebase.missingCommitsCheck=error \
+    -c rebase.autoStash=false \
+    rebase -i <base>
 ```
 
 ## Verifying every commit
@@ -112,8 +116,8 @@ git -c rebase.rebaseMerges=false -c rebase.missingCommitsCheck=error -c rebase.a
 `--exec` runs a command after each commit and stops at the first
 failure: the per-commit gate.
 
-```
-git rebase --keep-base --exec 'make test' <base>
+```console
+$ git rebase --keep-base --exec 'make test' <base>
 ```
 
 `--keep-base` is not optional. Without it, `git rebase --exec <cmd>
@@ -131,16 +135,22 @@ reports every early commit as broken.
 
 `git commit --fixup=reword:<sha>` requires an editor and is unusable
 headless. Write the `amend!` commit by hand instead; `--autosquash`
-treats it identically.
+treats it identically. Git rejects `-m` together with `-F`, so put
+everything in the message file: the line `amend! <original subject>`,
+a blank line, then the complete replacement message (its subject, a
+blank line, its body). Everything after the first blank line becomes
+the new message.
 
-```
-git commit --allow-empty -m "amend! <original subject>" -F new-message.txt
+```console
+$ git commit --allow-empty -F new-message.txt
 ```
 
 Then fold it:
 
-```
-GIT_SEQUENCE_EDITOR=true GIT_EDITOR=false git rebase -i --autosquash <base>
+```console
+$ GIT_SEQUENCE_EDITOR=true \
+  GIT_EDITOR=false \
+  git rebase -i --autosquash <base>
 ```
 
 ## Recovering
@@ -155,8 +165,8 @@ detached at the half-rewritten result and restores nothing.
 Detect an in-progress operation by probing the git dir, never HEAD:
 `git status` reports a detached HEAD with no sign a rebase is underway.
 
-```
-git rev-parse --git-path rebase-merge
+```console
+$ git rev-parse --git-path rebase-merge
 ```
 
 The names worth probing are `rebase-merge`, `rebase-apply`,

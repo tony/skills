@@ -50,7 +50,8 @@ Take the most stable locator the source supports, in this order:
 4. A source with no stable anchor, such as a PDF without pagination or a
    transcript: quote enough unique text to be found by search, and record in
    `sources.jsonl` that the locator is a search string rather than a position,
-   so `verify` checks it by search.
+   so `verify` checks it by search. The kind is the source row's
+`locator_kind`; the cite's `locator` holds the position or the search string.
 
 Never invent a position the source does not have. A confident wrong locator
 costs a reader more than an honest search string.

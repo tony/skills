@@ -21,13 +21,24 @@ sample count, default 5), `--force` to ignore the idempotency token, and
 `--memory-dir` to override the memory location.
 
 Arithmetic goes through `references/measure.py` (Python 3 standard
-library). Run it by absolute path: `../../` is relative to this file.
+library). That path resolves from this skill's own directory, not the
+project's working directory: resolve this file's directory, join
+`references/measure.py`, print the absolute path once, and write that
+literal path in each command below where `<measure.py>` appears.
 
 ## Step 1: Preflight
 
 Read the project's own test command from `AGENTS.md`, `CLAUDE.md`,
-`justfile`, `tox.ini`, or `pyproject.toml`, and record it; every later phase
-reuses it. Substitute it wherever this file writes `pytest`.
+`justfile`, `tox.ini`, or `pyproject.toml`. Append the scope from `$ARGUMENTS`
+(a path or `-m <marker>`) to it, record the result as `test_command`, and
+substitute it wherever this file writes `pytest`. Every later phase reuses
+`test_command` unchanged, so baseline and candidates measure the same tests.
+
+Measurement flags (`-p no:cacheprovider -p no:randomly -q`) go straight onto a
+command that runs pytest itself (`pytest`, `uv run pytest`, `python -m pytest`).
+For a wrapper (`tox -e py`, `nox -s tests`, `make test`), pass them through the
+wrapper's own separator (`tox -e py -- <flags>`); when the wrapper has none, run
+it without them and record that in `baseline.json`.
 
 If the project has no pytest suite, stop with the halted-run shape in
 `references/output-contract.md`.
@@ -45,8 +56,8 @@ $ pytest --collect-only -q -p no:cacheprovider -p no:randomly
 Write the node-id lines (unsorted) to `collection.txt`. Compute the idempotency
 token defined in the schema with `measure.py token --head <HEAD sha>
 --collection collection.txt --version <name>=<version> ...` (pytest and each
-plugin). If `state.json` shows `scan` completed with an unchanged token and
-`hypotheses.json` exists, report "already scanned" and stop, unless `--force`.
+plugin), and store it in `state.json` as `env_token`. If `state.json` shows
+`scan` completed with an unchanged token and `hypotheses.json` exists, report "already scanned" and stop, unless `--force`.
 
 ## Step 3: Detect capabilities
 
@@ -61,11 +72,11 @@ cache-disabled runs, appending each JSON line to a runs file in the memory
 directory:
 
 ```console
-$ python3 references/measure.py run \
+$ python3 <measure.py> run \
     -- pytest -p no:cacheprovider -p no:randomly -q
 ```
 
-`measure.py band <runs file>` prints the median, MAD, and noise band (floored at
+Substitute `test_command` for `pytest`. `measure.py band <runs file>` prints the median, MAD, and noise band (floored at
 the 50 ms trust floor), and exits 1 when any run fails or the test counts differ.
 A failing baseline means the suite is red: stop and report it. Write the env
 fingerprint, versions, capabilities, the band, and the passed/total counts to

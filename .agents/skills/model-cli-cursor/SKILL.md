@@ -13,7 +13,8 @@ metadata:
 
 Run a prompt through Cursor's `agent` CLI. There is no fallback tier. Follow
 `references/dispatch.md` for triggers, running a tier, failure handling,
-and the report.
+and the report. Write the report per
+`references/prose-rules.md`.
 
 ## Step 1: Detect the CLI
 
@@ -31,7 +32,8 @@ Cursor's read-only plan mode.
 1. Normal: `agent -p -f --`
    Plan: `agent -p --mode plan --`
 
-Failure of this tier, including credit exhaustion, ends the run: report it.
+Failure of this tier, including credit exhaustion, ends the run: report it. Do not suggest or
+run another vendor's CLI.
 
 
 ## Portability notes

@@ -90,11 +90,18 @@ has no `.function`) and `2>/dev/null` does not hide it — so override addopts w
 clearing addopts here is safe.
 
 A fixture in the first set but not the second, and not `autouse`, is a
-candidate. Cross-check with the dedicated tool when available:
+candidate. Cross-check with the `pytest-deadfixtures` plugin when installed. It has no
+executable of its own; it adds `--dead-fixtures` to pytest, so run it in the
+project environment. With `uv`:
 
-```bash
-uvx --with pytest-deadfixtures --from pytest pytest --dead-fixtures
+```console
+$ uv run --with pytest-deadfixtures \
+    pytest \
+    --dead-fixtures
 ```
+
+With another runner, install the plugin into that environment first. Never run it
+through a bare `uvx`: it lacks the project's dependencies, so collection fails.
 
 **Mandatory guard (H09).** Static analysis cannot see dynamic requests. Before
 deleting, search for dynamic references:
@@ -112,8 +119,13 @@ why).
 
 ## Duplicate fixtures (H11/H42)
 
-```bash
-uvx --with pytest-deadfixtures --from pytest pytest --dup-fixtures
+With the plugin installed as above (`--dup-fixtures` runs the tests, unlike
+`--dead-fixtures`, and skips fixtures without a truthy return value):
+
+```console
+$ uv run --with pytest-deadfixtures \
+    pytest \
+    --dup-fixtures
 ```
 
 Or find name collisions across conftests with the built-ins:

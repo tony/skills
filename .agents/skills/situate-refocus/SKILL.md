@@ -54,20 +54,26 @@ where it started.
 
 ### 4. Find the gap
 
-Walk the goal's criteria one at a time and check each against the
-branch. Criteria with no work behind them are drift too.
+For a ticket or pull-request goal, walk its criteria one at a time and
+check each against the branch. For a typed or branch-name goal, name
+only the gaps its own words imply; never add criteria, settings, or
+tests it does not state. Criteria with no work behind them are drift
+too.
 
 ### 5. Propose the correction
 
-Recommend one of the four correctives in the goal-derivation reference
-and say why. Do not assume the goal wins: when the excursion was the
+Recommend one applicable corrective from the goal-derivation reference
+and say why; offer only the correctives that apply. Do not assume the goal wins: when the excursion was the
 better instinct, update the ticket or pull request body to match.
 
 ## Output
 
-Write it per `references/prose-rules.md`. Open with a one-line hero — `✓ On goal: <goal> · <n> commits`, or
-`⚠ Drift: <what wandered>`, or `⚠ No goal recoverable` — then exactly
-these sections:
+Write it per `references/prose-rules.md`. Name no absolute path
+or temp directory. Open with a one-line hero: `✓ On goal: <goal> · <n> commits`,
+`⚠ Drift: <what wandered>`, `⚠ No goal recoverable`, or
+`⚠ Nothing to measure yet: <why>` when there are no commits or changes
+to classify (also the hero when the repository root is the home
+directory; see the sweep reference). Then exactly these sections:
 
 1. `## Goal` — the goal in one or two sentences, and the source it came
    from with its confidence.
@@ -77,8 +83,9 @@ these sections:
    excursion started, and the pattern behind it; or that there is none.
 4. `## Gap` — criteria the goal asks for with nothing on the branch
    addressing them; or that there are none.
-5. `## Realign` — the recommended correction and the reasoning, followed
-   by the alternatives that were not recommended.
+5. `## Realign` — the recommended correction and the reasoning. A run
+   with nothing to measure prints the hero, `## Goal`, and one `## Realign`
+   line saying what the user must do; skip the other sections.
 
 Reply in this shape, as plain text outside any code fence, with plain
 bullets and no bold (never `- **Label:** ...`):
@@ -106,19 +113,18 @@ bullets and no bold (never `- **Label:** ...`):
 ## Realign
 
 - Split the limiter commits to a follow-up branch and finish the test here. The refactor is sound but belongs in its own review.
-- Not recommended: widening the goal to include the refactor.
 
 1. Finish the gap
 2. Split the off-goal work to a follow-up
-3. Drop the off-goal work
-4. Widen the goal to match
+3. Widen the goal to match
 ```
 
-End with an `ask-user-choice` panel offering the correctives as actions
-— finish the gap, split the off-goal work to a follow-up, drop it, widen
-the goal to match the work — so the user can choose without composing a
-command. Skip the panel only in plan mode; without the tool, end with
-those options as numbered lines.
+End with an `ask-user-choice` panel offering the applicable correctives
+as actions (finish the gap, split the off-goal work to a follow-up, drop
+it, widen the goal to match the work), so the user can choose without
+composing a command. Skip the panel in plan mode and on a run with
+nothing to measure. Without the tool (Codex, headless runs), end with
+those options as numbered lines and stop.
 
 
 ## Portability notes

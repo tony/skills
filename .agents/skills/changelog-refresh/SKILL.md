@@ -19,7 +19,8 @@ rewritten; the `changelog-rewrite-aggressively` skill does that.
 
 Scope: edit only changelog content the branch added. Entries from the base
 branch, whether earlier releases or other work's unreleased entries, are
-read-only. A correction that needs a line the branch did not add: stop and ask.
+read-only. A correction that needs a line the branch did not add: ask, or without a
+question tool leave it and note the limitation.
 
 Additional context from user: $ARGUMENTS
 
@@ -52,6 +53,10 @@ Write entries and the commit message per `references/prose-rules.md`.
 
    None: say so and offer the `/changelog` procedure instead.
 
+4. Run `git status --porcelain -- <changelog-file>`. Output means earlier
+   uncommitted edits: a commit would sweep them in, so never commit; edit
+   only, and say why.
+
 ## Phase 2: Recompute what the entries should say
 
 Apply `branch-scope.md` and `entry-rules.md`: read conventions, categorize, and
@@ -72,7 +77,7 @@ Compare the branch-owned entries against the recomputed ones.
 - **Out of reach**: the fix would touch content the branch did not add (the
   branch's entry merged into a pre-existing bullet, or a section heading
   shared with base entries must change). Ask via `ask-user-choice` first; if
-  declined, leave it and note the limitation.
+  declined, or without a question tool, leave it and note the limitation.
 
 ## Phase 4: Present, edit, commit
 
@@ -94,20 +99,20 @@ in order:
    `--commit` to apply and commit.
 
    Reply in this shape, as plain text outside any code fence, with plain
-bullets and no bold (never `- **Label:** ...`):
+   bullets and no bold (never `- **Label:** ...`):
 
-```text
-Branch: feat/cache-evict | Base: main | Changelog commits: 2
+   ```text
+   Branch: feat/cache-evict | Base: main | Changelog commits: 2
 
-Old:
-- Add `Cache.evict()` (#212)
+   Old:
+   - Add `Cache.evict()` (#212)
 
-New:
-- Add `Cache.evict()` to drop a cached key (#212)
+   New:
+   - Add `Cache.evict()` to drop a cached key (#212)
 
-- Everything else in CHANGES.md is untouched.
-- Target: Unreleased, Features.
-```
+   - Everything else in CHANGES.md is untouched.
+   - Target: CHANGES.md, Unreleased, Features. No version assigned, no release cut.
+   ```
 
 2. On approval, apply with Edit, confined to the branch's footprint plus
    approved insertions in the unreleased block.
@@ -115,7 +120,8 @@ New:
    `<changelog-file>` against the Phase 1 footprint must show no changed
    base-branch lines.
 4. With `--commit` in `$ARGUMENTS`, commit the edit as one new commit on top,
-   per `commit-message.md`. Otherwise leave it uncommitted and show a
+   per `commit-message.md`: no `Co-Authored-By`, no "Generated with" or other
+   tool trailer, no emoji. Otherwise leave it uncommitted and show a
    ready-to-use commit message.
 
 Never rebase, amend, or force-push.

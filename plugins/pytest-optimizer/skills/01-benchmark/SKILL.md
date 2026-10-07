@@ -18,7 +18,10 @@ re-benchmark ids already recorded, and `--memory-dir` to override the memory
 location.
 
 Arithmetic goes through `../../scripts/measure.py` (Python 3 standard
-library). Run it by absolute path: `../../` is relative to this file.
+library). That path resolves from this skill's own directory, not the
+project's working directory: resolve this file's directory, join
+`../../scripts/measure.py`, print the absolute path once, and write that
+literal path in each command below where `<measure.py>` appears.
 
 ## Step 1: Load inputs
 
@@ -28,11 +31,15 @@ Resolve the memory directory by the lookup order in
 `../../references/output-contract.md` and tell the user to run
 `pytest-optimizer:00-scan` first.
 
+Recompute the idempotency token as `00-scan` Step 2 does. If `state.json`
+records an `env_token` and the result differs, the baseline is stale: stop and tell the user to run
+`pytest-optimizer:00-scan --force`.
+
 Read `baseline.json` and `hypotheses.json`. If `git status --porcelain` shows
 changes outside the memory directory, stop and ask the user to commit or shelve
 them: the scratch worktree is cut from `HEAD`, which the baseline must match.
-Substitute the resolved test command wherever this file writes `pytest`. Skip a
-hypothesis whose id already has a benchmark recorded **against the current
+Substitute `test_command` from `baseline.json` wherever this file writes
+`pytest`. Skip a hypothesis whose id already has a benchmark recorded **against the current
 baseline token**, unless `--force`.
 
 ## Step 2: Per hypothesis — apply, measure, gate
@@ -48,7 +55,11 @@ For each open hypothesis, in isolation:
    ```
 
    Then add a detached worktree there and run everything below inside it with
-   the project's own interpreter and environment (the worktree has no virtualenv):
+   the project's own runner. The worktree holds only tracked files: no virtualenv
+   and no gitignored build artifacts. Rebuild them there with the project's
+   install or sync command (`uv run` builds a fresh `.venv` on first use, which
+   the untimed warm-up absorbs), or mark the hypothesis `rejected` when the suite
+   cannot run from a clean checkout:
 
    ```console
    $ git worktree add --detach <scratch-dir> HEAD
@@ -63,7 +74,7 @@ For each open hypothesis, in isolation:
    and then `--runs` times, appending each JSON line to a candidate runs file:
 
    ```console
-   $ python3 ../../scripts/measure.py run \
+   $ python3 <measure.py> run \
        --cwd <scratch-dir> \
        -- pytest -p no:cacheprovider -p no:randomly -q
    ```
@@ -71,7 +82,7 @@ For each open hypothesis, in isolation:
    Judge the runs against the baseline:
 
    ```console
-   $ python3 ../../scripts/measure.py compare baseline.json <candidate runs file>
+   $ python3 <measure.py> compare baseline.json <candidate runs file>
    ```
 
    A candidate counts only when `valid` is true and `clears_noise` is true.

@@ -24,9 +24,17 @@ regression usually entered, and the reader has no other way to find
 them.
 
 **Verify before writing.** A link that 404s is indistinguishable from a
-version that was never published. Check the URL resolves — for a
+version that was never published. Check the URL resolves. For a
 GitHub-hosted project, `gh api repos/<owner>/<repo>/releases/tags/<tag>`
-gates on exit status.
+gates on exit status. For any other host (pnpm.io, nodejs.org, go.dev,
+docs.python.org, a registry), fetch the URL and require HTTP 200:
+
+```console
+$ curl -sSL -o /dev/null -w '%{http_code}' <url>
+```
+
+A URL fragment (`#anchor`) is never checked by the status code; copy it
+from the rendered page.
 
 **Order the block as the reader reads it.** Changelog first when the
 project keeps a good one, release notes first when it does not.
@@ -39,21 +47,23 @@ project keeps a good one, release notes first when it does not.
 **just** — `https://github.com/casey/just/blob/<version>/CHANGELOG.md`
 and `https://github.com/casey/just/releases/tag/<version>`
 
-**pnpm** — `https://pnpm.io/blog/releases/<major.minor>` and
-`https://github.com/pnpm/pnpm/releases/tag/v<version>`. The blog post is
-per minor, so a patch bump within a minor cites the same post as the
-minor that opened it.
+**pnpm** — `https://github.com/pnpm/pnpm/releases/tag/v<version>`, plus
+the blog post at `https://pnpm.io/blog/releases/<major.minor>` (or
+`<major.minor.patch>` for a patch post) when one exists. Not every
+release has a post; a 404 means cite the GitHub release alone.
 
 **Node.js** — `https://nodejs.org/en/blog/release/v<version>`
 
 **Python** —
-`https://docs.python.org/release/<version>/whatsnew/changelog.html#python-<version-with-dashes>`,
-plus `https://devguide.python.org/versions/` when the support window is
-part of the reason. A version's release schedule PEP belongs in the
+`https://docs.python.org/release/<version>/whatsnew/changelog.html`.
+The page has one anchor per release, ending in `-final` or
+`-release-candidate-<N>`; copy the anchor from the page rather than
+building it. Add `https://devguide.python.org/versions/` when the
+support window is part of the reason. A version's release schedule PEP belongs in the
 block when the bump is about the schedule rather than the content.
 
 **Go** — `https://go.dev/blog/go<major.minor>` and
-`https://tip.golang.org/doc/go<major.minor>`. Both are per minor; a
+`https://go.dev/doc/go<major.minor>`. Both are per minor; a
 patch bump cites the minor's pages.
 
 **poetry** —
@@ -92,7 +102,9 @@ the `github-actions-update-actions` skill, not this plugin.
 Fall back in this order: the release notes on the forge, the tag's
 compare view against the previous tag, then the registry's release page
 (`https://pypi.org/project/<name>/<version>/`,
-`https://www.npmjs.com/package/<name>/v/<version>`).
+`https://www.npmjs.com/package/<name>/v/<version>`). npmjs.com refuses
+non-browser clients with a 403, so confirm an npm version with
+`npm view <name>@<version> version` instead.
 
 If none of those say anything useful, say so in the body rather than
 padding the block with a link that answers nothing. "No release notes

@@ -24,8 +24,11 @@ $ df -h
 
 On WSL, the guest root is an `ext4.vhdx` under the Windows user
 profile, and container runtimes add their own. Locate every backing
-file and compare its on-disk size against the used space reported
-inside it. This command is WSL-only and needs GNU `find` and `numfmt`:
+file and compare its size against the used space reported inside it.
+This command is WSL-only and needs GNU `find` and `numfmt`. `%s` is the
+file's apparent size; on `/mnt/c`, `du` reports the same figure, so the
+on-disk size of a sparse vhdx is readable only from Windows (file
+properties, "Size on disk"). Label the figure "apparent size":
 
 ```console
 $ find /mnt/c/Users/*/AppData/Local \
@@ -36,7 +39,7 @@ $ find /mnt/c/Users/*/AppData/Local \
   | numfmt --field=1 --to=iec
 ```
 
-The gap between a backing file's allocated size and the guest's used
+The gap between a backing file's size and the guest's used
 space is *balloon* — blocks written once, freed inside the guest, and
 never returned to the host. It is recoverable without deleting
 anything.
@@ -79,8 +82,8 @@ so sequence matters:
 
 1. Delete and merge inside the guest. This frees blocks internally and
    changes the host's disk usage by nothing at all.
-2. Hand the user the shutdown command and wait.
-3. Hand the user the compaction command.
+2. Hand the user the in-guest trim, then the shutdown command, and wait.
+3. Hand the user the compaction commands.
 
 Sparse is a durable fix: future TRIM self-reclaims, so the balloon stops
 re-accumulating. Offer it alongside a plain compact.
@@ -98,7 +101,19 @@ Sources:
 [Advanced settings configuration in WSL](https://learn.microsoft.com/en-us/windows/wsl/wsl-config)
 (`sparseVhd`), and
 [Optimize-VHD](https://learn.microsoft.com/en-us/powershell/module/hyper-v/optimize-vhd)
-(compact). Re-check them with `wsl --help` before relying on a command.
+(compact),
+[Mount-VHD](https://learn.microsoft.com/en-us/powershell/module/hyper-v/mount-vhd)
+(`-ReadOnly`), and
+[compact vdisk](https://learn.microsoft.com/en-us/windows-server/administration/windows-commands/compact-vdisk)
+(diskpart). Re-check them with `wsl --help` before relying on a command.
+
+Run inside the guest, before the shutdown. It tells the filesystem to
+release free blocks so the host can reclaim them; see `man fstrim`. Zero
+bytes trimmed, or an error, means compaction will likely free little:
+
+```console
+$ sudo fstrim -av
+```
 
 Run in PowerShell. It terminates every running distribution and the WSL 2
 VM, killing all shells, servers, and containers in them:
@@ -113,14 +128,44 @@ Run in PowerShell to print a distribution's vhdx path:
 (Get-ChildItem -Path HKCU:\Software\Microsoft\Windows\CurrentVersion\Lxss | Where-Object { $_.GetValue("DistributionName") -eq '<distribution-name>' }).GetValue("BasePath") + "\ext4.vhdx"
 ```
 
-Run in an elevated PowerShell after the shutdown. `Optimize-VHD` is in
-the Hyper-V PowerShell module, which not every Windows edition installs,
-and requires the disk to be detached or attached read-only. On a detached
-VHDX, `-Mode Full` falls back to Prezeroed per the cmdlet page:
+Compaction needs the vhdx detached or attached read-only. The
+`Optimize-VHD` page says `-Mode Full` and `-Mode Quick` are allowable only
+for a disk mounted read-only, and that on a VHDX not attached read-only
+they fall back to Prezeroed and Pretrimmed. Prezeroed reclaims only space
+already zeroed, which ext4 free space is not, so `Optimize-VHD` on a
+detached vhdx can free nothing. Attach read-only first.
+
+Run in an elevated PowerShell after the shutdown. `Mount-VHD` and
+`Optimize-VHD` are in the Hyper-V PowerShell module, which not every
+Windows edition installs:
+
+```powershell
+Mount-VHD -Path <path-to-ext4.vhdx> -ReadOnly
+```
+
+Compact it, then detach:
 
 ```powershell
 Optimize-VHD -Path <path-to-ext4.vhdx> -Mode Full
 ```
+
+```powershell
+Dismount-VHD -Path <path-to-ext4.vhdx>
+```
+
+Where the Hyper-V module is missing, run `diskpart` in an elevated
+prompt and enter these at the `DISKPART>` prompt (cited on the
+`compact vdisk` page):
+
+```text
+select vdisk file="<path-to-ext4.vhdx>"
+attach vdisk readonly
+compact vdisk
+detach vdisk
+```
+
+The compact "can succeed without reducing the file size". Re-read the
+file size afterwards and report the measured change.
 
 The Microsoft pages cite no command that sets an existing distribution's
 disk sparse. They document only `sparseVhd=true` under `[experimental]`

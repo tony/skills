@@ -60,14 +60,16 @@ unavailable, and environment versions for the tools used to collect.
 
 ### sources.md
 
-The source manifest: one entry per collected artifact, each with a
-stable name (for example `gh-pr-cycle-times`) so figures can cite
-it. Every entry records:
+The source manifest: one `## <name>` entry per collected artifact,
+named stably (for example `gh-pr-cycle-times`) so figures can cite
+it. Every entry has these labeled lines:
 
-- the query or command, verbatim;
-- the timestamp of execution;
-- the tool version;
-- the output file it produced under `raw/`.
+```text
+- query: the command, verbatim
+- executed: 2026-06-30T10:00:00Z
+- tool version: gh 2.60.1
+- output: raw/pr-cycle-times.json
+```
 
 ### assumptions.yaml
 
@@ -100,10 +102,23 @@ Immutable snapshots of instrument output, written before anything is
 derived from them. Never mutated after write — corrections happen by
 adding a new snapshot, never by editing an old one.
 
+Per-person data (logins, per-user adoption) stays out of `raw/` when an
+aggregate answers the question; otherwise tell the user the run root
+may be cloud-synced and ask how long to keep the snapshots.
+
 ### measurements/
 
 Per-topic tables (timing, cycle times, rework, adoption, ...).
 Every figure tagged MEASURED, DERIVED, BENCHMARKED, or ESTIMATED, denominator stated.
+
+A figure computed from a CSV in `raw/` gets a line the gate recomputes:
+
+```text
+check: median raw/task-timings.csv minutes_manual-minutes_ai = 18
+```
+
+The statistic is `median`, `mean`, `min`, `max`, or `n`; the column is
+one header or `a-b` for a per-row difference.
 
 ### findings.md
 
@@ -128,29 +143,33 @@ $ ../scripts/business.py runs
 ```
 
 It searches `~/Documents` and, on WSL, the Windows users' Documents
-folders; `--root <dir>` adds one. Confirm the chosen run with the
+folders, skipping any it cannot read; `--root <dir>` searches that
+directory instead. Confirm the chosen run with the
 user before rendering anything from it. Running non-interactively:
 proceed with the newest run and say which one in the output's Run
 section instead of asking.
 
 ## Completeness gate
 
-Report commands refuse to render from an incomplete package. Check,
-in order:
+Report commands refuse to render from an incomplete package. Run:
 
-1. `README.md` exists and states a pinned window.
-2. `sources.md` exists and every entry carries a verbatim query,
-   timestamp, tool version, and output file.
-3. `assumptions.yaml` passes `../scripts/business.py assumptions`.
-4. Every figure in `measurements/` and `findings.md` carries one of
-   the four provenance tags, and every MEASURED figure's citation
-   resolves: collect the cited manifest names and verify each names
-   an entry that exists in `sources.md` — a mechanical check, not a
-   judgment call.
-5. Every unknown in `findings.md` states what data would resolve it.
+```console
+$ ../scripts/business.py gate <run>
+```
 
-On any failure: do not render, and treat it as a stopped run (see
-Rendering a report).
+It prints each problem and exits 1, or prints `ok`. It checks that
+`README.md` states a pinned window; that every `sources.md` entry has a
+query, timestamp, tool version, and an existing output file; that
+`assumptions.yaml` passes `business.py assumptions` plus numeric
+values, ISO dates, and resolving MEASURED `source_ref`s; that every
+MEASURED figure cites an existing `sources.md` entry; that figures
+with units carry a tag; that every `check:` line recomputes from
+`raw/`; and that each unknown names the data that would resolve it.
+
+The script cannot judge whether a tag is right or a figure is
+missing a unit it does not recognize. Read `measurements/` and
+`findings.md` once for those. On any failure: do not render, and
+treat it as a stopped run (see Rendering a report).
 
 ## Rendering a report
 
@@ -158,10 +177,14 @@ Every report skill follows this frame. The skill names its own tier,
 references, and body.
 
 Value is engineer-hours, cycle time, and capacity, never money.
+A request to convert to money is declined in one sentence in the
+reply. Offer the finance handoff: the hours with their interval, the
+pinned window, and the population (engineers and period), for finance
+to convert with its own rates.
 
 1. Locate the run: the `$ARGUMENTS` path if given, else per "Locating
    an existing run".
-2. Run the completeness gate. Load the skill's other references only
+2. Run the completeness gate (above). Load the skill's other references only
    after it passes.
 3. Render the body, then write the report to `<run>/reports/<name>.md`.
 
@@ -205,9 +228,12 @@ bullets and no bold (never `- **Label:** ...`):
 A run that halts (run not found, gate failed, missing input, failed
 sweep) is one hero line `⚠ Refused: <reason in one sentence>`, then
 one short paragraph or list of what the user must do next. No `Run`,
-`Gate`, or `Report` sections, no panel. State only what happened:
-never claim a check failed that did not run, and never describe
-references that were not loaded.
+`Gate`, or `Report` sections, no panel, no list of checks performed,
+and no sentence that repeats the hero. State only what a command
+printed: never claim a check failed that did not run, never report an
+exit status the script does not define (`runs` prints nothing and
+exits 0 when it finds no run), and never describe references that
+were not loaded.
 
 ```text
 ⚠ Refused: sources.md has an entry with no output file.
@@ -217,9 +243,11 @@ Add the missing snapshot or remove the entry, then render again.
 
 ### Paths and commits
 
-Name a run as `<date>/business/<workflow>` relative to its root.
-Print an absolute or temporary path only when the user must act on
-that file.
+Name a run as `<date>/business/<workflow>` relative to its root, and
+a root as the user would type it (`~/Documents`), never expanded into
+a temporary or sandbox path. Print an absolute path only when the user
+must act on that file. Never report sandbox restrictions as facts
+about the user's machine; say a path could not be read or written.
 
 Steps that ask the user (`AskUserQuestion`) state their
 non-interactive default; an explicit authorization in the request

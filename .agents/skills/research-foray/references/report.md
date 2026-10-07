@@ -78,4 +78,6 @@ Open with a one-line hero (`✓ <report path>: <n> findings, <n> sources, check 
 1. `## Answer`: the report's title and summary, verbatim.
 2. `## Checks`: the `check` result from this session, each gate with its counts.
 
+Write per `prose-rules.md`: plain bullets, no bold labels, no sentence narrating your own edits ("I added…"), no closing recap.
+
 Panel options: verify sources, tighten the prose, stop.

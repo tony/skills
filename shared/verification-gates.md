@@ -24,8 +24,8 @@ discovered command in the report before running it.
 | `build` | `build`, `compile`, `bundle`, `dist` |
 
 When a bucket is unset **and the manifest shows evidence the project
-has that gate** — a typecheck config (`mypy`/`pyright` section,
-`tsconfig.json`), a `build` script, a test-runner dependency — present
+has that gate** (a typecheck config such as a `mypy`/`pyright` section
+or `tsconfig.json`, a `build` script, a test-runner dependency), present
 *example* commands via `AskUserQuestion` and require explicit
 selection. Never auto-inject `pytest`, `npm test`, `cargo build`, etc.
 Without such evidence, the bucket is legitimately `unset`: skip it
@@ -34,7 +34,8 @@ evidence-backed unset buckets as `unset` too, and name them in the
 report.
 
 If no conventions file and no manifest exist, prompt once; the user
-may answer `skip` to disable gates for the run.
+may answer `skip` to disable gates for the run. In a non-interactive
+run, treat every bucket as `unset` and say so in the report.
 
 ## CI-coverage pass
 
@@ -50,21 +51,19 @@ so local runs are not duplicated effort:
    GitHub remote, post-push results can be watched with
    `gh pr checks --watch` (or `gh run watch` when no PR exists yet).
 
-Record the result as a two-column split the calling skill embeds in
-its plan output:
-
-| Runs locally (per commit) | Deferred to CI (post-push) |
-|---|---|
-| fast buckets: `format`, `lint`, `typecheck`, scoped `test` | full-matrix tests, slow/marked suites, e2e, release builds |
+Record the result as a split the calling skill embeds in its plan
+output: fast buckets (`format`, `lint`, `typecheck`, scoped `test`) run
+locally per commit; full-matrix tests, slow or marked suites, e2e, and
+release builds are deferred to CI after the push.
 
 ## Right-sizing: no more verification than the change needs
 
-The gates exist to keep every commit green — not to re-run the world.
+The gates exist to keep every commit green, not to re-run the world.
 
 - **Per-commit**: run `format`, `lint`, `typecheck` on the tree, and
   the `test` bucket **scoped to the affected area** when the runner
-  supports path/keyword selection; otherwise — including when no test
-  maps to the change (docs-only edits) — the project's default fast
+  supports path/keyword selection; otherwise (including when no test
+  maps to the change, such as docs-only edits) the project's default fast
   test command as written (its defaults often already exclude slow
   suites).
 - **`build`**: run per commit only when the change plausibly affects
@@ -78,9 +77,8 @@ The gates exist to keep every commit green — not to re-run the world.
 
 ## Storage
 
-Resolved commands are cached for the run as `FORMAT_CMD`, `LINT_CMD`,
-`TYPECHECK_CMD`, `TEST_CMD`, `BUILD_CMD`, plus `CI_COVERAGE` (the
-two-column split) and `CI_WATCH_CMD` (empty when unobservable). They
-are recorded verbatim in the skill's plan output so the user can audit
-what was discovered — the skill does not pre-validate they exist on
-`$PATH`.
+Shell state does not persist between commands, so record each resolved
+command verbatim in the plan text (`format`, `lint`, `typecheck`,
+`test`, `build`, the CI split, and the CI watch command, empty when
+unobservable) and reuse the recorded text. The user audits what was
+discovered there. Do not pre-validate that a command exists on `$PATH`.

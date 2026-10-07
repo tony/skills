@@ -35,8 +35,16 @@ graders:
     type: llm
     focus: last_message
     criteria: |
-      The reply claims a worktree or branch exists only if it ran
-      `git worktree add`, and it claims no commits under `--setup-only`.
+      Under `--setup-only` the reply says no commits were made and no code
+      was implemented, and it does not claim any fix or validation was
+      written.
+
+  - name: worktrees-created
+    type: tool_used
+    tool: Bash
+    input_match: 'git (-C \S+ )?worktree add\b'
+    min: 1
+    arm: both
 
   - name: no-commit
     type: tool_used
