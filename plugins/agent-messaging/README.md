@@ -3,7 +3,7 @@
 Message another running coding-agent session (Claude Code or Codex) on
 this machine, and verify who actually sent an incoming message.
 
-## Requirements
+## Prerequisites
 
 Both sessions run on the same machine under the same user; every route is
 local, and the socket route trusts that boundary. Reaching a Claude session
@@ -12,7 +12,7 @@ share your `CODEX_HOME`; a thread under a different one is invisible, not
 merely unreachable. The `codex-queue` route needs a Codex build that ships
 `codex queue`; check with `codex queue --help`.
 
-Prerequisites: `jq` (envelope audit and socket frames), `python3` 3.9 or newer only to run the
+Tools: `jq` (envelope audit and socket frames), `python3` 3.9 or newer only to run the
 tests, and per route: `nc` for the inbox socket, `tmux` for the typing fallback, and the
 `sqlite3` CLI to read back a Codex queue item (optional; delivery is then reported
 unconfirmed).

@@ -108,7 +108,7 @@ _PHRASE_FIXES = (
 """Repairs for the article and noun left behind when a slash command becomes a skill."""
 # SPIKE: grammar repair by pattern, covering only the shapes this corpus produces
 # ("the /p:c command", "the /p:c"). A new phrasing in a source file would slip through
-# and read awkwardly; nothing detects that, so it needs a re-read after adding commands.
+# and read awkwardly; nothing detects that, so it needs a re-read after adding skills.
 
 _BASH_LINE_RE = re.compile(r"^`!(?P<cmd>.+)`\s*$")
 _INLINE_BANG_RE = re.compile(r"`!([^`\n]*)`")
@@ -121,16 +121,14 @@ _FENCE_RE = re.compile(r"^\s*(```|~~~)")
 
 @dataclasses.dataclass(frozen=True)
 class SourceComponent:
-    """A skill or command in the source tree, before portable naming.
+    """A skill in the source tree, before portable naming.
 
     Attributes
     ----------
     plugin : Path
         Plugin directory that owns the component.
-    kind : str
-        Either ``"skill"`` or ``"command"``.
     path : Path
-        The ``SKILL.md`` or ``commands/<name>.md`` file.
+        The ``SKILL.md`` file.
     raw_name : str
         Undisambiguated component name.
     base : Path
@@ -142,7 +140,6 @@ class SourceComponent:
     """
 
     plugin: Path
-    kind: str
     path: Path
     raw_name: str
     base: Path
@@ -159,13 +156,10 @@ class OutputSkill:
         Output directory name, also the emitted ``name`` frontmatter value.
     body : SourceComponent
         Component whose body becomes ``SKILL.md``.
-    overview : SourceComponent or None
-        Merged sibling whose body is vendored as a bundled overview.
     """
 
     name: str
     body: SourceComponent
-    overview: SourceComponent | None
 
 
 @dataclasses.dataclass
@@ -459,7 +453,6 @@ def _describe_source_path(plugin_name: str, rel: str) -> str:
         "references": "reference",
         "templates": "template",
         "docs": "doc",
-        "commands": "command",
         "skills": "skill",
         "hooks": "hook",
     }
@@ -529,7 +522,7 @@ class SkillBuilder:
 
     Resources (``references/``, ``templates/``, ``docs/``, ``assets/``) are
     copied into the output directory and their links rewritten to plain
-    relative paths. Peer components (other commands and skills) are not
+    relative paths. Peer components (other skills) are not
     copied; they are named, because the export emits them as sibling skills.
     """
 
@@ -560,9 +553,6 @@ class SkillBuilder:
         body = self._transform_markdown(body, body_src.plugin, body_src.base)
         has_headless_default = _HEADLESS_DEFAULT_MARKER in body
         body = body.replace(_HEADLESS_DEFAULT_MARKER, "")
-        if self._skill.overview is not None:
-            body = self._attach_overview(body)
-            sources.append(str(self._skill.overview.path.relative_to(REPO_ROOT)))
         text = self._render(
             fm,
             body + self._portability_notes(body, has_headless_default=has_headless_default),
@@ -581,14 +571,12 @@ class SkillBuilder:
 
     def _render(self, fm: dict[str, t.Any], body: str) -> str:
         """Render frontmatter plus body for the skill's ``SKILL.md``."""
-        overview = self._skill.overview
-        desc_fm = overview.frontmatter if overview is not None else fm
-        raw_description = t.cast("str", (desc_fm or fm).get("description", "")).strip()
-        origin = overview if overview is not None else self._skill.body
+        raw_description = t.cast("str", fm.get("description", "")).strip()
+        origin = self._skill.body
         description = self._rewrite_tokens(raw_description, origin.plugin, origin.base)
         self._description = description
         meta = {"source": ", ".join(self._source_paths())}
-        hint = t.cast("str | None", fm.get("argument-hint") or desc_fm.get("argument-hint"))
+        hint = t.cast("str | None", fm.get("argument-hint"))
         if hint is not None:
             meta["argument-hint"] = hint
         header = _render_frontmatter(
@@ -602,28 +590,7 @@ class SkillBuilder:
 
     def _source_paths(self) -> list[str]:
         """List the repo-relative sources feeding this skill."""
-        paths = [self._skill.body.path]
-        if self._skill.overview is not None:
-            paths.append(self._skill.overview.path)
-        return [str(p.relative_to(REPO_ROOT)) for p in paths]
-
-    def _attach_overview(self, body: str) -> str:
-        """Vendor the merged sibling's body and link it from under the title."""
-        overview = self._skill.overview
-        if overview is None:
-            return body
-        text = _read_body(overview.path)
-        rel = self._allocate(f"{_VENDOR_ROOT}/overview.md")
-        self._vendored[overview.path] = rel
-        rendered = self._transform_markdown(text, overview.plugin, overview.base)
-        self._files[rel] = (rendered.encode("utf-8"), 0o644)
-        pointer = f"*Selection guidance for this skill is bundled at `{rel}`.*"
-        lines = body.split("\n")
-        for position, line in enumerate(lines):
-            if line.startswith("# "):
-                lines[position + 1 : position + 1] = ["", pointer]
-                return "\n".join(lines)
-        return f"{pointer}\n\n{body}"
+        return [str(self._skill.body.path.relative_to(REPO_ROOT))]
 
     def _drain(self) -> None:
         """Transform and store every queued resource, following links onward."""

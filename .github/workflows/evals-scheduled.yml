@@ -16,8 +16,7 @@ on:
 jobs:
   fast:
     runs-on: ubuntu-latest
-    # One run per case, around a minute each; see evals/README.md for the
-    # measured cost of a full pass.
+    # Per-case duration and the full-pass budget are in evals/README.md.
     timeout-minutes: 120
     steps:
       - uses: actions/checkout@v7

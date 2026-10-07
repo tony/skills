@@ -10,7 +10,7 @@ ARTIFACT_PATH is a directory: list it to find the per-participant output files.
 
 Per-participant responses (variants flattened) · Attribution
 
-List each participant's ideas as written. Do not cluster, rank, tabulate, merge, or recommend, and do not count how many distinct designs the responses cover. Keep each design under the participant that wrote it, and say in Attribution that the originals were generated independently in parallel.
+List each participant's ideas as written. Do not cluster, rank, tabulate, merge, or recommend, and do not count how many distinct designs the responses cover. Keep each design under the participant that wrote it; a recommendation inside a response stays there, introduced as that participant's. Add no prose between the hero and the first section. Say in Attribution that the originals were generated independently in parallel.
 
 ## Example
 

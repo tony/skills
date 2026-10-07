@@ -142,7 +142,8 @@ $ python3 <engine> prompt \
 
 Add `--mutating` for a mutating command. Launch every lane in the same turn;
 if parallel dispatch is unavailable, launch them one after another. A failed
-lane never blocks the run.
+lane never blocks the run. Wait for lane results by ending your turn on them, not
+with a sleep or background timer, so the results message stays your last one.
 
 **subagents**: the lanes are `maintainer`, `skeptic`, `builder`. Give each a
 worktree. Read-only commands start it from the snapshot, so the lane sees the

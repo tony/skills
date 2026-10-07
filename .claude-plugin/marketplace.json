@@ -24,7 +24,7 @@
     },
     {
       "name": "rebase",
-      "description": "Automated rebase onto trunk with conflict prediction, resolution, and quality gate verification.",
+      "description": "Rebase onto remote trunk with a file-overlap reading before the replay, conflict resolution, and quality gate verification.",
       "version": "0.0.1",
       "author": {
         "name": "Tony Narlock",

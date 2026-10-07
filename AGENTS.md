@@ -510,9 +510,9 @@ name and its frontmatter `name` match, or the two hosts invoke it by
 different names.
 
 A skill carrying a workflow that only makes sense when the user asks for it by
-name sets `disable-model-invocation: true`. That keeps a command's semantics —
-invocable by name, never routed to on the model's initiative — and keeps it out
-of a routing corpus where it would crowd skills meant to be discovered.
+name sets `disable-model-invocation: true`. That keeps it invocable by name
+only and never routed to on the model's initiative, and keeps it out of a
+routing corpus where it would crowd skills meant to be discovered.
 
 Address bundled files by climbing out of the skill directory
 (`../../references/x.md`), never through `${CLAUDE_PLUGIN_ROOT}`. Codex performs

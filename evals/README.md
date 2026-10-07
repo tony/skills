@@ -123,3 +123,17 @@ everything.
 `.github/workflows/evals-scheduled.yml` runs the fast suite weekly and on
 demand. It needs a `CLAUDE_CODE_OAUTH_TOKEN` secret; without one the job fails
 at the eval step.
+
+## Credentials
+
+Two CI jobs call a model, and each reads a different secret.
+
+- `ANTHROPIC_API_KEY` — the end-to-end install job in
+  `.github/workflows/lint.yml`, which runs `scripts/e2e.py` on every pull
+  request. The scheduled evals do not use it.
+- `CLAUDE_CODE_OAUTH_TOKEN` — the fast suite in
+  `.github/workflows/evals-scheduled.yml`. The end-to-end job does not use it.
+
+The offline routing check (`scripts/skill_evals.py check`) needs neither.
+Locally, unset `ANTHROPIC_API_KEY` before running `claude plugin eval` or
+`scripts/fast_evals.sh` if you want the CLI's own login to pay for the run.

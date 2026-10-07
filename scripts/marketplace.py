@@ -10,7 +10,7 @@
 # ///
 """Marketplace management CLI for tony/skills.
 
-Validates marketplace manifests, plugin structures, and command frontmatter.
+Validates marketplace manifests, plugin structures, and skill frontmatter.
 Syncs the marketplace manifest with discovered plugin directories.
 
 Examples
@@ -472,23 +472,6 @@ def parse_frontmatter(path: Path) -> dict[str, t.Any] | None:
     return None
 
 
-def _validate_commands_dir(plugin_name: str, commands_dir: Path) -> list[str]:
-    """Validate commands/*.md frontmatter in a plugin directory."""
-    errors: list[str] = []
-    md_files = sorted(commands_dir.glob("*.md"))
-    if not md_files:
-        errors.append(f"[{plugin_name}] No .md files in commands/")
-    for md_file in md_files:
-        fm = parse_frontmatter(md_file)
-        if fm is None:
-            errors.append(f"[{plugin_name}] commands/{md_file.name}: Missing YAML frontmatter")
-        elif "description" not in fm:
-            errors.append(
-                f"[{plugin_name}] commands/{md_file.name}: Frontmatter missing 'description'"
-            )
-    return errors
-
-
 def _validate_agents_dir(plugin_name: str, agents_dir: Path) -> list[str]:
     """Validate agents/*.md frontmatter in a plugin directory."""
     errors: list[str] = []
@@ -674,7 +657,7 @@ def _is_runtime_instruction(rel: Path) -> bool:
     Examples
     --------
     >>> from pathlib import Path
-    >>> _is_runtime_instruction(Path("commands/deslop.md"))
+    >>> _is_runtime_instruction(Path("references/deslop.md"))
     True
     >>> _is_runtime_instruction(Path("README.md"))
     False
@@ -685,7 +668,7 @@ def _is_runtime_instruction(rel: Path) -> bool:
     >>> _is_runtime_instruction(Path("docs/specs/2026-05-17-plan-handoff.md"))
     False
 
-    A doc a command loads at runtime is not exempt just for living in ``docs/``:
+    A doc a skill loads at runtime is not exempt just for living in ``docs/``:
 
     >>> _is_runtime_instruction(Path("docs/repo-guard-protocol.md"))
     True
@@ -696,9 +679,9 @@ def _is_runtime_instruction(rel: Path) -> bool:
 
 
 # SPIKE: the split above is by name, not by reachability. The exact question is
-# whether any command or skill can reach the file, which the portable export
+# whether any skill can reach the file, which the portable export
 # already answers when it walks a bundle. Wiring that walk in would let a spec
-# that a command actually loads be checked, and would stop a new prose directory
+# that a skill actually loads be checked, and would stop a new prose directory
 # from silently opting itself out.
 
 
@@ -727,13 +710,13 @@ def _citation_error(owner: str, token: str, *, exists: bool, runtime: bool) -> s
     A file citing its own plugin by repo path breaks on install, because the host
     resolves the path against the user's project:
 
-    >>> _citation_error("pr", "plugins/pr/commands/review-pr.md", exists=True, runtime=True)
-    "cites its own plugin by repo path; use '${CLAUDE_PLUGIN_ROOT}/commands/review-pr.md'"
+    >>> _citation_error("pr", "plugins/pr/references/review.md", exists=True, runtime=True)
+    "cites its own plugin by repo path; climb out of the skill with '../../references/review.md'"
 
-    A citation into a *different* plugin has no ``${CLAUDE_PLUGIN_ROOT}`` spelling
-    — that variable only ever names the citing plugin — so it is left alone:
+    A citation into a *different* plugin has no climbing spelling, since each
+    plugin installs alone, so it is left alone:
 
-    >>> _citation_error("weave", "plugins/pr/commands/deslop.md", exists=True, runtime=True) is None
+    >>> _citation_error("weave", "plugins/pr/references/x.md", exists=True, runtime=True) is None
     True
 
     Repo prose may address its own plugin, since it is read in the repo:
@@ -751,7 +734,7 @@ def _citation_error(owner: str, token: str, *, exists: bool, runtime: bool) -> s
     _, _, remainder = token.partition("/")
     cited, _, rel = remainder.partition("/")
     if runtime and cited == owner:
-        return f"cites its own plugin by repo path; use '${{CLAUDE_PLUGIN_ROOT}}/{rel}'"
+        return f"cites its own plugin by repo path; climb out of the skill with '../../{rel}'"
     return None
 
 
@@ -838,6 +821,34 @@ def _escapes_plugin(source: Path, link: str, plugin_dir: Path) -> bool:
     return not target.is_relative_to(plugin_dir.resolve())
 
 
+PLAN_PRELUDE = (
+    "Enter plan mode before the first edit. In Claude Code call `EnterPlanMode`; "
+    "in Cursor, Codex, or Gemini use `/plan` or `Shift+Tab`. "
+    "Where plan mode is unavailable, present the plan as text."
+)
+"""Verbatim opening AGENTS.md requires under an Orchestration Plan heading."""
+
+
+def _plan_prelude_missing(text: str) -> bool:
+    r"""Report whether a skill has an Orchestration Plan heading but not the prelude.
+
+    Whitespace is collapsed first, so the prelude may wrap across lines.
+
+    Examples
+    --------
+    >>> _plan_prelude_missing("# T\n\n## Orchestration Plan\n\nPlan it.\n")
+    True
+    >>> wrapped = PLAN_PRELUDE.replace(". ", ".\n")
+    >>> _plan_prelude_missing(f"## Orchestration Plan\n\n{wrapped}\n")
+    False
+    >>> _plan_prelude_missing("## Steps\n\nNo plan section here.\n")
+    False
+    """
+    if not re.search(r"^#+ .*Orchestration Plan", text, re.MULTILINE):
+        return False
+    return PLAN_PRELUDE not in " ".join(text.split())
+
+
 def _check_estate_rules(plugin_dir: Path) -> list[str]:
     """Enforce the skill-library rules that keep plugins standalone and lean.
 
@@ -850,6 +861,7 @@ def _check_estate_rules(plugin_dir: Path) -> list[str]:
     - Every resource file is named by some other file in the plugin.
     - A skill or reference running a bundled script says how its path resolves.
     - Every eval grader declares its ``type``.
+    - An Orchestration Plan section carries the verbatim plan-mode prelude.
     """
     name = plugin_dir.name
     errors: list[str] = []
@@ -882,6 +894,8 @@ def _check_estate_rules(plugin_dir: Path) -> list[str]:
         ):
             errors.append(f"[{name}] {rel}: runs {script_ref} with no path-resolution note")
         if path.name == "SKILL.md":
+            if _plan_prelude_missing(text):
+                errors.append(f"[{name}] {rel}: Orchestration Plan lacks the plan-mode prelude")
             body_lines = strip_frontmatter(text).count("\n")
             if body_lines > SKILL_BODY_MAX_LINES:
                 errors.append(
@@ -1046,7 +1060,7 @@ def validate_plugin_dir(plugin_dir: Path) -> list[str]:
         errors.append(f"[{name}] Missing README.md")
 
     # Check for at least one component directory or config file
-    component_dirs = ["commands", "agents", "skills", "hooks"]
+    component_dirs = ["agents", "skills", "hooks"]
     config_files = [".mcp.json", ".lsp.json"]
     has_component = any((plugin_dir / d).exists() for d in component_dirs) or any(
         (plugin_dir / f).exists() for f in config_files
@@ -1055,10 +1069,8 @@ def validate_plugin_dir(plugin_dir: Path) -> list[str]:
         msg = f"[{name}] No component directory or config file found"
         errors.append(msg)
 
-    # Validate commands/*.md frontmatter
-    commands_dir = plugin_dir / "commands"
-    if commands_dir.exists():
-        errors.extend(_validate_commands_dir(name, commands_dir))
+    if (plugin_dir / "commands").exists():
+        errors.append(f"[{name}] commands/: every workflow is a skill; move it under skills/")
 
     # Validate agents/*.md and skills/*/SKILL.md frontmatter
     agents_dir = plugin_dir / "agents"
@@ -1756,7 +1768,7 @@ a picker row.
 
 
 def _collect_sources() -> list[SourceComponent]:
-    """Collect every skill and command in the source tree.
+    """Collect every skill in the source tree.
 
     Each component carries its parsed frontmatter, which is the only YAML the
     render layer needs from the source tree.
@@ -1776,46 +1788,8 @@ def _collect_sources() -> list[SourceComponent]:
                     continue
                 fm = parse_frontmatter(md) or {}
                 raw = str(fm.get("name") or skill_dir.name)
-                found.append(SourceComponent(plugin, "skill", md, raw, skill_dir, fm))
-        commands_dir = plugin / "commands"
-        if commands_dir.exists():
-            found.extend(
-                SourceComponent(plugin, "command", md, md.stem, plugin, parse_frontmatter(md) or {})
-                for md in sorted(commands_dir.glob("*.md"))
-            )
+                found.append(SourceComponent(plugin, md, raw, skill_dir, fm))
     return found
-
-
-def _merge_units(group: list[SourceComponent]) -> list[tuple[SourceComponent, SourceComponent]]:
-    """Pair same-plugin skill/command duplicates into single units.
-
-    A skill and a command with the same name inside one plugin are two entry
-    points to one feature: the command carries the procedure, the skill carries
-    the trigger phrasing. A flat skill namespace can only hold one, so they
-    merge. Returns ``(body, overview)`` pairs where overview may repeat body.
-
-    Parameters
-    ----------
-    group : list[SourceComponent]
-        Components sharing a raw name.
-
-    Returns
-    -------
-    list[tuple[SourceComponent, SourceComponent]]
-        One entry per output skill.
-    """
-    units: list[tuple[SourceComponent, SourceComponent]] = []
-    commands = [c for c in group if c.kind == "command"]
-    skills = [c for c in group if c.kind == "skill"]
-    for command in commands:
-        mate = next((s for s in skills if s.plugin == command.plugin), None)
-        if mate is not None:
-            skills.remove(mate)
-            units.append((command, mate))
-        else:
-            units.append((command, command))
-    units.extend((skill, skill) for skill in skills)
-    return units
 
 
 def _qualify(plugin: str, raw_name: str) -> str:
@@ -1874,15 +1848,12 @@ def _assign_names(sources: list[SourceComponent]) -> tuple[list[OutputSkill], Po
     skills: list[OutputSkill] = []
     index = PortableIndex(by_path={}, by_invocation={})
     for raw_name in sorted(groups):
-        units = _merge_units(groups[raw_name])
-        for body, overview in units:
+        for body in groups[raw_name]:
             name = _qualify(body.plugin.name, raw_name)
-            skills.append(OutputSkill(name, body, None if overview is body else overview))
-            for member in {body, overview}:
-                index.by_path[member.path] = name
-                index.by_invocation[(member.plugin.name, member.raw_name)] = name
-                stem = member.base.name if member.kind == "skill" else member.path.stem
-                index.by_invocation[(member.plugin.name, stem)] = name
+            skills.append(OutputSkill(name, body))
+            index.by_path[body.path] = name
+            index.by_invocation[(body.plugin.name, body.raw_name)] = name
+            index.by_invocation[(body.plugin.name, body.base.name)] = name
     skills.sort(key=lambda s: s.name)
     return skills, index
 

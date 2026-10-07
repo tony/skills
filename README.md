@@ -10,6 +10,9 @@ readable by agents scanning `.agents/skills/`.
 
 **Repository:** [tony/skills](https://github.com/tony/skills)
 
+Status: pre-1.0. Skills change without a compatibility promise; pin a commit
+to hold one version.
+
 ## Plugins
 
 Most work starts with `situate` to get oriented, `commit` and `pr` to land
@@ -20,7 +23,7 @@ changes, and `respond` to screen review feedback.
 | Plugin | Description |
 |--------|-------------|
 | [commit](plugins/commit/) | Create git commits following project conventions with format enforcement and safety checks. |
-| [rebase](plugins/rebase/) | Automated rebase onto trunk with conflict prediction, resolution, and quality gate verification. |
+| [rebase](plugins/rebase/) | Rebase onto remote trunk with a file-overlap reading before the replay, conflict resolution, and quality gate verification. |
 | [git-branch](plugins/git-branch/) | Rebuild branch history into atomic commits (byte-identical), or reimplement from scratch using existing tests as the spec. Includes an interactive-rebase toolkit. |
 | [pr](plugins/pr/) | Draft, refresh, rewrite, and review PR descriptions, and draft merge commit messages, from the branch diff. |
 | [merge-pr](plugins/merge-pr/) | Merge PRs matching repo history conventions. Includes readiness checks, CI watching, stack detection, and automated rebasing. |
@@ -74,6 +77,9 @@ changes, and `respond` to screen review feedback.
 
 ### Agents and models
 
+Experimental: these drive other vendors' CLIs or read undocumented session
+internals, either of which can change without notice.
+
 | Plugin | Description |
 |--------|-------------|
 | [weave](plugins/weave/) | Run independent, adversarial AI participants via sub-agents or model CLIs to brainstorm, refine, plan, execute, architect, review, and synthesize. |
@@ -125,8 +131,8 @@ Each workflow is one skill, invoked as `/slop:deslop` under Claude Code and
 ### Other agents
 
 `.agents/skills/` holds every skill flattened, with its references copied in,
-for agents that scan that directory (Cursor, pi, Antigravity, Grok). The
-`skills` CLI installs from it:
+for agents that read skills from that directory. The `skills` CLI installs
+from it:
 
 ```console
 $ npx skills add tony/skills
@@ -145,16 +151,14 @@ assume no language.
 
 - Every plugin ships eval cases in `plugins/<name>/evals/`: prompts with
   graders that assert what the skill did, including what it refused to do.
-  Run a plugin's suite with `claude plugin eval plugins/<name>`.
-- `scripts/skill_evals.py check` routes every trigger prompt in
-  `evals/cases/` against every skill description and fails when two
-  descriptions collide. It makes no model calls, so it runs on every pull
-  request. [evals/README.md](evals/README.md) covers the model-backed suites.
-- `scripts/marketplace.py lint` enforces the skill-authoring rules in
-  [AGENTS.md](AGENTS.md).
-- `scripts/e2e.py` takes every plugin through add, install, disable,
-  enable, and uninstall in Claude Code and Codex under a throwaway `HOME`,
-  and checks each skill's frontmatter.
+- An offline routing check scores every trigger prompt against every skill
+  description and fails when two descriptions collide, so one skill does not
+  steal another's prompts. [evals/README.md](evals/README.md) covers the
+  model-backed suites and their credentials.
+- CI installs every plugin into Claude Code and Codex under a throwaway
+  `HOME` and checks each skill's frontmatter.
+
+[AGENTS.md](AGENTS.md) lists the commands for each check.
 
 ## Development
 

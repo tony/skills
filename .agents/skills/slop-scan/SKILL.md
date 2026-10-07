@@ -51,6 +51,10 @@ budget. A non-flag token is a path scope that overrides `--paths`.
 
 ## Orchestration Plan
 
+Enter plan mode before the first edit. In Claude Code call `EnterPlanMode`; in
+Cursor, Codex, or Gemini use `/plan` or `Shift+Tab`. Where plan mode is
+unavailable, present the plan as text.
+
 Follow `references/detect-pipeline.md` § Orchestration plan: run
 Step 1 first, then present the plan. The plan contains:
 
