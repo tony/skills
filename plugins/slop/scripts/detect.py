@@ -1,0 +1,408 @@
+#!/usr/bin/env python3
+"""Run the slop registry's regex signatures over files, a diff, or commit messages.
+
+Usage:
+  detect.py files    --registry PATH [--override PATH] [--added-base SHA] [PATH ...]
+  detect.py diff     --registry PATH [--override PATH] [--historical]
+  detect.py messages --registry PATH [--override PATH] [--historical]
+
+``files`` reads NUL-separated paths from stdin when none are given
+(``git ls-files -z``). ``diff`` reads a unified diff or ``git log -p`` output
+from stdin. ``messages`` reads ``git log -z --format=%H%x1f%B`` output.
+
+Prints one JSON object: ``loaded`` counts and ``findings``. Exits 2 on a
+registry or override error. Only ``kind: regex`` signatures run.
+
+A pattern that starts with ``^\\+`` judges added lines only. In ``files`` mode a
+line counts as added when ``git diff BASE HEAD`` added it; without
+``--added-base`` no line does. A Tier A match on a pre-existing line is
+demoted to Tier B and marked ``pre_existing``.
+"""
+
+# pyright: reportAny=false, reportExplicitAny=false, reportUnusedCallResult=false
+
+from __future__ import annotations
+
+import argparse
+import json
+import re
+import subprocess
+import sys
+from pathlib import Path
+from typing import Any
+
+Sig = dict[str, Any]
+
+HEX_ESCAPE = re.compile(r"\\x\{([0-9A-Fa-f]+)\}")
+HUNK = re.compile(r"^@@ -\d+(?:,\d+)? \+(\d+)(?:,(\d+))? @@")
+
+
+class RegistryError(Exception):
+    """Registry or override file is malformed."""
+
+
+def _scalar(raw: str) -> Any:
+    raw = raw.strip()
+    if raw.startswith("'") and raw.endswith("'") and len(raw) >= 2:
+        return raw[1:-1].replace("''", "'")
+    if raw.startswith('"') and raw.endswith('"') and len(raw) >= 2:
+        return json.loads(raw)
+    if raw in {"true", "false"}:
+        return raw == "true"
+    return raw
+
+
+def _flow_list(raw: str) -> list[Any]:
+    inner = raw.strip()[1:-1]
+    items: list[str] = []
+    buf = ""
+    quote = ""
+    i = 0
+    while i < len(inner):
+        ch = inner[i]
+        if quote:
+            buf += ch
+            if ch == quote:
+                if quote == "'" and inner[i + 1 : i + 2] == "'":
+                    buf += "'"
+                    i += 1
+                else:
+                    quote = ""
+        elif ch in "'\"":
+            quote = ch
+            buf += ch
+        elif ch == ",":
+            items.append(buf)
+            buf = ""
+        else:
+            buf += ch
+        i += 1
+    if buf.strip():
+        items.append(buf)
+    return [_scalar(item) for item in items]
+
+
+def _value(raw: str) -> Any:
+    raw = raw.strip()
+    return _flow_list(raw) if raw.startswith("[") else _scalar(raw)
+
+
+def parse_yaml(text: str) -> dict[str, Any]:
+    """Parse the registry subset of YAML: top-level scalars and lists of mappings.
+
+    Examples
+    --------
+    >>> parse_yaml("version: 1\\nsignatures:\\n  - id: a.b\\n    tier: A\\n")["signatures"]
+    [{'id': 'a.b', 'tier': 'A'}]
+    >>> parse_yaml("delete:\\n  - a.b\\n")
+    {'delete': ['a.b']}
+    """
+    lines = text.splitlines()
+    out: dict[str, Any] = {}
+    key: str | None = None
+    item: Any = None
+    item_indent = 0
+    i = 0
+    while i < len(lines):
+        line = lines[i]
+        i += 1
+        stripped = line.strip()
+        if not stripped or stripped.startswith("#"):
+            continue
+        indent = len(line) - len(line.lstrip())
+        if indent == 0:
+            name, _, rest = stripped.partition(":")
+            if rest.strip():
+                out[name] = _value(rest)
+                key = None
+            else:
+                out[name] = []
+                key = name
+            item = None
+            continue
+        if key is None:
+            msg = f"unexpected indented line: {line!r}"
+            raise RegistryError(msg)
+        if stripped.startswith("- "):
+            body = stripped[2:]
+            if ":" in body and not body.startswith(("'", '"')):
+                name, _, rest = body.partition(":")
+                item = {name.strip(): _value(rest)}
+                item_indent = indent + 2
+                out[key].append(item)
+            else:
+                item = None
+                out[key].append(_scalar(body))
+            continue
+        if not isinstance(item, dict) or indent < item_indent:
+            msg = f"unexpected line under {key}: {line!r}"
+            raise RegistryError(msg)
+        name, _, rest = stripped.partition(":")
+        if rest.strip() in {"|", ">"}:
+            block: list[str] = []
+            while i < len(lines) and (
+                not lines[i].strip() or len(lines[i]) - len(lines[i].lstrip()) > indent
+            ):
+                block.append(lines[i].strip())
+                i += 1
+            item[name] = " ".join(b for b in block if b)
+        else:
+            item[name] = _value(rest)
+    return out
+
+
+def load_registry(
+    registry: Path, override: Path | None = None
+) -> tuple[list[Sig], dict[str, int]]:
+    """Load built-in signatures and apply ``replace`` / ``append`` / ``delete``.
+
+    Examples
+    --------
+    >>> import tempfile, pathlib
+    >>> d = pathlib.Path(tempfile.mkdtemp())
+    >>> _ = (d / "r.yml").write_text("signatures:\\n  - id: a.b\\n    tier: A\\n")
+    >>> load_registry(d / "r.yml")[1]["builtin"]
+    1
+    """
+    sigs = parse_yaml(registry.read_text(encoding="utf-8")).get("signatures", [])
+    counts = {"builtin": len(sigs), "replaced": 0, "appended": 0, "deleted": 0}
+    if override is None or not override.is_file():
+        return sigs, counts
+    data = parse_yaml(override.read_text(encoding="utf-8"))
+    seen: set[str] = set()
+    for section in ("replace", "append", "delete"):
+        for entry in data.get(section, []):
+            sid = entry["id"] if isinstance(entry, dict) else entry
+            if sid in seen:
+                msg = f"{override}: id {sid!r} appears under more than one key or twice"
+                raise RegistryError(msg)
+            seen.add(sid)
+    by_id = {s["id"]: s for s in sigs}
+    for entry in data.get("replace", []):
+        if entry["id"] not in by_id:
+            msg = f"{override}: replace names unknown id {entry['id']!r}"
+            raise RegistryError(msg)
+        by_id[entry["id"]].update(entry)
+        counts["replaced"] += 1
+    for entry in data.get("append", []):
+        if entry["id"] in by_id:
+            msg = f"{override}: append id {entry['id']!r} already exists"
+            raise RegistryError(msg)
+        sigs.append(entry)
+        by_id[entry["id"]] = entry
+        counts["appended"] += 1
+    for sid in data.get("delete", []):
+        if sid not in by_id:
+            msg = f"{override}: delete names unknown id {sid!r}"
+            raise RegistryError(msg)
+        sigs = [s for s in sigs if s["id"] != sid]
+        counts["deleted"] += 1
+    return sigs, counts
+
+
+def compile_pattern(pattern: str) -> re.Pattern[str]:
+    r"""Compile a registry PCRE pattern with Python's ``re``.
+
+    ``\x{H}`` becomes a literal code point escape.
+
+    Examples
+    --------
+    >>> bool(compile_pattern(r"[\x{1F300}-\x{1FAFF}]").search("ship \U0001f680"))
+    True
+    """
+    translated = HEX_ESCAPE.sub(lambda m: f"\\U{int(m.group(1), 16):08x}", pattern)
+    return re.compile(translated)
+
+
+class Rule:
+    """A regex signature ready to match lines."""
+
+    def __init__(self, sig: Sig) -> None:
+        self.sig = sig
+        pattern = str(sig["pattern"])
+        self.added_only = pattern.startswith("^\\+")
+        self.skipped = pattern.startswith("^-")
+        if self.added_only:
+            pattern = "^" + pattern[3:]
+        self.regex = compile_pattern(pattern)
+        self.targets: list[str] = list(sig.get("target", []))
+        self.skip_paths = [re.compile(p, re.IGNORECASE) for p in sig.get("skip-paths", [])]
+
+    def path_skipped(self, path: str) -> bool:
+        return any(rx.search(path) for rx in self.skip_paths)
+
+
+def build_rules(sigs: list[Sig]) -> list[Rule]:
+    """Rules for every regex signature that matches lines of present content."""
+    rules = [Rule(s) for s in sigs if s.get("kind") == "regex" and s.get("pattern")]
+    return [r for r in rules if not r.skipped]
+
+
+def _finding(
+    rule: Rule, line: str, *, pre_existing: bool = False, historical: bool = False, **where: Any
+) -> dict[str, Any]:
+    sig = rule.sig
+    tier = str(sig["tier"])
+    if pre_existing and tier == "A":
+        tier = "B"
+    guard = str(sig.get("fp-guard", ""))
+    out: dict[str, Any] = {
+        **where,
+        "signature_id": sig["id"],
+        "tier": tier,
+        "action": sig.get("action"),
+        "confidence": "regex",
+        "text": line.strip()[:200],
+    }
+    if tier != sig["tier"]:
+        out["registry_tier"] = sig["tier"]
+        out["pre_existing"] = True
+    if historical:
+        out["historical_only"] = True
+    if guard and not guard.startswith("None"):
+        out["fp_guard"] = guard
+    return out
+
+
+def added_lines(base: str) -> dict[str, set[int]]:
+    """Map each path to the line numbers ``git diff BASE HEAD`` added."""
+    proc = subprocess.run(  # noqa: S603
+        ["git", "-c", "core.quotepath=off", "diff", "-U0", "--no-color", "--no-renames", base, "HEAD"],  # noqa: S607
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    result: dict[str, set[int]] = {}
+    path = ""
+    for line in proc.stdout.splitlines():
+        if line.startswith("+++ "):
+            path = line[6:] if line.startswith("+++ b/") else ""
+            continue
+        m = HUNK.match(line)
+        if m and path:
+            start = int(m.group(1))
+            count = int(m.group(2)) if m.group(2) is not None else 1
+            result.setdefault(path, set()).update(range(start, start + count))
+    return result
+
+
+def scan_files(
+    rules: list[Rule], paths: list[str], added: dict[str, set[int]] | None
+) -> list[dict[str, Any]]:
+    """Match every ``file`` / ``diff`` rule against each line of each file."""
+    found: list[dict[str, Any]] = []
+    for path in paths:
+        try:
+            text = Path(path).read_text(encoding="utf-8")
+        except (OSError, UnicodeDecodeError):
+            continue
+        new = (added or {}).get(path, set())
+        for number, line in enumerate(text.splitlines(), start=1):
+            for rule in rules:
+                if not ({"file", "diff"} & set(rule.targets)) or rule.path_skipped(path):
+                    continue
+                if rule.regex.search(line):
+                    found.append(
+                        _finding(
+                            rule,
+                            line,
+                            pre_existing=rule.added_only and number not in new,
+                            file=path,
+                            line_start=number,
+                        )
+                    )
+    return found
+
+
+def scan_diff(rules: list[Rule], text: str, *, historical: bool) -> list[dict[str, Any]]:
+    """Match every ``diff`` rule against the added lines of a diff or ``log -p``."""
+    found: list[dict[str, Any]] = []
+    commit = ""
+    path = ""
+    number = 0
+    in_hunk = False
+    for line in text.splitlines():
+        if not in_hunk or not line[:1] in {" ", "+", "-", "\\"}:
+            in_hunk = False
+            if line.startswith("commit "):
+                commit = line.split()[1]
+            elif line.startswith("+++ "):
+                path = line[6:] if line.startswith("+++ b/") else ""
+            elif (m := HUNK.match(line)) is not None:
+                number = int(m.group(1))
+                in_hunk = True
+            continue
+        if HUNK.match(line):
+            number = int(HUNK.match(line).group(1))  # pyright: ignore[reportOptionalMemberAccess]
+            continue
+        if line.startswith("+"):
+            for rule in rules:
+                if "diff" in rule.targets and not rule.path_skipped(path):
+                    if rule.regex.search(line[1:]):
+                        where: dict[str, Any] = {"file": path, "line_start": number}
+                        if commit:
+                            where["commit_sha"] = commit
+                        found.append(_finding(rule, line[1:], historical=historical, **where))
+            number += 1
+        elif line.startswith(" "):
+            number += 1
+    return found
+
+
+def scan_messages(rules: list[Rule], text: str, *, historical: bool) -> list[dict[str, Any]]:
+    """Match message-subject and message-body rules against each commit message."""
+    found: list[dict[str, Any]] = []
+    for record in text.split("\0"):
+        sha, sep, message = record.strip("\n").partition("\x1f")
+        if not sep:
+            continue
+        for number, line in enumerate(message.splitlines(), start=1):
+            kind = "message-subject" if number == 1 else "message-body"
+            for rule in rules:
+                if kind in rule.targets and rule.regex.search(line):
+                    found.append(
+                        _finding(
+                            rule,
+                            line,
+                            historical=historical,
+                            commit_sha=sha,
+                            line_start=number,
+                        )
+                    )
+    return found
+
+
+def main(argv: list[str] | None = None) -> int:
+    """Run the requested mode; return the process exit code."""
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("mode", choices=["files", "diff", "messages"])
+    parser.add_argument("paths", nargs="*")
+    parser.add_argument("--registry", type=Path, required=True)
+    parser.add_argument("--override", type=Path)
+    parser.add_argument("--added-base")
+    parser.add_argument("--historical", action="store_true")
+    args = parser.parse_args(argv)
+
+    try:
+        sigs, counts = load_registry(args.registry, args.override)
+        rules = build_rules(sigs)
+    except (RegistryError, re.error, KeyError, OSError) as exc:
+        print(f"detect: {exc}", file=sys.stderr)
+        return 2
+
+    if args.mode == "files":
+        paths = args.paths or [p for p in sys.stdin.read().split("\0") if p]
+        added = added_lines(args.added_base) if args.added_base else None
+        findings = scan_files(rules, paths, added)
+    elif args.mode == "diff":
+        findings = scan_diff(rules, sys.stdin.read(), historical=args.historical)
+    else:
+        findings = scan_messages(rules, sys.stdin.read(), historical=args.historical)
+
+    json.dump({"loaded": {**counts, "active": len(sigs)}, "findings": findings}, sys.stdout)
+    sys.stdout.write("\n")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
