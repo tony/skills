@@ -1,7 +1,7 @@
 # merge-pr
 
-Merge PRs matching repo history conventions. Includes readiness checks,
-CI watching, stack detection, and automated rebasing.
+Two skills merge pull requests with `gh`: `this` for one PR, `multiple` for a
+set merged one at a time. Both gate on readiness and CI and sync trunk after.
 
 Merging is a separate act: verify checks, sync trunk, land branch. It never tags,
 edits changelogs, or claims releases.
