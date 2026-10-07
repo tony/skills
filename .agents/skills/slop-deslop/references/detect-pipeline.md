@@ -125,7 +125,7 @@ If the override is tracked by git and dirty, warn that a rebase or
 rollback touching it can pause or lose edits, and advise committing or
 stashing first.
 
-`scripts/detect.py` performs this merge and prints the counts in its
+`scripts/slop_detect.py` performs this merge and prints the counts in its
 `loaded` object. Print: "Loaded N signatures (B builtin, R replaced, A appended, D
 deleted; tone calibration demoted X)." When every signature is
 disabled, print "No active signatures — nothing to detect." and exit 0.
@@ -134,7 +134,7 @@ disabled, print "No active signatures — nothing to detect." and exit 0.
 
 ## Pass A: regex
 
-Always runs, through `scripts/detect.py`. It loads the registry, applies
+Always runs, through `scripts/slop_detect.py`. It loads the registry, applies
 the override (`replace`, `append`, `delete`), and matches every
 `kind: regex` signature with Python `re`, so it needs no PCRE engine and
 behaves the same on GNU and BSD hosts. Never hand-roll the matching with

@@ -190,7 +190,7 @@ Tier A on those lines and drops to Tier B on every other line. Omit
 `git ls-files -z` list the same way as Step 2.
 
 ```console
-$ git ls-files -z | python3 references/detect.py files \
+$ git ls-files -z | python3 references/slop_detect.py files \
     --registry references/signatures.yml \
     --override .claude/slop.local.yml \
     --added-base "<BASELINE_SHA>"
@@ -200,13 +200,13 @@ Under `--with-history`, also run the diff and message modes over the
 captured log. Their findings carry `historical_only`.
 
 ```console
-$ git log -n "<N>" -p HEAD | python3 references/detect.py diff \
+$ git log -n "<N>" -p HEAD | python3 references/slop_detect.py diff \
     --registry references/signatures.yml \
     --historical
 ```
 
 ```console
-$ git log -n "<N>" -z --format=%H%x1f%B HEAD | python3 references/detect.py messages \
+$ git log -n "<N>" -z --format=%H%x1f%B HEAD | python3 references/slop_detect.py messages \
     --registry references/signatures.yml \
     --historical
 ```

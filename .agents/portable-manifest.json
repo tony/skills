@@ -1075,13 +1075,13 @@
         "references/apply-template.sh": "plugins/slop/references/apply-template.sh",
         "references/conflict-loop.md": "plugins/slop/references/conflict-loop.md",
         "references/detect-pipeline.md": "plugins/slop/references/detect-pipeline.md",
-        "references/detect.py": "plugins/slop/scripts/detect.py",
         "references/prose-rules.md": "plugins/slop/references/prose-rules.md",
         "references/render_apply.py": "plugins/slop/scripts/render_apply.py",
         "references/signatures.yml": "plugins/slop/references/signatures.yml",
+        "references/slop_detect.py": "plugins/slop/scripts/slop_detect.py",
         "references/verification-gates.md": "plugins/slop/references/verification-gates.md"
       },
-      "bytes": 76362
+      "bytes": 76402
     },
     {
       "name": "slop-scan",
@@ -1091,12 +1091,12 @@
       "bundled": {
         "references/commit-template.md": "plugins/slop/references/commit-template.md",
         "references/detect-pipeline.md": "plugins/slop/references/detect-pipeline.md",
-        "references/detect.py": "plugins/slop/scripts/detect.py",
         "references/prose-rules.md": "plugins/slop/references/prose-rules.md",
         "references/signatures.yml": "plugins/slop/references/signatures.yml",
+        "references/slop_detect.py": "plugins/slop/scripts/slop_detect.py",
         "references/verification-gates.md": "plugins/slop/references/verification-gates.md"
       },
-      "bytes": 65265
+      "bytes": 65310
     },
     {
       "name": "spike-bakeoff",
@@ -1514,7 +1514,7 @@
     "plugins/slop/references/prose-rules.md": 2,
     "plugins/slop/references/signatures.yml": 2,
     "plugins/slop/references/verification-gates.md": 2,
-    "plugins/slop/scripts/detect.py": 2,
+    "plugins/slop/scripts/slop_detect.py": 2,
     "plugins/tdd/references/gates-and-commits.md": 2,
     "plugins/tdd/references/prose-rules.md": 2,
     "plugins/tdd/references/xfail-mechanisms.md": 2,

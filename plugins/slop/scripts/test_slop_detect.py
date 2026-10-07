@@ -10,8 +10,8 @@ import os
 import subprocess
 from pathlib import Path
 
-import detect  # pyright: ignore[reportImplicitRelativeImport]
 import pytest
+import slop_detect as detect  # pyright: ignore[reportImplicitRelativeImport]
 
 REGISTRY = Path(__file__).resolve().parent.parent / "references" / "signatures.yml"
 ENV = {

@@ -166,14 +166,14 @@ flagged hunks (expensive, precise).
   first, so each finding names the commit that added the line.
 
 ```console
-$ git log -p --reverse "<BASELINE_SHA>..HEAD" | python3 ../../scripts/detect.py diff \
+$ git log -p --reverse "<BASELINE_SHA>..HEAD" | python3 ../../scripts/slop_detect.py diff \
     --registry ../../references/signatures.yml
 ```
 
 - `message-subject` and `message-body` (skip under `--targets=diff`):
 
 ```console
-$ git log -z --format=%H%x1f%B "<BASELINE_SHA>..HEAD" | python3 ../../scripts/detect.py messages \
+$ git log -z --format=%H%x1f%B "<BASELINE_SHA>..HEAD" | python3 ../../scripts/slop_detect.py messages \
     --registry ../../references/signatures.yml
 ```
 

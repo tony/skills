@@ -20,7 +20,7 @@
 #   skip-paths — optional list of case-insensitive regexes; a match on the
 #                file path suppresses the rule.
 #
-# A pattern that starts with `^\+` judges added lines only. `scripts/detect.py`
+# A pattern that starts with `^\+` judges added lines only. `scripts/slop_detect.py`
 # enforces that and `skip-paths`; the main agent checks the rest of `fp-guard`.
 
 version: 1

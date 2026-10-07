@@ -2,9 +2,9 @@
 r"""Run the slop registry's regex signatures over files, a diff, or commit messages.
 
 Usage:
-  detect.py files    --registry PATH [--override PATH] [--added-base SHA] [PATH ...]
-  detect.py diff     --registry PATH [--override PATH] [--historical]
-  detect.py messages --registry PATH [--override PATH] [--historical]
+  slop_detect.py files    --registry PATH [--override PATH] [--added-base SHA] [PATH ...]
+  slop_detect.py diff     --registry PATH [--override PATH] [--historical]
+  slop_detect.py messages --registry PATH [--override PATH] [--historical]
 
 ``files`` reads NUL-separated paths from stdin when none are given
 (``git ls-files -z``). ``diff`` reads a unified diff or ``git log -p`` output
