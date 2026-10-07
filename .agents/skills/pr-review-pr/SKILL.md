@@ -83,8 +83,7 @@ decisions section.
 Use these `##` headings verbatim, in this order, and end after the last
 one.
 
-Reply in this shape, as plain text outside any code fence, with plain
-bullets and no bold (never `- **Label:** ...`):
+Reply in this shape, as plain text outside any code fence, with plain bullets, no bold (never `- **Label:** ...`), and no local paths:
 
 ```text
 ## What works

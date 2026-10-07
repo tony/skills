@@ -113,8 +113,7 @@ A blocked run emits the hero and one sentence on what the user must do,
 with no sections and no findings list. Report a suspicious PR title as the
 finding, without guessing its cause or intent.
 
-Reply in this shape, as plain text outside any code fence, with plain
-bullets and no bold (never `- **Label:** ...`):
+Reply in this shape, as plain text outside any code fence, with plain bullets, no bold (never `- **Label:** ...`), and no local paths:
 
 ```text
 ✓ astral-sh/setup-uv v5 -> v6 across 1 repo

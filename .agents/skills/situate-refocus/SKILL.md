@@ -87,8 +87,7 @@ directory; see the sweep reference). Then exactly these sections:
    with nothing to measure prints the hero, `## Goal`, and one `## Realign`
    line saying what the user must do; skip the other sections.
 
-Reply in this shape, as plain text outside any code fence, with plain
-bullets and no bold (never `- **Label:** ...`):
+Reply in this shape, as plain text outside any code fence, with plain bullets, no bold (never `- **Label:** ...`), and no local paths:
 
 ```text
 ⚠ Drift: the login rate limiter was refactored before the throttling work started.

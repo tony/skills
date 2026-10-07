@@ -16,7 +16,7 @@ Ask independent adversarial workers the same question in parallel, then synthesi
 
 The question comes from `$ARGUMENTS`. If there are none, ask the user what they want to know.
 
-`<engine>` is `references/engine.py`, run with `python3`. It prints JSON; `"ok": false` carries the reason. `references/ensemble-core.md` holds the shared steps this skill calls by section name.
+`<engine>` is `references/engine.py` resolved from this skill's directory to an absolute path, written literally in every command, and run with `python3`. It prints JSON; `"ok": false` carries the reason. `references/ensemble-core.md` holds the shared steps this skill calls by section name.
 
 ## Worker selection
 

@@ -13,7 +13,7 @@ Run code review through independent adversarial workers in parallel, then synthe
 
 The focus area comes from `$ARGUMENTS`; without one, review the whole branch.
 
-`<engine>` is `../../scripts/engine.py`, run with `python3`. It prints JSON; `"ok": false` carries the reason. `../../references/ensemble-core.md` holds the shared steps this skill calls by section name.
+`<engine>` is `../../scripts/engine.py` resolved from this skill's directory to an absolute path, written literally in every command, and run with `python3`. It prints JSON; `"ok": false` carries the reason. `../../references/ensemble-core.md` holds the shared steps this skill calls by section name.
 
 ## Worker selection
 

@@ -74,8 +74,7 @@ Present, in this order:
 4. The commit message the entries would land under, built per
    `commit-message.md`.
 
-Reply in this shape, as plain text outside any code fence, with plain
-bullets and no bold (never `- **Label:** ...`):
+Reply in this shape, as plain text outside any code fence, with plain bullets, no bold (never `- **Label:** ...`), and no local paths:
 
 ````text
 Branch: feat/cache-evict | Commits: 3 | PR: #212
@@ -126,8 +125,7 @@ never commit.
    tool trailer, no emoji. Otherwise say the edit is uncommitted and give the
    commit as one `console` command with the message, so committing is one paste.
 
-Reply in this shape, as plain text outside any code fence, with plain
-bullets and no bold:
+Reply in this shape, as plain text outside any code fence, with plain bullets, no bold, and no local paths:
 
 ````text
 Inserted 1 entry into CHANGES.md under Unreleased; it is uncommitted.

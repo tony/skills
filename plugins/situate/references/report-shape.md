@@ -34,8 +34,7 @@ actually blocked. An open decision that halts unfinished work (a stub
 waiting on it, a question an earlier conversation stopped on) is a
 blocker: name it in the hero line and in `## Open questions`.
 
-Reply in this shape, as plain text outside any code fence, with plain
-bullets and no bold (never `- **Label:** ...`):
+Reply in this shape, as plain text outside any code fence, with plain bullets, no bold (never `- **Label:** ...`), and no local paths:
 
 ```text
 ⚠ feat/terse-mode: terse output works, CI is red · 4 commits · PR #12 open

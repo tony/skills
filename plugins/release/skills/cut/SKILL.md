@@ -199,8 +199,7 @@ No paragraph between the hero line and the first heading.
 A stopped or refused run is one result sentence (what stopped and why),
 then what the user needs to do. Nothing else.
 
-Reply in this shape, as plain text outside any code fence, with plain
-bullets and no bold (never `- **Label:** ...`):
+Reply in this shape, as plain text outside any code fence, with plain bullets, no bold (never `- **Label:** ...`), and no local paths:
 
 ```text
 ✓ Cut v0.4.0 as a local commit; no tag created, nothing pushed

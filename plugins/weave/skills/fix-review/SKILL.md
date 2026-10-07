@@ -10,7 +10,7 @@ disable-model-invocation: true
 
 Process weave code review findings from the conversation context. Validate each finding independently against the actual codebase and project conventions, add test coverage where applicable, apply fixes as separate atomic commits, and ensure all quality gates pass before each commit.
 
-`<engine>` is `../../scripts/engine.py`, run with `python3`. It prints JSON; `"ok": false` carries the reason.
+`<engine>` is `../../scripts/engine.py` resolved from this skill's directory to an absolute path, written literally in every command, and run with `python3`. It prints JSON; `"ok": false` carries the reason.
 
 This command commits to a git repository, so it needs one with at least one commit. Without one, reply in one sentence that `fix-review` needs a git repository with commits, and stop.
 

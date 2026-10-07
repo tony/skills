@@ -230,8 +230,7 @@ explain most drift and are worth surfacing every run: pins that disagree
 with each other across a workspace, and packages held back with no
 recorded reason.
 
-Reply in this shape, as plain text outside any code fence, with plain
-bullets and no bold (never `- **Label:** ...`):
+Reply in this shape, as plain text outside any code fence, with plain bullets, no bold (never `- **Label:** ...`), and no local paths:
 
 ```text
 ✓ 2 commits across 1 repo
@@ -265,7 +264,7 @@ Shape, which the three commands in this plugin share:
    as text and take none.
 
 Reply to a halt in this shape, as plain text outside any code fence,
-with plain bullets and no bold:
+with plain bullets, no bold, and no local paths:
 
 ```text
 ⚠ Stopped: nothing was changed. requests 2.32.4 could not be confirmed as published, and no file pinning it was found.

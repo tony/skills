@@ -12,7 +12,7 @@ Generate independent originals from adversarial participants, let the user choos
 
 The prompt comes from `$ARGUMENTS`. If there are none, ask the user what to brainstorm and refine.
 
-`<engine>` is `../../scripts/engine.py`, run with `python3`. It prints JSON; `"ok": false` carries the reason. `../../references/ensemble-core.md` holds the shared steps this skill calls by section name, and `../../references/refine-cycle.md` holds the judge, weave, and distribute cycle.
+`<engine>` is `../../scripts/engine.py` resolved from this skill's directory to an absolute path, written literally in every command, and run with `python3`. It prints JSON; `"ok": false` carries the reason. `../../references/ensemble-core.md` holds the shared steps this skill calls by section name, and `../../references/refine-cycle.md` holds the judge, weave, and distribute cycle.
 
 ## Worker selection
 

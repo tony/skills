@@ -147,8 +147,7 @@ sections:
    with any pre-existing failure named as pre-existing.
 6. `## Drift` — pin shapes disagreeing across a workspace or a fleet.
 
-Reply in this shape, as plain text outside any code fence, with plain
-bullets and no bold (never `- **Label:** ...`):
+Reply in this shape, as plain text outside any code fence, with plain bullets, no bold (never `- **Label:** ...`), and no local paths:
 
 ```text
 ✓ requests 2.31.0 -> 2.32.3 across 2 repos

@@ -28,6 +28,8 @@ until the gate passes:
 
 User arguments: $ARGUMENTS
 
+Paths under `../../scripts/` resolve from this skill's directory: print the absolute path once and write it literally in each command, since shell variables do not persist between Bash calls.
+
 ## Procedure
 
 ### 1. Locate the run and pass the gate

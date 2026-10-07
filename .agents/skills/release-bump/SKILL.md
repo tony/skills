@@ -91,8 +91,7 @@ Never name local or temp paths. A completed run ends with `cut`'s
 output. A stopped run (missing signals, unresolved version, refused
 flag) is one result sentence, then what the user needs to do.
 
-Reply to a stop in this shape, as plain text outside any code fence, with
-plain bullets and no bold (never `- **Label:** ...`):
+Reply to a stop in this shape, as plain text outside any code fence, with plain bullets, no bold (never `- **Label:** ...`), and no local paths:
 
 ```text
 No version bumped: none of the three signals exist here (a manifest

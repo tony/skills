@@ -17,6 +17,8 @@ that fail. By default only comments on lines the branch added or
 changed are judged; comments it never touched are left alone. Edits in
 place and prints a diff. Never commits or pushes.
 
+Paths under `../../scripts/` resolve from this skill's directory: print the absolute path once and write it literally in each command, since shell variables do not persist between Bash calls.
+
 ## Confirm before the first edit
 
 This skill deletes code the user did not ask you to touch, and it can
@@ -117,8 +119,7 @@ With no paths, the scope is the lines this branch added or changed.
    The hero line is `N comments: K kept, R rewritten, D deleted`; the
    counts sum to N. Omit `## For the commit message` when nothing moved.
 
-   Reply in this shape, as plain text outside any code fence, with plain
-   bullets and no bold (never `- **Label:** ...`):
+   Reply in this shape, as plain text outside any code fence, with plain bullets, no bold (never `- **Label:** ...`), and no local paths:
 
    ````text
    4 comments: 1 kept, 1 rewritten, 2 deleted

@@ -136,8 +136,7 @@ Do not name scratch-file paths. Show, in this order:
 
 Explain each change in the user's terms, never by citing this skill's rules.
 
-Reply in this shape, as plain text outside any code fence, with plain
-bullets and no bold (never `- **Label:** ...`):
+Reply in this shape, as plain text outside any code fence, with plain bullets, no bold (never `- **Label:** ...`), and no local paths:
 
 ```text
 WIDGET-482 is a Jira work item written as a change report; rebuilt as a work item.

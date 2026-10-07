@@ -98,8 +98,7 @@ only: M lock files found`), then these sections in order:
 4. `## Verification`: the gates run and their real results.
 5. `## Failures`: root modules that could not be refreshed, and why.
 
-Reply in this shape, as plain text outside any code fence, with plain
-bullets and no bold (never `- **Label:** ...`):
+Reply in this shape, as plain text outside any code fence, with plain bullets, no bold (never `- **Label:** ...`), and no local paths:
 
 ```text
 ✓ 1 of 2 lock files moved

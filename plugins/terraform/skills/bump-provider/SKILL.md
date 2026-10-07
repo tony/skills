@@ -117,8 +117,7 @@ order:
    bump, root modules that did not move and why, and modules whose
    constraints already admitted the target.
 
-Reply in this shape, as plain text outside any code fence, with plain
-bullets and no bold (never `- **Label:** ...`):
+Reply in this shape, as plain text outside any code fence, with plain bullets, no bold (never `- **Label:** ...`), and no local paths:
 
 ```text
 ✓ hashicorp/aws 6.56.1 -> 6.57.0 across 2 root modules

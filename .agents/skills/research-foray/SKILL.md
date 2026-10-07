@@ -54,7 +54,7 @@ Finish with the `## Output` section of the procedure you picked; for a new asses
 
 A stopped or halted run (`?` or `⚠` hero) prints the hero as the one result sentence, then one line per thing the user must decide or do, and no sections. A run blocked before it could record anything (no shell, a denied tool) adds the framing from the rules above as plain bullets, with no lead-in sentence, and says nothing was saved.
 
-Reply in this shape, as plain text outside any code fence, with plain bullets and no bold (never `- **Label:** ...`):
+Reply in this shape, as plain text outside any code fence, with plain bullets, no bold (never `- **Label:** ...`), and no local paths:
 
 ```text
 ✓ research/sqlite-wal 2026-07-14: 6 sources, 2 open questions

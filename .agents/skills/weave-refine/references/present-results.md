@@ -113,8 +113,7 @@ single-verified, then unverified). Omit consensus tags when only one lane partic
 >    what the user needs to do next.
 
 Reply in this shape (shown for refine; every RESULT_KIND follows its own
-section list), as plain text outside any code fence, with plain bullets and
-no bold (never `- **Label:** ...`):
+section list), as plain text outside any code fence, with plain bullets, no bold (never `- **Label:** ...`), and no local paths:
 
 ```text
 Refined through 2 passes

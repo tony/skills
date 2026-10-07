@@ -203,8 +203,7 @@ End with an `ask-user-choice` panel offering the skill's next steps.
 Skip it in plan mode or when running non-interactively, where the
 output ends after `## Report`.
 
-Reply in this shape, as plain text outside any code fence, with plain
-bullets and no bold (never `- **Label:** ...`):
+Reply in this shape, as plain text outside any code fence, with plain bullets, no bold (never `- **Label:** ...`), and no local paths:
 
 ```text
 ✓ Leadership report: 310 engineer-hours per quarter saved (DERIVED)

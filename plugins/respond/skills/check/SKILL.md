@@ -110,8 +110,7 @@ with no readable code. Never name local absolute paths or temp files.
    plain numbered lines after `## Ledger key`, with no heading, and stop.
    Invoked by `/respond:goal`, skip the panel.
 
-Reply in this shape, as plain text outside any code fence, with plain
-bullets and no bold (never `- **Label:** ...`):
+Reply in this shape, as plain text outside any code fence, with plain bullets, no bold (never `- **Label:** ...`), and no local paths:
 
 ```text
 2 to fix, 1 deferred, 1 declined on feat/retry-after. Screened 4 comments from the PR and 1 bot.

@@ -88,8 +88,7 @@ headings, and no narration of what was not done.
 
 Write the sections per `references/prose-rules.md`.
 
-Reply in this shape, as plain text outside any code fence, with plain
-bullets and no bold (never `- **Label:** ...`):
+Reply in this shape, as plain text outside any code fence, with plain bullets, no bold (never `- **Label:** ...`), and no local paths:
 
 ```text
 ✓ Merged #31: Retry transient sync failures

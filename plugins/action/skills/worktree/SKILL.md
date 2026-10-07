@@ -183,8 +183,7 @@ label on every bullet, no table cell holding prose, no closing recap.
    In a non-interactive run, record the question and options in the
    report instead of asking, and default to keeping the branch local.
 
-Reply in this shape, as plain text outside any code fence, with plain
-bullets and no bold (never `- **Label:** ...`):
+Reply in this shape, as plain text outside any code fence, with plain bullets, no bold (never `- **Label:** ...`), and no local paths:
 
 ```text
 ✓ add-signup-validation ready: 2 commits, kept local

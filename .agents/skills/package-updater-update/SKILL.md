@@ -133,8 +133,7 @@ sections:
 9. `## Drift` — pins disagreeing across a workspace, and holds applied
    unevenly across workspace members.
 
-Reply in this shape, as plain text outside any code fence, with plain
-bullets and no bold (never `- **Label:** ...`):
+Reply in this shape, as plain text outside any code fence, with plain bullets, no bold (never `- **Label:** ...`), and no local paths:
 
 ```text
 ✓ 2 commits across 1 repo

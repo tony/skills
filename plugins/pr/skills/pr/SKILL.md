@@ -92,7 +92,7 @@ Describe the branch's net shipped result, not its evolution: ignore fixups, reve
 
 Output the proposed title and full body, then one question. The chat text around the body is plain prose with no bold labels, and never asks for an issue number.
 
-Reply in this shape, as plain text outside any code fence, with plain bullets and no bold (never `- **Label:** ...`):
+Reply in this shape, as plain text outside any code fence, with plain bullets, no bold (never `- **Label:** ...`), and no local paths:
 
 ````text
 Draft for the 2 commits on fix/metrics-race not on origin/main.

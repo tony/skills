@@ -153,8 +153,7 @@ sections:
 6. `## Drift` — tools pinned to different versions across the fleet, and
    pins that disagree with what the repository declares it supports.
 
-Reply in this shape, as plain text outside any code fence, with plain
-bullets and no bold (never `- **Label:** ...`):
+Reply in this shape, as plain text outside any code fence, with plain bullets, no bold (never `- **Label:** ...`), and no local paths:
 
 ```text
 ✓ 2 tools across 1 repo

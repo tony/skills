@@ -151,8 +151,7 @@ print the body only, revise a named section, or drop it. Where no interactive
 question tool exists, print the draft and stop; filing needs an explicit
 instruction naming the action.
 
-Reply in this shape, as plain text outside any code fence, with plain
-bullets and no bold (never `- **Label:** ...`):
+Reply in this shape, as plain text outside any code fence, with plain bullets, no bold (never `- **Label:** ...`), and no local paths:
 
 ```text
 Linear Project description (delivery group), not filed yet.

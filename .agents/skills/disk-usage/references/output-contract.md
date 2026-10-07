@@ -17,8 +17,7 @@ result, then what was measured, what was not, and what the user needs to
 do next. Never estimate what was not measured, and never attribute
 unmeasured space to a path or directory.
 
-Reply in this shape, as plain text outside any code fence, with plain
-bullets and no bold (never `- **Label:** ...`):
+Reply in this shape, as plain text outside any code fence, with plain bullets, no bold (never `- **Label:** ...`), and no local paths:
 
 ```text
 Nothing was reclaimed: the host drive could not be read, so no layer is
@@ -74,8 +73,7 @@ questions, not candidates. Layers that could not be measured go under
 halted, or a host-side administrator shell. One command per block, with
 what it interrupts stated before it. Present these as pending.
 
-Reply in this shape, as plain text outside any code fence, with plain
-bullets and no bold (never `- **Label:** ...`):
+Reply in this shape, as plain text outside any code fence, with plain bullets, no bold (never `- **Label:** ...`), and no local paths:
 
 ```text
 ⚠ C: (host) is 94% full; the WSL guest is 61% used.

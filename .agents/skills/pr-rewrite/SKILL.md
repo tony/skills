@@ -72,8 +72,7 @@ title and full body in a `markdown` fence, the carried and dropped items, then t
 that stops early is one sentence saying what happened and that nothing
 changed, then what the user must do.
 
-Reply in this shape, as plain text outside any code fence, with plain
-bullets and no bold (never `- **Label:** ...`):
+Reply in this shape, as plain text outside any code fence, with plain bullets, no bold (never `- **Label:** ...`), and no local paths:
 
 ```text
 PR #17 rewritten against main.

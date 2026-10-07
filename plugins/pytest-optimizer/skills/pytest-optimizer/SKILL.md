@@ -19,6 +19,8 @@ band, whose run exits non-zero, or whose test count changes is never committed.
 to, `--force` to ignore idempotency tokens and re-run, and `--memory-dir` to
 override where durable state is written.
 
+Paths under `../../scripts/` resolve from this skill's directory: print the absolute path once and write it literally in each command, since shell variables do not persist between Bash calls.
+
 ## The loop
 
 ```

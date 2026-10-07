@@ -10,6 +10,8 @@ argument-hint: "[skill paths/globs] [--audit] [--diff-only]"
 One bar: a line stays only when its removal would change what the
 agent does.
 
+Paths under `../../scripts/` resolve from this skill's directory: print the absolute path once and write it literally in each command, since shell variables do not persist between Bash calls.
+
 ## Two ways in
 
 ### Routed while authoring
@@ -242,8 +244,7 @@ A stopped run (no targets, missing file, edit not authorized) is one
 sentence stating the result, then what the user must supply or
 authorize. No sections.
 
-Reply in this shape, as plain text outside any code fence, with plain
-bullets and no bold (never `- **Label:** ...`):
+Reply in this shape, as plain text outside any code fence, with plain bullets, no bold (never `- **Label:** ...`), and no local paths:
 
 ```text
 db-helper loses its explanatory padding; commands and warnings stay.

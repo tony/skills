@@ -219,8 +219,7 @@ the ledger key; it belongs to the screening report.
    record the options and default to stopping. In loop mode, skip the
    panel.
 
-Reply in this shape, as plain text outside any code fence, with plain
-bullets and no bold (never `- **Label:** ...`):
+Reply in this shape, as plain text outside any code fence, with plain bullets, no bold (never `- **Label:** ...`), and no local paths:
 
 ```text
 ✓ 2 fixed, 1 deferred, 1 declined on feat/retry-after.

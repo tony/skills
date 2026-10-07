@@ -39,8 +39,7 @@ Follow the contract's four rules.
    If a claim is weak, say why it is weak; never say it was previously
    stated differently.
 
-Reply in this shape, as plain text outside any code fence, with plain
-bullets and no bold (never `- **Label:** ...`):
+Reply in this shape, as plain text outside any code fence, with plain bullets, no bold (never `- **Label:** ...`), and no local paths:
 
 ```text
 client.py sets MAX_RETRIES = 3 and RETRY_BACKOFF_SECONDS = 2.

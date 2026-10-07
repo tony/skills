@@ -138,7 +138,7 @@ I changed nothing: the branch ruff-bump-0.12.4 already exists in api.
 To proceed, delete that branch or re-run with `--branch <name>`.
 ```
 
-Reply in this shape, as plain text outside any code fence, with plain bullets and no bold (never `- **Label:** ...`):
+Reply in this shape, as plain text outside any code fence, with plain bullets, no bold (never `- **Label:** ...`), and no local paths:
 
 ```text
 ✓ 1 repo on ruff 0.12.4

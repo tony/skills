@@ -33,6 +33,8 @@ branch-internal narrative (renames of unshipped symbols, intermediate
 states, `### Fixes` for bugs no release had) only when no user of the
 latest published release experienced the old name, behavior, or bug.
 
+Paths under `../../scripts/` resolve from this skill's directory: print the absolute path once and write it literally in each command, since shell variables do not persist between Bash calls.
+
 ## `$ARGUMENTS` contract
 
 An empty `$ARGUMENTS` audits `<trunk>..HEAD`. A non-flag token is a
@@ -359,8 +361,7 @@ summary`; sections follow in the order shown: summary block,
 refused run prints one sentence naming the cause, then what the user
 must do (commit or stash, or re-run with `--force-rewrite-pushed`):
 
-Reply in this shape, as plain text outside any code fence, with plain
-bullets and no bold (never `- **Label:** ...`):
+Reply in this shape, as plain text outside any code fence, with plain bullets, no bold (never `- **Label:** ...`), and no local paths:
 
 ```text
 Slop summary

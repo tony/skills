@@ -13,7 +13,7 @@
         "references/verification-gates.md": "plugins/action/references/verification-gates.md",
         "references/worktree-setup.md": "plugins/action/references/worktree-setup.md"
       },
-      "bytes": 32290
+      "bytes": 32307
     },
     {
       "name": "action-worktrees",
@@ -27,7 +27,7 @@
         "references/verification-gates.md": "plugins/action/references/verification-gates.md",
         "references/worktree-setup.md": "plugins/action/references/worktree-setup.md"
       },
-      "bytes": 32823
+      "bytes": 32840
     },
     {
       "name": "agent-messaging-session-relay",
@@ -40,7 +40,7 @@
         "references/prose-rules.md": "plugins/agent-messaging/references/prose-rules.md",
         "references/relay.sh": "plugins/agent-messaging/scripts/relay.sh"
       },
-      "bytes": 38514
+      "bytes": 38531
     },
     {
       "name": "business-case-study-internal",
@@ -54,7 +54,7 @@
         "references/prose-rules.md": "plugins/business/references/prose-rules.md",
         "references/provenance.md": "plugins/business/references/provenance.md"
       },
-      "bytes": 45842
+      "bytes": 45859
     },
     {
       "name": "business-case-study-public",
@@ -69,7 +69,7 @@
         "references/prose-rules.md": "plugins/business/references/prose-rules.md",
         "references/provenance.md": "plugins/business/references/provenance.md"
       },
-      "bytes": 51348
+      "bytes": 51365
     },
     {
       "name": "business-pr-release",
@@ -83,7 +83,7 @@
         "references/prose-rules.md": "plugins/business/references/prose-rules.md",
         "references/provenance.md": "plugins/business/references/provenance.md"
       },
-      "bytes": 46947
+      "bytes": 46964
     },
     {
       "name": "business-report-leadership",
@@ -99,7 +99,7 @@
         "references/prose-rules.md": "plugins/business/references/prose-rules.md",
         "references/provenance.md": "plugins/business/references/provenance.md"
       },
-      "bytes": 55569
+      "bytes": 55779
     },
     {
       "name": "business-report-org-wide",
@@ -114,7 +114,7 @@
         "references/prose-rules.md": "plugins/business/references/prose-rules.md",
         "references/provenance.md": "plugins/business/references/provenance.md"
       },
-      "bytes": 51181
+      "bytes": 51198
     },
     {
       "name": "business-research",
@@ -129,7 +129,7 @@
         "references/prose-rules.md": "plugins/business/references/prose-rules.md",
         "references/provenance.md": "plugins/business/references/provenance.md"
       },
-      "bytes": 54410
+      "bytes": 54637
     },
     {
       "name": "changelog",
@@ -142,7 +142,7 @@
         "references/entry-rules.md": "plugins/changelog/references/entry-rules.md",
         "references/prose-rules.md": "plugins/changelog/references/prose-rules.md"
       },
-      "bytes": 23345
+      "bytes": 23379
     },
     {
       "name": "changelog-refresh",
@@ -155,7 +155,7 @@
         "references/entry-rules.md": "plugins/changelog/references/entry-rules.md",
         "references/prose-rules.md": "plugins/changelog/references/prose-rules.md"
       },
-      "bytes": 22679
+      "bytes": 22693
     },
     {
       "name": "changelog-rewrite-aggressively",
@@ -168,7 +168,7 @@
         "references/entry-rules.md": "plugins/changelog/references/entry-rules.md",
         "references/prose-rules.md": "plugins/changelog/references/prose-rules.md"
       },
-      "bytes": 25339
+      "bytes": 25370
     },
     {
       "name": "commit",
@@ -178,7 +178,7 @@
       "bundled": {
         "references/prose-rules.md": "plugins/commit/references/prose-rules.md"
       },
-      "bytes": 12368
+      "bytes": 12385
     },
     {
       "name": "disk",
@@ -199,7 +199,7 @@
         "references/prose-rules.md": "plugins/disk/references/prose-rules.md",
         "references/virtual-disks.md": "plugins/disk/references/virtual-disks.md"
       },
-      "bytes": 25139
+      "bytes": 25173
     },
     {
       "name": "disk-usage",
@@ -216,7 +216,7 @@
         "references/study-repos.md": "plugins/disk/references/study-repos.md",
         "references/virtual-disks.md": "plugins/disk/references/virtual-disks.md"
       },
-      "bytes": 38924
+      "bytes": 38958
     },
     {
       "name": "double-check",
@@ -227,7 +227,7 @@
         "references/prose-rules.md": "plugins/double-check/references/prose-rules.md",
         "references/verification-contract.md": "plugins/double-check/references/verification-contract.md"
       },
-      "bytes": 11865
+      "bytes": 11882
     },
     {
       "name": "double-check-align",
@@ -238,7 +238,7 @@
         "references/prose-rules.md": "plugins/double-check/references/prose-rules.md",
         "references/verification-contract.md": "plugins/double-check/references/verification-contract.md"
       },
-      "bytes": 11639
+      "bytes": 11656
     },
     {
       "name": "gh-create-issue",
@@ -262,7 +262,7 @@
         "references/rendered-markdown.md": "plugins/gh/references/rendered-markdown.md",
         "references/source-links.md": "plugins/gh/references/source-links.md"
       },
-      "bytes": 23205
+      "bytes": 23222
     },
     {
       "name": "git-branch-redo-from-scratch",
@@ -278,7 +278,7 @@
         "references/rebuild-contract.md": "plugins/git-branch/references/rebuild-contract.md",
         "references/split-mechanics.md": "plugins/git-branch/references/split-mechanics.md"
       },
-      "bytes": 47663
+      "bytes": 47680
     },
     {
       "name": "git-branch-soft-reset-and-recommit",
@@ -293,7 +293,7 @@
         "references/rebase-toolkit.md": "plugins/git-branch/references/rebase-toolkit.md",
         "references/split-mechanics.md": "plugins/git-branch/references/split-mechanics.md"
       },
-      "bytes": 42684
+      "bytes": 42701
     },
     {
       "name": "github-actions-bumping-github-actions",
@@ -306,7 +306,7 @@
         "references/prose-rules.md": "plugins/github-actions/references/prose-rules.md",
         "references/throwaway-worktree.md": "plugins/github-actions/references/throwaway-worktree.md"
       },
-      "bytes": 22840
+      "bytes": 22857
     },
     {
       "name": "github-actions-update-action",
@@ -319,7 +319,7 @@
         "references/prose-rules.md": "plugins/github-actions/references/prose-rules.md",
         "references/throwaway-worktree.md": "plugins/github-actions/references/throwaway-worktree.md"
       },
-      "bytes": 21230
+      "bytes": 21247
     },
     {
       "name": "github-actions-update-actions",
@@ -354,7 +354,7 @@
         "references/prose-rules.md": "plugins/lean/references/prose-rules.md",
         "references/scope.py": "plugins/lean/scripts/scope.py"
       },
-      "bytes": 19661
+      "bytes": 19868
     },
     {
       "name": "lean-writing",
@@ -377,7 +377,7 @@
         "references/merge-readiness.md": "plugins/merge-pr/references/merge-readiness.md",
         "references/prose-rules.md": "plugins/merge-pr/references/prose-rules.md"
       },
-      "bytes": 19508
+      "bytes": 19525
     },
     {
       "name": "merge-pr-this",
@@ -388,7 +388,7 @@
         "references/merge-readiness.md": "plugins/merge-pr/references/merge-readiness.md",
         "references/prose-rules.md": "plugins/merge-pr/references/prose-rules.md"
       },
-      "bytes": 18628
+      "bytes": 18645
     },
     {
       "name": "model-cli-agy",
@@ -399,7 +399,7 @@
         "references/dispatch.md": "plugins/model-cli/references/dispatch.md",
         "references/prose-rules.md": "plugins/model-cli/references/prose-rules.md"
       },
-      "bytes": 11682
+      "bytes": 11699
     },
     {
       "name": "model-cli-codex",
@@ -410,7 +410,7 @@
         "references/dispatch.md": "plugins/model-cli/references/dispatch.md",
         "references/prose-rules.md": "plugins/model-cli/references/prose-rules.md"
       },
-      "bytes": 11563
+      "bytes": 11580
     },
     {
       "name": "model-cli-cursor",
@@ -421,7 +421,7 @@
         "references/dispatch.md": "plugins/model-cli/references/dispatch.md",
         "references/prose-rules.md": "plugins/model-cli/references/prose-rules.md"
       },
-      "bytes": 11012
+      "bytes": 11029
     },
     {
       "name": "model-cli-gemini",
@@ -449,7 +449,7 @@
         "references/prose-rules.md": "plugins/package-updater/references/prose-rules.md",
         "references/repo-scope.md": "plugins/package-updater/references/repo-scope.md"
       },
-      "bytes": 21256
+      "bytes": 21273
     },
     {
       "name": "package-updater-update-package",
@@ -466,7 +466,7 @@
         "references/repo-scope.md": "plugins/package-updater/references/repo-scope.md",
         "references/upstream-links.md": "plugins/package-updater/references/upstream-links.md"
       },
-      "bytes": 47002
+      "bytes": 47019
     },
     {
       "name": "package-updater-update-toolchain",
@@ -480,7 +480,7 @@
         "references/repo-scope.md": "plugins/package-updater/references/repo-scope.md",
         "references/upstream-links.md": "plugins/package-updater/references/upstream-links.md"
       },
-      "bytes": 38572
+      "bytes": 38589
     },
     {
       "name": "package-updater-updating-packages",
@@ -498,7 +498,7 @@
         "references/throwaway-worktree.md": "plugins/package-updater/references/throwaway-worktree.md",
         "references/upstream-links.md": "plugins/package-updater/references/upstream-links.md"
       },
-      "bytes": 52409
+      "bytes": 52443
     },
     {
       "name": "pr",
@@ -510,7 +510,7 @@
         "references/prose-rules.md": "plugins/pr/references/prose-rules.md",
         "references/template-resolution.md": "plugins/pr/references/template-resolution.md"
       },
-      "bytes": 14335
+      "bytes": 14352
     },
     {
       "name": "pr-merge-commit",
@@ -532,7 +532,7 @@
         "references/prose-rules.md": "plugins/pr/references/prose-rules.md",
         "references/resolve-and-backup.md": "plugins/pr/references/resolve-and-backup.md"
       },
-      "bytes": 12539
+      "bytes": 12556
     },
     {
       "name": "pr-review-pr",
@@ -542,7 +542,7 @@
       "bundled": {
         "references/prose-rules.md": "plugins/pr/references/prose-rules.md"
       },
-      "bytes": 9875
+      "bytes": 9892
     },
     {
       "name": "pr-rewrite",
@@ -554,7 +554,7 @@
         "references/resolve-and-backup.md": "plugins/pr/references/resolve-and-backup.md",
         "references/template-resolution.md": "plugins/pr/references/template-resolution.md"
       },
-      "bytes": 13788
+      "bytes": 13805
     },
     {
       "name": "pytest-optimizer",
@@ -576,7 +576,7 @@
         "templates/conftest_cache_snippet.py": "plugins/pytest-optimizer/templates/conftest_cache_snippet.py",
         "templates/pytest_optimizer_plugin.py": "plugins/pytest-optimizer/templates/pytest_optimizer_plugin.py"
       },
-      "bytes": 91998
+      "bytes": 92191
     },
     {
       "name": "pytest-optimizer-00-scan",
@@ -648,7 +648,7 @@
       "bundled": {
         "references/prose-rules.md": "plugins/rebase/references/prose-rules.md"
       },
-      "bytes": 13068
+      "bytes": 13085
     },
     {
       "name": "release-bump",
@@ -658,7 +658,7 @@
       "bundled": {
         "references/release-conventions.md": "plugins/release/references/release-conventions.md"
       },
-      "bytes": 11129
+      "bytes": 11146
     },
     {
       "name": "release-cut",
@@ -669,7 +669,7 @@
         "references/prose-rules.md": "plugins/release/references/prose-rules.md",
         "references/release-conventions.md": "plugins/release/references/release-conventions.md"
       },
-      "bytes": 20281
+      "bytes": 20298
     },
     {
       "name": "release-update-downstream-packages",
@@ -679,7 +679,7 @@
       "bundled": {
         "references/prose-rules.md": "plugins/release/references/prose-rules.md"
       },
-      "bytes": 15381
+      "bytes": 15398
     },
     {
       "name": "research-assess",
@@ -715,7 +715,7 @@
         "references/topic.py": "plugins/research/scripts/topic.py",
         "references/verify.md": "plugins/research/references/verify.md"
       },
-      "bytes": 193157
+      "bytes": 193174
     },
     {
       "name": "research-release",
@@ -749,7 +749,7 @@
       "bundled": {
         "references/prose-rules.md": "plugins/research/references/prose-rules.md"
       },
-      "bytes": 11775
+      "bytes": 11792
     },
     {
       "name": "research-verify",
@@ -770,7 +770,7 @@
         "references/screening-rubric.md": "plugins/respond/references/screening-rubric.md",
         "references/verification-gates.md": "plugins/respond/references/verification-gates.md"
       },
-      "bytes": 32368
+      "bytes": 32385
     },
     {
       "name": "respond-check",
@@ -782,7 +782,7 @@
         "references/prose-rules.md": "plugins/respond/references/prose-rules.md",
         "references/screening-rubric.md": "plugins/respond/references/screening-rubric.md"
       },
-      "bytes": 24817
+      "bytes": 24834
     },
     {
       "name": "respond-goal",
@@ -796,7 +796,7 @@
         "references/verification-gates.md": "plugins/respond/references/verification-gates.md",
         "references/wait_pr.py": "plugins/respond/scripts/wait_pr.py"
       },
-      "bytes": 31923
+      "bytes": 31940
     },
     {
       "name": "ruff-bump",
@@ -811,7 +811,7 @@
         "references/release-triage.md": "plugins/ruff/references/release-triage.md",
         "references/throwaway-worktree.md": "plugins/ruff/references/throwaway-worktree.md"
       },
-      "bytes": 35150
+      "bytes": 35167
     },
     {
       "name": "scholar-annotate",
@@ -963,7 +963,7 @@
         "references/prose-rules.md": "plugins/self-improvement/references/prose-rules.md",
         "references/sweep.py": "plugins/self-improvement/scripts/sweep.py"
       },
-      "bytes": 33688
+      "bytes": 33705
     },
     {
       "name": "self-improvement-sweep",
@@ -976,7 +976,7 @@
         "references/sweep.py": "plugins/self-improvement/scripts/sweep.py",
         "references/worked-example-spike.md": "plugins/self-improvement/references/worked-example-spike.md"
       },
-      "bytes": 49854
+      "bytes": 49871
     },
     {
       "name": "situate",
@@ -989,7 +989,7 @@
         "references/report-shape.md": "plugins/situate/references/report-shape.md",
         "references/situation-sweep.md": "plugins/situate/references/situation-sweep.md"
       },
-      "bytes": 21839
+      "bytes": 21856
     },
     {
       "name": "situate-brief",
@@ -1012,7 +1012,7 @@
         "references/prose-rules.md": "plugins/situate/references/prose-rules.md",
         "references/situation-sweep.md": "plugins/situate/references/situation-sweep.md"
       },
-      "bytes": 22162
+      "bytes": 22179
     },
     {
       "name": "situate-situational-awareness",
@@ -1025,7 +1025,7 @@
         "references/report-shape.md": "plugins/situate/references/report-shape.md",
         "references/situation-sweep.md": "plugins/situate/references/situation-sweep.md"
       },
-      "bytes": 21634
+      "bytes": 21651
     },
     {
       "name": "situate-what",
@@ -1037,7 +1037,7 @@
         "references/prose-rules.md": "plugins/situate/references/prose-rules.md",
         "references/situation-sweep.md": "plugins/situate/references/situation-sweep.md"
       },
-      "bytes": 21373
+      "bytes": 21390
     },
     {
       "name": "skill-style",
@@ -1051,7 +1051,7 @@
         "references/skill-rubric.md": "plugins/skill-style/references/skill-rubric.md",
         "references/skill_diff.py": "plugins/skill-style/scripts/skill_diff.py"
       },
-      "bytes": 39650
+      "bytes": 39860
     },
     {
       "name": "slop-deslop",
@@ -1067,7 +1067,7 @@
         "references/signatures.yml": "plugins/slop/references/signatures.yml",
         "references/verification-gates.md": "plugins/slop/references/verification-gates.md"
       },
-      "bytes": 57142
+      "bytes": 57352
     },
     {
       "name": "slop-scan",
@@ -1081,7 +1081,7 @@
         "references/signatures.yml": "plugins/slop/references/signatures.yml",
         "references/verification-gates.md": "plugins/slop/references/verification-gates.md"
       },
-      "bytes": 46878
+      "bytes": 46895
     },
     {
       "name": "spike-bakeoff",
@@ -1126,7 +1126,7 @@
         "references/patterns.md": "plugins/tailwind/skills/spacing-audit/references/patterns.md",
         "references/prose-rules.md": "plugins/tailwind/references/prose-rules.md"
       },
-      "bytes": 28700
+      "bytes": 28910
     },
     {
       "name": "tdd-fix",
@@ -1138,7 +1138,7 @@
         "references/prose-rules.md": "plugins/tdd/references/prose-rules.md",
         "references/xfail-mechanisms.md": "plugins/tdd/references/xfail-mechanisms.md"
       },
-      "bytes": 14251
+      "bytes": 14285
     },
     {
       "name": "tdd-xfail",
@@ -1150,7 +1150,7 @@
         "references/prose-rules.md": "plugins/tdd/references/prose-rules.md",
         "references/xfail-mechanisms.md": "plugins/tdd/references/xfail-mechanisms.md"
       },
-      "bytes": 20187
+      "bytes": 20221
     },
     {
       "name": "terraform-bump-provider",
@@ -1160,7 +1160,7 @@
       "bundled": {
         "references/prose-rules.md": "plugins/terraform/references/prose-rules.md"
       },
-      "bytes": 11585
+      "bytes": 11602
     },
     {
       "name": "terraform-bump-terraform",
@@ -1172,7 +1172,7 @@
         "references/pin-sites.md": "plugins/terraform/references/pin-sites.md",
         "references/prose-rules.md": "plugins/terraform/references/prose-rules.md"
       },
-      "bytes": 26159
+      "bytes": 26369
     },
     {
       "name": "terraform-bumping-terraform",
@@ -1197,7 +1197,7 @@
         "references/lock-and-init.md": "plugins/terraform/references/lock-and-init.md",
         "references/prose-rules.md": "plugins/terraform/references/prose-rules.md"
       },
-      "bytes": 24311
+      "bytes": 24328
     },
     {
       "name": "ticket-draft",
@@ -1211,7 +1211,7 @@
         "references/prose-rules.md": "plugins/ticket/references/prose-rules.md",
         "references/resolve.md": "plugins/ticket/references/resolve.md"
       },
-      "bytes": 39043
+      "bytes": 39060
     },
     {
       "name": "ticket-rebuild",
@@ -1225,7 +1225,7 @@
         "references/prose-rules.md": "plugins/ticket/references/prose-rules.md",
         "references/resolve.md": "plugins/ticket/references/resolve.md"
       },
-      "bytes": 38914
+      "bytes": 38931
     },
     {
       "name": "weave-architecture",
@@ -1239,7 +1239,7 @@
         "references/prose-rules.md": "plugins/weave/references/prose-rules.md",
         "references/worker-backends.md": "plugins/weave/references/worker-backends.md"
       },
-      "bytes": 144096
+      "bytes": 144210
     },
     {
       "name": "weave-ask",
@@ -1255,7 +1255,7 @@
         "references/prose-rules.md": "plugins/weave/references/prose-rules.md",
         "references/worker-backends.md": "plugins/weave/references/worker-backends.md"
       },
-      "bytes": 152947
+      "bytes": 153061
     },
     {
       "name": "weave-brainstorm",
@@ -1268,7 +1268,7 @@
         "references/present-results.md": "plugins/weave/references/present-results.md",
         "references/worker-backends.md": "plugins/weave/references/worker-backends.md"
       },
-      "bytes": 130953
+      "bytes": 131067
     },
     {
       "name": "weave-brainstorm-and-refine",
@@ -1283,7 +1283,7 @@
         "references/refine-cycle.md": "plugins/weave/references/refine-cycle.md",
         "references/worker-backends.md": "plugins/weave/references/worker-backends.md"
       },
-      "bytes": 147856
+      "bytes": 147970
     },
     {
       "name": "weave-execute",
@@ -1297,7 +1297,7 @@
         "references/prose-rules.md": "plugins/weave/references/prose-rules.md",
         "references/worker-backends.md": "plugins/weave/references/worker-backends.md"
       },
-      "bytes": 142796
+      "bytes": 142910
     },
     {
       "name": "weave-fix-review",
@@ -1309,7 +1309,7 @@
         "references/present-results.md": "plugins/weave/references/present-results.md",
         "references/prose-rules.md": "plugins/weave/references/prose-rules.md"
       },
-      "bytes": 113811
+      "bytes": 113925
     },
     {
       "name": "weave-plan",
@@ -1324,7 +1324,7 @@
         "references/prose-rules.md": "plugins/weave/references/prose-rules.md",
         "references/worker-backends.md": "plugins/weave/references/worker-backends.md"
       },
-      "bytes": 147371
+      "bytes": 147485
     },
     {
       "name": "weave-prompt",
@@ -1338,7 +1338,7 @@
         "references/prose-rules.md": "plugins/weave/references/prose-rules.md",
         "references/worker-backends.md": "plugins/weave/references/worker-backends.md"
       },
-      "bytes": 142525
+      "bytes": 142639
     },
     {
       "name": "weave-refine",
@@ -1353,7 +1353,7 @@
         "references/refine-cycle.md": "plugins/weave/references/refine-cycle.md",
         "references/worker-backends.md": "plugins/weave/references/worker-backends.md"
       },
-      "bytes": 147233
+      "bytes": 147347
     },
     {
       "name": "weave-review",
@@ -1369,7 +1369,7 @@
         "references/prose-rules.md": "plugins/weave/references/prose-rules.md",
         "references/worker-backends.md": "plugins/weave/references/worker-backends.md"
       },
-      "bytes": 157148
+      "bytes": 157262
     },
     {
       "name": "weave-serene-bliss",
@@ -1384,7 +1384,7 @@
         "references/refine-cycle.md": "plugins/weave/references/refine-cycle.md",
         "references/worker-backends.md": "plugins/weave/references/worker-backends.md"
       },
-      "bytes": 151054
+      "bytes": 151168
     }
   ],
   "duplication": {
@@ -1553,6 +1553,16 @@
     "plugins/terraform/scripts/lockctl.py": 1
   },
   "external_paths": {
+    "../../scripts/": [
+      "business-report-leadership",
+      "business-research",
+      "lean-trim-comments",
+      "pytest-optimizer",
+      "skill-style",
+      "slop-deslop",
+      "tailwind-spacing-audit",
+      "terraform-bump-terraform"
+    ],
     "../../scripts/detect.py": [
       "tailwind-spacing-audit"
     ],

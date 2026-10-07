@@ -20,6 +20,8 @@ skill uses. To move a provider, use `/terraform:bump-provider`.
 
 User arguments: $ARGUMENTS
 
+Paths under `../../scripts/` resolve from this skill's directory: print the absolute path once and write it literally in each command, since shell variables do not persist between Bash calls.
+
 ## Procedure
 
 ### 1. Resolve the target version
@@ -118,8 +120,7 @@ order:
 6. `## Drift`: every disagreement found before the bump, and every one
    still outstanding after it.
 
-Reply in this shape, as plain text outside any code fence, with plain
-bullets and no bold (never `- **Label:** ...`):
+Reply in this shape, as plain text outside any code fence, with plain bullets, no bold (never `- **Label:** ...`), and no local paths:
 
 ```text
 ✓ terraform 1.14.5 -> 1.15.8 across 4 pin sites

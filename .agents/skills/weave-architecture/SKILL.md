@@ -16,7 +16,7 @@ Run an architecture or scaffolding task across independent adversarial workers, 
 
 The architecture goal comes from `$ARGUMENTS`. If there are none, ask the user what they want scaffolded.
 
-`<engine>` is `references/engine.py`, run with `python3`. It prints JSON; `"ok": false` carries the reason. `references/ensemble-core.md` holds the shared steps this skill calls by section name.
+`<engine>` is `references/engine.py` resolved from this skill's directory to an absolute path, written literally in every command, and run with `python3`. It prints JSON; `"ok": false` carries the reason. `references/ensemble-core.md` holds the shared steps this skill calls by section name.
 
 This command needs a git repository with at least one commit, because workers run in worktrees and the engine stashes your uncommitted work. Without one, `init` fails: relay its `error` in one sentence and stop.
 

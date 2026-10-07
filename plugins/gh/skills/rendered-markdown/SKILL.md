@@ -42,8 +42,7 @@ The rewritten body comes first. Add only what the user must do before
 posting, such as replacing a `<SHA>` placeholder or an unrun preview.
 Do not narrate what changed or why GitHub renders it that way.
 
-Reply in this shape, as plain text outside any code fence, with plain
-bullets and no bold (never `- **Label:** ...`):
+Reply in this shape, as plain text outside any code fence, with plain bullets, no bold (never `- **Label:** ...`), and no local paths:
 
 `````text
 Rewritten body for example/widgets, preview not run (gh is not logged in).

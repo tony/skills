@@ -199,8 +199,7 @@ no temp-file paths.
    report instead of asking, and default to stopping with all
    worktrees kept.
 
-Reply in this shape, as plain text outside any code fence, with plain
-bullets and no bold (never `- **Label:** ...`):
+Reply in this shape, as plain text outside any code fence, with plain bullets, no bold (never `- **Label:** ...`), and no local paths:
 
 ```text
 ✓ 2 units done, 0 blocked

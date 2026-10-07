@@ -122,8 +122,7 @@ When every tier fails or none is installed:
    it. Leave out host, sandbox, and URL detail.
 3. What the user must do (install, log in, raise a quota).
 
-Reply in this shape, as plain text outside any code fence, with plain
-bullets and no bold (never `- **Label:** ...`):
+Reply in this shape, as plain text outside any code fence, with plain bullets, no bold (never `- **Label:** ...`), and no local paths:
 
 ```text
 agent (gemini-3.1-pro, tier 2) exited 0.

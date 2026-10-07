@@ -394,8 +394,7 @@ shown: summary block, `Quality gates (final)`, `Per-finding commits`,
 prints one sentence naming the cause, then what the user must do (commit
 or stash, or pass `--allow-dirty`).
 
-Reply in this shape, as plain text outside any code fence, with plain
-bullets and no bold (never `- **Label:** ...`):
+Reply in this shape, as plain text outside any code fence, with plain bullets, no bold (never `- **Label:** ...`), and no local paths:
 
 ```text
 Slop scan summary

@@ -155,8 +155,7 @@ printed command, inspect a `` ! `` commit's patch, or done. Where no question
 tool exists (Codex, headless runs), print the options as a plain list and
 stop; never push without an explicit ask.
 
-Reply in this shape, as plain text outside any code fence, with plain
-bullets and no bold (never `- **Label:** ...`):
+Reply in this shape, as plain text outside any code fence, with plain bullets, no bold (never `- **Label:** ...`), and no local paths:
 
 ```text
 ✓ Rebased 2 commits onto origin/main

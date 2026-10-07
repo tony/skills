@@ -73,8 +73,7 @@ the old → new comparison, then the apply question. A run that stops
 early is one sentence saying what happened and that nothing changed,
 then what the user must do.
 
-Reply in this shape, as plain text outside any code fence, with plain
-bullets and no bold (never `- **Label:** ...`):
+Reply in this shape, as plain text outside any code fence, with plain bullets, no bold (never `- **Label:** ...`), and no local paths:
 
 ```text
 PR #17: Summary and Test plan change, Setup Required untouched.

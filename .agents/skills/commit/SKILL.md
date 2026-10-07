@@ -167,8 +167,7 @@ If a pre-commit hook fails:
 - Run `git log --oneline -1` to show the created commit
 - Run `git status` to show the remaining working tree state
 
-Reply in this shape, as plain text outside any code fence, with plain
-bullets and no bold (never `- **Staged:** ...`):
+Reply in this shape, as plain text outside any code fence, with plain bullets, no bold (never `- **Staged:** ...`), and no local paths:
 
 ```text
 42881ff auth(fix[token]) Reject expired tokens (local, not pushed)

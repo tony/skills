@@ -139,8 +139,7 @@ Present:
 3. When asking, an `AskUserQuestion` with **Insert** and **Edit first** (return
    to generation). Offer no commit choice: `--commit` alone decides what lands.
 
-Reply in this shape, as plain text outside any code fence, with plain
-bullets and no bold (never `- **Label:** ...`):
+Reply in this shape, as plain text outside any code fence, with plain bullets, no bold (never `- **Label:** ...`), and no local paths:
 
 ```text
 Branch: feat/cache-evict | Base: main | Dropped: 3 | Backup: changelog-rewrite-backup-20261006-142530Z
@@ -168,8 +167,7 @@ Run only after the Phase 3 approval.
    when `--commit` was not passed, and for a pushed branch the
    `git push --force-with-lease --force-if-includes` the user needs.
 
-   Reply in this shape, as plain text outside any code fence, with plain
-   bullets and no bold (never `- **Backup:** ...`):
+   Reply in this shape, as plain text outside any code fence, with plain bullets, no bold (never `- **Backup:** ...`), and no local paths:
 
    ```text
    Rewrote the changelog history of feat/cache-evict: 3 commits dropped, 1 added.

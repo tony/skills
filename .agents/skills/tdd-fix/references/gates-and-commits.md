@@ -49,8 +49,7 @@ then `## Evidence` (the three commit subjects with short hashes, the xfail
 line from the reproduction run, and for `xfail` the fix-isolation result), then
 `## Follow-ups` (omit when empty). Name no local paths or temp files.
 
-Reply in this shape, as plain text outside any code fence, with plain bullets
-and no bold (never `- **Commit:** ...`):
+Reply in this shape, as plain text outside any code fence, with plain bullets, no bold (never `- **Commit:** ...`), and no local paths:
 
 ```text
 ✓ Fixed the business-day off-by-one in add_days; three commits, all gates green.
@@ -75,8 +74,7 @@ One hero line (`⚠` plus the result in one sentence), the plan under
 user must do. Name commits by purpose, never by phase or number, and name no
 local paths.
 
-Reply in this shape, as plain text outside any code fence, with plain bullets
-and no bold:
+Reply in this shape, as plain text outside any code fence, with plain bullets, no bold, and no local paths:
 
 ```text
 ⚠ Nothing written: the current directory is not the project's repository.

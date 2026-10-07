@@ -212,8 +212,7 @@ confirmation) is one result sentence, then what the user needs to do. Name
 the unconfirmed precondition and what the user supplies, never the sandbox
 or network environment.
 
-Reply in this shape, as plain text outside any code fence, with plain
-bullets and no bold (never `- **Label:** ...`):
+Reply in this shape, as plain text outside any code fence, with plain bullets, no bold (never `- **Label:** ...`), and no local paths:
 
 ```text
 ✓ libvcs 0.37.0 → 0.38.0 across 2 repos

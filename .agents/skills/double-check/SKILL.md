@@ -50,8 +50,7 @@ still append anything material you discovered while re-deriving, as a
 standalone fact about the subject ("the ADR also permits Y"), never as a
 correction of your prior answer.
 
-Reply in this shape, as plain text outside any code fence, with plain
-bullets and no bold (never `- **Label:** ...`):
+Reply in this shape, as plain text outside any code fence, with plain bullets, no bold (never `- **Label:** ...`), and no local paths:
 
 ```text
 client.py sets MAX_RETRIES = 3 and RETRY_BACKOFF_SECONDS = 2.

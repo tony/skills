@@ -33,6 +33,8 @@ ladder and the statistics discipline. Intervals come from
 
 User arguments: $ARGUMENTS
 
+Paths under `../../scripts/` resolve from this skill's directory: print the absolute path once and write it literally in each command, since shell variables do not persist between Bash calls.
+
 ## Procedure
 
 ### 1. Scope and orchestration plan
@@ -115,8 +117,7 @@ End with an `ask-user-choice` panel: generate a report (ask which
 tier), collect more, or stop. Skip the panel in plan mode or when
 running non-interactively.
 
-Reply in this shape, as plain text outside any code fence, with plain
-bullets and no bold (never `- **Label:** ...`):
+Reply in this shape, as plain text outside any code fence, with plain bullets, no bold (never `- **Label:** ...`), and no local paths:
 
 ```text
 ✓ Run written: 2026-07-14/business/review-skill, window 2026-04-01..2026-06-30

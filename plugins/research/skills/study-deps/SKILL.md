@@ -99,7 +99,7 @@ Skip an existing path and report it as present. A monorepo clones once; the work
 
 ## 8. Report
 
-Write it per `../../references/prose-rules.md`. Reply in this shape, as plain text outside any code fence, with plain bullets and no bold (never `- **Label:** ...`):
+Write it per `../../references/prose-rules.md`. Reply in this shape, as plain text outside any code fence, with plain bullets, no bold (never `- **Label:** ...`), and no local paths:
 
 ```text
 ✓ 2 worktrees ready

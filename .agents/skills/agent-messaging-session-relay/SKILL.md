@@ -221,8 +221,8 @@ the outcome (delivered, staged and pending, withheld, or refused) and the relay 
 bullets in this order: target and what identified it, route used, delivery evidence, what the
 user needs to do next. Name no local paths or temp files unless the user must act on them.
 
-Reply in this shape, as plain text outside any code fence, with plain bullets and no bold
-(never `- **Route:** ...`):
+Reply in this shape, as plain text outside any code fence, with plain bullets, no bold
+(never `- **Route:** ...`), and no local paths:
 
 ```text
 Delivered to reviewer (relay id 019a3c-2, hop 0); acknowledgment pending.

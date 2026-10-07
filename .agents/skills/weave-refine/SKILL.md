@@ -15,7 +15,7 @@ Improve an artifact through independent adversarial critique and weaving. Every 
 
 The artifact comes from `$ARGUMENTS`: an existing file path (read it) or inline text. If there are none, ask the user what to refine.
 
-`<engine>` is `references/engine.py`, run with `python3`. It prints JSON; `"ok": false` carries the reason. `references/ensemble-core.md` holds the shared steps this skill calls by section name, and `references/refine-cycle.md` holds the judge, weave, and distribute cycle.
+`<engine>` is `references/engine.py` resolved from this skill's directory to an absolute path, written literally in every command, and run with `python3`. It prints JSON; `"ok": false` carries the reason. `references/ensemble-core.md` holds the shared steps this skill calls by section name, and `references/refine-cycle.md` holds the judge, weave, and distribute cycle.
 
 ## Worker selection
 

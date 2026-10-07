@@ -152,8 +152,8 @@ $ git range-diff <base-sha> backup/<flat>-<ts> HEAD
 ```
 
 Write the report per `references/prose-rules.md`. Reply in this
-shape, as plain text outside any code fence, with plain bullets and no
-bold (never `- **Backup:** ...`):
+shape, as plain text outside any code fence, with plain bullets, no bold (never `- **Backup:** ...`),
+and no local paths:
 
 ```text
 Rebuilt feature/auth-rework as 3 commits; the tree matches the original.

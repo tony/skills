@@ -182,8 +182,7 @@ shows it.
    non-interactive run, list the options in the report and default to
    stopping.
 
-Reply in this shape, as plain text outside any code fence, with plain
-bullets and no bold (never `- **Label:** ...`):
+Reply in this shape, as plain text outside any code fence, with plain bullets, no bold (never `- **Label:** ...`), and no local paths:
 
 ```text
 Finished after 2 rounds on feat/retry-after: 3 fixed, 1 deferred, 1 declined.

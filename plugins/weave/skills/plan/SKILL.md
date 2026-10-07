@@ -15,7 +15,7 @@ This is a **project-read-only** command: no file in your repository is written, 
 
 The task comes from `$ARGUMENTS`; if there are none, ask the user what they want planned.
 
-`<engine>` is `../../scripts/engine.py`, run with `python3`. It prints JSON; `"ok": false` carries the reason. `../../references/ensemble-core.md` holds the shared steps this skill calls by section name.
+`<engine>` is `../../scripts/engine.py` resolved from this skill's directory to an absolute path, written literally in every command, and run with `python3`. It prints JSON; `"ok": false` carries the reason. `../../references/ensemble-core.md` holds the shared steps this skill calls by section name.
 
 ## Worker selection
 

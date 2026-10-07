@@ -98,8 +98,7 @@ in order:
    question, or when stopping, one line: nothing was edited; re-run with
    `--commit` to apply and commit.
 
-   Reply in this shape, as plain text outside any code fence, with plain
-   bullets and no bold (never `- **Label:** ...`):
+   Reply in this shape, as plain text outside any code fence, with plain bullets, no bold (never `- **Label:** ...`), and no local paths:
 
    ```text
    Branch: feat/cache-evict | Base: main | Changelog commits: 2

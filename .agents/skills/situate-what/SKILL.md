@@ -87,8 +87,7 @@ Before sending, check each line:
 The body, then the options. Nothing else: no title, no framing
 sentence, no offer to go deeper.
 
-Reply in this shape, as plain text outside any code fence, with plain
-bullets and no bold (never `- **Label:** ...`):
+Reply in this shape, as plain text outside any code fence, with plain bullets, no bold (never `- **Label:** ...`), and no local paths:
 
 ```text
 ⚠ CI is red on PR #12: the type-check job fails on three files this branch added.

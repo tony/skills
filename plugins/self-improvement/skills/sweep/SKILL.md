@@ -251,8 +251,7 @@ Write the report per `../../references/prose-rules.md`.
    `/self-improvement:apply`, narrow the sweep and rerun, or stop. In a
    non-interactive run, record the options and stop.
 
-Reply in this shape, as plain text outside any code fence, with plain
-bullets and no bold (never `- **Label:** ...`):
+Reply in this shape, as plain text outside any code fence, with plain bullets, no bold (never `- **Label:** ...`), and no local paths:
 
 ```text
 1 finding across 1 skill, 3 of 4 history sources searched

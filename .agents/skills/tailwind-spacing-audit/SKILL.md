@@ -19,6 +19,8 @@ Use `$ARGUMENTS` as the target scope. If it is empty, ask which
 component or file to audit. Without a question tool, stop with the halted
 result below.
 
+Paths under `../../scripts/` resolve from this skill's directory: print the absolute path once and write it literally in each command, since shell variables do not persist between Bash calls.
+
 ## Workflow
 
 ### Step 0: Detect framework and Tailwind version
@@ -109,8 +111,7 @@ in order, with these headings:
 3. Proposed refactor: a focused diff or before/after
 4. Validation checklist: Step 4 filled in
 
-Reply in this shape, as plain text outside any code fence, with plain
-bullets and no bold (never `- **Label:** ...`):
+Reply in this shape, as plain text outside any code fence, with plain bullets, no bold (never `- **Label:** ...`), and no local paths:
 
 ````text
 ## Spacing map

@@ -155,8 +155,7 @@ Write the report per `../../references/prose-rules.md`.
    or stop. Without a question tool, print the options as a plain list and
    stop; never push or open a pull request unasked.
 
-Reply in this shape, as plain text outside any code fence, with plain
-bullets and no bold (never `- **Label:** ...`):
+Reply in this shape, as plain text outside any code fence, with plain bullets, no bold (never `- **Label:** ...`), and no local paths:
 
 ```text
 1 applied, 1 skipped on sweep/commit-trailer

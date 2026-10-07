@@ -179,8 +179,8 @@ Each hunk where the old branch did something the new one does not is a
 question for the user. This is where a lost workaround surfaces.
 
 Write the report per `references/prose-rules.md`. Reply in this
-shape, as plain text outside any code fence, with plain bullets and no
-bold (never `- **Ledger:** ...`):
+shape, as plain text outside any code fence, with plain bullets, no bold (never `- **Ledger:** ...`),
+and no local paths:
 
 ```text
 Rebuilt feature/export-v2 as feature/export-v2-redo; the contract holds.
