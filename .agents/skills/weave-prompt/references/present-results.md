@@ -8,7 +8,7 @@ next-step panel with active plan-mode handoff.
 ## Contents
 
 - Caller contract
-- Phase A: Render output
+- Phase A: Render output (Steps 1-4, with a literal example per result kind)
 - Phase B: Next-step panel
 - Phase C: Active plan-mode entry
 - Failure modes
@@ -22,7 +22,7 @@ The caller sets these variables before invoking this reference:
 | Variable | Type | Purpose |
 |---|---|---|
 | RESULT_KIND | one of: review, plan, ask, brainstorm, brainstorm-and-refine, refine, prompt, architecture, execute, fix-review, serene-bliss | Selects template and handoff options |
-| ARTIFACT_PATH | absolute path | Desloped final artifact (single file) or directory of per-participant outputs |
+| ARTIFACT_PATH | absolute path | Desloped final artifact (single file); for `brainstorm`, the directory of per-participant outputs |
 | SESSION_DIR | absolute path | Session directory for auxiliary writes |
 | PASS_COUNT | integer | Toggles Evolution/Confidence sections |
 | IN_PLAN_MODE | boolean | True for plan; suppresses next-step panel |
@@ -39,10 +39,10 @@ The caller sets these variables before invoking this reference:
 
 ### Step 1: Read the artifact
 
-- When RESULT_KIND is `brainstorm` or `prompt`: ARTIFACT_PATH is a
-  **directory**. List its contents to find per-participant output files.
-- All other RESULT_KINDs: ARTIFACT_PATH is a **single markdown file**.
-  Read it.
+- When RESULT_KIND is `brainstorm`: ARTIFACT_PATH is a **directory**. List
+  its contents to find per-participant output files.
+- All other RESULT_KINDs (`prompt` included): ARTIFACT_PATH is a **single
+  markdown file**. Read it.
 
 ### Step 2: Compose the hero block
 
@@ -61,6 +61,12 @@ content. Emit 1–4 lines.
 | execute | `Best of N implementations` |
 | fix-review | `N fixes applied, M skipped` |
 
+When only one participant produced output, the comparison never ran. Start
+the hero with `Adversarial comparison unavailable: only <participant>
+responded` and drop the winner or "best of N" claim; render the body
+sections from that one output and list the failed participants with their
+failure class in Attribution.
+
 When CASCADE_STATE is `early-exit`, append `, cascade early-exit
 (Maintainer lane only)` in subagent mode or `, cascade early-exit
 (Claude lane only)` in model-CLI mode to the hero's first line.
@@ -77,7 +83,7 @@ optional.
 | review | Scores · Verified Issues (Critical / Important / Suggestions) · False Positives Rejected · Reviewer Disagreements · Critic Findings · Confidence Evolution (only when PASS_COUNT > 1) · Summary · Attribution |
 | plan | Architecture Decision · Implementation Steps · Test Strategy · Risks and Mitigations · Scores · Verification Summary · Adjudication · Critic Findings · Plan Evolution (only when PASS_COUNT > 1) · Attribution. Rendered into the harness plan file, not chat. |
 | ask | Verified Answer · Evidence (file:line bullets) · Disagreements (only if any) · Refinement Notes (only when PASS_COUNT > 1) · Attribution |
-| brainstorm | Per-participant responses (variants flattened) · Attribution |
+| brainstorm | Per-participant responses (variants flattened) · Attribution. List each participant's ideas as written; do not cluster, rank, tabulate, or recommend. |
 | brainstorm-and-refine, refine, serene-bliss | Final Result · Evolution Summary · Rationale Chain · Attribution |
 | prompt | Per-variant outputs · Winner Selection Rationale · Attribution |
 | architecture | Chosen Architecture · Component Map · Trade-off Analysis · Risks · Attribution |
@@ -112,8 +118,9 @@ single-verified, then unverified). Omit consensus tags when only one lane partic
 >    declined) renders none of this: one sentence stating the result, then
 >    what the user needs to do next.
 
-Reply in this shape (shown for refine; every RESULT_KIND follows its own
-section list), as plain text outside any code fence, with plain bullets, no bold (never `- **Label:** ...`), and no local paths:
+Reply in this shape, as plain text outside any code fence, with plain bullets, no bold (never `- **Label:** ...`), and no local paths. Each kind below follows its own section list; values are invented:
+
+Refine, brainstorm-and-refine, and serene-bliss:
 
 ```text
 Refined through 2 passes
@@ -127,6 +134,190 @@ Retry delivery with exponential backoff, capped at 5 attempts.
 
 ## Rationale Chain
 - Backoff avoids hammering a failing endpoint.
+
+## Attribution
+Host-native sub-agents: maintainer, skeptic, builder.
+```
+
+Review:
+
+```text
+⚠ 1 blocker before merge
+- src/retry.py: the backoff loop never stops on a permanent failure
+
+## Scores
+- maintainer 31/40, skeptic 28/40, builder 26/40
+
+## Verified Issues
+### Critical
+- src/retry.py: unbounded retry on a 4xx response (consensus 3/3)
+### Important
+- src/queue.py: a failed requeue is logged but not counted (consensus 2/3)
+### Suggestions
+- Name the retry limit instead of using 5 inline (consensus 1/3 (uncontested))
+
+## False Positives Rejected
+- A claimed race in the worker pool: the lock is held across the check.
+
+## Summary
+One blocker; the other findings are local fixes.
+
+## Attribution
+Host-native sub-agents: maintainer, skeptic, builder.
+```
+
+Ask:
+
+```text
+Retries stop after 5 attempts; the 6th failure marks the job dead.
+
+## Verified Answer
+The handler re-queues only on 5xx responses and caps attempts in `MAX_ATTEMPTS`.
+
+## Evidence
+- src/retry.py:41 compares the attempt count with `MAX_ATTEMPTS`.
+- src/queue.py:88 requeues only when `retryable(status)` is true.
+
+## Disagreements
+- The skeptic read the cap as 3. The constant is 5, so that reading was dropped.
+
+## Attribution
+Host-native sub-agents: maintainer, skeptic, builder.
+```
+
+Brainstorm:
+
+```text
+9 ideas from 3 participants
+
+## Per-participant responses
+### maintainer
+- Cache the parsed config per process.
+- Add a `doctor` subcommand.
+### skeptic
+- Drop the plugin hook; it has one caller.
+
+## Attribution
+Host-native sub-agents: maintainer, skeptic, builder.
+```
+
+Prompt:
+
+```text
+Winner: skeptic
+
+## Per-variant outputs
+- maintainer 24/40: adds the flag but skips the empty-input case.
+- skeptic 33/40: adds the flag, handles empty input, and extends the test.
+- builder: unavailable (timeout).
+
+## Winner Selection Rationale
+- The skeptic is the only implementation that passes every quality gate.
+
+## Attribution
+Host-native sub-agents: maintainer, skeptic. The builder timed out.
+```
+
+Architecture:
+
+```text
+Architecture: one engine module with thin CLI wrappers
+
+## Chosen Architecture
+A single `engine` module owns state; each command is a wrapper.
+
+## Component Map
+- engine.py: sessions and guards
+- skills/: one prose workflow per command
+
+## Trade-off Analysis
+- One module is simple to test; it grows with every command.
+
+## Risks
+- The engine becomes a catch-all if wrappers start owning logic.
+
+## Attribution
+Host-native sub-agents: maintainer, skeptic, builder.
+```
+
+Execute, after the user's stash is restored:
+
+```text
+Best of 3 implementations
+
+## Winning Implementation
+- src/cli.py from skeptic; tests/test_cli.py from builder.
+
+## Diff Summary
+- Adds --dry-run to the CLI and one test for it.
+
+## Trade-offs
+- The skeptic's parser is stricter and rejects an empty target.
+
+## Attribution
+Host-native sub-agents: maintainer, skeptic, builder.
+```
+
+Execute with a refused stash restore: put this before the hero, then the same shape.
+
+```text
+Your uncommitted changes are safe in a stash (3f2a9c1) and were not restored.
+- Overlap: src/cli.py
+- Inspect it: git stash show --patch 3f2a9c1
+- Recover: run the commands below one at a time.
+```
+
+Fix-review:
+
+```text
+2 fixes applied, 1 skipped
+
+## Applied Fixes
+- Bound the retry loop (commit a1b2c3d).
+- Count failed requeues (commit d4e5f6a).
+
+## Tests Added
+- test_retry_stops_on_4xx extends the parametrized retry cases.
+
+## Skipped Findings
+- Rename the constant: the file has your uncommitted edits.
+
+## Final Verification
+- Formatter, linter, and tests pass.
+
+## Attribution
+Findings came from the weave review in this conversation.
+```
+
+Plan renders into the host's plan file, not chat:
+
+```text
+Plan: 4 steps, 3 files touched
+
+## Architecture Decision
+Add the flag in the parser and thread it to the executor.
+
+## Implementation Steps
+1. Parse `--dry-run` in src/cli.py.
+2. Print planned actions in src/runner.py.
+
+## Test Strategy
+- Extend the CLI parser test with a dry-run case.
+
+## Risks and Mitigations
+- A side effect outside the runner would still execute; grep for direct calls.
+
+## Scores
+- maintainer 30/40, skeptic 33/40, builder 27/40
+
+## Verification Summary
+- 12 of 14 claims verified.
+
+## Adjudication
+The skeptic's executor threading won over the builder's global flag.
+
+## Critic Findings
+- Step 2 omitted the quiet-mode path; added.
 
 ## Attribution
 Host-native sub-agents: maintainer, skeptic, builder.
@@ -169,7 +360,7 @@ path instead of Phase C.
 | brainstorm | **Pick one and plan it** (sub-prompt for which idea, then plan) · **Refine further** (suggest the `weave-refine` skill) · **Done** |
 | brainstorm-and-refine, refine, serene-bliss | **Plan the refined result** · **Refine again** (suggest the `weave-refine` skill) · **Done** |
 | architecture | **Plan the chosen architecture** · **Brainstorm alternatives** (suggest the `weave-brainstorm` skill) · **Done** |
-| execute | **Apply the winning implementation** · **Compare with another participant** (suggest this skill) · **Done** |
+| execute | **Compare with another participant** (suggest this skill) · **Done** |
 | prompt | **Use the winner - plan it** · **Re-run with different variants** · **Done** |
 | fix-review | **Review the branch again** (suggest the `weave-review` skill) · **Done** |
 
@@ -182,7 +373,7 @@ path instead of Phase C.
   and return.
 - **Plan-entry options** (Draft plan, Turn into plan, Plan the refined
   result, Plan the chosen architecture, Pick one and plan it, Use the
-  winner - plan it, Apply the winning implementation) → proceed to
+  winner - plan it) → proceed to
   Phase C.
 
 ---
@@ -236,7 +427,7 @@ Run weave-plan with this context to enter plan mode.
 |---|---|
 | ARTIFACT_PATH missing or empty | Emit error line; skip rendering, skip panel. |
 | LABEL_MAP_PATH set but file missing | Omit label mapping from Attribution; note "label map unavailable". |
-| ask-user-choice unavailable | Skip Phase B; emit "Session complete" line. |
+| ask-user-choice unavailable | Skip Phase B; end after the Attribution section. |
 | EnterPlanMode unavailable | Headless fallback (Phase C). |
 | Host-native sub-agents unavailable (Phase C Step 1) | Emit plan-brief stub with ARTIFACT_PATH pointer; proceed to headless fallback. |
 | Plan-brief generation fails | Emit error; do not enter plan mode. |

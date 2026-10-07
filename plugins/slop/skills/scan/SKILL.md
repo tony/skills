@@ -48,8 +48,8 @@ budget. A non-flag token is a path scope that overrides `--paths`.
 
 ## Orchestration Plan
 
-Follow `../../references/detect-pipeline.md` § Orchestration plan. The
-plan contains:
+Follow `../../references/detect-pipeline.md` § Orchestration plan: run
+Step 1 first, then present the plan. The plan contains:
 
 1. `BASELINE_SHA` and the working-tree state (clean, or dirty with
    `--allow-dirty` and the list of dirty files).
@@ -62,15 +62,27 @@ plan contains:
 
 ## Step 1: Snapshot state and lock the baseline
 
-Check for an empty repository first: a repo with no commits has no
-`HEAD`, and a repo with no tracked files has nothing to scan.
+Check for an unborn branch first: staged files pass `git ls-files` but
+leave no `HEAD` to scan.
+
+```console
+$ git rev-parse --verify --quiet HEAD
+```
+
+A non-zero exit means no commits. Stop with one result sentence, then
+what the user must do. Do not list what was not done:
+
+```text
+No commits yet. Commit the files you want checked, then run /slop:scan again.
+```
+
+Then check for tracked files:
 
 ```console
 $ git ls-files
 ```
 
-If it prints nothing, stop with one result sentence, then what the user
-must do. Do not list what was not done:
+If it prints nothing, stop the same way:
 
 ```text
 No tracked files to scan. Commit the files you want checked, then run /slop:scan again.
@@ -134,7 +146,7 @@ Then collect the history, from `HEAD` so it also works on the trunk:
 $ git log -n "${N}" -p HEAD
 ```
 
-Feed it to Pass A with a `historical_only=true` marker.
+Pass A reads it in Step 6 with `--historical`.
 
 ## Step 3: Discover quality gates
 
@@ -160,23 +172,47 @@ source: `../../references/signatures.yml`.
 Regex first (cheap, deterministic), semantic verification only on
 flagged files (expensive, precise).
 
-**Pass A.** Follow `../../references/detect-pipeline.md` § Pass A. Run
-each signature's `pattern` against its `target`:
+**Pass A.** Follow `../../references/detect-pipeline.md` § Pass A. Paths
+under `../../scripts/` and `../../references/` resolve from this skill's
+directory: print the absolute path once and write it literally in each
+command, since shell variables do not persist between Bash calls.
 
-- `file`: every file from Step 2, per line.
-- `diff`: the same files, read as current content. This skill matches
-  file state, not patches, so strip a leading `^\+` from the pattern and
-  treat every line as added. Skip patterns that begin with `^-`: they
-  cannot match file content, and stay active under `--with-history`
-  against the `git log -p` output.
-- `message-subject` and `message-body`: only under `--with-history`,
-  against the captured log.
+Run the matcher over the Step 2 files. `files` mode reads each `file`
+and `diff` signature against current content; `--added-base` marks the
+lines `BASELINE_SHA..HEAD` added, so an added-line rule (`^\+`) stays
+Tier A on those lines and drops to Tier B on every other line. Omit
+`--added-base` when there is no trunk, and `--override` when
+`.claude/slop.local.yml` is absent; with `--taxonomy=<path>`, pass it as
+`--registry` and drop `--override`. With `--paths`, narrow the
+`git ls-files -z` list the same way as Step 2.
 
-A match yields `{file, line_range, signature_id, tier,
-confidence: regex, action, historical_only: <bool>}`. A finding with
-`historical_only: true` is advisory at any tier, because the skill
-cannot edit historical commits. A finding in a file listed in
-`DIRTY_AT_START` is advisory too.
+```console
+$ git ls-files -z | python3 ../../scripts/detect.py files \
+    --registry ../../references/signatures.yml \
+    --override .claude/slop.local.yml \
+    --added-base "<BASELINE_SHA>"
+```
+
+Under `--with-history`, also run the diff and message modes over the
+captured log. Their findings carry `historical_only`.
+
+```console
+$ git log -n "<N>" -p HEAD | python3 ../../scripts/detect.py diff \
+    --registry ../../references/signatures.yml \
+    --historical
+```
+
+```console
+$ git log -n "<N>" -z --format=%H%x1f%B HEAD | python3 ../../scripts/detect.py messages \
+    --registry ../../references/signatures.yml \
+    --historical
+```
+
+Then run the Guard check from the pipeline reference. A finding has
+`{file, line_start, signature_id, tier, confidence: regex, action,
+historical_only}`. A finding with `historical_only: true` is advisory at
+any tier, because the skill cannot edit historical commits. A finding in
+a file listed in `DIRTY_AT_START` is advisory too.
 
 **Pass B.** Follow `../../references/detect-pipeline.md` § Pass B with a
 file as the unit. Pass the file's full content.
@@ -253,9 +289,10 @@ Reached only with `--apply`. Ask through `AskUserQuestion`:
 | **Cancel** | Delete `<run-dir>/` and exit. |
 
 Without a question tool (Codex, headless), take **Patches only** and
-print the `--apply` command. A
-request that explicitly says to apply and commit approves that choice
-only, never a push.
+print the `--apply` command, unless the request explicitly says to apply
+and commit. That request approves **Apply and commit** and nothing
+broader: no push, and every Tier B finding still counts as declined,
+because nobody confirmed it.
 
 ## Step 10: Per-finding commit loop
 
@@ -323,6 +360,9 @@ lost:
 $ git restore --source=HEAD --staged --worktree -- "<file>"
 ```
 
+Then clean up after a project-wide formatter as in 10c: run
+`git status --porcelain` and restore every other path the gates changed.
+
 Then apply `--on-fail`:
 
 - `skip` (default): record the gate's stderr, mark the finding
@@ -387,7 +427,8 @@ $ ${TEST_CMD}
 
 The hero line is `Slop scan summary`; sections follow in the order
 shown: summary block, `Quality gates (final)`, `Per-finding commits`,
-`Gate-failed findings`, then the `Patch series:` line. A halted run
+`Gate-failed findings`, then the `Patch series:` line when nothing was
+committed. A halted run
 prints one sentence naming the cause, then what the user must do (commit
 or stash, or pass `--allow-dirty`).
 
@@ -414,17 +455,17 @@ Quality gates (final)
 format=pass | lint=pass | typecheck=pass | tests=skipped
 
 Per-finding commits:
-  7c1e9d4 chore(slop[low-value.todo-noise]) Remove vague TODO from src/utils.py
-  a02b5f1 docs(slop[brittle.line-numbers]) Replace line number in CONTRIBUTING.md
+  7c1e9d4 chore(cleanup) Remove vague TODO from src/utils.py
+  a02b5f1 docs(cleanup) Replace line number in CONTRIBUTING.md
 
 Gate-failed findings:
-  brittle.test-count in docs/guide.md:12, lint: line too long
-
-Patch series: <run-dir>
+  brittle.line-numbers in docs/guide.md:12, lint: line too long
 ```
 
-`<run-dir>` is the path Step 8 printed. Do not push; the user decides. A plain `git push` suffices because no
-history changed.
+A run that committed nothing ends with `Patch series: <run-dir>`, the
+path Step 8 printed, because the user reviews or edits `commits.json`
+there; a run that committed omits the line. Do not push; the user
+decides. A plain `git push` suffices because no history changed.
 
 ## Edge cases
 

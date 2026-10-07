@@ -11,6 +11,7 @@ from pathlib import Path
 
 import render_apply  # pyright: ignore[reportImplicitRelativeImport]
 
+EXIT_APPLY_FAILED = 3
 ENV = {
     **os.environ,
     "GIT_AUTHOR_NAME": "t",
@@ -100,3 +101,48 @@ def test_render_rejects_unsafe_value() -> None:
     except ValueError:
         return
     raise AssertionError
+
+
+def test_second_fixup_in_one_file_applies_only_when_cut_after_the_first(tmp_path: Path) -> None:
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    git(repo, "init", "-q", "-b", "main")
+    (repo / "a.txt").write_text("one\ntwo\nthree\nfour\n")
+    git(repo, "add", "a.txt")
+    git(repo, "commit", "-q", "-m", "add a")
+    target = git(repo, "rev-parse", "--short", "HEAD")
+    base = git(repo, "rev-parse", "HEAD")
+
+    def cut(edits: list[tuple[str, str]], *, sequential: bool) -> list[str]:
+        scratch = tmp_path / ("seq" if sequential else "indep")
+        git(repo, "worktree", "add", "-q", "--detach", str(scratch), "HEAD")
+        patches: list[str] = []
+        for old, new in edits:
+            path = scratch / "a.txt"
+            path.write_text(path.read_text().replace(old, new))
+            patches.append(git(scratch, "diff"))
+            if sequential:
+                git(scratch, "add", "a.txt")
+            else:
+                git(scratch, "checkout", "--", "a.txt")
+        return patches
+
+    edits = [("one\n", ""), ("three\n", "")]
+
+    def run(patches: list[str], name: str) -> subprocess.CompletedProcess[str]:
+        run_dir = tmp_path / name
+        run_dir.mkdir()
+        registry = tmp_path / "signatures.yml"
+        registry.write_text("version: 1\n")
+        for n, text in enumerate(patches, start=1):
+            (run_dir / f"{n:04d}-fixup-{target}-x.y.patch").write_text(text + "\n")
+        argv = ["--run-dir", str(run_dir), "--registry", str(registry)]
+        assert render_apply.main([*argv, "--baseline", base, "--trunk-ref", "origin/main"]) == 0
+        return run_sh(run_dir / "apply.sh", repo)
+
+    bad = run(cut(edits, sequential=False), "bad")
+    assert bad.returncode == EXIT_APPLY_FAILED
+    git(repo, "reset", "-q", "--hard", base)
+    good = run(cut(edits, sequential=True), "good")
+    assert good.returncode == 0, good.stderr
+    assert (repo / "a.txt").read_text() == "two\nfour\n"

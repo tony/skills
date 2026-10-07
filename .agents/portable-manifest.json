@@ -674,7 +674,7 @@
         "references/prose-rules.md": "plugins/release/references/prose-rules.md",
         "references/release-conventions.md": "plugins/release/references/release-conventions.md"
       },
-      "bytes": 20917
+      "bytes": 21013
     },
     {
       "name": "release-update-downstream-packages",
@@ -1072,12 +1072,13 @@
         "references/apply-template.sh": "plugins/slop/references/apply-template.sh",
         "references/conflict-loop.md": "plugins/slop/references/conflict-loop.md",
         "references/detect-pipeline.md": "plugins/slop/references/detect-pipeline.md",
+        "references/detect.py": "plugins/slop/scripts/detect.py",
         "references/prose-rules.md": "plugins/slop/references/prose-rules.md",
         "references/render_apply.py": "plugins/slop/scripts/render_apply.py",
         "references/signatures.yml": "plugins/slop/references/signatures.yml",
         "references/verification-gates.md": "plugins/slop/references/verification-gates.md"
       },
-      "bytes": 57325
+      "bytes": 76362
     },
     {
       "name": "slop-scan",
@@ -1087,11 +1088,12 @@
       "bundled": {
         "references/commit-template.md": "plugins/slop/references/commit-template.md",
         "references/detect-pipeline.md": "plugins/slop/references/detect-pipeline.md",
+        "references/detect.py": "plugins/slop/scripts/detect.py",
         "references/prose-rules.md": "plugins/slop/references/prose-rules.md",
         "references/signatures.yml": "plugins/slop/references/signatures.yml",
         "references/verification-gates.md": "plugins/slop/references/verification-gates.md"
       },
-      "bytes": 46868
+      "bytes": 65289
     },
     {
       "name": "spike-bakeoff",
@@ -1254,7 +1256,7 @@
         "references/prose-rules.md": "plugins/weave/references/prose-rules.md",
         "references/worker-backends.md": "plugins/weave/references/worker-backends.md"
       },
-      "bytes": 145545
+      "bytes": 150882
     },
     {
       "name": "weave-ask",
@@ -1270,7 +1272,7 @@
         "references/prose-rules.md": "plugins/weave/references/prose-rules.md",
         "references/worker-backends.md": "plugins/weave/references/worker-backends.md"
       },
-      "bytes": 154190
+      "bytes": 159527
     },
     {
       "name": "weave-brainstorm",
@@ -1283,7 +1285,7 @@
         "references/present-results.md": "plugins/weave/references/present-results.md",
         "references/worker-backends.md": "plugins/weave/references/worker-backends.md"
       },
-      "bytes": 131968
+      "bytes": 137305
     },
     {
       "name": "weave-brainstorm-and-refine",
@@ -1298,7 +1300,7 @@
         "references/refine-cycle.md": "plugins/weave/references/refine-cycle.md",
         "references/worker-backends.md": "plugins/weave/references/worker-backends.md"
       },
-      "bytes": 149008
+      "bytes": 154345
     },
     {
       "name": "weave-execute",
@@ -1312,7 +1314,7 @@
         "references/prose-rules.md": "plugins/weave/references/prose-rules.md",
         "references/worker-backends.md": "plugins/weave/references/worker-backends.md"
       },
-      "bytes": 144245
+      "bytes": 149582
     },
     {
       "name": "weave-fix-review",
@@ -1324,7 +1326,7 @@
         "references/present-results.md": "plugins/weave/references/present-results.md",
         "references/prose-rules.md": "plugins/weave/references/prose-rules.md"
       },
-      "bytes": 116055
+      "bytes": 120845
     },
     {
       "name": "weave-plan",
@@ -1339,7 +1341,7 @@
         "references/prose-rules.md": "plugins/weave/references/prose-rules.md",
         "references/worker-backends.md": "plugins/weave/references/worker-backends.md"
       },
-      "bytes": 148442
+      "bytes": 153779
     },
     {
       "name": "weave-prompt",
@@ -1353,7 +1355,7 @@
         "references/prose-rules.md": "plugins/weave/references/prose-rules.md",
         "references/worker-backends.md": "plugins/weave/references/worker-backends.md"
       },
-      "bytes": 143974
+      "bytes": 149311
     },
     {
       "name": "weave-refine",
@@ -1368,7 +1370,7 @@
         "references/refine-cycle.md": "plugins/weave/references/refine-cycle.md",
         "references/worker-backends.md": "plugins/weave/references/worker-backends.md"
       },
-      "bytes": 148385
+      "bytes": 153722
     },
     {
       "name": "weave-review",
@@ -1384,7 +1386,7 @@
         "references/prose-rules.md": "plugins/weave/references/prose-rules.md",
         "references/worker-backends.md": "plugins/weave/references/worker-backends.md"
       },
-      "bytes": 158391
+      "bytes": 163728
     },
     {
       "name": "weave-serene-bliss",
@@ -1399,7 +1401,7 @@
         "references/refine-cycle.md": "plugins/weave/references/refine-cycle.md",
         "references/worker-backends.md": "plugins/weave/references/worker-backends.md"
       },
-      "bytes": 152206
+      "bytes": 157543
     }
   ],
   "duplication": {
@@ -1509,6 +1511,7 @@
     "plugins/slop/references/prose-rules.md": 2,
     "plugins/slop/references/signatures.yml": 2,
     "plugins/slop/references/verification-gates.md": 2,
+    "plugins/slop/scripts/detect.py": 2,
     "plugins/tdd/references/gates-and-commits.md": 2,
     "plugins/tdd/references/prose-rules.md": 2,
     "plugins/tdd/references/xfail-mechanisms.md": 2,
@@ -1573,6 +1576,9 @@
     "plugins/tailwind/skills/spacing-audit/references/patterns.md": 1
   },
   "external_paths": {
+    "../../references/": [
+      "slop-scan"
+    ],
     "../../scripts/": [
       "business-case-study-internal",
       "business-case-study-public",
@@ -1588,6 +1594,7 @@
       "respond-goal",
       "skill-style",
       "slop-deslop",
+      "slop-scan",
       "terraform-bump-terraform",
       "terraform-bumping-terraform"
     ],

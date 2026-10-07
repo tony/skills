@@ -16,7 +16,11 @@
 #   pattern    — PCRE (required when `kind: regex`); uses `(?i)`, `\b`, `\d`, `\x{…}`
 #   rationale  — one sentence on why this is slop
 #   fp-guard   — false-positive context where the rule is suppressed
-#   suppress-if — optional additional condition (path / file presence / etc.)
+#   skip-paths — optional list of case-insensitive regexes; a match on the
+#                file path suppresses the rule.
+#
+# A pattern that starts with `^\+` judges added lines only. `scripts/detect.py`
+# enforces that and `skip-paths`; the main agent checks the rest of `fp-guard`.
 
 version: 1
 
@@ -62,7 +66,7 @@ signatures:
     target: [diff]
     pattern: '^\+.*\b(TODO|FIXME|XXX|HACK):?\s*(revisit|later|someday|figure out|come back)\b'
     rationale: Net-new vague TODOs with no owner or ticket reference.
-    fp-guard: 'Pattern matches only added lines (`^\+`); pre-existing TODOs untouched.'
+    fp-guard: 'Added lines only; a TODO already on trunk is never auto-removed.'
 
   # ─── Tier B — suggest, user-confirmed ───────────────────────────
 
@@ -138,9 +142,10 @@ signatures:
     action: ask
     kind: regex
     target: [diff]
+    skip-paths: ['(^|/)[^/]*-cli\.', '(^|/)[^/]*main\.', '(^|/)scripts/', 'debug', '(^|/)tests?/', '(^|/)test_[^/]*$', '_test\.[^/]*$']
     pattern: '^\+\s*(console\.(log|debug)|print\(|printf\(|fmt\.Println|System\.out\.println|dbg!|pp\b)'
     rationale: Debug log statements added in non-test files are usually leftovers from active debugging.
-    fp-guard: 'Skip in `*-cli.*`, `*main.*`, `scripts/`, and any path containing `debug` — CLI tools and build scripts intentionally write to stdout.'
+    fp-guard: 'Skip test files, `*-cli.*`, `*main.*`, `scripts/`, and any path containing `debug` — CLI tools and build scripts intentionally write to stdout.'
 
   - id: ai-slop.co-authored-by-ai
     tier: B
@@ -168,6 +173,7 @@ signatures:
     action: rewrite
     kind: regex
     target: [diff]
+    skip-paths: ['(^|/)(tests?|fixtures?|examples?|docs?)/', '\.(md|rst|txt)$']
     pattern: '^\+.*(["''])(/Users/|/home/[a-z]+/|C:\\\\Users\\\\)'
     rationale: Absolute user-home paths in committed code break for every other user.
     fp-guard: 'Skip in test fixtures and example documentation.'
@@ -234,6 +240,7 @@ signatures:
     action: rewrite
     kind: regex
     target: [diff, file]
+    skip-paths: ['(^|/)(CHANGES|CHANGELOG|MIGRATION|UPGRADING)', 'deprecat']
     pattern: '(?i)\b(renamed?\s+from|was\s+(previously|formerly|originally)\s+(called|named|known\s+as)|used\s+to\s+be\s+(called|named|known\s+as)|formerly\s+(called|named|known\s+as)|originally\s+(named|called)|previously\s+named)\b'
     rationale: |
       In-artifact narration of a within-branch rename. The git diff

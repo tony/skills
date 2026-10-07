@@ -32,6 +32,12 @@ graders:
     min: 1
     arm: both
 
+  - name: reports-the-applied-fixup
+    type: regex
+    target: last_message
+    pattern: 'fixup'
+    flags: i
+
   - name: reports-the-backup-branch
     type: regex
     target: last_message

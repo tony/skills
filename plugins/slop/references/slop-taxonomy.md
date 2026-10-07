@@ -15,7 +15,9 @@ reaches the proposal.
 **Tier A: deterministic, near-zero false positives.** Exact AI-tool
 footers, emoji in commit subjects, markdown syntax opening a subject,
 and net-new `TODO: revisit` noise. In an apply mode these change with no
-per-finding confirmation; they are the only findings that do. The
+per-finding confirmation; they are the only findings that do. A rule
+written for added lines (`^\+`) is Tier A only on lines the branch
+added; on a pre-existing line it is Tier B. The
 emoji rule flags pictographic emoji only, not status glyphs such as
 check marks, and is overridable for gitmoji projects.
 

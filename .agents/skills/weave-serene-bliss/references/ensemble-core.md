@@ -46,7 +46,16 @@ each command: shell variables do not survive between Bash calls.
    - **Timeout** (`model-clis` only, `timeout` null): "Timeout for external
      model commands?" Options from `timeout_menu`: default, `quick`, `long`, and none.
 
-3. Start the session. Stdin carries the prompt for the session summary:
+3. For a `--mutating` command, check the checkout first: run `git rev-parse
+   --show-toplevel` and `echo "$HOME"`. When the toplevel is the home directory
+   (or the user says this is their home or dotfiles repository), contains it, or
+   is `/`, stop before `init`. Reply in one sentence that a write command will
+   not stash or snapshot a home-rooted repository, then that the user should
+   run it from a project checkout. A dotfile repo at home would sweep
+   credentials into the stash and worktrees. `init` refuses the same
+   locations.
+
+4. Start the session. Stdin carries the prompt for the session summary:
 
    ```console
    $ python3 <engine> init \

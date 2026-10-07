@@ -190,7 +190,8 @@ The first failure stops the run: report it and run none of the later steps.
 Never name local or temp paths. A completed run ends with these, in order:
 
 1. Hero line: `✓ Cut <tag>` plus whether the release commit and the tag
-   were created and whether each was pushed.
+   were created and whether each was pushed. Name the tag when one was
+   created, for example `tag v0.4.0 created locally, nothing pushed`.
 2. `## Release summary`: old to new version, CHANGES section dated, next
    unreleased target, one fragment per fact. Nothing else: no gate output,
    cleanup, clauses about how the changelog is styled, or skill mechanics.

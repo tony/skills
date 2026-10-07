@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Run the slop registry's regex signatures over files, a diff, or commit messages.
+r"""Run the slop registry's regex signatures over files, a diff, or commit messages.
 
 Usage:
   detect.py files    --registry PATH [--override PATH] [--added-base SHA] [PATH ...]
@@ -19,7 +19,9 @@ line counts as added when ``git diff BASE HEAD`` added it; without
 demoted to Tier B and marked ``pre_existing``.
 """
 
+# ruff: noqa: ANN401, PLR2004
 # pyright: reportAny=false, reportExplicitAny=false, reportUnusedCallResult=false
+# pyright: reportUnknownVariableType=false, reportUnknownArgumentType=false
 
 from __future__ import annotations
 
@@ -29,7 +31,7 @@ import re
 import subprocess
 import sys
 from pathlib import Path
-from typing import Any
+from typing import Any, final
 
 Sig = dict[str, Any]
 
@@ -88,13 +90,13 @@ def _value(raw: str) -> Any:
 
 
 def parse_yaml(text: str) -> dict[str, Any]:
-    """Parse the registry subset of YAML: top-level scalars and lists of mappings.
+    r"""Parse the registry subset of YAML: top-level scalars and lists of mappings.
 
     Examples
     --------
-    >>> parse_yaml("version: 1\\nsignatures:\\n  - id: a.b\\n    tier: A\\n")["signatures"]
+    >>> parse_yaml("version: 1\nsignatures:\n  - id: a.b\n    tier: A\n")["signatures"]
     [{'id': 'a.b', 'tier': 'A'}]
-    >>> parse_yaml("delete:\\n  - a.b\\n")
+    >>> parse_yaml("delete:\n  - a.b\n")
     {'delete': ['a.b']}
     """
     lines = text.splitlines()
@@ -151,16 +153,14 @@ def parse_yaml(text: str) -> dict[str, Any]:
     return out
 
 
-def load_registry(
-    registry: Path, override: Path | None = None
-) -> tuple[list[Sig], dict[str, int]]:
-    """Load built-in signatures and apply ``replace`` / ``append`` / ``delete``.
+def load_registry(registry: Path, override: Path | None = None) -> tuple[list[Sig], dict[str, int]]:
+    r"""Load built-in signatures and apply ``replace`` / ``append`` / ``delete``.
 
     Examples
     --------
     >>> import tempfile, pathlib
     >>> d = pathlib.Path(tempfile.mkdtemp())
-    >>> _ = (d / "r.yml").write_text("signatures:\\n  - id: a.b\\n    tier: A\\n")
+    >>> _ = (d / "r.yml").write_text("signatures:\n  - id: a.b\n    tier: A\n")
     >>> load_registry(d / "r.yml")[1]["builtin"]
     1
     """
@@ -214,6 +214,7 @@ def compile_pattern(pattern: str) -> re.Pattern[str]:
     return re.compile(translated)
 
 
+@final
 class Rule:
     """A regex signature ready to match lines."""
 
@@ -229,6 +230,7 @@ class Rule:
         self.skip_paths = [re.compile(p, re.IGNORECASE) for p in sig.get("skip-paths", [])]
 
     def path_skipped(self, path: str) -> bool:
+        """Whether a ``skip-paths`` regex matches the path."""
         return any(rx.search(path) for rx in self.skip_paths)
 
 
@@ -267,7 +269,17 @@ def _finding(
 def added_lines(base: str) -> dict[str, set[int]]:
     """Map each path to the line numbers ``git diff BASE HEAD`` added."""
     proc = subprocess.run(  # noqa: S603
-        ["git", "-c", "core.quotepath=off", "diff", "-U0", "--no-color", "--no-renames", base, "HEAD"],  # noqa: S607
+        [  # noqa: S607
+            "git",
+            "-c",
+            "core.quotepath=off",
+            "diff",
+            "-U0",
+            "--no-color",
+            "--no-renames",
+            base,
+            "HEAD",
+        ],
         capture_output=True,
         text=True,
         check=True,
@@ -322,30 +334,27 @@ def scan_diff(rules: list[Rule], text: str, *, historical: bool) -> list[dict[st
     number = 0
     in_hunk = False
     for line in text.splitlines():
-        if not in_hunk or not line[:1] in {" ", "+", "-", "\\"}:
-            in_hunk = False
-            if line.startswith("commit "):
-                commit = line.split()[1]
-            elif line.startswith("+++ "):
-                path = line[6:] if line.startswith("+++ b/") else ""
-            elif (m := HUNK.match(line)) is not None:
-                number = int(m.group(1))
-                in_hunk = True
-            continue
-        if HUNK.match(line):
-            number = int(HUNK.match(line).group(1))  # pyright: ignore[reportOptionalMemberAccess]
-            continue
-        if line.startswith("+"):
-            for rule in rules:
-                if "diff" in rule.targets and not rule.path_skipped(path):
+        if in_hunk and line[:1] in ("+", "-", " ", "\\"):
+            if line[0] == "+":
+                for rule in rules:
+                    if "diff" not in rule.targets or rule.path_skipped(path):
+                        continue
                     if rule.regex.search(line[1:]):
                         where: dict[str, Any] = {"file": path, "line_start": number}
                         if commit:
                             where["commit_sha"] = commit
                         found.append(_finding(rule, line[1:], historical=historical, **where))
-            number += 1
-        elif line.startswith(" "):
-            number += 1
+            if line[0] in ("+", " "):
+                number += 1
+            continue
+        in_hunk = False
+        if line.startswith("commit "):
+            commit = line.split()[1]
+        elif line.startswith("+++ "):
+            path = line[6:] if line.startswith("+++ b/") else ""
+        elif (m := HUNK.match(line)) is not None:
+            number = int(m.group(1))
+            in_hunk = True
     return found
 
 
@@ -358,17 +367,11 @@ def scan_messages(rules: list[Rule], text: str, *, historical: bool) -> list[dic
             continue
         for number, line in enumerate(message.splitlines(), start=1):
             kind = "message-subject" if number == 1 else "message-body"
-            for rule in rules:
-                if kind in rule.targets and rule.regex.search(line):
-                    found.append(
-                        _finding(
-                            rule,
-                            line,
-                            historical=historical,
-                            commit_sha=sha,
-                            line_start=number,
-                        )
-                    )
+            found.extend(
+                _finding(rule, line, historical=historical, commit_sha=sha, line_start=number)
+                for rule in rules
+                if kind in rule.targets and rule.regex.search(line)
+            )
     return found
 
 

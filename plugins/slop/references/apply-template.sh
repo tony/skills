@@ -86,8 +86,9 @@ mark_done() {
 # ── patch application loop ────────────────────────────────────────
 #
 # The target SHA is embedded in each filename
-# (`NNNN-fixup-<sha>-<finding-id>.patch`, `NNNN-amend-<sha>.patch`,
-# `NNNN-reword-<sha>.txt`).
+# (`NNNN-fixup-<sha>-<finding-id>.patch`, `NNNN-reword-<sha>.txt`).
+# Each patch applies to the tree left by the lower-numbered ones, so
+# patches that touch one file must be generated in numeric order.
 
 step_num=0
 
@@ -109,8 +110,8 @@ for entry in "$run_dir"/[0-9]*; do
     fi
 
     case "$base" in
-        *-fixup-*.patch|*-amend-*.patch)
-            target_sha=$(echo "$base" | sed -nE 's/^[0-9]+-(fixup|amend)-([0-9a-f]+)(-.*)?\.patch$/\2/p')
+        *-fixup-*.patch)
+            target_sha=$(echo "$base" | sed -nE 's/^[0-9]+-fixup-([0-9a-f]+)(-.*)?\.patch$/\1/p')
             if [ -z "$target_sha" ]; then
                 echo "apply.sh: cannot extract target SHA from $base" >&2
                 exit 3

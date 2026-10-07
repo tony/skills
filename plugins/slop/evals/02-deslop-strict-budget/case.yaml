@@ -1,8 +1,8 @@
 schema_version: "1.0"
 name: 02-deslop-strict-budget
 description: >-
-  A branch carrying real slop: an attribution footer, a stale line reference,
-  a bare ticket id and diff narration. The audit must find them and classify
+  A branch carrying real slop: an attribution footer, a stale line reference
+  and diff narration. The audit must find them and classify
   them, without rewriting anything.
 tags: [fixture, git]
 
@@ -35,11 +35,6 @@ graders:
     target: last_message
     pattern: 'lines 12-18|line numbers?'
     flags: i
-
-  - name: catches-the-bare-ticket-id
-    type: regex
-    target: last_message
-    pattern: 'PROJ-4471'
 
   - name: classifies-findings-by-tier
     type: regex

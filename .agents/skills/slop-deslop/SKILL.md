@@ -56,8 +56,8 @@ commit range (`<sha>..<sha>` or a single SHA) that overrides it.
 
 ## Orchestration Plan
 
-Follow `references/detect-pipeline.md` § Orchestration plan. The
-plan contains:
+Follow `references/detect-pipeline.md` § Orchestration plan: run
+Step 1 first, then present the plan. The plan contains:
 
 1. The trunk ref, `BASELINE_SHA`, and the commit count to scan.
 2. The active `--budget` and `--targets`.
@@ -133,8 +133,8 @@ pushed. A non-zero exit with an upstream set means a local rewrite
 diverged from it; that branch was pushed too. Without `--force-rewrite-pushed`, refuse:
 
 > This branch was already pushed to `<upstream>`. Rewriting its
-> history will require a force-push and may break a reviewer's local
-> checkout. Re-run with `--force-rewrite-pushed` to override, or use
+> history requires a force-push, and reviewers must reset their local
+> checkouts. Re-run with `--force-rewrite-pushed` to override, or use
 > `--apply-patches` (no rebase) to apply fixups without rewriting.
 
 With the flag, record the upstream in the final report and continue.
@@ -161,16 +161,30 @@ source: `references/signatures.yml`.
 Regex first (cheap, deterministic), semantic verification only on
 flagged hunks (expensive, precise).
 
-**Pass A.** Follow `references/detect-pipeline.md` § Pass A. Run
-each signature's `pattern` against its `target`:
+**Pass A.** Follow `references/detect-pipeline.md` § Pass A. Pass
+`--override .claude/slop.local.yml` when that file exists; with
+`--taxonomy=<path>`, pass it as `--registry` and drop `--override`.
 
-- `diff`: `git diff "${BASELINE_SHA}..HEAD"`, per hunk.
-- `message-subject`: each commit's subject line.
-- `message-body`: each commit's body.
-- `file`: the file content at each commit.
+- `diff` (skip under `--targets=messages`): one commit at a time, oldest
+  first, so each finding names the commit that added the line.
 
-A match yields `{commit_sha, signature_id, location, tier,
-confidence: regex, action}`.
+```console
+$ git log -p --reverse "<BASELINE_SHA>..HEAD" | python3 references/detect.py diff \
+    --registry references/signatures.yml
+```
+
+- `message-subject` and `message-body` (skip under `--targets=diff`):
+
+```console
+$ git log -z --format=%H%x1f%B "<BASELINE_SHA>..HEAD" | python3 references/detect.py messages \
+    --registry references/signatures.yml
+```
+
+Drop a diff finding whose `text` no longer appears in its file at `HEAD`
+(`git grep -F -e "<text>" HEAD -- "<file>"`): a later commit removed
+it, and its fixup could not apply. Then run the Guard check. A finding
+has `{commit_sha, signature_id, file, line_start, tier, confidence: regex,
+action}`.
 
 **Pass B.** Follow `references/detect-pipeline.md` § Pass B with a
 commit as the unit. Pass the commit's full diff (`git show <sha>`) and
@@ -188,6 +202,12 @@ Group findings by target commit:
 | Diff slop in commit X | One fixup commit per patch | `git commit --fixup=<X>` |
 | Subject or body slop in commit X | One reword commit per X | An empty commit whose message is `amend! <subject>` plus the replacement text |
 | Whole-commit low-value, or a multi-topic commit | Advisory only | Dropping or splitting is the user's `git rebase -i` |
+
+Number the diff patches by `(target commit, oldest first; file;
+line_start)`. `apply.sh` applies them in number order and `git apply`
+exits 3 on a stale hunk, so cut each patch against the tree the earlier
+patches leave, never against `HEAD` alone. Step 8 does this in a scratch
+worktree.
 
 Autosquash folds fixups that share a target. It reads an `amend!` commit
 only from git 2.32 on; check `git --version`, and on older git list each
@@ -213,6 +233,39 @@ Shell state does not persist between Bash calls: use the printed path
 literally as `<run-dir>` in every later command, and likewise the
 literal values of `BASELINE_SHA`, `START_SHA`, and the gate commands
 recorded in `0000-PLAN.md`.
+
+Cut the diff patches sequentially. Refuse to create the scratch
+worktree when `git rev-parse --show-toplevel` is `$HOME` or contains it:
+a dotfile repo rooted at home would check out the whole home directory.
+Make the directory and print it:
+
+```console
+$ mktemp -d "${TMPDIR:-/tmp}/deslop-scratch.XXXXXX"
+```
+
+Use the printed path literally as `<scratch>`:
+
+```console
+$ git worktree add --detach "<scratch>" HEAD
+```
+
+For each finding in number order, make its edit inside `<scratch>`,
+write that file's diff as the finding's patch, then stage the file so the
+next diff starts from the edited state:
+
+```console
+$ git -C "<scratch>" diff -- "<file>"
+```
+
+```console
+$ git -C "<scratch>" add -- "<file>"
+```
+
+When every patch is cut, remove the worktree:
+
+```console
+$ git worktree remove --force "<scratch>"
+```
 
 Layout:
 
@@ -272,9 +325,11 @@ through `ask-user-choice`:
 | **Cancel** | Delete `<run-dir>/` and exit. |
 
 Without a question tool (Codex, headless), take **Patches only** and
-print the `apply.sh` command. A
-request that explicitly says to apply patches, or to apply and
-autosquash, approves that choice only, never a push.
+print the `apply.sh` command, unless the request explicitly says to
+apply. "Apply the patches" approves **Apply patches now** and nothing
+broader: not autosquash, not a push. "Apply and autosquash" approves
+that choice. Every Tier B finding still counts as declined, because
+nobody confirmed it.
 
 Before "Apply patches now", show this warning:
 
@@ -357,7 +412,8 @@ $ ${TEST_CMD}
 
 Report exact counts, not the plan's ranges. The hero line is `Slop
 summary`; sections follow in the order shown: summary block,
-`Quality gates (final)`, then the `Patch series:` line. A halted or
+`Quality gates (final)`, then the `Patch series:` line when nothing was
+applied. A halted or
 refused run prints one sentence naming the cause, then what the user
 must do (commit or stash, or re-run with `--force-rewrite-pushed`):
 
@@ -368,25 +424,23 @@ Slop summary
 ============
 Budget: default
 Findings: 4 (2 Tier A, 1 Tier B, 1 Tier C)
-Applied: 2 Tier A
-Proposed and accepted: 1 Tier B (0 declined)
+Applied: 3 (2 Tier A, 1 Tier B; 0 declined)
 Advisories: 1 Tier C (see advisory.md)
 
 Tone calibration: demoted "robust"
 Verifier: enabled (6 commits scanned; 0 skipped)
 
-Commits: 6 -> 5
-  - 1 fixup squashed
-Backup branch: feat-login-pre-deslop-20261005
+Commits: 6 (3 fixups folded)
+Backup branch: feat-login-pre-deslop-20261005-142530
 
 Quality gates (final)
 =====================
 format=pass | lint=pass | typecheck=pass | tests=skipped
-
-Patch series: <run-dir>
 ```
 
-`<run-dir>` is the path Step 8 printed. In audit mode, "Applied" is 0 and the Commits and gate lines are omitted.
+An audit run ends with `Patch series: <run-dir>`, the path Step 8
+printed, and omits the Commits, Backup branch, and gate lines; "Applied"
+is 0.
 
 Do not push; the user decides. After `--force-rewrite-pushed`, recommend
 `git push --force-with-lease --force-if-includes` over `git push --force`.
