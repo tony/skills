@@ -180,7 +180,9 @@ Every other `gh pr merge` flag the user supplies passes through verbatim:
 `--delete-branch` (except on a stack parent, below), `--admin`,
 `--match-head-commit`, `--author-email`, `--body-file`, `--repo`, and the
 rest of `gh pr merge --help`. Do not
-translate or second-guess them. `--auto` queues the merge instead of
+translate or second-guess them. `--delete-branch` also deletes the local
+head branch and switches the checkout to trunk when that branch is checked
+out; note the branch before the merge. `--auto` queues the merge instead of
 performing it: see "After each merge".
 
 ### Stack parents
@@ -324,8 +326,9 @@ stop there.
 
    Report `mergeCommit.oid` (shortened) and the PR URL. When the merge is
    queued (`--auto`, or a queue-protected branch), the state stays
-   `OPEN`: open the reply with `✓ Queued #<n>: <title>`, skip the sync, and halt a multi-PR run, because the next PR cannot be
-   rebased over an unmerged parent.
+   `OPEN`: open the reply with `✓ Queued #<n>: <title>`, skip the sync, and
+   halt a multi-PR run, because the next PR cannot be rebased over an
+   unmerged parent.
 2. With scope `remote`, run no local git command: confirm trunk contains the
    commit with
    `gh api repos/<owner>/<name>/compare/<trunk>...<oid> --jq .status`
@@ -347,7 +350,8 @@ stop there.
    ```
 
    A nonzero exit is a finding: report that local trunk does not contain
-   the merge commit, with the commit and trunk short SHAs. State no cause.
+   the merge commit, with the commit and trunk short SHAs. State no cause
+   and do not say trunk is up to date.
 4. With scope `local`, read the subject back instead of reporting the composed
    one, since `gh` or the repo's merge settings can write another:
 

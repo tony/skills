@@ -17,6 +17,9 @@ asking you anything.
 Argument: $ARGUMENTS (a description, a repository, a pasted finding,
 or nothing).
 
+Whenever a step stops the run without filing, the reply begins with the
+words `Not filed:` (or `Not filed publicly:`), never "I didn't file it".
+
 The body follows `references/rendered-markdown.md`
 and every link in it follows
 `references/source-links.md`. Read both before

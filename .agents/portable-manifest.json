@@ -257,7 +257,7 @@
         "references/rendered-markdown.md": "plugins/gh/references/rendered-markdown.md",
         "references/source-links.md": "plugins/gh/references/source-links.md"
       },
-      "bytes": 39736
+      "bytes": 39882
     },
     {
       "name": "gh-rendered-markdown",
@@ -393,7 +393,7 @@
         "references/merge_pr.py": "plugins/merge-pr/scripts/merge_pr.py",
         "references/prose-rules.md": "plugins/merge-pr/references/prose-rules.md"
       },
-      "bytes": 37900
+      "bytes": 38308
     },
     {
       "name": "merge-pr-this",
@@ -405,7 +405,7 @@
         "references/merge_pr.py": "plugins/merge-pr/scripts/merge_pr.py",
         "references/prose-rules.md": "plugins/merge-pr/references/prose-rules.md"
       },
-      "bytes": 36849
+      "bytes": 37201
     },
     {
       "name": "model-cli-agy",
@@ -1244,7 +1244,7 @@
         "references/lockctl.py": "plugins/terraform/scripts/lockctl.py",
         "references/prose-rules.md": "plugins/terraform/references/prose-rules.md"
       },
-      "bytes": 22349
+      "bytes": 22340
     },
     {
       "name": "terraform-refresh-lock",

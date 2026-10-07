@@ -90,13 +90,13 @@ one of them; offer the others as next steps.
   reverting them (`git restore -- <paths>`) first.
 
   No sections, no recap, and no numbered next-step list: the step is one
-  or two sentences. At most three plain bullets follow, with no
-  lead-in sentence, each a finding that changes that step and describes
-  only what the run found. A bullet never describes a step the run would
-  take after the edit ("both keep `~>`", "no lock file to refresh
-  afterwards"), and never covers repository history, untracked dotfiles,
-  which tool drives the repository, or what a commit would have looked
-  like.
+  or two sentences. Bullets are optional, at most three, with no lead-in
+  sentence. A bullet is a finding about the repository as it stands that
+  the step depends on, such as the pins that disagree when the step asks
+  which to move. Leave out anything about what the run would do after the
+  edit (`init` could not run, no lock to refresh, both keep `~>`), the
+  branch, history, untracked files, the driving tool, or a question. With
+  no such finding, write no bullets.
 
   Reply in this shape, as plain text outside any code fence, with plain bullets, no bold (never `- **Label:** ...`), and no local paths:
 
@@ -106,7 +106,6 @@ one of them; offer the others as next steps.
   Tell me you confirmed 6.57.0 yourself, or allow registry.terraform.io so I can check it.
 
   - envs/prod and modules/network both declare hashicorp/aws, at ~> 6.56.0 and ~> 6.55.0.
-  - envs/prod has a committed lock tracking 3 platforms.
   ```
 
 - `--audit-only` writes nothing and is a result, not a stop. Its hero is

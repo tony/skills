@@ -23,7 +23,7 @@ import sys
 import tempfile
 from pathlib import Path
 
-PR_FIELDS = "number,baseRefName,headRefName,headRefOid"
+PR_FIELDS = "number,baseRefName,headRefName,headRefOid,isCrossRepository"
 
 
 def _run(*args: str, stdin: str | None = None) -> str:
@@ -80,7 +80,8 @@ def order_prs(prs: list[dict[str, object]]) -> dict[str, object]:
     ----------
     prs
         PR records with ``number``, ``baseRefName``, ``headRefName`` and
-        ``headRefOid``, in the order the user gave them.
+        ``headRefOid``, in the order the user gave them. A record with a true
+        ``isCrossRepository`` (a fork PR) never counts as another PR's base.
 
     Examples
     --------
@@ -92,7 +93,9 @@ def order_prs(prs: list[dict[str, object]]) -> dict[str, object]:
     >>> out["topology"], out["order"], out["trunk"], out["parents"]
     ('stack', [1, 2], 'main', {'2': 1, '1': None})
     """
-    by_head = {str(p["headRefName"]): int(str(p["number"])) for p in prs}
+    by_head = {
+        str(p["headRefName"]): int(str(p["number"])) for p in prs if not p.get("isCrossRepository")
+    }
     parents: dict[int, int | None] = {
         int(str(p["number"])): by_head.get(str(p["baseRefName"])) for p in prs
     }
