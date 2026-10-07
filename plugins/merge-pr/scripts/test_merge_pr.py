@@ -96,6 +96,21 @@ def test_order_independent_keeps_given_order(repo: Path, tmp_path: Path) -> None
     assert (out["topology"], out["order"]) == ("independent", [7, 5])
 
 
+def test_order_ignores_fork_head_named_like_base(repo: Path, tmp_path: Path) -> None:
+    """A fork PR from its own ``main`` is not the parent of PRs based on ``main``."""
+    for n, fork in ((1, True), (2, False)):
+        pr = {
+            "number": n,
+            "baseRefName": "main",
+            "headRefName": "main" if fork else "feat",
+            "headRefOid": "o",
+            "isCrossRepository": fork,
+        }
+        (tmp_path / "stub" / f"pr-{n}.json").write_text(json.dumps(pr))
+    out = json.loads(_script(repo, "order", "1", "2").stdout)
+    assert (out["topology"], out["order"]) == ("independent", [1, 2])
+
+
 def _commit(repo: Path, name: str, text: str) -> None:
     (repo / name).write_text(text)
     _git(repo, "add", name)

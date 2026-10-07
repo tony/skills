@@ -1,7 +1,7 @@
 ---
 name: multiple
 description: "Merge a set of PRs one at a time: detect stack vs independent set, rebase and resolve conflicts, watch CI, merge each via gh"
-allowed-tools: ["Bash", "Read", "Write", "Edit", "AskUserQuestion"]
+allowed-tools: ["Bash", "Read", "Write", "AskUserQuestion"]
 argument-hint: "[PR numbers/URLs, e.g. '#31 #32'] [--squash | --rebase | any other gh pr merge flag]"
 user-invocable: true
 disable-model-invocation: true
@@ -117,7 +117,7 @@ merged"). The hero states the cause only: not "so neither PR was merged".
 1. `## Roster`: the PRs, detected topology (stack or independent),
    and merge order.
 2. `## Merges`: one bullet per PR: the gate result, rebase and conflicts if
-   any, CI outcome, merge commit short SHA with its subject as read back from
+   any (a clean rebase is "rebased onto <base>", nothing more), CI outcome, merge commit short SHA with its subject as read back from
    the commit. Note a dropped `--delete-branch` on a stack parent, and the
    parent branches deleted after the last merge. Diagnostics about the
    environment belong in no bullet. Report a stack child's remote branch
