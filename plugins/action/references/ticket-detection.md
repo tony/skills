@@ -205,6 +205,10 @@ flatten.
 | GitHub | closing keyword in the PR body (`Fixes #123`) | issue links immediately, closes when a human merges |
 | Generic | ID in the branch name, PR title, and commit bodies | whatever the tracker's own git integration picks up |
 
+Both carriers are vendor behavior; verify them in the tracker's docs
+(Linear's GitHub integration page, GitHub's "Linking a pull request to
+an issue" page) before relying on them.
+
 Commit bodies name the ticket ID(s) they advance, in the project's
 form. Closing keywords belong in the PR body, never in commit
 subjects.

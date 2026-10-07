@@ -51,7 +51,7 @@ each command: shell variables do not survive between Bash calls.
    (or the user says this is their home or dotfiles repository), contains it, or
    is `/`, stop before `init`. Reply in one sentence that a write command will
    not stash or snapshot a home-rooted repository, then that the user should
-   run it from a project checkout. A dotfile repo at home would sweep
+   run it from a project checkout. Name no local path. A dotfile repo at home would sweep
    credentials into the stash and worktrees. `init` refuses the same
    locations.
 
@@ -112,6 +112,13 @@ Cap the packet at 400 lines; trim snippets first, then the file list.
 
 ## Dispatch lanes
 
+**Cost line.** Before the first dispatch of the run, print the worker count as
+`lanes x variants x passes = N worker runs` (variants is 1 for commands without
+them; the skill adds judging or panel runs it launches). Confirm once with
+`AskUserQuestion` when N exceeds the lane count or the backend is `model-clis`
+(external lanes bill other provider accounts). Without `AskUserQuestion`,
+print it and proceed: the flags already chose the scale.
+
 Write the shared worker prompt to `<session_dir>/pass-NNNN/prompt.md`: the
 skill's body text, then the context packet verbatim. The engine adds each
 lane's role preamble and, for read-only commands, the write ban, so write
@@ -137,6 +144,14 @@ $ python3 <engine> worktrees create \
     --session "<session_dir>" \
     --participants maintainer,skeptic,builder
 ```
+
+**Write probe (mutating commands).** Before launching, write a one-line file
+named `.weave-probe` in each worktree path with the host's file-writing tool,
+read it back, then delete it with `rm`. A denied or failing write means the
+lane would lose its work after dispatch: stop before any lane runs, name the
+roles whose worktree refused (no paths), say that file writes must be allowed for
+the session, and remove the worktrees (`worktrees remove`). Under `model-clis`, probe only the `claude`
+lane's checkout the same way; the engine runs `agy` and `gpt` itself.
 
 Launch a fresh `general-purpose` Task agent per role, rooted in its worktree
 path from the JSON, with the prompt "Read `<composed prompt path>` and follow
@@ -372,5 +387,6 @@ $ python3 <engine> guard prune
 ```
 
 A run that stops before results (refused, failed, or declined) replies in one
-sentence that states the result, then what the user needs to do. It renders no
-sections.
+sentence that states the result, then what the user needs to do, as plain text
+with plain bullets, no bold labels, no numbered menu, and no local paths or
+temp files. It renders no sections.

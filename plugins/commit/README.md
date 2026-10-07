@@ -38,14 +38,17 @@ draft a conventional commit message, and commit.
 
 ## How It Works
 
-1. Analyze changes: review the diff, determine type and scope, check topic
+1. Gather state: read the branch, status, diffs, untracked files, and recent
+   commits. Stop on a non-repository, a detached HEAD, nothing to commit, or
+   a branch-convention violation.
+2. Analyze changes: review the diff, determine type and scope, check topic
    coherence.
-2. Determine staging: respect existing staged files, and auto-stage only if
+3. Determine staging: respect existing staged files, and auto-stage only if
    nothing is staged. A staged secret stops the run.
-3. Draft the commit message: follow `AGENTS.md`/`CLAUDE.md` and recent
+4. Draft the commit message: follow `AGENTS.md`/`CLAUDE.md` and recent
    commit styles, with proportional detail and verified version-bump URLs.
-4. Commit: retry on pre-commit hook failures, never bypassing the hook.
-5. Confirm the result: show the created commit and the remaining working
+5. Commit: retry on pre-commit hook failures, never bypassing the hook.
+6. Confirm the result: show the created commit and the remaining working
    tree state.
 
 ## Arguments
@@ -66,7 +69,7 @@ always enforced.
 ## Commit Format Detection
 
 Reads `AGENTS.md` and `CLAUDE.md` to discover conventions. Inspects the
-last 10 commits for style matching. Falls back to Conventional Commits
+recent commits for style matching. Falls back to Conventional Commits
 (`type(scope): description`) if no convention is found.
 
 ## Safety

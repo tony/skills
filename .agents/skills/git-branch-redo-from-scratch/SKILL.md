@@ -15,7 +15,9 @@ Throw the implementation away and write it again, without losing what
 the original learned.
 
 Argument: $ARGUMENTS — a PR number, a branch, a statement of what
-should change about the approach, or nothing.
+should change about the approach, or nothing. Resolve a PR number to its
+head branch with `gh pr view <number> --json headRefName`; never
+`gh pr checkout`, which changes the working tree.
 
 Five references carry the parts that must not drift:
 
@@ -32,9 +34,12 @@ Five references carry the parts that must not drift:
   splitting one file across commits, and resolving `<base-sha>`.
 
 `<base-sha>` is the merge base of the branch and its base, resolved once
-to a SHA per "Resolve the base first" in `split-mechanics.md` (a stacked
-branch uses its parent branch's tip, never trunk). `<flat>` is the branch
-name with every `/` replaced by `-`.
+to a full 40-character SHA per "Resolve the base first" in
+`split-mechanics.md` (a stacked branch uses its parent branch's tip,
+never trunk). `<flat>` is the branch
+name with every `/` replaced by `-`. `<toolkit>` is
+`references/rebase-todo.sh` resolved from this skill's directory to an
+absolute path; write that path literally in each command.
 
 ## Core principle
 
@@ -53,7 +58,8 @@ differ, so the contract replaces the tree comparison as the safety.
 
 ## Phase 1 — Establish the contract before anything else
 
-Per `rebuild-contract.md`. Identify trunk's tests, the tests this
+Before running a test or reading any pull request, ticket, or transcript,
+run the refusals Phase 3 names. Then, per `rebuild-contract.md`, identify trunk's tests, the tests this
 branch added or changed, and run them against the branch now. What
 passes is the specification; what is already failing or skipped is a
 finding to report, not a target.
@@ -112,14 +118,17 @@ The plan states:
 When several approaches contend, offer a bakeoff rather than picking
 silently.
 
-Wait for approval. Exit plan mode before executing. Without an
-interactive question tool, stop after presenting the plan; an
-instruction to redo authorizes the redo, not a push.
+Wait for approval, then exit plan mode before executing. An explicit
+instruction to proceed ("go ahead", "without waiting") is the approval;
+with no such instruction and no question tool, stop after the plan. The
+approval covers the redo, never a push.
 
 ## Phase 4 — Rebuild
 
 Work in a worktree so the original branch stays runnable for
-comparison:
+comparison. If `git rev-parse --verify --quiet refs/heads/<branch>-redo`
+prints a SHA, the name is taken: append `-2`, `-3`, and so on until it is
+free, and use that name everywhere `<branch>-redo` appears:
 
 ```console
 $ git worktree add \
@@ -169,7 +178,7 @@ so stage them with `git add -- <paths>` and commit the index; `--only`
 fails on untracked paths.
 
 Then gate every commit of the new series in place, from the worktree,
-with `<toolkit>` as defined in `rebase-toolkit.md`. The spec-tests commit
+with `<toolkit>`. The spec-tests commit
 has no implementation yet, so the gate must not run the tests on it: skip
 the commit whose parent is `<base-sha>`, and run the full test command
 on every later commit.
@@ -198,7 +207,11 @@ question for the user. This is where a lost workaround surfaces.
 
 Write the report per `references/prose-rules.md`. Reply in this
 shape, as plain text outside any code fence, with plain bullets, no bold (never `- **Ledger:** ...`),
-and no local paths:
+and no local paths other than the worktree. Add no bullet the shape does
+not list, no findings outside it except a failed gate, no evidence beyond
+the contract result, and no mention of which forbidden items you left out.
+The contract guarantees only what the tests and the ledger cover; say
+nothing stronger:
 
 ```text
 Rebuilt feature/export-v2 as feature/export-v2-redo; the contract holds.
@@ -208,6 +221,8 @@ Rebuilt feature/export-v2 as feature/export-v2-redo; the contract holds.
 - Ledger: 14 of 15 entries covered; 1 dropped on purpose.
 - Dropped: the CSV retry shim, recorded in commit 3f9a0c1.
 - Backup: backup/feature-export-v2-20261005T141500Z.
+- Worktree: /tmp/feature-export-v2-redo.k3Qx9a; remove it with
+  git worktree remove when you are done.
 - Not pushed.
 ```
 

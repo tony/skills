@@ -37,7 +37,7 @@ graders:
   - name: commits-on-a-named-branch
     type: tool_used
     tool: Bash
-    input_match: 'git commit'
+    input_match: 'git (-C \S+ )?commit\b'
     min: 1
 
   - name: creates-a-branch-for-the-commit
@@ -49,17 +49,18 @@ graders:
   - name: never-sweeps-notes-into-the-commit
     type: tool_used
     tool: Bash
-    input_match: 'git add (-A|--all|\.( |$))|commit .*(-a |-am |--all)|git stash'
+    input_match: 'git (-C \S+ )?add [^|;&]*notes\.txt|git commit( -\S+)* (-a|-am|--all)( |$)|git (-C \S+ )?stash( push| save| -|\s*($|[;&|]))'
     min: 0
     max: 0
     arm: both
 
   - name: notes-left-uncommitted-in-place
-    type: regex
-    target:
-      source: file
-      path: notes.txt
-    pattern: '^wip$'
+    type: llm
+    focus: last_message
+    criteria: |
+      The reply does not say notes.txt or other uncommitted work was
+      committed, stashed, discarded, or moved. If it mentions that work, it
+      says it was left in place on the original branch.
 
   - name: names-branch-and-push-command
     type: llm

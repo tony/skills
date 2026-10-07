@@ -34,6 +34,9 @@ Install the plugin:
 $ codex plugin add business@skills
 ```
 
+Every skill runs only when invoked by name; none is routed to
+automatically.
+
 Claude Code uses a leading slash (`/business:…`). Codex omits it (`business:…`).
 
 ## Skills
@@ -92,12 +95,14 @@ deterministic work: `stats` (median, quartiles, seeded BCa interval),
 `--allow-url` for false positives and citation links), `gate` (the
 completeness gate, recomputing `check:` figures from `raw/`),
 `assumptions` (register check), `project` (org-wide projection,
-scenarios, and sensitivity from register ids), and `runs`
-(newest-first run listing).
+scenarios, and sensitivity from register ids), `breakeven` (net
+per-instance and per-period saving and break-even from register ids), and `collect-prs`
+(per-PR cycle-time and first-review CSV from `gh api graphql` pages), and
+`runs` (newest-first run listing).
 
 ## Prerequisites
 
-- `python3` for `scripts/business.py`.
+- `python3` (3.9 or newer) for `scripts/business.py`.
 - `git` for history-based collection.
 - `gh` CLI (optional) for PR/review telemetry.
 - Ticket-tracker MCPs/CLIs are probed at runtime but not required.

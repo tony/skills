@@ -19,6 +19,9 @@ case "$1 $2" in
 JSON
     ;;
   "issue create") echo "$*" >>create.log ;;
+  "api repos/example/widgets/contents/SECURITY.md")
+    echo "Report vulnerabilities privately through the Security tab (Report a vulnerability)."
+    ;;
   *) echo "unsupported: $*" >&2; exit 1 ;;
 esac
 SH

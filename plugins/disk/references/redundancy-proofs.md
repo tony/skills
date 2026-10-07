@@ -37,10 +37,10 @@ Reading case 2 as case 1 deletes the only copy. **Never classify on a
 Compare path sets directly and report the intersection, both
 differences, and the byte size of each. A directory is redundant only
 when the set unique to it is empty and every entry in both trees was
-readable. Run the script, resolved relative to this file:
+readable. Run the script:
 
 ```console
-$ python3 ../scripts/redundancy.py \
+$ python3 /abs/path/to/scripts/redundancy.py \
     <candidate> \
     <keeper>
 ```

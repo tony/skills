@@ -23,7 +23,7 @@ graders:
   - name: checks-fresh
     type: tool_used
     tool: Bash
-    input_match: 'topic\.py\s+check\b'
+    input_match: '(topic\.py|\$\{?\w+\}?|\.py)\s+check\b'
 
   - name: releases-nothing
     type: tool_used

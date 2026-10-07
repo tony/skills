@@ -82,12 +82,17 @@ def test_apply_creates_fixup_for_dotted_finding_id(tmp_path: Path) -> None:
 
     first = run_sh(script, repo)
     assert first.returncode == 0, first.stderr
+    backup = first.stdout.split("Backup branch: ", 1)[1].split()[0]
+    assert backup.startswith("main-pre-deslop-")
+    assert git(repo, "rev-parse", backup) == base
     assert git(repo, "log", "-1", "--format=%s") == "fixup! add a"
     assert (repo / "a.txt").read_text() == "line\nkeep\n"
     assert git(repo, "status", "--porcelain") == ""
 
     again = run_sh(script, repo)
     assert again.returncode == 0, again.stderr
+    assert f"Backup branch: {backup}" in again.stdout
+    assert git(repo, "branch", "--list", "*-pre-deslop-*").count("pre-deslop") == 1
     assert git(repo, "rev-list", "--count", "HEAD") == "2"
 
     registry.write_text("version: 2\n")

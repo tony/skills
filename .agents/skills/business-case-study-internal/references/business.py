@@ -8,7 +8,9 @@ Subcommands:
 - ``assumptions``: required-field check of an ``assumptions.yaml`` register.
 - ``runs``: list run directories newest first, ordered by the date in the path.
 - ``project``: the org-wide projection and scenarios from register ids.
+- ``breakeven``: net per-instance saving, net period saving, and break-even from register ids.
 - ``gate``: the completeness gate for one run package, with figures recomputed from ``raw/``.
+- ``collect-prs``: per-PR cycle-time rows from ``gh api graphql`` pull-request pages.
 
 Run ``business.py <command> --help`` for each command.
 """
@@ -19,6 +21,7 @@ import argparse
 import contextlib
 import csv
 import datetime as dt
+import json
 import math
 import random
 import re
@@ -411,6 +414,109 @@ def project(register: str) -> tuple[dict[str, float], list[str]]:
     return {k: round(v, 2) for k, v in figures.items()}, []
 
 
+BREAKEVEN_INPUTS = (
+    ("t_manual", "manual-minutes", "benefit"),
+    ("t_ai", "ai-minutes", "cost"),
+    ("t_verify", "verify-minutes", "cost"),
+    ("p_fail", "rework-probability", "cost"),
+    ("t_rework", "rework-minutes", "cost"),
+    ("N", "instances-in-period", "benefit"),
+    ("C_build", "build-hours", "cost"),
+    ("C_maint", "maintenance-hours-per-period", "cost"),
+    ("periods", "periods", "fixed"),
+)
+_SAVING_INPUTS = ("t_manual", "t_ai", "t_verify", "p_fail", "t_rework")
+_UPKEEP_INPUTS = ("C_build", "C_maint", "periods")
+SCENARIOS = ("conservative", "base", "upside")
+
+
+def breakeven(register: str) -> tuple[dict[str, float | None], list[str], list[str]]:
+    r"""Compute ``S_inst``, ``S_net``, and ``N_breakeven`` per scenario from register ids.
+
+    Returns ``(figures, missing, problems)``. Figure keys are ``<scenario>_<name>``:
+    ``s_inst`` in minutes, ``s_net`` in hours, ``n_breakeven`` in instances (``None``
+    when ``S_inst`` is not positive). Benefit inputs sit at ``low`` and cost inputs at
+    ``high`` in the conservative scenario, the reverse in the upside; a figure whose
+    inputs are not all registered is absent and its ids are in ``missing``.
+
+    Examples
+    --------
+    >>> reg = "\n".join(
+    ...     f"- id: {i}\n  value: {v}\n  low: {lo}\n  high: {hi}"
+    ...     for i, v, lo, hi in [
+    ...         ("manual-minutes", 30, 28, 40),
+    ...         ("ai-minutes", 10, 8, 12),
+    ...         ("verify-minutes", 4, 3, 6),
+    ...         ("rework-probability", 0.2, 0.1, 0.3),
+    ...         ("rework-minutes", 20, 10, 30),
+    ...         ("instances-in-period", 600, 500, 700),
+    ...         ("build-hours", 20, 15, 30),
+    ...         ("maintenance-hours-per-period", 2, 1, 4),
+    ...         ("periods", 4, 4, 4),
+    ...     ]
+    ... )
+    >>> figures, missing, problems = breakeven(reg)
+    >>> (missing, problems)
+    ([], [])
+    >>> (figures["base_s_inst"], figures["base_s_net"], figures["base_n_breakeven"])
+    (12.0, 92.0, 140.0)
+    >>> (figures["conservative_s_inst"], figures["conservative_s_net"])
+    (1.0, -37.67)
+    >>> figures["conservative_n_breakeven"]
+    2760.0
+    >>> breakeven("- id: manual-minutes\n  value: 30")[1][:2]
+    ['ai-minutes', 'verify-minutes']
+    """
+    entries = {e.get("id", ""): e for e in _parse_register(register)}
+    problems: list[str] = []
+    levels: dict[str, tuple[float, float, float]] = {}
+    missing: list[str] = []
+    for symbol, ident, _kind in BREAKEVEN_INPUTS:
+        entry = entries.get(ident)
+        if entry is None:
+            missing.append(ident)
+            continue
+        try:
+            base = float(entry["value"])
+            low = float(entry.get("low") or base)
+            high = float(entry.get("high") or base)
+        except (KeyError, ValueError):
+            problems.append(f"{ident}: value, low, and high must be numbers")
+            continue
+        if not low <= base <= high:
+            problems.append(f"{ident}: need low <= value <= high")
+        if symbol == "p_fail" and not 0 <= high <= 1:
+            problems.append(f"{ident}: high {high} must be in [0, 1]")
+        levels[symbol] = (low, base, high)
+    if problems:
+        return {}, missing, problems
+    kinds = {symbol: kind for symbol, _, kind in BREAKEVEN_INPUTS}
+
+    def pick(symbol: str, scenario: str) -> float:
+        low, base, high = levels[symbol]
+        if scenario == "base" or kinds[symbol] == "fixed":
+            return base
+        benefit = kinds[symbol] == "benefit"
+        return low if (scenario == "conservative") == benefit else high
+
+    figures: dict[str, float | None] = {}
+    for scenario in SCENARIOS:
+        if any(sym not in levels for sym in _SAVING_INPUTS):
+            break
+        v = {sym: pick(sym, scenario) for sym in levels}
+        s_inst = (v["t_manual"] - (v["t_ai"] + v["t_verify"])) - v["p_fail"] * v["t_rework"]
+        figures[f"{scenario}_s_inst"] = round(s_inst, 2)
+        if any(sym not in levels for sym in _UPKEEP_INPUTS):
+            continue
+        upkeep = v["C_build"] + v["C_maint"] * v["periods"]
+        figures[f"{scenario}_n_breakeven"] = (
+            round(upkeep * MINUTES_PER_HOUR / s_inst, 2) if s_inst > 0 else None
+        )
+        if "N" in levels:
+            figures[f"{scenario}_s_net"] = round(v["N"] * s_inst / MINUTES_PER_HOUR - upkeep, 2)
+    return figures, list(dict.fromkeys(missing)), []
+
+
 def list_runs(roots: Sequence[Path]) -> list[Path]:
     """List ``<root>/<date>/business/<workflow>`` directories, newest date first.
 
@@ -508,16 +614,34 @@ def _check_figures(label: str, text: str, names: Collection[str]) -> list[str]:
 
 
 def _column(rows: list[dict[str, str]], expr: str) -> list[float] | None:
+    """Return a CSV column or ``a-b`` row difference; rows with a blank needed cell drop out.
+
+    Examples
+    --------
+    >>> _column([{"a": "5", "b": "2"}, {"a": "4", "b": ""}], "a-b")
+    [3.0]
+    >>> _column([{"a": "x"}], "a") is None
+    True
+    """
     fields: set[str] = set(rows[0]) if rows else set()
     try:
         if expr in fields:
-            return [float(r[expr]) for r in rows]
+            return [float(r[expr]) for r in rows if (r[expr] or "").strip()]
         left, _, right = expr.partition("-")
         if left in fields and right in fields:
-            return [float(r[left]) - float(r[right]) for r in rows]
+            return [
+                float(r[left]) - float(r[right])
+                for r in rows
+                if (r[left] or "").strip() and (r[right] or "").strip()
+            ]
     except (ValueError, TypeError):
         return None
     return None
+
+
+def _read_csv_column(path: Path, expr: str) -> list[float] | None:
+    with path.open(encoding="utf-8", newline="") as handle:
+        return _column(list(csv.DictReader(handle)), expr)
 
 
 def _recompute(stat: str, values: list[float]) -> float:
@@ -544,9 +668,7 @@ def _check_recomputed(run: Path, label: str, text: str) -> list[str]:
         if not target.is_relative_to(run.resolve()) or not target.is_file():
             problems.append(f"{label}: check file {rel} does not exist in the run")
             continue
-        with target.open(encoding="utf-8", newline="") as handle:
-            rows = list(csv.DictReader(handle))
-        values = _column(rows, expr)
+        values = _read_csv_column(target, expr)
         if not values:
             problems.append(f"{label}: check {rel} has no numeric column {expr}")
             continue
@@ -603,6 +725,11 @@ def check_run(run: Path) -> list[str]:
             ("findings.md", findings),
         ):
             problems.extend(_check_figures(label, text, set(entries)))
+            problems.extend(
+                f"{label}:{line}: currency {match!r}; value is hours, never money"
+                for line, _, kind, match in scan_text(text)
+                if kind == "currency"
+            )
             problems.extend(_check_recomputed(run, label, text))
         problems.extend(_check_unknowns(findings))
     return problems
@@ -613,7 +740,7 @@ def _check_unknowns(findings: str) -> list[str]:
     inside = False
     for line in findings.splitlines():
         if line.startswith("#"):
-            inside = line.lstrip("#").strip().lower().startswith("unknown")
+            inside = "unknown" in line.lstrip("#").lower()
         elif inside:
             section.append(line)
     return [
@@ -621,6 +748,127 @@ def _check_unknowns(findings: str) -> list[str]:
         for unit in _units("\n".join(section))
         if UNIT_START.match(unit) and "resolve" not in unit.lower()
     ]
+
+
+PR_COLUMNS = (
+    "number",
+    "created_at",
+    "merged_at",
+    "cycle_hours",
+    "first_review_hours",
+    "reopened",
+    "additions",
+    "deletions",
+)
+
+
+def _timestamp(text: str) -> dt.datetime:
+    return dt.datetime.fromisoformat(text.replace("Z", "+00:00"))
+
+
+def _json_documents(text: str) -> list[object]:
+    """Split concatenated JSON documents, as ``gh api graphql --paginate`` prints them."""
+    decoder = json.JSONDecoder()
+    docs: list[object] = []
+    pos = 0
+    while True:
+        while pos < len(text) and text[pos].isspace():
+            pos += 1
+        if pos >= len(text):
+            return docs
+        doc: object
+        doc, pos = decoder.raw_decode(text, pos)  # pyright: ignore[reportAny]
+        docs.append(doc)
+
+
+def _obj(value: object) -> dict[str, object]:
+    return t.cast("dict[str, object]", value) if isinstance(value, dict) else {}
+
+
+def _items(value: object) -> list[object]:
+    return t.cast("list[object]", value) if isinstance(value, list) else []
+
+
+def _text(value: object) -> str:
+    return value if isinstance(value, str) else ""
+
+
+def _first_review_hours(pr: dict[str, object]) -> str:
+    author = _text(_obj(pr.get("author")).get("login"))
+    stamps: list[str] = []
+    for node in _items(_obj(pr.get("reviews")).get("nodes")):
+        review = _obj(node)
+        who = _obj(review.get("author"))
+        login = _text(who.get("login"))
+        if (
+            _text(review.get("submittedAt"))
+            and login not in ("", author)
+            and _text(who.get("__typename")) != "Bot"
+        ):
+            stamps.append(_text(review.get("submittedAt")))
+    if not stamps:
+        return ""
+    delta = _timestamp(min(stamps)) - _timestamp(_text(pr.get("createdAt")))
+    return f"{delta.total_seconds() / 3600:.2f}"
+
+
+def collect_prs(text: str, start: str, end: str) -> list[dict[str, str]]:
+    """Return one row per PR merged in ``start``..``end`` (inclusive dates, UTC).
+
+    ``first_review_hours`` counts the earliest submitted review by someone other than
+    the PR author and not a bot; it is blank when there is none.
+
+    Examples
+    --------
+    >>> page = {"data": {"repository": {"pullRequests": {"nodes": [{
+    ...     "number": 7, "createdAt": "2026-04-02T00:00:00Z",
+    ...     "mergedAt": "2026-04-03T12:00:00Z", "additions": 5, "deletions": 1,
+    ...     "author": {"login": "ann"},
+    ...     "reviews": {"nodes": [
+    ...         {"submittedAt": "2026-04-02T01:00:00Z",
+    ...          "author": {"login": "ann", "__typename": "User"}},
+    ...         {"submittedAt": "2026-04-02T02:00:00Z",
+    ...          "author": {"login": "ci", "__typename": "Bot"}},
+    ...         {"submittedAt": "2026-04-02T06:00:00Z",
+    ...          "author": {"login": "bo", "__typename": "User"}}]},
+    ...     "reopened": {"filteredCount": 0}}]}}}}
+    >>> rows = collect_prs(json.dumps(page), "2026-04-01", "2026-04-03")
+    >>> (rows[0]["cycle_hours"], rows[0]["first_review_hours"])
+    ('36.00', '6.00')
+    >>> collect_prs(json.dumps(page), "2026-04-01", "2026-04-02")
+    []
+    """
+    lo = dt.datetime.fromisoformat(f"{start}T00:00:00+00:00")
+    hi = dt.datetime.fromisoformat(f"{end}T00:00:00+00:00") + dt.timedelta(days=1)
+    rows: list[dict[str, str]] = []
+    for doc in _json_documents(text):
+        repo = _obj(_obj(doc).get("data")).get("repository")
+        nodes = _items(_obj(_obj(repo).get("pullRequests")).get("nodes"))
+        if not isinstance(repo, dict):
+            msg = "no data.repository in a page"
+            raise ValueError(msg)  # noqa: TRY004
+        for node in nodes:
+            pr = _obj(node)
+            if not _text(pr.get("mergedAt")):
+                continue
+            merged = _timestamp(_text(pr["mergedAt"]))
+            if not lo <= merged < hi:
+                continue
+            created = _text(pr.get("createdAt"))
+            cycle = (merged - _timestamp(created)).total_seconds() / 3600
+            rows.append(
+                {
+                    "number": str(pr.get("number")),
+                    "created_at": created,
+                    "merged_at": _text(pr["mergedAt"]),
+                    "cycle_hours": f"{cycle:.2f}",
+                    "first_review_hours": _first_review_hours(pr),
+                    "reopened": str(_obj(pr.get("reopened")).get("filteredCount", 0)),
+                    "additions": str(pr.get("additions", 0)),
+                    "deletions": str(pr.get("deletions", 0)),
+                }
+            )
+    return sorted(rows, key=lambda r: int(r["number"]))
 
 
 def default_roots() -> list[Path]:
@@ -674,6 +922,34 @@ def _project_command(run: Path) -> int:
     return 0
 
 
+def _breakeven_command(args: Args) -> int:
+    register = Path(args.run) / "assumptions.yaml"
+    if not register.is_file():
+        print(f"no assumptions.yaml in {args.run}", file=sys.stderr)
+        return 2
+    figures, missing, problems = breakeven(register.read_text(encoding="utf-8"))
+    for problem in problems:
+        print(problem)
+    if problems:
+        return 1
+    labels = (
+        ("s_inst", "S_inst (minutes per instance)"),
+        ("s_net", "S_net (engineer-hours per period)"),
+        ("n_breakeven", "N_breakeven (instances)"),
+    )
+    for scenario in SCENARIOS:
+        for key, label in labels:
+            name = f"{scenario}_{key}"
+            if name in figures:
+                value = figures[name]
+                shown = "none, no positive saving" if value is None else f"{value:g}"
+                print(f"{scenario} {label}: {shown}")
+    print("committed figures: the conservative lines")
+    for ident in missing:
+        print(f"missing: {ident}")
+    return 0 if figures else 1
+
+
 def _gate_command(run: Path) -> int:
     if not run.is_dir():
         print(f"no run directory at {run}", file=sys.stderr)
@@ -684,6 +960,46 @@ def _gate_command(run: Path) -> int:
     if not problems:
         print("ok")
     return 1 if problems else 0
+
+
+def _stats_command(args: Args) -> int:
+    if args.csv_file:
+        values = _read_csv_column(Path(args.csv_file), args.column) or []
+    else:
+        values = parse_numbers(_read(args.files))
+    if len(values) < MIN_OBSERVATIONS:
+        print("need at least 2 observations", file=sys.stderr)
+        return 2
+    for key, value in summarize(values, seed=args.seed, resamples=args.resamples).items():
+        print(f"{key}: {value}")
+    return 0
+
+
+def _scan_command(args: Args) -> int:
+    hits = scan_text(_read(args.files), args.deny, args.allow, args.allow_url)
+    for line, col, kind, match in hits:
+        print(f"{line}:{col}: {kind}: {match}")
+    if not hits:
+        print("clean")
+    return 1 if hits else 0
+
+
+def _collect_prs_command(args: Args) -> int:
+    try:
+        rows = collect_prs(_read(args.files), args.start, args.end)
+    except (ValueError, KeyError, TypeError) as exc:
+        print(f"not gh api graphql pull-request pages: {exc}", file=sys.stderr)
+        return 2
+    writer = csv.writer(sys.stdout, lineterminator="\n")
+    writer.writerow(PR_COLUMNS)
+    writer.writerows([row[c] for c in PR_COLUMNS] for row in rows)
+    return 0
+
+
+def _runs_command(args: Args) -> int:
+    for run in list_runs([Path(r) for r in args.root] or default_roots()):
+        print(run)
+    return 0
 
 
 class Args(argparse.Namespace):
@@ -699,6 +1015,10 @@ class Args(argparse.Namespace):
     allow: list[str] = []  # noqa: RUF012
     allow_url: list[str] = []  # noqa: RUF012
     run: str = ""
+    csv_file: str = ""
+    column: str = ""
+    start: str = ""
+    end: str = ""
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -714,6 +1034,10 @@ def main(argv: list[str] | None = None) -> int:
         "--seed", type=int, default=1, help="resampling seed, recorded in the output"
     )
     _ = p_stats.add_argument("--resamples", type=int, default=10000)
+    _ = p_stats.add_argument(
+        "--csv", dest="csv_file", default="", help="read a CSV column instead; needs --column"
+    )
+    _ = p_stats.add_argument("--column", default="", help="header, or a-b for a row difference")
 
     p_scan = sub.add_parser("scan", help="tier-3 scan; exit 1 when any exclusion is found")
     _ = p_scan.add_argument("files", nargs="*", help="draft files; stdin when omitted")
@@ -739,6 +1063,19 @@ def main(argv: list[str] | None = None) -> int:
     )
     _ = p_project.add_argument("run", help="run directory")
 
+    p_prs = sub.add_parser(
+        "collect-prs",
+        help="CSV of PRs merged in a window from gh api graphql pages (stdin or files)",
+    )
+    _ = p_prs.add_argument("files", nargs="*", help="saved pages; stdin when omitted")
+    _ = p_prs.add_argument("--start", required=True, help="first merged date, YYYY-MM-DD")
+    _ = p_prs.add_argument("--end", required=True, help="last merged date, inclusive")
+
+    p_break = sub.add_parser(
+        "breakeven", help="S_inst, S_net, and break-even per scenario from assumptions.yaml"
+    )
+    _ = p_break.add_argument("run", help="run directory")
+
     p_assume = sub.add_parser("assumptions", help="check required fields of assumptions.yaml")
     _ = p_assume.add_argument("file")
 
@@ -746,30 +1083,17 @@ def main(argv: list[str] | None = None) -> int:
     _ = p_runs.add_argument("--root", action="append", default=[], help="run root; repeatable")
 
     args = parser.parse_args(argv, namespace=Args())
-    if args.command == "stats":
-        values = parse_numbers(_read(args.files))
-        if len(values) < MIN_OBSERVATIONS:
-            print("need at least 2 observations", file=sys.stderr)
-            return 2
-        for key, value in summarize(values, seed=args.seed, resamples=args.resamples).items():
-            print(f"{key}: {value}")
-        return 0
-    if args.command == "scan":
-        hits = scan_text(_read(args.files), args.deny, args.allow, args.allow_url)
-        for line, col, kind, match in hits:
-            print(f"{line}:{col}: {kind}: {match}")
-        if not hits:
-            print("clean")
-        return 1 if hits else 0
-    if args.command == "assumptions":
-        return _assumptions_command(Path(args.file))
-    if args.command in ("gate", "project"):
-        run = Path(args.run)
-        return _gate_command(run) if args.command == "gate" else _project_command(run)
-    roots = [Path(r) for r in args.root] or default_roots()
-    for run in list_runs(roots):
-        print(run)
-    return 0
+    handlers: dict[str, Callable[[Args], int]] = {
+        "stats": _stats_command,
+        "scan": _scan_command,
+        "collect-prs": _collect_prs_command,
+        "assumptions": lambda a: _assumptions_command(Path(a.file)),
+        "gate": lambda a: _gate_command(Path(a.run)),
+        "project": lambda a: _project_command(Path(a.run)),
+        "breakeven": _breakeven_command,
+        "runs": _runs_command,
+    }
+    return handlers[args.command](args)
 
 
 if __name__ == "__main__":

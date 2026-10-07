@@ -33,7 +33,20 @@ Paths under `../../scripts/` resolve from this skill's directory: print the abso
 
 Per `interim-format.md` § Rendering a report.
 
-### 2. Render the report
+### 2. Compute the figures
+
+Run `../../scripts/business.py breakeven <run>` (absolute path) and
+`../../scripts/business.py stats` for intervals. Every computed
+figure in the report (`S_inst`, `S_net`, `N_breakeven`, and the
+conservative, base, and upside scenarios) comes from that output,
+copied as printed; never compute, round, or convert one yourself.
+The `conservative` lines are the committed figures. Each `missing:`
+line is an unknown naming that register id, with the data that would
+resolve it. Exit 1 means nothing is computable: render an evidence
+report per `measurement.md`, with the measured medians only and
+break-even stated as unknown.
+
+### 3. Render the report
 
 Write `<run>/reports/leadership.md` with this fixed structure:
 
@@ -43,7 +56,7 @@ Write `<run>/reports/leadership.md` with this fixed structure:
    message per exhibit; a source, query, and date-range note under
    each.
 3. Value build: every multiplier explicit, per the chains in
-   `measurement.md`; break-even stated.
+   `measurement.md`; break-even from the script output, or stated unknown.
 4. Scenarios: the conservative scenario (defined in `measurement.md`)
    is the committed number; base and upside appear as context, never
    as the headline.
@@ -56,8 +69,6 @@ Write `<run>/reports/leadership.md` with this fixed structure:
    skill caused this (name the counterfactual rung); does the
    savings rate survive the verification tax; who maintains the
    skill.
-
-Compute interval figures with `../../scripts/business.py stats`.
 
 Write it per `../../references/prose-rules.md`.
 

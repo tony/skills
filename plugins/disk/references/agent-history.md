@@ -39,12 +39,11 @@ A tool that compresses its own history is always the correct path —
 it keeps sessions resumable. Look for three signals together, since any
 one alone is misleading:
 
-- A **codec linked in**: `zstd-safe`, `flate2`, `ruzstd` source paths,
-  or decoder error strings such as `Unknown frame descriptor`.
+- A **codec linked in**: a compression library's name or its decoder
+  error strings.
 - A **literal extension** the tool constructs: `jsonl.zst`, `.jsonl.gz`.
-- An **archive routine**: source paths matching `compression.rs`,
-  `archive_thread.rs`, or a job emitting counters such as `scanned`,
-  `compressed`, `skipped_already_compressed`, `skipped_referenced`.
+- An **archive routine**: a compress or archive code path or job that
+  reports what it compressed and skipped.
 
 A codec alone proves nothing: binaries link zstd and gzip for HTTP
 transport and tarballs, and runtimes (Bun, Node) expose `zstdCompress`
@@ -52,7 +51,9 @@ to every binary built on them. Only the extension string plus an
 archive routine shows the codec is wired to *history*.
 
 Check `<tool> --help` and its docs for a compress or archive option before
-reading the binary. When native support exists, it is usually behind a feature flag. Find
+reading the binary. Cite what you read (the help text, the docs page, or
+the binary string) for any claim about a tool's file format or compression
+support. When native support exists, it is usually behind a feature flag. Find
 the flag name and enable it in the tool's own config rather than
 compressing by hand.
 

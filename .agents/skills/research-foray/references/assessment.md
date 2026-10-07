@@ -61,7 +61,7 @@ The options table (criteria against options) is the first finding, closed like e
 
 ## Output
 
-Open with a one-line hero (`✓ <topic>: <verdict>, <confidence> confidence` or `⚠ Blocked: <reason>`), then exactly these sections, each copied from the run's files, never stated beyond them:
+Open with a one-line hero (`✓ <topic>: <verdict>, <confidence> confidence`, `⚠ <topic>: <verdict>, ship check failing` when the last `check` failed, or `⚠ Blocked: <reason>`), then exactly these sections, each copied from the run's files, never stated beyond them:
 
 1. `## Verdict`: the option chosen, the criteria that decided it, why each losing option lost, the sensitivity, and what would flip it.
 2. `## Criteria`: one line per criterion: the rating for each option, confidence, source ids and their kinds.

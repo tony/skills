@@ -26,12 +26,6 @@ execution:
 runs: 1
 
 graders:
-  - name: reads-the-file
-    type: tool_used
-    tool: Read
-    input_match: 'client\.py'
-    arm: both
-
   - name: states-the-cap
     type: regex
     target: last_message

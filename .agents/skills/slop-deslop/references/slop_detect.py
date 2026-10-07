@@ -45,6 +45,14 @@ class RegistryError(Exception):
 
 def _scalar(raw: str) -> Any:
     raw = raw.strip()
+    if raw[:1] in {"'", '"'} and (len(raw) < 2 or raw[-1] != raw[0]):
+        msg = f"unterminated quoted scalar: {raw!r}"
+        raise RegistryError(msg)
+    if raw[:1] in {"&", "*", "!", "{", "|", ">", "%", "@", "`"}:
+        msg = (
+            f"unsupported YAML syntax (anchor, alias, tag, flow mapping, or block scalar): {raw!r}"
+        )
+        raise RegistryError(msg)
     if raw.startswith("'") and raw.endswith("'") and len(raw) >= 2:
         return raw[1:-1].replace("''", "'")
     if raw.startswith('"') and raw.endswith('"') and len(raw) >= 2:
@@ -55,6 +63,9 @@ def _scalar(raw: str) -> Any:
 
 
 def _flow_list(raw: str) -> list[Any]:
+    if not raw.strip().endswith("]"):
+        msg = f"flow lists must close on the same line: {raw!r}"
+        raise RegistryError(msg)
     inner = raw.strip()[1:-1]
     items: list[str] = []
     buf = ""
@@ -89,6 +100,32 @@ def _value(raw: str) -> Any:
     return _flow_list(raw) if raw.startswith("[") else _scalar(raw)
 
 
+def _check_line(line: str, indent: int) -> None:
+    """Reject line shapes the subset parser would otherwise misplace."""
+    stripped = line.strip()
+    name, colon, rest = stripped.partition(":")
+    if "\t" in line[:indent] or stripped in {"---", "..."}:
+        msg = f"unsupported YAML syntax (tab indent or document marker): {line!r}"
+        raise RegistryError(msg)
+    if stripped.startswith("- "):
+        return
+    if not colon or name.startswith("<<") or (indent > 0 and not rest.strip()):
+        msg = f"unsupported line (nested mapping, merge key, or stray text): {line!r}"
+        raise RegistryError(msg)
+
+
+def _block_scalar(lines: list[str], start: int, indent: int) -> tuple[str, int]:
+    """Join the lines indented deeper than ``indent``; return the text and next index."""
+    block: list[str] = []
+    i = start
+    while i < len(lines) and (
+        not lines[i].strip() or len(lines[i]) - len(lines[i].lstrip()) > indent
+    ):
+        block.append(lines[i].strip())
+        i += 1
+    return " ".join(b for b in block if b), i
+
+
 def parse_yaml(text: str) -> dict[str, Any]:
     r"""Parse the registry subset of YAML: top-level scalars and lists of mappings.
 
@@ -98,6 +135,10 @@ def parse_yaml(text: str) -> dict[str, Any]:
     [{'id': 'a.b', 'tier': 'A'}]
     >>> parse_yaml("delete:\n  - a.b\n")
     {'delete': ['a.b']}
+
+    Anchors, aliases, tags, flow mappings, multi-line flow lists, tab
+    indentation, document markers, nested mappings, and lines the subset
+    cannot place raise ``RegistryError``.
     """
     lines = text.splitlines()
     out: dict[str, Any] = {}
@@ -112,6 +153,7 @@ def parse_yaml(text: str) -> dict[str, Any]:
         if not stripped or stripped.startswith("#"):
             continue
         indent = len(line) - len(line.lstrip())
+        _check_line(line, indent)
         if indent == 0:
             name, _, rest = stripped.partition(":")
             if rest.strip():
@@ -129,6 +171,9 @@ def parse_yaml(text: str) -> dict[str, Any]:
             body = stripped[2:]
             if ":" in body and not body.startswith(("'", '"')):
                 name, _, rest = body.partition(":")
+                if not rest.strip():
+                    msg = f"nested mappings are unsupported: {line!r}"
+                    raise RegistryError(msg)
                 item = {name.strip(): _value(rest)}
                 item_indent = indent + 2
                 out[key].append(item)
@@ -141,13 +186,7 @@ def parse_yaml(text: str) -> dict[str, Any]:
             raise RegistryError(msg)
         name, _, rest = stripped.partition(":")
         if rest.strip() in {"|", ">"}:
-            block: list[str] = []
-            while i < len(lines) and (
-                not lines[i].strip() or len(lines[i]) - len(lines[i].lstrip()) > indent
-            ):
-                block.append(lines[i].strip())
-                i += 1
-            item[name] = " ".join(b for b in block if b)
+            item[name], i = _block_scalar(lines, i, indent)
         else:
             item[name] = _value(rest)
     return out
@@ -169,6 +208,10 @@ def load_registry(registry: Path, override: Path | None = None) -> tuple[list[Si
     if override is None or not override.is_file():
         return sigs, counts
     data = parse_yaml(override.read_text(encoding="utf-8"))
+    unknown = set(data) - {"version", "replace", "append", "delete"}
+    if unknown:
+        msg = f"{override}: unknown top-level keys {sorted(unknown)}"
+        raise RegistryError(msg)
     seen: set[str] = set()
     for section in ("replace", "append", "delete"):
         for entry in data.get(section, []):

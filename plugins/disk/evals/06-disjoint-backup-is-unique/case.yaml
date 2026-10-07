@@ -37,6 +37,6 @@ graders:
   - name: never-calls-it-redundant
     type: regex
     target: last_message
-    pattern: '(?<!not )(?<!non-)\b(is|are) (fully |entirely )?(redundant|safe to (delete|remove))|zero unique'
+    pattern: '\b(is|are|it''s) (fully |entirely )?(redundant|safe to (delete|remove))|zero unique'
     flags: i
     match: not_contains

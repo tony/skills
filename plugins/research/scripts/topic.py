@@ -30,6 +30,7 @@ import re
 import shlex
 import shutil
 import socket
+import ssl
 import subprocess
 import sys
 import tempfile
@@ -1187,6 +1188,68 @@ class PublicRedirects(urllib.request.HTTPRedirectHandler):
         raise urllib.error.URLError(reason)
 
 
+def connect_vetted(host: str, port: int, resolve: Resolver, timeout: float | None) -> socket.socket:
+    """Open a socket to a public address of ``host``, resolving once.
+
+    The connection goes to the address that was vetted, so a second DNS answer
+    cannot redirect it.
+    """
+    addrs = resolve(host)
+    if not is_public_host(host, lambda _: addrs):
+        reason = f"{host} does not resolve to a public address"
+        raise OSError(reason)
+    err: OSError | None = None
+    for addr in addrs:
+        try:
+            return socket.create_connection((addr, port), timeout)
+        except OSError as e:
+            err = e
+    raise err or OSError(host)
+
+
+@t.final
+class VettedHTTPHandler(urllib.request.HTTPHandler):
+    """Plain-HTTP handler whose connections go to the vetted address."""
+
+    def __init__(self, resolve: Resolver) -> None:
+        """Keep ``resolve`` for each connection."""
+        super().__init__()
+        self.resolve: Resolver = resolve
+
+    def http_open(self, req: urllib.request.Request) -> http.client.HTTPResponse:  # pyright: ignore[reportImplicitOverride]
+        """Open ``req`` over a connection pinned to the vetted address."""
+        resolve = self.resolve
+
+        @t.final
+        class Conn(http.client.HTTPConnection):
+            def connect(self) -> None:  # pyright: ignore[reportImplicitOverride]
+                self.sock = connect_vetted(self.host, self.port, resolve, self.timeout)
+
+        return self.do_open(Conn, req)
+
+
+@t.final
+class VettedHTTPSHandler(urllib.request.HTTPSHandler):
+    """HTTPS handler whose connections go to the vetted address, verified by host name."""
+
+    def __init__(self, resolve: Resolver) -> None:
+        """Keep ``resolve`` for each connection."""
+        super().__init__(context=ssl.create_default_context())
+        self.resolve: Resolver = resolve
+
+    def https_open(self, req: urllib.request.Request) -> http.client.HTTPResponse:  # pyright: ignore[reportImplicitOverride]
+        """Open ``req`` over a TLS connection pinned to the vetted address."""
+        resolve = self.resolve
+
+        @t.final
+        class Conn(http.client.HTTPSConnection):
+            def connect(self) -> None:  # pyright: ignore[reportImplicitOverride]
+                sock = connect_vetted(self.host, self.port, resolve, self.timeout)
+                self.sock = self._context.wrap_socket(sock, server_hostname=self.host)  # pyright: ignore[reportAttributeAccessIssue, reportUnknownMemberType]
+
+        return self.do_open(Conn, req, context=ssl.create_default_context())
+
+
 def http_fetch(
     url: str, resolve: Resolver = resolve_host
 ) -> tuple[int, str, bytes, dict[str, str]]:
@@ -1194,6 +1257,7 @@ def http_fetch(
 
     Status 0 also covers a refusal: a non-http(s) scheme, a host that resolves to a
     non-public address (also on each redirect), and a body over ``MAX_FETCH_BYTES``.
+    Connections go straight to the vetted address and ignore proxy settings.
     """
     if not url.startswith(("https://", "http://")):
         return 0, url, b"", {}
@@ -1201,7 +1265,12 @@ def http_fetch(
         target = ascii_url(fetch_url(url))
         if not is_public_host(urllib.parse.urlsplit(target).hostname or "", resolve):
             return 0, url, b"", {}
-        opener = urllib.request.build_opener(PublicRedirects(resolve))
+        opener = urllib.request.build_opener(
+            urllib.request.ProxyHandler({}),
+            VettedHTTPHandler(resolve),
+            VettedHTTPSHandler(resolve),
+            PublicRedirects(resolve),
+        )
         req = urllib.request.Request(target, headers={"User-Agent": USER_AGENT})  # noqa: S310
         with t.cast("http.client.HTTPResponse", opener.open(req, timeout=20)) as resp:
             body = resp.read(MAX_FETCH_BYTES + 1)

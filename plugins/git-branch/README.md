@@ -74,16 +74,14 @@ Retains original branch as a reference.
 - **`soft-reset-and-recommit`**: Code is correct, but history is messy.
   Guarantees byte-identical changes.
 - **`redo-from-scratch`**: Code approach needs changing. Guarantees
-  correctness via test contracts and coverage ledgers.
+  only what the tests and the coverage ledger cover.
 
 ### The interactive-rebase toolkit
 
 `scripts/rebase-todo.sh` drives `git rebase -i` without an editor or TTY.
 
 Run it from anywhere. In the examples, `<toolkit>` is the script's absolute
-path: from a skill, `../../scripts/rebase-todo.sh` relative to the skill's
-directory; outside a session, the plugin's install path plus
-`scripts/rebase-todo.sh`.
+path: the plugin's install path plus `scripts/rebase-todo.sh`.
 
 Report any git operation in progress:
 

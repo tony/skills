@@ -23,7 +23,9 @@ the base is one.
 
 Two-dot `git diff <base-branch>..HEAD` against a *moving ref* invents
 deletions of files the base branch added after the fork. Resolve the
-base to a SHA once, then use that SHA.
+base to a full 40-character SHA once, then use that SHA. Expand an
+abbreviation with `git rev-parse --verify "<abbrev>^{commit}"`; the
+per-commit gate compares against it.
 
 Refuse to continue unless exactly one merge base exists; with two,
 `git merge-base` picks one without warning.

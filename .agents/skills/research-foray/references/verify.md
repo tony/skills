@@ -29,7 +29,7 @@ Never swap in a different source that happens to support the same claim without 
 - `python3 <topic.py> links --run <run_dir>` lists URLs your captures cite that the manifest lacks. Open the frequent ones.
 - Every claim in the report's findings cites a source id; a claim without one is either sourced now or moved to open questions.
 - Trace secondary sources to their primaries: a blog citing a benchmark means the benchmark is the source.
-- Search once more for the strongest disagreeing source, and log the search with `topic.py searched`. An analysis that met no counter-evidence has not looked.
+- Search once more for the strongest disagreeing source (the host may ask approval for the search tool), and log the search with `topic.py searched`. An analysis that met no counter-evidence has not looked.
 - In an assessment, each criterion that decides the verdict needs at least one independent or measured source.
 
 Add what you find with `topic.py add`. Where it disagrees with a source you already cite, record the conflict and set it out per `analysis.md`.

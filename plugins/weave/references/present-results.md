@@ -90,6 +90,9 @@ optional.
 | execute | Winning Implementation · Diff Summary · Trade-offs · Attribution |
 | fix-review | Applied Fixes · Tests Added · Skipped Findings · Final Verification · Attribution |
 
+For `execute`, Winning Implementation is one bullet per file with the
+participant it came from; never paste file contents.
+
 For `review` and `ask`, findings and Disagreements carry the consensus
 tags and ordering the caller recorded in its consensus map
 (`consensus 2/3`, `consensus 1/3 (uncontested)`; for `review`, within
@@ -116,9 +119,20 @@ single-verified, then unverified). Omit consensus tags when only one lane partic
 >    or a plain sentence, never `- **Label:** text`.
 > 5. A run that stopped before producing the artifact (refused, failed, or
 >    declined) renders none of this: one sentence stating the result, then
->    what the user needs to do next.
+>    what the user needs to do next. No headings, bold labels, numbered
+>    menus, or local paths.
+> 6. The deslop summary line, when the pass produced one, is the last line
+>    after Attribution. Nothing precedes the hero, including notes about
+>    what was or was not applied.
 
 Reply in this shape, as plain text outside any code fence, with plain bullets, no bold (never `- **Label:** ...`), and no local paths. Each kind below follows its own section list; values are invented:
+
+A stopped run, for any kind (serene-bliss shown), is a sentence and a plain list:
+
+```text
+Stopped before refining: serene-bliss needs a draft to improve and none was given.
+- Paste the draft or give a file path, then run it again.
+```
 
 Refine, brainstorm-and-refine, and serene-bliss:
 
@@ -258,6 +272,20 @@ Best of 3 implementations
 Host-native sub-agents: maintainer, skeptic, builder.
 ```
 
+Execute when nothing was applied (no way to confirm); prompt and architecture open the same way over their own sections:
+
+```text
+Nothing applied: confirmation was unavailable, so your checkout is unchanged.
+- Best of 3 implementations: src/cli.py from skeptic, tests/test_cli.py from builder.
+- Re-run and confirm the plan to apply it.
+
+## Winning Implementation
+- src/cli.py from skeptic; tests/test_cli.py from builder.
+
+## Attribution
+Host-native sub-agents: maintainer, skeptic, builder.
+```
+
 Execute with a refused stash restore: put this before the hero, then the same shape.
 
 ```text
@@ -338,7 +366,8 @@ Shared across all RESULT_KINDs. Render as the final body section:
   executors from EXECUTORS, and resolved provider/model details from MODELS.
   The `gpt` lane normally runs through `codex`; do not call `gpt` a CLI.
 - Name no local paths or temp files. Mention a file only when the user must
-  act on it.
+  act on it. Never say where outputs were saved, that saving was denied, or
+  that condensed copies exist.
 
 ---
 
@@ -415,8 +444,7 @@ Implementation Plan (same shape as `/weave:plan` Phase 3 step 3). Call
 If `EnterPlanMode` is unavailable, emit one line and stop:
 
 ```
-Plan mode unavailable - plan brief written to <session_dir>/handoff/plan-brief.md.
-Run /weave:plan with this context to enter plan mode.
+Plan mode is unavailable here. Run /weave:plan with the same task to plan this result.
 ```
 
 ---

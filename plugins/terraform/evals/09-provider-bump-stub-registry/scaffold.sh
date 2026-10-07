@@ -14,6 +14,11 @@ for v in 3.6.0 3.7.0 3.7.1; do
   done
 done
 
+# The harness gives each run its own HOME; never overwrite a real one.
+if [ -e "$HOME/.terraformrc" ]; then
+  echo "refusing to overwrite $HOME/.terraformrc" >&2
+  exit 1
+fi
 cat >"$HOME/.terraformrc" <<RC
 provider_installation {
   filesystem_mirror {

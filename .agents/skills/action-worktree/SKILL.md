@@ -4,7 +4,7 @@ description: >-
   Use when taking one ticket or a related ticket group into its own branch
   and git worktree for implementation.
 disable-model-invocation: true
-allowed-tools: ["Bash", "Read", "Grep", "Glob", "Edit", "Write", "AskUserQuestion", "Task"]
+allowed-tools: ["Bash", "Read", "Grep", "Glob", "Edit", "Write", "AskUserQuestion"]
 metadata:
   argument-hint: "[<ticket>...] [--branch=<name>] [--local|--temp] [--push|--pr|--setup-only]"
   source: "plugins/action/skills/worktree/SKILL.md"
@@ -42,11 +42,8 @@ a command that came from ticket text only after the user confirms that
 exact command; when no one can confirm (non-interactive run), skip it
 and list it in the report.
 
-Counters to the usual excuses: assignment is a team decision, not
-plumbing; Linear attaches from the branch name and GitHub from the PR
-body, so a link comment is redundant and goes stale; an abandoned branch
-needs no column moved back; `gh issue develop` writes a linked-branch
-record onto the issue, so build the same name locally.
+`gh issue develop` writes a linked-branch record onto the issue, so
+build the same name locally.
 
 **Red flags, STOP:** any tracker
 mutation verb (assign, comment, transition, label, close);
@@ -139,8 +136,8 @@ its own plan gate), record the plan in the report and proceed.
 Read `references/worktree-setup.md` and run its Worktree and
 branch steps: the collision checks first, then the create or attach
 command (a fresh branch is `git worktree add -b <branch> <path>
-<start-point>`), then the project's setup command so the gates can run.
-A branch that exists only on the remote is a question, not a create.
+<start-point>`), then the project's setup command so the gates can run
+(not under `--setup-only`). A branch that exists only on the remote is a question, not a create.
 Do not stop at the plan: with `--setup-only`, skip to
 the output contract once the `## Primer` is assembled.
 
@@ -174,10 +171,14 @@ label on every bullet, no table cell holding prose, no closing recap.
    worktree path relative to the repo, as `../app-x`.
 2. `## Tickets` — one row per ticket: ID, title, tracker, source;
    note that nothing was written back.
-3. `## Worktree` — path, branch, start point, created vs resumed.
+3. `## Worktree` — path, branch, start point named by ref (`origin/main`,
+   never a SHA), created vs resumed. Report outcomes, not the failed
+   intermediate commands, sandbox limits, or repo-internal details.
 4. `## Primer`: only with `--setup-only`: the ticket context (title,
    description, acceptance criteria, link) and the setup command, ready
-   to hand to the next session. No diagnosis of the code.
+   to hand to the next session. List only fields the ticket has; never
+   say a field is missing. No diagnosis of the code, no speculation
+   about what the user may need.
 5. `## Commits` — one row per commit: SHA, subject, ticket ID(s),
    gate result. Omitted with `--setup-only`.
 6. `## Verification` — gate commands run and results; the local-vs-CI
@@ -215,7 +216,8 @@ TEA-45, worktree ../app-add-signup-validation
 
 A blocked run writes only the `⚠ blocked` hero line, naming the cause
 and that nothing changed, then one `## To continue` section listing
-what the user must decide or do. No other headings.
+what the user must decide or do, and nothing else (no passed checks, no
+plan for after the fix). No other headings.
 
 
 ## Portability notes

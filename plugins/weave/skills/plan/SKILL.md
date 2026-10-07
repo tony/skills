@@ -77,17 +77,17 @@ Follow `ensemble-core.md` (Dispatch lanes) with this body, running the engine co
 
 Apply `ensemble-core.md` (Blind judging, Synthesis protocol) to this pass's outputs, with the default rubric. The convergence mode is **Merge**: agreed points are the foundation, then adjudicated resolutions, then the best unique contributions ordered by score, with unverified claims stripped. The main agent reads the outputs and judges; the session agent writes the artifacts.
 
-Then, in this order:
+Steps 2 to 4 run on the final pass only (pass 1 when `passes` is 1, else the last pass of Phase 4), so the plan is rendered once. In this order:
 
 1. Have the session agent write the synthesis to `<session_dir>/pass-NNNN/synthesis.md` per `../../references/prose-rules.md`. The plan must tell the executor to run the project's quality gates before each commit.
 
-2. On the final pass only (pass 1 when `passes` is 1, else the last pass of Phase 4), unless `--no-deslop` was set: read `../../references/deslop-pass.md` and apply it with `ARTIFACT_PATH` set to that file, `SESSION_DIR`, `BASELINE_SHA` set to `baseline_sha` from `init`, and `DESLOP_MODE` from the flags. Re-read `synthesis.md` for the desloped plan. The deslop summary block stays out of the plan body; emit one chat line instead, such as `Desloped (-84 words, 3 trims)`.
+2. Unless `--no-deslop` was set, deslop through the session agent: plan mode makes the main agent read-only, and the pass needs `Edit` and a file copy. Tell the session agent to read `../../references/deslop-pass.md` and apply it with `ARTIFACT_PATH` set to that file, `SESSION_DIR`, `BASELINE_SHA` set to `baseline_sha` from `init`, and `DESLOP_MODE` from the flags, and to return the one-line summary. Re-read `synthesis.md` for the desloped plan. The summary block stays out of the plan body; print its one line after `Plan ready for review.`
 
 3. Read `../../references/present-results.md` and apply it with `RESULT_KIND` = `plan`, `ARTIFACT_PATH` = the desloped `synthesis.md`, `SESSION_DIR`, `PASS_COUNT` = the resolved pass count, `IN_PLAN_MODE` = true, `LABEL_MAP_PATH` = `<session_dir>/pass-NNNN/label-map.json`. Read `WORKER_BACKEND`, `PARTICIPANTS`, `EXECUTORS`, and `MODELS` from `session.json`.
 
 4. Write the rendered plan to the plan file, then emit `Plan ready for review.`
 
-5. Record the pass through the session agent (`update --completed-passes <N> --event pass_complete`).
+5. After every pass, record it through the session agent (`update --completed-passes <N> --event pass_complete`).
 
 ---
 

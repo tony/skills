@@ -33,6 +33,9 @@
       },
       {
         "prompt": "check in with the vendor about pricing"
+      },
+      {
+        "prompt": "verify the tests pass before I push"
       }
     ]
   }

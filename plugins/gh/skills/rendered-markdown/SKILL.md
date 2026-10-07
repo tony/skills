@@ -1,8 +1,8 @@
 ---
 name: rendered-markdown
 description: "Use when GitHub Markdown must render: no hard-wrapped bodies, fix code fences, fold logs into details, pin links. Not for filing an issue."
-allowed-tools: ["Read", "Grep", "Glob", "Bash"]
-disallowed-tools: ["Edit", "Write"]
+allowed-tools: ["Read", "Write", "Grep", "Glob", "Bash"]
+disallowed-tools: ["Edit"]
 ---
 
 # Rendered markdown
@@ -35,11 +35,12 @@ ones. Read both before drafting:
 4. Strip local absolute paths, hostnames, emails, and tokens from the
    body (see "Nothing local, nothing personal" in `rendered-markdown.md`).
    The preview sends the body to GitHub.
-5. Preview through GitHub's renderer with the stdin form in
-   `rendered-markdown.md`: the body goes inside a quoted heredoc in
-   the command, so no file is written. Read the output before
-   publishing. When `gh` is unauthenticated or offline, say the
-   preview did not run.
+5. Preview through GitHub's renderer with the file form in
+   `rendered-markdown.md`. Create the file with `mktemp` outside the
+   working tree, write the body to it with the file-writing tool (never a
+   shell heredoc: pasted text can end it and run the rest), and remove
+   it afterwards. Read the output before publishing. When `gh` is
+   unauthenticated or offline, say the preview did not run.
 
 ## Reply
 

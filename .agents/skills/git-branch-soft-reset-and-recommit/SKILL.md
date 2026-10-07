@@ -15,7 +15,9 @@ Rebuild a branch's history so the commits explain the change, without
 changing a byte of the result.
 
 Argument: $ARGUMENTS — a PR number, a base ref, a hint about how to
-split, or nothing.
+split, or nothing. Resolve a PR number to its head branch with
+`gh pr view <number> --json headRefName`; never `gh pr checkout`, which
+changes the working tree.
 
 Four references carry the parts that must not drift:
 
@@ -35,7 +37,24 @@ The tree is the invariant. The history is the deliverable.
 A recommit that changes what the branch produces is a bug, however good
 the commits look.
 
-## Phase 1 — Gather intent, before anything destructive
+## Phase 1 — Run the gates and resolve the base
+
+Run every refusal in `branch-safety.md` before reading any pull
+request, ticket, or transcript: repository rooted at the home directory,
+unborn HEAD, shallow clone, dirty tree, operation in progress, merge
+commits in the range, branch held by another worktree. Detect a pushed
+branch and whether anyone else has pushed to it, without `git fetch`.
+
+Resolve the base to a full 40-character SHA once, per
+`split-mechanics.md`. On a stacked branch the base is the parent branch
+tip, never trunk. A remote-tracking base may be stale; say so in the plan.
+
+A refusal is a report and a stop.
+
+`<toolkit>` is `references/rebase-todo.sh` resolved from this skill's
+directory to an absolute path; write that path literally in each command.
+
+## Phase 2 — Gather intent, before anything destructive
 
 The collapse destroys the original commit boundaries. Read first:
 every original message whole, the trailers, the pull request body
@@ -47,19 +66,6 @@ claims and re-state them, never copy a span out of a transcript.
 
 Record what each original commit was *for*. That mapping is the raw
 material for every message written later.
-
-## Phase 2 — Resolve the base and run the gates
-
-Resolve the base to a SHA once, per `split-mechanics.md`. On a stacked
-branch the base is the parent branch tip, never trunk. A remote-tracking
-base may be stale; say so in the plan.
-
-Then run every refusal in `branch-safety.md`: dirty tree, operation in
-progress, merge commits in the range, branch held by another worktree,
-shallow clone, repository rooted at `$HOME`, unborn HEAD. Detect a pushed branch and
-whether anyone else has pushed to it — without `git fetch`.
-
-A refusal is a report and a stop.
 
 ## Phase 3 — Discover the conventions
 
@@ -92,9 +98,10 @@ Order the series so it builds: a refactor before the behavior that
 depends on it. Declare any dependency between commits. Split a commit
 whose body needs to describe two concerns.
 
-Wait for approval. Exit plan mode before executing. Without an
-interactive question tool, stop after presenting the plan; an
-instruction to recommit authorizes the recommit, not a push.
+Wait for approval, then exit plan mode before executing. An explicit
+instruction to proceed ("go ahead", "without waiting") is the approval;
+with no such instruction and no question tool, stop after the plan. The
+approval covers the recommit, never a push.
 
 ## Phase 5 — Back up, then collapse
 
@@ -112,7 +119,7 @@ Per `split-mechanics.md`: whole files with `git commit -m "..." --only
 commits through the regenerate-filter-apply loop, the staged set
 asserted before every commit.
 
-Write each message from the intent gathered in Phase 1, in the format
+Write each message from the intent gathered in Phase 2, in the format
 discovered in Phase 3, preserving each original author's name, email,
 and author date; the committer is whoever runs the recommit. Carry the
 original commits' `Co-authored-by` and ticket trailers forward, but add
@@ -120,8 +127,7 @@ no `Co-Authored-By`, "Generated with" or other tool trailer of your
 own, and no emoji. Write the messages per
 `references/prose-rules.md`.
 
-Then gate the whole series in place, with `<toolkit>` as defined in
-`rebase-toolkit.md`:
+Then gate the whole series in place, with `<toolkit>`:
 
 ```console
 $ sh <toolkit> verify <base-sha> '<test command>'
@@ -154,7 +160,9 @@ $ git range-diff <base-sha> backup/<flat>-<ts> HEAD
 Name any gate that did not run on every commit, and the commits it skipped.
 Write the report per `references/prose-rules.md`. Reply in this
 shape, as plain text outside any code fence, with plain bullets, no bold (never `- **Backup:** ...`),
-and no local paths:
+and no local paths. Add no bullet the shape does not list, no findings
+outside it except a failed gate, and no mention of which forbidden items
+you left out:
 
 ```text
 Rebuilt feature/auth-rework as 3 commits; the tree matches the original.
@@ -170,8 +178,8 @@ Rebuilt feature/auth-rework as 3 commits; the tree matches the original.
 A refused or halted run is one result sentence naming the gate that
 stopped it, then what the user must do, as plain sentences or plain
 bullets with no bold lead-ins and no absolute paths. It states no commit
-list, hashes, or diffs that were not read from the repository, and ends
-without a recap:
+list, hashes, or diffs that were not read from the repository, does not
+narrate the commands it ran, and ends without a recap:
 
 ```text
 Stopped before changing anything: the working tree has uncommitted edits.

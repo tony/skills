@@ -69,8 +69,8 @@ fix, xfail removal), never by phase or number. Name no local paths.
 
 1. Create a todo list tracking all phases.
 2. Confirm the repository: `git rev-parse --show-toplevel` must be the
-   project the bug lives in. If there is none, or the root is `$HOME` or
-   contains it (a dotfile repository would sweep home into Phase 4's stash),
+   project the bug lives in. If there is none, or the root is the home
+   directory (`cd ~ && pwd -P`, since home may be a symlink) or contains it (a dotfile repository would sweep home into Phase 4's stash),
    stop and tell the user.
 3. Confirm a clean tree: `git status --porcelain` must print nothing. If it
    prints changes, ask the user to commit or stash them first. Without an

@@ -44,8 +44,8 @@ one quality-gate discovery procedure, and one tone-calibration step.
 ## Choosing
 
 Use `/slop:deslop` before opening a PR, when the slop sits in commits
-you are about to ship. It rewrites history, so it refuses pushed
-branches and branches with merge commits unless told otherwise.
+you are about to ship. With `--apply-rebase` it rewrites history, so it
+refuses pushed branches and branches with merge commits unless told otherwise.
 
 Use `/slop:scan` for slop already on trunk or in long-lived files. It
 only adds commits, so it is safe on pushed and shared branches.
@@ -95,7 +95,7 @@ Audit commit messages only, with the strict budget:
 /slop:deslop --message-only --budget=strict
 ```
 
-Allow a branch that was already pushed:
+Let `--apply-rebase` rewrite a branch that was already pushed:
 
 ```
 /slop:deslop --force-rewrite-pushed --apply-rebase

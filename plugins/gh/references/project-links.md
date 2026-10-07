@@ -21,31 +21,31 @@ slots at the same page.
 npm, including `repository.directory` for a package inside a monorepo:
 
 ```console
-$ curl -s https://registry.npmjs.org/PKG/latest | jq '{version, homepage, repository, bugs}'
+$ curl -s 'https://registry.npmjs.org/PKG/latest' | jq '{version, homepage, repository, bugs}'
 ```
 
 PyPI, where the link set is maintainer-labeled free text:
 
 ```console
-$ curl -s https://pypi.org/pypi/PROJECT/json | jq '.info | {package_url, home_page, project_urls}'
+$ curl -s 'https://pypi.org/pypi/PROJECT/json' | jq '.info | {package_url, home_page, project_urls}'
 ```
 
 crates.io, which requires an identifying user agent that includes a contact (replace `CONTACT` with the user's project URL or email, and ask first):
 
 ```console
-$ curl -s -A 'issue-authoring (CONTACT)' https://crates.io/api/v1/crates/CRATE | jq '.crate | {homepage, documentation, repository, default_version}'
+$ curl -s -A 'issue-authoring (CONTACT)' 'https://crates.io/api/v1/crates/CRATE' | jq '.crate | {homepage, documentation, repository, default_version}'
 ```
 
 RubyGems exposes `changelog_uri`:
 
 ```console
-$ curl -s https://rubygems.org/api/v1/gems/GEM.json | jq '{homepage_uri, source_code_uri, documentation_uri, changelog_uri}'
+$ curl -s 'https://rubygems.org/api/v1/gems/GEM.json' | jq '{homepage_uri, source_code_uri, documentation_uri, changelog_uri}'
 ```
 
 Go, resolving version, tag ref, and commit in one call:
 
 ```console
-$ curl -s https://proxy.golang.org/MODULE/@latest
+$ curl -s 'https://proxy.golang.org/MODULE/@latest'
 ```
 
 Second-source the repository itself, since a registry records what was
@@ -63,15 +63,15 @@ https://github.com/OWNER/REPO/releases/tag/v2.40.0
 
 Copy that URL from the API rather than building it: monorepo tags carry
 prefixes and encodings not derivable from a version number
-(`@changesets/cli@2.31.1` becomes `%40changesets/cli%402.31.1`, Go
+(`@scope/pkg@1.2.3` becomes `%40scope/pkg%401.2.3`, Go
 submodules tag as `module1/v1.2.3`).
 
 ```console
 $ gh api repos/OWNER/REPO/releases/tags/v2.40.0 --jq '{tag_name, html_url}'
 ```
 
-`/releases/latest` moves on every publish and means different things in
-the API and the web UI; never use it for a claim about a specific
+`/releases/latest` is the newest non-prerelease, non-draft release and
+moves on every publish; never use it for a claim about a specific
 version. When a project publishes no releases, link a tag-pinned
 `CHANGELOG` file, or a `/compare/<old>...<new>` URL.
 

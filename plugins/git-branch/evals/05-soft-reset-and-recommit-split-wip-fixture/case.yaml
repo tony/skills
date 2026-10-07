@@ -23,7 +23,7 @@ graders:
   - name: backs-up-before-collapsing
     type: tool_used
     tool: Bash
-    input_match: 'git .*branch.*backup/|backup/.*git .*branch'
+    input_match: 'git branch (\\"|")?(backup/|\$)'
     min: 1
     arm: both
 

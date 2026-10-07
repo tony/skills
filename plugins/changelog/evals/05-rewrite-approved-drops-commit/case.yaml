@@ -60,6 +60,13 @@ graders:
       path: src/ping.py
     pattern: 'return "PONG"'
 
+  - name: checks-code-against-the-backup
+    type: tool_used
+    tool: Bash
+    input_match: 'git diff changelog-rewrite-backup-'
+    min: 1
+    arm: both
+
   - name: does-not-copy-the-draft-pr-number
     type: regex
     target:

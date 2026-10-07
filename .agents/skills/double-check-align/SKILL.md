@@ -37,20 +37,30 @@ Phrases to avoid: `references/verification-contract.md`.
    claim positively and in full, per `references/prose-rules.md`.
    If a claim is weak, say why it is weak; never say it was previously
    stated differently.
+3. Check for adopted state: did the user commit, file, or send a prior
+   claim? Then add one sentence saying that claim is wrong and what the
+   source says, and continue standalone. Otherwise the prior turn does
+   not appear in your output.
+
+Halt only after trying: when `$ARGUMENTS` is empty and no analysis
+thread exists, or a named source will not open, restate nothing. Reply
+with one result sentence, then what the user must supply (a topic, or
+the file's path).
 
 Reply in this shape, as plain text outside any code fence, with plain bullets, no bold (never `- **Label:** ...`), and no local paths:
 
 ```text
-client.py sets MAX_RETRIES = 3 and RETRY_BACKOFF_SECONDS = 2.
+poller.py sets POLL_INTERVAL_SECONDS = 30 and MAX_POLLS = 4.
 
-- The loop makes at most 3 send attempts.
-- Each failed attempt sleeps 2 seconds, so a fully failing call spends
-  6 seconds sleeping before it returns None.
+- The loop checks the job status at most 4 times.
+- It sleeps 30 seconds between checks, so a job that never finishes
+  costs 90 seconds of waiting before TimeoutError is raised.
 ```
 
 ## What this does not do
 
-- Reference, summarize, or grade the earlier response.
+- Reference, summarize, or grade the earlier response, except the one
+  adopted-state sentence in step 3.
 - Edit files or commit — output is conversation only.
 - Answer a different question than the one recovered or given —
   losing focus is the failure this command repairs.

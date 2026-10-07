@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import subprocess
 from pathlib import Path
 
@@ -172,3 +173,88 @@ def test_cli_prints_json_and_exit_2_on_bad_override(
     bad = tmp_path / "bad.yml"
     bad.write_text("delete:\n  - nope\n")
     assert detect.main(["files", "--registry", str(reg), "--override", str(bad), str(target)]) == 2
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "append:\n  - id: a\n    pattern: &p 'x'\n",
+        "append:\n  - id: a\n    pattern: *p\n",
+        "append:\n  - id: a\n    target: [diff,\n      file]\n",
+        "append:\n  - id: a\n    meta: {k: v}\n",
+        "append:\n  - id: a\n    nested:\n      k: v\n",
+        "append:\n  - id: a\n    pattern: 'unterminated\n",
+        "append:\n\t- id: a\n",
+        "---\nappend:\n  - id: a\n",
+        "just a stray line\n",
+        "deletes:\n  - a.b\n",
+    ],
+)
+def test_override_with_unsupported_syntax_exits_2(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str], text: str
+) -> None:
+    reg = tmp_path / "r.yml"
+    reg.write_text(MINI)
+    override = tmp_path / "o.yml"
+    override.write_text(text)
+    target = tmp_path / "a.txt"
+    target.write_text("x\n")
+    argv = ["files", "--registry", str(reg), "--override", str(override), str(target)]
+    assert detect.main(argv) == 2
+    assert capsys.readouterr().err.startswith("detect:")
+
+
+def _shipped() -> list[detect.Sig]:
+    return detect.load_registry(REGISTRY)[0]
+
+
+def _hits(sig_id: str, mode: str, text: str) -> list[dict[str, object]]:
+    built = detect.build_rules(_shipped())
+    if mode == "message":
+        found = detect.scan_messages(built, f"sha\x1f{text}\n", historical=False)
+    else:
+        diff = f"diff --git a/f b/f\n--- a/f\n+++ b/f\n@@ -0,0 +1 @@\n+{text}\n"
+        found = detect.scan_diff(built, diff, historical=False)
+    return [f for f in found if f["signature_id"] == sig_id]
+
+
+TIER_A_FIXTURES = [
+    ("ai-slop.signatures", "message", "feat(x) Add y\n\nGenerated with Claude Code", True),
+    ("ai-slop.signatures", "message", "feat(x) Add y\n\nDone \U0001f916", True),
+    ("ai-slop.signatures", "message", "feat(x) Add y\n\nGenerated with protoc 25", False),
+    ("ai-slop.emoji-in-commit-subject", "message", "feat(x) Ship it \U0001f680", True),
+    ("ai-slop.emoji-in-commit-subject", "message", "feat(x) Check ✓ and ⚠", False),
+    ("brittle.commit-message-markdown-leak", "message", "**feat** add y", True),
+    ("brittle.commit-message-markdown-leak", "message", "- add y", True),
+    ("brittle.commit-message-markdown-leak", "message", "feat(x) Add y with - dash", False),
+    ("low-value.todo-noise", "diff", "# TODO: revisit later", True),
+    ("low-value.todo-noise", "diff", "# TODO(alice): revisit after PROJ-12", False),
+]
+
+
+@pytest.mark.parametrize(("sig_id", "mode", "text", "fires"), TIER_A_FIXTURES)
+def test_tier_a_rule_fixtures(sig_id: str, mode: str, text: str, fires: bool) -> None:
+    assert bool(_hits(sig_id, mode, text)) is fires
+
+
+def test_every_tier_a_rule_has_a_positive_and_negative_fixture() -> None:
+    tier_a = {s["id"] for s in _shipped() if s["tier"] == "A"}
+    for sig_id in tier_a:
+        outcomes = {fires for sid, _, _, fires in TIER_A_FIXTURES if sid == sig_id}
+        assert outcomes == {True, False}, sig_id
+
+
+def test_tier_a_guards_reach_the_agent_and_none_guard_stays_silent() -> None:
+    assert _hits("ai-slop.signatures", "message", "x\n\n\U0001f916")[0]["fp_guard"]
+    assert "fp_guard" not in _hits("brittle.commit-message-markdown-leak", "message", "# x")[0]
+
+
+def test_guards_name_only_checks_something_performs() -> None:
+    pipeline = (REGISTRY.parent / "detect-pipeline.md").read_text()
+    for sig in _shipped():
+        guard = str(sig.get("fp-guard", ""))
+        assert not re.search(r"\bLCS\b|similarity|\d\.\d", guard), sig["id"]
+        if "tone calibration" in guard:
+            assert "## Tone calibration" in pipeline, sig["id"]
+        if guard.startswith("Skip test files") or "test fixtures" in guard:
+            assert sig.get("skip-paths"), sig["id"]

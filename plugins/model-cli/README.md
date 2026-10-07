@@ -85,3 +85,5 @@ Install at least one CLI:
 - `agy`: [Antigravity CLI](https://antigravity.google/product/antigravity-cli)
 - `codex`: [Codex CLI](https://github.com/openai/codex)
 - `agent`: [Cursor CLI](https://cursor.com/cli)
+
+`python3` (3.9 or newer) runs `scripts/run_tier.py`, which launches each tier.

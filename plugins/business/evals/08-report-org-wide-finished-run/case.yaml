@@ -29,7 +29,8 @@ graders:
     target:
       source: file
       path: out/2026-06-30/business/lean-tighten/reports/org-wide.md
-    pattern: '(?is)(?=.*conservative)(?=.*base)(?=.*upside)(?=.*\b45(?:\.0+)?\b)'
+    pattern: '(?=[\s\S]*conservative)(?=[\s\S]*base)(?=[\s\S]*upside)(?=[\s\S]*\b45(?:\.0+)?\b)'
+    flags: i
 
   - name: report-carries-a-tag
     type: regex
@@ -50,7 +51,7 @@ graders:
   - name: reply-leads-with-hero-line
     type: regex
     target: last_message
-    pattern: '\A\s*✓ Org-wide projection'
+    pattern: '^\s*✓ Org-wide projection'
 
   - name: no-bold-label-bullets
     type: regex

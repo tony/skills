@@ -21,17 +21,17 @@ graders:
   - name: creates-the-worktree
     type: tool_used
     tool: Bash
-    input_match: 'git worktree add'
+    input_match: 'worktree add'
 
   - name: branch-name-comes-from-the-goal
     type: tool_used
     tool: Bash
-    input_match: 'git worktree add -b \S*dry-run'
+    input_match: 'dry[-_]?run.*worktree add|worktree add.*dry[-_]?run'
 
   - name: worktree-is-outside-the-checkout
     type: tool_used
     tool: Bash
-    input_match: 'git worktree add -b \S+ (\.\./|/)'
+    input_match: 'worktree add\b.* (\.\./|/|\$\{?\w+)'
 
   - name: invents-no-ticket-id
     type: regex

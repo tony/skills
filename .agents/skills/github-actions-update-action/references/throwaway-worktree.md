@@ -9,9 +9,10 @@ a push from it is rejected as a non-fast-forward.
 exists, the only remote when there is one, otherwise ask (`git remote -v`
 lists them).
 
-Refuse when `git rev-parse --show-toplevel` prints `$HOME` or a
-directory containing it: a dotfile repository rooted at home would pull
-the whole home directory into the worktree.
+Refuse when `git rev-parse --show-toplevel` prints the home directory or
+a directory containing it: a dotfile repository rooted at home would pull
+the whole home directory into the worktree. Compare against `cd ~ && pwd -P`,
+not `$HOME`: the toplevel is a physical path, and home may be a symlink.
 
 Fetch the default branch first:
 

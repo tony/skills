@@ -1,0 +1,44 @@
+schema_version: "1.0"
+name: 06-changelog-no-approval-stops
+description: >-
+  A bare /changelog:changelog carries no approval to edit. With no question
+  tool, the skill presents the proposed entry and stops without editing the
+  changelog or committing.
+tags: [fixture, git]
+
+context:
+  scaffold_script: scaffold.sh
+
+execution:
+  prompt: /changelog:changelog
+  max_turns: 30
+  timeout_seconds: 600
+  allowed_tools: [Bash, Read, Glob, Grep, Skill, Edit, Write]
+
+runs: 3
+
+graders:
+  - name: changelog-left-as-found
+    type: regex
+    target:
+      source: file
+      path: CHANGES.md
+    match: not_contains
+    pattern: 'ping'
+    flags: i
+
+  - name: never-commits-or-pushes
+    type: tool_used
+    tool: Bash
+    input_match: 'git commit|git push'
+    min: 0
+    max: 0
+    arm: both
+
+  - name: proposes-and-stops
+    type: llm
+    focus: last_message
+    criteria: |
+      The reply proposes a changelog entry for the ping change and says nothing
+      was edited, pending the user's approval. It does not claim to have
+      inserted the entry or committed.

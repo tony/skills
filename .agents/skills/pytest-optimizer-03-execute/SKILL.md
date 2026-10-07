@@ -58,8 +58,8 @@ test commands. Refuse to run unless all hold, checking in this order:
 - its `plan_hash` equals the output of `measure.py hash plan.json`. Otherwise
   stop: the plan changed after approval, so approve it again with
   `pytest-optimizer:02-plan`. Name the one check that failed, never both;
-- `git rev-parse --show-toplevel` is neither `$HOME` nor a directory containing
-  it: a dotfile repo rooted at home hides its untracked files from `git status`,
+- `git rev-parse --show-toplevel` neither equals nor contains the physical home
+  directory (`cd ~ && pwd -P`, never the string `$HOME`): a dotfile repo rooted at home hides its untracked files from `git status`,
   and Step 2's cleanup would delete them;
 - the memory directory is outside the working tree, or listed in the local
   exclude file (`git rev-parse --git-path info/exclude`), so cleanup cannot
@@ -105,7 +105,7 @@ For each plan item not yet applied:
    default. First write the log entry with `pending_subject`, then commit, then
    record the `commit_sha` and the verify run's `seconds`.
 4. **On failure** — the tree was clean before the item. Restore it, files the
-   item created included, with the script, which repeats the `$HOME` and
+   item created included, with the script, which repeats the home-directory and
    memory-directory checks before it runs `git reset --hard HEAD` and
    `git clean -fd`:
 

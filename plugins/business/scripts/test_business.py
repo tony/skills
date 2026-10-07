@@ -6,6 +6,7 @@
 
 from __future__ import annotations
 
+import json
 import typing as t
 from pathlib import Path
 
@@ -159,3 +160,99 @@ def test_stats_and_runs_cli(tmp_path: Path, capsys: pytest.CaptureFixture[str]) 
     make_run(tmp_path)
     assert business.main(["runs", "--root", str(tmp_path)]) == 0
     assert capsys.readouterr().out.strip().endswith("2026-06-30/business/lean-tighten")
+
+
+def test_project_lists_every_missing_factor(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    (tmp_path / "assumptions.yaml").write_text("- id: unrelated\n  value: 1\n")
+    assert business.main(["project", str(tmp_path)]) == 1
+    out = capsys.readouterr().out
+    assert all(f"{ident}: missing" in out for _, ident in business.FACTORS)
+
+
+def test_gate_flags_open_unknowns_heading_and_currency(tmp_path: Path) -> None:
+    run = make_run(tmp_path)
+    (run / "findings.md").write_text("## Open unknowns\n\n- Adoption: unknown.\n\nSaved $40.\n")
+    problems = business.check_run(run)
+    assert any("unknown without the data" in p for p in problems)
+    assert any("currency '$'" in p for p in problems)
+
+
+def test_stats_csv_column_difference_skips_blank_cells(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    sample = tmp_path / "t.csv"
+    sample.write_text("a,b\n10,4\n9,\n8,2\n")
+    assert business.main(["stats", "--csv", str(sample), "--column", "a-b"]) == 0
+    assert "n: 2\n" in capsys.readouterr().out
+    assert business.main(["stats", "--csv", str(sample), "--column", "z"]) == 2
+
+
+def test_collect_prs_reads_paginated_pages(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    def page(number: int, merged: str) -> str:
+        pr: dict[str, object] = {
+            "number": number,
+            "createdAt": "2026-04-02T00:00:00Z",
+            "mergedAt": merged,
+            "additions": 1,
+            "deletions": 0,
+            "author": {"login": "ann"},
+            "reviews": {"nodes": []},
+            "reopened": {"filteredCount": 1},
+        }
+        return json.dumps({"data": {"repository": {"pullRequests": {"nodes": [pr]}}}})
+
+    pages = tmp_path / "pages.json"
+    pages.write_text(page(2, "2026-04-02T12:00:00Z") + page(1, "2026-07-02T00:00:00Z") + "\n")
+    args = ["collect-prs", "--start", "2026-04-01", "--end", "2026-06-30", str(pages)]
+    assert business.main(args) == 0
+    lines = capsys.readouterr().out.splitlines()
+    assert lines[0].startswith("number,created_at")
+    assert lines[1:] == ["2,2026-04-02T00:00:00Z,2026-04-02T12:00:00Z,12.00,,1,1,0"]
+    pages.write_text("[1]")
+    assert business.main(args) == 2
+
+
+BREAKEVEN_REGISTER = "\n".join(
+    f"- id: {i}\n  value: {v}\n  low: {lo}\n  high: {hi}"
+    for i, v, lo, hi in [
+        ("manual-minutes", 30, 28, 40),
+        ("ai-minutes", 10, 8, 12),
+        ("verify-minutes", 4, 3, 6),
+        ("rework-probability", 0.2, 0.1, 0.3),
+        ("rework-minutes", 20, 10, 30),
+        ("instances-in-period", 600, 500, 700),
+        ("build-hours", 20, 15, 30),
+        ("maintenance-hours-per-period", 2, 1, 4),
+        ("periods", 4, 4, 4),
+    ]
+)
+
+
+def test_breakeven_cli_prints_every_scenario(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    (tmp_path / "assumptions.yaml").write_text(BREAKEVEN_REGISTER)
+    assert business.main(["breakeven", str(tmp_path)]) == 0
+    out = capsys.readouterr().out
+    assert "conservative S_net (engineer-hours per period): -37.67\n" in out
+    assert "base N_breakeven (instances): 140\n" in out
+    assert "missing:" not in out
+
+
+def test_breakeven_reports_unknowns_and_computes_only_what_is_registered(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    (tmp_path / "assumptions.yaml").write_text(
+        "- id: " + "\n- id: ".join(BREAKEVEN_REGISTER.split("- id: ")[1:6])
+    )
+    assert business.main(["breakeven", str(tmp_path)]) == 0
+    out = capsys.readouterr().out
+    assert "base S_inst (minutes per instance): 12\n" in out
+    assert "S_net" not in out
+    assert "missing: build-hours\n" in out
+    (tmp_path / "assumptions.yaml").write_text("- id: periods\n  value: 4\n")
+    assert business.main(["breakeven", str(tmp_path)]) == 1

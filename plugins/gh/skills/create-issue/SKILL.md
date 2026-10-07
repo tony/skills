@@ -2,7 +2,7 @@
 name: create-issue
 description: "Use when asked to file, report, open, or raise a GitHub issue for a bug, feature, audit, or review finding."
 argument-hint: "[description, repository, or pasted finding]"
-allowed-tools: ["Bash", "Read", "Grep", "Glob", "AskUserQuestion"]
+allowed-tools: ["Bash", "Read", "Write", "Grep", "Glob", "AskUserQuestion"]
 ---
 
 # Create issue
@@ -23,11 +23,17 @@ read `../../references/project-links.md` for its link set. Write it per
 Commands assume github.com. For GitHub Enterprise, set
 `GH_HOST=HOST` on every `gh` command.
 
-When `gh auth status` fails or `gh` is missing, you cannot run the
-checks below. Say so first, then produce a draft whose first line starts
-"Unverified draft", with each unchecked item (duplicates, security
-policy, templates, pins) named as unchecked. Do not file, and do not
-offer `--web` or an issue form: neither was checked. A suspected
+Run this first:
+
+```console
+$ gh auth status
+```
+
+When it fails or `gh` is missing, you cannot run the checks below. The
+reply's first line is the draft's label and the reason (shape under
+"Present"), then the draft, with each unchecked item (duplicates,
+security policy, templates, pins) named as unchecked. Do not file, and
+do not offer `--web` or an issue form: neither was checked. A suspected
 security vulnerability gets no draft at all, since the exploit details
 are the deliverable: say why, and name the places to look for the
 project's private reporting path (the repository's Security tab,
@@ -82,7 +88,16 @@ $ gh repo view OWNER/REPO --json isSecurityPolicyEnabled,securityPolicyUrl
 
 That covers `SECURITY.md` wherever the project keeps it, including in a
 repository you have not cloned. When a policy exists and the finding is
-a security defect, read it, follow its private reporting path, and stop.
+a security defect, read it, follow its private reporting path, and stop. Read it from
+the API, since the repository may not be cloned:
+
+```console
+$ gh api repos/OWNER/REPO/contents/SECURITY.md -H 'Accept: application/vnd.github.raw'
+```
+
+On a 404, try the same path under `.github/` and `docs/`. When none
+reads, give the user `securityPolicyUrl` as the place to look. The reply
+names the private reporting path the policy gives.
 
 When no policy exists, check for private vulnerability reporting:
 
@@ -124,7 +139,15 @@ $ gh api repos/OWNER/REPO/contents/.github/ISSUE_TEMPLATE --jq '.[].name'
 $ gh api repos/OWNER/REPO/contents/.github/ISSUE_TEMPLATE/NAME -H 'Accept: application/vnd.github.raw'
 ```
 
-`NAME` is a file from that listing.
+`NAME` is a file from that listing. Skip `config.yml`: it holds
+`contactLinks` and the blank-issue setting, not a template.
+
+A `.yml` file is an issue form, not markdown. Fill it as GitHub would
+render a submission: each `input`, `textarea`, `dropdown`, and
+`checkboxes` entry becomes a `###` heading from its `attributes.label`,
+in file order, with the answer beneath. Entries with `type: markdown`
+are instructions to the reporter, not fields. A field with
+`validations.required: true` is never left empty.
 
 Templates live on the default branch only. When several fit, ask:
 their file order is a filename artifact, not the maintainer's ranking,
@@ -226,10 +249,12 @@ path.
 $ mktemp "${TMPDIR:-/tmp}/gh-issue.XXXXXX"
 ```
 
-Write the body to that path with a Bash heredoc using a quoted
-delimiter (`<<'EOF'`). Then render it with the preview command in
-`../../references/rendered-markdown.md`, using `-f text="$(cat PATH)"`
-with the literal path. Read the output, fix, and re-render.
+Write the body to that path with the host's file-writing tool, never a
+shell heredoc: pasted text can hold any delimiter line, and the rest of
+the body would run as shell. If the tool refuses to overwrite a file you
+have not read, read it first. Then render it with the preview command in
+`../../references/rendered-markdown.md`, using the literal path. Read
+the output, fix, and re-render.
 
 ## Phase 8 — Present, then file
 
@@ -269,13 +294,29 @@ $ widgets build --target=wasm
 File it, print the body only, revise a section, or drop it?
 `````
 
-When `gh` is unavailable, the first line reads `Unverified draft for OWNER/REPO, not filed.` and one sentence says duplicates, security policy, templates, and pins could not be checked without `gh auth login`. Close with one sentence naming the fields only the user has (OS, exact versions, full trace) instead of a request list.
+Without `gh`, the first line is `Unverified draft for OWNER/REPO, not filed: duplicates, security policy, templates, and pins could not be checked without `gh auth login`.` Close with one sentence naming the fields only the user has (OS, exact versions, full trace) instead of a request list.
 
-A halted run (a duplicate found, a security policy, unsanitizable evidence) is one result sentence naming the duplicate or the private path, then what the user needs to do.
+A halted run (a duplicate found, a security policy, unsanitizable evidence) is one result sentence naming the duplicate or the private path, then what the user needs to do. Reply in this shape:
+
+```text
+Not filed: example/widgets already tracks this as #1187 (open, "wasm target throws TypeError"). Comment on it with the new evidence, or tell me to file anyway.
+```
+
+```text
+Not filed publicly: example/widgets has a security policy. Report through "Report a vulnerability" on its Security tab, https://github.com/example/widgets/security/policy.
+```
 
 ### File
 
-Run only after the user approves filing. To let the user submit it
+Run only after the user approves filing. First scan the body file for
+a leftover placeholder (an unresolved `<SHA>`, `<VERSION>`, `CONTACT`):
+
+```console
+$ rg -n -e '<[A-Z][A-Z_ -]*>' -e 'CONTACT' PATH
+```
+
+Any match blocks filing: resolve it, or keep the run a draft and say
+which placeholder remains. To let the user submit it
 themselves instead, add `--web` to `gh issue create` so it opens the
 prefilled form; that needs `gh auth login`.
 
@@ -300,9 +341,18 @@ Remove the scratch file on the way out, whichever branch ended the run
 $ rm -f PATH
 ```
 
-After filing, the reply is the issue URL. When the create fails (unknown
+After filing, the reply is one line. When the create fails (unknown
 label, 403), the reply is one sentence quoting the `gh` error and what
-the user does next; nothing was filed.
+the user does next; nothing was filed. Reply in these shapes, as plain
+text with no bullets and no bold:
+
+```text
+Filed: https://github.com/example/widgets/issues/42
+```
+
+```text
+Not filed: gh said `could not add label: 'bugs' not found`. Pick a label from the repository's list or file without one.
+```
 
 ## Rules
 

@@ -38,8 +38,10 @@ The caller is responsible for honouring `--no-deslop`: if set, do **not**
 invoke this reference at all. Skip cleanly with no banner, no sibling
 file, no summary block.
 
-Before Step 1, print `Polishing synthesis (deslop pass)…`. The summary block
-or the no-op line replaces it.
+Print nothing while the pass runs. Return the summary block (or the no-op
+line) to the caller, which places it after the result's last section. It never
+comes before the hero line, and the reply never mentions this file's
+storage or the rollback sibling.
 
 ---
 
@@ -98,8 +100,10 @@ Tier C matches are recorded for the summary only.
 
 ### Pass B: Semantic verifier
 
-Dispatch **one** `Task` sub-agent (not per-finding, not per-paragraph;
-the artifact is one file). Sub-agent contract:
+Skip this pass (`verifier=skipped`, recorded in `deslop-report.md` only) when
+the artifact is under 100 words. Otherwise dispatch **one** `Task` sub-agent
+(not per-finding, not per-paragraph; the artifact is one file). Sub-agent
+contract:
 
 - Allowed tools: `Read`, `Grep`, `Glob`.
 - Disallowed: `Bash`, `Write`, `Edit`, `Task`.
@@ -132,7 +136,9 @@ For each finding produced by Step 3:
   - 2 or more: present **one** batched `ask-user-choice` with up to 4
     options ("apply both", "apply [a] only", "apply [b] only", "skip
     both"). Per-finding interrogation is wrong here - the artifact is
-    one prose blob, not a series of commits.
+    one prose blob, not a series of commits. Without `ask-user-choice`
+    (Codex, headless runs), apply none and list the pairs as advisories
+    in the summary.
 - **Tier C** - advisory only. List in the summary; never edit.
 
 ---
@@ -183,7 +189,8 @@ Write `<session_dir>/deslop-report.md` with:
 - Path to `<artifact>.pre-deslop.md` sibling
 - Verifier status (`enabled` | `skipped`)
 
-Emit the terminal summary block per `DESLOP_MODE`:
+Emit the terminal summary block per `DESLOP_MODE`. It reports edits only: no
+scan narration, verifier status, or paths.
 
 ### `default` (≤ 8 lines, no banner, no tier letters)
 
@@ -227,8 +234,8 @@ Held trims are listed in the report; nothing was removed from the result.
 
 ### No-op
 
-If Steps 3–5 produced zero applied edits, replace the in-progress line
-with one line and emit no block:
+If Steps 3–5 produced zero applied edits, emit one line and no block. Scan
+details and verifier status stay in `deslop-report.md`:
 
 ```
 Synthesis already clean (no deslop edits applied)

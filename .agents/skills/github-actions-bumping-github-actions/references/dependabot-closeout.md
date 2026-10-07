@@ -40,7 +40,8 @@ title, bumped action, commit SHA or "obsolete". A title that names
 several actions (a grouped update) or comes from another bot is reported as
 unmapped. Show the exact commands below with every placeholder filled in. Run them only after the user
 confirms those commands. On hosts without an interactive question tool,
-or in a headless run, print the commands and run none.
+or in a headless run, print the filled commands for the user to run and
+run none; "go ahead and close them" in the request does not change this.
 
 List the open PRs, raising `--limit` until the result count is below it:
 
@@ -84,18 +85,18 @@ canonical slug from the API before mapping.
 Establish attribution before acting: a wrong call reverts good work or ships
 a regression.
 
-**Compare the same workflow by name.** Filtering only by branch mixes in a
+Compare the same workflow by name. Filtering only by branch mixes in a
 second workflow (dependency graph, deploy, docs) and can report a failing
 repo as passing.
 
-**Check the age of the base run.** A green baseline from months ago proves
-nothing: floating tags moved and runner images were rebuilt since. A base run
-must be recent enough to isolate the change.
+Check the age of the base run. A green baseline from months ago proves
+nothing: floating tags moved and runner images were rebuilt since. A base
+run must be recent enough to isolate the change.
 
-**Compare the failing step, not just the conclusion.** The same step
-failing before and after means the failure predates the bump.
+Compare the failing step, not just the conclusion. The same step failing
+before and after means the failure predates the bump.
 
-**When unsure, revert and observe, with the user's go-ahead.** Do it on a
+When unsure, revert and observe, with the user's go-ahead. Do it on a
 scratch branch, never on trunk: restore the workflow file from the parent
 commit, push the branch, and run the workflow there. If it still fails, the
 bump was not the cause; tell the user, and correct any commit message that

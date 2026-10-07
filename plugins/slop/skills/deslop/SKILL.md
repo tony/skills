@@ -20,8 +20,8 @@ Invoked by name only: history rewrites must be user-explicit, never
 router-inferred. For repo-wide cleanup of files already on trunk, use
 `/slop:scan`. The PR description is out of scope; never edit it.
 
-The skill refuses a pushed branch without `--force-rewrite-pushed`, and
-refuses `--apply-rebase` when the branch holds merge commits, because
+With `--apply-rebase`, the skill refuses a pushed branch without
+`--force-rewrite-pushed`, and refuses a branch holding merge commits, because
 `git rebase -i --autosquash` without `--rebase-merges` flattens topology.
 
 Slop is a workflow label, not proof the text is wrong; reduce
@@ -46,7 +46,7 @@ commit range (`<sha>..<sha>` or a single SHA) that overrides it.
 | `--message-only` | off | Shorthand for `--targets=messages`. Exclusive with `--diff-only` and `--targets`. |
 | `--diff-only` | off | Shorthand for `--targets=diff`. Exclusive with `--message-only` and `--targets`. |
 | `--since=<ref>` | merge-base with trunk | Replaces the trunk merge-base as `BASELINE_SHA`. |
-| `--force-rewrite-pushed` | off | Allow a branch that was already pushed. |
+| `--force-rewrite-pushed` | off | Let `--apply-rebase` rewrite a branch that was already pushed. |
 | `--run-tests` | off | Include the test command in conflict-loop gates and final verification. |
 | `--no-semantic` | off | Skip the Pass B verifier; regex only. |
 | `--taxonomy=<path>` | built-in + `.claude/slop.local.yml` | Replace the registry; the built-in set and the override are both ignored. |
@@ -115,24 +115,31 @@ Halt with a clear message when any of these holds:
 
 ## Step 2: Pushed-branch gate
 
+Only `--apply-rebase` rewrites history, so only it is gated. Audit and
+`--apply-patches` runs skip this step.
+
 ```console
 $ git rev-parse --abbrev-ref --symbolic-full-name '@{u}' 2>/dev/null
 ```
 
-No upstream means a local-only branch; continue. With an upstream:
+No upstream means a local-only branch; continue. With an upstream,
+count the commits it holds past the baseline:
 
 ```console
-$ git merge-base --is-ancestor "$(git rev-parse '@{u}')" HEAD
+$ git rev-list --count "${BASELINE_SHA}..@{u}"
 ```
 
-Exit 0 means the upstream is reachable from `HEAD`: the branch was
-pushed. A non-zero exit with an upstream set means a local rewrite
-diverged from it; that branch was pushed too. Without `--force-rewrite-pushed`, refuse:
+A count above 0 means the branch was pushed, whether or not `HEAD` still
+contains those commits. A count of 0 means the upstream is trunk itself
+(a branch cut with `git switch -c x origin/main` tracks it) or sits at
+the baseline; nothing of the branch was published, so continue. Without
+`--force-rewrite-pushed`, refuse a pushed branch:
 
 > This branch was already pushed to `<upstream>`. Rewriting its
 > history requires a force-push, and reviewers must reset their local
-> checkouts. Re-run with `--force-rewrite-pushed` to override, or use
-> `--apply-patches` (no rebase) to apply fixups without rewriting.
+> checkouts. Re-run with `--force-rewrite-pushed` to override, or drop
+> `--apply-rebase` and use `--apply-patches` to add fixup commits
+> without rewriting.
 
 With the flag, record the upstream in the final report and continue.
 
@@ -337,19 +344,16 @@ Before "Apply patches now", show this warning:
 
 ## Step 10: Backup and apply
 
-Before any history-affecting action, including "Apply patches now",
-create the backup branch:
-
-```console
-$ git branch "$(git branch --show-current)-pre-deslop-$(date -u +%Y%m%d-%H%M%S)"
-```
-
-Record its name in the final report and tell the user that
-`git reset --hard <backup>` restores the original state.
+Run the series. Before its first commit, `apply.sh` creates a backup
+branch at the starting tip and prints `Backup branch: <name>`; a re-run
+prints the same name:
 
 ```console
 $ bash "<run-dir>/apply.sh"
 ```
+
+Record that name in the final report and tell the user that
+`git reset --hard <backup>` restores the original state.
 
 `apply.sh` stages explicit paths
 only and never uses `git add -A` or `git add .`. Reword commits are
@@ -406,6 +410,10 @@ With `--run-tests`:
 ```console
 $ ${TEST_CMD}
 ```
+
+Run `git status --porcelain` once more. A formatter that rewrote files
+leaves a dirty tree: add `Gate left uncommitted changes: <paths>` under
+`Quality gates (final)`, and never commit or restore them.
 
 Report exact counts, not the plan's ranges. The hero line is `Slop
 summary`; sections follow in the order shown: summary block,

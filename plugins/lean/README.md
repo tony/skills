@@ -54,4 +54,5 @@ confirms before editing. Prints a diff, never commits.
 
 ## Prerequisites
 
-- None. Reads `AGENTS.md` / `CLAUDE.md` at runtime to match repo voice.
+- `python3` (3.9 or newer) runs `scripts/scope.py` for `trim-comments`.
+- Reads `AGENTS.md` / `CLAUDE.md` at runtime to match repo voice.

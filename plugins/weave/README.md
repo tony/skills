@@ -84,7 +84,7 @@ Commands that need commits (`execute`, `prompt`, `architecture`, `review`, `fix-
 
 ## Engine
 
-`scripts/engine.py` runs the deterministic work: flag parsing, session setup, model-CLI dispatch with retry and fallback, worktrees, diff capture, judging helpers, and the repo guard. It needs Python 3 and `git` on a POSIX system. `scripts/test_engine.py` tests it against real git repositories and stub CLIs. [`docs/engine.md`](docs/engine.md) lists every command and how to convert a skill.
+`scripts/engine.py` runs the deterministic work: flag parsing, session setup, model-CLI dispatch with retry and fallback, worktrees, diff capture, judging helpers, and the repo guard. It needs `python3` (3.9 or newer) and `git` on a POSIX system. `scripts/test_engine.py` tests it against real git repositories and stub CLIs. [`docs/engine.md`](docs/engine.md) lists every command and how to convert a skill.
 
 Shared judgment prose lives in `references/ensemble-core.md` (context packet, dispatch, blind judging, synthesis, consensus), `references/ensemble-techniques.md` (cascade and residual re-attack), `references/present-results.md`, and `references/deslop-pass.md`. `references/worker-backends.md` defines the two backends.
 
@@ -120,7 +120,7 @@ When a flag is set the matching question is skipped. Otherwise the command asks 
 
 ## Plan Mode
 
-`review`, `fix-review`, and `execute` enter plan mode to produce an orchestration plan, present it for approval, then exit plan mode before executing. `plan` enters plan mode first and stays there: the host's plan file is the deliverable, and host sub-agents handle the non-readonly work.
+`review`, `fix-review`, `execute`, `prompt`, and `architecture` enter plan mode to produce an orchestration plan, present it for approval, then exit plan mode before executing. `plan` enters plan mode first and stays there: the host's plan file is the deliverable, and host sub-agents handle the non-readonly work.
 
 | Tool | Enter plan mode | Exit plan mode |
 |------|----------------|----------------|
@@ -217,11 +217,11 @@ If no CLI resolves for a lane, weave reports the lane unavailable. It does not f
 
 The engine enforces timeouts itself, so no `timeout` or `gtimeout` binary is needed. It closes each CLI's stdin, appends stderr to a per-lane file, and kills the CLI's whole process group on timeout.
 
-To confirm which model the Antigravity lane runs:
+To confirm which model the Antigravity lane runs, pass the first `agy` model listed in `LANES` in `scripts/engine.py`:
 
 ```console
 $ agy \
-    --model "Gemini 3.1 Pro (High)" \
+    --model "<pinned model>" \
     --dangerously-skip-permissions \
     -p "Report your exact model ID and reasoning level." </dev/null
 ```

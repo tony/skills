@@ -158,18 +158,15 @@ plain text.
 
 ## Preview before publishing
 
-GitHub's own renderer will tell you whether the body works. Put the
-body inside the quoted heredoc, so no file is needed:
+GitHub's own renderer will tell you whether the body works. Write the
+body to a file with the host's file-writing tool, never a shell heredoc
+(pasted text can contain the delimiter line), then render it:
 
-```bash
-gh api --method POST /markdown -f mode=gfm -f context=OWNER/REPO -f text="$(cat <<'EOF'
-BODY
-EOF
-)"
+```console
+$ gh api --method POST /markdown -f mode=gfm -f context=OWNER/REPO -F text=@PATH
 ```
 
-When the body is already in a file, `-f text="$(cat PATH)"` does the
-same. Needs `gh auth login`.
+Needs `gh auth login`.
 
 Literal `**` or ``` ``` ``` in that output means a `<details>` block
 is missing its blank line. A `<br>` inside a prose paragraph means the
@@ -177,7 +174,7 @@ body is hard-wrapped.
 
 Both `mode=gfm` and `context` are required — with the default mode,
 `context` is ignored and every reference renders inert, which reads as
-a false negative. The preview is also not faithful for label chips,
+a false negative. The preview is also not faithful for
 reference unfurling in lists, team mentions, or cross-repo references,
 and it renders with your permissions, so a private reference that
 links for you can be inert for everyone else.

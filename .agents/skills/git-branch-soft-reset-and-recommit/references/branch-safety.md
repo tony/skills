@@ -32,12 +32,14 @@ Each of these halts the run with a report, not a warning:
 - **An unborn HEAD** (`git rev-parse --verify HEAD` fails): there is
   nothing to rewrite or study.
 - **A repository rooted at `$HOME`, or at a directory containing it.**
-  Compare `git rev-parse --show-toplevel` with `$HOME`; a dotfile repo
+  Compare `git rev-parse --show-toplevel` with the physical home path
+  from `cd ~ && pwd -P`, never the string `$HOME` (a symlinked home
+  slips past it); a dotfile repo
   there makes every untracked file, credentials included, part of the
-  work.
+  work. The report says "credential files" and names none of them.
 
 Report but do not necessarily halt on: a stale submodule pointer (a later
-`git add -A` bakes it in); an active sparse checkout (file listings are
+blanket add would bake it in); an active sparse checkout (file listings are
 incomplete); and signed commits, which a rebase strips unless signing
 is re-enabled.
 
@@ -110,9 +112,7 @@ Report the backup branch name in the final output.
 
 ## Recovery
 
-Undo a rewrite of the checked-out branch from its backup. `<branch>@{1}`
-is only the previous reflog step, correct for a rewrite that moved the
-branch once:
+Undo a rewrite of the checked-out branch from its backup:
 
 ```console
 $ git reset --hard backup/<flat>-<ts>

@@ -141,6 +141,6 @@ page.
 
 - A repository rename redirects, until someone re-creates the old name
   under the old owner. Then it silently points somewhere else.
-- A branch rename redirects normal URLs but not raw file URLs.
+- A branch rename redirects normal URLs.
 - Unauthenticated GitHub API calls are capped at 60 per hour per IP.
   Route them through `gh`.

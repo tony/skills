@@ -41,8 +41,17 @@ S_net = (N * S_inst) - C_build - (C_maint * periods)
 N_breakeven = (C_build + C_maint * periods) / S_inst
 ```
 
-- `N` — instances in the period. `C_build` — one-time skill build
-  time. `C_maint` — maintenance time per period.
+- `N`: instances in the period. `C_build`: one-time skill build
+  time. `C_maint`: maintenance time per period.
+- `business.py breakeven <run>` computes `S_inst`, `S_net`, and
+  `N_breakeven` per scenario from these register ids:
+  `manual-minutes` (`t_manual`), `ai-minutes` (`t_ai`),
+  `verify-minutes` (`t_verify`), `rework-probability` (`p_fail`),
+  `rework-minutes` (`t_rework`), `instances-in-period` (`N`),
+  `build-hours` (`C_build`), `maintenance-hours-per-period`
+  (`C_maint`), and `periods`. Minutes and hours as named; never
+  compute these by hand. A figure whose inputs are not all registered
+  is absent and each absent id prints as `missing:`.
 - Report break-even explicitly: the instance count at which the
   skill pays back its build and upkeep is more honest and more
   useful than an annualized headline.
@@ -85,8 +94,8 @@ hand.
 Each register entry may carry `low` and `high` fields beside `value`.
 A measured input's `low` and `high` are its 95% interval ends.
 
-- Conservative: every input at `low`, except cost inputs (`t_verify`,
-  `p_fail`, `t_rework`, `C_build`, `C_maint`), which sit at `high`.
+- Conservative: every input at `low`, except cost inputs (`t_ai`,
+  `t_verify`, `p_fail`, `t_rework`, `C_build`, `C_maint`), which sit at `high`.
 - Base: every input at `value`.
 - Upside: every input at `high`, cost inputs at `low`.
 

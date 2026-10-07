@@ -80,8 +80,10 @@ unavailable, not worked around.
   is reliable. Paginate to exhaustion or record the cutoff
   explicitly.
 - Window query shape: page every pull request by cursor to
-  exhaustion, then filter to the window locally. The window filter
-  stays in `jq`, so the snapshot in `raw/` is the full response:
+  exhaustion and snapshot the full response; the window filter runs
+  locally. Write the snapshot to `<run>/raw/pr-pages.json` with the
+  run's absolute path, since the working directory resets between
+  Bash calls:
 
   ```bash
   gh api graphql --paginate \
@@ -94,20 +96,37 @@ unavailable, not worked around.
             pageInfo { hasNextPage endCursor }
             nodes {
               number createdAt mergedAt additions deletions
-              reviews(first: 1) { nodes { submittedAt } }
+              author { login }
+              reviews(first: 50) {
+                nodes { submittedAt author { login __typename } }
+              }
               reopened: timelineItems(itemTypes: [REOPENED_EVENT]) { filteredCount }
             }
           }
         }
-      }' > raw/pr-pages.json
-  jq -c '.data.repository.pullRequests.nodes[]
-    | select(.mergedAt != null
-        and .mergedAt >= "2026-04-01T00:00:00Z"
-        and .mergedAt < "2026-07-01T00:00:00Z")' raw/pr-pages.json
+      }' > /abs/path/to/run/raw/pr-pages.json
   ```
 
-  Record both commands verbatim in `sources.md`. A window end date
-  is inclusive in the manifest, so the `jq` bound is the next day.
+  Derive the per-PR table with `../scripts/business.py collect-prs`
+  (the script's absolute path, written literally). It takes the
+  pages on stdin or as files, keeps PRs merged between `--start` and
+  `--end` (inclusive UTC dates), and prints CSV with `cycle_hours`,
+  `first_review_hours`, `reopened`, `additions`, `deletions`.
+  First-review latency is the earliest review by someone other than
+  the author and not a bot; it is blank when there is none.
+
+  ```console
+  $ ../scripts/business.py collect-prs \
+      --start 2026-04-01 \
+      --end 2026-06-30 \
+      /abs/path/to/run/raw/pr-pages.json > /abs/path/to/run/raw/pr-metrics.csv
+  ```
+
+  Record both commands verbatim in `sources.md`, with the CSV as
+  the second entry's output. Figures from the CSV take `check:` lines
+  (`check: median raw/pr-metrics.csv cycle_hours = 31.5`); a
+  `stats --csv raw/pr-metrics.csv --column cycle_hours` gives the
+  interval.
 - GraphQL event-count trap: `timelineItems(...).totalCount` ignores
   the `itemTypes` filter and returns the count of all timeline
   items. Use `filteredCount` for reopened/closed event counts, and

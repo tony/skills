@@ -21,7 +21,7 @@ graders:
   - name: compresses-nothing
     type: tool_used
     tool: Bash
-    input_match: '\b(gzip|zstd|xz|bzip2|rm|mv|tar)\b'
+    input_match: '\b(rm|mv)\s+[^|;&]*(agent-home|session|\.claude)|\.jsonl\.(gz|zst|xz|bz2)\b|\b(gzip|zstd|xz|bzip2)\b(\s+-(?![0-9A-Za-z-]*c)[0-9A-Za-z-]+)*\s+[^\s|<>;&-][^\s|<>;&]*\.jsonl'
     min: 0
     max: 0
     arm: both

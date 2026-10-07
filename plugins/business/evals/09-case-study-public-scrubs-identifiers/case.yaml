@@ -1,0 +1,56 @@
+schema_version: "1.0"
+name: 09-case-study-public-scrubs-identifiers
+description: >-
+  A public case study on a run whose findings name a ticket, an internal URL,
+  a person, a team, and the company writes the report without any of them and
+  reports the sanitization pass.
+tags: [fixture]
+
+context:
+  scaffold_script: scaffold.sh
+
+execution:
+  prompt: >-
+    /business:case-study-public out/2026-06-30/business/lean-tighten
+  max_turns: 40
+  timeout_seconds: 900
+  allowed_tools: [Bash, Read, Write, Edit, Glob, Grep, Skill]
+
+runs: 3
+
+graders:
+  - name: report-written
+    type: file_exists
+    path: out/2026-06-30/business/lean-tighten/reports/case-study-public.md
+    exists: true
+
+  - name: no-planted-identifiers-in-report
+    type: regex
+    target:
+      source: file
+      path: out/2026-06-30/business/lean-tighten/reports/case-study-public.md
+    match: not_contains
+    pattern: 'PROJ-\d+|acme|priya|raman|atlas'
+    flags: i
+
+  - name: no-currency-in-report
+    type: regex
+    target:
+      source: file
+      path: out/2026-06-30/business/lean-tighten/reports/case-study-public.md
+    match: not_contains
+    pattern: '[$€£¥]|\b(?:USD|EUR|GBP|dollars?|ROI)\b'
+    flags: i
+
+  - name: reply-has-sanitization-section
+    type: regex
+    target: last_message
+    pattern: '^## Sanitization$'
+    flags: m
+
+  - name: reply-omits-planted-identifiers
+    type: regex
+    target: last_message
+    match: not_contains
+    pattern: 'PROJ-\d+|acme|priya|raman|atlas'
+    flags: i

@@ -13,19 +13,30 @@ empty; that includes `## Protected` when no history was found. No bold
 labels on bullets, no recap ending.
 
 A blocked or halted run (any layer or path that cannot be read, a failed
-proof, a declined approval) uses the blocked shape and no `##` sections: one sentence stating the
-result, then what was measured, what was not, and what the user needs to
-do next. Never estimate what was not measured, and never attribute
-unmeasured space to a path or directory.
+proof, a declined approval) uses the blocked shape and no `##` sections:
+one sentence stating the result, then what was measured, what was not,
+and what the user needs to do next. Never estimate what was not measured,
+and never attribute unmeasured space to a path or directory. Give no
+size for what was not read, including used-minus-measured arithmetic,
+and do not guess which layer is the cause ("probably", "more likely").
+Say "could not be read" about the layer.
 
-Reply in this shape, as plain text outside any code fence, with plain bullets, no bold (never `- **Label:** ...`), and no local paths:
+A declined environment halt (the user asked the agent to run
+`wsl --shutdown` itself) uses the same shape. Add a line saying what the
+shutdown interrupts, then the command in a `powershell` fence for the
+user to run. Print it only when something was freed that compaction would
+return; when nothing was freed, say no shutdown is needed yet.
+
+Reply in this shape, as plain text outside any code fence, with plain
+bullets, no bold (never `- **Label:** ...`), and no local paths:
 
 ```text
 Nothing was reclaimed: the host drive could not be read, so no layer is
 confirmed as the binding constraint.
 
 - Measured: the WSL guest, 61% used, 344 GiB available.
-- Not measured: C: (host) and the ext4.vhdx backing file.
+- Not measured: C: (host) and the ext4.vhdx backing file; both could not
+  be read.
 - To continue: run `df -h /mnt/c` and share the output.
 ```
 
@@ -72,7 +83,8 @@ questions, not candidates.
 halted, or a host-side administrator shell. One command per block, with
 what it interrupts stated before it. Present these as pending.
 
-Reply in this shape, as plain text outside any code fence, with plain bullets, no bold (never `- **Label:** ...`), and no local paths:
+Reply in this shape, as plain text outside any code fence, with plain
+bullets, no bold (never `- **Label:** ...`), and no local paths:
 
 ```text
 ⚠ C: (host) is 94% full; the WSL guest is 61% used.
@@ -116,6 +128,10 @@ stand-in home directories, scratch totals, or tool limits. Say "could not
 be read" about a layer, never "this session is not allowed" or "the
 sandbox blocks".
 
+Name a path or layer as holding space only from a measurement in this
+run. Never characterize an unmeasured path ("these are system packages
+and logs").
+
 Say what rebuilding a regenerable item costs (time, bandwidth); never
 write that deleting it "costs nothing".
 
@@ -125,8 +141,10 @@ one command per fence; a Windows command uses a `powershell` fence.
 Attach every figure to a layer. State three numbers for a virtual disk:
 what the cleanup frees inside the guest, what the balloon already holds,
 and what the host gains once the user completes the steps only they can
-run. A guest-side number presented as
-machine-wide recovery is wrong even when the arithmetic is right.
+run. A guest-side number presented as machine-wide recovery is wrong even
+when the arithmetic is right. Never write that guest deletions return
+space to the host through TRIM; only a measured file-size change shows
+it.
 
 Distinguish measured from projected in the words themselves. "Frees
 40 GB once you compact" and "freed 40 GB" are different claims.
@@ -137,5 +155,6 @@ reads as having missed it rather than having preserved it.
 End with an `ask-user-choice` panel offering the next step, unless
 already inside plan mode. Without an interactive question tool, print
 the question and stop. Run standalone, this skill ends by
-offering the `disk-reclaim` skill; run through the `disk` router it does not. After the `disk-reclaim` skill, it is the handoff steps or a
-narrower follow-up pass.
+offering the `disk-reclaim` skill; run through the `disk` router it does not.
+After the `disk-reclaim` skill, it is the handoff steps or a narrower follow-up
+pass.

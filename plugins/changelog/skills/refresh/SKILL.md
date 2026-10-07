@@ -57,7 +57,10 @@ Write entries and the commit message per `../../references/prose-rules.md`.
 
 Apply `branch-scope.md` and `entry-rules.md`: read conventions, categorize, and
 generate the entries the branch should have from its current net change
-(`git log` and `git diff` against `origin/<base>`).
+(`git log origin/<base>..HEAD` and `git diff origin/<base>...HEAD`, three-dot,
+so base commits the fetch pulled in stay out). For the PR number, run
+`gh pr view --json number --jq .number`; on failure write `(#???)`. Never copy
+a number from a dropped or stale entry.
 
 ## Phase 3: Diff documented vs. actual
 
@@ -89,7 +92,9 @@ in order:
 1. Present the summary line
    (`Branch: <name> | Base: <base> | Changelog commits: <count>`), the proposed
    old to new markdown for each touched entry, the statement that everything
-   else in the file is untouched, and the `Target` line from `entry-rules.md`.
+   else in the file is untouched, the voice check and `Target` line from
+   `entry-rules.md`, and `Notes` only for a fact the user must act on, such as
+   an out-of-reach correction left undone. Never recap checks that passed.
    Refer to commits by subject in prose, never by bare SHA. Close with the
    question, or when stopping, one line: nothing was edited; re-run with
    `--commit` to apply and commit.
@@ -105,15 +110,23 @@ in order:
    New:
    - Add `Cache.evict()` to drop a cached key (#212)
 
-   - Everything else in CHANGES.md is untouched.
-   - Target: CHANGES.md, Unreleased, Features. No version assigned, no release cut.
+   Everything else in CHANGES.md is untouched.
+
+   Voice check:
+   - Add `Cache.evict()` to drop a cached key: can I take a new affordance?
+
+   Target: CHANGES.md, Unreleased, Features, after the "### Features" heading. No version assigned, no release cut.
+
+   Notes:
+   - The "Cache" heading is shared with base entries; renaming it needs your say-so.
    ```
 
 2. On approval, apply with Edit, confined to the branch's footprint plus
    approved insertions in the unreleased block.
-3. Show the modified region. Then check the scope guard: the diff of
-   `<changelog-file>` against the Phase 1 footprint must show no changed
-   base-branch lines.
+3. Show the modified region. Then check the scope guard: run
+   `git diff origin/<base>...HEAD -- <changelog-file>` for the committed
+   footprint and `git diff -- <changelog-file>` for the edit; the edit must
+   touch no line outside the Phase 1 footprint and the approved insertions.
 4. With `--commit` in `$ARGUMENTS`, commit the edit as one new commit on top,
    per `commit-message.md`: no `Co-Authored-By`, no "Generated with" or other
    tool trailer, no emoji. Otherwise leave it uncommitted and show a

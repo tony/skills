@@ -23,7 +23,7 @@ early instrumentation, unknowns blocking `S_inst`, no counterfactual
 yet. Render an evidence report at any tier: the headline states what
 the data does and does not yet support, and where a committed number
 would go, the open unknowns and the data that would resolve them.
-Refusal is for gate failures, never for honest absence.
+Refusal is for gate failures, never for a thin dataset.
 
 ## Tier 0 — leadership
 
@@ -70,9 +70,9 @@ Hard sanitization contract:
 over the finished draft. `/business:pr-release` inherits the result
 by sourcing figures only from the public case study.
 
-1. Run the scanner over the draft, passing each organization,
-   repository, team, and person name from the run's `README.md` as
-   `--deny`:
+1. Run the scanner over the draft, passing each name on the
+   `Names:` line of the run's `README.md` as `--deny`, one flag per
+   name:
 
    ```console
    $ ../scripts/business.py scan \
@@ -86,7 +86,7 @@ by sourcing figures only from the public case study.
    money terms (exit 1 on any hit). `--allow-url <prefix>` keeps
    the pinned citation links BENCHMARKED figures need, one prefix
    per cited host; `--allow <text>` skips a false positive such as
-   `UTF-8` or `GPT-4`. Both repeat. Remove or reword every other
+   `UTF-8` or `GPT-4`. `--deny` and both allow flags repeat. Remove or reword every other
    hit. Then read the draft once for names the scanner cannot know
    and for the re-identification rule above.
 2. Confirm every figure is an aggregate or a range, rounded to
@@ -104,8 +104,8 @@ command output: pass per item, with what was removed or reworded.
 `/business:pr-release` verifies the public case study instead of
 trusting it. Before deriving the announcement, run checklist items 1,
 2, 4, and 5 over it; triangulation was the case study's job. The only
-thing it reads from the run is the names for `--deny`, taken from
-`README.md`; no figure comes from there.
+thing it reads from the run is the `Names:` line of `README.md` for
+`--deny`; no figure comes from there.
 
 Any failure stops the run: regenerate via `/business:case-study-public`,
 never patch around it in the release. Report a passing sweep in

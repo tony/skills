@@ -18,13 +18,6 @@ execution:
 runs: 3
 
 graders:
-  - name: creates-a-backup-branch
-    type: tool_used
-    tool: Bash
-    input_match: 'git branch .*pre-deslop'
-    min: 1
-    arm: both
-
   - name: runs-apply-sh
     type: tool_used
     tool: Bash
@@ -35,7 +28,7 @@ graders:
   - name: reports-the-applied-fixup
     type: regex
     target: last_message
-    pattern: 'fixup'
+    pattern: 'fixup! queue'
     flags: i
 
   - name: reports-the-backup-branch

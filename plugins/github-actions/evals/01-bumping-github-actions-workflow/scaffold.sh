@@ -37,6 +37,9 @@ case "$args" in
   "api repos/actions/checkout/releases/latest"*) echo v4.2.2 ;;
   "api repos/actions/setup-node/releases/latest"*) echo v4.4.0 ;;
   "api repos/astral-sh/setup-uv/releases/latest"*) echo v6.1.0 ;;
+  "api repos/actions/checkout/releases --paginate"*) printf 'v4.2.2\nv4.0.0\nv3.0.0\n' ;;
+  "api repos/actions/setup-node/releases --paginate"*) printf 'v4.0.0\n' ;;
+  "api repos/astral-sh/setup-uv/releases --paginate"*) printf 'v6.0.0\nv5.0.0\n' ;;
   "api repos/"*"/git/ref/tags/v4"*|"api repos/"*"/git/ref/tags/v6"*) echo '{}' ;;
   "api repos/"*"/releases/tags/"*tag_name*) t=${args#*releases/tags/}; echo "${t%% *}" ;;
   "api repos/"*"/releases/tags/"*) echo "Release notes: raises the minimum runtime." ;;

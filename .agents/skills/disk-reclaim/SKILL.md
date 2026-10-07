@@ -10,6 +10,8 @@ metadata:
   source: "plugins/disk/skills/reclaim/SKILL.md"
 ---
 
+# Reclaim
+
 Reclaim disk space on this machine without losing anything the user
 cannot get back.
 

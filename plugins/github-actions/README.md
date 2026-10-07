@@ -60,6 +60,6 @@ Pinning rules, the fork rule, and the Dependabot close-out protocol live in
 
 ## Prerequisites
 
-- **git** — Reads workflow content from the default branch.
-- **gh** — Tag verification, release lookup, CI watching, and closing
+- git: reads workflow content from the default branch.
+- gh: tag verification, release lookup, CI watching, and closing
   dependabot PRs.

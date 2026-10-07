@@ -58,8 +58,8 @@ checks it could not run, and does not file.
 
 ### `rendered-markdown` (skill)
 
-Provides rendering guidance for human-readable markdown. Edit and Write
-are disallowed while it runs.
+Provides rendering guidance for human-readable markdown. Edit is
+disallowed while it runs; Write is used only for a scratch preview file.
 - Prevents hard-wrapping in comment bodies.
 - Enforces backticks for symbols and one shell command per fence.
 - Requires long output in `<details>` and pinned source links.
@@ -78,13 +78,15 @@ globally reformatting.
 ## Scope
 
 Use `gh` for filing issues or writing GitHub-rendered markdown (markup and
-links). It does not write PR descriptions or tighten prose; the rendering
-rules still apply to a PR body written elsewhere.
+links). Neither skill drafts a PR description or tightens prose; the
+rendering rules, including net-change framing for a pull request, apply
+to one written elsewhere.
 
 ## Prerequisites
 
 - `gh`, authenticated with `gh auth login`. Used for repository checks,
-  previews, and creating issues.
+  previews, and creating issues. Use a current release (`gh --version`);
+  upgrade when `gh` rejects a flag such as `--match` or `--exclude-drafts`.
 - `git`, for resolving tags and refs when pinning links.
 - `curl` and `jq`, for package-registry lookups and pre-publish link
   checks.

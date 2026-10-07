@@ -67,8 +67,8 @@ says `origin/<base>`, and say so. When the current branch is the base, report
 
 Scan the repo root for `CHANGES`, `CHANGES.md`, `CHANGELOG`, `CHANGELOG.md`,
 `HISTORY`, `HISTORY.md`, `NEWS`, `NEWS.md`. With several, take the one with the
-most content. With none, ask the user which filename to create; without a question tool,
-propose `CHANGES.md` as a guess and create nothing before approval.
+most content. With none, ask the user which filename to create, then create it with Bash; without a
+question tool, propose `CHANGES.md` as a guess and create nothing before approval.
 
 ## Whole-branch perspective
 

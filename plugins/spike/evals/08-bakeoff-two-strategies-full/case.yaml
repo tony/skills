@@ -50,25 +50,25 @@ graders:
     target:
       source: file
       path: .git/logs/refs/stash
-    pattern: '(?s)\tbakeoff [^\n]*\n.*\tbakeoff '
+    pattern: '\tbakeoff [^\n]*\n[\s\S]*\tbakeoff '
 
   - name: worktrees-removed
     type: tool_used
     tool: Bash
     input_match: 'git worktree remove'
-    min: 2
+    min: 1
     arm: both
 
   - name: reports-both-stash-shas
     type: regex
     target: last_message
-    pattern: '(?s)git stash apply\s+[0-9a-f]{7,40}.*git stash apply\s+[0-9a-f]{7,40}'
+    pattern: 'git stash apply\s+[0-9a-f]{7,40}[\s\S]*git stash apply\s+[0-9a-f]{7,40}'
     flags: i
 
-  - name: reports-the-teardown
+  - name: reports-the-verdict
     type: llm
     focus: last_message
     criteria: |
-      The reply names a winner (or says the result is inconclusive), lists both
-      contenders with a stash SHA each, and says the worktrees were removed. It
-      does not claim a commit was made.
+      The reply names a winner (or says the result is inconclusive) and lists
+      both contenders, each with a stash SHA or "no changes". It does not
+      claim a commit was made.

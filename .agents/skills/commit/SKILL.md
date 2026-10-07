@@ -42,21 +42,24 @@ may be staged or committed. Without that, a match is never committed.
 
 Run these and read the output:
 
-- `git branch --show-current`: the current branch.
+- `git branch --show-current`: the current branch. Empty output means a
+  detached HEAD.
 - `git status --short`: the working tree.
 - `git diff --cached --stat` and `git diff --stat`: staged and unstaged changes.
 - `git diff HEAD --shortstat`: size of the tracked diff. Read the full
   `git diff HEAD` when it is a few thousand lines or fewer; otherwise read it
-  per file.
+  per file. Read a sensitive path with `git diff HEAD --stat -- <path>` only,
+  never its content.
 - `git ls-files --others --exclude-standard`: untracked files, which the diff
   omits. Read each new file that is not sensitive.
 - `git log --oneline -10`: recent commits, for style matching.
 - `git symbolic-ref --short refs/remotes/origin/HEAD`: the remote's default
-  branch. A failure means there is no remote; compare against `main` and
-  `master` only.
+  branch. A failure means the default branch is unknown; compare against
+  `main` and `master`.
 
 A failure of the first command means this is not a git repository: report it
-and stop. `git diff HEAD` fails in a repository with no commits; use
+and stop. On a detached HEAD, commit nothing: say so and tell the user to
+switch to a branch. `git diff HEAD` fails in a repository with no commits; use
 `git diff --cached` there. No tracked changes and no untracked files: report
 "Nothing to commit" and stop.
 On the default branch, commit anyway and say so in the reply; the commit
@@ -78,11 +81,15 @@ branches, commit nothing and tell the user to switch branches.
 - **Files already staged** (`git diff --cached` is non-empty): respect the
   user's staging and commit only what is staged. If a staged path matches the
   sensitive list (and the user did not override it), commit nothing: name the
-  path and tell the user to unstage it (`git restore --staged <path>`). Otherwise name the unstaged and untracked
-  files left out.
+  path and tell the user to unstage it (`git restore --staged <path>`).
+  Otherwise name the unstaged and untracked files left out. Before
+  committing, note each staged path that also has unstaged changes (listed by
+  both `git diff --cached --name-only` and `git diff --name-only`): it is
+  partially staged.
 - **Nothing staged**: stage changed files, never a sensitive one. Name each
-  skipped file in the reply and say it matches the sensitive-file list. Use `git add <specific-files>`, never
-  `git add -A` or `git add .`. Tell the user which files you are staging.
+  skipped file in the reply and say it matches the sensitive-file list. Use
+  `git add <specific-files>`, never `git add -A` or `git add .`. Tell the
+  user which files you are staging.
 
 ### 4. Draft Commit Message
 
@@ -163,17 +170,23 @@ If a pre-commit hook fails:
 - Read the hook output to understand the failure.
 - Fix the issue (formatting, lint, etc.) in the staged files only; leave
   unstaged files as they are.
-- Re-stage only the files this commit staged.
+- Re-stage only the paths the hook or your fix changed, and never a path
+  noted as partially staged: `git add <path>` would stage its unstaged hunks
+  too. If such a path needs re-staging, stop, name it, and tell the user to
+  re-stage it with `git add -p`.
 - Create a new commit; the failed commit does not exist, so there is nothing
   to amend. Never delete, disable, or reconfigure the hook.
 - After two failed attempts, stop and report the hook output.
+- If signing fails (`commit.gpgsign`), stop and report; never pass
+  `--no-gpg-sign`.
 
 ### 7. Confirm Result
 
 - Run `git log --oneline -1` to show the created commit
 - Run `git status` to show the remaining working tree state
 
-Reply in this shape, as plain text outside any code fence, with plain bullets, no bold (never `- **Staged:** ...`), and no local paths:
+Reply in this shape, as plain text outside any code fence, with plain
+bullets, no bold (never `- **Label:** ...`), and no local paths:
 
 ```text
 42881ff auth(fix[token]) Reject expired tokens (local, not pushed)
@@ -193,7 +206,9 @@ default branch it reads `(local on <branch>, not pushed)` with the branch's
 name. The commit body follows
 verbatim when there is one. Bullets cover only files staged, files left out,
 the working tree state, and a hook rejection that preceded the commit (say
-what it rejected and what you changed); add no other advice or remarks.
+what it rejected and what you changed). Skip the working-tree bullet when the
+left-out bullets already name every remaining file, unless it adds a fact.
+Add no other advice or remarks.
 
 A stopped run is one result sentence, then what the user needs to do.
 

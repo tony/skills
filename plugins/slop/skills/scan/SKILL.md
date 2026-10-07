@@ -342,8 +342,10 @@ $ ${TEST_CMD}
   `git add -- "<file>"`. A project-wide formatter may also rewrite other
   files: after the gates, run `git status --porcelain`, and restore
   every path other than `<file>` with
-  `git restore --source=HEAD --staged --worktree -- "<path>"` so the
-  next finding starts from a clean tree. A path in `DIRTY_AT_START` is
+  `git restore --source=HEAD --staged --worktree -- "<path>"`, or, for
+  an untracked (`??`) path the formatter created,
+  `git clean -fd -- "<path>"`, so the next finding starts from a clean
+  tree. A path in `DIRTY_AT_START` is
   never restored; treat a change to it as a gate failure.
 - A linter with `--fix` applies fixes; re-stage. An error it cannot fix
   is a gate failure.
@@ -361,7 +363,8 @@ $ git restore --source=HEAD --staged --worktree -- "<file>"
 ```
 
 Then clean up after a project-wide formatter as in 10c: run
-`git status --porcelain` and restore every other path the gates changed.
+`git status --porcelain` and restore or clean every other path the
+gates changed, as above.
 
 Then apply `--on-fail`:
 
@@ -425,6 +428,11 @@ With `--run-tests`:
 $ ${TEST_CMD}
 ```
 
+Then run `git status --porcelain` again. A formatter that rewrote files
+leaves a dirty tree: list those paths under `Quality gates (final)`
+as `Gate left uncommitted changes: <paths>`, and never commit or
+restore them.
+
 The hero line is `Slop scan summary`; sections follow in the order
 shown: summary block, `Quality gates (final)`, `Per-finding commits`,
 `Gate-failed findings`, then the `Patch series:` line when nothing was
@@ -454,12 +462,15 @@ Quality gates (final)
 =====================
 format=pass | lint=pass | typecheck=pass | tests=skipped
 
-Per-finding commits:
-  7c1e9d4 chore(cleanup) Remove vague TODO from src/utils.py
-  a02b5f1 docs(cleanup) Replace line number in CONTRIBUTING.md
+Per-finding commits
+===================
+- 7c1e9d4 chore(cleanup) Remove vague TODO from src/utils.py
+- a02b5f1 docs(cleanup) Replace line number in CONTRIBUTING.md
+- e4410bc docs(cleanup) Drop attribution footer from README.md
 
-Gate-failed findings:
-  brittle.line-numbers in docs/guide.md:12, lint: line too long
+Gate-failed findings
+====================
+- brittle.line-numbers in docs/guide.md:12, lint: line too long
 ```
 
 A run that committed nothing ends with `Patch series: <run-dir>`, the

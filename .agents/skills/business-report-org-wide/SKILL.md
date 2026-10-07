@@ -35,23 +35,29 @@ Paths under `../../scripts/` resolve from this skill's directory: print the abso
 
 Per `interim-format.md` § Rendering a report.
 
-### 2. Secure the multipliers
+### 2. Secure the inputs
 
-Read adoption (`adoption-rate`) and realization (`realization-rate`)
-from `assumptions.yaml`. If either is absent, ask the user via `ask-user-choice`, explaining what
-each means per `measurement.md`, and append the answer to the register
-with rationale and owner (ESTIMATED, or MEASURED when an instrument
-export gives it). Never proceed with a default of 1.0. Without a
-question tool, or without an answer, halt with `⚠ Refused: <factor>
-missing from the assumptions register` and tell the user to add it
-(the `business-research` skill or editing `assumptions.yaml`).
+Run `references/business.py project <run>` with its absolute path.
+It prints every register id the projection needs that is missing or
+out of range (all six factors in the chain below, not only adoption
+and realization) and exits 1. Exit 0 means every input is present;
+go to step 3.
+
+For each id it names, ask the user once via `ask-user-choice`, in one
+batch, explaining each factor per `measurement.md`. Append every
+answer to `assumptions.yaml` with rationale and owner (ESTIMATED, or
+MEASURED when an instrument export gives it), optional `low` and
+`high` fields bounding the scenarios, then run `project` again. Never
+proceed with a default of 1.0 for adoption or realization. Without a
+question tool, or without an answer, halt per `interim-format.md` §
+Stopped run with `⚠ Refused: <ids> missing from the assumptions
+register`, naming every missing id in plain words, then say to add
+them (the `business-research` skill or editing `assumptions.yaml`).
 
 ### 3. Render the report
 
-Run `references/business.py project <run>` and take every figure
-in sections 1 to 3 from its output; never do that arithmetic by hand.
-It exits 1 and names each missing or out-of-range register id, which
-is a stopped run. Write `<run>/reports/org-wide.md` with this fixed
+Take every figure in sections 1 to 3 from the `project` output of
+step 2; never do that arithmetic by hand. Write `<run>/reports/org-wide.md` with this fixed
 structure:
 
 1. Bottom-up build: the full chain

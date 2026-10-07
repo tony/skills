@@ -41,7 +41,7 @@ $ git log \
     --no-merges \
     -n 200 \
     --format='%B' \
-    "$(git merge-base HEAD <base-ref>)"
+    <base-sha>
 ```
 
 Sample 100 to 200 non-merge commits; a sample of twenty can invert a

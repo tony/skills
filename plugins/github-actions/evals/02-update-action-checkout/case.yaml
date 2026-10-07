@@ -19,6 +19,14 @@ execution:
 runs: 3
 
 graders:
+  - name: writes-nothing
+    type: tool_used
+    tool: Bash
+    input_match: 'git (-C \S+ )?(commit|add|push|checkout -b|switch -c)|sed -i|worktree add'
+    min: 0
+    max: 0
+    arm: both
+
   - name: tag-not-assumed
     type: llm
     focus: last_message

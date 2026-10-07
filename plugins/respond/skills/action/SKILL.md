@@ -121,8 +121,9 @@ the squash was skipped. This rewrites history, so:
    against a heading as a whole word (`Respect` is not `spec`), and take
    only a fenced block that holds a command. Show every discovered
    command in the plan.
-3. Run `git rev-parse --show-toplevel`. When it is `$HOME` or contains
-   it, halt before anything else, with no stash offered: the commands
+3. Run `git rev-parse --show-toplevel`. When it is the home directory
+   (compare with `cd ~ && pwd -P`, since home may be a symlink) or
+   contains it, halt before anything else, with no stash offered: the commands
    below stage and stash files, and a repository rooted at home would
    sweep in credentials. Tell the user to run again from the project's
    own checkout.

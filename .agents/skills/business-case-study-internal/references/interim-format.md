@@ -56,7 +56,11 @@ window live in `README.md`.
 Scope (what is measured and why), the pinned window (explicit start
 and end dates, plus any excluded novelty-ramp window), the
 instrument inventory with each instrument marked available or
-unavailable, and environment versions for the tools used to collect.
+unavailable, environment versions for the tools used to collect, and
+a `Names:` line listing every organization, repository, team, and
+person name the run touches, comma-separated. Research fills it from
+the repositories, teams, and logins it collected; the tier-3 scan
+reads it as the `--deny` list.
 
 ### sources.md
 
@@ -91,7 +95,8 @@ A list of entries:
 
 `source_type` is one of MEASURED | DERIVED | BENCHMARKED |
 ESTIMATED; `confidence` is high | medium | low. Every field above is
-required on every entry; `references/business.py assumptions <file>`
+required on every entry, written as flat `key: value` lines with no
+trailing comments, quotes, or nesting; `references/business.py assumptions <file>`
 checks that and the two enumerations. A MEASURED entry's `source_ref`
 names a `sources.md` entry; an assumption with no instrument behind
 it is ESTIMATED.
@@ -118,7 +123,9 @@ check: median raw/task-timings.csv minutes_manual-minutes_ai = 18
 ```
 
 The statistic is `median`, `mean`, `min`, `max`, or `n`; the column is
-one header or `a-b` for a per-row difference.
+one header or `a-b` for a per-row difference. Rows with a blank cell
+in a needed column drop out. `business.py stats --csv <file> --column
+<column>` takes the same column syntax for medians and intervals.
 
 ### findings.md
 
@@ -142,9 +149,10 @@ first, ordered by the date in the path:
 $ references/business.py runs
 ```
 
-It searches `~/Documents` and, on WSL, the Windows users' Documents
-folders, skipping any it cannot read; `--root <dir>` searches that
-directory instead. Confirm the chosen run with the
+It searches only `~/Documents` and, on WSL, the Windows users'
+Documents folders, skipping any it cannot read; `--root <dir>`
+searches that directory instead. It never searches the current
+directory. Confirm the chosen run with the
 user before rendering anything from it. Non-interactive:
 proceed with the newest run and say which one in the output's Run
 section instead of asking.
@@ -164,7 +172,9 @@ query, timestamp, tool version, and an existing output file; that
 values, ISO dates, and resolving MEASURED `source_ref`s; that every
 MEASURED figure cites an existing `sources.md` entry; that figures
 with units carry a tag; that every `check:` line recomputes from
-`raw/`; and that each unknown names the data that would resolve it.
+`raw/`; that no currency symbol or code appears in `measurements/` or
+`findings.md`; and that each bullet under a heading containing
+"unknown" names the data that would resolve it.
 
 The script cannot judge whether a tag is right or a figure is
 missing a unit it does not recognize. Read `measurements/` and
@@ -203,12 +213,14 @@ End with an `ask-user-choice` panel offering the skill's next steps.
 Skip it in plan mode. Where no question tool exists (Codex, headless
 runs), print the options as a plain list after `## Report` and stop.
 
-Each bullet says something new: the hero states the claim, the
+One fact per bullet, one sentence per bullet. Each bullet says something new: the hero states the claim, the
 headline bullet states what the data supports and where a committed
 figure would go, and the limitation bullet names a limitation the
 headline lacks. A request to convert to money is declined in one
 sentence as the first bullet of `## Report`, never ahead of the hero,
-and says "money" or "currency", never a unit or the word "dollars".
+and says "money" or "currency", never a unit or the word "dollars". The
+same sentence names the handoff: hours with their interval, the pinned
+window, and the population, for finance to convert.
 Write adoption and realization in words, never as `(a)` and `(r)`.
 
 Reply in this shape, as plain text outside any code fence, with plain bullets, no bold (never `- **Label:** ...`), and no local paths:
@@ -244,8 +256,8 @@ A run that halts (run not found, gate failed, missing input, failed
 sweep) is one hero line `⚠ Refused: <reason in one sentence>`, then
 one short paragraph or list of what the user must do next, two
 sentences at most. No `Run`, `Gate`, or `Report` sections, no panel,
-no list of checks performed, no sentence that repeats the hero or the
-run name, and no negation narration ("I did not use a default") or
+no list of checks performed, no sentence that repeats the hero, the
+run name, or a question already asked, and no negation narration ("I did not use a default") or
 sandbox fact ("I cannot ask you here"). State only what a command
 printed: never claim a check failed that did not run, never report an
 exit status the script does not define (`runs` prints nothing and
@@ -259,7 +271,7 @@ Add the missing snapshot or remove the entry, then render again.
 ```
 
 ```text
-⚠ Refused: no public case study exists for this run.
+⚠ Refused: no public case study for this run.
 
 Run business-case-study-public on it, then run business-pr-release again.
 ```

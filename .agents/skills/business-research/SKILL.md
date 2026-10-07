@@ -24,8 +24,8 @@ Read these first; they bind every step:
 - `references/provenance.md`: the four tags and the
   anti-inflation rules.
 - `references/instruments.md`: per-instrument probes,
-  collection discipline, and the targets to collect (prose, not
-  ready-made queries).
+  collection discipline, the pull-request query, and the targets to
+  collect.
 
 Load `references/measurement.md` only for the counterfactual
 ladder and the statistics discipline. Intervals come from
@@ -66,13 +66,18 @@ Plan: review-skill, window 2026-04-01..2026-06-30. Nothing is written yet.
 
 ## Instruments
 
-- git and gh to probe; no tracker found yet.
+- git and gh to probe; trackers and timing logs only from exports you provide.
 
 ## Output
 
 - 2026-07-14/business/review-skill under ~/Documents, the default root.
 - Questions: confirm the root and the repo paths.
 ```
+
+The `- Questions:` bullet is the last line: no closing paragraph that
+restates it. One fact per bullet. Report what you will probe, not
+what the current directory happens to hold or what you have not yet
+probed.
 
 ### 2. Instrument discovery
 
@@ -88,15 +93,18 @@ rationale and owner.
 For each available instrument, run pinned-window queries per
 `instruments.md` and snapshot raw output into `raw/` before deriving
 anything. Collect the targets listed there; record the rest as
-unknown.
+unknown. Derive pull-request tables with `business.py collect-prs`
+rather than rewriting the query or the filter.
 
 ### 4. Write the package
 
 Emit the full interim format from `interim-format.md`: run README,
 source manifest with verbatim queries, assumptions register, raw
 snapshots, per-topic measurements, and `findings.md`. Every figure
-tagged; every unknown listed with what data would resolve it. Compute
-medians, quartiles, and intervals with `business.py stats`. Give each
+tagged; every unknown listed with what data would resolve it. List every organization, repository, team, and person name the run
+touched on the README `Names:` line; the tier-3 scan depends on it.
+Compute medians, quartiles, and intervals with `business.py stats`
+(`--csv <file> --column <a-b>` for a CSV column). Give each
 figure computed from a `raw/` CSV a `check:` line. Run
 `business.py gate <run>` and fix every problem before reporting.
 Write prose per `references/prose-rules.md`.
@@ -140,7 +148,15 @@ Reply in this shape, as plain text outside any code fence, with plain bullets, n
 ## Package
 
 - Run at 2026-07-14/business/review-skill, 3 assumptions, 1 open unknown.
+
+Next, you can:
+- Generate a report (leadership, org-wide, internal or public case study).
+- Collect more data.
+- Stop here.
 ```
+
+The last list is the non-interactive form; with a question tool it is
+the panel instead.
 
 
 ## Portability notes

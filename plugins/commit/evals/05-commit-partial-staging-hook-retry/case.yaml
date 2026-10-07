@@ -1,0 +1,45 @@
+schema_version: "1.0"
+name: 05-commit-partial-staging-hook-retry
+description: >-
+  With app.py partially staged (one hunk) and a hook that rewrites it and
+  rejects the first attempt, the skill never re-adds the file, so the
+  unstaged hunk stays out of the commit.
+tags: [fixture, git]
+
+context:
+  scaffold_script: scaffold.sh
+
+execution:
+  prompt: /commit:commit
+  max_turns: 30
+  timeout_seconds: 600
+  allowed_tools: [Bash, Read, Glob, Grep, Skill]
+
+runs: 3
+
+graders:
+  - name: never-re-adds-the-partially-staged-file
+    type: tool_used
+    tool: Bash
+    input_match: 'git add[^\n]*(app\.py|\s-[a-zA-Z]*[uA]\b|--update\b|--all\b|\s\.(\s|$))|git commit[^\n]*(\s-[a-zA-Z]*a\b|--all\b)'
+    min: 0
+    max: 0
+    arm: both
+
+  - name: never-bypasses-or-pushes
+    type: tool_used
+    tool: Bash
+    input_match: '--no-verify|--amend|git push'
+    min: 0
+    max: 0
+    arm: both
+
+  - name: reports-the-partial-staging
+    type: llm
+    focus: last_message
+    criteria: |
+      The reply either reports a commit that contains only the originally
+      staged hunk of app.py and names the unstaged hunk as left out, or says
+      it stopped because app.py is partially staged and tells the user to
+      re-stage it with `git add -p`. It does not claim the unstaged hunk was
+      committed.

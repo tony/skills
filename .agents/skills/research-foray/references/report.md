@@ -73,10 +73,11 @@ Write for a reader who was not there and will judge the report by whether they c
 
 ## Output
 
-Open with a one-line hero (`✓ <report path>: <n> findings, <n> sources, check ok` (`check ok, offline` when `check` ran with `--offline`) or `⚠ Not shippable: <failing checks>`), then exactly these sections:
+Open with a one-line hero (`✓ <namespace>/<topic> <date>: <n> findings, <n> sources, check ok` (`check ok, offline` when `check` ran with `--offline`) or `⚠ Not shippable: <failing checks>`), then exactly these sections:
 
 1. `## Answer`: the report's title and summary, verbatim.
-2. `## Checks`: the `check` result from this session, each gate with its counts.
+2. `## Checks`: the `check` result from this session, each gate with its counts, and nothing else.
+3. `## Open`: open questions and unresolved conflicts, one line each; omit when none.
 
 Write per `prose-rules.md`: plain bullets, no bold labels, no sentence narrating your own edits ("I added…"), no closing recap.
 

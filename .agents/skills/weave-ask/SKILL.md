@@ -42,7 +42,7 @@ Build the context packet per `ensemble-core.md` (Context packet). Lead with conv
 
 ## Phase 2: Cascade gate (only with `--cascade`)
 
-Read `references/ensemble-techniques.md` (Technique 1) and apply it: run the Maintainer lane from Phase 3 alone, self-verify with the Verify Claims step, and evaluate the five escalation triggers. On **early-exit**, skip the other lanes, blind judging, and scoring; run the Critic and deslop steps, then present with `CASCADE_STATE` = `early-exit`. On **escalate** (or user escalation from the panel), continue to Phase 3 and reuse the cheap-pass output as the Maintainer lane.
+Read `references/ensemble-techniques.md` (Technique 1) and apply it: run the Maintainer lane from Phase 3 alone, self-verify with the Verify Claims step, and evaluate the five escalation triggers. On **early-exit**, skip the other lanes, blind judging, and scoring; run the Critic, then go to Phase 6 with `CASCADE_STATE` = `early-exit`. On **escalate** (or user escalation from the panel), continue to Phase 3 and reuse the cheap-pass output as the Maintainer lane.
 
 ---
 
@@ -66,11 +66,7 @@ Apply `ensemble-core.md` (Blind judging, Synthesis protocol, Consensus map) to t
 
 Write the synthesis to `<session_dir>/pass-NNNN/synthesis.md` per `references/prose-rules.md`.
 
-Run the deslop pass on the final pass only (pass 1 when `passes` is 1, else the last pass of Phase 5), unless `--no-deslop` was set. Read `references/deslop-pass.md` and apply it with `ARTIFACT_PATH` set to that file, `SESSION_DIR`, `BASELINE_SHA` set to `baseline_sha` from `init`, and `DESLOP_MODE` from the flags (`quiet`, `verbose`, or `default`). Re-read `synthesis.md` for the desloped text and render from it.
-
-### Present the answer
-
-Read `references/present-results.md` and apply it with `RESULT_KIND` = `ask`, `ARTIFACT_PATH` = `<session_dir>/pass-NNNN/synthesis.md`, `SESSION_DIR`, `PASS_COUNT` = `passes`, `IN_PLAN_MODE` = false, `LABEL_MAP_PATH` = `<session_dir>/pass-NNNN/label-map.json` (null when only one worker answered or the cascade exited early), `CASCADE_STATE` = `early-exit`, `escalated`, or null without `--cascade`. Read `WORKER_BACKEND`, `PARTICIPANTS`, `EXECUTORS`, and `MODELS` from `session.json`.
+Do not render anything yet: results are presented once, in Phase 6, after the last pass.
 
 ---
 
@@ -82,9 +78,16 @@ Skip when `passes` is 1. Read `references/ensemble-techniques.md` (Technique 2).
 2. Write the residual prompt to `pass-<N>/prompt.md` (ledger entries only), then dispatch as in Phase 3 with pass `<N>`.
 3. Merge resolutions back into the prior synthesis, re-score only affected dimensions, and write `pass-<N>/synthesis.md`.
 4. Stop early when no score moved by more than 1 and no new conflict appeared.
-5. On the final pass, run the deslop step from Phase 4 on `pass-<N>/synthesis.md` before presenting.
 
-Present the final-pass synthesis with a **Refinement Notes** section on what was deepened, corrected, or confirmed.
+The final pass's `synthesis.md` (pass 1 when `passes` is 1) feeds Phase 6, with a **Refinement Notes** section on what was deepened, corrected, or confirmed.
+
+---
+
+## Phase 6: Polish and present
+
+1. Unless `--no-deslop` was set, read `references/deslop-pass.md` and apply it once, with `ARTIFACT_PATH` set to the final pass's `synthesis.md`, `SESSION_DIR`, `BASELINE_SHA` set to `baseline_sha` from `init`, and `DESLOP_MODE` from the flags (`quiet`, `verbose`, or `default`). Re-read `synthesis.md` for the desloped text.
+
+2. Read `references/present-results.md` and apply it with `RESULT_KIND` = `ask`, `ARTIFACT_PATH` = the final `synthesis.md`, `SESSION_DIR`, `PASS_COUNT` = `passes`, `IN_PLAN_MODE` = false, `LABEL_MAP_PATH` = `<session_dir>/pass-NNNN/label-map.json` (null when only one worker answered or the cascade exited early), `CASCADE_STATE` = `early-exit`, `escalated`, or null without `--cascade`. Read `WORKER_BACKEND`, `PARTICIPANTS`, `EXECUTORS`, and `MODELS` from `session.json`.
 
 ---
 

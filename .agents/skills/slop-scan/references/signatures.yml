@@ -1,4 +1,4 @@
-# Slop registry read by the `slop-deslop` skill and this skill.
+# Slop registry read by the deslop steps of the slop and weave plugins.
 #
 # Project overrides live in `.claude/slop.local.yml` at the repo root.
 # The override file may declare top-level `replace:` / `append:` /
@@ -19,8 +19,8 @@
 #   skip-paths — optional list of case-insensitive regexes; a match on the
 #                file path suppresses the rule.
 #
-# A pattern that starts with `^\+` judges added lines only. `scripts/slop_detect.py`
-# enforces that and `skip-paths`; the main agent checks the rest of `fp-guard`.
+# A pattern that starts with `^\+` judges added lines only. The plugin's detect
+# step enforces that and `skip-paths`; the agent checks the rest of `fp-guard`.
 
 version: 1
 
@@ -76,7 +76,7 @@ signatures:
     action: rewrite
     kind: regex
     target: [diff, message-body]
-    pattern: '(?i)\b(see|at|on)\s+(line\s+\d{2,4}|L\d{3,4})\b|\bL\d{2,4}-L?\d{2,4}\b'
+    pattern: '(?i)\b(see|at|on)\s+(lines?\s+\d{2,4}|L\d{3,4})\b|\bL\d{2,4}-L?\d{2,4}\b'
     rationale: Line-number references rot on every refactor.
     fp-guard: 'Skip inside fenced quoted-output blocks (compiler errors, stack traces).'
 
@@ -107,7 +107,7 @@ signatures:
     kind: semantic
     target: [message-body]
     rationale: The `why:` line paraphrases the subject without adding motivation; body should explain the reason for the change, not repeat the change.
-    fp-guard: 'Skip if subject and body have LCS similarity below 0.85.'
+    fp-guard: 'Skip when the body states a reason or constraint the subject does not.'
 
   - id: verbose.what-bullets-mirror-diff
     tier: B
@@ -155,7 +155,7 @@ signatures:
     target: [message-body]
     pattern: '^Co-Authored-By:\s*\S+.*<.*(claude|gpt|codex|copilot|cursor|gemini)\b.*>'
     rationale: AI co-author trailer; user-confirmed because legitimate Co-Authored-By usage exists for human pair-programming.
-    fp-guard: 'Demote to advisory if any commit in the last 50 trunk commits used `Co-Authored-By:` legitimately.'
+    fp-guard: 'Demote to advisory when trunk history shows human `Co-Authored-By:` trailers.'
 
   - id: hardcoded.test-runner
     tier: B
@@ -188,7 +188,7 @@ signatures:
     target: [diff, message-subject, message-body]
     pattern: '(?i)\b(comprehensive solution|robust implementation|best practices|production[- ]ready|enterprise[- ]grade|seamlessly integrat\w+|leverag\w+ the power)\b'
     rationale: Flagship LLM phrasing — almost never appears in human-written code or commit messages, but legitimate occasionally.
-    fp-guard: 'Subject to tone calibration: phrases at >= 3 occurrences in last 50 trunk commits are demoted to summary-only.'
+    fp-guard: 'Subject to tone calibration: a phrase common in trunk history is demoted to summary-only.'
 
   - id: verbose.docstring-exceeds-body
     tier: C

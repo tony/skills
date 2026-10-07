@@ -1,8 +1,8 @@
 # disk
 
 Safely reclaim disk space. Classifies consumers as regenerable cache, proven
-redundant copy, stale-but-unique data, or protected history, and deletes
-only what is proven safe.
+redundant copy, stale-but-unique data (decided per directory), or protected
+history, and deletes only what is proven safe.
 
 ## Installation
 
@@ -35,7 +35,8 @@ Claude Code uses a leading slash (`/disk:…`). Codex omits it (`disk:…`).
 ## Skills
 
 - **`/disk:usage`**: Read-only survey of every filesystem layer.
-  Classifies what is reclaimable. Takes an optional path.
+  Classifies what is regenerable, redundant, stale-but-unique, or
+  protected. Takes an optional path.
 - **`/disk:reclaim`**: Full pipeline: survey, classify, plan (needs
   approval), reclaim, verify.
 
@@ -62,11 +63,14 @@ The `disk` skill triggers either flow automatically under disk pressure.
 
 ## Prerequisites
 
-- `df`, `du`, `find`, `findmnt` (Linux), `git`, `python3`, `realpath`,
+- `df`, `du`, `find`, `findmnt` (Linux), `git`, `python3` (3.9 or newer), `realpath`,
   `rsync` (checksum comparison in the redundancy proof), and `lsof` or
   `fuser` (open-file check before deleting)
 - (Optional) `dust` for faster surveying, `strings` and `rg` for binary
   inspection, `zstd` for compressing history
+
+Compaction of a live vhdx is documented from Microsoft's pages but has not
+been run against one.
 
 Scope is WSL-first: virtual-disk guidance covers WSL, with pointers for
 Docker Desktop and Hyper-V. macOS APFS and Time Machine snapshots are not

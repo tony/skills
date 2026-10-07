@@ -75,8 +75,12 @@ the part other plugins honor when they write dated output.
 ## The script
 
 The skills drive `scripts/topic.py`, a standard-library Python 3.9+ script.
-Every command prints JSON; `--help` lists the options. Examples use the
-repo-relative path; an installed plugin runs the script path the skill resolves.
+Every command prints JSON; `--help` lists the options. Fetches connect
+directly to the address they vetted, so `HTTPS_PROXY` and `HTTP_PROXY` are
+ignored; behind a required proxy, save each page yourself and record it with
+`source --file`, then run checks with `--offline`. Examples use the
+repo-relative path; an installed plugin runs the script path the skill
+resolves.
 
 Open today's run of a topic:
 

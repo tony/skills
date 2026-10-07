@@ -33,10 +33,9 @@ The selected backend governs the whole session: dispatch, retry, judging, refine
 
 ## Orchestration Plan
 
-This command changes the working tree. Before any phase, enter plan mode and produce an orchestration plan. Plan-mode activation varies by host:
+Enter plan mode before the first edit. In Claude Code call `EnterPlanMode`; in Cursor, Codex, or Gemini use `/plan` or `Shift+Tab`. Where plan mode is unavailable, present the plan as text.
 
-- Claude Code: `EnterPlanMode` tool
-- Cursor / Codex / Gemini: `/plan` or `Shift+Tab`
+This command changes the working tree, so produce an orchestration plan before any phase.
 
 The plan must contain:
 
@@ -102,50 +101,15 @@ Under **subagents**, then confirm nothing touched the main checkout with `ensemb
 
 ## Phase 4: Multi-pass refinement
 
-Skip when `passes` is 1. For pass N of 2 to `passes`, do not re-run the whole task. Target only unresolved conflicts from the prior adjudication, critic findings from the prior pass, any dimension scored below 5 on any response, and per-file low scores and quality-gate failures.
-
-Before each pass, ask the user to confirm. Under **model-clis**, warn that each pass spawns external agents billed to other provider accounts. Without `AskUserQuestion`, run extra passes under **subagents** and stop after pass 1 under **model-clis**.
-
-Create the pass (`python3 <engine> pass-dir --session "<session_dir>" --pass <N>`) and write the targeted prompt to `pass-<N>/prompt.md`:
-
-> The following issues remain from the prior pass. Address ONLY these items:
->
-> **Unresolved conflicts**: [from prior adjudication]
-> **Critic findings**: [from prior critic.md]
-> **Low-confidence areas**: [dimensions and responses scored below 5]
->
-> For each item, give your resolution with evidence (file paths, line numbers, code references).
-
-Then repeat Phases 2 and 3 with pass `<N>`, reusing each participant's work:
-- **subagents**: keep every worktree and redispatch a fresh role-matched sub-agent into the same one.
-- **model-clis**: discard the main-tree changes and rebuild the external worktrees with fresh branches:
-
-  ```console
-  $ python3 <engine> reset-main \
-      --session "<session_dir>"
-  ```
-
-  ```console
-  $ python3 <engine> worktrees remove \
-      --session "<session_dir>"
-  ```
-
-  Then create the worktrees again as in Phase 2. Reference prior artifacts by path for `claude` and inline them for external lanes.
-
-Re-score only affected files and dimensions. Stop early when no score moved by more than 1 and no new conflict appeared. Carry the final-pass analysis into Phase 5.
+Follow `../../references/mutating-run.md` (Refinement passes), repeating Phases 2 and 3. Also target per-file low scores and re-score only affected files.
 
 ---
 
 ## Phase 5: Apply the best implementation
 
-Show the synthesis plan and wait for the user's confirmation before touching the main checkout. Without `AskUserQuestion`, do not apply anything: report the synthesis plan, then run only the cleanup steps (discard the `claude` lane's main-checkout changes with `reset-main` under **model-clis**, remove the worktrees, restore the stash, then render the results) so the user's tree is as they left it. A request that explicitly says to apply the result is that confirmation for applying it, never for committing.
+Show the synthesis plan and wait for the user's confirmation before touching the main checkout. Without `AskUserQuestion`, do not apply anything: report the synthesis plan, then run only the cleanup steps (discard the `claude` lane's main-checkout changes with `reset-main` under **model-clis**, remove the worktrees, restore the stash, then render the results in the nothing-applied shape) so the user's tree is as they left it. A request that explicitly says to apply the result is that confirmation for applying it, never for committing.
 
-1. Under **model-clis**, discard the `claude` lane's changes first. The command refuses unless the user's stash is recorded and still present:
-
-   ```console
-   $ python3 <engine> reset-main \
-       --session "<session_dir>"
-   ```
+1. Under **model-clis**, discard the `claude` lane's changes first (`../../references/mutating-run.md`, Reset the main checkout).
 
 2. Copy the chosen snapshot of each file into the main checkout and remove each path whose selected version is a deletion. Repeat `--pick` and `--delete` per path. Snapshots, not worktrees, are the source, so this works after worktrees are gone:
 
@@ -167,23 +131,9 @@ Show the synthesis plan and wait for the user's confirmation before touching the
        --event synthesis_applied
    ```
 
-5. Remove the session's worktrees and branches:
+5. Remove the worktrees and restore the user's changes with `stash-restore` (`../../references/mutating-run.md`, Remove worktrees and restore the stash), checking `git diff --stat HEAD` against the synthesis plan. Continue to step 6 after a stash conflict.
 
-   ```console
-   $ python3 <engine> worktrees remove \
-       --session "<session_dir>"
-   ```
-
-6. Check `git diff --stat HEAD` against the synthesis plan, then restore the user's changes:
-
-   ```console
-   $ python3 <engine> stash-restore \
-       --session "<session_dir>"
-   ```
-
-   On `"conflict": true` the pop was refused or conflicted, and the stash is intact. Tell the user, in this order: their uncommitted changes are safe in the stash; its SHA (`stash_sha`); the `overlap` paths that both the result and the stash changed; then each `recover` command in order, as a `console` fence with one command per block, with `inspect` available to read the stash first. Do not run them unprompted, and do not drop the stash or suggest dropping it. Continue to step 7.
-
-7. Read `../../references/present-results.md` and apply it with `RESULT_KIND` = `execute`, `ARTIFACT_PATH` = `<session_dir>/pass-NNNN/synthesis.md`, `SESSION_DIR`, `PASS_COUNT` = `passes`, `IN_PLAN_MODE` = false, `LABEL_MAP_PATH` = `<session_dir>/pass-NNNN/label-map.json`. Read `WORKER_BACKEND`, `PARTICIPANTS`, `EXECUTORS`, and `MODELS` from `session.json`.
+6. Read `../../references/present-results.md` and apply it with `RESULT_KIND` = `execute`, `ARTIFACT_PATH` = `<session_dir>/pass-NNNN/synthesis.md`, `SESSION_DIR`, `PASS_COUNT` = `passes`, `IN_PLAN_MODE` = false, `LABEL_MAP_PATH` = `<session_dir>/pass-NNNN/label-map.json`. Read `WORKER_BACKEND`, `PARTICIPANTS`, `EXECUTORS`, and `MODELS` from `session.json`.
 
    Render it only now: the stash is restored (or its recovery reported), so a next-step panel never runs while the user's work is held.
 

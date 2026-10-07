@@ -15,7 +15,7 @@ Process weave code review findings from the conversation context. Validate each 
 
 `<engine>` is `references/engine.py` resolved from this skill's directory to an absolute path, written literally in every command, and run with `python3`. It prints JSON; `"ok": false` carries the reason.
 
-This command commits to a git repository, so it needs one with at least one commit. Without one, reply in one sentence that `fix-review` needs a git repository with commits, and stop.
+This command commits to a git repository, so it needs one with at least one commit. Without one, reply in one sentence, with no local paths, that `fix-review` needs a git repository with commits, and stop.
 
 ---
 

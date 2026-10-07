@@ -40,7 +40,8 @@ A pin to a moving branch (`@main`, `@master`) is reported under Drift and
 not bumped, unless the user names a target.
 
 For each distinct action, resolve the latest version, choose a target
-that preserves the repository's pin shape, and confirm the tag exists
+that preserves the repository's pin shape (an exact patch moves to the
+float), and confirm the tag exists
 (for a SHA pin, resolve the SHA too). Nothing proceeds on an unverified
 tag.
 
@@ -149,8 +150,49 @@ Open with a one-line hero: `✓ N commits across M repos`, or
 An audit-only run emits Audit, Upgrades, and Drift. A halted run (no
 workflows, no `gh`, an unverifiable tag) emits `⚠ Blocked: <reason>` and
 one sentence on what the user must do, with no sections, no findings
-list, and no next-steps panel. Report a suspicious PR title as the finding, without guessing its
-cause or intent.
+list, and no next-steps panel. A suspicious PR title is the finding: name
+it inside that one sentence, without guessing its cause or intent.
+
+A plan-only run (a headless run that stops at the plan, or a request to
+plan first) opens `⚠ Plan only: N commits proposed, nothing written`, then
+emits the same five sections with `## Commits` listing the proposed commit
+subjects and `## Close-out` listing the PRs to close and the filled
+commands, none run. Do not mention commit-message rules or offer to break
+them.
+
+Plan-only reply:
+
+```text
+⚠ Plan only: 2 commits proposed, nothing written
+
+## Audit
+
+- actions/checkout v3 in ci.yml; latest is v4.2.2.
+- actions/setup-node@main is pinned to a moving branch.
+
+## Upgrades
+
+- actions/checkout v3 to v4 raises the runtime to Node 20; ubuntu-latest meets it.
+
+## Commits
+
+- Bump actions/checkout v3 -> v4. Not made.
+
+## Close-out
+
+- No open dependabot PRs.
+
+## Drift
+
+- actions/setup-node@main is not bumped without a named target.
+```
+
+Blocked reply:
+
+```text
+⚠ Blocked: gh is not authenticated, so no tag can be verified.
+Run gh auth login, then ask again.
+```
 
 Reply in this shape, as plain text outside any code fence, with plain bullets, no bold (never `- **Label:** ...`), and no local paths:
 

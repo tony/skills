@@ -33,7 +33,7 @@ graders:
   - name: catches-the-stale-line-reference
     type: regex
     target: last_message
-    pattern: 'lines 12-18|line numbers?'
+    pattern: 'brittle\.line-numbers|lines? 12-18'
     flags: i
 
   - name: classifies-findings-by-tier

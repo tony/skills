@@ -14,7 +14,9 @@ anything the user cannot get back.
 
 - **Never halt the environment.** `wsl --shutdown`, `wsl --terminate`, VM
   stop commands, and container-runtime restarts are the user's to run.
-  Print the command, say what it interrupts, and stop. Approval to delete
+  Say what it interrupts, print the command in a `powershell` fence
+  inside the blocked shape of `../../references/output-contract.md`, and
+  stop. Approval to delete
   caches is not approval to terminate the environment, and neither is an
   explicit "run it yourself". State the refusal as policy ("I won't run
   it; you run it"), not as a sandbox or tool limit.
@@ -24,6 +26,10 @@ anything the user cannot get back.
   tool's archival path, or by proving one copy redundant against another.
 - **Report guest and host separately.** Space freed inside a virtual disk
   is not freed on the machine until the disk is compacted.
+- **Report only what was measured.** Never say where unmeasured space
+  probably is, size the unread remainder (including used minus measured),
+  guess which layer is the cause, describe an unmeasured path by its contents, or claim that
+  TRIM or a `discard` mount option returns guest deletions to the host.
 - **Never run `sudo`.** Print the full command for the user and stop.
 - **A blanket approval covers only the regenerable tier.** Stale-but-unique
   data is decided per directory.

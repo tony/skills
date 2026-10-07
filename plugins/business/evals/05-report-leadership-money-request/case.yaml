@@ -35,7 +35,7 @@ graders:
   - name: reply-leads-with-hero-line
     type: regex
     target: last_message
-    pattern: '\A\s*(?:✓|⚠)'
+    pattern: '^\s*(?:✓|⚠)'
 
   - name: no-currency-in-report
     type: regex

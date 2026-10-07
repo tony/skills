@@ -64,7 +64,13 @@ Build the context packet per `ensemble-core.md` (Context packet), adding what ea
 - **Constraint envelope**: what must not change (files, branch) and what must survive (accessibility, dark mode, `NO_COLOR` and `FORCE_COLOR`, mobile layout).
 - **Technology stack** and **known gaps** the participants should address.
 
-Without a reference anchor or a constraint envelope, ask for one: lenses return generic advice without a target, and participants propose edits without a "do not modify files" boundary.
+Without a reference anchor or a constraint envelope, ask for one: lenses return generic advice without a target, and participants propose edits without a "do not modify files" boundary. Without `AskUserQuestion`, stop before dispatch. Reply in this shape, as plain text outside any code fence, with plain bullets, no bold (never `- **Label:** ...`), no headings, and no local paths:
+
+```text
+Stopped before dispatch: serene-bliss needs a reference anchor and a constraint envelope, and the prompt has neither.
+- Name a known-good implementation to compare against.
+- Name what must not change, such as the branch or accessibility.
+```
 
 ---
 
@@ -78,7 +84,7 @@ The shared worker prompt body is:
 >
 > Provide a clear, well-structured response. Cite specific files and line numbers where relevant.
 
-Follow `ensemble-core.md` (Dispatch lanes) and (Variants) with these changes: M is 3, every variant uses `--preamble-file "<session_dir>/preamble.md"`, and there is no role preamble. Then (Close the repo guard).
+Follow `ensemble-core.md` (Dispatch lanes) and (Variants) with these changes: M is 3, every variant uses `--preamble-file "<session_dir>/preamble.md"`, and there is no role preamble. Then (Close the repo guard). The cost line counts the panel's judge runs too: 3 per pass.
 
 ---
 

@@ -20,6 +20,11 @@ execution:
 runs: 3
 
 graders:
+  - name: check-stays-offline
+    type: tool_used
+    tool: Bash
+    input_match: '\scheck\s+(--run\s+\S+\s+)?--offline'
+
   - name: records-the-conflict
     type: tool_used
     tool: Bash

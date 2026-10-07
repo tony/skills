@@ -34,6 +34,7 @@ case "$args" in
   "repo view"*defaultBranchRef*) echo main ;;
   "repo view"*nameWithOwner*) echo acme/widgets ;;
   "api repos/actions/checkout/releases/latest"*) echo v4.2.2 ;;
+  "api repos/actions/checkout/releases --paginate"*) printf 'v4.2.2\nv4.0.0\nv3.0.0\n' ;;
   "api repos/actions/checkout/git/ref/tags/v4"*|"api repos/actions/checkout/git/ref/tags/v4.2.2"*) echo '{}' ;;
   "api repos/actions/checkout/releases/tags/"*tag_name*) t=${args#*releases/tags/}; echo "${t%% *}" ;;
   "api repos/actions/checkout/releases/tags/v4"*) echo "v4 runs on a newer Node runtime." ;;

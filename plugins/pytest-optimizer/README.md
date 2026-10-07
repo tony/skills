@@ -100,7 +100,7 @@ order: `--memory-dir`, the in-tree directory, the cache directory. See
 ## Prerequisites
 
 - A git repository with a pytest suite.
-- Python 3 on `PATH` for `scripts/measure.py`, which does the timing arithmetic.
+- `python3` (3.9 or newer) on `PATH` for `scripts/measure.py`, which does the timing arithmetic.
 - A test command the skills can read from `AGENTS.md`, `CLAUDE.md`, `justfile`, `tox.ini`, or `pyproject.toml`.
 - Optional auto-detected plugins: `pytest-xdist`, `pytest-randomly`,
   `pytest-deadfixtures`, `pytest-timeout`. The skills ask before installing any of them into your environment.

@@ -82,8 +82,8 @@ $ gh api repos/<owner>/<action>/releases \
     --jq '.[].tag_name | select(test("^v[0-9]+\\.0\\.0$"))'
 ```
 
-For `actions/checkout` v3 to v7 this prints `v7.0.0` through `v1.0.0`;
-keep `v4.0.0`, `v5.0.0`, `v6.0.0`, and `v7.0.0`. An action with no
+For an action pinned at v3 with a v6 target, keep `v4.0.0`, `v5.0.0`, and
+`v6.0.0` from whatever the list prints. An action with no
 `vN.0.0` release tags its majors as bare `vN`: list them with `git
 ls-remote --tags` and take the first release of each major from the tags.
 Link each kept tag only after the release-URL check passes.
@@ -135,22 +135,21 @@ An empty result means the tag does not exist; stop.
 Default to the major-level float: it collects patches without a commit per
 patch release.
 
-**Currently a major float** (`@v6`) — move to the next major float
-(`@v7`).
+A major float (`@v6`) moves to the next major float (`@v7`).
 
-**Currently an exact patch** (`@v4.0.1`) — repin to the float (`@v4`)
-when it exists and resolves to at least that patch. Say `repin X -> Y`
-in the subject; "from 4.0.1 to 4" reads as a downgrade otherwise.
+An exact patch (`@v4.0.1`) is repinned to the float (`@v4`) when it
+exists and resolves to at least that patch. Say `repin X -> Y` in the
+subject; "from 4.0.1 to 4" reads as a downgrade otherwise.
 
-**Currently a commit SHA with a version comment** — move the SHA *and* the
-trailing comment together; a stale `# v8.1.0` beside a v9 SHA is worse than
-no comment.
+A commit SHA with a version comment moves the SHA and the trailing
+comment together; a stale `# v8.1.0` beside a v9 SHA is worse than no
+comment.
 
-**Currently a moving branch** (`@main`, `@master`) — leave it and report
-it as drift; bump it only when the user names a target.
+A moving branch (`@main`, `@master`) is left alone and reported as drift;
+bump it only when the user names a target.
 
-**No major tag upstream** — pin the exact release and say why in the commit
-body, so no one "fixes" it to a float that does not exist.
+When upstream has no major tag, pin the exact release and say why in the
+commit body, so no one "fixes" it to a float that does not exist.
 
 ## Check the gates the research surfaces
 

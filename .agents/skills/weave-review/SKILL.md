@@ -46,7 +46,7 @@ $ python3 <engine> context \
     --full-diff
 ```
 
-It returns `repo`, `trunk`, `base`, `branch`, `commits` on the branch, and the diff stat and full diff in `markdown`. `base` is `origin/<trunk>` as last fetched, else the local trunk, so the comparison may be stale; say so in the plan. When `repo` is false there is nothing to review: reply in one sentence that `review` needs a git repository with commits, and stop. Read the project's CLAUDE.md / AGENTS.md as well.
+It returns `repo`, `trunk`, `base`, `branch`, `commits` on the branch, and the diff stat and full diff in `markdown`. `base` is `origin/<trunk>` as last fetched, else the local trunk, so the comparison may be stale; say so in the plan. When `repo` is false there is nothing to review: reply in one sentence, with no local paths, that `review` needs a git repository with commits, and stop. Read the project's CLAUDE.md / AGENTS.md as well.
 
 The plan must contain:
 
@@ -70,7 +70,7 @@ Build the context packet per `ensemble-core.md` (Context packet), using the appr
 
 ## Phase 2: Cascade gate (only with `--cascade`)
 
-Read `references/ensemble-techniques.md` (Technique 1) and apply it: run the Maintainer lane from Phase 3 alone, self-verify per Phase 4's Verify Claims step, and evaluate the five escalation triggers. For review, any **Critical** finding fires the judgment-call trigger, so Criticals always get ensemble confirmation. On **early-exit**, skip the other lanes, blind judging, and rubric scoring; run the Critic and deslop steps, then present with `CASCADE_STATE` = `early-exit`. On **escalate** (or user escalation from the panel), continue to Phase 3 with the cheap-pass output reused as the Maintainer lane.
+Read `references/ensemble-techniques.md` (Technique 1) and apply it: run the Maintainer lane from Phase 3 alone, self-verify per Phase 4's Verify Claims step, and evaluate the five escalation triggers. For review, any **Critical** finding fires the judgment-call trigger, so Criticals always get ensemble confirmation. On **early-exit**, skip the other lanes, blind judging, and rubric scoring; run the Critic, then go to Phase 6 with `CASCADE_STATE` = `early-exit`. On **escalate** (or user escalation from the panel), continue to Phase 3 with the cheap-pass output reused as the Maintainer lane.
 
 ---
 
@@ -125,15 +125,9 @@ Group findings that refer to the same issue (same file, similar description). Ea
 - 2 or 3 reviewers: promote one level (Suggestion to Important, Important to Critical).
 - A finding becomes Critical only when verification confirmed the impact, so a unanimous Suggestion rises to Important, not Critical.
 
-### Write and polish the report
+### Write the report
 
-Write the report to `<session_dir>/pass-NNNN/synthesis.md` per `references/prose-rules.md`.
-
-Run the deslop pass on the final pass only (pass 1 when `passes` is 1, else the last pass of Phase 5), unless `--no-deslop` was set. Read `references/deslop-pass.md` and apply it with `ARTIFACT_PATH` set to that file, `SESSION_DIR`, `BASELINE_SHA` set to `baseline_sha` from `init`, and `DESLOP_MODE` from the flags. Re-read `synthesis.md` and render from the desloped report; the deslop summary block follows the Attribution section.
-
-### Present the report
-
-Read `references/present-results.md` and apply it with `RESULT_KIND` = `review`, `ARTIFACT_PATH` = `<session_dir>/pass-NNNN/synthesis.md`, `SESSION_DIR`, `PASS_COUNT` = the resolved pass count, `IN_PLAN_MODE` = false, `LABEL_MAP_PATH` = `<session_dir>/pass-NNNN/label-map.json`, `CASCADE_STATE` = `early-exit`, `escalated`, or null without `--cascade`. Read `WORKER_BACKEND`, `PARTICIPANTS`, `EXECUTORS`, and `MODELS` from `session.json`.
+Write the report to `<session_dir>/pass-NNNN/synthesis.md` per `references/prose-rules.md`. Do not render anything yet: results are presented once, in Phase 6, after the last pass.
 
 ---
 
@@ -145,9 +139,8 @@ Skip when `passes` is 1. Read `references/ensemble-techniques.md` (Technique 2).
 2. Write the residual prompt to `pass-<N>/prompt.md` (ledger entries only), then dispatch as in Phase 3 with pass `<N>`.
 3. Merge resolutions back into the prior synthesis; untouched findings carry forward verbatim. Re-score only affected dimensions and re-adjudicate only the ledger items. Write `pass-<N>/synthesis.md`.
 4. Stop early when no score moved by more than 1 and no new conflict appeared.
-5. On the final pass, run the deslop step from Phase 4 on `pass-<N>/synthesis.md` before presenting.
 
-Present the final-pass synthesis with a **Confidence Evolution** section:
+The final pass's `synthesis.md` (pass 1 when `passes` is 1) feeds Phase 6. When `passes` > 1, it carries a **Confidence Evolution** section:
 
 ```markdown
 ## Confidence Evolution
@@ -158,6 +151,14 @@ Present the final-pass synthesis with a **Confidence Evolution** section:
 | file:15 type error | 1/3 reviewers | 0/3 reviewers | — | Retracted |
 | file:99 race condition | — | 2/3 reviewers | 3/3 reviewers | New (confirmed) |
 ```
+
+---
+
+## Phase 6: Polish and present
+
+1. Unless `--no-deslop` was set, read `references/deslop-pass.md` and apply it once, with `ARTIFACT_PATH` set to the final pass's `synthesis.md`, `SESSION_DIR`, `BASELINE_SHA` set to `baseline_sha` from `init`, and `DESLOP_MODE` from the flags. Re-read `synthesis.md` for the desloped report; the deslop summary block follows the Attribution section.
+
+2. Read `references/present-results.md` and apply it with `RESULT_KIND` = `review`, `ARTIFACT_PATH` = the final `synthesis.md`, `SESSION_DIR`, `PASS_COUNT` = the resolved pass count, `IN_PLAN_MODE` = false, `LABEL_MAP_PATH` = `<session_dir>/pass-NNNN/label-map.json`, `CASCADE_STATE` = `early-exit`, `escalated`, or null without `--cascade`. Read `WORKER_BACKEND`, `PARTICIPANTS`, `EXECUTORS`, and `MODELS` from `session.json`.
 
 ---
 

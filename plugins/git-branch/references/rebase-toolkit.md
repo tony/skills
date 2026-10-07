@@ -35,10 +35,9 @@ message.
 wraps the idioms below. It refuses a dirty tree or an operation in
 progress, and reports a rebase it left stopped.
 
-`<toolkit>` is the absolute path to `rebase-todo.sh`: this file's directory
-plus `../scripts/rebase-todo.sh`, from the path you opened it by. A shell
-runs in the project's working directory, not this plugin's, so print the
-resolved path once and use that literal path afterwards.
+`<toolkit>` is the absolute path to `rebase-todo.sh`; each skill states how
+it resolves. A shell runs in the project's working directory, not this
+plugin's, so use the literal path in every command.
 
 Report any operation in progress, so a later command does not fail
 mysteriously:

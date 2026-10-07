@@ -221,6 +221,25 @@ def test_guard_detects_further_edit_of_dirty_file_and_never_mutates(repo: Path) 
     assert engine.guard_check(sdir, "gpt").get("repeat") is True
 
 
+def test_guard_and_capture_survive_non_utf8_files(repo: Path) -> None:
+    latin1 = b"caf\xe9\n"
+    sdir = guarded_session(repo)
+    (repo / "latin.txt").write_bytes(latin1)
+    found = engine.guard_check(sdir, "agy")
+    assert found["violation"] is True
+    assert (Path(found["dir"]) / "violation.patch").read_bytes().count(b"caf") >= 1
+    assert (Path(found["dir"]) / "post-copy" / "latin.txt").read_bytes() == latin1
+    engine.guard_resolve(sdir, "revert")
+    assert not (repo / "latin.txt").exists()
+    wdir = Path(init(command="execute", mutating=True)["session_dir"])
+    engine.create_worktrees(wdir, ["maintainer"])
+    wt = Path(engine.load_session(wdir)["worktrees"]["maintainer"]["path"])
+    (wt / "latin.txt").write_bytes(latin1)
+    cap = engine.capture_tree(wdir, 1, "maintainer", None)
+    assert cap["changed"] == ["latin.txt"]
+    assert latin1 in Path(cap["patch"]).read_bytes()
+
+
 def test_guard_clean_run_has_no_violation(repo: Path) -> None:
     sdir = guarded_session(repo)
     assert engine.guard_check(sdir)["violation"] is False

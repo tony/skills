@@ -42,7 +42,8 @@ Write entries and the commit message per `references/prose-rules.md`.
    - Working tree dirty (`git status --porcelain` non-empty). Tell the user to
      commit or stash the tracked changes. Advise `git stash -u` for untracked
      files only after `git rev-parse --show-toplevel` shows a root that is
-     neither `$HOME` nor a parent of it.
+     neither the output of `cd ~ && pwd -P` nor a parent of it (compare
+     physical paths, not the string `$HOME`).
    - Detached HEAD, or an in-progress rebase, merge, or cherry-pick.
    - Currently on the base branch.
    - A merge commit between the base and HEAD (`git rev-list --merges
@@ -119,8 +120,10 @@ Write entries and the commit message per `references/prose-rules.md`.
    the merge-base with the base. Use these printed values literally in later
    commands:
 
-   ```console
-   $ name=changelog-rewrite-backup-$(date -u +%Y%m%d-%H%M%SZ); git branch "$name" && echo "$name $(git rev-parse HEAD) $(git merge-base origin/<base> HEAD)"
+   ```bash
+   name="changelog-rewrite-backup-$(date -u +%Y%m%d-%H%M%SZ)"
+   git branch "$name"
+   echo "$name $(git rev-parse HEAD) $(git merge-base origin/<base> HEAD)"
    ```
 
 2. Drop the pure changelog commits non-interactively with a scripted sequence
@@ -165,8 +168,9 @@ edit comes from, in order:
 - Otherwise, present the entries and stop; never wait. The tree then holds
   the rebased history with no entries; say so and name the backup.
 
-Generate entries from the branch's current net change against
-`origin/<base>`, per `entry-rules.md`. For the PR number, run
+Generate entries from the branch's current net change
+(`git diff origin/<base>...HEAD`, three-dot, so base commits the fetch pulled
+in stay out), per `entry-rules.md`. For the PR number, run
 `gh pr view --json number --jq .number`. On failure, if the branch already
 merged, read the number from its merge commit on the base branch ("Merge pull
 request #N"); otherwise write `(#???)`. Never copy a number from a dropped
@@ -206,8 +210,7 @@ Target: CHANGES.md, Unreleased, Features, after the "### Features" heading. No v
 Run only after the Phase 3 approval.
 
 1. Apply with Edit. With `--commit` in `$ARGUMENTS`, commit once at the tip per
-   `commit-message.md` (the project's own subject format wins; never compare
-   the subject with a dropped commit's): no `Co-Authored-By`, no "Generated with" or other tool
+   `commit-message.md` (the project's own subject format wins): no `Co-Authored-By`, no "Generated with" or other tool
    trailer, no emoji. Without it, leave the edit uncommitted and show a
    ready-to-use commit message.
 2. Report the backup branch (to delete once satisfied with
@@ -215,7 +218,7 @@ Run only after the Phase 3 approval.
    when `--commit` was not passed, and for a pushed branch the
    `git push --force-with-lease --force-if-includes` the user needs.
 
-   Reply in this shape, as plain text outside any code fence, with plain bullets, no bold (never `- **Backup:** ...`), and no local paths. The subject line below is the no-convention form:
+   Reply in this shape, as plain text outside any code fence, with plain bullets, no bold (never `- **Backup:** ...`), and no local paths. The subject line below is the no-convention form. Notes hold facts the user must act on, so never recap checks that passed and never compare the new subject with a dropped commit's:
 
    ````text
    Rewrote the changelog history of feat/cache-evict: 3 commits dropped, 1 added.

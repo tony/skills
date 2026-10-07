@@ -1,6 +1,6 @@
 {
   "name": "double-check",
-  "description": "Forces verification requests to return re-derived answers instead of diffs against prior turns. Includes an alignment tool for repairing chats.",
+  "description": "Forces verification requests to return re-derived answers instead of diffs against prior turns. The align skill restates a chat's analysis standalone after a revision-log reply.",
   "version": "0.0.1",
   "author": {
     "name": "Tony Narlock",

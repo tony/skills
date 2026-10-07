@@ -11,6 +11,7 @@ from __future__ import annotations
 import contextlib
 import io
 import json
+import socket
 import typing as t
 import urllib.error
 import urllib.request
@@ -20,6 +21,7 @@ from pathlib import Path
 import pytest
 import topic  # pyright: ignore[reportImplicitRelativeImport]
 
+REFUSED = "refused"
 REPORT = """\
 # WAL lets readers proceed during writes
 
@@ -291,3 +293,31 @@ def test_slop_section_must_parse() -> None:
         topic.parse_slop_words("## Other\n\nInflation: robust.\n")
     with pytest.raises(ValueError, match="lists no words"):
         topic.parse_slop_words("## Cut these words\n\nNothing here.\n")
+
+
+def test_connection_pins_to_the_vetted_address(monkeypatch: pytest.MonkeyPatch) -> None:
+    seen: list[tuple[str, int]] = []
+
+    def fake_connect(address: tuple[str, int], _timeout: float | None) -> t.NoReturn:
+        seen.append(address)
+        raise OSError(REFUSED)
+
+    monkeypatch.setattr(socket, "create_connection", fake_connect)
+    with pytest.raises(OSError, match=REFUSED):
+        topic.connect_vetted("example.org", 443, public, 5)
+    assert seen == [("93.184.216.34", 443)]
+    with pytest.raises(OSError, match="public address"):
+        topic.connect_vetted("example.org", 443, lambda _: ["127.0.0.1"], 5)
+    assert len(seen) == 1
+
+
+def test_fetch_connects_to_the_vetted_address(monkeypatch: pytest.MonkeyPatch) -> None:
+    seen: list[tuple[str, int]] = []
+
+    def fake_connect(address: tuple[str, int], _timeout: float | None) -> t.NoReturn:
+        seen.append(address)
+        raise OSError(REFUSED)
+
+    monkeypatch.setattr(socket, "create_connection", fake_connect)
+    assert topic.http_fetch("http://example.org/x", public)[0] == 0
+    assert seen == [("93.184.216.34", 80)]

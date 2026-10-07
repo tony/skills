@@ -23,6 +23,9 @@
 # A failed fixup commit rolls the patch back (index and worktree), so
 # the tree is clean again and a re-run retries the same step.
 #
+# The first run creates a backup branch at the starting tip and prints
+# `Backup branch: <name>`; re-runs print the same name.
+#
 # Exit codes:
 #   0  all steps complete
 #   1  registry SHA-256 changed since materialization, or is unreadable
@@ -68,6 +71,28 @@ if [ -n "$(git status --porcelain)" ]; then
     git status --short >&2
     exit 2
 fi
+
+# ── backup branch ─────────────────────────────────────────────────
+#
+# Created once, before the first history change; a re-run reuses it.
+# `git reset --hard <backup>` restores the pre-apply state.
+
+backup_file="$checkpoint_dir/backup"
+if [ -f "$backup_file" ]; then
+    backup=$(cat "$backup_file")
+else
+    current=$(git branch --show-current)
+    stem="${current:-detached}-pre-deslop-$(date -u +%Y%m%d-%H%M%S)"
+    backup=$stem
+    n=1
+    while git show-ref --verify --quiet "refs/heads/$backup"; do
+        n=$((n + 1))
+        backup="$stem-$n"
+    done
+    git branch "$backup"
+    printf '%s\n' "$backup" > "$backup_file"
+fi
+echo "Backup branch: $backup"
 
 # ── per-step helper ───────────────────────────────────────────────
 

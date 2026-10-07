@@ -65,8 +65,8 @@ top of every round.
    empty roster shortens the loop to CI alone.
 3. Resolve the gate buckets and the CI-coverage split per
    `references/verification-gates.md`.
-4. Run `git rev-parse --show-toplevel` and halt when it is `$HOME` or
-   contains it. Run `git fetch origin`; when it fails, go on with
+4. Run `git rev-parse --show-toplevel` and halt when it is the home
+   directory (compare with `cd ~ && pwd -P`) or contains it. Run `git fetch origin`; when it fails, go on with
    provenance marked possibly stale. Confirm a clean working tree and
    note the push state; a dirty tree halts.
 

@@ -7,6 +7,7 @@ user-invocable: true
 disable-model-invocation: true
 ---
 
+# Reclaim
 
 Reclaim disk space on this machine without losing anything the user
 cannot get back.

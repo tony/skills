@@ -169,8 +169,30 @@ def stamp() -> str:
 
 
 def emit(doc: Json) -> None:
-    """Print a JSON document on stdout."""
-    print(json.dumps(doc, indent=2, ensure_ascii=False))
+    """Print a JSON document on stdout; escape text that is not valid UTF-8."""
+    text = json.dumps(doc, indent=2, ensure_ascii=False)
+    try:
+        text.encode("utf-8")
+    except UnicodeEncodeError:
+        text = json.dumps(doc, indent=2, ensure_ascii=True)
+    print(text)
+
+
+def git_bytes(
+    top: str | Path, *args: str, check: bool = True, env: Mapping[str, str] | None = None
+) -> bytes:
+    """Run ``git -C top ...`` and return raw stdout; no decoding, nothing stripped."""
+    proc = subprocess.run(  # noqa: S603
+        ["git", "-C", str(top), *args],  # noqa: S607
+        capture_output=True,
+        check=False,
+        env={**os.environ, **env} if env else None,
+    )
+    if check and proc.returncode != 0:
+        err = proc.stderr.decode("utf-8", "replace").strip()
+        msg = f"git {' '.join(args)}: {err}"
+        raise EngineError(msg)
+    return proc.stdout
 
 
 def git(
@@ -178,20 +200,13 @@ def git(
 ) -> str:
     """Run ``git -C top ...`` and return stdout minus trailing newlines.
 
+    Undecodable bytes become surrogate escapes, so path names round-trip.
+
     >>> git(".", "--version").startswith("git version")
     True
     """
-    proc = subprocess.run(  # noqa: S603
-        ["git", "-C", str(top), *args],  # noqa: S607
-        capture_output=True,
-        text=True,
-        check=False,
-        env={**os.environ, **env} if env else None,
-    )
-    if check and proc.returncode != 0:
-        msg = f"git {' '.join(args)}: {proc.stderr.strip()}"
-        raise EngineError(msg)
-    return proc.stdout.rstrip("\n")
+    out = git_bytes(top, *args, check=check, env=env)
+    return out.decode("utf-8", "surrogateescape").rstrip("\n")
 
 
 def git_z(top: str | Path, *args: str, env: Mapping[str, str] | None = None) -> list[str]:
@@ -689,8 +704,8 @@ def guard_check(session_dir: Path, label: str = "check") -> Json:
     vdir.mkdir(mode=0o700)
     touched = _touched(top, pre["tree"], post_tree)
     (vdir / "touched.json").write_text(json.dumps(touched, indent=2) + "\n", encoding="utf-8")
-    patch = git(top, "diff", "--binary", "--no-renames", pre["tree"], post_tree)
-    (vdir / "violation.patch").write_text(patch + "\n" if patch else "", encoding="utf-8")
+    patch = git_bytes(top, "diff", "--binary", "--no-renames", pre["tree"], post_tree)
+    (vdir / "violation.patch").write_bytes(patch)
     for rel, status in touched.items():
         src = Path(top) / rel
         if status != "D" and src.is_file():
@@ -753,14 +768,13 @@ def _revert_paths(top: str, pre_tree: str, touched: Mapping[str, str]) -> None:
         git(top, "read-tree", pre_tree, env=env)
         proc = subprocess.run(  # noqa: S603
             ["git", "-C", top, "checkout-index", "-f", "-z", "--stdin"],  # noqa: S607
-            input="\0".join(restore) + "\0",
+            input=("\0".join(restore) + "\0").encode("utf-8", "surrogateescape"),
             capture_output=True,
-            text=True,
             check=False,
             env={**os.environ, **env},
         )
         if proc.returncode != 0:
-            msg = f"git checkout-index: {proc.stderr.strip()}"
+            msg = f"git checkout-index: {proc.stderr.decode('utf-8', 'replace').strip()}"
             raise EngineError(msg)
     finally:
         Path(name).unlink(missing_ok=True)
@@ -1807,7 +1821,7 @@ def capture_tree(session_dir: Path, n: int, participant: str, tree: str | None) 
     path = tree or entry["path"]
     base = session_dir / pass_name(n)
     after = snapshot_tree(path)
-    patch = git(path, "diff", "--binary", "--no-renames", "HEAD", after)
+    patch = git_bytes(path, "diff", "--binary", "--no-renames", "HEAD", after)
     changed = git_z(
         path, "diff", "--name-only", "-z", "--no-renames", "--diff-filter=d", "HEAD", after
     )
@@ -1816,7 +1830,7 @@ def capture_tree(session_dir: Path, n: int, participant: str, tree: str | None) 
     )
     patch_path = base / "diffs" / f"{participant}.patch"
     patch_path.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
-    patch_path.write_text(patch + "\n" if patch else "", encoding="utf-8")
+    patch_path.write_bytes(patch)
     for rel in changed:
         dest = base / "files" / participant / rel
         dest.parent.mkdir(parents=True, exist_ok=True)
@@ -1936,6 +1950,7 @@ def restore_stash(session_dir: Path) -> Json:
         ["git", "-C", top, "stash", "pop", ref],  # noqa: S607
         capture_output=True,
         text=True,
+        errors="replace",
         check=False,
     )
     if proc.returncode != 0:
