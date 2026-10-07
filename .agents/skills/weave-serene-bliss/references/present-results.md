@@ -77,7 +77,11 @@ When CASCADE_STATE is `early-exit`, append `, cascade early-exit
    choices that were unavailable, or a deslop pass that changed nothing.
    The deslop summary line, when the pass produced one, is the last line
    after Attribution.
-6. A run that stopped before producing the artifact (refused, failed, or
+6. Nothing follows Attribution except the deslop summary line, and no
+   clustering, ranking, counting of distinct designs, or recommendation
+   appears anywhere in the reply's own voice (brainstorm and
+   brainstorm-and-refine originals included).
+7. A run that stopped before producing the artifact (refused, failed, or
    declined) renders none of this: one sentence stating the result, then
    what the user needs to do next. No headings, bold labels, numbered
    menus, or local paths and temp files.

@@ -93,7 +93,7 @@ Follow `ensemble-core.md` (Dispatch lanes) and (Variants) with these changes: M 
 
 ## Phase 3: Show the originals and ask which to refine
 
-Show every original under `<participant>, <lens>`, with a failed variant as a note and its failure class.
+Read `references/brainstorm.md` and show the originals by its Per-participant rule: every original under `<participant>, <lens>`, plain bullets, no clustering, ranking, or recommendation in your own voice, and a failed variant as a note with its failure class.
 
 Ask through `ask-user-choice` which originals enter refinement: **All of them (Recommended)**, **Let me pick** (a follow-up multi-select, one option per original), or **None** (stop after the brainstorm). Without `ask-user-choice`, refine all. Never start refinement without this step.
 
@@ -121,6 +121,7 @@ Copy the final woven text to `<session_dir>/final.md`, then follow `ensemble-cor
 
 - Never modify project files. The engine runs every external CLI in a disposable worktree built from a snapshot of the checkout, and sub-agents work in snapshot worktrees too.
 - Run every phase even when the artifact is small; never stop the pipeline and write the design yourself.
+- A denied file-writing tool never stops this read-only command or produces a menu: stage text with the heredoc fallback in `ensemble-core.md` and continue.
 - Every refinement pass goes to all participants. The panel judges and the host weaves; nothing refines alone.
 - Verify every model claim against the codebase before it enters the weave.
 - When the prompt says behavior must not change, keep only rendering changes in the weave. Drop any element that alters parsing, flags, exit codes, or error text, such as a rewritten usage line or parser.

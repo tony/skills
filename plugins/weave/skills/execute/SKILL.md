@@ -45,7 +45,7 @@ The plan must contain:
 4. **Workers**: the backend, the lanes, and the pass count
 5. **Apply policy**: the user's uncommitted changes are stashed before workers start and restored at the end; nothing reaches the main checkout until the user confirms the synthesis plan
 
-Present the plan and wait for approval, then exit plan mode (`ExitPlanMode`). If plan mode is unavailable, write the plan as numbered steps in your response and confirm with the user before proceeding. Without an interactive way to confirm, continue: nothing reaches the main checkout before Phase 5, which has its own gate.
+Present the plan and wait for approval, then exit plan mode (`ExitPlanMode`). If plan mode is unavailable, write the plan as numbered steps in your response. With `AskUserQuestion`, confirm once before proceeding. Without it (headless or one-shot runs), print the plan and continue without asking a text question: nothing reaches the main checkout before Phase 5, which has its own gate.
 
 ---
 

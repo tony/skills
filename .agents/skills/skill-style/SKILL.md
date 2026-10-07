@@ -199,7 +199,8 @@ These are this marketplace's limits. Apply them only when the project's
 4. **Run the deletion test** and build the ledger. Include the
    library-standards defects. A rewrite never adds a claim the source
    did not make: list every added or changed claim, rename, and
-   frontmatter change under Behavior changes, not in the Ledger. A table
+   frontmatter change under Behavior changes, not in the Ledger. Fix a
+   name or description defect in the rewrite and list the fix there. A table
    of flags is not `$ARGUMENTS` consumption, so add no `argument-hint`
    for it. Report a flaw once, in
    one bullet, without speculating about edits nobody asked for.

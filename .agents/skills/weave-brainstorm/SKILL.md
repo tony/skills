@@ -47,7 +47,7 @@ The shared worker prompt body is:
 >
 > Prompt: <the prompt>
 >
-> Provide a clear, well-structured response. Cite specific files and line numbers where relevant.
+> Provide a clear, well-structured response. Cite specific files and line numbers where relevant. Where the prompt asks for alternatives, make each one differ from the obvious design in mechanism (the underlying data structure or control flow), not in naming or detail.
 
 Follow `ensemble-core.md` (Dispatch lanes) and (Variants), then (Close the repo guard).
 
@@ -57,7 +57,7 @@ Follow `ensemble-core.md` (Dispatch lanes) and (Variants), then (Close the repo 
 
 Read `references/present-results.md` and `references/brainstorm.md`, and apply them with `RESULT_KIND` = `brainstorm`, `ARTIFACT_PATH` = the session's `outputs/` directory, `SESSION_DIR`, `PASS_COUNT` = 1, `IN_PLAN_MODE` = false, `LABEL_MAP_PATH` = null. Read `WORKER_BACKEND`, `PARTICIPANTS`, `EXECUTORS`, and `MODELS` from `session.json`.
 
-Head each response as `ensemble-core.md` (Variants) step 5 says. Do not group responses, count how many distinct designs they cover, merge them, or comment on overlap.
+Reply with the hero and sections of `results/brainstorm.md` in that order, and nothing after Attribution. Head each response as `ensemble-core.md` (Variants) step 5 says. Do not group responses, count how many distinct designs they cover, merge them, or comment on overlap, rank them, or recommend one in your own voice.
 
 ---
 

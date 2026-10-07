@@ -16,6 +16,7 @@ import argparse
 import os
 import subprocess
 import sys
+from pathlib import Path
 
 EXIT_CONFLICT = 10
 
@@ -39,7 +40,7 @@ def rebase_in_progress() -> bool:
     """Whether a rebase is paused, resolved through ``--git-path`` for linked worktrees."""
     for name in ("rebase-merge", "rebase-apply"):
         path = _git("rev-parse", "--git-path", name).stdout.strip()
-        if path and os.path.isdir(path):
+        if path and Path(path).is_dir():
             return True
     return False
 

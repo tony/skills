@@ -1091,7 +1091,7 @@
         "references/skill-rubric.md": "plugins/skill-style/references/skill-rubric.md",
         "references/skill_diff.py": "plugins/skill-style/scripts/skill_diff.py"
       },
-      "bytes": 43158
+      "bytes": 43233
     },
     {
       "name": "slop-deslop",
@@ -1109,7 +1109,7 @@
         "references/slop_detect.py": "plugins/slop/scripts/slop_detect.py",
         "references/verification-gates.md": "plugins/slop/references/verification-gates.md"
       },
-      "bytes": 87668
+      "bytes": 88177
     },
     {
       "name": "slop-scan",
@@ -1124,7 +1124,7 @@
         "references/slop_detect.py": "plugins/slop/scripts/slop_detect.py",
         "references/verification-gates.md": "plugins/slop/references/verification-gates.md"
       },
-      "bytes": 71557
+      "bytes": 73677
     },
     {
       "name": "spike-bakeoff",
@@ -1137,7 +1137,7 @@
         "references/spike.sh": "plugins/spike/scripts/spike.sh",
         "references/verification-gates.md": "plugins/spike/references/verification-gates.md"
       },
-      "bytes": 43670
+      "bytes": 43716
     },
     {
       "name": "spike-probe",
@@ -1150,7 +1150,7 @@
         "references/spike.sh": "plugins/spike/scripts/spike.sh",
         "references/verification-gates.md": "plugins/spike/references/verification-gates.md"
       },
-      "bytes": 39270
+      "bytes": 39492
     },
     {
       "name": "spike-ratchet",
@@ -1163,7 +1163,7 @@
         "references/spike.sh": "plugins/spike/scripts/spike.sh",
         "references/verification-gates.md": "plugins/spike/references/verification-gates.md"
       },
-      "bytes": 39397
+      "bytes": 39443
     },
     {
       "name": "tailwind-spacing-audit",
@@ -1297,7 +1297,7 @@
         "references/prose-rules.md": "plugins/weave/references/prose-rules.md",
         "references/worker-backends.md": "plugins/weave/references/worker-backends.md"
       },
-      "bytes": 147396
+      "bytes": 148185
     },
     {
       "name": "weave-ask",
@@ -1314,7 +1314,7 @@
         "references/prose-rules.md": "plugins/weave/references/prose-rules.md",
         "references/worker-backends.md": "plugins/weave/references/worker-backends.md"
       },
-      "bytes": 154511
+      "bytes": 155237
     },
     {
       "name": "weave-brainstorm",
@@ -1328,7 +1328,7 @@
         "references/present-results.md": "plugins/weave/references/present-results.md",
         "references/worker-backends.md": "plugins/weave/references/worker-backends.md"
       },
-      "bytes": 132476
+      "bytes": 133639
     },
     {
       "name": "weave-brainstorm-and-refine",
@@ -1344,7 +1344,7 @@
         "references/refine-cycle.md": "plugins/weave/references/refine-cycle.md",
         "references/worker-backends.md": "plugins/weave/references/worker-backends.md"
       },
-      "bytes": 149927
+      "bytes": 150653
     },
     {
       "name": "weave-execute",
@@ -1360,7 +1360,7 @@
         "references/prose-rules.md": "plugins/weave/references/prose-rules.md",
         "references/worker-backends.md": "plugins/weave/references/worker-backends.md"
       },
-      "bytes": 145996
+      "bytes": 146785
     },
     {
       "name": "weave-fix-review",
@@ -1373,7 +1373,7 @@
         "references/present-results.md": "plugins/weave/references/present-results.md",
         "references/prose-rules.md": "plugins/weave/references/prose-rules.md"
       },
-      "bytes": 113325
+      "bytes": 113788
     },
     {
       "name": "weave-plan",
@@ -1389,7 +1389,7 @@
         "references/prose-rules.md": "plugins/weave/references/prose-rules.md",
         "references/worker-backends.md": "plugins/weave/references/worker-backends.md"
       },
-      "bytes": 149129
+      "bytes": 149855
     },
     {
       "name": "weave-prompt",
@@ -1405,7 +1405,7 @@
         "references/prose-rules.md": "plugins/weave/references/prose-rules.md",
         "references/worker-backends.md": "plugins/weave/references/worker-backends.md"
       },
-      "bytes": 145644
+      "bytes": 146433
     },
     {
       "name": "weave-refine",
@@ -1421,7 +1421,7 @@
         "references/refine.md": "plugins/weave/references/results/refine.md",
         "references/worker-backends.md": "plugins/weave/references/worker-backends.md"
       },
-      "bytes": 148783
+      "bytes": 149509
     },
     {
       "name": "weave-review",
@@ -1438,7 +1438,7 @@
         "references/review.md": "plugins/weave/references/results/review.md",
         "references/worker-backends.md": "plugins/weave/references/worker-backends.md"
       },
-      "bytes": 159352
+      "bytes": 160078
     },
     {
       "name": "weave-serene-bliss",
@@ -1446,6 +1446,7 @@
         "plugins/weave/skills/serene-bliss/SKILL.md"
       ],
       "bundled": {
+        "references/brainstorm.md": "plugins/weave/references/results/brainstorm.md",
         "references/deslop-pass.md": "plugins/weave/references/deslop-pass.md",
         "references/engine.py": "plugins/weave/scripts/engine.py",
         "references/ensemble-core.md": "plugins/weave/references/ensemble-core.md",
@@ -1454,7 +1455,7 @@
         "references/refine.md": "plugins/weave/references/results/refine.md",
         "references/worker-backends.md": "plugins/weave/references/worker-backends.md"
       },
-      "bytes": 152959
+      "bytes": 155646
     }
   ],
   "duplication": {
@@ -1585,6 +1586,7 @@
     "plugins/ticket/references/prose-rules.md": 2,
     "plugins/ticket/references/resolve.md": 2,
     "plugins/weave/references/ensemble-techniques.md": 2,
+    "plugins/weave/references/results/brainstorm.md": 2,
     "plugins/weave/references/results/refine.md": 2,
     "plugins/agent-messaging/references/agents/claude-code.md": 1,
     "plugins/agent-messaging/references/agents/codex.md": 1,
@@ -1646,7 +1648,6 @@
     "plugins/weave/references/results/architecture.md": 1,
     "plugins/weave/references/results/ask.md": 1,
     "plugins/weave/references/results/brainstorm-and-refine.md": 1,
-    "plugins/weave/references/results/brainstorm.md": 1,
     "plugins/weave/references/results/execute.md": 1,
     "plugins/weave/references/results/fix-review.md": 1,
     "plugins/weave/references/results/plan.md": 1,

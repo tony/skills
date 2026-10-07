@@ -6,7 +6,7 @@ description: >-
 disable-model-invocation: true
 allowed-tools: ["Bash", "Read", "Grep", "Glob", "Edit", "Write", "AskUserQuestion", "Task"]
 metadata:
-  argument-hint: "[--paths=<glob>] [--apply] [--budget=strict|default|lax] [--with-history=<N>] [--allow-dirty] [--run-tests] [--no-semantic] [--taxonomy=<path>] [--on-fail=skip|stop|ask]"
+  argument-hint: "[--paths=<glob>] [--apply] [--from=<run-dir>] [--budget=strict|default|lax] [--with-history=<N>] [--allow-dirty] [--run-tests] [--no-semantic] [--taxonomy=<path>] [--on-fail=skip|stop|ask]"
   source: "plugins/slop/skills/scan/SKILL.md"
 ---
 
@@ -41,6 +41,7 @@ budget. A non-flag token is a path scope that overrides `--paths`.
 |---|---|---|
 | `--paths=<glob>` | all tracked | Scope through `git ls-files`; comma-separate multiple globs. |
 | `--apply` | off | Offer the per-finding commit loop at the Step 9 gate. **Lands new commits on `HEAD`.** Without it the run stops after writing the patch series. |
+| `--from=<run-dir>` | off | With `--apply`, reuse a series an earlier run materialized instead of detecting again, so edits to its `commits.json` are honored. Halts when `HEAD` moved since. |
 | `--budget=<level>` | `default` | Tier ceiling; table in `references/detect-pipeline.md` § Budget and confirmation. |
 | `--with-history=<N>` | off | Also scan the last N commits' content and messages. Findings are advisory only. N is capped at the commit count, with a warning. |
 | `--allow-dirty` | off | Permit a dirty working tree. Files already dirty at Step 1 are advisory only; the skill never edits or rolls back a file with pre-existing changes. Without the flag, a dirty tree halts at Step 1. |
@@ -86,7 +87,7 @@ No commits yet. Commit the files you want checked, then run slop-scan again.
 Then check for tracked files:
 
 ```console
-$ git ls-files
+$ git ls-files | head -n 1
 ```
 
 If it prints nothing, stop the same way:
@@ -125,35 +126,38 @@ Halt with a clear message when any of these holds:
   `MERGE_HEAD` with `git rev-parse --git-path <name>` and test the
   printed paths.
 - `HEAD` is detached; every commit needs a branch reference.
+- `--from` was passed without `--apply`, or `<run-dir>/0000-PLAN.md` is
+  missing, or its recorded `START_SHA` differs from `HEAD`, or the
+  registry SHA-256 it records changed. Say that the series is stale and
+  to re-run `--apply` without `--from`.
+
+With `--from=<run-dir>`, read the scope, gate commands, `--on-fail`, and
+`DIRTY_AT_START` from `0000-PLAN.md`, skip Steps 2 to 8, and go to Step 9.
 
 ## Step 2: Resolve scan scope
 
+Only counts are needed here; Step 6 streams the content to the matcher.
+
 ```console
-$ git ls-files
+$ git ls-files | wc -l
 ```
 
-With `--paths=<glob>`, pass each glob through:
+With `--paths=<glob>`, count each glob instead:
 
 ```console
-$ git ls-files -- "<glob>"
+$ git ls-files -- "<glob>" | wc -l
 ```
 
 Refuse an empty set with "scope is empty"; a misspelled glob must not
 silently no-op.
 
-With `--with-history=N`, first cap N at the commit count:
+With `--with-history=N`, cap N at the commit count, with a warning:
 
 ```console
 $ git rev-list --count HEAD
 ```
 
-Then collect the history, from `HEAD` so it also works on the trunk:
-
-```console
-$ git log -n "${N}" -p HEAD
-```
-
-Pass A reads it in Step 6 with `--historical`.
+Step 6 reads that history from `HEAD`, so it also works on the trunk.
 
 ## Step 3: Discover quality gates
 
@@ -182,6 +186,11 @@ path once, print it, and write that literal path in each command, since
 shell variables do not persist between Bash calls. It needs python3 (3.9
 or newer).
 
+`<signatures.yml>` is `references/signatures.yml`, resolved and
+written the same way. Write the literal value of `BASELINE_SHA`,
+`START_SHA`, `N`, and each gate command wherever a step shows `<BASELINE_SHA>`
+or `<FORMAT_CMD>`.
+
 Run the matcher over the Step 2 files. `files` mode reads each `file`
 and `diff` signature against current content; `--added-base` marks the
 lines `BASELINE_SHA..HEAD` added, so an added-line rule (`^\+`) stays
@@ -193,7 +202,7 @@ Tier A on those lines and drops to Tier B on every other line. Omit
 
 ```console
 $ git ls-files -z | python3 <slop_detect.py> files \
-    --registry references/signatures.yml \
+    --registry <signatures.yml> \
     --override .claude/slop.local.yml \
     --added-base "<BASELINE_SHA>"
 ```
@@ -202,14 +211,14 @@ Under `--with-history`, also run the diff and message modes over the
 captured log. Their findings carry `historical_only`.
 
 ```console
-$ git log -n "<N>" -p HEAD | python3 <slop_detect.py> diff \
-    --registry references/signatures.yml \
+$ git -c core.quotepath=off log -n "<N>" -p HEAD | python3 <slop_detect.py> diff \
+    --registry <signatures.yml> \
     --historical
 ```
 
 ```console
 $ git log -n "<N>" -z --format=%H%x1f%B HEAD | python3 <slop_detect.py> messages \
-    --registry references/signatures.yml \
+    --registry <signatures.yml> \
     --historical
 ```
 
@@ -257,18 +266,22 @@ Layout:
 └── commits.json                       (finding → proposed commit subject + body)
 ```
 
-`0000-PLAN.md` adds the scope's file count, the `--on-fail` mode, and
-`DIRTY_AT_START` to the fields in § Run directory.
+`0000-PLAN.md` adds `START_SHA`, the scope's file count, the `--on-fail`
+mode, and `DIRTY_AT_START` to the fields in § Run directory.
 
-`commits.json` holds, per finding, the proposed subject and the `why:` /
-`what:` body, built from `references/commit-template.md` and
-written per `references/prose-rules.md`. The user may edit it
-before the apply loop reads it. The skill drives the loop itself; there
-is no `apply.sh`.
+`commits.json` is a list in apply order. Each entry holds `patch`, `file`,
+`signature_id`, and the proposed `subject` and `why:` / `what:` `body`,
+built from `references/commit-template.md` and written per
+`references/prose-rules.md`. The user may edit an entry or delete
+one to skip it, then re-invoke with `--apply --from=<run-dir>`; the loop
+reads the file as it stands. A re-invocation without `--from` detects
+again, writes a new run directory, and ignores those edits. The skill
+drives the loop itself; there is no `apply.sh`.
 
 Without `--apply`, print the Step 11 report (skip its git and gate
 commands; counts of committed and rolled-back findings are 0) and stop.
-The user re-invokes with `--apply` once the proposals look right.
+The user re-invokes with `--apply --from=<run-dir>` once the proposals
+look right.
 
 ## Step 9: Confirmation gate
 
@@ -282,13 +295,13 @@ choices:
 | **Apply and commit** | Run the per-finding commit loop. |
 | **Cancel** | Delete `<run-dir>/` and exit. |
 
-Headless, the printed command is the `--apply` re-run. "Apply and
+Headless, the printed command is the `--apply --from=<run-dir>` re-run. "Apply and
 commit" approves **Apply and commit** and nothing broader: no push.
 
 ## Step 10: Per-finding commit loop
 
-Take findings in order of `(file ASC, signature_id ASC,
-line_range_start ASC)`.
+Take the entries of `commits.json` in order; Step 8 sorted them by
+`(file ASC, signature_id ASC, line_range_start ASC)`.
 
 ### 10a. Apply the edit
 
@@ -312,21 +325,21 @@ gates that take a path, skip the others, and report them as skipped, so
 a project-wide formatter cannot rewrite the user's dirty files.
 
 ```console
-$ ${FORMAT_CMD}
+$ <FORMAT_CMD>
 ```
 
 ```console
-$ ${LINT_CMD}
+$ <LINT_CMD>
 ```
 
 ```console
-$ ${TYPECHECK_CMD}
+$ <TYPECHECK_CMD>
 ```
 
 With `--run-tests`:
 
 ```console
-$ ${TEST_CMD}
+$ <TEST_CMD>
 ```
 
 - The formatter applies its changes; re-stage only `<file>` with
@@ -369,7 +382,7 @@ Then apply `--on-fail`:
 
 ### 10e. On gate pass
 
-Read the finding's message from `commits.json`. Make a temp file with
+Read the finding's `subject` and `body` from its `commits.json` entry. Make a temp file with
 `mktemp "${TMPDIR:-/tmp}/slop-msg.XXXXXX"` and print its path. Write the
 message to it with the Write tool, never a shell heredoc: the text comes
 from repo content, and a line equal to the delimiter would end the
@@ -394,7 +407,7 @@ Mark the finding `committed`.
 ## Step 11: Final verification and report
 
 ```console
-$ git log --oneline "${START_SHA}..HEAD"
+$ git log --oneline "<START_SHA>..HEAD"
 ```
 
 ```console
@@ -404,21 +417,21 @@ $ git status --porcelain
 Run the full gate set on the tip, skipping empty buckets:
 
 ```console
-$ ${FORMAT_CMD}
+$ <FORMAT_CMD>
 ```
 
 ```console
-$ ${LINT_CMD}
+$ <LINT_CMD>
 ```
 
 ```console
-$ ${TYPECHECK_CMD}
+$ <TYPECHECK_CMD>
 ```
 
 With `--run-tests`:
 
 ```console
-$ ${TEST_CMD}
+$ <TEST_CMD>
 ```
 
 Then run `git status --porcelain` again. A formatter that rewrote files
@@ -427,9 +440,12 @@ as `Gate left uncommitted changes: <paths>`, and never commit or
 restore them.
 
 The hero line is `Slop scan summary`; sections follow in the order
-shown: summary block, `Quality gates (final)`, `Per-finding commits`,
-`Gate-failed findings`, then the `Patch series:` line when nothing was
-committed. A halted run
+shown: summary block, `Open findings`, `Quality gates (final)`,
+`Per-finding commits`, `Gate-failed findings`, then the `Patch series:`
+line. `Open findings` lists each Tier A and B finding neither committed nor gate-failed as
+`signature_id file:line` (`signature_id <short-sha> subject` or `body`
+for a history finding), at most 10, then `and N more`; omit it when none
+remain. A halted run
 prints one sentence naming the cause, then what the user must do (commit
 or stash, or pass `--allow-dirty`).
 
@@ -445,11 +461,15 @@ Findings: 5 (2 Tier A, 2 Tier B, 1 Tier C, 0 historical-only)
 Committed: 3
 Gate-failed (rolled back): 1
 Hook-failed (rolled back): 0
-Advisory: 1 (see advisory.md)
+Advisory: 1 (in advisory.md under the patch series)
 Historical-only: 0
 
 Tone calibration: demoted "robust", "seamless"
 Verifier: enabled (42 files scanned; 0 skipped)
+
+Open findings
+=============
+- low-value.log-debris src/cli.py:88
 
 Quality gates (final)
 =====================
@@ -464,15 +484,16 @@ Per-finding commits
 Gate-failed findings
 ====================
 - brittle.line-numbers in docs/guide.md:12, lint: line too long
+
+Patch series: <run-dir>
 ```
 
-A run that committed nothing ends with `Patch series: <run-dir>`, the
-path Step 8 printed, because the user reviews or edits `commits.json`
-there; a run that committed omits the line. Do not push; the user
+`Patch series:` carries the path Step 8 printed, because the user
+reviews `commits.json` and `advisory.md` there. Do not push; the user
 decides. A plain `git push` suffices because no history changed.
 
 End with the next step, through `ask-user-choice` when available,
-otherwise as a plain line: after an audit, the `--apply` re-run; after
+otherwise as a plain line: after an audit, the `--apply --from=<run-dir>` re-run; after
 commits, `git push`.
 
 ## Edge cases

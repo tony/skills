@@ -135,6 +135,8 @@ Unless `--keep-tree`, run the Stash steps in
 `references/spike-core.md`: `stash` on a clean start, `stash-on-top`
 after a probe on top, `delta` for the plan, then `restore` after a
 stash-first run that is not replaying, and `branch-end` with `--branch`.
+Run `git rev-parse --verify <sha>^{commit}` on each printed SHA, as its own
+Bash call, before writing the report.
 
 ## Phase 5: The replay plan
 
@@ -217,7 +219,8 @@ that needs attention) go inside `## Stash`, never before the first section.
    case for the `spike-bakeoff` skill or the `spike-ratchet` skill.
 3. `## Verification`: gate commands run and their results; the
    local-vs-CI split; what was deferred and why.
-4. `## Stash`: message, SHA, restore command. With `--keep-tree` there
+4. `## Stash`: message, SHA (one `git rev-parse --verify <sha>^{commit}`
+   printed back), restore command. With `--keep-tree` there
    is no spike stash: say the spike was left in the tree. A probe that
    changed nothing says "no changes" here instead of a SHA. Whenever the
    run saved the user's work (stash first or on top), add one more bullet

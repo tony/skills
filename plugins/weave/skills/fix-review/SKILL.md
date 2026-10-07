@@ -65,12 +65,14 @@ For each finding:
    - **Out of scope**: valid but unrelated to this branch's changes
    - **Pre-existing**: valid but older than this branch
 4. Record the verdict. For a valid finding, note the planned fix and test strategy. For any other verdict, cite the code, test, or convention that decides it.
-5. Present each finding with its verdict, compared against the plan's predictions, and highlight changes. Wait for the user's confirmation before Phase 3. A pre-existing finding is fixed only when the user approves it. Without an interactive reply, stop here and report the verdicts: nothing is fixed or committed. A stopped run replies in one sentence stating the result, then what the user must do, as plain text with plain bullets and no local paths:
+5. Present each finding with its verdict, compared against the plan's predictions, and highlight changes. Wait for the user's confirmation before Phase 3. A pre-existing finding is fixed only when the user approves it. Without an interactive reply, stop here and report the verdicts: nothing is fixed or committed. A stopped run replies in one sentence stating the result, then what the user must do, as plain text with one bullet per finding (never grouped by verdict) and no local paths:
 
    ```text
    Validated 4 findings and changed nothing: confirm which to fix.
-   - Valid: 1, 2, 4
-   - Incorrect: 3 (the cited branch is unreachable)
+   - Finding 1: valid, the null check is missing at the cited line.
+   - Finding 2: valid, the retry loop never exits on error.
+   - Finding 3: incorrect, the cited branch is unreachable.
+   - Finding 4: valid, the test covers only the success path.
    Reply "apply the valid fixes" to continue.
    ```
  A request that explicitly says to apply the fixes is that confirmation for the findings judged Valid, never for pre-existing ones and never for pushing.

@@ -7,6 +7,13 @@ every engine command prints JSON, and `"ok": false` carries the reason.
 `<session_dir>` is the literal `session_dir` path `init` prints. Paste it into
 each command: shell variables do not survive between Bash calls.
 
+**Writing text to a file.** Use the host's file-writing tool. When it is
+unavailable or denied, fall back to a quoted heredoc in Bash
+(`cat > <path> <<'WEAVE_TEXT_END'`), after checking that the delimiter
+appears on no line of the text; pick another delimiter when it does. Every
+"write ... to <path>" step below means this. A write that fails both ways
+stops the run before dispatch.
+
 ## Contents
 
 - Start the session
@@ -31,8 +38,8 @@ each command: shell variables do not survive between Bash calls.
    $ mktemp -d "${TMPDIR:-/tmp}/weave-in.XXXXXX"
    ```
 
-   Write the raw `$ARGUMENTS` to `arguments.txt` in the directory it printed,
-   with the host's file-writing tool, and use that literal path from here on:
+   Write the raw `$ARGUMENTS` to `arguments.txt` in the directory it printed
+   (see Writing text to a file), and use that literal path from here on:
 
    ```console
    $ python3 <engine> flags \
@@ -63,7 +70,7 @@ each command: shell variables do not survive between Bash calls.
    locations.
 
 4. Start the session. Write `prompt` to `prompt.txt` in the input directory
-   with the file-writing tool; stdin carries it for the session summary:
+   (see Writing text to a file); stdin carries it for the session summary:
 
    ```console
    $ python3 <engine> init \
@@ -156,11 +163,17 @@ $ python3 <engine> worktrees create \
 ```
 
 **Write probe (mutating commands).** Before launching, write a one-line file
-named `.weave-probe` in each worktree path with the host's file-writing tool,
-read it back, then delete it with `rm`. A denied or failing write means the
-lane would lose its work after dispatch: stop before any lane runs, name the
-roles whose worktree refused (no paths), say that file writes must be allowed for
-the session, and remove the worktrees (`worktrees remove`). Under `model-clis`, probe only the `claude`
+named `.weave-probe` in each worktree path (a Bash `echo` is enough), read it
+back, then delete it with `rm`. A write refused by both the tool and Bash means
+the lane would lose its work after dispatch: stop before any lane runs, remove
+the worktrees (`worktrees remove`), and reply with this and nothing more:
+
+```text
+Stopped before any worker started: file writes are blocked for this session.
+- Allow file writes, then run it again.
+```
+
+Name no role and no path. Under `model-clis`, probe only the `claude`
 lane's checkout the same way; the engine runs `agy` and `gpt` itself.
 
 Launch a fresh `general-purpose` Task agent per role, rooted in its worktree
