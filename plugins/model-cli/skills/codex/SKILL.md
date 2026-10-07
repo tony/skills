@@ -1,6 +1,6 @@
 ---
 name: codex
-description: "Use when asked to use Codex, GPT, OpenAI's model, or the Codex CLI to delegate a task; falls back to agent. Not for messaging a Codex session."
+description: "Use when asked to use Codex, GPT, OpenAI, or the Codex CLI to delegate; writes unsandboxed unless mode:plan. Not for messaging a Codex session."
 user-invocable: true
 allowed-tools: ["Bash"]
 argument-hint: <prompt> [timeout:<seconds>] [mode:plan]
@@ -28,7 +28,8 @@ unavailable and stop.
 
 ## Step 2: Run the tiers in order
 
-Normal runs are write-enabled. `mode:plan` runs are read-only: `codex exec
+Normal runs are write-enabled with no sandbox, and `--skip-git-repo-check` removes
+Codex's repo guard. `mode:plan` runs are read-only: `codex exec
 --sandbox read-only` is Codex's read-only sandbox, and `agent --mode plan` is
 Cursor's read-only plan mode.
 

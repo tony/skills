@@ -44,30 +44,42 @@ one of them; offer the others as next steps.
   after `git add <path>` for any new file such as a lock file (`git
   commit -- <untracked path>` fails). Stop when a path to commit is
   already in the recorded list.
+- `../../scripts/lockctl.py` resolves from this skill's directory. Print
+  its absolute path once and write that path literally in each command,
+  since shell variables do not persist between Bash calls. The
+  references show the same `../../scripts/` form.
 - Commit messages carry no `Co-Authored-By`, no "Generated with" or other
   tool trailers, and no emoji.
 - Where there is no interactive question tool (Codex, headless runs),
   state each question in the reply with the narrower answer as the
-  default (fewest modules, `--no-commit`). A headless run presents the
+  default (fewest modules, `--no-commit`), without remarking that no
+  question tool exists. A headless run presents the
   plan and stops, unless the request itself authorises the edit ("go
   ahead and bump it"); that covers the edit only, never a commit or
   push.
 - Reply in the shape each skill's Output declares, as plain text outside
   any code fence, with plain bullets and no bold (never
   `- **Label:** ...`), and no section that would hold nothing. Name paths
-  relative to the repository, never local absolute or temporary paths.
+  relative to the repository, never local absolute or temporary paths,
+  and name tools by name (`terraform`), never by install path. Name no
+  helper script in a reply; say what it found.
+- Name no version the registry has not confirmed, and make no claim about
+  what a newer release changes (such as a major jump) before one is
+  confirmed.
 - A run that cannot proceed (nothing declared, no version named and the
   release list unreachable, a dirty tree it cannot work around) ends
   with `⚠ Stopped: <one result sentence>`, then the step the user must
   take. No sections and no recap. Findings that change that step follow
-  as plain bullets, with no lead-in sentence.
+  as plain bullets, with no lead-in sentence, and describe only what the
+  run found, never steps it would take after the edit. A run stopped
+  before its first edit says nothing was edited.
 - `--audit-only` writes nothing and is a result, not a stop. Its hero is
   `Audit only: <result>` with no `⚠`, the skill's own sections follow
   (omit the empty ones), and no sentence restates that nothing was
   written. An audit with nothing to audit (no Terraform files) is a
   stopped run.
-- When the target crosses a major version, link the project's upgrade
-  guide in the report, or say none was found.
+- When a confirmed target crosses a major version, link the project's
+  upgrade guide in the report, or say none was found.
 
 ## Core principle
 
@@ -89,7 +101,10 @@ file presence, how many platforms that lock tracks per provider, and the
 providers and `required_version` it declares. That inventory is the unit
 of work for everything after.
 
-Ask the reference's ambiguity questions together, after the inventory exists.
+Find root modules from the `.tf` files, not only from tracked lock files,
+and map each child module to the root modules that call it, both per the
+reference. Ask the reference's ambiguity questions together, after the
+inventory exists.
 
 ## Phase 2 - Resolve the target and confirm it exists
 
@@ -98,7 +113,9 @@ the version is published and record its tag and source repository, which
 is where the changelog link comes from. Write no version string before
 this phase confirms it. If it cannot be confirmed, stop and ask the user
 which version to use, and say plainly when a version was stated but not
-confirmed.
+confirmed. When the user says they confirmed it, write it, record
+"confirmed by you" in the report, and link no changelog unless a fetch
+succeeded.
 
 ## Phase 3 - Inventory the pin sites and predict the change
 
@@ -138,7 +155,8 @@ All sites in one commit. Preserve each site's operator, and write to the
 file the tool loads where `.tofu` shadows `.tf`.
 
 The commit body says what moved and why, and cites the release notes at
-the tag the registry reported. Take the subject format from the project's
+the tag the registry reported, but only a page the run fetched; with none,
+the body names no link. Take the subject format from the project's
 own commit conventions in AGENTS.md or CLAUDE.md. Write it per
 `../../references/prose-rules.md`.
 
@@ -149,7 +167,9 @@ provider or the CLI moves. Apply the reference's guard first: a root
 module with no committed lock, or an edited one, is skipped and reported,
 never initialised on its own. Compare each provider's platform count
 against its count before the run; a drop is a stop signal. A failed
-`init` restores the lock from git.
+`init` restores the lock from git. A lock that lost platforms is never
+committed without the user's explicit yes to that file; headless, restore
+it from git, leave it out of the commit, and stop.
 
 Lock files land as their own commit, separate from the constraints.
 

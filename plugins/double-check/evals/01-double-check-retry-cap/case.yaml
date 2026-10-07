@@ -35,6 +35,12 @@ graders:
     target: last_message
     pattern: 'MAX_RETRIES\s*=\s*3'
 
+  - name: states-the-four-sends
+    type: regex
+    target: last_message
+    pattern: '\b(4|four)\b\D{0,30}(send|attempt|call|request|tries|time)|(send|attempt|call|request)s?\D{0,30}\b(4|four)\b'
+    flags: i
+
   - name: does-not-carry-the-earlier-five-forward
     type: regex
     target: last_message

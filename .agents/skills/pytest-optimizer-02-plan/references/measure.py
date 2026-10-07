@@ -5,7 +5,7 @@ Each command prints one JSON object on stdout. Exit codes: 0 success, 1 a
 reported failure (the JSON says why), 2 a usage error. Standard library only.
 
 Commands: run, band, compare, order, token, hash, impact, score, memory-dir,
-restore.
+restore, chain.
 Run ``measure.py <command> --help`` for arguments.
 """
 
@@ -330,8 +330,11 @@ def impact(delta: float, baseline: float, clears_noise: bool) -> float:
     return 0.25
 
 
-def score(dims: dict[str, float]) -> dict[str, t.Any]:
-    """Weight the five dimensions and apply the hard gates.
+def score(dims: dict[str, float], hygiene: bool = False) -> dict[str, t.Any]:
+    """Weight the dimensions and apply the hard gates.
+
+    A hygiene item (typing, parametrize convention) saves no time by design: it
+    skips the noise gate and is scored on the other four dimensions, rescaled to 1.
 
     >>> out = score(
     ...     {"safety": 0.9, "impact": 0.75, "effort": 1.0, "confidence": 0.9, "reversibility": 0.9}
@@ -346,12 +349,22 @@ def score(dims: dict[str, float]) -> dict[str, t.Any]:
     ...     "dropped"
     ... ]
     'impact is 0'
+    >>> out = score(
+    ...     {"safety": 1, "impact": 0, "effort": 1, "confidence": 1, "reversibility": 1},
+    ...     hygiene=True,
+    ... )
+    >>> (out["total"], out["dropped"])
+    (1.0, None)
     """
-    total = round(sum(WEIGHTS[name] * dims[name] for name in WEIGHTS), 3)
+    if hygiene:
+        rest = 1 - WEIGHTS["impact"]
+        total = round(sum(w * dims[n] for n, w in WEIGHTS.items() if n != "impact") / rest, 3)
+    else:
+        total = round(sum(WEIGHTS[name] * dims[name] for name in WEIGHTS), 3)
     dropped = None
     if dims["safety"] < SAFETY_CUTOFF:
         dropped = "safety below 0.4"
-    elif dims["impact"] == 0:
+    elif dims["impact"] == 0 and not hygiene:
         dropped = "impact is 0"
     return {"total": total, "dropped": dropped, **dims}
 
@@ -470,6 +483,47 @@ def restore(memory: pathlib.Path, cwd: pathlib.Path, home: pathlib.Path) -> dict
     return {"restored": proc.returncode == 0, "reason": proc.stderr.strip() or None}
 
 
+def chain(root: pathlib.Path, base: str, logged: Sequence[str]) -> dict[str, t.Any]:
+    """Check that ``HEAD`` is ``base`` plus exactly the logged commits, in order.
+
+    A resumed ``03-execute`` run compares against this instead of the scan-time
+    token, which includes ``HEAD`` and so changes with the run's own commits.
+
+    >>> import tempfile
+    >>> with tempfile.TemporaryDirectory() as d:
+    ...     r = pathlib.Path(d)
+    ...     _ = _git(r, "init", "-q")
+    ...     _ = _git(r, "config", "user.email", "a@example.com")
+    ...     _ = _git(r, "config", "user.name", "a")
+    ...     _ = _git(r, "commit", "-q", "--allow-empty", "-m", "base")
+    ...     b = _git(r, "rev-parse", "HEAD").stdout.strip()
+    ...     _ = _git(r, "commit", "-q", "--allow-empty", "-m", "one")
+    ...     c = _git(r, "rev-parse", "--short", "HEAD").stdout.strip()
+    ...     ok = chain(r, b, [c])["ok"]
+    ...     none_logged = chain(r, b, [])["ok"]
+    ...     _ = _git(r, "commit", "-q", "--allow-empty", "-m", "foreign")
+    ...     foreign = chain(r, b, [c])["ok"]
+    >>> (ok, none_logged, foreign)
+    (True, False, False)
+    """
+    proc = _git(root, "rev-list", "--reverse", f"{base}..HEAD")
+    if proc.returncode != 0:
+        return {"ok": False, "reason": "base is not an ancestor of HEAD"}
+    actual = proc.stdout.split()
+    expected: list[str] = []
+    for sha in logged:
+        full = _git(root, "rev-parse", "--verify", "--quiet", f"{sha}^{{commit}}")
+        if full.returncode != 0:
+            return {"ok": False, "reason": f"logged commit {sha} does not exist"}
+        expected.append(full.stdout.strip())
+    if actual != expected:
+        return {
+            "ok": False,
+            "reason": f"HEAD is base plus {len(actual)} commits; the log holds {len(expected)}",
+        }
+    return {"ok": True, "reason": None}
+
+
 def build_parser() -> argparse.ArgumentParser:
     """Build the command-line parser."""
     parser = argparse.ArgumentParser(description=__doc__)
@@ -509,10 +563,16 @@ def build_parser() -> argparse.ArgumentParser:
     p = sub.add_parser("score", help="weighted rubric total and hard gates")
     for name in WEIGHTS:
         p.add_argument(f"--{name}", type=float, required=True)
+    p.add_argument("--hygiene", action="store_true", help="skip the noise gate (typing items)")
 
     p = sub.add_parser("restore", help="git reset --hard and clean, with home and memory guards")
     p.add_argument("--memory-dir", dest="explicit", required=True)
     p.add_argument("--cwd", default=".")
+
+    p = sub.add_parser("chain", help="check HEAD is base plus exactly the logged commits")
+    p.add_argument("--base", required=True)
+    p.add_argument("--cwd", default=".")
+    p.add_argument("commits", nargs="*", help="logged commit shas, in order")
 
     p = sub.add_parser("memory-dir", help="resolve the memory directory")
     p.add_argument("--memory-dir", dest="explicit")
@@ -553,7 +613,11 @@ def main(argv: Sequence[str] | None = None) -> int:  # noqa: PLR0911
     if cmd == "impact":
         return _emit({"impact": impact(args.delta, args.baseline, args.clears_noise)})
     if cmd == "score":
-        return _emit(score({name: getattr(args, name) for name in WEIGHTS}))
+        dims = {name: getattr(args, name) for name in WEIGHTS}
+        return _emit(score(dims, args.hygiene))
+    if cmd == "chain":
+        out = chain(pathlib.Path(args.cwd), args.base, args.commits)
+        return _emit(out, out["ok"])
     if cmd == "restore":
         out = restore(pathlib.Path(args.explicit), pathlib.Path(args.cwd), pathlib.Path.home())
         return _emit(out, out["restored"])

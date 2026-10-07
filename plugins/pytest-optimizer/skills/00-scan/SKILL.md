@@ -53,7 +53,8 @@ $ pytest --collect-only -q -p no:cacheprovider -p no:randomly
 Write the node-id lines (unsorted) to `collection.txt`. Compute the idempotency
 token defined in the schema with `measure.py token --head <HEAD sha>
 --collection collection.txt --version <name>=<version> ...` (pytest and each
-plugin), and store it in `state.json` as `env_token`. If `state.json` shows
+plugin), and store it in `state.json` as `env_token`, with `base_head` set to the same
+`HEAD` sha: `03-execute` resumes against it. If `state.json` shows
 `scan` completed with an unchanged token and `hypotheses.json` exists, report "already scanned" and stop, unless `--force`.
 
 ## Step 3: Detect capabilities
@@ -64,28 +65,34 @@ available features below; fall back as the matrix directs.
 
 ## Step 4: Establish the baseline and noise band
 
-Run the suite once untimed as a warm-up, then time `--runs` serial,
-cache-disabled runs, appending each JSON line to a runs file in the memory
-directory:
+Run the command below once without the redirect as a warm-up; its `seconds` is
+`t`. The scan costs about `(runs + 2) * t` in total: the warm-up, `--runs`
+baseline runs, and the profile run. Above 900 seconds, ask the user to confirm
+or lower `--runs` (never below 3); without an interactive question tool, lower
+`--runs` to 3 and say so in the closing line. Then time `--runs` serial,
+cache-disabled runs, appending each JSON line to `baseline-runs.jsonl` in the
+memory directory:
 
 ```console
 $ python3 <measure.py> run \
-    -- pytest -p no:cacheprovider -p no:randomly -q
+    -- pytest -p no:cacheprovider -p no:randomly -q \
+    >> baseline-runs.jsonl
 ```
 
-Substitute `test_command` for `pytest`. `measure.py band <runs file>` prints the median, MAD, and noise band (floored at
-the 50 ms trust floor), and exits 1 when any run fails or the test counts differ.
-A failing baseline means the suite is red: stop and report it. Write the env
-fingerprint, versions, capabilities, the band, and the passed/total counts to
-`baseline.json`. See `../../references/durations-parsing.md`.
+Substitute `test_command` for `pytest`. `measure.py band baseline-runs.jsonl`
+prints the median, MAD, and noise band (floored at the 50 ms trust floor), and
+exits 1 when any run fails or the test counts differ. A failing baseline means
+the suite is red: stop and report it. Write the env fingerprint, versions,
+capabilities, the band, and the passed/total counts to `baseline.json`. See
+`../../references/durations-parsing.md`.
 
 ## Step 5: Profile slowest tests and fixtures
 
 Capture per-phase timings, bucketed by the `when` token and de-duplicated by
 `(nodeid, when)`:
 
-```bash
-pytest --durations=0 --durations-min=0.005 -p no:cacheprovider -p no:randomly
+```console
+$ pytest --durations=0 --durations-min=0.005 -p no:cacheprovider -p no:randomly
 ```
 
 Rank slowest **test bodies** (`call`, H01) and slowest **fixture
@@ -105,7 +112,8 @@ before proposing any fixture deletion.
 ## Step 7: Emit hypotheses
 
 Write `hypotheses.json`: one entry per firing detector with its heuristic id,
-raw evidence, and prior risk/effort. Estimate no impact here; `01-benchmark`
+raw evidence, and prior risk/effort. H01-H07 and H17/H18 are measurements and
+gates: they appear in the report sections, never as entries. Estimate no impact here; `01-benchmark`
 measures it. Update `state.json` (`phase=scan`, `completed.scan=true`, token).
 
 ## Step 8: Report

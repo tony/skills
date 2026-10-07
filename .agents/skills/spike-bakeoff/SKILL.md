@@ -4,7 +4,7 @@ description: >-
   Use when building two to four competing strategies in isolated git
   worktrees to compare them without landing commits.
 disable-model-invocation: true
-allowed-tools: ["Bash", "Read", "Grep", "Glob", "Edit", "Write", "AskUserQuestion", "Task"]
+allowed-tools: ["Bash", "Read", "Grep", "Glob", "Edit", "Write", "AskUserQuestion", "Agent"]
 metadata:
   argument-hint: "[<goal>] [--strategies=\"a; b; c\"] [--prongs=<2-4>] [--keep-trees] [--replay]"
   source: "plugins/spike/skills/bakeoff/SKILL.md"
@@ -45,10 +45,10 @@ contender branch, not even to snapshot a contender.
 
 | Rationalization | Reality |
 |---|---|
-| "It's a throwaway worktree — a commit there is harmless" | Worktree branches outlive worktrees and leak into PRs. Stash, then prune. |
+| "It's a throwaway worktree, so a commit there is harmless" | Worktree branches outlive worktrees and leak into PRs. Stash, then prune. |
 | "Committing each contender makes them easier to diff" | `git stash show -p <sha>` and `git diff` across stash SHAs diff fine. Stash. |
-| "The winner is decided — commit it straight from its worktree" | The winner exits as a stash and a plan; commits happen in `--replay`, one gated plan item at a time, from the main checkout. |
-| "The losers don't matter — force-remove their worktrees" | Losers are graft material for the synthesis. Stash every contender with a SHA before any teardown. |
+| "The winner is decided, so commit it straight from its worktree" | The winner exits as a stash and a plan; commits happen in `--replay`, one gated plan item at a time, from the main checkout. |
+| "The losers don't matter, so force-remove their worktrees" | Losers are graft material for the synthesis. Stash every contender with a SHA before any teardown. |
 
 **Red flags (STOP):** `git commit` anywhere; `git worktree remove
 --force` on a tree that has not been stashed; "snapshot commit";
@@ -64,7 +64,8 @@ the `spike-probe` skill:
 2. **Empty → mine the conversation** (review findings, a failing
    test, an agreed problem). One strong candidate: adopt it (the
    Phase 1 brief is the confirmation gate). Several:
-   `ask-user-choice`. None: ask.
+   `ask-user-choice`; non-interactive: halt and name the candidates.
+   None: ask; non-interactive: halt and name the missing goal.
 3. **Record provenance** in the Phase 1 brief.
 
 **Strategies** resolve by their own ladder:
@@ -86,12 +87,14 @@ the `spike-probe` skill:
 
 ## Phase 0: Situational awareness
 
-Read the `spike-probe` skill and follow its Phase 0: commit check and
-home-directory refusal, conventions files, the five gate buckets and CI
+Read the `spike-probe` skill and follow its Phase 0 (including how
+`spike.sh` resolves): commit check and home-directory refusal, conventions files, the five gate buckets and CI
 split per `references/verification-gates.md`, and the dirty-tree
 halt. A bakeoff never probes on top of the user's work, because
 `git worktree add ... HEAD` carries none of it: offer only stash first
-or abort (non-interactive default: abort). It also takes no `--branch`.
+or abort (non-interactive default: abort). The user-work SHA that
+stash first prints goes in the report with its restore command. It also
+takes no `--branch`.
 Then the bakeoff-specific checks:
 
 1. Confirm `git worktree` is usable and there is disk headroom for N
@@ -101,8 +104,8 @@ Then the bakeoff-specific checks:
    that is its directory and its stash message prefix. Worktrees are
    detached, so no contender has a branch.
 
-```sh
-mktemp -d "${TMPDIR:-/tmp}/bakeoff.XXXXXX"
+```console
+$ mktemp -d "${TMPDIR:-/tmp}/bakeoff.XXXXXX"
 ```
 
 3. Note any setup a fresh checkout needs to run gates (dependency
@@ -135,7 +138,7 @@ non-interactive run, record the brief in the report and proceed.
 ## Phase 2: The bake
 
 For each contender, create its worktree and run it as an independent
-sub-agent (Task tool) when the host supports it, or sequentially
+sub-agent when the host supports it, or sequentially
 otherwise:
 
 ```console
@@ -189,10 +192,10 @@ A split verdict is valid: report `⚠ inconclusive` with the scorecards.
 **Stash first, prune second**, one contender at a time, never in
 parallel. For each contender:
 
-1. In its worktree, run the stash sequence from the `spike-probe` skill
+1. In its worktree, run `spike.sh stash` as in the `spike-probe` skill
    Phase 4 with the message
-   `bakeoff <n>-<slug>: <strategy> (<verdict>)`. It captures the
-   stash's own SHA in the same command; never read `stash@{0}`, which
+   `bakeoff <n>-<slug>: <strategy> (<verdict>)`. It prints the
+   stash's own SHA; never read `stash@{0}`, which
    is another contender's entry when this one changed nothing. A
    contender that printed `no changes` is recorded as "no changes",
    not given a SHA.
@@ -215,6 +218,10 @@ $ git worktree remove <root>/<n>-<slug>
 
 4. After all contenders: `git worktree prune`, and verify the main
    tree is untouched (`git status`).
+5. After a stash-first Phase 0, restore the user's work with
+   `spike.sh restore <user-work sha>` unless `--replay` runs, which
+   restores it after its last item. A refused restore keeps the stash:
+   report the SHA.
 
 ## Phase 6: The verdict and replay plan
 
@@ -240,10 +247,10 @@ when observable, as in probe.
 ## Phase 7: Replay (only with `--replay`, after approval)
 
 Follow Phase 6 of the `spike-probe` skill from the main checkout: apply
-the winner's stash (apply, not pop), land plan items one gated commit
+the winner's stash with `spike.sh replay-apply <sha>` (apply, not pop), land plan items one gated commit
 at a time, apply graft hunks from runner-up stashes where the plan
 says so, and only after the final green gate drop the contender
-stashes by SHA, using the SHA-matching drop in that phase. Commit
+stashes by SHA with `spike.sh drop`, never the user-work stash. Commit
 messages follow the probe's rules: no `Co-Authored-By`, no "Generated
 with" or other tool trailers, no emoji.
 
@@ -275,7 +282,8 @@ Write the report, and any replay commit message, per
    split; deferrals.
 5. `## Stashes`: table: contender, strategy, stash message, SHA,
    restore command. Every contender appears, losers included; one that
-   changed nothing shows "no changes" in the SHA column.
+   changed nothing shows "no changes" in the SHA column. A run that saved
+   the user's work adds a row for it and says whether it was restored.
 6. `## Replay plan`: the numbered commit sequence for the winner,
    grafts marked.
 7. End with an `ask-user-choice` panel: replay the winner / probe the

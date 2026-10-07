@@ -18,7 +18,7 @@ Read before writing any version string.
 > version and any provider versions the modules use. Terraform
 > considers these constraints equal, and only proceeds if all are met.
 >
-> — [Version Constraints](https://developer.hashicorp.com/terraform/language/expressions/version-constraints)
+> Source: [Version Constraints](https://developer.hashicorp.com/terraform/language/expressions/version-constraints)
 
 A partial edit is worse than no edit: raise the root module's `aws`
 constraint to `~> 6.57.0` while a child module says `~> 6.56.0` and `init`
@@ -44,7 +44,7 @@ whether the target version requires an edit:
 - `~> 6.56.0` allows `6.56.4` but not `6.57.0`. Moving to a new minor
   requires editing the constraint.
 - `~> 6.56` allows `6.57.0` but not `7.0.0`. Moving within the major
-  requires no edit at all — refreshing the lock is the whole change.
+  requires no edit at all: refreshing the lock is the whole change.
 - `>= 6.0` or `>= 6.0, < 7.0` already admits the target. Rewriting it
   as `~> 6.57.0` narrows what the module accepts, which is a policy
   change.
@@ -68,7 +68,7 @@ one was not requested.
 > minimum version, document any known incompatibilities, and let the
 > root module manage the maximum version.
 >
-> — [Provider Requirements](https://developer.hashicorp.com/terraform/language/providers/requirements)
+> Source: [Provider Requirements](https://developer.hashicorp.com/terraform/language/providers/requirements)
 
 A floor in a reusable module is correct, not drift; a ceiling constrains
 every consumer, including ones outside this repository. Leave floors alone
@@ -78,17 +78,21 @@ the commit body when you move one.
 ## The CLI version has pin sites outside `.tf` entirely
 
 `required_version` appears in the `terraform` block of every module
-that declares one — root and child alike, and they combine by the same
+that declares one, root and child alike, and they combine by the same
 rule. Beyond those:
 
-- `.terraform-version` — tfenv, and read by several CI actions.
-- `.tool-versions` — asdf and mise, as a `terraform` or `opentofu` line.
-- `mise.toml` and `.mise.toml` — under `[tools]`.
-- Workflow files — `hashicorp/setup-terraform` with `terraform_version`,
+- `.terraform-version`: tfenv, and read by several CI actions.
+- `.tool-versions`: asdf and mise, as a `terraform` or `opentofu` line.
+- `mise.toml` and `.mise.toml`: under `[tools]`.
+- Workflow files: `hashicorp/setup-terraform` with `terraform_version`,
   `opentofu/setup-opentofu` with `tofu_version`, and any container image
   tag that carries the version in its name.
 - `Dockerfile` and `devcontainer.json` image tags, and task-runner
   variables in a `Makefile` or `justfile`.
+- Terragrunt: `terraform_version_constraint` in `terragrunt.hcl` or
+  `root.hcl`.
+- HCP Terraform or Terraform Enterprise: `terraform_version` on a
+  `tfe_workspace` resource, which pins the CLI the remote runs use.
 
 Three traps make a search report a clean repository that is not one.
 
@@ -113,7 +117,8 @@ $ git grep \
     -n -I -i -E \
     -e '(terraform|tofu|tf_?version).*[0-9]+\.[0-9]+' \
     -- ':(icase)*justfile' ':(icase)*makefile' '*Dockerfile*' \
-    '*devcontainer.json' '*.tool-versions' '*mise.toml' '*.yml' '*.yaml'
+    '*devcontainer.json' '*.tool-versions' '*mise.toml' '*.hcl' '*.tf' \
+    '.github/*' '.gitlab-ci.yml' '.gitlab/*' '.circleci/*'
 ```
 
 Version files take a second search:
@@ -141,13 +146,21 @@ $ curl -fsS https://registry.terraform.io/v1/providers/hashicorp/aws/versions \
 ```
 
 That list holds every release, prereleases included, in no useful order.
-Pipe it through `lockctl.py stable` (in `../scripts/`) for the newest stable
-versions:
+Pipe it through `lockctl.py stable` (path rule in the skill) for the newest
+stable versions:
 
 ```console
 $ curl -fsS https://registry.terraform.io/v1/providers/hashicorp/aws/versions \
     | jq -r '.versions[].version' \
-    | python3 lockctl.py stable 3
+    | python3 ../../scripts/lockctl.py stable 3
+```
+
+To confirm a version the user named, test for that exact entry. The command
+exits non-zero when it is absent:
+
+```console
+$ curl -fsS https://registry.terraform.io/v1/providers/hashicorp/aws/versions \
+    | jq -e '.versions[] | select(.version == "6.57.0")'
 ```
 
 Swap the host for `registry.opentofu.org` when OpenTofu drives the
@@ -170,7 +183,7 @@ That one is an extension, not protocol:
 > described on this page [...] Third-party implementations should not
 > include those extensions.
 >
-> — [Provider Registry Protocol](https://developer.hashicorp.com/terraform/internals/provider-registry-protocol)
+> Source: [Provider Registry Protocol](https://developer.hashicorp.com/terraform/internals/provider-registry-protocol)
 
 It returns 404 on `registry.opentofu.org` and on private registries. Where it
 is unavailable, confirm the version through the versions endpoint and find the
@@ -178,13 +191,33 @@ provider's repository another way before citing a changelog; never construct a
 repository URL from the source address.
 
 For the CLI itself, Terraform releases are enumerated at
-`https://releases.hashicorp.com/terraform/index.json`. OpenTofu releases
+`https://releases.hashicorp.com/terraform/index.json`. Confirm a named
+Terraform version by key; the command exits non-zero when it is absent:
+
+```console
+$ curl -fsS https://releases.hashicorp.com/terraform/index.json \
+    | jq -e '.versions["1.14.0"]'
+```
+
+OpenTofu releases
 are tags on its GitHub repository; list the latest stable ones with:
 
 ```console
 $ git ls-remote --tags --refs https://github.com/opentofu/opentofu.git 'v*' \
     | sed 's#.*refs/tags/v##' \
-    | python3 lockctl.py stable 3
+    | python3 ../../scripts/lockctl.py stable 3
+```
+
+Confirm a named OpenTofu version by its tag; the command exits 2 when the
+tag is absent:
+
+```console
+$ git ls-remote \
+    --exit-code \
+    --tags \
+    --refs \
+    https://github.com/opentofu/opentofu.git \
+    refs/tags/v1.10.0
 ```
 
 Link the CLI changelog at that tag:
@@ -192,9 +225,19 @@ Link the CLI changelog at that tag:
 - OpenTofu: `https://github.com/opentofu/opentofu/releases/tag/v<version>`.
 - Terraform: `https://github.com/hashicorp/terraform/blob/v<version>/CHANGELOG.md`.
 
+For a provider, take `source` and `tag` from the metadata above and link
+`<source>/releases/tag/<tag>`; where the repository keeps a
+`CHANGELOG.md`, `<source>/blob/<tag>/CHANGELOG.md` is the alternative. Fetch
+the page before linking it.
+
 If the page cannot be fetched, report no changelog link instead of
-guessing one. Cite release notes at the tag the registry reported, not at a
-branch.
+guessing one, in the report and in the commit body alike. Cite release notes
+at the tag the registry reported, not at a branch.
+
+When the user says they confirmed a version themselves, write it, record
+"confirmed by you" as how it was confirmed, and treat the changelog link
+as unfetched unless a fetch succeeded. Never predict that an unconfirmed
+version crosses a major version.
 
 ## Upgrade guides on a major jump
 

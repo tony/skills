@@ -1,9 +1,10 @@
 ---
 name: ticket-draft
 description: >-
-  Use when asked to file a Linear issue or regression, draft a Jira epic,
-  open a GitLab issue, or create a Shortcut story or tracker document.
-allowed-tools: ["Bash", "Read", "Write", "Grep", "Glob", "AskUserQuestion"]
+  Use when asked to file or write a ticket, Jira epic, Linear issue or
+  regression, GitLab issue, Azure DevOps item, Trello card, or Shortcut
+  story.
+allowed-tools: ["Bash", "Read", "Grep", "Glob", "AskUserQuestion"]
 metadata:
   argument-hint: "[description, URL, provider, or pasted finding]"
   source: "plugins/ticket/skills/draft/SKILL.md"
@@ -19,7 +20,8 @@ Argument: `$ARGUMENTS`, a description, a URL, a provider name, a pasted
 finding, or nothing.
 
 For a plain GitHub bug report, `gh:create-issue` is more specialized; hand
-off to it when it is installed and the target is a GitHub `work_item`. This
+off to it when it is installed and the target is a GitHub `work_item`;
+otherwise continue here. This
 skill covers every other provider, and every altitude above and below a
 single issue.
 
@@ -49,7 +51,8 @@ Establish the provider, the scope container, and the semantic role, following
 each fit several trackers.
 
 When the role is ambiguous between two levels, ask: a `delivery_group` and a
-`work_item` share almost no sections.
+`work_item` share almost no sections. Where no question tool exists, print
+the question and stop.
 
 ## Phase 2: Decide it belongs in this tracker, publicly
 
@@ -57,7 +60,8 @@ A vulnerability does not. For a public repository, check the security policy
 before anything else and follow its private path if the finding is a security
 defect.
 
-Stop and ask when the evidence cannot be sanitized. An internal log carrying
+Stop and ask when the evidence cannot be sanitized (where no question tool
+exists, print the question and stop). An internal log carrying
 customer data does not become fileable by trimming it.
 
 ## Phase 3: Preflight the container
@@ -114,6 +118,20 @@ for a Linear Project or `Pull Request` for a GitLab merge request.
 
 Then check the future tense against `contract.md`: demote every failed
 invariant to intent, and rewrite any checkbox list of technical outcomes.
+Write an invariant only from a constraint the user stated, in their words and
+figures; a figure or technical choice they gave goes to Intent as a non-binding
+target, as given, never into the Outcome or the title. Do not
+add "faster, never slower", "finds what the correct spelling would find", or any
+other rule they did not say. With no stated constraint, omit Invariants and
+list "Invariants: none stated" under Unverified.
+Do not suggest a candidate invariant, in the body or in the reply.
+
+Write the Outcome or Summary from the user's own nouns and figures, close to
+their sentence ("adding typo tolerance to the search backend"), never a
+paraphrase that says more ("returns results despite typos"). Add no
+user impact, motivation, or quality adjective ("fast enough that users stop
+waiting") they did not give. Do not mention the revision in the body: no "filed",
+and state the version once.
 
 When the reporter gave only a symptom, restate the symptom and stop: add no
 impact, scope ("smaller exports are fine"), or expected-behavior sentence.
@@ -140,16 +158,19 @@ block that lost its blank line renders as literal asterisks.
 ## Phase 8: Present, then file
 
 Show the result in this order: a hero line (one line, at most 25 words: the
-role, the provider, and "not filed yet"), `## Title`, `## Body`,
+role, the provider, and "not filed yet"; no reasons, no backend or Team
+status), `## Title`, `## Body`,
 `## Changed from your request` only when you altered something the user asked
 for, and `## Unverified` only when the draft carries marked-unverified items.
 Backend and run status go under Unverified. Explain each change in the user's
 terms ("a checkbox list reads as a requirement"), never by citing this
 skill's rules. Lead with the result; stop at the last concrete point, with no
-recap or "Next step" line. Then offer, via `ask-user-choice`: file it,
+recap or "Next step" line. Never comment on the draft's own strength or offer
+to "add" detail in free prose. Always end with the offer, via `ask-user-choice`: file it,
 print the body only, revise a named section, or drop it. Where no interactive
-question tool exists, print the draft and stop; filing needs an explicit
-instruction naming the action.
+question tool exists, print the draft, list those four options as plain bullets, and stop;
+filing needs an explicit instruction naming the action (say "Reply 'file it'",
+not that no question tool exists).
 
 Reply in this shape, as plain text outside any code fence, with plain bullets, no bold (never `- **Label:** ...`), and no local paths:
 
@@ -171,8 +192,11 @@ Search rework: faster results that survive typos
 
 ## Unverified
 
+- Invariants: none stated, so the body has no Invariants section.
 - Why now: no reason was given, so there is no Evidence section.
 - Filing: no Linear connection here, so paste the body into the Project.
+
+Should I file it, print the body by itself, revise a section, or drop it?
 ```
 
 A halted run (a vulnerability, unsanitizable evidence, a duplicate found) is

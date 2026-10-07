@@ -25,16 +25,12 @@ Phrases to avoid: `../../references/verification-contract.md`.
 
 ## Steps
 
-Follow the contract's four rules.
-
 1. Reconstruct the original question and every constraint the user has
    added since, including corrections they made that you agreed with.
    User turns are binding context; your own answer turns are not.
-2. Treat everything you previously concluded as untrusted until
-   re-verified. Do not reuse prior numbering, category names, or
-   verdict framing.
-3. Re-open the source artifacts and write the full analysis,
-   standalone, in the shape the original request implied. State every
+2. Re-open the source artifacts and write the full analysis,
+   standalone, in the shape the original request implied, with no
+   reused numbering, category names, or verdict framing. State every
    claim positively and in full, per `../../references/prose-rules.md`.
    If a claim is weak, say why it is weak; never say it was previously
    stated differently.

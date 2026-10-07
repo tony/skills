@@ -4,7 +4,7 @@ description: >-
   Pass every check fresh, release the exact report to its readers, record
   decisions taken on it, and export the run as a fixity-checked bag
 disable-model-invocation: true
-allowed-tools: ["Skill", "Bash", "Read", "Write", "Edit", "Grep", "Glob", "AskUserQuestion"]
+allowed-tools: ["Bash", "Read", "Write", "Edit", "Grep", "Glob", "AskUserQuestion"]
 metadata:
   argument-hint: "[topic or run directory] [--to=<readers>] [--offline]"
   source: "plugins/research/skills/release/SKILL.md"
@@ -12,7 +12,7 @@ metadata:
 
 # this skill
 
-Invoke the `research-foray` skill with `release` followed by the user arguments, and follow it.
+Read the `research-foray` skill and follow it, treating `release` as the first word of the arguments.
 
 User arguments: $ARGUMENTS
 

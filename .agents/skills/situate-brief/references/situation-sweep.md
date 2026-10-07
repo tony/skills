@@ -34,82 +34,56 @@ The one contract for every situate skill. Reading files, git history,
 and `gh` views is allowed. Never commit, push, edit files, stash, switch
 branches, or run `git fetch`: it rewrites remote-tracking refs, which
 changes what every other command sees. Work from the refs already in the
-repository and say how old they are:
-
-```console
-$ git log -1 --format='%cr' "$(git symbolic-ref --short refs/remotes/origin/HEAD 2>/dev/null || echo origin/main)" 2>/dev/null || echo "(unknown)"
-```
-
-If that date is old, say the comparison against trunk may be stale and
-let the user decide whether to fetch.
+repository; the position script reports the trunk ref's age as
+`trunk_age`. If it is old, say the comparison against trunk may be stale
+and let the user decide whether to fetch.
 
 ## 1. Position
 
-Check the repository root first:
+Run the position script. It only reads git, never fetches, and prints
+JSON with no paths; the path resolves from the skill directory like the
+other bundled files:
 
 ```console
-$ git rev-parse --show-toplevel
+$ python3 ../../scripts/position.py
 ```
 
-A root equal to `$HOME`, or one that contains it, means a dotfile
-repository, not the project. Report that in the hero line, name no
-untracked files, and stop: one result sentence, then ask which directory
-holds the project. The same stop applies when `HEAD` has no commits.
+Add `--trunk origin/<baseRefName>` when a pull request is the subject.
+A non-zero exit means the directory is not a git repository: say so and
+ask which directory holds the project.
 
-Resolve trunk from the remote's own HEAD rather than assuming `main`:
+Read its fields:
 
-```console
-$ git symbolic-ref --short refs/remotes/origin/HEAD
-```
-
-When that ref is absent (a fresh clone, `--single-branch`), fall back to
-whichever of `origin/main` or `origin/master` exists, and say which was
-assumed.
-
-Then the merge-base, the ahead/behind counts, the uncommitted state,
-and any stashes: work in flight that no commit records is what a new
-session cannot see.
-
-On trunk itself with nothing ahead, there is no branch story to tell;
-report recent trunk activity and the open pull requests instead, and say
-so.
+- `dotfile_repo` true (the root is the home directory or contains it) or
+  `has_commits` false: report that in the hero line, name no untracked
+  files, and stop with one result sentence, then ask which directory
+  holds the project. The script prints nothing else in these cases.
+- `trunk`, `trunk_source`, `trunk_age`: the remote's own HEAD, else
+  `origin/main` or `origin/master`. When `trunk_source` starts with
+  "assumed", say which was assumed. A null `trunk` means no trunk ref.
+- `ahead`, `behind`, `branch` (null is a detached HEAD), `staged`,
+  `modified`, `untracked`, `stashes`: work in flight that no commit
+  records is what a new session cannot see. `untracked` already omits
+  editor and shell files; `ignored_untracked` only counts them, so
+  never list them.
+- `on_trunk` true with nothing ahead: there is no branch story to tell;
+  report recent trunk activity and the open pull requests instead, and
+  say so.
 
 ## 2. Change
 
-Resolve the base commit, where this branch diverged from what it will
-merge into, before logging anything. Trunk is the base in the ordinary
-case; an upstream is better only when it names a *different* branch, a
-stacked branch whose upstream is its parent. Check which:
+The script's `base` is where this branch diverged from what it will
+merge into. `base_source` says which it is: `trunk` in the ordinary
+case, `upstream` only for a stacked branch whose upstream is a
+*different* branch (the branch's own `origin/<branch>` is ignored: its
+merge-base is the last pushed commit and would hide what is already on
+the remote).
 
-```console
-$ git rev-parse --abbrev-ref '@{upstream}' 2>/dev/null
-```
+A null `base` means the layer is unavailable: say which lookups
+`failed` lists, and never substitute `HEAD` and log an empty range,
+which reports a branch with commits as having none.
 
-When that is the branch's own remote counterpart (`origin/<branch>`, what
-`git push -u` sets), ignore it: its merge-base is the last pushed commit,
-so the range would hide everything already on the remote.
-
-For a stacked branch, take the parent:
-
-```console
-$ git merge-base HEAD '@{upstream}' 2>/dev/null
-```
-
-Otherwise, and whenever that lookup fails or returns `HEAD`, take
-trunk. Shell state does not persist between Bash calls, so substitute
-the trunk name from the Position layer for `<trunk>`:
-
-```console
-$ git merge-base HEAD <trunk> 2>/dev/null
-```
-
-Guard both lookups: a branch pushed with no upstream, or a clone whose
-`refs/remotes/origin/HEAD` was never populated, fails hard otherwise.
-When neither resolves, report the layer unavailable and say which lookups
-failed; never substitute `HEAD` and log an empty range, which reports a
-branch with commits as having none.
-
-With the base commit printed by that command in hand:
+With `base` in hand:
 
 ```console
 $ git log --no-merges --format='%h %s' <base>..HEAD
@@ -167,12 +141,16 @@ $ gh pr view <n> --json commits,headRefName,baseRefName
 ```
 
 ```console
-$ gh pr diff <n>
+$ gh pr diff <n> --name-only
 ```
 
-The base is `origin/<baseRefName>`; local ahead/behind, uncommitted work,
+Read the diff of the files that matter with `gh pr diff <n>`; a pull
+request touching many files gets its names first and the diff by area.
+
+The base is `origin/<baseRefName>`. Local ahead/behind, uncommitted work,
 and stashes describe a different branch, so report them as not applying
-unless the current branch is the pull request's head.
+unless the current branch is the pull request's head; then run the
+position script with `--trunk origin/<baseRefName>`.
 
 ## 4. Tickets
 

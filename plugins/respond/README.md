@@ -74,12 +74,16 @@ respond:goal
 ```
 
 Every skill takes a pull request number or URL to collect feedback from.
-`check` also takes `--base=<ref>` (override the provenance baseline) and
-`--include-resolved` (screen settled threads). `action` takes `--base=<ref>`,
-`--no-fixup` (forward commits only), `--on-fail=skip|stop|ask` (per-finding
-gate failure), and `--reply` (post drafted replies). `goal` takes
-`--max-rounds=<n>`, `--wait=<minutes>`, `--ci-wait=<minutes>`, `--reply`, and
-`--push` (push each round and watch CI; without it, one local round).
+Further flags per skill:
+
+- `check`: `--base=<ref>` overrides the provenance baseline;
+  `--include-resolved` screens settled threads.
+- `action`: `--base=<ref>`; `--no-fixup` lands forward commits only;
+  `--on-fail=skip|stop|ask` sets what a failed gate does; `--reply` posts
+  drafted replies.
+- `goal`: `--max-rounds=<n>`, `--wait=<minutes>`, `--ci-wait=<minutes>`;
+  `--reply` posts drafted replies; `--push` pushes each round and watches CI
+  (without it, one local round).
 
 ## What a fix is allowed to add
 
@@ -101,4 +105,4 @@ and no more verification is run than each fix needs.
 - **git** — provenance uses merge-base, diff, log -L, and blame
 - **gh** (optional) — enables pull-request feedback, CI watching, and
   review-agent detection
-- **python3** (goal only) — runs the CI and review-agent wait script
+- **python3** — runs the ledger digest script, and in `goal` the CI and review-agent wait script

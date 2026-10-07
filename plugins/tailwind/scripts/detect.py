@@ -7,7 +7,7 @@ PATTERN is one of ``margin``, ``gap``, ``width``, ``interactive``,
 ``wrapper``, ``space-gap``, ``space``. Each hit prints ``path:line:text``.
 The patterns are candidate finders: every hit needs a read in context.
 
-Exit codes: 0 hits found, 1 no hits, 2 usage error.
+Exit codes: 0 hits found, 1 no hits, 2 usage error or a path that does not exist.
 """
 
 # pyright: reportUnusedCallResult=false
@@ -36,16 +36,11 @@ SKIP_DIRS = {"node_modules", ".git", "dist", "build", ".next", ".nuxt"}
 MIN_ARGS = 3
 
 QUOTES = "\"'`"
-LEAD = r"(?:^|[\sQQ:])"
-GAP = r"gap(?:-[xy])?-[0-9\[]"
-SPACE = r"space-[xy]-[0-9\[]"
-BEFORE = r"[QQ](?:[^QQ]*\s)?"
-
-TAG_OPEN = r"<(?:a|button|Button|Link|NavLink|[A-Z]\w*(?:Button|Link))\s"
-TAG_ATTR = r"(?:[^>]|=>)*?(?:class|className)=(?:\"[^\"]*\"|'[^']*'|\{[^}]*\})"
-DIV_OPEN = r"<div\s(?:[^>]|=>)*?(?:class|className)=\{?(?:\w+\()?[QQ]"
-FLEX_CENTER = r"(?:flex\s(?:[^QQ]*\s)?items-center|items-center\s(?:[^QQ]*\s)?flex)"
-DIV_CLASS = r"(?:[^QQ]*\s)?" + FLEX_CENTER + r"(?:\s[^QQ]*)?[QQ]"
+LEAD = r"(?<![^\sQQ:!])"
+STEP = r"(?:[0-9\[]|px\b)"
+GAP = r"gap(?:-[xy])?-" + STEP
+SPACE = r"space-[xy]-" + STEP
+MAX_SNIPPET = 200
 
 
 def _rx(template: str) -> re.Pattern[str]:
@@ -53,16 +48,72 @@ def _rx(template: str) -> re.Pattern[str]:
     return re.compile(template.replace("QQ", QUOTES))
 
 
-PATTERNS: dict[str, re.Pattern[str]] = {
-    "margin": _rx(LEAD + r"-?m[xesrl]-[0-9\[]"),
+SIMPLE: dict[str, re.Pattern[str]] = {
+    "margin": _rx(LEAD + r"-?m[xesrl]-" + STEP),
     "gap": _rx(LEAD + GAP),
     "width": _rx(LEAD + r"w-[0-9\[]"),
-    "interactive": _rx(TAG_OPEN + TAG_ATTR),
-    "wrapper": _rx(DIV_OPEN + DIV_CLASS),
-    "space-gap": _rx(BEFORE + GAP + r"[^QQ]*\s" + SPACE + "|" + BEFORE + SPACE + r"[^QQ]*\s" + GAP),
     "space": _rx(LEAD + SPACE),
 }
-LEADING_LEAD = {"margin", "gap", "width", "space"}
+PATTERNS = (*SIMPLE, "interactive", "wrapper", "space-gap")
+
+BUTTON_OPEN = re.compile(r"<(?:a|button|Button|Link|NavLink|[A-Z]\w*(?:Button|Link))\s")
+DIV_OPEN = re.compile(r"<div\s")
+ATTR_VALUE = re.compile(r"(?:class|className)=(?:\"[^\"]*\"|'[^']*'|\{[^}]{0,2000}\})")
+CLASS_START = _rx(r"(?:class|className)=\{?(?:\w+\()?[QQ]")
+STRING_END = _rx(r"[^QQ]*[QQ]")
+SEGMENT = _rx(r"[QQ][^QQ]*")
+GAP_TOKEN = re.compile(GAP)
+SPACE_TOKEN = re.compile(SPACE)
+
+
+def _tag_end(text: str, pos: int) -> int:
+    """Return the index of the ``>`` closing the tag body at ``pos``; ``=>`` does not close."""
+    while True:
+        j = text.find(">", pos)
+        if j < 0:
+            return len(text)
+        if text[j - 1] == "=":
+            pos = j + 1
+            continue
+        return j
+
+
+def _tags(text: str, opener: re.Pattern[str]) -> Iterator[tuple[int, int, int]]:
+    """Yield ``(start, body_start, body_end)`` per tag, skipping openers inside a prior tag."""
+    end = -1
+    for m in opener.finditer(text):
+        if m.start() < end:
+            continue
+        end = _tag_end(text, m.end())
+        yield m.start(), m.end(), end
+
+
+def _scan(pattern: str, text: str) -> Iterator[tuple[int, int]]:
+    """Yield ``(start, end)`` of each hit; every step is linear in ``text``."""
+    if pattern in SIMPLE:
+        for m in SIMPLE[pattern].finditer(text):
+            yield m.start(), m.end()
+    elif pattern == "interactive":
+        for start, body, end in _tags(text, BUTTON_OPEN):
+            attr = ATTR_VALUE.search(text, body, end)
+            if attr:
+                yield start, attr.end()
+    elif pattern == "wrapper":
+        for start, body, end in _tags(text, DIV_OPEN):
+            for attr in CLASS_START.finditer(text, body, end):
+                close = STRING_END.match(text, attr.end())
+                if close and {"flex", "items-center"} <= set(
+                    text[attr.end() : close.end() - 1].split()
+                ):
+                    yield start, close.end()
+                    break
+    else:
+        for m in SEGMENT.finditer(text):
+            tokens = m.group()[1:].split()
+            if any(GAP_TOKEN.match(t) for t in tokens) and any(
+                SPACE_TOKEN.match(t) for t in tokens
+            ):
+                yield m.start(), m.end()
 
 
 def find(pattern: str, text: str) -> list[tuple[int, str]]:
@@ -71,14 +122,10 @@ def find(pattern: str, text: str) -> list[tuple[int, str]]:
     >>> find("margin", '<a className="px-2 me-4">')
     [(1, 'me-4')]
     """
-    hits: list[tuple[int, str]] = []
-    for m in PATTERNS[pattern].finditer(text):
-        start = m.start()
-        if pattern in LEADING_LEAD and m.group(0)[0] in "\n\t " + QUOTES + ":":
-            start += 1
-        line = text.count("\n", 0, start) + 1
-        hits.append((line, text[start : m.end()].splitlines()[0]))
-    return hits
+    return [
+        (text.count("\n", 0, start) + 1, text[start:end].splitlines()[0][:MAX_SNIPPET])
+        for start, end in _scan(pattern, text)
+    ]
 
 
 def iter_files(paths: list[str]) -> Iterator[Path]:
@@ -97,6 +144,10 @@ def main(argv: list[str]) -> int:
     """Print hits for ``argv[1]`` in the paths ``argv[2:]``."""
     if len(argv) < MIN_ARGS or argv[1] not in PATTERNS:
         sys.stderr.write(__doc__ or "")
+        return 2
+    missing = [p for p in argv[2:] if not Path(p).exists()]
+    if missing:
+        sys.stderr.write(f"detect.py: no such path: {', '.join(missing)}\n")
         return 2
     found = False
     for f in iter_files(argv[2:]):

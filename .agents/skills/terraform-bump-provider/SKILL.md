@@ -23,6 +23,8 @@ locks within existing constraints, use the `terraform-refresh-lock` skill.
 
 User arguments: $ARGUMENTS
 
+`references/lockctl.py` resolves from this skill's directory: print its absolute path once and write that path literally in each command, since shell variables do not persist between Bash calls.
+
 ## Procedure
 
 ### 1. Resolve which provider
@@ -58,17 +60,21 @@ named directories.
 
 ### 3. Resolve the target version
 
-If the user named a version, confirm it is published. Otherwise take the
+If the user named a version, confirm it with the exact-entry command in
+`references/pin-sites.md`. Otherwise take the
 latest stable release. Either way, record the tag and the source
-repository the registry reports, and take the changelog link from that
-source at the tag. If the registry reports no source, say no changelog
+repository the registry reports, and build the changelog link from that
+source at the tag in the form the reference gives, fetching it before
+linking. If the registry reports no source, say no changelog
 link was confirmed. When the target crosses a major version, add the
 provider's upgrade guide.
 
 ### 4. Inventory the sites and predict the edits
 
 Every module declaring this provider, root and child, per the pin-sites
-reference. Decide per site whether it needs editing at all.
+reference. The affected root modules are the roots that declare it plus
+the roots that call a declaring child module, mapped per the
+layout-discovery reference. Decide per site whether it needs editing at all.
 
 ### 5. Present the plan and wait
 
@@ -86,7 +92,9 @@ steps, never `init -upgrade`. A root module with no committed lock is
 skipped and reported, since `init` would create one; run it there only
 after the user approves. A failed `init` restores the lock from git. Compare every provider's platform count
 against its count before, and restore a dropped platform count for the
-bumped provider with `providers lock` naming it. With
+bumped provider with `providers lock` naming it. Never commit a lock that
+lost platforms without the user's explicit yes to that file; headless,
+restore it from git, leave it out of the commit, and stop. With
 `--no-commit`, leave everything in the working tree and say what would
 have been committed. Write commit messages and the report per
 `references/prose-rules.md`.
@@ -118,7 +126,7 @@ order:
    pre-existing failure named as pre-existing.
 6. `## Drift`: pin sites that disagreed with each other before the
    bump, root modules that did not move and why, and modules whose
-   constraints already admitted the target.
+   constraints already admitted the target. Omit it when none apply.
 
 Reply in this shape, as plain text outside any code fence, with plain bullets, no bold (never `- **Label:** ...`), and no local paths:
 

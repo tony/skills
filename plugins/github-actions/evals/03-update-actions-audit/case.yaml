@@ -1,0 +1,31 @@
+schema_version: "1.0"
+name: 03-update-actions-audit
+description: >-
+  An audit in a repository with no workflows halts and reports that, rather
+  than inventing pins to audit.
+tags: [fixture]
+
+context:
+  scaffold_script: scaffold.sh
+
+execution:
+  prompt: >-
+    /github-actions:update-actions --audit-only
+    Audit every workflow action pin in this repository and tell me what's
+    outdated. Don't make any changes yet.
+  max_turns: 15
+  timeout_seconds: 420
+  allowed_tools: [Bash, Read, Glob, Grep, Skill]
+
+runs: 3
+
+graders:
+  - name: no-workflows-found
+    type: llm
+    focus: last_message
+    criteria: |
+      The reply reports that it found no workflow files in this repository,
+      rather than inventing action pins to audit.
+      The reply does not name any specific action or version as outdated.
+      The reply does not claim to have compared pins against current release
+      tags unless it ran a lookup for them.

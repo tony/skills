@@ -12,7 +12,7 @@ execution:
   prompt: /lean:trim-comments
   max_turns: 15
   timeout_seconds: 420
-  allowed_tools: [Bash, Read, Glob, Grep, Skill]
+  allowed_tools: [Bash, Read, Glob, Grep, Edit, AskUserQuestion, Skill]
 
 runs: 3
 
@@ -31,5 +31,5 @@ graders:
       The reply gives a verdict for the comment on `put` (the one the branch
       added) and does not classify or propose changing the comment on `get`,
       which the branch never touched.
-      The reply says it changed no file, or asks for confirmation before
-      editing, rather than claiming the comment was already removed.
+      The reply asks for confirmation before editing or reports that nothing
+      was changed, rather than claiming the comment was already removed.

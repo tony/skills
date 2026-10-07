@@ -20,6 +20,11 @@ headings, declared order, no invented sections.
    point. Without an interactive question tool, list the options as text and take
    the stated non-interactive default.
 
+After the last section, add at most one closing line in plain words for anything
+the user must know that has no section (a stale baseline, a repo oddity, a lowered
+run count, an unrecorded approval). Name no state field, file, or sandbox detail,
+and never open it with a colon reveal or a label.
+
 Name every heuristic in words with its id, never the id alone. Name a path or
 temp file only when the user must act on it; refer to the memory directory and
 the repo by role. Between the hero and the first heading there is no prose: put
@@ -64,7 +69,7 @@ A `01-benchmark` reply:
 
 ## Rejected
 
-- H01 slow test body: test_export_large saves 0.02s, inside the noise band.
+- H33 fixed sleep in test_report: removing it saves 0.02s, inside the noise band.
 
 ## Safety-gate results
 
@@ -78,17 +83,14 @@ A `02-plan` reply:
 
 ## Ranked plan
 
-- 1. H10 mis-scoped fixture: widen make_config to session scope in tests/conftest.py, total score 0.87, saves 2.7s above the 0.45s band, verified with pytest expecting 40 of 40 passing.
-  Draft subject: tests(fixtures) Widen make_config to session scope
+- 1. H10 mis-scoped fixture: widen make_config to session scope in tests/conftest.py under the subject "tests(fixtures) Widen make_config to session scope", total score 0.87, saves 2.7s above the 0.45s band, verified with pytest expecting 40 of 40 passing.
 
 ## Dropped at the gate
 
 - H33 fixed sleep in test_report: saves 0.03s, inside the noise band, so impact is 0.
-
-## Ordering rationale
-
-- One commit, so there is nothing to order.
 ```
+
+A plan with one commit omits `## Ordering rationale`.
 
 A `03-execute` reply:
 
@@ -108,7 +110,8 @@ A `03-execute` reply:
 
 When a phase stops before its work (missing input, dirty tree, plan hash
 mismatch, no suite), print one result sentence naming what stopped it, then one
-sentence on what the user must do. No body sections, no panel, no bold, no
+sentence on what the user must do. Give one reason only, the first check that
+failed; leave out sandbox, placeholder-file, and cleanup-risk detail. No body sections, no panel, no bold, no
 projected timings or results. When the user pasted durations or named a
 likely cause, add one sentence saying where the pasted time sits (setup versus
 call, which fixture) as a hypothesis to benchmark; never what a change would save.
@@ -142,16 +145,18 @@ suite is available."
   passed the gates (id, median delta, confidence).
 - `## Rejected` — within-noise or gate-failing candidates, each with the reason.
 - `## Safety-gate results` — order-independence and collection-determinism
-  outcomes.
+  outcomes for each candidate that needed them. A scope, order, or parallelism
+  change always needs both, so never say the gates did not apply to one.
 
 **`02-plan`**
 
 - `## Ranked plan` — ordered commits with score breakdown, target files, draft
-  subject, verify command.
+  subject (in the same sentence, no `Draft subject:` label), verify command.
+  A hygiene item says it is a hygiene item with no timing.
 - `## Dropped at the gate` — candidates below `safety 0.4` or `impact 0`, with the
   prerequisite refactor surfaced separately.
 - `## Ordering rationale` — why safety-gate fixes and typings precede scope and
-  parallelism; one line, and "nothing to order" when the plan has one commit.
+  parallelism, in one line. Omit the section when the plan has one commit.
 
 **`03-execute`**
 

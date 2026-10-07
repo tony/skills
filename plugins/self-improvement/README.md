@@ -70,17 +70,14 @@ clear.
 ## Counting and the ledger
 
 `scripts/sweep.py catalog` lists skills with birth dates, the rename map, and
-the era boundary. `scripts/sweep.py counts` turns a prompt-history file into per-skill counts,
+the era boundary, and `tree-check` reports uncommitted changes that `apply` must not mix with its edits. `scripts/sweep.py counts` turns a prompt-history file into per-skill counts,
 the era split, and project spread. `ledger-save` writes the findings ledger
 under the git directory, outside the working tree, and `ledger-verify`
 recomputes its key before `apply` edits anything. The key is the sha256 of the
 repository `HEAD` and the sorted finding ids and verdicts.
 
-`references/detecting-invocations.md` covers collecting the inputs and the
-traps that produce confident wrong answers: invocations are recorded in two
-separate places and either alone misreports usage, renames split a skill's
-history, a supersession splits it the other way, and a truncated query is
-indistinguishable from a genuine absence.
+`references/detecting-invocations.md` covers collecting the counter's inputs
+and the traps that make a count confidently wrong.
 
 `references/worked-example-spike.md` shows what a finding and its edit look
 like.

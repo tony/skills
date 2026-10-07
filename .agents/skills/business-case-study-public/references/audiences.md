@@ -8,11 +8,11 @@
 - Firewall sweep
 
 Four disclosure tiers, from tier 0 (internal leadership, full
-detail) to tier 3 (fully external). The binding rule: **an artifact
+detail) to tier 3 (fully external). The binding rule: an artifact
 may never contain detail its tier's contract excludes, even though
-the run directory has it.** Sanitization is a property of the
+the run directory has it. Sanitization is a property of the
 artifact, not of the data. Script paths below resolve relative to
-this file.
+this file; run the script by its absolute location.
 
 ## When the package holds no committable savings figure
 
@@ -69,7 +69,8 @@ over the finished draft. the `business-pr-release` skill inherits the result
 by sourcing figures only from the public case study.
 
 1. Run the scanner over the draft, passing each organization,
-   repository, team, and person name from the run as `--deny`:
+   repository, team, and person name from the run's `README.md` as
+   `--deny`:
 
    ```console
    $ references/business.py scan \
@@ -100,7 +101,9 @@ command output: pass per item, with what was removed or reworded.
 
 the `business-pr-release` skill verifies the public case study instead of
 trusting it. Before deriving the announcement, run checklist items 1,
-2, 4, and 5 over it; triangulation was the case study's job.
+2, 4, and 5 over it; triangulation was the case study's job. The only
+thing it reads from the run is the names for `--deny`, taken from
+`README.md`; no figure comes from there.
 
 Any failure stops the run: regenerate via this skill,
 never patch around it in the release. Report a passing sweep in

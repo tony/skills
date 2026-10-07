@@ -63,7 +63,9 @@ numbered, so the reader can answer with a digit instead of a sentence.
 Offer them only when there is a real fork; an obvious next step ends at
 the body.
 
-Two to four options. Each names an action, not a topic: `2. Resolve the
+Offer no option the session cannot back: no fix the explanation never
+gave, no pointer into code when there is no repository. Two to four
+options. Each names an action, not a topic: `2. Resolve the
 three review threads on PR #12`, never `2. Review feedback`.
 
 Do not use `ask-user-choice`; a modal panel is heavier than the five
@@ -77,9 +79,10 @@ Work outward in tiers and stop as soon as the five lines are earned.
 ran, or the session has been working in this repo, that is the evidence;
 re-reading what is already in context is the common way this gets slow.
 
-**Cheap — run when the session's own memory is thin.** Current branch,
-trunk from `refs/remotes/origin/HEAD`, ahead/behind, `git status
---short`, and the branch's commit subjects. These are local and fast.
+**Cheap — run when the session's own memory is thin.** The position
+script (`references/position.py`: branch, trunk, ahead/behind,
+uncommitted work) and the branch's commit subjects. These are local and
+fast.
 
 **Paid — only on an existing reference.** `gh pr view` when the branch
 actually has a pull request, `gh issue view` when a ticket ID appears in
@@ -95,7 +98,8 @@ an existing line rather than spending a line on the tooling.
 ## Confidence
 
 State only what the evidence supports, and mark at most one inference
-per brief with a single hedging word. Two hedges means the brief is
+per brief with a single hedging word, never a guess at a person's
+motive or intent. Two hedges means the brief is
 guessing and should say what it does not know instead.
 
 ## Banned

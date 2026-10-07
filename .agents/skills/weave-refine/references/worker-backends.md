@@ -9,8 +9,8 @@ session.
 
 - Caller contract
 - Backend adapter
-- Sub-agent backend
-- Model-CLI backend
+- Adversarial sub-agents
+- Separate model CLIs
 - Shared execution semantics
 
 ## Caller contract

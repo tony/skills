@@ -69,7 +69,8 @@ Prompts and lanes
 - `reset-main`, `stash-restore`: discard the main tree's changes only when the
   user's stash is recorded and present; pop the session's own stash entry. A
   refused or conflicting pop returns `ok: false`, `stash_kept`, `stash_sha`,
-  `inspect`, and `apply`; the stash is never dropped.
+  `overlap` (paths both the stash and the tree changed), `inspect`, `apply`, and
+  `recover` (ordered commands); the stash is never dropped.
 
 Judging
 - `labels --session S --pass N --participants a,b [--outputs-dir D]`: random blind
@@ -81,7 +82,8 @@ Judging
 - `judge-parse --file F [--prior F2] [--label-map M]`: parses a judge file's
   scores table (decimal scores allowed, role suffixes stripped from columns,
   blind labels mapped through `M`, Winner section optional); returns `columns`,
-  `scores`, `totals`, `winner`, `winner_declared`, `winner_score`, `errors`.
+  `scores`, `totals`, `winner`, `winner_declared`, `winner_score`, `errors`, `warnings`. A total that is not the sum of its
+  dimensions is recomputed and reported in `warnings`, not rejected.
   With `--prior`, `not_improved` is true when the winner's score did not rise.
 - `panel-merge --judge name=path ... [--label-map M]`: peer-only averaging over
   panel judge files; returns `merged`, `totals`, `winner` or `tied`, `peers`, and
@@ -120,9 +122,9 @@ treat the participant ID as an executable.
 Each external lane has a fallback chain. A step whose executable is missing is
 skipped; the last step is the lesser model.
 
-- `agy`: `agy` (Gemini 3.1 Pro), then `agent` (gemini-3.1-pro), then `agy`
-  (Gemini 3.8 Flash).
-- `gpt`: `codex`, then `agent` (gpt-5.4-high), then `agent` (gpt-5.4-mini).
+`LANES` in `engine.py` is the only place the executables and model names
+are spelled: `agy` tries the `agy` CLI, then `agent`, then `agy` with a lesser
+model; `gpt` tries `codex`, then `agent` twice with a lesser model last.
 
 Each attempt is classified: `ok`, `timeout`, `rate-limit`, `credit`, `crash`, or
 `empty`. A timeout retries once at 1.5 times the limit, a rate limit retries after

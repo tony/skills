@@ -12,7 +12,8 @@ state      print source, selected version and h1 hash count, tab separated,
 drop       remove one provider block in place; print "dropped" or "absent".
 stable     read versions on stdin, print the newest COUNT stable ones
            (default 3), oldest first.
-platforms  print each tracked file's `providers lock -platform=` values.
+platforms  print each tracked CI or task file's `providers lock -platform=`
+           values.
 """
 
 from __future__ import annotations
@@ -30,6 +31,21 @@ _H1 = re.compile(r'^\s*"h1:')
 _STABLE = re.compile(r"^(\d+)\.(\d+)\.(\d+)$")
 _PLATFORM = re.compile(r"-platform[= ]([A-Za-z0-9_]+)")
 _MAX_SCAN_BYTES = 1_000_000
+_CI_OR_TASK = tuple(
+    re.compile(pattern, re.IGNORECASE)
+    for pattern in (
+        r"(^|/)\.github/(workflows|actions)/.+\.ya?ml$",
+        r"(^|/)\.gitlab-ci\.ya?ml$",
+        r"(^|/)\.gitlab/.+\.ya?ml$",
+        r"(^|/)\.circleci/.+\.ya?ml$",
+        r"(^|/)azure-pipelines\.ya?ml$",
+        r"(^|/)\.buildkite/.+",
+        r"(^|/)Jenkinsfile[^/]*$",
+        r"(^|/)bitbucket-pipelines\.yml$",
+        r"(^|/)[^/]*(makefile|\.mk|justfile)$",
+        r"(^|/)Taskfile\.ya?ml$",
+    )
+)
 _DEFAULT_COUNT = 3
 
 
@@ -173,6 +189,8 @@ def main(argv: list[str]) -> int:
 
 def _print_platforms() -> int:
     for name in _tracked_files():
+        if not any(p.search(name) for p in _CI_OR_TASK):
+            continue
         path = Path(name)
         if not path.is_file() or path.stat().st_size > _MAX_SCAN_BYTES:
             continue

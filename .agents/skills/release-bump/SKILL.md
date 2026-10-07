@@ -89,13 +89,13 @@ onward) with the chosen version, forwarding any `--push` / `--tag` /
 
 Never name local or temp paths. A completed run ends with `cut`'s
 output. A stopped run (missing signals, unresolved version, refused
-flag) is one result sentence, then what the user needs to do.
+flag) is one result sentence, then what the user needs to do. The
+sentence carries no parenthetical about the repo or environment.
 
 Reply to a stop in this shape, as plain text outside any code fence, with plain bullets, no bold (never `- **Label:** ...`), and no local paths:
 
 ```text
-No version bumped: none of the three signals exist here (a manifest
-version, a git tag, a changelog unreleased header).
+No version bumped: this project has no manifest version, git tag, or changelog unreleased header.
 
 - Tell me the current version, or
 - Run release-bump again from the project root.

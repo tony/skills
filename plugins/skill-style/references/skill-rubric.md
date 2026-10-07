@@ -173,11 +173,9 @@ That gives a budget shaped like a funnel:
 - **Reference files:** everything a task needs *sometimes*. They cost
   nothing until read, so they can be long.
 
-Keep every reference one level deep from the body. An agent that
-follows a link out of a file it already followed a link into tends to
-preview rather than read it (`head -100` instead of the whole thing)
-and acts on a fragment. Link `reference/forms.md` from the body, and
-never from inside another reference.
+Keep every reference one level deep from the body. Link
+`reference/forms.md` from the body, and never from inside another
+reference.
 
 Give a reference file longer than 100 lines a contents list at the
 top, so a partial read still shows the full scope of what is there.
@@ -232,20 +230,8 @@ are the same. Consistency is not style here; it is parseability.
 ## Library standards
 
 The skill body lists the defects and labels each as host fact or house
-rule. The reasoning behind the ones that are not obvious:
+rule. Reasoning for the ones the body does not carry:
 
-- **Context expansion.** A `!` directly before a command's opening
-  backquote expands on Claude Code, but a failing command or a missing
-  `allowed-tools` grant empties the whole skill without an error. The
-  form with the `!` inside the backquotes never expands, and Codex expands
-  neither form. A numbered step that names what it gathers
-  works everywhere.
-- **Bundled files.** Codex does not substitute `${CLAUDE_PLUGIN_ROOT}`.
-  Where several plugins ship the same file, each holds a vendored copy:
-  edit the source, never the copy.
-- **Tool grants.** `allowed-tools` pre-approves; only `disallowed-tools`
-  removes a tool. `WebFetch` and `WebSearch` stay off a skill that
-  reads untrusted input.
 - **Portable shell.** `sed -i` differs between GNU and BSD/Darwin,
   `sed` `\+` and `\|` are GNU-only (use `-E`), and `readlink -f`,
   `stat -c`, `date -d`, and `mapfile` have no BSD equivalent. Temp

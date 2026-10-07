@@ -40,7 +40,8 @@ individual ones. The fork rule is in
 Run the inventory and verification phases across the whole scope before
 touching anything, so a dangling ref is never written fleet-wide. Also
 list open dependabot pull requests per repository for the close-out,
-with the command in `references/dependabot-closeout.md`. A failed
+with the command in `references/dependabot-closeout.md` (pass each
+repository's `--repo <slug>`). A failed
 `gh` call means none can be listed; say so.
 
 ### 3. Research, one chain per distinct upgrade

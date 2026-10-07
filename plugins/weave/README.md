@@ -71,7 +71,7 @@ Worker backends are strictly isolated: retry and fallback stay inside the chosen
 Commands that need commits (`execute`, `prompt`, `architecture`, `review`, `fix-review`) refuse in one sentence without a git repository that has at least one commit. `ask` and `plan` degrade with a stated "no repository" note. `brainstorm`, `brainstorm-and-refine`, `refine`, and `serene-bliss` run anywhere: with no usable repository the repo guard is off and workers start in an empty scratch directory. A checkout rooted at `/`, at your home directory, or at a directory containing your home directory counts as no repository, and a command that snapshots, stashes, or adds worktrees refuses it.
 
 - **Read-only** (`ask`, `plan`, `brainstorm`, `refine`, `brainstorm-and-refine`, `serene-bliss`, `review`): gather perspectives and synthesize. Nothing in the repository changes.
-- **Write**: each participant works in its own worktree. `prompt` picks one winner, `execute` cherry-picks the best parts, `architecture` cherry-picks conventions, skills, and scaffolding per file, and `fix-review` commits findings one by one.
+- **Write**: each participant works in its own worktree, with one exception: under `--workers=model-clis` the `claude` lane runs as a host sub-agent in your main checkout and is the only lane that writes it. The engine stashes your uncommitted work first, and `reset-main` discards that lane's changes only while the stash is recorded and present. `prompt` picks one winner, `execute` cherry-picks the best parts, `architecture` cherry-picks conventions, skills, and scaffolding per file, and `fix-review` commits findings one by one.
 
 ### Shared protocols
 
@@ -90,7 +90,7 @@ Shared judgment prose lives in `references/ensemble-core.md` (context packet, di
 
 ## Repo Guard
 
-Weave workers never write the user's checkout. `init` records the checkout, uncommitted and untracked files included, as a snapshot commit pinned under `refs/weave-guard/<session>/`. Every external CLI lane runs in a disposable worktree built from that snapshot, so it sees your uncommitted work but writes only to a throwaway tree. Host sub-agents of read-only commands get snapshot worktrees too.
+Read-only commands never write your checkout, and neither do write-command workers except the `model-clis` `claude` lane described under Write. `init` records the checkout, uncommitted and untracked files included, as a snapshot commit pinned under `refs/weave-guard/<session>/`. Every external CLI lane runs in a disposable worktree built from that snapshot, so it sees your uncommitted work but writes only to a throwaway tree. Host sub-agents of read-only commands get snapshot worktrees too.
 
 After each CLI attempt and once after all lanes finish, the guard compares per-path content hashes of your checkout with the snapshot. It never changes anything. On a difference it records the touched paths, a patch, a copy of each touched file, and a pinned post-run ref under the session directory, and warns. The skill then offers once: keep, revert only the touched paths, or quarantine everything in a named stash. Headless runs keep and report. `docs/repo-guard-protocol.md` has the details.
 

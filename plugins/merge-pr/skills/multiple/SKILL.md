@@ -1,7 +1,7 @@
 ---
 name: multiple
 description: Merge a set of PRs one at a time — detect stack vs independent set, rebase and resolve conflicts between merges, watch CI, merge each via gh
-allowed-tools: ["Bash", "Read", "Grep", "Edit", "AskUserQuestion"]
+allowed-tools: ["Bash", "Read", "Edit", "AskUserQuestion"]
 argument-hint: "[PR numbers/URLs, e.g. '#31 #32'] [--squash | --rebase | any other gh pr merge flag]"
 user-invocable: true
 disable-model-invocation: true
@@ -61,24 +61,23 @@ trunk, run `gh pr edit <child> --base <trunk>` before rebasing the child.
 One PR at a time; never merge two PRs between trunk syncs. For each PR in
 order:
 
-1. **Readiness gate** — apply the gate from the reference. A halt
+1. **Readiness gate**: apply the gate from the reference. A halt
    reports what landed and what remains.
-2. **Bring up to date** — when the PR is `BEHIND` or `DIRTY`, or an
+2. **Bring up to date**: when the PR is `BEHIND` or `DIRTY`, or an
    earlier merge in this run moved trunk, follow the reference's rebase
-   procedure. For a stacked child, run
-   `git rebase --onto <trunk> <parent's recorded headRefOid> <branch>` so
-   the parent's merged commits drop out; a squash merge deletes the
-   parent's old head, so use the roster-time SHA. Ask on any conflict that forces a choice
-   between behaviors.
-3. **Wait on CI** — `gh pr checks <n> --watch` on the rebased head.
-4. **Merge** — compose the message per the reference and
-   `../../references/prose-rules.md`, then merge with
-   `gh pr merge <n> <strategy flag> --match-head-commit <sha>`, plus
-   `-t`/`-b` only under the reference's condition, passing the user's
-   flags through verbatim. The strategy flag is `--merge` unless the user
-   passed `--squash` or `--rebase`. `--admin` only within the reference's
-   policy.
-5. **Sync** — per the reference's "After each merge". A queued
+   procedure. For a stacked child, use its `--onto` form with the parent's
+   roster-time `headRefOid`, because a squash merge leaves the parent's old head out of
+   trunk. Ask on any conflict that forces a choice between behaviors.
+3. **Wait on CI**: `gh pr checks <n> --watch` on the rebased head.
+4. **Merge**: check the repo allows the strategy, compose the message per
+   the reference and `../../references/prose-rules.md` (no `Co-Authored-By`,
+   no "Generated with" or other tool trailer, no emoji), then merge with
+   `gh pr merge <n> <strategy flag> --match-head-commit <sha>` and
+   `-t`/`-b`, as the reference's strategy and message sections say. Pass the
+   user's other flags through verbatim, except `--delete-branch` on a stack
+   parent: the reference drops it, and the report says so.
+5. **Sync**: per the reference's "After each merge", including its check
+   that trunk contains the merge commit. A queued
    (`--auto`) merge halts the run here.
 
 ### 4. Halt conditions
@@ -96,13 +95,17 @@ Open with a one-line hero (`✓ Merged N of M PRs` or
 a command in this run verified, and name the merge order only once the
 topology was read. A run halted before any merge (`gh` unavailable, roster
 invalid) gives the hero and one sentence on what the user must do; no
-headings, and no narration of what was not done.
+headings, and never a sentence saying what was not done ("nothing was
+merged").
 
-1. `## Roster` — the PRs, detected topology (stack or independent),
+1. `## Roster`: the PRs, detected topology (stack or independent),
    and merge order.
-2. `## Merges` — per PR: gate result, rebase/conflicts if any, CI
-   outcome, merge commit subject and short SHA.
-3. `## Trunk` — the post-run trunk state, from the sync's checkout and pull.
+2. `## Merges`: per PR, the gate result, rebase and conflicts if any, CI
+   outcome, merge commit subject and short SHA. Note a dropped
+   `--delete-branch` on a stack parent.
+3. `## Trunk`: the post-run trunk state and the result of the
+   contains-the-merge-commit check. Report a mismatch as a fact with the
+   short SHAs; give no cause.
 
 Write the sections per `../../references/prose-rules.md`.
 
@@ -128,5 +131,5 @@ Reply in this shape, as plain text outside any code fence, with plain bullets, n
 
 End with an `AskUserQuestion` panel offering next steps (for
 example: continue with a halted PR after a fix, merge another set,
-stop here) — skip the panel in plan mode. Without a question tool, end
+stop here); skip the panel in plan mode. Without a question tool, end
 after the sections: no `## Next steps` section.

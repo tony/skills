@@ -21,13 +21,15 @@ the same.
 
 ## Helper script
 
-`lockctl.py` in this plugin's `scripts/` directory (`../scripts/` from
-this file) does the lock-file work that must not be retyped: `state`
-prints one line per provider (source address, selected version, `h1:`
-hash count), `drop` removes one provider block, `stable` filters a
-version list, and `platforms` lists the `-platform=` values the
-repository's own `providers lock` commands name. Run it with `python3`
-by its path; the commands below write it as `lockctl.py`.
+`lockctl.py` in this plugin's `scripts/` directory does the lock-file work
+that must not be retyped: `state` prints one line per provider (source
+address, selected version, `h1:` hash count), `drop` removes one provider
+block, `stable` filters a version list, and `platforms` lists the
+`-platform=` values the repository's CI and task files pass to
+`providers lock`. The commands below name it by its path relative to the
+running skill's directory, two levels up. Print its absolute path once and
+write that path literally in each command, since shell variables do not
+persist between Bash calls.
 
 ## Guard every `init`
 
@@ -100,7 +102,7 @@ wait ([init options](https://developer.hashicorp.com/terraform/cli/commands/init
 > lock file, and to take the newest available version matching the
 > configured version constraints.
 >
-> — [terraform init](https://developer.hashicorp.com/terraform/cli/commands/init)
+> Source: [terraform init](https://developer.hashicorp.com/terraform/cli/commands/init)
 
 `init` has no per-provider upgrade flag, so `-upgrade` moves every provider
 a constraint allows to move. Use it only where that is the goal
@@ -127,7 +129,7 @@ the command prints `dropped`, or `absent` when the provider is new in
 this directory:
 
 ```console
-$ python3 lockctl.py drop \
+$ python3 ../../scripts/lockctl.py drop \
     <root-module-dir>/.terraform.lock.hcl \
     <provider-source-address>
 ```
@@ -165,7 +167,7 @@ file-wide maximum would let a drop hide behind a provider that tracks more
 platforms:
 
 ```console
-$ python3 lockctl.py state \
+$ python3 ../../scripts/lockctl.py state \
     <root-module-dir>/.terraform.lock.hcl
 ```
 
@@ -181,12 +183,13 @@ If the count dropped, find the platform names where the repository writes
 them down:
 
 ```console
-$ python3 lockctl.py platforms
+$ python3 ../../scripts/lockctl.py platforms
 ```
 
-It prints each tracked file that runs `providers lock` and the
-`-platform=` values it names (CI workflows, a Makefile or justfile
-target). Where it prints nothing, ask the user. Restore the platforms with
+It prints each CI or task file (workflows, a Makefile or justfile
+target) that runs `providers lock` and the `-platform=` values it names;
+documentation that merely mentions the command is not scanned. Where it
+prints nothing, ask the user for the names. Restore the platforms with
 them:
 
 ```console
@@ -200,6 +203,20 @@ Naming the provider restricts the command to it
 ([providers lock](https://developer.hashicorp.com/terraform/cli/commands/providers/lock));
 omit the address only to restore every provider. Never infer the platform
 list: a repository that tracked one platform should keep tracking one.
+
+Never commit a lock that tracks fewer platforms than it started with
+unless the user says yes to that exact file. When the names are unknown,
+or the count is still short after `providers lock`, ask. Without an
+interactive question tool, or with no answer, restore the committed lock
+and leave that root module out of the commit:
+
+```console
+$ git checkout \
+    -- <root-module-dir>/.terraform.lock.hcl
+```
+
+Report it as held back with the before and after counts, and end the run
+with the stopped line.
 
 ## When the resolver cannot see the version
 
@@ -226,7 +243,7 @@ Read the version out of the lock file and compare it to the target; a zero
 exit code proves nothing:
 
 ```console
-$ python3 lockctl.py state \
+$ python3 ../../scripts/lockctl.py state \
     <root-module-dir>/.terraform.lock.hcl
 ```
 

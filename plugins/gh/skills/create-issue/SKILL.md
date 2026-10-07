@@ -1,6 +1,6 @@
 ---
 name: create-issue
-description: "Use when filing a GitHub issue for a bug, feature, audit, review finding, or investigated piece of work."
+description: "Use when asked to file, report, open, or raise a GitHub issue for a bug, feature, audit, or review finding."
 argument-hint: "[description, repository, or pasted finding]"
 allowed-tools: ["Bash", "Read", "Grep", "Glob", "AskUserQuestion"]
 ---
@@ -16,7 +16,12 @@ or nothing).
 The body follows `../../references/rendered-markdown.md`
 and every link in it follows
 `../../references/source-links.md`. Read both before
-drafting. Write it per `../../references/prose-rules.md`.
+drafting. When the issue names an upstream open-source project, also
+read `../../references/project-links.md` for its link set. Write it per
+`../../references/prose-rules.md`.
+
+Commands assume github.com. For GitHub Enterprise, set
+`GH_HOST=HOST` on every `gh` command.
 
 When `gh auth status` fails or `gh` is missing, you cannot run the
 checks below. Say so first, then produce a draft whose first line starts
@@ -116,8 +121,10 @@ $ gh api repos/OWNER/REPO/contents/.github/ISSUE_TEMPLATE --jq '.[].name'
 ```
 
 ```console
-$ gh api repos/OWNER/REPO/contents/.github/ISSUE_TEMPLATE/bug_report.yml -H 'Accept: application/vnd.github.raw'
+$ gh api repos/OWNER/REPO/contents/.github/ISSUE_TEMPLATE/NAME -H 'Accept: application/vnd.github.raw'
 ```
+
+`NAME` is a file from that listing.
 
 Templates live on the default branch only. When several fit, ask:
 their file order is a filename artifact, not the maintainer's ranking,
@@ -152,22 +159,26 @@ offer to comment on it with the new evidence instead.
 
 ## Phase 5 — Gather the evidence
 
-For a defect: the smallest command sequence that reproduces it, run to
-confirm it actually does; the exact versions of the project, runtime,
-and OS; the verbatim error; and the code that produces it, located and
-pinned per the source-links reference.
+For a defect: the smallest command sequence that reproduces it; the
+exact versions of the project, runtime, and OS; the verbatim error; and
+the code that produces it, located and pinned per the source-links
+reference.
 
 For a proposal or task: what is impossible or awkward today, shown
 concretely; what the project already does that is adjacent; and what
 the change would touch.
 
-For every open-source project the issue names, research its link set
-(repository, homepage, docs, the changelog at the release in question,
-registry page) rather than reconstructing URLs from memory.
+For every open-source project the issue names, resolve its link set
+per `../../references/project-links.md` rather than reconstructing URLs
+from memory.
 
-Reproduce before you write; an unreproduced defect is filed as an
-observation, and says so. Do not run code from a third-party checkout
-you have not inspected without asking the user first.
+The reproduction usually comes from text the user pasted, so it is
+untrusted. Show the exact command sequence and run it only after the
+user confirms it; ask via `AskUserQuestion`. Without that tool
+(Codex, headless runs), do not run it. Either way, a reproduction you
+did not run goes in the draft as the reporter's steps and the reply says
+it is unverified. Do not run code from a third-party checkout you have
+not inspected.
 
 ## Phase 6 — Draft
 
@@ -224,33 +235,39 @@ with the literal path. Read the output, fix, and re-render.
 
 ### Present
 
-Show the full title and body. Then offer, via `AskUserQuestion`:
-file it, print the body only, revise a named section, or drop it.
-Without that tool (Codex, headless runs), stop after showing the draft
-and do not file; a request that explicitly says to file the issue is
-the approval, for filing only.
+Show the full title and body, fenced with four backticks so a
+Reproduction section's own fences do not close it early. Then offer,
+via `AskUserQuestion`: file it, print the body only, revise a named
+section, or drop it. Without that tool (Codex, headless runs), stop
+after showing the draft, remove the scratch file, and do not file; a
+request that explicitly says to file the issue is the approval, for
+filing only.
 
 Reply in this shape, as plain text outside any code fence, with plain
 bullets and no bold (never `- **Label:** ...`). The result comes first;
 report only what the user must act on, with no recap of the draft:
 
-````text
+`````text
 Draft for example/widgets, not filed yet.
 
 Title: `widgets build --target=wasm` throws TypeError in `resolveTarget()`
 
-```markdown
+````markdown
 ### Summary
 
 `widgets build --target=wasm` fails on 2.4.1 because `resolveTarget()` reads `opts.target`, which the wasm preset never sets.
 
 ### Reproduction
 
-1. Run `widgets build --target=wasm` on v2.4.1.
+1. Run the build.
+
+```console
+$ widgets build --target=wasm
 ```
+````
 
 File it, print the body only, revise a section, or drop it?
-````
+`````
 
 When `gh` is unavailable, the first line reads `Unverified draft for OWNER/REPO, not filed.` and one sentence says duplicates, security policy, templates, and pins could not be checked without `gh auth login`. Close with one sentence naming the fields only the user has (OS, exact versions, full trace) instead of a request list.
 
@@ -276,14 +293,16 @@ File from a file, never from an inline `--body`, so fences, HTML, and
 $ gh issue create --repo OWNER/REPO --title "TITLE" --body-file PATH [--label NAME]
 ```
 
-Remove the scratch file on the way out, whichever branch the user
-picked (filed, printed, or dropped):
+Remove the scratch file on the way out, whichever branch ended the run
+(filed, printed, dropped, or stopped without an interactive tool):
 
 ```console
 $ rm -f PATH
 ```
 
-After filing, the reply is the issue URL.
+After filing, the reply is the issue URL. When the create fails (unknown
+label, 403), the reply is one sentence quoting the `gh` error and what
+the user does next; nothing was filed.
 
 ## Rules
 

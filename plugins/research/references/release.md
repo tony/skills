@@ -56,12 +56,12 @@ The bag holds evidence and working material the scan does not cover (cards, raw 
 
 ## Output
 
-Open with a one-line hero (`✓ Released <hash> to <who>` or `✓ Released <hash> to <who> on an offline check`, `✓ Bag <file>: <n> files`, or `⚠ Not released: <failing checks>`), then exactly these sections:
+Open with a one-line hero (`✓ Released <hash> to <who>` or `✓ Released <hash> to <who> on an offline check`, `✓ Bag <file>: <n> files`, `⚠ Not released: <failing checks>`, or `⚠ Not released: check passed offline only; needs your call`), then exactly these sections:
 
-1. `## Check`: each check's result from this call, verbatim counts.
+1. `## Check`: each check's result from this call, verbatim counts and nothing else.
 2. `## Trail`: the release, decision, or bag written, with its hash.
 3. `## Next`: affected releases and decisions to revisit, or the fix `check` listed; at most three bullets, and the panel never repeats them.
 
 Write per `prose-rules.md`: plain bullets, no bold labels, no sentence narrating your own edits ("I added…"), no closing recap.
 
-Panel options: fix and check again, record the decision, export, stop.
+Panel options: fix and check again, record the decision, export, stop. Without an interactive host, print the options as a numbered list.

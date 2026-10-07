@@ -1,6 +1,6 @@
 ---
 name: situate
-description: Gain situational awareness — read the branch, its diff, its PR, its tickets, and the project's own conventions, and report where the work stands
+description: "Use when the user asks to get oriented or caught up on a branch, its pull request, tickets, and conventions before touching anything."
 allowed-tools: ["Bash", "Read", "Grep", "Glob", "AskUserQuestion"]
 argument-hint: "[<pr-number|url>] [--with-agentgrep [terms]]"
 user-invocable: true
@@ -33,8 +33,8 @@ pull request and its head branch. Read it through `gh`; do not check it
 out. The sweep reference's pull-request-as-subject section gives the
 commands.
 
-The full sweep runs several git and `gh` calls; `/situate:what` is the
-cheap alternative.
+The full sweep runs one script, several `git` and `gh` calls, and reads
+the diff; `/situate:what` is the cheap alternative.
 
 ### 2. Sweep the layers
 
@@ -45,8 +45,9 @@ acceptance criteria reframe the diff that implements them.
 
 ### 3. Search prior conversations
 
-Only with `--with-agentgrep` or when the user asks for it in words,
-under the prior-conversations reference.
+Only with `--with-agentgrep`, when the user asks for it in words, or
+when the request is to resume after a gap, under the prior-conversations
+reference.
 Derive the search terms from what the first five layers found unless
 the user supplied them.
 

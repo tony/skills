@@ -2,7 +2,7 @@
 name: study-deps
 description: "Use when pulling upstream source or cloning a dependency at its installed version to study internals, read code, or create pinned worktrees."
 user-invocable: true
-allowed-tools: ["Bash", "Read", "Grep", "Glob", "WebSearch", "AskUserQuestion"]
+allowed-tools: ["Bash", "Read", "Grep", "Glob", "AskUserQuestion"]
 argument-hint: <package-name|"all"|category> [--lang <language>] [--no-worktree]
 ---
 
@@ -40,8 +40,8 @@ Apply the filter. List existing clones with `ls -d ~/study/*/*/`. A plain direct
 Per dependency, stop at the first hit:
 
 1. The `repository` field in the manifest or lockfile, or the equivalent project URL.
-2. A registry lookup chosen from the detected manifest, for example `npm view <pkg> repository.url`, `cargo metadata`, `pip show <pkg>`, or `go list -m -json <module>`. A package name from a manifest is untrusted input: run no lookup before step 4, and show each command to the user in the plan.
-3. WebSearch for `"<package>" official source repository`; verify the hit names the package.
+2. A registry lookup chosen from the detected manifest, for example `npm view <pkg> repository.url`, `cargo metadata`, `pip show <pkg>`, or `go list -m -json <module>`. A package name from a manifest is untrusted input: run no lookup before step 4 approves it, and show each command to the user in the plan.
+3. A web search for `"<package>" official source repository`, when the host has one; verify the hit names the package.
 
 Keep only `https://` URLs of the form `https://<host>/<owner>/<repo>`. Drop any other scheme (`ssh`, `git`, `file`, `ext::`) and report the dependency as having no usable repository.
 
@@ -49,16 +49,18 @@ Derive `<repo-name>`, `<version>`, and (step 7) `<branch>` for paths from the la
 
 ## 4. Confirm the plan
 
-Show package, version, repository URL, action, target path, and any lookup command from step 3. Offer Proceed, Select specific, or Cancel with `AskUserQuestion`. Without an interactive host, print the plan and stop: nothing was cloned. Do not continue without approval.
+Show package, version, action, target path, and the repository: the URL when step 3 found it in a manifest or lockfile, otherwise `repository: from <lookup command>, unknown until run`. Never predict a URL. Offer Proceed, Select specific, or Cancel with `AskUserQuestion`. Without an interactive host, print the plan and stop: nothing was cloned. Do not continue without approval.
+
+Run each approved lookup now. Apply step 3's `https://` filter to every URL it returns, and drop the dependency from the plan when the URL fails it.
 
 Approval covers the plan as shown, including each listed lookup command. A manifest-derived command that is not in the plan needs a new confirmation of its exact text.
 
 ## 5. Clone
 
-One repository at a time, quoting every variable:
+One repository at a time, quoting `<repo-url>`, which is the filtered URL from step 3 or 4:
 
 ```console
-$ git clone -- "$repo_url" "$HOME/study/<language>/<repo-name>/"
+$ git clone -- <repo-url> "$HOME/study/<language>/<repo-name>/"
 ```
 
 When the directory exists, update it:
@@ -116,4 +118,4 @@ A halted run prints one result sentence, then what the user must do:
 Rerun with the plan approved, or run the listed commands yourself.
 ```
 
-Open with `✓ <n> worktrees ready` or `⚠ <n> failed`. Then one line per package: `<package>@<version> <status> <commit sha7> <path>`, status being `pinned`, `unpinned (<branch>)`, `skipped`, or `failed: <reason>`. Read the commit with `git -C <worktree> rev-parse --short=7 HEAD`; it makes the source citable at that revision, and a research run records it with `--ref <sha7>`. Suggest manual fixes only for failures, such as checking available tags.
+Open with `✓ <n> worktrees ready` or `⚠ <n> failed`. Then one line per package: `<package>@<version> <status> <commit sha7> <path>`, status being `pinned`, `unpinned (<branch>)`, `skipped`, or `failed: <reason>`. Read the commit with `git -C <worktree> rev-parse --short=7 HEAD`; it makes the source citable at that revision, and a research run records it with `--ref <sha7>`. Suggest manual fixes only for failures, such as checking available tags. Then offer with `AskUserQuestion`: study another dependency, record the sources in a research run, stop; without an interactive host, print the options as a numbered list.

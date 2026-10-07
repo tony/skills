@@ -30,17 +30,26 @@ $ git worktree add \
     origin/<default>
 ```
 
-Commit there. Push with `git push origin HEAD:<default>` only when the
-request asks to push. Remove the worktree afterwards; the branch and its
-commits stay:
+Commit there. Push only when the request asks to push, and only to the
+target the calling skill names. A skill that lands commits on the default
+branch directly pushes `HEAD:<default>`; a skill that opens a pull request
+pushes its own branch:
+
+```console
+$ git push \
+    --set-upstream \
+    origin <branch>
+```
+
+Remove the worktree afterwards; the branch and its commits stay:
 
 ```console
 $ git worktree remove <printed-path>
 ```
 
 Without a push request, report the branch name and print the push
-command for the user to run:
+command for the user to run, using the same target (`<target>` is `<default>` or `<branch>`):
 
 ```console
-$ git push origin <branch>:<default>
+$ git push origin <branch>:<target>
 ```

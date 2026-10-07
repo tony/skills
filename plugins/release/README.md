@@ -44,7 +44,7 @@ quality gates, and commits.
 **Safety Model (Requires Explicit Flags)**:
 - **Default**: Commit stays local (no push/tag).
 - **`--push`**: Pushes commit (`git push --no-follow-tags`).
-- **`--tag`**: Creates local annotated tag `v<version>`.
+- **`--tag`**: Creates a local annotated tag: the repo's tag prefix (`v` when it has none) plus the version.
 - **`--push-tag`**: Pushes that tag (often triggers publish workflow).
   Requires `--tag` in the same run; alone it is refused before anything
   runs.
@@ -59,7 +59,7 @@ repo's `AGENTS.md` reserves tags for a human.
 unwanted tag or push is the skill text and your own permission rules,
 not a tool restriction.
 
-### `/release:bump [patch|minor|major|prerelease|final|<version>]`
+### `/release:bump [patch|minor|major|prerelease|final|<version>] [--push] [--tag] [--push-tag]`
 
 Like `cut`, but calculates the next version first based on current version,
 tags, and changelog headers. Asks on ambiguity.

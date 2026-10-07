@@ -80,8 +80,15 @@ answer and is preferred over an inferred one.
 
 The plugin relies on undocumented internals: the `queue_1.sqlite` schema, transcript
 `origin` records, and the session registry layout. A release of either CLI can change them,
-so the skill checks each route at run time (`codex queue --help`, `claude agents --json`)
-instead of assuming a version.
+so it pins no CLI version. The skill probes each route at run time before choosing it:
+
+- `codex queue --help` must exit 0 for the `codex-queue` route.
+- `claude agents --json` must succeed for the inbox-socket route.
+- `ListAgents` must exist as a tool for the native `SendMessage` route.
+
+A failed probe drops that route and the skill falls back to the next one in its ranking,
+ending at `tmux send-keys`. Delivery is then confirmed from receiver evidence, never from
+the probe.
 
 ## Upstream
 

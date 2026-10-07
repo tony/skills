@@ -64,7 +64,7 @@ Scope by the file, and name the condition in the subject.
 Adding a hold:
 
 ```text
-.ncurc: Ignore `@biomejs/biome` 2.3.5 -> 2.3.6 until they fix class methods
+.ncurc: Hold `@biomejs/biome` at 2.3.5 until class-method fix
 ```
 
 Releasing one, naming what fixed it:

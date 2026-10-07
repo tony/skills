@@ -17,8 +17,9 @@ candidate at a time, every verdict traceable to the evidence that settled it.
 
 Read `references/evidence-tiers.md` before recording any number, and
 `references/citation.md` for the circularity rule that applies in every
-pass. The analyzer ships beside it at `references/term-metrics.py`; `<analyzer>`
-below is that path.
+pass. The analyzer
+is `references/term_metrics.py`; `<analyzer>` below is its absolute path
+resolved from this skill's directory.
 
 User arguments: $ARGUMENTS
 
@@ -27,7 +28,7 @@ User arguments: $ARGUMENTS
 Run the analyzer:
 
 ```console
-$ <analyzer> notes/ontology/<subject>/
+$ python3 <analyzer> notes/ontology/<subject>/
 ```
 
 It reports synonymy candidates, polysemy candidates, orphans, circular
@@ -68,8 +69,8 @@ Read `sources.jsonl` and ask what the study does not know:
 
 ## Pass 4 — stop condition
 
-Stop when a round surfaces no new contested claim, or at `--rounds`
-(default 3). Stop when the design stops fighting back, not when a counter runs
+A round is passes 1 to 3 rerun against the current table. Stop when a round
+surfaces no new contested claim, or at `--rounds` (default 3). Stop when the design stops fighting back, not when a counter runs
 out.
 
 ## Panels
@@ -99,7 +100,15 @@ beside the serial one.
 Per `references/output-contract.md`. Hero: `✓ <n> candidates judged, <n>
 killed, <n> open` or `⚠ Blocked: <reason>`. With no distilled ontology on disk,
 the reason names distill as the missing stage and the one sentence after it
-says to run it. Sections:
+says to run the `scholar-distill` skill, never the `scholar-ontology` skill:
+
+```text
+⚠ Blocked: no study directory or distilled ontology to contest.
+
+Run scholar-distill on the study, then run contest again.
+```
+
+Sections:
 
 1. `## Findings` — what the analyzer proposed, by kind.
 2. `## Verdicts` — each candidate, its objection, and how it resolved.

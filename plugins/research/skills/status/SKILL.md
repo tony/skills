@@ -1,7 +1,7 @@
 ---
 name: status
 description: "List research topics and assessments: latest run, source states, open questions, and the next action for each"
-allowed-tools: ["Skill", "Bash", "Read"]
+allowed-tools: ["Bash", "Read"]
 argument-hint: "[--namespace=<ns>] [--root=<dir>]"
 user-invocable: true
 disable-model-invocation: true
@@ -10,6 +10,6 @@ disable-model-invocation: true
 
 # /research:status
 
-Invoke /research:foray with `status` followed by the user arguments, and follow it.
+Read `../foray/SKILL.md` and follow it, treating `status` as the first word of the arguments.
 
 User arguments: $ARGUMENTS

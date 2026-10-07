@@ -57,6 +57,10 @@ Exit plan mode once approved.
 
 ## Execute
 
+Never run `sudo`. Print the full command for the user, say what it
+changes, and stop. This covers system-tier cleanup such as `apt clean`
+and `journalctl --vacuum-size`.
+
 Work the approved plan in tier order, largest first within each tier.
 Track progress with TodoWrite so a long run stays inspectable.
 
@@ -70,7 +74,7 @@ its own reference counting and leaves the store consistent.
 Before any `rm`, resolve the path with `realpath`, list what it would
 remove (`ls -A <path>`), print the exact target, and check that no
 process holds it open (`fuser -v <path>`; `lsof +D <path>` walks the
-whole tree, so bound it with `timeout 20` on a large one). Stop if the
+whole tree, so use it only on a small one). Stop if the
 resolved path leaves the approved scope.
 
 Stop and report rather than improvising when a proof fails, a candidate

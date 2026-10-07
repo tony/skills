@@ -136,15 +136,33 @@ CONFIDENCE_RE = re.compile(
 )
 ITEM_RE = re.compile(r"(?:[-*]|\d+[.)])\s")
 RESPONSE_HEADERS = ("content-type", "last-modified", "etag", "date")
-SLOP_WORDS = (
-    "delve", "leverage", "utilize", "facilitate", "empower", "streamline", "robust",
-    "seamless", "comprehensive", "cutting-edge", "game changer", "paradigm shift",
-    "tapestry", "realm", "beacon", "multifaceted", "meticulous", "paramount",
-    "transformative", "elevate", "embark", "supercharge", "pivotal", "testament",
-    "it's worth noting", "it is worth noting", "it's important to note",
-    "in today's world", "at the end of the day", "let's dive in", "in conclusion",
-    "best practices",
-)  # fmt: skip
+PROSE_RULES = Path(__file__).resolve().parent.parent / "references" / "prose-rules.md"
+
+
+def parse_slop_words(text: str) -> tuple[str, ...]:
+    """Read the banned words and quoted phrases from the "Cut these words" section."""
+    m = re.search(r"^## Cut these words\n(.*?)(?=^## |\Z)", text, re.MULTILINE | re.DOTALL)
+    if not m:
+        msg = "prose-rules.md has no 'Cut these words' section"
+        raise ValueError(msg)
+    words: list[str] = []
+    for para in re.split(r"\n\s*\n", m[1].strip()):
+        flat = " ".join(para.split())
+        head, sep, rest = flat.partition(": ")
+        if not sep:
+            continue
+        if head.startswith("Inflation"):
+            words.extend(w.strip(" .") for w in rest.split(","))
+        else:
+            words.extend(t.cast("list[str]", re.findall(r'"([^"]+)"', rest)))
+    found = tuple(dict.fromkeys(w.lower() for w in words if w))
+    if not found:
+        msg = "'Cut these words' section lists no words"
+        raise ValueError(msg)
+    return found
+
+
+SLOP_WORDS = parse_slop_words(PROSE_RULES.read_text(encoding="utf-8"))
 SLOP_PATTERNS = tuple(
     (name, re.compile(pattern, re.IGNORECASE))
     for name, pattern in (

@@ -1,9 +1,9 @@
 ---
 name: rebuild
-description: "Use when rebuilding a bloated tracker item whose epic or Jira ticket hard-codes implementation, restates a spec, or cites counts and line numbers."
+description: "Use when asked to rewrite or clean up a bloated ticket or epic that hard-codes implementation, restates a spec, or cites counts and line numbers."
 user-invocable: true
 argument-hint: "[URL or identifier]"
-allowed-tools: ["Bash", "Read", "Write", "Grep", "Glob", "AskUserQuestion"]
+allowed-tools: ["Bash", "Read", "Grep", "Glob", "AskUserQuestion"]
 ---
 
 # Rebuild a ticket
@@ -105,7 +105,12 @@ Check for each of these:
 
 Write the new body from the audit, not by editing the old text, using the
 section list from `altitude.md` for the role the item should be. Check the
-future tense against `contract.md`, and sanitize for local paths, hostnames,
+future tense against `contract.md`: an invariant restates a constraint the
+item itself states, in its own nouns, with no added clause; a technical choice
+is Intent. When the item states no constraint, omit Invariants and list it
+under Missing. Do not invent impact or a symptom: the Summary says only what
+the item says (never "steady rate" for a backoff it does not describe).
+Sanitize for local paths, hostnames,
 emails, tokens, and internal URLs. State facts about the work; never put
 advice about the document in the body. Use no time-relative words
 ("currently", "for now"). Headings inside the body are `###`, so they nest
@@ -159,9 +164,10 @@ No comments or work type were pasted, so this uses the body alone.
 
 ## Demoted
 
-- "Add breaker.js" becomes the invariant "retries never storm a failing
-  dependency".
-- "Backoff capped at 30s" becomes Intent, as a non-binding choice.
+- "Circuit breaker implemented using the half-open state pattern" becomes
+  Intent, as a non-binding design choice.
+- "Backoff capped at exactly 30 seconds" becomes Intent, as a non-binding
+  choice.
 
 ## Missing
 
@@ -177,8 +183,9 @@ sentence, then what the user needs to do.
 
 Then offer, via `AskUserQuestion`: update the item, update and also create the
 relocated document, print the body only, revise a named section, or drop it.
-Where no interactive question tool exists, print the result and stop; an
-update needs an explicit instruction naming the action.
+Where no interactive question tool exists, print the result, list those
+options as plain bullets, and stop; an update needs an explicit instruction
+naming the action. Add no free-prose offer or comment on the draft's strength.
 
 ## Phase 7: Update
 
@@ -205,3 +212,5 @@ command.
 - Never close, reassign, relabel, or reparent the item. Rewriting a body is
   the whole mandate.
 - Never invent a reference syntax or a link that was not verifiable.
+- Never invent a version, symptom, affected user, or impact the item does not
+  state; list it under Missing.

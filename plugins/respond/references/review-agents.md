@@ -59,25 +59,19 @@ window is absence, and the report says which agent never arrived.
 
 ## Waiting
 
-Two waits, in this order, both bounded.
+Two waits, in this order, both bounded, both run by
+the plugin's `wait_pr.py`, with the commands in `/respond:goal` steps 5
+and 6.
 
 **CI**, which has a completion signal but no cap of its own. Right
 after a push `gh pr checks` can list nothing, which is not "none
 pending"; the script waits for a first check, then for none pending,
-and stops at the first failure or at the cap:
+and stops at the first failure or at the cap.
 
-```console
-$ python3 ../scripts/wait_pr.py ci <pr> --timeout <minutes>
-```
-
-**The agents**, which have none. Record the head SHA and the UTC time
-before pushing, then let the script poll reviews and comments. It stops
-the moment every named login has weighed in on the head SHA, or at the
-cap, and prints the logins still missing:
-
-```console
-$ python3 ../scripts/wait_pr.py agents <pr> --sha <head-sha> --since <push-time-utc> --agents <login> <login> --timeout <minutes>
-```
+**The agents**, which have none. The script polls reviews and issue
+comments and stops the moment every named login has weighed in on the
+head SHA or commented since the push, or at the cap, and prints the
+logins still missing. Roster logins match with or without `[bot]`.
 
 The cap (`--wait` in `/respond:goal`) is not optional. Past it, the
 loop is holding a session open in the hope of an event that

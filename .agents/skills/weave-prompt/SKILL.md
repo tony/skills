@@ -99,9 +99,7 @@ Under **subagents**, then confirm nothing touched the main checkout with `ensemb
 
 4. Write the comparison (scores per implementation, quality-gate results, the winner and why) to `<session_dir>/pass-NNNN/synthesis.md` per `references/prose-rules.md`.
 
-5. Read `references/present-results.md` and apply it with `RESULT_KIND` = `prompt`, `ARTIFACT_PATH` = `<session_dir>/pass-NNNN/synthesis.md`, `SESSION_DIR`, `PASS_COUNT` = `passes`, `IN_PLAN_MODE` = false, `LABEL_MAP_PATH` = `<session_dir>/pass-NNNN/label-map.json`. Read `WORKER_BACKEND`, `PARTICIPANTS`, `EXECUTORS`, and `MODELS` from `session.json`.
-
-6. Record the pass (`update --completed-passes <N> --event pass_complete`).
+5. Record the pass (`update --completed-passes <N> --event pass_complete`). Do not render results yet: the user's stash is still held, so presentation waits for Phase 5.
 
 ---
 
@@ -137,13 +135,13 @@ Then repeat Phases 2 and 3 with pass `<N>`, reusing each participant's work:
 
   Then create the worktrees again as in Phase 2. Reference prior artifacts by path for `claude` and inline them for external lanes.
 
-Re-score only affected dimensions. Stop early when no score moved by more than 1 and no new conflict appeared. Present the final-pass analysis.
+Re-score only affected dimensions. Stop early when no score moved by more than 1 and no new conflict appeared. Carry the final-pass analysis into Phase 5.
 
 ---
 
 ## Phase 5: Adopt the chosen implementation
 
-Show the user the comparison and the recommended winner, and let them choose. Wait for the choice before touching the main checkout. Without `ask-user-choice`, do not apply anything: report the comparison and recommended winner, then run only the cleanup steps (discard the `claude` lane's main-checkout changes with `reset-main` under **model-clis**, remove the worktrees, restore the stash) so the user's tree is as they left it. A request that explicitly says to apply the result is that confirmation for applying it, never for committing.
+Show the user the comparison and the recommended winner, and let them choose. Wait for the choice before touching the main checkout. Without `ask-user-choice`, do not apply anything: report the comparison and recommended winner, then run only the cleanup steps (discard the `claude` lane's main-checkout changes with `reset-main` under **model-clis**, remove the worktrees, restore the stash, then render the results) so the user's tree is as they left it. A request that explicitly says to apply the result is that confirmation for applying it, never for committing.
 
 1. If the winner is the `claude` lane under **model-clis**, its changes are already in the main checkout; skip to step 3. Otherwise, under **model-clis**, discard the `claude` lane's changes first. The command refuses unless the user's stash is recorded and still present:
 
@@ -183,7 +181,11 @@ Show the user the comparison and the recommended winner, and let them choose. Wa
        --session "<session_dir>"
    ```
 
-   On `"conflict": true` the restore was refused or conflicted and the stash is still intact. Tell the user, in this order: their uncommitted changes are safe in the stash, `stash_sha` identifies it, `inspect` shows it, and `apply` restores it once they are ready. Do not drop the stash and do not suggest dropping it.
+   On `"conflict": true` the pop was refused or conflicted, and the stash is intact. Tell the user, in this order: their uncommitted changes are safe in the stash; its SHA (`stash_sha`); the `overlap` paths that both the result and the stash changed; then each `recover` command in order, as a `console` fence with one command per block, with `inspect` available to read the stash first. Do not run them unprompted, and do not drop the stash or suggest dropping it. Continue to step 6.
+
+6. Read `references/present-results.md` and apply it with `RESULT_KIND` = `prompt`, `ARTIFACT_PATH` = `<session_dir>/pass-NNNN/synthesis.md`, `SESSION_DIR`, `PASS_COUNT` = `passes`, `IN_PLAN_MODE` = false, `LABEL_MAP_PATH` = `<session_dir>/pass-NNNN/label-map.json`. Read `WORKER_BACKEND`, `PARTICIPANTS`, `EXECUTORS`, and `MODELS` from `session.json`.
+
+   Render it only now: the stash is restored (or its recovery reported), so a next-step panel never runs while the user's work is held.
 
 The result is unstaged in the working tree for the user to review. Never commit it.
 

@@ -57,6 +57,21 @@ def test_unreadable_candidate_subtree_is_inconclusive(
     assert "REDUNDANT\n" not in out.replace("NOT REDUNDANT", "")
 
 
+@pytest.mark.skipif(os.geteuid() == 0, reason="root ignores file modes")
+def test_unreadable_file_is_inconclusive(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    cand = tree(tmp_path / "c", {"a": "1", "b": "2"})
+    keep = tree(tmp_path / "k", {"a": "1", "b": "2"})
+    (cand / "b").chmod(0)
+    try:
+        code, out = run(cand, keep, capsys)
+    finally:
+        (cand / "b").chmod(0o600)
+    assert code == redundancy.EXIT_INCONCLUSIVE
+    assert "UNREADABLE" in out
+
+
 def test_listing_error_is_inconclusive(
     tmp_path: Path, capsys: pytest.CaptureFixture[str], monkeypatch: pytest.MonkeyPatch
 ) -> None:

@@ -23,12 +23,12 @@ local date (`date +%F`) and `<workflow>` is the measured skill or
 workflow as a kebab-case slug (`lean-tighten`, `pr-review`). The same
 slug on different dates is one workflow.
 
-Root: the user's choice, else `~/Documents`; on WSL, the Windows user's
-`/mnt/c/Users/<user>/Documents`. These are defaults, not decisions:
-always ask the user where to write before creating a run. Running
-non-interactively: use the default root and record that decision in the
-run README. Nothing is written to disk before the user confirms the
-root.
+Root: the user's choice, else `~/Documents`; on WSL, the Windows
+Documents folder. These are defaults, not decisions: always ask the
+user where to write before creating a run, and write nothing before
+they confirm the root. Non-interactive: this skill prints its
+plan and stops unless the request names the root; the report commands
+write only inside the run they were given.
 
 ## Layout
 
@@ -145,7 +145,7 @@ $ references/business.py runs
 It searches `~/Documents` and, on WSL, the Windows users' Documents
 folders, skipping any it cannot read; `--root <dir>` searches that
 directory instead. Confirm the chosen run with the
-user before rendering anything from it. Running non-interactively:
+user before rendering anything from it. Non-interactive:
 proceed with the newest run and say which one in the output's Run
 section instead of asking.
 
@@ -200,8 +200,16 @@ with any the skill adds:
 3. `## Report`: where it was written and the headline.
 
 End with an `ask-user-choice` panel offering the skill's next steps.
-Skip it in plan mode or when running non-interactively, where the
-output ends after `## Report`.
+Skip it in plan mode. Where no question tool exists (Codex, headless
+runs), print the options as a plain list after `## Report` and stop.
+
+Each bullet says something new: the hero states the claim, the
+headline bullet states what the data supports and where a committed
+figure would go, and the limitation bullet names a limitation the
+headline lacks. A request to convert to money is declined in one
+sentence as the first bullet of `## Report`, never ahead of the hero,
+and says "money" or "currency", never a unit or the word "dollars".
+Write adoption and realization in words, never as `(a)` and `(r)`.
 
 Reply in this shape, as plain text outside any code fence, with plain bullets, no bold (never `- **Label:** ...`), and no local paths:
 
@@ -220,15 +228,25 @@ Reply in this shape, as plain text outside any code fence, with plain bullets, n
 
 - Written to reports/leadership.md.
 - Strongest limitation: review latency covers 41 PRs, one team.
+
+Next, you can:
+- Render the org-wide projection.
+- Adjust an assumption and render again.
+- Stop here.
 ```
+
+The last list is the non-interactive form; with a question tool it is
+the panel instead.
 
 ### Stopped run
 
 A run that halts (run not found, gate failed, missing input, failed
 sweep) is one hero line `⚠ Refused: <reason in one sentence>`, then
-one short paragraph or list of what the user must do next. No `Run`,
-`Gate`, or `Report` sections, no panel, no list of checks performed,
-and no sentence that repeats the hero. State only what a command
+one short paragraph or list of what the user must do next, two
+sentences at most. No `Run`, `Gate`, or `Report` sections, no panel,
+no list of checks performed, no sentence that repeats the hero or the
+run name, and no negation narration ("I did not use a default") or
+sandbox fact ("I cannot ask you here"). State only what a command
 printed: never claim a check failed that did not run, never report an
 exit status the script does not define (`runs` prints nothing and
 exits 0 when it finds no run), and never describe references that
@@ -240,13 +258,20 @@ were not loaded.
 Add the missing snapshot or remove the entry, then render again.
 ```
 
+```text
+⚠ Refused: no public case study exists for this run.
+
+Run business-case-study-public on it, then run business-pr-release again.
+```
+
 ### Paths and commits
 
 Name a run as `<date>/business/<workflow>` relative to its root, and
 a root as the user would type it (`~/Documents`), never expanded into
-a temporary or sandbox path. Print an absolute path only when the user
-must act on that file. Never report sandbox restrictions as facts
-about the user's machine; say a path could not be read or written.
+a temporary or sandbox path or a username-bearing path. Print an
+absolute path only when the user must act on that file. Never report
+sandbox restrictions as facts about the user's machine, and say what
+you need from the user rather than what you could not read from here.
 
 Steps that ask the user (`ask-user-choice`) state their
 non-interactive default; an explicit authorization in the request

@@ -44,9 +44,8 @@ Write entries and the commit message per `../../references/prose-rules.md`.
 5. **Check for a PR.** `gh pr view --json number,title,body,labels` returns the
    number, title, body, and labels. A failure means no PR; use `(#???)`
    placeholders.
-6. **Check the changelog is clean.** `git status --porcelain -- <changelog-file>`
-   output means earlier uncommitted edits: a commit would sweep them in, so
-   never commit; insert only, and say why.
+6. **Check the changelog is clean** per `commit-message.md`; when it is not,
+   insert only and say why.
 7. **Get commits.** Fetch per `branch-scope.md` first. `git log origin/<base>..HEAD --format='%H %s%n%b---'`
    gives subjects and bodies. No commits ahead: report "No commits ahead of
    the base branch" and stop.
@@ -103,6 +102,11 @@ When asking, use `AskUserQuestion`: "Insert into `<changelog-file>`?" Offer:
 Without approval already given and without `AskUserQuestion`, end with one
 line: nothing was edited; re-run with "add the entries" to insert, or with
 `--commit` to insert and commit. Name no temp files or local paths.
+
+When approval was already given, send one reply: the summary line first, then
+the Phase 4 reply, then the voice check, `Target` line, and `Notes`. Skip the
+Phase 3 reply. `Notes` holds only facts that explain an omission or that the
+user must act on; leave out advice such as "you may want".
 
 A stopped run (no commits ahead, on the base branch) is one result sentence,
 then what the user needs to do.

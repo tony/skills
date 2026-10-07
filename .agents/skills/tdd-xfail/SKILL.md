@@ -19,7 +19,8 @@ Initial bug report: $ARGUMENTS
 
 Shared rules: [xfail mechanisms](references/xfail-mechanisms.md) and
 [gates, commits, recovery](references/gates-and-commits.md). Write
-commit messages per `references/prose-rules.md`.
+commit messages per `references/prose-rules.md` and the reference's
+"Commit messages" section.
 
 ## Orchestration Plan
 
@@ -27,7 +28,7 @@ Enter plan mode before the first edit. In Claude Code call `EnterPlanMode`;
 in Cursor, Codex, or Gemini use `/plan` or `Shift+Tab`. Where plan mode is
 unavailable, present the plan as text.
 
-The plan must contain:
+The plan covers these points, written as plain bullets without bold labels:
 
 1. Bug summary: symptom, expected behavior, trigger conditions, affected component.
 2. Test strategy: test file, fixtures, xfail mechanism.
@@ -38,25 +39,25 @@ The plan must contain:
 7. Reproduction proof: how you will show the test fails for the bug's reason and
    not the setup (the failure message at the marker-removed run, the stash round-trip).
 
-Present the plan to the user and wait for approval before executing. Exit plan
-mode once approved; Phase 0 stashes and Phase 1 commits, which plan mode
+Cap the plan to what differs from this workflow's defaults: a pure function
+with one test needs a handful of lines, not eight steps.
+
+Present the plan and wait for approval per the approval rule in
+[gates, commits, recovery](references/gates-and-commits.md). Exit plan
+mode once approved; Phase 1 commits and Phase 4 stashes, which plan mode
 blocks.
 
 When the user asked only for the failing test, the plan covers Phases 0 to 2
 and the run stops after Gate 2 with the test committed. Never start Phase 3
 unasked.
 
-If plan mode is unavailable, write the plan as numbered steps in your
-response and confirm with the user before proceeding. A headless run with no
-user to ask treats the request as approval of the plan, for the phases the
-request covers. The
-plan needs no repository: when a Phase 0 gate (dirty tree, wrong repository)
-stops the run, the stopped report still states the plan, asks the user to
-approve it, and says what to fix in the repository.
+The plan needs no repository: when a Phase 0 gate (dirty tree, wrong
+repository) stops the run, the stopped report still states the plan, asks the
+user to approve it, and says what to fix in the repository.
 
 ## Output shape
 
-Report per the final-report and stopped-run shapes in
+Report per the final-report, stopped-run, and plan-awaiting-approval shapes in
 `references/gates-and-commits.md`. Name commits by purpose (xfail test,
 fix, xfail removal), never by phase or number. Name no local paths.
 
@@ -64,8 +65,9 @@ fix, xfail removal), never by phase or number. Name no local paths.
 
 1. Create a todo list tracking all phases.
 2. Confirm the repository: `git rev-parse --show-toplevel` must be the
-   project the bug lives in. If it is a parent or home-directory repository,
-   or there is none, stop and tell the user.
+   project the bug lives in. If there is none, or the root is `$HOME` or
+   contains it (a dotfile repository would sweep home into Phase 4's stash),
+   stop and tell the user.
 3. Confirm a clean tree: `git status --porcelain` must print nothing. If it
    prints changes, ask the user to commit or stash them first. Without an
    interactive question tool, stop; never stash or commit unrelated work.
@@ -74,9 +76,8 @@ fix, xfail removal), never by phase or number. Name no local paths.
 5. Detect the framework and select the mechanism from the xfail-mechanisms
    reference.
 6. Derive the test-file patterns the diff gates use from the project's own
-   layout and naming. Write each as its own `:(glob)` pathspec, for example
-   `:(glob)**/test_*`, `:(glob)**/*_test.*`, `:(glob)tests/**`,
-   `:(glob)**/*.spec.*`. Only `:(glob)` makes `**/` match top-level files too.
+   layout and naming. Write each as its own `:(glob)` pathspec (see "Diff gates" in the
+   reference).
 7. Use Explore agents to find the relevant source and existing tests.
 8. When the bug spans a dependency, follow the cross-dependency steps in the
    gates-and-commits reference, running this protocol in the dependency first.
@@ -119,9 +120,8 @@ The test must produce an expected-failure result. If it passes outright, it does
 not reproduce the bug; rewrite it. If it fails with an exception not matching
 `raises`, it targets the wrong symptom.
 
-Then commit test file changes only. Write the message per the gates-and-commits
-reference: no `Co-Authored-By`, no "Generated with" or other tool trailers, no
-emoji.
+Then commit test file changes only; the test-only-commit check in the
+reference's "Diff gates" section must print nothing.
 
 ## Phase 2: Verify Reproduction Is Genuine
 
@@ -155,14 +155,8 @@ Fix the source. Zero test file changes in this commit. Apply the minimal fix
 
 ### Gate 3: zero-diff on test files
 
-List modified and untracked files matching the test patterns from Phase 0. The
-command must print nothing. Pass one `:(glob)` pathspec per pattern, for
-example:
-
-```console
-$ git status --porcelain \
-    -- ':(glob)**/test_*.py' ':(glob)**/*.spec.ts'
-```
+Run the source-only-commit check from the reference's "Diff gates" section. It must
+print nothing.
 
 If test files changed, move those changes to Phase 5.
 
@@ -201,8 +195,7 @@ If the test does not return to xfail with the fix stashed, something else
 resolved it. Check for a stale build cache, an unrelated working-tree change, or
 a dependency update.
 
-Then commit the fix with the root cause in the message, with no
-`Co-Authored-By`, tool trailers, or emoji.
+Then commit the fix with the root cause in the message.
 
 ## Phase 5: Remove xfail Marker
 
@@ -216,18 +209,12 @@ Convert the xfail test to a regression test. Zero source changes in this commit.
 
 ### Gate 5: zero-diff on source files
 
-List modified and untracked files outside the test patterns. The command must
-print nothing. Pass one `:(exclude,glob)` pathspec per pattern; a single
-exclude holding several patterns excludes nothing:
-
-```console
-$ git status --porcelain \
-    -- . ':(exclude,glob)**/test_*.py' ':(exclude,glob)**/*.spec.ts'
-```
+Run the test-only-commit check from the reference's "Diff gates" section. It
+must print nothing.
 
 If source files changed, move them to a separate commit.
 
-Then commit, with no `Co-Authored-By`, tool trailers, or emoji.
+Then commit.
 
 ## Phase 6: Final Verification
 

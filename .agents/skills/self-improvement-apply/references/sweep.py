@@ -6,6 +6,7 @@ launches) into per-skill invocation counts, an era split, and project spread.
 ``catalog`` lists the skills with their rename map, birth dates, and era
 boundary from git history. ``ledger-save`` writes the findings ledger outside
 the working tree and ``ledger-verify`` recomputes its key before any edit.
+``tree-check`` reports uncommitted changes that would mix with a catalog edit.
 
 Run ``sweep.py <command> --help`` for each command.
 """
@@ -20,7 +21,7 @@ import subprocess
 import sys
 import typing as t
 from collections import Counter, defaultdict
-from datetime import UTC, date, datetime
+from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
 
 if t.TYPE_CHECKING:
@@ -43,6 +44,9 @@ class Args(argparse.Namespace):
     alias: list[str] = []  # noqa: RUF012
     findings: str = ""
     resweep_on: str = ""
+    resweep_days: int = 30
+    names_out: str | None = None
+    ignore: list[str] = []  # noqa: RUF012
     out: str | None = None
     ledger: str | None = None
     tool_unavailable: bool = False
@@ -297,7 +301,8 @@ def verify_ledger(ledger: object, head: str) -> tuple[bool, str]:
 
 
 SKILL_DIR_RE = re.compile(r"^plugins/([^/]+)/skills/([^/]+)/")
-SKILL_GLOB = "plugins/*/skills/*/SKILL.md"
+CATALOG_ROOT = "plugins"
+SKILL_GLOB = f"{CATALOG_ROOT}/*/skills/*/SKILL.md"
 FRONTMATTER_PARTS = 3
 RENAME_COLS = 3
 REBUILD_MIN_SKILLS = 3
@@ -496,8 +501,23 @@ def _cmd_catalog(args: Args) -> int:
         "rename_subjects": subjects.splitlines(),
         "era": era_boundary(births),
     }
+    if args.names_out:
+        _ = Path(args.names_out).write_text(
+            "".join(f"{s['name']}\n" for s in skills), encoding="utf-8"
+        )
     print(json.dumps(out, indent=2))
     return 0
+
+
+def _cmd_tree_check(args: Args) -> int:
+    ignored = {Path(p).resolve() for p in args.ignore}
+    tracked = _git("diff", "--name-only", "--relative", "HEAD", "--").splitlines()
+    untracked = _git(
+        "ls-files", "--others", "--exclude-standard", "--", ":/" + CATALOG_ROOT
+    ).splitlines()
+    dirty = sorted(p for p in {*tracked, *untracked} if Path(p).resolve() not in ignored)
+    print(json.dumps({"clean": not dirty, "dirty": dirty}))
+    return 0 if not dirty else 1
 
 
 def _cmd_ledger_path(_args: Args) -> int:
@@ -506,7 +526,9 @@ def _cmd_ledger_path(_args: Args) -> int:
 
 
 def _cmd_ledger_save(args: Args) -> int:
-    if not DATE_RE.match(args.resweep_on):
+    today = date.today()  # noqa: DTZ011
+    resweep_on = args.resweep_on or (today + timedelta(days=args.resweep_days)).isoformat()
+    if not DATE_RE.match(resweep_on):
         print("--resweep-on must be YYYY-MM-DD", file=sys.stderr)
         return 2
     try:
@@ -521,14 +543,16 @@ def _cmd_ledger_save(args: Args) -> int:
     out.parent.mkdir(parents=True, exist_ok=True)
     ledger = {
         "version": LEDGER_VERSION,
-        "created": date.today().isoformat(),  # noqa: DTZ011
-        "resweep_on": args.resweep_on,
+        "created": today.isoformat(),
+        "resweep_on": resweep_on,
         "head": head,
         "key": ledger_key(head, findings),
         "findings": findings,
     }
     _ = out.write_text(json.dumps(ledger, indent=2) + "\n", encoding="utf-8")
-    print(json.dumps({"path": str(out), "key": ledger["key"], "head": head}))
+    print(
+        json.dumps({"path": str(out), "key": ledger["key"], "head": head, "resweep_on": resweep_on})
+    )
     return 0
 
 
@@ -547,6 +571,7 @@ def _cmd_ledger_verify(args: Args) -> int:
 COMMANDS: dict[str, Callable[[Args], int]] = {
     "catalog": _cmd_catalog,
     "counts": _cmd_counts,
+    "tree-check": _cmd_tree_check,
     "ledger-path": _cmd_ledger_path,
     "ledger-save": _cmd_ledger_save,
     "ledger-verify": _cmd_ledger_verify,
@@ -560,6 +585,14 @@ def build_parser() -> argparse.ArgumentParser:
 
     cat = sub.add_parser("catalog", help="skills, rename map, birth dates, era boundary as JSON")
     _ = cat.add_argument("--root", default=".", help="repository root; default is the cwd")
+    _ = cat.add_argument("--names-out", help="also write the skill names, one per line, here")
+
+    tree = sub.add_parser(
+        "tree-check", help="exit 1 on tracked changes or untracked files under the catalog"
+    )
+    _ = tree.add_argument(
+        "--ignore", action="append", default=[], help="path to leave out, repeatable"
+    )
 
     counts = sub.add_parser("counts", help="per-skill counts, era split, spread as JSON")
     _ = counts.add_argument("--history", required=True, help="prompt-history JSONL file")
@@ -581,7 +614,10 @@ def build_parser() -> argparse.ArgumentParser:
 
     save = sub.add_parser("ledger-save", help="write the ledger with its key")
     _ = save.add_argument("--findings", required=True, help="JSON list of findings")
-    _ = save.add_argument("--resweep-on", required=True, help="date to sweep again, YYYY-MM-DD")
+    _ = save.add_argument("--resweep-on", help="date to sweep again, YYYY-MM-DD")
+    _ = save.add_argument(
+        "--resweep-days", type=int, default=30, help="days from today when --resweep-on is absent"
+    )
     _ = save.add_argument("--out", help="ledger path; default is the per-worktree path")
 
     verify = sub.add_parser("ledger-verify", help="recompute the key; exit 1 on mismatch")

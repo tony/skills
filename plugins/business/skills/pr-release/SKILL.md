@@ -15,7 +15,8 @@ skill introduces no figure that is not already in it and re-derives
 nothing from the interim package.
 
 Read `../../references/interim-format.md` first for the run location
-and output frame; there is no completeness gate here. Defer these
+and output frame; there is no completeness gate here. The run's
+`README.md` is read only for the names the sweep denies. Defer these
 until the firewall (the public case study) is located:
 
 - `../../references/provenance.md`
@@ -23,6 +24,8 @@ until the firewall (the public case study) is located:
   firewall sweep.
 
 User arguments: $ARGUMENTS
+
+Paths under `../../scripts/` resolve from this skill's directory: print the absolute path once and write it literally in each command, since shell variables do not persist between Bash calls.
 
 ## Procedure
 
@@ -46,19 +49,19 @@ to the public case study, never into hand-patching here.
 
 From the public case study only:
 
-1. **Headline result**: the case study's headline, with its tag
+1. Headline result: the case study's headline, with its tag
    and range.
-2. **Supporting numbers**: two or three, each with its denominator
+2. Supporting numbers: two or three, each with its denominator
    and window length, exactly as they appear in the case study.
-3. **Quote placeholder**: clearly marked as a placeholder, with
+3. Quote placeholder: clearly marked as a placeholder, with
    attribution left blank for the user to fill.
-4. **Limitations one-liner**: a single candid sentence distilled
+4. Limitations one-liner: a single candid sentence distilled
    from the case study's limitations section.
 
 Write `<run>/reports/pr-release.md`. Every figure must trace to the
 public case study verbatim or by stated rounding; if a wanted figure
 is not there, extend the case study first instead of reaching into
-the run.
+the run's measurements.
 
 Write it per `../../references/prose-rules.md`.
 
@@ -73,5 +76,5 @@ Hero success form: `✓ PR release: <headline>`; a stopped run follows
 3. `## Report`: where it was written and the headline.
 
 Panel options: revise the headline, regenerate after updating the
-case study (read `../case-study-public/SKILL.md` and follow it), or stop. Skip the panel in plan mode or when running
-non-interactively.
+case study (read `../case-study-public/SKILL.md` and follow it), or stop.
+Panel rules as in `interim-format.md` § Finished run.

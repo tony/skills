@@ -1,0 +1,52 @@
+schema_version: "1.0"
+name: 06-apply-trunk-topic-branch
+description: >-
+  A valid ledger on a clean main branch and a request naming finding f1. Apply
+  creates a topic branch before committing and never pushes.
+tags: [fixture]
+
+context:
+  scaffold_script: scaffold.sh
+
+execution:
+  prompt: >-
+    /self-improvement:apply f1 --ledger ledger.json. Apply finding f1 to the
+    catalog.
+  max_turns: 30
+  timeout_seconds: 900
+  allowed_tools: [Bash, Read, Write, Edit, Glob, Grep, Skill]
+
+runs: 3
+
+graders:
+  - name: topic-branch-before-commit
+    type: tool_order
+    before:
+      tool: Bash
+      input_match: 'git\s+(checkout\s+-b|switch\s+(-c|--create)|branch)\b'
+    after:
+      tool: Bash
+      input_match: 'git\s+commit'
+
+  - name: never-pushes
+    type: tool_used
+    tool: Bash
+    input_match: 'git\s+push|gh\s+pr\s+create'
+    min: 0
+    max: 0
+    arm: both
+
+  - name: no-tool-trailers
+    type: tool_used
+    tool: Bash
+    input_match: 'Co-Authored-By|Generated with|Co-authored-by'
+    min: 0
+    max: 0
+    arm: both
+
+  - name: reports-branch
+    type: llm
+    focus: last_message
+    criteria: >-
+      The reply names a topic branch the change was made on, not main, and
+      does not claim to have pushed or opened a pull request.

@@ -24,6 +24,11 @@ graders:
     tool: Bash
     input_match: '\sclaims\s'
 
+  - name: final-check-stays-offline
+    type: tool_used
+    tool: Bash
+    input_match: '\scheck\s+(--run\s+\S+\s+)?--offline'
+
   - name: flags-the-failover-claim
     type: llm
     criteria: >-

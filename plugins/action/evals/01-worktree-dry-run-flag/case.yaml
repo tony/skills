@@ -28,11 +28,16 @@ graders:
     tool: Bash
     input_match: 'git worktree add -b \S*dry-run'
 
+  - name: worktree-is-outside-the-checkout
+    type: tool_used
+    tool: Bash
+    input_match: 'git worktree add -b \S+ (\.\./|/)'
+
   - name: invents-no-ticket-id
     type: regex
     target: last_message
     match: not_contains
-    pattern: '\b[A-Z]{2,}-\d+\b'
+    pattern: '\b(?!UTF-)[A-Z]{2,}-\d+\b'
 
   - name: commits-nothing-under-setup-only
     type: tool_used

@@ -2,7 +2,7 @@
 name: model-cli-cursor
 description: >-
   Use when asked to use Cursor, Cursor's CLI, or the agent binary to
-  delegate a prompt or task; no fallback is available.
+  delegate; write-enabled, no sandbox, unless mode:plan; no fallback.
 allowed-tools: ["Bash"]
 metadata:
   argument-hint: "<prompt> [timeout:<seconds>] [mode:plan]"

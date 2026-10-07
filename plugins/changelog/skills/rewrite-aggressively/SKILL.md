@@ -31,20 +31,40 @@ Write entries and the commit message per `../../references/prose-rules.md`.
 
 ## Phase 1: Safety checks, scope, approval
 
-1. **Preconditions.** Report why and stop if any fail. Name the failed
+1. **Detect the base**, fetch it, and find the changelog file per
+   `branch-scope.md`.
+
+2. **Preconditions.** Report why and stop if any fail. Name the failed
    precondition in plain words; mention no local paths or temp directories:
-   - Working tree dirty (`git status --porcelain` non-empty).
+   - Working tree dirty (`git status --porcelain` non-empty). Tell the user to
+     commit or stash the tracked changes. Advise `git stash -u` for untracked
+     files only after `git rev-parse --show-toplevel` shows a root that is
+     neither `$HOME` nor a parent of it.
    - Detached HEAD, or an in-progress rebase, merge, or cherry-pick.
    - Currently on the base branch.
    - A merge commit between the base and HEAD (`git rev-list --merges
      origin/<base>..HEAD` non-empty): the rebase would flatten it.
 
-2. Detect the base and find the changelog file per `branch-scope.md`.
+   Reply in this shape for a stopped run, as plain text outside any code
+   fence: one result sentence, then what the user must do. Skip the checks that
+   passed.
+
+   ```text
+   Stopped before changing anything: the working tree has uncommitted changes in src/ping.py.
+
+   Commit or stash them, then run /changelog:rewrite-aggressively --commit again.
+   ```
 
 3. **Partition the branch's commits** that touch the changelog file:
 
    ```console
    $ git log origin/<base>..HEAD --format='%h %s' -- <changelog-file>
+   ```
+
+   Classify each by the files it touches:
+
+   ```console
+   $ git show --name-only --format= <sha>
    ```
 
    - **Pure changelog commits** touch only the changelog file. Phase 2 drops
@@ -53,8 +73,8 @@ Write entries and the commit message per `../../references/prose-rules.md`.
      dropped. Ask via `AskUserQuestion` per commit: leave it intact and let the
      new tip commit supersede its entries (recommended), or abort so the user
      can split it. Without a question tool, leave it intact and say so.
-   - No changelog commits: nothing to rewrite. Suggest `/changelog` or
-     `/changelog:refresh` and stop.
+   - No changelog commits: nothing to rewrite. Suggest `/changelog:changelog`
+     or `/changelog:refresh` and stop.
 
 4. **Approve the rewrite.** Nothing in git changes before this approval.
    `--commit` does not approve the rewrite, and neither does an invoking
@@ -74,6 +94,21 @@ Write entries and the commit message per `../../references/prose-rules.md`.
    Proceed only on an explicit yes. Without one (including with no
    `AskUserQuestion` and no approval in the message), stop with the list above
    and the tree unchanged; never wait.
+
+   Reply in this shape for the approval stop, as plain text outside any code
+   fence, with plain bullets, no bold, and no recap of the checks that passed:
+
+   ```text
+   Nothing changed yet: the rewrite needs your explicit approval, and --commit does not count.
+
+   If you approve:
+   - The commit "docs(CHANGES) First draft of the cache entry" is dropped.
+   - A backup branch, changelog-rewrite-backup-20261006-142530Z, is created first.
+   - A failed check restores the backup.
+   - The new entries are committed once at the tip.
+
+   Reply "yes, drop that commit" to proceed.
+   ```
 
 ## Phase 2: Back up and rebase out the old changelog commits
 
@@ -101,8 +136,10 @@ Write entries and the commit message per `../../references/prose-rules.md`.
    ```
 
    Use each dropped commit's abbreviated SHA exactly as the todo list shows
-   it. On conflict, stop and show the state; never resolve by discarding user
-   code.
+   it. On conflict, run `git rebase --abort` and confirm `git rev-parse HEAD`
+   equals the backup tip printed in step 1; if it does not, run
+   `git reset --hard <backup>`. Report the backup name and stop; never resolve
+   by discarding user code.
 
 3. **Verify the invariant.**
    - Code unchanged: `git diff <backup> HEAD -- . ':(exclude)<changelog-file>'`
@@ -126,9 +163,16 @@ edit comes from, in order:
   the rebased history with no entries; say so and name the backup.
 
 Generate entries from the branch's current net change against
-`origin/<base>`, per `entry-rules.md`. Entries superseding a mixed commit's
+`origin/<base>`, per `entry-rules.md`. For the PR number, run
+`gh pr view --json number --jq .number`. On failure, if the branch already
+merged, read the number from its merge commit on the base branch ("Merge pull
+request #N"); otherwise write `(#???)`. Never copy a number from a dropped
+commit or an earlier entry. Entries superseding a mixed commit's
 surviving changelog hunks may update those hunks, which are branch-owned, but
 nothing from the base branch.
+
+When the edit was approved up front (`--commit` or an invoking request), skip
+the Phase 3 reply and send only the Phase 4 reply.
 
 Present:
 
@@ -159,7 +203,8 @@ Target: CHANGES.md, Unreleased, Features, after the "### Features" heading. No v
 Run only after the Phase 3 approval.
 
 1. Apply with Edit. With `--commit` in `$ARGUMENTS`, commit once at the tip per
-   `commit-message.md`: no `Co-Authored-By`, no "Generated with" or other tool
+   `commit-message.md` (the project's own subject format wins; never compare
+   the subject with a dropped commit's): no `Co-Authored-By`, no "Generated with" or other tool
    trailer, no emoji. Without it, leave the edit uncommitted and show a
    ready-to-use commit message.
 2. Report the backup branch (to delete once satisfied with
@@ -167,12 +212,21 @@ Run only after the Phase 3 approval.
    when `--commit` was not passed, and for a pushed branch the
    `git push --force-with-lease --force-if-includes` the user needs.
 
-   Reply in this shape, as plain text outside any code fence, with plain bullets, no bold (never `- **Backup:** ...`), and no local paths:
+   Reply in this shape, as plain text outside any code fence, with plain bullets, no bold (never `- **Backup:** ...`), and no local paths. The subject line below is the no-convention form:
 
-   ```text
+   ````text
    Rewrote the changelog history of feat/cache-evict: 3 commits dropped, 1 added.
+
+   ```markdown
+   - Add `Cache.evict()` to drop a cached key (#212)
+   ```
+
+   Voice check:
+   - Add `Cache.evict()` to drop a cached key: can I take a new affordance?
+
+   Target: CHANGES.md, Unreleased, Features, after the "### Features" heading. No version assigned, no release cut.
 
    - Backup: changelog-rewrite-backup-20261006-142530Z; delete it once satisfied.
    - The entry is committed at the tip as docs(CHANGES) Cache key eviction.
    - The branch is pushed; publish with git push --force-with-lease --force-if-includes.
-   ```
+   ````

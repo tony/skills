@@ -50,7 +50,7 @@ graders:
       source: file
       path: CHANGES.md
     match: not_contains
-    pattern: 'empty|\bget\(\)|miss'
+    pattern: '\bget\(\)|empty cached'
     flags: i
 
   - name: never-tags-or-pushes

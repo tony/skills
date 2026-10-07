@@ -43,10 +43,10 @@ $ python3 references/redundancy.py \
     <keeper>
 ```
 
-Exit status 0 is REDUNDANT, 1 is NOT REDUNDANT, 2 is INCONCLUSIVE. An
-unreadable directory or file in either tree makes the result
-INCONCLUSIVE and lists the entries; a subtree that cannot be listed
-cannot be proved empty. Report an INCONCLUSIVE proof as failed and
+Exit status 0 is REDUNDANT, 1 is NOT REDUNDANT, 2 is INCONCLUSIVE. A
+directory that cannot be listed, or a regular file that cannot be opened,
+in either tree makes the result INCONCLUSIVE and lists the entries; what
+cannot be read cannot be proved duplicated. Report an INCONCLUSIVE proof as failed and
 classify the candidate as unique until access is fixed.
 
 Symlinks (including broken ones) count as entries sized by `lstat`.

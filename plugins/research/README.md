@@ -75,7 +75,8 @@ the part other plugins honor when they write dated output.
 ## The script
 
 The skills drive `scripts/topic.py`, a standard-library Python 3.9+ script.
-Every command prints JSON; `--help` lists the options.
+Every command prints JSON; `--help` lists the options. Examples use the
+repo-relative path; an installed plugin runs the script path the skill resolves.
 
 Open today's run of a topic:
 
@@ -127,23 +128,8 @@ Only `https://` repositories are cloned. When no tag matches the resolved versio
 the worktree is named for the default branch and its commit, and the report says it
 is unpinned. Without an interactive host it prints the plan and stops.
 
-### Supported Manifests
-
-| Manifest | Language | Lockfiles |
-|----------|----------|-----------|
-| `package.json` | `typescript` | `package-lock.json`, `pnpm-lock.yaml`, `yarn.lock`, `bun.lock` |
-| `pyproject.toml` | `python` | `uv.lock`, `poetry.lock`, `requirements.txt` |
-| `Cargo.toml` | `rust` | `Cargo.lock` |
-| `go.mod` | `golang` | `go.sum` |
-| `Gemfile` | `ruby` | `Gemfile.lock` |
-| `mix.exs` | `elixir` | `mix.lock` |
-| `build.gradle` / `build.gradle.kts`| `java` | `gradle.lockfile` |
-| `pom.xml` | `java` | — |
-
-### Version Tag Resolution
-
-Prioritizes: exact tags (`5.2.0`), `v`-prefixed, scoped, crate-style, minor
-branches, major branches.
+Manifests, lockfiles, and tag resolution follow steps 1 and 6 of
+`skills/study-deps/SKILL.md`.
 
 ### Arguments
 

@@ -19,6 +19,8 @@ waits, so it runs only when invoked by name. Invoking it authorizes the
 rounds and commits described below, and nothing broader; only `--push`
 authorizes pushes.
 
+Paths under `../../scripts/` resolve from this skill's directory: print the absolute path once and write it literally in each command, since shell variables do not persist between Bash calls.
+
 ## Exit condition
 
 The round is easy; stopping is the hard part. A loop with no exit
@@ -94,26 +96,29 @@ neither enters plan mode or ends with its panel, and the action steps
 neither push nor post replies. With `--push`, step 4 pushes; the end of
 the loop posts.
 
-**4. Push.** Only with `--push`. Print the head SHA and the time first and
+**4. Push.** Only with `--push`. First print the head SHA
+(`git rev-parse HEAD`) and the time (`date -u +%Y-%m-%dT%H:%M:%SZ`) and
 keep the literal values, since the wait in step 6 depends on both. Push
 normally; a rejected push is a halt condition, never forced.
 
 **5. Watch CI.** The script polls until at least one check exists on
 the head and none is pending, stopping at the first failure or at the
 cap. It prints a JSON status and exits 0 (green), 1 (failed), 2
-(timeout), or 3 (no check ever appeared, which means the repository has
-no CI):
+(timeout), or 3 (no check appeared within the grace period):
 
 ```console
 $ python3 ../../scripts/wait_pr.py ci <pr> --timeout <ci-wait>
 ```
 
-A failure becomes next round's feedback, with the failing log as its
+Exit 3 means there is nothing to wait on; say so in the report and test
+the exit condition on the agents alone. A failure becomes next round's feedback, with the failing log as its
 evidence. A timeout halts the loop.
 
 **6. Wait for the agents.** The script polls reviews and comments until
 every named roster login has reviewed the head SHA or commented since
-the push time, bounded by `--wait`. It prints the logins still missing:
+the push time, bounded by `--wait`. It reads reviews and issue comments,
+not inline review comments, and ignores a trailing `[bot]` on logins. It
+prints the logins still missing:
 
 ```console
 $ python3 ../../scripts/wait_pr.py agents <pr> --sha <head-sha> --since <push-time-utc> --agents <login> <login> --timeout <wait>
@@ -156,12 +161,15 @@ behalf.
 ## Phase 3: Report — the output contract
 
 Write the report and replies per `../../references/prose-rules.md`.
-Never name local absolute paths or temp files.
+Never name local absolute paths, temp files, or internal phase and step
+names.
 
 A halted run reports one result sentence naming the halt condition,
 then what the user needs to do, then `## Still open`; the other
-sections appear only when they have content. The last example below
-shows it.
+sections appear only when they have content. It never recaps what the
+loop inspected. The last example below shows it. In a non-interactive
+run, state the plan in one sentence after the hero line and give no
+reason for skipping approval.
 
 1. Hero block (1–3 lines): the outcome (finished, capped, quiet, or
    halted), rounds run, and total fixed / deferred / declined.

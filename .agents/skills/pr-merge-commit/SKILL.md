@@ -13,8 +13,9 @@ metadata:
 # Generate Merge Commit Message
 
 Draft a merge commit message for the current branch. It is the
-**user-facing, product-level** summary that appears in `git log --merges`
-on the main branch. Write it per `references/prose-rules.md`.
+user-facing, product-level summary that becomes the commit on the main
+branch, whether the merge is a merge commit or a squash. Write it per
+`references/prose-rules.md`.
 
 User hint: $ARGUMENTS
 
@@ -26,11 +27,11 @@ Follow `references/branch-context.md` to find the base and gather the branch's c
 
 ### 2. Analyze changes
 
-- Review the full diff and **all** commits, not only the latest.
+- Review the full diff and all commits, not only the latest.
 - Classify the change: feature, fix, refactor, version bump, CI, docs,
   breaking change, runtime version drop.
 - Note any PR number visible in the branch name or the user's hint.
-- Describe the **net shipped result**: collapse fixups,
+- Describe the net shipped result: collapse fixups,
   reverts-then-re-adds, and WIP states. Leave out rename history,
   `### Fixes` for behavior that never shipped, and "no longer X" framing
   unless a user of the latest published release experienced the old
@@ -47,46 +48,48 @@ the title.
 #### Title line
 
 - Under 70 characters.
-- Ends with ` (#N)` when the PR number is known. The suffix belongs to
-  the merge commit title only; commits on the branch never carry `#N`.
-- Describes the **impact**, what changed for the user, not the
+- Ends with ` (#N)` when the PR number is known (a number in the hint,
+  the branch name, or the branch's PR). The suffix belongs to the merge
+  commit title only; commits on the branch never carry `#N`. When the
+  number is unknown, leave the suffix off and tell the user to append it.
+- Describes the impact, what changed for the user, not the
   implementation.
 
 #### Body, proportional to the change
 
-- **Small change** (1-3 file fix, simple bump): title only.
-- **Medium change** (feature, targeted refactor, fix with a root cause):
+- Small change (1-3 file fix, simple bump): title only.
+- Medium change (feature, targeted refactor, fix with a root cause):
   an opening paragraph of 2-4 sentences on what changed and why, then
-  bullets with **bold labels** for specific changes.
-- **Large change** (multi-module feature, major refactor, migration): a
+  plain bullets for specific changes.
+- Large change (multi-module feature, major refactor, migration): a
   structured body from the patterns below.
 
-End the message with no `Co-Authored-By`, "Generated with", or other
-tool trailer, and use no emoji.
+Add no `Co-Authored-By`, "Generated with", or other tool trailer, and no
+emoji.
 
 Wrap body lines at 72 characters. Never break a URL, hash, path, stack
 trace, or long identifier mid-token; let that line run long.
 
 #### Body patterns, use only what applies
 
-- **Features, refactors, bug fixes:** opening paragraph (what and why),
-  bold-labeled bullets, `Breaking changes:` with migration guidance,
+- Features, refactors, bug fixes: opening paragraph (what and why),
+  plain bullets, `Breaking changes:` with migration guidance,
   cross-references (`Fixes #N`, `See also:`, companion PR links), and
   version compatibility notes.
-- **Bug fixes with a non-obvious root cause:** a root-cause paragraph,
+- Bug fixes with a non-obvious root cause: a root-cause paragraph,
   numbered reproduction steps if they help, environment or version
   tables when the bug is version-specific.
-- **API refactors with migration paths:** old/new tables for renamed
+- API refactors with migration paths: old/new tables for renamed
   methods, parameters, or modules; deprecation notices with a timeline.
-- **Version bumps:** `v1.2.3 -> v1.3.0` notation, and per-file scope
+- Version bumps: `v1.2.3 -> v1.3.0` notation, and per-file scope
   notes when files change different dependencies.
-- **Runtime version drops:** the dropped version and why.
+- Runtime version drops: the dropped version and why.
+- Build and infra migrations: before/after tooling and why.
+- Multi-module sync results: companion PR links, design decisions
+  and trade-offs, and a qualitative test coverage summary.
 
 Use only URLs, versions, and dates present in the diff, lockfile, or
 fetched this run; omit the rest.
-- **Build and infra migrations:** before/after tooling and why.
-- **Multi-module sync results:** companion PR links, design decisions
-  and trade-offs, and a qualitative test coverage summary.
 
 #### What not to include
 
@@ -98,14 +101,9 @@ fetched this run; omit the rest.
 
 Do not run any git write command; the user pastes the message into
 their merge workflow (GitHub merge button, `git merge --edit`, the
-squash-and-merge dialog). When the PR number is unknown, note where
-` (#N)` goes. A run that stops early (empty log, no base) is one
-sentence stating the stop and what the user must do, with no
-colon-delimited aside.
+squash-and-merge dialog).
 
-Reply in this shape, as plain text outside any code fence, with plain
-bullets and no bold (never `- **Label:** ...`). The message is one
-fenced block:
+Reply in this shape, as plain text outside any code fence, with plain bullets, no bold (never `- **Label:** ...`), and no local paths:
 
 ````text
 Merge commit message for 3 commits on chore/bump-ruff:
@@ -119,8 +117,16 @@ Picks up the fix for false positives in the import-sorting rule.
 - Reformat two files the new release now flags.
 ```
 
-The PR number was taken from the branch name; correct it if wrong.
+The PR number came from the branch name; correct it if wrong.
 ````
+
+After the message, add one line only for a fact the user must act on: where the PR number came from, the number to append when none was found, or a base other than `origin/<trunk>`. Do not explain the message's wording or the commit history.
+
+A run that stops early (empty log, no base) is one sentence stating the stop and that nothing changed, then what the user must do. No colon-delimited aside, no local paths. Reply in this shape:
+
+```text
+chore/bump-ruff has no commits ahead of origin/main, so no message was drafted and nothing changed. Commit your changes, then run this again.
+```
 
 ## Rules
 

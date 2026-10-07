@@ -51,3 +51,15 @@ def test_agents_reports_missing(
     argv += ["--agents", "a", "b", "--timeout", "0", "--interval", "0"]
     assert wait_pr.main(argv) == 2
     assert json.loads(capsys.readouterr().out) == {"missing": ["b"]}
+
+
+def test_agents_match_bot_logins_across_suffix(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """A roster login without ``[bot]`` matches the REST login with it, and back."""
+    review = json.dumps({"login": "coderabbitai[bot]", "commit": "abc"})
+    monkeypatch.setattr(wait_pr, "_gh", _fake(review, "reviews"))
+    argv = ["agents", "7", "--sha", "abc", "--since", "2026-01-01T00:00:00Z"]
+    argv += ["--agents", "coderabbitai", "other[bot]", "--timeout", "0", "--interval", "0"]
+    assert wait_pr.main(argv) == 2
+    assert json.loads(capsys.readouterr().out) == {"missing": ["other[bot]"]}

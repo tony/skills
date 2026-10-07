@@ -3,9 +3,12 @@
 
 ``ci`` polls ``gh pr checks`` until at least one check exists on the head and
 none is pending. ``agents`` polls reviews and comments until every named login
-has weighed in on a head SHA. Each prints one JSON line.
+has weighed in on a head SHA; a trailing ``[bot]`` is ignored on both sides.
+Reviews and issue comments are read; inline review comments are not. Each
+prints one JSON line.
 
-Exit codes: 0 done, 1 a check failed, 2 timed out, 3 no checks ever appeared.
+Exit codes: 0 done, 1 a check failed, 2 timed out, 3 no check appeared within
+the grace period.
 """
 
 # ruff: noqa: S603
@@ -43,6 +46,10 @@ def classify_ci(checks: list[dict[str, str]]) -> str:
     return "green"
 
 
+def _bare(login: str) -> str:
+    return login.removesuffix("[bot]")
+
+
 def missing_agents(
     roster: list[str],
     reviews: list[dict[str, str]],
@@ -58,10 +65,12 @@ def missing_agents(
     >>> c = [{"login": "c", "at": "2026-01-02T00:00:00Z"}]
     >>> missing_agents(["a", "b", "c", "d"], r, c, "abc", "2026-01-01T00:00:00Z")
     ['b', 'd']
+    >>> missing_agents(["bot"], [{"login": "bot[bot]", "commit": "abc"}], [], "abc", "")
+    []
     """
-    seen = {r["login"] for r in reviews if r.get("commit") == sha}
-    seen |= {c["login"] for c in comments if c.get("at", "") >= since}
-    return [login for login in roster if login not in seen]
+    seen = {_bare(r["login"]) for r in reviews if r.get("commit") == sha}
+    seen |= {_bare(c["login"]) for c in comments if c.get("at", "") >= since}
+    return [login for login in roster if _bare(login) not in seen]
 
 
 def _gh(*args: str) -> str:

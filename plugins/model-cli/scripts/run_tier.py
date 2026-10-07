@@ -1,0 +1,140 @@
+#!/usr/bin/env python3
+"""Run one model-CLI tier and print a JSON result with its failure class.
+
+Usage: run_tier.py --prompt-file FILE [--timeout SECONDS|none] -- BINARY ARGS...
+
+The prompt file's text is appended to the command as its last argument; stdin
+is closed. Output keys: exit_code (null on timeout), class, elapsed, stdout,
+stderr.
+"""
+
+from __future__ import annotations
+
+import argparse
+import json
+import os
+import re
+import signal
+import subprocess
+import sys
+import time
+from pathlib import Path
+from typing import cast
+
+CREDIT_PATTERNS = (
+    "RESOURCE_EXHAUSTED",
+    "quota exceeded",
+    "quota_exceeded",
+    "insufficient_quota",
+    "exceeded your current quota",
+    "billing",
+    "capacity exhausted",
+    "usage limit",
+)
+CREDIT_RE = re.compile("|".join(CREDIT_PATTERNS), re.IGNORECASE)
+RATE_RE = re.compile(r"rate.?limit|too many requests|\b429\b", re.IGNORECASE)
+AUTH_RE = re.compile(
+    r"not logged in|log in|login required|authentication|unauthori[sz]ed|\b401\b|api key",
+    re.IGNORECASE,
+)
+MODEL_RE = re.compile(
+    r"unknown model|invalid model|model not found|cannot use this model", re.IGNORECASE
+)
+FAILURES = (("rate-limit", RATE_RE), ("unknown-model", MODEL_RE), ("auth", AUTH_RE))
+
+
+def classify(*, exit_code: int | None, timed_out: bool, stdout: str, stderr: str) -> str:
+    """Classify one attempt; stderr only, since stdout can quote code that says "billing".
+
+    >>> classify(exit_code=0, timed_out=False, stdout="hi", stderr="")
+    'ok'
+    >>> classify(exit_code=None, timed_out=True, stdout="", stderr="")
+    'timeout'
+    >>> classify(exit_code=1, timed_out=False, stdout="", stderr="RESOURCE_EXHAUSTED")
+    'credit'
+    >>> classify(exit_code=1, timed_out=False, stdout="", stderr="429 daily limit")
+    'credit'
+    >>> classify(exit_code=1, timed_out=False, stdout="", stderr="429 Too Many Requests")
+    'rate-limit'
+    >>> classify(exit_code=1, timed_out=False, stdout="", stderr="Not logged in")
+    'auth'
+    >>> classify(exit_code=1, timed_out=False, stdout="", stderr="Unknown model x")
+    'unknown-model'
+    >>> classify(exit_code=2, timed_out=False, stdout="", stderr="boom")
+    'crash'
+    >>> classify(exit_code=0, timed_out=False, stdout="", stderr="")
+    'empty'
+    >>> classify(exit_code=0, timed_out=False, stdout="billing", stderr="billing")
+    'ok'
+    """
+    if timed_out:
+        return "timeout"
+    if exit_code == 0:
+        return "ok" if stdout.strip() else "empty"
+    if CREDIT_RE.search(stderr) or ("429" in stderr and "daily limit" in stderr.lower()):
+        return "credit"
+    for name, pattern in FAILURES:
+        if pattern.search(stderr):
+            return name
+    return "crash"
+
+
+def run(command: list[str], prompt: str, timeout: float | None) -> dict[str, object]:
+    """Run command with prompt appended; kill the whole process group on timeout."""
+    start = time.monotonic()
+    try:
+        proc = subprocess.Popen(  # noqa: S603
+            [*command, prompt],
+            stdin=subprocess.DEVNULL,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            start_new_session=True,
+        )
+    except OSError as exc:
+        return {
+            "exit_code": 127,
+            "class": "crash",
+            "elapsed": 0.0,
+            "stdout": "",
+            "stderr": str(exc),
+        }
+    timed_out = False
+    try:
+        stdout, stderr = proc.communicate(timeout=timeout)
+    except subprocess.TimeoutExpired:
+        timed_out = True
+        os.killpg(proc.pid, signal.SIGKILL)
+        stdout, stderr = proc.communicate()
+    exit_code = None if timed_out else proc.returncode
+    return {
+        "exit_code": exit_code,
+        "class": classify(exit_code=exit_code, timed_out=timed_out, stdout=stdout, stderr=stderr),
+        "elapsed": round(time.monotonic() - start, 1),
+        "stdout": stdout,
+        "stderr": stderr,
+    }
+
+
+def main(argv: list[str] | None = None) -> int:
+    """Parse arguments, run the tier, and print the JSON result."""
+    parser = argparse.ArgumentParser(description=__doc__)
+    _ = parser.add_argument("--prompt-file", required=True, type=Path)
+    _ = parser.add_argument("--timeout", default="600")
+    _ = parser.add_argument("command", nargs=argparse.REMAINDER)
+    args = parser.parse_args(argv)
+    prompt_file = cast("Path", args.prompt_file)
+    raw = cast("list[str]", args.command)
+    command = raw[1:] if raw[:1] == ["--"] else raw
+    if not command:
+        parser.error("missing command after --")
+    raw_timeout = cast("str", args.timeout)
+    timeout = None if raw_timeout == "none" else float(raw_timeout)
+    result = run(command, prompt_file.read_text(encoding="utf-8"), timeout)
+    json.dump(result, sys.stdout)
+    _ = sys.stdout.write("\n")
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

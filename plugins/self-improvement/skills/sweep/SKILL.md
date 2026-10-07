@@ -16,7 +16,9 @@ It edits no skill, commits nothing, and pushes nothing. Its output is a
 report plus a ledger file of findings with their evidence, written outside
 the working tree. `/self-improvement:apply` acts on the ledger.
 
-`<sweep.py>` is `../../scripts/sweep.py` in every step below.
+`<sweep.py>` is `../../scripts/sweep.py`, resolved from this skill's
+directory, not the repository root. Resolve it to an absolute path once,
+print it, and use that literal path in every command below.
 
 ## Two shapes carry the signal
 
@@ -147,13 +149,15 @@ ask what to sweep; in a non-interactive run, stop with the halted report.
 1. List the catalog: every `plugins/*/skills/*/SKILL.md`, its name, and
    whether it sets `disable-model-invocation`. No catalog means a halted
    run.
-2. Run the catalog command from the repository root. It prints each
+2. Create the scratch directory as `../../references/detecting-invocations.md`
+   says, then run the catalog command from the repository root. It prints each
    skill's gating and birth date (one `--follow` run per file, so a rename
    does not date a skill to the rename), the rename map, commit subjects
    that mention a rename or replacement, and the era boundary.
 
    ```console
-   $ python3 <sweep.py> catalog
+   $ python3 <sweep.py> catalog \
+       --names-out <scratch>/catalog.txt
    ```
 
 3. Read `rename_subjects` for renames git scored below its similarity
@@ -168,10 +172,10 @@ ask what to sweep; in a non-interactive run, stop with the halted report.
 
 ## Phase 1: Count every skill
 
-Say first which searches you are about to run and that an exhaustive
-transcript search reads every store on disk. Then follow
-`../../references/detecting-invocations.md`: create the scratch directory,
-collect the tool channel, and run `<sweep.py> counts` once. The script
+Say first which searches you are about to run. The transcript search is
+scoped to the last 90 days unless the user asks for all of it, because an
+exhaustive one reads every store on disk. Then follow
+`../../references/detecting-invocations.md`: collect the tool channel, and run `<sweep.py> counts` once. The script
 unions both channels, sums renames, splits on the era boundary, and counts
 project spread. Do not recount by hand.
 
@@ -216,12 +220,14 @@ ledger. Each finding has these fields:
 
 ```console
 $ python3 <sweep.py> ledger-save \
-    --findings <scratch>/findings.json \
-    --resweep-on <date 30 days from today>
+    --findings <scratch>/findings.json
 ```
 
+The re-sweep date defaults to 30 days from today; `--resweep-days <n>` or
+`--resweep-on <YYYY-MM-DD>` overrides it.
+
 The command writes the ledger under the git directory, outside the working
-tree, and prints its `path` and `key`. The key is the sha256 hex digest of
+tree, and prints its `path`, `key`, and `resweep_on`. The key is the sha256 hex digest of
 the repository `HEAD` hash, a newline, then one `<id>\t<verdict>` line per
 finding sorted by id. `/self-improvement:apply` recomputes it with
 `ledger-verify`, so a moved `HEAD` or an edited finding is caught. Evidence
@@ -263,7 +269,8 @@ Reply in this shape, as plain text outside any code fence, with plain bullets, n
 
 ## Findings
 
-- f1, commit: 14 of 38 prompts append "no AI trailer", 37 percent since 2026-08-01, 5 projects. Verdict not-binding. The skill already says it, so the remedy is an output gate (class: checked gate). Expected: retyping falls below 10 percent.
+- f1, commit: 14 of 38 prompts since 2026-08-01 (37 percent, 5 projects) append "no AI trailer".
+  Verdict not-binding: the skill already says it, so the remedy is an output gate. Expected: retyping falls below 10 percent.
   Prompt: "commit this, no co-author line".
 
 ## Not proposed
@@ -272,8 +279,8 @@ Reply in this shape, as plain text outside any code fence, with plain bullets, n
 
 ## Corpus
 
-- Searched prompt history and session transcripts; the third source was unreadable.
-- Ledger: /home/dev/work/skills/.git/self-improvement/ledger.json
+- Searched prompt history and session transcripts from the last 90 days; the third source was unreadable.
+- Ledger: <ledger path printed by ledger-save>
 - Key: 3f9c2ab41d7e5a60b8c1d94f2a7e03b5c6d81f90a2e4b7c3d5f60718293a4b5c
 - Re-sweep: 2026-11-05
 ```
@@ -281,7 +288,12 @@ Reply in this shape, as plain text outside any code fence, with plain bullets, n
 A halted run (no catalog, history unreadable, count incomplete past use)
 is one result sentence, then what the user must do, such as which path to
 supply or which tool to install. It has no other sections, does not outline
-the steps a run would take, and writes no ledger.
+the steps a run would take, offers no extra options, and writes no ledger.
+Reply in this shape:
+
+```text
+Nothing was swept: this directory has no skill catalog. Run the sweep from the root of the repository that holds your plugins.
+```
 
 The ledger may quote prompts with absolute paths, hostnames, and client
 names. A `SKILL.md`, commit, pull request, or issue may not. Name no temp

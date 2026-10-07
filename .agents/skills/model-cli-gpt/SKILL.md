@@ -1,8 +1,8 @@
 ---
 name: model-cli-gpt
 description: >-
-  Use when invoking OpenAI GPT directly through the same Codex CLI or agent
-  fallback used by the codex skill.
+  Use when invoking OpenAI GPT directly through Codex CLI or agent; writes
+  unsandboxed unless mode:plan.
 disable-model-invocation: true
 allowed-tools: ["Bash"]
 metadata:

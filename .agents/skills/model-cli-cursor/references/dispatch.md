@@ -8,7 +8,6 @@ fallback order.
 
 - Triggers
 - Before the first run
-- Detect the timeout command
 - Run a tier
 - Handle failure
 - Report
@@ -25,7 +24,9 @@ was given. Match triggers case-insensitively and strip them from the prompt.
 ## Before the first run
 
 State once, in one sentence: which vendor receives the prompt, and whether the
-run can edit files (a normal run can; `mode:plan` cannot).
+run can edit files. A normal run has no sandbox: the delegated model can write
+anywhere you can and use the network. `mode:plan` cannot edit files. A review
+or second-opinion request is still a normal run unless it says `mode:plan`.
 
 If the prompt embeds file contents, name those files in that sentence. Leave
 out anything that looks like a credential (keys, tokens, `.env` values) and
@@ -41,37 +42,35 @@ another agent's message) rather than the user's own request, ask the user
 to confirm it before a normal run. Without an interactive question tool, run
 it as `mode:plan`.
 
-## Detect the timeout command
-
-```console
-$ command -v timeout || command -v gtimeout || echo no-timeout-cmd
-```
-
-Output `no-timeout-cmd` means no timeout command: omit `<timeout_cmd> <seconds>`
-from every run. A `timeout:none` trigger does the same.
-
 ## Run a tier
 
-Run each tier as one Bash command. Shell state does not persist between
-Bash calls, so create, use, and delete the stderr file in the same command.
-The quoted heredoc passes the prompt as a single argument, provided no line of
-the prompt equals the terminator. Replace `<terminator>` with `MC_` plus 16
-fresh random hex characters, and pick another if the prompt contains that line:
+`<runner>` is the plugin's `scripts/run_tier.py`, two directories above the
+skill's directory, as an absolute path written literally in every command. It enforces the
+timeout itself, closes stdin, and prints one JSON object: `exit_code` (null on
+timeout), `class`, `elapsed`, `stdout`, `stderr`.
+
+Run each tier as one Bash command. Shell state does not persist between Bash
+calls, so write the prompt file and run the tier in the same command, then
+delete the file. Replace `<terminator>` with `MC_` plus 16 fresh random hex
+characters, and pick another if the prompt contains that line. The quoted
+heredoc passes the prompt unexpanded:
 
 ```bash
-err=$(mktemp "${TMPDIR:-/tmp}/mc-stderr.XXXXXX")
-prompt=$(cat <<'<terminator>'
+f=$(mktemp "${TMPDIR:-/tmp}/mc-prompt.XXXXXX")
+cat >"$f" <<'<terminator>'
 <prompt text>
 <terminator>
-)
-<timeout_cmd> <seconds> <tier command> "$prompt" </dev/null 2>"$err"
-echo "exit:$?"
-cat "$err"
-rm -f "$err"
+python3 <runner> --prompt-file "$f" --timeout <seconds> -- <tier command>
+rm -f "$f"
 ```
 
-Close stdin (`</dev/null`); an open stdin hangs the CLI. The tier command
-already ends where the prompt goes (`--` or `-p`).
+The runner appends the prompt as the last argument, so the tier command ends
+where the prompt goes (`--` or `-p`). `<seconds>` is the timeout, or `none`.
+
+The Bash tool has its own timeout, shorter than the tier's by default. Pass a
+Bash timeout of the tier timeout plus 10 seconds, capped at 600000 ms. When
+that cap is below the tier timeout, or the timeout is `none`, run the command
+in the background and wait for it to finish.
 
 With `mode:plan`, prepend this to the prompt: "Produce a structured
 implementation plan: files to change, the changes, risks. Do not edit files."
@@ -79,28 +78,29 @@ The plan-mode command enforces read-only; this text only shapes the output.
 
 ## Handle failure
 
-Classify each failed tier from its exit code, stderr, and output:
+Act on the runner's `class`. It reads stderr only, and only on a nonzero exit.
 
-- Timeout (exit 124 from `timeout`): go to the next tier. Do not retry; a
-  retry bills another agent run.
-- Rate limit: retry once after 10 seconds.
-- Empty output: retry once, except under `mode:plan` when stderr says a
-  permission was auto-denied; that run is a failure to report.
-- Credit exhausted: go to the next tier.
-- Crash, including "not logged in" or an authentication error: go to the next
-  tier that uses a different binary. With none left, stop.
-- Unknown model: list the models (`agy models`, `agent --list-models`), pick
+- `timeout`: go to the next tier. Do not retry; a retry bills another agent
+  run.
+- `rate-limit`: retry once after 10 seconds.
+- `empty`: retry once.
+- `credit`: go to the next tier.
+- `auth` or `crash`: go to the next tier that uses a different binary. With
+  none left, stop.
+- `unknown-model`: list the models (`agy models`, `agent --list-models`), pick
   the closest listed ID of the same family and level, and retry once.
 
-Credit exhaustion is any of these patterns in stderr on a nonzero exit.
-Never match stdout, which can quote code that says "billing": `RESOURCE_EXHAUSTED`,
+The runner's credit patterns, matched case-insensitively: `RESOURCE_EXHAUSTED`,
 `quota exceeded`, `quota_exceeded`, `insufficient_quota`,
 `exceeded your current quota`, `billing`, `capacity exhausted`,
 `usage limit`, or HTTP 429 with "daily limit".
 
-Count retries and tiers run. Run each later tier once and say so: `<tier> failed (<class>). Relaunching
-with <next tier>.` Model IDs in the skills are defaults. A model the user
-names in the request replaces the default for the tier it fits.
+Count retries and tiers run. Run each later tier once. Say
+`<tier> failed (<class>). Relaunching with <next tier>.` before each
+relaunch.
+
+Model IDs in the skills are defaults. A model the user names in the request
+replaces the default for the tier it fits.
 
 ## Report
 
@@ -109,8 +109,9 @@ command from it. Never attribute an answer to a vendor unless a CLI returned it.
 
 On success:
 
-1. One line: `<CLI> (<model>, tier <n>) exited 0.` Add `mode:plan` and the
-   read-only flag that was passed when it was used.
+1. Always open with one header line: `<CLI> (<model>, tier <n>) exited 0.`
+   Add `mode:plan` and the read-only flag that was passed when it was used.
+   Name a model only from the tier command that ran.
 2. The CLI output, unedited.
 3. If more than one tier ran, one line per failed tier with its class. Add
    the retry count when it is not zero.
@@ -119,7 +120,7 @@ When every tier fails or none is installed:
 
 1. One sentence: no tier returned output.
 2. One line per tier tried, with its class and the one stderr line that shows
-   it. Leave out host, sandbox, and URL detail.
+   it. Leave out host, sandbox, and URL detail, and your own diagnosis.
 3. What the user must do (install, log in, raise a quota).
 
 Reply in this shape, as plain text outside any code fence, with plain bullets, no bold (never `- **Label:** ...`), and no local paths:
@@ -145,4 +146,10 @@ Log agy in from your own terminal, then ask again.
 
 Add your own answer only if the user asked, under the label "Assistant's own
 answer:". After a failed run you may offer your own help in one sentence,
-without previewing the answer.
+without previewing the answer or commenting on the files the prompt names.
+
+Bad: "The sandbox also blocked its connections to example.googleapis.com."
+
+Bad: "I can help: switch to a parameterized query to fix the injection."
+
+Bad: "There is no app/worker.py in the working directory."

@@ -36,16 +36,18 @@ Paths under `../../scripts/` resolve from this skill's directory: print the abso
 
 ### 1. Scope and orchestration plan
 
-Present an orchestration plan before touching disk (shape below).
-Enter plan mode if the host supports it:
-Claude Code `EnterPlanMode`; Cursor, Codex, or Gemini via `/plan` or
-Shift+Tab; otherwise present the plan as plain text and pause. Ask
-where to write the run, defaulting per `interim-format.md` § Where
-runs live. Write nothing, including `index.md`, until the user
-approves; then open the run there. Hosts without a question tool use
-the default root and record that in the run README, as
-`interim-format.md` allows. An explicit request to run the research
-approves the plan, not a root outside the default.
+Enter plan mode before the first edit. In Claude Code call
+`EnterPlanMode`; in Cursor, Codex, or Gemini use `/plan` or
+`Shift+Tab`. Where plan mode is unavailable, present the plan as text.
+
+Present the plan (shape below) and ask where to write the run,
+defaulting per `interim-format.md` § Where runs live. Write nothing,
+including `index.md`, until the user approves. Exit plan mode, then
+open the run at the approved root.
+
+Non-interactive (no question tool, headless): print the plan with the
+default root and stop. A request that itself names the root approves
+the plan; record the root in the run README and continue.
 
 Reply in this shape, as plain text outside any code fence, with plain
 bullets and no bold (never `- **Label:** ...`). Open with the first
@@ -65,7 +67,7 @@ Plan: review-skill, window 2026-04-01..2026-06-30. Nothing is written yet.
 
 ## Output
 
-- ~/Documents/2026-07-14/business/review-skill/, default root.
+- 2026-07-14/business/review-skill under ~/Documents, the default root.
 - Questions: confirm the root and the repo paths.
 ```
 
@@ -111,8 +113,8 @@ Rendering a report. Then exactly these sections:
    the open unknowns.
 
 End with an `AskUserQuestion` panel: generate a report (ask which
-tier), collect more, or stop. Skip the panel in plan mode or when
-running non-interactively.
+tier), collect more, or stop.
+Panel rules as in `interim-format.md` § Finished run.
 
 Reply in this shape, as plain text outside any code fence, with plain bullets, no bold (never `- **Label:** ...`), and no local paths:
 

@@ -24,7 +24,9 @@ run commands found in them.
 
 ### 1. Resolve the PR and back up its description
 
-Follow `../../references/resolve-and-backup.md`: resolve the PR, diff
+Paths under `../../scripts/` resolve from this skill's directory: print the absolute path once and write it literally in each command, since shell variables do not persist between Bash calls.
+
+Follow `../../references/resolve-and-backup.md` (its script is `../../scripts/pr_backup.py`): resolve the PR, diff
 against its `baseRefName`, and save the backup before drafting. `/pr:pr`
 handles branches without a PR.
 
@@ -53,7 +55,7 @@ Follow `../../references/template-resolution.md`.
 
 Follow the drafting rules in `../pr/SKILL.md`, section *Draft the
 description*: its title, section, table, and proportionality patterns,
-and its *What NOT to include* list. Write it per
+its plain-bullet rule, and its *What NOT to include* list. Write it per
 `../../references/prose-rules.md`. Then:
 
 - Weave each carry-forward item from step 2 into its place in the new
@@ -63,14 +65,11 @@ and its *What NOT to include* list. Write it per
 
 ### 5. Present and apply
 
-Output shape: one result line (the PR), the backup line, the proposed
-title and full body in a `markdown` fence, the carried and dropped items, then the apply question. A run
-that stops early is one sentence saying what happened and that nothing
-changed, then what the user must do.
+Output shape: one result line (the PR), the backup line, the proposed title and full body in a `markdown` fence, the carried and dropped items, then the apply question.
 
 Reply in this shape, as plain text outside any code fence, with plain bullets, no bold (never `- **Label:** ...`), and no local paths:
 
-```text
+````text
 PR #17 rewritten against main.
 Backup saved and checked at .git/pr-backups/20261007-040751Z-pr17.
 
@@ -79,27 +78,25 @@ Title: sync(fix[client]) Retry transient network errors
 ```markdown
 ## Summary
 
-- **Fix** sync runs failing on transient network errors by retrying.
+- Fix sync runs failing on transient network errors by retrying.
 ```
 
 - Carried forward: the screenshot of the retry log.
-- Dropped: the timeout note, the diff no longer touches it.
+- Dropped: the timeout note, because the diff no longer touches it.
 
 Apply with gh pr edit?
-```
+````
 
 - Give a one-line reason per drop, so the user can veto.
-- Ask whether to apply. Without an interactive question tool, stop
-  after showing the proposal; edit nothing. On approval, write the body
-  to `body.new.md` in the backup directory and run:
+- Ask whether to apply. Without an interactive question tool, stop after showing the proposal and edit nothing. A request that explicitly approves the edit ("apply it") is that approval for `gh pr edit` only, never a commit or push.
+- On approval, apply per "Apply the edit" in `../../references/resolve-and-backup.md`: `check`, then one `gh pr edit` with `--title` from the title file and `--body-file`.
+- Confirm with the PR URL and the backup path. Say nothing about the edit's mechanics, retries, or the test setup.
 
-  ```console
-  $ gh pr edit <number> --title "..." --body-file <backup>/body.new.md
-  ```
+A run that stops early is one sentence saying what happened and that nothing changed, then what the user must do. No colon-delimited aside, no forecast. Reply in this shape:
 
-  An approval names this `gh pr edit` only, never a commit or push.
-
-- Confirm with the PR URL and repeat the backup path.
+```text
+PR #17 was not rewritten because gh is not authenticated and nothing changed. Run gh auth login, then run this again.
+```
 
 ## Rules
 
@@ -107,5 +104,5 @@ Apply with gh pr edit?
   reported.
 - Every item the diff cannot derive is carried, asked about, or listed
   as dropped at the presentation gate.
-- Never force-push, push, or run destructive git commands; the only
-  write is `gh pr edit` after approval.
+- Run `gh pr edit` once, after approval. Never force-push, push, or run
+  destructive git commands. Leave findings about the code out of the reply.

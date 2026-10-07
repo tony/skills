@@ -37,14 +37,22 @@ graders:
   - name: commits-the-test
     type: tool_used
     tool: Bash
-    input_match: '"command":\s*"([^"]*(&&|;|\|\|)\s*)?git (commit|-c [^"]*commit)\b'
+    input_match: 'git (-\w+ \S+ )*commit\b'
     min: 1
+    arm: both
+
+  - name: no-attribution-trailer
+    type: tool_used
+    tool: Bash
+    input_match: '[Cc]o-[Aa]uthored-[Bb]y|[Gg]enerated with'
+    min: 0
+    max: 0
     arm: both
 
   - name: no-push
     type: tool_used
     tool: Bash
-    input_match: '"command":\s*"([^"]*(&&|;|\|\|)\s*)?git push\b'
+    input_match: 'git (-\w+ \S+ )*push\b'
     min: 0
     max: 0
     arm: both

@@ -58,3 +58,35 @@ def test_socket_send_maps_nc_failure_to_exit_6() -> None:
         finally:
             srv.close()
     assert result.returncode == 6, result.stderr
+
+
+@needs_tools
+def test_socket_send_adds_n_when_help_exits_nonzero() -> None:
+    with tempfile.TemporaryDirectory() as tmp:
+        stub = pathlib.Path(tmp, "bin")
+        stub.mkdir()
+        log = pathlib.Path(tmp, "args")
+        nc = stub / "nc"
+        script = (
+            '#!/bin/sh\nif [ "$1" = -h ]; then echo "usage: nc [-N]"; exit 1; fi\n',
+            f'echo "$@" >{log}\ncat >/dev/null\n',
+        )
+        nc.write_text("".join(script))
+        nc.chmod(0o755)
+        sock_path = pathlib.Path(tmp, "s.sock")
+        srv = socket.socket(socket.AF_UNIX)
+        srv.bind(str(sock_path))
+        try:
+            env = {**os.environ, "PATH": f"{stub}{os.pathsep}{os.environ['PATH']}"}
+            env.pop("CODEX_SANDBOX_NETWORK_DISABLED", None)
+            result = subprocess.run(
+                [str(RELAY), "socket-send", "--socket", str(sock_path), "--line", "x"],
+                capture_output=True,
+                text=True,
+                env=env,
+                check=False,
+            )
+        finally:
+            srv.close()
+        assert result.returncode == 0, result.stderr
+        assert "-N" in log.read_text()

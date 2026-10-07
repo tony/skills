@@ -55,6 +55,16 @@ man page entry.
 
 ## Keep
 
+Hard keeps. Never delete or rewrite these, whatever the gates say:
+
+- Tool directives: `# noqa`, `# type: ignore`, `# pragma`,
+  `# fmt: off`, `// eslint-disable`, and their kin.
+- Shebang and encoding lines, and license or SPDX headers.
+- A docstring that is the only statement in its block: removing it is
+  a syntax error. Report it instead.
+
+Otherwise keep:
+
 - Why over how: upstream quirks, protocol and compatibility
   constraints, performance tradeoffs still part of the contract.
 - Invariants, preconditions, ordering, lifetime, and concurrency
@@ -130,8 +140,9 @@ frozen external fact, not a value tracking your own code:
 # CPython < 3.11 has no ExceptionGroup, so this branch stays.
 ```
 
-Rewrite — the same fact, with the argument cut away (illustrative; GCC's
-`-Wdangling-reference` warns on this pattern):
+Rewrite — the same fact, with the argument cut away (GCC's
+[`-Wdangling-reference`](https://gcc.gnu.org/onlinedocs/gcc-14.2.0/gcc/C_002b_002b-Dialect-Options.html)
+warns on this pattern):
 
 ```cpp
 // By value, though the answer is cached and a reference would be

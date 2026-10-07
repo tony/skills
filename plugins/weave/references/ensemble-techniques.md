@@ -79,11 +79,15 @@ If no trigger fires, the verdict is **early-exit**.
 
 Write `<session_dir>/cascade.md`: the verdict (`early-exit` or
 `escalate`), then one line per trigger - fired or not, with the
-specific claim/reading/gap as evidence when fired. Append to
-`events.jsonl`:
+specific claim/reading/gap as evidence when fired. Record the event
+through the engine, which stamps it and appends atomically (list the fired
+triggers in `triggers_fired`):
 
-```json
-{"event":"cascade_gate","timestamp":"<ISO 8601 UTC>","verdict":"early-exit","triggers_fired":[]}
+```console
+$ python3 <engine> update \
+    --session "<session_dir>" \
+    --event cascade_gate \
+    --event-json '{"verdict": "early-exit", "triggers_fired": []}'
 ```
 
 ### Early-exit path
@@ -156,7 +160,7 @@ shown to the user). One entry per residual:
 
 An empty ledger means the pass converged: skip remaining passes,
 report convergence (this is the operational definition behind ask's
-and review's early-stop; refine stops per its own Step 5 conditions).
+and review's early-stop; refine stops per the early-stop rule in `refine-cycle.md`).
 
 ### Scoped re-attack prompt
 

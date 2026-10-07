@@ -1,8 +1,8 @@
 ---
 name: annotate
 description: "Take reading notes on a prose corpus — quotations with stable locators and margin notes, as a term source for extract"
-allowed-tools: ["Bash", "Read", "Grep", "Glob", "Write", "AskUserQuestion"]
-argument-hint: "<source> [--locator=chapter|section|page|line] [--out=<dir>]"
+allowed-tools: ["Read", "Grep", "Glob", "Write", "AskUserQuestion"]
+argument-hint: "<source> [--locator=line-range|section|page|search-string] [--out=<dir>]"
 user-invocable: true
 disable-model-invocation: true
 ---
@@ -22,9 +22,11 @@ User arguments: $ARGUMENTS
 
 ### 1. Confirm the edition
 
-Read the source's row in `sources.jsonl`. If the locator scheme is `page` and
-the edition is unrecorded, or the source has no row, stop. `gather` writes
-`sources.jsonl` and records the edition; the user may also add the row by hand.
+Read the source's row in `sources.jsonl`. `--locator` overrides the row's
+`locator_kind`; the four kinds are defined in `../../references/citation.md`.
+If the kind is `page` and the edition is unrecorded, or the source has no row,
+stop. `gather` writes `sources.jsonl` and records the edition; the user may
+also add the row by hand.
 
 ### 2. Extract quotations
 
@@ -40,9 +42,16 @@ the two into a paraphrase; `extract` needs to know which is which.
 
 ### 4. Write the quotation set
 
+Append one row per quotation to `quotations.jsonl` in the study directory
+(`--out`, default `notes/ontology/<subject>/`). `extract` reads this file for
+prose sources.
+
 ```json
-{"source": "<source id from sources.jsonl>", "locator": "ch.3 §2", "quote": "...", "note": "the author's own term for the boundary"}
+{"source": "<source id from sources.jsonl>", "locator_kind": "section", "locator": "ch.3 §2", "quote": "...", "note": "the author's own term for the boundary"}
 ```
+
+When the kind is `search-string`, `locator` is the unique text that finds the
+passage.
 
 ## Rules
 
@@ -57,9 +66,9 @@ the two into a paraphrase; `extract` needs to know which is which.
 Per `../../references/output-contract.md`. Hero: `✓ <n> quotations from
 <source>`. Sections:
 
-1. `## Quotations` — count by locator kind, and the concepts they name.
-2. `## Locator` — which scheme this source uses and why, including any
-   fallback to a search string.
+1. `## Quotations` — the `quotations.jsonl` path under the study directory, the count by `locator_kind`, and the concepts they name.
+2. `## Locator` — which `locator_kind` this source uses and why, including any
+   fallback to `search-string`.
 3. `## Undefined` — terms the author uses without defining, which `extract`
    will have to infer from usage.
 

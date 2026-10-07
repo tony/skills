@@ -36,21 +36,29 @@ the PR's target) maps to the commit that landed it: find it with
 is on trunk, and cite it. If none is found, report the PR as unmapped.
 
 Then present the mapping to the user, one line per PR: repo, number,
-title, bumped action, commit SHA or "obsolete". Show the exact commands
-below with every placeholder filled in. Run them only after the user
+title, bumped action, commit SHA or "obsolete". A title that names
+several actions (a grouped update) or comes from another bot is reported as
+unmapped. Show the exact commands below with every placeholder filled in. Run them only after the user
 confirms those commands. On hosts without an interactive question tool,
 or in a headless run, print the commands and run none.
 
 List the open PRs, raising `--limit` until the result count is below it:
 
 ```console
-$ gh pr list --author app/dependabot --state open --limit 100 --json number,title
+$ gh pr list \
+    --repo <slug> \
+    --author app/dependabot \
+    --state open \
+    --limit 100 \
+    --json number,title
 ```
 
 Comment, then close:
 
 ```console
-$ gh pr comment <n> --repo <slug> --body "Superseded by [\`<sha12>\`](https://github.com/<slug>/commit/<sha>) on \`<trunk>\`, which bumps \`<action>\` with the release notes and migration impact recorded in the commit message."
+$ gh pr comment <n> \
+    --repo <slug> \
+    --body "Superseded by [\`<sha12>\`](https://github.com/<slug>/commit/<sha>) on \`<trunk>\`, which bumps \`<action>\`."
 ```
 
 ```console
@@ -58,8 +66,15 @@ $ gh pr close <n> --repo <slug>
 ```
 
 A PR for an action no longer referenced by any workflow closes as
-**obsolete**, not superseded; say so instead of citing a commit. List every
-closed PR by URL in the report so each can be reopened.
+obsolete, not superseded; comment without a commit, then close it as above:
+
+```console
+$ gh pr comment <n> \
+    --repo <slug> \
+    --body "Closing as obsolete: \`<action>\` is no longer referenced by any workflow."
+```
+
+List every closed PR by URL in the report so each can be reopened.
 
 A local remote may hold a renamed repository's old slug. Resolve the
 canonical slug from the API before mapping.
@@ -93,7 +108,12 @@ An empty result means no run has started yet; retry once the push has
 registered:
 
 ```console
-$ gh run watch "$(gh run list --commit <sha> --limit 1 --json databaseId --jq '.[0].databaseId')"
+$ gh run watch "$(gh run list \
+    --repo <slug> \
+    --commit <sha> \
+    --limit 1 \
+    --json databaseId \
+    --jq '.[0].databaseId')"
 ```
 
 When the work goes through a pull request instead, watch its checks:

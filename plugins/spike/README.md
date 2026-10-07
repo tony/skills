@@ -64,23 +64,19 @@ three named approaches: `bakeoff`. Shape of the answer still unknown, so
 one pass of either will not settle it: `ratchet`. To vary the *model*
 rather than the strategy, use the weave plugin.
 
-A spike never commits. Commits happen only through `--replay`, after plan
-approval, one item at a time behind green gates. A repository whose root
-contains your home directory is refused, and uncommitted work is stashed
-or kept in the tree, never discarded.
+A spike never commits; `--replay` is the only path to a commit.
 
 ## Verification discovery
 
 Commands read AGENTS.md / CLAUDE.md / CONTRIBUTING.md to discover
 required quality checks, and CI definitions to learn push coverage
-(see `references/verification-gates.md`). Does **not** hardcode
-runners or linters, and deliberately limits verification to defer
-CI-covered work to `gh pr checks --watch`.
+(see `references/verification-gates.md`). No runner or linter is
+hardcoded, and CI-covered work is deferred to `gh pr checks --watch`.
 
 ## Prerequisites
 
-- **git**: stash-based workflow; `/spike:bakeoff` and `/spike:ratchet`
-  use `git worktree`. `/spike:ratchet` also needs git 2.31 or newer,
-  which is where `git rev-parse --path-format` arrived; it resolves
-  the ledger path with it.
-- **gh** (optional): enables watching CI checks after a push
+- git 2.31 or newer: stash-based workflow, `git switch`, and
+  `git rev-parse --path-format` for the ratchet's ledger path.
+  `/spike:bakeoff` and `/spike:ratchet` use `git worktree`.
+- bash: `scripts/spike.sh` holds the git plumbing.
+- gh (optional): enables watching CI checks after a push.

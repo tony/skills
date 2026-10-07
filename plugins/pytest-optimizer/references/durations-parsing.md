@@ -35,21 +35,21 @@ high-variance.
 
 Rank slowest **test bodies** (H01):
 
-```bash
-pytest --durations=25 --durations-min=0.005 -p no:randomly -p no:cacheprovider
+```console
+$ pytest --durations=25 --durations-min=0.005 -p no:randomly -p no:cacheprovider
 ```
 
 Rank slowest **fixture setup/teardown** (H02) — use `--durations=0` so no phase is
 sliced away before you filter:
 
-```bash
-pytest --durations=0 --durations-min=0.005 -p no:cacheprovider
+```console
+$ pytest --durations=0 --durations-min=0.005 -p no:cacheprovider
 ```
 
 Capture **everything** on a small suite (H04), including `0.00s` rows:
 
-```bash
-pytest --durations=0 --durations-min=0 -p no:cacheprovider
+```console
+$ pytest --durations=0 --durations-min=0 -p no:cacheprovider
 ```
 
 `--durations=0` means no N-slice, but `--durations-min` still applies, so it
@@ -71,8 +71,8 @@ aggregating.
 
 When the output must be parsed reliably, prefer JUnit XML over scraping the table:
 
-```bash
-pytest --junit-xml=report.xml -o junit_duration_report=call
+```console
+$ pytest --junit-xml=report.xml -o junit_duration_report=call
 ```
 
 Read `testcase@time` for per-test `call` time (the default reports

@@ -80,8 +80,9 @@ cmd_socket_send() {
   command -v nc >/dev/null || die "nc not found; use tmux" 6
   command -v jq >/dev/null || die "jq not found" 6
   [ -S "$sock" ] || die "not a socket: $sock; the session is gone or the path is stale" 7
-  local flags=(-U -w 3)
-  nc -h 2>&1 | grep -q -e '-N' && flags=(-U -N -w 3)
+  local flags=(-U -w 3) help
+  help=$(nc -h 2>&1 || true)
+  case $help in *-N*) flags=(-U -N -w 3) ;; esac
   jq -nc --arg content "$line" '{type:"user",message:{role:"user",content:$content}}' \
     | nc "${flags[@]}" "$sock" \
     || die "nc could not send (sandbox blocks the socket, or the peer refused); use tmux or codex queue" 6

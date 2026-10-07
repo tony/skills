@@ -1,7 +1,7 @@
 ---
 name: session-relay
 description: "Use when sending a message to another Codex/Claude session or agent in a tmux pane, or checking who sent a message that arrived."
-allowed-tools: ["Bash", "Read", "Grep", "ListAgents", "SendMessage"]
+allowed-tools: ["Bash", "Read", "ListAgents", "SendMessage"]
 ---
 
 # Message another agent
@@ -59,28 +59,11 @@ A new adapter exposing a stronger transport wins the same ranking. Modifiers:
   route unavailable and offer tmux or codex-queue. Do not retry.
 - Never use tmux against a session with no rostered pane.
 
-## 4. Confirm the plan
+## 4. Compose
 
-Whenever you resolved the target or route yourself rather than being handed it, present
-the plan and wait for approval before the first side effect.
-
-Enter plan mode before the first edit. In Claude Code call `EnterPlanMode`;
-in Cursor, Codex, or Gemini use `/plan` or `Shift+Tab`. Where plan mode is
-unavailable, present the plan as text. Exit plan mode before sending. In a
-headless run, present the plan and stop without sending. A request that names the target and
-route and says to send is approval for that one send, nothing broader.
-
-Say four things: the resolved target and what identified it, the transport and its fallback,
-the exact envelope line (compose it per step 5 first; a
-`<payload>` placeholder is not a plan), and what counts as delivered. Send that exact line
-after approval; never compose a second envelope for the send.
-
-## 5. Compose
-
-One line, because Enter submits in both TUIs. Compose once, before the plan. The helper
-encodes header values, builds a
-unique id, increments the hop, and refuses a multi-line body, one over 800 characters, or
-`want=reply` with no address:
+Compose once, before the plan. One line, because Enter submits in both TUIs. The helper
+encodes header values, builds a unique id, increments the hop, and refuses a multi-line
+body, one over 800 characters, or `want=reply` with no address:
 
 ```console
 $ relay.sh envelope \
@@ -106,6 +89,22 @@ values, since session names can end the header early.
 
 Never start a typed message with `/`, `!`, `#`, or `@`: each opens a UI mode instead of
 entering text. A leading `[` is safe.
+
+## 5. Confirm the plan
+
+Whenever you resolved the target or route yourself rather than being handed it, present
+the plan and wait for approval before the first side effect.
+
+Enter plan mode before the first edit. In Claude Code call `EnterPlanMode`;
+in Cursor, Codex, or Gemini use `/plan` or `Shift+Tab`. Where plan mode is
+unavailable, present the plan as text. Exit plan mode before sending. In a
+headless run, present the plan and stop without sending. A request that names the target and
+route and says to send is approval for that one send, nothing broader.
+
+Say four things: the resolved target and what identified it, the transport and its fallback,
+the exact envelope line from step 4 (a `<payload>` placeholder is not a plan), and what
+counts as delivered. After approval, send that line verbatim; never compose a second
+envelope for the send.
 
 ## 6. The tmux state machine
 
@@ -230,9 +229,11 @@ Delivered to reviewer (relay id 019a3c-2, hop 0); acknowledgment pending.
 ```
 
 A stopped run is the result sentence plus what the user must do, nothing else: no Target,
-Route, or Next bullets, and no narration of the sandbox or missing tools beyond the reason in
-the sentence. When no route works, the user pastes the message into the target session by
-hand, so print the composed single-line envelope for them to paste:
+Route, or Next bullets. Name the reason in the result sentence only (for example "no route
+to the other session could be verified"); never list missing tools, uninstalled CLIs, or
+sandbox limits, and never restate the sentence in a second paragraph. When no route works,
+the user pastes the message into the target session by hand, so the only other element is
+the composed single-line envelope to paste:
 
 ```text
 Not sent (relay id unknown-1791346278-3): no route to the other session could be verified.

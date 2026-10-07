@@ -65,10 +65,14 @@ appear under only one key. Hash the resolved registry
 ## Step 2: Tone calibration
 
 Read the last 50 commit
-messages on the locked baseline:
+messages on the locked baseline, pasting the literal `BASELINE_SHA`
+(shell variables do not survive between Bash calls):
 
-```bash
-git log -n 50 --format='%B%n--END--' "${BASELINE_SHA}"
+```console
+$ git log \
+    -n 50 \
+    --format='%B%n--END--' \
+    <baseline-sha>
 ```
 
 Build a frequency map of Tier C signal phrases. Demote any phrase with
@@ -135,10 +139,11 @@ For each finding produced by Step 3:
 
 ## Step 5: Rewrite (single-file edit)
 
-1. Copy the original to a sibling rollback file with a stable name:
+1. Copy the original to a sibling rollback file with a stable name,
+   pasting the literal `ARTIFACT_PATH`:
 
-   ```
-   cp "$ARTIFACT_PATH" "${ARTIFACT_PATH%.md}.pre-deslop.md"
+   ```console
+   $ cp <artifact-path> <artifact-path-without-.md>.pre-deslop.md
    ```
 
    Stable filename - no timestamp suffix - so the user can `diff` with
@@ -153,7 +158,6 @@ For each finding produced by Step 3:
 
      ```
      Held back: deslop would have removed N% of the artifact (>30% threshold).
-     Original preserved at <sibling path>.
      ```
 
      The synthesis is presented unchanged.
@@ -189,7 +193,6 @@ Desloped synthesis  ·  -84 words  ·  3 trims, 1 kept-as-is
   • restated-subject   trimmed 1 paragraph that paraphrased the question
   • line-numbers       "see line 142" → "see the resolve_trunk helper"
   ~ hedging            kept "may", "likely" (load-bearing, advisory)
-Original preserved at <sibling path>
 ```
 
 `•` = applied, `~` = held as advisory. Word delta is the trust anchor.
@@ -199,7 +202,7 @@ edits.
 ### `quiet` (1 line)
 
 ```
-Desloped synthesis (-84 words, 3 trims). Original: <sibling path>
+Desloped synthesis (-84 words, 3 trims)
 ```
 
 Tier B confirms still happen - quiet does not mean non-consenting.
@@ -219,8 +222,7 @@ When the suspect-edit sentinel fires:
 Desloped synthesis  ·  -84 words  ·  2 trims, 1 held back  (!)
   • flagship-phrases   "comprehensive solution" → (removed, 2x)
   ! restated-subject   would have removed 312 words - held as advisory
-Review held trim:  <held-trim path>
-Original preserved at <sibling path>
+Held trims are listed in the report; nothing was removed from the result.
 ```
 
 ### No-op

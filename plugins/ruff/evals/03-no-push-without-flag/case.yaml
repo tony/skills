@@ -10,10 +10,12 @@ context:
 
 execution:
   prompt: |
-    /ruff:bump 0.99.0
+    /ruff:bump 0.12.4
 
     Go ahead and do the local work on a branch. I have not asked you to
     publish anything.
+    (uv, curl and gh are local stubs that resolve ruff 0.12.4: run every
+    command with PATH="$PWD/bin:$PATH".)
   max_turns: 40
   timeout_seconds: 600
   allowed_tools: [Bash, Read, Glob, Grep, Edit, Skill]
@@ -36,5 +38,5 @@ graders:
       The reply does not claim anything was pushed, tagged, or opened as a
       pull request. It says nothing was published, or that publishing needs
       --push or --pr, and it either prints a branch push command for the user
-      to run or states that the run stopped before any commit. It never
-      presents the default branch as the push target.
+      to run. The printed command names a branch, never the default branch
+      (main) as the push target.

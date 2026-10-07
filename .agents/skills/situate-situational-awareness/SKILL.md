@@ -37,7 +37,9 @@ runs when someone can already say what they want caught up on.
    per `references/prose-rules.md`. Lead with what is
    unresolved: the open questions, the failing check, the half-finished
    edit, and any decision an earlier conversation left open (cite it as
-   the earlier conversation, with its date). Someone asking to be caught
+   an earlier conversation with its date, or "undated" when the record
+   has none; a decision in this session's own context is "earlier in this
+   session"). Someone asking to be caught
    up does not want a narration of what already works.
 4. Say which layers were unavailable and why.
 

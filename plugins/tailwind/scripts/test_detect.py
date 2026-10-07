@@ -7,20 +7,24 @@ from __future__ import annotations
 
 import subprocess
 import sys
+import time
 from pathlib import Path
 
 import pytest
-from detect import find  # pyright: ignore[reportImplicitRelativeImport]
+from detect import PATTERNS, find  # pyright: ignore[reportImplicitRelativeImport]
 
 CASES: list[tuple[str, str, bool]] = [
     ("margin", '<a className="px-2 me-4">', True),
     ("margin", '<a className="-ml-2 px-2">', True),
     ("margin", '<a class="ms-[3px]">', True),
+    ("margin", '<a className="ml-px">', True),
+    ("margin", '<a className="!me-4">', True),
     ("margin", '<a className="mx-auto px-2">', False),
     ("margin", '<a className="mt-4 my-2 m-4">', False),
     ("margin", '<a className="some-ml-2">', False),
     ("gap", '<div className="flex gap-3">', True),
     ("gap", '<div className="flex gap-x-[3px]">', True),
+    ("gap", '<div className="flex gap-px">', True),
     ("gap", '<div className="flex">', False),
     ("gap", '<div className="biggap-3">', False),
     ("width", '<button className="h-8 w-24">', True),
@@ -58,6 +62,33 @@ def test_fixture(pattern: str, text: str, hit: bool) -> None:
 def test_line_number_counts_multiline_tag() -> None:
     text = 'x\n<button\n  onClick={() => y()}\n  className="px-2"\n>'
     assert find("interactive", text)[0][0] == 2
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        '<div className="' + "flex gap-2 space-x-2 " * 5000,
+        "<div " * 20000,
+        "<a " * 33000,
+    ],
+)
+def test_long_input_scans_fast(text: str) -> None:
+    start = time.perf_counter()
+    for pattern in PATTERNS:
+        find(pattern, text)
+    assert time.perf_counter() - start < 1.0
+
+
+def test_missing_path_exits_two(tmp_path: Path) -> None:
+    script = Path(__file__).with_name("detect.py")
+    run = subprocess.run(
+        [sys.executable, str(script), "margin", str(tmp_path / "nope")],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert run.returncode == 2
+    assert "no such path" in run.stderr
 
 
 def test_cli_exit_codes(tmp_path: Path) -> None:

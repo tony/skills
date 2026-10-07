@@ -1,7 +1,8 @@
 # disk
 
-Safely reclaim disk space. Classifies consumers as cache, redundant copy,
-or history, deleting only what is proven safe.
+Safely reclaim disk space. Classifies consumers as regenerable cache, proven
+redundant copy, stale-but-unique data, or protected history, and deletes
+only what is proven safe.
 
 ## Installation
 

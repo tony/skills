@@ -15,7 +15,8 @@ one of them alone is not an ontology.
 
 Read `../../references/evidence-tiers.md` for what each claim must carry and
 `../../references/stage-gates.md` for this stage's exit condition. The analyzer
-ships at `../../references/term-metrics.py`; `<analyzer>` below is that path.
+is `../../scripts/term_metrics.py`; `<analyzer>` below is its absolute path
+resolved from this skill's directory.
 
 User arguments: $ARGUMENTS
 
@@ -69,7 +70,7 @@ describing it.
 Run the analyzer and read its `orphans` section:
 
 ```console
-$ <analyzer> notes/ontology/<subject>/
+$ python3 <analyzer> notes/ontology/<subject>/
 ```
 
 A term with no `parent` is an orphan, as is one whose parent is neither

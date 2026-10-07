@@ -13,13 +13,15 @@ Move the pins that select the tools everything else resolves through —
 one tool per commit, with every release in the span linked.
 
 Follow `../updating-packages/SKILL.md` for the shared phases: inventory
-(pins read from the default branch, not the working tree), the plan gate
-and plan mode, verification, and the halt shape. This command narrows
-them to toolchain pins.
+(pins read from the default branch, not the working tree), discovery in
+a throwaway worktree when the checkout is parked on a feature branch,
+the cooldown check, the plan gate and plan mode, verification, and the
+halt shape. This command narrows them to toolchain pins.
 
 References: `../../references/upstream-links.md` (the per-tool link
 taxonomy this command depends on), `../../references/commit-conventions.md`,
-`../../references/ecosystems.md` and `../../references/repo-scope.md`.
+`../../references/ecosystems.md`, `../../references/repo-scope.md` and
+`../../references/cooldown-exemption.md`.
 
 For dependencies rather than tools, use `/package-updater:update` or
 `/package-updater:update-package`.
@@ -39,8 +41,11 @@ the pin files (`.tool-versions`, `.nvmrc`, `.python-version`,
 `mise.toml`) plus `packageManager` and `engines` in `package.json`. Run
 `mise outdated` when `mise` is on PATH; without it, resolve each tool
 against its own release feed. Resolve the latest release from the
-vendor's feed rather than memory, and confirm it exists before writing
-it.
+vendor's feed rather than memory: for a tool released on GitHub, the tag
+`gh api repos/<owner>/<repo>/releases/latest --jq .tag_name` prints;
+for Node.js, the newest entry on the repository's line in
+`https://nodejs.org/dist/index.json`.
+Confirm the version exists before writing it.
 
 Prefer the pin granularity the repository already uses. A repository
 pinning `3.14` rather than `3.14.2` has chosen to track the latest patch
@@ -55,7 +60,20 @@ A toolchain sweep is where pins most often disagree across a fleet.
 Record the current version per repository before changing anything; the
 spread is a finding.
 
-### 3. Research each span
+### 3. Check the cooldown
+
+Read the repository's cooldown configuration per the "Supply-chain
+cooldown" section of `../../references/ecosystems.md`; a toolchain pin
+uses the window the repository sets for its packages, and a repository
+with none has no gate. For each target, read its publication time with
+the command in the "Release publication time" section of that
+reference. A target younger than the window stops that tool, even when
+the user named the version: say when it becomes visible. Take the newest
+release outside the window only when the user agrees; a release skipped
+this way earns a `why:` in the commit. Exempt a tool only per
+`../../references/cooldown-exemption.md`.
+
+### 4. Research each span
 
 For each tool, collect the release notes for **every version between the
 current pin and the target**, not just the endpoint. The intermediate
@@ -71,20 +89,23 @@ moving its floor. Dropping a version that is still declared supported in
 a manifest, a CI matrix, or classifiers is a separate decision and a
 separate commit.
 
-### 4. Present the plan and wait
+### 5. Present the plan and wait
 
 Enter plan mode per the Orchestration Plan in
-`../updating-packages/SKILL.md`, then show, per repository and per tool: current pin, target, the versions in
-the span, and the verified links. Say how many commits this produces —
-one per tool per repository, and the branch and push target per
-repository. A repository whose ownership rested on the fallback signals
-alone is local-only unless the user approves its push here. With
-`--audit-only`, stop here.
+`../updating-packages/SKILL.md`, then show, per repository and per
+tool: current pin, target, publication time against the cooldown, the
+versions in the span, and the verified links. Say how many commits this
+produces — one per tool per repository, and the branch and push target
+per repository. A repository whose ownership rested on the fallback
+signals alone is local-only unless the user approves its push here.
+With `--audit-only`, stop here.
 
-### 5. Land, one tool per commit
+### 6. Land, one tool per commit
 
 Even when a single edit to `.tool-versions` moves three tools, that is
-three commits. Stage the file, commit one tool's change, then the next.
+three commits. Edit one tool's line, commit the file, then edit the next
+tool's line and commit again; never stage a file already edited for
+several tools, and never use `git add -p`, which is interactive.
 Each reverts on its own, and a reader bisecting a runtime regression
 needs them separated.
 
@@ -109,7 +130,7 @@ Commits land on the default branch by default. `--branch` works on a
 branch; `--push` pushes the commits; `--pr` pushes a branch and opens a pull
 request. Without either, stop after committing and print the push command.
 
-### 6. Verify
+### 7. Verify
 
 A toolchain bump changes what resolves, so run the project's own quality
 checks after it — including a lockfile check, since a new resolver may

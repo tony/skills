@@ -5,6 +5,7 @@
 - Net per-instance saving
 - Net over a period, and break-even
 - Org-wide projection
+- Scenarios
 - Statistics discipline
 - Counterfactual quality ladder
 - Quality guardrails
@@ -69,6 +70,27 @@ Segment the population: addressable ⊃ served ⊃ realized. Reporting
 only the addressable figure is the most common inflation — always
 show all three segments.
 
+`business.py project <run>` does the arithmetic from these register
+ids, with `F` per person per year and `t` in minutes:
+`addressable-population` (`V`), `instances-per-person-year` (`F`),
+`baseline-minutes` (`t`), `savings-rate` (`s`), `adoption-rate` (`a`),
+`realization-rate` (`r`). It prints the three scenarios, the segment
+hours, and the one-way sensitivity ranking; never recompute them by
+hand.
+
+## Scenarios
+
+Each register entry may carry `low` and `high` fields beside `value`.
+A measured input's `low` and `high` are its 95% interval ends.
+
+- Conservative: every input at `low`, except cost inputs (`t_verify`,
+  `p_fail`, `t_rework`, `C_build`, `C_maint`), which sit at `high`.
+- Base: every input at `value`.
+- Upside: every input at `high`, cost inputs at `low`.
+
+An input without `low` or `high` stays at `value` in that scenario.
+The committed number is always the conservative one.
+
 ## Statistics discipline
 
 - Medians plus IQR, not means: task durations are right-skewed,
@@ -81,7 +103,7 @@ show all three segments.
 - Fewer than 20 observations, whether paired comparisons or single
   distributions: present the raw values, the median (or median
   difference), and the wide interval, and label the result
-  **DIRECTIONAL** (the script sets the label). Never
+  DIRECTIONAL (the script sets the label). Never
   single-decimal percentages from 5 tasks.
 - Exclude the novelty ramp window; measure steady state. State the
   excluded window in the run README. No identifiable introduction

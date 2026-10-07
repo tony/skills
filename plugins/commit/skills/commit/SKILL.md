@@ -7,7 +7,6 @@ user-invocable: true
 disable-model-invocation: true
 ---
 
-
 # Git Commit
 
 Create a git commit using the project's commit conventions.
@@ -32,6 +31,13 @@ commits' capitalization, tense, and level of detail.
 
 ### 1. Gather State
 
+Sensitive files: `.env`, `.env.*`, `*.pem`, `*.key`, `*.p12`, `*.pfx`,
+`*.jks`, `*.p8`, `*.keystore`, `id_rsa*`, `*credentials*`, `*secret*`,
+`.npmrc`, `.pypirc`, `.netrc`, `.pgpass`. A name ending in `.example` or
+`.sample` is not sensitive. The user may override for one path by naming it
+in the request or hint (for example "commit .env.test"); that path alone
+may be staged or committed. Without that, a match is never committed.
+
 Run these and read the output:
 
 - `git branch --show-current`: the current branch.
@@ -41,7 +47,7 @@ Run these and read the output:
   `git diff HEAD` when it is a few thousand lines or fewer; otherwise read it
   per file.
 - `git ls-files --others --exclude-standard`: untracked files, which the diff
-  omits. Read each new file that is not sensitive (see Step 3).
+  omits. Read each new file that is not sensitive.
 - `git log --oneline -10`: recent commits, for style matching.
 - `git symbolic-ref --short refs/remotes/origin/HEAD`: the remote's default
   branch. A failure means there is no remote; compare against `main` and
@@ -51,8 +57,9 @@ A failure of the first command means this is not a git repository: report it
 and stop. `git diff HEAD` fails in a repository with no commits; use
 `git diff --cached` there. No tracked changes and no untracked files: report
 "Nothing to commit" and stop.
-On the default branch, say so in the proposal in Step 4 and commit anyway;
-the commit stays local.
+On the default branch, commit anyway and say so in the reply; the commit
+stays local. If the project's AGENTS.md or CLAUDE.md requires feature
+branches, commit nothing and tell the user to switch branches.
 
 ### 2. Analyze Changes
 
@@ -66,16 +73,13 @@ the commit stays local.
 
 ### 3. Determine Staging
 
-Sensitive files: `.env`, `.env.*`, `*.pem`, `*.key`, `*credentials*`,
-`*secret*`, `*.p12`, `*.pfx`, `id_rsa*`, `*.keystore`.
-
 - **Files already staged** (`git diff --cached` is non-empty): respect the
   user's staging and commit only what is staged. If a staged path matches the
-  sensitive list, commit nothing: name the path and tell the user to unstage it
-  (`git restore --staged <path>`). Otherwise name the unstaged and untracked
+  sensitive list (and the user did not override it), commit nothing: name the
+  path and tell the user to unstage it (`git restore --staged <path>`). Otherwise name the unstaged and untracked
   files left out.
 - **Nothing staged**: stage changed files, never a sensitive one. Name each
-  skipped file and why in the reply. Use `git add <specific-files>`, never
+  skipped file in the reply and say it matches the sensitive-file list. Use `git add <specific-files>`, never
   `git add -A` or `git add .`. Tell the user which files you are staging.
 
 ### 4. Draft Commit Message
@@ -91,7 +95,8 @@ Sensitive files: `.env`, `.env.*`, `*.pem`, `*.key`, `*credentials*`,
   - Multiple files are changed
   - The change is non-trivial
   - The diff is not self-explanatory
-- **Show the proposed commit message**, then commit without waiting for a reply.
+- Commit without waiting for a reply; the message appears once, in the final
+  reply.
 
 #### Line wrapping
 
@@ -158,7 +163,7 @@ If a pre-commit hook fails:
   unstaged files as they are.
 - Re-stage only the files this commit staged.
 - Create a new commit; the failed commit does not exist, so there is nothing
-  to amend.
+  to amend. Never delete, disable, or reconfigure the hook.
 - After two failed attempts, stop and report the hook output.
 
 ### 7. Confirm Result
@@ -177,14 +182,16 @@ what:
 - Compare with <= in is_expired.
 
 - Staged src/auth.py and tests/test_auth.py.
-- Left .env unstaged: it holds credentials.
+- Left .env unstaged: it matches the sensitive-file list.
 - Working tree is clean.
 ```
 
 The first line is the hash, the subject, and `(local, not pushed)`; on a
-default branch it reads `(local on main, not pushed)`. The commit body follows
+default branch it reads `(local on <branch>, not pushed)` with the branch's
+name. The commit body follows
 verbatim when there is one. Bullets cover only files staged, files left out,
-and the working tree state; add no other advice or remarks.
+the working tree state, and a hook rejection that preceded the commit (say
+what it rejected and what you changed); add no other advice or remarks.
 
 A stopped run is one result sentence, then what the user needs to do.
 
@@ -216,3 +223,4 @@ A stopped run is one result sentence, then what the user needs to do.
   destructive git command.
 - Never use `--amend`, `--no-verify`, or `--no-gpg-sign`.
 - Never create empty commits.
+- Never use `git commit -a` or `--all`; commit exactly the index.

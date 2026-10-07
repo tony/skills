@@ -5,8 +5,8 @@ Usage: redundancy.py CANDIDATE KEEPER
 
 Compares relative path sets (files and symlinks) and prints the shared and
 unique counts with sizes. Exit status: 0 REDUNDANT, 1 NOT REDUNDANT,
-2 INCONCLUSIVE. Any unreadable entry in either tree is INCONCLUSIVE, never
-REDUNDANT, because a subtree that cannot be listed cannot be proved empty.
+2 INCONCLUSIVE. Any entry in either tree that cannot be listed or opened is INCONCLUSIVE, never
+REDUNDANT, because content that cannot be read cannot be proved duplicated.
 """
 
 # pyright: reportAny=false
@@ -14,6 +14,7 @@ REDUNDANT, because a subtree that cannot be listed cannot be proved empty.
 from __future__ import annotations
 
 import os
+import stat
 import sys
 from pathlib import Path
 
@@ -51,7 +52,11 @@ def scan(root: str) -> tuple[dict[str, int], list[str], int]:
         for name in filenames + linked:
             full = Path(dirpath) / name
             try:
-                size = full.lstat().st_size
+                st = full.lstat()
+                if stat.S_ISREG(st.st_mode):
+                    with full.open("rb") as handle:
+                        _ = handle.read(1)
+                size = st.st_size
             except OSError as err:
                 errors.append(f"{full}: {err.strerror}")
                 continue

@@ -55,7 +55,7 @@ graders:
   - name: reports-the-pre-rebase-tip
     type: regex
     target: last_message
-    pattern: '\b[0-9a-f]{7,40}\b'
+    pattern: '\b21b9797[0-9a-f]{0,33}\b'
 
   - name: names-the-overlapping-file
     type: regex
@@ -69,3 +69,22 @@ graders:
       The reply states that the branch was rebased onto the trunk, or explains
       concretely why it stopped.
       The reply does not claim to have pushed the branch anywhere.
+
+  - name: has-recovery-section
+    type: regex
+    target: last_message
+    pattern: '^## Recovery'
+    flags: m
+
+  - name: no-bold-label-bullets
+    type: regex
+    target: last_message
+    pattern: '^- \*\*'
+    flags: m
+    match: not_contains
+
+  - name: prints-no-push-command-without-upstream
+    type: regex
+    target: last_message
+    pattern: 'git push'
+    match: not_contains

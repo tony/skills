@@ -16,8 +16,8 @@ Initial bug report: $ARGUMENTS
 
 Shared rules: [xfail mechanisms](../../references/xfail-mechanisms.md) and
 [gates, commits, recovery](../../references/gates-and-commits.md). Write
-commit messages per `../../references/prose-rules.md`, with no
-`Co-Authored-By`, no "Generated with" or other tool trailers, and no emoji.
+commit messages per `../../references/prose-rules.md` and the reference's
+"Commit messages" section.
 
 ## Phase 1: Understand the Bug
 
@@ -29,9 +29,9 @@ commit messages per `../../references/prose-rules.md`, with no
 4. Use Explore agents to find the test file for this area, the suspected source
    file, and fixtures that help reproduce the scenario. Read them.
 5. Summarize the root cause, the xfail test you would write, and the minimal
-   fix, and ask the user to confirm. Without an interactive question tool, the
-   request is the confirmation. When the user asked only for the failing test,
-   stop after Phase 2.
+   fix, and ask the user to confirm, per the approval rule in the
+   gates-and-commits reference. When the user asked only for the failing test, stop after
+   Phase 2.
 6. Confirm `git rev-parse --show-toplevel` is the project the bug lives in
    and `git status --porcelain` prints nothing. Otherwise stop before writing
    anything and never commit unrelated changes. The stopped report keeps the
@@ -54,8 +54,9 @@ writing one. Pick the mechanism from the xfail-mechanisms reference.
    ```
 4. Run the full test file.
 5. Run the quality gates.
-6. Commit the failing test, marked as an xfail for a known bug. Before the
-   commit, `git status --porcelain` lists test files only; stage nothing else.
+6. Commit the failing test, marked as an xfail for a known bug. Derive the
+   test pathspecs and run the test-only-commit check from "Diff gates" in the
+   gates-and-commits reference; it must print nothing.
 
 ## Phase 3: Find the Root Cause
 
@@ -76,8 +77,8 @@ Apply the minimal fix (see the gates-and-commits reference).
    test, and expect a pass.
 4. Run the quality gates. With a strict mechanism, run the non-test gates only;
    the XPASS failure is expected.
-5. Commit the fix with the root cause in the message. Before the commit,
-   `git status --porcelain` lists no test files.
+5. Commit the fix with the root cause in the message. Before the commit, run
+   the source-only-commit check from "Diff gates"; it must print nothing.
 
 ## Phase 5: Remove xfail and Verify
 
@@ -102,6 +103,6 @@ When the test still fails after the fix:
 
 ## Report
 
-Report per the final-report and stopped-run shapes in
+Report per the final-report, stopped-run, and plan-awaiting-approval shapes in
 `../../references/gates-and-commits.md`. Name commits by purpose, never by
 phase or number.

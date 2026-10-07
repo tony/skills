@@ -16,8 +16,8 @@ ones. Read both before drafting:
 - `../../references/rendered-markdown.md` — wrapping, symbols, code
   fences, `<details>`, structure, mentions, what to leave out, and the
   preview command.
-- `../../references/source-links.md` — pinning, autolinking, cross-repo
-  references, and the project link set.
+- `../../references/source-links.md` — pinning, autolinking, and
+  cross-repo references.
 
 ## Steps
 
@@ -29,8 +29,13 @@ ones. Read both before drafting:
 2. Draft or fix the text per `rendered-markdown.md`. This skill
    governs what you are writing, not the files around it. Filing an
    issue belongs to `create-issue`, which applies these rules.
-3. Pin and complete every link per `source-links.md`.
-4. Preview through GitHub's renderer with the stdin form in
+3. Pin and complete every link per `source-links.md`. When the text
+   names an upstream open-source project, also read
+   `../../references/project-links.md` for its link set.
+4. Strip local absolute paths, hostnames, emails, and tokens from the
+   body (see "Nothing local, nothing personal" in `rendered-markdown.md`).
+   The preview sends the body to GitHub.
+5. Preview through GitHub's renderer with the stdin form in
    `rendered-markdown.md`: the body goes inside a quoted heredoc in
    the command, so no file is written. Read the output before
    publishing. When `gh` is unauthenticated or offline, say the
@@ -62,9 +67,7 @@ TypeError: Cannot read properties of undefined (reading 'target')
 See [`src/build.js`](https://github.com/example/widgets/blob/<SHA>/src/build.js#L38-L50).
 ````
 
-Before posting:
-
-- Replace `<SHA>` with the commit where you saw the bug, or a release tag.
+Before posting, replace `<SHA>` with the commit where you saw the bug, or a release tag.
 `````
 
 If the text cannot be fixed (no body was given, or the surface is a

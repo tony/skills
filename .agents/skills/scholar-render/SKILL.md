@@ -15,8 +15,8 @@ metadata:
 Stage 5. Write the two layers a reader actually meets: a brief they read start
 to finish, and the evidence they check it against.
 
-The analyzer ships at `references/term-metrics.py`; `<analyzer>` below
-is that path. `references/stage-gates.md` states the brief gate's exit
+The analyzer is `references/term_metrics.py`; `<analyzer>` below is its
+absolute path resolved from this skill's directory. `references/stage-gates.md` states the brief gate's exit
 condition.
 
 User arguments: $ARGUMENTS
@@ -37,7 +37,7 @@ The analyzer enforces the rule. Run it before reporting success. A missing
 unchanged is gated as is; report its findings and leave it.
 
 ```console
-$ <analyzer> notes/ontology/<subject>/ --check-brief
+$ python3 <analyzer> notes/ontology/<subject>/ --check-brief
 ```
 
 ## What the brief says
@@ -88,7 +88,9 @@ Per `references/output-contract.md`. Hero: `✓ rendered <subject>: brief +
    stripped.
 
 On a failed gate, print the hero, `## Gate`, and the fix: edit the brief, or
-leave it and stop. Omit `## Brief` and `## Evidence` for anything not
+leave it and stop. Say only that each flagged URL or number moves into the
+matching `evidence/` file and is linked; never claim a command produced a
+number the brief's author wrote by hand. Omit `## Brief` and `## Evidence` for anything not
 written, and offer no other next step. A missing study follows the halted-run
 shape in the output contract.
 

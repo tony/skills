@@ -30,8 +30,6 @@ Install the plugin:
 $ codex plugin add terraform@skills
 ```
 
-Claude Code uses a leading slash (`/terraform:…`). Codex omits it (`terraform:…`).
-
 ## When to use it
 
 Use it when one bump must land across several root modules and their
@@ -41,14 +39,33 @@ service.
 
 ## Skills
 
-| Claude Code | Codex | Description |
-|---|---|---|
-| `/terraform:bump-provider <provider> [version]` | `terraform:bump-provider <provider> [version]` | Move a provider across every module that declares it, then refresh the affected lock files |
-| `/terraform:bump-terraform [version]` | `terraform:bump-terraform [version]` | Move the CLI version across every module and every pin site outside the configuration |
-| `/terraform:refresh-lock` | `terraform:refresh-lock` | Re-resolve providers within the constraints already written, in every root module |
+Claude Code uses a leading slash (`/terraform:...`). Codex omits it
+(`terraform:...`).
+
+Move a provider across every module that declares it, then refresh the
+affected lock files:
+
+```text
+/terraform:bump-provider <provider> [version]
+```
+
+Move the CLI version across every module and every pin site outside the
+configuration:
+
+```text
+/terraform:bump-terraform [version]
+```
+
+Re-resolve providers within the constraints already written, in every root
+module:
+
+```text
+/terraform:refresh-lock
+```
 
 With no version, each bump targets the latest stable release and confirms it
 before writing.
+
 - `--audit-only`: Reports the predicted work without writing.
 - `--root-module <dir>`: Limits the run to specific root modules.
 - `--no-commit`: Leaves the result in the working tree.
@@ -59,16 +76,14 @@ request is conversational (e.g., "the providers here are ancient").
 
 ## Components
 
-| Path | Purpose |
-|------|---------|
-| `skills/bump-provider/SKILL.md` | Move one provider across every module that declares it |
-| `skills/bump-terraform/SKILL.md` | Move the CLI version across configuration and non-configuration pin sites |
-| `skills/refresh-lock/SKILL.md` | Re-resolve within existing constraints, every root module |
-| `skills/bumping-terraform/SKILL.md` | The shared phase structure, model-invocable without a slash command |
-| `references/layout-discovery.md` | Root and child module classification, the `.terraform/` cache trap, `.tofu` shadowing, Terragrunt and stacks |
-| `references/pin-sites.md` | Every file a provider or CLI version is pinned in, operator preservation, registry lookups |
-| `references/lock-and-init.md` | Per-root-module `init` and its guard, the platform-narrowing trap, blocked resolvers, verification gates |
-| `scripts/lockctl.py` | Per-provider lock state, single-block removal, stable-version filter, and platform names from `providers lock` commands |
+- `skills/bump-provider/SKILL.md`: move one provider across every module that declares it.
+- `skills/bump-terraform/SKILL.md`: move the CLI version across configuration and non-configuration pin sites.
+- `skills/refresh-lock/SKILL.md`: re-resolve within existing constraints, every root module.
+- `skills/bumping-terraform/SKILL.md`: the shared phase structure, model-invocable without a slash command.
+- `references/layout-discovery.md`: root and child module classification, child-to-root mapping, the `.terraform/` cache trap, `.tofu` shadowing, Terragrunt and stacks.
+- `references/pin-sites.md`: every file a provider or CLI version is pinned in, operator preservation, registry lookups.
+- `references/lock-and-init.md`: per-root-module `init` and its guard, the platform-narrowing trap, blocked resolvers, verification gates.
+- `scripts/lockctl.py`: per-provider lock state, single-block removal, stable-version filter, and platform names from CI and task files that run `providers lock`.
 
 ## Prerequisites
 
@@ -77,6 +92,7 @@ request is conversational (e.g., "the providers here are ancient").
 - `terraform` or `tofu` CLI on `PATH`. The plugin resolves versions against
   the detected tool's registry.
 - Network access to the provider registry or private registry.
-- No cloud credentials required (lock refreshes use `-backend=false`).
+- No backend credentials required (lock refreshes use `-backend=false`).
+  A private registry or private module source needs its own credentials.
 - Project quality-check commands (e.g., in `AGENTS.md` / `CLAUDE.md` or CI
   workflow).

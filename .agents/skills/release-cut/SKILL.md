@@ -128,8 +128,9 @@ Following the conventions reference, record:
 Run the project's quality gates discovered in Phase 2. All must pass
 before committing. If a gate fails, stop and report the failure —
 never commit a release on a red gate, and never weaken a gate to get
-to green. Delete untracked files the gates created (bytecode caches, build output)
-before Phase 5, so the Phase 6 tree check passes.
+to green. Compare `git status --porcelain` with the clean Phase 1 tree and remove
+only the new untracked paths the gates created (bytecode caches, build
+output) before Phase 5, so the Phase 6 tree check passes.
 
 ## Phase 5: Commit
 
@@ -172,7 +173,8 @@ The first failure stops the run: report it and run none of the later steps.
    ```
 
    A rejected push (protected trunk, non-fast-forward) is a failure. Do
-   not tag-push after it.
+   not tag-push after it. With no upstream configured the push fails;
+   report it, because setting an upstream is the user's call.
 
 4. `--push-tag`, only if step 2 ran and step 3 either succeeded or was not
    requested. This pushes the tag and the commit it points at:
@@ -190,9 +192,10 @@ Never name local or temp paths. A completed run ends with these, in order:
 1. Hero line: `✓ Cut <tag>` plus whether the release commit and the tag
    were created and whether each was pushed.
 2. `## Release summary`: old to new version, CHANGES section dated, next
-   unreleased target. Nothing else: no gate output, cleanup, skipped files,
-   or skill mechanics.
-3. `## Files changed`: the files in the release commit.
+   unreleased target, one fragment per fact. Nothing else: no gate output,
+   cleanup, clauses about how the changelog is styled, or skill mechanics.
+3. `## Files changed`: the files in the release commit, with no sentence
+   about files left unchanged.
 4. `## Next steps`: the exact `git tag -a` / `git push --no-follow-tags` /
    `git push --no-follow-tags <remote> refs/tags/<tag>` commands for
    whatever the flags did not authorize.
@@ -200,7 +203,8 @@ Never name local or temp paths. A completed run ends with these, in order:
 No paragraph between the hero line and the first heading.
 
 A stopped or refused run is one result sentence (what stopped and why),
-then what the user needs to do. Nothing else.
+then what the user needs to do. Nothing else: no gate results, no
+description of the edits beyond whether they stay in the tree.
 
 Reply in this shape, as plain text outside any code fence, with plain bullets, no bold (never `- **Label:** ...`), and no local paths:
 
@@ -223,13 +227,17 @@ Reply in this shape, as plain text outside any code fence, with plain bullets, n
 ```
 
 A stopped run uses the same plain-text shape, for example after a failed
-commit. The edits stay in the tree; give no discard command:
+commit. The edits stay staged and give no discard command. A re-run of
+`cut` is refused (dirty tree, and the manifest already reads the new
+version), so the recovery is to commit, then run the authorized flag steps
+from `Next steps` yourself:
 
 ```text
 Stopped: the release commit failed (signing error), so no tag was created and nothing was pushed.
 
 - Fix the commit error, then commit the staged release files with the subject "Tag v0.4.0".
-- Re-run release-cut 0.4.0 with the flags you want.
+- Then run the tag and push commands you wanted yourself:
+  git tag -a v0.4.0 -m "v0.4.0", then git push --no-follow-tags.
 ```
 
 Then, unless running in plan mode, `ask-user-choice` may offer only

@@ -24,6 +24,8 @@ until the gate passes:
 
 User arguments: $ARGUMENTS
 
+Paths under `../../scripts/` resolve from this skill's directory: print the absolute path once and write it literally in each command, since shell variables do not persist between Bash calls.
+
 ## Procedure
 
 ### 1. Locate the run and pass the gate
@@ -32,8 +34,8 @@ Per `interim-format.md` § Rendering a report.
 
 ### 2. Secure the multipliers
 
-Read adoption `a` and realization `r` from `assumptions.yaml`. If
-either is absent, ask the user via `AskUserQuestion`, explaining what
+Read adoption (`adoption-rate`) and realization (`realization-rate`)
+from `assumptions.yaml`. If either is absent, ask the user via `AskUserQuestion`, explaining what
 each means per `measurement.md`, and append the answer to the register
 with rationale and owner (ESTIMATED, or MEASURED when an instrument
 export gives it). Never proceed with a default of 1.0. Without a
@@ -43,19 +45,22 @@ missing from the assumptions register` and tell the user to add it
 
 ### 3. Render the report
 
-Write `<run>/reports/org-wide.md` with this fixed structure:
+Run `../../scripts/business.py project <run>` and take every figure
+in sections 1 to 3 from its output; never do that arithmetic by hand.
+It exits 1 and names each missing or out-of-range register id, which
+is a stopped run. Write `<run>/reports/org-wide.md` with this fixed
+structure:
 
-1. **Bottom-up build**: the full chain
+1. Bottom-up build: the full chain
    `Annual_hours_saved = V * F * t * s * a * r`, every factor shown
    with its own tag; the population segmented addressable ⊃ served ⊃
    realized, all three reported.
-2. **Scenarios**: conservative, base, upside, with the differing
-   assumptions listed per scenario.
-3. **Sensitivity**: one-way ranking: which single input moves the
-   outcome most, in order.
-4. **What has to be true**: break-even framing: the values the
+2. Scenarios: conservative, base, upside as `measurement.md` defines
+   them, with the differing inputs listed per scenario.
+3. Sensitivity: the script's one-way ranking, largest swing first.
+4. What has to be true: break-even framing: the values the
    inputs must reach for the projection to hold.
-5. **Plain-language summary**: for the whole company: no
+5. Plain-language summary: for the whole company: no
    methodology jargon, no formula notation; figures still tagged and
    true.
 
@@ -68,7 +73,7 @@ Write it per `../../references/prose-rules.md`.
 
 Hero success form: `✓ Org-wide projection: <conservative figure with
 tag>`. Sections and stopped-run shape as in `interim-format.md`; `## Gate` also gives the
-`a` and `r` values used with their register ids, and `## Report` names
+adoption and realization values used with their register ids, and `## Report` names
 the most sensitive input. Panel options: write an internal case study
 next (read `../case-study-internal/SKILL.md` and follow it), revisit
 an assumption, or stop.

@@ -49,9 +49,9 @@ A single autonomous loop cannot be re-entered safely on failure. Each phase
 reads and writes a durable JSON file under `.pytest-optimizer/`, keeping the
 pipeline:
 
-- **Idempotent** — Re-running a phase is a no-op if inputs are unchanged.
-- **Resumable** — `03-execute` checkpoints after every commit.
-- **Auditable** — The plan is a reviewable artifact before any code changes.
+- Idempotent: Re-running a phase is a no-op if inputs are unchanged.
+- Resumable: `03-execute` checkpoints after every commit and, on resume, checks that `HEAD` holds only its own commits.
+- Auditable: The plan is a reviewable artifact before any code changes.
 
 ## What it looks for
 
@@ -61,7 +61,7 @@ The detection rules are in `references/heuristic-catalog.md`:
 - Unused, duplicate, and mis-scoped fixtures, with a `getfixturevalue` guard.
 - Duplicate tests and loops that belong in one parametrized track.
 - Safe parallelism, gated on order independence and deterministic collection.
-- Untyped tests and fixtures, and untyped `parametrize` data.
+- Untyped tests and fixtures, and untyped `parametrize` data, planned as hygiene items that save no time.
 - Opt-in project-owned helpers: a per-fixture timing plugin and a
   `config.cache` memoization snippet.
 
@@ -71,7 +71,7 @@ Candidates are ranked and gated (see `references/scoring-rubric.md`):
 
 | Dimension | Weight | Meaning |
 |-----------|-------:|---------|
-| safety | 0.35 | **Hard gate: score < 0.4 is dropped.** Inverse of correctness risk. |
+| safety | 0.35 | Hard gate: a score under 0.4 is dropped. Inverse of correctness risk. |
 | impact | 0.30 | Measured wall-clock delta vs the noise band, as a share of the baseline. (Within-noise scores 0.) |
 | effort | 0.15 | Inverse of refactor cost. |
 | confidence | 0.12 | Quality of timing evidence (e.g., serial, repeated, above noise floor). |
@@ -82,7 +82,7 @@ Candidates are ranked and gated (see `references/scoring-rubric.md`):
 | Skill | Phase | Writes |
 |---------|-------|--------|
 | `/pytest-optimizer:00-scan` | Profile, detect, hypothesize | `baseline.json`, `capabilities.json`, `collection.txt`, `hypotheses.json` |
-| `/pytest-optimizer:01-benchmark` | Prove each hypothesis vs the noise band | `benchmarks.json` |
+| `/pytest-optimizer:01-benchmark` | Prove each hypothesis vs the noise band | `benchmarks.json`, `control.json` |
 | `/pytest-optimizer:02-plan` | Rank into a commit plan (plan-mode gated) | `plan.json` |
 | `/pytest-optimizer:03-execute` | Apply each speedup as a commit, verify, resume | `execution-log.json` |
 
@@ -101,18 +101,18 @@ order: `--memory-dir`, the in-tree directory, the cache directory. See
 
 - A git repository with a pytest suite.
 - Python 3 on `PATH` for `scripts/measure.py`, which does the timing arithmetic.
-- Test commands configured via `AGENTS.md` or `CLAUDE.md`.
+- A test command the skills can read from `AGENTS.md`, `CLAUDE.md`, `justfile`, `tox.ini`, or `pyproject.toml`.
 - Optional auto-detected plugins: `pytest-xdist`, `pytest-randomly`,
   `pytest-deadfixtures` (added to the project environment), `pytest-timeout`.
 
 ## Component reference
 
-- `skills/00-scan`, `01-benchmark`, `02-plan`, `03-execute` — The four phase skills.
-- `skills/pytest-optimizer/SKILL.md` — Orchestrator with planning and
+- `skills/00-scan`, `01-benchmark`, `02-plan`, `03-execute`: the four phase skills.
+- `skills/pytest-optimizer/SKILL.md`: orchestrator with planning and
   degradation.
-- `references/` — Recipes, schemas, rubric, and capabilities.
-- `scripts/measure.py` — Median, MAD, noise band, test-count and order gates, rubric arithmetic, memory lookup.
-- `templates/` — Opt-in scaffolds (timing plugin, cache snippet) and the commit message template.
+- `references/`: recipes, schemas, rubric, and capabilities.
+- `scripts/measure.py`: median, MAD, noise band, test-count and order gates, rubric arithmetic, memory lookup, resume check.
+- `templates/`: opt-in scaffolds (timing plugin, cache snippet) and the commit message template.
 
 ## Scope
 

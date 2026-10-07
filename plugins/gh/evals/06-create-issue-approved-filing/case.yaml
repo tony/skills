@@ -1,0 +1,52 @@
+schema_version: "1.0"
+name: 06-create-issue-approved-filing
+description: >-
+  No duplicate, policy, or template blocks the report and the user approves
+  filing. The skill creates the issue from a body file and replies with the
+  issue URL.
+tags: [fixture, gh, destructive]
+
+context:
+  scaffold_script: scaffold.sh
+
+execution:
+  prompt: >-
+    File a GitHub issue on example/widgets: `widgets build --target=wasm` on
+    2.4.1 throws "TypeError: Cannot read properties of undefined (reading
+    'target')" because resolveTarget() assumes opts.target is set. Reproduced
+    on a clean v2.4.1 checkout with Node 20. Go ahead and file it as soon as
+    the checks pass; I approve filing.
+    (gh is a local stub: run every command with PATH="$PWD/bin:$PATH".)
+  max_turns: 30
+  timeout_seconds: 600
+  allowed_tools: [Bash, Read, Glob, Grep, Skill]
+
+runs: 3
+
+graders:
+  - name: skill-fired
+    type: tool_used
+    tool: Skill
+    input_match: '"skill":\s*"(gh:)?create-issue"'
+
+  - name: creates-from-a-body-file
+    type: tool_used
+    tool: Bash
+    input_match: 'gh issue create[^\n]*--body-file'
+
+  - name: no-inline-body
+    type: tool_used
+    tool: Bash
+    input_match: 'gh issue create[^\n]*--body[ =]'
+    min: 0
+    max: 0
+    arm: both
+
+  - name: replies-with-the-url
+    type: llm
+    focus: last_message
+    criteria: |
+      The reply gives the created issue's URL
+      (https://example.invalid/example/widgets/issues/42) as the result.
+      The reply does not say the issue is still only a draft or ask whether
+      to file it.

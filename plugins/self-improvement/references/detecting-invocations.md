@@ -2,8 +2,8 @@
 
 Prompts you typed and transcripts your agents wrote sit in local stores on
 your disk. This file turns them into a per-skill invocation count and lists
-the ways that count comes back confidently wrong. `<sweep.py>`, which is
-`../scripts/sweep.py` from this file, does the counting; this file covers
+the ways that count comes back confidently wrong. `<sweep.py>`, the absolute
+path of `scripts/sweep.py` in this plugin, does the counting; this file covers
 getting its inputs and reading its output.
 
 Contents:
@@ -33,25 +33,32 @@ names of user-level skills; say so in the report.
 **Skill-tool invocations** write a `Launching skill: <plugin>:<skill>` line
 into the conversation transcript, not into prompt history. Collect one line
 per occurrence into a scratch file. Prefer the host's own session-search
-tool. Without one, Claude Code transcripts are searchable with `rg`:
+tool. Without one, Claude Code transcripts are searchable with `rg`. The
+default scope is transcripts modified in the last 90 days, which keeps the
+read bounded; drop `-mtime -90` only when the user asks for everything, and
+check the store size first with `du -sh ~/.claude/projects`. This command
+lists those transcripts and searches them:
 
 ```console
-$ rg \
+$ find ~/.claude/projects \
+    -name '*.jsonl' \
+    -mtime -90 \
+    -print0 \
+  | xargs -r -0 rg \
     --only-matching \
     --no-filename \
     --no-line-number \
-    --glob '*.jsonl' \
-    'Launching skill: [a-z0-9:-]+' \
-    ~/.claude/projects
+    'Launching skill: [a-z0-9:-]+'
 ```
 
-Redirect the output to a file in the scratch directory. Confirm the line
+Redirect the output to `tool-log.txt` in the scratch directory, and say in
+the report that the tool channel covers only that window. Confirm the line
 form with one search before counting; an empty file means this host does
 not write that line, and the tool channel is unavailable, not zero.
 
 The match also hits earlier transcripts that quoted the line, such as a
 past sweep's own session, so the tool count is an upper bound. Say so in
-the report, or drop the sessions of this plugin from the search.
+the report.
 
 The tool channel has no usable date, so the era split comes from the slash
 channel alone and a skill the model reaches for on its own is undercounted
@@ -79,11 +86,12 @@ their gating and birth dates, the rename map, commit subjects that mention
 a rename or replacement, and the era boundary (Phase 0 of the sweep):
 
 ```console
-$ python3 <sweep.py> catalog
+$ python3 <sweep.py> catalog \
+    --names-out <scratch>/catalog.txt
 ```
 
-Write the skill names it lists, one per line, to `catalog.txt` in the
-scratch directory, then count. `--history` takes any prompt-history file in
+Pass `--names-out <scratch>/catalog.txt` to the catalog command so the
+names land in the scratch directory without hand-copying, then count. `--history` takes any prompt-history file in
 the same JSONL shape, which is how a fixture replaces the real one:
 
 ```console
@@ -152,10 +160,11 @@ as not countable instead of scoring it zero.
 
 ## Cost
 
-An exhaustive transcript search reads every store on disk. Run it once,
-save the raw output, and re-slice it locally rather than running one
-search per skill. The slash channel is a single file read and finishes in
-seconds. Say before starting which of the two you are running.
+An unscoped transcript search reads every store on disk, which can be
+gigabytes. Default to the last 90 days, run it once, save the raw output,
+and re-slice it locally rather than running one search per skill. The slash
+channel is a single file read and finishes in seconds. Say before starting
+which of the two you are running and the window.
 
 ## Other hosts and other search tools
 
@@ -167,8 +176,7 @@ proven otherwise, not as "this host does not use skills".
 `agentgrep` searches the stores of several hosts at once and is an
 optional alternative to the host's search tool. It runs through `uvx`, so
 `uv` must be installed. It reads every transcript store, so run only a
-pinned version: `uvx agentgrep@0.1.0a52`, the version this procedure was
-checked against. Before relying on it, show the user this exact command and
+pinned version: `uvx agentgrep@0.1.0a52`. Before relying on it, show the user this exact command and
 run it only once they confirm:
 
 ```console

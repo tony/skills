@@ -17,11 +17,11 @@ discovered command in the report before running it.
 
 | Bucket | Heading keywords (case-insensitive) |
 |---|---|
-| `format` | `format`, `fmt`, `style` |
+| `format` | `format`, `fmt` |
 | `lint` | `lint`, `ruff check`, `eslint`, `clippy` |
 | `typecheck` | `typecheck`, `type check`, `mypy`, `pyright`, `tsc` |
 | `test` | `test`, `spec`, `pytest`, `vitest`, `jest` |
-| `build` | `build`, `compile`, `bundle`, `dist` |
+| `build` | `build`, `compile` |
 
 When a bucket is unset **and the manifest shows evidence the project
 has that gate** (a typecheck config such as a `mypy`/`pyright` section

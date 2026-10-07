@@ -34,6 +34,10 @@ with `../../references/scoring-rubric.md`: get `impact` from
 `measure.py impact --delta <median_delta> --baseline <median> --clears-noise`,
 judge the other four dimensions against the rubric anchors, then run
 `measure.py score` with all five. It returns the total and a `dropped` reason.
+A candidate benchmarked as `kind: "hygiene"` (H26-H32) has no timing: pass
+`--hygiene` to `measure.py score` (impact 0), which skips the noise gate and
+scores the other four dimensions. Plan it as a hygiene item, never drop it for
+saving no time.
 
 Drop every candidate whose `dropped` is set. Capture each dropped item's
 prerequisite refactor, if any, as a labeled follow-up, never an auto-applied

@@ -51,3 +51,40 @@ def test_no_trunk_exits_2(
     monkeypatch.chdir(tmp_path)
     assert scope.main([]) == 2
     assert "no trunk ref" in capsys.readouterr().err
+
+
+def _topic_repo(tmp_path: pathlib.Path) -> pathlib.Path:
+    _run(tmp_path, "init", "-q", "-b", "main")
+    _run(tmp_path, "config", "user.email", "t@example.com")
+    _run(tmp_path, "config", "user.name", "t")
+    f = tmp_path / "a.py"
+    f.write_text("x = 1\n# gone\ny = 2\n")
+    _run(tmp_path, "add", ".")
+    _run(tmp_path, "commit", "-q", "-m", "base")
+    return f
+
+
+def test_all_lists_names_only(
+    tmp_path: pathlib.Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """--all prints tracked names with no ranges."""
+    _topic_repo(tmp_path)
+    monkeypatch.chdir(tmp_path)
+    assert scope.main(["--all"]) == 0
+    assert capsys.readouterr().out == "a.py\n"
+
+
+def test_staged_and_deletion_only_range(
+    tmp_path: pathlib.Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """A deletion-only hunk prints an empty range; --staged reads the index."""
+    f = _topic_repo(tmp_path)
+    f.write_text("x = 1\ny = 2\n")
+    _run(tmp_path, "add", ".")
+    monkeypatch.chdir(tmp_path)
+    assert scope.main(["--staged"]) == 0
+    assert capsys.readouterr().out == "a.py\t\n"

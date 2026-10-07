@@ -3,7 +3,7 @@ name: scholar-ontology
 description: >-
   Use when distilling an ontology, controlled vocabulary, or glossary of
   what a codebase, a repository set, or a written corpus calls things.
-allowed-tools: ["Bash", "Read", "Grep", "Glob", "Edit", "Write", "AskUserQuestion"]
+allowed-tools: ["Read", "Grep", "Glob", "AskUserQuestion"]
 metadata:
   argument-hint: "[<target>...] [--kind=code|prose|fleet] [--out=<dir>] [--resume=<stage>]"
   source: "plugins/scholar/skills/ontology/SKILL.md"
@@ -79,7 +79,8 @@ start stage 1 without approval.
   defaulting to `notes/ontology/<subject>/` in the current repository.
 - A pasted snippet is not a corpus. With no repository, directory, or document
   on disk to pin, report `⚠ Blocked` at stage 1 and say what to point the
-  study at.
+  study at. A pasted prose excerpt can only be pinned by running `gather`
+  directly, which saves it under the study directory.
 
 ## Output
 
@@ -95,8 +96,16 @@ types, <n> contested` or `⚠ Blocked: <reason>`. Sections:
 4. `## Where it lives` — the study directory path and which stages ran.
 
 A blocked run follows the halted-run shape in the output contract: hero, one
-sentence naming the missing corpus, and what to point the study at. Print no
-sections and no guesses from a pasted snippet. Name no local paths.
+sentence naming the missing corpus, and one line saying what to point the study
+at (a repository URL, a local directory, or a document on disk). No bold, no
+options list, no plan for what happens next, no sections, no guesses from a
+pasted snippet, no local paths:
+
+```text
+⚠ Blocked: no corpus on disk to study, only a pasted snippet.
+
+Point me at a repository URL, a local directory, or a document on disk.
+```
 
 Next-step options: contest another round, compare against another study,
 stop here.

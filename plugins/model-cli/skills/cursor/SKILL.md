@@ -1,6 +1,6 @@
 ---
 name: cursor
-description: "Use when asked to use Cursor, Cursor's CLI, or the agent binary to delegate a prompt or task; no fallback is available."
+description: "Use when asked to use Cursor, Cursor's CLI, or the agent binary to delegate; write-enabled, no sandbox, unless mode:plan; no fallback."
 user-invocable: true
 allowed-tools: ["Bash"]
 argument-hint: <prompt> [timeout:<seconds>] [mode:plan]

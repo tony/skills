@@ -4,7 +4,7 @@ description: >-
   List research topics and assessments: latest run, source states, open
   questions, and the next action for each
 disable-model-invocation: true
-allowed-tools: ["Skill", "Bash", "Read"]
+allowed-tools: ["Bash", "Read"]
 metadata:
   argument-hint: "[--namespace=<ns>] [--root=<dir>]"
   source: "plugins/research/skills/status/SKILL.md"
@@ -12,7 +12,7 @@ metadata:
 
 # this skill
 
-Invoke the `research-foray` skill with `status` followed by the user arguments, and follow it.
+Read the `research-foray` skill and follow it, treating `status` as the first word of the arguments.
 
 User arguments: $ARGUMENTS
 

@@ -61,4 +61,4 @@ Adapts dynamically based on `AGENTS.md` / `CLAUDE.md`:
 
 - git, for the commits.
 - A supported test framework.
-- Quality gate commands defined in conventions.
+- Quality gate commands listed in the project's AGENTS.md or CLAUDE.md.

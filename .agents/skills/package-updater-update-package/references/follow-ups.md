@@ -49,19 +49,15 @@ commit that fails for reasons its message does not mention.
 An exemplar of the pair:
 
 ```text
-js(deps[dev]) bump tailwind, vite, babylon
+js(deps[dev]) tailwindcss 4.3.2 -> 4.3.3
 
-why: Routine refresh from `ncu -u`. Tailwind 4.3.3 resolves CSS
-nesting inside `compile()` rather than deferring it to Lightning
-CSS (tailwindlabs/tailwindcss#<number>), which reshapes the compiled
-output the tailwind-plugin snapshots capture. The snapshots are
-regenerated in the follow-up commit, so `pnpm test` fails in
-packages/tailwind-plugin at this revision.
+why: 4.3.3 changes the shape of the compiled CSS that the
+tailwind-plugin snapshots record (see the 4.3.3 release notes). The
+snapshots are regenerated in the follow-up commit, so `pnpm test`
+fails in packages/tailwind-plugin at this revision.
 
 what:
-- tailwindcss and @tailwindcss/vite 4.3.2 -> 4.3.3
-- vite 8.1.4 -> 8.1.5
-- @babylonjs/{core,inspector,loaders,materials} 9.16.2 -> 9.17.0
+- tailwindcss 4.3.2 -> 4.3.3
 ```
 
 And the follow-up, which earns its length by proving the churn is
@@ -70,14 +66,10 @@ cosmetic rather than asserting it:
 ```text
 test(tailwind-plugin) regenerate CSS snapshots
 
-why: Tailwind 4.3.3 flattens CSS nesting into `:is()` selectors and
-merges adjacent at-rules while compiling
-(tailwindlabs/tailwindcss#<number>), so the recorded output no longer
-matches. Comparing the two revisions declaration by declaration,
-every CSS declaration is byte identical; only nesting structure and
-at-rule grouping differ. Rendered output is unchanged, since
-`@tailwindcss/vite` already ran Lightning CSS over the same input
-and emitted flat CSS before this upgrade.
+why: tailwindcss 4.3.3 restructures the compiled CSS. Comparing the two
+revisions declaration by declaration, every CSS declaration is byte
+identical; only nesting and at-rule grouping differ, so rendered output
+is unchanged.
 
 what:
 - Re-record the four compiled-CSS snapshots against tailwindcss 4.3.3

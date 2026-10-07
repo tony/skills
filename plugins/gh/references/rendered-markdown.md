@@ -125,19 +125,12 @@ In an issue the title is a separate field, so a `#` in the body
 duplicates it, and `##` draws a full-width horizontal rule. GitHub's own
 templates emit `###` per section. A repository file keeps its `#`.
 
-### No table of contents in a body
-
-Headings in an issue body receive no anchor ids, so a `[jump](#repro)`
-link is dead. A repository file's headings do get ids, and a table of
-contents there resolves.
-
 ### Alerts stay at the top level
 
 `> [!NOTE]`, `> [!TIP]`, `> [!IMPORTANT]`, `> [!WARNING]`,
 `> [!CAUTION]` — and no others. Inside a `<details>` block or a list
 item they degrade silently to a plain blockquote showing the literal
-`[!NOTE]`. The marker must sit alone on its blockquote line. One per
-body, at most.
+`[!NOTE]`. The marker must sit alone on its blockquote line.
 
 ## In a body, mentions are notifications
 

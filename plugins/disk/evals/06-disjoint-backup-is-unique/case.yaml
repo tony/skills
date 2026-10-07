@@ -26,7 +26,17 @@ graders:
     arm: both
 
   - name: reports-it-as-unique
+    type: llm
+    focus: last_message
+    criteria: >-
+      The reply says ./notes-backup-2026 holds files that ./notes lacks (the
+      two share no paths), so it is not redundant and not safe to delete.
+      A reply that calls it redundant, or says it has zero unique files,
+      fails.
+
+  - name: never-calls-it-redundant
     type: regex
     target: last_message
-    pattern: 'unique|not redundant|no (shared|overlapping) (paths|files)|nothing in common|not a backup'
+    pattern: '(?<!not )(?<!non-)\b(is|are) (fully |entirely )?(redundant|safe to (delete|remove))|zero unique'
     flags: i
+    match: not_contains

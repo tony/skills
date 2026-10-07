@@ -17,7 +17,9 @@ class, and the expected change per finding; this skill turns each finding
 into the smallest edit that removes the gap, behind the gates that catch a
 bad one.
 
-`<sweep.py>` is `references/sweep.py` in every step below.
+`<sweep.py>` is `references/sweep.py`, resolved from this skill's
+directory, not the repository root. Resolve it to an absolute path once,
+print it, and use that literal path in every command below.
 
 ## The rule that makes this safe
 
@@ -51,16 +53,29 @@ Check these in order. The first failure halts the run.
 
    Exit 1 means the ledger is missing, edited, or older than the catalog.
    Sweep again; do not apply a picture that no longer holds.
-2. The tree is clean (`git status --porcelain` prints nothing), ignoring
-   the ledger file itself when `--ledger` points inside the tree. Never
-   stage that file. Mixing a catalog edit with unrelated work makes an
-   unreviewable commit.
+2. The tree has no uncommitted changes that would mix with a catalog edit:
+   no tracked file modified and no untracked file under the catalog.
+   Untracked files elsewhere (editor or shell dotfiles, host state) do not
+   count. Mixing a catalog edit with unrelated work makes an unreviewable
+   commit. Exit 1 lists the dirty paths. Pass the ledger path as `--ignore`
+   when it sits inside the tree, and never stage that file.
+
+   ```console
+   $ python3 <sweep.py> tree-check \
+       --ignore <ledger path>
+   ```
 3. Read the project's conventions files for its commit format and quality
    checks.
 
 A halted run is one result sentence, then what the user must do (run the
 sweep, supply `--ledger`, commit or stash the dirty files). It has no other
-sections.
+sections. Name only the files the user must act on; name no exit code,
+command, commit hash, or untracked file outside the catalog, and never
+advise committing config or dotfiles. Reply in this shape:
+
+```text
+Nothing was applied: the ledger was saved at an older commit than the catalog now has, so its evidence may be stale. Run self-improvement-sweep for a fresh ledger, then rerun apply with it.
+```
 
 ## Phase 1: Orchestration plan
 

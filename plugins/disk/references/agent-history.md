@@ -26,7 +26,8 @@ Before touching any transcript, establish two things:
 - **Whether a state DB exists.** If the tool maintains one, files it
   did not write are invisible to it regardless of location.
 
-Both are recoverable from a shipped binary without source access:
+Read `<tool> --help` and the tool's docs first. Only when they are silent,
+recover both from the shipped binary:
 
 ```console
 $ strings -n 6 <binary> | rg -o '\*\.jsonl|state_db|thread.store|archive[a-z_]*'
@@ -50,7 +51,8 @@ transport and tarballs, and runtimes (Bun, Node) expose `zstdCompress`
 to every binary built on them. Only the extension string plus an
 archive routine shows the codec is wired to *history*.
 
-When native support exists, it is usually behind a feature flag. Find
+Check `<tool> --help` and its docs for a compress or archive option before
+reading the binary. When native support exists, it is usually behind a feature flag. Find
 the flag name and enable it in the tool's own config rather than
 compressing by hand.
 
@@ -91,7 +93,7 @@ Discover paths rather than trusting this list; tools relocate their
 stores between releases.
 
 Common roots include `~/.codex/sessions`, `~/.claude/projects`,
-`~/.config/cursor/chats`, and per-tool state under `~/.local/state`.
+and per-tool state under `~/.local/state`.
 On WSL, the Windows-side profile holds a second, independent set.
 
 Two reclaimable classes of file sit *beside* history and are mistaken

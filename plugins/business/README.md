@@ -4,7 +4,7 @@ Measure and report the business value of AI workflows with
 provenance-tagged data: metrics in engineer-hours and cycle time,
 never currency.
 
-> **Never use money.** Value is stated in engineer-hours, cycle-time
+> Never use money. Value is stated in engineer-hours, cycle-time
 > deltas, throughput, quality rates, and capacity language. All figures
 > carry a provenance tag (MEASURED, DERIVED, BENCHMARKED, ESTIMATED) and
 > appropriate qualifiers.
@@ -91,7 +91,9 @@ deterministic work: `stats` (median, quartiles, seeded BCa interval),
 `scan` (tier-3 identifier and money-term scan, with `--allow` and
 `--allow-url` for false positives and citation links), `gate` (the
 completeness gate, recomputing `check:` figures from `raw/`),
-`assumptions` (register check), and `runs` (newest-first run listing).
+`assumptions` (register check), `project` (org-wide projection,
+scenarios, and sensitivity from register ids), and `runs`
+(newest-first run listing).
 
 ## Prerequisites
 

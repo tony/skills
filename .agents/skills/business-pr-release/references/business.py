@@ -7,6 +7,7 @@ Subcommands:
 - ``scan``: tier-3 sanitization scan of a draft for identifiers and money terms.
 - ``assumptions``: required-field check of an ``assumptions.yaml`` register.
 - ``runs``: list run directories newest first, ordered by the date in the path.
+- ``project``: the org-wide projection and scenarios from register ids.
 - ``gate``: the completeness gate for one run package, with figures recomputed from ``raw/``.
 
 Run ``business.py <command> --help`` for each command.
@@ -27,7 +28,7 @@ import typing as t
 from pathlib import Path
 
 if t.TYPE_CHECKING:
-    from collections.abc import Collection, Sequence
+    from collections.abc import Callable, Collection, Sequence
 
 DIRECTIONAL_BELOW = 20
 MIN_OBSERVATIONS = 2
@@ -63,7 +64,10 @@ DATE_DIR = re.compile(r"\d{4}-\d{2}-\d{2}")
 DATE_RANGE = re.compile(r"\d{4}-\d{2}-\d{2}\s*(?:\.\.|to|\u2013|-)\s*\d{4}-\d{2}-\d{2}")
 TAGS = ("MEASURED", "DERIVED", "BENCHMARKED", "ESTIMATED")
 CITATION = re.compile(r"sources\.md(?:#|\s+`)([\w-]+)")
-FIGURE = re.compile(r"\d(?:\.\d+)?\s*(?:%|min\b|h\b|hours?\b|days?\b|PRs?\b|engineers?\b)")
+_TIME_UNITS = (
+    "ms|s|secs?|seconds?|mins?|minutes?|h|hrs?|hours?|days?|weeks?|months?|quarters?|years?"
+)
+FIGURE = re.compile(rf"\d(?:\.\d+)?[\s-]?(?:%|(?:{_TIME_UNITS}|PRs?|engineers?)\b)", re.IGNORECASE)
 UNIT_START = re.compile(r"\s*(?:[-*]|\d+\.|\|)\s?")
 CHECK_LINE = re.compile(r"\s*(?:[-*]\s*)?check:", re.IGNORECASE)
 CHECK_SPEC = re.compile(
@@ -222,6 +226,22 @@ def _is_number(text: str) -> bool:
     return True
 
 
+def _parse_register(text: str) -> list[dict[str, str]]:
+    entries: list[dict[str, str]] = []
+    for raw in text.splitlines():
+        line = raw.rstrip()
+        if not line.strip() or line.lstrip().startswith("#"):
+            continue
+        body = line.lstrip()
+        if body.startswith("- "):
+            entries.append({})
+            body = body[2:]
+        if ":" in body and entries:
+            key, _, value = body.partition(":")
+            entries[-1][key.strip()] = value.strip()
+    return entries
+
+
 def check_assumptions(text: str, sources: Collection[str] | None = None) -> list[str]:
     r"""Return problems in an ``assumptions.yaml`` register of flat ``key: value`` entries.
 
@@ -251,18 +271,7 @@ def check_assumptions(text: str, sources: Collection[str] | None = None) -> list
     >>> check_assumptions("")
     ['no entries']
     """
-    entries: list[dict[str, str]] = []
-    for raw in text.splitlines():
-        line = raw.rstrip()
-        if not line.strip() or line.lstrip().startswith("#"):
-            continue
-        body = line.lstrip()
-        if body.startswith("- "):
-            entries.append({})
-            body = body[2:]
-        if ":" in body and entries:
-            key, _, value = body.partition(":")
-            entries[-1][key.strip()] = value.strip()
+    entries = _parse_register(text)
     if not entries:
         return ["no entries"]
     problems: list[str] = []
@@ -300,6 +309,106 @@ def _check_entry_values(
         elif sources is not None and match.group(1) not in sources:
             problems.append(f"entry {name}: source_ref names no entry in sources.md")
     return problems
+
+
+FACTORS = (
+    ("V", "addressable-population"),
+    ("F", "instances-per-person-year"),
+    ("t", "baseline-minutes"),
+    ("s", "savings-rate"),
+    ("a", "adoption-rate"),
+    ("r", "realization-rate"),
+)
+MINUTES_PER_HOUR = 60
+
+
+def project(register: str) -> tuple[dict[str, float], list[str]]:
+    r"""Project annual engineer-hours from register ids; return ``(figures, problems)``.
+
+    Each factor is the register entry named in ``FACTORS``; its optional ``low``
+    and ``high`` fields bound the scenarios. The conservative scenario takes every
+    factor at ``low``, base at ``value``, upside at ``high``; a missing bound
+    falls back to ``value``. ``a`` and ``r`` must lie strictly between 0 and 1.
+
+    Examples
+    --------
+    >>> reg = "\n".join(
+    ...     f"- id: {i}\n  value: {v}\n  low: {lo}\n  high: {hi}"
+    ...     for i, v, lo, hi in [
+    ...         ("addressable-population", 40, 30, 50),
+    ...         ("instances-per-person-year", 100, 100, 100),
+    ...         ("baseline-minutes", 30, 25, 40),
+    ...         ("savings-rate", 0.4, 0.3, 0.6),
+    ...         ("adoption-rate", 0.5, 0.3, 0.7),
+    ...         ("realization-rate", 0.6, 0.4, 0.8),
+    ...     ]
+    ... )
+    >>> figures, problems = project(reg)
+    >>> (problems, figures["base"], figures["conservative"], figures["upside"])
+    ([], 240.0, 45.0, 1120.0)
+    >>> (figures["addressable"], figures["served"], figures["realized"])
+    (800.0, 400.0, 240.0)
+    >>> sorted((k for k in figures if k.startswith("swing_")), key=lambda k: -figures[k])[:2]
+    ['swing_a', 'swing_s']
+    >>> "adoption-rate: value 1.0 must be strictly between 0 and 1" in project(
+    ...     "- id: adoption-rate\n  value: 1"
+    ... )[1]
+    True
+    """
+    entries = {e.get("id", ""): e for e in _parse_register(register)}
+    problems: list[str] = []
+    levels: dict[str, tuple[float, float, float]] = {}
+    for symbol, ident in FACTORS:
+        entry = entries.get(ident)
+        if entry is None:
+            problems.append(f"{ident}: missing from the assumptions register")
+            continue
+        try:
+            base = float(entry["value"])
+            low = float(entry.get("low") or base)
+            high = float(entry.get("high") or base)
+        except (KeyError, ValueError):
+            problems.append(f"{ident}: value, low, and high must be numbers")
+            continue
+        if not low <= base <= high:
+            problems.append(f"{ident}: need low <= value <= high")
+        if symbol in ("a", "r"):
+            problems.extend(
+                f"{ident}: {name} {x} must be strictly between 0 and 1"
+                for name, x in (("value", base), ("low", low), ("high", high))
+                if not 0 < x < 1
+            )
+        elif symbol == "s" and not 0 < high <= 1:
+            problems.append(f"{ident}: high {high} must be in (0, 1]")
+        levels[symbol] = (low, base, high)
+    if problems:
+        return {}, problems
+
+    def hours(pick: Callable[[str], float], upto: str = "r") -> float:
+        total = 1.0
+        for symbol, _ in FACTORS:
+            total *= pick(symbol) / (MINUTES_PER_HOUR if symbol == "t" else 1)
+            if symbol == upto:
+                break
+        return total
+
+    def at(index: int) -> Callable[[str], float]:
+        return lambda sym: levels[sym][index]
+
+    figures: dict[str, float] = {
+        "conservative": hours(at(0)),
+        "base": hours(at(1)),
+        "upside": hours(at(2)),
+        "addressable": hours(at(1), "s"),
+        "served": hours(at(1), "a"),
+        "realized": hours(at(1)),
+    }
+    for symbol, _ in FACTORS:
+        swing = hours(lambda sym, s=symbol: levels[sym][2 if sym == s else 1]) - hours(
+            lambda sym, s=symbol: levels[sym][0 if sym == s else 1]
+        )
+        figures[f"swing_{symbol}"] = swing
+    return {k: round(v, 2) for k, v in figures.items()}, []
 
 
 def list_runs(roots: Sequence[Path]) -> list[Path]:
@@ -536,6 +645,35 @@ def _read(paths: list[str]) -> str:
     return "\n".join(Path(p).read_text(encoding="utf-8") for p in paths)
 
 
+def _assumptions_command(file: Path) -> int:
+    problems = check_assumptions(file.read_text(encoding="utf-8"))
+    for problem in problems:
+        print(problem)
+    if not problems:
+        print("ok")
+    return 1 if problems else 0
+
+
+def _project_command(run: Path) -> int:
+    register = run / "assumptions.yaml"
+    if not register.is_file():
+        print(f"no assumptions.yaml in {run}", file=sys.stderr)
+        return 2
+    figures, problems = project(register.read_text(encoding="utf-8"))
+    for problem in problems:
+        print(problem)
+    if problems:
+        return 1
+    swings = sorted((k for k in figures if k.startswith("swing_")), key=lambda k: -figures[k])
+    for key, value in figures.items():
+        if not key.startswith("swing_"):
+            print(f"{key}: {value:g}")
+    print("sensitivity (low-to-high swing, engineer-hours per year, largest first):")
+    for key in swings:
+        print(f"  {key.removeprefix('swing_')}: {figures[key]:g}")
+    return 0
+
+
 def _gate_command(run: Path) -> int:
     if not run.is_dir():
         print(f"no run directory at {run}", file=sys.stderr)
@@ -596,6 +734,11 @@ def main(argv: list[str] | None = None) -> int:
     p_gate = sub.add_parser("gate", help="completeness gate for a run; exit 1 on any problem")
     _ = p_gate.add_argument("run", help="run directory")
 
+    p_project = sub.add_parser(
+        "project", help="org-wide projection, scenarios, and sensitivity from assumptions.yaml"
+    )
+    _ = p_project.add_argument("run", help="run directory")
+
     p_assume = sub.add_parser("assumptions", help="check required fields of assumptions.yaml")
     _ = p_assume.add_argument("file")
 
@@ -619,14 +762,10 @@ def main(argv: list[str] | None = None) -> int:
             print("clean")
         return 1 if hits else 0
     if args.command == "assumptions":
-        problems = check_assumptions(Path(args.file).read_text(encoding="utf-8"))
-        for problem in problems:
-            print(problem)
-        if not problems:
-            print("ok")
-        return 1 if problems else 0
-    if args.command == "gate":
-        return _gate_command(Path(args.run))
+        return _assumptions_command(Path(args.file))
+    if args.command in ("gate", "project"):
+        run = Path(args.run)
+        return _gate_command(run) if args.command == "gate" else _project_command(run)
     roots = [Path(r) for r in args.root] or default_roots()
     for run in list_runs(roots):
         print(run)

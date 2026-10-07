@@ -1,6 +1,6 @@
 ---
 name: agy
-description: "Use when delegating to Google Gemini or Antigravity for a second opinion from Gemini, Google's model; falls back to the agent CLI."
+description: "Use when delegating to Google Gemini or Antigravity for a Gemini second opinion; runs write-enabled, no sandbox, unless mode:plan."
 user-invocable: true
 allowed-tools: ["Bash"]
 argument-hint: <prompt> [timeout:<seconds>] [mode:plan]

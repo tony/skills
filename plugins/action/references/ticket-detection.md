@@ -1,7 +1,7 @@
 # Ticket Detection, Branch Naming & Worktree Placement
 
 How `/action:worktree` and `/action:worktrees` resolve tickets into
-branch names and worktree paths. Linear and GitHub are first-class;
+branch names and worktree paths. Linear and GitHub have dedicated steps;
 other trackers use the generic fallback.
 
 Contents:
@@ -15,15 +15,15 @@ Contents:
 
 ## The read-only invariant (zero ticket write-back)
 
-```
+```text
 TICKETS ARE READ-ONLY
 ```
 
 Neither command assigns, comments, transitions, labels, estimates, or
 otherwise mutates a ticket, in any tracker through any tool. Every
-ticket operation is a read. A branch that goes nowhere unwinds with
-`git worktree remove` and `git branch -D`; linking happens server-side
-from naming (see § Server-side linking).
+ticket operation is a read. A branch that goes nowhere unwinds with the
+teardown steps in `worktree-setup.md`; linking happens server-side from
+naming (see § Server-side linking).
 
 Forbidden (non-exhaustive): tracker MCP mutation tools (comment, state
 change, assignee change), `gh issue edit`, `gh issue comment`,
@@ -97,7 +97,7 @@ $ gh issue view <num> --json number,title,body,labels,url
 - **Fetch**: whatever CLI or MCP server is present (`jira`, `glab`),
   read-only subcommands only. When none exists, ask the user to paste
   the ticket body.
-- **Branch name**: generic kebab slug — `<id-lowercased>-<kebab-title>`.
+- **Branch name**: generic kebab slug, `<id-lowercased>-<kebab-title>`.
 
 ### Kebab-slug algorithm
 
@@ -156,9 +156,9 @@ so server-side linking fires for every ticket.
 
 ## Worktree placement & path sanitization
 
-Two placements — the placement axis:
+Two placements, the placement axis:
 
-- **`--local` (default)** — a visible sibling of the repo:
+- **`--local` (default)**: a visible sibling of the repo:
 
 ```text
 {repo_path}-{sanitized_branch}/
@@ -175,17 +175,24 @@ Two placements — the placement axis:
   worktree `/work/shop-feat-tea-123-login/`, branch still
   `feat/tea-123-login`.
 
-- **`--temp`** — the host's native temp-worktree mechanism when one
+- **`--temp`**: the host's native temp-worktree mechanism when one
   exists, **but only if it can put the work on the computed branch
   name** (Linear auto-attaches by name). Otherwise a temp root outside
   the repo:
 
 ```text
-${TMPDIR:-/tmp}/action-worktrees/<repo-name>/<sanitized-branch>/
+${TMPDIR:-/tmp}/action-worktrees/<repo-name>-<hash>/<sanitized-branch>/
 ```
 
-  `<repo-name>` is the basename of the main checkout. The path is
-  deterministic, so `--temp` re-runs resume the same worktree.
+  `<repo-name>` is the basename of the main checkout and `<hash>` the
+  checksum of its absolute path, so same-named repos do not collide:
+
+```console
+$ printf '%s' <main-checkout-path> | cksum | cut -d' ' -f1
+```
+
+  The path is deterministic, so `--temp` re-runs resume the same
+  worktree.
 
 Branch names are git-valid by here, so `/` is the only character to
 flatten.

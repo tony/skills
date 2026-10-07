@@ -2,6 +2,11 @@
 # A catalog repo plus a ledger whose key was computed for a different HEAD.
 set -euo pipefail
 
+if [ -e .git ]; then
+  echo "refusing: the working directory is already a git checkout" >&2
+  exit 1
+fi
+
 mkdir -p catalog/tidy
 cat >catalog/tidy/SKILL.md <<'MD'
 ---
@@ -17,7 +22,7 @@ MD
 git init -q
 git config user.email eval@example.invalid
 git config user.name eval
-git add .
+git add catalog
 git commit -q -m "Add tidy skill"
 
 python3 - <<'PY'

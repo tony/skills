@@ -1,6 +1,6 @@
 """Tests for the completeness gate, scan allow flags, and permission-safe roots."""
 
-# ruff: noqa: S101, INP001, PLR2004, D103, ARG001, TC002
+# ruff: noqa: S101, INP001, PLR2004, D103, ARG001
 # pyright: reportAny=false, reportUnusedCallResult=false, reportPrivateUsage=false
 # pyright: reportImplicitStringConcatenation=false, reportUnusedParameter=false
 
@@ -90,3 +90,72 @@ def test_default_roots_survive_unreadable_windows_mount(monkeypatch: pytest.Monk
     monkeypatch.setattr(Path, "glob", deny)
     assert business.default_roots() == [Path.home() / "Documents"]
     assert business.list_runs([Path("/mnt/c/Users/x/Documents")]) == []
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "Saved 18 minutes per task.",
+        "Took 3 weeks.",
+        "A 3-week window.",
+        "About 2 engineer-days.",
+        "Latency 40 sec.",
+        "Over 6 months.",
+        "Down 12%.",
+    ],
+)
+def test_figure_catches_every_time_unit(text: str) -> None:
+    assert business.FIGURE.search(text)
+
+
+def test_figure_ignores_dates_and_ids() -> None:
+    assert not business.FIGURE.search("Window 2026-04-01..2026-06-30, entry task-timings.")
+
+
+PROJECT_REGISTER = "\n".join(
+    f"- id: {i}\n  value: {v}\n  low: {lo}\n  high: {hi}"
+    for i, v, lo, hi in [
+        ("addressable-population", 40, 30, 50),
+        ("instances-per-person-year", 100, 100, 100),
+        ("baseline-minutes", 30, 25, 40),
+        ("savings-rate", 0.4, 0.3, 0.6),
+        ("adoption-rate", 0.5, 0.3, 0.7),
+        ("realization-rate", 0.6, 0.4, 0.8),
+    ]
+)
+
+
+def test_project_cli_prints_scenarios_and_ranked_sensitivity(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    (tmp_path / "assumptions.yaml").write_text(PROJECT_REGISTER)
+    assert business.main(["project", str(tmp_path)]) == 0
+    out = capsys.readouterr().out
+    assert "conservative: 45\n" in out
+    assert "base: 240\n" in out
+    assert out.index("  a: 192") < out.index("  s: 180")
+
+
+def test_project_requires_multipliers_strictly_below_one(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    (tmp_path / "assumptions.yaml").write_text(
+        PROJECT_REGISTER.replace(
+            "value: 0.5\n  low: 0.3\n  high: 0.7", "value: 1\n  low: 1\n  high: 1"
+        )
+    )
+    assert business.main(["project", str(tmp_path)]) == 1
+    assert "adoption-rate: value 1.0 must be strictly between 0 and 1" in capsys.readouterr().out
+    (tmp_path / "assumptions.yaml").write_text("- id: addressable-population\n  value: 40\n")
+    assert business.main(["project", str(tmp_path)]) == 1
+    assert "adoption-rate: missing from the assumptions register" in capsys.readouterr().out
+
+
+def test_stats_and_runs_cli(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    sample = tmp_path / "n.txt"
+    sample.write_text("1\n2\n9\n")
+    assert business.main(["stats", str(sample)]) == 0
+    assert "label: DIRECTIONAL" in capsys.readouterr().out
+    make_run(tmp_path)
+    assert business.main(["runs", "--root", str(tmp_path)]) == 0
+    assert capsys.readouterr().out.strip().endswith("2026-06-30/business/lean-tighten")

@@ -66,6 +66,7 @@ notes/ontology/<subject>/
 ├── brief.md              the only file meant to be read start to finish
 ├── terms.jsonl           interchange: {schema, term, definition, parent, kind, cites}
 ├── sources.jsonl         {source, ref, commit, scope, locator_kind, read, why}
+├── quotations.jsonl      prose only: {source, locator_kind, locator, quote, note}
 └── evidence/
     ├── hierarchy.md      the type hierarchy, one citation per is-a claim
     ├── vocabulary.md     preferred and deprecated terms, disjointness constraints
@@ -80,7 +81,7 @@ different tool entirely, is a valid input to `contest` and `render`.
 
 `brief.md` may not contain a citation, a permalink, or a bare number. Where it
 wants one it links into `evidence/`. `render` enforces this with
-`references/term-metrics.py --check-brief`, so the top layer stays readable by
+`scripts/term_metrics.py --check-brief`, so the top layer stays readable by
 construction rather than by discipline.
 
 ## Composition
@@ -93,8 +94,15 @@ beside the serial one.
 
 ## Prerequisites
 
-- **git** — resolving and pinning a corpus to a ref
-- **gh** — resolving a tag to its commit, and checking it again in `verify`
-- **rg** — inventorying a corpus without reading all of it
-- **Python 3.9+** — `references/term-metrics.py`, standard library only, so it
-  runs inside any corpus checkout with no package manager present
+- git, to resolve and pin a corpus to a ref.
+- gh, to resolve a tag to its commit and to check it again in `verify`.
+- rg, to inventory a corpus without reading all of it.
+- Python 3.9+, to run `scripts/term_metrics.py`. It uses the standard library
+  only, so it runs inside any corpus checkout with no package manager present.
+
+A corpus with no git remote cannot be cited by permalink. Publish it first, or
+cite `path@commit`, which `verify` checks with `git show`.
+
+A small repository does not need every stage: run `gather` and `extract`, then
+`render`, and add `distill` and `contest` once the term table has siblings to
+tell apart.

@@ -24,8 +24,7 @@ plans expose issue types is UNVERIFIED — that page states no gate.
 
 GitHub has no native Initiative or Epic level. Express one as a parent Issue
 with sub-issues, a custom issue type, a label, a Project field or a tracking
-Issue, recording `native_type: issue`, `native_display_type: Epic`,
-`mapping_basis: convention`. A custom issue type named Epic is still an Issue.
+Issue, and say in the reply that the Epic role rests on convention. A custom issue type named Epic is still an Issue.
 
 ## Semantic roles
 
@@ -115,10 +114,11 @@ bare reference form.
 
 `gh issue create` takes `--title`, `--body-file`, `--label`, `--milestone`,
 `--project`, `--type`, `--parent`, `--blocked-by` and `--blocking`, so a
-drafted body goes in from a file undamaged by shell quoting.
+drafted body goes in from a file undamaged by shell quoting. The scratch path
+comes from the skill's filing step.
 
 ```console
-$ gh issue create --title "..." --body-file ./draft.md --type Bug
+$ gh issue create --title "..." --body-file "<scratch path>" --type Bug
 ```
 
 `gh issue edit`, `gh issue view` and `gh project item-add` cover rewriting an

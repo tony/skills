@@ -28,13 +28,30 @@ Resolve the memory directory by the lookup order in
 `../../references/memory-schema.md`. If none exists or `plan.json` is missing,
 stop with the halted-run shape in `../../references/output-contract.md`.
 
-Recompute the idempotency token as `00-scan` Step 2 does. If `state.json`
-records an `env_token` and the result differs, the baseline predates the current `HEAD`: stop and
-tell the user to run `pytest-optimizer:00-scan --force`.
+Read `execution-log.json` if present. A fresh run has no entry with a
+`commit_sha`: recompute the idempotency token as `00-scan` Step 2 does, and if
+`state.json` records an `env_token` and the result differs, the baseline
+predates the current `HEAD`: stop and tell the user to run
+`pytest-optimizer:00-scan --force`. A resumed run skips the token, which this
+run's own commits changed. It checks instead that `HEAD` is `base_head` from
+`state.json` plus exactly the logged commits, in order:
+
+```console
+$ python3 <measure.py> chain \
+    --base <base_head> \
+    <every logged commit_sha, in order>
+```
+
+Exit 1 means someone else's commit sits in the range or a logged commit is
+gone: stop, print its `reason`, and tell the user to run
+`pytest-optimizer:00-scan --force`.
 
 Read `plan.json`, `baseline.json`, `state.json`, and the project quality-check +
-test commands. Refuse to run unless:
+test commands. Refuse to run unless all hold, checking in this order:
 
+- `state.json` has `completed.plan=true` and its `plan_hash` equals the output of
+  `measure.py hash plan.json`. Otherwise the plan was not approved in
+  `pytest-optimizer:02-plan` or changed afterwards;
 - `git rev-parse --show-toplevel` is neither `$HOME` nor a directory containing
   it: a dotfile repo rooted at home hides its untracked files from `git status`,
   and Step 2's cleanup would delete them;
@@ -42,13 +59,13 @@ test commands. Refuse to run unless:
   exclude file (`git rev-parse --git-path info/exclude`), so cleanup cannot
   delete it;
 - `git status --porcelain` is empty (the excluded memory directory does not
-  show), and
-- `state.json` has `completed.plan=true` and its `plan_hash` equals the output of
-  `measure.py hash plan.json`. Otherwise the plan was not approved in
-  `pytest-optimizer:02-plan` or changed afterwards.
+  show). A dirty tree on a resumed run means a crash left an item half applied:
+  show `git status --short` and, once the user confirms the changes are the
+  run's own, discard them with the `restore` command in Step 2.4. Without an
+  interactive question tool, stop and name that command.
 
-Read `execution-log.json` if present and resume from `last_applied_index + 1`
-(or `--from`). Never re-apply an item that already has a `commit_sha`.
+Resume from `last_applied_index + 1` (or `--from`). Never re-apply an item that
+already has a `commit_sha`. Nothing in this skill pushes: the commits stay local.
 
 ## Step 2: Apply each item in order
 
@@ -63,14 +80,14 @@ For each plan item not yet applied:
 
    ```console
    $ python3 <measure.py> run \
-       -- pytest -p no:cacheprovider -q
+       -- pytest -p no:cacheprovider -p no:randomly -q
    ```
 
    Substitute `test_command` from `baseline.json` for `pytest`. The item passes
    when `exit` is 0, `total` equals the item's `expected_total` from `plan.json`,
    and the non-passing count (`total - passed`) equals the baseline's.
    For a typing or parametrize item (H26–H32), the type checker must cover
-   `tests/` and pass.
+   `tests/` and pass; such an item records no timing.
 3. **On success** — commit this change **alone** with the drafted why/what
    message, written per `../../references/prose-rules.md`. No `Co-Authored-By`,
    no "Generated with" or other tool trailer, no emoji: hosts add them by

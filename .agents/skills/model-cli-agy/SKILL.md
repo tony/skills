@@ -1,8 +1,8 @@
 ---
 name: model-cli-agy
 description: >-
-  Use when delegating to Google Gemini or Antigravity for a second opinion
-  from Gemini, Google's model; falls back to the agent CLI.
+  Use when delegating to Google Gemini or Antigravity for a Gemini second
+  opinion; runs write-enabled, no sandbox, unless mode:plan.
 allowed-tools: ["Bash"]
 metadata:
   argument-hint: "<prompt> [timeout:<seconds>] [mode:plan]"

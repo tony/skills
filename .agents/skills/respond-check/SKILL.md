@@ -11,16 +11,15 @@ metadata:
 
 # this skill
 
-Screen review feedback and decide what deserves a fix. A claim is not
-a work order: every claim, from a colleague, a bot, or a review command
-run earlier in this session, is tested against six gates and leaves with
-a verdict, its evidence, and a reply the reviewer can argue with.
-`references/screening-rubric.md` owns the gates, verdicts, and
-ledger.
+Screen review feedback and decide what deserves a fix: every claim, from
+a colleague, a bot, or a review run earlier in this session, passes the
+six gates in `references/screening-rubric.md` and leaves with a
+verdict, its evidence, and a reply the reviewer can argue with.
 
-**This skill changes nothing.** No edits, no commits, no comments
-posted, no threads resolved. Its entire output is a ledger and a
-recommendation; acting on it is the `respond-action` skill's job.
+This skill changes nothing: no edits, commits, posted comments, or
+resolved threads. Acting on the ledger is the `respond-action` skill's job.
+
+Paths under `../../scripts/` resolve from this skill's directory: print the absolute path once and write it literally in each command, since shell variables do not persist between Bash calls.
 
 ## `$ARGUMENTS` contract
 
@@ -93,7 +92,9 @@ with no readable code. Never name local absolute paths or temp files.
 2. `## Ledger` — one entry per finding: id, source (author, and whether
    it is a bot), the claim quoted, location, the gate results with
    their evidence, and the verdict with its reason. Merged duplicates
-   list all their sources on one entry.
+   list all their sources on one entry. When the code is unreadable,
+   every finding is an `ask` entry here, never under
+   `## Deferred & declined`.
 3. `## To fix` — the accepted findings in the order they should land,
    each with the minimal fix and whether it wants a forward commit or a
    `fixup!`. Name a `fixup!` target only when the branch's log shows
@@ -103,14 +104,26 @@ with no readable code. Never name local absolute paths or temp files.
    scenario needs, so a reviewer who knows a caller that produces it
    can say so.
 5. `## Ledger key` — branch, `HEAD` SHA, and the feedback digest, as
-   the rubric's ledger section defines them. the `respond-action` skill checks
+   the rubric's ledger section defines them. A second bullet says
+   provenance may be stale when the remote has moved.
+ the `respond-action` skill checks
    this key to know the screening still describes the current tree.
 6. End with an `ask-user-choice` panel: run the `respond-action` skill on the
    accepted findings, run it with `--reply` so the drafted replies get
-   posted too, re-screen with the deferred findings opted in, or stop.
+   posted too (both omitted when `## To fix` is empty), re-screen with the deferred findings opted in, or stop.
    In a non-interactive run (CI, subagent), list the panel's options as
    plain numbered lines after `## Ledger key`, with no heading, and stop.
    Invoked by the `respond-goal` skill, skip the panel.
+
+Compute the digest from one `<source>` TAB `<claim>` line per finding,
+as collected. A quoted heredoc needs no escaping:
+
+```bash
+python3 references/ledger_key.py <<'EOF'
+alex	first claim
+lint-bot	second claim
+EOF
+```
 
 Reply in this shape, as plain text outside any code fence, with plain bullets, no bold (never `- **Label:** ...`), and no local paths:
 
@@ -144,12 +157,35 @@ Reply in this shape, as plain text outside any code fence, with plain bullets, n
 4. Stop
 ```
 
+A `## Deferred & declined` entry holds the follow-up or the drafted
+reply and nothing else: no speculation about how the fix should look.
+
 A stopped run (no findings to screen, no readable feedback) reports one
 result sentence, then what the user needs to provide.
 
-When the code is not readable, each ledger entry is `ask` with one
-line saying what is missing. Add no hypothetical, no "if X then fix"
-branch, and no claim about code you have not read.
+When the code is not readable, the reply is the hero line, `## Ledger`
+with one `ask` entry per finding, and `## Ledger key`. Each entry says
+what is missing in one line. Add no hypothetical, no "if X then fix"
+branch, no claim about code you have not read, and no extra heading.
+Reply in this shape, with the same plain bullets:
+
+```text
+0 to fix, 0 deferred, 0 declined, 4 ask on main. Screened 4 pasted comments; no code is available.
+
+## Ledger
+
+- #1 alex: "parse_retry_after throws on a non-numeric header". Verdict ask: code not available; need the file that defines parse_retry_after.
+- #2 lint-bot and alex: "session.token is read before the None check". Verdict ask: code not available; need the function that reads session.token.
+- #3 style-bot: "split this 45-line function". Verdict ask: code not available; need the function and the branch diff.
+- #4 alex: "recieved should be received in the log message". Verdict ask: code not available; need the file with the log line.
+
+## Ledger key
+
+- Branch main, HEAD none, digest 1f12e2f93174.
+
+1. Run this from the pull request's checkout, or paste the code
+2. Stop
+```
 
 If a fix seems obvious enough to just do, write it in `## To fix` and
 hand off.

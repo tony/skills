@@ -33,7 +33,7 @@ graders:
   - name: backs-up-the-body
     type: tool_used
     tool: Bash
-    input_match: 'pr-backups'
+    input_match: 'pr_backup\.py save|pr-backups'
 
   - name: never-edits-without-approval
     type: tool_used

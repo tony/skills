@@ -1,0 +1,64 @@
+"""Tests for pr_backup.py with ``gh`` replaced by a stub on PATH."""
+
+# ruff: noqa: S101, INP001, S603, S607
+# pyright: reportAny=false, reportUnusedCallResult=false
+from __future__ import annotations
+
+import json
+import os
+import subprocess
+import sys
+from pathlib import Path
+
+import pytest
+
+SCRIPT = Path(__file__).with_name("pr_backup.py")
+BODY = "## Summary\n\n- Add a parser\nline with trailing space \n\n"
+
+
+@pytest.fixture
+def repo(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
+    """Build a git repo whose PATH holds a gh stub that prints ``stub.json``."""
+    work = tmp_path / "work"
+    work.mkdir()
+    subprocess.run(["git", "init", "-q"], cwd=work, check=True)
+    stub_bin = tmp_path / "bin"
+    stub_bin.mkdir()
+    gh = stub_bin / "gh"
+    gh.write_text(f"#!/bin/sh\ncat '{tmp_path}/stub.json'\n")
+    gh.chmod(0o755)
+    monkeypatch.setenv("PATH", f"{stub_bin}{os.pathsep}{os.environ['PATH']}")
+    (tmp_path / "stub.json").write_text(json.dumps({"number": 17, "title": "Add it", "body": BODY}))
+    return work
+
+
+def _run(repo: Path, *args: str) -> subprocess.CompletedProcess[str]:
+    return subprocess.run(
+        [sys.executable, "-I", str(SCRIPT), *args],
+        cwd=repo,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+
+def test_save_writes_verbatim_body(repo: Path) -> None:
+    """The backup keeps the body byte for byte and prints its directory."""
+    done = _run(repo, "save", "17")
+    assert done.returncode == 0, done.stderr
+    out = repo / done.stdout.strip()
+    assert (out / "body.md").read_text(newline="") == BODY
+    assert (out / "title.txt").read_text() == "Add it"
+    assert out.name.endswith("-pr17")
+
+
+def test_check_detects_edit_since_backup(repo: Path) -> None:
+    """Check passes on an unchanged body and fails once the body differs."""
+    out = str(repo / _run(repo, "save", "17").stdout.strip())
+    assert _run(repo, "check", out).returncode == 0
+    (repo.parent / "stub.json").write_text(
+        json.dumps({"number": 17, "title": "Add it", "body": BODY + "edited"})
+    )
+    done = _run(repo, "check", out)
+    assert done.returncode == 1
+    assert "changed" in done.stderr

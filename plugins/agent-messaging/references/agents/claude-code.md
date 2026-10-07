@@ -53,15 +53,15 @@ The model calls `SendMessage` with a `ListAgents` name. The receiver gets a stru
 ### claude-code-socket (receive from any same-UID process; send through a shell)
 
 Resolve the target's inbox path from its `messagingSocketPath` (Discovery above), then send
-the exact line the plan showed as one newline-delimited JSON user frame. No auth line is
-needed on Linux; native Windows requires `{"type":"auth","token":"..."}` first
-`(unverified — from docs)`. Run `relay.sh` by the absolute path resolved in `SKILL.md`:
+the line composed in SKILL.md step 4 and approved in step 5, verbatim, as one
+newline-delimited JSON user frame. No auth line is needed on Linux; native Windows
+requires `{"type":"auth","token":"..."}` first `(unverified — from docs)`. Run `relay.sh` by the absolute path resolved in `SKILL.md`:
 
 ```bash
 /path/to/relay.sh socket-send \
     --socket "$(jq -r .messagingSocketPath "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/sessions/<pid>.json")" \
     --line - <<'RELAY'
-[relay/1 from=planner:claude-code@<address> to=<role> id=<id> hop=0 want=none] <body>
+<the exact line from step 4>
 RELAY
 ```
 
@@ -163,9 +163,7 @@ all transports.
   the exact payload renders, and recheck activity before Enter. A visible empty composer is
   not sufficient.
 - Busy receiver: Enter queues input; it appears at a later tool boundary.
-- Reserved prefixes: `/`, `!`, `#`, and `@` open UI modes. The relay envelope begins with
-  `[`, which is safe.
-- Send one line of at most 800 characters.
+- Reserved prefixes and the length cap: SKILL.md step 4.
 
 ## 9. Environment
 

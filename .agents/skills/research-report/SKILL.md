@@ -4,7 +4,7 @@ description: >-
   Write a topic's report: the answer and summary first, findings next, then
   method, exhibits, and sources
 disable-model-invocation: true
-allowed-tools: ["Skill", "Bash", "Read", "Write", "Edit", "Grep", "Glob"]
+allowed-tools: ["Bash", "Read", "Write", "Edit", "Grep", "Glob"]
 metadata:
   argument-hint: "[topic or run directory] [--audience=private|internal|public]"
   source: "plugins/research/skills/report/SKILL.md"
@@ -12,7 +12,7 @@ metadata:
 
 # this skill
 
-Invoke the `research-foray` skill with `report` followed by the user arguments, and follow it.
+Read the `research-foray` skill and follow it, treating `report` as the first word of the arguments.
 
 User arguments: $ARGUMENTS
 

@@ -17,7 +17,7 @@ whatever the user names) from whatever each repository pins to its
 current version, with one commit per repository explaining the upgrade.
 
 Read `references/action-pinning.md` first, then
-`references/dependabot-closeout.md`. For a feature-branch checkout,
+`references/dependabot-closeout.md`. For a feature-branch checkout or one with uncommitted work,
 land the commit through `references/throwaway-worktree.md`.
 
 User arguments: $ARGUMENTS
@@ -58,11 +58,13 @@ actual workflows, per the gates section of the pinning reference.
 
 ### 5. Present the plan and wait
 
+Enter plan mode before the first edit. In Claude Code call `EnterPlanMode`; in Cursor, Codex, or Gemini use `/plan` or `Shift+Tab`. Where plan mode is unavailable, present the plan as text.
+
 Show the target and its tag evidence, the pin shape per repository, the
 breaking changes and which repositories they reach, and how many commits
 this produces. List the dependabot PRs for this action that step 7 will
 close (destructive): repo, number, title, and the commit each maps to.
-Wait for approval before writing. A headless run stops here and writes
+Wait for approval, then exit plan mode before writing. A headless run stops here and writes
 nothing, unless the request explicitly authorizes the action named; that
 never covers closing PRs.
 
@@ -76,8 +78,8 @@ span. Never cite a dependabot pull request. No `Co-Authored-By`, no
 "Generated with" or other tool trailer, no emoji.
 
 Commit locally; push only with `--push`, and otherwise report the local
-branch holding the commit and print its push command. With `--pr`, branch, push, and open a pull request
-instead of committing to the default branch.
+branch holding the commit and print its push command. With `--pr`, branch,
+push, and open a pull request instead of committing to the default branch.
 
 ### 7. Verify and close out
 
@@ -124,7 +126,7 @@ Reply in this shape, as plain text outside any code fence, with plain bullets, n
 
 ## Upgrade
 
-- v6 renames the <input> input; this repo does not set it.
+- v6 renames the cache-glob input to cache-dependency-glob; this repo does not set it.
 
 ## Commits
 

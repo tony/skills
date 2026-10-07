@@ -658,7 +658,11 @@ def test_judge_parse_rejects_bad_totals_and_unknown_winner() -> None:
     good = judge_text("a", {"a": {"Q": 9, "C": 8}, "b": {"Q": 5, "C": 5}})
     assert engine.parse_judge(good)["winner_score"] == 17
     bad = good.replace("| 17 | 10 |", "| 18 | 10 |")
-    assert "total for a is not the sum" in engine.parse_judge(bad)["errors"][0]
+    slip = engine.parse_judge(bad)
+    assert slip["ok"] is True
+    assert slip["totals"]["a"] == 17
+    assert slip["winner_score"] == 17
+    assert "recomputed as 17" in slip["warnings"][0]
     assert not engine.parse_judge(good.replace("**a** with", "**z** with"))["ok"]
     assert not engine.parse_judge(good.replace("| 9 |", "| 11 |"))["ok"]
 
@@ -756,9 +760,38 @@ def test_failed_stash_pop_keeps_the_stash_and_never_advises_dropping_it(repo: Pa
     assert doc["stash_sha"] == sha
     assert engine.stash_entry(str(repo), sha) is not None
     assert "drop" not in json.dumps(doc)
-    sh(repo, "git", "checkout", "--", "a.txt")
-    sh(repo, "git", "stash", "apply", doc["stash_sha"])
+    assert doc["overlap"] == ["a.txt"]
+    for cmd in doc["recover"]:
+        sh(repo, *cmd.split())
     assert (repo / "a.txt").read_text() == "user edit\n"
+    assert "synthesis" in sh(repo, "git", "stash", "list")
+    assert engine.stash_entry(str(repo), sha) is not None
+
+
+def test_adopt_then_restore_leaves_synthesis_and_user_changes_before_any_panel(
+    repo: Path,
+) -> None:
+    (repo / "b.txt").write_text("user edit\n")
+    (repo / "u.txt").write_text("user untracked\n")
+    sdir = Path(init(command="execute", mutating=True)["session_dir"])
+    engine.create_worktrees(sdir, ["maintainer"])
+    wt = Path(engine.load_session(sdir)["worktrees"]["maintainer"]["path"])
+    (wt / "sub" / "new.py").write_text("x = 1\n")
+    engine.capture_tree(sdir, 1, "maintainer", None)
+    engine.adopt_files(sdir, 1, [], [], whole="maintainer")
+    engine.remove_worktrees(sdir, None)
+    assert engine.restore_stash(sdir)["restored"] is True
+    assert (repo / "sub" / "new.py").read_text() == "x = 1\n"
+    assert (repo / "b.txt").read_text() == "user edit\n"
+    assert (repo / "u.txt").exists()
+    assert sh(repo, "git", "stash", "list") == ""
+
+
+@pytest.mark.parametrize("skill", ["execute", "prompt", "architecture"])
+def test_write_skills_restore_the_stash_before_presenting_results(skill: str) -> None:
+    root = Path(__file__).resolve().parents[1]
+    text = (root / "skills" / skill / "SKILL.md").read_text(encoding="utf-8")
+    assert text.index("stash-restore") < text.index("present-results.md")
 
 
 def test_no_skill_or_reference_advises_stash_drop() -> None:
@@ -922,7 +955,7 @@ def test_judge_parse_accepts_decimals_and_a_missing_winner_section() -> None:
     assert doc["ok"], doc["errors"]
     assert doc["totals"] == {"claude": 17.5, "agy": 13.5}
     assert (doc["winner"], doc["winner_declared"], doc["winner_score"]) == ("claude", False, 17.5)
-    assert not engine.parse_judge(text.replace("17.5", "18.5"))["ok"]
+    assert engine.parse_judge(text.replace("17.5", "18.5"))["totals"]["claude"] == 17.5
 
 
 def test_judge_columns_normalize_role_suffixes_and_blind_labels(tmp_path: Path) -> None:

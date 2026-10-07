@@ -20,6 +20,23 @@ execution:
 runs: 3
 
 graders:
+  - name: report-written
+    type: file_exists
+    path: out/2026-06-30/business/lean-tighten/reports/leadership.md
+    exists: true
+
+  - name: report-carries-directional-tag
+    type: regex
+    target:
+      source: file
+      path: out/2026-06-30/business/lean-tighten/reports/leadership.md
+    pattern: 'DIRECTIONAL'
+
+  - name: reply-leads-with-hero-line
+    type: regex
+    target: last_message
+    pattern: '\A\s*(?:✓|⚠)'
+
   - name: no-currency-in-report
     type: regex
     target:

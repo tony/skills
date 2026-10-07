@@ -7,8 +7,8 @@ commands read this file before touching any PR.
 
 - Readiness gate
 - Rebase procedure
-- Merge commit message
 - Strategy and flag passthrough
+- Merge commit message
 - After each merge
 
 ## Readiness gate
@@ -57,37 +57,108 @@ same `--repo`, so the gate inspects the repo the merge will hit.
 
 When a PR is `BEHIND` or `DIRTY`, or an earlier merge in a multi-PR
 run has moved trunk. Consent differs by command on purpose:
-the `merge-pr-this` skill confirms before rebasing — a rebase expands "merge
-this PR" — while this skill's between-merge rebases are
-its disclosed core loop, covered by the roster shown up front.
+the `merge-pr-this` skill confirms before rebasing, because a rebase expands "merge
+this PR"; this skill's between-merge rebases are its disclosed
+core loop, covered by the roster shown up front.
 
-1. Record the branch's diff against its base before touching it
-   (`git diff <base>...<branch>`, kept for step 4). Check that the working
-   tree is clean (`git status --porcelain` prints
+1. Check that the working tree is clean (`git status --porcelain` prints
    nothing); if not, halt and ask the user to commit or stash. Note the
    current branch (`git branch --show-current`) so it can be restored.
    A fork PR (`gh pr view <n> --json isCrossRepository,maintainerCanModify`)
    with `maintainerCanModify` false cannot be pushed to: halt and say the
    author must rebase.
-2. Check out the PR branch (`gh pr checkout <n>`), fetch, then
-   rebase it onto its current base. For a stacked PR whose parent
-   just merged, drop the parent's commits with
-   `git rebase --onto <base> <old-parent-head> <branch>`.
-3. Resolve conflicts. Mechanical resolutions (context drift, adjacent
+2. Check out the PR branch and fetch its base:
+
+   ```console
+   $ gh pr checkout <n>
+   ```
+
+   ```console
+   $ git fetch origin <base>
+   ```
+
+   Then record the branch's per-commit patch fingerprints. `-U0` drops
+   context lines, so a moved base does not change them:
+
+   ```console
+   $ git rev-list --reverse origin/<base>..HEAD | git diff-tree --stdin -p -U0 | git patch-id --stable | cut -d' ' -f1
+   ```
+
+   For a stacked child, use `<parent's recorded headRefOid>..HEAD` as the
+   range. Keep the printed lines for step 5.
+3. Rebase onto the current base: `git rebase origin/<base>`. For a stacked
+   PR whose parent just merged, drop the parent's commits with
+   `git rebase --onto origin/<trunk> <parent's recorded headRefOid> <branch>`.
+4. Resolve conflicts. Mechanical resolutions (context drift, adjacent
    hunks, a list both sides appended to) are resolved directly. A
    conflict that forces a choice between two competing behaviors is
-   presented to the user via `ask-user-choice` — never silently pick
-   a side; without a question tool, halt and list the conflicting files.
-4. Verify the rebase changed history, not content: compare the
-   diff recorded in step 1 with the same three-dot diff after the rebase
-   (`git range-diff` also works). Unexpected content
-   drift halts the run.
-5. If conflicts were resolved, run the project's fast quality gates
-   — format, lint, typecheck, scoped tests, discovered from its
-   AGENTS.md/CLAUDE.md — and fix failures before pushing.
-6. Force-push the PR branch, and only that branch, with
-   `git push --force-with-lease --force-if-includes` — never bare `--force`.
-7. Wait for CI on the rebased head: `gh pr checks <n> --watch`.
+   presented to the user via `ask-user-choice`; never silently pick
+   a side. Without a question tool, halt and list the conflicting files.
+5. Verify the rebase changed history, not content: rerun the step 2
+   fingerprint command with the range `origin/<trunk>..HEAD` and compare
+   line by line with the recorded output. Commits that touched a file
+   resolved in step 4 may differ; any other mismatch, or a different
+   number of commits, halts the run. Do not compare raw `git diff
+   base...branch` output: a moved base shifts offsets and context on a
+   clean rebase.
+6. If conflicts were resolved, run the project's fast quality gates
+   (format, lint, typecheck, scoped tests, discovered from its
+   AGENTS.md/CLAUDE.md) and fix failures before pushing.
+7. Force-push the PR branch, and only that branch, with
+   `git push --force-with-lease --force-if-includes`, never bare `--force`.
+8. Wait for CI on the rebased head: `gh pr checks <n> --watch`.
+
+## Strategy and flag passthrough
+
+Pin the merge to the head that was verified: after the final CI wait, read
+`gh pr view <n> --json headRefOid` and pass `--match-head-commit <sha>`,
+unless the user supplied their own. A push after the checks passed then
+fails the merge instead of landing unreviewed commits; on that failure,
+re-run the gate.
+
+The default strategy is a merge commit (`--merge`). `--squash` and
+`--rebase` override it. Check the repo allows the chosen method:
+
+```console
+$ gh repo view --json mergeCommitAllowed,squashMergeAllowed,rebaseMergeAllowed
+```
+
+Run this check before composing a commit message, so a disallowed method
+skips the message work.
+
+When the default is disallowed and the user named no strategy, ask which
+allowed method to use; without a question tool, halt and list the allowed
+methods. A strategy the user named that the repo disallows halts.
+
+Every other `gh pr merge` flag the user supplies passes through verbatim:
+`--delete-branch` (except on a stack parent, below), `--admin`, `--match-head-commit`, `--author-email`,
+`--body-file`, `--repo`, and the rest of `gh pr merge --help`. Do not
+translate or second-guess them. `--auto` queues the merge instead of
+performing it: see "After each merge".
+
+### Stack parents
+
+Never pass `--delete-branch` when merging a PR that another PR in the run
+is based on: deleting the head branch closes the child PR before it is
+retargeted. Drop the flag from that merge and say so in the report. Pass it
+on the last PR of the stack if the user asked for it.
+
+### `--admin` policy
+
+`--admin` bypasses branch protection, nothing more. It is acceptable
+when CI is otherwise passing and the only blocker is a protection
+rule (for example a required-review rule on a solo repo). It is never
+used to merge over failing or pending checks, over a critical error
+found during discovery, or over anything that violates the repo's
+AGENTS.md/CLAUDE.md. If the user did not pass `--admin` and it turns
+out to be needed, ask before using it; without a question tool, halt and
+report that `--admin` needs the user's approval and that it was not used.
+
+`--admin` yields to AGENTS.md because it overrides a control the
+repository set for everyone, not because repo rules outrank flags in
+general. A flag that authorizes a step the user would otherwise run by
+hand, such as a release command's tag and push flags, is the user's
+decision and stands.
 
 ## Merge commit message
 
@@ -132,48 +203,6 @@ lands "in vX.Y", edit CHANGES/CHANGELOG files, tag, or otherwise
 tread into release territory. Describe what the branch ships and
 stop there.
 
-## Strategy and flag passthrough
-
-Pin the merge to the head that was verified: after the final CI wait, read
-`gh pr view <n> --json headRefOid` and pass `--match-head-commit <sha>`,
-unless the user supplied their own. A push after the checks passed then
-fails the merge instead of landing unreviewed commits; on that failure,
-re-run the gate.
-
-The default strategy is a merge commit (`--merge`). `--squash` and
-`--rebase` override it. Check the repo allows the chosen method:
-
-```console
-$ gh repo view --json mergeCommitAllowed,squashMergeAllowed,rebaseMergeAllowed
-```
-
-When the default is disallowed and the user named no strategy, ask which
-allowed method to use; without a question tool, halt and list the allowed
-methods. A strategy the user named that the repo disallows halts.
-
-Every other `gh pr merge` flag the user supplies passes through verbatim:
-`--delete-branch`, `--admin`, `--match-head-commit`, `--author-email`,
-`--body-file`, `--repo`, and the rest of `gh pr merge --help`. Do not
-translate or second-guess them. `--auto` queues the merge instead of
-performing it: see "After each merge".
-
-### `--admin` policy
-
-`--admin` bypasses branch protection, nothing more. It is acceptable
-when CI is otherwise passing and the only blocker is a protection
-rule (for example a required-review rule on a solo repo). It is never
-used to merge over failing or pending checks, over a critical error
-found during discovery, or over anything that violates the repo's
-AGENTS.md/CLAUDE.md. If the user did not pass `--admin` and it turns
-out to be needed, ask before using it; without a question tool, halt and
-report that `--admin` needs the user's approval and that it was not used.
-
-`--admin` yields to AGENTS.md because it overrides a control the
-repository set for everyone, not because repo rules outrank flags in
-general. A flag that authorizes a step the user would otherwise run by
-hand, such as a release command's tag and push flags, is the user's
-decision and stands.
-
 ## After each merge
 
 1. Confirm the merge landed and capture its commit:
@@ -185,11 +214,21 @@ decision and stands.
    Report `mergeCommit.oid` (shortened) and the PR URL. With `--auto`, the
    state stays `OPEN`: report "queued", skip the sync, and halt a multi-PR
    run, because the next PR cannot be rebased over an unmerged parent.
-2. If the working tree is dirty, skip the sync and say so. Otherwise
-   `git checkout <trunk>` and `git pull --ff-only` so the local trunk matches
-   what was just merged. If the user started on a different branch that
-   was not the merged PR's, return to it afterward.
-3. Report and stand by — never chain into tagging, releasing, or
+2. If the working tree is dirty, or trunk is checked out in another
+   worktree, skip the sync and say so. Otherwise `git checkout <trunk>` and
+   `git pull --ff-only origin <trunk>` (a trunk with no upstream makes a bare
+   `git pull` fail) so the local trunk matches what was just merged. If the
+   user started on a different branch that was not the merged PR's, return
+   to it afterward.
+3. Verify trunk contains the merge commit:
+
+   ```console
+   $ git merge-base --is-ancestor <mergeCommit.oid> HEAD
+   ```
+
+   A nonzero exit is a finding: report that local trunk does not contain
+   the merge commit, with the commit and trunk short SHAs. State no cause.
+4. Report and stand by — never chain into tagging, releasing, or
    deploying.
 
 The merge itself always goes through `gh pr merge`, never a local

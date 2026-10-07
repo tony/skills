@@ -10,7 +10,7 @@ argument-hint: "[skill paths/globs] [--audit] [--diff-only]"
 One bar: a line stays only when its removal would change what the
 agent does.
 
-Paths under `../../scripts/` resolve from this skill's directory: print the absolute path once and write it literally in each command, since shell variables do not persist between Bash calls.
+Paths under `../../scripts/` resolve from this skill's directory as the host reports it, else from `git rev-parse --show-toplevel` plus the plugin path. Print the resolved absolute path once and write it literally in each command; shell variables do not persist between Bash calls.
 
 ## Two ways in
 
@@ -21,7 +21,7 @@ that draft as it is written. Touch no other file, propose no sweep of
 the rest of the catalog.
 
 A draft pasted inline has no file: skip the confirmation and git, and
-reply with the ledger and the diff of the paste (Steps, inline draft).
+reply with the ledger and the diff of the paste (step 6).
 
 ### Invoked by name with targets
 
@@ -110,16 +110,13 @@ it, in the literal words a user would type.
 
 - `name`: lowercase letters, numbers, hyphens; 64 characters or fewer.
   `helper`, `utils`, and `tools` name nothing.
-- `description`: 150 characters or fewer is this library's limit;
-  use the project's own when its AGENTS.md sets one. Front-load the
-  trigger. Never `I can help you…` or `You can use this to…`.
+- `description`: front-load the trigger. Never `I can help you…` or
+  `You can use this to…`. The length limit is a house rule below.
 - `argument-hint` is required when the body consumes `$ARGUMENTS`. Add
   no field the body does not consume.
 - `allowed-tools` pre-approves, so list only tools a step uses, by
   bare name. Drop `WebFetch` and `WebSearch` unless a step fetches,
   and never pre-approve them on a skill that reads untrusted input.
-- House rule: set `disable-model-invocation: true` when the skill only
-  makes sense asked for by name, so it stays out of the routing corpus.
 
 ## Library standards
 
@@ -132,9 +129,10 @@ These hold on the named hosts wherever the skill is installed.
 
 - Context expansion: a `!` placed inside the backquotes, ahead of
   the command, never expands. A `!` directly before the opening
-  backquote expands on Claude Code, but a failing or ungranted command
-  empties the whole skill; Codex expands neither. Rewrite either form as a numbered step that names what it
-  gathers and what a failure means.
+  backquote expands on Claude Code, but a failing or ungranted
+  command empties the whole skill; Codex expands neither. Rewrite
+  either form as a numbered step that names what it gathers and what
+  a failure means.
 - `${CLAUDE_PLUGIN_ROOT}` is not substituted by Codex. Address bundled
   files by climbing out of the skill directory.
 - A hardcoded command that only fits one ecosystem (a named test runner
@@ -150,7 +148,8 @@ These are this marketplace's limits. Apply them only when the project's
 
 - A link or read that leaves the plugin, or a reference that sends the
   reader on to another reference.
-- A description over 150 characters.
+- A description over 150 characters, or over the project's own limit
+  when its `AGENTS.md` sets one.
 - A workflow skill that only makes sense asked for by name and lacks
   `disable-model-invocation: true`.
 - A report-writing skill with no declared output shape, including the
@@ -183,8 +182,9 @@ These are this marketplace's limits. Apply them only when the project's
    `--diff-only`. Without `AskUserQuestion`, edit only when the
    request explicitly authorizes it ("apply", "go ahead", "edit in
    place"); otherwise behave as `--diff-only`.
-6. **Snapshot, edit, diff.** Skip under `--audit`. The script paths are
-   relative to this file. Before any edit, snapshot every target; the
+6. **Snapshot, edit, diff.** Skip under `--audit`. When the user
+   forbids running commands, skip the script: edit a copy in your head,
+   write the diff by hand, and say so in one clause. Before any edit, snapshot every target; the
    first output line is the snapshot directory and each later line is a
    work copy and the label for it. The snapshot is what the diff
    compares against, so earlier uncommitted edits to a target never
@@ -214,20 +214,27 @@ These are this marketplace's limits. Apply them only when the project's
    $ ../../scripts/skill_diff.py clean <snapshot-dir>
    ```
 
-   - Inline draft: run `mktemp -d "${TMPDIR:-/tmp}/skill-style.XXXXXX"`,
-     write the pasted text to `SKILL.md` inside the directory it
-     printed, snapshot that file, edit its work copy, diff with
-     `--work`, and clean up. No confirmation, no git. The diff labels it
-     `SKILL.md`.
+   - Inline draft: pipe the pasted text to `snapshot --stdin`, edit
+     the work copy it prints, diff with `--work`, then clean. No
+     confirmation, no git. The diff labels it `SKILL.md`.
+
+     ```console
+     $ ../../scripts/skill_diff.py snapshot --stdin
+     ```
+
+   - A `diff` that exits 2 means a target vanished after the snapshot:
+     stop and name the file.
 
 ## Output
 
 Write it per `../../references/prose-rules.md`. No coded labels, no
 bold lead-in on every bullet, no tables, no recap ending, no counts
-of lines removed, no local or temp paths.
+of lines removed, no local or temp paths, no narration of which tools
+or scripts ran (bar the hand-written-diff clause), no commentary past the cut.
 
-1. One hero line: the result, in exactly one sentence, with no second
-   sentence about what survives. Anything more goes in the Ledger.
+1. One hero line: the result, in one sentence of about 20 words or
+   fewer, claiming nothing the Behavior changes do not show. Anything
+   more goes in the Ledger.
 2. `## Ledger`: one bullet per cut, quoting the line and why nothing
    breaks, then the library-standards defects and any command flaw
    reported once and left as written.

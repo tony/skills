@@ -26,6 +26,8 @@ until the gate passes:
 
 User arguments: $ARGUMENTS
 
+Paths under `../../scripts/` resolve from this skill's directory: print the absolute path once and write it literally in each command, since shell variables do not persist between Bash calls.
+
 ## Procedure
 
 ### 1. Locate the run and pass the gate
@@ -37,16 +39,16 @@ Per `interim-format.md` § Rendering a report.
 Write `<run>/reports/case-study-internal.md` as a narrative in this
 fixed order:
 
-1. **Situation**: the team, the recurring task, why it cost enough
+1. Situation: the team, the recurring task, why it cost enough
    to act on.
-2. **What was built**: the skill or workflow, its build time
+2. What was built: the skill or workflow, its build time
    (tagged), and who maintains it.
-3. **Measured outcomes**: every figure tagged, denominator stated,
+3. Measured outcomes: every figure tagged, denominator stated,
    window pinned. Include the costs: verification time, failed
    runs, maintenance.
-4. **Lessons**: what worked, what did not, what the team would do
+4. Lessons: what worked, what did not, what the team would do
    differently.
-5. **How other teams can replicate**: prerequisites, the expected
+5. How other teams can replicate: prerequisites, the expected
    ramp (and the excluded novelty window), and where results are
    likely to differ.
 

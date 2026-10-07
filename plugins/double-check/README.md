@@ -1,7 +1,8 @@
 # double-check
 
 Forces verification requests to return re-derived answers instead of diffs
-against prior turns. Includes an alignment tool for repairing chats.
+against prior turns. Includes `align`, which repairs chats that already
+hold a revision log.
 
 ## Installation
 
@@ -33,10 +34,10 @@ Claude Code uses a leading slash (`/double-check:…`). Codex omits it (`double-
 
 ## Components
 
-- **`double-check` (skill):** Triggers when asked to double-check,
+- `double-check` skill: triggers when asked to double-check,
   verify, or "are you sure". The agent re-derives answers directly from
   source artifacts, avoiding revision logs or inherited numbering.
-- **`/double-check:align` (skill):** Recovers conversations where
+- `/double-check:align` skill: recovers conversations where
   diff-shaped answers already landed. Restates the best analysis rebuilt
   from source without referencing earlier responses. Can re-anchor on a
   narrower question.
@@ -48,7 +49,7 @@ Both components enforce `references/verification-contract.md`:
 - The deliverable is a re-derived answer, not a delta.
 - The baseline is the source material, not the transcript.
 - Confidence belongs to the claim, never the revision.
-- **Exception:** Explicit corrections are stated once if you acted on a
+- Exception: explicit corrections are stated once if you acted on a
   prior claim.
 
 Beyond pasting the contract into your own rules file, the plugin adds

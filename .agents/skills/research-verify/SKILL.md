@@ -4,7 +4,7 @@ description: >-
   Re-check a topic's sources (vanished, moved, changed, misquoted), look for
   missed sources, and lint the report
 disable-model-invocation: true
-allowed-tools: ["Skill", "Bash", "Read", "Write", "Edit", "Grep", "Glob", "WebSearch", "AskUserQuestion"]
+allowed-tools: ["Bash", "Read", "Edit", "Grep", "Glob", "AskUserQuestion"]
 metadata:
   argument-hint: "[topic or run directory] [--offline]"
   source: "plugins/research/skills/verify/SKILL.md"
@@ -12,7 +12,7 @@ metadata:
 
 # this skill
 
-Invoke the `research-foray` skill with `verify` followed by the user arguments, and follow it.
+Read the `research-foray` skill and follow it, treating `verify` as the first word of the arguments.
 
 User arguments: $ARGUMENTS
 

@@ -23,7 +23,7 @@ skill uses. To move a provider, use the `terraform-bump-provider` skill.
 
 User arguments: $ARGUMENTS
 
-Paths under `../../scripts/` resolve from this skill's directory: print the absolute path once and write it literally in each command, since shell variables do not persist between Bash calls.
+`references/lockctl.py` resolves from this skill's directory: print its absolute path once and write that path literally in each command, since shell variables do not persist between Bash calls.
 
 ## Procedure
 
@@ -31,13 +31,15 @@ Paths under `../../scripts/` resolve from this skill's directory: print the abso
 
 Find the installed CLI version with `terraform -version` or
 `tofu -version`, whichever exists. If the user named a version, confirm
-it is published. Otherwise list the latest stable releases:
+it with the by-key command in `references/pin-sites.md`. Otherwise list the latest stable releases:
 
 ```console
 $ curl -fsS https://releases.hashicorp.com/terraform/index.json \
     | jq -r '.versions | keys_unsorted[]' \
     | python3 references/lockctl.py stable 3
 ```
+
+The fence shows the `../../scripts/` form; write the absolute path.
 
 When `tofu` drives the repository, list OpenTofu's releases with the
 command in `references/pin-sites.md`. Present the latest stable
@@ -89,7 +91,9 @@ each root module that has a committed, unmodified lock, as a separate
 commit if the lock changes (a CLI bump can change the lock file's own
 format). Use plain `init` per the lock reference, never `-upgrade`: a CLI
 bump moves no provider, so any version change in `lockctl.py state`
-means restore the lock from git and report it. A root module with no
+means restore the lock from git and report it. A lock whose platform
+count dropped is restored the same way and never committed without the
+user's explicit yes (headless: restore it, leave it out, and stop). A root module with no
 committed lock is skipped and reported: `init` there would create a lock
 and pick providers. Run it only after the user approves that outcome.
 With `--no-commit`, leave the working tree alone and say what would have
@@ -109,9 +113,9 @@ Open with a one-line hero (`✓ terraform <old> -> <new> across N pin
 sites` or `Audit only: N sites disagree`), then these sections in
 order:
 
-1. `## Target`: the resolved version, how it was confirmed, the
-   version installed locally, and the changelog link (or that none
-   was confirmed).
+1. `## Target`: the resolved version, how it was confirmed (registry
+   or "confirmed by you"), the version installed locally, and the
+   changelog link (or that none was confirmed).
 2. `## Layout`: root modules and child modules discovered, and which
    tool drives the repository.
 3. `## Sites`: a list of every pin found, inside the configuration and outside
@@ -121,7 +125,7 @@ order:
 5. `## Verification`: the gates run and their real results, including
    whether each root module now initialises.
 6. `## Drift`: every disagreement found before the bump, and every one
-   still outstanding after it.
+   still outstanding after it. Omit it when nothing disagreed.
 
 Reply in this shape, as plain text outside any code fence, with plain bullets, no bold (never `- **Label:** ...`), and no local paths:
 

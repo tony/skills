@@ -3,7 +3,7 @@ name: spike-ratchet
 description: >-
   Use when asked to spike, bake off, then spike again; rinse and repeat,
   keep spiking, converge on a design, and stop when nothing new fights back.
-allowed-tools: ["Bash", "Read", "Grep", "Glob", "Edit", "Write", "AskUserQuestion", "Task"]
+allowed-tools: ["Bash", "Read", "Grep", "Glob", "Edit", "Write", "AskUserQuestion", "Agent"]
 metadata:
   argument-hint: "[<goal>] [--rounds=<n>] [--replay]"
   source: "plugins/spike/skills/ratchet/SKILL.md"
@@ -43,11 +43,12 @@ stash, and the ledger is the base.
 
 ## The ledger
 
-One markdown file, written outside the working tree. Create and print
-the directory it lives in, and use the printed path literally afterwards:
+One markdown file, written outside the working tree. `spike.sh` (see
+the `spike-probe` skill, which says how its path resolves) creates and prints
+the directory it lives in; use the printed path literally afterwards:
 
-```sh
-d="$(git rev-parse --path-format=absolute --git-common-dir)/spike" && mkdir -p "$d" && echo "$d"
+```console
+$ spike.sh ledger-dir
 ```
 
 The ledger lives at `<that path>/<goal-slug>.md`. A ledger in the
@@ -90,7 +91,8 @@ ratchet: commit check, conventions files, the five gate buckets and CI
 split per `references/verification-gates.md`, and the dirty-tree
 halt. Every round starts from a clean tree, so offer only stash first or
 abort there (non-interactive default: abort); never "probe on top". The
-ratchet takes no `--branch`. Then:
+ratchet takes no `--branch`. The user-work SHA that stash first prints
+goes in the ledger and the report. Then:
 
 1. Resolve the ledger path and read it if it already exists.
 2. Confirm `git worktree` is usable, since any round may call a
@@ -123,7 +125,8 @@ Repeat until Phase 3 says stop. Each round:
 1. **Probe.** Read the `spike-probe` skill and follow its Phases 2 through 4
    against the goal as sharpened by the ledger's open questions. Probe's
    Phase 0 and brief already ran above; its plan and replay phases
-   belong to the ratchet's exit.
+   belong to the ratchet's exit, and so does restoring the user's
+   work: skip the restore in its Phase 4.
 2. **Branch on what fought back.** A stumbling block with two or more
    genuinely different resolutions calls for the `spike-bakeoff` skill: read
    the `spike-bakeoff` skill and follow its Phases 2 through 5 with those
@@ -145,13 +148,13 @@ ledger's locked decisions, not the code.
 
 ## Phase 3: Convergence test
 
-Stop when any of these holds, tested in this order (a repeats-only round
-satisfies more than one). Say which one in the report:
+Stop when any of these holds, tested in this order. Say which one in
+the report:
 
-- **Thrashing**: every stumbling block this round was already recorded
-  and decided earlier. More spiking cannot settle the question; stop and
-  surface it.
 - **Converged**: the round surfaced no stumbling block.
+- **Thrashing**: the round surfaced at least one stumbling block and
+  every one was already recorded and decided earlier. More spiking cannot
+  settle the question; stop and surface it.
 - **Capped**: `--rounds` is exhausted. Report the open questions
   plainly.
 
@@ -160,13 +163,18 @@ Otherwise start the next round from the ledger's open questions.
 ## Phase 4: Exit
 
 The surviving artifacts are the ledger and every round's stash SHA.
-Offer the two exits. Write any commit message per
+Restore the user's saved work first with
+`spike.sh restore <user-work sha>`, unless `--replay` runs, which
+restores it after its last item. A refused restore keeps the stash:
+report the SHA. Offer the two exits. Write any commit message per
 `references/prose-rules.md`, with no `Co-Authored-By`, no
 "Generated with" or other tool trailers, and no emoji:
 
-- **Clean rewrite**: write the final implementation from the ledger's
-  locked decisions, keeping the final stash as reference. Right when
-  the code carries the marks of abandoned rounds.
+- **Clean rewrite**: after approval, write the final implementation
+  from the ledger's locked decisions, keeping the final stash as
+  reference. Run the fast gates once. The result stays uncommitted and
+  `--replay` is not involved; committing it is the user's call. Right
+  when the code carries the marks of abandoned rounds.
 - **Landing plan**: a commit-by-commit plan for the final stash, built
   as Phase 5 of the `spike-probe` skill, landed under `--replay` as its
   Phase 6. Right when the last round's code is what the design wants.
@@ -196,7 +204,8 @@ Write the report per `references/prose-rules.md`.
 5. `## Stashes`: table: round, stash message, SHA, restore
    command. Every round appears (a round that changed nothing shows
    "no changes"), and so does every contender a round's bakeoff
-   stashed; those stashes outlive the ratchet.
+   stashed; those stashes outlive the ratchet. A run that saved the
+   user's work adds a row for it and says whether it was restored.
 6. `## Next`: the recommended exit, and the landing plan when one was
    produced.
 7. End with an `ask-user-choice` panel: rewrite from the ledger / land

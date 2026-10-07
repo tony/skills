@@ -1,7 +1,7 @@
 ---
 name: this
 description: Merge one PR via gh with a merge commit matching the repo's git history — readiness-gated, CI-watched, trunk synced after
-allowed-tools: ["Bash", "Read", "Grep", "Edit", "AskUserQuestion"]
+allowed-tools: ["Bash", "Read", "Edit", "AskUserQuestion"]
 argument-hint: "[PR number or URL] [--squash | --rebase | any other gh pr merge flag]"
 user-invocable: true
 disable-model-invocation: true
@@ -47,16 +47,17 @@ Without a question tool, halt instead of rebasing.
 
 ### 3. Compose the merge commit message
 
-Follow the reference's merge-commit-message section, which also says when
-to skip it (`--rebase`, or a message flag from the user). Write the message
-per `../../references/prose-rules.md`.
+Check the repo allows the strategy, per the reference's strategy section.
+Then follow its merge-commit-message section, which also says when to skip
+it (`--rebase`, or a message flag from the user). Write the message per
+`../../references/prose-rules.md`. The message carries no `Co-Authored-By`,
+no "Generated with" or other tool trailer, and no emoji.
 
 ### 4. Merge
 
-Pass the user's `gh pr merge` flags through verbatim. The strategy flag is
-`--merge` unless the user passed `--squash` or `--rebase`. Add
-`--match-head-commit <sha>` per the reference. Add `-t`/`-b` only under the
-reference's condition:
+Pass the user's `gh pr merge` flags through verbatim, with the strategy flag,
+`--match-head-commit <sha>`, and `-t`/`-b` as the reference's strategy and
+message sections say:
 
 ```console
 $ gh pr merge <n> <strategy flag> --match-head-commit <sha> -t "<subject>" -b "<body>"
@@ -66,22 +67,26 @@ Use `--admin` only within the reference's policy.
 
 ### 5. Sync trunk and stand by
 
-Sync trunk and confirm the merge, per the reference's "After each merge".
-Then stop. With `--auto` the merge is only queued: say so and skip the sync.
+Sync trunk and confirm the merge, per the reference's "After each merge",
+including its check that trunk contains the merge commit. Then stop. With `--auto` the merge is only queued: say so and skip the sync.
 
 ## Output
 
 Open with a one-line hero (`✓ Merged #N: <title>` or
 `⚠ Blocked: <reason>`), then exactly these sections. A run that stops before
 the merge gives the hero and one sentence on what the user must do; no
-headings, and no narration of what was not done.
+headings, and never a sentence saying what was not done ("nothing was
+merged", "I did not use --admin").
 
-1. `## Merge readiness` — the gate results, including anything that
+1. `## Merge readiness`: the gate results, including anything that
    required a rebase or a wait on CI.
-2. `## Merge` — strategy used, flags passed through, the merge commit
-   subject and short SHA, and the PR URL.
-3. `## Trunk` — the post-merge trunk state after checkout and pull, or
-   that the sync was skipped.
+2. `## Merge`: the strategy, the merge commit subject and short SHA, and
+   the PR URL. Name a flag only when the run dropped or added one the user
+   did not pass; never the head pin or the user's own flags.
+3. `## Trunk`: the post-merge trunk state and the result of the
+   contains-the-merge-commit check, or that the sync was skipped. Report a
+   mismatch as a fact with the short SHAs; give no cause and do not narrate
+   how the pull was run.
 
 Write the sections per `../../references/prose-rules.md`.
 
@@ -110,12 +115,12 @@ A stopped run:
 ```text
 ⚠ Blocked: #42 needs an approving review before branch protection allows the merge.
 
-Get the review, or tell me to use --admin; I did not use it.
+Get the review, or tell me to merge with --admin.
 ```
 
 End with an `AskUserQuestion` panel offering next steps (for example:
 cut a release from the merged trunk, merge another PR, delete the
-local branch, stop here) — skip the panel in plan mode. Without a question
+local branch, stop here); skip the panel in plan mode. Without a question
 tool, end after the sections: no `## Next steps` section.
 
 Offer the release only when the merged trunk is in a releasable state and

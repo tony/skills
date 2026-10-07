@@ -9,10 +9,11 @@ are the same anti-pattern.
 
 ## Detect command limits
 
-Each pattern's command is `python3 ../../scripts/detect.py <name> <path>`,
-run from this skill's directory; `<path>` is the target from
-`$ARGUMENTS`. It prints `path:line:text` for each hit and exits 1 when
-there is none. Needs `python3`. If it cannot run, use the `rg` fallback
+Each pattern's command is `python3 <absolute path to detect.py> <name> <path>`,
+run from the project root; `<path>` is the target from `$ARGUMENTS`,
+relative to the project. It prints `path:line:text` for each hit, exits
+1 when there is none, and exits 2 when a path does not exist. Needs
+`python3`. If it cannot run, use the `rg` fallback
 under the pattern.
 
 The commands are candidate finders, not proof. They search class tokens
@@ -58,7 +59,7 @@ skipped). It has no sibling logic; walk the DOM to see which margins
 compensate for a split.
 
 ```console
-$ python3 ../../scripts/detect.py \
+$ python3 <absolute path to detect.py> \
     margin \
     <path>
 ```
@@ -67,7 +68,7 @@ Fallback if the script cannot run (replace `.` with the target):
 
 ```console
 $ rg -n \
-    -e '(?:^|[\s"\x27\x60:])-?m[xesrl]-[0-9\[]' \
+    -e '(?:^|[\s"\x27\x60:!])-?m[xesrl]-(?:[0-9\[]|px\b)' \
     -g '*.{tsx,jsx,vue,svelte,astro,html,erb,blade.php}' \
     .
 ```
@@ -132,7 +133,7 @@ Detect: find parents with gap, then margins on their children. A file in
 both lists is a candidate:
 
 ```console
-$ python3 ../../scripts/detect.py \
+$ python3 <absolute path to detect.py> \
     gap \
     <path>
 ```
@@ -141,7 +142,7 @@ Fallback if the script cannot run (replace `.` with the target):
 
 ```console
 $ rg -n \
-    -e '(?:^|[\s"\x27\x60:])gap(?:-[xy])?-[0-9\[]' \
+    -e '(?:^|[\s"\x27\x60:!])gap(?:-[xy])?-(?:[0-9\[]|px\b)' \
     -g '*.{tsx,jsx,vue,svelte,astro,html,erb,blade.php}' \
     .
 ```
@@ -150,7 +151,7 @@ Then list margins, numeric and arbitrary values. `mx-auto` is skipped
 because it centers a block instead of spacing peers:
 
 ```console
-$ python3 ../../scripts/detect.py \
+$ python3 <absolute path to detect.py> \
     margin \
     <path>
 ```
@@ -159,7 +160,7 @@ Fallback if the script cannot run (replace `.` with the target):
 
 ```console
 $ rg -n \
-    -e '(?:^|[\s"\x27\x60:])-?m[xesrl]-[0-9\[]' \
+    -e '(?:^|[\s"\x27\x60:!])-?m[xesrl]-(?:[0-9\[]|px\b)' \
     -g '*.{tsx,jsx,vue,svelte,astro,html,erb,blade.php}' \
     .
 ```
@@ -215,7 +216,7 @@ elements with `=>` props. Component names outside the pattern
 (`IconButton` matches; `Action` does not) need a read of the file:
 
 ```console
-$ python3 ../../scripts/detect.py \
+$ python3 <absolute path to detect.py> \
     interactive \
     <path>
 ```
@@ -261,7 +262,7 @@ Detect: `w-` followed by a digit or `[`, at the start of a token, so
 `min-w-*` and `max-w-*` do not match:
 
 ```console
-$ python3 ../../scripts/detect.py \
+$ python3 <absolute path to detect.py> \
     width \
     <path>
 ```
@@ -306,7 +307,7 @@ one child. The command reads the first string inside `cn(...)` or
 `clsx(...)` too:
 
 ```console
-$ python3 ../../scripts/detect.py \
+$ python3 <absolute path to detect.py> \
     wrapper \
     <path>
 ```
@@ -391,7 +392,7 @@ Detect: both utilities in one string, in either order. The command also
 reads template literals and `cn()` strings that hold both:
 
 ```console
-$ python3 ../../scripts/detect.py \
+$ python3 <absolute path to detect.py> \
     space-gap \
     <path>
 ```
@@ -412,7 +413,7 @@ If the utilities sit in different arguments, such as
 space utility and read the surrounding call:
 
 ```console
-$ python3 ../../scripts/detect.py \
+$ python3 <absolute path to detect.py> \
     space \
     <path>
 ```
@@ -421,7 +422,7 @@ Fallback if the script cannot run (replace `.` with the target):
 
 ```console
 $ rg -n \
-    -e '(?:^|[\s"\x27\x60:])space-[xy]-[0-9\[]' \
+    -e '(?:^|[\s"\x27\x60:!])space-[xy]-(?:[0-9\[]|px\b)' \
     -g '*.{tsx,jsx,vue,svelte,astro,html,erb,blade.php}' \
     .
 ```
@@ -458,7 +459,7 @@ Flag it as a migration opportunity only when the file already uses
 
 For a spacing issue between items A and B:
 
-```
+```text
 Does the parent have both gap-* and space-*?
 +-- Yes --> Pattern 7. Remove space-*.
 +-- No --> Is A in a different container than B?

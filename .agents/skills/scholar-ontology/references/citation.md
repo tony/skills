@@ -39,19 +39,22 @@ $ curl -s -o /dev/null -w '%{http_code}\n' -L 'https://github.com/OWNER/REPO/blo
 ## Every citation carries a locator
 
 A citation names where in the source the claim lives, not just which source.
-Take the most stable locator the source supports, in this order:
+The source row's `locator_kind` says what the cite's `locator` holds, and is
+one of these four values in every stage. Take the most stable the source
+supports, in this order:
 
-1. Code or text in version control: a line range on a pinned ref, which
-   `verify` can check mechanically.
-2. Structured prose: chapter and section. It survives repagination and
-   translation.
-3. A book: a page, and only where `sources.jsonl` records the edition. A page
+1. `line-range`: code or text in version control, as a line range on a pinned
+   ref. `verify` checks it mechanically.
+2. `section`: structured prose, as chapter and section. It survives
+   repagination and translation.
+3. `page`: a book page, only where `sources.jsonl` records the edition. A page
    number without an edition is true of one printing only.
-4. A source with no stable anchor, such as a PDF without pagination or a
-   transcript: quote enough unique text to be found by search, and record in
-   `sources.jsonl` that the locator is a search string rather than a position,
-   so `verify` checks it by search. The kind is the source row's
-`locator_kind`; the cite's `locator` holds the position or the search string.
+4. `search-string`: a source with no stable anchor, such as a PDF without
+   pagination or a transcript. The `locator` is enough unique text to be found
+   by search, and `verify` checks it by search.
+
+A source with no remote has no permalink. Publish it first; otherwise cite it
+as `path@commit` with no `url`, and `verify` checks it with `git show`.
 
 Never invent a position the source does not have. A confident wrong locator
 costs a reader more than an honest search string.
@@ -62,6 +65,6 @@ A citation whose quoted text contains the term it supports proves nothing. It
 shows the corpus uses the word, which was never in question, and hides whether
 the corpus uses it the way the definition claims.
 
-`term-metrics.py` reports these as `circular evidence`. Replace the quotation
+`term_metrics.py` reports these as `circular evidence`. Replace the quotation
 with one that shows the term in use without naming it, or mark the term as
 resting on a definition the corpus states directly.

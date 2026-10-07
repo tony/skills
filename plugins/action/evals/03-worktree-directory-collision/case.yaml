@@ -34,8 +34,11 @@ graders:
     max: 0
     arm: both
 
-  - name: reports-the-block
-    type: regex
-    target: last_message
-    pattern: 'blocked|already exists|collision'
-    flags: i
+  - name: tells-the-user-what-to-decide
+    type: llm
+    focus: last_message
+    criteria: |
+      The reply says the run stopped, names the directory that already
+      exists, and asks the user to choose another path, clear the
+      directory themselves, or abort. It does not say a worktree was
+      created.

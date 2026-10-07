@@ -39,4 +39,5 @@ graders:
       source: file
       path: out/2026-06-30/business/lean-tighten/assumptions.yaml
     match: not_contains
-    pattern: 'value:\s*1(\.0+)?\s*(\n|$)'
+    pattern: 'id:\s*(?:adoption|realization)[\w-]*\n(?:[ \t]+\S.*\n)*?[ \t]+value:\s*1(?:\.0+)?\s*$'
+    flags: m

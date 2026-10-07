@@ -47,12 +47,12 @@ because a non-default `CODEX_HOME` makes live threads look missing.
 
 ### codex-queue (send and receive)
 
-Send the exact line the plan showed. Pass it through a quoted heredoc so an apostrophe
-cannot break the shell:
+Send the line composed in SKILL.md step 4 and approved in step 5, verbatim. Pass it
+through a quoted heredoc so an apostrophe cannot break the shell:
 
 ```bash
 line=$(cat <<'RELAY'
-[relay/1 from=planner:codex@<address> to=reviewer id=<id> hop=0 want=none] <body>
+<the exact line from step 4>
 RELAY
 )
 codex queue --thread <uuid-or-name> --message "$line"
@@ -142,8 +142,7 @@ ID, hop counter, hop cap, duplicate cache, and explicit halt phrase.
   unconditionally to an empty composer.
 - Long-literal race: text and Enter issued back-to-back in one shell command can leave an
   idle payload unsubmitted. Composer confirmation avoids relying on a timing delay.
-- Reserved prefixes: the relay envelope begins with `[`, which triggers no mode. Send one
-  line of at most 800 characters.
+- Reserved prefixes and the length cap: SKILL.md step 4.
 
 ## 9. Environment
 

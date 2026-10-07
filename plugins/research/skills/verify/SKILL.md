@@ -1,7 +1,7 @@
 ---
 name: verify
 description: "Re-check a topic's sources (vanished, moved, changed, misquoted), look for missed sources, and lint the report"
-allowed-tools: ["Skill", "Bash", "Read", "Write", "Edit", "Grep", "Glob", "WebSearch", "AskUserQuestion"]
+allowed-tools: ["Bash", "Read", "Edit", "Grep", "Glob", "AskUserQuestion"]
 argument-hint: "[topic or run directory] [--offline]"
 user-invocable: true
 disable-model-invocation: true
@@ -10,6 +10,6 @@ disable-model-invocation: true
 
 # /research:verify
 
-Invoke /research:foray with `verify` followed by the user arguments, and follow it.
+Read `../foray/SKILL.md` and follow it, treating `verify` as the first word of the arguments.
 
 User arguments: $ARGUMENTS

@@ -6,7 +6,7 @@ description: >-
 disable-model-invocation: true
 allowed-tools: ["Bash", "Read", "Grep", "Glob", "Write", "AskUserQuestion"]
 metadata:
-  argument-hint: "[--out=<dir>] [--from=<sources.jsonl>]"
+  argument-hint: "[--out=<dir>]"
   source: "plugins/scholar/skills/extract/SKILL.md"
 ---
 
@@ -18,8 +18,8 @@ citation that shows the term in use.
 Read `references/citation.md` for what a citation must carry, including
 why a quotation containing its own term is circular, and
 `references/stage-gates.md` for this stage's exit condition. The
-analyzer ships at `references/term-metrics.py`; `<analyzer>` below is
-that path.
+analyzer is `references/term_metrics.py`; `<analyzer>` below is its absolute
+path resolved from this skill's directory.
 
 User arguments: $ARGUMENTS
 
@@ -29,7 +29,8 @@ A term is a word the corpus uses for one of its own concepts. In code that is
 the names it gives things: type and class names, module and package names,
 recurring verbs in function names and commit subjects, the roles in its
 configuration, the nouns in its error messages. In prose it is the author's
-own vocabulary, taken from `annotate`'s quotation set.
+own vocabulary, taken from `quotations.jsonl`, the quotation set `annotate`
+writes in the study directory.
 
 A term is not a word that merely appears. `handler` is a term where the
 project distinguishes handlers from services; it is noise where it is just
@@ -46,7 +47,8 @@ Take `sources.jsonl` from `gather`. Harvest only from sources marked
 
 Read each code source at its recorded `commit`, never at a moving branch. A
 checkout already on disk is read in place once `git rev-parse HEAD` matches
-the row's `commit`; a mismatch is reported, not harvested. A remote source
+the row's `commit` and `git status --porcelain` prints nothing; a mismatch or a
+dirty tree is reported, not harvested. A remote source
 gets a throwaway checkout outside the study and outside the current
 repository. This command prints its path; use that literal path afterwards:
 
@@ -59,7 +61,8 @@ $ dir=$(mktemp -d "${TMPDIR:-/tmp}/scholar-corpus.XXXXXX") \
 ```
 
 A failed fetch means the source is unreachable; mark it unharvested and say
-so. Prose sources need no checkout: harvest from `annotate`'s quotation set.
+so. Prose sources need no checkout: harvest from `quotations.jsonl` in the study
+directory, or stop and name `annotate` if it is missing.
 
 ### 3. Harvest
 
@@ -128,7 +131,7 @@ Per `references/output-contract.md`. Hero: `✓ <n> terms extracted from
    row has a definition and a quoted citation:
 
    ```console
-   $ <analyzer> notes/ontology/<subject>/ --check-terms
+   $ python3 <analyzer> notes/ontology/<subject>/ --check-terms
    ```
 
 A halted run follows the halted-run shape in the output contract. Do not name

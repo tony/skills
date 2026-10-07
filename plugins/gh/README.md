@@ -44,8 +44,9 @@ Read-only until the final step.
 3. Preflights the repository: issues enabled, templates and forms,
    `CONTRIBUTING.md` requirements.
 4. Searches open and closed issues for duplicates.
-5. Gathers evidence: reproduces defects, records versions, pins code,
-   researches upstream projects.
+5. Gathers evidence: records the reproduction (run only after you
+   confirm the exact commands), versions, and pinned code, and researches
+   upstream projects.
 6. Drafts with fixed sections, `###` headings, and `<details>` for long
    output.
 7. Strips local paths and PII, then previews through GitHub's renderer.
@@ -64,9 +65,8 @@ are disallowed while it runs.
 - Requires long output in `<details>` and pinned source links.
 - Not for filing an issue; use `create-issue`.
 - Rules live in `references/rendered-markdown.md` and
-  `references/source-links.md`. `references/prose-rules.md` is a vendored
-  copy; edit `shared/prose-rules.md` in the marketplace repository and
-  regenerate.
+  `references/source-links.md`; `references/project-links.md` holds the
+  link set for a named upstream project.
 
 ## The wrapping rule exception
 

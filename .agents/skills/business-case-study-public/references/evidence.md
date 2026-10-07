@@ -23,8 +23,6 @@ Place an internal figure by outcome:
 
 The lab result is listed separately and never sets an expectation.
 
-Table compiled 2026-07-24.
-
 ## Re-verify before citing
 
 A run that cites this table repeats the check first:
@@ -35,8 +33,7 @@ A run that cites this table repeats the check first:
    link. Update the entry if the source revised them. Drop the entry
    from the report if the link is gone or the figure is absent.
 3. Cite the date of this check as the retrieval date. Without a
-   check, cite the table's date above and say the run did not
-   re-verify.
+   check, write "not re-verified" in place of a retrieval date.
 
 ## Field studies
 

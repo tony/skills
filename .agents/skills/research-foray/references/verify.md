@@ -48,7 +48,7 @@ $ python3 <topic.py> lint-report --strict <run_dir>/report.md
 
 Then read the summary alone, as the reader will. It should answer the question and stand without the findings, and its title should claim no more than its findings and ratings support. Check the report against the prose rules.
 
-Finish with `python3 <topic.py> check --run <run_dir>` and quote its result.
+Finish with `python3 <topic.py> check --run <run_dir>` and quote its result. Add `--offline` when the request did: a check without it fetches every URL and writes `unreachable` rows to `checks.jsonl`.
 
 ## 4. Keep it fresh
 
@@ -60,8 +60,8 @@ Open with a one-line hero. After the final `check`: `✓ <n> sources checked, al
 
 1. `## References`: each failure: source id, status, what was done about it.
 2. `## Missed`: sources found and added, conflicts recorded, and leads not yet followed.
-3. `## Report`: the final `check` result from this session, and the fixes still needed.
+3. `## Report`: the final `check` result from this session, unsupported claims and overreaching titles with what was done, and the fixes still needed.
 
 Write per `prose-rules.md`: plain bullets, no bold labels, no sentence between the hero and the first section, no sentence narrating your own edits ("I added…"), no finding recaps.
 
-Panel options: fix the failures, continue the topic, stop.
+Panel options: fix the failures, continue the topic, stop. The panel never repeats `## Report`; without an interactive host, print the options as a numbered list.

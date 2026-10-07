@@ -29,14 +29,14 @@ anything the user cannot get back.
   tool's archival path, or by proving one copy redundant against another.
 - **Report guest and host separately.** Space freed inside a virtual disk
   is not freed on the machine until the disk is compacted.
+- **Never run `sudo`.** Print the full command for the user and stop.
 - **A blanket approval covers only the regenerable tier.** Stale-but-unique
   data is decided per directory.
 
 ## Route
 
-Read the sibling file and follow it. A file read never substitutes the
-scope line each sibling opens with: the scope is the path the user
-named, or every mounted filesystem when none.
+Read the sibling file and follow it. Each sibling opens with a scope line. Use the path the user named, or
+every mounted filesystem when none; reading the file does not set it.
 
 - Survey, "where did my space go", or no request to delete: follow
   the `disk-usage` skill. It is read-only, and the router run does not end

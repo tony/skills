@@ -4,6 +4,9 @@ Hold SKILL.md files to a deletion test: a line stays only when its
 removal would change what the agent does. Frontmatter, code blocks, and
 sections survive verbatim.
 
+Invoked by name, it edits the named files in place; `--audit` and
+`--diff-only` write nothing.
+
 ## Installation
 
 In Claude Code, add the marketplace:
@@ -47,11 +50,6 @@ Flags: `--audit` (report the ledger, change nothing), `--diff-only`
 (show the proposed edits as a diff without writing them). A SKILL.md
 pasted inline is trimmed without confirmation or git, and the reply
 carries the ledger and the diff of the paste.
-
-## The deletion test
-
-The skill body states the test and the lines it never touches. A
-flawed command is reported, not corrected.
 
 ## References
 

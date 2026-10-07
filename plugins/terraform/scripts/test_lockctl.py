@@ -71,3 +71,22 @@ def test_drop_absent_provider_changes_nothing(
 def test_stable_drops_prereleases_and_sorts_numerically() -> None:
     versions = ["1.9.0", "1.10.0", "1.11.0-beta1", "1.10.2", "1.8.0"]
     assert lockctl.stable(versions, 3) == ["1.9.0", "1.10.0", "1.10.2"]
+
+
+def test_platforms_scans_ci_and_task_files_only(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    cmd = "terraform providers lock -platform=linux_amd64 -platform=darwin_arm64\n"
+    (tmp_path / ".github" / "workflows").mkdir(parents=True)
+    (tmp_path / ".github" / "workflows" / "lock.yml").write_text("run: " + cmd)
+    (tmp_path / "README.md").write_text(cmd)
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setattr(
+        lockctl, "_tracked_files", lambda: [".github/workflows/lock.yml", "README.md"]
+    )
+    assert lockctl.main(["lockctl.py", "platforms"]) == 0
+    assert capsys.readouterr().out.splitlines() == [
+        ".github/workflows/lock.yml\tlinux_amd64,darwin_arm64"
+    ]

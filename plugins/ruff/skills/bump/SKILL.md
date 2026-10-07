@@ -11,13 +11,7 @@ disable-model-invocation: true
 
 Raise the ruff version floor across the repositories in scope and absorb everything the new release surfaces: one commit per rule, each justified against the rule's own documentation, behind the project's own quality gates.
 
-Read the references before acting:
-
-- `../../references/release-triage.md` for what a release does to a specific repo, and how much care each class of fix needs.
-- `../../references/pin-sites-and-gating.md` for every file a version can be pinned in, and what to do when the resolver refuses the release.
-- `../../references/default-rule-set.md` for measuring and adopting a newly curated default rule set.
-- `../../references/cooldown-exemption.md` for exempting ruff from a resolver cooldown.
-- `../../references/throwaway-worktree.md` for working in an isolated worktree.
+Each phase names the reference it needs; read it there, not before.
 
 User arguments: $ARGUMENTS
 
@@ -37,7 +31,7 @@ Drop repositories with no ruff configuration or that already satisfy the target 
 
 ### 3. Research the release once, then intersect it per repository
 
-Follow the triage reference: read the release's changelog at its tag, sort every change into the five buckets, then intersect those buckets with each repository's effective rule selection to predict which diagnostics it can produce. Repositories that share a configuration share a prediction.
+Follow `../../references/release-triage.md` (what a release does to a specific repo, and how much care each class of fix needs): read the release's changelog at its tag, sort every change into the five buckets, then intersect those buckets with each repository's effective rule selection to predict which diagnostics it can produce. Repositories that share a configuration share a prediction.
 
 An explicit `select` opts a repository out of an expanded default set; phase 8 raises that as a finding. A formatter change that widens which file types are covered applies everywhere regardless of rule selection.
 
@@ -47,11 +41,11 @@ Dispatch a subagent per repository where the host supports it. A repository that
 
 Enter plan mode before the first edit. In Claude Code call `EnterPlanMode`; in Cursor, Codex, or Gemini use `/plan` or `Shift+Tab`. Where plan mode is unavailable, present the plan as text.
 
-Show the predicted work per repository: the rules expected to fire, whether the formatter's scope widens, which pin sites need editing, and whether a resolver gate is needed. With `--audit-only`, stop here, write nothing, and report per the audit-only shape under Output. Wait for the user's approval, then exit plan mode before phase 5.
+Show the predicted work per repository: the rules expected to fire, whether the formatter's scope widens, which pin sites need editing, and whether a resolver gate is needed. With `--audit-only`, first measure the delta (below), then stop here, write nothing, and report per the audit-only shape under Output. Wait for the user's approval, then exit plan mode before phase 5.
 
 Without an interactive question tool (Codex, headless runs), print the plan and stop before phase 5 unless the request says to proceed (a `--push` or `--pr` flag, or "go ahead"). That approves the local work only; the `$ARGUMENTS` flags authorize just the actions they name.
 
-For `--audit-only`, measure the delta with the target version without installing it into the project: run ruff through an ephemeral environment (for example `uv run --with ruff==<target> ruff ...`, chosen from the project's runner) and confirm with `--version`. Where that cannot run, report the delta as unmeasured.
+For `--audit-only`, measure the delta (before stopping) with the target version without installing it into the project, per `../../references/default-rule-set.md`: run ruff through an ephemeral environment (for example `uv run --with ruff==<target> ruff ...`, chosen from the project's runner) and confirm with `--version`. Where that cannot run, report the delta as unmeasured.
 
 ### 5. Isolate
 
@@ -65,17 +59,17 @@ If that fails, read the `ref: refs/heads/<name>\tHEAD` line of `git ls-remote --
 
 ### 6. Gate the resolver, if and only if it is blocked
 
-Only when the resolver cannot see the target version; skip it when the resolver already sees the release. Diagnose the layer per the gating reference, and if it is a cooldown, exempt per `../../references/cooldown-exemption.md`.
+Only when the resolver cannot see the target version; skip it when the resolver already sees the release. Diagnose the layer per `../../references/pin-sites-and-gating.md`, and if it is a cooldown, exempt per `../../references/cooldown-exemption.md`.
 
 For uv, read the installed uv's documentation (`uv --help`, the settings reference for its version) for a per-package `exclude-newer-package` form that carries no date. If the installed uv has none, write a dated entry at or after the publication timestamp, and name the commit that removes it in the annotation. In the plan, always describe the exemption in full: ruff only, its own first commit annotated with the removal condition, reverted before merge (a pre-merge requirement in the pull request), and the lapse time. State the choice between waiting and exempting as facts; recommend exempting only when the user said the release is needed now.
 
 ### 7. Raise the floor and refresh the lockfile
 
-Edit every pin site the reference enumerates, in one commit. Prefer a floor over an exact pin, except in pre-commit configuration where the tag is exact by design. Refresh the lockfile with the project's own resolver, and confirm the lock moved to the target version. Cite the release notes in the commit body.
+Find every pin site per `../../references/pin-sites-and-gating.md` and edit them all in one commit. Prefer a floor over an exact pin, except in pre-commit configuration where the tag is exact by design. Refresh the lockfile with the project's own resolver, and confirm the lock moved to the target version. Cite the release notes in the commit body. Every commit in this run follows the trailer rule in phase 9.
 
 ### 8. Surface the default-rule-set decision
 
-If the release changed the default rule set and a repository sets an explicit `select`, report the opt-out as a finding, never as inert, even when the release or the delta cannot be measured. Follow the default-rule-set reference: measure each repository's delta and present the per-repo finding counts with the recommended config shape. With `--adopt-defaults`, carry the change through; the config edit lands as its own commit, before any fix or ignore. Without the flag, report the measurement and stop, so the decision stays the user's.
+If the release changed the default rule set and a repository sets an explicit `select`, report the opt-out as a finding, never as inert, even when the release or the delta cannot be measured. Follow `../../references/default-rule-set.md`: measure each repository's delta and present the per-repo finding counts with the recommended config shape. With `--adopt-defaults`, carry the change through; the config edit lands as its own commit, before any fix or ignore. Without the flag, report the measurement and stop, so the decision stays the user's.
 
 ### 9. One rule, one commit
 
@@ -99,7 +93,7 @@ Unless `--no-changelog` or the repository keeps no changelog, add an entry as th
 
 ### 12. Push, open, watch
 
-Without `--push` or `--pr`, stop after the local commits and print, per repository, the branch and this push command (a branch push, not the default-branch form the worktree reference shows):
+Without `--push` or `--pr`, stop after the local commits and print, per repository, the branch and this push command (the push target is the branch, never the default branch):
 
 ```console
 $ git push --set-upstream origin <branch>
@@ -113,7 +107,7 @@ Watch CI to a conclusion, and attribute failures before blaming the bump. If CI 
 
 ## Output
 
-Write the report per `../../references/prose-rules.md`. The hero is the first line of the reply, with nothing before it: `✓ N repos on ruff X.Y.Z`, `⚠ Audit only: N repos behind`, or `⚠ M of N repos halted`. Then exactly these sections:
+Write the report per `../../references/prose-rules.md`. The hero is the first line of the reply, with nothing before it: `✓ N repos on ruff X.Y.Z`, `⚠ Audit only: N repos behind` (append `, target version unconfirmed` when the target could not be confirmed), or `⚠ M of N repos halted`. Then exactly these sections:
 
 1. `## Release`: what the target version changes, sorted into the triage buckets, with the formatter's scope change called out separately if there is one. Cite the changelog URL at the tag and the ruff version used for measurement.
 2. `## Scope`: repositories in scope with their current and target versions, and what was excluded as fork, unowned, already-current, or already-branched.
@@ -125,7 +119,7 @@ Write the report per `../../references/prose-rules.md`. The hero is the first li
 
 Omit a section with nothing to report, except `## Per repo` and `## Verification`. An audit-only run reports `## Release`, `## Scope`, and `## Default rule set`, with predicted work and any resolver gate under `## Scope`. Never name a local absolute path or temp file in the report unless the user must act on that file.
 
-An audit-only run whose target version cannot be confirmed still reports what needs no release: `## Scope` with the current pins and `## Default rule set` with each explicit `select` as an opt-out finding, and the unconfirmed target stated under the hero. A run that stops before any change (nothing behind, every repository skipped, or the user declined) is the hero, one result sentence, then what the user must do to proceed. Reply in this shape, as plain text outside any code fence:
+An audit-only run whose target version cannot be confirmed still reports what needs no release: `## Scope` with the current pins and `## Default rule set` with each explicit `select` as an opt-out finding, and the unconfirmed target stated under the hero. A run that stops before any change (nothing behind, every repository skipped, the target unconfirmed outside an audit, or the user declined) is the hero, one result sentence, then what the user must do to proceed, with no extra findings. State what blocked in one clause (for example, "pypi.org was unreachable"); do not narrate the sandbox or hedge. Reply in this shape, as plain text outside any code fence:
 
 ```text
 ⚠ Nothing to do: 1 repo skipped
@@ -133,6 +127,39 @@ An audit-only run whose target version cannot be confirmed still reports what ne
 I changed nothing: the branch ruff-bump-0.12.4 already exists in api.
 
 To proceed, delete that branch or re-run with `--branch <name>`.
+```
+
+An audit-only reply uses the same rules. With the target confirmed:
+
+```text
+⚠ Audit only: 1 repo behind
+
+## Release
+
+- Changelog: https://github.com/astral-sh/ruff/blob/0.12.4/CHANGELOG.md, measured with ruff 0.12.4.
+- Newly stabilized: UP045. No formatter scope change.
+
+## Scope
+
+- api: 0.11.2 to 0.12.4. No resolver gate needed.
+
+## Default rule set
+
+- api: opted out (`select = ["E", "F"]`). Delta if it adopted the defaults: 9 findings. Recommended: unset `select` and move additions to `extend-select`.
+```
+
+With the target unconfirmed, the hero ends `, target version unconfirmed`, `## Release` is omitted, and the delta reads `unmeasured`:
+
+```text
+⚠ Audit only: 1 repo behind, target version unconfirmed
+
+## Scope
+
+- api: pinned at ruff 0.13.0. The target could not be read because pypi.org was unreachable.
+
+## Default rule set
+
+- api: opted out (`select = ["E", "F"]`). Delta: unmeasured.
 ```
 
 Reply in this shape, as plain text outside any code fence, with plain bullets, no bold (never `- **Label:** ...`), and no local paths:

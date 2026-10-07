@@ -115,8 +115,8 @@ Shortcut hosts an OAuth MCP server at `https://mcp.shortcut.com/mcp` — no toke
 to store — and documents the Claude Code setup, so a local agent reads and
 writes directly.
 
-```bash
-claude mcp add --transport http shortcut https://mcp.shortcut.com/mcp
+```console
+$ claude mcp add --transport http shortcut https://mcp.shortcut.com/mcp
 ```
 
 Coverage per the [MCP Server](https://www.shortcut.com/help/integrations/mcp-server/)

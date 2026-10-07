@@ -9,10 +9,11 @@
 
 Every command reports in the same fixed order. A hero block may precede
 it. Omit a section that has no findings rather than writing that it is
-empty; that includes `## Protected` when no history was found. No bold labels on bullets, no recap ending.
+empty; that includes `## Protected` when no history was found. No bold
+labels on bullets, no recap ending.
 
 A blocked or halted run (any layer or path that cannot be read, a failed
-proof, a declined approval) skips the sections: one sentence stating the
+proof, a declined approval) uses the blocked shape and no `##` sections: one sentence stating the
 result, then what was measured, what was not, and what the user needs to
 do next. Never estimate what was not measured, and never attribute
 unmeasured space to a path or directory.
@@ -25,8 +26,7 @@ confirmed as the binding constraint.
 
 - Measured: the WSL guest, 61% used, 344 GiB available.
 - Not measured: C: (host) and the ext4.vhdx backing file.
-- To continue: run `df -h /mnt/c` and share the output, or grant access
-  to /mnt/c.
+- To continue: run `df -h /mnt/c` and share the output.
 ```
 
 ## Hero block
@@ -66,8 +66,7 @@ where it bears on a proposal.
 
 **## Needs a decision** — stale-but-unique data and anything that
 resisted classification, each with size, age, and origin. These are
-questions, not candidates. Layers that could not be measured go under
-`## Layers` as "not measured".
+questions, not candidates.
 
 **## Only you can run this** — commands requiring the environment to be
 halted, or a host-side administrator shell. One command per block, with
@@ -113,7 +112,9 @@ declined approval each belong here.
 ## Rules
 
 Report findings about the machine, never about the session's sandbox: no
-stand-in home directories, scratch totals, or tool limits.
+stand-in home directories, scratch totals, or tool limits. Say "could not
+be read" about a layer, never "this session is not allowed" or "the
+sandbox blocks".
 
 Say what rebuilding a regenerable item costs (time, bandwidth); never
 write that deleting it "costs nothing".

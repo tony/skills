@@ -216,7 +216,7 @@ Call `EnterPlanMode`. If unavailable, go to headless fallback.
 In plan mode: read `<session_dir>/handoff/plan-brief.md`, read the
 codebase files referenced in the brief, write the plan file at the path
 supplied by the host's plan-mode system message. Format as an
-Implementation Plan (same shape as `/weave:plan` Phase 4 output). Call
+Implementation Plan (same shape as `/weave:plan` Phase 3 step 3). Call
 `ExitPlanMode`.
 
 ### Headless fallback

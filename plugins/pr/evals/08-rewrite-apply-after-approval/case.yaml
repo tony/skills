@@ -24,13 +24,14 @@ graders:
   - name: backs-up-the-body
     type: tool_used
     tool: Bash
-    input_match: 'pr-backups'
+    input_match: 'pr_backup\.py save|pr-backups'
 
   - name: applies-with-gh-pr-edit
     type: tool_used
     tool: Bash
     input_match: 'gh pr edit[^\n]*--body-file'
     min: 1
+    max: 1
 
   - name: never-commits-or-pushes
     type: tool_used

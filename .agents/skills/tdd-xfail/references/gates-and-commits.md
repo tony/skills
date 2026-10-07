@@ -2,6 +2,53 @@
 
 Shared by `fix` and `xfail`.
 
+## Contents
+
+- Approval
+- Diff gates
+- Quality gates
+- Minimal fix
+- Commit messages
+- Cross-dependency bugs
+- Recovery
+- Final report
+- Plan awaiting approval
+- Stopped run
+
+## Approval
+
+Ask the user to approve the plan. When no question tool is available, the
+request's explicit scope is the approval, for the phases it names only ("only
+the failing test" approves the test phases). A request with no explicit scope
+gets the plan and a stop. Approval never covers a push.
+
+## Diff gates
+
+Derive the test-file patterns from the project's layout and naming. Write each
+as its own `:(glob)` pathspec, for example `:(glob)**/test_*.py`,
+`:(glob)**/*_test.py`, `:(glob)tests/**`, `:(glob)**/*.spec.ts`. Only `:(glob)`
+makes `**/` match top-level files too.
+
+The tree is clean when the workflow starts, so every change in it belongs to
+the commit being prepared.
+
+Before a source-only commit, list modified and untracked test files. The
+command must print nothing:
+
+```console
+$ git status --porcelain \
+    -- ':(glob)**/test_*.py' ':(glob)**/*.spec.ts'
+```
+
+Before a test-only commit, list modified and untracked files outside the test
+patterns. The command must print nothing. Use one `:(exclude,glob)` pathspec
+per pattern; one exclude holding several patterns excludes nothing:
+
+```console
+$ git status --porcelain \
+    -- . ':(exclude,glob)**/test_*.py' ':(exclude,glob)**/*.spec.ts'
+```
+
 ## Quality gates
 
 Read the project's AGENTS.md or CLAUDE.md for the formatter, linter, type
@@ -20,7 +67,9 @@ Follow the project's existing patterns.
 
 ## Commit messages
 
-Use the project's commit format from AGENTS.md or CLAUDE.md. Without one, name
+Use the project's commit format from AGENTS.md or CLAUDE.md. Add no
+`Co-Authored-By` line, no "Generated with" or other tool trailer, and no emoji;
+hosts add them by default. Without a project format, name
 the component, whether the commit adds the xfail test, fixes the bug, or
 removes the xfail, why it was needed, and what changed. Wrap body lines at 72
 characters; let URLs, paths, hashes, and long identifiers overflow.
@@ -67,17 +116,26 @@ Reply in this shape, as plain text outside any code fence, with plain bullets, n
 - add_hours has the same weekend handling; not changed.
 ```
 
+## Plan awaiting approval
+
+A run that has not started because no one approved the plan uses the
+stopped-run shape: a hero line such as `⚠ Nothing written yet. The plan below
+needs your approval.`, `## Plan`, `## To continue`. Plan items are plain
+bullets without bold labels, and no paragraph sits between the hero line and
+`## Plan`; put the diagnosis in one Plan bullet.
+
 ## Stopped run
 
-One hero line (`⚠` plus the result in one sentence), the plan under
+One hero line (`⚠` plus the result in one sentence, no colon), the plan under
 `## Plan` when no one has approved it yet, then `## To continue` with what the
-user must do. Name commits by purpose, never by phase or number, and name no
-local paths.
+user must do. No other sections. Name commits by purpose, never by phase or
+number, and name no local paths or repository details beyond what the user
+must fix.
 
 Reply in this shape, as plain text outside any code fence, with plain bullets, no bold, and no local paths:
 
 ```text
-⚠ Nothing written: the current directory is not the project's repository.
+⚠ Nothing written. The current directory is not the project's repository.
 
 ## Plan
 

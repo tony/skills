@@ -1,4 +1,4 @@
 ---
 type: llm
 ---
-Its level-2 headings are `## Ledger`, `## To fix`, `## Deferred & declined`, and `## Ledger key`, in that order, with no other level-2 headings. A hero line before the first heading and numbered next-step options after the last section are allowed.
+The reply has no level-2 heading outside `## Ledger`, `## To fix`, `## Deferred & declined`, and `## Ledger key`, and those it has appear in that order. Hero line before the first heading and numbered next-step options after the last are allowed.

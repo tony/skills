@@ -48,7 +48,8 @@ anything.
 
 A dynamically expanding virtual disk grows on write and never shrinks
 on delete. The guest kernel can signal freed blocks with TRIM, but the
-signal only reaches the host when the backing file is sparse-aware.
+signal may not reach the host unless the backing file is sparse-aware
+(see the `sparseVhd` page linked below).
 
 Check whether the guest even issues TRIM. This layer is Linux-only —
 `findmnt` is util-linux, and the surrounding `.vhdx` inspection assumes
@@ -59,9 +60,8 @@ $ findmnt -no OPTIONS /
 ```
 
 `discard` in the mount options means the kernel trims on every delete.
-Its presence alongside a fully-allocated backing file is the
-diagnostic signature of a non-sparse virtual disk: the guest is
-signalling correctly and the host is ignoring it.
+Its presence alongside a fully-allocated backing file may mean the
+virtual disk is not sparse: the guest signals and the host may ignore it.
 
 ## Never run the shutdown yourself
 
@@ -105,7 +105,7 @@ Sources:
 [Mount-VHD](https://learn.microsoft.com/en-us/powershell/module/hyper-v/mount-vhd)
 (`-ReadOnly`), and
 [compact vdisk](https://learn.microsoft.com/en-us/windows-server/administration/windows-commands/compact-vdisk)
-(diskpart). Re-check them with `wsl --help` before relying on a command.
+(diskpart). Re-read the linked pages before relying on a command.
 
 Run inside the guest, before the shutdown. It tells the filesystem to
 release free blocks so the host can reclaim them; see `man fstrim`. Zero

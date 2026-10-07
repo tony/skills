@@ -51,7 +51,7 @@ it is and why.
 
 ### 3. Judge by reading
 
-Compare definitions side by side. The analyzer, `references/term-metrics.py`, scores
+Compare definitions side by side. The term analyzer scores
 one table at a time, so no cross-table similarity exists; do not report one.
 The hero counts are counts of findings, not scores.
 

@@ -4,7 +4,9 @@ Detection rules, each with a **signal** (the smell), a **detect** recipe (the
 exact command or inspection), an **action** (the fix), and a **risk**/**effort**
 estimate.
 
-`00-scan` runs the detectors and emits one hypothesis per firing rule. Risk and
+`00-scan` runs the detectors and emits one hypothesis per firing rule, except
+H01-H07 and H17/H18: those are measurements and gates that feed the report and
+`01-benchmark`, and never become hypotheses. Risk and
 effort here are *priors*; `01-benchmark` replaces the impact estimate with a
 measurement and `02-plan` scores the result against the rubric.
 
@@ -41,7 +43,7 @@ Replace `pytest` with the project's resolved test command.
 
 | ID | Signal | Detect | Action | Risk / Effort |
 |----|--------|--------|--------|---------------|
-| H14 | Collection aborts: "Marks cannot be applied to fixtures" | the last lines of `pytest --collect-only -q` | Move the mark's condition into the fixture body via `pytest.skip()`; never stack `@pytest.mark.*` above `@pytest.fixture` | low / trivial |
+| H14 | Collection aborts on a mark applied to a fixture (message text varies by version) | the last lines of `pytest --collect-only -q` | Move the mark's condition into the fixture body via `pytest.skip()`; never stack `@pytest.mark.*` above `@pytest.fixture` | low / trivial |
 | H22 | Collection/import-bound (`--co` itself slow) | `time pytest --co -q` is a large fraction of total | Do **not** xdist (each worker re-collects). Disable unused autoload plugins (`-p no:` / `PYTEST_DISABLE_PLUGIN_AUTOLOAD`), narrow `testpaths`, reduce parametrize explosion, defer heavy top-level imports | low / medium |
 | H44 | Third-party `pytest11` plugin error blocks an unrelated suite | Traceback names `site-packages/<pkg>/pytest_plugin.py` during `load_setuptools_entrypoints` | Temporarily `-p no:<entrypoint_name>` to keep measuring; report the upstream plugin as the real blocker | low / trivial |
 

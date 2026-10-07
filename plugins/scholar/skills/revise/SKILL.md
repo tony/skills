@@ -59,11 +59,11 @@ meets it. A brief edit can break the brief gate, so run it and report the
 result in `## Touched`:
 
 ```console
-$ <analyzer> notes/ontology/<subject>/ --check-brief
+$ python3 <analyzer> notes/ontology/<subject>/ --check-brief
 ```
 
-`<analyzer>` is `../../references/term-metrics.py`. Fix the brief until it
-exits zero.
+`<analyzer>` is `../../scripts/term_metrics.py`, resolved against this skill's
+directory to an absolute path. Fix the brief until it exits zero.
 
 ## Rules
 
@@ -82,6 +82,9 @@ Blocked: <reason>`. Sections:
 2. `## Touched` — the rows and evidence documents updated.
 3. `## Downstream` — anything else in the study that rested on the same
    evidence and may now be unsupported.
+
+A halted run (no study, or no standing claim to correct) is the hero and one
+unblock sentence. Do not comment on the correction text the user supplied.
 
 Next-step options: verify the downstream claims, re-run contest, stop here.
 

@@ -1,6 +1,6 @@
 ---
 name: foray
-description: "Use when researching or assessing a topic, like whether to adopt a tool: keep sources, resume, fill gaps, re-check references, or write it up."
+description: "Use when researching or assessing a topic, like adopting a tool: keep sources, resume earlier research, fill gaps, re-check references, write it up."
 allowed-tools: ["Bash", "Read", "Write", "Edit", "Grep", "Glob", "WebSearch", "AskUserQuestion"]
 argument-hint: "[topic or question] [--mode=research|assessment] [--namespace=<ns>] [--root=<dir>] [--resume] [--audience=private|internal|public]"
 user-invocable: true
@@ -93,6 +93,8 @@ A run blocked before it could record anything:
 - Scope: the -shm locks and checkpoint modes; not network filesystems.
 - Sources to capture: sqlite.org/wal.html at 3.46.
 ```
+
+A pin is a value (`3.46`, a commit, an edition) or `pin unknown`, never "the current release". Do not narrate the rules you followed ("the research skill says not to work around a denial").
 
 Write the hero and every section per `../../references/prose-rules.md`: no bold labels on bullets, no closing recap, no sentence that narrates your own edits ("I added…", "I changed…"). `## Next` names the one recommended step; the panel offers the alternatives and never repeats it. Name a run by its date and `<namespace>/<topic>`, never by its path.
 

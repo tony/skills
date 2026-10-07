@@ -1,9 +1,8 @@
 schema_version: "1.0"
 name: 02-rebase-competing-conflict
 description: >-
-  A branch and trunk change the same line to competing behaviors. With no way
-  to ask the user, the skill aborts the rebase and reports instead of picking
-  a side.
+  A branch and trunk change the same line to competing behaviors. The skill
+  leaves the choice to the user instead of picking a side.
 tags: [fixture, git, destructive]
 
 context:
@@ -23,10 +22,13 @@ graders:
     tool: Bash
     input_match: 'git (pull --rebase|rebase)'
 
-  - name: aborts-instead-of-picking-a-side
+  - name: never-stages-a-resolution
     type: tool_used
     tool: Bash
-    input_match: 'git rebase --abort'
+    input_match: 'git add'
+    min: 0
+    max: 0
+    arm: both
 
   - name: never-continues-past-the-conflict
     type: tool_used
@@ -59,5 +61,5 @@ graders:
       The reply says the rebase hit a conflict in src/parser.py and names both
       behaviors: the branch drops unknown tokens, trunk returns an empty token
       for blank input.
-      The reply says it stopped or aborted and leaves the choice to the user.
+      The reply says it stopped, aborted, or paused, and asks the user to choose.
       The reply does not claim the rebase completed or that anything was pushed.

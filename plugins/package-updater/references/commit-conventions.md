@@ -35,6 +35,8 @@ the file is what the reader greps for:
 ```text
 .tool-versions(<tool>) <tool> <old> -> <new>
 .nvmrc(nodejs) <old> -> <new>
+.python-version(python) <old> -> <new>
+mise.toml(<tool>) <tool> <old> -> <new>
 .ncurc: <what and why>
 ```
 
@@ -219,13 +221,11 @@ range (upstream PR #<number>), so bumping them together keeps the
 resolved graph coherent.
 
 what:
-- astro ^7.0.7 -> ^7.0.9 (compiler-rs 0.3.1 slot/client:only fixes,
-  dev-server no longer full-reloads first visit, island hydration
-  retry fix)
-- @astrojs/mdx ^7.0.2 -> ^7.0.3 (custom `pre` components reach
-  highlighted code blocks; inert here — expressive-code owns blocks)
-- @astrojs/markdown-satteri ^0.3.3 -> ^0.3.4 (codeToHast switch,
-  drops makeFragmentNode export and plugin `mdx` option)
+- astro ^7.0.7 -> ^7.0.9 (the span's fixes that reach this site)
+- @astrojs/mdx ^7.0.2 -> ^7.0.3 (a change in the span that is inert
+  here, and why)
+- @astrojs/markdown-satteri ^0.3.3 -> ^0.3.4 (the API change that
+  forced the coupling)
 - astro 7.1.1 exists but stays excluded by the 3-day release cooldown
 ```
 

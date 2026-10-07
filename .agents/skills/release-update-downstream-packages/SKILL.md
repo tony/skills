@@ -4,7 +4,7 @@ description: >-
   Use when rolling a newly published package release through every
   maintained consumer repository and verifying CI.
 disable-model-invocation: true
-allowed-tools: ["Bash", "Read", "Grep", "Glob", "Edit", "AskUserQuestion", "Task"]
+allowed-tools: ["Bash", "Read", "Grep", "Glob", "Edit", "AskUserQuestion", "Agent"]
 metadata:
   argument-hint: "<package> [<version>] [--roots <glob>...] [--push]"
   source: "plugins/release/skills/update-downstream-packages/SKILL.md"
@@ -22,7 +22,8 @@ Arguments: $ARGUMENTS
 This command can push to trunk of many repos. Phases 1 and 2 only read;
 every cache clean, commit, push, and CI rerun waits for the Phase 3 gate.
 Without `--push` it leaves commits local and prints the push command per
-repo, and CI verification does not apply.
+repo, and CI verification does not apply. It pushes to trunk or a branch
+the user names at the gate; opening pull requests is out of scope.
 
 ---
 
@@ -31,12 +32,24 @@ repo, and CI verification does not apply.
 1. **Package** — the first non-flag argument. If missing, ask.
 2. **Version** — the second non-flag argument, or the latest published
    version from the package index (PyPI:
-   `https://pypi.org/pypi/<package>/json`; npm: `npm view <package> version`).
-   Confirm it exists on the index before touching anything (PyPI:
-   `https://pypi.org/pypi/<package>/<version>/json` returns 200; npm:
-   `npm view <package>@<version> version` prints it). If the check cannot
-   run, stop and say what could not be confirmed and what the user must
-   supply; do not describe the environment.
+   `https://pypi.org/pypi/<package>/json`; npm: `npm view <package> version`;
+   crates.io: `https://crates.io/api/v1/crates/<package>`; Go:
+   `https://proxy.golang.org/<module>/@latest`).
+   Confirm it exists on the index before touching anything; each check
+   returns 200 or prints the version when it exists, and 404 otherwise:
+
+   - PyPI: `https://pypi.org/pypi/<package>/<version>/json`
+   - npm: `npm view <package>@<version> version`
+   - crates.io: `https://crates.io/api/v1/crates/<package>/<version>`,
+     sent with a `User-Agent` header (the API rejects requests without one)
+   - Go: `https://proxy.golang.org/<module>/@v/<version>.info`, with the
+     version's `v` prefix and each uppercase letter in the module path
+     written as an exclamation mark plus its lowercase (`BurntSushi` becomes
+     `burnt` and `sushi` each prefixed that way)
+
+   For any other ecosystem, or if a check cannot run, stop and say what
+   could not be confirmed and what the user must supply; do not describe
+   the environment.
 3. **Workspace roots** — from `--roots` globs. If not given, ask the user
    which directories hold their checkouts; assume no layout.
 4. **Sibling packages** — if the package is developed in a workspace repo
@@ -50,13 +63,18 @@ Take the manifest names from the ecosystem the package is published to
 (`pyproject.toml` and `package.json` below are one example; add
 requirements files, `Cargo.toml`, `go.mod`, and lockfile-only consumers where
 the ecosystem uses them). Match the whole
-package name, so `foo` does not hit `foo-bar`, and escape `.` in the name:
+package name, so `foo` does not hit `foo-bar`. PyPI treats runs of `-`, `_`,
+and `.` as one separator and ignores case (PEP 503), so for a PyPI package
+lowercase the name, split it on those separators, and rejoin the parts with
+`[-_.]+` and match case-insensitively: `Foo.Bar` becomes `foo[-_.]+bar`.
+For other ecosystems match the name exactly, escaping `.`:
 
 ```console
-$ rg -l '(^|[^A-Za-z0-9_.-])<package>([^A-Za-z0-9_.-]|$)' \
+$ rg -i -l '(^|[^A-Za-z0-9_.-])foo[-_.]+bar([^A-Za-z0-9_.-]|$)' \
     --max-depth 2 \
     -g pyproject.toml \
     -g package.json \
+    -g requirements*.txt \
     <root>
 ```
 
@@ -66,7 +84,8 @@ For each hit, record:
   the primary checkout is found on its own.
 - **Trunk** — `git symbolic-ref refs/remotes/origin/HEAD`, falling
   back to whichever of `main`/`master` exists.
-- **Owner** — from `git remote get-url origin`. Group repos by owner
+- **Owner** — from `git remote get-url <remote>`, the upstream remote of
+  trunk (`origin` by default). Group repos by owner
   org; the user confirms which orgs are in scope at the gate.
 - **Current pin(s)** — the pinned version(s) of the package and any
   siblings in the manifest.
@@ -79,6 +98,8 @@ For each hit, record:
   key names and per-package exemption syntax. If one is set, check that the
   package and every sibling are exempt; a missing entry blocks the fresh
   release at lock time, so add it as its own commit before the bump.
+- **Gates** — the repo's own quality checks, from its AGENTS.md / CLAUDE.md.
+  Note when none are documented.
 - **Dirty?** Repos with uncommitted changes get reported and skipped
   unless the user says otherwise.
 
@@ -87,8 +108,9 @@ For each hit, record:
 Present the plan before mutating anything:
 
 - Per repo: path, owner, branch to update, current pin → new version,
-  and any prep commits needed (source-override removal, cooldown
-  exemption additions).
+  any prep commits needed (source-override removal, cooldown
+  exemption additions), and the gates it will run (or that none are
+  documented).
 - Skipped repos with reasons (worktree, dirty, org out of scope).
 - Whether pushes will happen (only with `--push`).
 - Every mutation outside the working trees: the resolver cache clean, the
@@ -149,8 +171,7 @@ confirmed branches:
    version, add none of them; halt this repo and report. The cause is
    upstream: a stale cache, a missing cooldown exemption, or a bad publish.
 6. **Gates** — before any push, run the repo's own quality checks (from
-   its AGENTS.md / CLAUDE.md). If none are documented, say so in the plan at
-   the gate. On a failure, halt this repo and report. A red local gate must
+   its AGENTS.md / CLAUDE.md), as the plan listed them. On a failure, halt this repo and report. A red local gate must
    not reach trunk. Parallel agents run exactly the scope the plan names.
 7. **Commit** — mirror the repo's own previous bump commits for this
    package (`git log --oneline --grep '<package>'`). Fallback subject,
@@ -213,7 +234,16 @@ For every pushed repo:
 A stopped run (missing package, version not on the index, no gate
 confirmation) is one result sentence, then what the user needs to do. Name
 the unconfirmed precondition and what the user supplies, never the sandbox
-or network environment.
+or network environment. No promise of what happens next.
+
+Reply to a stop in this shape, with the same formatting rules:
+
+```text
+Stopped: example-pkg 2.0.0 is not confirmed on its package index, so nothing was changed.
+
+- Confirm the version is published and which index (PyPI, npm, crates.io, or Go) holds it.
+- Pass your checkout directories with --roots, and --push if you want the commits pushed.
+```
 
 Reply in this shape, as plain text outside any code fence, with plain bullets, no bold (never `- **Label:** ...`), and no local paths:
 

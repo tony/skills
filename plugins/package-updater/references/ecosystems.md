@@ -13,6 +13,7 @@ Read before running anything that resolves a version.
 - When a project has no established procedure
 - Runtime and toolchain pins
 - Supply-chain cooldown
+- Release publication time
 
 Detect an ecosystem by the files present, never by the project's name or
 language tag. A repository can carry several (a Python package with a docs
@@ -221,7 +222,7 @@ $ ncu --help
 
 Search the output and the vendor's settings page for `exclude-newer`
 (uv), `minimumReleaseAge` (pnpm), `min-release-age` (npm), and
-`cooldown` (ncu). A tool that lists none has no cooldown support in the
+`cooldown` (ncu); these are search hints, not keys to copy. A tool that lists none has no cooldown support in the
 installed version. Settings pages:
 [uv](https://docs.astral.sh/uv/reference/settings/),
 [pnpm](https://pnpm.io/settings),
@@ -236,3 +237,50 @@ effect, and do not report versions it gates as current.
 Check for a cooldown before reporting a package as current: a release
 inside the window is invisible to the resolver, so a gated tree looks up
 to date.
+
+## Release publication time
+
+The cooldown check compares a release's publication time with the
+window. Read the time from the registry in this run; an empty result or
+a non-zero exit means the version is not published, so stop. Each
+command prints one timestamp.
+
+PyPI, for a Python package or a tool published there (uv):
+
+```console
+$ curl -fsS https://pypi.org/pypi/<name>/<version>/json | jq -r '.urls[0].upload_time_iso_8601'
+```
+
+npm, for any Node package:
+
+```console
+$ npm view <name> time --json | jq -r '.["<version>"]'
+```
+
+crates.io, which rejects a request with no user agent:
+
+```console
+$ curl -fsS -A 'package-updater' https://crates.io/api/v1/crates/<name>/<version> | jq -r .version.created_at
+```
+
+Go module proxy; a module path escapes each capital letter as `!` plus
+the lowercase letter, and the version keeps its `v`:
+
+```console
+$ curl -fsS https://proxy.golang.org/<module>/@v/<version>.info | jq -r .Time
+```
+
+A tool released on GitHub (just, pnpm, mise, a runtime), using the tag
+the project publishes:
+
+```console
+$ gh api repos/<owner>/<repo>/releases/tags/<tag> --jq .published_at
+```
+
+Node.js, which publishes a date and no time of day. Treat the release as
+published at the end of that day (23:59 UTC), so the check errs toward
+waiting:
+
+```console
+$ curl -fsS https://nodejs.org/dist/index.json | jq -r '.[] | select(.version=="v<version>") | .date'
+```

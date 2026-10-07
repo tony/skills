@@ -24,7 +24,8 @@ Never write into the corpus being read: no `git checkout`, no `git clean`, no
 edit inside a target. Studying a project must not dirty its checkout. Output
 lands under `--out`, defaulting to `notes/ontology/<subject>/` in the current
 repository. The corpus is recorded by URL and ref, not by local path; `extract` fetches a
-pinned checkout when it needs one.
+pinned checkout when it needs one. A pasted excerpt is the exception: it has no
+URL, so it is stored under `--out`.
 
 ## Procedure
 
@@ -63,7 +64,22 @@ $ git ls-remote \
     https://github.com/OWNER/REPO
 ```
 
-For a local checkout, record both the remote and the exact ref:
+For a local checkout, run these checks first. Each must hold or the pin cannot
+be reproduced elsewhere:
+
+```console
+$ git status --porcelain
+```
+
+Output means uncommitted edits: the working tree differs from the commit, so
+stop and ask the user to commit or pass a scope that excludes them.
+
+```console
+$ git branch --remotes --contains HEAD
+```
+
+No output means the commit is not pushed, so a permalink to it can 404. Pin a
+pushed ref instead, or record the source without a URL (below).
 
 ```console
 $ git rev-parse --short HEAD
@@ -78,8 +94,15 @@ $ gh api repos/OWNER/REPO/commits/v2.40.0 --jq .sha
 
 For a local checkout, `git rev-parse HEAD` gives the commit.
 
+A checkout with no remote has no URL form. Publish it first, or record
+`source` as the repository's directory name, leave `url` out of every cite, and
+cite `path@commit` in `locator`; `verify` checks those with `git show` inside
+that repository.
+
 For prose, the ref is the edition: publisher, year, and printing. It has no
-`commit`; leave it empty.
+`commit`; leave it empty. A pasted prose excerpt is saved verbatim to
+`<out>/corpus/excerpt-<n>.txt` (n counts from 1), and that path relative to `<out>`
+is the row's `source`. Name no title the user did not give.
 
 ### 3. Inventory without reading everything
 
@@ -105,8 +128,9 @@ One row per source, including every source deliberately not read:
 ```
 
 `locator_kind` is how citations into the source are located: `line-range`,
-`section`, `page`, or `search-string`, in the order `../../references/citation.md`
-prefers. `verify` checks each citation by its source's kind.
+`section`, `page`, or `search-string`, defined in
+`../../references/citation.md`. `annotate`, `extract`, and `verify` all use
+these four values.
 
 `contest`'s completeness pass reads exactly this file.
 

@@ -25,30 +25,27 @@ message rules, non-interactive defaults, stopped and audit-only runs). This skil
 
 User arguments: $ARGUMENTS
 
+`references/lockctl.py` resolves from this skill's directory: print its absolute path once and write that path literally in each command, since shell variables do not persist between Bash calls.
+
 ## Procedure
 
 ### 1. Discover every root module
 
-List the committed lock files:
-
-```console
-$ git ls-files -- '*.terraform.lock.hcl'
-```
-
-No output means a module repository with nothing to refresh: report
-nothing to refresh.
-
-Run the umbrella's discovery phase. `--root-module` limits the run to the
-named directories. A directory holding a backend block but no committed
-lock file is a finding: its lock is untracked or was never created.
+Run the umbrella's discovery phase first: root modules come from the
+`.tf` files and from lock files tracked, untracked, or gitignored, per
+`references/layout-discovery.md`. `--root-module` limits the run to
+the named directories. Report nothing to refresh only when no directory
+has a backend or a lock file. A directory with a backend or an untracked
+or ignored lock but no committed one is a finding, not an absence.
 
 ### 2. Record the starting state
 
 Per root module: the version selected for each provider, and how many
 platforms each provider's entry tracks (the lock reference has the
 count command). The first reports what moved; the second detects a
-narrowed file. In an audit, also report the platform names
-`lockctl.py platforms` finds, or that none are recorded.
+narrowed file. In an audit, also report the platform names the repository's CI and task
+files pass to `providers lock` (the lock reference has the command), or
+that none are recorded.
 
 ### 3. Present the plan and wait
 
@@ -62,15 +59,19 @@ committed and unmodified, else skip and report it. Then run its
 `init -upgrade` command (this skill moves every provider its constraints
 allow) and compare each lock's per-provider platform count against its
 count before. When a count dropped, restore the platforms from the
-names `lockctl.py platforms` finds in the repository, or ask.
+names the lock reference finds in the repository's CI and task files, or
+ask. If the count is still short, or the question goes unanswered
+(headless included), restore that lock from git, leave it out of the
+commit, list the root module under `## Failures` with the before and
+after counts, and stop after the other root modules finish.
 
 A root module whose `init` fails has its lock restored from git, and the
 others carry on. Record the failure and continue.
 
 ### 5. Commit
 
-One commit for the lock files, kept out of any commit carrying authored
-changes. With `--no-commit`, leave them in the working tree and say what
+One commit for the lock files that kept every platform (or got the
+user's explicit yes), kept out of any commit carrying authored changes. With `--no-commit`, leave them in the working tree and say what
 would have been committed. Write the message and the report per
 `references/prose-rules.md`.
 

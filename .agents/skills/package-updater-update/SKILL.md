@@ -68,20 +68,24 @@ With `--audit-only`, stop here and report; nothing is written.
 
 Work through repositories one at a time in the skill's commit order,
 with `--push`, pushing as each completes so an interrupted run resumes
-cleanly, except where the plan marked a repository local-only. Write commit messages and
-the report per `references/prose-rules.md`.
+cleanly, except where the plan marked a repository local-only. Write
+commit messages and the report per `references/prose-rules.md`.
 No `Co-Authored-By`, no "Generated with" or other tool trailers, no emoji.
 
 Commits land on the default branch by default. `--branch <name>` works
-on a branch instead; `--push` pushes the commits; `--pr` pushes the branch and opens a pull
-request from it. Without either, commit locally, stop, and print the push
-command.
+on a branch instead; `--push` pushes the commits; `--pr` pushes the
+branch and opens a pull request from it. Without either, commit
+locally, stop, and print the push command.
 
 With `--issue`, the audit is filed before the work starts: create the
 issue or Linear card listing what is outstanding, derive the branch name
 from it, then work on that branch. Linear supplies its own branch name —
 use it verbatim. The pull request references the issue; the commits do
-not.
+not. Write the issue or card body and the pull request text per
+`references/prose-rules.md`. The issue body is one sentence naming
+the sweep, then `## Outstanding` with one plain bullet per repository
+and move (package or tool, current version, target, track). The pull
+request body is one sentence on what landed, then one bullet per track.
 
 ### 6. Verify and report
 

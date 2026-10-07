@@ -75,8 +75,7 @@ last 10 commits for style matching. Falls back to Conventional Commits
 - No history rewriting: never uses `--amend`, and always creates new commits.
 - Secret filtering: never stages `.env`, credentials, or key files, and names any it skips.
 - No tool credit: commit messages carry no `Co-Authored-By` trailer, tool footer, or emoji.
-- Explicit staging: stages specific files only, never `git add -A` or `git add .`.
-- Heredoc formatting: used for multi-line commit messages.
+- Explicit staging: stages specific files only, never `git add -A`, `git add .`, or `git commit -a`.
 
 ## Prerequisites
 

@@ -15,11 +15,14 @@ bugs come from fragmented spacing authority: gap, margin, padding, and
 fixed widths all control the space between the same visual peers. Each
 pair of adjacent items gets exactly one mechanism.
 
-Use `$ARGUMENTS` as the target scope. If it is empty, ask which
-component or file to audit. Without a question tool, stop with the halted
-result below.
+Use `$ARGUMENTS` as the target scope. If it is empty and the user pasted
+markup, audit the paste. Otherwise ask which component or file to audit;
+without a question tool, stop with the halted result below.
 
-Paths under `../../scripts/` resolve from this skill's directory: print the absolute path once and write it literally in each command, since shell variables do not persist between Bash calls.
+Run scripts from the project root so targets stay relative to the
+project. Resolve `references/detect.py` against this skill's directory,
+print the absolute path once, and write it literally in each command,
+since shell variables do not persist between Bash calls.
 
 ## Workflow
 
@@ -46,12 +49,8 @@ version-neutral.
 ### Step 1: Structural audit
 
 Read `references/patterns.md`. Scan the component and draw a spacing
-map: every spacing mechanism acting on the group the user cares about.
-
-```
-[Logo] --gap-1--> [Tools] --gap-1--> [Docs] --me-1+flex--> [Theme(me-2)]
-        ^ parent gap                  ^ margin leak    ^ separate container
-```
+map in the list form shown under Output: every spacing mechanism acting
+on the group the user cares about.
 
 Call out how many mechanisms act between visual peers, which items sit
 in different containers yet read as one group, and any fixed `w-*` on
@@ -86,7 +85,8 @@ Work in this order:
 5. Keep intentional breaks. A divider between nav groups is
    deliberate. Ask before normalizing a difference that may be design.
    Without a question tool, keep the break and list it under the
-   findings. When you keep separate containers, name the evidence that
+   findings as "kept; confirm it is intended", with no guessed
+   rationale. When you keep separate containers, name the evidence that
    they are separate groups (a divider, different roles, a
    `justify-between`), or merge them.
 
@@ -100,6 +100,9 @@ Redraw the spacing map and confirm:
 - [ ] No `w-*` on content-sized items, unless all peers match
 - [ ] Hit targets are consistent across peers
 
+Leave a box `[ ]` and give the reason for any unmet item; never tick a
+box and then argue against it.
+
 ## Output
 
 Write it per `references/prose-rules.md`. Present these sections
@@ -107,7 +110,8 @@ in order, with these headings:
 
 1. Spacing map
 2. Anti-patterns found: one plain sentence per finding, naming the
-   pattern and the elements involved, with no bold lead-ins
+   pattern and the elements involved, with no bold lead-ins. For a file or
+   directory audit, name each finding's `path:line`
 3. Proposed refactor: a focused diff or before/after
 4. Validation checklist: Step 4 filled in
 
@@ -123,7 +127,7 @@ nav (p-4, no gap)
 
 ## Anti-patterns found
 
-- The `ms-3` on the second group sets the space between groups with a margin (Pattern 2).
+- The `ms-3` on the second group (`src/Nav.tsx:11`) sets the space between groups with a margin (Pattern 2).
 - "Sign in" has `px-2` and "Sign up" has none, so the buttons differ in width (Pattern 3).
 
 ## Proposed refactor
@@ -140,7 +144,8 @@ nav (p-4, no gap)
 - [x] Peer buttons share `h-8 px-2`.
 ````
 
-For a straightforward fix, collapse this to a short explanation and the
+Use the full shape when auditing a file or directory. For a pasted
+snippet with one finding, collapse it to a short explanation and the
 code, with no bold anywhere and no counted lead-in ("for three
 reasons:"). State each visible change once. Do not restate that
 distances stay the same.
@@ -151,6 +156,9 @@ Halted or empty runs give one result sentence, then what the user does:
   Pass a file or directory.
 - No Tailwind class attributes in scope: "No Tailwind classes found in
   `<scope>`." Check the path, or point at the template files.
+- Issues found but all kept as deliberate: "No spacing changes made in
+  `<scope>`." One sentence naming the kept break and what would change
+  it. Do not reprint unchanged code.
 - No issues found: "No spacing issues found in `<scope>`." Name the files
   you read, since the detect commands can miss dynamic classes.
 

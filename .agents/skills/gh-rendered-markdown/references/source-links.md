@@ -1,9 +1,9 @@
 # Source links
 
-Contents: Link everything that has a URL, Pin every reference into a repository, Let GitHub do the linking where it already does, Naming an open-source project, What rots.
+Contents: Link everything that has a URL, Pin every reference into a repository, Let GitHub do the linking where it already does, What rots.
 
-How to link so the link still works. Shared by the
-`rendered-markdown` skill and the `gh-create-issue` skill.
+How to link so the link still works. The link set for a named
+open-source project is in `project-links.md`.
 
 A rotted link is worse than no link: it resolves, looks authoritative,
 and points at unrelated code. Write for a three-year horizon.
@@ -137,92 +137,10 @@ A wrong issue number or a SHA that is not in the repository produces
 no link and no error. Confirm anything you did not copy from a live
 page.
 
-## Naming an open-source project
-
-On first mention, give the whole set: repository, homepage,
-documentation, the changelog at the release in question, and the
-package-registry page. Research it; do not reconstruct URLs from memory.
-Render the project name linked to its primary home, with the rest
-alongside (project and version below are illustrative):
-
-```
-[vitest](https://vitest.dev) — [repo](https://github.com/vitest-dev/vitest), [docs](https://vitest.dev/guide/), [v1.2.3 release notes](https://github.com/vitest-dev/vitest/releases/tag/v1.2.3), [npm](https://www.npmjs.com/package/vitest)
-```
-
-Drop a slot that genuinely does not exist rather than pointing two
-slots at the same page.
-
-### Resolving the set from a registry
-
-npm, including `repository.directory` for a package inside a monorepo:
-
-```console
-$ curl -s https://registry.npmjs.org/PKG/latest | jq '{version, homepage, repository, bugs}'
-```
-
-PyPI, where the link set is maintainer-labeled free text:
-
-```console
-$ curl -s https://pypi.org/pypi/PROJECT/json | jq '.info | {package_url, home_page, project_urls}'
-```
-
-crates.io, which requires an identifying user agent:
-
-```console
-$ curl -s -A 'issue-authoring' https://crates.io/api/v1/crates/CRATE | jq '.crate | {homepage, documentation, repository, default_version}'
-```
-
-RubyGems, the one registry with a first-class changelog field:
-
-```console
-$ curl -s https://rubygems.org/api/v1/gems/GEM.json | jq '{homepage_uri, source_code_uri, documentation_uri, changelog_uri}'
-```
-
-Go, resolving version, tag ref, and commit in one call:
-
-```console
-$ curl -s https://proxy.golang.org/MODULE/@latest
-```
-
-Second-source the repository itself, since a registry records what was
-true at publish time:
-
-```console
-$ gh repo view OWNER/REPO --json url,homepageUrl,description,isArchived
-```
-
-### Changelog at the release, never at trunk
-
-```
-https://github.com/OWNER/REPO/releases/tag/v2.40.0
-```
-
-Copy that URL from the API rather than building it: monorepo tags carry
-prefixes and encodings not derivable from a version number
-(`@changesets/cli@2.31.1` becomes `%40changesets/cli%402.31.1`, Go
-submodules tag as `module1/v1.2.3`).
-
-```console
-$ gh api repos/OWNER/REPO/releases/tags/v2.40.0 --jq '{tag_name, html_url}'
-```
-
-`/releases/latest` moves on every publish and means different things in
-the API and the web UI; never use it for a claim about a specific
-version. When a project publishes no releases, link a tag-pinned
-`CHANGELOG` file, or a `/compare/<old>...<new>` URL.
-
 ## What rots
 
 - A repository rename redirects, until someone re-creates the old name
   under the old owner. Then it silently points somewhere else.
 - A branch rename redirects normal URLs but not raw file URLs.
-- A registry-recorded repository URL can predate a rename; it resolves
-  only through that redirect.
-- `npm` `repository.url` is a VCS URL (`git+https://….git`), not a
-  browsable link. `homepage` is often just the README anchor.
-- Registry web pages reject non-browser clients — npmjs.com and
-  crates.io both return 403 to `curl`, crates.io citing its data
-  access policy. Validate those through the JSON APIs above, not with
-  a status check.
 - Unauthenticated GitHub API calls are capped at 60 per hour per IP.
   Route them through `gh`.

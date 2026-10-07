@@ -40,12 +40,9 @@ Claude Code uses a leading slash (`/merge-pr:â€¦`). Codex omits it (`merge-pr:â€
 
 Merges a single PR.
 
-- Runs the readiness gate: open, not draft, CI, mergeability, reviews.
-- Waits on pending CI.
-- Rebases and force-pushes if behind, after confirming.
-- Merges via `gh pr merge`, pinned to the verified head commit, using repo
-  history for the commit message.
-- Checks out and pulls trunk.
+Runs the readiness gate, rebases after confirming when behind, merges via
+`gh pr merge` pinned to the verified head with a message matching repo
+history, then syncs trunk and checks it contains the merge commit.
 
 ### `/merge-pr:multiple`
 
@@ -53,14 +50,13 @@ Lands multiple PRs sequentially.
 
 - Detects if PRs are a **stack** (merged bottom-up, children rebased/retargeted)
   or **independent** (merged in order, rebased on trunk).
-- Between merges: rebases, force-pushes, waits on CI.
+- Between merges: rebases, force-pushes, waits on CI. A stack parent is
+  merged without `--delete-branch` so its child PR stays open.
 - Halts on CI failure, drift, or product-level conflicts, preserving merges.
 
 ## Merge strategy and flags
 
-Defaults to merge commit; `--squash` and `--rebase` override. Other
-`gh pr merge` flags pass through. The gate, strategy, and flag rules live in
-`references/merge-readiness.md`.
+The gate, strategy, and flag rules live in `references/merge-readiness.md`.
 
 ## Prerequisites
 

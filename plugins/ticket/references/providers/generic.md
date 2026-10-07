@@ -21,7 +21,7 @@ Answers give you `delivery_group`, `work_item`, and `sub_item`. Everything
 else is optional and probably absent.
 
 When the answer is unclear, treat the system as having exactly one authored
-level — `work_item` — and record `mapping_basis: convention` for anything
+level — `work_item` — and say in the reply that the role rests on convention for anything
 someone calls an epic or a project.
 
 ## Semantic roles

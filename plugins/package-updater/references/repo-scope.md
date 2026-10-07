@@ -58,8 +58,9 @@ different names. Deduplicate by remote URL and keep one.
 
 ## Find the default branch
 
-Fetch first, so the comparison is not against stale refs. When the fetch
-fails, say in the report that pins may be stale:
+Fetch first, so the comparison is not against stale refs. Use the
+repository's remote name where it is not `origin`. When the fetch fails,
+say in the report that pins may be stale:
 
 ```console
 $ git -C <repo> fetch origin

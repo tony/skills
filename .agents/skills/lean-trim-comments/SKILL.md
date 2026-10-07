@@ -17,7 +17,7 @@ that fail. By default only comments on lines the branch added or
 changed are judged; comments it never touched are left alone. Edits in
 place and prints a diff. Never commits or pushes.
 
-Paths under `../../scripts/` resolve from this skill's directory: print the absolute path once and write it literally in each command, since shell variables do not persist between Bash calls.
+The commands below run from the user's directory. Resolve `references/scope.py` against the directory of this SKILL.md (the path it was read from) and write that absolute path literally in each command; shell variables do not persist between Bash calls. Never show that path in the reply.
 
 ## Confirm before the first edit
 
@@ -27,8 +27,8 @@ classification and get an explicit yes through `ask-user-choice`
 before any `Edit`.
 
 No exceptions: not for a single comment, not for a file the user just
-named, not under `--all`. `--diff-only` is the way to skip the edit,
-not the confirmation. `--stdin` edits nothing, so it needs none.
+named, not under `--all`. `--diff-only` and `--stdin` edit nothing, so
+they need no confirmation.
 
 Without an interactive question tool (Codex, headless runs), act as
 `--diff-only`: print the classification and stop. A request that says
@@ -65,13 +65,15 @@ With no paths, the scope is the lines this branch added or changed.
 
    Otherwise take the branch scope, which diffs against the merge base
    with the trunk ref (`origin/HEAD` as last fetched, so it may be
-   stale; else `main` or `master`):
+   stale; else `origin/main`, `origin/master`, `main`, then `master`):
 
    ```console
    $ python3 references/scope.py
    ```
 
-   The script prints `path<TAB>start-end,...` per file. Exit 2 means no
+   The script prints `path<TAB>start-end,...` per file; `--all` prints
+   names only, meaning judge the whole file. A path with an empty range
+   had only deletions: skip it. Exit 2 means no
    trunk ref or no changes: report that and stop rather than widening
    the scope. Keep source files; drop lockfiles, generated output, and
    vendored trees.
@@ -89,7 +91,12 @@ With no paths, the scope is the lines this branch added or changed.
    whole text. A verdict you cannot attach to a gate is a keep.
 
    Read the surrounding code first: a comment that looks like narration
-   but pins an invariant is a keep.
+   but pins an invariant is a keep. The policy's hard keeps override
+   every other verdict: tool directives (`# noqa`, `# type: ignore`,
+   `# pragma`, `// eslint-disable`, `# fmt: off`), shebang and encoding
+   lines, and license or SPDX headers are never deleted or rewritten,
+   and neither is a docstring that is the only statement in its block.
+   Report a bloated sole-body docstring as a finding instead.
 
 4. **Preview and confirm.** List one verdict per comment, keeps
    included, grouped by file: old and new text for each rewrite, the
@@ -102,8 +109,11 @@ With no paths, the scope is the lines this branch added or changed.
 5. **Apply.** Use `Edit`. Rewrites are concrete and shorter than what
    they replace. Do not touch the code itself; a comment that is wrong
    because the code is wrong is a finding to report, not to fix here.
+   Never delete a directive or a sole-body docstring, whatever the
+   preview said.
 
-6. **Diff.** Print `git diff -- <targets>`. Skip for `--stdin`.
+6. **Diff.** Print `git diff -- <targets>`. Skip for `--stdin`,
+   `--diff-only`, and runs without a question tool: nothing was edited.
 
 7. **Report and hand off.** Write it per
    `references/prose-rules.md`. Shape by mode:
@@ -117,7 +127,13 @@ With no paths, the scope is the lines this branch added or changed.
      the preview above, then `## For the commit message`.
 
    The hero line is `N comments: K kept, R rewritten, D deleted`; the
-   counts sum to N. Omit `## For the commit message` when nothing moved.
+   counts sum to N. Tally the verdicts before writing any reply text, so
+   the first line is final; never recount or correct it inline. A
+   comment you shorten or reword is rewritten, not kept; kept means
+   the text is unchanged. A rewrite preserves every instruction in the
+   original, such as what not to change and what to test first. A rewrite verdict names the gate the
+   old text failed, not one the new text passes. The hero comes first,
+   with no paragraph before it. Omit `## For the commit message` when nothing moved.
 
    Reply in this shape, as plain text outside any code fence, with plain bullets, no bold (never `- **Label:** ...`), and no local paths:
 
@@ -141,8 +157,22 @@ With no paths, the scope is the lines this branch added or changed.
    - Windows runners see a cold DNS cache on the first request.
    ````
 
+   A `--diff-only` run, with the one comment it judged:
+
+   ````text
+   1 comment: 0 kept, 0 rewritten, 1 deleted
+
+   ## Verdicts
+
+   - Deleted "puts the value in the store" above `store[key] = value`: fails Elite, the name says it.
+   ````
+
+   `## For the commit message` holds only rationale moved out of a
+   deleted or rewritten comment, never one that was kept.
+
    Then offer next steps through `ask-user-choice`: commit, tighten
-   the prose too with the `lean-tighten` skill, or discard. Without a question
+   the prose too with the `lean-tighten` skill, or discard. Never offer to widen
+   the scope to comments the branch did not touch. Without a question
    tool, print the options as a plain list and stop. Review the printed
    diff first, since `git checkout -- <file>` resets the whole file to
    HEAD and drops any other uncommitted work in it. A commit message

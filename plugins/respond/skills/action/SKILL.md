@@ -24,6 +24,8 @@ Run by `/respond:goal`, this skill is in loop mode: it skips Phase 2's
 plan mode and Phase 5's panel, never pushes, and never posts replies.
 The loop owns all four.
 
+Paths under `../../scripts/` resolve from this skill's directory: print the absolute path once and write it literally in each command, since shell variables do not persist between Bash calls.
+
 ## The screening gate
 
 ```
@@ -33,8 +35,9 @@ NO FIX WITHOUT A VERDICT
 This skill does not triage. Before any edit, resolve a ledger:
 
 - **A ledger exists whose key matches**: collect the feedback,
-  recompute the branch, `HEAD`, and digest as the rubric's ledger
-  section defines them, and compare them with the `## Ledger key` of the
+  recompute the branch, `HEAD`, and digest (with
+  `../../scripts/ledger_key.py`, as `../check/SKILL.md` shows) per the
+  rubric's ledger section, and compare them with the `## Ledger key` of the
   `/respond:check` report earlier in this session. Its verdicts are
   settled; do not re-argue them.
 - **No ledger, or a key mismatch**: run `/respond:check` now with the
@@ -121,7 +124,9 @@ skipped. This rewrites history, so:
    run aborts. Detect trunk and push state with `git status -sb`.
 4. Run `git rev-parse --show-toplevel`. When it is `$HOME` or contains
    it, halt: the commands below stage files, and a repository rooted at
-   home would sweep in credentials.
+   home would sweep in credentials. Tell the user to run again from the
+   project's own checkout; never advise deleting `.git` or any other
+   user file.
 
 ## Phase 1: Resolve the ledger
 
@@ -191,7 +196,9 @@ report.
 ## Phase 5: Report — the output contract
 
 Write the report per `../../references/prose-rules.md`. Never name
-local absolute paths or temp files.
+local absolute paths or temp files. In a non-interactive run, put the
+plan from Phase 2 in one sentence after the hero line, and give no
+reason for skipping approval.
 
 A run that stops early (dirty tree, failed gate under `--on-fail=stop`,
 no screenable findings) reports one result sentence, then what the user

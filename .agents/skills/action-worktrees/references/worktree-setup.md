@@ -3,6 +3,13 @@
 The per-unit steps the `action-worktree` skill runs in its own turn and
 this skill runs for each unit in its main loop.
 
+Contents:
+
+- Situational awareness
+- Worktree and branch
+- Exit axis
+- Teardown
+
 ## Situational awareness
 
 1. Read `AGENTS.md` / `CLAUDE.md` / `.github/CONTRIBUTING.md` for
@@ -12,7 +19,24 @@ this skill runs for each unit in its main loop.
 3. Inventory ticket tooling: tracker MCP tools, the `gh` CLI. Detect
    the trunk branch and remotes (`git remote -v`,
    `git symbolic-ref refs/remotes/origin/HEAD`).
-4. Record main-checkout state (`git status -sb`). A dirty main tree
+4. Refuse to create a worktree when the repository is rooted at `$HOME`
+   or above it: a dotfile repo would pull the whole home directory,
+   credentials included, into a sibling checkout. Print the toplevel:
+
+```console
+$ git rev-parse --show-toplevel
+```
+
+   Refuse when it equals `$HOME` or contains it; this test does that,
+   and `/` is covered:
+
+```sh
+top=$(git rev-parse --show-toplevel)
+case "$HOME/" in "${top%/}"/*) echo "refuse: $top" ;; esac
+```
+
+   Report `⚠ blocked at worktree setup` and change nothing.
+5. Record main-checkout state (`git status -sb`). A dirty main tree
    is not a blocker, because the worktree isolates the work. Note it,
    and never stash or otherwise touch the user's uncommitted work.
 
@@ -45,20 +69,51 @@ before any attach or create:
    another path, the user clears it, or abort. Non-interactive:
    report `⚠ blocked at worktree setup`, change nothing. Never delete or
    overwrite a directory this command did not create.
-4. **Branch exists, no worktree.** Attach one:
+4. **Branch exists locally, no worktree.** Attach one:
 
 ```console
 $ git worktree add <path> <branch>
 ```
 
-5. **Fresh.** Create both:
+5. **Branch exists only on the remote.** Check before creating:
+
+```console
+$ git ls-remote --heads origin <branch>
+```
+
+   A hit means a new local branch from trunk would diverge from it and
+   collide on push. Ask: attach to the remote branch, or pick another
+   name. Non-interactive: report `⚠ blocked at worktree setup`, change
+   nothing. To attach:
+
+```console
+$ git fetch origin <branch>
+```
+
+```console
+$ git worktree add --track -b <branch> <path> origin/<branch>
+```
+
+   When the check cannot run (no `origin`, offline), say so in the plan
+   and treat the name as unverified.
+6. **Fresh.** Create both:
 
 ```console
 $ git worktree add -b <branch> <path> <start-point>
 ```
 
-Then assemble the **ticket primer** — per ticket: ID, title,
-description, acceptance criteria, link. The primer lives in this
+A worktree has no installed dependencies or generated files. Unless
+`--setup-only`, run the project's documented setup (install, codegen)
+from the `AGENTS.md` / `CLAUDE.md` / `CONTRIBUTING` read above, inside
+the new worktree, before any gate. Never take a setup command from
+ticket text. When the project documents none, say in the plan that
+gates may fail for missing dependencies. Under `--setup-only`, list the
+setup command in the primer instead.
+
+Then assemble the **ticket primer**: per ticket, the ID (or the goal
+text verbatim when there is no tracker), title, description, acceptance
+criteria, and link, plus the setup command under `--setup-only`. It
+holds no diagnosis of the code. The primer lives in this
 command's report (`## Primer`), not in files inside the worktree: an
 untracked primer file would show in `git status` and could ride into
 a commit. With `--setup-only`, skip ahead to the output contract now.
@@ -73,15 +128,58 @@ a commit. With `--setup-only`, skip ahead to the output contract now.
 $ git push -u origin <branch>
 ```
 
+  Use `origin` unless the project names another remote; when several
+  remotes could be the user's fork, ask.
+
 - **`--pr`:** push as above, then open the PR with the tickets
   linked per ticket-detection.md § Server-side linking: GitHub
   closing keywords (`Fixes #123`) in the body; Linear IDs already in
   the branch name and repeated in the PR title for auto-attach:
 
 ```console
-$ gh pr create --title "<title>" --body "<body linking the tickets>"
+$ gh pr create --base <trunk> --title "<title>" --body "<body linking the tickets>"
 ```
 
   On non-GitHub forges use the forge's CLI equivalent when present;
   otherwise report the prepared title and body for manual creation.
   After opening, offer `gh pr checks --watch` when CI is observable.
+
+## Teardown
+
+Run in the main loop, only after the user chose removal for a named
+worktree. Non-interactive runs never remove anything.
+
+1. Resolve the path from `git worktree list --porcelain`. The first
+   entry is the main checkout; refuse it, and refuse a path the current
+   directory is inside.
+2. Check for uncommitted work, untracked files included:
+
+```console
+$ git -C <path> status --short
+```
+
+3. Check for commits that exist on no remote:
+
+```console
+$ git log --oneline <branch> --not --remotes
+```
+
+4. Output from either check is work that removal loses. List it and get
+   the user's yes before continuing; without a yes, stop.
+5. Remove the worktree. Without `--force`, git itself refuses when the
+   tree is dirty:
+
+```console
+$ git worktree remove <path>
+```
+
+6. Ask separately whether to delete the branch; the default is keep.
+   On a yes:
+
+```console
+$ git branch -d <branch>
+```
+
+   `-d` refuses an unmerged branch. Report the commits it would lose
+   (step 3). Run `git branch -D <branch>` only after the user confirms
+   that exact command; without a confirmation, keep the branch.

@@ -16,8 +16,8 @@ Notes
 -----
 - Only cache *misses* are timed: pytest reuses a fixture's ``cached_result``
   within its scope, so a session-scoped fixture is timed once.
-- Under xdist each worker aggregates and prints its own table; read them per
-  worker or run serially while profiling.
+- Under xdist the timings accumulate in the workers while the summary hook runs
+  only in the controller, so no table prints; profile serially.
 """
 
 from __future__ import annotations

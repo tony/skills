@@ -4,7 +4,7 @@ description: >-
   Assess a decision against stated criteria: sourced ratings per criterion
   and a verdict, kept in a dated topic folder
 disable-model-invocation: true
-allowed-tools: ["Skill", "Bash", "Read", "Write", "Edit", "Grep", "Glob", "WebSearch", "AskUserQuestion"]
+allowed-tools: ["Bash", "Read", "Write", "Edit", "Grep", "Glob", "WebSearch", "AskUserQuestion"]
 metadata:
   argument-hint: "[decision or question] [--root=<dir>] [--resume] [--audience=private|internal|public]"
   source: "plugins/research/skills/assess/SKILL.md"
@@ -12,7 +12,7 @@ metadata:
 
 # this skill
 
-Invoke the `research-foray` skill with `assess` followed by the user arguments, and follow it.
+Read the `research-foray` skill and follow it, treating `assess` as the first word of the arguments.
 
 User arguments: $ARGUMENTS
 

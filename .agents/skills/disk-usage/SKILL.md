@@ -37,8 +37,9 @@ balloon will keep re-accumulating.
 
 ## Measure
 
-Survey each filesystem separately. Prefer `dust` with an explicit depth
-and minimum size, falling back to `du` when unavailable.
+Survey each filesystem separately and stay on one filesystem: `dust -x`
+with an explicit depth and minimum size, falling back to `du -x`. Without
+`-x`, a walk from `/` enters `/mnt/c` and other mounts and mixes layers.
 
 Set the size floor (minimum size) relative to the filesystem rather than using a
 fixed value, so a small disk still produces findings and a large one is
@@ -63,6 +64,12 @@ For directories of upstream clones kept for reading, read
 `references/study-repos.md`.
 
 ## Output
+
+When any layer or path cannot be read, use the blocked shape in
+`references/output-contract.md`: no `##` sections, and never
+attribute unmeasured space to a path or say where the answer probably is.
+Name the layer, not the sandbox, and use only the four tiers in the
+catalog (regenerable, redundant, stale-but-unique, protected).
 
 Follow `references/output-contract.md`. Write it per `references/prose-rules.md`.
 

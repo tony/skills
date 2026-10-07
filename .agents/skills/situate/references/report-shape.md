@@ -4,11 +4,14 @@ Shared by `/situate` and the `situational-awareness` skill.
 
 One hero line, then these sections in this order, then a next-step
 panel. No other headings, no bold label on every bullet, no recap ending.
-An empty layer is "none", never "not available". Never name an absolute
+An empty layer is "none", never "not available". Never list untracked
+editor or shell files. Never name an absolute
 path or a temp directory.
 
 The hero is `✓ <branch>: <what it does> · <n> commits · PR #<n> <state>`,
-or `⚠ <what is blocking or unclear>`. A run that stops early gets one
+or `⚠ <what is blocking or unclear>`. When there is nothing to measure
+(no commits, or the root is the home directory) the hero is
+`⚠ Nothing to measure yet: <why>`. A run that stops early gets one
 result sentence, then what the user needs to do.
 
 1. `## Position` — branch, trunk, ahead/behind, uncommitted work,
@@ -23,7 +26,7 @@ result sentence, then what the user needs to do.
    it must pass.
 6. `## Prior work` — only when the prior-conversations layer ran: what
    was decided earlier, when, and whether the repository agrees.
-7. `## Open questions` — what is unresolved, mid-flight, or
+7. `## Open questions` — only blockers and decisions: what is unresolved, mid-flight, or
    contradictory, and what a resumed session would most likely get
    wrong. Anything decided in an earlier conversation and still open
    belongs here, with its date.

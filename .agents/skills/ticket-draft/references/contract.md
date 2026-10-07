@@ -94,6 +94,12 @@ pre-commit the implementation.
 violated, is the work pointless, or is a neighbour broken?* Anything that
 fails the test is not an invariant.
 
+Write an invariant only from a constraint the input states, in the input's
+own nouns and figures, adding no clause the input lacks ("resume on their own",
+"never slower"). An item that only names a technical choice is Intent, not
+an invariant. When the input states no constraint, leave Invariants out and
+list "Invariants: none stated" under Unverified (Missing, for a rebuild).
+
 Say plainly that the invariants are the non-negotiable part and everything
 else is open; otherwise a reader treats every constraint as load-bearing and
 the ticket ends up dictating a storage engine.

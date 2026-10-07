@@ -37,7 +37,7 @@ Write entries and the commit message per `references/prose-rules.md`.
 
 1. Detect the base and find the changelog file per `branch-scope.md`. No
    changelog changes on this branch and no changelog file: suggest
-   `/changelog` and stop.
+   the `changelog` skill and stop.
 2. Extract the branch's changelog footprint. The added lines are the
    branch-owned entries, the only region this skill may edit:
 
@@ -51,11 +51,10 @@ Write entries and the commit message per `references/prose-rules.md`.
    $ git log origin/<base>..HEAD --oneline -- <changelog-file>
    ```
 
-   None: say so and offer the `/changelog` procedure instead.
+   None: say so and offer the `changelog` skill procedure instead.
 
-4. Run `git status --porcelain -- <changelog-file>`. Output means earlier
-   uncommitted edits: a commit would sweep them in, so never commit; edit
-   only, and say why.
+4. Check the changelog is clean per `commit-message.md`; when it is not, edit
+   only and say why.
 
 ## Phase 2: Recompute what the entries should say
 

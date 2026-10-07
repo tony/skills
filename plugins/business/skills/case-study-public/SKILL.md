@@ -25,6 +25,8 @@ until the gate passes:
 
 User arguments: $ARGUMENTS
 
+Paths under `../../scripts/` resolve from this skill's directory: print the absolute path once and write it literally in each command, since shell variables do not persist between Bash calls.
+
 ## Procedure
 
 ### 1. Locate the run and pass the gate
@@ -35,13 +37,13 @@ Per `interim-format.md` § Rendering a report.
 
 Draft in this order, sanitized from the first word, not afterwards:
 
-1. **Context**: the kind of team and the kind of task, described
+1. Context: the kind of team and the kind of task, described
    without identifying anyone or anything internal.
-2. **Approach**: what was built, in transferable terms.
-3. **Results**: aggregates and ranges only; every figure tagged as
+2. Approach: what was built, in transferable terms.
+3. Results: aggregates and ranges only; every figure tagged as
    tag plus method phrase per `audiences.md`; denominators and
    pinned-window lengths stated; honest rounding.
-4. **Limitations**: candid and mandatory: measurement weaknesses,
+4. Limitations: candid and mandatory: measurement weaknesses,
    the counterfactual rung, what was not measured.
 
 ### 3. Triangulate every headline claim

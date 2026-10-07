@@ -33,23 +33,11 @@ Claude Code uses a leading slash (`/tailwind:â€¦`). Codex omits it (`tailwind:â€
 
 ## Skills
 
-| Skill | Claude Code | Codex | Description |
-|---|---|---|---|
-| Spacing Audit | `/tailwind:spacing-audit` | `tailwind:spacing-audit` | Detect and fix inconsistent spacing in Tailwind CSS layouts |
-
-## How It Works
-
-The spacing audit follows five steps:
-
-1. Detect the framework and Tailwind version from file extensions and the
-   lockfile.
-2. Draw a spacing map of the mechanisms acting on the element group.
-3. Match the catalog's patterns (fragmentation, margin/gap mixing,
-   padding asymmetry, fixed widths, wrapper nesting, hit targets,
-   space-*/gap collisions). `scripts/detect.py` finds candidates for each.
-4. Merge fragmented containers, assign one spacing authority, and
-   flatten wrappers.
-5. Redraw the map to confirm uniform envelopes and authorities.
+`spacing-audit` (`/tailwind:spacing-audit` in Claude Code,
+`tailwind:spacing-audit` in Codex) detects and fixes inconsistent spacing
+in Tailwind CSS layouts. It finds candidates with `scripts/detect.py`,
+falls back to `rg`, then to reading files. See
+[`SKILL.md`](skills/spacing-audit/SKILL.md) for the steps.
 
 The supported template files are `.tsx` and `.jsx` (`className`), `.vue`
 (`class`, `:class`), and `.svelte`, `.astro`, `.html`, `.erb`, and
@@ -70,7 +58,7 @@ Target specific files or components:
 ## Prerequisites
 
 - A project using **Tailwind CSS** v3 or v4; the skill reads the installed
-  version and branches Pattern 7 on it
+  version and adjusts `space-x`/`space-y` advice for it
 - `python3` for the detect script; without it the skill falls back to `rg`
   (ripgrep), then to reading files
 - Template files in any supported framework

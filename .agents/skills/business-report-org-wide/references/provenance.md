@@ -8,14 +8,14 @@ file. A figure that cannot satisfy it does not ship.
 
 Every figure carries exactly one tag:
 
-- **MEASURED** — read from instrumented data. Cite the
+- MEASURED: read from instrumented data. Cite the
   source-manifest entry in the run's `sources.md` by its stable name.
-- **DERIVED** — computed from measured inputs. Show the formula
+- DERIVED: computed from measured inputs. Show the formula
   inline next to the figure; each input keeps its own tag.
-- **BENCHMARKED** — from an external source. Pinned link (URL, DOI,
+- BENCHMARKED: from an external source. Pinned link (URL, DOI,
   or report ID) plus retrieval date. Vendor sources carry an
   additional `(vendor)` flag and are never used as internal inputs.
-- **ESTIMATED** — an assumption. Rationale plus confidence
+- ESTIMATED: an assumption. Rationale plus confidence
   (high | medium | low); the entry lives in `assumptions.yaml` and
   the figure cites its assumption id.
 
@@ -63,7 +63,8 @@ A hard contract, not a preference:
 - Every "hours saved" states across how many engineers and over what
   period.
 - Pinned date ranges everywhere: explicit start and end dates,
-  stated wherever the data appears.
+  stated wherever the data appears. Tier 3 is the exception: it
+  rounds the window to a month or quarter (`audiences.md`).
 - Deterministic seeds for any resampling (bootstrap, Monte Carlo);
   record the seed next to the result.
 - Failed and abandoned AI runs count their time. Verification and

@@ -3,7 +3,7 @@ name: 05-rewrite-approved-drops-commit
 description: >-
   With explicit approval of the rewrite and --commit, the skill backs up the
   branch, drops the changelog-only commit, leaves code untouched, and lands one
-  fresh docs(CHANGES) commit without tool trailers.
+  fresh commit, in the project's own commit format, without tool trailers.
 tags: [fixture, git]
 
 context:
@@ -53,6 +53,21 @@ graders:
     pattern: 'ping'
     flags: i
 
+  - name: code-is-untouched
+    type: regex
+    target:
+      source: file
+      path: src/ping.py
+    pattern: 'return "PONG"'
+
+  - name: does-not-copy-the-draft-pr-number
+    type: regex
+    target:
+      source: file
+      path: CHANGES.md
+    match: not_contains
+    pattern: '#2\b'
+
   - name: commits-once
     type: tool_used
     tool: Bash
@@ -82,5 +97,7 @@ graders:
     focus: last_message
     criteria: |
       The reply says the old changelog commit was dropped, names the backup
-      branch, and says one new docs(CHANGES) commit was added at the tip. It
-      does not claim a push or tell the user the code changed.
+      branch, and says one new commit was added at the tip. The commit subject
+      may follow the project's own format from its AGENTS.md (Scope(type[detail]))
+      or a docs(CHANGES) form; either is correct. It does not claim a push or
+      tell the user the code changed.

@@ -35,10 +35,11 @@ yields one, stop and ask; never infer the goal from the diff.
 
 ### 2. Read what was actually done
 
-Resolve the base by the sweep reference's rules rather than assuming
-trunk: a stacked branch takes its parent, so the range holds only this
-branch's work. Report the layer unavailable, and which lookup failed,
-when neither resolves.
+Run the position script per the sweep reference and take its `base`: a
+stacked branch takes its parent, so the range holds only this branch's
+work. Report the layer unavailable, and which lookups `failed` lists,
+when `base` is null. Ignore untracked editor and shell files; the
+script already filters them.
 
 Then read the commits since that base, the diff behind them, and the
 uncommitted changes. Uncommitted work counts: drift often lives there
@@ -61,7 +62,8 @@ too.
 ### 5. Propose the correction
 
 Recommend one applicable corrective from the goal-derivation reference
-and say why; offer only the correctives that apply. Do not assume the goal wins: when the excursion was the
+and say why; offer only correctives that agree with your own verdict (never offer
+to drop work you called sound). Do not assume the goal wins: when the excursion was the
 better instinct, update the ticket or pull request body to match.
 
 ## Output
@@ -81,7 +83,8 @@ directory; see the sweep reference). Then exactly these sections:
    excursion started, and the pattern behind it; or that there is none.
 4. `## Gap` — criteria the goal asks for with nothing on the branch
    addressing them; or that there are none.
-5. `## Realign` — the recommended correction and the reasoning. A run
+5. `## Realign` — the recommended correction and the reasoning, and no
+   account of what you did or did not run. A run
    with nothing to measure prints the hero, `## Goal`, and one `## Realign`
    line saying what the user must do; skip the other sections.
 

@@ -31,3 +31,23 @@ graders:
     tool: Edit
     min: 0
     max: 0
+
+  - name: writes-nothing
+    type: tool_used
+    tool: Write
+    min: 0
+    max: 0
+
+  - name: no-shell-writes
+    type: tool_used
+    tool: Bash
+    input_match: '(sed\s+(-[a-zA-Z]*i|--in-place)|(?<![0-9&>=-])>>?(?![=&])\s*(?!/dev/null)\S|\btee\b|git\s+(commit|add|stash|checkout|reset))'
+    min: 0
+    max: 0
+
+  - name: ignores-unrelated-untracked-files
+    type: llm
+    criteria: >-
+      The reply blames only the modified skill file. It does not name
+      dotfiles or editor or host directories as blockers and does not advise
+      committing them.

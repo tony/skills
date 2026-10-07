@@ -32,11 +32,6 @@ $ codex plugin add pr@skills
 
 Claude Code uses a leading slash (`/pr:…`). Codex omits it (`pr:…`).
 
-To describe a branch with no PR yet, use `/pr:pr`. To update a PR whose
-branch moved on, use `/pr:refresh`; to start its description over, use
-`/pr:rewrite`. For a squash-merge message, use `/pr:merge-commit`. To
-critique a description without editing it, use `/pr:review-pr`.
-
 ## Skills
 
 | Claude Code | Codex | Description |
@@ -49,15 +44,14 @@ critique a description without editing it, use `/pr:review-pr`.
 
 ## How It Works
 
-- **`/pr:pr`**: Gathers diff/log context, reads conventions (`AGENTS.md`/`CLAUDE.md`,
+- `/pr:pr`: Gathers diff/log context against the PR's base or the parent branch of a stacked branch, reads conventions (`AGENTS.md`/`CLAUDE.md`,
   templates), applies the section patterns in `skills/pr/SKILL.md`, and optionally creates the PR via `gh`.
-- **`/pr:refresh`**: Stack-aware diff against base, backs up to `pr-backups/` in the git directory,
-  updates content while preserving hand-written text/structure, and applies via `gh`.
-- **`/pr:rewrite`**: Backs up PR, mines old description for manual context, resolves
+- `/pr:refresh`: Diffs against the PR's own base (a stacked PR diffs against its parent), backs up to `pr-backups/` in the git directory with a `cmp`-checked copy, updates content while preserving hand-written text and structure, and applies via `gh` once the PR body is confirmed unchanged since the backup.
+- `/pr:rewrite`: Backs up PR, mines old description for manual context, resolves
   templates, drafts fresh description, and applies via `gh`.
-- **`/pr:merge-commit`**: Gathers diff/log, reads conventions, drafts proportional
+- `/pr:merge-commit`: Gathers diff/log, reads conventions, drafts proportional
   message (title-only for small, structured for large), and presents for copying.
-- **`/pr:review-pr`**: Fetches PR and diff, evaluates against structure/patterns,
+- `/pr:review-pr`: Fetches PR and diff, evaluates against structure/patterns,
   and reports strengths and specific markdown improvements.
 
 ## Arguments
@@ -106,10 +100,10 @@ existing structure without applying templates.
 - Never force-pushes or runs destructive git commands.
 - Never pushes to main/master.
 - `/pr:refresh` and `/pr:rewrite` edit a PR only after you approve the proposal; `/pr:pr` creates one only on request.
-- Backs up existing descriptions before editing.
+- Backs up existing descriptions, verifies the copy, and refuses to edit a PR whose body changed since the backup.
 - Stops without changing anything when `gh` is unauthenticated, the PR is missing, or the PR's head branch is not checked out.
 
 ## Prerequisites
 
-- **git**: For diff/log.
-- **gh**: For PR creation/fetching; run `gh auth login` once.
+- git: For diff/log.
+- gh: For PR creation/fetching; run `gh auth login` once.

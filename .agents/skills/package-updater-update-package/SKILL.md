@@ -37,7 +37,9 @@ User arguments: $ARGUMENTS
 
 If the user named a version, use it. Otherwise take the latest stable
 release. Either way confirm it is published and record its publication
-timestamp for the cooldown check. A version written before it is
+timestamp for the cooldown check, using the command for the package's
+registry in the "Release publication time" section of
+`references/ecosystems.md`. A version written before it is
 confirmed to exist is the expensive failure this ordering prevents.
 
 Read the cooldown configuration (the ecosystems reference lists the
@@ -85,13 +87,13 @@ usually needs one, per the follow-ups reference.
 ### 5. Present the plan and wait
 
 Enter plan mode per the Orchestration Plan in
-the `package-updater-updating-packages` skill, then show the pin sites per repository, the target, the verified links, the
-follow-up expected, the branch and push target per repository, and
-whether any repository will be red between the bump and its follow-up.
-A repository whose ownership rested on the fallback signals alone is
-local-only unless the user approves its push here. With `--audit-only`,
-stop here. Write commit messages and the report per
-`references/prose-rules.md`.
+the `package-updater-updating-packages` skill, then show the pin sites per
+repository, the target, the verified links, the follow-up expected, the
+branch and push target per repository, and whether any repository will
+be red between the bump and its follow-up. A repository whose ownership
+rested on the fallback signals alone is local-only unless the user
+approves its push here. With `--audit-only`, stop here. Write commit
+messages and the report per `references/prose-rules.md`.
 
 ### 6. Land
 
@@ -130,9 +132,11 @@ run.
 
 ## Output
 
-Open with a one-line hero (`✓ <package> <old> -> <new> across N repos`
-or `⚠ Stopped: <package> <version> visible <date>`), then exactly these
-sections:
+Open with a one-line hero (`✓ <package> <old> -> <new> across N repos`,
+`⚠ Audit only: <package> <old> -> <new> available in N repos` for
+`--audit-only`, or `⚠ Stopped: <package> <version> visible <date>`), then
+exactly these sections; an audit-only run omits `## Commits` and
+`## Verification`:
 
 1. `## Release` — what the span changes, with verified links to every
    version in it.
@@ -150,7 +154,7 @@ sections:
 Reply in this shape, as plain text outside any code fence, with plain bullets, no bold (never `- **Label:** ...`), and no local paths:
 
 ```text
-✓ requests 2.31.0 -> 2.32.3 across 2 repos
+✓ requests 2.31.0 -> 2.32.3 across 1 repo
 
 ## Release
 

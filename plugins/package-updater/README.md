@@ -82,7 +82,8 @@ committed alone, and reverted when the block lapses.
 
 Each tool names, scales and enforces its cooldown differently. The
 plugin reads the setting and its units from the installed tool's help and
-documentation at run time, so no key or unit is fixed here.
+documentation at run time; the keys the reference names are search
+hints, not settings to copy.
 
 ## Repository Scope
 
@@ -106,7 +107,7 @@ Audits `.ncurc` `reject` entries on every sweep:
 - To properly document a hold, name the condition in the subject:
 
 ```text
-.ncurc: Ignore `@biomejs/biome` 2.3.5 -> 2.3.6 until they fix class methods
+.ncurc: Hold `@biomejs/biome` at 2.3.5 until class-method fix
 ```
 
 ```text
@@ -130,6 +131,8 @@ first run in a repository.
 ## Prerequisites
 
 - git
+- curl and network access: link checks and the cooldown check read
+  release pages and registries.
 - Ecosystem tooling: `uv`, `pnpm`, `ncu`, `npm`, `cargo`, `go`, or
   `mise` (auto-detected).
 - gh: for issue creation and GitHub release URL verification.

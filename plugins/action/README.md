@@ -43,9 +43,9 @@ One ticket (or related set) → `worktree`. Independent tickets → `worktrees`.
 creates new branches).
 
 Flag axes:
-- **Placement**: `--local` (default) creates a sibling worktree. `--temp` uses
+- Placement: `--local` (default) creates a sibling worktree. `--temp` uses
   the host's temp-worktree mechanism.
-- **Exit**: By default, commits locally. Optionally use `--push`, `--pr`, or
+- Exit: By default, commits locally. Optionally use `--push`, `--pr`, or
   `--setup-only`.
 
 Additional flags: `/action:worktree` accepts `--branch=<name>`.
@@ -53,13 +53,13 @@ Additional flags: `/action:worktree` accepts `--branch=<name>`.
 
 ## Workflow
 
-1. **Awareness**: Read conventions to discover formatting, linting, testing, and CI rules.
-2. **Resolution**: Detect tracker, fetch ticket details read-only.
-3. **Naming**: Follow precedence (explicit ask > conventions > tracker default > repo norms).
-4. **Plan**: Confirm details before mutation.
-5. **Worktree**: Idempotent setup (resumes existing, halts on collision).
-6. **Implement**: Code and commit strictly inside the worktree, running gates.
-7. **Exit**: Stop locally, push, PR, or setup-only.
+1. Awareness: Read conventions to discover formatting, linting, testing, and CI rules.
+2. Resolution: Detect tracker, fetch ticket details read-only.
+3. Naming: Follow precedence (explicit ask > conventions > tracker default > repo norms).
+4. Plan: Confirm details before mutation.
+5. Worktree: Idempotent setup (resumes existing, halts on collision).
+6. Implement: Code and commit strictly inside the worktree, running gates.
+7. Exit: Stop locally, push, PR, or setup-only.
 
 Multi-ticket branches share a theme slug; ticket IDs ride in commits/PRs for linking.
 
@@ -71,7 +71,9 @@ Neither skill writes to a tracker. Links form server-side from branch and PR nam
 
 Both commands share runtime procedures:
 - `ticket-detection.md`: Tracker detection, branch naming, linking.
+- `worktree-setup.md`: Worktree and branch setup, exit axis, teardown.
 - `implement-and-commit.md`: Per-unit implement, gate, and commit procedure.
+- `prose-rules.md`: Writing rules for reports, commits, and PR text.
 - `verification-gates.md`: Quality-gate and CI discovery.
 
 ## Verification Discovery
@@ -81,6 +83,6 @@ Defers CI-covered work to `gh pr checks --watch` when pushing.
 
 ## Prerequisites
 
-- **git**: Required for `git worktree`.
-- **gh** (optional): For GitHub integration.
-- **Tracker MCP server** (optional): For tools like Linear.
+- git: Required for `git worktree`.
+- gh (optional): For GitHub integration.
+- Tracker MCP server (optional): For tools like Linear.

@@ -119,8 +119,8 @@ A local agent can read and write for real; this adapter is not paste-only.
   `list-type` ([az boards work-item](https://learn.microsoft.com/en-us/cli/azure/boards/work-item?view=azure-cli-latest)).
   `--description` and `--discussion` take body text; `--fields` sets reference-named fields.
 
-```
-az boards work-item create --title "..." --type "User Story" --project "..." --description "..."
+```console
+$ az boards work-item create --title "..." --type "User Story" --project "..." --description "..."
 ```
 
 - REST API: Work Item Tracking. Work items are created and patched with JSON Patch; comments use a

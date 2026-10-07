@@ -25,9 +25,9 @@ or timebox object. Do not invent one. Above the Card there is only the Board, an
 Board is a container, not a deliverable. Anything resembling a higher level is
 convention built from generic materials: a Card titled "Epic: Authentication", a Board
 card (native card type that "is a link to another board"), a Label, a Custom Field
-(native, Standard plan and up), a card-to-card attachment, or a Power-Up. Record each
-with `mapping_basis: convention` and keep `native_type: card` (or `label`,
-`custom_field`).
+(native, Standard plan and up), a card-to-card attachment, or a Power-Up. Say in the
+reply that the role rests on convention; the native object is still a Card (or
+Label, Custom Field).
 
 Checklist items are not tickets. A checklist item has no description, no comments, and
 no URL you can hand to someone. Promote it to a Card before treating it as work_item.
@@ -36,7 +36,7 @@ no URL you can hand to someone. Promote it to a Card before treating it as work_
 
 - **Workspace** — scope_container. native, required.
 - **Board** — scope_container (the Card container). native, required. Reading it as a
-  project or workflow is `mapping_basis: convention`.
+  project or workflow is convention; say so.
 - **List** — no canonical role; default meaning is workflow state. native, required (a
   Card must be in one). Never map a List to delivery_group or strategic_goal, and never
   emit `parent_of` from a List to its Cards.
@@ -126,8 +126,14 @@ The
 `POST /cards/{id}/actions/comments`, attach with `POST /cards/{id}/attachments`. The body
 field is `desc`, capped at 16384 characters — check length before writing a long draft.
 
-```
-curl -s "https://api.trello.com/1/cards/$CARD_ID?key=$TRELLO_KEY&token=$TRELLO_TOKEN"
+Send the key and token in an `Authorization: OAuth` header, which the
+[authorization guide](https://developer.atlassian.com/cloud/trello/guides/rest-api/authorization/)
+documents, not in the URL query, where they land in shell history and server logs:
+
+```console
+$ curl -s \
+    -H "Authorization: OAuth oauth_consumer_key=\"$TRELLO_KEY\", oauth_token=\"$TRELLO_TOKEN\"" \
+    "https://api.trello.com/1/cards/$CARD_ID"
 ```
 
 The [official Trello MCP server](https://support.atlassian.com/trello/docs/connect-trello-to-ai-assistants-with-trello-mcp/)

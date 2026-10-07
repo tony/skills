@@ -61,10 +61,13 @@ token = hash(git HEAD
 `measure.py token` computes it and sorts the node ids itself. The environment
 fingerprint is Python version, OS, and machine architecture. A phase is a no-op
 on re-run when `state.json` marks it `completed`, the token is unchanged, and its
-output file exists; `--force` overrides all three. `01-benchmark` and `03-execute` recompute the
-token before reading `baseline.json` and halt on a mismatch with `state.json`'s
-`env_token`, naming `00-scan --force` as the fix. Including `git HEAD` means
-`03-execute`'s commits change the token, so the next `00-scan` re-baselines.
+output file exists; `--force` overrides all three. `01-benchmark` and a fresh
+`03-execute` run recompute the token before reading `baseline.json` and halt on
+a mismatch with `state.json`'s `env_token`, naming `00-scan --force` as the fix.
+`03-execute`'s own commits change `HEAD` and the collected node ids, so a resumed
+run skips the token and checks instead that `HEAD` is `base_head` plus exactly
+the commits in `execution-log.json` (`measure.py chain`). The next `00-scan`
+re-baselines.
 
 ## Baseline-diff rule
 
@@ -84,7 +87,11 @@ by hand or quote the band as a fixed number.
 
 Paths are relative to the memory directory. Besides `state.json` (every phase),
 `collection.txt` (baseline `--collect-only -q` output in collection order), and
-`capabilities.json` (resolved version-matrix probes), each file's shape follows:
+`capabilities.json` (resolved version-matrix probes), the JSONL run files
+(`baseline-runs.jsonl`, `control-runs.jsonl`, `<hypothesis-id>-runs.jsonl`, one
+`measure.py run` line each) and `control.json` (the unmodified-worktree summary
+from `measure.py band`, the reference candidates are judged against), each
+file's shape follows:
 
 ### `state.json`
 
@@ -94,6 +101,7 @@ Paths are relative to the memory directory. Besides `state.json` (every phase),
   "run_id": "string",
   "collection_hash": "string",
   "env_token": "string",
+  "base_head": "git sha of HEAD when 00-scan ran",
   "completed": { "scan": true, "benchmark": false, "plan": false, "execute": false },
   "plan_hash": null,
   "last_applied_index": -1
@@ -157,6 +165,10 @@ re-scans. A re-baseline after `03-execute` re-opens all candidates.
   }
 ]
 ```
+
+`kind` is `"hygiene"` for a typing or parametrize item (H26-H32): no timing,
+`median_delta` and `clears_noise` null, `verdict` `validated` when the suite and
+type checker pass. Every other entry is `"speedup"` (the default when absent).
 
 ### `plan.json`
 

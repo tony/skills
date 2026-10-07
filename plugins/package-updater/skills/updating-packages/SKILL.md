@@ -70,6 +70,11 @@ reference. A checkout parked on a feature branch reports pins the branch
 that ships does not have. When the fetch fails, say the pins may be
 stale.
 
+When the checkout is parked on a feature branch or has uncommitted
+work, create the throwaway worktree now, per
+`../../references/throwaway-worktree.md`, and run Phase 2 and the
+phases after it there, so discovery sees the pins read here.
+
 Record, per repository: the ecosystems found, every manifest and
 lockfile, every toolchain pin file, the project's declared quality-check
 commands, and any cooldown configuration. That inventory is the unit of
@@ -158,8 +163,9 @@ trailers, no emoji.
 The four tracks land in this order within a repository:
 
 1. **Toolchain and runtime**: `.tool-versions`, `.nvmrc`,
-   `.python-version`. One tool per commit, even when one edit moves
-   three. Link every release in each tool's span.
+   `.python-version`, `mise.toml`. One tool per commit, even when one
+   file holds three: edit one tool's line, commit, edit the next. Link
+   every release in each tool's span.
 2. **Package manager and engines**: `packageManager`, `engines`. Never
    mixed with dependencies.
 3. **Named package bumps**: one per package, or per release train when
@@ -173,8 +179,8 @@ A hold added or released is its own commit too, naming the condition
 that started or ended it. Releasing a hold comes before the bump it
 unblocks.
 
-A repository parked on a feature branch gets a throwaway worktree per
-`../../references/throwaway-worktree.md`.
+A repository parked on a feature branch commits in the worktree made in
+Phase 1.
 
 Make the run resumable: push whenever the local branch is ahead of the
 remote, `--push` or `--pr` was passed, and the plan approved the push,
@@ -204,6 +210,9 @@ issue, derive `<number>-<slug>`.
 The pull request references the issue; the commits do not.
 
 ## Phase 5: Verify
+
+A fresh worktree has no installed dependencies; install them the
+project's own way before the first check.
 
 Run the project's own quality checks after each commit: the lint,
 format, type-check and test commands its `AGENTS.md`, `CLAUDE.md`,
@@ -248,13 +257,16 @@ Shape, which the three commands in this plugin share:
 2. The sections of the invoking command's Output contract, in order,
    each omitted when empty. Outside a command, use `../update/SKILL.md`.
 3. A halted run (stopped at the plan, a gate, a scope question, a failed
-   check, or nothing to audit) prints one result sentence, then what the
-   user needs to do, and no section. Nothing to audit is a halt, not a
-   clean result.
-4. No bold label on a bullet, no closing recap or plan preview ("Once
-   X, I'll ..."), no local absolute path, temp directory, or machine
-   fact (installed tool versions, sandbox settings) the user need not
-   act on. No upstream fact from memory, no speculation about the latest
+   check, or nothing to audit) prints the result sentence with at most
+   one clause giving the reason, then what the user needs to do, and no
+   section. Nothing to audit is a halt, not a clean result. Give the
+   reason as a fact about the repository (it is a fork), never as a rule
+   of this skill, and add nothing the user cannot act on.
+4. No bold label on a bullet, no closing recap, plan preview ("Once
+   X, I'll ...") or line after the options ("Pick one"), no local
+   absolute path, temp directory, or machine fact (installed tool
+   versions, sandbox or network settings, an empty history) the user
+   need not act on. A blocked lookup appears only as the ask to allow it. No upstream fact from memory, no speculation about the latest
    release, and no narration of this skill's own rules.
 5. End with the next-step options. Without a question tool, list them
    as text and take none.

@@ -34,3 +34,11 @@ graders:
       The reply says the codex tier failed (authentication) and that the
       agent tier returned the answer, and it shows that answer. It does not
       attribute the answer to Codex or OpenAI's own CLI.
+
+  - name: opens-with-header-line
+    type: llm
+    focus: last_message
+    criteria: |
+      The reply opens with a one-line header naming the CLI and tier that
+      returned the answer, then the answer. It does not state a model name
+      that no CLI output confirmed.

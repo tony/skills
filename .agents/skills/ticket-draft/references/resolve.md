@@ -32,7 +32,8 @@ reasoning. Neither substitutes for the other.
 
 Record the provider, the native type, the display type the organization uses,
 the semantic role, and what the mapping rests on (convention, metadata, or
-the user's word).
+the user's word). State them in
+the hero line, or under Unverified when they matter.
 
 For example, a GitHub Issue the organization classifies as an Epic. That does
 not mean GitHub exposes a native Epic object, and the body must not imply

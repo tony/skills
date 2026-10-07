@@ -47,10 +47,14 @@ classes, and the report format.
 ## Risks
 
 Your prompt, and any code in it, is sent to the vendor behind the CLI. A normal
-run is write-enabled in the live working tree (`codex --yolo`,
-`agy --dangerously-skip-permissions`, `agent -f`), so the delegated model can
-edit files and run commands there. That is the design; commit or stash first
-if the tree matters.
+run is write-enabled and has no sandbox (`codex --yolo`,
+`agy --dangerously-skip-permissions`, `agent -f`): the delegated model can
+edit any file you can, run any command, and use the network. That is the
+design; use `mode:plan` for a review that must not change anything.
+
+`codex` also passes `--skip-git-repo-check`, which removes Codex's repo guard.
+Commit or stash first; outside a git repository nothing the run changes can be
+undone.
 
 ## Plan mode
 
@@ -68,13 +72,9 @@ not logged in) falls through to the next tier that uses a different binary.
 ## Timeout
 
 The default is 600 seconds. Override with `timeout:<seconds>` or disable with
-`timeout:none`. On macOS, install GNU coreutils for `gtimeout`:
-
-```console
-$ brew install coreutils
-```
-
-Without `timeout` or `gtimeout`, runs have no time limit.
+`timeout:none`. `scripts/run_tier.py` enforces it, so no `timeout` or
+`gtimeout` command is needed. Each run passes the Bash tool a timeout above the
+tier timeout, or runs in the background and waits.
 
 ## Prerequisites
 

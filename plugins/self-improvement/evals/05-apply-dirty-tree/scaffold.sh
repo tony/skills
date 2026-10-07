@@ -2,6 +2,11 @@
 # A catalog repo, a ledger that verifies against its HEAD, and an uncommitted edit.
 set -euo pipefail
 
+if [ -e .git ]; then
+  echo "refusing: the working directory is already a git checkout" >&2
+  exit 1
+fi
+
 mkdir -p catalog/tidy
 cat >catalog/tidy/SKILL.md <<'MD'
 ---
@@ -17,7 +22,7 @@ MD
 git init -q
 git config user.email eval@example.invalid
 git config user.name eval
-git add .
+git add catalog
 git commit -q -m "Add tidy skill"
 
 python3 - <<'PY'
@@ -50,3 +55,5 @@ with open("ledger.json", "w", encoding="utf-8") as fh:
 PY
 
 echo "Scratch edit from another task." >>catalog/tidy/SKILL.md
+mkdir .claude
+touch .zshrc .claude/settings.json

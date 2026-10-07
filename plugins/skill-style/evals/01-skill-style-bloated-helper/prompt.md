@@ -1,7 +1,7 @@
 ---
 max_turns: 12
 timeout_seconds: 300
-allowed_tools: [Read, Glob, Grep, Skill]
+allowed_tools: [Bash, Read, Glob, Grep, Skill]
 ---
 This SKILL.md is bloated, cut the lines that don't change what the agent does:
 

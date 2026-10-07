@@ -1,8 +1,8 @@
 ---
 name: model-cli-gemini
 description: >-
-  Use when invoking Google's Gemini directly through the Antigravity or
-  agent fallback chain.
+  Use when invoking Google's Gemini directly through Antigravity or agent;
+  writes unsandboxed unless mode:plan.
 disable-model-invocation: true
 allowed-tools: ["Bash"]
 metadata:

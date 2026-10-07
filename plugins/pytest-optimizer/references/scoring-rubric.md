@@ -39,7 +39,9 @@ A candidate is **dropped from the plan, never auto-applied**, when either holds:
 
 1. **Safety gate:** `safety < 0.4`.
 2. **Noise gate:** `impact == 0`: the measured delta did not clear the noise band
-   in `01-benchmark`.
+   in `01-benchmark`. Hygiene items (H26-H32: typing and parametrize convention)
+   are exempt: they save no time by design, so `measure.py score --hygiene`
+   skips this gate and rescales the other four weights to sum to 1.
 
 Surviving candidates are ordered by `total` descending, then by the ordering
 constraints below.
@@ -50,8 +52,8 @@ Score sets the priority, but some changes must precede others regardless of scor
 
 1. **Safety-gate fixes first**: make collection deterministic (H18) and prove
    order independence (H17) before any parallel or reorder speedup.
-2. **Typing and parametrize migrations early** (H26-H32): low-risk, and they make
-   later diffs readable.
+2. **Typing and parametrize migrations early** (H26-H32): low-risk hygiene items,
+   and they make later diffs readable.
 3. **Scope and consolidation before parallelism**: fix fixture scope (H10) and
    merge duplicates (H11, H25) before `-n auto` (H19).
 4. **One speedup per commit**, so a failed green-verify reverts exactly one

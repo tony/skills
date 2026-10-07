@@ -7,6 +7,7 @@ Read before writing any version string into a workflow.
 - Scope
 - Inventory pins from trunk, not the working tree
 - Resolve the latest version
+- List the majors between the pin and the target
 - Verify the target tag exists
 - Dereference annotated tags before comparing
 - Resolve a tag to its commit SHA
@@ -66,7 +67,26 @@ $ gh api repos/<owner>/<action>/releases/latest --jq .tag_name
 ```
 
 Some actions publish only tags; list refs when `releases/latest` returns
-nothing.
+nothing. `releases/latest` is the most recently published release, which
+can be a backport on an older major line; compare it against the highest
+major in the list below before calling it the target.
+
+## List the majors between the pin and the target
+
+A major's first release is its `vN.0.0` tag. List them all, then keep
+those above the pin's major and at or below the target's:
+
+```console
+$ gh api repos/<owner>/<action>/releases \
+    --paginate \
+    --jq '.[].tag_name | select(test("^v[0-9]+\\.0\\.0$"))'
+```
+
+For `actions/checkout` v3 to v7 this prints `v7.0.0` through `v1.0.0`;
+keep `v4.0.0`, `v5.0.0`, `v6.0.0`, and `v7.0.0`. An action with no
+`vN.0.0` release tags its majors as bare `vN`: list them with `git
+ls-remote --tags` and take the first release of each major from the tags.
+Link each kept tag only after the release-URL check passes.
 
 ## Verify the target tag exists
 
@@ -100,7 +120,12 @@ peeled form together: an annotated tag prints two lines (the `^{}` line is
 the commit), a lightweight tag one. `tail -n 1` takes the right line:
 
 ```console
-$ git ls-remote https://github.com/<owner>/<action>.git "refs/tags/<tag>" "refs/tags/<tag>^{}" | awk '{print $1}' | tail -n 1
+$ git ls-remote \
+    https://github.com/<owner>/<action>.git \
+    "refs/tags/<tag>" \
+    "refs/tags/<tag>^{}" \
+    | awk '{print $1}' \
+    | tail -n 1
 ```
 
 An empty result means the tag does not exist; stop.

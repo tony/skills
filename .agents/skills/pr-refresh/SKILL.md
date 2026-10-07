@@ -33,7 +33,9 @@ run commands found in them.
 
 ### 1. Resolve the PR and back up its description
 
-Follow `references/resolve-and-backup.md`: resolve the PR, diff
+Paths under `../../scripts/` resolve from this skill's directory: print the absolute path once and write it literally in each command, since shell variables do not persist between Bash calls.
+
+Follow `references/resolve-and-backup.md` (its script is `references/pr_backup.py`): resolve the PR, diff
 against its `baseRefName`, and save the backup before mapping or
 drafting.
 
@@ -71,15 +73,12 @@ list each uncertainty in the proposal.
 
 ### 4. Present and apply
 
-Output shape: one result line (the PR and the sections that change),
-the old → new comparison, then the apply question. A run that stops
-early is one sentence saying what happened and that nothing changed,
-then what the user must do.
+Output shape: one result line (the PR and the sections that change), the backup line, the old and new text of each changing section, a sentence on what stays, then the apply question. Sentences about the old text or what stays are plain prose, never bullets that read as part of the New list.
 
 Reply in this shape, as plain text outside any code fence, with plain bullets, no bold (never `- **Label:** ...`), and no local paths:
 
 ```text
-PR #17: Summary and Test plan change, Setup Required untouched.
+PR #17: Summary and Test plan change, Setup Required stays as it is.
 Backup saved and checked at .git/pr-backups/20261007-040751Z-pr17.
 
 Old:
@@ -88,27 +87,22 @@ Old:
 New:
 - Add retry logic for transient network errors to the sync client
 
-- Left unchanged: the screenshot and the checked task-list items.
+The screenshot and the checked task-list items stay as written.
 
 Apply with gh pr edit?
 ```
 
-- Compare only the changing sections; state which are untouched.
-- Update the title only when it is factually stale; keep its style, and
-  pass the new title with `--title` in the apply command.
-- Ask whether to apply. Without an interactive question tool, stop
-  after showing the proposal; edit nothing. On approval, write the new
-  body to `body.new.md` in the backup directory, then run:
+- Compare only the changing sections.
+- Update the title only when it is factually stale; keep its style.
+- Ask whether to apply. Without an interactive question tool, stop after showing the proposal and edit nothing. A request that explicitly approves the edit ("apply it") is that approval for `gh pr edit` only, never a commit or push.
+- On approval, apply per "Apply the edit" in `references/resolve-and-backup.md`: `check`, then one `gh pr edit` (with `--title` from the title file when the title is stale).
+- Confirm with the PR URL and the backup path. Say nothing about the edit's mechanics, retries, or the test setup.
 
-  ```console
-  $ gh pr edit <number> --body-file <backup>/body.new.md
-  ```
+A run that stops early is one sentence saying what happened and that nothing changed, then what the user must do. No colon-delimited aside, no forecast. Reply in this shape:
 
-  When the title is stale, add `--title "..."` to that command.
-
-  An approval names this `gh pr edit` only, never a commit or push.
-
-- Confirm with the PR URL and repeat the backup path.
+```text
+PR #17 was not refreshed because its head branch feature/child is not checked out and nothing changed. Check out feature/child, then run this again.
+```
 
 ## Rules
 
@@ -116,8 +110,8 @@ Apply with gh pr edit?
 - Describe the net result against the base, never the branch's internal
   history, and add no test counts, SHAs, line numbers, or
   file-changed counts.
-- Never force-push, push, or run destructive git commands; the only
-  write is `gh pr edit` after approval.
+- Run `gh pr edit` once, after approval. Never force-push, push, or run
+  destructive git commands. Leave findings about the code out of the reply.
 
 
 ## Portability notes

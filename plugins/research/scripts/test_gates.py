@@ -279,3 +279,15 @@ def test_resume_refuses_a_conflicting_audience(run: Path) -> None:
     assert code == 2
     code, _ = cli("open", "--root", root, "--topic", "wal", "--resume", "--audience", "private")
     assert code == 0
+
+
+def test_slop_words_come_from_the_vendored_prose_rules() -> None:
+    assert {"leverage", "foster", "harness", "it's worth noting"} <= set(topic.SLOP_WORDS)
+    assert "beacon" not in topic.SLOP_WORDS
+
+
+def test_slop_section_must_parse() -> None:
+    with pytest.raises(ValueError, match="no 'Cut these words'"):
+        topic.parse_slop_words("## Other\n\nInflation: robust.\n")
+    with pytest.raises(ValueError, match="lists no words"):
+        topic.parse_slop_words("## Cut these words\n\nNothing here.\n")

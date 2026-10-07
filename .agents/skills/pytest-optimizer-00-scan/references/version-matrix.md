@@ -10,27 +10,27 @@ system Python.
 
 1. Read the pytest version:
 
-   ```bash
-   python -c "import pytest; print(pytest.__version__)"
+   ```console
+   $ python -c "import pytest; print(pytest.__version__)"
    ```
 
 2. Probe flags that may be absent (cheaper and more reliable than version math
    for CLI options):
 
-   ```bash
-   pytest --help 2>/dev/null | rg -- '--durations-min|--import-mode|--dist|--sw-reset'
+   ```console
+   $ pytest --help 2>/dev/null | rg -- '--durations-min|--import-mode|--dist|--sw-reset'
    ```
 
 3. Probe plugin presence and version:
 
-   ```bash
-   python -c "import importlib.metadata as m; [print(d, next((x.version for x in m.distributions() if x.metadata['Name'].lower() == d), 'missing')) for d in ('pytest-xdist', 'pytest-randomly', 'pytest-timeout')]"
+   ```console
+   $ python -c "import importlib.metadata as m; [print(d, next((x.version for x in m.distributions() if x.metadata['Name'].lower() == d), 'missing')) for d in ('pytest-xdist', 'pytest-randomly', 'pytest-timeout')]"
    ```
 
 4. For API features, import-probe:
 
-   ```bash
-   python -c "import pytest; print(hasattr(pytest, 'StashKey'))"
+   ```console
+   $ python -c "import pytest; print(hasattr(pytest, 'StashKey'))"
    ```
 
 5. Record each feature as `{available, version, flag, fallback}` in

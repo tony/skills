@@ -21,7 +21,7 @@ with no Epic is a complete Issue. Epic is Premium and Ultimate, group-level only
 multi-level hierarchies are Ultimate, single-level child items are Free, and an Issue "can
 be set as a child item of at most one epic" ([child items][child]). Task is the sub-item
 beneath an Issue, on Free. GitLab has no native level above Epic other than another Epic —
-express an Initiative as a top-level Epic and record `mapping_basis: convention`.
+express an Initiative as a top-level Epic and say in the reply that the role rests on convention.
 
 Type names are instance-dependent. Configurable work item types are Premium and Ultimate,
 exist at the project level only, "their widgets and hierarchy restrictions match those of
@@ -127,10 +127,10 @@ authenticated with `glab auth login` ([GitLab CLI][cli]). It has `issue`, `mr`,
 `work-items`, `milestone` and `api` command groups; there is no `epic` group. `glab issue
 create` takes `-t/--title`, `-d/--description`, `-l/--label`, `-m/--milestone`,
 `-a/--assignee`, `--epic`, `-w/--weight` and `-c/--confidential`. No file flag is
-documented, so feed an approved draft through command substitution rather than retyping it.
+documented, so feed an approved draft through command substitution rather than retyping it. The scratch path comes from the skill's filing step.
 
-```
-glab issue create -t "..." -d "$(cat ./draft.md)" -y
+```console
+$ glab issue create -t "..." -d "$(cat "<scratch path>")" -y
 ```
 
 Issues, Merge Requests and Milestones are also plain REST ([Issues API][restapi]). Epics,

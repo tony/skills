@@ -66,13 +66,23 @@ For each finding:
    - **Out of scope**: valid but unrelated to this branch's changes
    - **Pre-existing**: valid but older than this branch
 4. Record the verdict. For a valid finding, note the planned fix and test strategy. For any other verdict, cite the code, test, or convention that decides it.
-5. Present each finding with its verdict, compared against the plan's predictions, and highlight changes. Wait for the user's confirmation before Phase 3. A pre-existing finding is fixed only when the user approves it. Without an interactive reply, stop here and report the verdicts: nothing is fixed or committed. A request that explicitly says to apply the fixes is that confirmation for the findings judged Valid, never for pre-existing ones and never for pushing.
+5. Present each finding with its verdict, compared against the plan's predictions, and highlight changes. Wait for the user's confirmation before Phase 3. A pre-existing finding is fixed only when the user approves it. Without an interactive reply, stop here and report the verdicts: nothing is fixed or committed. A stopped run replies in one sentence stating the result, then what the user must do, as plain text with plain bullets and no local paths:
+
+   ```text
+   Validated 4 findings and changed nothing: confirm which to fix.
+   - Valid: 1, 2, 4
+   - Incorrect: 3 (the cited branch is unreachable)
+   Reply "apply the valid fixes" to continue.
+   ```
+ A request that explicitly says to apply the fixes is that confirmation for the findings judged Valid, never for pre-existing ones and never for pushing.
 
 ---
 
 ## Phase 3: Apply fixes, one commit per finding
 
 Process one finding at a time and finish its full cycle before the next. A finding that needs changes in several files is still one commit.
+
+Before editing for a finding, list the files you will touch (fix and tests) and run `git status --porcelain -- <those files>`. A file with uncommitted changes is the user's work: ask whether to skip the finding or have them commit or stash first. Without `AskUserQuestion`, skip the finding and report it. Never use `git add -A` or `git add .`, and never stage a file you did not find clean.
 
 1. **Find existing tests.** Search the test directory for the affected function or module, read the test structure, and look for parameterized fixtures or helpers to extend.
 2. **Write or extend a test**, following the project's test conventions strictly. Prefer, in order: a new entry in an existing parameterized fixture, a new case in an existing test function, a new test function in an existing file, and a new test file only when nothing covers the area.
@@ -84,11 +94,11 @@ Process one finding at a time and finish its full cycle before the next. A findi
    $ git add <specific-files>
    ```
 
-6. **Verify clean state** with `git status`. No uncommitted changes may remain before the next finding.
+6. **Verify clean state** with `git status`. None of your changes may remain uncommitted before the next finding; the user's own uncommitted files stay as they were.
 
 ### Recovery: quality gate failure
 
-If a gate still fails after two attempts at the fix, revert the change with `git checkout -- <files>`, mark the finding "valid but could not apply cleanly", move to the next finding, and report it in the Phase 4 summary.
+If a gate still fails after two attempts at the fix, revert only your own change: `git checkout -- <files>` for the files you found clean, and delete the untracked test files you created (name each one first). Never discard a file that had uncommitted changes. Mark the finding "valid but could not apply cleanly", move to the next finding, and report it in the Phase 4 summary.
 
 ---
 

@@ -34,8 +34,8 @@ names, never a commit.
 ## Steps
 
 1. **Resolve targets.** Expand paths/globs, or read stdin with
-   `--stdin`. Reject an empty target set with a clear message; with `--stdin`, ask
-   for the text.
+   `--stdin`. Reject an empty target set with a clear message; with `--stdin` and
+   no text, print the usage and stop.
 2. **Load the rules and voice.** Read
    `references/prose-rules.md` and
    `references/lean-rubric.md`, then `./AGENTS.md` and
@@ -51,8 +51,8 @@ names, never a commit.
    `--diff-only`.
 5. **Apply in place.** Use `Edit`. Replacements are concrete and
    shorter than the original.
-6. **Diff.** Print `git diff -- <targets>`. Skip for `--stdin`, which instead
-   prints the tightened text as the whole reply. With `--gates`, run the
+6. **Diff.** Print `git diff -- <targets>`. Skip for `--diff-only` and runs
+   without a question tool (nothing was edited); for `--stdin`, print the tightened text as the whole reply. With `--gates`, run the
    discovered checks once and report; commit on neither pass nor fail.
 7. **Report and hand off.** Write it per
    `references/prose-rules.md`: a one-line count of findings
@@ -62,6 +62,10 @@ names, never a commit.
    ```text
    5 findings resolved, 1 skipped.
    ```
+
+   With `--diff-only` or no question tool the hero is
+   `6 findings proposed, 0 applied.` A stopped run is one result
+   sentence, then what the user needs to do.
 
    Then offer next steps via `ask-user-choice`: commit, or
    discard the edits. Without a question tool, print the options as a

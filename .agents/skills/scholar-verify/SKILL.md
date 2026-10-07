@@ -40,7 +40,9 @@ $ gh api repos/OWNER/REPO/commits/v2.40.0 --jq .sha
 ```
 
 A different SHA is Moved. A source row with no `commit` cannot be checked this
-way; report it under Uncheckable.
+way; report it under Uncheckable. A source with no remote (a cite with
+`path@commit` and no `url`) is checked with `git show COMMIT:PATH` inside that
+repository when it is the current one; otherwise report it under Uncheckable.
 
 The file still exists at that path on that ref. Check only a URL that starts
 with `https://` and contains no quote, space, backtick, `$`, or `;`; report any
@@ -54,7 +56,8 @@ The quoted text still appears at the recorded locator. This is the one that
 fails silently: a file that grew by ten lines leaves a line-anchor citation
 resolving to unrelated code while still returning 200. Fetch the file at the
 recorded `commit` (same character check on PATH) and read the cited lines, or
-search the whole file when the source's `locator_kind` is `search-string`:
+search the whole file when the source's `locator_kind` is `search-string`. For
+`section` or `page`, search the file for the quote:
 
 ```console
 $ gh api \

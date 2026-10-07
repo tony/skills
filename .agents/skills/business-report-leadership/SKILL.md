@@ -40,21 +40,22 @@ Per `interim-format.md` § Rendering a report.
 
 Write `<run>/reports/leadership.md` with this fixed structure:
 
-1. **SCQA opening**: Situation, Complication, Question, Answer,
+1. SCQA opening: Situation, Complication, Question, Answer,
    with the Answer stated first.
-2. **Exhibits**: every exhibit title is a full-sentence takeaway; one
+2. Exhibits: every exhibit title is a full-sentence takeaway; one
    message per exhibit; a source, query, and date-range note under
    each.
-3. **Value build**: every multiplier explicit, per the chains in
+3. Value build: every multiplier explicit, per the chains in
    `measurement.md`; break-even stated.
-4. **Scenarios**: the conservative scenario is the committed
-   number; base and upside appear as context, never as the headline.
-5. **Assumptions register and data dictionary**: appendix, inline
+4. Scenarios: the conservative scenario (defined in `measurement.md`)
+   is the committed number; base and upside appear as context, never
+   as the headline.
+5. Assumptions register and data dictionary: appendix, inline
    from `assumptions.yaml` plus definitions of every metric used.
-6. **Known limitations**: each with a confidence label.
-7. **What would flip this conclusion**: the input thresholds at
+6. Known limitations: each with a confidence label.
+7. What would flip this conclusion: the input thresholds at
    which the answer changes.
-8. **Pre-answered objections**: at minimum: how do you know the
+8. Pre-answered objections: at minimum: how do you know the
    skill caused this (name the counterfactual rung); does the
    savings rate survive the verification tax; who maintains the
    skill.

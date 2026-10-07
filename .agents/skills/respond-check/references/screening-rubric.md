@@ -1,6 +1,6 @@
 # Screening Rubric
 
-Contents: The gates, Verdicts, The ledger, Rationalizations.
+Contents: The gates, Verdicts, The ledger.
 
 Every claim a reviewer makes, human or machine, passes six gates
 before a single file is edited. this skill runs them and writes
@@ -28,7 +28,8 @@ about what the code might do. Merging duplicates and dropping non-claims still a
 ### 2. Truth
 
 Is the claim true of the code as written? Read the code and its
-callers. Reviewers assert; the ledger records what you verified.
+callers. Reviewers assert; the ledger records what you verified. Three
+bots agreeing is one opinion; the code is the evidence.
 
 A claim is `wrong` when the code already does the thing, when the path
 the claim depends on is unreachable, when it rests on a misread of an
@@ -164,16 +165,9 @@ session by the `respond-action` skill:
   It covers the findings as collected, before dedup, so new or edited
   feedback changes it.
 
-Build the lines and hash them in one command, since shell state does
-not persist between commands. Collapse each claim's whitespace
-yourself and write a single quote as `'\''`:
-
-```bash
-{
-  printf '%s\t%s\n' 'alex' 'first claim'
-  printf '%s\t%s\n' 'lint-bot' 'second claim'
-} | LC_ALL=C sort | shasum -a 256 | cut -c1-12
-```
+The plugin's `ledger_key.py` computes it from one `<source>` TAB
+`<claim>` line per finding: it collapses each claim's whitespace, sorts,
+hashes, and prints the digest. this skill shows the command.
 
 the `respond-action` skill recomputes all three from the feedback it collects.
 Any mismatch means the ledger is stale, and screening runs again rather
@@ -193,9 +187,3 @@ Each record carries:
 - **fix shape** — for `fix`: the minimal change, forward commit or
   `fixup!`.
 - **reply** — for `decline` and `defer`: text a reviewer can answer.
-
-## Rationalizations
-
-- "Three bots flagged it, so it must be real." Bots share training data
-  and prompt shapes; three agreements are one opinion, and the code is
-  the evidence.

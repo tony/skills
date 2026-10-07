@@ -1,7 +1,7 @@
 ---
 name: rebase
 description: >-
-  Rebase current branch onto trunk (origin/master or origin/main), predict
+  Rebase current branch onto trunk (main or master) on the remote, predict
   and resolve conflicts
 disable-model-invocation: true
 allowed-tools: ["Bash", "Read", "Edit", "AskUserQuestion"]
@@ -11,50 +11,73 @@ metadata:
 
 ## Task
 
-Rebase the current branch onto the remote trunk branch, phase by phase.
+Rebase the current branch onto the remote trunk branch, phase by phase. Signed
+commits (`commit.gpgsign`) prompt for the key on every replayed commit and
+hooks may run; if a replay blocks on a prompt, stop and tell the user.
 
 ### Phase 1: Inspect the repository and detect trunk
 
 Gather the starting state:
 
-1. `git branch --show-current` names the current branch. A failure means the
+1. `git --version` must report 2.30 or newer (`range-diff` and
+   `--force-if-includes` need it); stop and say so otherwise.
+2. `git branch --show-current` names the current branch. A failure means the
    directory is not a git repository: stop and say so. Empty output means a
    detached HEAD: stop and ask.
-2. `git status --short` shows uncommitted changes; `--autostash` in Phase 3
+3. `git status --short` shows uncommitted changes; `--autostash` in Phase 3
    carries them across.
-3. `git remote -v` lists the remotes. Stop if there is no `origin`.
-4. If `git rev-parse --git-path rebase-merge` or `git rev-parse --git-path
-   rebase-apply` exists, stop and tell the user to finish or abort that
-   rebase first.
-
-Then determine the trunk name as `TRUNK`, the **bare** name (every use below
-adds `origin/`). Shell state does not persist between Bash calls: write the
-literal name wherever `${TRUNK}` appears below. Ask the remote first; it
-answers before any fetch:
+4. `git remote -v` lists the remotes. Stop if there are none.
+5. Check for a rebase already in progress. `git rev-parse --git-path` prints a
+   path whether or not it exists, so test the path:
 
 ```console
-$ git ls-remote --symref origin HEAD
+$ test -e "$(git rev-parse --git-path rebase-merge)" || test -e "$(git rev-parse --git-path rebase-apply)"
 ```
 
-`TRUNK` is the part of the `ref:` line after `refs/heads/`. If the remote is
-unreachable, fall back to `git symbolic-ref --short refs/remotes/origin/HEAD`
-(prints `origin/<branch>`; take the part after the slash), then to whichever
-of `origin/main` or `origin/master` `git rev-parse --verify` resolves.
+   Exit 0 means a rebase is in progress: stop and tell the user to finish or
+   abort it first. Exit 1 means none.
 
-If the current branch is `TRUNK`, stop: there is nothing to rebase onto.
+Shell state does not persist between Bash calls: write the literal names
+wherever `<remote>` and `<trunk>` appear below.
+
+Pick `<remote>`, the remote that carries trunk:
+
+1. `git config --get branch.<branch>.remote` names the remote the branch
+   tracks. With one remote in total, use it.
+2. A remote named `upstream` alongside a different tracking remote signals a
+   fork, where the tracking remote's trunk is stale: use `upstream`, and say
+   so in the report. If the layout is not that plain (several remotes, none
+   named `upstream` or `origin`), ask which remote carries trunk; with no
+   question tool, stop.
+3. With no tracking remote and several remotes, use the first of `upstream`
+   or `origin` that exists.
+
+Then determine `<trunk>`, the **bare** branch name (every use below prefixes
+`<remote>/`). Ask the remote first; it answers before any fetch:
+
+```console
+$ git ls-remote --symref <remote> HEAD
+```
+
+`<trunk>` is the part of the `ref:` line after `refs/heads/`. If the remote is
+unreachable, fall back to `git symbolic-ref --short refs/remotes/<remote>/HEAD`
+(prints `<remote>/<branch>`; take the part after the slash), then to whichever
+of `<remote>/main` or `<remote>/master` `git rev-parse --verify` resolves.
+
+If the current branch is `<trunk>`, stop: there is nothing to rebase onto.
 
 ### Phase 2: Fetch latest and analyze
 
-1. Run `git fetch origin` to get the latest remote state.
+1. Run `git fetch <remote>` to get the latest remote state.
 2. Stop early with a one-line result when there is nothing to do: no commits
-   ahead (`git rev-list --count origin/${TRUNK}..HEAD` prints `0`) or already
-   up to date (`git merge-base --is-ancestor origin/${TRUNK} HEAD` exits 0).
-3. Run `git log --oneline origin/${TRUNK}..HEAD` for the commits to rebase.
-   If `git rev-list --merges --count origin/${TRUNK}..HEAD` is not `0`, stop:
+   ahead (`git rev-list --count <remote>/<trunk>..HEAD` prints `0`) or already
+   up to date (`git merge-base --is-ancestor <remote>/<trunk> HEAD` exits 0).
+3. Run `git log --oneline <remote>/<trunk>..HEAD` for the commits to rebase.
+   If `git rev-list --merges --count <remote>/<trunk>..HEAD` is not `0`, stop:
    the rebase would flatten those merge commits. Report them and leave the
    choice (such as `git rebase --rebase-merges`) to the user.
-4. Run `git diff --name-only origin/${TRUNK}...HEAD` for the files the branch
-   changed, then `git diff --name-only HEAD...origin/${TRUNK}` for the files
+4. Run `git diff --name-only <remote>/<trunk>...HEAD` for the files the branch
+   changed, then `git diff --name-only HEAD...<remote>/<trunk>` for the files
    trunk changed since the fork. Files in both lists are the potential
    conflict zones.
 5. Read the diff of each overlapping file on both sides.
@@ -67,7 +90,7 @@ expected / minor / significant).
 Record the safety facts first, in one command, and keep the printed values:
 
 ```console
-$ git rev-parse HEAD && git merge-base HEAD origin/${TRUNK} && git rev-parse --abbrev-ref @{upstream}
+$ git rev-parse HEAD && git merge-base HEAD <remote>/<trunk> && git rev-parse --abbrev-ref @{upstream}
 ```
 
 The first SHA is the pre-rebase tip, the second the old base. A failing third
@@ -78,15 +101,14 @@ autostash changes; `--hard` would discard them).
 Then rebase onto the ref Phase 2 fetched:
 
 ```console
-$ git rebase --autostash origin/${TRUNK}
+$ git rebase --autostash <remote>/<trunk>
 ```
 
 If the output says `Applying autostash resulted in conflicts`, the rebase
 finished and the stash is kept. Run `git rev-parse refs/stash` and keep that
 SHA. Resolve those files by the Phase 4 step 2 rules, then run `git restore
---staged <file>` for each so the changes stay uncommitted. Run `git stash
-drop` only after `git stash show -p` matches what the resolved files now
-hold; if unsure, keep the stash and report its SHA.
+--staged <file>` for each so the changes stay uncommitted. Never run `git
+stash drop`: report the SHA and leave the drop to the user.
 
 If the rebase completes cleanly (exit code 0), skip to Phase 5.
 
@@ -117,11 +139,11 @@ If conflicts are detected:
 2. Compare content before and after, using the SHAs recorded in Phase 3:
 
 ```console
-$ git range-diff <old base>..<pre-rebase tip> origin/${TRUNK}..HEAD
+$ git range-diff <old base>..<pre-rebase tip> <remote>/<trunk>..HEAD
 ```
 
-   A commit marked `=` replayed unchanged. For each `` ! ``, run the same command
-   without `--no-patch` and read the inner diff: a difference confined to `@@`
+   A commit marked `=` replayed unchanged. For each `` ! ``, read the inner diff
+   `range-diff` prints beneath it: a difference confined to `@@`
    hunk headers or context lines is benign (trunk moved the surrounding code);
    an added or removed line must trace to a conflict resolution you made, and
    an unexplained one is a defect: report it and stop. A `<` commit was
@@ -129,14 +151,16 @@ $ git range-diff <old base>..<pre-rebase tip> origin/${TRUNK}..HEAD
    each, and stop on any you cannot explain.
 3. Run the project's quality checks (formatter, linter, type checker, tests)
    once, as its AGENTS.md or CLAUDE.md defines them. If a check fails, fix it
-   in a new commit only when the user asks; report it.
+   in a new commit only when the user asks; report it. Run no other checks;
+   with none defined, say so in one line.
 
 Never push. The skill ends with the report and the user decides the next step.
 
 ## Output
 
 Write the report per `references/prose-rules.md`. Open with a one-line
-hero (`✓ Rebased N commits onto origin/<trunk>` or `⚠ Stopped: <reason>`), then
+hero (`✓ Rebased N commits onto <remote>/<trunk>`, adding `, dropped M already on
+trunk` when `range-diff` shows `<` commits, or `⚠ Stopped: <reason>`), then
 exactly these sections:
 
 1. `## Rebase` - commits replayed, conflicts and how each was resolved.
@@ -144,8 +168,9 @@ exactly these sections:
 3. `## Checks` - each quality check and its result.
 4. `## Recovery` - the pre-rebase tip SHA and the `git reset --keep` undo.
    With an upstream, also print the exact push command (`git push
-   --force-with-lease --force-if-includes origin <branch>`) for the user to
-   run. Without one, say no push is needed.
+   --force-with-lease --force-if-includes <tracking remote> <branch>`) for the
+   user to run. Without one, write only "<branch> has no upstream, so no push is
+   needed": no push command, and no advice on publishing the branch.
 
 Write each commit message you create (none is expected) without a
 `Co-Authored-By` line, a "Generated with" or other tool trailer, or emoji.

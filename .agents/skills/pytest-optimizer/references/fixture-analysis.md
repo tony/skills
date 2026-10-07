@@ -37,15 +37,15 @@ The `--durations` table cannot name the costly fixture (a `setup` row is the
 whole chain). `--setup-show` runs the suite and prints each fixture as it is set
 up and torn down, with a scope letter (`F`/`C`/`M`/`P`/`S`):
 
-```bash
-pytest --setup-show -q
+```console
+$ pytest --setup-show -q
 ```
 
 `--setup-plan` shows the same plan **without running tests**, which suits
 counting setups:
 
-```bash
-pytest --setup-plan
+```console
+$ pytest --setup-plan
 ```
 
 For true per-fixture timing, generate the opt-in plugin
@@ -54,8 +54,8 @@ seconds.
 
 ## Mis-scoped fixture (H10/H13)
 
-```bash
-pytest --setup-plan | rg 'SETUP +F '
+```console
+$ pytest --setup-plan | rg 'SETUP +F '
 ```
 
 Count `SETUP` rows per `F` (function) fixture. A count > 1 on a fixture whose body
@@ -74,12 +74,12 @@ module/session scope and select from it.
 
 Diff **defined** fixtures against **used** fixtures:
 
-```bash
-pytest --fixtures -v 2>/dev/null | rg -v 'site-packages|_pytest'
+```console
+$ pytest --fixtures -v 2>/dev/null | rg -v 'site-packages|_pytest'
 ```
 
-```bash
-pytest -o addopts='' --fixtures-per-test 2>/dev/null
+```console
+$ pytest -o addopts='' --fixtures-per-test 2>/dev/null
 ```
 
 The first command lists project-defined fixtures; the second lists what each test
@@ -106,8 +106,8 @@ through a bare `uvx`: it lacks the project's dependencies, so collection fails.
 **Mandatory guard (H09).** Static analysis cannot see dynamic requests. Before
 deleting, search for dynamic references:
 
-```bash
-rg "getfixturevalue\([\"']<name>" tests/ ; rg "\b<name>\b" tests/
+```console
+$ rg "getfixturevalue\([\"']<name>" tests/ ; rg "\b<name>\b" tests/
 ```
 
 A `getfixturevalue('name')` call or a string-based mark reference keeps the
@@ -130,8 +130,8 @@ $ uv run --with pytest-deadfixtures \
 
 Or find name collisions across conftests with the built-ins:
 
-```bash
-pytest --fixtures -v 2>/dev/null | rg '^\w' | awk '{print $1}' | sort | uniq -d
+```console
+$ pytest --fixtures -v 2>/dev/null | rg '^\w' | awk '{print $1}' | sort | uniq -d
 ```
 
 Consolidate duplicates into one fixture in the nearest shared conftest; a child
@@ -140,14 +140,14 @@ Delete an empty conftest (H42).
 
 ## Autouse audit (H12/H15/H43)
 
-```bash
-rg 'autouse\s*=\s*True' tests/
+```console
+$ rg 'autouse\s*=\s*True' tests/
 ```
 
 For each autouse fixture, count its setups:
 
-```bash
-pytest --setup-plan | rg '<name>' | rg -c SETUP
+```console
+$ pytest --setup-plan | rg '<name>' | rg -c SETUP
 ```
 
 When the count is about the total tests **and** the body is expensive or
@@ -157,16 +157,16 @@ reset, time freezing, global state reset). If it does unguarded network I/O
 (H15), gate it behind a registered marker or env var with `pytest.skip`.
 
 A `@pytest.mark.*` stacked on a `@pytest.fixture` (H43) is a silent no-op before
-pytest 9 and a collection error from 9 on: remove it and move the condition into
-the body (`pytest.skip()`).
+pytest 8.0, which warns about it and plans to make it an error later. Remove it
+and move the condition into the body (`pytest.skip()`).
 
 ## Shared mutable state (H16, H21)
 
 Before widening scope or parallelizing, check whether the shared resource is
 mutated:
 
-```bash
-rg 'scope="session"|scope="module"' tests/ ; rg 'create_all|metadata|\.add\(|writestr|bootstrap' tests/
+```console
+$ rg 'scope="session"|scope="module"' tests/ ; rg 'create_all|metadata|\.add\(|writestr|bootstrap' tests/
 ```
 
 If a session or module-scoped resource is written in more than one module, keep

@@ -37,22 +37,17 @@ and needs no tools.
 
 When the session's memory is thin, gather the cheap tier:
 
-1. The current branch (`git branch --show-current`; empty means
-   detached HEAD).
-2. Trunk (`git symbolic-ref --short refs/remotes/origin/HEAD`, falling
-   back to whichever of `origin/main` or `origin/master` exists), then ahead/behind counts
-   (`git rev-list --left-right --count <trunk>...HEAD`).
-3. Uncommitted work (`git status --short`).
-4. Commit subjects since trunk
-   (`git log --no-merges --format='%h %s' <trunk>..HEAD`).
+1. Position: run `python3 ../../scripts/position.py` for branch, trunk,
+   ahead/behind, uncommitted work, and stashes. A `dotfile_repo` or an
+   empty repository (`has_commits` false) gets one line saying so and no
+   file list; the script prints nothing else then.
+2. Commit subjects since the base:
+   `git log --no-merges --format='%h %s' <trunk>..HEAD`.
 
-A failed command means that layer is unavailable; say so inside an
-existing line. Measuring from trunk is approximate on a branch stacked
-over another branch, because the range carries the parent's commits;
-say so rather than re-resolving the base.
-
-If `git rev-parse --show-toplevel` is `$HOME` or contains it, or `HEAD`
-has no commits, say that in one line and list no files.
+A null `trunk` or a failed command means that layer is unavailable; say
+so inside an existing line. Measuring from trunk is approximate on a
+branch stacked over another branch, because the range carries the
+parent's commits; say so rather than re-resolving the base.
 
 Go beyond that only for the paid tier in the brief reference.
 
@@ -70,7 +65,9 @@ Before sending, check each line:
 - One sentence per line, at most about 20 words. Cut a second sentence
   or a stacked "so", "because", or "which" clause.
 - A narrow question gets only the causal answer. No line on branch
-  position, trunk, or repository location unless the answer needs it.
+  position, trunk, or repository location unless the answer needs it,
+  and no branch or trunk name inside an option ("commit it", not
+  "commit it on main").
 - No headings, bullets, bold, preamble, closing summary, or offer to go
   deeper. No `AskUserQuestion`; options are plain numbered lines.
 - No absolute paths, and no line true in every repository ("nothing has

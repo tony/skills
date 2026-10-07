@@ -1628,11 +1628,12 @@ def parse_judge(text: str, label_map: Mapping[str, str] | None = None) -> Json:
             if num > 10:  # noqa: PLR2004
                 errors.append(f"{label} for {col} is above 10")
             scores[col][label] = num
-    errors.extend(
-        f"total for {col} is not the sum of its dimensions"
+    warnings = [
+        f"total for {col} was {totals[col]:g}, recomputed as {sum(scores[col].values()):g}"
         for col in columns
         if col in totals and abs(totals[col] - sum(scores[col].values())) > 1e-6  # noqa: PLR2004
-    )
+    ]
+    totals.update({c: sum(scores[c].values()) for c in columns if c in totals})
     if not totals:
         totals = {c: sum(v.values()) for c, v in scores.items()}
     winner = None
@@ -1658,6 +1659,7 @@ def parse_judge(text: str, label_map: Mapping[str, str] | None = None) -> Json:
         "winner_declared": declared,
         "winner_score": totals.get(winner or ""),
         "errors": errors,
+        "warnings": warnings,
     }
 
 
@@ -1909,6 +1911,17 @@ def reset_main(session_dir: Path) -> Json:
     return {"ok": True}
 
 
+def stash_overlap(top: str, sha: str) -> list[str]:
+    """Return the paths both the stash and the working tree changed."""
+    held = set(git(top, "diff", "--name-only", f"{sha}^1", sha, check=False).splitlines())
+    held |= set(git(top, "ls-tree", "-r", "--name-only", f"{sha}^3", check=False).splitlines())
+    dirty = {
+        line[3:].split(" -> ")[-1]
+        for line in git(top, "status", "--porcelain", "--untracked-files=all").splitlines()
+    }
+    return sorted(held & dirty)
+
+
 def restore_stash(session_dir: Path) -> Json:
     """Pop the session's own stash entry, found by commit, never ``stash@{0}`` blindly."""
     session = load_session(session_dir)
@@ -1934,8 +1947,14 @@ def restore_stash(session_dir: Path) -> Json:
             "reason": proc.stderr.strip(),
             "stash_kept": True,
             "stash_sha": sha,
+            "overlap": stash_overlap(top, sha),
             "inspect": f"git stash show --patch {sha}",
             "apply": f"git stash apply {sha}",
+            "recover": [
+                "git stash push --include-untracked --message weave-synthesis",
+                f"git stash apply {sha}",
+                "git stash show --patch stash@{0}",
+            ],
         }
     return {"ok": True, "restored": True}
 

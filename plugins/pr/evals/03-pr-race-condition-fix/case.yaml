@@ -47,6 +47,13 @@ graders:
     pattern: '\b\d+ +(tests?|files? changed|insertions?|deletions?|lines? of)\b'
     flags: i
 
+  - name: no-bold-label-bullets
+    type: regex
+    target: last_message
+    match: not_contains
+    pattern: '^\s*- \*\*'
+    flags: m
+
   - name: never-pushes-to-trunk
     type: tool_used
     tool: Bash
