@@ -4,9 +4,10 @@ Shared by `/situate` and the `situational-awareness` skill.
 
 One hero line, then these sections in this order, then a next-step
 panel. No other headings, no bold label on every bullet, no recap ending.
-An empty layer is "none", never "not available". Never list untracked
-editor or shell files. Never name an absolute
-path or a temp directory.
+An empty layer is "none", never "not available"; a lookup that could not
+run is `unavailable` with the reason. Never list, count, or mention
+untracked editor or shell files. Never name an absolute path or a temp
+directory. Report what was found and where, never "I checked" or "I read".
 
 The hero is `✓ <branch>: <what it does> · <n> commits · PR #<n> <state>`,
 or `⚠ <what is blocking or unclear>`. When there is nothing to measure
@@ -15,7 +16,8 @@ or `⚠ <what is blocking or unclear>`. When there is nothing to measure
 result sentence, then what the user needs to do.
 
 1. `## Position` — branch, trunk, ahead/behind, uncommitted work,
-   stashes, and how stale the trunk ref is.
+   stashes, and when the refs were last fetched (`last_fetch`), never
+   "current".
 2. `## Change` — what the branch does and how far along it is, grouped
    by area, with the commit sequence's shape.
 3. `## Pull request` — state, checks by job name, unresolved review
@@ -45,7 +47,7 @@ Reply in this shape, as plain text outside any code fence, with plain bullets, n
 ## Position
 
 - feat/terse-mode, 4 commits ahead of main, 0 behind; 2 files uncommitted; no stashes.
-- The main ref was last updated 3 days ago, so ahead/behind may be stale.
+- The refs were last fetched 3 days ago, so ahead/behind may be stale.
 
 ## Change
 
@@ -72,6 +74,9 @@ Reply in this shape, as plain text outside any code fence, with plain bullets, n
 1. Fix the three type errors and push
 2. Address the unresolved review thread
 ```
+
+Offer distinct actions only, never "keep working". Change reports what the
+goal needs, with no style nits or speculation about future linters.
 
 The panel is an `AskUserQuestion` offering next steps (continue the
 work, address the review threads, open a pull request, widen the sweep

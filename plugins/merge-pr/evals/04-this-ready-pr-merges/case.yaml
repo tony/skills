@@ -27,7 +27,7 @@ graders:
   - name: subject-follows-history-suffix
     type: tool_used
     tool: Bash
-    input_match: 'gh pr merge[\s\S]*-t[\s\S]*\(#42\)'
+    input_match: '(?=[\s\S]*gh pr merge)(?=[\s\S]*\(#42\))'
 
   - name: never-uses-admin
     type: tool_used

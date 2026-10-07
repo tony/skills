@@ -4,7 +4,7 @@ description: >-
   Use when spiking a feature or fix in the working tree to prove it quickly
   before committing to an implementation.
 disable-model-invocation: true
-allowed-tools: ["Bash", "Read", "Grep", "Glob", "Edit", "Write", "AskUserQuestion", "Agent"]
+allowed-tools: ["Bash", "Read", "Grep", "Glob", "Edit", "Write", "AskUserQuestion"]
 metadata:
   argument-hint: "[<goal>] [--branch=<name>] [--keep-tree] [--replay]"
   source: "plugins/spike/skills/probe/SKILL.md"
@@ -22,10 +22,10 @@ A probe **mutates the working tree freely** and never touches history.
 `references/spike.sh` holds the git plumbing: the repository guard, the
 stash sequences, saving and restoring the user's work, and the spike-only
 replay. The shell's working directory is the project, not this skill, so
-resolve that path against this skill's base directory (given when the
-skill loads) and run it by its absolute path. Below, `spike.sh` means that
-absolute path. It exits 1 with a one-line reason when it refuses, 2 on
-usage errors.
+resolve `../../scripts` against this skill's base directory (given when the
+skill loads). In every command below, substitute that absolute directory
+for `<scripts>`. The script exits 1 with a one-line reason when it
+refuses, 2 on usage errors.
 
 ## Core thesis
 
@@ -86,7 +86,7 @@ landing them is the `respond-action` skill.
 | Flag | Default | Effect |
 |---|---|---|
 | `--branch=<name>` | off | Probe on a new scratch branch from HEAD, then return to the original branch and delete the scratch branch at exit. Still zero commits. |
-| `--keep-tree` | off | Skip the stash at exit; leave changes in the working tree. The plan is still produced. Cannot combine with `--replay`: halt and say so. |
+| `--keep-tree` | off | Skip the stash at exit; leave changes in the working tree. The plan is still produced; after a probe on top it is built from the tree's diff against the user-work SHA. Cannot combine with `--replay`: halt and say so. |
 | `--replay` | off | After the plan is approved, apply the spike's stash and land plan items one gated commit at a time. |
 
 ## Phase 0: Situational awareness
@@ -99,7 +99,7 @@ Before writing any code:
    home directory, credentials included:
 
 ```console
-$ spike.sh guard
+$ <scripts>/spike.sh guard
 ```
 
    Any output but `ok` halts before touching anything. Say what is
@@ -114,37 +114,14 @@ $ spike.sh guard
    `references/verification-gates.md`.
 4. Run `git status --porcelain`. A dirty tree halts here: ask whether to
    stash their work first, probe on top of it, or abort. Non-interactive
-   default: abort. Either way their work is saved as a stash named
-   `user work before spike`, and the printed SHA is the **user-work SHA**:
-   record it, report it with its restore command in every run (Stash
-   section), and never drop it.
-   - **Stash first:** the tree is cleaned:
-
-```console
-$ spike.sh save-user
-```
-
-     Phase 4 restores their work after the exit path completes. With
-     `--keep-tree` the spike stays in the tree, so their work stays
-     stashed: report the SHA and
-     `spike.sh restore <user-work sha>`.
-   - **Probe on top:** the stash is saved but their files stay in the
-     tree, so the spike builds on them. Staged edits come back unstaged
-     and untracked files stay untracked; contents are unchanged:
-
-```console
-$ spike.sh hold-user
-```
-
-5. With `--branch`, create the scratch branch. A name that already
-   exists fails; halt and ask for another. The command prints the
-   original branch (a SHA when HEAD is detached); use that literal value
-   in Phase 4:
-
-```console
-$ spike.sh branch-start <name>
-```
-
+   default: abort. Record the choice; nothing is saved or switched until
+   the brief is approved (Phase 2, Setup). Either way their work is saved
+   as a stash named `user work before spike`, and the printed SHA is the
+   **user-work SHA**: record it, report it with its restore command in
+   every run (Stash section), and never drop it.
+5. With `--branch`, check that the name is free
+   (`git rev-parse --verify --quiet refs/heads/<name>` prints nothing);
+   a name that exists halts: ask for another.
 6. Locate the code the goal touches (existing modules, tests,
    fixtures), enough to work in the project's idiom.
 
@@ -167,9 +144,39 @@ Present a short spike brief:
 
 Wait for approval, then exit plan mode. If plan mode is unavailable,
 present the same brief inline and proceed on confirmation. In a
-non-interactive run, record the brief in the report and proceed.
+non-interactive run, record the brief in the report and proceed. A
+rejected brief ends the run with nothing saved, switched, or edited, so
+there is nothing to undo.
 
 ## Phase 2: The probe
+
+Setup, once the brief is approved and before the first edit:
+
+1. A dirty tree answered *stash first*: the tree is cleaned:
+
+```console
+$ <scripts>/spike.sh save-user
+```
+
+   Phase 4 restores their work after the exit path completes. With
+   `--keep-tree` the spike stays in the tree, so their work stays
+   stashed: report the SHA and its restore command.
+2. A dirty tree answered *probe on top*: the stash is saved but their
+   files stay in the tree, so the spike builds on them. Staged edits come
+   back unstaged and untracked files stay untracked; contents are
+   unchanged:
+
+```console
+$ <scripts>/spike.sh hold-user
+```
+
+3. With `--branch`, create the scratch branch. The command prints the
+   original branch (a SHA when HEAD is detached); use that literal value
+   in Phase 4:
+
+```console
+$ <scripts>/spike.sh branch-start <name>
+```
 
 Code the shortest path to "proven". During this phase:
 
@@ -213,24 +220,34 @@ repository.
 Replace `<message>` with `spike: <goal> (<what passed, what's undecided>)`:
 
 ```console
-$ spike.sh stash "<message>"
+$ <scripts>/spike.sh stash "<message>"
 ```
 
 After a probe on top, pass the user-work SHA so their files go back into
 the tree and the stash records the spike:
 
 ```console
-$ spike.sh stash-on-top <user-work sha> "<message>"
+$ <scripts>/spike.sh stash-on-top <user-work sha> "<message>"
 ```
 
 1. Record the printed SHA in the report; `git stash apply <sha>`
    restores it. The output `no changes` means record "no changes", not a
-   SHA. Files matched by `.gitignore` are not stashed. After a probe on
-   top the stash holds their work plus the spike, so build the plan and
-   the replay from the spike's own delta, never the whole stash:
+   SHA. A refused restore after `stash-on-top` still printed the spike
+   SHA first: report both SHAs. Files matched by `.gitignore` are not
+   stashed. After a probe on top the stash holds their work plus the
+   spike, so build the plan and the replay from the spike's own delta,
+   never the whole stash:
 
 ```console
-$ spike.sh delta <user-work sha> <spike sha>
+$ <scripts>/spike.sh delta <user-work sha> <spike sha>
+```
+
+   With `--keep-tree` after a probe on top there is no spike SHA: the
+   tree holds their edits and the spike together, so build the plan from
+   the tree's diff against the user-work SHA:
+
+```console
+$ <scripts>/spike.sh delta <user-work sha>
 ```
 
 2. After a stash-first run without `--replay`, put their work back and
@@ -239,7 +256,7 @@ $ spike.sh delta <user-work sha> <spike sha>
    and stop, and never drop it.
 
 ```console
-$ spike.sh restore <user-work sha>
+$ <scripts>/spike.sh restore <user-work sha>
 ```
 
 3. With `--branch`, return to the original branch and delete the
@@ -248,7 +265,7 @@ $ spike.sh restore <user-work sha>
    the user the return command instead.
 
 ```console
-$ spike.sh branch-end <orig> <name>
+$ <scripts>/spike.sh branch-end <orig> <name>
 ```
 
 ## Phase 5: The replay plan
@@ -276,7 +293,7 @@ exists yet, or "none (no remote)".
    pass the user-work SHA so only the spike's delta is applied.
 
 ```console
-$ spike.sh replay-apply <spike sha> [<user-work sha>]
+$ <scripts>/spike.sh replay-apply <spike sha> [<user-work sha>]
 ```
 
 2. Land plan items in order: stage only that item's changes, run its
@@ -292,7 +309,7 @@ $ spike.sh replay-apply <spike sha> [<user-work sha>]
    counterpart offer to push and watch CI:
 
 ```console
-$ spike.sh drop <spike sha>
+$ <scripts>/spike.sh drop <spike sha>
 ```
 
 4. After a stash-first run, restore their work with
@@ -308,21 +325,26 @@ Write the report, and any replay commit message, per
    goal + exit path taken.
 
    A run that halts before probing (no commit, repository rooted at
-   home, dirty tree declined, goal missing) is the hero line and one
-   result sentence naming what is missing, then what the user must do
-   next. No sections, no panel, no stash SHA, no local or temp paths, no
-   command echo, no description of the environment.
+   home, dirty tree declined, goal missing) is the hero line, one result
+   sentence, then one line with what the user must do next. Several
+   blockers at once: name every one in that single result sentence, in
+   the order no commits, repository at home, dirty tree, missing code or
+   goal, and make the action line cover them all. No sections, no panel,
+   no stash SHA, no local or temp paths, no command echo, no description
+   of the environment.
 2. `## Spike findings`: what was proven, stumbling blocks, `SPIKE:`
    markers, observed-not-addressed list. State stumbling blocks even
    when the probe succeeded: a path that fought you throughout is the
    case for the `spike-bakeoff` skill or the `spike-ratchet` skill.
 3. `## Verification`: gate commands run and their results; the
    local-vs-CI split; what was deferred and why.
-4. `## Stash`: message, SHA, restore command (omit with
-   `--keep-tree`). A probe that changed nothing says "no changes"
-   here instead of a SHA. Whenever the run saved the user's work (stash
-   first or on top), add its SHA and restore command, and say whether
-   it was restored.
+4. `## Stash`: message, SHA, restore command. With `--keep-tree` there
+   is no spike stash: say the spike was left in the tree. A probe that
+   changed nothing says "no changes" here instead of a SHA. Whenever the
+   run saved the user's work (stash first or on top), add one more bullet
+   in this form, with the real SHA and its restore state:
+   `- user work before spike: 9d31c2a, restored (git stash apply 9d31c2a
+   puts it back)`.
 5. `## Replay plan`: the numbered commit sequence from Phase 5.
 6. End with an `ask-user-choice` panel: replay now / keep stash and
    stop / discard spike, unless already running inside plan mode or
@@ -333,8 +355,10 @@ Write the report, and any replay commit message, per
 A halted run replies in this shape:
 
 ```text
-⚠ spike blocked: stream the NDJSON export instead of buffering it. Nothing was probed.
-The repository has no commits yet. Make the initial commit yourself, since a spike never commits, then run spike-probe again.
+⚠ spike blocked: stream the NDJSON export instead of buffering it.
+
+Nothing was probed: the repository has no commits and the export code is missing.
+Make the initial commit yourself, since a spike never commits, open the project that holds the export code, then run spike-probe again.
 ```
 
 Reply in this shape, as plain text outside any code fence, with plain

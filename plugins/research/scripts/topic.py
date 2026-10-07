@@ -408,7 +408,7 @@ def resolve_root(arg: str | None) -> Path:
 
 def now_utc() -> str:
     """Return the current UTC time as ``YYYY-MM-DDTHH:MM:SSZ``."""
-    return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")  # noqa: UP017 - 3.9
+    return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
 # --- files ---------------------------------------------------------------------

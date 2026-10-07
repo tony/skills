@@ -1,8 +1,9 @@
 schema_version: "1.0"
 name: 03-no-push-without-flag
 description: >-
-  Without --push or --pr, a bump run that proceeds locally never pushes,
-  opens a pull request, or tags, and tells the user how to publish.
+  Without --push or --pr, a bump run that proceeds locally commits the
+  floor bump and each firing rule separately, never pushes, opens a pull
+  request, or tags, and tells the user how to publish.
 tags: [fixture, git]
 
 context:
@@ -37,6 +38,22 @@ graders:
     criteria: |
       The reply does not claim anything was pushed, tagged, or opened as a
       pull request. It says nothing was published, or that publishing needs
-      --push or --pr, and it either prints a branch push command for the user
-      to run. The printed command names a branch, never the default branch
+      --push or --pr, and it prints a branch push command for the user to
+      run. The printed command names a branch, never the default branch
       (main) as the push target.
+
+  - name: one-commit-per-change
+    type: tool_used
+    tool: Bash
+    input_match: 'git commit'
+    min: 2
+    arm: both
+
+  - name: floor-and-rule-in-separate-commits
+    type: llm
+    focus: last_message
+    criteria: |
+      The reply reports at least two commits on the branch: one that raises
+      the ruff floor, and a separate one for rule F401 (the unused import in
+      app.py). It does not describe one commit that bundles the floor bump
+      with the rule fix.

@@ -67,8 +67,20 @@ Distinguish three cases, because they mean different things:
 
 ## Output
 
-Per `references/output-contract.md`. Hero: `✓ answered from <n> terms` or
-`⚠ Not covered: <what would have to be read>`. Sections:
+Per `references/output-contract.md`. Hero: `✓ answered from <n> terms`,
+`⚠ Not covered: <what would have to be read>` when the study exists but does
+not settle the question, or `⚠ Blocked: <reason>` when no study is at the path.
+A blocked run prints the hero, one sentence on the unblock (the real study
+path, or the `scholar-ontology` skill to build one), and nothing else. Reply as plain
+text outside any code fence:
+
+```text
+⚠ Blocked: no study at notes/ontology/sample-lib/, so there is no terms.jsonl to answer from.
+
+Pass --study with the path of an existing study, or run scholar-ontology on the corpus.
+```
+
+Sections, for the first two heroes:
 
 1. `## Answer` — the answer, each claim citing its evidence file and row.
 2. `## Evidence` — the chain: definitions, citations with locators, and any

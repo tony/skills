@@ -47,7 +47,10 @@ For a small change, read the whole diff:
 $ gh pr diff <number>
 ```
 
-For a large change, read only the files that matter, one at a time.
+For a large change, read the `--name-only` list, then read the files that
+matter one at a time: `gh pr checkout <number>` when the branch is not
+checked out, then `git diff <base>...HEAD -- <file>` with `<base>` from
+`gh pr view <number> --json baseRefName`.
 
 Judge the change's magnitude (small fix, medium feature, large
 overhaul) from the diff; the description must be **proportional** to it.

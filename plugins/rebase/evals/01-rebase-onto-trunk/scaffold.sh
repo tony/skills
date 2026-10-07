@@ -10,6 +10,8 @@ export GIT_COMMITTER_NAME=Eval GIT_COMMITTER_EMAIL=eval@example.invalid
 export GIT_AUTHOR_DATE='2026-01-01T00:00:00Z' GIT_COMMITTER_DATE='2026-01-01T00:00:00Z'
 
 git init -b main >/dev/null
+git config user.name Eval
+git config user.email eval@example.invalid
 
 cat >.gitignore <<'MD'
 .bash_profile

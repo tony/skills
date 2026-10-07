@@ -3,7 +3,7 @@ name: pytest-optimizer
 description: "Use when pytest tests or fixtures are slow and you want them faster: speed up the suite with measured, safety-gated optimization."
 user-invocable: true
 allowed-tools: ["Bash", "Read", "Grep", "Glob", "AskUserQuestion"]
-argument-hint: "[test-path-or-marker] [--phase=scan|benchmark|plan|execute] [--force] [--memory-dir=<path>]"
+argument-hint: "[test-path-or-marker] [--phase=scan|benchmark|plan|execute] [--force] [--hygiene] [--memory-dir=<path>]"
 ---
 
 # pytest-optimizer
@@ -16,7 +16,8 @@ noise before you trust it. A change whose measured saving falls inside the noise
 band, whose run exits non-zero, or whose test count changes is never committed.
 
 `$ARGUMENTS` may name a test path or marker to scope the run, a `--phase` to jump
-to, `--force` to ignore idempotency tokens and re-run, and `--memory-dir` to
+to, `--force` to ignore idempotency tokens and re-run, `--hygiene` to add the opt-in typing
+and parametrize detectors, and `--memory-dir` to
 override where durable state is written.
 
 Paths under `../../scripts/` resolve from this skill's directory: print the absolute path once and write it literally in each command, since shell variables do not persist between Bash calls.
@@ -28,7 +29,7 @@ Paths under `../../scripts/` resolve from this skill's directory: print the abso
 ```
 
 Each phase reads and writes durable JSON under the resolved memory directory;
-re-running resumes at the first incomplete phase. After `03-execute`, re-scan and
+re-running resumes at the first phase whose `completed` flag is false. After `03-execute`, re-scan and
 loop until no candidate clears the rubric.
 
 The phase skills set `disable-model-invocation`, so this skill cannot invoke
@@ -84,6 +85,7 @@ Present a plan stating:
 - the resolved memory directory, or that `00-scan` will create it;
 - the starting phase (fresh `00-scan`, or resume) and the scope (`$ARGUMENTS`
   path or marker, or the whole suite);
+- whether the opt-in typing detectors (`--hygiene`) are on;
 - that suite edits happen only in `03-execute`, one commit per speedup, each
   verified green with unchanged test counts.
 

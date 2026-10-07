@@ -23,7 +23,7 @@ under **Gaps**.
 
 One block per transport this agent supports, sender side and receiver side.
 
-- **Name** (tmux / codex-queue / claude-code-message / claude-code-socket / new).
+- Name (tmux / codex-queue / claude-code-message / claude-code-socket / new).
 - Direction: can this agent send on it, receive on it, or both.
 - Invocation: the exact command, tool call, or frame. Copy-pasteable.
 - Preconditions: daemon running, experimental capability, feature flag, socket bound,
@@ -35,7 +35,7 @@ One block per transport this agent supports, sender side and receiver side.
 - When a message reaches the model: immediately, between tool calls, only when idle.
 - Latency: idle and mid-turn.
 - Target not running: dropped, or durable and delivered on resume.
-- **Ordering** under rapid sends.
+- Ordering: under rapid sends.
 - Caps: message size, queue depth, burst limits, and the behavior at each.
 - Interrupt interaction: what an interrupted turn does to pending messages.
 
@@ -54,10 +54,10 @@ The section the skill depends on most.
 ## 6. Inbound controls
 
 - Gating: accept / hold / refuse equivalents, and where they are configured.
-- **Hooks or filters** that can drop a message before the model sees it.
-- **Default posture** when nothing is configured, including anything that varies by
+- Hooks or filters: that can drop a message before the model sees it.
+- Default posture: when nothing is configured, including anything that varies by
   permission mode.
-- **Turning it off** entirely, sending and receiving separately.
+- Turning it off: entirely, sending and receiving separately.
 
 ## 7. Loop and abuse safety
 
@@ -66,8 +66,8 @@ The section the skill depends on most.
 
 ## 8. Typing quirks (tmux)
 
-- **Submit key**, and how to send a literal newline without submitting.
-- **Reserved leading characters** that open a UI mode instead of entering text.
+- Submit key:, and how to send a literal newline without submitting.
+- Reserved leading characters: that open a UI mode instead of entering text.
 - Paste behavior: bracketed paste support, safe maximum length, `send-keys -l` vs
   `load-buffer` + `paste-buffer`.
 - Racing an active turn: does typed input queue, interrupt, or get lost?

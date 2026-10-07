@@ -73,6 +73,9 @@ Rolls out published releases to local consumer repos.
 - `--roots` names the directories that hold your checkouts.
 - `--push` pushes the commits to trunk; without it they stay local.
 
+Pin edits run `scripts/bump_pin.py`, a standard-library Python 3 script;
+it needs `python3` on `PATH`.
+
 ## Shared reference
 
 `references/release-conventions.md` holds the discovery procedures and

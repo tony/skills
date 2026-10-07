@@ -94,9 +94,11 @@ and the suspected cause. Ask for guidance.
 ## Final report
 
 One hero line (`✓` finished or `⚠` stopped, with the result in one sentence),
-then `## Evidence` (the three commit subjects with short hashes, the xfail
-line from the reproduction run, and for `xfail` the fix-isolation result), then
-`## Follow-ups` (omit when empty). Name no local paths or temp files.
+then `## Evidence` (the commit subjects made, with short hashes, the xfail
+line from the reproduction run, and for `xfail` the fix-isolation result once
+the fix exists), then `## Follow-ups` (omit when empty). A scoped run that
+stopped after the failing test lists one commit and says in the hero line that
+the fix is not made. Name no local paths or temp files.
 
 Reply in this shape, as plain text outside any code fence, with plain bullets, no bold (never `- **Commit:** ...`), and no local paths:
 
@@ -116,6 +118,21 @@ Reply in this shape, as plain text outside any code fence, with plain bullets, n
 - add_hours has the same weekend handling; not changed.
 ```
 
+A scoped run that made one commit looks like this:
+
+```text
+✓ Committed the failing test for the is_business_day Saturday bug; the fix is not made.
+
+## Evidence
+
+- 3f9c2ab tests(fix[is_business_day]) Add xfail test for Saturday
+- Reproduction: 1 expected failure (AssertionError: True is not false).
+
+## Follow-ups
+
+- Ask for the fix when you want it.
+```
+
 ## Plan awaiting approval
 
 A run that has not started because no one approved the plan uses the
@@ -129,8 +146,8 @@ bullets without bold labels, and no paragraph sits between the hero line and
 One hero line (`⚠` plus the result in one sentence, no colon), the plan under
 `## Plan` when no one has approved it yet, then `## To continue` with what the
 user must do. No other sections. Name commits by purpose, never by phase or
-number, and name no local paths or repository details beyond what the user
-must fix.
+number. For a wrong repository root, say only that the root is wrong; never
+describe what is in it. Name no local paths.
 
 Reply in this shape, as plain text outside any code fence, with plain bullets, no bold, and no local paths:
 

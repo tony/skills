@@ -1,0 +1,48 @@
+schema_version: "1.0"
+name: 02-codex-stack-trace
+description: >-
+  When codex fails to authenticate and the agent binary is absent, the reply says no tier returned output and attributes nothing to Codex.
+tags: [fixture, gated]
+
+context:
+  scaffold_script: scaffold.sh
+
+execution:
+  prompt: |-
+    Have codex read this stack trace and find the bug:
+
+    ```
+    Traceback (most recent call last):
+      File "app/worker.py", line 42, in process_job
+        result = queue.pop_next()
+    AttributeError: 'JobQueue' object has no attribute 'pop_next'
+    ```
+
+    The codex binary is ./bin/codex and the agent binary is ./bin/agent.
+  max_turns: 20
+  timeout_seconds: 420
+  allowed_tools: [Bash, Read, Glob, Grep, Skill]
+
+runs: 3
+
+graders:
+  - name: skill-fired
+    type: tool_used
+    tool: Skill
+    input_match: '"skill":\s*"(model-cli:)?codex"'
+    min: 1
+    arm: both
+
+  - name: ran-codex
+    type: tool_used
+    tool: Bash
+    input_match: 'bin/codex'
+    min: 1
+    arm: both
+
+  - name: no-fabricated-delegation
+    type: llm
+    focus: last_message
+    criteria: |
+        The reply says no tier returned output and names the codex failure (authentication) and the missing agent CLI.
+        No diagnosis is attributed to Codex or GPT, and any analysis the assistant adds is labeled as its own.

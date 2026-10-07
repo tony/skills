@@ -12,12 +12,14 @@ stated reason in `why`.
 ## extract
 
 Every row in `terms.jsonl` has a non-empty `definition` and at least one entry
-in `cites`, each with a non-empty `quote`. `term_metrics.py <study>
+in `cites`, each with a non-empty `quote`. A `kind: type` row is exempt from
+`cites`; any it carries still need a quote. `term_metrics.py <study>
 --check-terms` lists the rows that fail, including rows with a mistyped field.
 
 ## distill
 
-Every type has a discriminator, and `term_metrics.py` reports no orphans: a
+Every type is a `kind: type` row with its discriminator as `definition`,
+`--check-terms` still exits zero, and `term_metrics.py` reports no orphans: a
 term with no parent, or a parent that is neither another term nor `root`, is an
 orphan.
 

@@ -1,6 +1,6 @@
 ---
 name: fix
-description: "Use when fixing a bug test-first: reproduce it as an xfail test, find the root cause, fix, and verify."
+description: "Use when fixing a bug test-first: write a failing test to reproduce it, find the root cause, fix, and add a regression test."
 allowed-tools: ["Bash", "Read", "Grep", "Glob", "Edit", "Write", "Task"]
 argument-hint: Paste or describe the bug to reproduce and fix
 user-invocable: true
@@ -26,8 +26,9 @@ commit messages per `../../references/prose-rules.md` and the reference's
    component from the report.
 3. Read the project's AGENTS.md / CLAUDE.md for test conventions, quality gate
    commands, and commit format.
-4. Use Explore agents to find the test file for this area, the suspected source
-   file, and fixtures that help reproduce the scenario. Read them.
+4. Use Explore agents (or read the files directly where none exist) to find the
+   test file for this area, the suspected source file, and fixtures that help
+   reproduce the scenario. Read them.
 5. Summarize the root cause, the xfail test you would write, and the minimal
    fix, and ask the user to confirm, per the approval rule in the
    gates-and-commits reference. When the user asked only for the failing test, stop after
@@ -74,7 +75,8 @@ Apply the minimal fix (see the gates-and-commits reference).
 2. Remove the debug logging added in Phase 3.
 3. Run the test. With a strict mechanism it now reports an unexpected pass
    (XPASS in pytest). With a skip-based mechanism, remove the skip, run the
-   test, and expect a pass.
+   test, expect a pass, then restore the skip so the fix commit stays
+   source-only.
 4. Run the quality gates. With a strict mechanism, run the non-test gates only;
    the XPASS failure is expected.
 5. Commit the fix with the root cause in the message. Before the commit, run
@@ -82,13 +84,13 @@ Apply the minimal fix (see the gates-and-commits reference).
 
 ## Phase 5: Remove xfail and Verify
 
-1. Remove the expected-failure marker (or skip).
+1. Remove the expected-failure marker (or the restored skip).
 2. Rewrite the test comment to describe a regression test, not a bug report.
 3. Run the test; it must pass.
 4. Run the full suite for the affected file or module.
 5. Run the full quality gates.
-6. When everything passes, commit, noting the xfail is removed because the fix
-   is verified.
+6. Run the test-only-commit check from "Diff gates"; it must print nothing.
+   Then commit, noting the xfail is removed because the fix is verified.
 
 ## Phase 6: Recovery Loop
 
@@ -100,6 +102,9 @@ When the test still fails after the fix:
    and cached installs can run old code, so confirm module paths point to local
    source and reinstall if not. If the fix is wrong, revert it, return to
    Phase 3, and apply a new fix in Phase 4.
+
+Gate every recommit with the check its phase names. After 3 failed attempts,
+stop per "Recovery" in the gates-and-commits reference.
 
 ## Report
 

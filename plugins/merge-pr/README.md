@@ -42,16 +42,18 @@ Merges a single PR.
 
 Runs the readiness gate, rebases after confirming when behind, merges via
 `gh pr merge` pinned to the verified head with a message matching repo
-history, then syncs trunk and checks it contains the merge commit.
+history (written through files, never a shell string), then syncs trunk and checks it contains the merge commit.
 
 ### `/merge-pr:multiple`
 
 Lands multiple PRs sequentially.
 
 - Detects if PRs are a **stack** (merged bottom-up, children rebased/retargeted)
-  or **independent** (merged in order, rebased on trunk).
-- Between merges: rebases, force-pushes, waits on CI. A stack parent is
-  merged without `--delete-branch` so its child PR stays open.
+  or **independent** (merged in order).
+- Between merges: rebases and force-pushes only a PR that is behind or
+  conflicting, and waits on CI. A stack parent is merged without
+  `--delete-branch` so its child PR stays open; the parent branches are
+  deleted after the last merge when you passed the flag.
 - Halts on CI failure, drift, or product-level conflicts, preserving merges.
 
 ## Merge strategy and flags

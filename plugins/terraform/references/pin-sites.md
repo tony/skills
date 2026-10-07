@@ -46,7 +46,9 @@ whether the target version requires an edit:
 - `~> 6.56.0` allows `6.56.4` but not `6.57.0`. Moving to a new minor
   requires editing the constraint.
 - `~> 6.56` allows `6.57.0` but not `7.0.0`. Moving within the major
-  requires no edit at all: refreshing the lock is the whole change.
+  requires no edit, but refreshing the lock selects the newest allowed
+  release, not necessarily the target. A version the user named lands
+  only through the exact-version steps in the lock reference.
 - `>= 6.0` or `>= 6.0, < 7.0` already admits the target. Rewriting it
   as `~> 6.57.0` narrows what the module accepts, which is a policy
   change.
@@ -112,6 +114,15 @@ matches every `terraform plan` line in a `justfile`. Require the tool name
 **Read version files by path.** `.terraform-version` holds a bare version
 number, so no name-based filter matches it. Take every line.
 
+`required_version` is declared in `.tf` and `.tofu` files at any depth; list
+every declaration with:
+
+```console
+$ git grep \
+    -n -I -e 'required_version' \
+    -- '*.tf' '*.tofu'
+```
+
 One search covers the first two traps, case-insensitively at any depth:
 
 ```console
@@ -171,11 +182,13 @@ registry: read `providers.v1` out of
 `https://<hostname>/.well-known/terraform.json` and build the path from that
 prefix.
 
-`registry.terraform.io` also serves a metadata endpoint with the release tag
-and the provider's own repository, which makes a changelog link derivable:
+`registry.terraform.io` also serves a per-version metadata endpoint with the
+release tag, publication date, and the provider's own repository, which makes
+a changelog link derivable. Query the target version, never the bare provider
+path, which returns the latest release whatever the target is:
 
 ```console
-$ curl -fsS https://registry.terraform.io/v1/providers/hashicorp/aws \
+$ curl -fsS https://registry.terraform.io/v1/providers/hashicorp/aws/6.57.0 \
     | jq '{version, tag, source, published_at}'
 ```
 
@@ -227,7 +240,8 @@ Link the CLI changelog at that tag:
 - OpenTofu: `https://github.com/opentofu/opentofu/releases/tag/v<version>`.
 - Terraform: `https://github.com/hashicorp/terraform/blob/v<version>/CHANGELOG.md`.
 
-For a provider, take `source` and `tag` from the metadata above and link
+For a provider, take `source`, `tag`, and the publication date from the
+target version's metadata above and link
 `<source>/releases/tag/<tag>`; where the repository keeps a
 `CHANGELOG.md`, `<source>/blob/<tag>/CHANGELOG.md` is the alternative. Fetch
 the page before linking it.

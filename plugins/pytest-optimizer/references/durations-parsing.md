@@ -90,14 +90,15 @@ Fast rows are not benchmarks. To judge a later change:
        -- pytest -p no:cacheprovider -p no:randomly -q
    ```
 
-   Append each JSON line to one `.jsonl` file in the memory directory.
+   Append each JSON line to one `.jsonl` file in `<runs-dir>` (see `memory-schema.md`), deleted first.
 2. `measure.py band <file>` prints the **median**, the **MAD**, and the noise
-   band `max(k * MAD, floor)` (`k = 3`; the 50 ms **trust floor** keeps identical
-   runs from producing a zero band). It reports `valid: false` when any run exits
+   band `max(k * 1.4826 * MAD, floor)` (`k = 3`; the **trust floor**, the larger
+   of 50 ms and 1% of the median, keeps identical runs from producing a zero band). It reports `valid: false` when any run exits
    non-zero or the counts differ between runs.
 3. `measure.py compare baseline.json <candidate .jsonl>` counts a candidate's
-   saving (`baseline_median - candidate_median`) only when it exceeds the band,
-   every run exits 0, and the test counts match.
+   saving (`baseline_median - candidate_median`) only when it exceeds the band
+   (widened by the candidate's own MAD), every run exits 0, and the test counts
+   match.
 
 Rank nothing below the trust floor. Disable cacheprovider while measuring for
 reproducible wall-time, and never measure under xdist: per-worker re-collection

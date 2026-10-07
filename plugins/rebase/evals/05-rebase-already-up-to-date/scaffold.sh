@@ -4,6 +4,8 @@
 set -euo pipefail
 
 git init -b main >/dev/null
+git config user.name Eval
+git config user.email eval@example.invalid
 
 cat >.gitignore <<'MD'
 .bash_profile

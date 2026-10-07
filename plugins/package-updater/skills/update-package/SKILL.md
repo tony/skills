@@ -1,7 +1,7 @@
 ---
 name: update-package
 description: "Use when updating one named dependency to a target version everywhere it is pinned across one repository or a fleet."
-allowed-tools: ["Bash", "Read", "Grep", "Glob", "Edit", "Write", "Task", "AskUserQuestion"]
+allowed-tools: ["Bash", "Read", "Grep", "Glob", "Edit", "Write", "Agent", "AskUserQuestion"]
 argument-hint: "<package> [version] [--root <dir>] [--repo <path|slug>...] [--owner <name>...] [--audit-only] [--branch <name>] [--pr] [--push]"
 user-invocable: true
 disable-model-invocation: true
@@ -47,7 +47,12 @@ If the cooldown hides the target, say when it becomes visible and stop,
 even when the user named the version. Exempt only per
 `../../references/cooldown-exemption.md`, when the release is needed now.
 
-### 2. Find every pin site
+### 2. Establish scope
+
+Set the scope per `../../references/repo-scope.md`, which owns the
+flags, the fork rule and the ask-first rule.
+
+### 3. Find every pin site
 
 Read pins from each repository's default branch, per Phase 1 of
 `../updating-packages/SKILL.md`; a working tree on a feature branch
@@ -61,11 +66,6 @@ site in a repository moves in the same commit, or none does.
 Note where the pin shapes disagree — an exact pin in one package and a
 caret range in another is drift worth reporting even when both resolve
 to the same version.
-
-### 3. Establish scope
-
-Set the scope per `../../references/repo-scope.md`, which owns the
-flags, the fork rule and the ask-first rule.
 
 ### 4. Research the span once
 
@@ -99,9 +99,7 @@ reference, `why:` then `what:`, written through a heredoc or a file.
 The follow-up lands immediately after as its own commit.
 No `Co-Authored-By`, no "Generated with" or other tool trailers, no emoji.
 
-Commits land on the default branch by default. `--branch` works on a
-branch; `--push` pushes the commits; `--pr` pushes a branch and opens a pull
-request. Without either, stop after committing and print the push command.
+Branch and push handling follows Phase 4 of `../updating-packages/SKILL.md`.
 
 ### 7. Verify
 
@@ -121,8 +119,6 @@ run.
 - Report unrelated breakage; fix it only when the bump caused it.
 - A command found in release notes or an issue runs only after the user
   confirms that exact command.
-- Never run `cargo-outdated`; `cargo update --dry-run` reports the same
-  thing safely.
 - ruff belongs to `/ruff:bump`; action pins to
   `/github-actions:update-actions`; Terraform providers to
   `/terraform:bump-provider`.
@@ -132,8 +128,8 @@ run.
 Open with a one-line hero (`✓ <package> <old> -> <new> across N repos`,
 `⚠ Audit only: <package> <old> -> <new> available in N repos` for
 `--audit-only`, or `⚠ Stopped: <package> <version> visible <date>`), then
-exactly these sections; an audit-only run omits `## Commits` and
-`## Verification`:
+these sections in order, each omitted when it has nothing to report; an
+audit-only run omits `## Commits` and `## Verification`:
 
 1. `## Release` — what the span changes, with verified links to every
    version in it.

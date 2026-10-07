@@ -1,8 +1,8 @@
 ---
 name: disk
 description: >-
-  Use when disk is full, out of space, or no space left: find large dirs,
-  decide if Claude sessions or npm cache are safe to remove, shrink WSL
+  Use when disk is full, no space left, or to free up space: find big dirs,
+  decide if Claude sessions or npm cache are safe to delete, shrink WSL
   vhdx.
 allowed-tools: "Bash, Read, Glob, Grep, AskUserQuestion, TodoWrite"
 metadata:

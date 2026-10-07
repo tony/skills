@@ -9,7 +9,8 @@ fails the suite when the test starts passing (strict).
 - Jest: `it.failing('...')`. Fixed bug: the test passes, so the suite fails.
 - Vitest: `it.fails('...')`. Fixed bug: same as Jest.
 - Rust: `#[should_panic(expected = "...")]`. Without `expected`, any panic
-  passes, so always set it. Fixed bug: no panic, so the test fails.
+  passes, so always set it. Fixed bug: no panic, so the test fails. It models
+  only bugs that panic or fail an assertion, not wrong return values.
 - Python unittest: `@unittest.expectedFailure`. Fixed bug: reported as an
   unexpected success, which fails the run.
 - RSpec: `pending "reason"`. Fixed bug: the example passes, which RSpec reports

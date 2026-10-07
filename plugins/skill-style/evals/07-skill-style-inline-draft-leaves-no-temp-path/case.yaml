@@ -1,0 +1,54 @@
+schema_version: "1.0"
+name: 07-skill-style-inline-draft-leaves-no-temp-path
+description: >-
+  A SKILL.md pasted inline with Bash granted. The reply carries a Ledger and a
+  Diff and names no snapshot or temp path.
+tags: [fixture]
+
+execution:
+  prompt: |
+    /skill-style:skill-style Trim this draft SKILL.md, I pasted it inline:
+
+    ---
+    name: tidy
+    description: "Use when tidying imports in a Python file."
+    ---
+
+    # Tidy imports
+
+    Imports are an important part of any Python program, and keeping them
+    tidy is considered a best practice.
+
+    ## Sort the imports
+
+    Sort the imports of the named file with the project's formatter.
+  max_turns: 20
+  timeout_seconds: 400
+  allowed_tools: [Bash, Read, Glob, Skill]
+
+runs: 3
+
+graders:
+  - name: ledger-is-reported
+    type: regex
+    target: last_message
+    pattern: '## Ledger'
+
+  - name: diff-section-present
+    type: regex
+    target: last_message
+    pattern: '^## Diff'
+    flags: m
+
+  - name: no-snapshot-or-temp-path
+    type: regex
+    target: last_message
+    pattern: 'skill-style\.|/tmp/|/var/folders/'
+    match: not_contains
+
+  - name: no-bold-label-bullets
+    type: regex
+    target: last_message
+    pattern: '^- \*\*[^*]+:\*\*'
+    flags: m
+    match: not_contains

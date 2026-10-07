@@ -10,10 +10,15 @@ import ledger_key  # pyright: ignore[reportImplicitRelativeImport]
 
 def test_digest_matches_documented_recipe() -> None:
     """Sorted, whitespace-collapsed, newline-terminated lines hash to 12 hex."""
-    want = hashlib.sha256(b"alex\tone two\nlint-bot\tthree\n").hexdigest()[:12]
-    assert ledger_key.digest("lint-bot\tthree\nalex\tone   two\n") == want
+    want = hashlib.sha256(b"101\tone two\n202\tthree\n").hexdigest()[:12]
+    assert ledger_key.digest("202\tthree\n101\tone   two\n") == want
 
 
-def test_digest_changes_when_a_claim_changes() -> None:
+def test_digest_changes_when_a_comment_is_edited() -> None:
     """Edited feedback invalidates the key."""
-    assert ledger_key.digest("alex\ta") != ledger_key.digest("alex\tb")
+    assert ledger_key.digest("101\ta") != ledger_key.digest("101\tb")
+
+
+def test_digest_changes_when_a_comment_is_added() -> None:
+    """A new comment invalidates the key."""
+    assert ledger_key.digest("101\ta") != ledger_key.digest("101\ta\n202\tb")

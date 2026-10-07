@@ -6,19 +6,23 @@ description: >-
 disable-model-invocation: true
 allowed-tools: ["Bash", "Read", "Grep", "Glob", "Write", "AskUserQuestion"]
 metadata:
-  argument-hint: "[test-path-or-marker] [--force] [--runs=N] [--memory-dir=<path>]"
+  argument-hint: "[test-path-or-marker] [--force] [--runs=N] [--hygiene] [--memory-dir=<path>]"
   source: "plugins/pytest-optimizer/skills/00-scan/SKILL.md"
 ---
 
 # 00-scan
 
-Profile, detect, hypothesize. This phase never edits the suite. It writes only
-JSON and one collection listing to the memory directory, plus one line in the
-local git exclude file when it creates an in-tree memory directory.
+Profile, detect, hypothesize. This phase never edits the suite and never
+installs anything into the user's environment without asking. It writes only
+JSON and one collection listing to the memory directory, run files under the git
+directory, and one line in the local git exclude file when it creates an in-tree
+memory directory.
 
 `$ARGUMENTS` may scope the run to a path or marker, set `--runs=N` (baseline
-sample count, default 5), `--force` to ignore the idempotency token, and
-`--memory-dir` to override the memory location.
+sample count, default 5), `--force` to ignore the idempotency token,
+`--hygiene` to run the typing and parametrize detectors (H26-H32), and
+`--memory-dir` to override the memory location. Those detectors rewrite test
+signatures and case ids to one house convention, so they stay off unless asked.
 
 Arithmetic goes through `references/measure.py` (Python 3 standard
 library). That path resolves from this skill's own directory, not the
@@ -58,13 +62,20 @@ token defined in the schema with `measure.py token --head <HEAD sha>
 --collection collection.txt --version <name>=<version> ...` (pytest and each
 plugin), and store it in `state.json` as `env_token`, with `base_head` set to the same
 `HEAD` sha: `03-execute` resumes against it. If `state.json` shows
-`scan` completed with an unchanged token and `hypotheses.json` exists, report "already scanned" and stop, unless `--force`.
+`scan` completed with an unchanged token and `hypotheses.json` exists, report "already scanned" and stop, unless `--force`
+or `--hygiene` differs from the recorded run.
+
+Resolve `<runs-dir>` as `references/memory-schema.md` ("Run files") says
+and create it. Run files live there, never in the working directory.
 
 ## Step 3: Detect capabilities
 
 Probe the installed pytest and plugins against
 `references/version-matrix.md` and write `capabilities.json`. Use only
-available features below; fall back as the matrix directs.
+available features below; fall back as the matrix directs. Install nothing into
+the project's environment to widen the probe: an ephemeral `uv run --with <pkg>`
+is fine, any other install needs the user's confirmation of the exact package and
+environment, and without it the detector takes its fallback.
 
 ## Step 4: Establish the baseline and noise band
 
@@ -73,18 +84,18 @@ Run the command below once without the redirect as a warm-up; its `seconds` is
 baseline runs, and the profile run. Above 900 seconds, ask the user to confirm
 or lower `--runs` (never below 3); without an interactive question tool, lower
 `--runs` to 3 and say so in the closing line. Then time `--runs` serial,
-cache-disabled runs, appending each JSON line to `baseline-runs.jsonl` in the
-memory directory:
+cache-disabled runs. Delete `<runs-dir>/baseline-runs.jsonl` first, then append
+each JSON line to it:
 
 ```console
 $ python3 <measure.py> run \
     -- pytest -p no:cacheprovider -p no:randomly -q \
-    >> baseline-runs.jsonl
+    >> <runs-dir>/baseline-runs.jsonl
 ```
 
-Substitute `test_command` for `pytest`. `measure.py band baseline-runs.jsonl`
-prints the median, MAD, and noise band (floored at the 50 ms trust floor), and
-exits 1 when any run fails or the test counts differ. A failing baseline means
+Substitute `test_command` for `pytest`. `measure.py band <runs-dir>/baseline-runs.jsonl`
+prints the median, MAD, and noise band (floored at the larger of 50 ms and 1% of
+the median), and exits 1 when any run fails or the test counts differ. A failing baseline means
 the suite is red: stop and report it. Write the env fingerprint, versions,
 capabilities, the band, and the passed/total counts to `baseline.json`. See
 `references/durations-parsing.md`.
@@ -108,7 +119,7 @@ per-fixture cost is needed. Persist the timings to `baseline.json`.
 Run every detector in `references/heuristic-catalog.md`, using
 `references/fixture-analysis.md` for the fixture recipes and
 `references/parametrize-convention.md` for the typing and parametrize
-gaps (H26-H32). Emit H19 only when `time pytest --co -q` is a small share of
+gaps (H26-H32, only under `--hygiene`). Emit H19 only when `time pytest --co -q` is a small share of
 the baseline (H22 rules it out). Apply the `getfixturevalue` guard (H09)
 before proposing any fixture deletion.
 
@@ -117,7 +128,8 @@ before proposing any fixture deletion.
 Write `hypotheses.json`: one entry per firing detector with its heuristic id,
 raw evidence, and prior risk/effort. H01-H07 and H17/H18 are measurements and
 gates: they appear in the report sections, never as entries. Estimate no impact here; `01-benchmark`
-measures it. Update `state.json` (`phase=scan`, `completed.scan=true`, token).
+measures it. Update `state.json` (`phase=scan`, `completed.scan=true`, the later `completed`
+flags false, token).
 
 ## Step 8: Report
 

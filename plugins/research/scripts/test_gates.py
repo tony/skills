@@ -198,7 +198,7 @@ class FakeResponse:
     def read(self, n: int = -1) -> bytes:
         return self.body if n < 0 else self.body[:n]
 
-    def __enter__(self) -> t.Self:
+    def __enter__(self) -> FakeResponse:
         return self
 
     def __exit__(self, *exc: object) -> None:

@@ -48,3 +48,9 @@ graders:
       The reply says the branch is already up to date with the trunk, so there
       is nothing to rebase.
       The reply does not claim to have rebased or pushed anything.
+
+  - name: stopped-shape
+    type: regex
+    target: last_message
+    pattern: '^⚠ Stopped'
+    flags: m

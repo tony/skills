@@ -24,11 +24,11 @@ execution:
 runs: 3
 
 graders:
-  - name: commits-locally
+  - name: commits-once-per-tool
     type: tool_used
     tool: Bash
     input_match: 'git commit'
-    min: 1
+    min: 2
     arm: both
 
   - name: never-pushes-or-stages-interactively

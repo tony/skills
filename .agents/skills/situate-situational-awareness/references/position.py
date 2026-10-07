@@ -6,7 +6,8 @@ Paths are never printed; the root is reported as flags and its basename.
 
 Keys: ``root_name``, ``dotfile_repo`` (root is, or contains, the home
 directory), ``has_commits``, ``branch`` (null when detached), ``trunk``,
-``trunk_source``, ``trunk_age``, ``upstream``, ``base``, ``base_source``
+``trunk_source``, ``trunk_tip_age`` (when the trunk tip commit was made),
+``last_fetch`` (age of FETCH_HEAD, or "unknown"), ``upstream``, ``base``, ``base_source``
 (``upstream``, ``trunk`` or null), ``failed`` (lookups that did not resolve),
 ``ahead``, ``behind``, ``on_trunk``, ``staged``, ``modified``, ``untracked``,
 ``ignored_untracked`` (environment files filtered out) and ``stashes``.
@@ -21,6 +22,7 @@ import argparse
 import json
 import subprocess
 import sys
+import time
 from pathlib import Path
 
 _ENV_NAMES = frozenset(
@@ -53,6 +55,28 @@ def _git(*args: str, strip: bool = True) -> str | None:
     if done.returncode != 0:
         return None
     return done.stdout.strip() if strip else done.stdout
+
+
+def _age(seconds: float) -> str:
+    """Format an age in seconds as a coarse phrase.
+
+    >>> _age(5), _age(7200), _age(3 * 86400)
+    ('just now', '2 hours ago', '3 days ago')
+    """
+    for unit, size in (("day", 86400), ("hour", 3600), ("minute", 60)):
+        if seconds >= size:
+            n = int(seconds // size)
+            return f"{n} {unit}{'s' if n != 1 else ''} ago"
+    return "just now"
+
+
+def last_fetch_age() -> str:
+    """Return the age of FETCH_HEAD, or "unknown" when nothing was fetched."""
+    path = _git("rev-parse", "--git-path", "FETCH_HEAD")
+    try:
+        return _age(time.time() - Path(path).stat().st_mtime) if path else "unknown"
+    except OSError:
+        return "unknown"
 
 
 def is_env_entry(path: str) -> bool:
@@ -102,12 +126,22 @@ def _split_status(raw: str) -> tuple[int, int, list[str]]:
 
     >>> _split_status("M  a\0 M b\0?? c\0?? .zshrc\0")
     (1, 1, ['c', '.zshrc'])
+
+    A rename or copy is followed by an entry holding the old path:
+
+    >>> _split_status("R  new\0old\0")
+    (1, 0, [])
     """
     staged = modified = 0
     untracked: list[str] = []
+    skip_next = False
     for entry in raw.split("\0"):
+        if skip_next:
+            skip_next = False
+            continue
         if len(entry) < 3:  # noqa: PLR2004
             continue
+        skip_next = "R" in entry[:2] or "C" in entry[:2]
         code, path = entry[:2], entry[3:]
         if code == "??":
             untracked.append(path)
@@ -134,7 +168,8 @@ def position(trunk_override: str | None = None) -> dict[str, object]:
     out["branch"] = _git("symbolic-ref", "--short", "--quiet", "HEAD")
     trunk, source = find_trunk(trunk_override)
     out["trunk"], out["trunk_source"] = trunk, source
-    out["trunk_age"] = _git("log", "-1", "--format=%cr", trunk) if trunk else None
+    out["trunk_tip_age"] = _git("log", "-1", "--format=%cr", trunk) if trunk else None
+    out["last_fetch"] = last_fetch_age()
 
     upstream = _git("rev-parse", "--abbrev-ref", "@{upstream}")
     own = f"origin/{out['branch']}"
@@ -150,13 +185,16 @@ def position(trunk_override: str | None = None) -> dict[str, object]:
         base_source = "upstream"
         if base is None:
             failed.append("merge-base with upstream")
-    if (base is None or base == head) and trunk:
+    if base == head and not trunk:
+        base, base_source = None, None
+        failed.append("trunk ref")
+    elif (base is None or base == head) and trunk:
         trunk_base = _git("merge-base", "HEAD", trunk)
         if trunk_base is None:
             failed.append("merge-base with trunk")
         else:
             base, base_source = trunk_base, "trunk"
-    elif base is None:
+    elif base is None and not upstream:
         failed.append("trunk ref")
     out["base"], out["base_source"], out["failed"] = base, base_source, failed
 

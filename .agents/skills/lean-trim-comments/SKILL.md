@@ -73,7 +73,8 @@ With no paths, the scope is the lines this branch added or changed.
 
    The script prints `path<TAB>start-end,...` per file; `--all` prints
    names only, meaning judge the whole file. A path with an empty range
-   had only deletions: skip it. Exit 2 means no
+   had only deletions: skip it. Paths are relative to the current
+   directory, and untracked files count as added in full. Exit 2 means no
    trunk ref or no changes: report that and stop rather than widening
    the scope. Keep source files; drop lockfiles, generated output, and
    vendored trees.
@@ -86,7 +87,8 @@ With no paths, the scope is the lines this branch added or changed.
 3. **Classify.** Every comment and docstring in scope gets one verdict
    (keep, rewrite, or delete) and the gate that decides it: `Loss`,
    `Elite`, or `Upkeep` for a failure, the gate that protects it for a
-   keep. On branch and `--staged` runs, judge only comments inside the
+   keep, or `Hard keep: directive`, `Hard keep: header`, or
+   `Hard keep: sole docstring` for the cases below. On branch and `--staged` runs, judge only comments inside the
    listed line ranges; for paths, `--all`, and pasted code, judge the
    whole text. A verdict you cannot attach to a gate is a keep.
 
@@ -96,11 +98,13 @@ With no paths, the scope is the lines this branch added or changed.
    `# pragma`, `// eslint-disable`, `# fmt: off`), shebang and encoding
    lines, and license or SPDX headers are never deleted or rewritten,
    and neither is a docstring that is the only statement in its block.
-   Report a bloated sole-body docstring as a finding instead.
+   Report a bloated sole-body docstring as a finding only, with no
+   suggested rewrite.
 
 4. **Preview and confirm.** List one verdict per comment, keeps
    included, grouped by file: old and new text for each rewrite, the
-   code each deletion sat above, and the gate that protects each keep.
+   code each deletion sat above, and the gate or hard-keep label that
+   protects each keep.
    Rewrites hold to the policy's two-line ceiling. Rationale the policy
    says belongs in a commit message goes in its own list, so it is not
    lost. Confirm through `ask-user-choice`. Skip for `--diff-only` and
@@ -125,6 +129,7 @@ With no paths, the scope is the lines this branch added or changed.
      is not printed twice.
    - Edited runs: the hero line and one line saying the verdicts are in
      the preview above, then `## For the commit message`.
+   - Next steps: a plain list after the last section, with no heading.
 
    The hero line is `N comments: K kept, R rewritten, D deleted`; the
    counts sum to N. Tally the verdicts before writing any reply text, so
@@ -133,7 +138,9 @@ With no paths, the scope is the lines this branch added or changed.
    the text is unchanged. A rewrite preserves every instruction in the
    original, such as what not to change and what to test first. A rewrite verdict names the gate the
    old text failed, not one the new text passes. The hero comes first,
-   with no paragraph before it. Omit `## For the commit message` when nothing moved.
+   with no paragraph before it. Omit `## For the commit message` when nothing moved, and say nothing
+   about it. A run that edited nothing adds no sentence between the hero and
+   `## Verdicts` (not even to say nothing was edited); do not narrate comments you did not judge.
 
    Reply in this shape, as plain text outside any code fence, with plain bullets, no bold (never `- **Label:** ...`), and no local paths:
 
@@ -154,7 +161,12 @@ With no paths, the scope is the lines this branch added or changed.
 
    ## For the commit message
 
-   - Windows runners see a cold DNS cache on the first request.
+   - The retry was added after intermittent DNS failures on Windows CI.
+
+   Next steps:
+   - Commit the edits
+   - Tighten the prose too with `lean-tighten`
+   - Discard with `git checkout -- <file>`
    ````
 
    A `--diff-only` run, with the one comment it judged:
@@ -168,12 +180,13 @@ With no paths, the scope is the lines this branch added or changed.
    ````
 
    `## For the commit message` holds only rationale moved out of a
-   deleted or rewritten comment, never one that was kept.
+   deleted or rewritten comment, never text still present in the code or
+   in a kept or rewritten comment.
 
    Then offer next steps through `ask-user-choice`: commit, tighten
    the prose too with the `lean-tighten` skill, or discard. Never offer to widen
    the scope to comments the branch did not touch. Without a question
-   tool, print the options as a plain list and stop. Review the printed
+   tool, print the same options as the plain list above and stop. Review the printed
    diff first, since `git checkout -- <file>` resets the whole file to
    HEAD and drops any other uncommitted work in it. A commit message
    carries no `Co-Authored-By`, no "Generated with" or other tool

@@ -28,7 +28,7 @@ graders:
   - name: parent-merge-never-deletes-its-branch
     type: tool_used
     tool: Bash
-    input_match: 'gh pr merge #?31\b[^\n]*--delete-branch'
+    input_match: 'gh pr merge #?31\b(?:(?!\bgh )[\s\S])*--delete-branch'
     min: 0
     max: 0
     arm: both
@@ -49,10 +49,15 @@ graders:
   - name: never-uses-admin
     type: tool_used
     tool: Bash
-    input_match: 'gh pr merge[^\n]*--admin'
+    input_match: 'gh pr merge(?:(?!\bgh )[\s\S])*--admin'
     min: 0
     max: 0
     arm: both
+
+  - name: deletes-parent-branch-after-last-merge
+    type: tool_used
+    tool: Bash
+    input_match: 'git push\s+origin\s+(--delete\s+stack-1|:stack-1)|gh api[^\n]*git/refs/heads/stack-1'
 
   - name: reports-order-and-kept-parent-branch
     type: llm

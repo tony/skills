@@ -1,6 +1,6 @@
 ---
 name: draft
-description: "Use when asked to file or write a ticket, Jira epic, Linear issue or regression, GitLab issue, Azure DevOps item, Trello card, or Shortcut story."
+description: "Use when asked to file or write a ticket, bug report, Jira epic, Linear issue or regression, GitLab issue, Asana task, Trello card, or Shortcut story."
 user-invocable: true
 argument-hint: "[description, URL, provider, or pasted finding]"
 allowed-tools: ["Bash", "Read", "Grep", "Glob", "AskUserQuestion"]
@@ -116,7 +116,8 @@ Then check the future tense against `contract.md`: demote every failed
 invariant to intent, and rewrite any checkbox list of technical outcomes.
 Write an invariant only from a constraint the user stated, in their words and
 figures; a figure or technical choice they gave goes to Intent as a non-binding
-target, as given, never into the Outcome or the title. Do not
+target, as given, never into the Outcome or the title, and never as a
+direction built from it ("lower latency", "faster"). Do not
 add "faster, never slower", "finds what the correct spelling would find", or any
 other rule they did not say. With no stated constraint, omit Invariants and
 list "Invariants: none stated" under Unverified.
@@ -126,8 +127,8 @@ Write the Outcome or Summary from the user's own nouns and figures, close to
 their sentence ("adding typo tolerance to the search backend"), never a
 paraphrase that says more ("returns results despite typos"). Add no
 user impact, motivation, or quality adjective ("fast enough that users stop
-waiting") they did not give. Do not mention the revision in the body: no "filed",
-and state the version once.
+waiting") they did not give. Do not mention the revision in the body: no "filed".
+State each fact once: a version in Environment or Summary, not both.
 
 When the reporter gave only a symptom, restate the symptom and stop: add no
 impact, scope ("smaller exports are fine"), or expected-behavior sentence.
@@ -155,12 +156,14 @@ block that lost its blank line renders as literal asterisks.
 
 Show the result in this order: a hero line (one line, at most 25 words: the
 role, the provider, and "not filed yet"; no reasons, no backend or Team
-status), `## Title`, `## Body`,
+status; never open with "Below is" or "Here is"; name a role even for a
+plain issue, as "work item"), `## Title`, `## Body`,
 `## Changed from your request` only when you altered something the user asked
 for, and `## Unverified` only when the draft carries marked-unverified items.
 Backend and run status go under Unverified. Explain each change in the user's
 terms ("a checkbox list reads as a requirement"), never by citing this
-skill's rules. Lead with the result; stop at the last concrete point, with no
+skill's rules, and never with a claim about what the change does for the
+work's success. Lead with the result; stop at the last concrete point, with no
 recap or "Next step" line. Never comment on the draft's own strength or offer
 to "add" detail in free prose. Always end with the offer, via `AskUserQuestion`: file it,
 print the body only, revise a named section, or drop it. Where no interactive

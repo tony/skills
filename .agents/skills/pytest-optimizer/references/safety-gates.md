@@ -25,8 +25,11 @@ $ uv run --with pytest-randomly \
     -p no:cacheprovider
 ```
 
-With another runner, install `pytest-randomly` into that environment. Never run
-the suite through a bare `uvx`: it lacks the project's dependencies.
+With another runner, install `pytest-randomly` only into the scratch worktree's
+own environment, which `01-benchmark` discards; in the user's environment, ask
+first, naming the package and environment, and without a yes use the manual
+fallback below. Never run the suite through a bare `uvx`: it lacks the project's
+dependencies.
 
 - Run **≥ 3 seeds** (change `--randomly-seed`). Reproduce a failure with
   `--randomly-seed=last`, then `--randomly-seed=<n>`.

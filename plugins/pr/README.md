@@ -106,4 +106,5 @@ existing structure without applying templates.
 ## Prerequisites
 
 - git: For diff/log.
+- python3 (3.9 or newer): For the backup script `/pr:refresh` and `/pr:rewrite` run.
 - gh: For PR creation/fetching; run `gh auth login` once.

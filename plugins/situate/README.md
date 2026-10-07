@@ -89,6 +89,7 @@ Gathers context in order, degrading gracefully if unavailable:
 
 ## Prerequisites
 - `git`
+- `python3` (runs `scripts/position.py` for `what`, `situate`, and `refocus`)
 - `gh` CLI (optional, but needed for PRs/issues/threads)
 - `uvx` (only required for `--with-agentgrep` to run
   [agentgrep](https://pypi.org/project/agentgrep/))

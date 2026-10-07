@@ -47,7 +47,7 @@ def test_save_writes_verbatim_body(repo: Path) -> None:
     done = _run(repo, "save", "17")
     assert done.returncode == 0, done.stderr
     out = repo / done.stdout.strip()
-    assert (out / "body.md").read_text(newline="") == BODY
+    assert (out / "body.md").read_bytes().decode() == BODY
     assert (out / "title.txt").read_text() == "Add it"
     assert out.name.endswith("-pr17")
 

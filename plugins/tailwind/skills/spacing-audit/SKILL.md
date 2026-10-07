@@ -45,7 +45,9 @@ version-neutral.
 
 ### Step 1: Structural audit
 
-Read `references/patterns.md`. Scan the component and draw a spacing
+Read the Detect command limits and Decision tree sections of
+`references/patterns.md`, then only the pattern sections the findings
+match. Scan the component and draw a spacing
 map in the list form shown under Output: every spacing mechanism acting
 on the group the user cares about.
 
@@ -81,11 +83,13 @@ Work in this order:
    the child.
 5. Keep intentional breaks. A divider between nav groups is
    deliberate. Ask before normalizing a difference that may be design.
-   Without a question tool, keep the break and list it under the
-   findings as "kept; confirm it is intended", with no guessed
+   Without a question tool, or when the user said not to ask ("no
+   questions"), keep the break, ask nothing, and report it as a kept
+   difference after the findings, never as a finding, with no guessed
    rationale. When you keep separate containers, name the evidence that
    they are separate groups (a divider, different roles, a
-   `justify-between`), or merge them.
+   `justify-between`), or merge them. Never end a reply with a question
+to the user when they said not to ask.
 
 ### Step 4: Validate
 
@@ -108,7 +112,8 @@ in order, with these headings:
 1. Spacing map
 2. Anti-patterns found: one plain sentence per finding, naming the
    pattern and the elements involved, with no bold lead-ins. For a file or
-   directory audit, name each finding's `path:line`
+   directory audit, name each finding's `path:line`. Put each kept
+   difference in one plain sentence after the last finding, not among them
 3. Proposed refactor: a focused diff or before/after
 4. Validation checklist: Step 4 filled in
 
@@ -154,7 +159,7 @@ Halted or empty runs give one result sentence, then what the user does:
 - No Tailwind class attributes in scope: "No Tailwind classes found in
   `<scope>`." Check the path, or point at the template files.
 - Issues found but all kept as deliberate: "No spacing changes made in
-  `<scope>`." One sentence naming the kept break and what would change
-  it. Do not reprint unchanged code.
+  `<scope>`." Stop after one sentence naming the kept break and the one change
+  that would alter it. Do not reprint unchanged code or recap.
 - No issues found: "No spacing issues found in `<scope>`." Name the files
   you read, since the detect commands can miss dynamic classes.

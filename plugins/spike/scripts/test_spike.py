@@ -110,6 +110,17 @@ def test_stash_prints_own_sha_and_cleans_tree(repo: pathlib.Path) -> None:
     assert git(repo, "status", "--porcelain") == ""
 
 
+def test_stash_keep_leaves_the_work_in_the_tree(repo: pathlib.Path) -> None:
+    dirty_user_work(repo)
+    sha = spike(repo, "stash", "--keep", "spike: kept").stdout.strip()
+    assert git(repo, "stash", "list", "--format=%H") == sha
+    assert (repo / "notes.txt").read_text() == "base\nuser edit\n"
+    status = git(repo, "status", "--porcelain").splitlines()
+    assert " M notes.txt" in status
+    assert "?? scratch.txt" in status
+    assert "user edit" in git(repo, "stash", "show", "-p", sha)
+
+
 def test_stash_unchanged_tree_reports_no_changes(repo: pathlib.Path) -> None:
     result = spike(repo, "stash", "spike: nothing")
     assert result.stdout.strip() == "no changes"
@@ -230,6 +241,50 @@ def test_drop_matches_by_sha_and_spares_user_work(repo: pathlib.Path) -> None:
     refused = spike(repo, "drop", user)
     assert refused.returncode == 1
     assert user in git(repo, "stash", "list", "--format=%H")
+
+
+def test_drop_accepts_an_abbreviated_sha(repo: pathlib.Path) -> None:
+    dirty_user_work(repo)
+    user = spike(repo, "save-user").stdout.strip()
+    (repo / "feature.txt").write_text("one\n")
+    first = spike(repo, "stash", "spike: one").stdout.strip()
+
+    assert spike(repo, "drop", first[:7]).stdout.strip() == "dropped"
+    assert git(repo, "stash", "list", "--format=%H") == user
+    assert spike(repo, "drop", first[:7]).stdout.strip() == "already gone"
+    assert spike(repo, "drop", "0123abc").stdout.strip() == "already gone"
+
+    refused = spike(repo, "drop", user[:7])
+    assert refused.returncode == 1
+    assert user in git(repo, "stash", "list", "--format=%H")
+
+
+def test_stash_on_top_prints_the_spike_sha_before_a_refused_restore(
+    repo: pathlib.Path,
+) -> None:
+    (repo / "u.txt").write_text("user file\n")
+    user = spike(repo, "hold-user").stdout.strip()
+    (repo / ".gitignore").write_text("u.txt\n")
+    result = spike(repo, "stash-on-top", user, "spike: top")
+    spike_sha = git(repo, "stash", "list", "--format=%H").splitlines()[0]
+    assert result.returncode == 1
+    assert result.stdout.strip() == spike_sha
+    assert spike_sha != user
+    assert user in result.stderr
+    assert user in git(repo, "stash", "list", "--format=%H")
+
+
+def test_delta_without_spike_sha_diffs_the_tree(repo: pathlib.Path) -> None:
+    dirty_user_work(repo)
+    user = spike(repo, "hold-user").stdout.strip()
+    (repo / "notes.txt").write_text("base\nuser edit\nspike line\n")
+    (repo / "feature.txt").write_text("spike file\n")
+    delta = spike(repo, "delta", user).stdout
+    assert "+spike line" in delta
+    assert "+spike file" in delta
+    assert "+user edit" not in delta
+    assert "user scratch" not in delta
+    assert "?? feature.txt" in git(repo, "status", "--porcelain").splitlines()
 
 
 def test_branch_round_trip(repo: pathlib.Path) -> None:

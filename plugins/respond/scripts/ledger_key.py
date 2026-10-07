@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 """Print the feedback digest that keys a screening ledger.
 
-Reads one ``<source>`` TAB ``<claim>`` line per finding on stdin, as collected
-and before dedup. Each claim's whitespace is collapsed, the lines are sorted
-bytewise, and the first 12 hex characters of their SHA-256 are printed.
+Reads one ``<id>`` TAB ``<text>`` line per collected comment or pasted block on
+stdin: the reviewer's original text, never an agent's paraphrase. Each text's
+whitespace is collapsed, the lines are sorted bytewise, and the first 12 hex
+characters of their SHA-256 are printed.
 """
 
 # pyright: reportUnusedCallResult=false
@@ -14,21 +15,21 @@ import sys
 
 
 def digest(text: str) -> str:
-    r"""Return the 12-hex digest of ``source<TAB>claim`` lines.
+    r"""Return the 12-hex digest of ``id<TAB>text`` lines.
 
-    >>> digest("alex\tfirst  claim\nlint-bot\tsecond\tclaim\n") == digest(
-    ...     "lint-bot\tsecond claim\nalex\tfirst claim"
+    >>> digest("101\tfirst  text\n202\tsecond\ttext\n") == digest(
+    ...     "202\tsecond text\n101\tfirst text"
     ... )
     True
-    >>> len(digest("alex\tx"))
+    >>> len(digest("101\tx"))
     12
     """
     lines: list[bytes] = []
     for raw in text.splitlines():
         if not raw.strip():
             continue
-        source, _, claim = raw.partition("\t")
-        lines.append(f"{source.strip()}\t{' '.join(claim.split())}\n".encode())
+        ident, _, body = raw.partition("\t")
+        lines.append(f"{ident.strip()}\t{' '.join(body.split())}\n".encode())
     return hashlib.sha256(b"".join(sorted(lines))).hexdigest()[:12]
 
 

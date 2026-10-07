@@ -46,8 +46,7 @@ one of them; offer the others as next steps.
   already in the recorded list.
 - `../../scripts/lockctl.py` resolves from this skill's directory. Print
   its absolute path once and write that path literally in each command,
-  since shell variables do not persist between Bash calls. The
-  references show the same `../../scripts/` form.
+  since shell variables do not persist between Bash calls.
 - Commit messages carry no `Co-Authored-By`, no "Generated with" or other
   tool trailers, and no emoji.
 - Where there is no interactive question tool (Codex, headless runs),
@@ -69,14 +68,30 @@ one of them; offer the others as next steps.
 - A run that cannot proceed (nothing declared, no version named and the
   release list unreachable, a dirty tree it cannot work around) ends
   with `⚠ Stopped: <one result sentence>`, then the step the user must
-  take. No sections and no recap. Findings that change that step follow
-  as plain bullets, with no lead-in sentence, and describe only what the
-  run found, never steps it would take after the edit. A run stopped
-  before its first edit says nothing was edited.
+  take. No sections and no recap. At most three plain bullets follow,
+  with no lead-in sentence, each a finding that changes that step and
+  describes only what the run found, never steps it would take after the
+  edit. Branch state, untracked dotfiles, and which tool drives the
+  repository do not belong. A run stopped before its first edit says
+  nothing was edited.
+
+  Reply in this shape, as plain text outside any code fence, with plain bullets, no bold (never `- **Label:** ...`), and no local paths:
+
+  ```text
+  ⚠ Stopped: I could not confirm hashicorp/aws 6.57.0 because registry.terraform.io was unreachable, so nothing was edited.
+
+  Tell me you confirmed 6.57.0 yourself, or allow registry.terraform.io so I can check it.
+
+  - envs/prod and modules/network both declare hashicorp/aws, at ~> 6.56.0 and ~> 6.55.0.
+  - envs/prod has a committed lock tracking 3 platforms.
+  ```
+
 - `--audit-only` writes nothing and is a result, not a stop. Its hero is
   `Audit only: <result>` with no `⚠`, the skill's own sections follow
   (omit the empty ones), and no sentence restates that nothing was
-  written. An audit with nothing to audit (no Terraform files) is a
+  written. In an audit `## Held back` lists only what a constraint or
+  guard is already blocking, never constraints that merely permit a
+  newer release. An audit with nothing to audit (no Terraform files) is a
   stopped run.
 - When a confirmed target crosses a major version, link the project's
   upgrade guide in the report, or say none was found.
@@ -162,16 +177,12 @@ own commit conventions in AGENTS.md or CLAUDE.md. Write it per
 
 ## Phase 5 - Refresh the locks
 
-Per root module, per the lock reference, without `-upgrade` when one
-provider or the CLI moves. Apply the reference's guard first: a root
-module with no committed lock, or an edited one, is skipped and reported,
-never initialised on its own. Compare each provider's platform count
-against its count before the run; a drop is a stop signal. A failed
-`init` restores the lock from git. A lock that lost platforms is never
-committed without the user's explicit yes to that file; headless, restore
-it from git, leave it out of the commit, and stop.
-
-Lock files land as their own commit, separate from the constraints.
+Per root module, per the lock reference and the invoked skill's steps.
+Guard first, compare platform counts before and after, restore the lock
+from git on a failed `init`, and never commit a lock that lost platforms
+without the user's explicit yes to that file (headless: restore it, leave
+it out, stop). Lock files land as their own commit, separate from the
+constraints.
 
 ## Phase 6 - Verify
 

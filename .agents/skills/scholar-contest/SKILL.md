@@ -36,8 +36,16 @@ evidence, and fan-out per type.
 
 The analyzer proposes; it never decides. A high similarity score is a
 question (*are these one concept?*), not an answer. Record the number in
-`evidence/metrics.md` with the command that produced it, per the evidence
-tiers.
+`evidence/metrics.md`, per the evidence tiers, with a command a third party
+can paste: the study-relative form, never the absolute `<analyzer>` path.
+
+```console
+$ python3 term_metrics.py notes/ontology/<subject>/
+```
+
+Open `metrics.md` with one line naming the analyzer: `term_metrics.py` from the
+scholar plugin's `scripts/`, at the `version` in the plugin's `plugin.json`
+(`references/plugin.json`).
 
 ## Pass 2 — serial judgment
 
@@ -100,7 +108,8 @@ beside the serial one.
 Per `references/output-contract.md`. Hero: `✓ <n> candidates judged, <n>
 killed, <n> open` or `⚠ Blocked: <reason>`. With no distilled ontology on disk,
 the reason names distill as the missing stage and the one sentence after it
-says to run the `scholar-distill` skill, never the `scholar-ontology` skill:
+says to run the `scholar-distill` skill, never the `scholar-ontology` skill. Nothing follows that
+sentence: no paths searched, no "I wrote nothing", no offer to look elsewhere:
 
 ```text
 ⚠ Blocked: no study directory or distilled ontology to contest.

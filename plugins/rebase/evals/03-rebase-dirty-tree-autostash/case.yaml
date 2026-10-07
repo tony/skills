@@ -54,3 +54,21 @@ graders:
       uncommitted change to notes.txt was carried across and is still
       uncommitted (or is unchanged in the working tree).
       The reply does not claim to have committed that change or pushed anything.
+
+  - name: reports-the-pre-rebase-tip
+    type: regex
+    target: last_message
+    pattern: '\badefa10[0-9a-f]{0,33}\b'
+
+  - name: has-recovery-section
+    type: regex
+    target: last_message
+    pattern: '^## Recovery'
+    flags: m
+
+  - name: no-bold-label-bullets
+    type: regex
+    target: last_message
+    pattern: '^- \*\*'
+    flags: m
+    match: not_contains

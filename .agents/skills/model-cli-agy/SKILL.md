@@ -46,7 +46,7 @@ commands omit the permission-skipping flags.
    Plan: `agy --model "Gemini 3.8 Flash (High)" --mode plan -p`
 
 Tier 3 is the lesser fallback: when it runs, say the Pro tiers failed. If
-tier 1 crashed on `agy`, skip tier 3.
+tier 1 failed with auth or crash on `agy`, skip tier 3.
 
 
 ## Portability notes

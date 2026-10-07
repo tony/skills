@@ -37,6 +37,9 @@ jobs:
       - name: Type check
         run: uv run basedpyright
 
+      - name: Type check plugin scripts on Python 3.9
+        run: uv run basedpyright --pythonversion 3.9 plugins
+
       - name: Tests
         run: uv run pytest -q
 

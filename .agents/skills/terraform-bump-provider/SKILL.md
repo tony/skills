@@ -62,8 +62,9 @@ named directories.
 
 If the user named a version, confirm it with the exact-entry command in
 `references/pin-sites.md`. Otherwise take the
-latest stable release. Either way, record the tag and the source
-repository the registry reports, and build the changelog link from that
+latest stable release. Either way, query the registry's metadata for
+that exact version and record its tag, publication date, and source
+repository, never the latest-only endpoint, and build the changelog link from that
 source at the tag in the form the reference gives, fetching it before
 linking. If the registry reports no source, say no changelog
 link was confirmed. When the target crosses a major version, add the
@@ -88,7 +89,9 @@ here and write nothing.
 All constraint edits in one commit. Then, unless `--no-lock`, refresh
 each affected root module's lock and commit those separately. Move only
 the bumped provider: use the lock reference's "Moving one provider"
-steps, never `init -upgrade`. A root module with no committed lock is
+steps, never `init -upgrade`. When the user named a version that the
+constraint allows to be exceeded, follow its "Landing a version the user
+named" steps so the lock holds exactly that version. A root module with no committed lock is
 skipped and reported, since `init` would create one; run it there only
 after the user approves. A failed `init` restores the lock from git. Compare every provider's platform count
 against its count before, and restore a dropped platform count for the
@@ -102,7 +105,7 @@ have been committed. Write commit messages and the report per
 ### 7. Verify
 
 Read the selected version back out of each lock file and compare it to
-the target. `git diff` each lock file and report any provider block
+the target; a different version is an overshoot to report, not a pass. `git diff` each lock file and report any provider block
 other than the bumped one that changed. Run the repository's own gates.
 Report root modules that did not move, and why.
 

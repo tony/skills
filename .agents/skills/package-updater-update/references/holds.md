@@ -37,7 +37,9 @@ releases, and a root-only scan under-reports holds. Enumerate every
 config in the tree:
 
 ```console
-$ find . -name '.ncurc*' -type f
+$ find . \
+    -name node_modules -prune \
+    -o -name '.ncurc*' -type f -print
 ```
 
 Releasing the last hold ends one of two ways: `{"reject": []}` left in

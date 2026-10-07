@@ -27,12 +27,12 @@ prose of its own; `cut` writes the changelog and commit message.
 
 Gather three signals and check they agree:
 
-1. **Manifest version** — from the version-bearing files (conventions
+1. **Manifest version**: from the version-bearing files (conventions
    reference).
-2. **Latest tag** — `git tag --sort=-creatordate | head -20`, noting the
+2. **Latest tag**: `git tag --sort=-creatordate | head -20`, noting the
    prefix convention and the increment vocabulary the project has used (aN,
    bN, rcN, postN, devN, `-next.N`, plain semver).
-3. **CHANGES unreleased header** — the version it already targets. A
+3. **CHANGES unreleased header**: the version it already targets. A
    stable-track header like `## <project> 0.63.x (unreleased)` constrains
    the next release to the `0.63` series unless the user overrides; a
    prerelease-track header names the next version outright.
@@ -59,15 +59,15 @@ one.
 
 ## Phase 3: Resolve the Version
 
-- **Explicit version argument** (e.g. `0.2.0a0`) — validate it sorts after
+- **Explicit version argument** (e.g. `0.2.0a0`): validate it sorts after
   the current version and fits the scheme, then proceed. If it breaks the
   scheme (a `-next.N` version in a PEP 440 project), stop and ask.
-- **Bump-type argument** (`patch`, `minor`, `major`, `prerelease`, `final`)
-  — map it to the concrete candidate. If the mapping is ambiguous
+- **Bump-type argument** (`patch`, `minor`, `major`, `prerelease`, `final`):
+  map it to the concrete candidate. If the mapping is ambiguous
   (`prerelease` on a stable track could mean `0.1.10a0` or `0.2.0a0`),
   present the interpretations via `AskUserQuestion`; without it (Codex,
   headless runs), list them and stop.
-- **No argument** — present the Phase 2 candidates via `AskUserQuestion`,
+- **No argument**: present the Phase 2 candidates via `AskUserQuestion`,
   recommending the increment the project performed most recently. Label each
   option with the concrete version and when it is the right choice. Without
   `AskUserQuestion`, list the candidates and stop.
@@ -95,5 +95,5 @@ Reply to a stop in this shape, as plain text outside any code fence, with plain 
 No version bumped: this project has no manifest version, git tag, or changelog unreleased header.
 
 - Tell me the current version, or
-- Run /release:bump again from the project root.
+- Run /release:bump <version> with the version you want.
 ```

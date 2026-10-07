@@ -5,7 +5,7 @@ description: >-
   what a codebase, a repository set, or a written corpus calls things.
 allowed-tools: ["Read", "Grep", "Glob", "AskUserQuestion"]
 metadata:
-  argument-hint: "[<target>...] [--kind=code|prose|fleet] [--out=<dir>] [--resume=<stage>]"
+  argument-hint: "[<target>...] [--kind=code|prose] [--out=<dir>] [--resume=<stage>]"
   source: "plugins/scholar/skills/ontology/SKILL.md"
 ---
 
@@ -28,10 +28,8 @@ User arguments: $ARGUMENTS
 
 ## Survey the workspace
 
-1. Run `git remote get-url origin` to name the current repository. A failure
-   means the working directory is not a git repository.
-2. Run `ls notes/ontology/` to list existing studies. A failure means there
-   are none.
+Run `ls notes/ontology/` to list existing studies. A failure means there are
+none.
 
 ## Stages
 
@@ -63,7 +61,7 @@ Enter plan mode before the first edit. In Claude Code call `EnterPlanMode`; in C
 The plan states:
 
 - The corpus: each target, its resolved ref, and how it was resolved.
-- The kind — code, prose, or fleet — and what that changes about stages 1 and 2.
+- The kind, code or prose, and what that changes about stages 1 and 2.
 - The output directory, and confirmation that it is not inside the corpus.
 - Which stages will run, and which are being skipped because a prior study
   already satisfies them.

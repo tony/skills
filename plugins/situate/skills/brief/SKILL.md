@@ -12,7 +12,8 @@ Read `../../references/brief.md` before answering. It carries the
 five-line budget, the ranking that decides what earns a line, the option
 format, and the evidence tiers. `/situate:what` is the explicit entry
 point to the same contract. Stay read-only, per the contract in
-`../../references/situation-sweep.md`.
+`../../references/situation-sweep.md`, and write per
+`../../references/prose-rules.md`.
 
 ## Recognizing the trigger
 

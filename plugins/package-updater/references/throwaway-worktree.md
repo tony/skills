@@ -1,10 +1,14 @@
 <!-- Vendored from shared/throwaway-worktree.md; edit that file, then run 'scripts/marketplace.py portable'. -->
 # Working in a throwaway worktree
 
-Use one when the repository is checked out on a feature branch or has
-uncommitted work, so the commits start from the remote default branch.
-The local default branch may be stale, and a push from it is rejected as
-a non-fast-forward.
+The calling skill says when to use one. The usual reason: the checkout
+is on a feature branch or has uncommitted work, and the commits must start
+from the remote default branch. The local default branch may be stale, and
+a push from it is rejected as a non-fast-forward.
+
+`<remote>` below is the remote the default branch tracks: `origin` when it
+exists, the only remote when there is one, otherwise ask (`git remote -v`
+lists them).
 
 Refuse when `git rev-parse --show-toplevel` prints `$HOME` or a
 directory containing it: a dotfile repository rooted at home would pull
@@ -13,7 +17,7 @@ the whole home directory into the worktree.
 Fetch the default branch first:
 
 ```console
-$ git fetch origin <default>
+$ git fetch <remote> <default>
 ```
 
 Then create the directory. The command prints its path; use that literal
@@ -33,7 +37,7 @@ pick another name; never reset an existing one.
 $ git worktree add \
     -b <branch> \
     <printed-path> \
-    origin/<default>
+    <remote>/<default>
 ```
 
 Commit there. Push only when the request asks to push, and only to the
@@ -41,7 +45,7 @@ target the calling skill names. A skill that lands commits on the default
 branch directly pushes `HEAD` to it:
 
 ```console
-$ git push origin HEAD:<default>
+$ git push <remote> HEAD:<default>
 ```
 
 A skill that opens a pull request pushes its own branch:
@@ -49,7 +53,7 @@ A skill that opens a pull request pushes its own branch:
 ```console
 $ git push \
     --set-upstream \
-    origin <branch>
+    <remote> <branch>
 ```
 
 Remove the worktree afterwards; the branch and its commits stay:
@@ -63,5 +67,5 @@ command for the user to run, using the same target (`<target>` is
 `<default>` or `<branch>`):
 
 ```console
-$ git push origin <branch>:<target>
+$ git push <remote> <branch>:<target>
 ```

@@ -23,7 +23,7 @@ graders:
   - name: nothing-sent
     type: tool_used
     tool: Bash
-    input_match: 'codex queue(?!\s+--help)|send-keys|socket-send|nc\s'
+    input_match: 'codex queue(?!\s+--help)|send-keys|socket-send|\bnc\s'
     min: 0
     max: 0
     arm: both

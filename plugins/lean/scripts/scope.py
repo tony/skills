@@ -3,7 +3,9 @@
 
 Prints one ``path<TAB>start-end[,start-end...]`` line per file, from the
 merge base with the trunk ref (default), the index (``--staged``), or the
-whole tree (``--all``, ranges omitted). Exits 2 with a message on stderr
+whole tree (``--all``, ranges omitted). Paths are relative to the current
+directory. Untracked files outside ignore rules count as added in full on a
+branch run. Exits 2 with a message on stderr
 when no trunk ref exists or nothing changed.
 """
 
@@ -12,16 +14,30 @@ when no trunk ref exists or nothing changed.
 from __future__ import annotations
 
 import argparse
+import os
 import re
 import subprocess
 import sys
+from pathlib import Path
 
 _HUNK = re.compile(r"^@@ -\S+ \+(\d+)(?:,(\d+))? @@")
 
 
+_DIFF = (
+    "diff",
+    "-U0",
+    "--no-color",
+    "--no-ext-diff",
+    "--no-textconv",
+    "--src-prefix=a/",
+    "--dst-prefix=b/",
+    "--diff-filter=d",
+)
+
+
 def _git(*args: str) -> str:
     return subprocess.run(
-        ["git", *args],  # noqa: S607
+        ["git", "-c", "core.quotePath=off", *args],  # noqa: S607
         check=True,
         capture_output=True,
         text=True,
@@ -62,7 +78,7 @@ def parse_ranges(diff: str) -> dict[str, list[tuple[int, int]]]:
     path = ""
     for line in diff.splitlines():
         if line.startswith("+++ b/"):
-            path = line[6:]
+            path = line[6:].rstrip("\t")
             out[path] = []
             continue
         m = _HUNK.match(line)
@@ -82,27 +98,37 @@ def main(argv: list[str] | None = None) -> int:
     mode.add_argument("--all", action="store_true", help="every tracked file")
     args = p.parse_args(argv)
 
+    top = _git("rev-parse", "--show-toplevel").strip()
+
+    def rel(name: str) -> str:
+        return os.path.relpath(Path(top, name))
+
     if args.all:
-        for name in _git("ls-files").splitlines():
-            print(name)
+        for name in _git("-C", top, "ls-files").splitlines():
+            print(rel(name))
         return 0
 
+    untracked: list[str] = []
     if args.staged:
-        diff = _git("diff", "--cached", "-U0", "--no-color", "--diff-filter=d")
+        diff = _git("-C", top, *_DIFF[:1], "--cached", *_DIFF[1:])
     else:
         trunk = trunk_ref()
         if trunk is None:
             print("no trunk ref (origin/HEAD, main, master) found", file=sys.stderr)
             return 2
         base = _git("merge-base", "HEAD", trunk).strip()
-        diff = _git("diff", base, "-U0", "--no-color", "--diff-filter=d")
+        diff = _git("-C", top, *_DIFF[:1], base, *_DIFF[1:])
+        untracked = _git("-C", top, "ls-files", "--others", "--exclude-standard").splitlines()
 
     ranges = parse_ranges(diff)
+    for name in untracked:
+        count = Path(top, name).read_bytes().count(b"\n")
+        ranges[name] = [(1, count)] if count else []
     if not ranges:
         print("no changed files", file=sys.stderr)
         return 2
     for name, spans in ranges.items():
-        print(f"{name}\t{','.join(f'{a}-{b}' for a, b in spans)}")
+        print(f"{rel(name)}\t{','.join(f'{a}-{b}' for a, b in spans)}")
     return 0
 
 

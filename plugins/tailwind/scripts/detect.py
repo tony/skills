@@ -3,9 +3,15 @@
 
 Usage: detect.py PATTERN PATH [PATH ...]
 
-PATTERN is one of ``margin``, ``gap``, ``width``, ``interactive``,
-``wrapper``, ``space-gap``, ``space``. Each hit prints ``path:line:text``.
-The patterns are candidate finders: every hit needs a read in context.
+PATTERN is one of ``margin``, ``vmargin``, ``margin-in-gap``, ``gap``,
+``width``, ``interactive``, ``wrapper``, ``space-gap``, ``space``. Each hit
+prints ``path:line:text``. The patterns are candidate finders: every hit
+needs a read in context.
+
+``margin`` lists horizontal margins. ``vmargin`` lists ``mt-``, ``mb-``, and
+``my-`` margins in files that use ``flex-col`` or ``grid``. ``margin-in-gap``
+lists both kinds of margin in files that also set ``gap-*``, and stops after
+50 hits.
 
 Exit codes: 0 hits found, 1 no hits, 2 usage error or a path that does not exist.
 """
@@ -41,6 +47,8 @@ STEP = r"(?:[0-9\[]|px\b)"
 GAP = r"gap(?:-[xy])?-" + STEP
 SPACE = r"space-[xy]-" + STEP
 MAX_SNIPPET = 200
+MAX_HITS = 50
+CAPPED = {"margin-in-gap"}
 
 
 def _rx(template: str) -> re.Pattern[str]:
@@ -54,7 +62,9 @@ SIMPLE: dict[str, re.Pattern[str]] = {
     "width": _rx(LEAD + r"w-[0-9\[]"),
     "space": _rx(LEAD + SPACE),
 }
-PATTERNS = (*SIMPLE, "interactive", "wrapper", "space-gap")
+VMARGIN = _rx(LEAD + r"-?m[ytb]-" + STEP)
+COLUMN = _rx(LEAD + r"(?:flex-col(?:-reverse)?|inline-grid|grid)(?![\w-])")
+PATTERNS = (*SIMPLE, "vmargin", "margin-in-gap", "interactive", "wrapper", "space-gap")
 
 BUTTON_OPEN = re.compile(r"<(?:a|button|Button|Link|NavLink|[A-Z]\w*(?:Button|Link))\s")
 DIV_OPEN = re.compile(r"<div\s")
@@ -93,6 +103,16 @@ def _scan(pattern: str, text: str) -> Iterator[tuple[int, int]]:
     if pattern in SIMPLE:
         for m in SIMPLE[pattern].finditer(text):
             yield m.start(), m.end()
+    elif pattern == "vmargin":
+        if COLUMN.search(text):
+            for m in VMARGIN.finditer(text):
+                yield m.start(), m.end()
+    elif pattern == "margin-in-gap":
+        if SIMPLE["gap"].search(text):
+            hits = [m.span() for m in SIMPLE["margin"].finditer(text)]
+            if COLUMN.search(text):
+                hits += [m.span() for m in VMARGIN.finditer(text)]
+            yield from sorted(hits)
     elif pattern == "interactive":
         for start, body, end in _tags(text, BUTTON_OPEN):
             attr = ATTR_VALUE.search(text, body, end)
@@ -150,13 +170,18 @@ def main(argv: list[str]) -> int:
         sys.stderr.write(f"detect.py: no such path: {', '.join(missing)}\n")
         return 2
     found = False
+    count = 0
     for f in iter_files(argv[2:]):
         try:
             text = f.read_text(encoding="utf-8", errors="replace")
         except OSError:
             continue
         for line, snippet in find(argv[1], text):
+            if argv[1] in CAPPED and count == MAX_HITS:
+                sys.stderr.write(f"detect.py: stopped at {MAX_HITS} hits; narrow the path\n")
+                return 0
             found = True
+            count += 1
             sys.stdout.write(f"{f}:{line}:{snippet}\n")
     return 0 if found else 1
 

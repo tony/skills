@@ -22,7 +22,7 @@ References:
 - `references/cooldown-exemption.md`: when and how to exempt one
   package from a cooldown.
 - `references/throwaway-worktree.md`: landing commits from a
-  repository parked on a feature branch.
+  repository parked on a feature branch or behind its remote.
 - `references/commit-conventions.md`: commit tracks, subject
   grammar, body anatomy, and the empty-body rule.
 - `references/upstream-links.md`: which URLs each tool's bump
@@ -65,6 +65,9 @@ findings with the command that handles them, and do not do the work:
 
 ## Phase 1: Inventory
 
+Set the scope first, per the scope reference: which repositories are in
+play decides which ones get read.
+
 Detect ecosystems by the files present, per the ecosystems reference. Each
 one a repository carries updates on its own track.
 
@@ -74,8 +77,10 @@ reference. A checkout parked on a feature branch reports pins the branch
 that ships does not have. When the fetch fails, say the pins may be
 stale.
 
-When the checkout is parked on a feature branch or has uncommitted
-work, create the throwaway worktree now, per
+When the checkout is parked on a feature branch, has uncommitted work,
+or its default branch is behind `origin/<default>` (`git rev-list
+--count <default>..origin/<default>` prints more than 0), create the
+throwaway worktree now, per
 `references/throwaway-worktree.md`, and run Phase 2 and the
 phases after it there, so discovery sees the pins read here.
 
@@ -96,7 +101,8 @@ looks up to date may only be gated. Report gated releases separately
 from current ones, with the date each becomes visible.
 
 Separate what moves in-range from what needs a manifest edit; they are
-different commits.
+different commits. A major is never part of the bulk refresh: bound the
+refresh to in-range moves and treat each major as a named bump.
 
 **Audit the existing holds in the same pass.** Every `reject` entry in
 every config in the tree, not just the root one, per the holds
@@ -174,7 +180,7 @@ The four tracks land in this order within a repository:
    mixed with dependencies.
 3. **Named package bumps**: one per package, or per release train when
    the body can say why they are coupled.
-4. **Bulk lockfile refresh**: empty body.
+4. **Bulk lockfile refresh**: in-range moves only, empty body.
 
 A follow-up (config schema, snapshots, migrations) lands immediately
 after the bump it belongs to, as its own commit.
@@ -183,8 +189,12 @@ A hold added or released is its own commit too, naming the condition
 that started or ended it. Releasing a hold comes before the bump it
 unblocks.
 
-A repository parked on a feature branch commits in the worktree made in
-Phase 1.
+A repository that got a worktree in Phase 1 commits there.
+
+Commits land on the default branch by default. `--branch <name>` works
+on a branch; `--push` pushes the commits; `--pr` pushes a branch and
+opens a pull request from it. Without `--push` or `--pr`, commit locally,
+stop, and print the push command.
 
 Make the run resumable: push whenever the local branch is ahead of the
 remote, `--push` or `--pr` was passed, and the plan approved the push,
@@ -258,14 +268,19 @@ Shape, which the three commands in this plugin share:
 1. A hero line: `✓ <what landed>`. `⚠ Audit only: <result>` appears only
    when the user asked for an audit. A run that stopped has
    `⚠ Stopped: <why>` instead.
-2. The sections of the invoking command's Output contract, in order,
-   each omitted when empty. Outside a command, use the `package-updater-update` skill.
+2. The sections of the invoking command's Output contract, in order. A
+   section with nothing to report is omitted, never filled with "nothing
+   found" or a restated scope. Outside a command, use the `package-updater-update` skill.
 3. A halted run (stopped at the plan, a gate, a scope question, a failed
    check, or nothing to audit) prints the result sentence with at most
-   one clause giving the reason, then what the user needs to do, and no
+   one clause giving the one reason the user acts on first, then the
+   options, and nothing between or after: no second paragraph, no
    section. Nothing to audit is a halt, not a clean result. Give the
-   reason as a fact about the repository (it is a fork), never as a rule
-   of this skill, and add nothing the user cannot act on.
+   reason as a fact about the repository (it is a fork, no manifest or
+   pin file was found), never as a rule of this skill, and never the
+   repository's history, its remotes or what the sandbox refused.
+   Options are actions for the user, never a promise of what happens
+   next ("and I'll then ...").
 4. No bold label on a bullet, no closing recap, plan preview ("Once
    X, I'll ...") or line after the options ("Pick one"), no local
    absolute path, temp directory, or machine fact (installed tool

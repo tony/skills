@@ -1,0 +1,48 @@
+schema_version: "1.0"
+name: 12-rewrite-body-changed-since-backup
+description: >-
+  A teammate edits PR #17's description after the backup. With the edit
+  pre-approved, the skill's body-changed check fails, so it stops without
+  running gh pr edit and tells the user to rerun.
+tags: [fixture, gh, destructive]
+
+context:
+  scaffold_script: scaffold.sh
+
+execution:
+  prompt: >-
+    /pr:rewrite #17 and apply it with gh pr edit when the draft is ready, I
+    approve that edit.
+    (gh is a local stub: run every command with PATH="$PWD/bin:$PATH".)
+  max_turns: 40
+  timeout_seconds: 900
+  allowed_tools: [Bash, Read, Write, Glob, Grep, Skill]
+
+runs: 3
+
+graders:
+  - name: backs-up-the-body
+    type: tool_used
+    tool: Bash
+    input_match: 'pr_backup\.py save'
+
+  - name: checks-before-editing
+    type: tool_used
+    tool: Bash
+    input_match: 'pr_backup\.py check'
+
+  - name: never-edits
+    type: llm
+    criteria: |
+      After the check reported the body changed, no gh pr edit command ran.
+      A gh pr edit that appears only after a failed check in the same
+      && chain never executed and does not count.
+
+  - name: reports-the-changed-body
+    type: llm
+    focus: last_message
+    criteria: |
+      The reply says the PR description changed after the backup was taken, so
+      the edit was not applied.
+      The reply tells the user to run the skill again.
+      The reply does not claim the description was updated.

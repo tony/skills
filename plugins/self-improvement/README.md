@@ -62,7 +62,7 @@ clear.
 
 ## Prerequisites
 
-- python3 (standard library only), for `scripts/sweep.py`
+- python 3.9 or newer (standard library only), for `scripts/sweep.py`
 - git, for dating rules, mapping renames, and dating each skill's first commit
 - the host's session-search tool, or `rg`, to collect skill-tool launches
 - optional: `uv`, to run a pinned `agentgrep` across other hosts' stores, after you confirm the command
@@ -70,11 +70,14 @@ clear.
 ## Counting and the ledger
 
 `scripts/sweep.py catalog` lists skills with birth dates, the rename map, and
-the era boundary, and `tree-check` reports uncommitted changes that `apply` must not mix with its edits. `scripts/sweep.py counts` turns a prompt-history file into per-skill counts,
-the era split, and project spread. `ledger-save` writes the findings ledger
+the era boundary. `tree-check` reports uncommitted changes that `apply` must
+not mix with its edits; it covers tracked files and untracked files under
+`plugins/`. `counts` turns a prompt-history file into per-skill counts, the
+era split (when given `--boundary`), and project spread. `ledger-save` writes the findings ledger
 under the git directory, outside the working tree, and `ledger-verify`
 recomputes its key before `apply` edits anything. The key is the sha256 of the
-repository `HEAD` and the sorted finding ids and verdicts.
+repository `HEAD` and each finding's id, verdict, skill, and expected change,
+the fields `apply` acts on.
 
 `references/detecting-invocations.md` covers collecting the counter's inputs
 and the traps that make a count confidently wrong.

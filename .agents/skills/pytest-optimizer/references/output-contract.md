@@ -20,21 +20,23 @@ headings, declared order, no invented sections.
    point. Without an interactive question tool, list the options as text and take
    the stated non-interactive default.
 
-After the last section, add at most one closing line in plain words for anything
-the user must know that has no section (a stale baseline, a repo oddity, a lowered
-run count, an unrecorded approval). Name no state field, file, or sandbox detail,
-and never open it with a colon reveal or a label.
+After the last section, add at most one closing sentence in plain words for
+anything the user must know that has no section (a stale baseline, a lowered run
+count, an unrecorded approval). Name no state field, file, sandbox detail, or
+whether plan mode is available, and never open it with a label such as "Next step:"
+or a leading "Also,". State what happened, never a list of what did not (no
+"neither", "no X and no Y").
 
 Name every heuristic in words with its id, never the id alone. Name a path or
 temp file only when the user must act on it; refer to the memory directory and
 the repo by role. Between the hero and the first heading there is no prose: put
-a plan-mode or approval note in the hero line or the closing line.
+an approval note in the hero line or the closing sentence.
 
 Reply in this shape, as plain text outside any code fence, with plain
 bullets and no bold (never `- **Label:** ...`). A `00-scan` reply:
 
 ```text
-✓ scan complete: baseline 12.5s, noise band 0.45s, 2 hypotheses
+✓ scan complete: baseline 12.5s, noise band 0.44s, 2 hypotheses
 
 ## Environment
 
@@ -46,7 +48,7 @@ bullets and no bold (never `- **Label:** ...`). A `00-scan` reply:
 
 ## Slowest tests
 
-- test_export_large spends 0.61s in one call (H01 slow test body).
+- test_export_large spends 0.61s in one call (H01 slow test body, a measurement, not a hypothesis).
 
 ## Slowest fixtures
 
@@ -55,17 +57,20 @@ bullets and no bold (never `- **Label:** ...`). A `00-scan` reply:
 ## Hypotheses
 
 - H10 mis-scoped fixture: widen db_session to session scope, 4.8s of setup repeated per test.
-- H01 slow test body: test_export_large spends 0.61s in one call.
+- H33 fixed sleep in test_report: time.sleep(0.02) in the test body.
 ```
 
-A `01-benchmark` reply:
+`## Hypotheses` lists only detectors that become entries; H01-H07 and H17/H18
+(measurements and gates) appear in the other sections.
+
+A `01-benchmark` reply with candidates that needed gates:
 
 ```text
 ✓ 1 validated, 1 rejected
 
 ## Validated
 
-- H10 mis-scoped fixture: db_session to session scope saves 4.6s, above the 0.45s band, confidence 0.9.
+- H10 mis-scoped fixture: db_session to session scope saves 4.6s, above the 0.44s band, confidence 0.9.
 
 ## Rejected
 
@@ -73,8 +78,11 @@ A `01-benchmark` reply:
 
 ## Safety-gate results
 
-- Order independence held across 3 seeds; collection is deterministic.
+- H10 mis-scoped fixture: order independence held across 3 seeds and collection is deterministic.
 ```
+
+A `01-benchmark` reply with no candidate that touched order, scope, or
+parallelism omits `## Safety-gate results` and says nothing about gates.
 
 A `02-plan` reply:
 
@@ -83,12 +91,15 @@ A `02-plan` reply:
 
 ## Ranked plan
 
-- 1. H10 mis-scoped fixture: widen make_config to session scope in tests/conftest.py under the subject "tests(fixtures) Widen make_config to session scope", total score 0.87, saves 2.7s above the 0.45s band, verified with pytest expecting 40 of 40 passing.
+- 1. H10 mis-scoped fixture: widen make_config to session scope in tests/conftest.py under the subject "tests(fixtures) Widen make_config to session scope", total score 0.87, saves 2.7s above the 0.44s band, verified with pytest expecting 40 of 40 passing.
 
 ## Dropped at the gate
 
 - H33 fixed sleep in test_report: saves 0.03s, inside the noise band, so impact is 0.
 ```
+
+A deselecting item (H15, H37) says "removes N tests from the default run" in its
+`## Ranked plan` bullet, so the user sees the count at the approval gate.
 
 A plan with one commit omits `## Ordering rationale`.
 
@@ -111,10 +122,13 @@ A `03-execute` reply:
 When a phase stops before its work (missing input, dirty tree, plan hash
 mismatch, no suite), print one result sentence naming what stopped it, then one
 sentence on what the user must do. Give one reason only, the first check that
-failed; leave out sandbox, placeholder-file, and cleanup-risk detail. No body sections, no panel, no bold, no
+failed, as a single clause naming the missing prerequisite (never a list of what is
+absent, and never "or" between two causes); leave out sandbox, placeholder-file, and
+cleanup-risk detail. No body sections, no panel, no bold, no
 projected timings or results. When the user pasted durations or named a
 likely cause, add one sentence saying where the pasted time sits (setup versus
-call, which fixture) as a hypothesis to benchmark; never what a change would save.
+call, which fixture) as a hypothesis to benchmark; never what a change would save,
+and never call a scope change or any other change a fix or a likely fix.
 
 ```text
 I stopped before measuring because this directory has no pytest suite.
@@ -146,7 +160,7 @@ suite is available."
 - `## Rejected` — within-noise or gate-failing candidates, each with the reason.
 - `## Safety-gate results` — order-independence and collection-determinism
   outcomes for each candidate that needed them. A scope, order, or parallelism
-  change always needs both, so never say the gates did not apply to one.
+  change needs both. Omit the section when no candidate did.
 
 **`02-plan`**
 
@@ -154,7 +168,8 @@ suite is available."
   subject (in the same sentence, no `Draft subject:` label), verify command.
   A hygiene item says it is a hygiene item with no timing.
 - `## Dropped at the gate` — candidates below `safety 0.4` or `impact 0`, with the
-  prerequisite refactor surfaced separately.
+  prerequisite refactor surfaced separately. Name a refactor only for an item that
+  has one; never state that an item needs none.
 - `## Ordering rationale` — why safety-gate fixes and typings precede scope and
   parallelism, in one line. Omit the section when the plan has one commit.
 

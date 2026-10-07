@@ -51,6 +51,15 @@ $ uv run ruff check
 $ uv run basedpyright
 ```
 
+Plugin scripts run under the user's `python3`, and macOS ships 3.9, so
+they also check against 3.9:
+
+```console
+$ uv run basedpyright \
+    --pythonversion 3.9 \
+    plugins
+```
+
 ### Test
 
 Doctests and script tests, then the plugin lint, manifest sync,

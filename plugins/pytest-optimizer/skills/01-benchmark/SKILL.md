@@ -44,6 +44,9 @@ Substitute `test_command` from `baseline.json` wherever this file writes
 `pytest`. Skip a hypothesis whose id already has a benchmark recorded **against the current
 baseline token**, unless `--force`.
 
+Resolve `<runs-dir>` as `../../references/memory-schema.md` ("Run files") says
+and create it. Delete each run file before its first timed run.
+
 ## Step 2: Budget, control run, then each hypothesis
 
 **Budget.** Time one run of `test_command` to get `t` (the baseline median
@@ -57,10 +60,10 @@ line.
 **Control run.** The baseline ran in the user's tree; candidates run in a fresh
 worktree with no bytecode cache and a new virtualenv, so the two differ before
 any change. Run steps 1, 3 and 5 once with no change applied, append its runs to
-`control-runs.jsonl`, and save its summary:
+`<runs-dir>/control-runs.jsonl`, and save its summary in the memory directory:
 
 ```console
-$ python3 <measure.py> band control-runs.jsonl > control.json
+$ python3 <measure.py> band <runs-dir>/control-runs.jsonl > <memory-dir>/control.json
 ```
 
 Judge every candidate against `control.json`, not `baseline.json`. When the
@@ -96,24 +99,35 @@ to the baseline's.
    (`../../references/heuristic-catalog.md`).
 3. **Measure.** Run the suite serially, cache disabled, once untimed as a warm-up
    and then `--runs` times, appending each JSON line to
-   `<hypothesis-id>-runs.jsonl` in the memory directory:
+   `<runs-dir>/<hypothesis-id>-runs.jsonl`:
 
    ```console
    $ python3 <measure.py> run \
        --cwd <scratch-dir> \
        -- pytest -p no:cacheprovider -p no:randomly -q \
-       >> <hypothesis-id>-runs.jsonl
+       >> <runs-dir>/<hypothesis-id>-runs.jsonl
    ```
 
    Judge the runs against the control:
 
    ```console
-   $ python3 <measure.py> compare control.json <hypothesis-id>-runs.jsonl
+   $ python3 <measure.py> compare <memory-dir>/control.json <runs-dir>/<hypothesis-id>-runs.jsonl
    ```
 
    A candidate counts only when `valid` is true and `clears_noise` is true.
-   Otherwise `impact = 0` and it is rejected with the reported reason. A change
-   that removes tests on purpose passes `--expect-total <count>`.
+   Otherwise `impact = 0` and it is rejected with the reported reason. A count
+   drop is a rejection naming the tests lost; it never counts as a speedup unless
+   the change is a deliberate deselection below.
+
+   A cross-run cache candidate (H24) measures with the cache provider enabled:
+   drop `-p no:cacheprovider` for it, so the untimed warm-up populates the cache
+   and the timed runs hit it. Its saving applies from the second run onward;
+   say so in the record.
+
+   A deselecting candidate (H15, H37) wins by running fewer tests, so it passes
+   `--expect-total <count>`, records `removes_tests` with the number dropped, and
+   reports the saving as time not spent on those tests. `02-plan` shows that
+   number at the approval gate.
 
    A typing or parametrize hypothesis (H26-H32) saves no time by design: skip the
    timing. Run the suite once and the project's type checker over the test
@@ -142,7 +156,9 @@ to the baseline's.
 
 Write `benchmarks.json` in the shape `../../references/memory-schema.md` gives,
 with `confidence` high only for serial, repeated runs with the delta above the
-floor. Nothing in this phase touches the user's tree, history, or any remote. Update `state.json` (`phase=benchmark`, benchmarked ids).
+floor. Nothing in this phase touches the user's tree, history, or any remote. Update
+`state.json` (`phase=benchmark`, `completed.benchmark=true`, the later
+`completed` flags false).
 
 ## Step 4: Report
 

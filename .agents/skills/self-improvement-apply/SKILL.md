@@ -54,7 +54,8 @@ Check these in order. The first failure halts the run.
    Exit 1 means the ledger is missing, edited, or older than the catalog.
    Sweep again; do not apply a picture that no longer holds.
 2. The tree has no uncommitted changes that would mix with a catalog edit:
-   no tracked file modified and no untracked file under the catalog.
+   no tracked file modified and no untracked file under `plugins/` (the
+   check covers that directory only).
    Untracked files elsewhere (editor or shell dotfiles, host state) do not
    count. Mixing a catalog edit with unrelated work makes an unreviewable
    commit. Exit 1 lists the dirty paths. Pass the ledger path as `--ignore`

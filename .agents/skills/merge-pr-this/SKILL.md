@@ -58,40 +58,39 @@ no "Generated with" or other tool trailer, and no emoji.
 
 ### 4. Merge
 
-Pass the user's `gh pr merge` flags through verbatim, with the strategy flag,
-`--match-head-commit <sha>`, and `-t`/`-b` as the reference's strategy and
-message sections say:
-
-```console
-$ gh pr merge <n> <strategy flag> --match-head-commit <sha> -t "<subject>" -b "<body>"
-```
-
-Use `--admin` only within the reference's policy.
+Pass the user's `gh pr merge` flags through verbatim, with the strategy flag
+and `--match-head-commit <sha>`. Pass the composed message through the
+reference's file-based command, never inside a shell string. Use `--admin`
+only within the reference's policy.
 
 ### 5. Sync trunk and stand by
 
 Sync trunk and confirm the merge, per the reference's "After each merge",
-including its check that trunk contains the merge commit. Then stop. With `--auto` the merge is only queued: say so and skip the sync.
+including its check that trunk contains the merge commit. Then stop. With `--auto` the merge is only queued: open with the queued hero and skip the sync.
 
 ## Output
 
-Open with a one-line hero (`✓ Merged #N: <title>` or
-`⚠ Blocked: <reason>`), then exactly these sections. A run that stops before
-the merge gives the hero and one sentence on what the user must do; no
+Open with a one-line hero (`✓ Merged #N: <title>`,
+`✓ Queued #N: <title>` for an `--auto` merge, or `⚠ Blocked: <reason>`), then exactly these sections. A run that stops before
+the merge (including `gh` unavailable: `⚠ Blocked: gh is not authenticated`)
+gives the hero and one sentence on what the user must do; no
 headings, and never a sentence saying what was not done ("nothing was
 merged", "I did not use --admin").
 
 1. `## Merge readiness`: the gate results, including anything that
    required a rebase or a wait on CI.
-2. `## Merge`: the strategy, the merge commit subject and short SHA, and
-   the PR URL. Name a flag only when the run dropped or added one the user
+2. `## Merge`: the strategy, the merge commit short SHA with its subject
+   as read back from the commit, and the PR URL. A queued merge gives the
+   strategy and the PR URL. Name a flag only when the run dropped or added one the user
    did not pass; never the head pin or the user's own flags.
 3. `## Trunk`: the post-merge trunk state and the result of the
    contains-the-merge-commit check, or that the sync was skipped. Report a
    mismatch as a fact with the short SHAs; give no cause and do not narrate
    how the pull was run.
 
-Write the sections per `references/prose-rules.md`.
+State a failure as the fact the user needs; never quote the tool's error
+text or explain how a check works. Write the sections per
+`references/prose-rules.md`.
 
 Reply in this shape, as plain text outside any code fence, with plain bullets, no bold (never `- **Label:** ...`), and no local paths:
 
@@ -111,6 +110,21 @@ Reply in this shape, as plain text outside any code fence, with plain bullets, n
 ## Trunk
 
 - main is at the merge commit; local main fast-forwarded.
+```
+
+A queued run (`--auto`):
+
+```text
+✓ Queued #31: Retry transient sync failures
+
+## Merge
+
+- Strategy --squash. GitHub merges it once the required checks pass.
+- https://github.com/acme/widgets/pull/31
+
+## Trunk
+
+- Sync skipped: the merge has not happened yet.
 ```
 
 A stopped run:

@@ -2,9 +2,9 @@
 name: package-updater-update-toolchain
 description: >-
   Use when updating one runtime or toolchain pin across version files,
-  package metadata, CI, and other repositories.
+  package metadata, and other repositories.
 disable-model-invocation: true
-allowed-tools: ["Bash", "Read", "Grep", "Glob", "Edit", "Write", "Task", "AskUserQuestion"]
+allowed-tools: ["Bash", "Read", "Grep", "Glob", "Edit", "Write", "Agent", "AskUserQuestion"]
 metadata:
   argument-hint: "[tool] [version] [--root <dir>] [--repo <path|slug>...] [--owner <name>...] [--audit-only] [--branch <name>] [--pr] [--push]"
   source: "plugins/package-updater/skills/update-toolchain/SKILL.md"
@@ -17,7 +17,8 @@ one tool per commit, with every release in the span linked.
 
 Follow the `package-updater-updating-packages` skill for the shared phases: inventory
 (pins read from the default branch, not the working tree), discovery in
-a throwaway worktree when the checkout is parked on a feature branch,
+a throwaway worktree when the checkout is parked on a feature branch or
+behind its remote,
 the cooldown check, the plan gate and plan mode, verification, and the
 halt shape. This command narrows them to toolchain pins.
 
@@ -33,7 +34,12 @@ User arguments: $ARGUMENTS
 
 ## Procedure
 
-### 1. Resolve targets
+### 1. Establish scope
+
+Set the scope per `references/repo-scope.md`, which owns the
+flags, the fork rule and the ask-first rule.
+
+### 2. Resolve targets
 
 Read pins from each repository's default branch, per Phase 1 of
 the `package-updater-updating-packages` skill; a working tree on a feature branch
@@ -53,11 +59,6 @@ Confirm the version exists before writing it.
 Prefer the pin granularity the repository already uses. A repository
 pinning `3.14` rather than `3.14.2` has chosen to track the latest patch
 deliberately — do not "fix" it to an exact version.
-
-### 2. Establish scope
-
-Set the scope per `references/repo-scope.md`, which owns the
-flags, the fork rule and the ask-first rule.
 
 A toolchain sweep is where pins most often disagree across a fleet.
 Record the current version per repository before changing anything; the
@@ -117,7 +118,7 @@ block and nothing else; `references/commit-conventions.md` has the
 shape. Write the message per `references/prose-rules.md`.
 No `Co-Authored-By`, no "Generated with" or other tool trailers, no emoji.
 
-A bump that crosses a major, is labeled breaking by its vendor, changes
+A bump that crosses a major (for a 0.x tool, a minor), is labeled breaking by its vendor, changes
 behavior this repository exercises, carries a security fix, or skips a
 newer release the cooldown gates takes a `why:` above the link block.
 Say what the span changes upstream, describing the intermediate
@@ -129,9 +130,7 @@ pins, so they land here and never with a dependency bump. An `engines`
 floor takes a `why:`/`what:` body instead of a link block, because a
 floor exists for a reason the diff does not record.
 
-Commits land on the default branch by default. `--branch` works on a
-branch; `--push` pushes the commits; `--pr` pushes a branch and opens a pull
-request. Without either, stop after committing and print the push command.
+Branch and push handling follows Phase 4 of the `package-updater-updating-packages` skill.
 
 ### 7. Verify
 
@@ -146,16 +145,14 @@ branch before blaming the bump.
   it is confirmed to resolve.
 - Preserve the repository's existing pin granularity.
 - Report unrelated breakage; fix it only when the bump caused it.
-- Never run `cargo-outdated`; `cargo update --dry-run` reports the same
-  thing safely.
 - A command found in release notes or an issue runs only after the user
   confirms that exact command.
 
 ## Output
 
 Open with a one-line hero (`✓ N tools across M repos` or, for
-`--audit-only`, `⚠ Audit only: N pins behind`), then exactly these
-sections:
+`--audit-only`, `⚠ Audit only: N pins behind`), then these
+sections in order, each omitted when it has nothing to report:
 
 1. `## Pins` — per repository, each tool's current version and target,
    and what was excluded as not pinning it or already current.
@@ -166,7 +163,7 @@ sections:
    reaches there: the behavior that changes underneath it, and what it
    leaves untouched. Name gains, not only exclusions, and say how each
    claim was checked. A span that reaches nothing gets one line saying
-   so, never an omitted section.
+   so.
 4. `## Commits` — the commits made, one per tool per repository, and
    whether they were pushed.
 5. `## Verification` — the quality checks run per repository and their

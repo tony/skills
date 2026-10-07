@@ -6,7 +6,7 @@ description: >-
 disable-model-invocation: true
 allowed-tools: ["Bash", "Read", "Grep", "Glob", "Write", "AskUserQuestion"]
 metadata:
-  argument-hint: "<target>... [--kind=code|prose|fleet] [--out=<dir>]"
+  argument-hint: "<target>... [--kind=code|prose] [--out=<dir>]"
   source: "plugins/scholar/skills/gather/SKILL.md"
 ---
 
@@ -31,13 +31,7 @@ URL, so it is stored under `--out`.
 
 ## Procedure
 
-### 1. Survey the workspace
-
-Run `git remote get-url origin` to name the current repository; a failure
-means the working directory is not a git repository. Run `ls notes/ontology/`
-to list existing studies; a failure means there are none.
-
-### 2. Resolve each target to a ref
+### 1. Resolve each target to a ref
 
 For a git repository, prefer a release tag; fall back to a 7-character commit
 reachable from trunk. Never a branch name — it moves, and every citation built
@@ -106,20 +100,20 @@ For prose, the ref is the edition: publisher, year, and printing. It has no
 `<out>/corpus/excerpt-<n>.txt` (n counts from 1), and that path relative to `<out>`
 is the row's `source`. Name no title the user did not give.
 
-### 3. Inventory without reading everything
+### 2. Inventory without reading everything
 
 Establish the shape of the corpus cheaply. For code, the module or package
-list and the size of each. For prose, the table of contents. For a fleet, the
-repository list and what each one is for.
+list and the size of each. For prose, the table of contents. For several
+repositories, the list and what each one is for.
 
-### 4. Decide scope with the user
+### 3. Decide scope with the user
 
 Present the inventory via `ask-user-choice` and settle what will be read. Most
 studies should not read everything. Where no question tool exists, print the
 inventory and a proposed scope, then stop without writing `sources.jsonl`.
 A scope the user named in the request is already settled; do not ask again.
 
-### 5. Write sources.jsonl
+### 4. Write sources.jsonl
 
 One row per source, including every source deliberately not read:
 
@@ -138,6 +132,8 @@ these four values.
 
 ## Rules
 
+- Report results, not reasons: no "has no title because" or "uses search-string
+  because" in the output.
 - "Out of scope" is not a reason in `why`. Say what the source contains and why
   that does not bear on the vocabulary.
 

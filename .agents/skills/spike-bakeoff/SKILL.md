@@ -82,19 +82,21 @@ the `spike-probe` skill:
 |---|---|---|
 | `--strategies="a; b; c"` | off | Explicit contender list; skips strategy mining. |
 | `--prongs=<2-4>` | auto | Cap the number of contenders. |
-| `--keep-trees` | off | Skip teardown; leave all worktrees in place for manual inspection. Stashes are still created and SHAs recorded. |
+| `--keep-trees` | off | Skip teardown; leave all worktrees in place for manual inspection. Each contender's work is stashed without being cleared (`stash --keep`), so the tree still shows it, and SHAs are recorded. |
 | `--replay` | off | After the verdict and plan are approved, land the winner immediately: apply its stash, one gated commit per plan item. |
 
 ## Phase 0: Situational awareness
 
 Read the `spike-probe` skill and follow its Phase 0 (including how
-`spike.sh` resolves): commit check and home-directory refusal, conventions files, the five gate buckets and CI
-split per `references/verification-gates.md`, and the dirty-tree
-halt. A bakeoff never probes on top of the user's work, because
+`<scripts>` resolves): commit check and home-directory refusal,
+conventions files, the five gate buckets and CI split per
+`references/verification-gates.md`, and the dirty-tree halt. A
+bakeoff never probes on top of the user's work, because
 `git worktree add ... HEAD` carries none of it: offer only stash first
-or abort (non-interactive default: abort). The user-work SHA that
-stash first prints goes in the report with its restore command. It also
-takes no `--branch`.
+or abort (non-interactive default: abort). Once the brief is approved,
+run probe's Setup step 1 (`save-user`) before the first worktree; its
+printed user-work SHA goes in the report with its restore command. A
+rejected brief changes nothing. It also takes no `--branch`.
 Then the bakeoff-specific checks:
 
 1. Confirm `git worktree` is usable and there is disk headroom for N
@@ -122,7 +124,8 @@ Present the **bakeoff brief**:
 1. The goal, one line, with provenance (typed / inferred from what).
 2. The contenders: one line per strategy stating what makes it
    *distinct*; merge entries that differ only cosmetically. Each is a
-   full probe plus judge sub-agents, so state N and let the user trim.
+   full probe plus a judge per lens, so state the sub-agent count (N
+   contenders plus the judges) and let the user confirm or trim it.
 3. What "proven" means per contender: the shared smoke check every
    contender must pass to reach judging.
 4. The judging rubric (Phase 4 lenses, plus any goal-specific
@@ -142,11 +145,18 @@ sub-agent when the host supports it, or sequentially
 otherwise:
 
 ```console
-$ git worktree add <root>/<n>-<slug> HEAD
+$ git worktree add \
+    --detach \
+    <root>/<n>-<slug> \
+    HEAD
 ```
 
 Each contender follows the Phase 2 discipline in the `spike-probe` skill
-inside its own worktree, aiming at the shared "proven" check.
+inside its own worktree, aiming at the shared "proven" check. Tell every
+sub-agent its worktree's absolute path and to work only inside it: read
+and edit by absolute path under that directory, begin every Bash command
+with `cd <that path> &&` (the shell's directory resets between calls),
+and never touch the main checkout or another worktree.
 
 Contenders are **blind to each other**: no shared scratch files, no
 peeking. They bake in parallel but never stash: the coordinator stashes
@@ -194,7 +204,8 @@ parallel. For each contender:
 
 1. In its worktree, run `spike.sh stash` as in the `spike-probe` skill
    Phase 4 with the message
-   `bakeoff <n>-<slug>: <strategy> (<verdict>)`. It prints the
+   `bakeoff <n>-<slug>: <strategy> (<verdict>)`, adding `--keep` before
+   the message under `--keep-trees` so the worktree keeps the work. It prints the
    stash's own SHA; never read `stash@{0}`, which
    is another contender's entry when this one changed nothing. A
    contender that printed `no changes` is recorded as "no changes",
@@ -221,7 +232,8 @@ $ git worktree remove <root>/<n>-<slug>
 5. After a stash-first Phase 0, restore the user's work with
    `spike.sh restore <user-work sha>` unless `--replay` runs, which
    restores it after its last item. A refused restore keeps the stash:
-   report the SHA.
+   report the SHA. Under `--keep-trees`, name each kept worktree path in
+   the report: the user must act on it (`git worktree remove`).
 
 ## Phase 6: The verdict and replay plan
 
@@ -270,9 +282,10 @@ Write the report, and any replay commit message, per
 
    A run that halts before any worktree exists (no commit, repository
    rooted at home, dirty tree declined, missing code or goal) is a
-   `⚠ bakeoff halted` hero line and one result sentence naming what is
-   missing, then what the user must do next. No sections, no panel, no
-   stash SHAs, no local or temp paths, no command echo, no description
+   `⚠ bakeoff halted` hero line, one result sentence naming every
+   blocker (order and rule as in the `spike-probe` skill's output contract),
+   then one line with what the user must do next. No sections, no panel,
+   no stash SHAs, no local or temp paths, no command echo, no description
    of the environment.
 2. `## Contenders`: one line per strategy: what it tried, proven or
    blocked, headline gate status.
@@ -280,10 +293,11 @@ Write the report, and any replay commit message, per
    and why the losers lost.
 4. `## Verification`: gate commands run per contender; local-vs-CI
    split; deferrals.
-5. `## Stashes`: table: contender, strategy, stash message, SHA,
-   restore command. Every contender appears, losers included; one that
-   changed nothing shows "no changes" in the SHA column. A run that saved
-   the user's work adds a row for it and says whether it was restored.
+5. `## Stashes`: one bullet per contender: name, strategy, stash message,
+   SHA, restore command. Every contender appears, losers included; one
+   that changed nothing shows "no changes" in place of the SHA. A run that
+   saved the user's work adds a bullet for it and says whether it was
+   restored.
 6. `## Replay plan`: the numbered commit sequence for the winner,
    grafts marked.
 7. End with an `ask-user-choice` panel: replay the winner / probe the
@@ -297,12 +311,13 @@ A halted run replies in this shape:
 
 ```text
 ⚠ bakeoff halted: compare an LRU dict with a Redis-backed session cache.
-The working tree has uncommitted changes that a worktree would not carry. Commit or stash them yourself, then run spike-bakeoff again.
+
+Nothing was built: the working tree has uncommitted changes that a worktree would not carry.
+Commit or stash them yourself, then run spike-bakeoff again.
 ```
 
 Reply in this shape, as plain text outside any code fence, with plain
-bullets and no bold (never `- **Winner:** ...`), the `## Stashes`
-table aside:
+bullets and no bold (never `- **Winner:** ...`), and no local paths:
 
 ```text
 ✓ bakeoff judged: B (write-behind cache)
@@ -322,9 +337,9 @@ Goal: cut p99 latency of the export endpoint. Exit path: stash and teardown.
 - Local: format, lint, typecheck, scoped tests. CI-only: integration suite.
 
 ## Stashes
-| Contender | Strategy | Stash message | SHA | Restore |
-|---|---|---|---|---|
-| A | LRU | bakeoff 1-lru: in-process LRU (lost) | 9f2c4d1 | git stash apply 9f2c4d1 |
+- A, LRU: bakeoff 1-lru: in-process LRU (lost), 9f2c4d1, restore with git stash apply 9f2c4d1
+- B, write-behind: bakeoff 2-write-behind: write-behind cache (won), 5ab3e08, restore with git stash apply 5ab3e08
+- C, query rewrite: bakeoff 3-query: query rewrite (blocked), no changes
 
 ## Replay plan
 1. cache(feat[store]) Add write-behind store

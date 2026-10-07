@@ -12,12 +12,12 @@ usage() {
   cat <<'USAGE'
 spike.sh guard
 spike.sh ledger-dir
-spike.sh stash MESSAGE
+spike.sh stash [--keep] MESSAGE
 spike.sh save-user
 spike.sh hold-user
 spike.sh stash-on-top USER_SHA MESSAGE
 spike.sh restore USER_SHA
-spike.sh delta USER_SHA SPIKE_SHA
+spike.sh delta USER_SHA [SPIKE_SHA]
 spike.sh replay-apply SPIKE_SHA [USER_SHA]
 spike.sh drop SHA
 spike.sh branch-start NAME
@@ -46,8 +46,14 @@ cmd_ledger_dir() {
 }
 
 # Stash everything, untracked files included, and print the stash's own SHA
-# (never stash@{0}, which is another entry when nothing changed).
+# (never stash@{0}, which is another entry when nothing changed). With --keep
+# the files stay in the tree, unstaged, so a kept worktree still shows the work.
 cmd_stash() {
+  local keep=0
+  if [ "${1:-}" = "--keep" ]; then
+    keep=1
+    shift
+  fi
   [ $# -eq 1 ] || die "stash needs MESSAGE" 2
   cmd_guard >/dev/null
   git add -A
@@ -57,7 +63,11 @@ cmd_stash() {
     echo "no changes"
   else
     git stash store -m "$1" "$sha"
-    git reset -q --hard
+    if [ "$keep" -eq 1 ]; then
+      git reset -q
+    else
+      git reset -q --hard
+    fi
     echo "$sha"
   fi
 }
@@ -80,7 +90,7 @@ cmd_hold_user() {
 }
 
 # Stash a spike probed on top of the user's work and put that work back.
-# Prints the spike stash SHA, or "no changes" when the spike added nothing.
+# Prints the spike stash SHA first, so a refused restore still reports it, or "no changes" when the spike added nothing.
 cmd_stash_on_top() {
   [ $# -eq 2 ] || die "stash-on-top needs USER_SHA and MESSAGE" 2
   cmd_guard >/dev/null
@@ -93,9 +103,9 @@ cmd_stash_on_top() {
     return
   fi
   git stash store -m "$2" "$spike"
+  echo "$spike"
   git reset -q --hard
   cmd_restore "$1"
-  echo "$spike"
 }
 
 # Reapply the user's stash and unstage it. A refused apply changes nothing and
@@ -108,9 +118,17 @@ cmd_restore() {
   git reset -q
 }
 
+# Without SPIKE_SHA, diff the current tree (untracked files included) against
+# the user's stash: the spike's changes when it was never stashed.
 cmd_delta() {
-  [ $# -eq 2 ] || die "delta needs USER_SHA and SPIKE_SHA" 2
-  git diff "$1" "$2"
+  [ $# -ge 1 ] && [ $# -le 2 ] || die "delta needs USER_SHA [SPIKE_SHA]" 2
+  if [ $# -eq 2 ]; then
+    git diff "$1" "$2"
+    return
+  fi
+  git add -A
+  git diff --cached "$1"
+  git reset -q
 }
 
 # Apply only the spike's own changes. With USER_SHA the spike stash also holds
@@ -134,12 +152,17 @@ cmd_replay_apply() {
   fi
 }
 
-# Drop a stash by SHA. Indexes shift as entries drop, so match the SHA, and
-# never drop the saved user work.
+# Drop a stash by SHA, full or abbreviated. Indexes shift as entries drop, so
+# match the resolved SHA, and never drop the saved user work.
 cmd_drop() {
   [ $# -eq 1 ] || die "drop needs SHA" 2
-  local line ref
-  line=$(git stash list --format='%H %gd %gs' | awk -v sha="$1" '$1 == sha && !found {print; found = 1}')
+  local line ref full
+  full=$(git rev-parse --verify --quiet "$1^{commit}" || true)
+  if [ -z "$full" ]; then
+    echo "already gone"
+    return
+  fi
+  line=$(git stash list --format='%H %gd %gs' | awk -v sha="$full" '$1 == sha && !found {print; found = 1}')
   if [ -z "$line" ]; then
     echo "already gone"
     return

@@ -48,7 +48,9 @@ checkout already on disk is read in place once `git rev-parse HEAD` matches
 the row's `commit` and `git status --porcelain` prints nothing; a mismatch or a
 dirty tree is reported, not harvested. A remote source
 gets a throwaway checkout outside the study and outside the current
-repository. This command prints its path; use that literal path afterwards:
+repository. Take OWNER, REPO and COMMIT from `sources.jsonl`; run the command
+only when each is made of letters, digits, `.`, `_`, and `-`, and otherwise
+mark the source unharvested. This command prints its path; use that literal path afterwards:
 
 ```console
 $ dir=$(mktemp -d "${TMPDIR:-/tmp}/scholar-corpus.XXXXXX") \

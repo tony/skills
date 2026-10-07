@@ -88,3 +88,66 @@ def test_staged_and_deletion_only_range(
     monkeypatch.chdir(tmp_path)
     assert scope.main(["--staged"]) == 0
     assert capsys.readouterr().out == "a.py\t\n"
+
+
+def test_spaced_path_has_no_trailing_tab(
+    tmp_path: pathlib.Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """A path with a space prints exactly, with no quoting tab."""
+    _topic_repo(tmp_path)
+    (tmp_path / "a b.py").write_text("x = 1\ny = 2\n")
+    _run(tmp_path, "add", ".")
+    monkeypatch.chdir(tmp_path)
+    assert scope.main(["--staged"]) == 0
+    assert capsys.readouterr().out == "a b.py\t1-2\n"
+
+
+def test_diff_prefix_config_is_ignored(
+    tmp_path: pathlib.Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """diff.mnemonicPrefix and diff.noprefix do not hide changed files."""
+    f = _topic_repo(tmp_path)
+    f.write_text("x = 1\n# gone\ny = 2\n# new\n")
+    _run(tmp_path, "add", ".")
+    monkeypatch.chdir(tmp_path)
+    for key in ("diff.mnemonicPrefix", "diff.noprefix"):
+        _run(tmp_path, "config", key, "true")
+        assert scope.main(["--staged"]) == 0
+        assert capsys.readouterr().out == "a.py\t4-4\n"
+        _run(tmp_path, "config", "--unset", key)
+
+
+def test_untracked_file_counts_as_added_in_full(
+    tmp_path: pathlib.Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """A new file never passed to git add is in branch scope."""
+    _topic_repo(tmp_path)
+    _run(tmp_path, "checkout", "-q", "-b", "topic")
+    (tmp_path / "fresh.py").write_text("# c\nx = 1\ny = 2\n")
+    monkeypatch.chdir(tmp_path)
+    assert scope.main([]) == 0
+    assert capsys.readouterr().out == "fresh.py\t1-3\n"
+
+
+def test_paths_are_relative_to_cwd_from_a_subdirectory(
+    tmp_path: pathlib.Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """Diff and --all paths agree and resolve from the current directory."""
+    _topic_repo(tmp_path)
+    sub = tmp_path / "pkg"
+    sub.mkdir()
+    (sub / "m.py").write_text("x = 1\n")
+    _run(tmp_path, "add", ".")
+    monkeypatch.chdir(sub)
+    assert scope.main(["--staged"]) == 0
+    assert capsys.readouterr().out == "m.py\t1-1\n"
+    assert scope.main(["--all"]) == 0
+    assert capsys.readouterr().out == "../a.py\nm.py\n"

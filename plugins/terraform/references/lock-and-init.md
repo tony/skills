@@ -13,7 +13,7 @@ the same.
 - One run per root module
 - `-backend=false` removes the credential requirement
 - `-upgrade` moves every provider
-- Moving one provider
+- Moving one provider, and landing a version the user named
 - Selecting a new version narrows the lock to one platform
 - When the resolver cannot see the version
 - Confirm the lock actually moved
@@ -145,6 +145,29 @@ on the lock file; report any other block that changed. A CLI bump moves
 no provider: plain `init`, never `-upgrade`, and any version change in
 `state` is a failure to restore.
 
+### Landing a version the user named
+
+Plain `init` selects the newest version the constraint allows, so under a
+range (`~> 6.56`) a named `6.57.0` can land as `6.60.2`. When the user named
+a version and the constraint admits a newer one, pin it for the refresh:
+
+1. Set the provider's constraint to `= <version>` at every declaring site,
+   as a temporary working-tree edit on top of the planned constraints.
+2. Drop the block and run plain `init` as above.
+3. Put the planned constraints back (`git checkout -- <declaring-file>...`
+   when they are committed, a re-edit otherwise), then run `providers lock` naming the
+   provider with the platforms the lock tracked (the running platform when
+   the count did not drop). That rewrites the lock's `constraints` line to
+   the restored form and keeps the selected version.
+4. Read the version with `lockctl.py state`. If it is not exactly the named
+   version, restore the lock from git, put the declaring files back as in
+   step 3, report the version that was selected, and stop:
+
+```console
+$ git checkout \
+    -- <root-module-dir>/.terraform.lock.hcl
+```
+
 ## Selecting a new version narrows the lock to one platform
 
 `h1:` hashes are per-platform. `terraform init` records them only for the
@@ -152,8 +175,8 @@ platform it runs on; teams that need more use
 `terraform providers lock -platform=...`
 ([dependency lock file](https://developer.hashicorp.com/terraform/language/files/dependency-lock)).
 A provider that moves to a different version comes back tracking only the
-platform that ran the bump, with no warning, and the diff looks like an
-ordinary version change. The next `init` on another platform then rewrites
+platform that ran the bump, and the diff looks like an ordinary version
+change. The next `init` on another platform then rewrites
 the lock, which fails under `-lockfile=readonly` or any CI step that checks
 the tree is clean.
 
@@ -201,7 +224,11 @@ $ terraform -chdir=<root-module-dir> providers lock \
 
 Naming the provider restricts the command to it
 ([providers lock](https://developer.hashicorp.com/terraform/cli/commands/providers/lock));
-omit the address only to restore every provider. Never infer the platform
+omit the address only to restore every provider. `providers lock` ignores
+`provider_installation` in the CLI configuration, so when the repository
+resolves through a mirror, pass the same one with `-fs-mirror=<dir>` or
+`-net-mirror=<url>`, as the CI command that locks does (a relative path
+resolves from the `-chdir` directory). Never infer the platform
 list: a repository that tracked one platform should keep tracking one.
 
 Never commit a lock that tracks fewer platforms than it started with

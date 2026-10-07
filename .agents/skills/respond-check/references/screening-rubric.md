@@ -34,7 +34,7 @@ bots agreeing is one opinion; the code is the evidence.
 A claim is `wrong` when the code already does the thing, when the path
 the claim depends on is unreachable, when it rests on a misread of an
 API's contract, or when it describes a version of the file that no
-longer exists. Automated reviewers produce this class constantly.
+longer exists.
 
 ### 3. Provenance
 
@@ -52,8 +52,10 @@ $ git merge-base origin/<trunk> HEAD
 the `respond-action` skill and the `respond-goal` skill run `git fetch origin` first.
 this skill does not, so its provenance may be stale.
 
-With no remote, fall back to the local trunk (`main` or `master`); when
-neither resolves, ask for the base rather than guessing.
+With no remote, or when `git fetch origin` fails, fall back to
+`origin/<trunk>` as last fetched, then to the local trunk (`main` or
+`master`), and say provenance may be stale; when none resolves, ask for
+the base rather than guessing.
 
 Then test whether this branch introduced or last touched the flagged
 code — `git diff <base>...HEAD -- <file>` for the region, and
@@ -157,17 +159,20 @@ session by the `respond-action` skill:
 
 - **branch** — `git branch --show-current`; `none` when empty or
   outside a repository.
-- **`HEAD`** — `git rev-parse HEAD`; `none` when it fails (no commits,
+- **`HEAD`** — `git rev-parse --short=7 HEAD`; `none` when it fails (no commits,
   no repository).
 - **digest** — the first 12 hex characters of the SHA-256 of the
-  screened claims: one line per finding, `<source>` TAB `<claim>` with
-  the claim whitespace-collapsed, sorted bytewise, newline-terminated.
-  It covers the findings as collected, before dedup, so new or edited
-  feedback changes it.
+  collected feedback as the reviewers wrote it: one line per comment,
+  review body, or pasted block, `<id>` TAB `<original text>`, whitespace
+  collapsed, sorted bytewise, newline-terminated. The id is the one the
+  source returns; pasted text and a session's review output have none, so
+  the id is `paste` or `session` and the text is the whole block. Never
+  hash a claim you trimmed or paraphrased: two runs would differ. It
+  covers every comment before splitting, dropping, or merging, so new or
+  edited feedback changes it.
 
-The plugin's `ledger_key.py` computes it from one `<source>` TAB
-`<claim>` line per finding: it collapses each claim's whitespace, sorts,
-hashes, and prints the digest. this skill shows the command.
+The plugin's `ledger_key.py` computes it from those lines.
+this skill shows the commands.
 
 the `respond-action` skill recomputes all three from the feedback it collects.
 Any mismatch means the ledger is stale, and screening runs again rather

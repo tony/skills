@@ -75,7 +75,7 @@ list each uncertainty in the proposal.
 
 Output shape: one result line (the PR and the sections that change), the backup line, the old and new text of each changing section, a sentence on what stays, then the apply question. Sentences about the old text or what stays are plain prose, never bullets that read as part of the New list.
 
-Reply in this shape, as plain text outside any code fence, with plain bullets, no bold (never `- **Label:** ...`), and no local paths:
+Reply in this shape, as plain text outside any code fence, with plain bullets, no bold (never `- **Label:** ...`), and no local paths except the backup path:
 
 ```text
 PR #17: Summary and Test plan change, Setup Required stays as it is.

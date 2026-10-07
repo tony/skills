@@ -96,6 +96,8 @@ beside the serial one.
 
 - git, to resolve and pin a corpus to a ref.
 - gh, to resolve a tag to its commit and to check it again in `verify`.
+  `verify` checks GitHub sources only; a corpus on another host is Uncheckable
+  there unless a local clone is on disk, which `verify` checks with plain git.
 - rg, to inventory a corpus without reading all of it.
 - Python 3.9+, to run `scripts/term_metrics.py`. It uses the standard library
   only, so it runs inside any corpus checkout with no package manager present.
@@ -104,5 +106,5 @@ A corpus with no git remote cannot be cited by permalink. Publish it first, or
 cite `path@commit`, which `verify` checks with `git show`.
 
 A small repository does not need every stage: run `gather` and `extract`, then
-`render`, and add `distill` and `contest` once the term table has siblings to
-tell apart.
+`render`, and add `distill` and `contest` once the term table passes about 20
+terms and has siblings to tell apart.

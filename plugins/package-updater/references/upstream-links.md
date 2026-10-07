@@ -26,8 +26,10 @@ them.
 **Verify before writing.** A link that 404s is indistinguishable from a
 version that was never published. Check the URL resolves. For a
 GitHub-hosted project, `gh api repos/<owner>/<repo>/releases/tags/<tag>`
-gates on exit status. For any other host (pnpm.io, nodejs.org, go.dev,
-docs.python.org, a registry), fetch the URL and require HTTP 200:
+gates on exit status, and proves only the release page exists: a tag
+can exist without the `CHANGELOG.md` the `blob/<version>/` link names.
+Fetch every other URL (the changelog blob, pnpm.io, nodejs.org, go.dev,
+docs.python.org, a registry) and require HTTP 200:
 
 ```console
 $ curl -sSL -o /dev/null -w '%{http_code}' <url>

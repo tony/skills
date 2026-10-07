@@ -64,3 +64,18 @@ def test_stdin_snapshot_cleans_everything(tmp_path: Path, monkeypatch: pytest.Mo
     assert "-b" in skill_diff.diff(root, work=True)
     skill_diff.clean(root)
     assert not root.exists()
+
+
+def test_missing_final_newline_gets_marker(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.chdir(tmp_path)
+    root, out = skill_diff.snapshot([], tmp_path, "a\nb")
+    out[0][0].write_text("a\nc")
+    assert skill_diff.diff(root, work=True).splitlines()[2:] == [
+        "@@ -1,2 +1,2 @@",
+        " a",
+        "-b",
+        "\\ No newline at end of file",
+        "+c",
+        "\\ No newline at end of file",
+    ]
+    skill_diff.clean(root)

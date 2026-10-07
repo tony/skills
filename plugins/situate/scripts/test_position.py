@@ -139,3 +139,24 @@ def test_outside_a_repository_exits_2(
     monkeypatch.setenv("GIT_CEILING_DIRECTORIES", str(tmp_path.parent))
     assert position.main([]) == 2
     assert "not inside a git repository" in capsys.readouterr().err
+
+
+def test_staged_rename_counts_once_and_fetch_age_is_separate(
+    tmp_path: pathlib.Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """A staged rename is one staged entry; fetch age is not the tip's age."""
+    repo = _repo_with_origin(tmp_path)
+    _git(repo, "mv", "a.txt", "b.txt")
+    monkeypatch.chdir(repo)
+
+    assert position.main([]) == 0
+    assert json.loads(capsys.readouterr().out)["last_fetch"] == "unknown"
+
+    _git(repo, "fetch", "-q")
+    assert position.main([]) == 0
+    got = json.loads(capsys.readouterr().out)
+    assert (got["staged"], got["modified"]) == (1, 0)
+    assert got["last_fetch"] == "just now"
+    assert "trunk_age" not in got

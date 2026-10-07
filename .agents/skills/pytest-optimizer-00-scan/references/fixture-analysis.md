@@ -100,8 +100,9 @@ $ uv run --with pytest-deadfixtures \
     --dead-fixtures
 ```
 
-With another runner, install the plugin into that environment first. Never run it
-through a bare `uvx`: it lacks the project's dependencies, so collection fails.
+With another runner, install the plugin only after the user confirms the package
+and the environment; without a yes, use the built-in `--fixtures` diff above.
+Never run it through a bare `uvx`: it lacks the project's dependencies, so collection fails.
 
 **Mandatory guard (H09).** Static analysis cannot see dynamic requests. Before
 deleting, search for dynamic references:

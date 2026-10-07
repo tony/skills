@@ -66,21 +66,21 @@ order:
 
 1. **Readiness gate**: apply the gate from the reference. A halt
    reports what landed and what remains.
-2. **Bring up to date**: when the PR is `BEHIND` or `DIRTY`, or an
-   earlier merge in this run moved trunk, follow the reference's rebase
-   procedure. For a stacked child, use its `--onto` form with the parent's
+2. **Bring up to date**: when the PR is `BEHIND` or `DIRTY` (or `UNKNOWN`
+   after the gate's retries), follow the reference's rebase procedure. Leave
+   a `CLEAN` PR alone: no rebase, no force-push. For a stacked child, use its `--onto` form with the parent's
    roster-time `headRefOid`, because a squash merge leaves the parent's old head out of
    trunk. Ask on any conflict that forces a choice between behaviors.
 3. **Wait on CI**: `gh pr checks <n> --watch` on the rebased head.
 4. **Merge**: check the repo allows the strategy, compose the message per
    the reference and `references/prose-rules.md` (no `Co-Authored-By`,
    no "Generated with" or other tool trailer, no emoji), then merge with
-   `gh pr merge <n> <strategy flag> --match-head-commit <sha>` and
-   `-t`/`-b`, as the reference's strategy and message sections say. Pass the
+   the reference's file-based command, never a message inside a shell
+   string, with `--match-head-commit <sha>` and the strategy flag. Pass the
    user's other flags through verbatim, except `--delete-branch` on a stack
    parent: the reference drops it, and the report says so.
 5. **Sync**: per the reference's "After each merge", including its check
-   that trunk contains the merge commit. A queued
+   that trunk contains the merge commit and the subject read-back. A queued
    (`--auto`) merge halts the run here.
 
 ### 4. Halt conditions
@@ -91,10 +91,14 @@ closed or draft mid-run, or a conflict needs a product decision.
 Everything already merged stays merged; the report says exactly
 where the run stopped and why.
 
+After the last PR of a stack merges, carry out the user's `--delete-branch`
+for the parents, per the reference's stack-parents section.
+
 ## Output
 
 Open with a one-line hero (`✓ Merged N of M PRs` or
-`⚠ Halted at #N: <reason>`), then exactly these sections. Report only what
+`⚠ Halted at #N: <reason>`; an `--auto` merge halts with
+`⚠ Halted at #N: queued with --auto, merges once checks pass`), then exactly these sections. Report only what
 a command in this run verified, and name the merge order only once the
 topology was read. A run halted before any merge (`gh` unavailable, roster
 invalid) gives the hero and one sentence on what the user must do; no
@@ -103,14 +107,18 @@ merged").
 
 1. `## Roster`: the PRs, detected topology (stack or independent),
    and merge order.
-2. `## Merges`: per PR, the gate result, rebase and conflicts if any, CI
-   outcome, merge commit subject and short SHA. Note a dropped
-   `--delete-branch` on a stack parent.
+2. `## Merges`: one bullet per PR: the gate result, rebase and conflicts if
+   any, CI outcome, merge commit short SHA with its subject as read back from
+   the commit. Note a dropped `--delete-branch` on a stack parent, and the
+   parent branches deleted after the last merge. Diagnostics about the
+   environment belong in no bullet.
 3. `## Trunk`: the post-run trunk state and the result of the
    contains-the-merge-commit check. Report a mismatch as a fact with the
    short SHAs; give no cause.
 
-Write the sections per `references/prose-rules.md`.
+State a failure as the fact the user needs; never quote the tool's error
+text or explain how a check works. Write the sections per
+`references/prose-rules.md`.
 
 Reply in this shape, as plain text outside any code fence, with plain bullets, no bold (never `- **Label:** ...`), and no local paths:
 
@@ -130,6 +138,14 @@ Reply in this shape, as plain text outside any code fence, with plain bullets, n
 ## Trunk
 
 - main is at the #31 merge commit.
+```
+
+A run halted before any merge:
+
+```text
+⚠ Halted: gh is not authenticated.
+
+Run `gh auth login`, then re-run `merge-pr-multiple #31 #32 --squash`.
 ```
 
 End with an `ask-user-choice` panel offering next steps (for

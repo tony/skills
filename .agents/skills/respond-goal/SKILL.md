@@ -4,7 +4,7 @@ description: >-
   Use when the review-and-CI loop should continue through bounded rounds
   until no new actionable feedback remains.
 disable-model-invocation: true
-allowed-tools: ["Bash", "Read", "Grep", "Glob", "Edit", "Write", "AskUserQuestion"]
+allowed-tools: ["Bash", "Read", "Grep", "Glob", "AskUserQuestion"]
 metadata:
   argument-hint: "[<pr-number|url>] [--max-rounds=<n>] [--wait=<minutes>] [--ci-wait=<minutes>] [--push] [--reply]"
   source: "plugins/respond/skills/goal/SKILL.md"
@@ -49,7 +49,7 @@ top of every round.
 | `--wait=<minutes>` | `10` | Cap on waiting for review agents per round. |
 | `--ci-wait=<minutes>` | `30` | Cap on waiting for CI per round. |
 | `--push` | off | Push after each round and run the CI and review-agent conditions. Without it, run one local round on session or pasted feedback with steps 4-6 skipped, finished when the local gates are green; the report prints the push command. |
-| `--reply` | off | Post the drafted replies for declined and deferred findings once, when the loop ends. Confirm first; a non-interactive run treats the flag as that confirmation, for the replies shown in the report only. |
+| `--reply` | off | Post the drafted replies for declined and deferred findings once, when the loop ends, with the commands in the `respond-action` skill Phase 4. Confirm first; a non-interactive run treats the flag as that confirmation, for the replies shown in the report only. |
 
 ## Phase 0: Reconnaissance
 
@@ -65,8 +65,10 @@ top of every round.
    empty roster shortens the loop to CI alone.
 3. Resolve the gate buckets and the CI-coverage split per
    `references/verification-gates.md`.
-4. Run `git fetch origin`, confirm a clean working tree, and note the
-   push state.
+4. Run `git rev-parse --show-toplevel` and halt when it is `$HOME` or
+   contains it. Run `git fetch origin`; when it fails, go on with
+   provenance marked possibly stale. Confirm a clean working tree and
+   note the push state; a dirty tree halts.
 
 ## Phase 1: Orchestration plan
 
@@ -167,8 +169,8 @@ Never name local absolute paths, temp files, or internal phase and step
 names.
 
 A halted run reports one result sentence naming the halt condition,
-then what the user needs to do, then `## Still open`; the other
-sections appear only when they have content. It never recaps what the
+then what the user needs to do, then only the sections that have
+content, headings included. It never recaps what the
 loop inspected. The last example below shows it. In a non-interactive
 run, state the plan in one sentence after the hero line and give no
 reason for skipping approval.
@@ -213,7 +215,7 @@ Finished after 2 rounds on feat/retry-after: 3 fixed, 1 deferred, 1 declined.
 
 ## Verification
 
-- Head 4f2a9c1e7b05d83a6c1f9e204b7d5a38c0e1f692, CI green. Ran format, lint, typecheck, and tests.
+- Head 4f2a9c1, CI green. Ran format, lint, typecheck, and tests.
 
 1. Post the drafted replies
 2. Stop
@@ -226,11 +228,15 @@ Halted before round 1: feat/retry-after has no pull request, and --push was pass
 
 Open a pull request for the branch, then run respond-goal again.
 
-## Still open
-
-- Nothing was collected or screened, so nothing is fixed, deferred, or declined.
-
 1. Stop
+```
+
+A non-interactive run states its plan after the hero line:
+
+```text
+Finished after 1 round on feat/retry-after: 1 fixed, 0 deferred, 0 declined.
+
+Plan: finish when a round lands no new fixes and CI is green on the head; stop on any halt condition.
 ```
 
 

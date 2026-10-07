@@ -61,7 +61,7 @@ The detection rules are in `references/heuristic-catalog.md`:
 - Unused, duplicate, and mis-scoped fixtures, with a `getfixturevalue` guard.
 - Duplicate tests and loops that belong in one parametrized track.
 - Safe parallelism, gated on order independence and deterministic collection.
-- Untyped tests and fixtures, and untyped `parametrize` data, planned as hygiene items that save no time.
+- With `--hygiene`, untyped tests and fixtures and untyped `parametrize` data, planned as hygiene items that save no time. Off by default: they rewrite test signatures and ids.
 - Opt-in project-owned helpers: a per-fixture timing plugin and a
   `config.cache` memoization snippet.
 
@@ -103,7 +103,7 @@ order: `--memory-dir`, the in-tree directory, the cache directory. See
 - Python 3 on `PATH` for `scripts/measure.py`, which does the timing arithmetic.
 - A test command the skills can read from `AGENTS.md`, `CLAUDE.md`, `justfile`, `tox.ini`, or `pyproject.toml`.
 - Optional auto-detected plugins: `pytest-xdist`, `pytest-randomly`,
-  `pytest-deadfixtures` (added to the project environment), `pytest-timeout`.
+  `pytest-deadfixtures`, `pytest-timeout`. The skills ask before installing any of them into your environment.
 
 ## Component reference
 

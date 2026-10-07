@@ -8,7 +8,7 @@ diff.
 
 Never blur two findings: nothing found is "none" (`none is open`,
 `none is referenced`); a lookup that could not run is `unavailable`
-with the reason. A repository with no remote has no pull request to
+with the reason. Say where a layer was looked, never "I checked". A repository with no remote has no pull request to
 check, so write `no remote, so no pull request is open or checkable`.
 Say where a "none" was looked: `none is referenced in commits, the
 branch name, or a pull request body`.
@@ -16,7 +16,7 @@ branch name, or a pull request body`.
 Never print an absolute path, a temp directory, or a host-sandbox
 detail; say "the home directory" or "the project root" instead.
 
-Script paths here (`../scripts/...`) resolve from this file's directory; print the absolute path once and write it literally in each command.
+Script paths here (`../scripts/...`) resolve from this file's directory, not the repository: print the absolute path once and write it literally in each command.
 
 ## Contents
 
@@ -36,15 +36,16 @@ The one contract for every situate skill. Reading files, git history,
 and `gh` views is allowed. Never commit, push, edit files, stash, switch
 branches, or run `git fetch`: it rewrites remote-tracking refs, which
 changes what every other command sees. Work from the refs already in the
-repository; the position script reports the trunk ref's age as
-`trunk_age`. If it is old, say the comparison against trunk may be stale
-and let the user decide whether to fetch.
+repository. The position script reports `last_fetch`, when the refs were
+last fetched, apart from `trunk_tip_age`, when the trunk tip commit was
+made. Say the comparison against trunk may be stale when `last_fetch` is
+old or "unknown", and let the user decide whether to fetch. Never call
+trunk "current" or "up to date": no local ref proves it.
 
 ## 1. Position
 
 Run the position script. It only reads git, never fetches, and prints
-JSON with no paths; the path resolves from the skill directory like the
-other bundled files:
+JSON with no paths:
 
 ```console
 $ python3 references/position.py
@@ -60,14 +61,15 @@ Read its fields:
   `has_commits` false: report that in the hero line, name no untracked
   files, and stop with one result sentence, then ask which directory
   holds the project. The script prints nothing else in these cases.
-- `trunk`, `trunk_source`, `trunk_age`: the remote's own HEAD, else
-  `origin/main` or `origin/master`. When `trunk_source` starts with
+- `trunk`, `trunk_source`, `trunk_tip_age`, `last_fetch`: the remote's own
+  HEAD, else `origin/main` or `origin/master`; the tip's age says how old
+  the last commit is, `last_fetch` how fresh the ref is. When `trunk_source` starts with
   "assumed", say which was assumed. A null `trunk` means no trunk ref.
 - `ahead`, `behind`, `branch` (null is a detached HEAD), `staged`,
   `modified`, `untracked`, `stashes`: work in flight that no commit
   records is what a new session cannot see. `untracked` already omits
-  editor and shell files; `ignored_untracked` only counts them, so
-  never list them.
+  editor and shell files; never list, count, or mention the ones it
+  omits, `ignored_untracked` included.
 - `on_trunk` true with nothing ahead: there is no branch story to tell;
   report recent trunk activity and the open pull requests instead, and
   say so.
@@ -111,7 +113,11 @@ call, taking `<number>` from the output above (`-F` sends it as an
 integer and fills `{owner}` and `{repo}` from the repository):
 
 ```console
-$ gh api graphql -F owner='{owner}' -F repo='{repo}' -F number=<number> -f query='query($owner: String!, $repo: String!, $number: Int!) { repository(owner: $owner, name: $repo) { pullRequest(number: $number) { reviewThreads(first: 100) { nodes { isResolved isOutdated path comments(first: 1) { nodes { author { login } body } } } } } } }'
+$ gh api graphql \
+    -F owner='{owner}' \
+    -F repo='{repo}' \
+    -F number=<number> \
+    -f query='query($owner: String!, $repo: String!, $number: Int!) { repository(owner: $owner, name: $repo) { pullRequest(number: $number) { reviewThreads(first: 100) { nodes { isResolved isOutdated path comments(first: 1) { nodes { author { login } body } } } } } } }'
 ```
 
 Keep the nodes where `isResolved` is false. A repository with more

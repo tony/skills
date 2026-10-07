@@ -81,14 +81,15 @@ def diff(root: Path, *, work: bool) -> str:
         after_text = after.read_text(encoding="utf-8")
         before_text = before_text.splitlines(keepends=True)
         after_text = after_text.splitlines(keepends=True)
-        chunks.extend(
-            difflib.unified_diff(
-                before_text,
-                after_text,
-                fromfile=f"a/{entry['label']}",
-                tofile=f"b/{entry['label']}",
-            )
-        )
+        for line in difflib.unified_diff(
+            before_text,
+            after_text,
+            fromfile=f"a/{entry['label']}",
+            tofile=f"b/{entry['label']}",
+        ):
+            chunks.append(line)
+            if not line.endswith("\n"):
+                chunks.append("\n\\ No newline at end of file\n")
     return "".join(chunks)
 
 

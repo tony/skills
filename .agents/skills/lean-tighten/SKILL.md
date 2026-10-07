@@ -57,7 +57,7 @@ names, never a commit.
 7. **Report and hand off.** Write it per
    `references/prose-rules.md`: a one-line count of findings
    resolved and skipped, with no section labels and no recap of what
-   changed, in this shape:
+   changed. Reply in this shape, as plain text outside any code fence, with plain bullets, no bold (never `- **Label:** ...`), and no local paths:
 
    ```text
    5 findings resolved, 1 skipped.

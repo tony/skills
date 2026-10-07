@@ -117,10 +117,11 @@ A local agent can read and write for real; this adapter is not paste-only.
 - CLI: the `azure-devops` extension for Azure CLI installs on first use and covers `az boards work-item
   create`, `show`, `update`, `delete`, and `az boards work-item relation add` / `remove` / `show` /
   `list-type` ([az boards work-item](https://learn.microsoft.com/en-us/cli/azure/boards/work-item?view=azure-cli-latest)).
-  `--description` and `--discussion` take body text; `--fields` sets reference-named fields.
+  `--description` and `--discussion` take body text; `--fields` sets reference-named fields. The scratch path comes from the skill's filing step;
+  feed the approved body through command substitution, never an inline string.
 
 ```console
-$ az boards work-item create --title "..." --type "User Story" --project "..." --description "..."
+$ az boards work-item create --title "..." --type "User Story" --project "..." --description "$(cat "<scratch path>")"
 ```
 
 - REST API: Work Item Tracking. Work items are created and patched with JSON Patch; comments use a

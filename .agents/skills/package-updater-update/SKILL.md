@@ -4,7 +4,7 @@ description: >-
   Use when bringing every outdated dependency and toolchain pin current
   across one repository or a fleet.
 disable-model-invocation: true
-allowed-tools: ["Bash", "Read", "Grep", "Glob", "Edit", "Write", "Task", "AskUserQuestion"]
+allowed-tools: ["Bash", "Read", "Grep", "Glob", "Edit", "Write", "Agent", "AskUserQuestion"]
 metadata:
   argument-hint: "[--root <dir>] [--repo <path|slug>...] [--owner <name>...] [--audit-only] [--branch <name>] [--pr] [--issue github|linear] [--push]"
   source: "plugins/package-updater/skills/update/SKILL.md"
@@ -72,10 +72,7 @@ cleanly, except where the plan marked a repository local-only. Write
 commit messages and the report per `references/prose-rules.md`.
 No `Co-Authored-By`, no "Generated with" or other tool trailers, no emoji.
 
-Commits land on the default branch by default. `--branch <name>` works
-on a branch instead; `--push` pushes the commits; `--pr` pushes the
-branch and opens a pull request from it. Without either, commit
-locally, stop, and print the push command.
+Branch and push handling follows Phase 4 of the skill.
 
 With `--issue`, the audit is filed before the work starts: create the
 issue or Linear card listing what is outstanding, derive the branch name
@@ -111,15 +108,15 @@ blaming a bump.
 ## Output
 
 Open with a one-line hero (`✓ N commits across M repos` or, for
-`--audit-only`, `⚠ Audit only: N packages outdated`), then exactly these
-sections:
+`--audit-only`, `⚠ Audit only: N packages outdated`), then these
+sections in order, each omitted when it has nothing to report:
 
 1. `## Audit` — per repository, the ecosystems found and what is
    outdated in each, separated into what moves in-range and what needs a
    manifest edit. Note what was excluded as fork, unowned, or already
    current.
 2. `## Gated` — releases the cooldown currently hides, with the date each
-   becomes visible. Omit when no cooldown is configured.
+   becomes visible.
 3. `## Moves` — one entry per distinct chain: what changed upstream,
    verified links, and which repositories it reaches.
 4. `## Commits` — per repository, the commits made in landing order and
@@ -132,8 +129,7 @@ sections:
    versions found, each with the sibling command that handles it.
 8. `## Holds` — per `references/holds.md`, every `reject` entry
    across the tree with its recorded condition, which conditions are now
-   met, and which holds have no recoverable reason. Omit when nothing is
-   held.
+   met, and which holds have no recoverable reason.
 9. `## Drift` — pins disagreeing across a workspace, and holds applied
    unevenly across workspace members.
 

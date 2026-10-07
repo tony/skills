@@ -87,12 +87,14 @@ provenance recorded in the brief.
 ## Phase 0: Situational awareness
 
 Read the `spike-probe` skill and follow its Phase 0 once for the whole
-ratchet: commit check, conventions files, the five gate buckets and CI
-split per `references/verification-gates.md`, and the dirty-tree
-halt. Every round starts from a clean tree, so offer only stash first or
-abort there (non-interactive default: abort); never "probe on top". The
-ratchet takes no `--branch`. The user-work SHA that stash first prints
-goes in the ledger and the report. Then:
+ratchet (including how `<scripts>` resolves): commit check, conventions
+files, the five gate buckets and CI split per
+`references/verification-gates.md`, and the dirty-tree halt. Every
+round starts from a clean tree, so offer only stash first or abort there
+(non-interactive default: abort); never "probe on top". The ratchet takes
+no `--branch`. After the brief is approved, run probe's Setup step 1
+(`save-user`) before round 1; the user-work SHA it prints goes in the
+ledger and the report. Then:
 
 1. Resolve the ledger path and read it if it already exists.
 2. Confirm `git worktree` is usable, since any round may call a
@@ -109,14 +111,18 @@ Present the **ratchet brief**:
 1. The goal, one line, with provenance.
 2. What "converged" means for this goal: the demo or property the
    final design must satisfy, not just the first round's smoke check.
-3. The round cap, and any rounds already in the ledger.
+3. The round cap, any rounds already in the ledger, and the worst-case
+   cost: each round is one probe, possibly a bakeoff of N contenders,
+   and a judge per lens, so state the rounds times that sub-agent count
+   and let the user confirm or trim the cap.
 4. Discovered gate commands and the local-vs-CI split.
 5. The ledger path.
 6. The intended exit: clean rewrite, or landing plan.
 
 Wait for approval, then exit plan mode. If plan mode is unavailable,
 present the brief inline and proceed on confirmation. In a
-non-interactive run, record the brief and proceed.
+non-interactive run, record the brief and proceed. A rejected brief
+changes nothing.
 
 ## Phase 2: A round
 
@@ -124,7 +130,7 @@ Repeat until Phase 3 says stop. Each round:
 
 1. **Probe.** Read the `spike-probe` skill and follow its Phases 2 through 4
    against the goal as sharpened by the ledger's open questions. Probe's
-   Phase 0 and brief already ran above; its plan and replay phases
+   Phase 0, brief, and Setup already ran above, so skip its Setup; its plan and replay phases
    belong to the ratchet's exit, and so does restoring the user's
    work: skip the restore in its Phase 4.
 2. **Branch on what fought back.** A stumbling block with two or more
@@ -135,8 +141,8 @@ Repeat until Phase 3 says stop. Each round:
    probe. Stash serially: one stash command at a time, never from
    parallel contenders.
 3. **Re-probe the graft.** Grafts are unproven in combination, so the
-   ratchet seeds the next round's tree (apply the winner's stash, then
-   the graft hunks) and that round probes from there. Probe's
+   ratchet seeds the next round's tree (`spike.sh replay-apply <winner
+   sha>`, then the graft hunks) and that round probes from there. Probe's
    dirty-tree halt does not fire on a tree the ratchet seeded. A graft
    that fails the check is dropped and recorded as dropped.
 4. **Record.** Append the round's ledger section before the next round;
@@ -163,21 +169,26 @@ Otherwise start the next round from the ledger's open questions.
 ## Phase 4: Exit
 
 The surviving artifacts are the ledger and every round's stash SHA.
-Restore the user's saved work first with
-`spike.sh restore <user-work sha>`, unless `--replay` runs, which
-restores it after its last item. A refused restore keeps the stash:
-report the SHA. Offer the two exits. Write any commit message per
+Offer the two exits. Write any commit message per
 `references/prose-rules.md`, with no `Co-Authored-By`, no
 "Generated with" or other tool trailers, and no emoji:
 
 - **Clean rewrite**: after approval, write the final implementation
   from the ledger's locked decisions, keeping the final stash as
-  reference. Run the fast gates once. The result stays uncommitted and
-  `--replay` is not involved; committing it is the user's call. Right
-  when the code carries the marks of abandoned rounds.
+  reference. Write it on the clean tree, before the user's work comes
+  back, so it never mixes with their edits. Run the fast gates once. The
+  result stays uncommitted and `--replay` is not involved; committing it
+  is the user's call. Right when the code carries the marks of abandoned
+  rounds.
 - **Landing plan**: a commit-by-commit plan for the final stash, built
   as Phase 5 of the `spike-probe` skill, landed under `--replay` as its
   Phase 6. Right when the last round's code is what the design wants.
+
+Then restore the user's saved work with
+`spike.sh restore <user-work sha>`, unless `--replay` runs, which
+restores it after its last item. After a clean rewrite, list the rewrite's
+files in the report so the user can tell them from their own edits. A
+refused restore keeps the stash: report the SHA.
 
 Recommend one and say why. Never drop earlier stashes; the ledger cites
 them by SHA.
@@ -192,20 +203,21 @@ Write the report per `references/prose-rules.md`.
 
    A run that halts before round 1 (no commit, repository rooted at
    home, dirty tree declined, missing code or goal) is a
-   `⚠ ratchet halted` hero line and one result sentence naming what is
-   missing, then what the user must do next. No sections, no panel, no
-   stash SHAs, no local or temp paths, no command echo, no description
+   `⚠ ratchet halted` hero line, one result sentence naming every
+   blocker (order and rule as in the `spike-probe` skill's output contract),
+   then one line with what the user must do next. No sections, no panel,
+   no stash SHAs, no local or temp paths, no command echo, no description
    of the environment.
 2. `## Rounds`: one block per round: what was probed, what fought
    back, bakeoff winner if any, what got locked.
 3. `## Design`: the locked decisions as a specification, not a history.
 4. `## Open`: questions the ratchet did not settle, and for a thrashing
    stop, why spiking cannot settle them.
-5. `## Stashes`: table: round, stash message, SHA, restore
-   command. Every round appears (a round that changed nothing shows
-   "no changes"), and so does every contender a round's bakeoff
+5. `## Stashes`: one bullet per stash: round, stash message, SHA,
+   restore command. Every round appears (a round that changed nothing
+   shows "no changes"), and so does every contender a round's bakeoff
    stashed; those stashes outlive the ratchet. A run that saved the
-   user's work adds a row for it and says whether it was restored.
+   user's work adds a bullet for it and says whether it was restored.
 6. `## Next`: the recommended exit, and the landing plan when one was
    produced.
 7. End with an `ask-user-choice` panel: rewrite from the ledger / land
@@ -218,12 +230,13 @@ A halted run replies in this shape:
 
 ```text
 ⚠ ratchet halted: converge on an async/await port of the retry queue.
-The repository has no commits yet. Make the initial commit yourself, then run spike-ratchet again with the same goal.
+
+Nothing was probed: the repository has no commits yet.
+Make the initial commit yourself, then run spike-ratchet again with the same goal.
 ```
 
 Reply in this shape, as plain text outside any code fence, with plain
-bullets and no bold (never `- **Round 1:** ...`), the `## Stashes`
-table aside:
+bullets and no bold (never `- **Round 1:** ...`), and no local paths:
 
 ```text
 ✓ converged in 3 rounds: port the sync worker to asyncio
@@ -241,9 +254,8 @@ table aside:
 - Whether the metrics exporter needs its own loop.
 
 ## Stashes
-| Round | Stash message | SHA | Restore |
-|---|---|---|---|
-| 1 | spike: asyncio port, round 1 | 1d8e0b7 | git stash apply 1d8e0b7 |
+- Round 1: spike: asyncio port, round 1, 1d8e0b7, restore with git stash apply 1d8e0b7
+- Round 2: spike: asyncio port, round 2, 6c40a93, restore with git stash apply 6c40a93
 
 ## Next
 - Recommended: clean rewrite from the ledger; the final stash still carries round 2's abandoned executor shim.

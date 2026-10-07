@@ -40,11 +40,11 @@ Cursor's read-only plan mode.
    Plan: `codex exec --sandbox read-only --skip-git-repo-check -c model_reasoning_effort=medium --`
 2. Normal: `agent -p -f --model gpt-5.4-high --`
    Plan: `agent -p --mode plan --model gpt-5.4-high --`
-3. Normal: `agent -p -f --model gpt-5.4-mini-medium --`
-   Plan: `agent -p --mode plan --model gpt-5.4-mini-medium --`
+3. Normal: `agent -p -f --model gpt-5.4-mini --`
+   Plan: `agent -p --mode plan --model gpt-5.4-mini --`
 
 Tier 3 is the lesser fallback: when it runs, say the larger model failed. If
-tier 2 crashed on `agent`, skip tier 3.
+tier 2 failed with auth or crash on `agent`, skip tier 3.
 
 
 ## Portability notes

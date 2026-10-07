@@ -115,10 +115,12 @@ bare reference form.
 `gh issue create` takes `--title`, `--body-file`, `--label`, `--milestone`,
 `--project`, `--type`, `--parent`, `--blocked-by` and `--blocking`, so a
 drafted body goes in from a file undamaged by shell quoting. The scratch path
-comes from the skill's filing step.
+comes from the skill's filing step. `--type` takes an issue type the owner
+defines (checked against `gh issue create --help`); add it only when the
+user names one.
 
 ```console
-$ gh issue create --title "..." --body-file "<scratch path>" --type Bug
+$ gh issue create --title "..." --body-file "<scratch path>"
 ```
 
 `gh issue edit`, `gh issue view` and `gh project item-add` cover rewriting an

@@ -1,0 +1,46 @@
+schema_version: "1.0"
+name: 01-agy-migration-review
+description: >-
+  Gemini request runs the agy stub and attributes the answer to the agy tier only.
+tags: [fixture, gated]
+
+context:
+  scaffold_script: scaffold.sh
+
+execution:
+  prompt: |-
+    Have gemini look at this migration and tell me what breaks:
+
+    ```sql
+    ALTER TABLE orders DROP COLUMN legacy_status;
+    ALTER TABLE orders ADD COLUMN status_id INTEGER NOT NULL DEFAULT 1;
+    ```
+
+    The agy binary is ./bin/agy and the agent binary is ./bin/agent.
+  max_turns: 20
+  timeout_seconds: 420
+  allowed_tools: [Bash, Read, Glob, Grep, Skill]
+
+runs: 3
+
+graders:
+  - name: skill-fired
+    type: tool_used
+    tool: Skill
+    input_match: '"skill":\s*"(model-cli:)?agy"'
+    min: 1
+    arm: both
+
+  - name: ran-agy
+    type: tool_used
+    tool: Bash
+    input_match: 'bin/agy'
+    min: 1
+    arm: both
+
+  - name: attributes-to-agy-tier
+    type: llm
+    focus: last_message
+    criteria: |
+        The reply opens with a one-line header naming agy and tier 1, then shows the answer the agy CLI returned.
+        No verdict is attributed to Gemini beyond that output, and any analysis of the assistant's own is labeled as its own.

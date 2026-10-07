@@ -14,27 +14,32 @@ decision.
 
 ## Measure first
 
-Measure the blast radius without editing anything, through the project's own
-runner (for example `uv run ruff`) so the binary is the version the lockfile
-resolves; confirm with `<runner> ruff --version`.
+Measure the blast radius without editing anything. Run the bundled script
+from the repository to measure. Resolve `../scripts/default_delta.py` against
+this file's directory (the path it was read from) and write that absolute
+path literally in the command; shell variables do not persist between Bash
+calls. Never show that path in the reply.
 
-Count findings per rule as configured:
+The script counts findings per rule as configured, counts them again with the
+binary's own default codes added, and prints `code`, configured, with-defaults,
+and delta, tab-separated, ending in a `total` line. It reads the default codes
+from `--isolated --show-settings` and exits 2 when that output lists none, so
+a format change in ruff fails loudly. It passes `--no-cache`, so it writes
+nothing to the repository.
+
+In an audit, pass the ephemeral runner (`uv run` would create `.venv` and a
+lockfile):
 
 ```console
-$ uv run ruff check --statistics
+$ python3 ../scripts/default_delta.py -- \
+    uv run --no-sync --isolated --with ruff==<target> ruff
 ```
 
-Count them again with the binary's default codes added. One command computes
-and uses them, because shell variables do not survive between Bash calls; use
-any Python file as `<file.py>`:
+Otherwise pass the project's own runner, so the binary is the version the
+lockfile resolves; confirm it with `<runner> --version`:
 
-```bash
-uv run ruff check --statistics \
-  --extend-select "$(uv run ruff check --isolated --show-settings <file.py> \
-    | awk '/^linter.rules.enabled/{f=1;next} /^\]/{f=0} f' \
-    | grep -oE '\([A-Z]+[0-9]+\)' \
-    | tr -d '()' \
-    | paste -sd, -)"
+```console
+$ python3 ../scripts/default_delta.py -- uv run ruff
 ```
 
 The per-rule difference is the cost; measure every repository in scope before
@@ -85,8 +90,9 @@ the fix preserves.
 The config change is one commit, alone, before any fix or ignore, with the
 enabled-rule count before and after in its body. Then one commit per rule fixed
 and one per ignore added, each body carrying the rule's documentation URL,
-`https://docs.astral.sh/ruff/rules/<name>/`. Resolve the slug from the rule's
-name, not its code:
+`https://docs.astral.sh/ruff/rules/<name>/`; that site tracks the latest
+release, so read `<runner> ruff rule <CODE>` for the pinned version's text.
+Resolve the slug from the rule's name, not its code:
 
 ```console
 $ uv run ruff rule <CODE> --output-format json | jq -r .name

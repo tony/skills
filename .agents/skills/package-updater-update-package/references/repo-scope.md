@@ -1,7 +1,7 @@
 # Choosing which repositories are in scope
 
-Run this before any sweep that walks a directory rather than acting on
-one named repository.
+Run this before any sweep that walks a directory or names more than
+the current repository.
 
 A directory of checkouts holds worktrees, forks, vendored clones and
 upstream projects read for reference, and every one looks like a git
@@ -22,7 +22,10 @@ one question. A wrong commit costs someone else's review time.
 
 ## Set the scope
 
-Default scope is the current repository. `--root <dir>` walks a
+Default scope is the current repository, which the user chose by
+running the command there: it is not fork- or ownership-checked, and
+the rules below apply to repositories that `--repo` or `--root` adds.
+`--root <dir>` walks a
 directory for git repositories, `--repo <path|slug>` names individual
 ones, and `--owner <name>` keeps only those whose remote belongs to the
 given accounts or organisations.
@@ -119,9 +122,10 @@ $ git -C <repo> log \
     origin/<default-branch>
 ```
 
-Match on the email domain rather than one exact address — the same
-person commits as more than one identity, and a project run under an
-organisation's own address is still theirs.
+Compare the commit emails with `git config user.email`. Match on the
+domain rather than one exact address: the same person commits as more
+than one identity, and a project run under an organisation's own address
+is still theirs.
 
 Agreeing signals decide it, but a repository settled this way is
 committed locally and not pushed unless the user approves the push in the

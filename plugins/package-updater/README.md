@@ -69,15 +69,16 @@ tracks:
    committed separately from dependencies.
 3. Named package bumps: one per package (or coupled release train).
    Body includes `why:` and `what:` with verified links.
-4. Bulk lockfile refresh: everything routine in one commit with an
-   empty body. The lockfile diff speaks for itself.
+4. Bulk lockfile refresh: everything routine and in-range in one
+   commit with an empty body. Majors are named bumps.
 
 Fallout (e.g., schema bumps, migrations) lands after in a separate commit.
 
 ## Supply-Chain Cooldown
 
-Checks for a cooldown before reporting anything as current to prevent
-pulling risky, fresh releases. Exemptions are narrow, annotated,
+Checks the repository's configured cooldown before reporting anything
+as current, to prevent pulling risky, fresh releases. A repository with
+no cooldown configured has no gate. Exemptions are narrow, annotated,
 committed alone, and reverted when the block lapses.
 
 Each tool names, scales and enforces its cooldown differently. The
@@ -123,14 +124,15 @@ Handled by sibling plugins:
 
 ## Ecosystem coverage
 
-uv, pnpm, npm and Cargo flows are exercised. The Poetry, pip and Go
-procedures come from each tool's own documentation and are experimental:
-the plugin proposes the command and waits for confirmation before the
-first run in a repository.
+The uv, pnpm, npm, Cargo, Poetry, pip and Go procedures come from each
+tool's own documentation. The plugin proposes the command and waits for
+confirmation before the first run in a repository. Only the
+`.tool-versions` flow has an eval case.
 
 ## Prerequisites
 
 - git
+- jq: reads registry responses for the cooldown check.
 - curl and network access: link checks and the cooldown check read
   release pages and registries.
 - Ecosystem tooling: `uv`, `pnpm`, `ncu`, `npm`, `cargo`, `go`, or

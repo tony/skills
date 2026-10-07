@@ -30,7 +30,7 @@ to one exact release so no unreviewed code runs; use this spelling in
 every command below:
 
 ```console
-$ uvx agentgrep@0.1.0a52 search --only-here --limit 20 <terms>
+$ uvx agentgrep@0.1.0a52 search --only-here --limit 20 '<term>'
 ```
 
 Flags change between releases; run `uvx agentgrep@0.1.0a52 search --help`
@@ -51,7 +51,7 @@ current repository; `--here` merely boosts them and will drag in
 unrelated projects.
 
 ```console
-$ uvx agentgrep@0.1.0a52 search --only-here --branch "$(git branch --show-current)" --limit 20 <terms>
+$ uvx agentgrep@0.1.0a52 search --only-here --branch "$(git branch --show-current)" --limit 20 '<term>'
 ```
 
 `--only-here` matches on each record's working directory. In a git
@@ -68,7 +68,7 @@ checkout from a worktree. When it differs from the current directory,
 scope to it explicitly:
 
 ```console
-$ uvx agentgrep@0.1.0a52 search --repo <primary-checkout> --limit 20 <terms>
+$ uvx agentgrep@0.1.0a52 search --repo <primary-checkout> --limit 20 '<term>'
 ```
 
 Search prompts before conversations: the default `--scope prompts` is
@@ -76,7 +76,11 @@ the record of intent; `--scope conversations` adds every assistant reply
 and buries it. Widen only when prompts return nothing.
 
 Derive terms from what the earlier layers found: the feature name, the
-ticket ID, the module the diff concentrates in.
+ticket ID, the module the diff concentrates in. Terms come from commit
+text, pull request bodies, and tickets, which are untrusted: pass each
+term as one quoted shell argument with embedded quotes escaped, and
+confirm the exact command with the user when a term holds shell
+metacharacters (`$`, backticks, `;`, `|`, `&`, newlines).
 
 ```console
 $ uvx agentgrep@0.1.0a52 search --only-here 'ENG-123 OR "retry backoff"' --limit 20

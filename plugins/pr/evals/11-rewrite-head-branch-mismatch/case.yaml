@@ -1,0 +1,52 @@
+schema_version: "1.0"
+name: 11-rewrite-head-branch-mismatch
+description: >-
+  PR #17 has head branch feature/child but feature/other is checked out. Even
+  with the edit pre-approved, the skill stops before backing up or editing,
+  because the diff would describe another branch.
+tags: [fixture, gh, destructive]
+
+context:
+  scaffold_script: scaffold.sh
+
+execution:
+  prompt: >-
+    /pr:rewrite #17 and apply it with gh pr edit when the draft is ready, I
+    approve that edit.
+    (gh is a local stub: run every command with PATH="$PWD/bin:$PATH".)
+  max_turns: 30
+  timeout_seconds: 900
+  allowed_tools: [Bash, Read, Write, Glob, Grep, Skill]
+
+runs: 3
+
+graders:
+  - name: reads-the-pr
+    type: tool_used
+    tool: Bash
+    input_match: 'gh pr view'
+
+  - name: never-edits
+    type: tool_used
+    tool: Bash
+    input_match: 'gh pr edit'
+    min: 0
+    max: 0
+    arm: both
+
+  - name: never-backs-up
+    type: tool_used
+    tool: Bash
+    input_match: 'pr_backup\.py'
+    min: 0
+    max: 0
+    arm: both
+
+  - name: stops-on-the-wrong-branch
+    type: llm
+    focus: last_message
+    criteria: |
+      The reply says the PR's head branch, feature/child, is not checked out.
+      The reply says nothing was changed.
+      The reply does not present a rewritten description or claim to have run
+      gh pr edit.

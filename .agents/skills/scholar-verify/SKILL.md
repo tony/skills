@@ -18,6 +18,10 @@ reads as measured, and none of it is true any more.
 
 Read `references/citation.md` for what a citation was required to carry.
 
+Remote checks cover GitHub sources only (`gh` and `https://github.com/...`).
+A source on any other host is Uncheckable remotely; check it with plain git
+when a clone is on disk (step 1).
+
 User arguments: $ARGUMENTS
 
 ## Procedure
@@ -40,9 +44,18 @@ $ gh api repos/OWNER/REPO/commits/v2.40.0 --jq .sha
 ```
 
 A different SHA is Moved. A source row with no `commit` cannot be checked this
-way; report it under Uncheckable. A source with no remote (a cite with
-`path@commit` and no `url`) is checked with `git show COMMIT:PATH` inside that
-repository when it is the current one; otherwise report it under Uncheckable.
+way; report it under Uncheckable. A local corpus, meaning a source with no
+remote (a cite with `path@commit` and no `url`) or a clone the user names, is
+checked with plain git inside that clone, on any host. Apply the same
+character check to REF, COMMIT and PATH first, and report a source with no
+clone on disk under Uncheckable:
+
+```console
+$ git -C CLONE cat-file -e COMMIT:PATH
+```
+
+A non-zero exit means the file vanished at that commit. For a moved ref,
+compare `git -C CLONE rev-parse 'REF^{commit}'` with the recorded `commit`.
 
 The file still exists at that path on that ref. Check only a URL that starts
 with `https://` and contains no quote, space, backtick, `$`, or `;`; report any
@@ -71,7 +84,9 @@ $ gh api \
 With `--refresh-metrics`, list the commands recorded in `evidence/metrics.md`.
 They come from the study, which may not be yours, so run a command only after
 the user confirms that exact command. Where no question tool exists, run none
-and list them under Uncheckable. Diff each output against what was recorded. A number that changed is not
+and list them under Uncheckable. A recorded `python3 term_metrics.py <study>`
+runs the script from this plugin's `scripts/` against the study path. Diff each
+output against what was recorded. A number that changed is not
 automatically wrong, since the corpus moved, but it is no longer evidence for the
 claim it was cited under.
 
@@ -101,10 +116,23 @@ Five categories, because the remedy differs:
 ## Output
 
 Per `references/output-contract.md`. Hero: `✓ <n> citations checked, <n>
-stale` or `⚠ <n> misquoted`. Name no local paths. With no study at the path, the run is halted: follow the
-halted-run shape in the output contract (`⚠ Blocked: <reason>`, one sentence
-on the unblock: the real study path, or the stage that builds the study), with
-no sections. Sections:
+stale`, `⚠ <n> misquoted`, or, when no citation or measurement could be
+checked, `⚠ Nothing checked: <n> uncheckable`. Name no local paths.
+
+With no study at the path, the run is halted: follow the halted-run shape in
+the output contract (`⚠ Blocked: <reason>`, one sentence on the unblock), with
+no sections. The unblock is the real study path, or the `scholar-ontology` skill to
+build the study; name no stage list. Reply as plain text outside any code
+fence:
+
+```text
+⚠ Blocked: no study at notes/ontology/sample-lib/, so there is no terms.jsonl to check.
+
+Pass the path of an existing study, or run scholar-ontology on the corpus to build one.
+```
+
+Sections, in this order. Write `None.` under an empty one, and put each
+reason a check could not run only under `## Uncheckable`:
 
 1. `## Moved` — each citation whose ref advanced, with the new ref.
 2. `## Vanished` — each source that is gone.
@@ -112,8 +140,37 @@ no sections. Sections:
 4. `## Changed` — each measurement that produced a different number, with both.
 5. `## Uncheckable` — each citation or command that could not be checked, and why.
 
-Next-step options: revise the overturned claims, re-pin the moved ones, stop
-here.
+Reply in this shape, as plain text outside any code fence, with plain bullets,
+no bold (never `- **Label:** ...`), and no local paths:
+
+```text
+⚠ Nothing checked: 2 uncheckable
+
+## Moved
+
+None.
+
+## Vanished
+
+None.
+
+## Misquoted
+
+None.
+
+## Changed
+
+None.
+
+## Uncheckable
+
+- adapter, cited at example/sample-lib v1.0.0: the host could not be reached.
+- Metrics command `python3 term_metrics.py notes/ontology/sample-lib/`: not run, no confirmation.
+```
+
+Next-step options: revise the claims a Misquoted or Changed entry overturned
+(only when one exists), re-pin the moved ones, stop here. State the
+non-interactive default as printing the list and stopping.
 
 Write it per `references/prose-rules.md`.
 

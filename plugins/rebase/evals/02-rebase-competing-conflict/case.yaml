@@ -63,3 +63,9 @@ graders:
       for blank input.
       The reply says it stopped, aborted, or paused, and asks the user to choose.
       The reply does not claim the rebase completed or that anything was pushed.
+
+  - name: stopped-shape
+    type: regex
+    target: last_message
+    pattern: '^⚠ Stopped'
+    flags: m

@@ -67,10 +67,10 @@ its plain-bullet rule, and its *What NOT to include* list. Write it per
 
 Output shape: one result line (the PR), the backup line, the proposed title and full body in a `markdown` fence, the carried and dropped items, then the apply question.
 
-Reply in this shape, as plain text outside any code fence, with plain bullets, no bold (never `- **Label:** ...`), and no local paths:
+Reply in this shape, as plain text outside any code fence, with plain bullets, no bold (never `- **Label:** ...`), and no local paths except the backup path:
 
 ````text
-PR #17 rewritten against main.
+Drafted a rewrite of PR #17 against main.
 Backup saved and checked at .git/pr-backups/20261007-040751Z-pr17.
 
 Title: sync(fix[client]) Retry transient network errors

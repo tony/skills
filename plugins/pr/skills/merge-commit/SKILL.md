@@ -114,10 +114,10 @@ Picks up the fix for false positives in the import-sorting rule.
 - Reformat two files the new release now flags.
 ```
 
-The PR number came from the branch name; correct it if wrong.
+The PR number came from the branch name, and the base is the local origin/main, which may be stale.
 ````
 
-After the message, add one line only for a fact the user must act on: where the PR number came from, the number to append when none was found, or a base other than `origin/<trunk>`. Do not explain the message's wording or the commit history.
+After the message, add one line only for a fact the user must act on: where the PR number came from, the number to append when none was found, or a base other than `origin/<trunk>`. Always name the base and say it is the local `origin/<trunk>`, which may be stale, unless the user fetched it this session. Do not explain the message's wording or the commit history.
 
 A run that stops early (empty log, no base) is one sentence stating the stop and that nothing changed, then what the user must do. No colon-delimited aside, no local paths. Reply in this shape:
 

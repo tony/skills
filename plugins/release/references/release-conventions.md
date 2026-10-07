@@ -17,14 +17,14 @@ contract lives in `/release:cut`.
 
 Scan the repo root for manifests, in order of precedence:
 
-- `pyproject.toml` — `[project] version`. Workspace repos may repeat
+- `pyproject.toml`: `[project] version`. Workspace repos may repeat
   the version in `packages/*/pyproject.toml`.
-- `src/<pkg>/__about__.py` (or `<pkg>/__about__.py`) — a `__version__`
+- `src/<pkg>/__about__.py` (or `<pkg>/__about__.py`): a `__version__`
   string. Many projects re-export it from `__init__.py`
   (`from .__about__ import __version__`); the re-export needs no edit.
-- `package.json` — `version`, possibly per-package in a workspace
+- `package.json`: `version`, possibly per-package in a workspace
   (`packages/*/package.json`).
-- `Cargo.toml` — `[package] version`.
+- `Cargo.toml`: `[package] version`.
 - A bare `VERSION` file.
 
 Then find stray version literals the manifest scan misses:
@@ -67,14 +67,14 @@ commit as the version bump.
 Classify the project's scheme from its current version and recent tags
 (`git tag --sort=-creatordate | head -20`):
 
-- **PEP 440 prerelease track** — `0.0.1a35`, `0.1.0a41`. Increments:
+- **PEP 440 prerelease track**: `0.0.1a35`, `0.1.0a41`. Increments:
   next prerelease (`a35` → `a36`), segment promotion (`a` → `b` →
   `rc`), graduation to final (`0.0.1a35` → `0.0.1`).
-- **Stable semver** — `0.1.9`, `1.74.0`. Increments: patch
+- **Stable semver**: `0.1.9`, `1.74.0`. Increments: patch
   (`0.1.9` → `0.1.10`), minor (`0.1.9` → `0.2.0`), major
   (`0.1.9` → `1.0.0`), or starting a prerelease series for the next
   version (`0.1.9` → `0.2.0a0`).
-- **npm prerelease** — `0.1.0-next.11` → `0.1.0-next.12`, or
+- **npm prerelease**: `0.1.0-next.11` → `0.1.0-next.12`, or
   graduation to `0.1.0`.
 
 Mirror the vocabulary the project has actually used in its tags. Do

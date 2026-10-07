@@ -3,8 +3,9 @@
 
 Usage: run_tier.py --prompt-file FILE [--timeout SECONDS|none] -- BINARY ARGS...
 
-The prompt file's text is appended to the command as its last argument; stdin
-is closed. Output keys: exit_code (null on timeout), class, elapsed, stdout,
+The prompt file's text is appended to the command as its last argument; a
+prompt over MAX_ARG_BYTES is replaced by an instruction to read the file.
+Stdin is closed. Output keys: exit_code (null on timeout), class, elapsed, stdout,
 stderr.
 """
 
@@ -20,6 +21,8 @@ import sys
 import time
 from pathlib import Path
 from typing import cast
+
+MAX_ARG_BYTES = 100_000
 
 CREDIT_PATTERNS = (
     "RESOURCE_EXHAUSTED",
@@ -79,9 +82,17 @@ def classify(*, exit_code: int | None, timed_out: bool, stdout: str, stderr: str
     return "crash"
 
 
-def run(command: list[str], prompt: str, timeout: float | None) -> dict[str, object]:
-    """Run command with prompt appended; kill the whole process group on timeout."""
+def run(
+    command: list[str], prompt: str, timeout: float | None, prompt_file: Path | None = None
+) -> dict[str, object]:
+    """Run command with prompt appended; kill the whole process group on timeout.
+
+    A prompt over MAX_ARG_BYTES cannot be one argument (Linux caps it near
+    128 KiB), so the CLI is told to read ``prompt_file`` instead.
+    """
     start = time.monotonic()
+    if prompt_file is not None and len(prompt.encode()) > MAX_ARG_BYTES:
+        prompt = f"Read the file {prompt_file.resolve()} and follow its instructions exactly."
     try:
         proc = subprocess.Popen(  # noqa: S603
             [*command, prompt],
@@ -130,7 +141,7 @@ def main(argv: list[str] | None = None) -> int:
         parser.error("missing command after --")
     raw_timeout = cast("str", args.timeout)
     timeout = None if raw_timeout == "none" else float(raw_timeout)
-    result = run(command, prompt_file.read_text(encoding="utf-8"), timeout)
+    result = run(command, prompt_file.read_text(encoding="utf-8"), timeout, prompt_file)
     json.dump(result, sys.stdout)
     _ = sys.stdout.write("\n")
     return 0

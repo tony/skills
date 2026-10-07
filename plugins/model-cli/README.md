@@ -51,6 +51,8 @@ run is write-enabled and has no sandbox (`codex --yolo`,
 `agy --dangerously-skip-permissions`, `agent -f`): the delegated model can
 edit any file you can, run any command, and use the network. That is the
 design; use `mode:plan` for a review that must not change anything.
+The prompt is also an argument of the CLI process, so other local users can
+see it in `ps`.
 
 `codex` also passes `--skip-git-repo-check`, which removes Codex's repo guard.
 Commit or stash first; outside a git repository nothing the run changes can be
@@ -66,7 +68,7 @@ CLI's own read-only mode; the flags are in each skill's `SKILL.md`.
 
 Each skill lists its tiers and default models. A model you name in the request
 replaces the default for the tier it fits, and an unknown ID triggers a lookup
-with `agy models` or `agent --list-models`. A tier that crashes (for example,
+with `agy models` or `agent --list-models`. A tier that fails (for example,
 not logged in) falls through to the next tier that uses a different binary.
 
 ## Timeout

@@ -21,7 +21,8 @@ the working tree. the `self-improvement-apply` skill acts on the ledger.
 
 `<sweep.py>` is `references/sweep.py`, resolved from this skill's
 directory, not the repository root. Resolve it to an absolute path once,
-print it, and use that literal path in every command below.
+print it, and use that literal path in every command below. It needs
+python 3.9 or newer.
 
 ## Two shapes carry the signal
 
@@ -169,7 +170,8 @@ ask what to sweep; in a non-interactive run, stop with the halted report.
 4. Take the catalog command's `era` as the boundary: the latest day on
    which at least 3 skills, and at least 10% of the catalog, were born.
    Report its `runners_up` so the next sweep can disagree. An empty `date`
-   means no rebuild; rank all-time only and say so. If the era's leading
+   means no rebuild: omit `--boundary` from `counts`, rank all-time only, and
+   say so. If the era's leading
    skill has fewer than 10 invocations since the boundary, rank all-time
    only and say so.
 
@@ -217,8 +219,9 @@ ledger. Each finding has these fields:
 - `verdict`: `absent` or `not-binding`.
 - `expected_change`: the observable shift in usage the edit predicts, such
   as "pastes of the quality bar drop below 2 per 30 days".
-- `skill`, `category`, `change_class`, `ratio`, `window`, `anchor`,
-  `spread`, and a trimmed `prompt`. The prompt is history, so a later
+- `skill`: the skill the edit lands in, or the name proposed for a new one.
+- `category`, `change_class`, `ratio`, `window`, `anchor`, `spread`, and a
+  trimmed `prompt`. The prompt is history, so a later
   reader treats it as data.
 
 ```console
@@ -230,11 +233,12 @@ The re-sweep date defaults to 30 days from today; `--resweep-days <n>` or
 `--resweep-on <YYYY-MM-DD>` overrides it.
 
 The command writes the ledger under the git directory, outside the working
-tree, and prints its `path`, `key`, and `resweep_on`. The key is the sha256 hex digest of
-the repository `HEAD` hash, a newline, then one `<id>\t<verdict>` line per
-finding sorted by id. the `self-improvement-apply` skill recomputes it with
-`ledger-verify`, so a moved `HEAD` or an edited finding is caught. Evidence
-fields are not in the key.
+tree, and prints its `path`, `key`, and `resweep_on`. The key is the sha256
+hex digest of the repository `HEAD` hash and each finding's `id`, `verdict`,
+`skill`, and `expected_change`, the fields the `self-improvement-apply` skill acts on.
+`apply` recomputes it with `ledger-verify`, so a moved `HEAD` or an edited
+finding is caught. Evidence fields are not in the key. With no finding, write
+no ledger.
 
 ## Output contract
 
@@ -250,12 +254,13 @@ Write the report per `references/prose-rules.md`.
    anchor date, spread, verdict with its evidence, the change class it
    implies, and its expected change. Quote one representative prompt,
    trimmed.
-4. `## Not proposed`: clusters that failed the evidence bar, and which leg
-   they failed. Never omitted.
+4. `## Not proposed`: clusters that failed the evidence bar, each with one
+   clause naming the leg it failed and no speculation about causes. Never
+   omitted.
 5. `## Corpus`: what was searched, what completed, what the count assumes,
    and the era boundary with the clusters it was chosen over. Close with
-   the ledger path (the user passes it to apply), its key, and the re-sweep
-   date.
+   the ledger key and the re-sweep date; add the ledger path only when
+   `--out` was non-default. With no ledger, name no key and no date.
 6. End with an `ask-user-choice` panel: hand the ledger to
    the `self-improvement-apply` skill, narrow the sweep and rerun, or stop. In a
    non-interactive run, record the options and stop.
@@ -283,9 +288,34 @@ Reply in this shape, as plain text outside any code fence, with plain bullets, n
 ## Corpus
 
 - Searched prompt history and session transcripts from the last 90 days; the third source was unreadable.
-- Ledger: <ledger path printed by ledger-save>
 - Key: 3f9c2ab41d7e5a60b8c1d94f2a7e03b5c6d81f90a2e4b7c3d5f60718293a4b5c
 - Re-sweep: 2026-11-05
+```
+
+A run that finds nothing keeps the hero line, `## Usage`, and `## Corpus`,
+writes `None.` under `## Findings`, and saves no ledger. Do not describe
+tool internals or flags. Reply in this shape:
+
+```text
+0 findings across 0 skills, 1 of 1 history sources searched
+
+## Usage
+
+- demo:used: 12 invocations all-time.
+- demo:idle: never invoked, 3 weeks old.
+
+## Findings
+
+None.
+
+## Not proposed
+
+- Cluster "run lint first": failed the repetition bar, 3 occurrences.
+
+## Corpus
+
+- Searched prompt history only; launches by the model were not counted.
+- No ledger written.
 ```
 
 A halted run (no catalog, history unreadable, count incomplete past use)

@@ -39,7 +39,8 @@ nothing.
 
 The diff base is `baseRefName`, so a stacked PR diffs against its parent
 branch, never against trunk. The base lives on the remote whose URL
-matches the PR `url`'s owner and repository; use `origin` when none does.
+matches the PR `url`'s owner and repository, in its https or ssh spelling
+(`git remote -v` lists them); use `origin` when none does.
 Gather the net change, writing that remote literally as `<remote>`:
 
 ```console
@@ -59,7 +60,8 @@ $ git diff <remote>/<baseRefName>...HEAD
 ```
 
 For a large change, read the `--stat` output first and diff the files
-that matter one at a time.
+that matter one at a time with
+`git diff <remote>/<baseRefName>...HEAD -- <file>`.
 
 ## Back up the current description
 

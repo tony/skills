@@ -56,7 +56,7 @@ named directories.
 ### 3. Inventory every pin site
 
 Both kinds, per the pin-sites reference: `required_version` in every
-module, and the pins outside the configuration (`.terraform-version`,
+module (the reference's `git grep` lists them across `.tf` and `.tofu`), and the pins outside the configuration (`.terraform-version`,
 `.tool-versions`, `mise.toml`, workflow files, image tags, devcontainer
 configuration, Makefile variables).
 

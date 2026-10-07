@@ -7,7 +7,7 @@ before that ends is a cost. The full sweep is exhaustive because its
 reader is about to touch the code; the brief is ruthless because its
 reader has just said "huh".
 
-Script paths here (`../scripts/...`) resolve from this file's directory; print the absolute path once and write it literally in each command.
+Script paths here (`../scripts/...`) resolve from this file's directory, not the repository: print the absolute path once and write it literally in each command.
 
 ## Contents
 

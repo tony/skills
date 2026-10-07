@@ -46,3 +46,16 @@ def test_bare_www_url_fails_the_brief_gate(
     (tmp_path / "brief.md").write_text("See www.example.com for detail.\n", encoding="utf-8")
     assert term_metrics.main([str(tmp_path), "--check-brief"]) == 1
     assert "URL belongs in evidence/" in capsys.readouterr().out
+
+
+def test_type_row_needs_no_citation_but_a_member_does(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """The term gate exempts ``kind: type`` rows from citing, never a member row."""
+    rows = [
+        '{"term": "role", "definition": "names a doer", "kind": "type", "parent": "root"}',
+        '{"term": "adapter", "definition": "wraps a client", "kind": "role", "parent": "role"}',
+    ]
+    (tmp_path / "terms.jsonl").write_text("\n".join(rows) + "\n", encoding="utf-8")
+    assert term_metrics.main([str(tmp_path), "--check-terms"]) == 1
+    assert capsys.readouterr().out.splitlines() == ["adapter: no citation"]

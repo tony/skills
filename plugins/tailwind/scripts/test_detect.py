@@ -21,6 +21,15 @@ CASES: list[tuple[str, str, bool]] = [
     ("margin", '<a className="!me-4">', True),
     ("margin", '<a className="mx-auto px-2">', False),
     ("margin", '<a className="mt-4 my-2 m-4">', False),
+    ("vmargin", '<div className="flex flex-col gap-3"><p className="mt-4">', True),
+    ("vmargin", '<ul className="md:grid grid-cols-2"><li className="-mb-2">', True),
+    ("vmargin", '<div className="flex gap-3"><p className="mt-4">', False),
+    ("vmargin", '<div className="flex-col"><p className="mt-auto my-auto">', False),
+    ("vmargin", '<div className="grid-cols-2"><p className="mt-4">', False),
+    ("margin-in-gap", '<div className="flex gap-3"><a className="me-4">', True),
+    ("margin-in-gap", '<div className="flex-col gap-3"><a className="my-2">', True),
+    ("margin-in-gap", '<div className="flex gap-3"><a className="my-2">', False),
+    ("margin-in-gap", '<div className="flex"><a className="me-4">', False),
     ("margin", '<a className="some-ml-2">', False),
     ("gap", '<div className="flex gap-3">', True),
     ("gap", '<div className="flex gap-x-[3px]">', True),
@@ -111,3 +120,17 @@ def test_cli_exit_codes(tmp_path: Path) -> None:
         check=False,
     )
     assert miss.returncode == 1
+
+
+def test_margin_in_gap_caps_hits(tmp_path: Path) -> None:
+    (tmp_path / "a.tsx").write_text('<div className="flex gap-2">' + '<a className="me-4"/>\n' * 80)
+    script = Path(__file__).with_name("detect.py")
+    run = subprocess.run(
+        [sys.executable, str(script), "margin-in-gap", str(tmp_path)],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert run.returncode == 0
+    assert run.stdout.count("\n") == 50
+    assert "stopped at 50 hits" in run.stderr

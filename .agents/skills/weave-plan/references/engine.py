@@ -165,7 +165,7 @@ class EngineError(Exception):
 
 def stamp() -> str:
     """Return the current UTC time as ``YYYY-MM-DDTHH:MM:SSZ``."""
-    return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")  # noqa: UP017 - 3.9
+    return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
 def emit(doc: Json) -> None:
@@ -652,7 +652,7 @@ def _touched(top: str, pre_tree: str, post_tree: str) -> dict[str, str]:
     fields = git_z(
         top, "diff-tree", "-r", "--no-renames", "--name-status", "-z", pre_tree, post_tree
     )
-    return {path: status for status, path in zip(fields[0::2], fields[1::2], strict=True)}
+    return {path: status for status, path in zip(fields[0::2], fields[1::2])}
 
 
 def _guard_of(session: Json) -> Json:
@@ -684,7 +684,7 @@ def guard_check(session_dir: Path, label: str = "check") -> Json:
         seen = json.loads(last.read_text(encoding="utf-8"))
         if seen["tree"] == post_tree and seen["head"] == head:
             return {**seen["result"], "repeat": True}
-    vid = f"{label}-{datetime.now(timezone.utc).strftime('%H%M%S')}-{random.randbytes(2).hex()}"  # noqa: UP017
+    vid = f"{label}-{datetime.now(timezone.utc).strftime('%H%M%S')}-{random.randbytes(2).hex()}"
     vdir = gdir / vid
     vdir.mkdir(mode=0o700)
     touched = _touched(top, pre["tree"], post_tree)
@@ -916,7 +916,7 @@ def init_session(  # noqa: PLR0913
     root = aip_root()
     repo_path = root / "repos" / repo_dir
     session_id = (
-        f"{datetime.now(timezone.utc).strftime('%Y%m%d-%H%M%SZ')}"  # noqa: UP017 - 3.9
+        f"{datetime.now(timezone.utc).strftime('%Y%m%d-%H%M%SZ')}"
         f"-{os.getpid()}-{random.randbytes(2).hex()}"
     )
     session_dir = repo_path / "sessions" / command / session_id
@@ -1622,9 +1622,9 @@ def parse_judge(text: str, label_map: Mapping[str, str] | None = None) -> Json:
             continue
         values = t.cast("list[float]", nums)
         if label.lower().startswith("total"):
-            totals = dict(zip(columns, values, strict=True))
+            totals = dict(zip(columns, values))
             continue
-        for col, num in zip(columns, values, strict=True):
+        for col, num in zip(columns, values):
             if num > 10:  # noqa: PLR2004
                 errors.append(f"{label} for {col} is above 10")
             scores[col][label] = num
@@ -1754,7 +1754,7 @@ def _create_worktrees(
         return {"ok": True, "worktrees": made}
     require_safe_toplevel(top)
     base = base or ("head" if session.get("mutating") else "pre")
-    when = when or datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S")  # noqa: UP017 - 3.9
+    when = when or datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S")
     for name in participants:
         path = session_dir / "worktrees" / name
         git(top, "worktree", "remove", "--force", str(path), check=False)

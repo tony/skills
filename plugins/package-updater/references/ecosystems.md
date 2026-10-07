@@ -77,21 +77,25 @@ $ ncu
 `pnpm outdated` reads the installed tree instead and reports a different
 set; prefer `ncu` so discovery and apply agree on what "outdated" means.
 
-**Apply** the manifest bump, then install:
+**Apply** the in-range manifest bump, then install. `--target minor`
+keeps every major out of the bulk refresh (verified: a `^6.0.0` range
+moves to `^6.3.1`, not `^7`); `ncu` takes majors by default. A major is
+a named bump with its own commit, applied with `ncu -u --target latest
+<name>`:
 
 ```console
-$ ncu -u
+$ ncu -u --target minor
 ```
 
 ```console
 $ pnpm install
 ```
 
-`ncu -u` acts on the manifest in the current directory. Confirm the
+`ncu` acts on the manifest in the current directory. Confirm the
 workspace options with `ncu --help`, or recurse to the members:
 
 ```console
-$ pnpm --recursive exec ncu -u
+$ pnpm --recursive exec ncu -u --target minor
 ```
 
 **Apply** an in-range refresh, which moves transitives without touching
@@ -101,7 +105,7 @@ any manifest:
 $ pnpm update
 ```
 
-`ncu -u` edits `package.json` and lands as a dependency bump; `pnpm
+`ncu -u --target minor` edits `package.json` and lands as a dependency bump; `pnpm
 update` edits only the lockfile and lands as an in-range transitive
 refresh. They are separate commits.
 
@@ -243,12 +247,12 @@ to date.
 The cooldown check compares a release's publication time with the
 window. Read the time from the registry in this run; an empty result or
 a non-zero exit means the version is not published, so stop. Each
-command prints one timestamp.
+command prints one timestamp (PyPI's is the earliest file upload).
 
 PyPI, for a Python package or a tool published there (uv):
 
 ```console
-$ curl -fsS https://pypi.org/pypi/<name>/<version>/json | jq -r '.urls[0].upload_time_iso_8601'
+$ curl -fsS https://pypi.org/pypi/<name>/<version>/json | jq -r '[.urls[].upload_time_iso_8601] | min'
 ```
 
 npm, for any Node package:

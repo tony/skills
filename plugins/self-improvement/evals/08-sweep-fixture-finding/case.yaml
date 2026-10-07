@@ -1,0 +1,49 @@
+schema_version: "1.0"
+name: 08-sweep-fixture-finding
+description: >-
+  A fixture history in which 8 of 12 runs of demo:used repeat the same
+  trailing instruction across 3 projects after the skill's birth. The sweep
+  reports one finding with a ratio and saves a ledger.
+tags: [fixture]
+
+context:
+  scaffold_script: scaffold.sh
+
+execution:
+  prompt: >-
+    /self-improvement:sweep. Use history.jsonl in this directory as the prompt
+    history, and treat the skill-tool channel as unavailable on this host.
+  max_turns: 40
+  timeout_seconds: 900
+  allowed_tools: [Bash, Read, Write, Glob, Grep, Skill]
+
+runs: 3
+
+graders:
+  - name: reports-one-finding-with-ratio
+    type: llm
+    focus: last_message
+    criteria: >-
+      The reply reports one finding on demo:used about the repeated "only
+      touch *.log files" instruction, with a ratio of 8 of 12 runs (about 67
+      percent), a spread of 3 projects, and a verdict of absent. It states an
+      expected change.
+
+  - name: saves-ledger
+    type: tool_used
+    tool: Bash
+    input_match: 'ledger-save'
+    min: 1
+
+  - name: no-bold-lead-ins
+    type: regex
+    target: last_message
+    match: not_contains
+    pattern: '^\s*-\s+\*\*'
+    flags: m
+
+  - name: edits-nothing
+    type: tool_used
+    tool: Edit
+    min: 0
+    max: 0

@@ -57,8 +57,7 @@ tag it was cut for.
 
 ## Phase 1: Preflight
 
-1. **Flags.** If `--push-tag` is present without `--tag`, stop now per
-   the Safety Contract, before any other step.
+1. **Flags.** Apply the `--push-tag` refusal before any other step.
 2. **Version argument.** The first non-flag argument is the version
    (accept with or without a leading `v`; strip it — files and CHANGES
    use the bare version, only the tag carries the prefix). If no version
@@ -67,11 +66,13 @@ tag it was cut for.
 3. **Clean tree.** `git status --porcelain` must be empty. If not,
    stop and show the dirty paths.
 4. **On trunk.** Detect trunk via
-   `git symbolic-ref refs/remotes/origin/HEAD` (fall back to
-   `main`/`master` existence). If the current branch is not trunk,
+   `git symbolic-ref refs/remotes/<remote>/HEAD` (`<remote>` is trunk's
+   upstream remote, `origin` by default; fall back to `main`/`master`
+   existence). If the current branch is not trunk,
    stop and ask; releases are normally cut from trunk, but the user
    may confirm a maintenance branch. Without `AskUserQuestion`, stop.
-5. **Up to date.** `git pull --ff-only` (skip if no remote).
+5. **Up to date.** `git pull --ff-only` (skip if no remote). It fails on
+   a branch with no upstream or a diverged one; stop and report that.
 6. **Tag name.** Take the prefix from the repo's latest tags
    (`git tag --sort=-creatordate | head -5`); use `v` when there are none.
    `<tag>` below is that prefix plus the version.
@@ -79,8 +80,7 @@ tag it was cut for.
    The new version must sort after it under the project's scheme
    (see the conventions reference). If `git tag -l '<tag>'` already exists, stop.
    With `--push-tag`, also stop if this prints anything, because the
-   remote already has the tag (`<remote>` is trunk's upstream remote,
-   `origin` by default):
+   remote already has the tag:
 
    ```console
    $ git ls-remote --tags <remote> refs/tags/<tag>
@@ -116,16 +116,17 @@ Following the conventions reference, record:
    block above, as the conventions reference specifies. Write the lead
    per `../../references/prose-rules.md`. If the unreleased section is
    empty (placeholder only), stop and confirm with the user before
-   cutting an empty release.
+   cutting an empty release; the stop shape is in Output.
 4. **MIGRATION.** If present, retitle its unreleased/`.x` headings to
    the concrete version per the file's precedent.
 
 ## Phase 4: Verify
 
 Run the project's quality gates discovered in Phase 2. All must pass
-before committing. If a gate fails, stop and report the failure —
-never commit a release on a red gate, and never weaken a gate to get
-to green. Compare `git status --porcelain` with the clean Phase 1 tree and remove
+before committing. If a gate fails, stop and report the failure.
+Never commit a release on a red gate, and never weaken a gate to get
+to green. The edits stay in the tree and a re-run of `cut` is refused,
+so the stop carries the recovery from Output. Compare `git status --porcelain` with the clean Phase 1 tree and remove
 only the new untracked paths the gates created (bytecode caches, build
 output) before Phase 5, so the Phase 6 tree check passes.
 
@@ -189,9 +190,11 @@ Never name local or temp paths. A completed run ends with these, in order:
 1. Hero line: `✓ Cut <tag>` plus whether the release commit and the tag
    were created and whether each was pushed. Name the tag when one was
    created, for example `tag v0.4.0 created locally, nothing pushed`.
-2. `## Release summary`: old to new version, CHANGES section dated, next
-   unreleased target, one fragment per fact. Nothing else: no gate output,
-   cleanup, clauses about how the changelog is styled, or skill mechanics.
+2. `## Release summary`: three bullets, each a bare fragment: old to new
+   version, CHANGES section date, next unreleased target. Nothing else: no
+   gate output, cleanup, sentence about files not touched (a skipped
+   lockfile), or skill mechanics, and no "following", "already uses", or
+   "because" clause about how the changelog is styled.
 3. `## Files changed`: the files in the release commit, with no sentence
    about files left unchanged.
 4. `## Next steps`: the exact `git tag -a` / `git push --no-follow-tags` /
@@ -211,7 +214,9 @@ Reply in this shape, as plain text outside any code fence, with plain bullets, n
 
 ## Release summary
 
-- 0.3.2 to 0.4.0, CHANGES dated 2026-10-05, next unreleased target 0.4.x.
+- Version 0.3.2 to 0.4.0
+- CHANGES section dated 2026-10-05
+- Next unreleased target 0.4.x
 
 ## Files changed
 
@@ -224,11 +229,9 @@ Reply in this shape, as plain text outside any code fence, with plain bullets, n
 - git push --no-follow-tags origin refs/tags/v0.4.0
 ```
 
-A stopped run uses the same plain-text shape, for example after a failed
-commit. The edits stay staged and give no discard command. A re-run of
-`cut` is refused (dirty tree, and the manifest already reads the new
-version), so the recovery is to commit, then run the authorized flag steps
-from `Next steps` yourself:
+A stopped run uses the same plain-text shape. After a failed commit the
+edits stay staged; offer no discard command, because the recovery is to
+commit and then run the authorized flag steps from `Next steps` yourself:
 
 ```text
 Stopped: the release commit failed (signing error), so no tag was created and nothing was pushed.
@@ -236,6 +239,27 @@ Stopped: the release commit failed (signing error), so no tag was created and no
 - Fix the commit error, then commit the staged release files with the subject "Tag v0.4.0".
 - Then run the tag and push commands you wanted yourself:
   git tag -a v0.4.0 -m "v0.4.0", then git push --no-follow-tags.
+```
+
+After a red gate the edits are unstaged in the tree, and `cut` refuses a
+re-run on a dirty tree. Give both exits and no gate output. The restore
+command lists the release files this run edited and resets index and tree
+to `HEAD`; print it for the user, never run it:
+
+```text
+Stopped: the test suite failed after the version edits, so nothing was committed, tagged or pushed.
+
+- To resume: fix the failure, commit the release files with the subject "Tag v0.4.0", then run the tag and push commands you wanted yourself.
+- To start over: git restore --source=HEAD --staged --worktree -- pyproject.toml CHANGES.md, then re-run /release:cut 0.4.0 --tag.
+```
+
+An empty Unreleased section is a stop with two exits and no edits:
+
+```text
+Stopped: the Unreleased section has no entries, so I did not cut an empty 0.4.0 release and the tree is unchanged.
+
+- To release anyway, re-run the same command and say to go ahead with an empty release.
+- Otherwise add the notes under the Unreleased heading and commit them, then re-run.
 ```
 
 Then, unless running in plan mode, `AskUserQuestion` may offer only

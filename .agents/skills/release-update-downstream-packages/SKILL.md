@@ -29,8 +29,8 @@ the user names at the gate; opening pull requests is out of scope.
 
 ## Phase 1: Inputs and Pre-flight
 
-1. **Package** — the first non-flag argument. If missing, ask.
-2. **Version** — the second non-flag argument, or the latest published
+1. **Package**: the first non-flag argument. If missing, ask.
+2. **Version**: the second non-flag argument, or the latest published
    version from the package index (PyPI:
    `https://pypi.org/pypi/<package>/json`; npm: `npm view <package> version`;
    crates.io: `https://crates.io/api/v1/crates/<package>`; Go:
@@ -50,9 +50,9 @@ the user names at the gate; opening pull requests is out of scope.
    For any other ecosystem, or if a check cannot run, stop and say what
    could not be confirmed and what the user must supply; do not describe
    the environment.
-3. **Workspace roots** — from `--roots` globs. If not given, ask the user
+3. **Workspace roots**: from `--roots` globs. If not given, ask the user
    which directories hold their checkouts; assume no layout.
-4. **Sibling packages** — if the package is developed in a workspace repo
+4. **Sibling packages**: if the package is developed in a workspace repo
    that publishes several packages versioned together, list the siblings
    (from the source repo's manifests or the index). They bump together.
 
@@ -82,23 +82,23 @@ For each hit, record:
 
 - **Worktree?** A `.git` that is a file marks a linked worktree; skip it,
   the primary checkout is found on its own.
-- **Trunk** — `git symbolic-ref refs/remotes/origin/HEAD`, falling
+- **Trunk**: `git symbolic-ref refs/remotes/origin/HEAD`, falling
   back to whichever of `main`/`master` exists.
-- **Owner** — from `git remote get-url <remote>`, the upstream remote of
+- **Owner**: from `git remote get-url <remote>`, the upstream remote of
   trunk (`origin` by default). Group repos by owner
   org; the user confirms which orgs are in scope at the gate.
-- **Current pin(s)** — the pinned version(s) of the package and any
+- **Current pin(s)**: the pinned version(s) of the package and any
   siblings in the manifest.
-- **Source overrides** — dependency sources that shadow the index (for
+- **Source overrides**: dependency sources that shadow the index (for
   example `[tool.uv.sources]` entries, npm `file:`/`link:`/`git:` specs).
   Remove the override so the published package is used, as its own commit
   before the bump.
-- **Resolver cutoffs** — a cooldown setting that hides fresh releases (uv's
+- **Resolver cutoffs**: a cooldown setting that hides fresh releases (uv's
   `exclude-newer` is one). Read the tool's current documentation for its
   key names and per-package exemption syntax. If one is set, check that the
   package and every sibling are exempt; a missing entry blocks the fresh
   release at lock time, so add it as its own commit before the bump.
-- **Gates** — the repo's own quality checks, from its AGENTS.md / CLAUDE.md.
+- **Gates**: the repo's own quality checks, from its AGENTS.md / CLAUDE.md.
   Note when none are documented.
 - **Dirty?** Repos with uncommitted changes get reported and skipped
   unless the user says otherwise.
@@ -117,6 +117,17 @@ Present the plan before mutating anything:
   `gh cache delete --all` per pushed repo, and the failed-run `gh run rerun`
   (at most once per run).
 
+Print the plan in this shape, as plain text with plain bullets and no bold:
+
+```text
+Plan: example-pkg 1.4.0 → 1.5.0, pushes on (--push)
+
+- app-one (acme) on main: pin 1.4.0 → 1.5.0, prep commit removing the uv source override, gates: make test
+- app-two (acme) on main and release/1.x: pin 1.4.0 → 1.5.0, no prep, gates: none documented
+- Skipped: app-three (dirty tree), tools-fork (owner outside scope)
+- Outside the working trees: uv cache clean, gh cache delete --all per pushed repo, gh run rerun --failed at most once per run
+```
+
 Ask the user via `ask-user-choice` which owner orgs are in scope and
 whether any repo needs a branch override or an **additional** long-lived
 branch beyond trunk (the user names it; the same per-repo procedure runs on
@@ -130,50 +141,51 @@ Repos are independent: parallelize with background agents batched by owner
 org (up to 4 batches), or run sequentially. Each repo, on each of its
 confirmed branches:
 
-0. **Fresh resolver cache** — once, after the gate and before the first
+0. **Fresh resolver cache**: once, after the gate and before the first
    lock, clear the package manager's resolver cache so every lock resolves
    against the newly published files (uv: `uv cache clean --force`, which
    clears a global cache).
-1. **Sync** — `git checkout <branch> && git pull --ff-only`.
+1. **Sync**: `git checkout <branch> && git pull --ff-only`.
 2. **Prep commits** (each on its own, only if discovery flagged it):
    - Remove the source override so the repo consumes the published
      index package. Commit it alone, in the repo's own commit style.
    - Add missing cooldown exemptions in the tool's documented syntax,
      keeping the file's ordering. Commit alone, with a body noting the
      cooldown would otherwise block the fresh release.
-3. **Bump pins** — replace the pinned version for the package and each
+3. **Bump pins**: replace the pinned version for the package and each
    sibling in the manifest, one name at a time, with the project's own
    tooling where it has some. A text edit must anchor on the name and a
    version boundary so `0.1.1` never rewrites `0.1.10`, `0.1.1a1`, or another
-   package's pin; escape `.` in the version and name. For `pyproject.toml`
-   `==` pins with GNU coreutils:
+   package's pin. For `pyproject.toml`, requirements files, and
+   `package.json`, run the bundled script once per name. It matches the name
+   case-insensitively with `-`, `_`, and `.` interchangeable, handles pins
+   inside one-line arrays and extras, and rewrites only an exact `==`
+   version (`package.json`: the quoted version, with an optional `^` or `~`).
+   Resolve `references/bump_pin.py` against the directory of this SKILL.md
+   (the path it was read from) and write that absolute path literally in the
+   command; shell variables do not persist between Bash calls. Never show
+   that path in the reply:
 
    ```console
-   $ sed -i -E 's/^([[:space:]]*"<name>(\[[^]]*\])?[[:space:]]*==[[:space:]]*)<old-version>([^0-9A-Za-z.+_-]|$)/\1<new-version>\3/' pyproject.toml
+   $ python3 references/bump_pin.py pyproject.toml <name> <old-version> <new-version>
    ```
 
-   On BSD/Darwin, `-i` requires an explicit backup suffix, and an
-   empty one edits in place:
+   It prints the count of pins changed. A non-zero exit means no pin matched
+   and the file is untouched: edit the dependency line by hand or use the
+   package manager's own install command. Review `git diff`: only the
+   intended pins changed.
 
-   ```console
-   $ sed -i '' -E 's/^([[:space:]]*"<name>(\[[^]]*\])?[[:space:]]*==[[:space:]]*)<old-version>([^0-9A-Za-z.+_-]|$)/\1<new-version>\3/' pyproject.toml
-   ```
-
-   Review `git diff`: only the intended pins changed. For other manifests or
-   pin syntax, edit the matching dependency line or use the package
-   manager's own install command.
-
-4. **Re-lock** — the ecosystem's lock command (`uv lock`,
+4. **Re-lock**: the ecosystem's lock command (`uv lock`,
    `npm install --package-lock-only`, ...). On a resolution failure,
    clear the resolver cache and retry once.
 5. **Prerelease warnings mean stop.** If locking warns about prerelease
    resolution or would need `--prerelease` flags or config to accept the
    version, add none of them; halt this repo and report. The cause is
    upstream: a stale cache, a missing cooldown exemption, or a bad publish.
-6. **Gates** — before any push, run the repo's own quality checks (from
+6. **Gates**: before any push, run the repo's own quality checks (from
    its AGENTS.md / CLAUDE.md), as the plan listed them. On a failure, halt this repo and report. A red local gate must
    not reach trunk. Parallel agents run exactly the scope the plan names.
-7. **Commit** — mirror the repo's own previous bump commits for this
+7. **Commit**: mirror the repo's own previous bump commits for this
    package (`git log --oneline --grep '<package>'`). Fallback subject,
    version-arrow form:
 
@@ -185,7 +197,7 @@ confirmed branches:
    entry for the version. Write it per
    `references/prose-rules.md`. No `Co-Authored-By` line, no
    "Generated with" or other tool trailer, no emoji.
-8. **Push** — With `--push`, `git push --no-follow-tags`; otherwise skip it
+8. **Push**: With `--push`, `git push --no-follow-tags`; otherwise skip it
    and print the command in the report. Never force. A rejected push
    (protected trunk, non-fast-forward) halts this repo: report it as
    stopped, never as pushed, and skip Phase 5 for it.
@@ -200,8 +212,9 @@ For every pushed repo:
    $ gh cache delete --all --repo <owner>/<repo>
    ```
 
-2. Find the run for the pushed commit. Retry until a run appears; a run
-   for an older commit is not this one:
+2. Find the run for the pushed commit. Retry up to 5 times, a few seconds
+   apart, until a run appears, then report CI as unconfirmed for this repo;
+   a run for an older commit is not this one:
 
    ```console
    $ gh run list --repo <owner>/<repo> --branch <branch> --commit <pushed-sha> --limit 1
@@ -220,8 +233,8 @@ For every pushed repo:
 
 ## Output
 
-1. Hero line: `✓ <package> <old> → <new> across N repos` (or `⚠` with
-   the failure count).
+1. Hero line: `✓ <package> <old> → <new> across N repos`, or
+   `⚠ <package> <old> → <new>: K of N repos stopped` when any repo stopped.
 2. `## Rollout summary`: per repo, branch, prep commits, bump commit,
    pushed or local, CI status.
 3. `## Stopped repos`: any halted on prerelease warnings, dirty trees, rejected pushes, or
@@ -232,7 +245,7 @@ For every pushed repo:
    options and stop.
 
 A stopped run (missing package, version not on the index, no gate
-confirmation) is one result sentence, then what the user needs to do. Name
+confirmation, CI failure) is one result sentence, then what the user needs to do. Name
 the unconfirmed precondition and what the user supplies, never the sandbox
 or network environment. No promise of what happens next.
 
@@ -244,6 +257,10 @@ Stopped: example-pkg 2.0.0 is not confirmed on its package index, so nothing was
 - Confirm the version is published and which index (PyPI, npm, crates.io, or Go) holds it.
 - Pass your checkout directories with --roots, and --push if you want the commits pushed.
 ```
+
+A CI failure is a stop for that repo: name the repo, the failed job, and
+whether the same job failed before the bump, as a bullet under
+`## Stopped repos`. Do not paste log output.
 
 Reply in this shape, as plain text outside any code fence, with plain bullets, no bold (never `- **Label:** ...`), and no local paths:
 

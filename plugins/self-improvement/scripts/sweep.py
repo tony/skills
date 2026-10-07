@@ -21,7 +21,7 @@ import subprocess
 import sys
 import typing as t
 from collections import Counter, defaultdict
-from datetime import UTC, date, datetime, timedelta
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 
 if t.TYPE_CHECKING:
@@ -113,8 +113,8 @@ def parse_history(lines: Iterable[str]) -> tuple[list[Row], int, int]:
             continue
         stamp = rec.get("timestamp")
         day = ""
-        if isinstance(stamp, int | float):
-            day = datetime.fromtimestamp(stamp / 1000, tz=UTC).date().isoformat()
+        if isinstance(stamp, (int, float)):
+            day = datetime.fromtimestamp(stamp / 1000, tz=timezone.utc).date().isoformat()
         project = rec.get("project")
         rows.append(Row(day, match.group(1), project if isinstance(project, str) else ""))
     return rows, records, malformed
@@ -160,6 +160,8 @@ def summarize(
 
     The era split and project spread come from the slash channel only; the
     tool channel carries no date. Aliases sum renamed skills into one row.
+    An empty ``boundary`` means no era: the ``*_era`` fields and ``rank_era``
+    are omitted.
 
     Examples
     --------
@@ -175,6 +177,11 @@ def summarize(
     0
     >>> out["rank_all"]
     ['a:new', 'b:idle']
+    >>> flat = summarize(rows, [], "", {"a:old": "a:new"})
+    >>> flat["skills"]["a:new"]
+    {'slash_all': 3, 'tool_all': 0, 'all_time': 3, 'projects_all': 2}
+    >>> (flat["rank_all"], flat["rank_era"])
+    (['a:new'], [])
     """  # noqa: E501
     slash_all: Counter[str] = Counter()
     slash_era: Counter[str] = Counter()
@@ -186,15 +193,16 @@ def summarize(
         slash_all[name] += 1
         if row.project:
             proj_all[name].add(row.project)
-        if row.day and row.day >= boundary:
+        if boundary and row.day and row.day >= boundary:
             slash_era[name] += 1
             if row.project:
                 proj_era[name].add(row.project)
     for raw in tool_names:
         tool_all[aliases.get(raw, raw)] += 1
     names = set(slash_all) | set(tool_all) | set(catalog)
-    skills = {
-        n: {
+    skills: dict[str, dict[str, int]] = {}
+    for n in sorted(names):
+        row_out = {
             "slash_all": slash_all[n],
             "slash_era": slash_era[n],
             "tool_all": tool_all[n],
@@ -202,44 +210,60 @@ def summarize(
             "projects_all": len(proj_all[n]),
             "projects_era": len(proj_era[n]),
         }
-        for n in sorted(names)
-    }
+        if not boundary:
+            del row_out["slash_era"], row_out["projects_era"]
+        skills[n] = row_out
+    rank_era = sorted(skills, key=lambda n: (-skills[n]["slash_era"], n)) if boundary else []
     return {
         "boundary": boundary,
         "skills": skills,
         "rank_all": sorted(skills, key=lambda n: (-skills[n]["all_time"], n)),
-        "rank_era": sorted(skills, key=lambda n: (-skills[n]["slash_era"], n)),
+        "rank_era": rank_era,
     }
 
 
 def ledger_key(head: str, findings: Sequence[dict[str, object]]) -> str:
     r"""Return the ledger key: sha256 hex of ``head`` and the finding set.
 
-    The hashed text is ``<head>\n`` followed by one ``<id>\t<verdict>\n``
-    line per finding, sorted by id. Evidence fields do not enter the key.
+    The hashed text is ``<head>\n`` followed by one compact JSON array per
+    finding, sorted by id: ``[id, verdict, skill, expected_change]``. Those
+    are the fields ``apply`` acts on; evidence fields stay out.
 
     Examples
     --------
-    >>> a = ledger_key("abc", [{"id": "f2", "verdict": "absent"}, {"id": "f1", "verdict": "x"}])
-    >>> b = ledger_key("abc", [{"id": "f1", "verdict": "x"}, {"id": "f2", "verdict": "absent"}])
-    >>> a == b and len(a) == 64
+    >>> f1 = {"id": "f1", "verdict": "x", "skill": "a:b", "expected_change": "y"}
+    >>> f2 = {"id": "f2", "verdict": "absent", "skill": "a:c", "expected_change": "z"}
+    >>> a = ledger_key("abc", [f2, f1])
+    >>> a == ledger_key("abc", [f1, f2]) and len(a) == 64
     True
-    >>> a == ledger_key("abd", [{"id": "f1", "verdict": "x"}, {"id": "f2", "verdict": "absent"}])
+    >>> a == ledger_key("abd", [f1, f2])
     False
+    >>> a == ledger_key("abc", [f1, {**f2, "skill": "a:d"}])
+    False
+    >>> a == ledger_key("abc", [f1, {**f2, "expected_change": "w"}])
+    False
+    >>> a == ledger_key("abc", [f1, {**f2, "prompt": "w"}])
+    True
     """
-    lines = sorted(f"{f['id']}\t{f['verdict']}\n" for f in findings)
+    lines = sorted(
+        json.dumps([f["id"], f["verdict"], f["skill"], f["expected_change"]], separators=(",", ":"))
+        + "\n"
+        for f in findings
+    )
     return hashlib.sha256((head + "\n" + "".join(lines)).encode()).hexdigest()
 
 
 def validate_findings(data: object) -> list[dict[str, object]]:
     """Check the findings list and return it.
 
-    Every finding needs a unique ``id``, a ``verdict``, and an
-    ``expected_change`` naming the observable shift in usage it predicts.
+    Every finding needs a unique ``id``, a ``verdict``, the ``skill`` it
+    edits (or proposes), and an ``expected_change`` naming the observable
+    shift in usage it predicts.
 
     Examples
     --------
-    >>> validate_findings([{"id": "f1", "verdict": "absent", "expected_change": "x"}])[0]["id"]
+    >>> ok = {"id": "f1", "verdict": "absent", "skill": "a:b", "expected_change": "x"}
+    >>> validate_findings([ok])[0]["id"]
     'f1'
     >>> validate_findings([{"id": "f1"}])
     Traceback (most recent call last):
@@ -255,7 +279,7 @@ def validate_findings(data: object) -> list[dict[str, object]]:
             msg = f"finding {i} must be an object"
             raise TypeError(msg)
         rec = t.cast("dict[str, object]", item)
-        for field in ("id", "verdict", "expected_change"):
+        for field in ("id", "verdict", "skill", "expected_change"):
             value = rec.get(field)
             if not isinstance(value, str) or not value.strip():
                 msg = f"finding {i} needs a non-empty {field}"
@@ -274,13 +298,13 @@ def verify_ledger(ledger: object, head: str) -> tuple[bool, str]:
 
     Examples
     --------
-    >>> f = [{"id": "f1", "verdict": "absent", "expected_change": "x"}]
+    >>> f = [{"id": "f1", "verdict": "absent", "skill": "a:b", "expected_change": "x"}]
     >>> led = {"head": "h1", "findings": f, "key": ledger_key("h1", f)}
     >>> verify_ledger(led, "h1")
     (True, 'ok')
     >>> verify_ledger(led, "h2")
     (False, 'head moved: ledger h1, catalog h2')
-    >>> verify_ledger({**led, "findings": [{**f[0], "verdict": "y"}]}, "h1")
+    >>> verify_ledger({**led, "findings": [{**f[0], "skill": "a:c"}]}, "h1")
     (False, 'findings changed since the ledger was saved')
     """
     if not isinstance(ledger, dict):
@@ -596,7 +620,9 @@ def build_parser() -> argparse.ArgumentParser:
 
     counts = sub.add_parser("counts", help="per-skill counts, era split, spread as JSON")
     _ = counts.add_argument("--history", required=True, help="prompt-history JSONL file")
-    _ = counts.add_argument("--boundary", required=True, help="era boundary, YYYY-MM-DD")
+    _ = counts.add_argument(
+        "--boundary", default="", help="era boundary, YYYY-MM-DD; omit to rank all-time only"
+    )
     _ = counts.add_argument(
         "--tool-log", help="text file with one Launching skill: line per launch"
     )

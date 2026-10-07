@@ -40,7 +40,7 @@ yields one, stop and ask; never infer the goal from the diff.
 Run the position script per the sweep reference and take its `base`: a
 stacked branch takes its parent, so the range holds only this branch's
 work. Report the layer unavailable, and which lookups `failed` lists,
-when `base` is null. Ignore untracked editor and shell files; the
+when `base` is null. Never list, count, or mention untracked editor or shell files; the
 script already filters them.
 
 Then read the commits since that base, the diff behind them, and the

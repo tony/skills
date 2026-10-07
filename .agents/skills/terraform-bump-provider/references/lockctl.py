@@ -164,27 +164,27 @@ def _tracked_files() -> list[str]:
 
 def main(argv: list[str]) -> int:
     """Run one subcommand; return the process exit status."""
-    match argv[1:]:
-        case ["state", lock]:
-            for source, version, count in state(Path(lock).read_text()):
-                print(f"{source}\t{version}\t{count}")
-            return 0
-        case ["drop", lock, source]:
-            path = Path(lock)
-            text, dropped = drop(path.read_text(), source)
-            if dropped:
-                _write_atomic(path, text)
-            print("dropped" if dropped else "absent")
-            return 0
-        case ["stable", *rest] if len(rest) <= 1:
-            count = int(rest[0]) if rest else _DEFAULT_COUNT
-            print("\n".join(stable(sys.stdin.read().split(), count)))
-            return 0
-        case ["platforms"]:
-            return _print_platforms()
-        case _:
-            _ = sys.stderr.write(__doc__ or "")
-            return 2
+    args = argv[1:]
+    cmd, rest = (args[0], args[1:]) if args else ("", [])
+    if cmd == "state" and len(rest) == 1:
+        for source, version, count in state(Path(rest[0]).read_text()):
+            print(f"{source}\t{version}\t{count}")
+        return 0
+    if cmd == "drop" and len(rest[1:]) == 1:
+        path = Path(rest[0])
+        text, dropped = drop(path.read_text(), rest[1])
+        if dropped:
+            _write_atomic(path, text)
+        print("dropped" if dropped else "absent")
+        return 0
+    if cmd == "stable" and len(rest) <= 1:
+        count = int(rest[0]) if rest else _DEFAULT_COUNT
+        print("\n".join(stable(sys.stdin.read().split(), count)))
+        return 0
+    if cmd == "platforms" and not rest:
+        return _print_platforms()
+    _ = sys.stderr.write(__doc__ or "")
+    return 2
 
 
 def _print_platforms() -> int:

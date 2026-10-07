@@ -127,10 +127,18 @@ terms.jsonl line 1: 'definition' must be a string
 terms.jsonl line 2: each entry in 'cites' must be an object
 1
 
-Every term row needs a definition and a quoted citation:
+Every term row needs a definition and a quoted citation; a ``type`` row
+needs no citation of its own, since its is-a claims are cited in
+``evidence/hierarchy.md``:
 
 >>> check_terms([{"term": "a", "definition": "x", "cites": [{"quote": "q"}]}])
 []
+>>> check_terms([{"term": "t", "definition": "names a doer", "kind": "type"}])
+[]
+>>> check_terms([{"term": "t", "definition": " ", "kind": "type"}])
+['t: empty definition']
+>>> check_terms([{"term": "t", "definition": "x", "kind": "type", "cites": [{}]}])
+['t: citation without a quote']
 >>> check_terms([{"term": "a", "definition": " "}, {"term": "b", "definition": "y"}])
 ['a: empty definition', 'a: no citation', 'b: no citation']
 >>> check_terms([{"term": "a", "definition": "x", "cites": [{"locator": "f:1"}]}])
@@ -159,6 +167,7 @@ class _RowBase(TypedDict):
 class _Row(_RowBase, total=False):
     parent: str
     definition: str
+    kind: str
     cites: list[_Cite]
 
 
@@ -346,13 +355,18 @@ def check_brief(text: str) -> list[str]:
 
 
 def check_terms(terms: list[_Row]) -> list[str]:
-    """List rows with an empty definition, no citation, or a citation with no quote."""
+    """List rows with an empty definition, no citation, or a citation with no quote.
+
+    A ``type`` row may omit citations; any it carries still need a quote.
+    """
     findings: list[str] = []
     for row in terms:
         if not row.get("definition", "").strip():
             findings.append(f"{row['term']}: empty definition")
         cites = row.get("cites")
         if not cites:
+            if row.get("kind") == "type":
+                continue
             findings.append(f"{row['term']}: no citation")
         elif any(not str(cite.get("quote", "")).strip() for cite in cites):
             findings.append(f"{row['term']}: citation without a quote")
@@ -375,7 +389,7 @@ def _row_problem(row: object) -> str | None:
     fields = cast("dict[str, object]", row)
     if not isinstance(fields.get("term"), str):
         return "row needs a string 'term'"
-    for key in ("definition", "parent"):
+    for key in ("definition", "parent", "kind"):
         if key in fields and not isinstance(fields[key], str):
             return f"'{key}' must be a string"
     cites = fields.get("cites", [])

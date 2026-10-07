@@ -13,7 +13,7 @@ metadata:
 # 02-plan
 
 Turn measured candidates into a reviewable commit plan. This phase writes only
-`plan.json` and `state.json`.
+`plan.json` and `state.json`, and only after the user approves.
 
 `$ARGUMENTS` may pass `--max-commits=N` to cap the plan, `--min-score` to raise the
 inclusion threshold, `--force` to recompute, and `--memory-dir` to override the
@@ -61,8 +61,10 @@ other tool trailer, no emoji: hosts add them by default. Each entry records
 order, heuristic id, score breakdown, target files, draft subject and body, the
 verify command (project tests and quality checks), `expected_total` (the
 baseline `tests.total`, unless the change removes tests on purpose), and
-`depends_on`. Write `plan.json` with `plan_hash` still `null` in `state.json`
-(`phase=plan`).
+`depends_on`. Keep the draft in the reply, not on disk: nothing is written until
+approval. A deselecting item (`removes_tests` in `benchmarks.json`) states "removes
+N tests from the default run" and sets `expected_total` to the reduced count, and
+its saving reads as time not spent on those tests.
 
 ## Step 4: Present for approval
 
@@ -70,20 +72,23 @@ Enter plan mode before the first edit. In Claude Code call `EnterPlanMode`; in C
 
 Present the `02-plan`
 sections from `references/output-contract.md`. Let the user reorder, drop
-items, or cap the count; rewrite `plan.json` after each change. Plan mode is the
-decision point, so omit the `ask-user-choice` panel.
+items, or cap the count; revise the draft in the reply after each change and write
+nothing, since plan mode blocks writes. Plan mode is the decision point, so omit
+the `ask-user-choice` panel.
 
 Without plan mode, present the same sections as text and wait for the reply.
-Without an interactive session, leave `plan_hash` null and stop: an unapproved
-plan is not executable.
+Without an interactive session, write nothing and stop: an unapproved plan is not
+executable.
 
-Once the user approves, exit plan mode, then record approval:
+Once the user approves, exit plan mode, write `plan.json` from the approved
+draft, then record approval:
 
 ```console
 $ python3 <measure.py> hash plan.json
 ```
 
-Store that value as `plan_hash` and set `completed.plan=true` in `state.json`.
+Store that value as `plan_hash` and set `phase=plan` and `completed.plan=true` in
+`state.json`.
 `plan.json` is the contract `pytest-optimizer:03-execute` consumes; a request that
 explicitly says to approve and apply the plan is approval for this plan only.
 

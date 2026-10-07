@@ -38,7 +38,10 @@ findings = [
         "skill": "tidy",
     }
 ]
-text = head + "\n" + "".join(f"{f['id']}\t{f['verdict']}\n" for f in findings)
+text = head + "\n" + "".join(
+    json.dumps([f["id"], f["verdict"], f["skill"], f["expected_change"]], separators=(",", ":")) + "\n"
+    for f in findings
+)
 ledger = {
     "version": 1,
     "created": "2026-01-01",

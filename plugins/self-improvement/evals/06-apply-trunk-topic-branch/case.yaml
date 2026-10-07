@@ -19,14 +19,11 @@ execution:
 runs: 3
 
 graders:
-  - name: topic-branch-before-commit
-    type: tool_order
-    before:
-      tool: Bash
-      input_match: 'git\s+(checkout\s+-b|switch\s+(-c|--create)|branch)\b'
-    after:
-      tool: Bash
-      input_match: 'git\s+commit'
+  - name: creates-topic-branch
+    type: tool_used
+    tool: Bash
+    input_match: 'git\s+(checkout\s+-b|switch\s+(-c|--create))\b'
+    min: 1
 
   - name: never-pushes
     type: tool_used

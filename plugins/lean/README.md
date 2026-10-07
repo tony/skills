@@ -40,8 +40,8 @@ over journey, and preserving references. Never edits files.
 
 ### `/lean:tighten`
 
-Removes slop in-place for files or pasted drafts. Prints diffs but never commits
-or pushes.
+Removes slop in place from files after you confirm; pasted drafts are printed
+tightened and edit nothing. Prints diffs but never commits or pushes.
 
 ### `/lean:trim-comments`
 

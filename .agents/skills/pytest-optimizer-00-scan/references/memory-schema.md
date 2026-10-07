@@ -8,6 +8,7 @@ at the next item.
 
 - Location resolution
 - Idempotency token
+- Run files
 - Baseline-diff rule
 - Files and shapes
 
@@ -69,12 +70,30 @@ run skips the token and checks instead that `HEAD` is `base_head` plus exactly
 the commits in `execution-log.json` (`measure.py chain`). The next `00-scan`
 re-baselines.
 
+## Run files
+
+`measure.py run` output is appended to JSONL files that live outside the
+working tree, in a per-worktree directory resolved once and printed:
+
+```console
+$ git rev-parse \
+    --path-format=absolute \
+    --git-path pytest-optimizer-runs
+```
+
+Create it with `mkdir -p`, and write that literal path as `<runs-dir>` in later
+commands. Delete a run file before its first timed run, so a re-run, `--force`,
+or a post-execute re-scan never mixes old samples into a band. Nothing here
+shows in `git status`, which `03-execute` requires to be empty.
+
 ## Baseline-diff rule
 
-The noise band is `max(k * MAD, trust floor)` (`k = 3`, floor `0.05` s), measured
-per project in `00-scan` from N serial, cache-disabled runs. A candidate is a real
+The noise band is `max(k * 1.4826 * MAD, trust floor)` (`k = 3`; the trust floor is
+the larger of `0.05` s and 1% of the median), measured per project in `00-scan`
+from N serial, cache-disabled runs. `compare` widens the dispersion with the
+candidate's own MAD, `hypot(baseline MAD, candidate MAD)`. A candidate is a real
 speedup only when every run exits 0, its passed and collected-test counts match
-the baseline, and its median saving exceeds the band:
+the baseline, and its median saving exceeds that band:
 
 ```
 real_speedup  <=>  baseline_median - candidate_median > band
@@ -86,12 +105,12 @@ by hand or quote the band as a fixed number.
 ## Files and shapes
 
 Paths are relative to the memory directory. Besides `state.json` (every phase),
-`collection.txt` (baseline `--collect-only -q` output in collection order), and
-`capabilities.json` (resolved version-matrix probes), the JSONL run files
-(`baseline-runs.jsonl`, `control-runs.jsonl`, `<hypothesis-id>-runs.jsonl`, one
-`measure.py run` line each) and `control.json` (the unmodified-worktree summary
-from `measure.py band`, the reference candidates are judged against), each
-file's shape follows:
+`collection.txt` (baseline `--collect-only -q` output in collection order),
+`capabilities.json` (resolved version-matrix probes), and `control.json` (the
+unmodified-worktree summary from `measure.py band`, the reference candidates are
+judged against), each file's shape follows. The JSONL run files
+(`baseline-runs.jsonl`, `control-runs.jsonl`, `<hypothesis-id>-runs.jsonl`,
+`post-runs.jsonl`, one `measure.py run` line each) live in `<runs-dir>`, not here.
 
 ### `state.json`
 
@@ -108,6 +127,10 @@ file's shape follows:
 }
 ```
 
+Each phase sets its own `completed` flag when it finishes: `00-scan`,
+`01-benchmark`, `02-plan` (on approval), `03-execute` (plan exhausted). A re-run
+of an earlier phase clears the later flags.
+
 `plan_hash` stays `null` until the user approves `plan.json`; then it holds the
 `measure.py hash` of that file.
 
@@ -122,7 +145,7 @@ file's shape follows:
   "test_command": "<project test command>",
   "capabilities": { "durations_min": true, "stash": true },
   "runs": [ { "wall_seconds": 12.4 }, { "wall_seconds": 12.6 } ],
-  "noise": { "median": 12.5, "mad": 0.15, "floor": 0.05, "k": 3, "band": 0.45 },
+  "noise": { "median": 12.5, "mad": 0.1, "floor": 0.125, "k": 3, "band": 0.44478 },
   "tests": { "passed": 240, "total": 242 },
   "timings": [ { "nodeid": "tests/test_x.py::test_a", "phase": "setup", "seconds": 0.42 } ]
 }
@@ -166,7 +189,8 @@ re-scans. A re-baseline after `03-execute` re-opens all candidates.
 ]
 ```
 
-`kind` is `"hygiene"` for a typing or parametrize item (H26-H32): no timing,
+`removes_tests` is the number of tests a deselecting change (H15, H37) drops from
+the default run; it is absent otherwise. `kind` is `"hygiene"` for a typing or parametrize item (H26-H32): no timing,
 `median_delta` and `clears_noise` null, `verdict` `validated` when the suite and
 type checker pass. Every other entry is `"speedup"` (the default when absent).
 
@@ -199,10 +223,15 @@ tests on purpose.
     "order": 1,
     "id": "H10-conftest-make_config",
     "applied": true,
-    "verify": { "passed": true, "output_ref": "checkpoint-1.txt" },
+    "verify": { "passed": true, "seconds": 7.9, "output_ref": "checkpoint-1.txt" },
     "commit_sha": "abc1234",
     "skip_reason": null,
     "ts": "ISO-8601"
   }
 ]
 ```
+
+An entry is written with `pending_subject` (the commit subject) before the commit
+is made, then completed with `commit_sha`. A resume that finds an entry with
+`pending_subject` and no `commit_sha` adopts `HEAD` as its commit when `HEAD`'s
+subject matches.

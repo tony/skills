@@ -29,10 +29,10 @@ Replace `pytest` with the project's resolved test command.
 
 | ID | Signal | Detect | Action | Risk / Effort |
 |----|--------|--------|--------|---------------|
-| H08 | Fixture defined but never requested (and not autouse) | Diff defined set (`pytest --fixtures -v`, strip `site-packages`/`_pytest`) minus used closures (`pytest -o addopts='' --fixtures-per-test`); cross-check `pytest --dead-fixtures` with `pytest-deadfixtures` added to the project environment | Delete the dead fixture, or wire it to its intended test | medium / trivial |
+| H08 | Fixture defined but never requested (and not autouse) | Diff defined set (`pytest --fixtures -v`, strip `site-packages`/`_pytest`) minus used closures (`pytest -o addopts='' --fixtures-per-test`); cross-check `pytest --dead-fixtures` with `pytest-deadfixtures` when the user has approved installing it | Delete the dead fixture, or wire it to its intended test | medium / trivial |
 | H09 | Candidate "unused" fixture may be requested dynamically | `rg 'getfixturevalue\(["\x27]<name>' tests/` and bare `<name>` string refs before deleting | **Guard:** never delete a fixture reachable via `request.getfixturevalue` or a string mark; static scans cannot see it | medium / trivial |
 | H10 | Expensive function-scoped fixture re-runs once per test | `pytest --setup-plan`; count `SETUP` rows per `F` fixture; > 1 with an I/O body (net/db/docker/subprocess/sleep/build) | Raise scope to module/session (or class/package) when the value is shared and not test-mutated; verify the `SETUP` count drops | medium / small |
-| H11 | Two fixtures with identical/near-identical bodies | `pytest --dup-fixtures` with `pytest-deadfixtures` added to the project environment; or name collisions: `pytest --fixtures -v` names, `sort`, `uniq -d` | Consolidate into one fixture in the nearest shared conftest; document intentional overrides | medium / small |
+| H11 | Two fixtures with identical/near-identical bodies | `pytest --dup-fixtures` with `pytest-deadfixtures` when the user has approved installing it; or name collisions: `pytest --fixtures -v` names, `sort`, `uniq -d` | Consolidate into one fixture in the nearest shared conftest; document intentional overrides | medium / small |
 | H12 | Autouse fixture runs for every test but most don't need it | `rg 'autouse\s*=\s*True' tests/`; `pytest --setup-plan`, its `SETUP` count ≈ total tests | Drop autouse, opt-in the subset via `@pytest.mark.usefixtures`; keep autouse only for cheap universal setup (env/time/global reset) | high / medium |
 | H13 | Parametrized/indirect fixture pays setup once per param per test | `SETUP .* <name>[` lines in `pytest --setup-show` output; many repeated `[param]` setups | Move the param to a higher-scoped fixture, or cache the per-param resource at module/session scope and select from it | medium / medium |
 | H41 | Fixture/test requests a dependency it never uses | Diff signature params against names used in the body; flag params with 0 in-body uses that are not autouse side-effect fixtures | Drop unused params; if a side-effect is intended, make it `autouse`/`usefixtures` and document it | low / trivial |
@@ -62,7 +62,7 @@ Replace `pytest` with the project's resolved test command.
 
 | ID | Signal | Detect | Action | Risk / Effort |
 |----|--------|--------|--------|---------------|
-| H24 | Expensive computation recomputed every run (build/schema/dataset) | `--durations` shows the same costly setup each invocation | Memoize cross-run via `config.cache.set/get` under a namespaced key + invalidation token (input hash/mtime); guard writes with `if not hasattr(config, "workerinput")` | medium / medium |
+| H24 | Expensive computation recomputed every run (build/schema/dataset) | `--durations` shows the same costly setup each invocation | Memoize cross-run via `config.cache.set/get` under a namespaced key + invalidation token (input hash/mtime); guard writes with `if not hasattr(config, "workerinput")`. Benchmark it with the cache provider enabled; under `-p no:cacheprovider` it never engages |  medium / medium |
 | H35 | Per-test `tmp_path` rebuilds an identical file tree | `rg 'tmp_path /' tests/`; same files written across many tests | Build the tree once with a module/session `tmp_path_factory` fixture; share read-only | low / small |
 | H34 | Expensive object built in body/function fixture and reused unchanged | `pytest --durations=25` + `rg` repeated construction of the same heavy type | Hoist construction to a session/module fixture + a cheap function-scoped reset (`.clear()`/`.reset()`); or content-hash a build cache | medium / medium |
 
@@ -70,9 +70,9 @@ Replace `pytest` with the project's resolved test command.
 
 | ID | Signal | Detect | Action | Risk / Effort |
 |----|--------|--------|--------|---------------|
-| H15 | Autouse/default-path fixture does real network I/O, unguarded | `rg 'autouse=True' tests/` then follow to `urlretrieve`/`requests`/`urlopen`/`.download`; check for a network/slow marker | Make the heavy fixture opt-in behind a registered marker or env var with `pytest.skip`; split unit vs integration paths | medium / medium |
+| H15 | Autouse/default-path fixture does real network I/O, unguarded | `rg 'autouse=True' tests/` then follow to `urlretrieve`/`requests`/`urlopen`/`.download`; check for a network/slow marker | Make the heavy fixture opt-in behind a registered marker or env var with `pytest.skip`; split unit vs integration paths. If tests are deselected, the plan states how many |  medium / medium |
 | H33 | Tests call real `time.sleep`/`asyncio.sleep` for non-trivial durations | `rg -e 'time\.sleep\(' -e 'asyncio\.sleep\(' tests/`, then `pytest --durations=25` | Route production timing through an indirection and monkeypatch a `FakeClock` fixture (advance a counter); or cap with `pytest-timeout` | low / small |
-| H37 | Slow/networked/subprocess tests run by default (no marker/gate) | `rg -e 'requests\.' -e 'httpx\.' -e 'subprocess\.' -e 'socket\.' -e docker -e '\.connect\(' tests/`; check markers/addopts | Register a marker (slow/integration/network), apply it (hand or folder-based auto-mark in `pytest_collection_modifyitems`), deselect by default via `addopts '-m "not integration"'` or a `--runslow` flag | low / small |
+| H37 | Slow/networked/subprocess tests run by default (no marker/gate) | `rg -e 'requests\.' -e 'httpx\.' -e 'subprocess\.' -e 'socket\.' -e docker -e '\.connect\(' tests/`; check markers/addopts | Register a marker (slow/integration/network), apply it (hand or folder-based auto-mark in `pytest_collection_modifyitems`), deselect by default via `addopts '-m "not integration"'` or a `--runslow` flag. The default run then executes fewer tests: the plan states how many |  low / small |
 | H39 | Optional/heavy dependency imported at module top | `rg -e '^import ' -e '^from ' tests/` for heavy/optional libs; `pytest --collect-only` | Replace the top-level import with `pytest.importorskip('pkg', minversion=...)` so the module skips cleanly when absent | low / trivial |
 | H40 | No per-test timeout / warnings ignored / unregistered markers | Check pyproject for `timeout`, `filterwarnings`, `strict-markers`, `markers`; run `pytest -W error` locally | Add `pytest-timeout` (`--timeout-method=thread` for async), `filterwarnings=['error']`, `--strict-markers`, and register every custom marker | low / trivial |
 
@@ -85,6 +85,9 @@ Replace `pytest` with the project's resolved test command.
 | H38 | Shared expensive fixtures copy-pasted across conftests/repos | Diff conftest fixtures across packages; `rg 'pytest_plugins' .` | Package fixtures as an installable `pytest11` plugin (`entry-points.pytest11`) or `pytest_plugins = ('pkg.module',)`; register markers via `addinivalue_line` | low / medium |
 
 ## H. Typing and parametrize convention
+
+Opt-in: these run only under `00-scan --hygiene`. They change node ids and rewrite
+signatures to one house convention, which is not a speedup.
 
 | ID | Signal | Detect | Action | Risk / Effort |
 |----|--------|--------|--------|---------------|

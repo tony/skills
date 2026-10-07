@@ -26,9 +26,13 @@ User arguments: $ARGUMENTS
 
 The is-a hierarchy. What kinds of thing the corpus contains.
 
-Write it to `evidence/hierarchy.md`, one citation per is-a claim, and write
-each type back onto its members' rows in `terms.jsonl` as `parent`. A root
-type's `parent` is the literal string `root`.
+Write it to `evidence/hierarchy.md`, one citation per is-a claim. Each type is
+also a row in `terms.jsonl` with `kind: type`, its discriminator as
+`definition`, and `parent` set to another type or the literal string `root`.
+Write each type's name onto its members' rows as `parent`. A type row carries
+no `cites` of its own; the `--check-terms` gate exempts `kind: type` rows, and
+the citations live in `hierarchy.md`. A type the corpus already names (a
+`class`) keeps the row `extract` wrote, citation included.
 
 Types come from the corpus's own distinctions. If a project separates ports
 from adapters everywhere, those are types. If the analyst finds it tidy to
@@ -73,6 +77,12 @@ Run the analyzer and read its `orphans` section:
 
 ```console
 $ python3 <analyzer> notes/ontology/<subject>/
+```
+
+Then confirm the table still passes the term gate:
+
+```console
+$ python3 <analyzer> notes/ontology/<subject>/ --check-terms
 ```
 
 A term with no `parent` is an orphan, as is one whose parent is neither

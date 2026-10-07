@@ -110,20 +110,25 @@ Check for each of these:
 Write the new body from the audit, not by editing the old text, using the
 section list from `altitude.md` for the role the item should be. Check the
 future tense against `contract.md`: an invariant restates a constraint the
-item itself states, in its own nouns, with no added clause; a technical choice
-is Intent. When the item states no constraint, omit Invariants and list it
-under Missing. Do not invent impact or a symptom: the Summary says only what
-the item says (never "steady rate" for a backoff it does not describe).
-Sanitize for local paths, hostnames,
-emails, tokens, and internal URLs. State facts about the work; never put
-advice about the document in the body. Use no time-relative words
+item itself states, in its own nouns, with no added clause. A technical
+choice (an algorithm, a cap, a pattern) is Intent, never in the title or
+Summary, even when the old title named it. When the item states only
+mechanisms, the Summary restates the subject ("the retry queue") and nothing
+more, with no "gets a circuit breaker". When the item states no constraint,
+omit Invariants and list it under Missing, and do not suggest a candidate
+invariant. Do not invent impact or a symptom: the Summary says only what the
+item says (never "steady rate" for a backoff it does not describe), and no
+explanation line claims user impact the item omits. State each fact once: a
+version in Environment or Summary, not both. Sanitize for local paths,
+hostnames, emails, tokens, and internal URLs. State facts about the work;
+never put advice about the document in the body. Use no time-relative words
 ("currently", "for now"). Headings inside the body are `###`, so they nest
 under the reply's `## Rebuilt title and body`.
 
 Write it per `references/prose-rules.md`.
 
 Save the new body to a scratch file created the same way, so Phase 7 passes
-it from a file, and render it the way the provider will.
+it from a file (every provider, including `--description` flags), and render it the way the provider will.
 
 ## Phase 6: Present
 
@@ -194,7 +199,9 @@ naming the action. Add no free-prose offer or comment on the draft's strength.
 ## Phase 7: Update
 
 Only on explicit approval of the update, and only through the provider's documented write
-path with the body passed from a file.
+path with the body passed from a file, never inline. Before approval, run no
+write command (edit, update, comment, create). With no question tool and no
+instruction naming the update, print the result and stop.
 
 Where no write backend exists, print the approved body to paste and say that
 is what is happening.

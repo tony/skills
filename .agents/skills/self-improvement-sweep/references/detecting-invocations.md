@@ -33,8 +33,16 @@ names of user-level skills; say so in the report.
 **Skill-tool invocations** write a `Launching skill: <plugin>:<skill>` line
 into the conversation transcript, not into prompt history. Collect one line
 per occurrence into a scratch file. Prefer the host's own session-search
-tool. Without one, Claude Code transcripts are searchable with `rg`. The
-default scope is transcripts modified in the last 90 days, which keeps the
+tool. Without one, Claude Code transcripts are searchable with `rg`. First
+create the scratch directory outside the repository, because a sweep that
+leaves untracked files in the tree it measures has edited it. Print the
+path and use that literal path in every later command.
+
+```console
+$ mktemp -d "${TMPDIR:-/tmp}/sweep.XXXXXX"
+```
+
+The default scope is transcripts modified in the last 90 days, which keeps the
 read bounded; drop `-mtime -90` only when the user asks for everything, and
 check the store size first with `du -sh ~/.claude/projects`. This command
 lists those transcripts and searches them:
@@ -73,14 +81,6 @@ channel.
 
 ## Run the counter
 
-Create the scratch directory outside the repository, because a sweep that
-leaves untracked files in the tree it measures has edited it. Print the
-path and use that literal path in every later command.
-
-```console
-$ mktemp -d "${TMPDIR:-/tmp}/sweep.XXXXXX"
-```
-
 Run the catalog command from the repository root. It prints the skills with
 their gating and birth dates, the rename map, commit subjects that mention
 a rename or replacement, and the era boundary (Phase 0 of the sweep):
@@ -90,9 +90,10 @@ $ python3 <sweep.py> catalog \
     --names-out <scratch>/catalog.txt
 ```
 
-Pass `--names-out <scratch>/catalog.txt` to the catalog command so the
-names land in the scratch directory without hand-copying, then count. `--history` takes any prompt-history file in
-the same JSONL shape, which is how a fixture replaces the real one:
+`--history` takes any prompt-history file in the same JSONL shape, which is
+how a fixture replaces the real one. Omit `--boundary` when the catalog's era
+`date` is empty: the output then has no `slash_era`, no `projects_era`, and an
+empty `rank_era`.
 
 ```console
 $ python3 <sweep.py> counts \

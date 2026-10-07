@@ -41,6 +41,28 @@ graders:
     min: 1
     arm: both
 
+  - name: stages-the-test-file-by-name
+    type: tool_used
+    tool: Bash
+    input_match: 'git (-\w+ \S+ )*(add|commit)\b[^;&|\\"]*test_bizdays\.py'
+    min: 1
+    arm: both
+
+  - name: never-stages-source
+    type: tool_used
+    tool: Bash
+    input_match: 'git (-\w+ \S+ )*add\b[^;&|\\"]*((^|[\s/])bizdays\.py|\s-[a-zA-Z]*A|\s--all|\s-u|\s\.(\s|$|;|&))|git (-\w+ \S+ )*commit\b[^;&|\\"]*\s-[a-zA-Z]*a'
+    min: 0
+    max: 0
+    arm: both
+
+  - name: history-gains-exactly-one-commit
+    type: regex
+    target:
+      source: file
+      path: .git/logs/HEAD
+    pattern: '\tcommit \(initial\): [^\n]*\n[^\n]*\tcommit: [^\n]*\n$'
+
   - name: no-attribution-trailer
     type: tool_used
     tool: Bash

@@ -1,6 +1,6 @@
 ---
 name: situational-awareness
-description: "Use when you came back to a branch/PR: the work you were in the middle of, where it left off, repo state, and what reviewers ask or the PR waits on."
+description: "Use when the user is back on a branch or PR and says \"bring me up to speed\" or \"I'm back\": where it left off, repo state, what reviews ask."
 allowed-tools: ["Bash", "Read", "Grep", "Glob", "AskUserQuestion"]
 ---
 

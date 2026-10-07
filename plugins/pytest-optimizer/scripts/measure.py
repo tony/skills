@@ -15,6 +15,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import math
 import os
 import pathlib
 import platform
@@ -29,7 +30,9 @@ if t.TYPE_CHECKING:
     from collections.abc import Mapping, Sequence
 
 TRUST_FLOOR = 0.05
+REL_FLOOR = 0.01
 DEFAULT_K = 3.0
+MAD_SCALE = 1.4826
 MEMORY_DIRNAME = ".pytest-optimizer"
 
 WEIGHTS = {
@@ -65,16 +68,27 @@ def median_mad(values: Sequence[float]) -> tuple[float, float]:
 
 
 def noise_band(mad: float, k: float = DEFAULT_K, floor: float = TRUST_FLOOR) -> float:
-    """Return ``max(k * mad, floor)``; identical runs give MAD 0, never a zero band.
+    """Return ``max(k * MAD_SCALE * mad, floor)``; MAD 0 never gives a zero band.
 
     >>> noise_band(0.0)
     0.05
     >>> noise_band(0.1)
-    0.3
+    0.44478
     >>> noise_band(0.01, floor=0.2)
     0.2
     """
-    return round(max(k * mad, floor), 6)
+    return round(max(k * MAD_SCALE * mad, floor), 6)
+
+
+def trust_floor(median: float) -> float:
+    """Return the larger of 50 ms and 1% of the median.
+
+    >>> trust_floor(1.0)
+    0.05
+    >>> trust_floor(120.0)
+    1.2
+    """
+    return round(max(TRUST_FLOOR, REL_FLOOR * median), 6)
 
 
 def parse_summary(output: str) -> dict[str, int]:
@@ -156,7 +170,7 @@ def _validity(runs: Sequence[dict[str, t.Any]]) -> str | None:
 def band(
     runs: Sequence[dict[str, t.Any]],
     k: float = DEFAULT_K,
-    floor: float = TRUST_FLOOR,
+    floor: float | None = None,
 ) -> dict[str, t.Any]:
     """Summarize baseline runs into the ``baseline.json`` noise fields.
 
@@ -173,6 +187,8 @@ def band(
     if reason is not None:
         return {"valid": False, "reason": reason}
     med, mad = median_mad([r["seconds"] for r in runs])
+    if floor is None:
+        floor = trust_floor(med)
     return {
         "valid": True,
         "runs": [{"wall_seconds": r["seconds"]} for r in runs],
@@ -205,6 +221,10 @@ def compare(
     >>> jitter = [{"seconds": 9.98, "exit": 0, "passed": 5, "total": 5}] * 3
     >>> compare(base, jitter)["clears_noise"]
     False
+    >>> noisy = [{"seconds": s, "exit": 0, "passed": 5, "total": 5} for s in (7.0, 9.5, 6.0)]
+    >>> out = compare(base, noisy)
+    >>> (out["median_delta"], out["clears_noise"])
+    (3.0, False)
     >>> broken = [{"seconds": 1.0, "exit": 1, "passed": 3, "total": 5}] * 3
     >>> compare(base, broken)["reason"]
     'a run exited 1, not 0'
@@ -232,9 +252,11 @@ def compare(
         )
     if reason is not None:
         return {"valid": False, "clears_noise": False, "reason": reason}
-    med, _ = median_mad([r["seconds"] for r in runs])
-    delta = baseline["noise"]["median"] - med
-    limit = baseline["noise"]["band"]
+    med, mad = median_mad([r["seconds"] for r in runs])
+    noise = baseline["noise"]
+    delta = noise["median"] - med
+    spread = math.hypot(noise["mad"], mad)
+    limit = noise_band(spread, noise["k"], noise["floor"])
     return {
         "valid": True,
         "median": med,
@@ -269,7 +291,7 @@ def order(a: str, b: str) -> dict[str, t.Any]:
     """
     na, nb = _nodeids(a), _nodeids(b)
     diff = next(
-        (i for i, (x, y) in enumerate(zip(na, nb, strict=False)) if x != y),
+        (i for i, (x, y) in enumerate(zip(na, nb)) if x != y),
         None,
     )
     if diff is None and len(na) != len(nb):
@@ -536,7 +558,7 @@ def build_parser() -> argparse.ArgumentParser:
     p = sub.add_parser("band", help="noise fields from a JSONL file of baseline runs")
     p.add_argument("runs", help="JSONL file from `run`, or - for stdin")
     p.add_argument("--k", type=float, default=DEFAULT_K)
-    p.add_argument("--floor", type=float, default=TRUST_FLOOR)
+    p.add_argument("--floor", type=float, default=None)
 
     p = sub.add_parser("compare", help="judge candidate runs against baseline.json")
     p.add_argument("baseline", help="baseline.json")

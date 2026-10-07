@@ -95,7 +95,8 @@ only: M lock files found`), then these sections in order:
 2. `## Changes`: per root module and provider: the version before and
    after, and the platform count tracked before and after.
 3. `## Held back`: providers that did not move, and the constraint
-   holding each.
+   holding each. In an audit, only providers a constraint is already
+   blocking; omit the section otherwise.
 4. `## Verification`: the gates run and their real results.
 5. `## Failures`: root modules that could not be refreshed, and why.
 
@@ -128,7 +129,8 @@ End with an `ask-user-choice` panel offering next steps, for example:
 bump a constraint that is holding a provider back, restore
 multi-platform coverage, commit an untracked lock file, or stop here.
 Skip the panel only in plan mode. Without a question tool, list the
-options and take the default: stop here.
+options and take the default: stop here, without a closing line that
+says the run stopped.
 
 
 ## Portability notes

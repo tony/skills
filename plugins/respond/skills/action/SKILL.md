@@ -92,13 +92,15 @@ Then squash. `GIT_SEQUENCE_EDITOR=:` accepts the generated todo list
 unchanged, so no editor opens:
 
 ```console
-$ GIT_SEQUENCE_EDITOR=: git rebase -i --autosquash <base>
+$ GIT_SEQUENCE_EDITOR=: git rebase -i --autosquash --autostash <base>
 ```
 
-`<base>` is the resolved provenance base. When the rebase reports a
-conflict, run `git rebase --abort`; the `fixup!` commits stay
-unsquashed as forward commits, and the report says the squash was
-skipped. This rewrites history, so:
+`<base>` is the resolved provenance base. `--autostash` is what lets the
+rebase run over the user's own uncommitted edits: it stashes them and
+reapplies them afterward, and `git rebase --abort` restores them too.
+When the rebase reports a conflict, run `git rebase --abort`; the
+`fixup!` commits stay unsquashed as forward commits, and the report says
+the squash was skipped. This rewrites history, so:
 
 - **Trivial and safe** (typo-class fix whose causal commit is
   in-branch, unpushed, and not a merge): offer fixup as the plan's
@@ -119,19 +121,39 @@ skipped. This rewrites history, so:
    against a heading as a whole word (`Respect` is not `spec`), and take
    only a fenced block that holds a command. Show every discovered
    command in the plan.
-3. Run `git fetch origin`, then confirm a clean working tree. A dirty
-   tree halts: ask to stash, proceed on top, or abort; a non-interactive
-   run aborts. Detect trunk and push state with `git status -sb`.
-4. Run `git rev-parse --show-toplevel`. When it is `$HOME` or contains
-   it, halt: the commands below stage files, and a repository rooted at
-   home would sweep in credentials. Tell the user to run again from the
-   project's own checkout; never advise deleting `.git` or any other
-   user file.
+3. Run `git rev-parse --show-toplevel`. When it is `$HOME` or contains
+   it, halt before anything else, with no stash offered: the commands
+   below stage and stash files, and a repository rooted at home would
+   sweep in credentials. Tell the user to run again from the project's
+   own checkout.
+4. Run `git fetch origin`. When it fails (no remote, offline), go on:
+   provenance falls back as the rubric's Provenance gate says, the
+   report says it may be stale, and there is nothing to push or watch.
+5. Run `git status --porcelain`. Every path listed is the user's own
+   uncommitted work; keep the list. A non-empty list asks: stash it,
+   proceed on top, or abort; a non-interactive run aborts.
+   - Stash: run one command and keep the SHA it prints. Restore at the
+     end with `git stash apply <sha>`. When that conflicts, keep the
+     stash and report its SHA; never drop it.
+
+     ```console
+     $ git stash push \
+         --include-untracked \
+         --message respond-action && git rev-parse stash@{0}
+     ```
+
+   - Proceed on top: commits stage only the paths below, so the user's
+     edits stay uncommitted, and the autosquash above carries
+     `--autostash`. A finding whose fix must edit a path on the list
+     stops and asks (a non-interactive run skips that finding and says
+     so), since staging it would commit the user's edits.
+6. Detect trunk and push state with `git status -sb`.
 
 ## Phase 1: Resolve the ledger
 
-Apply the screening gate above. Report which path was taken: an
-existing ledger, a fresh screening run, or inline screening.
+Apply the screening gate above. Say which path was taken (an
+existing ledger, a fresh screening run, or inline screening) as the
+first `## Verification` bullet, not under a heading of its own.
 
 ## Phase 2: Orchestration plan
 
@@ -168,8 +190,12 @@ non-interactive run skips it and says so.
    plausibly affects build output. Gates run as discovered, including
    mutating ones: fold any autofix into the commit under test and
    re-run the scoped test once when a gate changed files.
-3. Green → stage only the paths this fix edited (`git add -- <path>`,
-   never `git add -A` or `git add .`) and commit. The message uses the project's format and describes
+3. Green → run `git status --porcelain`. The fix owns every path listed
+   there that is not on Phase 0's list: the paths it edited or created
+   and the paths a gate's autofix changed. Stage exactly those with
+   `git add -- <path> <path>`, never `git add -A` or `git add .`; an
+   autofix that changed a path on Phase 0's list stays unstaged and the
+   report says so. Commit. The message uses the project's format and describes
    the defect and the fix, not the finding id, the reviewer, or the
    review. Write it per
    `../../references/prose-rules.md`, with no `Co-Authored-By`, no
@@ -177,17 +203,49 @@ non-interactive run skips it and says so.
    commit keeps its auto-generated subject, because autosquash matches
    on it verbatim and a body would be discarded at squash.
 4. Red → revert that fix and follow `--on-fail`. A non-interactive
-   `ask` becomes `stop`.
+   `ask` becomes `stop`. Restore each tracked path the fix or a gate
+   changed, then delete each file the fix created (untracked, not on
+   Phase 0's list); never `git clean`, `git reset --hard`, or
+   `git checkout .`, which would take the user's edits too:
+
+   ```console
+   $ git restore \
+       --staged \
+       --worktree \
+       -- <path> <path>
+   ```
+
+   ```console
+   $ rm -- <created-path>
+   ```
 
 After all findings: run the consented autosquash if any `fixup!`
-commits exist, then re-run the fast gates once.
+commits exist, re-run the fast gates once, then restore a Phase 0
+stash.
 
 ## Phase 4: Replies
 
 With `--reply`, show the ledger's drafted replies for declined and
 deferred findings in full, and post them on one confirmation: to the
 originating thread where the source was a thread, otherwise as a single
-pull-request comment. Never post without that confirmation (a
+pull-request comment. A thread reply goes to the thread's first comment,
+by its numeric id (`databaseId` in the thread query, `id` in the REST
+listing in `../../references/feedback-sources.md`):
+
+```console
+$ gh api repos/{owner}/{repo}/pulls/<n>/comments/<comment-id>/replies \
+    -f body='<reply>'
+```
+
+A pull-request comment:
+
+```console
+$ gh pr comment <n> \
+    --body '<reply>'
+```
+
+Pass a reply holding a single quote with `--body-file -` and a quoted
+heredoc instead. Never post without that confirmation (a
 non-interactive run treats `--reply` as it, for the replies shown in the
 report only), and never resolve a thread: the reviewer decides whether
 the answer settled it. Without `--reply`, the replies stay in the
@@ -197,13 +255,14 @@ report.
 
 Write the report per `../../references/prose-rules.md`. Never name
 local absolute paths or temp files. In a non-interactive run, put the
-plan from Phase 2 in one sentence after the hero line, and give no
-reason for skipping approval.
+plan from Phase 2 in one sentence beginning `Plan:` right after the
+hero line, as the last example shows, and give no reason for skipping
+approval.
 
 A run that stops early (dirty tree, failed gate under `--on-fail=stop`,
 no screenable findings) reports one result sentence, then what the user
 needs to do, then only the sections below that have content; it omits
-the empty ones, as the second example shows. On a run that landed
+the empty ones, headings included, as the second example shows. On a run that landed
 commits, keep `## What the fixes added` even when empty. In prose, name
 a commit by its subject; SHAs appear only in `## Commits`. Do not print
 the ledger key; it belongs to the screening report.
@@ -247,6 +306,7 @@ Reply in this shape, as plain text outside any code fence, with plain bullets, n
 
 ## Verification
 
+- Used the ledger from the earlier check.
 - Ran format, lint, typecheck, and the retry tests locally. The full suite is left to CI.
 
 1. Push and watch CI
@@ -261,9 +321,13 @@ Stopped before any edit: the working tree has uncommitted changes.
 
 Commit or stash them, then run /respond:action again.
 
-## Verification
-
-- No gates ran, because nothing changed.
-
 1. Stop
+```
+
+A non-interactive run states its plan after the hero line:
+
+```text
+✓ 1 fixed, 0 deferred, 0 declined on feat/retry-after.
+
+Plan: one forward commit for #1, stop on a red gate, post no replies.
 ```

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # One commit, then an uncommitted edit to a tracked file and an untracked
-# file: the user's work a probe on top must leave in the tree untouched.
+# file: the user's work a stash-first probe must save and put back.
 set -euo pipefail
 
 git init -b main >/dev/null

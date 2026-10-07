@@ -26,8 +26,9 @@ cleaned up later.
   no account of what was cut.
 - A commit message carries no `Co-Authored-By`, no "Generated with" or
   other tool trailer, and no emoji.
-- Read `./AGENTS.md` and `./CLAUDE.md`. When they define a slop rubric
-  or a house voice, that governs.
+- For multi-paragraph or repo-bound prose, read `./AGENTS.md` and
+  `./CLAUDE.md`. When they define a slop rubric or a house voice, that
+  governs.
 
 ## Comments
 

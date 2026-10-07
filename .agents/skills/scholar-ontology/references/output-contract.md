@@ -40,7 +40,8 @@ When a prerequisite is missing or a gate fails, report only the hero line
 (`⚠ Blocked: <reason>`), one sentence naming what is missing, and the step the
 user takes to unblock it. Print none of the skill's sections, no empty
 placeholders, no guesses from partial input, and no next-step list. Do not
-list files you did not create.
+list files you did not create. The sentence names the unblock; it does not
+restate the hero, list what was searched, or say what was not written.
 
 ```text
 ⚠ Blocked: no sources.jsonl for this study.

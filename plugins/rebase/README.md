@@ -38,8 +38,7 @@ only when you invoke it by name.
 
 ## Quality Gates & Design
 
-- Reads `AGENTS.md` / `CLAUDE.md` to discover required checks.
-- Does not hardcode linters or test runners; works with whatever the project uses.
+Reads `AGENTS.md` / `CLAUDE.md` for the project's checks; hardcodes no linter or test runner.
 
 ## Prerequisites
 

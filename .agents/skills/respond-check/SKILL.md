@@ -65,8 +65,8 @@ the first gate that settles it. Record each gate's evidence as you go; a
 verdict with no evidence behind it is not a verdict, and the report must
 not contain one.
 
-- Read the code, do not trust the claim: automated reviewers assert with
-  total confidence regardless of whether they are right.
+- Read the code, do not trust the claim: automated reviewers may assert
+  with full confidence and be wrong.
 - One verdict per finding. "Fix if X" is not a verdict; when the code
   cannot be read, the verdict is `ask`.
 - Decline on evidence only: a cited decision, a code path read, a
@@ -87,41 +87,61 @@ exactly the headings below, in this order, and no others. The hero line
 is the first line of the reply; nothing precedes it, including a run
 with no readable code. Never name local absolute paths or temp files.
 
-1. Hero block (1–3 lines): `N to fix, M deferred, K declined` plus the
-   branch name and the feedback sources screened.
+1. Hero block (1–3 lines): `N to fix, M deferred, K declined`, then
+   `, J ask` when any finding is an `ask`, plus the branch name and the
+   feedback sources screened.
 2. `## Ledger` — one entry per finding: id, source (author, and whether
    it is a bot), the claim quoted, location, the gate results with
-   their evidence, and the verdict with its reason. Merged duplicates
+   their evidence, and the verdict with its reason, as one inline-prose
+   bullet (no labeled sub-bullets). Merged duplicates
    list all their sources on one entry. When the code is unreadable,
    every finding is an `ask` entry here, never under
    `## Deferred & declined`.
-3. `## To fix` — the accepted findings in the order they should land,
+3. `## To fix` — omitted when nothing is accepted; else the accepted findings in the order they should land,
    each with the minimal fix and whether it wants a forward commit or a
    `fixup!`. Name a `fixup!` target only when the branch's log shows
    the causal commit; otherwise it is a forward commit.
-4. `## Deferred & declined` — with the follow-up recommendation or the
-   drafted reply. A declined `improbable` reply states the trigger the
+4. `## Deferred & declined` — omitted when empty; else the follow-up
+   recommendation or the drafted reply. A declined `improbable` reply states the trigger the
    scenario needs, so a reviewer who knows a caller that produces it
    can say so.
-5. `## Ledger key` — branch, `HEAD` SHA, and the feedback digest, as
-   the rubric's ledger section defines them. A second bullet says
-   provenance may be stale when the remote has moved.
- the `respond-action` skill checks
-   this key to know the screening still describes the current tree.
+5. `## Ledger key` — branch, `HEAD` (7-character SHA, the only place a
+   SHA appears), and the feedback digest, as the rubric's ledger section
+   defines them. A second bullet says provenance may be stale when the
+   remote has moved. the `respond-action` skill checks this key to know the
+   screening still describes the current tree.
 6. End with an `ask-user-choice` panel: run the `respond-action` skill on the
    accepted findings, run it with `--reply` so the drafted replies get
-   posted too (both omitted when `## To fix` is empty), re-screen with the deferred findings opted in, or stop.
+   posted too (both omitted when `## To fix` is empty), re-screen with the
+   deferred findings opted in, or stop.
    In a non-interactive run (CI, subagent), list the panel's options as
    plain numbered lines after `## Ledger key`, with no heading, and stop.
    Invoked by the `respond-goal` skill, skip the panel.
 
-Compute the digest from one `<source>` TAB `<claim>` line per finding,
-as collected. A quoted heredoc needs no escaping:
+Compute the digest from the reviewers' original text, one
+`<id>` TAB `<text>` line per comment, review body, or pasted block, as
+the rubric's ledger section defines. the `respond-action` skill runs the same
+commands, so the keys compare. For a pull request, one command covers
+the three comment surfaces:
+
+```bash
+{
+  gh api repos/{owner}/{repo}/pulls/<n>/reviews --paginate \
+    --jq '.[] | [.id, .body] | @tsv'
+  gh api repos/{owner}/{repo}/issues/<n>/comments --paginate \
+    --jq '.[] | [.id, .body] | @tsv'
+  gh api repos/{owner}/{repo}/pulls/<n>/comments --paginate \
+    --jq '.[] | [.id, .body] | @tsv'
+} | python3 references/ledger_key.py
+```
+
+For pasted text or a session's review output, give each whole block the
+id `paste` or `session`; a quoted heredoc needs no escaping:
 
 ```bash
 python3 references/ledger_key.py <<'EOF'
-alex	first claim
-lint-bot	second claim
+paste	alex: parse_retry_after throws on a non-numeric header
+session	lint-bot: session.token is read before the None check
 EOF
 ```
 
@@ -149,7 +169,8 @@ Reply in this shape, as plain text outside any code fence, with plain bullets, n
 
 ## Ledger key
 
-- Branch feat/retry-after, HEAD 4f2a9c1e7b05d83a6c1f9e204b7d5a38c0e1f692, digest 9b3e07a1c4d2.
+- Branch feat/retry-after, HEAD 4f2a9c1, digest 9b3e07a1c4d2.
+- Provenance may be stale: this skill did not fetch, so origin/main is as last fetched.
 
 1. Run respond-action on the accepted findings
 2. Run it with --reply to post the drafted replies
@@ -182,6 +203,7 @@ Reply in this shape, with the same plain bullets:
 ## Ledger key
 
 - Branch main, HEAD none, digest 1f12e2f93174.
+- Provenance may be stale: no code or remote was available.
 
 1. Run this from the pull request's checkout, or paste the code
 2. Stop

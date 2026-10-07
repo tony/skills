@@ -82,3 +82,9 @@ def test_missing_binary_is_crash(tmp_path: Path) -> None:
     result = tier(tmp_path, tmp_path / "absent")
     assert result["class"] == "crash"
     assert result["exit_code"] == 127
+
+
+def test_oversized_prompt_is_passed_as_a_file_reference(tmp_path: Path) -> None:
+    result = tier(tmp_path, stub(tmp_path, 'echo "${@: -1}"'), prompt="x" * 200_000)
+    assert result["class"] == "ok"
+    assert str(tmp_path / "prompt.txt") in str(result["stdout"])

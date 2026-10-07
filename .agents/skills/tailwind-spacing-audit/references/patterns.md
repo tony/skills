@@ -7,6 +7,18 @@ logical margins (`ms-*`, `me-*`, added in
 [Tailwind v3.3](https://github.com/tailwindlabs/tailwindcss/releases/tag/v3.3.0))
 are the same anti-pattern.
 
+## Contents
+
+- Detect command limits
+- Pattern 1: Container fragmentation
+- Pattern 2: Margin and gap mixing
+- Pattern 3: Padding asymmetry
+- Pattern 4: Fixed width on content-sized items
+- Pattern 5: Wrapper nesting
+- Pattern 6: Hit target inconsistency
+- Pattern 7: space-x and space-y with gap (v3 and v4)
+- Decision tree
+
 ## Detect command limits
 
 Each pattern's command is `python3 <absolute path to detect.py> <name> <path>`,
@@ -25,27 +37,22 @@ They cannot see:
 
 - classes assembled at runtime (`` `gap-${n}` ``), `@apply`, `cva`
   variants, and component-library props
-- `className` values built across several string arguments (Pattern 7
-  has a second command for this)
 - tags whose opening line holds `>` inside an attribute other than
   `=>`, such as a generic `<Foo<T>>`
 - files outside the template extensions the script scans
+- containers: `vmargin` and `margin-in-gap` match per file, so a
+  `flex-col` or `grid` anywhere in a file makes every `mt-*`, `mb-*`,
+  and `my-*` in it a hit, and a `gap-*` anywhere pairs with every margin
+- vertical margins in a file with no `flex-col` or `grid` (block flow
+  collapses them; `margin` never lists them)
+- `mt-auto`, `mx-auto`, and the other `auto` margins, which push instead
+  of space
+- `space-*` combined with `gap-*` across separate `cn()` arguments
+  (Pattern 7 has a second command for this)
 
 Zero hits is not proof of a clean file. When a command returns nothing
 for a file the user named, read that file and apply the pattern by eye.
 Every hit needs a read in context.
-
-## Contents
-
-- Detect command limits
-- Pattern 1: Container fragmentation
-- Pattern 2: Margin and gap mixing
-- Pattern 3: Padding asymmetry
-- Pattern 4: Fixed width on content-sized items
-- Pattern 5: Wrapper nesting
-- Pattern 6: Hit target inconsistency
-- Pattern 7: space-x and space-y with gap (v3 and v4)
-- Decision tree
 
 ## Pattern 1: Container fragmentation
 
@@ -55,7 +62,7 @@ with its own spacing rule. No `rg` pattern finds this; walk the DOM.
 Detect: list the visual peers, then check that all share one flex or
 grid parent. The command lists every horizontal margin (`ml-`, `mr-`,
 `ms-`, `me-`, `mx-` with a number or arbitrary value; `mx-auto` is
-skipped). It has no sibling logic; walk the DOM to see which margins
+skipped; vertical margins are `vmargin`, under Pattern 2). It has no sibling logic; walk the DOM to see which margins
 compensate for a split.
 
 ```console
@@ -129,38 +136,34 @@ profile link gained `px-2` (Pattern 3), and all four peers share `h-12`
 A flex or grid parent sets `gap-*`, and some children also carry
 margin. The margin adds to the gap on that edge.
 
-Detect: find parents with gap, then margins on their children. A file in
-both lists is a candidate:
+Detect: list margins in files that also set `gap-*`. Horizontal margins
+always count; `mt-*`, `mb-*`, and `my-*` count when the file has
+`flex-col` or `grid`. `auto` margins are skipped because they push
+instead of spacing peers. The command stops after 50 hits; narrow the
+path and rerun when it says so:
 
 ```console
 $ python3 <absolute path to detect.py> \
-    gap \
+    margin-in-gap \
     <path>
 ```
 
-Fallback if the script cannot run (replace `.` with the target):
-
-```console
-$ rg -n \
-    -e '(?:^|[\s"\x27\x60:!])gap(?:-[xy])?-(?:[0-9\[]|px\b)' \
-    -g '*.{tsx,jsx,vue,svelte,astro,html,erb,blade.php}' \
-    .
-```
-
-Then list margins, numeric and arbitrary values. `mx-auto` is skipped
-because it centers a block instead of spacing peers:
+To list vertical margins without requiring a gap, such as a `flex-col`
+stack that spaces rows with `mt-*` alone, run:
 
 ```console
 $ python3 <absolute path to detect.py> \
-    margin \
+    vmargin \
     <path>
 ```
 
-Fallback if the script cannot run (replace `.` with the target):
+Fallback if the script cannot run (replace `.` with the target). It lists
+every margin; keep the ones in files that also match the `gap` pattern,
+and take the first 50 hits per file:
 
 ```console
 $ rg -n \
-    -e '(?:^|[\s"\x27\x60:!])-?m[xesrl]-(?:[0-9\[]|px\b)' \
+    -e '(?:^|[\s"\x27\x60:!])-?m[xesrlytb]-(?:[0-9\[]|px\b)' \
     -g '*.{tsx,jsx,vue,svelte,astro,html,erb,blade.php}' \
     .
 ```
@@ -189,7 +192,7 @@ After, uniform:
 </nav>
 ```
 
-After, if the wide gap was a deliberate break, make it a visible
+After, only when the user wants the wide gap kept, make it a visible
 divider instead of margin arithmetic:
 
 ```tsx
@@ -441,10 +444,11 @@ Every gap is 8 + 12 = 20px, and the margin follows the child, so
 reordering children changes the spacing (in v4, hiding the last child
 does too).
 
-After:
+After (keep the `gap-*` already on the container; use a different value
+only when the user asked to preserve the old distance):
 
 ```tsx
-<div className="flex gap-3">
+<div className="flex gap-2">
   <span>Tag 1</span>
   <span>Tag 2</span>
   <span>Tag 3</span>
@@ -478,5 +482,6 @@ Does the parent have both gap-* and space-*?
         |                   +-- No --> Spacing may be correct. Verify visually.
         +-- No --> Is spacing done via margins?
             +-- Yes --> Pattern 2. Add gap-* to the parent, remove margins.
-            +-- No --> Spacing may be correct. Verify visually.
+            +-- No --> Check Patterns 3 to 6 as in the gap branch above.
+                If none applies, spacing may be correct. Verify visually.
 ```

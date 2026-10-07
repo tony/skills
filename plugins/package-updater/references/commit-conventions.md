@@ -63,7 +63,8 @@ exercises, is fully described by its links.
 
 A bump takes a `why:` above that link block when any of these hold:
 
-- It crosses a major, or the vendor labels the release breaking.
+- It crosses a major (for a 0.x tool, a minor: uv 0.7 to 0.8 can
+  break), or the vendor labels the release breaking.
 - The span changes behavior the repository exercises — a resolver
   default, a discovery rule, a newly rejected input format.
 - It carries a security fix.
@@ -109,7 +110,8 @@ worth reaching.
 
 A package earns its own commit when any of these hold:
 
-- The version crosses a major.
+- The version crosses a major, or for a 0.x package a minor, which is
+  where 0.x breaks.
 - It is a linter, formatter, or compiler whose output changes.
 - It needs a follow-up commit.
 - The change is a floor or constraint in the manifest, not just a
@@ -128,7 +130,8 @@ js(deps) Refresh in-range transitives
 ```
 
 **The body is empty,** for every ecosystem: `uv sync --upgrade`,
-`ncu -u` with no named package, and `pnpm update` alike. The lockfile
+`ncu -u --target minor` with no named package, and `pnpm update`
+alike. The lockfile
 diff already says it, and a generated package inventory buries the
 commits that carry reasoning. The subject says which kind of refresh it
 is: manifest bumps, or in-range transitives with no manifest edit. A
@@ -207,7 +210,9 @@ EOF
 
 ## Exemplars
 
-Match their density, not their length.
+Match their density, not their length. Versions, issue numbers and
+vendor behavior in them are invented for illustration; never copy one
+into a real body.
 
 A named bump whose body earns its place by naming the coupling:
 

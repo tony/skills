@@ -28,8 +28,8 @@ write this comment, at this length? Those projects state the
 constraint and stop. They do not argue with an imagined objector.
 
 **Upkeep.** Will it stay true without maintenance? A comment that
-hand-syncs a value the code owns — a count, an offset, a line
-reference, a duplicated constant — is false the first time that value
+hand-syncs a value the code owns (a count, an offset, a line
+reference, a duplicated constant) is false the first time that value
 moves.
 
 ## Ceiling

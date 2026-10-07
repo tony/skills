@@ -21,9 +21,10 @@ makes editor JSON validation disagree with the running binary. Run
 biome.jsonc: Update to 2.5.5
 ```
 
-**Tailwind CSS** — compiled-CSS snapshots record the shape of Tailwind's
-output, which changes across minors even when the rendered result does
-not. Regenerate them and land them separately.
+**Tailwind CSS** — a compiled-CSS snapshot records the shape of
+Tailwind's output, which can change across a release without changing
+the rendered result. When the tests show it moved, regenerate the
+snapshots and land them separately.
 
 **Any linter or formatter** — new or changed rules produce a diff across
 files the bump never touched. That diff is its own commit, or several;
@@ -46,7 +47,8 @@ This is the honest form. The alternatives are worse: bundling the two
 loses the clean revert, and staying silent leaves a bisect landing on a
 commit that fails for reasons its message does not mention.
 
-An exemplar of the pair:
+An exemplar of the pair, with illustrative versions and vendor
+behavior:
 
 ```text
 js(deps[dev]) tailwindcss 4.3.2 -> 4.3.3

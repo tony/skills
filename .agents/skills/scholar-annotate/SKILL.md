@@ -27,8 +27,8 @@ User arguments: $ARGUMENTS
 Read the source's row in `sources.jsonl`. `--locator` overrides the row's
 `locator_kind`; the four kinds are defined in `references/citation.md`.
 If the kind is `page` and the edition is unrecorded, or the source has no row,
-stop. `gather` writes `sources.jsonl` and records the edition; the user may
-also add the row by hand.
+stop with `⚠ Blocked` (see Output). `gather` writes `sources.jsonl` and
+records the edition; the user may also add the row by hand.
 
 ### 2. Extract quotations
 
@@ -66,11 +66,21 @@ passage.
 ## Output
 
 Per `references/output-contract.md`. Hero: `✓ <n> quotations from
-<source>`. Sections:
+<source>` or `⚠ Blocked: <reason>`. A blocked run prints the hero, one
+sentence on the unblock, and nothing else: no text before the hero, no
+sections, no restating the reason. Reply as plain text outside any code fence.
+
+```text
+⚠ Blocked: no sources.jsonl row for style-guide-essay, so its edition is unrecorded.
+
+Run scholar-gather on the source, or add its row by hand, then run annotate again.
+```
+
+Sections:
 
 1. `## Quotations` — the `quotations.jsonl` path under the study directory, the count by `locator_kind`, and the concepts they name.
-2. `## Locator` — which `locator_kind` this source uses and why, including any
-   fallback to `search-string`.
+2. `## Locator` — which `locator_kind` this source uses, including any
+   fallback to `search-string`. Give no reasons.
 3. `## Undefined` — terms the author uses without defining, which `extract`
    will have to infer from usage.
 

@@ -15,7 +15,7 @@ import json
 import subprocess
 import sys
 import tempfile
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from pathlib import Path
 
 
@@ -44,12 +44,12 @@ def save(pr: str) -> int:
     """Back up the PR body and title; print the backup directory."""
     pr_json = _fetch(pr)
     body = str(pr_json["body"])
-    root = Path(_run("git", "rev-parse", "--git-path", "pr-backups").strip())
-    stamp = datetime.now(UTC).strftime("%Y%m%d-%H%M%SZ")
+    root = Path(_run("git", "rev-parse", "--git-path", "pr-backups").strip()).resolve()
+    stamp = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%SZ")
     out = root / f"{stamp}-pr{pr_json['number']}"
     out.mkdir(parents=True)
-    (out / "body.md").write_text(body, encoding="utf-8", newline="")
-    (out / "title.txt").write_text(str(pr_json["title"]), encoding="utf-8", newline="")
+    (out / "body.md").write_bytes(body.encode("utf-8"))
+    (out / "title.txt").write_bytes(str(pr_json["title"]).encode("utf-8"))
     (out / "number.txt").write_text(str(pr_json["number"]), encoding="utf-8")
     if not _same(out / "body.md", body):
         sys.stderr.write("backup does not match the fetched body\n")

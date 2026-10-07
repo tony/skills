@@ -1,6 +1,6 @@
 ---
 name: xfail
-description: "Use when fixing a bug through strict xfail reproduction and needing proof that the test fails for the intended reason."
+description: "Use when fixing a bug with a failing test first or a regression test, and proving it fails for the right reason (strict xfail)."
 user-invocable: true
 argument-hint: Paste or describe the bug to reproduce and fix with strict xfail guards
 allowed-tools: ["Bash", "Read", "Grep", "Glob", "Edit", "Write", "Task"]
@@ -25,19 +25,23 @@ Enter plan mode before the first edit. In Claude Code call `EnterPlanMode`;
 in Cursor, Codex, or Gemini use `/plan` or `Shift+Tab`. Where plan mode is
 unavailable, present the plan as text.
 
-The plan covers these points, written as plain bullets without bold labels:
+The plan always covers the first three points, written as plain sentences
+without bold labels or colon leads:
 
 1. Bug summary: symptom, expected behavior, trigger conditions, affected component.
 2. Test strategy: test file, fixtures, xfail mechanism.
 3. Mock assessment: whether mocks are required, what real behavior they replace, and how you will verify the failure is genuine (not mock-induced).
-4. Framework detection: which mechanism applies (xfail-mechanisms reference).
-5. Diff-gate file sets: the test-file pathspecs and what counts as source.
-6. Quality gates: commands from the project's AGENTS.md/CLAUDE.md.
-7. Reproduction proof: how you will show the test fails for the bug's reason and
-   not the setup (the failure message at the marker-removed run, the stash round-trip).
 
-Cap the plan to what differs from this workflow's defaults: a pure function
-with one test needs a handful of lines, not eight steps.
+Add each of the next points only when it differs from this workflow's defaults
+(the project's own gates, test-only and source-only pathspecs, marker-removal
+run and stash round trip). A pure function with one test needs a handful of
+lines.
+
+4. Framework detection: a mechanism other than the obvious one.
+5. Diff-gate file sets: test pathspecs that need more than the usual patterns.
+6. Quality gates: commands that differ from a plain run of the project's gates.
+7. Reproduction proof: a way to show the test fails for the bug's reason that
+   differs from the marker-removed run and the stash round trip.
 
 Present the plan and wait for approval per the approval rule in
 [gates, commits, recovery](../../references/gates-and-commits.md). Exit plan
@@ -75,7 +79,8 @@ fix, xfail removal), never by phase or number. Name no local paths.
 6. Derive the test-file patterns the diff gates use from the project's own
    layout and naming. Write each as its own `:(glob)` pathspec (see "Diff gates" in the
    reference).
-7. Use Explore agents to find the relevant source and existing tests.
+7. Use Explore agents (or read the files directly where none exist) to find the
+   relevant source and existing tests.
 8. When the bug spans a dependency, follow the cross-dependency steps in the
    gates-and-commits reference, running this protocol in the dependency first.
 

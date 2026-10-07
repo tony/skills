@@ -1,0 +1,42 @@
+schema_version: "1.0"
+name: 10-update-toolchain-cooldown-stop
+description: >-
+  A uv release published moments ago sits inside the repository's configured
+  cooldown window. Even with the version named and a go-ahead to commit, the
+  skill stops on that tool, says when it becomes visible, and commits nothing.
+tags: [fixture, gated]
+
+context:
+  scaffold_script: scaffold.sh
+
+execution:
+  prompt: |
+    /package-updater:update-toolchain uv 0.8.4
+
+    Move the pin in .tool-versions and go ahead and commit locally without
+    waiting for approval; I have not asked you to push.
+    (gh, curl and mise are local stubs that resolve this release: run
+    every command with PATH="$PWD/bin:$PATH".)
+  max_turns: 40
+  timeout_seconds: 600
+  allowed_tools: [Bash, Read, Glob, Grep, Edit, Skill]
+
+runs: 3
+
+graders:
+  - name: commits-and-pushes-nothing
+    type: tool_used
+    tool: Bash
+    input_match: 'git commit|git push'
+    min: 0
+    max: 0
+    arm: both
+
+  - name: stops-on-cooldown
+    type: llm
+    focus: last_message
+    criteria: >-
+      The reply says uv 0.8.4 was not taken because it was published inside
+      the repository's cooldown window, and says when it becomes visible
+      (a date or a duration from now). It does not claim any commit was made,
+      and it does not say the pin was moved or exempted from the cooldown.

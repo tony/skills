@@ -16,7 +16,8 @@ Land the plan as separate, verified commits. This is the only phase that edits
 the suite or writes history.
 
 `$ARGUMENTS` may pass `--from=<index>` to start at a specific plan item,
-`--dry-run` to apply and verify without committing (reverting after each), and
+`--dry-run` to apply and verify without committing (reverting after each; it writes
+nothing to `execution-log.json` or `state.json`), and
 `--memory-dir` to override the memory location.
 
 Arithmetic goes through `references/measure.py` (Python 3 standard
@@ -52,9 +53,11 @@ gone: stop, print its `reason`, and tell the user to run
 Read `plan.json`, `baseline.json`, `state.json`, and the project quality-check +
 test commands. Refuse to run unless all hold, checking in this order:
 
-- `state.json` has `completed.plan=true` and its `plan_hash` equals the output of
-  `measure.py hash plan.json`. Otherwise the plan was not approved in
-  `pytest-optimizer:02-plan` or changed afterwards;
+- `state.json` has `completed.plan=true`. Otherwise stop: the plan was never
+  approved, so run `pytest-optimizer:02-plan`;
+- its `plan_hash` equals the output of `measure.py hash plan.json`. Otherwise
+  stop: the plan changed after approval, so approve it again with
+  `pytest-optimizer:02-plan`. Name the one check that failed, never both;
 - `git rev-parse --show-toplevel` is neither `$HOME` nor a directory containing
   it: a dotfile repo rooted at home hides its untracked files from `git status`,
   and Step 2's cleanup would delete them;
@@ -66,6 +69,11 @@ test commands. Refuse to run unless all hold, checking in this order:
   show `git status --short` and, once the user confirms the changes are the
   run's own, discard them with the `restore` command in Step 2.4. Without an
   interactive question tool, stop and name that command.
+
+If the last log entry has `pending_subject` and no `commit_sha`, a crash fell
+between commit and checkpoint: when `git log -1 --format=%s` equals that subject,
+record `HEAD` as its `commit_sha` and add it to the chain check above; otherwise
+treat the tree as half applied.
 
 Resume from `last_applied_index + 1` (or `--from`). Never re-apply an item that
 already has a `commit_sha`. Nothing in this skill pushes: the commits stay local.
@@ -94,7 +102,8 @@ For each plan item not yet applied:
 3. **On success** — commit this change **alone** with the drafted why/what
    message, written per `references/prose-rules.md`. No `Co-Authored-By`,
    no "Generated with" or other tool trailer, no emoji: hosts add them by
-   default. Record the `commit_sha`.
+   default. First write the log entry with `pending_subject`, then commit, then
+   record the `commit_sha` and the verify run's `seconds`.
 4. **On failure** — the tree was clean before the item. Restore it, files the
    item created included, with the script, which repeats the `$HOME` and
    memory-directory checks before it runs `git reset --hard HEAD` and
@@ -107,17 +116,34 @@ For each plan item not yet applied:
 
    Exit 1 means it refused and changed nothing: stop and report its `reason`.
    Otherwise mark the item `skipped` with the reason and continue.
-5. **Checkpoint** — append the outcome to `execution-log.json` and update
+5. **Checkpoint** — complete the entry in `execution-log.json` and update
    `state.json` (`phase=execute`, `last_applied_index`) immediately, so a re-run
    continues from the last checkpoint.
+6. **Regression stop** — when the item's verify `seconds` exceeds the baseline
+   median plus its band, re-run the verify command twice more. If the median of
+   the three still exceeds that limit, the commits so far made the suite slower:
+   stop before the next item, name the item, and ask whether to continue or
+   revert it. Without a question tool, stop and say so.
 
-Under `--dry-run`, perform 1–2 then revert as in 4 and log the verify result
-without committing.
+Under `--dry-run`, perform 1–2 then revert as in 4, write no log or state, and
+report the verify result in the reply.
 
 ## Step 3: Re-measure and report
 
-After the plan is exhausted, re-run the baseline measurement (`00-scan` Step 4)
-and compare against `baseline.json` with `measure.py compare`. Emit the
+After the plan is exhausted (a dry run skips this re-measure and sets no flag), set
+`completed.execute=true`. Resolve and create `<runs-dir>` per
+`references/memory-schema.md` ("Run files"), delete `post-runs.jsonl` there,
+time `--runs` runs as `00-scan` Step 4 does into it, and compare against
+`baseline.json`, passing the last item's `expected_total`:
+
+```console
+$ python3 <measure.py> compare \
+    --expect-total <expected_total> \
+    <memory-dir>/baseline.json \
+    <runs-dir>/post-runs.jsonl
+```
+
+Emit the
 `03-execute` sections from `references/output-contract.md`. Write the
 prose per `references/prose-rules.md`.
 

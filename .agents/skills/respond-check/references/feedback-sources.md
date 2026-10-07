@@ -44,7 +44,7 @@ $ gh api graphql \
     -F owner={owner} \
     -F repo={repo} \
     -F number=<n> \
-    -f query='query($owner: String!, $repo: String!, $number: Int!, $endCursor: String) { repository(owner: $owner, name: $repo) { pullRequest(number: $number) { reviewThreads(first: 100, after: $endCursor) { pageInfo { hasNextPage endCursor } nodes { isResolved isOutdated path comments(first: 20) { pageInfo { hasNextPage } nodes { author { login } body createdAt } } } } } } }'
+    -f query='query($owner: String!, $repo: String!, $number: Int!, $endCursor: String) { repository(owner: $owner, name: $repo) { pullRequest(number: $number) { reviewThreads(first: 100, after: $endCursor) { pageInfo { hasNextPage endCursor } nodes { isResolved isOutdated path comments(first: 20) { pageInfo { hasNextPage } nodes { databaseId author { login } body createdAt } } } } } } }'
 ```
 
 Skip resolved and outdated threads by default; `--include-resolved`
@@ -103,7 +103,7 @@ and let the rubric settle it.
 
 ## Re-posts across rounds
 
-Automated reviewers re-post on every push. A finding that a previous
+Automated reviewers may re-post on a push. A finding that a previous
 round declined stays declined unless the code at that location changed
 since the decline — in which case it is genuinely new and screens
 again.

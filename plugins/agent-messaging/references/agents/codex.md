@@ -1,6 +1,6 @@
 # Adapter: Codex
 
-If `codex queue --help` fails, the build lacks `codex queue`; use tmux.
+If `codex queue --help` fails, the build lacks `codex queue`; use tmux only on a pane the user names, since Codex discovery yields no pane.
 
 Upstream: [openai/codex](https://github.com/openai/codex).
 
