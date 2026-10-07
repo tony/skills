@@ -280,7 +280,7 @@
         "references/rebuild-contract.md": "plugins/git-branch/references/rebuild-contract.md",
         "references/split-mechanics.md": "plugins/git-branch/references/split-mechanics.md"
       },
-      "bytes": 47680
+      "bytes": 48941
     },
     {
       "name": "git-branch-soft-reset-and-recommit",
@@ -295,7 +295,7 @@
         "references/rebase-toolkit.md": "plugins/git-branch/references/rebase-toolkit.md",
         "references/split-mechanics.md": "plugins/git-branch/references/split-mechanics.md"
       },
-      "bytes": 42701
+      "bytes": 42980
     },
     {
       "name": "github-actions-bumping-github-actions",

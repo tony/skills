@@ -148,6 +148,7 @@ Then show the user how the history was regrouped:
 $ git range-diff <base-sha> backup/<flat>-<ts> HEAD
 ```
 
+Name any gate that did not run on every commit, and the commits it skipped.
 Write the report per `../../references/prose-rules.md`. Reply in this
 shape, as plain text outside any code fence, with plain bullets, no bold (never `- **Backup:** ...`),
 and no local paths:
@@ -158,9 +159,9 @@ Rebuilt feature/auth-rework as 3 commits; the tree matches the original.
 - 7c1e9a2 auth(refactor[session]) Extract token store
 - b40d3f8 auth(feat[refresh]) Add refresh-token rotation
 - e9a6150 auth(test[refresh]) Cover rotation and expiry
-- Backup: backup/feature-auth-rework-20261005.
+- Backup: backup/feature-auth-rework-20261005T141500Z.
 - Gates: lint, typecheck, and tests pass on every commit.
-- Deferred: the push; run it when ready.
+- Not pushed.
 ```
 
 A refused or halted run is one result sentence naming the gate that

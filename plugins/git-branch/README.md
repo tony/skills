@@ -42,7 +42,8 @@ always a manual step.
 1. **Gathers intent:** Reads commit messages, trailers, PR bodies, reviews,
    and linked tickets before altering boundaries.
 2. **Resolves base & validates:** Stops on dirty trees, operations in
-   progress, merge commits, or pushed branches. Identifies correct base for
+   progress, and merge commits; asks before rewriting a pushed branch and
+   stops if someone else pushed. Identifies correct base for
    stacked branches.
 3. **Discovers commit format:** Reads from `AGENTS.md`, `CONTRIBUTING.md`,
    commitlint configs, or mining history. Asks if mixed.
@@ -79,37 +80,39 @@ Retains original branch as a reference.
 
 `scripts/rebase-todo.sh` drives `git rebase -i` without an editor or TTY.
 
-Run it from anywhere (substitute `${CLAUDE_PLUGIN_ROOT}` with the plugin's
-install path outside a session):
+Run it from anywhere. In the examples, `<toolkit>` is the script's absolute
+path: from a skill, `../../scripts/rebase-todo.sh` relative to the skill's
+directory; outside a session, the plugin's install path plus
+`scripts/rebase-todo.sh`.
 
 Report any git operation in progress:
 
 ```console
-$ sh ${CLAUDE_PLUGIN_ROOT}/scripts/rebase-todo.sh status
+$ sh <toolkit> status
 ```
 
 Print the todo list for a range:
 
 ```console
-$ sh ${CLAUDE_PLUGIN_ROOT}/scripts/rebase-todo.sh show <base>
+$ sh <toolkit> show <base>
 ```
 
 Replay the range from an edited plan:
 
 ```console
-$ sh ${CLAUDE_PLUGIN_ROOT}/scripts/rebase-todo.sh apply <base> plan.txt
+$ sh <toolkit> apply <base> plan.txt
 ```
 
 Run a command after every commit, in place:
 
 ```console
-$ sh ${CLAUDE_PLUGIN_ROOT}/scripts/rebase-todo.sh verify <base> 'make test'
+$ sh <toolkit> verify <base> 'make test'
 ```
 
 Fold pending `fixup!` and `amend!` commits:
 
 ```console
-$ sh ${CLAUDE_PLUGIN_ROOT}/scripts/rebase-todo.sh squash <base>
+$ sh <toolkit> squash <base>
 ```
 
 ## Relationship to other git plugins
@@ -124,8 +127,8 @@ $ sh ${CLAUDE_PLUGIN_ROOT}/scripts/rebase-todo.sh squash <base>
 
 ## Prerequisites
 
-- **git** — 2.30+ for `--keep-base`, `git restore`, and
-  `--force-if-includes`; 2.38+ for `RECUT_UPDATE_REFS` (`--update-refs`).
+- **git** — 2.30+ for `--force-if-includes`; 2.38+ for
+  `RECUT_UPDATE_REFS` (`--update-refs`).
   Check with `git --version`.
 - **gh** — (Optional) to read PRs, reviews, and linked issues. Degrades to
   git-only if missing.

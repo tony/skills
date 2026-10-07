@@ -15,8 +15,10 @@ copy of a day's work. Each gate prevents a silent loss.
 
 Each of these halts the run with a report, not a warning:
 
-- **A dirty working tree.** Check `git status --porcelain` yourself;
-  `rebase.autoStash=true` makes git stash and proceed.
+- **A dirty working tree.** Check `git status --porcelain` yourself,
+  untracked files included; `rebase.autoStash=true` makes git stash and
+  proceed. The toolkit script ignores untracked files, so this check is
+  the stricter one.
 - **An operation already in progress.** Probe the git dir for
   `rebase-merge`, `rebase-apply`, `MERGE_HEAD`, `CHERRY_PICK_HEAD`,
   `REVERT_HEAD`, `BISECT_LOG`, `sequencer`, each resolved through

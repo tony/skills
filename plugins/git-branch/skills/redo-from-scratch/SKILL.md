@@ -25,8 +25,13 @@ Five references carry the parts that must not drift:
   discovery, intent recovery, and the privacy gate.
 - `../../references/rebase-toolkit.md` — per-commit
   verification with no editor, and `<toolkit>`.
-- `../../references/split-mechanics.md` — committing whole files and
-  splitting one file across commits.
+- `../../references/split-mechanics.md` — committing whole files,
+  splitting one file across commits, and resolving `<base-sha>`.
+
+`<base-sha>` is the merge base of the branch and its base, resolved once
+to a SHA per "Resolve the base first" in `split-mechanics.md` (a stacked
+branch uses its parent branch's tip, never trunk). `<flat>` is the branch
+name with every `/` replaced by `-`.
 
 ## Core principle
 
@@ -114,8 +119,14 @@ Work in a worktree so the original branch stays runnable for
 comparison:
 
 ```console
-$ git worktree add -b <branch>-redo /tmp/<branch>-redo <base-sha>
+$ git worktree add \
+    -b <branch>-redo \
+    "$(mktemp -d "${TMPDIR:-/tmp}/<flat>-redo.XXXXXX")" \
+    <base-sha>
 ```
+
+Run `git worktree list` for the new path and use that literal path for
+every later command; each Bash call starts in a fresh shell.
 
 The worktree starts at the base, so the branch's tests are not in it.
 Copy them in from the backup (this stages them), leave them staged
@@ -150,16 +161,23 @@ per `commit-messages.md` (write the messages per
 `../../references/prose-rules.md`; no `Co-Authored-By`, "Generated
 with" or other tool trailer, and no emoji), carving the working tree
 into commits with `split-mechanics.md`; commit the staged spec tests
-first. The rebuilt files are untracked,
+first, as their own commit. The rebuilt files are untracked,
 so stage them with `git add -- <paths>` and commit the index; `--only`
 fails on untracked paths.
 
-Then gate every commit of the new series in place, with `<toolkit>` as
-defined in `rebase-toolkit.md`:
+Then gate every commit of the new series in place, from the worktree,
+with `<toolkit>` as defined in `rebase-toolkit.md`. The spec-tests commit
+has no implementation yet, so the gate must not run the tests on it: skip
+the commit whose parent is `<base-sha>`, and run the full test command
+on every later commit.
 
 ```console
-$ sh <toolkit> verify <base-sha> '<test command>'
+$ sh <toolkit> verify <base-sha> '[ "$(git rev-parse HEAD^)" = <base-sha> ] || <test command>'
 ```
+
+Add the project's lint and build gates to the command as separate
+`&&` terms outside the skip, so they still run on the spec-tests commit.
+Report the skip: the report says which commit the tests were not run on.
 
 ## Phase 7 — Reconcile, then stop
 
@@ -182,10 +200,11 @@ and no local paths:
 ```text
 Rebuilt feature/export-v2 as feature/export-v2-redo; the contract holds.
 
-- Contract: 48 trunk and branch tests pass unmodified.
+- Contract: 48 trunk and branch tests pass unmodified at the tip.
+- Gates: tests ran on every commit except the spec-tests commit.
 - Ledger: 14 of 15 entries covered; 1 dropped on purpose.
 - Dropped: the CSV retry shim, recorded in commit 3f9a0c1.
-- Backup: backup/feature-export-v2-20261005.
+- Backup: backup/feature-export-v2-20261005T141500Z.
 - Not pushed.
 ```
 
