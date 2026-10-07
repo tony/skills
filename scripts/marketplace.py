@@ -1264,6 +1264,45 @@ def check_readme_table(manifest: MarketplaceManifest, readme: str) -> list[str]:
     return errors
 
 
+def rewrite_readme_rows(manifest: MarketplaceManifest, readme: str) -> str:
+    """Return ``readme`` with each plugin row's description set from ``manifest``.
+
+    Rows for plugins the manifest does not list are left alone; ``lint`` reports
+    them.
+
+    Examples
+    --------
+    >>> entry = PluginEntry(
+    ...     name="commit",
+    ...     description="Create git commits",
+    ...     version="1.0.0",
+    ...     author=Author(name="T"),
+    ...     source="./plugins/commit",
+    ...     category="development",
+    ... )
+    >>> manifest = MarketplaceManifest(
+    ...     name="m",
+    ...     metadata=MarketplaceMetadata(description="d"),
+    ...     owner=Author(name="T"),
+    ...     plugins=[entry],
+    ... )
+    >>> rewrite_readme_rows(manifest, "| [commit](plugins/commit/) | Old blurb |")
+    '| [commit](plugins/commit/) | Create git commits |'
+    """
+    descriptions = {entry.name: entry.description.strip() for entry in manifest.plugins}
+
+    def replace(match: re.Match[str]) -> str:
+        new = descriptions.get(match["name"])
+        if new is None:
+            return match.group(0)
+        start = match.start("desc") - match.start(0)
+        end = match.end("desc") - match.start(0)
+        row = match.group(0)
+        return row[:start] + new + row[end:]
+
+    return README_ROW_RE.sub(replace, readme)
+
+
 @app.command()
 def lint() -> None:
     """Validate the marketplace manifest and all plugin directories."""
@@ -1645,6 +1684,8 @@ def sync(*, write: bool = False, check: bool = False) -> None:
     )
 
     if not additions and not removals and not stale:
+        if write:
+            _write_readme_rows(manifest)
         console.print("[green]Marketplace manifest is in sync with plugins/.[/green]")
         return
 
@@ -1694,6 +1735,16 @@ def sync(*, write: bool = False, check: bool = False) -> None:
     # Write updated manifest
     _ = MARKETPLACE_PATH.write_text(_serialize_manifest(manifest), encoding="utf-8")
     console.print(f"\n[green]Updated {PrivatePath(MARKETPLACE_PATH)}[/green]")
+    _write_readme_rows(manifest)
+
+
+def _write_readme_rows(manifest: MarketplaceManifest) -> None:
+    """Rewrite README plugin rows whose description drifted from the manifest."""
+    readme = README_PATH.read_text(encoding="utf-8")
+    updated = rewrite_readme_rows(manifest, readme)
+    if updated != readme:
+        _ = README_PATH.write_text(updated, encoding="utf-8")
+        console.print(f"[green]Updated {PrivatePath(README_PATH)}[/green]")
 
 
 @app.command(name="check-outdated")

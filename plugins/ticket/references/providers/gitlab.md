@@ -133,6 +133,11 @@ documented, so feed an approved draft through command substitution rather than r
 $ glab issue create -t "..." -d "$(cat "<scratch path>")" -y
 ```
 
+A very large body can exceed the argument-size limit. Then print the body
+for the user to paste, or send it through `glab api` with the body read
+from the file (UNVERIFIED: confirm the file-input flag with `glab api
+--help` first).
+
 Issues, Merge Requests and Milestones are also plain REST ([Issues API][restapi]). Epics,
 Tasks, Objectives and Key Results are work items and belong to GraphQL: `workItemCreate`
 and `workItemUpdate` take a `workItemTypeId` global ID and set parentage through the

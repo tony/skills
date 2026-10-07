@@ -71,7 +71,8 @@ Per `references/output-contract.md`. Hero: `✓ answered from <n> terms`,
 `⚠ Not covered: <what would have to be read>` when the study exists but does
 not settle the question, or `⚠ Blocked: <reason>` when no study is at the path.
 A blocked run prints the hero, one sentence on the unblock (the real study
-path, or the `scholar-ontology` skill to build one), and nothing else. Reply as plain
+path, or the `scholar-ontology` skill to build one), and nothing else: no paths
+searched, no "I found no terms.jsonl anywhere". Reply as plain
 text outside any code fence:
 
 ```text

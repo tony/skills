@@ -67,14 +67,24 @@ one of them; offer the others as next steps.
   helper script in a reply; say what it found.
 - Name no version the registry has not confirmed, and make no claim about
   what a newer release changes (such as a major jump) before one is
-  confirmed.
+  confirmed. A version the user named that the registry cannot confirm
+  (unreachable, or absent from the release list) is a stopped run unless
+  the user said they confirmed it; the next step offers that confirmation
+  or access to the registry.
+- Output rules for every reply: state results, not the rules behind them.
+  Do not mention commit-message rules, trailers, or this skill's
+  conventions. Do not recap a default taken ("I've taken the default",
+  "Stop here"), and do not remark on the missing question tool. Do not
+  write "X, not Y" contrasts or filler such as "nothing needed
+  classifying by you". A bullet states a finding, not scope the plan
+  already gave.
 - A run that cannot proceed (nothing declared, no version named and the
   release list unreachable, a dirty tree it cannot work around) ends
   with `⚠ Stopped: <one result sentence>`, then the step the user must
   take. No sections and no recap. At most three plain bullets follow,
   with no lead-in sentence, each a finding that changes that step and
   describes only what the run found, never steps it would take after the
-  edit. Repository history (a branch with no commits), untracked dotfiles,
+  edit ("both keep `~>`", "no lock file to refresh afterwards"). Repository history (a branch with no commits), untracked dotfiles,
   which tool drives the repository, what a commit would have looked like,
   and what would happen after the edit do not belong. A run stopped before its first edit says
   nothing was edited.

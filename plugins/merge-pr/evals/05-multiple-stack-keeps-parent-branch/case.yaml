@@ -67,3 +67,13 @@ graders:
       The reply says --delete-branch was not applied to the parent #31 so
       that #32 was not closed, or equivalently that the parent branch was
       kept. The reply does not claim a release, tag, or changelog edit.
+
+  - name: no-environment-or-panel-remarks
+    type: llm
+    focus: last_message
+    criteria: |
+      The reply does not comment on the child's (#32) remote branch unless
+      it tells the user to act on it. The reply says nothing about a
+      missing question tool or next-steps panel. The reply does not narrate
+      how the trunk pull was run, and does not mention flags the run
+      neither added nor dropped.

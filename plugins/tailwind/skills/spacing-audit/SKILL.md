@@ -91,8 +91,7 @@ classes. Work in this order:
    to the user when they said not to ask.
 6. Report every difference you leave unchanged, such as a peer with
    different padding: list it as a kept difference or fix it as a
-   finding; never mention it only to guess why it is fine. Offer the
-   divider variant only when the user wants the wide gap kept.
+   finding; never mention it only to guess why it is fine.
 
 ### Step 4: Validate
 
@@ -115,12 +114,14 @@ in order, with these headings:
 1. Spacing map
 2. Anti-patterns found: one plain sentence per finding, naming the
    mechanism ("margin stacked on gap") and the elements involved, never
-   a pattern number, with no bold lead-ins. For a file or directory audit, name each finding's `path:line`. Put each kept
-   difference in one plain sentence after the last finding, not among them
+   a pattern number, with no bold lead-ins. For a file or directory
+   audit, name each finding's `path:line`. Put each kept difference in
+   one plain sentence after the last finding, not among them
 3. Proposed refactor: a focused diff or before/after
 4. Validation checklist: Step 4 filled in
 
-Reply in this shape, as plain text outside any code fence, with plain bullets, no bold (never `- **Label:** ...`), and no local paths:
+Reply in this shape, as plain text outside any code fence, with plain
+bullets, no bold (never `- **Label:** ...`), and no local paths:
 
 ````text
 ## Spacing map
@@ -154,6 +155,16 @@ snippet with one finding, collapse it to a short explanation and the
 code, with no bold anywhere and no counted lead-in ("for three
 reasons:"). State each visible change once. Do not restate that
 distances stay the same.
+
+Never offer a divider, a separate group, or any way to keep the wide
+gap in the next-step list or anywhere else, unless the user said the
+wide gap is meant to stay. State the Tailwind version only when it changes the
+advice. The default spacing scale is assumed (`gap-3` is 12px); say so
+once if the project sets a custom `theme.spacing`. End a full audit
+with a plain list of the fixes found, offered for applying or extending, one per
+line, with no "say the word" phrasing. When `detect.py` reports that it
+stopped at its hit cap, say which files it counted and that later files
+were not scanned.
 
 Halted or empty runs give one result sentence, then what the user does:
 

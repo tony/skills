@@ -214,8 +214,10 @@ flatten.
 | Generic | ID in the branch name, PR title, and commit bodies | whatever the tracker's own git integration picks up |
 
 Both carriers are vendor behavior; verify them in the tracker's docs
-(Linear's GitHub integration page, GitHub's "Linking a pull request to
-an issue" page) before relying on them.
+before relying on them: Linear's GitHub integration
+(https://linear.app/docs/github-integration) and GitHub's "Linking a
+pull request to an issue"
+(https://docs.github.com/en/issues/tracking-your-work-with-issues/using-issues/linking-a-pull-request-to-an-issue).
 
 Commit bodies name the ticket ID(s) they advance, in the project's
 form. Closing keywords belong in the PR body, never in commit

@@ -42,7 +42,8 @@ Write entries and the commit message per `../../references/prose-rules.md`.
    $ git diff origin/<base>...HEAD -- <changelog-file>
    ```
 
-3. List the branch commits that touch the file:
+3. List the branch commits that touch the file (with no `origin` remote,
+   substitute the local base name for `origin/<base>` in these commands):
 
    ```console
    $ git log origin/<base>..HEAD --oneline -- <changelog-file>
@@ -98,6 +99,23 @@ in order:
    Refer to commits by subject in prose, never by bare SHA. Close with the
    question, or when stopping, one line: nothing was edited; re-run with
    "refresh the entries" to edit only, or with `--commit` to apply and commit.
+
+   When every entry is accurate, send the no-change shape instead: the
+   summary line, one result sentence, and `Notes` only for out-of-reach items
+   left undone. No Old/New, voice check, `Target` line, or re-run line.
+
+   ```text
+   Branch: feat/cache-evict | Base: main | Changelog commits: 2
+
+   The branch's entries already match; nothing to change.
+
+   Notes:
+   - The "Cache" heading is shared with base entries; renaming it is left undone and needs your approval.
+   ```
+
+   Omit `Notes` when nothing was left undone. Each Notes bullet names what
+   was left undone and that it needs the user's approval; no alternatives or
+   offers beyond that.
 
    Reply in this shape, as plain text outside any code fence, with plain bullets, no bold (never `- **Label:** ...`), and no local paths:
 

@@ -23,6 +23,7 @@ spike.sh replay-apply SPIKE_SHA [USER_SHA]
 spike.sh drop SHA
 spike.sh branch-start NAME
 spike.sh branch-end ORIG NAME
+spike.sh teardown WORKTREE
 USAGE
 }
 
@@ -270,6 +271,21 @@ cmd_drop() {
   echo dropped
 }
 
+# Remove a worktree whose work is already stashed. Files left in place on
+# purpose (bytecode, --leave paths) make the plain remove refuse, so retry
+# with --force. Succeeds only when git no longer lists the worktree.
+cmd_teardown() {
+  [ $# -eq 1 ] || die "teardown needs WORKTREE" 2
+  git worktree remove "$1" 2>/dev/null || git worktree remove --force "$1" || true
+  git worktree prune
+  local abs
+  abs=$(cd "$(dirname "$1")" 2>/dev/null && pwd -P)/$(basename "$1") || abs=$1
+  if git worktree list --porcelain | awk '/^worktree /{print substr($0, 10)}' | grep -qxF -e "$1" -e "$abs"; then
+    die "worktree still listed: $1"
+  fi
+  echo removed
+}
+
 cmd_branch_start() {
   [ $# -eq 1 ] || die "branch-start needs NAME" 2
   local orig
@@ -307,6 +323,7 @@ main() {
     drop) cmd_drop "$@" ;;
     branch-start) cmd_branch_start "$@" ;;
     branch-end) cmd_branch_end "$@" ;;
+    teardown) cmd_teardown "$@" ;;
     -h | --help | help) usage ;;
     *) usage >&2; exit 2 ;;
   esac

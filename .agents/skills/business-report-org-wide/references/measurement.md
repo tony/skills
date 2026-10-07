@@ -90,7 +90,8 @@ hand.
 ## Scenarios
 
 Each register entry may carry `low` and `high` fields beside `value`.
-A measured input's `low` and `high` are its 95% interval ends.
+A measured input's `low` and `high` are its 95% interval ends; with
+fewer than 5 observations they are the observed min and max, labeled a range.
 
 - Conservative: every input at `low`, except cost inputs (`t_ai`,
   `t_verify`, `p_fail`, `t_rework`, `C_build`, `C_maint`), which sit at `high`.
@@ -108,10 +109,12 @@ The committed number is always the conservative one.
   `references/business.py stats` (absolute path; one number per line on stdin or
   in files). It prints n, median, quartiles, the 95% interval, the
   seed, and the resample count; paste them next to the result.
-  Small n gets wide intervals and honesty, not precision.
+  Below n=5 a bootstrap collapses to the observed values, so `stats`
+  prints `range_lo` and `range_hi` instead and no `ci95_*`; call that
+  a range, never a "95% interval".
 - Fewer than 20 observations, whether paired comparisons or single
   distributions: present the raw values, the median (or median
-  difference), and the wide interval, and label the result
+  difference), and the wide interval (the range when n<5), and label the result
   DIRECTIONAL (the script sets the label). Never
   single-decimal percentages from 5 tasks.
 - Exclude the novelty ramp window; measure steady state. State the

@@ -44,10 +44,11 @@ Write entries and the commit message per `../../references/prose-rules.md`.
 5. **Check for a PR.** `gh pr view --json number,title,body,labels` returns the
    number, title, body, and labels. A failure means no PR; use `(#???)`
    placeholders.
-6. **Check the changelog is clean** per `commit-message.md`; when it is not,
-   insert only and say why.
+6. **Check the changelog is clean** per `commit-message.md` (an untracked,
+   new changelog file is not dirty); when it is not, insert only and say why.
 7. **Get commits.** Fetch per `branch-scope.md` first. `git log origin/<base>..HEAD --format='%H %s%n%b---'`
-   gives subjects and bodies. No commits ahead: report "No commits ahead of
+   gives subjects and bodies (with no `origin` remote, substitute the local
+   base name). No commits ahead: report "No commits ahead of
    the base branch" and stop.
 
 ## Phase 2: Categorize and Generate
@@ -93,6 +94,10 @@ Notes:
 - The get() empty-value fix is omitted: its bug was introduced on the base branch.
 ````
 
+The commit subject in both replies is the no-convention form. Before
+writing it, read the project's commit format from `AGENTS.md` / `CLAUDE.md`
+and use that format when it has one, else `docs(CHANGES) ...`.
+
 When asking, use `AskUserQuestion`: "Insert into `<changelog-file>`?" Offer:
    - **Insert only**: apply the edit and leave it uncommitted.
    - **Insert and commit**: apply the edit and commit the changelog file with
@@ -106,7 +111,7 @@ line: nothing was edited; re-run with "add the entries" to insert, or with
 When approval was already given, skip the Phase 3 reply and send only the
 Phase 4 reply, which carries the summary line, entries, voice check, `Target`
 line, and `Notes` itself. `Notes` holds only facts that explain an omission
-or that the user must act on; leave out advice such as "you may want".
+or that the user must act on, each stated once; leave out advice such as "you may want" and never justify the commit subject format.
 
 A stopped run (no commits ahead, on the base branch) is one result sentence,
 then what the user needs to do.

@@ -289,3 +289,51 @@ def test_command_guards_route_through_the_guard_check() -> None:
     assert "### Guard check" in pipeline
     assert "git grep -c" in pipeline.split("### Guard check")[1].split("\n## ")[0]
     assert "Guard check" in pipeline.split("## Pass B")[1].split("\n## ")[0]
+
+
+def test_diff_mode_keeps_spaced_and_non_ascii_names(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    git(tmp_path, "init", "-q", "-b", "main")
+    names = ["my file.py", "café.py"]
+    for name in names:
+        (tmp_path / name).write_text("x = 1\n# TODO: revisit later\n")
+    git(tmp_path, "add", ".")
+    git(tmp_path, "commit", "-q", "-m", "branch")
+    base = git(tmp_path, "rev-parse", "HEAD")
+    monkeypatch.chdir(tmp_path)
+
+    log = git(tmp_path, "-c", "core.quotepath=off", "log", "-p", "--reverse")
+    found = detect.scan_diff(rules(), log, historical=False)
+    assert sorted(f["file"] for f in found) == sorted(names)
+
+    files = detect.scan_files(rules(), names, detect.added_lines("HEAD~0"))
+    assert {f["tier"] for f in files} == {"B"}
+    (tmp_path / "my file.py").write_text("x = 1\n# TODO: revisit later\ny = 2\n")
+    git(tmp_path, "commit", "-q", "-am", "edit")
+    files = detect.scan_files(rules(), names[:1], detect.added_lines(base))
+    assert files[0]["tier"] == "B"
+    assert detect.added_lines(base) == {"my file.py": {3}}
+
+
+def test_conventions_requiring_disclosure_demote_attribution_to_tier_b(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    shipped = detect.build_rules(_shipped())
+    message = "feat(x) Add y\n\nGenerated with Claude Code"
+    found = detect.scan_messages(shipped, f"sha\x1f{message}\n", historical=False)
+    footer = [f for f in found if f["signature_id"] == "ai-slop.signatures"]
+
+    detect.demote_by_conventions(shipped, footer)
+    assert footer[0]["tier"] == "A"
+
+    (tmp_path / "AGENTS.md").write_text("No attribution footers, no inflated adjectives.\n")
+    detect.demote_by_conventions(shipped, footer)
+    assert footer[0]["tier"] == "A"
+
+    (tmp_path / "CONTRIBUTING.md").write_text("Contributors must disclose AI assistance.\n")
+    detect.demote_by_conventions(shipped, footer)
+    assert footer[0]["tier"] == "B"
+    assert footer[0]["registry_tier"] == "A"
+    assert footer[0]["demoted_by"] == "conventions"

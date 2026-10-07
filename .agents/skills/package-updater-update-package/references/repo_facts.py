@@ -48,6 +48,22 @@ def _show(repo: str, ref: str, path: str) -> str | None:
     return out if code == 0 else None
 
 
+def _mise_tools(text: str) -> dict[str, str]:
+    """Read ``tool = "version"`` and ``tool = ["version", ...]`` lines under ``[tools]``."""
+    tools: dict[str, str] = {}
+    in_tools = False
+    for raw in text.splitlines():
+        line = raw.split("#")[0].strip()
+        if line.startswith("["):
+            in_tools = line == "[tools]"
+            continue
+        match = re.match(r"""["']?([^"'=\s]+)["']?\s*=\s*(.*)$""", line)
+        if in_tools and match:
+            value = re.search(r"""["']([^"']+)["']""", match.group(2))
+            tools[match.group(1)] = value.group(1) if value else match.group(2).strip()
+    return tools
+
+
 def _pins(repo: str, ref: str) -> dict[str, object]:
     pins: dict[str, object] = {}
     for name in PIN_FILES:
@@ -63,6 +79,10 @@ def _pins(repo: str, ref: str) -> dict[str, object]:
             pins[name] = tools
         else:
             pins[name] = text.splitlines()[0].strip() if text else ""
+    for name in ("mise.toml", ".mise.toml"):
+        mise = _show(repo, ref, name)
+        if mise is not None:
+            pins[name] = _mise_tools(mise)
     toolchain = _show(repo, ref, "rust-toolchain.toml")
     if toolchain is not None:
         match = re.search(r'^\s*channel\s*=\s*"([^"]+)"', toolchain, re.MULTILINE)

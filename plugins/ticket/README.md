@@ -72,6 +72,14 @@ canonical roles (for example, Linear Project is close to Jira Epic).
 - `pr`: for branch pull request descriptions.
 - `lean`: for shortening already-accurate text.
 
+## Filing and print-only
+
+- Files when a backend is connected: GitHub (`gh`), GitLab (`glab`),
+  Azure DevOps (`az`), Jira (`acli`, plain text), Linear, Asana, and
+  Shortcut (MCP server), Trello (MCP or REST).
+- Prints the body to paste: any other tracker, and any provider above
+  with no backend connected.
+
 ## Prerequisites
 
 - `gh`: for GitHub.

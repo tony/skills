@@ -128,7 +128,7 @@ check: median raw/task-timings.csv minutes_manual-minutes_ai = 18
 The statistic is `median`, `mean`, `min`, `max`, or `n`; the column is
 one header or `a-b` for a per-row difference. Rows with a blank cell
 in a needed column drop out. `business.py stats --csv <file> --column
-<column>` takes the same column syntax for medians and intervals.
+<column>` takes the same column syntax for medians and intervals (a range below n=5).
 
 ### findings.md
 
@@ -217,7 +217,7 @@ End with an `AskUserQuestion` panel offering the skill's next steps.
 Skip it in plan mode. Where no question tool exists (Codex, headless
 runs), print the options as a plain list after `## Report` and stop.
 
-One fact per bullet, one sentence per bullet. Each bullet says something new: the hero states the claim, the
+One fact per bullet, one sentence per bullet; split a bullet that needs two. Each bullet says something new: the hero states the claim, the
 headline bullet states what the data supports and where a committed
 figure would go, and the limitation bullet names a limitation the
 headline lacks. A request to convert to money is declined in one
@@ -225,7 +225,8 @@ sentence as the first bullet of `## Report`, never ahead of the hero,
 and says "money" or "currency", never a unit or the word "dollars". The
 same sentence names the handoff: hours with their interval, the pinned
 window, and the population, for finance to convert.
-Every figure in the reply keeps its provenance tag, in the hero and
+An n<5 spread is a range (`range_lo`..`range_hi`), never a "95% interval".
+Name an unknown or a missing input, never a script's exit status or command. Every figure in the reply keeps its provenance tag, in the hero and
 in bullets. State a figure as what was measured, never as what the
 skill caused: "median 18 min per task gross, net unknown
 (DIRECTIONAL, MEASURED, n=3)", not "the skill saved 18 min".

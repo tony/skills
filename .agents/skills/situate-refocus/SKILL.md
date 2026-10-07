@@ -60,7 +60,7 @@ where it started.
 For a ticket or pull-request goal, walk its criteria one at a time and
 check each against the branch. For a typed or branch-name goal, name
 only the gaps its own words imply; never add criteria, settings, or
-tests it does not state. Criteria with no work behind them are drift
+tests it does not state. Tool state (`gh` signed out) is never a gap. Criteria with no work behind them are drift
 too.
 
 ### 5. Propose the correction

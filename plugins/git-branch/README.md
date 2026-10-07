@@ -37,7 +37,8 @@ Claude Code uses a leading slash (`/git-branch:…`). Codex omits it (`git-branc
 ### `/git-branch:soft-reset-and-recommit` (skill)
 
 Converts messy `wip` commits into a readable, reviewable series. Pushing is
-always a manual step.
+always a manual step. It refuses unless the target branch is checked out.
+Signatures are lost unless `RECUT_SIGN` is set.
 
 1. **Gathers intent:** Reads commit messages, trailers, PR bodies, reviews,
    and linked tickets before altering boundaries.
@@ -80,38 +81,10 @@ Retains original branch as a reference.
 
 `scripts/rebase-todo.sh` drives `git rebase -i` without an editor or TTY.
 
-Run it from anywhere. In the examples, `<toolkit>` is the script's absolute
-path: the plugin's install path plus `scripts/rebase-todo.sh`.
-
-Report any git operation in progress:
-
-```console
-$ sh <toolkit> status
-```
-
-Print the todo list for a range:
-
-```console
-$ sh <toolkit> show <base>
-```
-
-Replay the range from an edited plan:
-
-```console
-$ sh <toolkit> apply <base> plan.txt
-```
-
-Run a command after every commit, in place:
-
-```console
-$ sh <toolkit> verify <base> 'make test'
-```
-
-Fold pending `fixup!` and `amend!` commits:
-
-```console
-$ sh <toolkit> squash <base>
-```
+Run it from anywhere. The subcommands (`status`, `show`, `apply`,
+`verify`, `squash`) and their exit codes are in
+[`references/rebase-toolkit.md`](references/rebase-toolkit.md). It needs a
+POSIX shell (WSL or Git Bash on Windows).
 
 ## Relationship to other git plugins
 

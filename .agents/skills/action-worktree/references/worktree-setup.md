@@ -31,7 +31,8 @@ Contents:
 $ python3 /abs/path/to/scripts/worktree_paths.py guard
 ```
 
-   Exit 2 with `refuse: <toplevel>` means refuse: report
+   Exit 2 with `refuse: <toplevel>` means refuse; exit 1 (not inside a
+   git repository) also stops the run. Either way report
    `⚠ blocked at worktree setup` and change nothing.
 5. Record main-checkout state (`git status -sb`). A dirty main tree
    is not a blocker, because the worktree isolates the work. Note it,
@@ -56,7 +57,8 @@ before any attach or create:
    commits present, continue to the exit axis; primer only, start
    implementation
    (or report a no-op under `--setup-only`). Report "resumed", not
-   "created".
+   "created". Under `--setup-only` an attach or resume only sets up the
+   worktree and primer; claim no other work.
 2. **Branch checked out in the main checkout.** Not a resume: the work
    would not be isolated. Ask for another branch name or abort.
    Non-interactive: report `⚠ blocked at worktree setup`, change nothing.
@@ -99,8 +101,14 @@ $ git worktree add --track -b <branch> <path> origin/<branch>
 6. **Fresh.** Create both:
 
 ```console
-$ git worktree add -b <branch> <path> <start-point>
+$ git worktree add --no-track -b <branch> <path> <start-point>
 ```
+
+   `--no-track` matters when the start point is `origin/<trunk>`:
+   without it git sets that remote branch as the new branch's upstream,
+   and a later plain `git push` would target trunk. The branch has an
+   upstream only after `--push` or `--pr` runs `git push -u`; mention an
+   upstream in a report only then.
 
 A worktree has no installed dependencies or generated files. Under
 `--setup-only`, never run the setup command: it executes project code

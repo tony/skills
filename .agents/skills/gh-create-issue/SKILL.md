@@ -27,17 +27,21 @@ read `references/project-links.md` for its link set. Write it per
 Commands assume github.com. For GitHub Enterprise, set
 `GH_HOST=HOST` on every `gh` command.
 
-Run this first:
+Run this first (with `--hostname HOST` for another host), so a broken
+login on an unrelated host does not halt the run:
 
 ```console
-$ gh auth status
+$ gh auth status --hostname github.com
 ```
 
 When it fails or `gh` is missing, you cannot run the checks below. The
 reply's first line is the draft's label and the reason (shape under
 "Present"), then the draft, with each unchecked item (duplicates,
-security policy, templates, pins) named as unchecked. Do not file, and
-do not offer `--web` or an issue form: neither was checked. A suspected
+security policy, templates, pins) named as unchecked. Do not file, do
+not offer `--web` or an issue form (neither was checked), and omit the
+"File it" question. A link into a repository you could not pin carries a
+`<TAG>` or `<SHA>` placeholder, and the body adds no checkout or
+version-switch step the user did not state. A suspected
 security vulnerability gets no draft at all, since the exploit details
 are the deliverable: say why, and name the places to look for the
 project's private reporting path (the repository's Security tab,
@@ -81,7 +85,9 @@ repository".)
 Check whether the resolved repository is a fork:
 
 ```console
-$ gh repo view OWNER/REPO --json parent --jq '.parent | select(. != null) | .owner.login + "/" + .name'
+$ gh repo view OWNER/REPO \
+    --json parent \
+    --jq '.parent | select(. != null) | .owner.login + "/" + .name'
 ```
 
 Empty output means it is not. A repository the user named in the
@@ -112,8 +118,7 @@ $ gh api repos/OWNER/REPO/contents/SECURITY.md -H 'Accept: application/vnd.githu
 
 On a 404, try the same path under `.github/` and `docs/`, then in the
 owner's `OWNER/.github` repository, where an organization keeps its
-default policy (`isSecurityPolicyEnabled` can report that one). When
-none reads, give the user `securityPolicyUrl` as the place to look. The
+default policy. When none reads, give the user `securityPolicyUrl` as the place to look. The
 reply names the private reporting path the policy gives.
 
 When no policy exists, check for private vulnerability reporting:
@@ -138,7 +143,7 @@ which sections the body carries.
 ## Phase 3 — Preflight the repository
 
 ```console
-$ gh repo view OWNER/REPO --json hasIssuesEnabled,isBlankIssuesEnabled,issueTemplates,contactLinks
+$ gh repo view OWNER/REPO --json hasIssuesEnabled,issueTemplates,contactLinks
 ```
 
 Issues disabled means the project takes reports somewhere else: read
@@ -158,7 +163,9 @@ $ gh api repos/OWNER/REPO/contents/.github/ISSUE_TEMPLATE/NAME -H 'Accept: appli
 ```
 
 `NAME` is a file from that listing. Skip `config.yml`: it holds
-`contactLinks` and the blank-issue setting, not a template.
+`contactLinks` and the blank-issue setting, not a template. A 404 on the
+listing means the repository has no templates; then list the same path
+in `OWNER/.github`, where an organization keeps its default templates.
 
 A `.yml` file is an issue form, not markdown. Fill it as GitHub would
 render a submission: each `input`, `textarea`, `dropdown`, and
@@ -183,11 +190,19 @@ include.
 ## Phase 4 — Look for the issue that already exists
 
 ```console
-$ gh issue list --repo OWNER/REPO --state all --search "KEYWORDS in:title" --limit 50 --json number,title,state,url
+$ gh issue list \
+    --repo OWNER/REPO \
+    --state all \
+    --search "KEYWORDS in:title" \
+    --limit 50 \
+    --json number,title,state,url
 ```
 
 ```console
-$ gh search issues "KEYWORDS" --repo OWNER/REPO --match body --json number,title,url,state
+$ gh search issues "KEYWORDS" \
+    --repo OWNER/REPO \
+    --match body \
+    --json number,title,url,state
 ```
 
 A duplicate of a closed issue is a regression report, a different and
@@ -207,7 +222,9 @@ there, or ask you to file anyway.
 For a defect: the smallest command sequence that reproduces it; the
 exact versions of the project, runtime, and OS; the verbatim error; and
 the code that produces it, located and pinned per the source-links
-reference.
+reference. A line range the user took from another ref (usually
+`main`) is moved to the pinned ref only after the "Verify a line range"
+check in that reference passes.
 
 For a proposal or task: what is impossible or awkward today, shown
 concretely; what the project already does that is adjacent; and what
@@ -288,7 +305,7 @@ request that explicitly says to file the issue is the approval, for
 filing only.
 
 Reply in this shape, as plain text outside any code fence, with plain
-bullets and no bold (never `- **Label:** ...`). The result comes first;
+bullets, no bold (never `- **Label:** ...`), and no local paths. The result comes first;
 report only what the user must act on, with no recap of the draft:
 
 `````text
@@ -315,10 +332,14 @@ File it, print the body only, revise a section, or drop it?
 
 Without `gh`, the first line is `Unverified draft for OWNER/REPO, not filed: duplicates, security policy, templates, and pins could not be checked without `gh auth login`.` That line carries every unchecked item; do not list them again. Close with one sentence naming the fields only the user has (OS, exact versions, full trace), not a request list.
 
-A halted run (a duplicate found, a security policy, unsanitizable evidence) is one result sentence naming the duplicate or the private path, then what the user needs to do. Do not repeat exploit details, assess impact, or compare the new report to the duplicate. Reply in this shape:
+A halted run (a duplicate found, a security policy, unsanitizable evidence, an unresolved pin) is one result sentence naming the duplicate, the private path, or the missing pin, then what the user needs to do. Name no attack class, exploit detail, or impact, do not compare the new report to the duplicate or list what to add to it, and do not recap the checks that passed or mention the sandbox. Reply in this shape:
 
 ```text
 Not filed: example/widgets already tracks this as #1187 (open, "wasm target throws TypeError"). Add your evidence there, or tell me to file anyway.
+```
+
+```text
+Not filed: the permalink to `src/build.js` lines 38-50 could not be pinned, since no release or commit resolved. Tell me the tag or commit to link, or say to file without the link.
 ```
 
 ```text
@@ -351,7 +372,11 @@ File from a file, never from an inline `--body`, so fences, HTML, and
 `$` survive shell quoting:
 
 ```console
-$ gh issue create --repo OWNER/REPO --title "TITLE" --body-file PATH [--label NAME]
+$ gh issue create \
+    --repo OWNER/REPO \
+    --title "TITLE" \
+    --body-file PATH \
+    [--label NAME]
 ```
 
 Remove the scratch file on the way out, whichever branch ended the run
@@ -361,7 +386,7 @@ Remove the scratch file on the way out, whichever branch ended the run
 $ rm -f PATH
 ```
 
-After filing, the reply is `Filed: URL` and nothing else: no recap of
+After filing, the reply is exactly `Filed: URL` (not "I filed the issue: URL") and nothing else: no recap of
 the checks, the title, or the body, and no sentence about what you did
 not run or could not pin. Those caveats belong in the body, written
 before filing. A create that fails (unknown label, 403) gets one

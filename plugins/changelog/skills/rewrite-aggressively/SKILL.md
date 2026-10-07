@@ -182,7 +182,8 @@ Target: CHANGES.md, Unreleased, Features, after the "### Features" heading. No v
 
 Run only after the Phase 3 approval.
 
-1. Apply with Edit. With `--commit` in `$ARGUMENTS`, commit once at the tip per
+1. Read the commit format from `AGENTS.md` / `CLAUDE.md` now, even when not
+   committing: the subject you commit or offer uses it. Apply with Edit. With `--commit` in `$ARGUMENTS`, commit once at the tip per
    `commit-message.md`; the project's own subject format wins. Write no
    `Co-Authored-By`, no "Generated with" or other tool trailer, and no emoji.
    Without `--commit`, leave the edit uncommitted and show a ready-to-use
@@ -192,10 +193,10 @@ Run only after the Phase 3 approval.
    when `--commit` was not passed, and for a pushed branch the
    `git push --force-with-lease --force-if-includes` the user needs.
 
-   Reply in this shape, as plain text outside any code fence, with plain bullets, no bold (never `- **Backup:** ...`), and no local paths. The subject line below is the no-convention form. Notes hold facts the user must act on, so never recap checks that passed (the code-unchanged check included), never justify the subject format, and never compare the new subject with a dropped commit's:
+   Reply in this shape, as plain text outside any code fence, with plain bullets, no bold (never `- **Backup:** ...`), and no local paths. Fill the subject placeholder from the project's convention: read the project's commit format from `AGENTS.md` / `CLAUDE.md` at reply time and use it when it has one. Notes hold facts the user must act on, so never recap checks that passed (the code-unchanged check included), never justify the subject format, and never compare the new subject with a dropped commit's, never narrate which entry lines a dropped commit removed (name only a commit left intact):
 
    ````text
-   Rewrote the changelog history of feat/cache-evict: 3 commits dropped, 1 added.
+   Rewrote the changelog history of feat/cache-evict: 3 changelog-only commits dropped, 1 added.
 
    ```markdown
    - Add `Cache.evict()` to drop a cached key (#212)
@@ -207,6 +208,8 @@ Run only after the Phase 3 approval.
    Target: CHANGES.md, Unreleased, Features, after the "### Features" heading. No version assigned, no release cut.
 
    - Backup: changelog-rewrite-backup-20261006-142530Z; delete it once satisfied.
-   - Committed at the tip as docs(CHANGES) Cache key eviction.
+   - Committed at the tip as <subject in the project's format> (no convention: docs(CHANGES) Cache key eviction).
+   - To commit it, run: git commit --message "<subject in the project's format>" -- CHANGES.md   (show only one of these two bullets, never the placeholder)
+   - Left intact: "cache(feat) Add evict" also changes code, so it was not dropped or rewritten.
    - The branch is pushed; publish with git push --force-with-lease --force-if-includes.
    ````

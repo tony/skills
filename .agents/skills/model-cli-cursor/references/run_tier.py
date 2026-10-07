@@ -192,7 +192,10 @@ def main(argv: list[str] | None = None) -> int:
         _ = sys.stdout.write("\n")
         return 0
     raw_timeout = cast("str", args.timeout)
-    timeout = None if raw_timeout == "none" else float(raw_timeout)
+    try:
+        timeout = None if raw_timeout == "none" else float(raw_timeout)
+    except ValueError:
+        parser.error(f"invalid --timeout {raw_timeout!r}: use seconds or none")
     result = run(command, prompt_file.read_text(encoding="utf-8"), timeout, prompt_file)
     json.dump(result, sys.stdout)
     _ = sys.stdout.write("\n")

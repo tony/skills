@@ -51,7 +51,7 @@ Use only the sections that fit the change, in proportion to the diff: a one-file
 
 `## Summary`: 3-7 plain bullets.
 - Each bullet opens with an impact verb (Fix, Add, Remove, Replace, Migrate), in plain text. Bold only a term the reader must not miss, never a label on every bullet.
-- Each bullet is one clause of what changed and why; no colon that sets up a reveal ("...concurrently: two threads could read...").
+- Each bullet is one clause of what changed and why; no colon or semicolon that sets up a reveal ("...concurrently: two threads could read...").
 - A reviewer should understand the full scope from the summary alone.
 - For non-trivial changes, include the motivation.
 
@@ -122,7 +122,7 @@ Push the branch and create the PR?
 - Run `gh auth status` first. When `gh` is missing or unauthenticated, skip the question: end the reply with one sentence saying the PR was not created and naming `gh auth login`; the drafted description stays valid.
 - Otherwise ask the question above. When the branch is already pushed (`git rev-parse --abbrev-ref @{upstream}` succeeds and `git rev-list @{upstream}..HEAD` is empty), ask "Create the PR?" instead.
 - Without an interactive question tool, output the description and stop. A request that says to create the PR authorizes `gh pr create` and the push it needs, nothing else.
-- To create, push the branch with `git push -u origin <branch>` unless it is already pushed, never to `main` or `master`. The title and body can quote diff content, so never put them inside a shell heredoc. Make a scratch directory and print its path:
+- To create, push the branch with `git push -u <remote> <branch>` unless it is already pushed, never to `main` or `master`. The title and body can quote diff content, so never put them inside a shell heredoc. Make a scratch directory and print its path:
 
   ```console
   $ mktemp -d "${TMPDIR:-/tmp}/pr-draft.XXXXXX"

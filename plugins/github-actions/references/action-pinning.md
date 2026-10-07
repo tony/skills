@@ -27,8 +27,11 @@ A fork (`isFork: true`) is out of scope unless the user names it with
 
 ## Inventory pins from trunk, not the working tree
 
-Resolve the default branch from the API (`origin/HEAD` may be unset), then
-fetch so `origin/<default>` is current; without the fetch, say the audit may
+`<remote>` is the remote the default branch tracks: `origin` when it
+exists, the only remote when there is one, otherwise ask.
+
+Resolve the default branch from the API (`<remote>/HEAD` may be unset), then
+fetch so `<remote>/<default>` is current; without the fetch, say the audit may
 be stale.
 
 ```console
@@ -36,10 +39,10 @@ $ gh repo view --json defaultBranchRef --jq .defaultBranchRef.name
 ```
 
 ```console
-$ git fetch origin
+$ git fetch <remote>
 ```
 
-Read workflow content from `origin/<default>`, not the checkout. Cover
+Read workflow content from `<remote>/<default>`, not the checkout. Cover
 `.github/workflows/**` and `.github/actions/**`; composite actions pin
 versions too and are the most often missed.
 
@@ -48,13 +51,13 @@ expands as one word in zsh, so a repo with two workflow files drops out of
 the audit with no error and the fleet reads as clean.
 
 ```bash
-git ls-tree -r --name-only origin/<default> .github | while read -r f; do
-  git show "origin/<default>:$f" | grep -n -E '^[[:space:]]*-?[[:space:]]*uses:' | sed "s|^|$f:|"
+git ls-tree -r --name-only <remote>/<default> .github | while read -r f; do
+  git show "<remote>/<default>:$f" | grep -n -E '^[[:space:]]*-?[[:space:]]*uses:' | sed "s|^|$f:|"
 done
 ```
 
 A repository named only by slug (`--repo <owner>/<name>` with no local
-clone) has no `origin/<default>`. Resolve the default branch with
+clone) has no `<remote>/<default>`. Resolve the default branch with
 `gh repo view <slug> --json defaultBranchRef`, list the files, then read
 each one raw:
 
@@ -85,8 +88,9 @@ Ask the registry, not memory:
 $ gh api repos/<owner>/<action>/releases/latest --jq .tag_name
 ```
 
-Some actions publish only tags; list refs when `releases/latest` returns
-nothing. `releases/latest` is the most recently published release, which
+Some actions publish only tags; when `releases/latest` returns nothing,
+list them with `git ls-remote --tags --refs
+https://github.com/<owner>/<action>.git` and take the highest. `releases/latest` is the most recently published release, which
 can be a backport on an older major line; compare it against the highest
 major in the list below before calling it the target.
 

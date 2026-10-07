@@ -124,9 +124,9 @@ repository, and collect the links per the upstream-links reference.
 Verify every URL resolves before it reaches a commit body. State no
 upstream fact that was not read in this run.
 
-When the notes cannot be read (the page fails to load, the changelog is
-empty or points elsewhere) for a major bump, or for a 0.x bump that
-crosses a minor, stop and ask: the reply names the package and span and
+When the notes cannot be read for any release in the span (the page
+fails to load, the changelog is empty or points elsewhere) on a major
+bump, or on a 0.x bump that crosses a minor, stop and ask: the reply names the package and span and
 offers to commit with links and a `why:` saying the notes were unread, or
 to skip it. A patch or in-minor bump with unreadable notes takes the
 link block alone.
@@ -180,7 +180,7 @@ Follow the commit-conventions reference for subject and body, and write
 each message per `../../references/prose-rules.md`. Write multi-line
 messages through a heredoc or a file, never as a multi-line `-m`
 argument. No `Co-Authored-By`, no "Generated with" or other tool
-trailers, no emoji.
+trailers, no emoji; do not mention the omission.
 
 The four tracks land in this order within a repository:
 
@@ -341,6 +341,11 @@ after: no second paragraph, no section, no plan.
   repository's history or remotes, or what the sandbox refused.
 - Options are actions for the user, never a promise of what happens next
   ("Exempt uv from the cooldown", not "Exempt uv and I'll then commit").
+- Print nothing before the hero line and nothing after the options; the
+  reason is one sentence, with no second sentence explaining a rule.
+- The reason is the only fact: no pins, installed versions, lockfile
+  state or other machine fact beyond it, and no clause about a pin left
+  as it is.
 - Leave out a lookup that could not run (a release list, a forge call) and
   anything the run left out on purpose, such as an omitted trailer.
 

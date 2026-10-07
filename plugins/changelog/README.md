@@ -40,9 +40,7 @@ Claude Code uses a leading slash (`/changelog:…`). Codex omits it (`changelog:
 Choose `refresh` to fix entries by stacking a commit, and
 `rewrite-aggressively` to replace the branch's changelog history with one commit.
 
-With no question tool (Codex, headless runs), a request that asks to add the
-entries approves insert only, `--commit` approves insert and commit, and
-anything else ends with the proposal and no edit. Entries always land in the
+Approval follows the ladder in Phase 3 of [`changelog`](skills/changelog/SKILL.md); the other two skills use the same one. Entries always land in the
 unreleased section; see `references/branch-scope.md`.
 
 ## Supported Changelog Formats

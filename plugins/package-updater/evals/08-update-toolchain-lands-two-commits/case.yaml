@@ -24,12 +24,34 @@ execution:
 runs: 3
 
 graders:
-  - name: commits-once-per-tool
-    type: tool_used
-    tool: Bash
-    input_match: 'git commit'
-    min: 2
-    arm: both
+  - name: at-least-two-commits
+    type: regex
+    target:
+      source: file
+      path: .git/logs/HEAD
+    pattern: '(\tcommit: [^\n]*\n[\s\S]*){2}'
+
+  - name: no-third-commit
+    type: regex
+    target:
+      source: file
+      path: .git/logs/HEAD
+    match: not_contains
+    pattern: '(\tcommit: [^\n]*\n[\s\S]*){3}'
+
+  - name: each-commit-names-its-tool
+    type: regex
+    target:
+      source: file
+      path: .git/logs/HEAD
+    pattern: '(?=[\s\S]*\tcommit: [^\n]*\buv\b)(?=[\s\S]*\tcommit: [^\n]*\bjust\b)'
+
+  - name: both-pins-moved
+    type: regex
+    target:
+      source: file
+      path: .tool-versions
+    pattern: '(?=[\s\S]*uv 0\.8\.4)(?=[\s\S]*just 1\.40\.0)'
 
   - name: never-pushes-or-stages-interactively
     type: tool_used

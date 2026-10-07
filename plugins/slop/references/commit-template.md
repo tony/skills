@@ -1,9 +1,10 @@
 # Per-Finding Commit Templates
 
 `/slop:scan` lands each finding as one commit. Read the user's
-conventions files first; where they define a subject format, follow it and
-treat the shapes below as the default: `type(scope) description`, with
-`cleanup` as the scope. Keep the signature id out of the subject.
+conventions files first; where they define a subject format, a subject
+length, or a body format, follow them and treat the shapes below as the
+default: `type(scope) description`, with `cleanup` as the scope. Keep the
+signature id out of the subject.
 
 ## Subject templates
 
@@ -22,6 +23,8 @@ taken from the signature's `rationale`.
 
 ## Body
 
+This `why:` / `what:` body is the default when the project defines none.
+
 ```
 docs(cleanup) Replace line number in docs/api.md
 
@@ -32,9 +35,9 @@ what:
 - Point the parse step at the `parse_config` function, not a line.
 ```
 
-Wrap body lines at 72 characters. Keep the subject at 64 characters or
-fewer: when the path makes it long, shorten the description, never the
-path. Leave out exact counts, emoji, AI signatures,
+Absent a project convention, wrap body lines at 72 characters and keep the
+subject at 64 characters or fewer: when the path makes it long, shorten
+the description, never the path. Leave out exact counts, emoji, AI signatures,
 and `Co-Authored-By:` lines, "Generated with" trailers, and tool
 signatures; hosts add them by default, so strip them before committing.
 

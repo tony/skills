@@ -58,7 +58,8 @@ One candidate at a time. For each, write to `evidence/contested.md`:
 - Objection: the strongest case against it, argued properly rather than
   noted.
 - Evidence: what settles it, cited or measured.
-- Verdict: upheld, revised, or killed.
+- Verdict: upheld, revised, killed, or open. An open claim states the
+  objection and what evidence would settle it.
 
 Record kills; do not discard them. A kill often carries more than a survivor, because it names a boundary
 the ontology drew in the wrong place. A candidate rejected for the wrong reason
@@ -81,8 +82,7 @@ Read `sources.jsonl` and ask what the study does not know:
 ## Pass 4: stop condition
 
 A round is passes 1 to 3 rerun against the current table. Stop when a round
-surfaces no new contested claim, or at `--rounds` (default 3). Stop when the design stops fighting back, not when a counter runs
-out. A stop at `--rounds` with any claim still open leaves the gate unmet; the
+surfaces no new contested claim, or at `--rounds` (default 3). A stop at `--rounds` with any claim still open leaves the gate unmet; the
 hero says so (see Output).
 
 ## Panels
@@ -140,7 +140,7 @@ Open: update-action / update-actions, whether the two are one concept.
 Run another round, or widen the corpus to settle them.
 ```
 
-Report only what the run recorded; never list files left unchanged. Sections:
+Report only what the run recorded. Write no sentence about a file left alone ("I left `terms.jsonl` unchanged"). Sections:
 
 1. `## Findings`: what the analyzer proposed, by kind.
 2. `## Verdicts`: each candidate, its objection, and how it resolved.

@@ -62,8 +62,9 @@ with its own spacing rule. No `rg` pattern finds this; walk the DOM.
 Detect: list the visual peers, then check that all share one flex or
 grid parent. The command lists every all-sides and horizontal margin
 (`m-`, `ml-`, `mr-`, `ms-`, `me-`, `mx-` with a number or arbitrary
-value; `auto` is skipped; vertical margins are `vmargin`, under Pattern 2). It has no
-sibling logic; walk the DOM to see which margins compensate for a split.
+value; `auto` is skipped; vertical margins are `vmargin`, under
+Pattern 2). It has no sibling logic; walk the DOM to see which margins
+compensate for a split.
 
 ```console
 $ python3 <absolute path to detect.py> \
@@ -137,7 +138,7 @@ $ python3 <absolute path to detect.py> \
 
 Fallback if the script cannot run (replace `.` with the target). It lists
 every margin; keep the ones in files that also match the `gap` pattern,
-and take the first 50 hits per file:
+and take the first 50 hits per run:
 
 ```console
 $ rg -n \
@@ -176,10 +177,14 @@ divider instead of margin arithmetic:
 ```tsx
 <nav className="flex items-center gap-3">
   <a className="px-2" href="/docs">Docs</a>
-  <div className="mx-1 h-5 w-px bg-slate-300" aria-hidden="true" />
+  <div className="h-5 w-px bg-slate-300" aria-hidden="true" />
   <button className="px-3">Contact</button>
 </nav>
 ```
+
+The divider is a flex item, so `gap-3` puts 12px on each side of it and
+the divider adds no margin. Add `mx-*` only to widen the space on both
+sides, and then state the new distance.
 
 Leave alone: a margin on the first or last child that insets from the
 container edge. `gap-*` does not govern edge space, but padding on the

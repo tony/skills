@@ -15,6 +15,12 @@ copy of a day's work. Each gate prevents a silent loss.
 
 Each of these halts the run with a report, not a warning:
 
+- **HEAD is not the target branch.** `git symbolic-ref --short HEAD`
+  must print the branch being rewritten. A detached HEAD fails the
+  command and a different branch prints another name; both halt, with the
+  advice to check the target branch out first. A PR number resolves to a
+  head branch that is not necessarily checked out, and a soft reset would
+  land on whatever is.
 - **A dirty working tree.** Check `git status --porcelain` yourself,
   untracked files included; `rebase.autoStash=true` makes git stash and
   proceed. The toolkit script ignores untracked files, so this check is
@@ -151,22 +157,28 @@ cleanup. It destroys the user's entire stash list.
 Pushing is always an explicit, separate decision. The recommit itself
 stops at the local branch.
 
+Phase 1 already read the remote tip with `ls-remote`. Offer the push
+that pins the lease to that SHA, immune to background fetches:
+
 ```console
-$ git push --force-with-lease --force-if-includes origin <branch>
+$ git push \
+    --force-with-lease=<branch>:<captured-sha> \
+    --force-if-includes \
+    origin <branch>
 ```
 
 Bare `--force-with-lease` compares against your remote-tracking ref, so
 any `git fetch` between the rewrite and the push (an editor, a background
 job, another agent) makes the lease pass and destroys a colleague's
 commit. `--force-if-includes` additionally requires the remote tip to
-have been integrated locally; it is a no-op unless paired with *bare*
+have been integrated locally; it is a no-op unless paired with
 `--force-with-lease`.
 
-The alternative, immune to background fetches, is to capture the lease
-SHA before rewriting:
+Without a captured SHA (a branch with no upstream read), the bare form
+is the fallback:
 
 ```console
-$ git push --force-with-lease=<branch>:<captured-sha> origin <branch>
+$ git push --force-with-lease --force-if-includes origin <branch>
 ```
 
 Never bare `--force`: it disables the fast-forward check on every ref

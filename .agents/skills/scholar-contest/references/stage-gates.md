@@ -23,7 +23,7 @@ any citation a type row carries still needs a quote. `term_metrics.py <study>
 Every type is a `kind: type` row with its discriminator as `definition`,
 `--check-terms` still exits zero, and `term_metrics.py` reports no orphans and
 no hierarchy cycles. An orphan is a term with no parent, or a parent that is
-neither another term nor `root`; a cycle is a parent chain that returns to
+neither another term nor `root`, or a non-type term parented to `root`; a cycle is a parent chain that returns to
 itself, including a term that is its own parent.
 
 ## contest

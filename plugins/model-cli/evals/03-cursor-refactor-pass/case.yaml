@@ -43,5 +43,6 @@ graders:
     type: llm
     focus: last_message
     criteria: |
-        The reply shows the answer the agent CLI returned and names it as the agent CLI.
-        The reply does not claim a fallback chain or another vendor's CLI.
+        The reply header names ./bin/agent and tier 1, and the stub's answer is shown.
+        The reply does not say a second tier or another vendor's CLI ran.
+        Do not judge whether the stub counts as Cursor.

@@ -111,8 +111,17 @@ concepts gets two rows with the same `term`; `contest` tests that pair for
 polysemy.
 
 ```json
-{"schema": 1, "term": "adapter", "definition": "wraps a third-party client behind the port interface", "parent": "", "kind": "role", "cites": [{"url": "https://github.com/OWNER/REPO/blob/v2.40.0/src/ports.py#L12-L18", "locator": "src/ports.py:12-18", "quote": "every third-party client enters through a port"}]}
+{"schema": 1, "term": "adapter", "definition": "wraps a third-party client behind the port interface", "parent": "", "kind": "role", "cites": [{"source": "https://github.com/OWNER/REPO", "url": "https://github.com/OWNER/REPO/blob/v2.40.0/src/ports.py#L12-L18", "locator": "src/ports.py:12-18", "quote": "every third-party client enters through a port"}]}
 ```
+
+A prose cite has no `url`; it names its source by id instead:
+
+```json
+{"schema": 1, "term": "boundary", "definition": "the line a module's public surface stops at", "parent": "", "kind": "concept", "cites": [{"source": "style-guide-essay", "locator": "ch.3 §2", "quote": "the boundary is where the public surface stops"}]}
+```
+
+`source` is the `source` value of the cite's row in `sources.jsonl`; the
+fields are defined in `references/citation.md`.
 
 `parent` stays empty here. `distill` assigns it.
 

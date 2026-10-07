@@ -6,7 +6,8 @@ merge base with the trunk ref (default), the index (``--staged``), or the
 whole tree (``--all``, ranges omitted). Paths are relative to the current
 directory. Untracked files outside ignore rules count as added in full on a
 branch run. Exits 2 with a message on stderr
-when no trunk ref or merge base exists, or nothing changed.
+outside a git repository, when no trunk ref or merge base exists, or nothing
+changed.
 """
 
 # ruff: noqa: S603
@@ -98,7 +99,11 @@ def main(argv: list[str] | None = None) -> int:
     mode.add_argument("--all", action="store_true", help="every tracked file")
     args = p.parse_args(argv)
 
-    top = _git("rev-parse", "--show-toplevel").strip()
+    try:
+        top = _git("rev-parse", "--show-toplevel").strip()
+    except subprocess.CalledProcessError:
+        print("not inside a git repository", file=sys.stderr)
+        return 2
 
     def rel(name: str) -> str:
         return os.path.relpath(Path(top, name))
@@ -129,7 +134,7 @@ def main(argv: list[str] | None = None) -> int:
         path = Path(top, name)
         if not path.is_file():
             continue
-        count = path.read_bytes().count(b"\n")
+        count = len(path.read_bytes().splitlines())
         ranges[name] = [(1, count)] if count else []
     if not ranges:
         print("no changed files", file=sys.stderr)

@@ -199,7 +199,9 @@ These are this marketplace's limits. Apply them only when the project's
 4. **Run the deletion test** and build the ledger. Include the
    library-standards defects. A rewrite never adds a claim the source
    did not make: list every added or changed claim, rename, and
-   frontmatter change under Behavior changes. Report a flaw once, in
+   frontmatter change under Behavior changes, not in the Ledger. A table
+   of flags is not `$ARGUMENTS` consumption, so add no `argument-hint`
+   for it. Report a flaw once, in
    one bullet, without speculating about edits nobody asked for.
 5. **Confirm, then edit.** Show the ledger and confirm via
    `ask-user-choice` before writing; skip under `--audit` and
@@ -260,10 +262,21 @@ or scripts ran (bar the hand-written-diff clause), no commentary past the cut.
 1. One hero line: the result, in one sentence of 20 words or fewer
    with no semicolon, claiming nothing the Behavior changes do not
    show. Name the file and what it lost; anything more goes in the
-   Ledger or Behavior changes.
+   Ledger or Behavior changes. Never say what was not written or run:
+   the mode already says it. Literal heroes, one per mode:
+
+   - Edit: `db-helper loses its intro, Notes section and two filler steps.`
+   - `--audit`: `db-helper has an intro, a Notes section and two filler steps to cut.`
+   - `--diff-only`: `db-helper would lose its intro, Notes section and two filler steps.`
+   - Pasted draft: `The draft loses its intro, Notes section and two filler steps.`
+
 2. `## Ledger`: one bullet per cut, quoting the line and why nothing
    breaks, then the library-standards defects and any command flaw
-   reported once and left as written.
+   reported once and left as written. A command flaw is one bullet naming
+   the fault ("`--delete-force` is not a git flag"), never a corrected
+   command, alternative flag, or other edit nobody asked for. The Ledger
+   names only what the deletion test cuts or keeps, and repeats nothing
+   that Behavior changes carries.
 3. `## Behavior changes`: edits that change what the skill does,
    separate from cuts: renames, added claims, frontmatter changes.
    Omit when none.

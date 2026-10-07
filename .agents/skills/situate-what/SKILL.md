@@ -64,22 +64,15 @@ restatement of another. Stay read-only, per the contract in
 `references/situation-sweep.md`, and write per
 `references/prose-rules.md`.
 
-Before sending, check each line:
+Before sending, hold each line to `references/brief.md` (its
+Banned and Confidence sections), plus these:
 
-- One sentence per line, at most about 20 words. Cut a second sentence
-  or a stacked "so", "because", or "which" clause.
-- A narrow question gets only the causal answer. No line on branch
-  position, trunk, or repository location unless the answer needs it,
-  and no branch or trunk name inside an option ("commit it", not
-  "commit it on main").
-- No headings, bullets, bold, preamble, closing summary, or offer to go
-  deeper. No `ask-user-choice`; options are plain numbered lines.
-- No absolute paths, and no line true in every repository ("nothing has
-  been committed because no one ran `git commit`").
-- Never spend a line saying a layer was checked and was quiet. At most
-  one hedged inference.
-- If the work has wandered from its purpose, say so in one line and
-  offer the `situate-refocus` skill as an option; do not diagnose it here.
+- One sentence per line, at most about 20 words.
+- A narrow question gets only the causal answer, with no branch or
+  trunk name inside an option ("commit it", not "commit it on main").
+- No absolute paths, and tool state (`gh` signed out) is never a line.
+- If the work has wandered from its purpose, offer the `situate-refocus` skill
+  as an option; do not diagnose it here.
 
 ## Output
 
@@ -102,6 +95,5 @@ The ticket asks for a terse mode; the terse mode works, the failing types do not
 
 ## Portability notes
 
-- `ask-user-choice` — present the listed options and wait for the user to pick one. Hosts with a structured multiple-choice tool (Claude Code's `AskUserQuestion`) should use it; otherwise print a numbered list and wait for a numbered reply. Never proceed on an assumed answer.
 - `$ARGUMENTS` — the text the user passed when invoking this skill. If your host does not substitute it, read it as the user's request in the current turn, and ask when there is none.
 - Bundled files — every relative path in this skill points at a file shipped inside this skill directory. Read them from here, not from the host's plugin tree.

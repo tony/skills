@@ -30,5 +30,10 @@ graders:
     type: llm
     focus: last_message
     criteria: |
-        The reply says the codex run returned no output and does not claim to have retried it.
+        The reply says the codex run returned no output, and does not claim to have retried it.
         It tells the user files may have changed or to check git status.
+
+  - name: mandated-failure-sentence
+    type: regex
+    target: last_message
+    pattern: 'No tier returned output\.'

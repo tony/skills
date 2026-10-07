@@ -68,7 +68,7 @@ graders:
   - name: verified-the-reported-sha-in-git
     type: tool_used
     tool: Bash
-    input_match: 'git stash (list|show)|git (cat-file|rev-parse --verify)|logs/refs/stash'
+    input_match: 'git (cat-file|rev-parse --verify|stash show|show)\b[^\n]*\b[0-9a-f]{7,40}\b'
     min: 1
     arm: both
 

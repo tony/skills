@@ -113,7 +113,8 @@ With no paths, the scope is the lines this branch added or changed.
    Never delete a directive or a sole-body docstring, whatever the
    preview said.
 
-6. **Diff.** Print `git diff -- <targets>`. Skip for `--stdin`,
+6. **Diff.** Print `git diff -- <targets>`; for an untracked target print
+   `git diff --no-index -- /dev/null <file>` instead. Skip for `--stdin`,
    `--diff-only`, and runs that edited nothing.
 
 7. **Report and hand off.** Write it per
@@ -206,9 +207,12 @@ With no paths, the scope is the lines this branch added or changed.
    Then offer next steps through `AskUserQuestion`: commit, tighten
    the prose too with `/lean:tighten`, or discard. Never offer to widen
    the scope to comments the branch did not touch. Without a question
-   tool, print the same options as the plain list above and stop. Review the printed
-   diff first, since `git checkout -- <file>` resets the whole file to
-   HEAD and drops any other uncommitted work in it. A commit message
+   tool, print the same options as the plain list above and stop. Offer a
+   file option only for files on disk; pasted code has none and is never
+   matched to a scaffold file. Review the printed diff first, since
+   `git checkout -- <file>` resets a tracked file to HEAD and drops any
+   other uncommitted work in it; to discard edits to an untracked file,
+   restore the original text you read before editing. A commit message
    carries no `Co-Authored-By`, no "Generated with" or other tool
    trailer, and no emoji. A stopped run is one result sentence, then
    what the user needs to do.

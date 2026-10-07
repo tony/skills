@@ -128,7 +128,8 @@ core loop, covered by the roster shown up front.
    with the record, naming each file resolved in step 4 with `--resolved`:
 
    ```console
-   $ python3 /absolute/path/to/scripts/merge_pr.py fingerprint verify <record path> origin/<trunk>..HEAD
+   $ python3 /absolute/path/to/scripts/merge_pr.py fingerprint verify <record path> origin/<trunk>..HEAD \
+       [--resolved <path>]...
    ```
 
    Exit 1 (a `MISMATCH` line, or a different commit count) halts the run.
@@ -158,7 +159,8 @@ Pin the merge to the head that was verified: after the final CI wait, read
 `gh pr view <n> --json headRefOid` and pass `--match-head-commit <sha>`,
 unless the user supplied their own. A push after the checks passed then
 fails the merge instead of landing unreviewed commits; on that failure,
-re-run the gate.
+re-run the gate and get a fresh `message-path`, because the merge
+deleted the old message file.
 
 The default strategy is a merge commit (`--merge`). `--squash` and
 `--rebase` override it. Check the repo allows the chosen method:
@@ -175,8 +177,9 @@ allowed method to use; without a question tool, halt and list the allowed
 methods. A strategy the user named that the repo disallows halts.
 
 Every other `gh pr merge` flag the user supplies passes through verbatim:
-`--delete-branch` (except on a stack parent, below), `--admin`, `--match-head-commit`, `--author-email`,
-`--body-file`, `--repo`, and the rest of `gh pr merge --help`. Do not
+`--delete-branch` (except on a stack parent, below), `--admin`,
+`--match-head-commit`, `--author-email`, `--body-file`, `--repo`, and the
+rest of `gh pr merge --help`. Do not
 translate or second-guess them. `--auto` queues the merge instead of
 performing it: see "After each merge".
 
@@ -227,6 +230,11 @@ Applies to both skills' reports:
   not verified" (or the mismatch as a fact); give no cause.
 - Do not describe how a check works (patch fingerprints, ancestry tests) or
   how PR text was handled; report only the result.
+- Report a stack child's remote branch only when the user must act on it.
+- Say nothing about a missing question tool or next-steps panel.
+- Name a flag only when the run added or dropped one; say nothing about
+  flags that were not touched.
+- Do not narrate the pull or rebase that produced a trunk or drift result.
 
 ## Merge commit message
 

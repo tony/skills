@@ -59,6 +59,18 @@ as `path@commit` with no `url`, and `verify` checks it with `git show`.
 Never invent a position the source does not have. A confident wrong locator
 costs a reader more than an honest search string.
 
+## The cite fields
+
+Every entry in a row's `cites` carries these fields:
+
+- `source`: the `source` value of the cite's row in `sources.jsonl` (a
+  repository URL, or the id `gather` gave a prose document). It ties the cite
+  to the pinned ref or edition, and `verify` reads it.
+- `locator`: where in the source, in the row's `locator_kind`.
+- `quote`: the text at that locator.
+- `url`: the pinned permalink, for a source with a remote. A prose source has
+  no `url`; a cite is `source`, `locator`, `quote`.
+
 ## Circular evidence does not count
 
 A citation whose quoted text contains the term it supports proves nothing. It

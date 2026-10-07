@@ -106,8 +106,11 @@ and leave everything else staged. After a soft reset every path is
 tracked, so `--only` works:
 
 ```console
-$ git commit -m "subject" --only -- path/one path/two
+$ git commit -F <scratch>/msg.txt --only -- path/one path/two
 ```
+
+Write the message file with the host's file tool, never a shell
+heredoc: a subject drawn from PR text can contain the delimiter line.
 
 `--only` fails with `pathspec ... did not match any file(s) known to
 git` on a path git does not track yet, as in a rebuild where the files
@@ -119,12 +122,12 @@ $ git add -- path/one path/two
 ```
 
 ```console
-$ git commit -m "subject"
+$ git commit -F <scratch>/msg.txt
 ```
 
 **Message flags must come before the `--`.** Everything after `--` is
-a pathspec, so `git commit --only -- file.txt -m "msg"` makes git
-look for files named `-m` and `msg`.
+a pathspec, so `git commit --only -- file.txt -F msg.txt` makes git
+look for files named `-F` and `msg.txt`.
 
 `--only` records the *working tree* content of those paths, not the
 index. That is safe for whole files and unsafe for a file being

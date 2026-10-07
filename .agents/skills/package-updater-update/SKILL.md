@@ -71,7 +71,7 @@ pushing as each completes only when `--push` or `--pr` was passed, so an
 interrupted run resumes cleanly, except where the plan marked a
 repository local-only. Write
 commit messages and the report per `references/prose-rules.md`.
-No `Co-Authored-By`, no "Generated with" or other tool trailers, no emoji.
+No `Co-Authored-By`, no "Generated with" or other tool trailers, no emoji; do not mention the omission.
 
 Branch and push handling follows Phase 4 of the skill.
 
@@ -159,14 +159,8 @@ Reply in this shape, as plain text outside any code fence, with plain bullets, n
 - web: no change.
 ```
 
-A halted run (a scope question, a fork, a cooldown, a failed check,
-nothing to change) follows "Plan stop and halt" in
-the `package-updater-updating-packages` skill: the hero line `⚠ Stopped: nothing was changed.` plus one sentence
-stating the single reason, then the options, and no section and no second paragraph. The
-clause is a fact about the repository or release, never its commit
-history, its remotes, a lookup that could not run, or a rule of this
-skill. Options are bare actions, never "and I'll then ...". The plan gate
-is not a halt; the plan prints as text.
+A halted run takes the shape in "Plan stop and halt" in
+the `package-updater-updating-packages` skill; the plan gate is not a halt.
 
 Halt example, same plain-text form:
 

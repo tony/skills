@@ -57,10 +57,14 @@ graders:
     max: 0
     arm: both
 
-  - name: reports-tag-pushed-branch-not
-    type: llm
-    focus: last_message
-    criteria: |
-      The reply states that tag `v0.4.0` was created and pushed.
-      The reply does not claim the release commit's branch was pushed, and gives
-      the branch push command as a next step (or says it was not pushed).
+  - name: reports-tag-created-and-pushed
+    type: regex
+    target: last_message
+    pattern: 'tag v0\.4\.0 created and pushed'
+    flags: i
+
+  - name: gives-branch-push-as-next-step
+    type: regex
+    target: last_message
+    pattern: 'git push --no-follow-tags\s*$'
+    flags: m

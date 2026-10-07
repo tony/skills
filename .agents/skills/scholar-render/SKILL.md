@@ -72,8 +72,12 @@ produced it and the output it produced.
 
 ## Rules
 
-- Refresh the evidence documents rather than appending; they describe the
-  current state of the study, and `corrections.md` is where history lives.
+- Create an evidence document only when it is missing, and never rewrite one
+  that exists. `distill`, `contest` and `revise` own `hierarchy.md`,
+  `vocabulary.md`, `metrics.md`, `contested.md` and `corrections.md`: their
+  verbatim command output and recorded kills stay as written. Render
+  regenerates only `brief.md`; where an owned document is stale, name the
+  stage that owns it.
 - Do not restate an evidence document in the brief. If a paragraph would
   survive being replaced by a link, replace it.
 
@@ -83,7 +87,7 @@ Per `references/output-contract.md`. Hero: `✓ rendered <subject>: brief +
 <n> evidence docs` or `⚠ Brief gate failed: <n> findings`. Sections:
 
 1. `## Brief`: the path, and the four movements in one line each.
-2. `## Evidence`: each document written and what it holds.
+2. `## Evidence`: each document created, and what it holds.
 3. `## Gate`: the brief check's output, verbatim, with absolute paths
    stripped.
 

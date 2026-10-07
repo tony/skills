@@ -122,3 +122,14 @@ def test_guard_allows_project_under_home(tmp_path: Path) -> None:
     done = run(repo, "guard", env={**ENV, "HOME": str(tmp_path / "home")})
     assert done.returncode == 0
     assert done.stdout == ""
+
+
+def test_guard_outside_repo_exits_1(tmp_path: Path) -> None:
+    (tmp_path / "plain").mkdir()
+    done = run(
+        tmp_path / "plain",
+        "guard",
+        env={**ENV, "GIT_CEILING_DIRECTORIES": str(tmp_path)},
+    )
+    assert done.returncode == 1
+    assert "not a git repository" in done.stderr

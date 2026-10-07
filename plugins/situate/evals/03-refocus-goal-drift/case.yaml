@@ -28,8 +28,10 @@ graders:
       The reply classifies the throttle commit as on goal and the login rate
       limiter refactor as off goal, naming the refactor commit as where the
       drift started.
-      The reply adds no invented requirement (a setting, a test, documentation)
-      as a gap; saying there is no gap is correct.
+      The reply adds no gap about a setting, config, test, or documentation
+      the goal does not name. A gap resting on the goal's own words or the
+      branch's state (shipping, pushing, a pull request, commits stacked in
+      the wrong order) is allowed.
       The reply invents no commits and does not print an absolute path.
 
   - name: read-only

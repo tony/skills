@@ -33,11 +33,18 @@ branch-internal narrative (renames of unshipped symbols, intermediate
 states, `### Fixes` for bugs no release had) only when no user of the
 latest published release experienced the old name, behavior, or bug.
 
-`<slop_detect.py>` is `references/slop_detect.py` and `<render_apply.py>`
-is `references/render_apply.py`, resolved from this skill's directory,
-not the repository root. Resolve each to an absolute path once, print it,
-and write that literal path in every command below, since shell variables
-do not persist between Bash calls. Both need python3 (3.9 or newer).
+`<slop_detect.py>` is `references/slop_detect.py`, `<render_apply.py>`
+is `references/render_apply.py`, `<autosquash.py>` is
+`references/autosquash.py`, and `<signatures.yml>` is
+`references/signatures.yml`, all resolved from this skill's
+directory, not the repository root. Resolve each to an absolute path once,
+print it, and write that literal path in every command below, since shell
+variables do not persist between Bash calls, and a relative path breaks
+from the repository root. The scripts need python3 (3.9 or newer).
+
+Likewise write the literal value of `BASELINE_SHA` and of each gate command
+wherever a step shows `<BASELINE_SHA>` or `<FORMAT_CMD>`; an unset variable
+turns `git log "..HEAD"` into a silent empty range.
 
 ## `$ARGUMENTS` contract
 
@@ -96,11 +103,11 @@ $ git status --porcelain
 ```
 
 ```console
-$ git log --oneline "${BASELINE_SHA}..HEAD"
+$ git log --oneline "<BASELINE_SHA>..HEAD"
 ```
 
 ```console
-$ git log --merges --oneline "${BASELINE_SHA}..HEAD"
+$ git log --merges --oneline "<BASELINE_SHA>..HEAD"
 ```
 
 With `--since=<ref>` and `--apply-rebase`, confirm the ref precedes
@@ -137,7 +144,7 @@ No upstream means a local-only branch; continue. With an upstream,
 count the commits it holds past the baseline:
 
 ```console
-$ git rev-list --count "${BASELINE_SHA}..@{u}"
+$ git rev-list --count "<BASELINE_SHA>..@{u}"
 ```
 
 A count above 0 means the branch was pushed, whether or not `HEAD` still
@@ -182,15 +189,15 @@ flagged hunks (expensive, precise).
   first, so each finding names the commit that added the line.
 
 ```console
-$ git log -p --reverse "<BASELINE_SHA>..HEAD" | python3 <slop_detect.py> diff \
-    --registry references/signatures.yml
+$ git -c core.quotepath=off log -p --reverse "<BASELINE_SHA>..HEAD" | python3 <slop_detect.py> diff \
+    --registry <signatures.yml>
 ```
 
 - `message-subject` and `message-body` (skip under `--targets=diff`):
 
 ```console
 $ git log -z --format=%H%x1f%B "<BASELINE_SHA>..HEAD" | python3 <slop_detect.py> messages \
-    --registry references/signatures.yml
+    --registry <signatures.yml>
 ```
 
 Drop a diff finding whose `text` no longer appears in its file at `HEAD`
@@ -364,24 +371,27 @@ Record that name in the final report and tell the user that
 only and never uses `git add -A` or `git add .`. Reword commits are
 empty by design and are the only empty commits the skill creates.
 
-"Apply patches now" stops here. Steps 11 and 12 follow "Apply and
+"Apply patches now" skips to Step 12. Step 11 follows "Apply and
 autosquash" only.
 
-Autosquash runs with `rerere` enabled. Reword commits carry their
-replacement message in the body, so no editor is needed:
+"Apply and autosquash" runs the rebase with `rerere` enabled and accepts the generated todo list
+unattended; reword commits carry their replacement message in the body, so
+no editor is needed. Without a question tool, also pass
+`--abort-on-conflict`, so a conflict aborts the rebase instead of pausing it:
 
 ```console
-$ GIT_SEQUENCE_EDITOR=: git \
-    -c rerere.enabled=true \
-    -c rerere.autoupdate=true \
-    rebase -i --autosquash "${BASELINE_SHA}"
+$ python3 <autosquash.py> \
+    --baseline "<BASELINE_SHA>"
 ```
 
-`GIT_SEQUENCE_EDITOR=:` accepts the generated todo list unattended.
-Exit 0 skips to Step 12.
+Exit 0 skips to Step 12. Exit 10 means a conflict stopped the rebase (the
+script aborted it under `--abort-on-conflict`); go to Step 11 unless it
+aborted. Exit 1 is any other failure: report git's message and the backup
+branch.
 
 ## Step 11: Conflict loop
 
+Reached only when `autosquash.py` exited 10 with the rebase still paused.
 Follow `references/conflict-loop.md` until the rebase completes or
 is aborted. On abort, remind the user that the Step 10 backup branch
 exists.
@@ -389,31 +399,33 @@ exists.
 ## Step 12: Final verification and report
 
 ```console
-$ git log --oneline "${BASELINE_SHA}..HEAD"
+$ git log --oneline "<BASELINE_SHA>..HEAD"
 ```
 
 ```console
 $ git status --porcelain
 ```
 
-Run the full gate set on the tip, skipping empty buckets:
+After "Apply patches now", stop here: the fixups are not folded, so skip
+the gates and the `Quality gates (final)` section. After "Apply and
+autosquash", run the full gate set on the tip, skipping empty buckets:
 
 ```console
-$ ${FORMAT_CMD}
+$ <FORMAT_CMD>
 ```
 
 ```console
-$ ${LINT_CMD}
+$ <LINT_CMD>
 ```
 
 ```console
-$ ${TYPECHECK_CMD}
+$ <TYPECHECK_CMD>
 ```
 
 With `--run-tests`:
 
 ```console
-$ ${TEST_CMD}
+$ <TEST_CMD>
 ```
 
 Run `git status --porcelain` once more. A formatter that rewrote files
@@ -422,8 +434,11 @@ leaves a dirty tree: add `Gate left uncommitted changes: <paths>` under
 
 Report exact counts, not the plan's ranges. The hero line is `Slop
 summary`; sections follow in the order shown: summary block,
-`Quality gates (final)`, then the `Patch series:` line when nothing was
-applied. A halted or
+`Open findings`, `Quality gates (final)`, then the `Patch series:` line.
+`Open findings` lists each Tier A and B finding not applied as
+`signature_id file:line` (`signature_id <short-sha> subject` or `body`
+for a message finding), at most 10, then `and N more`; omit it when none
+remain. A halted or
 refused run prints one sentence naming the cause, then what the user
 must do (commit or stash, or re-run with `--force-rewrite-pushed`):
 
@@ -435,7 +450,7 @@ Slop summary
 Budget: default
 Findings: 4 (2 Tier A, 1 Tier B, 1 Tier C)
 Applied: 3 (2 Tier A, 1 Tier B; 0 declined)
-Advisories: 1 Tier C (see advisory.md)
+Advisories: 1 Tier C (in advisory.md under the patch series)
 
 Tone calibration: demoted "robust"
 Verifier: enabled (6 commits scanned; 0 skipped)
@@ -443,21 +458,32 @@ Verifier: enabled (6 commits scanned; 0 skipped)
 Commits: 6 (3 fixups folded)
 Backup branch: feat-login-pre-deslop-20261005-142530
 
+Open findings
+=============
+- brittle.line-numbers src/queue.py:12
+- brittle.counts 7c1e9d4 body
+
 Quality gates (final)
 =====================
 format=pass | lint=pass | typecheck=pass | tests=skipped
+
+Patch series: <run-dir>
 ```
 
-An audit run ends with `Patch series: <run-dir>`, the path Step 8
-printed, and omits the Commits, Backup branch, and gate lines; "Applied"
-is 0.
+Print the `Patch series:` line with the path Step 8 printed, because
+`advisory.md` and the patches live there. An audit run omits the
+Commits, Backup branch, and gate lines; "Applied" is 0. After "Apply
+patches now", `Commits:` reads like `Commits: 8 (2 fixups, not yet
+folded)` and the gate section is absent.
 
 Do not push; the user decides. After `--force-rewrite-pushed`, recommend
 `git push --force-with-lease --force-if-includes` over `git push --force`.
 
 End with the next step, through `ask-user-choice` when available,
 otherwise as a plain line: after an audit, `bash <run-dir>/apply.sh` or
-a re-run with `--apply-patches`; after an apply, the push command.
+a re-run with `--apply-patches`; after "Apply patches now", the
+`git rebase -i --autosquash <trunk>` command; after autosquash, the push
+command.
 
 ## Edge cases
 

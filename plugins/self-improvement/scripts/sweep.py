@@ -2,7 +2,8 @@
 """Deterministic counting and the findings ledger for the sweep and apply skills.
 
 ``counts`` turns a prompt-history file (and optionally a log of skill-tool
-launches) into per-skill invocation counts, an era split, and project spread.
+launches) into per-skill invocation counts, an era split, and project spread;
+``--window`` adds a windowed numerator and denominator for a finding's ratio.
 ``catalog`` lists the skills with their rename map, birth dates, and era
 boundary from git history. ``ledger-save`` writes the findings ledger outside
 the working tree and ``ledger-verify`` recomputes its key before any edit.
@@ -29,10 +30,11 @@ from pathlib import Path
 if t.TYPE_CHECKING:
     from collections.abc import Callable, Iterable, Sequence
 
-SLASH_RE = re.compile(r"^/([a-z0-9-]+:[a-z0-9-]+)")
+SLASH_RE = re.compile(r"^/([a-z0-9-]+(?::[a-z0-9-]+)?)")
 TOOL_RE = re.compile(r"Launching skill: ([a-z0-9-]+(?::[a-z0-9-]+)?)")
 DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 LEDGER_VERSION = 1
+MIN_RATIO_INVOCATIONS = 10
 
 
 class Args(argparse.Namespace):
@@ -54,6 +56,8 @@ class Args(argparse.Namespace):
     ledger: str | None = None
     tool_unavailable: bool = False
     root: str = "."
+    catalog_glob: str = "plugins/*/skills/*/SKILL.md"
+    window: list[str] = []  # noqa: RUF012
 
 
 class Row(t.NamedTuple):
@@ -62,39 +66,57 @@ class Row(t.NamedTuple):
     day: str
     skill: str
     project: str
+    text: str = ""
 
 
-def parse_history(lines: Iterable[str]) -> tuple[list[Row], int, int]:
-    """Extract slash invocations from prompt-history JSONL.
+class Prompt(t.NamedTuple):
+    """One prompt-history record."""
 
-    A prompt counts only when ``display`` starts with ``/plugin:skill``, so a
-    prompt that merely mentions one does not. Bare ``/skill`` names of
-    user-level skills are not matched.
+    day: str
+    text: str
+    project: str
+
+
+def parse_history(
+    lines: Iterable[str], bare: Iterable[str] = ()
+) -> tuple[list[Row], list[Prompt], int, int]:
+    """Extract slash invocations and every prompt from prompt-history JSONL.
+
+    A prompt counts as an invocation only when ``display`` starts with
+    ``/plugin:skill``, so a prompt that merely mentions one does not. A bare
+    ``/skill`` counts only when its name is in ``bare`` (the catalog), so
+    built-in commands such as ``/clear`` stay out.
 
     Parameters
     ----------
     lines : Iterable[str]
         One JSON object per line, with ``display``, ``timestamp`` (epoch
         milliseconds), and ``project``.
+    bare : Iterable[str]
+        Catalog names that may appear without a plugin prefix.
 
     Returns
     -------
-    tuple[list[Row], int, int]
-        Invocation rows, records read, and malformed lines skipped.
+    tuple[list[Row], list[Prompt], int, int]
+        Invocation rows, all prompts, records read, and malformed lines skipped.
 
     Examples
     --------
-    >>> rows, records, bad = parse_history([
+    >>> rows, prompts, records, bad = parse_history([
     ...     '{"display": "/spike:probe x", "timestamp": 1700000000000, "project": "/a"}',
     ...     '{"display": "see /spike:probe", "timestamp": 1700000000000}',
+    ...     '{"display": "/clear", "timestamp": 1700000000000}',
+    ...     '{"display": "/tidy now", "timestamp": 1700000000000}',
     ...     "not json",
-    ... ])
-    >>> rows
-    [Row(day='2023-11-14', skill='spike:probe', project='/a')]
-    >>> (records, bad)
-    (2, 1)
+    ... ], bare=["tidy"])
+    >>> [(r.skill, r.text) for r in rows]
+    [('spike:probe', '/spike:probe x'), ('tidy', '/tidy now')]
+    >>> (len(prompts), records, bad)
+    (4, 4, 1)
     """
+    known = set(bare)
     rows: list[Row] = []
+    prompts: list[Prompt] = []
     records = 0
     malformed = 0
     for line in lines:
@@ -111,16 +133,20 @@ def parse_history(lines: Iterable[str]) -> tuple[list[Row], int, int]:
         rec = t.cast("dict[str, object]", loaded)
         records += 1
         display = rec.get("display")
-        match = SLASH_RE.match(display) if isinstance(display, str) else None
-        if match is None:
+        if not isinstance(display, str):
             continue
         stamp = rec.get("timestamp")
         day = ""
         if isinstance(stamp, (int, float)):
             day = datetime.fromtimestamp(stamp / 1000, tz=timezone.utc).date().isoformat()
         project = rec.get("project")
-        rows.append(Row(day, match.group(1), project if isinstance(project, str) else ""))
-    return rows, records, malformed
+        proj = project if isinstance(project, str) else ""
+        prompts.append(Prompt(day, display, proj))
+        match = SLASH_RE.match(display)
+        if match is None or (":" not in match.group(1) and match.group(1) not in known):
+            continue
+        rows.append(Row(day, match.group(1), proj, display))
+    return rows, prompts, records, malformed
 
 
 def parse_tool_log(lines: Iterable[str]) -> list[str]:
@@ -225,6 +251,85 @@ def summarize(
     }
 
 
+def resolve_since(value: str, today: date | None = None) -> str:
+    """Return ``YYYY-MM-DD`` for a date or an ``<n>d`` offset before today.
+
+    Examples
+    --------
+    >>> resolve_since("2026-02-01")
+    '2026-02-01'
+    >>> resolve_since("90d", date(2026, 10, 7))
+    '2026-07-09'
+    """
+    if DATE_RE.match(value):
+        return value
+    m = re.fullmatch(r"(\d+)d", value)
+    if m is None:
+        msg = f"since must be YYYY-MM-DD or <n>d: {value!r}"
+        raise ValueError(msg)
+    base = today or date.today()  # noqa: DTZ011
+    return (base - timedelta(days=int(m.group(1)))).isoformat()
+
+
+def window_count(
+    rows: Sequence[Row],
+    prompts: Sequence[Prompt],
+    spec: str,
+    aliases: dict[str, str],
+    today: date | None = None,
+) -> dict[str, object]:
+    """Count a pattern and its denominator in a window.
+
+    ``spec`` is ``SKILL@SINCE@REGEX``. With a skill, ``invocations`` is that
+    skill's slash invocations since ``SINCE`` (renames summed), ``matched`` is
+    those whose text matches ``REGEX`` (all of them when the regex is empty),
+    and ``ratio`` is their quotient, ``null`` below 10 invocations. With an
+    empty skill, ``matched`` counts non-slash prompts matching ``REGEX`` and
+    there is no denominator.
+
+    Examples
+    --------
+    >>> rows = [
+    ...     Row("2026-03-01", "a:b", "/p", "/a:b x, no trailer"),
+    ...     Row("2026-03-02", "a:b", "/q", "/a:b y"),
+    ...     Row("2026-01-01", "a:b", "/q", "/a:b no trailer"),
+    ... ]
+    >>> w = window_count(rows, [], "a:b@2026-02-01@no trailer", {})
+    >>> (w["invocations"], w["matched"], w["projects"], w["ratio"])
+    (2, 1, 1, None)
+    >>> p = [Prompt("2026-03-01", "run lint then test", "/p"), Prompt("", "run lint", "/q")]
+    >>> window_count([], p, "@2026-02-01@run lint", {})["matched"]
+    1
+    """
+    skill, sep1, rest = spec.partition("@")
+    since_raw, _, regex = rest.partition("@")
+    if not sep1 or not since_raw or (not skill and not regex):
+        msg = f"window must be SKILL@SINCE[@REGEX], regex required without a skill: {spec!r}"
+        raise ValueError(msg)
+    since = resolve_since(since_raw, today)
+    pattern = re.compile(regex) if regex else None
+    out: dict[str, object] = {"skill": skill, "since": since, "regex": regex}
+    if skill:
+        pool = [
+            r for r in rows if aliases.get(r.skill, r.skill) == skill and r.day and r.day >= since
+        ]
+        hit = [r for r in pool if pattern is None or pattern.search(r.text)]
+        out["invocations"] = len(pool)
+        out["matched"] = len(hit)
+        out["projects"] = len({r.project for r in hit if r.project})
+        enough = len(pool) >= MIN_RATIO_INVOCATIONS
+        out["ratio"] = round(len(hit) / len(pool), 2) if enough else None
+    else:
+        found = [
+            p
+            for p in prompts
+            if p.day and p.day >= since and not p.text.startswith("/") and re.search(regex, p.text)
+        ]
+        out["matched"] = len(found)
+        out["projects"] = len({p.project for p in found if p.project})
+    return out
+
+
 def ledger_key(head: str, findings: Sequence[dict[str, object]]) -> str:
     r"""Return the ledger key: sha256 hex of ``head`` and the finding set.
 
@@ -327,9 +432,7 @@ def verify_ledger(ledger: object, head: str) -> tuple[bool, str]:
     return True, "ok"
 
 
-SKILL_DIR_RE = re.compile(r"^plugins/([^/]+)/skills/([^/]+)/")
-CATALOG_ROOT = "plugins"
-SKILL_GLOB = f"{CATALOG_ROOT}/*/skills/*/SKILL.md"
+DEFAULT_GLOB = "plugins/*/skills/*/SKILL.md"
 FRONTMATTER_PARTS = 3
 RENAME_COLS = 3
 REBUILD_MIN_SKILLS = 3
@@ -348,18 +451,41 @@ def _git(*args: str, cwd: str | None = None) -> str:
 
 
 def skill_name(path: str) -> str | None:
-    """Return ``plugin:skill`` for a path under ``plugins/*/skills/*/``.
+    """Return ``plugin:skill`` under ``plugins/<plugin>/skills/``, else the bare name.
+
+    A skill under any other ``skills/`` directory (``skills/``,
+    ``.claude/skills/``) has no plugin prefix.
 
     Examples
     --------
     >>> root = "plugins"
     >>> skill_name(f"{root}/a/skills/b/file")
     'a:b'
+    >>> skill_name(".claude/skills/b/SKILL.md")
+    'b'
     >>> skill_name(f"{root}/a/file") is None
     True
     """
-    m = SKILL_DIR_RE.match(path)
-    return f"{m.group(1)}:{m.group(2)}" if m else None
+    parts = path.split("/")
+    for i, part in enumerate(parts[:-2]):
+        if part == "skills":
+            if parts[0] == "plugins" and i == 2:  # noqa: PLR2004
+                return f"{parts[1]}:{parts[i + 1]}"
+            return parts[i + 1]
+    return None
+
+
+def catalog_root(glob: str) -> str:
+    """Return the directory a catalog glob starts in.
+
+    Examples
+    --------
+    >>> catalog_root("plugins/*/skills/*/SKILL.md")
+    'plugins'
+    >>> catalog_root(".claude/skills/*/SKILL.md")
+    '.claude/skills'
+    """
+    return glob.split("*", 1)[0].rstrip("/") or "."
 
 
 def is_gated(text: str) -> bool:
@@ -462,14 +588,6 @@ def default_ledger_path() -> Path:
 
 def _cmd_counts(args: Args) -> int:
     history = Path(args.history)
-    with history.open(encoding="utf-8", errors="replace") as fh:
-        rows, records, malformed = parse_history(fh)
-    tool_names: list[str] = []
-    tool_status = "unavailable" if args.tool_unavailable else "absent"
-    if args.tool_log and not args.tool_unavailable:
-        with Path(args.tool_log).open(encoding="utf-8", errors="replace") as fh:
-            tool_names = parse_tool_log(fh)
-        tool_status = "read" if tool_names else "empty"
     catalog: list[str] = []
     if args.catalog:
         catalog = [
@@ -477,7 +595,17 @@ def _cmd_counts(args: Args) -> int:
             for ln in Path(args.catalog).read_text(encoding="utf-8").splitlines()
             if ln.strip()
         ]
-    out = summarize(rows, tool_names, args.boundary, parse_aliases(args.alias), catalog)
+    with history.open(encoding="utf-8", errors="replace") as fh:
+        rows, prompts, records, malformed = parse_history(fh, catalog)
+    tool_names: list[str] = []
+    tool_status = "unavailable" if args.tool_unavailable else "absent"
+    if args.tool_log and not args.tool_unavailable:
+        with Path(args.tool_log).open(encoding="utf-8", errors="replace") as fh:
+            tool_names = parse_tool_log(fh)
+        tool_status = "read" if tool_names else "empty"
+    aliases = parse_aliases(args.alias)
+    out = summarize(rows, tool_names, args.boundary, aliases, catalog)
+    out["windows"] = [window_count(rows, prompts, spec, aliases) for spec in args.window]
     slash_status = "empty" if records == 0 else "partial" if malformed else "complete"
     out["channels"] = {
         "slash": {"status": slash_status, "records": records, "malformed": malformed},
@@ -490,14 +618,20 @@ def _cmd_counts(args: Args) -> int:
 
 def _cmd_catalog(args: Args) -> int:
     root = args.root
-    paths = sorted(_git("ls-files", "--", SKILL_GLOB, cwd=root).splitlines())
+    glob = args.catalog_glob
+    shallow = _git("rev-parse", "--is-shallow-repository", cwd=root) == "true"
+    paths = sorted(_git("ls-files", "--", glob, cwd=root).splitlines())
     skills: list[dict[str, object]] = []
     births: dict[str, str] = {}
     for path in paths:
         name = skill_name(path)
         if name is None:
             continue
-        days = _git("log", "--follow", "--format=%ad", "--date=short", "--", path, cwd=root)
+        days = (
+            ""
+            if shallow
+            else _git("log", "--follow", "--format=%ad", "--date=short", "--", path, cwd=root)
+        )
         born = min(days.splitlines()) if days else ""
         if born:
             births[name] = born
@@ -509,7 +643,7 @@ def _cmd_catalog(args: Args) -> int:
         "--name-status",
         "--format=",
         "--",
-        SKILL_GLOB.rsplit("/", 1)[0],
+        glob.rsplit("/", 1)[0],
         cwd=root,
     )
     subjects = _git(
@@ -519,10 +653,11 @@ def _cmd_catalog(args: Args) -> int:
         f"--grep={RENAME_SUBJECT_RE}",
         "--format=%h %s",
         "--",
-        "plugins/*/skills/*",
+        glob.rsplit("/", 1)[0],
         cwd=root,
     )
     out = {
+        "shallow": shallow,
         "skills": skills,
         "renames": parse_renames(renames, births),
         "rename_subjects": subjects.splitlines(),
@@ -553,13 +688,22 @@ def _cmd_autosquash(args: Args) -> int:
     )
     start = [f"{base}^"] if parent.returncode == 0 else ["--root"]
     env = {**os.environ, "GIT_SEQUENCE_EDITOR": "true"}
-    _ = subprocess.run(  # noqa: S603
+    done = subprocess.run(  # noqa: S603
         ["git", "rebase", "-i", "--autosquash", *start],  # noqa: S607
-        check=True,
+        check=False,
         capture_output=True,
         text=True,
         env=env,
     )
+    if done.returncode != 0:
+        _ = subprocess.run(["git", "rebase", "--abort"], check=False, capture_output=True)  # noqa: S607
+        print(done.stderr.strip() or done.stdout.strip(), file=sys.stderr)
+        print(
+            "error: fixup conflicts with a later commit; rebase aborted, branch unchanged",
+            file=sys.stderr,
+        )
+        print(json.dumps({"squashed": False, "aborted": True}))
+        return 2
     span = "HEAD" if start == ["--root"] else f"{base}^..HEAD"
     left = [
         ln
@@ -577,7 +721,7 @@ def _cmd_tree_check(args: Args) -> int:
     except subprocess.CalledProcessError:
         tracked = _tracked_changes_without_head()
     untracked = _git(
-        "ls-files", "--others", "--exclude-standard", "--", ":/" + CATALOG_ROOT
+        "ls-files", "--others", "--exclude-standard", "--", ":/" + catalog_root(args.catalog_glob)
     ).splitlines()
     dirty = sorted(p for p in {*tracked, *untracked} if Path(p).resolve() not in ignored)
     print(json.dumps({"clean": not dirty, "dirty": dirty}))
@@ -648,8 +792,13 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0] if __doc__ else "")
     sub = parser.add_subparsers(dest="cmd", required=True)
 
+    glob_help = (
+        "git pathspec of the catalog's SKILL.md files, such as skills/*/SKILL.md "
+        f"or .claude/skills/*/SKILL.md; default {DEFAULT_GLOB}"
+    )
     cat = sub.add_parser("catalog", help="skills, rename map, birth dates, era boundary as JSON")
     _ = cat.add_argument("--root", default=".", help="repository root; default is the cwd")
+    _ = cat.add_argument("--catalog-glob", default=DEFAULT_GLOB, help=glob_help)
     _ = cat.add_argument("--names-out", help="also write the skill names, one per line, here")
 
     tree = sub.add_parser(
@@ -658,9 +807,11 @@ def build_parser() -> argparse.ArgumentParser:
     _ = tree.add_argument(
         "--ignore", action="append", default=[], help="path to leave out, repeatable"
     )
+    _ = tree.add_argument("--catalog-glob", default=DEFAULT_GLOB, help=glob_help)
 
     squash = sub.add_parser(
-        "autosquash", help="fold fixup! commits made since --onto; exit 1 if any remain"
+        "autosquash",
+        help="fold fixup! commits since --onto; exit 1 if any remain, 2 after a conflict abort",
     )
     _ = squash.add_argument("--onto", required=True, help="commit the earliest fixup targets")
 
@@ -678,6 +829,16 @@ def build_parser() -> argparse.ArgumentParser:
         help="host writes no Launching skill: line; count the slash channel only",
     )
     _ = counts.add_argument("--catalog", help="file of current skill names, one per line")
+    _ = counts.add_argument(
+        "--window",
+        action="append",
+        default=[],
+        help=(
+            "SKILL@SINCE[@REGEX], repeatable: invocations since a date (or <n>d ago), "
+            "those matching REGEX, and their spread; empty SKILL counts non-slash "
+            "prompts and needs REGEX"
+        ),
+    )
     _ = counts.add_argument(
         "--alias", action="append", default=[], help="old=new rename, repeatable"
     )

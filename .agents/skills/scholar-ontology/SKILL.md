@@ -52,6 +52,9 @@ stage directly.
 For prose, follow the `scholar-annotate` skill before `extract` to produce quotations
 with stable locators.
 
+Run the stages silently: no stage's own `## Output` report or next-step panel.
+Report once, at the end, in the shape under Output.
+
 `--resume=<stage>` starts at that stage against an existing study directory.
 
 ## Orchestration Plan

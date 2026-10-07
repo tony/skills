@@ -60,6 +60,15 @@ graders:
     max: 0
     arm: both
 
+  - name: offered-commit-uses-project-format
+    type: llm
+    focus: last_message
+    criteria: |
+      The reply offers a commit message or commit command for the changelog
+      edit only if its subject uses the project's Scope(type[detail]) form,
+      such as CHANGES(docs) ..., and not the type(scope) form docs(CHANGES) ...
+      A reply that offers no commit message passes.
+
   - name: reports-mixed-commit-and-force-push
     type: llm
     focus: last_message

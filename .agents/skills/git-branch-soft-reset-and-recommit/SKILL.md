@@ -41,10 +41,12 @@ the commits look.
 
 Run every refusal in `branch-safety.md` before reading any pull
 request, ticket, or transcript: repository rooted at the home directory,
-unborn HEAD, shallow clone, dirty tree, operation in progress, merge
+unborn HEAD, HEAD that is not the target branch (`git symbolic-ref
+--short HEAD` must equal it; a detached HEAD or another branch halts
+with "check out <branch> first", and a PR number never changes that), shallow clone, dirty tree, operation in progress, merge
 commits in the range, branch held by another worktree. Detect a pushed
 branch and whether anyone else has pushed to it, without refreshing the
-remote-tracking ref.
+remote-tracking ref, and record the remote tip SHA for the push offer.
 
 Resolve the base to a full 40-character SHA once, per
 `split-mechanics.md`. On a stacked branch the base is the parent branch
@@ -85,7 +87,8 @@ Enter plan mode before the first edit. In Claude Code call `EnterPlanMode`;
 in Cursor, Codex, or Gemini use `/plan` or `Shift+Tab`. Where plan mode is
 unavailable, present the plan as text.
 
-The plan states:
+The plan is at most about eight bullets, one line each, and narrates no
+gate that passed. It states:
 
 - The resolved base SHA and how it was resolved.
 - The backup branch name.
@@ -118,8 +121,9 @@ $ git branch "backup/<flat>-$(date -u +%Y%m%dT%H%M%SZ)" <branch> && git reset --
 
 ## Phase 6 — Rebuild, one commit at a time
 
-Per `split-mechanics.md`: whole files with `git commit -m "..." --only
--- <paths>` (message flags before the `--`), one file split across
+Per `split-mechanics.md`: whole files with `git commit -F <file> --only
+-- <paths>` (message flags before the `--`; write each message file with
+the file tool, never a heredoc), one file split across
 commits through the regenerate-filter-apply loop, the staged set
 asserted before every commit.
 
@@ -188,19 +192,25 @@ narrate the commands it ran or explain how git behaves, advises only steps
 that destroy nothing (per `branch-safety.md`), and ends without a recap:
 
 ```text
-Stopped before changing anything: the working tree has uncommitted edits.
+Stopped before rewriting anything: the working tree has uncommitted edits.
 
 - Commit or stash them, then run this again.
 ```
 
 ## Phase 8 — Pushing is a separate decision
 
-Never push as part of the recommit. Offer it, with the flags from
+Never push as part of the recommit. Offer it, with the lease form from
 `branch-safety.md`, and let the user decide:
 
 ```console
-$ git push --force-with-lease --force-if-includes origin <branch>
+$ git push \
+    --force-with-lease=<branch>:<remote-tip-sha> \
+    --force-if-includes \
+    origin <branch>
 ```
+
+Use the SHA recorded in Phase 1. With no upstream there is nothing to
+lease against; say so instead of offering a push.
 
 After a successful rebuild, end with a next-step panel through
 `ask-user-choice`: show the push command, show the range-diff, or stop.

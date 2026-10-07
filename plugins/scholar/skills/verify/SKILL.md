@@ -26,8 +26,10 @@ User arguments: $ARGUMENTS
 
 ### 1. Walk every citation
 
-For each `cites` entry in `terms.jsonl`, confirm three things separately,
-because they fail differently:
+For each `cites` entry in `terms.jsonl`, find its `sources.jsonl` row by the
+cite's `source` field; a cite with no `source`, or one matching no row, is
+Uncheckable. That row holds the `commit` or edition the cite is checked
+against. Then confirm three things separately, because they fail differently:
 
 The ref still exists, and still points at the `commit` recorded for it in
 `sources.jsonl`. A tag can be moved or deleted, and a deleted tag makes every

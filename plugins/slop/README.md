@@ -67,7 +67,9 @@ and quality gates inside the conflict loop.
 
 `/slop:scan` writes `slop-scan/<ts>-<pid>/` under the git directory with `commits.json`.
 `--apply` offers the per-finding loop: edit, stage the file, run gates,
-commit. A gate failure rolls the file back and the run continues.
+commit. A gate failure rolls the file back and the run continues. Edit
+`commits.json` first, then re-run with `--apply --from=<run-dir>` to commit
+your wording.
 
 ## Arguments
 
@@ -125,6 +127,12 @@ Offer the per-finding commit loop:
 /slop:scan --apply
 ```
 
+Commit a series you reviewed, keeping your edits to `commits.json`:
+
+```
+/slop:scan --apply --from=<run-dir>
+```
+
 Stop on the first gate failure instead of skipping:
 
 ```
@@ -135,7 +143,22 @@ Stop on the first gate failure instead of skipping:
 
 `.claude/slop.local.yml` in the repo root changes the registry for both
 skills with `replace:`, `append:`, and `delete:` lists of signature ids.
-An id may appear under only one key.
+An id may appear under only one key. The file is read as a YAML subset:
+top-level scalars and lists of flat mappings, quoted or plain scalars, and
+single-line `[a, b]` lists. Anchors, tags, nested mappings, and multi-line
+flow lists exit with an error naming the line.
+
+## Standalone detector
+
+`scripts/slop_detect.py` runs without a model for CI or a pre-commit hook.
+It prints one JSON object of findings from `messages` (commit messages),
+`diff` (a unified diff on stdin), or `files` (tracked paths), and exits 2
+on a malformed registry. For example, check the branch's commit messages:
+
+```console
+$ git log -z --format=%H%x1f%B origin/main..HEAD | python3 scripts/slop_detect.py messages \
+    --registry references/signatures.yml
+```
 
 ## Safety
 
@@ -143,6 +166,8 @@ An id may appear under only one key.
 - Tier A findings apply without a per-finding prompt once you pick an
   apply choice; Tier B needs your confirmation per finding; Tier C is
   advisory.
+- A project whose `AGENTS.md`, `CLAUDE.md`, or `CONTRIBUTING.md` requires
+  AI-assistance disclosure keeps attribution footers as a Tier B proposal.
 - `/slop:deslop` creates a backup branch before touching history and
   never pushes.
 - `/slop:scan` never rewrites history and never touches a file that had

@@ -27,11 +27,11 @@ The is-a hierarchy. What kinds of thing the corpus contains.
 Write it to `evidence/hierarchy.md`, one citation per is-a claim. Each type is
 also a row in `terms.jsonl` with `kind: type`, its discriminator as
 `definition`, and `parent` set to another type or the literal string `root`.
-Write each type's name onto its members' rows as `parent`. A type row carries
-no `cites` of its own; the `--check-terms` gate exempts a `kind: type` row that
+Write each type's name onto its members' rows as `parent`. A type row you create
+carries no `cites`; the `--check-terms` gate exempts a `kind: type` row that
 has a `parent`, and the citations live in `hierarchy.md`. A type the corpus
 already names (a `class`) keeps the row `extract` wrote: change its `kind` from
-`class` to `type` in place, citation included.
+`class` to `type` in place, `cites` included.
 
 Types come from the corpus's own distinctions. If a project separates ports
 from adapters everywhere, those are types. If the analyst finds it tidy to
@@ -85,7 +85,8 @@ $ python3 <analyzer> notes/ontology/<subject>/ --check-terms
 ```
 
 A term with no `parent` is an orphan, as is one whose parent is neither
-another term nor `root`. The analyzer's `hierarchy cycles` section lists any
+another term nor `root`. Report a member (non-type row) whose parent is
+`root` as an orphan too: only types sit under `root`. The analyzer's `hierarchy cycles` section lists any
 parent chain that returns to itself, such as `a -> b -> a` or a term that is
 its own parent; fix each by re-reading the corpus's own is-a claim. An orphan
 is a finding: either the corpus has a
@@ -104,7 +105,9 @@ rather than the corpus.
 ## Output
 
 Per `../../references/output-contract.md`. Hero: `✓ <n> types, <n> terms, <n>
-preferred terms` or `⚠ Blocked: <reason>`. Sections:
+preferred terms`, `⚠ Gate failed: <n> orphans, <n> cycles`, or `⚠ Blocked:
+<reason>`. A failed gate prints the hero, then each orphan or cycle on its own
+line, then the fix; no other sections. Sections:
 
 1. `## Types`: the hierarchy, each type with its discriminator.
 2. `## Vocabulary`: preferred terms with their deprecated variants.

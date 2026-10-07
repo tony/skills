@@ -3,7 +3,8 @@
 Whether the skill commits or the user commits later, the message follows these
 tiers.
 
-1. Project convention wins. When the user's `AGENTS.md`, `CLAUDE.md`, or
+1. Project convention wins, read again from `AGENTS.md` / `CLAUDE.md` when
+   writing the reply, not recalled from earlier. When the user's `AGENTS.md`, `CLAUDE.md`, or
    equivalent prescribes a commit format, use it exactly: subject pattern,
    body structure, line-wrap budget, component naming. Use the project's `type`
    for docs edits and its component style (for example `docs(CHANGES)`). The

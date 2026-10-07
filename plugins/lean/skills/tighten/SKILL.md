@@ -24,11 +24,11 @@ repo-wide.
   format/lint/typecheck once and report. Never commits.
 - `--diff-only` — show what would change without editing.
 
-If `$ARGUMENTS` is empty, ask which files via `AskUserQuestion`. Without
+If `$ARGUMENTS` is empty, ask which files via `AskUserQuestion`; without
 an interactive question tool (Codex, headless runs), print the usage
-and stop. Without a question tool, act as `--diff-only` unless the
-request itself says "go ahead": that authorizes the edits it names,
-never a commit.
+and stop. With targets but no question tool, act as `--diff-only`
+unless the request itself says "go ahead": that authorizes the edits it
+names, never a commit.
 
 ## Steps
 
@@ -50,12 +50,13 @@ never a commit.
    headless rule in `$ARGUMENTS`.
 5. **Apply in place.** Use `Edit`. Replacements are concrete and
    shorter than the original.
-6. **Diff.** Print `git diff -- <targets>`. Skip for `--diff-only` and runs
+6. **Diff.** Print `git diff -- <targets>`; for an untracked target print
+   `git diff --no-index -- /dev/null <file>` instead. Skip for `--diff-only` and runs
    that edited nothing; for `--stdin`, print the tightened text as the whole reply. With `--gates`, run the
    discovered checks once and report; never commit, whatever the gates report.
 7. **Report and hand off.** Write it per
    `../../references/prose-rules.md`: a one-line count of findings
-   resolved and skipped, with no section labels and no recap of what
+   (each edit or cut you proposed) resolved and skipped, with no section labels and no recap of what
    changed. Reply in this shape, as plain text outside any code fence, with plain bullets, no bold (never `- **Label:** ...`), and no local paths:
 
    ```text
@@ -64,13 +65,18 @@ never a commit.
 
    With `--diff-only`, or no question tool and no go-ahead, the hero is
    `6 findings proposed, 0 applied.` A stopped run is one result
-   sentence, then what the user needs to do.
+   sentence, then what the user needs to do. The reply adds no sentence
+   outside the shape, anywhere (not even to say nothing was edited, why,
+   or what the session cannot do); do not explain text you kept.
 
    Then offer next steps via `AskUserQuestion`: commit, or
    discard the edits. Without a question tool, print the options as a
-   plain list and stop. Review the printed diff first, since
-   `git checkout -- <file>` resets the whole file to HEAD and drops any
-   other uncommitted work in it. A commit message carries no
+   plain list and stop. Offer a file option only for files on disk; pasted
+   text has none and is never matched to a scaffold file. Review the
+   printed diff first, since `git checkout -- <file>` resets a tracked
+   file to HEAD and drops any other uncommitted work in it; to discard
+   edits to an untracked file, restore the original text you read before
+   editing, or delete the file if the user created it for this run. A commit message carries no
    `Co-Authored-By`, no "Generated with" or other tool trailer, and no
    emoji. For `--stdin`, skip the handoff: the reply is the tightened
    text with no lead-in, then at most one line, and only to name

@@ -19,7 +19,8 @@ and the report. Write the report per
 $ command -v agent
 ```
 
-If `agent` is not found, report it unavailable and stop.
+If `agent` is not found, stop and give the failed-run report from
+`../../references/dispatch.md`.
 
 ## Step 2: Run the tier
 

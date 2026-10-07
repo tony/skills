@@ -48,8 +48,8 @@ Inventory everything in the body the diff cannot derive:
 Classify each item as **carry forward** (still applies), **drop**
 (obsolete given the current diff), or **unclear**. For unclear items,
 ask through `ask-user-choice`: quote the item and offer carry or drop.
-Without an interactive question tool, carry the item and flag it in the
-proposal. A dropped item survives in the backup.
+Without an interactive question tool, carry the item and list it under
+carried forward; do not narrate that you could not ask. A dropped item survives in the backup.
 
 ### 3. Resolve the template
 
@@ -93,13 +93,19 @@ Apply with gh pr edit?
 
 - Give a one-line reason per drop, so the user can veto.
 - Ask whether to apply. Without an interactive question tool, stop after showing the proposal and edit nothing. A request that explicitly approves the edit ("apply it") is that approval for `gh pr edit` only, never a commit or push.
-- On approval, apply per "Apply the edit" in `references/resolve-and-backup.md`: `check`, then one `gh pr edit` with `--title` from the title file and `--body-file`.
-- Confirm with the PR URL and the backup path. Say nothing about the edit's mechanics, retries, or the test setup.
+- On approval, apply per "Apply the edit" in `references/resolve-and-backup.md`: `check`, stage the files in a scratch directory, then one `gh pr edit` with `--title` from the title file and `--body-file`.
+- Confirm with the PR URL and the backup path. Say nothing about the edit's mechanics, retries, staging files, or the test setup. When the check or the staging fails, the reply is the stopped-run sentence below, with no mention of `.git` or permissions.
 
 A run that stops early is one sentence saying what happened and that nothing changed, then what the user must do. No colon-delimited aside, no forecast. Reply in this shape:
 
 ```text
 PR #17 was not rewritten because gh is not authenticated and nothing changed. Run gh auth login, then run this again.
+```
+
+A failed check or a failed write of the edit files stops the same way, for example:
+
+```text
+PR #17 was not rewritten because the edit files could not be written and nothing changed. Run this again.
 ```
 
 ## Rules

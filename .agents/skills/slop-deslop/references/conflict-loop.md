@@ -49,21 +49,21 @@ Three rules shape it:
    Skip empty buckets:
 
    ```console
-   $ ${FORMAT_CMD}
+   $ <FORMAT_CMD>
    ```
 
    ```console
-   $ ${LINT_CMD}
+   $ <LINT_CMD>
    ```
 
    ```console
-   $ ${TYPECHECK_CMD}
+   $ <TYPECHECK_CMD>
    ```
 
    If `--run-tests` was passed:
 
    ```console
-   $ ${TEST_CMD}
+   $ <TEST_CMD>
    ```
 
    - The formatter applies its changes; re-stage what it touched.
@@ -89,6 +89,7 @@ Three rules shape it:
    $ git rebase --abort
    ```
 
+   `python3 <autosquash.py> --abort-on-conflict` does this unattended.
    Report the failing pick and remind the user that the backup branch
    still exists; `git reset --hard <backup>` returns to the pre-run
    state.

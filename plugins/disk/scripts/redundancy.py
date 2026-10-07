@@ -5,8 +5,9 @@ Usage: redundancy.py CANDIDATE KEEPER
 
 Compares relative path sets (files and symlinks) and prints the shared and
 unique counts with sizes. Exit status: 0 REDUNDANT, 1 NOT REDUNDANT,
-2 INCONCLUSIVE. Any entry in either tree that cannot be listed or opened is INCONCLUSIVE, never
-REDUNDANT, because content that cannot be read cannot be proved duplicated.
+2 INCONCLUSIVE. Any entry in either tree that cannot be listed or opened
+is INCONCLUSIVE, never REDUNDANT, because content that cannot be read
+cannot be proved duplicated.
 """
 
 # pyright: reportAny=false

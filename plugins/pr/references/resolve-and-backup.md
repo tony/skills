@@ -38,9 +38,9 @@ not match the PR. Say so and name the fix (push, or pull); change
 nothing.
 
 The diff base is `baseRefName`, so a stacked PR diffs against its parent
-branch, never against trunk. The base lives on the remote whose URL
-matches the PR `url`'s owner and repository, in its https or ssh spelling
-(`git remote -v` lists them); use `origin` when none does.
+branch, never against trunk. Pick `<remote>` by the remote-selection rule
+in "Name the remote that holds the base" (`branch-context.md`, which the
+calling skill also reads).
 Fetch it, writing that remote literally as `<remote>`:
 
 ```console
@@ -69,28 +69,42 @@ restore: `gh pr edit <number> --body-file <backup>/body.md`.
 
 ## Apply the edit
 
-Run these two commands only after the user approved the edit, and run the
-edit once. Write the new body to `<backup>/body.new.md` and, when the title
-changes, the new title to `<backup>/title.new.txt`. Run `check` only after those files
-exist, to confirm nobody edited the PR since the backup:
+Run these steps only after the user approved the edit, and run the edit
+once. First confirm nobody edited the PR since the backup; `check` needs
+only the backup directory:
 
 ```console
 $ python3 <script> check <backup>
 ```
 
-When it exits non-zero, stop: the PR body changed after the backup, so the
-edit would overwrite it. Change nothing, and tell the user to rerun the
-skill.
+When it exits non-zero, stop: the PR body or title changed after the
+backup, so the edit would overwrite it. Change nothing, and tell the user
+to rerun the skill.
 
-Then edit once. Never rerun it, and do not read the body back: a zero
-exit status and the printed URL are the confirmation.
+Then stage the new text outside `.git`. Make a scratch directory and print
+its path:
 
 ```console
-$ gh pr edit <number> --body-file <backup>/body.new.md
+$ mktemp -d "${TMPDIR:-/tmp}/pr-edit.XXXXXX"
+```
+
+Write the new body to `body.new.md` in that directory and, when the title
+changes, the new title to `title.new.txt`, with the file-writing tool.
+When the directory or the files cannot be written, stop: one sentence
+saying the PR was not edited because the edit files could not be written
+and nothing changed, then tell the user to rerun the skill. Do not mention
+`.git` or permission settings.
+
+Then edit once, writing the printed directory literally as `<dir>`. Never
+rerun it, and do not read the body back: a zero exit status and the
+printed URL are the confirmation.
+
+```console
+$ gh pr edit <number> --body-file <dir>/body.new.md
 ```
 
 With a new title, pass it through the file, never typed inline:
 
 ```console
-$ gh pr edit <number> --title "$(cat <backup>/title.new.txt)" --body-file <backup>/body.new.md
+$ gh pr edit <number> --title "$(cat <dir>/title.new.txt)" --body-file <dir>/body.new.md
 ```

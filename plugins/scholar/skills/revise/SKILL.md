@@ -84,7 +84,14 @@ Blocked: <reason>`. Sections:
    evidence and may now be unsupported.
 
 A halted run (no study, or no standing claim to correct) is the hero and one
-unblock sentence. Do not comment on the correction text the user supplied.
+unblock sentence, with no temp path and no "I didn't change anything". Do not
+comment on the correction text the user supplied:
+
+```text
+⚠ Blocked: no study at notes/ontology/sample-lib/ to correct.
+
+Pass the study path, or run /scholar:ontology to build one.
+```
 
 Next-step options: verify the downstream claims, re-run contest, stop here.
 

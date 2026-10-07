@@ -61,7 +61,7 @@ differ, so the contract replaces the tree comparison as the safety.
 Before running a test or reading any pull request, ticket, or transcript,
 run the refusals Phase 3 names. Then, per `rebuild-contract.md`, identify
 trunk's tests and the tests this branch added or changed, from the diff
-alone; create nothing yet.
+alone; create nothing but the throwaway spec worktree below.
 
 **If the branch has no tests, stop here.** An untested branch has no
 mechanical invariant, and a redo becomes a rewrite with review as
@@ -81,6 +81,12 @@ $ git worktree add \
     "$(mktemp -d "${TMPDIR:-/tmp}/<flat>-spec.XXXXXX")" \
     <branch>
 ```
+
+Take the test command from the project's own docs (`AGENTS.md`,
+`CLAUDE.md`, `CONTRIBUTING.md`, or the build file); never invent one. The
+worktree lacks ignored files (`.env`, `node_modules`, build output), so a
+failure that traces to a missing ignored file is an environmental finding
+to report, not a failing spec.
 
 What passes is the specification; what is already failing or skipped is a
 finding to report, not a target.
@@ -117,7 +123,8 @@ Enter plan mode before the first edit. In Claude Code call `EnterPlanMode`;
 in Cursor, Codex, or Gemini use `/plan` or `Shift+Tab`. Where plan mode is
 unavailable, present the plan as text.
 
-The plan states:
+The plan is at most about eight bullets, one line each, and narrates no
+gate that passed. It states:
 
 - The contract: which tests are the spec, and their current result.
 - The ledger, summarized, with the entries judged highest-risk called
@@ -185,7 +192,8 @@ changes. Never edit a spec test to make a rebuild green.
 
 Commit the rebuild as an atomic series in the project's own format,
 per `commit-messages.md` (write the messages per
-`references/prose-rules.md`; no `Co-Authored-By`, "Generated
+`references/prose-rules.md`, each to a file with the file tool and
+committed with `-F <file>`; no `Co-Authored-By`, "Generated
 with" or other tool trailer, and no emoji), carving the working tree
 into commits with `split-mechanics.md`; commit the staged spec tests
 first, as their own commit. The rebuilt files are untracked,
@@ -227,8 +235,9 @@ bullet the shape does not list, no findings outside it except a failed gate,
 no evidence beyond the contract result, and no mention of which forbidden
 items you left out. Where the project defines no gates, the Gates bullet
 says `none defined in the project`.
-The contract guarantees only what the tests and the ledger cover; say
-nothing stronger:
+The lead names the branches and nothing else: no approach, no
+description of the new code. The contract guarantees only what the tests
+and the ledger cover; say nothing stronger:
 
 ```text
 Rebuilt feature/export-v2 as feature/export-v2-redo; the contract holds.
@@ -256,7 +265,7 @@ no work that was not done, does not narrate commands or explain git, and
 ends without a recap:
 
 ```text
-Stopped before rewriting: the branch has no tests to act as the spec.
+Stopped before rewriting anything: the branch has no tests to act as the spec.
 
 - Say whether to write characterization tests against the current code first.
 - Or tell me to rebuild without a mechanical check.

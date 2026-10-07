@@ -58,7 +58,7 @@ for `--since=<ref>`.
 Lock the baseline as a SHA so a background fetch cannot move it mid-run:
 
 ```console
-$ git merge-base HEAD "origin/${TRUNK}"
+$ git merge-base HEAD "origin/<trunk>"
 ```
 
 Store it as `BASELINE_SHA` and use it everywhere. On the trunk itself it
@@ -91,7 +91,7 @@ whitelist itself.
 2. Read the last 50 commit messages before the baseline:
 
    ```console
-   $ git log -n 50 --format='%B%n--END--' "${BASELINE_SHA}"
+   $ git log -n 50 --format='%B%n--END--' "<BASELINE_SHA>"
    ```
 
 3. Count Tier C signal phrases. A phrase with at least 3 occurrences in
@@ -163,7 +163,8 @@ mode:
 - `messages`: `git log -z --format=%H%x1f%B` output on stdin.
 
 Pass the override as `--override .claude/slop.local.yml` when that file
-exists, and `--registry <path>` for `--taxonomy=<path>` with no override.
+exists. `--registry` takes the skill's absolute `<signatures.yml>` path,
+or `<path>` for `--taxonomy=<path>` with no override.
 The script prints one JSON object. `loaded` holds the counts for the
 "Loaded N signatures" line; `findings` holds one entry per match with
 `signature_id`, `tier`, `file` and `line_start` or `commit_sha`, and
@@ -175,8 +176,15 @@ A pattern that starts with `^\+` judges added lines only. In `diff`
 mode every `+` line is added. In `files` mode only the lines
 `git diff <BASELINE_SHA> HEAD` added count (`--added-base`), and a match
 on any other line is marked `pre_existing` and demoted one tier (A to B,
-B to C), so a repo-wide scan never proposes an edit to a legacy line. Patterns starting with `^-` are skipped. A signature's
-`skip-paths` suppress it for matching paths.
+B to C), so an added-line rule never proposes an edit to a legacy line.
+Rules without the `^\+` anchor (`brittle.line-numbers`,
+`hardcoded.test-runner`) judge existing lines by design. Patterns
+starting with `^-` are skipped. A signature's `skip-paths` suppress it for
+matching paths. A signature with `demote-if-conventions` drops one tier
+(`demoted_by: conventions`) when that regex matches `AGENTS.md`,
+`CLAUDE.md`, or `CONTRIBUTING.md` in the working directory;
+`ai-slop.signatures` uses it, so a project that requires AI-assistance
+disclosure gets its footers as a Tier B proposal.
 
 ### Guard check
 
@@ -244,8 +252,8 @@ each proposed Tier B finding with `AskUserQuestion` before
 materialization, and a declined finding moves to `advisory.md`. Without a
 question tool, every Tier B finding counts as declined. Tier A
 findings apply with no per-finding prompt once the user picks an apply
-choice, except that a Pass A demotion (`pre_existing`) makes the finding
-Tier B. Tier C never applies.
+choice, except that a Pass A demotion (`pre_existing` or `demoted_by`) makes the
+finding Tier B. Tier C never applies.
 
 ---
 

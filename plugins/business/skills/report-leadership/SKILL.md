@@ -1,7 +1,7 @@
 ---
 name: report-leadership
 description: "Use when rendering a tier-0 leadership report from a completed business-value run, with SCQA and a conservative value case."
-allowed-tools: ["Bash", "Read", "Write", "Grep", "AskUserQuestion", "WebFetch"]
+allowed-tools: ["Bash", "Read", "Write", "Grep", "AskUserQuestion"]
 argument-hint: "[run directory]"
 user-invocable: true
 disable-model-invocation: true
@@ -34,7 +34,7 @@ Per `interim-format.md` § Rendering a report.
 ### 2. Compute the figures
 
 Run `../../scripts/business.py breakeven <run>` (absolute path) and
-`../../scripts/business.py stats` for intervals. Every computed
+`../../scripts/business.py stats` for intervals (n<5 prints a range, never a "95% interval"). Every computed
 figure in the report (`S_inst`, `S_net`, `N_breakeven`, and the
 conservative, base, and upside scenarios) comes from that output,
 copied as printed; never compute, round, or convert one yourself.

@@ -52,13 +52,16 @@ chosen because it flatters a number:
   birth date. That separates a discoverability gap from a rule people read
   and ignored.
 - A pattern typed with no skill named is windowed on the era boundary
-  Phase 0 fixes. The question is whether the typing is still happening.
+  Phase 0 fixes, or the last 90 days (`90d`) when the catalog has no era
+  date. The question is whether the typing is still happening. Echo which
+  window you used.
 - The Usage ranking uses the era boundary, so retired skills do not
   outvote live ones.
 - The supersession check uses the successor's birth date.
 
 Report a ratio against that skill's invocations in the same window, with
-the window and its anchor beside it. The same evidence argues for opposite
+the window and its anchor beside it. `counts --window` computes both
+numbers (Phase 2); never count them by hand. The same evidence argues for opposite
 remedies at 54% and at 20%. A skill with fewer than 10 invocations in the
 window gets counts only: no ratio, and no finding around it.
 
@@ -148,8 +151,10 @@ ask what to sweep; in a non-interactive run, stop with the halted report.
 ## Phase 0: Inventory, rename map, and birth dates
 
 1. List the catalog: every `plugins/*/skills/*/SKILL.md`, its name, and
-   whether it sets `disable-model-invocation`. No catalog means a halted
-   run.
+   whether it sets `disable-model-invocation`. A repository that keeps skills
+   elsewhere passes `--catalog-glob` to `catalog` and `tree-check`, such as
+   `skills/*/SKILL.md` or `.claude/skills/*/SKILL.md`; names there carry no
+   plugin prefix. No catalog means a halted run.
 2. Create the scratch directory as `../../references/detecting-invocations.md`
    says, then run the catalog command from the repository root. It prints each
    skill's gating and birth date (one `--follow` run per file, so a rename
@@ -161,6 +166,11 @@ ask what to sweep; in a non-interactive run, stop with the halted report.
        --names-out <scratch>/catalog.txt
    ```
 
+   If it prints `"shallow": true`, the clone's history is truncated, every
+   birth date is unknown, and no era exists. Rank all-time only, make no
+   finding anchored on a birth date, say so, and suggest
+   `git fetch --unshallow` so a later sweep can date the skills.
+
 3. Read `rename_subjects` for renames git scored below its similarity
    threshold, and for skills replaced by a different set. Pass each `renames`
    entry to the counter as an alias so old invocations are summed in.
@@ -168,9 +178,8 @@ ask what to sweep; in a non-interactive run, stop with the halted report.
    which at least 3 skills, and at least 10% of the catalog, were born.
    Report its `runners_up` so the next sweep can disagree. An empty `date`
    means no rebuild: omit `--boundary` from `counts`, rank all-time only, and
-   say so. If the era's leading
-   skill has fewer than 10 invocations since the boundary, rank all-time
-   only and say so.
+   say so. If the era's leading skill has fewer than 10 invocations since the
+   boundary, rank all-time only and say so.
 
 ## Phase 1: Count every skill
 
@@ -197,6 +206,21 @@ Group the text around each invocation by shared phrasing and sort each
 cluster into paste, continuation, or override by what its tail does.
 Cluster the no-invocation corpus separately, where near-verbatim
 repetition, not frequency, is the signal.
+
+Then size each cluster with the script. Write a regex its prompts share and
+rerun `counts` with one `--window` per cluster, in the form
+`SKILL@SINCE@REGEX`: the skill's birth date for a cluster around an
+invocation, or an empty skill and the unnamed-procedure window for one
+without. `SINCE` is a date or `<n>d`. Each window prints `invocations` (the
+denominator, for a named skill), `matched` (the numerator), `projects`, and
+`ratio` (`null` under 10 invocations). If `matched` disagrees with the
+cluster you read, fix the regex, not the number.
+
+```console
+$ python3 <sweep.py> counts \
+    --history <history file> \
+    --window 'demo:used@2026-08-01@only touch .* files'
+```
 
 ## Phase 3: Verdicts and ledger
 
@@ -258,12 +282,19 @@ Write the report per `../../references/prose-rules.md`.
    clause naming the first leg it failed and no speculation about causes.
    Never omitted.
 5. `## Corpus`: what was searched, what completed, what the count assumes,
-   and the era boundary with the clusters it was chosen over. Close with
-   the re-sweep date; never print the ledger key. With no ledger, name no
-   date.
+   and the era boundary with the clusters it was chosen over. State a
+   threshold only when it differs from the default. Close with the re-sweep
+   date; never print the ledger key. With no ledger, name no date.
 6. End with an `AskUserQuestion` panel: hand the ledger to
    `/self-improvement:apply`, narrow the sweep and rerun, or stop. In a
-   non-interactive run, record the options and stop.
+   non-interactive run, print the options as a plain list and stop; do not
+   explain why there is no panel.
+
+Keep each section to its job. `## Usage` holds counts and ages only: the
+reasons for an era or a ranking go in `## Corpus`. Each `## Not proposed`
+entry is one clause, the first bar the cluster failed, and nothing after
+it. Add no section beyond these (no `Caveat` or `Notes`); a caveat goes in
+`## Corpus`.
 
 Reply in this shape, as plain text outside any code fence, with plain bullets, no bold (never `- **Label:** ...`), and no local paths:
 

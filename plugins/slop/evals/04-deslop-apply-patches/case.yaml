@@ -28,13 +28,12 @@ graders:
   - name: reports-the-applied-fixup
     type: regex
     target: last_message
-    pattern: 'fixup! queue'
-    flags: i
+    pattern: 'Applied: [1-9]'
 
   - name: reports-the-backup-branch
     type: regex
     target: last_message
-    pattern: 'pre-deslop'
+    pattern: 'Backup branch: \S*pre-deslop'
 
   - name: does-not-rebase
     type: tool_used

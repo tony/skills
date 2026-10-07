@@ -3,7 +3,7 @@ max_turns: 12
 timeout_seconds: 300
 allowed_tools: [Read, Glob, Grep, Skill]
 ---
-Rewrite this comment body so the code fences actually render on github and the links won't rot:
+(gh is not logged in on this machine and no shell is available.) Rewrite this comment body so the code fences actually render on github and the links won't rot:
 
 ```
 The retry logic drops the timeout after the third attempt because

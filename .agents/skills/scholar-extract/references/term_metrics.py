@@ -41,6 +41,8 @@ A term whose parent is not in the table, or that has no parent at all:
 ['probe']
 >>> orphans([{"term": "probe", "parent": "root", "definition": "one path"}])
 []
+>>> orphans([{"term": "probe", "parent": "root", "kind": "verb", "definition": "one path"}])
+['probe']
 
 A citation that quotes the term it is meant to support:
 
@@ -301,9 +303,18 @@ def polysemy(terms: list[_Row]) -> list[tuple[str, list[str]]]:
 
 
 def orphans(terms: list[_Row]) -> list[str]:
-    """Terms whose parent is unassigned, or neither another term nor ``root``."""
+    """Terms whose parent is unassigned, or neither another term nor ``root``.
+
+    A typed row other than ``type`` parented to ``root`` is also reported:
+    only types sit directly under ``root``.
+    """
     known = {row["term"] for row in terms} | {"root"}
-    return [row["term"] for row in terms if row.get("parent", "") not in known]
+    return [
+        row["term"]
+        for row in terms
+        if row.get("parent", "") not in known
+        or (row.get("parent") == "root" and row.get("kind", "type") != "type")
+    ]
 
 
 def cycles(terms: list[_Row]) -> list[str]:

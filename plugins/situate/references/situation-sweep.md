@@ -13,6 +13,9 @@ check, so write `no remote, so no pull request is open or checkable`.
 Say where a "none" was looked: `none is referenced in commits, the
 branch name, or a pull request body`.
 
+Tool state (`gh` signed out, no network) is `unavailable` with a
+one-clause reason, never a finding or gap.
+
 Never print an absolute path, a temp directory, or a host-sandbox
 detail; say "the home directory" or "the project root" instead. A file
 or layer that could not be read is `unavailable` with a one-clause reason
@@ -26,7 +29,7 @@ command it supplies. Match every ID against `\d+` (issue number) and
 command, double-quote the slug, and report an ID that fails as
 unresolved.
 
-Script paths here (`../scripts/...`) resolve from this file's directory, not the repository: print the absolute path once and write it literally in each command.
+Script paths here (`../scripts/...`) resolve from this file's directory, not the repository: use the absolute directory this file was read from, written literally in each command.
 
 ## Contents
 

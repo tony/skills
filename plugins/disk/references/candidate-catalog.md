@@ -46,8 +46,7 @@ Prefer the tool's own command over `rm`. Re-check each with `<tool> --help`:
 - `node_modules` and `.venv`: delete the directory; `npm ci` or `uv sync`.
 
 System tier (`apt clean`, `journalctl --vacuum-size`, `snap` revisions) is
-regenerable but needs root; print the command for the user, per the
-`sudo` rule in the `disk` skill.
+regenerable but needs root.
 
 Three cautions apply even here:
 

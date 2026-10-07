@@ -57,9 +57,6 @@ Exit plan mode once approved.
 
 ## Execute
 
-For a command that needs `sudo`, print it for the user with what it
-changes, and stop.
-
 Work the approved plan in tier order, largest first within each tier.
 Track progress with TodoWrite so a long run stays inspectable.
 
@@ -86,8 +83,8 @@ route around.
 
 After each tier, re-read free space on the affected layer and report the
 measured delta rather than the predicted one. When they disagree,
-investigate before continuing — the usual cause is a virtual disk that
-has not been compacted, or a symlink that made one directory look like
+investigate before continuing. Two checks apply: whether a virtual disk
+has been compacted, and whether a symlink made one directory look like
 two.
 
 ## Hand off

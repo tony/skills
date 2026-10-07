@@ -65,7 +65,10 @@ unavailable, not worked around.
 ## Collection discipline
 
 - Pin every query to the run's date range; put the range inside the
-  query itself wherever the API allows.
+  query itself wherever the API allows. The PR connection takes no
+  date filter, so the window query below pages every PR and filters
+  locally: compare `gh api rate_limit` with `ceil(PR count / 100)`
+  pages before starting on a large repository.
 - State the timezone convention once in the run README and hold it:
   forge timestamps are UTC; git author/committer dates are local —
   convert to UTC before windowing, and note the offset. State the
@@ -83,11 +86,14 @@ unavailable, not worked around.
   window filter runs locally. Author and reviewer logins are read
   only to tell a self-review or a bot from a reviewer and never
   reach `raw/`: the pages are not saved, and `raw/pr-metrics.csv`
-  holds the aggregate rows. Write it with the run's absolute path,
+  holds the aggregate rows. Write to a temp file in the same
+  command and move it into `raw/` only when the pipeline succeeds, so
+  a failed `gh` leaves nothing in `raw/`. Use the run's absolute path,
   since the working directory resets between Bash calls:
 
   ```bash
   set -o pipefail
+  tmp="$(mktemp "${TMPDIR:-/tmp}/pr-metrics.XXXXXX")"
   gh api graphql --paginate \
     -f owner=acme \
     -f name=widgets \
@@ -111,7 +117,8 @@ unavailable, not worked around.
     | /abs/path/to/scripts/business.py collect-prs \
         --start 2026-04-01 \
         --end 2026-06-30 \
-        > /abs/path/to/run/raw/pr-metrics.csv
+        > "$tmp" \
+    && mv "$tmp" /abs/path/to/run/raw/pr-metrics.csv
   ```
 
   `collect-prs` (the script's absolute path, written literally)
@@ -156,7 +163,7 @@ marker → the segmentation is unknown; do not guess from prose style.
 ### Rework signals
 
 Reverts (revert markers in `git log` plus forge revert links),
-reopened issues and PRs (across all items, not only merged ones),
+reopened PRs (the `reopened` column covers merged PRs only; state that cohort),
 CI failure and retry rates, PR-size drift across the window.
 
 ### Per-task timing

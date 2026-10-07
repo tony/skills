@@ -68,8 +68,10 @@ first: a shallow clone yields a one-commit sample and a wrong profile.
 
 ### Writing the message so it survives
 
-`git commit -F -` with a quoted heredoc is the editor-free way to
-supply a multi-paragraph message.
+Write the message to a file with the host's file tool and pass it with
+`git commit -F <file>`. Subjects and bodies come from PR and ticket text,
+so never put them in a shell heredoc or a `-m` argument: a line equal to
+the delimiter ends the heredoc and the rest runs as shell.
 
 `commit.cleanup=strip` silently deletes body lines beginning with the
 comment character, so a line starting `#123` vanishes. Read

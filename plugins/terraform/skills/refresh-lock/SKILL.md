@@ -125,5 +125,4 @@ End with an `AskUserQuestion` panel offering next steps, for example:
 bump a constraint that is holding a provider back, restore
 multi-platform coverage, commit an untracked lock file, or stop here.
 Skip the panel only in plan mode. Without a question tool, list the
-options and take the default: stop here, without a closing line that
-says the run stopped.
+options and stop.

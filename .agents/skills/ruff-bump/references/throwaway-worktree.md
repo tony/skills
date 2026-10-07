@@ -1,8 +1,9 @@
 # Working in a throwaway worktree
 
-The calling skill says when to use one. The usual reason: the checkout
-is on a feature branch or has uncommitted work, and the commits must start
-from the remote default branch. The local default branch may be stale, and
+The calling skill says when to use one. The usual reasons: the checkout
+is on a feature branch, has uncommitted work, or holds a local default
+branch that differs from the remote's, and the commits must start from the
+remote default branch. The local default branch may be stale, and
 a push from it is rejected as a non-fast-forward.
 
 `<remote>` below is the remote the default branch tracks: `origin` when it

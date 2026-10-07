@@ -90,7 +90,7 @@ Read from `references/`:
 ## Script
 
 `scripts/business.py` (Python 3 standard library) does the
-deterministic work: `stats` (median, quartiles, seeded BCa interval),
+deterministic work: `stats` (median, quartiles, seeded BCa interval, or the range below n=5),
 `scan` (tier-3 identifier and money-term scan, with `--allow` and
 `--allow-url` for false positives and citation links), `gate` (the
 completeness gate, recomputing `check:` figures from `raw/`),

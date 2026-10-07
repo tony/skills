@@ -171,6 +171,7 @@ def main(argv: list[str]) -> int:
         return 2
     found = False
     count = 0
+    per_file: dict[str, int] = {}
     for f in iter_files(argv[2:]):
         try:
             text = f.read_text(encoding="utf-8", errors="replace")
@@ -178,10 +179,14 @@ def main(argv: list[str]) -> int:
             continue
         for line, snippet in find(argv[1], text):
             if argv[1] in CAPPED and count == MAX_HITS:
-                sys.stderr.write(f"detect.py: stopped at {MAX_HITS} hits; narrow the path\n")
+                counts = ", ".join(f"{name}: {n}" for name, n in per_file.items())
+                sys.stderr.write(
+                    f"detect.py: stopped at {MAX_HITS} hits ({counts}); narrow the path\n"
+                )
                 return 0
             found = True
             count += 1
+            per_file[str(f)] = per_file.get(str(f), 0) + 1
             sys.stdout.write(f"{f}:{line}:{snippet}\n")
     return 0 if found else 1
 

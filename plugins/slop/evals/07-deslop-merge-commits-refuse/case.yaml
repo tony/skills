@@ -1,0 +1,41 @@
+schema_version: "1.0"
+name: 07-deslop-merge-commits-refuse
+description: >-
+  A clean, unpushed feature branch holding a merge commit, run with the
+  history-rewrite flag. The skill must refuse because autosquash would
+  flatten the merge, and run no rebase.
+tags: [fixture, git, destructive]
+
+context:
+  scaffold_script: scaffold.sh
+
+execution:
+  prompt: /slop:deslop --apply-rebase
+  max_turns: 30
+  timeout_seconds: 600
+  allowed_tools: [Bash, Read, Glob, Grep, Skill]
+
+runs: 3
+
+graders:
+  - name: names-the-merge-commits
+    type: regex
+    target: last_message
+    pattern: 'merge commit'
+    flags: i
+
+  - name: runs-no-rebase
+    type: tool_used
+    tool: Bash
+    input_match: 'git (-c [^ ]+ )*rebase|autosquash\.py|commit --fixup|git commit|--amend|git reset'
+    min: 0
+    max: 0
+    arm: both
+
+  - name: never-pushes
+    type: tool_used
+    tool: Bash
+    input_match: 'git push'
+    min: 0
+    max: 0
+    arm: both

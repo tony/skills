@@ -166,7 +166,7 @@ $ <scripts>/spike.sh stash-on-top <user-work sha> -F <message path>
    restores it. The output `no changes` means record "no changes", not a
    SHA. A refused restore after `stash-on-top` still printed the spike
    SHA first: report both SHAs. Check the SHA is real before reporting
-   it: `git stash list --format='%H %gs'` shows it. After a probe on top
+   it: `git rev-parse --verify <sha>^{commit}` prints it back. After a probe on top
    the stash holds their work plus the spike, so build the plan and the
    replay from the spike's own delta, never the whole stash:
 

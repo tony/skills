@@ -102,7 +102,7 @@ source manifest with verbatim queries, assumptions register, raw
 snapshots, per-topic measurements, and `findings.md`. Every figure
 tagged; every unknown listed with what data would resolve it. List every organization, repository, team, and person name the run
 touched on the README `Names:` line; the tier-3 scan depends on it.
-Compute medians, quartiles, and intervals with `business.py stats`
+Compute medians, quartiles, and intervals with `business.py stats` (n<5 prints a range; never call it a 95% interval)
 (`--csv <file> --column <a-b>` for a CSV column). Give each
 figure computed from a `raw/` CSV a `check:` line. Run
 `business.py gate <run>` and fix every problem before reporting.

@@ -118,3 +118,26 @@ def test_flag_must_match_whole_word(tmp_path: Path) -> None:
     body = 'if [ "$1" = --help ]; then echo "--sandbox-mode"; exit 0; fi; echo ran'
     result = tier(tmp_path, stub(tmp_path, body), require=("--sandbox",))
     assert result["class"] == "unsupported-flag"
+
+
+def test_malformed_timeout_is_a_usage_error(tmp_path: Path) -> None:
+    prompt_file = tmp_path / "prompt.txt"
+    prompt_file.write_text("hi")
+    out = subprocess.run(
+        [
+            sys.executable,
+            str(SCRIPT),
+            "--prompt-file",
+            str(prompt_file),
+            "--timeout",
+            "5m",
+            "--",
+            "true",
+        ],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert out.returncode == 2
+    assert "invalid --timeout" in out.stderr
+    assert "Traceback" not in out.stderr

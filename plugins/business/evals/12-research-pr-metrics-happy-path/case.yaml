@@ -64,6 +64,13 @@ graders:
     target: last_message
     pattern: '^\s*✓ Run written'
 
+  - name: reply-never-calls-small-n-range-a-95-interval
+    type: regex
+    target: last_message
+    match: not_contains
+    pattern: 'n\s*(=|<)\s*[1-4]\b[^\n]{0,80}95%\s*(CI|interval)|95%\s*(CI|interval)[^\n]{0,80}n\s*(=|<)\s*[1-4]\b'
+    flags: i
+
   - name: reply-reports-collection-and-truncation
     type: llm
     focus: last_message

@@ -45,7 +45,7 @@ cat >bin/curl <<'SH'
 case "$*" in
   *"%{http_code}"*) printf 200 ;;
   *pypi.org*) echo '{"urls":[{"upload_time_iso_8601":"2025-07-01T00:00:00.000000Z"}]}' ;;
-  *) echo "Bug fixes, new subcommands and one deprecation; nothing removed."; exit 0 ;;
+  *) echo "Release notes for ${*: -1}: bug fixes, new subcommands and one deprecation; nothing removed."; exit 0 ;;
 esac
 SH
 cat >bin/mise <<'SH'

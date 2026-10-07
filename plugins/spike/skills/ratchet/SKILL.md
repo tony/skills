@@ -151,6 +151,9 @@ Repeat until Phase 3 says stop. Each round:
 4. **Record.** Append the round's ledger section before the next round;
    a round without its entry did not happen.
 
+Round-2 and later contenders branch from `HEAD`, not from a tree seeded
+with the previous winner; a seeded tree is probed in the main checkout.
+
 Except when carrying grafts, a round starts from a clean tree (the
 user's own work waits in the stash from Phase 0) and inherits the
 ledger's locked decisions, not the code.
@@ -204,6 +207,9 @@ The first line of the reply is exactly the hero line: no lead-in sentence,
 no first-person opener. Report results, not process: never narrate a
 departure from these steps or name the brief or the skill; do the step or
 halt. State what happened, not what a contender or step did not do.
+Write in the passive or the plain result, never "I" or "the run"; when a
+non-interactive default applies, name the default taken without describing
+how the run was set up. Use no transient wording ("for now", "currently").
 Warnings about the checkout (mode changes, files left in place, a tree
 that needs attention) go inside `## Stashes`, never before the first section.
 
@@ -217,7 +223,8 @@ that needs attention) go inside `## Stashes`, never before the first section.
    blocker (order and rule as in `../probe/SKILL.md`'s output contract),
    then one line with what the user must do next. No sections, no panel,
    no stash SHAs, no local or temp paths, no command echo, no description
-   of the environment.
+   of the environment. The result sentence names only the blockers, never
+   why a file or tree is in that state.
 2. `## Rounds`: one block per round: what was probed, what fought
    back, bakeoff winner if any, what got locked.
 3. `## Design`: the locked decisions as a specification, not a history.

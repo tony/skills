@@ -139,3 +139,4 @@ def test_margin_in_gap_caps_hits(tmp_path: Path) -> None:
     assert run.returncode == 0
     assert run.stdout.count("\n") == 50
     assert "stopped at 50 hits" in run.stderr
+    assert "a.tsx: 50" in run.stderr

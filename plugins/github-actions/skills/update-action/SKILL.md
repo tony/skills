@@ -14,9 +14,11 @@ whatever the user names) from whatever each repository pins to its
 current version, with one commit per repository explaining the upgrade.
 
 Read `../../references/action-pinning.md` first, then
-`../../references/dependabot-closeout.md`. For a feature-branch checkout
-or one with uncommitted work (modified or untracked files both count),
-land the commit through `../../references/throwaway-worktree.md`.
+`../../references/dependabot-closeout.md`. Land the commit through
+`../../references/throwaway-worktree.md` when the checkout is on a
+feature branch, has uncommitted work (modified or untracked files both
+count), or its local `<default>` differs from `<remote>/<default>`, ahead
+or behind.
 
 User arguments: $ARGUMENTS
 
@@ -82,9 +84,12 @@ rule in the reply. After each commit, run `git show --name-only
 --format=%h <sha>` and confirm it lists only the workflow files this
 bump changed.
 
-Commit locally; push only with `--push`, and otherwise report the local
-branch holding the commit and print its push command. With `--pr`, branch,
-push, and open a pull request instead of committing to the default branch.
+Commit locally. Push only with `--push`, and only after `git log
+<remote>/<default>..HEAD --format=%h%x20%s` lists bump commits alone; any
+other commit is the user's, so do not push, name it, and print the push
+command. Without `--push`, report the local branch holding the commit and
+print its push command. With `--pr`, branch, push, and open a pull
+request instead of committing to the default branch.
 
 ### 7. Verify and close out
 
@@ -145,6 +150,7 @@ bullets, no bold (never `- **Label:** ...`), and no local paths:
 
 End with an `AskUserQuestion` panel of next steps (for example: update
 another action, run `/github-actions:update-actions --audit-only`, stop
-here); skip it only in plan mode or a blocked run. On hosts without the
-tool, end with the next steps as text and take none.
-Never name temp or local paths unless the user must act on them.
+here); skip it only in a plan-only or blocked run. On hosts without the
+tool, end with the next steps as text and take none. Never name temp or
+local paths unless the user must act on them. Report no command exit
+codes and state no sandbox facts.

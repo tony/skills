@@ -29,8 +29,7 @@ names, config keys, and verbatim error strings. In the title too.
 
 Backticks are also the escape hatch: text inside a code span is never
 autolinked, so `` `#123` `` and `` `@import` `` stay literal. An
-unescaped `@` in a body has linked to a stranger's GitHub account
-before.
+unescaped `@name` in a body mentions that account and notifies it.
 
 ## Nothing local, nothing personal
 
@@ -152,9 +151,7 @@ is missing its blank line. A `<br>` inside a prose paragraph means the
 body is hard-wrapped.
 
 `context` applies only with `mode=gfm`; otherwise references render
-inert, which reads as a false negative. The preview is not faithful for
-reference unfurling in lists, team mentions, or cross-repo references,
-and it renders with your permissions, so a private reference that links
+inert, which reads as a false negative. The preview renders with your permissions, so a private reference that links
 for you can be inert for everyone else.
 
 ## Primary sources

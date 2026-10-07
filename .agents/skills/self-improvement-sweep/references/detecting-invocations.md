@@ -27,8 +27,10 @@ channel alone is wrong.
 that is `~/.claude/history.jsonl`: one JSON object per line with `display`,
 `project`, and `timestamp` in epoch milliseconds. The counter reads it
 directly and matches only prompts that start with `/plugin:skill`, so a
-prompt that merely mentions one does not score. It misses bare `/skill`
-names of user-level skills; say so in the report.
+prompt that merely mentions one does not score. A bare `/skill` counts only
+when its name is in the `--catalog` file, which is how skills under
+`skills/` or `.claude/skills/` are found; a user-level skill outside the
+catalog is missed, so say so in the report.
 
 **Skill-tool invocations** write a `Launching skill: <plugin>:<skill>` line
 into the conversation transcript, not into prompt history. Collect one line
@@ -81,16 +83,8 @@ channel.
 
 ## Run the counter
 
-Run the catalog command from the repository root. It prints the skills with
-their gating and birth dates, the rename map, commit subjects that mention
-a rename or replacement, and the era boundary (Phase 0 of the sweep):
-
-```console
-$ python3 <sweep.py> catalog \
-    --names-out <scratch>/catalog.txt
-```
-
-`--history` takes any prompt-history file in the same JSONL shape, which is
+Run the catalog command first (Phase 0 of the sweep); `counts` reads the
+`catalog.txt` it writes. `--history` takes any prompt-history file in the same JSONL shape, which is
 how a fixture replaces the real one. Omit `--boundary` when the catalog's era
 `date` is empty: the output then has no `slash_era`, no `projects_era`, and an
 empty `rank_era`.
@@ -104,7 +98,7 @@ $ python3 <sweep.py> counts \
     --alias <old-name>=<current-name>
 ```
 
-Pass one `--alias` per entry of the catalog command's `renames`. The output is JSON: per skill `slash_all`,
+Pass one `--alias` per entry of the catalog command's `renames`. Add one `--window` per cluster once the sweep has clustered (Phase 2). The output is JSON: per skill `slash_all`,
 `slash_era`, `tool_all`, `all_time`, `projects_all`, `projects_era`, plus
 `rank_all`, `rank_era`, and per-channel `status`. Use `rank_all` for the
 all-time ranking and `rank_era` for the current-era ranking; the second is

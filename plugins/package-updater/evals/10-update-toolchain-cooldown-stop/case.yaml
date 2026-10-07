@@ -45,9 +45,9 @@ graders:
     type: llm
     focus: last_message
     criteria: |
-      The reply is a halt: a stop line, one sentence giving the single
-      reason, then a list of options, and nothing else. It has no second
-      paragraph and no section headings. Naming the repository, its
-      upstream or a release date is fine; it does not narrate commit
-      history, authors or remotes, and does not promise later work ("I'll
-      then ...", "will be researched").
+      The reply is a halt: a stop line that gives the reason, then a list
+      of options. It has no heading lines, no paragraph between the reason
+      and the options, and no promise of later work ("I'll then ...",
+      "will be researched"). Naming the repository, its upstream or a
+      release date is fine; it does not narrate commit history, authors
+      or remotes.

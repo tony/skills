@@ -37,8 +37,10 @@ graders:
     focus: last_message
     criteria: |
       The reply reports the update-action / update-actions pair as a synonymy
-      candidate and gives a verdict on it (upheld, revised, or killed) with
-      the evidence that settled it.
+      candidate and either gives a verdict on it (upheld, revised, or killed)
+      with the evidence that settled it, or leaves it open while stating the
+      objection and what evidence would settle it. Dismissing the pair
+      without either is a failure.
 
   - name: judges-the-circular-citation
     type: llm

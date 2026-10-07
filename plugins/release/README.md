@@ -41,11 +41,11 @@ Claude Code uses a leading slash (`/release:…`). Codex omits it (`release:…`
 Cuts a release: bumps versions, refreshes lockfiles, dates changelogs, runs
 quality gates, and commits.
 
-**Safety Model (Requires Explicit Flags)**:
-- **Default**: Commit stays local (no push/tag).
-- **`--push`**: Pushes commit (`git push --no-follow-tags`).
-- **`--tag`**: Creates a local annotated tag: the repo's tag prefix (`v` when it has none) plus the version.
-- **`--push-tag`**: Pushes that tag (often triggers publish workflow).
+Safety model (requires explicit flags):
+- Default: Commit stays local (no push/tag).
+- `--push`: Pushes commit (`git push --no-follow-tags`).
+- `--tag`: Creates a local annotated tag: the repo's tag prefix (`v` when it has none) plus the version.
+- `--push-tag`: Pushes that tag (often triggers publish workflow).
   Requires `--tag` in the same run; alone it is refused before anything
   runs.
 
@@ -70,8 +70,8 @@ Rolls out published releases to local consumer repos.
 - Syncs trunk, updates pins, re-locks, and commits.
 - Verifies CI with `gh`.
 - Requires confirmation before mutating.
-- `--roots` names the directories that hold your checkouts.
-- `--push` pushes the commits to trunk; without it they stay local.
+- `--roots`: names the directories that hold your checkouts.
+- `--push`: pushes the commits to trunk; without it they stay local.
 
 Pin edits run `scripts/bump_pin.py`, a standard-library Python script.
 
@@ -82,6 +82,6 @@ templates.
 
 ## Prerequisites
 
-- **git** and **gh**.
-- **python3** (3.9 or newer) on `PATH`, for `scripts/bump_pin.py`.
+- git and gh.
+- python3 (3.9 or newer) on `PATH`, for `scripts/bump_pin.py`.
 - The target project's toolchain (as required by quality gates).

@@ -54,13 +54,8 @@ line.
 
 ### 2. Discover the layout and settle the ambiguities
 
-Follow `../../references/layout-discovery.md`. Record, per directory:
-kind, lock file presence, how many platforms that lock tracks per
-provider, and the providers and `required_version` it declares. Find root
-modules from the `.tf` files, not only from tracked lock files, map each
-child module to the roots that call it, and ask the reference's
-ambiguity questions together once the inventory exists. `--root-module`
-limits the run to the named directories.
+Follow `../../references/layout-discovery.md` and record its inventory.
+`--root-module` limits the run to the named directories.
 
 ### 3. Resolve the target version
 
@@ -88,25 +83,34 @@ alone with the reason, the lock files to be refreshed with how many
 platforms each tracks, and any drift found. With `--audit-only`, stop
 here and write nothing.
 
-### 6. Edit and commit
+### 6. Edit and commit the constraints
 
-All constraint edits in one commit. Then, unless `--no-lock`, refresh
-each affected root module's lock and commit those separately. Move only
-the bumped provider: use the lock reference's "Moving one provider"
-steps, never `init -upgrade`. When the user named a version that the
-constraint allows to be exceeded, follow its "Landing a version the user
-named" steps so the lock holds exactly that version. A root module with no committed lock is
-skipped and reported, since `init` would create one; run it there only
-after the user approves. A failed `init` restores the lock from git. Compare each lock with `lockctl.py diff`, passing the bumped provider
-to `--allow` (the lock reference has the command), and restore a dropped
-platform count for the bumped provider with `providers lock` naming it. Never commit a lock that
-lost platforms without the user's explicit yes to that file; headless,
-restore it from git, leave it out of the commit, and stop. With
-`--no-commit`, leave everything in the working tree and say what would
-have been committed. Write commit messages and the report per
+All constraint edits in one commit. With `--no-commit`, leave them in
+the working tree. Write commit messages per
 `../../references/prose-rules.md`.
 
-### 7. Verify
+### 7. Refresh the locks
+
+Unless `--no-lock`, refresh each affected root module's lock and commit
+those separately.
+
+- Move only the bumped provider: use the lock reference's "Moving one
+  provider" steps, never `init -upgrade`.
+- When the user named a version that the constraint allows to be
+  exceeded, follow its "Landing a version the user named" steps so the
+  lock holds exactly that version.
+- A root module with no committed lock is skipped and reported, since
+  `init` would create one; run it there only after the user approves.
+- A failed `init` restores the lock from git.
+- Compare each lock with `lockctl.py diff`, passing the bumped provider
+  to `--allow` (the lock reference has the command), and restore a
+  dropped platform count for the bumped provider with `providers lock`
+  naming it.
+- Never commit a lock that lost platforms without the user's explicit
+  yes to that file; headless, restore it from git, leave it out of the
+  commit, and stop.
+
+### 8. Verify
 
 Read the selected version back out of each lock file and compare it to
 the target; a different version is an overshoot to report, not a pass.
@@ -175,4 +179,4 @@ End with an `AskUserQuestion` panel offering next steps, for example:
 converge the pin sites that disagree, refresh the lock files this run
 left alone, restore multi-platform coverage to a lock that only ever
 tracked one, or stop here. Skip the panel only in plan mode. Without a question tool, list the
-options and take the default: stop here.
+options and stop.

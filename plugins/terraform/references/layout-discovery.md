@@ -13,6 +13,7 @@ Read before deciding what is in scope.
 - JSON syntax is not a text edit
 - Other drivers wrap the CLI
 - Repositories with no root module
+- What to record
 - What to ask
 
 Terraform imposes no directory convention, so classify by signal and ask
@@ -72,6 +73,9 @@ $ git ls-files \
     --exclude-standard \
     -- '*.terraform.lock.hcl'
 ```
+
+Drop paths containing `/.terraform/`: they are module copies, not root
+modules.
 
 The union of the directories is the root-module candidate set. Report
 "nothing to refresh" only when that set is empty.
@@ -167,6 +171,13 @@ lifecycle:
 A published module repository has provider constraints and no lock file.
 Constraint bumps apply normally; report that there is nothing to refresh
 once the discovery above finds no backend and no lock file.
+
+## What to record
+
+Per directory: kind, lock file presence, how many platforms that lock
+tracks per provider, and the providers and `required_version` it
+declares. Map each child module to the roots that call it, then ask the
+questions below together once the inventory exists.
 
 ## What to ask
 

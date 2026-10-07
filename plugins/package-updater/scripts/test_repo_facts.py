@@ -27,6 +27,9 @@ def _make(tmp_path: pathlib.Path) -> pathlib.Path:
     _git(repo, "config", "user.name", "t")
     (repo / ".tool-versions").write_text("uv 0.7.8 # pin\njust 1.36.0\n")
     (repo / "rust-toolchain.toml").write_text('[toolchain]\nchannel = "1.80.0"\n')
+    mise = ["[tools]", 'node = "20"', '"npm:prettier" = "3.3.0" # fmt']
+    mise += ['python = ["3.12", "3.11"]', "", "[env]", 'A = "b"', ""]
+    (repo / "mise.toml").write_text("\n".join(mise))
     (repo / "go.mod").write_text("module x\n\ngo 1.22\ntoolchain go1.22.3\n")
     (repo / "package.json").write_text('{"packageManager": "pnpm@9.0.0"}')
     _git(repo, "add", ".")
@@ -49,6 +52,7 @@ def test_pins_come_from_default_branch_not_working_tree(tmp_path: pathlib.Path) 
     assert out["branch"] == "topic"
     assert out["pins"] == {
         ".tool-versions": {"uv": "0.7.8", "just": "1.36.0"},
+        "mise.toml": {"node": "20", "npm:prettier": "3.3.0", "python": "3.12"},
         "rust-toolchain.toml": "1.80.0",
         "go.mod": {"go": "1.22", "toolchain": "go1.22.3"},
         "package.json": {"packageManager": "pnpm@9.0.0"},

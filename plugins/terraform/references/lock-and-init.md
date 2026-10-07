@@ -230,7 +230,9 @@ $ python3 ../scripts/lockctl.py platforms
 It prints each CI or task file (workflows, a Makefile or justfile
 target), tracked or not yet added, that runs `providers lock` and the `-platform=` values it names;
 documentation that merely mentions the command is not scanned. Where it
-prints nothing, ask the user for the names. Restore the platforms with
+prints nothing, ask the user for the names. It reads literal
+`-platform=` values only: a loop or variable (`-platform=$p`) prints
+nothing. Restore the platforms with
 them:
 
 ```console
@@ -272,8 +274,9 @@ The registry shows a version the resolver refuses to find. Diagnose the layer:
   (`.terraformrc`, `terraform.rc`, or wherever `TF_CLI_CONFIG_FILE`
   points) with a `filesystem_mirror` or `network_mirror` that only
   carries what somebody mirrored.
-- `TF_PLUGIN_CACHE_DIR`, which serves a stale copy when the mirror
-  cannot be reached.
+- A plugin cache (`TF_PLUGIN_CACHE_DIR` or `plugin_cache_dir`) that
+  already holds an older build of the provider
+  ([CLI configuration](https://developer.hashicorp.com/terraform/cli/config/config-file#provider-plugin-cache)).
 - A private registry requiring credentials this machine does not have.
 - A provider whose new release genuinely has no build for this
   platform.

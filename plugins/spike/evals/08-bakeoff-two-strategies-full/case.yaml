@@ -55,7 +55,19 @@ graders:
   - name: worktrees-removed
     type: tool_used
     tool: Bash
-    input_match: 'git worktree remove'
+    input_match: 'worktree remove|\bteardown\b'
+    min: 1
+    arm: both
+
+  - name: only-the-main-worktree-remains
+    type: file_exists
+    path: .git/worktrees
+    exists: false
+
+  - name: checked-the-worktree-list
+    type: tool_used
+    tool: Bash
+    input_match: 'worktree list|\bteardown\b'
     min: 1
     arm: both
 

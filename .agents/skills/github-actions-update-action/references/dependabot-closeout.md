@@ -33,16 +33,18 @@ into a command.
 
 A bump that already landed before this run (the workflow is at or past
 the PR's target) maps to the commit that landed it: find it with
-`git log -S'<action>@<version>' origin/<default> -- .github`, confirm it
+`git log -S'<action>@<version>' <remote>/<default> -- .github`, confirm it
 is on trunk, and cite it. If none is found, or the repository is a slug
 with no clone, report the PR as unmapped.
 
 Then present the mapping to the user, one line per PR: repo, number,
 title, bumped action, commit SHA or "obsolete". A title that names
 several actions (a grouped update) or comes from another bot is reported as
-unmapped. Show the exact commands below with every placeholder filled in. Run them
-only after the user confirms those commands. On hosts without an interactive question tool,
-or in a headless run, print the filled commands for the user to run and
+unmapped. A title carrying shell syntax (`$(`, backticks, `;`, `|`, `&&`)
+halts the whole run with the blocked reply in `output-shapes.md`; map and
+close nothing. Show the exact commands below with every placeholder
+filled in. Run them only after the user confirms those commands. On
+hosts without an interactive question tool, or in a headless run, print the filled commands for the user to run and
 run none; "go ahead and close them" in the request does not change this.
 
 List the open PRs, raising `--limit` until the result count is below it:
@@ -111,7 +113,7 @@ An empty result means no run has started yet; retry once the push has
 registered:
 
 ```console
-$ gh run watch "$(gh run list \
+$ gh run watch --exit-status "$(gh run list \
     --repo <slug> \
     --commit <sha> \
     --limit 1 \

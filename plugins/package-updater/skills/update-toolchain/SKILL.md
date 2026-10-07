@@ -73,7 +73,8 @@ uses the window the repository sets for its packages, and a repository
 with none has no gate. For each target, read its publication time with
 the command in the "Release publication time" section of that
 reference. A target younger than the window stops that tool, even when
-the user named the version: say when it becomes visible. Find the newest
+the user named the version: print the cooldown halt shown under Output,
+with the date it becomes visible and nothing else. Find the newest
 release outside the window by listing publication dates, newest first:
 for a GitHub tool, `gh api repos/<owner>/<repo>/releases --jq '.[] |
 select(.prerelease | not) | [.tag_name, .published_at] | @tsv'`; for
@@ -121,7 +122,7 @@ needs them separated.
 Subject names the file and the tool. A routine bump's body is a link
 block and nothing else; `../../references/commit-conventions.md` has the
 shape. Write the message per `../../references/prose-rules.md`.
-No `Co-Authored-By`, no "Generated with" or other tool trailers, no emoji.
+No `Co-Authored-By`, no "Generated with" or other tool trailers, no emoji; do not mention the omission.
 
 A bump takes a `why:` above the link block when it:
 
@@ -211,14 +212,8 @@ Reply in this shape, as plain text outside any code fence, with plain bullets, n
 - Tests and lint pass; uv.lock still resolves.
 ```
 
-A halted run (a scope question, a fork, a cooldown, a failed check,
-nothing to change) follows "Plan stop and halt" in
-`../updating-packages/SKILL.md`: the hero line `⚠ Stopped: nothing was changed.` plus one sentence
-stating the single reason, then the options, and no section and no second paragraph. The
-clause is a fact about the repository or release, never its commit
-history, its remotes, a lookup that could not run, or a rule of this
-skill. Options are bare actions, never "and I'll then ...". The plan gate
-is not a halt; the plan prints as text.
+A halted run takes the shape in "Plan stop and halt" in
+`../updating-packages/SKILL.md`; the plan gate is not a halt.
 
 Cooldown halt example, same plain-text form:
 

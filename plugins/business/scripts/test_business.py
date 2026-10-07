@@ -157,7 +157,14 @@ def test_stats_and_runs_cli(tmp_path: Path, capsys: pytest.CaptureFixture[str]) 
     sample = tmp_path / "n.txt"
     sample.write_text("1\n2\n9\n")
     assert business.main(["stats", str(sample)]) == 0
-    assert "label: DIRECTIONAL" in capsys.readouterr().out
+    out = capsys.readouterr().out
+    assert "label: DIRECTIONAL" in out
+    assert "range_lo: 1.0" in out
+    assert "range_hi: 9.0" in out
+    assert "ci95" not in out
+    sample.write_text("1\n2\n3\n4\n9\n")
+    assert business.main(["stats", str(sample)]) == 0
+    assert "ci95_lo" in capsys.readouterr().out
     make_run(tmp_path)
     assert business.main(["runs", "--root", str(tmp_path)]) == 0
     assert capsys.readouterr().out.strip().endswith("2026-06-30/business/lean-tighten")

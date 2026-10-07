@@ -13,6 +13,13 @@ from stdin. ``messages`` reads ``git log -z --format=%H%x1f%B`` output.
 Prints one JSON object: ``loaded`` counts and ``findings``. Exits 2 on a
 registry or override error. Only ``kind: regex`` signatures run.
 
+Feed ``diff`` with ``git -c core.quotepath=off log -p``: git otherwise quotes
+non-ASCII paths and the file name is lost.
+
+A signature with ``demote-if-conventions`` drops one tier when that regex matches
+the project's conventions files (``AGENTS.md``, ``CLAUDE.md``, ``CONTRIBUTING.md``,
+``.github/CONTRIBUTING.md`` under the current directory).
+
 A pattern that starts with ``^\\+`` judges added lines only. In ``files`` mode a
 line counts as added when ``git diff BASE HEAD`` added it; without
 ``--added-base`` no line does. A match on a pre-existing line is marked
@@ -243,6 +250,36 @@ def load_registry(registry: Path, override: Path | None = None) -> tuple[list[Si
     return sigs, counts
 
 
+CONVENTION_FILES = ("AGENTS.md", "CLAUDE.md", "CONTRIBUTING.md", ".github/CONTRIBUTING.md")
+
+
+def conventions_text() -> str:
+    """Concatenate the conventions files present under the current directory."""
+    parts: list[str] = []
+    for name in CONVENTION_FILES:
+        try:
+            parts.append(Path(name).read_text(encoding="utf-8"))
+        except (OSError, UnicodeDecodeError):
+            continue
+    return "\n".join(parts)
+
+
+def demote_by_conventions(rules: list[Rule], findings: list[dict[str, Any]]) -> None:
+    """Demote findings one tier when the conventions text matches ``demote-if-conventions``."""
+    text = conventions_text()
+    ids = {
+        r.sig["id"]
+        for r in rules
+        if r.sig.get("demote-if-conventions")
+        and re.search(str(r.sig["demote-if-conventions"]), text)
+    }
+    for f in findings:
+        if f["signature_id"] in ids and f["tier"] in {"A", "B"}:
+            f.setdefault("registry_tier", f["tier"])
+            f["tier"] = {"A": "B", "B": "C"}[f["tier"]]
+            f["demoted_by"] = "conventions"
+
+
 def compile_pattern(pattern: str) -> re.Pattern[str]:
     r"""Compile a registry pattern with Python's ``re``.
 
@@ -332,7 +369,7 @@ def added_lines(base: str) -> dict[str, set[int]]:
     path = ""
     for line in proc.stdout.splitlines():
         if line.startswith("+++ "):
-            path = line[6:] if line.startswith("+++ b/") else ""
+            path = line[6:].rstrip("\t") if line.startswith("+++ b/") else ""
             continue
         m = HUNK.match(line)
         if m and path:
@@ -395,7 +432,7 @@ def scan_diff(rules: list[Rule], text: str, *, historical: bool) -> list[dict[st
         if line.startswith("commit "):
             commit = line.split()[1]
         elif line.startswith("+++ "):
-            path = line[6:] if line.startswith("+++ b/") else ""
+            path = line[6:].rstrip("\t") if line.startswith("+++ b/") else ""
         elif (m := HUNK.match(line)) is not None:
             number = int(m.group(1))
             in_hunk = True
@@ -446,6 +483,7 @@ def main(argv: list[str] | None = None) -> int:
     else:
         findings = scan_messages(rules, sys.stdin.read(), historical=args.historical)
 
+    demote_by_conventions(rules, findings)
     json.dump({"loaded": {**counts, "active": len(sigs)}, "findings": findings}, sys.stdout)
     sys.stdout.write("\n")
     return 0

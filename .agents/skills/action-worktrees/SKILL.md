@@ -188,7 +188,11 @@ reaches commits and PRs only through files (`git commit -F`,
 
 Report headings are the ones below, in this order. No bold lead-in
 label on every bullet, no table cell holding prose, no closing recap,
-no temp-file paths.
+no temp-file paths. Report results only. Never narrate the skill's own
+rules, list repo facts outside these sections (unset gates, missing
+config), mention an upstream before a push, use transient wording
+("yet", "for now"), or name a commit by bare SHA where a ref exists. A
+setup-only run claims only worktrees and primers.
 
 1. Hero block (1–4 lines): `✓ N units done, M blocked`
    (`✓ N units set up, M blocked` under `--setup-only`), then execution
@@ -267,7 +271,8 @@ A run that stops before any unit starts (nothing resolvable, a
 contradictory flag pair, every unit blocked) writes only a
 `⚠ blocked at <phase>: <cause>` hero line stating that nothing
 changed, then one `## To continue` section listing what the user must
-decide or do, and nothing else (no other headings):
+decide or do, and nothing else (no command to rerun after the fix,
+no other headings):
 
 ```text
 ⚠ blocked at Phase 0: --setup-only cannot combine with --pr. Nothing changed.

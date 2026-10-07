@@ -138,20 +138,28 @@ def _patch_ids(rev_range: str) -> list[str]:
     return [line.split(" ", 1)[0] for line in ids.splitlines() if line]
 
 
-def record(rev_range: str) -> int:
-    """Store the patch ids of ``rev_range`` and print the record path."""
-    root = Path(_run("git", "rev-parse", "--git-path", "merge-pr-fingerprints").strip())
+def _write_record(root: Path, text: str) -> str:
     root.mkdir(parents=True, exist_ok=True)
     with tempfile.NamedTemporaryFile(
-        "w",
-        dir=root,
-        prefix="fp-",
-        suffix=".txt",
-        delete=False,
-        encoding="utf-8",
+        "w", dir=root, prefix="fp-", suffix=".txt", delete=False, encoding="utf-8"
     ) as out:
-        out.write("".join(f"{pid}\n" for pid in _patch_ids(rev_range)))
-    sys.stdout.write(f"{out.name}\n")
+        out.write(text)
+    return out.name
+
+
+def record(rev_range: str) -> int:
+    """Store the patch ids of ``rev_range`` and print the record path.
+
+    Falls back to a fresh temporary directory when the git directory is not
+    writable, as in a sandboxed host.
+    """
+    ids = "".join(f"{pid}\n" for pid in _patch_ids(rev_range))
+    root = Path(_run("git", "rev-parse", "--git-path", "merge-pr-fingerprints").strip())
+    try:
+        name = _write_record(root, ids)
+    except OSError:
+        name = _write_record(Path(tempfile.mkdtemp(prefix="merge-pr-fp.")), ids)
+    sys.stdout.write(f"{name}\n")
     return 0
 
 
@@ -159,7 +167,8 @@ def verify(record_path: str, rev_range: str, resolved: list[str]) -> int:
     """Compare ``rev_range`` with a record; exit 1 on an unexplained difference.
 
     A commit whose patch id differs is tolerated when it touches a path in
-    ``resolved`` (a file whose conflicts were resolved by hand).
+    ``resolved`` (a file whose conflicts were resolved by hand), even when
+    the change goes beyond the conflict hunks.
     """
     old = Path(record_path).read_text(encoding="utf-8").split()
     new = _patch_ids(rev_range)

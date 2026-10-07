@@ -83,3 +83,10 @@ def test_save_falls_back_when_git_dir_is_unwritable(repo: Path) -> None:
     out = Path(done.stdout.strip())
     assert (out / "body.md").read_bytes().decode() == BODY
     assert ".git" not in out.parts
+
+
+def test_check_needs_only_the_backup_files(repo: Path) -> None:
+    """Check runs before the new text is staged, so no .new file is required."""
+    out = Path(_run(repo, "save", "17").stdout.strip())
+    assert sorted(f.name for f in (repo / out).iterdir()) == ["body.md", "number.txt", "title.txt"]
+    assert _run(repo, "check", str(repo / out)).returncode == 0

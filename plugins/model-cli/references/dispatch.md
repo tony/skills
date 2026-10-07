@@ -137,7 +137,8 @@ On success:
 
 When every tier fails or none is installed:
 
-1. Exactly the sentence "No tier returned output."
+1. Exactly the sentence "No tier returned output." as the first line, never a paraphrase
+   ("Codex did not return an answer because ...").
 2. One line per tier tried, with its class and the one stderr line that shows
    it. Leave out host, sandbox, and URL detail, and your own diagnosis. After
    a `timeout`, `crash`, or `empty` normal run, add one line "Files may have
@@ -202,3 +203,12 @@ Bad: "The sandbox also blocked its connections to example.googleapis.com."
 Bad: "I can help: switch to a parameterized query to fix the injection."
 
 Bad: "There is no app/worker.py in the working directory."
+
+Bad: opening a failed run with "Codex couldn't answer because it isn't
+logged in" in place of the mandated sentence.
+
+Bad: describing the binary or stub that ran ("`./bin/agent` is a four-line
+script that ...").
+
+Bad: explaining a rule behind a stopped run ("I stopped here because the
+killed run had already edited app.py"). The template line says what to do.

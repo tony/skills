@@ -1,5 +1,5 @@
 ---
 type: llm
 ---
-The reply states that neither study directory has a terms.jsonl, so there is nothing to compare, and names the missing studies.
-The reply invents no mappings, collisions, or coverage findings.
+The reply opens with a halt line beginning `⚠ Blocked` and names both missing study directories (sample-lib and other-lib) as absent, then says how to unblock.
+The reply reports no mappings, collisions, or coverage findings, and invents none.

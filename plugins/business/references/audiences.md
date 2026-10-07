@@ -22,26 +22,26 @@ the data does and does not yet support, and where a committed number
 would go, the open unknowns and the data that would resolve them.
 Refusal is for gate failures, never for a thin dataset.
 
-## Tier 0 — leadership
+## Tier 0: leadership
 
 Full detail: names, raw links, registers inline. Provenance tags
 render with complete source refs: manifest entry names, file paths,
 assumption ids.
 
-## Tier 1 — org-wide
+## Tier 1: org-wide
 
 Team-level aggregates only; no individual names anywhere. Internal
 team and system names allowed. Ends with a plain-language summary
 readable by the whole company: no methodology jargon, figures still
 tagged and true.
 
-## Tier 2 — internal case study
+## Tier 2: internal case study
 
 Internal team and repo names allowed; individuals anonymized to
 roles ("a senior engineer", never a name). Tags with internal source
 refs allowed.
 
-## Tier 3 — public
+## Tier 3: public
 
 Hard sanitization contract:
 

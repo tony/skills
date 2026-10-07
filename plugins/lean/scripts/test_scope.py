@@ -216,3 +216,30 @@ def test_untracked_symlink_to_directory_is_skipped(
     monkeypatch.chdir(tmp_path)
     assert scope.main([]) == 0
     assert capsys.readouterr().out == "fresh.py\t1-1\n"
+
+
+def test_untracked_file_without_trailing_newline_counts_last_line(
+    tmp_path: pathlib.Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """A final line lacking a newline is still in range."""
+    _topic_repo(tmp_path)
+    _run(tmp_path, "checkout", "-q", "-b", "topic")
+    (tmp_path / "m.py").write_text("x = 1\n# c\n# d")
+    (tmp_path / "n.py").write_text("# c")
+    monkeypatch.chdir(tmp_path)
+    assert scope.main([]) == 0
+    assert capsys.readouterr().out == "m.py\t1-3\nn.py\t1-1\n"
+
+
+def test_outside_a_repo_exits_2(
+    tmp_path: pathlib.Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """No repository halts with a message, not a traceback."""
+    monkeypatch.setenv("GIT_CEILING_DIRECTORIES", str(tmp_path.parent))
+    monkeypatch.chdir(tmp_path)
+    assert scope.main([]) == 2
+    assert "not inside a git repository" in capsys.readouterr().err

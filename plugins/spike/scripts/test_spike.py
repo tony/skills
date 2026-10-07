@@ -427,3 +427,24 @@ def test_stash_clears_a_stale_lock_and_releases_its_own(
     result = spike(repo, "stash", message="spike: after crash")
     assert result.returncode == 0, result.stderr
     assert not lock.exists()
+
+
+def test_teardown_removes_a_worktree_holding_left_in_place_files(
+    repo: pathlib.Path, tmp_path: pathlib.Path
+) -> None:
+    tree = tmp_path / "wt"
+    git(repo, "worktree", "add", "--detach", str(tree), "HEAD")
+    (tree / "feature.txt").write_text("x\n")
+    build_output(tree)
+    sha = spike(tree, "stash", message="spike: wt").stdout.strip()
+    assert (tree / "src" / "__pycache__").exists()
+    plain = subprocess.run(
+        ["git", "worktree", "remove", str(tree)], cwd=repo, capture_output=True, check=False
+    )
+    assert plain.returncode != 0
+    result = spike(repo, "teardown", str(tree))
+    assert result.returncode == 0, result.stderr
+    assert result.stdout.strip() == "removed"
+    assert not tree.exists()
+    assert len(git(repo, "worktree", "list").splitlines()) == 1
+    assert git(repo, "rev-parse", "--verify", sha)

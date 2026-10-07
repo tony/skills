@@ -11,8 +11,10 @@ A headless run that stops at the plan, or a request to plan first, opens
 `⚠ Plan only: N commits proposed, nothing written`, then emits the five
 sections below in this order, whichever skill was invoked. `## Commits`
 lists each proposed commit with "Not made". `## Close-out` lists the
-dependabot PRs to close and says none were run. State no commit-message
-rules and offer no way around them.
+dependabot PRs to close and says none were run. Do not restate
+commit-message rules, and do not list next steps or narrate checks
+already made. Drift states each finding as a fact: no guess at intent, no
+claim about what Dependabot will or will not do.
 
 ```text
 ⚠ Plan only: 2 commits proposed, nothing written
@@ -44,9 +46,11 @@ rules and offer no way around them.
 
 A run that cannot proceed (no workflows, no `gh`, an unverifiable tag, a
 PR title carrying shell syntax) opens `⚠ Blocked: <reason>` and adds one
-sentence on what the user must do. One reason in the hero and one action in the sentence;
-leave out secondary findings. No sections, no list, no table, no
-next-steps panel, no recap of what was and was not run. A suspicious PR
+sentence on what the user must do. Name one reason in the hero and one
+action in the sentence. When several things are wrong, name only the
+first blocker and leave out the rest. No sections, no list, no table, no
+next-steps panel, no recap of what was and was not run, no sandbox
+facts, no command exit codes, and no "next steps you could take" list. A suspicious PR
 title is the reason: quote it inside the hero and do not guess who wrote
 it or why.
 

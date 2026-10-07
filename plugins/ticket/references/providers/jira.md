@@ -136,6 +136,16 @@ groups Jira tools into read, write, and search — get a work item, create one,
 edit fields, add a comment, link two work items, JQL search — gated by
 org-granted permission groups, over OAuth or an API token.
 
+Write format. The Jira description field takes plain text or ADF, never
+markdown, so a markdown body is converted before any write. Convert to plain
+text: a `###` heading becomes its text on its own line, `**` and backticks
+are dropped, a fenced block becomes its lines indented four spaces,
+`[text](url)` becomes `text (url)`, and `- ` lists stay as they are. The
+converted text is what the preview shows and what `--description-file`
+receives. Print the body for the user to paste, and file nothing, when the
+body holds a table or a nested list that plain text would flatten. ADF
+output is unverified here: no acli flag is documented to take markdown.
+
 With none of the three configured, the adapter drafts the body and emits the
 approved text for the user to paste. A normal outcome.
 

@@ -26,7 +26,7 @@ graders:
   - name: tells-the-user-to-commit
     type: regex
     target: last_message
-    pattern: 'commit'
+    pattern: 'commit the files|git commit'
     flags: i
 
   - name: makes-no-commit

@@ -74,7 +74,7 @@ trace, or long identifier mid-token; let that line run long.
 
 - Features, refactors, bug fixes: opening paragraph (what and why),
   plain bullets, `Breaking changes:` with migration guidance,
-  cross-references (`Fixes #N`, `See also:`, companion PR links), and
+  cross-references (`Fixes #N` only for an issue number the user, the branch name, or a commit supplied; `See also:`, companion PR links), and
   version compatibility notes.
 - Bug fixes with a non-obvious root cause: a root-cause paragraph,
   numbered reproduction steps if they help, and the affected versions

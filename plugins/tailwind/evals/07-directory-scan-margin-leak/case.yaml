@@ -33,3 +33,11 @@ graders:
       src/components/Nav.tsx as stacked on the parent `gap-3`, cites that
       file with a line number (line 6, the Docs line), and proposes
       removing the margin. It does not report issues in Footer.tsx.
+
+  - name: no-unprompted-divider
+    type: llm
+    focus: last_message
+    criteria: |
+      The reply does not offer a divider variant or suggest adding a
+      visible divider element; the user never said a wide gap should
+      stay.

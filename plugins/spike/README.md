@@ -79,4 +79,5 @@ hardcoded, and CI-covered work is deferred to `gh pr checks --watch`.
   `git rev-parse --path-format` for the ratchet's ledger path.
   `/spike:bakeoff` and `/spike:ratchet` use `git worktree`.
 - bash: `scripts/spike.sh` holds the git plumbing.
+- python3 (3.9 or newer): runs `scripts/test_spike.py`.
 - gh (optional): enables watching CI checks after a push.

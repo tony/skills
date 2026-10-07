@@ -66,8 +66,9 @@ only within the reference's policy.
 ### 5. Sync trunk and stand by
 
 Sync trunk and confirm the merge, per the reference's "After each merge",
-including its check that trunk contains the merge commit. Then stop. With `--auto` the merge is only queued: open with the queued hero
-and skip the sync.
+including its check that trunk contains the merge commit. Then stop.
+With `--auto` the merge is only queued: open with the queued hero and skip
+the sync.
 
 ## Output
 
@@ -77,13 +78,14 @@ then exactly these sections. A run that stops before
 the merge (including `gh` unavailable: `⚠ Blocked: gh is not authenticated`)
 gives the hero and one sentence on what the user must do; no
 headings, and never a sentence saying what was not done ("nothing was
-merged", "I did not use --admin").
+merged", "I did not use --admin"). The hero states the cause only.
 
 1. `## Merge readiness`: the gate results, including anything that
    required a rebase or a wait on CI.
 2. `## Merge`: the strategy, the merge commit short SHA with its subject
    as read back from the commit, and the PR URL. A queued merge gives the
-   strategy and the PR URL. Name a flag only when the run dropped or added
+   strategy and the PR URL (its reply keeps all three sections; see the
+   queued example). Name a flag only when the run dropped or added
    one the user did not pass; never the head pin or the user's own flags.
 3. `## Trunk`: the post-merge trunk state and the result of the
    contains-the-merge-commit check, or that the sync was skipped and why.
@@ -115,10 +117,15 @@ bullets, no bold (never `- **Label:** ...`), and no local paths:
 - main is at the merge commit; local main fast-forwarded.
 ```
 
-A queued run (`--auto`):
+A queued run (`--auto`) uses the same three sections, with readiness as
+in a merged run:
 
 ```text
 ✓ Queued #31: Retry transient sync failures
+
+## Merge readiness
+
+- Open, not a draft. CI green on the head.
 
 ## Merge
 
@@ -141,7 +148,8 @@ Get the review, or tell me to merge with --admin.
 End with an `AskUserQuestion` panel offering next steps (for example:
 cut a release from the merged trunk, merge another PR, delete the
 local branch, stop here); skip the panel in plan mode. Without a question
-tool, end after the sections: no `## Next steps` section.
+tool, end after the sections and say nothing about the missing panel; no
+`## Next steps` section.
 
 Offer the release only when the merged trunk is in a releasable state and
 the repo carries the version files a release touches. Name the project's

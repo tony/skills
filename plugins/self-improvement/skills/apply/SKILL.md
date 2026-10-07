@@ -35,7 +35,8 @@ Non-flag text selects finding ids; empty takes every finding in the
 ledger, in the order the ledger lists them. `--ledger <path>` names the
 ledger the sweep printed; without it, the default per-worktree ledger is
 used. `--dry-run` shows the edits and the gates each would run, and stops
-before the first write.
+before the first write; its reply has its own shape (see the output
+contract).
 
 ## Phase 0: Preconditions
 
@@ -51,8 +52,9 @@ Check these in order. The first failure halts the run.
    Exit 1 means the ledger is missing, edited, or older than the catalog.
    Sweep again; do not apply a picture that no longer holds.
 2. The tree has no uncommitted changes that would mix with a catalog edit:
-   no tracked file modified and no untracked file under `plugins/` (the
-   check covers that directory only).
+   no tracked file modified and no untracked file under the catalog
+   directory (`plugins/` by default; pass `--catalog-glob` for another
+   layout, the same value the sweep used). The check covers that directory only.
    Untracked files elsewhere (editor or shell dotfiles, host state) do not
    count. Mixing a catalog edit with unrelated work makes an unreviewable
    commit. Exit 1 lists the dirty paths. Pass the ledger path as `--ignore`
@@ -149,10 +151,18 @@ the skill it landed in for exactly these three defects:
 - A flag is documented as absolute and a panel overrides it.
 - A handoff goes to a skill that cannot accept the input.
 
-Fix what it finds before handing back. While the branch is unpushed, fix a
-defect in an earlier commit with `git commit --fixup=<sha>`, then fold it in
-with the script; it runs the rebase without an editor and checks that no
-`fixup!` commit remains:
+Fix what it finds before handing back. A commit is unpushed when this
+prints nothing; while it is, fix a defect in it with
+`git commit --fixup=<sha>`:
+
+```console
+$ git branch \
+    --remotes \
+    --contains <sha>
+```
+
+Then fold the fixups in with the script; it runs the rebase without an
+editor and checks that no `fixup!` commit remains:
 
 ```console
 $ python3 <sweep.py> autosquash \
@@ -160,7 +170,10 @@ $ python3 <sweep.py> autosquash \
 ```
 
 Exit 1 lists the fixup commits still unfolded; report them under
-`## Verification`. Once pushed, the fix lands as its own commit.
+`## Verification`. Exit 2 means a fixup conflicted with a later commit: the
+script aborted the rebase and the branch is unchanged, so leave the fixup
+commits in place and report that under `## Verification`. Once pushed, the
+fix lands as its own commit.
 
 ## Output contract
 
@@ -174,8 +187,9 @@ Write the report per `../../references/prose-rules.md`.
 3. `## Skipped`: findings not applied and why, including any the plan
    deliberately held back.
 4. `## Verification`: the gate commands run with their results, and the
-   Phase 5 result. Nothing else: no restated edits, no cleanup notes. Name no
-   temp directory or local path.
+   Phase 5 result. Nothing else: no restated edits, no cleanup notes, no
+   remarks on a defect you found but did not edit, no push state, no
+   clean-tree remark. Name no temp directory or local path.
 5. End with an `AskUserQuestion` panel: open a pull request, sweep again,
    or stop. Without a question tool, print the options as a plain list and
    stop; never push or open a pull request unasked.
@@ -196,4 +210,23 @@ Reply in this shape, as plain text outside any code fence, with plain bullets, n
 ## Verification
 
 - Eval check and lint pass; the final pass found nothing to fix.
+```
+
+A `--dry-run` reply has the hero line `N planned, M skipped`, then `## Plan`
+and `## Skipped`, then the panel (apply for real, or stop). It has no
+preamble, no `## Applied`, no `## Verification`, and no commentary on the
+ledger's prompts or the project's commit style. Plan bullets give the
+finding id, the edit, the files, the gate, and the `expected_change`. Reply
+in this shape, as plain text outside any code fence, with plain bullets:
+
+```text
+1 planned, 1 skipped
+
+## Plan
+
+- f1, commit: add the no-trailer rule to the output step; files: skills/commit/SKILL.md; gate: lint and eval check; expected: retyping under 10 percent by 2026-11-05.
+
+## Skipped
+
+- f2: a description change that needs a routing eval first.
 ```

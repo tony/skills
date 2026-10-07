@@ -125,6 +125,20 @@ def test_fingerprints_survive_a_clean_rebase(repo: Path) -> None:
     assert (tolerated.returncode, tolerated.stdout.startswith("resolved 2 ")) == (0, True)
 
 
+def test_record_falls_back_when_git_path_is_unwritable(repo: Path) -> None:
+    """A file where the record directory belongs forces the temp-dir fallback."""
+    _git(repo, "checkout", "-q", "-b", "feature")
+    _commit(repo, "one.txt", "one\n")
+    git_path = Path(_git(repo, "rev-parse", "--absolute-git-dir").strip())
+    (git_path / "merge-pr-fingerprints").write_text("blocked\n")
+    out = _script(repo, "fingerprint", "record", "main..HEAD")
+    assert out.returncode == 0
+    rec = Path(out.stdout.strip())
+    assert rec.is_file()
+    assert git_path not in rec.parents
+    assert _script(repo, "fingerprint", "verify", str(rec), "main..HEAD").returncode == 0
+
+
 def test_verify_fails_on_commit_count(repo: Path) -> None:
     """A different number of commits halts."""
     _git(repo, "checkout", "-q", "-b", "feature")

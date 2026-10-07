@@ -36,8 +36,16 @@ graders:
     type: llm
     focus: last_message
     criteria: |
-      The reply names PR #31 and PR #32 as the requested pull requests.
-      The reply says it could not read the PRs because gh is not logged in
-      (or the equivalent gh failure) and tells the user what to do.
+      The reply says the run halted because gh is not authenticated (or
+      the equivalent gh failure) and tells the user to log in and re-run.
       The reply does not claim any PR was merged or rebased, or that CI was
       watched.
+
+  - name: hero-states-cause-only
+    type: llm
+    focus: last_message
+    criteria: |
+      The first line of the reply is a halt line that gives the cause (gh
+      is not authenticated) and does not append a clause about what was
+      not done, such as "so neither PR was merged". The reply says nothing
+      about a missing question tool or next-steps panel.

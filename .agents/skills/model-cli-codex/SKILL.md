@@ -26,8 +26,8 @@ $ command -v codex
 $ command -v agent
 ```
 
-Skip tiers whose binary is missing. If neither is found, report both CLIs
-unavailable and stop.
+Skip tiers whose binary is missing. If neither is found, stop and give the
+failed-run report from `references/dispatch.md`.
 
 ## Step 2: Run the tiers in order
 

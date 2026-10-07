@@ -51,13 +51,8 @@ major version, add the CLI's upgrade guide to the report.
 
 ### 2. Discover the layout
 
-Follow `references/layout-discovery.md`. Record, per directory:
-kind, lock file presence, how many platforms that lock tracks per
-provider, and the providers and `required_version` it declares. Find root
-modules from the `.tf` files, not only from tracked lock files, map each
-child module to the roots that call it, and ask the reference's
-ambiguity questions together once the inventory exists. `--root-module`
-limits the run to the named directories.
+Follow `references/layout-discovery.md` and record its inventory.
+`--root-module` limits the run to the named directories.
 
 ### 3. Inventory every pin site
 
@@ -92,9 +87,11 @@ refreshed. With `--audit-only`, stop here and write nothing.
 
 ### 7. Edit, commit, verify
 
-All pin sites in one commit. Then, unless `--no-lock`, re-run `init` in
-each root module that has a committed, unmodified lock, as a separate
-commit if the lock changes (a CLI bump can change the lock file's own
+All pin sites in one commit. Then, unless `--no-lock`, check that the
+installed CLI satisfies the new `required_version`; if it does not,
+skip `init`, report it unverifiable, and name the installed version.
+Otherwise re-run `init` in each root module that has a committed,
+unmodified lock, as a separate commit if the lock changes (a CLI bump can change the lock file's own
 format). Use plain `init` per the lock reference, never `-upgrade`: a CLI
 bump moves no provider, so `lockctl.py diff` with no `--allow` must exit
 0; a non-zero exit (a version change or a platform count drop) means
@@ -102,16 +99,13 @@ restore the lock from git and report it. A dropped count is never
 committed without the user's explicit yes (headless: restore it, leave it out, and stop). A root module with no
 committed lock is skipped and reported: `init` there would create a lock
 and pick providers. Run it only after the user approves that outcome.
-With `--no-commit`, leave the working tree alone and say what would have
-been committed. Write commit messages and the
-report per `references/prose-rules.md`.
+With `--no-commit`, leave the edits in the working tree. Write commit
+messages and the report per `references/prose-rules.md`.
 
-Verify by initialising each guarded root module and confirming it
-accepts the new version, but only when the installed CLI satisfies the
-new `required_version` and `--no-lock` is absent (`init` writes the
-lock). Otherwise report init as unverifiable (skipped lock-less modules
-included), name the installed version, and edit nothing to work around
-it. Then run the repository's own gates.
+Verify by confirming each guarded root module initialised under the new
+version in the step above. Where `init` did not run (`--no-lock`, a CLI
+that does not satisfy the pin, or no committed lock), report it
+unverifiable and edit nothing to work around it. Then run the repository's own gates.
 
 ## Output
 
@@ -168,7 +162,7 @@ End with an `ask-user-choice` panel offering next steps, for example:
 converge the root modules still on an older pin, add the version to a
 version manager file the repository lacks, align the CI workflow, or
 stop here. Skip the panel only in plan mode. Without a question tool, list the
-options and take the default: stop here.
+options and stop.
 
 
 ## Portability notes

@@ -115,7 +115,7 @@ a command in this run verified, and name the merge order only once the
 topology was read. A run halted before any merge (`gh` unavailable, roster
 invalid) gives the hero and one sentence on what the user must do; no
 headings, and never a sentence saying what was not done ("nothing was
-merged").
+merged"). The hero states the cause only: not "so neither PR was merged".
 
 1. `## Roster`: the PRs, detected topology (stack or independent),
    and merge order.
@@ -123,7 +123,8 @@ merged").
    any, CI outcome, merge commit short SHA with its subject as read back from
    the commit. Note a dropped `--delete-branch` on a stack parent, and the
    parent branches deleted after the last merge. Diagnostics about the
-   environment belong in no bullet.
+   environment belong in no bullet. Report a stack child's remote branch
+   only when the user must act on it.
 3. `## Trunk`: the post-run trunk state and the result of the
    contains-the-merge-commit check. Report a mismatch as a fact with the
    short SHAs; give no cause.
@@ -164,7 +165,8 @@ Run `gh auth login`, then re-run `merge-pr-multiple #31 #32 --squash`.
 End with an `ask-user-choice` panel offering next steps (for
 example: continue with a halted PR after a fix, merge another set,
 stop here); skip the panel in plan mode. Without a question tool, end
-after the sections: no `## Next steps` section.
+after the sections and say nothing about the missing panel; no
+`## Next steps` section.
 
 
 ## Portability notes

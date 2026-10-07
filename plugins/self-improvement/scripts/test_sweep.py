@@ -16,6 +16,10 @@ if t.TYPE_CHECKING:
     import pytest
 
 
+HALF = 6
+AUTOSQUASH_ABORTED = 2
+
+
 def _finding(**over: str) -> dict[str, object]:
     base: dict[str, object] = {
         "id": "f1",
@@ -178,3 +182,114 @@ def test_autosquash_folds_fixup_commits(
     assert json.loads(capsys.readouterr().out) == {"squashed": True, "unsquashed": []}
     assert _git(tmp_path, "log", "--format=%s", f"{target}^..HEAD") == "Add b\nAdd a"
     assert _git(tmp_path, "show", "HEAD:a.txt") == "a fixed"
+
+
+def test_autosquash_conflict_aborts_and_exits_2(
+    tmp_path: pathlib.Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """A fixup that conflicts with a later commit aborts the rebase and exits 2."""
+    _repo(tmp_path)
+    target_file = tmp_path / "a.txt"
+    _ = target_file.write_text("one\n", encoding="utf-8")
+    _ = _git(tmp_path, "add", "a.txt")
+    _ = _git(tmp_path, "commit", "-q", "-m", "Add a")
+    target = _git(tmp_path, "rev-parse", "HEAD")
+    _ = target_file.write_text("two\n", encoding="utf-8")
+    _ = _git(tmp_path, "commit", "-q", "-a", "-m", "Edit a")
+    _ = target_file.write_text("three\n", encoding="utf-8")
+    _ = _git(tmp_path, "commit", "-q", "-a", f"--fixup={target}")
+    before = _git(tmp_path, "rev-parse", "HEAD")
+    monkeypatch.chdir(tmp_path)
+    assert sweep.main(["autosquash", "--onto", target]) == AUTOSQUASH_ABORTED
+    captured = capsys.readouterr()
+    assert json.loads(captured.out) == {"squashed": False, "aborted": True}
+    assert "rebase aborted" in captured.err
+    assert _git(tmp_path, "rev-parse", "HEAD") == before
+    assert _git(tmp_path, "status", "--porcelain") == ""
+    assert not Path(_git(tmp_path, "rev-parse", "--git-path", "rebase-merge")).exists()
+
+
+def test_counts_window_numerator_and_denominator(
+    tmp_path: pathlib.Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """--window reports matches, the windowed denominator, and spread per skill."""
+    history = tmp_path / "history.jsonl"
+    day = 86400000
+    start = 1790000000000
+    lines: list[dict[str, object]] = []
+    for i in range(12):
+        tail = " no trailer" if i < HALF else ""
+        lines.append(
+            {
+                "display": f"/demo:used run {i}{tail}",
+                "timestamp": start + i * day,
+                "project": f"/p{i % 3}",
+            }
+        )
+    lines.append(
+        {"display": "/demo:used old no trailer", "timestamp": start - 400 * day, "project": "/z"}
+    )
+    lines.append({"display": "run lint then test", "timestamp": start, "project": "/p0"})
+    lines.append({"display": "run lint then test", "timestamp": start, "project": "/p1"})
+    _ = history.write_text("\n".join(json.dumps(r) for r in lines) + "\n", encoding="utf-8")
+    since = "2026-01-01"
+    code = sweep.main(
+        [
+            "counts",
+            "--history",
+            str(history),
+            "--tool-unavailable",
+            "--window",
+            f"demo:used@{since}@no trailer",
+            "--window",
+            f"@{since}@run lint",
+        ]
+    )
+    assert code == 0
+    out = t.cast("dict[str, t.Any]", json.loads(capsys.readouterr().out))
+    used, unnamed = t.cast("list[dict[str, t.Any]]", out["windows"])
+    assert (used["invocations"], used["matched"], used["projects"], used["ratio"]) == (
+        12,
+        6,
+        3,
+        0.5,
+    )
+    assert (unnamed["matched"], unnamed["projects"]) == (2, 2)
+
+
+def test_catalog_flags_shallow_clone_and_hides_births(
+    tmp_path: pathlib.Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """A shallow clone reports shallow and no birth dates instead of false ones."""
+    origin = tmp_path / "origin"
+    origin.mkdir()
+    _repo(origin)
+    _skill(origin, "open")
+    _ = _git(origin, "add", "plugins")
+    _ = _git(origin, "commit", "-q", "-m", "Add skill")
+    clone = tmp_path / "clone"
+    _ = subprocess.run(["git", "clone", "-q", "--depth=1", origin.as_uri(), str(clone)], check=True)
+    assert sweep.main(["catalog", "--root", str(clone)]) == 0
+    out = t.cast("dict[str, t.Any]", json.loads(capsys.readouterr().out))
+    assert out["shallow"] is True
+    assert out["skills"][0]["born"] == ""
+    assert out["era"]["date"] == ""
+
+
+def test_catalog_glob_reads_a_flat_skills_directory(
+    tmp_path: pathlib.Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """--catalog-glob catalogs skills/<name>/ and .claude/skills/<name>/ with bare names."""
+    _repo(tmp_path)
+    for rel in ("skills/flat", ".claude/skills/local"):
+        skill = tmp_path / rel / "SKILL.md"
+        skill.parent.mkdir(parents=True)
+        _ = skill.write_text("---\nname: x\n---\nbody\n", encoding="utf-8")
+    _ = _git(tmp_path, "add", "-Af")
+    _ = _git(tmp_path, "commit", "-q", "-m", "Add skills")
+    for glob, name in (("skills/*/SKILL.md", "flat"), (".claude/skills/*/SKILL.md", "local")):
+        assert sweep.main(["catalog", "--root", str(tmp_path), "--catalog-glob", glob]) == 0
+        out = t.cast("dict[str, t.Any]", json.loads(capsys.readouterr().out))
+        assert [s["name"] for s in t.cast("list[dict[str, t.Any]]", out["skills"])] == [name]

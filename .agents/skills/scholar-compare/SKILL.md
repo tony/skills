@@ -76,6 +76,16 @@ collisions, <n> uncovered` or `⚠ Blocked: <reason>`. Sections:
 3. `## Coverage`: what each side has that the other lacks, and whether that
    is a difference or a gap.
 
+A halted run (a study with no `terms.jsonl`, or fewer than two studies) is the
+hero and one sentence naming each missing study directory and the unblock
+(the `scholar-ontology` skill to build it). No mappings, collisions, or coverage:
+
+```text
+⚠ Blocked: neither notes/ontology/sample-lib/ nor notes/ontology/other-lib/ exists.
+
+Run scholar-ontology on each corpus, then compare again.
+```
+
 With `--out=<file>`, also write the three sections to that file; without it,
 write nothing.
 

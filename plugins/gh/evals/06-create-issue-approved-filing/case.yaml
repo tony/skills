@@ -19,7 +19,7 @@ execution:
     (gh is a local stub: run every command with PATH="$PWD/bin:$PATH".)
   max_turns: 30
   timeout_seconds: 600
-  allowed_tools: [Bash, Read, Glob, Grep, Skill]
+  allowed_tools: [Bash, Read, Write, Glob, Grep, Skill]
 
 runs: 3
 
@@ -46,8 +46,8 @@ graders:
     type: llm
     focus: last_message
     criteria: |
-      The reply gives the created issue's URL
-      (https://example.invalid/example/widgets/issues/42) as the result.
+      The reply is exactly `Filed:` followed by the created issue's URL
+      (https://example.invalid/example/widgets/issues/42).
       The reply does not say the issue is still only a draft or ask whether
       to file it.
 

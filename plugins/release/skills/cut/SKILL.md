@@ -195,8 +195,8 @@ Never name local or temp paths. A completed run ends with these, in order:
    created, for example `tag v0.4.0 created locally, nothing pushed` or
    `local commit, tag v0.4.0 created and pushed, branch not pushed`.
 2. `## Release summary`: three bullets, each a bare fragment: old to new
-   version, CHANGES section date, next unreleased target (the header
-   text when it has no version). Nothing else: no
+   version, CHANGES section date, next unreleased target (when the header
+   has no version, its text in quotes: `Next unreleased target "Unreleased"`). Nothing else: no
    gate output, cleanup, sentence about files not touched (a skipped
    lockfile), or skill mechanics, and no "following", "already uses", or
    "because" clause about how the changelog is styled.
@@ -212,7 +212,8 @@ No paragraph between the hero line and the first heading.
 
 A stopped or refused run is one result sentence (what stopped and why),
 then what the user needs to do. Nothing else: no gate results, no
-description of the edits beyond whether they stay in the tree.
+description of the edits beyond whether they stay in the tree, no second
+sentence of extra findings, and one command per bullet.
 
 Reply in this shape, as plain text outside any code fence, with plain bullets, no bold (never `- **Label:** ...`), and no local paths:
 
@@ -236,7 +237,8 @@ Reply in this shape, as plain text outside any code fence, with plain bullets, n
 - git push --no-follow-tags origin refs/tags/v0.4.0
 ```
 
-A stopped run uses the same plain-text shape. After a failed commit the
+A stopped run uses the same plain-text shape, opens with "Stopped:", and
+states no gate results. After a failed commit the
 edits stay staged; offer no discard command, because the recovery is to
 commit and then run the authorized flag steps from `Next steps` yourself:
 
@@ -244,8 +246,8 @@ commit and then run the authorized flag steps from `Next steps` yourself:
 Stopped: the release commit failed (signing error), so no tag was created and nothing was pushed.
 
 - Fix the commit error, then commit the staged release files with the subject "Tag v0.4.0".
-- Then run the tag and push commands you wanted yourself:
-  git tag -a v0.4.0 -m "v0.4.0", then git push --no-follow-tags.
+- Then run the tag command you wanted: git tag -a v0.4.0 -m "v0.4.0"
+- Then run the push command you wanted: git push --no-follow-tags
 ```
 
 After a red gate the edits are unstaged in the tree, and `cut` refuses a
@@ -257,7 +259,8 @@ to `HEAD`; print it for the user, never run it:
 Stopped: the test suite failed after the version edits, so nothing was committed, tagged or pushed.
 
 - To resume: fix the failure, commit the release files with the subject "Tag v0.4.0", then run the tag and push commands you wanted yourself.
-- To start over: git restore --source=HEAD --staged --worktree -- pyproject.toml CHANGES.md, then re-run /release:cut 0.4.0 --tag.
+- To start over: git restore --source=HEAD --staged --worktree -- pyproject.toml CHANGES.md
+- Then re-run /release:cut 0.4.0 --tag.
 ```
 
 An empty Unreleased section is a stop with two exits and no edits:

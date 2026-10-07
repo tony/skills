@@ -1,7 +1,7 @@
 ---
 max_turns: 15
 timeout_seconds: 360
-allowed_tools: [Read, Glob, Grep, Skill]
+allowed_tools: [Bash, Read, Glob, Grep, Skill]
 ---
 File a Linear issue for this bug a customer pasted into support. Reproduction steps from their message:
 

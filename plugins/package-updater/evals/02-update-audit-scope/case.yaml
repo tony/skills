@@ -28,6 +28,6 @@ graders:
       it from a file or command output in this run. There is nothing to
       audit here, and the reply says so as a stop (not as a clean "0
       outdated" result) and asks for or states which repository to audit.
-      It is one result sentence followed by options, with no second
-      paragraph and no section headings.
+      It is a stop line giving the reason, then options, with no heading
+      lines and no paragraph between the reason and the options.
 

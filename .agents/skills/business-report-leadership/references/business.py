@@ -35,6 +35,7 @@ if t.TYPE_CHECKING:
 
 DIRECTIONAL_BELOW = 20
 MIN_OBSERVATIONS = 2
+MIN_INTERVAL_N = 5
 
 SCAN_RULES: tuple[tuple[str, re.Pattern[str]], ...] = (
     ("ticket-id", re.compile(r"\b[A-Z][A-Z0-9]+-\d+\b")),
@@ -140,6 +141,9 @@ def bca_interval(
 def summarize(values: list[float], *, seed: int, resamples: int = 10000) -> dict[str, object]:
     """Summarize observations as median, IQR, interval, and a DIRECTIONAL flag.
 
+    Below ``MIN_INTERVAL_N`` observations a bootstrap interval is only the
+    range, so ``range_lo``/``range_hi`` replace ``ci95_lo``/``ci95_hi``.
+
     Examples
     --------
     >>> out = summarize([float(x) for x in range(1, 31)], seed=7, resamples=1000)
@@ -147,20 +151,34 @@ def summarize(values: list[float], *, seed: int, resamples: int = 10000) -> dict
     (30, 15.5, 8.25, 22.75, 'ok')
     >>> summarize([1.0, 2.0, 9.0], seed=7, resamples=500)["label"]
     'DIRECTIONAL'
+    >>> small = summarize([10.0, 36.0], seed=7, resamples=500)
+    >>> (small["range_lo"], small["range_hi"], "ci95_lo" in small)
+    (10.0, 36.0, False)
     """
     q1, _, q3 = statistics.quantiles(values, n=4, method="inclusive")
-    lo, hi = bca_interval(values, seed=seed, resamples=resamples)
+    n = len(values)
+    if n < MIN_INTERVAL_N:
+        interval: dict[str, object] = {
+            "range_lo": min(values),
+            "range_hi": max(values),
+            "method": f"range only; n < {MIN_INTERVAL_N}, no 95% interval",
+        }
+    else:
+        lo, hi = bca_interval(values, seed=seed, resamples=resamples)
+        interval = {
+            "ci95_lo": lo,
+            "ci95_hi": hi,
+            "method": "BCa bootstrap of the median",
+        }
     return {
-        "n": len(values),
+        "n": n,
         "median": _median(values),
         "q1": q1,
         "q3": q3,
-        "ci95_lo": lo,
-        "ci95_hi": hi,
-        "method": "BCa bootstrap of the median",
+        **interval,
         "seed": seed,
         "resamples": resamples,
-        "label": "DIRECTIONAL" if len(values) < DIRECTIONAL_BELOW else "ok",
+        "label": "DIRECTIONAL" if n < DIRECTIONAL_BELOW else "ok",
     }
 
 

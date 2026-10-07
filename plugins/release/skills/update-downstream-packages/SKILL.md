@@ -41,8 +41,8 @@ the user names at the gate; opening pull requests is out of scope.
      sent with a `User-Agent` header (the API rejects requests without one)
    - Go: `https://proxy.golang.org/<module>/@v/<version>.info`, with the
      version's `v` prefix and each uppercase letter in the module path
-     written as an exclamation mark plus its lowercase (`BurntSushi` takes one before
-     the `B` and one before the `S`, both letters lowercased)
+     replaced by one exclamation mark followed by its lowercase (`BurntSushi`
+     gets two exclamation marks in total)
 
    For any other ecosystem, or if a check cannot run, stop and say what
    could not be confirmed and what the user must supply; do not describe
@@ -111,7 +111,7 @@ Present the plan before mutating anything:
 - Skipped repos with reasons (worktree, dirty, org out of scope).
 - Whether pushes will happen (only with `--push`).
 - Every mutation outside the working trees: the resolver cache clean, the
-  `gh cache delete --all` per pushed repo, and the failed-run `gh run rerun`
+  per-key `gh cache delete` of that repo's dependency caches, and the failed-run `gh run rerun`
   (at most once per run).
 
 Print the plan in this shape, as plain text with plain bullets and no bold:
@@ -122,7 +122,7 @@ Plan: example-pkg 1.4.0 → 1.5.0, pushes on (--push)
 - app-one (acme) on main: pin 1.4.0 → 1.5.0, prep commit removing the uv source override, gates: make test
 - app-two (acme) on main and release/1.x: pin 1.4.0 → 1.5.0, no prep, gates: none documented
 - Skipped: app-three (dirty tree), tools-fork (owner outside scope)
-- Outside the working trees: uv cache clean example-pkg, gh cache delete --all per pushed repo, gh run rerun --failed at most once per run
+- Outside the working trees: uv cache clean example-pkg, gh cache delete per dependency-cache key in each pushed repo, gh run rerun --failed at most once per run
 ```
 
 Ask the user via `AskUserQuestion` which owner orgs are in scope and
@@ -204,10 +204,16 @@ confirmed branches:
 
 For every pushed repo:
 
-1. Clear stale Actions caches so CI resolves fresh:
+1. Clear stale dependency caches so CI resolves fresh. List the caches, then
+   delete each dependency-cache key (never `--all`, which also drops unrelated
+   build caches):
 
    ```console
-   $ gh cache delete --all --repo <owner>/<repo>
+   $ gh cache list --repo <owner>/<repo>
+   ```
+
+   ```console
+   $ gh cache delete <key> --repo <owner>/<repo>
    ```
 
 2. Find the run for the pushed commit. Retry up to 5 times, a few seconds
@@ -224,7 +230,7 @@ For every pushed repo:
    $ gh run watch <run-id> --repo <owner>/<repo> --exit-status
    ```
 
-3. On failure: clear the cache again and rerun the failed jobs once
+3. On failure: clear the dependency caches again and rerun the failed jobs once
    (`gh run rerun <run-id> --failed`). If it still fails, compare with the
    run before the bump and report a pre-existing failure as such.
 4. Where the repo deploys docs from CI, confirm the docs job succeeded too.

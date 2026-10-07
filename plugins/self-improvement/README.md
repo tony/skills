@@ -3,6 +3,13 @@
 Mine local agent prompt history for how the skill catalog is really used, then
 land the changes that usage evidence supports.
 
+The counter reads Claude Code's prompt history (`~/.claude/history.jsonl`)
+and its transcripts. Other hosts keep no per-prompt file in a shape the
+script can parse, so they are covered only by `--history` pointed at a file
+in the same JSONL shape, or by the optional `agentgrep` route. Skills are
+found under `plugins/*/skills/` by default; `--catalog-glob` handles
+`skills/` and `.claude/skills/` layouts.
+
 ## Installation
 
 In Claude Code, add the marketplace:
@@ -69,17 +76,15 @@ clear.
 
 ## Counting and the ledger
 
-`scripts/sweep.py catalog` lists skills with birth dates, the rename map, and
-the era boundary. `tree-check` reports uncommitted changes that `apply` must
-not mix with its edits; it covers tracked files and untracked files under
-`plugins/`.
+`scripts/sweep.py catalog` dates the skills from git history. `tree-check`
+reports uncommitted changes that `apply` must not mix with its edits: tracked
+files, and untracked files under the catalog directory.
 
 `counts` turns a prompt-history file into per-skill counts, the era split
-(when given `--boundary`), and project spread. `ledger-save` writes the
+(when given `--boundary`), project spread, and, per `--window`, the
+numerator and windowed denominator of a finding's ratio. `ledger-save` writes the
 findings ledger under the git directory, outside the working tree, and
-`ledger-verify` recomputes its key before `apply` edits anything. The key is
-the sha256 of the repository `HEAD` and each finding's id, verdict, skill,
-and expected change, the fields `apply` acts on. `autosquash` folds
+`ledger-verify` recomputes its key before `apply` edits anything. `autosquash` folds
 `fixup!` commits into their targets for the verification pass.
 
 `references/detecting-invocations.md` covers collecting the counter's inputs
@@ -87,21 +92,3 @@ and the traps that make a count confidently wrong.
 
 `references/worked-example-spike.md` shows what a finding and its edit look
 like.
-
-## Observed yield
-
-One read-only run of `counts` on 2026-10-07 against this catalog (109
-skills) and one machine's Claude Code history, with the scratch files in a
-temporary directory:
-
-- Scanned 23,465 prompt-history records (2025-09-27 to 2026-10-07) and 379
-  skill-tool launch lines from 6,471 transcripts modified in the last 90
-  days. Both channels read complete.
-- The era boundary was 2026-10-05, the day all 109 skills were born. Three
-  slash invocations fell after it and no skill reached the 10 needed for a
-  ratio.
-- Findings meeting the bar (5 occurrences, 2 projects, 90 days, current
-  era): 0.
-
-A freshly rebuilt catalog yields nothing until its new skills accumulate
-invocations; the bar withholds a finding rather than lower itself.

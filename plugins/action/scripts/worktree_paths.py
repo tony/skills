@@ -16,7 +16,7 @@ Subcommands:
 ``guard``
     Exit 2 and print ``refuse: <toplevel>`` when the repository root is the
     physical home directory or contains it; print nothing and exit 0
-    otherwise.
+    otherwise. Outside a git repository, exit 1 with ``not a git repository``.
 
 Titles come from tickets and are untrusted, so ``slug`` reads a file and
 never takes the title as an argument.

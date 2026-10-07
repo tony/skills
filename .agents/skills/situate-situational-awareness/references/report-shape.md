@@ -2,7 +2,8 @@
 
 Shared by the `situate` skill and the `situational-awareness` skill.
 
-One hero line, then these sections in this order, then a next-step
+Exactly one hero line (a missing layer goes under its section, never in
+the hero), then these sections in this order, then a next-step
 panel. No other headings, no bold label on every bullet, no recap ending.
 An empty layer is "none", never "not available"; a lookup that could not
 run is `unavailable` with the reason. Never list, count, or mention
@@ -10,7 +11,11 @@ untracked editor or shell files. Never name an absolute path or a temp
 directory. Report what was found and where, never "I checked", "I read", or "I
 haven't tested"; leave out what was not examined rather than narrating
 it. Cite a commit by its subject, never a bare SHA. Never guess at why
-someone did something.
+someone did something or what they intended. Report only conventions a
+file states, never ones inferred from commit history. Tool state (a `gh`
+sign-in, a missing network) is `unavailable` with a one-clause reason,
+never a finding, gap, or option. An earlier conversation is cited with
+its date, never as "earlier in this session".
 
 The hero is `✓ <branch>: <what it does> · <n> commits · PR #<n> <state>`,
 or `⚠ <what is blocking or unclear>`. When there is nothing to measure
@@ -78,13 +83,14 @@ Reply in this shape, as plain text outside any code fence, with plain bullets, n
 2. Address the unresolved review thread
 ```
 
-Offer distinct actions only, never "keep working". Each option answers a
-finding (a gap, failing check, unresolved thread, open decision); never
-propose new tests, refactors, a merge, or any work no finding asks for.
+One option per finding (a gap, failing check, unresolved thread, open
+decision), each a distinct action. Never offer "keep working", "continue
+the work", or "keep building on" anything. Offer a push or a pull request
+only when a finding asks for one. Never propose new tests, refactors, a
+merge, or any work no finding asks for.
 Change reports what the goal needs, with no style nits or speculation
 about future linters.
 
-The panel is an `ask-user-choice` offering next steps (continue the
-work, address the review threads, open a pull request, widen the sweep
-to prior conversations). Skip it in plan mode. When the tool is absent,
+The panel is an `ask-user-choice` offering those options (the example
+above shows two). Skip it in plan mode. When the tool is absent,
 end with numbered options instead, as above.

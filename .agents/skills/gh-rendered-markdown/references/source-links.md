@@ -1,6 +1,6 @@
 # Source links
 
-Contents: Link everything that has a URL, Pin every reference into a repository, Let GitHub do the linking where it already does, What rots, Primary sources.
+Contents: Link everything that has a URL, Pin every reference into a repository (including Verify a line range), Let GitHub do the linking where it already does, What rots, Primary sources.
 
 How to link so the link still works. The link set for a named
 open-source project is in `project-links.md`.
@@ -86,6 +86,22 @@ $ gh api repos/OWNER/REPO/commits/v2.40.0 --jq .sha
 That endpoint resolves lightweight and annotated tags alike. Do not use
 `git/ref/tags/<tag>`: on an annotated tag it returns the tag object's
 SHA, and a blob URL built on it 404s.
+
+### Verify a line range
+
+A range the user took from `main` can cover other code at the pinned
+ref. Fetch the file at that ref, print the range, and confirm the named
+symbol lies in it:
+
+```console
+$ gh api 'repos/OWNER/REPO/contents/PATH?ref=REF' \
+    -H 'Accept: application/vnd.github.raw' \
+    | sed -n '38,50p'
+```
+
+When the symbol is outside the range, find its lines in this output and
+use them; when it is gone, drop the anchor or ask the user. Never publish
+a range you did not read at the ref.
 
 Confirm before publishing:
 

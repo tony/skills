@@ -14,9 +14,9 @@ from it. The public case study is the sanitization firewall: this
 skill introduces no figure that is not already in it and re-derives
 nothing from the interim package.
 
-Read `../../references/interim-format.md` first for the run location
-and output frame; there is no completeness gate here. The run's
-`README.md` is read only for the names the sweep denies. Defer these
+Read `../../references/interim-format.md` first, only § Where runs live,
+§ Locating an existing run, and § Rendering a report; there is no
+completeness gate here. The run's `README.md` is read only for the names the sweep denies. Defer these
 until the firewall (the public case study) is located:
 
 - `../../references/provenance.md`

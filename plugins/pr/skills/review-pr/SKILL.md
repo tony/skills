@@ -49,10 +49,10 @@ $ gh pr diff <number>
 
 For a large change, read the `--name-only` list, then read the files that
 matter one at a time. The checkout stays untouched: never run
-`gh pr checkout`, which switches the user's branch.
+`gh pr checkout`, which switches the user's branch. Take `<owner>`, `<repo>`, and `<number>` from the `url` field step 1 returned (`https://github.com/<owner>/<repo>/pull/<number>`) and write them literally, never `{owner}/{repo}`, which resolves from the current directory.
 
 ```console
-$ gh api repos/{owner}/{repo}/pulls/<number>/files --paginate --jq '.[] | select(.filename == "<file>") | .patch'
+$ gh api repos/<owner>/<repo>/pulls/<number>/files --paginate --jq '.[] | select(.filename == "<file>") | .patch'
 ```
 
 Judge the change's magnitude (small fix, medium feature, large

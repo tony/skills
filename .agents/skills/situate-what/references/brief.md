@@ -7,7 +7,7 @@ before that ends is a cost. The full sweep is exhaustive because its
 reader is about to touch the code; the brief is capped at five lines because
 its reader has just said "huh".
 
-Script paths here (`../scripts/...`) resolve from this file's directory, not the repository: print the absolute path once and write it literally in each command.
+Script paths here (`../scripts/...`) resolve from this file's directory, not the repository: use the absolute directory this file was read from, written literally in each command.
 
 ## Contents
 
@@ -112,6 +112,9 @@ guessing and should say what it does not know instead.
 - References to earlier turns: "as I mentioned", "as noted above".
 - Apology or self-assessment about the confusion that prompted the ask.
 - Any line that would be true in every repository on any day.
+- A guess at why uncommitted work was left, or an option phrased as
+  "what was probably intended".
+- Bullets, bold, and headings.
 - Diagnosing drift. If the work has wandered from what it was for, say
   so in one line and offer the `situate-refocus` skill as an option.
 

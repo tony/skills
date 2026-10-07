@@ -93,7 +93,9 @@ Resolve the ref to the commit it points at, and record that as `commit`, so
 $ gh api repos/OWNER/REPO/commits/v2.40.0 --jq .sha
 ```
 
-For a local checkout, `git rev-parse HEAD` gives the commit.
+For a local checkout, `git rev-parse HEAD` gives the commit. For a remote on
+another host, `git ls-remote URL REF 'REF^{}'` prints it; the peeled line
+(`REF^{}`) is the commit of an annotated tag, else use the plain line.
 
 A checkout with no remote has no URL form. Publish it first, or record
 `source` as the repository's directory name, leave `url` out of every cite, and

@@ -1,0 +1,36 @@
+schema_version: "1.0"
+name: 02-apply-findings-no-ledger
+description: >-
+  Apply is asked for findings that no ledger backs. It reports there is no
+  ledger, invents no findings, and edits nothing.
+tags: [fixture]
+
+context:
+  scaffold_script: scaffold.sh
+
+execution:
+  prompt: >-
+    /self-improvement:apply finding-3 finding-7 Apply the accepted findings
+    from the sweep to the catalog.
+  max_turns: 10
+  timeout_seconds: 300
+  allowed_tools: [Bash, Read, Glob, Grep, Skill]
+
+runs: 3
+
+graders:
+  - name: no-ledger-gate
+    type: llm
+    focus: last_message
+    criteria: >-
+      The reply states there is no sweep ledger to trace finding-3 and
+      finding-7 to, rather than inventing what those findings might be. It
+      does not claim to have edited any file or made a commit. It proposes
+      running a sweep first, or asks for the ledger, rather than guessing at
+      edits.
+
+  - name: edits-nothing
+    type: tool_used
+    tool: Edit
+    min: 0
+    max: 0

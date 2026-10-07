@@ -7,9 +7,10 @@ Prints JSON: the filesystem holding PATH (total, used, available bytes),
 the floor in bytes (P percent of total, default 1), and every directory
 within N levels of PATH (default 3) whose size meets the floor, largest
 first. Sizes are allocated bytes (st_blocks), each hardlinked inode is
-counted once, symlinks are never followed, and the walk stays on PATH's
-filesystem. Paths that could not be read are listed under "errors" and
-their contents are missing from the sizes. Directories under /mnt are
+counted once under the first path in name order, symlinks are never
+followed, and the walk stays on PATH's filesystem. Paths that could not
+be read are listed under "errors" and their contents are missing from
+the sizes. Directories under /mnt are
 skipped (listed under "skipped") unless PATH is inside /mnt. When the
 time limit (default 90 seconds) runs out, "complete" is false and every
 size is a lower bound.
@@ -66,7 +67,10 @@ class Walker:
         >>> os.link(os.path.join(d, "sub", "f"), os.path.join(d, "g"))
         >>> w = Walker(Path(d).stat().st_dev, 3)
         >>> total = w.walk(d)
-        >>> w.sizes[os.path.join(d, "sub")] == total - os.lstat(d).st_blocks * 512
+        >>> sub = os.path.join(d, "sub")
+        >>> w.sizes[sub] == os.lstat(sub).st_blocks * 512
+        True
+        >>> w.sizes[d] == total > w.sizes[sub]
         True
         """
         total = 0
@@ -76,7 +80,7 @@ class Walker:
         try:
             total += os.lstat(path).st_blocks * BLOCK
             with os.scandir(path) as it:
-                entries = list(it)
+                entries = sorted(it, key=lambda e: e.name)
         except OSError as err:
             self.errors.append(f"{path}: {err.strerror}")
             return total

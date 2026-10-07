@@ -44,5 +44,10 @@ graders:
     type: llm
     focus: last_message
     criteria: |
-        The reply says no tier returned output and names the codex failure (authentication) and the missing agent CLI.
+        The reply names the codex failure (authentication) and the missing agent CLI.
         No diagnosis is attributed to Codex or GPT, and any analysis the assistant adds is labeled as its own.
+
+  - name: mandated-failure-sentence
+    type: regex
+    target: last_message
+    pattern: 'No tier returned output\.'

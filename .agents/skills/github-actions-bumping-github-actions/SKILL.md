@@ -1,8 +1,8 @@
 ---
 name: github-actions-bumping-github-actions
 description: >-
-  Use when workflow actions are out of date across repos, Dependabot opens
-  action-bump PRs, or pinned actions/checkout needs its latest release.
+  Use when workflow actions are out of date, in one repo or many, Dependabot
+  opens action-bump PRs, or pinned actions/checkout needs its latest.
 allowed-tools: ["Bash", "Read", "Grep", "Glob", "Edit", "Task", "AskUserQuestion"]
 metadata:
   source: "plugins/github-actions/skills/bumping-github-actions/SKILL.md"
@@ -81,8 +81,9 @@ Present a plan covering:
   or already current.
 - The target version per action, and the evidence each target tag exists.
 - Which upgrades carry breaking changes, and which repositories they reach.
-- Commit granularity and where commits land: the default branch, or a
-  branch and pull request per repository.
+- Commit granularity and where commits land: a named local branch in a
+  throwaway worktree for the default branch, or a branch and pull request
+  per repository.
 - How many commits this produces, and whether they will be pushed.
 - Dependabot PRs to close (destructive): repo, number, title, and the
   commit or "obsolete" each maps to. The exact commands are confirmed
@@ -117,22 +118,25 @@ set frobnicate, so no workflow change is needed.
 https://github.com/acme/frob-action/releases/tag/v6.0.0
 ```
 
-A repository checked out on a feature branch, or with uncommitted work
-(modified or untracked files both count), gets a throwaway worktree per
-`references/throwaway-worktree.md`. The commits live on a named
-local branch; without a push request the report names that branch and
-prints its push command. After each commit, run `git show --name-only
---format=%h <sha>` and confirm it lists only the workflow files this bump
-changed.
+A repository gets a throwaway worktree per
+`references/throwaway-worktree.md` when it is checked out on a
+feature branch, has uncommitted work (modified or untracked files both
+count), or its local `<default>` differs from `<remote>/<default>`, ahead
+or behind. The commits live on a named local branch; without a push
+request the report names that branch and prints its push command. After
+each commit, run `git show --name-only --format=%h <sha>` and confirm it
+lists only the workflow files this bump changed.
 
 With `--pr`, make the commits on a branch, push it, and open a pull request
 per repository instead of committing to the default branch. Close each
 dependabot pull request only after that pull request merges.
 
-When pushing is requested, push whenever the local branch is ahead of the
-remote, not only when this invocation made the commits, so a re-run
-resumes. Stop the fleet loop on a rate-limit error or a rejected push and
-report which repositories remain.
+When pushing is requested, run `git log <remote>/<default>..HEAD
+--format=%h%x20%s` first and push only when every listed commit is a bump
+commit; a re-run then resumes unpushed bumps. Any other commit is the
+user's: do not push, name it, and print the push command. Stop the fleet
+loop on a rate-limit error or a rejected push and report which
+repositories remain.
 
 ## Phase 5: Verify and close out
 
@@ -157,7 +161,9 @@ before it: `✓ N commits across M repos`, or
 4. `## Close-out`: CI results, PRs closed by URL with the commit each
    cited, and any failure shown to predate the bumps.
 5. `## Drift`: repositories with no dependabot configuration, and
-   actions pinned to a moving branch.
+   actions pinned to a moving branch. State each as a fact only; never
+   say what it implies about the user's intent or what Dependabot will
+   or will not do.
 
 An audit-only run emits Audit, Upgrades, and Drift. A halted run emits
 the blocked shape and a plan-only run the plan-only shape, both in
@@ -188,10 +194,11 @@ bullets, no bold (never `- **Label:** ...`), and no local paths:
 - CI not yet run; two open dependabot PRs await confirmation to close.
 ```
 
-Except for a halted run, end with an `ask-user-choice` panel of next
-steps. On hosts without the tool, end with the next steps as text and
-take none of them. Never name temp or local paths unless the user must
-act on them.
+Except for a halted or plan-only run, end with an `ask-user-choice`
+panel of next steps. On hosts without the tool, end with the next steps
+as text and take none of them. Never name temp or local paths unless the
+user must act on them. Do not guess why the repository looks the way it
+does, report no command exit codes, and state no sandbox facts.
 
 
 ## Portability notes

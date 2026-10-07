@@ -21,7 +21,7 @@ execution:
 runs: 3
 
 graders:
-  - name: checks-the-tag-exists
+  - name: runs-the-tag-check
     type: tool_used
     tool: Bash
     input_match: 'git/ref/tags/v4'

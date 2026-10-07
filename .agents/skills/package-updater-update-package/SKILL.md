@@ -103,7 +103,7 @@ messages and the report per `references/prose-rules.md`.
 One commit per repository, subject and body per the commit-conventions
 reference, `why:` then `what:`, written through a heredoc or a file.
 The follow-up lands immediately after as its own commit.
-No `Co-Authored-By`, no "Generated with" or other tool trailers, no emoji.
+No `Co-Authored-By`, no "Generated with" or other tool trailers, no emoji; do not mention the omission.
 
 Branch and push handling follows Phase 4 of the `package-updater-updating-packages` skill;
 pull request text goes through `--body-file`.
@@ -178,14 +178,8 @@ Reply in this shape, as plain text outside any code fence, with plain bullets, n
 - api: tests pass, uv.lock resolves.
 ```
 
-A halted run (a scope question, a fork, a cooldown, a failed check,
-nothing to change) follows "Plan stop and halt" in
-the `package-updater-updating-packages` skill: the hero line `⚠ Stopped: nothing was changed.` plus one sentence
-stating the single reason, then the options, and no section and no second paragraph. The
-clause is a fact about the repository or release, never its commit
-history, its remotes, a lookup that could not run, or a rule of this
-skill. Options are bare actions, never "and I'll then ...". The plan gate
-is not a halt; the plan prints as text.
+A halted run takes the shape in "Plan stop and halt" in
+the `package-updater-updating-packages` skill; the plan gate is not a halt.
 
 Halt example, same plain-text form:
 

@@ -22,6 +22,10 @@ size for what was not read, including used-minus-measured arithmetic,
 and do not guess which layer is the cause ("probably", "more likely").
 Say "could not be read" about the layer.
 
+A this skill plan awaiting approval uses the same section order, with
+the hero line first and no heading of its own such as "Plan". It ends
+with the approval question, and states projected figures as projections.
+
 A declined environment halt (the user asked the agent to run
 `wsl --shutdown` itself) uses the same shape. Add a line saying what the
 shutdown interrupts, then the command in a `powershell` fence for the
@@ -38,7 +42,11 @@ confirmed as the binding constraint.
 - Measured: the WSL guest, 61% used, 344 GiB available.
 - Not measured: C: (host) and the ext4.vhdx backing file; both could not
   be read.
-- To continue: run `df -h /mnt/c` and share the output.
+- To continue: run the command below and share the output.
+
+```console
+$ df -h /mnt/c
+```
 ```
 
 The last bullet is the ask. Add no separate closing question and no
@@ -73,7 +81,9 @@ a layer is 90% used or more, `✓` otherwise. No prose paragraphs. Name a
 host layer as the constraint only from a measurement.
 
 The binding constraint is the filesystem closest to full, which may not be
-the one the user asked about: a full host beats a comfortable guest.
+the one the user asked about: among the layers measured, a full host
+beats a comfortable guest. When the user scoped one path and the other
+layers were left out, name the constraint among the layers measured.
 
 ## Sections
 
@@ -173,6 +183,11 @@ run. A guest-side number presented as machine-wide recovery is wrong even
 when the arithmetic is right. Never write that guest deletions return
 space to the host through TRIM; only a measured file-size change shows
 it.
+
+Give a cause only when a command measured it; otherwise say what was
+observed and that the cause was not checked. Describe a file by what you
+read in it, not by its name or age. Write what a thing is, not what it
+is not (no "it isn't X: it is Y").
 
 Distinguish measured from projected in the words themselves. "Frees
 40 GB once you compact" and "freed 40 GB" are different claims.

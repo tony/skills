@@ -212,13 +212,19 @@ $ git -C <root>/<n>-<slug> status --ignored --short
 ```
 
    List any ignored files in the report, then remove the worktree
-   (skip with `--keep-trees`):
+   (skip with `--keep-trees`). Files the stash left in place (bytecode,
+   `--leave` paths) make a plain remove refuse; the work is already
+   stashed, so `teardown` retries with `--force`:
 
 ```console
-$ git worktree remove <root>/<n>-<slug>
+$ <scripts>/spike.sh teardown <root>/<n>-<slug>
 ```
 
-4. After all contenders: `git worktree prune`, and verify the main
+   It prints `removed` only when `git worktree list` no longer shows the
+   worktree; otherwise it exits non-zero and the report names that worktree
+   as still present.
+
+4. After all contenders: run `git worktree list` and verify the main
    tree is untouched (`git status`).
 5. After a stash-first Phase 0, restore the user's work with
    `<scripts>/spike.sh restore <user-work sha>` unless `--replay` runs,
@@ -274,6 +280,10 @@ The first line of the reply is exactly the hero line: no lead-in sentence,
 no first-person opener. Report results, not process: never narrate a
 departure from these steps or name the brief or the skill; do the step or
 halt. State what happened, not what a contender or step did not do.
+Write in the passive or the plain result, never "I" or "the run"; when a
+non-interactive default applies, name the default taken without describing
+how the run was set up. Use no transient wording ("for now", "currently").
+Report worktrees as removed only when `git worktree list` no longer shows them.
 Warnings about the checkout (mode changes, files left in place, a tree
 that needs attention) go inside `## Stashes`, never before the first section.
 
@@ -286,11 +296,13 @@ that needs attention) go inside `## Stashes`, never before the first section.
    blocker (order and rule as in `../probe/SKILL.md`'s output contract),
    then one line with what the user must do next. No sections, no panel,
    no stash SHAs, no local or temp paths, no command echo, no description
-   of the environment.
+   of the environment. The result sentence names only the blockers, never
+   why a file or tree is in that state.
 2. `## Contenders`: one line per strategy: what it tried, proven or
    blocked, headline gate status.
-3. `## Verdict`: scorecards per lens, the winner, the graft list,
-   and why the losers lost.
+3. `## Verdict`: one plain line per lens naming each contender's standing
+   (`Correctness: A holds, B ...`, no bold label), then the winner, the
+   graft list, and why the losers lost.
 4. `## Verification`: gate commands run per contender; local-vs-CI
    split; deferrals.
 5. `## Stashes`: one bullet per contender: name, strategy, stash message,
@@ -329,9 +341,11 @@ Goal: cut p99 latency of the export endpoint. Exit path: stash and teardown.
 - C, query rewrite: blocked; the planner ignores the new index.
 
 ## Verdict
-- Winner B: smallest blast radius and the closest fit to the existing
-  cache module.
-- Graft from A: its eviction test.
+- Correctness: A and B pass the proving check; C is blocked.
+- Blast radius: B touches two files, A touches five.
+- Idiom fit: B matches the existing cache module.
+- Gate status: A fails two tests; B passes all gates.
+- Winner B. Graft from A: its eviction test.
 
 ## Verification
 - Local: format, lint, typecheck, scoped tests. CI-only: integration suite.

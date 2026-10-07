@@ -36,7 +36,7 @@ changes, and `respond` to screen review feedback.
 | Plugin | Description |
 |--------|-------------|
 | [release](plugins/release/) | Cut and bump releases with safe defaults (no automatic push/tag). Rolls out releases to downstream consumers with CI verification. |
-| [package-updater](plugins/package-updater/) | Update dependencies and toolchains across repositories. Checks the supply-chain cooldown first, then commits toolchain, named bumps, and lockfile refreshes separately with release notes cited. |
+| [package-updater](plugins/package-updater/) | Update dependencies and toolchains across repositories. Checks the supply-chain cooldown first when one is configured, then commits toolchain, named bumps, and lockfile refreshes separately with release notes cited. |
 | [github-actions](plugins/github-actions/) | Update GitHub Actions pins fleet-wide. Verifies tags, researches release notes, commits each action separately, and supersedes Dependabot PRs. |
 | [ruff](plugins/ruff/) | Upgrade Ruff across repositories. Works out which new rules can fire against each repo's select list and lands one reviewed commit per rule, citing the upstream rule doc. |
 | [terraform](plugins/terraform/) | Upgrade Terraform and OpenTofu versions. Discovers every root module, moves provider constraints together because they combine across modules, and refreshes lock files. |
