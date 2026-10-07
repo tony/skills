@@ -8,22 +8,15 @@ allowed-tools: ["Bash", "Read", "Grep", "Glob", "Edit", "AskUserQuestion"]
 
 Find the root modules, move every declaration of a version together,
 refresh each root module's lock file without narrowing it, and verify
-the selected version changed.
-
-The references own the rules; read each before the phase that cites it:
-
-- `../../references/layout-discovery.md` for root and child module
-  classification and what to ask.
-- `../../references/pin-sites.md` for every pin site, operator
-  preservation, and registry lookups.
-- `../../references/lock-and-init.md` for `init`, platform narrowing, and
-  verification.
+the selected version changed. This skill classifies the request and hands
+it to one of three skills; the conventions below apply to whichever runs.
 
 ## Conversational requests
 
 The three slash-command skills are gated, so the model cannot invoke them.
-Match the request to one, read its file, and follow its Procedure and
-Output, taking its arguments from the request's wording:
+Match the request to one, then read its file and follow it from its
+Procedure through its Output, taking its arguments from the request's
+wording:
 
 - A provider to move: `../bump-provider/SKILL.md`.
 - The CLI version to move: `../bump-terraform/SKILL.md`.
@@ -44,9 +37,15 @@ one of them; offer the others as next steps.
   after `git add <path>` for any new file such as a lock file (`git
   commit -- <untracked path>` fails). Stop when a path to commit is
   already in the recorded list.
-- `../../scripts/lockctl.py` resolves from this skill's directory. Print
-  its absolute path once and write that path literally in each command,
-  since shell variables do not persist between Bash calls.
+- Script paths: `../../scripts/lockctl.py` resolves from a skill's
+  directory (a reference writes `../scripts/`). Print the absolute path
+  once and write it literally in each command, since shell variables do
+  not persist between Bash calls.
+- Commit bodies say what moved and why, and cite release notes at the
+  tag the registry reported only when the run fetched that page; with
+  none, the body names no link. Take the subject format from the
+  project's AGENTS.md or CLAUDE.md. Write them per
+  `../../references/prose-rules.md`.
 - Commit messages carry no `Co-Authored-By`, no "Generated with" or other
   tool trailers, and no emoji.
 - Where there is no interactive question tool (Codex, headless runs),
@@ -71,8 +70,9 @@ one of them; offer the others as next steps.
   take. No sections and no recap. At most three plain bullets follow,
   with no lead-in sentence, each a finding that changes that step and
   describes only what the run found, never steps it would take after the
-  edit. Branch state, untracked dotfiles, and which tool drives the
-  repository do not belong. A run stopped before its first edit says
+  edit. Repository history (a branch with no commits), untracked dotfiles,
+  which tool drives the repository, what a commit would have looked like,
+  and what would happen after the edit do not belong. A run stopped before its first edit says
   nothing was edited.
 
   Reply in this shape, as plain text outside any code fence, with plain bullets, no bold (never `- **Label:** ...`), and no local paths:
@@ -109,41 +109,6 @@ the user when there is more than one. Never widen scope as a side effect:
 no repository-wide operator normalising, no platforms the lock never
 tracked, no reformatting of modules the change did not touch.
 
-## Phase 1 - Discover the layout
-
-Follow the layout-discovery reference. Record, per directory: kind, lock
-file presence, how many platforms that lock tracks per provider, and the
-providers and `required_version` it declares. That inventory is the unit
-of work for everything after.
-
-Find root modules from the `.tf` files, not only from tracked lock files,
-and map each child module to the root modules that call it, both per the
-reference. Ask the reference's ambiguity questions together, after the
-inventory exists.
-
-## Phase 2 - Resolve the target and confirm it exists
-
-Ask the registry the detected tool resolves against, not memory. Confirm
-the version is published and record its tag and source repository, which
-is where the changelog link comes from. Write no version string before
-this phase confirms it. If it cannot be confirmed, stop and ask the user
-which version to use, and say plainly when a version was stated but not
-confirmed. When the user says they confirmed it, write it, record
-"confirmed by you" in the report, and link no changelog unless a fetch
-succeeded.
-
-## Phase 3 - Inventory the pin sites and predict the change
-
-Find every declaration of the thing being moved across the whole
-configuration, per the pin-sites reference, including CLI pin sites
-outside `.tf`. Work out which sites need editing: a constraint that
-already admits the target needs none.
-
-Report drift found before the bump as its own finding: root modules
-disagreeing about the CLI version, a `.tool-versions` that contradicts
-`required_version`, pin sites that disagree with each other. The bump
-overwrites that evidence.
-
 ## Orchestration Plan
 
 Enter plan mode before the first edit. In Claude Code call `EnterPlanMode`; in Cursor, Codex, or Gemini use `/plan` or `Shift+Tab`. Where plan mode is unavailable, present the plan as text.
@@ -160,39 +125,7 @@ Present a plan covering:
 - The commits this produces and whether they will be pushed.
 - Drift found that this run will not fix.
 
-Wait for approval, then exit plan mode before Phase 4. Without plan mode,
-finish discovery, resolution, and inventory, and confirm scope with the
-user before writing anything. Headless, the plan is the reply.
+Wait for approval, then exit plan mode before the first edit. Without plan
+mode, finish discovery, resolution, and inventory, and confirm scope with
+the user before writing anything. Headless, the plan is the reply.
 
-## Phase 4 - Edit the constraints
-
-All sites in one commit. Preserve each site's operator, and write to the
-file the tool loads where `.tofu` shadows `.tf`.
-
-The commit body says what moved and why, and cites the release notes at
-the tag the registry reported, but only a page the run fetched; with none,
-the body names no link. Take the subject format from the project's
-own commit conventions in AGENTS.md or CLAUDE.md. Write it per
-`../../references/prose-rules.md`.
-
-## Phase 5 - Refresh the locks
-
-Per root module, per the lock reference and the invoked skill's steps.
-Guard first, compare platform counts before and after, restore the lock
-from git on a failed `init`, and never commit a lock that lost platforms
-without the user's explicit yes to that file (headless: restore it, leave
-it out, stop). Lock files land as their own commit, separate from the
-constraints.
-
-## Phase 6 - Verify
-
-Read the selected version back out of each lock file, per root module.
-Name the root modules that did not move and why.
-
-Run the detected tool's `fmt -check -recursive` and its `validate` per
-initialised root module (`tofu` where OpenTofu drives the repository),
-then the repository's own gates. If something fails, establish whether it
-failed before the bump; report pre-existing failures, and fix none as a
-side effect.
-
-Never report a gate as passing without reading the output that says so.

@@ -1,7 +1,5 @@
 # Measurement Contract
 
-Script paths here (`../scripts/...`) resolve from this file's directory; print the absolute path once and write it literally in each command.
-
 ## Contents
 
 - Net per-instance saving
@@ -107,7 +105,7 @@ The committed number is always the conservative one.
 - Medians plus IQR, not means: task durations are right-skewed,
   roughly log-normal, and means chase the tail.
 - Bootstrapped BCa intervals for medians, computed by
-  `references/business.py stats` (one number per line on stdin or
+  `references/business.py stats` (absolute path; one number per line on stdin or
   in files). It prints n, median, quartiles, the 95% interval, the
   seed, and the resample count; paste them next to the result.
   Small n gets wide intervals and honesty, not precision.

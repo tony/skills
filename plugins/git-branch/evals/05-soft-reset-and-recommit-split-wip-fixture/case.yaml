@@ -23,14 +23,7 @@ graders:
   - name: backs-up-before-collapsing
     type: tool_used
     tool: Bash
-    input_match: 'git branch (\\"|")?(backup/|\$)'
-    min: 1
-    arm: both
-
-  - name: collapses-with-soft-reset
-    type: tool_used
-    tool: Bash
-    input_match: 'git reset --soft'
+    input_match: 'git branch .*backup/.*&&\s*git reset --soft'
     min: 1
     arm: both
 

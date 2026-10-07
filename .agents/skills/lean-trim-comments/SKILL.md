@@ -31,8 +31,8 @@ named, not under `--all`. `--diff-only` and `--stdin` edit nothing, so
 they need no confirmation.
 
 Without an interactive question tool (Codex, headless runs), act as
-`--diff-only`: print the classification and stop. A request that says
-"go ahead and trim" authorizes the edits it names, never a commit.
+`--diff-only` unless the request itself says "go ahead and trim": that
+authorizes the edits it names, never a commit.
 
 ## `$ARGUMENTS`
 
@@ -87,19 +87,18 @@ With no paths, the scope is the lines this branch added or changed.
 3. **Classify.** Every comment and docstring in scope gets one verdict
    (keep, rewrite, or delete) and the gate that decides it: `Loss`,
    `Elite`, or `Upkeep` for a failure, the gate that protects it for a
-   keep, or `Hard keep: directive`, `Hard keep: header`, or
+   keep (`No gate fails` when none fails it), or `Hard keep: directive`, `Hard keep: header`, or
    `Hard keep: sole docstring` for the cases below. On branch and `--staged` runs, judge only comments inside the
    listed line ranges; for paths, `--all`, and pasted code, judge the
-   whole text. A verdict you cannot attach to a gate is a keep.
-
+   whole text.
    Read the surrounding code first: a comment that looks like narration
    but pins an invariant is a keep. The policy's hard keeps override
    every other verdict: tool directives (`# noqa`, `# type: ignore`,
    `# pragma`, `// eslint-disable`, `# fmt: off`), shebang and encoding
    lines, and license or SPDX headers are never deleted or rewritten,
    and neither is a docstring that is the only statement in its block.
-   Report a bloated sole-body docstring as a finding only, with no
-   suggested rewrite.
+   Label a bloated sole-body docstring `Hard keep: sole docstring` and
+   say nothing about how to shorten it.
 
 4. **Preview and confirm.** List one verdict per comment, keeps
    included, grouped by file: old and new text for each rewrite, the
@@ -117,18 +116,19 @@ With no paths, the scope is the lines this branch added or changed.
    preview said.
 
 6. **Diff.** Print `git diff -- <targets>`. Skip for `--stdin`,
-   `--diff-only`, and runs without a question tool: nothing was edited.
+   `--diff-only`, and runs that edited nothing.
 
 7. **Report and hand off.** Write it per
    `references/prose-rules.md`. Shape by mode:
 
    - `--stdin` and pasted code: the hero line, the trimmed code in one
      fence, `## Verdicts`, then `## For the commit message`.
-   - `--diff-only` and runs without a question tool: the hero line,
+   - `--diff-only` and runs that edited nothing: the hero line,
      `## Verdicts`, then `## For the commit message`; the step 4 list
      is not printed twice.
    - Edited runs: the hero line and one line saying the verdicts are in
-     the preview above, then `## For the commit message`.
+     the preview above, then `## For the commit message`; the verdicts
+     are not repeated.
    - Next steps: a plain list after the last section, with no heading.
 
    The hero line is `N comments: K kept, R rewritten, D deleted`; the
@@ -139,13 +139,14 @@ With no paths, the scope is the lines this branch added or changed.
    original, such as what not to change and what to test first. A rewrite verdict names the gate the
    old text failed, not one the new text passes. The hero comes first,
    with no paragraph before it. Omit `## For the commit message` when nothing moved, and say nothing
-   about it. A run that edited nothing adds no sentence between the hero and
-   `## Verdicts` (not even to say nothing was edited); do not narrate comments you did not judge.
+   about it. The reply adds no sentence outside the shape, anywhere (not even to
+   say nothing was edited or why); do not narrate comments you did not
+   judge.
 
    Reply in this shape, as plain text outside any code fence, with plain bullets, no bold (never `- **Label:** ...`), and no local paths:
 
    ````text
-   4 comments: 1 kept, 1 rewritten, 2 deleted
+   5 comments: 2 kept, 1 rewritten, 2 deleted
 
    ```python
    def fetch_with_retry(url):
@@ -157,6 +158,7 @@ With no paths, the scope is the lines this branch added or changed.
    - Deleted "fetches a URL with retries": fails Elite, the name says it.
    - Deleted "retries up to 3 times": fails Upkeep, repeats MAX_RETRIES.
    - Kept the monotonic-clock note: Loss protects the invariant.
+   - Kept `# noqa: SIM115`: Hard keep: directive.
    - Rewrote the Windows DNS note to two lines: fails Elite, argues.
 
    ## For the commit message
@@ -177,6 +179,26 @@ With no paths, the scope is the lines this branch added or changed.
    ## Verdicts
 
    - Deleted "puts the value in the store" above `store[key] = value`: fails Elite, the name says it.
+
+   Next steps:
+   - Apply the deletion by running `lean-trim-comments` again with a question tool, or by asking for "go ahead and trim"
+   ````
+
+   An edited run:
+
+   ````text
+   3 comments: 1 kept, 1 rewritten, 1 deleted
+
+   The verdicts are in the preview above.
+
+   ## For the commit message
+
+   - The cache lock was added after a race on shutdown.
+
+   Next steps:
+   - Commit the edits
+   - Tighten the prose too with `lean-tighten`
+   - Discard with `git checkout -- <file>`
    ````
 
    `## For the commit message` holds only rationale moved out of a

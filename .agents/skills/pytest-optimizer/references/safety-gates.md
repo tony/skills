@@ -44,22 +44,24 @@ or make it function-scoped. Only then is a parallel or reorder speedup eligible.
 ## Gate 2 — collection determinism (H18)
 
 xdist workers must collect the **same** set in the **same** order. Collect
-twice, keeping collection order; sorting hides the order drift this gate exists
-to catch.
+twice into a scratch directory outside the working tree (the run directory
+`memory-schema.md` resolves, or a `mktemp -d` directory), so the files never dirty
+`git status`; keep collection order, since sorting hides the order drift this gate
+exists to catch.
 
 ```console
-$ pytest --collect-only -q -p no:randomly -p no:cacheprovider > collection-a.txt
+$ pytest --collect-only -q -p no:randomly -p no:cacheprovider > <scratch-dir>/collection-a.txt
 ```
 
 ```console
-$ pytest --collect-only -q -p no:randomly -p no:cacheprovider > collection-b.txt
+$ pytest --collect-only -q -p no:randomly -p no:cacheprovider > <scratch-dir>/collection-b.txt
 ```
 
 Compare them with the script, which drops the timing footer and compares node
 ids in order:
 
 ```console
-$ python3 <measure.py> order collection-a.txt collection-b.txt
+$ python3 <measure.py> order <scratch-dir>/collection-a.txt <scratch-dir>/collection-b.txt
 ```
 
 For a candidate that must not change order, compare its collection against the

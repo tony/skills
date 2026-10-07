@@ -160,3 +160,85 @@ def test_staged_rename_counts_once_and_fetch_age_is_separate(
     assert (got["staged"], got["modified"]) == (1, 0)
     assert got["last_fetch"] == "just now"
     assert "trunk_age" not in got
+
+
+def _run(capsys: pytest.CaptureFixture[str]) -> dict[str, object]:
+    assert position.main([]) == 0
+    return json.loads(capsys.readouterr().out)
+
+
+def test_branch_tracking_trunk_reports_trunk_base(
+    tmp_path: pathlib.Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """A branch whose upstream is trunk itself is not a stacked branch."""
+    repo = _repo_with_origin(tmp_path)
+    _git(repo, "switch", "-q", "-c", "x", "origin/main")
+    (repo / "x.txt").write_text("x\n")
+    _git(repo, "add", ".")
+    _git(repo, "commit", "-q", "-m", "x")
+    monkeypatch.chdir(repo)
+
+    got = _run(capsys)
+    assert got["upstream"] == "origin/main"
+    assert got["base_source"] == "trunk"
+    assert got["ahead"] == 1
+
+
+def test_stacked_branch_takes_its_parent_as_base(
+    tmp_path: pathlib.Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """A branch tracking another branch measures from that parent."""
+    repo = _repo_with_origin(tmp_path)
+    _git(repo, "switch", "-q", "-c", "parent")
+    (repo / "p.txt").write_text("p\n")
+    _git(repo, "add", ".")
+    _git(repo, "commit", "-q", "-m", "parent work")
+    _git(repo, "push", "-q", "origin", "parent")
+    _git(repo, "switch", "-q", "-c", "child")
+    _git(repo, "branch", "-q", "--set-upstream-to=origin/parent")
+    (repo / "c.txt").write_text("c\n")
+    _git(repo, "add", ".")
+    _git(repo, "commit", "-q", "-m", "child work")
+    monkeypatch.chdir(repo)
+
+    got = _run(capsys)
+    assert got["base_source"] == "upstream"
+    assert got["ahead"] == 2
+    parent = subprocess.run(
+        ["git", "rev-parse", "origin/parent"],
+        cwd=repo,
+        check=True,
+        capture_output=True,
+        text=True,
+    ).stdout.strip()
+    assert got["base"] == parent
+
+
+def test_unmerged_paths_count_once_as_conflicts(
+    tmp_path: pathlib.Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """A conflicted path is one conflict, not also staged and modified."""
+    repo = _repo_with_origin(tmp_path)
+    _git(repo, "switch", "-q", "-c", "side")
+    (repo / "a.txt").write_text("side\n")
+    _git(repo, "commit", "-q", "-am", "side")
+    _git(repo, "switch", "-q", "main")
+    (repo / "a.txt").write_text("main\n")
+    _git(repo, "commit", "-q", "-am", "main")
+    merge = subprocess.run(
+        ["git", "merge", "side"],
+        cwd=repo,
+        check=False,
+        capture_output=True,
+    )
+    assert merge.returncode != 0
+    monkeypatch.chdir(repo)
+
+    got = _run(capsys)
+    assert (got["conflicts"], got["staged"], got["modified"]) == (1, 0, 0)

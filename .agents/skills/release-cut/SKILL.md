@@ -65,7 +65,7 @@ tag it was cut for.
    (accept with or without a leading `v`; strip it — files and CHANGES
    use the bare version, only the tag carries the prefix). If no version
    was given, stop and tell the user to either supply one or run
-   the `release-bump` skill to discover the next version interactively.
+   the `release-bump` skill.
 3. **Clean tree.** `git status --porcelain` must be empty. If not,
    stop and show the dirty paths.
 4. **On trunk.** Detect trunk via
@@ -100,7 +100,8 @@ Following the conventions reference, record:
 - The changelog file, its unreleased-header variant, placeholder
   wording, and whether released sections open with a lead paragraph
 - Whether a MIGRATION file exists and its heading pattern
-- The next unreleased target, per the conventions reference
+- The next unreleased target, per the conventions reference; when the
+  placeholder header carries no version, name its header text instead
 - The project's quality gates from AGENTS.md / CLAUDE.md (test suite,
   linters, type checkers, docs build). Never assume ecosystem
   commands; use what the project documents.
@@ -129,7 +130,9 @@ Run the project's quality gates discovered in Phase 2. All must pass
 before committing. If a gate fails, stop and report the failure.
 Never commit a release on a red gate, and never weaken a gate to get
 to green. The edits stay in the tree and a re-run of `cut` is refused,
-so the stop carries the recovery from Output. Compare `git status --porcelain` with the clean Phase 1 tree and remove
+so the stop carries the recovery from Output.
+
+Compare `git status --porcelain` with the clean Phase 1 tree and remove
 only the new untracked paths the gates created (bytecode caches, build
 output) before Phase 5, so the Phase 6 tree check passes.
 
@@ -192,9 +195,11 @@ Never name local or temp paths. A completed run ends with these, in order:
 
 1. Hero line: `✓ Cut <tag>` plus whether the release commit and the tag
    were created and whether each was pushed. Name the tag when one was
-   created, for example `tag v0.4.0 created locally, nothing pushed`.
+   created, for example `tag v0.4.0 created locally, nothing pushed` or
+   `local commit, tag v0.4.0 created and pushed, branch not pushed`.
 2. `## Release summary`: three bullets, each a bare fragment: old to new
-   version, CHANGES section date, next unreleased target. Nothing else: no
+   version, CHANGES section date, next unreleased target (the header
+   text when it has no version). Nothing else: no
    gate output, cleanup, sentence about files not touched (a skipped
    lockfile), or skill mechanics, and no "following", "already uses", or
    "because" clause about how the changelog is styled.
@@ -202,7 +207,9 @@ Never name local or temp paths. A completed run ends with these, in order:
    about files left unchanged.
 4. `## Next steps`: the exact `git tag -a` / `git push --no-follow-tags` /
    `git push --no-follow-tags <remote> refs/tags/<tag>` commands for
-   whatever the flags did not authorize.
+   whatever the flags did not authorize, as bare command bullets with no
+   sentence before them. Pushing a tag moves no branch: never say it
+   sent the commit to the remote.
 
 No paragraph between the hero line and the first heading.
 

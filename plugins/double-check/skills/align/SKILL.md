@@ -34,10 +34,13 @@ Phrases to avoid: `../../references/verification-contract.md`.
    claim positively and in full, per `../../references/prose-rules.md`.
    If a claim is weak, say why it is weak; never say it was previously
    stated differently.
-3. Check for adopted state: did the user commit, file, or send a prior
-   claim? Then add one sentence saying that claim is wrong and what the
-   source says, and continue standalone. Otherwise the prior turn does
-   not appear in your output.
+3. Check for adopted state: did the user commit, file, send, or build
+   on a prior claim? Then add one sentence saying whether that claim
+   holds and what the source says, and continue standalone. Otherwise
+   the prior turn does not appear in your output.
+
+If a claim has no checkable artifact (a web fact, a memory), label it
+recall and name any source you did open; never present it as verified.
 
 Halt only after trying: when `$ARGUMENTS` is empty and no analysis
 thread exists, or a named source will not open, restate nothing. Reply

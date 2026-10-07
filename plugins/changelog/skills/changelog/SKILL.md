@@ -90,7 +90,7 @@ Target: CHANGES.md, Unreleased, Features, after the "### Features" heading. No v
 Commit message: docs(CHANGES) Cache key eviction
 
 Notes:
-- Left the get() empty-value fix out: no release shipped that bug.
+- The get() empty-value fix is omitted: its bug was introduced on the base branch.
 ````
 
 When asking, use `AskUserQuestion`: "Insert into `<changelog-file>`?" Offer:
@@ -103,10 +103,10 @@ Without approval already given and without `AskUserQuestion`, end with one
 line: nothing was edited; re-run with "add the entries" to insert, or with
 `--commit` to insert and commit. Name no temp files or local paths.
 
-When approval was already given, send one reply: the summary line first, then
-the Phase 4 reply, then the voice check, `Target` line, and `Notes`. Skip the
-Phase 3 reply. `Notes` holds only facts that explain an omission or that the
-user must act on; leave out advice such as "you may want".
+When approval was already given, skip the Phase 3 reply and send only the
+Phase 4 reply, which carries the summary line, entries, voice check, `Target`
+line, and `Notes` itself. `Notes` holds only facts that explain an omission
+or that the user must act on; leave out advice such as "you may want".
 
 A stopped run (no commits ahead, on the base branch) is one result sentence,
 then what the user needs to do.
@@ -129,9 +129,11 @@ never commit.
    tool trailer, no emoji. Otherwise say the edit is uncommitted and give the
    commit as one `console` command with the message, so committing is one paste.
 
-Reply in this shape, as plain text outside any code fence, with plain bullets, no bold, and no local paths:
+Reply in this shape, as plain text outside any code fence, with plain bullets, no bold, and no local paths. Omit `Notes` when it has nothing, and state a commit instead of the `git commit` command when the commit was made:
 
 ````text
+Branch: feat/cache-evict | Commits: 3 | PR: #212
+
 Inserted 1 entry into CHANGES.md under Unreleased; it is uncommitted.
 
 ```markdown
@@ -139,6 +141,14 @@ Inserted 1 entry into CHANGES.md under Unreleased; it is uncommitted.
 
 - Add `Cache.evict()` to drop a cached key (#212)
 ```
+
+Voice check:
+- Add `Cache.evict()` to drop a cached key: can I take a new affordance?
+
+Target: CHANGES.md, Unreleased, Features, after the "### Features" heading. No version assigned, no release cut.
+
+Notes:
+- The get() empty-value fix is omitted: its bug was introduced on the base branch.
 
 To commit it, run:
 

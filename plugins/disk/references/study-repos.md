@@ -112,9 +112,9 @@ Call out three groups explicitly, largest first within each:
 
 - **Huge clones** — the largest by total size, with the `.git` share
   shown so the user can see where the weight sits.
-- **Unshallow clones** — those reporting `false` with a `.git`
-  directory above the survey's size floor (about one percent of the filesystem's capacity), ranked by `.git` size. These are the
-  conversion candidates.
+- **Unshallow clones** — those reporting `false` with a `.git` directory
+  above the survey's size floor (about one percent of the filesystem's
+  capacity), ranked by `.git` size. These are the conversion candidates.
 - **Artifact directories** — build output, aggregated per language, as
   a single reclaimable figure.
 

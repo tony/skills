@@ -1,6 +1,6 @@
 ---
 name: case-study-public
-description: Write the tier-3 public case study — hard sanitization, every headline claim triangulated against external evidence, candid limitations mandatory
+description: "Use when writing a tier-3 public case study from a business-value run: sanitized, triangulated against external evidence, with limitations."
 allowed-tools: ["Bash", "Read", "Write", "Grep", "AskUserQuestion", "WebFetch"]
 argument-hint: "[run directory]"
 user-invocable: true
@@ -24,8 +24,6 @@ until the gate passes:
   checklist.
 
 User arguments: $ARGUMENTS
-
-Paths under `../../scripts/` resolve from this skill's directory: print the absolute path once and write it literally in each command, since shell variables do not persist between Bash calls.
 
 ## Procedure
 

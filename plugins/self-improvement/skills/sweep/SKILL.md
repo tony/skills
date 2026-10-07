@@ -230,7 +230,10 @@ The re-sweep date defaults to 30 days from today; `--resweep-days <n>` or
 `--resweep-on <YYYY-MM-DD>` overrides it.
 
 The command writes the ledger under the git directory, outside the working
-tree, and prints its `path`, `key`, and `resweep_on`. The key is the sha256
+tree, and prints its `path`, `key`, and `resweep_on`. If the write is
+refused (a sandbox can block the git directory), rerun with
+`--out <scratch>/ledger.json` and tell the user that path, because `apply`
+needs it as `--ledger`. The key is the sha256
 hex digest of the repository `HEAD` hash and each finding's `id`, `verdict`,
 `skill`, and `expected_change`, the fields `/self-improvement:apply` acts on.
 `apply` recomputes it with `ledger-verify`, so a moved `HEAD` or an edited
@@ -252,12 +255,12 @@ Write the report per `../../references/prose-rules.md`.
    implies, and its expected change. Quote one representative prompt,
    trimmed.
 4. `## Not proposed`: clusters that failed the evidence bar, each with one
-   clause naming the leg it failed and no speculation about causes. Never
-   omitted.
+   clause naming the first leg it failed and no speculation about causes.
+   Never omitted.
 5. `## Corpus`: what was searched, what completed, what the count assumes,
    and the era boundary with the clusters it was chosen over. Close with
-   the ledger key and the re-sweep date; add the ledger path only when
-   `--out` was non-default. With no ledger, name no key and no date.
+   the re-sweep date; never print the ledger key. With no ledger, name no
+   date.
 6. End with an `AskUserQuestion` panel: hand the ledger to
    `/self-improvement:apply`, narrow the sweep and rerun, or stop. In a
    non-interactive run, record the options and stop.
@@ -285,7 +288,6 @@ Reply in this shape, as plain text outside any code fence, with plain bullets, n
 ## Corpus
 
 - Searched prompt history and session transcripts from the last 90 days; the third source was unreadable.
-- Key: 3f9c2ab41d7e5a60b8c1d94f2a7e03b5c6d81f90a2e4b7c3d5f60718293a4b5c
 - Re-sweep: 2026-11-05
 ```
 
@@ -327,4 +329,4 @@ Nothing was swept: this directory has no skill catalog. Run the sweep from the r
 
 The ledger may quote prompts with absolute paths, hostnames, and client
 names. A `SKILL.md`, commit, pull request, or issue may not. Name no temp
-directory or local path in the report except the ledger path.
+directory or local path in the report, except a fallback ledger path.

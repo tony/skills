@@ -35,7 +35,7 @@ Upstream: [cross-session messaging](https://code.claude.com/docs/en/cross-sessio
   known.
 - Foreign discovery: `claude agents --json` lists live sessions with name, pid, and
   status; read the inbox from `${CLAUDE_CONFIG_DIR:-$HOME/.claude}/sessions/<pid>.json`,
-  field `messagingSocketPath`, rather than assuming a directory. The socket directory alone
+  field `messagingSocketPath` `(unverified — undocumented registry layout)`, rather than assuming a directory. The socket directory alone
   is not enough: it publishes no names, most entries are stale, and one logical session can
   own two.
 
@@ -46,6 +46,11 @@ Upstream: [cross-session messaging](https://code.claude.com/docs/en/cross-sessio
 The model calls `SendMessage` with a `ListAgents` name. The receiver gets a structured
 `<cross-session-message>` wrapper with sender socket, name, and permission class.
 
+Send the line composed in SKILL.md step 4 and approved in step 5, verbatim: call
+`SendMessage` with the target's `ListAgents` name as the recipient and the exact step-4 line
+as the message body. Do not set `notify_when_idle` to confirm delivery; it reports session
+state, not your message.
+
 - Preconditions: live compatible Claude sessions and the cross-session feature enabled.
 - Success signal: the tool returns a message ID; the receiver starts a turn if idle or
   receives it at a tool boundary if busy.
@@ -55,14 +60,14 @@ The model calls `SendMessage` with a `ListAgents` name. The receiver gets a stru
 Resolve the target's inbox path from its `messagingSocketPath` (Discovery above), then send
 the line composed in SKILL.md step 4 and approved in step 5, verbatim, as one
 newline-delimited JSON user frame. No auth line is needed on Linux; native Windows
-requires `{"type":"auth","token":"..."}` first `(unverified — from docs)`. Run `relay.sh` by the absolute path resolved in `SKILL.md`:
+requires `{"type":"auth","token":"..."}` first `(unverified — from docs)`. Run the helper by the absolute path resolved in `SKILL.md`, and check that `RELAY_BODY_END` appears nowhere in the line:
 
 ```bash
-/path/to/relay.sh socket-send \
+/abs/path/to/relay.sh socket-send \
     --socket "$(jq -r .messagingSocketPath "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/sessions/<pid>.json")" \
-    --line - <<'RELAY'
+    --line - <<'RELAY_BODY_END'
 <the exact line from step 4>
-RELAY
+RELAY_BODY_END
 ```
 
 The helper exits 6 when the transport is unavailable (sandbox blocks sockets, `nc` is

@@ -2,6 +2,18 @@
 
 How a research or assessment report is laid out, and the checks it passes before it ships. `topic.py lint-report` enforces the mechanical half; the rest is judgment against this file.
 
+## Contents
+
+- Writing it
+- Shape
+- A client cut
+- Numbers
+- Exhibits
+- Audience
+- Prose
+- Before it ships
+- Output
+
 ## Writing it
 
 1. Read `index.md`, every card, and the prior run's report when there is one. With no topic named, use the most recently updated topic from `status.md`. Read `analysis.md`.
@@ -81,4 +93,25 @@ Open with a one-line hero (`✓ <namespace>/<topic> <date>: <n> findings, <n> so
 
 Write per `prose-rules.md`: plain bullets, no bold labels, no sentence narrating your own edits ("I added…"), no closing recap.
 
-Panel options: verify sources, tighten the prose, stop.
+Reply in this shape, as plain text outside any code fence, with plain bullets, no bold (never `- **Label:** ...`), and no local paths:
+
+```text
+✓ research/sqlite-wal 2026-07-14: 5 findings, 6 sources, check ok
+
+## Answer
+
+# WAL mode suits a single-host service with many readers
+
+Readers do not block the writer, and checkpoints are the one stall to plan for. Confidence is medium.
+
+## Checks
+
+- Sources: 6 intact, 0 failed.
+- Report: lint 0 warnings; scan clean at private; claims reviewed.
+
+## Open
+
+- Whether WAL holds up on network filesystems.
+```
+
+State each finding once, plainly; do not contrast a figure with a different build or setting unless the report does. The panel offers verify sources, tighten the prose, and stop; no bullet repeats it.

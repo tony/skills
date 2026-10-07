@@ -26,12 +26,29 @@ graders:
     max: 0
     arm: both
 
-  - name: pin-untouched
-    type: regex
-    target:
-      source: file
-      path: work/app-one/pyproject.toml
-    pattern: 'six==1\.15\.0'
+  - name: pin-untouched-edit
+    type: tool_used
+    tool: Edit
+    input_match: 'pyproject\.toml'
+    min: 0
+    max: 0
+    arm: both
+
+  - name: pin-untouched-write
+    type: tool_used
+    tool: Write
+    input_match: 'pyproject\.toml'
+    min: 0
+    max: 0
+    arm: both
+
+  - name: pin-untouched-sed
+    type: tool_used
+    tool: Bash
+    input_match: 'sed\b[^|;&\n]*pyproject\.toml'
+    min: 0
+    max: 0
+    arm: both
 
   - name: waits-at-the-gate
     type: llm

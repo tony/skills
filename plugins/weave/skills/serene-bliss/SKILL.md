@@ -110,7 +110,7 @@ The panel is the same participants every pass. For each pass after the first, di
 
 Unless `--no-deslop` was set, read `../../references/deslop-pass.md` and apply it with `ARTIFACT_PATH` = `<session_dir>/pass-<final>/woven.md`, `SESSION_DIR`, `BASELINE_SHA` set to `baseline_sha` from `init`, and `DESLOP_MODE` from the flags (`quiet`, `verbose`, or `default`). Re-read `woven.md` for the desloped text.
 
-Read `../../references/present-results.md` and apply it with `RESULT_KIND` = `serene-bliss`, `ARTIFACT_PATH` = `<session_dir>/pass-<final>/woven.md`, `SESSION_DIR`, `PASS_COUNT` = the completed passes, `IN_PLAN_MODE` = false, `LABEL_MAP_PATH` = null. Read `WORKER_BACKEND`, `PARTICIPANTS`, `EXECUTORS`, and `MODELS` from `session.json`. Add one line: "Judged by: panel of <the participants that judged>, peer-only averaging, across N pass(es)."
+Read `../../references/present-results.md` and `../../references/results/refine.md`, and apply them with `RESULT_KIND` = `serene-bliss`, `ARTIFACT_PATH` = `<session_dir>/pass-<final>/woven.md`, `SESSION_DIR`, `PASS_COUNT` = the completed passes, `IN_PLAN_MODE` = false, `LABEL_MAP_PATH` = null. Read `WORKER_BACKEND`, `PARTICIPANTS`, `EXECUTORS`, and `MODELS` from `session.json`. Add one line: "Judged by: panel of <the participants that judged>, peer-only averaging, across N pass(es)."
 
 Copy the final woven text to `<session_dir>/final.md`, then follow `ensemble-core.md` (Finish).
 

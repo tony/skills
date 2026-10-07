@@ -46,9 +46,12 @@ that line is absent:
 $ git rev-parse --git-path info/exclude
 ```
 
-It creates `cache_path` instead when the tree is read-only or the user declines
-an in-tree directory. Append the paths of helpers generated from `templates/` to
-the same exclude file unless the user chooses to commit them.
+It creates `cache_path` instead when the tree is read-only, the user declines
+an in-tree directory, or the write to the exclude file is refused (some sandboxed
+hosts refuse writes under `.git/`): an unexcluded in-tree directory would dirty
+`git status`. Append the paths of helpers generated from `templates/` to the same
+exclude file unless the user chooses to commit them; when the write is refused,
+tell the user to add those paths.
 
 ## Idempotency token
 
@@ -82,14 +85,24 @@ $ git rev-parse \
 ```
 
 Create it with `mkdir -p`, and write that literal path as `<runs-dir>` in later
-commands. Delete a run file before its first timed run, so a re-run, `--force`,
+commands. When the `mkdir` or the first write fails, use `<memory-dir>/runs`
+instead (the memory directory is already outside `git status`); when that fails
+too, use the directory this prints, and print it once:
+
+```console
+$ mktemp -d "${TMPDIR:-/tmp}/pytest-optimizer-runs.XXXXXX"
+```
+
+A temp directory does not outlive the session; a later session re-creates its run
+files, since each is deleted before its first timed run. Say which location was
+used only when the user must act on the files. Delete a run file before its first timed run, so a re-run, `--force`,
 or a post-execute re-scan never mixes old samples into a band. Nothing here
 shows in `git status`, which `03-execute` requires to be empty.
 
 ## Baseline-diff rule
 
 The noise band is `max(k * 1.4826 * MAD, trust floor)` (`k = 3`; the trust floor is
-the larger of `0.05` s and 1% of the median), measured per project in `00-scan`
+the larger of `0.05` s and 1% of the median, so a 12.5 s median gives `0.125` s), measured per project in `00-scan`
 from N serial, cache-disabled runs. `compare` widens the dispersion with the
 candidate's own MAD, `hypot(baseline MAD, candidate MAD)`. A candidate is a real
 speedup only when every run exits 0, its passed and collected-test counts match
@@ -120,12 +133,16 @@ judged against), each file's shape follows. The JSONL run files
   "run_id": "string",
   "collection_hash": "string",
   "env_token": "string",
+  "hygiene": false,
   "base_head": "git sha of HEAD when 00-scan ran",
   "completed": { "scan": true, "benchmark": false, "plan": false, "execute": false },
   "plan_hash": null,
   "last_applied_index": -1
 }
 ```
+
+`hygiene` records whether `00-scan` ran with `--hygiene`; a later `00-scan` whose
+flag differs re-scans even when the token is unchanged.
 
 Each phase sets its own `completed` flag when it finishes: `00-scan`,
 `01-benchmark`, `02-plan` (on approval), `03-execute` (plan exhausted). A re-run
@@ -176,6 +193,7 @@ re-scans. A re-baseline after `03-execute` re-opens all candidates.
 [
   {
     "id": "H10-conftest-make_config",
+    "env_token": "string",
     "diff_summary": "scope=\"function\" -> scope=\"session\" on make_config",
     "runs": 5,
     "median_delta": 2.7,
@@ -189,6 +207,8 @@ re-scans. A re-baseline after `03-execute` re-opens all candidates.
 ]
 ```
 
+`env_token` is `state.json`'s `env_token` when the entry was recorded: an entry
+whose token differs from the current one is stale and is re-benchmarked.
 `removes_tests` is the number of tests a deselecting change (H15, H37) drops from
 the default run; it is absent otherwise. `kind` is `"hygiene"` for a typing or parametrize item (H26-H32): no timing,
 `median_delta` and `clears_noise` null, `verdict` `validated` when the suite and

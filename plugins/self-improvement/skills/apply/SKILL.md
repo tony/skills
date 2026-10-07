@@ -150,9 +150,17 @@ the skill it landed in for exactly these three defects:
 - A handoff goes to a skill that cannot accept the input.
 
 Fix what it finds before handing back. While the branch is unpushed, fix a
-defect in an earlier commit with `git commit --fixup=<sha>` followed by
-`git rebase --autosquash <sha>^` (set `GIT_SEQUENCE_EDITOR=true` to skip the
-editor). Once pushed, the fix lands as its own commit.
+defect in an earlier commit with `git commit --fixup=<sha>`, then fold it in
+with the script; it runs the rebase without an editor and checks that no
+`fixup!` commit remains:
+
+```console
+$ python3 <sweep.py> autosquash \
+    --onto <sha>
+```
+
+Exit 1 lists the fixup commits still unfolded; report them under
+`## Verification`. Once pushed, the fix lands as its own commit.
 
 ## Output contract
 
@@ -165,8 +173,9 @@ Write the report per `../../references/prose-rules.md`.
    the next sweep can check it. Plain bullets, no bold label on each.
 3. `## Skipped`: findings not applied and why, including any the plan
    deliberately held back.
-4. `## Verification`: gate commands run and their results, and what the
-   Phase 5 pass found and fixed. Name no temp directory or local path.
+4. `## Verification`: the gate commands run with their results, and the
+   Phase 5 result. Nothing else: no restated edits, no cleanup notes. Name no
+   temp directory or local path.
 5. End with an `AskUserQuestion` panel: open a pull request, sweep again,
    or stop. Without a question tool, print the options as a plain list and
    stop; never push or open a pull request unasked.

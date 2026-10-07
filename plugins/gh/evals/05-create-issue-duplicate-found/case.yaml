@@ -2,7 +2,7 @@ schema_version: "1.0"
 name: 05-create-issue-duplicate-found
 description: >-
   The duplicate search returns an open issue that matches the bug. The skill
-  stops, names the duplicate, offers to comment, and never creates an issue.
+  stops, names the duplicate, and never creates an issue.
 tags: [fixture, gh, destructive]
 
 context:
@@ -46,5 +46,5 @@ graders:
     criteria: |
       The reply says an existing issue (#17) already covers this bug and that
       nothing was filed.
-      The reply offers to comment on #17 with the new evidence, or asks the
-      user how to proceed; it does not claim a new issue was created.
+      The reply tells the user what to do next (add the evidence to #17, or
+      ask to file anyway); it does not claim a new issue was created.

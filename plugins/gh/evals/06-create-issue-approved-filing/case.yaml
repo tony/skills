@@ -50,3 +50,11 @@ graders:
       (https://example.invalid/example/widgets/issues/42) as the result.
       The reply does not say the issue is still only a draft or ask whether
       to file it.
+
+  - name: reply-is-one-line
+    type: llm
+    focus: last_message
+    criteria: |
+      The reply is a single line that gives the issue URL. It has no bullet
+      list, no recap of the checks that ran, and no description of the
+      title, body, or preview.

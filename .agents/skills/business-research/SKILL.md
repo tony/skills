@@ -29,11 +29,9 @@ Read these first; they bind every step:
 
 Load `references/measurement.md` only for the counterfactual
 ladder and the statistics discipline. Intervals come from
-`references/business.py stats`.
+`references/business.py stats` (absolute path).
 
 User arguments: $ARGUMENTS
-
-Paths under `../../scripts/` resolve from this skill's directory: print the absolute path once and write it literally in each command, since shell variables do not persist between Bash calls.
 
 ## Procedure
 
@@ -93,8 +91,9 @@ rationale and owner.
 For each available instrument, run pinned-window queries per
 `instruments.md` and snapshot raw output into `raw/` before deriving
 anything. Collect the targets listed there; record the rest as
-unknown. Derive pull-request tables with `business.py collect-prs`
-rather than rewriting the query or the filter.
+unknown. Derive pull-request tables with `business.py collect-prs`,
+piping the query into it so reviewer and author logins never reach
+`raw/`, rather than rewriting the query or the filter.
 
 ### 4. Write the package
 

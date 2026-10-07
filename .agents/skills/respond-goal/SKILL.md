@@ -21,7 +21,7 @@ waits, so it runs only when invoked by name. Invoking it authorizes the
 rounds and commits described below, and nothing broader; only `--push`
 authorizes pushes.
 
-Paths under `../../scripts/` resolve from this skill's directory: print the absolute path once and write it literally in each command, since shell variables do not persist between Bash calls.
+Write each `../../scripts/` path as an absolute path, resolved from this skill's directory.
 
 ## Exit condition
 
@@ -108,13 +108,16 @@ normally; a rejected push is a halt condition, never forced.
 **5. Watch CI.** The script polls until at least one check exists on
 the head and none is pending, stopping at the first failure or at the
 cap. It prints a JSON status and exits 0 (green), 1 (failed), 2
-(timeout), or 3 (no check appeared within the grace period):
+(timeout), 3 (no check appeared within the grace period), or 4 (`gh`
+failed; stderr says why, and the loop halts):
 
 ```console
-$ python3 references/wait_pr.py ci <pr> --timeout <ci-wait>
+$ python3 references/wait_pr.py ci <pr> \
+    --timeout <ci-wait>
 ```
 
-Exit 3 means there is nothing to wait on; say so in the report and test
+Exit 4 (and the same on the agents wait) halts the loop with `gh`'s
+message as the reason; it never means "nothing to wait on". Exit 3 means there is nothing to wait on; say so in the report and test
 the exit condition on the agents alone. A failure becomes next round's feedback, with the failing log as its
 evidence. A timeout halts the loop.
 
@@ -125,7 +128,11 @@ not inline review comments, and ignores a trailing `[bot]` on logins. It
 prints the logins still missing:
 
 ```console
-$ python3 references/wait_pr.py agents <pr> --sha <head-sha> --since <push-time-utc> --agents <login> <login> --timeout <wait>
+$ python3 references/wait_pr.py agents <pr> \
+    --sha <head-sha> \
+    --since <push-time-utc> \
+    --timeout <wait> \
+    --agents <login> <login>
 ```
 
 Report who never arrived rather than waiting past the cap; a late agent
@@ -155,6 +162,7 @@ never weighed in.
 - A push is rejected, or the branch needs a rebase or a force-push.
 - Screening returns an `ask` verdict that needs the author's intent.
 - The working tree is dirty from something the loop did not do.
+- The repository is rooted at the home directory, or `gh` fails.
 - CI fails for a reason outside the branch, such as a flaky job, an
   outage, or a missing secret, or is still pending after `--ci-wait`.
 
@@ -165,13 +173,16 @@ behalf.
 ## Phase 3: Report — the output contract
 
 Write the report and replies per `references/prose-rules.md`.
-Never name local absolute paths, temp files, or internal phase and step
+The hero line is the literal first line of the reply: nothing precedes
+it and nothing follows the prescribed parts. Never name local absolute
+paths, temp files, credential file names, or internal phase and step
 names.
 
 A halted run reports one result sentence naming the halt condition,
 then what the user needs to do, then only the sections that have
 content, headings included. It never recaps what the
-loop inspected. The last example below shows it. In a non-interactive
+loop inspected; a home-directory halt names no file it found there. Two
+examples below show a halted run. In a non-interactive
 run, state the plan in one sentence after the hero line and give no
 reason for skipping approval.
 
@@ -227,6 +238,17 @@ A halted run replies in this shape, with the same plain bullets:
 Halted before round 1: feat/retry-after has no pull request, and --push was passed.
 
 Open a pull request for the branch, then run respond-goal again.
+
+1. Stop
+```
+
+A halt because the repository is rooted at the home directory replies
+in this shape:
+
+```text
+Halted before round 1: this repository is rooted at your home directory.
+
+Run respond-goal again from the project's own checkout.
 
 1. Stop
 ```

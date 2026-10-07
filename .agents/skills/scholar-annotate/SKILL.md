@@ -1,10 +1,10 @@
 ---
 name: scholar-annotate
 description: >-
-  Take reading notes on a prose corpus — quotations with stable locators and
+  Take reading notes on a prose corpus: quotations with stable locators and
   margin notes, as a term source for extract
 disable-model-invocation: true
-allowed-tools: ["Read", "Grep", "Glob", "Write", "AskUserQuestion"]
+allowed-tools: ["Read", "Grep", "Glob", "Edit", "Write", "AskUserQuestion"]
 metadata:
   argument-hint: "<source> [--locator=line-range|section|page|search-string] [--out=<dir>]"
   source: "plugins/scholar/skills/annotate/SKILL.md"
@@ -38,7 +38,7 @@ sentence before it is too short.
 
 ### 3. Attach margin notes
 
-The note says what the quotation is evidence *for* — which is the analyst's
+The note says what the quotation is evidence *for*, which is the analyst's
 judgement and must stay visibly separate from the author's words. Never blend
 the two into a paraphrase; `extract` needs to know which is which.
 
@@ -46,7 +46,9 @@ the two into a paraphrase; `extract` needs to know which is which.
 
 Append one row per quotation to `quotations.jsonl` in the study directory
 (`--out`, default `notes/ontology/<subject>/`). `extract` reads this file for
-prose sources.
+prose sources. When the file exists, Read it first and add the new rows with
+`Edit` at its end; `Write` creates the file only when it is absent, never
+replaces it, because an earlier source's rows live there.
 
 ```json
 {"source": "<source id from sources.jsonl>", "locator_kind": "section", "locator": "ch.3 §2", "quote": "...", "note": "the author's own term for the boundary"}
@@ -78,10 +80,10 @@ Run scholar-gather on the source, or add its row by hand, then run annotate agai
 
 Sections:
 
-1. `## Quotations` — the `quotations.jsonl` path under the study directory, the count by `locator_kind`, and the concepts they name.
-2. `## Locator` — which `locator_kind` this source uses, including any
+1. `## Quotations`: the `quotations.jsonl` path under the study directory, the count by `locator_kind`, and the concepts they name.
+2. `## Locator`: which `locator_kind` this source uses, including any
    fallback to `search-string`. Give no reasons.
-3. `## Undefined` — terms the author uses without defining, which `extract`
+3. `## Undefined`: terms the author uses without defining, which `extract`
    will have to infer from usage.
 
 Next-step options: run extract, annotate another source, stop here.

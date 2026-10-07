@@ -2,9 +2,11 @@
 """Back up a PR description, verify the copy, and detect edits since.
 
 ``save [PR]`` fetches the PR once, writes ``body.md`` and ``title.txt`` into a
-new directory under the git ``pr-backups`` path, checks the copy with ``cmp``
+new directory under the git ``pr-backups`` path (a ``mktemp -d`` directory
+when that path is unwritable), checks the copy with ``cmp``
 against the fetched body, and prints the directory. ``check DIR`` refetches
-the body and exits 1 when it differs from ``DIR/body.md``.
+the PR and exits 1 when its body or title differs from ``DIR/body.md`` or
+``DIR/title.txt``.
 """
 
 # ruff: noqa: S603, S607, PLR2004
@@ -46,8 +48,12 @@ def save(pr: str) -> int:
     body = str(pr_json["body"])
     root = Path(_run("git", "rev-parse", "--git-path", "pr-backups").strip()).resolve()
     stamp = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%SZ")
-    out = root / f"{stamp}-pr{pr_json['number']}"
-    out.mkdir(parents=True)
+    name = f"{stamp}-pr{pr_json['number']}"
+    try:
+        out = root / name
+        out.mkdir(parents=True)
+    except OSError:
+        out = Path(tempfile.mkdtemp(prefix=f"pr-backup-{name}."))
     (out / "body.md").write_bytes(body.encode("utf-8"))
     (out / "title.txt").write_bytes(str(pr_json["title"]).encode("utf-8"))
     (out / "number.txt").write_text(str(pr_json["number"]), encoding="utf-8")
@@ -59,14 +65,16 @@ def save(pr: str) -> int:
 
 
 def check(directory: str) -> int:
-    """Return 1 when the PR body differs from the backup."""
+    """Return 1 when the PR body or title differs from the backup."""
     out = Path(directory)
     number = (out / "number.txt").read_text(encoding="utf-8").strip()
-    body = str(_fetch(number)["body"])
-    if _same(out / "body.md", body):
+    pr_json = _fetch(number)
+    if _same(out / "body.md", str(pr_json["body"])) and _same(
+        out / "title.txt", str(pr_json["title"])
+    ):
         sys.stdout.write("unchanged\n")
         return 0
-    sys.stderr.write("the PR body changed since the backup\n")
+    sys.stderr.write("the PR body or title changed since the backup\n")
     return 1
 
 

@@ -1,6 +1,6 @@
 ---
 name: verify
-description: "Re-check a finished study against the corpus it cites — refs that moved, files that vanished, quotations that no longer match, numbers that changed"
+description: "Re-check a finished study against the corpus it cites: refs that moved, files that vanished, quotations that no longer match, numbers that changed"
 allowed-tools: ["Bash", "Read", "Grep", "Glob", "AskUserQuestion"]
 argument-hint: "[<study-dir>] [--refresh-metrics]"
 user-invocable: true
@@ -92,14 +92,14 @@ claim it was cited under.
 
 Five categories, because the remedy differs:
 
-- **Moved** — the ref advanced or the tag was retargeted. Re-pin.
-- **Vanished** — the file or ref is gone. The claim needs a new source or it
+- Moved: the ref advanced or the tag was retargeted. Re-pin.
+- Vanished: the file or ref is gone. The claim needs a new source or it
   needs retracting.
-- **Misquoted** — the locator resolves but the text there is not what was
+- Misquoted: the locator resolves but the text there is not what was
   quoted. This is the dangerous one, and it is why quotations are recorded
   rather than just links.
-- **Changed** — a measurement produced a different number.
-- **Uncheckable** — a source behind a paywall or deleted, a row with no
+- Changed: a measurement produced a different number.
+- Uncheckable: a source behind a paywall or deleted, a row with no
   `commit`, an unsafe URL, or a command the user did not confirm.
 
 ## Rules
@@ -132,11 +132,11 @@ Pass the path of an existing study, or run /scholar:ontology on the corpus to bu
 Sections, in this order. Write `None.` under an empty one, and put each
 reason a check could not run only under `## Uncheckable`:
 
-1. `## Moved` — each citation whose ref advanced, with the new ref.
-2. `## Vanished` — each source that is gone.
-3. `## Misquoted` — each locator whose text no longer matches, with both texts.
-4. `## Changed` — each measurement that produced a different number, with both.
-5. `## Uncheckable` — each citation or command that could not be checked, and why.
+1. `## Moved`: each citation whose ref advanced, with the new ref.
+2. `## Vanished`: each source that is gone.
+3. `## Misquoted`: each locator whose text no longer matches, with both texts.
+4. `## Changed`: each measurement that produced a different number, with both.
+5. `## Uncheckable`: each citation or command that could not be checked, and why.
 
 Reply in this shape, as plain text outside any code fence, with plain bullets,
 no bold (never `- **Label:** ...`), and no local paths:
@@ -167,7 +167,8 @@ None.
 ```
 
 Next-step options: revise the claims a Misquoted or Changed entry overturned
-(only when one exists), re-pin the moved ones, stop here. State the
-non-interactive default as printing the list and stopping.
+(only when one exists), re-pin the moved ones, stop here. Where no
+question tool exists, print the list and stop, without saying that is the
+default.
 
 Write it per `../../references/prose-rules.md`.

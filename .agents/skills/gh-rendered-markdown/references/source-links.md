@@ -1,6 +1,6 @@
 # Source links
 
-Contents: Link everything that has a URL, Pin every reference into a repository, Let GitHub do the linking where it already does, What rots.
+Contents: Link everything that has a URL, Pin every reference into a repository, Let GitHub do the linking where it already does, What rots, Primary sources.
 
 How to link so the link still works. The link set for a named
 open-source project is in `project-links.md`.
@@ -51,9 +51,9 @@ needs `?plain=1` before the fragment or it has nothing to attach to.
 https://github.com/OWNER/REPO/blob/9a29b1a/README.md?plain=1#L14
 ```
 
-A line-range permalink unfurls into a code snippet only inside its own
-repository. Filing across repositories, quote the lines in a fence
-next to the link.
+A line-range permalink renders as a code snippet only inside the
+repository it points into, and only in a comment body. Filing across
+repositories, quote the lines in a fence next to the link.
 
 When a pin cannot be resolved (no network, no release), keep the
 unresolved ref visibly marked in the draft, such as `<SHA>`, and list
@@ -144,3 +144,13 @@ page.
 - A branch rename redirects normal URLs.
 - Unauthenticated GitHub API calls are capped at 60 per hour per IP.
   Route them through `gh`.
+
+## Primary sources
+
+- [Creating a permanent link to a code snippet](https://docs.github.com/en/get-started/writing-on-github/working-with-advanced-formatting/creating-a-permanent-link-to-a-code-snippet) — snippet rendering scope, `?plain=1`
+- [Autolinked references and URLs](https://docs.github.com/en/get-started/writing-on-github/working-with-advanced-formatting/autolinked-references-and-urls)
+- [REST: autolinks](https://docs.github.com/en/rest/repos/autolinks) — admin only
+- [REST: Git references](https://docs.github.com/en/rest/git/refs)
+- [Renaming a repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/renaming-a-repository) — redirects, and what breaks them
+- [Renaming a branch](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-branches-in-your-repository/renaming-a-branch)
+- [Rate limits for the REST API](https://docs.github.com/en/rest/using-the-rest-api/rate-limits-for-the-rest-api)

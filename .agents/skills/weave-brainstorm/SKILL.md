@@ -55,9 +55,9 @@ Follow `ensemble-core.md` (Dispatch lanes) and (Variants), then (Close the repo 
 
 ## Phase 3: Present the originals
 
-Read `references/present-results.md` and apply it with `RESULT_KIND` = `brainstorm`, `ARTIFACT_PATH` = the session's `outputs/` directory, `SESSION_DIR`, `PASS_COUNT` = 1, `IN_PLAN_MODE` = false, `LABEL_MAP_PATH` = null. Read `WORKER_BACKEND`, `PARTICIPANTS`, `EXECUTORS`, and `MODELS` from `session.json`.
+Read `references/present-results.md` and `references/brainstorm.md`, and apply them with `RESULT_KIND` = `brainstorm`, `ARTIFACT_PATH` = the session's `outputs/` directory, `SESSION_DIR`, `PASS_COUNT` = 1, `IN_PLAN_MODE` = false, `LABEL_MAP_PATH` = null. Read `WORKER_BACKEND`, `PARTICIPANTS`, `EXECUTORS`, and `MODELS` from `session.json`.
 
-Head each response as `ensemble-core.md` (Variants) step 5 says. Do not group responses, count how many distinct designs they cover, or comment on overlap.
+Head each response as `ensemble-core.md` (Variants) step 5 says. Do not group responses, count how many distinct designs they cover, merge them, or comment on overlap.
 
 ---
 

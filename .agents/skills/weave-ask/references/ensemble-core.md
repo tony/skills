@@ -23,13 +23,20 @@ each command: shell variables do not survive between Bash calls.
 
 ## Start the session
 
-1. Parse the flags. Pass the raw arguments on stdin:
+1. Make an input directory, then parse the flags. The raw arguments are
+   untrusted text and never go inside a shell heredoc (a line equal to the
+   delimiter would end it and run the rest). Create the directory:
+
+   ```console
+   $ mktemp -d "${TMPDIR:-/tmp}/weave-in.XXXXXX"
+   ```
+
+   Write the raw `$ARGUMENTS` to `arguments.txt` in the directory it printed,
+   with the host's file-writing tool, and use that literal path from here on:
 
    ```console
    $ python3 <engine> flags \
-       --command <command> <<'EOF'
-   <raw $ARGUMENTS>
-   EOF
+       --command <command> < "<input_dir>/arguments.txt"
    ```
 
    Flags are read only from the start of the arguments, up to the first word
@@ -47,25 +54,27 @@ each command: shell variables do not survive between Bash calls.
      model commands?" Options from `timeout_menu`: default, `quick`, `long`, and none.
 
 3. For a `--mutating` command, check the checkout first: run `git rev-parse
-   --show-toplevel` and `echo "$HOME"`. When the toplevel is the home directory
-   (or the user says this is their home or dotfiles repository), contains it, or
-   is `/`, stop before `init`. Reply in one sentence that a write command will
+   --show-toplevel` and `cd ~ && pwd -P`. When the toplevel equals that physical
+   home path (or the user says this is their home or dotfiles repository),
+   contains it, or is `/`, stop before `init`. Reply in one sentence that a write command will
    not stash or snapshot a home-rooted repository, then that the user should
-   run it from a project checkout. Name no local path. A dotfile repo at home would sweep
-   credentials into the stash and worktrees. `init` refuses the same
+   run it from a project checkout. Name no local path. A dotfile repo at home would
+   sweep credentials into the stash and worktrees. `init` refuses the same
    locations.
 
-4. Start the session. Stdin carries the prompt for the session summary:
+4. Start the session. Write `prompt` to `prompt.txt` in the input directory
+   with the file-writing tool; stdin carries it for the session summary:
 
    ```console
    $ python3 <engine> init \
        --command <command> \
        --backend <worker_backend> \
        --passes <passes> \
-       --prompt-stdin <<'EOF'
-   <prompt>
-   EOF
+       --prompt-stdin < "<input_dir>/prompt.txt"
    ```
+
+   Then remove the input directory's two files and the directory itself with
+   `rm` and `rmdir`.
 
    Add `--mutating` for a command that changes the tree (it stashes the user's
    uncommitted work first) and `--timeout <seconds|none>` under `model-clis`.

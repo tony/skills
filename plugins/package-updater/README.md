@@ -1,8 +1,8 @@
 # package-updater
 
-Update dependencies and toolchains across repositories. Checks the
-supply-chain cooldown first, then commits toolchain, named bumps, and
-lockfile refreshes separately with release notes cited.
+Update dependencies and toolchains across repositories. Commits
+toolchain, named bumps, and lockfile refreshes separately with release
+notes cited, and honors a configured supply-chain cooldown.
 
 ## Installation
 
@@ -76,9 +76,8 @@ Fallout (e.g., schema bumps, migrations) lands after in a separate commit.
 
 ## Supply-Chain Cooldown
 
-Checks the repository's configured cooldown before reporting anything
-as current, to prevent pulling risky, fresh releases. A repository with
-no cooldown configured has no gate. Exemptions are narrow, annotated,
+Reads the repository's configured cooldown before reporting anything
+as current. A repository with no cooldown configured has no gate. Exemptions are narrow, annotated,
 committed alone, and reverted when the block lapses.
 
 Each tool names, scales and enforces its cooldown differently. The
@@ -126,12 +125,14 @@ Handled by sibling plugins:
 
 The uv, pnpm, npm, Cargo, Poetry, pip and Go procedures come from each
 tool's own documentation. The plugin proposes the command and waits for
-confirmation before the first run in a repository. Only the
-`.tool-versions` flow has an eval case.
+confirmation before the first run in a repository. Eval cases cover the
+`.tool-versions` flow and a named `requests` bump on a uv lock.
 
 ## Prerequisites
 
 - git
+- python3 (3.9 or newer): runs `scripts/repo_facts.py`, which reports
+  fork signal, default branch and pins per repository.
 - jq: reads registry responses for the cooldown check.
 - curl and network access: link checks and the cooldown check read
   release pages and registries.

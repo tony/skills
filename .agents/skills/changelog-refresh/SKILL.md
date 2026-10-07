@@ -100,7 +100,7 @@ in order:
    an out-of-reach correction left undone. Never recap checks that passed.
    Refer to commits by subject in prose, never by bare SHA. Close with the
    question, or when stopping, one line: nothing was edited; re-run with
-   `--commit` to apply and commit.
+   "refresh the entries" to edit only, or with `--commit` to apply and commit.
 
    Reply in this shape, as plain text outside any code fence, with plain bullets, no bold (never `- **Label:** ...`), and no local paths:
 

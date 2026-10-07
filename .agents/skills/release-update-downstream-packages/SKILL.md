@@ -44,8 +44,8 @@ the user names at the gate; opening pull requests is out of scope.
      sent with a `User-Agent` header (the API rejects requests without one)
    - Go: `https://proxy.golang.org/<module>/@v/<version>.info`, with the
      version's `v` prefix and each uppercase letter in the module path
-     written as an exclamation mark plus its lowercase (`BurntSushi` becomes
-     `burnt` and `sushi` each prefixed that way)
+     written as an exclamation mark plus its lowercase (`BurntSushi` takes one before
+     the `B` and one before the `S`, both letters lowercased)
 
    For any other ecosystem, or if a check cannot run, stop and say what
    could not be confirmed and what the user must supply; do not describe
@@ -82,10 +82,10 @@ For each hit, record:
 
 - **Worktree?** A `.git` that is a file marks a linked worktree; skip it,
   the primary checkout is found on its own.
-- **Trunk**: `git symbolic-ref refs/remotes/origin/HEAD`, falling
-  back to whichever of `main`/`master` exists.
-- **Owner**: from `git remote get-url <remote>`, the upstream remote of
-  trunk (`origin` by default). Group repos by owner
+- **Trunk**: `git symbolic-ref refs/remotes/<remote>/HEAD`, falling
+  back to whichever of `main`/`master` exists. `<remote>` is trunk's
+  upstream remote (`origin` by default).
+- **Owner**: from `git remote get-url <remote>`. Group repos by owner
   org; the user confirms which orgs are in scope at the gate.
 - **Current pin(s)**: the pinned version(s) of the package and any
   siblings in the manifest.
@@ -125,7 +125,7 @@ Plan: example-pkg 1.4.0 → 1.5.0, pushes on (--push)
 - app-one (acme) on main: pin 1.4.0 → 1.5.0, prep commit removing the uv source override, gates: make test
 - app-two (acme) on main and release/1.x: pin 1.4.0 → 1.5.0, no prep, gates: none documented
 - Skipped: app-three (dirty tree), tools-fork (owner outside scope)
-- Outside the working trees: uv cache clean, gh cache delete --all per pushed repo, gh run rerun --failed at most once per run
+- Outside the working trees: uv cache clean example-pkg, gh cache delete --all per pushed repo, gh run rerun --failed at most once per run
 ```
 
 Ask the user via `ask-user-choice` which owner orgs are in scope and
@@ -143,8 +143,8 @@ confirmed branches:
 
 0. **Fresh resolver cache**: once, after the gate and before the first
    lock, clear the package manager's resolver cache so every lock resolves
-   against the newly published files (uv: `uv cache clean --force`, which
-   clears a global cache).
+   against the newly published files (uv: `uv cache clean <package>`, once per
+   package and sibling).
 1. **Sync**: `git checkout <branch> && git pull --ff-only`.
 2. **Prep commits** (each on its own, only if discovery flagged it):
    - Remove the source override so the repo consumes the published
@@ -171,8 +171,9 @@ confirmed branches:
    ```
 
    It prints the count of pins changed. A non-zero exit means no pin matched
-   and the file is untouched: edit the dependency line by hand or use the
-   package manager's own install command. Review `git diff`: only the
+   and the file is untouched. A `>=` or `~=` floor is such a case: ask the
+   user whether to raise the floor to the new version, then edit the line
+   by hand or use the package manager's own install command. Review `git diff`: only the
    intended pins changed.
 
 4. **Re-lock**: the ecosystem's lock command (`uv lock`,
@@ -213,8 +214,8 @@ For every pushed repo:
    ```
 
 2. Find the run for the pushed commit. Retry up to 5 times, a few seconds
-   apart, until a run appears, then report CI as unconfirmed for this repo;
-   a run for an older commit is not this one:
+   apart; if no run appears, report CI as unconfirmed for this repo. A run
+   for an older commit is not this one:
 
    ```console
    $ gh run list --repo <owner>/<repo> --branch <branch> --commit <pushed-sha> --limit 1
@@ -235,6 +236,7 @@ For every pushed repo:
 
 1. Hero line: `✓ <package> <old> → <new> across N repos`, or
    `⚠ <package> <old> → <new>: K of N repos stopped` when any repo stopped.
+   Example: `⚠ libvcs 0.37.0 → 0.38.0: 1 of 3 repos stopped`.
 2. `## Rollout summary`: per repo, branch, prep commits, bump commit,
    pushed or local, CI status.
 3. `## Stopped repos`: any halted on prerelease warnings, dirty trees, rejected pushes, or
@@ -260,7 +262,11 @@ Stopped: example-pkg 2.0.0 is not confirmed on its package index, so nothing was
 
 A CI failure is a stop for that repo: name the repo, the failed job, and
 whether the same job failed before the bump, as a bullet under
-`## Stopped repos`. Do not paste log output.
+`## Stopped repos`. Do not paste log output. For example:
+
+```text
+- vcspull on main: job "tests (3.12)" failed after the bump and passed on the previous run; inspect the bump commit.
+```
 
 Reply in this shape, as plain text outside any code fence, with plain bullets, no bold (never `- **Label:** ...`), and no local paths:
 

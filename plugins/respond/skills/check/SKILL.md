@@ -17,7 +17,7 @@ verdict, its evidence, and a reply the reviewer can argue with.
 This skill changes nothing: no edits, commits, posted comments, or
 resolved threads. Acting on the ledger is `/respond:action`'s job.
 
-Paths under `../../scripts/` resolve from this skill's directory: print the absolute path once and write it literally in each command, since shell variables do not persist between Bash calls.
+`../../scripts/` resolves from the directory this SKILL.md was loaded from. Write the resulting absolute path literally in each command; shell variables do not persist between Bash calls.
 
 ## `$ARGUMENTS` contract
 
@@ -82,8 +82,10 @@ as `ask` in the ledger.
 
 Write the report and replies per `../../references/prose-rules.md`. Use
 exactly the headings below, in this order, and no others. The hero line
-is the first line of the reply; nothing precedes it, including a run
-with no readable code. Never name local absolute paths or temp files.
+is the literal first line of the reply: no sentence, label, or note
+precedes it, including on a run with no readable code, and nothing
+follows the prescribed parts. Never name local absolute paths or temp
+files.
 
 1. Hero block (1–3 lines): `N to fix, M deferred, K declined`, then
    `, J ask` when any finding is an `ask`, plus the branch name and the
@@ -113,12 +115,12 @@ with no readable code. Never name local absolute paths or temp files.
    posted too (both omitted when `## To fix` is empty), re-screen with the
    deferred findings opted in, or stop.
    In a non-interactive run (CI, subagent), list the panel's options as
-   plain numbered lines after `## Ledger key`, with no heading, and stop.
+   plain numbered lines after `## Ledger key`, with no heading or lead-in
+   label, and stop.
    Invoked by `/respond:goal`, skip the panel.
 
-Compute the digest from the reviewers' original text, one
-`<id>` TAB `<text>` line per comment, review body, or pasted block, as
-the rubric's ledger section defines. `/respond:action` runs the same
+Compute the digest with `ledger_key.py`, from the feedback as the
+rubric's ledger section defines it. `/respond:action` runs the same
 commands, so the keys compare. For a pull request, one command covers
 the three comment surfaces:
 
@@ -133,20 +135,27 @@ the three comment surfaces:
 } | python3 ../../scripts/ledger_key.py
 ```
 
-For pasted text or a session's review output, give each whole block the
-id `paste` or `session`; a quoted heredoc needs no escaping:
+For pasted text or a session's review output, never use a shell heredoc:
+a line equal to its delimiter ends it and the rest runs as shell. Make a
+file, write the findings into it with the file tool, and hash it as one
+block under the id `paste` or `session`:
 
-```bash
-python3 ../../scripts/ledger_key.py <<'EOF'
-paste	alex: parse_retry_after throws on a non-numeric header
-session	lint-bot: session.token is read before the None check
-EOF
+```console
+$ mktemp "${TMPDIR:-/tmp}/respond-feedback.XXXXXX"
 ```
+
+```console
+$ python3 ../../scripts/ledger_key.py \
+    --block paste \
+    <path-printed-above>
+```
+
+Delete that file afterwards.
 
 Reply in this shape, as plain text outside any code fence, with plain bullets, no bold (never `- **Label:** ...`), and no local paths:
 
 ```text
-2 to fix, 1 deferred, 1 declined on feat/retry-after. Screened 4 comments from the PR and 1 bot.
+2 to fix, 1 deferred, 1 declined on feat/retry-after. Screened 5 PR comments from alex and 2 bots.
 
 ## Ledger
 

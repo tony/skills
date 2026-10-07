@@ -1,0 +1,41 @@
+schema_version: "1.0"
+name: 09-skill-style-empty-arguments-asks-for-path
+description: >-
+  Invoked by name with no arguments and no question tool. The reply is one
+  paragraph asking for a skill path, with no sections and no scan of the repo.
+tags: [fixture]
+
+execution:
+  prompt: /skill-style:skill-style
+  max_turns: 10
+  timeout_seconds: 300
+  allowed_tools: [Read, Glob, Skill]
+
+runs: 3
+
+graders:
+  - name: asks-for-a-skill-path
+    type: regex
+    target: last_message
+    pattern: 'path|director|SKILL\.md'
+    flags: i
+
+  - name: no-sections
+    type: regex
+    target: last_message
+    pattern: '^#'
+    flags: m
+    match: not_contains
+
+  - name: one-paragraph
+    type: regex
+    target: last_message
+    pattern: '\n[ \t]*\n'
+    match: not_contains
+
+  - name: edits-nothing
+    type: tool_used
+    tool: Edit
+    min: 0
+    max: 0
+    arm: both

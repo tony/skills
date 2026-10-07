@@ -71,6 +71,8 @@ before writing.
 - `--no-commit`: Leaves the result in the working tree.
 - `--no-lock`: Skips the lock refresh (`bump-provider` and `bump-terraform`).
 
+Terragrunt and Terraform stacks are detected and reported, not driven.
+
 The `bumping-terraform` skill executes without a slash command when the
 request is conversational (e.g., "the providers here are ancient").
 
@@ -79,16 +81,17 @@ request is conversational (e.g., "the providers here are ancient").
 - `skills/bump-provider/SKILL.md`: move one provider across every module that declares it.
 - `skills/bump-terraform/SKILL.md`: move the CLI version across configuration and non-configuration pin sites.
 - `skills/refresh-lock/SKILL.md`: re-resolve within existing constraints, every root module.
-- `skills/bumping-terraform/SKILL.md`: the shared phase structure, model-invocable without a slash command.
+- `skills/bumping-terraform/SKILL.md`: routes a conversational request to one of the three skills above and holds the conventions they share.
 - `references/layout-discovery.md`: root and child module classification, child-to-root mapping, the `.terraform/` cache trap, `.tofu` shadowing, Terragrunt and stacks.
 - `references/pin-sites.md`: every file a provider or CLI version is pinned in, operator preservation, registry lookups.
 - `references/lock-and-init.md`: per-root-module `init` and its guard, the platform-narrowing trap, blocked resolvers, verification gates.
-- `scripts/lockctl.py`: per-provider lock state, single-block removal, stable-version filter, and platform names from CI and task files that run `providers lock`.
+- `scripts/lockctl.py`: per-provider lock state, single-block removal, stable-version filter, platform names from CI and task files that run `providers lock`, and a provider-by-provider lock comparison that exits non-zero on an unexpected change or a platform-count drop.
 
 ## Prerequisites
 
 - `git` and a repository with tracked Terraform or OpenTofu files.
-- `python3` for `scripts/lockctl.py`.
+- `python3` (3.9 or newer) for `scripts/lockctl.py`.
+- `curl` and `jq` for registry and release lookups.
 - `terraform` or `tofu` CLI on `PATH`. The plugin resolves versions against
   the detected tool's registry.
 - Network access to the provider registry or private registry.

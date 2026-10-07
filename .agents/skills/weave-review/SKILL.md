@@ -34,10 +34,9 @@ The selected backend governs the whole session: dispatch, retry, judging, refine
 
 ## Orchestration Plan
 
-Before dispatching reviewers, enter plan mode and produce a review strategy. Plan-mode activation varies by host:
+Enter plan mode before the first edit. In Claude Code call `EnterPlanMode`; in Cursor, Codex, or Gemini use `/plan` or `Shift+Tab`. Where plan mode is unavailable, present the plan as text.
 
-- Claude Code: `EnterPlanMode` tool
-- Cursor / Codex / Gemini: `/plan` or `Shift+Tab`
+Before dispatching reviewers, produce a review strategy.
 
 Gather the facts read-only first:
 
@@ -158,7 +157,7 @@ The final pass's `synthesis.md` (pass 1 when `passes` is 1) feeds Phase 6. When 
 
 1. Unless `--no-deslop` was set, read `references/deslop-pass.md` and apply it once, with `ARTIFACT_PATH` set to the final pass's `synthesis.md`, `SESSION_DIR`, `BASELINE_SHA` set to `baseline_sha` from `init`, and `DESLOP_MODE` from the flags. Re-read `synthesis.md` for the desloped report; the deslop summary block follows the Attribution section.
 
-2. Read `references/present-results.md` and apply it with `RESULT_KIND` = `review`, `ARTIFACT_PATH` = the final `synthesis.md`, `SESSION_DIR`, `PASS_COUNT` = the resolved pass count, `IN_PLAN_MODE` = false, `LABEL_MAP_PATH` = `<session_dir>/pass-NNNN/label-map.json`, `CASCADE_STATE` = `early-exit`, `escalated`, or null without `--cascade`. Read `WORKER_BACKEND`, `PARTICIPANTS`, `EXECUTORS`, and `MODELS` from `session.json`.
+2. Read `references/present-results.md` and `references/review.md`, and apply them with `RESULT_KIND` = `review`, `ARTIFACT_PATH` = the final `synthesis.md`, `SESSION_DIR`, `PASS_COUNT` = the resolved pass count, `IN_PLAN_MODE` = false, `LABEL_MAP_PATH` = `<session_dir>/pass-NNNN/label-map.json`, `CASCADE_STATE` = `early-exit`, `escalated`, or null without `--cascade`. Read `WORKER_BACKEND`, `PARTICIPANTS`, `EXECUTORS`, and `MODELS` from `session.json`.
 
 ---
 

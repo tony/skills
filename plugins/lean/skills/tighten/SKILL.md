@@ -26,8 +26,9 @@ repo-wide.
 
 If `$ARGUMENTS` is empty, ask which files via `AskUserQuestion`. Without
 an interactive question tool (Codex, headless runs), print the usage
-and stop. A request that says "go ahead" authorizes the edits it
-names, never a commit.
+and stop. Without a question tool, act as `--diff-only` unless the
+request itself says "go ahead": that authorizes the edits it names,
+never a commit.
 
 ## Steps
 
@@ -45,13 +46,13 @@ names, never a commit.
 4. **Preview and confirm.** Show the proposed edits and confirm via
    `AskUserQuestion` before writing; the preview and the printed diff
    (Step 6) are the review surface. Skip when `--diff-only` or
-   `--stdin`. Without an interactive question tool, act as
-   `--diff-only`.
+   `--stdin`. Without an interactive question tool, follow the
+   headless rule in `$ARGUMENTS`.
 5. **Apply in place.** Use `Edit`. Replacements are concrete and
    shorter than the original.
 6. **Diff.** Print `git diff -- <targets>`. Skip for `--diff-only` and runs
-   without a question tool (nothing was edited); for `--stdin`, print the tightened text as the whole reply. With `--gates`, run the
-   discovered checks once and report; commit on neither pass nor fail.
+   that edited nothing; for `--stdin`, print the tightened text as the whole reply. With `--gates`, run the
+   discovered checks once and report; never commit, whatever the gates report.
 7. **Report and hand off.** Write it per
    `../../references/prose-rules.md`: a one-line count of findings
    resolved and skipped, with no section labels and no recap of what
@@ -61,7 +62,7 @@ names, never a commit.
    5 findings resolved, 1 skipped.
    ```
 
-   With `--diff-only` or no question tool the hero is
+   With `--diff-only`, or no question tool and no go-ahead, the hero is
    `6 findings proposed, 0 applied.` A stopped run is one result
    sentence, then what the user needs to do.
 

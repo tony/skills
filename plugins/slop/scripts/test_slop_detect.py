@@ -108,6 +108,28 @@ def test_scan_demotes_preexisting_todo_and_keeps_added_one(
     assert no_base[0]["tier"] == "B"
 
 
+def test_preexisting_print_is_advisory_not_a_proposal(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    git(tmp_path, "init", "-q", "-b", "main")
+    (tmp_path / "legacy.py").write_text("print('x')\n")
+    git(tmp_path, "add", "legacy.py")
+    git(tmp_path, "commit", "-q", "-m", "base")
+    base = git(tmp_path, "rev-parse", "HEAD")
+    (tmp_path / "fresh.py").write_text("print('y')\n")
+    git(tmp_path, "add", "fresh.py")
+    git(tmp_path, "commit", "-q", "-m", "branch")
+    monkeypatch.chdir(tmp_path)
+
+    found = detect.scan_files(rules(), ["legacy.py", "fresh.py"], detect.added_lines(base))
+    by_file = {f["file"]: f for f in found}
+    assert by_file["legacy.py"]["tier"] == "C"
+    assert by_file["legacy.py"]["pre_existing"] is True
+    assert by_file["legacy.py"]["registry_tier"] == "B"
+    assert by_file["fresh.py"]["tier"] == "B"
+    assert "pre_existing" not in by_file["fresh.py"]
+
+
 def test_skip_paths_suppress_a_rule(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     (tmp_path / "scripts").mkdir()
     (tmp_path / "scripts" / "run.py").write_text("print('x')\n")
@@ -258,3 +280,12 @@ def test_guards_name_only_checks_something_performs() -> None:
             assert "## Tone calibration" in pipeline, sig["id"]
         if guard.startswith("Skip test files") or "test fixtures" in guard:
             assert sig.get("skip-paths"), sig["id"]
+
+
+def test_command_guards_route_through_the_guard_check() -> None:
+    pipeline = (REGISTRY.parent / "detect-pipeline.md").read_text()
+    guarded = [s["id"] for s in _shipped() if "`git " in str(s.get("fp-guard", ""))]
+    assert guarded
+    assert "### Guard check" in pipeline
+    assert "git grep -c" in pipeline.split("### Guard check")[1].split("\n## ")[0]
+    assert "Guard check" in pipeline.split("## Pass B")[1].split("\n## ")[0]

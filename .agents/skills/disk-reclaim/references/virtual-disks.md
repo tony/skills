@@ -85,8 +85,9 @@ so sequence matters:
 2. Hand the user the in-guest trim, then the shutdown command, and wait.
 3. Hand the user the compaction commands.
 
-Sparse is a durable fix: future TRIM self-reclaims, so the balloon stops
-re-accumulating. Offer it alongside a plain compact.
+`sparseVhd` is documented for new disks only; whether TRIM then reclaims
+space on the host is unmeasured. Mention it as an option, with that
+caveat, alongside a plain compact.
 
 ## WSL: shutdown, compact, sparse
 

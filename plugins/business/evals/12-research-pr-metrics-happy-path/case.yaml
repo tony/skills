@@ -1,0 +1,76 @@
+schema_version: "1.0"
+name: 12-research-pr-metrics-happy-path
+description: >-
+  A research run over saved GraphQL pages and a stub gh pipes the pages into
+  collect-prs, keeps reviewer logins out of raw/, writes the package, and
+  passes the gate.
+tags: [fixture]
+
+context:
+  scaffold_script: scaffold.sh
+
+execution:
+  prompt: >-
+    /business:research lean-review 2026-04-01..2026-06-30
+    Write the run at out/2026-06-30/business/lean-review; the root is out and
+    that approves the plan. Measure pull-request cycle time and first-review
+    latency for the repository in the current directory (GitHub acme/widgets).
+    Nothing else is available: no timing logs, no trackers.
+    (gh is a local stub: run every command with PATH="$PWD/bin:$PATH".)
+  max_turns: 50
+  timeout_seconds: 1200
+  allowed_tools: [Bash, Read, Write, Edit, Glob, Grep, Skill]
+
+runs: 3
+
+graders:
+  - name: metrics-csv-written
+    type: file_exists
+    path: out/2026-06-30/business/lean-review/raw/pr-metrics.csv
+    exists: true
+
+  - name: csv-has-merged-in-window-pr-with-review-latency
+    type: regex
+    target:
+      source: file
+      path: out/2026-06-30/business/lean-review/raw/pr-metrics.csv
+    pattern: '^1,[^,]*,[^,]*,36\.00,6\.00,0,40,5$'
+    flags: m
+
+  - name: csv-excludes-out-of-window-and-open-prs
+    type: regex
+    target:
+      source: file
+      path: out/2026-06-30/business/lean-review/raw/pr-metrics.csv
+    match: not_contains
+    pattern: '^[34],'
+    flags: m
+
+  - name: csv-holds-no-logins
+    type: regex
+    target:
+      source: file
+      path: out/2026-06-30/business/lean-review/raw/pr-metrics.csv
+    match: not_contains
+    pattern: 'ann-dev|bo-rev'
+
+  - name: findings-written
+    type: file_exists
+    path: out/2026-06-30/business/lean-review/findings.md
+    exists: true
+
+  - name: reply-leads-with-run-written
+    type: regex
+    target: last_message
+    pattern: '^\s*✓ Run written'
+
+  - name: reply-reports-collection-and-truncation
+    type: llm
+    focus: last_message
+    criteria: >-
+      The reply follows the Scope, Instruments, Collected, Package sections.
+      It says the run passed its completeness gate (or that it fixed every
+      gate problem), names timing logs or adoption data as unavailable or
+      unknown, and mentions that one pull request's reviews were truncated
+      so its first-review latency is unreliable. It does not name the
+      reviewer or author logins and does not state a currency figure.

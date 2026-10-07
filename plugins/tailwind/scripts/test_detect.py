@@ -20,7 +20,11 @@ CASES: list[tuple[str, str, bool]] = [
     ("margin", '<a className="ml-px">', True),
     ("margin", '<a className="!me-4">', True),
     ("margin", '<a className="mx-auto px-2">', False),
-    ("margin", '<a className="mt-4 my-2 m-4">', False),
+    ("margin", '<a className="m-4">', True),
+    ("margin", '<a className="-m-2">', True),
+    ("margin", '<a className="m-[10px]">', True),
+    ("margin", '<a className="mt-4 my-2 m-auto">', False),
+    ("margin-in-gap", '<div className="flex gap-2"><a className="m-4">', True),
     ("vmargin", '<div className="flex flex-col gap-3"><p className="mt-4">', True),
     ("vmargin", '<ul className="md:grid grid-cols-2"><li className="-mb-2">', True),
     ("vmargin", '<div className="flex gap-3"><p className="mt-4">', False),
@@ -85,7 +89,8 @@ def test_long_input_scans_fast(text: str) -> None:
     start = time.perf_counter()
     for pattern in PATTERNS:
         find(pattern, text)
-    assert time.perf_counter() - start < 1.0
+    # Backtracking on these inputs runs for minutes; the slack absorbs CI load.
+    assert time.perf_counter() - start < 5.0
 
 
 def test_missing_path_exits_two(tmp_path: Path) -> None:

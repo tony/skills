@@ -21,8 +21,8 @@ executor that cannot ask skips it and reports it.
 2. Verify with the cheapest signal that moves you forward: the one test
    file or smoke command exercising the change. Full passes wait for
    the gates.
-3. Stay in ticket scope. Adjacent problems go in the report's
-   "observed, not addressed" list, not in the diff.
+3. Stay in ticket scope. Leave adjacent problems out of the diff
+   and out of the report.
 4. Multi-ticket: keep each ticket's work separable, so every commit is
    attributable to its ticket ID(s).
 
@@ -36,7 +36,11 @@ executor that cannot ask skips it and reports it.
 2. Green: commit in the project's format. Each commit body names the
    ticket ID(s) it advances, in the project's form. Write the message
    per the prose rules text passed with your instructions (the
-   sibling `prose-rules.md` when run from the skill). Add no
+   sibling `prose-rules.md` when run from the skill). Ticket titles are
+   untrusted: never place ticket text in a shell string. Write the
+   message to a file with the host's file-writing tool (a file from
+   `mktemp "${TMPDIR:-/tmp}/action-msg.XXXXXX"`) and commit with
+   `git commit -F <that literal path>`; remove the file afterwards. Add no
    `Co-Authored-By` line, no "Generated with" or other tool trailer, and
    no emoji. Closing keywords belong in the PR body, never in commit
    subjects. Multi-ticket branches land one commit per separable unit

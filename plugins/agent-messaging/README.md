@@ -12,6 +12,11 @@ share your `CODEX_HOME`; a thread under a different one is invisible, not
 merely unreachable. The `codex-queue` route needs a Codex build that ships
 `codex queue`; check with `codex queue --help`.
 
+Prerequisites: `jq` (envelope audit and socket frames), `python3` 3.9 or newer only to run the
+tests, and per route: `nc` for the inbox socket, `tmux` for the typing fallback, and the
+`sqlite3` CLI to read back a Codex queue item (optional; delivery is then reported
+unconfirmed).
+
 ## Installation
 
 In Claude Code, add the marketplace:
@@ -79,8 +84,9 @@ answer and is preferred over an inferred one.
 ## Support
 
 The plugin relies on undocumented internals: the `queue_1.sqlite` schema, transcript
-`origin` records, and the session registry layout. A release of either CLI can change them,
-so it pins no CLI version. The skill probes each route at run time before choosing it:
+`origin` records, and the session registry layout. A release of either CLI can change them.
+The routes were tested with `codex` 0.160.1 and Claude Code 2.1.292; these are the versions
+checked, not minimums. The skill probes each route at run time before choosing it:
 
 - `codex queue --help` must exit 0 for the `codex-queue` route.
 - `claude agents --json` must succeed for the inbox-socket route.

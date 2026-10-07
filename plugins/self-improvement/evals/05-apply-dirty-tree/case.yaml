@@ -38,12 +38,12 @@ graders:
     min: 0
     max: 0
 
-  - name: no-shell-writes
-    type: tool_used
-    tool: Bash
-    input_match: '(sed\s+(-[a-zA-Z]*i|--in-place)|(?<![0-9&>=-])>>?(?![=&])\s*(?!/dev/null)\S|\btee\b|git\s+(commit|add|stash|checkout|reset))'
-    min: 0
-    max: 0
+  - name: tree-unchanged
+    type: regex
+    target:
+      source: file
+      path: catalog/tidy/SKILL.md
+    pattern: '^---\nname: tidy\ndescription: "Use when tidying files."\n---\n\n# Tidy\n\nRemove stray files.\nScratch edit from another task\.\n$'
 
   - name: ignores-unrelated-untracked-files
     type: llm

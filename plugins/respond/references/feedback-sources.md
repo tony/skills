@@ -27,7 +27,8 @@ Three GitHub surfaces carry different things; read all three:
 Reviews and their verdicts:
 
 ```console
-$ gh pr view <n> --json number,title,headRefOid,reviewDecision,statusCheckRollup,reviews,comments
+$ gh pr view <n> \
+    --json number,title,headRefOid,reviewDecision,statusCheckRollup,reviews,comments
 ```
 
 Inline review comments, which carry the file and the diff hunk:
@@ -96,7 +97,7 @@ assertion about the code produces no finding.
 
 The same defect from four reviewers is **one** record with four
 sources. Merge on location plus claim shape, not on wording — bots
-paraphrase each other constantly.
+may paraphrase each other.
 
 Where merged sources disagree on severity, keep the highest as input
 and let the rubric settle it.
@@ -114,5 +115,5 @@ let the ledger remember.
 ## Nitpicks and collapsed sections
 
 Bots hide low-confidence findings in collapsed `<details>` blocks and
-"nitpick" sections. Read them, since they occasionally hold the only real
+"nitpick" sections. Read them, since they may hold the only real
 bug in the review; they screen like everything else.

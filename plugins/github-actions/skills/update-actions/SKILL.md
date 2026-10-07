@@ -29,7 +29,8 @@ This skill supplies the scope and the fan-out.
 Default scope is the current repository. `--root` audits every git
 repository beneath a directory; `--owner` keeps only those whose remote
 belongs to the given accounts or organisations; `--repo` names
-individual ones. The fork rule is in
+individual ones by path or slug. A slug with no clone is audited
+read-only. The fork rule and the slug-only read are in
 `../../references/action-pinning.md`.
 
 ### 2. Inventory and verify
@@ -86,5 +87,7 @@ and run them only after the user confirms.
 
 Use the output shape in `../bumping-github-actions/SKILL.md`. The hero is
 `✓ N commits across M repos`, or `⚠ Audit only: N pins out of date` with
-`--audit-only`, or `⚠ Blocked: <reason>` with one sentence on what the
-user must do when the run halts.
+`--audit-only`. A plan-only run, and a halted run (no workflows, no
+`gh`, an unverifiable tag, a PR title carrying shell syntax, PRs that
+cannot be listed or mapped), use the shapes in
+`../../references/output-shapes.md`; read it before replying.

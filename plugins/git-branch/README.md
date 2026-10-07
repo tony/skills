@@ -119,8 +119,8 @@ $ sh <toolkit> squash <base>
   correct but history is messy.
 - **Use `/slop:deslop`**: When commit messages need cleaning but boundaries are
   fine (uses autosquash without splitting commits).
-- **Use `/rebase`**: When moving a branch onto the current trunk.
-- **Use `/commit`**: When creating a new commit rather than rebuilding
+- **Use `/rebase:rebase`**: When moving a branch onto the current trunk.
+- **Use `/commit:commit`**: When creating a new commit rather than rebuilding
   existing ones.
 
 ## Prerequisites

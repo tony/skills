@@ -64,4 +64,24 @@ Open with a one-line hero. After the final `check`: `✓ <n> sources checked, al
 
 Write per `prose-rules.md`: plain bullets, no bold labels, no sentence between the hero and the first section, no sentence narrating your own edits ("I added…"), no finding recaps.
 
-Panel options: fix the failures, continue the topic, stop. The panel never repeats `## Report`; without an interactive host, print the options as a numbered list.
+Reply in this shape, as plain text outside any code fence, with plain bullets, no bold (never `- **Label:** ...`), and no local paths:
+
+```text
+⚠ 2 failed: 1 changed, 1 vanished
+
+## References
+
+- S2 changed: replaced by S9 at the new tag.
+- S4 vanished: marked unretrieved; the claim it supported moved to Open questions.
+
+## Missed
+
+- Added S10, a third-party benchmark; recorded its disagreement with S2 as a conflict.
+
+## Report
+
+- Check failing: 1 unsupported claim in Findings, 1 stale Sources row.
+- Fix: source or drop the claim, then run `sources --write`.
+```
+
+Report only what changed in the sources and report; do not describe what this pass left untouched. Panel options: fix the failures, continue the topic, stop. The panel never repeats `## Report`; without an interactive host, print the options as a numbered list.

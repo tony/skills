@@ -129,7 +129,7 @@ remote scenario that costs a new code path and a test is declined as
 failure mode.
 
 Cost the smallest fix that would work, not the one the reviewer
-proposed: reviewers often propose a mechanism when the defect only
+proposed: a reviewer may propose a mechanism when the defect only
 needed a condition. Offer the smaller fix.
 
 ## Verdicts
@@ -166,7 +166,10 @@ session by `/respond:action`:
   review body, or pasted block, `<id>` TAB `<original text>`, whitespace
   collapsed, sorted bytewise, newline-terminated. The id is the one the
   source returns; pasted text and a session's review output have none, so
-  the id is `paste` or `session` and the text is the whole block. Never
+  the id is `paste` or `session` and the text is the whole block, without
+  the instruction wrapped around it ("Fix the findings below"). A run that
+  reuses a ledger hashes the source that ledger screened, not its own
+  argument text, so typed and screened runs match. Never
   hash a claim you trimmed or paraphrased: two runs would differ. It
   covers every comment before splitting, dropping, or merging, so new or
   edited feedback changes it.

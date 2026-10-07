@@ -128,14 +128,16 @@ terms.jsonl line 2: each entry in 'cites' must be an object
 1
 
 Every term row needs a definition and a quoted citation; a ``type`` row
-needs no citation of its own, since its is-a claims are cited in
-``evidence/hierarchy.md``:
+with a ``parent`` needs no citation of its own, since its is-a claims are
+cited in ``evidence/hierarchy.md``:
 
 >>> check_terms([{"term": "a", "definition": "x", "cites": [{"quote": "q"}]}])
 []
->>> check_terms([{"term": "t", "definition": "names a doer", "kind": "type"}])
+>>> check_terms([{"term": "t", "definition": "d", "kind": "type", "parent": "root"}])
 []
->>> check_terms([{"term": "t", "definition": " ", "kind": "type"}])
+>>> check_terms([{"term": "t", "definition": "d", "kind": "type"}])
+['t: no citation']
+>>> check_terms([{"term": "t", "definition": " ", "kind": "type", "parent": "root"}])
 ['t: empty definition']
 >>> check_terms([{"term": "t", "definition": "x", "kind": "type", "cites": [{}]}])
 ['t: citation without a quote']
@@ -304,6 +306,37 @@ def orphans(terms: list[_Row]) -> list[str]:
     return [row["term"] for row in terms if row.get("parent", "") not in known]
 
 
+def cycles(terms: list[_Row]) -> list[str]:
+    """Parent chains that loop back on themselves, self-parents included.
+
+    >>> cycles([{"term": "a", "parent": "a"}])
+    ['a -> a']
+    >>> cycles([{"term": "a", "parent": "b"}, {"term": "b", "parent": "a"}])
+    ['a -> b -> a']
+    >>> cycles([{"term": "a", "parent": "root"}])
+    []
+    """
+    parents: dict[str, list[str]] = {}
+    for row in terms:
+        parent = row.get("parent", "")
+        if parent:
+            parents.setdefault(row["term"], []).append(parent)
+    found: set[tuple[str, ...]] = set()
+
+    def walk(path: list[str]) -> None:
+        for parent in parents.get(path[-1], []):
+            if parent in path:
+                loop = path[path.index(parent) :]
+                pivot = loop.index(min(loop))
+                found.add(tuple(loop[pivot:] + loop[:pivot]))
+            elif parent in parents:
+                walk([*path, parent])
+
+    for term in parents:
+        walk([term])
+    return [" -> ".join((*loop, loop[0])) for loop in sorted(found)]
+
+
 def fan_out(terms: list[_Row]) -> dict[str, int]:
     """Child count per parent.
 
@@ -357,7 +390,9 @@ def check_brief(text: str) -> list[str]:
 def check_terms(terms: list[_Row]) -> list[str]:
     """List rows with an empty definition, no citation, or a citation with no quote.
 
-    A ``type`` row may omit citations; any it carries still need a quote.
+    A ``type`` row with a ``parent`` may omit citations, since ``distill``
+    assigns the parent and cites the is-a claim in ``evidence/hierarchy.md``;
+    any citation it carries still needs a quote.
     """
     findings: list[str] = []
     for row in terms:
@@ -365,7 +400,7 @@ def check_terms(terms: list[_Row]) -> list[str]:
             findings.append(f"{row['term']}: empty definition")
         cites = row.get("cites")
         if not cites:
-            if row.get("kind") == "type":
+            if row.get("kind") == "type" and row.get("parent", ""):
                 continue
             findings.append(f"{row['term']}: no citation")
         elif any(not str(cite.get("quote", "")).strip() for cite in cites):
@@ -480,6 +515,7 @@ def main(argv: list[str]) -> int:
         ("synonymy", [f"{a} / {b} at {score:.3f}" for a, b, score in synonymy(terms)]),
         ("polysemy", [f"{term}: {len(defs)} definitions" for term, defs in polysemy(terms)]),
         ("orphans", orphans(terms)),
+        ("hierarchy cycles", cycles(terms)),
         ("circular evidence", circular(terms)),
         ("fan-out", [f"{p}: {n}" for p, n in sorted(fan_out(terms).items())]),
     ]

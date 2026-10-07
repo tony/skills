@@ -50,3 +50,11 @@ graders:
     match: not_contains
     pattern: 'I (have )?(edited|committed|updated the file|made a commit)'
     flags: i
+
+  - name: restates-standalone
+    type: llm
+    focus: last_message
+    criteria: |
+      The reply restates the retry analysis from the file with no reference to
+      any earlier answer, note, or verdict, and states each claim positively
+      and in full.

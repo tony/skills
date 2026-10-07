@@ -1,7 +1,5 @@
 # Instrument discovery and collection queries
 
-Script paths here (`../scripts/...`) resolve from this file's directory; print the absolute path once and write it literally in each command.
-
 ## Contents
 
 - Discovery: probe, record, classify
@@ -74,18 +72,22 @@ unavailable, not worked around.
   cohort rule per metric in `sources.md` (for example: PR cycle time
   by mergedAt-in-window; review latency by createdAt-in-window).
 - Snapshot each response to `raw/` and add its `sources.md` entry
-  before computing anything from it.
+  before computing anything from it, except responses that carry
+  logins: aggregate those before they reach disk.
 - Prefer GraphQL over the Search API for PR and issue queries —
   search results truncate and drift; GraphQL with cursor pagination
   is reliable. Paginate to exhaustion or record the cutoff
   explicitly.
 - Window query shape: page every pull request by cursor to
-  exhaustion and snapshot the full response; the window filter runs
-  locally. Write the snapshot to `<run>/raw/pr-pages.json` with the
-  run's absolute path, since the working directory resets between
-  Bash calls:
+  exhaustion and pipe the pages straight into `collect-prs`; the
+  window filter runs locally. Author and reviewer logins are read
+  only to tell a self-review or a bot from a reviewer and never
+  reach `raw/`: the pages are not saved, and `raw/pr-metrics.csv`
+  holds the aggregate rows. Write it with the run's absolute path,
+  since the working directory resets between Bash calls:
 
   ```bash
+  set -o pipefail
   gh api graphql --paginate \
     -f owner=acme \
     -f name=widgets \
@@ -98,32 +100,33 @@ unavailable, not worked around.
               number createdAt mergedAt additions deletions
               author { login }
               reviews(first: 50) {
+                pageInfo { hasNextPage }
                 nodes { submittedAt author { login __typename } }
               }
               reopened: timelineItems(itemTypes: [REOPENED_EVENT]) { filteredCount }
             }
           }
         }
-      }' > /abs/path/to/run/raw/pr-pages.json
+      }' \
+    | /abs/path/to/scripts/business.py collect-prs \
+        --start 2026-04-01 \
+        --end 2026-06-30 \
+        > /abs/path/to/run/raw/pr-metrics.csv
   ```
 
-  Derive the per-PR table with `references/business.py collect-prs`
-  (the script's absolute path, written literally). It takes the
-  pages on stdin or as files, keeps PRs merged between `--start` and
-  `--end` (inclusive UTC dates), and prints CSV with `cycle_hours`,
-  `first_review_hours`, `reopened`, `additions`, `deletions`.
-  First-review latency is the earliest review by someone other than
-  the author and not a bot; it is blank when there is none.
+  `collect-prs` (the script's absolute path, written literally)
+  keeps PRs merged between `--start` and `--end` (inclusive UTC
+  dates), so open and closed-unmerged PRs are excluded, and prints
+  CSV with `cycle_hours`, `first_review_hours`, `reopened`,
+  `additions`, `deletions`. First-review latency is the earliest
+  review by someone other than the author and not a bot; it is blank
+  when there is none. It prints `warning:` on stderr for every PR
+  whose reviews exceeded the 50 fetched: record each warning in
+  `sources.md` and the README, and treat that PR's latency as
+  unreliable.
 
-  ```console
-  $ references/business.py collect-prs \
-      --start 2026-04-01 \
-      --end 2026-06-30 \
-      /abs/path/to/run/raw/pr-pages.json > /abs/path/to/run/raw/pr-metrics.csv
-  ```
-
-  Record both commands verbatim in `sources.md`, with the CSV as
-  the second entry's output. Figures from the CSV take `check:` lines
+  Record the pipeline verbatim in `sources.md`, with the CSV as the
+  entry's output file. Figures from the CSV take `check:` lines
   (`check: median raw/pr-metrics.csv cycle_hours = 31.5`); a
   `stats --csv raw/pr-metrics.csv --column cycle_hours` gives the
   interval.

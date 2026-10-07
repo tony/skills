@@ -3,7 +3,7 @@
 Profile and optimize pytest suites. Ranks and applies safe speedups as
 verified, independent commits.
 
-It runs as a **resumable four-phase pipeline**. Measurement and mutation are
+It runs as a resumable four-phase pipeline. Measurement and mutation are
 separated on purpose: you can re-run any phase without redoing the previous
 one, and the suite is never edited until a speedup has been measured against
 the project's own timing noise and has cleared a safety gate.

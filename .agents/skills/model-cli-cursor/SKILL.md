@@ -32,6 +32,9 @@ Cursor's read-only plan mode.
 1. Normal: `agent -p -f --`
    Plan: `agent -p --mode plan --`
 
+Pass `--require-flag=-f` on a normal run and `--require-flag=--mode` on a
+`mode:plan` run.
+
 Failure of this tier, including credit exhaustion, ends the run: report it. Do not suggest or
 run another vendor's CLI.
 

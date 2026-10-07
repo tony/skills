@@ -1,7 +1,7 @@
 ---
 name: ontology
 description: "Use when distilling an ontology, controlled vocabulary, or glossary of what a codebase, a repository set, or a written corpus calls things."
-allowed-tools: ["Read", "Grep", "Glob", "AskUserQuestion"]
+allowed-tools: ["Bash", "Read", "Grep", "Glob", "Edit", "Write", "AskUserQuestion"]
 argument-hint: "[<target>...] [--kind=code|prose] [--out=<dir>] [--resume=<stage>]"
 user-invocable: true
 ---
@@ -36,15 +36,15 @@ cannot call them. To run a stage, read `../<stage>/SKILL.md` (for example
 `../gather/SKILL.md`) and follow it. A user resumes a study by invoking a
 stage directly.
 
-1. `gather` — resolve and pin the corpus, inventory it, and record
+1. `gather`: resolve and pin the corpus, inventory it, and record
    what was read and what was skipped, into `sources.jsonl`.
-2. `extract` — harvest the terms the corpus uses, with a citation and
+2. `extract`: harvest the terms the corpus uses, with a citation and
    a locator each, into `terms.jsonl`.
-3. `distill` — build the three layers: types, members with
+3. `distill`: build the three layers: types, members with
    discriminators, and the controlled vocabulary.
-4. `contest` — judge the ontology adversarially, one candidate at a
+4. `contest`: judge the ontology adversarially, one candidate at a
    time, recording the kills.
-5. `render` — write `brief.md` and the evidence documents, and gate
+5. `render`: write `brief.md` and the evidence documents, and gate
    the brief.
 
 For prose, follow `../annotate/SKILL.md` before `extract` to produce quotations
@@ -60,7 +60,8 @@ The plan states:
 
 - The corpus: each target, its resolved ref, and how it was resolved.
 - The kind, code or prose, and what that changes about stages 1 and 2.
-- The output directory, and confirmation that it is not inside the corpus.
+- The output directory, and for a corpus that is the current repository, that
+  the study directory is excluded from the dirty-tree check.
 - Which stages will run, and which are being skipped because a prior study
   already satisfies them.
 - The coverage boundary: what will deliberately not be read, and why.
@@ -72,7 +73,9 @@ start stage 1 without approval.
 ## Rules
 
 - Never write into the corpus being studied. Output lands under `--out`,
-  defaulting to `notes/ontology/<subject>/` in the current repository.
+  defaulting to `notes/ontology/<subject>/` in the current repository. When
+  the current repository is the corpus, that default stands: `extract`'s
+  dirty-tree check leaves the study directory out.
 - A pasted snippet is not a corpus. With no repository, directory, or document
   on disk to pin, report `⚠ Blocked` at stage 1 and say what to point the
   study at. A pasted prose excerpt can only be pinned by running `gather`
@@ -83,13 +86,13 @@ start stage 1 without approval.
 Per `../../references/output-contract.md`. Hero: `✓ <subject>: <n> terms, <n>
 types, <n> contested` or `⚠ Blocked: <reason>`. Sections:
 
-1. `## Corpus` — each source, its resolved ref, and what was deliberately not
+1. `## Corpus`: each source, its resolved ref, and what was deliberately not
    read, with the reason.
-2. `## Ontology` — the type hierarchy in prose, each type with its
+2. `## Ontology`: the type hierarchy in prose, each type with its
    discriminator, and the vocabulary's preferred terms.
-3. `## Contested` — what was challenged and how it resolved, including what
+3. `## Contested`: what was challenged and how it resolved, including what
    was killed and what the kill revealed.
-4. `## Where it lives` — the study directory path and which stages ran.
+4. `## Where it lives`: the study directory path and which stages ran.
 
 A blocked run follows the halted-run shape in the output contract: hero, one
 sentence naming the missing corpus, and one line saying what to point the study

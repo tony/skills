@@ -35,12 +35,20 @@ def spike(
     repo: pathlib.Path,
     *args: str,
     home: pathlib.Path | None = None,
+    message: str | None = None,
+    unset_home: bool = False,
 ) -> subprocess.CompletedProcess[str]:
     env = {**os.environ, "HOME": str(home or repo.parent / "home")}
+    if unset_home:
+        env.pop("HOME")
+    cmd = [str(SPIKE), *args]
+    if message is not None:
+        cmd += ["-F", "-"]
     return subprocess.run(
-        [str(SPIKE), *args],
+        cmd,
         cwd=repo,
         env=env,
+        input=message,
         capture_output=True,
         text=True,
         check=False,
@@ -95,7 +103,7 @@ def test_guard_refuses_root_containing_home(repo: pathlib.Path) -> None:
 
 def test_stash_refuses_at_home_before_touching_files(repo: pathlib.Path) -> None:
     dirty_user_work(repo)
-    result = spike(repo, "stash", "m", home=repo)
+    result = spike(repo, "stash", message="m", home=repo)
     assert result.returncode == 1
     assert (repo / "scratch.txt").exists()
     assert git(repo, "stash", "list") == ""
@@ -103,7 +111,7 @@ def test_stash_refuses_at_home_before_touching_files(repo: pathlib.Path) -> None
 
 def test_stash_prints_own_sha_and_cleans_tree(repo: pathlib.Path) -> None:
     dirty_user_work(repo)
-    result = spike(repo, "stash", "spike: demo")
+    result = spike(repo, "stash", message="spike: demo")
     sha = result.stdout.strip()
     assert result.returncode == 0
     assert git(repo, "stash", "list", "--format=%H") == sha
@@ -112,7 +120,7 @@ def test_stash_prints_own_sha_and_cleans_tree(repo: pathlib.Path) -> None:
 
 def test_stash_keep_leaves_the_work_in_the_tree(repo: pathlib.Path) -> None:
     dirty_user_work(repo)
-    sha = spike(repo, "stash", "--keep", "spike: kept").stdout.strip()
+    sha = spike(repo, "stash", "--keep", message="spike: kept").stdout.strip()
     assert git(repo, "stash", "list", "--format=%H") == sha
     assert (repo / "notes.txt").read_text() == "base\nuser edit\n"
     status = git(repo, "status", "--porcelain").splitlines()
@@ -122,7 +130,7 @@ def test_stash_keep_leaves_the_work_in_the_tree(repo: pathlib.Path) -> None:
 
 
 def test_stash_unchanged_tree_reports_no_changes(repo: pathlib.Path) -> None:
-    result = spike(repo, "stash", "spike: nothing")
+    result = spike(repo, "stash", message="spike: nothing")
     assert result.stdout.strip() == "no changes"
     assert git(repo, "stash", "list") == ""
 
@@ -134,7 +142,7 @@ def test_stash_first_saves_and_restores_user_work(repo: pathlib.Path) -> None:
     assert git(repo, "status", "--porcelain") == ""
 
     (repo / "notes.txt").write_text("base\nspiked\n")
-    spike_sha = spike(repo, "stash", "spike: s").stdout.strip()
+    spike_sha = spike(repo, "stash", message="spike: s").stdout.strip()
     assert spike_sha != user
 
     restored = spike(repo, "restore", user)
@@ -159,7 +167,7 @@ def probe_on_top(repo: pathlib.Path) -> tuple[str, str]:
     user = spike(repo, "hold-user").stdout.strip()
     (repo / "notes.txt").write_text("base\nuser edit\nspike line\n")
     (repo / "feature.txt").write_text("spike file\n")
-    spike_sha = spike(repo, "stash-on-top", user, "spike: top").stdout.strip()
+    spike_sha = spike(repo, "stash-on-top", user, message="spike: top").stdout.strip()
     return user, spike_sha
 
 
@@ -188,7 +196,7 @@ def test_hold_user_leaves_files_in_tree(repo: pathlib.Path) -> None:
 def test_stash_on_top_without_spike_changes(repo: pathlib.Path) -> None:
     dirty_user_work(repo)
     user = spike(repo, "hold-user").stdout.strip()
-    result = spike(repo, "stash-on-top", user, "spike: none")
+    result = spike(repo, "stash-on-top", user, message="spike: none")
     assert result.stdout.strip() == "no changes"
     assert (repo / "notes.txt").read_text() == "base\nuser edit\n"
 
@@ -219,7 +227,7 @@ def test_replay_applies_only_the_spike_delta(repo: pathlib.Path) -> None:
 
 def test_replay_apply_stash_first_uses_whole_stash(repo: pathlib.Path) -> None:
     (repo / "feature.txt").write_text("spike file\n")
-    spike_sha = spike(repo, "stash", "spike: s").stdout.strip()
+    spike_sha = spike(repo, "stash", message="spike: s").stdout.strip()
     result = spike(repo, "replay-apply", spike_sha)
     assert result.returncode == 0, result.stderr
     assert (repo / "feature.txt").read_text() == "spike file\n"
@@ -230,9 +238,9 @@ def test_drop_matches_by_sha_and_spares_user_work(repo: pathlib.Path) -> None:
     dirty_user_work(repo)
     user = spike(repo, "save-user").stdout.strip()
     (repo / "feature.txt").write_text("one\n")
-    first = spike(repo, "stash", "spike: one").stdout.strip()
+    first = spike(repo, "stash", message="spike: one").stdout.strip()
     (repo / "feature.txt").write_text("two\n")
-    second = spike(repo, "stash", "spike: two").stdout.strip()
+    second = spike(repo, "stash", message="spike: two").stdout.strip()
 
     assert spike(repo, "drop", first).stdout.strip() == "dropped"
     assert git(repo, "stash", "list", "--format=%H").splitlines() == [second, user]
@@ -247,7 +255,7 @@ def test_drop_accepts_an_abbreviated_sha(repo: pathlib.Path) -> None:
     dirty_user_work(repo)
     user = spike(repo, "save-user").stdout.strip()
     (repo / "feature.txt").write_text("one\n")
-    first = spike(repo, "stash", "spike: one").stdout.strip()
+    first = spike(repo, "stash", message="spike: one").stdout.strip()
 
     assert spike(repo, "drop", first[:7]).stdout.strip() == "dropped"
     assert git(repo, "stash", "list", "--format=%H") == user
@@ -265,7 +273,7 @@ def test_stash_on_top_prints_the_spike_sha_before_a_refused_restore(
     (repo / "u.txt").write_text("user file\n")
     user = spike(repo, "hold-user").stdout.strip()
     (repo / ".gitignore").write_text("u.txt\n")
-    result = spike(repo, "stash-on-top", user, "spike: top")
+    result = spike(repo, "stash-on-top", user, message="spike: top")
     spike_sha = git(repo, "stash", "list", "--format=%H").splitlines()[0]
     assert result.returncode == 1
     assert result.stdout.strip() == spike_sha
@@ -322,3 +330,100 @@ def test_ledger_dir_resolves_from_a_linked_worktree(
     linked = spike(tree, "ledger-dir").stdout.strip()
     assert main == linked
     assert pathlib.Path(main).is_dir()
+
+
+def test_guard_without_home_reports_it(repo: pathlib.Path) -> None:
+    result = spike(repo, "guard", unset_home=True)
+    assert result.returncode == 1
+    assert "HOME is not set" in result.stderr
+
+
+def test_stash_message_with_shell_syntax_is_stored_verbatim(
+    repo: pathlib.Path, tmp_path: pathlib.Path
+) -> None:
+    marker = tmp_path / "ran"
+    goal = f'spike: $(touch {marker}) `touch {marker}` "quoted" (ok)'
+    (repo / "feature.txt").write_text("x\n")
+    sha = spike(repo, "stash", message=goal).stdout.strip()
+    assert goal in git(repo, "stash", "list", "--format=%gs")
+    assert git(repo, "stash", "list", "--format=%H") == sha
+    assert not marker.exists()
+
+
+def test_stash_reads_the_message_from_a_file(repo: pathlib.Path, tmp_path: pathlib.Path) -> None:
+    note = tmp_path / "msg.txt"
+    note.write_text("spike: from file\nsecond line\n")
+    (repo / "feature.txt").write_text("x\n")
+    result = spike(repo, "stash", "-F", str(note))
+    assert result.returncode == 0, result.stderr
+    assert "spike: from file second line" in git(repo, "stash", "list", "--format=%gs")
+
+
+def test_stash_refuses_a_positional_message(repo: pathlib.Path) -> None:
+    (repo / "feature.txt").write_text("x\n")
+    result = spike(repo, "stash", "spike: positional")
+    assert result.returncode == 2
+    assert git(repo, "stash", "list") == ""
+    assert (repo / "feature.txt").exists()
+
+
+def build_output(root: pathlib.Path) -> None:
+    (root / "src" / "__pycache__").mkdir(parents=True)
+    (root / "src" / "__pycache__" / "m.cpython-312.pyc").write_bytes(b"\0")
+    (root / "run.log").write_text("log\n")
+    (root / "feature.txt").write_text("source\n")
+
+
+def test_untracked_lists_new_paths_but_not_bytecode_or_ignored(
+    repo: pathlib.Path,
+) -> None:
+    (repo / ".gitignore").write_text("ignored.out\n")
+    git(repo, "add", ".gitignore")
+    git(repo, "commit", "-q", "-m", "ignore")
+    (repo / "ignored.out").write_text("x\n")
+    build_output(repo)
+    listed = spike(repo, "untracked").stdout.split()
+    assert sorted(listed) == ["feature.txt", "run.log"]
+    assert spike(repo, "untracked", "--leave", "run.log").stdout.split() == ["feature.txt"]
+
+
+def test_stash_leaves_bytecode_ignored_and_named_paths_in_the_tree(
+    repo: pathlib.Path,
+) -> None:
+    (repo / ".gitignore").write_text("ignored.out\n")
+    git(repo, "add", ".gitignore")
+    git(repo, "commit", "-q", "-m", "ignore")
+    (repo / "ignored.out").write_text("x\n")
+    build_output(repo)
+    sha = spike(repo, "stash", "--leave", "run.log", message="spike: build").stdout.strip()
+    files = git(repo, "diff", "--name-only", "HEAD", sha).splitlines()
+    assert files == ["feature.txt"]
+    assert (repo / "run.log").exists()
+    assert (repo / "ignored.out").exists()
+    assert (repo / "src" / "__pycache__" / "m.cpython-312.pyc").exists()
+    assert not (repo / "feature.txt").exists()
+
+
+def test_stash_refuses_while_another_stash_holds_the_lock(
+    repo: pathlib.Path,
+) -> None:
+    lock_dir = pathlib.Path(spike(repo, "ledger-dir").stdout.strip())
+    (lock_dir / "stash.lock").write_text(f"{os.getpid()}\n")
+    (repo / "feature.txt").write_text("x\n")
+    result = spike(repo, "stash", message="spike: busy")
+    assert result.returncode == 1
+    assert "one at a time" in result.stderr
+    assert git(repo, "stash", "list") == ""
+
+
+def test_stash_clears_a_stale_lock_and_releases_its_own(
+    repo: pathlib.Path,
+) -> None:
+    gone = subprocess.Popen(["true"])
+    gone.wait()
+    lock = pathlib.Path(spike(repo, "ledger-dir").stdout.strip()) / "stash.lock"
+    lock.write_text(f"{gone.pid}\n")
+    (repo / "feature.txt").write_text("x\n")
+    result = spike(repo, "stash", message="spike: after crash")
+    assert result.returncode == 0, result.stderr
+    assert not lock.exists()

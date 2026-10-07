@@ -27,6 +27,11 @@ graders:
     max: 0
     arm: both
 
+  - name: plan-only-hero
+    type: regex
+    target: last_message
+    pattern: '^\s*⚠ Plan only: '
+
   - name: tag-not-assumed
     type: llm
     focus: last_message

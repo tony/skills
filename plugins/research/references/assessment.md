@@ -2,6 +2,16 @@
 
 An assessment answers a decision question against stated criteria: adopt or not, ready or not, which of three. It runs on the same topic folder, sources, and lifecycle as research; this file adds what research does not need.
 
+## Contents
+
+- Frame it before collecting
+- Collect evidence of more than one kind
+- Rate each criterion
+- The verdict
+- In the report
+- On a rerun
+- Output
+
 ## Frame it before collecting
 
 Fill the `## Question` list and the `## Criteria` table in `index.md` before the first source:
@@ -61,13 +71,44 @@ The options table (criteria against options) is the first finding, closed like e
 
 ## Output
 
-Open with a one-line hero (`✓ <topic>: <verdict>, <confidence> confidence`, `⚠ <topic>: <verdict>, ship check failing` when the last `check` failed, or `⚠ Blocked: <reason>`), then exactly these sections, each copied from the run's files, never stated beyond them:
+Open with a one-line hero (`✓ <topic>: <verdict>, <confidence> confidence`, `⚠ <topic>: <verdict>, ship check failing` when the last `check` failed, `⚠ <topic>: <verdict>, ship check not run` when none ran, or `⚠ Blocked: <reason>`), then exactly these sections, each copied from the run's files, never stated beyond them:
 
 1. `## Verdict`: the option chosen, the criteria that decided it, why each losing option lost, the sensitivity, and what would flip it.
 2. `## Criteria`: one line per criterion: the rating for each option, confidence, source ids and their kinds.
-3. `## Open`: unknown ratings and open questions.
-4. `## Run`: run directory and report path.
+3. `## Open`: unknown ratings and open questions, one bullet each; the last bullet is the ship-check result (`check ok`, `check failing: <checks>`, or `check not run`).
+4. `## Run`: date, `<namespace>/<topic>`, and mode; no path.
 
 Write per `prose-rules.md`: plain bullets, no bold labels, no sentence narrating your own edits ("I added…"), no closing recap.
 
-Panel options: fill the unknowns, verify sources, stop.
+Reply in this shape, as plain text outside any code fence, with plain bullets, no bold (never `- **Label:** ...`), and no local paths:
+
+```text
+✓ uv-monorepo: adopt, medium confidence
+
+## Verdict
+
+- Adopt uv: strong on 3 of 5 criteria, unknown on 1.
+- Lockfile reproducibility and CI time decided it; pip-tools lost on both.
+- The verdict holds if any one rating moves a grade, except migration effort.
+- It flips if the three CI images cannot be rebuilt within a sprint.
+
+## Criteria
+
+- Lockfile reproducibility: uv strong, pip-tools adequate, high, S2 independent, S5 measured.
+- Migration effort: uv adequate, pip-tools strong, medium, S7 vendor.
+
+## Open
+
+- Windows runner support is unknown; no source covers it.
+- Check ok.
+
+## Run
+
+- 2026-10-07, research/uv-monorepo, assessment mode.
+
+## Next
+
+- Measure Windows runner support to settle the open rating.
+```
+
+`## Next` names the one recommended step; the panel offers the others and never repeats it. Panel options: fill the unknowns, verify sources, stop.

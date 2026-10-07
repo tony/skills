@@ -152,5 +152,6 @@ An id may appear under only one key.
 ## Prerequisites
 
 - **git**
+- **python3** (3.9 or newer): runs the regex matcher and the `apply.sh` renderer
 - **Formatter, linter, type-checker**: discovered at runtime from the
   project's conventions files.

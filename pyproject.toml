@@ -48,12 +48,16 @@ exclude = [".agents", "plugins/pytest-optimizer/templates", "**/__pycache__"]
 [tool.pytest.ini_options]
 addopts = "--doctest-modules"
 testpaths = [
+    "plugins/action/scripts",
     "plugins/agent-messaging/scripts",
     "plugins/business/scripts",
+    "plugins/changelog/scripts",
     "plugins/disk/scripts",
     "plugins/git-branch/scripts",
     "plugins/lean/scripts",
+    "plugins/merge-pr/scripts",
     "plugins/model-cli/scripts",
+    "plugins/package-updater/scripts",
     "plugins/pr/scripts",
     "plugins/pytest-optimizer/scripts",
     "plugins/release/scripts",
@@ -67,6 +71,7 @@ testpaths = [
     "plugins/slop/scripts",
     "plugins/spike/scripts",
     "plugins/tailwind/scripts",
+    "plugins/tdd/scripts",
     "plugins/terraform/scripts",
     "plugins/weave/scripts",
     "scripts",

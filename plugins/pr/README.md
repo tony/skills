@@ -98,8 +98,8 @@ existing structure without applying templates.
 ## Safety
 
 - Never force-pushes or runs destructive git commands.
-- Never pushes to main/master.
-- `/pr:refresh` and `/pr:rewrite` edit a PR only after you approve the proposal; `/pr:pr` creates one only on request.
+- Never pushes to main/master. `/pr:pr` runs `git push -u origin <branch>` only as part of creating a PR you approved.
+- `/pr:refresh` and `/pr:rewrite` edit a PR only after you approve the proposal; `/pr:pr` pushes the branch and creates a PR only after you confirm.
 - Backs up existing descriptions, verifies the copy, and refuses to edit a PR whose body changed since the backup.
 - Stops without changing anything when `gh` is unauthenticated, the PR is missing, or the PR's head branch is not checked out.
 

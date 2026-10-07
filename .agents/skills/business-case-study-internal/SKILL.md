@@ -1,8 +1,8 @@
 ---
 name: business-case-study-internal
 description: >-
-  Write the tier-2 internal case study — situation, what was built, tagged
-  outcomes with denominators, lessons, replication guide for other teams
+  Use when writing a tier-2 internal case study from a business-value run:
+  tagged outcomes, lessons, and a replication guide for other teams.
 disable-model-invocation: true
 allowed-tools: ["Bash", "Read", "Write", "Grep", "AskUserQuestion"]
 metadata:
@@ -25,8 +25,6 @@ until the gate passes:
 - `references/audiences.md`: the tier-2 contract.
 
 User arguments: $ARGUMENTS
-
-Paths under `../../scripts/` resolve from this skill's directory: print the absolute path once and write it literally in each command, since shell variables do not persist between Bash calls.
 
 ## Procedure
 

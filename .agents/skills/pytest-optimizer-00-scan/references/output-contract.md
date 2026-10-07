@@ -32,8 +32,7 @@ temp file only when the user must act on it; refer to the memory directory and
 the repo by role. Between the hero and the first heading there is no prose: put
 an approval note in the hero line or the closing sentence.
 
-Reply in this shape, as plain text outside any code fence, with plain
-bullets and no bold (never `- **Label:** ...`). A `00-scan` reply:
+Reply in this shape, as plain text outside any code fence, with plain bullets, no bold (never `- **Label:** ...`), and no local paths. A `00-scan` reply:
 
 ```text
 ✓ scan complete: baseline 12.5s, noise band 0.44s, 2 hypotheses
@@ -44,7 +43,7 @@ bullets and no bold (never `- **Label:** ...`). A `00-scan` reply:
 
 ## Baseline
 
-- Median 12.5s over 5 runs; trust floor 50ms.
+- Median 12.5s over 5 runs; trust floor 125ms (1% of the median).
 
 ## Slowest tests
 
@@ -103,6 +102,9 @@ A deselecting item (H15, H37) says "removes N tests from the default run" in its
 
 A plan with one commit omits `## Ordering rationale`.
 
+Without plan mode, the same reply is the whole message: the hero line carries the
+approval request, and nothing precedes it or follows the last section.
+
 A `03-execute` reply:
 
 ```text
@@ -111,6 +113,10 @@ A `03-execute` reply:
 ## Applied
 
 - 7c1e9d4 Share db_session across the session, verify green, 12.5s to 7.9s.
+
+## Skipped
+
+- H33 fixed sleep in test_report: reverted, test_report failed once the sleep was removed.
 
 ## Result
 
@@ -139,6 +145,14 @@ With pasted durations, insert one sentence after the first: "Your durations put
 most of the time in db_session setup, which is a hypothesis to benchmark once the
 suite is available."
 
+
+Without a prior phase, the same two sentences name the missing phase's output
+in words, not by file:
+
+```text
+I stopped before planning because no benchmarks have been recorded.
+Run 01-benchmark first, then run this phase again.
+```
 
 ## Per-command body sections
 

@@ -17,7 +17,7 @@ fallback order.
 Use `$ARGUMENTS` as the prompt. If it is empty, stop and report that no prompt
 was given. Match triggers case-insensitively and strip them from the prompt.
 
-- `timeout:<seconds>` overrides the default of 600 seconds.
+- `timeout:<seconds>` overrides the default of 540 seconds.
 - `timeout:none` disables the timeout.
 - `mode:plan` runs each tier's plan-mode command instead of its normal one.
 
@@ -48,10 +48,12 @@ as the baseline for the failure checks below.
 
 ## Run a tier
 
-`<runner>` is the plugin's `scripts/run_tier.py`, two directories above the
-skill's directory, as an absolute path written literally in every command. It
+`<runner>` is `../scripts/run_tier.py`, resolved from this file's directory to
+an absolute path written literally in every command. It
 enforces the timeout itself, closes stdin, and prints one JSON object:
-`exit_code` (null on timeout), `class`, `elapsed`, `stdout`, `stderr`. A prompt
+`exit_code` (null on timeout), `class`, `elapsed`, `stdout`, `stderr`. Before
+running, it checks that `<bin> --help` lists each `--require-flag=<flag>`; a
+missing one yields class `unsupported-flag` and nothing runs. A prompt
 over 100000 bytes is too large for one argument, so the runner passes the CLI a
 one-line instruction to read the prompt file instead.
 
@@ -67,16 +69,20 @@ trap 'rm -f "$f"' EXIT
 cat >"$f" <<'<terminator>'
 <prompt text>
 <terminator>
-python3 <runner> --prompt-file "$f" --timeout <seconds> -- <tier command>
+python3 <runner> --prompt-file "$f" --timeout <seconds> --require-flag=<flag> -- <tier command>
 ```
 
 The runner appends the prompt as the last argument, so the tier command ends
 where the prompt goes (`--` or `-p`). `<seconds>` is the timeout, or `none`.
+`<flag>` is the tier command's permission flag: the read-only flag on a
+`mode:plan` run (`--sandbox`, `--mode`), the write flag otherwise (`--yolo`,
+`-f`, `--dangerously-skip-permissions`). Pass one `--require-flag` per such flag.
 
-The Bash tool has its own timeout, shorter than the tier's by default. Pass a
-Bash timeout of the tier timeout plus 10 seconds, capped at 600000 ms. When
-that cap is below the tier timeout, or the timeout is `none`, run the command
-in the background and wait for it to finish.
+The Bash tool caps a foreground call at 600000 ms. Pass a Bash timeout of the
+tier timeout plus 10 seconds (550000 ms for the default). When that exceeds
+the cap, or the timeout is `none`, run the command in the background where the
+host supports it and wait for its completion notice. On a host with no
+background runs (Codex), clamp the timeout to 540 seconds and say so.
 
 With `mode:plan`, prepend this to the prompt: "Produce a structured
 implementation plan: files to change, the changes, risks. Do not edit files."
@@ -89,23 +95,22 @@ Act on the runner's `class`. It reads stderr only, and only on a nonzero exit.
 - `timeout` or `crash`: the killed tier may have edited files. Before a
   normal run's next tier, run `git status --porcelain` and compare it with the
   baseline. If it differs, or the command fails, stop and report the changes
-  (or that none could be checked). If it matches, go to the next tier. Do not
-  retry the same tier; a retry bills another agent run.
+  (or that none could be checked). If it matches, `timeout` goes to the next
+  tier and `crash` to the next tier that uses a different binary (none left:
+  stop). Do not retry the same tier; a retry bills another agent run.
 - `rate-limit`: retry once after 10 seconds.
 - `empty`: the CLI exited 0, so a write-enabled run already acted. Retry once
   only with `mode:plan`; otherwise report it.
-- `credit`: go to the next tier.
-- `auth`: go to the next tier that uses a different binary. With none left,
-  stop.
-- `crash` (after the check above): go to the next tier that uses a different
-  binary. With none left, stop.
+- `credit`: go to the next tier that uses a different binary; tiers on the
+  same binary share its quota. With none left, stop.
+- `auth` or `unsupported-flag` (nothing ran, so no status check): go to the
+  next tier that uses a different binary. With none left, stop and name the
+  missing flag.
 - `unknown-model`: list the models (`agy models`, `agent --list-models`), pick
   the closest listed ID of the same family and level, and retry once.
 
-The runner's credit patterns, matched case-insensitively: `RESOURCE_EXHAUSTED`,
-`quota exceeded`, `quota_exceeded`, `insufficient_quota`,
-`exceeded your current quota`, `billing`, `capacity exhausted`,
-`usage limit`, or HTTP 429 with "daily limit".
+The runner's `CREDIT_PATTERNS` constant, plus HTTP 429 with "daily limit",
+defines `credit`.
 
 Count retries and tiers run. No tier runs more than twice. Say
 `<tier> failed (<class>). Relaunching with <next tier>.` before each
@@ -132,11 +137,12 @@ On success:
 
 When every tier fails or none is installed:
 
-1. One sentence: no tier returned output.
+1. Exactly the sentence "No tier returned output."
 2. One line per tier tried, with its class and the one stderr line that shows
    it. Leave out host, sandbox, and URL detail, and your own diagnosis. After
-   a `timeout`, `crash`, or `empty` normal run, add "Files may have changed;
-   check `git status`" and the paths the status check found, if any.
+   a `timeout`, `crash`, or `empty` normal run, add one line "Files may have
+   changed; check `git status`" and, when the status check ran, the paths it
+   found or "no changes found". Do not say both "may have" and "did not".
 3. What the user must do (install, log in, raise a quota).
 
 Reply in this shape, as plain text outside any code fence, with plain bullets, no bold (never `- **Label:** ...`), and no local paths:
@@ -158,6 +164,28 @@ No tier returned output.
 - agent: not installed.
 
 Log agy in from your own terminal, then ask again.
+```
+
+A failed run after `timeout` (the status check found a changed file):
+
+```text
+No tier returned output.
+
+- codex: timeout after 540 seconds. Files may have changed; check `git status`.
+  The status check found src/app.py modified since the run began.
+
+Review the change with `git diff`, then ask again with a longer timeout.
+```
+
+A failed run after `empty` (the status check found nothing):
+
+```text
+No tier returned output.
+
+- codex: empty, exited 0 with no output. Files may have changed; check
+  `git status`. The status check found no changes.
+
+Ask again with a narrower prompt, or add mode:plan for a read-only run.
 ```
 
 Add your own answer only if the user asked, under the label "Assistant's own

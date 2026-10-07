@@ -49,7 +49,8 @@ misses root modules. Start from the configuration. Directories holding a
 $ git grep \
     -l -E \
     -e '^[[:space:]]*(backend[[:space:]]+"|cloud[[:space:]]*\{)' \
-    -- '*.tf' '*.tofu'
+    -e '"(backend|cloud)"[[:space:]]*:' \
+    -- '*.tf' '*.tofu' '*.tf.json'
 ```
 
 Lock files that are tracked or untracked-but-not-ignored:
@@ -105,7 +106,8 @@ sources:
 $ git grep \
     -n -E \
     -e '^[[:space:]]*source[[:space:]]*=[[:space:]]*"\.\.?/' \
-    -- '*.tf' '*.tofu'
+    -e '"source"[[:space:]]*:[[:space:]]*"\.\.?/' \
+    -- '*.tf' '*.tofu' '*.tf.json'
 ```
 
 Resolve each `source` against the directory of the file that holds it.

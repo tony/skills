@@ -1,0 +1,37 @@
+schema_version: "1.0"
+name: 16-decide-without-release
+description: >-
+  Asked to record a decision on a report that was never released, the run
+  does not record one: a decision must trace to the exact report its maker
+  read, so the reply says it was refused and that a release comes first.
+tags: [fixture]
+
+context:
+  scaffold_script: scaffold.sh
+
+execution:
+  prompt: >-
+    /research:release record our decision on vendor-y: adopt the replicas,
+    decided by the platform lead, revisit if lag exceeds ten seconds. Use
+    --root out. There is no network access here.
+  max_turns: 30
+  timeout_seconds: 900
+  allowed_tools: [Bash, Read, Write, Edit, Glob, Grep, Skill]
+
+runs: 3
+
+graders:
+  - name: no-release-forced
+    type: tool_used
+    tool: Bash
+    input_match: 'topic\.py\s+release\b'
+    min: 0
+    max: 0
+    arm: both
+
+  - name: refuses-decision-without-release
+    type: llm
+    criteria: >-
+      The reply says the decision was not recorded because the report has no
+      release to trace it to, and that the report must be released first. It
+      does not say the decision was recorded.

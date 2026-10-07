@@ -34,38 +34,40 @@ Claude Code uses a leading slash (`/disk:…`). Codex omits it (`disk:…`).
 
 ## Skills
 
-- **`/disk:usage`**: Read-only survey of every filesystem layer.
-  Classifies what is regenerable, redundant, stale-but-unique, or
-  protected. Takes an optional path.
-- **`/disk:reclaim`**: Full pipeline: survey, classify, plan (needs
+- `/disk:usage` is a read-only survey of every filesystem layer. It
+  classifies what is regenerable, redundant, stale-but-unique, or
+  protected, and takes an optional path.
+- `/disk:reclaim` runs the full pipeline: survey, classify, plan (needs
   approval), reclaim, verify.
 
 The `disk` skill triggers either flow automatically under disk pressure.
 
 ## What it protects
 
-- **Agent history**: Transcripts and session stores are protected unless
+- Agent history: transcripts and session stores are protected unless
   proven redundant or archived through the owning tool.
-- **Running environments**: Never runs environment-halting commands (e.g.,
-  `wsl --shutdown`). Prints such commands for you to run manually. The
-  WSL and Windows commands it prints (`wsl --shutdown`, `Optimize-VHD`)
-  are single-platform: they run in Windows PowerShell on the host, not in
-  the Linux guest.
-- **Unproved directories**: Directories like `*-backup-*` or `archive-*`
-  are not assumed redundant.
+- Running environments: it never runs environment-halting commands (for
+  example `wsl --shutdown`) and prints them for you to run. The WSL and
+  Windows commands it prints (`wsl --shutdown`, `Optimize-VHD`) are
+  single-platform: they run in Windows PowerShell on the host, not in the
+  Linux guest.
+- Unproved directories: names like `*-backup-*` or `archive-*` are not
+  assumed redundant.
 
-## Inspection Scope
+## Inspection scope
 
-- **Filesystem layers**: Evaluates guest vs. host footprint to identify
-  gaps in backing-file size vs. used space.
-- **Upstream clones**: Ranks clones by size and shallow vs. full history.
-  Checks for unpushed commits and uncommitted changes.
+- Filesystem layers: compares guest and host footprint to find gaps
+  between backing-file size and used space.
+- Upstream clones: ranks clones by size and shallow versus full history,
+  and checks for unpushed commits and uncommitted changes.
 
 ## Prerequisites
 
-- `df`, `du`, `find`, `findmnt` (Linux), `git`, `python3` (3.9 or newer), `realpath`,
-  `rsync` (checksum comparison in the redundancy proof), and `lsof` or
-  `fuser` (open-file check before deleting)
+- `df`, `du`, `find`, `findmnt` (Linux), `git`, `python3` (3.9 or newer),
+  `realpath`, `rsync` (checksum comparison in the redundancy proof), and
+  `lsof` or `fuser` (open-file check before deleting)
+- WSL only: GNU `find` and `numfmt` (backing-file size) and `fstrim`
+  (in-guest trim, run by you)
 - (Optional) `dust` for faster surveying, `strings` and `rg` for binary
   inspection, `zstd` for compressing history
 

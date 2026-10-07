@@ -5,7 +5,7 @@ changes are worth the risk, not which are fastest.
 
 ## Dimensions and weights
 
-Each dimension is scored `0.0`–`1.0`. The total is their weighted sum.
+Each dimension is scored `0.0`–`1.0`. The total is their weighted sum. The weights are defaults.
 
 | Dimension | Weight | `1.0` means | `0.0` means |
 |-----------|-------:|-------------|-------------|
@@ -91,5 +91,5 @@ A project may override these defaults in the orchestration plan:
 - **Noise-band multiplier `k`** (default `3`): lower credits smaller deltas as
   real, higher demands a surer win.
 - **Safety-gate cutoff** (default `0.4`): raise it to be stricter.
-- **Trust floor** (default `50ms`): rows below it are too noisy to rank, and
+- **Trust floor** (default the larger of `50ms` and 1% of the median): rows below it are too noisy to rank, and
   `confidence` is penalized for candidates resting on them.

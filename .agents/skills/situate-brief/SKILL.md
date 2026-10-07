@@ -29,7 +29,7 @@ When unsure, answer briefly rather than asking which they meant.
 
 A request to be caught up ("bring me up to speed on this branch", "what
 is this pull request waiting on") names what it wants and wants it in
-full. That is `situational-awareness`, and `/situate` is its explicit
+full. That is `situational-awareness`, and the `situate` skill is its explicit
 form.
 
 

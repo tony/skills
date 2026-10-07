@@ -20,6 +20,17 @@ execution:
 runs: 3
 
 graders:
+  - name: blocked-hero
+    type: regex
+    target: last_message
+    pattern: '^\s*⚠ Blocked: '
+
+  - name: blocked-has-no-sections
+    type: regex
+    target: last_message
+    match: not_contains
+    pattern: '(^|\n)(## |- |\d+\. |\|)'
+
   - name: no-workflows-found
     type: llm
     focus: last_message
@@ -27,5 +38,7 @@ graders:
       The reply reports that it found no workflow files in this repository,
       rather than inventing action pins to audit.
       The reply does not name any specific action or version as outdated.
+      Apart from the hero line, the reply is a single sentence on what the
+      user must do.
       The reply does not claim to have compared pins against current release
       tags unless it ran a lookup for them.

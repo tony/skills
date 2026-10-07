@@ -34,12 +34,14 @@ graders:
     type: regex
     target: last_message
     pattern: 'MAX_RETRIES\s*=\s*3'
+    arm: both
 
   - name: states-the-four-sends
     type: regex
     target: last_message
     pattern: '\b(4|four)\b\D{0,30}(send|attempt|call|request|tries|time)|(send|attempt|call|request)s?\D{0,30}\b(4|four)\b'
     flags: i
+    arm: both
 
   - name: does-not-carry-the-earlier-five-forward
     type: regex
@@ -47,6 +49,7 @@ graders:
     match: not_contains
     pattern: 'MAX_RETRIES\s*=\s*5|caps? (out )?at 5|5 attempts'
     flags: i
+    arm: both
 
   - name: no-revision-verdict-language
     type: regex
@@ -54,6 +57,7 @@ graders:
     match: not_contains
     pattern: 'overstated|as I (mentioned|said) (before|earlier)|still holds|verdict update|what changed'
     flags: i
+    arm: both
 
   - name: delivers-a-standalone-finding
     type: llm
@@ -64,3 +68,5 @@ graders:
       The reply reads as a fresh answer to the question, not as a correction
       notice about a previous answer, and does not repeat the earlier claim of
       five as if it still stood.
+    arm: both
+

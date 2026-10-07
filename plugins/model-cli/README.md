@@ -69,14 +69,16 @@ CLI's own read-only mode; the flags are in each skill's `SKILL.md`.
 Each skill lists its tiers and default models. A model you name in the request
 replaces the default for the tier it fits, and an unknown ID triggers a lookup
 with `agy models` or `agent --list-models`. A tier that fails (for example,
-not logged in) falls through to the next tier that uses a different binary.
+not logged in) falls through to the next tier; which tier depends on the failure
+class, listed in `references/dispatch.md`.
 
 ## Timeout
 
-The default is 600 seconds. Override with `timeout:<seconds>` or disable with
-`timeout:none`. `scripts/run_tier.py` enforces it, so no `timeout` or
-`gtimeout` command is needed. Each run passes the Bash tool a timeout above the
-tier timeout, or runs in the background and waits.
+The default is 540 seconds, so one foreground Bash call (timeout plus 10
+seconds) fits the 600-second tool cap. Override with `timeout:<seconds>` or
+disable with `timeout:none`. `scripts/run_tier.py` enforces it, so no `timeout` or
+`gtimeout` command is needed. A longer timeout runs in the background where
+the host has background runs; otherwise it is clamped to 540 seconds.
 
 ## Prerequisites
 

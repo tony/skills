@@ -27,6 +27,22 @@ base to a full 40-character SHA once, then use that SHA. Expand an
 abbreviation with `git rev-parse --verify "<abbrev>^{commit}"`; the
 per-commit gate compares against it.
 
+Find the base ref. Trunk is the remote's default branch:
+
+```console
+$ git symbolic-ref --short refs/remotes/origin/HEAD
+```
+
+When `origin/HEAD` is unset it fails; fall back to whichever of
+`origin/main` or `origin/master` exists. A branch with a pull request names
+its own base, which is the parent on a stacked branch:
+
+```console
+$ gh pr view --json baseRefName
+```
+
+Without `gh` or a pull request, ask the user for the parent.
+
 Refuse to continue unless exactly one merge base exists; with two,
 `git merge-base` picks one without warning.
 

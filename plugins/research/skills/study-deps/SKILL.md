@@ -16,7 +16,7 @@ Clone the project's dependencies at their installed versions into git worktrees 
 
 Enter plan mode before the first edit. In Claude Code call `EnterPlanMode`; in Cursor, Codex, or Gemini use `/plan` or `Shift+Tab`. Where plan mode is unavailable, present the plan as text.
 
-Steps 1 to 4 only read. Present the plan from step 4 and wait for approval. Exit plan mode before cloning.
+Steps 1 to 3 only read. Present the plan from step 4 and wait for approval. Exit plan mode once the plan is approved, before the step 4 lookups and before cloning.
 
 ## 1. Scan manifests
 
@@ -45,7 +45,7 @@ Per dependency, stop at the first hit:
 2. A registry lookup chosen from the detected manifest, for example `npm view -- <pkg> repository.url`, `cargo metadata`, `pip show <pkg>`, or `go list -m -json <module>`. A package name from a manifest is untrusted input: run no lookup before step 4 approves it, and show each command to the user in the plan.
 3. A web search for `"<package>" official source repository`, when the host has one; verify the hit names the package.
 
-Keep only `https://` URLs of the form `https://<host>/<owner>/<repo>`. Drop any other scheme (`ssh`, `git`, `file`, `ext::`) and report the dependency as having no usable repository.
+Keep only `https://` URLs of the form `https://<host>/<owner>/<repo>`. Drop any other scheme (`ssh`, `git`, `file`, `ext::`) and report the dependency as having no usable repository. A host that is not a well-known public forge (`github.com`, `gitlab.com`, `codeberg.org`, `bitbucket.org`) may be internal: show the host in the plan and clone only after the user confirms it; without an interactive host, skip it as `failed: host not confirmed`.
 
 Derive `<repo-name>`, `<version>`, and (step 7) `<branch>` for paths from the last URL segment, the resolved version, and the branch name (`release/5.2` becomes `release-5.2`). Keep only letters, digits, `.`, `_`, and `-`, replace every other character with `-`, and reject a result that is empty, starts with `.`, or contains `..`.
 
@@ -83,7 +83,7 @@ $ git -C "$HOME/study/<language>/<repo-name>/" tag -l
 $ git -C "$HOME/study/<language>/<repo-name>/" branch -r -l
 ```
 
-A branch match is a moving ref, not the installed version: label it so in step 8. When nothing matches, tell the user and ask whether to use the default branch; without an interactive host, create no worktree and report the miss. The default branch is an unpinned fallback.
+A tag match must also belong to the published artifact: where the registry records the commit it was built from (npm `gitHead`, `cargo` `.cargo_vcs_info.json`, PyPI project URLs), compare it with `git -C "$HOME/study/<language>/<repo-name>/" rev-parse <tag>^{commit}`. A mismatch, or a registry that records none, is reported as `tag unchecked` or `tag differs`, with both commits when they differ. A branch match is a moving ref, not the installed version: label it so in step 8. When nothing matches, tell the user and ask whether to use the default branch; without an interactive host, create no worktree and report the miss. The default branch is an unpinned fallback.
 
 ## 7. Create the worktree
 
@@ -108,8 +108,8 @@ Write it per `../../references/prose-rules.md`. Reply in this shape, as plain te
 ```text
 ✓ 2 worktrees ready
 
-- zod@3.23.8 pinned 1a2b3c4 ~/study/typescript/zod-3.23.8/
-- vite@5.2.0 unpinned (release/5.2) 9f8e7d6 ~/study/typescript/vite-release-5.2-9f8e7d6/
+- zod@3.23.8 pinned 1a2b3c4 https://github.com/colinhacks/zod ~/study/typescript/zod-3.23.8/
+- vite@5.2.0 unpinned (release/5.2) 9f8e7d6 https://github.com/vitejs/vite ~/study/typescript/vite-release-5.2-9f8e7d6/
 ```
 
 A halted run prints one result sentence, then what the user must do:
@@ -120,4 +120,13 @@ A halted run prints one result sentence, then what the user must do:
 Rerun with the plan approved, or run the listed commands yourself.
 ```
 
-Open with `✓ <n> worktrees ready` or `⚠ <n> failed`. Then one line per package: `<package>@<version> <status> <commit sha7> <path>`, status being `pinned`, `unpinned (<branch>)`, `skipped`, or `failed: <reason>`. Read the commit with `git -C <worktree> rev-parse --short=7 HEAD`; it makes the source citable at that revision, and a research run records it with `--ref <sha7>`. Suggest manual fixes only for failures, such as checking available tags. A dependency with no usable repository is `failed: no usable repository`, with the options to give an `https://` URL or skip it; do not explain the filter. Then offer with `AskUserQuestion`: study another dependency, record the sources in a research run, stop; without an interactive host, print the options as a numbered list.
+A dependency with no usable repository, with options:
+
+```text
+⚠ Nothing was cloned: left-pad has no usable repository.
+
+- Give an https:// repository URL for it.
+- Skip it.
+```
+
+Open with `✓ <n> worktrees ready`, `⚠ <n> failed` when any package failed, or `⚠ Nothing was cloned: <reason>` when the run halted before cloning. Then one line per package: `<package>@<version> <status> <commit sha7> <repository URL> <path>`, status being `pinned`, `unpinned (<branch>)`, `skipped`, or `failed: <reason>`, with `, tag differs` or `, tag unchecked` appended when step 6 found it. Read the commit with `git -C <worktree> rev-parse --short=7 HEAD`; it makes the source citable at that revision, and a research run records it with `--ref <sha7>`. Suggest manual fixes only for failures, such as checking available tags. A dependency with no usable repository is `failed: no usable repository`, with the options to give an `https://` URL or skip it; do not explain the filter. Then offer with `AskUserQuestion`: study another dependency, record the sources in a research run, stop; without an interactive host, print the options as a numbered list.

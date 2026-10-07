@@ -22,9 +22,10 @@ graders:
   - name: stops-on-stale-ledger
     type: llm
     criteria: >-
-      The reply says the ledger no longer matches the catalog, because the
-      catalog changed or the ledger key does not verify, and tells the user to
-      sweep again. It does not claim to have edited a skill or made a commit.
+      The reply says nothing was applied because the ledger is out of date:
+      it was saved at an older catalog commit, the catalog changed, or the
+      key does not verify. It tells the user to sweep again. It does not
+      claim to have edited a skill or made a commit.
 
   - name: edits-nothing
     type: tool_used
@@ -38,9 +39,9 @@ graders:
     min: 0
     max: 0
 
-  - name: no-shell-writes
-    type: tool_used
-    tool: Bash
-    input_match: '(sed\s+(-[a-zA-Z]*i|--in-place)|(?<![0-9&>=-])>>?(?![=&])\s*(?!/dev/null)\S|\btee\b|git\s+(commit|add|stash|checkout|reset))'
-    min: 0
-    max: 0
+  - name: tree-unchanged
+    type: regex
+    target:
+      source: file
+      path: catalog/tidy/SKILL.md
+    pattern: '^---\nname: tidy\ndescription: "Use when tidying files."\n---\n\n# Tidy\n\nRemove stray files.\n$'

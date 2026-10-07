@@ -13,6 +13,10 @@ Survey this machine's disk usage and report where the space went.
 
 Scope: $ARGUMENTS — when empty, survey every mounted filesystem.
 
+A named path limits the survey to the filesystem holding it: leave other
+layers out instead of reporting them as unread, unless the user asks
+about the host.
+
 This command is read-only. Do not delete, move, or modify anything, and
 do not write compressed files (measuring with `-c` to stdout is fine);
 never halt a virtual machine or WSL guest. When run
@@ -41,14 +45,23 @@ Survey each filesystem separately with the script. It stays on one
 filesystem, sets the size floor at one percent of capacity (so a small
 disk still produces findings and a large one is not drowned), counts
 hardlinks once, never follows symlinks, and lists unreadable paths under
-`errors`. Print the absolute path of `../../scripts/survey.py` once (it
-resolves from this file's directory) and write it literally:
+`errors`. It skips `/mnt` (listed under `skipped`) unless the path you
+give is inside it, so survey a Windows drive only when the user names it.
+Print the absolute path of `../../scripts/survey.py` once (it resolves
+from this file's directory) and write it literally:
 
 ```console
 $ python3 /abs/path/to/scripts/survey.py \
     --depth 3 \
+    --time-limit 90 \
     <mount-point>
 ```
+
+The walk stops at `--time-limit` seconds and sets `"complete": false`;
+every size is then a lower bound, so report it as "at least" and say the
+survey was cut short. On a large or network-backed filesystem, survey
+the user's likely heavy subpaths one at a time with `--depth 2`, and
+name which ones were left unmeasured.
 
 Sizes are allocated bytes, so they can differ from `du --apparent-size`.
 When the script is unavailable, `dust -x` or `du -x` with an explicit
@@ -84,4 +97,5 @@ characterize an unmeasured path, and do not claim TRIM or in-guest
 deletion returns space to the host; only a measured backing-file change
 shows that.
 
-Follow `../../references/output-contract.md`. Write it per `../../references/prose-rules.md`.
+Follow `../../references/output-contract.md`. Write it per
+`../../references/prose-rules.md`.

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # A PR stacked on feature/base whose description claims retry logic the branch
-# does not contain, with a stub gh whose body changes once a body.new.md exists. Every gh pr edit call is appended to edit.log.
+# does not contain, with a stub gh whose body changes when the backup script's check refetches it. Every gh pr edit call is appended to edit.log.
 set -euo pipefail
 
 git init -b main >/dev/null
@@ -55,7 +55,7 @@ cat >bin/gh <<'SH'
 #!/usr/bin/env bash
 json='{"number":17,"title":"Add the parser","url":"https://example.invalid/pull/17","state":"OPEN","baseRefName":"feature/base","headRefName":"feature/child","headRefOid":"HEADOID","body":"## Summary\n\n- **Add** a key=value parser\n- **Add** retry logic to the client so transient errors do not fail the run\n\n## Reviewer notes\n\nBenchmarks pending, see the dashboard."}'
 json="${json/HEADOID/$(git rev-parse HEAD)}"
-if ls "$(git rev-parse --git-path pr-backups)"/*/body.new.md >/dev/null 2>&1; then
+if [ "$*" = "pr view 17 --json number,title,body" ] && ls "$(git rev-parse --git-path pr-backups)"/*/body.md >/dev/null 2>&1; then
   json="${json/Benchmarks pending, see the dashboard./Benchmarks pending, see the dashboard. Edited by a teammate.}"
 fi
 case "$1 $2" in

@@ -1,10 +1,10 @@
 ---
 name: merge-pr-multiple
 description: >-
-  Merge a set of PRs one at a time — detect stack vs independent set, rebase
-  and resolve conflicts between merges, watch CI, merge each via gh
+  Merge a set of PRs one at a time: detect stack vs independent set, rebase
+  and resolve conflicts, watch CI, merge each via gh
 disable-model-invocation: true
-allowed-tools: ["Bash", "Read", "Edit", "AskUserQuestion"]
+allowed-tools: ["Bash", "Read", "Write", "Edit", "AskUserQuestion"]
 metadata:
   argument-hint: "[PR numbers/URLs, e.g. '#31 #32'] [--squash | --rebase | any other gh pr merge flag]"
   source: "plugins/merge-pr/skills/multiple/SKILL.md"
@@ -44,42 +44,53 @@ $ gh pr list --limit 200 --json number,title,headRefName,baseRefName,isDraft
 
 ### 2. Detect the topology
 
-Fetch `baseRefName`, `headRefName`, and `headRefOid` for each PR
-(`gh pr view <n> --json baseRefName,headRefName,headRefOid`); keep each
-`headRefOid` for the stacked rebase. If any PR's base
-branch is another PR's head branch, the set is a **stack**: order
-bottom-up, each PR merging only after its parent. Otherwise the set
-is **independent**: honor the order the user gave, falling back to
-ascending PR number.
+Check the repo scope as the reference describes. Then have the helper read
+each PR and order the set, passing `--repo` when the user did:
 
-Trunk is the `baseRefName` of the bottom PR of a stack, or of the
-independent PRs.
+```console
+$ python3 /absolute/path/to/scripts/merge_pr.py order <PR numbers in the user's order>
+```
+
+It prints the topology (`stack` when any PR's base branch is another PR's
+head branch, else `independent`), the merge order (bottom-up for a stack,
+otherwise the order given), the trunk, each PR's parent, and each
+`headRefOid`; keep the `headRefOid` values for the stacked rebase. A `null`
+trunk means the PRs target different branches: ask which is trunk, or halt
+and list them without a question tool.
+
+Resolve the absolute script path as the reference describes: `../../scripts/`
+from this skill's directory.
 
 For a stack, plan the retarget: after each parent merges, read the child's
 `baseRefName` (`gh pr view <child> --json baseRefName`); when it is not
-trunk, run `gh pr edit <child> --base <trunk>` before rebasing the child.
+trunk, run `gh pr edit <child> --base <trunk>`, then re-read the child's
+state, before its readiness gate.
 
 ### 3. Land each PR
 
 One PR at a time; never merge two PRs between trunk syncs. For each PR in
 order:
 
-1. **Readiness gate**: apply the gate from the reference. A halt
-   reports what landed and what remains.
-2. **Bring up to date**: when the PR is `BEHIND` or `DIRTY` (or `UNKNOWN`
-   after the gate's retries), follow the reference's rebase procedure. Leave
-   a `CLEAN` PR alone: no rebase, no force-push. For a stacked child, use its `--onto` form with the parent's
-   roster-time `headRefOid`, because a squash merge leaves the parent's old head out of
-   trunk. Ask on any conflict that forces a choice between behaviors.
-3. **Wait on CI**: `gh pr checks <n> --watch` on the rebased head.
-4. **Merge**: check the repo allows the strategy, compose the message per
+1. **Retarget** a stacked child whose parent just merged, as planned above.
+2. **Readiness gate**: apply the gate from the reference, on the
+   retargeted state. A halt reports what landed and what remains.
+3. **Bring up to date**: when the PR is `BEHIND` or `DIRTY` (or `UNKNOWN`
+   after the gate's retries), follow the reference's rebase procedure; with
+   scope `remote` that halts the run. Leave a `CLEAN` PR alone: no rebase,
+   no force-push. For a stacked child, use its `--onto` form with the
+   parent's roster-time `headRefOid`, because a squash merge leaves the
+   parent's old head out of trunk. Ask on any conflict that forces a choice
+   between behaviors.
+4. **Wait on CI**: `gh pr checks <n> --watch` only when the PR was rebased or
+   the gate saw pending checks. A PR with no checks has no CI to wait on.
+5. **Merge**: check the repo allows the strategy, compose the message per
    the reference and `references/prose-rules.md` (no `Co-Authored-By`,
    no "Generated with" or other tool trailer, no emoji), then merge with
-   the reference's file-based command, never a message inside a shell
-   string, with `--match-head-commit <sha>` and the strategy flag. Pass the
+   the reference's `merge_pr.py merge` command, never a message inside a
+   shell string, with `--match-head-commit <sha>` and the strategy flag. Pass the
    user's other flags through verbatim, except `--delete-branch` on a stack
    parent: the reference drops it, and the report says so.
-5. **Sync**: per the reference's "After each merge", including its check
+6. **Sync**: per the reference's "After each merge", including its check
    that trunk contains the merge commit and the subject read-back. A queued
    (`--auto`) merge halts the run here.
 
@@ -98,7 +109,8 @@ for the parents, per the reference's stack-parents section.
 
 Open with a one-line hero (`✓ Merged N of M PRs` or
 `⚠ Halted at #N: <reason>`; an `--auto` merge halts with
-`⚠ Halted at #N: queued with --auto, merges once checks pass`), then exactly these sections. Report only what
+`⚠ Halted at #N: queued with --auto, merges once checks pass`), then
+exactly these sections. Report only what
 a command in this run verified, and name the merge order only once the
 topology was read. A run halted before any merge (`gh` unavailable, roster
 invalid) gives the hero and one sentence on what the user must do; no
@@ -117,10 +129,11 @@ merged").
    short SHAs; give no cause.
 
 State a failure as the fact the user needs; never quote the tool's error
-text or explain how a check works. Write the sections per
-`references/prose-rules.md`.
+text or explain how a check works. Follow the reference's "Report wording".
+Write the sections per `references/prose-rules.md`.
 
-Reply in this shape, as plain text outside any code fence, with plain bullets, no bold (never `- **Label:** ...`), and no local paths:
+Reply in this shape, as plain text outside any code fence, with plain
+bullets, no bold (never `- **Label:** ...`), and no local paths:
 
 ```text
 ⚠ Halted at #32: CI failed on the rebased head.

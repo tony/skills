@@ -1,7 +1,7 @@
 ---
 name: rendered-markdown
-description: "Use when GitHub Markdown must render: no hard-wrapped bodies, fix code fences, fold logs into details, pin links. Not for filing an issue."
-allowed-tools: ["Read", "Write", "Grep", "Glob", "Bash"]
+description: "Use when a GitHub PR description, comment, or issue body looks broken: wrapped lines, bad code fences, long logs, links. Not for filing an issue."
+allowed-tools: ["Read", "Write", "Bash"]
 disallowed-tools: ["Edit"]
 ---
 
@@ -19,6 +19,9 @@ ones. Read both before drafting:
 - `../../references/source-links.md` — pinning, autolinking, and
   cross-repo references.
 
+For a pull-request description, a repository markdown file, or a commit
+message, also read `../../references/pr-and-files.md`.
+
 ## Steps
 
 1. Identify the surface. A comment, issue, or pull request body is
@@ -35,20 +38,20 @@ ones. Read both before drafting:
 4. Strip local absolute paths, hostnames, emails, and tokens from the
    body (see "Nothing local, nothing personal" in `rendered-markdown.md`).
    The preview sends the body to GitHub.
-5. Preview through GitHub's renderer with the file form in
-   `rendered-markdown.md`. Create the file with `mktemp` outside the
-   working tree, write the body to it with the file-writing tool (never a
-   shell heredoc: pasted text can end it and run the rest), and remove
-   it afterwards. Read the output before publishing. When `gh` is
-   unauthenticated or offline, say the preview did not run.
+5. Preview through GitHub's renderer, following "Preview before
+   publishing" in `rendered-markdown.md` for the scratch file and the
+   command. Read the output before publishing. When `gh` is
+   unauthenticated, offline, or you cannot run commands, say the preview
+   did not run and do not claim the body was rendered.
 
 ## Reply
 
-The rewritten body comes first. Add only what the user must do before
-posting, such as replacing a `<SHA>` placeholder or an unrun preview.
-Do not narrate what changed or why GitHub renders it that way.
+The rewritten body comes first. Close with one sentence naming what the
+user must do before posting, such as replacing a `<SHA>` placeholder.
+Do not add a bullet list, a command, or an explanation of what changed or
+why GitHub renders it that way.
 
-Reply in this shape, as plain text outside any code fence, with plain bullets, no bold (never `- **Label:** ...`), and no local paths:
+Reply in this shape, as plain text outside any code fence, with no bold (never `- **Label:** ...`) and no local paths:
 
 `````text
 Rewritten body for example/widgets, preview not run (gh is not logged in).

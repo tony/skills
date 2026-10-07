@@ -1,7 +1,7 @@
 ---
 name: scholar-compare
 description: >-
-  Set two term tables against each other — same concept different term, same
+  Set two term tables against each other: same concept different term, same
   term different concept, and what each covers that the other lacks
 disable-model-invocation: true
 allowed-tools: ["Read", "Glob", "Write", "AskUserQuestion"]
@@ -41,7 +41,7 @@ is meaningless.
 while the terms differ. These are the translation table.
 
 **Same term, different concept.** Identical terms whose definitions describe
-different things. These are the traps — the reader who knows one project will be confidently
+different things. These are the traps: the reader who knows one project will be confidently
 wrong about the other.
 
 **Coverage.** What each table has that the other has no counterpart for. A
@@ -70,10 +70,10 @@ The hero counts are counts of findings, not scores.
 Per `references/output-contract.md`. Hero: `✓ <n> mappings, <n>
 collisions, <n> uncovered` or `⚠ Blocked: <reason>`. Sections:
 
-1. `## Mappings` — same concept, different term, with both definitions.
-2. `## Collisions` — same term, different concept, and what a reader moving
+1. `## Mappings`: same concept, different term, with both definitions.
+2. `## Collisions`: same term, different concept, and what a reader moving
    between the two would get wrong.
-3. `## Coverage` — what each side has that the other lacks, and whether that
+3. `## Coverage`: what each side has that the other lacks, and whether that
    is a difference or a gap.
 
 With `--out=<file>`, also write the three sections to that file; without it,

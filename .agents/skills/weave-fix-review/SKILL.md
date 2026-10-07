@@ -21,10 +21,9 @@ This command commits to a git repository, so it needs one with at least one comm
 
 ## Orchestration Plan
 
-Before executing any fixes, enter plan mode and produce a fix strategy from the review findings. Plan-mode activation varies by host:
+Enter plan mode before the first edit. In Claude Code call `EnterPlanMode`; in Cursor, Codex, or Gemini use `/plan` or `Shift+Tab`. Where plan mode is unavailable, present the plan as text.
 
-- Claude Code: `EnterPlanMode` tool
-- Cursor / Codex / Gemini: `/plan` or `Shift+Tab`
+Before executing any fixes, produce a fix strategy from the review findings.
 
 The plan must contain:
 
@@ -117,7 +116,7 @@ $ python3 <engine> init \
 
 Write the session summary, with each finding, its verdict, and the commit that addressed it, to `<session_dir>/phase-4-summary.md` per `references/prose-rules.md`.
 
-Read `references/present-results.md` and apply it with `RESULT_KIND` = `fix-review`, `ARTIFACT_PATH` = `<session_dir>/phase-4-summary.md`, `SESSION_DIR` = `<session_dir>`, `PASS_COUNT` = 1, `IN_PLAN_MODE` = false, `WORKER_BACKEND` = null, `PARTICIPANTS` = [], `EXECUTORS` = null, `MODELS` = null, `LABEL_MAP_PATH` = null.
+Read `references/present-results.md` and `references/fix-review.md`, and apply them with `RESULT_KIND` = `fix-review`, `ARTIFACT_PATH` = `<session_dir>/phase-4-summary.md`, `SESSION_DIR` = `<session_dir>`, `PASS_COUNT` = 1, `IN_PLAN_MODE` = false, `WORKER_BACKEND` = null, `PARTICIPANTS` = [], `EXECUTORS` = null, `MODELS` = null, `LABEL_MAP_PATH` = null.
 
 After the reference returns, run the full quality gate one last time, show the commit log for the session, report the final pass/fail status, and mark the session complete:
 

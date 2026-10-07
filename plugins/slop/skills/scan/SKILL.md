@@ -150,13 +150,9 @@ Pass A reads it in Step 6 with `--historical`.
 
 ## Step 3: Discover quality gates
 
-Follow `../../references/verification-gates.md` § Local gate buckets;
-this skill ignores `build` and the CI-coverage pass. With no question
-tool and no conventions file, treat the answer as `skip` and warn that
-no gate will run. Skip empty buckets in the
-apply loop and final verification. When every bucket is `unset` and
-`--apply` was passed, warn before continuing that commits will land
-without gate validation.
+Follow `../../references/verification-gates.md` § Local gate buckets,
+then `../../references/detect-pipeline.md` § Gate handling. The no-gate
+warning says commits will land without gate validation.
 
 ## Step 4: Read project tone
 
@@ -172,10 +168,12 @@ source: `../../references/signatures.yml`.
 Regex first (cheap, deterministic), semantic verification only on
 flagged files (expensive, precise).
 
-**Pass A.** Follow `../../references/detect-pipeline.md` § Pass A. Paths
-under `../../scripts/` resolve from this skill's
-directory: print the absolute path once and write it literally in each
-command, since shell variables do not persist between Bash calls.
+**Pass A.** Follow `../../references/detect-pipeline.md` § Pass A.
+`<slop_detect.py>` is `../../scripts/slop_detect.py`, resolved from this
+skill's directory, not the repository root. Resolve it to an absolute
+path once, print it, and write that literal path in each command, since
+shell variables do not persist between Bash calls. It needs python3 (3.9
+or newer).
 
 Run the matcher over the Step 2 files. `files` mode reads each `file`
 and `diff` signature against current content; `--added-base` marks the
@@ -187,7 +185,7 @@ Tier A on those lines and drops to Tier B on every other line. Omit
 `git ls-files -z` list the same way as Step 2.
 
 ```console
-$ git ls-files -z | python3 ../../scripts/slop_detect.py files \
+$ git ls-files -z | python3 <slop_detect.py> files \
     --registry ../../references/signatures.yml \
     --override .claude/slop.local.yml \
     --added-base "<BASELINE_SHA>"
@@ -197,13 +195,13 @@ Under `--with-history`, also run the diff and message modes over the
 captured log. Their findings carry `historical_only`.
 
 ```console
-$ git log -n "<N>" -p HEAD | python3 ../../scripts/slop_detect.py diff \
+$ git log -n "<N>" -p HEAD | python3 <slop_detect.py> diff \
     --registry ../../references/signatures.yml \
     --historical
 ```
 
 ```console
-$ git log -n "<N>" -z --format=%H%x1f%B HEAD | python3 ../../scripts/slop_detect.py messages \
+$ git log -n "<N>" -z --format=%H%x1f%B HEAD | python3 <slop_detect.py> messages \
     --registry ../../references/signatures.yml \
     --historical
 ```
@@ -238,19 +236,9 @@ findings. For aggregation, use `/slop:deslop`.
 
 ## Step 8: Materialize the patch series
 
-Always materialize first; the series is the user's review surface. The
-run directory resolves through `git rev-parse --git-path`, so it works
-in a linked worktree where `.git` is a file. Create it and print its
-path:
-
-```console
-$ d=$(git rev-parse --git-path "slop-scan/$(date -u +%Y%m%d-%H%M%SZ)-$$") && mkdir -p "$d" && echo "$d"
-```
-
-Shell state does not persist between Bash calls: use the printed path
-literally as `<run-dir>` in every later command, and likewise the
-literal values of `BASELINE_SHA`, `START_SHA`, and the gate commands
-recorded in `0000-PLAN.md`.
+Always materialize first; the series is the user's review surface.
+Create the run directory per `../../references/detect-pipeline.md` §
+Run directory, with `<name>` = `slop-scan`.
 
 Layout:
 
@@ -262,10 +250,8 @@ Layout:
 └── commits.json                       (finding → proposed commit subject + body)
 ```
 
-`0000-PLAN.md` records the registry version, source path, and SHA-256,
-the resolved `FORMAT_CMD` / `LINT_CMD` / `TYPECHECK_CMD` / `TEST_CMD`,
-`BASELINE_SHA`, the scope's file count, the budget, the tone-calibration
-result, the `--on-fail` mode, and `DIRTY_AT_START`.
+`0000-PLAN.md` adds the scope's file count, the `--on-fail` mode, and
+`DIRTY_AT_START` to the fields in § Run directory.
 
 `commits.json` holds, per finding, the proposed subject and the `why:` /
 `what:` body, built from `../../references/commit-template.md` and
@@ -275,12 +261,13 @@ is no `apply.sh`.
 
 Without `--apply`, print the Step 11 report (skip its git and gate
 commands; counts of committed and rolled-back findings are 0) and stop.
-The user re-invokes with `--apply` once the proposals look right. The directory is run-scoped, not a permanent
-record.
+The user re-invokes with `--apply` once the proposals look right.
 
 ## Step 9: Confirmation gate
 
-Reached only with `--apply`. Ask through `AskUserQuestion`:
+Reached only with `--apply`. Follow
+`../../references/detect-pipeline.md` § Confirmation gate with these
+choices:
 
 | Choice | Effect |
 |---|---|
@@ -288,11 +275,8 @@ Reached only with `--apply`. Ask through `AskUserQuestion`:
 | **Apply and commit** | Run the per-finding commit loop. |
 | **Cancel** | Delete `<run-dir>/` and exit. |
 
-Without a question tool (Codex, headless), take **Patches only** and
-print the `--apply` command, unless the request explicitly says to apply
-and commit. That request approves **Apply and commit** and nothing
-broader: no push, and every Tier B finding still counts as declined,
-because nobody confirmed it.
+Headless, the printed command is the `--apply` re-run. "Apply and
+commit" approves **Apply and commit** and nothing broader: no push.
 
 ## Step 10: Per-finding commit loop
 
@@ -379,9 +363,11 @@ Then apply `--on-fail`:
 ### 10e. On gate pass
 
 Read the finding's message from `commits.json`. Make a temp file with
-`mktemp "${TMPDIR:-/tmp}/slop-msg.XXXXXX"`, print its path, write the
-message to it, and reuse the printed path literally. Commit with it,
-then delete it with `rm -f`:
+`mktemp "${TMPDIR:-/tmp}/slop-msg.XXXXXX"` and print its path. Write the
+message to it with the Write tool, never a shell heredoc: the text comes
+from repo content, and a line equal to the delimiter would end the
+heredoc and run the rest as shell. Reuse the printed path literally.
+Commit with it, then delete it with `rm -f`:
 
 ```console
 $ git commit -F "<temp-message-file>"
@@ -449,8 +435,8 @@ Scope: 42 files (paths: src/**, docs/**)
 Budget: default
 Findings: 5 (2 Tier A, 2 Tier B, 1 Tier C, 0 historical-only)
 
-Committed: 3 findings landed as commits
-Gate-failed (rolled back): 1 (details below)
+Committed: 3
+Gate-failed (rolled back): 1
 Hook-failed (rolled back): 0
 Advisory: 1 (see advisory.md)
 Historical-only: 0
@@ -477,6 +463,10 @@ A run that committed nothing ends with `Patch series: <run-dir>`, the
 path Step 8 printed, because the user reviews or edits `commits.json`
 there; a run that committed omits the line. Do not push; the user
 decides. A plain `git push` suffices because no history changed.
+
+End with the next step, through `AskUserQuestion` when available,
+otherwise as a plain line: after an audit, the `--apply` re-run; after
+commits, `git push`.
 
 ## Edge cases
 

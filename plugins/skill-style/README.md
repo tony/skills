@@ -1,11 +1,6 @@
 # skill-style
 
-Hold SKILL.md files to a deletion test: a line stays only when its
-removal would change what the agent does. Frontmatter, code blocks, and
-sections survive verbatim.
-
-Invoked by name, it edits the named files in place; `--audit` and
-`--diff-only` write nothing.
+Deletion-test trimmer and auditor for SKILL.md files.
 
 ## Installation
 
@@ -39,17 +34,15 @@ Claude Code uses a leading slash (`/skill-style:…`). Codex omits it (`skill-st
 
 ### `skill-style`
 
-Routes automatically while a SKILL.md is being written, and takes
-targets when invoked by name (`/skill-style:skill-style <paths>`).
-Invoked with targets, it trims the files in place and shows a diff
-against a snapshot taken before the edit (`scripts/skill_diff.py`), so
-earlier uncommitted edits never show as its own. It never commits,
-never pushes, and never scans the repository on its own initiative.
+Routes while a SKILL.md is being written, and takes targets when
+invoked by name (`/skill-style:skill-style <paths>`). It edits the
+targets in place, shows a diff against a pre-edit snapshot
+(`scripts/skill_diff.py`), and never commits, pushes, or scans the
+repository unprompted.
 
-Flags: `--audit` (report the ledger, change nothing), `--diff-only`
-(show the proposed edits as a diff without writing them). A SKILL.md
-pasted inline is trimmed without confirmation or git, and the reply
-carries the ledger and the diff of the paste.
+Flags: `--audit` reports the ledger and writes nothing; `--diff-only`
+shows the edits without writing them. A SKILL.md pasted inline is
+trimmed without confirmation or git.
 
 ## References
 

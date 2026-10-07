@@ -105,4 +105,4 @@ and no more verification is run than each fix needs.
 - **git** — provenance uses merge-base, diff, log -L, and blame
 - **gh** (optional) — enables pull-request feedback, CI watching, and
   review-agent detection
-- **python3** — runs the ledger digest script, and in `goal` the CI and review-agent wait script
+- **python3** (3.9 or newer) — runs the ledger digest and stash scripts, and in `goal` the CI and review-agent wait script

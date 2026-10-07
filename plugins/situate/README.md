@@ -36,14 +36,14 @@ Claude Code uses a leading slash (`/situate:…`). Codex omits it (`situate:…`
 
 | Claude Code | Codex | Description |
 |---|---|---|
-| `/situate` | `situate` | Sweep current branch, PR, tickets, and conventions; report the situation. Defaults to current branch vs trunk. |
+| `/situate:situate` | `situate:situate` | Sweep current branch, PR, tickets, and conventions; report the situation. Defaults to current branch vs trunk. |
 | `/situate:what` | `situate:what` | Five-line summary of what is going on, with numbered options for real choices. |
 | `/situate:refocus` | `situate:refocus` | Re-derive the goal, sort commits against it, and identify drift and gaps. |
 | (model-invoked) | `situate:brief` | Answers a bare "huh" or "wait, what" in five lines; `/situate:what` is its explicit form. |
-| (model-invoked) | `situate:situational-awareness` | Catches the user up on a branch or pull request they are returning to; `/situate` is its explicit form. |
+| (model-invoked) | `situate:situational-awareness` | Catches the user up on a branch or pull request they are returning to; `/situate:situate` is its explicit form. |
 
 **Arguments:**
-- `/situate`:
+- `/situate:situate`:
   - `<pr-number|url>`: Target a PR without checking it out.
   - `--with-agentgrep [terms]`: Search local AI transcripts for
     unrecorded decisions.
@@ -69,7 +69,7 @@ Gathers context in order, degrading gracefully if unavailable:
 - **Prior Conversations (agentgrep)**: Off by default. Supplements
   unrecorded intent from local AI transcripts but prioritizes repository
   state when conflicts arise.
-- **The Brief (`/situate:what`)**: Ruthlessly concise (5-line ceiling).
+- **The Brief (`/situate:what`)**: Capped at five lines.
   Drops empty slots to save time. Relies on cheap local evidence first.
 - **Goal and Drift (`/situate:refocus`)**: Re-derives goals organically
   rather than storing them. Categorizes commits into correct work,
@@ -89,7 +89,7 @@ Gathers context in order, degrading gracefully if unavailable:
 
 ## Prerequisites
 - `git`
-- `python3` (runs `scripts/position.py` for `what`, `situate`, and `refocus`)
+- `python3` (3.9 or newer; runs `scripts/position.py` for `what`, `situate`, and `refocus`)
 - `gh` CLI (optional, but needed for PRs/issues/threads)
 - `uvx` (only required for `--with-agentgrep` to run
   [agentgrep](https://pypi.org/project/agentgrep/))

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Measure one filesystem and list the directories above a size floor.
 
-Usage: survey.py PATH [--depth N] [--floor-pct P]
+Usage: survey.py PATH [--depth N] [--floor-pct P] [--time-limit S]
 
 Prints JSON: the filesystem holding PATH (total, used, available bytes),
 the floor in bytes (P percent of total, default 1), and every directory
@@ -9,7 +9,10 @@ within N levels of PATH (default 3) whose size meets the floor, largest
 first. Sizes are allocated bytes (st_blocks), each hardlinked inode is
 counted once, symlinks are never followed, and the walk stays on PATH's
 filesystem. Paths that could not be read are listed under "errors" and
-their contents are missing from the sizes.
+their contents are missing from the sizes. Directories under /mnt are
+skipped (listed under "skipped") unless PATH is inside /mnt. When the
+time limit (default 90 seconds) runs out, "complete" is false and every
+size is a lower bound.
 """
 
 # pyright: reportAny=false
@@ -18,13 +21,17 @@ from __future__ import annotations
 
 import argparse
 import json
+import math
 import os
 import sys
+import time
 from pathlib import Path
 from typing import final
 
 DEFAULT_DEPTH = 3
 DEFAULT_FLOOR_PCT = 1.0
+DEFAULT_TIME_LIMIT = 90.0
+SKIP_ROOT = "/mnt"
 BLOCK = 512
 
 
@@ -32,9 +39,19 @@ BLOCK = 512
 class Walker:
     """Accumulate allocated sizes for one filesystem."""
 
-    def __init__(self, dev: int, max_depth: int) -> None:
+    def __init__(
+        self,
+        dev: int,
+        max_depth: int,
+        skip: str | None = None,
+        deadline: float = math.inf,
+    ) -> None:
         self.dev: int = dev
         self.max_depth: int = max_depth
+        self.skip: str | None = skip
+        self.deadline: float = deadline
+        self.timed_out: bool = False
+        self.skipped: list[str] = []
         self.seen: set[tuple[int, int]] = set()
         self.sizes: dict[str, int] = {}
         self.errors: list[str] = []
@@ -53,6 +70,9 @@ class Walker:
         True
         """
         total = 0
+        if time.monotonic() > self.deadline:
+            self.timed_out = True
+            return total
         try:
             total += os.lstat(path).st_blocks * BLOCK
             with os.scandir(path) as it:
@@ -64,7 +84,9 @@ class Walker:
             try:
                 st = entry.stat(follow_symlinks=False)
                 if entry.is_dir(follow_symlinks=False):
-                    if st.st_dev == self.dev:
+                    if self.skip and entry.path == self.skip:
+                        self.skipped.append(entry.path)
+                    elif st.st_dev == self.dev:
                         total += self.walk(entry.path, depth + 1)
                     continue
                 key = (st.st_dev, st.st_ino)
@@ -80,15 +102,27 @@ class Walker:
         return total
 
 
-def survey(root: str, max_depth: int, floor_pct: float) -> dict[str, object]:
+def survey(
+    root: str,
+    max_depth: int,
+    floor_pct: float,
+    time_limit: float = DEFAULT_TIME_LIMIT,
+    skip: str = SKIP_ROOT,
+) -> dict[str, object]:
     """Return the survey of root as a JSON-ready dict."""
     real = os.path.realpath(root)
+    inside = real == skip or real.startswith(skip + "/")
     vfs = os.statvfs(real)
     total_bytes = vfs.f_blocks * vfs.f_frsize
     avail = vfs.f_bavail * vfs.f_frsize
     used = total_bytes - vfs.f_bfree * vfs.f_frsize
     floor = int(total_bytes * floor_pct / 100)
-    walker = Walker(Path(real).stat().st_dev, max_depth)
+    walker = Walker(
+        Path(real).stat().st_dev,
+        max_depth,
+        None if inside else skip,
+        time.monotonic() + time_limit,
+    )
     _ = walker.walk(real)
     found = sorted(
         ((p, s) for p, s in walker.sizes.items() if s >= floor),
@@ -101,6 +135,8 @@ def survey(root: str, max_depth: int, floor_pct: float) -> dict[str, object]:
         "floor": floor,
         "directories": [{"path": p, "bytes": s} for p, s in found],
         "errors": walker.errors,
+        "skipped": walker.skipped,
+        "complete": not walker.timed_out,
     }
 
 
@@ -110,11 +146,14 @@ def main(argv: list[str]) -> int:
     _ = parser.add_argument("path")
     _ = parser.add_argument("--depth", type=int, default=DEFAULT_DEPTH)
     _ = parser.add_argument("--floor-pct", type=float, default=DEFAULT_FLOOR_PCT)
+    _ = parser.add_argument("--time-limit", type=float, default=DEFAULT_TIME_LIMIT)
     args = parser.parse_args(argv[1:])
     if not Path(args.path).is_dir():
         _ = sys.stderr.write(f"{args.path}: not a directory\n")
         return 2
-    _ = json.dump(survey(args.path, args.depth, args.floor_pct), sys.stdout, indent=2)
+    _ = json.dump(
+        survey(args.path, args.depth, args.floor_pct, args.time_limit), sys.stdout, indent=2
+    )
     _ = sys.stdout.write("\n")
     return 0
 

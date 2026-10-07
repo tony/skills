@@ -15,9 +15,7 @@ metadata:
 Answer one question: what is going on here, right now, and what would
 someone picking this up need to know before touching anything.
 
-Read `references/situation-sweep.md` first; it
-defines the six evidence layers, how each degrades, and the read-only
-contract. Read
+Read `references/situation-sweep.md` first, and
 `references/prior-conversations.md` before using
 `--with-agentgrep`.
 

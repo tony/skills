@@ -15,8 +15,15 @@ if TYPE_CHECKING:
 import survey  # pyright: ignore[reportImplicitRelativeImport]
 
 
-def run(root: Path, depth: int, pct: float) -> dict[str, Any]:  # pyright: ignore[reportExplicitAny]
-    return json.loads(json.dumps(survey.survey(str(root), depth, pct)))
+def run(
+    root: Path,
+    depth: int,
+    pct: float,
+    limit: float = 90.0,
+    skip: str = "/mnt",
+) -> dict[str, Any]:  # pyright: ignore[reportExplicitAny]
+    out = survey.survey(str(root), depth, pct, limit, skip)
+    return json.loads(json.dumps(out))
 
 
 LIMIT = 400_000
@@ -55,3 +62,22 @@ def test_unreadable_directory_is_reported(tmp_path: Path) -> None:
         locked.chmod(0o700)
     if os.geteuid() != 0:
         assert any("locked" in e for e in out["errors"])
+
+
+def test_skip_root_is_skipped_unless_survey_is_inside_it(tmp_path: Path) -> None:
+    mnt = tmp_path / "mnt"
+    (mnt / "c").mkdir(parents=True)
+    (mnt / "c" / "f").write_bytes(b"x" * 100_000)
+    outside = run(tmp_path, 3, 0, skip=str(mnt.resolve()))
+    assert outside["skipped"] == [str(mnt.resolve())]
+    assert all("/mnt/c" not in d["path"] for d in outside["directories"])
+    inside = run(mnt / "c", 3, 0, skip=str(mnt.resolve()))
+    assert inside["skipped"] == []
+    assert inside["directories"]
+
+
+def test_expired_time_limit_marks_result_incomplete(tmp_path: Path) -> None:
+    (tmp_path / "a").mkdir()
+    assert run(tmp_path, 3, 0)["complete"] is True
+    out = run(tmp_path, 3, 0, limit=-1)
+    assert out["complete"] is False

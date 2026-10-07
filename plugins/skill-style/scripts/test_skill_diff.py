@@ -5,7 +5,8 @@
 
 from __future__ import annotations
 
-from pathlib import Path  # noqa: TC003
+import tempfile
+from pathlib import Path
 
 import pytest
 import skill_diff  # pyright: ignore[reportImplicitRelativeImport]
@@ -78,4 +79,31 @@ def test_missing_final_newline_gets_marker(tmp_path: Path, monkeypatch: pytest.M
         "+c",
         "\\ No newline at end of file",
     ]
+    skill_diff.clean(root)
+
+
+def test_non_utf8_target_exits_2_and_leaves_no_snapshot(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    target = tmp_path / "SKILL.md"
+    target.write_bytes(b"caf\xe9\n")
+    before = set(Path(tempfile.gettempdir()).glob(f"{skill_diff.PREFIX}*"))
+    assert skill_diff.main(["snapshot", str(target)]) == EXIT_MISSING
+    assert "not UTF-8" in capsys.readouterr().err
+    assert set(Path(tempfile.gettempdir()).glob(f"{skill_diff.PREFIX}*")) == before
+
+
+def test_outside_cwd_labels_are_unique(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    cwd = tmp_path / "cwd"
+    cwd.mkdir()
+    monkeypatch.chdir(cwd)
+    targets: list[Path] = []
+    for name in ("a", "b"):
+        d = tmp_path / name
+        d.mkdir()
+        (d / "SKILL.md").write_text("x\n")
+        targets.append(d / "SKILL.md")
+    root, out = skill_diff.snapshot(targets, cwd)
+    assert [label for _, label in out] == ["a/SKILL.md", "b/SKILL.md"]
     skill_diff.clean(root)

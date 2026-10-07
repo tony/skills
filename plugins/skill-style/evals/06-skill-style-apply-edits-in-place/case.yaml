@@ -49,3 +49,8 @@ graders:
     pattern: '^- \*\*[^*]+:\*\*'
     flags: m
     match: not_contains
+
+  - name: hero-line-is-one-short-sentence
+    type: regex
+    target: last_message
+    pattern: '^\s*(?:[^\s;]+[ \t]+){0,24}[^\s;]+[ \t]*\n'

@@ -29,6 +29,14 @@ graders:
       release unless it states how it confirmed it, or it says the version
       still needs checking against the release list.
 
+  - name: stopped-shape
+    type: llm
+    focus: last_message
+    criteria: |
+      If the reply stops instead of presenting a plan, its first line begins
+      with `⚠ Stopped:` and it says nothing was edited. A reply that presents
+      a plan and waits satisfies this.
+
   - name: no-commit
     type: tool_used
     tool: Bash

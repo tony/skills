@@ -85,7 +85,7 @@ For each later pass up to `passes`, the cycle's Distribute step has already writ
 
 Unless `--no-deslop` was set, read `../../references/deslop-pass.md` and apply it with `ARTIFACT_PATH` = `<session_dir>/pass-<final>/woven.md`, `SESSION_DIR`, `BASELINE_SHA` set to `baseline_sha` from `init`, and `DESLOP_MODE` from the flags (`quiet`, `verbose`, or `default`). Re-read `woven.md` for the desloped text.
 
-Read `../../references/present-results.md` and apply it with `RESULT_KIND` = `brainstorm-and-refine`, `ARTIFACT_PATH` = `<session_dir>/pass-<final>/woven.md`, `SESSION_DIR`, `PASS_COUNT` = the completed passes, `IN_PLAN_MODE` = false, `LABEL_MAP_PATH` = null. Read `WORKER_BACKEND`, `PARTICIPANTS`, `EXECUTORS`, and `MODELS` from `session.json`.
+Read `../../references/present-results.md` and `../../references/results/brainstorm-and-refine.md`, and apply them with `RESULT_KIND` = `brainstorm-and-refine`, `ARTIFACT_PATH` = `<session_dir>/pass-<final>/woven.md`, `SESSION_DIR`, `PASS_COUNT` = the completed passes, `IN_PLAN_MODE` = false, `LABEL_MAP_PATH` = null. Read `WORKER_BACKEND`, `PARTICIPANTS`, `EXECUTORS`, and `MODELS` from `session.json`. The Evolution Summary's Originals bullet comes from the Phase 3 originals: how many there were and what they differed on.
 
 Copy the final woven text to `<session_dir>/final.md`, then follow `ensemble-core.md` (Finish).
 

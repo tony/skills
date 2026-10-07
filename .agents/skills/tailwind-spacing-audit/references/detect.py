@@ -8,7 +8,7 @@ PATTERN is one of ``margin``, ``vmargin``, ``margin-in-gap``, ``gap``,
 prints ``path:line:text``. The patterns are candidate finders: every hit
 needs a read in context.
 
-``margin`` lists horizontal margins. ``vmargin`` lists ``mt-``, ``mb-``, and
+``margin`` lists all-sides (``m-``) and horizontal margins. ``vmargin`` lists ``mt-``, ``mb-``, and
 ``my-`` margins in files that use ``flex-col`` or ``grid``. ``margin-in-gap``
 lists both kinds of margin in files that also set ``gap-*``, and stops after
 50 hits.
@@ -57,7 +57,7 @@ def _rx(template: str) -> re.Pattern[str]:
 
 
 SIMPLE: dict[str, re.Pattern[str]] = {
-    "margin": _rx(LEAD + r"-?m[xesrl]-" + STEP),
+    "margin": _rx(LEAD + r"-?m[xesrl]?-" + STEP),
     "gap": _rx(LEAD + GAP),
     "width": _rx(LEAD + r"w-[0-9\[]"),
     "space": _rx(LEAD + SPACE),

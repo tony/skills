@@ -78,8 +78,8 @@ $ ncu
 set; prefer `ncu` so discovery and apply agree on what "outdated" means.
 
 **Apply** the in-range manifest bump, then install. `--target minor`
-keeps every major out of the bulk refresh (verified: a `^6.0.0` range
-moves to `^6.3.1`, not `^7`); `ncu` takes majors by default. A major is
+keeps every major out of the bulk refresh (`ncu --help` documents
+`--target`); `ncu` takes majors by default. A major is
 a named bump with its own commit, applied with `ncu -u --target latest
 <name>`:
 
@@ -154,10 +154,7 @@ pnpm section applies unchanged, except the cooldown key.
 
 Marked by `Cargo.lock`.
 
-Never run `cargo-outdated`: it exhausts memory and the OOM killer can
-take a constrained host down, and merely starting it is the cost, so
-there is no safe probe and it is never offered. Only the user can lift
-this. Discover with the resolver instead:
+Discover with the resolver:
 
 ```console
 $ cargo update --dry-run

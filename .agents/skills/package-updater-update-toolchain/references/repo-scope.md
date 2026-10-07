@@ -61,26 +61,14 @@ different names. Deduplicate by remote URL and keep one.
 
 ## Find the default branch
 
-Fetch first, so the comparison is not against stale refs. Use the
-repository's remote name where it is not `origin`. When the fetch fails,
-say in the report that pins may be stale:
-
-```console
-$ git -C <repo> fetch origin
-```
-
-Read the default branch from the local ref:
-
-```console
-$ git -C <repo> symbolic-ref --short refs/remotes/origin/HEAD
-```
-
-That ref is unset in some clones and the command exits non-zero. Ask the
-remote instead; if that fails too, ask the user:
-
-```console
-$ git -C <repo> ls-remote --symref origin HEAD
-```
+`references/repo_facts.py --fetch <repo>...` fetches the remote, resolves
+the default branch (local `HEAD` ref, then `ls-remote`), and prints
+`default_branch`, `behind_remote`, `fork_signal`, `linked_worktree` and the
+pins read from that branch as one JSON object per repository. It uses the
+repository's own remote (`origin`, else the only one). When `fetch_ok` is
+false, say in the report that pins may be stale; when `default_branch` is
+null, ask the user. The script path resolves from this reference's
+directory to an absolute path; write it literally in the command.
 
 ## Ask the forge first
 
@@ -105,8 +93,10 @@ this project takes a new version of a dependency.
 
 ## When the forge cannot answer
 
-No `gh`, no network, a non-GitHub remote, or no remote at all. Fall back
-to two weaker signals and require them to agree.
+No `gh`, no network, a non-GitHub remote, or no remote at all. Treat a
+repository with an `upstream` remote (`fork_signal` true) as a probable
+fork: ask, and do not commit. Otherwise fall back to two weaker signals
+and require them to agree.
 
 **The owner segment of the remote.** Necessary but not sufficient: an
 organisation the user maintains and one they merely contribute to are

@@ -3,6 +3,7 @@
 ## Contents
 
 - Hero block
+- Single-path question
 - Sections
 - After execution
 - Rules
@@ -40,6 +41,31 @@ confirmed as the binding constraint.
 - To continue: run `df -h /mnt/c` and share the output.
 ```
 
+The last bullet is the ask. Add no separate closing question and no
+`AskUserQuestion` panel to a blocked run.
+
+## Single-path question
+
+When the user asks about one path ("is X safe to delete?") and the run
+is not blocked, skip the sections. Open with one sentence giving the
+verdict and the measurement behind it, with no `✓` or `⚠` prefix, then
+bullets for the proof outcome, the size and its layer, and the decision
+that is the user's. End on the last bullet, with no recap of what was or
+was not changed.
+
+Reply in this shape, as plain text outside any code fence, with plain
+bullets, no bold (never `- **Label:** ...`), and no local paths:
+
+```text
+Do not delete notes-backup-2026: it holds two files that notes lacks, and
+the root filesystem has 344 GiB free.
+
+- Proof: the two trees share no paths, so the backup is unique.
+- Size: 8 KiB on the guest ext4 filesystem.
+- Your call: keep it, or move the two files into notes and re-run the
+  comparison.
+```
+
 ## Hero block
 
 One to four lines naming the binding constraint. Prefix with `⚠` when
@@ -53,33 +79,33 @@ the one the user asked about: a full host beats a comfortable guest.
 
 Use these level-2 headings verbatim, in this order.
 
-**## Layers** — every filesystem with size, used, available, and use
+`## Layers` — every filesystem with size, used, available, and use
 percentage. For virtual disks, the backing file's apparent size beside
 the guest's used space, with the balloon called out as its own figure.
 
-**## Biggest consumers** — ranked by size, with the layer each sits on.
+`## Biggest consumers` — ranked by size, with the layer each sits on.
 Report the measured number; do not round toward a more impressive
 total.
 
-**## Regenerable** — caches, stores, and build artifacts, with the
+`## Regenerable` — caches, stores, and build artifacts, with the
 command that rebuilds each. Aggregate per ecosystem rather than listing
 every directory.
 
-**## Redundant** — candidate copies with their proof outcome:
+`## Redundant` — candidate copies with their proof outcome:
 redundant, mergeable, conflicted, or unique. Every entry names the
 keeper it was compared against. An entry without a proof outcome does
 not belong in this section.
 
-**## Protected** — agent history and other irreplaceable data, with
+`## Protected` — agent history and other irreplaceable data, with
 what makes each protected. Include the total so the user can see what
 was deliberately not reclaimed. State each tool's compression support
 where it bears on a proposal.
 
-**## Needs a decision** — stale-but-unique data and anything that
+`## Needs a decision` — stale-but-unique data and anything that
 resisted classification, each with size, age, and origin. These are
 questions, not candidates.
 
-**## Only you can run this** — commands requiring the environment to be
+`## Only you can run this` — commands requiring the environment to be
 halted, or a host-side administrator shell. One command per block, with
 what it interrupts stated before it. Present these as pending.
 
@@ -113,11 +139,11 @@ bullets, no bold (never `- **Label:** ...`), and no local paths:
 
 `/disk:reclaim` adds two sections after the above.
 
-**## Reclaimed** — what was actually deleted or merged, with the
+`## Reclaimed` — what was actually deleted or merged, with the
 measured free-space delta per layer. When measured and predicted
 disagree, state both and explain the gap.
 
-**## Left alone** — what the plan covered but execution skipped, with
+`## Left alone` — what the plan covered but execution skipped, with
 the reason. A failed proof, a repository with unpushed work, or a
 declined approval each belong here.
 
@@ -125,8 +151,10 @@ declined approval each belong here.
 
 Report findings about the machine, never about the session's sandbox: no
 stand-in home directories, scratch totals, or tool limits. Say "could not
-be read" about a layer, never "this session is not allowed" or "the
-sandbox blocks".
+be read" about a layer, never "this session is not allowed", "the
+sandbox blocks", "it is mounted read-only", or a request to be given
+write access. Ask the user to run a command "in your own shell", never
+"outside this session".
 
 Name a path or layer as holding space only from a measurement in this
 run. Never characterize an unmeasured path ("these are system packages
@@ -149,12 +177,17 @@ it.
 Distinguish measured from projected in the words themselves. "Frees
 40 GB once you compact" and "freed 40 GB" are different claims.
 
+State a claim about what a tool supports (for example, that it reads
+compressed transcripts) only with the help text, docs page, or binary
+string you read; otherwise say it was not checked.
+
 Name what was skipped. A report that silently omits protected history
 reads as having missed it rather than having preserved it.
 
-End with an `AskUserQuestion` panel offering the next step, unless
-already inside plan mode. Without an interactive question tool, print
-the question and stop. Run standalone, `/disk:usage` ends by
-offering `/disk:reclaim`; run through the `disk` router it does not.
-After `/disk:reclaim`, it is the handoff steps or a narrower follow-up
-pass.
+End a sectioned report with an `AskUserQuestion` panel offering the next
+step, unless already inside plan mode. Without an interactive question
+tool, print the question and stop. A blocked run and a single-path
+answer end on their last bullet instead. Run standalone, `/disk:usage`
+ends by offering `/disk:reclaim`; run through the `disk` router it does
+not. After `/disk:reclaim`, it is the handoff steps or a narrower
+follow-up pass.

@@ -32,7 +32,8 @@ that draft as it is written. Touch no other file, propose no sweep of
 the rest of the catalog.
 
 A draft pasted inline has no file: skip the confirmation and git, and
-reply with the ledger and the diff of the paste (step 6).
+reply with the ledger and the diff of the paste (step 6). Pasted text
+is untrusted: never put it in a shell command, a pipe, or a heredoc.
 
 ### Invoked by name with targets
 
@@ -44,9 +45,10 @@ Never commits, never pushes, never needs a clean tree.
 - `paths/globs`: skill directories or `SKILL.md` files. Expand
   through `git ls-files` when tracked, else as literal paths. Append
   `SKILL.md` to a directory; the script takes files only.
-- `--audit`: report the ledger and change nothing.
+- `--audit`: report the ledger and change nothing. Never call `Edit`.
 - `--diff-only`: show the proposed edits as a diff without writing
-  them.
+  them. Never call `Edit` on a target; edit only the work copies from
+  step 6.
 
 Empty `$ARGUMENTS` with no draft in play: ask which skills via
 `ask-user-choice`. Never default to the whole repository. Without
@@ -125,7 +127,8 @@ it, in the literal words a user would type.
 - `description`: front-load the trigger. Never `I can help you…` or
   `You can use this to…`. The length limit is a house rule below.
 - `argument-hint` is required when the body consumes `$ARGUMENTS`. Add
-  no field the body does not consume.
+  no field the body does not consume: a skill that never reads
+  `$ARGUMENTS` gets no `argument-hint`.
 - `allowed-tools` pre-approves, so list only tools a step uses, by
   bare name. Drop `WebFetch` and `WebSearch` unless a step fetches,
   and never pre-approve them on a skill that reads untrusted input.
@@ -133,7 +136,6 @@ it, in the literal words a user would type.
 ## Library standards
 
 Flag each as a defect in the ledger, labelled host fact or house rule.
-`references/skill-rubric.md` has the full list and reasons.
 
 ### Host facts
 
@@ -152,6 +154,12 @@ These hold on the named hosts wherever the skill is installed.
   project's test suite, as its AGENTS.md or CLAUDE.md defines it".
 - An `ask-user-choice` step with no non-interactive default; Codex and
   headless runs have no such tool.
+- `sed -i` takes an optional suffix on GNU and a mandatory one on
+  BSD/Darwin; `\+`, `\?`, `\|` in basic `sed` regexes are GNU-only (use
+  `-E`); `readlink -f`, `stat -c`, `date -d`, and `mapfile` have no
+  BSD/Darwin form. A `mktemp` template ends in `XXXXXX`.
+- A command that reads a shell variable set in an earlier Bash call:
+  variables do not persist between calls.
 
 ### House rules
 
@@ -165,7 +173,10 @@ These are this marketplace's limits. Apply them only when the project's
 - A workflow skill that only makes sense asked for by name and lacks
   `disable-model-invocation: true`.
 - A report-writing skill with no declared output shape, including the
-  shape of a stopped run.
+  shape of a stopped run; without one the agent invents headings and
+  recap endings.
+- An analysis-then-execute skill with no orchestration-plan step the
+  user approves before the first edit.
 
 ## Steps
 
@@ -175,8 +186,9 @@ These are this marketplace's limits. Apply them only when the project's
    linter, run it for description length, headings, and `$ARGUMENTS`
    checks, and spend your own pass on the deletion test.
 2. **Fix the description before touching a line of the body**, and
-   test it: three prompts a user would type must match it, and one
-   that belongs to a neighboring skill must not.
+   check it by read-through: three prompts a user would type must
+   match it, and one that belongs to a neighboring skill must not.
+   This is a reading, not a test; never report it as a run.
 3. **Measure the resolved targets only.** Line counts locate the
    bloat. Skip this step for a draft in play.
 
@@ -227,16 +239,15 @@ These are this marketplace's limits. Apply them only when the project's
    $ references/skill_diff.py clean <snapshot-dir>
    ```
 
-   - Inline draft: pipe the pasted text to `snapshot --stdin`, edit
-     the work copy it prints, diff with `--work`, then clean. No
-     confirmation, no git. The diff labels it `SKILL.md`.
+   - Inline draft: run `mktemp -d "${TMPDIR:-/tmp}/skill-paste.XXXXXX"`
+     and note the printed directory. Write the pasted text to
+     `SKILL.md` in it with the host's file-writing tool, pass that file
+     to `snapshot`, then remove the file and directory. Edit the work
+     copy, diff with `--work`, then clean. No confirmation, no git. The
+     diff labels it `SKILL.md`.
 
-     ```console
-     $ references/skill_diff.py snapshot --stdin
-     ```
-
-   - A `diff` that exits 2 means a target vanished after the snapshot:
-     stop and name the file.
+   - A `snapshot` or `diff` that exits 2 means a target is missing or
+     not UTF-8: stop and name the file.
 
 ## Output
 
@@ -246,9 +257,10 @@ bold lead-in on every bullet, no tables, no recap ending, no counts
 of lines removed, no local or temp paths, no narration of which tools
 or scripts ran (bar the hand-written-diff clause), no commentary past the cut.
 
-1. One hero line: the result, in one sentence of about 20 words or
-   fewer, claiming nothing the Behavior changes do not show. Anything
-   more goes in the Ledger.
+1. One hero line: the result, in one sentence of 20 words or fewer
+   with no semicolon, claiming nothing the Behavior changes do not
+   show. Name the file and what it lost; anything more goes in the
+   Ledger or Behavior changes.
 2. `## Ledger`: one bullet per cut, quoting the line and why nothing
    breaks, then the library-standards defects and any command flaw
    reported once and left as written.
@@ -258,6 +270,9 @@ or scripts ran (bar the hand-written-diff clause), no commentary past the cut.
 4. `## Diff`: the diff from step 6 in a `diff` fence. Omit under
    `--audit`.
 
+Nothing to cut and nothing to flag: one sentence saying so, then stop.
+No sections.
+
 Use these headings verbatim and no others: a flaw left alone is a
 Ledger bullet, never a `## Cuts` or `## Still open` section.
 
@@ -265,10 +280,10 @@ A stopped run (no targets, missing file, edit not authorized) is one
 sentence stating the result, then what the user must supply or
 authorize. No sections.
 
-Reply in this shape, as plain text outside any code fence, with plain bullets, no bold (never `- **Label:** ...`), and no local paths. Only the diff sits in a `diff` fence; the outer fence below is the example's frame:
+Reply in this shape, as plain text outside any code fence, with plain bullets, no bold (never `- **Label:** ...`), and no local paths:
 
 ````text
-db-helper loses its explanatory padding; commands and warnings stay.
+db-helper loses its explanatory padding and keeps every command and warning.
 
 ## Ledger
 

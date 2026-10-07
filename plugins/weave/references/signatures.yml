@@ -14,7 +14,8 @@
 #   action     — remove | rewrite | ask | ignore
 #   kind       — regex | semantic
 #   target     — list of: diff | message-subject | message-body | file
-#   pattern    — PCRE (required when `kind: regex`); uses `(?i)`, `\b`, `\d`, `\x{…}`
+#   pattern    — Python `re` (required when `kind: regex`); uses `(?i)`, `\b`, `\d`;
+#                `\x{H}` is translated to a code point escape
 #   rationale  — one sentence on why this is slop
 #   fp-guard   — false-positive context where the rule is suppressed
 #   skip-paths — optional list of case-insensitive regexes; a match on the

@@ -56,10 +56,9 @@ differ, so the contract replaces the tree comparison as the safety.
 ## Phase 1 — Establish the contract before anything else
 
 Before running a test or reading any pull request, ticket, or transcript,
-run the refusals Phase 3 names. Then, per `rebuild-contract.md`, identify trunk's tests, the tests this
-branch added or changed, and run them against the branch now. What
-passes is the specification; what is already failing or skipped is a
-finding to report, not a target.
+run the refusals Phase 3 names. Then, per `rebuild-contract.md`, identify
+trunk's tests and the tests this branch added or changed, from the diff
+alone; create nothing yet.
 
 **If the branch has no tests, stop here.** An untested branch has no
 mechanical invariant, and a redo becomes a rewrite with review as
@@ -67,6 +66,21 @@ the only net. Offer to write characterization tests against the
 existing implementation first, so a spec exists before anything is
 discarded. Proceed without them only if the user says so, and say in
 the final report that nothing mechanical was guarding the result.
+
+Otherwise run the spec at the branch tip in a throwaway detached worktree,
+never in the current checkout, so uncommitted edits cannot colour the
+result. Run `git worktree list` for the new path and use that literal path
+for every command, then remove it with `git worktree remove --force`:
+
+```console
+$ git worktree add \
+    --detach \
+    "$(mktemp -d "${TMPDIR:-/tmp}/<flat>-spec.XXXXXX")" \
+    <branch>
+```
+
+What passes is the specification; what is already failing or skipped is a
+finding to report, not a target.
 
 ## Phase 2 — Study the branch into a ledger
 
@@ -107,7 +121,8 @@ The plan states:
   out by name.
 - What is being changed about the approach, and why the original shape
   is not being kept.
-- Where the rebuild happens — the worktree path and new branch name.
+- Where the rebuild happens — the new branch name; the worktree path is
+  chosen when the worktree is made.
 - The gate commands discovered from the project's own conventions.
 - Anything the branch does that the rebuild intends to drop, as an
   explicit list to be approved rather than discovered later.
@@ -204,9 +219,11 @@ question for the user. This is where a lost workaround surfaces.
 
 Write the report per `../../references/prose-rules.md`. Reply in this
 shape, as plain text outside any code fence, with plain bullets, no bold (never `- **Ledger:** ...`),
-and no local paths other than the worktree. Add no bullet the shape does
-not list, no findings outside it except a failed gate, no evidence beyond
-the contract result, and no mention of which forbidden items you left out.
+and no local paths other than the worktree. Each bullet is one line. Add no
+bullet the shape does not list, no findings outside it except a failed gate,
+no evidence beyond the contract result, and no mention of which forbidden
+items you left out. Where the project defines no gates, the Gates bullet
+says `none defined in the project`.
 The contract guarantees only what the tests and the ledger cover; say
 nothing stronger:
 
@@ -226,12 +243,14 @@ Rebuilt feature/export-v2 as feature/export-v2-redo; the contract holds.
 After a successful redo, end with a next-step panel through
 `AskUserQuestion`: show the old-versus-new diff, show the push command,
 or stop. Without a question tool, print those options as a plain list
-and stop. A halted run skips the panel.
+and stop. Options are bare, with no commentary on them. A halted run skips
+the panel.
 
 A run stopped at Phase 1 or a refusal is one result sentence naming
 why, then what the user must do, as plain sentences or plain bullets with
 no bold lead-ins, no numbered headings, and no absolute paths. It claims
-no work that was not done and ends without a recap:
+no work that was not done, does not narrate commands or explain git, and
+ends without a recap:
 
 ```text
 Stopped before rewriting: the branch has no tests to act as the spec.

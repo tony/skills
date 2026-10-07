@@ -1,6 +1,6 @@
 ---
 name: report-org-wide
-description: Render the tier-1 org-wide projection — explicit adoption and realization inputs, scenario spread, sensitivity ranking, plain-language company close
+description: "Use when rendering the tier-1 org-wide projection from a business-value run: adoption, realization, scenarios, and sensitivity ranking."
 allowed-tools: ["Bash", "Read", "Write", "Grep", "AskUserQuestion"]
 argument-hint: "[run directory]"
 user-invocable: true
@@ -24,8 +24,6 @@ until the gate passes:
 
 User arguments: $ARGUMENTS
 
-Paths under `../../scripts/` resolve from this skill's directory: print the absolute path once and write it literally in each command, since shell variables do not persist between Bash calls.
-
 ## Procedure
 
 ### 1. Locate the run and pass the gate
@@ -47,9 +45,14 @@ MEASURED when an instrument export gives it), optional `low` and
 `high` fields bounding the scenarios, then run `project` again. Never
 proceed with a default of 1.0 for adoption or realization. Without a
 question tool, or without an answer, halt per `interim-format.md` §
-Stopped run with `⚠ Refused: <ids> missing from the assumptions
-register`, naming every missing id in plain words, then say to add
-them (`/business:research` or editing `assumptions.yaml`).
+Stopped run. Name each missing input once, in plain words, in the hero
+line; list the register ids only in the next-step sentence:
+
+```text
+⚠ Refused: the register lacks five projection inputs: drafts per engineer per year, baseline minutes per draft, savings rate, adoption, and realization.
+
+Add them with /business:research or by editing assumptions.yaml (instances-per-person-year, baseline-minutes, savings-rate, adoption-rate, realization-rate), then render again.
+```
 
 ### 3. Render the report
 

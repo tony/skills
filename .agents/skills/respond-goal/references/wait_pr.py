@@ -8,7 +8,7 @@ Reviews and issue comments are read; inline review comments are not. Each
 prints one JSON line.
 
 Exit codes: 0 done, 1 a check failed, 2 timed out, 3 no check appeared within
-the grace period.
+the grace period, 4 ``gh`` failed (its stderr is printed).
 """
 
 # ruff: noqa: S603
@@ -50,6 +50,10 @@ def _bare(login: str) -> str:
     return login.removesuffix("[bot]")
 
 
+class GhError(Exception):
+    """``gh`` could not run or exited nonzero without usable output."""
+
+
 def missing_agents(
     roster: list[str],
     reviews: list[dict[str, str]],
@@ -67,19 +71,38 @@ def missing_agents(
     ['b', 'd']
     >>> missing_agents(["bot"], [{"login": "bot[bot]", "commit": "abc"}], [], "abc", "")
     []
+    >>> missing_agents(["a"], [{"login": None, "commit": "abc"}], [], "abc", "")
+    ['a']
     """
-    seen = {_bare(r["login"]) for r in reviews if r.get("commit") == sha}
-    seen |= {_bare(c["login"]) for c in comments if c.get("at", "") >= since}
+    seen = {_bare(r["login"]) for r in reviews if r.get("login") and r.get("commit") == sha}
+    seen |= {_bare(c["login"]) for c in comments if c.get("login") and c.get("at", "") >= since}
     return [login for login in roster if _bare(login) not in seen]
 
 
-def _gh(*args: str) -> str:
-    return subprocess.run(
-        ["gh", *args],  # noqa: S607
-        check=False,
-        capture_output=True,
-        text=True,
-    ).stdout
+def _gh(*args: str, checks: bool = False) -> str:
+    """Return ``gh`` stdout; raise ``GhError`` on failure.
+
+    ``gh pr checks`` exits nonzero for failing or pending checks while still
+    printing them, and for a head with no checks; ``checks=True`` accepts both.
+    """
+    try:
+        done = subprocess.run(
+            ["gh", *args],  # noqa: S607
+            check=False,
+            capture_output=True,
+            text=True,
+        )
+    except OSError as exc:
+        msg = f"gh: {exc}"
+        raise GhError(msg) from exc
+    if done.returncode == 0:
+        return done.stdout
+    if checks and done.stdout.strip():
+        return done.stdout
+    if checks and "no checks reported" in done.stderr:
+        return ""
+    msg = done.stderr.strip() or f"gh exited {done.returncode}"
+    raise GhError(msg)
 
 
 def _lines(raw: str) -> list[dict[str, str]]:
@@ -91,7 +114,7 @@ def _wait_ci(args: argparse.Namespace) -> int:
     grace = time.monotonic() + args.grace * 60
     state = "none"
     while True:
-        raw = _gh("pr", "checks", args.pr, "--json", "name,bucket,state")
+        raw = _gh("pr", "checks", args.pr, "--json", "name,bucket,state", checks=True)
         state = classify_ci(json.loads(raw) if raw.strip() else [])
         if state in {"green", "failed"}:
             break
@@ -152,7 +175,11 @@ def main(argv: list[str] | None = None) -> int:
     ag.add_argument("--timeout", type=float, default=10, help="minutes")
     ag.add_argument("--interval", type=float, default=30, help="seconds")
     args = parser.parse_args(argv)
-    return _wait_ci(args) if args.cmd == "ci" else _wait_agents(args)
+    try:
+        return _wait_ci(args) if args.cmd == "ci" else _wait_agents(args)
+    except GhError as exc:
+        sys.stderr.write(f"{exc}\n")
+        return 4
 
 
 if __name__ == "__main__":

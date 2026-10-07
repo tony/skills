@@ -63,8 +63,8 @@ exercises, is fully described by its links.
 
 A bump takes a `why:` above that link block when any of these hold:
 
-- It crosses a major (for a 0.x tool, a minor: uv 0.7 to 0.8 can
-  break), or the vendor labels the release breaking.
+- It crosses a major (for a 0.x tool, a minor, which may break), or the
+  vendor labels the release breaking.
 - The span changes behavior the repository exercises — a resolver
   default, a discovery rule, a newly rejected input format.
 - It carries a security fix.
@@ -193,10 +193,14 @@ tool trailer, a tool URL, or an emoji. Hosts add them by default.
 ## Writing the message
 
 Multi-line messages go through a heredoc or a file; a multi-line
-`git commit -m` string has collapsed bodies into the subject line.
+`git commit -m` string has collapsed bodies into the subject line. A body
+built from release-note text is untrusted: write it to a file with the
+file-writing tool and run `git commit -F <file>`. A message the skill
+authors itself may use a quoted heredoc, with a delimiter that appears
+nowhere in the body (check before running).
 
 ```bash
-git commit -F - <<'EOF'
+git commit -F - <<'COMMIT_MSG_END'
 js(deps[dev]) @biomejs/biome 2.5.3 -> 2.5.4
 
 why: Track latest Biome patch release (published <date>, now past
@@ -205,7 +209,7 @@ the <N>-day supply-chain cooldown).
 what:
 - Bump @biomejs/biome in root, lib, wc (exact) and site (caret)
 - Lockfile: biome + platform CLI binaries 2.5.3 -> 2.5.4
-EOF
+COMMIT_MSG_END
 ```
 
 ## Exemplars

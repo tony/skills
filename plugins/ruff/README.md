@@ -34,6 +34,8 @@ Claude Code uses a leading slash (`/ruff:…`). Codex omits it (`ruff:…`).
 
 ## Skills
 
+### bump
+
 Raise the ruff floor across the repositories in scope and absorb what the
 release surfaces, one commit per rule. Claude Code invokes it as
 `/ruff:bump [version]`, Codex as `ruff:bump [version]`.
@@ -62,11 +64,11 @@ Arguments:
 - `references/cooldown-exemption.md`: exempting one package from a resolver cooldown
 - `references/throwaway-worktree.md`: working on a branch in an isolated worktree
 - `references/prose-rules.md`: rules for commit, PR, and report prose
-- `scripts/default_delta.py`: per-rule finding delta between the configured and default rule sets
+- `scripts/default_delta.py`: per-rule finding delta between the configured and default rule sets, and the codes a version reports that its predecessor did not
 
 ## Prerequisites
 
 - `git`; remote push access only for `--push` or `--pr`
 - `curl`, or GitHub CLI (`gh`) for release lookups; `gh`, authenticated, only for fork checks and `--pr`
-- `python3` for the bundled measurement script
+- `python3` (3.9 or newer) for the bundled measurement script
 - Project's resolver and quality-check commands (defined in `AGENTS.md`/`CLAUDE.md` or CI workflow)

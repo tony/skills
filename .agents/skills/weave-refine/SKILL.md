@@ -74,9 +74,9 @@ Follow `references/refine-cycle.md` for pass 1, with the candidates in `pass-000
 
 Unless `--no-deslop` was set, read `references/deslop-pass.md` and apply it with `ARTIFACT_PATH` = `<session_dir>/pass-<final>/woven.md`, `SESSION_DIR`, `BASELINE_SHA` set to `baseline_sha` from `init`, and `DESLOP_MODE` from the flags (`quiet`, `verbose`, or `default`). Re-read `woven.md` for the desloped text.
 
-Read `references/present-results.md` and apply it with `RESULT_KIND` = `refine`, `ARTIFACT_PATH` = `<session_dir>/pass-<final>/woven.md`, `SESSION_DIR`, `PASS_COUNT` = the completed passes, `IN_PLAN_MODE` = false, `LABEL_MAP_PATH` = null. Read `WORKER_BACKEND`, `PARTICIPANTS`, `EXECUTORS`, and `MODELS` from `session.json`.
+Read `references/present-results.md` and `references/refine.md`, and apply them with `RESULT_KIND` = `refine`, `ARTIFACT_PATH` = `<session_dir>/pass-<final>/woven.md`, `SESSION_DIR`, `PASS_COUNT` = the completed passes, `IN_PLAN_MODE` = false, `LABEL_MAP_PATH` = null. Read `WORKER_BACKEND`, `PARTICIPANTS`, `EXECUTORS`, and `MODELS` from `session.json`.
 
-Copy the final woven text to `<session_dir>/final.md`, then follow `ensemble-core.md` (Finish).
+Copy the final woven text to `<session_dir>/final.md`, then follow `ensemble-core.md` (Finish). Inline-text input gets the same shape: a hero line first, then the four listed headings, with no title line or other headings.
 
 ## Rules
 

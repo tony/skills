@@ -59,3 +59,37 @@ def test_type_row_needs_no_citation_but_a_member_does(
     (tmp_path / "terms.jsonl").write_text("\n".join(rows) + "\n", encoding="utf-8")
     assert term_metrics.main([str(tmp_path), "--check-terms"]) == 1
     assert capsys.readouterr().out.splitlines() == ["adapter: no citation"]
+
+
+def test_type_row_without_parent_or_cite_fails_the_gate(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """A harvested ``kind: type`` row has no parent yet, so it must cite."""
+    row = '{"term": "Config", "definition": "a class", "kind": "type"}'
+    (tmp_path / "terms.jsonl").write_text(row + "\n", encoding="utf-8")
+    assert term_metrics.main([str(tmp_path), "--check-terms"]) == 1
+    assert capsys.readouterr().out.splitlines() == ["Config: no citation"]
+
+
+@pytest.mark.parametrize(
+    ("rows", "expected"),
+    [
+        ([("a", "a")], ["a -> a"]),
+        ([("a", "b"), ("b", "a")], ["a -> b -> a"]),
+        ([("a", "b"), ("b", "c"), ("c", "b")], ["b -> c -> b"]),
+        ([("a", "root"), ("b", "a")], []),
+    ],
+)
+def test_cycles_reports_self_loops_and_loops(
+    rows: list[tuple[str, str]], expected: list[str]
+) -> None:
+    """Parent chains that never reach ``root`` are reported once each."""
+    assert term_metrics.cycles([{"term": t, "parent": p} for t, p in rows]) == expected
+
+
+def test_main_prints_cycles_section(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    """The analyzer report lists a self-parent under hierarchy cycles."""
+    row = '{"term": "a", "definition": "x", "parent": "a"}'
+    (tmp_path / "terms.jsonl").write_text(row + "\n", encoding="utf-8")
+    assert term_metrics.main([str(tmp_path)]) == 0
+    assert "== hierarchy cycles ==\n  a -> a" in capsys.readouterr().out

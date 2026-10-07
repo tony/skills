@@ -16,14 +16,15 @@ Move `required_version` across every module that declares one, along
 with the version manager files, CI workflows, and images that pin the
 same CLI somewhere else.
 
-Follow the phase structure and conventions in
-the `terraform-bumping-terraform` skill (recorded tree state, commit
-message rules, non-interactive defaults, stopped and audit-only runs), which names the references this
-skill uses. To move a provider, use the `terraform-bump-provider` skill.
+Follow the conventions in the `terraform-bumping-terraform` skill (recorded tree
+state, script paths, commit message rules, non-interactive defaults,
+the plan, stopped and audit-only runs). This skill uses
+`references/layout-discovery.md`,
+`references/pin-sites.md`, and
+`references/lock-and-init.md`. To move a provider, use
+the `terraform-bump-provider` skill.
 
 User arguments: $ARGUMENTS
-
-`references/lockctl.py` resolves from this skill's directory: print its absolute path once and write that path literally in each command, since shell variables do not persist between Bash calls.
 
 ## Procedure
 
@@ -39,7 +40,7 @@ $ curl -fsS https://releases.hashicorp.com/terraform/index.json \
     | python3 references/lockctl.py stable 3
 ```
 
-The fence shows the `../../scripts/` form; write the absolute path.
+Write the script's absolute path there, per the umbrella's script-path rule.
 
 When `tofu` drives the repository, list OpenTofu's releases with the
 command in `references/pin-sites.md`. Present the latest stable
@@ -50,14 +51,19 @@ major version, add the CLI's upgrade guide to the report.
 
 ### 2. Discover the layout
 
-Run the umbrella's discovery phase. `--root-module` limits the run to the
-named directories.
+Follow `references/layout-discovery.md`. Record, per directory:
+kind, lock file presence, how many platforms that lock tracks per
+provider, and the providers and `required_version` it declares. Find root
+modules from the `.tf` files, not only from tracked lock files, map each
+child module to the roots that call it, and ask the reference's
+ambiguity questions together once the inventory exists. `--root-module`
+limits the run to the named directories.
 
 ### 3. Inventory every pin site
 
 Both kinds, per the pin-sites reference: `required_version` in every
-module (the reference's `git grep` lists them across `.tf` and `.tofu`), and the pins outside the configuration (`.terraform-version`,
-`.tool-versions`, `mise.toml`, workflow files, image tags, devcontainer
+module (the reference's `git grep` lists them across `.tf`, `.tofu`, and `.tf.json`), and the pins outside the configuration (`.terraform-version`,
+`.tool-versions`, `mise.toml`, `.mise/config.toml`, workflow files, image tags, devcontainer
 configuration, Makefile variables).
 
 ### 4. Report the drift before overwriting it
@@ -80,7 +86,7 @@ one.
 
 ### 6. Present the plan and wait
 
-Show every site to be edited with the form it keeps, every site left
+Per the umbrella's Orchestration Plan, show every site to be edited with the form it keeps, every site left
 alone with the reason, the drift found, and whether lock files will be
 refreshed. With `--audit-only`, stop here and write nothing.
 
@@ -90,10 +96,10 @@ All pin sites in one commit. Then, unless `--no-lock`, re-run `init` in
 each root module that has a committed, unmodified lock, as a separate
 commit if the lock changes (a CLI bump can change the lock file's own
 format). Use plain `init` per the lock reference, never `-upgrade`: a CLI
-bump moves no provider, so any version change in `lockctl.py state`
-means restore the lock from git and report it. A lock whose platform
-count dropped is restored the same way and never committed without the
-user's explicit yes (headless: restore it, leave it out, and stop). A root module with no
+bump moves no provider, so `lockctl.py diff` with no `--allow` must exit
+0; a non-zero exit (a version change or a platform count drop) means
+restore the lock from git and report it. A dropped count is never
+committed without the user's explicit yes (headless: restore it, leave it out, and stop). A root module with no
 committed lock is skipped and reported: `init` there would create a lock
 and pick providers. Run it only after the user approves that outcome.
 With `--no-commit`, leave the working tree alone and say what would have
@@ -126,6 +132,10 @@ order:
    whether each root module now initialises.
 6. `## Drift`: every disagreement found before the bump, and every one
    still outstanding after it. Omit it when nothing disagreed.
+
+Name each commit by subject in the section it carries, never by SHA.
+State a root module that could not be initialised in `## Locks` only;
+`## Verification` does not repeat it.
 
 Reply in this shape, as plain text outside any code fence, with plain bullets, no bold (never `- **Label:** ...`), and no local paths:
 

@@ -6,6 +6,7 @@
 
 from __future__ import annotations
 
+import io
 import json
 import typing as t
 from pathlib import Path
@@ -256,3 +257,55 @@ def test_breakeven_reports_unknowns_and_computes_only_what_is_registered(
     assert "missing: build-hours\n" in out
     (tmp_path / "assumptions.yaml").write_text("- id: periods\n  value: 4\n")
     assert business.main(["breakeven", str(tmp_path)]) == 1
+
+
+def _review_page(*, has_next: bool) -> str:
+    pr: dict[str, object] = {
+        "number": 9,
+        "createdAt": "2026-04-02T00:00:00Z",
+        "mergedAt": "2026-04-02T12:00:00Z",
+        "additions": 1,
+        "deletions": 0,
+        "author": {"login": "ann-author"},
+        "reviews": {
+            "pageInfo": {"hasNextPage": has_next},
+            "nodes": [
+                {
+                    "submittedAt": "2026-04-02T03:00:00Z",
+                    "author": {"login": "bo-reviewer", "__typename": "User"},
+                }
+            ],
+        },
+        "reopened": {"filteredCount": 0},
+    }
+    return json.dumps({"data": {"repository": {"pullRequests": {"nodes": [pr]}}}})
+
+
+def test_collect_prs_stdin_output_holds_no_logins(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    monkeypatch.setattr("sys.stdin", io.StringIO(_review_page(has_next=False)))
+    args = ["collect-prs", "--start", "2026-04-01", "--end", "2026-04-30"]
+    assert business.main(args) == 0
+    out = capsys.readouterr()
+    assert out.out.splitlines()[1].split(",")[4] == "3.00"
+    assert "ann-author" not in out.out + out.err
+    assert "bo-reviewer" not in out.out + out.err
+    assert out.err == ""
+
+
+def test_collect_prs_warns_when_reviews_are_truncated(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    monkeypatch.setattr("sys.stdin", io.StringIO(_review_page(has_next=True)))
+    args = ["collect-prs", "--start", "2026-04-01", "--end", "2026-04-30"]
+    assert business.main(args) == 0
+    assert "warning: PR #9: reviews truncated at 1" in capsys.readouterr().err
+
+
+def test_unknown_bullet_accepts_any_data_clause(tmp_path: Path) -> None:
+    run = make_run(tmp_path)
+    (run / "findings.md").write_text("## Unknowns\n\n- Adoption: unknown. Needs a usage export.\n")
+    assert business.check_run(run) == []
+    (run / "findings.md").write_text("## Unknowns\n\n- Adoption: unknown.\n")
+    assert len(business.check_run(run)) == 1

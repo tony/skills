@@ -4,8 +4,8 @@ Shared by this skill and the `brief` skill.
 
 Five lines, maximum. The reader is disoriented; every line they read
 before that ends is a cost. The full sweep is exhaustive because its
-reader is about to touch the code; the brief is ruthless because its
-reader has just said "huh".
+reader is about to touch the code; the brief is capped at five lines because
+its reader has just said "huh".
 
 Script paths here (`../scripts/...`) resolve from this file's directory, not the repository: print the absolute path once and write it literally in each command.
 

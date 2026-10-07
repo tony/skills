@@ -19,13 +19,11 @@ a commit-by-commit plan, optionally replaying it immediately.
 
 A probe **mutates the working tree freely** and never touches history.
 
-`references/spike.sh` holds the git plumbing: the repository guard, the
-stash sequences, saving and restoring the user's work, and the spike-only
-replay. The shell's working directory is the project, not this skill, so
-resolve `../../scripts` against this skill's base directory (given when the
-skill loads). In every command below, substitute that absolute directory
-for `<scripts>`. The script exits 1 with a one-line reason when it
-refuses, 2 on usage errors.
+The shared steps (preflight, setup, probe loop, exit gate, stash) live in
+`references/spike-core.md`; read it before Phase 0. `references/spike.sh`
+holds the git plumbing. In every command, `<scripts>` stands for the
+absolute path of `../../scripts` resolved from this skill's directory (the
+shell runs in the project, not here); write that path literally.
 
 ## Core thesis
 
@@ -91,39 +89,10 @@ landing them is the `respond-action` skill.
 
 ## Phase 0: Situational awareness
 
-Before writing any code:
-
-1. Confirm a git repository with at least one commit, and that its root
-   does not contain the home directory. A dotfile repository rooted at
-   `$HOME` would have `git add -A` and `git reset --hard` sweep the whole
-   home directory, credentials included:
-
-```console
-$ <scripts>/spike.sh guard
-```
-
-   Any output but `ok` halts before touching anything. Say what is
-   missing in plain words, not the command that found it: no commits (the
-   user makes the initial commit, since a spike never commits) or a
-   repository rooted at their home directory (the user opens the project's
-   own repository).
-2. Read `AGENTS.md` / `CLAUDE.md` / `.github/CONTRIBUTING.md` for
-   quality checks, commit format, and test conventions.
-3. Resolve the five gate buckets (`format`, `lint`, `typecheck`,
-   `test`, `build`) and the CI-coverage split per
-   `references/verification-gates.md`.
-4. Run `git status --porcelain`. A dirty tree halts here: ask whether to
-   stash their work first, probe on top of it, or abort. Non-interactive
-   default: abort. Record the choice; nothing is saved or switched until
-   the brief is approved (Phase 2, Setup). Either way their work is saved
-   as a stash named `user work before spike`, and the printed SHA is the
-   **user-work SHA**: record it, report it with its restore command in
-   every run (Stash section), and never drop it.
-5. With `--branch`, check that the name is free
-   (`git rev-parse --verify --quiet refs/heads/<name>` prints nothing);
-   a name that exists halts: ask for another.
-6. Locate the code the goal touches (existing modules, tests,
-   fixtures), enough to work in the project's idiom.
+Run the Preflight in `references/spike-core.md`, resolving the gate
+buckets and CI split per `references/verification-gates.md`. Probe
+accepts all three dirty-tree answers (stash first, probe on top, abort) and
+`--branch`.
 
 ## Phase 1: Orchestration plan
 
@@ -150,123 +119,22 @@ there is nothing to undo.
 
 ## Phase 2: The probe
 
-Setup, once the brief is approved and before the first edit:
-
-1. A dirty tree answered *stash first*: the tree is cleaned:
-
-```console
-$ <scripts>/spike.sh save-user
-```
-
-   Phase 4 restores their work after the exit path completes. With
-   `--keep-tree` the spike stays in the tree, so their work stays
-   stashed: report the SHA and its restore command.
-2. A dirty tree answered *probe on top*: the stash is saved but their
-   files stay in the tree, so the spike builds on them. Staged edits come
-   back unstaged and untracked files stay untracked; contents are
-   unchanged:
-
-```console
-$ <scripts>/spike.sh hold-user
-```
-
-3. With `--branch`, create the scratch branch. The command prints the
-   original branch (a SHA when HEAD is detached); use that literal value
-   in Phase 4:
-
-```console
-$ <scripts>/spike.sh branch-start <name>
-```
-
-Code the shortest path to "proven". During this phase:
-
-- Verify with the **cheapest signal that moves you forward**: the one
-  test file or smoke command that exercises the new code, not the full
-  suite or the build.
-- Mark shortcuts as you take them with a `SPIKE:` comment (hardcoded
-  values, skipped edge cases, undecided semantics). They become plan
-  items, not debt to fix during the probe.
-- Stay inside the goal. Adjacent problems go in the plan's "observed,
-  not addressed" list.
-- Record **stumbling blocks**: places the approach itself fought back
-  (an API that will not compose, a constraint that surfaced too late).
-  Unlike a `SPIKE:` marker (a shortcut you chose) or an adjacent
-  problem, a stumbling block is evidence the *approach* may be wrong:
-  the reason to reach for the `spike-bakeoff` skill.
+Run Setup from `references/spike-core.md` once the brief is
+approved: `save-user` for *stash first*, `hold-user` for *probe on top*,
+`branch-start` with `--branch`. With `--keep-tree` after a stash-first
+answer the spike stays in the tree, so their work stays stashed: report the
+SHA and its restore command. Then follow its probe loop.
 
 ## Phase 3: Spike exit gate
 
-Once proven, run the fast local buckets exactly as discovered:
-`format`, `lint`, `typecheck`, and the scoped `test` command. Run
-`build` only if the change plausibly affects build output; otherwise
-note it as CI-deferred.
-
-Gate failures here are **information, not work**: fix formatting, and
-record the rest as plan items.
-
-Run gates as discovered, including mutating ones (`--fix` linters,
-formatters). If a gate changes any file, re-run the Phase 2 proving
-check once: the stash must hold code proven *after* its last
-modification.
+Run the Exit gate in `references/spike-core.md`.
 
 ## Phase 4: Stash with a recovery ref
 
-Unless `--keep-tree`, stash everything, untracked files included. The
-command prints the stash's own SHA; never read `stash@{0}`, because on an
-unchanged tree `git stash push` exits 0 and `stash@{0}` is another
-stash's entry. Never run it in parallel with another stash in the
-repository.
-
-Replace `<message>` with `spike: <goal> (<what passed, what's undecided>)`:
-
-```console
-$ <scripts>/spike.sh stash "<message>"
-```
-
-After a probe on top, pass the user-work SHA so their files go back into
-the tree and the stash records the spike:
-
-```console
-$ <scripts>/spike.sh stash-on-top <user-work sha> "<message>"
-```
-
-1. Record the printed SHA in the report; `git stash apply <sha>`
-   restores it. The output `no changes` means record "no changes", not a
-   SHA. A refused restore after `stash-on-top` still printed the spike
-   SHA first: report both SHAs. Files matched by `.gitignore` are not
-   stashed. After a probe on top the stash holds their work plus the
-   spike, so build the plan and the replay from the spike's own delta,
-   never the whole stash:
-
-```console
-$ <scripts>/spike.sh delta <user-work sha> <spike sha>
-```
-
-   With `--keep-tree` after a probe on top there is no spike SHA: the
-   tree holds their edits and the spike together, so build the plan from
-   the tree's diff against the user-work SHA:
-
-```console
-$ <scripts>/spike.sh delta <user-work sha>
-```
-
-2. After a stash-first run without `--replay`, put their work back and
-   confirm the tree matches its pre-spike state with `git status`. A
-   refused restore changes nothing and keeps the stash: report the SHA
-   and stop, and never drop it.
-
-```console
-$ <scripts>/spike.sh restore <user-work sha>
-```
-
-3. With `--branch`, return to the original branch and delete the
-   scratch branch (it holds no commits, so `-d` succeeds). Uncommitted work
-   follows you. With `--keep-tree`, stay on the scratch branch and give
-   the user the return command instead.
-
-```console
-$ <scripts>/spike.sh branch-end <orig> <name>
-```
+Unless `--keep-tree`, run the Stash steps in
+`references/spike-core.md`: `stash` on a clean start, `stash-on-top`
+after a probe on top, `delta` for the plan, then `restore` after a
+stash-first run that is not replaying, and `branch-end` with `--branch`.
 
 ## Phase 5: The replay plan
 
@@ -313,13 +181,20 @@ $ <scripts>/spike.sh drop <spike sha>
 ```
 
 4. After a stash-first run, restore their work with
-   `spike.sh restore <user-work sha>`. It stays uncommitted. A refused
+   `<scripts>/spike.sh restore <user-work sha>`. It stays uncommitted. A refused
    restore keeps the stash: report the SHA.
 
 ## Output contract
 
 Write the report, and any replay commit message, per
 `references/prose-rules.md`.
+
+The first line of the reply is exactly the hero line: no lead-in sentence,
+no first-person opener. Report results, not process: never narrate a
+departure from these steps or name the brief or the skill; do the step or
+halt. State what happened, not what a contender or step did not do.
+Warnings about the checkout (mode changes, files left in place, a tree
+that needs attention) go inside `## Stash`, never before the first section.
 
 1. Hero block (1–3 lines): `✓ spike proven` / `⚠ spike blocked` +
    goal + exit path taken.

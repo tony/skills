@@ -1,7 +1,5 @@
 # Audience Sensitivity Ladder
 
-Script paths here (`../scripts/...`) resolve from this file's directory; print the absolute path once and write it literally in each command.
-
 ## Contents
 
 - When the package holds no committable savings figure
@@ -13,8 +11,7 @@ Four disclosure tiers, from tier 0 (internal leadership, full
 detail) to tier 3 (fully external). The binding rule: an artifact
 may never contain detail its tier's contract excludes, even though
 the run directory has it. Sanitization is a property of the
-artifact, not of the data. Script paths below resolve relative to
-this file; run the script by its absolute location.
+artifact, not of the data.
 
 ## When the package holds no committable savings figure
 
@@ -70,7 +67,7 @@ this skill runs this as an explicit final pass
 over the finished draft. the `business-pr-release` skill inherits the result
 by sourcing figures only from the public case study.
 
-1. Run the scanner over the draft, passing each name on the
+1. Run the scanner (by its absolute path) over the draft, passing each name on the
    `Names:` line of the run's `README.md` as `--deny`, one flag per
    name:
 

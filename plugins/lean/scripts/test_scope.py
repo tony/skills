@@ -151,3 +151,68 @@ def test_paths_are_relative_to_cwd_from_a_subdirectory(
     assert capsys.readouterr().out == "m.py\t1-1\n"
     assert scope.main(["--all"]) == 0
     assert capsys.readouterr().out == "../a.py\nm.py\n"
+
+
+def _commit_file(repo: pathlib.Path, name: str) -> None:
+    (repo / name).write_text("x = 1\n")
+    _run(repo, "add", ".")
+    _run(repo, "commit", "-q", "-m", name)
+
+
+def test_orphan_branch_exits_2_without_traceback(
+    tmp_path: pathlib.Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """An orphan branch shares no history with the trunk."""
+    _topic_repo(tmp_path)
+    _run(tmp_path, "checkout", "-q", "--orphan", "island")
+    _commit_file(tmp_path, "b.py")
+    monkeypatch.chdir(tmp_path)
+    assert scope.main([]) == 2
+    assert "no merge base with main" in capsys.readouterr().err
+
+
+def test_shallow_clone_without_merge_base_exits_2(
+    tmp_path: pathlib.Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """A depth-1 clone of a diverged branch cannot reach the merge base."""
+    origin = tmp_path / "origin"
+    origin.mkdir()
+    _topic_repo(origin)
+    _run(origin, "checkout", "-q", "-b", "topic")
+    _commit_file(origin, "t1.py")
+    _run(origin, "checkout", "-q", "main")
+    _commit_file(origin, "m1.py")
+    clone = tmp_path / "clone"
+    _run(
+        tmp_path,
+        "clone",
+        "-q",
+        "--depth=1",
+        "--no-single-branch",
+        origin.as_uri(),
+        str(clone),
+    )
+    _run(clone, "checkout", "-q", "topic")
+    monkeypatch.chdir(clone)
+    assert scope.main([]) == 2
+    assert "no merge base" in capsys.readouterr().err
+
+
+def test_untracked_symlink_to_directory_is_skipped(
+    tmp_path: pathlib.Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """A symlinked directory is not a readable file and never crashes."""
+    _topic_repo(tmp_path)
+    _run(tmp_path, "checkout", "-q", "-b", "topic")
+    (tmp_path / "pkg").mkdir()
+    (tmp_path / "link").symlink_to(tmp_path / "pkg", target_is_directory=True)
+    (tmp_path / "fresh.py").write_text("x = 1\n")
+    monkeypatch.chdir(tmp_path)
+    assert scope.main([]) == 0
+    assert capsys.readouterr().out == "fresh.py\t1-1\n"

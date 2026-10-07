@@ -124,7 +124,8 @@ The
 `https://api.trello.com/1/`, authenticated with an API key plus token. Create with
 `POST /cards` (requires `idList`), update with `PUT /cards/{id}`, comment with
 `POST /cards/{id}/actions/comments`, attach with `POST /cards/{id}/attachments`. The body
-field is `desc`, capped at 16384 characters — check length before writing a long draft.
+field is `desc`, capped at 16384 characters; re-check the limit in the REST reference before
+writing a long draft.
 
 Send the key and token in an `Authorization: OAuth` header, which the
 [authorization guide](https://developer.atlassian.com/cloud/trello/guides/rest-api/authorization/)

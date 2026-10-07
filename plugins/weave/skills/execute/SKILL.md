@@ -107,7 +107,7 @@ Follow `../../references/mutating-run.md` (Refinement passes), repeating Phases 
 
 ## Phase 5: Apply the best implementation
 
-Show the synthesis plan and wait for the user's confirmation before touching the main checkout. Without `AskUserQuestion`, do not apply anything: report the synthesis plan, then run only the cleanup steps (discard the `claude` lane's main-checkout changes with `reset-main` under **model-clis**, remove the worktrees, restore the stash, then render the results in the nothing-applied shape) so the user's tree is as they left it. A request that explicitly says to apply the result is that confirmation for applying it, never for committing.
+Follow `../../references/mutating-run.md` (Apply gate and presentation): show the synthesis plan and wait before touching the main checkout.
 
 1. Under **model-clis**, discard the `claude` lane's changes first (`../../references/mutating-run.md`, Reset the main checkout).
 
@@ -123,7 +123,7 @@ Show the synthesis plan and wait for the user's confirmation before touching the
 
 3. Read the combined result and fix integration problems: imports, signatures, and API mismatches between files from different participants; naming, docstring, and import style per the project's conventions.
 
-4. Run the project's quality gates. All must pass; fix and rerun otherwise. Then record the state:
+4. Run the project's quality gates, then record the state:
 
    ```console
    $ python3 <engine> update \
@@ -133,11 +133,7 @@ Show the synthesis plan and wait for the user's confirmation before touching the
 
 5. Remove the worktrees and restore the user's changes with `stash-restore` (`../../references/mutating-run.md`, Remove worktrees and restore the stash), checking `git diff --stat HEAD` against the synthesis plan. Continue to step 6 after a stash conflict.
 
-6. Read `../../references/present-results.md` and apply it with `RESULT_KIND` = `execute`, `ARTIFACT_PATH` = `<session_dir>/pass-NNNN/synthesis.md`, `SESSION_DIR`, `PASS_COUNT` = `passes`, `IN_PLAN_MODE` = false, `LABEL_MAP_PATH` = `<session_dir>/pass-NNNN/label-map.json`. Read `WORKER_BACKEND`, `PARTICIPANTS`, `EXECUTORS`, and `MODELS` from `session.json`.
-
-   Render it only now: the stash is restored (or its recovery reported), so a next-step panel never runs while the user's work is held.
-
-The result is unstaged in the working tree for the user to review. Never commit it.
+6. Read `../../references/present-results.md` and `../../references/results/execute.md`, and apply them with `RESULT_KIND` = `execute`, `ARTIFACT_PATH` = `<session_dir>/pass-NNNN/synthesis.md`, `SESSION_DIR`, `PASS_COUNT` = `passes`, `IN_PLAN_MODE` = false, `LABEL_MAP_PATH` = `<session_dir>/pass-NNNN/label-map.json`. Read `WORKER_BACKEND`, `PARTICIPANTS`, `EXECUTORS`, and `MODELS` from `session.json`.
 
 ---
 

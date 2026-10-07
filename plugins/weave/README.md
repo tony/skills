@@ -86,7 +86,7 @@ Commands that need commits (`execute`, `prompt`, `architecture`, `review`, `fix-
 
 `scripts/engine.py` runs the deterministic work: flag parsing, session setup, model-CLI dispatch with retry and fallback, worktrees, diff capture, judging helpers, and the repo guard. It needs `python3` (3.9 or newer) and `git` on a POSIX system. `scripts/test_engine.py` tests it against real git repositories and stub CLIs. [`docs/engine.md`](docs/engine.md) lists every command and how to convert a skill.
 
-Shared judgment prose lives in `references/ensemble-core.md` (context packet, dispatch, blind judging, synthesis, consensus), `references/ensemble-techniques.md` (cascade and residual re-attack), `references/present-results.md`, and `references/deslop-pass.md`. `references/worker-backends.md` defines the two backends.
+Shared judgment prose lives in `references/ensemble-core.md` (context packet, dispatch, blind judging, synthesis, consensus), `references/ensemble-techniques.md` (cascade and residual re-attack), `references/present-results.md` (shared rendering rules, plus one file per result kind in `references/results/`), and `references/deslop-pass.md`. `references/worker-backends.md` defines the two backends.
 
 ## Repo Guard
 
@@ -133,7 +133,7 @@ Without plan mode the commands still run; the phase structure guides the analysi
 
 ## Output
 
-Commands render through `references/present-results.md`: a hero block, prescribed sections in a fixed order, an Attribution footer, and a next-step panel that can hand the result off into plan mode.
+Commands render through `references/present-results.md` and their kind's file in `references/results/`: a hero block, prescribed sections in a fixed order, an Attribution footer, and a next-step panel that can hand the result off into plan mode.
 
 ## Workers
 

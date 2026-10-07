@@ -12,15 +12,16 @@ disable-model-invocation: true
 Raise a provider's version across every module that declares it, in one
 commit, then refresh the lock file of every affected root module.
 
-Follow the phase structure and conventions in
-`../bumping-terraform/SKILL.md` (recorded tree state, commit
-message rules, non-interactive defaults, stopped and audit-only runs), which names the references this
-skill uses. To move the CLI, use `/terraform:bump-terraform`. To refresh
-locks within existing constraints, use `/terraform:refresh-lock`.
+Follow the conventions in `../bumping-terraform/SKILL.md` (recorded tree
+state, script paths, commit message rules, non-interactive defaults,
+the plan, stopped and audit-only runs). This skill uses
+`../../references/layout-discovery.md`,
+`../../references/pin-sites.md`, and
+`../../references/lock-and-init.md`. To move the CLI, use
+`/terraform:bump-terraform`. To refresh locks within existing constraints,
+use `/terraform:refresh-lock`.
 
 User arguments: $ARGUMENTS
-
-`../../scripts/lockctl.py` resolves from this skill's directory: print its absolute path once and write that path literally in each command, since shell variables do not persist between Bash calls.
 
 ## Procedure
 
@@ -33,7 +34,8 @@ source addresses the repository declares:
 $ git grep \
     -n -E \
     -e '^[[:space:]]*source[[:space:]]*=' \
-    -- '*.tf' '*.tofu'
+    -e '"source"[[:space:]]*:' \
+    -- '*.tf' '*.tofu' '*.tf.json'
 ```
 
 The list mixes provider and module sources, and each hit names its file
@@ -52,8 +54,13 @@ line.
 
 ### 2. Discover the layout and settle the ambiguities
 
-Run the umbrella's discovery phase. `--root-module` limits the run to the
-named directories.
+Follow `../../references/layout-discovery.md`. Record, per directory:
+kind, lock file presence, how many platforms that lock tracks per
+provider, and the providers and `required_version` it declares. Find root
+modules from the `.tf` files, not only from tracked lock files, map each
+child module to the roots that call it, and ask the reference's
+ambiguity questions together once the inventory exists. `--root-module`
+limits the run to the named directories.
 
 ### 3. Resolve the target version
 
@@ -76,7 +83,7 @@ layout-discovery reference. Decide per site whether it needs editing at all.
 
 ### 5. Present the plan and wait
 
-Show the sites to be edited with the operator each keeps, the sites left
+Per the umbrella's Orchestration Plan, show the sites to be edited with the operator each keeps, the sites left
 alone with the reason, the lock files to be refreshed with how many
 platforms each tracks, and any drift found. With `--audit-only`, stop
 here and write nothing.
@@ -90,9 +97,9 @@ steps, never `init -upgrade`. When the user named a version that the
 constraint allows to be exceeded, follow its "Landing a version the user
 named" steps so the lock holds exactly that version. A root module with no committed lock is
 skipped and reported, since `init` would create one; run it there only
-after the user approves. A failed `init` restores the lock from git. Compare every provider's platform count
-against its count before, and restore a dropped platform count for the
-bumped provider with `providers lock` naming it. Never commit a lock that
+after the user approves. A failed `init` restores the lock from git. Compare each lock with `lockctl.py diff`, passing the bumped provider
+to `--allow` (the lock reference has the command), and restore a dropped
+platform count for the bumped provider with `providers lock` naming it. Never commit a lock that
 lost platforms without the user's explicit yes to that file; headless,
 restore it from git, leave it out of the commit, and stop. With
 `--no-commit`, leave everything in the working tree and say what would
@@ -102,8 +109,9 @@ have been committed. Write commit messages and the report per
 ### 7. Verify
 
 Read the selected version back out of each lock file and compare it to
-the target; a different version is an overshoot to report, not a pass. `git diff` each lock file and report any provider block
-other than the bumped one that changed. Run the repository's own gates.
+the target; a different version is an overshoot to report, not a pass.
+`lockctl.py diff` exiting non-zero names any other provider that changed
+or any count that dropped; report it. Run the repository's own gates.
 Report root modules that did not move, and why.
 
 ## Output
@@ -127,6 +135,10 @@ order:
 6. `## Drift`: pin sites that disagreed with each other before the
    bump, root modules that did not move and why, and modules whose
    constraints already admitted the target. Omit it when none apply.
+
+Name each commit by subject in the section it carries (constraints under
+`## Sites`, locks under `## Locks`), never by SHA, and do not report the
+temporary exact pin used to land a named version.
 
 Reply in this shape, as plain text outside any code fence, with plain bullets, no bold (never `- **Label:** ...`), and no local paths:
 

@@ -29,31 +29,28 @@ Install the plugin:
 $ codex plugin add github-actions@skills
 ```
 
-Claude Code uses a leading slash (`/github-actions:…`). Codex omits it (`github-actions:…`).
-
 ## Skills
 
-| Claude Code | Codex | Description |
-|---|---|---|
-| `/github-actions:update-action <owner/action> [target version]` | `github-actions:update-action <owner/action> [target version]` | Take one named action to its current version wherever it is pinned — verify the tag, research the span, commit per repository |
-| `/github-actions:update-actions` | `github-actions:update-actions` | Audit every action in scope and update the out-of-date ones, then close the dependabot PRs those commits superseded |
+Take one named action to its current version wherever it is pinned:
+verify the tag, research the span, commit per repository.
 
-- `bumping-github-actions`: the shared procedure; it also triggers on its
-  own when you mention out-of-date actions or Dependabot's action PRs.
+```text
+/github-actions:update-action <owner/action> [target version]
+```
 
-By default a run covers the current repository, commits to the default
-branch, and does not push. Flags:
+Audit every action in scope, update the out-of-date ones, then close the
+dependabot PRs those commits superseded.
 
-- `--repo <path|slug>`: name repositories to cover; repeatable.
-- `--root <dir>`: sweep every repository beneath a directory
-  (`update-actions` only).
-- `--owner <name>`: keep only repositories owned by the given accounts
-  (`update-actions` only).
-- `--audit-only`: report without writing (`update-actions` only).
-- `--pr`: branch and open a pull request instead of committing to the
-  default branch.
-- `--push`: push the commits; without it, the report prints the push
-  command.
+```text
+/github-actions:update-actions
+```
+
+Codex omits the leading slash (`github-actions:update-action`). Each
+skill's `argument-hint` lists its flags. By default a run covers the
+current repository, commits to the default branch, and does not push.
+
+`bumping-github-actions` is the shared procedure; it also triggers on its
+own when you mention out-of-date actions or Dependabot's action PRs.
 
 Pinning rules, the fork rule, and the Dependabot close-out protocol live in
 `references/action-pinning.md` and `references/dependabot-closeout.md`.

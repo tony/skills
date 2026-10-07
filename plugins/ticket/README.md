@@ -1,7 +1,8 @@
 # ticket
 
-Manage work across trackers (Linear, Jira, GitHub, etc.) respecting native
-object graphs. Drafts durable, invariant-focused tickets.
+Manage work across trackers (Linear, Jira, GitHub, and others),
+respecting native object graphs. Drafts durable, invariant-focused
+tickets.
 
 ## Installation
 
@@ -29,7 +30,8 @@ Install the plugin:
 $ codex plugin add ticket@skills
 ```
 
-Claude Code uses a leading slash (`/ticket:…`). Codex omits it (`ticket:…`).
+Claude Code uses a leading slash (`/ticket:…`). Codex omits it
+(`ticket:…`).
 
 ## Components
 
@@ -41,8 +43,9 @@ text to paste if no backend exists.
 
 ### `/ticket:rebuild`
 
-Rebuilds messy live items. Sorts body into keep/cut/relocate/demote/repair.
-Relocates depth to linked documents. Updates only on approval.
+Rebuilds messy live items. Sorts the body into keep, cut, relocate,
+demote, and repair. Relocates depth to linked documents. Updates only on
+approval.
 
 ## Content Rules
 
@@ -58,7 +61,8 @@ Trackers use different native nouns. The plugin maps objects to
 canonical roles (for example, Linear Project is close to Jira Epic).
 
 - `references/hierarchy.md` lists roles and collisions.
-- `references/resolve.md` indexes the provider files under `references/providers/`.
+- `references/resolve.md` indexes the provider files under
+  `references/providers/`.
 
 ## When to Use
 

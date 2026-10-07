@@ -15,8 +15,8 @@ metadata:
 Profile, detect, hypothesize. This phase never edits the suite and never
 installs anything into the user's environment without asking. It writes only
 JSON and one collection listing to the memory directory, run files under the git
-directory, and one line in the local git exclude file when it creates an in-tree
-memory directory.
+directory (or the memory directory when that is unwritable), and one line in the
+local git exclude file when it creates an in-tree memory directory.
 
 `$ARGUMENTS` may scope the run to a path or marker, set `--runs=N` (baseline
 sample count, default 5), `--force` to ignore the idempotency token,
@@ -44,8 +44,9 @@ For a wrapper (`tox -e py`, `nox -s tests`, `make test`), pass them through the
 wrapper's own separator (`tox -e py -- <flags>`); when the wrapper has none, run
 it without them and record that in `baseline.json`.
 
-If the project has no pytest suite, stop with the halted-run shape in
-`references/output-contract.md`.
+If the project has no pytest suite, or the test command cannot start (pytest is
+not installed for it), stop with the halted-run shape in
+`references/output-contract.md`: one clause naming that, no interpreter paths.
 
 ## Step 2: Resolve memory and check idempotency
 
@@ -61,9 +62,10 @@ Write the node-id lines (unsorted) to `collection.txt`. Compute the idempotency
 token defined in the schema with `measure.py token --head <HEAD sha>
 --collection collection.txt --version <name>=<version> ...` (pytest and each
 plugin), and store it in `state.json` as `env_token`, with `base_head` set to the same
-`HEAD` sha: `03-execute` resumes against it. If `state.json` shows
+`HEAD` sha (`03-execute` resumes against it) and `hygiene` set to whether `--hygiene`
+was passed. If `state.json` shows
 `scan` completed with an unchanged token and `hypotheses.json` exists, report "already scanned" and stop, unless `--force`
-or `--hygiene` differs from the recorded run.
+is passed or `--hygiene` differs from `state.json`'s `hygiene`.
 
 Resolve `<runs-dir>` as `references/memory-schema.md` ("Run files") says
 and create it. Run files live there, never in the working directory.
@@ -81,8 +83,9 @@ environment, and without it the detector takes its fallback.
 
 Run the command below once without the redirect as a warm-up; its `seconds` is
 `t`. The scan costs about `(runs + 2) * t` in total: the warm-up, `--runs`
-baseline runs, and the profile run. Above 900 seconds, ask the user to confirm
-or lower `--runs` (never below 3); without an interactive question tool, lower
+baseline runs, and the profile run. Above the default budget of 900 seconds
+(the project's own limit, when its docs set one, replaces it), ask the user to
+confirm or lower `--runs` (never below 3); without an interactive question tool, lower
 `--runs` to 3 and say so in the closing line. Then time `--runs` serial,
 cache-disabled runs. Delete `<runs-dir>/baseline-runs.jsonl` first, then append
 each JSON line to it:

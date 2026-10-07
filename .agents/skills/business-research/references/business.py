@@ -85,6 +85,7 @@ SOURCE_FIELDS = (
 )
 OUTPUT_LINE = re.compile(r"^\W*output(?: file)?\s*:\s*(.+)$", re.IGNORECASE)
 CHECK_TOLERANCE = 0.005
+UNKNOWN_DATA = re.compile(r"\b(?:resolve|needs?|requires?|data|exports?)\b", re.IGNORECASE)
 
 
 def _median(values: list[float]) -> float:
@@ -746,7 +747,7 @@ def _check_unknowns(findings: str) -> list[str]:
     return [
         f"findings.md: unknown without the data that would resolve it: {unit[:60]}"
         for unit in _units("\n".join(section))
-        if UNIT_START.match(unit) and "resolve" not in unit.lower()
+        if UNIT_START.match(unit) and not UNKNOWN_DATA.search(unit)
     ]
 
 
@@ -812,11 +813,16 @@ def _first_review_hours(pr: dict[str, object]) -> str:
     return f"{delta.total_seconds() / 3600:.2f}"
 
 
-def collect_prs(text: str, start: str, end: str) -> list[dict[str, str]]:
+def collect_prs(
+    text: str, start: str, end: str, warnings: list[str] | None = None
+) -> list[dict[str, str]]:
     """Return one row per PR merged in ``start``..``end`` (inclusive dates, UTC).
 
-    ``first_review_hours`` counts the earliest submitted review by someone other than
-    the PR author and not a bot; it is blank when there is none.
+    Open and closed-unmerged PRs are excluded. ``first_review_hours`` counts the
+    earliest submitted review by someone other than the PR author and not a bot;
+    it is blank when there is none. A PR whose ``reviews.pageInfo.hasNextPage`` is
+    true appends a line to ``warnings``. Logins are read to compare author and
+    reviewer and never written to the rows.
 
     Examples
     --------
@@ -837,6 +843,13 @@ def collect_prs(text: str, start: str, end: str) -> list[dict[str, str]]:
     ('36.00', '6.00')
     >>> collect_prs(json.dumps(page), "2026-04-01", "2026-04-02")
     []
+    >>> page["data"]["repository"]["pullRequests"]["nodes"][0]["reviews"]["pageInfo"] = {
+    ...     "hasNextPage": True
+    ... }
+    >>> notes: list[str] = []
+    >>> _ = collect_prs(json.dumps(page), "2026-04-01", "2026-04-03", notes)
+    >>> notes
+    ['PR #7: reviews truncated at 3; first_review_hours may be wrong']
     """
     lo = dt.datetime.fromisoformat(f"{start}T00:00:00+00:00")
     hi = dt.datetime.fromisoformat(f"{end}T00:00:00+00:00") + dt.timedelta(days=1)
@@ -854,6 +867,13 @@ def collect_prs(text: str, start: str, end: str) -> list[dict[str, str]]:
             merged = _timestamp(_text(pr["mergedAt"]))
             if not lo <= merged < hi:
                 continue
+            reviews = _obj(pr.get("reviews"))
+            if warnings is not None and _obj(reviews.get("pageInfo")).get("hasNextPage") is True:
+                kept = len(_items(reviews.get("nodes")))
+                number = pr.get("number")
+                warnings.append(
+                    f"PR #{number}: reviews truncated at {kept}; first_review_hours may be wrong"
+                )
             created = _text(pr.get("createdAt"))
             cycle = (merged - _timestamp(created)).total_seconds() / 3600
             rows.append(
@@ -986,10 +1006,13 @@ def _scan_command(args: Args) -> int:
 
 def _collect_prs_command(args: Args) -> int:
     try:
-        rows = collect_prs(_read(args.files), args.start, args.end)
+        warnings: list[str] = []
+        rows = collect_prs(_read(args.files), args.start, args.end, warnings)
     except (ValueError, KeyError, TypeError) as exc:
         print(f"not gh api graphql pull-request pages: {exc}", file=sys.stderr)
         return 2
+    for warning in warnings:
+        print(f"warning: {warning}", file=sys.stderr)
     writer = csv.writer(sys.stdout, lineterminator="\n")
     writer.writerow(PR_COLUMNS)
     writer.writerows([row[c] for c in PR_COLUMNS] for row in rows)

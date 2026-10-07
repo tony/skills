@@ -30,17 +30,24 @@ Prefer the tool's own command over `rm`. Re-check each with `<tool> --help`:
 - yarn: `yarn cache clean`; rebuilt by `yarn install`.
 - pip: `pip cache purge`; rebuilt by the next install.
 - uv: `uv cache prune`; rebuilt by `uv sync`.
-- cargo: `cargo clean` inside a project; rebuilt by `cargo build`. It leaves `~/.cargo/registry`, which only a cache tool such as `cargo-cache` prunes.
-- Go: `go clean -cache` for the build cache, `go clean -modcache` for downloaded modules; rebuilt by `go build`.
-- Docker: `docker builder prune` for build cache, `docker image prune` for dangling images; rebuilt by `docker build` or `docker pull`. Volumes (`docker volume ls`) can hold data: classify them stale-but-unique.
-- conda, Hugging Face, Gradle, Maven: `conda clean --all`, `huggingface-cli delete-cache`, `~/.gradle/caches`, `~/.m2/repository`; re-downloaded on demand, so a model or dependency set costs bandwidth to restore.
+- cargo: `cargo clean` inside a project; rebuilt by `cargo build`. It leaves
+  `~/.cargo/registry`, which only a cache tool such as `cargo-cache` prunes.
+- Go: `go clean -cache` for the build cache, `go clean -modcache` for
+  downloaded modules; rebuilt by `go build`.
+- Docker: `docker builder prune` for build cache, `docker image prune` for
+  dangling images; rebuilt by `docker build` or `docker pull`. Volumes
+  (`docker volume ls`) can hold data: classify them stale-but-unique.
+- conda, Hugging Face, Gradle, Maven: `conda clean --all`,
+  `huggingface-cli delete-cache`, `~/.gradle/caches`, `~/.m2/repository`;
+  re-downloaded on demand, so a model or dependency set costs bandwidth
+  to restore.
 - Homebrew: `brew cleanup`; re-downloaded on demand.
 - Playwright browsers: delete the cache directory; `npx playwright install`.
 - `node_modules` and `.venv`: delete the directory; `npm ci` or `uv sync`.
 
 System tier (`apt clean`, `journalctl --vacuum-size`, `snap` revisions) is
-regenerable but needs root. Never run `sudo`: print the full command for
-the user.
+regenerable but needs root; print the command for the user, per the
+`sudo` rule in the `disk` skill.
 
 Three cautions apply even here:
 

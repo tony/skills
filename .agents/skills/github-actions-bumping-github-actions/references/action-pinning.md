@@ -53,6 +53,25 @@ git ls-tree -r --name-only origin/<default> .github | while read -r f; do
 done
 ```
 
+A repository named only by slug (`--repo <owner>/<name>` with no local
+clone) has no `origin/<default>`. Resolve the default branch with
+`gh repo view <slug> --json defaultBranchRef`, list the files, then read
+each one raw:
+
+```console
+$ gh api "repos/<slug>/git/trees/<default>?recursive=1" \
+    --jq '.tree[] | select(.type == "blob") | .path | select(startswith(".github/"))'
+```
+
+```console
+$ gh api \
+    -H "Accept: application/vnd.github.raw+json" \
+    "repos/<slug>/contents/<path>?ref=<default>"
+```
+
+Without a local clone nothing can be committed: report that repository's
+audit and skip its commits, unless the user supplies a checkout path.
+
 Skip `uses: ./path` (local) and `uses: docker://...` (no tag to verify)
 and say so in the report. For `owner/repo/subpath@ref`, look up tags on
 `owner/repo`. On a host other than github.com, set `GH_HOST` and use

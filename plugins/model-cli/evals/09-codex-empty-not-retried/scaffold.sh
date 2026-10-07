@@ -6,6 +6,8 @@ mkdir -p bin
 
 cat >bin/codex <<'SH'
 #!/usr/bin/env bash
+case " $* " in *" --help "*) echo "  --yolo --sandbox -f --mode --dangerously-skip-permissions"; exit 0;; esac
+case " $* " in *" --yolo "*) ;; *) echo "stub: expected --yolo" >&2; exit 2;; esac
 n=$(cat .calls 2>/dev/null || echo 0)
 echo $((n + 1)) >.calls
 exit 0

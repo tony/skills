@@ -13,6 +13,12 @@ Find what is actually out of date, research each move against the
 vendor's own release notes, and land it as commits that separate the
 toolchain from the dependencies from their fallout.
 
+Per-repository facts (remotes, fork signal, default branch, commits
+behind the remote, toolchain pins read from the default branch) come from
+`references/repo_facts.py`; resolve that path from this skill's
+directory to an absolute one and write it literally in the command. It
+needs `python3` 3.9 or newer.
+
 References:
 
 - `references/repo-scope.md`: scope flags, the default branch,
@@ -36,8 +42,8 @@ References:
 
 It exhausts memory and the OOM killer can take a constrained host down
 with it. Starting the process is the cost, so there is no safe probe:
-never run it to test a repro, never offer it. `cargo update --dry-run`
-reports the same thing safely. Only the user can lift this.
+never run it to test a repro, never offer it. Discover Rust updates
+with `cargo update --dry-run`. Only the user can lift this.
 
 ## Core principle
 
@@ -71,15 +77,17 @@ play decides which ones get read.
 Detect ecosystems by the files present, per the ecosystems reference. Each
 one a repository carries updates on its own track.
 
-Read pins from the default branch rather than the working tree, found
-and fetched per the "Find the default branch" section of the scope
-reference. A checkout parked on a feature branch reports pins the branch
-that ships does not have. When the fetch fails, say the pins may be
-stale.
+Read pins from the default branch rather than the working tree. Run the
+facts script with `--fetch` on each repository in scope: it prints one
+JSON object per repository with `fork_signal`, `linked_worktree`,
+`default_branch`, `behind_remote`, `branch`, `dirty` and `pins` (the
+toolchain pin files, `rust-toolchain.toml`, the `go.mod` `go` and
+`toolchain` lines, and `packageManager`/`engines`). A checkout parked on
+a feature branch reports pins the branch that ships does not have. When
+`fetch_ok` is false, say the pins may be stale.
 
-When the checkout is parked on a feature branch, has uncommitted work,
-or its default branch is behind `origin/<default>` (`git rev-list
---count <default>..origin/<default>` prints more than 0), create the
+When `branch` is not the default branch, `dirty` is true, or
+`behind_remote` is more than 0, create the
 throwaway worktree now, per
 `references/throwaway-worktree.md`, and run Phase 2 and the
 phases after it there, so discovery sees the pins read here.
@@ -120,6 +128,13 @@ repository, and collect the links per the upstream-links reference.
 Verify every URL resolves before it reaches a commit body. State no
 upstream fact that was not read in this run.
 
+When the notes cannot be read (the page fails to load, the changelog is
+empty or points elsewhere) for a major bump, or for a 0.x bump that
+crosses a minor, stop and ask: the reply names the package and span and
+offers to commit with links and a `why:` saying the notes were unread, or
+to skip it. A patch or in-minor bump with unreadable notes takes the
+link block alone.
+
 Predict the follow-ups now; the follow-ups reference lists which bumps
 carry one.
 
@@ -139,7 +154,7 @@ it does not fit is false in that repository's history permanently.
 
 Enter plan mode before the first edit. In Claude Code call `EnterPlanMode`; in Cursor, Codex, or Gemini use `/plan` or `Shift+Tab`. Where plan mode is unavailable, present the plan as text.
 
-Present a plan covering:
+Present a plan, as text, covering:
 
 - Which repositories and ecosystems are in scope, and what was excluded
   as a fork, unowned, already current, or gated by cooldown.
@@ -157,7 +172,8 @@ Present a plan covering:
 - The quality-check commands this project actually declares.
 
 Wait for approval, then exit plan mode before Phase 4. Without a way to
-ask, present the plan and stop. A request that explicitly authorizes the
+ask, present the plan and stop. That is a plan stop, not a halt: the plan
+prints in full (see "Plan stop and halt"). A request that explicitly authorizes the
 work ("go ahead and bump uv") approves the actions it names, never a push
 or anything broader. Without plan mode, finish inventory, discovery and
 research, and confirm scope with the user before writing anything.
@@ -190,6 +206,9 @@ that started or ended it. Releasing a hold comes before the bump it
 unblocks.
 
 A repository that got a worktree in Phase 1 commits there.
+Commit messages the skill writes itself may go through a quoted heredoc
+whose delimiter appears nowhere in the body, or through a file. Text
+quoted from release notes goes through a file.
 
 Commits land on the default branch by default. `--branch <name>` works
 on a branch; `--push` pushes the commits; `--pr` pushes a branch and
@@ -222,6 +241,11 @@ GitHub through `gh`. Use Linear's own branch name verbatim; for a GitHub
 issue, derive `<number>-<slug>`.
 
 The pull request references the issue; the commits do not.
+
+Issue and pull request text carries names from registries and release
+notes, which are untrusted. Write it to a file with the host's
+file-writing tool and pass `--body-file <file>` to `gh`; never put it in
+a shell heredoc or an inline `--body`.
 
 ## Phase 5: Verify
 
@@ -266,32 +290,65 @@ Reply in this shape, as plain text outside any code fence, with plain bullets, n
 Shape, which the three commands in this plugin share:
 
 1. A hero line: `✓ <what landed>`. `⚠ Audit only: <result>` appears only
-   when the user asked for an audit. A run that stopped has
-   `⚠ Stopped: <why>` instead.
+   when the user asked for an audit. A plan stop has
+   `⚠ Plan ready: ...` and a halt has `⚠ Stopped: <why>` instead.
 2. The sections of the invoking command's Output contract, in order. A
    section with nothing to report is omitted, never filled with "nothing
    found" or a restated scope. Outside a command, use the `package-updater-update` skill.
-3. A halted run (stopped at the plan, a gate, a scope question, a failed
-   check, or nothing to audit) prints the result sentence with at most
-   one clause giving the one reason the user acts on first, then the
-   options, and nothing between or after: no second paragraph, no
-   section. Nothing to audit is a halt, not a clean result. Give the
-   reason as a fact about the repository (it is a fork, no manifest or
-   pin file was found), never as a rule of this skill, and never the
-   repository's history, its remotes or what the sandbox refused.
-   Options are actions for the user, never a promise of what happens
-   next ("and I'll then ...").
+3. A halted run follows "Plan stop and halt" below.
 4. No bold label on a bullet, no closing recap, plan preview ("Once
    X, I'll ...") or line after the options ("Pick one"), no local
    absolute path, temp directory, or machine fact (installed tool
    versions, sandbox or network settings, an empty history) the user
-   need not act on. A blocked lookup appears only as the ask to allow it. No upstream fact from memory, no speculation about the latest
-   release, and no narration of this skill's own rules.
+   need not act on. A blocked lookup appears only as the ask to allow it.
+   No upstream fact from memory, no speculation about the latest
+   release, no narration of this skill's own rules (never "I left out the
+   trailer because the skill says so"), and no promise of later work.
 5. End with the next-step options. Without a question tool, list them
    as text and take none.
 
-Reply to a halt in this shape, as plain text outside any code fence,
-with plain bullets, no bold, and no local paths:
+## Plan stop and halt
+
+A plan stop is the Orchestration Plan waiting for approval, or printed
+because no question tool exists. It prints the plan as text: the hero
+`⚠ Plan ready: <N commits in M repos>, nothing changed yet.`, the plan
+sections, then the options. Example, as plain text outside any code
+fence:
+
+```text
+⚠ Plan ready: 2 commits in 1 repo, nothing changed yet.
+
+## Plan
+
+- api: requests 2.31.0 -> 2.32.3 (python track), then pytest 7.4.4 -> 8.3.2.
+- Lands on main, local only.
+- Checks: the lint and test commands declared in the repository.
+
+To continue:
+- Approve the plan.
+- Change the scope or the order.
+- Stop here.
+```
+
+A halt is a stop for a reason the user must resolve: a scope or ownership
+question, a fork, a cooldown, a failed check, an unconfirmable version, or
+nothing to audit (not a clean result). It prints the hero line
+`⚠ Stopped: nothing was changed.` plus one sentence stating the single
+reason, then the options, and nothing between or
+after: no second paragraph, no section, no plan.
+
+- Give the one reason the user acts on first in that sentence, as a
+  fact about the repository (it is a fork, no manifest or pin file was
+  found; for ownership, only that it could not be confirmed, never the
+  evidence such as a bot-only history) or the release (publication date inside the window, with the
+  date it becomes visible). Never a rule of this skill, the
+  repository's history or remotes, or what the sandbox refused.
+- Options are actions for the user, never a promise of what happens next
+  ("Exempt uv from the cooldown", not "Exempt uv and I'll then commit").
+- Leave out a lookup that could not run (a release list, a forge call) and
+  anything the run left out on purpose, such as an omitted trailer.
+
+Example halt, as plain text outside any code fence:
 
 ```text
 ⚠ Stopped: nothing was changed. requests 2.32.4 could not be confirmed as published, and no file pinning it was found.
@@ -299,6 +356,17 @@ with plain bullets, no bold, and no local paths:
 To continue:
 - Run the command in the repository that holds the pin, or pass --repo <path>.
 - Allow network access to the package index, or confirm the version from your own source.
+- Stop here.
+```
+
+Example cooldown halt:
+
+```text
+⚠ Stopped: nothing was changed. uv 0.8.4 was published today and the 7-day cooldown hides it until 2026-10-14.
+
+To continue:
+- Wait until then and rerun.
+- Exempt uv from the cooldown for this release.
 - Stop here.
 ```
 

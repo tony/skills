@@ -1,6 +1,6 @@
 ---
 name: distill
-description: "Build the three ontology layers from a term table — types, members with discriminators, and the controlled vocabulary"
+description: "Build the three ontology layers from a term table: types, members with discriminators, and the controlled vocabulary"
 allowed-tools: ["Bash", "Read", "Grep", "Glob", "Edit", "Write", "AskUserQuestion"]
 argument-hint: "[--out=<dir>]"
 user-invocable: true
@@ -20,7 +20,7 @@ resolved from this skill's directory.
 
 User arguments: $ARGUMENTS
 
-## Layer 1 — types
+## Layer 1: types
 
 The is-a hierarchy. What kinds of thing the corpus contains.
 
@@ -28,15 +28,16 @@ Write it to `evidence/hierarchy.md`, one citation per is-a claim. Each type is
 also a row in `terms.jsonl` with `kind: type`, its discriminator as
 `definition`, and `parent` set to another type or the literal string `root`.
 Write each type's name onto its members' rows as `parent`. A type row carries
-no `cites` of its own; the `--check-terms` gate exempts `kind: type` rows, and
-the citations live in `hierarchy.md`. A type the corpus already names (a
-`class`) keeps the row `extract` wrote, citation included.
+no `cites` of its own; the `--check-terms` gate exempts a `kind: type` row that
+has a `parent`, and the citations live in `hierarchy.md`. A type the corpus
+already names (a `class`) keeps the row `extract` wrote: change its `kind` from
+`class` to `type` in place, citation included.
 
 Types come from the corpus's own distinctions. If a project separates ports
 from adapters everywhere, those are types. If the analyst finds it tidy to
 group four things, that is not a type.
 
-## Layer 2 — members with discriminators
+## Layer 2: members with discriminators
 
 For each type, the test that decides membership. Write it into
 `evidence/hierarchy.md` beside the type.
@@ -50,7 +51,7 @@ This is what separates an ontology from a labelled list:
 A type whose discriminator you cannot write is not a type yet. Either find the
 test, or dissolve the type and return its members to their parent.
 
-## Layer 3 — the controlled vocabulary
+## Layer 3: the controlled vocabulary
 
 Write `evidence/vocabulary.md`: per act or relation the corpus performs, the
 preferred term, its deprecated variants, and the disjointness constraints
@@ -58,11 +59,11 @@ between siblings.
 
 Three properties, all checkable by `contest`:
 
-- **One term, one referent.** No polysemy. A term standing for two concepts is
+- One term, one referent. No polysemy. A term standing for two concepts is
   the failure that makes a vocabulary unusable.
-- **One referent, one term.** No synonymy. Four names for one act is four
+- One referent, one term. No synonymy. Four names for one act is four
   chances to miss the fourth.
-- **Siblings disjoint.** No two sibling terms both correctly describe one
+- Siblings disjoint. No two sibling terms both correctly describe one
   instance.
 
 The preferred term is the one the corpus already uses most, not the one that
@@ -84,7 +85,10 @@ $ python3 <analyzer> notes/ontology/<subject>/ --check-terms
 ```
 
 A term with no `parent` is an orphan, as is one whose parent is neither
-another term nor `root`. An orphan is a finding: either the corpus has a
+another term nor `root`. The analyzer's `hierarchy cycles` section lists any
+parent chain that returns to itself, such as `a -> b -> a` or a term that is
+its own parent; fix each by re-reading the corpus's own is-a claim. An orphan
+is a finding: either the corpus has a
 concept the hierarchy has not named, or the term does not belong in the table.
 Never invent a type to house an orphan, and never split a type to tidy its
 fan-out. Both produce a hierarchy that describes the analyst's sense of order
@@ -102,9 +106,9 @@ rather than the corpus.
 Per `../../references/output-contract.md`. Hero: `✓ <n> types, <n> terms, <n>
 preferred terms` or `⚠ Blocked: <reason>`. Sections:
 
-1. `## Types` — the hierarchy, each type with its discriminator.
-2. `## Vocabulary` — preferred terms with their deprecated variants.
-3. `## Unresolved` — terms that resisted placement, and what that suggests
+1. `## Types`: the hierarchy, each type with its discriminator.
+2. `## Vocabulary`: preferred terms with their deprecated variants.
+3. `## Unresolved`: terms that resisted placement, and what that suggests
    about the corpus rather than about the table.
 
 Next-step options: run contest, revisit a type, stop here.

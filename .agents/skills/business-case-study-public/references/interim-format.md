@@ -12,9 +12,11 @@ The package the `business-research` skill writes and every report command
 reads. Commands resolve run locations and verify completeness by
 this file.
 
-Script paths in this plugin's files (`references/business.py`)
-resolve relative to the file that names them; run the script by its
-absolute location.
+Script paths in this plugin's files climb from the file that names
+them to the plugin's `scripts/` directory: one level up from a
+reference, two from a skill. Print the absolute path once and write it
+literally in each command: shell variables do not persist between Bash
+calls.
 
 ## Where runs live
 
@@ -59,7 +61,7 @@ instrument inventory with each instrument marked available or
 unavailable, environment versions for the tools used to collect, and
 a `Names:` line listing every organization, repository, team, and
 person name the run touches, comma-separated. Research fills it from
-the repositories, teams, and logins it collected; the tier-3 scan
+the repositories and teams it queried and the people the user named; the tier-3 scan
 reads it as the `--deny` list.
 
 ### sources.md
@@ -109,7 +111,8 @@ adding a new snapshot, never by editing an old one.
 
 Per-person data (logins, per-user adoption) stays out of `raw/` when an
 aggregate answers the question; otherwise tell the user the run root
-may be cloud-synced and ask how long to keep the snapshots.
+may be cloud-synced and ask how long to keep the snapshots. Non-interactive:
+write no per-person data.
 
 ### measurements/
 
@@ -174,7 +177,8 @@ MEASURED figure cites an existing `sources.md` entry; that figures
 with units carry a tag; that every `check:` line recomputes from
 `raw/`; that no currency symbol or code appears in `measurements/` or
 `findings.md`; and that each bullet under a heading containing
-"unknown" names the data that would resolve it.
+"unknown" names the data that would resolve it (the bullet
+must contain one of `resolve`, `need`, `require`, `data`, `export`).
 
 The script cannot judge whether a tag is right or a figure is
 missing a unit it does not recognize. Read `measurements/` and
@@ -221,12 +225,16 @@ sentence as the first bullet of `## Report`, never ahead of the hero,
 and says "money" or "currency", never a unit or the word "dollars". The
 same sentence names the handoff: hours with their interval, the pinned
 window, and the population, for finance to convert.
+Every figure in the reply keeps its provenance tag, in the hero and
+in bullets. State a figure as what was measured, never as what the
+skill caused: "median 18 min per task gross, net unknown
+(DIRECTIONAL, MEASURED, n=3)", not "the skill saved 18 min".
 Write adoption and realization in words, never as `(a)` and `(r)`.
 
 Reply in this shape, as plain text outside any code fence, with plain bullets, no bold (never `- **Label:** ...`), and no local paths:
 
 ```text
-✓ Leadership report: 310 engineer-hours per quarter saved (DERIVED)
+✓ Leadership report: 310 engineer-hours per quarter projected (DERIVED)
 
 ## Run
 

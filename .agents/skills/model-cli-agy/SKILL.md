@@ -45,8 +45,11 @@ commands omit the permission-skipping flags.
 3. Normal: `agy --model "Gemini 3.8 Flash (High)" --dangerously-skip-permissions -p`
    Plan: `agy --model "Gemini 3.8 Flash (High)" --mode plan -p`
 
+Pass `--require-flag=` with `--dangerously-skip-permissions` (tiers 1, 3) or `-f`
+(tier 2) on a normal run, and `--mode` on a `mode:plan` run.
+
 Tier 3 is the lesser fallback: when it runs, say the Pro tiers failed. If
-tier 1 failed with auth or crash on `agy`, skip tier 3.
+tier 1 failed with auth, credit, crash, or unsupported-flag on `agy`, skip tier 3.
 
 
 ## Portability notes

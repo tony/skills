@@ -34,8 +34,9 @@ commits' capitalization, tense, and level of detail.
 ### 1. Gather State
 
 Sensitive files: `.env`, `.env.*`, `*.pem`, `*.key`, `*.p12`, `*.pfx`,
-`*.jks`, `*.p8`, `*.keystore`, `id_rsa*`, `*credentials*`, `*secret*`,
-`.npmrc`, `.pypirc`, `.netrc`, `.pgpass`. A name ending in `.example` or
+`*.jks`, `*.p8`, `*.keystore`, `id_*` (but not `*.pub`), `*credentials*`,
+`*secret*`, `*.tfvars`, `.git-credentials`, `.npmrc`, `.pypirc`, `.netrc`,
+`.pgpass`. A name ending in `.example` or
 `.sample` is not sensitive. The user may override for one path by naming it
 in the request or hint (for example "commit .env.test"); that path alone
 may be staged or committed. Without that, a match is never committed.
@@ -46,12 +47,14 @@ Run these and read the output:
   detached HEAD.
 - `git status --short`: the working tree.
 - `git diff --cached --stat` and `git diff --stat`: staged and unstaged changes.
-- `git diff HEAD --shortstat`: size of the tracked diff. Read the full
-  `git diff HEAD` when it is a few thousand lines or fewer; otherwise read it
-  per file. Read a sensitive path with `git diff HEAD --stat -- <path>` only,
-  never its content.
+- `git diff HEAD --shortstat`: size of the tracked diff. Read the full diff
+  when it is a few thousand lines or fewer; otherwise read it per file. Append
+  `-- . ':(exclude)<path>'` for every sensitive path in the status output
+  (for example `git diff HEAD -- . ':(exclude).env'`), so a sensitive body
+  never enters context. Never read a sensitive file's content.
 - `git ls-files --others --exclude-standard`: untracked files, which the diff
-  omits. Read each new file that is not sensitive.
+  omits. Read each new file that is not sensitive; skim a large or binary
+  file by name only.
 - `git log --oneline -10`: recent commits, for style matching.
 - `git symbolic-ref --short refs/remotes/origin/HEAD`: the remote's default
   branch. A failure means the default branch is unknown; compare against
@@ -68,8 +71,8 @@ branches, commit nothing and tell the user to switch branches.
 
 ### 2. Analyze Changes
 
-- Review the full diff to understand what changed
-- Determine the commit type (`feat`, `fix`, `refactor`, `docs`, `chore`, `test`, `style`, etc.)
+- Determine the commit type (`feat`, `fix`, `refactor`, `docs`, `chore`,
+  `test`, `style`, etc.)
 - Determine the scope/component from the files and modules touched
 - Check topic coherence: if the changes span unrelated topics and nothing is
   staged, commit only the largest coherent topic's files, name the files left
@@ -125,8 +128,8 @@ Single package: link the release tag and changelog in the body.
 - https://github.com/owner/repo/blob/vX.Y.Z/CHANGELOG.md
 ```
 
-Multiple packages: the subject names the tools (`Bump tool1, tool2`), and the
-body lists each one.
+Multiple packages: the subject names the tools in the project's subject
+format, and the body lists each one.
 
 ```text
 - tool1 1.2.0 -> 1.3.0 (<release date>)
@@ -146,22 +149,18 @@ exist.
 
 ### 6. Commit
 
-For a single-line message:
-
-```console
-$ git commit -m "the message"
-```
-
-For a message with a body, use a heredoc to preserve formatting:
+Pass every message, one line or many, through a quoted heredoc so backticks
+and `$(...)` stay literal. Pick a delimiter that appears nowhere in the
+message; never use double quotes for the message.
 
 ```bash
-git commit -m "$(cat <<'EOF'
+git commit -m "$(cat <<'COMMIT_MSG_END'
 subject line
 
 why: ...
 what:
 - ...
-EOF
+COMMIT_MSG_END
 )"
 ```
 
@@ -198,6 +197,8 @@ what:
 
 - Staged src/auth.py and tests/test_auth.py.
 - Left .env unstaged: it matches the sensitive-file list.
+- A pre-commit hook rejected the first attempt (trailing whitespace in
+  src/auth.py); fixed it and committed again.
 - Working tree is clean.
 ```
 
@@ -206,11 +207,13 @@ default branch it reads `(local on <branch>, not pushed)` with the branch's
 name. The commit body follows
 verbatim when there is one. Bullets cover only files staged, files left out,
 the working tree state, and a hook rejection that preceded the commit (say
-what it rejected and what you changed). Skip the working-tree bullet when the
+what it rejected and what you changed; include that bullet only when a hook
+rejected an attempt). Skip the working-tree bullet when the
 left-out bullets already name every remaining file, unless it adds a fact.
 Add no other advice or remarks.
 
-A stopped run is one result sentence, then what the user needs to do.
+A stopped run is one result sentence, then what the user needs to do. Add
+no other advice, such as `.gitignore` tips or follow-up suggestions.
 
 ---
 

@@ -27,6 +27,13 @@ graders:
       path: .git/logs/HEAD
     pattern: '\tcommit \(initial\): [^\n]*\n([^\n]*\tcommit: [^\n]*\n){3}$'
 
+  - name: stages-source-file-alone-for-the-fix
+    type: tool_used
+    tool: Bash
+    input_match: 'git (-\w+ \S+ )*(add|commit)\b(?![^;&|\n]*test_bizdays)[^;&|\n]*(?<!\w)bizdays\.py'
+    min: 1
+    arm: both
+
   - name: never-stages-everything
     type: tool_used
     tool: Bash
@@ -79,3 +86,10 @@ graders:
     criteria: |
       The reply says the bug is fixed and lists three commits (failing test,
       fix, xfail removal). It does not claim anything was pushed.
+
+  - name: middle-commit-is-source-only
+    type: llm
+    focus: last_message
+    criteria: |
+      The reply does not say the fix commit touched test_bizdays.py; the fix
+      commit changes only bizdays.py.

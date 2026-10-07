@@ -1,10 +1,9 @@
 # Rendered markdown
 
-Contents: The test, Two surfaces, one difference, Symbols, Nothing local, nothing personal, Code blocks, Long output goes in `<details>`, Structure, In a body, mentions are notifications, What to leave out, Preview before publishing, Primary sources.
+Contents: The test, Comment bodies are never hard-wrapped, Symbols, Nothing local, nothing personal, Code blocks, Long output goes in `<details>`, Structure, In a body, mentions are notifications, What to leave out, Preview before publishing, Primary sources.
 
-The writing rules for text a renderer will show a human: issue, pull
-request, discussion and review-comment bodies, release notes, tracker
-tickets, and a repository's own markdown files.
+The writing rules for text GitHub renders for a human in an issue,
+discussion, or comment body.
 
 ## The test
 
@@ -15,34 +14,12 @@ survives is what was written down and what it links to: pin the links,
 name the symbols exactly, show the command that was actually run, and
 cut sentences that only made sense on the day.
 
-For a pull request, describe the branch's **net** change, not the route
-it took; the commits already carry renames, reverted attempts, and
-fixups.
+## Comment bodies are never hard-wrapped
 
-## Two surfaces, one difference
-
-In issue, pull request, discussion, and comment bodies GitHub renders
-a single newline inside a paragraph as a line break. In a markdown
-file it renders as a space.
-
-That decides wrapping. Heading level, table of contents, and mentions
-are body-only; everything else applies to both surfaces.
-
-### Comment bodies are never hard-wrapped
-
-Write each paragraph as one long line and separate paragraphs with a
-blank line. A body wrapped at 72 or 80 columns renders as ragged short
-lines.
-
-### Repository files follow the repository
-
-Match whatever the repository already does; never re-wrap a file because
-a body nearby is unwrapped.
-
-### Commit messages wrap
-
-They are not rendered markdown at all. The project's own commit
-convention governs.
+GitHub renders a single newline inside a paragraph of an issue,
+discussion, or comment body as a line break. Write each paragraph as one
+long line and separate paragraphs with a blank line. A body wrapped at 72
+or 80 columns renders as ragged short lines.
 
 ## Symbols
 
@@ -115,22 +92,20 @@ matrices, and anything else a reader scrolls past to reach the point.
 
 ### No tables
 
-Rendered tables scroll sideways instead of reflowing, so a narrow
-viewport silently hides the right-hand columns. Use nested sections, or a
-list with a repeated leading label.
+Use nested sections, or a list with a repeated leading label, so the
+text reflows on a narrow screen.
 
 ### Start a body's headings at `###`
 
 In an issue the title is a separate field, so a `#` in the body
-duplicates it, and `##` draws a full-width horizontal rule. GitHub's own
-templates emit `###` per section. A repository file keeps its `#`.
+duplicates it. GitHub's own issue templates emit `###` per section.
 
 ### Alerts stay at the top level
 
 `> [!NOTE]`, `> [!TIP]`, `> [!IMPORTANT]`, `> [!WARNING]`,
-`> [!CAUTION]` — and no others. Inside a `<details>` block or a list
-item they degrade silently to a plain blockquote showing the literal
-`[!NOTE]`. The marker must sit alone on its blockquote line.
+`> [!CAUTION]` — and no others. GitHub does not support an alert nested
+inside another element, such as a `<details>` block or a list item. The
+marker sits alone on its blockquote line.
 
 ## In a body, mentions are notifications
 
@@ -139,9 +114,6 @@ asking them for something.
 
 Every rendered issue reference also writes a backlink onto the target
 issue. Citing twenty related issues notifies twenty threads.
-
-Neither fires from a repository file, where `@name` and `#123` are
-plain text.
 
 ## What to leave out
 
@@ -152,32 +124,38 @@ plain text.
 - `comprehensive`, `robust`, `seamless`, `production-ready`,
   `leverage`, `delve`. Say what the thing does.
 - Coded labels (`[R1]`, `Option B`) in text a human reads.
-- For a pull request: renames of symbols that never shipped,
-  "previously X" framing for behavior no released user saw, and any
-  paraphrase of the diff.
 
 ## Preview before publishing
 
-GitHub's own renderer will tell you whether the body works. Write the
-body to a file with the host's file-writing tool, never a shell heredoc
-(pasted text can contain the delimiter line), then render it:
+GitHub's own renderer tells you whether the body works. Create a scratch
+file outside the working tree. Shell state does not persist between Bash
+calls: the command prints the path, and every later command uses that
+literal path.
+
+```console
+$ mktemp "${TMPDIR:-/tmp}/gh-body.XXXXXX"
+```
+
+Write the body to that path with the host's file-writing tool, never a
+shell heredoc: pasted text can hold the delimiter line, and the rest of
+the body would run as shell. If the tool refuses to overwrite a file you
+have not read, read it first. Then render it:
 
 ```console
 $ gh api --method POST /markdown -f mode=gfm -f context=OWNER/REPO -F text=@PATH
 ```
 
-Needs `gh auth login`.
+Needs `gh auth login`. Remove the scratch file when the run ends.
 
 Literal `**` or ``` ``` ``` in that output means a `<details>` block
 is missing its blank line. A `<br>` inside a prose paragraph means the
 body is hard-wrapped.
 
-Both `mode=gfm` and `context` are required — with the default mode,
-`context` is ignored and every reference renders inert, which reads as
-a false negative. The preview is also not faithful for
+`context` applies only with `mode=gfm`; otherwise references render
+inert, which reads as a false negative. The preview is not faithful for
 reference unfurling in lists, team mentions, or cross-repo references,
-and it renders with your permissions, so a private reference that
-links for you can be inert for everyone else.
+and it renders with your permissions, so a private reference that links
+for you can be inert for everyone else.
 
 ## Primary sources
 
@@ -185,3 +163,5 @@ links for you can be inert for everyone else.
 - [Organized with collapsed sections](https://docs.github.com/en/get-started/writing-on-github/working-with-advanced-formatting/organizing-information-with-collapsed-sections)
 - [Autolinked references and URLs](https://docs.github.com/en/get-started/writing-on-github/working-with-advanced-formatting/autolinked-references-and-urls)
 - [The GitHub Flavored Markdown spec](https://github.github.com/gfm/)
+- [Render a Markdown document (REST)](https://docs.github.com/en/rest/markdown)
+- [About notifications](https://docs.github.com/en/account-and-profile/managing-subscriptions-and-notifications-on-github/setting-up-notifications/about-notifications)

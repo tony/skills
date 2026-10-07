@@ -32,6 +32,10 @@ Read these first:
 
 Write entries and the commit message per `references/prose-rules.md`.
 
+`<rewrite>` is `references/rewrite.py` resolved from this skill's directory
+to an absolute path, written literally in every command, and run with
+`python3`. It prints one JSON object; `"ok": false` carries the `reason`.
+
 ## Phase 1: Safety checks, scope, approval
 
 1. **Detect the base**, fetch it, and find the changelog file per
@@ -59,16 +63,12 @@ Write entries and the commit message per `references/prose-rules.md`.
    Commit or stash them, then run changelog-rewrite-aggressively --commit again.
    ```
 
-3. **Partition the branch's commits** that touch the changelog file:
+3. **Partition the branch's commits** that touch the changelog file. The
+   output lists each commit's `subject` and whether it is `pure` (touches only
+   the changelog file) or mixed:
 
    ```console
-   $ git log origin/<base>..HEAD --format='%h %s' -- <changelog-file>
-   ```
-
-   Classify each by the files it touches:
-
-   ```console
-   $ git show --name-only --format= <sha>
+   $ python3 <rewrite> partition --base origin/<base> --file <changelog-file>
    ```
 
    - **Pure changelog commits** touch only the changelog file. Phase 2 drops
@@ -89,8 +89,7 @@ Write entries and the commit message per `references/prose-rules.md`.
    - the commits Phase 2 will drop, by subject, never by bare SHA;
    - the backup branch it will create first, named
      `changelog-rewrite-backup-` plus the current UTC date and time;
-   - that a failed invariant check restores the backup with
-     `git reset --hard`;
+   - that a failed check restores the backup;
    - when the dropped commits are pushed, that publishing needs a later
      `git push --force-with-lease --force-if-includes` by the user. This skill
      never pushes.
@@ -116,45 +115,21 @@ Write entries and the commit message per `references/prose-rules.md`.
 
 ## Phase 2: Back up and rebase out the old changelog commits
 
-1. **Back up.** Create the backup branch and print its name, its tip SHA, and
-   the merge-base with the base. Use these printed values literally in later
-   commands:
-
-   ```bash
-   name="changelog-rewrite-backup-$(date -u +%Y%m%d-%H%M%SZ)"
-   git branch "$name"
-   echo "$name $(git rev-parse HEAD) $(git merge-base origin/<base> HEAD)"
-   ```
-
-2. Drop the pure changelog commits non-interactively with a scripted sequence
-   editor that turns their `pick` lines into `drop` by SHA. Rebase onto the
-   merge-base, not onto `origin/<base>`: the fetch may have moved the base, and
-   the rebase must not also move code onto it. With GNU coreutils:
+1. Run the helper with the pure commits' SHAs from the partition. It stops
+   unless the tree is clean, then creates the backup branch, rebases the named
+   commits out onto the merge-base (not `origin/<base>`: the fetch may have
+   moved the base, and the rebase must not also move code onto it), and checks
+   that no code changed and, with no mixed commits, that no branch changelog
+   edits remain:
 
    ```console
-   $ GIT_SEQUENCE_EDITOR='sed -i -E "s/^pick (<sha1>|<sha2>)/drop \1/"' git rebase -i <merge-base>
+   $ python3 <rewrite> drop --base origin/<base> --file <changelog-file> <sha1> <sha2>
    ```
 
-   On BSD/Darwin, `-i` needs an explicit (here empty) suffix:
-
-   ```console
-   $ GIT_SEQUENCE_EDITOR='sed -i "" -E "s/^pick (<sha1>|<sha2>)/drop \1/"' git rebase -i <merge-base>
-   ```
-
-   Use each dropped commit's abbreviated SHA exactly as the todo list shows
-   it. On conflict, run `git rebase --abort` and confirm `git rev-parse HEAD`
-   equals the backup tip printed in step 1; if it does not, run
-   `git reset --hard <backup>`. Report the backup name and stop; never resolve
-   by discarding user code.
-
-3. **Verify the invariant.**
-   - Code unchanged: `git diff <backup> HEAD -- . ':(exclude)<changelog-file>'`
-     must be empty. Intact mixed commits keep this true.
-   - With only pure commits dropped and no mixed commits,
-     `git diff <merge-base> HEAD -- <changelog-file>` must now be empty.
-
-   If either check fails, restore with `git reset --hard <backup>`, report,
-   and stop.
+2. On `"ok": true`, note the `backup` branch name for the report. On
+   `"ok": false`, the helper has already restored the backup; report the
+   `reason` and the `backup` name, and stop. Never resolve a conflict by
+   discarding user code.
 
 ## Phase 3: Regenerate entries and present
 
@@ -179,7 +154,8 @@ surviving changelog hunks may update those hunks, which are branch-owned, but
 nothing from the base branch.
 
 When the edit was approved up front (`--commit` or an invoking request), skip
-the Phase 3 reply and send only the Phase 4 reply.
+the Phase 3 reply and send only the Phase 4 reply, which carries the summary
+line, entries, voice check, and `Target` line itself.
 
 Present:
 
@@ -210,15 +186,16 @@ Target: CHANGES.md, Unreleased, Features, after the "### Features" heading. No v
 Run only after the Phase 3 approval.
 
 1. Apply with Edit. With `--commit` in `$ARGUMENTS`, commit once at the tip per
-   `commit-message.md` (the project's own subject format wins): no `Co-Authored-By`, no "Generated with" or other tool
-   trailer, no emoji. Without it, leave the edit uncommitted and show a
-   ready-to-use commit message.
+   `commit-message.md`; the project's own subject format wins. Write no
+   `Co-Authored-By`, no "Generated with" or other tool trailer, and no emoji.
+   Without `--commit`, leave the edit uncommitted and show a ready-to-use
+   commit message.
 2. Report the backup branch (to delete once satisfied with
    `git branch -D <backup>`), an uncommitted edit awaiting the user's commit
    when `--commit` was not passed, and for a pushed branch the
    `git push --force-with-lease --force-if-includes` the user needs.
 
-   Reply in this shape, as plain text outside any code fence, with plain bullets, no bold (never `- **Backup:** ...`), and no local paths. The subject line below is the no-convention form. Notes hold facts the user must act on, so never recap checks that passed and never compare the new subject with a dropped commit's:
+   Reply in this shape, as plain text outside any code fence, with plain bullets, no bold (never `- **Backup:** ...`), and no local paths. The subject line below is the no-convention form. Notes hold facts the user must act on, so never recap checks that passed (the code-unchanged check included), never justify the subject format, and never compare the new subject with a dropped commit's:
 
    ````text
    Rewrote the changelog history of feat/cache-evict: 3 commits dropped, 1 added.
@@ -233,7 +210,7 @@ Run only after the Phase 3 approval.
    Target: CHANGES.md, Unreleased, Features, after the "### Features" heading. No version assigned, no release cut.
 
    - Backup: changelog-rewrite-backup-20261006-142530Z; delete it once satisfied.
-   - The entry is committed at the tip as docs(CHANGES) Cache key eviction.
+   - Committed at the tip as docs(CHANGES) Cache key eviction.
    - The branch is pushed; publish with git push --force-with-lease --force-if-includes.
    ````
 

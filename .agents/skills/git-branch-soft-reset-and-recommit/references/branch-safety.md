@@ -24,7 +24,9 @@ Each of these halts the run with a report, not a warning:
   `REVERT_HEAD`, `BISECT_LOG`, `sequencer`, each resolved through
   `git rev-parse --git-path`; HEAD is not the test.
 - **Merge commits in the range.** Collapsing across one erases another
-  author's commits while keeping their content.
+  author's commits while keeping their content. Advise asking the merge's
+  author how to handle it, then running again once the range has no merge
+  commit; never advise resetting the branch to drop the merge.
 - **The branch checked out in another worktree.** It cannot be
   rewritten in place; `git worktree list --porcelain` names the
   holder.
@@ -37,6 +39,11 @@ Each of these halts the run with a report, not a warning:
   slips past it); a dotfile repo
   there makes every untracked file, credentials included, part of the
   work. The report says "credential files" and names none of them.
+
+Halt advice names only steps that destroy nothing. Never advise
+`git reset --hard`, `git clean`, `git checkout -- <path>`, a force-push,
+or `git stash drop` in a refusal; if the only fix is destructive, make the
+backup branch below first and name it in the advice.
 
 Report but do not necessarily halt on: a stale submodule pointer (a later
 blanket add would bake it in); an active sparse checkout (file listings are
@@ -66,8 +73,8 @@ local name and need not be `origin`). Read the remote's true tip
 $ git ls-remote --heads <remote> <remote-branch>
 ```
 
-`fetch` refreshes the remote-tracking ref and destroys the
-`--force-with-lease` protection you are about to rely on.
+`git fetch` by remote name refreshes the remote-tracking ref and destroys
+the `--force-with-lease` protection you are about to rely on.
 
 Then decide whether rewriting drops commits that exist only on the
 remote:
@@ -79,7 +86,10 @@ $ git merge-base --is-ancestor <remote-tip> HEAD
 A non-zero exit means someone else pushed, or the remote tip is not
 local yet. Halt. Report the SHA from `ls-remote`. To name who pushed,
 fetch by URL into a scratch ref; a fetch by remote name also refreshes
-the remote-tracking ref and defeats the lease:
+the remote-tracking ref and defeats the lease. The scratch ref is the one
+change a refused run leaves behind: the halt names it and gives the
+cleanup, `git update-ref -d refs/remote-check/<remote-branch>`, and does
+not describe the fetch:
 
 ```console
 $ git fetch \

@@ -1,6 +1,6 @@
 # rebase
 
-Automated rebase onto trunk with conflict prediction, resolution, and quality gate verification.
+Rebase onto trunk with file-overlap reading, conflict resolution, and quality-check verification.
 
 ## Installation
 
@@ -33,12 +33,8 @@ Claude Code uses a leading slash (`/rebase:…`). Codex omits it (`rebase:…`).
 ## Skills
 
 `/rebase` in Claude Code, `rebase` in Codex: rebase the current branch onto
-trunk, resolve conflicts, verify quality gates. It never pushes, and it runs
-only when you invoke it by name.
-
-## Quality Gates & Design
-
-Reads `AGENTS.md` / `CLAUDE.md` for the project's checks; hardcodes no linter or test runner.
+trunk, resolve conflicts, and run the checks your `AGENTS.md` / `CLAUDE.md`
+defines. It never pushes, and it runs only when you invoke it by name.
 
 ## Prerequisites
 

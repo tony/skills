@@ -35,7 +35,8 @@ Claude Code uses a leading slash (`/double-check:…`). Codex omits it (`double-
 ## Components
 
 - `double-check` skill: triggers when asked to double-check,
-  verify, or "are you sure". The agent re-derives answers directly from
+  "are you sure", "I don't trust that", to verify your earlier answer,
+  or to run an analysis again. The agent re-derives answers directly from
   source artifacts, avoiding revision logs or inherited numbering.
 - `/double-check:align` skill: recovers conversations where
   diff-shaped answers already landed. Restates the best analysis rebuilt
@@ -55,6 +56,21 @@ Both components enforce `references/verification-contract.md`:
 Beyond pasting the contract into your own rules file, the plugin adds
 trigger routing on those request phrases and `align`, which repairs a chat
 after a revision-log answer has already landed.
+
+## Measured effect
+
+Measured 2026-10-07 with `claude plugin eval`, 3 runs per arm, with the
+plugin against the bare model (graders marked `arm: both` score both arms):
+
+- `01-double-check-retry-cap`: 3/3 runs pass with the plugin, 0/3 without.
+  Without it every run failed the standalone-answer judge.
+- `04-double-check-adopted-claim`: 3/3 with, 0/3 without. Without it, 2 of 3
+  runs failed to tell the user the filed ticket's figure was wrong, and all 3
+  failed the judge that the correction stays to one brief sentence.
+- Verdict phrases (`overstated`, `still holds`, `as I said earlier`) did not
+  appear in any run of either arm on this fixture, so the effect measured here
+  is standalone shape and the one-sentence correction, not a drop in those
+  phrases.
 
 ## Prerequisites
 

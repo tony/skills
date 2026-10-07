@@ -30,7 +30,7 @@ PyPI, where the link set is maintainer-labeled free text:
 $ curl -s 'https://pypi.org/pypi/PROJECT/json' | jq '.info | {package_url, home_page, project_urls}'
 ```
 
-crates.io, which requires an identifying user agent that includes a contact (replace `CONTACT` with the user's project URL or email, and ask first):
+crates.io, which requires an identifying user agent that includes a contact. Ask the user for a project URL or email to put in place of `CONTACT`; without `AskUserQuestion`, or without an answer, skip this lookup and leave the crates.io slot out:
 
 ```console
 $ curl -s -A 'issue-authoring (CONTACT)' 'https://crates.io/api/v1/crates/CRATE' | jq '.crate | {homepage, documentation, repository, default_version}'
@@ -70,9 +70,9 @@ submodules tag as `module1/v1.2.3`).
 $ gh api repos/OWNER/REPO/releases/tags/v2.40.0 --jq '{tag_name, html_url}'
 ```
 
-`/releases/latest` is the newest non-prerelease, non-draft release and
-moves on every publish; never use it for a claim about a specific
-version. When a project publishes no releases, link a tag-pinned
+`/releases/latest` is the most recent non-prerelease, non-draft release
+and moves as releases are published; never use it for a claim about a
+specific version. When a project publishes no releases, link a tag-pinned
 `CHANGELOG` file, or a `/compare/<old>...<new>` URL.
 
 ## What rots in registry data
@@ -81,7 +81,12 @@ version. When a project publishes no releases, link a tag-pinned
   only through that redirect.
 - `npm` `repository.url` is a VCS URL (`git+https://….git`), not a
   browsable link. `homepage` is often just the README anchor.
-- Registry web pages reject non-browser clients — npmjs.com and
-  crates.io both return 403 to `curl`, crates.io citing its data
-  access policy. Validate those through the JSON APIs above, not with
-  a status check.
+
+## Primary sources
+
+- [PyPI JSON API](https://docs.pypi.org/api/json/)
+- [RubyGems API](https://guides.rubygems.org/rubygems-org-api/)
+- [Go modules reference, GOPROXY protocol](https://go.dev/ref/mod#goproxy-protocol)
+- [npm `package.json` `repository`](https://docs.npmjs.com/cli/v10/configuring-npm/package-json#repository)
+- [REST: releases](https://docs.github.com/en/rest/releases/releases) — "latest release"
+- [crates.io data access policy](https://crates.io/data-access) — user-agent requirement

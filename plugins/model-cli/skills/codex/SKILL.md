@@ -40,5 +40,8 @@ Cursor's read-only plan mode.
 3. Normal: `agent -p -f --model gpt-5.4-mini --`
    Plan: `agent -p --mode plan --model gpt-5.4-mini --`
 
+Pass `--require-flag=` with `--yolo` (tier 1) or `-f` (tiers 2-3) on a normal run,
+and `--sandbox` (tier 1) or `--mode` (tiers 2-3) on a `mode:plan` run.
+
 Tier 3 is the lesser fallback: when it runs, say the larger model failed. If
-tier 2 failed with auth or crash on `agent`, skip tier 3.
+tier 2 failed with auth, credit, crash, or unsupported-flag on `agent`, skip tier 3.

@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # A repository with an origin remote and an old ruff floor, plus local stubs
-# for uv, curl and gh that resolve ruff 0.12.4 without the network.
+# for uv, curl and gh that resolve ruff 0.12.4 without the network. One new
+# rule (F401) fires.
 set -euo pipefail
 
 git init -b main >/dev/null
@@ -28,13 +29,16 @@ name = "demo"
 version = "0.1.0"
 
 [dependency-groups]
-dev = ["ruff>=0.1.0"]
+dev = ["ruff>=0.11.0"]
 
 [tool.ruff.lint]
 select = ["E", "F"]
 MD
 
-printf 'import os\nx = 1\n' >app.py
+cat >app.py <<'PY'
+import os
+x = 1
+PY
 git add .
 git commit -q -m 'Initial commit'
 git remote add origin ../origin.git
@@ -43,20 +47,36 @@ git push -q origin main
 mkdir -p bin
 cat >bin/uv <<'SH'
 #!/usr/bin/env bash
-# Stub ruff: app.py carries one F401 finding until `--fix` removes it.
+# Stub ruff. Findings come from app.py. The previous version (0.11.0, or an
+# isolated `--with ruff==` run of it) reports only E711; 0.12.4 reports all.
+old=0
+case "$*" in *"ruff=="*) case "$*" in *"ruff==0.12.4"*) ;; *) old=1 ;; esac ;; esac
 case "$*" in
-  *"ruff --version"*) echo "ruff 0.12.4" ;;
+  *"ruff --version"*)
+    if grep -q '0\.12\.4' pyproject.toml; then echo "ruff 0.12.4"; else echo "ruff 0.11.0"; fi ;;
   *"ruff check"*"--fix"*)
-    grep -v '^import os$' app.py >app.py.new && mv app.py.new app.py
+    case "$*" in
+      *"--select F401"*) grep -v '^import os$' app.py >app.py.new && mv app.py.new app.py ;;
+      *"--select F841"*) grep -v 'unused = 1' app.py >app.py.new && mv app.py.new app.py ;;
+    esac
     echo "Found 1 error (1 fixed, 0 remaining)." ;;
   *"ruff check"*"--statistics"*)
-    if grep -q '^import os$' app.py; then printf '1\tF401\t[*] unused-import\n'; exit 1; fi
-    echo "All checks passed!" ;;
-  *"ruff check"*)
-    if grep -q '^import os$' app.py; then
-      echo "app.py:1:8: F401 [*] \`os\` imported but unused"; exit 1
+    out=""
+    add() { out="$out${out:+,}{\"code\":\"$1\",\"count\":1}"; }
+    if [ "$old" = 0 ]; then
+      grep -q '^import os$' app.py && add F401
+      grep -q 'unused = 1' app.py && add F841
     fi
-    echo "All checks passed!" ;;
+    grep -q '== None' app.py && add E711
+    echo "[$out]"
+    [ -z "$out" ] || exit 1 ;;
+  *"ruff check"*)
+    n=0
+    grep -q '^import os$' app.py && { echo "app.py:1:8: F401 [*] \`os\` imported but unused"; n=1; }
+    grep -q 'unused = 1' app.py && { echo "app.py:3:5: F841 [*] local variable \`unused\` is assigned to but never used"; n=1; }
+    grep -q '== None' app.py && { echo "app.py:5:4: E711 comparison to \`None\`"; n=1; }
+    [ "$n" = 0 ] && echo "All checks passed!"
+    exit "$n" ;;
   *"ruff format"*) ;;
   lock*) : >uv.lock ;;
   *) echo "uv stub: $*" ;;
@@ -73,7 +93,8 @@ cat >bin/gh <<'SH'
 #!/usr/bin/env bash
 case "$1 $2" in
   "release view") echo '{"tagName":"0.12.4","publishedAt":"2025-07-17T12:00:00Z"}' ;;
-  *) echo "## 0.12.4"; echo; echo "- [pyflakes] Stabilize wider unused-import (F401) detection for plain stdlib imports" ;;
+  "repo view") echo '{"isFork":false}' ;;
+  *) echo "## 0.12.4"; echo; printf '%s\n' "- [pyflakes] Stabilize wider unused-import (F401) detection for plain stdlib imports" ;;
 esac
 SH
 chmod +x bin/uv bin/curl bin/gh

@@ -1,10 +1,10 @@
 ---
 name: merge-pr-this
 description: >-
-  Merge one PR via gh with a merge commit matching the repo's git history —
+  Merge one PR via gh with a merge commit matching the repo's git history;
   readiness-gated, CI-watched, trunk synced after
 disable-model-invocation: true
-allowed-tools: ["Bash", "Read", "Edit", "AskUserQuestion"]
+allowed-tools: ["Bash", "Read", "Write", "Edit", "AskUserQuestion"]
 metadata:
   argument-hint: "[PR number or URL] [--squash | --rebase | any other gh pr merge flag]"
   source: "plugins/merge-pr/skills/this/SKILL.md"
@@ -34,7 +34,9 @@ and `gh pr view --json number` to find the current branch's PR.
 
 Gather the PR's state. A failure here means no PR exists for the branch or
 `gh` is unavailable or unauthenticated: report it and stop. The readiness
-gate reuses this read.
+gate reuses this read. When the user passed `--repo`, add it to this command
+and every other `gh` call, and check the repo scope as the reference
+describes.
 
 ```console
 $ gh pr view <n> --json number,title,url,state,isDraft,baseRefName,mergeable,mergeStateStatus,reviewDecision
@@ -45,8 +47,9 @@ Trunk is the PR's `baseRefName`.
 ### 2. Run the readiness gate
 
 Apply the readiness gate from the reference. If the PR is `BEHIND` or
-`DIRTY`, confirm with the user, then follow the reference's rebase procedure.
-Without a question tool, halt instead of rebasing.
+`DIRTY` and the repo scope is `local`, confirm with the user, then follow the
+reference's rebase procedure. Without a question tool, halt instead of
+rebasing. With scope `remote`, halt: the rebase cannot run here.
 
 ### 3. Compose the merge commit message
 
@@ -60,18 +63,20 @@ no "Generated with" or other tool trailer, and no emoji.
 
 Pass the user's `gh pr merge` flags through verbatim, with the strategy flag
 and `--match-head-commit <sha>`. Pass the composed message through the
-reference's file-based command, never inside a shell string. Use `--admin`
+reference's `merge_pr.py merge` command, never inside a shell string. Use `--admin`
 only within the reference's policy.
 
 ### 5. Sync trunk and stand by
 
 Sync trunk and confirm the merge, per the reference's "After each merge",
-including its check that trunk contains the merge commit. Then stop. With `--auto` the merge is only queued: open with the queued hero and skip the sync.
+including its check that trunk contains the merge commit. Then stop. With `--auto` the merge is only queued: open with the queued hero
+and skip the sync.
 
 ## Output
 
 Open with a one-line hero (`✓ Merged #N: <title>`,
-`✓ Queued #N: <title>` for an `--auto` merge, or `⚠ Blocked: <reason>`), then exactly these sections. A run that stops before
+`✓ Queued #N: <title>` for an `--auto` merge, or `⚠ Blocked: <reason>`),
+then exactly these sections. A run that stops before
 the merge (including `gh` unavailable: `⚠ Blocked: gh is not authenticated`)
 gives the hero and one sentence on what the user must do; no
 headings, and never a sentence saying what was not done ("nothing was
@@ -81,18 +86,19 @@ merged", "I did not use --admin").
    required a rebase or a wait on CI.
 2. `## Merge`: the strategy, the merge commit short SHA with its subject
    as read back from the commit, and the PR URL. A queued merge gives the
-   strategy and the PR URL. Name a flag only when the run dropped or added one the user
-   did not pass; never the head pin or the user's own flags.
+   strategy and the PR URL. Name a flag only when the run dropped or added
+   one the user did not pass; never the head pin or the user's own flags.
 3. `## Trunk`: the post-merge trunk state and the result of the
-   contains-the-merge-commit check, or that the sync was skipped. Report a
-   mismatch as a fact with the short SHAs; give no cause and do not narrate
-   how the pull was run.
+   contains-the-merge-commit check, or that the sync was skipped and why.
+   Report a mismatch as a fact with the short SHAs; give no cause and do
+   not narrate how the pull was run.
 
 State a failure as the fact the user needs; never quote the tool's error
-text or explain how a check works. Write the sections per
-`references/prose-rules.md`.
+text or explain how a check works. Follow the reference's "Report wording".
+Write the sections per `references/prose-rules.md`.
 
-Reply in this shape, as plain text outside any code fence, with plain bullets, no bold (never `- **Label:** ...`), and no local paths:
+Reply in this shape, as plain text outside any code fence, with plain
+bullets, no bold (never `- **Label:** ...`), and no local paths:
 
 ```text
 ✓ Merged #31: Retry transient sync failures

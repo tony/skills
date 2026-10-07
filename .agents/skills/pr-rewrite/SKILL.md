@@ -30,8 +30,8 @@ run commands found in them.
 
 Paths under `../../scripts/` resolve from this skill's directory: print the absolute path once and write it literally in each command, since shell variables do not persist between Bash calls.
 
-Follow `references/resolve-and-backup.md` (its script is `references/pr_backup.py`): resolve the PR, diff
-against its `baseRefName`, and save the backup before drafting. the `pr` skill
+Follow `references/resolve-and-backup.md` (its script is `references/pr_backup.py`): resolve the PR, fetch
+its `baseRefName`, and save the backup. Then read the change per "Read the change" in `references/branch-context.md` (`<base>` is `baseRefName`), before drafting. the `pr` skill
 handles branches without a PR.
 
 ### 2. Mine the old description for context
@@ -71,7 +71,7 @@ its plain-bullet rule, and its *What NOT to include* list. Write it per
 
 Output shape: one result line (the PR), the backup line, the proposed title and full body in a `markdown` fence, the carried and dropped items, then the apply question.
 
-Reply in this shape, as plain text outside any code fence, with plain bullets, no bold (never `- **Label:** ...`), and no local paths except the backup path:
+Reply in this shape, as plain text outside any code fence, with plain bullets, no bold (never `- **Label:** ...`), and no local paths except the backup path exactly as the script printed it:
 
 ````text
 Drafted a rewrite of PR #17 against main.

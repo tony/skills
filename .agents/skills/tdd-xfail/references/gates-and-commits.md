@@ -24,30 +24,37 @@ gets the plan and a stop. Approval never covers a push.
 
 ## Diff gates
 
-Derive the test-file patterns from the project's layout and naming. Write each
-as its own `:(glob)` pathspec, for example `:(glob)**/test_*.py`,
-`:(glob)**/*_test.py`, `:(glob)tests/**`, `:(glob)**/*.spec.ts`. Only `:(glob)`
-makes `**/` match top-level files too.
+Derive the test-file patterns from the project's layout and naming, for
+example `**/test_*.py`, `**/*_test.py`, `tests/**`, `**/*.spec.ts`. `**/`
+matches zero or more directories, so top-level files match too.
 
-The tree is clean when the workflow starts, so every change in it belongs to
-the commit being prepared.
+`<diff-gate>` is `references/diff_gate.py` resolved from this reference's
+directory to an absolute path, written literally in every command, and run
+with `python3`. It reads `git status`, ignores untracked build caches
+(`__pycache__/`, `.pytest_cache/`, `node_modules/.cache/`), prints each
+offending path, and exits 1 when any exist. The tree is clean when the
+workflow starts, so every other change belongs to the commit being prepared.
 
-Before a source-only commit, list modified and untracked test files. The
-command must print nothing:
-
-```console
-$ git status --porcelain \
-    -- ':(glob)**/test_*.py' ':(glob)**/*.spec.ts'
-```
-
-Before a test-only commit, list modified and untracked files outside the test
-patterns. The command must print nothing. Use one `:(exclude,glob)` pathspec
-per pattern; one exclude holding several patterns excludes nothing:
+Before a source-only commit, run the gate in `source-only` mode; it prints
+every modified or untracked test file and must print nothing:
 
 ```console
-$ git status --porcelain \
-    -- . ':(exclude,glob)**/test_*.py' ':(exclude,glob)**/*.spec.ts'
+$ python3 <diff-gate> source-only \
+    --pattern '**/test_*.py' \
+    --pattern '**/*.spec.ts'
 ```
+
+Before a test-only commit, run it in `test-only` mode; it prints every
+modified or untracked file outside the patterns and must print nothing:
+
+```console
+$ python3 <diff-gate> test-only \
+    --pattern '**/test_*.py' \
+    --pattern '**/*.spec.ts'
+```
+
+Stage by file name, never `git add -A` or `git commit -a`, so each commit
+holds only the files its gate allows.
 
 ## Quality gates
 
@@ -78,13 +85,20 @@ characters; let URLs, paths, hashes, and long identifiers overflow.
 
 When the bug spans this project and a dependency:
 
-1. Fix the dependency first, with its own commit conventions.
-2. Run the dependency's test suite.
-3. Point this project at the fixed local source. Package managers that enforce
-   lockfiles overwrite local installs, so use a path dependency, workspace link,
-   or local override, then confirm the module path resolves to the local source
-   and not a package cache.
-4. Fix and test this project.
+1. Ask the user for the dependency's own checkout. Never edit an installed or
+   vendored copy (site-packages, `node_modules`, a package cache, a `vendor/`
+   directory); a lockfile reinstall overwrites it.
+2. In that checkout, run the repository checks first: `git rev-parse
+   --show-toplevel` must be the dependency and not home or a parent of it
+   (`cd ~ && pwd -P` gives the physical home path), and `git status
+   --porcelain` must print nothing. Otherwise stop and tell the user.
+3. Fix the dependency there with its own commit conventions, and run its test
+   suite.
+4. Point this project at the checkout with a path dependency, workspace link,
+   or local override, then confirm the module path resolves to the checkout
+   and not a package cache. Keep that override uncommitted: revert it before
+   each diff gate and commit here, and reapply it to run tests.
+5. Fix and test this project.
 
 ## Recovery
 
@@ -93,10 +107,12 @@ and the suspected cause. Ask for guidance.
 
 ## Final report
 
-One hero line (`✓` finished or `⚠` stopped, with the result in one sentence),
-then `## Evidence` (the commit subjects made, with short hashes, the xfail
-line from the reproduction run, and for `xfail` the fix-isolation result once
-the fix exists), then `## Follow-ups` (omit when empty). A scoped run that
+One hero line (`✓` finished or `⚠` stopped) holding the whole result in a
+single sentence, then `## Evidence` (every commit made, with short hashes,
+including extra commits for a regression or a mid-run correction; the xfail
+line from the reproduction run; and for `xfail` the fix-isolation result once
+the fix exists), then `## Follow-ups` (omit when empty). Follow-ups list only
+actions for the user, never narration of what the run did. A scoped run that
 stopped after the failing test lists one commit and says in the hero line that
 the fix is not made. Name no local paths or temp files.
 
@@ -136,14 +152,14 @@ A scoped run that made one commit looks like this:
 ## Plan awaiting approval
 
 A run that has not started because no one approved the plan uses the
-stopped-run shape: a hero line such as `⚠ Nothing written yet. The plan below
+stopped-run shape: a hero line such as `⚠ Nothing written yet because the plan
 needs your approval.`, `## Plan`, `## To continue`. Plan items are plain
 bullets without bold labels, and no paragraph sits between the hero line and
 `## Plan`; put the diagnosis in one Plan bullet.
 
 ## Stopped run
 
-One hero line (`⚠` plus the result in one sentence, no colon), the plan under
+One hero line (`⚠` plus the result in a single sentence, no colon), the plan under
 `## Plan` when no one has approved it yet, then `## To continue` with what the
 user must do. No other sections. Name commits by purpose, never by phase or
 number. For a wrong repository root, say only that the root is wrong; never
@@ -152,7 +168,7 @@ describe what is in it. Name no local paths.
 Reply in this shape, as plain text outside any code fence, with plain bullets, no bold, and no local paths:
 
 ```text
-⚠ Nothing written. The current directory is not the project's repository.
+⚠ Nothing written because the current directory is not the project's repository.
 
 ## Plan
 

@@ -1,7 +1,7 @@
 ---
 name: fix
 description: "Use when fixing a bug test-first: write a failing test to reproduce it, find the root cause, fix, and add a regression test."
-allowed-tools: ["Bash", "Read", "Grep", "Glob", "Edit", "Write", "Task"]
+allowed-tools: ["Bash", "Read", "Grep", "Glob", "Edit", "Write", "Agent"]
 argument-hint: Paste or describe the bug to reproduce and fix
 user-invocable: true
 disable-model-invocation: true
@@ -51,13 +51,13 @@ writing one. Pick the mechanism from the xfail-mechanisms reference.
 3. Run it and confirm it fails as expected:
 
    ```console
-   $ <project's test command> <test_file>::<test_name>
+   $ <project's test command> <the framework's single-test selector for the new test>
    ```
 4. Run the full test file.
 5. Run the quality gates.
 6. Commit the failing test, marked as an xfail for a known bug. Derive the
-   test pathspecs and run the test-only-commit check from "Diff gates" in the
-   gates-and-commits reference; it must print nothing.
+   test patterns and run `diff_gate.py` in `test-only` mode (see "Diff gates"
+   in the gates-and-commits reference); it must print nothing.
 
 ## Phase 3: Find the Root Cause
 
@@ -80,7 +80,7 @@ Apply the minimal fix (see the gates-and-commits reference).
 4. Run the quality gates. With a strict mechanism, run the non-test gates only;
    the XPASS failure is expected.
 5. Commit the fix with the root cause in the message. Before the commit, run
-   the source-only-commit check from "Diff gates"; it must print nothing.
+   `diff_gate.py` in `source-only` mode; it must print nothing.
 
 ## Phase 5: Remove xfail and Verify
 
@@ -89,7 +89,7 @@ Apply the minimal fix (see the gates-and-commits reference).
 3. Run the test; it must pass.
 4. Run the full suite for the affected file or module.
 5. Run the full quality gates.
-6. Run the test-only-commit check from "Diff gates"; it must print nothing.
+6. Run `diff_gate.py` in `test-only` mode; it must print nothing.
    Then commit, noting the xfail is removed because the fix is verified.
 
 ## Phase 6: Recovery Loop

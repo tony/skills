@@ -43,11 +43,13 @@ Run every refusal in `branch-safety.md` before reading any pull
 request, ticket, or transcript: repository rooted at the home directory,
 unborn HEAD, shallow clone, dirty tree, operation in progress, merge
 commits in the range, branch held by another worktree. Detect a pushed
-branch and whether anyone else has pushed to it, without `git fetch`.
+branch and whether anyone else has pushed to it, without refreshing the
+remote-tracking ref.
 
 Resolve the base to a full 40-character SHA once, per
 `split-mechanics.md`. On a stacked branch the base is the parent branch
 tip, never trunk. A remote-tracking base may be stale; say so in the plan.
+Find trunk and the parent with the commands in `split-mechanics.md`.
 
 A refusal is a report and a stop.
 
@@ -105,11 +107,13 @@ approval covers the recommit, never a push.
 
 ## Phase 5 — Back up, then collapse
 
-Create the backup branch first, per `branch-safety.md`, and report its
-name. Then collapse:
+Create the backup branch, then collapse, in one command so the backup
+cannot be skipped. The backup name is the single-segment form in
+`branch-safety.md`; read it back later with
+`git branch --list 'backup/<flat>-*'` and report it:
 
 ```console
-$ git reset --soft <base-sha>
+$ git branch "backup/<flat>-$(date -u +%Y%m%dT%H%M%SZ)" <branch> && git reset --soft <base-sha>
 ```
 
 ## Phase 6 — Rebuild, one commit at a time
@@ -160,9 +164,10 @@ $ git range-diff <base-sha> backup/<flat>-<ts> HEAD
 Name any gate that did not run on every commit, and the commits it skipped.
 Write the report per `references/prose-rules.md`. Reply in this
 shape, as plain text outside any code fence, with plain bullets, no bold (never `- **Backup:** ...`),
-and no local paths. Add no bullet the shape does not list, no findings
-outside it except a failed gate, and no mention of which forbidden items
-you left out:
+and no local paths. Each bullet is one line. Add no bullet the shape does
+not list, no findings outside it except a failed gate, and no mention of
+which forbidden items you left out. Where the project defines no gates, the
+Gates bullet says `none defined in the project`:
 
 ```text
 Rebuilt feature/auth-rework as 3 commits; the tree matches the original.
@@ -179,7 +184,8 @@ A refused or halted run is one result sentence naming the gate that
 stopped it, then what the user must do, as plain sentences or plain
 bullets with no bold lead-ins and no absolute paths. It states no commit
 list, hashes, or diffs that were not read from the repository, does not
-narrate the commands it ran, and ends without a recap:
+narrate the commands it ran or explain how git behaves, advises only steps
+that destroy nothing (per `branch-safety.md`), and ends without a recap:
 
 ```text
 Stopped before changing anything: the working tree has uncommitted edits.
@@ -198,8 +204,8 @@ $ git push --force-with-lease --force-if-includes origin <branch>
 
 After a successful rebuild, end with a next-step panel through
 `ask-user-choice`: show the push command, show the range-diff, or stop.
-Without a question tool, print those options as a plain list and stop;
-never push as the default. A halted run skips the panel.
+Without a question tool, print those options as a bare plain list and stop,
+with no commentary on the options; never push as the default. A halted run skips the panel.
 
 ## Rules
 

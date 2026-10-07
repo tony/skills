@@ -1,13 +1,16 @@
 # Report shape
 
-Shared by `/situate` and the `situational-awareness` skill.
+Shared by the `situate` skill and the `situational-awareness` skill.
 
 One hero line, then these sections in this order, then a next-step
 panel. No other headings, no bold label on every bullet, no recap ending.
 An empty layer is "none", never "not available"; a lookup that could not
 run is `unavailable` with the reason. Never list, count, or mention
 untracked editor or shell files. Never name an absolute path or a temp
-directory. Report what was found and where, never "I checked" or "I read".
+directory. Report what was found and where, never "I checked", "I read", or "I
+haven't tested"; leave out what was not examined rather than narrating
+it. Cite a commit by its subject, never a bare SHA. Never guess at why
+someone did something.
 
 The hero is `✓ <branch>: <what it does> · <n> commits · PR #<n> <state>`,
 or `⚠ <what is blocking or unclear>`. When there is nothing to measure
@@ -29,8 +32,8 @@ result sentence, then what the user needs to do.
 6. `## Prior work` — only when the prior-conversations layer ran: what
    was decided earlier, when, and whether the repository agrees.
 7. `## Open questions` — only blockers and decisions: what is unresolved, mid-flight, or
-   contradictory, and what a resumed session would most likely get
-   wrong. Anything decided in an earlier conversation and still open
+   contradictory, each tied to evidence in the repository; no prediction
+   of what a later session would do and no guess at elapsed time. Anything decided in an earlier conversation and still open
    belongs here, with its date.
 
 Mark an inference with one hedging word ("probably", "appears"); an
@@ -75,8 +78,11 @@ Reply in this shape, as plain text outside any code fence, with plain bullets, n
 2. Address the unresolved review thread
 ```
 
-Offer distinct actions only, never "keep working". Change reports what the
-goal needs, with no style nits or speculation about future linters.
+Offer distinct actions only, never "keep working". Each option answers a
+finding (a gap, failing check, unresolved thread, open decision); never
+propose new tests, refactors, a merge, or any work no finding asks for.
+Change reports what the goal needs, with no style nits or speculation
+about future linters.
 
 The panel is an `ask-user-choice` offering next steps (continue the
 work, address the review threads, open a pull request, widen the sweep

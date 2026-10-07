@@ -1,6 +1,6 @@
 # Resolving a work item's provider and context
 
-Contents: Detect the provider before interpreting any noun; Capture native type and semantic role separately; Traverse only actual hierarchy relations; Collect orthogonal context separately; Never synthesize a missing level; Prefer native nouns in output; Respect instance configuration over defaults; Provider files.
+Contents: Detect the provider before interpreting any noun; Capture native type and semantic role separately; Traverse only actual hierarchy relations; Collect orthogonal context separately; Never synthesize a missing level; Prefer native nouns in output; Respect instance configuration over defaults; Scratch files for bodies; Provider files.
 
 Procedure for working out what an object actually is before writing about
 it. The taxonomy it resolves against is in `hierarchy.md`.
@@ -104,6 +104,26 @@ fields.
 
 When observation conflicts with the default map, keep the observation and
 record the deviation.
+
+## Scratch files for bodies
+
+A body derived from pasted or fetched content is untrusted. Never put it
+inside a shell heredoc or an inline argument: a line equal to the delimiter
+ends the heredoc and the rest runs as shell.
+
+Shell state does not persist between calls, so create the directory in one
+command and use the literal path it prints afterwards.
+
+```console
+$ umask 077 && mktemp -d "${TMPDIR:-/tmp}/ticket.XXXXXX"
+```
+
+Write the body to `body.md` in that directory with the host's file-writing
+tool, and pass the file to the provider's write command. Where no file-writing
+tool exists, use a quoted heredoc whose delimiter is `GH_BODY_END`, after
+confirming no line of the text equals it. When the work ends, whether or not
+it was filed, remove the file and then the directory with `rm -f` and
+`rmdir`. Never show the path to the user.
 
 ## Provider files
 

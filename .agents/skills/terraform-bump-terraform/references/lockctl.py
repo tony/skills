@@ -6,6 +6,7 @@ Usage:
     lockctl.py drop LOCK SOURCE
     lockctl.py stable [COUNT] < versions
     lockctl.py platforms
+    lockctl.py diff [--allow SOURCE]... BEFORE AFTER
 
 state      print source, selected version and h1 hash count, tab separated,
            one line per provider block in file order.
@@ -13,7 +14,13 @@ drop       remove one provider block in place; print "dropped" or "absent".
 stable     read versions on stdin, print the newest COUNT stable ones
            (default 3), oldest first.
 platforms  print each tracked CI or task file's `providers lock -platform=`
-           values.
+           values, including files git has not yet tracked.
+diff       compare two locks provider by provider; BEFORE and AFTER are
+           files or `<rev>:<path>` git objects. Print one line per
+           difference (source, status, then version/h1-count before and
+           after) and exit 1 when a provider outside --allow changed or
+           disappeared, or any provider's h1 count dropped. `--allow '*'`
+           permits every provider's version to move.
 """
 
 from __future__ import annotations
@@ -47,6 +54,7 @@ _CI_OR_TASK = tuple(
     )
 )
 _DEFAULT_COUNT = 3
+_ARGS_PER_DIFF = 2
 
 
 def state(text: str) -> list[tuple[str, str, int]]:
@@ -142,6 +150,90 @@ def platforms(text: str) -> list[str]:
     return found
 
 
+def _fmt(entry: tuple[str, int] | None) -> str:
+    return "-" if entry is None else f"{entry[0]}/{entry[1]}"
+
+
+def diff(
+    before: list[tuple[str, str, int]],
+    after: list[tuple[str, str, int]],
+    allow: frozenset[str],
+) -> tuple[list[str], bool]:
+    r"""Return report lines and whether any difference is unexpected.
+
+    >>> old = [("a", "1.0.0", 3), ("b", "2.0.0", 1)]
+    >>> diff(old, old, frozenset())
+    ([], False)
+    >>> diff(old, [("a", "1.1.0", 3), ("b", "2.0.0", 1)], frozenset({"a"}))
+    (['a\tmoved\t1.0.0/3\t1.1.0/3'], False)
+    >>> diff(old, [("a", "1.1.0", 1), ("b", "2.0.0", 1)], frozenset({"a"}))[1]
+    True
+    >>> diff(old, [("a", "1.0.0", 3), ("b", "2.1.0", 1)], frozenset({"a"}))[1]
+    True
+    >>> diff(old, [("a", "1.0.0", 3)], frozenset({"*"}))
+    (['b\tremoved\t2.0.0/1\t-'], True)
+    """
+    old = {s: (v, n) for s, v, n in before}
+    new = {s: (v, n) for s, v, n in after}
+    lines: list[str] = []
+    bad = False
+    for source in list(old) + [s for s in new if s not in old]:
+        was, now = old.get(source), new.get(source)
+        if was == now:
+            continue
+        ok = "*" in allow or source in allow
+        if now is None:
+            status, fail = "removed", True
+        elif was is None:
+            status, fail = "added", not ok
+        elif now[1] < was[1]:
+            status, fail = "count-dropped", True
+        elif ok and now[0] != was[0]:
+            status, fail = "moved", False
+        else:
+            status, fail = "changed", not ok
+        bad = bad or fail
+        lines.append(f"{source}\t{status}\t{_fmt(was)}\t{_fmt(now)}")
+    return lines, bad
+
+
+def _load(arg: str) -> str:
+    path = Path(arg)
+    if path.is_file():
+        return path.read_text()
+    if ":" in arg:
+        out = subprocess.run(  # noqa: S603
+            ["git", "show", arg],  # noqa: S607
+            capture_output=True,
+            check=True,
+        ).stdout
+        return out.decode()
+    raise FileNotFoundError(arg)
+
+
+def _diff_command(rest: list[str]) -> int:
+    allow: set[str] = set()
+    files: list[str] = []
+    it = iter(rest)
+    for arg in it:
+        if arg == "--allow":
+            allow.add(next(it, ""))
+        else:
+            files.append(arg)
+    if len(files) != _ARGS_PER_DIFF or "" in allow:
+        _ = sys.stderr.write(__doc__ or "")
+        return 2
+    try:
+        before, after = (state(_load(f)) for f in files)
+    except (OSError, subprocess.CalledProcessError) as exc:
+        _ = sys.stderr.write(f"cannot read lock: {exc}\n")
+        return 2
+    lines, bad = diff(before, after, frozenset(allow))
+    if lines:
+        print("\n".join(lines))
+    return 1 if bad else 0
+
+
 def _write_atomic(path: Path, text: str) -> None:
     fd, tmp = tempfile.mkstemp(dir=path.parent, prefix=path.name + ".")
     try:
@@ -155,7 +247,7 @@ def _write_atomic(path: Path, text: str) -> None:
 
 def _tracked_files() -> list[str]:
     out = subprocess.run(
-        ["git", "ls-files", "-z"],  # noqa: S607
+        ["git", "ls-files", "-z", "--cached", "--others", "--exclude-standard"],  # noqa: S607
         capture_output=True,
         check=True,
     ).stdout
@@ -177,12 +269,14 @@ def main(argv: list[str]) -> int:
             _write_atomic(path, text)
         print("dropped" if dropped else "absent")
         return 0
-    if cmd == "stable" and len(rest) <= 1:
+    if cmd == "stable" and len(rest) <= 1 and (not rest or rest[0].isdigit()):
         count = int(rest[0]) if rest else _DEFAULT_COUNT
         print("\n".join(stable(sys.stdin.read().split(), count)))
         return 0
     if cmd == "platforms" and not rest:
         return _print_platforms()
+    if cmd == "diff":
+        return _diff_command(rest)
     _ = sys.stderr.write(__doc__ or "")
     return 2
 

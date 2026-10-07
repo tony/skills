@@ -42,7 +42,7 @@ Merges a single PR.
 
 Runs the readiness gate, rebases after confirming when behind, merges via
 `gh pr merge` pinned to the verified head with a message matching repo
-history (written through files, never a shell string), then syncs trunk and checks it contains the merge commit.
+history, then syncs trunk and checks it contains the merge commit.
 
 ### `/merge-pr:multiple`
 
@@ -56,6 +56,11 @@ Lands multiple PRs sequentially.
   deleted after the last merge when you passed the flag.
 - Halts on CI failure, drift, or product-level conflicts, preserving merges.
 
+With `--repo` naming a repository other than the working directory's, both
+commands read history through the GitHub API, skip the local trunk sync, and
+halt instead of rebasing. Merge queues and stacks of fork PRs are not
+handled specially.
+
 ## Merge strategy and flags
 
 The gate, strategy, and flag rules live in `references/merge-readiness.md`.
@@ -64,3 +69,4 @@ The gate, strategy, and flag rules live in `references/merge-readiness.md`.
 
 - gh, authenticated with merge permissions.
 - git, with fetch and push access to PR branches.
+- python3 (3.9 or newer), for `scripts/merge_pr.py`.

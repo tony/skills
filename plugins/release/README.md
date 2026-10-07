@@ -73,8 +73,7 @@ Rolls out published releases to local consumer repos.
 - `--roots` names the directories that hold your checkouts.
 - `--push` pushes the commits to trunk; without it they stay local.
 
-Pin edits run `scripts/bump_pin.py`, a standard-library Python 3 script;
-it needs `python3` on `PATH`.
+Pin edits run `scripts/bump_pin.py`, a standard-library Python script.
 
 ## Shared reference
 
@@ -84,4 +83,5 @@ templates.
 ## Prerequisites
 
 - **git** and **gh**.
+- **python3** (3.9 or newer) on `PATH`, for `scripts/bump_pin.py`.
 - The target project's toolchain (as required by quality gates).

@@ -1,6 +1,6 @@
 # Prior conversations
 
-Shared by `/situate` and the `situational-awareness` skill. This layer
+Shared by this skill and the `situational-awareness` skill. This layer
 runs only when the user passes `--with-agentgrep` or asks for it in
 words. A request to resume after a gap ("I'm back after a break", "where
 did I leave off") counts as asking: run one capped search.
@@ -30,7 +30,10 @@ to one exact release so no unreviewed code runs; use this spelling in
 every command below:
 
 ```console
-$ uvx agentgrep@0.1.0a52 search --only-here --limit 20 '<term>'
+$ uvx agentgrep@0.1.0a52 search \
+    --only-here \
+    --limit 20 \
+    '<term>'
 ```
 
 Flags change between releases; run `uvx agentgrep@0.1.0a52 search --help`
@@ -40,9 +43,10 @@ Absent network or a `uvx` failure, fall back to `Grep` over the current
 project's Claude Code session store (`~/.claude/projects/`, the
 directory named for this repository), capped at the same twenty
 matches. When that is unreadable too, report the layer unavailable and
-continue with the rest of the sweep. Give the reason in one clause
-without naming the host's sandbox or any path. It is never a hard
-dependency.
+continue with the rest of the sweep. It is never a hard dependency.
+Report it in one clause about the search, such as "earlier conversations
+could not be searched here"; never name the search tool, the session
+store, the host's sandbox, or any path.
 
 ## Scoping
 
@@ -51,7 +55,11 @@ current repository; `--here` merely boosts them and will drag in
 unrelated projects.
 
 ```console
-$ uvx agentgrep@0.1.0a52 search --only-here --branch "$(git branch --show-current)" --limit 20 '<term>'
+$ uvx agentgrep@0.1.0a52 search \
+    --only-here \
+    --branch "$(git branch --show-current)" \
+    --limit 20 \
+    '<term>'
 ```
 
 `--only-here` matches on each record's working directory. In a git
@@ -68,7 +76,10 @@ checkout from a worktree. When it differs from the current directory,
 scope to it explicitly:
 
 ```console
-$ uvx agentgrep@0.1.0a52 search --repo <primary-checkout> --limit 20 '<term>'
+$ uvx agentgrep@0.1.0a52 search \
+    --repo <primary-checkout> \
+    --limit 20 \
+    '<term>'
 ```
 
 Search prompts before conversations: the default `--scope prompts` is
@@ -83,7 +94,10 @@ confirm the exact command with the user when a term holds shell
 metacharacters (`$`, backticks, `;`, `|`, `&`, newlines).
 
 ```console
-$ uvx agentgrep@0.1.0a52 search --only-here 'ENG-123 OR "retry backoff"' --limit 20
+$ uvx agentgrep@0.1.0a52 search \
+    --only-here \
+    --limit 20 \
+    'ENG-123 OR "retry backoff"'
 ```
 
 Cap the layer at twenty ranked results; if more context exists and

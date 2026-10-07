@@ -18,22 +18,19 @@ allow, in every root module, and report what moved.
 This changes no constraint. When a provider will not move, a constraint
 is holding it; use the `terraform-bump-provider` skill.
 
-Follow the phase structure and conventions in
-the `terraform-bumping-terraform` skill (recorded tree state, commit
-message rules, non-interactive defaults, stopped and audit-only runs). This skill uses
+Follow the conventions in the `terraform-bumping-terraform` skill (recorded tree
+state, script paths, commit message rules, non-interactive defaults,
+the plan, stopped and audit-only runs). This skill uses
 `references/layout-discovery.md` and `references/lock-and-init.md`.
 
 User arguments: $ARGUMENTS
-
-`references/lockctl.py` resolves from this skill's directory: print its absolute path once and write that path literally in each command, since shell variables do not persist between Bash calls.
 
 ## Procedure
 
 ### 1. Discover every root module
 
-Run the umbrella's discovery phase first: root modules come from the
-`.tf` files and from lock files tracked, untracked, or gitignored, per
-`references/layout-discovery.md`. `--root-module` limits the run to
+Root modules come from the `.tf` files and from lock files tracked,
+untracked, or gitignored, per `references/layout-discovery.md`. `--root-module` limits the run to
 the named directories. Report nothing to refresh only when no directory
 has a backend or a lock file. A directory with a backend or an untracked
 or ignored lock but no committed one is a finding, not an absence.
@@ -49,7 +46,7 @@ that none are recorded.
 
 ### 3. Present the plan and wait
 
-Show the root modules to be refreshed and how many platforms each lock
+Per the umbrella's Orchestration Plan, show the root modules to be refreshed and how many platforms each lock
 tracks. With `--audit-only`, stop here and write nothing.
 
 ### 4. Refresh, one root module at a time
@@ -57,8 +54,9 @@ tracks. With `--audit-only`, stop here and write nothing.
 Apply the lock reference's guard to each root module: the lock must be
 committed and unmodified, else skip and report it. Then run its
 `init -upgrade` command (this skill moves every provider its constraints
-allow) and compare each lock's per-provider platform count against its
-count before. When a count dropped, restore the platforms from the
+allow) and compare each lock with `lockctl.py diff --allow '*'` against
+its committed copy (the lock reference has the command); a non-zero exit
+means a count dropped or a provider block vanished. When a count dropped, restore the platforms from the
 names the lock reference finds in the repository's CI and task files, or
 ask. If the count is still short, or the question goes unanswered
 (headless included), restore that lock from git, leave it out of the
@@ -90,8 +88,9 @@ gate as passing without reading the output that says so.
 Open with a one-line hero (`✓ N of M lock files moved` or `Audit
 only: M lock files found`), then these sections in order:
 
-1. `## Root modules`: every one discovered, and any directory with a
-   backend but no committed lock file.
+1. `## Root modules`: every one discovered, any directory with a
+   backend but no committed lock file, and in an audit the platform
+   names CI passes to `providers lock`.
 2. `## Changes`: per root module and provider: the version before and
    after, and the platform count tracked before and after.
 3. `## Held back`: providers that did not move, and the constraint

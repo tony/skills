@@ -87,29 +87,23 @@ the `spike-probe` skill:
 
 ## Phase 0: Situational awareness
 
-Read the `spike-probe` skill and follow its Phase 0 (including how
-`<scripts>` resolves): commit check and home-directory refusal,
-conventions files, the five gate buckets and CI split per
-`references/verification-gates.md`, and the dirty-tree halt. A
-bakeoff never probes on top of the user's work, because
-`git worktree add ... HEAD` carries none of it: offer only stash first
-or abort (non-interactive default: abort). Once the brief is approved,
-run probe's Setup step 1 (`save-user`) before the first worktree; its
-printed user-work SHA goes in the report with its restore command. A
-rejected brief changes nothing. It also takes no `--branch`.
-Then the bakeoff-specific checks:
+The shared steps live in `references/spike-core.md`; read it before
+this phase. In every command, `<scripts>` stands for the absolute path of
+`../../scripts` resolved from this skill's directory (the shell runs in the
+project, not here); write that path literally.
+
+Run its Preflight, resolving the gate buckets and CI split per
+`references/verification-gates.md`. A bakeoff never probes on top of
+the user's work, because `git worktree add ... HEAD` carries none of it:
+offer only stash first or abort (non-interactive default: abort). It takes
+no `--branch`. Once the brief is approved, run Setup's `save-user` before
+the first worktree; its printed user-work SHA goes in the report with its
+restore command. A rejected brief changes nothing. Then:
 
 1. Confirm `git worktree` is usable and there is disk headroom for N
    checkouts.
-2. Create a worktree root outside the repo and print it; use the
-   printed path literally afterwards. Name each contender `<n>-<slug>`:
-   that is its directory and its stash message prefix. Worktrees are
-   detached, so no contender has a branch.
-
-```console
-$ mktemp -d "${TMPDIR:-/tmp}/bakeoff.XXXXXX"
-```
-
+2. Create the worktree root as described under "Worktree root" in the
+   shared file.
 3. Note any setup a fresh checkout needs to run gates (dependency
    install, codegen), because each kitchen must be able to bake.
 
@@ -151,7 +145,7 @@ $ git worktree add \
     HEAD
 ```
 
-Each contender follows the Phase 2 discipline in the `spike-probe` skill
+Each contender follows the probe loop in `references/spike-core.md`
 inside its own worktree, aiming at the shared "proven" check. Tell every
 sub-agent its worktree's absolute path and to work only inside it: read
 and edit by absolute path under that directory, begin every Bash command
@@ -199,17 +193,16 @@ A split verdict is valid: report `⚠ inconclusive` with the scorecards.
 
 ## Phase 5: Stash all contenders, then tear down
 
-**Stash first, prune second**, one contender at a time, never in
-parallel. For each contender:
+**Stash first, prune second**, one contender at a time, one `spike.sh`
+stash command per Bash call, never in parallel or batched: every worktree
+shares one stash stack and the script refuses an overlapping stash. For each
+contender:
 
-1. In its worktree, run `spike.sh stash` as in the `spike-probe` skill
-   Phase 4 with the message
+1. In its worktree, run the Stash steps in `references/spike-core.md`
+   (`untracked`, message file, `stash -F`) with the message
    `bakeoff <n>-<slug>: <strategy> (<verdict>)`, adding `--keep` before
-   the message under `--keep-trees` so the worktree keeps the work. It prints the
-   stash's own SHA; never read `stash@{0}`, which
-   is another contender's entry when this one changed nothing. A
-   contender that printed `no changes` is recorded as "no changes",
-   not given a SHA.
+   `-F` under `--keep-trees` so the worktree keeps the work. A contender
+   that printed `no changes` is recorded as "no changes", not given a SHA.
 2. Record the printed SHA; `git stash apply <sha>` recovers it from the
    main checkout after its worktree is gone.
 3. Only after the SHA is recorded, check what removal will delete.
@@ -230,10 +223,11 @@ $ git worktree remove <root>/<n>-<slug>
 4. After all contenders: `git worktree prune`, and verify the main
    tree is untouched (`git status`).
 5. After a stash-first Phase 0, restore the user's work with
-   `spike.sh restore <user-work sha>` unless `--replay` runs, which
-   restores it after its last item. A refused restore keeps the stash:
-   report the SHA. Under `--keep-trees`, name each kept worktree path in
-   the report: the user must act on it (`git worktree remove`).
+   `<scripts>/spike.sh restore <user-work sha>` unless `--replay` runs,
+   which restores it after its last item. A refused restore keeps the
+   stash: report the SHA. Under `--keep-trees`, name each kept worktree
+   path in the report: the user must act on it (`git worktree remove`).
+   the `spike-ratchet` skill follows steps 1 through 4 and skips this restore.
 
 ## Phase 6: The verdict and replay plan
 
@@ -259,10 +253,11 @@ when observable, as in probe.
 ## Phase 7: Replay (only with `--replay`, after approval)
 
 Follow Phase 6 of the `spike-probe` skill from the main checkout: apply
-the winner's stash with `spike.sh replay-apply <sha>` (apply, not pop), land plan items one gated commit
-at a time, apply graft hunks from runner-up stashes where the plan
-says so, and only after the final green gate drop the contender
-stashes by SHA with `spike.sh drop`, never the user-work stash. Commit
+the winner's stash with `<scripts>/spike.sh replay-apply <sha>` (apply,
+not pop), land plan items one gated commit at a time, apply graft hunks
+from runner-up stashes where the plan says so, and only after the final
+green gate drop the contender stashes by SHA with
+`<scripts>/spike.sh drop`, never the user-work stash. Commit
 messages follow the probe's rules: no `Co-Authored-By`, no "Generated
 with" or other tool trailers, no emoji.
 
@@ -276,6 +271,13 @@ recorded as dropped; do not debug it here.
 
 Write the report, and any replay commit message, per
 `references/prose-rules.md`.
+
+The first line of the reply is exactly the hero line: no lead-in sentence,
+no first-person opener. Report results, not process: never narrate a
+departure from these steps or name the brief or the skill; do the step or
+halt. State what happened, not what a contender or step did not do.
+Warnings about the checkout (mode changes, files left in place, a tree
+that needs attention) go inside `## Stashes`, never before the first section.
 
 1. Hero block (1–3 lines): `✓ bakeoff judged: <winner>` /
    `⚠ bakeoff inconclusive` + goal + exit path taken.

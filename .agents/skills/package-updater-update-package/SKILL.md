@@ -33,7 +33,12 @@ User arguments: $ARGUMENTS
 
 ## Procedure
 
-### 1. Resolve the target and confirm it exists
+### 1. Establish scope
+
+Set the scope per `references/repo-scope.md`, which owns the
+flags, the fork rule and the ask-first rule.
+
+### 2. Resolve the target and confirm it exists
 
 If the user named a version, use it. Otherwise take the latest stable
 release. Either way confirm it is published and record its publication
@@ -42,18 +47,13 @@ registry in the "Release publication time" section of
 `references/ecosystems.md`. A version written before it is
 confirmed to exist is the expensive failure this ordering prevents.
 
-Read the cooldown configuration (the ecosystems reference lists the
-keys) and check the package against `holds.md`: a held package stops
+Read the cooldown configuration of each repository in scope (the
+ecosystems reference lists the keys) and check the package against `holds.md`: a held package stops
 here unless the user is releasing the hold.
 
 If the cooldown hides the target, say when it becomes visible and stop,
 even when the user named the version. Exempt only per
 `references/cooldown-exemption.md`, when the release is needed now.
-
-### 2. Establish scope
-
-Set the scope per `references/repo-scope.md`, which owns the
-flags, the fork rule and the ask-first rule.
 
 ### 3. Find every pin site
 
@@ -81,6 +81,9 @@ reaches. A release note describes the package; only the repository can
 say whether the change applies. Where the general claim does not hold,
 the body says something different in that repository.
 
+When the notes of a major bump, or a 0.x bump crossing a minor, cannot
+be read, stop and ask, per Phase 3 of the `package-updater-updating-packages` skill.
+
 Predict the follow-up now — a formatter, compiler or framework bump
 usually needs one, per the follow-ups reference.
 
@@ -102,7 +105,8 @@ reference, `why:` then `what:`, written through a heredoc or a file.
 The follow-up lands immediately after as its own commit.
 No `Co-Authored-By`, no "Generated with" or other tool trailers, no emoji.
 
-Branch and push handling follows Phase 4 of the `package-updater-updating-packages` skill.
+Branch and push handling follows Phase 4 of the `package-updater-updating-packages` skill;
+pull request text goes through `--body-file`.
 
 ### 7. Verify
 
@@ -174,11 +178,14 @@ Reply in this shape, as plain text outside any code fence, with plain bullets, n
 - api: tests pass, uv.lock resolves.
 ```
 
-A halted run (a gate, a scope question, a failed check, nothing to
-change) follows the halt shape in the `package-updater-updating-packages` skill,
-Phase 6: one result sentence, then what the user needs to do, and no
-section. No bold labels, no local paths, no machine facts, no upstream
-facts from memory, no closing recap.
+A halted run (a scope question, a fork, a cooldown, a failed check,
+nothing to change) follows "Plan stop and halt" in
+the `package-updater-updating-packages` skill: the hero line `⚠ Stopped: nothing was changed.` plus one sentence
+stating the single reason, then the options, and no section and no second paragraph. The
+clause is a fact about the repository or release, never its commit
+history, its remotes, a lookup that could not run, or a rule of this
+skill. Options are bare actions, never "and I'll then ...". The plan gate
+is not a halt; the plan prints as text.
 
 Halt example, same plain-text form:
 

@@ -30,10 +30,11 @@ sits on, and for anything in the redundant tier, the proof outcome.
 
 ## Plan
 
-Enter plan mode before proposing anything destructive. In Claude Code
-call `EnterPlanMode`; in Cursor, Codex, or Gemini use `/plan` or
-`Shift+Tab`. Where plan mode is unavailable, present the plan as text
-and wait for explicit approval before touching anything.
+Enter plan mode before the first edit. In Claude Code call
+`EnterPlanMode`; in Cursor, Codex, or Gemini use `/plan` or `Shift+Tab`.
+Where plan mode is unavailable, present the plan as text.
+
+Present the plan and wait for explicit approval before touching anything.
 
 The plan states:
 
@@ -56,9 +57,8 @@ Exit plan mode once approved.
 
 ## Execute
 
-Never run `sudo`. Print the full command for the user, say what it
-changes, and stop. This covers system-tier cleanup such as `apt clean`
-and `journalctl --vacuum-size`.
+For a command that needs `sudo`, print it for the user with what it
+changes, and stop.
 
 Work the approved plan in tier order, largest first within each tier.
 Track progress with TodoWrite so a long run stays inspectable.
@@ -71,7 +71,8 @@ Prefer a tool's own prune or archive command over `rm`. It understands
 its own reference counting and leaves the store consistent.
 
 Before any `rm`, resolve the path with `realpath`, list what it would
-remove (`ls -A <path>`), print the exact target, and check that no
+remove (`ls -A <path> | head -n 50`; a large tree is summarized by its
+size), print the exact target, and check that no
 process holds it open (`fuser -v <path>`; `lsof +D <path>` walks the
 whole tree, so use it only on a small one). Stop if the
 resolved path leaves the approved scope.
@@ -100,4 +101,5 @@ command for the user's host, say so rather than writing one from memory.
 Report host recovery as pending rather than achieved, and say plainly
 which numbers are measured and which are projected.
 
-Follow `../../references/output-contract.md`. Write it per `../../references/prose-rules.md`.
+Follow `../../references/output-contract.md`. Write it per
+`../../references/prose-rules.md`.

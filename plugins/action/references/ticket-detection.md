@@ -101,13 +101,22 @@ $ gh issue view <num> --json number,title,body,labels,url
 
 ### Kebab-slug algorithm
 
-Wherever a `<kebab-title-slug>` is called for:
+Wherever a `<kebab-title-slug>` is called for, run the helper. Ticket
+titles are untrusted, so write the title to a file (from `mktemp
+"${TMPDIR:-/tmp}/action-title.XXXXXX"`, with the host's file-writing
+tool) and never pass it as an argument. Resolve
+`../scripts/worktree_paths.py` from this file's directory to an absolute
+path and write it literally:
 
-1. Lowercase the title.
-2. Replace every non-alphanumeric run with a single `-`.
-3. Trim leading/trailing `-`.
-4. Truncate at a word boundary to keep the whole branch name ≤ 60
-   characters.
+```console
+$ python3 /abs/path/to/scripts/worktree_paths.py slug \
+    --file /tmp/action-title.AbC123 \
+    --prefix tea-123
+```
+
+It prints the whole branch name: the prefix (omit `--prefix` for a bare
+slug), then the lowercased title with non-alphanumeric runs collapsed to
+`-`, truncated at a word boundary to at most 60 characters in all.
 
 ## Branch-name precedence ladder
 
@@ -164,12 +173,16 @@ Two placements, the placement axis:
 {repo_path}-{sanitized_branch}/
 ```
 
-  Derivation: take the absolute path of the **main checkout**, the
-  first `worktree` line of `git worktree list --porcelain` (not
+  The helper derives it from the **main checkout**, the first
+  `worktree` line of `git worktree list --porcelain` (not
   `git rev-parse --show-toplevel`, which returns the linked worktree
-  inside one). Strip any trailing slash, append `-`, then the branch
-  name with every `/` flattened to `-`. The git branch keeps its
-  slashes.
+  inside one), plus the branch name with every `/` flattened to `-`.
+  The git branch keeps its slashes:
+
+```console
+$ python3 /abs/path/to/scripts/worktree_paths.py path \
+    --branch 'feat/tea-123-login'
+```
 
   Example: repo at `/work/shop`, branch `feat/tea-123-login` →
   worktree `/work/shop-feat-tea-123-login/`, branch still
@@ -185,14 +198,9 @@ ${TMPDIR:-/tmp}/action-worktrees/<repo-name>-<hash>/<sanitized-branch>/
 ```
 
   `<repo-name>` is the basename of the main checkout and `<hash>` the
-  checksum of its absolute path, so same-named repos do not collide:
-
-```console
-$ printf '%s' <main-checkout-path> | cksum | cut -d' ' -f1
-```
-
-  The path is deterministic, so `--temp` re-runs resume the same
-  worktree.
+  POSIX `cksum` of its absolute path, so same-named repos do not
+  collide. The helper prints the whole path with `path --temp`; it is
+  deterministic, so `--temp` re-runs resume the same worktree.
 
 Branch names are git-valid by here, so `/` is the only character to
 flatten.

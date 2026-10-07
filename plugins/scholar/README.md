@@ -45,14 +45,14 @@ Claude Code uses a leading slash (`/scholar:…`). Codex omits it (`scholar:…`
 | `/scholar:ontology [<target>...]` | `scholar:ontology` | Distil an ontology, controlled vocabulary, or glossary of what a codebase, a repository set, or a written corpus calls things |
 | `/scholar:gather <target>...` | `scholar:gather` | Resolve and pin a corpus, inventory it, and record what was read and what was deliberately skipped |
 | `/scholar:extract` | `scholar:extract` | Harvest terms and their definitions into a term table, each with the citation that supports it |
-| `/scholar:distill` | `scholar:distill` | Build the three layers — types, members with discriminators, and the controlled vocabulary |
+| `/scholar:distill` | `scholar:distill` | Build the three layers: types, members with discriminators, and the controlled vocabulary |
 | `/scholar:contest` | `scholar:contest` | Adversarially judge the ontology one candidate at a time, recording the kills |
 | `/scholar:render` | `scholar:render` | Write the brief and the evidence documents, then enforce the brief's citation prohibition |
-| `/scholar:annotate <source>` | `scholar:annotate` | Reading notes on prose — quotations with stable locators, as a term source for extract |
+| `/scholar:annotate <source>` | `scholar:annotate` | Reading notes on prose: quotations with stable locators, as a term source for extract |
 | `/scholar:ask <question>` | `scholar:ask` | Answer from a finished study, citing its evidence, and name the gap when there is one |
-| `/scholar:compare <dir> <dir>` | `scholar:compare` | Set two term tables against each other — shared concepts, clashing terms, and coverage |
+| `/scholar:compare <dir> <dir>` | `scholar:compare` | Set two term tables against each other: shared concepts, clashing terms, and coverage |
 | `/scholar:revise <claim>` | `scholar:revise` | Record a correction: what was believed, what it rested on, and why it failed |
-| `/scholar:verify [<dir>]` | `scholar:verify` | Re-check a study against the corpus it cites — moved refs, vanished files, misquotes, changed numbers |
+| `/scholar:verify [<dir>]` | `scholar:verify` | Re-check a study against the corpus it cites: moved refs, vanished files, misquotes, changed numbers |
 
 `ontology` is the only skill a model routes to on its own. The rest are
 invoked by name, so the pipeline can be resumed at any stage.
@@ -71,7 +71,7 @@ notes/ontology/<subject>/
     ├── hierarchy.md      the type hierarchy, one citation per is-a claim
     ├── vocabulary.md     preferred and deprecated terms, disjointness constraints
     ├── metrics.md        distributional claims, each with its command and output
-    ├── contested.md      claim, objection, verdict — including the kills
+    ├── contested.md      claim, objection, verdict, including the kills
     └── corrections.md    retractions: what was believed, and why it failed
 ```
 
@@ -88,7 +88,7 @@ construction rather than by discipline.
 
 Every one of these is optional. `scholar` works standalone.
 
-`weave` — `contest --panel` prints a contested claim and a `/weave:ask`
+`weave`: `contest --panel` prints a contested claim and a `/weave:ask`
 command for you to run; paste the verdicts back and `contest` records them
 beside the serial one.
 
@@ -98,6 +98,8 @@ beside the serial one.
 - gh, to resolve a tag to its commit and to check it again in `verify`.
   `verify` checks GitHub sources only; a corpus on another host is Uncheckable
   there unless a local clone is on disk, which `verify` checks with plain git.
+  `extract` fetches a remote corpus with plain git over HTTPS from the recorded
+  source URL, so any host that serves git works.
 - rg, to inventory a corpus without reading all of it.
 - Python 3.9+, to run `scripts/term_metrics.py`. It uses the standard library
   only, so it runs inside any corpus checkout with no package manager present.

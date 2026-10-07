@@ -152,7 +152,7 @@ stderr file.
    `adopt`, `reset-main`, and `stash-restore`.
 6. Read-only skills close the guard (Close the repo guard) after the lanes.
 7. Judge and synthesize with the shared sections, naming the convergence mode and
-   rubric. Deslop and render with `deslop-pass.md` and `present-results.md`.
+   rubric. Deslop and render with `deslop-pass.md`, `present-results.md`, and `results/<kind>.md`.
 8. Finish with `ensemble-core.md` (Finish).
 
 Keep the skill's own judgment prose; delete anything the engine or a reference

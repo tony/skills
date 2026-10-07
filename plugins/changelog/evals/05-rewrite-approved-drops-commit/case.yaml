@@ -20,19 +20,10 @@ execution:
 runs: 3
 
 graders:
-  - name: creates-a-backup-branch-first
-    type: tool_order
-    before:
-      tool: Bash
-      input_match: 'rewrite-backup'
-    after:
-      tool: Bash
-      input_match: 'git rebase'
-
-  - name: drops-the-draft-commit
+  - name: drops-the-draft-commit-through-the-helper
     type: tool_used
     tool: Bash
-    input_match: 'git rebase'
+    input_match: 'rewrite\.py drop'
     min: 1
     arm: both
 
@@ -59,13 +50,6 @@ graders:
       source: file
       path: src/ping.py
     pattern: 'return "PONG"'
-
-  - name: checks-code-against-the-backup
-    type: tool_used
-    tool: Bash
-    input_match: 'git diff changelog-rewrite-backup-'
-    min: 1
-    arm: both
 
   - name: does-not-copy-the-draft-pr-number
     type: regex

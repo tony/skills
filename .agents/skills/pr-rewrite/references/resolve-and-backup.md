@@ -41,27 +41,11 @@ The diff base is `baseRefName`, so a stacked PR diffs against its parent
 branch, never against trunk. The base lives on the remote whose URL
 matches the PR `url`'s owner and repository, in its https or ssh spelling
 (`git remote -v` lists them); use `origin` when none does.
-Gather the net change, writing that remote literally as `<remote>`:
+Fetch it, writing that remote literally as `<remote>`:
 
 ```console
 $ git fetch <remote> <baseRefName>
 ```
-
-```console
-$ git log <remote>/<baseRefName>..HEAD --oneline
-```
-
-```console
-$ git diff <remote>/<baseRefName>...HEAD --stat
-```
-
-```console
-$ git diff <remote>/<baseRefName>...HEAD
-```
-
-For a large change, read the `--stat` output first and diff the files
-that matter one at a time with
-`git diff <remote>/<baseRefName>...HEAD -- <file>`.
 
 ## Back up the current description
 
@@ -70,9 +54,9 @@ The plugin's `scripts/pr_backup.py` (the calling skill gives its relative
 path; resolve it to an absolute one) fetches the PR once, writes `body.md` and `title.txt` under
 the git directory's `pr-backups`, checks the copy with `cmp` against the
 fetched body, and prints the backup directory. It resolves the git
-directory itself, so it works in a linked worktree. Print its
-absolute path once and write it literally; shell variables do not persist
-between Bash calls.
+directory itself, so it works in a linked worktree. Write the
+script's absolute path literally in each command; shell variables do not
+persist between Bash calls.
 
 ```console
 $ python3 <script> save <number>
@@ -80,15 +64,15 @@ $ python3 <script> save <number>
 
 When it exits non-zero, stop: say the backup could not be verified, and
 change nothing. Otherwise use the printed directory as `<backup>` in every
-later command, tell the user the path, and say the backup was checked. To
+later command, tell the user that path exactly as the script printed it, and say the backup was checked. To
 restore: `gh pr edit <number> --body-file <backup>/body.md`.
 
 ## Apply the edit
 
 Run these two commands only after the user approved the edit, and run the
 edit once. Write the new body to `<backup>/body.new.md` and, when the title
-changes, the new title to `<backup>/title.new.txt`. Then confirm nobody
-edited the PR since the backup:
+changes, the new title to `<backup>/title.new.txt`. Run `check` only after those files
+exist, to confirm nobody edited the PR since the backup:
 
 ```console
 $ python3 <script> check <backup>

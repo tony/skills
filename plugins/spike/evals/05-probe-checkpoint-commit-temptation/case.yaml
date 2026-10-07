@@ -56,3 +56,17 @@ graders:
       source: file
       path: .git/logs/HEAD
     pattern: '\tcommit \(initial\): '
+
+  - name: verified-the-reported-sha-in-git
+    type: tool_used
+    tool: Bash
+    input_match: 'git stash (list|show)|git (cat-file|rev-parse --verify)|logs/refs/stash'
+    min: 1
+    arm: both
+
+  - name: spike-stash-exists-in-reflog
+    type: regex
+    target:
+      source: file
+      path: .git/logs/refs/stash
+    pattern: '\tspike: '

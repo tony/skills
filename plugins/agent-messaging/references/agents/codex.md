@@ -48,12 +48,13 @@ because a non-default `CODEX_HOME` makes live threads look missing.
 ### codex-queue (send and receive)
 
 Send the line composed in SKILL.md step 4 and approved in step 5, verbatim. Pass it
-through a quoted heredoc so an apostrophe cannot break the shell:
+through a quoted heredoc so an apostrophe cannot break the shell, after checking that
+`RELAY_BODY_END` appears nowhere in the line:
 
 ```bash
-line=$(cat <<'RELAY'
+line=$(cat <<'RELAY_BODY_END'
 <the exact line from step 4>
-RELAY
+RELAY_BODY_END
 )
 codex queue --thread <uuid-or-name> --message "$line"
 ```

@@ -44,7 +44,7 @@ They cannot see:
   `flex-col` or `grid` anywhere in a file makes every `mt-*`, `mb-*`,
   and `my-*` in it a hit, and a `gap-*` anywhere pairs with every margin
 - vertical margins in a file with no `flex-col` or `grid` (block flow
-  collapses them; `margin` never lists them)
+  collapses them; `margin` never lists `mt-*`, `mb-*`, or `my-*`)
 - `mt-auto`, `mx-auto`, and the other `auto` margins, which push instead
   of space
 - `space-*` combined with `gap-*` across separate `cn()` arguments
@@ -60,10 +60,10 @@ Items that read as one row are split across sibling containers, each
 with its own spacing rule. No `rg` pattern finds this; walk the DOM.
 
 Detect: list the visual peers, then check that all share one flex or
-grid parent. The command lists every horizontal margin (`ml-`, `mr-`,
-`ms-`, `me-`, `mx-` with a number or arbitrary value; `mx-auto` is
-skipped; vertical margins are `vmargin`, under Pattern 2). It has no sibling logic; walk the DOM to see which margins
-compensate for a split.
+grid parent. The command lists every all-sides and horizontal margin
+(`m-`, `ml-`, `mr-`, `ms-`, `me-`, `mx-` with a number or arbitrary
+value; `auto` is skipped; vertical margins are `vmargin`, under Pattern 2). It has no
+sibling logic; walk the DOM to see which margins compensate for a split.
 
 ```console
 $ python3 <absolute path to detect.py> \
@@ -75,7 +75,7 @@ Fallback if the script cannot run (replace `.` with the target):
 
 ```console
 $ rg -n \
-    -e '(?:^|[\s"\x27\x60:!])-?m[xesrl]-(?:[0-9\[]|px\b)' \
+    -e '(?:^|[\s"\x27\x60:!])-?m[xesrl]?-(?:[0-9\[]|px\b)' \
     -g '*.{tsx,jsx,vue,svelte,astro,html,erb,blade.php}' \
     .
 ```
@@ -83,60 +83,38 @@ $ rg -n \
 Before:
 
 ```tsx
-<div className="me-1 flex gap-1">
-  <a className="flex h-12 items-center" href="/profile">
-    <img className="h-6 w-auto" alt="Profile" src="..." />
-  </a>
-  <button className="flex h-12 items-center px-2">
-    <SettingsIcon className="h-5 w-5" />
-  </button>
-  <button className="flex h-8 items-center gap-1.5 rounded px-2">
-    <span>B</span><span>Billing</span>
-  </button>
+<div className="flex items-center gap-1">
+  <a href="/profile">Profile</a>
+  <button>Billing</button>
 </div>
 
-<div className="me-2 flex place-items-center">
-  <button className="flex h-8 w-24 items-center gap-1.5 rounded px-2">
-    <span>Theme</span>
-  </button>
+<div className="flex items-center">
+  <button>Theme</button>
 </div>
 ```
 
-The Settings to Billing gap is `gap-1`. The Billing to Theme gap is
-`me-1` plus whatever the outer parent adds. They differ.
+The Billing to Theme gap comes from the outer parent, not from the
+row's `gap-1`, so it differs from the Profile to Billing gap.
 
 After:
 
 ```tsx
 <div className="flex items-center gap-1">
-  <a className="flex h-12 items-center px-2" href="/profile">
-    <img className="h-6 w-auto" alt="Profile" src="..." />
-  </a>
-  <button className="flex h-12 items-center px-2">
-    <SettingsIcon className="h-5 w-5" />
-  </button>
-  <button className="flex h-12 items-center gap-1.5 rounded px-2">
-    <span>B</span><span>Billing</span>
-  </button>
-  <button className="flex h-12 items-center gap-1.5 rounded px-2">
-    <span>Theme</span>
-  </button>
+  <a href="/profile">Profile</a>
+  <button>Billing</button>
+  <button>Theme</button>
 </div>
 ```
 
-One container, one `gap-1`: the Settings to Billing gap is unchanged,
-and the Billing to Theme gap shrinks to match it (it was `me-1` plus
-the outer parent's spacing). Pick the gap value you want the whole row
-to have. The `me-*` hacks and `w-24` are gone (Patterns 2 and 4), the
-profile link gained `px-2` (Pattern 3), and all four peers share `h-12`
-(Pattern 6).
+One container, one `gap-1`. Pick the gap value you want the whole row
+to have.
 
 ## Pattern 2: Margin and gap mixing
 
 A flex or grid parent sets `gap-*`, and some children also carry
 margin. The margin adds to the gap on that edge.
 
-Detect: list margins in files that also set `gap-*`. Horizontal margins
+Detect: list margins in files that also set `gap-*`. All-sides and horizontal margins
 always count; `mt-*`, `mb-*`, and `my-*` count when the file has
 `flex-col` or `grid`. `auto` margins are skipped because they push
 instead of spacing peers. The command stops after 50 hits; narrow the
@@ -163,7 +141,7 @@ and take the first 50 hits per file:
 
 ```console
 $ rg -n \
-    -e '(?:^|[\s"\x27\x60:!])-?m[xesrlytb]-(?:[0-9\[]|px\b)' \
+    -e '(?:^|[\s"\x27\x60:!])-?m[xesrlytb]?-(?:[0-9\[]|px\b)' \
     -g '*.{tsx,jsx,vue,svelte,astro,html,erb,blade.php}' \
     .
 ```

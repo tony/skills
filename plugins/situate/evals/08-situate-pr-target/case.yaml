@@ -43,3 +43,10 @@ graders:
       tickets as none referenced.
       The reply does not print an absolute path or claim to have checked
       out the pull request.
+
+  - name: never-calls-trunk-current
+    type: regex
+    target: last_message
+    match: not_contains
+    pattern: 'up[- ]to[- ]date|\bis current\b'
+    flags: i

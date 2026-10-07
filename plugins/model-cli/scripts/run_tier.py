@@ -1,7 +1,12 @@
 #!/usr/bin/env python3
 """Run one model-CLI tier and print a JSON result with its failure class.
 
-Usage: run_tier.py --prompt-file FILE [--timeout SECONDS|none] -- BINARY ARGS...
+Usage: run_tier.py --prompt-file FILE [--timeout SECONDS|none]
+       [--require-flag=FLAG ...] -- BINARY ARGS...
+
+Each --require-flag=FLAG (the = is required) is checked against
+`BINARY [SUBCOMMAND] --help` before the run; a missing flag prints class
+"unsupported-flag" and runs nothing.
 
 The prompt file's text is appended to the command as its last argument; a
 prompt over MAX_ARG_BYTES is replaced by an instruction to read the file.
@@ -30,7 +35,7 @@ CREDIT_PATTERNS = (
     "quota_exceeded",
     "insufficient_quota",
     "exceeded your current quota",
-    "billing",
+    r"billing (?:limit|error|issue)",
     "capacity exhausted",
     "usage limit",
 )
@@ -67,6 +72,10 @@ def classify(*, exit_code: int | None, timed_out: bool, stdout: str, stderr: str
     'crash'
     >>> classify(exit_code=0, timed_out=False, stdout="", stderr="")
     'empty'
+    >>> classify(exit_code=1, timed_out=False, stdout="", stderr="billing limit reached")
+    'credit'
+    >>> classify(exit_code=1, timed_out=False, stdout="", stderr="billing")
+    'crash'
     >>> classify(exit_code=0, timed_out=False, stdout="billing", stderr="billing")
     'ok'
     """
@@ -80,6 +89,34 @@ def classify(*, exit_code: int | None, timed_out: bool, stdout: str, stderr: str
         if pattern.search(stderr):
             return name
     return "crash"
+
+
+def missing_flags(command: list[str], flags: list[str]) -> list[str]:
+    """Return the flags absent from the help text of the command's leading words.
+
+    ``codex exec --yolo`` probes ``codex exec --help``. An unreadable help
+    text reports every flag missing.
+    """
+    if not flags:
+        return []
+    probe: list[str] = []
+    for word in command:
+        if word.startswith("-"):
+            break
+        probe.append(word)
+    try:
+        done = subprocess.run(  # noqa: S603
+            [*probe, "--help"],
+            stdin=subprocess.DEVNULL,
+            capture_output=True,
+            text=True,
+            timeout=30,
+            check=False,
+        )
+    except (OSError, subprocess.TimeoutExpired):
+        return list(flags)
+    text = done.stdout + done.stderr
+    return [f for f in flags if not re.search(rf"(?<![\w-]){re.escape(f)}(?![\w-])", text)]
 
 
 def run(
@@ -132,6 +169,7 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     _ = parser.add_argument("--prompt-file", required=True, type=Path)
     _ = parser.add_argument("--timeout", default="600")
+    _ = parser.add_argument("--require-flag", action="append", default=[])
     _ = parser.add_argument("command", nargs=argparse.REMAINDER)
     args = parser.parse_args(argv)
     prompt_file = cast("Path", args.prompt_file)
@@ -139,6 +177,20 @@ def main(argv: list[str] | None = None) -> int:
     command = raw[1:] if raw[:1] == ["--"] else raw
     if not command:
         parser.error("missing command after --")
+    missing = missing_flags(command, cast("list[str]", args.require_flag))
+    if missing:
+        json.dump(
+            {
+                "exit_code": None,
+                "class": "unsupported-flag",
+                "elapsed": 0.0,
+                "stdout": "",
+                "stderr": f"{command[0]} --help does not list: {', '.join(missing)}",
+            },
+            sys.stdout,
+        )
+        _ = sys.stdout.write("\n")
+        return 0
     raw_timeout = cast("str", args.timeout)
     timeout = None if raw_timeout == "none" else float(raw_timeout)
     result = run(command, prompt_file.read_text(encoding="utf-8"), timeout, prompt_file)

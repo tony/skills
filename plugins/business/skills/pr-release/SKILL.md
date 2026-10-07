@@ -1,6 +1,6 @@
 ---
 name: pr-release
-description: Write the tier-3 one-page announcement — figures drawn only from the public case study, denominators attached, limitations one-liner included
+description: "Use when writing the tier-3 one-page announcement from a public case study, with denominators attached and a limitations line."
 allowed-tools: ["Bash", "Read", "Write", "Grep", "AskUserQuestion"]
 argument-hint: "[run directory]"
 user-invocable: true
@@ -24,8 +24,6 @@ until the firewall (the public case study) is located:
   firewall sweep.
 
 User arguments: $ARGUMENTS
-
-Paths under `../../scripts/` resolve from this skill's directory: print the absolute path once and write it literally in each command, since shell variables do not persist between Bash calls.
 
 ## Procedure
 

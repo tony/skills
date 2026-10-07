@@ -47,7 +47,11 @@ reports pins that branch alone has.
 
 If the user named a tool, work on that one. Otherwise take every tool in
 the pin files (`.tool-versions`, `.nvmrc`, `.python-version`,
-`mise.toml`) plus `packageManager` and `engines` in `package.json`. Run
+`.ruby-version`, `mise.toml`, `rust-toolchain.toml`, the `go` and
+`toolchain` lines of `go.mod`) plus `packageManager` and `engines` in
+`package.json`; `references/repo_facts.py` prints these per repository
+(`pins`); resolve its path from this skill's directory to an absolute
+path and write it literally in the command. Run
 `mise outdated` when `mise` is on PATH; without it, resolve each tool
 against its own release feed. Resolve the latest release from the
 vendor's feed rather than memory: for a tool released on GitHub, the tag
@@ -72,9 +76,13 @@ uses the window the repository sets for its packages, and a repository
 with none has no gate. For each target, read its publication time with
 the command in the "Release publication time" section of that
 reference. A target younger than the window stops that tool, even when
-the user named the version: say when it becomes visible. Take the newest
-release outside the window only when the user agrees; a release skipped
-this way earns a `why:` in the commit. Exempt a tool only per
+the user named the version: say when it becomes visible. Find the newest
+release outside the window by listing publication dates, newest first:
+for a GitHub tool, `gh api repos/<owner>/<repo>/releases --jq '.[] |
+select(.prerelease | not) | [.tag_name, .published_at] | @tsv'`; for
+Node.js, `jq -r '.[] | [.version, .date] | @tsv'` on the dist index.
+Take it only when the user agrees; a release skipped this way earns a
+`why:` in the commit. Exempt a tool only per
 `references/cooldown-exemption.md`.
 
 ### 4. Research each span
@@ -118,10 +126,19 @@ block and nothing else; `references/commit-conventions.md` has the
 shape. Write the message per `references/prose-rules.md`.
 No `Co-Authored-By`, no "Generated with" or other tool trailers, no emoji.
 
-A bump that crosses a major (for a 0.x tool, a minor), is labeled breaking by its vendor, changes
-behavior this repository exercises, carries a security fix, or skips a
-newer release the cooldown gates takes a `why:` above the link block.
-Say what the span changes upstream, describing the intermediate
+A bump takes a `why:` above the link block when it:
+
+- crosses a major (for a 0.x tool, a minor);
+- is labeled breaking by its vendor;
+- changes behavior this repository exercises;
+- carries a security fix;
+- skips a newer release the cooldown gates.
+
+When the notes of a bump that crosses a major (for a 0.x tool, a minor)
+cannot be read, stop and ask, per Phase 3 of
+the `package-updater-updating-packages` skill.
+
+The `why:` says what the span changes upstream, describing the intermediate
 releases and not only linking them, and what it reaches here, naming
 what the repository gains alongside what it dodges.
 
@@ -197,20 +214,23 @@ Reply in this shape, as plain text outside any code fence, with plain bullets, n
 - Tests and lint pass; uv.lock still resolves.
 ```
 
-A halted run (a gate, a scope question, a failed check, nothing to
-change) follows the halt shape in the `package-updater-updating-packages` skill,
-Phase 6: one result sentence, then what the user needs to do, and no
-section. No bold labels, no local paths, no machine facts, no upstream
-facts from memory, no closing recap.
+A halted run (a scope question, a fork, a cooldown, a failed check,
+nothing to change) follows "Plan stop and halt" in
+the `package-updater-updating-packages` skill: the hero line `⚠ Stopped: nothing was changed.` plus one sentence
+stating the single reason, then the options, and no section and no second paragraph. The
+clause is a fact about the repository or release, never its commit
+history, its remotes, a lookup that could not run, or a rule of this
+skill. Options are bare actions, never "and I'll then ...". The plan gate
+is not a halt; the plan prints as text.
 
-Halt example, same plain-text form:
+Cooldown halt example, same plain-text form:
 
 ```text
-⚠ Stopped: nothing was changed. uv 0.9.5 could not be confirmed as a published release, and no .tool-versions was found.
+⚠ Stopped: nothing was changed. uv 0.9.5 was published today and the 7-day cooldown hides it until 2026-10-14.
 
 To continue:
-- Run the command in the repository that holds the pin, or pass --repo <path>.
-- Allow network access to the release feed, or confirm the version from your own source.
+- Wait until then and rerun.
+- Exempt uv from the cooldown for this release.
 - Stop here.
 ```
 

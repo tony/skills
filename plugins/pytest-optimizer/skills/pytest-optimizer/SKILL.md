@@ -66,10 +66,31 @@ directory.
    Prefix the project's runner when it has one (`uv run pytest --version`,
    `tox -e py -- --version`).
 
-If there is no pytest suite, stop with the halted-run shape in
-`../../references/output-contract.md`. A saving is a measured number: when
+If there is no pytest suite, stop with the halted-run shape below. A saving is a measured number: when
 nothing was run, state no projected timing, and call a scope change a
 hypothesis to benchmark, not a fix.
+
+A halted run (no suite here, or a prior phase's output missing) is one result
+sentence naming the first check that failed, then one sentence on what the user
+does, with no sections, panel, bold, local paths, or projected timings. Write it
+per `../../references/prose-rules.md`. Reply in this shape, as plain text outside
+any code fence, with plain sentences and no bold:
+
+```text
+I stopped before measuring because this directory has no pytest suite.
+Run the skill from the project root that holds the tests, or send the path to it.
+```
+
+When the user pasted durations, add one sentence after the first: "Your durations
+put most of the time in db_session setup, which is a hypothesis to benchmark once
+the suite is available."
+
+A phase whose input is missing stops the same way:
+
+```text
+I stopped before planning because no benchmarks have been recorded.
+Run 01-benchmark first, then run this phase again.
+```
 
 ## Orchestration Plan
 

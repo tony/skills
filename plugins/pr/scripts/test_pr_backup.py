@@ -62,3 +62,24 @@ def test_check_detects_edit_since_backup(repo: Path) -> None:
     done = _run(repo, "check", out)
     assert done.returncode == 1
     assert "changed" in done.stderr
+
+
+def test_check_detects_title_edit_since_backup(repo: Path) -> None:
+    """A title edited after the backup fails the check even when the body matches."""
+    out = str(repo / _run(repo, "save", "17").stdout.strip())
+    (repo.parent / "stub.json").write_text(
+        json.dumps({"number": 17, "title": "Add it, edited", "body": BODY})
+    )
+    done = _run(repo, "check", out)
+    assert done.returncode == 1
+    assert "title" in done.stderr
+
+
+def test_save_falls_back_when_git_dir_is_unwritable(repo: Path) -> None:
+    """An unwritable pr-backups path falls back to a temp directory."""
+    (repo / ".git" / "pr-backups").write_text("blocked")
+    done = _run(repo, "save", "17")
+    assert done.returncode == 0, done.stderr
+    out = Path(done.stdout.strip())
+    assert (out / "body.md").read_bytes().decode() == BODY
+    assert ".git" not in out.parts

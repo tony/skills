@@ -24,4 +24,15 @@ Open with a one-line hero (`✓ <n> topics under <root>` or `⚠ No topics under
 
 1. `## Topics`: one line per topic, most urgent first: latest run, sources by state, open questions, next action.
 
-Panel options: continue a topic, verify a topic, stop.
+Reply in this shape, as plain text outside any code fence, with plain bullets, no bold (never `- **Label:** ...`), and no local paths:
+
+```text
+✓ 2 topics under the Documents root
+
+## Topics
+
+- research/sqlite-wal, latest 2026-07-14: 6 sources (5 intact, 1 moved), 2 open questions; next: verify.
+- research/uv-monorepo, latest 2026-07-12: 4 sources intact, 1 unknown rating; next: continue --fill.
+```
+
+The panel offers continue a topic, verify a topic, and stop; no bullet repeats a next action as a panel option. Panel options: continue a topic, verify a topic, stop.

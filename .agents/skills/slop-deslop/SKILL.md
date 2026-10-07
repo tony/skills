@@ -33,7 +33,11 @@ branch-internal narrative (renames of unshipped symbols, intermediate
 states, `### Fixes` for bugs no release had) only when no user of the
 latest published release experienced the old name, behavior, or bug.
 
-Paths under `../../scripts/` resolve from this skill's directory: print the absolute path once and write it literally in each command, since shell variables do not persist between Bash calls.
+`<slop_detect.py>` is `references/slop_detect.py` and `<render_apply.py>`
+is `references/render_apply.py`, resolved from this skill's directory,
+not the repository root. Resolve each to an absolute path once, print it,
+and write that literal path in every command below, since shell variables
+do not persist between Bash calls. Both need python3 (3.9 or newer).
 
 ## `$ARGUMENTS` contract
 
@@ -148,11 +152,9 @@ With the flag, record the upstream in the final report and continue.
 
 ## Step 3: Discover quality gates
 
-Follow `references/verification-gates.md` § Local gate buckets;
-this skill ignores `build` and the CI-coverage pass. Skip empty buckets
-in Steps 11 and 12. With no question tool and no conventions file,
-treat the answer as `skip` and warn that no gate will run. When every bucket is `unset` and an apply flag was passed,
-warn before Step 10 that no gate will validate the result.
+Follow `references/verification-gates.md` § Local gate buckets,
+then `references/detect-pipeline.md` § Gate handling. Skip empty
+buckets in Steps 11 and 12; the no-gate warning comes before Step 10.
 
 ## Step 4: Read project tone
 
@@ -176,14 +178,14 @@ flagged hunks (expensive, precise).
   first, so each finding names the commit that added the line.
 
 ```console
-$ git log -p --reverse "<BASELINE_SHA>..HEAD" | python3 references/slop_detect.py diff \
+$ git log -p --reverse "<BASELINE_SHA>..HEAD" | python3 <slop_detect.py> diff \
     --registry references/signatures.yml
 ```
 
 - `message-subject` and `message-body` (skip under `--targets=diff`):
 
 ```console
-$ git log -z --format=%H%x1f%B "<BASELINE_SHA>..HEAD" | python3 references/slop_detect.py messages \
+$ git log -z --format=%H%x1f%B "<BASELINE_SHA>..HEAD" | python3 <slop_detect.py> messages \
     --registry references/signatures.yml
 ```
 
@@ -227,24 +229,26 @@ tool trailer, and no emoji; hosts add these by default, so strip them.
 
 ## Step 8: Materialize the patch series
 
-Always materialize first; the series is the user's review surface. The
-run directory resolves through `git rev-parse --git-path`, so it works
-in a linked worktree where `.git` is a file. Create it and print its
-path:
+Always materialize first; the series is the user's review surface.
+Create the run directory per `references/detect-pipeline.md` §
+Run directory, with `<name>` = `deslop`.
+
+Cut the diff patches sequentially. Before creating the scratch worktree,
+compare two physical paths: print the repository root, then the physical
+home path.
 
 ```console
-$ d=$(git rev-parse --git-path "deslop/$(date -u +%Y%m%d-%H%M%SZ)-$$") && mkdir -p "$d" && echo "$d"
+$ git rev-parse --show-toplevel
 ```
 
-Shell state does not persist between Bash calls: use the printed path
-literally as `<run-dir>` in every later command, and likewise the
-literal values of `BASELINE_SHA`, `START_SHA`, and the gate commands
-recorded in `0000-PLAN.md`.
+```console
+$ cd ~ && pwd -P
+```
 
-Cut the diff patches sequentially. Refuse to create the scratch
-worktree when `git rev-parse --show-toplevel` is `$HOME` or contains it:
-a dotfile repo rooted at home would check out the whole home directory.
-Make the directory and print it:
+Refuse when the two are equal or the root is an ancestor of home: a
+dotfile repo rooted at home would check out the whole home directory. A
+string compare against `$HOME` misses a symlinked home. Make the
+scratch directory and print it:
 
 ```console
 $ mktemp -d "${TMPDIR:-/tmp}/deslop-scratch.XXXXXX"
@@ -289,10 +293,7 @@ Layout:
 └── apply.sh                     (rendered by references/render_apply.py)
 ```
 
-`0000-PLAN.md` records the registry version, source path, and SHA-256,
-the resolved `FORMAT_CMD` / `LINT_CMD` / `TYPECHECK_CMD` / `TEST_CMD`,
-`BASELINE_SHA`, the commit range, the budget, and the tone-calibration
-result.
+`0000-PLAN.md` adds the commit range to the fields in § Run directory.
 
 Render `apply.sh` with the tested script, passing the literal
 `<run-dir>`, `BASELINE_SHA`, and the trunk ref. It
@@ -300,7 +301,7 @@ hashes the registry, fills the template, marks the file executable, and
 prints its path:
 
 ```console
-$ python3 references/render_apply.py \
+$ python3 <render_apply.py> \
     --run-dir "<run-dir>" \
     --baseline "<BASELINE_SHA>" \
     --trunk-ref "origin/<trunk>"
@@ -316,13 +317,13 @@ and aborts if the registry changed. Its exit codes are in the header of
 
 Without an apply flag, print the Step 12 report (skip its git and gate
 commands) and stop, telling the user how to run
-`bash <run-dir>/apply.sh`. The directory is run-scoped, not
-a permanent record.
+`bash <run-dir>/apply.sh`.
 
 ## Step 9: Confirmation gate
 
-Reached only when `--apply-patches` or `--apply-rebase` was passed. Ask
-through `ask-user-choice`:
+Reached only when `--apply-patches` or `--apply-rebase` was passed.
+Follow `references/detect-pipeline.md` § Confirmation gate with
+these choices:
 
 | Choice | Effect |
 |---|---|
@@ -331,12 +332,9 @@ through `ask-user-choice`:
 | **Apply and autosquash** | Full rewrite. Offered only with `--apply-rebase`, and only when Step 1 found no merge commits. |
 | **Cancel** | Delete `<run-dir>/` and exit. |
 
-Without a question tool (Codex, headless), take **Patches only** and
-print the `apply.sh` command, unless the request explicitly says to
-apply. "Apply the patches" approves **Apply patches now** and nothing
-broader: not autosquash, not a push. "Apply and autosquash" approves
-that choice. Every Tier B finding still counts as declined, because
-nobody confirmed it.
+Headless, the printed command is `bash <run-dir>/apply.sh`. "Apply the
+patches" approves **Apply patches now** and nothing broader: not
+autosquash, not a push. "Apply and autosquash" approves that choice.
 
 Before "Apply patches now", show this warning:
 
@@ -452,6 +450,10 @@ is 0.
 
 Do not push; the user decides. After `--force-rewrite-pushed`, recommend
 `git push --force-with-lease --force-if-includes` over `git push --force`.
+
+End with the next step, through `ask-user-choice` when available,
+otherwise as a plain line: after an audit, `bash <run-dir>/apply.sh` or
+a re-run with `--apply-patches`; after an apply, the push command.
 
 ## Edge cases
 

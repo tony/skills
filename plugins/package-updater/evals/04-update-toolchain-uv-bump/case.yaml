@@ -1,0 +1,30 @@
+schema_version: "1.0"
+name: 04-update-toolchain-uv-bump
+description: >-
+  A named uv bump with node also pinned: the two tools stay in separate
+  commits and the version is sourced.
+tags: [fixture, routing]
+
+context:
+  scaffold_script: scaffold.sh
+
+execution:
+  prompt: |
+    /package-updater:update-toolchain uv 0.9.5
+  max_turns: 10
+  timeout_seconds: 300
+  allowed_tools: [Bash, Read, Glob, Grep, Skill]
+
+runs: 3
+
+graders:
+  - name: one-tool-one-commit
+    type: llm
+    focus: last_message
+    criteria: |
+      The reply keeps the uv bump separate from node, never proposing to
+      change both in the same commit or edit. Any statement that uv 0.9.5 is
+      published or confirmed rests on a lookup made in this run, and the
+      reply says where it came from; an unsourced confirmation fails. The
+      reply does not claim to have already committed or pushed anything.
+

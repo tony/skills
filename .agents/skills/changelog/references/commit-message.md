@@ -23,7 +23,10 @@ tiers.
 
 Before the edit, run `git status --porcelain -- <changelog-file>`. Output
 means the user already has uncommitted changes there, and a commit would sweep
-them in: do not commit, leave the edit uncommitted, and say why.
+them in: do not commit, leave the edit uncommitted, and say why. Before
+advising `git checkout -- <changelog-file>` to clear it, confirm with
+`git diff --stat -- <changelog-file>` that only the file mode changed; a
+checkout discards real edits.
 
 Commit the changelog file by path, which leaves other staged files out:
 

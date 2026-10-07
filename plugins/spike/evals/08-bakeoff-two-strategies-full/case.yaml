@@ -72,3 +72,18 @@ graders:
       The reply names a winner (or says the result is inconclusive) and lists
       both contenders, each with a stash SHA or "no changes". It does not
       claim a commit was made.
+
+  - name: stashes-one-at-a-time
+    type: tool_used
+    tool: Bash
+    input_match: 'spike\.sh\s+stash[\s\S]*spike\.sh\s+stash'
+    min: 0
+    max: 0
+    arm: both
+
+  - name: verified-the-reported-shas-in-git
+    type: tool_used
+    tool: Bash
+    input_match: 'git stash (list|show)|git (cat-file|rev-parse --verify)|logs/refs/stash'
+    min: 1
+    arm: both

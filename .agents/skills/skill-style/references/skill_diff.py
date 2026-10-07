@@ -11,8 +11,9 @@ Usage:
 ``<work copy>TAB<label>`` line per file. ``diff`` prints a unified diff of the
 snapshot against the live files, or against the work copies with ``--work``.
 ``snapshot --stdin`` snapshots pasted text read from stdin as ``SKILL.md``; use
-``diff --work`` on it. Labels are cwd-relative paths (basename outside cwd),
-never temp paths. ``diff`` exits 2 when a target has gone missing.
+``diff --work`` on it. Labels are cwd-relative paths (basename outside cwd, widened with the parent
+directory when two targets would share one), never temp paths. ``snapshot`` and
+``diff`` exit 2 on a missing or non-UTF-8 target.
 """
 
 # ruff: noqa: D103
@@ -45,9 +46,32 @@ def label_for(path: Path, cwd: Path) -> str:
         return path.name
 
 
+def labels_for(paths: list[Path], cwd: Path) -> list[str]:
+    """Return one unique label per path, widening outside-cwd basenames.
+
+    >>> labels_for([Path("/x/a/SKILL.md"), Path("/x/b/SKILL.md")], Path("/c"))
+    ['a/SKILL.md', 'b/SKILL.md']
+    >>> labels_for([Path("/x/a/SKILL.md"), Path("/y/a/SKILL.md")], Path("/c"))
+    ['1:a/SKILL.md', '2:a/SKILL.md']
+    """
+    labels = [label_for(p, cwd) for p in paths]
+    first = list(labels)
+    for i, path in enumerate(paths):
+        if first.count(first[i]) > 1 and first[i] == path.name:
+            labels[i] = f"{path.parent.name}/{path.name}"
+    second = list(labels)
+    for i, label in enumerate(second):
+        if second.count(label) > 1:
+            labels[i] = f"{i + 1}:{label}"
+    return labels
+
+
 def snapshot(
     targets: list[Path], cwd: Path, text: str | None = None
 ) -> tuple[Path, list[tuple[Path, str]]]:
+    if text is None:
+        for target in targets:
+            target.read_bytes().decode("utf-8")
     root = Path(tempfile.mkdtemp(prefix=PREFIX))
     (root / "orig").mkdir()
     (root / "work").mkdir()
@@ -58,11 +82,12 @@ def snapshot(
         targets = [pasted]
     entries: list[dict[str, str]] = []
     out: list[tuple[Path, str]] = []
-    for i, target in enumerate(targets):
-        src = target.resolve()
+    resolved = [t.resolve() for t in targets]
+    labels = labels_for(resolved, cwd)
+    for i, src in enumerate(resolved):
         shutil.copyfile(src, root / "orig" / f"{i}.md")
         shutil.copyfile(src, root / "work" / f"{i}.md")
-        label = label_for(src, cwd)
+        label = labels[i]
         entries.append({"path": str(src), "label": label})
         out.append((root / "work" / f"{i}.md", label))
     (root / "manifest.json").write_text(json.dumps(entries), encoding="utf-8")
@@ -100,6 +125,38 @@ def clean(root: Path) -> None:
     shutil.rmtree(root)
 
 
+def _is_utf8(path: Path) -> bool:
+    try:
+        path.read_bytes().decode("utf-8")
+    except UnicodeDecodeError:
+        return False
+    return True
+
+
+def _snapshot_cmd(files: list[Path], *, use_stdin: bool) -> int:
+    cwd = Path.cwd().resolve()
+    if use_stdin:
+        root, out = snapshot([], cwd, sys.stdin.read())
+    elif not files:
+        print("give FILE... or --stdin", file=sys.stderr)
+        return 2
+    else:
+        missing = [str(f) for f in files if not f.is_file()]
+        if missing:
+            print("not a file: " + ", ".join(missing), file=sys.stderr)
+            return 2
+        try:
+            root, out = snapshot(files, cwd)
+        except UnicodeDecodeError:
+            bad = ", ".join(str(f) for f in files if not _is_utf8(f))
+            print(f"not UTF-8: {bad}", file=sys.stderr)
+            return 2
+    print(root)
+    for work, label in out:
+        print(f"{work}\t{label}")
+    return 0
+
+
 def main(argv: list[str]) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     sub = parser.add_subparsers(dest="cmd", required=True)
@@ -113,28 +170,15 @@ def main(argv: list[str]) -> int:
     p_clean.add_argument("dir", type=Path)
     args = parser.parse_args(argv)
     if args.cmd == "snapshot":
-        if args.stdin:
-            root, out = snapshot([], Path.cwd().resolve(), sys.stdin.read())
-            print(root)
-            for work, label in out:
-                print(f"{work}\t{label}")
-            return 0
-        if not args.files:
-            print("give FILE... or --stdin", file=sys.stderr)
-            return 2
-        missing = [str(f) for f in args.files if not f.is_file()]
-        if missing:
-            print("not a file: " + ", ".join(missing), file=sys.stderr)
-            return 2
-        root, out = snapshot(args.files, Path.cwd().resolve())
-        print(root)
-        for work, label in out:
-            print(f"{work}\t{label}")
-    elif args.cmd == "diff":
+        return _snapshot_cmd(args.files, use_stdin=args.stdin)
+    if args.cmd == "diff":
         try:
             sys.stdout.write(diff(args.dir, work=args.work))
         except FileNotFoundError as err:
             print(err, file=sys.stderr)
+            return 2
+        except UnicodeDecodeError:
+            print("target is not UTF-8", file=sys.stderr)
             return 2
     else:
         clean(args.dir)

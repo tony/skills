@@ -12,11 +12,12 @@ The BENCHMARKED sources for triangulating internal claims. An
 internal savings claim must land near the study that measures the
 same outcome, or explain its divergence.
 
+Last verified: never. Step 4 of the re-verify check sets this date.
+
 The studies measure different outcomes, so there is no pooled range.
 Place an internal figure by outcome:
 
-- Task completion time: METR (time up 19%, early-2025 tools, about
-  16% slower) and Google (time down about 21%, wide interval).
+- Task completion time: METR (19% longer, early-2025 tools) and Google (time down about 21%, wide interval).
 - Completed tasks: Cui et al. (+26.08% completed tasks).
 - Throughput, review load, and quality: the context sources below,
   directional only.
@@ -34,6 +35,9 @@ A run that cites this table repeats the check first:
    from the report if the link is gone or the figure is absent.
 3. Cite the date of this check as the retrieval date. Without a
    check, write "not re-verified" in place of a retrieval date.
+4. When every source the run cites passed, set the `Last verified:`
+   date above to today's date. Where this file is read-only, state
+   the date in the run README instead.
 
 ## Field studies
 
@@ -71,26 +75,16 @@ A run that cites this table repeats the check first:
   ([report PDF](https://services.google.com/fh/files/misc/2025_state_of_ai_assisted_software_development.pdf),
   nearly 5,000 respondents): AI amplifies existing team strengths
   and weaknesses.
-- Faros AI Productivity Paradox, 2025 (vendor;
-  [report](https://www.faros.ai/ai-productivity-paradox)). Telemetry
-  from 10,000+ developers in 1,255 teams: high-adoption teams
-  complete 21% more tasks and merge 98% more PRs; PR review
-  time +91%, PR size +154%, bugs per developer +9%; no
-  significant company-level correlation with delivery metrics.
-  Directional; magnitudes are vendor-sourced.
-- CodeRabbit AI vs human code report, Dec 2025 (vendor;
-  [report](https://coderabbit.ai/blog/state-of-ai-vs-human-code-generation-report)).
-  470 open-source PRs (320 AI co-authored, 150 human): 10.83 vs
-  6.45 issues per PR, about 1.7×. Directional only.
 
 ## Usage rules
 
 - Cite a BENCHMARKED figure with its study label above, its link,
   and the retrieval date from the re-verify step.
-- Never import a vendor headline as an internal savings-rate input.
-  Cite it beside your own MEASURED number, flagged `(vendor)`.
-- Vendor magnitudes are directional context. Internal inputs come
-  from your own instruments or from the non-vendor studies, cited.
+- Never import a consultancy or vendor headline as an internal
+  savings-rate input. Cite it beside your own MEASURED number,
+  flagged as a consultancy report or `(vendor)`.
+- Context-source magnitudes are directional. Internal inputs come
+  from your own instruments or from the field studies, cited.
 
 ## Triangulation procedure
 

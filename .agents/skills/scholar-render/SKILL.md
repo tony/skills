@@ -57,18 +57,18 @@ they will judge the study by whether they can disagree with it.
 
 ## What the evidence documents hold
 
-`evidence/hierarchy.md` — the is-a claims, one citation each, with the
+`evidence/hierarchy.md`: the is-a claims, one citation each, with the
 discriminators.
 
-`evidence/vocabulary.md` — preferred and deprecated terms, and the
+`evidence/vocabulary.md`: preferred and deprecated terms, and the
 disjointness constraints.
 
-`evidence/metrics.md` — every distributional claim with the command that
+`evidence/metrics.md`: every distributional claim with the command that
 produced it and the output it produced.
 
-`evidence/contested.md` — what `contest` judged, including the kills.
+`evidence/contested.md`: what `contest` judged, including the kills.
 
-`evidence/corrections.md` — created empty, written by the `scholar-revise` skill.
+`evidence/corrections.md`: created empty, written by the `scholar-revise` skill.
 
 ## Rules
 
@@ -82,16 +82,16 @@ produced it and the output it produced.
 Per `references/output-contract.md`. Hero: `✓ rendered <subject>: brief +
 <n> evidence docs` or `⚠ Brief gate failed: <n> findings`. Sections:
 
-1. `## Brief` — the path, and the four movements in one line each.
-2. `## Evidence` — each document written and what it holds.
-3. `## Gate` — the brief check's output, verbatim, with absolute paths
+1. `## Brief`: the path, and the four movements in one line each.
+2. `## Evidence`: each document written and what it holds.
+3. `## Gate`: the brief check's output, verbatim, with absolute paths
    stripped.
 
 On a failed gate, print the hero, `## Gate`, and the fix: edit the brief, or
 leave it and stop. Say only that each flagged URL or number moves into the
 matching `evidence/` file and is linked; never claim a command produced a
 number the brief's author wrote by hand. Omit `## Brief` and `## Evidence` for anything not
-written, and offer no other next step. A missing study follows the halted-run
+written, and offer no other next step. Never say what was left alone ("I left the brief as you wrote it"); report the gate result. A missing study follows the halted-run
 shape in the output contract.
 
 Next-step options: compare against another study, stop here.

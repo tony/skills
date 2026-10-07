@@ -64,8 +64,9 @@ With `--audit-only`, stop here and report; nothing is written.
 ### 5. Land
 
 Work through repositories one at a time in the skill's commit order,
-with `--push`, pushing as each completes so an interrupted run resumes
-cleanly, except where the plan marked a repository local-only. Write
+pushing as each completes only when `--push` or `--pr` was passed, so an
+interrupted run resumes cleanly, except where the plan marked a
+repository local-only. Write
 commit messages and the report per `../../references/prose-rules.md`.
 No `Co-Authored-By`, no "Generated with" or other tool trailers, no emoji.
 
@@ -76,7 +77,8 @@ issue or Linear card listing what is outstanding, derive the branch name
 from it, then work on that branch. Linear supplies its own branch name —
 use it verbatim. The pull request references the issue; the commits do
 not. Write the issue or card body and the pull request text per
-`../../references/prose-rules.md`. The issue body is one sentence naming
+`../../references/prose-rules.md`, to a file with the file-writing tool,
+and pass `--body-file <file>` to `gh`; they carry registry-derived names. The issue body is one sentence naming
 the sweep, then `## Outstanding` with one plain bullet per repository
 and move (package or tool, current version, target, track). The pull
 request body is one sentence on what landed, then one bullet per track.
@@ -154,11 +156,14 @@ Reply in this shape, as plain text outside any code fence, with plain bullets, n
 - web: no change.
 ```
 
-A halted run (a gate, a scope question, a failed check, nothing to
-change) follows the halt shape in `../updating-packages/SKILL.md`,
-Phase 6: one result sentence, then what the user needs to do, and no
-section. No bold labels, no local paths, no machine facts, no upstream
-facts from memory, no closing recap.
+A halted run (a scope question, a fork, a cooldown, a failed check,
+nothing to change) follows "Plan stop and halt" in
+`../updating-packages/SKILL.md`: the hero line `⚠ Stopped: nothing was changed.` plus one sentence
+stating the single reason, then the options, and no section and no second paragraph. The
+clause is a fact about the repository or release, never its commit
+history, its remotes, a lookup that could not run, or a rule of this
+skill. Options are bare actions, never "and I'll then ...". The plan gate
+is not a halt; the plan prints as text.
 
 Halt example, same plain-text form:
 
@@ -166,7 +171,7 @@ Halt example, same plain-text form:
 ⚠ Stopped: nothing was changed. Ownership of the one repository under this root could not be confirmed.
 
 To continue:
-- Confirm you maintain it, and the plan will go ahead locally only.
+- Confirm you maintain it.
 - Let GitHub answer the ownership check, then rerun.
 - Stop here.
 ```

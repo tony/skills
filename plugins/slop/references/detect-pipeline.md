@@ -9,11 +9,14 @@ and a file for `scan`.
 
 - Orchestration plan
 - Baseline
+- Gate handling
 - Tone calibration
 - Registry load
 - Pass A: regex
 - Pass B: semantic verifier
 - Budget and confirmation
+- Run directory
+- Confirmation gate
 
 ---
 
@@ -28,8 +31,8 @@ plan as text.
    state).
 2. Build the plan from the skill's checklist, with pre-execution ranges.
 3. Present it and wait for explicit user approval. A non-interactive run
-   prints the plan and continues; the Step 9 gate alone decides whether
-   anything is applied.
+   prints the plan, with every gate command it will run, and continues;
+   the Step 9 gate alone decides whether anything is applied.
 4. Exit plan mode before the first edit.
 
 Without plan mode, the step order still puts analysis before execution.
@@ -60,6 +63,20 @@ $ git merge-base HEAD "origin/${TRUNK}"
 
 Store it as `BASELINE_SHA` and use it everywhere. On the trunk itself it
 equals `HEAD`.
+
+---
+
+## Gate handling
+
+Resolve the buckets per `verification-gates.md` § Local gate buckets,
+which the skill's Step 3 links. Slop ignores `build` and the CI-coverage
+pass. Then:
+
+- Skip empty buckets in the apply loop and in final verification.
+- With no question tool and no conventions file, treat the answer as
+  `skip` and warn that no gate will run.
+- When every bucket is `unset` and an apply flag was passed, warn before
+  the first edit that nothing will validate the result.
 
 ---
 
@@ -157,18 +174,18 @@ set.
 A pattern that starts with `^\+` judges added lines only. In `diff`
 mode every `+` line is added. In `files` mode only the lines
 `git diff <BASELINE_SHA> HEAD` added count (`--added-base`), and a match
-on any other line is demoted from Tier A to Tier B and marked
-`pre_existing`, so a repo-wide scan never auto-applies a rule written
-for new lines. Patterns starting with `^-` are skipped. A signature's
+on any other line is marked `pre_existing` and demoted one tier (A to B,
+B to C), so a repo-wide scan never proposes an edit to a legacy line. Patterns starting with `^-` are skipped. A signature's
 `skip-paths` suppress it for matching paths.
 
 ### Guard check
 
 The script enforces added-line scope and `skip-paths`. For every other
 finding that carries `fp_guard`, the main agent, which has Bash, runs the
-check the guard names (`git log` before `BASELINE_SHA`, a manifest or
-conventions file present, and so on). Drop a finding whose guard holds. A
-guard that cannot be decided leaves the finding advisory.
+check the guard names (`git log` before `BASELINE_SHA`, `git grep -c
+<symbol> HEAD` for a symbol's callers, a manifest or conventions file
+present, and so on). Drop a finding whose guard holds. A guard that
+cannot be decided leaves the finding advisory.
 
 ---
 
@@ -201,7 +218,8 @@ never crash the run.
 Join to Pass A by `(unit, location)`: a semantic confirmation upgrades
 confidence, a denial drops the finding, a semantic-only finding is
 added. A semantic finding whose guard needs git history or command output
-goes through the Guard check above. When `Task` is unavailable, mark
+(`low-value.dead-future-code` needs `git grep -c`) goes through the
+Guard check above. When `Task` is unavailable, mark
 `verifier=skipped` globally and continue with Pass A.
 
 ---
@@ -228,3 +246,45 @@ question tool, every Tier B finding counts as declined. Tier A
 findings apply with no per-finding prompt once the user picks an apply
 choice, except that a Pass A demotion (`pre_existing`) makes the finding
 Tier B. Tier C never applies.
+
+---
+
+## Run directory
+
+Both skills materialize a patch series under a run directory. Print its
+path from `git rev-parse --git-path`, which works in a linked worktree
+where `.git` is a file. The `<name>` is `deslop` or `slop-scan`:
+
+```console
+$ d=$(git rev-parse --git-path "<name>/$(date -u +%Y%m%d-%H%M%SZ)-$$") && mkdir -p "$d" && echo "$d"
+```
+
+A sandboxed host can refuse writes inside `.git/`. When `mkdir` fails,
+use `mktemp -d "${TMPDIR:-/tmp}/<name>.XXXXXX"` instead, and tell the
+user the path only because they must act on `apply.sh` or
+`commits.json` there.
+
+Shell state does not persist between Bash calls: use the printed path
+literally as `<run-dir>` in every later command, and likewise the literal
+values of `BASELINE_SHA`, `START_SHA`, and the gate commands recorded in
+`0000-PLAN.md`.
+
+`0000-PLAN.md` records the registry version, source path, and SHA-256,
+the resolved `FORMAT_CMD` / `LINT_CMD` / `TYPECHECK_CMD` / `TEST_CMD`,
+`BASELINE_SHA`, the budget, and the tone-calibration result; each skill
+names what else it adds. The run directory is run-scoped, not a
+permanent record.
+
+---
+
+## Confirmation gate
+
+Reached only when an apply flag was passed. Ask through `AskUserQuestion`;
+the skill's table lists the choices. **Patches only** is the default and
+applies nothing; **Cancel** deletes `<run-dir>/` and exits.
+
+Without a question tool (Codex, headless), take **Patches only** and
+print the apply command, unless the request explicitly says to apply. An
+explicit request approves the choice it names and nothing broader: not a
+push, not a history rewrite the skill did not name. Every Tier B finding
+still counts as declined, because nobody confirmed it.

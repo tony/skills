@@ -6,6 +6,8 @@ mkdir -p bin
 
 cat >bin/agy <<'SH'
 #!/usr/bin/env bash
+case " $* " in *" --help "*) echo "  --yolo --sandbox -f --mode --dangerously-skip-permissions"; exit 0;; esac
+case " $* " in *" --dangerously-skip-permissions "*) ;; *) echo "stub: expected --dangerously-skip-permissions" >&2; exit 2;; esac
 echo "ANSWER: dropping legacy_status breaks any query or ORM model that still reads it."
 SH
 chmod +x bin/agy

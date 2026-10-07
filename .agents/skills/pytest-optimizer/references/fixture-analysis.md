@@ -158,7 +158,7 @@ reset, time freezing, global state reset). If it does unguarded network I/O
 (H15), gate it behind a registered marker or env var with `pytest.skip`.
 
 A `@pytest.mark.*` stacked on a `@pytest.fixture` (H43) is a silent no-op before
-pytest 8.0, which warns about it and plans to make it an error later. Remove it
+pytest 8.0, which warns about it. Remove it
 and move the condition into the body (`pytest.skip()`).
 
 ## Shared mutable state (H16, H21)

@@ -10,6 +10,7 @@ command. `<engine>` and `<session_dir>` are as in `ensemble-core.md`.
 - Refinement passes
 - Reset the main checkout
 - Remove worktrees and restore the stash
+- Apply gate and presentation
 
 ---
 
@@ -105,3 +106,38 @@ stash changed; then each `recover` command in order, one command per `console`
 fence, with `inspect` available to read the stash first. Do not run them
 unprompted, and do not drop the stash or suggest dropping it. Then render the
 results.
+
+---
+
+## Apply gate and presentation
+
+Show the plan or comparison and wait for the user's confirmation before
+touching the main checkout. Without `AskUserQuestion`, apply nothing: report
+the plan, then run only the cleanup (under **model-clis** `reset-main`, then
+remove the worktrees and restore the stash) and render the nothing-applied
+opening below. A request that explicitly says to apply the result is that
+confirmation for applying, never for committing.
+
+After applying, run the project's quality gates. All must pass; fix and
+rerun otherwise. Remove the worktrees and restore the stash, then render
+the results: only now, so a next-step panel never runs while the user's work
+is held. Leave the result unstaged for the user to review and never commit it.
+
+When nothing was applied, the reply opens with this in place of the hero,
+then the kind's body sections:
+
+```text
+Nothing applied: confirmation was unavailable, so your checkout is unchanged.
+- Best of 3 implementations: src/cli.py from skeptic, tests/test_cli.py from builder.
+- Re-run and confirm the plan to apply it.
+```
+
+After a refused stash restore, put this before the hero, then the kind's
+shape:
+
+```text
+Your uncommitted changes are safe in a stash (3f2a9c1) and were not restored.
+- Overlap: src/cli.py
+- Inspect it: git stash show --patch 3f2a9c1
+- Recover: run the commands below one at a time.
+```

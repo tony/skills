@@ -995,10 +995,14 @@ def _check_engine_parity() -> list[str]:
         return []
     haystack = "\n".join(
         path.read_text(encoding="utf-8")
-        for path in [model_cli / "references" / "dispatch.md", *model_cli.glob("skills/*/SKILL.md")]
+        for path in [
+            model_cli / "references" / "dispatch.md",
+            *model_cli.glob("skills/*/SKILL.md"),
+            *model_cli.glob("scripts/[!t]*.py"),
+        ]
     )
     return [
-        f"weave engine.py: '{s}' appears in neither model-cli dispatch.md nor its skills"
+        f"weave engine.py: '{s}' appears in neither model-cli's dispatch.md, skills, nor scripts"
         for s in _engine_strings(engine.read_text(encoding="utf-8"))
         if s not in haystack
     ]

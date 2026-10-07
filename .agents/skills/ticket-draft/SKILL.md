@@ -60,6 +60,9 @@ A vulnerability does not. For a public repository, check the security policy
 before anything else and follow its private path if the finding is a security
 defect.
 
+A vulnerability halts the run: draft no public issue, and name the
+private reporting path.
+
 Stop and ask when the evidence cannot be sanitized (where no question tool
 exists, print the question and stop). An internal log carrying
 customer data does not become fileable by trimming it.
@@ -79,9 +82,9 @@ its fields.
 ## Phase 4: Look for the thing that already exists
 
 Search open and closed items, and read each candidate before dismissing it.
-A duplicate of a closed item is a regression report, a different thing to
-file. When one matches, say so, stop, and offer to comment on it with the new
-evidence instead.
+When one matches, open or closed, name it, stop, and offer one thing:
+a comment on it with the new evidence. Draft nothing, and offer no new item
+or reopening until the user asks.
 
 When no tracker is reachable to search, put "Duplicate check not run" under
 Unverified.
@@ -121,17 +124,23 @@ invariant to intent, and rewrite any checkbox list of technical outcomes.
 Write an invariant only from a constraint the user stated, in their words and
 figures; a figure or technical choice they gave goes to Intent as a non-binding
 target, as given, never into the Outcome or the title, and never as a
-direction built from it ("lower latency", "faster"). Do not
+direction built from it ("lower latency", "faster"). The title states the
+outcome, and the Outcome or Summary names every scope item the user listed
+in their own nouns, the largest included: "new search backend, typo
+tolerance", with the engine name and the latency figure in Intent. Do
 add "faster, never slower", "finds what the correct spelling would find", or any
 other rule they did not say. With no stated constraint, omit Invariants and
 list "Invariants: none stated" under Unverified.
 Do not suggest a candidate invariant, in the body or in the reply.
 
 Write the Outcome or Summary from the user's own nouns and figures, close to
-their sentence ("adding typo tolerance to the search backend"), never a
-paraphrase that says more ("returns results despite typos"). Add no
-user impact, motivation, or quality adjective ("fast enough that users stop
-waiting") they did not give. Do not mention the revision in the body: no "filed".
+their sentence ("moving the search backend and adding typo tolerance"), never
+a paraphrase that says more ("returns results despite typos"), and keep the
+user's verb ("add a circuit breaker", not "put a circuit breaker in front of
+the queue"). Add no user impact, motivation, quality adjective ("fast enough
+that users stop waiting"), or placement they did not give. Report no
+reproduction status, cause, or vendor requirement the reporter or the
+provider file did not state; "Repro steps: not provided" is the whole fact. Do not mention the revision in the body: no "filed".
 State each fact once: a version in Environment or Summary, not both.
 
 When the reporter gave only a symptom, restate the symptom and stop: add no
@@ -159,19 +168,23 @@ block that lost its blank line renders as literal asterisks.
 ## Phase 8: Present, then file
 
 Show the result in this order: a hero line (one line, at most 25 words: the
-role, the provider, and "not filed yet"; no reasons, no backend or Team
-status; never open with "Below is" or "Here is"; name a role even for a
+role, the provider, and "not filed yet"; no reasons, no backend, Team, or
+reproduction status; never open with "Below is" or "Here is"; name a role even for a
 plain issue, as "work item"), `## Title`, `## Body`,
 `## Changed from your request` only when you altered something the user asked
 for, and `## Unverified` only when the draft carries marked-unverified items.
-Backend and run status go under Unverified. Explain each change in the user's
+Backend and run status go under Unverified, and name tools as the user
+knows them (`glab`), never as a stub, fixture, or sandbox. Explain each change in the user's
 terms ("a checkbox list reads as a requirement"), never by citing this
 skill's rules, and never with a claim about what the change does for the
-work's success. Lead with the result; stop at the last concrete point, with no
-recap or "Next step" line. Never comment on the draft's own strength or offer
-to "add" detail in free prose. Always end with the offer, via `ask-user-choice`: file it,
-print the body only, revise a named section, or drop it. Where no interactive
-question tool exists, print the draft, list those four options as plain bullets, and stop;
+work's success ("that way the Project names the result"): say what changed
+and why in the user's words, then stop. Lead with the result; stop at the last concrete point, with no
+recap or "Next step" line. Never comment on the draft's own strength, offer to
+"add" detail or a constraint "in your words", or ask for more in free prose.
+Always end with exactly these four options, via `ask-user-choice`, and no
+others: file it, print the body only, revise a named section, or drop it.
+Where no interactive question tool exists, print the draft, list those four
+options as plain bullets, and stop;
 filing needs an explicit instruction naming the action (say "Reply 'file it'",
 not that no question tool exists).
 
@@ -182,7 +195,7 @@ Linear Project description (delivery group), not filed yet.
 
 ## Title
 
-Search rework: faster results that survive typos
+Search rework: new backend and typo tolerance
 
 ## Body
 
@@ -192,6 +205,7 @@ Search rework: faster results that survive typos
 
 - "Storage engine changed to a custom inverted index" is now Intent, so
   it informs the work without binding it.
+- "p95 latency under 200ms" is now Intent, as a non-binding target.
 
 ## Unverified
 
@@ -205,13 +219,13 @@ Should I file it, print the body by itself, revise a section, or drop it?
 A halted run (a vulnerability, unsanitizable evidence, a duplicate found) is
 one result sentence, then what the user needs to do.
 
-File through a real backend when the provider file says one exists. Save the
-approved body to a scratch file outside the working tree and pass that path,
-not an inline argument, so fences, HTML, and `$` survive shell quoting. Create
-it with `mktemp "${TMPDIR:-/tmp}/ticket-body.XXXXXX"`. Shell state does not
-persist between calls, so create, write, file, and `rm -f` the file in one
-command, or print the path once and use the literal path afterwards. Never
-show the path to the user.
+File through a real backend when the provider file says one exists. The body
+derives from a pasted report, so save the approved body as
+`references/resolve.md` describes under "Scratch files for bodies": a
+private directory, the host's file-writing tool, never a shell heredoc. Pass
+the file, not an inline argument, so fences, HTML, and `$` survive shell
+quoting, unless the provider file documents no file flag. Remove the file and
+directory after filing. Never show the path to the user.
 
 Where no backend exists, print the approved body for the user to paste and say
 plainly that is what is happening.

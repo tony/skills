@@ -55,7 +55,12 @@ cmd_envelope() {
     [ "$want" = none ] || die "no address: a reply cannot be routed, use --want none" 3
     addr=unknown
   fi
-  [ -n "$seq" ] || seq="$(date +%s)-$$"
+  case $from$to in *$'\n'*|*$'\r'*) die "--from and --to must be single-line" ;; esac
+  if [ -n "$seq" ]; then
+    case $seq in *[!0-9-]*) die "--seq must be digits and hyphens" ;; esac
+  else
+    seq="$(date +%s)-$$"
+  fi
   local e_who e_addr e_to id
   e_who=$(enc "$who"); e_addr=$(enc "$addr"); e_to=$(enc "$to")
   id="${e_addr}-${seq}"
@@ -126,6 +131,10 @@ cmd_selftest() {
   check unknown-addr 'from=p:c@unknown ' "$out"
   out=$("$self" envelope --from p:c@s --to r --hop 0 --body $'a\nb' 2>&1) && fail=1
   check multiline 'single line' "$out"
+  out=$("$self" envelope --from p:c@s --to r --hop 0 --seq '1 hop=0' --body hi 2>&1) && fail=1
+  check bad-seq 'digits and hyphens' "$out"
+  out=$("$self" envelope --from p:c@s --to $'r\nx' --hop 0 --body hi 2>&1) && fail=1
+  check newline-to 'single-line' "$out"
   out=$(printf "it's done" | "$self" envelope --from p:c@s --to r --hop 0 --seq 1 --body -)
   check stdin-body "] it's done" "$out"
   out=$("$self" envelope --from p:c@s --to r --hop 0 --body "$(head -c 900 /dev/zero | tr '\0' x)" 2>&1) && fail=1

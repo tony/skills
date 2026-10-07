@@ -602,6 +602,17 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
+def _strip_separator(argv: Sequence[str]) -> list[str]:
+    """Drop only the leading ``--`` so a wrapper's own separator survives.
+
+    >>> _strip_separator(["--", "tox", "-e", "py", "--", "-p", "no:cacheprovider"])
+    ['tox', '-e', 'py', '--', '-p', 'no:cacheprovider']
+    >>> _strip_separator(["pytest", "-q"])
+    ['pytest', '-q']
+    """
+    return list(argv[1:] if argv[:1] == ["--"] else argv)
+
+
 def main(argv: Sequence[str] | None = None) -> int:  # noqa: PLR0911
     """Dispatch one command.
 
@@ -612,7 +623,7 @@ def main(argv: Sequence[str] | None = None) -> int:  # noqa: PLR0911
     args = build_parser().parse_args(argv)
     cmd = args.command
     if cmd == "run":
-        cmdline = [a for a in args.argv if a != "--"] if args.argv[:1] == ["--"] else args.argv
+        cmdline = _strip_separator(args.argv)
         if not cmdline:
             print("run: give the command after --", file=sys.stderr)
             return 2

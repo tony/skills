@@ -1,12 +1,11 @@
 #!/usr/bin/env bash
-# A branch left mid-rewrite two weeks ago: commits landed, the backoff change
+# A branch left mid-rewrite on 2026-08-28: commits landed, the backoff change
 # is still unstaged, and trunk has moved underneath it.
 set -euo pipefail
 
-# Date the commits relative to now (GNU date, then BSD) so the age of the work
-# does not drift with the calendar.
-when=$(date -u -d '14 days ago' +%Y-%m-%dT09:00:00+00:00 2>/dev/null ||
-  date -u -v-14d +%Y-%m-%dT09:00:00+00:00)
+# Commit on the day history.jsonl records, so the repository and the
+# earlier conversation agree on when the work stopped.
+when=2026-08-28T09:00:00+00:00
 export GIT_AUTHOR_DATE="$when"
 export GIT_COMMITTER_DATE="$when"
 

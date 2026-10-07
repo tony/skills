@@ -24,6 +24,8 @@ $ python3 <topic.py> release \
 
 ## 3. Decide
 
+Runs under `release`, as does `export` (step 5).
+
 When the reader acts on the report, record it:
 
 ```console
@@ -56,12 +58,34 @@ The bag holds evidence and working material the scan does not cover (cards, raw 
 
 ## Output
 
-Open with a one-line hero (`✓ Released <hash> to <who>` or `✓ Released <hash> to <who> on an offline check`, `✓ Bag <file>: <n> files`, `⚠ Not released: <failing checks>`, or `⚠ Not released: check passed offline only; needs your call`), then exactly these sections, with no sentence before the hero:
+Open with a one-line hero (`✓ Released <hash> to <who>` or `✓ Released <hash> to <who> on an offline check`, `✓ Bag <file>: <n> files`, `⚠ Not released: <failing checks>`, `⚠ Not released: check passed offline only; needs your call`, or for a check alone `✓ Ready: check ok` and `⚠ Not ready: <failing checks>`), then exactly these sections, with no sentence before the hero:
 
-1. `## Check`: each check's result from this call, verbatim counts and nothing else.
+1. `## Check`: each check's result from this call, counts only; reasons and consequences go under `## Next`.
 2. `## Trail`: the release, decision, or bag written, with its hash.
 3. `## Next`: affected releases and decisions to revisit, or the fix `check` listed; at most three bullets, and the panel never repeats them.
 
 Write per `prose-rules.md`: plain bullets, no bold labels, no sentence narrating your own edits ("I added…"), no closing recap.
 
-Offer only options that can run now: with a failing check, no release, decision, or export. Panel options: fix and check again, record the decision, export, stop. Without an interactive host, print the options as a numbered list.
+A check-only run has no `## Trail`. Offer only options that can run now: with a failing check, no release, decision, or export. Panel options: fix and check again, record the decision, export, stop. Without an interactive host, print the options as a numbered list.
+
+Reply in this shape, as plain text outside any code fence, with plain bullets, no bold (never `- **Label:** ...`), and no local paths:
+
+```text
+⚠ Not released: audience is internal, release asked for a public reader
+
+## Check
+
+- Sources: 6 intact, 0 failed.
+- Report: lint 0 warnings.
+- Scan: 2 internal identifiers at public audience.
+
+## Trail
+
+- Nothing written.
+
+## Next
+
+- Rename the identifiers, or set the audience to internal and name an internal recipient.
+```
+
+The panel offers fix and check again, record the decision, export, and stop, minus anything that cannot run; no `## Next` bullet repeats an option.

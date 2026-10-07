@@ -1,0 +1,53 @@
+schema_version: "1.0"
+name: 01-pytest-optimizer-slow-fixture
+description: >-
+  Pasted durations on a slow fixture are treated as a hypothesis to measure, never as a settled fix.
+tags: [fixture, git]
+
+context:
+  scaffold_script: scaffold.sh
+
+execution:
+  prompt: |-
+    My pytest suite takes too long, can you speed it up? Here's what `pytest --durations=0` reported:
+
+    ```
+    ========================= slowest durations =========================
+    4.82s setup    tests/test_reports.py::test_export_large
+    4.81s setup    tests/test_reports.py::test_export_small
+    4.79s setup    tests/test_reports.py::test_export_empty
+    0.61s call     tests/test_reports.py::test_export_large
+    0.02s call     tests/test_reports.py::test_export_small
+    =========================== 5 tests in 15.13s ==========================
+    ```
+
+    conftest.py has one fixture, `db_session`, used by all three tests.
+  max_turns: 30
+  timeout_seconds: 600
+  allowed_tools: [Bash, Read, Glob, Grep, Skill]
+
+runs: 3
+
+graders:
+  - name: never-commits
+    type: tool_used
+    tool: Bash
+    input_match: 'git commit|git push'
+    min: 0
+    max: 0
+    arm: both
+
+  - name: skill-fired
+    type: tool_used
+    tool: Skill
+    input_match: '"skill":\s*"(pytest-optimizer:)?pytest-optimizer"'
+
+  - name: measure-before-mutate
+    type: llm
+    focus: last_message
+    criteria: |
+      The reply points at db_session setup, not the test bodies, as where the
+      time goes, and describes any change to that fixture as a hypothesis or
+      guess to measure first. It does not present a saving as measured or
+      guaranteed, and does not claim to have applied a change or committed.
+      Stopping before measuring is acceptable.

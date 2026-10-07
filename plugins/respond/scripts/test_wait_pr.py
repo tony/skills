@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 import json
+import subprocess
 from typing import TYPE_CHECKING
 
 import wait_pr  # pyright: ignore[reportImplicitRelativeImport]
@@ -16,7 +17,7 @@ if TYPE_CHECKING:
 
 
 def _fake(reply: str, only: str = "") -> Callable[..., str]:
-    def gh(*args: str) -> str:
+    def gh(*args: str, **_kw: bool) -> str:
         return reply if only in " ".join(args) else ""
 
     return gh
@@ -63,3 +64,90 @@ def test_agents_match_bot_logins_across_suffix(
     argv += ["--agents", "coderabbitai", "other[bot]", "--timeout", "0", "--interval", "0"]
     assert wait_pr.main(argv) == 2
     assert json.loads(capsys.readouterr().out) == {"missing": ["other[bot]"]}
+
+
+def test_ci_green_exits_zero(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """Passing and skipped checks end the wait green."""
+    out = json.dumps([{"bucket": "pass"}, {"bucket": "skipping"}])
+    monkeypatch.setattr(wait_pr, "_gh", _fake(out))
+    assert wait_pr.main(["ci", "7", "--interval", "0"]) == 0
+    assert json.loads(capsys.readouterr().out) == {"status": "green"}
+
+
+def test_ci_pending_past_cap_exits_two(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """A check still pending at the cap is a timeout."""
+    monkeypatch.setattr(wait_pr, "_gh", _fake(json.dumps([{"bucket": "pending"}])))
+    assert wait_pr.main(["ci", "7", "--timeout", "0", "--interval", "0"]) == 2
+    assert json.loads(capsys.readouterr().out) == {"status": "timeout"}
+
+
+def test_agents_all_present_exits_zero(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """A review on the head and a later comment cover the whole roster."""
+    review = json.dumps({"login": "a", "commit": "abc"})
+    comment = json.dumps({"login": "b", "at": "2026-01-02T00:00:00Z"})
+
+    def gh(*args: str, **_kw: bool) -> str:
+        return review if "reviews" in " ".join(args) else comment
+
+    monkeypatch.setattr(wait_pr, "_gh", gh)
+    argv = ["agents", "7", "--sha", "abc", "--since", "2026-01-01T00:00:00Z"]
+    argv += ["--agents", "a", "b", "--timeout", "0", "--interval", "0"]
+    assert wait_pr.main(argv) == 0
+    assert json.loads(capsys.readouterr().out) == {"missing": []}
+
+
+def test_agents_skip_null_logins(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """A deleted account (null login) is skipped, not a crash."""
+    review = json.dumps({"login": None, "commit": "abc"})
+    monkeypatch.setattr(wait_pr, "_gh", _fake(review, "reviews"))
+    argv = ["agents", "7", "--sha", "abc", "--since", "2026-01-01T00:00:00Z"]
+    argv += ["--agents", "a", "--timeout", "0", "--interval", "0"]
+    assert wait_pr.main(argv) == 2
+    assert json.loads(capsys.readouterr().out) == {"missing": ["a"]}
+
+
+def _run_result(code: int, out: str, err: str) -> Callable[..., object]:
+    def run(*_a: object, **_k: object) -> subprocess.CompletedProcess[str]:
+        return subprocess.CompletedProcess([], code, out, err)
+
+    return run
+
+
+def test_gh_failure_exits_four_with_stderr(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """An unauthenticated ``gh`` is an error, not "no checks" or "waiting"."""
+    monkeypatch.setattr(subprocess, "run", _run_result(1, "", "gh auth login"))
+    assert wait_pr.main(["ci", "7", "--interval", "0"]) == 4
+    captured = capsys.readouterr()
+    assert "gh auth login" in captured.err
+    assert captured.out == ""
+    argv = ["agents", "7", "--sha", "abc", "--since", "", "--agents", "a"]
+    assert wait_pr.main(argv) == 4
+
+
+def test_gh_checks_nonzero_exit_with_output_is_read(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """``gh pr checks`` exits nonzero on failing checks yet prints them."""
+    out = json.dumps([{"bucket": "fail"}])
+    monkeypatch.setattr(subprocess, "run", _run_result(1, out, ""))
+    assert wait_pr.main(["ci", "7", "--interval", "0"]) == 1
+    assert json.loads(capsys.readouterr().out) == {"status": "failed"}
+
+
+def test_gh_no_checks_reported_is_none(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """``gh pr checks`` on a head with no checks is the grace-period case."""
+    monkeypatch.setattr(subprocess, "run", _run_result(1, "", "no checks reported"))
+    assert wait_pr.main(["ci", "7", "--grace", "0", "--interval", "0"]) == 3
+    assert json.loads(capsys.readouterr().out) == {"status": "none"}

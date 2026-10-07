@@ -77,9 +77,9 @@ trace, or long identifier mid-token; let that line run long.
   cross-references (`Fixes #N`, `See also:`, companion PR links), and
   version compatibility notes.
 - Bug fixes with a non-obvious root cause: a root-cause paragraph,
-  numbered reproduction steps if they help, environment or version
-  tables when the bug is version-specific.
-- API refactors with migration paths: old/new tables for renamed
+  numbered reproduction steps if they help, and the affected versions
+  in a sentence when the bug is version-specific.
+- API refactors with migration paths: old and new names as `old -> new` bullets for renamed
   methods, parameters, or modules; deprecation notices with a timeline.
 - Version bumps: `v1.2.3 -> v1.3.0` notation, and per-file scope
   notes when files change different dependencies.

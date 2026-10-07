@@ -6,17 +6,13 @@ allowed-tools: ["Bash", "Read", "Grep", "Glob", "AskUserQuestion"]
 
 # Situational awareness
 
-Establish what is going on in a repository before acting in it: what
-the branch does, how far along it is, what its pull request and tickets
-ask for, and what the project's own rules require of the work.
+Establish what is going on in a repository before acting in it.
 
-Read `../../references/situation-sweep.md` first. It defines the six
-evidence layers, how each degrades, and the read-only contract. Read
+Read `../../references/situation-sweep.md` first, and
 `../../references/prior-conversations.md` before searching local AI
 transcripts. Search them when the repository does not explain itself
-(an approach with no recorded rationale, a decision that left no
-artifact) and always when the request is to resume after a gap: that
-request counts as asking.
+and always when the request is to resume after a gap: that request
+counts as asking.
 
 A bare "huh" or "what?" is not this skill; `brief` answers it. This one
 runs when someone can already say what they want caught up on.

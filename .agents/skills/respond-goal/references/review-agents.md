@@ -12,11 +12,15 @@ repository's pull requests beats any configuration file, because a
 configured app that never fires is not a reviewer:
 
 ```console
-$ gh pr list --state all --limit 20 --json reviews,comments --jq '[.[] | (.reviews[]?.author.login, .comments[]?.author.login)] | unique'
+$ gh pr list \
+    --state all \
+    --limit 20 \
+    --json reviews,comments \
+    --jq '[.[] | (.reviews[]?.author.login, .comments[]?.author.login)] | unique'
 ```
 
-A login ending in `[bot]` is an automated reviewer. `gh` JSON often
-drops that suffix, so also test each remaining login:
+A login ending in `[bot]` is an automated reviewer. `gh` JSON may
+drop that suffix, so also test each remaining login:
 
 ```console
 $ gh api users/<login> --jq .type
@@ -45,7 +49,9 @@ Reviews carry the commit they were submitted against, which is the
 only reliable "has looked at this" signal:
 
 ```console
-$ gh api repos/{owner}/{repo}/pulls/<n>/reviews --paginate --jq '.[] | {login: .user.login, commit: .commit_id, at: .submitted_at}'
+$ gh api repos/{owner}/{repo}/pulls/<n>/reviews \
+    --paginate \
+    --jq '.[] | {login: .user.login, commit: .commit_id, at: .submitted_at}'
 ```
 
 An agent has weighed in on the current head when a review of theirs

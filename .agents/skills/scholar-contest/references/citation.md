@@ -18,8 +18,8 @@ one exception is a living document meant to always show the latest state, such
 as a contributing guide; link it as a pointer, never as evidence for a claim.
 
 **Line anchors only on a pinned ref.** `#L120` for a line, `#L120-L145` for a
-range. On a file the host renders rather than displays — Markdown,
-reStructuredText — the anchor needs `?plain=1` before the fragment or it has
+range. On a file the host renders rather than displays, such as Markdown or
+reStructuredText, the anchor needs `?plain=1` before the fragment or it has
 nothing to attach to.
 
 Resolve a tag to the commit it points at, so a moved tag cannot silently

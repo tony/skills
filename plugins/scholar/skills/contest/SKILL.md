@@ -1,6 +1,6 @@
 ---
 name: contest
-description: "Adversarially judge a distilled ontology one candidate at a time — synonymy, polysemy, orphans, circular evidence, and coverage"
+description: "Adversarially judge a distilled ontology one candidate at a time: synonymy, polysemy, orphans, circular evidence, and coverage"
 allowed-tools: ["Bash", "Read", "Grep", "Glob", "Edit", "Write", "AskUserQuestion"]
 argument-hint: "[--out=<dir>] [--rounds=<n>] [--panel]"
 user-invocable: true
@@ -21,7 +21,7 @@ resolved from this skill's directory.
 
 User arguments: $ARGUMENTS
 
-## Pass 1 — mechanical
+## Pass 1: mechanical
 
 Run the analyzer:
 
@@ -29,8 +29,13 @@ Run the analyzer:
 $ python3 <analyzer> notes/ontology/<subject>/
 ```
 
-It reports synonymy candidates, polysemy candidates, orphans, circular
-evidence, and fan-out per type.
+It compares sibling definitions for synonymy (tf-idf cosine over the
+`definition` text of rows sharing a parent), compares the definitions of rows
+sharing one `term` for polysemy, walks `parent` links for orphans and
+hierarchy cycles, tests whether a citation's quote contains the term it
+supports for circular evidence, and counts children per parent for fan-out. It
+reads definitions and parents, never the names, so a high synonymy score means
+two definitions say the same thing.
 
 The analyzer proposes; it never decides. A high similarity score is a
 question (*are these one concept?*), not an answer. Record the number in
@@ -45,15 +50,15 @@ Open `metrics.md` with one line naming the analyzer: `term_metrics.py` from the
 scholar plugin's `scripts/`, at the `version` in the plugin's `plugin.json`
 (`../../.claude-plugin/plugin.json`).
 
-## Pass 2 — serial judgment
+## Pass 2: serial judgment
 
 One candidate at a time. For each, write to `evidence/contested.md`:
 
-- **Claim** — what the ontology currently asserts.
-- **Objection** — the strongest case against it, argued properly rather than
+- Claim: what the ontology currently asserts.
+- Objection: the strongest case against it, argued properly rather than
   noted.
-- **Evidence** — what settles it, cited or measured.
-- **Verdict** — upheld, revised, or killed.
+- Evidence: what settles it, cited or measured.
+- Verdict: upheld, revised, or killed.
 
 Record kills; do not discard them. A kill often carries more than a survivor, because it names a boundary
 the ontology drew in the wrong place. A candidate rejected for the wrong reason
@@ -62,7 +67,7 @@ tells you the type above it is mis-specified.
 Judge one candidate fully before starting the next. Batching them produces
 verdicts that argue with each other.
 
-## Pass 3 — completeness
+## Pass 3: completeness
 
 Read `sources.jsonl` and ask what the study does not know:
 
@@ -73,11 +78,12 @@ Read `sources.jsonl` and ask what the study does not know:
   description, not a type.
 - Which terms have no citation that shows them in use, only in definition.
 
-## Pass 4 — stop condition
+## Pass 4: stop condition
 
 A round is passes 1 to 3 rerun against the current table. Stop when a round
 surfaces no new contested claim, or at `--rounds` (default 3). Stop when the design stops fighting back, not when a counter runs
-out.
+out. A stop at `--rounds` with any claim still open leaves the gate unmet; the
+hero says so (see Output).
 
 ## Panels
 
@@ -104,7 +110,9 @@ beside the serial one.
 ## Output
 
 Per `../../references/output-contract.md`. Hero: `✓ <n> candidates judged, <n>
-killed, <n> open` or `⚠ Blocked: <reason>`. With no distilled ontology on disk,
+killed, 0 open` only when the gate in `../../references/stage-gates.md` passes;
+`⚠ Gate unmet: <n> claims still open after <n> rounds` when a capped run has
+open claims; or `⚠ Blocked: <reason>`. With no distilled ontology on disk,
 the reason names distill as the missing stage and the one sentence after it
 says to run `/scholar:distill`, never `/scholar:ontology`. Nothing follows that
 sentence: no paths searched, no "I wrote nothing", no offer to look elsewhere:
@@ -115,12 +123,29 @@ sentence: no paths searched, no "I wrote nothing", no offer to look elsewhere:
 Run /scholar:distill on the study, then run contest again.
 ```
 
-Sections:
+A capped run with open claims replies in this shape, as plain text outside any
+code fence, with the sections below under the hero (shown here with one):
 
-1. `## Findings` — what the analyzer proposed, by kind.
-2. `## Verdicts` — each candidate, its objection, and how it resolved.
-3. `## Kills` — what was killed and what the kill revealed.
-4. `## Coverage` — what the study does not know, from pass 3.
+```text
+⚠ Gate unmet: 3 claims still open after 3 rounds.
+
+## Findings
+
+Synonymy: update-action / update-actions at 0.91. Circular evidence: ratchet.
+
+## Verdicts
+
+Open: update-action / update-actions, whether the two are one concept.
+
+Run another round, or widen the corpus to settle them.
+```
+
+Report only what the run recorded; never list files left unchanged. Sections:
+
+1. `## Findings`: what the analyzer proposed, by kind.
+2. `## Verdicts`: each candidate, its objection, and how it resolved.
+3. `## Kills`: what was killed and what the kill revealed.
+4. `## Coverage`: what the study does not know, from pass 3.
 
 Next-step options: another round, run render, widen the corpus, stop here.
 

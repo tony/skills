@@ -76,6 +76,10 @@ Both commands share runtime procedures:
 - `prose-rules.md`: Writing rules for reports, commits, and PR text.
 - `verification-gates.md`: Quality-gate and CI discovery.
 
+Both skills pre-approve Bash, Edit, and Write while reading pasted ticket
+text. The control is the rule that a command taken from ticket text runs only
+after you confirm that exact command.
+
 ## Verification Discovery
 
 Reads conventions (`AGENTS.md`) and CI configs to run necessary local checks.
@@ -84,5 +88,6 @@ Defers CI-covered work to `gh pr checks --watch` when pushing.
 ## Prerequisites
 
 - git: Required for `git worktree`.
+- python3 (3.9 or newer): Runs `scripts/worktree_paths.py`, which derives branch slugs and worktree paths and tests the home-directory guard.
 - gh (optional): For GitHub integration.
 - Tracker MCP server (optional): For tools like Linear.

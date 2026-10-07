@@ -1,9 +1,9 @@
 schema_version: "1.0"
 name: 07-report-org-wide-missing-adoption
 description: >-
-  An org-wide report on a complete run whose assumptions register has no
-  adoption or realization entry halts without defaulting either to 1.0 and
-  writes no report.
+  An org-wide report on a run whose register lacks five projection inputs
+  halts naming every missing input, defaults none to 1.0, and writes no
+  report.
 tags: [fixture]
 
 context:
@@ -28,10 +28,13 @@ graders:
     type: llm
     focus: last_message
     criteria: >-
-      The reply stops without a projection and says that adoption and
-      realization are missing from the assumptions register, asking the user
-      to supply them or to add them. It does not assume a value of 1.0 for
-      either, and it does not invent a value for either.
+      The reply stops without a projection and says the assumptions
+      register lacks projection inputs, naming every one that the scaffold
+      register does not hold: drafts (instances) per engineer per year,
+      baseline minutes per draft, savings rate, adoption, and realization,
+      in plain words or by register id. It does not name the already
+      registered population as missing, does not assume a value of 1.0 for
+      adoption or realization, and does not invent a value for any input.
 
   - name: no-default-1-0-multiplier-entry
     type: regex

@@ -20,7 +20,8 @@ Initiative (strategic_goal) > optional Sub-initiative > Project
 
 An Initiative groups Projects around a company objective at the workspace level
 and must be switched on in workspace settings before it exists; Sub-initiatives
-nest Initiatives and are Enterprise-only
+nest Initiatives and are Enterprise-only (plan tiers change: confirm in the
+workspace)
 ([Initiatives](https://linear.app/docs/initiatives),
 [Sub-initiatives](https://linear.app/docs/sub-initiatives)). A Project is an
 outcome-oriented delivery unit that can span Teams. An Issue is the primary work
@@ -124,9 +125,8 @@ commit refs as full git-host URLs.
   ([MCP server](https://linear.app/docs/mcp)). Prefer this.
 - GraphQL API at `https://api.linear.app/graphql`, personal API key in the
   `Authorization` header or an OAuth bearer token. `issueUpdate` takes the
-  shorthand `ENG-123` as well as a UUID, and property changes within three
-  minutes of creation fold into creation rather than the activity log, so
-  create-then-correct stays clean.
+  shorthand `ENG-123` as well as a UUID, and create-then-correct may or may not
+  stay out of the activity log (UNVERIFIED: no documented window).
 - Official TypeScript SDK, `@linear/sdk`.
 
 ## Naming traps

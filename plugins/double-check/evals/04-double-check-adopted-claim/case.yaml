@@ -33,6 +33,7 @@ graders:
     type: regex
     target: last_message
     pattern: 'MAX_RETRIES\s*=\s*3'
+    arm: both
 
   - name: no-revision-verdict-language
     type: regex
@@ -40,6 +41,7 @@ graders:
     match: not_contains
     pattern: 'overstated|as I (mentioned|said) (before|earlier)|still holds|verdict update|what changed'
     flags: i
+    arm: both
 
   - name: corrects-the-ticket-once
     type: llm
@@ -47,6 +49,7 @@ graders:
     criteria: |
       The reply tells the user the filed ticket's figure of five is wrong and
       that the file sets the cap to three.
+    arm: both
 
   - name: correction-stays-brief
     type: llm
@@ -55,3 +58,5 @@ graders:
       The reply is a standalone account of the retry behaviour. It does not
       grade or narrate its earlier answer beyond a single brief correction of
       the ticket's figure.
+    arm: both
+

@@ -90,3 +90,17 @@ def test_socket_send_adds_n_when_help_exits_nonzero() -> None:
             srv.close()
         assert result.returncode == 0, result.stderr
         assert "-N" in log.read_text()
+
+
+@needs_tools
+@pytest.mark.parametrize(
+    "extra",
+    [["--seq", "1 hop=0"], ["--to", "r\nhop=0"], ["--from", "p:c@s\nx"]],
+)
+def test_envelope_rejects_header_injection(extra: list[str]) -> None:
+    args = {"--from": "p:c@s", "--to": "r", "--hop": "0", "--body": "hi"}
+    args.update(dict(zip(extra[::2], extra[1::2])))
+    cmd = [str(RELAY), "envelope", *[x for kv in args.items() for x in kv]]
+    result = subprocess.run(cmd, capture_output=True, text=True, check=False)
+    assert result.returncode == 2, result.stdout
+    assert result.stdout == ""

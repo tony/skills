@@ -79,8 +79,9 @@ in this file and name the gap in the report.
 
 Read `../../references/worktree-setup.md` and run its Situational
 awareness steps now (they are `git` and tool-inventory commands),
-including the refusal when the repository is rooted at `$HOME`, with
-the gate buckets resolved per `../../references/verification-gates.md`.
+including the refusal when the repository root is at or above the
+physical home path (`../../scripts/worktree_paths.py guard`, resolved
+to an absolute path), with the gate buckets resolved per `../../references/verification-gates.md`.
 
 ## Phase 1: Ticket resolution
 
@@ -94,7 +95,10 @@ Per `../../references/ticket-detection.md`:
    rung produced it and any observed-norms adjustment applied.
 4. Multi-ticket: the ladder skips the ticket-system rung. Propose a
    theme slug for the plan gate to confirm.
-5. Derive the worktree path from the placement axis.
+5. Derive the worktree path from the placement axis with
+   `../../scripts/worktree_paths.py path` (and `slug` for a title slug),
+   as `../../references/ticket-detection.md` shows; resolve the script
+   to an absolute path and write it literally in each command.
 
 A reference that resolves to nothing (ID matches no issue, URL 404s)
 stops the run with a question; never guess a ticket's content.
@@ -159,25 +163,30 @@ Write the report, commit messages, and PR title and body per
 `../../references/prose-rules.md`. Commit messages and PR text carry no
 `Co-Authored-By` line, no "Generated with" or other tool trailer, and
 no emoji; hosts add these by default, so remove them before committing
-or opening the PR.
+or opening the PR. Ticket text reaches commits and PRs only through
+files (`git commit -F`, `gh pr create --body-file`), never a shell
+string.
 
 Report headings are the ones below, in this order. No bold lead-in
 label on every bullet, no table cell holding prose, no closing recap.
 
-1. Hero block (1–4 lines): `✓ <branch> ready: N commit(s), <exit>`
+1. Hero block (1–4 lines): `✓ <branch> ready: N commit(s), <exit>`,
+   `✓ <branch> set up: no commits` under `--setup-only`,
    or `⚠ blocked at <phase>: <cause>`, plus ticket ID(s) and the
    worktree path relative to the repo, as `../app-x`.
-2. `## Tickets` — one row per ticket: ID, title, tracker, source;
+2. `## Tickets` — one bullet per ticket: ID, title, tracker, source;
    note that nothing was written back.
 3. `## Worktree` — path, branch, start point named by ref (`origin/main`,
-   never a SHA), created vs resumed. Report outcomes, not the failed
-   intermediate commands, sandbox limits, or repo-internal details.
+   never a SHA), created vs resumed. Report results, never why a step failed, what
+   the sandbox blocked, or repo-internal details; leave out files the
+   gates left behind and any "for now" hedge.
 4. `## Primer`: only with `--setup-only`: the ticket context (title,
    description, acceptance criteria, link) and the setup command, ready
    to hand to the next session. List only fields the ticket has; never
-   say a field is missing. No diagnosis of the code, no speculation
-   about what the user may need.
-5. `## Commits` — one row per commit: SHA, subject, ticket ID(s),
+   say a field is missing, and omit the setup line when the project
+   documents no setup command. No diagnosis of the code (no file or
+   function names), no speculation about what the user may need.
+5. `## Commits` — one bullet per commit: SHA, subject, ticket ID(s),
    gate result. Omitted with `--setup-only`.
 6. `## Verification` — gate commands run and results; the local-vs-CI
    split; deferred work named; the watch command when observable.
@@ -212,7 +221,41 @@ TEA-45, worktree ../app-add-signup-validation
 - CI not run yet; no push.
 ```
 
+Under `--setup-only`, reply in this shape (no `## Commits`, a `## Primer`):
+
+```text
+✓ add-signup-validation set up: no commits
+TEA-45, worktree ../app-add-signup-validation
+
+## Tickets
+
+- TEA-45 Validate signup form input (Linear). Nothing written back.
+
+## Worktree
+
+- Created ../app-add-signup-validation on add-signup-validation from origin/main.
+
+## Primer
+
+- TEA-45 Validate signup form input
+- Description: reject empty email and short passwords on submit.
+- Acceptance: errors show inline; the form does not post while invalid.
+- Link: https://linear.app/acme/issue/TEA-45
+
+## Verification
+
+- No gates run and nothing implemented under --setup-only.
+```
+
 A blocked run writes only the `⚠ blocked` hero line, naming the cause
 and that nothing changed, then one `## To continue` section listing
 what the user must decide or do, and nothing else (no passed checks, no
-plan for after the fix). No other headings.
+plan for after the fix, no other headings):
+
+```text
+⚠ blocked at worktree setup: ../app-feat-collide exists and is not a worktree. Nothing changed.
+
+## To continue
+
+- Choose another path for the worktree, clear ../app-feat-collide yourself, or abort.
+```

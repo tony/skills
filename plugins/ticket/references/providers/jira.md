@@ -29,7 +29,8 @@ A Jira Task is level 0 — beside Story and Bug, never beneath them — and noth
 sits between the Epic level and the standard level.
 
 The level-1 type can be renamed and still stays level 1. Levels above 1 are
-configurable and tier-gated to Premium and Enterprise, named whatever the org
+configurable and tier-gated to Premium and Enterprise (tiers change: confirm
+in the instance), named whatever the org
 chose: Initiative, Theme, Program, Capability ([custom hierarchy levels](https://support.atlassian.com/jira-software-cloud/docs/configure-custom-hierarchy-levels-in-advanced-roadmaps/)).
 Never assert Initiative exists, or sits at a given level, without reading the
 instance's work type hierarchy.

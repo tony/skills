@@ -34,8 +34,27 @@ Open with a one-line hero (`✓ <topic> <date>: carried <n>, verified <n>, ticke
 
 1. `## Since <prior date>`: new findings, replaced or failed sources, and rating changes.
 2. `## Open`: what is still unanswered.
-3. `## Run`: run directory and report path.
+3. `## Run`: date, `<namespace>/<topic>`, and mode; no path.
 
 Write per `prose-rules.md`: plain bullets, no bold labels, no sentence narrating your own edits ("I added…"), no closing recap.
 
-Panel options: keep going, write the report, stop.
+Reply in this shape, as plain text outside any code fence, with plain bullets, no bold (never `- **Label:** ...`), and no local paths:
+
+```text
+✓ research/sqlite-wal 2026-07-21: carried 6, verified 6, ticked 1 open questions
+
+## Since 2026-07-14
+
+- Added S7, a postmortem measuring checkpoint latency; it answers the latency question.
+- S3 moved to a new URL and was replaced by S8.
+
+## Open
+
+- Whether WAL holds up on network filesystems.
+
+## Run
+
+- 2026-07-21, research/sqlite-wal, research mode.
+```
+
+The panel offers keep going, write the report, and stop, and nothing under the sections repeats them.

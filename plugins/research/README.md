@@ -119,6 +119,16 @@ The other commands are `prior`, `status`, `scan`, `find`, `links`,
 `sources`, `claims`, `lint-report`, `chart`, `searched`, `run`, `conflict`,
 `release`, `decide`, and `export`.
 
+## Network and data retention
+
+`add --fetch`, `verify`, `check`, and `release` fetch source URLs directly,
+after vetting that each resolves to a public address. Every capture is stored
+under the run's `references/raw/`, and `export` bags them with the rest of the
+run, so a captured page stays on disk until you delete the run. Searching the
+web, when a host offers it, goes through that host. Study Dependencies runs
+registry lookups only after you approve them, and `check --offline` makes no
+requests.
+
 ## Study Dependencies
 
 Separate from topics: clone a project's dependencies at the versions it

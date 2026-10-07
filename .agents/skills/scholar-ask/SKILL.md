@@ -61,7 +61,7 @@ Distinguish three cases, because they mean different things:
 ## Rules
 
 - Never cite the corpus directly. If the answer needs a source the study did
-  not read, that is case three — report it and stop.
+  not read, that is case three; report it and stop.
 - Quote the study's own words for a definition rather than paraphrasing; a
   paraphrase silently drops the distinction the term exists to carry.
 
@@ -82,10 +82,10 @@ Pass --study with the path of an existing study, or run scholar-ontology on the 
 
 Sections, for the first two heroes:
 
-1. `## Answer` — the answer, each claim citing its evidence file and row.
-2. `## Evidence` — the chain: definitions, citations with locators, and any
+1. `## Answer`: the answer, each claim citing its evidence file and row.
+2. `## Evidence`: the chain: definitions, citations with locators, and any
    verdict recorded about the terms involved.
-3. `## Gaps` — what the study does not settle, and which of the three cases
+3. `## Gaps`: what the study does not settle, and which of the three cases
    applies.
 
 Next-step options: widen the study to cover the gap, ask another question, stop

@@ -43,16 +43,16 @@ lockfile (`package-lock.json`, `pnpm-lock.yaml`, `yarn.lock`,
 `bun.lock`), else the range in `package.json`. As a cross-check, an
 `@import "tailwindcss"` line in a stylesheet means v4, and
 `@tailwind base` or a `tailwind.config.*` file means v3. If the version
-cannot be found, say so in the result and keep Pattern 7 advice
+cannot be found, say so in the result and keep `space-x` and `space-y` advice
 version-neutral.
 
 ### Step 1: Structural audit
 
-Read the Detect command limits and Decision tree sections of
-`references/patterns.md`, then only the pattern sections the findings
-match. Scan the component and draw a spacing
-map in the list form shown under Output: every spacing mechanism acting
-on the group the user cares about.
+Scan the component and draw a spacing map in the list form shown under
+Output: every spacing mechanism acting on the group the user cares
+about. Then read the Detect command limits and Decision tree sections
+of `references/patterns.md`, and only the pattern sections the findings
+match.
 
 Call out how many mechanisms act between visual peers, which items sit
 in different containers yet read as one group, and any fixed `w-*` on
@@ -70,8 +70,7 @@ file the user named is not a clean bill: read the file.
 Propose the changes as a diff or before/after; edit files only when the
 user asked to fix or apply them. For a pasted snippet, reply with the
 code. Preserve existing breakpoints, and change only spacing and sizing
-classes.
-Work in this order:
+classes. Work in this order:
 
 1. Merge fragmented containers. Put one visual group in one flex
    container with one `gap-*`. Remove the outer `me-*` and `ms-*` that
@@ -92,7 +91,11 @@ Work in this order:
    rationale. When you keep separate containers, name the evidence that
    they are separate groups (a divider, different roles, a
    `justify-between`), or merge them. Never end a reply with a question
-to the user when they said not to ask.
+   to the user when they said not to ask.
+6. Report every difference you leave unchanged, such as a peer with
+   different padding: list it as a kept difference or fix it as a
+   finding; never mention it only to guess why it is fine. Offer the
+   divider variant only when the user wants the wide gap kept.
 
 ### Step 4: Validate
 
@@ -114,8 +117,8 @@ in order, with these headings:
 
 1. Spacing map
 2. Anti-patterns found: one plain sentence per finding, naming the
-   pattern and the elements involved, with no bold lead-ins. For a file or
-   directory audit, name each finding's `path:line`. Put each kept
+   mechanism ("margin stacked on gap") and the elements involved, never
+   a pattern number, with no bold lead-ins. For a file or directory audit, name each finding's `path:line`. Put each kept
    difference in one plain sentence after the last finding, not among them
 3. Proposed refactor: a focused diff or before/after
 4. Validation checklist: Step 4 filled in
@@ -132,8 +135,8 @@ nav (p-4, no gap)
 
 ## Anti-patterns found
 
-- The `ms-3` on the second group (`src/Nav.tsx:11`) sets the space between groups with a margin (Pattern 2).
-- "Sign in" has `px-2` and "Sign up" has none, so the buttons differ in width (Pattern 3).
+- The `ms-3` on the second group (`src/Nav.tsx:11`) sets the space between groups, a margin stacked on the parent's gap.
+- "Sign in" has `px-2` and "Sign up" has none, so the buttons differ in width.
 
 ## Proposed refactor
 

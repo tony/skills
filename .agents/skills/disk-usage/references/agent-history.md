@@ -14,9 +14,10 @@ owning tool's own archival path, or by proving a copy redundant.
 
 ## The state-database rule
 
-Agent CLIs index sessions in a sidecar database and reconcile it
-against the filesystem, so renaming, moving, or compressing a transcript
-by hand can orphan a session even when every byte survives.
+Some agent CLIs index sessions in a database and reconcile it against
+the filesystem; check whether the tool does. Where it does, renaming,
+moving, or compressing a transcript by hand can orphan a session even
+when every byte survives.
 
 Before touching any transcript, establish two things:
 
@@ -46,8 +47,7 @@ one alone is misleading:
   reports what it compressed and skipped.
 
 A codec alone proves nothing: binaries link zstd and gzip for HTTP
-transport and tarballs, and runtimes (Bun, Node) expose `zstdCompress`
-to every binary built on them. Only the extension string plus an
+transport and tarballs. Only the extension string plus an
 archive routine shows the codec is wired to *history*.
 
 Check `<tool> --help` and its docs for a compress or archive option before

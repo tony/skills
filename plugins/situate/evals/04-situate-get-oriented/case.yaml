@@ -28,3 +28,10 @@ graders:
       The reply reports the branch's one commit ahead of trunk (the shout
       variant) and invents no other commits, diff, or review thread.
       The reply does not print an absolute path.
+
+  - name: never-calls-trunk-current
+    type: regex
+    target: last_message
+    match: not_contains
+    pattern: 'up[- ]to[- ]date|\bis current\b'
+    flags: i

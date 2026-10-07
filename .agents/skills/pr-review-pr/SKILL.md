@@ -52,9 +52,12 @@ $ gh pr diff <number>
 ```
 
 For a large change, read the `--name-only` list, then read the files that
-matter one at a time: `gh pr checkout <number>` when the branch is not
-checked out, then `git diff <base>...HEAD -- <file>` with `<base>` from
-`gh pr view <number> --json baseRefName`.
+matter one at a time. The checkout stays untouched: never run
+`gh pr checkout`, which switches the user's branch.
+
+```console
+$ gh api repos/{owner}/{repo}/pulls/<number>/files --paginate --jq '.[] | select(.filename == "<file>") | .patch'
+```
 
 Judge the change's magnitude (small fix, medium feature, large
 overhaul) from the diff; the description must be **proportional** to it.
@@ -106,15 +109,14 @@ Reply in this shape, as plain text outside any code fence, with plain bullets, n
 Good; adding a runnable verification step is the highest-impact fix.
 ```
 
-`## What works`: specific strengths, so the author keeps them.
+`## What works`: specific strengths, so the author keeps them. Check each against the PR text before listing it; drop one that holds for only some bullets or sections. A limit of the review (no diff, a pasted body) is never a strength.
 
 `## Suggested improvements`: one action per suggestion (split a compound fix into separate
 suggestions), each with a concrete markdown snippet, never vague advice like "add more detail".
-Draft a missing section the diff warrants as ready-to-paste text, show
-the improved version of a weak one, and flag brittle details as edits.
+For a missing section the diff warrants, name what is missing and ask the author for it; never draft placeholders or invent values. Show the improved version of a weak section, and flag brittle details as edits.
 
 `## Overall assessment`: one sentence: adequate, good, or complete. For
-adequate or good, name the single highest-impact improvement.
+adequate or good, name the single highest-impact improvement. Add one more sentence for each limit of the review, such as an unavailable diff leaving proportionality unjudged.
 
 A run that stops early is one sentence saying what happened and that nothing was reviewed, then what the user must do, with no speculation about other problems. Reply in this shape:
 

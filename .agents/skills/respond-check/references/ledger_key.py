@@ -1,10 +1,9 @@
 #!/usr/bin/env python3
 """Print the feedback digest that keys a screening ledger.
 
-Reads one ``<id>`` TAB ``<text>`` line per collected comment or pasted block on
-stdin: the reviewer's original text, never an agent's paraphrase. Each text's
-whitespace is collapsed, the lines are sorted bytewise, and the first 12 hex
-characters of their SHA-256 are printed.
+Reads ``<id>`` TAB ``<text>`` lines from a file argument or stdin, or with
+``--block <id> <file>`` hashes the whole file as one block under that id. The
+rubric's ledger section defines the digest.
 """
 
 # pyright: reportUnusedCallResult=false
@@ -12,6 +11,9 @@ from __future__ import annotations
 
 import hashlib
 import sys
+from pathlib import Path
+
+_BLOCK_ARGS = 3
 
 
 def digest(text: str) -> str:
@@ -33,9 +35,28 @@ def digest(text: str) -> str:
     return hashlib.sha256(b"".join(sorted(lines))).hexdigest()[:12]
 
 
-def main() -> int:
-    """Print the digest of stdin."""
-    sys.stdout.write(digest(sys.stdin.read()) + "\n")
+def block_digest(ident: str, text: str) -> str:
+    r"""Return the digest of one whole block, newlines included.
+
+    >>> block_digest("paste", "a\nb") == digest("paste\ta b")
+    True
+    """
+    return digest(f"{ident}\t{' '.join(text.split())}")
+
+
+def main(argv: list[str] | None = None) -> int:
+    """Print the digest of a file, stdin, or one block."""
+    args = sys.argv[1:] if argv is None else argv
+    if args[:1] == ["--block"] and len(args) == _BLOCK_ARGS:
+        out = block_digest(args[1], Path(args[2]).read_text(encoding="utf-8"))
+    elif len(args) == 1 and not args[0].startswith("--"):
+        out = digest(Path(args[0]).read_text(encoding="utf-8"))
+    elif not args:
+        out = digest(sys.stdin.read())
+    else:
+        sys.stderr.write("usage: ledger_key.py [FILE | --block ID FILE]\n")
+        return 2
+    sys.stdout.write(out + "\n")
     return 0
 
 

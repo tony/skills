@@ -14,7 +14,7 @@ execution:
     (gh is a local stub: run every command with PATH="$PWD/bin:$PATH".)
   max_turns: 25
   timeout_seconds: 600
-  allowed_tools: [Bash, Read, Glob, Grep, Skill]
+  allowed_tools: [Bash, Read, Write, Glob, Grep, Skill]
 
 runs: 3
 
@@ -22,7 +22,7 @@ graders:
   - name: passes-auto-through
     type: tool_used
     tool: Bash
-    input_match: 'gh pr merge(?:(?!\bgh )[\s\S])*--auto'
+    input_match: '(?:gh pr merge|merge_pr\.py merge)(?:(?!merge_pr\.py|\bgh )[\s\S])*--auto'
 
   - name: no-trunk-sync-for-queued-merge
     type: tool_used
@@ -35,7 +35,7 @@ graders:
   - name: never-uses-admin
     type: tool_used
     tool: Bash
-    input_match: 'gh pr merge(?:(?!\bgh )[\s\S])*--admin'
+    input_match: '(?:gh pr merge|merge_pr\.py merge)(?:(?!merge_pr\.py|\bgh )[\s\S])*--admin'
     min: 0
     max: 0
     arm: both

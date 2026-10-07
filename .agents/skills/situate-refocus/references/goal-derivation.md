@@ -20,8 +20,10 @@ Nothing is written to disk and nothing carries over between sessions.
 A stored goal goes stale the moment the ticket is edited or the scope is
 renegotiated in a comment, and the user resuming after a gap has no
 memory to check it against. A goal the user only said out loud in an
-ended session is not recoverable: say the goal came from the branch name
-and is weak, rather than presenting a guess as the record.
+ended session is not in the repository, and this skill does not search
+transcripts: say the goal came from the branch name and is weak, and
+that `the `situate` skill --with-agentgrep` can look for the earlier
+conversation, rather than presenting a guess as the record.
 
 ## Precedence
 
@@ -76,7 +78,8 @@ that commit usually explains the whole excursion.
 
 ## Why it happened
 
-When there is off-goal work, name the pattern:
+When there is off-goal work, name the pattern only when the commits show
+it, never a guess at motive:
 
 - Repairing something noticed in passing while touching the file
 - A failing check dragging in an unrelated fix to get green

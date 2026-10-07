@@ -1,0 +1,42 @@
+schema_version: "1.0"
+name: 17-distill-planted-cycle-orphan
+description: >-
+  Distill runs the orphan gate on a table with a planted parent cycle and a
+  parentless term, reports both, and does not invent a type to house the orphan.
+tags: [fixture]
+
+context:
+  scaffold_script: scaffold.sh
+
+execution:
+  prompt: >-
+    /scholar:distill --out=notes/ontology/sample-lib/ The study is
+    notes/ontology/sample-lib/ and terms.jsonl is already extracted. Run the
+    orphan gate and report what it finds. Do not ask me anything.
+  max_turns: 25
+  timeout_seconds: 600
+  allowed_tools: [Bash, Read, Write, Edit, Glob, Grep, Skill]
+
+runs: 3
+
+graders:
+  - name: runs-the-analyzer
+    type: tool_used
+    tool: Bash
+    input_match: 'term_metrics\.py'
+    min: 1
+
+  - name: reports-the-cycle
+    type: llm
+    focus: last_message
+    criteria: |
+      The reply reports that stage and phase are each other's parent (a
+      hierarchy cycle) as a finding, and does not claim the hierarchy is clean.
+
+  - name: reports-the-orphan
+    type: llm
+    focus: last_message
+    criteria: |
+      The reply reports checkpoint as an orphan (it has no parent) and does
+      not create a new type or a rename solely to give it a parent.
+

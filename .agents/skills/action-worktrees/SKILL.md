@@ -67,7 +67,9 @@ separately for a unit that needs different axes. `--setup-only` with
 ## Phase 0: Situational awareness
 
 Follow `references/worktree-setup.md` (Situational awareness,
-including the refusal when the repository is rooted at `$HOME`), with the gate buckets resolved per
+including the refusal when the repository root is at or above the
+physical home path, via `references/worktree_paths.py guard` resolved
+to an absolute path), with the gate buckets resolved per
 `references/verification-gates.md`, plus these checks:
 
 1. Confirm `git worktree` is usable and there is disk headroom for N
@@ -130,7 +132,7 @@ unavailable, present the plan as text.
 
 Present:
 
-1. The unit table: unit → ticket(s) → branch name (with its ladder
+1. The unit list, one bullet each: unit → ticket(s) → branch name (with its ladder
    rung) → worktree path → exit axis.
 2. Grouping rationale, one line per proposed group (or "1:1
    throughout").
@@ -180,15 +182,19 @@ without a human at the gate.
 Write the report per `references/prose-rules.md`; units write
 their commit messages and PR text the same way, with no
 `Co-Authored-By` line, no "Generated with" or other tool trailer, and
-no emoji. Hosts add these by default, so remove them.
+no emoji. Hosts add these by default, so remove them. Ticket text
+reaches commits and PRs only through files (`git commit -F`,
+`gh pr create --body-file`), never a shell string.
 
 Report headings are the ones below, in this order. No bold lead-in
 label on every bullet, no table cell holding prose, no closing recap,
 no temp-file paths.
 
-1. Hero block (1–4 lines): `✓ N units done, M blocked`, then
-   execution mode and exit axis.
-2. `## Units`: one row per unit: ticket(s) → branch → worktree path
+1. Hero block (1–4 lines): `✓ N units done, M blocked`
+   (`✓ N units set up, M blocked` under `--setup-only`), then execution
+   mode and exit axis; under `--setup-only` say that no commits were
+   made and nothing was implemented.
+2. `## Units`: one bullet per unit: ticket(s) → branch → worktree path
    relative to the repo (`../app-x`) → created/resumed → commits landed
    → gate status → exit taken. Under `--setup-only` stop at
    created/resumed; name the start point by ref, never a SHA.
@@ -196,9 +202,10 @@ no temp-file paths.
 4. `## Primer`: only with `--setup-only`. Per unit: the ticket ID or
    goal text verbatim, title, description, acceptance criteria, link,
    and the setup command. List only fields the ticket has; never say a
-   field is missing. No diagnosis of the code, no speculation about what
-   the user may need. Report outcomes, not failed intermediate
-   commands or sandbox limits.
+   field is missing, and omit the setup line when the project documents
+   none. No diagnosis of the code (no file or function names), no
+   speculation about what the user may need. Report results, never why a
+   step failed or what the sandbox blocked.
 5. `## Verification`: shared gate commands, per-unit results
    summarized, the local-vs-CI split, deferred work named.
 6. `## Blocked`: failed units with the failure verbatim and the
@@ -231,13 +238,44 @@ Sequential, exit axis: gated commit.
 - CI not run yet; no push.
 ```
 
+Under `--setup-only`, reply in this shape (no commits, a `## Primer`):
+
+```text
+✓ 2 units set up, 0 blocked
+Sequential, setup only: no commits, nothing implemented.
+
+## Units
+
+- TEA-45 to add-signup-validation at ../app-signup, created.
+- TEA-52 to fix-webhook-retry at ../app-webhook, created.
+
+## Grouping
+
+- 1:1, the two tickets touch different modules.
+
+## Primer
+
+- TEA-45 Validate signup form input. Reject empty email and short passwords on submit. Acceptance: errors show inline. https://linear.app/acme/issue/TEA-45
+- TEA-52 Fix webhook retry. Acceptance: a failed delivery retries three times. https://linear.app/acme/issue/TEA-52
+
+## Verification
+
+- No gates run under --setup-only; nothing implemented.
+```
+
 A run that stops before any unit starts (nothing resolvable, a
 contradictory flag pair, every unit blocked) writes only a
 `⚠ blocked at <phase>: <cause>` hero line stating that nothing
 changed, then one `## To continue` section listing what the user must
-decide or do, and nothing else. No other headings. `--setup-only` is not a halt: it
-reports the units created, with `## Units`, `## Grouping`, `## Primer`,
-and `## Verification` as above.
+decide or do, and nothing else (no other headings):
+
+```text
+⚠ blocked at Phase 0: --setup-only cannot combine with --pr. Nothing changed.
+
+## To continue
+
+- Rerun with --setup-only alone, or drop it to open pull requests.
+```
 
 
 ## Portability notes

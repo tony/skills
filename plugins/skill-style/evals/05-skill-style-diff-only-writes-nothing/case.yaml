@@ -41,3 +41,14 @@ graders:
       source: file
       path: skills/tidy/SKILL.md
     pattern: 'Imports are an important part of any Python program'
+
+  - name: hero-line-is-one-short-sentence
+    type: regex
+    target: last_message
+    pattern: '^\s*(?:[^\s;]+[ \t]+){0,24}[^\s;]+[ \t]*\n'
+
+  - name: diff-cuts-the-filler
+    type: regex
+    target: last_message
+    pattern: '^-Imports are an important part'
+    flags: m

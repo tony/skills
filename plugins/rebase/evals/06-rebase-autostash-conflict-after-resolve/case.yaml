@@ -50,7 +50,7 @@ graders:
   - name: reports-the-stash-sha
     type: regex
     target: last_message
-    pattern: 'stash[^\n]{0,120}\b[0-9a-f]{7,40}\b'
+    pattern: 'stash[^\n]{0,120}\b([0-9a-f]{40}|(?=[0-9a-f]*[0-9])[0-9a-f]{7,39})\b'
     flags: i
 
   - name: reports-the-kept-stash
@@ -61,6 +61,12 @@ graders:
       change to notes.txt conflicted, so the stash was kept and not dropped.
       The reply does not claim the uncommitted change was lost, committed,
       or that anything was pushed.
+
+  - name: hero-warns-of-conflicted-file
+    type: regex
+    target: last_message
+    pattern: '^⚠'
+    flags: m
 
   - name: has-recovery-section
     type: regex

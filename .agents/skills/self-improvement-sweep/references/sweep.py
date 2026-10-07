@@ -7,6 +7,7 @@ launches) into per-skill invocation counts, an era split, and project spread.
 boundary from git history. ``ledger-save`` writes the findings ledger outside
 the working tree and ``ledger-verify`` recomputes its key before any edit.
 ``tree-check`` reports uncommitted changes that would mix with a catalog edit.
+``autosquash`` folds ``fixup!`` commits into their targets without an editor.
 
 Run ``sweep.py <command> --help`` for each command.
 """
@@ -16,6 +17,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import os
 import re
 import subprocess
 import sys
@@ -48,6 +50,7 @@ class Args(argparse.Namespace):
     names_out: str | None = None
     ignore: list[str] = []  # noqa: RUF012
     out: str | None = None
+    onto: str = ""
     ledger: str | None = None
     tool_unavailable: bool = False
     root: str = "."
@@ -533,9 +536,46 @@ def _cmd_catalog(args: Args) -> int:
     return 0
 
 
+def _tracked_changes_without_head() -> list[str]:
+    """List staged or modified paths in a repository that has no commit yet."""
+    porcelain = _git("status", "--porcelain", "--untracked-files=no")
+    return [ln[3:].split(" -> ")[-1] for ln in porcelain.splitlines() if ln[3:]]
+
+
+def _cmd_autosquash(args: Args) -> int:
+    """Fold ``fixup!`` commits into their targets, starting at ``--onto``."""
+    base = args.onto
+    parent = subprocess.run(  # noqa: S603
+        ["git", "rev-parse", "--verify", "--quiet", f"{base}^"],  # noqa: S607
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    start = [f"{base}^"] if parent.returncode == 0 else ["--root"]
+    env = {**os.environ, "GIT_SEQUENCE_EDITOR": "true"}
+    _ = subprocess.run(  # noqa: S603
+        ["git", "rebase", "-i", "--autosquash", *start],  # noqa: S607
+        check=True,
+        capture_output=True,
+        text=True,
+        env=env,
+    )
+    span = "HEAD" if start == ["--root"] else f"{base}^..HEAD"
+    left = [
+        ln
+        for ln in _git("log", "--format=%s", span).splitlines()
+        if ln.startswith(("fixup! ", "squash! ", "amend! "))
+    ]
+    print(json.dumps({"squashed": not left, "unsquashed": left}))
+    return 0 if not left else 1
+
+
 def _cmd_tree_check(args: Args) -> int:
     ignored = {Path(p).resolve() for p in args.ignore}
-    tracked = _git("diff", "--name-only", "--relative", "HEAD", "--").splitlines()
+    try:
+        tracked = _git("diff", "--name-only", "--relative", "HEAD", "--").splitlines()
+    except subprocess.CalledProcessError:
+        tracked = _tracked_changes_without_head()
     untracked = _git(
         "ls-files", "--others", "--exclude-standard", "--", ":/" + CATALOG_ROOT
     ).splitlines()
@@ -596,6 +636,7 @@ COMMANDS: dict[str, Callable[[Args], int]] = {
     "catalog": _cmd_catalog,
     "counts": _cmd_counts,
     "tree-check": _cmd_tree_check,
+    "autosquash": _cmd_autosquash,
     "ledger-path": _cmd_ledger_path,
     "ledger-save": _cmd_ledger_save,
     "ledger-verify": _cmd_ledger_verify,
@@ -617,6 +658,11 @@ def build_parser() -> argparse.ArgumentParser:
     _ = tree.add_argument(
         "--ignore", action="append", default=[], help="path to leave out, repeatable"
     )
+
+    squash = sub.add_parser(
+        "autosquash", help="fold fixup! commits made since --onto; exit 1 if any remain"
+    )
+    _ = squash.add_argument("--onto", required=True, help="commit the earliest fixup targets")
 
     counts = sub.add_parser("counts", help="per-skill counts, era split, spread as JSON")
     _ = counts.add_argument("--history", required=True, help="prompt-history JSONL file")

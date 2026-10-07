@@ -24,12 +24,22 @@ the same.
 `lockctl.py` in this plugin's `scripts/` directory does the lock-file work
 that must not be retyped: `state` prints one line per provider (source
 address, selected version, `h1:` hash count), `drop` removes one provider
-block, `stable` filters a version list, and `platforms` lists the
+block, `stable` filters a version list, `platforms` lists the
 `-platform=` values the repository's CI and task files pass to
-`providers lock`. The commands below name it as `references/lockctl.py`,
-relative to this file's directory. Print its absolute path once and write
-that path literally in each command, since shell variables do not persist
-between Bash calls.
+`providers lock`, and `diff` compares two locks provider by provider.
+The commands below name it as `references/lockctl.py`, relative to this
+file's directory. Print its absolute path once and write that path
+literally in each command, since shell variables do not persist between
+Bash calls.
+
+`diff` takes a file or a `<rev>:<path>` git object on each side, run from
+the repository root, and prints one line per difference: source, status
+(`moved`, `changed`, `count-dropped`, `removed`, `added`), then
+`version/h1-count` before and after. It exits 1 when a provider outside
+`--allow` changed or disappeared, or any provider's `h1:` count dropped,
+and 0 otherwise. `--allow <source>` lets that provider's version move
+(repeat it, or pass `'*'` for every provider); a count drop fails
+regardless.
 
 ## Guard every `init`
 
@@ -60,10 +70,9 @@ selects the newest version each constraint allows, so even a plain
 then `git add` the new lock so `git commit -- <paths>` can include it.
 With no interactive question tool, skip the module.
 
-Run `lockctl.py state` on the lock before `init` and again after. When
-`init` fails, or any provider other than the one being moved changes
-version (every provider, on a CLI bump), restore the committed file and
-report why:
+After `init`, compare the lock with its committed copy (the `diff` command under
+"Moving one provider"). When `init` fails, or `diff` exits non-zero,
+restore the committed file and report why:
 
 ```console
 $ git checkout \
@@ -140,10 +149,18 @@ old block tracked as the next section describes, naming the provider so no
 other block is touched.
 
 Only the target provider's `version`, `constraints`, and `hashes` move.
-Compare `lockctl.py state` before and after, and confirm with `git diff`
-on the lock file; report any other block that changed. A CLI bump moves
-no provider: plain `init`, never `-upgrade`, and any version change in
-`state` is a failure to restore.
+Check it with `diff`, naming the target in `--allow`:
+
+```console
+$ python3 references/lockctl.py diff \
+    --allow <provider-source-address> \
+    HEAD:<root-module-dir>/.terraform.lock.hcl \
+    <root-module-dir>/.terraform.lock.hcl
+```
+
+A non-zero exit lists the other block that changed or the count that
+dropped. A CLI bump moves no provider: plain `init`, never `-upgrade`, and
+the same command without `--allow` must exit 0.
 
 ### Landing a version the user named
 
@@ -157,8 +174,9 @@ a version and the constraint admits a newer one, pin it for the refresh:
 3. Put the planned constraints back (`git checkout -- <declaring-file>...`
    when they are committed, a re-edit otherwise), then run `providers lock` naming the
    provider with the platforms the lock tracked (the running platform when
-   the count did not drop). That rewrites the lock's `constraints` line to
-   the restored form and keeps the selected version.
+   the count did not drop). Read the lock's `constraints` line back with
+   `git diff`: it must show the restored form and the named version. When
+   it still shows `= <version>`, restore the lock as in step 4 and stop.
 4. Read the version with `lockctl.py state`. If it is not exactly the named
    version, restore the lock from git, put the declaring files back as in
    step 3, report the version that was selected, and stop:
@@ -184,10 +202,10 @@ The lock file names no platforms: each provider block holds a flat list of
 opaque `h1:` and `zh:` strings. The count of platforms is readable; which
 ones is not, and `providers lock -platform=` requires exact names.
 
-Use the count as a tripwire. `lockctl.py state` prints one line per
-provider; compare before and after provider by provider, because a
-file-wide maximum would let a drop hide behind a provider that tracks more
-platforms:
+Use the count as a tripwire. `lockctl.py diff` compares provider by
+provider, so a drop cannot hide behind a provider that tracks more
+platforms (a file-wide maximum would). `state` prints the counts
+themselves, one line per provider:
 
 ```console
 $ python3 references/lockctl.py state \
@@ -202,7 +220,7 @@ registry.terraform.io/hashicorp/aws	5.60.0	3
 registry.terraform.io/hashicorp/random	3.6.0	1
 ```
 
-If the count dropped, find the platform names where the repository writes
+If `diff` reports `count-dropped`, find the platform names where the repository writes
 them down:
 
 ```console
@@ -210,7 +228,7 @@ $ python3 references/lockctl.py platforms
 ```
 
 It prints each CI or task file (workflows, a Makefile or justfile
-target) that runs `providers lock` and the `-platform=` values it names;
+target), tracked or not yet added, that runs `providers lock` and the `-platform=` values it names;
 documentation that merely mentions the command is not scanned. Where it
 prints nothing, ask the user for the names. Restore the platforms with
 them:
@@ -230,6 +248,7 @@ resolves through a mirror, pass the same one with `-fs-mirror=<dir>` or
 `-net-mirror=<url>`, as the CI command that locks does (a relative path
 resolves from the `-chdir` directory). Never infer the platform
 list: a repository that tracked one platform should keep tracking one.
+Run `diff` again afterwards; it must exit 0.
 
 Never commit a lock that tracks fewer platforms than it started with
 unless the user says yes to that exact file. When the names are unknown,

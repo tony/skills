@@ -12,21 +12,26 @@ stated reason in `why`.
 ## extract
 
 Every row in `terms.jsonl` has a non-empty `definition` and at least one entry
-in `cites`, each with a non-empty `quote`. A `kind: type` row is exempt from
-`cites`; any it carries still need a quote. `term_metrics.py <study>
+in `cites`, each with a non-empty `quote`. A `kind: type` row that has a
+`parent` is exempt from `cites`, since `distill` writes it and cites the is-a
+claim in `evidence/hierarchy.md`; a `type` row with no `parent` must cite, and
+any citation a type row carries still needs a quote. `term_metrics.py <study>
 --check-terms` lists the rows that fail, including rows with a mistyped field.
 
 ## distill
 
 Every type is a `kind: type` row with its discriminator as `definition`,
-`--check-terms` still exits zero, and `term_metrics.py` reports no orphans: a
-term with no parent, or a parent that is neither another term nor `root`, is an
-orphan.
+`--check-terms` still exits zero, and `term_metrics.py` reports no orphans and
+no hierarchy cycles. An orphan is a term with no parent, or a parent that is
+neither another term nor `root`; a cycle is a parent chain that returns to
+itself, including a term that is its own parent.
 
 ## contest
 
 The analyzer has run, every finding it produced has a recorded verdict in
-`evidence/contested.md`, and the last round produced no new contested claim.
+`evidence/contested.md`, no claim is open, and the last round produced no new
+contested claim. A run stopped at `--rounds` with a claim still open has not
+passed: it reports `⚠ Gate unmet`, never `✓`.
 
 ## render
 

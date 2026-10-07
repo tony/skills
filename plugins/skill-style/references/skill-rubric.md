@@ -1,11 +1,9 @@
 # Skill writing rubric
 
 The rules a SKILL.md is held to, and the reasoning behind the ones
-whose reasoning is not obvious. The 500-line body, 64-character name,
-and reserved-word limits come from Anthropic's skill authoring best
-practices. The 150-character description limit, plugin boundaries, and
-`disable-model-invocation` gating are house rules of this marketplace,
-not host facts; check the project's AGENTS.md before applying them.
+whose reasoning is not obvious. Naming, body-length, and reserved-word
+limits follow [Anthropic's skill authoring best practices][best-practices].
+The skill body labels each library standard as host fact or house rule.
 
 ## Contents
 
@@ -18,7 +16,6 @@ not host facts; check the project's AGENTS.md before applying them.
 - Degrees of freedom
 - Workflows and feedback loops
 - Terminology
-- Library standards
 - Anti-patterns
 - Trigger testing
 
@@ -26,9 +23,6 @@ not host facts; check the project's AGENTS.md before applying them.
 
 Delete the line. Name what the agent now does differently. No name, no
 line.
-
-The five costs that keep a line (command, constraint, trigger, output
-contract, fork) are listed in the skill body.
 
 Worked examples.
 
@@ -138,19 +132,18 @@ attention. It decides whether the skill is ever used.
   is weaker than it looks. Write both where both get typed.
 - **Front-load the trigger.** The first clause is what survives
   truncation and skimming.
-- **Non-empty, no XML tags.** This library also caps it at 150
-  characters; use the project's own cap when its AGENTS.md sets one.
+- **Non-empty, no XML tags.**
 
 Descriptions that route nothing: `Helps with documents`, `Processes
 data`, `Does stuff with files`.
 
-House rule: set `disable-model-invocation: true` on a skill that only
-makes sense when asked for by name. It keeps the skill invocable while
-removing it from the corpus every other description competes in.
+Setting `disable-model-invocation: true` on a skill that only makes
+sense when asked for by name keeps it invocable while removing it from
+the corpus every other description competes in.
 
 ## Sections and headings
 
-The skill body states the section rules. The reasons behind two of them:
+Reasons behind two of the section rules in the skill body:
 
 - State the rule before its exceptions. An agent that meets the edge
   case first has no model to hang it on, and generalizes the exception
@@ -162,8 +155,7 @@ The skill body states the section rules. The reasons behind two of them:
 
 ## Progressive disclosure
 
-Only the metadata of every installed skill is preloaded, and hosts cap
-that shared listing. The body loads when the skill is selected, and
+Only the metadata of every installed skill is preloaded. The body loads when the skill is selected, and
 bundled files load only when something reads them.
 
 That gives a budget shaped like a funnel:
@@ -227,23 +219,6 @@ Pick one term per concept and repeat it. Mixing "field", "box",
 "element", and "control" for one thing forces the reader to prove they
 are the same. Consistency is not style here; it is parseability.
 
-## Library standards
-
-The skill body lists the defects and labels each as host fact or house
-rule. Reasoning for the ones the body does not carry:
-
-- **Portable shell.** `sed -i` differs between GNU and BSD/Darwin,
-  `sed` `\+` and `\|` are GNU-only (use `-E`), and `readlink -f`,
-  `stat -c`, `date -d`, and `mapfile` have no BSD equivalent. Temp
-  files use `mktemp` with a template ending in `XXXXXX`.
-- **State between commands.** Shell variables do not survive separate
-  Bash calls. Do the work in one command, or print the value and use
-  the literal afterwards.
-- **Output contract.** Without a declared hero line, section order, and
-  stopped-run shape, the agent invents headings and recap endings.
-- **Analysis-then-execute skills** open execution with an
-  orchestration-plan step the user approves.
-
 ## Anti-patterns
 
 **Time-sensitive statements.** `Before August 2025, use the old API`
@@ -272,7 +247,9 @@ input.
 
 1. Write three prompts a user would actually type, in their words, not
    the skill's.
-2. Confirm this skill is the right answer to each.
+2. Read the description against each and decide whether this skill is
+   the right answer. This is a read-through, not a test; never report
+   it as one.
 3. Write one prompt that belongs to a neighboring skill, and confirm
    it goes there instead.
 4. When a positive fails, the fix is almost always vocabulary: the
@@ -283,3 +260,4 @@ task without the skill first and record where the agent actually
 fails; write only enough instruction to close those gaps. Skills
 written from imagined failures document problems nobody has.
 
+[best-practices]: https://platform.claude.com/docs/en/agents-and-tools/agent-skills/best-practices

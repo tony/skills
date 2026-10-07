@@ -6,7 +6,7 @@ merge base with the trunk ref (default), the index (``--staged``), or the
 whole tree (``--all``, ranges omitted). Paths are relative to the current
 directory. Untracked files outside ignore rules count as added in full on a
 branch run. Exits 2 with a message on stderr
-when no trunk ref exists or nothing changed.
+when no trunk ref or merge base exists, or nothing changed.
 """
 
 # ruff: noqa: S603
@@ -116,13 +116,20 @@ def main(argv: list[str] | None = None) -> int:
         if trunk is None:
             print("no trunk ref (origin/HEAD, main, master) found", file=sys.stderr)
             return 2
-        base = _git("merge-base", "HEAD", trunk).strip()
+        try:
+            base = _git("merge-base", "HEAD", trunk).strip()
+        except subprocess.CalledProcessError:
+            print(f"no merge base with {trunk}", file=sys.stderr)
+            return 2
         diff = _git("-C", top, *_DIFF[:1], base, *_DIFF[1:])
         untracked = _git("-C", top, "ls-files", "--others", "--exclude-standard").splitlines()
 
     ranges = parse_ranges(diff)
     for name in untracked:
-        count = Path(top, name).read_bytes().count(b"\n")
+        path = Path(top, name)
+        if not path.is_file():
+            continue
+        count = path.read_bytes().count(b"\n")
         ranges[name] = [(1, count)] if count else []
     if not ranges:
         print("no changed files", file=sys.stderr)

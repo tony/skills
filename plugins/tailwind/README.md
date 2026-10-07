@@ -59,6 +59,6 @@ Target specific files or components:
 
 - A project using **Tailwind CSS** v3 or v4; the skill reads the installed
   version and adjusts `space-x`/`space-y` advice for it
-- `python3` for the detect script; without it the skill falls back to `rg`
+- `python3` (3.9 or newer) for the detect script; without it the skill falls back to `rg`
   (ripgrep), then to reading files
 - Template files in any supported framework

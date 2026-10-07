@@ -29,8 +29,8 @@ names. Every declaration of a provider moves in one commit, or none does.
 
 ## Finding the declarations
 
-Constraints live in a `terraform` block's `required_providers`, in any `.tf`
-or `.tofu` file under any filename. Search for the block, not the filename.
+Constraints live in a `terraform` block's `required_providers`, in any `.tf`,
+`.tofu`, or `.tf.json` file under any filename. Search for the block, not the filename.
 
 Identity is the source address, not the local name: modules can call one
 provider by different local names, and one local name can point at different
@@ -87,7 +87,7 @@ rule. Beyond those:
 
 - `.terraform-version`: tfenv, and read by several CI actions.
 - `.tool-versions`: asdf and mise, as a `terraform` or `opentofu` line.
-- `mise.toml` and `.mise.toml`: under `[tools]`.
+- `mise.toml`, `.mise.toml`, and `.mise/config.toml`: under `[tools]`.
 - Workflow files: `hashicorp/setup-terraform` with `terraform_version`,
   `opentofu/setup-opentofu` with `tofu_version`, and any container image
   tag that carries the version in its name.
@@ -114,13 +114,13 @@ matches every `terraform plan` line in a `justfile`. Require the tool name
 **Read version files by path.** `.terraform-version` holds a bare version
 number, so no name-based filter matches it. Take every line.
 
-`required_version` is declared in `.tf` and `.tofu` files at any depth; list
+`required_version` is declared in `.tf`, `.tofu`, and `.tf.json` files at any depth; list
 every declaration with:
 
 ```console
 $ git grep \
     -n -I -e 'required_version' \
-    -- '*.tf' '*.tofu'
+    -- '*.tf' '*.tofu' '*.tf.json'
 ```
 
 One search covers the first two traps, case-insensitively at any depth:
@@ -130,7 +130,8 @@ $ git grep \
     -n -I -i -E \
     -e '(terraform|tofu|tf_?version).*[0-9]+\.[0-9]+' \
     -- ':(icase)*justfile' ':(icase)*makefile' '*Dockerfile*' \
-    '*devcontainer.json' '*.tool-versions' '*mise.toml' '*.hcl' '*.tf' \
+    '*devcontainer.json' '*.tool-versions' '*mise.toml' '*mise/config.toml' \
+    '*.hcl' '*.tf' '*.tf.json' \
     '.github/*' '.gitlab-ci.yml' '.gitlab/*' '.circleci/*'
 ```
 

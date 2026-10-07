@@ -1,0 +1,33 @@
+schema_version: "1.0"
+name: 02-update-audit-scope
+description: >-
+  An audit-only run in a repository with no manifest or pin file halts as
+  nothing to audit, not as a clean result.
+tags: [fixture, gated]
+
+context:
+  scaffold_script: scaffold.sh
+
+execution:
+  prompt: |
+    /package-updater:update --audit-only
+
+    Audit this repository for outdated packages and toolchain pins and tell me what is out of date. Do not make any changes yet.
+  max_turns: 15
+  timeout_seconds: 420
+  allowed_tools: [Bash, Read, Glob, Grep, Skill]
+
+runs: 3
+
+graders:
+  - name: nothing-to-audit-is-a-halt
+    type: llm
+    focus: last_message
+    criteria: |
+      The reply names a package, version or pin as outdated only when it read
+      it from a file or command output in this run. There is nothing to
+      audit here, and the reply says so as a stop (not as a clean "0
+      outdated" result) and asks for or states which repository to audit.
+      It is one result sentence followed by options, with no second
+      paragraph and no section headings.
+

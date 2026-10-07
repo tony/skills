@@ -66,7 +66,8 @@ disallowed while it runs; Write is used only for a scratch preview file.
 - Not for filing an issue; use `create-issue`.
 - Rules live in `references/rendered-markdown.md` and
   `references/source-links.md`; `references/project-links.md` holds the
-  link set for a named upstream project.
+  link set for a named upstream project, and `references/pr-and-files.md`
+  the pull-request, repository-file, and commit-message rules.
 
 ## The wrapping rule exception
 
@@ -84,9 +85,10 @@ to one written elsewhere.
 
 ## Prerequisites
 
-- `gh`, authenticated with `gh auth login`. Used for repository checks,
-  previews, and creating issues. Use a current release (`gh --version`);
-  upgrade when `gh` rejects a flag such as `--match` or `--exclude-drafts`.
+- `gh` 2.43.0 or newer, authenticated with `gh auth login`. Used for
+  repository checks, previews, and creating issues. 2.43.0 is the first
+  release where `gh release list` accepts `--json`; check with
+  `gh --version`.
 - `git`, for resolving tags and refs when pinning links.
 - `curl` and `jq`, for package-registry lookups and pre-publish link
   checks.

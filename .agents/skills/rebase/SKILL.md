@@ -1,8 +1,8 @@
 ---
 name: rebase
 description: >-
-  Rebase current branch onto trunk (main or master) on the remote, predict
-  and resolve conflicts
+  Use when asked to rebase the current branch onto remote trunk, check for
+  file overlap, and resolve conflicts
 disable-model-invocation: true
 allowed-tools: ["Bash", "Read", "Edit", "AskUserQuestion"]
 metadata:
@@ -13,7 +13,8 @@ metadata:
 
 Rebase the current branch onto the remote trunk branch, phase by phase. Signed
 commits (`commit.gpgsign`) prompt for the key on every replayed commit and
-hooks may run; if a replay blocks on a prompt, stop and tell the user.
+hooks may run; if a replay blocks on a prompt, run `git rebase --abort`, then
+stop and tell the user.
 
 ### Phase 1: Inspect the repository and detect trunk
 
@@ -46,14 +47,15 @@ Pick `<remote>`, the remote that carries trunk:
    tracks. With one remote in total, use it.
 2. A remote named `upstream` alongside a different tracking remote signals a
    fork, where the tracking remote's trunk is stale: use `upstream`, and say
-   so in the report. If the layout is not that plain (several remotes, none
-   named `upstream` or `origin`), ask which remote carries trunk; with no
-   question tool, stop.
-3. With no tracking remote and several remotes, use the first of `upstream`
-   or `origin` that exists.
+   so in the report.
+3. Otherwise use the tracking remote, even among several remotes.
+4. With no tracking remote and several remotes, use the first of `upstream`
+   or `origin` that exists. If neither exists, ask which remote carries
+   trunk; with no question tool, stop.
 
-Then determine `<trunk>`, the branch name without the remote prefix (every use below prefixes
-`<remote>/`). Ask the remote first; it answers before any fetch:
+Then determine `<trunk>`, the branch name without the remote prefix (every
+use below prefixes `<remote>/`). Ask the remote first; it answers before any
+fetch:
 
 ```console
 $ git ls-remote --symref <remote> HEAD
@@ -81,12 +83,21 @@ If the current branch is `<trunk>`, stop: there is nothing to rebase onto.
    choice (such as `git rebase --rebase-merges`) to the user.
 4. Run `git diff --name-only <remote>/<trunk>...HEAD` for the files the branch
    changed, then `git diff --name-only HEAD...<remote>/<trunk>` for the files
-   trunk changed since the fork. Files in both lists are the potential
-   conflict zones.
+   trunk changed since the fork. Files in both lists overlap.
 5. Read the diff of each overlapping file on both sides.
+6. With git 2.38 or newer, a dry run lists the files that would conflict:
 
-Summarize the commit count, overlapping files, and conflict likelihood (none
-expected / minor / significant).
+```console
+$ git merge-tree --write-tree --name-only HEAD <remote>/<trunk>
+```
+
+   Exit 0 means a clean merge; exit 1 prints a tree SHA, then the conflicted
+   files. It simulates one merge, while the rebase replays each commit, so
+   treat it as a hint. Older git has only the overlap lists.
+
+Summarize the commit count, overlapping files, and the expected conflicts
+(none / minor / significant), labeled as a reading of overlap, not a
+guarantee.
 
 ### Phase 3: Execute the rebase
 
@@ -98,9 +109,10 @@ $ git rev-parse HEAD && git merge-base HEAD <remote>/<trunk> && git rev-parse --
 
 The first SHA is the pre-rebase tip, the second the old base. A failing third
 command means no upstream; otherwise it prints `<tracking remote>/<upstream
-branch>`, which can differ from the local branch name. Recovery is `git reset --keep <pre-rebase tip>`,
-run by the user from a clean tree (`--keep` refuses to overwrite restored
-autostash changes; `--hard` would discard them). It undoes the local branch
+branch>`, which can differ from the local branch name. Recovery is
+`git reset --keep <pre-rebase tip>`, run by the user from a clean tree
+(`--keep` refuses to overwrite restored autostash changes; `--hard` would
+discard them). It undoes the local branch
 only: a branch already pushed needs the user to force-push the old tip too.
 
 Then rebase onto the ref Phase 2 fetched:
@@ -124,8 +136,9 @@ If conflicts are detected:
       list both sides appended to), integrating trunk's structural changes
       (renames, new parameters). When the two sides give the same code
       competing behaviors, ask the user via `ask-user-choice`; never pick a
-      side silently. With no question tool (Codex, headless runs), run
-      `git rebase --abort` and report both behaviors instead.
+      side silently. With no question tool (Codex, headless runs) during the
+      rebase, run `git rebase --abort` and report both behaviors instead.
+      After the rebase finished (Phase 5 autostash), see Phase 5.
    d. Run `git add <file>` to mark it resolved
 3. Run `GIT_EDITOR=true git rebase --continue` (a bare `--continue` opens an
    editor and hangs a headless run); skip quality checks until Phase 5.
@@ -140,11 +153,15 @@ If conflicts are detected:
    If the rebase output (from Phase 3, or from the `--continue` that finished
    Phase 4) said `Applying autostash resulted in conflicts`, the rebase is
    done and the stash is kept. Run `git rev-parse refs/stash` and keep that
-   SHA. Resolve those files by the Phase 4 step 2 rules, then run `git restore
-   --staged <file>` for each so the changes stay uncommitted. Never run `git
-   stash drop` or `git stash pop`: report the SHA and leave the drop to the
-   user. The rebase finished, so this is a full report (`✓ Rebased ...`) with
-   the stash SHA under `## Rebase`, never a stopped run.
+   SHA. Resolve those files by the Phase 4 step 2c rules, then run `git
+   restore --staged <file>` for each so the changes stay uncommitted. Where
+   step 2c would ask and no question tool exists, leave the file conflicted
+   with its markers; do not abort, since the rebase is done. Never run `git
+   stash drop` or `git stash pop`, and never tell the user to: write "stash"
+   and its full SHA, and say the stash is kept. The rebase finished, so this
+   is a full report with the stash SHA under `## Rebase`. Use the hero `✓ Rebased ...` when
+   every file was resolved, and `⚠ Rebased ...` naming each file left
+   conflicted otherwise.
 2. Compare content before and after, using the SHAs recorded in Phase 3:
 
 ```console
@@ -155,9 +172,13 @@ $ git range-diff <old base>..<pre-rebase tip> <remote>/<trunk>..HEAD
    `range-diff` prints beneath it: a difference confined to `@@`
    hunk headers or context lines is benign (trunk moved the surrounding code);
    an added or removed line must trace to a conflict resolution you made, and
-   an unexplained one is a defect: report it and stop. A `<` commit was
-   dropped (trunk already holds the patch) and a `>` commit is new; name
-   each, and stop on any you cannot explain.
+   an unexplained one is a defect: report it and stop. A `<` commit has no
+   match in the new range and a `>` commit has none in the old. When a `<` and
+   a `>` share a subject, a small replayed patch fell below the matching
+   threshold, so rerun with `--creation-factor=100` before reading either as
+   dropped or new. A `<` still unpaired was dropped (trunk already holds the
+   patch) and a `>` still unpaired is new; name each, and stop on any you
+   cannot explain.
 3. Run the project's quality checks (formatter, linter, type checker, tests)
    once, as its AGENTS.md or CLAUDE.md defines them. If a check fails, fix it
    in a new commit only when the user asks; report it. Run no other checks;
@@ -170,8 +191,9 @@ run it. The skill ends with the report.
 
 Write the report per `references/prose-rules.md`. Open with a one-line
 hero (`✓ Rebased N commits onto <remote>/<trunk>`, adding `, dropped M already on
-trunk` when `range-diff` shows `<` commits, or `⚠ Stopped: <reason>`), then
-exactly these sections:
+trunk` when `range-diff` shows `<` commits, `⚠ Rebased ...` when the autostash
+restore left a file conflicted, or `⚠ Stopped: <reason>`), then exactly these
+sections:
 
 1. `## Rebase`: commits replayed, conflicts and how each was resolved.
 2. `## Content check`: the `range-diff` result, naming any `` ! `` commit.
@@ -179,8 +201,11 @@ exactly these sections:
 4. `## Recovery`: the pre-rebase tip SHA and the `git reset --keep` undo.
    With an upstream, also print the exact push command (`git push
    --force-with-lease --force-if-includes <tracking remote> HEAD:<upstream
-   branch>`, both from the Phase 3 `@{upstream}` value) for the user to run. Without one, write only "<branch> has no upstream, so no push is
-   needed": no push command, and no advice on publishing the branch.
+   branch>`, both from the Phase 3 `@{upstream}` value) for the user to run.
+   Without one, write only "<branch> has no upstream, so no push is needed":
+   no push command, and no advice on publishing the branch.
+
+Write the report impersonally: "Replayed 4be0d71", not "I replayed 4be0d71".
 
 Write each commit message you create (none is expected) without a
 `Co-Authored-By` line, a "Generated with" or other tool trailer, or emoji.
@@ -227,7 +252,7 @@ conflict, without analysis, unless the user asks. State the stop impersonally
 
 feature/strict is back at 4a61a04 with a clean tree; nothing was pushed.
 Your commit keeps only known tokens, while trunk returns [""] for blank input.
-Tell me which to keep: both, one side, or another combination.
+Reply with which to keep: both, one side, or another combination.
 ```
 
 

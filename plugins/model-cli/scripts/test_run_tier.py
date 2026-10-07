@@ -20,7 +20,11 @@ def stub(tmp_path: Path, body: str) -> Path:
 
 
 def tier(
-    tmp_path: Path, binary: Path, prompt: str = "hello", timeout: str = "5"
+    tmp_path: Path,
+    binary: Path,
+    prompt: str = "hello",
+    timeout: str = "5",
+    require: tuple[str, ...] = (),
 ) -> dict[str, object]:
     prompt_file = tmp_path / "prompt.txt"
     prompt_file.write_text(prompt)
@@ -32,6 +36,7 @@ def tier(
             str(prompt_file),
             "--timeout",
             timeout,
+            *[f"--require-flag={flag}" for flag in require],
             "--",
             str(binary),
             "-p",
@@ -56,6 +61,8 @@ def test_credit_from_stderr_only(tmp_path: Path) -> None:
     assert failing["class"] == "credit"
     quoted = tier(tmp_path, stub(tmp_path, "echo billing; exit 1"))
     assert quoted["class"] == "crash"
+    bare = tier(tmp_path, stub(tmp_path, "echo billing >&2; exit 1"))
+    assert bare["class"] == "crash"
 
 
 def test_auth_and_unknown_model(tmp_path: Path) -> None:
@@ -88,3 +95,26 @@ def test_oversized_prompt_is_passed_as_a_file_reference(tmp_path: Path) -> None:
     result = tier(tmp_path, stub(tmp_path, 'echo "${@: -1}"'), prompt="x" * 200_000)
     assert result["class"] == "ok"
     assert str(tmp_path / "prompt.txt") in str(result["stdout"])
+
+
+HELP_STUB = 'if [ "$1" = --help ]; then echo "  --sandbox <MODE>"; exit 0; fi; echo ran'
+
+
+def test_required_flag_present_runs_the_tier(tmp_path: Path) -> None:
+    result = tier(tmp_path, stub(tmp_path, HELP_STUB), require=("--sandbox",))
+    assert result["class"] == "ok"
+
+
+def test_required_flag_missing_runs_nothing(tmp_path: Path) -> None:
+    marker = tmp_path / "ran"
+    body = f'if [ "$1" = --help ]; then echo "  --other"; exit 0; fi; touch {marker}; echo ran'
+    result = tier(tmp_path, stub(tmp_path, body), require=("--sandbox",))
+    assert result["class"] == "unsupported-flag"
+    assert "--sandbox" in str(result["stderr"])
+    assert not marker.exists()
+
+
+def test_flag_must_match_whole_word(tmp_path: Path) -> None:
+    body = 'if [ "$1" = --help ]; then echo "--sandbox-mode"; exit 0; fi; echo ran'
+    result = tier(tmp_path, stub(tmp_path, body), require=("--sandbox",))
+    assert result["class"] == "unsupported-flag"

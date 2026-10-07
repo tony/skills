@@ -80,6 +80,7 @@ graders:
     type: llm
     focus: last_message
     criteria: |
-      The commit subject shown in the reply is 64 characters or fewer, and no
+      The commit subject shown in the reply (excluding the trailing status
+      parenthetical such as `(local, not pushed)`) is 64 characters or fewer, and no
       body line shown in the reply is longer than 72 characters (a URL, hash,
       or path may run long).

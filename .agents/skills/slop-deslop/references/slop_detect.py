@@ -15,8 +15,8 @@ registry or override error. Only ``kind: regex`` signatures run.
 
 A pattern that starts with ``^\\+`` judges added lines only. In ``files`` mode a
 line counts as added when ``git diff BASE HEAD`` added it; without
-``--added-base`` no line does. A Tier A match on a pre-existing line is
-demoted to Tier B and marked ``pre_existing``.
+``--added-base`` no line does. A match on a pre-existing line is marked
+``pre_existing`` and demoted one tier (A to B, B to C).
 """
 
 # ruff: noqa: ANN401, PLR2004
@@ -244,7 +244,7 @@ def load_registry(registry: Path, override: Path | None = None) -> tuple[list[Si
 
 
 def compile_pattern(pattern: str) -> re.Pattern[str]:
-    r"""Compile a registry PCRE pattern with Python's ``re``.
+    r"""Compile a registry pattern with Python's ``re``.
 
     ``\x{H}`` becomes a literal code point escape.
 
@@ -288,8 +288,8 @@ def _finding(
 ) -> dict[str, Any]:
     sig = rule.sig
     tier = str(sig["tier"])
-    if pre_existing and tier == "A":
-        tier = "B"
+    if pre_existing:
+        tier = {"A": "B", "B": "C"}.get(tier, tier)
     guard = str(sig.get("fp-guard", ""))
     out: dict[str, Any] = {
         **where,
@@ -299,9 +299,10 @@ def _finding(
         "confidence": "regex",
         "text": line.strip()[:200],
     }
+    if pre_existing:
+        out["pre_existing"] = True
     if tier != sig["tier"]:
         out["registry_tier"] = sig["tier"]
-        out["pre_existing"] = True
     if historical:
         out["historical_only"] = True
     if guard and not guard.startswith("None"):

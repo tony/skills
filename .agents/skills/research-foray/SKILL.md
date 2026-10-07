@@ -26,11 +26,11 @@ User arguments: $ARGUMENTS
 - `continue`, pick up, keep going, fill the gaps, dig deeper, expand: `references/continue.md`.
 - `verify`, re-check sources, links, or quotes, or look for missed sources: `references/verify.md`.
 - `report`, write or rewrite the report: `references/report.md`.
-- `release` named by the user: `references/release.md`. "Is it ready" without that word: `check` per `references/release.md` step 1 alone; send, hand off, record a decision, and export wait for the user to name `release`.
+- `release` named by the user: `references/release.md`. "Is it ready" without that word: `check` per `references/release.md` step 1 alone. "Record a decision" and "export" run under `release`: `references/release.md` step 3 or 5. Send and hand off wait for the user to name `release`.
 
 `references/layout.md` is the folder contract and `references/analysis.md` the standard every finding meets; read both once per session before start, continue, report, or verify. `status` needs neither. Write every report, summary, and chat result per `references/prose-rules.md`.
 
-Sent by another plugin with `--namespace`: run `references/start.md` step 2 only, report the run directory and earlier runs, and return. That plugin's procedure does the rest.
+Sent by another plugin with `--namespace`: run `references/start.md` step 2 only, report the run's date, `<namespace>/<topic>`, and earlier runs, and return. That plugin's procedure does the rest.
 
 ## Rules
 
@@ -48,7 +48,7 @@ Sent by another plugin with `--namespace`: run `references/start.md` step 2 only
 
 Finish with the `## Output` section of the procedure you picked; for a new assessment, the one in `references/assessment.md`. Output sections in files that procedure only draws on do not apply. A new research topic uses this one: open with a one-line hero (`✓ <namespace>/<topic> <date>: <n> sources, <n> open items`, `? Your call: <the choice>` when stopping for a decision, or `⚠ Blocked: <reason>`), then exactly these sections (the hero's open-item count equals the bullets under `## Open`), each copied from the run's files, never stated beyond them:
 
-1. `## Run`: run directory, prior run, mode, audience.
+1. `## Run`: date, `<namespace>/<topic>`, prior run, mode, audience.
 2. `## Done`: what this session added, verified, or changed.
 3. `## Open`: open questions and failed checks, one bullet each.
 4. `## Next`: the recommended next step.
@@ -99,7 +99,7 @@ A run blocked before it could record anything:
 
 A pin is a value (`3.46`, a commit, an edition) or `pin unknown`, never "the current release". Do not narrate the rules you followed ("the research skill says not to work around a denial").
 
-Write the hero and every section per `references/prose-rules.md`: no bold labels on bullets, no closing recap, no sentence that narrates your own edits ("I added…", "I changed…"). `## Next` names the one recommended step; the panel offers the alternatives and never repeats it. Name a run by its date and `<namespace>/<topic>`, never by its path.
+Write the hero and every section per `references/prose-rules.md`: no bold labels on bullets, no closing recap, no sentence that narrates your own edits ("I added…", "I changed…"). `## Next` names the one recommended step; the panel offers the alternatives and never repeats it. Offer only options that can run now: no verify with no sources recorded, no continue while blocked on network. Name a run by its date and `<namespace>/<topic>`, never by its path.
 
 End every procedure's output with an `ask-user-choice` panel offering next steps (a new topic: continue, verify, write the report, stop; other procedures list their own options). Skip it in plan mode; without an interactive host, print the options as a numbered list.
 

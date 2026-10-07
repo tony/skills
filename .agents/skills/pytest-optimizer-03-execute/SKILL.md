@@ -104,6 +104,13 @@ For each plan item not yet applied:
    no "Generated with" or other tool trailer, no emoji: hosts add them by
    default. First write the log entry with `pending_subject`, then commit, then
    record the `commit_sha` and the verify run's `seconds`.
+
+   When the commit fails after a green verify (a hook rejects it, signing is
+   unavailable), never retry with `--no-verify` or `--no-gpg-sign`. Restore the
+   tree as in 4, set the entry's `applied` to false with `skip_reason` "commit
+   failed: <first line of the error>", remove its `pending_subject`, and stop
+   without starting the next item. Report the error and tell the user to fix the
+   hook or signing and re-run `pytest-optimizer:03-execute --from=<index>`.
 4. **On failure** — the tree was clean before the item. Restore it, files the
    item created included, with the script, which repeats the home-directory and
    memory-directory checks before it runs `git reset --hard HEAD` and

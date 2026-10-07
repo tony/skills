@@ -6,6 +6,7 @@ mkdir -p bin
 
 cat >bin/agy <<'SH'
 #!/usr/bin/env bash
+case " $* " in *" --help "*) echo "  --yolo --sandbox -f --mode --dangerously-skip-permissions"; exit 0;; esac
 echo "Authentication required: log in first" >&2
 exit 1
 SH

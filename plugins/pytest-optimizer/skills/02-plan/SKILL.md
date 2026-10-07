@@ -73,7 +73,18 @@ items, or cap the count; revise the draft in the reply after each change and wri
 nothing, since plan mode blocks writes. Plan mode is the decision point, so omit
 the `AskUserQuestion` panel.
 
-Without plan mode, present the same sections as text and wait for the reply.
+Without plan mode, the reply is the same sections as text and nothing else: the
+hero line comes first and carries the approval request, with no remark about plan
+mode before it and no closing note after the last section. Wait for the reply:
+
+```text
+✓ 1 commit planned, 2.7s of the 12.5s baseline recovered; reply "approve" to record the plan, or name items to drop or reorder
+
+## Ranked plan
+
+- 1. H10 mis-scoped fixture: widen make_config to session scope in tests/conftest.py under the subject "tests(fixtures) Widen make_config to session scope", total score 0.87, saves 2.7s above the 0.44s band, verified with pytest expecting 40 of 40 passing.
+```
+
 Without an interactive session, write nothing and stop: an unapproved plan is not
 executable.
 

@@ -8,8 +8,10 @@ Keys: ``root_name``, ``dotfile_repo`` (root is, or contains, the home
 directory), ``has_commits``, ``branch`` (null when detached), ``trunk``,
 ``trunk_source``, ``trunk_tip_age`` (when the trunk tip commit was made),
 ``last_fetch`` (age of FETCH_HEAD, or "unknown"), ``upstream``, ``base``, ``base_source``
-(``upstream``, ``trunk`` or null), ``failed`` (lookups that did not resolve),
-``ahead``, ``behind``, ``on_trunk``, ``staged``, ``modified``, ``untracked``,
+(``upstream`` only when the upstream is a branch other than trunk, else
+``trunk`` or null), ``failed`` (lookups that did not resolve),
+``ahead``, ``behind``, ``on_trunk``, ``staged``, ``modified``, ``conflicts``
+(unmerged paths, counted once and not in the other two), ``untracked``,
 ``ignored_untracked`` (environment files filtered out) and ``stashes``.
 Exits 2 with a message on stderr outside a git repository.
 """
@@ -31,12 +33,15 @@ _ENV_NAMES = frozenset(
         ".eval-artifacts",
         ".gitconfig",
         ".idea",
+        ".gitmodules",
         ".mcp.json",
         ".profile",
         ".ripgreprc",
         ".vscode",
+        ".zprofile",
     }
 )
+_UNMERGED = frozenset({"DD", "AU", "UD", "UA", "DU", "AA", "UU"})
 _ENV_PREFIXES = (".bash", ".zsh")
 
 
@@ -121,18 +126,23 @@ def find_trunk(override: str | None) -> tuple[str | None, str | None]:
     return None, None
 
 
-def _split_status(raw: str) -> tuple[int, int, list[str]]:
-    r"""Count staged and modified entries and list untracked paths.
+def _split_status(raw: str) -> tuple[int, int, int, list[str]]:
+    r"""Count staged, modified and conflicted entries and list untracked paths.
 
     >>> _split_status("M  a\0 M b\0?? c\0?? .zshrc\0")
-    (1, 1, ['c', '.zshrc'])
+    (1, 1, 0, ['c', '.zshrc'])
+
+    An unmerged entry is one conflict, not also staged and modified:
+
+    >>> _split_status("UU a\0AA b\0DD c\0")
+    (0, 0, 3, [])
 
     A rename or copy is followed by an entry holding the old path:
 
     >>> _split_status("R  new\0old\0")
-    (1, 0, [])
+    (1, 0, 0, [])
     """
-    staged = modified = 0
+    staged = modified = conflicts = 0
     untracked: list[str] = []
     skip_next = False
     for entry in raw.split("\0"):
@@ -146,9 +156,12 @@ def _split_status(raw: str) -> tuple[int, int, list[str]]:
         if code == "??":
             untracked.append(path)
             continue
+        if code in _UNMERGED:
+            conflicts += 1
+            continue
         staged += code[0] not in " ?"
         modified += code[1] not in " ?"
-    return staged, modified, untracked
+    return staged, modified, conflicts, untracked
 
 
 def position(trunk_override: str | None = None) -> dict[str, object]:
@@ -172,16 +185,16 @@ def position(trunk_override: str | None = None) -> dict[str, object]:
     out["last_fetch"] = last_fetch_age()
 
     upstream = _git("rev-parse", "--abbrev-ref", "@{upstream}")
-    own = f"origin/{out['branch']}"
-    if upstream == own:
+    if upstream == f"origin/{out['branch']}":
         upstream = None
     out["upstream"] = upstream
+    stacked = upstream if upstream and upstream != trunk else None
 
     failed: list[str] = []
     head = _git("rev-parse", "HEAD")
     base, base_source = None, None
-    if upstream:
-        base = _git("merge-base", "HEAD", upstream)
+    if stacked:
+        base = _git("merge-base", "HEAD", stacked)
         base_source = "upstream"
         if base is None:
             failed.append("merge-base with upstream")
@@ -194,7 +207,7 @@ def position(trunk_override: str | None = None) -> dict[str, object]:
             failed.append("merge-base with trunk")
         else:
             base, base_source = trunk_base, "trunk"
-    elif base is None and not upstream:
+    elif base is None and not stacked:
         failed.append("trunk ref")
     out["base"], out["base_source"], out["failed"] = base, base_source, failed
 
@@ -204,8 +217,8 @@ def position(trunk_override: str | None = None) -> dict[str, object]:
     out["on_trunk"] = bool(trunk) and ahead == 0 and base == head
 
     raw = _git("status", "--porcelain=v1", "-z", "--untracked-files=normal", strip=False) or ""
-    staged, modified, untracked = _split_status(raw)
-    out["staged"], out["modified"] = staged, modified
+    staged, modified, conflicts, untracked = _split_status(raw)
+    out["staged"], out["modified"], out["conflicts"] = staged, modified, conflicts
     out["untracked"] = [p for p in untracked if not is_env_entry(p)]
     out["ignored_untracked"] = len(untracked) - len(out["untracked"])
     stash = _git("stash", "list") or ""

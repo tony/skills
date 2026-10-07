@@ -14,7 +14,8 @@ whatever the user names) from whatever each repository pins to its
 current version, with one commit per repository explaining the upgrade.
 
 Read `../../references/action-pinning.md` first, then
-`../../references/dependabot-closeout.md`. For a feature-branch checkout or one with uncommitted work,
+`../../references/dependabot-closeout.md`. For a feature-branch checkout
+or one with uncommitted work (modified or untracked files both count),
 land the commit through `../../references/throwaway-worktree.md`.
 
 User arguments: $ARGUMENTS
@@ -28,7 +29,8 @@ The action comes from the argument. Without one, inventory the pins
 on hosts without the tool, list them and stop.
 
 Scope defaults to the current repository. `--repo` may be repeated to
-name others by path or slug. The pinning reference has the fork rule.
+name others by path or slug; the pinning reference says how to read a
+slug with no local clone, and has the fork rule.
 
 ### 2. Inventory the current pins
 
@@ -55,15 +57,18 @@ actual workflows, per the gates section of the pinning reference.
 
 ### 5. Present the plan and wait
 
-Enter plan mode before the first edit. In Claude Code call `EnterPlanMode`; in Cursor, Codex, or Gemini use `/plan` or `Shift+Tab`. Where plan mode is unavailable, present the plan as text.
+Enter plan mode before the first edit. In Claude Code call
+`EnterPlanMode`; in Cursor, Codex, or Gemini use `/plan` or `Shift+Tab`.
+Where plan mode is unavailable, present the plan as text.
 
 Show the target and its tag evidence, the pin shape per repository, the
 breaking changes and which repositories they reach, and how many commits
 this produces. List the dependabot PRs for this action that step 7 will
 close (destructive): repo, number, title, and the commit each maps to.
-Wait for approval, then exit plan mode before writing. A headless run stops here and writes
-nothing, replying with the hero `⚠ Plan only: <action> <old> -> <new>, nothing written` and the sections below, with `## Commits` marking each commit "Not made", unless the request explicitly authorizes the action named; that
-never covers closing PRs.
+Wait for approval, then exit plan mode before writing. A headless run
+stops here and writes nothing, replying in the plan-only shape in
+`../../references/output-shapes.md` (read it first), unless the request
+explicitly authorizes the action named; that never covers closing PRs.
 
 ### 6. Commit
 
@@ -73,7 +78,9 @@ commit conventions from its AGENTS.md or CLAUDE.md; write them per
 what it means for that repository, and links every major release in the
 span. Never cite a dependabot pull request. No `Co-Authored-By`, no
 "Generated with" or other tool trailer, no emoji; do not mention this
-rule in the reply.
+rule in the reply. After each commit, run `git show --name-only
+--format=%h <sha>` and confirm it lists only the workflow files this
+bump changed.
 
 Commit locally; push only with `--push`, and otherwise report the local
 branch holding the commit and print its push command. With `--pr`, branch,
@@ -96,26 +103,25 @@ the bump PR merges, and only after the user confirms the exact commands.
 
 ## Output
 
-Open with a one-line hero (`✓ <action> <old> -> <new> across N repos`
-or `⚠ Blocked: <reason>`), then exactly these sections:
+Open with a one-line hero as the first line of the reply, with nothing
+before it (`✓ <action> <old> -> <new> across N repos`), then exactly
+these sections:
 
 1. `## Target`: resolved version, evidence the tag exists, and the
    pin shape chosen per repository.
 2. `## Upgrade`: what changed between the pins in scope and the
    target, with release links, and which repositories the breaking
    changes reach.
-3. `## Commits`: one line per repository, with commit subject and whether
-   it was pushed, or why it was skipped.
+3. `## Commits`: one line per repository, with commit subject, the files
+   it changed, and whether it was pushed, or why it was skipped.
 4. `## Close-out`: CI result and any dependabot pull requests closed,
    by URL, with the commit each cited.
 
-A blocked run emits the hero and one sentence on what the user must do,
-with no sections and no findings list; a suspicious PR title is the
-finding, named inside that sentence without guessing its cause or intent.
-Example: `⚠ Blocked: gh is not authenticated, so no tag can be verified.`
-then `Run gh auth login, then ask again.`
+A blocked run and a plan-only run use the shapes in
+`../../references/output-shapes.md`, not the sections above.
 
-Reply in this shape, as plain text outside any code fence, with plain bullets, no bold (never `- **Label:** ...`), and no local paths:
+Reply in this shape, as plain text outside any code fence, with plain
+bullets, no bold (never `- **Label:** ...`), and no local paths:
 
 ```text
 ✓ acme/frob-action v5 -> v6 across 1 repo
@@ -130,7 +136,7 @@ Reply in this shape, as plain text outside any code fence, with plain bullets, n
 
 ## Commits
 
-- api: 5c2e7a1 Bump acme/frob-action v5 -> v6. Not pushed.
+- api: 5c2e7a1 Bump acme/frob-action v5 -> v6 (ci.yml). Not pushed.
 
 ## Close-out
 
@@ -138,6 +144,7 @@ Reply in this shape, as plain text outside any code fence, with plain bullets, n
 ```
 
 End with an `AskUserQuestion` panel of next steps (for example: update
-another action, run `/github-actions:update-actions --audit-only`, stop here); skip it only in plan mode.
-On hosts without the tool, end with the next steps as text and take none.
+another action, run `/github-actions:update-actions --audit-only`, stop
+here); skip it only in plan mode or a blocked run. On hosts without the
+tool, end with the next steps as text and take none.
 Never name temp or local paths unless the user must act on them.

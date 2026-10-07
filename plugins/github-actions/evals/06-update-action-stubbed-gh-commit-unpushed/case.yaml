@@ -21,7 +21,7 @@ execution:
 runs: 3
 
 graders:
-  - name: verifies-the-tag-before-writing
+  - name: checks-the-tag-exists
     type: tool_used
     tool: Bash
     input_match: 'git/ref/tags/v4'
@@ -53,6 +53,25 @@ graders:
     min: 0
     max: 0
     arm: both
+
+  - name: success-hero
+    type: regex
+    target: last_message
+    pattern: '^\s*✓ actions/checkout \S+ -> \S+ across 1 repos?\b'
+
+  - name: inspects-the-commit-file-list
+    type: tool_used
+    tool: Bash
+    input_match: 'git (-C \S+ )?(show|log|diff-tree)\b.*--name-(only|status)'
+    min: 1
+
+  - name: commit-file-list-is-the-workflow-only
+    type: llm
+    focus: last_message
+    criteria: |
+      The Commits line names the files the commit changed, and the only
+      file named is the workflow (ci.yml). notes.txt is not listed as
+      part of the commit.
 
   - name: notes-left-uncommitted-in-place
     type: llm

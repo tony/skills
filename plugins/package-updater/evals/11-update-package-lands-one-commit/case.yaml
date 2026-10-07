@@ -1,0 +1,50 @@
+schema_version: "1.0"
+name: 11-update-package-lands-one-commit
+description: >-
+  With a go-ahead to commit locally, a named requests bump on a scaffolded
+  manifest and lock lands as one commit covering the pin site and the lock,
+  unpushed.
+tags: [fixture, git]
+
+context:
+  scaffold_script: scaffold.sh
+
+execution:
+  prompt: |
+    /package-updater:update-package requests 2.32.3
+
+    Move the pin and the lock, and go ahead and commit locally without waiting
+    for approval; I have not asked you to push.
+    (curl and uv are local stubs that resolve this release: run every command
+    with PATH="$PWD/bin:$PATH".)
+  max_turns: 50
+  timeout_seconds: 900
+  allowed_tools: [Bash, Read, Glob, Grep, Edit, Skill]
+
+runs: 3
+
+graders:
+  - name: commits-once
+    type: tool_used
+    tool: Bash
+    input_match: 'git commit'
+    min: 1
+    arm: both
+
+  - name: never-pushes
+    type: tool_used
+    tool: Bash
+    input_match: 'git push'
+    min: 0
+    max: 0
+    arm: both
+
+  - name: reports-one-commit-not-pushed
+    type: llm
+    focus: last_message
+    criteria: |
+      The reply says requests moved from 2.31.0 to 2.32.3 in one commit that
+      covers both the manifest and uv.lock, and that nothing was pushed. It
+      does not claim a push happened, and it does not claim a version was
+      confirmed without a lookup in this run.
+

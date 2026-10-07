@@ -116,7 +116,7 @@ bare reference form.
 `--project`, `--type`, `--parent`, `--blocked-by` and `--blocking`, so a
 drafted body goes in from a file undamaged by shell quoting. The scratch path
 comes from the skill's filing step. `--type` takes an issue type the owner
-defines (checked against `gh issue create --help`); add it only when the
+defines (confirm with `gh issue create --help`); add it only when the
 user names one.
 
 ```console

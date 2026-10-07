@@ -44,8 +44,8 @@ the user to commit or shelve them: the scratch worktree is cut from `HEAD`,
 which the baseline must match. Untracked files never matter, because the
 worktree holds only tracked files.
 Substitute `test_command` from `baseline.json` wherever this file writes
-`pytest`. Skip a hypothesis whose id already has a benchmark recorded **against the current
-baseline token**, unless `--force`.
+`pytest`. Skip a hypothesis whose id already has a `benchmarks.json` entry whose
+`env_token` equals `state.json`'s, unless `--force`.
 
 Resolve `<runs-dir>` as `references/memory-schema.md` ("Run files") says
 and create it. Delete each run file before its first timed run.
@@ -54,7 +54,8 @@ and create it. Delete each run file before its first timed run.
 
 **Budget.** Time one run of `test_command` to get `t` (the baseline median
 works). The phase costs about `(runs + 1) * t` for the control plus the same for
-every open speed hypothesis. Above 1800 seconds in total, ask the user to
+every open speed hypothesis. Above the default budget of 1800 seconds in total
+(the project's own limit, when its docs set one, replaces it), ask the user to
 confirm, narrow with `--only`, or lower `--runs`. Without an interactive
 question tool, benchmark only as many hypotheses as fit in 1800 seconds, lowest
 prior risk and effort first, leave the rest `open`, and say so in the closing
@@ -158,7 +159,9 @@ to the baseline's.
 ## Step 3: Record
 
 Write `benchmarks.json` in the shape `references/memory-schema.md` gives,
-with `confidence` high only for serial, repeated runs with the delta above the
+stamping each entry with `state.json`'s `env_token`. Keep the entries for ids this
+run skipped (`--only` or a matching token) and replace those for ids it
+benchmarked, `--force` included. Set `confidence` high only for serial, repeated runs with the delta above the
 floor. Nothing in this phase touches the user's tree, history, or any remote. Update
 `state.json` (`phase=benchmark`, `completed.benchmark=true`, the later
 `completed` flags false).

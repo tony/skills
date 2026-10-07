@@ -1,8 +1,8 @@
 ---
 name: scholar-revise
 description: >-
-  Record a correction to a standing claim — what was believed, what it
-  rested on, and why it failed — rather than editing it away
+  Record a correction to a standing claim: what was believed, what it rested
+  on, and why it failed, rather than editing it away
 disable-model-invocation: true
 allowed-tools: ["Bash", "Read", "Glob", "Edit", "Write", "AskUserQuestion"]
 metadata:
@@ -50,7 +50,7 @@ earlier verdict). Take the claim as it currently stands, verbatim.
 **Now:** the replacement claim, or a statement that the question is open.
 ```
 
-Append. Never rewrite an existing correction — a correction that was itself
+Append. Never rewrite an existing correction: a correction that was itself
 wrong gets its own entry beneath.
 
 ### 3. Update the study
@@ -80,9 +80,9 @@ directory to an absolute path. Fix the brief until it exits zero.
 Per `references/output-contract.md`. Hero: `✓ corrected <claim>` or `⚠
 Blocked: <reason>`. Sections:
 
-1. `## Correction` — the four fields, as written to the file.
-2. `## Touched` — the rows and evidence documents updated.
-3. `## Downstream` — anything else in the study that rested on the same
+1. `## Correction`: the four fields, as written to the file.
+2. `## Touched`: the rows and evidence documents updated.
+3. `## Downstream`: anything else in the study that rested on the same
    evidence and may now be unsupported.
 
 A halted run (no study, or no standing claim to correct) is the hero and one

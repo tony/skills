@@ -43,12 +43,14 @@ stash, and the ledger is the base.
 
 ## The ledger
 
-One markdown file, written outside the working tree. `spike.sh` (see
-the `spike-probe` skill, which says how its path resolves) creates and prints
-the directory it lives in; use the printed path literally afterwards:
+One markdown file, written outside the working tree. `spike.sh` creates
+and prints the directory it lives in; use the printed path literally
+afterwards. In every command, `<scripts>` stands for the absolute path of
+`../../scripts` resolved from this skill's directory (the shell runs in
+the project, not here); write that path literally:
 
 ```console
-$ spike.sh ledger-dir
+$ <scripts>/spike.sh ledger-dir
 ```
 
 The ledger lives at `<that path>/<goal-slug>.md`. A ledger in the
@@ -86,19 +88,19 @@ provenance recorded in the brief.
 
 ## Phase 0: Situational awareness
 
-Read the `spike-probe` skill and follow its Phase 0 once for the whole
-ratchet (including how `<scripts>` resolves): commit check, conventions
-files, the five gate buckets and CI split per
-`references/verification-gates.md`, and the dirty-tree halt. Every
-round starts from a clean tree, so offer only stash first or abort there
-(non-interactive default: abort); never "probe on top". The ratchet takes
-no `--branch`. After the brief is approved, run probe's Setup step 1
-(`save-user`) before round 1; the user-work SHA it prints goes in the
-ledger and the report. Then:
+Read `references/spike-core.md` and run its Preflight once for the
+whole ratchet: guard, conventions files, the five gate buckets and CI
+split per `references/verification-gates.md`, and the dirty-tree
+halt. Every round starts from a clean tree, so offer only stash first or
+abort there (non-interactive default: abort); never "probe on top". The
+ratchet takes no `--branch`. After the brief is approved, run Setup's
+`save-user` before round 1; the user-work SHA it prints goes in the ledger
+and the report. Then:
 
 1. Resolve the ledger path and read it if it already exists.
 2. Confirm `git worktree` is usable, since any round may call a
-   bakeoff.
+   bakeoff, and create the worktree root once as described under
+   "Worktree root" in the shared file; every round's bakeoff reuses it.
 
 ## Phase 1: Orchestration plan
 
@@ -128,21 +130,24 @@ changes nothing.
 
 Repeat until Phase 3 says stop. Each round:
 
-1. **Probe.** Read the `spike-probe` skill and follow its Phases 2 through 4
-   against the goal as sharpened by the ledger's open questions. Probe's
-   Phase 0, brief, and Setup already ran above, so skip its Setup; its plan and replay phases
-   belong to the ratchet's exit, and so does restoring the user's
-   work: skip the restore in its Phase 4.
+1. **Probe.** Follow the probe loop and Exit gate in
+   `references/spike-core.md`, then its Stash steps, against the
+   goal as sharpened by the ledger's open questions. The ratchet's
+   Phase 0 and brief already ran, so skip Setup. The plan and replay
+   phases belong to the ratchet's exit, and so does restoring the user's
+   work: never run `restore` between rounds.
 2. **Branch on what fought back.** A stumbling block with two or more
    genuinely different resolutions calls for the `spike-bakeoff` skill: read
-   the `spike-bakeoff` skill and follow its Phases 2 through 5 with those
-   resolutions as contenders; the ratchet's Phase 0 and brief stand in
-   for the bakeoff's. A block with one obvious fix folds into the next
-   probe. Stash serially: one stash command at a time, never from
-   parallel contenders.
+   the `spike-bakeoff` skill and follow its Phases 2 through 4 and Phase 5
+   steps 1 through 4 with those resolutions as contenders, using the
+   worktree root from Phase 0. Skip its Phase 0 (the ratchet's stands in
+   for it), its brief, and Phase 5 step 5, which would restore the user's
+   work mid-run. A block with one obvious fix folds into the next probe.
+   Stash serially: one stash command per Bash call, never from parallel
+   contenders.
 3. **Re-probe the graft.** Grafts are unproven in combination, so the
-   ratchet seeds the next round's tree (`spike.sh replay-apply <winner
-   sha>`, then the graft hunks) and that round probes from there. Probe's
+   ratchet seeds the next round's tree (`<scripts>/spike.sh replay-apply <winner
+   sha>`, then the graft hunks) and that round probes from there. The
    dirty-tree halt does not fire on a tree the ratchet seeded. A graft
    that fails the check is dropped and recorded as dropped.
 4. **Record.** Append the round's ledger section before the next round;
@@ -185,7 +190,7 @@ Offer the two exits. Write any commit message per
   Phase 6. Right when the last round's code is what the design wants.
 
 Then restore the user's saved work with
-`spike.sh restore <user-work sha>`, unless `--replay` runs, which
+`<scripts>/spike.sh restore <user-work sha>`, unless `--replay` runs, which
 restores it after its last item. After a clean rewrite, list the rewrite's
 files in the report so the user can tell them from their own edits. A
 refused restore keeps the stash: report the SHA.
@@ -196,6 +201,13 @@ them by SHA.
 ## Output contract
 
 Write the report per `references/prose-rules.md`.
+
+The first line of the reply is exactly the hero line: no lead-in sentence,
+no first-person opener. Report results, not process: never narrate a
+departure from these steps or name the brief or the skill; do the step or
+halt. State what happened, not what a contender or step did not do.
+Warnings about the checkout (mode changes, files left in place, a tree
+that needs attention) go inside `## Stashes`, never before the first section.
 
 1. Hero block (1–3 lines): `✓ converged in <n> rounds` /
    `⚠ capped at <n> rounds` / `⚠ thrashing, stopped at round <n>` +
