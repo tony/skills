@@ -3,6 +3,10 @@
 set -euo pipefail
 
 mkdir -p bin
+cat >app.py <<'PY'
+def handle(payload):
+    return payload["name"].upper()
+PY
 
 cat >bin/codex <<'SH'
 #!/usr/bin/env bash
@@ -23,4 +27,10 @@ cat >.gitignore <<'MD'
 .profile
 .zprofile
 .zshrc
+bin
+.calls
 MD
+
+git init -q
+git add -A
+git -c user.name=eval -c user.email=eval@example.com commit -q -m init

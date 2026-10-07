@@ -140,7 +140,7 @@ Open: update-action / update-actions, whether the two are one concept.
 Run another round, or widen the corpus to settle them.
 ```
 
-Report only what the run recorded. Write no sentence about a file left alone ("I left `terms.jsonl` unchanged"). Sections:
+Print no text before the hero. Report only what the run recorded. Write no sentence about a file left alone ("I left `terms.jsonl` unchanged"). Sections:
 
 1. `## Findings`: what the analyzer proposed, by kind.
 2. `## Verdicts`: each candidate, its objection, and how it resolved.

@@ -34,6 +34,14 @@ graders:
     input_match: 'check-brief'
     min: 1
 
+  - name: brief-gate-passes
+    type: llm
+    focus: last_message
+    criteria: |
+      The reply reports that the brief's citation gate passed (no findings,
+      exit status zero). A reply that reports gate findings, or that never
+      says what the gate returned, fails.
+
   - name: reports-once
     type: llm
     focus: last_message

@@ -53,3 +53,12 @@ graders:
     min: 0
     max: 0
     arm: both
+
+  - name: stopped-bullets-describe-findings-only
+    type: llm
+    focus: last_message
+    criteria: |
+      If the reply is a stopped run, none of its bullets describes a step
+      after the edit (what init, the lock, or a commit would do once the
+      edit lands) and none asks a question. A reply that presents a plan
+      and waits satisfies this.

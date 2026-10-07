@@ -3,6 +3,8 @@
 # and harvest end to end.
 set -euo pipefail
 
+git init --quiet
+
 mkdir -p tiny-lib/src
 cat >tiny-lib/src/ports.py <<'PY'
 class PortAdapter:

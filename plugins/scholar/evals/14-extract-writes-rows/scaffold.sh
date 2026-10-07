@@ -3,6 +3,8 @@
 # so extract has something real to harvest and write.
 set -euo pipefail
 
+git init --quiet
+
 mkdir -p tiny-lib/src
 cat >tiny-lib/src/ports.py <<'PY'
 class PortAdapter:

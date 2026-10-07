@@ -168,7 +168,7 @@ def main(argv: list[str] | None = None) -> int:
     """Parse arguments, run the tier, and print the JSON result."""
     parser = argparse.ArgumentParser(description=__doc__)
     _ = parser.add_argument("--prompt-file", required=True, type=Path)
-    _ = parser.add_argument("--timeout", default="600")
+    _ = parser.add_argument("--timeout", default="540")
     _ = parser.add_argument("--require-flag", action="append", default=[])
     _ = parser.add_argument("command", nargs=argparse.REMAINDER)
     args = parser.parse_args(argv)

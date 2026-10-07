@@ -23,10 +23,16 @@ graders:
   - name: never-pushes-the-local-default-branch
     type: tool_used
     tool: Bash
-    input_match: 'git (-C \S+ )?push\b(\s+-\S+)*\s+\S+\s+(refs/heads/)?(main|master)(:\S+)?(\s|$)'
+    input_match: '(?<!\bcd\b[^\n]*)\bgit push\b[^\n]*\s(HEAD:|\S+:)?(refs/heads/)?(main|master)(\s|$)'
     min: 0
     max: 0
     arm: both
+
+  - name: bump-pushed-from-the-worktree
+    type: tool_used
+    tool: Bash
+    input_match: 'git -C \S+ push\b[^\n]*\s(HEAD|\S+):(refs/heads/)?(main|master)(\s|$)'
+    min: 1
 
   - name: bump-built-outside-the-checkout
     type: tool_used

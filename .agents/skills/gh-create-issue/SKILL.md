@@ -34,14 +34,15 @@ login on an unrelated host does not halt the run:
 $ gh auth status --hostname github.com
 ```
 
-When it fails or `gh` is missing, you cannot run the checks below. The
+When it fails or `gh` is missing, the checks below did not run. The
 reply's first line is the draft's label and the reason (shape under
 "Present"), then the draft, with each unchecked item (duplicates,
 security policy, templates, pins) named as unchecked. Do not file, do
 not offer `--web` or an issue form (neither was checked), and omit the
 "File it" question. A link into a repository you could not pin carries a
-`<TAG>` or `<SHA>` placeholder, and the body adds no checkout or
-version-switch step the user did not state. A suspected
+`<TAG>` or `<SHA>` placeholder. A tag the user named may be linked
+only when the body says the tag was not checked. The body adds no
+checkout or version-switch step the user did not state. A suspected
 security vulnerability gets no draft at all, since the exploit details
 are the deliverable: say why, and name the places to look for the
 project's private reporting path (the repository's Security tab,
@@ -113,7 +114,8 @@ a security defect, read it, follow its private reporting path, and stop. Read it
 the API, since the repository may not be cloned:
 
 ```console
-$ gh api repos/OWNER/REPO/contents/SECURITY.md -H 'Accept: application/vnd.github.raw'
+$ gh api repos/OWNER/REPO/contents/SECURITY.md \
+    -H 'Accept: application/vnd.github.raw'
 ```
 
 On a 404, try the same path under `.github/` and `docs/`, then in the
@@ -159,7 +161,8 @@ $ gh api repos/OWNER/REPO/contents/.github/ISSUE_TEMPLATE --jq '.[].name'
 ```
 
 ```console
-$ gh api repos/OWNER/REPO/contents/.github/ISSUE_TEMPLATE/NAME -H 'Accept: application/vnd.github.raw'
+$ gh api repos/OWNER/REPO/contents/.github/ISSUE_TEMPLATE/NAME \
+    -H 'Accept: application/vnd.github.raw'
 ```
 
 `NAME` is a file from that listing. Skip `config.yml`: it holds
@@ -278,7 +281,9 @@ Include only the ones you have content for; never invent another.
 
 Create the scratch file, write the body to it, and render it per
 "Preview before publishing" in `references/rendered-markdown.md`.
-Keep the printed path: the filing step reuses it.
+Keep the printed path: the filing step reuses it. Without `gh`, skip
+the render, still run the scan and reread below, and add "the preview"
+to the unchecked items in the reply's first line.
 
 Scan the file for local paths, emails, and tokens first:
 
@@ -330,9 +335,17 @@ $ widgets build --target=wasm
 File it, print the body only, revise a section, or drop it?
 `````
 
-Without `gh`, the first line is `Unverified draft for OWNER/REPO, not filed: duplicates, security policy, templates, and pins could not be checked without `gh auth login`.` That line carries every unchecked item; do not list them again. Close with one sentence naming the fields only the user has (OS, exact versions, full trace), not a request list.
+Without `gh`, the first line is `Unverified draft for OWNER/REPO, not filed: duplicates, security policy, templates, and pins could not be checked without `gh auth login`.` That line carries every unchecked item. After the draft, write at most one sentence, naming only the fields the user must supply (OS, exact versions, full trace). Do not restate the unchecked items, mention `<SHA>` or `<TAG>` placeholders, or ask a list of questions. Reply in this shape:
 
-A halted run (a duplicate found, a security policy, unsanitizable evidence, an unresolved pin) is one result sentence naming the duplicate, the private path, or the missing pin, then what the user needs to do. Name no attack class, exploit detail, or impact, do not compare the new report to the duplicate or list what to add to it, and do not recap the checks that passed or mention the sandbox. Reply in this shape:
+```text
+Unverified draft for example/widgets, not filed: duplicates, security policy, templates, and pins could not be checked without `gh auth login`.
+
+[title and four-backtick body]
+
+Add your OS and the full stack trace before filing.
+```
+
+A halted run (a duplicate found, a security policy, unsanitizable evidence, an unresolved pin) is exactly one result sentence beginning `Not filed:` or `Not filed publicly:`, naming the duplicate, the private path, or the missing pin, plus one instruction for the user. No bullets, no bold, no second paragraph. Name no attack class, exploit detail, or impact. Do not describe the duplicate's content, compare the new report to it, or list what to add to it. Do not list the lookups that ran or came back clean, and do not mention the sandbox, the network, or a blocked or failed command; say only what could not be resolved. Reply in this shape:
 
 ```text
 Not filed: example/widgets already tracks this as #1187 (open, "wasm target throws TypeError"). Add your evidence there, or tell me to file anyway.
@@ -416,14 +429,13 @@ Not filed: gh said `could not add label: 'bugs' not found`. Pick a label from th
 
 ## Common mistakes
 
-**A bare `gh issue create` in a non-interactive shell.** It cannot
-prompt, so it exits with `must provide --title and --body when not
-running interactively` and files nothing. Always pass `--title` plus
-`--body-file`.
-
-**Combining `--template` with a body.** `gh` rejects it outright. To
-honor a template non-interactively, read it, fill it in, and pass the
-result as the body.
+- A bare `gh issue create` in a non-interactive shell cannot prompt, so
+  it exits with `must provide --title and --body when not running
+  interactively` and files nothing. Always pass `--title` plus
+  `--body-file`.
+- `gh` rejects `--template` combined with a body outright. To honor a
+  template non-interactively, read it, fill it in, and pass the result
+  as the body.
 
 
 ## Portability notes

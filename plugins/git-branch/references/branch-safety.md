@@ -41,7 +41,7 @@ Each of these halts the run with a report, not a warning:
   nothing to rewrite or study.
 - **A repository rooted at `$HOME`, or at a directory containing it.**
   Compare `git rev-parse --show-toplevel` with the physical home path
-  from `cd ~ && pwd -P`, never the string `$HOME` (a symlinked home
+  from `(cd ~ && pwd -P)`, never the string `$HOME` (a symlinked home
   slips past it); a dotfile repo
   there makes every untracked file, credentials included, part of the
   work. The report says "credential files" and names none of them.

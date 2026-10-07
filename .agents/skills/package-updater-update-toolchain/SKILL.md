@@ -47,7 +47,7 @@ reports pins that branch alone has.
 
 If the user named a tool, work on that one. Otherwise take every tool in
 the pin files (`.tool-versions`, `.nvmrc`, `.python-version`,
-`.ruby-version`, `mise.toml`, `rust-toolchain.toml`, the `go` and
+`.ruby-version`, `mise.toml`, `.mise.toml`, `rust-toolchain.toml`, the `go` and
 `toolchain` lines of `go.mod`) plus `packageManager` and `engines` in
 `package.json`; `references/repo_facts.py` prints these per repository
 (`pins`); resolve its path from this skill's directory to an absolute
@@ -79,9 +79,14 @@ reference. A target younger than the window stops that tool, even when
 the user named the version: print the cooldown halt shown under Output,
 with the date it becomes visible and nothing else. Find the newest
 release outside the window by listing publication dates, newest first:
-for a GitHub tool, `gh api repos/<owner>/<repo>/releases --jq '.[] |
-select(.prerelease | not) | [.tag_name, .published_at] | @tsv'`; for
-Node.js, `jq -r '.[] | [.version, .date] | @tsv'` on the dist index.
+for a GitHub tool, the command below; for Node.js,
+`jq -r '.[] | [.version, .date] | @tsv'` on the dist index.
+
+```console
+$ gh api repos/<owner>/<repo>/releases \
+    --jq '.[] | select(.prerelease | not) | [.tag_name, .published_at] | @tsv'
+```
+
 Take it only when the user agrees; a release skipped this way earns a
 `why:` in the commit. Exempt a tool only per
 `references/cooldown-exemption.md`.
@@ -136,7 +141,7 @@ A bump takes a `why:` above the link block when it:
 - skips a newer release the cooldown gates.
 
 When the notes of a bump that crosses a major (for a 0.x tool, a minor)
-cannot be read, stop and ask, per Phase 3 of
+cannot be read, or the release list cannot be fetched, stop and ask, per Phase 3 of
 the `package-updater-updating-packages` skill.
 
 The `why:` says what the span changes upstream, describing the intermediate
@@ -168,7 +173,7 @@ branch before blaming the bump.
 
 ## Output
 
-Open with a one-line hero (`✓ N tools across M repos` or, for
+Open with the one-line hero `✓ N tools across M repos` (nothing else on that line; or, for
 `--audit-only`, `⚠ Audit only: N pins behind`), then these
 sections in order, each omitted when it has nothing to report:
 

@@ -72,11 +72,11 @@ graders:
     pattern: 'user work[^\n]*\b[0-9a-f]{7,40}\b|\b[0-9a-f]{7,40}\b[^\n]*user work'
     flags: i
 
-  - name: verified-the-reported-sha-in-git
+  - name: verified-each-reported-sha-by-literal-ref
     type: tool_used
     tool: Bash
-    input_match: 'git (cat-file|rev-parse --verify|stash show|show)\b[^\n]*\b[0-9a-f]{7,40}\b'
-    min: 1
+    input_match: 'git rev-parse\s+--verify\s+"?[0-9a-f]{7,40}"?\^\{commit\}'
+    min: 2
     arm: both
 
   - name: user-work-stash-exists-in-reflog

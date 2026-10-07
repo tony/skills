@@ -442,9 +442,40 @@ def test_teardown_removes_a_worktree_holding_left_in_place_files(
         ["git", "worktree", "remove", str(tree)], cwd=repo, capture_output=True, check=False
     )
     assert plain.returncode != 0
-    result = spike(repo, "teardown", str(tree))
+    result = spike(repo, "teardown", str(tree), sha)
     assert result.returncode == 0, result.stderr
     assert result.stdout.strip() == "removed"
     assert not tree.exists()
     assert len(git(repo, "worktree", "list").splitlines()) == 1
     assert git(repo, "rev-parse", "--verify", sha)
+
+
+def test_teardown_refuses_without_a_recorded_stash(
+    repo: pathlib.Path, tmp_path: pathlib.Path
+) -> None:
+    tree = tmp_path / "wt"
+    git(repo, "worktree", "add", "--detach", str(tree), "HEAD")
+    (tree / "feature.txt").write_text("x\n")
+    for sha in ("none", "deadbeef"):
+        result = spike(repo, "teardown", str(tree), sha)
+        assert result.returncode == 1
+        assert tree.exists()
+
+
+def test_ledger_dir_falls_back_when_the_git_dir_is_unwritable(
+    repo: pathlib.Path,
+) -> None:
+    git_dir = repo / ".git"
+    git_dir.chmod(0o555)
+    try:
+        if os.access(git_dir, os.W_OK):
+            pytest.skip("directory permissions are not enforced")
+        result = spike(repo, "ledger-dir")
+        assert result.returncode == 0, result.stderr
+        ledger = pathlib.Path(result.stdout.strip())
+        assert ledger.is_dir()
+        assert ledger.name.startswith("spike-ledger.")
+        assert git_dir not in ledger.parents
+        shutil.rmtree(ledger)
+    finally:
+        git_dir.chmod(0o755)

@@ -253,7 +253,7 @@ $ git rev-parse --show-toplevel
 ```
 
 ```console
-$ cd ~ && pwd -P
+$ (cd ~ && pwd -P)
 ```
 
 Refuse when the two are equal or the root is an ancestor of home: a

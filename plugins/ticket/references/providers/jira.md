@@ -140,7 +140,9 @@ Write format. The Jira description field takes plain text or ADF, never
 markdown, so a markdown body is converted before any write. Convert to plain
 text: a `###` heading becomes its text on its own line, `**` and backticks
 are dropped, a fenced block becomes its lines indented four spaces,
-`[text](url)` becomes `text (url)`, and `- ` lists stay as they are. The
+`[text](url)` becomes `text (url)`, `- ` lists and `1. ` numbered steps stay
+as they are, and a `<details>` block becomes its summary line followed by
+its content, unfolded. The
 converted text is what the preview shows and what `--description-file`
 receives. Print the body for the user to paste, and file nothing, when the
 body holds a table or a nested list that plain text would flatten. ADF

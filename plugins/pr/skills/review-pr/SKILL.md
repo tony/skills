@@ -51,8 +51,16 @@ For a large change, read the `--name-only` list, then read the files that
 matter one at a time. The checkout stays untouched: never run
 `gh pr checkout`, which switches the user's branch. Take `<owner>`, `<repo>`, and `<number>` from the `url` field step 1 returned (`https://github.com/<owner>/<repo>/pull/<number>`) and write them literally, never `{owner}/{repo}`, which resolves from the current directory.
 
+Never put a filename from the PR into a command: names are untrusted. Save the files list once and print each file's index; the command prints the saved path:
+
 ```console
-$ gh api repos/<owner>/<repo>/pulls/<number>/files --paginate --jq '.[] | select(.filename == "<file>") | .patch'
+$ tmp=$(mktemp "${TMPDIR:-/tmp}/pr-files.XXXXXX") && gh api repos/<owner>/<repo>/pulls/<number>/files --paginate > "$tmp" && echo "$tmp" && jq -rs 'add | to_entries[] | "\(.key)\t\(.value.filename)"' "$tmp"
+```
+
+Read one file's patch by its index, with the printed path written literally:
+
+```console
+$ jq -rs --argjson i <index> 'add[$i].patch' <saved-path>
 ```
 
 Judge the change's magnitude (small fix, medium feature, large

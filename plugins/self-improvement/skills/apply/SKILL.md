@@ -57,7 +57,7 @@ Check these in order. The first failure halts the run.
    layout, the same value the sweep used). The check covers that directory only.
    Untracked files elsewhere (editor or shell dotfiles, host state) do not
    count. Mixing a catalog edit with unrelated work makes an unreviewable
-   commit. Exit 1 lists the dirty paths. Pass the ledger path as `--ignore`
+   commit, from the repository root. Exit 1 lists the dirty paths. Pass the ledger path as `--ignore`
    when it sits inside the tree, and never stage that file.
 
    ```console
@@ -181,17 +181,19 @@ Write the report per `../../references/prose-rules.md`.
 
 1. Hero line, first line of the reply: `N applied, M skipped` plus the
    branch. Nothing precedes it.
-2. `## Applied`: per finding, the edit, the gates it cleared, its commit
-   subject, and its `expected_change` with the ledger's re-sweep date, so
-   the next sweep can check it. Plain bullets, no bold label on each.
+2. `## Applied`: one bullet per finding, at most two sentences besides the
+   subject: the edit, the gates it cleared, its commit subject, and its
+   `expected_change` with the ledger's re-sweep date. No "also added" or
+   "as before" remarks. Plain bullets, no bold label on each.
 3. `## Skipped`: findings not applied and why, including any the plan
    deliberately held back.
-4. `## Verification`: the gate commands run with their results, and the
-   Phase 5 result. Nothing else: no restated edits, no cleanup notes, no
+4. `## Verification`: the gate commands the project defines, with their
+   results (report no other gate), and one line for the Phase 5 result:
+   the pass found nothing, or what it found. Nothing else: no restated edits, no cleanup notes, no
    remarks on a defect you found but did not edit, no push state, no
    clean-tree remark. Name no temp directory or local path.
-5. End with an `AskUserQuestion` panel: open a pull request, sweep again,
-   or stop. Without a question tool, print the options as a plain list and
+5. End with an `AskUserQuestion` panel, option lines carrying no
+   parenthetical: open a pull request, sweep again, or stop. Without a question tool, print the options as a plain list and
    stop; never push or open a pull request unasked.
 
 Reply in this shape, as plain text outside any code fence, with plain bullets, no bold (never `- **Label:** ...`), and no local paths:
@@ -216,7 +218,8 @@ A `--dry-run` reply has the hero line `N planned, M skipped`, then `## Plan`
 and `## Skipped`, then the panel (apply for real, or stop). It has no
 preamble, no `## Applied`, no `## Verification`, and no commentary on the
 ledger's prompts or the project's commit style. Plan bullets give the
-finding id, the edit, the files, the gate, and the `expected_change`. Reply
+finding id, the edit, the files, the gate, and the `expected_change`, and
+nothing else: no commit or branch line, no remark on dates. Reply
 in this shape, as plain text outside any code fence, with plain bullets:
 
 ```text

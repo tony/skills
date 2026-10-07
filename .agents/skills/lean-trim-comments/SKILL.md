@@ -123,7 +123,8 @@ With no paths, the scope is the lines this branch added or changed.
    `references/prose-rules.md`. Shape by mode:
 
    - `--stdin` and pasted code: the hero line, the trimmed code in one
-     fence, `## Verdicts`, then `## For the commit message`.
+     fence, `## Verdicts`, then `## For the commit message`. Pasted code
+     has no file: never offer a file option or match it to a scaffold file.
    - `--diff-only` and runs that edited nothing: the hero line,
      `## Verdicts`, then `## For the commit message`; the step 4 list
      is not printed twice.
@@ -137,7 +138,8 @@ With no paths, the scope is the lines this branch added or changed.
    the first line is final; never recount or correct it inline. A
    comment you shorten or reword is rewritten, not kept; kept means
    the text is unchanged. A rewrite preserves every instruction in the
-   original, such as what not to change and what to test first. A rewrite verdict names the gate the
+   original, such as what not to change and what to test first, and adds
+   no fact the original lacks. A rewrite verdict names the gate the
    old text failed, not one the new text passes. The hero comes first,
    with no paragraph before it. Omit `## For the commit message` when nothing moved, and say nothing
    about it. The reply adds no sentence outside the shape, anywhere (not even to
@@ -172,35 +174,10 @@ With no paths, the scope is the lines this branch added or changed.
    - Discard with `git checkout -- <file>`
    ````
 
-   A `--diff-only` run, with the one comment it judged:
-
-   ````text
-   1 comment: 0 kept, 0 rewritten, 1 deleted
-
-   ## Verdicts
-
-   - Deleted "puts the value in the store" above `store[key] = value`: fails Elite, the name says it.
-
-   Next steps:
-   - Apply the deletion by running `lean-trim-comments` again with a question tool, or by asking for "go ahead and trim"
-   ````
-
-   An edited run:
-
-   ````text
-   3 comments: 1 kept, 1 rewritten, 1 deleted
-
-   The verdicts are in the preview above.
-
-   ## For the commit message
-
-   - The cache lock was added after a race on shutdown.
-
-   Next steps:
-   - Commit the edits
-   - Tighten the prose too with `lean-tighten`
-   - Discard with `git checkout -- <file>`
-   ````
+   A `--diff-only` run drops the fenced code and ends with a next step
+   to apply the deletion; an edited run replaces `## Verdicts` with the
+   line "The verdicts are in the preview above." Both keep the hero line
+   and `## For the commit message` as above.
 
    `## For the commit message` holds only rationale moved out of a
    deleted or rewritten comment, never text still present in the code or
@@ -209,9 +186,7 @@ With no paths, the scope is the lines this branch added or changed.
    Then offer next steps through `ask-user-choice`: commit, tighten
    the prose too with the `lean-tighten` skill, or discard. Never offer to widen
    the scope to comments the branch did not touch. Without a question
-   tool, print the same options as the plain list above and stop. Offer a
-   file option only for files on disk; pasted code has none and is never
-   matched to a scaffold file. Review the printed diff first, since
+   tool, print the same options as the plain list above and stop. Review the printed diff first, since
    `git checkout -- <file>` resets a tracked file to HEAD and drops any
    other uncommitted work in it; to discard edits to an untracked file,
    restore the original text you read before editing. A commit message

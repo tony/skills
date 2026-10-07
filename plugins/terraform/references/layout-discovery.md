@@ -190,8 +190,6 @@ gathered, never one directory at a time.
 - Both `terraform` and `tofu` available, or repository signals that
   disagree with the binary on `PATH`: which drives, and therefore which
   registry resolves versions.
-- Terragrunt or stacks present: drive through the wrapper, or operate
-  on the underlying Terraform files directly.
 - Root modules that disagree about the CLI version: converge them all,
   or move only the selected one and report the rest as drift.
 
@@ -199,4 +197,4 @@ Decide everything else from the signals.
 
 Without an interactive question tool, take the narrower answer to each
 (the one root module containing the working directory, the binary on
-`PATH`, no wrapper) and say so in the reply.
+`PATH`) and say so in the reply.

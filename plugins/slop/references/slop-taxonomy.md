@@ -12,7 +12,7 @@ reaches the proposal.
 
 ## Tiers
 
-**Tier A: deterministic, near-zero false positives.** Exact AI-tool
+**Tier A: deterministic, exact-match rules.** Exact AI-tool
 footers, emoji in commit subjects, markdown syntax opening a subject,
 and net-new `TODO: revisit` noise. In an apply mode these change with no
 per-finding confirmation; they are the only findings that do. A rule

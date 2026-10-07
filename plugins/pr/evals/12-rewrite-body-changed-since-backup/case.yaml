@@ -32,11 +32,12 @@ graders:
     input_match: 'pr_backup\.py check'
 
   - name: never-edits
-    type: llm
-    criteria: |
-      After the check reported the body changed, no gh pr edit command ran.
-      A gh pr edit that appears only after a failed check in the same
-      && chain never executed and does not count.
+    type: tool_used
+    tool: Bash
+    input_match: 'gh pr edit'
+    min: 0
+    max: 0
+    arm: both
 
   - name: reports-the-changed-body
     type: llm

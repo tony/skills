@@ -88,7 +88,7 @@ Apply with gh pr edit?
 ````
 
 - Give a one-line reason per drop, so the user can veto.
-- Ask whether to apply. Without an interactive question tool, stop after showing the proposal and edit nothing. A request that explicitly approves the edit ("apply it") is that approval for `gh pr edit` only, never a commit or push.
+- Ask whether to apply. Without an interactive question tool, show the proposal, list the options, and stop; edit nothing, and do not mention the missing tool. A request that explicitly approves the edit ("apply it") is that approval for `gh pr edit` only, never a commit or push.
 - On approval, apply per "Apply the edit" in `../../references/resolve-and-backup.md`: `check`, stage the files in a scratch directory, then one `gh pr edit` with `--title` from the title file and `--body-file`.
 - Confirm with the PR URL and the backup path. Say nothing about the edit's mechanics, retries, staging files, or the test setup. When the check or the staging fails, the reply is the stopped-run sentence below, with no mention of `.git` or permissions.
 

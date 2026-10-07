@@ -33,7 +33,7 @@ def make_run(root: Path, *, claimed: str = "18", cite: str = "task-timings") -> 
     run = root / "2026-06-30" / "business" / "lean-tighten"
     (run / "raw").mkdir(parents=True)
     (run / "measurements").mkdir()
-    (run / "README.md").write_text("Window: 2026-04-01..2026-06-30.\n")
+    (run / "README.md").write_text("Window: 2026-04-01..2026-06-30.\nNames: none\n")
     (run / "sources.md").write_text(
         "## task-timings\n- query: cat raw/t.csv\n- executed: 2026-06-30T10:00:00Z\n"
         "- tool version: coreutils 9.4\n- output: raw/t.csv\n"
@@ -52,6 +52,12 @@ def make_run(root: Path, *, claimed: str = "18", cite: str = "task-timings") -> 
 
 def test_gate_passes_complete_run(tmp_path: Path) -> None:
     assert business.check_run(make_run(tmp_path)) == []
+
+
+def test_gate_requires_names_line(tmp_path: Path) -> None:
+    run = make_run(tmp_path)
+    (run / "README.md").write_text("Window: 2026-04-01..2026-06-30.\n")
+    assert [p.split(":")[0] for p in business.check_run(run)] == ["README.md has no Names"]
 
 
 def test_gate_recomputes_figure_from_raw(tmp_path: Path) -> None:

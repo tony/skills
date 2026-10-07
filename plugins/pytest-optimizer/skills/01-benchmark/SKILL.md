@@ -75,7 +75,7 @@ to the baseline's.
 **Per hypothesis.** For each open hypothesis, in isolation:
 
 1. **Isolate.** Refuse when `git rev-parse --show-toplevel` equals or contains
-   the physical home directory (`cd ~ && pwd -P`; never compare to the string `$HOME`). Create the scratch directory; the command prints its
+   the physical home directory (`(cd ~ && pwd -P)`; never compare to the string `$HOME`). Create the scratch directory; the command prints its
    path, so use that literal path in every later command:
 
    ```console

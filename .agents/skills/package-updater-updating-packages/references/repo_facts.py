@@ -143,7 +143,7 @@ def facts(repo: str, *, fetch: bool = False) -> dict[str, object]:
     if _git(repo, "rev-parse", "--verify", "--quiet", ref)[0] != 0:
         ref = default
     behind = _git(repo, "rev-list", "--count", f"{default}..{remote}/{default}")
-    out["behind_remote"] = int(behind[1]) if behind[0] == 0 and behind[1] else 0
+    out["behind_remote"] = int(behind[1]) if behind[0] == 0 and behind[1] else None
     out["pins_ref"] = ref
     out["pins"] = _pins(repo, ref)
     return out

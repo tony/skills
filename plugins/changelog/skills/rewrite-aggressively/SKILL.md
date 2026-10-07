@@ -43,7 +43,7 @@ to an absolute path, written literally in every command, and run with
    - Working tree dirty (`git status --porcelain` non-empty). Tell the user to
      commit or stash the tracked changes. Advise `git stash -u` for untracked
      files only after `git rev-parse --show-toplevel` shows a root that is
-     neither the output of `cd ~ && pwd -P` nor a parent of it (compare
+     neither the output of `(cd ~ && pwd -P)` nor a parent of it (compare
      physical paths, not the string `$HOME`).
    - Detached HEAD, or an in-progress rebase, merge, or cherry-pick.
    - Currently on the base branch.

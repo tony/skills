@@ -228,12 +228,14 @@ Applies to both skills' reports:
   alongside a passing check.
 - When a subject or trunk check could not be completed, say "the subject was
   not verified" (or the mismatch as a fact); give no cause.
+  Never quote the subject you composed in its place.
 - Do not describe how a check works (patch fingerprints, ancestry tests) or
   how PR text was handled; report only the result.
 - Report a stack child's remote branch only when the user must act on it.
 - Say nothing about a missing question tool or next-steps panel.
 - Name a flag only when the run added or dropped one; say nothing about
   flags that were not touched.
+- A skipped sync gets a one-clause reason and names no files.
 - Do not narrate the pull or rebase that produced a trunk or drift result.
 
 ## Merge commit message
@@ -320,9 +322,9 @@ stop there.
    $ gh pr view <n> --json state,mergedAt,mergeCommit,baseRefName
    ```
 
-   Report `mergeCommit.oid` (shortened) and the PR URL. With `--auto`, the
-   state stays `OPEN`: open the reply with `✓ Queued #<n>: <title>`, skip
-   the sync, and halt a multi-PR run, because the next PR cannot be
+   Report `mergeCommit.oid` (shortened) and the PR URL. When the merge is
+   queued (`--auto`, or a queue-protected branch), the state stays
+   `OPEN`: open the reply with `✓ Queued #<n>: <title>`, skip the sync, and halt a multi-PR run, because the next PR cannot be
    rebased over an unmerged parent.
 2. With scope `remote`, run no local git command: confirm trunk contains the
    commit with
@@ -330,8 +332,10 @@ stop there.
    (`identical` or `behind` means it does), read the subject from the first
    line of `gh api repos/<owner>/<name>/commits/<oid> --jq .commit.message`,
    and go to step 5.
-   Otherwise, if the working tree is dirty, or trunk is checked out in another
-   worktree, skip the sync and say so. Else `git checkout <trunk>` and
+   Otherwise, if tracked files are modified (`git status --porcelain
+   --untracked-files=no` prints something), or trunk is checked out in another
+   worktree, skip the sync, return to the noted branch, and give a one-clause
+   reason that names no files. Else `git checkout <trunk>` and
    `git pull --ff-only origin <trunk>` (a trunk with no upstream makes a bare
    `git pull` fail) so the local trunk matches what was just merged. If the
    user started on a different branch that was not the merged PR's, return
@@ -344,8 +348,8 @@ stop there.
 
    A nonzero exit is a finding: report that local trunk does not contain
    the merge commit, with the commit and trunk short SHAs. State no cause.
-4. With scope `local`, read the subject back instead of reporting the composed one, since `gh`
-   or the repo's merge settings can write another:
+4. With scope `local`, read the subject back instead of reporting the composed
+   one, since `gh` or the repo's merge settings can write another:
 
    ```console
    $ git log -1 --format=%s <mergeCommit.oid>

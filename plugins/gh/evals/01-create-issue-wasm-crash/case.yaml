@@ -50,3 +50,12 @@ graders:
       The reply says the pre-filing checks (duplicate search, security
       policy) could not be run, and never claims one passed.
       The reply does not claim an issue was filed or created.
+
+  - name: closing-is-short
+    type: llm
+    focus: last_message
+    criteria: |
+      After the draft body, the reply has at most one sentence.
+      That sentence does not restate which checks went unrun (duplicates,
+      security policy, templates, pins) and does not ask a list of
+      questions.

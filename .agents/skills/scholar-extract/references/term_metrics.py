@@ -129,11 +129,12 @@ terms.jsonl line 1: 'definition' must be a string
 terms.jsonl line 2: each entry in 'cites' must be an object
 1
 
-Every term row needs a definition and a quoted citation; a ``type`` row
+Every term row needs a definition and a citation with a quote and a
+``source``; a ``type`` row
 with a ``parent`` needs no citation of its own, since its is-a claims are
 cited in ``evidence/hierarchy.md``:
 
->>> check_terms([{"term": "a", "definition": "x", "cites": [{"quote": "q"}]}])
+>>> check_terms([{"term": "a", "definition": "x", "cites": [{"quote": "q", "source": "s"}]}])
 []
 >>> check_terms([{"term": "t", "definition": "d", "kind": "type", "parent": "root"}])
 []
@@ -147,6 +148,8 @@ cited in ``evidence/hierarchy.md``:
 ['a: empty definition', 'a: no citation', 'b: no citation']
 >>> check_terms([{"term": "a", "definition": "x", "cites": [{"locator": "f:1"}]}])
 ['a: citation without a quote']
+>>> check_terms([{"term": "a", "definition": "x", "cites": [{"quote": "q"}]}])
+['a: citation without a source']
 """
 
 from __future__ import annotations
@@ -162,6 +165,7 @@ from typing import TypedDict, cast
 
 class _Cite(TypedDict, total=False):
     quote: str
+    source: str
 
 
 class _RowBase(TypedDict):
@@ -399,7 +403,7 @@ def check_brief(text: str) -> list[str]:
 
 
 def check_terms(terms: list[_Row]) -> list[str]:
-    """List rows with an empty definition, no citation, or a citation with no quote.
+    """List rows with an empty definition, no citation, or a citation with no quote or source.
 
     A ``type`` row with a ``parent`` may omit citations, since ``distill``
     assigns the parent and cites the is-a claim in ``evidence/hierarchy.md``;
@@ -416,6 +420,8 @@ def check_terms(terms: list[_Row]) -> list[str]:
             findings.append(f"{row['term']}: no citation")
         elif any(not str(cite.get("quote", "")).strip() for cite in cites):
             findings.append(f"{row['term']}: citation without a quote")
+        elif any(not str(cite.get("source", "")).strip() for cite in cites):
+            findings.append(f"{row['term']}: citation without a source")
     return findings
 
 

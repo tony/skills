@@ -250,7 +250,7 @@ $ git rev-parse --show-toplevel
 ```
 
 ```console
-$ cd ~ && pwd -P
+$ (cd ~ && pwd -P)
 ```
 
 Refuse when the two are equal or the root is an ancestor of home: a
@@ -373,18 +373,18 @@ autosquash" only.
 
 "Apply and autosquash" runs the rebase with `rerere` enabled and accepts the generated todo list
 unattended; reword commits carry their replacement message in the body, so
-no editor is needed. Without a question tool, also pass
-`--abort-on-conflict`, so a conflict aborts the rebase instead of pausing it:
+no editor is needed:
 
 ```console
 $ python3 <autosquash.py> \
     --baseline "<BASELINE_SHA>"
 ```
 
-Exit 0 skips to Step 12. Exit 10 means a conflict stopped the rebase (the
-script aborted it under `--abort-on-conflict`); go to Step 11 unless it
-aborted. Exit 1 is any other failure: report git's message and the backup
-branch.
+Without a question tool, add `--abort-on-conflict` so a conflict aborts
+the rebase instead of pausing it. Exit 0 skips to Step 12. Exit 10 means
+a conflict stopped the rebase; go to Step 11 unless it aborted. Exit 1
+is any other failure: if a rebase is paused, run `git rebase --abort`,
+then report git's message and the backup branch.
 
 ## Step 11: Conflict loop
 
@@ -465,6 +465,7 @@ Quality gates (final)
 format=pass | lint=pass | typecheck=pass | tests=skipped
 
 Patch series: <run-dir>
+Next: git rebase -i --autosquash origin/main
 ```
 
 Print the `Patch series:` line with the path Step 8 printed, because
@@ -491,7 +492,7 @@ command.
 | Empty diff after an edit | Skip the fixup and record a no-op. |
 | Single-commit branch, no body | A reword commit autosquashes cleanly. |
 | `--message-only` and diff slop exists | Report the skipped diff findings; build reword commits only. |
-| Linked worktrees | Permitted; run directories resolve through `git rev-parse --git-path`. |
+| Linked worktrees | Permitted; run directories resolve through `git rev-parse --path-format=absolute --git-path`. |
 | Existing `fixup!` or `amend!` commits on the branch | Detect with `git log --grep='^fixup!' --grep='^amend!'`; offer to autosquash them first. |
 | Non-UTF-8 commit message | Skip message checks for it; warn. |
 | Pre-commit hook changes staged content during a fixup | `apply.sh` aborts that step with the hook's stderr; the user fixes it and re-runs. The skill never uses `--no-verify`. |

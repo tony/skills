@@ -21,10 +21,10 @@ execution:
 runs: 3
 
 graders:
-  - name: runs-the-tag-check
+  - name: tag-check-ran
     type: tool_used
     tool: Bash
-    input_match: 'git/ref/tags/v4'
+    input_match: 'gh api repos/actions/checkout/git/ref/tags/v4\b'
 
   - name: never-pushes
     type: tool_used

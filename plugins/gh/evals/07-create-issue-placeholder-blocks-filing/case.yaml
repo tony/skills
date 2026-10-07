@@ -47,3 +47,13 @@ graders:
       carries a placeholder or lacks the link.
       The reply does not claim an issue was filed or created, and does not
       invent a commit SHA or release tag.
+
+  - name: halted-shape
+    type: llm
+    focus: last_message
+    criteria: |
+      The reply opens with `Not filed`.
+      It is one result sentence plus one instruction to the user, with no
+      bullet list, no bold labels, and no second paragraph.
+      It does not mention a sandbox, a blocked command, or a network
+      restriction, and does not recap the lookups that ran.

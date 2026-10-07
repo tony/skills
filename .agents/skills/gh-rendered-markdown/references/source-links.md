@@ -44,7 +44,7 @@ show the latest state, such as a contributing guide.
 ### Line anchors only on a pinned ref
 
 `#L120` for a line and `#L120-L145` for a range. On a file GitHub
-renders rather than displays — markdown, reStructuredText — the anchor
+renders rather than displays (markdown, reStructuredText), the anchor
 needs `?plain=1` before the fragment or it has nothing to attach to.
 
 ```
@@ -64,7 +64,13 @@ it in the reply as unverified. Never substitute a guess.
 Newest tag of a repository you have not cloned:
 
 ```console
-$ gh release list --repo OWNER/REPO --limit 1 --exclude-drafts --exclude-pre-releases --json tagName --jq '.[0].tagName'
+$ gh release list \
+    --repo OWNER/REPO \
+    --limit 1 \
+    --exclude-drafts \
+    --exclude-pre-releases \
+    --json tagName \
+    --jq '.[0].tagName'
 ```
 
 A repository with no releases prints nothing; fall back to the tags:
@@ -106,7 +112,11 @@ a range you did not read at the ref.
 Confirm before publishing:
 
 ```console
-$ curl -s -o /dev/null -w '%{http_code}\n' -L 'https://github.com/OWNER/REPO/blob/v2.40.0/README.md'
+$ curl -s \
+    -o /dev/null \
+    -w '%{http_code}\n' \
+    -L \
+    'https://github.com/OWNER/REPO/blob/v2.40.0/README.md'
 ```
 
 ## Let GitHub do the linking where it already does

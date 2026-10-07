@@ -26,9 +26,11 @@ repo-wide.
 
 If `$ARGUMENTS` is empty, ask which files via `AskUserQuestion`; without
 an interactive question tool (Codex, headless runs), print the usage
-and stop. With targets but no question tool, act as `--diff-only`
-unless the request itself says "go ahead": that authorizes the edits it
-names, never a commit.
+and stop.
+
+With targets but no question tool, act as `--diff-only` unless the
+request itself says "go ahead": that authorizes the edits it names,
+never a commit.
 
 ## Steps
 
@@ -46,17 +48,19 @@ names, never a commit.
 4. **Preview and confirm.** Show the proposed edits and confirm via
    `AskUserQuestion` before writing; the preview and the printed diff
    (Step 6) are the review surface. Skip when `--diff-only` or
-   `--stdin`. Without an interactive question tool, follow the
+   `--stdin`; a `--diff-only` run prints its proposal in step 6. Without an interactive question tool, follow the
    headless rule in `$ARGUMENTS`.
 5. **Apply in place.** Use `Edit`. Replacements are concrete and
    shorter than the original.
 6. **Diff.** Print `git diff -- <targets>`; for an untracked target print
-   `git diff --no-index -- /dev/null <file>` instead. Skip for `--diff-only` and runs
-   that edited nothing; for `--stdin`, print the tightened text as the whole reply. With `--gates`, run the
+   `git diff --no-index -- /dev/null <file>` instead. A `--diff-only` run
+   prints the proposed edits as a unified `diff` block instead (the
+   proposal, not `git diff`). Skip for runs that edited nothing; for
+   `--stdin`, print the tightened text as the whole reply. With `--gates`, run the
    discovered checks once and report; never commit, whatever the gates report.
 7. **Report and hand off.** Write it per
    `../../references/prose-rules.md`: a one-line count of findings
-   (each edit or cut you proposed) resolved and skipped, with no section labels and no recap of what
+   (one per edited span) resolved and skipped, with no section labels and no recap of what
    changed. Reply in this shape, as plain text outside any code fence, with plain bullets, no bold (never `- **Label:** ...`), and no local paths:
 
    ```text
@@ -64,7 +68,22 @@ names, never a commit.
    ```
 
    With `--diff-only`, or no question tool and no go-ahead, the hero is
-   `6 findings proposed, 0 applied.` A stopped run is one result
+   `6 findings proposed, 0 applied.`, followed by the proposed edits in
+   a `diff` block and nothing else:
+
+   ````text
+   2 findings proposed, 0 applied.
+
+   ```diff
+   --- a/NOTES.md
+   +++ b/NOTES.md
+   @@ -3 +3 @@
+   -We should probably consider maybe running the sync job nightly.
+   +Run the sync job nightly.
+   ```
+   ````
+
+   A rewrite adds no fact the original lacks. A stopped run is one result
    sentence, then what the user needs to do. The reply adds no sentence
    outside the shape, anywhere (not even to say nothing was edited, why,
    or what the session cannot do); do not explain text you kept.
@@ -76,7 +95,7 @@ names, never a commit.
    printed diff first, since `git checkout -- <file>` resets a tracked
    file to HEAD and drops any other uncommitted work in it; to discard
    edits to an untracked file, restore the original text you read before
-   editing, or delete the file if the user created it for this run. A commit message carries no
+   editing, or delete the file when it was untracked before the run and the user says it is new. A commit message carries no
    `Co-Authored-By`, no "Generated with" or other tool trailer, and no
    emoji. For `--stdin`, skip the handoff: the reply is the tightened
    text with no lead-in, then at most one line, and only to name

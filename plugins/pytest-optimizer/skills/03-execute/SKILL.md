@@ -56,7 +56,7 @@ test commands. Refuse to run unless all hold, checking in this order:
   stop: the plan changed after approval, so approve it again with
   `pytest-optimizer:02-plan`. Name the one check that failed, never both;
 - `git rev-parse --show-toplevel` neither equals nor contains the physical home
-  directory (`cd ~ && pwd -P`, never the string `$HOME`): a dotfile repo rooted at home hides its untracked files from `git status`,
+  directory (`(cd ~ && pwd -P)`, never the string `$HOME`): a dotfile repo rooted at home hides its untracked files from `git status`,
   and Step 2's cleanup would delete them;
 - the memory directory is outside the working tree, or listed in the local
   exclude file (`git rev-parse --git-path info/exclude`), so cleanup cannot

@@ -108,6 +108,7 @@ def test_fingerprints_survive_a_clean_rebase(repo: Path) -> None:
     _commit(repo, "one.txt", "one\n")
     _commit(repo, "two.txt", "two\n")
     rec = _script(repo, "fingerprint", "record", "main..HEAD").stdout.strip()
+    assert Path(rec).is_absolute()
     assert Path(rec).is_file()
     _git(repo, "checkout", "-q", "main")
     (repo / "a.txt").write_text("0\n" + (repo / "a.txt").read_text())

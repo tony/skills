@@ -96,3 +96,29 @@ def test_missing_candidate_is_inconclusive(
     keep = tree(tmp_path / "k", {"a": "1"})
     code, _ = run(tmp_path / "nope", keep, capsys)
     assert code == redundancy.EXIT_INCONCLUSIVE
+
+
+def test_same_path_is_inconclusive(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    keep = tree(tmp_path / "k", {"a": "1"})
+    code, out = run(keep, keep, capsys)
+    assert code == redundancy.EXIT_INCONCLUSIVE
+    assert "same directory" in out
+
+
+def test_symlink_alias_is_inconclusive(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    keep = tree(tmp_path / "k", {"a": "1"})
+    alias = tmp_path / "alias"
+    alias.symlink_to(keep)
+    code, out = run(alias, keep, capsys)
+    assert code == redundancy.EXIT_INCONCLUSIVE
+    assert "same directory" in out
+
+
+def test_nested_trees_are_inconclusive(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    keep = tree(tmp_path / "k", {"a": "1", "sub/a": "1"})
+    code, out = run(keep / "sub", keep, capsys)
+    assert code == redundancy.EXIT_INCONCLUSIVE
+    assert "inside the keeper" in out
+    code, out = run(keep, keep / "sub", capsys)
+    assert code == redundancy.EXIT_INCONCLUSIVE
+    assert "inside the candidate" in out

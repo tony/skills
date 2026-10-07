@@ -31,3 +31,5 @@ graders:
       The reply proposes tightening edits to NOTES.md, or asks for
       confirmation before changing it, and does not claim the file was
       already rewritten. It does not commit anything.
+      When it proposes edits, it shows them as a diff block of the
+      changed lines, not only a count of findings.

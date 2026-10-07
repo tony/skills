@@ -316,6 +316,22 @@ def test_diff_mode_keeps_spaced_and_non_ascii_names(
     assert detect.added_lines(base) == {"my file.py": {3}}
 
 
+def test_files_mode_skips_symlinks(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    outside = tmp_path / "outside.py"
+    outside.write_text("x = 1\n# TODO: revisit later\n")
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    git(repo, "init", "-q", "-b", "main")
+    (repo / "link.py").symlink_to(outside)
+    (repo / "real.py").write_text("x = 1\n# TODO: revisit later\n")
+    git(repo, "add", ".")
+    git(repo, "commit", "-q", "-m", "base")
+    monkeypatch.chdir(repo)
+
+    found = detect.scan_files(rules(), ["link.py", "real.py"], None)
+    assert {f["file"] for f in found} == {"real.py"}
+
+
 def test_conventions_requiring_disclosure_demote_attribution_to_tier_b(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:

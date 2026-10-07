@@ -85,7 +85,7 @@ the commit body when you move one.
 that declares one, root and child alike, and they combine by the same
 rule. Beyond those:
 
-- `.terraform-version`: tfenv, and read by several CI actions.
+- `.terraform-version`: a bare version number, read by tfenv.
 - `.tool-versions`: asdf and mise, as a `terraform` or `opentofu` line.
 - `mise.toml`, `.mise.toml`, and `.mise/config.toml`: under `[tools]`.
 - Workflow files: `hashicorp/setup-terraform` with `terraform_version`,
@@ -131,7 +131,7 @@ $ git grep \
     -e '(terraform|tofu|tf_?version).*[0-9]+\.[0-9]+' \
     -- ':(icase)*justfile' ':(icase)*makefile' '*Dockerfile*' \
     '*devcontainer.json' '*.tool-versions' '*mise.toml' '*mise/config.toml' \
-    '*.hcl' '*.tf' '*.tf.json' \
+    '*terragrunt.hcl' '*root.hcl' '*.tf.json' \
     '.github/*' '.gitlab-ci.yml' '.gitlab/*' '.circleci/*'
 ```
 

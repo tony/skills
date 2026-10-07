@@ -27,53 +27,55 @@ A fork (`isFork: true`) is out of scope unless the user names it with
 
 ## Inventory pins from trunk, not the working tree
 
-`<remote>` is the remote the default branch tracks: `origin` when it
-exists, the only remote when there is one, otherwise ask.
+Every inventory, fetch, and commit command names its repository: `git -C
+<path>` for a clone, `gh repo view <slug>` and `gh api repos/<slug>/...`
+for the API. A fleet run loops over repositories, and a command that reads
+the current directory reads the wrong repository's default branch and tree.
 
-Resolve the default branch from the API (`<remote>/HEAD` may be unset), then
-fetch so `<remote>/<default>` is current; without the fetch, say the audit may
-be stale.
+`../scripts/pins.py` does this deterministically (Python 3.9 or newer). It
+resolves the remote (`origin`, else the only remote), fetches, reads the
+default branch from the API, and prints one JSON object per repository with
+every `uses:` pin in workflow and composite-action YAML files. Print the
+script's absolute path once and write it literally in each command:
 
 ```console
-$ gh repo view --json defaultBranchRef --jq .defaultBranchRef.name
-```
-
-```console
-$ git fetch <remote>
-```
-
-Read workflow content from `<remote>/<default>`, not the checkout. Cover
-`.github/workflows/**` and `.github/actions/**`; composite actions pin
-versions too and are the most often missed.
-
-Loop over the file list with `while read -r`: an unquoted captured list
-expands as one word in zsh, so a repo with two workflow files drops out of
-the audit with no error and the fleet reads as clean.
-
-```bash
-git ls-tree -r --name-only <remote>/<default> .github | while read -r f; do
-  git show "<remote>/<default>:$f" | grep -n -E '^[[:space:]]*-?[[:space:]]*uses:' | sed "s|^|$f:|"
-done
+$ python3 <absolute-path>/pins.py inventory <path-or-slug> [<path-or-slug>...]
 ```
 
 A repository named only by slug (`--repo <owner>/<name>` with no local
-clone) has no `<remote>/<default>`. Resolve the default branch with
-`gh repo view <slug> --json defaultBranchRef`, list the files, then read
-each one raw:
+clone) is read through the API. Without a local clone nothing can be
+committed: report that repository's audit and skip its commits, unless the
+user supplies a checkout path. Without the script, do the same by hand per
+repository:
 
 ```console
-$ gh api "repos/<slug>/git/trees/<default>?recursive=1" \
-    --jq '.tree[] | select(.type == "blob") | .path | select(startswith(".github/"))'
+$ gh repo view <slug> \
+    --json defaultBranchRef \
+    --jq .defaultBranchRef.name
 ```
 
 ```console
-$ gh api \
-    -H "Accept: application/vnd.github.raw+json" \
-    "repos/<slug>/contents/<path>?ref=<default>"
+$ git -C <path> fetch <remote>
 ```
 
-Without a local clone nothing can be committed: report that repository's
-audit and skip its commits, unless the user supplies a checkout path.
+```console
+$ git -C <path> ls-tree \
+    -r \
+    --name-only \
+    <remote>/<default> \
+    .github
+```
+
+Read only `.github/workflows/*.yml|yaml` and `.github/actions/**/*.yml|yaml`
+(composite actions pin versions too and are the most often missed), each with
+`git -C <path> show <remote>/<default>:<file>`. Search those files only: a
+search over all of `.github` also hits markdown. For a slug, list the tree
+with `gh api "repos/<slug>/git/trees/<default>?recursive=1"` and read each
+file raw with `gh api -H "Accept: application/vnd.github.raw+json"
+"repos/<slug>/contents/<path>?ref=<default>"`. Loop with `while read -r`:
+an unquoted captured list expands as one word in zsh, so a repo with two
+workflow files drops out of the audit with no error and the fleet reads as
+clean.
 
 Skip `uses: ./path` (local) and `uses: docker://...` (no tag to verify)
 and say so in the report. For `owner/repo/subpath@ref`, look up tags on
@@ -96,7 +98,10 @@ major in the list below before calling it the target.
 
 ## List the majors between the pin and the target
 
-A major's first release is its `vN.0.0` tag. List them all, then keep
+`python3 <absolute-path>/pins.py majors <owner/action> <pin> <target>`
+prints the first release of each major above the pin and at or below the
+target, falling back to the tag list when there are no release objects.
+By hand: a major's first release is its `vN.0.0` tag. List them all, then keep
 those above the pin's major and at or below the target's:
 
 ```console
@@ -113,7 +118,9 @@ Link each kept tag only after the release-URL check passes.
 
 ## Verify the target tag exists
 
-Confirm before writing, and gate on exit status:
+Confirm before writing, and gate on exit status
+(`python3 <absolute-path>/pins.py tag <owner/action> <tag>` does the same
+and exits 1 when the tag is missing):
 
 ```console
 $ gh api repos/<owner>/<action>/git/ref/tags/<tag> >/dev/null 2>&1

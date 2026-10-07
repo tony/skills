@@ -8,12 +8,11 @@ import subprocess
 import typing as t
 from pathlib import Path
 
+import pytest
 import sweep  # pyright: ignore[reportImplicitRelativeImport]
 
 if t.TYPE_CHECKING:
     import pathlib
-
-    import pytest
 
 
 HALF = 6
@@ -293,3 +292,44 @@ def test_catalog_glob_reads_a_flat_skills_directory(
         assert sweep.main(["catalog", "--root", str(tmp_path), "--catalog-glob", glob]) == 0
         out = t.cast("dict[str, t.Any]", json.loads(capsys.readouterr().out))
         assert [s["name"] for s in t.cast("list[dict[str, t.Any]]", out["skills"])] == [name]
+
+
+def test_catalog_survives_a_moved_but_uncommitted_skill(
+    tmp_path: pathlib.Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """A tracked skill missing from the working tree is read from HEAD, not a crash."""
+    _repo(tmp_path)
+    _skill(tmp_path, "a")
+    _ = _git(tmp_path, "add", "plugins")
+    _ = _git(tmp_path, "commit", "-q", "-m", "Add skill")
+    (tmp_path / "plugins" / "demo" / "skills" / "a" / "SKILL.md").unlink()
+    assert sweep.main(["catalog", "--root", str(tmp_path)]) == 0
+    out = t.cast("dict[str, t.Any]", json.loads(capsys.readouterr().out))
+    assert [s["name"] for s in t.cast("list[dict[str, t.Any]]", out["skills"])] == ["demo:a"]
+
+
+def test_catalog_skips_a_file_absent_from_head_and_tree(
+    tmp_path: pathlib.Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """An added-then-deleted skill has no text anywhere and is skipped."""
+    _repo(tmp_path)
+    _skill(tmp_path, "a")
+    _ = _git(tmp_path, "add", "plugins")
+    (tmp_path / "plugins" / "demo" / "skills" / "a" / "SKILL.md").unlink()
+    assert sweep.main(["catalog", "--root", str(tmp_path)]) == 0
+    out = t.cast("dict[str, t.Any]", json.loads(capsys.readouterr().out))
+    assert out["skills"] == []
+
+
+def test_validate_findings_rejects_unknown_verdict() -> None:
+    """Only absent and not-binding are accepted verdicts."""
+    with pytest.raises(ValueError, match="unknown verdict"):
+        _ = sweep.validate_findings([_finding(verdict="maybe")])
+
+
+def test_git_failure_shows_stderr(
+    tmp_path: pathlib.Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """Outside a repository the error carries git's own message."""
+    assert sweep.main(["catalog", "--root", str(tmp_path)]) == AUTOSQUASH_ABORTED
+    assert "not a git repository" in capsys.readouterr().err

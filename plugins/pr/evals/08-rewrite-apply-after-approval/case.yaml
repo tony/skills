@@ -24,7 +24,7 @@ graders:
   - name: backs-up-the-body
     type: tool_used
     tool: Bash
-    input_match: 'pr_backup\.py save|pr-backups'
+    input_match: 'pr_backup\.py save'
 
   - name: applies-with-gh-pr-edit
     type: tool_used

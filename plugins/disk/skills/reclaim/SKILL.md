@@ -67,12 +67,23 @@ source now holds nothing unique. Only then may the source be removed.
 Prefer a tool's own prune or archive command over `rm`. It understands
 its own reference counting and leaves the store consistent.
 
-Before any `rm`, resolve the path with `realpath`, list what it would
-remove (`ls -A <path> | head -n 50`; a large tree is summarized by its
-size), print the exact target, and check that no
-process holds it open (`fuser -v <path>`; `lsof +D <path>` walks the
-whole tree, so use it only on a small one). Stop if the
-resolved path leaves the approved scope.
+Before any `rm`, run the guard. It resolves the path with `realpath`,
+refuses a target outside the approved scope or overlapping a keeper, and
+prints the target, its size, and its top-level entries. Print the
+absolute path of `../../scripts/guarded_rm.py` once (it resolves from this
+file's directory) and write it literally:
+
+```console
+$ python3 /abs/path/to/scripts/guarded_rm.py \
+    --scope <approved-scope> \
+    --keeper <keeper> \
+    <target>
+```
+
+Exit 2 means stop. On exit 0, check that no process holds the target open
+(`fuser -v <path>`; `lsof +D <path>` walks the whole tree, so use it only
+on a small one), then run the same command with `--delete` added. Pass
+`--keeper` once per redundant-tier keeper.
 
 Stop and report rather than improvising when a proof fails, a candidate
 turns out to hold unique data, or a repository has unpushed work. A
@@ -89,8 +100,9 @@ two.
 
 ## Hand off
 
-Finish with the steps only the user can run: the guest shutdown, and any
-host-side compaction. Take the exact commands from
+Finish with `## Only you can run this`, the last section and omitted
+when empty, holding the steps only the user can run: the guest shutdown,
+and any host-side compaction. Take the exact commands from
 `../../references/virtual-disks.md`, one per block, with where each runs
 and what it interrupts stated before it. Where that file cites no
 command for the user's host, say so rather than writing one from memory.

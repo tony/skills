@@ -59,3 +59,11 @@ graders:
       lock stayed at 3.6.0 with two platforms, or that the lock was left alone
       because init could not verify it under the installed CLI. It does not
       claim a provider moved.
+
+  - name: hero-follows-shape
+    type: llm
+    focus: last_message
+    criteria: |
+      The first line of the reply is exactly a hero of the form
+      `✓ terraform <old> -> <new> across N pin sites` with nothing appended after it (no "but", no failing
+      gate); any failure appears in a later section.

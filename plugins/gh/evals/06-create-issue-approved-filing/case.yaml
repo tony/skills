@@ -37,7 +37,7 @@ graders:
   - name: no-inline-body
     type: tool_used
     tool: Bash
-    input_match: 'gh issue create[\s\S]*?--body[ =]'
+    input_match: 'gh issue create[\s\S]*?(--body[ =]|<<)'
     min: 0
     max: 0
     arm: both

@@ -38,7 +38,7 @@ Prefer the tool's own command over `rm`. Re-check each with `<tool> --help`:
   dangling images; rebuilt by `docker build` or `docker pull`. Volumes
   (`docker volume ls`) can hold data: classify them stale-but-unique.
 - conda, Hugging Face, Gradle, Maven: `conda clean --all`,
-  `huggingface-cli delete-cache`, `~/.gradle/caches`, `~/.m2/repository`;
+  `hf cache prune` and `hf cache rm`, `~/.gradle/caches`, `~/.m2/repository`;
   re-downloaded on demand, so a model or dependency set costs bandwidth
   to restore.
 - Homebrew: `brew cleanup`; re-downloaded on demand.
@@ -111,8 +111,8 @@ history root routinely contains regenerable build artifacts, and a
 cache root can contain a store the user has deliberately pinned.
 Classify at the level where the content is homogeneous.
 
-**Size does not affect tier.** A 40 GB cache is regenerable and a
-200 MB transcript store is protected. Ranking by size is for reporting;
+**Size does not affect tier.** A 40 GiB cache is regenerable and a
+200 MiB transcript store is protected. Ranking by size is for reporting;
 it never influences classification.
 
 ## Ambiguity

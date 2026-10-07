@@ -46,14 +46,16 @@ Take `sources.jsonl` from `gather`. Harvest only from sources marked
 ### 2. Put the corpus on disk, read-only
 
 Read each code source at its recorded `commit`, never at a moving branch. A
-checkout already on disk is read in place once `git rev-parse HEAD` matches
-the row's `commit` and the dirty-tree check prints nothing; a mismatch or a
-dirty tree is reported, not harvested. The check leaves out the study
-directory, so a study written inside the repository it studies does not block
-itself. With the study at `notes/ontology/<subject>/`:
+checkout already on disk is read in place once `git -C <corpus> rev-parse
+HEAD` matches the row's `commit` and the dirty-tree check prints nothing; a
+mismatch or a dirty tree is reported, not harvested. Run both against the
+checkout, never the current directory. When the study lives inside that
+checkout, the check leaves out the study directory so the study does not
+block itself; otherwise drop the pathspec. With the study at
+`notes/ontology/<subject>/`:
 
 ```console
-$ git status \
+$ git -C <corpus> status \
     --porcelain \
     -- . ':(exclude)notes/ontology/<subject>'
 ```

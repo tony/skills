@@ -55,6 +55,8 @@ case "$args" in
     echo '{"number":7,"title":"Add cache reads","headRefOid":"abc","state":"OPEN","isDraft":false,"reviewDecision":"","statusCheckRollup":[]}' ;;
   "pr checks"*)
     echo '[{"name":"ci","bucket":"pass","state":"SUCCESS"}]' ;;
+  *"api graphql"*)
+    echo '{"data":{"repository":{"pullRequest":{"reviewThreads":{"nodes":[]}}}}}' ;;
   "pr comment"*|*"/replies"*|*"-X POST"*|*"-f "*|*"-F "*)
     echo "$args" >>"$root/gh-writes.log"
     echo '{}' ;;

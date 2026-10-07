@@ -46,7 +46,7 @@ Claude Code uses a leading slash (`/pr:…`). Codex omits it (`pr:…`).
 
 - `/pr:pr`: Gathers diff/log context against the PR's base or the parent branch of a stacked branch, reads conventions (`AGENTS.md`/`CLAUDE.md`,
   templates), applies the section patterns in `skills/pr/SKILL.md`, and optionally creates the PR via `gh`.
-- `/pr:refresh`: Diffs against the PR's own base (a stacked PR diffs against its parent), backs up to `pr-backups/` in the git directory with a `cmp`-checked copy, updates content while preserving hand-written text and structure, and applies via `gh` once the PR body is confirmed unchanged since the backup.
+- `/pr:refresh`: Diffs against the PR's own base (a stacked PR diffs against its parent), backs up to `pr-backups/` in the git directory with a `cmp`-checked copy (in a temporary directory when the git directory is not writable), updates content while preserving hand-written text and structure, and applies via `gh` once the PR body is confirmed unchanged since the backup.
 - `/pr:rewrite`: Backs up PR, mines old description for manual context, resolves
   templates, drafts fresh description, and applies via `gh`.
 - `/pr:merge-commit`: Gathers diff/log, reads conventions, drafts proportional

@@ -90,9 +90,24 @@ Per `../../references/output-contract.md`. Hero: `✓ rendered <subject>: brief 
    stripped.
 
 On a failed gate, print the hero, `## Gate`, and the fix: edit the brief, or
-leave it and stop. Say only that each flagged URL or number moves into the
+leave it and stop. Name each flagged URL and number, and say only that each moves into the
 matching `evidence/` file and is linked; never claim a command produced a
-number the brief's author wrote by hand. Omit `## Brief` and `## Evidence` for anything not
+number the brief's author wrote by hand. Reply as plain text outside any code
+fence, with plain bullets, no bold (never `- **Label:** ...`), and no local
+paths:
+
+```text
+⚠ Brief gate failed: 2 findings
+
+## Gate
+
+line 5: URL belongs in evidence/, not the brief
+line 6: bare number belongs in evidence/, not the brief
+
+Move the URL (github.com/example/sample-lib/.../ports.py) and the numbers 14 and 0.62 into the matching evidence/ file and link them from the brief, or leave the brief as is and stop.
+```
+
+Omit `## Brief` and `## Evidence` for anything not
 written, and offer no other next step. Never say what was left alone ("I left the brief as you wrote it"); report the gate result. A missing study follows the halted-run
 shape in the output contract.
 

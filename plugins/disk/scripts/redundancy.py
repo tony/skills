@@ -7,7 +7,8 @@ Compares relative path sets (files and symlinks) and prints the shared and
 unique counts with sizes. Exit status: 0 REDUNDANT, 1 NOT REDUNDANT,
 2 INCONCLUSIVE. Any entry in either tree that cannot be listed or opened
 is INCONCLUSIVE, never REDUNDANT, because content that cannot be read
-cannot be proved duplicated.
+cannot be proved duplicated. The same directory (including a symlink alias)
+or one tree inside the other is also INCONCLUSIVE: it proves nothing.
 """
 
 # pyright: reportAny=false
@@ -70,10 +71,26 @@ def gib(n: int) -> str:
     return f"{n / 2**30:.2f} GiB"
 
 
+def overlap(cand: str, keep: str) -> str | None:
+    """Return why the two paths are not independent trees, else None."""
+    rc, rk = Path(cand).resolve(), Path(keep).resolve()
+    if rc == rk or (rc.exists() and rk.exists() and rc.samefile(rk)):
+        return "candidate and keeper are the same directory"
+    if rc.is_relative_to(rk):
+        return "candidate is inside the keeper"
+    if rk.is_relative_to(rc):
+        return "keeper is inside the candidate"
+    return None
+
+
 def main(argv: list[str]) -> int:
     """Run the proof and return the exit status."""
     if len(argv) != ARGC:
         print(__doc__, file=sys.stderr)
+        return EXIT_INCONCLUSIVE
+    reason = overlap(argv[1], argv[2])
+    if reason:
+        print(f"INCONCLUSIVE - {reason}; the proof compares two independent trees")
         return EXIT_INCONCLUSIVE
     cand, cand_errors, cand_empty = scan(argv[1])
     keep, keep_errors, _ = scan(argv[2])

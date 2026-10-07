@@ -483,6 +483,7 @@ Gate-failed findings
 - brittle.line-numbers in docs/guide.md:12, lint: line too long
 
 Patch series: <run-dir>
+Next: git push
 ```
 
 `Patch series:` carries the path Step 8 printed, because the user

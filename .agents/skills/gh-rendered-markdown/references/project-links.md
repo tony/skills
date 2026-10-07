@@ -27,19 +27,24 @@ $ curl -s 'https://registry.npmjs.org/PKG/latest' | jq '{version, homepage, repo
 PyPI, where the link set is maintainer-labeled free text:
 
 ```console
-$ curl -s 'https://pypi.org/pypi/PROJECT/json' | jq '.info | {package_url, home_page, project_urls}'
+$ curl -s 'https://pypi.org/pypi/PROJECT/json' \
+    | jq '.info | {package_url, home_page, project_urls}'
 ```
 
 crates.io, which requires an identifying user agent that includes a contact. Ask the user for a project URL or email to put in place of `CONTACT`; without `ask-user-choice`, or without an answer, skip this lookup and leave the crates.io slot out:
 
 ```console
-$ curl -s -A 'issue-authoring (CONTACT)' 'https://crates.io/api/v1/crates/CRATE' | jq '.crate | {homepage, documentation, repository, default_version}'
+$ curl -s \
+    -A 'issue-authoring (CONTACT)' \
+    'https://crates.io/api/v1/crates/CRATE' \
+    | jq '.crate | {homepage, documentation, repository, default_version}'
 ```
 
 RubyGems exposes `changelog_uri`:
 
 ```console
-$ curl -s 'https://rubygems.org/api/v1/gems/GEM.json' | jq '{homepage_uri, source_code_uri, documentation_uri, changelog_uri}'
+$ curl -s 'https://rubygems.org/api/v1/gems/GEM.json' \
+    | jq '{homepage_uri, source_code_uri, documentation_uri, changelog_uri}'
 ```
 
 Go, resolving version, tag ref, and commit in one call:

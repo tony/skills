@@ -16,8 +16,8 @@ current version, with one commit per repository explaining the upgrade.
 Read `../../references/action-pinning.md` first, then
 `../../references/dependabot-closeout.md`. Land the commit through
 `../../references/throwaway-worktree.md` when the checkout is on a
-feature branch, has uncommitted work (modified or untracked files both
-count), or its local `<default>` differs from `<remote>/<default>`, ahead
+feature branch or a detached HEAD, has uncommitted work (modified or
+untracked files both count), or its local `<default>` differs from `<remote>/<default>`, ahead
 or behind.
 
 User arguments: $ARGUMENTS
@@ -37,7 +37,9 @@ slug with no local clone, and has the fork rule.
 ### 2. Inventory the current pins
 
 Read every `uses:` line naming this action from each repository's
-default branch, per the pinning reference. Note the pin shape per
+default branch, per the pinning reference (`../../scripts/pins.py`
+inventories a clone or slug; its path resolves from this skill's directory,
+so print the absolute path once and write it literally in each command). Note the pin shape per
 repository: major float, exact patch, or commit SHA with a version
 comment.
 
@@ -45,7 +47,7 @@ comment.
 
 Resolve the latest version, or take the one the user named. Choose the
 target that preserves each repository's shape, then confirm the tag
-exists and gate on exit status. For a SHA pin, resolve the commit SHA as
+exists and gate on exit status (`pins.py tag`). For a SHA pin, resolve the commit SHA as
 the pinning reference shows. Stop if the tag does not resolve, and
 report the shapes that are available.
 
@@ -74,7 +76,8 @@ explicitly authorizes the action named; that never covers closing PRs.
 
 ### 6. Commit
 
-One commit per repository. Subject and body follow the project's own
+One commit per repository, with every git command run as `git -C <path>`
+on that repository (its worktree path when it uses one). Subject and body follow the project's own
 commit conventions from its AGENTS.md or CLAUDE.md; write them per
 `../../references/prose-rules.md`. The body says what changed upstream,
 what it means for that repository, and links every major release in the
@@ -152,5 +155,7 @@ End with an `AskUserQuestion` panel of next steps (for example: update
 another action, run `/github-actions:update-actions --audit-only`, stop
 here); skip it only in a plan-only or blocked run. On hosts without the
 tool, end with the next steps as text and take none. Never name temp or
-local paths unless the user must act on them. Report no command exit
-codes and state no sandbox facts.
+local paths unless the user must act on them. Name the finding, not the
+call that produced it: report no command exit codes, unresolved refs, stub,
+mock, or tool behavior, and no sandbox facts. Claim only what the release
+notes state; do not write "nothing applies here" beyond them.

@@ -69,7 +69,9 @@ by sourcing figures only from the public case study.
 
 1. Run the scanner (by its absolute path) over the draft, passing each name on the
    `Names:` line of the run's `README.md` as `--deny`, one flag per
-   name:
+   name. When the README has no `Names:` line, stop and ask the user
+   for the names to deny (`Names: none` is a valid answer); never scan
+   with an empty deny list:
 
    ```console
    $ ../scripts/business.py scan \

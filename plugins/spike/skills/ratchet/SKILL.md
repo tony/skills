@@ -31,8 +31,8 @@ named approaches competing once is `/spike:bakeoff`.
 EVERY ROUND PRODUCES ZERO COMMITS
 ```
 
-Inherited whole from `/spike:probe`, including its rationalization
-table, regardless of round count. Rounds end in stashes; commits happen
+Inherited whole from `/spike:probe`, rationalization table included,
+regardless of round count. Rounds end in stashes; commits happen
 only in `--replay`, after the final plan is approved.
 
 **Red flag** unique to this skill: "round 3 is basically final, commit
@@ -51,7 +51,13 @@ the project, not here); write that path literally:
 $ <scripts>/spike.sh ledger-dir
 ```
 
-The ledger lives at `<that path>/<goal-slug>.md`. A ledger in the
+The ledger lives at `<that path>/<goal-slug>.md`. When the git directory
+refuses the write, the script prints a fresh `spike-ledger.XXXXXX`
+directory under `${TMPDIR:-/tmp}` instead, and a write into the printed
+directory that still fails goes to `mktemp -d "${TMPDIR:-/tmp}/spike-ledger.XXXXXX"`.
+The report's `## Stashes` section ends with a ledger bullet: `spike/<goal-slug>.md`
+in the git directory, or the full temp path when the fallback was used,
+since the user must act on that path to keep the ledger. A ledger in the
 working tree gets swallowed by the round's stash or erased by
 `git clean -xdf`; the common dir resolves to one path from every
 bakeoff worktree.
@@ -206,10 +212,15 @@ Write the report per `../../references/prose-rules.md`.
 The first line of the reply is exactly the hero line: no lead-in sentence,
 no first-person opener. Report results, not process: never narrate a
 departure from these steps or name the brief or the skill; do the step or
-halt. State what happened, not what a contender or step did not do.
-Write in the passive or the plain result, never "I" or "the run"; when a
-non-interactive default applies, name the default taken without describing
-how the run was set up. Use no transient wording ("for now", "currently").
+halt. State what happened, never what a contender or step did not do: no
+"not hidden", "no user work was saved", "nothing was X" restatements.
+Write in the passive or the plain result, never "I" or "the run". Do not
+describe how the run was set up (answers unavailable, permissions,
+sandbox); a non-interactive default is one line: "Default: keep the
+stashes." Do not print HEAD or the main checkout's SHA; SHAs belong to
+stashes. Use no transient wording ("for now", "currently"). Write only the
+sections below: a stray finding goes in the findings or open section, and
+process (an amended commit, a retry) is left out.
 Warnings about the checkout (mode changes, files left in place, a tree
 that needs attention) go inside `## Stashes`, never before the first section.
 
@@ -240,8 +251,8 @@ that needs attention) go inside `## Stashes`, never before the first section.
 7. End with an `AskUserQuestion` panel: rewrite from the ledger / land
    the final stash / run another round / stop and keep the ledger,
    unless already in plan mode or `--replay` was given. In a
-   non-interactive run, record the question and default to stopping
-   with the ledger kept.
+   non-interactive run, state the default taken ("Default: stop, ledger
+   kept.") instead of asking.
 
 A halted run replies in this shape:
 

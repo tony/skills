@@ -90,15 +90,16 @@ Read from `references/`:
 ## Script
 
 `scripts/business.py` (Python 3 standard library) does the
-deterministic work: `stats` (median, quartiles, seeded BCa interval, or the range below n=5),
+deterministic work: `stats` (median, quartiles, seeded BCa interval, or
+the range below n=5),
 `scan` (tier-3 identifier and money-term scan, with `--allow` and
 `--allow-url` for false positives and citation links), `gate` (the
 completeness gate, recomputing `check:` figures from `raw/`),
 `assumptions` (register check), `project` (org-wide projection,
 scenarios, and sensitivity from register ids), `breakeven` (net
-per-instance and per-period saving and break-even from register ids), and `collect-prs`
-(per-PR cycle-time and first-review CSV from `gh api graphql` pages), and
-`runs` (newest-first run listing).
+per-instance and per-period saving and break-even from register ids),
+`collect-prs` (per-PR cycle-time and first-review CSV from
+`gh api graphql` pages), and `runs` (newest-first run listing).
 
 ## Prerequisites
 

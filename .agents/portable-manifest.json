@@ -171,7 +171,7 @@
         "references/prose-rules.md": "plugins/changelog/references/prose-rules.md",
         "references/rewrite.py": "plugins/changelog/scripts/rewrite.py"
       },
-      "bytes": 35979
+      "bytes": 35981
     },
     {
       "name": "commit",
@@ -256,7 +256,7 @@
         "references/rendered-markdown.md": "plugins/gh/references/rendered-markdown.md",
         "references/source-links.md": "plugins/gh/references/source-links.md"
       },
-      "bytes": 38275
+      "bytes": 39167
     },
     {
       "name": "gh-rendered-markdown",
@@ -270,7 +270,7 @@
         "references/rendered-markdown.md": "plugins/gh/references/rendered-markdown.md",
         "references/source-links.md": "plugins/gh/references/source-links.md"
       },
-      "bytes": 26204
+      "bytes": 26278
     },
     {
       "name": "git-branch-redo-from-scratch",
@@ -286,7 +286,7 @@
         "references/rebuild-contract.md": "plugins/git-branch/references/rebuild-contract.md",
         "references/split-mechanics.md": "plugins/git-branch/references/split-mechanics.md"
       },
-      "bytes": 53289
+      "bytes": 53291
     },
     {
       "name": "git-branch-soft-reset-and-recommit",
@@ -301,7 +301,7 @@
         "references/rebase-toolkit.md": "plugins/git-branch/references/rebase-toolkit.md",
         "references/split-mechanics.md": "plugins/git-branch/references/split-mechanics.md"
       },
-      "bytes": 46697
+      "bytes": 46699
     },
     {
       "name": "github-actions-bumping-github-actions",
@@ -315,7 +315,7 @@
         "references/prose-rules.md": "plugins/github-actions/references/prose-rules.md",
         "references/throwaway-worktree.md": "plugins/github-actions/references/throwaway-worktree.md"
       },
-      "bytes": 29221
+      "bytes": 29223
     },
     {
       "name": "github-actions-update-action",
@@ -329,7 +329,7 @@
         "references/prose-rules.md": "plugins/github-actions/references/prose-rules.md",
         "references/throwaway-worktree.md": "plugins/github-actions/references/throwaway-worktree.md"
       },
-      "bytes": 27712
+      "bytes": 27714
     },
     {
       "name": "github-actions-update-actions",
@@ -353,7 +353,7 @@
         "references/lean-rubric.md": "plugins/lean/references/lean-rubric.md",
         "references/prose-rules.md": "plugins/lean/references/prose-rules.md"
       },
-      "bytes": 10070
+      "bytes": 10583
     },
     {
       "name": "lean-trim-comments",
@@ -365,7 +365,7 @@
         "references/prose-rules.md": "plugins/lean/references/prose-rules.md",
         "references/scope.py": "plugins/lean/scripts/scope.py"
       },
-      "bytes": 24613
+      "bytes": 24168
     },
     {
       "name": "lean-writing",
@@ -413,7 +413,7 @@
         "references/prose-rules.md": "plugins/model-cli/references/prose-rules.md",
         "references/run_tier.py": "plugins/model-cli/scripts/run_tier.py"
       },
-      "bytes": 22708
+      "bytes": 22788
     },
     {
       "name": "model-cli-codex",
@@ -425,7 +425,7 @@
         "references/prose-rules.md": "plugins/model-cli/references/prose-rules.md",
         "references/run_tier.py": "plugins/model-cli/scripts/run_tier.py"
       },
-      "bytes": 22659
+      "bytes": 22739
     },
     {
       "name": "model-cli-cursor",
@@ -437,7 +437,7 @@
         "references/prose-rules.md": "plugins/model-cli/references/prose-rules.md",
         "references/run_tier.py": "plugins/model-cli/scripts/run_tier.py"
       },
-      "bytes": 21963
+      "bytes": 22043
     },
     {
       "name": "model-cli-gemini",
@@ -466,7 +466,7 @@
         "references/repo-scope.md": "plugins/package-updater/references/repo-scope.md",
         "references/repo_facts.py": "plugins/package-updater/scripts/repo_facts.py"
       },
-      "bytes": 27918
+      "bytes": 27921
     },
     {
       "name": "package-updater-update-package",
@@ -484,7 +484,7 @@
         "references/repo_facts.py": "plugins/package-updater/scripts/repo_facts.py",
         "references/upstream-links.md": "plugins/package-updater/references/upstream-links.md"
       },
-      "bytes": 55479
+      "bytes": 55482
     },
     {
       "name": "package-updater-update-toolchain",
@@ -500,7 +500,7 @@
         "references/repo_facts.py": "plugins/package-updater/scripts/repo_facts.py",
         "references/upstream-links.md": "plugins/package-updater/references/upstream-links.md"
       },
-      "bytes": 50110
+      "bytes": 50236
     },
     {
       "name": "package-updater-updating-packages",
@@ -519,7 +519,7 @@
         "references/throwaway-worktree.md": "plugins/package-updater/references/throwaway-worktree.md",
         "references/upstream-links.md": "plugins/package-updater/references/upstream-links.md"
       },
-      "bytes": 66320
+      "bytes": 66461
     },
     {
       "name": "pr",
@@ -635,7 +635,7 @@
         "references/prose-rules.md": "plugins/pytest-optimizer/references/prose-rules.md",
         "references/safety-gates.md": "plugins/pytest-optimizer/references/safety-gates.md"
       },
-      "bytes": 73283
+      "bytes": 73285
     },
     {
       "name": "pytest-optimizer-02-plan",
@@ -663,7 +663,7 @@
         "references/output-contract.md": "plugins/pytest-optimizer/references/output-contract.md",
         "references/prose-rules.md": "plugins/pytest-optimizer/references/prose-rules.md"
       },
-      "bytes": 53215
+      "bytes": 53217
     },
     {
       "name": "rebase",
@@ -799,7 +799,7 @@
         "references/user_stash.py": "plugins/respond/scripts/user_stash.py",
         "references/verification-gates.md": "plugins/respond/references/verification-gates.md"
       },
-      "bytes": 45073
+      "bytes": 45075
     },
     {
       "name": "respond-check",
@@ -826,7 +826,7 @@
         "references/verification-gates.md": "plugins/respond/references/verification-gates.md",
         "references/wait_pr.py": "plugins/respond/scripts/wait_pr.py"
       },
-      "bytes": 34779
+      "bytes": 34781
     },
     {
       "name": "ruff-bump",
@@ -842,7 +842,7 @@
         "references/release-triage.md": "plugins/ruff/references/release-triage.md",
         "references/throwaway-worktree.md": "plugins/ruff/references/throwaway-worktree.md"
       },
-      "bytes": 47055
+      "bytes": 47057
     },
     {
       "name": "scholar-annotate",
@@ -892,7 +892,7 @@
         "references/stage-gates.md": "plugins/scholar/references/stage-gates.md",
         "references/term_metrics.py": "plugins/scholar/scripts/term_metrics.py"
       },
-      "bytes": 38689
+      "bytes": 39015
     },
     {
       "name": "scholar-distill",
@@ -906,7 +906,7 @@
         "references/stage-gates.md": "plugins/scholar/references/stage-gates.md",
         "references/term_metrics.py": "plugins/scholar/scripts/term_metrics.py"
       },
-      "bytes": 33823
+      "bytes": 34149
     },
     {
       "name": "scholar-extract",
@@ -920,7 +920,7 @@
         "references/stage-gates.md": "plugins/scholar/references/stage-gates.md",
         "references/term_metrics.py": "plugins/scholar/scripts/term_metrics.py"
       },
-      "bytes": 37808
+      "bytes": 38250
     },
     {
       "name": "scholar-gather",
@@ -934,7 +934,7 @@
         "references/stage-gates.md": "plugins/scholar/references/stage-gates.md",
         "references/term_metrics.py": "plugins/scholar/scripts/term_metrics.py"
       },
-      "bytes": 37542
+      "bytes": 37868
     },
     {
       "name": "scholar-ontology",
@@ -949,7 +949,7 @@
         "references/stage-gates.md": "plugins/scholar/references/stage-gates.md",
         "references/term_metrics.py": "plugins/scholar/scripts/term_metrics.py"
       },
-      "bytes": 37635
+      "bytes": 37961
     },
     {
       "name": "scholar-render",
@@ -962,7 +962,7 @@
         "references/stage-gates.md": "plugins/scholar/references/stage-gates.md",
         "references/term_metrics.py": "plugins/scholar/scripts/term_metrics.py"
       },
-      "bytes": 31755
+      "bytes": 32081
     },
     {
       "name": "scholar-revise",
@@ -974,7 +974,7 @@
         "references/prose-rules.md": "plugins/scholar/references/prose-rules.md",
         "references/term_metrics.py": "plugins/scholar/scripts/term_metrics.py"
       },
-      "bytes": 29246
+      "bytes": 29572
     },
     {
       "name": "scholar-verify",
@@ -1109,7 +1109,7 @@
         "references/slop_detect.py": "plugins/slop/scripts/slop_detect.py",
         "references/verification-gates.md": "plugins/slop/references/verification-gates.md"
       },
-      "bytes": 88177
+      "bytes": 88179
     },
     {
       "name": "slop-scan",
@@ -1188,7 +1188,7 @@
         "references/prose-rules.md": "plugins/tdd/references/prose-rules.md",
         "references/xfail-mechanisms.md": "plugins/tdd/references/xfail-mechanisms.md"
       },
-      "bytes": 22978
+      "bytes": 22980
     },
     {
       "name": "tdd-xfail",
@@ -1201,7 +1201,7 @@
         "references/prose-rules.md": "plugins/tdd/references/prose-rules.md",
         "references/xfail-mechanisms.md": "plugins/tdd/references/xfail-mechanisms.md"
       },
-      "bytes": 28875
+      "bytes": 28879
     },
     {
       "name": "terraform-bump-provider",

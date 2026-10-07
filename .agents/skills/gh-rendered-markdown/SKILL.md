@@ -44,8 +44,8 @@ message, also read `references/pr-and-files.md`.
 5. Preview through GitHub's renderer, following "Preview before
    publishing" in `rendered-markdown.md` for the scratch file and the
    command. Read the output before publishing. When `gh` is
-   unauthenticated, offline, or you cannot run commands, say the preview
-   did not run and do not claim the body was rendered.
+   unauthenticated or offline, say the preview did not run and do not
+   claim the body was rendered.
 
 ## Reply
 
@@ -83,13 +83,12 @@ should send.
 
 ## Common mistakes
 
-**Hard-wrapping an issue body at 72 columns.** Correct for a commit
-message, wrong here: every newline becomes a line break and the
-paragraph renders as ragged stubs.
-
-**Skipping the preview because the draft looks fine.** The source
-view does not show a `<details>` block that lost its blank line after
-`</summary>`.
+- Hard-wrapping an issue body at 72 columns is correct for a commit
+  message, wrong here: every newline becomes a line break and the
+  paragraph renders as ragged stubs.
+- Skipping the preview because the draft looks fine misses a
+  `<details>` block that lost its blank line after `</summary>`; the
+  source view does not show it.
 
 
 ## Portability notes

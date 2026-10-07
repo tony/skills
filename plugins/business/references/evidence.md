@@ -12,7 +12,7 @@ The BENCHMARKED sources for triangulating internal claims. An
 internal savings claim must land near the study that measures the
 same outcome, or explain its divergence.
 
-Last verified: never. Step 4 of the re-verify check sets this date.
+Last verified: see the run README; this file is never edited.
 
 The studies measure different outcomes, so there is no pooled range.
 Place an internal figure by outcome:
@@ -35,9 +35,8 @@ A run that cites this table repeats the check first:
    from the report if the link is gone or the figure is absent.
 3. Cite the date of this check as the retrieval date. Without a
    check, write "not re-verified" in place of a retrieval date.
-4. When every source the run cites passed, set the `Last verified:`
-   date above to today's date. Where this file is read-only, state
-   the date in the run README instead.
+4. When every source the run cites passed, state today's date as
+   "Last verified" in the run README.
 
 ## Field studies
 

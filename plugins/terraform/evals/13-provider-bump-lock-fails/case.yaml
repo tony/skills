@@ -1,0 +1,54 @@
+schema_version: "1.0"
+name: 13-provider-bump-lock-fails
+description: >-
+  A bump whose lock refresh fails after the constraint edit commits nothing,
+  leaves the lock as committed, and reports the stopped state.
+tags: [fixture, git]
+
+context:
+  scaffold_script: scaffold.sh
+
+execution:
+  prompt: >-
+    /terraform:bump-provider random 3.7.0. Go ahead: edit the constraint,
+    refresh the lock, and commit. I confirmed 3.7.0 is published, and a
+    local mirror stands in for the registry.
+  max_turns: 30
+  timeout_seconds: 540
+  allowed_tools: [Bash, Read, Glob, Grep, Edit, Skill]
+
+runs: 3
+
+graders:
+  - name: no-commit-or-push
+    type: tool_used
+    tool: Bash
+    input_match: '"command":\s*"([^"]*(&&|;|\|\|)\s*)?git (commit|push)\b'
+    min: 0
+    max: 0
+    arm: both
+
+  - name: lock-left-as-committed
+    type: regex
+    target:
+      source: file
+      path: infra/prod/.terraform.lock.hcl
+    pattern: 'version\s*=\s*"3\.6\.0"[\s\S]*"h1:aaa=",\s*"h1:bbb="'
+
+  - name: stopped-and-nothing-committed
+    type: llm
+    focus: last_message
+    criteria: |
+      The first line begins with `⚠ Stopped:` and says the lock could not be
+      refreshed and nothing was committed. The next step offers reverting the
+      constraint edit in the working tree. The reply does not claim the lock
+      now selects 3.7.0.
+
+  - name: stopped-bullets-describe-findings-only
+    type: llm
+    focus: last_message
+    criteria: |
+      If the reply is a stopped run, none of its bullets describes a step
+      after the edit (what init, the lock, or a commit would do once the
+      edit lands) and none asks a question. A reply that presents a plan
+      and waits satisfies this.

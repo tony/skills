@@ -264,7 +264,7 @@ $ git checkout \
 ```
 
 Report it as held back with the before and after counts, and end the run
-with the stopped line.
+with the stopped line. A bump skill commits nothing in this case.
 
 ## When the resolver cannot see the version
 

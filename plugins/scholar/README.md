@@ -40,19 +40,73 @@ Claude Code uses a leading slash (`/scholar:…`). Codex omits it (`scholar:…`
 
 ## Skills
 
-| Claude Code | Codex | Description |
-|---|---|---|
-| `/scholar:ontology [<target>...]` | `scholar:ontology` | Distil an ontology, controlled vocabulary, or glossary of what a codebase, a repository set, or a written corpus calls things |
-| `/scholar:gather <target>...` | `scholar:gather` | Resolve and pin a corpus, inventory it, and record what was read and what was deliberately skipped |
-| `/scholar:extract` | `scholar:extract` | Harvest terms and their definitions into a term table, each with the citation that supports it |
-| `/scholar:distill` | `scholar:distill` | Build the three layers: types, members with discriminators, and the controlled vocabulary |
-| `/scholar:contest` | `scholar:contest` | Adversarially judge the ontology one candidate at a time, recording the kills |
-| `/scholar:render` | `scholar:render` | Write the brief and the evidence documents, then enforce the brief's citation prohibition |
-| `/scholar:annotate <source>` | `scholar:annotate` | Reading notes on prose: quotations with stable locators, as a term source for extract |
-| `/scholar:ask <question>` | `scholar:ask` | Answer from a finished study, citing its evidence, and name the gap when there is one |
-| `/scholar:compare <dir> <dir>` | `scholar:compare` | Set two term tables against each other: shared concepts, clashing terms, and coverage |
-| `/scholar:revise <claim>` | `scholar:revise` | Record a correction: what was believed, what it rested on, and why it failed |
-| `/scholar:verify [<dir>]` | `scholar:verify` | Re-check a study against the corpus it cites: moved refs, vanished files, misquotes, changed numbers |
+Each skill is invoked by name. Codex drops the leading slash (`scholar:ontology`).
+
+Distil an ontology, controlled vocabulary, or glossary of what a codebase, a repository set, or a written corpus calls things:
+
+```console
+$ /scholar:ontology [<target>...]
+```
+
+Resolve and pin a corpus, inventory it, and record what was read and what was deliberately skipped:
+
+```console
+$ /scholar:gather <target>...
+```
+
+Harvest terms and their definitions into a term table, each with the citation that supports it:
+
+```console
+$ /scholar:extract
+```
+
+Build the three layers: types, members with discriminators, and the controlled vocabulary:
+
+```console
+$ /scholar:distill
+```
+
+Adversarially judge the ontology one candidate at a time, recording the kills:
+
+```console
+$ /scholar:contest
+```
+
+Write the brief and the evidence documents, then enforce the brief's citation prohibition:
+
+```console
+$ /scholar:render
+```
+
+Reading notes on prose: quotations with stable locators, as a term source for extract:
+
+```console
+$ /scholar:annotate <source>
+```
+
+Answer from a finished study, citing its evidence, and name the gap when there is one:
+
+```console
+$ /scholar:ask <question>
+```
+
+Set two term tables against each other: shared concepts, clashing terms, and coverage:
+
+```console
+$ /scholar:compare <dir> <dir>
+```
+
+Record a correction: what was believed, what it rested on, and why it failed:
+
+```console
+$ /scholar:revise <claim>
+```
+
+Re-check a study against the corpus it cites: moved refs, vanished files, misquotes, changed numbers:
+
+```console
+$ /scholar:verify [<dir>]
+```
 
 `ontology` is the only skill a model routes to on its own. The rest are
 invoked by name, so the pipeline can be resumed at any stage.

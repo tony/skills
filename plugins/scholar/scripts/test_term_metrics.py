@@ -93,3 +93,14 @@ def test_main_prints_cycles_section(tmp_path: Path, capsys: pytest.CaptureFixtur
     (tmp_path / "terms.jsonl").write_text(row + "\n", encoding="utf-8")
     assert term_metrics.main([str(tmp_path)]) == 0
     assert "== hierarchy cycles ==\n  a -> a" in capsys.readouterr().out
+
+
+@pytest.mark.parametrize("source", ['"source": "",', ""])
+def test_cite_without_source_fails_the_term_gate(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str], source: str
+) -> None:
+    """``verify`` marks a cite with no source Uncheckable, so the gate rejects it."""
+    row = '{"term": "a", "definition": "x", "cites": [{' + source + ' "quote": "q"}]}'
+    (tmp_path / "terms.jsonl").write_text(row + "\n", encoding="utf-8")
+    assert term_metrics.main([str(tmp_path), "--check-terms"]) == 1
+    assert capsys.readouterr().out.splitlines() == ["a: citation without a source"]

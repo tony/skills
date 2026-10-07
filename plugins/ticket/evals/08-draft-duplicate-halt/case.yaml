@@ -28,7 +28,7 @@ graders:
   - name: never-writes
     type: tool_used
     tool: Bash
-    input_match: 'glab issue (create|update|note)'
+    input_match: 'glab issue (create|update|note)|glab api.*(-X|--method) (POST|PUT|PATCH)'
     min: 0
     max: 0
     arm: both

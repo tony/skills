@@ -27,6 +27,13 @@ graders:
       invocations and names demo:idle as never invoked. It states that the
       skill-tool channel was not counted.
 
+  - name: saves-no-ledger
+    type: tool_used
+    tool: Bash
+    input_match: 'ledger-save'
+    min: 0
+    max: 0
+
   - name: no-bold-lead-ins
     type: regex
     target: last_message

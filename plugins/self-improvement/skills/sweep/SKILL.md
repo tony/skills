@@ -59,8 +59,9 @@ chosen because it flatters a number:
   outvote live ones.
 - The supersession check uses the successor's birth date.
 
-Report a ratio against that skill's invocations in the same window, with
-the window and its anchor beside it. `counts --window` computes both
+Report a ratio against that skill's slash invocations in the same window
+(model-launched runs are not in the denominator), with the window and its
+anchor beside it. `counts --window` computes both
 numbers (Phase 2); never count them by hand. The same evidence argues for opposite
 remedies at 54% and at 20%. A skill with fewer than 10 invocations in the
 window gets counts only: no ratio, and no finding around it.
@@ -285,10 +286,16 @@ Write the report per `../../references/prose-rules.md`.
    and the era boundary with the clusters it was chosen over. State a
    threshold only when it differs from the default. Close with the re-sweep
    date; never print the ledger key. With no ledger, name no date.
-6. End with an `AskUserQuestion` panel: hand the ledger to
-   `/self-improvement:apply`, narrow the sweep and rerun, or stop. In a
-   non-interactive run, print the options as a plain list and stop; do not
-   explain why there is no panel.
+6. End with an `AskUserQuestion` panel: apply the ledger, narrow the sweep
+   and rerun, or stop. `apply` is user-invoked only, so the first option
+   prints `/self-improvement:apply <ledger path>` for the user to run; if
+   the user explicitly asked to apply, read `../apply/SKILL.md` and follow
+   it instead. In a non-interactive run, print the options as a plain list
+   and stop; do not explain why there is no panel.
+
+Report only gates and checks the project defines; do not narrate the
+catalog reader, skipped steps, or sandbox state. A corpus line states only
+what limits the findings. A halt is one sentence, then the action.
 
 Keep each section to its job. `## Usage` holds counts and ages only: the
 reasons for an era or a ranking go in `## Corpus`. Each `## Not proposed`

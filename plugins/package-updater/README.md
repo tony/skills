@@ -60,11 +60,8 @@ Flags:
 
 ## Behavior
 
-Toolchain, package manager, named bumps and the bulk lockfile refresh
-land as separate commits. A configured supply-chain cooldown is read
-before anything is reported as current. Forks and repositories of
-unconfirmed ownership are left out of a sweep. `updating-packages` holds
-the procedure; the references under `references/` hold the rules.
+`updating-packages` holds the procedure; the references under
+`references/` hold the rules.
 
 ## Out of Scope
 

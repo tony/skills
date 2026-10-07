@@ -51,6 +51,11 @@ graders:
     min: 1
     arm: both
 
+  - name: reports-where-the-ledger-was-written
+    type: regex
+    target: last_message
+    pattern: 'spike/[A-Za-z0-9_.-]+\.md|spike-ledger\.[A-Za-z0-9]+'
+
   - name: round-stash-exists-in-reflog
     type: regex
     target:

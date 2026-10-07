@@ -58,10 +58,11 @@ over 100000 bytes is too large for one argument, so the runner passes the CLI a
 one-line instruction to read the prompt file instead.
 
 Run each tier as one Bash command. Shell state does not persist between Bash
-calls, so write the prompt file and run the tier in the same command; the trap
-deletes the file even when the Bash call is killed. Replace `<terminator>` with `MC_` plus 16 fresh random hex
-characters, and pick another if the prompt contains that line. The quoted
-heredoc passes the prompt unexpanded:
+calls, so write the prompt file and run the tier in the same command; the
+trap deletes the file even when the Bash call is killed. Replace
+`<terminator>` with `MC_` plus 16 fresh random hex characters, and pick
+another if the prompt contains that line. The quoted heredoc passes the
+prompt unexpanded:
 
 ```bash
 f=$(mktemp "${TMPDIR:-/tmp}/mc-prompt.XXXXXX")
@@ -92,17 +93,20 @@ The plan-mode command enforces read-only; this text only shapes the output.
 
 Act on the runner's `class`. It reads stderr only, and only on a nonzero exit.
 
-- `timeout` or `crash`: the killed tier may have edited files. Before a
-  normal run's next tier, run `git status --porcelain` and compare it with the
-  baseline. If it differs, or the command fails, stop and report the changes
-  (or that none could be checked). If it matches, `timeout` goes to the next
-  tier and `crash` to the next tier that uses a different binary (none left:
-  stop). Do not retry the same tier; a retry bills another agent run.
-- `rate-limit`: retry once after 10 seconds.
+- `timeout`, `crash`, `credit`, or `rate-limit`: the failed tier may have
+  edited files before it stopped. Before a normal run's next step, run
+  `git status --porcelain` and compare it with the baseline. If it differs,
+  or the command fails, stop and report the changes (or that none could be
+  checked). If it matches:
+  - `timeout`: go to the next tier. Do not retry the same tier; a retry
+    bills another agent run.
+  - `crash`: go to the next tier that uses a different binary (none left:
+    stop).
+  - `credit`: go to the next tier that uses a different binary; tiers on
+    the same binary share its quota. With none left, stop.
+  - `rate-limit`: retry once after 10 seconds.
 - `empty`: the CLI exited 0, so a write-enabled run already acted. Retry once
   only with `mode:plan`; otherwise report it.
-- `credit`: go to the next tier that uses a different binary; tiers on the
-  same binary share its quota. With none left, stop.
 - `auth` or `unsupported-flag` (nothing ran, so no status check): go to the
   next tier that uses a different binary. With none left, stop and name the
   missing flag.
@@ -137,23 +141,26 @@ On success:
 
 When every tier fails or none is installed:
 
-1. Exactly the sentence "No tier returned output." as the first line, never a paraphrase
-   ("Codex did not return an answer because ...").
+1. Exactly the sentence "No tier returned output." as the first line, never
+   a paraphrase ("Codex did not return an answer because ...").
 2. One line per tier tried, with its class and the one stderr line that shows
    it. Leave out host, sandbox, and URL detail, and your own diagnosis. After
-   a `timeout`, `crash`, or `empty` normal run, add one line "Files may have
-   changed; check `git status`" and, when the status check ran, the paths it
-   found or "no changes found". Do not say both "may have" and "did not".
+   a `timeout`, `crash`, or `empty` normal run, add one line from this list
+   and nothing more: "The status check found <paths> changed since the run
+   began", "The status check found no changes", "The status check could not
+   cover <path>; check `git status`", or, when no check ran, "Files may have
+   changed; check `git status`".
 3. What the user must do (install, log in, raise a quota).
 
-Reply in this shape, as plain text outside any code fence, with plain bullets, no bold (never `- **Label:** ...`), and no local paths:
+Reply in this shape, as plain text outside any code fence, with plain
+bullets, no bold (never `- **Label:** ...`), and no local paths:
 
 ```text
 agent (gemini-3.1-pro, tier 2, write-enabled, no sandbox) exited 0.
 
 <the CLI output, unedited>
 
-- Tier 1 failed (crash): agy not logged in.
+- Tier 1 failed (auth): agy not logged in.
 ```
 
 A failed run:
@@ -172,8 +179,8 @@ A failed run after `timeout` (the status check found a changed file):
 ```text
 No tier returned output.
 
-- codex: timeout after 540 seconds. Files may have changed; check `git status`.
-  The status check found src/app.py modified since the run began.
+- codex: timeout after 540 seconds. The status check found src/app.py
+  changed since the run began.
 
 Review the change with `git diff`, then ask again with a longer timeout.
 ```
@@ -183,8 +190,7 @@ A failed run after `empty` (the status check found nothing):
 ```text
 No tier returned output.
 
-- codex: empty, exited 0 with no output. Files may have changed; check
-  `git status`. The status check found no changes.
+- codex: empty, exited 0 with no output. The status check found no changes.
 
 Ask again with a narrower prompt, or add mode:plan for a read-only run.
 ```

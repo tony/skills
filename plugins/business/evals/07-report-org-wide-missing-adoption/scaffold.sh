@@ -20,6 +20,7 @@ cat >"$run/README.md" <<'MD'
 Scope: time to tighten a draft, measured per task.
 Window: 2026-04-01..2026-06-30. Excluded novelty ramp: none, no
 introduction event to anchor one on.
+Names: none
 Instruments: git available, gh unavailable.
 Timezone: UTC. Tools: git 2.43.
 MD

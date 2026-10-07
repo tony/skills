@@ -74,11 +74,9 @@ class, listed in `references/dispatch.md`.
 
 ## Timeout
 
-The default is 540 seconds, so one foreground Bash call (timeout plus 10
-seconds) fits the 600-second tool cap. Override with `timeout:<seconds>` or
-disable with `timeout:none`. `scripts/run_tier.py` enforces it, so no `timeout` or
-`gtimeout` command is needed. A longer timeout runs in the background where
-the host has background runs; otherwise it is clamped to 540 seconds.
+The default is 540 seconds. Override with `timeout:<seconds>` or disable
+with `timeout:none`; `references/dispatch.md` holds the rules for longer
+runs.
 
 ## Prerequisites
 

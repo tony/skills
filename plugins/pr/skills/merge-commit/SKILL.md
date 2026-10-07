@@ -44,7 +44,7 @@ the title.
 
 #### Title line
 
-- Under 70 characters.
+- Under 70 characters, counting the ` (#N)` suffix.
 - Ends with ` (#N)` when the PR number is known (a number in the hint,
   the branch name, or the branch's PR). The suffix belongs to the merge
   commit title only; commits on the branch never carry `#N`. When the

@@ -6,7 +6,7 @@ set -euo pipefail
 d=notes/ontology/sample-lib
 mkdir -p "$d/evidence"
 cat >"$d/terms.jsonl" <<'JSON'
-{"schema":1,"term":"adapter","definition":"wraps a client behind a port","parent":"root","kind":"role","cites":[{"quote":"every client enters through a port","locator":"src/ports.py:12-18"}]}
+{"schema":1,"term":"adapter","definition":"wraps a client behind a port","parent":"root","kind":"role","cites":[{"source":"https://github.com/example/sample-lib","quote":"every client enters through a port","locator":"src/ports.py:12-18"}]}
 JSON
 cat >"$d/sources.jsonl" <<'JSON'
 {"source":"https://github.com/example/sample-lib","ref":"v1.0.0","commit":"0000000000000000000000000000000000000000","scope":"src/","read":true,"why":""}

@@ -87,6 +87,15 @@ def test_default_branch_falls_back_to_ls_remote(tmp_path: pathlib.Path) -> None:
     assert out["behind_remote"] == 1
 
 
+def test_behind_remote_is_null_without_local_default(tmp_path: pathlib.Path) -> None:
+    """An absent local default ref reports null, not a silent zero."""
+    repo = _make(tmp_path)
+    _git(repo, "checkout", "-q", "-b", "side")
+    _git(repo, "branch", "-q", "-D", "main")
+    out = repo_facts.facts(str(repo))
+    assert out["behind_remote"] is None
+
+
 def test_linked_worktree_and_non_repo(tmp_path: pathlib.Path) -> None:
     """A linked worktree is flagged; a plain directory reports an error."""
     repo = _make(tmp_path)

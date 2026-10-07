@@ -37,6 +37,8 @@ case "$*" in
   *releases/latest*uv*|*astral-sh/uv/releases/latest*) echo "0.8.4" ;;
   *casey/just/releases/latest*) echo "1.40.0" ;;
   *releases/tags/*) echo "2025-07-01T00:00:00Z" ;;
+  *astral-sh/uv/releases*) printf 'v0.8.4\t2025-07-01T00:00:00Z\nv0.8.0\t2025-06-01T00:00:00Z\nv0.7.8\t2025-05-01T00:00:00Z\n' ;;
+  *casey/just/releases*) printf '1.40.0\t2025-07-01T00:00:00Z\n1.36.0\t2025-05-01T00:00:00Z\n' ;;
   *) echo "gh stub: $*" >&2; exit 1 ;;
 esac
 SH

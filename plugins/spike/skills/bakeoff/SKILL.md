@@ -38,15 +38,11 @@ A second bakeoff because the first winner hit new resistance means
 A BAKEOFF PRODUCES ZERO COMMITS
 ```
 
-Inherited from `/spike:probe`: no commits in any worktree or on any
-contender branch, not even to snapshot a contender.
-
-| Rationalization | Reality |
-|---|---|
-| "It's a throwaway worktree, so a commit there is harmless" | Worktree branches outlive worktrees and leak into PRs. Stash, then prune. |
-| "Committing each contender makes them easier to diff" | `git stash show -p <sha>` and `git diff` across stash SHAs diff fine. Stash. |
-| "The winner is decided, so commit it straight from its worktree" | The winner exits as a stash and a plan; commits happen in `--replay`, one gated plan item at a time, from the main checkout. |
-| "The losers don't matter, so force-remove their worktrees" | Losers are graft material for the synthesis. Stash every contender with a SHA before any teardown. |
+Inherited from `/spike:probe`, rationalization table included: no
+commits in any worktree or on any contender branch, not even to snapshot
+a contender. A worktree commit is no more harmless than a trunk commit,
+and `git diff` across stash SHAs compares contenders fine. Losers are
+graft material: stash every contender with a SHA before any teardown.
 
 **Red flags (STOP):** `git commit` anywhere; `git worktree remove
 --force` on a tree that has not been stashed; "snapshot commit";
@@ -217,8 +213,11 @@ $ git -C <root>/<n>-<slug> status --ignored --short
    stashed, so `teardown` retries with `--force`:
 
 ```console
-$ <scripts>/spike.sh teardown <root>/<n>-<slug>
+$ <scripts>/spike.sh teardown <root>/<n>-<slug> <stash sha>
 ```
+
+   Pass `none` in place of the SHA for a contender that printed
+   `no changes`. The script refuses a SHA that is not a listed stash.
 
    It prints `removed` only when `git worktree list` no longer shows the
    worktree; otherwise it exits non-zero and the report names that worktree
@@ -279,10 +278,15 @@ Write the report, and any replay commit message, per
 The first line of the reply is exactly the hero line: no lead-in sentence,
 no first-person opener. Report results, not process: never narrate a
 departure from these steps or name the brief or the skill; do the step or
-halt. State what happened, not what a contender or step did not do.
-Write in the passive or the plain result, never "I" or "the run"; when a
-non-interactive default applies, name the default taken without describing
-how the run was set up. Use no transient wording ("for now", "currently").
+halt. State what happened, never what a contender or step did not do: no
+"not hidden", "no user work was saved", "nothing was X" restatements.
+Write in the passive or the plain result, never "I" or "the run". Do not
+describe how the run was set up (answers unavailable, permissions,
+sandbox); a non-interactive default is one line: "Default: keep the
+stashes." Do not print HEAD or the main checkout's SHA; SHAs belong to
+stashes. Use no transient wording ("for now", "currently"). Write only the
+sections below: a stray finding goes in the findings or open section, and
+process (an amended commit, a retry) is left out.
 Report worktrees as removed only when `git worktree list` no longer shows them.
 Warnings about the checkout (mode changes, files left in place, a tree
 that needs attention) go inside `## Stashes`, never before the first section.
@@ -316,8 +320,8 @@ that needs attention) go inside `## Stashes`, never before the first section.
    grafted winner (still zero commits) / keep stashes
    and stop / discard all, unless already in plan mode or `--replay`
    was given. Recommend the probe exit when Phase 6 judged the grafts
-   too substantial to land blind. In a non-interactive run, record the
-   question in the report and default to keeping the stashes.
+   too substantial to land blind. In a non-interactive run, state the
+   default taken ("Default: keep the stashes.") instead of asking.
 
 A halted run replies in this shape:
 

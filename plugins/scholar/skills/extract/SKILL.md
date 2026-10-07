@@ -44,14 +44,16 @@ Take `sources.jsonl` from `gather`. Harvest only from sources marked
 ### 2. Put the corpus on disk, read-only
 
 Read each code source at its recorded `commit`, never at a moving branch. A
-checkout already on disk is read in place once `git rev-parse HEAD` matches
-the row's `commit` and the dirty-tree check prints nothing; a mismatch or a
-dirty tree is reported, not harvested. The check leaves out the study
-directory, so a study written inside the repository it studies does not block
-itself. With the study at `notes/ontology/<subject>/`:
+checkout already on disk is read in place once `git -C <corpus> rev-parse
+HEAD` matches the row's `commit` and the dirty-tree check prints nothing; a
+mismatch or a dirty tree is reported, not harvested. Run both against the
+checkout, never the current directory. When the study lives inside that
+checkout, the check leaves out the study directory so the study does not
+block itself; otherwise drop the pathspec. With the study at
+`notes/ontology/<subject>/`:
 
 ```console
-$ git status \
+$ git -C <corpus> status \
     --porcelain \
     -- . ':(exclude)notes/ontology/<subject>'
 ```
@@ -87,10 +89,13 @@ $ rg \
     -o \
     --no-filename \
     -r '$1' \
-    '\b(?:class|struct|interface|type)\s+(\w+)' \
+    '^\s*(?:export\s+|pub\s+)?(?:class|struct|interface|type)\s+(\w+)' \
     <corpus> \
     | sort | uniq -c | sort -rn
 ```
+
+The match anchors at the line start so a comment's "type of" does not count;
+discard a stray `of` row.
 
 Commit subjects need history, which the shallow checkout lacks; run this only
 on a full local checkout:
@@ -143,7 +148,7 @@ citation's quote by choosing a passage that shows the usage.
   lets `contest` find the synonymy; merging them here destroys the evidence.
 - Distributional claims are `contest`'s to make, and they go in
   `evidence/metrics.md`, not on a term row.
-- Every cite carries a verbatim `quote`; the gate rejects a cite without one.
+- Every cite carries a verbatim `quote` and a `source`; the gate rejects a cite without either.
 
 ## Output
 

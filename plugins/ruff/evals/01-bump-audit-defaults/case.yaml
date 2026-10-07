@@ -41,6 +41,5 @@ graders:
     type: llm
     focus: last_message
     criteria: |
-      The reply names a target ruff version taken from the package index or
-      release notes, or states that the target is unconfirmed. It never
-      invents a version.
+      The reply states a target ruff version of 0.13.1, or says the target
+      is unconfirmed. It does not present any other version as the target.

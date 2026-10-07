@@ -90,7 +90,7 @@ When the bug spans this project and a dependency:
    directory); a lockfile reinstall overwrites it.
 2. In that checkout, run the repository checks first: `git rev-parse
    --show-toplevel` must be the dependency and not home or a parent of it
-   (`cd ~ && pwd -P` gives the physical home path), and `git status
+   (`(cd ~ && pwd -P)` gives the physical home path), and `git status
    --porcelain` must print nothing. Otherwise stop and tell the user.
 3. Fix the dependency there with its own commit conventions, and run its test
    suite.

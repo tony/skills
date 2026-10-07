@@ -53,6 +53,7 @@ testpaths = [
     "plugins/business/scripts",
     "plugins/changelog/scripts",
     "plugins/disk/scripts",
+    "plugins/github-actions/scripts",
     "plugins/git-branch/scripts",
     "plugins/lean/scripts",
     "plugins/merge-pr/scripts",

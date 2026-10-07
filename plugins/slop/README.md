@@ -160,6 +160,28 @@ $ git log -z --format=%H%x1f%B origin/main..HEAD | python3 scripts/slop_detect.p
     --registry references/signatures.yml
 ```
 
+## Measured false positives
+
+Measured 2026-10-07 with `slop_detect.py files` and every line treated
+as added (`--added-base` set to the empty tree), read-only, over the
+tracked files of four public Python repositories: aiosqlite (35 files),
+Fixit (111), apscheduler (100), and RapidFuzz (195), plus Apache Airflow
+(12,763 files).
+
+- Tier A: 1 finding in 13,204 files, a `low-value.todo-noise` hit on a
+  `TODO: revisit` that links an issue. That is a false positive for
+  auto-apply, so Tier A edits stay in the audit-first flow.
+- Tier B: 0 in aiosqlite, 8 in Fixit, 191 in apscheduler, 241 in
+  RapidFuzz, and 19,143 in Airflow. Nearly all of the larger counts are
+  `hardcoded.test-runner` matches on CI configuration and contributor
+  docs, where `pytest` is the intended runner. The rule's guard (manifest
+  present) is applied by the agent, not the script, so the script alone
+  over-reports it.
+- Tier C: 98 findings in Airflow, 0 elsewhere.
+
+Four of five repositories produced no Tier A finding, but one sample hit is
+not a rate; treat Tier A as high precision on added lines, not proven.
+
 ## Safety
 
 - Audit first: without an apply flag, nothing changes.

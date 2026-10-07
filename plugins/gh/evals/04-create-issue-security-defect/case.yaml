@@ -31,7 +31,7 @@ graders:
   - name: checks-the-policy
     type: tool_used
     tool: Bash
-    input_match: 'gh repo view .*securityPolicyUrl'
+    input_match: 'gh repo view[\s\S]*?securityPolicyUrl'
 
   - name: never-creates-an-issue
     type: tool_used

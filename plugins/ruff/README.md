@@ -40,6 +40,8 @@ Raise the ruff floor across the repositories in scope and absorb what the
 release surfaces, one commit per rule. Claude Code invokes it as
 `/ruff:bump [version]`, Codex as `ruff:bump [version]`.
 
+Invoke it by name only; the model never starts it on its own (`disable-model-invocation: true`).
+
 Defaults to the latest stable release in the current repository, committing
 on a branch in a throwaway worktree. Add `--push` or `--pr` to publish.
 
@@ -70,5 +72,6 @@ Arguments:
 
 - `git`; remote push access only for `--push` or `--pr`
 - `curl`, or GitHub CLI (`gh`) for release lookups; `gh`, authenticated, only for fork checks and `--pr`
+- `jq`, for reading the measurement output in `references/default-rule-set.md`
 - `python3` (3.9 or newer) for the bundled measurement script
 - Project's resolver and quality-check commands (defined in `AGENTS.md`/`CLAUDE.md` or CI workflow)

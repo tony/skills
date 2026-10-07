@@ -47,7 +47,9 @@ dependabot PRs those commits superseded.
 
 Codex omits the leading slash (`github-actions:update-action`). Each
 skill's `argument-hint` lists its flags. By default a run covers the
-current repository, commits to the default branch, and does not push.
+current repository, commits to the default branch, and does not push. A
+checkout that is dirty, on another branch, or on a detached HEAD gets its
+commits on a local `wip/` branch instead.
 
 `bumping-github-actions` is the shared procedure; it also triggers on its
 own when you mention out-of-date actions or Dependabot's action PRs.
@@ -58,5 +60,7 @@ Pinning rules, the fork rule, and the Dependabot close-out protocol live in
 ## Prerequisites
 
 - git: reads workflow content from the default branch.
+- python3 (3.9 or newer): runs `scripts/pins.py`, the pin inventory, tag
+  check, and majors list.
 - gh: tag verification, release lookup, CI watching, and closing
   dependabot PRs.

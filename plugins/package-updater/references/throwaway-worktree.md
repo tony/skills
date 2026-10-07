@@ -13,7 +13,7 @@ lists them).
 
 Refuse when `git rev-parse --show-toplevel` prints the home directory or
 a directory containing it: a dotfile repository rooted at home would pull
-the whole home directory into the worktree. Compare against `cd ~ && pwd -P`,
+the whole home directory into the worktree. Compare against `(cd ~ && pwd -P)`,
 not `$HOME`: the toplevel is a physical path, and home may be a symlink.
 
 Fetch the default branch first:

@@ -35,6 +35,7 @@ TOOL_RE = re.compile(r"Launching skill: ([a-z0-9-]+(?::[a-z0-9-]+)?)")
 DATE_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 LEDGER_VERSION = 1
 MIN_RATIO_INVOCATIONS = 10
+VERDICTS = ("absent", "not-binding")
 
 
 class Args(argparse.Namespace):
@@ -392,6 +393,9 @@ def validate_findings(data: object) -> list[dict[str, object]]:
             if not isinstance(value, str) or not value.strip():
                 msg = f"finding {i} needs a non-empty {field}"
                 raise ValueError(msg)
+        if rec["verdict"] not in VERDICTS:
+            msg = f"finding {i} has unknown verdict {rec['verdict']!r}"
+            raise ValueError(msg)
         fid = t.cast("str", rec["id"])
         if fid in seen:
             msg = f"duplicate finding id {fid!r}"
@@ -442,12 +446,28 @@ RENAME_SUBJECT_RE = "renam|replac|supersed|merge|split"
 def _git(*args: str, cwd: str | None = None) -> str:
     done = subprocess.run(  # noqa: S603
         ["git", *args],  # noqa: S607
-        check=True,
+        check=False,
         capture_output=True,
         text=True,
         cwd=cwd,
     )
+    if done.returncode:
+        raise subprocess.CalledProcessError(
+            done.returncode, ["git", *args], done.stdout, done.stderr
+        )
     return done.stdout.strip()
+
+
+def _skill_text(root: str, path: str) -> str | None:
+    """Return a skill file from ``HEAD``, else the working tree, else ``None``."""
+    try:
+        return _git("show", f"HEAD:{path}", cwd=root)
+    except subprocess.CalledProcessError:
+        pass
+    try:
+        return (Path(root) / path).read_text(encoding="utf-8", errors="replace")
+    except OSError:
+        return None
 
 
 def skill_name(path: str) -> str | None:
@@ -635,7 +655,9 @@ def _cmd_catalog(args: Args) -> int:
         born = min(days.splitlines()) if days else ""
         if born:
             births[name] = born
-        text = (Path(root) / path).read_text(encoding="utf-8", errors="replace")
+        text = _skill_text(root, path)
+        if text is None:
+            continue
         skills.append({"name": name, "path": path, "gated": is_gated(text), "born": born})
     renames = _git(
         "log",
@@ -865,7 +887,12 @@ def main(argv: Sequence[str] | None = None) -> int:
     args = build_parser().parse_args(argv, namespace=Args())
     try:
         return COMMANDS[args.cmd](args)
-    except (OSError, ValueError, subprocess.CalledProcessError) as exc:
+    except subprocess.CalledProcessError as exc:
+        stderr = t.cast("str", exc.stderr or "")
+        detail = stderr.strip() or str(exc)
+        print(f"error: {detail}", file=sys.stderr)
+        return 2
+    except (OSError, ValueError) as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 2
 

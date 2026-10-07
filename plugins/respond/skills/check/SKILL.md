@@ -1,7 +1,7 @@
 ---
 name: check
 description: "Use when asked to address review feedback, reply to review comments, or screen bot findings: decide fix, defer, or decline; draft replies."
-allowed-tools: ["Bash", "Read", "Grep", "Glob", "AskUserQuestion"]
+allowed-tools: ["Bash", "Read", "Write", "Grep", "Glob", "AskUserQuestion"]
 argument-hint: "[findings text] [<pr-number|url>] [--base=<ref>] [--include-resolved]"
 user-invocable: true
 ---
@@ -84,8 +84,8 @@ Write the report and replies per `../../references/prose-rules.md`. Use
 exactly the headings below, in this order, and no others. The hero line
 is the literal first line of the reply: no sentence, label, or note
 precedes it, including on a run with no readable code, and nothing
-follows the prescribed parts. Never name local absolute paths or temp
-files.
+follows the prescribed parts. Never name local absolute paths, temp
+files, or a file and line number (name the function), and write no first person.
 
 1. Hero block (1–3 lines): `N to fix, M deferred, K declined`, then
    `, J ask` when any finding is an `ask`, plus the branch name and the
@@ -94,9 +94,7 @@ files.
    it is a bot), the claim quoted, location, the gate results with
    their evidence, and the verdict with its reason, as one inline-prose
    bullet (no labeled sub-bullets). Merged duplicates
-   list all their sources on one entry. When the code is unreadable,
-   every finding is an `ask` entry here, never under
-   `## Deferred & declined`.
+   list all their sources on one entry.
 3. `## To fix` — omitted when nothing is accepted; else the accepted findings in the order they should land,
    each with the minimal fix and whether it wants a forward commit or a
    `fixup!`. Name a `fixup!` target only when the branch's log shows
@@ -108,7 +106,7 @@ files.
 5. `## Ledger key` — branch, `HEAD` (7-character SHA, the only place a
    SHA appears), and the feedback digest, as the rubric's ledger section
    defines them. A second bullet says provenance may be stale when the
-   remote has moved. `/respond:action` checks this key to know the
+   remote has moved; omit it when no remote exists. `/respond:action` checks this key to know the
    screening still describes the current tree.
 6. End with an `AskUserQuestion` panel: run `/respond:action` on the
    accepted findings, run it with `--reply` so the drafted replies get
@@ -150,7 +148,7 @@ $ python3 ../../scripts/ledger_key.py \
     <path-printed-above>
 ```
 
-Delete that file afterwards.
+Delete that file afterwards with `rm -- <path-printed-above>`.
 
 Reply in this shape, as plain text outside any code fence, with plain bullets, no bold (never `- **Label:** ...`), and no local paths:
 
@@ -192,7 +190,8 @@ A stopped run (no findings to screen, no readable feedback) reports one
 result sentence, then what the user needs to provide.
 
 When the code is not readable, the reply is the hero line, `## Ledger`
-with one `ask` entry per finding, and `## Ledger key`. Each entry says
+with one `ask` entry per finding, and `## Ledger key`. Every finding is an
+`ask` entry, never under `## Deferred & declined`, and each says
 what is missing in one line. Add no hypothetical, no "if X then fix"
 branch, no claim about code you have not read, and no extra heading.
 Reply in this shape, with the same plain bullets:
@@ -210,7 +209,6 @@ Reply in this shape, with the same plain bullets:
 ## Ledger key
 
 - Branch main, HEAD none, digest 1f12e2f93174.
-- Provenance may be stale: no code or remote was available.
 
 1. Run this from the pull request's checkout, or paste the code
 2. Stop

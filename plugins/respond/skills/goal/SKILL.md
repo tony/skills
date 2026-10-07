@@ -1,7 +1,7 @@
 ---
 name: goal
 description: "Use when the review-and-CI loop should continue through bounded rounds until no new actionable feedback remains."
-allowed-tools: ["Bash", "Read", "Grep", "Glob", "AskUserQuestion"]
+allowed-tools: ["Bash", "Read", "Edit", "Write", "Grep", "Glob", "AskUserQuestion"]
 argument-hint: "[<pr-number|url>] [--max-rounds=<n>] [--wait=<minutes>] [--ci-wait=<minutes>] [--push] [--reply]"
 user-invocable: true
 disable-model-invocation: true
@@ -19,7 +19,7 @@ waits, so it runs only when invoked by name. Invoking it authorizes the
 rounds and commits described below, and nothing broader; only `--push`
 authorizes pushes.
 
-Write each `../../scripts/` path as an absolute path, resolved from this skill's directory.
+Write each `../../scripts/` path as an absolute path, as `../check/SKILL.md` describes.
 
 ## Exit condition
 
@@ -64,7 +64,7 @@ top of every round.
 3. Resolve the gate buckets and the CI-coverage split per
    `../../references/verification-gates.md`.
 4. Run `git rev-parse --show-toplevel` and halt when it is the home
-   directory (compare with `cd ~ && pwd -P`) or contains it. Run `git fetch origin`; when it fails, go on with
+   directory (compare with `(cd ~ && pwd -P)`) or contains it. Run `git fetch origin`; when it fails, go on with
    provenance marked possibly stale. Confirm a clean working tree and
    note the push state; a dirty tree halts.
 
@@ -173,8 +173,8 @@ behalf.
 Write the report and replies per `../../references/prose-rules.md`.
 The hero line is the literal first line of the reply: nothing precedes
 it and nothing follows the prescribed parts. Never name local absolute
-paths, temp files, credential file names, or internal phase and step
-names.
+paths, temp files, credential file names, file and line numbers,
+the test harness or its stubs, or internal phase and step names.
 
 A halted run reports one result sentence naming the halt condition,
 then what the user needs to do, then only the sections that have

@@ -126,7 +126,9 @@ upstream fact that was not read in this run.
 
 When the notes cannot be read for any release in the span (the page
 fails to load, the changelog is empty or points elsewhere) on a major
-bump, or on a 0.x bump that crosses a minor, stop and ask: the reply names the package and span and
+bump, or on a 0.x bump that crosses a minor, stop and ask. A release
+list that cannot be fetched counts as unread notes for every release in
+the span. The reply names the package and span and
 offers to commit with links and a `why:` saying the notes were unread, or
 to skip it. A patch or in-minor bump with unreadable notes takes the
 link block alone.
@@ -296,12 +298,13 @@ Shape, which the three commands in this plugin share:
    X, I'll ...") or line after the options ("Pick one"), no local
    absolute path, temp directory, or machine fact (installed tool
    versions, sandbox or network settings, an empty history) the user
-   need not act on. A blocked lookup appears only as the ask to allow it.
-   No upstream fact from memory, no speculation about the latest
+   need not act on. A report that is not a halt omits any lookup that failed.
+   No upstream fact from memory (omit a claim that rests on memory), no speculation about the latest
    release, no narration of this skill's own rules (never "I left out the
    trailer because the skill says so"), and no promise of later work.
 5. End with the next-step options. Without a question tool, list them
-   as text and take none.
+   as text under the label `To continue:` and take none. Name the
+   repository by its name, never "cwd repo" or "current repo".
 
 ## Plan stop and halt
 
@@ -346,17 +349,20 @@ after: no second paragraph, no section, no plan.
 - The reason is the only fact: no pins, installed versions, lockfile
   state or other machine fact beyond it, and no clause about a pin left
   as it is.
+- Give a date, never a time of day, and never name the config file or
+  key that sets the window. Never say whether the user's go-ahead
+  overrides the stop.
 - Leave out a lookup that could not run (a release list, a forge call) and
   anything the run left out on purpose, such as an omitted trailer.
 
 Example halt, as plain text outside any code fence:
 
 ```text
-⚠ Stopped: nothing was changed. requests 2.32.4 could not be confirmed as published, and no file pinning it was found.
+⚠ Stopped: nothing was changed. requests 2.32.4 could not be confirmed as published.
 
 To continue:
-- Run the command in the repository that holds the pin, or pass --repo <path>.
-- Allow network access to the package index, or confirm the version from your own source.
+- Confirm the version from your own source.
+- Pass --repo <path> for the repository that holds the pin.
 - Stop here.
 ```
 
