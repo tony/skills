@@ -4,7 +4,7 @@ description: >-
   Use when upgrading Ruff in one repository or a fleet and evaluating newly
   applicable rules before committing each change.
 disable-model-invocation: true
-allowed-tools: ["Bash", "Read", "Grep", "Glob", "Edit", "AskUserQuestion"]
+allowed-tools: ["Bash", "Read", "Grep", "Glob", "Edit", "Write", "AskUserQuestion"]
 metadata:
   argument-hint: "[version] [--root <dir>] [--repo <path|slug>...] [--owner <name>...] [--branch <name>] [--adopt-defaults] [--audit-only] [--push] [--pr] [--no-changelog]"
   source: "plugins/ruff/skills/bump/SKILL.md"
@@ -43,6 +43,8 @@ A formatter change that widens which file types are covered applies everywhere r
 Enter plan mode before the first edit. In Claude Code call `EnterPlanMode`; in Cursor, Codex, or Gemini use `/plan` or `Shift+Tab`. Where plan mode is unavailable, present the plan as text.
 
 Show the predicted work per repository: the rules expected to fire, whether the formatter's scope widens, which pin sites need editing, whether a resolver gate is needed, and the predicted commit count: the floor, a resolver exemption if gated, the config edit if `--adopt-defaults`, one per predicted rule, the formatter if its scope widens, and the changelog if kept. With `--audit-only`, measure the delta (last paragraph of this phase), then stop here and report per the audit-only shape under Output. Wait for the user's approval, then exit plan mode before phase 5.
+
+When `--push` or `--pr` is passed, confirm publishing here in the parent, before any subagent is dispatched: ask once for the whole fleet, naming each repository, its branch, and whether a pull request follows, and let the user drop repositories from it. Without an interactive question tool, a passed flag is the confirmation. Subagents push only what this step confirmed and never ask.
 
 Without an interactive question tool (Codex, headless runs), print the plan and stop before phase 5 unless the request says to proceed (a `--push` or `--pr` flag, or "go ahead"). That approves the local work only; the `$ARGUMENTS` flags authorize just the actions they name.
 
@@ -112,7 +114,7 @@ Without `--push` or `--pr`, stop after the local commits and print, per reposito
 $ git push --set-upstream origin <branch>
 ```
 
-`--push` pushes each branch; `--pr` pushes it and opens a pull request. Plan approval in phase 4 does not cover publishing: before the first push, ask the user to confirm, naming each repository and branch and whether a pull request follows; with more than one repository, confirm once for the whole fleet and let the user drop repositories from it. Without an interactive question tool, a passed flag is the confirmation.
+`--push` pushes each branch; `--pr` pushes it and opens a pull request. Plan approval does not cover publishing; push only the repositories and branches the phase 4 confirmation named, and a repository dropped there gets the push command instead.
 
 The pull request body states which rules moved and links each to its documentation. When phase 6 applied, it carries a pre-merge instruction to drop the exemption and re-resolve, with the time the block lapses. Write it per `references/prose-rules.md`, with no `Co-Authored-By` line, tool trailer, or emoji.
 
@@ -120,7 +122,7 @@ Watch CI to a conclusion, and attribute failures before blaming the bump. If CI 
 
 ## Output
 
-Never write a "no X" or "does not" item (no changelog, no CI, main unchanged, nothing stabilized), never name a repository `cwd`, and give no sandbox advice or account of what a fault stopped.
+Never write a "no X" or "does not" item (no changelog, no CI, no formatter commit, unchanged coverage, nothing stabilized, nothing disagreed, no check defined); list only what exists, and never describe the fixture, the measurement runner, or what you will do later. Never name a repository `cwd`; use its slug or directory basename.
 
 Write the report per `references/prose-rules.md`. The hero is the first line of the reply, with nothing before it: `✓ N repos on ruff X.Y.Z`, `⚠ Audit only: N repos behind` (append `, target version unconfirmed` when the target could not be confirmed), `⚠ Nothing to do: N repos skipped`, or `⚠ M of N repos halted`. Then exactly these sections:
 
@@ -132,9 +134,9 @@ Write the report per `references/prose-rules.md`. The hero is the first line of 
 6. `## Pre-merge`: every repository carrying a temporary resolver exemption, and when its block lapses.
 7. `## Drift`: pin sites found disagreeing with each other before the bump, repositories with no lint configuration, and repositories relying on the default rule set.
 
-Omit a section with nothing to report, except `## Per repo` and `## Verification`. List only what exists: never an empty item (no "no changelog", "no pre-commit config", "nothing disagreed", "no type check defined"), and `## Drift` holds only disagreements, so one agreeing pin site omits it. `## Verification` lists only the checks that ran. An audit-only run reports `## Release`, `## Scope`, and `## Default rule set`, with predicted work and any resolver gate under `## Scope`; with more than one repository, each `## Scope` line ends with its predicted rule count, predicted commit count, and default-set delta so the repositories compare at a glance. Name each repository by its slug or its directory's basename, never `cwd`. Never name a local absolute path or temp file in the report unless the user must act on that file.
+Omit a section with nothing to report, except `## Per repo` and `## Verification`. `## Drift` holds only disagreements, so one agreeing pin site omits it. `## Verification` lists only the checks that ran. An audit-only run reports `## Release`, `## Scope`, and `## Default rule set`, with predicted work and any resolver gate under `## Scope`; with more than one repository, each `## Scope` line ends with its predicted rule count, predicted commit count, and default-set delta so the repositories compare at a glance. Never name a local absolute path or temp file in the report unless the user must act on that file.
 
-Nothing goes between the hero and the first heading. When nothing new is stabilized, write `Bug fixes only.` under `## Release` and stop; never list what the release lacks. Report an environment fault (blocked network, sandbox, git config) only when the user must act on it, in one clause, with no advice about sandbox settings; never narrate which skill rule or host default you followed, the sandbox, or what a fault stopped you from doing; the user needs the failing step and the command to run next. Never say where input came from (a pasted excerpt instead of a checkout). State the vendor's default rule set only from a run of the project's runner (`check --show-settings`), never from memory. Recommend a course only when phase 6 allows it.
+Nothing goes between the hero and the first heading. When nothing new is stabilized and nothing else changed, write `Bug fixes only.` under `## Release` and stop. When the release changes only the default rule set, write that one change and stop. Report an environment fault (blocked network, sandbox, git config) only when the user must act on it, in one clause, with no advice about sandbox settings; never narrate which skill rule or host default you followed, the sandbox, or what a fault stopped you from doing; the user needs the failing step and the command to run next. Never say where input came from (a pasted excerpt instead of a checkout). State the vendor's default rule set only from a run of the project's runner (`check --show-settings`), never from memory. Recommend a course only when phase 6 allows it.
 
 An audit-only run whose target version cannot be confirmed still reports what needs no release: `## Scope` with the current pins and `## Default rule set` with each explicit `select` as an opt-out finding, and the unconfirmed target stated under the hero. End an audit reply on its last section, which names the re-run command when something blocked it. A run that stops before any change (nothing behind, every repository skipped, the target unconfirmed outside an audit, or the user declined) is the hero, one result sentence, then what the user must do to proceed, with no extra findings. State what blocked in one clause (for example, "pypi.org was unreachable"). All example values below are invented. Reply in this shape, as plain text outside any code fence:
 
@@ -204,6 +206,13 @@ Reply in this shape, as plain text outside any code fence, with plain bullets, n
 ## Verification
 
 - Lint, format check, type check, and tests pass.
+```
+
+Name the formatter commit in `## Per repo` only when the formatter rewrote files; otherwise omit it. A release whose only change is to the default rule set reads, under `## Release`:
+
+```text
+- Changelog: https://example.invalid/ruff/blob/9.4.2/CHANGELOG.md, measured with ruff 9.4.2.
+- Default rule set gains ZZ310.
 ```
 
 End with an `ask-user-choice` panel offering next steps, for example: push the branch, drop the resolver exemptions now that the block has lapsed, adopt a newly stabilized rule that is currently unselected, or stop here. Headless: no panel; end after the last section. Skip the panel only in plan mode.

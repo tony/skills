@@ -39,7 +39,8 @@ read-only. The fork rule and the slug-only read are in
 ### 2. Inventory and verify
 
 Run the inventory and verification phases across the whole scope before
-touching anything, so a dangling ref is never written fleet-wide. Also
+touching anything, one repository at a time by its own path or slug (never
+the current directory), so a dangling ref is never written fleet-wide. Also
 list open dependabot pull requests per repository for the close-out,
 with the command in `references/dependabot-closeout.md` (pass each
 repository's `--repo <slug>`). A failed

@@ -76,9 +76,12 @@ uses the window the repository sets for its packages, and a repository
 with none has no gate. For each target, read its publication time with
 the command in the "Release publication time" section of that
 reference. A target younger than the window stops that tool, even when
-the user named the version: print the cooldown halt shown under Output,
-with the date it becomes visible and nothing else. Find the newest
-release outside the window by listing publication dates, newest first:
+the user named the version: print the cooldown halt shown under Output
+with its values swapped: one sentence holding the publication day and the
+date it becomes visible, then the options. Add no paragraph about the pin,
+the commit, the config file or the user's instruction. When the user asks
+for an older release instead, find the newest one outside the window by
+listing publication dates, newest first:
 for a GitHub tool, the command below; for Node.js,
 `jq -r '.[] | [.version, .date] | @tsv'` on the dist index.
 

@@ -48,9 +48,10 @@ A run that cannot proceed (no workflows, no `gh`, an unverifiable tag, a
 PR title carrying shell syntax) opens `⚠ Blocked: <reason>` and adds one
 sentence on what the user must do. Name one reason in the hero and one
 action in the sentence. When several things are wrong, name only the
-first blocker and leave out the rest. No sections, no list, no table, no
+first blocker and leave out the rest. Do not join reasons with "and" or
+offer two actions (such as "pass `--root` or `--repo`"); pick one. No sections, no list, no table, no
 next-steps panel, no recap of what was and was not run, no sandbox
-facts, no command exit codes, and no "next steps you could take" list. A suspicious PR
+facts, no tool or stub behavior, no command exit codes, and no "next steps you could take" list. A suspicious PR
 title is the reason: quote it inside the hero and do not guess who wrote
 it or why.
 

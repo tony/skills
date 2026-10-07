@@ -169,10 +169,11 @@ With no paths, the scope is the lines this branch added or changed.
    - The retry was added after intermittent DNS failures on Windows CI.
 
    Next steps:
-   - Commit the edits
    - Tighten the prose too with `lean-tighten`
-   - Discard with `git checkout -- <file>`
    ````
+
+   After edits to files, next steps also list "Commit the edits" and
+   "Discard with `git checkout -- <file>`".
 
    A `--diff-only` run drops the fenced code and ends with a next step
    to apply the deletion; an edited run replaces `## Verdicts` with the

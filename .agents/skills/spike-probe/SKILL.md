@@ -166,11 +166,14 @@ exists yet, or "none (no remote)".
 $ <scripts>/spike.sh replay-apply <spike sha> [<user-work sha>]
 ```
 
-2. Land plan items in order: stage only that item's changes, run its
-   gates, commit with the planned message, written per
+2. Land plan items in order: stage only that item's changes (never a
+   `SPIKE:` marker; resolve it per the plan's decision or leave the item
+   out), run its gates, commit with the planned message, written per
    `references/prose-rules.md`, with no `Co-Authored-By`, no
    "Generated with" or other tool trailers, and no emoji. A red gate
-   stops the replay; report and hand back. Prefer file-level splits;
+   stops the replay; report and hand back. Never amend a commit or
+   rewrite landed history: a mistake in a landed item gets a follow-up
+   item or a hand-back. Prefer file-level splits;
    to split one file, write the relevant hunks to a patch file and
    `git apply --cached <patch>` (`git add -p` is interactive).
 3. After the final item: run any end-of-run `build` bucket, drop the
@@ -194,10 +197,15 @@ Write the report, and any replay commit message, per
 The first line of the reply is exactly the hero line: no lead-in sentence,
 no first-person opener. Report results, not process: never narrate a
 departure from these steps or name the brief or the skill; do the step or
-halt. State what happened, not what a contender or step did not do.
-Write in the passive or the plain result, never "I" or "the run"; when a
-non-interactive default applies, name the default taken without describing
-how the run was set up. Use no transient wording ("for now", "currently").
+halt. State what happened, never what a contender or step did not do: no
+"not hidden", "no user work was saved", "nothing was X" restatements.
+Write in the passive or the plain result, never "I" or "the run". Do not
+describe how the run was set up (answers unavailable, permissions,
+sandbox); a non-interactive default is one line: "Default: keep the
+stashes." Do not print HEAD or the main checkout's SHA; SHAs belong to
+stashes. Use no transient wording ("for now", "currently"). Write only the
+sections below: a stray finding goes in the findings or open section, and
+process (an amended commit, a retry) is left out.
 Warnings about the checkout (mode changes, files left in place, a tree
 that needs attention) go inside `## Stash`, never before the first section.
 
@@ -231,8 +239,7 @@ that needs attention) go inside `## Stash`, never before the first section.
 6. End with an `ask-user-choice` panel: replay now / keep stash and
    stop / discard spike, unless already running inside plan mode or
    `--replay` was given. In a non-interactive run (CI, subagent),
-   record the panel's question and options in the report instead of
-   asking, and default to keeping the stash.
+   state the default taken ("Default: keep the stash.") instead of asking.
 
 A halted run replies in this shape:
 

@@ -33,7 +33,7 @@ when its name is in the `--catalog` file, which is how skills under
 catalog is missed, so say so in the report.
 
 **Skill-tool invocations** write a `Launching skill: <plugin>:<skill>` line
-into the conversation transcript, not into prompt history. Collect one line
+into the conversation transcript as a `tool_result`, not into prompt history. Collect one line
 per occurrence into a scratch file. Prefer the host's own session-search
 tool. Without one, Claude Code transcripts are searchable with `rg`. First
 create the scratch directory outside the repository, because a sweep that

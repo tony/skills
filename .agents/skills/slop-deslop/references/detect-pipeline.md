@@ -105,10 +105,10 @@ whitelist itself.
 Read `signatures.yml` as UTF-8. The project override is
 `.claude/slop.local.yml` at the repo root, if present. It may declare:
 
-- `replace:` — signature ids; each replaces the built-in entry of the
+- `replace:` lists signature ids; each replaces the built-in entry of the
   same id.
-- `append:` — new signatures with ids absent from the built-in set.
-- `delete:` — built-in ids removed for this run.
+- `append:` lists new signatures with ids absent from the built-in set.
+- `delete:` lists built-in ids removed for this run.
 
 ```yaml
 version: 1
@@ -145,7 +145,7 @@ stashing first.
 `scripts/slop_detect.py` performs this merge and prints the counts in its
 `loaded` object. Print: "Loaded N signatures (B builtin, R replaced, A appended, D
 deleted; tone calibration demoted X)." When every signature is
-disabled, print "No active signatures — nothing to detect." and exit 0.
+disabled, print "No active signatures; nothing to detect." and exit 0.
 
 ---
 
@@ -260,11 +260,12 @@ finding Tier B. Tier C never applies.
 ## Run directory
 
 Both skills materialize a patch series under a run directory. Print its
-path from `git rev-parse --git-path`, which works in a linked worktree
+absolute path from `git rev-parse --path-format=absolute --git-path`
+(git 2.31 or newer), which works in a linked worktree
 where `.git` is a file. The `<name>` is `deslop` or `slop-scan`:
 
 ```console
-$ d=$(git rev-parse --git-path "<name>/$(date -u +%Y%m%d-%H%M%SZ)-$$") && mkdir -p "$d" && echo "$d"
+$ d=$(git rev-parse --path-format=absolute --git-path "<name>/$(date -u +%Y%m%d-%H%M%SZ)-$$") && mkdir -p "$d" && echo "$d"
 ```
 
 A sandboxed host can refuse writes inside `.git/`. When `mkdir` fails,

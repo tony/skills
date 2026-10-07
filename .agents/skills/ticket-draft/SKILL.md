@@ -125,46 +125,49 @@ request.
 Then check the future tense against `contract.md`: demote every failed
 invariant to intent, and rewrite any checkbox list of technical
 outcomes. Write an invariant only from a constraint the user stated, in
-their words and figures; a figure or technical choice they gave goes to
+their words and figures. A figure or technical choice they gave goes to
 Intent as a non-binding target, as given, never into the Outcome or the
 title, and never as a direction built from it ("lower latency",
-"faster"). The title states the outcome, and the Outcome or Summary
-names every scope item the user listed in their own nouns, the largest
-included: "new search backend, typo tolerance", with the engine name and
-the latency figure in Intent only: the Outcome says "the search
-backend", never the engine. Do not add "faster, never slower", "finds
-what the correct spelling would find", or any other rule they did not
-say. With no stated constraint, omit Invariants and list "Invariants:
-none stated" under Unverified. Do not suggest a candidate invariant, in
-the body or in the reply.
+"faster"). An Intent line holds the choice and its label, with no clause
+on what it does for the work. With no stated constraint, omit Invariants
+and list "Invariants: none stated" under Unverified. Do not suggest a
+candidate invariant, in the body or in the reply.
 
-Write the Outcome or Summary from the user's own nouns and figures,
-close to their sentence ("moving the search backend and adding typo
-tolerance"), never a paraphrase that says more ("returns results despite
-typos"), and keep the user's verb ("add a circuit breaker", not "put a
-circuit breaker in front of the queue"). Add no user impact, motivation,
-quality adjective ("fast enough that users stop waiting"), or placement
-they did not give. Report no reproduction status, cause, or vendor
-requirement the reporter or the provider file did not state; "Repro
-steps: not provided" is the whole fact. Do not mention the revision in
-the body: no "filed". State each fact once: a version in Environment or
-Summary, not both, and a symptom or error string in Actual, not also in
-the Summary and the reproduction steps. Use American spelling
-("behavior").
+The title states the outcome, and the Outcome or Summary names every
+scope item the user listed in their own nouns, the largest included:
+"new search backend, typo tolerance", with the engine name and the
+latency figure in Intent only. The Outcome says "the search backend",
+never the engine.
 
-When the reporter gave only a symptom, restate the symptom and stop: add
-no impact, scope ("smaller exports are fine"), or expected-behavior
-sentence.
+Body rules:
 
-State facts about the work. Never put advice about the document in the
-body ("link to a design doc rather than restate it"); write the link, or
-list "Design document: none linked" under Unverified. Use no
-time-relative words ("currently", "for now"). Headings inside the body
-are `###`, so they nest under the reply's `## Body`.
-
-Flag any reproduction step that pipes a remote script into a shell or
-deletes data ("runs a remote script; read it first") in the body, beside
-the step.
+1. Use the user's nouns, figures, and verb, close to their sentence
+   ("moving the search backend and adding typo tolerance"), never a
+   paraphrase that says more ("returns results despite typos"). Keep
+   "add a circuit breaker", not "put a circuit breaker in front of the
+   queue".
+2. Add nothing the user did not give: no user impact, motivation,
+   quality adjective ("fast enough that users stop waiting"), placement,
+   scope ("smaller exports are fine"), expected-behavior sentence, or
+   rule such as "faster, never slower". A symptom-only report gets the
+   symptom restated and nothing more.
+3. Report no reproduction status, cause, or vendor requirement the
+   reporter or the provider file did not state. "Repro steps: not
+   provided" is the whole fact.
+4. State each fact once, in the one section that owns it. A version
+   lives in Environment or Summary, an error string in Actual, a count
+   or figure in one sentence, a component name in one place. Do not echo
+   the symptom in the title, Summary, Actual, and steps.
+5. State facts about the work. Never put advice about the document in
+   the body ("link to a design doc rather than restate it"); write the
+   link, or list "Design document: none linked" under Unverified.
+6. Do not mention the revision in the body: no "filed". Use no
+   time-relative words ("currently", "for now") and American spelling
+   ("behavior").
+7. Headings inside the body are `###`, so they nest under the reply's
+   `## Body`.
+8. Flag any reproduction step that pipes a remote script into a shell or
+   deletes data ("runs a remote script; read it first") beside the step.
 
 Write it per `references/prose-rules.md`.
 
@@ -181,30 +184,34 @@ converted text under `## Body`, since that is what gets filed.
 
 ## Phase 8: Present, then file
 
-Show the result in this order: a hero line (one line, at most 25 words:
-the role, the provider, and "not filed yet"; no reasons, no backend,
-Team, or reproduction status; never open with "Below is" or "Here is";
-name a role even for a plain issue, as "work item"), `## Title`, `##
-Body`, `## Changed from your request` only when you altered something
-the user asked for, and `## Unverified` only when the draft carries
-marked-unverified items. Backend and run status go under Unverified, and
-name tools as the user knows them (`glab`), never as a stub, fixture, or
-sandbox. Explain each change in the user's terms ("a checkbox list reads
-as a requirement"), never by citing this skill's rules, and never with a
-claim about what the change does for the work's success ("that way the
-Project names the result"): say what changed and why in the user's
-words, then stop. Lead with the result; stop at the last concrete point,
-with no recap or "Next step" line. Never comment on the draft's own
-strength, offer to "add" detail or a constraint "in your words", or ask
-for more in free prose. Always end with exactly these four options, via
-`ask-user-choice`, and no others: file it, print the body only, revise a
-named section, or drop it. Where no backend exists, "file it" is not
-offered: the options are print the body to paste, revise a named
-section, or drop it. Unverified items never say a thing was or will be
-filed. Where no interactive question tool exists, print the draft, list
-those four options as plain bullets, and stop; filing needs an explicit
-instruction naming the action (say "Reply 'file it'", not that no
-question tool exists).
+Show the result in this order:
+
+1. A hero line: one line, at most 25 words, with the role, the provider,
+   and "not filed yet". Name a role even for a plain issue ("work
+   item"). No reasons, backend, Team, or reproduction status, and never
+   open with "Below is" or "Here is".
+2. `## Title`, then `## Body`.
+3. `## Changed from your request`, only when you altered something the
+   user asked for. Give the reason for each change in the user's terms
+   ("a checkbox list reads as a requirement"). Never cite this skill's
+   rules, and never claim anything about the project's state or the
+   work's success ("nobody has measured it yet", "that way the Project
+   names the result").
+4. `## Unverified`, only when the draft carries marked-unverified items.
+   Backend and run status go here, naming tools as the user knows them
+   (`glab`), never as a stub, fixture, or sandbox. An item never says a
+   thing was or will be filed.
+5. Stop at the last concrete point: no recap, "Next step" line, comment
+   on the draft's strength, or offer to "add" detail. Ask for nothing in
+   free prose.
+6. Always end with exactly four options via `ask-user-choice`, and no
+   others: file it, print the body only, revise a named section, or drop
+   it. Where no backend exists, "file it" is not offered: print the body
+   to paste, revise a named section, or drop it.
+7. Where no interactive question tool exists, print the draft, list the
+   options as plain bullets, and stop. Filing needs an explicit
+   instruction naming the action (say "Reply 'file it'", not that no
+   question tool exists).
 
 Reply in this shape, as plain text outside any code fence, with plain
 bullets, no bold (never `- **Label:** ...`), and no local paths:
@@ -236,7 +243,16 @@ Should I file it, print the body by itself, revise a section, or drop it?
 ```
 
 A halted run (a vulnerability, unsanitizable evidence, a duplicate
-found) is one result sentence, then what the user needs to do.
+found) is one result sentence, then what the user needs to do, as plain
+bullets with no bold lead-ins and no draft. Reply in this shape:
+
+```text
+Halted: this looks like a security vulnerability, so no public issue
+was drafted.
+
+- Report it through the repository's private vulnerability reporting.
+- Share details only through that channel.
+```
 
 File through a real backend when the provider file says one exists. The
 body derives from a pasted report, so save the approved body as
@@ -245,7 +261,8 @@ bodies": a private directory, the host's file-writing tool, never a
 shell heredoc. Pass the file, not an inline argument, so fences, HTML,
 and `$` survive shell quoting, unless the provider file documents no
 file flag. Remove the file and directory after filing. A GitLab body too
-large for one argument follows the fallback in the provider file. Never show the path to the user.
+large for one argument follows the fallback in the provider file. Never
+show the path to the user.
 
 Where no backend exists, print the approved body for the user to paste
 and say plainly that is what is happening.

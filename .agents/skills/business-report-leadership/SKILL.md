@@ -43,9 +43,10 @@ conservative, base, and upside scenarios) comes from that output,
 copied as printed; never compute, round, or convert one yourself.
 The `conservative` lines are the committed figures. Each `missing:`
 line is an unknown naming that register id, with the data that would
-resolve it. Exit 1 means nothing is computable: render an evidence
-report per `measurement.md`, with the measured medians only and
-break-even stated as unknown.
+resolve it. Printed problem lines are a register error: fix the
+register first. Exit 1 with `missing:` lines only means nothing is
+computable: render an evidence report per `measurement.md`, with the
+measured medians only and break-even stated as unknown.
 
 ### 3. Render the report
 

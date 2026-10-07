@@ -12,8 +12,8 @@ metadata:
 
 # Bump a Terraform provider
 
-Raise a provider's version across every module that declares it, in one
-commit, then refresh the lock file of every affected root module.
+Raise a provider's version across every module that declares it and
+refresh the lock file of every affected root module, all in one commit.
 
 Follow the conventions in the `terraform-bumping-terraform` skill (recorded tree
 state, script paths, commit message rules, non-interactive defaults,
@@ -66,9 +66,9 @@ If the user named a version, confirm it with the exact-entry command in
 `references/pin-sites.md`. Otherwise take the
 latest stable release. Either way, query the registry's metadata for
 that exact version and record its tag, publication date, and source
-repository, never the latest-only endpoint, and build the changelog link from that
-source at the tag in the form the reference gives, fetching it before
-linking. If the registry reports no source, say no changelog
+repository; never use the latest-only endpoint. Build the changelog link
+from that source at the tag, in the form the reference gives, and fetch
+it before linking. If the registry reports no source, say no changelog
 link was confirmed. When the target crosses a major version, add the
 provider's upgrade guide.
 
@@ -86,16 +86,15 @@ alone with the reason, the lock files to be refreshed with how many
 platforms each tracks, and any drift found. With `--audit-only`, stop
 here and write nothing.
 
-### 6. Edit and commit the constraints
+### 6. Edit the constraints
 
-All constraint edits in one commit. With `--no-commit`, leave them in
-the working tree. Write commit messages per
+Edit every constraint in the plan and commit nothing yet: constraints
+and locks land together or not at all. Write commit messages per
 `references/prose-rules.md`.
 
 ### 7. Refresh the locks
 
-Unless `--no-lock`, refresh each affected root module's lock and commit
-those separately.
+Unless `--no-lock`, refresh each affected root module's lock.
 
 - Move only the bumped provider: use the lock reference's "Moving one
   provider" steps, never `init -upgrade`.
@@ -109,11 +108,18 @@ those separately.
   to `--allow` (the lock reference has the command), and restore a
   dropped platform count for the bumped provider with `providers lock`
   naming it.
-- Never commit a lock that lost platforms without the user's explicit
-  yes to that file; headless, restore it from git, leave it out of the
-  commit, and stop.
+- A lock that lost platforms is committed only with the user's explicit
+  yes to that file.
 
-### 8. Verify
+Any lock that fails, or stays short of its platforms without that yes
+(headless: always), stops the run with nothing committed. Restore that
+lock from git, leave every constraint edit in the working tree, and end
+with the stopped line (the umbrella has its mid-run form).
+
+### 8. Commit and verify
+
+With `--no-commit`, leave everything in the working tree. Otherwise make
+one commit holding the constraint edits and the refreshed locks.
 
 Read the selected version back out of each lock file and compare it to
 the target; a different version is an overshoot to report, not a pass.
@@ -143,9 +149,8 @@ order:
    bump, root modules that did not move and why, and modules whose
    constraints already admitted the target. Omit it when none apply.
 
-Name each commit by subject in the section it carries (constraints under
-`## Sites`, locks under `## Locks`), never by SHA, and do not report the
-temporary exact pin used to land a named version.
+Name the commit by subject in `## Sites`, never by SHA, and do not
+report the temporary exact pin used to land a named version.
 
 Reply in this shape, as plain text outside any code fence, with plain bullets, no bold (never `- **Label:** ...`), and no local paths:
 

@@ -15,14 +15,15 @@ $ gh pr view --json baseRefName,url,number,state
 `gh pr view` also returns merged and closed PRs for the branch name. Ignore
 a result whose `state` is not `OPEN`. When there is no open PR, or the
 command fails (no `gh`, offline), find the trunk without touching the
-network:
+network. Pick `<remote>` by the rule in "Name the remote that holds the
+base" below (`origin` when no PR is readable):
 
 ```console
-$ git symbolic-ref --short refs/remotes/origin/HEAD
+$ git symbolic-ref --short refs/remotes/<remote>/HEAD
 ```
 
-It prints `origin/<trunk>`. When it fails, use the first of `origin/main`
-or `origin/master` that `git rev-parse --verify --quiet` accepts; when
+It prints `<remote>/<trunk>`. When it fails, use the first of
+`<remote>/main` or `<remote>/master` that `git rev-parse --verify --quiet` accepts; when
 neither exists, ask the user for the base, or stop and name the missing
 base when you cannot ask.
 

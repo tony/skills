@@ -144,7 +144,7 @@ def _write_record(root: Path, text: str) -> str:
         "w", dir=root, prefix="fp-", suffix=".txt", delete=False, encoding="utf-8"
     ) as out:
         out.write(text)
-    return out.name
+    return str(Path(out.name).resolve())
 
 
 def record(rev_range: str) -> int:

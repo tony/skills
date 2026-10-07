@@ -26,7 +26,7 @@ Run by the `respond-goal` skill, this skill is in loop mode: it skips Phase 2's
 plan mode and Phase 5's panel, never pushes, and never posts replies.
 The loop owns all four.
 
-Write each `../../scripts/` path as an absolute path, resolved from this skill's directory.
+Write each `../../scripts/` path as an absolute path, as the `respond-check` skill describes.
 
 ## The screening gate
 
@@ -143,8 +143,9 @@ the squash was skipped. This rewrites history, so:
      $ python3 references/user_stash.py save
      ```
 
-     At the end, restore it. A clean apply drops the stash; a conflict
-     keeps it, and the report gives its SHA.
+     Every exit after this point restores it first, including a halt
+     under `--on-fail=stop`: a clean apply drops the stash; a conflict
+     keeps it, and the reply gives its SHA and the restore command.
 
      ```console
      $ python3 references/user_stash.py restore <sha>
@@ -262,7 +263,7 @@ $ gh pr comment <n> \
     --body-file <reply-file>
 ```
 
-Delete each reply file after posting. Never post without that confirmation (a
+Delete each reply file after posting, with `rm -- <reply-file>`. Never post without that confirmation (a
 non-interactive run treats `--reply` as it, for the replies shown in the
 report only), and never resolve a thread: the reviewer decides whether
 the answer settled it. Without `--reply`, the replies stay in the
@@ -274,15 +275,19 @@ Write the report per `references/prose-rules.md`. The hero line
 is the literal first line of the reply: nothing precedes it, no label
 such as `What you need to do:` appears anywhere, and nothing follows
 the prescribed parts. Never name local absolute paths, temp files, or
-credential file names. A hypothetical ("it would be a forward commit")
+credential file names, a file and line number (name the function), the
+test harness or its stubs, or a prompt you could not show; list a panel
+option only when it can run now (no push or CI watch without a remote
+or pull request). A hypothetical ("it would be a forward commit")
 is not reported. In a non-interactive run, put the
 plan from Phase 2 in one sentence beginning `Plan:` right after the
-hero line, as the last example shows, and give no reason for skipping
+hero line (never inside `## Verification`), as the last example shows, and give no reason for skipping
 approval.
 
 A run that stops early (dirty tree, failed gate under `--on-fail=stop`,
 no screenable findings) reports one result sentence, then what the user
-needs to do, then only the sections below that have content; it omits
+needs to do (when a stash could not be restored, its SHA and the
+restore command, as the fourth example shows), then only the sections below that have content; it omits
 the empty ones, headings included, as the second example shows. A home
 directory halt is the third example: it names no file it found and
 does not recap what it inspected. On a run that landed commits, keep `## What the fixes added` even when empty. In prose, name
@@ -344,6 +349,17 @@ A stopped run replies in this shape, with the same plain bullets:
 Stopped before any edit: the working tree has uncommitted changes.
 
 Commit or stash them, then run respond-action again.
+
+1. Stop
+```
+
+A halt after the stash restores it and gives the SHA when the restore
+conflicts:
+
+```text
+Stopped after fixing #1: the gate failed on #2 under --on-fail=stop, and your stashed edits conflicted on restore.
+
+Resolve the conflict, then run: git stash apply 9d41c07e5b2a. The stash stays until you drop it.
 
 1. Stop
 ```

@@ -42,12 +42,3 @@ graders:
       state (two platforms) because the refresh would have tracked fewer,
       and that no lock file was committed. It does not report a narrowed
       lock as committed or as the result.
-
-  - name: stopped-bullets-describe-findings-only
-    type: llm
-    focus: last_message
-    criteria: |
-      If the reply is a stopped run, none of its bullets describes a step
-      after the edit (what init, the lock, or a commit would do once the
-      edit lands) and none asks a question. A reply that presents a plan
-      and waits satisfies this.

@@ -23,24 +23,27 @@ about the host.
 This command is read-only. Do not delete, move, or modify anything, and
 do not write compressed files (measuring with `-c` to stdout is fine);
 never halt a virtual machine or WSL guest. When run
-directly rather than through the `disk` skill, end by offering
-the `disk-reclaim` skill.
+directly rather than through the `disk` skill, end a sectioned report by
+offering the `disk-reclaim` skill.
+
+Obey the non-negotiables in the `disk` skill, including when this
+skill is invoked directly.
 
 ## Establish the layer structure
-
-Read `references/virtual-disks.md` first.
 
 Run `df -h` and identify every distinct filesystem with its used and
 available space. Determine which of them is the binding constraint —
 the one closest to full, because that governs which findings matter.
+
+Read `references/virtual-disks.md` only when a filesystem is a
+virtual disk or the path sits on one (a WSL `/mnt` drive, a VM image).
 
 When a filesystem is a virtual disk, find its backing file on the host
 and compare that file's apparent size against the used space reported
 inside the guest. The gap is balloon: space recoverable by compaction
 alone, without deleting anything. Report it as a distinct figure.
 
-Check whether the guest issues TRIM and report it as a guest setting
-only; it does not show that the host file shrinks.
+Check whether the guest issues TRIM and report it as a guest setting.
 
 ## Measure
 
@@ -96,9 +99,7 @@ Name the layer, not the sandbox, and use only the four tiers in the
 catalog (regenerable, redundant, stale-but-unique, protected).
 
 Attach a path to a layer only from a measurement in this run. Do not
-characterize an unmeasured path, and do not claim TRIM or in-guest
-deletion returns space to the host; only a measured backing-file change
-shows that.
+characterize an unmeasured path.
 
 Follow `references/output-contract.md`. Write it per
 `references/prose-rules.md`.

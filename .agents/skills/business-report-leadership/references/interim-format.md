@@ -62,7 +62,8 @@ unavailable, environment versions for the tools used to collect, and
 a `Names:` line listing every organization, repository, team, and
 person name the run touches, comma-separated. Research fills it from
 the repositories and teams it queried and the people the user named; the tier-3 scan
-reads it as the `--deny` list.
+reads it as the `--deny` list. `gate` fails when the line is absent;
+write `Names: none` when the run touches no names.
 
 ### sources.md
 
@@ -169,7 +170,7 @@ $ references/business.py gate <run>
 ```
 
 It prints each problem and exits 1, or prints `ok`. It checks that
-`README.md` states a pinned window; that every `sources.md` entry has a
+`README.md` states a pinned window and has a `Names:` line (`Names: none` is allowed); that every `sources.md` entry has a
 query, timestamp, tool version, and an existing output file; that
 `assumptions.yaml` passes `business.py assumptions` plus numeric
 values, ISO dates, and resolving MEASURED `source_ref`s; that every
@@ -191,10 +192,6 @@ Every report skill follows this frame. The skill names its own tier,
 references, and body.
 
 Value is engineer-hours, cycle time, and capacity, never money.
-A request to convert to money is declined in one sentence in the
-reply. Offer the finance handoff: the hours with their interval, the
-pinned window, and the population (engineers and period), for finance
-to convert with its own rates.
 
 1. Locate the run: the `$ARGUMENTS` path if given, else per "Locating
    an existing run".
@@ -223,9 +220,9 @@ figure would go, and the limitation bullet names a limitation the
 headline lacks. A request to convert to money is declined in one
 sentence as the first bullet of `## Report`, never ahead of the hero,
 and says "money" or "currency", never a unit or the word "dollars". The
-same sentence names the handoff: hours with their interval, the pinned
-window, and the population, for finance to convert.
-An n<5 spread is a range (`range_lo`..`range_hi`), never a "95% interval".
+finance handoff (hours with their interval, the pinned window, and the
+population, for finance to convert) is the next bullet.
+An n<5 spread is a range (`range_lo`..`range_hi`); the reply never uses the words "95%" or "interval" for it, not even to deny them.
 Name an unknown or a missing input, never a script's exit status or command. Every figure in the reply keeps its provenance tag, in the hero and
 in bullets. State a figure as what was measured, never as what the
 skill caused: "median 18 min per task gross, net unknown
@@ -266,7 +263,7 @@ sweep) is one hero line `⚠ Refused: <reason in one sentence>`, then
 one short paragraph or list of what the user must do next, two
 sentences at most. No `Run`, `Gate`, or `Report` sections, no panel,
 no list of checks performed, no sentence that repeats the hero, the
-run name, or a question already asked, and no negation narration ("I did not use a default") or
+run name, or a question already asked, and when no run is found, say "no business run found" without naming the roots searched, which may be incomplete; no negation narration ("I did not use a default") or
 sandbox fact ("I cannot ask you here"). State only what a command
 printed: never claim a check failed that did not run, never report an
 exit status the script does not define (`runs` prints nothing and

@@ -61,7 +61,7 @@ stops the run before dispatch.
      model commands?" Options from `timeout_menu`: default, `quick`, `long`, and none.
 
 3. For a `--mutating` command, check the checkout first: run `git rev-parse
-   --show-toplevel` and `cd ~ && pwd -P`. When the toplevel equals that physical
+   --show-toplevel` and `(cd ~ && pwd -P)`. When the toplevel equals that physical
    home path (or the user says this is their home or dotfiles repository),
    contains it, or is `/`, stop before `init`. Reply in one sentence that a write command will
    not stash or snapshot a home-rooted repository, then that the user should

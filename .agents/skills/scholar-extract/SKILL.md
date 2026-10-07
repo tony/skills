@@ -91,10 +91,13 @@ $ rg \
     -o \
     --no-filename \
     -r '$1' \
-    '\b(?:class|struct|interface|type)\s+(\w+)' \
+    '^\s*(?:export\s+|pub\s+)?(?:class|struct|interface|type)\s+(\w+)' \
     <corpus> \
     | sort | uniq -c | sort -rn
 ```
+
+The match anchors at the line start so a comment's "type of" does not count;
+discard a stray `of` row.
 
 Commit subjects need history, which the shallow checkout lacks; run this only
 on a full local checkout:
@@ -147,7 +150,7 @@ citation's quote by choosing a passage that shows the usage.
   lets `contest` find the synonymy; merging them here destroys the evidence.
 - Distributional claims are `contest`'s to make, and they go in
   `evidence/metrics.md`, not on a term row.
-- Every cite carries a verbatim `quote`; the gate rejects a cite without one.
+- Every cite carries a verbatim `quote` and a `source`; the gate rejects a cite without either.
 
 ## Output
 

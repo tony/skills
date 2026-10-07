@@ -65,6 +65,7 @@ ASSUMPTION_FIELDS = (
 SOURCE_TYPES = ("MEASURED", "DERIVED", "BENCHMARKED", "ESTIMATED")
 CONFIDENCES = ("high", "medium", "low")
 DATE_DIR = re.compile(r"\d{4}-\d{2}-\d{2}")
+NAMES_LINE = re.compile(r"^Names:[ \t]*\S", re.MULTILINE)
 DATE_RANGE = re.compile(r"\d{4}-\d{2}-\d{2}\s*(?:\.\.|to|\u2013|-)\s*\d{4}-\d{2}-\d{2}")
 TAGS = ("MEASURED", "DERIVED", "BENCHMARKED", "ESTIMATED")
 CITATION = re.compile(r"sources\.md(?:#|\s+`)([\w-]+)")
@@ -722,6 +723,8 @@ def check_run(run: Path) -> list[str]:
         "window" in line.lower() and DATE_RANGE.search(line) for line in readme.splitlines()
     ):
         problems.append("README.md states no pinned window (start..end dates on a Window line)")
+    if readme is not None and not NAMES_LINE.search(readme):
+        problems.append("README.md has no Names: line (write `Names: none` when there are none)")
     sources = read("sources.md")
     entries: dict[str, list[str]] = {}
     if sources is None:

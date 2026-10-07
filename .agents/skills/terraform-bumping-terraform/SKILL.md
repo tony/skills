@@ -77,17 +77,26 @@ one of them; offer the others as next steps.
   "Stop here"), and do not remark on the missing question tool. Do not
   write "X, not Y" contrasts or filler such as "nothing needed
   classifying by you". A bullet states a finding, not scope the plan
-  already gave.
+  already gave. The hero is the line the skill's shape gives with
+  nothing appended; a failing gate goes in `## Verification`, stated as
+  observed.
 - A run that cannot proceed (nothing declared, no version named and the
-  release list unreachable, a dirty tree it cannot work around) ends
-  with `⚠ Stopped: <one result sentence>`, then the step the user must
-  take. No sections and no recap. At most three plain bullets follow,
-  with no lead-in sentence, each a finding that changes that step and
-  describes only what the run found, never steps it would take after the
-  edit ("both keep `~>`", "no lock file to refresh afterwards"). Repository history (a branch with no commits), untracked dotfiles,
-  which tool drives the repository, what a commit would have looked like,
-  and what would happen after the edit do not belong. A run stopped before its first edit says
-  nothing was edited.
+  release list unreachable, a dirty tree it cannot work around, a lock
+  that failed after the edits) ends with `⚠ Stopped: <one result
+  sentence>`, then the step the user must take. The result sentence says
+  what state the repository is in: `so nothing was edited` before the
+  first edit, or `so nothing was committed` after it. A run stopped after
+  its edits leaves them in the working tree, and the step offers
+  reverting them (`git restore -- <paths>`) first.
+
+  No sections, no recap, and no numbered next-step list: the step is one
+  or two sentences. At most three plain bullets follow, with no
+  lead-in sentence, each a finding that changes that step and describes
+  only what the run found. A bullet never describes a step the run would
+  take after the edit ("both keep `~>`", "no lock file to refresh
+  afterwards"), and never covers repository history, untracked dotfiles,
+  which tool drives the repository, or what a commit would have looked
+  like.
 
   Reply in this shape, as plain text outside any code fence, with plain bullets, no bold (never `- **Label:** ...`), and no local paths:
 
@@ -136,7 +145,8 @@ Present a plan covering:
   sites left alone with the reason.
 - Which lock files will be refreshed, and how many platforms each
   tracks.
-- The commits this produces and whether they will be pushed.
+- The commit this produces (constraints and locks together) and whether
+  it will be pushed.
 - Drift found that this run will not fix.
 
 Wait for approval, then exit plan mode before the first edit. Without plan

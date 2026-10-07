@@ -83,23 +83,35 @@ one.
 
 Per the umbrella's Orchestration Plan, show every site to be edited with the form it keeps, every site left
 alone with the reason, the drift found, and whether lock files will be
-refreshed. With `--audit-only`, stop here and write nothing.
+refreshed. Warn when the installed CLI cannot satisfy the new
+`required_version`: `init` will not run and the roots will be unverifiable. With `--audit-only`, stop here and write nothing.
 
-### 7. Edit, commit, verify
+### 7. Edit and re-initialise
 
-All pin sites in one commit. Then, unless `--no-lock`, check that the
-installed CLI satisfies the new `required_version`; if it does not,
-skip `init`, report it unverifiable, and name the installed version.
+Edit all pin sites, committing nothing yet. Unless `--no-lock`, check
+that the installed CLI satisfies the new `required_version`; if it does
+not, skip `init`, report it unverifiable, and name the installed version.
+
 Otherwise re-run `init` in each root module that has a committed,
-unmodified lock, as a separate commit if the lock changes (a CLI bump can change the lock file's own
-format). Use plain `init` per the lock reference, never `-upgrade`: a CLI
-bump moves no provider, so `lockctl.py diff` with no `--allow` must exit
-0; a non-zero exit (a version change or a platform count drop) means
-restore the lock from git and report it. A dropped count is never
-committed without the user's explicit yes (headless: restore it, leave it out, and stop). A root module with no
-committed lock is skipped and reported: `init` there would create a lock
-and pick providers. Run it only after the user approves that outcome.
-With `--no-commit`, leave the edits in the working tree. Write commit
+unmodified lock. Use plain `init` per the lock reference, never
+`-upgrade`: a CLI bump moves no provider, so `lockctl.py diff` with no
+`--allow` must exit 0. A non-zero exit (a version change or a platform
+count drop) means restore the lock from git and report it. A CLI bump can
+change the lock file's own format; that change is part of the commit.
+
+A root module with no committed lock is skipped and reported: `init`
+there would create a lock and pick providers. Run it only after the user
+approves that outcome.
+
+A failed `init`, or a lock restored for a version change or dropped
+count, stops the run with nothing committed. Leave the pin edits in the
+working tree and end with the stopped line (the umbrella has its mid-run
+form). A dropped count is committed only with the user's explicit yes.
+
+### 8. Commit and verify
+
+With `--no-commit`, leave the edits in the working tree. Otherwise make
+one commit holding the pin edits and any changed lock. Write commit
 messages and the report per `references/prose-rules.md`.
 
 Verify by confirming each guarded root module initialised under the new
@@ -127,7 +139,7 @@ order:
 6. `## Drift`: every disagreement found before the bump, and every one
    still outstanding after it. Omit it when nothing disagreed.
 
-Name each commit by subject in the section it carries, never by SHA.
+Name the commit by subject in `## Sites`, never by SHA.
 State a root module that could not be initialised in `## Locks` only;
 `## Verification` does not repeat it.
 

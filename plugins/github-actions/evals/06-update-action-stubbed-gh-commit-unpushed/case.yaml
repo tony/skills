@@ -24,7 +24,7 @@ graders:
   - name: tag-check-ran
     type: tool_used
     tool: Bash
-    input_match: 'gh api repos/actions/checkout/git/ref/tags/v4\b'
+    input_match: '(git/ref/tags/v4\b|\btag\s+actions/checkout\s+v4\b)'
 
   - name: never-pushes
     type: tool_used

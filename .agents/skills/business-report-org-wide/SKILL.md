@@ -49,13 +49,7 @@ MEASURED when an instrument export gives it), optional `low` and
 proceed with a default of 1.0 for adoption or realization. Without a
 question tool, or without an answer, halt per `interim-format.md` §
 Stopped run. Name each missing input once, in plain words, in the hero
-line; list the register ids only in the next-step sentence:
-
-```text
-⚠ Refused: the register lacks five projection inputs: drafts per engineer per year, baseline minutes per draft, savings rate, adoption, and realization.
-
-Add them with business-research or by editing assumptions.yaml (instances-per-person-year, baseline-minutes, savings-rate, adoption-rate, realization-rate), then render again.
-```
+line; list the register ids only in the next-step sentence.
 
 ### 3. Render the report
 
@@ -76,7 +70,8 @@ structure:
    methodology jargon, no formula notation; figures still tagged and
    true.
 
-Team-level aggregates only. If any measurement is per-person, roll
+The projection is gross of build and maintenance upkeep; say so in the
+plain-language summary. Team-level aggregates only. If any measurement is per-person, roll
 it up before it appears here.
 
 Write it per `references/prose-rules.md`.

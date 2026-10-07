@@ -23,7 +23,7 @@ spike.sh replay-apply SPIKE_SHA [USER_SHA]
 spike.sh drop SHA
 spike.sh branch-start NAME
 spike.sh branch-end ORIG NAME
-spike.sh teardown WORKTREE
+spike.sh teardown WORKTREE STASH_SHA|none
 USAGE
 }
 
@@ -41,11 +41,16 @@ cmd_guard() {
   echo ok
 }
 
+# The git directory's spike/ folder; a private temp directory when the git
+# directory refuses the write (sandboxed hosts).
 cmd_ledger_dir() {
   local d
   d="$(git rev-parse --path-format=absolute --git-common-dir)/spike"
-  mkdir -p "$d"
-  echo "$d"
+  if mkdir -p "$d" 2>/dev/null && [ -w "$d" ]; then
+    echo "$d"
+  else
+    mktemp -d "${TMPDIR:-/tmp}/spike-ledger.XXXXXX"
+  fi
 }
 
 # Bytecode is never source; a stash that swept it in would also carry it into
@@ -102,9 +107,13 @@ parse_stash_args() {
 # Stashes share one stack, so two at once would interleave their SHAs.
 acquire_lock() {
   [ -z "$LOCK_FILE" ] || return 0
-  local dir f pid
-  dir="$(git rev-parse --path-format=absolute --git-common-dir)/spike"
-  mkdir -p "$dir"
+  local dir f pid common
+  common=$(git rev-parse --path-format=absolute --git-common-dir)
+  dir="$common/spike"
+  if ! { mkdir -p "$dir" 2>/dev/null && [ -w "$dir" ]; }; then
+    dir="${TMPDIR:-/tmp}/spike-lock.$(printf '%s' "$common" | cksum | cut -d' ' -f1)"
+    mkdir -p "$dir" || die "cannot create a lock directory"
+  fi
   f="$dir/stash.lock"
   if ! (set -C; echo "$$" >"$f") 2>/dev/null; then
     pid=$(cat "$f" 2>/dev/null || true)
@@ -273,9 +282,20 @@ cmd_drop() {
 
 # Remove a worktree whose work is already stashed. Files left in place on
 # purpose (bytecode, --leave paths) make the plain remove refuse, so retry
-# with --force. Succeeds only when git no longer lists the worktree.
+# with --force. Refuses unless STASH_SHA is a listed stash, or is "none" and
+# the worktree holds no source changes. Succeeds only when git no longer
+# lists the worktree.
 cmd_teardown() {
-  [ $# -eq 1 ] || die "teardown needs WORKTREE" 2
+  [ $# -eq 2 ] || die "teardown needs WORKTREE and STASH_SHA (or none)" 2
+  if [ "$2" = none ]; then
+    [ -z "$(git -C "$1" ls-files --modified --others --exclude-standard -- ':/' "${BYTECODE[@]}")" ] ||
+      die "worktree holds unstashed changes: $1"
+  else
+    local full
+    full=$(git rev-parse --verify --quiet "$2^{commit}" || true)
+    [ -n "$full" ] && git stash list --format='%H' | grep -qxF "$full" ||
+      die "no stash $2; stash the work before removing $1"
+  fi
   git worktree remove "$1" 2>/dev/null || git worktree remove --force "$1" || true
   git worktree prune
   local abs

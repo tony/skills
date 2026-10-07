@@ -63,15 +63,15 @@ no "Generated with" or other tool trailer, and no emoji.
 
 Pass the user's `gh pr merge` flags through verbatim, with the strategy flag
 and `--match-head-commit <sha>`. Pass the composed message through the
-reference's `merge_pr.py merge` command, never inside a shell string. Use `--admin`
-only within the reference's policy.
+reference's `merge_pr.py merge` command, never inside a shell string. Use
+`--admin` only within the reference's policy.
 
 ### 5. Sync trunk and stand by
 
 Sync trunk and confirm the merge, per the reference's "After each merge",
 including its check that trunk contains the merge commit. Then stop.
-With `--auto` the merge is only queued: open with the queued hero and skip
-the sync.
+When the merge is only queued (`--auto`, or `state` still `OPEN` after the
+merge), open with the queued hero and skip the sync.
 
 ## Output
 

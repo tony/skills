@@ -3,7 +3,7 @@
 # this skill.
 #
 # `scripts/render_apply.py` renders this file to `<run-dir>/apply.sh`, where `<run-dir>`
-# is `git rev-parse --git-path deslop/<ts>-<pid>` (so linked worktrees
+# is `git rev-parse --path-format=absolute --git-path deslop/<ts>-<pid>` (so linked worktrees
 # work), substituting these placeholders:
 #   __REGISTRY_PATH__    — built-in or `--taxonomy=<path>` registry source
 #   __REGISTRY_SHA256__  — SHA-256 of the registry at materialization

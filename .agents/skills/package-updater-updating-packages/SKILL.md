@@ -353,6 +353,9 @@ after: no second paragraph, no section, no plan.
 - The reason is the only fact: no pins, installed versions, lockfile
   state or other machine fact beyond it, and no clause about a pin left
   as it is.
+- Give a date, never a time of day, and never name the config file or
+  key that sets the window. Never say whether the user's go-ahead
+  overrides the stop.
 - Leave out a lookup that could not run (a release list, a forge call) and
   anything the run left out on purpose, such as an omitted trailer.
 

@@ -78,7 +78,7 @@ collisions, <n> uncovered` or `⚠ Blocked: <reason>`. Sections:
 
 A halted run (a study with no `terms.jsonl`, or fewer than two studies) is the
 hero and one sentence naming each missing study directory and the unblock
-(the `scholar-ontology` skill to build it). No mappings, collisions, or coverage:
+(the `scholar-ontology` skill to build it). No mappings, collisions, or coverage, and nothing after the unblock sentence (no "Next step"). Reply as plain text outside any code fence:
 
 ```text
 ⚠ Blocked: neither notes/ontology/sample-lib/ nor notes/ontology/other-lib/ exists.

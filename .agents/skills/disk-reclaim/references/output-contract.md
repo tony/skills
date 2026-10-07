@@ -112,7 +112,7 @@ was deliberately not reclaimed. State each tool's compression support
 where it bears on a proposal.
 
 `## Needs a decision` — stale-but-unique data and anything that
-resisted classification, each with size, age, and origin. These are
+resisted classification, each with size and age. These are
 questions, not candidates.
 
 `## Only you can run this` — commands requiring the environment to be
@@ -147,7 +147,8 @@ bullets, no bold (never `- **Label:** ...`), and no local paths:
 
 ## After execution
 
-this skill adds two sections after the above.
+this skill adds two sections after `## Needs a decision` and moves
+`## Only you can run this` to the end, after `## Left alone`.
 
 `## Reclaimed` — what was actually deleted or merged, with the
 measured free-space delta per layer. When measured and predicted
@@ -180,9 +181,7 @@ Attach every figure to a layer. State three numbers for a virtual disk:
 what the cleanup frees inside the guest, what the balloon already holds,
 and what the host gains once the user completes the steps only they can
 run. A guest-side number presented as machine-wide recovery is wrong even
-when the arithmetic is right. Never write that guest deletions return
-space to the host through TRIM; only a measured file-size change shows
-it.
+when the arithmetic is right.
 
 Give a cause only when a command measured it; otherwise say what was
 observed and that the cause was not checked. Describe a file by what you
@@ -190,11 +189,14 @@ read in it, not by its name or age. Write what a thing is, not what it
 is not (no "it isn't X: it is Y").
 
 Distinguish measured from projected in the words themselves. "Frees
-40 GB once you compact" and "freed 40 GB" are different claims.
+40 GiB once you compact" and "freed 40 GiB" are different claims.
 
 State a claim about what a tool supports (for example, that it reads
 compressed transcripts) only with the help text, docs page, or binary
 string you read; otherwise say it was not checked.
+
+Use GiB for every size in a reply, converting what a tool printed
+(`1007G`, `14 GB`), and write `~` instead of the home path in commands.
 
 Name what was skipped. A report that silently omits protected history
 reads as having missed it rather than having preserved it.

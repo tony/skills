@@ -13,6 +13,9 @@ asking you anything.
 Argument: $ARGUMENTS (a description, a repository, a pasted finding,
 or nothing).
 
+Whenever a step stops the run without filing, the reply begins with the
+words `Not filed:` (or `Not filed publicly:`), never "I didn't file it".
+
 The body follows `../../references/rendered-markdown.md`
 and every link in it follows
 `../../references/source-links.md`. Read both before
@@ -212,11 +215,17 @@ $ gh issue view 123 --repo OWNER/REPO --comments
 ```
 
 Search again with a second keyword set (the error string, the symbol) so
-a body-only match is not missed. When one matches, stop and reply in the
-halted shape under "Present" (`Not filed: ...`, one sentence plus one
-instruction; no second paragraph, no restated cause). This
-skill never comments on an existing issue; the user can add the evidence
-there, or ask you to file anyway.
+a body-only match is not missed. This skill never comments on an
+existing issue.
+
+When one matches, the whole reply is the halted shape from "Present",
+even when the user said to file it. It starts with `Not filed:`, never
+"I didn't file it", and says nothing about the duplicate's content or
+what the user's evidence adds:
+
+```text
+Not filed: example/widgets already tracks this as #17 (open, "wasm target throws TypeError"). Add your evidence there, or tell me to file anyway.
+```
 
 ## Phase 5 — Gather the evidence
 

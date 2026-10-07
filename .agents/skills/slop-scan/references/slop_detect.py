@@ -385,6 +385,8 @@ def scan_files(
     """Match every ``file`` / ``diff`` rule against each line of each file."""
     found: list[dict[str, Any]] = []
     for path in paths:
+        if Path(path).is_symlink():
+            continue
         try:
             text = Path(path).read_text(encoding="utf-8")
         except (OSError, UnicodeDecodeError):

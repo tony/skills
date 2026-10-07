@@ -117,8 +117,9 @@ Rendering a report. Then exactly these sections:
 1. `## Scope`: what was measured and the pinned window.
 2. `## Instruments`: available vs unavailable, and what each
    unavailable one leaves unknown.
-3. `## Collected`: per instrument, what landed in `raw/` and
-   `measurements/`.
+3. `## Collected`: per instrument, what the data shows and what landed
+   in `raw/` and `measurements/`; one fact per bullet, one sentence per
+   bullet.
 4. `## Package`: the run location, count of registered assumptions, and
    the open unknowns.
 
