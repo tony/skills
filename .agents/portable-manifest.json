@@ -1304,7 +1304,7 @@
         "references/prose-rules.md": "plugins/weave/references/prose-rules.md",
         "references/worker-backends.md": "plugins/weave/references/worker-backends.md"
       },
-      "bytes": 153520
+      "bytes": 153712
     },
     {
       "name": "weave-ask",
@@ -1321,7 +1321,7 @@
         "references/prose-rules.md": "plugins/weave/references/prose-rules.md",
         "references/worker-backends.md": "plugins/weave/references/worker-backends.md"
       },
-      "bytes": 158519
+      "bytes": 158711
     },
     {
       "name": "weave-brainstorm",
@@ -1335,7 +1335,7 @@
         "references/present-results.md": "plugins/weave/references/present-results.md",
         "references/worker-backends.md": "plugins/weave/references/worker-backends.md"
       },
-      "bytes": 136924
+      "bytes": 137116
     },
     {
       "name": "weave-brainstorm-and-refine",
@@ -1351,7 +1351,7 @@
         "references/refine-cycle.md": "plugins/weave/references/refine-cycle.md",
         "references/worker-backends.md": "plugins/weave/references/worker-backends.md"
       },
-      "bytes": 154220
+      "bytes": 154412
     },
     {
       "name": "weave-execute",
@@ -1367,7 +1367,7 @@
         "references/prose-rules.md": "plugins/weave/references/prose-rules.md",
         "references/worker-backends.md": "plugins/weave/references/worker-backends.md"
       },
-      "bytes": 152115
+      "bytes": 152307
     },
     {
       "name": "weave-fix-review",
@@ -1380,7 +1380,7 @@
         "references/present-results.md": "plugins/weave/references/present-results.md",
         "references/prose-rules.md": "plugins/weave/references/prose-rules.md"
       },
-      "bytes": 117187
+      "bytes": 117379
     },
     {
       "name": "weave-plan",
@@ -1396,7 +1396,7 @@
         "references/prose-rules.md": "plugins/weave/references/prose-rules.md",
         "references/worker-backends.md": "plugins/weave/references/worker-backends.md"
       },
-      "bytes": 153265
+      "bytes": 153457
     },
     {
       "name": "weave-prompt",
@@ -1412,7 +1412,7 @@
         "references/prose-rules.md": "plugins/weave/references/prose-rules.md",
         "references/worker-backends.md": "plugins/weave/references/worker-backends.md"
       },
-      "bytes": 151759
+      "bytes": 151951
     },
     {
       "name": "weave-refine",
@@ -1428,7 +1428,7 @@
         "references/refine.md": "plugins/weave/references/results/refine.md",
         "references/worker-backends.md": "plugins/weave/references/worker-backends.md"
       },
-      "bytes": 152743
+      "bytes": 152935
     },
     {
       "name": "weave-review",
@@ -1445,7 +1445,7 @@
         "references/review.md": "plugins/weave/references/results/review.md",
         "references/worker-backends.md": "plugins/weave/references/worker-backends.md"
       },
-      "bytes": 163432
+      "bytes": 163624
     },
     {
       "name": "weave-serene-bliss",
@@ -1462,7 +1462,7 @@
         "references/refine.md": "plugins/weave/references/results/refine.md",
         "references/worker-backends.md": "plugins/weave/references/worker-backends.md"
       },
-      "bytes": 158914
+      "bytes": 159106
     }
   ],
   "duplication": {

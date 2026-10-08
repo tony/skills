@@ -84,7 +84,10 @@ When CASCADE_STATE is `early-exit`, append `, cascade early-exit
    refused-stash openings are the only text that may say what was not done.
    The deslop summary line, when the pass produced one, is the last line
    after Attribution.
-6. Nothing follows Attribution except the deslop summary line, and no
+6. Nothing follows Attribution except the deslop summary line: Attribution
+   names the lanes and stops, and assumptions or caveats ("no codebase was
+   checked", "confirm against your stack") appear once, at the start of the
+   final result, never after it. No
    clustering, ranking, counting of distinct designs, or recommendation
    appears anywhere in the reply's own voice (brainstorm and
    brainstorm-and-refine originals included).
