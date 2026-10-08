@@ -1,0 +1,42 @@
+schema_version: "1.0"
+name: 10-situate-prior-conversations
+description: >-
+  --with-agentgrep runs the pinned, capped agentgrep search with the term
+  passed as one quoted argument, and the reply reconciles the earlier
+  decision with the repository instead of repeating the transcript.
+tags: [fixture, git]
+
+context:
+  scaffold_script: scaffold.sh
+
+execution:
+  prompt: >-
+    /situate:situate --with-agentgrep retry budget
+    (uvx and gh are local stubs: run every command with PATH="$PWD/bin:$PATH".)
+  max_turns: 25
+  timeout_seconds: 420
+  allowed_tools: [Bash, Read, Glob, Grep, Skill]
+
+runs: 3
+
+graders:
+  - name: runs-the-pinned-capped-search
+    type: tool_used
+    tool: Bash
+    input_match: 'uvx agentgrep@0\.1\.0a52 search.*--limit 20'
+
+  - name: scopes-the-search-to-this-repository
+    type: tool_used
+    tool: Bash
+    input_match: 'agentgrep@0\.1\.0a52 search.*(--only-here|--repo)'
+
+  - name: reports-the-earlier-decision
+    type: llm
+    focus: last_message
+    criteria: |
+      The reply has a prior-work section that says an earlier conversation
+      left the retry budget decision (per call or across the whole
+      sequence) open, and gives its date or says it is undated.
+      The reply says the repository still has the budget helper
+      unimplemented, so the repository and the conversation agree.
+      The reply names no store path, session file, or absolute path.
