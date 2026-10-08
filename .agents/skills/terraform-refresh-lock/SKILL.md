@@ -41,8 +41,8 @@ Per root module: the version selected for each provider, and how many
 platforms each provider's entry tracks (the lock reference has the
 count command). The first reports what moved; the second detects a
 narrowed file. In an audit, also report the platform names the repository's CI and task
-files pass to `providers lock` (the lock reference has the command), or
-that none are recorded.
+files pass to `providers lock` (the lock reference has the command), when
+they pass any.
 
 ### 3. Present the plan and wait
 

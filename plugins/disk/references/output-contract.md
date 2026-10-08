@@ -66,7 +66,8 @@ When the user asks about one path ("is X safe to delete?") and the run
 is not blocked, skip the sections. Open with one sentence giving the
 verdict and the measurement behind it, with no `✓` or `⚠` prefix, then
 bullets for the proof outcome, the size and its layer, and the decision
-that is the user's. End on the last bullet, with no recap of what was or
+that is the user's. Open with what the path holds ("holds two files that
+notes lacks"), never "it isn't a copy of notes". End on the last bullet, with no recap of what was or
 was not changed.
 
 Reply in this shape, as plain text outside any code fence, with plain
@@ -176,6 +177,8 @@ be read" about a layer, never "this session is not allowed", "the
 sandbox blocks", "it is mounted read-only", or a request to be given
 write access. Ask the user to run a command "in your own shell", never
 "outside this session".
+Describe what a halt interrupts as "every shell, server, and container",
+never "this session", and never call a path "read-only to me".
 
 Name a path or layer as holding space only from a measurement in this
 run. Never characterize an unmeasured path ("these are system packages

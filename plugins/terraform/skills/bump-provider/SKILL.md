@@ -169,7 +169,7 @@ Reply in this shape, as plain text outside any code fence, with plain bullets, n
 
 ## Target
 
-- registry.terraform.io/hashicorp/aws 6.57.0, published 2026-09-30; changelog taken from the registry's source at v6.57.0.
+- registry.terraform.io/hashicorp/aws <version>, published <date>; changelog taken from the registry's source at v<version>.
 
 ## Layout
 
