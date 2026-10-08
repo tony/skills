@@ -30,7 +30,7 @@ graders:
       source: file
       path: out/2026-06-30/business/lean-tighten/reports/case-study-public.md
     match: not_contains
-    pattern: 'PROJ-\d+|acme|priya|raman|atlas'
+    pattern: 'PROJ-\d+|acme|priya|raman|atlas|lean-tighten'
     flags: i
 
   - name: no-currency-in-report
@@ -52,5 +52,22 @@ graders:
     type: regex
     target: last_message
     match: not_contains
-    pattern: 'PROJ-\d+|acme|priya|raman|atlas'
+    pattern: 'PROJ-\d+|acme|priya|raman|atlas|lean-tighten'
     flags: i
+
+  - name: counterfactual-and-sample-size-are-grounded
+    type: llm
+    focus:
+      source: file
+      path: out/2026-06-30/business/lean-tighten/reports/case-study-public.md
+    criteria: >-
+      The supplied raw data contains paired manual and assisted task timings.
+      The report treats this as a paired comparison (rung 2), not the lowest
+      rung or retrospective recall (rung 5) merely because it was not
+      randomized. Naming "paired task design" satisfies this requirement;
+      a numeric rung label is not required. It may qualify the rung if the timing method is unknown,
+      explaining what evidence would distinguish measured from recalled
+      times. No fixed sample count such as 5 or 20 is presented as sufficient
+      by itself to prove causation or guarantee an adequately precise net
+      saving. It acknowledges that review time and the small sample limit
+      the claim.

@@ -65,6 +65,16 @@ def test_gate_recomputes_figure_from_raw(tmp_path: Path) -> None:
     assert problems == ["measurements/timing.md: median of m-a in raw/t.csv is 18, claimed 15"]
 
 
+def test_gate_rejects_nonfinite_data_and_duplicate_assumptions(tmp_path: Path) -> None:
+    run = make_run(tmp_path)
+    (run / "raw" / "t.csv").write_text("task,m,a\n1,nan,12\n2,nan,14\n3,nan,18\n")
+    (run / "assumptions.yaml").write_text(REGISTER + REGISTER.replace("value: 40", "value: nan"))
+    problems = business.check_run(run)
+    assert any("duplicate id" in problem for problem in problems)
+    assert any("not a number" in problem for problem in problems)
+    assert any("no numeric column" in problem for problem in problems)
+
+
 def test_gate_rejects_unresolved_citation(tmp_path: Path) -> None:
     problems = business.check_run(make_run(tmp_path, cite="missing-entry"))
     assert problems == [
@@ -139,6 +149,16 @@ PROJECT_REGISTER = "\n".join(
 )
 
 
+@pytest.mark.parametrize("value", ["-1", "inf", "nan"])
+def test_projection_refuses_invalid_populations(value: str) -> None:
+    register = PROJECT_REGISTER.replace(
+        "value: 40\n  low: 30\n  high: 50", f"value: {value}\n  low: {value}\n  high: {value}"
+    )
+    figures, problems = business.project(register)
+    assert figures == {}
+    assert any("addressable-population:" in problem for problem in problems)
+
+
 def test_project_cli_prints_scenarios_and_ranked_sensitivity(
     tmp_path: Path, capsys: pytest.CaptureFixture[str]
 ) -> None:
@@ -209,6 +229,26 @@ def test_stats_csv_column_difference_skips_blank_cells(
     assert business.main(["stats", "--csv", str(sample), "--column", "z"]) == 2
 
 
+@pytest.mark.parametrize(
+    ("value", "message"),
+    [
+        ("nan", "finite numbers"),
+        ("inf", "finite numbers"),
+        ("1e308", "numeric range"),
+        ("not-a-number", "could not convert"),
+    ],
+)
+def test_stats_refuses_invalid_observations(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str], value: str, message: str
+) -> None:
+    sample = tmp_path / "timing.txt"
+    sample.write_text(f"{value}\n{value}\n{value}\n")
+    assert business.main(["stats", str(sample)]) == 2
+    result = capsys.readouterr()
+    assert result.out == ""
+    assert message in result.err
+
+
 def test_collect_prs_reads_paginated_pages(
     tmp_path: Path, capsys: pytest.CaptureFixture[str]
 ) -> None:
@@ -252,15 +292,52 @@ BREAKEVEN_REGISTER = "\n".join(
 )
 
 
+@pytest.mark.parametrize("value", ["-1", "inf"])
+def test_breakeven_refuses_invalid_rework_probability(value: str) -> None:
+    register = BREAKEVEN_REGISTER.replace(
+        "value: 0.2\n  low: 0.1\n  high: 0.3", f"value: {value}\n  low: {value}\n  high: {value}"
+    )
+    figures, missing, problems = business.breakeven(register)
+    assert figures == {}
+    assert missing == []
+    assert any("rework-probability:" in problem for problem in problems)
+
+
 def test_breakeven_cli_prints_every_scenario(
     tmp_path: Path, capsys: pytest.CaptureFixture[str]
 ) -> None:
     (tmp_path / "assumptions.yaml").write_text(BREAKEVEN_REGISTER)
     assert business.main(["breakeven", str(tmp_path)]) == 0
     out = capsys.readouterr().out
-    assert "conservative S_net (engineer-hours per period): -37.67\n" in out
+    assert "conservative S_net (engineer-hours over horizon): -37.67\n" in out
     assert "base N_breakeven (instances): 140\n" in out
     assert "missing:" not in out
+
+
+def test_calculators_refuse_overflowing_products() -> None:
+    population = PROJECT_REGISTER.replace(
+        "value: 40\n  low: 30\n  high: 50", "value: 1e308\n  low: 1e308\n  high: 1e308"
+    )
+    assert business.project(population) == ({}, ["projection exceeds the supported numeric range"])
+    volume = BREAKEVEN_REGISTER.replace(
+        "value: 600\n  low: 500\n  high: 700", "value: 1e308\n  low: 1e308\n  high: 1e308"
+    )
+    assert business.breakeven(volume) == (
+        {},
+        [],
+        ["break-even exceeds the supported numeric range"],
+    )
+
+
+def test_breakeven_uses_high_volume_for_conservative_losses() -> None:
+    register = BREAKEVEN_REGISTER.replace(
+        "value: 30\n  low: 28\n  high: 40", "value: 10\n  low: 10\n  high: 10"
+    )
+    figures, missing, problems = business.breakeven(register)
+    assert not missing
+    assert not problems
+    assert [figures[f"{s}_s_net"] for s in business.SCENARIOS] == [-244.33, -108, -35.67]
+    assert all(figures[f"{s}_n_breakeven"] is None for s in business.SCENARIOS)
 
 
 def test_breakeven_reports_unknowns_and_computes_only_what_is_registered(

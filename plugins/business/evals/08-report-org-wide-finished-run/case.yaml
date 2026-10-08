@@ -39,6 +39,15 @@ graders:
       path: out/2026-06-30/business/lean-tighten/reports/org-wide.md
     pattern: '\b(?:ESTIMATED|DERIVED)\b'
 
+  - name: does-not-invent-assisted-time-from-median-gap
+    type: regex
+    target:
+      source: file
+      path: out/2026-06-30/business/lean-tighten/reports/org-wide.md
+    pattern: 'from\s+30\s+(?:minutes?|mins?)\s+to\s+12\b'
+    flags: i
+    match: not_contains
+
   - name: no-currency-in-report
     type: regex
     target:

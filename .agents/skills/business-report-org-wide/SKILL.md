@@ -53,8 +53,9 @@ line; list the register ids only in the next-step sentence.
 
 ### 3. Render the report
 
-Take every figure in sections 1 to 3 from the `project` output of
-step 2; never do that arithmetic by hand. Write `<run>/reports/org-wide.md` with this fixed
+Copy projection, scenario, segment, and sensitivity totals from `project`;
+copy factor values, bounds, and tags from the assumptions register. Never
+calculate those totals by hand. Write `<run>/reports/org-wide.md` with this fixed
 structure:
 
 1. Bottom-up build: the full chain
@@ -71,7 +72,11 @@ structure:
    true.
 
 The projection is gross of build and maintenance upkeep; say so in the
-plain-language summary. Team-level aggregates only. If any measurement is per-person, roll
+plain-language summary. A registered net savings rate includes its assumed
+review allowance; distinguish that estimate from observed review timing.
+The summary introduces no new figures or before/after medians: use the tagged
+measurements already reported, without turning a time gap into a causal claim.
+Team-level aggregates only. If any measurement is per-person, roll
 it up before it appears here.
 
 Write it per `references/prose-rules.md`.

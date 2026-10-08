@@ -1,0 +1,62 @@
+schema_version: "1.0"
+name: 14-report-leadership-net-loss
+description: >-
+  A complete value register with negative per-task savings reports a net loss,
+  uses high volume for the conservative loss, and states no break-even.
+tags: [fixture]
+
+context:
+  scaffold_script: scaffold.sh
+
+execution:
+  prompt: >-
+    /business:report-leadership out/2026-06-30/business/draft-editing
+  max_turns: 35
+  timeout_seconds: 600
+  allowed_tools: [Bash, Read, Write, Edit, Glob, Grep, Skill]
+
+runs: 3
+
+graders:
+  - name: report-written
+    type: file_exists
+    path: out/2026-06-30/business/draft-editing/reports/leadership.md
+    exists: true
+
+  - name: report-copies-loss-scenarios
+    type: regex
+    target:
+      source: file
+      path: out/2026-06-30/business/draft-editing/reports/leadership.md
+    pattern: '(?=[\s\S]*[-−]244\.33)(?=[\s\S]*[-−]108\b)(?=[\s\S]*[-−]35\.67)'
+
+  - name: report-states-no-break-even
+    type: regex
+    target:
+      source: file
+      path: out/2026-06-30/business/draft-editing/reports/leadership.md
+    pattern: '(?:no|not|none|never)[^.\n]{0,80}break[- ]even|break[- ]even[^.\n]{0,80}(?:no|not|none|never)|no positive saving'
+    flags: i
+
+  - name: no-currency-in-report
+    type: regex
+    target:
+      source: file
+      path: out/2026-06-30/business/draft-editing/reports/leadership.md
+    match: not_contains
+    pattern: '[$€£¥]|\b(?:USD|EUR|GBP|dollars?|ROI)\b'
+    flags: i
+
+  - name: reply-leads-with-conservative-loss
+    type: regex
+    target: last_message
+    pattern: '^\s*✓ Leadership report:[^\n]*244\.33[^\n]*(?:DERIVED|ESTIMATED)'
+
+  - name: no-display-threshold-as-collection-target
+    type: regex
+    target:
+      source: file
+      path: out/2026-06-30/business/draft-editing/reports/leadership.md
+    pattern: '(?:sample|collect|time)[^.\n]{0,45}at\s+least\s+(?:20|twenty)\s+(?:drafts|tasks)'
+    flags: i
+    match: not_contains

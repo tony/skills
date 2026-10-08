@@ -20,6 +20,8 @@ only definitions — commands use them verbatim, never re-derive them.
 S_inst = (t_manual - (t_ai + t_verify)) - (p_fail * t_rework)
 ```
 
+`S_inst` and every `t_*` input are in minutes per instance.
+
 - `t_manual` — baseline time per instance without the skill.
   Measured, not self-reported; see the counterfactual ladder.
 - `t_ai` — AI-assisted time per instance, including failed and
@@ -32,15 +34,17 @@ S_inst = (t_manual - (t_ai + t_verify)) - (p_fail * t_rework)
 ## Net over a period, and break-even
 
 ```
-S_net = (N * S_inst) - C_build - (C_maint * periods)
+S_net = (N * S_inst / 60) - C_build - (C_maint * periods)
 ```
 
 ```
-N_breakeven = (C_build + C_maint * periods) / S_inst
+N_breakeven = (C_build + C_maint * periods) * 60 / S_inst
 ```
 
-- `N`: instances in the period. `C_build`: one-time skill build
-  time. `C_maint`: maintenance time per period.
+- `N`: instances over the chosen horizon. `C_build`: one-time skill build
+  hours. `C_maint`: hours per maintenance period, multiplied by the number
+  of periods in that horizon. `S_net` is engineer-hours over the horizon;
+  `N_breakeven` is an instance count.
 - `business.py breakeven <run>` computes `S_inst`, `S_net`, and
   `N_breakeven` per scenario from these register ids:
   `manual-minutes` (`t_manual`), `ai-minutes` (`t_ai`),
@@ -57,12 +61,12 @@ N_breakeven = (C_build + C_maint * periods) / S_inst
 ## Org-wide projection
 
 ```
-Annual_hours_saved = V * F * t * s * a * r
+Annual_hours_saved = V * F * (t / 60) * s * a * r
 ```
 
 - `V` — addressable population: people whose work contains the task.
-- `F` — instances per person per period.
-- `t` — baseline time per instance (measured, not self-reported).
+- `F` — instances per person per year.
+- `t` — baseline minutes per instance (measured, not self-reported).
 - `s` — savings rate net of the verification tax. When the run has
   `S_inst` and `t_manual`, `s = S_inst / t_manual`.
 - `a` — adoption: active use, not license-holding. Strictly < 1.0.
@@ -75,6 +79,9 @@ assumptions register, ask the user, then append the answer as an
 ESTIMATED entry (or MEASURED, when an instrument export gives it)
 with rationale and owner before projecting. With no one to ask,
 halt and name the missing input.
+
+Projection inputs must be finite and nonnegative. A measured slowdown is a
+loss to report, not a savings-rate input to turn positive.
 
 Segment the population: addressable ⊃ served ⊃ realized. Reporting
 only the addressable figure is the most common inflation — always
@@ -99,25 +106,31 @@ fewer than 5 observations they are the observed min and max, labeled a range.
 - Base: every input at `value`.
 - Upside: every input at `high`, cost inputs at `low`.
 
+When `S_inst` is negative, more instances deepen the loss: `S_net` uses
+the high task count in the conservative case and the low count in the upside.
 An input without `low` or `high` stays at `value` in that scenario.
+The chosen horizon, `periods`, stays at `value` in every scenario.
 The committed number is always the conservative one.
 
 ## Statistics discipline
 
 - Medians plus IQR, not means: task durations are right-skewed,
   roughly log-normal, and means chase the tail.
+- A median paired difference is not the difference of the two medians.
+  Compute before and after medians separately, or report only the paired gap.
 - Bootstrapped BCa intervals for medians, computed by
   `../scripts/business.py stats` (absolute path; one number per line on stdin or
   in files). It prints n, median, quartiles, the 95% interval, the
   seed, and the resample count; paste them next to the result.
-  Below n=5 a bootstrap collapses to the observed values, so `stats`
-  prints `range_lo` and `range_hi` instead and no `ci95_*`; call that
+  Below n=5, `stats` prints `range_lo` and `range_hi` instead and no `ci95_*`; call that
   a range, never a "95% interval".
 - Fewer than 20 observations, whether paired comparisons or single
   distributions: present the raw values, the median (or median
   difference), and the wide interval (the range when n<5), and label the result
   DIRECTIONAL (the script sets the label). Never
   single-decimal percentages from 5 tasks.
+- The n=5 and n=20 thresholds control display, not precision or causal
+  certainty; never treat crossing them as proof or a sample-size design.
 - Exclude the novelty ramp window; measure steady state. State the
   excluded window in the run README. No identifiable introduction
   event to anchor a ramp on → state "none excluded" with the

@@ -56,7 +56,7 @@
         "references/prose-rules.md": "plugins/business/references/prose-rules.md",
         "references/provenance.md": "plugins/business/references/provenance.md"
       },
-      "bytes": 70494
+      "bytes": 73492
     },
     {
       "name": "business-case-study-public",
@@ -68,10 +68,11 @@
         "references/business.py": "plugins/business/scripts/business.py",
         "references/evidence.md": "plugins/business/references/evidence.md",
         "references/interim-format.md": "plugins/business/references/interim-format.md",
+        "references/measurement.md": "plugins/business/references/measurement.md",
         "references/prose-rules.md": "plugins/business/references/prose-rules.md",
         "references/provenance.md": "plugins/business/references/provenance.md"
       },
-      "bytes": 75460
+      "bytes": 85714
     },
     {
       "name": "business-pr-release",
@@ -85,7 +86,7 @@
         "references/prose-rules.md": "plugins/business/references/prose-rules.md",
         "references/provenance.md": "plugins/business/references/provenance.md"
       },
-      "bytes": 71625
+      "bytes": 74697
     },
     {
       "name": "business-report-leadership",
@@ -101,7 +102,7 @@
         "references/prose-rules.md": "plugins/business/references/prose-rules.md",
         "references/provenance.md": "plugins/business/references/provenance.md"
       },
-      "bytes": 82426
+      "bytes": 86995
     },
     {
       "name": "business-report-org-wide",
@@ -116,7 +117,7 @@
         "references/prose-rules.md": "plugins/business/references/prose-rules.md",
         "references/provenance.md": "plugins/business/references/provenance.md"
       },
-      "bytes": 78147
+      "bytes": 82322
     },
     {
       "name": "business-research",
@@ -131,7 +132,7 @@
         "references/prose-rules.md": "plugins/business/references/prose-rules.md",
         "references/provenance.md": "plugins/business/references/provenance.md"
       },
-      "bytes": 83150
+      "bytes": 85963
     },
     {
       "name": "changelog",
@@ -1490,13 +1491,13 @@
     "plugins/situate/references/prose-rules.md": 5,
     "plugins/situate/references/situation-sweep.md": 5,
     "plugins/situate/scripts/position.py": 5,
+    "plugins/business/references/measurement.md": 4,
     "plugins/package-updater/references/prose-rules.md": 4,
     "plugins/package-updater/references/repo-scope.md": 4,
     "plugins/package-updater/scripts/repo_facts.py": 4,
     "plugins/pr/references/branch-context.md": 4,
     "plugins/terraform/references/prose-rules.md": 4,
     "plugins/terraform/scripts/lockctl.py": 4,
-    "plugins/business/references/measurement.md": 3,
     "plugins/changelog/references/branch-scope.md": 3,
     "plugins/changelog/references/commit-message.md": 3,
     "plugins/changelog/references/entry-rules.md": 3,

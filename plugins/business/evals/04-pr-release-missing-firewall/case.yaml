@@ -18,6 +18,13 @@ execution:
 runs: 3
 
 graders:
+  - name: reply-omits-private-run-name
+    type: regex
+    target: last_message
+    pattern: 'lean-tighten'
+    flags: i
+    match: not_contains
+
   - name: no-release-written
     type: file_exists
     path: out/2026-06-30/business/lean-tighten/reports/pr-release.md

@@ -1,0 +1,69 @@
+schema_version: "1.0"
+name: 13-pr-release-clean-case-study
+description: >-
+  A clean public case study produces a release and reply without private
+  identifiers, invented figures, or overwriting an existing scratch file.
+tags: [fixture]
+
+context:
+  scaffold_script: scaffold.sh
+
+execution:
+  prompt: >-
+    /business:pr-release out/2026-06-30/business/lean-tighten
+  max_turns: 30
+  timeout_seconds: 600
+  allowed_tools: [Bash, Read, Write, Edit, Glob, Grep, Skill]
+
+runs: 3
+
+graders:
+  - name: release-written
+    type: file_exists
+    path: out/2026-06-30/business/lean-tighten/reports/pr-release.md
+    exists: true
+
+  - name: release-omits-private-identifiers
+    type: regex
+    target:
+      source: file
+      path: out/2026-06-30/business/lean-tighten/reports/pr-release.md
+    match: not_contains
+    pattern: 'PROJ-\d+|acme|atlas|lean-tighten|9999|\$|\bROI\b'
+    flags: i
+
+  - name: reply-omits-private-identifiers
+    type: regex
+    target: last_message
+    match: not_contains
+    pattern: 'PROJ-\d+|acme|atlas|lean-tighten|out/2026|9999|\$|\bROI\b'
+    flags: i
+
+  - name: reply-confirms-firewall
+    type: regex
+    target: last_message
+    pattern: '^## Firewall$'
+    flags: m
+
+  - name: pre-existing-scratch-preserved
+    type: regex
+    target:
+      source: file
+      path: out/2026-06-30/business/lean-tighten/reports/.reply-check.md
+    pattern: '^User-owned draft: keep this file unchanged\.\n?$'
+
+  - name: release-retains-measurement-limits
+    type: llm
+    focus:
+      source: file
+      path: out/2026-06-30/business/lean-tighten/reports/pr-release.md
+    criteria: >-
+      The public case study supplies these facts: median paired saving
+      18 minutes per task gross, observed paired range 11 to 22 minutes,
+      3 tasks over a 13-week window in the second quarter, all DIRECTIONAL
+      and MEASURED. The saved release preserves these measurement limits.
+      It does not claim this is net savings, organization-wide realized
+      capacity, or a causal effect. It acknowledges unmeasured review time
+      and the small sample, and uses a clearly marked quote placeholder
+      without attributing it to an actual person. No numerical result is
+      introduced beyond the supplied public case study.
