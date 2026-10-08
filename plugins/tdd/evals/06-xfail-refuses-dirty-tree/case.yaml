@@ -1,0 +1,44 @@
+schema_version: "1.0"
+name: 06-xfail-refuses-dirty-tree
+description: >-
+  With uncommitted changes in the tree, the xfail workflow writes and commits
+  nothing and asks the user to commit or stash first.
+tags: [fixture, git]
+
+context:
+  scaffold_script: scaffold.sh
+
+execution:
+  prompt: >-
+    /tdd:xfail is_business_day(5) returns True for Saturday, but Saturday is
+    not a business day. I only want the failing test committed.
+  max_turns: 30
+  timeout_seconds: 600
+  allowed_tools: [Bash, Read, Write, Edit, Glob, Grep, Skill]
+
+runs: 3
+
+graders:
+  - name: no-commit
+    type: tool_used
+    tool: Bash
+    input_match: 'git(?:\s+-[Cc]\s*\S+)*\s+(-\w+ \S+ )*commit\b'
+    min: 0
+    max: 0
+    arm: both
+
+  - name: no-stash
+    type: tool_used
+    tool: Bash
+    input_match: 'git(?:\s+-[Cc]\s*\S+)*\s+(-\w+ \S+ )*stash\b'
+    min: 0
+    max: 0
+    arm: both
+
+  - name: no-test-written
+    type: llm
+    focus: last_message
+    criteria: |
+      The reply says nothing was written or committed because the working
+      tree has uncommitted changes, and asks the user to commit or stash them
+      first. It does not claim a test was added.
