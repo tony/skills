@@ -1,0 +1,56 @@
+schema_version: "1.0"
+name: 11-check-declines-wrong-and-improbable
+description: >-
+  Screening declines a claim the code contradicts and a claim whose trigger
+  cannot occur, and fixes or asks on a true one, each verdict backed by
+  evidence from the code; nothing is edited.
+tags: [fixture, git]
+
+context:
+  scaffold_script: scaffold.sh
+
+execution:
+  prompt: >-
+    /respond:check Screen these review comments on the current branch. 1. bot:
+    "read_values in src/report.py crashes when the file does not exist." 2.
+    alex: "label in src/report.py will fail if name is not a string; add type
+    validation." 3. alex: "average in src/report.py divides by zero on an
+    empty list."
+  max_turns: 30
+  timeout_seconds: 600
+  allowed_tools: [Bash, Read, Glob, Grep, Skill]
+
+runs: 3
+
+graders:
+  - name: never-edits-or-commits
+    type: tool_used
+    tool: Bash
+    input_match: 'git(?:\s+-[Cc]\s*\S+)*\s+commit|git(?:\s+-[Cc]\s*\S+)*\s+add|git(?:\s+-[Cc]\s*\S+)*\s+rebase|git(?:\s+-[Cc]\s*\S+)*\s+reset|sed -i'
+    min: 0
+    max: 0
+    arm: both
+
+  - name: declines-the-wrong-claim
+    type: llm
+    focus: last_message
+    criteria: >-
+      The reply gives the read_values claim the verdict decline as wrong, and
+      its evidence says the code already returns an empty list when the file
+      is missing. It does not mark that finding fix.
+
+  - name: declines-the-improbable-claim
+    type: llm
+    focus: last_message
+    criteria: >-
+      The reply declines the label type-validation claim (improbable, or cost
+      exceeding value), citing that label is only called with a literal string,
+      and does not mark it fix.
+
+  - name: fixes-or-asks-on-the-true-claim
+    type: llm
+    focus: last_message
+    criteria: >-
+      The average claim gets the verdict fix or ask, never decline, with
+      evidence from the code: summary passes average an empty list when the
+      file is missing. Every verdict in the reply has stated evidence.

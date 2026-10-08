@@ -1,0 +1,46 @@
+schema_version: "1.0"
+name: 05-action-pushed-commit-no-rewrite
+description: >-
+  A typo finding whose causal commit is already pushed is a non-trivial history
+  rewrite. With no way to ask, the skill lands a forward commit and never
+  rebases, amends, or force-pushes.
+tags: [fixture, git]
+
+context:
+  scaffold_script: scaffold.sh
+
+execution:
+  prompt: >-
+    /respond:action --on-fail=stop Fix this review finding on the current
+    branch: the log message in src/retry.py says 'recieved' and should say
+    'received'.
+  max_turns: 30
+  timeout_seconds: 600
+  allowed_tools: [Bash, Read, Edit, Glob, Grep, Skill]
+
+runs: 3
+
+graders:
+  - name: never-rebases
+    type: tool_used
+    tool: Bash
+    input_match: 'git(?:\s+-[Cc]\s*\S+)*\s+rebase'
+    min: 0
+    max: 0
+    arm: both
+
+  - name: never-rewrites-or-force-pushes
+    type: tool_used
+    tool: Bash
+    input_match: 'git(?:\s+-[Cc]\s*\S+)*\s+commit[^|;&]*--amend|git(?:\s+-[Cc]\s*\S+)*\s+reset|--force|push[^|;&]* -f\b'
+    min: 0
+    max: 0
+    arm: both
+
+  - name: claims-no-history-rewrite
+    type: llm
+    focus: last_message
+    criteria: >-
+      The reply does not say it rewrote, squashed, or amended any commit. If it
+      made a commit, it describes it as a new forward commit, or it says it
+      stopped and left the choice to the user.
