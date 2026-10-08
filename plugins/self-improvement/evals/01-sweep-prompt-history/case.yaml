@@ -1,0 +1,33 @@
+schema_version: "1.0"
+name: 01-sweep-prompt-history
+description: >-
+  The working directory is a repository with no skill catalog and no commits.
+  The sweep halts with one result sentence and invents no usage figures.
+tags: [fixture]
+
+context:
+  scaffold_script: scaffold.sh
+
+execution:
+  prompt: >-
+    Sweep my prompt history and tell me which skills I never invoke and what
+    instructions I keep retyping around them.
+  max_turns: 15
+  timeout_seconds: 420
+  allowed_tools: [Bash, Read, Glob, Grep, Skill]
+
+runs: 3
+
+graders:
+  - name: skill-fired
+    type: tool_used
+    tool: Skill
+    input_match: '"skill":\s*"(self-improvement:)?sweep"'
+
+  - name: halts-without-inventing-figures
+    type: llm
+    criteria: >-
+      The reply says the sweep could not run because there is no skill
+      catalog here, and tells the user what to supply, such as the repository
+      to sweep. It reports no invocation counts, ratios, or ranked skill
+      list, and does not claim to have written a findings ledger.
