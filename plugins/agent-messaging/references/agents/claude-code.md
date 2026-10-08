@@ -60,14 +60,15 @@ state, not your message.
 Resolve the target's inbox path from its `messagingSocketPath` (Discovery above), then send
 the line composed in SKILL.md step 4 and approved in step 5, verbatim, as one
 newline-delimited JSON user frame. No auth line is needed on Linux; native Windows
-requires `{"type":"auth","token":"..."}` first `(unverified — from docs)`. Run the helper by the absolute path resolved in `SKILL.md`, and check that `RELAY_BODY_END` appears nowhere in the line:
+requires `{"type":"auth","token":"..."}` first `(unverified — from docs)`. Run
+the helper by the absolute path resolved in `SKILL.md`, reading the approved
+`envelope.txt` from step 4:
 
-```bash
-/abs/path/to/relay.sh socket-send \
+```console
+$ /abs/path/to/relay.sh socket-send \
     --socket "$(jq -r .messagingSocketPath "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/sessions/<pid>.json")" \
-    --line - <<'RELAY_BODY_END'
-<the exact line from step 4>
-RELAY_BODY_END
+    --line - \
+    < <relay-dir>/envelope.txt
 ```
 
 The helper exits 6 when the transport is unavailable (sandbox blocks sockets, `nc` is
@@ -83,9 +84,9 @@ before typing at an idle prompt.
 
 ### codex-queue (send to Codex)
 
-Claude can shell out to `codex queue`, which returns a durable item receipt and delivers once
-the target is idle. Pass the message through a quoted heredoc, never `--message '<text>'`,
-which breaks on an apostrophe in the body. The Codex adapter owns the exact command.
+Claude can shell out to `codex queue`, which returns a durable queue-item receipt.
+Pass the saved envelope through the file-reading command in the Codex adapter;
+do not interpolate the message text into a shell command.
 
 ## 4. Delivery semantics
 

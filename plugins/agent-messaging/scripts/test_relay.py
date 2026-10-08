@@ -5,6 +5,7 @@
 
 from __future__ import annotations
 
+import json
 import os
 import pathlib
 import shutil
@@ -104,3 +105,65 @@ def test_envelope_rejects_header_injection(extra: list[str]) -> None:
     result = subprocess.run(cmd, capture_output=True, text=True, check=False)
     assert result.returncode == 2, result.stdout
     assert result.stdout == ""
+
+
+@needs_tools
+def test_file_payload_preserves_shell_metacharacters(tmp_path: pathlib.Path) -> None:
+    body = "It's literal: $(touch injected) `touch backtick` RELAY_BODY_END"
+    body_file = tmp_path / "body.txt"
+    body_file.write_text(body)
+    with body_file.open() as source:
+        envelope = subprocess.run(
+            [
+                str(RELAY),
+                "envelope",
+                "--from",
+                "p:c@s",
+                "--to",
+                "r",
+                "--hop",
+                "0",
+                "--seq",
+                "1",
+                "--body",
+                "-",
+            ],
+            stdin=source,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+    assert envelope.returncode == 0, envelope.stderr
+    assert (
+        envelope.stdout.rstrip("\n") == f"[relay/1 from=p:c@s to=r id=s-1 hop=0 want=none] {body}"
+    )
+    line_file = tmp_path / "envelope.txt"
+    line_file.write_text(envelope.stdout)
+    stub = tmp_path / "bin"
+    stub.mkdir()
+    frame = tmp_path / "frame.json"
+    nc = stub / "nc"
+    nc.write_text('#!/bin/sh\n[ "$1" = -h ] && exit 0\ncat >"$RELAY_TEST_FRAME"\n')
+    nc.chmod(0o755)
+    sock_path = tmp_path / "s.sock"
+    with socket.socket(socket.AF_UNIX) as server:
+        server.bind(str(sock_path))
+        env = {
+            **os.environ,
+            "PATH": f"{stub}{os.pathsep}{os.environ['PATH']}",
+            "RELAY_TEST_FRAME": str(frame),
+        }
+        env.pop("CODEX_SANDBOX_NETWORK_DISABLED", None)
+        with line_file.open() as source:
+            sent = subprocess.run(
+                [str(RELAY), "socket-send", "--socket", str(sock_path), "--line", "-"],
+                stdin=source,
+                capture_output=True,
+                text=True,
+                check=False,
+                env=env,
+            )
+    assert sent.returncode == 0, sent.stderr
+    assert json.loads(frame.read_text())["message"]["content"] == envelope.stdout.rstrip("\n")
+    assert not (tmp_path / "injected").exists()
+    assert not (tmp_path / "backtick").exists()
