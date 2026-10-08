@@ -8,6 +8,8 @@
 
 Final Result · Evolution Summary · Rationale Chain · Attribution
 
+Rationale Chain gives the reasons for the choices made. It ends with the last reason: no advice, "next improvement", or list of what could still be added.
+
 Evolution Summary opens with an Originals bullet: how many drafts were generated independently, and what they differed on. The final result is the weave, so this bullet is where the reader sees that more than one approach existed. Name the approaches that lost, in a few words each, in Rationale Chain.
 
 ## Example

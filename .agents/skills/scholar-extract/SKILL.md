@@ -17,11 +17,14 @@ citation that shows the term in use.
 
 Read `references/citation.md` for what a citation must carry, including
 why a quotation containing its own term is circular, and
+`references/source-pins.md` for repository pins. Read
 `references/stage-gates.md` for this stage's exit condition. The
 analyzer is `references/term_metrics.py`; `<analyzer>` below is its absolute
 path resolved from this skill's directory.
 
 User arguments: $ARGUMENTS
+
+Read `references/output-contract.md` before writing study files.
 
 ## What counts as a term
 

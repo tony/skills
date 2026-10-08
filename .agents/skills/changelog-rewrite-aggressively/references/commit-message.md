@@ -25,11 +25,14 @@ tiers.
      subject, or the body ("for the 1.53 release").
 
 Before the edit, run `git status --porcelain -- <changelog-file>`. Output
-means the user already has uncommitted changes there, and a commit would sweep
-them in: do not commit, leave the edit uncommitted, and say why. Before
-advising `git checkout -- <changelog-file>` to clear it, confirm with
-`git diff --stat -- <changelog-file>` that only the file mode changed; a
-checkout discards real edits.
+means the user already has uncommitted content there, including an untracked
+file: do not commit it, leave the edit uncommitted, and say why. A new file
+created by this run after approval may be staged and committed.
+
+Before committing, run the applicable project checks from `AGENTS.md` /
+`CLAUDE.md`. A failed check leaves the edit and backup refs available; report
+the failure and stop. Recheck the staged and unstaged changelog diffs before
+the commit. If new user changes appeared, leave them uncommitted.
 
 Commit the changelog file by path, which leaves other staged files out:
 
@@ -39,5 +42,5 @@ $ git commit \
     -- <changelog-file>
 ```
 
-A new, untracked changelog file needs `git add -- <changelog-file>` first.
+A file created by this run needs `git add -- <changelog-file>` first.
 Never `git add -A`, never a dirty code file, never push, never tag.

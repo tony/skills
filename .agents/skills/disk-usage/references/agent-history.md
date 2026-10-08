@@ -4,7 +4,7 @@
 
 - The state-database rule
 - Detecting native compression support
-- Compressing without native support
+- Without verified native archival support
 - Where history lives
 
 Agent transcripts are the one class of data on a developer machine that
@@ -21,14 +21,16 @@ when every byte survives.
 
 Before touching any transcript, establish two things:
 
-- **The discovery glob.** What filename pattern does the tool scan for?
-  A tool globbing `*.jsonl` will not see `*.jsonl.zst`, whatever codecs
-  it links.
-- **Whether a state DB exists.** If the tool maintains one, files it
-  did not write are invisible to it regardless of location.
+- **The discovery glob.** Establish the tool's filename pattern from
+  documented or tested behavior, not the extensions of existing files.
+- **Whether a state DB exists.** Check how the tool updates it after
+  importing, renaming, or archiving a session.
 
-Read `<tool> --help` and the tool's docs first. Only when they are silent,
-recover both from the shipped binary:
+Run `<tool> --help` as a standalone command and read the tool's docs first.
+Retain its exit status and unfiltered output: a missing executable or an
+empty filtered result cannot establish what help lists. When valid help
+and documentation are silent, binary strings can locate implementation
+clues; leave the store unchanged until discovery and indexing are verified:
 
 ```console
 $ strings -n 6 <binary> | rg -o '\*\.jsonl|state_db|thread.store|archive[a-z_]*'
@@ -36,9 +38,9 @@ $ strings -n 6 <binary> | rg -o '\*\.jsonl|state_db|thread.store|archive[a-z_]*'
 
 ## Detecting native compression support
 
-A tool that compresses its own history is always the correct path:
-it keeps sessions resumable. Look for three signals together, since any
-one alone is misleading:
+Prefer the tool's documented archival path, checking whether archived
+sessions remain resumable. These signals can guide investigation but
+do not establish that capability:
 
 - A **codec linked in**: a compression library's name or its decoder
   error strings.
@@ -47,46 +49,34 @@ one alone is misleading:
   reports what it compressed and skipped.
 
 A codec alone proves nothing: binaries link zstd and gzip for HTTP
-transport and tarballs. Only the extension string plus an
-archive routine shows the codec is wired to *history*.
+transport and tarballs. Strings are investigation clues, not proof
+that a tool can resume a compressed transcript.
 
-Check `<tool> --help` and its docs for a compress or archive option before
-reading the binary. Cite what you read (the help text, the docs page, or
-the binary string) for any claim about a tool's file format or compression
-support. When native support exists, it is usually behind a feature flag. Find
-the flag name and enable it in the tool's own config rather than
-compressing by hand.
+Use documentation or a disposable-transcript test for claims about
+resumability before proposing a change to the store.
 
 ```console
 $ strings -n 6 <binary> | rg -o '[a-z_]*compress[a-z_]*'
 ```
 
-## Compressing without native support
+## Without verified native archival support
 
-When a tool cannot read compressed history, compression converts the
-store from *resumable* to *archive-only*. That is a real cost and the
-user decides whether to pay it. Never present compression as free.
+Unknown archival support is a failed proof. After measuring the store's
+allocated size, stop this tier: leave originals and their index intact
+and use the blocked shape in `output-contract.md`. Do not measure or
+project a compression yield without a verified archival path.
 
-State the tradeoff explicitly, then offer a cutoff so recent sessions
-stay resumable:
+The result sentence is: "Archival support is unverified, so the originals
+remain unchanged." `Measured` gives the allocated size and its filesystem.
+`Not measured` is "Discovery, resumability, and index updates for compressed
+transcripts are unverified." `To continue` asks for the owning tool's
+documented archival behavior. These fields contain no hypothetical tool
+behavior, gzip command, backup offer, or projected saving.
 
-- Sessions older than a cutoff (90 days is a reasonable default) become
-  archives, and everything newer stays live.
-- Compression is reversible; the tradeoff is access, never fidelity.
-
-Transcripts usually compress well. Measure rather than assume, because
-inline base64 image data destroys the ratio.
-
-```console
-$ zstd -19 -T0 -c <sample-transcript> | wc -c
-```
-
-Check for embedded binary payloads before extrapolating a sample's
-ratio across the store.
-
-```console
-$ rg -c '"data:image/[a-z]+;base64' <sample-transcript>
-```
+Where native archival behavior is verified, measure that tool's output
+in a disposable copy, report its documented access tradeoff, and let the
+user choose a cutoff. Compare allocated sizes, not only stream lengths;
+age alone never authorizes modifying history.
 
 ## Where history lives
 
@@ -100,12 +90,12 @@ On WSL, the Windows-side profile holds a second, independent set.
 Two reclaimable classes of file sit *beside* history and are mistaken
 for it:
 
-- **Debug logs** — `*-tui.log`, `logs*.sqlite`. These record tool
-  internals, not conversation. Multi-gigabyte logs are common.
-- **Workspace snapshots** — an agent that checkpoints a working tree
-  captures whatever the tree contained, including `target/`,
-  `node_modules/`, and build output. Strip the artifacts and keep the
-  session.
+- **Debug logs** — inspect their contents; a name such as `logs*.sqlite`
+  does not prove that a database contains only disposable diagnostics.
+- **Workspace snapshots** — inspect for build output, then use the
+  owning tool's prune mechanism if it can preserve the checkpoint's
+  recovery behavior. A nested cache name does not justify editing a
+  snapshot store by hand.
 
 Measure the artifact share before classifying a snapshot store. With
 GNU coreutils:
@@ -128,6 +118,6 @@ $ find <store> \
     -type d \( -name target -o -name node_modules -o -name .venv \) \
     -prune \
     -print0 \
-  | xargs -0 du -sk \
+  | xargs -r -0 du -sk \
   | awk '{total += $1} END {printf "%.1f GiB\n", total / 1048576}'
 ```

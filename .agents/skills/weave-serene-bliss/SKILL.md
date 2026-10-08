@@ -121,7 +121,6 @@ Copy the final woven text to `<session_dir>/final.md`, then follow `ensemble-cor
 
 - Never modify project files. The engine runs every external CLI in a disposable worktree built from a snapshot of the checkout, and sub-agents work in snapshot worktrees too.
 - Run every phase even when the artifact is small; never stop the pipeline and write the design yourself.
-- A denied file-writing tool never stops this read-only command or produces a menu: stage text with the heredoc fallback in `ensemble-core.md` and continue.
 - Every refinement pass goes to all participants. The panel judges and the host weaves; nothing refines alone.
 - Verify every model claim against the codebase before it enters the weave.
 - When the prompt says behavior must not change, keep only rendering changes in the weave. Drop any element that alters parsing, flags, exit codes, or error text, such as a rewritten usage line or parser.

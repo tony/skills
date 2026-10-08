@@ -7,8 +7,8 @@ reported failure (the JSON says why), 2 a usage error. Run
 POSIX only: it needs ``git`` and process groups.
 
 Commands: flags, detect, init, context, prompt, pass-dir, labels, dispatch,
-judge-plan, judge-parse, panel-merge, worktrees, capture, adopt, guard,
-reset-main, stash-restore, update.
+judge-plan, judge-parse, panel-merge, worktrees, capture, adopt, commit,
+guard, reset-main, stash-restore, update.
 """
 
 # pyright: reportAny=false, reportExplicitAny=false, reportUnusedCallResult=false
@@ -22,6 +22,7 @@ import json
 import os
 import random
 import re
+import shlex
 import shutil
 import signal
 import subprocess
@@ -141,7 +142,7 @@ LANES: dict[str, tuple[tuple[str, str | None], ...]] = {
         ("agent", "gemini-3.1-pro"),
         ("agy", "Gemini 3.8 Flash (High)"),
     ),
-    "gpt": (("codex", None), ("agent", "gpt-5.4-high"), ("agent", "gpt-5.4-mini")),
+    "gpt": (("codex", None), ("agent", "gpt-5.4-high"), ("agent", "gpt-5.4-mini-medium")),
 }
 
 CREDIT_PATTERNS = (
@@ -179,12 +180,17 @@ def emit(doc: Json) -> None:
 
 
 def git_bytes(
-    top: str | Path, *args: str, check: bool = True, env: Mapping[str, str] | None = None
+    top: str | Path,
+    *args: str,
+    check: bool = True,
+    env: Mapping[str, str] | None = None,
+    stdin: bytes | None = None,
 ) -> bytes:
     """Run ``git -C top ...`` and return raw stdout; no decoding, nothing stripped."""
     proc = subprocess.run(  # noqa: S603
         ["git", "-C", str(top), *args],  # noqa: S607
         capture_output=True,
+        input=stdin,
         check=False,
         env={**os.environ, **env} if env else None,
     )
@@ -428,7 +434,7 @@ def lane_chain(
     """Return the installed ``(executable, model)`` steps for an external lane.
 
     >>> lane_chain("gpt", lambda n: "/bin/agent" if n == "agent" else None)
-    [('agent', 'gpt-5.4-high'), ('agent', 'gpt-5.4-mini')]
+    [('agent', 'gpt-5.4-high'), ('agent', 'gpt-5.4-mini-medium')]
     >>> [m for _, m in lane_chain("agy", lambda n: "/bin/agy" if n == "agy" else None)]
     ['Gemini 3.1 Pro (High)', 'Gemini 3.8 Flash (High)']
     """
@@ -615,20 +621,18 @@ def snapshot_tree(top: str | Path) -> str:
     """Return the tree of the working directory without touching the user's index.
 
     Tracked changes, deletions, and untracked non-ignored files are all included.
-    A temporary copy of the index keeps git's stat cache, so unchanged files are
-    not rehashed.
+    Rebuild a temporary index without stat-cache or shortcut flags so live
+    edits cannot hide behind assume-unchanged or skip-worktree entries.
     """
     require_safe_toplevel(top)
-    real = Path(top) / git(top, "rev-parse", "--git-path", "index")
     fd, name = tempfile.mkstemp(prefix="weave-index-")
     os.close(fd)
     env = {"GIT_INDEX_FILE": name}
     try:
-        if real.is_file():
-            shutil.copyfile(real, name)
-        else:
-            git(top, "read-tree", "HEAD", env=env)
-        git(top, "add", "-A", "--", ".", env=env)
+        entries = git_bytes(top, "ls-files", "--stage", "-z")
+        git(top, "read-tree", "--empty", env=env)
+        git_bytes(top, "update-index", "-z", "--index-info", stdin=entries, env=env)
+        git(top, "-c", "core.sparseCheckout=false", "add", "-A", "--", ".", env=env)
         return git(top, "write-tree", env=env)
     finally:
         Path(name).unlink(missing_ok=True)
@@ -653,13 +657,23 @@ def pin_tree(top: str | Path, session_id: str, name: str, tree: str, parent: str
     return commit
 
 
-def take_guard_snapshot(top: str, session_id: str) -> Json:
+def _index_state(top: str | Path) -> str:
+    return hashlib.sha256(git_bytes(top, "ls-files", "--stage", "-v", "-z")).hexdigest()
+
+
+def take_guard_snapshot(top: str, session_id: str, name: str = "pre") -> Json:
     """Record the checkout as ``refs/weave-guard/<session>/pre``."""
     require_safe_toplevel(top)
     head = git(top, "rev-parse", "HEAD")
     tree = snapshot_tree(top)
-    commit = pin_tree(top, session_id, "pre", tree, head)
-    return {"pre": commit, "tree": tree, "head": head}
+    commit = pin_tree(top, session_id, name, tree, head)
+    return {
+        "pre": commit,
+        "tree": tree,
+        "head": head,
+        "index": _index_state(top),
+        "head_ref": git(top, "symbolic-ref", "-q", "HEAD", check=False),
+    }
 
 
 def _touched(top: str, pre_tree: str, post_tree: str) -> dict[str, str]:
@@ -678,7 +692,7 @@ def _guard_of(session: Json) -> Json:
     return t.cast("Json", guard)
 
 
-def guard_check(session_dir: Path, label: str = "check") -> Json:
+def guard_check(session_dir: Path, label: str = "check", *, initial: bool = False) -> Json:
     """Compare the user's checkout with the pre-dispatch snapshot; never modify it.
 
     A difference is recorded under ``guard/<id>/``: ``touched.json``, ``violation.patch``,
@@ -687,17 +701,29 @@ def guard_check(session_dir: Path, label: str = "check") -> Json:
     session = load_session(session_dir)
     if session.get("unguarded"):
         return {"ok": True, "violation": False, "unguarded": True}
-    top, pre = session["toplevel"], _guard_of(session)
+    top = session["toplevel"]
+    pre = session["initial_guard"] if initial else _guard_of(session)
     post_tree = snapshot_tree(top)
     head = git(top, "rev-parse", "HEAD")
-    if post_tree == pre["tree"] and head == pre["head"]:
+    index = _index_state(top)
+    head_ref = git(top, "symbolic-ref", "-q", "HEAD", check=False)
+    index_changed = index != pre.get("index", index)
+    head_changed = head != pre["head"] or head_ref != pre.get("head_ref", head_ref)
+    if post_tree == pre["tree"] and not head_changed and not index_changed:
         return {"ok": True, "violation": False}
+    current = {
+        "tree": post_tree,
+        "head": head,
+        "index": index,
+        "head_ref": head_ref,
+        "baseline": pre["pre"],
+    }
     gdir = session_dir / "guard"
     gdir.mkdir(mode=0o700, exist_ok=True)
     last = gdir / "last.json"
     if last.is_file():
         seen = json.loads(last.read_text(encoding="utf-8"))
-        if seen["tree"] == post_tree and seen["head"] == head:
+        if all(seen.get(key) == value for key, value in current.items()):
             return {**seen["result"], "repeat": True}
     vid = f"{label}-{datetime.now(timezone.utc).strftime('%H%M%S')}-{random.randbytes(2).hex()}"
     vdir = gdir / vid
@@ -706,11 +732,12 @@ def guard_check(session_dir: Path, label: str = "check") -> Json:
     (vdir / "touched.json").write_text(json.dumps(touched, indent=2) + "\n", encoding="utf-8")
     patch = git_bytes(top, "diff", "--binary", "--no-renames", pre["tree"], post_tree)
     (vdir / "violation.patch").write_bytes(patch)
+    (vdir / "index-entries").write_bytes(git_bytes(top, "ls-files", "--stage", "-v", "-z"))
     for rel, status in touched.items():
         src = Path(top) / rel
-        if status != "D" and src.is_file():
+        if status != "D" and (src.is_symlink() or src.is_file()):
             (vdir / "post-copy" / rel).parent.mkdir(parents=True, exist_ok=True)
-            shutil.copy2(src, vdir / "post-copy" / rel)
+            shutil.copy2(src, vdir / "post-copy" / rel, follow_symlinks=False)
     pin_tree(top, session["session_id"], f"post-{vid}", post_tree, pre["pre"])
     result: Json = {
         "ok": True,
@@ -718,11 +745,10 @@ def guard_check(session_dir: Path, label: str = "check") -> Json:
         "id": vid,
         "dir": str(vdir),
         "touched": touched,
-        "head_changed": head != pre["head"],
+        "head_changed": head_changed,
+        "index_changed": index_changed,
     }
-    last.write_text(
-        json.dumps({"tree": post_tree, "head": head, "result": result}) + "\n", encoding="utf-8"
-    )
+    last.write_text(json.dumps({**current, "result": result}) + "\n", encoding="utf-8")
     append_jsonl(
         session_dir / "guard-events.jsonl",
         {
@@ -731,7 +757,8 @@ def guard_check(session_dir: Path, label: str = "check") -> Json:
             "label": label,
             "id": vid,
             "touched": sorted(touched),
-            "head_changed": head != pre["head"],
+            "head_changed": head_changed,
+            "index_changed": index_changed,
             "reverted": False,
         },
     )
@@ -833,7 +860,7 @@ def _drop_session_refs(top: str, session_id: str) -> None:
 def guard_finish(session_dir: Path) -> Json:
     """Run the last check, log ``repo_guard_final``, and drop the pinned refs when clean.
 
-    A mutating session changes the checkout on purpose, so it skips the check.
+    An adopted session changes the checkout on purpose, so it skips the check.
     Pins that ``reset-main`` made before discarding changes are always kept.
     """
     session = load_session(session_dir)
@@ -844,12 +871,22 @@ def guard_finish(session_dir: Path) -> Json:
             {"event": "repo_guard_final", "timestamp": stamp(), "repo_clean": None},
         )
         return {"ok": True, "clean": None, "unguarded": True, "refs_pruned": False, "touched": {}}
-    if session.get("mutating"):
+    if session.get("applied"):
         event: Json = {"event": "repo_guard_final", "timestamp": stamp(), "repo_clean": None}
         append_jsonl(session_dir / "events.jsonl", event)
-        _drop_session_refs(top, session["session_id"])
-        return {"ok": True, "clean": None, "refs_pruned": True, "touched": {}}
-    found = guard_check(session_dir, "final")
+        pruned = not (session_dir / "guard" / "last.json").exists()
+        if pruned:
+            _drop_session_refs(top, session["session_id"])
+        return {"ok": True, "clean": None, "refs_pruned": pruned, "touched": {}}
+    if session.get("mutating") and not session.get("initial_guard"):
+        return {
+            "ok": False,
+            "clean": None,
+            "refs_pruned": False,
+            "touched": {},
+            "error": "no initial checkout snapshot; unchanged state cannot be verified",
+        }
+    found = guard_check(session_dir, "final", initial=bool(session.get("mutating")))
     clean = not found["violation"]
     event = {"event": "repo_guard_final", "timestamp": stamp(), "repo_clean": clean}
     append_jsonl(session_dir / "guard-events.jsonl", event)
@@ -857,7 +894,14 @@ def guard_finish(session_dir: Path) -> Json:
     pruned = clean and not (session_dir / "guard" / "last.json").exists()
     if pruned:
         _drop_session_refs(top, session["session_id"])
-    return {"ok": True, "clean": clean, "refs_pruned": pruned, "touched": found.get("touched", {})}
+    return {
+        "ok": clean,
+        "clean": clean,
+        "refs_pruned": pruned,
+        "touched": found.get("touched", {}),
+        "head_changed": found.get("head_changed", False),
+        "index_changed": found.get("index_changed", False),
+    }
 
 
 def guard_prune(repo: str, days: float) -> Json:
@@ -951,7 +995,7 @@ def init_session(  # noqa: PLR0913
                 _drop_session_refs(top, session_id)
             ref = stash_entry(top, made["sha"]) if "sha" in made else None
             if ref:
-                git(top, "stash", "pop", "--quiet", ref, check=False)
+                git(top, "stash", "pop", "--quiet", "--index", ref, check=False)
         if new_repo:
             shutil.rmtree(repo_path, ignore_errors=True)
         raise
@@ -1005,6 +1049,9 @@ def _build_session(  # noqa: PLR0913
             + "\n",
         )
 
+    initial_guard = (
+        take_guard_snapshot(top, session_id, "initial") if mutating and not bare else None
+    )
     stash: Json | None = stash_user_changes(top, command) if mutating else None
     if stash and stash.get("sha"):
         made["sha"] = stash["sha"]
@@ -1034,6 +1081,8 @@ def _build_session(  # noqa: PLR0913
     }
     if guard:
         doc["guard"] = guard
+    if initial_guard:
+        doc["initial_guard"] = initial_guard
     if not info.git:
         doc["unguarded"] = True
         doc["scratch"] = str(scratch)
@@ -1277,7 +1326,7 @@ def build_command(
     if exe == "codex":
         effort = ["-c", "model_reasoning_effort=medium", prompt]
         if mutating:
-            return ["codex", "exec", "--yolo", *effort]
+            return ["codex", "exec", "--dangerously-bypass-approvals-and-sandbox", *effort]
         return ["codex", "exec", "-s", "read-only", "-C", wd, "--skip-git-repo-check", *effort]
     if mutating:
         return ["agent", "-p", "-f", "--model", t.cast("str", model), prompt]
@@ -1735,6 +1784,26 @@ def merge_panel(judges: Mapping[str, Path], label_map: Mapping[str, str] | None 
 # --- worktrees, capture, adopt --------------------------------------------
 
 
+def _worker_root_protocol(path: Path) -> str:
+    return (
+        f"Assigned worktree root: {str(path)!r}. This does not set your tool cwd.\n"
+        "Every Bash or shell call starts from the inherited directory, not your previous cd. "
+        f"Start EVERY shell command with this literal prefix: cd -- {shlex.quote(str(path))} && \n"
+        "Every Read, Write, Edit, Glob, or Grep path must be absolute under the assigned root "
+        "(the supplied prompt file is the only read exception). Never use a relative file path.\n"
+        "Leave edits unstaged. Do not commit, reset, restore, checkout, or change Git history.\n"
+        "Do not change files outside this root. If you discover an outside write, STOP and report "
+        "the exact paths; never move, delete, reset, or restore those files to hide or repair it."
+    )
+
+
+def _safe_participant(name: str) -> str:
+    if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9_.-]*", name):
+        msg = f"unsafe participant ID {name!r}"
+        raise EngineError(msg)
+    return name
+
+
 def create_worktrees(
     session_dir: Path,
     participants: Sequence[str],
@@ -1754,6 +1823,7 @@ def create_worktrees(
 def _create_worktrees(
     session_dir: Path, participants: Sequence[str], when: str | None, base: str | None
 ) -> Json:
+    participants = [_safe_participant(name) for name in participants]
     session = load_session(session_dir)
     top = session["toplevel"]
     made: Json = session.setdefault("worktrees", {})
@@ -1762,7 +1832,11 @@ def _create_worktrees(
             path = session_dir / "worktrees" / name
             shutil.rmtree(path, ignore_errors=True)
             path.mkdir(mode=0o700, parents=True)
-            made[name] = {"path": str(path), "branch": None}
+            made[name] = {
+                "path": str(path),
+                "branch": None,
+                "worker_instructions": _worker_root_protocol(path),
+            }
         save_session(session_dir, session)
         return {"ok": True, "worktrees": made}
     require_safe_toplevel(top)
@@ -1780,12 +1854,16 @@ def _create_worktrees(
             branch = f"weave/{name}/{when}"
             git(top, "worktree", "add", "-q", str(path), "-b", branch)
             made[name] = {"path": str(path), "branch": branch}
+        made[name]["worker_instructions"] = _worker_root_protocol(path)
+        made[name]["base"] = git(path, "rev-parse", "HEAD")
     save_session(session_dir, session)
     return {"ok": True, "worktrees": made}
 
 
 def remove_worktrees(session_dir: Path, participants: Sequence[str] | None) -> Json:
     """Remove the session's registered worktrees and delete their branches."""
+    if participants is not None:
+        participants = [_safe_participant(name) for name in participants]
     with session_lock(session_dir):
         session = load_session(session_dir)
         top = session["toplevel"]
@@ -1810,8 +1888,10 @@ def capture_tree(session_dir: Path, n: int, participant: str, tree: str | None) 
     """Save a participant's binary patch, changed-file snapshots, and manifest.
 
     ``tree`` is a path, or ``None`` for the participant's registered worktree.
-    The tree's index is not touched.
+    The tree's index is not touched. Symlinks are snapshotted as symlinks
+    (dangling ones included) and listed under ``links`` in the manifest.
     """
+    participant = _safe_participant(participant)
     session = load_session(session_dir)
     entry = session.get("worktrees", {}).get(participant)
     if tree is None and entry is None:
@@ -1819,22 +1899,31 @@ def capture_tree(session_dir: Path, n: int, participant: str, tree: str | None) 
         raise EngineError(msg)
     path = tree or entry["path"]
     base = session_dir / pass_name(n)
+    baseline = entry.get("base") if entry else None
+    baseline = baseline or session["guard"]["head" if session.get("mutating") else "pre"]
     after = snapshot_tree(path)
-    patch = git_bytes(path, "diff", "--binary", "--no-renames", "HEAD", after)
+    patch = git_bytes(path, "diff", "--binary", "--no-renames", baseline, after)
     changed = git_z(
-        path, "diff", "--name-only", "-z", "--no-renames", "--diff-filter=d", "HEAD", after
+        path, "diff", "--name-only", "-z", "--no-renames", "--diff-filter=d", baseline, after
     )
     deleted = git_z(
-        path, "diff", "--name-only", "-z", "--no-renames", "--diff-filter=D", "HEAD", after
+        path, "diff", "--name-only", "-z", "--no-renames", "--diff-filter=D", baseline, after
     )
     patch_path = base / "diffs" / f"{participant}.patch"
     patch_path.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
     patch_path.write_bytes(patch)
+    links: dict[str, str] = {}
     for rel in changed:
+        src = Path(path) / rel
         dest = base / "files" / participant / rel
         dest.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copy2(Path(path) / rel, dest)
-    manifest = {"changed": changed, "deleted": deleted}
+        dest.unlink(missing_ok=True)
+        if src.is_symlink():
+            links[rel] = os.readlink(src)  # noqa: PTH115
+        shutil.copy2(src, dest, follow_symlinks=False)
+    manifest: Json = {"changed": changed, "deleted": deleted}
+    if links:
+        manifest["links"] = links
     (base / "diffs" / f"{participant}.json").write_text(
         json.dumps(manifest, indent=2) + "\n", encoding="utf-8"
     )
@@ -1857,6 +1946,39 @@ def _safe_rel(rel: str) -> str:
     return rel
 
 
+def _path_conflicts(top: Path, paths: Sequence[str], *, editing: bool = False) -> dict[str, str]:
+    paths = [str(Path(_safe_rel(path))) for path in paths]
+    conflicts: dict[str, str] = {}
+    for rel in paths:
+        target = top / rel
+        parents = [p for p in target.parents if p != top and top in p.parents]
+        if not Path(rel).parts or any(p.lower() == ".git" for p in Path(rel).parts):
+            conflicts[rel] = "repository root or Git metadata"
+        elif any(parent.is_symlink() for parent in parents):
+            conflicts[rel] = "symlinked parent"
+        elif any(parent.exists() and not parent.is_dir() for parent in parents):
+            conflicts[rel] = "parent is not a directory"
+        elif target.is_symlink():
+            if editing:
+                conflicts[rel] = "symlink target cannot be edited in place"
+        elif target.exists() and not target.is_file():
+            conflicts[rel] = "directory or special file"
+    paths = [path for path in paths if path not in conflicts]
+    if paths:
+        env = {"GIT_OPTIONAL_LOCKS": "0"}
+        for entry in git_z(
+            top, "--literal-pathspecs", "ls-files", "-v", "-z", "--", *paths, env=env
+        ):
+            if entry[0].islower() or entry[0] == "S":
+                conflicts[entry[2:]] = "assume-unchanged or skip-worktree index flag"
+        for entry in git_z(
+            top, "--literal-pathspecs", "status", "--porcelain", "-z", "--no-renames",
+            "--untracked-files=all", "--ignored", "--", *paths, env=env,
+        ):  # fmt: skip
+            conflicts[entry[3:]] = "uncommitted or ignored path"
+    return conflicts
+
+
 def adopt_files(
     session_dir: Path,
     n: int,
@@ -1868,26 +1990,274 @@ def adopt_files(
 
     ``whole`` adopts every change one participant captured in pass ``n``.
     """
-    top = Path(load_session(session_dir)["toplevel"])
+    session = load_session(session_dir)
+    top = Path(session["toplevel"])
+    require_safe_toplevel(top)
+    if (
+        session.get("worker_backend") == "subagents"
+        and session.get("status") == "in_progress"
+        and not session.get("applied")
+        and guard_check(session_dir, "before-adopt")["violation"]
+    ):
+        msg = (
+            "checkout changed during native worker dispatch; "
+            "preserve the checkout and worktrees, then stop"
+        )
+        raise EngineError(msg)
     base = session_dir / pass_name(n)
     picks, deletes = list(picks), list(deletes)
     if whole:
-        manifest = json.loads((base / "diffs" / f"{whole}.json").read_text(encoding="utf-8"))
+        manifest = json.loads(
+            (base / "diffs" / f"{_safe_participant(whole)}.json").read_text(encoding="utf-8")
+        )
         picks += [f"{rel}={whole}" for rel in manifest["changed"]]
         deletes += manifest["deleted"]
-    copied: list[str] = []
+    sources: dict[str, Path] = {}
     for pick in picks:
         rel, _, participant = pick.rpartition("=")
-        src = base / "files" / participant / _safe_rel(rel)
-        if not src.is_file():
+        rel = _safe_rel(rel)
+        src = base / "files" / _safe_participant(participant) / rel
+        if not (src.is_symlink() or src.is_file()):
             msg = f"no snapshot of {rel} from {participant} in pass {n}"
             raise EngineError(msg)
+        sources[rel] = src
+    deletes = [_safe_rel(rel) for rel in deletes]
+    paths = [*sources, *deletes]
+    conflicts = _path_conflicts(top, paths)
+    if conflicts:
+        msg = "refusing to overwrite paths: " + "; ".join(
+            f"{path!r}: {reason}" for path, reason in conflicts.items()
+        )
+        raise EngineError(msg)
+    copied: list[str] = []
+    for rel, src in sources.items():
         (top / rel).parent.mkdir(parents=True, exist_ok=True)
-        shutil.copy2(src, top / rel)
+        (top / rel).unlink(missing_ok=True)
+        shutil.copy2(src, top / rel, follow_symlinks=False)
         copied.append(rel)
     for rel in deletes:
-        (top / _safe_rel(rel)).unlink(missing_ok=True)
+        (top / rel).unlink(missing_ok=True)
+    if copied or deletes:
+        session["applied"] = True
+        save_session(session_dir, session)
     return {"ok": True, "copied": copied, "deleted": deletes}
+
+
+_TRAILER = re.compile(r"^(co-authored-by:|.*generated (with|by)\b)", re.IGNORECASE | re.MULTILINE)
+
+
+def _commit_git(top: Path, *args: str, index: Path | None = None) -> str:
+    env = {
+        k: v
+        for k, v in os.environ.items()
+        if k not in {"GIT_DIR", "GIT_WORK_TREE", "GIT_INDEX_FILE", "GIT_PREFIX", "GIT_COMMON_DIR"}
+    }
+    if index is not None:
+        env["GIT_INDEX_FILE"] = str(index)
+    proc = subprocess.run(  # noqa: S603
+        ["git", "--literal-pathspecs", "-C", str(top), *args],  # noqa: S607
+        env=env,
+        capture_output=True,
+        check=False,
+    )
+    if proc.returncode:
+        detail = (proc.stderr or proc.stdout).decode("utf-8", "replace").strip()
+        msg = f"git {' '.join(args)}: {detail}"
+        raise EngineError(msg)
+    return os.fsdecode(proc.stdout).rstrip("\n")
+
+
+def _validate_commit(scratch: Path, candidate: str, expected: str, captured_tree: str) -> None:
+    if _commit_git(scratch, "rev-list", "--parents", "-n", "1", candidate).split() != [
+        candidate,
+        expected,
+    ]:
+        msg = "hook changed candidate history"
+        raise EngineError(msg)
+    if _commit_git(scratch, "rev-parse", f"{candidate}^{{tree}}") != captured_tree:
+        msg = "hook changed approved bytes; review the retained worktree"
+        raise EngineError(msg)
+    if _TRAILER.search(_commit_git(scratch, "show", "-s", "--format=%B", candidate)):
+        msg = "hook added a prohibited commit-message trailer"
+        raise EngineError(msg)
+    if _commit_git(scratch, "status", "--porcelain", "--untracked-files=all"):
+        msg = "hook left uncommitted changes; review the retained worktree"
+        raise EngineError(msg)
+
+
+def _expect_commit_source(top: Path, index: Path, prior: bytes, head: str, branch: str) -> None:
+    if index.read_bytes() != prior:
+        msg = "source index changed while hooks ran; nothing was published"
+        raise EngineError(msg)
+    if (
+        _commit_git(top, "rev-parse", "HEAD") != head
+        or _commit_git(top, "symbolic-ref", "HEAD") != branch
+    ):
+        msg = "source HEAD or branch changed while hooks ran; nothing was published"
+        raise EngineError(msg)
+
+
+def commit_paths(repo: str, message_file: str, paths: Sequence[str]) -> Json:  # noqa: PLR0915
+    """Commit named bytes through isolated hooks, preserving the source worktree and other staging.
+
+    Hook changes or concurrent index/HEAD changes retain a recovery worktree.
+    Publication requires a branch and no Git operation in progress.
+    """
+    if not paths:
+        msg = "commit needs at least one path"
+        raise EngineError(msg)
+    message = Path(message_file).read_text(encoding="utf-8")
+    if _TRAILER.search(message):
+        msg = "commit message carries a Co-Authored-By or 'Generated with' trailer"
+        raise EngineError(msg)
+    top = Path(_commit_git(Path(repo).resolve(), "rev-parse", "--show-toplevel"))
+    require_safe_toplevel(top)
+    expected = _commit_git(top, "rev-parse", "--verify", "HEAD^{commit}")
+    branch = _commit_git(top, "symbolic-ref", "HEAD")
+    index = Path(_commit_git(top, "rev-parse", "--git-path", "index"))
+    if not index.is_absolute():
+        index = top / index
+    head_path = top / _commit_git(top, "rev-parse", "--git-path", "HEAD")
+    for operation in (
+        "MERGE_HEAD",
+        "CHERRY_PICK_HEAD",
+        "REVERT_HEAD",
+        "rebase-apply",
+        "rebase-merge",
+    ):
+        location = Path(_commit_git(top, "rev-parse", "--git-path", operation))
+        if (top / location).exists():
+            msg = f"finish the Git operation before committing: {operation}"
+            raise EngineError(msg)
+    if _commit_git(top, "ls-files", "--unmerged"):
+        msg = "resolve the unmerged index before committing"
+        raise EngineError(msg)
+    rels = list(dict.fromkeys(_safe_rel(p) for p in paths))
+    for rel in rels:
+        target = top / rel
+        if target.is_dir() and not target.is_symlink():
+            msg = f"commit needs individual files, not directory {rel!r}"
+            raise EngineError(msg)
+        if any(parent.is_symlink() for parent in target.parents if top in parent.parents):
+            msg = f"commit refuses a symlinked parent of {rel!r}"
+            raise EngineError(msg)
+    prior_index = index.read_bytes()
+    root = aip_root().resolve() / "commit-recovery"
+    root.mkdir(parents=True, exist_ok=True)
+    recovery = Path(tempfile.mkdtemp(prefix="finding-", dir=root))
+    scratch = recovery / "worktree"
+    reference = f"refs/weave-commit/{recovery.name}"
+    stored_message = recovery / "message.txt"
+    stored_message.write_text(message, encoding="utf-8")
+    metadata: Json = {"source": str(top), "expected": expected, "branch": branch, "paths": rels}
+    temporary: Path | None = None
+    published = False
+    acquired: list[Path] = []
+    cleanup_errors: list[str] = []
+    locks = (index.with_name(index.name + ".lock"), head_path.with_name("HEAD.lock"))
+    try:
+        descriptor, name = tempfile.mkstemp(prefix="weave-index-", dir=index.parent)
+        os.close(descriptor)
+        temporary = Path(name)
+        _commit_git(top, "read-tree", expected, index=temporary)
+        _commit_git(top, "add", "--", *rels, index=temporary)
+        captured_tree = _commit_git(top, "write-tree", index=temporary)
+        _commit_git(top, "worktree", "add", "--detach", "--no-checkout", str(scratch), expected)
+        _commit_git(scratch, "read-tree", "--reset", "-u", captured_tree)
+        approved = _commit_git(
+            scratch, "commit-tree", captured_tree, "-p", expected, "-F", str(stored_message)
+        )
+        _commit_git(scratch, "update-ref", reference, approved, "")
+        metadata.update(approved=approved, recovery_ref=reference, captured_tree=captured_tree)
+        (recovery / "recovery.json").write_text(json.dumps(metadata, indent=2), encoding="utf-8")
+        _commit_git(scratch, "commit", "--quiet", "-F", str(stored_message))
+        candidate = _commit_git(scratch, "rev-parse", "HEAD")
+        metadata["candidate"] = candidate
+        _validate_commit(scratch, candidate, expected, captured_tree)
+        with contextlib.ExitStack() as stack:
+            for lock in locks:
+                stack.enter_context(lock.open("xb"))
+                acquired.append(lock)
+            _expect_commit_source(top, index, prior_index, expected, branch)
+            shutil.copyfile(index, temporary)
+            _commit_git(
+                top,
+                "-c",
+                "core.splitIndex=false",
+                "update-index",
+                "--no-split-index",
+                index=temporary,
+            )
+            _commit_git(
+                top, "restore", "--source", candidate, "--staged", "--", *rels, index=temporary
+            )
+            shutil.copymode(index, temporary)
+            shutil.copyfile(temporary, recovery / "index-after")
+            (recovery / "recovery.json").write_text(
+                json.dumps(metadata, indent=2), encoding="utf-8"
+            )
+            # Hooks run in scratch; source working files are never rewritten.
+            _commit_git(
+                scratch, "update-ref", "-m", "weave: apply finding", branch, candidate, expected
+            )
+            published = True
+            temporary.replace(index)
+    except (EngineError, OSError) as exc:
+        metadata.update(published=published, error=str(exc))
+        with contextlib.suppress(OSError):
+            (recovery / "recovery.json").write_text(
+                json.dumps(metadata, indent=2), encoding="utf-8"
+            )
+        state = "commit published; source index may need recovery" if published else "not published"
+        msg = f"{exc}; {state}; recovery retained at {recovery}"
+        raise EngineError(msg) from exc
+    finally:
+        for owned in ([temporary] if temporary is not None else []) + acquired:
+            try:
+                owned.unlink(missing_ok=True)
+            except OSError as exc:
+                cleanup_errors.append(f"could not remove {owned}: {exc}")
+                print(f"weave: {cleanup_errors[-1]}", file=sys.stderr)
+    result: Json = {
+        "ok": True,
+        "commit": candidate,
+        "committed": [
+            p
+            for p in _commit_git(
+                top,
+                "diff-tree",
+                "-z",
+                "--no-commit-id",
+                "--name-only",
+                "-r",
+                candidate,
+            ).split("\0")
+            if p
+        ],
+        "still_staged": [
+            p
+            for p in _commit_git(
+                top,
+                "diff",
+                "--cached",
+                "--name-only",
+                "-z",
+            ).split("\0")
+            if p
+        ],
+    }
+    if cleanup_errors:
+        result["warning"] = "; ".join(cleanup_errors) + f"; recovery retained at {recovery}"
+        return result
+    try:
+        _commit_git(scratch, "update-ref", "-d", reference, approved)
+        _commit_git(top, "worktree", "remove", "--force", str(scratch))
+        for name in ("message.txt", "recovery.json", "index-after"):
+            (recovery / name).unlink()
+        recovery.rmdir()
+    except (EngineError, OSError) as exc:
+        result["warning"] = f"commit published; cleanup failed: {exc}; retained at {recovery}"
+    return result
 
 
 def latest_session(repo: str, command: str) -> Json:
@@ -1919,8 +2289,7 @@ def latest_session(repo: str, command: str) -> Json:
         for manifest in sorted((passes[-1] / "diffs").glob("*.json")):
             captured[manifest.stem] = json.loads(manifest.read_text(encoding="utf-8"))
     paths = {p for m in captured.values() for p in m["changed"] + m["deleted"]}
-    status = git_z(info.top, "status", "--porcelain", "-z", "--no-renames", "--untracked-files=all")
-    dirty = sorted(paths & {entry[3:] for entry in status})
+    conflicts = _path_conflicts(Path(info.top), sorted(paths))
     events = sdir / "events.jsonl"
     text = events.read_text(encoding="utf-8") if events.is_file() else ""
     return {
@@ -1929,8 +2298,10 @@ def latest_session(repo: str, command: str) -> Json:
         "status": session.get("status"),
         "pass": int(passes[-1].name[5:]) if passes else None,
         "captured": captured,
-        "dirty": dirty,
-        "applied": any(f'"{e}"' in text for e in ("synthesis_applied", "adoption_applied")),
+        "dirty": sorted(conflicts),
+        "conflicts": conflicts,
+        "applied": bool(session.get("applied"))
+        or any(f'"{e}"' in text for e in ("synthesis_applied", "adoption_applied")),
     }
 
 
@@ -1950,6 +2321,9 @@ def reset_main(session_dir: Path) -> Json:
     still exists. The discarded state is pinned first.
     """
     session = load_session(session_dir)
+    if session.get("worker_backend") == "subagents":
+        msg = "native workers must not write the main checkout; refusing to reset it"
+        raise EngineError(msg)
     top = session["toplevel"]
     stash: Json = session.get("stash") or {}
     state = stash.get("state")
@@ -1990,7 +2364,7 @@ def restore_stash(session_dir: Path) -> Json:
     if ref is None:
         return {"ok": False, "restored": False, "reason": "stash entry not found"}
     proc = subprocess.run(  # noqa: S603
-        ["git", "-C", top, "stash", "pop", ref],  # noqa: S607
+        ["git", "-C", top, "stash", "pop", "--index", ref],  # noqa: S607
         capture_output=True,
         text=True,
         errors="replace",
@@ -2192,6 +2566,15 @@ def build_parser() -> argparse.ArgumentParser:  # noqa: PLR0915
     p.add_argument("--delete", action="append", default=[], help="path to remove")
     p.add_argument("--all", dest="whole", help="adopt everything this participant captured")
 
+    p = sub.add_parser("check-paths", help="refuse edit targets with user changes or unsafe paths")
+    p.add_argument("--repo", default=".")
+    p.add_argument("paths", nargs="+", help="paths relative to the checkout top")
+
+    p = sub.add_parser("commit", help="commit only the named paths, leaving other staged files")
+    p.add_argument("--message-file", required=True)
+    p.add_argument("--repo", default=".")
+    p.add_argument("paths", nargs="+", help="paths relative to the checkout top")
+
     p = sub.add_parser("latest", help="describe the newest session of a command")
     p.add_argument("--command", choices=sorted(PROFILES), required=True)
     p.add_argument("--repo", default=".")
@@ -2304,6 +2687,14 @@ def run(args: argparse.Namespace) -> Json:  # noqa: PLR0911
         )  # fmt: skip
         out.write_text(text, encoding="utf-8")
         return {"ok": True, "path": str(out)}
+    if cmd == "commit":
+        return commit_paths(args.repo, args.message_file, args.paths)
+    if cmd == "check-paths":
+        info = resolve_repo(args.repo)
+        if not info.git:
+            raise EngineError(info.reason or "not a project checkout")
+        conflicts = _path_conflicts(Path(info.top), args.paths, editing=True)
+        return {"ok": not conflicts, "clean": not conflicts, "conflicts": conflicts}
     if cmd == "latest":
         return latest_session(args.repo, args.command)
     if cmd == "guard":

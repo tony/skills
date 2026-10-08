@@ -52,8 +52,8 @@ ecosystems reference lists the keys) and check the package against `holds.md`: a
 here unless the user is releasing the hold; halt with the held-package
 example in the `package-updater-updating-packages` skill.
 
-If the cooldown hides the target, halt with the cooldown halt example in
-the `package-updater-updating-packages` skill, even when the user named the version. The reply is that halt alone: no
+If the cooldown hides the target, read `references/stopped-run.md`
+and use its cooldown form, even when the user named the version. The reply is that halt alone: no
 sentence about the named version, the user's go-ahead, what was left
 unchanged, or an exemption. Exempt only per
 `references/cooldown-exemption.md`, when the release is needed now.
@@ -197,8 +197,8 @@ check, no inventory of absences, no sandbox or write-permission remark, no
 speculation about consumers or code not read, no statement that other branches
 or files are untouched, and no promise of later work.
 
-A halted run takes the shape in "Plan stop and halt" in
-the `package-updater-updating-packages` skill; the plan gate is not a halt.
+When the run halts, read `references/stopped-run.md` in full and use
+its stopped-run contract. The plan gate is not a halt.
 
 Halt example, same plain-text form:
 

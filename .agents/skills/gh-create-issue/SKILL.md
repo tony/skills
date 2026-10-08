@@ -22,7 +22,7 @@ words `Not filed:` (or `Not filed publicly:`), never "I didn't file it".
 
 The body follows `references/rendered-markdown.md`
 and every link in it follows
-`references/source-links.md`. Read both before
+`references/source-links.md` and `references/source-pins.md`. Read them before
 drafting. When the issue names an upstream open-source project, also
 read `references/project-links.md` for its link set. Write it per
 `references/prose-rules.md`.

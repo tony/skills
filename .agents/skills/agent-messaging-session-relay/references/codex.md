@@ -47,16 +47,13 @@ because a non-default `CODEX_HOME` makes live threads look missing.
 
 ### codex-queue (send and receive)
 
-Send the line composed in SKILL.md step 4 and approved in step 5, verbatim. Pass it
-through a quoted heredoc so an apostrophe cannot break the shell, after checking that
-`RELAY_BODY_END` appears nowhere in the line:
+Send the approved `envelope.txt` from SKILL.md step 4. Substitute its literal
+path below; shell metacharacters read from the file remain message data:
 
-```bash
-line=$(cat <<'RELAY_BODY_END'
-<the exact line from step 4>
-RELAY_BODY_END
-)
-codex queue --thread <uuid-or-name> --message "$line"
+```console
+$ codex queue \
+    --thread <uuid-or-name> \
+    --message "$(cat <relay-dir>/envelope.txt)"
 ```
 
 - Preconditions: the target thread exists in the same `CODEX_HOME` and is not archived.
@@ -90,7 +87,8 @@ which the skill loads for any Claude target.
 - Target not running: documented as durable, but restart delivery is `UNKNOWN`
   empirically.
 - Ordering: FIFO by monotonically increasing `queue_order`; consumed rows disappear and
-  remaining orders are not renumbered.
+  remaining orders are not renumbered. Disappearance proves dequeue, not that the model
+  received the payload; require its turn or an acknowledgment of the relay id.
 - Caps: 100 items, 1,048,576 characters, text only `(unverified — from source)`.
 
 ### tmux

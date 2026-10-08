@@ -18,6 +18,8 @@ executor that cannot ask skips it and reports it.
 ## Implement
 
 1. Work the acceptance criteria in the project's idiom.
+   If the host denies a file edit, stop this unit and request access to
+   the assigned worktree; never recreate the denied edit through Bash.
 2. Verify with the cheapest signal that moves you forward: the one test
    file or smoke command exercising the change. Full passes wait for
    the gates.
@@ -33,7 +35,9 @@ executor that cannot ask skips it and reports it.
    affected), exactly as discovered, including mutating ones such as
    `--fix` linters: fold autofixes into the commit under test and
    re-run the scoped test once when a gate changed files.
-2. Green: commit in the project's format. Each commit body names the
+2. Green: stage only paths changed for this unit, preserving unrelated
+   staged work. Check the message against the staged diff, then commit in
+   the project's format. Each commit body names the
    ticket ID(s) it advances, in the project's form. Write the message
    per the prose rules text passed with your instructions (the
    sibling `prose-rules.md` when run from the skill). Ticket titles are

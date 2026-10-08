@@ -3,7 +3,7 @@ name: skill-style
 description: >-
   Trims SKILL.md bodies by a deletion test and audits descriptions. Use when
   writing, trimming, shortening, or auditing a SKILL.md.
-allowed-tools: ["Bash", "Read", "Glob", "Edit", "AskUserQuestion"]
+allowed-tools: ["Bash", "Read", "Glob", "Edit", "Write", "AskUserQuestion"]
 metadata:
   argument-hint: "[skill paths/globs] [--audit] [--diff-only]"
   source: "plugins/skill-style/skills/skill-style/SKILL.md"
@@ -101,7 +101,8 @@ Bodies are sections, never a wall.
 
 - One `#` title, then `##` sections. A heading names the step or the
   decision, not the topic: never `Context`, `Details`, `Notes`, or
-  `Misc`.
+  `Misc`. When flagging one, explain the missing step or decision;
+  its body's filler is a separate reason.
 - Steps that must run in order are a numbered list. Otherwise ask
   whether the items reorder without changing meaning: siblings are
   bullets, an argument is prose.
@@ -118,9 +119,8 @@ Bodies are sections, never a wall.
 
 ## Frontmatter and description
 
-The description is the only text a host sees before deciding. Write it
-in third person, saying both what the skill does and when to reach for
-it, in the literal words a user would type.
+The description guides implicit discovery. State the workflow and when
+to use it, with concrete terms a user would recognize.
 
 - `name`: lowercase letters, numbers, hyphens; 64 characters or fewer.
   `helper`, `utils`, and `tools` name nothing.
@@ -152,8 +152,7 @@ These hold on the named hosts wherever the skill is installed.
 - A hardcoded command that only fits one ecosystem (a named test runner
   or package manager) in a skill meant for any project. Say "the
   project's test suite, as its AGENTS.md or CLAUDE.md defines it".
-- An `ask-user-choice` step with no non-interactive default; Codex and
-  headless runs have no such tool.
+- An `ask-user-choice` step with no fallback when the host lacks that tool.
 - `sed -i` takes an optional suffix on GNU and a mandatory one on
   BSD/Darwin; `\+`, `\?`, `\|` in basic `sed` regexes are GNU-only (use
   `-E`); `readlink -f`, `stat -c`, `date -d`, and `mapfile` have no
@@ -247,78 +246,45 @@ These are this marketplace's limits. Apply them only when the project's
      `SKILL.md` in it with the host's file-writing tool, pass that file
      to `snapshot`, then remove the file and directory. Edit the work
      copy, diff with `--work`, then clean. No confirmation, no git. The
-     diff labels it `SKILL.md`.
+     diff labels it `SKILL.md`. If a file write is denied, stop; do not
+     route the pasted text through a shell command to bypass it.
 
    - A `snapshot` or `diff` that exits 2 means a target is missing or
      not UTF-8: stop and name the file.
 
-## Output
+7. **Write the reply** using `references/prose-rules.md` and this
+   format. The reply consists of the opening sentence and the applicable
+   sections below, without an introduction or recap.
 
-Read `references/prose-rules.md` before writing the reply, and
-write it to those rules. No coded labels, no
-bold lead-in on every bullet, no tables, no recap ending, no counts
-of lines removed, no local or temp paths, no narration of which tools
-or scripts ran (bar the hand-written-diff clause), no commentary past the cut.
+   Choose the mode's opening and substitute only the target and cuts.
+   Keep one sentence of at most 20 words; renames and frontmatter changes
+   belong in Behavior changes, not the opening.
 
-1. One hero line: the result, in one sentence of 20 words or fewer
-   with no semicolon, claiming nothing the Behavior changes do not
-   show. Name the file and what it lost; anything more goes in the
-   Ledger or Behavior changes. Never say what was not written or run:
-   the mode already says it. Literal heroes, one per mode:
+   - Edited: `db-helper loses its intro, Notes section and two filler steps.`
+   - Audit: `db-helper has an intro, Notes section and two filler steps to cut.`
+   - Diff only: `db-helper would lose its intro, Notes section and two filler steps.`
+   - Inline draft: `The draft loses its intro, Notes section and two filler steps.`
 
-   - Edit: `db-helper loses its intro, Notes section and two filler steps.`
-   - `--audit`: `db-helper has an intro, a Notes section and two filler steps to cut.`
-   - `--diff-only`: `db-helper would lose its intro, Notes section and two filler steps.`
-   - Pasted draft: `The draft loses its intro, Notes section and two filler steps.`
+   Use these headings verbatim, in this order, with no other sections:
 
-2. `## Ledger`: one bullet per cut, quoting the line and why nothing
-   breaks, then the library-standards defects and any command flaw
-   reported once and left as written. A command flaw is one bullet naming
-   the fault ("`--delete-force` is not a git flag"), never a corrected
-   command, alternative flag, or other edit nobody asked for. The Ledger
-   names only what the deletion test cuts or keeps, and repeats nothing
-   that Behavior changes carries.
-3. `## Behavior changes`: edits that change what the skill does,
-   separate from cuts: renames, added claims, frontmatter changes.
-   Omit when none.
-4. `## Diff`: the diff from step 6 in a `diff` fence. Omit under
-   `--audit`.
+   - `## Ledger`: one plain bullet per cut, quoting it and explaining why
+     nothing breaks. Include library-standards defects and command flaws
+     left as written. A command flaw gets one bullet naming the fault,
+     never a corrected command or alternative flag. Keep Behavior changes
+     out of this section.
+   - `## Behavior changes`: renames, frontmatter changes, added or changed
+     claims, separate from cuts. Omit this section when none occur.
+   - `## Diff`: the generated diff in a `diff` fence. Omit under `--audit`.
 
-Nothing to cut and nothing to flag: one sentence saying so, then stop.
-No sections.
+   Use plain bullets, without bold labels, tables, coded labels, line-removal
+   counts, local or temporary paths, or tool narration except the required
+   hand-written-diff clause. Before sending, check the opening against its
+   template and word limit, then the headings against the list above.
 
-Use these headings verbatim and no others: a flaw left alone is a
-Ledger bullet, never a `## Cuts` or `## Still open` section.
-
-A stopped run (no targets, missing file, edit not authorized) is one
-sentence stating the result, then what the user must supply or
-authorize. No sections.
-
-Reply in this shape, as plain text outside any code fence, with plain bullets, no bold (never `- **Label:** ...`), and no local paths:
-
-````text
-db-helper loses its explanatory padding and keeps every command and warning.
-
-## Ledger
-
-- "A database is a system for storing data": the agent knows this.
-- "This section explains how to restore": restates the heading.
-- Description says "I can help you"; rewrite in third person.
-
-## Behavior changes
-
-- Name changes from `helper` to `db-helper`; callers must update.
-
-## Diff
-
-```diff
---- a/SKILL.md
-+++ b/SKILL.md
-@@ -1,4 +1,4 @@
--name: helper
-+name: db-helper
-```
-````
+   Nothing to cut or flag: one sentence saying so, with no sections.
+   A stopped run states the result, then what the user must supply or
+   authorize, with no sections. Diff-only uses the normal report above;
+   it is not a stopped run.
 
 ## References
 

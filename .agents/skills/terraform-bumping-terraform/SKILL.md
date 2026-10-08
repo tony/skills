@@ -126,7 +126,8 @@ one of them; offer the others as next steps.
     did.
   - A bullet never asks the user for anything.
   - Never state what the run will do on its own later ("I'll show the
-    plan", "and I'll rerun it", "after that I'll ...", a "then" clause);
+    plan", "and I'll rerun it", "after that I'll ...", a "then" clause, or a
+    "so I can ..." clause after the user's step);
     telling the user what to do next is the step itself.
   - List nothing the repository lacks ("neither directory has a backend
     block or a lock file", "no CI or task file runs providers lock").
@@ -138,7 +139,7 @@ one of them; offer the others as next steps.
   ```text
   ⚠ Stopped: I could not confirm hashicorp/aws 6.57.0 because registry.terraform.io was unreachable, so nothing was edited.
 
-  Tell me you confirmed 6.57.0 yourself, or allow registry.terraform.io so I can check it.
+  Tell me you confirmed 6.57.0 yourself, or allow registry.terraform.io.
 
   - envs/prod and modules/network both declare hashicorp/aws, at ~> 6.56.0 and ~> 6.55.0, so the pins disagree.
   ```

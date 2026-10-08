@@ -79,7 +79,7 @@ uses the window the repository sets for its packages, and a repository
 with none has no gate. For each target, read its publication time with
 the command in the "Release publication time" section of that
 reference. A target younger than the window stops that tool, even when
-the user named the version: print the cooldown halt shown under Output
+the user named the version: read `references/stopped-run.md` and use its cooldown form
 with its values swapped: one sentence holding the publication day and the
 date it becomes visible, then the options. Add no paragraph about the pin,
 the commit, the config file or the user's instruction. When the user asks
@@ -247,21 +247,8 @@ links return 200"), no inventory of absences ("the repo sets no
 cooldown"), no speculation about consumers or code not read, no statement
 that other branches or files are untouched, and no promise of later work.
 
-A halted run takes the shape in "Plan stop and halt" in
-the `package-updater-updating-packages` skill; the plan gate is not a halt.
-
-Cooldown halt example, same plain-text form. Say "the 7-day cooldown" and
-stop: never name the file or key that sets it (`pyproject.toml`,
-`exclude-newer`), and give the date without a time of day.
-
-```text
-⚠ Stopped: nothing was changed. uv 0.9.5 was published today and the 7-day cooldown hides it until 2026-10-14.
-
-To continue:
-- Wait until then and rerun.
-- Exempt uv from the cooldown for this release.
-- Stop here.
-```
+When the run halts, read `references/stopped-run.md` in full and use
+its stopped-run contract. The plan gate is not a halt.
 
 End with an `ask-user-choice` panel of next steps, for example: align
 the fleet on one version, refresh lockfiles against the new toolchain,

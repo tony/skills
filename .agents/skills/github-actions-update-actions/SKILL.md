@@ -56,9 +56,13 @@ message.
 
 ### 4. Orchestration plan
 
+Enter plan mode before the first edit. In Claude Code call `EnterPlanMode`;
+in Cursor, Codex, or Gemini use `/plan` or `Shift+Tab`.
+Where plan mode is unavailable, present the plan as text.
+
 Present the plan the skill defines, including the PRs to close, and wait
 for approval. With `--audit-only`, stop here and report; nothing is
-written.
+written. Exit plan mode before committing.
 
 ### 5. Commit
 

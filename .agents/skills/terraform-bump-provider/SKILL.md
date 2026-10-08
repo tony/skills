@@ -163,8 +163,9 @@ order:
    `## Sites` or `## Locks` line is deleted; with none left, omit the
    section.
 
-Name the commit by subject in `## Sites`, never by SHA, and do not
-report the temporary exact pin used to land a named version.
+Name the commit by subject in `## Sites`, stating that it holds the
+constraints and refreshed locks together. Never print its SHA or the
+temporary exact pin used to land a named version.
 
 Reply in this shape, as plain text outside any code fence, with plain bullets, no bold (never `- **Label:** ...`), and no local paths:
 

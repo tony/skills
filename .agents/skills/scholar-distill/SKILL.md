@@ -22,6 +22,8 @@ resolved from this skill's directory.
 
 User arguments: $ARGUMENTS
 
+Read `references/output-contract.md` before writing study files.
+
 ## Layer 1: types
 
 The is-a hierarchy. What kinds of thing the corpus contains.
@@ -109,7 +111,8 @@ rather than the corpus.
 Per `references/output-contract.md`. Hero: `✓ <n> types, <n> terms, <n>
 preferred terms`, `⚠ Gate failed: <n> orphans, <n> cycles`, or `⚠ Blocked:
 <reason>`. A failed gate prints the hero, then each orphan or cycle on its own
-line, then the fix in one sentence naming the term to re-parent, with no
+line, then one sentence naming the terms whose corpus evidence must be
+re-read before assigning parents, with no
 quoted corpus text, not even in parentheses; no other sections. Reply as plain text outside any code
 fence, with plain bullets, no bold (never `- **Label:** ...`), and no local
 paths. Never narrate files you did not write ("I changed nothing"), and never
@@ -121,7 +124,7 @@ quote the skill's own instructions:
 - Orphan: checkpoint has no parent.
 - Cycle: phase -> stage -> phase.
 
-Set a parent for checkpoint, and make one of stage or phase the parent of the other only, then rerun the gate.
+Re-read the corpus evidence for checkpoint, stage, and phase before assigning parents, then rerun the gate.
 ```
 
 Sections:
