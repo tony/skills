@@ -317,7 +317,7 @@
         "references/prose-rules.md": "plugins/github-actions/references/prose-rules.md",
         "references/throwaway-worktree.md": "plugins/github-actions/references/throwaway-worktree.md"
       },
-      "bytes": 40540
+      "bytes": 40669
     },
     {
       "name": "github-actions-update-action",
@@ -332,7 +332,7 @@
         "references/prose-rules.md": "plugins/github-actions/references/prose-rules.md",
         "references/throwaway-worktree.md": "plugins/github-actions/references/throwaway-worktree.md"
       },
-      "bytes": 39228
+      "bytes": 39357
     },
     {
       "name": "github-actions-update-actions",
@@ -470,7 +470,7 @@
         "references/repo-scope.md": "plugins/package-updater/references/repo-scope.md",
         "references/repo_facts.py": "plugins/package-updater/scripts/repo_facts.py"
       },
-      "bytes": 28238
+      "bytes": 30964
     },
     {
       "name": "package-updater-update-package",
@@ -488,7 +488,7 @@
         "references/repo_facts.py": "plugins/package-updater/scripts/repo_facts.py",
         "references/upstream-links.md": "plugins/package-updater/references/upstream-links.md"
       },
-      "bytes": 56671
+      "bytes": 60288
     },
     {
       "name": "package-updater-update-toolchain",
@@ -504,7 +504,7 @@
         "references/repo_facts.py": "plugins/package-updater/scripts/repo_facts.py",
         "references/upstream-links.md": "plugins/package-updater/references/upstream-links.md"
       },
-      "bytes": 51649
+      "bytes": 55791
     },
     {
       "name": "package-updater-updating-packages",
@@ -523,7 +523,7 @@
         "references/throwaway-worktree.md": "plugins/package-updater/references/throwaway-worktree.md",
         "references/upstream-links.md": "plugins/package-updater/references/upstream-links.md"
       },
-      "bytes": 70669
+      "bytes": 74735
     },
     {
       "name": "pr",
@@ -846,7 +846,7 @@
         "references/release-triage.md": "plugins/ruff/references/release-triage.md",
         "references/throwaway-worktree.md": "plugins/ruff/references/throwaway-worktree.md"
       },
-      "bytes": 49960
+      "bytes": 50079
     },
     {
       "name": "scholar-annotate",
@@ -896,7 +896,7 @@
         "references/stage-gates.md": "plugins/scholar/references/stage-gates.md",
         "references/term_metrics.py": "plugins/scholar/scripts/term_metrics.py"
       },
-      "bytes": 45898
+      "bytes": 46062
     },
     {
       "name": "scholar-distill",
@@ -910,7 +910,7 @@
         "references/stage-gates.md": "plugins/scholar/references/stage-gates.md",
         "references/term_metrics.py": "plugins/scholar/scripts/term_metrics.py"
       },
-      "bytes": 41243
+      "bytes": 41407
     },
     {
       "name": "scholar-extract",
@@ -924,7 +924,7 @@
         "references/stage-gates.md": "plugins/scholar/references/stage-gates.md",
         "references/term_metrics.py": "plugins/scholar/scripts/term_metrics.py"
       },
-      "bytes": 45275
+      "bytes": 46141
     },
     {
       "name": "scholar-gather",
@@ -938,7 +938,7 @@
         "references/stage-gates.md": "plugins/scholar/references/stage-gates.md",
         "references/term_metrics.py": "plugins/scholar/scripts/term_metrics.py"
       },
-      "bytes": 45314
+      "bytes": 45567
     },
     {
       "name": "scholar-ontology",
@@ -953,7 +953,7 @@
         "references/stage-gates.md": "plugins/scholar/references/stage-gates.md",
         "references/term_metrics.py": "plugins/scholar/scripts/term_metrics.py"
       },
-      "bytes": 44783
+      "bytes": 44947
     },
     {
       "name": "scholar-render",
@@ -966,7 +966,7 @@
         "references/stage-gates.md": "plugins/scholar/references/stage-gates.md",
         "references/term_metrics.py": "plugins/scholar/scripts/term_metrics.py"
       },
-      "bytes": 39282
+      "bytes": 39446
     },
     {
       "name": "scholar-revise",
@@ -991,7 +991,7 @@
         "references/prose-rules.md": "plugins/scholar/references/prose-rules.md",
         "references/term_metrics.py": "plugins/scholar/scripts/term_metrics.py"
       },
-      "bytes": 43860
+      "bytes": 44052
     },
     {
       "name": "self-improvement-apply",

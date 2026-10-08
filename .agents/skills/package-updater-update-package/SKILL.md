@@ -190,7 +190,12 @@ Reply in this shape, as plain text outside any code fence, with plain bullets, n
 ```
 
 Label a repository by its name or directory name, never `cwd`. Never say a tool
-or response is a stub or mock; report only what the lookup returned.
+or response is a stub or mock; report only what the lookup returned. The bans
+of "Phase 6" in the `package-updater-updating-packages` skill apply to every section: no
+upstream fact from memory, no narration of this skill's rules or of the link
+check, no inventory of absences, no sandbox or write-permission remark, no
+speculation about consumers or code not read, no statement that other branches
+or files are untouched, and no promise of later work.
 
 A halted run takes the shape in "Plan stop and halt" in
 the `package-updater-updating-packages` skill; the plan gate is not a halt.

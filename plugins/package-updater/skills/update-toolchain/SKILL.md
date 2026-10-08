@@ -55,6 +55,9 @@ vendor's feed rather than memory: for a tool released on GitHub, the tag
 `gh api repos/<owner>/<repo>/releases/latest --jq .tag_name` prints;
 for Node.js, the newest entry on the repository's line in
 `https://nodejs.org/dist/index.json`.
+For a Go toolchain, the newest stable entry of
+`https://go.dev/dl/?mode=json`; for CPython, the newest stable release on
+python.org's release feed (`https://www.python.org/api/v2/downloads/release/`).
 Confirm the version exists before writing it.
 
 Prefer the pin granularity the repository already uses. A repository
@@ -103,7 +106,8 @@ List the span from the full release history, never the first page: the
 release-list command above with `--paginate` for a GitHub tool, the
 `releases` keys of `https://pypi.org/pypi/<name>/json` for a PyPI tool,
 and the `time` keys of `https://registry.npmjs.org/<name>` for an npm
-tool. A list that could not be read in full counts as unread notes.
+tool; keep stable versions only (drop prereleases and npm's `created` and
+`modified`) and sort by version. A list that could not be read in full counts as unread notes.
 
 Take the URLs from the upstream-links reference — each tool has its own
 shape, and some publish one page per minor rather than per patch.
@@ -191,8 +195,8 @@ sections in order, each omitted when it has nothing to report:
    Describe the intermediate releases; do not just link them.
 3. `## Impact` — per repository and per tool, what the span actually
    reaches there: the behavior that changes underneath it, and what it
-   leaves untouched. Name gains, not only exclusions, and say how each
-   claim was checked. A span that reaches nothing gets one line saying
+   leaves untouched. Name gains, not only exclusions; where a claim rests on a command
+   the user can rerun, name it. A span that reaches nothing gets one line saying
    so. No first-person sentence ("I checked ...") and no inventory of
    what the repository lacks (no justfile, no CI, no cooldown).
 4. `## Commits` — the commits made, one per tool per repository, and
@@ -230,6 +234,15 @@ Reply in this shape, as plain text outside any code fence, with plain bullets, n
 
 - Tests and lint pass; uv.lock still resolves.
 ```
+
+Label a repository by its name or directory name, never `cwd`. Never say
+a tool or response is a stub or mock; report only what the lookup
+returned. The bans of "Phase 6" in `../updating-packages/SKILL.md` apply
+to every section: no upstream fact from memory, no narration of this
+skill's rules ("so the commit has a `why:`") or of the link check ("all
+links return 200"), no inventory of absences ("the repo sets no
+cooldown"), no speculation about consumers or code not read, no statement
+that other branches or files are untouched, and no promise of later work.
 
 A halted run takes the shape in "Plan stop and halt" in
 `../updating-packages/SKILL.md`; the plan gate is not a halt.

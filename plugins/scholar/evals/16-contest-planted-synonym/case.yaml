@@ -49,18 +49,9 @@ graders:
       The reply reports the ratchet citation as circular evidence, because
       its quote contains the term it supports, and gives a verdict on it.
 
-  - name: never-edits-the-term-table
-    type: tool_used
-    tool: Edit
-    input_match: '"file_path":\s*"[^"]*terms\.jsonl"'
-    min: 0
-    max: 0
-    arm: both
-
-  - name: never-rewrites-the-term-table
-    type: tool_used
-    tool: Write
-    input_match: '"file_path":\s*"[^"]*terms\.jsonl"'
-    min: 0
-    max: 0
-    arm: both
+  - name: both-synonym-rows-survive
+    type: regex
+    target:
+      source: file
+      path: notes/ontology/sample-lib/terms.jsonl
+    pattern: '"term":\s*"update-action"[\s\S]*"term":\s*"update-actions"'

@@ -152,8 +152,8 @@ these four values.
   "the ref is the edition you gave", "saved word for word", "the commit field
   is empty, and citations are located by search string"): state what was
   recorded. For prose the whole line is "Commit: none"; the ref is only
-the edition as given ("2024, first printing"), with no reason after it. List
-`sources.jsonl` under `## Pinned` as its path under `--out`.
+  the edition as given ("2024, first printing"), with no reason after it. List
+  `sources.jsonl` under `## Pinned` as its path under `--out`.
 - A commit not on any remote is recorded as "commit not on a remote; recorded
   without URL".
 - "Out of scope" is not a reason in `why`. Say what the source contains and why
@@ -167,7 +167,8 @@ pinned, <n> skipped` or `⚠ Blocked: <reason>`. Sections:
 1. `## Pinned`: the `sources.jsonl` written, as a path under `--out`, then
    each source read, its ref, and how the ref was resolved.
 2. `## Skipped`: each source not read, and why.
-3. `## Shape`: the inventory that informed the scope decision.
+3. `## Shape`: the inventory that informed the scope decision, stated as
+   what is there ("one excerpt, two sentences"), never as what is missing.
 
 Next-step options: run extract, widen scope, stop here.
 

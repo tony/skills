@@ -89,7 +89,7 @@ The config change is one commit, alone, before any fix or ignore, with the
 enabled-rule count before and after in its body. Then one commit per rule fixed
 and one per ignore added, each body carrying the rule's documentation URL,
 `https://docs.astral.sh/ruff/rules/<name>/`; that site tracks the latest
-release, so read `<runner> ruff rule <CODE>` for the pinned version's text.
+release, so read `<runner> rule <CODE>` for the pinned version's text.
 Resolve the slug from the rule's name, not its code:
 
 ```console

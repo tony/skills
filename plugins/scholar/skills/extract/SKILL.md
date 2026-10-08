@@ -81,7 +81,7 @@ directory, or stop and name `annotate` if it is missing.
 
 ### 3. Harvest
 
-For code, the cheapest high-yield passes, all portable. `<corpus>` is the
+For code, the cheapest high-yield passes. `<corpus>` is the
 checkout path from step 2:
 
 ```console
@@ -89,7 +89,7 @@ $ rg \
     -o \
     --no-filename \
     -r '$1' \
-    '^\s*(?:export\s+|pub\s+)?(?:class|struct|interface|type)\s+(\w+)' \
+    '^\s*(?:export\s+|pub(?:\([a-z]+\))?\s+)?(?:class|struct|interface|enum|trait|type|def)\s+(\w+)' \
     <corpus> \
     | sort | uniq -c | sort -rn
 ```
@@ -141,7 +141,10 @@ added later without guessing what unversioned rows meant.
 `definition` is drawn from the corpus, not composed. Where the corpus never
 defines the term, record the definition its usage implies. Keep the definition
 free of provenance notes ("implied by usage"); the analyzer scores definition
-text. Record an implied definition as an open claim in `evidence/contested.md`.
+text. Record an implied definition as an open claim in `evidence/contested.md`
+with the Claim, Objection, Evidence and Verdict (`open`) fields `contest`
+uses. Create the file when missing; otherwise Read it and Write it back whole
+with the entry appended.
 
 ## Rules
 
@@ -165,6 +168,18 @@ Per `../../references/output-contract.md`. Hero: `✓ <n> terms extracted from
    ```console
    $ python3 <analyzer> notes/ontology/<subject>/ --check-terms
    ```
+
+   Then the quote check against the step 2 checkout of each source, which
+   tests every quote against its cited lines at the recorded commit:
+
+   ```console
+   $ python3 <analyzer> notes/ontology/<subject>/ --check-quotes <corpus>
+   ```
+
+   The command exits non-zero on any line, so judge by the lines. A
+   `Misquoted` or `Vanished` line halts the run: fix the row from the
+   corpus text and rerun. Report `Uncheckable` lines (including cites into
+   another source's checkout) without failing the gate.
 
 A halted run follows the halted-run shape in the output contract: the hero,
 then one sentence naming the unblock, never a restatement of the hero. Do not

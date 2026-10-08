@@ -117,7 +117,15 @@ from current ones, with the date each becomes visible.
 
 Separate what moves in-range from what needs a manifest edit; they are
 different commits. A major is never part of the bulk refresh: bound the
-refresh to in-range moves and treat each major as a named bump.
+refresh to in-range moves and treat each major as a named bump. pnpm and
+npm are bounded by `ncu --target minor`. uv, Poetry and Cargo have no such
+flag, so after the refresh run `references/repo_facts.py --lock-diff
+<repo>` (resolve the path from this skill's directory to an absolute one):
+`majors` lists each package whose new version is a new major, or for 0.x a
+new minor. When `majors` is not empty, restore the lockfile to `HEAD`,
+update only the `in_range` names (`uv lock --upgrade-package <name>`,
+`poetry update <name>`, `cargo update --package <name>`), rerun the
+script until `majors` is empty, and make each major its own named bump.
 
 **Audit the existing holds in the same pass.** Every `reject` entry in
 every config in the tree, not just the root one, per the holds
@@ -173,8 +181,8 @@ Present a plan, as text, covering:
 - The follow-up commits expected, and any bump that will leave the tree
   red until its follow-up lands.
 - For each repository: the branch the commits land on and the push
-  target, and any unpushed commits already ahead of the remote that are
-  not bumps (a push publishes them too). A repository whose ownership rested on the fallback signals
+  target, and any unpushed commits already ahead of the remote
+  (`git log <remote>/<default>..<default>`) that are not bumps (a push publishes them too). A repository whose ownership rested on the fallback signals
   alone is listed as local-only unless the user approves its push here.
 - How many commits this produces.
 - Any destructive step, such as a clean reinstall, with the exact
@@ -218,7 +226,8 @@ unblocks.
 A repository that got a worktree in Phase 1 commits there. After the
 plan is approved and before the first edit, name the branch inside it
 with `git -C <printed-path> switch -c <branch>` (the branch the plan
-gave, else `wip/<topic>`; if it exists, pick another name). Commits on a
+gave, else `wip/<topic>`; if it exists and is not checked out elsewhere,
+`switch` to it; if another worktree has it, pick another name). Commits on a
 detached HEAD are unreachable once the worktree is removed. After the
 last commit and any approved push, remove the worktree with
 `git -C <repo> worktree remove <printed-path>`; the branch stays, and the

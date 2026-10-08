@@ -26,7 +26,7 @@ If a local clone of the linter's source is available, reading the changelog at t
 
 ## Intersect the release with each repo's configuration
 
-A rule can only fire if the repo selects it. For each repo, extract the effective rule selection with `<runner> ruff check --show-settings <file.py>` (it resolves `extend`, `ruff.toml` against `pyproject.toml`, and per-file ignores) rather than reading config by hand. It covers `select`, `extend-select`, `ignore`, `extend-ignore`, per-file ignores, and whether preview mode is on. Then intersect:
+A rule can only fire if the repo selects it. For each repo, extract the effective rule selection with `<runner> check --show-settings <file.py>` (it resolves `extend`, `ruff.toml` against `pyproject.toml`, and per-file ignores) rather than reading config by hand. It covers `select`, `extend-select`, `ignore`, `extend-ignore`, per-file ignores, and whether preview mode is on. Then intersect:
 
 - A newly stabilized rule fires only if its prefix is selected and its code is not ignored.
 - A behavior change fires only if that specific rule was already selected.

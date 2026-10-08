@@ -17,6 +17,9 @@ in `cites`, each with a non-empty `quote`. A `kind: type` row that has a
 claim in `evidence/hierarchy.md`; a `type` row with no `parent` must cite, and
 any citation a type row carries still needs a quote. `term_metrics.py <study>
 --check-terms` lists the rows that fail, including rows with a mistyped field.
+The gate also runs `--check-quotes <corpus>` on each source's checkout and
+stops on a `Misquoted` or `Vanished` line; `Uncheckable` lines are reported,
+not failed.
 
 ## distill
 

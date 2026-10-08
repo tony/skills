@@ -33,7 +33,7 @@ cite's `source` field; a cite with no `source`, or one matching no row, is
 Uncheckable. That row holds the `commit` or edition the cite is checked
 against. Then confirm three things separately, because they fail differently:
 
-The ref still exists, and still points at the `commit` recorded for it in
+**Ref check.** The ref still exists, and still points at the `commit` recorded for it in
 `sources.jsonl`. A tag can be moved or deleted, and a deleted tag makes every
 URL built on it a 404 rather than a wrong answer.
 
@@ -58,18 +58,18 @@ $ git -C CLONE cat-file -e COMMIT:PATH
 
 A non-zero exit means the file vanished at that commit. For a moved ref,
 compare `git -C CLONE rev-parse 'REF^{commit}'` with the recorded `commit`.
-The quote check for a local clone is the third check below, run by the
+The quote check for a local clone is the quote check below, run by the
 analyzer.
 
-The file still exists at that path on that ref. Check only a URL that starts
-with `https://` and contains no quote, space, backtick, `$`, or `;`; report any
+**File check.** The file still exists at that path on that ref. Check only a URL that starts
+with `https://github.com/` and contains no quote, space, backtick, `$`, or `;`; report any
 other under Uncheckable rather than passing it to the shell.
 
 ```console
 $ curl -s -o /dev/null -w '%{http_code}\n' -L '<url>'
 ```
 
-The quoted text still appears at the recorded locator. This is the one that
+**Quote check.** The quoted text still appears at the recorded locator. This is the one that
 fails silently: a file that grew by ten lines leaves a line-anchor citation
 resolving to unrelated code while still returning 200. Fetch the file at the
 recorded `commit` (same character check on PATH) and read the cited lines, or
@@ -120,7 +120,9 @@ Five categories, because the remedy differs:
 - Uncheckable: a source behind a paywall or deleted, a row with no
   `commit`, an unsafe URL, or a command the user did not confirm. Give the
   reason as "host unreachable", "no login", or "no clone on disk", one short
-  phrase per entry; never write a claim about the sandbox.
+  phrase per entry, the first that applies, then stop: a cite failing
+  three checks gets one phrase. A command not run is "not run, no
+  confirmation". Never write a claim about the sandbox.
 
 ## Rules
 

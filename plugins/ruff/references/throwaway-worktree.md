@@ -40,7 +40,9 @@ Before its first commit it switches to a named local branch
 (`git -C <printed-path> switch -c <branch>`): commits on a detached HEAD
 are unreachable once the worktree is removed, so none lands there. Use the
 branch name the skill gives, or `wip/<topic>`. If the branch already
-exists, pick another name; never reset an existing one.
+exists, `switch` to a name the user passed and suffix a generated one
+(`wip/<topic>-2`); never reset an existing branch, and pick another name
+when another worktree has it checked out.
 
 A skill that commits straight away creates the branch with the worktree:
 

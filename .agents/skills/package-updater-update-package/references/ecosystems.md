@@ -54,6 +54,21 @@ $ uv lock --upgrade-package <name>
 moved: a floor raised in `pyproject.toml` does nothing until the resolver
 rewrites the lock.
 
+The refresh takes a new major wherever the manifest range allows it. After
+it, split the majors out of the bulk commit:
+
+```console
+$ python3 <absolute path to repo_facts.py> \
+    --lock-diff \
+    <repo>
+```
+
+Each package under `majors` is a named bump (`uv lock --upgrade-package
+<name>`) with its own research; restore `uv.lock` and update only the
+`in_range` names. Poetry (`poetry.lock`) and Cargo (`Cargo.lock`) get the
+same treatment with `poetry update <name>` and `cargo update --package
+<name>`.
+
 ## Python with poetry or pip
 
 Marked by `poetry.lock`, or by `requirements*.txt` with no lock at all.

@@ -13,6 +13,7 @@ from pathlib import Path
 import pytest
 
 SCRIPT = Path(__file__).with_name("pins.py")
+EXIT_UNCHECKED = 3
 
 GH_STUB = """#!/bin/sh
 case "$*" in
@@ -117,6 +118,6 @@ def test_tag_exit_status(
     missing = _run("tag", "actions/checkout", "v99", cwd=tmp_path)
     assert (missing.returncode, missing.stdout.strip()) == (1, "missing")
     failed = _run("tag", "actions/checkout", "v77", cwd=tmp_path)
-    assert failed.returncode == 3
+    assert failed.returncode == EXIT_UNCHECKED
     assert "could not be checked" in failed.stderr
     assert "missing" not in failed.stdout

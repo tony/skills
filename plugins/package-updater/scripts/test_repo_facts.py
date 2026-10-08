@@ -123,3 +123,41 @@ def test_remoteless_repo_reads_pins_from_current_branch(tmp_path: pathlib.Path) 
     assert out["default_branch"] is None
     assert out["pins_ref"] == "main"
     assert out["pins"] == {".tool-versions": {"uv": "0.7.8"}}
+
+
+def _lock(*pairs: tuple[str, str]) -> str:
+    return "version = 1\n" + "".join(
+        f'\n[[package]]\nname = "{n}"\nversion = "{v}"\nsource = {{ registry = "x" }}\n'
+        for n, v in pairs
+    )
+
+
+def test_lock_diff_splits_majors_from_in_range(tmp_path: pathlib.Path) -> None:
+    """A new major, or a new 0.x minor, is a major; a minor or patch is in range."""
+    repo = tmp_path / "locked"
+    repo.mkdir()
+    _git(repo, "init", "-q", "-b", "main")
+    _git(repo, "config", "user.email", "t@example.com")
+    _git(repo, "config", "user.name", "t")
+    base = _lock(("requests", "2.31.0"), ("pytest", "7.4.4"), ("ruff", "0.4.1"), ("same", "1.0.0"))
+    (repo / "uv.lock").write_text(base)
+    _git(repo, "add", ".")
+    _git(repo, "commit", "-q", "-m", "base")
+    new = _lock(
+        ("requests", "3.0.0"), ("pytest", "7.5.1"), ("ruff", "0.5.0"), ("same", "1.0.0"),
+        ("fresh", "1.0.0"),
+    )  # fmt: skip
+    (repo / "uv.lock").write_text(new)
+
+    out = repo_facts.lock_diff(str(repo), [])
+
+    assert out["uv.lock"] == {
+        "majors": [
+            {"name": "requests", "from": ["2.31.0"], "to": ["3.0.0"]},
+            {"name": "ruff", "from": ["0.4.1"], "to": ["0.5.0"]},
+        ],
+        "in_range": [
+            {"name": "fresh", "from": [], "to": ["1.0.0"]},
+            {"name": "pytest", "from": ["7.4.4"], "to": ["7.5.1"]},
+        ],
+    }
