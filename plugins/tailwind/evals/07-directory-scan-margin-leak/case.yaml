@@ -1,0 +1,43 @@
+schema_version: "1.0"
+name: 07-directory-scan-margin-leak
+description: >-
+  Auditing a directory runs a scan through Bash and the reply cites the
+  file and line of the margin stacked on a gap.
+tags: [fixture]
+
+context:
+  scaffold_script: scaffold.sh
+
+execution:
+  prompt: >-
+    /tailwind:spacing-audit src/
+  max_turns: 20
+  timeout_seconds: 420
+  allowed_tools: [Bash, Read, Glob, Grep, Skill]
+
+runs: 3
+
+graders:
+  - name: scans-with-a-command
+    type: tool_used
+    tool: Bash
+    input_match: 'detect\.py|\brg\b|grep'
+    min: 1
+    arm: both
+
+  - name: cites-file-and-line
+    type: llm
+    focus: last_message
+    criteria: |
+      The reply identifies the `me-4` margin on the Docs link in
+      src/components/Nav.tsx as stacked on the parent `gap-3`, cites that
+      file with a line number (line 6, the Docs line), and proposes
+      removing the margin. It does not report issues in Footer.tsx.
+
+  - name: no-unprompted-divider
+    type: llm
+    focus: last_message
+    criteria: |
+      The reply does not offer a divider variant or suggest adding a
+      visible divider element; the user never said a wide gap should
+      stay.
