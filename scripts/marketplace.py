@@ -858,7 +858,7 @@ PLAN_PRELUDE = (
 
 
 def _plan_prelude_missing(text: str) -> bool:
-    r"""Report whether a skill has an Orchestration Plan heading but not the prelude.
+    r"""Report whether an Orchestration Plan heading lacks the required prelude.
 
     Whitespace is collapsed first, so the prelude may wrap across lines.
 
@@ -871,8 +871,10 @@ def _plan_prelude_missing(text: str) -> bool:
     False
     >>> _plan_prelude_missing("## Steps\n\nNo plan section here.\n")
     False
+    >>> _plan_prelude_missing("## Orchestration plan\n\nPlan it.\n")
+    True
     """
-    if not re.search(r"^#+ .*Orchestration Plan", text, re.MULTILINE):
+    if not re.search(r"^#+ .*Orchestration Plan", text, re.MULTILINE | re.IGNORECASE):
         return False
     return PLAN_PRELUDE not in " ".join(text.split())
 
@@ -926,9 +928,9 @@ def _check_estate_rules(plugin_dir: Path) -> list[str]:
             r"(skill|file)'s (own |base )?director|absolute path", text, re.IGNORECASE
         ):
             errors.append(f"[{name}] {rel}: runs {script_ref} with no path-resolution note")
+        if _plan_prelude_missing(text):
+            errors.append(f"[{name}] {rel}: Orchestration Plan lacks the plan-mode prelude")
         if path.name == "SKILL.md":
-            if _plan_prelude_missing(text):
-                errors.append(f"[{name}] {rel}: Orchestration Plan lacks the plan-mode prelude")
             body_lines = strip_frontmatter(text).count("\n")
             if body_lines > SKILL_BODY_MAX_LINES:
                 errors.append(
@@ -1053,6 +1055,35 @@ def _check_engine_parity() -> list[str]:
         for s in _engine_strings(engine.read_text(encoding="utf-8"))
         if s not in haystack
     ]
+
+
+def _verifier_prose_constraint(text: str) -> str:
+    r"""Read the shared verifier constraint without quote indentation or wrapping.
+
+    >>> _verifier_prose_constraint('> Do not introduce slop.\n> Use concrete text.\n')
+    'Do not introduce slop. Use concrete text.'
+    >>> _verifier_prose_constraint('  > Do not introduce slop. Use concrete text.\n')
+    'Do not introduce slop. Use concrete text.'
+    >>> _verifier_prose_constraint('No verifier here.')
+    ''
+    """
+    match = re.search(
+        r"^[ \t]*> Do not introduce slop[^\n]*(?:\n[ \t]*>[^\n]*)*", text, re.MULTILINE
+    )
+    if match is None:
+        return ""
+    return " ".join(re.sub(r"^[ \t]*>[ \t]?", "", match[0], flags=re.MULTILINE).split())
+
+
+def _check_verifier_parity() -> list[str]:
+    """Keep weave's embedded verifier constraint equal to slop's owning protocol."""
+    owner = PLUGINS_DIR / "slop/references/detect-pipeline.md"
+    copy = PLUGINS_DIR / "weave/references/deslop-pass.md"
+    expected = _verifier_prose_constraint(owner.read_text(encoding="utf-8"))
+    actual = _verifier_prose_constraint(copy.read_text(encoding="utf-8"))
+    if expected and actual == expected:
+        return []
+    return ["weave deslop-pass.md: verifier prose constraint differs from slop detect-pipeline.md"]
 
 
 def validate_plugin_dir(plugin_dir: Path) -> list[str]:
@@ -1440,6 +1471,7 @@ def lint() -> None:
 
     errors.extend(_check_testpaths())
     errors.extend(_check_engine_parity())
+    errors.extend(_check_verifier_parity())
 
     # Run claude plugin validate if CLI is available
     cli_errors, cli_warnings = _lint_claude_validate()
