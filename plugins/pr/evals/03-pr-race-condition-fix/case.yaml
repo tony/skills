@@ -62,6 +62,21 @@ graders:
     max: 0
     arm: both
 
+  - name: no-test-setup-narration
+    type: regex
+    target: last_message
+    match: not_contains
+    pattern: 'pytest isn.t installed|called .* directly|not installed'
+    flags: i
+
+  - name: summary-bullets-are-one-clause
+    type: llm
+    focus: last_message
+    criteria: |
+      Each bullet under Summary is a single clause saying what changed and
+      why. None contains a relative clause ("where", "which", "so that")
+      that explains the mechanism, or a colon that sets up a reveal.
+
   - name: checked-boxes-only-for-tests-it-ran
     type: llm
     focus: last_message

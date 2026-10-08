@@ -107,4 +107,5 @@ existing structure without applying templates.
 
 - git: For diff/log.
 - python3 (3.9 or newer): For the backup script `/pr:refresh` and `/pr:rewrite` run.
+- jq: For `/pr:review-pr` to select files from the PR file list.
 - gh: For PR creation/fetching; run `gh auth login` once.

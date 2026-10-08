@@ -393,7 +393,7 @@
         "references/merge_pr.py": "plugins/merge-pr/scripts/merge_pr.py",
         "references/prose-rules.md": "plugins/merge-pr/references/prose-rules.md"
       },
-      "bytes": 38308
+      "bytes": 38316
     },
     {
       "name": "merge-pr-this",
@@ -535,7 +535,7 @@
         "references/prose-rules.md": "plugins/pr/references/prose-rules.md",
         "references/template-resolution.md": "plugins/pr/references/template-resolution.md"
       },
-      "bytes": 17618
+      "bytes": 17620
     },
     {
       "name": "pr-merge-commit",
@@ -546,7 +546,7 @@
         "references/branch-context.md": "plugins/pr/references/branch-context.md",
         "references/prose-rules.md": "plugins/pr/references/prose-rules.md"
       },
-      "bytes": 13079
+      "bytes": 13213
     },
     {
       "name": "pr-refresh",
@@ -559,7 +559,7 @@
         "references/prose-rules.md": "plugins/pr/references/prose-rules.md",
         "references/resolve-and-backup.md": "plugins/pr/references/resolve-and-backup.md"
       },
-      "bytes": 21122
+      "bytes": 21124
     },
     {
       "name": "pr-review-pr",
@@ -583,7 +583,7 @@
         "references/resolve-and-backup.md": "plugins/pr/references/resolve-and-backup.md",
         "references/template-resolution.md": "plugins/pr/references/template-resolution.md"
       },
-      "bytes": 22381
+      "bytes": 22424
     },
     {
       "name": "pytest-optimizer",

@@ -31,7 +31,7 @@ Only when there is no open PR, check whether the branch is stacked on
 another local branch:
 
 ```console
-$ git log origin/<trunk>..HEAD --simplify-by-decoration --decorate-refs=refs/heads --format=%D
+$ git log <remote>/<trunk>..HEAD --simplify-by-decoration --decorate-refs=refs/heads --format=%D
 ```
 
 The first line is the current branch. Any further line names a branch whose

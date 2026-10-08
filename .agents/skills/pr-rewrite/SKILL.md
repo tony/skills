@@ -58,7 +58,7 @@ Follow `references/template-resolution.md`.
 ### 4. Draft the new description
 
 Follow the drafting rules in the `pr` skill, section *Draft the
-description*: its title, section, table, and proportionality patterns,
+description*, including one clause per Summary bullet: its title, section, table, and proportionality patterns,
 its plain-bullet rule, and its *What NOT to include* list. Write it per
 `references/prose-rules.md`. Then:
 
