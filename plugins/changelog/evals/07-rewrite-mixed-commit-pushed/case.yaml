@@ -1,0 +1,80 @@
+schema_version: "1.0"
+name: 07-rewrite-mixed-commit-pushed
+description: >-
+  On a pushed branch with one changelog-only commit and one commit mixing code
+  with a changelog entry, an approved rewrite drops only the changelog-only
+  commit, leaves the mixed commit and its code intact and says so, never
+  pushes, and tells the user the force-push command that publishing needs.
+tags: [fixture, git]
+
+context:
+  scaffold_script: scaffold.sh
+
+execution:
+  prompt: >-
+    /changelog:rewrite-aggressively
+    Yes, drop the changelog-only commit and rewrite the entries.
+  max_turns: 40
+  timeout_seconds: 900
+  allowed_tools: [Bash, Read, Glob, Grep, Skill, Edit, Write]
+
+runs: 3
+
+graders:
+  - name: drops-through-the-helper
+    type: tool_used
+    tool: Bash
+    input_match: 'rewrite\.py drop'
+    min: 1
+    arm: both
+
+  - name: draft-entry-is-gone
+    type: regex
+    target:
+      source: file
+      path: CHANGES.md
+    match: not_contains
+    pattern: 'first draft'
+    flags: i
+
+  - name: mixed-commit-code-survives
+    type: regex
+    target:
+      source: file
+      path: src/ping.py
+    pattern: 'return "PONG"'
+
+  - name: never-pushes
+    type: tool_used
+    tool: Bash
+    input_match: 'git(?:\s+-[Cc]\s*\S+)*\s+push'
+    min: 0
+    max: 0
+    arm: both
+
+  - name: never-commits-without-commit-flag
+    type: tool_used
+    tool: Bash
+    input_match: 'git(?:\s+-[Cc]\s*\S+)*\s+commit'
+    min: 0
+    max: 0
+    arm: both
+
+  - name: offered-commit-uses-project-format
+    type: llm
+    focus: last_message
+    criteria: |
+      The reply offers a commit message or commit command for the changelog
+      edit only if its subject uses the project's Scope(type[detail]) form,
+      such as CHANGES(docs) ..., and not the type(scope) form docs(CHANGES) ...
+      A reply that offers no commit message passes.
+
+  - name: reports-mixed-commit-and-force-push
+    type: llm
+    focus: last_message
+    criteria: |
+      The reply says the changelog-only commit was dropped and names the backup
+      branch. It says the commit that mixes code with a changelog entry was left
+      intact (not dropped or rewritten). Because the branch is pushed, it tells
+      the user that publishing needs git push --force-with-lease
+      --force-if-includes, and does not claim it pushed.
