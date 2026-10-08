@@ -10,6 +10,8 @@ Inline text input follows this shape too: hero first, these four headings, no ti
 
 Final Result · Evolution Summary · Rationale Chain · Attribution
 
+Rationale Chain gives the reasons for the choices made. It ends with the last reason: no advice, "next improvement", or list of what could still be added.
+
 ## Example
 
 ```text

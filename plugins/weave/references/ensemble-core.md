@@ -292,8 +292,10 @@ with the successful participant IDs. It assigns random labels, writes
 `pass-NNNN/label-map.json`, and copies each output to
 `pass-NNNN/blind/response-<label>.md`.
 
-Read and score only the `blind/` copies and refer to responses by label. Reveal
-participant identities only in the final Attribution section, with the label map.
+Read and score only the `blind/` copies and refer to responses by label. Once
+scoring is final, substitute participant names for labels everywhere in the
+rendered result; Attribution also shows the label map. Blind labels never
+reach the user's reply.
 The host is both participant and judge, so its own output is never fully blind.
 
 ---

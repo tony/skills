@@ -117,8 +117,8 @@ In Verify Claims, read the file and line of each reported issue to confirm it ex
 Group findings that refer to the same issue (same file, similar description). Each group carries its consensus tag and severity:
 
 - 1 reviewer: the reported severity.
-- 2 or 3 reviewers: promote one level (Suggestion to Important, Important to Critical).
-- A finding becomes Critical only when verification confirmed the impact, so a unanimous Suggestion rises to Important, not Critical.
+- 2 or 3 reviewers: the highest severity any of them reported. Agreement shows in the consensus tag; it never raises severity.
+- A finding is Critical only when verification confirmed the impact.
 
 ### Write the report
 

@@ -1,0 +1,37 @@
+schema_version: "1.0"
+name: 17-review-report-shape
+description: >-
+  A review of a branch with a retry defect opens with a hero line, uses only
+  the declared headings, tags findings with consensus, and keeps bullets plain.
+tags: [fixture, gated]
+
+context:
+  scaffold_script: scaffold.sh
+
+execution:
+  prompt: >-
+    /weave:review --workers=subagents --passes=1 focus on error handling in
+    the charge retry path
+  max_turns: 60
+  timeout_seconds: 1500
+  allowed_tools: [Bash, Read, Glob, Grep, Write, Task, Skill]
+
+runs: 3
+
+graders:
+  - name: hero-first
+    type: llm
+    focus: last_message
+    criteria: |
+      The reply's first line is a hero: it starts with "⚠" followed by a count of blockers before merge, or with "✓ No blockers". No sentence about what was run comes before it.
+      Every markdown heading in the reply is one of Scores, Verified Issues, Critical, Important, Suggestions, False Positives Rejected, Reviewer Disagreements, Critic Findings, Confidence Evolution, Summary, or Attribution.
+      Headings from the main list appear in that relative order.
+
+  - name: findings-and-bullets
+    type: llm
+    focus: last_message
+    criteria: |
+      The reply reports the unbounded retry in src/payments.py (no attempt limit, no backoff growth, or swallowing every exception) as a finding, citing the file.
+      Each finding carries a consensus tag such as "consensus 3/3", "consensus 2/3", or "consensus 1/3".
+      A finding reported by every reviewer is not shown with a higher severity than the reviewers gave it; a Suggestion stays a Suggestion.
+      No bullet starts with a bold label, and the reply names no local path or session file.

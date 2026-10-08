@@ -1,5 +1,7 @@
 # Fix-review results
 
+Final Verification reports only gates that already ran, from the last gate run after the final commit; name a gate that could not run once, with the reason.
+
 ## Hero
 
 `N fixes applied, M skipped`

@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import io
 import json
+import os
 import re
 import subprocess
 from pathlib import Path
@@ -1123,3 +1124,66 @@ def test_latest_session_reports_snapshots_and_paths_dirtied_since(repo: Path) ->
     assert found["captured"]["maintainer"] == {"changed": ["sub/new.py"], "deleted": ["a.txt"]}
     assert found["dirty"] == ["sub/new.py"]
     assert found["applied"] is False
+
+
+def test_capture_and_adopt_keep_symlinks_as_links(repo: Path) -> None:
+    sdir = Path(init(command="execute", mutating=True)["session_dir"])
+    engine.create_worktrees(sdir, ["maintainer"])
+    wt = Path(engine.load_session(sdir)["worktrees"]["maintainer"]["path"])
+    (wt / "target.txt").write_text("real\n")
+    (wt / "live").symlink_to("target.txt")
+    (wt / "dangling").symlink_to("missing/nowhere")
+    cap = engine.capture_tree(sdir, 1, "maintainer", None)
+    assert sorted(cap["changed"]) == ["dangling", "live", "target.txt"]
+    assert cap["links"] == {"dangling": "missing/nowhere", "live": "target.txt"}
+    engine.adopt_files(sdir, 1, [], [], whole="maintainer")
+    assert (repo / "live").is_symlink()
+    assert os.readlink(repo / "live")  # noqa: PTH115 == "target.txt"
+    assert (repo / "dangling").is_symlink()
+    assert os.readlink(repo / "dangling")  # noqa: PTH115 == "missing/nowhere"
+    assert (repo / "target.txt").read_text() == "real\n"
+
+
+def test_adopt_replaces_a_symlink_without_writing_through_it(repo: Path) -> None:
+    sdir = Path(init(command="execute", mutating=True)["session_dir"])
+    engine.create_worktrees(sdir, ["maintainer"])
+    wt = Path(engine.load_session(sdir)["worktrees"]["maintainer"]["path"])
+    (wt / "n.txt").write_text("from worker\n")
+    engine.capture_tree(sdir, 1, "maintainer", None)
+    outside = repo.parent / "outside.txt"
+    outside.write_text("keep\n")
+    (repo / "n.txt").symlink_to(outside)
+    engine.adopt_files(sdir, 1, ["n.txt=maintainer"], [])
+    assert not (repo / "n.txt").is_symlink()
+    assert (repo / "n.txt").read_text() == "from worker\n"
+    assert outside.read_text() == "keep\n"
+
+
+def test_commit_takes_only_named_paths_and_keeps_other_staged_files(
+    repo: Path, tmp_path: Path
+) -> None:
+    (repo / "unrelated.txt").write_text("user work\n")
+    sh(repo, "git", "add", "unrelated.txt")
+    (repo / "a.txt").write_text("fixed\n")
+    (repo / "new.py").write_text("x = 1\n")
+    msg = tmp_path / "msg.txt"
+    msg.write_text("fix(a) Reset the counter\n\nwhy: finding 1\n")
+    done = engine.commit_paths(".", str(msg), ["a.txt", "new.py"])
+    assert sorted(done["committed"]) == ["a.txt", "new.py"]
+    assert done["still_staged"] == ["unrelated.txt"]
+    assert sh(repo, "git", "diff", "--cached", "--name-only").split() == ["unrelated.txt"]
+    assert sh(repo, "git", "show", "--name-only", "--format=", "HEAD").split() == [
+        "a.txt",
+        "new.py",
+    ]
+
+
+@pytest.mark.parametrize("trailer", ["Co-Authored-By: Bot <b@x.io>", "Generated with a tool"])
+def test_commit_refuses_tool_trailers(repo: Path, tmp_path: Path, trailer: str) -> None:
+    (repo / "a.txt").write_text("fixed\n")
+    msg = tmp_path / "msg.txt"
+    msg.write_text(f"fix(a) Reset\n\n{trailer}\n")
+    head = sh(repo, "git", "rev-parse", "HEAD")
+    with pytest.raises(engine.EngineError, match="trailer"):
+        engine.commit_paths(".", str(msg), ["a.txt"])
+    assert sh(repo, "git", "rev-parse", "HEAD") == head

@@ -7,8 +7,8 @@ reported failure (the JSON says why), 2 a usage error. Run
 POSIX only: it needs ``git`` and process groups.
 
 Commands: flags, detect, init, context, prompt, pass-dir, labels, dispatch,
-judge-plan, judge-parse, panel-merge, worktrees, capture, adopt, guard,
-reset-main, stash-restore, update.
+judge-plan, judge-parse, panel-merge, worktrees, capture, adopt, commit,
+guard, reset-main, stash-restore, update.
 """
 
 # pyright: reportAny=false, reportExplicitAny=false, reportUnusedCallResult=false
@@ -708,9 +708,9 @@ def guard_check(session_dir: Path, label: str = "check") -> Json:
     (vdir / "violation.patch").write_bytes(patch)
     for rel, status in touched.items():
         src = Path(top) / rel
-        if status != "D" and src.is_file():
+        if status != "D" and (src.is_symlink() or src.is_file()):
             (vdir / "post-copy" / rel).parent.mkdir(parents=True, exist_ok=True)
-            shutil.copy2(src, vdir / "post-copy" / rel)
+            shutil.copy2(src, vdir / "post-copy" / rel, follow_symlinks=False)
     pin_tree(top, session["session_id"], f"post-{vid}", post_tree, pre["pre"])
     result: Json = {
         "ok": True,
@@ -1810,7 +1810,8 @@ def capture_tree(session_dir: Path, n: int, participant: str, tree: str | None) 
     """Save a participant's binary patch, changed-file snapshots, and manifest.
 
     ``tree`` is a path, or ``None`` for the participant's registered worktree.
-    The tree's index is not touched.
+    The tree's index is not touched. Symlinks are snapshotted as symlinks
+    (dangling ones included) and listed under ``links`` in the manifest.
     """
     session = load_session(session_dir)
     entry = session.get("worktrees", {}).get(participant)
@@ -1830,11 +1831,18 @@ def capture_tree(session_dir: Path, n: int, participant: str, tree: str | None) 
     patch_path = base / "diffs" / f"{participant}.patch"
     patch_path.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
     patch_path.write_bytes(patch)
+    links: dict[str, str] = {}
     for rel in changed:
+        src = Path(path) / rel
         dest = base / "files" / participant / rel
         dest.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copy2(Path(path) / rel, dest)
-    manifest = {"changed": changed, "deleted": deleted}
+        dest.unlink(missing_ok=True)
+        if src.is_symlink():
+            links[rel] = os.readlink(src)  # noqa: PTH115
+        shutil.copy2(src, dest, follow_symlinks=False)
+    manifest: Json = {"changed": changed, "deleted": deleted}
+    if links:
+        manifest["links"] = links
     (base / "diffs" / f"{participant}.json").write_text(
         json.dumps(manifest, indent=2) + "\n", encoding="utf-8"
     )
@@ -1879,15 +1887,48 @@ def adopt_files(
     for pick in picks:
         rel, _, participant = pick.rpartition("=")
         src = base / "files" / participant / _safe_rel(rel)
-        if not src.is_file():
+        if not (src.is_symlink() or src.is_file()):
             msg = f"no snapshot of {rel} from {participant} in pass {n}"
             raise EngineError(msg)
         (top / rel).parent.mkdir(parents=True, exist_ok=True)
-        shutil.copy2(src, top / rel)
+        (top / rel).unlink(missing_ok=True)
+        shutil.copy2(src, top / rel, follow_symlinks=False)
         copied.append(rel)
     for rel in deletes:
         (top / _safe_rel(rel)).unlink(missing_ok=True)
     return {"ok": True, "copied": copied, "deleted": deletes}
+
+
+_TRAILER = re.compile(r"^(co-authored-by:|.*generated (with|by)\b)", re.IGNORECASE | re.MULTILINE)
+
+
+def commit_paths(repo: str, message_file: str, paths: Sequence[str]) -> Json:
+    """Commit exactly ``paths`` (relative to the checkout top), leaving other staged files staged.
+
+    Refuses a message carrying a ``Co-Authored-By`` line or a "Generated with" trailer.
+    """
+    info = resolve_repo(repo)
+    if not info.git:
+        msg = f"commit needs a git repository with at least one commit: {info.reason}."
+        raise EngineError(msg)
+    if not paths:
+        msg = "commit needs at least one path"
+        raise EngineError(msg)
+    message_file = str(Path(message_file).resolve())
+    text = Path(message_file).read_text(encoding="utf-8")
+    if _TRAILER.search(text):
+        msg = "commit message carries a Co-Authored-By or 'Generated with' trailer"
+        raise EngineError(msg)
+    rels = [_safe_rel(p) for p in paths]
+    git(info.top, "add", "--", *rels)
+    git(info.top, "commit", "--quiet", "--only", "-F", message_file, "--", *rels)
+    return {
+        "ok": True,
+        "commit": git(info.top, "rev-parse", "--short", "HEAD"),
+        "committed": git_z(info.top, "diff-tree", "-z", "--root", "--no-commit-id",
+                           "--name-only", "-r", "HEAD"),
+        "still_staged": git_z(info.top, "diff", "--cached", "--name-only", "-z"),
+    }  # fmt: skip
 
 
 def latest_session(repo: str, command: str) -> Json:
@@ -2192,6 +2233,11 @@ def build_parser() -> argparse.ArgumentParser:  # noqa: PLR0915
     p.add_argument("--delete", action="append", default=[], help="path to remove")
     p.add_argument("--all", dest="whole", help="adopt everything this participant captured")
 
+    p = sub.add_parser("commit", help="commit only the named paths, leaving other staged files")
+    p.add_argument("--message-file", required=True)
+    p.add_argument("--repo", default=".")
+    p.add_argument("paths", nargs="+", help="paths relative to the checkout top")
+
     p = sub.add_parser("latest", help="describe the newest session of a command")
     p.add_argument("--command", choices=sorted(PROFILES), required=True)
     p.add_argument("--repo", default=".")
@@ -2304,6 +2350,8 @@ def run(args: argparse.Namespace) -> Json:  # noqa: PLR0911
         )  # fmt: skip
         out.write_text(text, encoding="utf-8")
         return {"ok": True, "path": str(out)}
+    if cmd == "commit":
+        return commit_paths(args.repo, args.message_file, args.paths)
     if cmd == "latest":
         return latest_session(args.repo, args.command)
     if cmd == "guard":

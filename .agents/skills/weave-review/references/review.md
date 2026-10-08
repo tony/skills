@@ -17,7 +17,7 @@ Findings and Disagreements carry the consensus tags and ordering the caller reco
 - src/retry.py: the backoff loop never stops on a permanent failure
 
 ## Scores
-- maintainer 31/40, skeptic 28/40, builder 26/40
+- maintainer 70/90, skeptic 63/90, builder 58/90
 
 ## Verified Issues
 ### Critical

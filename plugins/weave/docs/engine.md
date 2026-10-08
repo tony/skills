@@ -67,6 +67,12 @@ Prompts and lanes
   binary patch, changed-file snapshots, and manifest; the index is not touched.
 - `adopt --session S --pass N --pick path=P --delete path`: copies snapshots into
   the main checkout. `--all P` adopts everything `P` captured.
+  Symlinks are captured and adopted as symlinks (dangling ones too); the
+  manifest lists their targets under `links`.
+- `commit --message-file F [--repo R] path...`: stages and commits exactly the
+  named paths (`git commit --only`), leaving files the user already staged
+  staged. Refuses a message with a `Co-Authored-By` line or a "Generated with"
+  trailer. Returns `commit`, `committed`, `still_staged`.
 - `reset-main`, `stash-restore`: discard the main tree's changes only when the
   user's stash is recorded and present; pop the session's own stash entry. A
   refused or conflicting pop returns `ok: false`, `stash_kept`, `stash_sha`,
