@@ -1,0 +1,79 @@
+[project]
+name = "skills"
+version = "0.1.0"
+requires-python = ">=3.12"
+
+[dependency-groups]
+dev = [
+    "ruff>=0.16.1",
+    "basedpyright>=1.37",
+    "pytest>=9.0",
+    "pydantic>=2.0",
+    "rich>=13.0",
+    "typer>=0.15",
+    "pyyaml>=6.0",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+# User projects receive the templates; their style is the user's, not ours.
+extend-exclude = [".agents", "plugins/pytest-optimizer/templates"]
+# Plugin scripts run under the user's python3, and macOS ships 3.9.
+per-file-target-version = { "plugins/*/scripts/*.py" = "py39" }
+
+[tool.ruff.lint]
+select = ["ALL"]
+ignore = [
+    "COM812",   # conflicts with ruff formatter
+    "T201",     # allow print() in CLI scripts
+    "S311",     # allow random for non-crypto
+    "FBT001",   # allow boolean positional args
+    "FBT002",   # allow boolean defaults
+    "SIM108",   # allow ternary when readable
+    "C901",     # allow complex main() in CLI scripts
+    "PLR0912",  # allow many branches in main()
+    "CPY001",   # licence lives in LICENSE, not a per-file header
+    "PERF203",  # try in a loop is free from 3.11; the 3.9 cost is noise in CLI scripts
+]
+
+[tool.ruff.lint.pydocstyle]
+convention = "numpy"
+
+[tool.basedpyright]
+typeCheckingMode = "all"
+include = ["scripts", "plugins"]
+exclude = [".agents", "plugins/pytest-optimizer/templates", "**/__pycache__"]
+
+[tool.pytest.ini_options]
+addopts = "--doctest-modules"
+testpaths = [
+    "plugins/action/scripts",
+    "plugins/agent-messaging/scripts",
+    "plugins/business/scripts",
+    "plugins/changelog/scripts",
+    "plugins/disk/scripts",
+    "plugins/github-actions/scripts",
+    "plugins/git-branch/scripts",
+    "plugins/lean/scripts",
+    "plugins/merge-pr/scripts",
+    "plugins/model-cli/scripts",
+    "plugins/package-updater/scripts",
+    "plugins/pr/scripts",
+    "plugins/pytest-optimizer/scripts",
+    "plugins/release/scripts",
+    "plugins/research/scripts",
+    "plugins/respond/scripts",
+    "plugins/ruff/scripts",
+    "plugins/scholar/scripts",
+    "plugins/self-improvement/scripts",
+    "plugins/situate/scripts",
+    "plugins/skill-style/scripts",
+    "plugins/slop/scripts",
+    "plugins/spike/scripts",
+    "plugins/tailwind/scripts",
+    "plugins/tdd/scripts",
+    "plugins/terraform/scripts",
+    "plugins/weave/scripts",
+    "scripts",
+]
