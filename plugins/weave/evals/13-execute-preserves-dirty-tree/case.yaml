@@ -9,16 +9,29 @@ context:
   scaffold_script: scaffold.sh
 
 execution:
+  append_system_prompt: >-
+    Before input staging, run mkdir -p .eval-state/tmp from the project root.
+    For input staging, use mktemp -d "$PWD/.eval-state/tmp/weave-in.XXXXXX"
+    from that root, so the input file is inside the writable fixture.
+    For this fixture, prefix every weave engine command from the project root
+    with AI_AIP_ROOT="$PWD/.eval-state/weave". Set this before init; never
+    change roots to bypass a denied write.
+    Immediately before the final reply, run python3 .eval-state/check_checkout.py
+    from the project root to attest that no implementation was applied.
   prompt: >-
     /weave:execute --workers=subagents --passes=1 Add a --dry-run flag to
     src/cli.py that prints planned actions without executing them.
   max_turns: 40
   timeout_seconds: 900
-  allowed_tools: [Bash, Read, Glob, Grep, Skill, Task]
+  allowed_tools: [Bash, Read, Glob, Grep, Write, Edit, Skill, Task]
 
 runs: 3
 
 graders:
+  - name: exact-checkout-preserved
+    type: file_exists
+    path: .eval-state/checkout-preserved.json
+
   - name: no-hand-rolled-discard
     type: tool_used
     tool: Bash

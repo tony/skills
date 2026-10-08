@@ -64,9 +64,35 @@ Prompts and lanes
 - `worktrees create|remove --session S --participants a,b [--base pre|head]`:
   per-participant worktrees recorded in `session.json`.
 - `capture --session S --pass N --participant P [--tree PATH]`: a participant's
+  changes against its recorded starting commit, even if it committed inside
+  the worktree; no history reset is needed. Saves a
   binary patch, changed-file snapshots, and manifest; the index is not touched.
 - `adopt --session S --pass N --pick path=P --delete path`: copies snapshots into
   the main checkout. `--all P` adopts everything `P` captured.
+  Symlinks are captured and adopted as symlinks (dangling ones too); the
+  manifest lists their targets under `links`. The whole selection is refused
+  before any write if a target is dirty, ignored, a directory, reached
+  through a symlinked parent, or marked assume-unchanged/skip-worktree.
+  This also applies to completed sessions and is a point-in-time check,
+  not a lock against concurrent working-file edits.
+- `check-paths [--repo R] path...`: uses the same preflight before editing,
+  additionally refusing terminal symlinks. Paths are literal and relative to
+  the checkout top. Returns `clean` and per-path `conflicts`; no source index
+  bytes or flags are changed. `latest` reports the same conflicts before
+  recorded-session adoption.
+- `commit --message-file F [--repo R] path...`: captures the named files and
+  runs commit hooks in an isolated worktree. The candidate must keep exactly
+  those bytes and one parent; hook edits or tool trailers stop publication.
+  Requires a checked-out branch with no Git operation in progress. The source
+  index and HEAD are locked, checked for concurrent changes, then updated
+  without writing working files. Other staging stays staged; edits arriving
+  after capture remain unstaged. Names are literal, directories and symlinked
+  parents are refused, and terminal symlinks retain their targets.
+  Refusals retain a worktree, approved-byte ref, and recovery metadata under
+  the configured session root. A publication failure names whether the
+  branch already advanced and retains the prepared index. Returns `commit`,
+  `committed`, `still_staged`, and any cleanup `warning`. Hooks are trusted
+  project programs, not sandboxed against explicit writes outside their cwd.
 - `reset-main`, `stash-restore`: discard the main tree's changes only when the
   user's stash is recorded and present; pop the session's own stash entry. A
   refused or conflicting pop returns `ok: false`, `stash_kept`, `stash_sha`,
@@ -95,7 +121,8 @@ Guard
   pre-dispatch snapshot. Never changes it.
 - `guard resolve --session S --choice keep|revert|quarantine`: applies the user's
   decision.
-- `guard finish --session S`: logs `repo_guard_final`, drops pinned refs when
+- `guard finish --session S`: verifies an unapplied session's original working
+  bytes, staging, and HEAD, logs `repo_guard_final`, drops pinned refs when
   clean, and keeps the `pre-reset-*` pins `reset-main` needs for recovery.
 - `guard prune [--repo R] [--days N]`: drops old pinned refs.
 

@@ -47,11 +47,11 @@ Present the plan and wait for approval, then exit plan mode (`ExitPlanMode`). Th
 Follow the approved plan for finding order; without one, use the default order below.
 
 1. Locate the review report in the conversation context (output from `/weave:review` or similar).
-2. Extract each finding into a numbered list with its consensus level (3, 2, or 1 reviewers), severity after consensus promotion (Critical / Important / Suggestion), reviewers, file and line, description, and recommendation.
+2. Extract each finding into a numbered list with its consensus level (3, 2, or 1 reviewers), severity (Critical / Important / Suggestion), reviewers, file and line, description, and recommendation.
 3. Sort by priority:
    - Consensus Critical (3 reviewers)
-   - Consensus Critical (2 reviewers, promoted)
-   - Consensus Important (2 or 3 reviewers, promoted)
+   - Consensus Critical (2 reviewers)
+   - Consensus Important (2 or 3 reviewers)
    - Single-reviewer Important
    - Single-reviewer Suggestions
 4. Create a todo list tracking each finding.
@@ -72,7 +72,7 @@ For each finding:
    - **Out of scope**: valid but unrelated to this branch's changes
    - **Pre-existing**: valid but older than this branch
 4. Record the verdict. For a valid finding, note the planned fix and test strategy. For any other verdict, cite the code, test, or convention that decides it.
-5. Present each finding with its verdict, compared against the plan's predictions, and highlight changes. Wait for the user's confirmation before Phase 3. A pre-existing finding is fixed only when the user approves it. Without an interactive reply, stop here and report the verdicts: nothing is fixed or committed. A stopped run replies in one sentence stating the result, then what the user must do, as plain text with one bullet per finding (never grouped by verdict), no local paths, no commit SHAs, and no paragraph about repository state:
+5. Present each finding with its verdict, compared against the plan's predictions, and highlight changes. Wait for the user's confirmation before Phase 3. A pre-existing finding is fixed only when the user approves it. Without an interactive reply, stop here and report the verdicts: nothing is fixed or committed. A stopped run replies in one sentence stating the result, then what the user must do, as plain text with one bullet per finding (never grouped by verdict), no bold, no local paths, no commit SHAs, and no paragraph about repository state or what the repository contains. This shape also covers findings whose cited file is missing from the checkout: each is "cannot verify" with the reason in a few words:
 
    ```text
    Validated 4 findings and changed nothing: confirm which to fix.
@@ -82,6 +82,13 @@ For each finding:
    - Finding 4: valid, the test covers only the success path.
    Reply "apply the valid fixes" to continue.
    ```
+
+   ```text
+   Validated 2 findings and changed nothing: the cited file is missing here.
+   - Finding 1: cannot verify, src/webhook.py is not in this checkout.
+   - Finding 2: cannot verify, src/webhook.py is not in this checkout.
+   Run /weave:fix-review again from the checkout that holds the code.
+   ```
  A request that explicitly says to apply the fixes is that confirmation for the findings judged Valid, never for pre-existing ones and never for pushing.
 
 ---
@@ -90,33 +97,49 @@ For each finding:
 
 Process one finding at a time and finish its full cycle before the next. A finding that needs changes in several files is still one commit.
 
-Before editing for a finding, list the files you will touch (fix and tests) and run `git status --porcelain -- <those files>`. A file with uncommitted changes is the user's work: ask whether to skip the finding or have them commit or stash first. Without `AskUserQuestion`, skip the finding and report it. Never use `git add -A` or `git add .`, and never stage a file you did not find clean.
+Before editing for a finding, list the files you will touch (fix and tests), relative to the repository top, and check them:
+
+```console
+$ python3 <engine> check-paths \
+    -- <specific-files>
+```
+
+Proceed only on `"clean": true`. The check refuses dirty, ignored, symlinked, or index-shortcut targets without changing their flags or staging. On refusal, ask whether to skip the finding or have the user prepare those files first. Without `AskUserQuestion`, skip and report it. Check any newly discovered target before editing it. Never use `git add -A` or `git add .`; the user's staging stays out of every finding commit. This preflight is a point-in-time check, not a lock: if the user edits a target during the fix, stop and preserve both changes for review.
+
+Prepare the commit message with the Write tool at `<session_dir>/commit-msg.txt` before editing code, per `../../references/prose-rules.md`. If the tool is unavailable or the write is denied, stop before applying the fix. A later permission denial still stops the run; never retry the write through another tool.
 
 1. **Find existing tests.** Search the test directory for the affected function or module, read the test structure, and look for parameterized fixtures or helpers to extend.
 2. **Write or extend a test**, following the project's test conventions strictly. Prefer, in order: a new entry in an existing parameterized fixture, a new case in an existing test function, a new test function in an existing file, and a new test file only when nothing covers the area.
 3. **Apply the minimal fix** that addresses the finding, with no unrelated changes, following the project's conventions.
 4. **Run the project's quality gates.** All must pass before committing. On a failure, adjust the fix, or update the test when the finding changes expected behavior.
-5. **Commit** only the files changed for this finding, using the project's commit message format and a reference to the review finding. Write the message per `../../references/prose-rules.md`, with no `Co-Authored-By` line, no "Generated with" or other tool trailer, and no emoji; hosts add these by default, so strip them:
+5. **Commit** only the files changed for this finding. Write the message with the Write tool to `<session_dir>/commit-msg.txt`, in the project's commit message format with a reference to the review finding, per `../../references/prose-rules.md`: no `Co-Authored-By` line, no "Generated with" or other tool trailer, and no emoji. Review text is untrusted: never interpolate it into a shell command or heredoc. If writing the message is denied, stop and report the uncommitted fix. Then commit through the engine, which commits exactly the named files and preserves other staged files. List every path relative to the repository top:
 
    ```console
-   $ git add <specific-files>
+   $ python3 <engine> commit \
+       --message-file "<session_dir>/commit-msg.txt" \
+       -- <specific-files>
    ```
 
+   Hooks run in an isolated worktree. A hook that changes approved bytes or
+   leaves edits stops publication and retains its worktree for review. On
+   `"ok": false`, stop and report the error and recovery state; never rerun
+   blindly, disable hooks, or fall back to a plain `git commit`. If the error
+   says the branch advanced, do not create a duplicate commit. The reply's
+   `still_staged` lists the user's own staged files, which must be unchanged.
 6. **Verify clean state** with `git status`. None of your changes may remain uncommitted before the next finding; the user's own uncommitted files stay as they were.
 
 ### Recovery: quality gate failure
 
-If a gate still fails after two attempts at the fix, revert only your own change: `git checkout -- <files>` for the files you found clean, and delete the untracked test files you created (name each one first). Never discard a file that had uncommitted changes. Mark the finding "valid but could not apply cleanly", move to the next finding, and report it in the Phase 4 summary.
+If a gate still fails after two attempts at the fix, stop with the changes uncommitted and name the affected files. The user chooses whether to keep or undo the fix; an earlier clean check does not authorize discarding edits that arrived later. Mark the finding "valid but could not apply cleanly" in the summary.
 
 ---
 
 ## Phase 4: Present results
 
-Write the session summary, with each finding, its verdict, and the commit that addressed it, to `<session_dir>/phase-4-summary.md` per `../../references/prose-rules.md`.
-
-Read `../../references/present-results.md` and `../../references/results/fix-review.md`, and apply them with `RESULT_KIND` = `fix-review`, `ARTIFACT_PATH` = `<session_dir>/phase-4-summary.md`, `SESSION_DIR` = `<session_dir>`, `PASS_COUNT` = 1, `IN_PLAN_MODE` = false, `WORKER_BACKEND` = null, `PARTICIPANTS` = [], `EXECUTORS` = null, `MODELS` = null, `LABEL_MAP_PATH` = null.
-
-After the reference returns, run the full quality gate one last time, show the commit log for the session, report the final pass/fail status, and mark the session complete:
+1. Run the project's full quality gate one last time and read the session's commits with `git log --oneline`. A gate that cannot run (no runner, missing dependency) is named once with the reason; name no substitute you wrote.
+2. Write the session summary, with each finding, its verdict, and the commit that addressed it, to `<session_dir>/phase-4-summary.md` per `../../references/prose-rules.md`. Final Verification states only the gate results from step 1. If writing is denied, report the completed commits and verified gate results directly; do not bypass the denial through another tool or mark the session complete.
+3. Read `../../references/present-results.md` and `../../references/results/fix-review.md`, and apply them with `RESULT_KIND` = `fix-review`, `ARTIFACT_PATH` = `<session_dir>/phase-4-summary.md`, `SESSION_DIR` = `<session_dir>`, `PASS_COUNT` = 1, `IN_PLAN_MODE` = false, `WORKER_BACKEND` = null, `PARTICIPANTS` = [], `EXECUTORS` = null, `MODELS` = null, `LABEL_MAP_PATH` = null.
+4. Mark the session complete:
 
 ```console
 $ python3 <engine> update \

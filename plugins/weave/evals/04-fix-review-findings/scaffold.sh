@@ -11,6 +11,7 @@ cat >.gitignore <<'MD'
 .bashrc
 .claude
 .eval-artifacts
+.eval-state
 .gitconfig
 .gitmodules
 .idea

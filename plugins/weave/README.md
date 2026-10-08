@@ -71,17 +71,32 @@ Multi-pass differs by command:
 - **Expansive weaving** (brainstorm-and-refine, refine): each pass is a full judge, weave, and distribute cycle.
 - **Remediation** (fix-review): applies review findings as atomic commits; multi-pass does not apply.
 
+Finding commits run hooks in an isolated worktree and publish only the
+approved file bytes. Hook edits or concurrent index/HEAD changes stop the
+commit and retain recovery artifacts. Unrelated staging and working files
+stay untouched; edits arriving after capture remain unstaged. Hooks remain
+trusted project programs, not a security sandbox.
+
 Worker backends are strictly isolated: retry and fallback stay inside the chosen backend.
 
 ### When not to use
 
-Skip weave for a task one agent answers in a single pass: a typo, a rename, a question whose answer is in one file. Each run pays for three workers, a blind judge, and a critic, so expect roughly three times the worker tokens of a single agent plus the judge and critic. The benefit is independent attempts whose disagreements get verified against the code; it shows on ambiguous design choices, risky changes, and reviews, not on mechanical edits. No measured comparison against a single agent ships with the plugin.
+Skip weave for a task one agent answers in a single pass: a typo, a rename, a question whose answer is in one file. Independent workers, judging, and refinement add cost. Use them when comparing alternatives and checking disagreements is worth that cost; the small comparison below did not establish a quality advantage.
+
+### Measured against a single agent
+
+Measured 2026-10-08 with Claude Code 2.1.294 on three eval cases whose prompts name no command: `refine-draft` (polish a paragraph), `brainstorm-ideas` (undo/redo designs), and `brainstorm-and-refine-pipeline` (pagination design). Each case ran twice per arm with `claude plugin eval --ablation with-without`: weave loaded in one arm and no plugin in the other. [Measurement records](docs/measurements.json) preserve the per-run cost and duration reported by the CLI.
+
+- Cost: summed within each case, weave cost 8.3 to 11.4 times as much and took 3.3 to 8.6 times as long. These are CLI-reported dollar estimates including judges and elapsed durations, not measured token counts or billed charges.
+- Quality: a retained comparison ledger contains 5 votes for weave, 6 for the baseline, and 1 invalid result. Across six run pairs, the two votes agree on weave once and the baseline once; three pairs split and one is incomplete. The original comparison prompts and judge responses are unavailable, so these votes are not reproducible evidence of a quality gain.
+- The cases' built-in graders require weave's process or result shape. Their zero baseline scores do not measure a content-quality difference.
+- Unmeasured: seeded-defect catch rate, other task classes, and `--workers=model-clis`.
 
 ### Command categories
 
 Commands that need commits (`execute`, `prompt`, `architecture`, `review`, `fix-review`) refuse in one sentence without a git repository that has at least one commit. `ask` and `plan` degrade with a stated "no repository" note. `brainstorm`, `brainstorm-and-refine`, `refine`, and `serene-bliss` run anywhere: with no usable repository the repo guard is off and workers start in an empty scratch directory. A checkout rooted at `/`, at your home directory, or at a directory containing your home directory counts as no repository, and a command that snapshots, stashes, or adds worktrees refuses it.
 
-- **Read-only** (`ask`, `plan`, `brainstorm`, `refine`, `brainstorm-and-refine`, `serene-bliss`, `review`): gather perspectives and synthesize. Nothing in the repository changes.
+- **Read-only** (`ask`, `plan`, `brainstorm`, `refine`, `brainstorm-and-refine`, `serene-bliss`, `review`): gather perspectives and synthesize. Workers and executable verification use scratch worktrees; the final guard must attest checkout state before the result is presented.
 - **Write**: each participant works in its own worktree, with one exception: under `--workers=model-clis` the `claude` lane runs as a host sub-agent in your main checkout and is the only lane that writes it. The engine stashes your uncommitted work first, and `reset-main` discards that lane's changes only while the stash is recorded and present. `prompt` picks one winner, `execute` cherry-picks the best parts, `architecture` cherry-picks conventions, skills, and scaffolding per file, and `fix-review` commits findings one by one.
 
 ### Shared protocols
@@ -101,9 +116,19 @@ Shared judgment prose lives in `references/ensemble-core.md` (context packet, di
 
 ## Repo Guard
 
-Read-only commands never write your checkout, and neither do write-command workers except the `model-clis` `claude` lane described under Write. `init` records the checkout, uncommitted and untracked files included, as a snapshot commit pinned under `refs/weave-guard/<session>/`. Every external CLI lane runs in a disposable worktree built from that snapshot, so it sees your uncommitted work but writes only to a throwaway tree. Host sub-agents of read-only commands get snapshot worktrees too.
+`init` records tracked and non-ignored untracked content, staging, and HEAD.
+It pins the content snapshot under `refs/weave-guard/<session>/`. Read-only
+lanes use snapshot worktrees; mutating native lanes use their own branches.
+Native prompts specify an absolute root for every file and shell call. These
+are cooperative instructions, not a filesystem sandbox: a worker can escape
+through an absolute path or an incorrectly rooted tool call.
 
-After each CLI attempt and once after all lanes finish, the guard compares per-path content hashes of your checkout with the snapshot. It never changes anything. On a difference it records the touched paths, a patch, a copy of each touched file, and a pinned post-run ref under the session directory, and warns. The skill then offers once: keep, revert only the touched paths, or quarantine everything in a named stash. Headless runs keep and report. `docs/repo-guard-protocol.md` has the details.
+The guard compares content, staging, and HEAD after dispatch and before
+presentation. Drift retains recovery snapshots without rewriting the checkout.
+A native mutating violation stops before adoption or cleanup, preserving leaked
+work and the original user stash for inspection. Read-only runs can offer keep,
+revert, or quarantine; headless runs keep the drift and cannot claim unchanged.
+`docs/repo-guard-protocol.md` describes the recovery choices and final attestation.
 
 ## Flags
 

@@ -78,11 +78,11 @@ Apply `ensemble-core.md` (Blind judging, Synthesis protocol) to this pass's outp
 
 Steps 2 to 4 run on the final pass only (pass 1 when `passes` is 1, else the last pass of Phase 4), so the plan is rendered once. In this order:
 
-1. Have the session agent write the synthesis to `<session_dir>/pass-NNNN/synthesis.md` per `../../references/prose-rules.md`. The plan must tell the executor to run the project's quality gates before each commit, and to write commit messages with no `Co-Authored-By` line, no "Generated with" or other tool trailer, and no emoji.
+1. Have the session agent read `../../references/present-results.md` and `../../references/results/plan.md`, then write the synthesis to `<session_dir>/pass-NNNN/synthesis.md` using that result contract and `../../references/prose-rules.md`. Supply those same references to the agent that writes the final plan file. Raw critic deltas stay in `critic.md`; the plan's Critic Findings uses the final risk/safeguard format from the result template. The plan must tell the executor to run the project's quality gates before each commit, and to write commit messages with no `Co-Authored-By` line, no "Generated with" or other tool trailer, and no emoji.
 
 2. Unless `--no-deslop` was set, deslop through the session agent: plan mode makes the main agent read-only, and the pass needs `Edit` and a file copy. Tell the session agent to read `../../references/deslop-pass.md` and apply it with `ARTIFACT_PATH` set to that file, `SESSION_DIR`, `BASELINE_SHA` set to `baseline_sha` from `init`, and `DESLOP_MODE` from the flags, and to return the one-line summary. Re-read `synthesis.md` for the desloped plan. The summary block stays out of the plan body; print its one line after `Plan ready for review.`
 
-3. Read `../../references/present-results.md` and `../../references/results/plan.md`, and apply them with `RESULT_KIND` = `plan`, `ARTIFACT_PATH` = the desloped `synthesis.md`, `SESSION_DIR`, `PASS_COUNT` = the resolved pass count, `IN_PLAN_MODE` = true, `LABEL_MAP_PATH` = `<session_dir>/pass-NNNN/label-map.json`. Read `WORKER_BACKEND`, `PARTICIPANTS`, `EXECUTORS`, and `MODELS` from `session.json`.
+3. Apply the result references from step 1 with `RESULT_KIND` = `plan`, `ARTIFACT_PATH` = the desloped `synthesis.md`, `SESSION_DIR`, `PASS_COUNT` = the resolved pass count, `IN_PLAN_MODE` = true, `LABEL_MAP_PATH` = `<session_dir>/pass-NNNN/label-map.json`. Read `WORKER_BACKEND`, `PARTICIPANTS`, `EXECUTORS`, and `MODELS` from `session.json`.
 
 4. Write the rendered plan to the plan file, then emit `Plan ready for review.`
 

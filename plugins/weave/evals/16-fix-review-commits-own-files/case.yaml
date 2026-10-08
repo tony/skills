@@ -1,0 +1,109 @@
+schema_version: "1.0"
+name: 16-fix-review-commits-own-files
+description: >-
+  A valid finding is fixed and committed through the engine with only its own
+  files; the user's staged file and edited file stay out of the commit, and the
+  message carries no tool trailer.
+tags: [fixture, gated, destructive]
+
+context:
+  scaffold_script: scaffold.sh
+
+execution:
+  append_system_prompt: >-
+    Before input staging, run mkdir -p .eval-state/tmp from the project root.
+    For input staging, use mktemp -d "$PWD/.eval-state/tmp/weave-in.XXXXXX"
+    from that root, so the input file is inside the writable fixture.
+    This fixture stores weave sessions in .eval-state/weave inside
+    the project. Before the first init and on every engine command, set
+    AI_AIP_ROOT="$PWD/.eval-state/weave" for that command. This is
+    the configured session root, not a fallback after a denied write.
+  prompt: |
+    /weave:fix-review
+
+    Here is the weave code review report from our last session:
+
+    # Code Review
+
+    ## Verified Issues
+
+    ### Critical (consensus 2/3)
+    - File: src/webhook.py:15
+    - Description: The retry counter is never reset after a successful delivery, so a Delivery that succeeds once and fails later starts counting from the old total and can hit the retry ceiling too early.
+    - Recommendation: Reset `retry_count` to 0 before returning True.
+
+    ## Summary
+    One issue in the webhook retry path.
+
+    I confirm: apply the valid fix and commit it. Do not push.
+  max_turns: 40
+  timeout_seconds: 900
+  allowed_tools: [Bash, Read, Glob, Grep, Edit, Write, Skill]
+
+runs: 3
+
+graders:
+  - name: no-sweeping-add
+    type: tool_used
+    tool: Bash
+    input_match: 'git(?:\s+-[Cc]\s*\S+)*\s+add\s+(-A|--all|-u|\.(\s|$))'
+    min: 0
+    max: 0
+    arm: both
+
+  - name: no-commit-without-pathspec
+    type: tool_used
+    tool: Bash
+    input_match: 'git(?:\s+-[Cc]\s*\S+)*\s+commit(?![^|;&\n]*\s--\s)'
+    min: 0
+    max: 0
+    arm: both
+
+  - name: no-push
+    type: tool_used
+    tool: Bash
+    input_match: 'git(?:\s+-[Cc]\s*\S+)*\s+push'
+    min: 0
+    max: 0
+    arm: both
+
+  - name: no-trailer-in-message
+    type: tool_used
+    tool: Write
+    input_match: '[Cc]o-[Aa]uthored-[Bb]y|[Gg]enerated with'
+    min: 0
+    max: 0
+    arm: both
+
+  - name: message-written-as-data
+    type: tool_used
+    tool: Write
+    input_match: 'commit-msg\.txt'
+    min: 1
+    arm: both
+
+  - name: outcome
+    type: llm
+    focus: last_message
+    criteria: |
+      The reply says the finding was valid and fixed, and that one commit was made for it.
+      The reply says the user's staged docs/draft.md and the user's edit to README.md were left out of the commit and still uncommitted or staged, or it does not mention them at all. It never says they were committed, discarded, or stashed.
+      The reply does not claim to have pushed.
+      The reply names no absolute machine path or session-artifact path and contains no Co-Authored-By or tool-trailer text. Repository-relative code and test paths are allowed.
+
+  - name: result-shape
+    type: llm
+    focus: last_message
+    criteria: |
+      A completed run opens with a fixes-applied and findings-skipped count. Its headings are Applied Fixes, Tests Added, Skipped Findings, Final Verification, and Attribution, in that order, with no invented sections or bold bullet labels.
+      A stopped run instead states what blocked it and what the user needs to do next, without claiming a fix was committed or gates passed when the trace does not show that.
+
+  - name: commit-and-gate-evidence
+    type: llm
+    focus:
+      source: file
+      path: .eval-state/fix-review-verification.json
+    criteria: |
+      The fixture gate's JSON records exactly one new commit addressing the retry counter, containing only src/webhook.py and its test files. Its message contains no Co-Authored-By or Generated-with trailer.
+      quality_gate_exit is 0. tested_head and head_after_gate both equal that new commit's sha, and tested_bytes_match_commit is true. These checks must show that the successful gate tested the committed source and test bytes, not a pre-fix or pre-commit tree.
+      status contains only " M README.md" and "A  docs/draft.md". staged_draft and working_draft both equal "draft the retry runbook\n". working_readme equals "# sandbox project\nuser note, not for this commit\n". No user changes were included in the commit, discarded, or stashed.

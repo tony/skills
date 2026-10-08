@@ -7,6 +7,7 @@ from __future__ import annotations
 import io
 import json
 import re
+import shlex
 import subprocess
 from pathlib import Path
 
@@ -200,6 +201,21 @@ def test_guard_pin_and_index_untouched(repo: Path) -> None:
     assert sh(repo, "git", "show", f"{ref}:a.txt") == DIRTY_A
     assert engine.guard_check(sdir)["violation"] is False
     assert (repo / ".git" / "index").read_bytes() == index_before
+
+
+@pytest.mark.parametrize("flag", ["--assume-unchanged", "--skip-worktree"])
+def test_guard_rehashes_live_bytes_behind_index_shortcuts(repo: Path, flag: str) -> None:
+    (repo / ".gitignore").write_text("a.txt\n")
+    sh(repo, "git", "update-index", flag, "a.txt")
+    sdir = Path(init()["session_dir"])
+    index = (repo / ".git/index").read_bytes()
+    (repo / "a.txt").write_text("hidden working edit\n")
+    found = engine.guard_check(sdir)
+    assert found["violation"] is True
+    assert found["touched"] == {"a.txt": "M"}
+    assert found["index_changed"] is False
+    assert (repo / ".git/index").read_bytes() == index
+    assert (Path(found["dir"]) / "post-copy/a.txt").read_text() == "hidden working edit\n"
 
 
 def test_guard_detects_further_edit_of_dirty_file_and_never_mutates(repo: Path) -> None:
@@ -464,7 +480,9 @@ def test_argv_contract() -> None:
     agent = engine.build_command("agent", "M", "P", mutating=False, workdir=wd)
     assert agent[:4] == ["agent", "-p", "--mode", "plan"]
     assert "-f" not in agent
-    assert "--yolo" in engine.build_command("codex", None, "P", mutating=True, workdir=wd)
+    assert "--dangerously-bypass-approvals-and-sandbox" in engine.build_command(
+        "codex", None, "P", mutating=True, workdir=wd
+    )
 
 
 # --- mutating sessions -----------------------------------------------------
@@ -504,6 +522,10 @@ def test_capture_and_adopt_whole_participant(repo: Path) -> None:
     wt = Path(engine.load_session(sdir)["worktrees"]["maintainer"]["path"])
     (wt / "a.txt").unlink()
     (wt / "sub" / "new.py").write_text("x = 1\n")
+    sh(wt, "git", "add", "-A")
+    sh(wt, "git", "commit", "-q", "-m", "worker ignored the no-commit protocol")
+    worker_head = sh(wt, "git", "rev-parse", "HEAD")
+    source_head = sh(repo, "git", "rev-parse", "HEAD")
     cap = engine.capture_tree(sdir, 1, "maintainer", None)
     assert cap["deleted"] == ["a.txt"]
     assert cap["changed"] == ["sub/new.py"]
@@ -511,6 +533,24 @@ def test_capture_and_adopt_whole_participant(repo: Path) -> None:
     assert done["copied"] == ["sub/new.py"]
     assert not (repo / "a.txt").exists()
     assert (repo / "sub" / "new.py").read_text() == "x = 1\n"
+    assert sh(wt, "git", "rev-parse", "HEAD") == worker_head
+    assert sh(repo, "git", "rev-parse", "HEAD") == source_head
+    assert engine.latest_session(str(repo), "execute")["applied"] is True
+
+
+def test_participant_paths_are_rejected_before_worktree_mutation(repo: Path) -> None:
+    sdir = Path(init(command="execute", mutating=True)["session_dir"])
+    sentinel = sdir.parent / "keep"
+    sentinel.write_text("owned recovery marker\n")
+    for name in ("..", "../..", "/absolute", "worker/child"):
+        with pytest.raises(engine.EngineError, match="unsafe participant"):
+            engine.create_worktrees(sdir, ["maintainer", name])
+        with pytest.raises(engine.EngineError, match="unsafe participant"):
+            engine.capture_tree(sdir, 1, name, None)
+        with pytest.raises(engine.EngineError, match="unsafe participant"):
+            engine.remove_worktrees(sdir, [name])
+        assert not (sdir / "worktrees").exists()
+        assert sentinel.read_text() == "owned recovery marker\n"
 
 
 def test_read_only_worktrees_start_from_the_snapshot(repo: Path) -> None:
@@ -520,6 +560,14 @@ def test_read_only_worktrees_start_from_the_snapshot(repo: Path) -> None:
     wt = Path(made["worktrees"]["maintainer"]["path"])
     assert made["worktrees"]["maintainer"]["branch"] is None
     assert (wt / "a.txt").read_text() == DIRTY_A
+    protocol = made["worktrees"]["maintainer"]["worker_instructions"]
+    prefix = "cd -- " + shlex.quote(str(wt)) + " && "
+    assert prefix in protocol
+    assert "Every Read, Write, Edit, Glob, or Grep path must be absolute" in protocol
+    for name in ("first", "second"):
+        sh(repo, "sh", "-c", prefix + "touch " + name)
+        assert (wt / name).exists()
+        assert not (repo / name).exists()
     engine.remove_worktrees(sdir, None)
     assert not wt.exists()
 
@@ -527,7 +575,7 @@ def test_read_only_worktrees_start_from_the_snapshot(repo: Path) -> None:
 def test_mutating_init_stashes_and_restore_pops_own_entry(repo: Path) -> None:
     (repo / "a.txt").write_text("user edit\n")
     (repo / "new.txt").write_text("untracked\n")
-    doc = init(command="execute", mutating=True)
+    doc = init(command="execute", backend="model-clis", mutating=True)
     sdir = Path(doc["session_dir"])
     assert doc["stash"]["state"] == "stashed"
     assert sh(repo, "git", "status", "--porcelain") == ""
@@ -542,21 +590,70 @@ def test_mutating_init_stashes_and_restore_pops_own_entry(repo: Path) -> None:
 
 
 def test_reset_main_refuses_without_stash_record_or_missing_stash(repo: Path) -> None:
-    sdir = Path(init()["session_dir"])
+    sdir = Path(init(backend="model-clis")["session_dir"])
     with pytest.raises(engine.EngineError, match="no stash record"):
         engine.reset_main(sdir)
     (repo / "a.txt").write_text("user edit\n")
-    sdir = Path(init(command="execute", mutating=True)["session_dir"])
+    sdir = Path(init(command="execute", backend="model-clis", mutating=True)["session_dir"])
     sh(repo, "git", "stash", "drop")
     with pytest.raises(engine.EngineError, match="missing"):
         engine.reset_main(sdir)
 
 
 def test_clean_tree_mutating_init_needs_no_stash(repo: Path) -> None:
-    doc = init(command="execute", mutating=True)
+    doc = init(command="execute", backend="model-clis", mutating=True)
     assert doc["stash"] == {"state": "none-needed"}
     assert engine.reset_main(Path(doc["session_dir"]))["ok"]
     assert engine.restore_stash(Path(doc["session_dir"]))["restored"] is False
+
+
+def test_native_no_adoption_restores_partial_staging_and_attests_original(repo: Path) -> None:
+    (repo / "a.txt").write_text("staged\n")
+    sh(repo, "git", "add", "a.txt")
+    (repo / "a.txt").write_text("working\n")
+    (repo / "notes").symlink_to("missing-target")
+    before_index = sh(repo, "git", "ls-files", "--stage", "-v")
+    sdir = Path(init(command="execute", mutating=True)["session_dir"])
+    assert engine.guard_check(sdir)["violation"] is False
+    assert engine.restore_stash(sdir)["restored"] is True
+    assert sh(repo, "git", "ls-files", "--stage", "-v") == before_index
+    assert (repo / "a.txt").read_text() == "working\n"
+    assert (repo / "notes").is_symlink()
+    assert engine.guard_finish(sdir)["clean"] is True
+
+
+@pytest.mark.parametrize("drift", ["working", "index", "branch"])
+def test_native_checkout_drift_halts_without_repair(repo: Path, drift: str) -> None:
+    sdir = Path(init(command="execute", mutating=True)["session_dir"])
+    made = engine.create_worktrees(sdir, ["builder"])
+    worktree = Path(made["worktrees"]["builder"]["path"])
+    (worktree / "a.txt").write_text("approved worker result\n")
+    engine.capture_tree(sdir, 1, "builder", None)
+    if drift == "working":
+        (repo / "escaped").symlink_to("missing-target")
+    elif drift == "index":
+        (repo / "B").write_text("concurrent staged edit\n")
+        sh(repo, "git", "add", "B")
+        (repo / "B").write_text("b1\n")
+    else:
+        sh(repo, "git", "checkout", "-q", "-b", "concurrent-branch")
+    before = sh(repo, "git", "status", "--porcelain")
+    index = (repo / ".git/index").read_bytes()
+    with pytest.raises(engine.EngineError, match="checkout changed"):
+        engine.adopt_files(sdir, 1, ["a.txt=builder"], [])
+    with pytest.raises(engine.EngineError, match="refusing to reset"):
+        engine.reset_main(sdir)
+    done = engine.guard_finish(sdir)
+    assert done["ok"] is False
+    assert done["clean"] is False
+    assert not done["refs_pruned"]
+    assert done["index_changed"] is (drift == "index")
+    assert done["head_changed"] is (drift == "branch")
+    assert (repo / "a.txt").read_text() == "one\n"
+    assert (repo / ".git/index").read_bytes() == index
+    assert sh(repo, "git", "status", "--porcelain") == before
+    assert worktree.is_dir()
+    assert sh(repo, "git", "for-each-ref", "refs/weave-guard/")
 
 
 # --- flags, prompts, labels, judges ---------------------------------------
@@ -764,10 +861,13 @@ def test_bare_session_has_no_workers_or_guard(repo: Path) -> None:
         )  # fmt: skip
 
 
-def test_mutating_session_finish_skips_the_comparison_and_drops_refs(repo: Path) -> None:
+def test_adopted_session_finish_skips_the_comparison_and_drops_refs(repo: Path) -> None:
     sdir = Path(init(command="execute", mutating=True)["session_dir"])
     sid = engine.load_session(sdir)["session_id"]
-    (repo / "adopted.txt").write_text("synthesis\n")
+    made = engine.create_worktrees(sdir, ["builder"])
+    (Path(made["worktrees"]["builder"]["path"]) / "adopted.txt").write_text("synthesis\n")
+    engine.capture_tree(sdir, 1, "builder", None)
+    engine.adopt_files(sdir, 1, [], [], whole="builder")
     done = engine.guard_finish(sdir)
     assert done["clean"] is None
     assert done["refs_pruned"] is True
@@ -973,10 +1073,11 @@ def test_failed_init_leaves_no_session_directory_and_returns_the_stash(
 
 def test_guard_finish_keeps_the_pins_reset_main_needs(repo: Path) -> None:
     (repo / "a.txt").write_text("user edit\n")
-    sdir = Path(init(command="execute", mutating=True)["session_dir"])
+    sdir = Path(init(command="execute", backend="model-clis", mutating=True)["session_dir"])
     sid = engine.load_session(sdir)["session_id"]
     (repo / "synth.txt").write_text("discarded synthesis\n")
     engine.reset_main(sdir)
+    engine.restore_stash(sdir)
     assert engine.guard_finish(sdir)["refs_pruned"] is True
     refs = sh(repo, "git", "for-each-ref", "--format=%(refname)", f"refs/weave-guard/{sid}/")
     pins = [r for r in refs.split() if "/pre-reset-" in r]
@@ -1123,3 +1224,372 @@ def test_latest_session_reports_snapshots_and_paths_dirtied_since(repo: Path) ->
     assert found["captured"]["maintainer"] == {"changed": ["sub/new.py"], "deleted": ["a.txt"]}
     assert found["dirty"] == ["sub/new.py"]
     assert found["applied"] is False
+
+
+def test_capture_and_adopt_keep_symlinks_as_links(repo: Path) -> None:
+    sdir = Path(init(command="execute", mutating=True)["session_dir"])
+    engine.create_worktrees(sdir, ["maintainer"])
+    wt = Path(engine.load_session(sdir)["worktrees"]["maintainer"]["path"])
+    (wt / "target.txt").write_text("real\n")
+    (wt / "live").symlink_to("target.txt")
+    (wt / "dangling").symlink_to("missing/nowhere")
+    cap = engine.capture_tree(sdir, 1, "maintainer", None)
+    assert sorted(cap["changed"]) == ["dangling", "live", "target.txt"]
+    assert cap["links"] == {"dangling": "missing/nowhere", "live": "target.txt"}
+    engine.adopt_files(sdir, 1, [], [], whole="maintainer")
+    assert (repo / "live").is_symlink()
+    assert (repo / "live").readlink() == Path("target.txt")
+    assert (repo / "dangling").is_symlink()
+    assert (repo / "dangling").readlink() == Path("missing/nowhere")
+    assert (repo / "target.txt").read_text() == "real\n"
+
+
+def test_adopt_replaces_a_symlink_without_writing_through_it(repo: Path) -> None:
+    outside = repo.parent / "outside.txt"
+    outside.write_text("keep\n")
+    (repo / "n.txt").symlink_to(outside)
+    sh(repo, "git", "add", "n.txt")
+    sh(repo, "git", "commit", "-q", "-m", "track link")
+    sdir = Path(init(command="execute", mutating=True)["session_dir"])
+    engine.create_worktrees(sdir, ["maintainer"])
+    wt = Path(engine.load_session(sdir)["worktrees"]["maintainer"]["path"])
+    (wt / "n.txt").unlink()
+    (wt / "n.txt").write_text("from worker\n")
+    engine.capture_tree(sdir, 1, "maintainer", None)
+    engine.adopt_files(sdir, 1, ["n.txt=maintainer"], [])
+    assert not (repo / "n.txt").is_symlink()
+    assert (repo / "n.txt").read_text() == "from worker\n"
+    assert outside.read_text() == "keep\n"
+
+
+@pytest.mark.parametrize(
+    "state",
+    [
+        "staged",
+        "unstaged",
+        "untracked",
+        "ignored",
+        "symlink-parent",
+        "assume-unchanged",
+        "skip-worktree",
+    ],
+)
+def test_adopt_refuses_dirty_targets_before_any_write(
+    repo: Path, state: str, capsys: pytest.CaptureFixture[str]
+) -> None:
+    sdir = Path(init(command="execute", mutating=True)["session_dir"])
+    engine.create_worktrees(sdir, ["maintainer"])
+    wt = Path(engine.load_session(sdir)["worktrees"]["maintainer"]["path"])
+    (wt / "a.txt").write_text("worker\n")
+    (wt / "B").unlink()
+    target = "sub/new.txt" if state in {"untracked", "ignored", "symlink-parent"} else "B"
+    if state == "symlink-parent":
+        outside = repo.parent / "outside"
+        outside.mkdir()
+        (repo / "sub" / "S").unlink()
+        (repo / "sub").rmdir()
+        (repo / "sub").symlink_to(outside, target_is_directory=True)
+    (wt / "sub" / "new.txt").write_text("worker\n")
+    engine.capture_tree(sdir, 1, "maintainer", None)
+    session = engine.load_session(sdir)
+    session["status"] = "completed"
+    engine.save_session(sdir, session)
+    (repo / target).write_text("user\n")
+    if state == "staged":
+        sh(repo, "git", "add", target)
+    if state == "ignored":
+        (repo / ".gitignore").write_text("sub/new.txt\n")
+    if state in {"assume-unchanged", "skip-worktree"}:
+        sh(repo, "git", "update-index", f"--{state}", target)
+    before = sh(repo, "git", "status", "--porcelain", "--ignored")
+    index = (repo / ".git/index").read_bytes()
+    head = sh(repo, "git", "rev-parse", "HEAD")
+    root = repo if state == "symlink-parent" else repo / "sub"
+    assert engine.main(["check-paths", "--repo", str(root), "--", target]) == 1
+    assert json.loads(capsys.readouterr().out)["clean"] is False
+    with pytest.raises(engine.EngineError, match="refusing"):
+        engine.adopt_files(sdir, 1, [], [], whole="maintainer")
+    assert (repo / "a.txt").read_text() == "one\n"
+    assert (repo / target).read_text() == "user\n"
+    assert (repo / ".git/index").read_bytes() == index
+    assert sh(repo, "git", "rev-parse", "HEAD") == head
+    assert sh(repo, "git", "status", "--porcelain", "--ignored") == before
+
+
+def test_edit_preflight_distinguishes_new_files_links_and_literal_names(
+    repo: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    (repo / "link").symlink_to("a.txt")
+    (repo / "[literal]").write_text("one\n")
+    sh(repo, "git", "add", "link", "[literal]")
+    sh(repo, "git", "commit", "-q", "-m", "tracked paths")
+    (repo / "B").write_text("unrelated user edit\n")
+    index = (repo / ".git/index").read_bytes()
+    assert engine.main(["check-paths", "--", "a.txt", "new-test", "[literal]"]) == 0
+    assert json.loads(capsys.readouterr().out)["clean"] is True
+    assert engine.main(["check-paths", "--", "link", ".git/config", ".", "B/new"]) == 1
+    assert set(json.loads(capsys.readouterr().out)["conflicts"]) == {
+        "link",
+        ".git/config",
+        ".",
+        "B/new",
+    }
+    assert (repo / ".git/index").read_bytes() == index
+
+
+@pytest.mark.parametrize("flag", ["--assume-unchanged", "--skip-worktree"])
+def test_recorded_adoption_refuses_hidden_edits_for_explicit_picks(
+    repo: Path, flag: str, capsys: pytest.CaptureFixture[str]
+) -> None:
+    sdir = Path(init(command="execute", mutating=True)["session_dir"])
+    engine.create_worktrees(sdir, ["maintainer"])
+    wt = Path(engine.load_session(sdir)["worktrees"]["maintainer"]["path"])
+    (wt / "a.txt").write_text("worker\n")
+    engine.capture_tree(sdir, 1, "maintainer", None)
+    session = engine.load_session(sdir)
+    session["status"] = "completed"
+    engine.save_session(sdir, session)
+    sh(repo, "git", "update-index", flag, "a.txt")
+    (repo / "a.txt").write_text("hidden user bytes\n")
+    index = (repo / ".git/index").read_bytes()
+    head = sh(repo, "git", "rev-parse", "HEAD")
+    assert engine.latest_session(".", "execute")["dirty"] == ["a.txt"]
+    for spelling in ("a.txt", "./a.txt", "a.txt/"):
+        assert engine.main(["check-paths", "--", spelling]) == 1
+        assert json.loads(capsys.readouterr().out)["clean"] is False
+        with pytest.raises(engine.EngineError, match="index flag"):
+            engine.adopt_files(sdir, 1, [f"{spelling}=maintainer"], [])
+    assert (repo / "a.txt").read_text() == "hidden user bytes\n"
+    assert (repo / ".git/index").read_bytes() == index
+    assert sh(repo, "git", "rev-parse", "HEAD") == head
+
+
+@pytest.mark.parametrize("split", [False, True])
+def test_commit_takes_only_named_paths_and_keeps_other_staged_files(
+    repo: Path, tmp_path: Path, split: bool
+) -> None:
+    if split:
+        sh(repo, "git", "config", "core.splitIndex", "true")
+        sh(repo, "git", "update-index", "--split-index")
+    (repo / "unrelated.txt").write_text("user work\n")
+    sh(repo, "git", "add", "unrelated.txt")
+    (repo / "unrelated.txt").write_text("user work plus unstaged addition\n")
+    (repo / "B").write_text("another unstaged edit\n")
+    staged = sh(repo, "git", "diff", "--cached", "--binary")
+    (repo / "a.txt").write_text("fixed\n")
+    (repo / "new.py").write_text("x = 1\n")
+    msg = tmp_path / "msg.txt"
+    msg.write_text("fix(a) Reset\n\nCOMMIT_MSG_END\ntouch injected\n$(touch injected)\n")
+    hook = repo / ".git/hooks/pre-commit"
+    hook.write_text("#!/bin/sh\ngit add B\n")
+    hook.chmod(0o700)
+    done = engine.commit_paths(".", str(msg), ["a.txt", "new.py"])
+    assert sorted(done["committed"]) == ["a.txt", "new.py"]
+    assert done["still_staged"] == ["unrelated.txt"]
+    assert sh(repo, "git", "diff", "--cached", "--name-only").split() == ["unrelated.txt"]
+    assert sh(repo, "git", "diff", "--cached", "--binary") == staged
+    assert (repo / "unrelated.txt").read_text() == "user work plus unstaged addition\n"
+    assert (repo / "B").read_text() == "another unstaged edit\n"
+    assert not (repo / "injected").exists()
+    assert sh(repo, "git", "show", "--name-only", "--format=", "HEAD").split() == [
+        "a.txt",
+        "new.py",
+    ]
+
+
+@pytest.mark.parametrize("trailer", ["Co-Authored-By: Bot <b@x.io>", "Generated with a tool"])
+def test_commit_refuses_tool_trailers(repo: Path, tmp_path: Path, trailer: str) -> None:
+    (repo / "a.txt").write_text("fixed\n")
+    msg = tmp_path / "msg.txt"
+    msg.write_text(f"fix(a) Reset\n\n{trailer}\n")
+    head = sh(repo, "git", "rev-parse", "HEAD")
+    with pytest.raises(engine.EngineError, match="trailer"):
+        engine.commit_paths(".", str(msg), ["a.txt"])
+    assert sh(repo, "git", "rev-parse", "HEAD") == head
+
+
+def test_commit_literal_paths_and_failed_hook_preserve_the_index(
+    repo: Path, tmp_path: Path
+) -> None:
+    (repo / "[ab].txt").write_text("fix\n")
+    (repo / "a.txt").write_text("user staged\n")
+    sh(repo, "git", "add", "a.txt")
+    (repo / "a.txt").write_text("user unstaged\n")
+    msg = tmp_path / "msg.txt"
+    msg.write_text("fix(a) Reset the counter\n")
+    hook = repo / ".git" / "hooks" / "pre-commit"
+    hook.write_text("#!/bin/sh\nexit 1\n")
+    hook.chmod(0o755)
+    before = sh(repo, "git", "diff", "--cached", "--binary")
+    with pytest.raises(engine.EngineError):
+        engine.commit_paths(".", str(msg), ["[ab].txt"])
+    assert sh(repo, "git", "diff", "--cached", "--binary") == before
+    assert (repo / "a.txt").read_text() == "user unstaged\n"
+    assert (repo / "[ab].txt").read_text() == "fix\n"
+    hook.unlink()
+    done = engine.commit_paths(".", str(msg), ["[ab].txt"])
+    assert done["committed"] == ["[ab].txt"]
+    assert sh(repo, "git", "diff", "--cached", "--binary") == before
+
+
+@pytest.mark.parametrize("change", ["staged", "unstaged", "trailer", "parent"])
+def test_commit_refuses_hook_changes_and_retains_approved_bytes(
+    repo: Path, tmp_path: Path, change: str
+) -> None:
+    (repo / "a.txt").write_text("approved\n")
+    message = tmp_path / "message"
+    message.write_text("fix(a) Approved\n")
+    head = sh(repo, "git", "rev-parse", "HEAD")
+    before = (repo / ".git/index").read_bytes()
+    hook_name = "pre-commit"
+    bodies = {
+        "staged": "echo hook >a.txt; git add a.txt",
+        "unstaged": "echo hook >a.txt",
+        "trailer": 'printf "\\nCo-Authored-By: Bot <b@example.test>\\n" >>"$1"',
+        "parent": 'git -c core.hooksPath=/dev/null commit --allow-empty -qm "extra commit"',
+    }
+    if change == "trailer":
+        hook_name = "commit-msg"
+    hook = repo / ".git/hooks" / hook_name
+    hook.write_text("#!/bin/sh\n" + bodies[change] + "\n")
+    hook.chmod(0o700)
+    with pytest.raises(engine.EngineError, match="recovery retained"):
+        engine.commit_paths(".", str(message), ["a.txt"])
+    assert sh(repo, "git", "rev-parse", "HEAD") == head
+    assert (repo / ".git/index").read_bytes() == before
+    assert (repo / "a.txt").read_text() == "approved\n"
+    saved = next((tmp_path / "aip/commit-recovery").glob("*/recovery.json"))
+    metadata = json.loads(saved.read_text())
+    assert sh(repo, "git", "show", metadata["recovery_ref"] + ":a.txt") == "approved\n"
+    assert (saved.parent / "worktree").is_dir()
+    assert not metadata["published"]
+
+
+@pytest.mark.parametrize("change", ["index", "branch", "working"])
+def test_commit_preserves_concurrent_source_changes(
+    repo: Path, tmp_path: Path, change: str
+) -> None:
+    (repo / "a.txt").write_text("approved\n")
+    (repo / "B").write_text("user staged later\n")
+    message = tmp_path / "message"
+    message.write_text("fix(a) Approved\n")
+    head = sh(repo, "git", "rev-parse", "HEAD").strip()
+    source = shlex.quote(str(repo))
+    bodies = {
+        "index": f"git -C {source} add B",
+        "branch": "; ".join(
+            (
+                f"git -C {source} update-ref refs/heads/moved {head}",
+                f"git -C {source} symbolic-ref HEAD refs/heads/moved",
+            )
+        ),
+        "working": f"printf 'new user edit\\n' >{source}/a.txt",
+    }
+    hook = repo / ".git/hooks/pre-commit"
+    hook.write_text(
+        "#!/bin/sh\nunset GIT_DIR GIT_WORK_TREE GIT_INDEX_FILE GIT_PREFIX GIT_COMMON_DIR\n"
+        + bodies[change]
+        + "\n"
+    )
+    hook.chmod(0o700)
+    if change == "working":
+        engine.commit_paths(".", str(message), ["a.txt"])
+        assert sh(repo, "git", "show", "HEAD:a.txt") == "approved\n"
+        assert (repo / "a.txt").read_text() == "new user edit\n"
+        assert " M a.txt" in sh(repo, "git", "status", "--porcelain")
+    else:
+        with pytest.raises(engine.EngineError, match=r"source .* changed"):
+            engine.commit_paths(".", str(message), ["a.txt"])
+        assert sh(repo, "git", "rev-parse", "HEAD").strip() == head
+        if change == "index":
+            assert sh(repo, "git", "show", ":B") == "user staged later\n"
+        else:
+            assert sh(repo, "git", "symbolic-ref", "HEAD").strip() == "refs/heads/moved"
+
+
+def test_commit_preserves_new_deleted_executable_symlink_bytes(repo: Path, tmp_path: Path) -> None:
+    (repo / "B").unlink()
+    (repo / "binary").write_bytes(b"binary\x00data")
+    (repo / "binary").chmod(0o755)
+    (repo / "link").symlink_to("missing-target")
+    message = tmp_path / "message"
+    message.write_text("fix(files) Approved\n")
+    done = engine.commit_paths(".", str(message), ["B", "binary", "link"])
+    assert done["committed"] == ["B", "binary", "link"]
+    assert engine.git_bytes(repo, "show", "HEAD:binary") == b"binary\x00data"
+    assert sh(repo, "git", "show", "HEAD:link") == "missing-target"
+    assert sh(repo, "git", "ls-tree", "HEAD", "binary").startswith("100755")
+    assert (repo / "link").is_symlink()
+
+
+def test_commit_retains_index_recovery_after_publication_failure(
+    repo: Path, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    (repo / "a.txt").write_text("approved\n")
+    message = tmp_path / "message"
+    message.write_text("fix(a) Approved\n")
+    before = (repo / ".git/index").read_bytes()
+    replace = Path.replace
+
+    def failed_replace(source: Path, destination: Path) -> Path:
+        if destination == repo / ".git/index":
+            msg = "simulated index publication failure"
+            raise OSError(msg)
+        return replace(source, destination)
+
+    monkeypatch.setattr(Path, "replace", failed_replace)
+    with pytest.raises(
+        engine.EngineError, match="commit published; source index may need recovery"
+    ):
+        engine.commit_paths(".", str(message), ["a.txt"])
+    assert sh(repo, "git", "show", "HEAD:a.txt") == "approved\n"
+    assert (repo / ".git/index").read_bytes() == before
+    saved = next((tmp_path / "aip/commit-recovery").glob("*/recovery.json"))
+    assert json.loads(saved.read_text())["published"]
+    assert (saved.parent / "index-after").is_file()
+    assert not (repo / ".git/index.lock").exists()
+
+
+@pytest.mark.parametrize("lock_name", ["index.lock", "HEAD.lock"])
+def test_commit_never_removes_a_foreign_lock(repo: Path, tmp_path: Path, lock_name: str) -> None:
+    (repo / "a.txt").write_text("approved\n")
+    message = tmp_path / "message"
+    message.write_text("fix(a) Approved\n")
+    lock = repo / ".git" / lock_name
+    lock.write_text("another Git operation\n")
+    before = (repo / ".git/index").read_bytes()
+    head = sh(repo, "git", "rev-parse", "HEAD")
+    with pytest.raises(engine.EngineError, match="not published"):
+        engine.commit_paths(".", str(message), ["a.txt"])
+    assert lock.read_text() == "another Git operation\n"
+    assert sh(repo, "git", "rev-parse", "HEAD") == head
+    assert (repo / ".git/index").read_bytes() == before
+
+
+def test_commit_locks_source_head_during_publication(repo: Path, tmp_path: Path) -> None:
+    (repo / "a.txt").write_text("approved\n")
+    message = tmp_path / "message"
+    message.write_text("fix(a) Approved\n")
+    attempt = tmp_path / "attempt"
+    hook = repo / ".git/hooks/reference-transaction"
+    source = shlex.quote(str(repo))
+    hook.write_text(
+        "\n".join(
+            (
+                "#!/bin/sh",
+                "read old new ref",
+                'if [ "$1" = prepared ] && [ "$ref" = refs/heads/main ]; then',
+                "unset GIT_DIR GIT_WORK_TREE GIT_INDEX_FILE GIT_PREFIX GIT_COMMON_DIR",
+                f"git -C {source} symbolic-ref HEAD refs/heads/moved >/dev/null 2>&1",
+                f'printf "%s\\n" "$?" >{shlex.quote(str(attempt))}',
+                "fi",
+                "exit 0",
+                "",
+            )
+        )
+    )
+    hook.chmod(0o700)
+    engine.commit_paths(".", str(message), ["a.txt"])
+    assert int(attempt.read_text()) != 0
+    assert sh(repo, "git", "symbolic-ref", "HEAD").strip() == "refs/heads/main"
+    assert not (repo / ".git/HEAD.lock").exists()

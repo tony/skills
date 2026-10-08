@@ -14,8 +14,8 @@ Per-variant outputs · Winner Selection Rationale · Attribution
 Winner: skeptic
 
 ## Per-variant outputs
-- maintainer 24/40: adds the flag but skips the empty-input case.
-- skeptic 33/40: adds the flag, handles empty input, and extends the test.
+- maintainer 54/90: adds the flag but skips the empty-input case.
+- skeptic 74/90: adds the flag, handles empty input, and extends the test.
 - builder: unavailable (timeout).
 
 ## Winner Selection Rationale

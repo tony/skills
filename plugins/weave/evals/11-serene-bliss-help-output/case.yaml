@@ -9,6 +9,13 @@ context:
   scaffold_script: scaffold.sh
 
 execution:
+  append_system_prompt: >-
+    Before input staging, run mkdir -p .eval-state/tmp from the project root.
+    For input staging, use mktemp -d "$PWD/.eval-state/tmp/weave-in.XXXXXX"
+    from that root, so the input file is inside the writable fixture.
+    For this fixture, prefix every weave engine command from the project root
+    with AI_AIP_ROOT="$PWD/.eval-state/weave". Set this before init; never
+    change roots to bypass a denied write.
   prompt: >-
     Our CLI's --help output (src/acme.py) is a wall of text with no grouping,
     unlike Stripe's CLI which groups commands by category with short one-line
@@ -18,7 +25,7 @@ execution:
     experience more serene here.
   max_turns: 60
   timeout_seconds: 1500
-  allowed_tools: [Bash, Read, Glob, Grep, Skill, Task]
+  allowed_tools: [Bash, Read, Glob, Grep, Write, Edit, Skill, Task]
 
 runs: 3
 

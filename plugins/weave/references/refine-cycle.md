@@ -76,7 +76,7 @@ Coherence (consistent, well structured). The total is the sum, at most 40.
    - <a strength this version has that the winner lacks>
    ```
 
-   On a tie, prefer the most comprehensive candidate.
+   On a tie, prefer the shorter candidate that keeps every verified point.
 
 3. A `native` or `external` judge needs a judge prompt in
    `pass-NNNN/judge-prompt.md`: the rubric, the shape above (columns are the
