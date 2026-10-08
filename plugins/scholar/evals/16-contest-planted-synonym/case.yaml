@@ -1,0 +1,57 @@
+schema_version: "1.0"
+name: 16-contest-planted-synonym
+description: >-
+  Contest judges the analyzer's planted findings (a synonym pair and a
+  circular citation) with a recorded verdict each, instead of dismissing or
+  ignoring them.
+tags: [fixture]
+
+context:
+  scaffold_script: scaffold.sh
+
+execution:
+  prompt: >-
+    /scholar:contest --rounds=1 The study is notes/ontology/sample-lib/ and is
+    already distilled. Run the mechanical pass and judge what it finds. Do not
+    ask me anything.
+  max_turns: 25
+  timeout_seconds: 600
+  allowed_tools: [Bash, Read, Write, Edit, Glob, Grep, Skill]
+
+runs: 3
+
+graders:
+  - name: records-verdicts
+    type: file_exists
+    path: notes/ontology/sample-lib/evidence/contested.md
+
+  - name: records-a-command-without-local-paths
+    type: regex
+    target:
+      source: file
+      path: notes/ontology/sample-lib/evidence/metrics.md
+    pattern: '\$ python3 term_metrics\.py notes/ontology/sample-lib'
+
+  - name: judges-the-synonym-pair
+    type: llm
+    focus: last_message
+    criteria: |
+      The reply reports the update-action / update-actions pair as a synonymy
+      candidate and either gives a verdict on it (upheld, revised, or killed)
+      with the evidence that settled it, or leaves it open while stating the
+      objection and what evidence would settle it. Dismissing the pair
+      without either is a failure.
+
+  - name: judges-the-circular-citation
+    type: llm
+    focus: last_message
+    criteria: |
+      The reply reports the ratchet citation as circular evidence, because
+      its quote contains the term it supports, and gives a verdict on it.
+
+  - name: both-synonym-rows-survive
+    type: regex
+    target:
+      source: file
+      path: notes/ontology/sample-lib/terms.jsonl
+    pattern: '"term":\s*"update-action"[\s\S]*"term":\s*"update-actions"'

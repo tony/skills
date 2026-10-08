@@ -1,0 +1,27 @@
+schema_version: "1.0"
+name: 20-verify-local-misquote
+description: >-
+  Verify checks quotations against a local clone at the recorded commit and
+  reports a cite whose line range has moved off its quote as Misquoted.
+tags: [fixture]
+
+context:
+  scaffold_script: scaffold.sh
+
+execution:
+  prompt: >-
+    /scholar:verify notes/ontology/tiny-lib/ The corpus clone is ./tiny-lib.
+    Check every citation and tell me which are stale. Do not ask me anything.
+  max_turns: 20
+  timeout_seconds: 600
+  allowed_tools: [Bash, Read, Glob, Grep, Skill]
+
+runs: 3
+
+graders:
+  - name: reports-the-moved-cite
+    type: llm
+    focus: last_message
+    criteria: |
+      The reply lists PortAdapter under Misquoted (its lines 5-6 no longer
+      hold the quoted text) and does not list EventBus as misquoted.

@@ -1,0 +1,28 @@
+{
+  "name": "scholar",
+  "version": "0.1.0",
+  "description": "Distil a checkable ontology from a codebase, a repository set, or a written corpus. Types, controlled vocabulary, cited and measured evidence.",
+  "author": {
+    "name": "Tony Narlock",
+    "email": "tony@git-pull.com"
+  },
+  "homepage": "https://github.com/tony/skills/tree/main/plugins/scholar",
+  "repository": "https://github.com/tony/skills",
+  "license": "MIT",
+  "keywords": [
+    "ontology",
+    "codebase-analysis",
+    "vocabulary",
+    "evidence",
+    "corpus"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Scholar",
+    "shortDescription": "Distil a checkable ontology from a codebase, a repository set, or a written corpus.",
+    "longDescription": "Distil a checkable ontology from a codebase, a repository set, or a written corpus. Types, controlled vocabulary, cited and measured evidence.",
+    "developerName": "Tony Narlock",
+    "category": "Development",
+    "websiteURL": "https://github.com/tony/skills/tree/main/plugins/scholar"
+  }
+}
