@@ -1,0 +1,48 @@
+schema_version: "1.0"
+name: 03-cursor-refactor-pass
+description: >-
+  Cursor delegation runs the single agent tier and reports it without claiming a fallback chain.
+tags: [fixture, gated]
+
+context:
+  scaffold_script: scaffold.sh
+
+execution:
+  prompt: |-
+    Let cursor's cli handle the boring refactor on this function:
+
+    ```python
+    def get_user(id):
+        u = db.query("SELECT * FROM users WHERE id = " + str(id))
+        return u
+    ```
+
+    The agent binary is ./bin/agent.
+  max_turns: 20
+  timeout_seconds: 420
+  allowed_tools: [Bash, Read, Glob, Grep, Skill]
+
+runs: 3
+
+graders:
+  - name: skill-fired
+    type: tool_used
+    tool: Skill
+    input_match: '"skill":\s*"(model-cli:)?cursor"'
+    min: 1
+    arm: both
+
+  - name: ran-agent
+    type: tool_used
+    tool: Bash
+    input_match: 'bin/agent'
+    min: 1
+    arm: both
+
+  - name: single-tier-no-fallback
+    type: llm
+    focus: last_message
+    criteria: |
+        The reply header names ./bin/agent and tier 1, and the stub's answer is shown.
+        The reply does not say a second tier or another vendor's CLI ran.
+        Do not judge whether the stub counts as Cursor.

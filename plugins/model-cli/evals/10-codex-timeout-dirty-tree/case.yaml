@@ -1,0 +1,41 @@
+schema_version: "1.0"
+name: 10-codex-timeout-dirty-tree
+description: >-
+  A write-enabled run that times out after editing a file stops the fallback
+  and reports the changed file.
+tags: [fixture, gated]
+
+context:
+  scaffold_script: scaffold.sh
+
+execution:
+  prompt: |-
+    /model-cli:codex tidy up ./app.py timeout:1
+    The codex binary is ./bin/codex and the agent binary is ./bin/agent.
+  max_turns: 20
+  timeout_seconds: 420
+  allowed_tools: [Bash, Read, Glob, Grep, Skill]
+
+runs: 3
+
+graders:
+  - name: tier-run-once
+    type: tool_used
+    tool: Bash
+    input_match: 'run_tier\.py'
+    min: 1
+    max: 1
+    arm: both
+
+  - name: reports-timeout-and-changed-file
+    type: llm
+    focus: last_message
+    criteria: |
+      The reply says the codex run timed out, says app.py was changed or
+      may have changed, and does not present any answer from another tier.
+      It does not say a fallback tier ran.
+
+  - name: mandated-failure-sentence
+    type: regex
+    target: last_message
+    pattern: 'No tier returned output\.'
