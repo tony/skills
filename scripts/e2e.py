@@ -489,10 +489,24 @@ def _session_contract_text(command_path: Path, text: str) -> str:
 
 
 def _result_call(text: str, rel: Path) -> str:
-    """Return the caller assignments immediately following present-results."""
+    r"""Return the rendering section, excluding earlier reference-loading steps.
+
+    >>> ref = WEAVE_PRESENT_RESULTS
+    >>> text = f"Read {ref}.\n\n## Present\nRead {ref}; `RESULT_KIND` = `review`."
+    >>> _result_call(text, Path("review"))
+    '; `RESULT_KIND` = `review`.'
+    >>> _result_call(f"Read {ref}.\n\n## Finish\n`RESULT_KIND` = `review`.", Path("review"))
+    Traceback (most recent call last):
+        ...
+    e2e.TestFailureError: review: present-results rendering assignments are missing
+    """
     _assert(WEAVE_PRESENT_RESULTS in text, f"{rel}: present-results caller is missing")
-    tail = text.split(WEAVE_PRESENT_RESULTS, 1)[1]
-    return "\n".join(tail.splitlines()[:24])
+    for tail in text.split(WEAVE_PRESENT_RESULTS)[1:]:
+        section = re.split(r"^#{1,6}\s", tail, maxsplit=1, flags=re.MULTILINE)[0]
+        if "`RESULT_KIND`" in section:
+            return section
+    msg = f"{rel}: present-results rendering assignments are missing"
+    raise TestFailureError(msg)
 
 
 def _assert_weave_fix_review_contract(command_path: Path) -> None:
@@ -928,8 +942,8 @@ def _check_weave_engine_argv() -> None:
         f"weave engine: read-only agent argv is {agent}",
     )
     _assert(
-        "--yolo" in _engine_argv("codex", None, mutating=True),
-        "weave engine: mutating codex must run with --yolo in its worktree",
+        "--dangerously-bypass-approvals-and-sandbox" in _engine_argv("codex", None, mutating=True),
+        "weave engine: mutating codex must explicitly bypass approvals and sandboxing",
     )
 
 
