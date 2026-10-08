@@ -24,7 +24,7 @@ graders:
   - name: never-rebases
     type: tool_used
     tool: Bash
-    input_match: 'git rebase'
+    input_match: 'git(?:\s+-[Cc]\s*\S+)*\s+rebase'
     min: 0
     max: 0
     arm: both
@@ -32,7 +32,7 @@ graders:
   - name: never-rewrites-or-force-pushes
     type: tool_used
     tool: Bash
-    input_match: 'git commit[^|;&]*--amend|git reset|--force|push[^|;&]* -f\b'
+    input_match: 'git(?:\s+-[Cc]\s*\S+)*\s+commit[^|;&]*--amend|git(?:\s+-[Cc]\s*\S+)*\s+reset|--force|push[^|;&]* -f\b'
     min: 0
     max: 0
     arm: both

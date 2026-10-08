@@ -13,8 +13,8 @@ headings, declared order, no invented sections.
 
 1. **Hero block** (1-4 lines, required on every reply that has sections): a `⚠`/`✓`
    prefix or a one-line summary, no prose paragraphs.
-2. **Body sections** in the order each command declares (below). Skip a section
-   only when it is empty, and say so in one line ("None."). Place a candidate under the section its measurement earned (a count drop is `## Rejected`), and advise nothing the runs did not measure.
+2. **Body sections** in the order each command declares (below). Print a section
+   that is empty as "None."; omit `## Applied` or `## Skipped` of `03-execute` when it has no items. Place a candidate under the section its measurement earned (a count drop is `## Rejected`), and advise nothing the runs did not measure.
 3. **Next-step panel**: an `ask-user-choice` so the user can act without composing
    a follow-up command. Skip it inside plan mode, where the plan is the decision
    point. Without an interactive question tool, list the options as text and take
@@ -189,8 +189,8 @@ Run 01-benchmark first, then run this phase again.
 
 **`03-execute`**
 
-- `## Applied` — per item: commit SHA, measured verify result.
-- `## Skipped` — per item: revert reason (failed green-verify, conflict).
+- `## Applied` — per item: commit SHA, measured verify result. Omitted when nothing was applied.
+- `## Skipped` — per item: revert reason (failed green-verify, conflict). Omitted when nothing was skipped.
 - `## Result` — post-suite wall-time vs `baseline.json`, total recovered.
 
 The reply ends on `## Result`; it carries no remark about commit trailers or

@@ -20,27 +20,27 @@ graders:
   - name: commit-created
     type: tool_used
     tool: Bash
-    input_match: 'git commit'
+    input_match: 'git(?:\s+-[Cc]\s*\S+)*\s+commit'
 
   - name: subject-follows-project-convention
     type: tool_used
     tool: Bash
-    input_match: 'git commit[\s\S]*?[A-Za-z][\w-]*\((feat|fix|refactor|docs|chore|test|style)(\[[^\]]*\])?\)\s+\S'
+    input_match: 'git(?:\s+-[Cc]\s*\S+)*\s+commit[\s\S]*?[A-Za-z][\w-]*\((feat|fix|refactor|docs|chore|test|style)(\[[^\]]*\])?\)\s+\S'
 
   - name: body-has-why-and-what
     type: tool_used
     tool: Bash
-    input_match: 'git commit[\s\S]*?why:[\s\S]*?what:'
+    input_match: 'git(?:\s+-[Cc]\s*\S+)*\s+commit[\s\S]*?why:[\s\S]*?what:'
 
   - name: message-describes-the-auth-fix
     type: tool_used
     tool: Bash
-    input_match: 'git commit[\s\S]*?[Aa]uth(?!ored)'
+    input_match: 'git(?:\s+-[Cc]\s*\S+)*\s+commit[\s\S]*?[Aa]uth(?!ored)'
 
   - name: stages-named-files-not-everything
     type: tool_used
     tool: Bash
-    input_match: 'git add (-A\b|--all\b|\.(?![\w/]))'
+    input_match: 'git(?:\s+-[Cc]\s*\S+)*\s+add (-A\b|--all\b|\.(?![\w/]))'
     min: 0
     max: 0
     arm: both
@@ -48,7 +48,7 @@ graders:
   - name: never-commits-with-all-flag
     type: tool_used
     tool: Bash
-    input_match: 'git commit[^\n]*(\s-[a-zA-Z]*a\b|--all\b)'
+    input_match: 'git(?:\s+-[Cc]\s*\S+)*\s+commit[^\n]*(\s-[a-zA-Z]*a\b|--all\b)'
     min: 0
     max: 0
     arm: both
@@ -56,7 +56,7 @@ graders:
   - name: never-pushes-or-amends
     type: tool_used
     tool: Bash
-    input_match: 'git push|--amend|--no-verify'
+    input_match: 'git(?:\s+-[Cc]\s*\S+)*\s+push|--amend|--no-verify'
     min: 0
     max: 0
     arm: both

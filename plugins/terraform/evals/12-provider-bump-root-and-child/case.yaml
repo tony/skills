@@ -35,11 +35,13 @@ graders:
     pattern: 'version\s*=\s*"~> 3\.7\.0"'
 
   - name: constraints-in-one-commit
-    type: tool_used
-    tool: Bash
-    input_match: 'git commit(?=.*infra/prod/versions\.tf)(?=.*modules/net/versions\.tf)'
-    min: 1
-    arm: both
+    type: llm
+    focus: last_message
+    criteria: |
+      The reply says a single commit holds both constraint edits
+      (infra/prod and modules/net) together with the refreshed lock, and
+      names the commit by subject. It does not describe separate commits for
+      the constraints and the lock, and does not report a push.
 
   - name: lock-holds-exact-version-and-both-platforms
     type: regex
@@ -51,7 +53,7 @@ graders:
   - name: no-push
     type: tool_used
     tool: Bash
-    input_match: '"command":\s*"([^"]*(&&|;|\|\|)\s*)?git push\b'
+    input_match: '"command":\s*"([^"]*(&&|;|\|\||\\n)\s*)?git(\s+-c\s+\S+)*\s+push\b'
     min: 0
     max: 0
     arm: both

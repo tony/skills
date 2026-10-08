@@ -154,6 +154,9 @@ to the baseline's. When it does not differ, say nothing about the control.
    rejects the candidate and surfaces the prerequisite refactor as its own
    follow-up hypothesis. A parallelism candidate (H19) also runs 5-10 times,
    with the grouping (H20) and single-exec (H21) fixes from the same reference.
+   H19 measures the control command (serial, as in step 3) and the same command
+   plus `-n auto`, both recorded, the second as parallel; the no-xdist rule
+   covers every other candidate.
 5. **Discard** the scratch worktree and prune its record (an exported copy is just deleted with `rm -rf <scratch-dir>`, a path this run created):
 
    ```console

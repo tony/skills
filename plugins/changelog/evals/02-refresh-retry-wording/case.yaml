@@ -52,12 +52,12 @@ graders:
   - name: commits-because-commit-was-passed
     type: tool_used
     tool: Bash
-    input_match: 'git commit'
+    input_match: 'git(?:\s+-[Cc]\s*\S+)*\s+commit'
 
   - name: never-rewrites-history
     type: tool_used
     tool: Bash
-    input_match: '--amend|git rebase|push --force'
+    input_match: '--amend|git(?:\s+-[Cc]\s*\S+)*\s+rebase|push --force'
     min: 0
     max: 0
     arm: both

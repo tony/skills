@@ -36,12 +36,12 @@ graders:
   - name: push-uses-lease-and-includes-check
     type: tool_used
     tool: Bash
-    input_match: 'git push(?:(?!\bgh |\bgit (?!push))[\s\S])*--force-with-lease(?:(?!\bgh |\bgit (?!push))[\s\S])*--force-if-includes'
+    input_match: 'git(?:\s+-[Cc]\s*\S+)*\s+push(?:(?!\bgh |\bgit(?:\s+-[Cc]\s*\S+)*\s+(?!push))[\s\S])*--force-with-lease(?:(?!\bgh |\bgit(?:\s+-[Cc]\s*\S+)*\s+(?!push))[\s\S])*--force-if-includes'
 
   - name: never-bare-force-push
     type: tool_used
     tool: Bash
-    input_match: 'git push(?:(?!\bgh |\bgit (?!push))[\s\S])*?(\s-f(\s|$)|--force(\s|$))'
+    input_match: 'git(?:\s+-[Cc]\s*\S+)*\s+push(?:(?!\bgh |\bgit(?:\s+-[Cc]\s*\S+)*\s+(?!push))[\s\S])*?(\s-f(\s|$)|--force(\s|$))'
     min: 0
     max: 0
     arm: both
@@ -57,7 +57,7 @@ graders:
   - name: deletes-parent-branch-after-last-merge
     type: tool_used
     tool: Bash
-    input_match: 'git push\s+origin\s+(--delete\s+stack-1|:stack-1)|gh api(?:(?!\bgit )[\s\S])*git/refs/heads/stack-1'
+    input_match: 'git(?:\s+-[Cc]\s*\S+)*\s+push\s+origin\s+(--delete\s+stack-1|:stack-1)|gh api(?:(?!\bgit )[\s\S])*git/refs/heads/stack-1'
 
   - name: reports-order-and-kept-parent-branch
     type: llm

@@ -605,7 +605,7 @@
         "templates/conftest_cache_snippet.py": "plugins/pytest-optimizer/templates/conftest_cache_snippet.py",
         "templates/pytest_optimizer_plugin.py": "plugins/pytest-optimizer/templates/pytest_optimizer_plugin.py"
       },
-      "bytes": 104591
+      "bytes": 107217
     },
     {
       "name": "pytest-optimizer-00-scan",
@@ -624,7 +624,7 @@
         "references/version-matrix.md": "plugins/pytest-optimizer/references/version-matrix.md",
         "templates/pytest_optimizer_plugin.py": "plugins/pytest-optimizer/templates/pytest_optimizer_plugin.py"
       },
-      "bytes": 92507
+      "bytes": 95052
     },
     {
       "name": "pytest-optimizer-01-benchmark",
@@ -639,7 +639,7 @@
         "references/prose-rules.md": "plugins/pytest-optimizer/references/prose-rules.md",
         "references/safety-gates.md": "plugins/pytest-optimizer/references/safety-gates.md"
       },
-      "bytes": 75193
+      "bytes": 77684
     },
     {
       "name": "pytest-optimizer-02-plan",
@@ -654,7 +654,7 @@
         "references/scoring-rubric.md": "plugins/pytest-optimizer/references/scoring-rubric.md",
         "templates/commit-message.tmpl": "plugins/pytest-optimizer/templates/commit-message.tmpl"
       },
-      "bytes": 56041
+      "bytes": 58492
     },
     {
       "name": "pytest-optimizer-03-execute",
@@ -667,7 +667,7 @@
         "references/output-contract.md": "plugins/pytest-optimizer/references/output-contract.md",
         "references/prose-rules.md": "plugins/pytest-optimizer/references/prose-rules.md"
       },
-      "bytes": 55049
+      "bytes": 57855
     },
     {
       "name": "rebase",
@@ -1220,7 +1220,7 @@
         "references/pin-sites.md": "plugins/terraform/references/pin-sites.md",
         "references/prose-rules.md": "plugins/terraform/references/prose-rules.md"
       },
-      "bytes": 54030
+      "bytes": 55026
     },
     {
       "name": "terraform-bump-terraform",
@@ -1234,7 +1234,7 @@
         "references/pin-sites.md": "plugins/terraform/references/pin-sites.md",
         "references/prose-rules.md": "plugins/terraform/references/prose-rules.md"
       },
-      "bytes": 53705
+      "bytes": 54768
     },
     {
       "name": "terraform-bumping-terraform",
@@ -1245,7 +1245,7 @@
         "references/lockctl.py": "plugins/terraform/scripts/lockctl.py",
         "references/prose-rules.md": "plugins/terraform/references/prose-rules.md"
       },
-      "bytes": 22787
+      "bytes": 23841
     },
     {
       "name": "terraform-refresh-lock",
@@ -1258,7 +1258,7 @@
         "references/lockctl.py": "plugins/terraform/scripts/lockctl.py",
         "references/prose-rules.md": "plugins/terraform/references/prose-rules.md"
       },
-      "bytes": 40521
+      "bytes": 40698
     },
     {
       "name": "ticket-draft",

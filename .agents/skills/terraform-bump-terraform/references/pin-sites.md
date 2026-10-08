@@ -93,6 +93,11 @@ rule. Beyond those:
   tag that carries the version in its name.
 - `Dockerfile` and `devcontainer.json` image tags, and task-runner
   variables in a `Makefile` or `justfile`.
+- Atlantis: `terraform_version` in `atlantis.yaml`, per project or under
+  `workflows`.
+- pre-commit: a `rev:` under a Terraform hook repository in
+  `.pre-commit-config.yaml`; read the file by path, since the name and the
+  version sit on different lines.
 - Terragrunt: `terraform_version_constraint` in `terragrunt.hcl` or
   `root.hcl`.
 - HCP Terraform or Terraform Enterprise: `terraform_version` on a
@@ -132,7 +137,7 @@ $ git grep \
     -e '(terraform|tofu|tf_?version).*[0-9]+\.[0-9]+' \
     -- ':(icase)*justfile' ':(icase)*makefile' '*Dockerfile*' \
     '*devcontainer.json' '*.tool-versions' '*mise.toml' '*mise/config.toml' \
-    '*terragrunt.hcl' '*root.hcl' '*.tf.json' \
+    '*terragrunt.hcl' '*root.hcl' '*atlantis.yaml' '*.tf.json' \
     '.github/*' '.gitlab-ci.yml' '.gitlab/*' '.circleci/*'
 ```
 

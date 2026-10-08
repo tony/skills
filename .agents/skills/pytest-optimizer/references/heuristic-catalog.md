@@ -23,7 +23,7 @@ Replace `pytest` with the project's resolved test command.
 | H04 | Want the complete unfiltered picture on a small suite | `pytest --durations=0 --durations-min=0` (equivalent to `--durations=0 -vv`) | Capture every setup/call/teardown row incl. `0.00s`; bucket by phase token; persist to `baseline.json` | low / trivial |
 | H05 | Durations vary run-to-run; fast rows unstable | Re-run the same durations command N ≥ 3× and diff top rows; compute the median and MAD | Run serially (no `-n`), raise `--durations-min` above the floor; only count a saving above `k * MAD` | low / small |
 | H06 | Profiling must be clean and not mutate the repo | Baseline command includes `-p no:cacheprovider` and omits `-n`/xdist | Disable cacheprovider and parallelism while measuring, for reproducible wall-time and one fewer timed hook per phase | low / trivial |
-| H07 | Need machine-readable per-test timing for the store | `pytest --junit-xml=report.xml -o junit_duration_report=call` | Parse `testcase@time` from XML instead of scraping the human table; store structured timings | low / small |
+| H07 | Need machine-readable per-test timing for the store | `pytest --junit-xml=<runs-dir>/report.xml -o junit_duration_report=call` | Parse `testcase@time` from XML instead of scraping the human table; store structured timings | low / small |
 
 ## B. Fixtures: unused, duplicate, scope, autouse
 
@@ -52,7 +52,7 @@ Replace `pytest` with the project's resolved test command.
 | ID | Signal | Detect | Action | Risk / Effort |
 |----|--------|--------|--------|---------------|
 | H17 | **GATE:** prove order-independence before parallel/reorder | `pytest-randomly` in the project environment over ≥ 3 seeds; reproduce with `--randomly-seed=last`; run the suspect nodeid in isolation | Block xdist/reorder until green across seeds **and** in isolation; fix coupling via fixture teardown that resets globals | low / medium |
-| H18 | **GATE:** collection must be deterministic for xdist | `pytest --co -q > a`; repeat `> b`; `measure.py order a b` must report `same: true` (never sort first) | List-ify parametrize values (no `set`/unordered dict); remove time/random/env-conditional collection | low / small |
+| H18 | **GATE:** collection must be deterministic for xdist | `pytest --co -q > <runs-dir>/a`; repeat `> <runs-dir>/b`; `measure.py order a b` must report `same: true` (never sort first) | List-ify parametrize values (no `set`/unordered dict); remove time/random/env-conditional collection | low / small |
 | H19 | Suite slow, tests independent, runtime-bound | `time pytest --co -q` fast **and** H17/H18 pass | Enable `-n auto` (cap `--maxprocesses` if I/O-bound on one shared resource) | medium / small |
 | H20 | Green serially but flakes under `-n auto` | Run `-n auto` 5–10×; failures move between workers | `--dist=loadscope`/`loadfile` to co-locate module/class state, and/or `@pytest.mark.xdist_group`; refactor only if grouping is insufficient | low / small |
 | H21 | Session fixture assumed once but runs once per xdist worker | Add a counter/log to the fixture; run `-n2`; it fires per worker | Use `tmp_path_factory.getbasetemp().parent` + `FileLock` single-exec, or `testrun_uid` for per-run-unique resources | medium / medium |

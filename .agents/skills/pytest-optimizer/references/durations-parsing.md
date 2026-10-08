@@ -101,5 +101,5 @@ Fast rows are not benchmarks. To judge a later change:
    match.
 
 Rank nothing below the trust floor. Disable cacheprovider while measuring for
-reproducible wall-time, and never measure under xdist: per-worker re-collection
+reproducible wall-time, and never measure under xdist (H19 alone compares a serial control against `-n auto`): per-worker re-collection
 and contention distort totals and rows.

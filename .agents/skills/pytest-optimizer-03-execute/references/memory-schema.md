@@ -231,9 +231,10 @@ type checker pass. Every other entry is `"speedup"` (the default when absent).
 ]
 ```
 
-`expected_total` is the collected-test count after the item applies: the
-baseline `tests.total`, or another number only for an item that removes or adds
-tests on purpose.
+`expected_total` is cumulative: the collected-test count after this item and
+every earlier item apply. It starts at the baseline `tests.total` and drops by
+the tests each deselecting item removes, so a later item inherits the reduced
+count.
 
 ### `execution-log.json`
 

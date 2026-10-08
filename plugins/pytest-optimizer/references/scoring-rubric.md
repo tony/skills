@@ -27,7 +27,7 @@ Mid-scale anchors keep scoring consistent:
 
 - `safety = 0.5` — scope change on a possibly-mutated resource, autouse removal,
   or xdist with grouping.
-- `impact` anchors, from the measured saving as a share of baseline wall-time:
+- `impact` anchors (defaults, like the weights), from the measured saving as a share of baseline wall-time:
   `0` within the noise band, `0.25` clears the band but under 5%, `0.5` for
   5–15%, `0.75` for 15–40%, `1.0` above 40%. `measure.py impact` applies them.
 - `effort = 0.6` — hoist a build into a fixture and add a reset; `0.3` — introduce

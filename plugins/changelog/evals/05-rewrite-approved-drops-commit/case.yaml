@@ -62,7 +62,7 @@ graders:
   - name: commits-once
     type: tool_used
     tool: Bash
-    input_match: 'git commit'
+    input_match: 'git(?:\s+-[Cc]\s*\S+)*\s+commit'
     min: 1
     max: 1
     arm: both
@@ -78,7 +78,7 @@ graders:
   - name: never-pushes
     type: tool_used
     tool: Bash
-    input_match: 'git push'
+    input_match: 'git(?:\s+-[Cc]\s*\S+)*\s+push'
     min: 0
     max: 0
     arm: both

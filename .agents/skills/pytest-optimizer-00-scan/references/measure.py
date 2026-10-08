@@ -4,8 +4,10 @@
 Each command prints one JSON object on stdout. Exit codes: 0 success, 1 a
 reported failure (the JSON says why), 2 a usage error. Standard library only.
 
-Commands: run, band, compare, order, token, hash, impact, score, memory-dir,
-restore, chain.
+Commands: run, band, compare, expected-total, order, token, hash, impact, score,
+memory-dir, restore, chain.
+`run` exits 0 whenever it timed the command; read `exit` in its JSON for the
+suite's own status.
 Run ``measure.py <command> --help`` for arguments.
 """
 
@@ -274,6 +276,45 @@ def _nodeids(text: str) -> list[str]:
     ['a.py::t1', 'a.py::t2']
     """
     return [ln for ln in text.splitlines() if "::" in ln and not ln.startswith((" ", "="))]
+
+
+def expected_total(
+    baseline_total: int,
+    plan: Sequence[dict[str, t.Any]],
+    applied: Sequence[int],
+    through: int | None = None,
+) -> int:
+    """Collected-test count once the ``applied`` plan orders are in the tree.
+
+    Each plan item's ``expected_total`` is cumulative (the count after it and
+    every earlier item apply), so its own change is the difference from the
+    previous item. Skipped items contribute nothing. With ``through``, the item
+    with that order counts as applied and later items are ignored.
+
+    >>> plan = [
+    ...     {"order": 1, "expected_total": 8},
+    ...     {"order": 2, "expected_total": 8},
+    ...     {"order": 3, "expected_total": 7},
+    ... ]
+    >>> expected_total(10, plan, [1, 2], through=2)
+    8
+    >>> expected_total(10, plan, [], through=2)
+    10
+    >>> expected_total(10, plan, [1, 3], through=3)
+    7
+    >>> expected_total(10, plan, [1, 2])
+    8
+    >>> expected_total(10, plan, [])
+    10
+    """
+    running = prev = baseline_total
+    for item in sorted(plan, key=lambda i: i["order"]):
+        if through is not None and item["order"] > through:
+            break
+        if item["order"] in applied or item["order"] == through:
+            running += item["expected_total"] - prev
+        prev = item["expected_total"]
+    return running
 
 
 def order(a: str, b: str) -> dict[str, t.Any]:
@@ -565,6 +606,12 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("runs", help="JSONL file from `run`, or - for stdin")
     p.add_argument("--expect-total", type=int)
 
+    p = sub.add_parser("expected-total", help="test count after the applied plan items")
+    p.add_argument("baseline", help="baseline.json")
+    p.add_argument("plan", help="plan.json")
+    p.add_argument("log", help="execution-log.json")
+    p.add_argument("--through", type=int, help="order of the item being verified")
+
     p = sub.add_parser("order", help="compare two collect-only outputs in order")
     p.add_argument("a")
     p.add_argument("b")
@@ -635,6 +682,11 @@ def main(argv: Sequence[str] | None = None) -> int:  # noqa: PLR0911
         baseline = json.loads(_read_text(args.baseline))
         out = compare(baseline, _read_runs(args.runs), args.expect_total)
         return _emit(out, out["valid"])
+    if cmd == "expected-total":
+        done = [e["order"] for e in json.loads(_read_text(args.log)) if e.get("applied")]
+        total = json.loads(_read_text(args.baseline))["tests"]["total"]
+        plan = json.loads(_read_text(args.plan))
+        return _emit({"expected_total": expected_total(total, plan, done, args.through)})
     if cmd == "order":
         out = order(_read_text(args.a), _read_text(args.b))
         return _emit(out, out["same"])

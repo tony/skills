@@ -61,7 +61,7 @@ token defined in the schema with `measure.py token --head <HEAD sha>
 plugin), and store it in `state.json` as `env_token`, with `base_head` set to the same
 `HEAD` sha (`03-execute` resumes against it) and `hygiene` set to whether `--hygiene`
 was passed. If `state.json` shows
-`scan` completed with an unchanged token and `hypotheses.json` exists, report "already scanned" and stop, unless `--force`
+`scan` completed with an unchanged token and `hypotheses.json` exists, reply with one sentence saying the suite was already scanned and naming `--force` to rescan, then stop, unless `--force`
 is passed or `--hygiene` differs from `state.json`'s `hygiene`.
 
 Resolve `<runs-dir>` as `../../references/memory-schema.md` ("Run files") says
@@ -134,8 +134,7 @@ flags false, token).
 ## Step 8: Report
 
 Emit the `00-scan` sections from `../../references/output-contract.md`. Write the
-prose per `../../references/prose-rules.md`. Report only measured numbers; project
-no speedup before `01-benchmark`. Reply in this shape, as plain text outside any
+prose per `../../references/prose-rules.md`. Report measured numbers. State no projected speedup or recoverable time before `01-benchmark`, and do not remark on the omission. Reply in this shape, as plain text outside any
 code fence, with plain bullets, no bold (never `- **Label:** ...`), and no local
 paths:
 
@@ -161,6 +160,8 @@ paths:
 ## Hypotheses
 
 - H10 mis-scoped fixture: widen db_session to session scope, 4.8s of setup repeated per test.
+
+Benchmarking the 2 hypotheses measures what each recovers.
 ```
 
 Close with an `AskUserQuestion` panel offering to benchmark the hypotheses,

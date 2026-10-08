@@ -59,7 +59,9 @@ Follow `references/layout-discovery.md` and record its inventory.
 Both kinds, per the pin-sites reference: `required_version` in every
 module (the reference's `git grep` lists them across `.tf`, `.tofu`, and `.tf.json`), and the pins outside the configuration (`.terraform-version`,
 `.tool-versions`, `mise.toml`, `.mise/config.toml`, workflow files, image tags, devcontainer
-configuration, Makefile variables).
+configuration, Makefile variables, `atlantis.yaml`, `.pre-commit-config.yaml`).
+With `--root-module`, apply the umbrella's scope rule to roots outside it
+that call a child module whose `required_version` you would edit.
 
 ### 4. Report the drift before overwriting it
 
@@ -110,28 +112,36 @@ count, stops the run with nothing committed. Leave the pin edits in the
 working tree and end with the stopped line (the umbrella has its mid-run
 form). A dropped count is committed only with the user's explicit yes.
 
-### 8. Commit and verify
+### 8. Verify, then commit
+
+Verify on the working tree before any commit. Confirm each guarded root
+module initialised under the new version in the step above. Where `init`
+did not run (`--no-lock`, a CLI that does not satisfy the pin, or no
+committed lock), report it unverifiable and edit nothing to work around
+it. Then run the repository's own gates (`validate`, `tflint`, policy
+checks).
+
+A gate that fails on a file this run edited, or that the bump plausibly
+caused, is a mid-run stop: leave the edits, commit nothing, and end with
+the stopped line. A failure in code the run did not touch is
+pre-existing; report it as such and carry on.
 
 With `--no-commit`, leave the edits in the working tree. Otherwise make
 one commit holding the pin edits and any changed lock. Write commit
 messages and the report per `references/prose-rules.md`.
 
-Verify by confirming each guarded root module initialised under the new
-version in the step above. Where `init` did not run (`--no-lock`, a CLI
-that does not satisfy the pin, or no committed lock), report it
-unverifiable and edit nothing to work around it. Then run the repository's own gates.
-
 ## Output
 
 Open with a one-line hero (`✓ terraform <old> -> <new> across N pin
-sites` or `Audit only: N sites disagree`), then these sections in
+sites` or `Audit only: N sites disagree`; `<old>` is the version the pins
+agreed on, or `mixed` when they disagreed), then these sections in
 order:
 
 1. `## Target`: the resolved version, how it was confirmed (registry
-   or "confirmed by you"), the version installed locally, and the
+   or "confirmed by you" with no reason), the version installed locally, and the
    changelog link (or that none was confirmed).
-2. `## Layout`: root modules and child modules discovered, and which
-   tool drives the repository.
+2. `## Layout`: root modules and child modules discovered (the umbrella
+   says when to name the tool).
 3. `## Sites`: a list of every pin found, inside the configuration and outside
    it, and whether each was edited or left alone with the reason.
 4. `## Locks`: per root module: whether the lock was re-initialised or
@@ -143,7 +153,8 @@ order:
 
 Name the commit by subject in `## Sites`, never by SHA.
 State a root module that could not be initialised in `## Locks` only;
-`## Verification` does not repeat it.
+`## Verification` does not repeat it. `## Drift` states nothing
+`## Sites` already says.
 
 Reply in this shape, as plain text outside any code fence, with plain bullets, no bold (never `- **Label:** ...`), and no local paths:
 
@@ -175,8 +186,8 @@ the `terraform-bumping-terraform` skill, not this shape.
 End with an `ask-user-choice` panel offering next steps, for example:
 converge the root modules still on an older pin, add the version to a
 version manager file the repository lacks, align the CI workflow, or
-stop here. Skip the panel only in plan mode. Without a question tool, list the
-options and stop.
+stop here. Skip the panel only in plan mode. Without a question tool, print the
+umbrella's `Next steps:` list and stop.
 
 
 ## Portability notes

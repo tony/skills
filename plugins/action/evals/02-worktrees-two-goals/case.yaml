@@ -42,14 +42,14 @@ graders:
   - name: worktrees-created
     type: tool_used
     tool: Bash
-    input_match: 'git (-C \S+ )?worktree add\b'
+    input_match: 'git(?:\s+-[Cc]\s*\S+)*\s+(-C \S+ )?worktree add\b'
     min: 1
     arm: both
 
   - name: no-commit
     type: tool_used
     tool: Bash
-    input_match: 'git commit'
+    input_match: 'git(?:\s+-[Cc]\s*\S+)*\s+commit'
     min: 0
     max: 0
     arm: both

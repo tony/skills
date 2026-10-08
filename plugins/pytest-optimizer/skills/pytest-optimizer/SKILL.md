@@ -127,7 +127,9 @@ each phase's panel.
 After `03-execute`, present the result per `../../references/output-contract.md`
 and write it per `../../references/prose-rules.md`, then offer a re-scan, the
 opt-in scaffolds, or stop. Without an interactive question tool, stop after the
-report.
+report. End on the report's last section plus at most one closing sentence, as
+`03-execute` Step 3 says; add no note on pushing, a probe file, or what remains to
+speed up. Test that a directory is writable with the real write, never a probe file.
 
 ## Opt-in scaffolds
 

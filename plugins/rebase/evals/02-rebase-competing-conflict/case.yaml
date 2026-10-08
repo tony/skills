@@ -20,12 +20,12 @@ graders:
   - name: rebase-attempted
     type: tool_used
     tool: Bash
-    input_match: 'git (pull --rebase|rebase)'
+    input_match: 'git(?:\s+-[Cc]\s*\S+)*\s+(pull --rebase|rebase)'
 
   - name: never-stages-a-resolution
     type: tool_used
     tool: Bash
-    input_match: 'git add'
+    input_match: 'git(?:\s+-[Cc]\s*\S+)*\s+add'
     min: 0
     max: 0
     arm: both
@@ -41,7 +41,7 @@ graders:
   - name: never-pushes
     type: tool_used
     tool: Bash
-    input_match: 'git push'
+    input_match: 'git(?:\s+-[Cc]\s*\S+)*\s+push'
     min: 0
     max: 0
     arm: both

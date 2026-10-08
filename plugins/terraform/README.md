@@ -35,7 +35,9 @@ $ codex plugin add terraform@skills
 Use it when one bump must land across several root modules and their
 child modules together, or when a lock file must keep the platforms it
 already tracks. It is an on-demand run by an agent, not a scheduled
-service.
+service. Renovate and Dependabot open one pull request per dependency; this
+moves a constraint in a child module and every root module that calls it
+in one commit, and refreshes a lock without dropping its platforms.
 
 ## Skills
 

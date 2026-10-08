@@ -31,14 +31,14 @@ graders:
   - name: backs-up-the-original-branch
     type: tool_used
     tool: Bash
-    input_match: 'git branch (\\"|")?(backup/|\$)'
+    input_match: 'git(?:\s+-[Cc]\s*\S+)*\s+branch (\\"|")?(backup/|\$)'
     min: 1
     arm: both
 
   - name: copies-spec-tests-from-the-backup
     type: tool_used
     tool: Bash
-    input_match: 'git (checkout|restore) [^"]*backup/[^"]* -- [^"]*test_slugify'
+    input_match: 'git(?:\s+-[Cc]\s*\S+)*\s+(checkout|restore) [^"]*backup/[^"]* -- [^"]*test_slugify'
     min: 1
     arm: both
 
@@ -61,7 +61,7 @@ graders:
   - name: never-pushes
     type: tool_used
     tool: Bash
-    input_match: 'git push'
+    input_match: 'git(?:\s+-[Cc]\s*\S+)*\s+push'
     min: 0
     max: 0
     arm: both

@@ -77,6 +77,8 @@ Every module declaring this provider, root and child, per the pin-sites
 reference. The affected root modules are the roots that declare it plus
 the roots that call a declaring child module, mapped per the
 layout-discovery reference. Decide per site whether it needs editing at all.
+With `--root-module`, apply the umbrella's scope rule to roots outside it
+that call an edited child module.
 
 ### 5. Present the plan and wait
 
@@ -115,16 +117,23 @@ Any lock that fails, or stays short of its platforms without that yes
 lock from git, leave every constraint edit in the working tree, and end
 with the stopped line (the umbrella has its mid-run form).
 
-### 8. Commit and verify
+### 8. Verify, then commit
+
+Verify on the working tree before any commit. Read the selected version
+back out of each lock file and compare it to the target; a different
+version is an overshoot to report, not a pass. `lockctl.py diff` exiting
+non-zero names any other provider that changed or any count that dropped;
+report it. Run the repository's own gates (`validate`, `tflint`, policy
+checks).
+
+A gate that fails on a file this run edited, or that the bump plausibly
+caused, is a mid-run stop: leave the edits, commit nothing, and end with
+the stopped line. A failure in code the run did not touch is
+pre-existing; report it as such and carry on.
 
 With `--no-commit`, leave everything in the working tree. Otherwise make
-one commit holding the constraint edits and the refreshed locks.
-
-Read the selected version back out of each lock file and compare it to
-the target; a different version is an overshoot to report, not a pass.
-`lockctl.py diff` exiting non-zero names any other provider that changed
-or any count that dropped; report it. Run the repository's own gates.
-Report root modules that did not move, and why.
+one commit holding the constraint edits and the refreshed locks. Report
+root modules that did not move, and why.
 
 ## Output
 
@@ -135,9 +144,10 @@ order:
 1. `## Target`: the provider's resolved source address, the target
    version, its publication date, the changelog link taken from the
    registry's source (or that none was confirmed), and the upgrade
-   guide on a major jump.
-2. `## Layout`: root modules and child modules discovered, which tool
-   drives the repository, and any classification the user settled.
+   guide on a major jump. Say "confirmed by you", with no reason, for a
+   version the user confirmed.
+2. `## Layout`: root modules and child modules discovered, and any
+   classification the user settled (the umbrella says when to name the tool).
 3. `## Sites`: a list of every declaration found, whether it was edited or
    deliberately left alone, and the operator each kept.
 4. `## Locks`: per root module: the version selected before and after,
@@ -146,7 +156,8 @@ order:
    pre-existing failure named as pre-existing.
 6. `## Drift`: pin sites that disagreed with each other before the
    bump, root modules that did not move and why, and modules whose
-   constraints already admitted the target. Omit it when none apply.
+   constraints already admitted the target. State nothing `## Sites` or
+   `## Locks` already says. Omit it when none apply.
 
 Name the commit by subject in `## Sites`, never by SHA, and do not
 report the temporary exact pin used to land a named version.
@@ -185,5 +196,5 @@ A run that cannot proceed ends with the stopped line from
 End with an `AskUserQuestion` panel offering next steps, for example:
 converge the pin sites that disagree, refresh the lock files this run
 left alone, restore multi-platform coverage to a lock that only ever
-tracked one, or stop here. Skip the panel only in plan mode. Without a question tool, list the
-options and stop.
+tracked one, or stop here. Skip the panel only in plan mode. Without a question tool, print the
+umbrella's `Next steps:` list and stop.

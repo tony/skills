@@ -65,6 +65,12 @@ one of them; offer the others as next steps.
   relative to the repository, never local absolute or temporary paths,
   and name tools by name (`terraform`), never by install path. Name no
   helper script in a reply; say what it found.
+- Where no question tool exists, close with `Next steps:` and a plain
+  bulleted list of the options, in that form every time, then stop.
+- A reply's `## Layout` names what the user can act on: the roots and
+  children found and any settled classification. Name the driving tool
+  only when both `terraform` and `tofu` are present. Leave out the branch
+  and any tool that is not installed.
 - Name no version the registry has not confirmed, and make no claim about
   what a newer release changes (such as a major jump) before one is
   confirmed. A version the user named that the registry cannot confirm
@@ -73,8 +79,8 @@ one of them; offer the others as next steps.
   or access to the registry.
 - Output rules for every reply: state results, not the rules behind them.
   Do not mention commit-message rules, trailers, or this skill's
-  conventions. Do not recap a default taken ("I've taken the default",
-  "Stop here"), and do not remark on the missing question tool. Do not
+  conventions. Do not recap a default taken ("I've taken the default"); a
+  next-step option "stop here" is fine. Do not remark on the missing question tool. Do not
   write "X, not Y" contrasts or filler such as "nothing needed
   classifying by you". A bullet states a finding, not scope the plan
   already gave. The hero is the line the skill's shape gives with
@@ -100,8 +106,11 @@ one of them; offer the others as next steps.
   finding; lock files, backends, which root calls which module, and the
   installed `terraform` version stay out, as does whether a pin or an
   installed version would satisfy the target. A stop after the edits may
-  state the new constraint and the lock's selected version in one bullet. A bullet never asks the user
-  for anything, and the step ends with its request, with no "then" clause.
+  state the new constraint and the lock's selected version in one bullet,
+  as the repository stands now ("the lock selects 3.7.0 with 1 platform,
+  2 before"), never as what the run did. A bullet never asks the user
+  for anything, and the step ends with its request. It promises nothing about what the
+  run does afterward: no "then" clause, no "and I'll rerun it".
 
   Reply in this shape, as plain text outside any code fence, with plain bullets, no bold (never `- **Label:** ...`), and no local paths:
 
@@ -120,6 +129,9 @@ one of them; offer the others as next steps.
   guard is already blocking, never constraints that merely permit a
   newer release. An audit with nothing to audit (no Terraform files) is a
   stopped run.
+- A target the user confirmed is reported as "confirmed by you", with no
+  reason attached. `## Drift` states only what `## Sites` and `## Locks`
+  do not already say.
 - When a confirmed target crosses a major version, link the project's
   upgrade guide in the report, or say none was found.
 
@@ -132,7 +144,10 @@ declaration moves in one commit, or none does.
 ## Scope
 
 The current repository. Discover its root modules and confirm the set with
-the user when there is more than one. Never widen scope as a side effect:
+the user when there is more than one. When `--root-module` limits the run, list every root outside it that
+calls a child module the run would edit (or declares the target pin). Such a root would be left
+inconsistent, its lock failing `init`, so stop and name them, or widen the scope on the user's yes
+(headless: stop). Never widen scope as a side effect:
 no repository-wide operator normalising, no platforms the lock never
 tracked, no reformatting of modules the change did not touch.
 

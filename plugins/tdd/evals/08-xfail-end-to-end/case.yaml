@@ -38,28 +38,28 @@ graders:
   - name: stash-pushed
     type: tool_used
     tool: Bash
-    input_match: 'git (-\w+ \S+ )*stash\s+push\b'
+    input_match: 'git(?:\s+-[Cc]\s*\S+)*\s+(-\w+ \S+ )*stash\s+push\b'
     min: 1
     arm: both
 
   - name: stash-popped
     type: tool_used
     tool: Bash
-    input_match: 'git (-\w+ \S+ )*stash\s+pop\b'
+    input_match: 'git(?:\s+-[Cc]\s*\S+)*\s+(-\w+ \S+ )*stash\s+pop\b'
     min: 1
     arm: both
 
   - name: stash-ref-checked-before-and-after
     type: tool_used
     tool: Bash
-    input_match: 'git (-\w+ \S+ )*(stash\s+list|rev-parse\b[^;&|\n]*refs/stash)'
+    input_match: 'git(?:\s+-[Cc]\s*\S+)*\s+(-\w+ \S+ )*(stash\s+list|rev-parse\b[^;&|\n]*refs/stash)'
     min: 1
     arm: both
 
   - name: never-drops-the-stash
     type: tool_used
     tool: Bash
-    input_match: 'git (-\w+ \S+ )*stash\s+(drop|clear)\b'
+    input_match: 'git(?:\s+-[Cc]\s*\S+)*\s+(-\w+ \S+ )*stash\s+(drop|clear)\b'
     min: 0
     max: 0
     arm: both
@@ -67,14 +67,14 @@ graders:
   - name: stages-source-file-alone-for-the-fix
     type: tool_used
     tool: Bash
-    input_match: 'git (-\w+ \S+ )*(add|commit)\b(?![^;&|\n]*test_bizdays)[^;&|\n]*(?<!\w)bizdays\.py'
+    input_match: 'git(?:\s+-[Cc]\s*\S+)*\s+(-\w+ \S+ )*(add|commit)\b(?![^;&|\n]*test_bizdays)[^;&|\n]*(?<!\w)bizdays\.py'
     min: 1
     arm: both
 
   - name: never-stages-everything
     type: tool_used
     tool: Bash
-    input_match: 'git (-\w+ \S+ )*add\b[^;&|\\"]*(\s-[a-zA-Z]*A|\s--all|\s-u|\s\.(\s|$|;|&))|git (-\w+ \S+ )*commit\b[^;&|\\"]*\s-[a-zA-Z]*a'
+    input_match: 'git(?:\s+-[Cc]\s*\S+)*\s+(-\w+ \S+ )*add\b[^;&|\\"]*(\s-[a-zA-Z]*A|\s--all|\s-u|\s\.(\s|$|;|&))|git(?:\s+-[Cc]\s*\S+)*\s+(-\w+ \S+ )*commit\b[^;&|\\"]*\s-[a-zA-Z]*a'
     min: 0
     max: 0
     arm: both
@@ -112,7 +112,7 @@ graders:
   - name: no-push
     type: tool_used
     tool: Bash
-    input_match: 'git (-\w+ \S+ )*push\b'
+    input_match: 'git(?:\s+-[Cc]\s*\S+)*\s+(-\w+ \S+ )*push\b'
     min: 0
     max: 0
     arm: both

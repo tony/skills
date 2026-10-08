@@ -31,7 +31,7 @@ graders:
   - name: creates-no-branch
     type: tool_used
     tool: Bash
-    input_match: '\bgit\s+(checkout\s+-b|switch\s+-c|branch\s+[^-\s])'
+    input_match: '\bgit(?:\s+-[Cc]\s*\S+)*\s+(checkout\s+-b|switch\s+-c|branch\s+[^-\s])'
     min: 0
     max: 0
     arm: both

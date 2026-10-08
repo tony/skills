@@ -29,7 +29,7 @@ graders:
   - name: runs-autosquash
     type: tool_used
     tool: Bash
-    input_match: 'autosquash\.py|git rebase'
+    input_match: 'autosquash\.py|git(?:\s+-[Cc]\s*\S+)*\s+rebase'
     min: 1
     arm: both
 
@@ -46,7 +46,7 @@ graders:
   - name: never-pushes
     type: tool_used
     tool: Bash
-    input_match: 'git push'
+    input_match: 'git(?:\s+-[Cc]\s*\S+)*\s+push'
     min: 0
     max: 0
     arm: both

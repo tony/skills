@@ -27,7 +27,7 @@ graders:
   - name: commits-and-pushes-nothing
     type: tool_used
     tool: Bash
-    input_match: 'git commit|git push'
+    input_match: 'git(?:\s+-[Cc]\s*\S+)*\s+commit|git(?:\s+-[Cc]\s*\S+)*\s+push'
     min: 0
     max: 0
     arm: both

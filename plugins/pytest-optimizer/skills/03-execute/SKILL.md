@@ -94,9 +94,20 @@ For each plan item not yet applied:
        -- pytest -p no:cacheprovider -p no:randomly -q
    ```
 
-   Substitute `test_command` from `baseline.json` for `pytest`. The item passes
-   when `exit` is 0, `total` equals the item's `expected_total` from `plan.json`,
-   and the non-passing count (`total - passed`) equals the baseline's.
+   Substitute `test_command` from `baseline.json` for `pytest`. Get the expected
+   count from the script, which counts only the items already applied (a skipped
+   earlier deselecting item does not lower it):
+
+   ```console
+   $ python3 <measure.py> expected-total \
+       --through <order> \
+       <memory-dir>/baseline.json \
+       <memory-dir>/plan.json \
+       <memory-dir>/execution-log.json
+   ```
+
+   The item passes
+   when `exit` is 0, `total` equals the expected count for this item, and the non-passing count (`total - passed`) equals the baseline's.
    For a typing or parametrize item (H26–H32), the type checker must cover
    `tests/` and pass; such an item records no timing.
 3. **On success** — stage the plan's files for this item (a created file
@@ -142,14 +153,17 @@ report the verify result in the reply.
 ## Step 3: Re-measure and report
 
 After the plan is exhausted (a dry run skips this re-measure and sets no flag), set
-`completed.execute=true`. Resolve and create `<runs-dir>` per
+`completed.execute=true`. When no item was applied, skip the re-measure and
+report the baseline as the result. Resolve and create `<runs-dir>` per
 `../../references/memory-schema.md` ("Run files"), delete `post-runs.jsonl` there,
 time as many runs as `baseline.json` recorded, as `00-scan` Step 4 does into it, and compare against
-`baseline.json`, passing the last item's `expected_total`:
+`baseline.json`, passing the count the script returns once every applied item is
+in the tree (`expected-total` without `--through`; the last item may have been
+skipped):
 
 ```console
 $ python3 <measure.py> compare \
-    --expect-total <expected_total> \
+    --expect-total <expected-total output> \
     <memory-dir>/baseline.json \
     <runs-dir>/post-runs.jsonl
 ```

@@ -44,7 +44,7 @@ graders:
   - name: rewrites-no-history-without-the-flag
     type: tool_used
     tool: Bash
-    input_match: 'git rebase|commit --fixup|--amend'
+    input_match: 'git(?:\s+-[Cc]\s*\S+)*\s+rebase|commit --fixup|--amend'
     min: 0
     max: 0
     arm: both
@@ -52,7 +52,7 @@ graders:
   - name: never-pushes
     type: tool_used
     tool: Bash
-    input_match: 'git push'
+    input_match: 'git(?:\s+-[Cc]\s*\S+)*\s+push'
     min: 0
     max: 0
     arm: both

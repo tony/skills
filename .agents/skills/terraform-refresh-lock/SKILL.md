@@ -85,8 +85,8 @@ gate as passing without reading the output that says so.
 
 ## Output
 
-Open with a one-line hero (`✓ N of M lock files moved` or `Audit
-only: M lock files found`), then these sections in order:
+Open with a one-line hero (`✓ N of M lock files moved`, `✓ 1 of 1 lock
+file moved` when M is 1, or `Audit only: M lock files found`), then these sections in order:
 
 1. `## Root modules`: every one discovered, any directory with a
    backend but no committed lock file, and in an audit the platform
@@ -127,8 +127,8 @@ the `terraform-bumping-terraform` skill, not this shape.
 End with an `ask-user-choice` panel offering next steps, for example:
 bump a constraint that is holding a provider back, restore
 multi-platform coverage, commit an untracked lock file, or stop here.
-Skip the panel only in plan mode. Without a question tool, list the
-options and stop.
+Skip the panel only in plan mode. Without a question tool, print the
+umbrella's `Next steps:` list and stop.
 
 
 ## Portability notes

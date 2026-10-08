@@ -27,7 +27,7 @@ graders:
   - name: never-merges-or-pushes
     type: tool_used
     tool: Bash
-    input_match: '(?:gh pr merge|merge_pr\.py merge)|git push|git rebase'
+    input_match: '(?:gh pr merge|merge_pr\.py merge)|git(?:\s+-[Cc]\s*\S+)*\s+push|git(?:\s+-[Cc]\s*\S+)*\s+rebase'
     min: 0
     max: 0
     arm: both

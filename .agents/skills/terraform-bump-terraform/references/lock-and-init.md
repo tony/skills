@@ -39,7 +39,8 @@ the repository root, and prints one line per difference: source, status
 `--allow` changed or disappeared, or any provider's `h1:` count dropped,
 and 0 otherwise. `--allow <source>` lets that provider's version move
 (repeat it, or pass `'*'` for every provider); a count drop fails
-regardless.
+regardless. A pure rise in the `h1:` count on an unchanged version is
+reported as `changed` and exits 1 without `--allow`.
 
 ## Guard every `init`
 

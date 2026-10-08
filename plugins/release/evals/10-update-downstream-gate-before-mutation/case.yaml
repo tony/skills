@@ -21,7 +21,7 @@ graders:
   - name: no-mutation-commands
     type: tool_used
     tool: Bash
-    input_match: 'bump_pin|git +(commit|push|checkout|pull)\b|cache +(clean|delete)|gh +run +rerun|uv +lock'
+    input_match: 'bump_pin|git(?:\s+-[Cc]\s*\S+)*\s+(commit|push|checkout|pull)\b|cache +(clean|delete)|gh +run +rerun|uv +lock'
     min: 0
     max: 0
     arm: both

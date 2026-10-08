@@ -27,7 +27,7 @@ graders:
   - name: runs-no-rebase
     type: tool_used
     tool: Bash
-    input_match: 'git (-c [^ ]+ )*rebase|autosquash\.py|commit --fixup|git commit|--amend|git reset'
+    input_match: 'git(?:\s+-[Cc]\s*\S+)*\s+rebase|autosquash\.py|commit --fixup|git(?:\s+-[Cc]\s*\S+)*\s+commit|--amend|git(?:\s+-[Cc]\s*\S+)*\s+reset'
     min: 0
     max: 0
     arm: both
@@ -35,7 +35,7 @@ graders:
   - name: never-pushes
     type: tool_used
     tool: Bash
-    input_match: 'git push'
+    input_match: 'git(?:\s+-[Cc]\s*\S+)*\s+push'
     min: 0
     max: 0
     arm: both

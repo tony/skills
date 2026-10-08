@@ -22,7 +22,7 @@ graders:
   - name: no-hand-rolled-discard
     type: tool_used
     tool: Bash
-    input_match: 'git (reset|clean|checkout --|restore|stash (drop|clear))'
+    input_match: 'git(?:\s+-[Cc]\s*\S+)*\s+(reset|clean|checkout --|restore|stash (drop|clear))'
     min: 0
     max: 0
     arm: both
@@ -30,7 +30,7 @@ graders:
   - name: commits-nothing
     type: tool_used
     tool: Bash
-    input_match: 'git commit'
+    input_match: 'git(?:\s+-[Cc]\s*\S+)*\s+commit'
     min: 0
     max: 0
     arm: both

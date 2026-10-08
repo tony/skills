@@ -57,7 +57,8 @@ target project's convention. Write the message per
 other tool trailer, no emoji: hosts add them by default. Each entry records
 order, heuristic id, score breakdown, target files, draft subject and body, the
 verify command (project tests and quality checks), `expected_total` (the
-baseline `tests.total`, unless the change removes tests on purpose), and
+collected-test count after this item and every earlier item apply: the baseline
+`tests.total`, less the tests each earlier or current deselecting item removes), and
 `depends_on`. The approval reply shows the draft subject only; the body goes into `plan.json` on approval. Keep the draft in the reply, not on disk: nothing is written until
 approval.
 
@@ -65,7 +66,7 @@ Confirm each target file exists at `HEAD`, unless the item creates it. An
 item whose target is absent is not planned: list it under `## Dropped at the
 gate` with "target file absent at HEAD", and count only the kept items in the
 hero line and the recovered-time total. A deselecting item (`removes_tests` in `benchmarks.json`) states "removes
-N tests from the default run" and sets `expected_total` to the reduced count, and
+N tests from the default run" and sets `expected_total` to the reduced count, carries that count into every later item's `expected_total`, and
 its saving reads as time not spent on those tests.
 
 ## Step 4: Present for approval
