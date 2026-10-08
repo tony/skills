@@ -1,0 +1,56 @@
+schema_version: "1.0"
+name: 09-merge-commit-pr-number
+description: >-
+  With a branch that fixes a counter race and a PR number in the hint, the skill
+  drafts a merge commit message ending in the PR suffix, with no tool trailers,
+  and writes nothing to git.
+tags: [fixture, git]
+
+context:
+  scaffold_script: scaffold.sh
+
+execution:
+  prompt: /pr:merge-commit this is PR 58
+  max_turns: 30
+  timeout_seconds: 900
+  allowed_tools: [Bash, Read, Glob, Grep, Skill]
+
+runs: 3
+
+graders:
+  - name: title-ends-with-the-pr-number
+    type: regex
+    target: last_message
+    pattern: '^.{1,80} \(#58\)$'
+    flags: m
+
+  - name: no-tool-trailers
+    type: regex
+    target: last_message
+    match: not_contains
+    pattern: 'Co-Authored-By|Generated with'
+    flags: i
+
+  - name: no-brittle-counts
+    type: regex
+    target: last_message
+    match: not_contains
+    pattern: '\b\d+ +(tests?|files? changed|insertions?|deletions?)\b'
+    flags: i
+
+  - name: writes-nothing-to-git
+    type: tool_used
+    tool: Bash
+    input_match: 'git(?:\s+-[Cc]\s*\S+)*\s+(commit|push)\b|git(?:\s+-[Cc]\s*\S+)*\s+merge( |$)|git(?:\s+-[Cc]\s*\S+)*\s+tag +(-a|-s|-m|-f|[A-Za-z0-9])'
+    min: 0
+    max: 0
+    arm: both
+
+  - name: message-describes-the-fix
+    type: llm
+    focus: last_message
+    criteria: |
+      The reply contains one merge commit message whose title describes the
+      impact of the fix (concurrent requests no longer lose counts) and whose
+      body, if any, wraps lines and carries no commit hashes.
+      The reply does not claim a merge or commit was made.

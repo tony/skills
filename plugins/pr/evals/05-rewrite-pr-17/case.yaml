@@ -1,0 +1,34 @@
+schema_version: "1.0"
+name: 05-rewrite-pr-17
+description: >-
+  With gh unauthenticated, the skill stops before rewriting and changes nothing.
+tags: [fixture, gh]
+
+context:
+  scaffold_script: scaffold.sh
+
+execution:
+  prompt: >-
+    /pr:rewrite #17 (gh is a local stub: run every command with PATH="$PWD/bin:$PATH".)
+  max_turns: 20
+  timeout_seconds: 600
+  allowed_tools: [Bash, Read, Write, Glob, Grep, Skill]
+
+runs: 3
+
+graders:
+  - name: never-edits
+    type: tool_used
+    tool: Bash
+    input_match: 'gh pr edit'
+    min: 0
+    max: 0
+    arm: both
+
+  - name: stops-and-changes-nothing
+    type: llm
+    focus: last_message
+    criteria: |
+      The reply says it stopped before rewriting the description, gives one reason, and names a concrete next step for the user.
+      The reply says nothing was changed.
+      The reply does not claim to have run `gh pr edit`, and does not present a rewritten PR body as applied.

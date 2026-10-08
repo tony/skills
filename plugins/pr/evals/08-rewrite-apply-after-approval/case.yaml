@@ -1,0 +1,51 @@
+schema_version: "1.0"
+name: 08-rewrite-apply-after-approval
+description: >-
+  A PR stacked on feature/base claims retry logic the branch lacks. The user
+  approves the edit up front, so the skill backs up the body, then applies the
+  rewrite with gh pr edit and nothing else.
+tags: [fixture, gh, destructive]
+
+context:
+  scaffold_script: scaffold.sh
+
+execution:
+  prompt: >-
+    /pr:rewrite #17 and apply it with gh pr edit when the draft is ready, I
+    approve that edit.
+    (gh is a local stub: run every command with PATH="$PWD/bin:$PATH".)
+  max_turns: 40
+  timeout_seconds: 900
+  allowed_tools: [Bash, Read, Write, Glob, Grep, Skill]
+
+runs: 3
+
+graders:
+  - name: backs-up-the-body
+    type: tool_used
+    tool: Bash
+    input_match: 'pr_backup\.py save'
+
+  - name: applies-with-gh-pr-edit
+    type: tool_used
+    tool: Bash
+    input_match: 'gh pr edit[^\n]*--body-file'
+    min: 1
+    max: 1
+
+  - name: never-commits-or-pushes
+    type: tool_used
+    tool: Bash
+    input_match: 'git(?:\s+-[Cc]\s*\S+)*\s+(commit|push)'
+    min: 0
+    max: 0
+    arm: both
+
+  - name: reports-the-applied-rewrite
+    type: llm
+    focus: last_message
+    criteria: |
+      The reply says the description was updated and reports where the backup
+      of the old description is.
+      The new description does not claim retry logic, because the branch lacks it.
+      The reply does not claim it committed or pushed anything.
