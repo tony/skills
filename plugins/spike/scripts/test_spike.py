@@ -462,6 +462,52 @@ def test_teardown_refuses_without_a_recorded_stash(
         assert tree.exists()
 
 
+def test_teardown_reads_the_whole_stash_list(repo: pathlib.Path, tmp_path: pathlib.Path) -> None:
+    tree = tmp_path / "wt"
+    git(repo, "worktree", "add", "--detach", str(tree), "HEAD")
+    (tree / "feature.txt").write_text("saved\n")
+    sha = spike(tree, "stash", message="spike: long stack").stdout.strip()
+    reflog = repo / ".git/logs/refs/stash"
+    reflog.write_bytes(reflog.read_bytes() * 8192)
+    result = spike(repo, "teardown", str(tree), sha)
+    assert result.returncode == 0, result.stderr
+    assert not tree.exists()
+
+
+@pytest.mark.parametrize(
+    ("name", "stage"), [("notes.txt", False), ("new.txt", False), ("notes.txt", True)]
+)
+def test_teardown_preserves_edits_made_after_stashing(
+    repo: pathlib.Path, tmp_path: pathlib.Path, name: str, stage: bool
+) -> None:
+    tree = tmp_path / "wt"
+    git(repo, "worktree", "add", "--detach", str(tree), "HEAD")
+    (tree / "feature.txt").write_text("saved\n")
+    sha = spike(tree, "stash", message="spike: before new work").stdout.strip()
+    (tree / name).write_text("new user work\n")
+    if stage:
+        git(tree, "add", name)
+    result = spike(repo, "teardown", str(tree), sha)
+    assert result.returncode == 1
+    assert "unstashed" in result.stderr
+    assert (tree / name).read_text() == "new user work\n"
+
+
+def test_teardown_preserves_commits_absent_from_stash(
+    repo: pathlib.Path, tmp_path: pathlib.Path
+) -> None:
+    tree = tmp_path / "wt"
+    git(repo, "worktree", "add", "--detach", str(tree), "HEAD")
+    (tree / "feature.txt").write_text("saved\n")
+    sha = spike(tree, "stash", message="spike: before new commit").stdout.strip()
+    (tree / "notes.txt").write_text("new commit\n")
+    git(tree, "commit", "-am", "new work")
+    result = spike(repo, "teardown", str(tree), sha)
+    assert result.returncode == 1
+    assert "commits absent" in result.stderr
+    assert (tree / "notes.txt").read_text() == "new commit\n"
+
+
 def test_ledger_dir_falls_back_when_the_git_dir_is_unwritable(
     repo: pathlib.Path,
 ) -> None:
