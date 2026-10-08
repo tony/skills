@@ -24,8 +24,8 @@
 # is the one intentionally empty commit; `reword-map.tsv` records it for
 # audit.
 #
-# A failed fixup commit rolls the patch back (index and worktree), so
-# the tree is clean again and a re-run retries the same step.
+# A failed fixup commit reverses its patch when the index and worktree
+# still match. Overlapping hook or user edits remain for inspection.
 #
 # The first run creates a backup branch at the starting tip and prints
 # `Backup branch: <name>`; re-runs print the same name.
@@ -79,7 +79,7 @@ fi
 # ── backup branch ─────────────────────────────────────────────────
 #
 # Created once, before the first history change; a re-run reuses it.
-# `git reset --hard <backup>` restores the pre-apply state.
+# It retains the starting commits, not later uncommitted work.
 
 backup_file="$checkpoint_dir/backup"
 if [ -f "$backup_file" ]; then
@@ -152,36 +152,25 @@ for entry in "$run_dir"/[0-9]*; do
                 exit 3
             fi
 
-            if ! git apply -- "$entry"; then
+            if ! git apply --index -- "$entry"; then
                 echo "apply.sh: git apply failed on $base" >&2
                 echo "  fix the patch (or remove it) and re-run" >&2
                 exit 3
             fi
 
-            paths=$(
-                git diff --name-only
-                git ls-files --others --exclude-standard
-            )
-            if [ -z "$paths" ]; then
+            if git diff --cached --quiet; then
                 mark_done "$step_num"
                 continue
             fi
 
-            # NUL-separated: core.quotepath quotes non-ASCII names in line output.
-            if ! { git diff -z --name-only; git ls-files -z --others --exclude-standard; } |
-                xargs -0 git add --; then
-                git reset -q
-                git apply -R -- "$entry" || git reset -q --hard HEAD
-                echo "apply.sh: staging the fixup for $full_sha failed" >&2
-                echo "  patch rolled back; repair the cause and re-run" >&2
-                exit 6
-            fi
-
             if ! git commit -m "fixup! $full_sha"; then
-                git apply -R --index -- "$entry" ||
-                    git reset -q --hard HEAD
                 echo "apply.sh: fixup commit for $full_sha failed" >&2
-                echo "  patch rolled back; repair the cause and re-run" >&2
+                if git apply -R --index -- "$entry"; then
+                    echo "  patch rolled back; repair the cause and re-run" >&2
+                else
+                    echo "  rollback refused overlapping edits; inspect the index and worktree" >&2
+                    echo "  patch and backup branch remain available" >&2
+                fi
                 exit 6
             fi
 

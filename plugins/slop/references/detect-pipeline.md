@@ -16,6 +16,7 @@ and a file for `scan`.
 - Pass B: semantic verifier
 - Budget and confirmation
 - Run directory
+- Cut patches
 - Confirmation gate
 
 ---
@@ -290,6 +291,56 @@ the resolved `FORMAT_CMD` / `LINT_CMD` / `TYPECHECK_CMD` / `TEST_CMD`,
 `BASELINE_SHA`, the budget, and the tone-calibration result; each skill
 names what else it adds. The run directory is run-scoped, not a
 permanent record.
+
+---
+
+## Cut patches
+
+Cut the diff patches in the skill's apply order. Before creating the scratch worktree,
+compare two physical paths: print the repository root, then the physical
+home path.
+
+```console
+$ git rev-parse --show-toplevel
+```
+
+```console
+$ (cd ~ && pwd -P)
+```
+
+Refuse when the two are equal or the root is an ancestor of home: a
+dotfile repo rooted at home would check out the whole home directory. A
+string compare against `$HOME` misses a symlinked home. Make the
+scratch directory and print it:
+
+```console
+$ mktemp -d "${TMPDIR:-/tmp}/deslop-scratch.XXXXXX"
+```
+
+Use the printed path literally as `<scratch>`:
+
+```console
+$ git worktree add --detach "<scratch>" HEAD
+```
+
+For each finding in apply order, make its edit inside `<scratch>`,
+write that file's diff as the finding's patch, then stage the file so the
+next diff starts from the edited state:
+
+```console
+$ git -C "<scratch>" diff -- '<file>'
+```
+
+```console
+$ git -C "<scratch>" add -- '<file>'
+```
+
+When every patch is cut, remove this owned scratch worktree. If an earlier
+attempt left one behind, verify its exact path before removing it:
+
+```console
+$ git worktree remove --force "<scratch>"
+```
 
 ---
 

@@ -51,8 +51,8 @@ one quality-gate discovery procedure, and one tone-calibration step.
 ## Choosing
 
 Use `/slop:deslop` before opening a PR, when the slop sits in commits
-you are about to ship. With `--apply-rebase` it rewrites history, so it
-refuses pushed branches and branches with merge commits unless told otherwise.
+you are about to ship. With `--apply-rebase` it rewrites history, requires
+`--force-rewrite-pushed` for published commits, and refuses merge commits.
 
 Use `/slop:scan` for slop already on trunk or in long-lived files. It
 only adds commits, so it is safe on pushed and shared branches.
@@ -73,8 +73,9 @@ until you pass an apply flag and confirm.
 and quality gates inside the conflict loop.
 
 `/slop:scan` writes `slop-scan/<ts>-<pid>/` under the git directory with `commits.json`.
-`--apply` offers the per-finding loop: edit, stage the file, run gates,
-commit. A gate failure rolls the file back and the run continues. Edit
+`--apply` offers the per-finding loop: apply the patch, run gates and commit
+hooks in a disposable worktree, then publish the approved file. A gate or
+hook failure leaves the checkout untouched. Edit
 `commits.json` first, then re-run with `--apply --from=<run-dir>` to commit
 your wording.
 
@@ -167,7 +168,7 @@ $ git log -z --format=%H%x1f%B origin/main..HEAD | python3 scripts/slop_detect.p
     --registry references/signatures.yml
 ```
 
-## Measured false positives
+## Detector sample
 
 Measured 2026-10-07 on each repository's default-branch tip (no pinned
 commits, so counts will drift) with `slop_detect.py files` and every line treated
@@ -186,8 +187,8 @@ Fixit (111), apscheduler (100), and RapidFuzz (195), plus Apache Airflow
   over-reports it.
 - Tier C: 98 findings in Airflow, 0 elsewhere.
 
-Four of five repositories produced no Tier A finding, but one sample hit is
-not a rate; treat Tier A as high precision on added lines, not proven.
+These are raw matches from unpinned snapshots, not a measured precision
+rate. Keep every Tier A edit in the reviewable patch series.
 
 ## Safety
 
@@ -199,8 +200,9 @@ not a rate; treat Tier A as high precision on added lines, not proven.
   AI-assistance disclosure keeps attribution footers as a Tier B proposal.
 - `/slop:deslop` creates a backup branch before touching history and
   never pushes.
-- `/slop:scan` never rewrites history and never touches a file that had
-  uncommitted changes when the run started.
+- `/slop:scan` checks the live target before publication and preserves
+  unrelated staged, unstaged, and untracked work. Gates and commit hooks
+  run in isolation; a blocked publication retains a recovery branch.
 - Both stage explicit paths only and never bypass hooks.
 
 ## Prerequisites

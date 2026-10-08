@@ -1116,7 +1116,7 @@
         "references/slop_detect.py": "plugins/slop/scripts/slop_detect.py",
         "references/verification-gates.md": "plugins/slop/references/verification-gates.md"
       },
-      "bytes": 93996
+      "bytes": 94077
     },
     {
       "name": "slop-scan",
@@ -1128,11 +1128,12 @@
         "references/detect-pipeline.md": "plugins/slop/references/detect-pipeline.md",
         "references/prose-rules.md": "plugins/slop/references/prose-rules.md",
         "references/scan-edge-cases.md": "plugins/slop/references/scan-edge-cases.md",
+        "references/scan_apply.py": "plugins/slop/scripts/scan_apply.py",
         "references/signatures.yml": "plugins/slop/references/signatures.yml",
         "references/slop_detect.py": "plugins/slop/scripts/slop_detect.py",
         "references/verification-gates.md": "plugins/slop/references/verification-gates.md"
       },
-      "bytes": 77403
+      "bytes": 94224
     },
     {
       "name": "spike-bakeoff",
@@ -1654,6 +1655,7 @@
     "plugins/slop/references/scan-edge-cases.md": 1,
     "plugins/slop/scripts/autosquash.py": 1,
     "plugins/slop/scripts/render_apply.py": 1,
+    "plugins/slop/scripts/scan_apply.py": 1,
     "plugins/tailwind/references/prose-rules.md": 1,
     "plugins/tailwind/scripts/detect.py": 1,
     "plugins/tailwind/skills/spacing-audit/references/patterns.md": 1,
