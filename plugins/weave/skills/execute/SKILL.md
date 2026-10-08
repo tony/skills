@@ -3,7 +3,6 @@ name: execute
 description: Weave execute — compare independent adversarial implementations, then synthesize their best parts
 allowed-tools: ["Bash", "Read", "Grep", "Glob", "Edit", "Write", "Task", "AskUserQuestion", "EnterPlanMode", "ExitPlanMode"]
 argument-hint: "[--passes=N] [--timeout=N|none] [--mode=fast|balanced|deep] [--workers=subagents|model-clis] <task description>"
-user-invocable: true
 disable-model-invocation: true
 ---
 

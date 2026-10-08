@@ -7,7 +7,15 @@
     "email": "tony@git-pull.com"
   },
   "homepage": "https://github.com/tony/skills/tree/main/plugins/weave",
+  "repository": "https://github.com/tony/skills",
   "license": "MIT",
+  "keywords": [
+    "multi-agent",
+    "ensemble",
+    "brainstorm",
+    "review",
+    "synthesis"
+  ],
   "skills": "./skills/",
   "interface": {
     "displayName": "Weave",

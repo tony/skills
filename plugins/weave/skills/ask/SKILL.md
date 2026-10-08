@@ -3,7 +3,6 @@ name: ask
 description: Weave question — ask independent adversarial workers in parallel, then synthesize the best answer
 allowed-tools: ["Bash", "Read", "Grep", "Glob", "Write", "Task", "AskUserQuestion"]
 argument-hint: "[--cascade] [--passes=N] [--timeout=N|none] [--mode=fast|balanced|deep] [--no-deslop|--quiet-deslop|--verbose-deslop] [--workers=subagents|model-clis] <question>"
-user-invocable: true
 disable-model-invocation: true
 ---
 

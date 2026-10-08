@@ -3,7 +3,6 @@ name: serene-bliss
 description: "Use when asked to make a CLI --help, docs page, error message, or tooling UX more serene or calmer for developer experience; returns text, no edits."
 allowed-tools: ["Bash", "Read", "Grep", "Glob", "Write", "Task", "AskUserQuestion"]
 argument-hint: "[--passes=N] [--timeout=N|none] [--mode=fast|balanced|deep] [--no-deslop|--quiet-deslop|--verbose-deslop] [--workers=subagents|model-clis] <prompt>"
-user-invocable: true
 ---
 
 # Weave Serene Bliss

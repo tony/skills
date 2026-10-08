@@ -1350,11 +1350,14 @@ def _run_codex(
     )
 
 
-def _codex_skill_ids() -> dict[str, list[str]]:
-    """Map each plugin to the skill IDs Codex should expose for it.
+def _codex_skill_ids(*, implicit: bool) -> dict[str, list[str]]:
+    """Map each plugin to the skill IDs whose implicit invocation is ``implicit``.
 
     Keyed on the frontmatter ``name`` rather than the directory, because that
-    is what Codex prefixes with the plugin name to build the invocable ID.
+    is what Codex prefixes with the plugin name to build the invocable ID. A
+    skill with ``disable-model-invocation`` gets ``allow_implicit_invocation:
+    false`` in its ``agents/openai.yaml``, so Codex keeps it out of the model's
+    list and serves it only to an explicit ``$`` mention.
     """
     ids: dict[str, list[str]] = {}
     for plugin in PLUGINS:
@@ -1362,8 +1365,9 @@ def _codex_skill_ids() -> dict[str, list[str]]:
         if not skills.is_dir():
             continue
         names = [
-            t.cast("str", _parse_frontmatter(md).get("name", md.parent.name))
+            t.cast("str", fm.get("name", md.parent.name))
             for md in sorted(skills.glob("*/SKILL.md"))
+            if bool((fm := _parse_frontmatter(md)).get("disable-model-invocation")) is not implicit
         ]
         if names:
             ids[plugin] = sorted(f"{plugin}:{name}" for name in names)
@@ -1455,7 +1459,8 @@ def _test_codex_lifecycle(sandbox: Path) -> list[TestCase]:
     """Build the Codex marketplace add -> install -> prompt -> remove cases."""
     tests: list[TestCase] = []
     project = sandbox / "project"
-    expected = _codex_skill_ids()
+    expected = _codex_skill_ids(implicit=True)
+    explicit_only = _codex_skill_ids(implicit=False)
 
     def _marketplace_add() -> None:
         r = _run_codex(["plugin", "marketplace", "add", str(REPO_ROOT), "--json"], sandbox)
@@ -1496,9 +1501,13 @@ def _test_codex_lifecycle(sandbox: Path) -> list[TestCase]:
         seen = _codex_prompt_skill_ids(sandbox, project)
         missing = sorted(i for ids in expected.values() for i in ids if i not in seen)
         _assert(not missing, f"{len(missing)} skill(s) never reached the model: {missing[:8]}")
+        leaked = sorted(i for ids in explicit_only.values() for i in ids if i in seen)
+        _assert(not leaked, f"{len(leaked)} name-only skill(s) offered implicitly: {leaked[:8]}")
 
     total = sum(len(v) for v in expected.values())
-    tests.append((f"codex skills reach the model ({total} IDs)", _skills_reach_model))
+    hidden = sum(len(v) for v in explicit_only.values())
+    label = f"codex skills reach the model ({total} implicit, {hidden} name-only)"
+    tests.append((label, _skills_reach_model))
 
     def _teardown() -> None:
         for plugin in PLUGINS:

@@ -2,7 +2,6 @@
 name: fix-review
 description: Fix weave review findings — validate, add test coverage, fix, and commit each as atomic changes
 allowed-tools: ["Bash", "Read", "Grep", "Glob", "Edit", "Write", "Task", "AskUserQuestion", "EnterPlanMode", "ExitPlanMode"]
-user-invocable: true
 disable-model-invocation: true
 ---
 

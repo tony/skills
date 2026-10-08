@@ -3,7 +3,6 @@ name: refine
 description: "Use when asked to refine a draft, iterate on code until cleaner, or polish a README through repeated critique and improvement."
 allowed-tools: ["Bash", "Read", "Grep", "Glob", "Write", "Task", "AskUserQuestion"]
 argument-hint: "[--passes=N] [--timeout=N|none] [--mode=fast|balanced|deep] [--judge=host|round-robin] [--no-deslop|--quiet-deslop|--verbose-deslop] [--workers=subagents|model-clis] <text or file path>"
-user-invocable: true
 ---
 
 # Weave Refine

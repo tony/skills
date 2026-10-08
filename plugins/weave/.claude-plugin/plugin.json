@@ -5,5 +5,13 @@
   "author": {
     "name": "Tony Narlock",
     "email": "tony@git-pull.com"
-  }
+  },
+  "keywords": [
+    "multi-agent",
+    "ensemble",
+    "brainstorm",
+    "review",
+    "synthesis"
+  ],
+  "repository": "https://github.com/tony/skills"
 }

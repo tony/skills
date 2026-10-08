@@ -3,7 +3,6 @@ name: review
 description: Weave code review — run independent adversarial reviews in parallel, then synthesize findings
 allowed-tools: ["Bash", "Read", "Grep", "Glob", "Write", "Task", "AskUserQuestion", "EnterPlanMode", "ExitPlanMode"]
 argument-hint: "[--cascade] [--passes=N] [--timeout=N|none] [--mode=fast|balanced|deep] [--no-deslop|--quiet-deslop|--verbose-deslop] [--workers=subagents|model-clis] [focus area]"
-user-invocable: true
 disable-model-invocation: true
 ---
 

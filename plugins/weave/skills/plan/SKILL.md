@@ -3,7 +3,6 @@ name: plan
 description: Weave planning — compare independent adversarial plans, then synthesize the best one
 allowed-tools: ["Bash", "Read", "Grep", "Glob", "Write", "Task", "AskUserQuestion", "EnterPlanMode"]
 argument-hint: "[--passes=N] [--timeout=N|none] [--mode=fast|balanced|deep] [--no-deslop|--quiet-deslop|--verbose-deslop] [--workers=subagents|model-clis] <task description>"
-user-invocable: true
 disable-model-invocation: true
 ---
 

@@ -19,6 +19,13 @@
       },
       "source": "./plugins/weave",
       "category": "development",
+      "tags": [
+        "multi-agent",
+        "ensemble",
+        "brainstorm",
+        "review",
+        "synthesis"
+      ],
       "homepage": "https://github.com/tony/skills/tree/main/plugins/weave",
       "license": "MIT"
     },

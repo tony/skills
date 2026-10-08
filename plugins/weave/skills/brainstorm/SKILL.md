@@ -3,7 +3,6 @@ name: brainstorm
 description: "Use when asked to brainstorm, or a design question or open-ended problem needs multiple independent adversarial ideas."
 allowed-tools: ["Bash", "Read", "Grep", "Glob", "Write", "Task", "AskUserQuestion"]
 argument-hint: "[--variants=N] [--timeout=N|none] [--mode=fast|balanced|deep] [--preamble=...] [--workers=subagents|model-clis] <prompt>"
-user-invocable: true
 ---
 
 # Weave Brainstorm
