@@ -2301,22 +2301,73 @@ def _codex_files() -> dict[str, bytes]:
     return files
 
 
-def _check_codex_drift(files: dict[str, bytes]) -> list[str]:
-    """Compare the committed Codex manifests against a fresh generation."""
-    errors: list[str] = []
-    # Globbing the real tree rather than deriving from discover_plugins(): a
-    # directory that lost its .claude-plugin/plugin.json is skipped by
-    # discovery, so deriving both sides from it can never report the orphaned
-    # Codex manifest it leaves behind.
-    actual = {
-        str(p.relative_to(REPO_ROOT))
+def _existing_codex_files(root: Path) -> set[str]:
+    """Include orphaned manifests whose source plugin or skill was removed."""
+    plugins = root / "plugins"
+    return {
+        str(p.relative_to(root))
         for p in [
-            *PLUGINS_DIR.glob(f"*/{CODEX_MANIFEST_REL}"),
-            *PLUGINS_DIR.glob(f"*/skills/*/{OPENAI_YAML_REL}"),
-            CODEX_MARKETPLACE_PATH,
+            *plugins.glob(f"*/{CODEX_MANIFEST_REL}"),
+            *plugins.glob(f"*/skills/*/{OPENAI_YAML_REL}"),
+            root / CODEX_MARKETPLACE_PATH.relative_to(REPO_ROOT),
         ]
         if p.is_file()
     }
+
+
+def _remove_stale_codex(files: dict[str, bytes], root: Path) -> None:
+    """Remove generated manifests left by deleted sources, retaining other files.
+
+    >>> with tempfile.TemporaryDirectory() as tmp:
+    ...     root = Path(tmp)
+    ...     stale = root / "plugins/p/skills/removed/agents/openai.yaml"
+    ...     stale.parent.mkdir(parents=True)
+    ...     _ = stale.write_text("old")
+    ...     keep = stale.parent / "notes.md"
+    ...     _ = keep.write_text("user data")
+    ...     _remove_stale_codex({}, root)
+    ...     assert not stale.exists() and keep.read_text() == "user data"
+    ...     keep.unlink()
+    ...     _ = stale.write_text("old")
+    ...     _remove_stale_codex({}, root)
+    ...     assert not (root / "plugins/p").exists()
+    ...     assert (root / "plugins").is_dir()
+    >>> with tempfile.TemporaryDirectory() as tmp:
+    ...     root = Path(tmp) / "repo"
+    ...     external = Path(tmp) / "external"
+    ...     external.mkdir()
+    ...     keep = external / "openai.yaml"
+    ...     _ = keep.write_text("user data")
+    ...     skill = root / "plugins/p/skills/removed"
+    ...     skill.mkdir(parents=True)
+    ...     (skill / "agents").symlink_to(external, target_is_directory=True)
+    ...     try:
+    ...         _remove_stale_codex({}, root)
+    ...     except ValueError as error:
+    ...         assert "symlink" in str(error)
+    ...     else:
+    ...         raise AssertionError("followed a symlinked parent")
+    ...     assert keep.read_text() == "user data"
+    """
+    stale = [root / rel for rel in sorted(_existing_codex_files(root) - set(files))]
+    for path in stale:
+        if any(parent.is_symlink() for parent in path.parents if parent.is_relative_to(root)):
+            msg = f"refusing generated cleanup through a symlink: {path.relative_to(root)}"
+            raise ValueError(msg)
+    for path in stale:
+        path.unlink()
+        directory = path.parent
+        while directory.is_relative_to(root / "plugins") and directory != root / "plugins":
+            if any(directory.iterdir()):
+                break
+            directory.rmdir()
+            directory = directory.parent
+
+
+def _check_codex_drift(files: dict[str, bytes]) -> list[str]:
+    """Compare the committed Codex manifests against a fresh generation."""
+    errors: list[str] = []
+    actual = _existing_codex_files(REPO_ROOT)
     errors.extend(f"codex: stale manifest '{rel}'" for rel in sorted(actual - set(files)))
     for rel, content in sorted(files.items()):
         path = REPO_ROOT / rel
@@ -2435,6 +2486,7 @@ def portable(*, check: bool = False) -> None:
                 console.print(f"[red]Error:[/red] {rich.markup.escape(error)}")
             raise SystemExit(1)
         _write_portable(built, PORTABLE_SKILLS_DIR, PORTABLE_MANIFEST_PATH)
+        _remove_stale_codex(codex_files, REPO_ROOT)
         for rel, content in sorted(codex_files.items()):
             path = REPO_ROOT / rel
             path.parent.mkdir(parents=True, exist_ok=True)
