@@ -1,0 +1,43 @@
+schema_version: "1.0"
+name: 08-draft-duplicate-halt
+description: >-
+  The tracker already holds a closed issue for the same bug. The skill stops,
+  names the match, offers to comment on it, and drafts nothing.
+tags: [fixture, glab]
+
+context:
+  scaffold_script: scaffold.sh
+
+execution:
+  prompt: >-
+    Open a GitLab issue for this bug: the CSV export drops the last row when
+    the file has more than 10000 rows. Seen on widgets 2.4.1.
+    (glab is a local stub: run every command with PATH="$PWD/bin:$PATH".)
+  max_turns: 20
+  timeout_seconds: 600
+  allowed_tools: [Bash, Read, Glob, Grep, Skill]
+
+runs: 3
+
+graders:
+  - name: skill-fired
+    type: tool_used
+    tool: Skill
+    input_match: '"skill":\s*"(ticket:)?draft"'
+
+  - name: never-writes
+    type: tool_used
+    tool: Bash
+    input_match: 'glab issue (create|update|note)|glab api.*(-X|--method) (POST|PUT|PATCH)'
+    min: 0
+    max: 0
+    arm: both
+
+  - name: stops-and-offers-comment
+    type: llm
+    focus: last_message
+    criteria: |
+      The reply names the existing closed issue (#3) as a match, stops
+      without drafting or filing a new issue, and offers to comment on that issue with the new
+      evidence. It does not present a full drafted title and body for a new
+      issue and does not claim anything was filed.

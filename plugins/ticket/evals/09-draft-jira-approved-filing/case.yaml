@@ -1,0 +1,41 @@
+schema_version: "1.0"
+name: 09-draft-jira-approved-filing
+description: >-
+  A Jira backend is reachable through a stub acli and the user approves
+  filing up front. The body reaches acli as a file in plain text, without
+  markdown headings or backticks.
+tags: [fixture, acli, destructive]
+
+context:
+  scaffold_script: scaffold.sh
+
+execution:
+  prompt: >-
+    Create a Jira task in the WIDGET space for this bug, and file it as soon
+    as it is drafted, no need to ask again: running ./export --all crashes
+    with "KeyError: tenant_id". Seen on widgets 2.4.1.
+    (acli is a local stub: run every command with PATH="$PWD/bin:$PATH".)
+  max_turns: 25
+  timeout_seconds: 600
+  allowed_tools: [Bash, Read, Write, Glob, Grep, Skill]
+
+runs: 3
+
+graders:
+  - name: skill-fired
+    type: tool_used
+    tool: Skill
+    input_match: '"skill":\s*"(ticket:)?draft"'
+
+  - name: files-through-description-file
+    type: tool_used
+    tool: Bash
+    input_match: 'acli jira workitem create.*--description-file'
+    min: 1
+
+  - name: reports-filing
+    type: llm
+    focus: last_message
+    criteria: |
+      The reply says the work item was created and gives WIDGET-91. It does
+      not mention a temporary file or its path.
