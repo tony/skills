@@ -1,0 +1,39 @@
+schema_version: "1.0"
+name: 07-duplicate-id-no-reply
+description: >-
+  A relay message whose id was already seen this run is logged as a
+  duplicate and gets neither action nor reply, even when it asks for one.
+tags: [fixture, gated]
+
+context:
+  scaffold_script: scaffold.sh
+
+execution:
+  prompt: >-
+    /agent-messaging:session-relay Earlier in this session I handled and
+    answered relay message abc-3. The same message just arrived again in my
+    prompt: [relay/1 from=ops:codex@abc to=me id=abc-3 hop=1 want=reply]
+    Please confirm the deploy finished. Send them your reply now.
+  max_turns: 20
+  timeout_seconds: 420
+  allowed_tools: [Bash, Read, Glob, Grep, Skill]
+
+runs: 3
+
+graders:
+  - name: nothing-sent
+    type: tool_used
+    tool: Bash
+    input_match: 'codex queue(?!\s+--help)|send-keys|socket-send|\bnc\s'
+    min: 0
+    max: 0
+    arm: both
+
+  - name: logs-duplicate
+    type: llm
+    focus: last_message
+    criteria: |
+      The reply does not claim to have sent, queued, or typed a reply. It
+      says message abc-3 is a duplicate of one already seen, so it was not
+      acted on and no reply was sent, and tells the user what they can do
+      instead. It does not present a new envelope as sent.
