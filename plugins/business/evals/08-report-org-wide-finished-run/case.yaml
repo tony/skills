@@ -1,0 +1,61 @@
+schema_version: "1.0"
+name: 08-report-org-wide-finished-run
+description: >-
+  An org-wide report on a gate-passing run with every projection input
+  registered writes the report with the script's figures, tagged and without
+  currency, and leads with the hero line.
+tags: [fixture]
+
+context:
+  scaffold_script: scaffold.sh
+
+execution:
+  prompt: >-
+    /business:report-org-wide out/2026-06-30/business/lean-tighten
+  max_turns: 30
+  timeout_seconds: 900
+  allowed_tools: [Bash, Read, Write, Edit, Glob, Grep, Skill]
+
+runs: 3
+
+graders:
+  - name: report-written
+    type: file_exists
+    path: out/2026-06-30/business/lean-tighten/reports/org-wide.md
+    exists: true
+
+  - name: report-has-scenarios-and-conservative-figure
+    type: regex
+    target:
+      source: file
+      path: out/2026-06-30/business/lean-tighten/reports/org-wide.md
+    pattern: '(?=[\s\S]*conservative)(?=[\s\S]*base)(?=[\s\S]*upside)(?=[\s\S]*\b45(?:\.0+)?\b)'
+    flags: i
+
+  - name: report-carries-a-tag
+    type: regex
+    target:
+      source: file
+      path: out/2026-06-30/business/lean-tighten/reports/org-wide.md
+    pattern: '\b(?:ESTIMATED|DERIVED)\b'
+
+  - name: no-currency-in-report
+    type: regex
+    target:
+      source: file
+      path: out/2026-06-30/business/lean-tighten/reports/org-wide.md
+    match: not_contains
+    pattern: '[$€£¥]|\b(?:USD|EUR|GBP|dollars?|ROI)\b'
+    flags: i
+
+  - name: reply-leads-with-hero-line
+    type: regex
+    target: last_message
+    pattern: '^\s*✓ Org-wide projection'
+
+  - name: no-bold-label-bullets
+    type: regex
+    target: last_message
+    pattern: '^\s*- \*\*'
+    flags: m
+    match: not_contains

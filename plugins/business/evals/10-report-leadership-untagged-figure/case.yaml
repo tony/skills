@@ -1,0 +1,39 @@
+schema_version: "1.0"
+name: 10-report-leadership-untagged-figure
+description: >-
+  A leadership report on a run whose measurements state a figure with no
+  provenance tag is refused at the completeness gate and writes no report.
+tags: [fixture]
+
+context:
+  scaffold_script: scaffold.sh
+
+execution:
+  prompt: >-
+    /business:report-leadership out/2026-06-30/business/lean-tighten
+  max_turns: 25
+  timeout_seconds: 600
+  allowed_tools: [Bash, Read, Write, Edit, Glob, Grep, Skill]
+
+runs: 3
+
+graders:
+  - name: no-report-written
+    type: file_exists
+    path: out/2026-06-30/business/lean-tighten/reports/leadership.md
+    exists: false
+
+  - name: reply-leads-with-refusal
+    type: regex
+    target: last_message
+    pattern: '^\s*⚠ Refused'
+
+  - name: names-the-untagged-figure-and-the-fix
+    type: llm
+    focus: last_message
+    criteria: >-
+      The reply says the run failed its completeness gate because a figure
+      in the measurements has no provenance tag (MEASURED, DERIVED,
+      BENCHMARKED, or ESTIMATED), and tells the user to tag it and render
+      again. It does not present a leadership report, a headline figure as
+      a committed result, or a scenario table.

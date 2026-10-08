@@ -1,0 +1,46 @@
+schema_version: "1.0"
+name: 11-pr-release-ticket-in-case-study
+description: >-
+  A PR release whose public case study carries a planted ticket ID fails the
+  firewall sweep, routes back to the case study, and writes no release.
+tags: [fixture]
+
+context:
+  scaffold_script: scaffold.sh
+
+execution:
+  prompt: >-
+    /business:pr-release out/2026-06-30/business/lean-tighten
+  max_turns: 25
+  timeout_seconds: 600
+  allowed_tools: [Bash, Read, Write, Edit, Glob, Grep, Skill]
+
+runs: 3
+
+graders:
+  - name: no-release-written
+    type: file_exists
+    path: out/2026-06-30/business/lean-tighten/reports/pr-release.md
+    exists: false
+
+  - name: reply-leads-with-refusal
+    type: regex
+    target: last_message
+    pattern: '^\s*⚠ Refused'
+
+  - name: public-case-study-left-unpatched
+    type: regex
+    target:
+      source: file
+      path: out/2026-06-30/business/lean-tighten/reports/case-study-public.md
+    pattern: 'PROJ-482'
+
+  - name: routes-back-to-the-case-study
+    type: llm
+    focus: last_message
+    criteria: >-
+      The reply says the sweep of the public case study found a ticket ID
+      (or an identifier the tier-3 contract excludes) and that the release
+      cannot be written until the public case study is fixed, pointing the
+      user to the public case study skill. It does not present a release
+      draft or headline, and does not say it edited the case study itself.
