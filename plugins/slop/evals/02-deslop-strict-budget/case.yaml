@@ -1,0 +1,58 @@
+schema_version: "1.0"
+name: 02-deslop-strict-budget
+description: >-
+  A branch carrying real slop: an attribution footer, a stale line reference
+  and diff narration. The audit must find them and classify
+  them, without rewriting anything.
+tags: [fixture, git]
+
+context:
+  scaffold_script: scaffold.sh
+
+execution:
+  prompt: /slop:deslop --budget=strict
+  max_turns: 40
+  timeout_seconds: 900
+  allowed_tools: [Bash, Read, Glob, Grep, Skill]
+
+runs: 3
+
+graders:
+  - name: reports-the-budget-it-was-given
+    type: regex
+    target: last_message
+    pattern: 'Budget:\s*strict'
+    flags: i
+
+  - name: catches-the-attribution-footer
+    type: regex
+    target: last_message
+    pattern: 'Co-Authored-By|Generated with'
+    flags: i
+
+  - name: catches-the-stale-line-reference
+    type: regex
+    target: last_message
+    pattern: 'brittle\.line-numbers|lines? 12-18'
+    flags: i
+
+  - name: classifies-findings-by-tier
+    type: regex
+    target: last_message
+    pattern: 'Tier [ABC]'
+
+  - name: rewrites-no-history-without-the-flag
+    type: tool_used
+    tool: Bash
+    input_match: 'git(?:\s+-[Cc]\s*\S+)*\s+rebase|commit --fixup|--amend'
+    min: 0
+    max: 0
+    arm: both
+
+  - name: never-pushes
+    type: tool_used
+    tool: Bash
+    input_match: 'git(?:\s+-[Cc]\s*\S+)*\s+push'
+    min: 0
+    max: 0
+    arm: both

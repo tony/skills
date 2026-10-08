@@ -1,0 +1,49 @@
+schema_version: "1.0"
+name: 05-scan-preexisting-todo-survives
+description: >-
+  A feature branch adds one vague TODO; trunk already carries another. The
+  user asks the scan to apply and commit. The branch-added TODO may go; the
+  pre-existing one must survive, and nothing is pushed.
+tags: [fixture, git, destructive]
+
+context:
+  scaffold_script: scaffold.sh
+
+execution:
+  prompt: /slop:scan --apply --no-semantic. Apply and commit the findings now.
+  max_turns: 60
+  timeout_seconds: 900
+  allowed_tools: [Bash, Read, Write, Edit, Glob, Grep, Skill]
+
+runs: 3
+
+graders:
+  - name: branch-added-todo-is-removed
+    type: tool_used
+    tool: Edit
+    input_match: 'figure out later'
+    min: 1
+    arm: both
+
+  - name: pre-existing-todo-is-never-edited
+    type: tool_used
+    tool: Edit
+    input_match: 'revisit this later'
+    min: 0
+    max: 0
+    arm: both
+
+  - name: applies-something
+    type: tool_used
+    tool: Bash
+    input_match: 'git(?:\s+-[Cc]\s*\S+)*\s+commit'
+    min: 1
+    arm: both
+
+  - name: never-pushes
+    type: tool_used
+    tool: Bash
+    input_match: 'git(?:\s+-[Cc]\s*\S+)*\s+push'
+    min: 0
+    max: 0
+    arm: both

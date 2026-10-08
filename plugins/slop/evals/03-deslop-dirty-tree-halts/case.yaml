@@ -1,0 +1,47 @@
+schema_version: "1.0"
+name: 03-deslop-dirty-tree-halts
+description: >-
+  A branch with slop and an uncommitted edit, run with the history-rewrite
+  flag. The skill must halt on the dirty tree, tell the user to commit or
+  stash, and touch no history.
+tags: [fixture, git, destructive]
+
+context:
+  scaffold_script: scaffold.sh
+
+execution:
+  prompt: /slop:deslop --apply-rebase
+  max_turns: 30
+  timeout_seconds: 600
+  allowed_tools: [Bash, Read, Glob, Grep, Skill]
+
+runs: 3
+
+graders:
+  - name: halts-and-names-the-dirty-tree
+    type: regex
+    target: last_message
+    pattern: 'dirty|uncommitted|unstaged|working tree'
+    flags: i
+
+  - name: tells-the-user-what-to-do
+    type: regex
+    target: last_message
+    pattern: 'commit|stash'
+    flags: i
+
+  - name: rewrites-no-history
+    type: tool_used
+    tool: Bash
+    input_match: 'git(?:\s+-[Cc]\s*\S+)*\s+rebase|commit --fixup|git(?:\s+-[Cc]\s*\S+)*\s+commit|--amend|git(?:\s+-[Cc]\s*\S+)*\s+reset|git(?:\s+-[Cc]\s*\S+)*\s+stash'
+    min: 0
+    max: 0
+    arm: both
+
+  - name: never-pushes
+    type: tool_used
+    tool: Bash
+    input_match: 'git(?:\s+-[Cc]\s*\S+)*\s+push'
+    min: 0
+    max: 0
+    arm: both
