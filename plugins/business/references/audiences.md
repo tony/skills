@@ -70,8 +70,9 @@ by sourcing figures only from the public case study.
 1. Run the scanner (by its absolute path) over the draft, passing each name on the
    `Names:` line of the run's `README.md` as `--deny`, one flag per
    name. When the README has no `Names:` line, stop and ask the user
-   for the names to deny (`Names: none` is a valid answer); never scan
-   with an empty deny list:
+   for the names to deny (`Names: none` is a valid answer, meaning no `--deny` flags, never
+   `--deny none`). List organization and team names as bare words
+   ("Atlas", not "Atlas team"):
 
    ```console
    $ ../scripts/business.py scan \

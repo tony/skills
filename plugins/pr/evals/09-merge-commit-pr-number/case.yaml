@@ -41,7 +41,7 @@ graders:
   - name: writes-nothing-to-git
     type: tool_used
     tool: Bash
-    input_match: 'git (commit|merge|push|tag)'
+    input_match: 'git (commit|push)\b|git merge( |$)|git tag +(-a|-s|-m|-f|[A-Za-z0-9])'
     min: 0
     max: 0
     arm: both

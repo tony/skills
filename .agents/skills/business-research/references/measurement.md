@@ -63,7 +63,8 @@ Annual_hours_saved = V * F * t * s * a * r
 - `V` — addressable population: people whose work contains the task.
 - `F` — instances per person per period.
 - `t` — baseline time per instance (measured, not self-reported).
-- `s` — savings rate net of the verification tax.
+- `s` — savings rate net of the verification tax. When the run has
+  `S_inst` and `t_manual`, `s = S_inst / t_manual`.
 - `a` — adoption: active use, not license-holding. Strictly < 1.0.
 - `r` — realization: the fraction of gross saved time that becomes
   usable capacity, since scattered minutes rarely convert. Strictly

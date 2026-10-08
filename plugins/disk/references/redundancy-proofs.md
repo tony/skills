@@ -80,7 +80,7 @@ proves redundancy. Either one alone does not.
 ## Required proof for "mergeable"
 
 A candidate is mergeable into a keeper when it holds unique files and
-no shared path differs in content. The merge is then additive — no
+no shared path differs in content. The merge is then additive; no
 existing file is written.
 
 Never write into an agent history store with `rsync`: the owning tool

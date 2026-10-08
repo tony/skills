@@ -11,7 +11,7 @@ system Python.
 1. Read the pytest version:
 
    ```console
-   $ python -c "import pytest; print(pytest.__version__)"
+   $ python3 -c "import pytest; print(pytest.__version__)"
    ```
 
 2. Probe flags that may be absent (cheaper and more reliable than version math
@@ -24,13 +24,13 @@ system Python.
 3. Probe plugin presence and version:
 
    ```console
-   $ python -c "import importlib.metadata as m; [print(d, next((x.version for x in m.distributions() if x.metadata['Name'].lower() == d), 'missing')) for d in ('pytest-xdist', 'pytest-randomly', 'pytest-timeout')]"
+   $ python3 -c "import importlib.metadata as m; [print(d, next((x.version for x in m.distributions() if x.metadata['Name'].lower() == d), 'missing')) for d in ('pytest-xdist', 'pytest-randomly', 'pytest-timeout')]"
    ```
 
 4. For API features, import-probe:
 
    ```console
-   $ python -c "import pytest; print(hasattr(pytest, 'StashKey'))"
+   $ python3 -c "import pytest; print(hasattr(pytest, 'StashKey'))"
    ```
 
 5. Record each feature as `{available, version, flag, fallback}` in

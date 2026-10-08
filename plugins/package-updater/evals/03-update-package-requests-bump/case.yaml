@@ -3,7 +3,7 @@ name: 03-update-package-requests-bump
 description: >-
   A named bump on a repository whose pyproject.toml pins requests: the
   version is looked up before it is claimed and nothing is claimed committed
-  without a commit.
+  without a commit. Runs offline, so a halt passes.
 tags: [fixture, routing]
 
 context:

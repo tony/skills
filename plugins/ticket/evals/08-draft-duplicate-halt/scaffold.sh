@@ -14,7 +14,12 @@ cat >bin/glab <<'SH'
 #!/usr/bin/env bash
 case "$1 $2" in
   "auth status") echo "gitlab.com: Logged in as demo" ;;
-  "issue list") printf '#3\tCSV export drops the last row on large files\t(closed)\n' ;;
+  "issue list")
+    case " $* " in
+      *" --all "*|*" -A "*|*" --closed "*|*" -c "*)
+        printf '#3\tCSV export drops the last row on large files\t(closed)\n' ;;
+      *) echo "No open issues match your search" ;;
+    esac ;;
   "issue view") printf '#3 CSV export drops the last row on large files\nState: closed\nThe export loses its final row when the file is large.\nComments: none\n' ;;
   "issue create"|"issue note"|"issue update") echo "$*" >>write.log; echo "https://gitlab.com/acme/widgets/-/issues/8" ;;
   *) echo "unsupported: $*" >&2; exit 1 ;;

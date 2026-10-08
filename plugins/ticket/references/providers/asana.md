@@ -1,6 +1,6 @@
 # Asana
 
-Contents: Scope; Native hierarchy; Semantic roles; Orthogonal objects; References and autolinks; Reading and writing; Naming traps.
+Contents: Scope; Native hierarchy; Semantic roles; Orthogonal objects; References and autolinks; Reading and writing; Duplicate search; Naming traps.
 
 ## Scope
 
@@ -130,6 +130,13 @@ Python or JavaScript client library.
 The writing gotcha that outranks the rest: send HTML, never markdown. A body drafted in
 markdown is stored and displayed as literal asterisks and brackets. Convert before the
 write, and validate the fragment parses as XML.
+
+## Duplicate search
+
+Search with the connected tool's search call, and include completed,
+closed, or archived items. UNVERIFIED: this file names no filter for
+that; read the tool's parameters first. A search that cannot include
+closed items goes under Unverified.
 
 ## Naming traps
 

@@ -73,6 +73,18 @@ $ uv run pytest -q \
     && uv run scripts/skill_evals.py check
 ```
 
+Plugin scripts and their tests use only the standard library, so the tests
+also run on 3.9 with nothing installed but pytest:
+
+```console
+$ uv run \
+    --no-project \
+    --isolated \
+    --python 3.9 \
+    --with pytest \
+    pytest -q plugins
+```
+
 ### End-to-end install
 
 Installs every plugin into both hosts under a throwaway `HOME`; needs

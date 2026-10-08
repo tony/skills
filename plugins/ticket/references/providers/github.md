@@ -1,6 +1,6 @@
 # GitHub
 
-Contents: Scope; Native hierarchy; Semantic roles; Orthogonal objects; References and autolinks; Reading and writing; Naming traps.
+Contents: Scope; Native hierarchy; Semantic roles; Orthogonal objects; References and autolinks; Reading and writing; Duplicate search; Naming traps.
 
 ## Scope
 
@@ -116,7 +116,7 @@ bare reference form.
 `--project`, `--type`, `--parent`, `--blocked-by` and `--blocking`, so a
 drafted body goes in from a file undamaged by shell quoting. The scratch path
 comes from the skill's filing step. `--type` takes an issue type the owner
-defines (confirm with `gh issue create --help`); add it only when the
+defines; add it only when the
 user names one.
 
 ```console
@@ -126,7 +126,7 @@ $ gh issue create --title "..." --body-file "<scratch path>"
 `gh issue edit`, `gh issue view` and `gh project item-add` cover rewriting an
 Issue and attaching it to a Project. Sub-issue relations are CLI flags: `--parent` on create, and `--parent`,
 `--add-sub-issue`, `--remove-sub-issue` and `--remove-parent` on `gh issue edit`.
-Run `gh issue create --help` to confirm the installed version has them.
+A flag the installed version lacks fails the command; report that and print the body instead.
 
 Reach for REST only where the CLI does not go — `PATCH
 /repos/{owner}/{repo}/issues/{issue_number}/sub_issues/priority` to reorder,
@@ -137,6 +137,15 @@ number. GitHub also maintains an official MCP server, remote at
 mode ([GitHub MCP Server][mcp]); prefer read-only until a write is approved.
 Preview the render first: autolinks, label chips and cross-references only
 appear then.
+
+## Duplicate search
+
+Search open and closed items together; `gh issue list` hides closed ones by
+default.
+
+```console
+$ gh issue list --state all --search "<keywords>"
+```
 
 ## Naming traps
 

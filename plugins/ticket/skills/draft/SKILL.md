@@ -78,8 +78,10 @@ you put in its fields.
 
 ## Phase 4: Look for the thing that already exists
 
-Search open and closed items, and read each candidate before dismissing
-it. When one matches, open or closed, name it, stop, and offer one
+Search open and closed items with the "Duplicate search" command in the
+provider file, and read each candidate before dismissing it. A search
+that could not include closed items goes under Unverified as "Closed
+items not searched". When one matches, open or closed, name it, stop, and offer one
 thing: a comment on it with the new evidence. Draft nothing, and offer
 no new item or reopening until the user asks.
 
@@ -149,7 +151,8 @@ Body rules:
    symptom restated and nothing more.
 3. Report no reproduction status, cause, or vendor requirement the
    reporter or the provider file did not state. "Repro steps: not
-   provided" is the whole fact.
+   provided" is the whole fact. A defect title names the symptom as
+   reported and no cause; the Summary adds scope and does not restate it.
 4. State each fact once, in the one section that owns it. A version
    lives in Environment or Summary, an error string in Actual, a count
    or figure in one sentence, a component name in one place. Do not echo
@@ -189,10 +192,11 @@ Show the result in this order:
 2. `## Title`, then `## Body`.
 3. `## Changed from your request`, only when you altered something the
    user asked for. Give the reason for each change in the user's terms
-   ("a checkbox list reads as a requirement"). Never cite this skill's
-   rules, and never claim anything about the project's state or the
-   work's success ("nobody has measured it yet", "that way the Project
-   names the result").
+   ("a checkbox list reads as a requirement"), taken from the request's
+   own wording. Never cite this skill's rules, predict consequences ("it
+   would lock the Project into one engine"), or claim anything about the
+   project's state or the work's success ("nobody has measured it yet",
+   "that way the Project names the result").
 4. `## Unverified`, only when the draft carries marked-unverified items.
    Backend and run status go here, naming tools as the user knows them
    (`glab`), never as a stub, fixture, or sandbox. An item never says a
@@ -239,8 +243,10 @@ Should I file it, print the body by itself, revise a section, or drop it?
 ```
 
 A halted run (a vulnerability, unsanitizable evidence, a duplicate
-found) is one result sentence, then what the user needs to do, as plain
-bullets with no bold lead-ins and no draft. Reply in this shape:
+found) is one result sentence starting "Halted:", then what the user
+needs to do, as plain bullets with no bold lead-ins, no second
+paragraph, no speculation about causes, and no draft. A duplicate names the match in that sentence
+("Halted: #3 already covers this."). Reply in this shape:
 
 ```text
 Halted: this looks like a security vulnerability, so no public issue
@@ -250,7 +256,10 @@ was drafted.
 - Share details only through that channel.
 ```
 
-File through a real backend when the provider file says one exists. The
+File through a real backend when the provider file says one exists.
+Take flags from the provider file; do not probe a write command with
+`--help`, a dry run, or a test item, since a CLI or stub may treat it as
+the call. The
 body derives from a pasted report, so save the approved body as
 `../../references/resolve.md` describes under "Scratch files for
 bodies": a private directory, the host's file-writing tool, never a
@@ -263,8 +272,21 @@ show the path to the user.
 Where no backend exists, print the approved body for the user to paste
 and say plainly that is what is happening.
 
-Return the URL when there is one, then offer the next step: open it, add
-a comment, or start a branch for it.
+After filing, stop: no options panel and no offer of a next step. Reply
+in this shape, as plain text outside any code fence, with plain bullets,
+no bold (never `- **Label:** ...`), and no local paths:
+
+```text
+Filed as WIDGET-91, a Jira work item: https://example.atlassian.net/browse/WIDGET-91
+
+## Unverified
+
+- Repro steps: not provided.
+```
+
+The hero line holds the key, the provider's noun, and the URL when there
+is one. Do not repeat the Title or Body. Keep `## Unverified` only for items that still apply, and omit
+it otherwise.
 
 ## Rules
 

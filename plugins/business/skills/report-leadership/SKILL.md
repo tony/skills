@@ -20,7 +20,8 @@ until the gate passes:
 - `../../references/measurement.md`: the value build, break-even,
   guardrails, the counterfactual ladder.
 - `../../references/evidence.md`: external context for the
-  pre-answered objections. Re-verify the sources you cite first.
+  pre-answered objections. Re-verify the sources you cite first Without a
+  fetch tool, ask the user to confirm each figure you cite; do not narrate the missing tool.
 - `../../references/audiences.md`: the tier-0 contract.
 
 User arguments: $ARGUMENTS
@@ -70,6 +71,8 @@ Write `<run>/reports/leadership.md` with this fixed structure:
    skill.
 
 Write it per `../../references/prose-rules.md`.
+
+Then run the money check, step 4 of `interim-format.md` § Rendering a report.
 
 ## Output
 

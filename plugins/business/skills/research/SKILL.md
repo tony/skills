@@ -117,8 +117,9 @@ Rendering a report. Then exactly these sections:
 3. `## Collected`: per instrument, what the data shows and what landed
    in `raw/` and `measurements/`; one fact per bullet, one sentence per
    bullet.
-4. `## Package`: the run location, count of registered assumptions, and
-   the open unknowns.
+4. `## Package`: the run location, the count of registered assumptions,
+   and the count of open unknowns; the unknowns themselves stay in
+   `findings.md`.
 
 End with an `AskUserQuestion` panel: generate a report (ask which
 tier), collect more, or stop.

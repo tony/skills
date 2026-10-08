@@ -55,7 +55,7 @@ test commands. Refuse to run unless all hold, checking in this order:
 
 - `state.json` has `completed.plan=true`. Otherwise stop: the plan was never
   approved, so run `pytest-optimizer:02-plan`;
-- its `plan_hash` equals the output of `measure.py hash plan.json`. Otherwise
+- its `plan_hash` equals the output of `measure.py hash <memory-dir>/plan.json`. Otherwise
   stop: the plan changed after approval, so approve it again with
   `pytest-optimizer:02-plan`. Name the one check that failed, never both;
 - `git rev-parse --show-toplevel` neither equals nor contains the physical home
@@ -65,9 +65,12 @@ test commands. Refuse to run unless all hold, checking in this order:
   exclude file (`git rev-parse --git-path info/exclude`), so cleanup cannot
   delete it;
 - `git status --porcelain` is empty (the excluded memory directory does not
-  show). A dirty tree on a resumed run means a crash left an item half applied:
-  show `git status --short` and, once the user confirms the changes are the
-  run's own, discard them with the `restore` command in Step 2.4. Without an
+  show). A failed precondition is never waived: plan approval, a benign
+  explanation, or files that look host-made (untracked dotfiles) do not
+  excuse it, because `restore` deletes untracked files. Stop and list the
+  files from `git status --short`. Only on a resumed run, where a crash left an
+  item half applied, discard them with the `restore` command in Step 2.4, and
+  only once the user confirms the changes are the run's own. Without an
   interactive question tool, stop and name that command.
 
 If the last log entry has `pending_subject` and no `commit_sha`, a crash fell
@@ -99,10 +102,10 @@ For each plan item not yet applied:
    and the non-passing count (`total - passed`) equals the baseline's.
    For a typing or parametrize item (H26–H32), the type checker must cover
    `tests/` and pass; such an item records no timing.
-3. **On success** — commit this change **alone** with the drafted why/what
+3. **On success** — commit this change by itself with the drafted why/what
    message, written per `references/prose-rules.md`. No `Co-Authored-By`,
    no "Generated with" or other tool trailer, no emoji: hosts add them by
-   default. First write the log entry with `pending_subject`, then commit, then
+   default. Do not mention the omission in the reply. First write the log entry with `pending_subject`, then commit, then
    record the `commit_sha` and the verify run's `seconds`.
 
    When the commit fails after a green verify (a hook rejects it, signing is
@@ -122,7 +125,10 @@ For each plan item not yet applied:
    ```
 
    Exit 1 means it refused and changed nothing: stop and report its `reason`.
-   Otherwise mark the item `skipped` with the reason and continue.
+   Otherwise mark the item `skipped` with the reason, mark every item whose
+   `depends_on` names it `skipped` too ("depends on a skipped item"), and
+   continue. The tree was clean before the item, so `git clean -fd` removes
+   only what the item created.
 5. **Checkpoint** — complete the entry in `execution-log.json` and update
    `state.json` (`phase=execute`, `last_applied_index`) immediately, so a re-run
    continues from the last checkpoint.
@@ -140,7 +146,7 @@ report the verify result in the reply.
 After the plan is exhausted (a dry run skips this re-measure and sets no flag), set
 `completed.execute=true`. Resolve and create `<runs-dir>` per
 `references/memory-schema.md` ("Run files"), delete `post-runs.jsonl` there,
-time `--runs` runs as `00-scan` Step 4 does into it, and compare against
+time as many runs as `baseline.json` recorded, as `00-scan` Step 4 does into it, and compare against
 `baseline.json`, passing the last item's `expected_total`:
 
 ```console
@@ -151,14 +157,17 @@ $ python3 <measure.py> compare \
 ```
 
 Emit the
-`03-execute` sections from `references/output-contract.md`. Write the
-prose per `references/prose-rules.md`.
+`03-execute` sections from `references/output-contract.md`, hero line
+first (`✓ 1 applied, 1 skipped`), nothing before it. Write the prose per
+`references/prose-rules.md`. Add at most one closing sentence, and no
+commentary on trailers, sandbox placeholders, or what the host adds.
 
 ## Step 4: Offer another pass
 
 Close with an `ask-user-choice` panel: re-scan for a second pass (new candidates
 may surface on a leaner suite), scaffold the opt-in cache/timing plugin, or stop.
-Without one, stop after the report. A re-scan restarts at
+Without one, stop after the report and name the single next step in one sentence,
+not a list of options. A re-scan restarts at
 `pytest-optimizer:00-scan` with a fresh baseline.
 
 

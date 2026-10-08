@@ -11,8 +11,8 @@ headings, declared order, no invented sections.
 
 ## Shape
 
-1. **Hero block** (1-4 lines, optional): a `⚠`/`✓` prefix or a one-line summary,
-   no prose paragraphs.
+1. **Hero block** (1-4 lines, required on every reply that has sections): a `⚠`/`✓`
+   prefix or a one-line summary, no prose paragraphs.
 2. **Body sections** in the order each command declares (below). Skip a section
    only when it is empty, and say so in one line.
 3. **Next-step panel**: an `ask-user-choice` so the user can act without composing

@@ -51,7 +51,7 @@ Use only the sections that fit the change, in proportion to the diff: a one-file
 
 `## Summary`: 3-7 plain bullets.
 - Each bullet opens with an impact verb (Fix, Add, Remove, Replace, Migrate), in plain text. Bold only a term the reader must not miss, never a label on every bullet.
-- Each bullet is one clause of what changed and why, with no relative clause that restates the mechanism and no colon or semicolon that sets up a reveal ("...concurrently: two threads could read...").
+- Each bullet is one short clause of what changed, 15 words or fewer, ending after the change or its direct impact. Put the mechanism in its own bullet or leave it to the code: no trailing relative or purpose clause ("that", "where", "which", "so that") and no colon or semicolon that sets up a reveal.
 - A reviewer should understand the full scope from the summary alone.
 - For non-trivial changes, include the motivation.
 
@@ -68,7 +68,7 @@ Use only the sections that fit the change, in proportion to the diff: a one-file
 - Run each command first and include it only when its result matches the claim.
 
 `## Test plan`: a checklist.
-- Run the project's test, lint, and typecheck commands (named in the project's AGENTS.md or CLAUDE.md) before drafting. Mark `- [x]` only for what you ran this session and it passed; mark `- [ ]` for the rest. Stop a command that runs past about two minutes and mark its item `- [ ]`. Never narrate test setup or how you ran them (missing packages, calling functions directly); report only pass or fail.
+- Run the project's test, lint, and typecheck commands (named in the project's AGENTS.md or CLAUDE.md) before drafting. Mark `- [x]` only for what you ran this session and it passed; mark `- [ ]` for the rest. Stop a command that runs past about two minutes and mark its item `- [ ]`. Never narrate test setup or how you ran them (missing packages, calling functions directly), in the description or in the reply around it. When a command cannot run, leave its item `- [ ]` and give no reason; the reply's second line is then "Did not run the project's tests."
 - Each item says what is validated, not just the command; name specific tests when they exist.
 - For removal or migration PRs, add "verify zero matches for X" items.
 
@@ -108,7 +108,7 @@ Title: metrics(fix[counter]) Stop losing hits under concurrent requests
 ```markdown
 ## Summary
 
-- Fix a race in `Counter.record()` that dropped concurrent hits.
+- Fix lost hits in `Counter.record()` under concurrent requests.
 
 ## Test plan
 

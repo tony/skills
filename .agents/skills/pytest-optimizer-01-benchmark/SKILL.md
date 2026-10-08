@@ -70,10 +70,13 @@ any change. Run steps 1, 3 and 5 once with no change applied, append its runs to
 $ python3 <measure.py> band <runs-dir>/control-runs.jsonl > <memory-dir>/control.json
 ```
 
+When `band` exits 1 the control run is invalid (non-zero exit or a changed
+test count): stop, report its `reason` in one sentence, and run no candidate.
+
 Judge every candidate against `control.json`, not `baseline.json`. When the
 control's median differs from the baseline's by more than the baseline band,
 say so in the closing line: absolute times from this phase are not comparable
-to the baseline's.
+to the baseline's. When it does not differ, say nothing about the control.
 
 **Per hypothesis.** For each open hypothesis, in isolation:
 
@@ -94,6 +97,14 @@ to the baseline's.
 
    ```console
    $ git worktree add --detach <scratch-dir> HEAD
+   ```
+
+   When the host refuses the worktree (it writes under the git directory), fall
+   back to an export of `HEAD` into the scratch directory, and skip the
+   `git worktree remove` in step 5:
+
+   ```console
+   $ git archive HEAD | tar -x -C <scratch-dir>
    ```
 
    An editable install imports the original tree, so a hypothesis that edits
@@ -143,7 +154,7 @@ to the baseline's.
    rejects the candidate and surfaces the prerequisite refactor as its own
    follow-up hypothesis. A parallelism candidate (H19) also runs 5-10 times,
    with the grouping (H20) and single-exec (H21) fixes from the same reference.
-5. **Discard** the scratch worktree and prune its record:
+5. **Discard** the scratch worktree and prune its record (an exported copy is just deleted with `rm -rf <scratch-dir>`, a path this run created):
 
    ```console
    $ git worktree remove --force <scratch-dir>

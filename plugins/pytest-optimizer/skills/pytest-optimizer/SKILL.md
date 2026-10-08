@@ -66,11 +66,11 @@ directory.
    Prefix the project's runner when it has one (`uv run pytest --version`,
    `tox -e py -- --version`).
 
-If there is no pytest suite, stop with the halted-run shape below. A saving is a measured number: when
+If there is no pytest suite, or pytest cannot start for the project's command, stop with the halted-run shape below, naming that one cause. A saving is a measured number: when
 nothing was run, state no projected timing, and call a scope change a
 hypothesis to benchmark, not a fix.
 
-A halted run (no suite here, or a prior phase's output missing) is one result
+A halted run (no suite here, pytest cannot start, or a prior phase's output missing) is one result
 sentence naming the first check that failed, then one sentence on what the user
 does, with no sections, panel, bold, local paths, or projected timings. Write it
 per `../../references/prose-rules.md`. Reply in this shape, as plain text outside

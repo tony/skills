@@ -76,6 +76,8 @@ it up before it appears here.
 
 Write it per `references/prose-rules.md`.
 
+Then run the money check, step 4 of `interim-format.md` § Rendering a report.
+
 ## Output
 
 Hero success form: `✓ Org-wide projection: <conservative figure with

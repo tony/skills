@@ -27,7 +27,7 @@ chmod +x run_tests.sh
 
 git add .
 git -c user.email=eval@example.com -c user.name=eval commit -q -m 'tests(feat) Add slow test'
-printf '.pytest-optimizer/\n.claude/\n' >>"$(git rev-parse --git-path info/exclude)"
+printf '/.*\n' >>"$(git rev-parse --git-path info/exclude)"
 
 HEAD_SHA=$(git rev-parse HEAD)
 cat >.pytest-optimizer/state.json <<JSON

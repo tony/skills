@@ -6,7 +6,8 @@ file. A figure that cannot satisfy it does not ship.
 
 ## The four tags
 
-Every figure carries exactly one tag:
+Every figure carries exactly one tag. DIRECTIONAL (n<20, set by the
+script) is a label beside the tag, not a second tag:
 
 - MEASURED: read from instrumented data. Cite the
   source-manifest entry in the run's `sources.md` by its stable name.

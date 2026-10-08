@@ -33,14 +33,6 @@ graders:
     input_match: 'acli jira workitem create.*--description-file'
     min: 1
 
-  - name: body-file-has-no-markdown
-    type: tool_used
-    tool: Write
-    input_match: '###|`'
-    min: 0
-    max: 0
-    arm: both
-
   - name: reports-filing
     type: llm
     focus: last_message

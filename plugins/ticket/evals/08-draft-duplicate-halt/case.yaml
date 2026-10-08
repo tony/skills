@@ -37,7 +37,7 @@ graders:
     type: llm
     focus: last_message
     criteria: |
-      The reply names the existing closed issue (#3) as a match, says it is
-      not filing a new issue, and offers to comment on that issue with the new
+      The reply names the existing closed issue (#3) as a match, stops
+      without drafting or filing a new issue, and offers to comment on that issue with the new
       evidence. It does not present a full drafted title and body for a new
       issue and does not claim anything was filed.

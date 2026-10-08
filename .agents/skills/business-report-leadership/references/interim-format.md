@@ -198,6 +198,17 @@ Value is engineer-hours, cycle time, and capacity, never money.
 2. Run the completeness gate (above). Load the skill's other references only
    after it passes.
 3. Render the body, then write the report to `<run>/reports/<name>.md`.
+4. Check the finished report for money. This is the last step before the
+   reply; use the absolute path to the script:
+
+   ```console
+   $ references/business.py scan \
+       --rules currency,money-term \
+       <run>/reports/<name>.md
+   ```
+
+   Reword every hit and rerun until it prints `clean`. Say the report was
+   scanned only after this ran.
 
 ### Finished run
 
@@ -261,14 +272,19 @@ the panel instead.
 A run that halts (run not found, gate failed, missing input, failed
 sweep) is one hero line `⚠ Refused: <reason in one sentence>`, then
 one short paragraph or list of what the user must do next, two
-sentences at most. No `Run`, `Gate`, or `Report` sections, no panel,
-no list of checks performed, no sentence that repeats the hero, the
-run name, or a question already asked, and when no run is found, say "no business run found" without naming the roots searched, which may be incomplete; no negation narration ("I did not use a default") or
-sandbox fact ("I cannot ask you here"). State only what a command
-printed: never claim a check failed that did not run, never report an
-exit status the script does not define (`runs` prints nothing and
-exits 0 when it finds no run), and never describe references that
-were not loaded.
+sentences at most. Never include:
+
+- `Run`, `Gate`, or `Report` sections, or a panel.
+- A list of checks performed.
+- A sentence that repeats the hero, the run name, or a question already
+  asked.
+- The roots searched, when no run is found; say "no business run found".
+  Never write a directory such as `~/Documents`.
+- Negation narration ("I did not use a default") or a sandbox fact ("I
+  cannot ask you here").
+- A claim that a check failed when it did not run, an exit status the
+  script does not define (`runs` prints nothing and exits 0 when it finds
+  no run), or a description of references that were not loaded.
 
 ```text
 ⚠ Refused: sources.md has an entry with no output file.

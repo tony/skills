@@ -65,6 +65,11 @@ Where the user names a CLI or API, confirm the exact invocation with them
 before running it. An unverified write path against an unknown tracker is
 worth one question.
 
+## Duplicate search
+
+No backend means no search. List "Duplicate check not run" under
+Unverified.
+
 ## Naming traps
 
 Use the nouns the user uses, and mirror them back exactly. When their noun

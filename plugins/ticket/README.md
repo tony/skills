@@ -76,13 +76,14 @@ canonical roles (for example, Linear Project is close to Jira Epic).
 
 - Files when a backend is connected: GitHub (`gh`), GitLab (`glab`),
   Azure DevOps (`az`), Jira (`acli`, plain text), Linear, Asana, and
-  Shortcut (MCP server), Trello (MCP or REST).
-  Jira bodies are filed as plain text, so a body with a table or a nested
-  list is printed instead.
+  Shortcut (MCP server), Trello (MCP or REST). Jira bodies are filed as
+  plain text, so a body with a table or a nested list is printed
+  instead.
 - Prints the body to paste: any other tracker, and any provider above
   with no backend connected.
 
 ## Prerequisites
 
-- `gh`: for GitHub.
+- `gh`: for GitHub. `glab`: for GitLab. `acli`: for Jira. `az` with the
+  `azure-devops` extension: for Azure DevOps.
 - Works locally for other providers or falls back to text emission.

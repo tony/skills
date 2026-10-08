@@ -29,8 +29,10 @@ with the approval question, and states projected figures as projections.
 A declined environment halt (the user asked the agent to run
 `wsl --shutdown` itself) uses the same shape. Add a line saying what the
 shutdown interrupts, then the command in a `powershell` fence for the
-user to run. Print it only when something was freed that compaction would
-return; when nothing was freed, say no shutdown is needed yet.
+user to run. Print it when the balloon is measured above zero or
+unmeasured, since compaction returns space without any deletion. Say
+"not yet known" when the backing file could not be read, and say no
+shutdown is needed only when the balloon was measured near zero.
 
 Reply in this shape, as plain text outside any code fence, with plain
 bullets, no bold (never `- **Label:** ...`), and no local paths:
@@ -195,8 +197,8 @@ State a claim about what a tool supports (for example, that it reads
 compressed transcripts) only with the help text, docs page, or binary
 string you read; otherwise say it was not checked.
 
-Use GiB for every size in a reply, converting what a tool printed
-(`1007G`, `14 GB`), and write `~` instead of the home path in commands.
+Use GiB at or above 1 GiB and MiB or KiB below it, one unit per
+figure, converting what a tool printed (`1007G`, `14 GB`), and write `~` instead of the home path in commands.
 
 Name what was skipped. A report that silently omits protected history
 reads as having missed it rather than having preserved it.

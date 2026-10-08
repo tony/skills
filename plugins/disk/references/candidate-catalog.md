@@ -87,7 +87,7 @@ Trash and recycle directories; old tool version installs; superseded
 toolchain versions; downloads; workspace snapshots from tools no longer
 in use.
 
-Present these individually with size, age, and what created them. A
+Present these individually with size, age,. A
 blanket "clear stale data" approval does not cover this tier.
 
 ## Protected

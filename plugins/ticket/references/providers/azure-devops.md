@@ -1,6 +1,6 @@
 # Azure DevOps (Azure Boards)
 
-Contents: Scope; Native hierarchy; Semantic roles; Orthogonal objects; References and autolinks; Reading and writing; Naming traps.
+Contents: Scope; Native hierarchy; Semantic roles; Orthogonal objects; References and autolinks; Reading and writing; Duplicate search; Naming traps.
 
 ## Scope
 
@@ -133,6 +133,15 @@ $ az boards work-item create --title "..." --type "User Story" --project "..." -
 
 A field is either Markdown or HTML, and a Markdown comment cannot be converted back to HTML. Detect
 the field's editor before emitting Markdown; HTML fields need HTML, and a soft line break needs two trailing spaces.
+
+## Duplicate search
+
+Search every state; a WIQL query with no `System.State` clause includes
+closed work items.
+
+```console
+$ az boards query --wiql "SELECT [System.Id], [System.Title], [System.State] FROM WorkItems WHERE [System.Title] CONTAINS '<keywords>'"
+```
 
 ## Naming traps
 

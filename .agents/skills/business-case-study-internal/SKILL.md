@@ -54,6 +54,8 @@ Anonymize individuals to roles. Team and repo names stay.
 
 Write it per `references/prose-rules.md`.
 
+Then run the money check, step 4 of `interim-format.md` § Rendering a report.
+
 ## Output
 
 Hero success form: `✓ Case study: <one-line outcome with tag>`.

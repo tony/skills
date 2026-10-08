@@ -1,6 +1,6 @@
 # Jira
 
-Contents: Scope; Native hierarchy; Semantic roles; Orthogonal objects; References and autolinks; Reading and writing; Naming traps.
+Contents: Scope; Native hierarchy; Semantic roles; Orthogonal objects; References and autolinks; Reading and writing; Duplicate search; Naming traps.
 
 ## Scope
 
@@ -150,6 +150,15 @@ output is unverified here: no acli flag is documented to take markdown.
 
 With none of the three configured, the adapter drafts the body and emits the
 approved text for the user to paste. A normal outcome.
+
+## Duplicate search
+
+Search every status; a JQL query with no `status` clause includes closed
+work items.
+
+```console
+$ acli jira workitem search --jql "project = <KEY> AND text ~ \"<keywords>\""
+```
 
 ## Naming traps
 

@@ -91,6 +91,12 @@ def test_scan_allow_flags() -> None:
     assert [h[3] for h in hits] == ["GPT-4", "https://corp.example/x"]
 
 
+def test_scan_rules_limits_kinds() -> None:
+    text = "ROI of $5 at https://corp.example/x"
+    hits = business.scan_text(text, rules=["currency", "money-term"])
+    assert [h[2] for h in hits] == ["money-term", "currency"]
+
+
 def test_default_roots_survive_unreadable_windows_mount(monkeypatch: pytest.MonkeyPatch) -> None:
     def deny(self: Path, pattern: str) -> t.NoReturn:
         raise PermissionError(13, "denied", str(self))

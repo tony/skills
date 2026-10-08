@@ -467,7 +467,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--override", type=Path)
     parser.add_argument("--added-base")
     parser.add_argument("--historical", action="store_true")
-    args = parser.parse_args(argv)
+    args = parser.parse_intermixed_args(argv)
 
     try:
         sigs, counts = load_registry(args.registry, args.override)

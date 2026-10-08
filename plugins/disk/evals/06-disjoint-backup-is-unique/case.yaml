@@ -47,3 +47,10 @@ graders:
     pattern: 'sandbox|mounted read-only|read-only (mount|file ?system)|file ?system (is|was) read-only|write access|not allowed to'
     flags: i
     match: not_contains
+
+  - name: no-binary-contrast
+    type: regex
+    target: last_message
+    pattern: "(isn't|is not|aren't|are not) [^.:\\n]*:"
+    flags: i
+    match: not_contains

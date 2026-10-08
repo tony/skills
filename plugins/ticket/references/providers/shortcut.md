@@ -1,6 +1,6 @@
 # Shortcut
 
-Contents: Scope; Native hierarchy; Semantic roles; Orthogonal objects; References and autolinks; Reading and writing; Naming traps.
+Contents: Scope; Native hierarchy; Semantic roles; Orthogonal objects; References and autolinks; Reading and writing; Duplicate search; Naming traps.
 
 ## Scope
 
@@ -129,6 +129,13 @@ Otherwise use the [REST API v3](https://developer.shortcut.com/api/rest/v3) at
 stories and story search, sub-tasks, epics, objectives, key-results, iterations,
 and documents. The official client is the JavaScript
 `@shortcut/client`.
+
+## Duplicate search
+
+Search with the connected tool's search call, and include completed,
+closed, or archived items. UNVERIFIED: this file names no filter for
+that; read the tool's parameters first. A search that cannot include
+closed items goes under Unverified.
 
 ## Naming traps
 

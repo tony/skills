@@ -2,7 +2,7 @@ schema_version: "1.0"
 name: 01-updating-packages-toolchain-bump
 description: >-
   Asked to move two toolchain pins and commit each bump, the skill fires and
-  keeps uv and just in separate edits and commits.
+  never merges uv and just into one edit or commit, and sources every version it names. Runs offline, so a halt passes.
 tags: [fixture, routing]
 
 context:

@@ -48,8 +48,8 @@ Read the cooldown configuration of each repository in scope (the
 ecosystems reference lists the keys) and check the package against `holds.md`: a held package stops
 here unless the user is releasing the hold.
 
-If the cooldown hides the target, say when it becomes visible and stop,
-even when the user named the version. Exempt only per
+If the cooldown hides the target, halt with the cooldown halt example in
+`../updating-packages/SKILL.md`, even when the user named the version. Exempt only per
 `../../references/cooldown-exemption.md`, when the release is needed now.
 
 ### 3. Find every pin site
@@ -130,8 +130,8 @@ run.
 ## Output
 
 Open with a one-line hero (`✓ <package> <old> -> <new> across N repos`,
-`⚠ Audit only: <package> <old> -> <new> available in N repos` for
-`--audit-only`, or `⚠ Stopped: <package> <version> visible <date>`), then
+or `⚠ Audit only: <package> <old> -> <new> available in N repos` for
+`--audit-only`; a halt takes its own shape, below), then
 these sections in order, each omitted when it has nothing to report; an
 audit-only run omits `## Commits` and `## Verification`:
 
@@ -175,21 +175,23 @@ Reply in this shape, as plain text outside any code fence, with plain bullets, n
 - api: tests pass, uv.lock resolves.
 ```
 
+Label a repository by its name or directory name, never `cwd`. Never say a tool
+or response is a stub or mock; report only what the lookup returned.
+
 A halted run takes the shape in "Plan stop and halt" in
 `../updating-packages/SKILL.md`; the plan gate is not a halt.
 
 Halt example, same plain-text form:
 
 ```text
-⚠ Stopped: nothing was changed. requests 2.32.4 could not be confirmed as published, and no file pinning it was found.
+⚠ Stopped: nothing was changed. requests 2.32.4 could not be confirmed as published.
 
 To continue:
-- Run the command in the repository that holds the pin, or pass --repo <path>.
-- Allow network access to the package index, or confirm the version from your own source.
+- Confirm the version from your own source.
 - Stop here.
 ```
 
 End with an `AskUserQuestion` panel of next steps, for example: run the
 sweep for the rest of the tree, take a gated release once it ages out,
 land the follow-up separately, or stop here. Without a question tool,
-list the options as text and take none. In plan mode, skip the panel.
+list the options as text under the label `To continue:` (never "Next steps") and take none. In plan mode, skip the panel.

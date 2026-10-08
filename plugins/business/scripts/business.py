@@ -199,11 +199,12 @@ def scan_text(
     deny: Sequence[str] = (),
     allow: Sequence[str] = (),
     allow_url: Sequence[str] = (),
+    rules: Sequence[str] = (),
 ) -> list[tuple[int, int, str, str]]:
     """Return ``(line, column, kind, match)`` for every tier-3 exclusion in ``text``.
 
     ``allow`` skips hits whose text equals an entry; ``allow_url`` skips URLs that
-    start with an entry.
+    start with an entry; a non-empty ``rules`` keeps only those kinds.
 
     Examples
     --------
@@ -219,11 +220,18 @@ def scan_text(
     ['GPT-4']
     >>> scan_text("See https://arxiv.org/abs/2507.09089", allow_url=["https://arxiv.org/"])
     []
+    >>> [h[2:] for h in scan_text("ROI at https://x.example, $5", rules=["currency"])]
+    [('currency', '$')]
     """
-    rules = [*SCAN_RULES, *(("denied-name", re.compile(re.escape(d), re.IGNORECASE)) for d in deny)]
+    patterns = [
+        *SCAN_RULES,
+        *(("denied-name", re.compile(re.escape(d), re.IGNORECASE)) for d in deny),
+    ]
+    if rules:
+        patterns = [(kind, pattern) for kind, pattern in patterns if kind in rules]
     hits: list[tuple[int, int, str, str]] = []
     for number, line in enumerate(text.splitlines(), start=1):
-        for kind, pattern in rules:
+        for kind, pattern in patterns:
             hits.extend(
                 (number, m.start() + 1, kind, m.group())
                 for m in pattern.finditer(line)
@@ -1017,7 +1025,13 @@ def _stats_command(args: Args) -> int:
 
 
 def _scan_command(args: Args) -> int:
-    hits = scan_text(_read(args.files), args.deny, args.allow, args.allow_url)
+    hits = scan_text(
+        _read(args.files),
+        args.deny,
+        args.allow,
+        args.allow_url,
+        [r for r in args.rules.split(",") if r],
+    )
     for line, col, kind, match in hits:
         print(f"{line}:{col}: {kind}: {match}")
     if not hits:
@@ -1058,6 +1072,7 @@ class Args(argparse.Namespace):
     root: list[str] = []  # noqa: RUF012
     allow: list[str] = []  # noqa: RUF012
     allow_url: list[str] = []  # noqa: RUF012
+    rules: str = ""
     run: str = ""
     csv_file: str = ""
     column: str = ""
@@ -1097,6 +1112,12 @@ def main(argv: list[str] | None = None) -> int:
         action="append",
         default=[],
         help="skip URLs starting with this prefix (citation links); repeatable",
+    )
+
+    _ = p_scan.add_argument(
+        "--rules",
+        default="",
+        help="comma-separated kinds to check, e.g. currency,money-term; all when omitted",
     )
 
     p_gate = sub.add_parser("gate", help="completeness gate for a run; exit 1 on any problem")

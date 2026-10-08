@@ -1,6 +1,6 @@
 # Linear
 
-Contents: Scope; Native hierarchy; Semantic roles; Orthogonal objects; References and autolinks; Reading and writing; Naming traps.
+Contents: Scope; Native hierarchy; Semantic roles; Orthogonal objects; References and autolinks; Reading and writing; Duplicate search; Naming traps.
 
 ## Scope
 
@@ -128,6 +128,13 @@ commit refs as full git-host URLs.
   shorthand `ENG-123` as well as a UUID, and create-then-correct may or may not
   stay out of the activity log (UNVERIFIED: no documented window).
 - Official TypeScript SDK, `@linear/sdk`.
+
+## Duplicate search
+
+Search with the connected tool's search call, and include completed,
+closed, or archived items. UNVERIFIED: this file names no filter for
+that; read the tool's parameters first. A search that cannot include
+closed items goes under Unverified.
 
 ## Naming traps
 

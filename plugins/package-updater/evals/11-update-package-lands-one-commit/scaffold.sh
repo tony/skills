@@ -26,7 +26,7 @@ cat >pyproject.toml <<'TOML'
 name = "demo"
 version = "0.1.0"
 dependencies = [
-    "requests>=2.28.0",
+    "requests==2.31.0",
 ]
 TOML
 cat >uv.lock <<'LOCK'

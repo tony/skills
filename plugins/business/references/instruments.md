@@ -73,7 +73,7 @@ unavailable, not worked around.
   forge timestamps are UTC; git author/committer dates are local —
   convert to UTC before windowing, and note the offset. State the
   cohort rule per metric in `sources.md` (for example: PR cycle time
-  by mergedAt-in-window; review latency by createdAt-in-window).
+  by mergedAt-in-window; review latency by mergedAt-in-window too).
 - Snapshot each response to `raw/` and add its `sources.md` entry
   before computing anything from it, except responses that carry
   logins: aggregate those before they reach disk.

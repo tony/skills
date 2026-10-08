@@ -111,9 +111,9 @@ Act on the runner's `class`. It reads stderr only, and only on a nonzero exit.
   - `credit`: go to the next tier that uses a different binary; tiers on
     the same binary share its quota. With none left, stop.
   - `rate-limit`: retry once after 10 seconds.
-- `empty`: the CLI exited 0, so a write-enabled run already acted. Retry once
-  only with `mode:plan`; if that is `empty` too, or the run was already
-  `mode:plan`, stop and report it.
+- `empty`: the CLI exited 0, so a write-enabled run already acted. Do not
+  retry a normal run; report it. An `empty` `mode:plan` run goes to the next
+  tier that uses a different binary; a second `empty` stops the run.
 - `auth` or `unsupported-flag` (nothing ran, so no status check): go to the
   next tier that uses a different binary. With none left, stop and name the
   missing flag.
@@ -153,8 +153,8 @@ When every tier fails or none is installed:
    a paraphrase ("Codex did not return an answer because ...").
 2. One line per tier tried, with its class and the one stderr line that shows
    it. Leave out host, sandbox, and URL detail, and your own diagnosis. After
-   a `timeout`, `crash`, `credit`, `rate-limit`, or `empty` normal run, add one line from this list
-   and nothing more: "The status check found <paths> changed since the run
+   a `timeout`, `crash`, `credit`, `rate-limit`, or `empty` normal run, add one line from this list,
+   worded exactly, and nothing more: "The status check found <paths> changed since the run
    began", "The status check found no changes", "The status check could not
    cover <path>; check `git status`", or, when no check ran, "Files may have
    changed; check `git status`".

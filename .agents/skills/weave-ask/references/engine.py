@@ -1413,6 +1413,9 @@ def dispatch_lane(  # noqa: PLR0913, PLR0915
     """
     session = load_session(session_dir)
     task = task or lane_task(session_dir, lane, n=n)
+    if mutating and task.name not in session.get("worktrees", {}):
+        msg = f"no worktree registered for {task.name}; run worktrees create first"
+        raise EngineError(msg)
     chain = lane_chain(lane, which)
     if not chain:
         return {"ok": False, "lane": lane, "failure_class": "unavailable", "attempts": []}
@@ -1440,11 +1443,7 @@ def dispatch_lane(  # noqa: PLR0913, PLR0915
         while True:
             disposable: Path | None = None
             if mutating:
-                entry = session.get("worktrees", {}).get(task.name)
-                if entry is None:
-                    msg = f"no worktree registered for {task.name}; run worktrees create first"
-                    raise EngineError(msg)
-                workdir = Path(entry["path"])
+                workdir = Path(session["worktrees"][task.name]["path"])
             elif session.get("unguarded"):
                 disposable = workdir = Path(session["scratch"]) / task.name
                 shutil.rmtree(workdir, ignore_errors=True)

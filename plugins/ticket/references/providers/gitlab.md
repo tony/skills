@@ -1,6 +1,6 @@
 # GitLab
 
-Contents: Scope; Native hierarchy; Semantic roles; Orthogonal objects; References and autolinks; Reading and writing; Naming traps.
+Contents: Scope; Native hierarchy; Semantic roles; Orthogonal objects; References and autolinks; Reading and writing; Duplicate search; Naming traps.
 
 ## Scope
 
@@ -146,6 +146,15 @@ ships an official MCP server at `https://<gitlab.example.com>/api/v4/mcp`, when 
 administrator has enabled it ([MCP server][mcp]); it exposes read and write tools, so prefer read until the user
 approves a write. Preview the rendered body before posting — sigils, label chips, `+`
 expansions and cross-references only reveal themselves after render.
+
+## Duplicate search
+
+Search open and closed items together; `glab issue list` hides closed ones by
+default.
+
+```console
+$ glab issue list --all --search "<keywords>"
+```
 
 ## Naming traps
 

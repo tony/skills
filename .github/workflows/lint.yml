@@ -43,6 +43,9 @@ jobs:
       - name: Tests
         run: uv run pytest -q
 
+      - name: Test plugin scripts on Python 3.9
+        run: uv run --no-project --isolated --python 3.9 --with pytest pytest -q plugins
+
       - name: Marketplace lint
         run: uv run scripts/marketplace.py lint
 

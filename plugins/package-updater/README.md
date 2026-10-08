@@ -50,6 +50,7 @@ Each skill runs as `/package-updater:<name>` in Claude Code and
   report). Claude invokes it when packages are out of date.
 
 Defaults: Current repository, commit on default branch, no push.
+
 Flags:
 - `--branch <name>`: Work on a specific branch.
 - `--pr`: Open a pull request.
@@ -68,7 +69,7 @@ Flags:
 Handled by sibling plugins:
 - GitHub Actions `uses:` pins → `/github-actions:update-actions`
 - ruff's floor and rule fallout → `/ruff:bump`
-- Terraform versions, providers, and lock files → `/terraform:bump-provider`
+- Terraform versions, providers, and lock files → `/terraform:bump-provider`, `/terraform:bump-terraform` and `/terraform:refresh-lock`
 
 ## Ecosystem coverage
 

@@ -232,7 +232,7 @@ def test_unmerged_paths_count_once_as_conflicts(
     (repo / "a.txt").write_text("main\n")
     _git(repo, "commit", "-q", "-am", "main")
     merge = subprocess.run(
-        ["git", "merge", "side"],
+        ["git", "-c", "user.email=t@example.com", "-c", "user.name=t", "merge", "side"],
         cwd=repo,
         check=False,
         capture_output=True,

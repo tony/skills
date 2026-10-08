@@ -110,7 +110,7 @@ dependency trees and double-counts nested artifact directories.
 
 Call out three groups explicitly, largest first within each:
 
-- **Huge clones** — the largest by total size, with the `.git` share
+- **Huge clones**: the largest by total size, with the `.git` share
   shown so the user can see where the weight sits.
 - **Unshallow clones** — those reporting `false` with a `.git` directory
   above the survey's size floor (about one percent of the filesystem's

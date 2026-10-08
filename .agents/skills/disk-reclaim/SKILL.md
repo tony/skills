@@ -72,7 +72,7 @@ its own reference counting and leaves the store consistent.
 
 Before any `rm`, run the guard. It resolves the path with `realpath`,
 refuses a target outside the approved scope or overlapping a keeper, and
-prints the target, its size, and its top-level entries. Print the
+prints the target, its size, and its top-level entries. The guard checks scope and keepers, not tier: before each `rm`, say which approved tier and item the target belongs to, and delete nothing the approval did not name. Print the
 absolute path of `references/guarded_rm.py` once (it resolves from this
 file's directory) and write it literally:
 

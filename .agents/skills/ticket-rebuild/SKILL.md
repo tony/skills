@@ -117,8 +117,8 @@ never in the title or Summary, even when the old title named it. The
 title states the outcome, and the Summary names the item's own subjects,
 the largest included ("the retry queue and its failure handling"), with
 the mechanism in Intent. When the item states only mechanisms, the
-Summary restates the subject ("the retry queue") and nothing more, with
-no "gets a circuit breaker", and an item's verb is kept ("add a circuit
+Summary is one sentence naming the subject ("the retry queue") and
+nothing more, with no "gets a circuit breaker", and an item's verb is kept ("add a circuit
 breaker", never "in front of the queue"). When the item states no
 constraint, omit Invariants and list it under Missing, and do not
 suggest a candidate invariant. Do not invent impact or a symptom: the

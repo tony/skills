@@ -36,7 +36,7 @@ $ strings -n 6 <binary> | rg -o '\*\.jsonl|state_db|thread.store|archive[a-z_]*'
 
 ## Detecting native compression support
 
-A tool that compresses its own history is always the correct path —
+A tool that compresses its own history is always the correct path:
 it keeps sessions resumable. Look for three signals together, since any
 one alone is misleading:
 

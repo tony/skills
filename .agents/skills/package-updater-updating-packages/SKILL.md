@@ -305,10 +305,15 @@ Shape, which the three commands in this plugin share:
    need not act on. A report that is not a halt omits any lookup that failed.
    No upstream fact from memory (omit a claim that rests on memory), no speculation about the latest
    release, no narration of this skill's own rules (never "I left out the
-   trailer because the skill says so"), and no promise of later work.
+   trailer because the skill says so", "it has a `why:` because it crosses
+   a 0.x minor"), no note about the harness (a stubbed tool or mocked
+   response), no cooldown config key or file name, and no promise of
+   later work.
 5. End with the next-step options. Without a question tool, list them
    as text under the label `To continue:` and take none. Name the
-   repository by its name, never "cwd repo" or "current repo".
+   repository by its name, never "cwd", "cwd repo" or "current repo"; with
+   no remote name, use its directory name, or no label for a single
+   repository. Label the options `To continue:`, never "Next steps".
 
 ## Plan stop and halt
 
@@ -334,8 +339,8 @@ To continue:
 ```
 
 A halt is a stop for a reason the user must resolve: a scope or ownership
-question, a fork, a cooldown, a failed check, an unconfirmable version, or
-nothing to audit (not a clean result). It prints the hero line
+question, a fork, a cooldown, a failed check, an unconfirmable version, notes
+that cannot be read, or nothing to audit (not a clean result). It prints the hero line
 `⚠ Stopped: nothing was changed.` plus one sentence stating the single
 reason, then the options, and nothing between or
 after: no second paragraph, no section, no plan.
@@ -366,7 +371,17 @@ Example halt, as plain text outside any code fence:
 
 To continue:
 - Confirm the version from your own source.
-- Pass --repo <path> for the repository that holds the pin.
+- Name the repository that holds the pin.
+- Stop here.
+```
+
+Example unreadable-notes halt:
+
+```text
+⚠ Stopped: nothing was changed. The release notes for uv 0.7.8 to 0.8.4 could not be read.
+
+To continue:
+- Paste the notes, or point to where they live.
 - Stop here.
 ```
 

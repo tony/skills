@@ -2,7 +2,7 @@ schema_version: "1.0"
 name: 04-update-toolchain-uv-bump
 description: >-
   A named uv bump with node also pinned: the two tools stay in separate
-  commits and the version is sourced.
+  commits and the version is sourced. Runs offline, so a halt passes.
 tags: [fixture, routing]
 
 context:

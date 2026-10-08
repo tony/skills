@@ -85,6 +85,9 @@ class Walker:
             self.errors.append(f"{path}: {err.strerror}")
             return total
         for entry in entries:
+            if time.monotonic() > self.deadline:
+                self.timed_out = True
+                break
             try:
                 st = entry.stat(follow_symlinks=False)
                 if entry.is_dir(follow_symlinks=False):

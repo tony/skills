@@ -49,7 +49,9 @@ filesystem, sets the size floor at one percent of capacity (so a small
 disk still produces findings and a large one is not drowned), counts
 hardlinks once, never follows symlinks, and lists unreadable paths under
 `errors`. It skips `/mnt` (listed under `skipped`) unless the path you
-give is inside it, so survey a Windows drive only when the user names it.
+give is inside it, so survey a Windows drive only when the user names it. When the user
+scopes the survey to a path, lower `--floor-pct` so caches of a few GiB
+still appear.
 Print the absolute path of `../../scripts/survey.py` once (it resolves
 from this file's directory) and write it literally:
 

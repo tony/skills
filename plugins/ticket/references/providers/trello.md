@@ -1,6 +1,6 @@
 # Trello
 
-Contents: Scope; Native hierarchy; Semantic roles; Orthogonal objects; References and autolinks; Reading and writing; Naming traps.
+Contents: Scope; Native hierarchy; Semantic roles; Orthogonal objects; References and autolinks; Reading and writing; Duplicate search; Naming traps.
 
 ## Scope
 
@@ -145,6 +145,13 @@ assistant can archive a Card or List but cannot permanently delete one.
 With neither backend configured, draft the Card
 title, description, and checklist as Trello-flavored Markdown and emit the approved text
 for the user to paste. That is a normal outcome, not a degraded one.
+
+## Duplicate search
+
+Search with the connected tool's search call, and include completed,
+closed, or archived items. UNVERIFIED: this file names no filter for
+that; read the tool's parameters first. A search that cannot include
+closed items goes under Unverified.
 
 ## Naming traps
 
