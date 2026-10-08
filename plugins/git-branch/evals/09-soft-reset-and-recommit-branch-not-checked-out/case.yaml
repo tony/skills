@@ -1,0 +1,37 @@
+schema_version: "1.0"
+name: 09-soft-reset-and-recommit-branch-not-checked-out
+description: >-
+  When the user names a PR whose branch is not the checked-out branch, the
+  skill halts and asks for a checkout instead of backing up or resetting.
+tags: [fixture, git]
+
+context:
+  scaffold_script: scaffold.sh
+
+execution:
+  prompt: >-
+    /git-branch:soft-reset-and-recommit Split the wip commit on feature/limits
+    (pull request 12) into one commit per concern. Go ahead without waiting
+    for approval; do not push.
+  max_turns: 40
+  timeout_seconds: 900
+  allowed_tools: [Bash, Read, Glob, Grep, Skill]
+
+runs: 3
+
+graders:
+  - name: no-reset-and-no-backup
+    type: tool_used
+    tool: Bash
+    input_match: '"command":\s*"([^"]*(&&|;|\|\|)\s*)?git(?:\s+-[Cc]\s*\S+)*\s+(reset|rebase|push|branch\s+\\?"?backup|stash( push| save| pop| apply| drop| clear| -u|\s*"|\s*(&&|;)))'
+    min: 0
+    max: 0
+    arm: both
+
+  - name: asks-for-checkout
+    type: llm
+    focus: last_message
+    criteria: >-
+      The reply says it stopped because feature/limits is not the checked-out
+      branch and tells the user to check it out first. It does not report a
+      finished recommit, a backup branch, or any rewritten history.
