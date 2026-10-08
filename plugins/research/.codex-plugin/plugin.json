@@ -1,0 +1,28 @@
+{
+  "name": "research",
+  "version": "0.1.0",
+  "description": "Research topics and assess decisions with pinned, captured sources in dated folders. Resume, re-verify, report. Clones dependencies at pinned versions.",
+  "author": {
+    "name": "Tony Narlock",
+    "email": "tony@git-pull.com"
+  },
+  "homepage": "https://github.com/tony/skills/tree/main/plugins/research",
+  "repository": "https://github.com/tony/skills",
+  "license": "MIT",
+  "keywords": [
+    "research",
+    "sources",
+    "citations",
+    "dependencies",
+    "reports"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Research",
+    "shortDescription": "Research topics and assess decisions with pinned, captured sources in dated folders.",
+    "longDescription": "Research topics and assess decisions with pinned, captured sources in dated folders. Resume, re-verify, report. Clones dependencies at pinned versions.",
+    "developerName": "Tony Narlock",
+    "category": "Learning",
+    "websiteURL": "https://github.com/tony/skills/tree/main/plugins/research"
+  }
+}
