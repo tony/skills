@@ -1,0 +1,28 @@
+{
+  "name": "pytest-optimizer",
+  "version": "0.1.0",
+  "description": "Profile and optimize pytest suites. Ranks and applies safe speedups as verified, independent commits.",
+  "author": {
+    "name": "Tony Narlock",
+    "email": "tony@git-pull.com"
+  },
+  "homepage": "https://github.com/tony/skills/tree/main/plugins/pytest-optimizer",
+  "repository": "https://github.com/tony/skills",
+  "license": "MIT",
+  "keywords": [
+    "pytest",
+    "performance",
+    "testing",
+    "fixtures",
+    "profiling"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Pytest Optimizer",
+    "shortDescription": "Profile and optimize pytest suites.",
+    "longDescription": "Profile and optimize pytest suites. Ranks and applies safe speedups as verified, independent commits.",
+    "developerName": "Tony Narlock",
+    "category": "Testing",
+    "websiteURL": "https://github.com/tony/skills/tree/main/plugins/pytest-optimizer"
+  }
+}

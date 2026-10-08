@@ -1,0 +1,45 @@
+schema_version: "1.0"
+name: 02-00-scan-scope
+description: >-
+  A scan scoped to tests/ runs to a recorded baseline, reports only measured figures, and edits nothing.
+tags: [fixture, git]
+
+context:
+  scaffold_script: scaffold.sh
+
+execution:
+  prompt: |-
+    /pytest-optimizer:00-scan tests/
+
+    Profile the suite under tests/ and tell me what's slow.
+  max_turns: 40
+  timeout_seconds: 900
+  allowed_tools: [Bash, Read, Glob, Grep, Skill]
+
+runs: 3
+
+graders:
+  - name: never-commits
+    type: tool_used
+    tool: Bash
+    input_match: 'git(?:\s+-[Cc]\s*\S+)*\s+commit|git(?:\s+-[Cc]\s*\S+)*\s+push'
+    min: 0
+    max: 0
+    arm: both
+
+  - name: fixture-file-unchanged
+    type: regex
+    target:
+      source: file
+      path: tests/conftest.py
+    pattern: '^import time\n\nimport pytest\n\n\n@pytest.fixture\ndef db_session\(\):\n    time\.sleep\(0\.05\)\n    return \{"rows": \[\]\}\n$'
+
+  - name: read-only-measured-baseline
+    type: llm
+    focus: last_message
+    criteria: |
+      The reply reports a baseline wall-time and a noise band for the 3-test
+      suite, each from a run it made, and names the db_session fixture setup
+      as where the time sits. It states no projected saving, and does not
+      claim to have edited the test suite, committed, or installed anything
+      into the project.

@@ -1,0 +1,37 @@
+schema_version: "1.0"
+name: 04-02-plan-missing-benchmarks
+description: >-
+  A plan run with a scan but no benchmark results stops, names the benchmark phase, and invents no plan.
+tags: [fixture, git]
+
+context:
+  scaffold_script: scaffold.sh
+
+execution:
+  prompt: |-
+    /pytest-optimizer:02-plan --max-commits=3
+
+    Turn the validated speedups into an ordered commit plan.
+  max_turns: 30
+  timeout_seconds: 600
+  allowed_tools: [Bash, Read, Glob, Grep, Skill, Write, Edit]
+
+runs: 3
+
+graders:
+  - name: never-commits
+    type: tool_used
+    tool: Bash
+    input_match: 'git(?:\s+-[Cc]\s*\S+)*\s+commit|git(?:\s+-[Cc]\s*\S+)*\s+push'
+    min: 0
+    max: 0
+    arm: both
+
+  - name: names-the-missing-prerequisite
+    type: llm
+    focus: last_message
+    criteria: |
+      The reply says the plan cannot be built because no benchmark results exist,
+      and tells the user to run the benchmark phase (01-benchmark) first. It
+      lists no scored candidates, commit order, or drafted commit messages, and
+      does not claim to have written a plan.
