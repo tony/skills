@@ -13,17 +13,19 @@ sections below in this order, whichever skill was invoked. `## Commits`
 lists each proposed commit with "Not made". `## Close-out` lists the
 dependabot PRs to close and says none were run. Do not restate
 commit-message rules, and do not list next steps or narrate checks
-already made. Add no commit-mechanics bullet (worktree, branch, push
-command). Name a repository by its slug or "this repository", never by
-its directory. State each fact once, in the section it belongs to. Drift states each finding as a fact: no guess at intent, no
-claim about what Dependabot will or will not do.
+already made, except that `## Audit` says each target tag was confirmed
+to exist, or that it could not be checked. Add no commit-mechanics
+bullet (worktree, branch, push command). Name a repository by its slug
+or "this repository", never by its directory. State each fact once, in
+the section it belongs to. Drift states each finding as a fact: no guess
+at intent, no claim about what Dependabot will or will not do.
 
 ```text
 ⚠ Plan only: 2 commits proposed, nothing written
 
 ## Audit
 
-- acme/frob-action v5 in api and web; latest is v6.0.2.
+- acme/frob-action v5 in api and web; latest is v6.0.2, and the v6 tag was confirmed to exist.
 - acme/other-action@main is pinned to a moving branch.
 
 ## Upgrades

@@ -91,7 +91,9 @@ Per `../../references/output-contract.md`. Hero: `✓ rendered <subject>: brief 
 
 On a failed gate, print the hero, `## Gate`, and the fix: edit the brief, or
 leave it and stop. Name each flagged URL and number, and say only that each moves into the
-matching `evidence/` file and is linked; never claim a command produced a
+matching `evidence/` file and is linked. One sentence closes the reply: never
+add a lead-in ("You can fix this in one of two ways") or explain how a finding
+was counted (that `v1.0.0` or `#L12` "counts as a bare number"). Never claim a command produced a
 number the brief's author wrote by hand. Reply as plain text outside any code
 fence, with plain bullets, no bold (never `- **Label:** ...`), and no local
 paths:

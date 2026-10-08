@@ -70,8 +70,9 @@ breaking changes and which repositories they reach, and how many commits
 this produces. List the dependabot PRs for this action that step 7 will
 close (destructive): repo, number, title, and the commit each maps to.
 Wait for approval, then exit plan mode before writing. A headless run
-stops here and writes nothing, unless the request explicitly authorizes
-the action named; that never covers closing PRs. Its whole reply is the
+stops here and writes nothing, unless the request explicitly says to
+commit ("commit it", "go ahead and land it"); naming the GitHub Action to
+update is not that authorization, and it never covers closing PRs. Its whole reply is the
 plan-only shape in `../../references/output-shapes.md` (read it first):
 the first line is `⚠ Plan only: N commits proposed, nothing written`, with
 no lead-in sentence, and it ends with no question.

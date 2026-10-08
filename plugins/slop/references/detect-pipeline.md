@@ -203,8 +203,8 @@ Skipped by `--no-semantic`. Dispatch one `Task` sub-agent per unit with
 at least one finding, at most 8 concurrent. The prompt enforces the
 contract; no separate agent file exists.
 
-- Allowed tools: `Read`, `Grep`, `Glob`. Disallowed: `Bash`, `Write`,
-  `Edit`, `Task`.
+- The prompt allows `Read`, `Grep`, `Glob` and forbids `Bash`, `Write`,
+  `Edit`, `Task`; `Task` has no per-call tool restriction.
 - Input: the unit's full content (commit diff and message, or file),
   its Pass A findings, the registry filtered to `kind: semantic` with
   each `fp-guard`, and the tone-calibration result. The verifier applies

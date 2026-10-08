@@ -4,6 +4,8 @@
 # pyright: reportAny=false, reportUnusedCallResult=false, reportPrivateUsage=false
 from __future__ import annotations
 
+import json
+import subprocess
 from typing import TYPE_CHECKING
 
 import pytest
@@ -104,3 +106,73 @@ def test_cite_without_source_fails_the_term_gate(
     (tmp_path / "terms.jsonl").write_text(row + "\n", encoding="utf-8")
     assert term_metrics.main([str(tmp_path), "--check-terms"]) == 1
     assert capsys.readouterr().out.splitlines() == ["a: citation without a source"]
+
+
+def _clone_with_file(root: Path, body: str) -> tuple[Path, str]:
+    """Create a one-commit git repo holding ``src/a.py``; return it and the commit."""
+    repo = root / "clone"
+    (repo / "src").mkdir(parents=True)
+    (repo / "src" / "a.py").write_text(body, encoding="utf-8")
+    git = ["git", "-C", str(repo), "-c", "user.name=t", "-c", "user.email=t@example.com"]
+    subprocess.run(["git", "init", "--quiet", str(repo)], check=True)  # noqa: S603, S607
+    subprocess.run([*git, "add", "."], check=True)  # noqa: S603
+    subprocess.run([*git, "commit", "--quiet", "-m", "x"], check=True)  # noqa: S603
+    head = subprocess.run(  # noqa: S603
+        [*git, "rev-parse", "HEAD"], check=True, capture_output=True, text=True
+    )
+    return repo, head.stdout.strip()
+
+
+def _study(root: Path, commit: str, locator: str, quote: str) -> Path:
+    study = root / "study"
+    study.mkdir()
+    cite = {"source": "s", "locator": locator, "quote": quote}
+    row = {"term": "t", "definition": "d", "cites": [cite]}
+    (study / "terms.jsonl").write_text(json.dumps(row) + "\n", encoding="utf-8")
+    src = {"source": "s", "ref": "v1", "commit": commit, "locator_kind": "line-range"}
+    (study / "sources.jsonl").write_text(json.dumps(src) + "\n", encoding="utf-8")
+    return study
+
+
+@pytest.mark.parametrize(
+    ("locator", "quote", "expected"),
+    [
+        ("src/a.py:2-3", "beta   gamma", []),
+        ("src/a.py:1-1", "beta gamma", ["Misquoted: t (src/a.py:1-1): quote not found"]),
+        ("src/gone.py:1-1", "beta", ["Vanished: t (src/gone.py:1-1)"]),
+        ("see chapter 2", "beta", ["Uncheckable: t (see chapter 2)"]),
+    ],
+)
+def test_check_quotes_against_a_local_clone(
+    tmp_path: Path,
+    capsys: pytest.CaptureFixture[str],
+    locator: str,
+    quote: str,
+    expected: list[str],
+) -> None:
+    """A moved line is Misquoted, a missing file Vanished, a free-text locator Uncheckable."""
+    clone, commit = _clone_with_file(tmp_path, "alpha\nbeta\ngamma\ndelta\n")
+    study = _study(tmp_path, commit, locator, quote)
+    code = term_metrics.main([str(study), "--check-quotes", str(clone)])
+    out = capsys.readouterr().out.splitlines()
+    assert code == (1 if expected else 0)
+    assert [line[: len(exp)] for line, exp in zip(out, expected)] == expected
+    assert len(out) == len(expected)
+
+
+def test_check_quotes_reports_a_commit_missing_from_the_clone(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """A recorded commit the clone lacks is Uncheckable, not Vanished."""
+    clone, _ = _clone_with_file(tmp_path, "alpha\n")
+    study = _study(tmp_path, "a" * 40, "src/a.py:1-1", "alpha")
+    assert term_metrics.main([str(study), "--check-quotes", str(clone)]) == 1
+    assert capsys.readouterr().out.startswith("Uncheckable: t (src/a.py:1-1): commit not in")
+
+
+def test_report_discloses_thresholds(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    """The analyzer output states the thresholds a finding was scored against."""
+    row = '{"term": "a", "definition": "x"}'
+    (tmp_path / "terms.jsonl").write_text(row + "\n", encoding="utf-8")
+    assert term_metrics.main([str(tmp_path)]) == 0
+    assert "thresholds: synonymy >= 0.5, polysemy < 0.3" in capsys.readouterr().out

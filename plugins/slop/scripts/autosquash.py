@@ -2,10 +2,16 @@
 """Run ``git rebase -i --autosquash`` over a baseline, unattended.
 
 Usage: autosquash.py --baseline SHA [--abort-on-conflict]
+       autosquash.py --baseline SHA --check-published
 
 Exit codes: 0 the rebase completed; 10 it stopped on a conflict (aborted
 when ``--abort-on-conflict`` is set, otherwise left paused for the conflict
 loop); 1 any other failure, with git's stderr passed through.
+
+``--check-published`` rewrites nothing. It prints ``published: <n> of <m>
+commits, on <refs>`` when any remote-tracking ref contains a commit of
+``SHA..HEAD`` (pushed with or without ``-u``), else ``local-only``, and
+exits 0 either way.
 """
 
 # pyright: reportAny=false, reportUnusedCallResult=false
@@ -45,12 +51,35 @@ def rebase_in_progress() -> bool:
     return False
 
 
+def published(baseline: str) -> tuple[int, int, list[str]]:
+    """Return (published, total, remote refs) for the commits in ``baseline..HEAD``."""
+    rng = f"{baseline}..HEAD"
+    everything = _git("rev-list", rng).stdout.split()
+    unpublished = set(_git("rev-list", rng, "--not", "--remotes").stdout.split())
+    pushed = [c for c in everything if c not in unpublished]
+    if not pushed:
+        return 0, len(everything), []
+    refs = _git(
+        "for-each-ref", "refs/remotes", "--contains", pushed[0], "--format=%(refname:short)"
+    ).stdout.split()
+    return len(pushed), len(everything), [r for r in refs if not r.endswith("/HEAD")]
+
+
 def main(argv: list[str] | None = None) -> int:
     """Run the rebase; return the process exit code."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--baseline", required=True)
     parser.add_argument("--abort-on-conflict", action="store_true")
+    parser.add_argument("--check-published", action="store_true")
     args = parser.parse_args(argv)
+
+    if args.check_published:
+        count, total, refs = published(args.baseline)
+        if count:
+            print(f"published: {count} of {total} commits, on {' '.join(refs)}")
+        else:
+            print("local-only")
+        return 0
 
     done = _git(
         "-c",

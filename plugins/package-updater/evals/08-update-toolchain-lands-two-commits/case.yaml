@@ -53,6 +53,13 @@ graders:
       path: .git/COMMIT_EDITMSG
     pattern: 'casey/just/releases/tag/1\.40\.0'
 
+  - name: uv-commit-states-why
+    type: tool_used
+    tool: Bash
+    input_match: 'git commit[\s\S]*why:'
+    min: 1
+    arm: both
+
   - name: both-pins-moved
     type: regex
     target:

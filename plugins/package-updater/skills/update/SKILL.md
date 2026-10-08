@@ -166,7 +166,7 @@ Halt example, same plain-text form:
 
 To continue:
 - Confirm you maintain it.
-- Let GitHub answer the ownership check, then rerun.
+- Name the owner of the repository.
 - Stop here.
 ```
 

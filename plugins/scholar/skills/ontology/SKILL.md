@@ -90,7 +90,9 @@ Per `../../references/output-contract.md`. Hero: `✓ <subject>: <n> terms, <n>
 types, <n> contested` or `⚠ Blocked: <reason>`. Sections:
 
 1. `## Corpus`: each source, its resolved ref, and what was deliberately not
-   read, with the reason.
+   read, with the reason. Never write that a checkout was clean or left
+   unchanged, that nothing was left unread, or a claim about the sandbox; an
+   unpushed commit reads "commit not on a remote; recorded without URL".
 2. `## Ontology`: the type hierarchy in prose, each type with its
    discriminator, and the vocabulary's preferred terms.
 3. `## Contested`: what was challenged and how it resolved, including what

@@ -59,7 +59,9 @@ Run /scholar:gather on the corpus first.
 - The hero is one line with no second sentence.
 - Write no sentence about a file left alone ("I left `terms.jsonl`
   unchanged") or an input that could not be reached ("the sandbox blocked
-  github.com"). Report the verdict and its evidence.
+  github.com"). Report the verdict and its evidence. A reason a check could
+  not run is the one exception, and only under `verify`'s `## Uncheckable`:
+  write "host unreachable", never a claim about the sandbox.
 - A fix for a failed gate is one sentence; do not explain how a finding was
   counted.
 - Do not narrate process ("I raised one more candidate myself"), justify a step ("this is what the stage exists to

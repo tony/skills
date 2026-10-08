@@ -32,7 +32,7 @@ graders:
   - name: makes-no-change
     type: tool_used
     tool: Bash
-    input_match: 'git commit|git push|uv lock|uv sync|git checkout -b|git worktree add'
+    input_match: '\bgit\b(\s+-[Cc]\s+\S+)*\s+(commit|push|checkout\s+-b|worktree\s+add)\b|uv lock|uv sync'
     min: 0
     max: 0
     arm: both

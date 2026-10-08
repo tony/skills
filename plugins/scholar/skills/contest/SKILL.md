@@ -46,9 +46,10 @@ can paste: the study-relative form, never the absolute `<analyzer>` path.
 $ python3 term_metrics.py notes/ontology/<subject>/
 ```
 
-Open `metrics.md` with one line naming the analyzer: `term_metrics.py` from the
+Open `metrics.md` with a header naming the analyzer: `term_metrics.py` from the
 scholar plugin's `scripts/`, at the `version` in the plugin's `plugin.json`
-(`../../.claude-plugin/plugin.json`).
+(`../../.claude-plugin/plugin.json`), plus the report's `thresholds:` line, so
+a reader can tell what score made a pair a candidate.
 
 ## Pass 2: serial judgment
 

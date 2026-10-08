@@ -109,3 +109,70 @@ def test_conflict_pauses_then_aborts_to_the_original_tip(tmp_path: Path) -> None
     assert git(repo, "rev-parse", "HEAD") == tip
     assert git(repo, "status", "--porcelain") == ""
     assert not (repo / git(repo, "rev-parse", "--git-path", "rebase-merge")).exists()
+
+
+def published(repo: Path, base: str) -> str:
+    done = subprocess.run(
+        [sys.executable, str(SCRIPT), "--baseline", base, "--check-published"],
+        cwd=repo,
+        env=ENV,
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    return done.stdout.strip()
+
+
+def make_clone(tmp_path: Path) -> Path:
+    git(tmp_path, "init", "-q", "--bare", "-b", "main", "origin.git")
+    repo, _ = make_repo(tmp_path)
+    git(repo, "remote", "add", "origin", str(tmp_path / "origin.git"))
+    git(repo, "push", "-q", "-u", "origin", "main")
+    return repo
+
+
+def commit(repo: Path, name: str) -> None:
+    (repo / name).write_text(name)
+    git(repo, "add", name)
+    git(repo, "commit", "-q", "-m", name)
+
+
+def test_branch_tracking_advanced_trunk_is_local_only(tmp_path: Path) -> None:
+    repo = make_clone(tmp_path)
+    git(repo, "switch", "-q", "-c", "feat", "origin/main")
+    commit(repo, "f.txt")
+    git(repo, "switch", "-q", "main")
+    commit(repo, "trunk.txt")
+    git(repo, "push", "-q", "origin", "main")
+    git(repo, "switch", "-q", "feat")
+    git(repo, "fetch", "-q")
+    base = git(repo, "merge-base", "origin/main", "HEAD")
+    assert published(repo, base) == "local-only"
+
+
+def test_push_without_upstream_is_published(tmp_path: Path) -> None:
+    repo = make_clone(tmp_path)
+    base = git(repo, "rev-parse", "HEAD")
+    git(repo, "switch", "-q", "-c", "feat")
+    commit(repo, "f.txt")
+    git(repo, "push", "-q", "origin", "HEAD")
+    assert published(repo, base) == "published: 1 of 1 commits, on origin/feat"
+
+
+def test_push_with_upstream_is_published(tmp_path: Path) -> None:
+    repo = make_clone(tmp_path)
+    base = git(repo, "rev-parse", "HEAD")
+    git(repo, "switch", "-q", "-c", "feat")
+    commit(repo, "f.txt")
+    git(repo, "push", "-q", "-u", "origin", "feat")
+    assert published(repo, base) == "published: 1 of 1 commits, on origin/feat"
+
+
+def test_local_commits_atop_pushed_count_pushed_ones(tmp_path: Path) -> None:
+    repo = make_clone(tmp_path)
+    base = git(repo, "rev-parse", "HEAD")
+    git(repo, "switch", "-q", "-c", "feat")
+    commit(repo, "f.txt")
+    git(repo, "push", "-q", "-u", "origin", "feat")
+    commit(repo, "g.txt")
+    assert published(repo, base) == "published: 1 of 2 commits, on origin/feat"

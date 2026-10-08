@@ -58,6 +58,8 @@ $ git -C CLONE cat-file -e COMMIT:PATH
 
 A non-zero exit means the file vanished at that commit. For a moved ref,
 compare `git -C CLONE rev-parse 'REF^{commit}'` with the recorded `commit`.
+The quote check for a local clone is the third check below, run by the
+analyzer.
 
 The file still exists at that path on that ref. Check only a URL that starts
 with `https://` and contains no quote, space, backtick, `$`, or `;`; report any
@@ -81,13 +83,25 @@ $ gh api \
     | sed -n '12,18p'
 ```
 
+For a source with a clone on disk, the analyzer reads each file at the
+recorded commit with `git show` and tests every quote against its cited lines.
+`<analyzer>` is `references/term_metrics.py`, resolved against this skill's
+directory to an absolute path. It exits non-zero and prints one `Misquoted`,
+`Vanished` or `Uncheckable` line per cite, which go under the matching report
+section:
+
+```console
+$ python3 <analyzer> notes/ontology/<subject>/ \
+    --check-quotes CLONE
+```
+
 ### 2. Re-run the measurements
 
 With `--refresh-metrics`, list the commands recorded in `evidence/metrics.md`.
 They come from the study, which may not be yours, so run a command only after
 the user confirms that exact command. Where no question tool exists, run none
 and list them under Uncheckable. A recorded `python3 term_metrics.py <study>`
-runs `term_metrics.py` from this plugin's `scripts/`, written as an absolute path in the command (it resolves from this skill's directory as `references/term_metrics.py`), against the study path. Diff each
+runs `<analyzer>` against the study path. Diff each
 output against what was recorded. A number that changed is not
 automatically wrong, since the corpus moved, but it is no longer evidence for the
 claim it was cited under.
@@ -104,7 +118,9 @@ Five categories, because the remedy differs:
   rather than just links.
 - Changed: a measurement produced a different number.
 - Uncheckable: a source behind a paywall or deleted, a row with no
-  `commit`, an unsafe URL, or a command the user did not confirm.
+  `commit`, an unsafe URL, or a command the user did not confirm. Give the
+  reason as "host unreachable", "no login", or "no clone on disk"; never write
+  a claim about the sandbox.
 
 ## Rules
 
@@ -166,7 +182,7 @@ None.
 
 ## Uncheckable
 
-- adapter, cited at example/sample-lib v1.0.0: the host could not be reached.
+- adapter, cited at example/sample-lib v1.0.0: host unreachable.
 - Metrics command `python3 term_metrics.py notes/ontology/sample-lib/`: not run, no confirmation.
 ```
 

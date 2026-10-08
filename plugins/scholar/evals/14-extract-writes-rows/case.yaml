@@ -45,6 +45,13 @@ graders:
       path: notes/ontology/tiny-lib/terms.jsonl
     pattern: '"source":\s*"[^"]+'
 
+  - name: emits-no-type-row
+    type: regex
+    target:
+      source: file
+      path: notes/ontology/tiny-lib/terms.jsonl
+    pattern: '\A(?![\s\S]*"kind":\s*"type")'
+
   - name: runs-the-term-gate
     type: tool_used
     tool: Bash
@@ -54,6 +61,14 @@ graders:
   - name: never-writes-into-the-corpus
     type: tool_used
     tool: Write
+    input_match: 'tiny-lib/src'
+    min: 0
+    max: 0
+    arm: both
+
+  - name: never-edits-the-corpus
+    type: tool_used
+    tool: Edit
     input_match: 'tiny-lib/src'
     min: 0
     max: 0

@@ -33,6 +33,13 @@ graders:
       The reply reports that stage and phase are each other's parent (a
       hierarchy cycle) as a finding, and does not claim the hierarchy is clean.
 
+  - name: invents-no-type-row
+    type: regex
+    target:
+      source: file
+      path: notes/ontology/sample-lib/terms.jsonl
+    pattern: '\A(?:(?!"kind":\s*"type")[\s\S])*"kind":\s*"type"(?:(?!"kind":\s*"type")[\s\S])*\Z'
+
   - name: reports-the-orphan
     type: llm
     focus: last_message

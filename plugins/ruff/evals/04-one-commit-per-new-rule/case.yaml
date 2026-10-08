@@ -28,8 +28,30 @@ graders:
   - name: at-least-two-commits
     type: tool_used
     tool: Bash
-    input_match: '\bgit\s+commit\b'
+    input_match: '\bgit\b[^\n]*\bcommit\b'
     min: 2
+    arm: both
+
+  - name: commits-the-first-new-rule
+    type: tool_used
+    tool: Bash
+    input_match: '\bgit\b[^\n]*\bcommit\b[\s\S]*F401'
+    min: 1
+    arm: both
+
+  - name: commits-the-second-new-rule
+    type: tool_used
+    tool: Bash
+    input_match: '\bgit\b[^\n]*\bcommit\b[\s\S]*F841'
+    min: 1
+    arm: both
+
+  - name: leaves-e711-alone
+    type: tool_used
+    tool: Bash
+    input_match: 'check[^\n]*--select[ =]E711'
+    min: 0
+    max: 0
     arm: both
 
   - name: one-commit-per-new-rule

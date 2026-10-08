@@ -129,6 +129,20 @@ terms.jsonl line 1: 'definition' must be a string
 terms.jsonl line 2: each entry in 'cites' must be an object
 1
 
+A quote is checked against the cited lines of a local git clone at the
+commit recorded for its source; a moved line is a misquote:
+
+>>> check_quote("src/a.py:2-3", "line-range", "beta gamma", "alpha\nbeta\ngamma\ndelta\n")
+'ok'
+>>> check_quote("src/a.py:1-1", "line-range", "beta gamma", "alpha\nbeta\ngamma\ndelta\n")
+'misquoted'
+>>> check_quote("src/a.py", "search-string", "gamma", "alpha\nbeta\ngamma\n")
+'ok'
+>>> parse_locator("src/a.py@9a29b1a:12-18")
+('src/a.py', 12, 18)
+>>> parse_locator("ch.3 section 2") is None
+True
+
 Every term row needs a definition and a citation with a quote and a
 ``source``; a ``type`` row
 with a ``parent`` needs no citation of its own, since its is-a claims are
@@ -158,6 +172,7 @@ import argparse
 import json
 import math
 import re
+import subprocess
 import sys
 from pathlib import Path
 from typing import TypedDict, cast
@@ -425,6 +440,113 @@ def check_terms(terms: list[_Row]) -> list[str]:
     return findings
 
 
+_LOCATOR = re.compile(r"^([A-Za-z0-9_./-]+?)(?:@[0-9a-fA-F]{7,40})?(?::(\d+)(?:-(\d+))?)?$")
+_HEX_COMMIT = re.compile(r"^[0-9a-fA-F]{7,40}$")
+_SNIPPET = 200
+
+
+def parse_locator(locator: str) -> tuple[str, int, int] | None:
+    """Split ``path[@commit][:first[-last]]`` into path and 1-based lines.
+
+    A locator without lines yields ``(path, 0, 0)``; anything that is not a
+    plain relative path gives ``None``.
+    """
+    match = _LOCATOR.match(locator.strip())
+    if not match or match.group(1).startswith(("/", "-")) or ".." in match.group(1).split("/"):
+        return None
+    first = int(match.group(2) or 0)
+    last = int(match.group(3) or first)
+    return match.group(1), first, last
+
+
+def _squash(text: str) -> str:
+    return " ".join(text.split())
+
+
+def check_quote(locator: str, kind: str, quote: str, text: str) -> str:
+    """Return ``ok``, ``misquoted``, or ``uncheckable`` for one cite against file *text*.
+
+    A ``line-range`` locator limits the search to its lines; every other kind
+    searches the whole file. Whitespace differences do not count.
+    """
+    parsed = parse_locator(locator)
+    if parsed is None or not _squash(quote):
+        return "uncheckable"
+    _, first, last = parsed
+    if kind == "line-range" and first:
+        text = "\n".join(text.splitlines()[first - 1 : last])
+    return "ok" if _squash(quote) in _squash(text) else "misquoted"
+
+
+def _git_show(clone: str, commit: str, path: str) -> str | None:
+    """Return the file at *commit*, or ``None`` when git cannot produce it."""
+    try:
+        done = subprocess.run(  # noqa: S603
+            ["git", "-C", clone, "show", f"{commit}:{path}"],  # noqa: S607
+            capture_output=True,
+            check=False,
+        )
+    except OSError:
+        return None
+    return done.stdout.decode("utf-8", "replace") if done.returncode == 0 else None
+
+
+def _has_commit(clone: str, commit: str) -> bool:
+    try:
+        done = subprocess.run(  # noqa: S603
+            ["git", "-C", clone, "cat-file", "-e", f"{commit}^{{commit}}"],  # noqa: S607
+            capture_output=True,
+            check=False,
+        )
+    except OSError:
+        return False
+    return done.returncode == 0
+
+
+def check_quotes(
+    terms: list[_Row],
+    sources: list[dict[str, object]],
+    clone: str,
+) -> list[str]:
+    """List cites whose quote is missing at the recorded commit in *clone*.
+
+    Each finding starts with ``Misquoted``, ``Vanished`` or ``Uncheckable``,
+    the report sections ``verify`` uses.
+    """
+    pinned = {
+        str(row["source"]): row
+        for row in reversed(sources)
+        if isinstance(row.get("source"), str) and str(row.get("commit", "")).strip()
+    }
+    findings: list[str] = []
+    for row in terms:
+        for cite in row.get("cites", []):
+            label = f"{row['term']} ({cite.get('locator', '')})"
+            pin = pinned.get(cite.get("source", ""))
+            commit = str(pin.get("commit", "")) if pin else ""
+            parsed = parse_locator(str(cite.get("locator", "")))
+            if not pin or not _HEX_COMMIT.match(commit) or parsed is None:
+                findings.append(f"Uncheckable: {label}: no pinned commit or file path")
+            elif not _has_commit(clone, commit):
+                findings.append(f"Uncheckable: {label}: commit not in the clone")
+            else:
+                text = _git_show(clone, commit, parsed[0])
+                if text is None:
+                    findings.append(f"Vanished: {label}: {parsed[0]} is not in the commit")
+                    continue
+                kind = str(pin.get("locator_kind", ""))
+                quote = str(cite.get("quote", ""))
+                verdict = check_quote(str(cite.get("locator", "")), kind, quote, text)
+                if verdict == "misquoted":
+                    first, last = parsed[1], parsed[2]
+                    there = _squash("\n".join(text.splitlines()[first - 1 : last]))
+                    where = there[:_SNIPPET] if kind == "line-range" and first else "whole file"
+                    findings.append(f"Misquoted: {label}: quote not found; text there: {where}")
+                elif verdict == "uncheckable":
+                    findings.append(f"Uncheckable: {label}: empty quote or unusable locator")
+    return findings
+
+
 def _cite_problem(cite: object) -> str | None:
     """Describe why *cite* is not an object with a string ``quote``, or ``None``."""
     if not isinstance(cite, dict):
@@ -475,8 +597,24 @@ def _load(path: Path) -> tuple[list[_Row], list[str]]:
     return rows, problems
 
 
+def _load_sources(path: Path) -> list[dict[str, object]]:
+    """Read ``sources.jsonl``, skipping blank and malformed lines."""
+    rows: list[dict[str, object]] = []
+    if not path.is_file():
+        return rows
+    for line in path.read_text(encoding="utf-8").splitlines():
+        try:
+            row = cast("object", json.loads(line)) if line.strip() else None
+        except json.JSONDecodeError:
+            continue
+        if isinstance(row, dict):
+            rows.append(cast("dict[str, object]", row))
+    return rows
+
+
 class _Opts(argparse.Namespace):
     study: str = ""
+    check_quotes: str = ""
     check_brief: bool = False
     check_terms: bool = False
 
@@ -487,6 +625,11 @@ def _parser() -> argparse.ArgumentParser:
     gate = parser.add_mutually_exclusive_group()
     _ = gate.add_argument("--check-brief", action="store_true", help="gate brief.md")
     _ = gate.add_argument("--check-terms", action="store_true", help="gate terms.jsonl")
+    _ = gate.add_argument(
+        "--check-quotes",
+        metavar="CLONE",
+        help="check each quote against the cited lines in a git clone at the recorded commit",
+    )
     return parser
 
 
@@ -522,8 +665,13 @@ def main(argv: list[str]) -> int:
         for problem in problems:
             print(problem)
         return 1
-    if opts.check_terms:
-        findings = check_terms(terms)
+    if opts.check_terms or opts.check_quotes:
+        sources = _load_sources(Path(f"{study}/sources.jsonl"))
+        findings = (
+            check_quotes(terms, sources, opts.check_quotes)
+            if opts.check_quotes
+            else check_terms(terms)
+        )
         for finding in findings:
             print(finding)
         return 1 if findings else 0
@@ -536,6 +684,7 @@ def main(argv: list[str]) -> int:
         ("circular evidence", circular(terms)),
         ("fan-out", [f"{p}: {n}" for p, n in sorted(fan_out(terms).items())]),
     ]
+    print(f"thresholds: synonymy >= {SYNONYMY_THRESHOLD}, polysemy < {POLYSEMY_THRESHOLD}")
     for title, rows in sections:
         print(f"== {title} ==")
         for row in rows or ["(none)"]:

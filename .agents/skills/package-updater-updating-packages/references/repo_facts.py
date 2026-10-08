@@ -11,6 +11,7 @@ Pins are read from the default branch ref, not the working tree. With
 from __future__ import annotations
 
 import json
+import os
 import re
 import subprocess
 import sys
@@ -20,7 +21,10 @@ PIN_FILES = (".tool-versions", ".nvmrc", ".python-version", ".ruby-version")
 
 
 def _git(repo: str, *args: str) -> tuple[int, str]:
-    done = subprocess.run(["git", "-C", repo, *args], capture_output=True, text=True, check=False)
+    env = {**os.environ, "GIT_TERMINAL_PROMPT": "0"}
+    done = subprocess.run(
+        ["git", "-C", repo, *args], capture_output=True, text=True, check=False, env=env
+    )
     return done.returncode, done.stdout.strip()
 
 

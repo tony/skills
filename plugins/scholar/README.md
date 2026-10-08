@@ -159,7 +159,8 @@ beside the serial one.
   only, so it runs inside any corpus checkout with no package manager present.
 
 A corpus with no git remote cannot be cited by permalink. Publish it first, or
-cite `path@commit`, which `verify` checks with `git show`.
+cite `path@commit`, which `verify` checks with `git show` through
+`term_metrics.py --check-quotes <clone>`.
 
 A small repository does not need every stage: run `gather` and `extract`, then
 `render`, and add `distill` and `contest` once the term table has siblings to tell apart.

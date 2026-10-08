@@ -134,29 +134,22 @@ Only `--apply-rebase` rewrites history, so only it is gated. Audit and
 `--apply-patches` runs skip this step.
 
 ```console
-$ git rev-parse --abbrev-ref --symbolic-full-name '@{u}' 2>/dev/null
+$ python3 <autosquash.py> \
+    --baseline "<BASELINE_SHA>" \
+    --check-published
 ```
 
-No upstream means a local-only branch; continue. With an upstream,
-count the commits it holds past the baseline:
+It prints `local-only`, or `published: <n> of <m> commits, on <refs>`
+when a remote-tracking ref holds a commit of the range, however it was
+pushed. A branch cut from `origin/main` and never pushed is local-only
+even after trunk advances. Without `--force-rewrite-pushed`, refuse a
+published branch:
 
-```console
-$ git rev-list --count "<BASELINE_SHA>..@{u}"
-```
-
-A count above 0 means the branch was pushed, whether or not `HEAD` still
-contains those commits. A count of 0 means the upstream is trunk itself
-(a branch cut with `git switch -c x origin/main` tracks it) or sits at
-the baseline; nothing of the branch was published, so continue. Without
-`--force-rewrite-pushed`, refuse a pushed branch:
-
-> This branch was already pushed to `<upstream>`. Rewriting its
-> history requires a force-push, and reviewers must reset their local
-> checkouts. Re-run with `--force-rewrite-pushed` to override, or drop
-> `--apply-rebase` and use `--apply-patches` to add fixup commits
+> Already pushed to `<refs>`; rewriting needs a force-push. Re-run with
+> `--force-rewrite-pushed`, or use `--apply-patches` to add fixups
 > without rewriting.
 
-With the flag, record the upstream in the final report and continue.
+With the flag, record the refs in the final report and continue.
 
 ## Step 3: Discover quality gates
 
@@ -195,7 +188,8 @@ $ git -c core.quotepath=off log -p --reverse "<BASELINE_SHA>..HEAD" | python3 <s
 
 ```console
 $ git log -z --format=%H%x1f%B "<BASELINE_SHA>..HEAD" | python3 <slop_detect.py> messages \
-    --registry <signatures.yml>
+    --registry <signatures.yml> \
+    --out <messages.json>
 ```
 
 Save the `diff` output with `--out <findings.json>` (a `mktemp` path;
@@ -209,7 +203,8 @@ $ python3 <slop_detect.py> present \
     --out <present.json>
 ```
 
-Read `<present.json>` for the survivors, then run the Guard check. A
+Read `<present.json>` and `<messages.json>` with `jq` (each a `mktemp`
+path), then run the Guard check. A
 finding has `{commit_sha, signature_id, file, line_start, tier, confidence: regex,
 action}`.
 
@@ -290,7 +285,8 @@ $ git -C "<scratch>" diff -- '<file>'
 $ git -C "<scratch>" add -- '<file>'
 ```
 
-When every patch is cut, remove the worktree:
+When every patch is cut, remove the worktree (after a failed or killed
+run, remove it the same way and run `git worktree prune`):
 
 ```console
 $ git worktree remove --force "<scratch>"

@@ -41,13 +41,13 @@ earlier verdict). Take the claim as it currently stands, verbatim.
 ```markdown
 ## <the term or claim>
 
-**Was:** the claim as it stood, quoted exactly.
+Was: the claim as it stood, quoted exactly.
 
-**Rested on:** the citation or measurement that supported it.
+Rested on: the citation or measurement that supported it.
 
-**Failed because:** what overturned it, cited or measured.
+Failed because: what overturned it, cited or measured.
 
-**Now:** the replacement claim, or a statement that the question is open.
+Now: the replacement claim, or a statement that the question is open.
 ```
 
 Append. Never rewrite an existing correction: a correction that was itself
@@ -80,7 +80,7 @@ directory to an absolute path. Fix the brief until it exits zero.
 Per `references/output-contract.md`. Hero: `✓ corrected <claim>` or `⚠
 Blocked: <reason>`. Sections:
 
-1. `## Correction`: the four fields, as written to the file.
+1. `## Correction`: the four fields as plain `Was: ...` lines, never bold.
 2. `## Touched`: the rows and evidence documents updated.
 3. `## Downstream`: anything else in the study that rested on the same
    evidence and may now be unsupported.

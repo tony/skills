@@ -1,0 +1,50 @@
+schema_version: "1.0"
+name: 19-extract-dirty-corpus-halts
+description: >-
+  Extract halts without harvesting when the pinned corpus checkout has an
+  uncommitted edit, and does not write a term table.
+tags: [fixture, gated]
+
+context:
+  scaffold_script: scaffold.sh
+
+execution:
+  prompt: >-
+    /scholar:extract --out=notes/ontology/tiny-lib/ The corpus is the
+    checkout in ./tiny-lib, already pinned in sources.jsonl. Harvest its terms
+    and write terms.jsonl. Do not ask me anything.
+  max_turns: 20
+  timeout_seconds: 600
+  allowed_tools: [Bash, Read, Write, Edit, Glob, Grep, Skill]
+
+runs: 3
+
+graders:
+  - name: writes-no-term-table
+    type: file_exists
+    path: notes/ontology/tiny-lib/terms.jsonl
+    exists: false
+
+  - name: reports-the-dirty-checkout
+    type: llm
+    focus: last_message
+    criteria: |
+      The reply's first line starts with `⚠ Blocked` and says the corpus
+      checkout has uncommitted changes. It asks the user to commit them or
+      narrow the scope, and reports no harvested terms.
+
+  - name: never-writes-into-the-corpus
+    type: tool_used
+    tool: Write
+    input_match: 'tiny-lib/src'
+    min: 0
+    max: 0
+    arm: both
+
+  - name: never-edits-the-corpus
+    type: tool_used
+    tool: Edit
+    input_match: 'tiny-lib/src'
+    min: 0
+    max: 0
+    arm: both

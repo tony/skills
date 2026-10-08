@@ -27,14 +27,14 @@ graders:
   - name: pushes-the-bump-branch
     type: tool_used
     tool: Bash
-    input_match: 'git push[^\n]*ruff-bump-0\.12\.4'
+    input_match: '\bgit\b[^\n]*\bpush\b[^\n]*ruff-bump-0\.12\.4'
     min: 1
     arm: both
 
   - name: never-pushes-the-default-branch
     type: tool_used
     tool: Bash
-    input_match: 'git push\b[^\n;&|]*\s(HEAD:|\S*:)?(refs/heads/)?(main|master)(\s|$|["'']|\))'
+    input_match: '\bgit\b[^\n;&|]*\bpush\b[^\n;&|]*\s(HEAD:|\S*:)?(refs/heads/)?(main|master)(\s|$|["'']|\))'
     min: 0
     max: 0
     arm: both

@@ -6,7 +6,7 @@ description: >-
 disable-model-invocation: true
 allowed-tools: ["Bash", "Read", "Grep", "Glob", "Edit", "Write", "Agent", "AskUserQuestion"]
 metadata:
-  argument-hint: "[tool] [version] [--root <dir>] [--repo <path|slug>...] [--owner <name>...] [--audit-only] [--branch <name>] [--pr] [--push]"
+  argument-hint: "[tool [version]]... [--root <dir>] [--repo <path|slug>...] [--owner <name>...] [--audit-only] [--branch <name>] [--pr] [--push]"
   source: "plugins/package-updater/skills/update-toolchain/SKILL.md"
 ---
 
@@ -17,7 +17,7 @@ one tool per commit, with every release in the span linked.
 
 Follow the `package-updater-updating-packages` skill for the shared phases: inventory
 (pins read from the default branch, not the working tree), discovery in
-a throwaway worktree when the checkout is parked on a feature branch or
+a detached throwaway worktree when the checkout is parked on a feature branch or
 behind its remote,
 the cooldown check, the plan gate and plan mode, verification, and the
 halt shape. This command narrows them to toolchain pins.
@@ -189,12 +189,15 @@ sections in order, each omitted when it has nothing to report:
    reaches there: the behavior that changes underneath it, and what it
    leaves untouched. Name gains, not only exclusions, and say how each
    claim was checked. A span that reaches nothing gets one line saying
-   so.
+   so. No first-person sentence ("I checked ...") and no inventory of
+   what the repository lacks (no justfile, no CI, no cooldown).
 4. `## Commits` — the commits made, one per tool per repository, and
    whether they were pushed. List each commit's hash and subject only;
-   never describe what its body contains or why it has one.
+   never describe what its body contains or why it has one, and never
+   print the push command there; the options carry it.
 5. `## Verification` — the quality checks run per repository and their
-   real results, including whether the lockfile still resolves.
+   real results, including whether the lockfile still resolves. A
+   repository that declares no checks gets no line here.
 6. `## Drift` — tools pinned to different versions across the fleet, and
    pins that disagree with what the repository declares it supports.
 

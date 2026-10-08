@@ -48,6 +48,7 @@ graders:
       The reply is a halt: a stop line that gives the reason, then a list
       of options. It has no heading lines, no paragraph between the reason
       and the options, and no promise of later work ("I'll then ...",
-      "will be researched"). Naming the repository, its upstream or a
+      "will be researched"). It does not name a configuration file or key
+      that sets the window. Naming the repository, its upstream or a
       release date is fine; it does not narrate commit history, authors
       or remotes.

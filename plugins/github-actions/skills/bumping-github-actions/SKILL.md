@@ -91,8 +91,9 @@ Present a plan covering:
 Wait for approval, then exit plan mode before Phase 4. Without plan mode,
 finish Phases 1 to 3 and confirm scope with the user before writing
 anything. In a headless run, stop after the plan and write nothing, unless
-the request explicitly authorizes the action named (for example "bump
-checkout and push"); that never covers closing PRs or anything broader.
+the request explicitly says to commit or push (for example "bump checkout
+and push"); naming the GitHub Action is not that authorization, and it
+never covers closing PRs or anything broader.
 
 ## Phase 4: Commit
 

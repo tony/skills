@@ -142,7 +142,8 @@ these sections in order, each omitted when it has nothing to report; an
 audit-only run omits `## Commits` and `## Verification`:
 
 1. `## Release` — what the span changes, with verified links to every
-   version in it.
+   version in it. Describe each release; never fold them into "the
+   notes say the same thing".
 2. `## Pin sites` — per repository, every place the package is pinned
    and its current shape, plus what was excluded as not pinning it or
    already current.

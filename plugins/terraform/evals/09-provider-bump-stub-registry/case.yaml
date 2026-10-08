@@ -56,5 +56,5 @@ graders:
     focus: last_message
     criteria: |
       The first line of the reply is exactly a hero of the form
-      `✓ hashicorp/random 3.6.0 -> 3.7.0 across N root modules` with nothing appended after it (no "but", no failing
+      `✓ hashicorp/random 3.6.0 -> 3.7.0 across N root modules` (singular "root module" when N is 1) with nothing appended after it (no "but", no failing
       gate); any failure appears in a later section.

@@ -141,7 +141,7 @@ added later without guessing what unversioned rows meant.
 `definition` is drawn from the corpus, not composed. Where the corpus never
 defines the term, record the definition its usage implies. Keep the definition
 free of provenance notes ("implied by usage"); the analyzer scores definition
-text. Mark an implied definition in `evidence/`.
+text. Record an implied definition as an open claim in `evidence/contested.md`.
 
 ## Rules
 
@@ -166,8 +166,15 @@ Per `../../references/output-contract.md`. Hero: `✓ <n> terms extracted from
    $ python3 <analyzer> notes/ontology/<subject>/ --check-terms
    ```
 
-A halted run follows the halted-run shape in the output contract. Do not name
-the checkout path.
+A halted run follows the halted-run shape in the output contract: the hero,
+then one sentence naming the unblock, never a restatement of the hero. Do not
+name the checkout path:
+
+```text
+⚠ Blocked: the corpus checkout has uncommitted edits.
+
+Commit or stash them in the checkout, then rerun /scholar:extract.
+```
 
 Next-step options: run distill, harvest another source, stop here.
 

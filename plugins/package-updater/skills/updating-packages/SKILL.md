@@ -84,9 +84,13 @@ a feature branch reports pins the branch that ships does not have. When
 
 When `branch` is not the default branch, `dirty` is true, or
 `behind_remote` is more than 0, create the
-throwaway worktree now, per
-`../../references/throwaway-worktree.md`, and run Phase 2 and the
-phases after it there, so discovery sees the pins read here.
+throwaway worktree per `../../references/throwaway-worktree.md`, but
+detached: `git -C <repo> worktree add --detach <printed-path>
+<remote>/<default>`, with no `-b`. Phase 2 and Phase 3 run there so
+discovery sees the pins read here, and the repository gains no branch
+until the plan is approved. On a halt, a plan stop, `--audit-only` or a
+declined plan, remove the worktree (`git -C <repo> worktree remove
+<printed-path>`) before replying.
 
 Record, per repository: the ecosystems found, every manifest and
 lockfile, every toolchain pin file, the project's declared quality-check
@@ -162,7 +166,8 @@ Present a plan, as text, covering:
 - The follow-up commits expected, and any bump that will leave the tree
   red until its follow-up lands.
 - For each repository: the branch the commits land on and the push
-  target. A repository whose ownership rested on the fallback signals
+  target, and any unpushed commits already ahead of the remote that are
+  not bumps (a push publishes them too). A repository whose ownership rested on the fallback signals
   alone is listed as local-only unless the user approves its push here.
 - How many commits this produces.
 - Any destructive step, such as a clean reinstall, with the exact
@@ -203,19 +208,25 @@ A hold added or released is its own commit too, naming the condition
 that started or ended it. Releasing a hold comes before the bump it
 unblocks.
 
-A repository that got a worktree in Phase 1 commits there.
+A repository that got a worktree in Phase 1 commits there. After the
+plan is approved and before the first edit, name the branch inside it
+with `git -C <printed-path> switch -c <branch>` (the branch the plan
+gave, else `wip/<topic>`; if it exists, pick another name). Commits on a
+detached HEAD are unreachable once the worktree is removed.
 Commit messages the skill writes itself may go through a quoted heredoc
 whose delimiter appears nowhere in the body, or through a file. Text
 quoted from release notes goes through a file.
 
-Commits land on the default branch by default. `--branch <name>` works
+Commits land on the default branch by default, or on the `wip/` branch
+of a worktree. `--branch <name>` works
 on a branch; `--push` pushes the commits; `--pr` pushes a branch and
 opens a pull request from it. Without `--push` or `--pr`, commit locally,
 stop, and print the push command.
 
 Make the run resumable: push whenever the local branch is ahead of the
-remote, `--push` or `--pr` was passed, and the plan approved the push,
-not only when this invocation created the commits.
+remote, `--push` or `--pr` was passed, and the plan approved the push
+(including any non-bump commits it listed as ahead), not only when this
+invocation created the commits.
 
 ### Trunk or a pull request
 
@@ -369,7 +380,8 @@ after: no second paragraph, no section, no plan.
   key that sets the window. Never say whether the user's go-ahead
   overrides the stop.
 - Leave out a lookup that could not run (a release list, a forge call) and
-  anything the run left out on purpose, such as an omitted trailer.
+  anything the run left out on purpose, such as an omitted trailer. When
+  the lookup's absence is the reason, say the notes "could not be read".
 
 Example halt, as plain text outside any code fence:
 
@@ -393,6 +405,16 @@ To continue:
 - Stop here.
 ```
 
+Example fork halt:
+
+```text
+⚠ Stopped: nothing was changed. widgets is a fork of example-org/widgets.
+
+To continue:
+- Name a different repository.
+- Stop here.
+```
+
 Example no-latest-release halt:
 
 ```text
@@ -410,6 +432,8 @@ Example unreadable-notes halt:
 
 To continue:
 - Paste the notes, or point to where they live.
+- Commit with links and a `why:` saying the notes were unread.
+- Skip uv.
 - Stop here.
 ```
 

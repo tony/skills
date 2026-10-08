@@ -215,18 +215,20 @@ captured log. Their findings carry `historical_only`.
 ```console
 $ git -c core.quotepath=off log -n "<N>" -p HEAD | python3 <slop_detect.py> diff \
     --registry <signatures.yml> \
-    --historical
+    --historical \
+    --out <history-diff.json>
 ```
 
 ```console
 $ git log -n "<N>" -z --format=%H%x1f%B HEAD | python3 <slop_detect.py> messages \
     --registry <signatures.yml> \
-    --historical
+    --historical \
+    --out <history-messages.json>
 ```
 
-Then run the Guard check from the pipeline reference. A finding has
-`{file, line_start, signature_id, tier, confidence: regex, action,
-historical_only}`. A finding with `historical_only: true` is advisory at
+Each `--out` is a `mktemp` path; read it with `jq`. Then run the Guard
+check from the pipeline reference. A finding has `{file, line_start,
+signature_id, tier, confidence: regex, action, historical_only}`. A finding with `historical_only: true` is advisory at
 any tier, because the skill cannot edit historical commits. A finding in
 a file listed in `DIRTY_AT_START` is advisory too.
 

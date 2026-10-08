@@ -6,9 +6,17 @@ set -euo pipefail
 git init -b main >/dev/null
 mkdir -p tests .pytest-optimizer
 
+cat >tests/conftest.py <<'PY'
+import pytest
+
+
+@pytest.fixture(scope="function")
+def make_config():
+    return {"debug": False}
+PY
 cat >tests/test_report.py <<'PY'
-def test_report():
-    assert True
+def test_report(make_config):
+    assert make_config["debug"] is False
 PY
 git add tests
 git commit -q -m 'tests(feat) Add report test'

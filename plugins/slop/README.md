@@ -75,67 +75,67 @@ your wording.
 
 Audit the branch since trunk:
 
-```
+```text
 /slop:deslop
 ```
 
 Offer fixup commits on `HEAD`:
 
-```
+```text
 /slop:deslop --apply-patches
 ```
 
 Offer autosquash, with tests in the conflict loop:
 
-```
+```text
 /slop:deslop --apply-rebase --run-tests
 ```
 
 Audit commit messages only, with the strict budget:
 
-```
+```text
 /slop:deslop --message-only --budget=strict
 ```
 
 Let `--apply-rebase` rewrite a branch that was already pushed:
 
-```
+```text
 /slop:deslop --force-rewrite-pushed --apply-rebase
 ```
 
 Audit the repo without applying anything:
 
-```
+```text
 /slop:scan
 ```
 
 Scope to a subdirectory:
 
-```
+```text
 /slop:scan --paths='src/**'
 ```
 
 Include the last 50 commits, as advisory findings:
 
-```
+```text
 /slop:scan --with-history=50
 ```
 
 Offer the per-finding commit loop:
 
-```
+```text
 /slop:scan --apply
 ```
 
 Commit a series you reviewed, keeping your edits to `commits.json`:
 
-```
+```text
 /slop:scan --apply --from=<run-dir>
 ```
 
 Stop on the first gate failure instead of skipping:
 
-```
+```text
 /slop:scan --apply --on-fail=stop
 ```
 
@@ -168,9 +168,8 @@ tracked files of four public Python repositories: aiosqlite (35 files),
 Fixit (111), apscheduler (100), and RapidFuzz (195), plus Apache Airflow
 (12,763 files).
 
-- Tier A: 1 finding in 13,204 files, a `low-value.todo-noise` hit on a
-  `TODO: revisit` that links an issue. That is a false positive for
-  auto-apply, so Tier A edits stay in the audit-first flow.
+- Tier A: 1 finding in 13,204 files. Tier A edits stay in the
+  audit-first flow.
 - Tier B: 0 in aiosqlite, 8 in Fixit, 191 in apscheduler, 241 in
   RapidFuzz, and 19,143 in Airflow. Nearly all of the larger counts are
   `hardcoded.test-runner` matches on CI configuration and contributor
