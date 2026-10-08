@@ -1,6 +1,6 @@
 {
   "name": "gh",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "File durable GitHub issues with reproductions, pinned links, and stripped PII. Enforces a markdown writing discipline reusable for any PR, comment, or ticket.",
   "author": {
     "name": "Tony Narlock",

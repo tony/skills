@@ -1,6 +1,6 @@
 {
   "name": "agent-messaging",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "Message another running Claude Code or Codex session, and verify who actually sent an incoming message.",
   "author": {
     "name": "Tony Narlock",

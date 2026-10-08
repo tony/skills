@@ -12,7 +12,7 @@
     {
       "name": "weave",
       "description": "Run independent, adversarial AI participants via sub-agents or model CLIs to brainstorm, refine, plan, execute, architect, review, and synthesize.",
-      "version": "0.0.2",
+      "version": "0.1.0",
       "author": {
         "name": "Tony Narlock",
         "email": "tony@git-pull.com"
@@ -25,7 +25,7 @@
     {
       "name": "rebase",
       "description": "Rebase onto remote trunk with a file-overlap reading before the replay, conflict resolution, and quality gate verification.",
-      "version": "0.0.1",
+      "version": "0.1.0",
       "author": {
         "name": "Tony Narlock",
         "email": "tony@git-pull.com"
@@ -51,7 +51,7 @@
     {
       "name": "tdd",
       "description": "TDD bug-fix workflow: reproduce bugs as failing tests, determine root cause, fix, and verify.",
-      "version": "0.0.1",
+      "version": "0.1.0",
       "author": {
         "name": "Tony Narlock",
         "email": "tony@git-pull.com"
@@ -64,7 +64,7 @@
     {
       "name": "commit",
       "description": "Create git commits following project conventions with format enforcement and safety checks.",
-      "version": "0.0.1",
+      "version": "0.1.0",
       "author": {
         "name": "Tony Narlock",
         "email": "tony@git-pull.com"
@@ -77,7 +77,7 @@
     {
       "name": "model-cli",
       "description": "Run a prompt through one AI CLI at a time: agy (Gemini), codex (GPT), or cursor's agent, with fallback between tiers.",
-      "version": "0.0.2",
+      "version": "0.1.0",
       "author": {
         "name": "Tony Narlock",
         "email": "tony@git-pull.com"
@@ -90,7 +90,7 @@
     {
       "name": "pr",
       "description": "Draft, refresh, rewrite, and review PR descriptions, and draft merge commit messages, from the branch diff.",
-      "version": "0.3.0",
+      "version": "0.1.0",
       "author": {
         "name": "Tony Narlock",
         "email": "tony@git-pull.com"
@@ -129,7 +129,7 @@
     {
       "name": "tailwind",
       "description": "Detect and fix inconsistent spacing, margin/gap mixing, and padding asymmetry in Tailwind CSS layouts.",
-      "version": "0.0.1",
+      "version": "0.1.0",
       "author": {
         "name": "Tony Narlock",
         "email": "tony@git-pull.com"
@@ -168,7 +168,7 @@
     {
       "name": "action",
       "description": "Convert tickets to branches in isolated worktrees. Uses team branch conventions, lands gated commits, and supports parallel tickets.",
-      "version": "0.0.1",
+      "version": "0.1.0",
       "author": {
         "name": "Tony Narlock",
         "email": "tony@git-pull.com"
@@ -181,7 +181,7 @@
     {
       "name": "lean",
       "description": "Writing discipline and cleanup tools for tight, slop-free prose and code.",
-      "version": "0.0.1",
+      "version": "0.1.0",
       "author": {
         "name": "Tony Narlock",
         "email": "tony@git-pull.com"
@@ -194,7 +194,7 @@
     {
       "name": "double-check",
       "description": "Forces verification requests to return re-derived answers instead of diffs against prior turns. The align skill restates a chat's analysis standalone after a revision-log reply.",
-      "version": "0.0.1",
+      "version": "0.1.0",
       "author": {
         "name": "Tony Narlock",
         "email": "tony@git-pull.com"
@@ -207,7 +207,7 @@
     {
       "name": "release",
       "description": "Cut and bump releases with safe defaults (no automatic push/tag). Rolls out releases to downstream consumers with CI verification.",
-      "version": "0.0.1",
+      "version": "0.1.0",
       "author": {
         "name": "Tony Narlock",
         "email": "tony@git-pull.com"
@@ -220,7 +220,7 @@
     {
       "name": "merge-pr",
       "description": "Merge PRs matching repo history conventions. Includes readiness checks, CI watching, stack detection, and automated rebasing.",
-      "version": "0.0.1",
+      "version": "0.1.0",
       "author": {
         "name": "Tony Narlock",
         "email": "tony@git-pull.com"
@@ -233,7 +233,7 @@
     {
       "name": "business",
       "description": "Measure and report the business value of AI workflows from provenance-tagged data, in engineer-hours and cycle time, never currency.",
-      "version": "0.0.2",
+      "version": "0.1.0",
       "author": {
         "name": "Tony Narlock",
         "email": "tony@git-pull.com"
@@ -246,7 +246,7 @@
     {
       "name": "github-actions",
       "description": "Update GitHub Actions pins fleet-wide. Verifies tags, researches release notes, commits each action separately, and supersedes Dependabot PRs.",
-      "version": "0.0.1",
+      "version": "0.1.0",
       "author": {
         "name": "Tony Narlock",
         "email": "tony@git-pull.com"
@@ -259,7 +259,7 @@
     {
       "name": "situate",
       "description": "Gain situational awareness before modifying code. Scans branches, PRs, tickets, and project conventions to orient the agent and verify the work required.",
-      "version": "0.0.2",
+      "version": "0.1.0",
       "author": {
         "name": "Tony Narlock",
         "email": "tony@git-pull.com"
@@ -272,7 +272,7 @@
     {
       "name": "terraform",
       "description": "Upgrade Terraform and OpenTofu versions. Discovers every root module, moves provider constraints together because they combine across modules, and refreshes lock files.",
-      "version": "0.0.1",
+      "version": "0.1.0",
       "author": {
         "name": "Tony Narlock",
         "email": "tony@git-pull.com"
@@ -285,7 +285,7 @@
     {
       "name": "ruff",
       "description": "Upgrade Ruff across repositories. Works out which new rules can fire against each repo's select list and lands one reviewed commit per rule, citing the upstream rule doc.",
-      "version": "0.0.1",
+      "version": "0.1.0",
       "author": {
         "name": "Tony Narlock",
         "email": "tony@git-pull.com"
@@ -298,7 +298,7 @@
     {
       "name": "gh",
       "description": "File durable GitHub issues with reproductions, pinned links, and stripped PII. Enforces a markdown writing discipline reusable for any PR, comment, or ticket.",
-      "version": "0.0.1",
+      "version": "0.1.0",
       "author": {
         "name": "Tony Narlock",
         "email": "tony@git-pull.com"
@@ -324,7 +324,7 @@
     {
       "name": "package-updater",
       "description": "Update dependencies and toolchains across repositories. Checks the supply-chain cooldown first when one is configured, then commits toolchain, named bumps, and lockfile refreshes separately with release notes cited.",
-      "version": "0.0.1",
+      "version": "0.1.0",
       "author": {
         "name": "Tony Narlock",
         "email": "tony@git-pull.com"
@@ -350,7 +350,7 @@
     {
       "name": "ticket",
       "description": "Manage work across trackers (Linear, Jira, GitHub, etc.) respecting each platform's native object graph. Drafts durable tickets focused on invariants.",
-      "version": "0.0.1",
+      "version": "0.1.0",
       "author": {
         "name": "Tony Narlock",
         "email": "tony@git-pull.com"
@@ -389,7 +389,7 @@
     {
       "name": "agent-messaging",
       "description": "Message another running Claude Code or Codex session, and verify who actually sent an incoming message.",
-      "version": "0.0.1",
+      "version": "0.1.0",
       "author": {
         "name": "Tony Narlock",
         "email": "tony@git-pull.com"
@@ -402,7 +402,7 @@
     {
       "name": "skill-style",
       "description": "Hold SKILL.md files to a deletion test: a line stays only when removing it would change what the agent does. Frontmatter, code blocks, and sections survive verbatim.",
-      "version": "0.0.1",
+      "version": "0.1.0",
       "author": {
         "name": "Tony Narlock",
         "email": "tony@git-pull.com"
@@ -415,7 +415,7 @@
     {
       "name": "scholar",
       "description": "Distil a checkable ontology from a codebase, a repository set, or a written corpus. Types, controlled vocabulary, cited and measured evidence.",
-      "version": "0.0.1",
+      "version": "0.1.0",
       "author": {
         "name": "Tony Narlock",
         "email": "tony@git-pull.com"

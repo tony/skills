@@ -1,6 +1,6 @@
 {
   "name": "package-updater",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "Update dependencies and toolchains across repositories. Checks the supply-chain cooldown first when one is configured, then commits toolchain, named bumps, and lockfile refreshes separately with release notes cited.",
   "author": {
     "name": "Tony Narlock",

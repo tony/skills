@@ -1,6 +1,6 @@
 {
   "name": "ticket",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "description": "Manage work across trackers (Linear, Jira, GitHub, etc.) respecting each platform's native object graph. Drafts durable tickets focused on invariants.",
   "author": {
     "name": "Tony Narlock",
