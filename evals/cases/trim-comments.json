@@ -1,0 +1,18 @@
+{
+  "skill_name": "trim-comments",
+  "trigger": {
+    "positive": [
+      { "prompt": "these comments are too fat, trim them", "top_k": 3 },
+      { "prompt": "the comments in this file are AI slop, cut them down", "top_k": 3 },
+      { "prompt": "debloat these docstrings, they are way too long", "top_k": 3 },
+      { "prompt": "keep comments light, avoid dense comments", "top_k": 3 },
+      { "prompt": "would we still be grateful for that comment in 3 years", "top_k": 3 }
+    ],
+    "negative": [
+      { "prompt": "reply to the review comment on the pull request", "owner": "check" },
+      { "prompt": "the commit message is way too long, cut it down", "owner": "lean-writing" },
+      { "prompt": "add a comment explaining what this regex matches" },
+      { "prompt": "comment out the debug block for now" }
+    ]
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "skill_name": "foray",
+  "trigger": {
+    "positive": [
+      { "prompt": "research how sqlite wal mode handles checkpoints and keep the sources", "top_k": 1 },
+      { "prompt": "assess whether we should adopt uv for our python monorepo and write it up", "top_k": 2 },
+      { "prompt": "pick up my research on postgres logical replication from last week", "top_k": 1 },
+      { "prompt": "what's the status of my research topics", "top_k": 2 },
+      { "prompt": "re-check the references in my wal research, some links may have moved", "top_k": 1 },
+      { "prompt": "fill the gaps in my vendor assessment", "top_k": 2 },
+      { "prompt": "write the report for my sqlite research, summary first", "top_k": 1 }
+    ],
+    "negative": [
+      { "prompt": "clone zod at the version we install so I can read its source", "owner": "study-deps" },
+      { "prompt": "where did I leave off on this branch", "owner": "situational-awareness" },
+      { "prompt": "are you sure that's right? I don't trust that", "owner": "double-check" },
+      { "prompt": "tighten this paragraph, it reads like AI fluff", "owner": "lean-writing" },
+      { "prompt": "build a glossary of what this codebase calls things", "owner": "ontology" },
+      { "prompt": "make a quick foray into the logs and tell me what failed" },
+      { "prompt": "change the topic of the slack channel" }
+    ]
+  }
+}
