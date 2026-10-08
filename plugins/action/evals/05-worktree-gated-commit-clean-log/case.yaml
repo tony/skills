@@ -13,6 +13,9 @@ execution:
   prompt: |
     /action:worktree Add a dry_run parameter to sync() that skips the writes and still returns the count --branch=feat/sync-dry-run
 
+    The repository is ./project. Work from there; its sibling worktrees
+    remain inside this fixture's writable workspace.
+
     After the commit, run `git log --format=%B` on the new branch and paste its output at the end of your reply.
   max_turns: 40
   timeout_seconds: 900
