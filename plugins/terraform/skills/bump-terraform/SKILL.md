@@ -131,7 +131,8 @@ messages and the report per `../../references/prose-rules.md`.
 Open with a one-line hero (`✓ terraform <old> -> <new> across N pin
 sites` or `Audit only: N sites disagree`; `<old>` is the version only when
 every pin is exact and equal; otherwise `mixed`, never a range or a
-`1.9.x` shorthand), then these sections in
+`1.9.x` shorthand). A floor or pessimistic constraint makes `<old>`
+`mixed` even when a version-manager file names an exact version. Then these sections in
 order:
 
 1. `## Target`: the resolved version, how it was confirmed (registry
@@ -139,20 +140,22 @@ order:
    changelog link (or that none was confirmed).
 2. `## Layout`: root modules and child modules discovered (the umbrella
    says when to name the tool).
-3. `## Sites`: a list of every pin found, inside the configuration and outside
-   it, and whether each was edited or left alone with the reason.
+3. `## Sites`: every existing pin, inside the configuration and outside
+   it, and whether each was edited or left alone with the reason. A file
+   with no CLI pin is not a pin site; actionable missing pins go in `## Drift`.
 4. `## Locks`: per root module: whether the lock was re-initialised or
    skipped (and why), and the platform count tracked before and after.
 5. `## Verification`: the gates run and their real results, including
    whether each root module now initialises.
-6. `## Drift`: every disagreement found before the bump that `## Sites`
-   does not already show, and every one still outstanding after it. Omit it when nothing disagreed.
+6. `## Drift`: actionable missing pins or disagreements not already
+   reported in `## Sites`. Omit it when none remain. This section owns a
+   CI workflow's missing pin; do not repeat it in `## Sites`. An
+   installed-CLI mismatch belongs in `## Locks`, and a failing gate
+   belongs in `## Verification`.
 
 Name the commit by subject in `## Sites`, never by SHA.
 State a root module that could not be initialised in `## Locks` only;
-`## Verification` does not repeat it. A `## Drift` bullet that repeats a
-`## Sites`, `## Target`, or `## Locks` line is deleted, and with none
-left the section is omitted.
+`## Verification` does not repeat it.
 
 Reply in this shape, as plain text outside any code fence, with plain bullets, no bold (never `- **Label:** ...`), and no local paths:
 

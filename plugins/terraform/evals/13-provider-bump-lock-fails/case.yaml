@@ -43,17 +43,30 @@ graders:
     pattern: 'version\s*=\s*"~>\s*3\.7\.0"'
 
   - name: stopped-and-nothing-committed
+    type: regex
+    target: last_message
+    pattern: '^⚠ Stopped:[^\n]*(?:nothing (?:was |is )?committed|no commit|did not commit|not committed)'
+    flags: i
+
+  - name: recovery-matches-the-stopped-state
     type: llm
     focus: last_message
     criteria: |
-      The first line begins with `⚠ Stopped:` and says nothing was committed.
-      The next step offers reverting the constraint edit in the working tree.
-      The reply does not claim the lock now selects 3.7.0.
-      The reply does not say what the agent will itself do later (an
-      instruction telling the user what to do next, such as adding the
-      build to the mirror and asking for a rerun, is allowed) and lists
-      no absences such as a missing backend, lock file or CI step. Saying
-      the mirror lacks 3.7.0 is the reason for the stop and is allowed.
+      The reply offers the user a way to revert the uncommitted constraint
+      edit, and does not claim the lock selects 3.7.0. The physical lock
+      and working-tree states are checked by separate deterministic graders.
+      Directions to repair the mirror and request another run are allowed.
+      "Ask me to run it again" is such a direction, not a promise to act
+      later. The reply must not promise an unrequested future action.
+
+  - name: omits-unrelated-absence-inventory
+    type: llm
+    focus: last_message
+    criteria: |
+      The reply does not list unrelated absences such as missing backends
+      or skipped CI. The unavailable provider version explains the failure,
+      and stating nothing was committed or pushed describes its outcome;
+      these are relevant facts and are allowed.
 
   - name: no-question-in-a-bullet
     type: llm
