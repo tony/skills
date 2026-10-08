@@ -11,6 +11,7 @@ cat >.gitignore <<'MD'
 .bashrc
 .claude
 .eval-artifacts
+.eval-state
 .gitconfig
 .gitmodules
 .idea
@@ -25,3 +26,7 @@ MD
 printf '# sandbox project\n' >README.md
 git add .gitignore README.md
 git commit -q -m 'docs(readme) Add the readme'
+
+mkdir -p .eval-state
+cp "$(dirname "$0")/../checkout_state.py" .eval-state/check_checkout.py
+python3 .eval-state/check_checkout.py capture

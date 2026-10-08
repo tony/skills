@@ -8,7 +8,7 @@ disable-model-invocation: true
 
 # Weave Code Review
 
-Run code review through independent adversarial workers in parallel, then synthesize their findings into a unified report with evidence-backed adjudication. Host-native sub-agents are the default; separate model CLIs are optional. This is a **project-read-only** command: no file in your repository is written, edited, or deleted. Session artifacts live in the session directory, outside your repository.
+Run code review through independent adversarial workers in parallel, then synthesize findings into a report with evidence-backed adjudication. Host-native sub-agents are the default; separate model CLIs are optional. This is a **project-read-only** command: do not change project content. Session artifacts live at the configured state root, outside the repository by default.
 
 The focus area comes from `$ARGUMENTS`; without one, review the whole branch.
 
@@ -51,7 +51,7 @@ The plan must contain:
 4. **Known concerns**: areas the user flagged, and risky patterns in the diff (large functions, missing tests, API changes)
 5. **Prompt strategy**: what each reviewer's prompt should emphasize
 
-Present the plan and wait for approval, then exit plan mode (`ExitPlanMode`). If plan mode is unavailable, write the plan as numbered steps in your response and continue; without an interactive way to approve, continue too. The session starts only after approval, because it writes outside the repository.
+Present the plan and wait for approval, then exit plan mode (`ExitPlanMode`). If plan mode is unavailable, write the plan as numbered steps in your response and continue; without an interactive way to approve, continue too. The session starts only after approval, because it creates persistent artifacts.
 
 ---
 
@@ -110,11 +110,13 @@ Apply `ensemble-core.md` (Blind judging, Synthesis protocol, Consensus map) to t
 | Actionability | 1x | Clear fix recommendations |
 | Convention coverage | 1x | Checks project-specific rules from CLAUDE.md |
 
-In Verify Claims, read the file and line of each reported issue to confirm it exists, check that a "Critical" has a real impact (exploitable or crash-worthy), and check each convention violation against the cited rule.
+In Verify Claims, read the file and line of each reported issue to confirm it exists, check that a "Critical" has a real impact (exploitable or crash-worthy), and check each convention violation against the cited rule. An unstated client default or server guarantee remains unknown: absence at a call site does not prove the behavior is absent. Put these unresolved checks in Summary, not Verified Issues or the blocker count. A verified generic defect does not verify every example: catching all exceptions proves broad retry, not that an unseen client raises on a decline or invalid input. Keep its evidence to a reproducible exception from a stub client. Missing input validation is a defect only when a known contract forbids those inputs. When the project has no test runner, propose test behavior without choosing a framework.
 
 ### Deduplicate and calibrate severity
 
 Group findings that refer to the same issue (same file, similar description). Each group carries its consensus tag and severity:
+
+In `consensus.md`, record a short diagnostic quote from each reviewer counted for each finding. Match the issue, not just its file or remedy: a proposed parameter for backoff is not an independent finding that the whole policy needs configuration. Recheck the quotes and tags after splitting findings or accepting critic additions; new claims do not inherit the original finding's votes.
 
 - 1 reviewer: the reported severity.
 - 2 or 3 reviewers: the highest severity any of them reported. Agreement shows in the consensus tag; it never raises severity.
@@ -122,7 +124,7 @@ Group findings that refer to the same issue (same file, similar description). Ea
 
 ### Write the report
 
-Write the report to `<session_dir>/pass-NNNN/synthesis.md` per `../../references/prose-rules.md`. Do not render anything yet: results are presented once, in Phase 6, after the last pass.
+Read `../../references/present-results.md` and `../../references/results/review.md` before writing the report to `<session_dir>/pass-NNNN/synthesis.md` per `../../references/prose-rules.md`. If an agent writes it, give that agent these references too. Raw critic deltas stay in `critic.md`; the report's Critic Findings follows the result template. With several reviewers, every finding bullet ends with its actual consensus tag, including Important and Suggestions; use the responding reviewer count as the denominator. With one reviewer, omit consensus tags. State the stale-base caveat in Summary; nothing sits between the hero and Scores. Do not render anything yet: results are presented once, in Phase 6, after the last pass.
 
 ---
 

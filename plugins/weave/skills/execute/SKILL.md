@@ -18,6 +18,11 @@ When the arguments ask to apply the latest session instead of giving a task, run
 
 This command needs a git repository with at least one commit, because workers run in worktrees and the engine stashes your uncommitted work. Without one, `init` fails: relay its `error` in one sentence, with no local paths, then tell the user to run it from a project checkout, and stop.
 
+If context already proves there is no repository or no commit, stop there.
+Use only: "Stopped: execute needs a project checkout with at least one commit."
+Then one bullet: "Run it from that checkout." Do not explain the stash or
+worktree machinery or ask the user to create a commit.
+
 ## Worker selection
 
 <!-- portable: ask-user-choice=headless-default -->

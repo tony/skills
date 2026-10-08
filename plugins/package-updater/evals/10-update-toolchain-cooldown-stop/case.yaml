@@ -52,3 +52,5 @@ graders:
       that sets the window. Naming the repository, its upstream or a
       release date is fine; it does not narrate commit history, authors
       or remotes.
+      The literal label "To continue:" and blank lines before the option
+      bullets are allowed; neither is an extra heading or paragraph.

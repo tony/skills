@@ -19,6 +19,15 @@ execution:
 runs: 3
 
 graders:
+  - name: offered-commit-uses-project-format
+    type: llm
+    focus: last_message
+    criteria: |
+      The reply offers a commit message or command for the uncommitted
+      changelog edit using the project's Scope(type[detail]) subject form,
+      such as CHANGES(docs), rather than docs(CHANGES). It does not explain
+      or justify the subject format.
+
   - name: changelog-gains-the-eviction-entry
     type: regex
     target:

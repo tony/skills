@@ -131,9 +131,11 @@ the host reports one.
 
 For project-read-only commands, give every role its own disposable isolated worktree
 under the session directory, created from the pre-dispatch snapshot (`worktrees
-create`), so the role sees the user's uncommitted work. Point the worker at that
-worktree, never the user's working tree. Prompt hardening still forbids project
-writes, so an accidental write is contained in a disposable tree.
+create`), so the role sees the user's uncommitted work. Include the engine's
+`worker_instructions` verbatim in its launch prompt: every shell call starts
+with the supplied directory prefix, and file-tool paths are absolute. A prose
+directory assignment does not set tool cwd. This is cooperative containment,
+not a filesystem sandbox; the repo guard detects live-checkout drift.
 
 For mutating commands, give every role its own isolated worktree on a
 dedicated branch, including the Maintainer. A sub-agent may modify only its
@@ -146,6 +148,10 @@ and snapshots have been captured, remove only that participant's exact
 session-scoped worktree. Native workers never run `checkout`, `clean`, or
 `reset` against the user's checkout. The repo guard reports any change to the
 checkout and never repairs it on its own.
+
+A mutating native run that detects live-checkout drift stops without cleanup
+or adoption. Keep the leaked files, worktrees, and original user stash for
+inspection; a concurrent user edit is indistinguishable from an escaped write.
 
 If the host cannot create native sub-agents, stop with a direct explanation.
 In an interactive session, offer a new explicit choice to use separate model

@@ -12,7 +12,8 @@ execution:
   prompt: >-
     /scholar:ontology --out=notes/ontology/tiny-lib/ The corpus is the
     checkout in ./tiny-lib. I approve the plan. Run every stage through
-    render. Do not ask me anything.
+    render. Record the final brief check with ./verify-brief.sh followed by
+    the analyzer's absolute path. Do not ask me anything.
   max_turns: 60
   timeout_seconds: 900
   allowed_tools: [Bash, Read, Write, Edit, Glob, Grep, Skill]
@@ -31,16 +32,23 @@ graders:
   - name: runs-the-brief-gate
     type: tool_used
     tool: Bash
-    input_match: 'check-brief'
+    input_match: 'check-brief|verify-brief\.sh'
     min: 1
 
   - name: brief-gate-passes
+    type: regex
+    target:
+      source: file
+      path: .eval-state/brief-gate.exit
+    pattern: '^0\s*$'
+
+  - name: reports-the-gate-result
     type: llm
     focus: last_message
     criteria: |
-      The reply reports that the brief's citation gate passed (no findings,
-      exit status zero). A reply that reports gate findings, or that never
-      says what the gate returned, fails.
+      The reply says the brief's citation check passed. It may group it
+      with the other successful checks and need not quote an exit code.
+      A reply reporting a failed brief check or omitting its outcome fails.
 
   - name: reports-once
     type: llm

@@ -6,14 +6,14 @@ Usage: survey.py PATH [--depth N] [--floor-pct P] [--time-limit S]
 Prints JSON: the filesystem holding PATH (total, used, available bytes),
 the floor in bytes (P percent of total, default 1), and every directory
 within N levels of PATH (default 3) whose size meets the floor, largest
-first. Sizes are allocated bytes (st_blocks), each hardlinked inode is
-counted once under the first path in name order, symlinks are never
+first. Sizes are allocated bytes (st_blocks), each inode is counted once
+under the first path in name order, symlinks are never
 followed, and the walk stays on PATH's filesystem. Paths that could not
 be read are listed under "errors" and their contents are missing from
 the sizes. Directories under /mnt are
 skipped (listed under "skipped") unless PATH is inside /mnt. When the
-time limit (default 90 seconds) runs out, "complete" is false and every
-size is a lower bound.
+time limit (default 90 seconds) runs out or a path cannot be read,
+"complete" is false and sizes are lower bounds.
 """
 
 # pyright: reportAny=false
@@ -78,9 +78,15 @@ class Walker:
             self.timed_out = True
             return total
         try:
-            total += os.lstat(path).st_blocks * BLOCK
+            st = os.lstat(path)
+            key = (st.st_dev, st.st_ino)
+            if key in self.seen:
+                self.skipped.append(path)
+                return 0
             with os.scandir(path) as it:
                 entries = sorted(it, key=lambda e: e.name)
+            self.seen.add(key)
+            total += st.st_blocks * BLOCK
         except OSError as err:
             self.errors.append(f"{path}: {err.strerror}")
             return total
@@ -90,17 +96,19 @@ class Walker:
                 break
             try:
                 st = entry.stat(follow_symlinks=False)
+                if st.st_dev != self.dev:
+                    self.skipped.append(entry.path)
+                    continue
                 if entry.is_dir(follow_symlinks=False):
                     if self.skip and entry.path == self.skip:
                         self.skipped.append(entry.path)
-                    elif st.st_dev == self.dev:
+                    else:
                         total += self.walk(entry.path, depth + 1)
                     continue
                 key = (st.st_dev, st.st_ino)
-                if st.st_nlink > 1:
-                    if key in self.seen:
-                        continue
-                    self.seen.add(key)
+                if key in self.seen:
+                    continue
+                self.seen.add(key)
                 total += st.st_blocks * BLOCK
             except OSError as err:
                 self.errors.append(f"{entry.path}: {err.strerror}")
@@ -143,7 +151,7 @@ def survey(
         "directories": [{"path": p, "bytes": s} for p, s in found],
         "errors": walker.errors,
         "skipped": walker.skipped,
-        "complete": not walker.timed_out,
+        "complete": not walker.timed_out and not walker.errors,
     }
 
 

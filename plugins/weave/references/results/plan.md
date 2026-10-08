@@ -2,7 +2,9 @@
 
 Plan renders into the host's plan file, not chat. IN_PLAN_MODE is true, so there is no next-step panel.
 
-State the plan's final decisions in every section, never how drafts changed: no "restored", "recounted", "added", or "removed" about the plan itself. Critic Findings lists what the critic found wrong, each with where the plan now covers it.
+Critic Findings states the risk, the chosen safeguard, and its place in the
+final plan. It does not describe defects in earlier drafts or their repair.
+Use "None." when no distinct risk remains to explain.
 
 ## Hero
 
@@ -40,7 +42,7 @@ Add the flag in the parser and thread it to the executor.
 The skeptic's executor threading won over the builder's global flag.
 
 ## Critic Findings
-- The quiet-mode path had no step; step 2 now covers it.
+- Quiet mode must stay silent; step 2 routes dry-run output through the verbosity check.
 
 ## Attribution
 Host-native sub-agents: maintainer, skeptic, builder.

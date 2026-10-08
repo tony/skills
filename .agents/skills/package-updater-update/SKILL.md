@@ -60,9 +60,14 @@ The bulk refresh needs no research and carries no claims.
 
 ### 4. Orchestration plan
 
+Enter plan mode before the first edit. In Claude Code call `EnterPlanMode`;
+in Cursor, Codex, or Gemini use `/plan` or `Shift+Tab`.
+Where plan mode is unavailable, present the plan as text.
+
 Present the plan the skill defines and wait for approval. The plan
 lists each repository with the branch it lands on and its push target.
 With `--audit-only`, stop here and report; nothing is written.
+Exit plan mode before landing changes.
 
 ### 5. Land
 
@@ -159,8 +164,8 @@ Reply in this shape, as plain text outside any code fence, with plain bullets, n
 - web: no change.
 ```
 
-A halted run takes the shape in "Plan stop and halt" in
-the `package-updater-updating-packages` skill; the plan gate is not a halt.
+When the run halts, read `references/stopped-run.md` in full and use
+its stopped-run contract. The plan gate is not a halt.
 
 Halt example, same plain-text form:
 

@@ -19,26 +19,24 @@ runs: 3
 
 graders:
   - name: branch-added-todo-is-removed
-    type: tool_used
-    tool: Edit
-    input_match: 'figure out later'
-    min: 1
-    arm: both
+    type: regex
+    target:
+      source: file
+      path: src/drain.py
+    pattern: 'figure out later'
+    match: not_contains
 
   - name: pre-existing-todo-is-never-edited
-    type: tool_used
-    tool: Edit
-    input_match: 'revisit this later'
-    min: 0
-    max: 0
-    arm: both
+    type: regex
+    target:
+      source: file
+      path: src/queue.py
+    pattern: '# TODO: revisit this later'
 
   - name: applies-something
-    type: tool_used
-    tool: Bash
-    input_match: 'git(?:\s+-[Cc]\s*\S+)*\s+commit'
-    min: 1
-    arm: both
+    type: regex
+    target: last_message
+    pattern: 'Committed: [1-9]'
 
   - name: never-pushes
     type: tool_used

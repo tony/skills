@@ -3,38 +3,8 @@
 How to pin a source so the citation still works in three years, and what a
 citation has to carry before it counts as evidence.
 
-## Pin every reference
-
-**A release tag first.** `blob/v2.40.0/README.md`. Most durable, and it tells
-the reader which released version the claim held for.
-
-**Otherwise a 7-character commit reachable from trunk.** `blob/9a29b1a/src/x.ts`.
-Use when there is no tag, or the claim is about unreleased code. Never a
-pull-request head: it can be rebased or garbage-collected.
-
-**Never a branch.** `blob/main/…` rots silently. The file moves, the lines
-shift, and the anchor lands on unrelated code while still returning 200. The
-one exception is a living document meant to always show the latest state, such
-as a contributing guide; link it as a pointer, never as evidence for a claim.
-
-**Line anchors only on a pinned ref.** `#L120` for a line, `#L120-L145` for a
-range. On a file the host renders rather than displays, such as Markdown or
-reStructuredText, the anchor needs `?plain=1` before the fragment or it has
-nothing to attach to.
-
-Resolve a tag to the commit it points at, so a moved tag cannot silently
-change what a quotation says. Record the result as `commit` in
-`sources.jsonl`; `verify` compares it against the tag later:
-
-```console
-$ gh api repos/OWNER/REPO/commits/v2.40.0 --jq .sha
-```
-
-Confirm a URL resolves before writing it down:
-
-```console
-$ curl -s -o /dev/null -w '%{http_code}\n' -L 'https://github.com/OWNER/REPO/blob/v2.40.0/README.md'
-```
+Record the resolved commit of a repository ref as `commit` in `sources.jsonl`;
+`verify` compares it against the ref later to detect moved tags.
 
 ## Every citation carries a locator
 

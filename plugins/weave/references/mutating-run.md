@@ -119,12 +119,21 @@ remove the worktrees and restore the stash) and render the nothing-applied
 opening below. A request that explicitly says to apply the result is that
 confirmation for applying, never for committing.
 
+For native workers, run the repo guard again immediately before adoption or
+cleanup. Any drift stops the run without changing or moving the checkout,
+removing worktrees, or restoring a stash over it. Preserve recovery evidence
+and report the affected paths; never use the nothing-applied opening below.
+
 After applying, run the project's quality gates. All must pass; fix and
 rerun otherwise. Remove the worktrees and restore the stash, then render
 the results: only now, so a next-step panel never runs while the user's work
-is held. Leave the result unstaged for the user to review and never commit it.
+is held. Before rendering, follow `ensemble-core.md` (Finish), including its
+final state check. Leave the result unstaged for the user to review and never
+commit it.
 
-When nothing was applied, the reply opens with this and nothing before it.
+When nothing was applied and `guard finish` returned `"clean": true`, the
+reply opens with this and nothing before it. If the session began with dirty
+files, add the sentence "Your existing edits and staging are intact."
 It replaces the hero, so no `Winner:` or `Best of N` line follows it; the
 kind's body sections come next. Say nothing about session files, saved copies,
 or unavailable choices. The last bullet names the command with the user's own
@@ -175,5 +184,7 @@ start no new session.
 4. Run the skill's `adopt` command with `--session` set to `session_dir`, the
    picks from step 2 minus the skipped paths, then the project's quality gates
    and the skill's `update --event` command. The original run already
-   restored the user's stash, so do not restore again.
+   restored the user's stash, so do not restore again. `adopt` refuses the
+   whole selection before writing if any target is dirty or has a symlinked
+   parent; remove that target from the selection and ask before retrying.
 5. Render the results as the skill's last step does.

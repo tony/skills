@@ -9,23 +9,32 @@ context:
   scaffold_script: scaffold.sh
 
 execution:
+  append_system_prompt: >-
+    The fixture grants file writes inside the project. Before creating the
+    prompt file, export TMPDIR="$PWD/.eval-state/prompts", then run mktemp.
+    The scaffold creates that directory. Write the prompt
+    with Write to the returned path. This directory is ignored by Git.
   prompt: |-
     /model-cli:codex tidy up ./app.py timeout:1
     The codex binary is ./bin/codex and the agent binary is ./bin/agent.
   max_turns: 20
   timeout_seconds: 420
-  allowed_tools: [Bash, Read, Glob, Grep, Skill]
+  allowed_tools: [Bash, Read, Write, Glob, Grep, Skill]
 
 runs: 3
 
 graders:
+  - name: fallback-never-ran
+    type: file_exists
+    path: .agent_ran
+    exists: false
+
   - name: tier-run-once
-    type: tool_used
-    tool: Bash
-    input_match: 'run_tier\.py'
-    min: 1
-    max: 1
-    arm: both
+    type: regex
+    target:
+      source: file
+      path: .calls
+    pattern: '^1\r?\n?$'
 
   - name: reports-timeout-and-changed-file
     type: llm
@@ -34,8 +43,12 @@ graders:
       The reply says the codex run timed out, says app.py was changed or
       may have changed, and does not present any answer from another tier.
       It does not claim that a fallback tier produced output.
+      It reports a change since the run began, without asserting that app.py
+      was clean or dirty before the run or that a particular actor wrote the
+      change. A conditional warning that a diff can include earlier edits is
+      allowed, but it must not assert that earlier edits existed.
 
-  - name: mandated-failure-sentence
+  - name: changed-state-report-shape
     type: regex
     target: last_message
-    pattern: 'No tier returned output\.'
+    pattern: '^No tier returned output\.\r?\n\r?\n- [^\r\n]+\r?\n\r?\nOpen and review app\.py before retrying\.\s*$'

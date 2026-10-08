@@ -18,6 +18,8 @@ condition.
 
 User arguments: $ARGUMENTS
 
+Read `../../references/output-contract.md` before writing study files.
+
 ## The prohibition
 
 The brief carries no citation, no permalink, and no bare number. Where it

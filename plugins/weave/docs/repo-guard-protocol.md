@@ -1,20 +1,36 @@
 # Repo guard
 
-The guard keeps weave workers out of the user's checkout. It isolates first,
-detects second, and never repairs on its own: it does not run `checkout`,
+The guard detects escaped worker writes and concurrent checkout changes. It
+never repairs on its own: it does not run `checkout`,
 `clean`, `reset`, or `stash` against the user's tree except when the user asks.
 `scripts/engine.py` implements it; `scripts/test_engine.py` tests it. Every
 weave command uses it except `fix-review`, which edits the repository on
-purpose, and a mutating command skips the final comparison.
+purpose. A mutating run that applies nothing must verify its original state
+before claiming the checkout is unchanged.
+
+## Contents
+
+- Snapshot
+- Isolation
+- Detection
+- Decision
+- Cleanup
+- Unsafe toplevels and no-repo mode
 
 ## Snapshot
 
 `engine.py init` records the checkout before any worker runs (outside no-repo
 mode, below). It builds a tree
-from a temporary copy of the index plus `git add -A`, so the user's index and
+from a temporary index rebuilt from staging entries plus `git add -A`, so the user's index and
 files are never touched. The tree holds every tracked change, deletion, and
 untracked non-ignored file as it stood. It becomes a commit on top of `HEAD`,
 pinned as `refs/weave-guard/<session>/pre`. Ignored files are not part of it.
+It also records staging entries and the HEAD branch. A mutating session pins
+an `initial` snapshot before stashing, then takes its dispatch snapshot after
+stashing. Stash restoration uses `--index` to preserve partial staging.
+The temporary index has no stat-cache shortcuts, so assume-unchanged and
+skip-worktree flags cannot conceal working-file changes. User index flags
+remain untouched.
 
 ## Isolation
 
@@ -27,6 +43,10 @@ created the lane fails; it never falls back to the user's checkout.
 Host sub-agents of a read-only command also get snapshot worktrees
 (`worktrees create`). Mutating commands start worker worktrees from `HEAD` after
 stashing the user's changes.
+Native launches include the engine's literal per-call directory prefix and
+absolute file-path rules. These instructions are not a sandbox: a shell `cd`
+does not persist between sub-agent tool calls, and hosts do not universally
+accept an arbitrary worker cwd.
 
 Each CLI's own read-only mode stays on as a second defense. `agy` has none.
 A CLI that writes through an absolute path to the checkout is caught by the
@@ -35,7 +55,7 @@ comparison below.
 ## Detection
 
 `guard check` snapshots the checkout again and compares per-path content hashes
-and `HEAD` with the pre snapshot. This catches a further edit to an
+and `HEAD` with the pre snapshot, including staging and the HEAD branch. This catches a further edit to an
 already-dirty file, which `git status --porcelain` cannot. `dispatch` runs it
 after every CLI attempt, and the orchestrating skill runs it once after all
 lanes finish.
@@ -52,7 +72,11 @@ the touched set includes both.
 
 ## Decision
 
-After all lanes finish, the skill offers once; headless runs keep and report.
+Native mutating runs halt on any drift. The engine refuses adoption while an
+active native run differs from its dispatch baseline and refuses `reset-main`
+for native workers. Worktrees, leaked files, and the original stash stay intact.
+
+Read-only runs offer once; headless runs keep and report.
 
 - **Keep**: the checkout stays as it is.
 - **Revert touched paths** (`guard resolve --choice revert`): restores each
@@ -69,7 +93,10 @@ the pre ref. A moved `HEAD` is reported and never undone.
 
 ## Cleanup
 
-`guard finish` logs `repo_guard_final`. When the session never recorded a
+`guard finish` runs before presentation and logs `repo_guard_final`. A mutating
+run with no adoption compares against its initial working bytes, staging, and
+HEAD after stash restoration. An adopted run reports no unchanged attestation.
+When the session never recorded a
 difference it deletes the session's pinned refs; otherwise they stay as
 evidence. The `pre-reset-*` pins that `reset-main` writes before it discards
 changes are never deleted by `finish`, so a reset stays recoverable.

@@ -1,0 +1,49 @@
+{
+  "measured_at": "2026-10-08",
+  "claude_version": "2.1.294",
+  "ablation": "with-without",
+  "runs_per_arm": 2,
+  "metric_notes": {
+    "cost_usd": "CLI-reported costUsd per run, including judgeCostUsd. Not billed charges or token counts.",
+    "duration_seconds": "CLI-reported elapsed duration per run; cases used concurrency 4.",
+    "comparison_votes": "Retained pairwise verdict ledger, two votes per run pair. Original comparison prompts and judge responses are unavailable; invalid is an incomplete vote."
+  },
+  "cases": [
+    {
+      "name": "10-refine-draft",
+      "weave": [
+        {"cost_usd": 1.2070379, "duration_seconds": 151},
+        {"cost_usd": 0.8462287, "duration_seconds": 116}
+      ],
+      "baseline": [
+        {"cost_usd": 0.0975058, "duration_seconds": 18},
+        {"cost_usd": 0.1001158, "duration_seconds": 19}
+      ],
+      "comparison_votes": [["weave", "baseline"], ["baseline", "weave"]]
+    },
+    {
+      "name": "08-brainstorm-ideas",
+      "weave": [
+        {"cost_usd": 1.5657101, "duration_seconds": 145},
+        {"cost_usd": 1.4490217, "duration_seconds": 211}
+      ],
+      "baseline": [
+        {"cost_usd": 0.1790154, "duration_seconds": 61},
+        {"cost_usd": 0.1829764, "duration_seconds": 46}
+      ],
+      "comparison_votes": [["baseline", "baseline"], ["baseline", "invalid"]]
+    },
+    {
+      "name": "09-brainstorm-and-refine-pipeline",
+      "weave": [
+        {"cost_usd": 2.0689336, "duration_seconds": 411},
+        {"cost_usd": 2.3747796, "duration_seconds": 373}
+      ],
+      "baseline": [
+        {"cost_usd": 0.2074576, "duration_seconds": 53},
+        {"cost_usd": 0.1807154, "duration_seconds": 38}
+      ],
+      "comparison_votes": [["weave", "weave"], ["baseline", "weave"]]
+    }
+  ]
+}

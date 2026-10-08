@@ -9,6 +9,16 @@ context:
   scaffold_script: scaffold.sh
 
 execution:
+  append_system_prompt: >-
+    Before input staging, run mkdir -p .eval-state/tmp from the project root.
+    For input staging, use mktemp -d "$PWD/.eval-state/tmp/weave-in.XXXXXX"
+    from that root, so the input file is inside the writable fixture.
+    This fixture stores weave sessions in .eval-state/weave inside
+    the project. Before the first init and on every engine command, set
+    AI_AIP_ROOT="$PWD/.eval-state/weave" for that command. This is
+    the configured session root, not a fallback after a denied write.
+    After persisting the final review and before replying, run
+    python3 .eval-state/collect_review.py to copy its raw evidence for grading.
   prompt: >-
     /weave:review --workers=subagents --passes=1 focus on error handling in
     the charge retry path
@@ -32,6 +42,16 @@ graders:
     focus: last_message
     criteria: |
       The reply reports the unbounded retry in src/payments.py (no attempt limit, no backoff growth, or swallowing every exception) as a finding, citing the file.
-      Each finding carries a consensus tag such as "consensus 3/3", "consensus 2/3", or "consensus 1/3".
-      A finding reported by every reviewer is not shown with a higher severity than the reviewers gave it; a Suggestion stays a Suggestion.
-      No bullet starts with a bold label, and the reply names no local path or session file.
+      Every finding in Verified Issues, including Important and Suggestions, carries a consensus tag such as "consensus 3/3", "consensus 2/3", or "consensus 1/3". Omit tags only when one reviewer responded, which the reply must state.
+      The reply never says a severity was promoted or raised because reviewers agreed.
+      No bullet starts with a bold label. Repository-relative finding paths are required; absolute machine paths and session-artifact paths are forbidden.
+      Verified Issues and the blocker count exclude claims that depend on unknown client defaults or server behavior; any such risks remain explicitly unverified in Summary.
+
+  - name: consensus-evidence
+    type: llm
+    focus:
+      source: file
+      path: .eval-state/review-evidence.json
+    criteria: |
+      Compare the synthesis's Verified Issues against the raw per-reviewer outputs in this fixture-collected JSON. A finding's consensus numerator counts reviewers who actually reported that issue, and its denominator is the number who responded. The participant list alone is not evidence that a reviewer reported a finding. It never claims three-reviewer agreement on an issue only the host added.
+      Agreement alone never raises severity: a unanimous Suggestion remains a Suggestion unless verification supplies a concrete higher-impact reason independent of reviewer count.

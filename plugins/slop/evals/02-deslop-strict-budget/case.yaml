@@ -18,6 +18,11 @@ execution:
 runs: 3
 
 graders:
+  - name: starts-with-plain-summary
+    type: regex
+    target: last_message
+    pattern: '^(?![\s\S]*\*\*)Slop summary\n'
+
   - name: reports-the-budget-it-was-given
     type: regex
     target: last_message

@@ -64,17 +64,17 @@ graders:
     type: llm
     focus: last_message
     criteria: |
-      The reply offers a commit message or commit command for the changelog
-      edit only if its subject uses the project's Scope(type[detail]) form,
+      The reply offers a commit message or commit command for the uncommitted
+      changelog edit. Its subject uses the project's Scope(type[detail]) form,
       such as CHANGES(docs) ..., and not the type(scope) form docs(CHANGES) ...
-      A reply that offers no commit message passes.
 
   - name: reports-mixed-commit-and-force-push
     type: llm
     focus: last_message
     criteria: |
       The reply says the changelog-only commit was dropped and names the backup
-      branch. It says the commit that mixes code with a changelog entry was left
-      intact (not dropped or rewritten). Because the branch is pushed, it tells
+      branch. It says the commit that mixes code with a changelog entry was
+      retained with its code changes. New commit IDs from rebasing are allowed.
+      Because the branch is pushed, it tells
       the user that publishing needs git push --force-with-lease
       --force-if-includes, and does not claim it pushed.

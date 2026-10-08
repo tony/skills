@@ -79,6 +79,7 @@ Hero success form: `✓ PR release: <headline>`; a stopped run follows
 Panel options: revise the headline, regenerate after updating the
 case study (read the `business-case-study-public` skill and follow it), or stop.
 Panel rules as in `interim-format.md` § Finished run.
+Apply the tier-3 reply scan from `audiences.md` before sending the reply.
 
 
 ## Portability notes

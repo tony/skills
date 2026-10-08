@@ -39,6 +39,10 @@ The caller sets these variables before invoking this reference:
 
 ## Render
 
+Finish the caller's checkout guard before rendering. Never infer "unchanged"
+from an absent adoption: a native worker may have escaped its worktree. A
+failed final check produces a safety halt, not the normal result template.
+
 Read ARTIFACT_PATH (a single markdown file; a directory only for
 `brainstorm`). Emit the kind file's hero (1-4 lines) from the artifact's
 content, then its body sections in that exact order. Skip a section only
@@ -78,8 +82,8 @@ When CASCADE_STATE is `early-exit`, append `, cascade early-exit
    a slot: fold a sub-heading into the first words of its paragraph or
    bullet (`- Cursor: ...`), never a line of its own, and start the reply
    with the hero, never a sentence about what was run and never "Here is..."
-   or "Below is...". Blind labels (A, B, C) never appear: use participant
-   names in every section.
+   or "Below is...". Blind labels (A, B, C) appear only in Attribution's
+   label map: every other section uses participant names.
 5. Never narrate how the run worked: no session files, `Bash`, interactive
    choices that were unavailable, stashes and worktrees that were cleaned up
    or restored, uncommitted edits put back, or a deslop pass that changed

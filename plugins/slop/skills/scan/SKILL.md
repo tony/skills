@@ -40,13 +40,15 @@ budget. A non-flag token is a path scope that overrides `--paths`.
 | `--from=<run-dir>` | off | With `--apply`, reuse a series an earlier run materialized instead of detecting again, so edits to its `commits.json` are honored. Halts when `HEAD` moved since. |
 | `--budget=<level>` | `default` | Tier ceiling; table in `../../references/detect-pipeline.md` § Budget and confirmation. |
 | `--with-history=<N>` | off | Also scan the last N commits' content and messages. Findings are advisory only. N is capped at the commit count, with a warning. |
-| `--allow-dirty` | off | Permit a dirty working tree. Files already dirty at Step 1 are advisory only; the skill never edits or rolls back a file with pre-existing changes. Without the flag, a dirty tree halts at Step 1. |
+| `--allow-dirty` | off | Permit a dirty working tree. Dirty files stay advisory; edits, gates, and hooks run in isolation. The apply helper checks the live target before publication. Without the flag, a dirty tree halts at Step 1. |
 | `--run-tests` | off | Include the test command in per-commit gates and final verification. |
 | `--no-semantic` | off | Skip the Pass B verifier; regex only. |
 | `--taxonomy=<path>` | built-in + `.claude/slop.local.yml` | Replace the registry; the built-in set and the override are both ignored. |
 | `--on-fail=<mode>` | `skip` | On a per-finding gate failure: `skip` (roll back, mark `gate-failed`, continue), `stop` (roll back, halt), `ask` (surface through `AskUserQuestion`). |
 
 ## Orchestration Plan
+
+Write the plan per `../../references/prose-rules.md`.
 
 Enter plan mode before the first edit. In Claude Code call `EnterPlanMode`; in
 Cursor, Codex, or Gemini use `/plan` or `Shift+Tab`. Where plan mode is
@@ -127,8 +129,10 @@ Halt with a clear message when any of these holds:
   registry SHA-256 it records changed. Say that the series is stale and
   to re-run `--apply` without `--from`.
 
-With `--from=<run-dir>`, read the scope, gate commands, `--on-fail`, and
-`DIRTY_AT_START` from `0000-PLAN.md`, skip Steps 2 to 8, and go to Step 9.
+With `--from=<run-dir>`, read the scope, gate commands, and `--on-fail`
+from `0000-PLAN.md`. Add its `DIRTY_AT_START` paths to the live dirty
+paths; never replace the live list with the saved one. Move findings in
+those files to advisory, skip Steps 2 to 8, and go to Step 9.
 
 ## Step 2: Resolve scan scope
 
@@ -232,7 +236,8 @@ any tier, because the skill cannot edit historical commits. A finding in
 a file listed in `DIRTY_AT_START` is advisory too.
 
 **Pass B.** Follow `../../references/detect-pipeline.md` § Pass B with a
-file as the unit. Pass the file's full content.
+file as the unit. Pass the file's full content; replacement text follows
+`../../references/prose-rules.md`.
 
 ## Step 7: Apply tiers, budget, and grouping
 
@@ -257,7 +262,8 @@ findings. For aggregation, use `/slop:deslop`.
 
 Always materialize first; the series is the user's review surface.
 Create the run directory per `../../references/detect-pipeline.md` §
-Run directory, with `<name>` = `slop-scan`.
+Run directory, with `<name>` = `slop-scan`. Cut patches in list order
+using that reference's § Cut patches, so each patch sees earlier edits.
 
 Layout:
 
@@ -266,6 +272,7 @@ Layout:
 ├── 0000-PLAN.md                       (plan + registry source path + SHA-256)
 ├── NNNN-edit-<file-slug>-<sigid>.patch
 ├── advisory.md                        (Tier C, over-budget, declined, historical-only, dirty-file findings)
+├── gates.json                         (approved gate names and shell commands)
 └── commits.json                       (finding → proposed commit subject + body)
 ```
 
@@ -278,11 +285,18 @@ built from `../../references/commit-template.md` and written per
 `../../references/prose-rules.md`. The user may edit an entry or delete
 one to skip it, then re-invoke with `--apply --from=<run-dir>`; the loop
 reads the file as it stands. A re-invocation without `--from` detects
-again, writes a new run directory, and ignores those edits. The skill
-drives the loop itself; there is no `apply.sh`.
+again, writes a new run directory, and ignores those edits. Do not reorder
+the list during apply; a stale patch fails safely in the scratch worktree.
+
+Write `gates.json` as a JSON list of objects with string `name` and
+`command` fields, in format, lint, typecheck, test order. Commands run
+from an isolated repository root against committed files. Omit empty
+buckets and tests unless `--run-tests` was passed. With no gates, write
+`[]` and retain the no-gate warning. A missing dependency is a gate
+failure; never install dependencies or fall back to the user's checkout.
 
 Without `--apply`, print the Step 11 report (skip its git and gate
-commands; counts of committed and rolled-back findings are 0) and stop.
+commands; committed and gate-failed counts are 0) and stop.
 The user re-invokes with `--apply --from=<run-dir>` once the proposals
 look right.
 
@@ -303,109 +317,47 @@ commit" approves **Apply and commit** and nothing broader: no push.
 
 ## Step 10: Per-finding commit loop
 
-Take the entries of `commits.json` in list order, which is apply order.
+`<scan_apply.py>` is `../../scripts/scan_apply.py`, resolved from this
+skill's directory to an absolute path written literally in each command.
+It requires python3 3.9 or newer. Review messages against
+`../../references/prose-rules.md` before applying: no AI trailers or emoji.
 
-### 10a. Apply the edit
-
-Use the Edit tool. The `old_string` and `new_string` come from the
-regex match (Pass A) or the sub-agent's suggestion (Pass B), as recorded
-in the finding's `.patch` file.
-
-### 10b. Stage explicit paths
-
-```console
-$ git add -- '<file>'
-```
-
-Write file names single-quoted, each `'` as `'\''`. Never `git add -A` or `git add .`.
-
-### 10c. Run touched-file gates
-
-Scope each gate to the touched file where the tool takes a path
-argument; otherwise run project-wide. With `--allow-dirty`, run only
-gates that take a path, skip the others, and report them as skipped, so
-a project-wide formatter cannot rewrite the user's dirty files.
+Take `commits.json` in list order. Start `<expected-head>` at `START_SHA`;
+after each successful commit, use the helper's returned `commit` as the
+next expected head. `<entry>` is the zero-based list index:
 
 ```console
-$ <FORMAT_CMD>
+$ python3 <scan_apply.py> \
+    --run-dir "<run-dir>" \
+    --expected-head "<expected-head>" \
+    --entry <entry>
 ```
 
-```console
-$ <LINT_CMD>
-```
+Add `--allow-dirty` only when the user passed it. The helper applies the
+patch, runs gates, and commits with hooks in a disposable worktree. It
+then verifies that only the approved file changed, checks the live
+branch and target again, and publishes that file while preserving the
+user's index. It never restores or cleans the user's other paths.
+If hooks change the gated content, it checks the exact candidate in a
+fresh worktree before publication; a formatter edit there rejects it.
 
-```console
-$ <TYPECHECK_CMD>
-```
+Read its JSON status:
 
-With `--run-tests`:
+- `committed`: record the returned commit.
+- `no-op`: record the finding as already fixed; no commit was created.
+- `gate-failed` or `hook-failed`: record stderr. `--on-fail=skip`
+  continues; `stop` halts; `ask` offers correcting the patch and retrying,
+  skipping, or stopping. Without a question tool, `ask` means `skip`.
+- `refused` or `recovery-needed`: halt and report the reason and any
+  `recovery_branch`. Inspect the live state before retrying. Never reset
+  or clean it to force the series through.
 
-```console
-$ <TEST_CMD>
-```
-
-- The formatter applies its changes; re-stage only `<file>` with
-  `git add -- '<file>'`. A project-wide formatter may also rewrite other
-  files: after the gates, run `git status --porcelain` and restore every
-  path other than `<file>` with
-  `git restore --source=HEAD --staged --worktree -- '<path>'` (for an
-  untracked `??` path, `git clean -fd -- '<path>'`), so the next finding
-  starts clean. Never restore a `DIRTY_AT_START` path; a change to one
-  is a gate failure.
-- A linter with `--fix` applies fixes; re-stage. An error it cannot fix
-  is a gate failure.
-- A type checker never modifies files; its errors are gate failures.
-- Test failures are gate failures.
-
-### 10d. On gate failure
-
-Roll the file back with a command that drops both the index and worktree
-change. The file is never one of `DIRTY_AT_START`, so no user edit is
-lost:
-
-```console
-$ git restore --source=HEAD --staged --worktree -- '<file>'
-```
-
-Then clean up after a project-wide formatter as in 10c: run
-`git status --porcelain` and restore or clean every other path the
-gates changed, as above.
-
-Then apply `--on-fail`:
-
-- `skip` (default): record the gate's stderr, mark the finding
-  `gate-failed`, continue.
-- `stop`: record stderr and halt.
-- `ask`: ask through `AskUserQuestion`: **Edit and continue** (the user
-  fixes the file; re-run the gates), **Skip this finding** (roll back
-  and continue), or **Stop the run** (roll back and halt). Without a
-  question tool, behave as `skip`.
-
-### 10e. On gate pass
-
-Read the finding's `subject` and `body` from its `commits.json` entry. Make a temp file with
-`mktemp "${TMPDIR:-/tmp}/slop-msg.XXXXXX"` and print its path. Write the
-message to it with the Write tool, never a shell heredoc: the text comes
-from repo content, and a line equal to the delimiter would end the
-heredoc and run the rest as shell. Reuse the printed path literally.
-Commit with it, then delete it with `rm -f`:
-
-```console
-$ git commit -F "<temp-message-file>"
-```
-
-The message carries no `Co-Authored-By:` line, no "Generated with" or
-other tool trailer, and no emoji; hosts add these by default, so strip
-them before committing.
-
-If a `pre-commit` or `commit-msg` hook rejects the commit, treat it as a
-gate failure: roll back as in 10d, mark the finding `hook-failed`,
-surface the hook's stderr, and apply `--on-fail`. Never use
-`--no-verify`; hooks are the project's authority.
-
-Mark the finding `committed`.
+Gate and hook failures discard only the isolated attempt. The original
+checkout keeps its staged, unstaged, and untracked work.
 
 ## Step 11: Final verification and report
+
+Write the report per `../../references/prose-rules.md`.
 
 ```console
 $ git log --oneline "<START_SHA>..HEAD"
@@ -415,29 +367,19 @@ $ git log --oneline "<START_SHA>..HEAD"
 $ git status --porcelain
 ```
 
-Run the full gate set on the tip, skipping empty buckets:
+Verify the final tip in isolation, adding `--allow-dirty` only when the
+user passed it:
 
 ```console
-$ <FORMAT_CMD>
+$ python3 <scan_apply.py> \
+    --run-dir "<run-dir>" \
+    --expected-head "<expected-head>" \
+    --verify
 ```
 
-```console
-$ <LINT_CMD>
-```
-
-```console
-$ <TYPECHECK_CMD>
-```
-
-With `--run-tests`:
-
-```console
-$ <TEST_CMD>
-```
-
-Run `git status --porcelain` again. List files a formatter rewrote as
-`Gate left uncommitted changes: <paths>` under `Quality gates (final)`;
-never commit or restore them.
+Report `gate-failed` or `gate-modified` as a failed final gate. The JSON
+names the command, output, and files requiring attention. Keep those
+findings open; the helper never copies final-gate edits into the checkout.
 
 The hero line is `Slop scan summary`; sections follow in the order
 shown: summary block, `Open findings`, `Quality gates (final)`,
@@ -445,11 +387,16 @@ shown: summary block, `Open findings`, `Quality gates (final)`,
 line. `Open findings` lists each Tier A and B finding neither committed nor gate-failed as
 `signature_id file:line` (`signature_id <short-sha> subject` or `body`
 for a history finding), at most 10, then `and N more`; omit it when none
-remain. A halted run
-prints one sentence naming the cause, then what the user must do (commit
-or stash, or pass `--allow-dirty`).
+remain. A precondition refusal prints one sentence naming the cause,
+then what the user must do. An attempted apply uses the summary even
+when `--on-fail=stop` halted it. Under `Gate-failed findings`, name the
+failure, whether the checkout was preserved, and the required next step.
+Do not add process or rule-compliance commentary.
 
-Reply in this shape, as plain text outside any code fence, with plain bullets, no bold (never `- **Label:** ...`), and no local paths:
+Print only this report, starting literally with `Slop scan summary`.
+Use plain text outside a code fence and plain bullets: no preamble,
+recap, bold labels, or extra sections. Omit local paths except the
+patch-series path and commands that use it:
 
 ```text
 Slop scan summary
@@ -459,8 +406,8 @@ Budget: default
 Findings: 5 (2 Tier A, 2 Tier B, 1 Tier C, 0 historical-only)
 
 Committed: 3
-Gate-failed (rolled back): 1
-Hook-failed (rolled back): 0
+Gate-failed: 1
+Hook-failed: 0
 Advisory: 1 (in advisory.md under the patch series)
 Historical-only: 0
 

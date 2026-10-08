@@ -83,12 +83,11 @@ graders:
     max: 0
     arm: both
 
-  - name: reports-backup-and-clean-code-diff
+  - name: reports-backup-and-project-commit
     type: llm
     focus: last_message
     criteria: |
       The reply says the old changelog commit was dropped, names the backup
       branch, and says one new commit was added at the tip. The commit subject
-      may follow the project's own format from its AGENTS.md (Scope(type[detail]))
-      or a docs(CHANGES) form; either is correct. It does not claim a push or
-      tell the user the code changed.
+      follows the project's Scope(type[detail]) format, such as CHANGES(docs),
+      rather than docs(CHANGES). It does not claim a push or say code changed.

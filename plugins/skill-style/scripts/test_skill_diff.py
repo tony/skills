@@ -5,6 +5,7 @@
 
 from __future__ import annotations
 
+import re
 import tempfile
 from pathlib import Path
 
@@ -12,6 +13,58 @@ import pytest
 import skill_diff  # pyright: ignore[reportImplicitRelativeImport]
 
 EXIT_MISSING = 2
+
+
+def test_report_graders_reject_malformed_replies() -> None:
+    graders = Path(__file__).parents[1] / "evals/01-skill-style-bloated-helper/graders"
+    patterns = [
+        next(
+            line.removeprefix("pattern: '").removesuffix("'")
+            for line in (graders / name).read_text().splitlines()
+            if line.startswith("pattern: '")
+        )
+        for name in ("output-shape.md", "short-target-first-hero.md")
+    ]
+    valid = """The draft loses its intro.
+
+## Ledger
+
+- Intro: repeats the task.
+
+## Behavior changes
+
+- Description names the trigger.
+
+## Diff
+
+```diff
+--- a/SKILL.md
++++ b/SKILL.md
+@@ -1 +0,0 @@
+-Intro
+```
+"""
+    assert all(re.search(pattern, valid) for pattern in patterns)
+    fenced_diff = valid.replace("-Intro", "-```bash\n-echo example\n-```")
+    assert all(re.search(pattern, fenced_diff) for pattern in patterns)
+    for malformed in (
+        valid.replace("- Intro:", "- **Intro:**", 1),
+        valid.replace("The draft loses its intro.", "We trimmed the draft."),
+        valid.replace("The draft loses its intro.", "The draft loses filler. We edited it."),
+        valid + "\n## Summary\n\nDone.\n```",
+    ):
+        assert not all(re.search(pattern, malformed) for pattern in patterns), malformed
+
+
+def test_examples_preserve_protected_command_fences() -> None:
+    references = Path(__file__).parents[1] / "references"
+    fences: list[list[str]] = []
+    for name in ("example-bloated.md", "example-ideal.md"):
+        text = (references / name).read_text().split("````markdown\n", 1)[1]
+        sample = text.split("\n````", 1)[0]
+        fences.append(re.findall(r"^```[^\n]*\n(.*?)^```", sample, re.MULTILINE | re.DOTALL))
+    assert fences[0]
+    assert fences[0] == fences[1]
 
 
 def test_diff_excludes_earlier_edits_and_temp_paths(

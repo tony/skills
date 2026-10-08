@@ -58,12 +58,16 @@ Write `<run>/reports/leadership.md` with this fixed structure:
    `measurement.md`; break-even from the script output, or stated unknown.
 4. Scenarios: the conservative scenario (defined in `measurement.md`)
    is the committed number; base and upside appear as context, never
-   as the headline.
+   as the headline. With negative per-instance savings, state the actual
+   volume bounds used: high for conservative, low for upside.
 5. Assumptions register and data dictionary: appendix, inline
    from `assumptions.yaml` plus definitions of every metric used.
 6. Known limitations: each with a confidence label.
 7. What would flip this conclusion: the input thresholds at
-   which the answer changes.
+   which the answer changes, from registered or scripted figures;
+   otherwise name the data needed, never an invented trial-count cutoff.
+   Recommend no sample count without a registered precision or power design;
+   display thresholds are not collection targets.
 8. Pre-answered objections: at minimum: how do you know the
    skill caused this (name the counterfactual rung); does the
    savings rate survive the verification tax; who maintains the
@@ -75,8 +79,9 @@ Then run the money check, step 4 of `interim-format.md` § Rendering a report.
 
 ## Output
 
-Hero success form: `✓ Leadership report: <committed figure with
-tag>`. Sections and stopped-run shape as in `interim-format.md`; `## Report` also names the
+Hero success form: `✓ Leadership report: net <signed figure> engineer-hours
+projected over <horizon> (<tag>)`; keep the printed sign, never write
+"loses" before a negative number. Sections and stopped-run shape as in `interim-format.md`; `## Report` also names the
 strongest limitation. Panel options: render the org-wide projection
 next (read `../report-org-wide/SKILL.md` and follow it), adjust
 assumptions and re-render, or stop.

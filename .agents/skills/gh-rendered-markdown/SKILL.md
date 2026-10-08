@@ -13,14 +13,14 @@ metadata:
 Write the body so it renders, and link it so it still resolves in
 three years. Write it per `references/prose-rules.md`.
 
-Two references carry the rules, and `create-issue` follows the same
-ones. Read both before drafting:
+Read these references before drafting:
 
 - `references/rendered-markdown.md` — wrapping, symbols, code
   fences, `<details>`, structure, mentions, what to leave out, and the
   preview command.
-- `references/source-links.md` — pinning, autolinking, and
+- `references/source-links.md` — autolinking and
   cross-repo references.
+- `references/source-pins.md` — pinned refs and verification of cited contents.
 
 For a pull-request description, a repository markdown file, or a commit
 message, also read `references/pr-and-files.md`.
@@ -35,7 +35,7 @@ message, also read `references/pr-and-files.md`.
 2. Draft or fix the text per `rendered-markdown.md`. This skill
    governs what you are writing, not the files around it. Filing an
    issue belongs to `create-issue`, which applies these rules.
-3. Pin and complete every link per `source-links.md`. When the text
+3. Pin and complete every link per `source-pins.md` and `source-links.md`. When the text
    names an upstream open-source project, also read
    `references/project-links.md` for its link set.
 4. Strip local absolute paths, hostnames, emails, and tokens from the

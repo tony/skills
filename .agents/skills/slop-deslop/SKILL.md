@@ -68,6 +68,8 @@ and audits through `<b>`; a single `<sha>` sets `BASELINE_SHA` to it.
 
 ## Orchestration Plan
 
+Write the plan per `references/prose-rules.md`.
+
 Enter plan mode before the first edit. In Claude Code call `EnterPlanMode`; in
 Cursor, Codex, or Gemini use `/plan` or `Shift+Tab`. Where plan mode is
 unavailable, present the plan as text.
@@ -214,7 +216,7 @@ action}`.
 
 **Pass B.** Follow `references/detect-pipeline.md` § Pass B with a
 commit as the unit. Pass the commit's full diff (`git show <sha>`) and
-message.
+message; replacement text follows `references/prose-rules.md`.
 
 ## Step 7: Apply tiers, budget, and grouping
 
@@ -252,51 +254,8 @@ Always materialize first; the series is the user's review surface.
 Create the run directory per `references/detect-pipeline.md` §
 Run directory, with `<name>` = `deslop`.
 
-Cut the diff patches sequentially. Before creating the scratch worktree,
-compare two physical paths: print the repository root, then the physical
-home path.
-
-```console
-$ git rev-parse --show-toplevel
-```
-
-```console
-$ (cd ~ && pwd -P)
-```
-
-Refuse when the two are equal or the root is an ancestor of home: a
-dotfile repo rooted at home would check out the whole home directory. A
-string compare against `$HOME` misses a symlinked home. Make the
-scratch directory and print it:
-
-```console
-$ mktemp -d "${TMPDIR:-/tmp}/deslop-scratch.XXXXXX"
-```
-
-Use the printed path literally as `<scratch>`:
-
-```console
-$ git worktree add --detach "<scratch>" HEAD
-```
-
-For each finding in number order, make its edit inside `<scratch>`,
-write that file's diff as the finding's patch, then stage the file so the
-next diff starts from the edited state:
-
-```console
-$ git -C "<scratch>" diff -- '<file>'
-```
-
-```console
-$ git -C "<scratch>" add -- '<file>'
-```
-
-When every patch is cut, remove the worktree (after a failed or killed
-run, remove it the same way and run `git worktree prune`):
-
-```console
-$ git worktree remove --force "<scratch>"
-```
+Follow `references/detect-pipeline.md` § Cut patches in the order
+Step 7 assigned.
 
 Layout:
 
@@ -373,8 +332,10 @@ prints the same name:
 $ bash "<run-dir>/apply.sh"
 ```
 
-Record that name in the final report and tell the user that
-`git reset --hard <backup>` restores the original state.
+Record that name in the final report. The backup holds the starting
+commits, not later uncommitted work. Offer `git reset --hard <backup>`
+only after the user saves current changes and approves discarding the
+post-backup commits; never run it automatically.
 
 `apply.sh` stages explicit paths
 only and never uses `git add -A` or `git add .`. Reword commits are
@@ -406,6 +367,8 @@ is aborted. On abort, remind the user that the Step 10 backup branch
 exists.
 
 ## Step 12: Final verification and report
+
+Write the report per `references/prose-rules.md`.
 
 ```console
 $ git log --oneline "<BASELINE_SHA>..HEAD"
@@ -451,7 +414,10 @@ remain. A halted or
 refused run prints one sentence naming the cause, then what the user
 must do (commit or stash, or re-run with `--force-rewrite-pushed`):
 
-Reply in this shape, as plain text outside any code fence, with plain bullets, no bold (never `- **Label:** ...`), and no local paths:
+Print only this report, starting literally with `Slop summary`. Use
+plain text outside a code fence and plain bullets: no preamble, recap,
+bold labels, or extra sections. Omit local paths except the patch-series
+path and commands that use it:
 
 ```text
 Slop summary
@@ -472,7 +438,7 @@ Quality gates (final)
 format=pass | lint=pass | typecheck=pass | tests=skipped
 
 Patch series: <run-dir>
-Next: git push --force-with-lease --force-if-includes
+Next: git push
 ```
 
 Print the `Patch series:` line with the path Step 8 printed, because

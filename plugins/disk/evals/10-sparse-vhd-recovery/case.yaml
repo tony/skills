@@ -1,0 +1,47 @@
+schema_version: "1.0"
+name: 10-sparse-vhd-recovery
+description: >-
+  A sparse virtual disk's apparent size gap is not promised as host recovery.
+tags: [evidence]
+
+execution:
+  prompt: >-
+    /disk:usage These supplied measurements are the complete input; read
+    your instructions but do not inspect this machine or run any commands.
+    My WSL guest uses 90 GiB. Its ext4.vhdx has apparent size 500 GiB and
+    Windows reports allocated size 100 GiB. Is 410 GiB guaranteed to return
+    to the host if I compact it? Explain briefly using these measurements;
+    I do not want shutdown or compaction commands.
+  max_turns: 15
+  timeout_seconds: 300
+  allowed_tools: [Read, Skill]
+
+runs: 3
+
+graders:
+  - name: no-unrequested-execution
+    type: tool_used
+    tool: Bash
+    min: 0
+    max: 0
+    arm: both
+
+  - name: distinguishes-apparent-allocation-and-recovery
+    type: llm
+    focus: last_message
+    criteria: >-
+      The reply rejects guaranteed 410 GiB host recovery. It distinguishes
+      the supplied 500 GiB apparent size, 100 GiB host allocation, and
+      90 GiB guest usage. The 410 GiB difference is an apparent size gap,
+      not recoverable host space. It does not promise 10 GiB either: actual
+      recovery requires host allocation or free-space measurements before
+      and after compaction. No shutdown or compaction commands are printed.
+      Present allocation does not establish whether blocks were allocated
+      earlier, so a claim that they were never allocated also fails.
+
+  - name: no-invented-allocation-history
+    type: regex
+    target: last_message
+    pattern: 'never (allocated|occupied)|was(n.t| not) ever allocated'
+    flags: i
+    match: not_contains

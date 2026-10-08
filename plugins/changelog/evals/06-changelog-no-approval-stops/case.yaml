@@ -18,6 +18,15 @@ execution:
 runs: 3
 
 graders:
+  - name: offered-commit-uses-project-format
+    type: llm
+    focus: last_message
+    criteria: |
+      The proposal includes a commit message using the project's
+      Scope(type[detail]) subject form, such as CHANGES(docs), rather than
+      docs(CHANGES). It does not claim to have committed or justify the
+      subject format.
+
   - name: changelog-left-as-found
     type: regex
     target:

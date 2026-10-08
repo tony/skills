@@ -1,0 +1,44 @@
+schema_version: "1.0"
+name: 05-codex-regex-check
+description: >-
+  The codex skill runs the stub and attributes the answer only to the codex tier.
+tags: [fixture, gated]
+
+context:
+  scaffold_script: scaffold.sh
+
+execution:
+  append_system_prompt: >-
+    The fixture grants file writes inside the project. Before creating the
+    prompt file, export TMPDIR="$PWD/.eval-state/prompts", then run mktemp.
+    The scaffold creates that directory. Write the prompt
+    with Write to the returned path. This directory is ignored by Git.
+  prompt: |-
+    /model-cli:codex "double check this regex handles unicode edge cases" timeout:90
+
+    ```
+    ^[\w.+-]+@[\w-]+\.[a-zA-Z]{2,}$
+    ```
+
+    The codex binary is ./bin/codex and the agent binary is ./bin/agent.
+  max_turns: 20
+  timeout_seconds: 420
+  allowed_tools: [Bash, Read, Write, Glob, Grep, Skill]
+
+runs: 3
+
+graders:
+  - name: ran-codex
+    type: tool_used
+    tool: Bash
+    input_match: 'bin/codex'
+    min: 1
+    arm: both
+
+  - name: attributes-to-codex-tier
+    type: llm
+    focus: last_message
+    criteria: |
+        The reply opens with a one-line header naming ./bin/codex and tier 1,
+        then shows the returned answer. It does not name a model or claim
+        the supplied binary proves the vendor identity or absence of a sandbox.

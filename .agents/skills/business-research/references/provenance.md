@@ -11,8 +11,9 @@ script) is a label beside the tag, not a second tag:
 
 - MEASURED: read from instrumented data. Cite the
   source-manifest entry in the run's `sources.md` by its stable name.
-- DERIVED: computed from measured inputs. Show the formula
-  inline next to the figure; each input keeps its own tag.
+- DERIVED: computed from tagged inputs. Show the formula
+  inline next to the figure; each input keeps its own tag. A calculation
+  using assumptions remains an estimate, not a measured outcome.
 - BENCHMARKED: from an external source. Pinned link (URL, DOI,
   or report ID) plus retrieval date. Vendor sources carry an
   additional `(vendor)` flag and are never used as internal inputs.

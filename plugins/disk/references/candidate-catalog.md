@@ -4,7 +4,7 @@
 
 - Regenerable
 - Redundant
-- Stale but unique
+- Needs a decision
 - Protected
 - Classification rules
 - Ambiguity
@@ -18,7 +18,7 @@ whether the user is asked first.
 Content a tool will rebuild or re-download on demand. Deletion costs
 time and bandwidth, never data. Reclaim with a single blanket approval.
 
-Package manager content-addressed stores and download caches; compiler
+Candidates include package manager content-addressed stores and download caches; compiler
 and toolchain caches; browser engine downloads for test harnesses;
 build output directories (`target/`, `build/`, `dist/`, `.venv`,
 `node_modules`).
@@ -36,7 +36,7 @@ Prefer the tool's own command over `rm`. Re-check each with `<tool> --help`:
   downloaded modules; rebuilt by `go build`.
 - Docker: `docker builder prune` for build cache, `docker image prune` for
   dangling images; rebuilt by `docker build` or `docker pull`. Volumes
-  (`docker volume ls`) can hold data: classify them stale-but-unique.
+  (`docker volume ls`) can hold data: they need a directory-specific decision.
 - conda, Hugging Face, Gradle, Maven: `conda clean --all`,
   `hf cache prune` and `hf cache rm`, `~/.gradle/caches`, `~/.m2/repository`;
   re-downloaded on demand, so a model or dependency set costs bandwidth
@@ -45,8 +45,13 @@ Prefer the tool's own command over `rm`. Re-check each with `<tool> --help`:
 - Playwright browsers: delete the cache directory; `npx playwright install`.
 - `node_modules` and `.venv`: delete the directory; `npm ci` or `uv sync`.
 
-System tier (`apt clean`, `journalctl --vacuum-size`, `snap` revisions) is
-regenerable but needs root.
+Verify that each candidate is reproducible from an available source.
+Locally installed packages, pinned stores, and hand-written files are
+not disposable merely because they sit under a cache directory.
+
+System package caches such as `apt clean` need root. Print the command
+for the user; never execute it. System logs and old tool revisions are
+data requiring a specific decision, not regenerable caches.
 
 Three cautions apply even here:
 
@@ -59,10 +64,8 @@ Three cautions apply even here:
   offline or the upstream registry removes a version. Ask before
   clearing a store backing a project with a committed lockfile if the
   user has said they work offline.
-- **Store generations.** Package managers keep versioned store
-  directories side by side across major releases. Older generations
-  are dead weight; the current one is hot. Identify which generation
-  the installed tool version writes to before deleting any of them.
+- **Store generations.** Identify which installed tool versions use
+  each store. Age alone does not establish that a store is unused.
 
 ## Redundant
 
@@ -77,11 +80,10 @@ Resolve symlinks before measuring: a dotfiles-managed directory appears
 under two paths, and counting both implies a duplicate that does not
 exist.
 
-## Stale but unique
+## Needs a decision
 
-Data that exists nowhere else and is probably unwanted, but only the
-user knows. Never delete without an explicit decision on the specific
-directory.
+Data with no proved replacement, whose value only the user can decide.
+Never delete without an explicit decision on the specific directory.
 
 Trash and recycle directories; old tool version installs; superseded
 toolchain versions; downloads; workspace snapshots from tools no longer
@@ -92,9 +94,9 @@ blanket "clear stale data" approval does not cover this tier.
 
 ## Protected
 
-Irreplaceable. Never deleted, never compressed without the user
-understanding the access tradeoff, never moved without updating the
-owning tool's index. See `agent-history.md`.
+Irreplaceable. Modify a live history store only through its verified
+owning-tool archival path, or after proving a copy redundant. See
+`agent-history.md` for verification and access tradeoffs.
 
 Agent transcripts and session stores; local databases not backed by a
 remote; anything under a path the user has named as history.

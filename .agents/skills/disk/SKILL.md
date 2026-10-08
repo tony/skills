@@ -29,8 +29,8 @@ anything the user cannot get back.
   `.bak`, and `archive-*` say nothing about redundancy. Run the proof.
 - **Agent history is protected.** Reclaim from it only through the owning
   tool's archival path, or by proving one copy redundant against another.
-- **Report guest and host separately.** Space freed inside a virtual disk
-  is not freed on the machine until the disk is compacted.
+- **Report guest and host separately.** Guest free space and a backing
+  file's apparent size do not measure host recovery; measure the host too.
 - **Report only what was measured.** Never say where unmeasured space
   probably is, size the unread remainder (including used minus measured),
   guess which layer is the cause, describe an unmeasured path by its
@@ -43,8 +43,8 @@ anything the user cannot get back.
   root, so I won't run it myself".
   This covers system-tier cleanup such as `apt clean` and
   `journalctl --vacuum-size`.
-- **A blanket approval covers only the regenerable tier.** Stale-but-unique
-  data is decided per directory.
+- **A blanket approval covers only the regenerable tier.** Data without a
+  proved replacement is decided per directory.
 
 ## Route
 
@@ -57,12 +57,6 @@ reading the file does not set it.
   with an offer to reclaim.
 - Free space, clean up, or shrink WSL: follow the `disk-usage` skill, then
   the `disk-reclaim` skill, which reuses that survey instead of repeating it.
-
-## Orchestration plan
-
-Before anything destructive, follow the Plan section of
-the `disk-reclaim` skill, which holds the plan-mode step and the plan's
-contents.
 
 
 ## Portability notes

@@ -2,8 +2,8 @@
 name: model-cli-codex
 description: >-
   Use when asked to use Codex, GPT, OpenAI, or the Codex CLI to delegate;
-  writes unsandboxed unless mode:plan. Not for messaging a Codex session.
-allowed-tools: ["Bash"]
+  write-enabled unless mode:plan. Not for messaging a Codex session.
+allowed-tools: ["Bash", "Write"]
 metadata:
   argument-hint: "<prompt> [timeout:<seconds>] [mode:plan]"
   source: "plugins/model-cli/skills/codex/SKILL.md"
@@ -31,23 +31,26 @@ failed-run report from `references/dispatch.md`.
 
 ## Step 2: Run the tiers in order
 
-Normal runs are write-enabled with no sandbox, and `--skip-git-repo-check` removes
-Codex's repo guard. `mode:plan` runs are read-only: `codex exec
+Normal runs are write-enabled. Codex bypasses its sandbox, and
+`--skip-git-repo-check` removes its repo guard. Cursor retains its configured
+sandbox. `mode:plan` runs are read-only: `codex exec
 --sandbox read-only` is Codex's read-only sandbox, and `agent --mode plan` is
 Cursor's read-only plan mode.
 
-1. Normal: `codex exec --yolo --skip-git-repo-check -c model_reasoning_effort=medium --`
+1. Normal: `codex exec --dangerously-bypass-approvals-and-sandbox --skip-git-repo-check -c model_reasoning_effort=medium --`
    Plan: `codex exec --sandbox read-only --skip-git-repo-check -c model_reasoning_effort=medium --`
 2. Normal: `agent -p -f --model gpt-5.4-high --`
    Plan: `agent -p --mode plan --model gpt-5.4-high --`
-3. Normal: `agent -p -f --model gpt-5.4-mini --`
-   Plan: `agent -p --mode plan --model gpt-5.4-mini --`
+3. Normal: `agent -p -f --model gpt-5.4-mini-medium --`
+   Plan: `agent -p --mode plan --model gpt-5.4-mini-medium --`
 
-Pass `--require-flag=` with `--yolo` (tier 1) or `-f` (tiers 2-3) on a normal run,
-and `--sandbox` (tier 1) or `--mode` (tiers 2-3) on a `mode:plan` run.
+Pass `--require-flag=` with `--dangerously-bypass-approvals-and-sandbox` (tier 1)
+or `-f` (tiers 2-3) on a normal run, and `--sandbox` (tier 1) or `--mode`
+(tiers 2-3) on a `mode:plan` run.
 
-Tier 3 is the lesser fallback: when it runs, say the larger model failed. If
-tier 2 failed with auth, credit, crash, or unsupported-flag on `agent`, skip tier 3.
+Tier 3 requests the smaller fallback model. Report earlier tier failures in
+the dispatch report's failed-tier lines. If tier 2 failed with auth, credit,
+crash, or unsupported-flag on `agent`, skip tier 3.
 
 
 ## Portability notes

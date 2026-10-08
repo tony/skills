@@ -119,23 +119,22 @@ skills, and splitting it is what lets either one route.
 
 ## Descriptions
 
-The description is the only text that competes for the router's
-attention. It decides whether the skill is ever used.
+The description guides implicit discovery. Name the workflow and the
+conditions under which it applies.
 
 - **Third person, always.** The description lands in a system prompt,
   so `I can help you process Excel files` confuses the point of view.
   Write `Processes Excel files and generates reports`.
-- **What it does and when to reach for it.** Both halves. A
-  description with no trigger clause never fires.
-- **The user's literal words.** A router matches text, not meaning. If
-  people say "repo" and the description says "repository", the match
-  is weaker than it looks. Write both where both get typed.
-- **Front-load the trigger.** The first clause is what survives
-  truncation and skimming.
+- **What it does and when to reach for it.** Give both the workflow
+  and its trigger.
+- **The user's literal words.** Use terms people type. Include both
+  "repo" and "repository" when those words clarify the intended trigger.
+- **Front-load the trigger.** Put the condition where a reader can
+  recognize it quickly.
 - **Non-empty, no XML tags.**
 
-Descriptions that route nothing: `Helps with documents`, `Processes
-data`, `Does stuff with files`.
+Descriptions too vague to identify a workflow: `Helps with documents`,
+`Processes data`, `Does stuff with files`.
 
 Setting `disable-model-invocation: true` on a skill that only makes
 sense when asked for by name keeps it invocable while removing it from

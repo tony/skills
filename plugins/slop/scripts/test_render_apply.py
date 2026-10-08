@@ -9,6 +9,7 @@ import os
 import subprocess
 from pathlib import Path
 
+import pytest
 import render_apply  # pyright: ignore[reportImplicitRelativeImport]
 
 EXIT_APPLY_FAILED = 3
@@ -177,3 +178,48 @@ def test_apply_stages_a_non_ascii_path(tmp_path: Path) -> None:
     assert done.returncode == 0, done.stderr
     assert git(repo, "log", "-1", "--format=%s") == f"fixup! {base}"
     assert git(repo, "status", "--porcelain") == ""
+
+
+@pytest.mark.parametrize("overlaps", [False, True])
+def test_failed_hook_retains_concurrent_edits_and_backup(tmp_path: Path, overlaps: bool) -> None:
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    git(repo, "init", "-q", "-b", "main")
+    (repo / "a.txt").write_text("robust line\n")
+    (repo / "user.txt").write_text("original\n")
+    git(repo, "add", "a.txt", "user.txt")
+    git(repo, "commit", "-qm", "base")
+    base = git(repo, "rev-parse", "HEAD")
+    run_dir = repo / ".git" / "deslop"
+    run_dir.mkdir()
+    registry = tmp_path / "registry.yml"
+    registry.write_text("version: 1\n")
+    (run_dir / f"0001-fixup-{base}-x.patch").write_text(
+        "--- a/a.txt\n+++ b/a.txt\n@@ -1 +1 @@\n-robust line\n+line\n"
+    )
+    hook = repo / ".git/hooks/pre-commit"
+    target_edit = "printf 'concurrent target\\n' > a.txt\n" if overlaps else ""
+    hook.write_text(
+        f"""#!/bin/sh
+printf 'concurrent staged\\n' > user.txt
+git add -- user.txt
+printf 'concurrent unstaged\\n' >> user.txt
+{target_edit}exit 1
+"""
+    )
+    hook.chmod(0o755)
+    args = ["--run-dir", str(run_dir), "--registry", str(registry), "--baseline", base]
+    assert render_apply.main([*args, "--trunk-ref", "origin/main"]) == 0
+    done = run_sh(run_dir / "apply.sh", repo)
+    assert done.returncode == 6  # noqa: PLR2004
+    assert git(repo, "rev-parse", "HEAD") == base
+    assert git(repo, "show", ":user.txt") == "concurrent staged"
+    assert (repo / "user.txt").read_text() == "concurrent staged\nconcurrent unstaged\n"
+    if overlaps:
+        assert "rollback refused" in done.stderr
+        assert (repo / "a.txt").read_text() == "concurrent target\n"
+    else:
+        assert "patch rolled back" in done.stderr
+        assert (repo / "a.txt").read_text() == "robust line\n"
+    backup = done.stdout.split("Backup branch: ", 1)[1].split()[0]
+    assert git(repo, "rev-parse", backup) == base

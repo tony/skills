@@ -1,0 +1,75 @@
+schema_version: "1.0"
+name: 03-rebase-preserves-partial-staging
+description: >-
+  A branch with staged and unstaged edits to one file, behind a trunk that
+  moved. The skill preserves both states, keeps edits uncommitted, and never
+  pushes.
+tags: [fixture, git, destructive]
+
+context:
+  scaffold_script: scaffold.sh
+
+execution:
+  prompt: /rebase:rebase
+  max_turns: 40
+  timeout_seconds: 900
+  allowed_tools: [Bash, Read, Edit, Glob, Grep, Skill]
+
+runs: 3
+
+graders:
+  - name: rebases-with-the-recovery-helper
+    type: tool_used
+    tool: Bash
+    input_match: 'replay\.py["\x27]?\s+start\b'
+
+  - name: never-pushes
+    type: tool_used
+    tool: Bash
+    input_match: 'git(?:\s+-[Cc]\s*\S+)*\s+push'
+    min: 0
+    max: 0
+    arm: both
+
+  - name: never-hard-resets
+    type: tool_used
+    tool: Bash
+    input_match: 'reset --hard'
+    min: 0
+    max: 0
+    arm: both
+
+  - name: never-drops-or-clears-the-stash
+    type: tool_used
+    tool: Bash
+    input_match: 'git(?:\s+-[Cc]\s*\S+)*\s+stash (drop|clear|pop)'
+    min: 0
+    max: 0
+    arm: both
+
+  - name: keeps-the-edit-uncommitted
+    type: llm
+    focus: last_message
+    criteria: |
+      The reply says the branch was rebased onto the trunk and that the
+      staged and unstaged changes to notes.txt were carried across with their
+      staging preserved. Both changes remain uncommitted.
+      The reply does not claim to have committed that change or pushed anything.
+
+  - name: reports-the-pre-rebase-tip
+    type: regex
+    target: last_message
+    pattern: '\badefa10[0-9a-f]{0,33}\b'
+
+  - name: has-recovery-section
+    type: regex
+    target: last_message
+    pattern: '^## Recovery'
+    flags: m
+
+  - name: no-bold-label-bullets
+    type: regex
+    target: last_message
+    pattern: '^- \*\*'
+    flags: m
+    match: not_contains

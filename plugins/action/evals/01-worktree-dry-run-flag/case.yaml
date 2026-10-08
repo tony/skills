@@ -10,6 +10,10 @@ context:
   scaffold_script: scaffold.sh
 
 execution:
+  append_system_prompt: >-
+    The fixture's bin/git delegates to the real Git binary and records
+    worktree creation for grading. Prefix every Bash command with
+    export PATH="$PWD/bin:$PATH" while working in the project root.
   prompt: /action:worktree Add a --dry-run flag to the sync command that prints planned actions without executing them --setup-only
   max_turns: 30
   timeout_seconds: 600
@@ -19,19 +23,25 @@ runs: 3
 
 graders:
   - name: creates-the-worktree
-    type: tool_used
-    tool: Bash
-    input_match: 'worktree add'
+    type: regex
+    target:
+      source: file
+      path: .eval-state/worktree.json
+    pattern: '"source_present":\s*true'
 
   - name: branch-name-comes-from-the-goal
-    type: tool_used
-    tool: Bash
-    input_match: 'dry[-_]?run.*worktree add|worktree add.*dry[-_]?run'
+    type: regex
+    target:
+      source: file
+      path: .eval-state/worktree.json
+    pattern: '"branch":\s*"[^"\n]*dry[-_]?run'
 
   - name: worktree-is-outside-the-checkout
-    type: tool_used
-    tool: Bash
-    input_match: 'worktree add\b.* (\.\./|/|\$\{?\w+)'
+    type: regex
+    target:
+      source: file
+      path: .eval-state/worktree.json
+    pattern: '"outside":\s*true'
 
   - name: invents-no-ticket-id
     type: regex

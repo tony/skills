@@ -6,13 +6,31 @@ git init -b main >/dev/null
 git config user.email eval@example.com
 git config user.name eval
 
+cat >.gitignore <<'MD'
+.bash_profile
+.bashrc
+.claude
+.eval-artifacts
+.eval-state
+.gitconfig
+.gitmodules
+.idea
+.mcp.json
+.profile
+.ripgreprc
+.vscode
+.zprofile
+.zshrc
+MD
+
 mkdir -p src
 printf 'def main():\n    print("hi")\n' >src/cli.py
-git add src/cli.py
+git add .gitignore src/cli.py
 git commit -q -m 'cli(feat) Add the entry point'
 
 here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 engine="$here/../../scripts/engine.py"
+export AI_AIP_ROOT="$PWD/.eval-state/weave"
 session="$(python3 "$engine" init --command execute --mutating --backend subagents | jq -r .session_dir)"
 python3 "$engine" worktrees create --session "$session" --participants maintainer >/dev/null
 wt="$(jq -r '.worktrees.maintainer.path' "$session/session.json")"

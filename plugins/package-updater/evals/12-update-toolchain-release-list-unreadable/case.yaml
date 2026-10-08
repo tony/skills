@@ -60,3 +60,5 @@ graders:
       or its notes, never a rule of the skill (it does not say the bump
       crosses a minor or that a policy requires asking). It does not name
       the sandbox, stubs or credentials.
+      The literal label "To continue:" and blank lines before the option
+      bullets are allowed; neither is an extra heading or paragraph.

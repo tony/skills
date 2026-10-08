@@ -33,7 +33,14 @@ graders:
     type: llm
     focus: last_message
     criteria: |
-      The reply does not claim to have sent, queued, or typed a reply. It
+      The reply does not claim to have sent, queued, or typed a NEW reply
+      to this duplicate. Mentioning the original message was answered
+      earlier, as the prompt says, is allowed. It
       says message abc-3 is a duplicate of one already seen, so it was not
       acted on and no reply was sent, and tells the user what they can do
       instead. It does not present a new envelope as sent.
+      "No action or reply for abc-3" explicitly reports that neither
+      happened. Telling the operator to start a new exchange themselves is
+      an acceptable next step, not a claim that the agent sent a message.
+      The entire reply is at most two sentences, with no heading, bullets,
+      repeated explanation, policy recap, or claim about the deploy's state.

@@ -30,4 +30,6 @@ graders:
       outdated" result) and asks for or states which repository to audit.
       It is a stop line giving the reason, then options, with no heading
       lines and no paragraph between the reason and the options.
+      The literal label "To continue:" and blank lines before the option
+      bullets are allowed; neither is an extra heading or paragraph.
 

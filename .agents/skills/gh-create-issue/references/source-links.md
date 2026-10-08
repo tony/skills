@@ -1,7 +1,5 @@
 # Source links
 
-Contents: Link everything that has a URL, Pin every reference into a repository (including Verify a line range), Let GitHub do the linking where it already does, What rots, Primary sources.
-
 How to link so the link still works. The link set for a named
 open-source project is in `project-links.md`.
 
@@ -15,114 +13,14 @@ issue, commit, release, and document that names a thing a reader could
 look up. The first mention carries the link; later mentions do not
 repeat it.
 
-## Pin every reference into a repository
-
-### A release tag first
-
-```
-https://github.com/OWNER/REPO/blob/v2.40.0/README.md
-```
-
-Most durable; it tells the reader which released version the claim held
-for.
-
-### Otherwise a 7-character commit reachable from trunk
-
-```
-https://github.com/OWNER/REPO/blob/9a29b1a/src/index.ts
-```
-
-Use when there is no tag, or the claim is about unreleased code. Never
-a pull-request head — it can be rebased or garbage-collected.
-
-### Never a branch
-
-`blob/main/…` rots silently: the anchor lands on unrelated code while
-still returning 200. Reserve it for a living document meant to always
-show the latest state, such as a contributing guide.
-
-### Line anchors only on a pinned ref
-
-`#L120` for a line and `#L120-L145` for a range. On a file GitHub
-renders rather than displays (markdown, reStructuredText), the anchor
-needs `?plain=1` before the fragment or it has nothing to attach to.
-
-```
-https://github.com/OWNER/REPO/blob/9a29b1a/README.md?plain=1#L14
-```
-
-A line-range permalink renders as a code snippet only inside the
-repository it points into, and only in a comment body. Filing across
-repositories, quote the lines in a fence next to the link.
-
-When a pin cannot be resolved (no network, no release), keep the
-unresolved ref visibly marked in the draft, such as `<SHA>`, and list
-it in the reply as unverified. Never substitute a guess.
-
-### Resolving the ref
-
-Newest tag of a repository you have not cloned:
-
-```console
-$ gh release list \
-    --repo OWNER/REPO \
-    --limit 1 \
-    --exclude-drafts \
-    --exclude-pre-releases \
-    --json tagName \
-    --jq '.[0].tagName'
-```
-
-A repository with no releases prints nothing; fall back to the tags:
-
-```console
-$ git ls-remote --tags --refs --sort=-v:refname https://github.com/OWNER/REPO
-```
-
-Version sort ranks `v1.2.0-rc1` above `v1.2.0`; read the list, do not
-take the first line.
-
-A tag pins content only by convention: git allows a tag to be moved.
-When the link is evidence for a quoted line, resolve it to a commit:
-
-```console
-$ gh api repos/OWNER/REPO/commits/v2.40.0 --jq .sha
-```
-
-That endpoint resolves lightweight and annotated tags alike. Do not use
-`git/ref/tags/<tag>`: on an annotated tag it returns the tag object's
-SHA, and a blob URL built on it 404s.
-
-### Verify a line range
-
-A range the user took from `main` can cover other code at the pinned
-ref. Fetch the file at that ref, print the range, and confirm the named
-symbol lies in it:
-
-```console
-$ gh api 'repos/OWNER/REPO/contents/PATH?ref=REF' \
-    -H 'Accept: application/vnd.github.raw' \
-    | sed -n '38,50p'
-```
-
-When the symbol is outside the range, find its lines in this output and
-use them; when it is gone, drop the anchor or ask the user. Never publish
-a range you did not read at the ref.
-
-Confirm before publishing:
-
-```console
-$ curl -s \
-    -o /dev/null \
-    -w '%{http_code}\n' \
-    -L \
-    'https://github.com/OWNER/REPO/blob/v2.40.0/README.md'
-```
-
 ## Let GitHub do the linking where it already does
 
 Inside issue, pull request, discussion, and comment bodies; not in
 repository files or wikis.
+
+A line-range permalink renders as a code snippet only inside the repository
+it points into, and only in a comment body. Filing across repositories,
+quote the lines in a fence next to the link.
 
 ### Same repository: write the bare reference
 

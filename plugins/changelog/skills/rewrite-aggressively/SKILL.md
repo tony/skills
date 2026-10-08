@@ -14,8 +14,8 @@ land as one fresh commit at the tip; otherwise they stay an uncommitted edit.
 `/changelog:refresh` stacks a correcting commit instead.
 
 Scope: only the branch's own changelog content is rewritten. Base-branch
-changelog content and code history are never modified; only pure changelog
-commits are dropped.
+changelog content and code changes stay intact. Only pure changelog commits
+are dropped; surviving commits may receive new IDs during the rebase.
 
 Additional context from user: $ARGUMENTS
 
@@ -26,11 +26,13 @@ Read these first:
 - `../../references/entry-rules.md`: categorizing, format, voice, exclusions.
 - `../../references/commit-message.md`: used in Phase 4.
 
-Write entries and the commit message per `../../references/prose-rules.md`.
+Write entries, commit messages, and user-facing replies per
+`../../references/prose-rules.md`.
 
 `<rewrite>` is `../../scripts/rewrite.py` resolved from this skill's directory
 to an absolute path, written literally in every command, and run with
-`python3`. It prints one JSON object; `"ok": false` carries the `reason`.
+`python3`. File paths are relative to the repository root, from any working
+directory. It prints one JSON object; `"ok": false` carries the `reason`.
 
 ## Phase 1: Safety checks, scope, approval
 
@@ -64,7 +66,9 @@ to an absolute path, written literally in every command, and run with
    the changelog file) or mixed:
 
    ```console
-   $ python3 <rewrite> partition --base origin/<base> --file <changelog-file>
+   $ python3 <rewrite> partition \
+       --base origin/<base> \
+       --file <changelog-file>
    ```
 
    - **Pure changelog commits** touch only the changelog file. Phase 2 drops
@@ -75,6 +79,8 @@ to an absolute path, written literally in every command, and run with
      can split it. Without a question tool, leave it intact and say so.
    - No changelog commits: nothing to rewrite. Suggest `/changelog:changelog`
      or `/changelog:refresh` and stop.
+   - Only mixed commits: there is nothing safe to drop. Suggest
+     `/changelog:refresh` and stop without changing history.
 
 4. **Approve the rewrite.** Nothing in git changes before this approval.
    `--commit` does not approve the rewrite, and neither does an invoking
@@ -85,8 +91,10 @@ to an absolute path, written literally in every command, and run with
    - the commits Phase 2 will drop, by subject, never by bare SHA;
    - the backup branch it will create first, named
      `changelog-rewrite-backup-` plus the current UTC date and time;
-   - that a failed check restores the backup;
-   - when the dropped commits are pushed, that publishing needs a later
+   - that clean failures restore the backup, while conflicts or new edits
+     stop with their state preserved;
+   - whether the dropped commits appear on a remote branch, checked with
+     `git branch --remotes --contains <sha>`; when they do, publishing needs a later
      `git push --force-with-lease --force-if-includes` by the user. This skill
      never pushes.
 
@@ -103,7 +111,7 @@ to an absolute path, written literally in every command, and run with
    If you approve:
    - The commit "docs(CHANGES) First draft of the cache entry" is dropped.
    - A backup branch, changelog-rewrite-backup-20261006-142530Z, is created first.
-   - A failed check restores the backup.
+   - A failed check restores clean state; conflicts or new edits stop for recovery.
    - The new entries are committed once at the tip.
 
    Reply "yes, drop that commit" to proceed.
@@ -115,17 +123,25 @@ to an absolute path, written literally in every command, and run with
    unless the tree is clean, then creates the backup branch, rebases the named
    commits out onto the merge-base (not `origin/<base>`: the fetch may have
    moved the base, and the rebase must not also move code onto it), and checks
-   that no code changed and, with no mixed commits, that no branch changelog
-   edits remain:
+   that no code changed and exactly the requested commits disappeared. It
+   protects other branch refs from Git's `rebase.updateRefs` setting and
+   refuses ignored files that overlap replayed paths. With no mixed commits,
+   it also checks that no branch changelog edits remain:
 
    ```console
-   $ python3 <rewrite> drop --base origin/<base> --file <changelog-file> <sha1> <sha2>
+   $ python3 <rewrite> drop \
+       --base origin/<base> \
+       --file <changelog-file> \
+       <sha1> <sha2>
    ```
 
 2. On `"ok": true`, note the `backup` branch name for the report. On
-   `"ok": false`, the helper has already restored the backup; report the
-   `reason` and the `backup` name, and stop. Never resolve a conflict by
-   discarding user code.
+   `"ok": false`, report the actual `reason` and any `backup` or `recovery`
+   refs, then stop. A precondition failure creates no backup. A clean failed
+   validation restores the original branch and pins the attempted result;
+   conflicts and new edits keep their files and staging intact. Do not
+   automatically abort, reset, or discard them. The user must preserve or
+   resolve that state before choosing a recovery operation.
 
 ## Phase 3: Regenerate entries and present
 
@@ -164,7 +180,7 @@ Present:
 
 Reply in this shape, as plain text outside any code fence, with plain bullets, no bold (never `- **Label:** ...`), and no local paths:
 
-```text
+````text
 Branch: feat/cache-evict | Base: main | Dropped: 3 | Backup: changelog-rewrite-backup-20261006-142530Z
 
 ```markdown
@@ -175,24 +191,30 @@ Voice check:
 - Add `Cache.evict()` to drop a cached key: can I take a new affordance?
 
 Target: CHANGES.md, Unreleased, Features, after the "### Features" heading. No version assigned, no release cut.
-```
+````
 
 ## Phase 4: Insert, commit, report
 
 Run only after the Phase 3 approval.
 
-1. Read the commit format from `AGENTS.md` / `CLAUDE.md` now, even when not
-   committing: the subject you commit or offer follows its pattern in order (`Scope(type[detail])` gives `CHANGES(docs) ...`, not `docs(CHANGES) ...`), not the log's older subjects. Apply with Edit. With `--commit` in `$ARGUMENTS`, commit once at the tip per
-   `commit-message.md`; the project's own subject format wins. Write no
-   `Co-Authored-By`, no "Generated with" or other tool trailer, and no emoji.
-   Without `--commit`, leave the edit uncommitted and show a ready-to-use
-   commit message.
+1. Apply with Edit. With `--commit` in `$ARGUMENTS`, run the project checks
+   and commit once at the tip per `commit-message.md`. Without `--commit`,
+   leave the edit uncommitted and show a ready-to-use commit message in the
+   project's format.
 2. Report the backup branch (to delete once satisfied with
    `git branch -D <backup>`), an uncommitted edit awaiting the user's commit
    when `--commit` was not passed, and for a pushed branch the
    `git push --force-with-lease --force-if-includes` the user needs.
 
-   Reply in this shape, as plain text outside any code fence, with plain bullets, no bold (never `- **Backup:** ...`), and no local paths. Fill the subject placeholder from the project's convention: read the project's commit format from `AGENTS.md` / `CLAUDE.md` at reply time and use it when it has one. Notes hold facts the user must act on, so never recap checks that passed (the code-unchanged check included), never justify the subject format, and never compare the new subject with a dropped commit's, never narrate which entry lines a dropped commit removed (name only a commit left intact):
+   Reply in this shape, with plain bullets, no bold labels, and no local
+   paths. Read the project's commit format at reply time. Notes hold facts
+   the user must act on; omit passed checks, subject-format explanations,
+   and comparisons with earlier entries. Do not repeat dropped commit
+   subjects or old entry text; the dropped count and backup identify the
+   operation. Name a retained mixed commit only.
+   The example shows a committed result. For an uncommitted edit, state that
+   fact in the first sentence and replace the commit bullet with one
+   pasteable `console` command following `commit-message.md`.
 
    ````text
    Rewrote the changelog history of feat/cache-evict: 3 changelog-only commits dropped, 1 added.
@@ -207,8 +229,7 @@ Run only after the Phase 3 approval.
    Target: CHANGES.md, Unreleased, Features, after the "### Features" heading. No version assigned, no release cut.
 
    - Backup: changelog-rewrite-backup-20261006-142530Z; delete it once satisfied.
-   - Committed at the tip as <subject in the project's format> (no convention: docs(CHANGES) Cache key eviction).
-   - To commit it, run: git commit --message "<subject in the project's format>" -- CHANGES.md   (show only one of these two bullets, never the placeholder)
-   - Left intact: "cache(feat) Add evict" also changes code, so it was not dropped or rewritten.
+   - Committed at the tip as CHANGES(docs) Cache key eviction.
+   - Retained: "cache(feat) Add evict" also changes code.
    - The branch is pushed; publish with git push --force-with-lease --force-if-includes.
    ````

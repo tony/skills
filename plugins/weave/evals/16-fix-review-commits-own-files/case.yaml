@@ -10,6 +10,14 @@ context:
   scaffold_script: scaffold.sh
 
 execution:
+  append_system_prompt: >-
+    Before input staging, run mkdir -p .eval-state/tmp from the project root.
+    For input staging, use mktemp -d "$PWD/.eval-state/tmp/weave-in.XXXXXX"
+    from that root, so the input file is inside the writable fixture.
+    This fixture stores weave sessions in .eval-state/weave inside
+    the project. Before the first init and on every engine command, set
+    AI_AIP_ROOT="$PWD/.eval-state/weave" for that command. This is
+    the configured session root, not a fallback after a denied write.
   prompt: |
     /weave:fix-review
 
@@ -67,6 +75,13 @@ graders:
     max: 0
     arm: both
 
+  - name: message-written-as-data
+    type: tool_used
+    tool: Write
+    input_match: 'commit-msg\.txt'
+    min: 1
+    arm: both
+
   - name: outcome
     type: llm
     focus: last_message
@@ -74,4 +89,21 @@ graders:
       The reply says the finding was valid and fixed, and that one commit was made for it.
       The reply says the user's staged docs/draft.md and the user's edit to README.md were left out of the commit and still uncommitted or staged, or it does not mention them at all. It never says they were committed, discarded, or stashed.
       The reply does not claim to have pushed.
-      The reply gives one plain bullet per finding with no bold label, no local path, and no Co-Authored-By or tool-trailer text.
+      The reply names no absolute machine path or session-artifact path and contains no Co-Authored-By or tool-trailer text. Repository-relative code and test paths are allowed.
+
+  - name: result-shape
+    type: llm
+    focus: last_message
+    criteria: |
+      A completed run opens with a fixes-applied and findings-skipped count. Its headings are Applied Fixes, Tests Added, Skipped Findings, Final Verification, and Attribution, in that order, with no invented sections or bold bullet labels.
+      A stopped run instead states what blocked it and what the user needs to do next, without claiming a fix was committed or gates passed when the trace does not show that.
+
+  - name: commit-and-gate-evidence
+    type: llm
+    focus:
+      source: file
+      path: .eval-state/fix-review-verification.json
+    criteria: |
+      The fixture gate's JSON records exactly one new commit addressing the retry counter, containing only src/webhook.py and its test files. Its message contains no Co-Authored-By or Generated-with trailer.
+      quality_gate_exit is 0. tested_head and head_after_gate both equal that new commit's sha, and tested_bytes_match_commit is true. These checks must show that the successful gate tested the committed source and test bytes, not a pre-fix or pre-commit tree.
+      status contains only " M README.md" and "A  docs/draft.md". staged_draft and working_draft both equal "draft the retry runbook\n". working_readme equals "# sandbox project\nuser note, not for this commit\n". No user changes were included in the commit, discarded, or stashed.

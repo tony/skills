@@ -173,10 +173,20 @@ worktree. Non-interactive runs never remove anything.
 1. Resolve the path from `git worktree list --porcelain`. The first
    entry is the main checkout; refuse it, and refuse a path the current
    directory is inside.
-2. Check for uncommitted work, untracked files included:
+2. Check for uncommitted work and ignored files. Plain worktree removal
+   deletes ignored files even without `--force`; they are not necessarily
+   disposable build output:
 
 ```console
 $ git -C <path> status --short
+```
+
+```console
+$ git -C <path> ls-files \
+    --others \
+    --ignored \
+    --exclude-standard \
+    --directory
 ```
 
 3. Check for commits that exist on no remote:
@@ -185,8 +195,10 @@ $ git -C <path> status --short
 $ git log --oneline <branch> --not --remotes
 ```
 
-4. Output from either check is work that removal loses. List it and get
-   the user's yes before continuing; without a yes, stop.
+4. List uncommitted, untracked, ignored, and unpushed work that removal
+   would discard. Preserve it elsewhere or obtain explicit approval to
+   discard those named paths before continuing. A general request to
+   remove the worktree does not authorize deleting undisclosed files.
 5. Remove the worktree. Without `--force`, git itself refuses when the
    tree is dirty:
 

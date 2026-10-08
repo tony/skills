@@ -21,6 +21,8 @@ location, the completeness gate, and the output frame. Defer these
 until the gate passes:
 
 - `references/provenance.md`
+- `references/measurement.md`: statistics discipline and the
+  counterfactual quality ladder; use its rung definitions verbatim.
 - `references/evidence.md`: the external evidence table and the
   triangulation procedure. Re-verify the sources you cite first.
 - `references/audiences.md`: the tier-3 contract and the final
@@ -67,7 +69,8 @@ Write it per `references/prose-rules.md`.
 Hero success form: `✓ Public case study: <headline with tag>`.
 Sections and stopped-run shape as in `interim-format.md`, with `## Sanitization` between
 `## Gate` and `## Report`: the checklist results item by item and the
-triangulation outcome per headline claim. Panel options: derive the PR
+triangulation outcome per headline claim, sanitized and scanned under the
+tier-3 reply contract in `audiences.md`. Panel options: derive the PR
 release next (read the `business-pr-release` skill and follow it), tighten a
 claim, or stop.
 

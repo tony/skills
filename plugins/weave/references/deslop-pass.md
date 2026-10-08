@@ -192,6 +192,9 @@ Write `<session_dir>/deslop-report.md` with:
 Emit the terminal summary block per `DESLOP_MODE`. It reports edits only: no
 scan narration, verifier status, or paths.
 
+When no edit was applied or held back as unsafe, omit the terminal block;
+advisory-only findings stay in `deslop-report.md`.
+
 ### `default` (≤ 8 lines, no banner, no tier letters)
 
 ```

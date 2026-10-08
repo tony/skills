@@ -10,12 +10,17 @@ context:
   scaffold_script: scaffold.sh
 
 execution:
+  append_system_prompt: >-
+    The fixture grants file writes inside the project. Before creating the
+    prompt file, export TMPDIR="$PWD/.eval-state/prompts", then run mktemp.
+    The scaffold creates that directory. Write the prompt
+    with Write to the returned path. This directory is ignored by Git.
   prompt: >-
     /model-cli:codex explain what handle() in ./app.py does
     The codex binary is ./bin/codex and the agent binary is ./bin/agent.
   max_turns: 20
   timeout_seconds: 420
-  allowed_tools: [Bash, Read, Glob, Grep, Skill]
+  allowed_tools: [Bash, Read, Write, Glob, Grep, Skill]
 
 runs: 3
 
@@ -34,6 +39,7 @@ graders:
       The reply says the codex tier failed (authentication) and that the
       agent tier returned the answer, and it shows that answer. It does not
       attribute the answer to Codex or OpenAI's own CLI.
+      It does not claim Cursor's sandbox was disabled or absent.
 
   - name: opens-with-header-line
     type: llm

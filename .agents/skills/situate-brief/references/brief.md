@@ -84,7 +84,8 @@ re-reading what is already in context is the common way this gets slow.
 **Cheap — run when the session's own memory is thin.** The position
 script (`references/position.py`: branch, trunk, ahead/behind,
 uncommitted work) and the branch's commit subjects. These are local and
-fast.
+fast. A narrow file question takes only that file's status and diff;
+unrelated branch, trunk, and remote lookups earn no line, even if unavailable.
 
 **Paid — only on an existing reference.** `gh pr view` when the branch
 actually has a pull request, `gh issue view` when a ticket ID appears in

@@ -34,7 +34,12 @@ When the confusion is about what just happened (a command that ran, a
 decision taken, why the work moved), the answer is already in context
 and needs no tools.
 
-When the session's memory is thin, gather the cheap tier:
+When the session's memory is thin, gather only the cheap evidence relevant
+to the question, per the brief reference. For a named file, inspect its
+status and diff; Git records what changed, not why someone left it
+uncommitted. Do not infer that motive.
+
+For the whole situation or a branch-position question, gather:
 
 1. Position: run `python3 ../../scripts/position.py` for branch, trunk,
    ahead/behind, uncommitted work, and stashes. `../../scripts/` resolves
@@ -45,8 +50,8 @@ When the session's memory is thin, gather the cheap tier:
 2. Commit subjects since the base:
    `git log --no-merges --format='%h %s' <trunk>..HEAD`.
 
-A null `trunk` or a failed command means that layer is unavailable; say
-so inside an existing line. Measuring from trunk is approximate on a
+A null `trunk` or a failed command means that layer is unavailable; mention
+it only when the answer depends on that layer. Measuring from trunk is approximate on a
 branch stacked over another branch, because the range carries the
 parent's commits; say so rather than re-resolving the base.
 

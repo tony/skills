@@ -20,7 +20,7 @@ graders:
   - name: rebase-performed
     type: tool_used
     tool: Bash
-    input_match: 'git(?:\s+-[Cc]\s*\S+)*\s+(pull --rebase|rebase)'
+    input_match: 'replay\.py["\x27]?\s+start\b'
 
   - name: fetches-before-rebasing
     type: tool_order
@@ -29,7 +29,7 @@ graders:
       input_match: 'git fetch'
     after:
       tool: Bash
-      input_match: 'git(?:\s+-[Cc]\s*\S+)*\s+(pull --rebase|rebase)'
+      input_match: 'replay\.py["\x27]?\s+start\b'
 
   - name: never-pushes
     type: tool_used

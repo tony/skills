@@ -125,11 +125,13 @@ Rewrite a draft entry that contains any of these:
 - Non-user-visible work: behavior-neutral refactors, type-only annotations,
   internal renames, lint cleanups, CI tweaks, test infrastructure,
   dev-tooling bumps.
-- Phantom fixes: a Fixes entry, or "no longer raises" phrasing, for behavior no
-  published release had. Check whether a published release had the bug: `git tag --contains
-  <introducing-commit>` prints nothing when none did (no tags: assume none). If not, fold it into the paragraph of the feature that introduced
-  the contract. If the introducing change is already on the base branch,
-  omit the fix.
+- Phantom fixes: a Fixes entry, or "no longer raises" phrasing, without
+  evidence that a published release had the bug. `git tag --contains
+  <introducing-commit>` finds local candidates; missing tags or shallow
+  history do not prove that nothing shipped. Verify the release's source or
+  published artifact before making the claim. A branch-only fix belongs in
+  its feature's paragraph. When the introducing change is on the base and
+  release status is unknown, omit the fix and note the missing evidence.
 - The section heading repeated in the entry text.
 
 ## Proportionality

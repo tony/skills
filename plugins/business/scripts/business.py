@@ -156,6 +156,9 @@ def summarize(values: list[float], *, seed: int, resamples: int = 10000) -> dict
     >>> (small["range_lo"], small["range_hi"], "ci95_lo" in small)
     (10.0, 36.0, False)
     """
+    if not all(math.isfinite(value) for value in values):
+        msg = "observations must be finite numbers"
+        raise ValueError(msg)
     q1, _, q3 = statistics.quantiles(values, n=4, method="inclusive")
     n = len(values)
     if n < MIN_INTERVAL_N:
@@ -171,7 +174,7 @@ def summarize(values: list[float], *, seed: int, resamples: int = 10000) -> dict
             "ci95_hi": hi,
             "method": "BCa bootstrap of the median",
         }
-    return {
+    summary: dict[str, object] = {
         "n": n,
         "median": _median(values),
         "q1": q1,
@@ -181,6 +184,10 @@ def summarize(values: list[float], *, seed: int, resamples: int = 10000) -> dict
         "resamples": resamples,
         "label": "DIRECTIONAL" if n < DIRECTIONAL_BELOW else "ok",
     }
+    if any(isinstance(value, float) and not math.isfinite(value) for value in summary.values()):
+        msg = "statistics exceed the supported numeric range"
+        raise ValueError(msg)
+    return summary
 
 
 def parse_numbers(text: str) -> list[float]:
@@ -251,10 +258,10 @@ def _is_date(text: str) -> bool:
 
 def _is_number(text: str) -> bool:
     try:
-        _ = float(text)
+        value = float(text)
     except ValueError:
         return False
-    return True
+    return math.isfinite(value)
 
 
 def _parse_register(text: str) -> list[dict[str, str]]:
@@ -304,8 +311,12 @@ def check_assumptions(text: str, sources: Collection[str] | None = None) -> list
     """
     entries = _parse_register(text)
     problems: list[str] = []
+    seen: set[str] = set()
     for index, entry in enumerate(entries, start=1):
         name = entry.get("id") or f"#{index}"
+        if name in seen:
+            problems.append(f"entry {name}: duplicate id")
+        seen.add(name)
         problems.extend(f"entry {name}: missing {k}" for k in ASSUMPTION_FIELDS if not entry.get(k))
         if entry.get("source_type") and entry["source_type"] not in SOURCE_TYPES:
             problems.append(
@@ -397,18 +408,23 @@ def project(register: str) -> tuple[dict[str, float], list[str]]:
             low = float(entry.get("low") or base)
             high = float(entry.get("high") or base)
         except (KeyError, ValueError):
-            problems.append(f"{ident}: value, low, and high must be numbers")
+            problems.append(f"{ident}: value, low, and high must be finite numbers")
+            continue
+        if not all(math.isfinite(x) for x in (low, base, high)):
+            problems.append(f"{ident}: value, low, and high must be finite numbers")
             continue
         if not low <= base <= high:
             problems.append(f"{ident}: need low <= value <= high")
+        if low < 0:
+            problems.append(f"{ident}: value, low, and high must be nonnegative")
         if symbol in ("a", "r"):
             problems.extend(
                 f"{ident}: {name} {x} must be strictly between 0 and 1"
                 for name, x in (("value", base), ("low", low), ("high", high))
                 if not 0 < x < 1
             )
-        elif symbol == "s" and not 0 < high <= 1:
-            problems.append(f"{ident}: high {high} must be in (0, 1]")
+        elif symbol == "s" and high > 1:
+            problems.append(f"{ident}: high {high} must be at most 1")
         levels[symbol] = (low, base, high)
     if problems:
         return {}, problems
@@ -437,6 +453,8 @@ def project(register: str) -> tuple[dict[str, float], list[str]]:
             lambda sym, s=symbol: levels[sym][0 if sym == s else 1]
         )
         figures[f"swing_{symbol}"] = swing
+    if not all(math.isfinite(value) for value in figures.values()):
+        return {}, ["projection exceeds the supported numeric range"]
     return {k: round(v, 2) for k, v in figures.items()}, []
 
 
@@ -464,6 +482,7 @@ def breakeven(register: str) -> tuple[dict[str, float | None], list[str], list[s
     when ``S_inst`` is not positive). Benefit inputs sit at ``low`` and cost inputs at
     ``high`` in the conservative scenario, the reverse in the upside; a figure whose
     inputs are not all registered is absent and its ids are in ``missing``.
+    With negative ``S_inst``, high volume is conservative and low volume is upside.
 
     Examples
     --------
@@ -507,10 +526,15 @@ def breakeven(register: str) -> tuple[dict[str, float | None], list[str], list[s
             low = float(entry.get("low") or base)
             high = float(entry.get("high") or base)
         except (KeyError, ValueError):
-            problems.append(f"{ident}: value, low, and high must be numbers")
+            problems.append(f"{ident}: value, low, and high must be finite numbers")
+            continue
+        if not all(math.isfinite(x) for x in (low, base, high)):
+            problems.append(f"{ident}: value, low, and high must be finite numbers")
             continue
         if not low <= base <= high:
             problems.append(f"{ident}: need low <= value <= high")
+        if low < 0:
+            problems.append(f"{ident}: value, low, and high must be nonnegative")
         if symbol == "p_fail" and not 0 <= high <= 1:
             problems.append(f"{ident}: high {high} must be in [0, 1]")
         levels[symbol] = (low, base, high)
@@ -539,7 +563,12 @@ def breakeven(register: str) -> tuple[dict[str, float | None], list[str], list[s
             round(upkeep * MINUTES_PER_HOUR / s_inst, 2) if s_inst > 0 else None
         )
         if "N" in levels:
-            figures[f"{scenario}_s_net"] = round(v["N"] * s_inst / MINUTES_PER_HOUR - upkeep, 2)
+            volume = v["N"]
+            if s_inst < 0 and scenario != "base":
+                volume = levels["N"][2 if scenario == "conservative" else 0]
+            figures[f"{scenario}_s_net"] = round(volume * s_inst / MINUTES_PER_HOUR - upkeep, 2)
+    if any(value is not None and not math.isfinite(value) for value in figures.values()):
+        return {}, missing, ["break-even exceeds the supported numeric range"]
     return figures, list(dict.fromkeys(missing)), []
 
 
@@ -652,17 +681,19 @@ def _column(rows: list[dict[str, str]], expr: str) -> list[float] | None:
     fields: set[str] = set(rows[0]) if rows else set()
     try:
         if expr in fields:
-            return [float(r[expr]) for r in rows if (r[expr] or "").strip()]
-        left, _, right = expr.partition("-")
-        if left in fields and right in fields:
-            return [
+            values = [float(r[expr]) for r in rows if (r[expr] or "").strip()]
+        else:
+            left, _, right = expr.partition("-")
+            if left not in fields or right not in fields:
+                return None
+            values = [
                 float(r[left]) - float(r[right])
                 for r in rows
                 if (r[left] or "").strip() and (r[right] or "").strip()
             ]
     except (ValueError, TypeError):
         return None
-    return None
+    return values if all(math.isfinite(value) for value in values) else None
 
 
 def _read_csv_column(path: Path, expr: str) -> list[float] | None:
@@ -981,7 +1012,7 @@ def _breakeven_command(args: Args) -> int:
         return 1
     labels = (
         ("s_inst", "S_inst (minutes per instance)"),
-        ("s_net", "S_net (engineer-hours per period)"),
+        ("s_net", "S_net (engineer-hours over horizon)"),
         ("n_breakeven", "N_breakeven (instances)"),
     )
     for scenario in SCENARIOS:
@@ -1010,14 +1041,19 @@ def _gate_command(run: Path) -> int:
 
 
 def _stats_command(args: Args) -> int:
-    if args.csv_file:
-        values = _read_csv_column(Path(args.csv_file), args.column) or []
-    else:
-        values = parse_numbers(_read(args.files))
-    if len(values) < MIN_OBSERVATIONS:
-        print("need at least 2 observations", file=sys.stderr)
+    try:
+        if args.csv_file:
+            values = _read_csv_column(Path(args.csv_file), args.column) or []
+        else:
+            values = parse_numbers(_read(args.files))
+        if len(values) < MIN_OBSERVATIONS:
+            print("need at least 2 observations", file=sys.stderr)
+            return 2
+        summary = summarize(values, seed=args.seed, resamples=args.resamples)
+    except (ValueError, OverflowError) as exc:
+        print(str(exc), file=sys.stderr)
         return 2
-    for key, value in summarize(values, seed=args.seed, resamples=args.resamples).items():
+    for key, value in summary.items():
         print(f"{key}: {value}")
     return 0
 

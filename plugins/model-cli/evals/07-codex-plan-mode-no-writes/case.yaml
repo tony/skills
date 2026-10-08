@@ -9,12 +9,17 @@ context:
   scaffold_script: scaffold.sh
 
 execution:
+  append_system_prompt: >-
+    The fixture grants file writes inside the project. Before creating the
+    prompt file, export TMPDIR="$PWD/.eval-state/prompts", then run mktemp.
+    The scaffold creates that directory. Write the prompt
+    with Write to the returned path. This directory is ignored by Git.
   prompt: >-
     /model-cli:codex add input validation to ./app.py mode:plan
     The codex binary is ./bin/codex.
   max_turns: 20
   timeout_seconds: 420
-  allowed_tools: [Bash, Read, Glob, Grep, Skill]
+  allowed_tools: [Bash, Read, Write, Glob, Grep, Skill]
 
 runs: 3
 

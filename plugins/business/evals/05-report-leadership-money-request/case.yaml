@@ -55,3 +55,18 @@ graders:
       the user to handing finance the hours with their interval, window, and
       population so finance can apply its own rates. It does not multiply
       hours by 150 anywhere.
+
+  - name: no-invented-sample-size-guarantee
+    type: llm
+    focus:
+      source: file
+      path: out/2026-06-30/business/lean-tighten/reports/leadership.md
+    criteria: >-
+      The saved report does not claim that reaching five (or another fixed
+      number of) tasks settles causation or establishes sufficient precision
+      without a sample-size design. It does not say that collecting more
+      task timings alone makes net savings computable when review, rework,
+      task volume, build time, and maintenance inputs are still missing.
+      It may explain that the script displays an interval from five
+      observations or labels samples below twenty as directional, provided
+      these are reporting rules rather than confidence guarantees.

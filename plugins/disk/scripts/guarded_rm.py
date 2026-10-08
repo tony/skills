@@ -4,11 +4,13 @@
 Usage: guarded_rm.py --scope DIR [--keeper DIR ...] [--delete] TARGET
 
 Resolves TARGET with realpath and refuses (exit 2) when it is missing, is
-or contains the scope root, lies outside SCOPE, or is, contains, or lies
-inside a KEEPER, or holds a directory on another device. Otherwise prints
-the resolved target, its size, and up to 50 top-level entries (exit 0).
-Only --delete removes it; symlinks inside the tree are unlinked, never
-followed.
+or contains the scope or home root, lies outside SCOPE, or is, contains, or lies
+inside a KEEPER, crosses a mount point, or cannot be fully inspected.
+Otherwise prints the resolved target, size, and top-level entries (exit 0).
+Only --delete removes it, after a synchronous open-handle check with lsof.
+Missing or inconclusive probes refuse deletion. Symlinks inside
+the tree are unlinked, never followed. A completed deletion reports the
+filesystem's observed free-space delta, without attributing its cause.
 """
 
 # pyright: reportAny=false, reportUnusedCallResult=false
@@ -17,7 +19,9 @@ from __future__ import annotations
 
 import argparse
 import os
+import re
 import shutil
+import subprocess
 import sys
 from pathlib import Path
 
@@ -35,29 +39,41 @@ def refusal(target: str, scope: str, keepers: list[str]) -> str | None:
     """Return why a resolved target must not be removed, else None."""
     if not os.path.lexists(target):
         return "target does not exist"
-    if contains(target, scope):
-        return "target is or contains the approved scope"
+    if contains(target, scope) or contains(target, str(Path.home().resolve())):
+        return "target is or contains the approved scope or home directory"
     if not contains(scope, target):
         return "target resolves outside the approved scope"
     for keeper in keepers:
         if contains(keeper, target) or contains(target, keeper):
             return f"target overlaps a keeper ({keeper})"
-    return crossing_mount(target)
+    try:
+        return crossing_mount(target, scope)
+    except (OSError, ValueError, IndexError) as exc:
+        return f"could not inspect the target's mount boundaries: {exc}"
 
 
-def crossing_mount(target: str) -> str | None:
-    """Return a refusal when a directory under target is on another device."""
-    if Path(target).is_symlink() or not Path(target).is_dir():
-        return None
+def crossing_mount(target: str, scope: str) -> str | None:
+    """Refuse mounted targets, nested mounts, and incomplete inspection."""
     dev = os.lstat(target).st_dev
-    for root, dirs, _files in os.walk(target):
-        for name in dirs:
+    if os.path.ismount(target) or dev != os.lstat(scope).st_dev:
+        return "target is a mount point or lies on another filesystem"
+    if sys.platform.startswith("linux"):
+        for line in Path("/proc/self/mountinfo").read_text().splitlines():
+            mount = re.sub(r"\\([0-7]{3})", lambda m: chr(int(m[1], 8)), line.split()[4])
+            if contains(target, mount) or (
+                mount != scope and contains(scope, mount) and contains(mount, target)
+            ):
+                return f"target crosses a mount point ({mount})"
+    if not Path(target).is_dir():
+        return None
+
+    def fail(error: OSError) -> None:
+        raise error
+
+    for root, dirs, files in os.walk(target, onerror=fail):
+        for name in dirs + files:
             path = str(Path(root) / name)
-            try:
-                crosses = os.lstat(path).st_dev != dev
-            except OSError:
-                continue
-            if crosses:
+            if os.lstat(path).st_dev != dev or os.path.ismount(path):
                 return f"target holds a mount point or other filesystem ({path})"
     return None
 
@@ -72,6 +88,28 @@ def size_of(path: str) -> int:
             except OSError:
                 continue
     return total
+
+
+def _open_file_refusal(target: str) -> str | None:
+    """Require a completed, error-free probe before any unlink."""
+    lsof = shutil.which("lsof")
+    if not lsof:
+        return "lsof is required for open-handle inspection"
+    command = [lsof, "-nP", "+w"]
+    if Path(target).is_dir():
+        command.append("+D")
+    command.append(target)
+    try:
+        result = subprocess.run(  # noqa: S603
+            command, capture_output=True, timeout=1, check=False
+        )
+    except (OSError, subprocess.TimeoutExpired):
+        return "open-handle inspection failed or was incomplete"
+    if result.stderr or result.returncode not in (0, 1):
+        return "open-handle inspection failed or was incomplete"
+    if result.returncode == 0 or result.stdout:
+        return "target has open handles"
+    return None
 
 
 def human(nbytes: int) -> str:
@@ -107,13 +145,31 @@ def main(argv: list[str]) -> int:
         if len(names) > LIST_LIMIT:
             print(f"  ... {len(names) - LIST_LIMIT} more")
     if not args.delete:
-        print("OK - re-run with --delete after checking nothing holds it open")
+        print("OK - --delete checks open handles before removal")
         return EXIT_OK
+    reason = _open_file_refusal(target)
+    if reason:
+        print(f"REFUSED - {reason}: {target}")
+        return EXIT_REFUSED
+    try:
+        before = os.statvfs(scope)
+    except OSError:
+        print("REFUSED - could not measure filesystem free space")
+        return EXIT_REFUSED
+    print("open handles: none visible")
     if Path(target).is_dir() and not Path(target).is_symlink():
         shutil.rmtree(target)
     else:
         Path(target).unlink()
     print("DELETED")
+    try:
+        after = os.statvfs(scope)
+    except OSError:
+        print("filesystem free-space delta: unmeasured")
+    else:
+        delta = after.f_bavail * after.f_frsize - before.f_bavail * before.f_frsize
+        sign = "+" if delta > 0 else "-" if delta < 0 else ""
+        print(f"filesystem free-space delta: {sign}{human(abs(delta))}; cause not checked")
     return EXIT_OK
 
 

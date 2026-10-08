@@ -3,14 +3,15 @@
 ## Contents
 
 - Detect the nesting first
-- Why balloon accumulates
+- Why apparent size differs
 - Never run the shutdown yourself
 - Ordering
 - WSL: shutdown, compact, sparse
 - Docker Desktop and Hyper-V
 
-When the filesystem being cleaned lives inside a virtual disk, deleting
-files frees nothing on the host until the disk is compacted.
+When the filesystem being cleaned lives inside a virtual disk, measure
+guest and host recovery separately. Guest deletion alone proves neither
+host recovery nor the need for compaction.
 
 ## Detect the nesting first
 
@@ -26,9 +27,9 @@ On WSL, the guest root is an `ext4.vhdx` under the Windows user
 profile, and container runtimes add their own. Locate every backing
 file and compare its size against the used space reported inside it.
 This command is WSL-only and needs GNU `find` and `numfmt`. `%s` is the
-file's apparent size; on `/mnt/c`, `du` reports the same figure, so the
-on-disk size of a sparse vhdx is readable only from Windows (file
-properties, "Size on disk"). Label the figure "apparent size":
+file's apparent size; guest-side `du` may not expose Windows allocation.
+Read host allocation from Windows file properties ("Size on disk").
+Label the guest-side figure "apparent size":
 
 ```console
 $ find /mnt/c/Users/*/AppData/Local \
@@ -39,17 +40,23 @@ $ find /mnt/c/Users/*/AppData/Local \
   | numfmt --field=1 --to=iec
 ```
 
-The gap between a backing file's size and the guest's used
-space is *balloon* — blocks written once, freed inside the guest, and
-never returned to the host. It is recoverable without deleting
-anything.
+The backing file's apparent size minus guest used space is an *apparent
+gap*, not a recovery estimate. Sparse allocation and virtual-disk
+metadata prevent that subtraction from measuring host space. Subtracting
+guest used space from host allocated size does not establish a reclaim
+estimate or upper bound either: the layers account for different blocks.
+Present allocation does not establish allocation history: call blocks
+currently unallocated, not "never allocated".
+Read host
+allocated size or free space before and after any compaction; Microsoft's
+[sparse-file documentation](https://learn.microsoft.com/en-us/windows/win32/fileio/sparse-files)
+distinguishes file length from allocation.
 
-## Why balloon accumulates
+## Why apparent size differs
 
-A dynamically expanding virtual disk grows on write and never shrinks
-on delete. The guest kernel can signal freed blocks with TRIM, but the
-signal may not reach the host unless the backing file is sparse-aware
-(see the `sparseVhd` page linked below).
+A dynamically expanding virtual disk can retain its apparent size after
+guest deletion. TRIM and sparse allocation can affect host usage without
+the same change in apparent size (see the `sparseVhd` page linked below).
 
 Check whether the guest even issues TRIM. This layer is Linux-only —
 `findmnt` is util-linux, and the surrounding `.vhdx` inspection assumes
@@ -59,29 +66,26 @@ a WSL guest:
 $ findmnt -no OPTIONS /
 ```
 
-`discard` in the mount options means the kernel trims on every delete.
-Its presence alongside a fully-allocated backing file may mean the
-virtual disk is not sparse: the guest signals and the host may ignore it.
+`discard` requests online discard of freed blocks. It does not measure
+whether the host reclaimed them.
 
 ## Never run the shutdown yourself
 
 Compacting requires the guest to be stopped. **Do not run
 `wsl --shutdown`, `wsl --terminate`, or any equivalent guest-halting
 command.** It kills every running shell, server, container, and
-background job, including the session issuing the command and any
-unsaved work.
+background job, risking unsaved work.
 
 Present it as a step the user runs, with what it interrupts, and stop.
 The same applies to host-side compaction, which runs from a Windows
-administrator shell the agent does not own.
+administrator shell.
 
 ## Ordering
 
 Compaction only reclaims blocks that are already free inside the guest,
 so sequence matters:
 
-1. Delete and merge inside the guest. This frees blocks internally and
-   changes the host's disk usage by nothing at all.
+1. Perform approved guest cleanup and measure its guest free-space delta.
 2. Hand the user the in-guest trim, then the shutdown command, and wait.
 3. Hand the user the compaction commands.
 
@@ -109,8 +113,8 @@ Sources:
 (diskpart). Re-read the linked pages before relying on a command.
 
 Run inside the guest, before the shutdown. It tells the filesystem to
-release free blocks so the host can reclaim them; see `man fstrim`. Zero
-bytes trimmed, or an error, means compaction will likely free little:
+release free blocks so the host can reclaim them; see `man fstrim`.
+Report the result without inferring compaction yield from it:
 
 ```console
 $ sudo fstrim -av
@@ -132,9 +136,9 @@ Run in PowerShell to print a distribution's vhdx path:
 Compaction needs the vhdx detached or attached read-only. The
 `Optimize-VHD` page says `-Mode Full` and `-Mode Quick` are allowable only
 for a disk mounted read-only, and that on a VHDX not attached read-only
-they fall back to Prezeroed and Pretrimmed. Prezeroed reclaims only space
-already zeroed, which ext4 free space is not, so `Optimize-VHD` on a
-detached vhdx can free nothing. Attach read-only first.
+they fall back to Prezeroed and Pretrimmed. Prezeroed relies on space
+already being zeroed. Attach read-only for Full mode; neither mode
+guarantees that the file will shrink.
 
 Run in an elevated PowerShell after the shutdown. `Mount-VHD` and
 `Optimize-VHD` are in the Hyper-V PowerShell module, which not every
@@ -165,8 +169,9 @@ compact vdisk
 detach vdisk
 ```
 
-The compact "can succeed without reducing the file size". Re-read the
-file size afterwards and report the measured change.
+Compaction can succeed without reducing file size. Measure host allocation
+or host free space afterwards and report that delta separately from the
+change in apparent file size.
 
 The Microsoft pages cite no command that sets an existing distribution's
 disk sparse. They document only `sparseVhd=true` under `[experimental]`

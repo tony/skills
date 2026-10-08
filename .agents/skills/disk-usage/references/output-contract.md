@@ -15,27 +15,47 @@ labels on bullets, no recap ending.
 
 A blocked or halted run (any layer or path that cannot be read, a failed
 proof, a declined approval) uses the blocked shape and no `##` sections:
-one sentence stating the result, then what was measured, what was not,
-and what the user needs to do next. Never estimate what was not measured,
+four sentences total: one result sentence, then exactly three plain
+bullets, one sentence each: `Measured`, `Not measured`, and `To continue`;
+put any necessary command after the last bullet. Fill `Measured` from
+the survey's `filesystem` fields and classified in-scope directories;
+leave rejected probe inventory out. Fill `Not measured` from `errors`
+or a recorded command failure. Unknown usage stays unknown,
+with no guessed location. No unrelated cleanup,
+TRIM findings, or recap. Never estimate what was not measured,
 and never attribute unmeasured space to a path or directory. Give no
 size for what was not read, including used-minus-measured arithmetic,
 and do not guess which layer is the cause ("probably", "more likely").
 Say "could not be read" about the layer.
+
+A blocked usage report opens: "The survey is incomplete; the location of
+unmeasured usage is unknown." A blocked reclaim opens: "No cleanup ran:
+no in-scope candidate passed its checks." Keep the opening separate from
+the measured figures. `To continue` asks for the missing measurement or
+a readable path; it does not explain where the missing usage might be.
+
+After an incomplete open-handle probe, `To continue` is: "Resolve the
+reported lsof error and retry the same guard; if it refuses again, leave
+the target in place." This checks caller-visible handles, not every
+process on the machine.
+
+A search target is not a finding: an unreadable home directory does not
+establish that caches live there, and a size-floor survey does not prove
+the readable filesystem contains no caches.
 
 A the `disk-reclaim` skill plan awaiting approval uses the same section order, with
 the hero line first and no heading of its own such as "Plan". It ends
 with the approval question, and states projected figures as projections.
 
 A declined environment halt (the user asked the agent to run
-`wsl --shutdown` itself) uses the same shape. Add a line saying what the
-shutdown interrupts, then the command in a `powershell` fence for the
-user to run. Print it when the balloon is measured above zero, since
-compaction returns space without any deletion. Say "not yet known" when
-the backing file could not be read, and say no shutdown is needed only
-when the balloon was measured near zero.
+`wsl --shutdown` itself) uses the same shape. Say what the shutdown
+interrupts in `To continue`, then put the command in a `powershell` fence for the
+user to run. The user's host-space request permits this handoff even
+when its payoff is unknown. Say "not yet known" when host recovery
+has not been measured; an apparent size gap does not establish it.
 
 The same test governs the hand-off after the `disk-reclaim` skill: print the
-commands only when the balloon is measured above zero or the user asked
+commands only when an apparent size gap was measured or the user asked
 about host space. Otherwise write one sentence, "Host recovery is
 unmeasured; run this skill to measure the vhdx", with no commands and no
 claim that none are needed.
@@ -43,19 +63,18 @@ claim that none are needed.
 Reply in this shape, as plain text outside any code fence, with plain
 bullets, no bold (never `- **Label:** ...`), and no local paths:
 
-```text
-Nothing was reclaimed: the host drive could not be read, so no layer is
-confirmed as the binding constraint.
+````text
+No cleanup ran: no in-scope cache was verified.
 
 - Measured: the WSL guest, 61% used, 344 GiB available.
-- Not measured: C: (host) and the ext4.vhdx backing file; both could not
-  be read.
-- To continue: run the command below and share the output.
+- Not measured: the home directory could not be read.
+- To continue: share a readable cache path or run the command below in
+  your own shell and share its output.
 
 ```console
-$ df -h /mnt/c
+$ du -xh -d 2 ~
 ```
-```
+````
 
 The last bullet is the ask. Add no separate closing question and no
 `ask-user-choice` panel to a blocked run.
@@ -77,7 +96,7 @@ bullets, no bold (never `- **Label:** ...`), and no local paths:
 Do not delete notes-backup-2026: it holds two files that notes lacks, and
 the root filesystem has 344 GiB free.
 
-- Proof: the two trees share no paths, so the backup is unique.
+- Proof: the two trees share no paths; no other copy was established.
 - Size: 8 KiB on the guest ext4 filesystem, of 344 GiB free.
 - Your call: keep it, or move the two files into notes and re-run the
   comparison.
@@ -101,8 +120,9 @@ layers were left out, name the constraint among the layers measured.
 Use these level-2 headings verbatim, in this order.
 
 `## Layers` — every filesystem with size, used, available, and use
-percentage. For virtual disks, the backing file's apparent size beside
-the guest's used space, with the balloon called out as its own figure.
+percentage. For virtual disks, show backing-file apparent size beside
+guest used space. Label their difference an apparent gap, not recoverable
+host space; host allocation or free-space measurements are separate.
 
 `## Biggest consumers` — ranked by size, with the layer each sits on.
 Report the measured number; do not round toward a more impressive
@@ -122,7 +142,7 @@ what makes each protected. Include the total so the user can see what
 was deliberately not reclaimed. State each tool's compression support
 where it bears on a proposal.
 
-`## Needs a decision` — stale-but-unique data and anything that
+`## Needs a decision` — data without a proved replacement and anything that
 resisted classification, each with size and age. These are
 questions, not candidates.
 
@@ -140,7 +160,7 @@ bullets, no bold (never `- **Label:** ...`), and no local paths:
 
 - C: 931 GiB, 876 used, 55 available, 94%.
 - WSL guest ext4: 1007 GiB, 612 used, 344 available, 61%; ext4.vhdx
-  apparent size 780 GiB, so 168 GiB is balloon.
+  apparent size 780 GiB; apparent gap 168 GiB, host recovery unmeasured.
 
 ## Biggest consumers
 
@@ -158,16 +178,46 @@ bullets, no bold (never `- **Label:** ...`), and no local paths:
 
 ## After execution
 
-the `disk-reclaim` skill adds two sections after `## Needs a decision` and moves
-`## Only you can run this` to the end, after `## Left alone`.
+The completion report uses this order, omitting empty sections:
+`## Protected`, `## Needs a decision`, `## Reclaimed`, `## Left alone`,
+then `## Only you can run this`. Put the deletion result in the hero;
+do not move `## Reclaimed` ahead of the pending decisions.
+
+Do not replay the survey in a completion report. Include each finding
+once; omit unchanged inventory. Data excluded from the approved plan
+belongs under `## Needs a decision` or `## Protected`, not `## Left alone`.
 
 `## Reclaimed` — what was actually deleted or merged, with the
 measured free-space delta per layer. When measured and predicted
-disagree, state both and explain the gap.
+disagree, state both. Give a cause only if checked; otherwise say
+"cause not checked" without speculating about concurrent writers.
 
 `## Left alone` — what the plan covered but execution skipped, with
 the reason. A failed proof, a repository with unpushed work, or a
 declined approval each belong here.
+
+Fill this completion shape from the guard result and candidate inventory.
+Copy the guard's observed delta; another `df` reading is a later sample,
+not a replacement for that observation. Omit an unproved cause or copy
+location, not the uncertainty. Add other nonempty sections in the order
+above, and omit the host sentence when this is not a virtual disk.
+
+```text
+Deleted <approved cache>, <measured size> on <measured filesystem>.
+
+## Needs a decision
+
+- <path>: <measured size and age>, kept; no replacement was proved.
+
+## Reclaimed
+
+- <approved cache>: <measured size> removed; filesystem free-space delta
+  <guard's signed delta>; cause not checked.
+
+Host recovery is unmeasured; run disk-usage to measure the vhdx.
+
+Keep <decision path>, or delete it?
+```
 
 ## Rules
 
@@ -184,33 +234,41 @@ Name a path or layer as holding space only from a measurement in this
 run. Never characterize an unmeasured path ("these are system packages
 and logs").
 
-Say what rebuilding a regenerable item costs (time, bandwidth); never
-write that deleting it "costs nothing".
+State the rebuild command and its observed requirements, such as local
+CPU time or a download. Duration and download size stay unknown unless
+measured; deleting a regenerable item never "costs nothing".
 
 Emit a command the user runs as a `console` fence with a `$ ` prefix,
 one command per fence; a Windows command uses a `powershell` fence.
 
-Attach every figure to a layer. State three numbers for a virtual disk:
-what the cleanup frees inside the guest, what the balloon already holds,
-and what the host gains once the user completes the steps only they can
-run. A guest-side number presented as machine-wide recovery is wrong even
-when the arithmetic is right.
+Attach every figure to a layer. Separate guest cleanup, backing-file
+apparent gap, and measured host recovery. Mark missing measurements
+unknown; never turn an apparent gap into projected host recovery. A
+guest-side number presented as machine-wide recovery is wrong even when
+the arithmetic is right.
 
 Give a cause only when a command measured it; otherwise say what was
 observed and that the cause was not checked. Describe a file by what you
 read in it, not by its name or age. Write what a thing is, not what it
 is not (no "it isn't X: it is Y").
 
-Distinguish measured from projected in the words themselves. "Frees
-40 GiB once you compact" and "freed 40 GiB" are different claims.
+Distinguish measured from projected in the words themselves. Do not
+promise a compaction yield from guest free space or apparent file size.
 
 State a claim about what a tool supports (for example, that it reads
-compressed transcripts) only with the help text, docs page, or binary
-string you read; otherwise say it was not checked.
+compressed transcripts) only with help text, documentation, or a
+disposable-fixture test. Binary strings are clues, not capability proof.
+
+A comparison proves uniqueness only relative to its named keeper. Without
+a wider search, say "no other copy was established", not "your only copy"
+or "I found no other copy anywhere". Name the actual search scope when
+reporting that a search found no copy.
 
 Use GiB at or above 1 GiB and MiB or KiB below it (`6 MiB`, never
 `0.0061 GiB`), one unit per figure, converting what a tool printed
-(`1007G`, `14 GB`). Write `~` instead of the home path in commands.
+(`1007G`, `14 GB`); do not repeat raw byte counters. In commands for the
+user, replace an absolute home prefix with `~`. Literal absolute installed
+script paths belong in internal tool calls, not in the final reply.
 
 Name what was skipped. A report that silently omits protected history
 reads as having missed it rather than having preserved it.

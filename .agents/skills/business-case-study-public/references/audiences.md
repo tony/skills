@@ -43,13 +43,15 @@ refs allowed.
 
 ## Tier 3: public
 
-Hard sanitization contract:
+This contract covers the saved report and the entire reply, including checklist
+results, the run description, and next steps:
 
-- No organization, repository, team, or person names; no ticket
-  IDs; no internal URLs; no internal or local file paths.
+- No internal organization, repository, team, or person names; no ticket
+  IDs, internal URLs, or internal/local file paths. Public study names may
+  appear only as citations, not as identities of the measured group.
 - Aggregates and ranges only. Round to honest precision: a
   number's precision must not exceed what its interval supports.
-- Every headline claim triangulated against the field range.
+- Every headline claim triangulated against an outcome-matched study.
 - A candid limitations section is mandatory; credibility is the PR
   asset.
 - Provenance tags remain on every figure, rendered as tag plus
@@ -96,8 +98,20 @@ by sourcing figures only from the public case study.
 4. Confirm the limitations section is present and candid.
 5. Confirm no currency appears; external text travels furthest.
 
-Report the checklist in the `## Sanitization` section of the
-command output: pass per item, with what was removed or reworded.
+Report the checklist in `## Sanitization` with one short result per check;
+omit scanner debugging, discarded flags, and descriptions of tool access.
+Name removed categories, never the excluded strings: "personal names removed",
+not the names themselves. In `## Run`, use the task category and rounded
+window; in `## Report`, name only the report's filename, not an internal path.
+
+Before replying, use `mktemp <run>/reports/.reply-check.XXXXXX` to reserve an
+owned scratch file; write and scan the reply there with the report's same
+`--deny` and allow flags. Reword every hit and send only the checked text.
+Remove only that scratch file afterwards. A clean
+report does not establish that its accompanying reply is safe to publish.
+For a stopped run, never repeat excluded strings or the supplied run path;
+name the failed category and the skill to run next. Without a run directory,
+use that generic refusal without creating files.
 
 ## Firewall sweep
 

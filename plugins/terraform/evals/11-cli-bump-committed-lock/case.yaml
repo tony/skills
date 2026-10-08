@@ -61,12 +61,9 @@ graders:
       claim a provider moved.
 
   - name: hero-follows-shape
-    type: llm
-    focus: last_message
-    criteria: |
-      The first line of the reply is exactly a hero of the form
-      `✓ terraform <old> -> <new> across N pin sites` with nothing appended after it (no "but", no failing
-      gate); any failure appears in a later section.
+    type: regex
+    target: last_message
+    pattern: '^✓ terraform mixed -> 1\.14\.0 across [0-9]+ pin sites(?:\r?\n|$)'
 
   - name: drift-does-not-restate
     type: llm

@@ -11,6 +11,7 @@ cat >.gitignore <<'MD'
 .bashrc
 .claude
 .eval-artifacts
+.eval-state
 .gitconfig
 .gitmodules
 .idea
@@ -35,4 +36,10 @@ git add .gitignore src/cli.py
 git commit -q -m 'cli(feat) Add the entry point'
 
 printf 'my in-progress notes\n' >NOTES.txt
+printf '# staged by the user\n' >>src/cli.py
+git add src/cli.py
 printf '# edited by the user\n' >>src/cli.py
+
+mkdir -p .eval-state
+cp "$(dirname "$0")/../checkout_state.py" .eval-state/check_checkout.py
+python3 .eval-state/check_checkout.py capture

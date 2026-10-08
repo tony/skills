@@ -3,6 +3,8 @@
 # commit can be checked for format and for tool trailers.
 set -euo pipefail
 
+mkdir project
+cd project
 git init -b main >/dev/null
 
 cat >.gitignore <<'MD'

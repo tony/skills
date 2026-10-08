@@ -209,10 +209,12 @@ contender:
 $ git -C <root>/<n>-<slug> status --ignored --short
 ```
 
-   List any ignored files in the report, then remove the worktree
-   (skip with `--keep-trees`). Files the stash left in place (bytecode,
-   `--leave` paths) make a plain remove refuse; the work is already
-   stashed, so `teardown` retries with `--force`:
+   Report the ignored files and confirm they are disposable output of this
+   contender. Preserve anything else before removing the worktree
+   (skip with `--keep-trees`). `teardown` removes bytecode and ignored output
+   with `--force` when needed, but refuses remaining source edits, staged
+   changes, or commits absent from the recorded stash. If `--leave` kept
+   other files, keep the worktree or explicitly approve their removal first:
 
 ```console
 $ <scripts>/spike.sh teardown <root>/<n>-<slug> <stash sha>

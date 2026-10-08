@@ -280,27 +280,28 @@ cmd_drop() {
   echo dropped
 }
 
-# Remove a worktree whose work is already stashed. Files left in place on
-# purpose (bytecode, --leave paths) make the plain remove refuse, so retry
-# with --force. Refuses unless STASH_SHA is a listed stash, or is "none" and
-# the worktree holds no source changes. Succeeds only when git no longer
-# lists the worktree.
+# Remove a stashed worktree only when no source changes remain.
+# Bytecode and ignored build output may require --force.
 cmd_teardown() {
   [ $# -eq 2 ] || die "teardown needs WORKTREE and STASH_SHA (or none)" 2
-  if [ "$2" = none ]; then
-    [ -z "$(git -C "$1" ls-files --modified --others --exclude-standard -- ':/' "${BYTECODE[@]}")" ] ||
-      die "worktree holds unstashed changes: $1"
-  else
+  if [ "$2" != none ]; then
     local full
     full=$(git rev-parse --verify --quiet "$2^{commit}" || true)
-    [ -n "$full" ] && git stash list --format='%H' | grep -qxF "$full" ||
+    [ -n "$full" ] && git stash list --format='%H' | awk -v sha="$full" '$0 == sha {found = 1} END {exit !found}' ||
       die "no stash $2; stash the work before removing $1"
+    git merge-base --is-ancestor "$(git -C "$1" rev-parse HEAD)" "$full" ||
+      die "worktree has commits absent from stash $2: $1"
   fi
+  git -C "$1" diff --cached --quiet || die "worktree holds unstashed staged changes: $1"
+  [ -z "$(git -C "$1" ls-files --modified --others --exclude-standard -- ':/' "${BYTECODE[@]}")" ] ||
+    die "worktree holds unstashed changes: $1"
   git worktree remove "$1" 2>/dev/null || git worktree remove --force "$1" || true
   git worktree prune
   local abs
   abs=$(cd "$(dirname "$1")" 2>/dev/null && pwd -P)/$(basename "$1") || abs=$1
-  if git worktree list --porcelain | awk '/^worktree /{print substr($0, 10)}' | grep -qxF -e "$1" -e "$abs"; then
+  if git worktree list --porcelain | awk -v target="$1" -v absolute="$abs" '
+    /^worktree / {path = substr($0, 10); if (path == target || path == absolute) found = 1}
+    END {exit !found}'; then
     die "worktree still listed: $1"
   fi
   echo removed

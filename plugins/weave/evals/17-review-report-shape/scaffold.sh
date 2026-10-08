@@ -11,6 +11,7 @@ cat >.gitignore <<'MD'
 .bashrc
 .claude
 .eval-artifacts
+.eval-state
 .gitconfig
 .gitmodules
 .idea
@@ -49,3 +50,35 @@ def charge(client, amount):
 PY
 git add -A
 git commit -q -m 'feat(payments) Retry failed charges'
+
+mkdir -p .eval-state
+cat >.eval-state/collect_review.py <<'PY'
+"""Copy persisted review evidence without reconstructing or summarizing it."""
+
+import json
+from pathlib import Path
+
+sessions = sorted({
+    path.resolve()
+    for path in Path(".eval-state/weave/repos").glob("*/sessions/review/*/session.json")
+})
+assert len(sessions) == 1, "expected one review session"
+session = json.loads(sessions[0].read_text())
+review_pass = sessions[0].parent / "pass-0001"
+outputs = {
+    path.stem: path.read_text() for path in sorted((review_pass / "outputs").glob("*.md"))
+}
+assert outputs, "no reviewer outputs"
+report = {
+    "participants": session["participants"],
+    "outputs": outputs,
+    "synthesis": (review_pass / "synthesis.md").read_text(),
+    "source_files": {
+        "session": str(sessions[0].relative_to(Path.cwd())),
+        "verification": str((review_pass / "verification.md").relative_to(Path.cwd())),
+        "consensus": str((review_pass / "consensus.md").relative_to(Path.cwd())),
+    },
+}
+Path(".eval-state/review-evidence.json").write_text(json.dumps(report, indent=2) + "\n")
+print("Collected persisted reviewer outputs, verification, consensus, and synthesis.")
+PY
