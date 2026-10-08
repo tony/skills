@@ -62,15 +62,24 @@ $ uv run basedpyright \
 
 ### Test
 
-Doctests and script tests, then the plugin lint, manifest sync,
-generated-file drift, and description-routing checks:
+Mid loop: unit tests and doctests, then plugin lint, manifest sync,
+generated-file drift, and description-routing checks. Integration tests
+exercise owned Git repositories and CLI subprocess workflows in the outer
+loop.
 
 ```console
 $ uv run pytest -q \
+    -m 'not integration' \
     && uv run scripts/marketplace.py lint \
     && uv run scripts/marketplace.py sync --check \
     && uv run scripts/marketplace.py portable --check \
     && uv run scripts/skill_evals.py check
+```
+
+Outer loop and CI: run every test, including integration tests:
+
+```console
+$ uv run pytest -q
 ```
 
 `marketplace.py lint` already runs `claude plugin validate --strict` over the

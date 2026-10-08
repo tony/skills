@@ -47,6 +47,7 @@ exclude = [".agents", "plugins/pytest-optimizer/templates", "**/__pycache__"]
 
 [tool.pytest.ini_options]
 addopts = "--doctest-modules"
+markers = ["integration: owned Git repositories and CLI subprocess workflows (outer loop)"]
 testpaths = [
     "plugins/action/scripts",
     "plugins/agent-messaging/scripts",

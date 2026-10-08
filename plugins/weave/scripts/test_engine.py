@@ -8,21 +8,23 @@ import io
 import json
 import re
 import shlex
+import shutil
 import subprocess
 from pathlib import Path
 
 import engine  # pyright: ignore[reportImplicitRelativeImport]
 import pytest
 
+pytestmark = pytest.mark.integration
+
 
 def sh(cwd: Path, *argv: str) -> str:
     return subprocess.run(argv, cwd=cwd, capture_output=True, text=True, check=True).stdout
 
 
-@pytest.fixture
-def repo(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
-    root = tmp_path / "work" / "Demo Repo"
-    root.mkdir(parents=True)
+@pytest.fixture(scope="module")
+def repo_template(tmp_path_factory: pytest.TempPathFactory) -> Path:
+    root = tmp_path_factory.mktemp("weave-repo")
     sh(root, "git", "init", "-q", "-b", "main")
     sh(root, "git", "config", "user.email", "t@example.com")
     sh(root, "git", "config", "user.name", "t")
@@ -31,6 +33,13 @@ def repo(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
         (root / name).write_text(text)
     sh(root, "git", "add", "-A")
     sh(root, "git", "commit", "-q", "-m", "init")
+    return root
+
+
+@pytest.fixture
+def repo(tmp_path: Path, repo_template: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
+    root = tmp_path / "work" / "Demo Repo"
+    shutil.copytree(repo_template, root)
     monkeypatch.setenv("AI_AIP_ROOT", str(tmp_path / "aip"))
     monkeypatch.setenv("WEAVE_REPO", str(root))
     monkeypatch.chdir(root)
