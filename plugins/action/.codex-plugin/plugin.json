@@ -7,6 +7,21 @@
     "email": "tony@git-pull.com"
   },
   "homepage": "https://github.com/tony/skills/tree/main/plugins/action",
+  "repository": "https://github.com/tony/skills",
   "license": "MIT",
-  "skills": "./skills/"
+  "keywords": [
+    "tickets",
+    "worktree",
+    "branches",
+    "parallel"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Action",
+    "shortDescription": "Convert tickets to branches in isolated worktrees.",
+    "longDescription": "Convert tickets to branches in isolated worktrees. Uses team branch conventions, lands gated commits, and supports parallel tickets.",
+    "developerName": "Tony Narlock",
+    "category": "Development",
+    "websiteURL": "https://github.com/tony/skills/tree/main/plugins/action"
+  }
 }

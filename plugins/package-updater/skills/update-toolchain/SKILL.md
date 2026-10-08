@@ -3,7 +3,6 @@ name: update-toolchain
 description: "Use when updating one runtime or toolchain pin across version files, package metadata, and other repositories."
 allowed-tools: ["Bash", "Read", "Grep", "Glob", "Edit", "Write", "Agent", "AskUserQuestion"]
 argument-hint: "[tool [version]]... [--root <dir>] [--repo <path|slug>...] [--owner <name>...] [--audit-only] [--branch <name>] [--pr] [--push]"
-user-invocable: true
 disable-model-invocation: true
 ---
 

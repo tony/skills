@@ -3,7 +3,6 @@ name: refocus
 description: "Use when a branch may have drifted from its ticket or pull-request goal and needs its work and gaps reclassified."
 allowed-tools: ["Bash", "Read", "Grep", "Glob", "AskUserQuestion"]
 argument-hint: "[the goal, when the repo does not record one]"
-user-invocable: true
 disable-model-invocation: true
 ---
 

@@ -3,7 +3,6 @@ name: commit
 description: Create a git commit following project conventions
 allowed-tools: ["Bash", "Read"]
 argument-hint: "[optional hint about the changes, e.g. 'fix the auth bug']"
-user-invocable: true
 disable-model-invocation: true
 ---
 

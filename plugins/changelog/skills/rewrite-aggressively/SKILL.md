@@ -3,7 +3,6 @@ name: rewrite-aggressively
 description: Rebase out the branch's earlier changelog commits and regenerate its entries fresh; commits only with --commit
 allowed-tools: ["Bash", "Read", "Grep", "Glob", "Edit", "AskUserQuestion"]
 argument-hint: "[--commit] [optional additional context about the changes]"
-user-invocable: true
 disable-model-invocation: true
 ---
 

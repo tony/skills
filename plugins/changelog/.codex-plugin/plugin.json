@@ -7,6 +7,21 @@
     "email": "tony@git-pull.com"
   },
   "homepage": "https://github.com/tony/skills/tree/main/plugins/changelog",
+  "repository": "https://github.com/tony/skills",
   "license": "MIT",
-  "skills": "./skills/"
+  "keywords": [
+    "changelog",
+    "release-notes",
+    "commits",
+    "pull-requests"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Changelog",
+    "shortDescription": "Generate and maintain categorized changelog entries from branch commits and PR context.",
+    "longDescription": "Generate and maintain categorized changelog entries from branch commits and PR context.",
+    "developerName": "Tony Narlock",
+    "category": "Productivity",
+    "websiteURL": "https://github.com/tony/skills/tree/main/plugins/changelog"
+  }
 }

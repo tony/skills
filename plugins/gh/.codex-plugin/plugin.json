@@ -7,6 +7,21 @@
     "email": "tony@git-pull.com"
   },
   "homepage": "https://github.com/tony/skills/tree/main/plugins/gh",
+  "repository": "https://github.com/tony/skills",
   "license": "MIT",
-  "skills": "./skills/"
+  "keywords": [
+    "github",
+    "issues",
+    "markdown",
+    "pii"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Gh",
+    "shortDescription": "File durable GitHub issues with reproductions, pinned links, and stripped PII.",
+    "longDescription": "File durable GitHub issues with reproductions, pinned links, and stripped PII. Enforces a markdown writing discipline reusable for any PR, comment, or ticket.",
+    "developerName": "Tony Narlock",
+    "category": "Development",
+    "websiteURL": "https://github.com/tony/skills/tree/main/plugins/gh"
+  }
 }

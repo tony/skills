@@ -3,7 +3,6 @@ name: case-study-public
 description: "Use when writing a tier-3 public case study from a business-value run: sanitized, triangulated against external evidence, with limitations."
 allowed-tools: ["Bash", "Read", "Write", "Grep", "AskUserQuestion", "WebFetch"]
 argument-hint: "[run directory]"
-user-invocable: true
 disable-model-invocation: true
 ---
 

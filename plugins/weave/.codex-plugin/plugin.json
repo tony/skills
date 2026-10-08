@@ -8,5 +8,13 @@
   },
   "homepage": "https://github.com/tony/skills/tree/main/plugins/weave",
   "license": "MIT",
-  "skills": "./skills/"
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Weave",
+    "shortDescription": "Run independent, adversarial AI participants via sub-agents or model CLIs to brainstorm, refine, plan, execute, architect, review, and synthesize.",
+    "longDescription": "Run independent, adversarial AI participants via sub-agents or model CLIs to brainstorm, refine, plan, execute, architect, review, and synthesize.",
+    "developerName": "Tony Narlock",
+    "category": "Development",
+    "websiteURL": "https://github.com/tony/skills/tree/main/plugins/weave"
+  }
 }

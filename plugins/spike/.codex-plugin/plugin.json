@@ -7,6 +7,22 @@
     "email": "tony@git-pull.com"
   },
   "homepage": "https://github.com/tony/skills/tree/main/plugins/spike",
+  "repository": "https://github.com/tony/skills",
   "license": "MIT",
-  "skills": "./skills/"
+  "keywords": [
+    "spike",
+    "bakeoff",
+    "worktrees",
+    "prototyping",
+    "design"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Spike",
+    "shortDescription": "Run no-commit spikes, strategy bakeoffs, or multi-round convergence in git worktrees.",
+    "longDescription": "Run no-commit spikes, strategy bakeoffs, or multi-round convergence in git worktrees. Tests ideas against quality gates and returns a commit-by-commit implementation plan.",
+    "developerName": "Tony Narlock",
+    "category": "Development",
+    "websiteURL": "https://github.com/tony/skills/tree/main/plugins/spike"
+  }
 }

@@ -3,7 +3,6 @@ name: gather
 description: "Resolve and pin a corpus, inventory it, and record what was read and what was deliberately skipped, into sources.jsonl"
 allowed-tools: ["Bash", "Read", "Grep", "Glob", "Write", "AskUserQuestion"]
 argument-hint: "<target>... [--kind=code|prose] [--out=<dir>]"
-user-invocable: true
 disable-model-invocation: true
 ---
 

@@ -46,6 +46,11 @@ jobs:
       - name: Test plugin scripts on Python 3.9
         run: uv run --no-project --isolated --python 3.9 --with pytest pytest -q plugins
 
+      - name: Claude plugin validate
+        run: |
+          claude plugin validate --strict .
+          for p in plugins/*/; do claude plugin validate --strict "$p"; done
+
       - name: Marketplace lint
         run: uv run scripts/marketplace.py lint
 

@@ -11,8 +11,15 @@ never currency.
 
 ## Installation
 
-In Claude Code, add the marketplace and install the plugin with these
-two slash commands:
+From a shell, one command installs the plugin for Claude Code and
+adds the marketplace first if it is missing:
+
+```console
+$ claude plugin install business --marketplace tony/skills
+```
+
+Inside a Claude Code session, add the marketplace and install the plugin
+with these two slash commands:
 
 ```text
 /plugin marketplace add tony/skills

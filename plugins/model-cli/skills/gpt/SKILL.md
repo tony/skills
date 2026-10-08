@@ -1,7 +1,6 @@
 ---
 name: gpt
 description: "Use when invoking OpenAI GPT directly through Codex CLI or agent; writes unsandboxed unless mode:plan."
-user-invocable: true
 disable-model-invocation: true
 allowed-tools: ["Bash"]
 argument-hint: <prompt> [timeout:<seconds>] [mode:plan]

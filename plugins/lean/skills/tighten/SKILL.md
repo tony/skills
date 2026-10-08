@@ -3,7 +3,6 @@ name: tighten
 description: "Use when tightening named files or pasted text in place by removing verbose prose, brittle references, and low-value noise."
 allowed-tools: ["Bash", "Read", "Grep", "Glob", "AskUserQuestion"]
 argument-hint: "[paths/globs] [--stdin] [--gates] [--diff-only]"
-user-invocable: true
 disable-model-invocation: true
 ---
 

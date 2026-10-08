@@ -3,7 +3,6 @@ name: what
 description: "Use when the user asks what is going on and needs a five-line summary of the session, branch, pull request, and ticket."
 allowed-tools: ["Bash", "Read", "Grep", "Glob"]
 argument-hint: "[what you are confused about]"
-user-invocable: true
 disable-model-invocation: true
 ---
 

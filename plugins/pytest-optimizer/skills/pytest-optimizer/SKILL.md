@@ -1,7 +1,6 @@
 ---
 name: pytest-optimizer
 description: "Use when pytest tests or fixtures are slow and you want them faster: speed up the suite with measured, safety-gated optimization."
-user-invocable: true
 allowed-tools: ["Bash", "Read", "Grep", "Glob", "Write", "Edit", "AskUserQuestion"]
 argument-hint: "[test-path-or-marker] [--phase=scan|benchmark|plan|execute] [--force] [--hygiene] [--memory-dir=<path>]"
 ---

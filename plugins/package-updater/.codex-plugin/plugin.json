@@ -7,6 +7,23 @@
     "email": "tony@git-pull.com"
   },
   "homepage": "https://github.com/tony/skills/tree/main/plugins/package-updater",
+  "repository": "https://github.com/tony/skills",
   "license": "MIT",
-  "skills": "./skills/"
+  "keywords": [
+    "dependencies",
+    "toolchain",
+    "lockfile",
+    "uv",
+    "npm",
+    "supply-chain"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Package Updater",
+    "shortDescription": "Update dependencies and toolchains across repositories.",
+    "longDescription": "Update dependencies and toolchains across repositories. Checks the supply-chain cooldown first when one is configured, then commits toolchain, named bumps, and lockfile refreshes separately with release notes cited.",
+    "developerName": "Tony Narlock",
+    "category": "Development",
+    "websiteURL": "https://github.com/tony/skills/tree/main/plugins/package-updater"
+  }
 }

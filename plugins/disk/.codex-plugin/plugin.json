@@ -7,6 +7,21 @@
     "email": "tony@git-pull.com"
   },
   "homepage": "https://github.com/tony/skills/tree/main/plugins/disk",
+  "repository": "https://github.com/tony/skills",
   "license": "MIT",
-  "skills": "./skills/"
+  "keywords": [
+    "disk-space",
+    "cleanup",
+    "cache",
+    "wsl"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Disk",
+    "shortDescription": "Safely reclaim disk space.",
+    "longDescription": "Safely reclaim disk space. Classifies consumers as cache, redundant copy, or history, deleting only what is proven safe.",
+    "developerName": "Tony Narlock",
+    "category": "Productivity",
+    "websiteURL": "https://github.com/tony/skills/tree/main/plugins/disk"
+  }
 }

@@ -7,6 +7,22 @@
     "email": "tony@git-pull.com"
   },
   "homepage": "https://github.com/tony/skills/tree/main/plugins/terraform",
+  "repository": "https://github.com/tony/skills",
   "license": "MIT",
-  "skills": "./skills/"
+  "keywords": [
+    "terraform",
+    "opentofu",
+    "providers",
+    "lock-files",
+    "upgrade"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Terraform",
+    "shortDescription": "Upgrade Terraform and OpenTofu versions.",
+    "longDescription": "Upgrade Terraform and OpenTofu versions. Discovers every root module, moves provider constraints together because they combine across modules, and refreshes lock files.",
+    "developerName": "Tony Narlock",
+    "category": "Development",
+    "websiteURL": "https://github.com/tony/skills/tree/main/plugins/terraform"
+  }
 }

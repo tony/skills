@@ -5,7 +5,14 @@ Keeps slop out of drafts and tidies working trees without commits.
 
 ## Installation
 
-In Claude Code, add the marketplace:
+From a shell, one command installs the plugin for Claude Code and
+adds the marketplace first if it is missing:
+
+```console
+$ claude plugin install lean --marketplace tony/skills
+```
+
+Inside a Claude Code session, add the marketplace:
 
 ```text
 /plugin marketplace add tony/skills

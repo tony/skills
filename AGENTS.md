@@ -73,6 +73,22 @@ $ uv run pytest -q \
     && uv run scripts/skill_evals.py check
 ```
 
+`marketplace.py lint` already runs `claude plugin validate --strict` over the
+marketplace and each plugin when the CLI is on `PATH` (an error under `CI`).
+Run it on the marketplace directly:
+
+```console
+$ claude plugin validate \
+    --strict \
+    .
+```
+
+Then on every plugin:
+
+```console
+$ for p in plugins/*/; do claude plugin validate --strict "$p" || exit 1; done
+```
+
 Plugin scripts and their tests use only the standard library, so the tests
 also run on 3.9 with nothing installed but pytest:
 
@@ -502,9 +518,11 @@ plugins/<name>/
 Hosts also accept `agents/`, `hooks/`, `.mcp.json`, and `.lsp.json`; no plugin
 here ships them, and the plugin reference linked above holds their schemas.
 
-`.codex-plugin/plugin.json` is written by `scripts/marketplace.py portable` and
-verified by `portable --check`. Never hand-edit it; change
-`.claude-plugin/plugin.json`, which it mirrors, and regenerate.
+`.codex-plugin/plugin.json` and every skill's `agents/openai.yaml` (Codex's
+presentation and `allow_implicit_invocation` policy) are written by
+`scripts/marketplace.py portable` and verified by `portable --check`. Never
+hand-edit them; change `.claude-plugin/plugin.json` or the skill's `SKILL.md`
+and regenerate.
 
 ### Shared Files
 
@@ -522,9 +540,10 @@ name and its frontmatter `name` match, or the two hosts invoke it by
 different names.
 
 A skill carrying a workflow that only makes sense when the user asks for it by
-name sets `disable-model-invocation: true`. That keeps it invocable by name
-only and never routed to on the model's initiative, and keeps it out of a
-routing corpus where it would crowd skills meant to be discovered.
+name sets `disable-model-invocation: true`; `portable` mirrors it into Codex's
+`agents/openai.yaml`. That keeps it invocable by name only and never routed to
+on the model's initiative, and keeps it out of a routing corpus where it would
+crowd skills meant to be discovered.
 
 Address bundled files by climbing out of the skill directory
 (`../../references/x.md`), never through `${CLAUDE_PLUGIN_ROOT}`. Codex performs
@@ -542,6 +561,7 @@ no substitution on that variable.
 - `disallowed-tools` (optional) — tools removed while the skill is active
 - `context` (optional) — set to `fork` to run in a subagent
 - `disable-model-invocation` (optional) — if true, runs without model invocation
+- `user-invocable` — defaults to true; never write `user-invocable: true`
 - Content can reference `$ARGUMENTS` to access arguments passed to the skill
 
 `allowed-tools` grants pre-approval rather than sandboxing: every tool

@@ -1,7 +1,6 @@
 ---
 name: study-deps
 description: "Use when pulling upstream source or cloning a dependency at its installed version to study internals, read code, or create pinned worktrees."
-user-invocable: true
 allowed-tools: ["Bash", "Read", "Grep", "Glob", "AskUserQuestion"]
 argument-hint: <package-name|"all"|category> [--lang <language>] [--no-worktree]
 ---

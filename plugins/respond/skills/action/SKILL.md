@@ -3,7 +3,6 @@ name: action
 description: "Use when screened review findings should be fixed on the current branch, usually as one verified commit per finding."
 allowed-tools: ["Bash", "Read", "Grep", "Glob", "Edit", "Write", "AskUserQuestion"]
 argument-hint: "[findings text] [<pr-number|url>] [--base=<ref>] [--no-fixup] [--on-fail=skip|stop|ask] [--reply]"
-user-invocable: true
 disable-model-invocation: true
 ---
 

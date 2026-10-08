@@ -7,6 +7,22 @@
     "email": "tony@git-pull.com"
   },
   "homepage": "https://github.com/tony/skills/tree/main/plugins/business",
+  "repository": "https://github.com/tony/skills",
   "license": "MIT",
-  "skills": "./skills/"
+  "keywords": [
+    "business-value",
+    "reporting",
+    "case-study",
+    "provenance",
+    "cycle-time"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Business",
+    "shortDescription": "Measure and report the business value of AI workflows from provenance-tagged data, in engineer-hours and cycle time, never currency.",
+    "longDescription": "Measure and report the business value of AI workflows from provenance-tagged data, in engineer-hours and cycle time, never currency.",
+    "developerName": "Tony Narlock",
+    "category": "Productivity",
+    "websiteURL": "https://github.com/tony/skills/tree/main/plugins/business"
+  }
 }

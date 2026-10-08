@@ -3,7 +3,6 @@ name: update-package
 description: "Use when updating one named dependency to a target version everywhere it is pinned across one repository or a fleet."
 allowed-tools: ["Bash", "Read", "Grep", "Glob", "Edit", "Write", "Agent", "AskUserQuestion"]
 argument-hint: "<package> [version] [--root <dir>] [--repo <path|slug>...] [--owner <name>...] [--audit-only] [--branch <name>] [--pr] [--push]"
-user-invocable: true
 disable-model-invocation: true
 ---
 

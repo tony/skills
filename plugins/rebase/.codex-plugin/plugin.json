@@ -7,6 +7,21 @@
     "email": "tony@git-pull.com"
   },
   "homepage": "https://github.com/tony/skills/tree/main/plugins/rebase",
+  "repository": "https://github.com/tony/skills",
   "license": "MIT",
-  "skills": "./skills/"
+  "keywords": [
+    "git",
+    "rebase",
+    "conflicts",
+    "trunk"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Rebase",
+    "shortDescription": "Rebase onto remote trunk with a file-overlap reading before the replay, conflict resolution, and quality gate verification.",
+    "longDescription": "Rebase onto remote trunk with a file-overlap reading before the replay, conflict resolution, and quality gate verification.",
+    "developerName": "Tony Narlock",
+    "category": "Development",
+    "websiteURL": "https://github.com/tony/skills/tree/main/plugins/rebase"
+  }
 }

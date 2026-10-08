@@ -3,7 +3,6 @@ name: 00-scan
 description: "Use when starting or re-baselining a pytest optimization pass by profiling tests and fixtures without editing the suite."
 allowed-tools: ["Bash", "Read", "Grep", "Glob", "Write", "AskUserQuestion"]
 argument-hint: "[test-path-or-marker] [--force] [--runs=N] [--hygiene] [--memory-dir=<path>]"
-user-invocable: true
 disable-model-invocation: true
 ---
 

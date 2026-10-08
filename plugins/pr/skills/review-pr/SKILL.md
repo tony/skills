@@ -3,7 +3,6 @@ name: review-pr
 description: "Use when reviewing an existing PR description for structure, proportionality, brittle details, and branch-internal narrative, without editing it."
 allowed-tools: ["Bash", "Read"]
 argument-hint: "[PR number or URL, e.g. '#42' or 'https://github.com/...']"
-user-invocable: true
 disable-model-invocation: true
 ---
 

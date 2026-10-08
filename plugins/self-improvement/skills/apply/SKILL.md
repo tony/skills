@@ -3,7 +3,6 @@ name: apply
 description: "Use when applying accepted self-improvement sweep findings to skills as individually gated edits and commits."
 allowed-tools: ["Bash", "Read", "Grep", "Glob", "Edit", "Write", "AskUserQuestion"]
 argument-hint: "[<finding id>...] [--ledger <path>] [--dry-run]"
-user-invocable: true
 disable-model-invocation: true
 ---
 

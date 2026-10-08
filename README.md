@@ -97,7 +97,14 @@ internals, either of which can change without notice.
 
 ### Claude Code
 
-Add the marketplace from inside Claude Code:
+From a shell, one command installs a plugin and adds the marketplace first
+if it is missing:
+
+```console
+$ claude plugin install commit --marketplace tony/skills
+```
+
+Or add the marketplace from inside Claude Code:
 
 ```text
 /plugin marketplace add tony/skills
@@ -113,7 +120,7 @@ Then install any plugin by the name in the table above:
 
 ### Codex
 
-Add the marketplace:
+Codex has no single-command form; add the marketplace once:
 
 ```console
 $ codex plugin marketplace add tony/skills
@@ -126,7 +133,9 @@ $ codex plugin add commit@skills
 ```
 
 Each workflow is one skill, invoked as `/slop:deslop` under Claude Code and
-`slop:deslop` under Codex.
+`slop:deslop` under Codex. A skill that runs only when named sets
+`disable-model-invocation` for Claude Code and `allow_implicit_invocation: false`
+in its `agents/openai.yaml` for Codex.
 
 ### Other agents
 

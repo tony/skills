@@ -3,7 +3,6 @@ name: goal
 description: "Use when the review-and-CI loop should continue through bounded rounds until no new actionable feedback remains."
 allowed-tools: ["Bash", "Read", "Edit", "Write", "Grep", "Glob", "AskUserQuestion"]
 argument-hint: "[<pr-number|url>] [--max-rounds=<n>] [--wait=<minutes>] [--ci-wait=<minutes>] [--push] [--reply]"
-user-invocable: true
 disable-model-invocation: true
 ---
 

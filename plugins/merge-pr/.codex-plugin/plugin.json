@@ -7,6 +7,22 @@
     "email": "tony@git-pull.com"
   },
   "homepage": "https://github.com/tony/skills/tree/main/plugins/merge-pr",
+  "repository": "https://github.com/tony/skills",
   "license": "MIT",
-  "skills": "./skills/"
+  "keywords": [
+    "pull-requests",
+    "merge",
+    "ci",
+    "git",
+    "stacked-prs"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Merge Pr",
+    "shortDescription": "Merge PRs matching repo history conventions.",
+    "longDescription": "Merge PRs matching repo history conventions. Includes readiness checks, CI watching, stack detection, and automated rebasing.",
+    "developerName": "Tony Narlock",
+    "category": "Development",
+    "websiteURL": "https://github.com/tony/skills/tree/main/plugins/merge-pr"
+  }
 }

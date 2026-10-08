@@ -3,7 +3,6 @@ name: reclaim
 description: Reclaim disk space through a proof-gated plan — clears regenerable caches, merges proved-redundant copies, and protects agent history
 allowed-tools: Bash, Read, Glob, Grep, AskUserQuestion, TodoWrite
 argument-hint: "[path or filesystem to focus on]"
-user-invocable: true
 disable-model-invocation: true
 ---
 

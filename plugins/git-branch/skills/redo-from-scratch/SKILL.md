@@ -1,7 +1,6 @@
 ---
 name: redo-from-scratch
 description: "Use when a branch or proof of concept should be rewritten: start over, redo it from scratch, throw away the approach, with tests as the spec."
-user-invocable: true
 argument-hint: "[PR number, branch, or what should change about the approach]"
 allowed-tools: ["Bash", "Read", "Write", "Edit", "Grep", "Glob", "AskUserQuestion"]
 ---

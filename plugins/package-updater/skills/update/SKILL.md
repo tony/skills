@@ -3,7 +3,6 @@ name: update
 description: "Use when bringing every outdated dependency and toolchain pin current across one repository or a fleet."
 allowed-tools: ["Bash", "Read", "Grep", "Glob", "Edit", "Write", "Agent", "AskUserQuestion"]
 argument-hint: "[--root <dir>] [--repo <path|slug>...] [--owner <name>...] [--audit-only] [--branch <name>] [--pr] [--issue github|linear] [--push]"
-user-invocable: true
 disable-model-invocation: true
 ---
 

@@ -7,6 +7,22 @@
     "email": "tony@git-pull.com"
   },
   "homepage": "https://github.com/tony/skills/tree/main/plugins/tailwind",
+  "repository": "https://github.com/tony/skills",
   "license": "MIT",
-  "skills": "./skills/"
+  "keywords": [
+    "tailwind",
+    "css",
+    "spacing",
+    "layout",
+    "audit"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Tailwind",
+    "shortDescription": "Detect and fix inconsistent spacing, margin/gap mixing, and padding asymmetry in Tailwind CSS layouts.",
+    "longDescription": "Detect and fix inconsistent spacing, margin/gap mixing, and padding asymmetry in Tailwind CSS layouts.",
+    "developerName": "Tony Narlock",
+    "category": "Design",
+    "websiteURL": "https://github.com/tony/skills/tree/main/plugins/tailwind"
+  }
 }

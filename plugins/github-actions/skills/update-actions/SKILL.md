@@ -3,7 +3,6 @@ name: update-actions
 description: "Use when updating every outdated GitHub Action across one repository or a fleet, one researched change at a time."
 allowed-tools: ["Bash", "Read", "Grep", "Glob", "Edit", "Task", "AskUserQuestion"]
 argument-hint: "[--root <dir>] [--owner <name>...] [--repo <path|slug>...] [--audit-only] [--pr] [--push]"
-user-invocable: true
 disable-model-invocation: true
 ---
 

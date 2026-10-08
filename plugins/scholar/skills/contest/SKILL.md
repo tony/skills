@@ -3,7 +3,6 @@ name: contest
 description: "Adversarially judge a distilled ontology one candidate at a time: synonymy, polysemy, orphans, circular evidence, and coverage"
 allowed-tools: ["Bash", "Read", "Grep", "Glob", "Edit", "Write", "AskUserQuestion"]
 argument-hint: "[--out=<dir>] [--rounds=<n>] [--panel]"
-user-invocable: true
 disable-model-invocation: true
 ---
 

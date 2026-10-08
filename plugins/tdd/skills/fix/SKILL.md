@@ -3,7 +3,6 @@ name: fix
 description: "Use when fixing a bug test-first: write a failing test to reproduce it, find the root cause, fix, and add a regression test."
 allowed-tools: ["Bash", "Read", "Grep", "Glob", "Edit", "Write", "Agent"]
 argument-hint: Paste or describe the bug to reproduce and fix
-user-invocable: true
 disable-model-invocation: true
 ---
 

@@ -7,6 +7,22 @@
     "email": "tony@git-pull.com"
   },
   "homepage": "https://github.com/tony/skills/tree/main/plugins/tdd",
+  "repository": "https://github.com/tony/skills",
   "license": "MIT",
-  "skills": "./skills/"
+  "keywords": [
+    "tdd",
+    "testing",
+    "bug-fix",
+    "xfail",
+    "debugging"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Tdd",
+    "shortDescription": "TDD bug-fix workflow: reproduce bugs as failing tests, determine root cause, fix, and verify.",
+    "longDescription": "TDD bug-fix workflow: reproduce bugs as failing tests, determine root cause, fix, and verify.",
+    "developerName": "Tony Narlock",
+    "category": "Testing",
+    "websiteURL": "https://github.com/tony/skills/tree/main/plugins/tdd"
+  }
 }

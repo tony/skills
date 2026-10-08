@@ -3,7 +3,6 @@ name: pr
 description: "Use when drafting a pull request description from the current branch's diff, optionally creating the PR with gh."
 allowed-tools: ["Bash", "Read", "Write", "AskUserQuestion"]
 argument-hint: "[optional hint about the PR, e.g. 'fixes the race condition']"
-user-invocable: true
 disable-model-invocation: true
 ---
 

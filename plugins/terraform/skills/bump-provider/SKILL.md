@@ -3,7 +3,6 @@ name: bump-provider
 description: "Use when updating one Terraform or OpenTofu provider across modules and refreshing root lockfiles without losing platforms."
 allowed-tools: ["Bash", "Read", "Grep", "Glob", "Edit", "AskUserQuestion"]
 argument-hint: "<provider> [version] [--root-module <dir>...] [--audit-only] [--no-lock] [--no-commit]"
-user-invocable: true
 disable-model-invocation: true
 ---
 
@@ -191,7 +190,8 @@ Reply in this shape, as plain text outside any code fence, with plain bullets, n
 ```
 
 A run that cannot proceed ends with the stopped line from
-`../bumping-terraform/SKILL.md`, not this shape.
+`../bumping-terraform/SKILL.md`, not this shape, and has no
+panel and no `Next steps:` list.
 
 End with an `AskUserQuestion` panel offering next steps, for example:
 converge the pin sites that disagree, refresh the lock files this run

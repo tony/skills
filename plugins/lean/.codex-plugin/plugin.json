@@ -7,6 +7,21 @@
     "email": "tony@git-pull.com"
   },
   "homepage": "https://github.com/tony/skills/tree/main/plugins/lean",
+  "repository": "https://github.com/tony/skills",
   "license": "MIT",
-  "skills": "./skills/"
+  "keywords": [
+    "writing",
+    "prose",
+    "comments",
+    "cleanup"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Lean",
+    "shortDescription": "Writing discipline and cleanup tools for tight, slop-free prose and code.",
+    "longDescription": "Writing discipline and cleanup tools for tight, slop-free prose and code.",
+    "developerName": "Tony Narlock",
+    "category": "Development",
+    "websiteURL": "https://github.com/tony/skills/tree/main/plugins/lean"
+  }
 }

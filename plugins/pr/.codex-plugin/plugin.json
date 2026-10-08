@@ -7,6 +7,21 @@
     "email": "tony@git-pull.com"
   },
   "homepage": "https://github.com/tony/skills/tree/main/plugins/pr",
+  "repository": "https://github.com/tony/skills",
   "license": "MIT",
-  "skills": "./skills/"
+  "keywords": [
+    "pull-requests",
+    "descriptions",
+    "review",
+    "merge-commit"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Pr",
+    "shortDescription": "Draft, refresh, rewrite, and review PR descriptions, and draft merge commit messages, from the branch diff.",
+    "longDescription": "Draft, refresh, rewrite, and review PR descriptions, and draft merge commit messages, from the branch diff.",
+    "developerName": "Tony Narlock",
+    "category": "Development",
+    "websiteURL": "https://github.com/tony/skills/tree/main/plugins/pr"
+  }
 }

@@ -7,6 +7,22 @@
     "email": "tony@git-pull.com"
   },
   "homepage": "https://github.com/tony/skills/tree/main/plugins/situate",
+  "repository": "https://github.com/tony/skills",
   "license": "MIT",
-  "skills": "./skills/"
+  "keywords": [
+    "orientation",
+    "branches",
+    "context",
+    "tickets",
+    "conventions"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Situate",
+    "shortDescription": "Gain situational awareness before modifying code.",
+    "longDescription": "Gain situational awareness before modifying code. Scans branches, PRs, tickets, and project conventions to orient the agent and verify the work required.",
+    "developerName": "Tony Narlock",
+    "category": "Development",
+    "websiteURL": "https://github.com/tony/skills/tree/main/plugins/situate"
+  }
 }

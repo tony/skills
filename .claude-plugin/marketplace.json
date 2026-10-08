@@ -32,6 +32,12 @@
       },
       "source": "./plugins/rebase",
       "category": "development",
+      "tags": [
+        "git",
+        "rebase",
+        "conflicts",
+        "trunk"
+      ],
       "homepage": "https://github.com/tony/skills/tree/main/plugins/rebase",
       "license": "MIT"
     },
@@ -45,6 +51,12 @@
       },
       "source": "./plugins/changelog",
       "category": "productivity",
+      "tags": [
+        "changelog",
+        "release-notes",
+        "commits",
+        "pull-requests"
+      ],
       "homepage": "https://github.com/tony/skills/tree/main/plugins/changelog",
       "license": "MIT"
     },
@@ -58,6 +70,13 @@
       },
       "source": "./plugins/tdd",
       "category": "testing",
+      "tags": [
+        "tdd",
+        "testing",
+        "bug-fix",
+        "xfail",
+        "debugging"
+      ],
       "homepage": "https://github.com/tony/skills/tree/main/plugins/tdd",
       "license": "MIT"
     },
@@ -71,6 +90,12 @@
       },
       "source": "./plugins/commit",
       "category": "development",
+      "tags": [
+        "git",
+        "commit",
+        "conventions",
+        "safety"
+      ],
       "homepage": "https://github.com/tony/skills/tree/main/plugins/commit",
       "license": "MIT"
     },
@@ -84,6 +109,13 @@
       },
       "source": "./plugins/model-cli",
       "category": "development",
+      "tags": [
+        "gemini",
+        "codex",
+        "cursor",
+        "cli",
+        "delegation"
+      ],
       "homepage": "https://github.com/tony/skills/tree/main/plugins/model-cli",
       "license": "MIT"
     },
@@ -97,6 +129,12 @@
       },
       "source": "./plugins/pr",
       "category": "development",
+      "tags": [
+        "pull-requests",
+        "descriptions",
+        "review",
+        "merge-commit"
+      ],
       "homepage": "https://github.com/tony/skills/tree/main/plugins/pr",
       "license": "MIT"
     },
@@ -110,6 +148,13 @@
       },
       "source": "./plugins/research",
       "category": "learning",
+      "tags": [
+        "research",
+        "sources",
+        "citations",
+        "dependencies",
+        "reports"
+      ],
       "homepage": "https://github.com/tony/skills/tree/main/plugins/research",
       "license": "MIT"
     },
@@ -123,6 +168,13 @@
       },
       "source": "./plugins/slop",
       "category": "development",
+      "tags": [
+        "ai-slop",
+        "audit",
+        "commits",
+        "cleanup",
+        "brittle-references"
+      ],
       "homepage": "https://github.com/tony/skills/tree/main/plugins/slop",
       "license": "MIT"
     },
@@ -136,6 +188,13 @@
       },
       "source": "./plugins/tailwind",
       "category": "design",
+      "tags": [
+        "tailwind",
+        "css",
+        "spacing",
+        "layout",
+        "audit"
+      ],
       "homepage": "https://github.com/tony/skills/tree/main/plugins/tailwind",
       "license": "MIT"
     },
@@ -149,6 +208,13 @@
       },
       "source": "./plugins/pytest-optimizer",
       "category": "testing",
+      "tags": [
+        "pytest",
+        "performance",
+        "testing",
+        "fixtures",
+        "profiling"
+      ],
       "homepage": "https://github.com/tony/skills/tree/main/plugins/pytest-optimizer",
       "license": "MIT"
     },
@@ -162,6 +228,13 @@
       },
       "source": "./plugins/spike",
       "category": "development",
+      "tags": [
+        "spike",
+        "bakeoff",
+        "worktrees",
+        "prototyping",
+        "design"
+      ],
       "homepage": "https://github.com/tony/skills/tree/main/plugins/spike",
       "license": "MIT"
     },
@@ -175,6 +248,12 @@
       },
       "source": "./plugins/action",
       "category": "development",
+      "tags": [
+        "tickets",
+        "worktree",
+        "branches",
+        "parallel"
+      ],
       "homepage": "https://github.com/tony/skills/tree/main/plugins/action",
       "license": "MIT"
     },
@@ -188,6 +267,12 @@
       },
       "source": "./plugins/lean",
       "category": "development",
+      "tags": [
+        "writing",
+        "prose",
+        "comments",
+        "cleanup"
+      ],
       "homepage": "https://github.com/tony/skills/tree/main/plugins/lean",
       "license": "MIT"
     },
@@ -201,6 +286,12 @@
       },
       "source": "./plugins/double-check",
       "category": "productivity",
+      "tags": [
+        "verification",
+        "re-derive",
+        "review",
+        "accuracy"
+      ],
       "homepage": "https://github.com/tony/skills/tree/main/plugins/double-check",
       "license": "MIT"
     },
@@ -214,6 +305,12 @@
       },
       "source": "./plugins/release",
       "category": "development",
+      "tags": [
+        "release",
+        "versioning",
+        "changelog",
+        "downstream"
+      ],
       "homepage": "https://github.com/tony/skills/tree/main/plugins/release",
       "license": "MIT"
     },
@@ -227,6 +324,13 @@
       },
       "source": "./plugins/merge-pr",
       "category": "development",
+      "tags": [
+        "pull-requests",
+        "merge",
+        "ci",
+        "git",
+        "stacked-prs"
+      ],
       "homepage": "https://github.com/tony/skills/tree/main/plugins/merge-pr",
       "license": "MIT"
     },
@@ -240,6 +344,13 @@
       },
       "source": "./plugins/business",
       "category": "productivity",
+      "tags": [
+        "business-value",
+        "reporting",
+        "case-study",
+        "provenance",
+        "cycle-time"
+      ],
       "homepage": "https://github.com/tony/skills/tree/main/plugins/business",
       "license": "MIT"
     },
@@ -253,6 +364,13 @@
       },
       "source": "./plugins/github-actions",
       "category": "development",
+      "tags": [
+        "github-actions",
+        "ci",
+        "dependabot",
+        "pinning",
+        "updates"
+      ],
       "homepage": "https://github.com/tony/skills/tree/main/plugins/github-actions",
       "license": "MIT"
     },
@@ -266,6 +384,13 @@
       },
       "source": "./plugins/situate",
       "category": "development",
+      "tags": [
+        "orientation",
+        "branches",
+        "context",
+        "tickets",
+        "conventions"
+      ],
       "homepage": "https://github.com/tony/skills/tree/main/plugins/situate",
       "license": "MIT"
     },
@@ -279,6 +404,13 @@
       },
       "source": "./plugins/terraform",
       "category": "development",
+      "tags": [
+        "terraform",
+        "opentofu",
+        "providers",
+        "lock-files",
+        "upgrade"
+      ],
       "homepage": "https://github.com/tony/skills/tree/main/plugins/terraform",
       "license": "MIT"
     },
@@ -292,6 +424,12 @@
       },
       "source": "./plugins/ruff",
       "category": "development",
+      "tags": [
+        "ruff",
+        "python",
+        "linting",
+        "upgrade"
+      ],
       "homepage": "https://github.com/tony/skills/tree/main/plugins/ruff",
       "license": "MIT"
     },
@@ -305,6 +443,12 @@
       },
       "source": "./plugins/gh",
       "category": "development",
+      "tags": [
+        "github",
+        "issues",
+        "markdown",
+        "pii"
+      ],
       "homepage": "https://github.com/tony/skills/tree/main/plugins/gh",
       "license": "MIT"
     },
@@ -318,6 +462,13 @@
       },
       "source": "./plugins/git-branch",
       "category": "development",
+      "tags": [
+        "git",
+        "history",
+        "rebase",
+        "atomic-commits",
+        "tdd"
+      ],
       "homepage": "https://github.com/tony/skills/tree/main/plugins/git-branch",
       "license": "MIT"
     },
@@ -331,6 +482,14 @@
       },
       "source": "./plugins/package-updater",
       "category": "development",
+      "tags": [
+        "dependencies",
+        "toolchain",
+        "lockfile",
+        "uv",
+        "npm",
+        "supply-chain"
+      ],
       "homepage": "https://github.com/tony/skills/tree/main/plugins/package-updater",
       "license": "MIT"
     },
@@ -344,6 +503,12 @@
       },
       "source": "./plugins/disk",
       "category": "productivity",
+      "tags": [
+        "disk-space",
+        "cleanup",
+        "cache",
+        "wsl"
+      ],
       "homepage": "https://github.com/tony/skills/tree/main/plugins/disk",
       "license": "MIT"
     },
@@ -357,6 +522,13 @@
       },
       "source": "./plugins/ticket",
       "category": "development",
+      "tags": [
+        "tickets",
+        "linear",
+        "jira",
+        "trackers",
+        "planning"
+      ],
       "homepage": "https://github.com/tony/skills/tree/main/plugins/ticket",
       "license": "MIT"
     },
@@ -370,6 +542,12 @@
       },
       "source": "./plugins/respond",
       "category": "development",
+      "tags": [
+        "code-review",
+        "pull-requests",
+        "feedback",
+        "bots"
+      ],
       "homepage": "https://github.com/tony/skills/tree/main/plugins/respond",
       "license": "MIT"
     },
@@ -383,6 +561,12 @@
       },
       "source": "./plugins/self-improvement",
       "category": "development",
+      "tags": [
+        "skills",
+        "usage",
+        "prompt-history",
+        "telemetry"
+      ],
       "homepage": "https://github.com/tony/skills/tree/main/plugins/self-improvement",
       "license": "MIT"
     },
@@ -396,6 +580,13 @@
       },
       "source": "./plugins/agent-messaging",
       "category": "development",
+      "tags": [
+        "sessions",
+        "messaging",
+        "claude-code",
+        "codex",
+        "identity"
+      ],
       "homepage": "https://github.com/tony/skills/tree/main/plugins/agent-messaging",
       "license": "MIT"
     },
@@ -409,6 +600,12 @@
       },
       "source": "./plugins/skill-style",
       "category": "development",
+      "tags": [
+        "skills",
+        "SKILL.md",
+        "style",
+        "trimming"
+      ],
       "homepage": "https://github.com/tony/skills/tree/main/plugins/skill-style",
       "license": "MIT"
     },
@@ -422,6 +619,13 @@
       },
       "source": "./plugins/scholar",
       "category": "development",
+      "tags": [
+        "ontology",
+        "codebase-analysis",
+        "vocabulary",
+        "evidence",
+        "corpus"
+      ],
       "homepage": "https://github.com/tony/skills/tree/main/plugins/scholar",
       "license": "MIT"
     }

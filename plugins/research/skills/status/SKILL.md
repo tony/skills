@@ -3,7 +3,6 @@ name: status
 description: "List research topics and assessments: latest run, source states, open questions, and the next action for each"
 allowed-tools: ["Bash", "Read"]
 argument-hint: "[--namespace=<ns>] [--root=<dir>]"
-user-invocable: true
 disable-model-invocation: true
 ---
 

@@ -7,6 +7,22 @@
     "email": "tony@git-pull.com"
   },
   "homepage": "https://github.com/tony/skills/tree/main/plugins/ticket",
+  "repository": "https://github.com/tony/skills",
   "license": "MIT",
-  "skills": "./skills/"
+  "keywords": [
+    "tickets",
+    "linear",
+    "jira",
+    "trackers",
+    "planning"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Ticket",
+    "shortDescription": "Manage work across trackers (Linear, Jira, GitHub, etc.) respecting each platform's native object graph.",
+    "longDescription": "Manage work across trackers (Linear, Jira, GitHub, etc.) respecting each platform's native object graph. Drafts durable tickets focused on invariants.",
+    "developerName": "Tony Narlock",
+    "category": "Development",
+    "websiteURL": "https://github.com/tony/skills/tree/main/plugins/ticket"
+  }
 }

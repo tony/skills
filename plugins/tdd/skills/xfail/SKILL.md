@@ -1,7 +1,6 @@
 ---
 name: xfail
 description: "Use when fixing a bug with a failing test first or a regression test, and proving it fails for the right reason (strict xfail)."
-user-invocable: true
 argument-hint: Paste or describe the bug to reproduce and fix with strict xfail guards
 allowed-tools: ["Bash", "Read", "Grep", "Glob", "Edit", "Write", "Agent"]
 ---

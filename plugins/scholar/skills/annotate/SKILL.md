@@ -3,7 +3,6 @@ name: annotate
 description: "Take reading notes on a prose corpus: quotations with stable locators and margin notes, as a term source for extract"
 allowed-tools: ["Read", "Grep", "Glob", "Edit", "Write", "AskUserQuestion"]
 argument-hint: "<source> [--locator=line-range|section|page|search-string] [--out=<dir>]"
-user-invocable: true
 disable-model-invocation: true
 ---
 

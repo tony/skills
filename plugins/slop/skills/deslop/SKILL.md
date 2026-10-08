@@ -3,7 +3,6 @@ name: deslop
 description: "Use when cleaning AI slop, verbose commit messages, brittle references, or low-value changes from a branch before review."
 allowed-tools: ["Bash", "Read", "Grep", "Glob", "Edit", "Write", "AskUserQuestion", "Task"]
 argument-hint: "[<commit-range>] [--apply-patches] [--apply-rebase] [--budget=strict|default|lax] [--targets=diff,messages,both] [--message-only | --diff-only] [--since=<ref>] [--force-rewrite-pushed] [--run-tests] [--no-semantic] [--taxonomy=<path>]"
-user-invocable: true
 disable-model-invocation: true
 ---
 

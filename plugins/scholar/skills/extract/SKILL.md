@@ -3,7 +3,6 @@ name: extract
 description: "Harvest terms and their definitions from a gathered corpus into terms.jsonl, each with the citation that supports it"
 allowed-tools: ["Bash", "Read", "Grep", "Glob", "Write", "AskUserQuestion"]
 argument-hint: "[--out=<dir>]"
-user-invocable: true
 disable-model-invocation: true
 ---
 

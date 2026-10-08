@@ -3,7 +3,6 @@ name: rewrite
 description: "Use when an existing PR description should be rewritten from scratch against the branch's current net change, keeping context that still matters."
 allowed-tools: ["Bash", "Read", "Write", "AskUserQuestion"]
 argument-hint: "[PR number or URL, and/or a template path or hint]"
-user-invocable: true
 disable-model-invocation: true
 ---
 

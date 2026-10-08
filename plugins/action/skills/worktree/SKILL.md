@@ -3,7 +3,6 @@ name: worktree
 description: "Use when taking one ticket or a related ticket group into its own branch and git worktree for implementation."
 allowed-tools: ["Bash", "Read", "Grep", "Glob", "Edit", "Write", "AskUserQuestion"]
 argument-hint: "[<ticket>...] [--branch=<name>] [--local|--temp] [--push|--pr|--setup-only]"
-user-invocable: true
 disable-model-invocation: true
 ---
 

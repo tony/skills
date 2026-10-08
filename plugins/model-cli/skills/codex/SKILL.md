@@ -1,7 +1,6 @@
 ---
 name: codex
 description: "Use when asked to use Codex, GPT, OpenAI, or the Codex CLI to delegate; writes unsandboxed unless mode:plan. Not for messaging a Codex session."
-user-invocable: true
 allowed-tools: ["Bash"]
 argument-hint: <prompt> [timeout:<seconds>] [mode:plan]
 ---

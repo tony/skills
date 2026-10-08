@@ -3,7 +3,6 @@ name: update-downstream-packages
 description: "Use when rolling a newly published package release through every maintained consumer repository and verifying CI."
 allowed-tools: ["Bash", "Read", "Grep", "Glob", "Edit", "AskUserQuestion", "Agent"]
 argument-hint: "<package> [<version>] [--roots <glob>...] [--push]"
-user-invocable: true
 disable-model-invocation: true
 ---
 

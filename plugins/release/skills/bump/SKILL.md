@@ -3,7 +3,6 @@ name: bump
 description: "Use when discovering and confirming the next version from a project's own release scheme before cutting the release."
 allowed-tools: ["Bash", "Read", "Grep", "Glob", "Edit", "AskUserQuestion"]
 argument-hint: "[patch|minor|major|prerelease|final|<version>] [--push] [--tag] [--push-tag]"
-user-invocable: true
 disable-model-invocation: true
 ---
 

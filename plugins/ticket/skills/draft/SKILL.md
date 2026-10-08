@@ -1,7 +1,6 @@
 ---
 name: draft
 description: "Use when asked to file or write a ticket, bug report, Jira epic, Linear issue or regression, GitLab issue, Asana task, Trello card, or Shortcut story."
-user-invocable: true
 argument-hint: "[description, URL, provider, or pasted finding]"
 allowed-tools: ["Bash", "Read", "Write", "Grep", "Glob", "AskUserQuestion"]
 ---

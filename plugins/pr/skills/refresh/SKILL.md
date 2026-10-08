@@ -3,7 +3,6 @@ name: refresh
 description: "Use when an existing PR description has gone stale and must match the branch's current net change, keeping its structure and hand-written text."
 allowed-tools: ["Bash", "Read", "Write", "AskUserQuestion"]
 argument-hint: "[PR number or URL, and/or a hint, e.g. 'the retry logic was dropped']"
-user-invocable: true
 disable-model-invocation: true
 ---
 

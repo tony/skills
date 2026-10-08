@@ -3,7 +3,6 @@ name: ontology
 description: "Use when distilling an ontology, controlled vocabulary, or glossary of what a codebase, a repository set, or a written corpus calls things."
 allowed-tools: ["Bash", "Read", "Grep", "Glob", "Edit", "Write", "AskUserQuestion"]
 argument-hint: "[<target>...] [--kind=code|prose] [--out=<dir>] [--resume=<stage>]"
-user-invocable: true
 ---
 
 

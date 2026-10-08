@@ -3,7 +3,6 @@ name: refresh
 description: Update the branch's own changelog entries to match its current net change; commits only with --commit
 allowed-tools: ["Bash", "Read", "Grep", "Glob", "Edit", "AskUserQuestion"]
 argument-hint: "[--commit] [optional additional context about the changes]"
-user-invocable: true
 disable-model-invocation: true
 ---
 

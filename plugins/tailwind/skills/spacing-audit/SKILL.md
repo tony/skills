@@ -1,7 +1,6 @@
 ---
 name: spacing-audit
 description: "Use when Tailwind spacing looks uneven or too wide: gap, space-x, margin, or padding mixed on navbars, toolbars, and flex rows."
-user-invocable: true
 argument-hint: <file-or-directory-to-audit>
 ---
 

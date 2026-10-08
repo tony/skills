@@ -3,7 +3,6 @@ name: worktrees
 description: "Use when fanning several tickets into parallel branches and git worktrees, with related tickets grouped together."
 allowed-tools: ["Bash", "Read", "Grep", "Glob", "Edit", "Write", "AskUserQuestion", "Task"]
 argument-hint: "[<ticket>...] [--groups=\"a b; c\"] [--sequential] [--local|--temp] [--push|--pr|--setup-only]"
-user-invocable: true
 disable-model-invocation: true
 ---
 

@@ -3,7 +3,6 @@ name: foray
 description: "Use when researching or assessing a topic, like adopting a tool: keep sources, resume earlier research, fill gaps, re-check references, write it up."
 allowed-tools: ["Bash", "Read", "Write", "Edit", "Grep", "Glob", "AskUserQuestion"]
 argument-hint: "[topic or question] [--mode=research|assessment] [--namespace=<ns>] [--root=<dir>] [--resume] [--audience=private|internal|public]"
-user-invocable: true
 ---
 
 

@@ -3,7 +3,6 @@ name: compare
 description: "Set two term tables against each other: same concept different term, same term different concept, and what each covers that the other lacks"
 allowed-tools: ["Read", "Glob", "Write", "AskUserQuestion"]
 argument-hint: "<study-dir> <study-dir> [--out=<file>]"
-user-invocable: true
 disable-model-invocation: true
 ---
 

@@ -5,5 +5,12 @@
   "author": {
     "name": "Tony Narlock",
     "email": "tony@git-pull.com"
-  }
+  },
+  "repository": "https://github.com/tony/skills",
+  "keywords": [
+    "writing",
+    "prose",
+    "comments",
+    "cleanup"
+  ]
 }

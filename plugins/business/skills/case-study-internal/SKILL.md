@@ -3,7 +3,6 @@ name: case-study-internal
 description: "Use when writing a tier-2 internal case study from a business-value run: tagged outcomes, lessons, and a replication guide for other teams."
 allowed-tools: ["Bash", "Read", "Write", "Grep", "AskUserQuestion"]
 argument-hint: "[run directory]"
-user-invocable: true
 disable-model-invocation: true
 ---
 

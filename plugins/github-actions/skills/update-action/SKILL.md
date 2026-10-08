@@ -3,7 +3,6 @@ name: update-action
 description: "Use when updating one named GitHub Action, such as actions/checkout, to its current version across one repository or a fleet."
 allowed-tools: ["Bash", "Read", "Grep", "Glob", "Edit", "AskUserQuestion"]
 argument-hint: "<owner/action> [target version] [--repo <path|slug>...] [--pr] [--push]"
-user-invocable: true
 disable-model-invocation: true
 ---
 

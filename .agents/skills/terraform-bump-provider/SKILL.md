@@ -194,7 +194,8 @@ Reply in this shape, as plain text outside any code fence, with plain bullets, n
 ```
 
 A run that cannot proceed ends with the stopped line from
-the `terraform-bumping-terraform` skill, not this shape.
+the `terraform-bumping-terraform` skill, not this shape, and has no
+panel and no `Next steps:` list.
 
 End with an `ask-user-choice` panel offering next steps, for example:
 converge the pin sites that disagree, refresh the lock files this run

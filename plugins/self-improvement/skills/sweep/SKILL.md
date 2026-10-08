@@ -3,7 +3,6 @@ name: sweep
 description: "Use when mining prompt history to rank skill usage, count how often each skill runs, find never-invoked skills, or improve repeated instructions."
 allowed-tools: ["Bash", "Read", "Write", "AskUserQuestion"]
 argument-hint: "[<plugin|plugin:skill>...]"
-user-invocable: true
 ---
 
 # `/self-improvement:sweep`

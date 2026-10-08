@@ -3,7 +3,6 @@ name: refresh-lock
 description: "Use when refreshing Terraform or OpenTofu root lockfiles within existing constraints while preserving platform coverage."
 allowed-tools: ["Bash", "Read", "Grep", "Glob", "AskUserQuestion"]
 argument-hint: "[--root-module <dir>...] [--audit-only] [--no-commit]"
-user-invocable: true
 disable-model-invocation: true
 ---
 
@@ -59,6 +58,9 @@ ask. If the count is still short, or the question goes unanswered
 (headless included), restore that lock from git and leave it out of the commit. When other
 root modules were refreshed, list this one under `## Failures` with the
 before and after counts; when none were, end with the stopped line.
+When the names were not found, the stopped step asks for them and
+says nothing about where the search looked or what it did not find.
+The step ends with its request, with no "and I'll refresh it again" clause.
 
 A root module whose `init` fails has its lock restored from git, and the
 others carry on. Record the failure and continue.
@@ -119,7 +121,8 @@ Reply in this shape, as plain text outside any code fence, with plain bullets, n
 ```
 
 A run that cannot proceed ends with the stopped line from
-`../bumping-terraform/SKILL.md`, not this shape.
+`../bumping-terraform/SKILL.md`, not this shape, and has no
+panel and no `Next steps:` list.
 
 End with an `AskUserQuestion` panel offering next steps, for example:
 bump a constraint that is holding a provider back, restore

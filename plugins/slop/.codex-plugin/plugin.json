@@ -7,6 +7,22 @@
     "email": "tony@git-pull.com"
   },
   "homepage": "https://github.com/tony/skills/tree/main/plugins/slop",
+  "repository": "https://github.com/tony/skills",
   "license": "MIT",
-  "skills": "./skills/"
+  "keywords": [
+    "ai-slop",
+    "audit",
+    "commits",
+    "cleanup",
+    "brittle-references"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Slop",
+    "shortDescription": "Audit a branch's commits or a repo's tracked files for AI slop and brittle references; fix through fixup or atomic commits.",
+    "longDescription": "Audit a branch's commits or a repo's tracked files for AI slop and brittle references; fix through fixup or atomic commits.",
+    "developerName": "Tony Narlock",
+    "category": "Development",
+    "websiteURL": "https://github.com/tony/skills/tree/main/plugins/slop"
+  }
 }

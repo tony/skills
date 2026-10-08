@@ -3,7 +3,6 @@ name: bump
 description: "Use when upgrading Ruff in one repository or a fleet and evaluating newly applicable rules before committing each change."
 allowed-tools: ["Bash", "Read", "Grep", "Glob", "Edit", "Write", "AskUserQuestion"]
 argument-hint: "[version] [--root <dir>] [--repo <path|slug>...] [--owner <name>...] [--branch <name>] [--adopt-defaults] [--audit-only] [--push] [--pr] [--no-changelog]"
-user-invocable: true
 disable-model-invocation: true
 ---
 

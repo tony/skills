@@ -7,6 +7,21 @@
     "email": "tony@git-pull.com"
   },
   "homepage": "https://github.com/tony/skills/tree/main/plugins/ruff",
+  "repository": "https://github.com/tony/skills",
   "license": "MIT",
-  "skills": "./skills/"
+  "keywords": [
+    "ruff",
+    "python",
+    "linting",
+    "upgrade"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Ruff",
+    "shortDescription": "Upgrade Ruff across repositories.",
+    "longDescription": "Upgrade Ruff across repositories. Works out which new rules can fire against each repo's select list and lands one reviewed commit per rule, citing the upstream rule doc.",
+    "developerName": "Tony Narlock",
+    "category": "Development",
+    "websiteURL": "https://github.com/tony/skills/tree/main/plugins/ruff"
+  }
 }

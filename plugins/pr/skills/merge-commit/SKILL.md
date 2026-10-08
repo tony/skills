@@ -3,7 +3,6 @@ name: merge-commit
 description: "Use when drafting a merge or squash-merge commit message for the current branch, to copy into the merge workflow."
 allowed-tools: ["Bash", "Read"]
 argument-hint: "[optional hint, e.g. 'version bump' or 'breaking change']"
-user-invocable: true
 disable-model-invocation: true
 ---
 

@@ -7,6 +7,22 @@
     "email": "tony@git-pull.com"
   },
   "homepage": "https://github.com/tony/skills/tree/main/plugins/agent-messaging",
+  "repository": "https://github.com/tony/skills",
   "license": "MIT",
-  "skills": "./skills/"
+  "keywords": [
+    "sessions",
+    "messaging",
+    "claude-code",
+    "codex",
+    "identity"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Agent Messaging",
+    "shortDescription": "Message another running Claude Code or Codex session, and verify who actually sent an incoming message.",
+    "longDescription": "Message another running Claude Code or Codex session, and verify who actually sent an incoming message.",
+    "developerName": "Tony Narlock",
+    "category": "Development",
+    "websiteURL": "https://github.com/tony/skills/tree/main/plugins/agent-messaging"
+  }
 }

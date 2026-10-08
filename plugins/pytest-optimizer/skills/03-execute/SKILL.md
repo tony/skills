@@ -3,7 +3,6 @@ name: 03-execute
 description: "Use when applying an approved pytest optimization plan as separate verified commits with resumable progress."
 allowed-tools: ["Bash", "Read", "Grep", "Glob", "Write", "Edit", "AskUserQuestion"]
 argument-hint: "[--from=<index>] [--dry-run] [--memory-dir=<path>]"
-user-invocable: true
 disable-model-invocation: true
 ---
 

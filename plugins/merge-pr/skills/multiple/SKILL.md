@@ -3,7 +3,6 @@ name: multiple
 description: "Merge a set of PRs one at a time: detect stack vs independent set, rebase and resolve conflicts, watch CI, merge each via gh"
 allowed-tools: ["Bash", "Read", "Write", "Edit", "AskUserQuestion"]
 argument-hint: "[PR numbers/URLs, e.g. '#31 #32'] [--squash | --rebase | any other gh pr merge flag]"
-user-invocable: true
 disable-model-invocation: true
 ---
 

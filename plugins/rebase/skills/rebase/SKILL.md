@@ -2,7 +2,6 @@
 name: rebase
 description: Use when asked to rebase the current branch onto remote trunk, check for file overlap, and resolve conflicts
 allowed-tools: ["Bash", "Read", "Edit", "AskUserQuestion"]
-user-invocable: true
 disable-model-invocation: true
 ---
 

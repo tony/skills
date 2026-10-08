@@ -3,7 +3,6 @@ name: changelog
 description: Generate CHANGES entries from branch commits and PR context
 allowed-tools: ["Bash", "Read", "Grep", "Glob", "Edit", "AskUserQuestion"]
 argument-hint: "[--commit] [optional additional context about the changes]"
-user-invocable: true
 disable-model-invocation: true
 ---
 

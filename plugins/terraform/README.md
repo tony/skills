@@ -6,7 +6,14 @@ refreshes lock files.
 
 ## Installation
 
-In Claude Code, add the marketplace:
+From a shell, one command installs the plugin for Claude Code and
+adds the marketplace first if it is missing:
+
+```console
+$ claude plugin install terraform --marketplace tony/skills
+```
+
+Inside a Claude Code session, add the marketplace:
 
 ```text
 /plugin marketplace add tony/skills

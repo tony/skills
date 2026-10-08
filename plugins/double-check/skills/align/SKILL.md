@@ -3,7 +3,6 @@ name: align
 description: "Use when prior verification was framed as a revision log and the user wants a clean, standalone restatement."
 allowed-tools: ["Read", "Grep", "Glob"]
 argument-hint: "[topic or question to re-anchor on]"
-user-invocable: true
 disable-model-invocation: true
 ---
 

@@ -3,7 +3,6 @@ name: check
 description: "Use when asked to address review feedback, reply to review comments, or screen bot findings: decide fix, defer, or decline; draft replies."
 allowed-tools: ["Bash", "Read", "Write", "Grep", "Glob", "AskUserQuestion"]
 argument-hint: "[findings text] [<pr-number|url>] [--base=<ref>] [--include-resolved]"
-user-invocable: true
 ---
 
 

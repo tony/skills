@@ -3,7 +3,6 @@ name: pr-release
 description: "Use when writing the tier-3 one-page announcement from a public case study, with denominators attached and a limitations line."
 allowed-tools: ["Bash", "Read", "Write", "Grep", "AskUserQuestion"]
 argument-hint: "[run directory]"
-user-invocable: true
 disable-model-invocation: true
 ---
 

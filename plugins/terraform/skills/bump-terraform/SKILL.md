@@ -3,7 +3,6 @@ name: bump-terraform
 description: "Use when updating the Terraform or OpenTofu CLI across module constraints, version-manager files, CI, and images."
 allowed-tools: ["Bash", "Read", "Grep", "Glob", "Edit", "AskUserQuestion"]
 argument-hint: "[version] [--root-module <dir>...] [--audit-only] [--no-lock] [--no-commit]"
-user-invocable: true
 disable-model-invocation: true
 ---
 
@@ -178,7 +177,8 @@ Reply in this shape, as plain text outside any code fence, with plain bullets, n
 ```
 
 A run that cannot proceed ends with the stopped line from
-`../bumping-terraform/SKILL.md`, not this shape.
+`../bumping-terraform/SKILL.md`, not this shape, and has no
+panel and no `Next steps:` list.
 
 End with an `AskUserQuestion` panel offering next steps, for example:
 converge the root modules still on an older pin, add the version to a

@@ -3,7 +3,6 @@ name: scan
 description: "Use when scanning tracked repository files for AI slop, verbosity, brittle references, or low-value contributions."
 allowed-tools: ["Bash", "Read", "Grep", "Glob", "Edit", "Write", "AskUserQuestion", "Task"]
 argument-hint: "[--paths=<glob>] [--apply] [--from=<run-dir>] [--budget=strict|default|lax] [--with-history=<N>] [--allow-dirty] [--run-tests] [--no-semantic] [--taxonomy=<path>] [--on-fail=skip|stop|ask]"
-user-invocable: true
 disable-model-invocation: true
 ---
 

@@ -3,7 +3,6 @@ name: situate
 description: "Use when the user asks to get oriented or caught up on a branch, its pull request, tickets, and conventions before touching anything."
 allowed-tools: ["Bash", "Read", "Grep", "Glob", "AskUserQuestion"]
 argument-hint: "[<pr-number|url>] [--with-agentgrep [terms]]"
-user-invocable: true
 disable-model-invocation: true
 ---
 

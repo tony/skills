@@ -3,7 +3,6 @@ name: verify
 description: "Re-check a finished study against the corpus it cites: refs that moved, files that vanished, quotations that no longer match, numbers that changed"
 allowed-tools: ["Bash", "Read", "Grep", "Glob", "AskUserQuestion"]
 argument-hint: "[<study-dir>] [--refresh-metrics]"
-user-invocable: true
 disable-model-invocation: true
 ---
 

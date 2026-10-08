@@ -1,7 +1,6 @@
 ---
 name: double-check
 description: "Use when asked to double-check, “are you sure”, “I don't trust that”, verify your earlier answer, or run an analysis again; re-derive from source."
-user-invocable: true
 ---
 
 # Double-check

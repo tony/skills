@@ -35,6 +35,7 @@ import rich.table
 import typer
 import yaml
 from _portable_render import (  # pyright: ignore[reportImplicitRelativeImport]
+    OPENAI_YAML_REL,
     RESOURCE_DIRS,
     SPEC_FRONTMATTER_KEYS,
     TOKEN_RE,
@@ -46,6 +47,7 @@ from _portable_render import (  # pyright: ignore[reportImplicitRelativeImport]
     SourceComponent,
     fenced_blocks,
     has_verbatim_fences,
+    render_openai_yaml,
     strip_frontmatter,
 )
 from _private_path import PrivatePath  # pyright: ignore[reportImplicitRelativeImport]
@@ -242,6 +244,22 @@ class PluginJson(pydantic.BaseModel):
     keywords: list[str] | None = None
 
 
+class CodexPluginInterface(pydantic.BaseModel):
+    """The ``interface`` block Codex shows in its plugin directory.
+
+    Every field is derived from the Claude manifest and marketplace entry;
+    capabilities, legal URLs, icons and screenshots have no source here and
+    are omitted.
+    """
+
+    displayName: str  # noqa: N815
+    shortDescription: str  # noqa: N815
+    longDescription: str  # noqa: N815
+    developerName: str | None = None  # noqa: N815
+    category: str | None = None
+    websiteURL: str | None = None  # noqa: N815
+
+
 class CodexPluginJson(pydantic.BaseModel):
     """A plugin's ``.codex-plugin/plugin.json``, Codex's required entry point.
 
@@ -259,8 +277,26 @@ class CodexPluginJson(pydantic.BaseModel):
     description: str
     author: Author | None = None
     homepage: str | None = None
+    repository: str | None = None
     license: str | None = None
+    keywords: list[str] | None = None
     skills: str = "./skills/"
+    interface: CodexPluginInterface | None = None
+
+
+def _first_sentence(text: str) -> str:
+    """Return the first sentence of *text*, for a one-line summary.
+
+    Examples
+    --------
+    >>> _first_sentence("Rebase onto trunk. Then verify.")
+    'Rebase onto trunk.'
+    >>> _first_sentence("No period here")
+    'No period here'
+    """
+    flat = " ".join(text.split())
+    head, sep, _ = flat.partition(". ")
+    return head + sep.strip() if sep else flat
 
 
 class CodexSource(pydantic.BaseModel):
@@ -1098,6 +1134,7 @@ def validate_plugin_dir(plugin_dir: Path) -> list[str]:
         errors.extend(_validate_lsp_json(name, lsp_json_path))
 
     errors.extend(_validate_path_citations(name, plugin_dir))
+    errors.extend(_check_readme_skills(plugin_dir))
 
     return errors
 
@@ -1121,7 +1158,7 @@ def _run_claude_validate(path: Path) -> tuple[list[str], list[str]]:
         return [], []
     try:
         result = subprocess.run(  # noqa: S603
-            ["claude", "plugin", "validate", str(path)],  # noqa: S607
+            ["claude", "plugin", "validate", "--strict", str(path)],  # noqa: S607
             capture_output=True,
             text=True,
             timeout=30,
@@ -1165,6 +1202,43 @@ def _lint_claude_validate() -> tuple[list[str], list[str]]:
     if not all_errors:
         console.print("  [green]OK[/green]")
     return all_errors, all_warnings
+
+
+def _readme_names_skill(plugin: str, skill: str, readme: str) -> bool:
+    r"""Report whether *readme* names *skill* as a heading, code span, or ``plugin:skill``.
+
+    Examples
+    --------
+    >>> _readme_names_skill("pkg", "up", "- `up`: bump it")
+    True
+    >>> _readme_names_skill("pkg", "up", "### up\n")
+    True
+    >>> _readme_names_skill("pkg", "up", "Run /pkg:up now")
+    True
+    >>> _readme_names_skill("pkg", "up", "Update everything; `update-all` too")
+    False
+    """
+    plug, name = re.escape(plugin), re.escape(skill)
+    pattern = (
+        rf"^#{{1,6}}\s+`?/?(?:{plug}:)?{name}(?![\w-])"
+        rf"|`/?(?:{plug}:)?{name}(?![\w-])"
+        rf"|(?<![\w/:-])/?{plug}:{name}(?![\w-])"
+    )
+    return re.search(pattern, readme, re.MULTILINE) is not None
+
+
+def _check_readme_skills(plugin_dir: Path) -> list[str]:
+    """List the skills a plugin's README never names."""
+    readme_path = plugin_dir / "README.md"
+    skills_dir = plugin_dir / "skills"
+    if not readme_path.is_file() or not skills_dir.is_dir():
+        return []
+    readme = readme_path.read_text(encoding="utf-8")
+    return [
+        f"[{plugin_dir.name}] README.md does not name skill '{d.name}'"
+        for d in sorted(skills_dir.iterdir())
+        if (d / "SKILL.md").is_file() and not _readme_names_skill(plugin_dir.name, d.name, readme)
+    ]
 
 
 def check_readme_table(manifest: MarketplaceManifest, readme: str) -> list[str]:
@@ -1627,6 +1701,7 @@ def _new_entry(name: str, plugin_meta: PluginJson, manifest: MarketplaceManifest
     return PluginEntry(
         name=plugin_meta.name,
         description=plugin_meta.description,
+        tags=plugin_meta.keywords,
         version=plugin_meta.version or "1.0.0",
         author=plugin_meta.author or manifest.owner,
         source=f"./plugins/{name}",
@@ -1641,8 +1716,8 @@ def sync(*, write: bool = False, check: bool = False) -> None:
     """Compare discovered plugins with marketplace manifest.
 
     Drift is a plugin present on one side only, or an entry whose description
-    no longer matches its ``plugin.json``. Descriptions are the listing users
-    read, and nothing else in CI compares them.
+    or ``tags`` no longer match its ``plugin.json`` (``keywords``). Descriptions
+    are the listing users read, and nothing else in CI compares them.
 
     Parameters
     ----------
@@ -1677,7 +1752,10 @@ def sync(*, write: bool = False, check: bool = False) -> None:
         entry.name
         for entry in manifest.plugins
         if entry.name in discovered_names
-        and entry.description != _load_plugin_json(PLUGINS_DIR / entry.name).description
+        and (
+            entry.description != _load_plugin_json(PLUGINS_DIR / entry.name).description
+            or entry.tags != _load_plugin_json(PLUGINS_DIR / entry.name).keywords
+        )
     )
 
     if not additions and not removals and not stale:
@@ -1695,7 +1773,7 @@ def sync(*, write: bool = False, check: bool = False) -> None:
     for name in removals:
         table.add_row("[red]- Remove[/red]", name)
     for name in stale:
-        table.add_row("[yellow]~ Description[/yellow]", name)
+        table.add_row("[yellow]~ Description or tags[/yellow]", name)
 
     console.print(table)
 
@@ -1727,7 +1805,9 @@ def sync(*, write: bool = False, check: bool = False) -> None:
     # Refresh drifted descriptions
     for entry in manifest.plugins:
         if entry.name in stale:
-            entry.description = _load_plugin_json(PLUGINS_DIR / entry.name).description
+            meta = _load_plugin_json(PLUGINS_DIR / entry.name)
+            entry.description = meta.description
+            entry.tags = meta.keywords
 
     # Write updated manifest
     _ = MARKETPLACE_PATH.write_text(_serialize_manifest(manifest), encoding="utf-8")
@@ -2132,6 +2212,32 @@ def _dump_json(model: pydantic.BaseModel) -> str:
     return json.dumps(raw, indent=2, ensure_ascii=False) + "\n"
 
 
+def _plugin_openai_files(plugin_dir: Path) -> dict[str, bytes]:
+    """Lay out ``agents/openai.yaml`` for each skill under *plugin_dir*.
+
+    Codex installs a plugin from ``plugins/<name>/skills/`` in place, so the
+    presentation file and invocation policy must sit beside each source skill
+    as well as in the flattened ``.agents/skills/`` export.
+    """
+    out: dict[str, bytes] = {}
+    skills_dir = plugin_dir / "skills"
+    if not skills_dir.is_dir():
+        return out
+    for skill_dir in sorted(d for d in skills_dir.iterdir() if d.is_dir()):
+        md = skill_dir / "SKILL.md"
+        if not md.is_file():
+            continue
+        fm = parse_frontmatter(md) or {}
+        text = render_openai_yaml(
+            _qualify(plugin_dir.name, str(fm.get("name") or skill_dir.name)),
+            t.cast("str", fm.get("description", "")),
+            model_invocable=not t.cast("object", fm.get("disable-model-invocation", False)),
+        )
+        rel = skill_dir.relative_to(REPO_ROOT) / OPENAI_YAML_REL
+        out[str(rel)] = text.encode("utf-8")
+    return out
+
+
 def _codex_files() -> dict[str, bytes]:
     """Lay out every generated Codex manifest, keyed by repo-relative path.
 
@@ -2167,18 +2273,31 @@ def _codex_files() -> dict[str, bytes]:
     for plugin_dir in discover_plugins():
         meta = _load_plugin_json(plugin_dir)
         entry = entries.get(plugin_dir.name)
+        author = meta.author or (entry.author if entry is not None else None)
+        homepage = meta.homepage or (entry.homepage if entry is not None else None)
         codex_json = CodexPluginJson(
             name=meta.name,
             # Codex keys its install cache on the version, so one is required
             # even where the Claude manifest leaves it unset.
             version=meta.version or "0.0.0",
             description=meta.description,
-            author=meta.author or (entry.author if entry is not None else None),
-            homepage=meta.homepage or (entry.homepage if entry is not None else None),
+            author=author,
+            homepage=homepage,
+            repository=meta.repository,
             license=meta.license or (entry.license if entry is not None else None),
+            keywords=meta.keywords,
+            interface=CodexPluginInterface(
+                displayName=meta.name.replace("-", " ").title(),
+                shortDescription=_first_sentence(meta.description),
+                longDescription=meta.description,
+                developerName=author.name if author is not None else None,
+                category=entry.category.title() if entry is not None else None,
+                websiteURL=homepage,
+            ),
         )
         rel = plugin_dir.relative_to(REPO_ROOT) / CODEX_MANIFEST_REL
         files[str(rel)] = _dump_json(codex_json).encode("utf-8")
+        files.update(_plugin_openai_files(plugin_dir))
     return files
 
 
@@ -2191,7 +2310,11 @@ def _check_codex_drift(files: dict[str, bytes]) -> list[str]:
     # Codex manifest it leaves behind.
     actual = {
         str(p.relative_to(REPO_ROOT))
-        for p in [*PLUGINS_DIR.glob(f"*/{CODEX_MANIFEST_REL}"), CODEX_MARKETPLACE_PATH]
+        for p in [
+            *PLUGINS_DIR.glob(f"*/{CODEX_MANIFEST_REL}"),
+            *PLUGINS_DIR.glob(f"*/skills/*/{OPENAI_YAML_REL}"),
+            CODEX_MARKETPLACE_PATH,
+        ]
         if p.is_file()
     }
     errors.extend(f"codex: stale manifest '{rel}'" for rel in sorted(actual - set(files)))
@@ -2285,7 +2408,9 @@ def portable(*, check: bool = False) -> None:
 
     The Codex side needs no such copy. Codex reads ``skills/`` in place, so all
     it takes is a ``.codex-plugin/plugin.json`` per plugin naming that directory
-    and a marketplace manifest in Codex's own format.
+    and a marketplace manifest in Codex's own format. Each skill, in place and
+    exported, also gets an ``agents/openai.yaml`` carrying Codex's presentation
+    and its spelling of ``disable-model-invocation``.
 
     Files under ``shared/`` are written into each plugin listed for them in
     ``shared/vendor.yml`` before anything is rendered.

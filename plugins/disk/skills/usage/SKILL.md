@@ -3,7 +3,6 @@ name: usage
 description: Survey disk usage across every filesystem layer and classify what is reclaimable, without deleting anything
 allowed-tools: Bash, Read, Glob, Grep, AskUserQuestion, TodoWrite
 argument-hint: "[path or filesystem to focus on]"
-user-invocable: true
 disable-model-invocation: true
 ---
 

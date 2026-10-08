@@ -66,7 +66,9 @@ one of them; offer the others as next steps.
   and name tools by name (`terraform`), never by install path. Name no
   helper script in a reply; say what it found.
 - Where no question tool exists, close with `Next steps:` and a plain
-  bulleted list of the options, in that form every time, then stop.
+  bulleted list of the options, in that form every time, then stop. A
+  stopped run is the exception: it has no panel and no `Next steps:`
+  list.
 - A reply's `## Layout` names what the user can act on: the roots and
   children found and any settled classification. Name the driving tool
   only when both `terraform` and `tofu` are present. Leave out the branch
@@ -109,8 +111,13 @@ one of them; offer the others as next steps.
   state the new constraint and the lock's selected version in one bullet,
   as the repository stands now ("the lock selects 3.7.0 with 1 platform,
   2 before"), never as what the run did. A bullet never asks the user
-  for anything, and the step ends with its request. It promises nothing about what the
-  run does afterward: no "then" clause, no "and I'll rerun it".
+  for anything, and the step ends with its request. Never state what the
+  run will do on its own later ("I'll show the plan", "and I'll rerun
+  it", a "then" clause); telling the user what to do next is the step
+  itself. List nothing the repository lacks ("neither directory has a
+  backend block or a lock file", "no CI or task file runs providers
+  lock"). Name no sandbox or network block; say the registry or mirror
+  was unreachable.
 
   Reply in this shape, as plain text outside any code fence, with plain bullets, no bold (never `- **Label:** ...`), and no local paths:
 

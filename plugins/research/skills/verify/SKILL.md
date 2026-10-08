@@ -3,7 +3,6 @@ name: verify
 description: "Re-check a topic's sources (vanished, moved, changed, misquoted), look for missed sources, and lint the report"
 allowed-tools: ["Bash", "Read", "Edit", "Grep", "Glob", "AskUserQuestion"]
 argument-hint: "[topic or run directory] [--offline]"
-user-invocable: true
 disable-model-invocation: true
 ---
 

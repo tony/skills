@@ -3,7 +3,6 @@ name: cut
 description: "Use when cutting a release at an explicit version, including version files, lockfiles, changelog dates, and commit."
 allowed-tools: ["Bash", "Read", "Grep", "Glob", "Edit", "AskUserQuestion"]
 argument-hint: "<version> [--push] [--tag] [--push-tag]"
-user-invocable: true
 disable-model-invocation: true
 ---
 

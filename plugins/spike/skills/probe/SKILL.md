@@ -3,7 +3,6 @@ name: probe
 description: "Use when spiking a feature or fix in the working tree to prove it quickly before committing to an implementation."
 allowed-tools: ["Bash", "Read", "Grep", "Glob", "Edit", "Write", "AskUserQuestion"]
 argument-hint: "[<goal>] [--branch=<name>] [--keep-tree] [--replay]"
-user-invocable: true
 disable-model-invocation: true
 ---
 

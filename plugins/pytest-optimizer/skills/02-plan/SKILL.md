@@ -3,7 +3,6 @@ name: 02-plan
 description: "Use when ranking validated pytest speedups from 01-benchmark into an approved, ordered, commit-by-commit plan."
 allowed-tools: ["Bash", "Read", "Grep", "Glob", "Write", "AskUserQuestion"]
 argument-hint: "[--max-commits=N] [--min-score=<0..1>] [--force] [--memory-dir=<path>]"
-user-invocable: true
 disable-model-invocation: true
 ---
 

@@ -3,7 +3,6 @@ name: report-org-wide
 description: "Use when rendering the tier-1 org-wide projection from a business-value run: adoption, realization, scenarios, and sensitivity ranking."
 allowed-tools: ["Bash", "Read", "Write", "Grep", "AskUserQuestion"]
 argument-hint: "[run directory]"
-user-invocable: true
 disable-model-invocation: true
 ---
 

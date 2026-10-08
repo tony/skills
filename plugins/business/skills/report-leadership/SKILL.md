@@ -3,7 +3,6 @@ name: report-leadership
 description: "Use when rendering a tier-0 leadership report from a completed business-value run, with SCQA and a conservative value case."
 allowed-tools: ["Bash", "Read", "Write", "Grep", "WebFetch", "AskUserQuestion"]
 argument-hint: "[run directory]"
-user-invocable: true
 disable-model-invocation: true
 ---
 

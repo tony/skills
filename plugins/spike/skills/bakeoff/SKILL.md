@@ -3,7 +3,6 @@ name: bakeoff
 description: "Use when building two to four competing strategies in isolated git worktrees to compare them without landing commits."
 allowed-tools: ["Bash", "Read", "Grep", "Glob", "Edit", "Write", "AskUserQuestion", "Agent"]
 argument-hint: "[<goal>] [--strategies=\"a; b; c\"] [--prongs=<2-4>] [--keep-trees] [--replay]"
-user-invocable: true
 disable-model-invocation: true
 ---
 

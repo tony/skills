@@ -1,7 +1,6 @@
 ---
 name: soft-reset-and-recommit
 description: "Use when a branch has wip or messy commits to split, squash, or clean up into atomic commits, keeping the same final tree and authorship."
-user-invocable: true
 argument-hint: "[PR number, base ref, or a hint like 'split the auth work out']"
 allowed-tools: ["Bash", "Read", "Write", "Grep", "Glob", "AskUserQuestion"]
 ---

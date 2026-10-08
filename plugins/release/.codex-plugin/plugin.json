@@ -7,6 +7,21 @@
     "email": "tony@git-pull.com"
   },
   "homepage": "https://github.com/tony/skills/tree/main/plugins/release",
+  "repository": "https://github.com/tony/skills",
   "license": "MIT",
-  "skills": "./skills/"
+  "keywords": [
+    "release",
+    "versioning",
+    "changelog",
+    "downstream"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Release",
+    "shortDescription": "Cut and bump releases with safe defaults (no automatic push/tag).",
+    "longDescription": "Cut and bump releases with safe defaults (no automatic push/tag). Rolls out releases to downstream consumers with CI verification.",
+    "developerName": "Tony Narlock",
+    "category": "Development",
+    "websiteURL": "https://github.com/tony/skills/tree/main/plugins/release"
+  }
 }

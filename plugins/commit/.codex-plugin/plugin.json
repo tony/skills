@@ -7,6 +7,21 @@
     "email": "tony@git-pull.com"
   },
   "homepage": "https://github.com/tony/skills/tree/main/plugins/commit",
+  "repository": "https://github.com/tony/skills",
   "license": "MIT",
-  "skills": "./skills/"
+  "keywords": [
+    "git",
+    "commit",
+    "conventions",
+    "safety"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Commit",
+    "shortDescription": "Create git commits following project conventions with format enforcement and safety checks.",
+    "longDescription": "Create git commits following project conventions with format enforcement and safety checks.",
+    "developerName": "Tony Narlock",
+    "category": "Development",
+    "websiteURL": "https://github.com/tony/skills/tree/main/plugins/commit"
+  }
 }

@@ -3,7 +3,6 @@ name: render
 description: "Write a study's brief and evidence documents, then enforce the brief's citation prohibition with the analyzer"
 allowed-tools: ["Bash", "Read", "Glob", "Edit", "Write", "AskUserQuestion"]
 argument-hint: "[--out=<dir>]"
-user-invocable: true
 disable-model-invocation: true
 ---
 
