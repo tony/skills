@@ -1,0 +1,22 @@
+---
+name: research-assess
+description: >-
+  Assess a decision against stated criteria: sourced ratings per criterion
+  and a verdict, kept in a dated topic folder
+disable-model-invocation: true
+allowed-tools: ["Bash", "Read", "Write", "Edit", "Grep", "Glob", "AskUserQuestion"]
+metadata:
+  argument-hint: "[decision or question] [--root=<dir>] [--resume] [--audience=private|internal|public]"
+  source: "plugins/research/skills/assess/SKILL.md"
+---
+
+# this skill
+
+Read the `research-foray` skill and follow it, treating `assess` as the first word of the arguments.
+
+User arguments: $ARGUMENTS
+
+
+## Portability notes
+
+- `$ARGUMENTS` — the text the user passed when invoking this skill. If your host does not substitute it, read it as the user's request in the current turn, and ask when there is none.

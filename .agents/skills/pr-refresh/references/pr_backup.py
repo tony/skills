@@ -1,0 +1,92 @@
+#!/usr/bin/env python3
+"""Back up a PR description, verify the copy, and detect edits since.
+
+``save [PR]`` fetches the PR once, writes ``body.md`` and ``title.txt`` into a
+new directory under the git ``pr-backups`` path (a ``mktemp -d`` directory
+when that path is unwritable), checks the copy with ``cmp``
+against the fetched body, and prints the directory. ``check DIR`` refetches
+the PR and exits 1 when its body or title differs from ``DIR/body.md`` or
+``DIR/title.txt``.
+"""
+
+# ruff: noqa: S603, S607, PLR2004
+# pyright: reportUnusedCallResult=false, reportAny=false
+from __future__ import annotations
+
+import json
+import subprocess
+import sys
+import tempfile
+from datetime import datetime, timezone
+from pathlib import Path
+
+
+def _run(*args: str) -> str:
+    done = subprocess.run(args, capture_output=True, text=True, check=False)
+    if done.returncode:
+        sys.stderr.write(done.stderr or f"{args[0]} failed\n")
+        raise SystemExit(1)
+    return done.stdout
+
+
+def _fetch(pr: str) -> dict[str, object]:
+    args = ["gh", "pr", "view", *([pr] if pr else []), "--json", "number,title,body"]
+    return json.loads(_run(*args))
+
+
+def _same(path: Path, text: str) -> bool:
+    """Compare a file to text with cmp, byte for byte."""
+    with tempfile.NamedTemporaryFile("w", encoding="utf-8", newline="") as tmp:
+        tmp.write(text)
+        tmp.flush()
+        return subprocess.run(["cmp", "-s", str(path), tmp.name], check=False).returncode == 0
+
+
+def save(pr: str) -> int:
+    """Back up the PR body and title; print the backup directory."""
+    pr_json = _fetch(pr)
+    body = str(pr_json["body"])
+    root = Path(_run("git", "rev-parse", "--git-path", "pr-backups").strip()).resolve()
+    stamp = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%SZ")
+    name = f"{stamp}-pr{pr_json['number']}"
+    try:
+        out = root / name
+        out.mkdir(parents=True)
+    except OSError:
+        out = Path(tempfile.mkdtemp(prefix=f"pr-backup-{name}."))
+    (out / "body.md").write_bytes(body.encode("utf-8"))
+    (out / "title.txt").write_bytes(str(pr_json["title"]).encode("utf-8"))
+    (out / "number.txt").write_text(str(pr_json["number"]), encoding="utf-8")
+    if not _same(out / "body.md", body):
+        sys.stderr.write("backup does not match the fetched body\n")
+        return 1
+    sys.stdout.write(f"{out}\n")
+    return 0
+
+
+def check(directory: str) -> int:
+    """Return 1 when the PR body or title differs from the backup."""
+    out = Path(directory)
+    number = (out / "number.txt").read_text(encoding="utf-8").strip()
+    pr_json = _fetch(number)
+    if _same(out / "body.md", str(pr_json["body"])) and _same(
+        out / "title.txt", str(pr_json["title"])
+    ):
+        sys.stdout.write("unchanged\n")
+        return 0
+    sys.stderr.write("the PR body or title changed since the backup\n")
+    return 1
+
+
+def main(argv: list[str]) -> int:
+    """Dispatch ``save`` or ``check``."""
+    if argv[:1] == ["save"] and len(argv) <= 2:
+        return save(argv[1] if len(argv) == 2 else "")
+    if argv[:1] == ["check"] and len(argv) == 2:
+        return check(argv[1])
+    sys.stderr.write("usage: pr_backup.py save [PR] | check BACKUP_DIR\n")
+    return 2
+
+
+if __name__ == "__main__":
+    raise SystemExit(main(sys.argv[1:]))

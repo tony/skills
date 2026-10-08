@@ -1,0 +1,83 @@
+# Post-update follow-ups
+
+Some bumps are not finished when the lockfile moves. A formatter's
+config carries the version it was written against; a compiler's output
+is recorded in snapshots; a framework major ships a migration. Each of
+those is a **separate commit that lands immediately after the bump**,
+never folded into it.
+
+The split exists so the bump reverts cleanly. Fold a snapshot
+regeneration into the bump that caused it and reverting the bump also
+reverts test data that may have been correct for other reasons.
+
+## Which bumps trigger which follow-up
+
+**Biome** — `biome.jsonc` carries a `$schema` pinned to the version it
+was written against. A stale one makes Biome emit a version notice and
+makes editor JSON validation disagree with the running binary. Run
+`biome migrate` and land the config change separately:
+
+```text
+biome.jsonc: Update to 2.5.5
+```
+
+**Tailwind CSS** — a compiled-CSS snapshot records the shape of
+Tailwind's output, which can change across a release without changing
+the rendered result. When the tests show it moved, regenerate the
+snapshots and land them separately.
+
+**Any linter or formatter** — new or changed rules produce a diff across
+files the bump never touched. That diff is its own commit, or several;
+for ruff specifically it is the `ruff-bump` skill, which lands one commit per
+rule.
+
+**Framework majors** — a codemod or migration guide's output lands
+separately from the version bump that required it.
+
+**Type packages** — a `@types/*` major can surface type errors in code
+that did not change. Fix them in their own commit and say whether the
+errors are new or pre-existing.
+
+## Declaring a red intermediate
+
+When the bump commit leaves the tree failing and the follow-up fixes it,
+**say so in the bump's body**. Name the command that fails and where.
+
+This is the honest form. The alternatives are worse: bundling the two
+loses the clean revert, and staying silent leaves a bisect landing on a
+commit that fails for reasons its message does not mention.
+
+An exemplar of the pair, with illustrative versions and vendor
+behavior:
+
+```text
+js(deps[dev]) tailwindcss 4.3.2 -> 4.3.3
+
+why: 4.3.3 changes the shape of the compiled CSS that the
+tailwind-plugin snapshots record (see the 4.3.3 release notes). The
+snapshots are regenerated in the follow-up commit, so `pnpm test`
+fails in packages/tailwind-plugin at this revision.
+
+what:
+- tailwindcss 4.3.2 -> 4.3.3
+```
+
+And the follow-up, which earns its length by proving the churn is
+cosmetic rather than asserting it:
+
+```text
+test(tailwind-plugin) regenerate CSS snapshots
+
+why: tailwindcss 4.3.3 restructures the compiled CSS. Comparing the two
+revisions declaration by declaration, every CSS declaration is byte
+identical; only nesting and at-rule grouping differ, so rendered output
+is unchanged.
+
+what:
+- Re-record the four compiled-CSS snapshots against tailwindcss 4.3.3
+```
+
+Regenerating a snapshot is asserting the new output is correct. Read
+enough of the diff to say why it moved, and put that in the body. A
+snapshot refreshed without that check records a regression as the new
+expected value.
