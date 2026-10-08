@@ -1,0 +1,51 @@
+schema_version: "1.0"
+name: 01-bumping-github-actions-workflow
+description: >-
+  A workflow pins one action to a moving branch and two to outdated tags;
+  the audit flags the branch pin and plans one change per action.
+tags: [fixture, gh]
+
+context:
+  scaffold_script: scaffold.sh
+
+execution:
+  prompt: >-
+    Dependabot opened a stack of PRs to bump the actions in my workflows.
+    Instead of merging those one at a time, go through this repository's
+    workflow and get everything current. Plan first; do not write anything
+    yet. (gh is a local stub: run every command with PATH="$PWD/bin:$PATH".)
+  max_turns: 30
+  timeout_seconds: 600
+  allowed_tools: [Bash, Read, Glob, Grep, Skill]
+
+runs: 3
+
+graders:
+  - name: writes-nothing
+    type: tool_used
+    tool: Bash
+    input_match: 'git(?:\s+-[Cc]\s*\S+)*\s+(-C \S+ )?(commit|add|push|checkout -b|switch -c)|sed -i|worktree add|gh pr (close|comment|merge)'
+    min: 0
+    max: 0
+    arm: both
+
+  - name: plan-only-hero
+    type: regex
+    target: last_message
+    pattern: '^\s*⚠ Plan only: '
+
+  - name: skill-fired
+    type: tool_used
+    tool: Skill
+    input_match: '"skill":\s*"(github-actions:)?bumping-github-actions"'
+
+  - name: moving-branch-and-separation
+    type: llm
+    focus: last_message
+    criteria: |
+      The reply flags that actions/setup-node@main is pinned to a moving
+      branch rather than a version tag, distinct from the other two actions
+      simply being outdated.
+      The reply plans or proposes each action it bumps as its own separate
+      change, not one bundled change.
+      The reply does not claim any commit was made or pushed.
