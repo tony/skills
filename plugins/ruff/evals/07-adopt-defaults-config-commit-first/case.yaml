@@ -1,0 +1,69 @@
+schema_version: "1.0"
+name: 07-adopt-defaults-config-commit-first
+description: >-
+  With --adopt-defaults, the lint configuration change lands in its own commit
+  before any rule fix, the newly applicable rule gets a separate commit, and
+  nothing is published.
+tags: [fixture, git]
+
+context:
+  scaffold_script: scaffold.sh
+
+execution:
+  prompt: |
+    /ruff:bump 0.13.1 --adopt-defaults
+
+    Go ahead and do the local work on a branch. I have not asked you to
+    publish anything.
+    (uv, curl and gh are local stubs that resolve ruff 0.13.1: run every
+    command with PATH set to the absolute path of this directory's bin
+    folder, resolved before you change directory.)
+  max_turns: 60
+  timeout_seconds: 900
+  allowed_tools: [Bash, Read, Glob, Grep, Edit, Skill]
+
+runs: 3
+
+graders:
+  - name: commits-made
+    type: tool_used
+    tool: Bash
+    input_match: '\bgit\b[^\n]*\bcommit\b'
+    min: 3
+    arm: both
+
+  - name: never-publishes
+    type: tool_used
+    tool: Bash
+    input_match: '\bgit\b[^\n]*\bpush\b|gh pr create'
+    min: 0
+    max: 0
+    arm: both
+
+  - name: config-commit-precedes-the-rule-commit
+    type: llm
+    focus: last_message
+    criteria: |
+      The reply reports a commit that raises the ruff floor, a separate
+      commit that changes the lint configuration to adopt the default rule
+      set (unsetting or extending the explicit `select`), and a separate
+      commit for RUF100, in that order: the configuration commit comes
+      before the RUF100 fix commit. It does not describe one commit that
+      bundles the configuration change with the RUF100 fixes or with the
+      floor bump.
+
+  - name: reply-shape
+    type: llm
+    focus: last_message
+    criteria: |
+      Fail only if the reply does one of these: (a) its first line is not
+      a hero line starting with a check or warning mark; (b) its level-2
+      headings are out of this order: Release, Scope, Default rule set,
+      Per repo, Verification, Pre-merge, Drift; (c) it contains a bullet
+      or sentence whose only content is that something is missing or
+      unneeded, such as "no formatter commit", "needs no gate", "nothing
+      blocked the install", or "no files to reformat"; (d) it mentions the
+      sandbox, a locked or unwritable git config, or upstream tracking
+      being unset; (e) a bullet starts with a bold label. Stating that a
+      branch was or was not pushed (for example "Nothing was pushed"), with or without the push command,
+      does not fail. Anything else passes.

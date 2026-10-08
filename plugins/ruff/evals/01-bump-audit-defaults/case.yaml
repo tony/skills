@@ -1,0 +1,45 @@
+schema_version: "1.0"
+name: 01-bump-audit-defaults
+description: >-
+  An audit-only run on a repository with an explicit lint select reports the
+  opt-out from the default rule set as a finding and changes nothing.
+tags: [fixture, git]
+
+context:
+  scaffold_script: scaffold.sh
+
+execution:
+  prompt: |
+    /ruff:bump --audit-only
+    (uv, curl and gh are local stubs that resolve ruff 0.13.1: run every
+    command with PATH="$PWD/bin:$PATH".)
+  max_turns: 40
+  timeout_seconds: 420
+  allowed_tools: [Bash, Read, Glob, Grep, Skill]
+
+runs: 3
+
+graders:
+  - name: reports-the-opt-out
+    type: llm
+    focus: last_message
+    criteria: |
+      The reply reports, as a finding, that this repository's explicit
+      `select = ["E", "F"]` opts it out of the vendor's default rule set, so
+      it does not pick up rules added to that set. It does not treat the
+      explicit select as a non-event.
+
+  - name: makes-no-change
+    type: tool_used
+    tool: Bash
+    input_match: '\bgit\b(\s+-[Cc]\s+\S+)*\s+(commit|push|checkout\s+-b|worktree\s+add)\b|uv lock|uv sync'
+    min: 0
+    max: 0
+    arm: both
+
+  - name: states-the-target
+    type: llm
+    focus: last_message
+    criteria: |
+      The reply states a target ruff version of 0.13.1, or says the target
+      is unconfirmed. It does not present any other version as the target.
