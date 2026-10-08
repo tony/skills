@@ -7,11 +7,10 @@ Contents: Scope; Native hierarchy; Semantic roles; Orthogonal objects; Reference
 Atlassian Site (tenant) > Jira Space (scope_container) > Jira Work Item
 (work_item).
 
-Jira Cloud renamed Project to Space, Issue to Work Item, and Issue Type to Work
-Type. The old nouns stay live in existing instances, in JQL, and in every REST
-endpoint, so carry both: `Jira Space (former and API name: Jira Project)`. They
-are one object. An Atlassian Project is a different object — a status and
-reporting record — and never a Jira Space; a Confluence Space is not one either.
+Jira's API and JQL use `project`, `issue`, and `issuetype` for the objects the
+Cloud UI calls Space, Work Item, and Work Type. Use the instance's names in
+prose and the API's field names in requests. An Atlassian Project is a separate
+status and reporting record; a Confluence Space is also a different object.
 
 A work item key is `SPACEKEY-123`: two or more uppercase letters, a hyphen, a
 number ([smart commits](https://support.atlassian.com/jira-software-cloud/docs/process-issues-with-smart-commits/)).
@@ -41,7 +40,7 @@ unparented, not an implied Epic.
 
 ## Semantic roles
 
-- **Jira Space** (alias Jira Project) — scope_container; native, required.
+- **Jira Space** — scope_container; native, required.
   Every work item is `contained_by` exactly one.
 - **Epic-level work item** — delivery_group; native, optional; `parent_of`
   standard work items.

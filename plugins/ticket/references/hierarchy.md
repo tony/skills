@@ -122,8 +122,8 @@ Lead with the provider's own noun, then the role:
 `<Provider> <native object> (<semantic role>)`
 
 Linear Project (delivery group). GitHub Project (planning collection and
-view). GitLab Project (development container). Jira Space (work container;
-former name: Jira Project). Atlassian Project (status and reporting object).
+view). GitLab Project (development container). Jira Space (work container).
+Atlassian Project (status and reporting object).
 Linear Project Milestone (checkpoint inside a Project). Trello Card (generic
 work object).
 
@@ -141,7 +141,7 @@ When translating between providers, say **closest analogue**, never
 
 **Project.** GitHub Project is a collection and view. GitLab Project is a
 development container holding a repository. Linear Project is a delivery
-group. Jira Space is the work container formerly called a Jira Project, while
+group. Jira Space is the work container, while
 Atlassian Project is a separate status and reporting object. Azure DevOps
 Project is a development and service container. Asana Project is a delivery
 container holding Tasks. Trello and Shortcut have no native Project work
