@@ -191,7 +191,7 @@
       "bundled": {
         "references/output-contract.md": "plugins/disk/references/output-contract.md"
       },
-      "bytes": 12387
+      "bytes": 12625
     },
     {
       "name": "disk-reclaim",
@@ -205,7 +205,7 @@
         "references/prose-rules.md": "plugins/disk/references/prose-rules.md",
         "references/virtual-disks.md": "plugins/disk/references/virtual-disks.md"
       },
-      "bytes": 34164
+      "bytes": 34402
     },
     {
       "name": "disk-usage",
@@ -222,7 +222,7 @@
         "references/survey.py": "plugins/disk/scripts/survey.py",
         "references/virtual-disks.md": "plugins/disk/references/virtual-disks.md"
       },
-      "bytes": 48154
+      "bytes": 48392
     },
     {
       "name": "double-check",
