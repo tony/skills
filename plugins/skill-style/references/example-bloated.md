@@ -1,8 +1,7 @@
 # A bloated skill, with its defects named
 
-Below is a SKILL.md of the kind the deletion test exists for. It is
-not a strawman: everything in it is true, well-meant, and grammatical.
-That is what makes it expensive.
+This illustrative SKILL.md repeats background information and leaves
+operational choices unresolved.
 
 ## Contents
 
@@ -116,16 +115,14 @@ If you have any questions, feel free to ask. Happy restoring!
 
 ## What the test cuts, and why
 
-**The description routes nothing.** `A helpful skill for working with
-databases` says what it is about, never when to reach for it, and
-`You can use this to` is second person in a system prompt. Nobody
-types "database-related things", so nothing matches it.
+**The description underspecifies the task.** `A helpful skill for working
+with databases` gives a domain, not a workflow. Keep the restore trigger,
+remove `other database-related things`, and write it in third person.
 
-**`Introduction`, `Overview`, and `Why This Matters` teach the agent
-nothing it does not know.** Postgres's age, `pg_dump`'s existence, and
-the fact that data loss is costly all survive as *true* and fail as
-*load-bearing*. Deleting all three changes no command, constraint,
-trigger, output, or fork.
+**The introductory background changes no step.** Cut Postgres's age,
+`pg_dump`'s definition, and the argument for being careful. Keep the warning
+that a failed restore can cause data loss; destructive-step warnings are
+outside the deletion test.
 
 **`This section explains the restore process` restates its own
 heading.** So does `This section provides an overview`. A line whose
@@ -135,24 +132,20 @@ content is its heading is the purest form of the defect.
 "the necessary permissions" cannot be acted on. Either name the binary
 and the role, or cut the section.
 
-**The options table is five ways to fail.** Presented as equals with
-no rule for choosing, it hands the agent a decision it has no basis to
-make. One default and one named escape hatch replaces the whole table
-— and the table was not matrix-shaped to begin with, so prose reads
-better even after the cut.
+**The options are a list of tools and their uses.** Drop the coded labels
+and keep the format and environment distinctions as bullets. A style pass
+does not invent a deployment-specific choice among them.
 
 **The prose under each fence repeats the fence.** `The command above
 uses the --dbname flag to specify which database to restore into` is
 the command, in English, one line lower. Where a fence and its prose
 say the same thing, the prose goes — the fence is what was verified.
 
-**The commands themselves are wrong in ways the test protects.**
-`C:\backups\nightly\` is a Windows path that breaks on any Unix host,
-and the `pg_restore` invocation has no `--clean`, no ordering
-constraint, and no mention that it overwrites. These are defects to
-*fix by verifying against a real system* — never by editing the
-characters inside a fence on style grounds. The deletion test cuts
-prose; it does not touch what is inside a fence.
+**Command flaws belong in the ledger.** The Windows path is inside a Bash
+fence, and the restore command names `mydb` without establishing that it is
+the intended target. The verification tool is unspecified. Report those
+gaps; do not replace commands, add cleanup flags, or invent a restore
+procedure while trimming prose.
 
 **`Conclusion` is postamble.** `That's it!`, `feel free to ask`, and
 `Happy restoring!` are conversational filler in a file no human reads
@@ -160,7 +153,6 @@ conversationally.
 
 ## What survives
 
-Three things: the name of the tool to run, the fact that a restore
-overwrites, and the requirement to verify afterward. Everything else
-was scaffolding around those three facts — which is the
-usual ratio, and the reason the test is worth running.
+The command fences, tool choices, data-loss warning, verification step,
+and reference paths survive. Their presence in the trimmed example does
+not establish that they are correct or safe to execute.

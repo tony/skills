@@ -1,93 +1,56 @@
-# The same skill, after the deletion test
+# A trim with the command fences preserved
 
-Every line below survives: it carries a command, a constraint, a
-trigger, an output contract, or a fork. Nothing explains PostgreSQL to
-a model that already knows it.
+This is a style example, not a validated restore procedure. Both command
+fences remain unchanged, including their unresolved flaws.
 
 ````markdown
 ---
-name: restoring-postgres-backups
-description: Restores a Postgres dump into a scratch database, then the target. Use when restoring a Postgres backup, running pg_restore, or loading a .dump file.
-allowed-tools: ["Bash", "Read"]
+name: db-helper
+description: Restores PostgreSQL backups and checks the result. Use when restoring a database backup or verifying a restore.
 ---
 
-# Restoring Postgres backups
+# Database Helper Skill
 
-`pg_restore --clean` drops every object it is about to recreate. Restore
-into a scratch database and verify there before touching the target.
+Getting a database restore wrong can lead to data loss.
 
-## Locate the dump
+## Choose the restore tool
 
-Nightly dumps land in `/srv/backups/pg/` named `<db>-<YYYYMMDD>.dump`.
+- `pg_restore`: custom-format dumps.
+- `psql`: plain SQL dumps.
+- pgAdmin: a graphical interface.
+- Docker exec: a database in a container.
+- Cloud console: a managed service.
 
-```console
-$ ls -t /srv/backups/pg/*.dump | head -5
+`pg_restore` is a reasonable default; `psql` and pgAdmin are alternatives.
+
+## Locate the backup
+
+Look in the backup directory for the most recent file.
+
+```bash
+ls -la C:\backups\nightly\
 ```
 
-## Restore into scratch
+## Restore the database
 
-Create the scratch database and restore into it. `--exit-on-error`
-turns a partial restore into a failure instead of a half-populated
-database:
-
-```console
-$ createdb restore_scratch
+```bash
+pg_restore --dbname=mydb backup.dump
 ```
 
-```console
-$ pg_restore \
-    --dbname=restore_scratch \
-    --exit-on-error \
-    --jobs=4 \
-    /srv/backups/pg/<db>-<date>.dump
-```
+## Verify the restore
 
-A plain-SQL dump (`.sql`, not `.dump`) has no custom-format header and
-`pg_restore` will reject it. Pipe those through `psql` instead:
+Use the `query_database` tool to check that the data looks correct.
 
-```console
-$ psql \
-    --dbname=restore_scratch \
-    --set ON_ERROR_STOP=1 \
-    --file=/srv/backups/pg/<db>-<date>.sql
-```
+## Read the restore reference
 
-## Verify before promoting
-
-Compare row counts against what the dump claimed. Any table at zero is
-a failed restore, not an empty table. Count one table:
-
-```console
-$ psql \
-    --dbname=restore_scratch \
-    --command='SELECT count(*) FROM <table>'
-```
-
-If a count is wrong, re-run the restore with `--verbose` and read the
-first error. Do not promote a scratch database you have not verified.
-
-## Promote
-
-Promotion is irreversible and takes the target offline. Confirm with
-the owner first, then:
-
-```console
-$ pg_restore \
-    --dbname=<target> \
-    --clean \
-    --if-exists \
-    --exit-on-error \
-    /srv/backups/pg/<db>-<date>.dump
-```
-
-## Drop the scratch database
-
-```console
-$ dropdb restore_scratch
-```
-
-## Point-in-time recovery
-
-Restoring to a moment between nightlies needs WAL replay, not
-`pg_restore`. See `reference/pitr.md`.
+See `reference/advanced.md`, which links to `reference/internals.md`.
 ````
+
+The description now names the existing workflow and its trigger. The title,
+tool choices, data-loss warning, verification step, and reference paths stay;
+the code fences are byte-for-byte the same as the input.
+
+The ledger would flag the Windows path in a Bash fence, the hardcoded database
+target, the unspecified `query_database` tool, and the reference chain. A style
+pass reports those flaws; correcting them needs separate verification and
+authorization.
