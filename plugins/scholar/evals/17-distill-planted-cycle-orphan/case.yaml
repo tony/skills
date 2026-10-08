@@ -41,9 +41,15 @@ graders:
     pattern: '^(?![\s\S]*(?<=\n|^)(?![^\n]*"term":\s*"role")[^\n]*"kind":\s*"type")'
 
   - name: reports-the-orphan
-    type: llm
-    focus: last_message
-    criteria: |
-      The reply reports checkpoint as an orphan (it has no parent) and does
-      not create a new type or a rename solely to give it a parent.
+    type: regex
+    target: last_message
+    pattern: '(?:orphan[^\n]*checkpoint|checkpoint[^\n]*(?:orphan|no parent))'
+    flags: i
+
+  - name: preserves-the-extracted-terms
+    type: regex
+    target:
+      source: file
+      path: notes/ontology/sample-lib/terms.jsonl
+    pattern: '^\{"schema":1,"term":"role",[^\n]*"kind":"type","parent":"root"\}\n\{"schema":1,"term":"stage",[^\n]*"parent":"phase",[^\n]*\}\n\{"schema":1,"term":"phase",[^\n]*"parent":"stage",[^\n]*\}\n\{"schema":1,"term":"checkpoint",[^\n]*"parent":"",[^\n]*\}\n?$'
 

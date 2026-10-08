@@ -14,6 +14,8 @@ than quietly making it true.
 
 User arguments: $ARGUMENTS
 
+Read `../../references/output-contract.md` before writing study files.
+
 ## Why a correction is kept
 
 A retracted claim is worth more written down than deleted. Deleting it does

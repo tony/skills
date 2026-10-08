@@ -25,6 +25,17 @@ git -C tiny-lib tag v1.0.0
 
 git -C tiny-lib remote add origin https://github.com/example/tiny-lib
 
+mkdir -p .eval-state
+cat >verify-brief.sh <<'SH'
+#!/usr/bin/env bash
+python3 "$1" notes/ontology/tiny-lib/ --check-brief >.eval-state/brief-gate.txt 2>&1
+gate_status=$?
+printf '%s\n' "$gate_status" >.eval-state/brief-gate.exit
+cat .eval-state/brief-gate.txt
+exit "$gate_status"
+SH
+chmod +x verify-brief.sh
+
 cat >.gitignore <<'MD'
 .bash_profile
 .bashrc

@@ -18,10 +18,13 @@ claim, find what it rests on, and re-derive it. A summary cannot be checked,
 does not compose, and rots without saying so.
 
 Read `../../references/evidence-tiers.md` before starting; it decides what
-each claim must carry. `../../references/citation.md` governs every pin.
+each claim must carry. Read `../../references/citation.md` for citation fields
+and `../../references/source-pins.md` for repository pins.
 `../../references/stage-gates.md` states each stage's exit condition.
 
 User arguments: $ARGUMENTS
+
+Read `../../references/output-contract.md` before writing study files.
 
 ## Survey the workspace
 

@@ -12,10 +12,13 @@ disable-model-invocation: true
 Stage 1. Turn a loose target (a repository, a set of them, a book) into a
 pinned, inventoried source list a later stage can cite against.
 
-Read `../../references/citation.md` for how to pin, and
+Read `../../references/source-pins.md` for how to pin,
+`../../references/citation.md` for citation fields, and
 `../../references/stage-gates.md` for this stage's exit condition.
 
 User arguments: $ARGUMENTS
+
+Read `../../references/output-contract.md` before writing study files.
 
 ## The invariant
 
@@ -33,32 +36,7 @@ URL, so it is stored under `--out`.
 
 ### 1. Resolve each target to a ref
 
-For a git repository, prefer a release tag; fall back to a 7-character commit
-reachable from trunk. Never a branch name: it moves, and every citation built
-on it rots silently.
-
-Newest tag of a repository you have not cloned:
-
-```console
-$ gh release list \
-    --repo OWNER/REPO \
-    --limit 1 \
-    --exclude-drafts \
-    --exclude-pre-releases \
-    --json tagName \
-    --jq '.[0].tagName'
-```
-
-A repository can have thousands of tags and no releases, in which case that
-prints nothing. Fall back to the tags:
-
-```console
-$ git ls-remote \
-    --tags \
-    --refs \
-    --sort=-v:refname \
-    https://github.com/OWNER/REPO
-```
+Resolve repository targets using `source-pins.md`.
 
 For a local checkout, run these checks first, each against the corpus with
 `git -C <corpus>`, since the corpus is not necessarily the working directory.
@@ -88,12 +66,7 @@ pushed ref instead, or record the source without a URL (below).
 $ git -C <corpus> rev-parse --short HEAD
 ```
 
-Resolve the ref to the commit it points at, and record that as `commit`, so
-`verify` can later tell a moved tag from an unmoved one:
-
-```console
-$ gh api repos/OWNER/REPO/commits/v2.40.0 --jq .sha
-```
+Record the resolved commit as `commit` so `verify` can detect a moved tag.
 
 For a local checkout, the ref is the tag only when
 `git -C <corpus> describe --tags --exact-match HEAD` prints it; otherwise it

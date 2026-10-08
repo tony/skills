@@ -20,6 +20,8 @@ resolved from this skill's directory.
 
 User arguments: $ARGUMENTS
 
+Read `../../references/output-contract.md` before writing study files.
+
 ## Pass 1: mechanical
 
 Run the analyzer:

@@ -14,6 +14,7 @@ rots into confident falsehood: every link still resolves, every number still
 reads as measured, and none of it is true any more.
 
 Read `../../references/citation.md` for what a citation was required to carry.
+Read `../../references/source-pins.md` for pinned refs and content checks.
 
 Remote checks cover GitHub sources only (`gh` and `https://github.com/...`).
 A source on any other host is Uncheckable remotely; check it with plain git
