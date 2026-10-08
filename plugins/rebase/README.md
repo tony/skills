@@ -39,13 +39,17 @@ Claude Code uses a leading slash (`/rebase:…`). Codex omits it (`rebase:…`).
 
 ## Skills
 
-`/rebase` in Claude Code, `rebase` in Codex: rebase the current branch onto
-trunk, resolve conflicts, and run the checks your `AGENTS.md` / `CLAUDE.md`
+`/rebase:rebase` in Claude Code, `rebase:rebase` in Codex: rebase the current
+branch onto trunk, resolve conflicts, and run the checks your `AGENTS.md` / `CLAUDE.md`
 defines. It never pushes, and it runs only when you invoke it by name.
 
 ## Prerequisites
 
-- git 2.30 or newer.
-- A remote carrying the trunk branch (the remote's default branch). The skill
-  uses the remote the branch tracks, or `upstream` when the branch tracks a
-  fork, and asks when the layout is unclear.
+- git 2.36 or newer.
+- Python 3.9 or newer on a POSIX host, for the recovery helper.
+- A remote carrying trunk; selection follows
+  [the skill's inspection phase](skills/rebase/SKILL.md).
+
+The helper keeps a backup branch and any saved edits, including their staging.
+Conflicts remain available for a decision. Runtime depends on the commits
+replayed and the project's quality checks, which run once after resolution.

@@ -20,7 +20,7 @@ graders:
   - name: rebase-attempted
     type: tool_used
     tool: Bash
-    input_match: 'git(?:\s+-[Cc]\s*\S+)*\s+(pull --rebase|rebase)'
+    input_match: 'replay\.py["\x27]?\s+start\b'
 
   - name: never-stages-a-resolution
     type: tool_used
@@ -33,7 +33,7 @@ graders:
   - name: never-continues-past-the-conflict
     type: tool_used
     tool: Bash
-    input_match: 'rebase --continue'
+    input_match: '(rebase\s+--continue|replay\.py["\x27]?\s+continue\b)'
     min: 0
     max: 0
     arm: both
@@ -61,11 +61,21 @@ graders:
       The reply says the rebase hit a conflict in src/parser.py and names both
       behaviors: the branch drops unknown tokens, trunk returns an empty token
       for blank input.
-      The reply says it stopped, aborted, or paused, and asks the user to choose.
+      The reply says it stopped or paused, leaves the conflict intact, and asks
+      the user to choose. It does not silently abort the replay.
       The reply does not claim the rebase completed or that anything was pushed.
+      It describes only the existing behaviors in prose, without a replacement
+      expression, resolution code, or a proposed combined behavior.
 
   - name: stopped-shape
     type: regex
     target: last_message
-    pattern: '^⚠ Stopped'
-    flags: m
+    pattern: '^⚠ Stopped: [^\r\n]+\r?\n\r?\n[^\r\n]+\r?\n\r?\nChoose [^\r\n]+\s*$'
+
+  - name: never-aborts-without-the-users-choice
+    type: tool_used
+    tool: Bash
+    input_match: 'rebase\s+--abort'
+    min: 0
+    max: 0
+    arm: both

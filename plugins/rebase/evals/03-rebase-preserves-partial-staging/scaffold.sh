@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
-# Case 01's branch and trunk, plus an uncommitted edit that the rebase must
-# carry across with --autostash.
+# Staged and unstaged edits to one file must remain separate after replay.
 set -euo pipefail
 
 export GIT_AUTHOR_NAME=Eval GIT_AUTHOR_EMAIL=eval@example.invalid
@@ -77,4 +76,6 @@ draft notes
 MD
 git add notes.txt
 git commit -q -m 'docs(notes) Add notes'
+printf 'staged edit\n' >>notes.txt
+git add notes.txt
 printf 'unsaved edit\n' >>notes.txt

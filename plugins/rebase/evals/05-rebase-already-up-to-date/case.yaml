@@ -20,7 +20,7 @@ graders:
   - name: never-rebases
     type: tool_used
     tool: Bash
-    input_match: 'git(?:\s+-[Cc]\s*\S+)*\s+(pull --rebase|rebase)'
+    input_match: '(git(?:\s+-[Cc]\s*\S+)*\s+(pull --rebase|rebase)|replay\.py["\x27]?\s+start\b)'
     min: 0
     max: 0
     arm: both
@@ -52,5 +52,4 @@ graders:
   - name: stopped-shape
     type: regex
     target: last_message
-    pattern: '^⚠ Stopped'
-    flags: m
+    pattern: '^⚠ Stopped: [^\r\n]+\r?\n\r?\nNo replay ran; no recovery refs were created\.\r?\n\r?\nNext: done\.\s*$'

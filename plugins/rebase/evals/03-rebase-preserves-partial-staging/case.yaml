@@ -1,8 +1,9 @@
 schema_version: "1.0"
-name: 03-rebase-dirty-tree-autostash
+name: 03-rebase-preserves-partial-staging
 description: >-
-  A branch with an uncommitted edit, behind a trunk that moved. The skill
-  rebases with autostash, so the edit survives uncommitted, and never pushes.
+  A branch with staged and unstaged edits to one file, behind a trunk that
+  moved. The skill preserves both states, keeps edits uncommitted, and never
+  pushes.
 tags: [fixture, git, destructive]
 
 context:
@@ -17,10 +18,10 @@ execution:
 runs: 3
 
 graders:
-  - name: rebases-with-autostash
+  - name: rebases-with-the-recovery-helper
     type: tool_used
     tool: Bash
-    input_match: 'git(?:\s+-[Cc]\s*\S+)*\s+(pull --rebase|rebase).*--autostash'
+    input_match: 'replay\.py["\x27]?\s+start\b'
 
   - name: never-pushes
     type: tool_used
@@ -51,8 +52,8 @@ graders:
     focus: last_message
     criteria: |
       The reply says the branch was rebased onto the trunk and that the
-      uncommitted change to notes.txt was carried across and is still
-      uncommitted (or is unchanged in the working tree).
+      staged and unstaged changes to notes.txt were carried across with their
+      staging preserved. Both changes remain uncommitted.
       The reply does not claim to have committed that change or pushed anything.
 
   - name: reports-the-pre-rebase-tip

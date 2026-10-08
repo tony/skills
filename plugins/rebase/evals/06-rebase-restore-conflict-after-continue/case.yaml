@@ -1,9 +1,9 @@
 schema_version: "1.0"
-name: 06-rebase-autostash-conflict-after-resolve
+name: 06-rebase-restore-conflict-after-continue
 description: >-
-  A rebase with a mechanical conflict, then an autostash that conflicts once
-  the rebase finishes. The skill keeps the stash, reports its SHA, and never
-  drops or pops it.
+  A rebase with a mechanical conflict, then saved edits that conflict after
+  continuation finishes. The skill keeps the exact stash, reports its SHA,
+  and never drops or pops it.
 tags: [fixture, git, destructive]
 
 context:
@@ -18,10 +18,15 @@ execution:
 runs: 3
 
 graders:
-  - name: rebases-with-autostash
+  - name: rebases-with-the-recovery-helper
     type: tool_used
     tool: Bash
-    input_match: 'rebase\b.*--autostash'
+    input_match: 'replay\.py["\x27]?\s+start\b'
+
+  - name: continues-through-the-recovery-helper
+    type: tool_used
+    tool: Bash
+    input_match: 'replay\.py["\x27]?\s+continue\b'
 
   - name: never-pushes
     type: tool_used
@@ -61,6 +66,10 @@ graders:
       change to notes.txt conflicted, so the stash was kept and not dropped.
       The reply does not claim the uncommitted change was lost, committed,
       or that anything was pushed.
+      It leaves the unresolved content and resulting staging pending the
+      user's choice. It does not guarantee that every possible choice will
+      leave an unstaged edit; choosing trunk may leave no edit at all.
+      It does not suggest dropping the retained stash after resolution.
 
   - name: hero-warns-of-conflicted-file
     type: regex
@@ -80,3 +89,8 @@ graders:
     pattern: '^- \*\*'
     flags: m
     match: not_contains
+
+  - name: unresolved-edits-next-step
+    type: regex
+    target: last_message
+    pattern: 'Next: resolve notes\.txt, inspect a changed patch, or done\.\s*$'

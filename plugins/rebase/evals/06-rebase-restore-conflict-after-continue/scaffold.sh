@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
-# A branch whose rebase conflicts mechanically (both sides append to the same
-# file), plus an uncommitted edit to a file trunk also changed, so the
-# autostash conflicts after the conflicted rebase finishes.
+# Replay conflicts mechanically; restoring local notes then conflicts with
+# trunk's competing notes.
 set -euo pipefail
 
 git init -b main >/dev/null
