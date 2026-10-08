@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import json
 import os
+import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -41,9 +42,9 @@ def commit(repo: Path, files: dict[str, str], message: str) -> str:
     return git(repo, "rev-parse", "HEAD")
 
 
-def run(repo: Path, *args: str) -> tuple[int, dict[str, object]]:
+def run(repo: Path, *args: str, script: Path = SCRIPT) -> tuple[int, dict[str, object]]:
     done = subprocess.run(
-        [sys.executable, str(SCRIPT), *args],
+        [sys.executable, str(script), *args],
         cwd=repo,
         env=ENV,
         capture_output=True,
@@ -115,15 +116,23 @@ def test_drop_refuses_mixed_commit(repo: Path) -> None:
     assert "changelog-rewrite-backup-" not in git(repo, "branch", "--list")
 
 
-def test_drop_refuses_dirty_tree(repo: Path) -> None:
+@pytest.mark.parametrize("kind", ["unstaged", "staged", "untracked"])
+def test_drop_refuses_dirty_tree(repo: Path, kind: str) -> None:
     draft = commit(repo, {"CHANGES.md": changes(draft=True)}, "docs: draft")
-    (repo / "code.py").write_text("dirty\n")
+    filename = "notes.txt" if kind == "untracked" else "code.py"
+    (repo / filename).write_text("dirty\n")
+    if kind == "staged":
+        git(repo, "add", filename)
+    status = git(repo, "status", "--porcelain")
     code, result = run(repo, "drop", "--base", "origin/main", "--file", "CHANGES.md", draft)
     assert code == 1
     assert "uncommitted" in str(result["reason"])
+    assert (repo / filename).read_text() == "dirty\n"
+    assert git(repo, "status", "--porcelain") == status
+    assert git(repo, "rev-parse", "HEAD") == draft
 
 
-def test_conflict_restores_the_backup(repo: Path) -> None:
+def test_failed_validation_restores_the_backup(repo: Path) -> None:
     draft = commit(repo, {"CHANGES.md": changes(draft=True)}, "docs: draft")
     tip = commit(repo, {"CHANGES.md": changes(draft=True) + "- later\n"}, "docs: later")
     code, result = run(repo, "drop", "--base", "origin/main", "--file", "CHANGES.md", draft)
@@ -131,3 +140,134 @@ def test_conflict_restores_the_backup(repo: Path) -> None:
     assert result["backup"]
     assert git(repo, "rev-parse", "HEAD") == tip
     assert git(repo, "status", "--porcelain") == ""
+
+
+@pytest.mark.parametrize("setting", ["rebase.abbreviateCommands", "rebase.updateRefs"])
+def test_rebase_settings_cannot_skip_drops_or_move_other_branches(repo: Path, setting: str) -> None:
+    draft = commit(repo, {"CHANGES.md": changes(draft=True)}, "docs: draft")
+    commit(repo, {"CHANGES.md": changes(draft=True, two=True), "code.py": "b\n"}, "feat: mixed")
+    before = git(repo, "rev-parse", "HEAD")
+    git(repo, "branch", "user-checkpoint")
+    git(repo, "config", setting, "true")
+    code, result = run(repo, "drop", "--base", "origin/main", "--file", "CHANGES.md", draft)
+    assert code == 0, result
+    assert "docs: draft" not in git(repo, "log", "--format=%s", "origin/main..HEAD")
+    assert git(repo, "rev-parse", "user-checkpoint") == before
+    assert git(repo, "rev-parse", str(result["backup"])) == before
+
+
+def test_drop_uses_fork_when_base_has_advanced(repo: Path) -> None:
+    fork = git(repo, "rev-parse", "HEAD")
+    draft = commit(repo, {"CHANGES.md": changes(draft=True)}, "docs: draft")
+    commit(repo, {"code.py": "b\n"}, "feat: code")
+    git(repo, "switch", "-q", "main")
+    commit(repo, {"base-only.py": "base\n"}, "feat: upstream")
+    git(repo, "update-ref", "refs/remotes/origin/main", "HEAD")
+    git(repo, "switch", "-q", "feat")
+    code, result = run(repo, "drop", "--base", "origin/main", "--file", "CHANGES.md", draft)
+    assert code == 0, result
+    assert result["merge_base"] == fork
+    assert git(repo, "log", "--format=%s", f"{fork}..HEAD") == "feat: code"
+    assert not (repo / "base-only.py").exists()
+
+
+def test_drop_from_subdirectory_uses_root_relative_changelog(repo: Path) -> None:
+    draft = commit(repo, {"CHANGES.md": changes(draft=True)}, "docs: draft")
+    (repo / "src").mkdir()
+    code, result = run(repo / "src", "drop", "--base", "origin/main", "--file", "CHANGES.md", draft)
+    assert code == 0, result
+    assert git(repo, "show", "HEAD:CHANGES.md") == changes().strip()
+
+
+def test_failed_validation_keeps_new_hook_edits(repo: Path) -> None:
+    draft = commit(repo, {"CHANGES.md": changes(draft=True)}, "docs: draft")
+    commit(repo, {"CHANGES.md": changes(draft=True, two=True)}, "docs: later")
+    hook = repo / ".git" / "hooks" / "post-rewrite"
+    hook.write_text("#!/bin/sh\nprintf 'hook edit\\n' > code.py\n")
+    hook.chmod(0o755)
+    code, result = run(repo, "drop", "--base", "origin/main", "--file", "CHANGES.md", draft)
+    assert code == 1, result
+    assert (repo / "code.py").read_text() == "hook edit\n"
+    assert result["backup"]
+
+
+def test_recovery_preserves_hook_staging_and_unstaged_edits(repo: Path) -> None:
+    draft = commit(repo, {"CHANGES.md": changes(draft=True)}, "docs: draft")
+    commit(repo, {"code.py": "b\n"}, "feat: code")
+    hook = repo / ".git" / "hooks" / "post-rewrite"
+    hook.write_text(
+        "#!/bin/sh\nprintf 'staged\\n' > code.py\ngit add code.py\nprintf 'unstaged\\n' > code.py\n"
+    )
+    hook.chmod(0o755)
+    code, result = run(repo, "drop", "--base", "origin/main", "--file", "CHANGES.md", draft)
+    assert code == 1, result
+    assert git(repo, "show", ":code.py") == "staged"
+    assert (repo / "code.py").read_text() == "unstaged\n"
+    assert result["recovery"]
+
+
+def test_failed_validation_pins_new_hook_commits(repo: Path) -> None:
+    draft = commit(repo, {"CHANGES.md": changes(draft=True)}, "docs: draft")
+    tip = commit(repo, {"code.py": "b\n"}, "feat: code")
+    hook = repo / ".git" / "hooks" / "post-rewrite"
+    hook.write_text(
+        "#!/bin/sh\nprintf 'hook commit\\n' > code.py\ngit commit -qam 'hook: save edit'\n"
+    )
+    hook.chmod(0o755)
+    code, result = run(repo, "drop", "--base", "origin/main", "--file", "CHANGES.md", draft)
+    assert code == 1, result
+    assert git(repo, "rev-parse", "HEAD") == tip
+    assert git(repo, "show", f"{result['recovery']}:code.py") == "hook commit"
+    assert git(repo, "log", "-1", "--format=%s", str(result["recovery"])) == "hook: save edit"
+
+
+def test_conflict_is_left_intact_with_original_history_backed_up(repo: Path) -> None:
+    draft = commit(repo, {"CHANGES.md": "draft\n"}, "docs: draft")
+    tip = commit(repo, {"CHANGES.md": "new draft\n", "code.py": "b\n"}, "feat: mixed")
+    code, result = run(repo, "drop", "--base", "origin/main", "--file", "CHANGES.md", draft)
+    assert code == 1, result
+    assert "still in progress" in str(result["reason"])
+    assert git(repo, "rev-parse", str(result["backup"])) == tip
+    assert (repo / ".git" / "rebase-merge").is_dir()
+    assert "<<<<<<<" in (repo / "CHANGES.md").read_text()
+    assert (repo / "code.py").read_text() == "b\n"
+
+
+def test_local_base_works_and_rewrite_on_base_is_refused(repo: Path) -> None:
+    draft = commit(repo, {"CHANGES.md": changes(draft=True)}, "docs: draft")
+    code, result = run(repo, "drop", "--base", "main", "--file", "CHANGES.md", draft)
+    assert code == 0, result
+    git(repo, "switch", "-q", "main")
+    main_tip = commit(repo, {"CHANGES.md": changes(draft=True)}, "docs: main draft")
+    code, result = run(repo, "drop", "--base", "origin/main", "--file", "CHANGES.md", main_tip)
+    assert code == 1, result
+    assert "base branch" in str(result["reason"])
+    assert git(repo, "rev-parse", "HEAD") == main_tip
+
+
+def test_ignored_file_overlapping_replayed_history_is_preserved(repo: Path) -> None:
+    commit(repo, {".gitignore": "scratch.dat\n"}, "chore: ignore scratch")
+    (repo / "scratch.dat").write_text("old\n")
+    git(repo, "add", "-f", "scratch.dat")
+    git(repo, "commit", "-qm", "feat: add scratch")
+    draft = commit(repo, {"CHANGES.md": changes(draft=True)}, "docs: draft")
+    git(repo, "rm", "scratch.dat")
+    git(repo, "commit", "-qm", "refactor: remove scratch")
+    (repo / "scratch.dat").write_text("user ignored work\n")
+    code, result = run(repo, "drop", "--base", "origin/main", "--file", "CHANGES.md", draft)
+    assert code == 1, result
+    assert "ignored files overlap" in str(result["reason"])
+    assert (repo / "scratch.dat").read_text() == "user ignored work\n"
+
+
+def test_sequence_editor_quotes_installed_script_path(repo: Path, tmp_path: Path) -> None:
+    draft = commit(repo, {"CHANGES.md": changes(draft=True)}, "docs: draft")
+    install = tmp_path.parent / "plugin's $PATH with spaces"
+    install.mkdir()
+    script = install / "rewrite.py"
+    shutil.copyfile(SCRIPT, script)
+    code, result = run(
+        repo, "drop", "--base", "origin/main", "--file", "CHANGES.md", draft, script=script
+    )
+    assert code == 0, result
+    assert git(repo, "show", "HEAD:CHANGES.md") == changes().strip()

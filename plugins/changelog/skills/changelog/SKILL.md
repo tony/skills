@@ -20,7 +20,8 @@ Read these first:
 - `../../references/entry-rules.md`: categorizing, format, voice, exclusions.
 - `../../references/commit-message.md`: used in Phase 4 and 5.
 
-Write entries and the commit message per `../../references/prose-rules.md`.
+Write entries, commit messages, and user-facing replies per
+`../../references/prose-rules.md`.
 
 ## Phase 1: Gather Context
 
@@ -43,8 +44,9 @@ Write entries and the commit message per `../../references/prose-rules.md`.
 5. **Check for a PR.** `gh pr view --json number,title,body,labels` returns the
    number, title, body, and labels. A failure means no PR; use `(#???)`
    placeholders.
-6. **Check the changelog is clean** per `commit-message.md` (an untracked,
-   new changelog file is not dirty); when it is not, insert only and say why.
+6. **Check the changelog is clean** per `commit-message.md`; an untracked
+   file already present belongs to the user. When it is not clean, insert
+   only and say why.
 7. **Get commits.** Fetch per `branch-scope.md` first. `git log origin/<base>..HEAD --format='%H %s%n%b---'`
    gives subjects and bodies (with no `origin` remote, substitute the local
    base name). No commits ahead: report "No commits ahead of
@@ -104,8 +106,9 @@ When asking, use `AskUserQuestion`: "Insert into `<changelog-file>`?" Offer:
    - **Edit first**: return to Phase 2.
 
 Without approval already given and without `AskUserQuestion`, end with one
-line: nothing was edited; re-run with "add the entries" to insert, or with
-`--commit` to insert and commit. Name no temp files or local paths.
+line: "Nothing was edited; approval is pending. Reply 'add the entries' to
+insert, or re-run with `--commit` to insert and commit." Name no temp files
+or local paths.
 
 When approval was already given, skip the Phase 3 reply and send only the
 Phase 4 reply, which carries the summary line, entries, voice check, `Target`
@@ -132,6 +135,7 @@ never commit.
    message already shown: no `Co-Authored-By`, no "Generated with" or other
    tool trailer, no emoji. Otherwise say the edit is uncommitted and give the
    commit as one `console` command with the message, so committing is one paste.
+   Introduce it with "To commit it, run:" and no subject-format explanation.
 
 Reply in this shape, as plain text outside any code fence, with plain bullets, no bold, and no local paths. Omit `Notes` when it has nothing, and state a commit instead of the `git commit` command when the commit was made:
 

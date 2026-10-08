@@ -27,7 +27,8 @@ Read these first:
 - `../../references/entry-rules.md`: categorizing, format, voice, exclusions.
 - `../../references/commit-message.md`: used in Phase 4.
 
-Write entries and the commit message per `../../references/prose-rules.md`.
+Write entries, commit messages, and user-facing replies per
+`../../references/prose-rules.md`.
 
 ## Phase 1: Establish scope
 

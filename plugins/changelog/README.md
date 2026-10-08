@@ -47,8 +47,11 @@ Claude Code uses a leading slash (`/changelog:…`). Codex omits it (`changelog:
 Choose `refresh` to fix entries by stacking a commit, and
 `rewrite-aggressively` to replace the branch's changelog history with one commit.
 
-Approval follows the ladder in Phase 3 of [`changelog`](skills/changelog/SKILL.md); the other two skills use the same one. Entries always land in the
-unreleased section; see `references/branch-scope.md`.
+Entry edits follow the approval ladder in Phase 3 of
+[`changelog`](skills/changelog/SKILL.md). History rewrites also require the
+explicit approval in Phase 1 of
+[`rewrite-aggressively`](skills/rewrite-aggressively/SKILL.md). Entries land
+in the unreleased section; see `references/branch-scope.md`.
 
 ## Supported Changelog Formats
 
