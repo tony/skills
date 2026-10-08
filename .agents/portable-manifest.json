@@ -418,7 +418,7 @@
         "references/prose-rules.md": "plugins/model-cli/references/prose-rules.md",
         "references/run_tier.py": "plugins/model-cli/scripts/run_tier.py"
       },
-      "bytes": 23853
+      "bytes": 28629
     },
     {
       "name": "model-cli-codex",
@@ -430,7 +430,7 @@
         "references/prose-rules.md": "plugins/model-cli/references/prose-rules.md",
         "references/run_tier.py": "plugins/model-cli/scripts/run_tier.py"
       },
-      "bytes": 23811
+      "bytes": 28727
     },
     {
       "name": "model-cli-cursor",
@@ -442,23 +442,7 @@
         "references/prose-rules.md": "plugins/model-cli/references/prose-rules.md",
         "references/run_tier.py": "plugins/model-cli/scripts/run_tier.py"
       },
-      "bytes": 23120
-    },
-    {
-      "name": "model-cli-gemini",
-      "sources": [
-        "plugins/model-cli/skills/gemini/SKILL.md"
-      ],
-      "bundled": {},
-      "bytes": 962
-    },
-    {
-      "name": "model-cli-gpt",
-      "sources": [
-        "plugins/model-cli/skills/gpt/SKILL.md"
-      ],
-      "bundled": {},
-      "bytes": 945
+      "bytes": 27887
     },
     {
       "name": "package-updater-update",

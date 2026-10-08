@@ -1,7 +1,7 @@
 ---
 name: agy
-description: "Use when delegating to Google Gemini or Antigravity for a Gemini second opinion; runs write-enabled, no sandbox, unless mode:plan."
-allowed-tools: ["Bash"]
+description: "Use when delegating to Google Gemini or Antigravity for a Gemini second opinion; runs write-enabled unless mode:plan."
+allowed-tools: ["Bash", "Write"]
 argument-hint: <prompt> [timeout:<seconds>] [mode:plan]
 ---
 
@@ -44,5 +44,6 @@ commands omit the permission-skipping flags.
 Pass `--require-flag=` with `--dangerously-skip-permissions` (tiers 1, 3) or `-f`
 (tier 2) on a normal run, and `--mode` on a `mode:plan` run.
 
-Tier 3 is the lesser fallback: when it runs, say the Pro tiers failed. If
-tier 1 failed with auth, credit, crash, or unsupported-flag on `agy`, skip tier 3.
+Tier 3 requests the smaller fallback model. Report earlier tier failures in
+the dispatch report's failed-tier lines. If tier 1 failed with auth, credit,
+crash, or unsupported-flag on `agy`, skip tier 3.

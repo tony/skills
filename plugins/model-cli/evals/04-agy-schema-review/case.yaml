@@ -1,15 +1,20 @@
 schema_version: "1.0"
-name: 04-gemini-schema-review
+name: 04-agy-schema-review
 description: >-
-  The gemini alias with a failing agy stub and an absent agent binary reports no output and fabricates no verdict.
+  A failing agy stub and an absent agent binary produce no output or fabricated verdict.
 tags: [fixture, gated]
 
 context:
   scaffold_script: scaffold.sh
 
 execution:
+  append_system_prompt: >-
+    The fixture grants file writes inside the project. Before creating the
+    prompt file, export TMPDIR="$PWD/.eval-state/prompts", then run mktemp.
+    The scaffold creates that directory. Write the prompt
+    with Write to the returned path. This directory is ignored by Git.
   prompt: |-
-    /model-cli:gemini "does dropping this field break existing consumers?" timeout:120
+    /model-cli:agy "does dropping this field break existing consumers?" timeout:120
 
     ```json
     {
@@ -23,7 +28,7 @@ execution:
     The agy binary is ./bin/agy and the agent binary is ./bin/agent.
   max_turns: 20
   timeout_seconds: 420
-  allowed_tools: [Bash, Read, Glob, Grep, Skill]
+  allowed_tools: [Bash, Read, Write, Glob, Grep, Skill]
 
 runs: 3
 

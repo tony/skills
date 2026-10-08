@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
-# Stub CLIs under ./bin so no real model CLI runs.
+# Fixture binaries keep delegated runs offline.
 set -euo pipefail
+mkdir -p .eval-state/prompts
 
 mkdir -p bin
 cat >app.py <<'PY'
@@ -10,7 +11,7 @@ PY
 
 cat >bin/agy <<'SH'
 #!/usr/bin/env bash
-case " $* " in *" --help "*) echo "  --yolo --sandbox -f --mode --dangerously-skip-permissions"; exit 0;; esac
+case " $* " in *" --help "*) echo "  --dangerously-skip-permissions --mode --model -p"; exit 0;; esac
 echo "Authentication required: log in first" >&2
 exit 1
 SH
@@ -21,7 +22,13 @@ cat >.gitignore <<'MD'
 .bashrc
 .claude
 .eval-artifacts
+.eval-state
 .gitconfig
+.gitmodules
+.ripgreprc
+.mcp.json
+.vscode
+.idea
 .profile
 .zprofile
 .zshrc

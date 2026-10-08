@@ -1,7 +1,7 @@
 ---
 name: cursor
-description: "Use when asked to use Cursor, Cursor's CLI, or the agent binary to delegate; write-enabled, no sandbox, unless mode:plan; no fallback."
-allowed-tools: ["Bash"]
+description: "Use when asked to use Cursor, Cursor's CLI, or the agent binary to delegate; write-enabled unless mode:plan; no fallback."
+allowed-tools: ["Bash", "Write"]
 argument-hint: <prompt> [timeout:<seconds>] [mode:plan]
 ---
 
@@ -23,8 +23,8 @@ If `agent` is not found, stop and give the failed-run report from
 
 ## Step 2: Run the tier
 
-Normal runs are write-enabled. `mode:plan` runs use `agent --mode plan`,
-Cursor's read-only plan mode.
+Normal runs are write-enabled and preserve Cursor's configured sandbox.
+`mode:plan` runs use `agent --mode plan`, Cursor's read-only plan mode.
 
 1. Normal: `agent -p -f --`
    Plan: `agent -p --mode plan --`
