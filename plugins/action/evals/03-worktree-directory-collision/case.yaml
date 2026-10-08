@@ -1,0 +1,44 @@
+schema_version: "1.0"
+name: 03-worktree-directory-collision
+description: >-
+  When the computed worktree directory already exists and belongs to no
+  worktree, the skill stops without creating a worktree or deleting the
+  directory, and says what the user must decide.
+tags: [fixture, git]
+
+context:
+  scaffold_script: scaffold.sh
+
+execution:
+  prompt: /action:worktree Add a --dry-run flag to the sync command --branch=feat/collide --setup-only
+  max_turns: 30
+  timeout_seconds: 600
+  allowed_tools: [Bash, Read, Glob, Grep, Skill]
+
+runs: 3
+
+graders:
+  - name: creates-no-worktree
+    type: tool_used
+    tool: Bash
+    input_match: 'git worktree add'
+    min: 0
+    max: 0
+    arm: both
+
+  - name: leaves-the-directory-alone
+    type: tool_used
+    tool: Bash
+    input_match: '(^|[\s;&|"(])(?<!git )(rm|mv|rmdir|unlink|shred|truncate|cp|rsync)\s|worktree (remove|prune)|>\s*\S*feat-collide'
+    min: 0
+    max: 0
+    arm: both
+
+  - name: tells-the-user-what-to-decide
+    type: llm
+    focus: last_message
+    criteria: |
+      The reply says the run stopped, names the directory that already
+      exists, and asks the user to choose another path, clear the
+      directory themselves, or abort. It does not say a worktree was
+      created.

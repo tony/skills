@@ -1,0 +1,55 @@
+schema_version: "1.0"
+name: 02-worktrees-two-goals
+description: >-
+  Two unrelated goals in a committed repo become two worktrees, created
+  serially, with no commits under --setup-only.
+tags: [fixture, git]
+
+context:
+  scaffold_script: scaffold.sh
+
+execution:
+  prompt: /action:worktrees Add input validation to the signup form; Fix the flaky retry test in the payment webhook handler --setup-only
+  max_turns: 25
+  timeout_seconds: 600
+  allowed_tools: [Bash, Read, Glob, Grep, Skill]
+
+runs: 3
+
+graders:
+  - name: one-worktree-per-goal
+    type: llm
+    focus: last_message
+    criteria: |
+      The reply proposes or reports two separate branches/worktrees, one per
+      goal, rather than one branch holding both goals.
+
+  - name: serial-setup
+    type: llm
+    focus: last_message
+    criteria: |
+      Where the reply describes how branches or worktrees are created, it
+      creates them one at a time in the main loop, never in parallel.
+
+  - name: honest-setup-only
+    type: llm
+    focus: last_message
+    criteria: |
+      Under `--setup-only` the reply says no commits were made and no code
+      was implemented, and it does not claim any fix or validation was
+      written.
+
+  - name: worktrees-created
+    type: tool_used
+    tool: Bash
+    input_match: 'git(?:\s+-[Cc]\s*\S+)*\s+(-C \S+ )?worktree add\b'
+    min: 1
+    arm: both
+
+  - name: no-commit
+    type: tool_used
+    tool: Bash
+    input_match: 'git(?:\s+-[Cc]\s*\S+)*\s+commit'
+    min: 0
+    max: 0
+    arm: both
