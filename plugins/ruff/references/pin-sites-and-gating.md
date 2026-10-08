@@ -10,7 +10,7 @@ A repository frequently pins the same tool in more than one file, and they drift
 
 **Requirements files.** `requirements*.txt`, `requirements/*.txt`, constraints files. Frequently the file CI actually installs from, even when `pyproject.toml` looks authoritative.
 
-**Pre-commit configuration.** `.pre-commit-config.yaml` pins the linter by git tag under a `rev:` key, entirely independently of the Python dependency graph. This is the single most commonly missed site: the project metadata says the new version, pre-commit keeps running the old one, and the two disagree about what is clean. Read the tag spelling from `git ls-remote --tags` of the hook's repository; it may or may not carry a `v` prefix.
+**Pre-commit configuration.** `.pre-commit-config.yaml` pins the linter by git tag under a `rev:` key, entirely independently of the Python dependency graph. A hook pin is easy to miss: the project metadata says the new version, pre-commit keeps running the old one, and the two disagree about what is clean. Read the tag spelling from `git ls-remote --tags` of the hook's repository; it may or may not carry a `v` prefix.
 
 **Runtime and tool-version managers.** `.tool-versions`, `mise.toml`/`.mise.toml`, `.python-version`-adjacent tool pins, `flake.nix`, `Dockerfile` install lines.
 

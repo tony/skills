@@ -173,7 +173,7 @@ name the checkout path:
 ```text
 ⚠ Blocked: the corpus checkout has uncommitted edits.
 
-Commit or stash them in the checkout, then rerun /scholar:extract.
+Commit them in the checkout or pass a scope that excludes them, then rerun /scholar:extract.
 ```
 
 Next-step options: run distill, harvest another source, stop here.

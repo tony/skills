@@ -96,7 +96,11 @@ Resolve the ref to the commit it points at, and record that as `commit`, so
 $ gh api repos/OWNER/REPO/commits/v2.40.0 --jq .sha
 ```
 
-For a local checkout, `git -C <corpus> rev-parse HEAD` gives the commit. For a remote on
+For a local checkout, the ref is the tag only when
+`git -C <corpus> describe --tags --exact-match HEAD` prints it; otherwise it
+is the 7-character HEAD, with no tag. Record `commit` from that same ref:
+`git -C <corpus> rev-parse 'REF^{commit}'`. Quotes are read at HEAD, so a tag
+behind HEAD is never the ref. For a remote on
 another host, `git ls-remote URL REF 'REF^{}'` prints it; the peeled line
 (`REF^{}`) is the commit of an annotated tag, else use the plain line.
 
@@ -147,7 +151,9 @@ these four values.
 - Never justify a step in the output ("the edition comes from the request",
   "the ref is the edition you gave", "saved word for word", "the commit field
   is empty, and citations are located by search string"): state what was
-  recorded. For prose the whole line is "Commit: none".
+  recorded. For prose the whole line is "Commit: none"; the ref is only
+the edition as given ("2024, first printing"), with no reason after it. List
+`sources.jsonl` under `## Pinned` as its path under `--out`.
 - A commit not on any remote is recorded as "commit not on a remote; recorded
   without URL".
 - "Out of scope" is not a reason in `why`. Say what the source contains and why

@@ -317,6 +317,19 @@ def expected_total(
     return running
 
 
+def _applied_orders(log_path: str) -> list[int]:
+    """Orders of the applied items in ``execution-log.json``.
+
+    The log does not exist before the first item or under ``--dry-run``.
+
+    >>> _applied_orders("/nonexistent/execution-log.json")
+    []
+    """
+    if not pathlib.Path(log_path).exists():
+        return []
+    return [e["order"] for e in json.loads(_read_text(log_path)) if e.get("applied")]
+
+
 def order(a: str, b: str) -> dict[str, t.Any]:
     r"""Compare two ``--collect-only -q`` outputs in collection order.
 
@@ -683,7 +696,7 @@ def main(argv: Sequence[str] | None = None) -> int:  # noqa: PLR0911
         out = compare(baseline, _read_runs(args.runs), args.expect_total)
         return _emit(out, out["valid"])
     if cmd == "expected-total":
-        done = [e["order"] for e in json.loads(_read_text(args.log)) if e.get("applied")]
+        done = _applied_orders(args.log)
         total = json.loads(_read_text(args.baseline))["tests"]["total"]
         plan = json.loads(_read_text(args.plan))
         return _emit({"expected_total": expected_total(total, plan, done, args.through)})

@@ -133,7 +133,7 @@ def facts(repo: str, *, fetch: bool = False) -> dict[str, object]:
         "fork_signal": "upstream" in remotes,
         "default_branch": None,
         "branch": _git(repo, "branch", "--show-current")[1],
-        "dirty": bool(_git(repo, "status", "--porcelain")[1]),
+        "dirty": bool(_git(repo, "status", "--porcelain", "--untracked-files=no")[1]),
     }
     if remote is None:
         ref = str(out["branch"] or "HEAD")

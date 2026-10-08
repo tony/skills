@@ -46,7 +46,8 @@ turns `git log "..HEAD"` into a silent empty range.
 ## `$ARGUMENTS` contract
 
 An empty `$ARGUMENTS` audits `<trunk>..HEAD`. A non-flag token is a
-commit range (`<sha>..<sha>` or a single SHA) that overrides it.
+commit range that overrides it: `<a>..<b>` sets `BASELINE_SHA` to `<a>`
+and audits through `<b>`; a single `<sha>` sets `BASELINE_SHA` to it.
 
 | Flag | Default | Effect |
 |---|---|---|
@@ -192,8 +193,8 @@ $ git log -z --format=%H%x1f%B "<BASELINE_SHA>..HEAD" | python3 <slop_detect.py>
     --out <messages.json>
 ```
 
-Save the `diff` output with `--out <findings.json>` (a `mktemp` path;
-use its literal value). Then drop findings whose `text` a later commit
+Save the `diff` output with `--out <findings.json>`, a path made per
+`../../references/detect-pipeline.md` § Pass A (use its literal value). Then drop findings whose `text` a later commit
 removed, since their fixups could not apply; the matcher reads the JSON
 itself, so audited text never enters a shell string:
 
@@ -221,8 +222,8 @@ Group findings by target commit:
 
 | Finding scope | Patch shape | Mechanism |
 |---|---|---|
-| Diff slop in commit X | One fixup commit per patch | `git commit --fixup=<X>` |
-| Subject or body slop in commit X | One reword commit per X | An empty commit whose message is `amend! <subject>` plus the replacement text |
+| Diff slop in commit X | One fixup commit per patch | `git commit -m "fixup! <full sha of X>"` |
+| Subject or body slop in commit X | One reword commit per X | An empty commit whose message is `amend! <full sha of X>` plus the replacement text |
 | Whole-commit low-value, or a multi-topic commit | Advisory only | Dropping or splitting is the user's `git rebase -i` |
 
 Number the diff patches by `(target commit, oldest first; file;
@@ -231,7 +232,9 @@ exits 3 on a stale hunk, so cut each patch against the tree the earlier
 patches leave, never against `HEAD` alone. Step 8 does this in a scratch
 worktree.
 
-Autosquash folds fixups that share a target. It reads an `amend!` commit
+Name every target by full SHA: autosquash matches a subject-only
+`fixup!` to the first commit with that subject. It folds fixups that
+share a target and reads an `amend!` commit
 only from git 2.32 on; check `git --version`, and on older git list each
 reword in `advisory.md` as a manual note and keep the diff fixups.
 
@@ -486,18 +489,5 @@ command.
 
 ## Edge cases
 
-| Case | Behavior |
-|---|---|
-| Merge commits in range, no `--apply-rebase` | Permitted; patches and fixups work, and the user can rebase later with `--rebase-merges`. |
-| Root commit in range | Warn; rewriting it needs `git rebase --root`. |
-| Empty diff after an edit | Skip the fixup and record a no-op. |
-| Single-commit branch, no body | A reword commit autosquashes cleanly. |
-| `--message-only` and diff slop exists | Report the skipped diff findings; build reword commits only. |
-| Linked worktrees | Permitted; run directories resolve through `git rev-parse --path-format=absolute --git-path`. |
-| Existing `fixup!` or `amend!` commits on the branch | Detect with `git log --grep='^fixup!' --grep='^amend!'`; offer to autosquash them first. |
-| Non-UTF-8 commit message | Skip message checks for it; warn. |
-| Pre-commit hook changes staged content during a fixup | `apply.sh` aborts that step with the hook's stderr; the user fixes it and re-runs. The skill never uses `--no-verify`. |
-| `.gitignore` covers a file a patch modifies | `git add` fails; `apply.sh` aborts that step. |
-| Git older than 2.32 | See Step 7. |
-| Override file is git-tracked and dirty | Warned at Step 5 (see Registry load). |
-| Registry edited between materialize and apply | `apply.sh` exits 1. |
+Read `../../references/deslop-edge-cases.md` for the per-case behavior
+(merge commits, hooks, root commit, and similar).

@@ -119,8 +119,8 @@ Five categories, because the remedy differs:
 - Changed: a measurement produced a different number.
 - Uncheckable: a source behind a paywall or deleted, a row with no
   `commit`, an unsafe URL, or a command the user did not confirm. Give the
-  reason as "host unreachable", "no login", or "no clone on disk"; never write
-  a claim about the sandbox.
+  reason as "host unreachable", "no login", or "no clone on disk", one short
+  phrase per entry; never write a claim about the sandbox.
 
 ## Rules
 
@@ -149,7 +149,8 @@ fence:
 Pass the path of an existing study, or run scholar-ontology on the corpus to build one.
 ```
 
-Sections, in this order. Write `None.` under an empty one, and put each
+Nothing sits between the hero and the first section: no summary paragraph
+restating the hero, no advice on pinning. Sections, in this order. Write `None.` under an empty one, and put each
 reason a check could not run only under `## Uncheckable`:
 
 1. `## Moved`: each citation whose ref advanced, with the new ref.

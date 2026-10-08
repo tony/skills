@@ -317,7 +317,7 @@
         "references/prose-rules.md": "plugins/github-actions/references/prose-rules.md",
         "references/throwaway-worktree.md": "plugins/github-actions/references/throwaway-worktree.md"
       },
-      "bytes": 39520
+      "bytes": 39796
     },
     {
       "name": "github-actions-update-action",
@@ -332,7 +332,7 @@
         "references/prose-rules.md": "plugins/github-actions/references/prose-rules.md",
         "references/throwaway-worktree.md": "plugins/github-actions/references/throwaway-worktree.md"
       },
-      "bytes": 38098
+      "bytes": 38374
     },
     {
       "name": "github-actions-update-actions",
@@ -470,7 +470,7 @@
         "references/repo-scope.md": "plugins/package-updater/references/repo-scope.md",
         "references/repo_facts.py": "plugins/package-updater/scripts/repo_facts.py"
       },
-      "bytes": 28214
+      "bytes": 28238
     },
     {
       "name": "package-updater-update-package",
@@ -488,7 +488,7 @@
         "references/repo_facts.py": "plugins/package-updater/scripts/repo_facts.py",
         "references/upstream-links.md": "plugins/package-updater/references/upstream-links.md"
       },
-      "bytes": 56137
+      "bytes": 56671
     },
     {
       "name": "package-updater-update-toolchain",
@@ -504,7 +504,7 @@
         "references/repo_facts.py": "plugins/package-updater/scripts/repo_facts.py",
         "references/upstream-links.md": "plugins/package-updater/references/upstream-links.md"
       },
-      "bytes": 51105
+      "bytes": 51129
     },
     {
       "name": "package-updater-updating-packages",
@@ -523,7 +523,7 @@
         "references/throwaway-worktree.md": "plugins/package-updater/references/throwaway-worktree.md",
         "references/upstream-links.md": "plugins/package-updater/references/upstream-links.md"
       },
-      "bytes": 69932
+      "bytes": 70669
     },
     {
       "name": "pr",
@@ -605,7 +605,7 @@
         "templates/conftest_cache_snippet.py": "plugins/pytest-optimizer/templates/conftest_cache_snippet.py",
         "templates/pytest_optimizer_plugin.py": "plugins/pytest-optimizer/templates/pytest_optimizer_plugin.py"
       },
-      "bytes": 107217
+      "bytes": 107811
     },
     {
       "name": "pytest-optimizer-00-scan",
@@ -624,7 +624,7 @@
         "references/version-matrix.md": "plugins/pytest-optimizer/references/version-matrix.md",
         "templates/pytest_optimizer_plugin.py": "plugins/pytest-optimizer/templates/pytest_optimizer_plugin.py"
       },
-      "bytes": 95052
+      "bytes": 95561
     },
     {
       "name": "pytest-optimizer-01-benchmark",
@@ -639,7 +639,7 @@
         "references/prose-rules.md": "plugins/pytest-optimizer/references/prose-rules.md",
         "references/safety-gates.md": "plugins/pytest-optimizer/references/safety-gates.md"
       },
-      "bytes": 77684
+      "bytes": 78204
     },
     {
       "name": "pytest-optimizer-02-plan",
@@ -654,7 +654,7 @@
         "references/scoring-rubric.md": "plugins/pytest-optimizer/references/scoring-rubric.md",
         "templates/commit-message.tmpl": "plugins/pytest-optimizer/templates/commit-message.tmpl"
       },
-      "bytes": 58492
+      "bytes": 58927
     },
     {
       "name": "pytest-optimizer-03-execute",
@@ -667,7 +667,7 @@
         "references/output-contract.md": "plugins/pytest-optimizer/references/output-contract.md",
         "references/prose-rules.md": "plugins/pytest-optimizer/references/prose-rules.md"
       },
-      "bytes": 57855
+      "bytes": 58290
     },
     {
       "name": "rebase",
@@ -846,7 +846,7 @@
         "references/release-triage.md": "plugins/ruff/references/release-triage.md",
         "references/throwaway-worktree.md": "plugins/ruff/references/throwaway-worktree.md"
       },
-      "bytes": 49177
+      "bytes": 49685
     },
     {
       "name": "scholar-annotate",
@@ -896,7 +896,7 @@
         "references/stage-gates.md": "plugins/scholar/references/stage-gates.md",
         "references/term_metrics.py": "plugins/scholar/scripts/term_metrics.py"
       },
-      "bytes": 45831
+      "bytes": 45898
     },
     {
       "name": "scholar-distill",
@@ -910,7 +910,7 @@
         "references/stage-gates.md": "plugins/scholar/references/stage-gates.md",
         "references/term_metrics.py": "plugins/scholar/scripts/term_metrics.py"
       },
-      "bytes": 41218
+      "bytes": 41243
     },
     {
       "name": "scholar-extract",
@@ -924,7 +924,7 @@
         "references/stage-gates.md": "plugins/scholar/references/stage-gates.md",
         "references/term_metrics.py": "plugins/scholar/scripts/term_metrics.py"
       },
-      "bytes": 45249
+      "bytes": 45275
     },
     {
       "name": "scholar-gather",
@@ -938,7 +938,7 @@
         "references/stage-gates.md": "plugins/scholar/references/stage-gates.md",
         "references/term_metrics.py": "plugins/scholar/scripts/term_metrics.py"
       },
-      "bytes": 44923
+      "bytes": 45314
     },
     {
       "name": "scholar-ontology",
@@ -953,7 +953,7 @@
         "references/stage-gates.md": "plugins/scholar/references/stage-gates.md",
         "references/term_metrics.py": "plugins/scholar/scripts/term_metrics.py"
       },
-      "bytes": 44694
+      "bytes": 44783
     },
     {
       "name": "scholar-render",
@@ -991,7 +991,7 @@
         "references/prose-rules.md": "plugins/scholar/references/prose-rules.md",
         "references/term_metrics.py": "plugins/scholar/scripts/term_metrics.py"
       },
-      "bytes": 43716
+      "bytes": 43860
     },
     {
       "name": "self-improvement-apply",
@@ -1107,6 +1107,7 @@
         "references/apply-template.sh": "plugins/slop/references/apply-template.sh",
         "references/autosquash.py": "plugins/slop/scripts/autosquash.py",
         "references/conflict-loop.md": "plugins/slop/references/conflict-loop.md",
+        "references/deslop-edge-cases.md": "plugins/slop/references/deslop-edge-cases.md",
         "references/detect-pipeline.md": "plugins/slop/references/detect-pipeline.md",
         "references/prose-rules.md": "plugins/slop/references/prose-rules.md",
         "references/render_apply.py": "plugins/slop/scripts/render_apply.py",
@@ -1114,7 +1115,7 @@
         "references/slop_detect.py": "plugins/slop/scripts/slop_detect.py",
         "references/verification-gates.md": "plugins/slop/references/verification-gates.md"
       },
-      "bytes": 92278
+      "bytes": 93703
     },
     {
       "name": "slop-scan",
@@ -1125,11 +1126,12 @@
         "references/commit-template.md": "plugins/slop/references/commit-template.md",
         "references/detect-pipeline.md": "plugins/slop/references/detect-pipeline.md",
         "references/prose-rules.md": "plugins/slop/references/prose-rules.md",
+        "references/scan-edge-cases.md": "plugins/slop/references/scan-edge-cases.md",
         "references/signatures.yml": "plugins/slop/references/signatures.yml",
         "references/slop_detect.py": "plugins/slop/scripts/slop_detect.py",
         "references/verification-gates.md": "plugins/slop/references/verification-gates.md"
       },
-      "bytes": 76648
+      "bytes": 77142
     },
     {
       "name": "spike-bakeoff",
@@ -1647,6 +1649,8 @@
     "plugins/slop/references/apply-template.sh": 1,
     "plugins/slop/references/commit-template.md": 1,
     "plugins/slop/references/conflict-loop.md": 1,
+    "plugins/slop/references/deslop-edge-cases.md": 1,
+    "plugins/slop/references/scan-edge-cases.md": 1,
     "plugins/slop/scripts/autosquash.py": 1,
     "plugins/slop/scripts/render_apply.py": 1,
     "plugins/tailwind/references/prose-rules.md": 1,

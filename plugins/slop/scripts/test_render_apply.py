@@ -54,7 +54,7 @@ def test_apply_creates_fixup_for_dotted_finding_id(tmp_path: Path) -> None:
     git(repo, "add", "a.txt")
     git(repo, "commit", "-q", "-m", "add a")
     target = git(repo, "rev-parse", "--short", "HEAD")
-    base = git(repo, "rev-parse", "HEAD")
+    base_a = base = git(repo, "rev-parse", "HEAD")
 
     registry = tmp_path / "signatures.yml"
     registry.write_text("version: 1\n")
@@ -85,7 +85,7 @@ def test_apply_creates_fixup_for_dotted_finding_id(tmp_path: Path) -> None:
     backup = first.stdout.split("Backup branch: ", 1)[1].split()[0]
     assert backup.startswith("main-pre-deslop-")
     assert git(repo, "rev-parse", backup) == base
-    assert git(repo, "log", "-1", "--format=%s") == "fixup! add a"
+    assert git(repo, "log", "-1", "--format=%s") == f"fixup! {base_a}"
     assert (repo / "a.txt").read_text() == "line\nkeep\n"
     assert git(repo, "status", "--porcelain") == ""
 
@@ -151,3 +151,29 @@ def test_second_fixup_in_one_file_applies_only_when_cut_after_the_first(tmp_path
     good = run(cut(edits, sequential=True), "good")
     assert good.returncode == 0, good.stderr
     assert (repo / "a.txt").read_text() == "two\nfour\n"
+
+
+def test_apply_stages_a_non_ascii_path(tmp_path: Path) -> None:
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    git(repo, "init", "-q", "-b", "main")
+    name = "café.md"
+    (repo / name).write_text("robust line\n")
+    git(repo, "add", name)
+    git(repo, "commit", "-q", "-m", "add notes")
+    base = git(repo, "rev-parse", "HEAD")
+
+    registry = tmp_path / "signatures.yml"
+    registry.write_text("version: 1\n")
+    run_dir = Path(git(repo, "rev-parse", "--absolute-git-dir")) / "deslop" / "t-1"
+    run_dir.mkdir(parents=True)
+    (run_dir / "0000-PLAN.md").write_text("plan\n")
+    patch = run_dir / f"0001-fixup-{base[:7]}-ai-slop.flagship-phrases.patch"
+    patch.write_text(f"--- a/{name}\n+++ b/{name}\n@@ -1 +1 @@\n-robust line\n+line\n")
+    argv = ["--run-dir", str(run_dir), "--registry", str(registry), "--baseline", base]
+    assert render_apply.main([*argv, "--trunk-ref", "origin/main"]) == 0
+
+    done = run_sh(run_dir / "apply.sh", repo)
+    assert done.returncode == 0, done.stderr
+    assert git(repo, "log", "-1", "--format=%s") == f"fixup! {base}"
+    assert git(repo, "status", "--porcelain") == ""

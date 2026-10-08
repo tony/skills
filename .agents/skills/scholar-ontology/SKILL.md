@@ -73,7 +73,8 @@ The plan states:
 
 Present it, wait for approval, then exit plan mode and run stage 1. Where no
 question tool exists (Codex, headless runs), print the plan and stop; do not
-start stage 1 without approval.
+start stage 1 without approval. A request that already approves the plan
+("I approve the plan") counts as that approval.
 
 ## Rules
 

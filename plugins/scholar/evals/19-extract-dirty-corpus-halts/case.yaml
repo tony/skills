@@ -30,8 +30,8 @@ graders:
     focus: last_message
     criteria: |
       The reply's first line starts with `⚠ Blocked` and says the corpus
-      checkout has uncommitted changes. It asks the user to commit them or
-      narrow the scope, and reports no harvested terms.
+      checkout has uncommitted changes, says what to do about them, and lists
+      no harvested terms.
 
   - name: never-writes-into-the-corpus
     type: tool_used

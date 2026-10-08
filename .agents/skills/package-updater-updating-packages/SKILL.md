@@ -90,7 +90,10 @@ When `branch` is not the default branch, `dirty` is true, or
 `behind_remote` is more than 0, create the
 throwaway worktree per `references/throwaway-worktree.md`, but
 detached: `git -C <repo> worktree add --detach <printed-path>
-<remote>/<default>`, with no `-b`. Phase 2 and Phase 3 run there so
+<remote>/<default>`, with no `-b`. A repository with no remote has no
+`<remote>/<default>`: detach from its local default branch, say the base is
+local, and treat the repository as local-only, so it halts before any
+`--push` or `--pr`. Phase 2 and Phase 3 run there so
 discovery sees the pins read here, and the repository gains no branch
 until the plan is approved. On a halt, a plan stop, `--audit-only` or a
 declined plan, remove the worktree (`git -C <repo> worktree remove
@@ -216,7 +219,10 @@ A repository that got a worktree in Phase 1 commits there. After the
 plan is approved and before the first edit, name the branch inside it
 with `git -C <printed-path> switch -c <branch>` (the branch the plan
 gave, else `wip/<topic>`; if it exists, pick another name). Commits on a
-detached HEAD are unreachable once the worktree is removed.
+detached HEAD are unreachable once the worktree is removed. After the
+last commit and any approved push, remove the worktree with
+`git -C <repo> worktree remove <printed-path>`; the branch stays, and the
+report names it.
 Commit messages the skill writes itself may go through a quoted heredoc
 whose delimiter appears nowhere in the body, or through a file. Text
 quoted from release notes goes through a file.
@@ -310,7 +316,8 @@ Shape, which the three commands in this plugin share:
 1. A hero line: `✓ <what landed>`. `⚠ Audit only: <result>` appears only
    when the user asked for an audit. A plan stop has
    `⚠ Plan ready: ...` and a halt has `⚠ Stopped: <why>` instead.
-2. The sections of the invoking command's Output contract, in order. A
+2. The sections of the invoking command's Output contract, in order, with
+   `## Failed check` after `## Commits` when a bump failed its check. A
    section with nothing to report is omitted, never filled with "nothing
    found" or a restated scope. Outside a command, use the `package-updater-update` skill.
 3. A halted run follows "Plan stop and halt" below.

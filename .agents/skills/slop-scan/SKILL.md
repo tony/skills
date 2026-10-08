@@ -209,8 +209,8 @@ $ git ls-files -z | python3 <slop_detect.py> files \
     --out <findings.json>
 ```
 
-`--out` writes the JSON to a `mktemp` file (use its literal path later)
-and prints counts per tier and signature. Read it with `jq`, not `cat`.
+`--out` writes the JSON to the path you give it (see
+`references/detect-pipeline.md` § Pass A) and prints counts per tier and signature. Read it with `jq`, not `cat`.
 
 Under `--with-history`, also run the diff and message modes over the
 captured log. Their findings carry `historical_only`.
@@ -229,7 +229,7 @@ $ git log -n "<N>" -z --format=%H%x1f%B HEAD | python3 <slop_detect.py> messages
     --out <history-messages.json>
 ```
 
-Each `--out` is a `mktemp` path; read it with `jq`. Then run the Guard
+Each `--out` path is made the same way; read it with `jq`. Then run the Guard
 check from the pipeline reference. A finding has `{file, line_start,
 signature_id, tier, confidence: regex, action, historical_only}`. A finding with `historical_only: true` is advisory at
 any tier, because the skill cannot edit historical commits. A finding in
@@ -307,7 +307,7 @@ commit" approves **Apply and commit** and nothing broader: no push.
 
 ## Step 10: Per-finding commit loop
 
-Take the entries of `commits.json` in order; Step 8 sorted them by
+Take the entries of `commits.json` sorted by
 `(file ASC, signature_id ASC, line_range_start ASC)`.
 
 ### 10a. Apply the edit
@@ -490,6 +490,9 @@ Patch series: <run-dir>
 Next: git push
 ```
 
+Print `Next: git push` only after commits landed; after an audit or a
+zero-commit run print the `--apply --from=<run-dir>` re-run instead.
+
 `Patch series:` carries the path Step 8 printed; the user reviews
 `commits.json` and `advisory.md` there. Do not push; no history
 changed, so a plain `git push` suffices.
@@ -500,16 +503,8 @@ commits, `git push`.
 
 ## Edge cases
 
-| Case | Behavior |
-|---|---|
-| Empty repo or no tracked files | Step 1 stops with the one-sentence shape. |
-| All findings advisory (Tier C only at `default` budget) | Print the report; no commits; exit 0. |
-| `--allow-dirty` and a finding sits in a dirty file | Advisory only; never edited. |
-| Finding's edit yields an empty diff (already fixed) | Skip; record "no-op"; never create an empty commit. |
-| Two findings target the same line range | Apply in `(signature_id ASC, line_range_start ASC)` order; the second usually becomes a no-op. |
-| Disk fills while writing a patch | Treat as a gate failure for that finding and follow `--on-fail`. |
-| Binary file | Pass A skips it; it yields no findings. |
-| Symlink | Skip it; the link target is out of scope. |
+Read `references/scan-edge-cases.md` for the per-case behavior
+(empty repo, dirty files, binary files, and similar).
 
 
 ## Portability notes

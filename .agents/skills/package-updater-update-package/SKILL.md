@@ -143,16 +143,23 @@ audit-only run omits `## Commits` and `## Verification`:
 
 1. `## Release` — what the span changes, with verified links to every
    version in it. Describe each release; never fold them into "the
-   notes say the same thing".
+   notes say the same thing", and never narrate the link check ("all
+   links resolved").
 2. `## Pin sites` — per repository, every place the package is pinned
    and its current shape, plus what was excluded as not pinning it or
-   already current.
+   already current. Name no ref the pins were read from and no release-age
+   setting the repository lacks.
 3. `## Impact` — per repository, what the release actually reaches
-   there, and where the general claim does not apply.
+   there, and where the general claim does not apply. No first-person
+   sentence ("I checked ...") and no inventory of what the repository
+   lacks (no justfile, no CI, no cooldown).
 4. `## Commits` — the commits made, their follow-ups, and whether they
-   were pushed.
+   were pushed. List each commit's hash and subject only; never describe
+   what its body contains or the files it touches, and never print the
+   push command there; the options carry it.
 5. `## Verification` — the quality checks run and their real results,
-   with any pre-existing failure named as pre-existing.
+   with any pre-existing failure named as pre-existing. A repository that
+   declares no checks gets no line here.
 6. `## Drift` — pin shapes disagreeing across a workspace or a fleet.
 
 Reply in this shape, as plain text outside any code fence, with plain bullets, no bold (never `- **Label:** ...`), and no local paths:

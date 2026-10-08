@@ -15,8 +15,12 @@
 # processed in lexical order; each patch becomes one fixup commit, and
 # autosquash folds fixups that share a target.
 #
+# Fixup and reword commits name their target by full SHA (`fixup! <sha>`,
+# `amend! <sha>`), which autosquash resolves exactly; a subject match
+# would pick the first of several commits sharing a subject.
+#
 # A reword step commits with `--allow-empty`: the commit carries only an
-# `amend! <subject>` message, and autosquash uses the body verbatim. It
+# `amend! <sha>` message, and autosquash uses the body verbatim. It
 # is the one intentionally empty commit; `reword-map.tsv` records it for
 # audit.
 #
@@ -142,6 +146,12 @@ for entry in "$run_dir"/[0-9]*; do
                 exit 3
             fi
 
+            full_sha=$(git rev-parse --verify --quiet "${target_sha}^{commit}") || full_sha=
+            if [ -z "$full_sha" ]; then
+                echo "apply.sh: target $target_sha is not a commit" >&2
+                exit 3
+            fi
+
             if ! git apply -- "$entry"; then
                 echo "apply.sh: git apply failed on $base" >&2
                 echo "  fix the patch (or remove it) and re-run" >&2
@@ -157,14 +167,20 @@ for entry in "$run_dir"/[0-9]*; do
                 continue
             fi
 
-            printf '%s\n' "$paths" | while IFS= read -r p; do
-                [ -n "$p" ] && git add -- "$p"
-            done
+            # NUL-separated: core.quotepath quotes non-ASCII names in line output.
+            if ! { git diff -z --name-only; git ls-files -z --others --exclude-standard; } |
+                xargs -0 git add --; then
+                git reset -q
+                git apply -R -- "$entry" || git reset -q --hard HEAD
+                echo "apply.sh: staging the fixup for $full_sha failed" >&2
+                echo "  patch rolled back; repair the cause and re-run" >&2
+                exit 6
+            fi
 
-            if ! git commit --no-edit --fixup="$target_sha"; then
+            if ! git commit -m "fixup! $full_sha"; then
                 git apply -R --index -- "$entry" ||
                     git reset -q --hard HEAD
-                echo "apply.sh: git commit --fixup=$target_sha failed" >&2
+                echo "apply.sh: fixup commit for $full_sha failed" >&2
                 echo "  patch rolled back; repair the cause and re-run" >&2
                 exit 6
             fi
@@ -182,20 +198,20 @@ for entry in "$run_dir"/[0-9]*; do
             mkdir -p "$run_dir/reword"
             cp -- "$entry" "$run_dir/reword/${target_sha}.txt"
 
-            subject_line=$(git -P log -1 --format='%s' "$target_sha" 2>/dev/null)
-            if [ -z "$subject_line" ]; then
-                echo "apply.sh: cannot resolve subject for $target_sha" >&2
+            full_sha=$(git rev-parse --verify --quiet "${target_sha}^{commit}") || full_sha=
+            if [ -z "$full_sha" ]; then
+                echo "apply.sh: cannot resolve $target_sha to a commit" >&2
                 exit 5
             fi
 
-            # Autosquash strips the `amend! <subject>` line and uses the
+            # Autosquash strips the `amend! <sha>` line and uses the
             # rest of the body as the message; no editor runs.
             msg_tmp=$(mktemp "$run_dir/.amend-msg.XXXXXX")
-            printf 'amend! %s\n\n' "$subject_line" > "$msg_tmp"
+            printf 'amend! %s\n\n' "$full_sha" > "$msg_tmp"
             cat -- "$entry" >> "$msg_tmp"
 
             map_row=$(printf 'amend! %s\t%s\treword/%s.txt' \
-                "$subject_line" "$target_sha" "$target_sha")
+                "$full_sha" "$target_sha" "$target_sha")
             echo "$map_row" >> "$run_dir/reword-map.tsv"
 
             if ! git commit --allow-empty -F "$msg_tmp"; then

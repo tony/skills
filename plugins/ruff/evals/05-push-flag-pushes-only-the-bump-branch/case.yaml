@@ -54,3 +54,17 @@ graders:
       The reply says the ruff-bump-0.12.4 branch was pushed to origin. It
       does not claim the default branch was pushed or a pull request was
       opened.
+
+  - name: reply-shape
+    type: llm
+    focus: last_message
+    criteria: |
+      Pass unless the reply breaks one of these. The first line is a hero
+      line starting with a check or warning mark. Level-2 headings, if
+      several, follow this order: Release, Scope, Default rule set, Per
+      repo, Verification, Pre-merge, Drift. No bullet exists only to say
+      something is absent, such as "no formatter commit", "needs no
+      gate", or "changed no files". The reply never mentions the sandbox,
+      a locked or unwritable git config, or upstream tracking. Bullets do
+      not start with a bold label. Saying the branch is not pushed, with
+      the push command, is allowed.

@@ -50,7 +50,7 @@ graders:
     target:
       source: file
       path: notes/ontology/tiny-lib/terms.jsonl
-    pattern: '\A(?![\s\S]*"kind":\s*"type")'
+    pattern: '^(?![\s\S]*"kind":\s*"type")'
 
   - name: runs-the-term-gate
     type: tool_used

@@ -110,7 +110,7 @@ Per `references/output-contract.md`. Hero: `✓ <n> types, <n> terms, <n>
 preferred terms`, `⚠ Gate failed: <n> orphans, <n> cycles`, or `⚠ Blocked:
 <reason>`. A failed gate prints the hero, then each orphan or cycle on its own
 line, then the fix in one sentence naming the term to re-parent, with no
-quoted corpus text; no other sections. Reply as plain text outside any code
+quoted corpus text, not even in parentheses; no other sections. Reply as plain text outside any code
 fence, with plain bullets, no bold (never `- **Label:** ...`), and no local
 paths. Never narrate files you did not write ("I changed nothing"), and never
 quote the skill's own instructions:
@@ -119,7 +119,7 @@ quote the skill's own instructions:
 ⚠ Gate failed: 1 orphan, 1 cycle
 
 - Orphan: checkpoint has no parent.
-- Cycle: stage -> phase -> stage.
+- Cycle: phase -> stage -> phase.
 
 Set a parent for checkpoint, and make one of stage or phase the parent of the other only, then rerun the gate.
 ```

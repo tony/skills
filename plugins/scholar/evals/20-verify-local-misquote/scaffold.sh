@@ -14,7 +14,7 @@ class PortAdapter:
 class EventBus:
     """Publishes domain events to subscribed handlers."""
 PY
-git -C tiny-lib init --quiet
+git -C tiny-lib init --quiet -b main
 git -C tiny-lib add .
 git -C tiny-lib -c user.name=eval -c user.email=eval@example.com commit --quiet -m "Add ports"
 commit=$(git -C tiny-lib rev-parse HEAD)

@@ -25,7 +25,8 @@ anything the user must know that has no section (a stale baseline, a lowered run
 count, an unrecorded approval). Name no state field, file, sandbox detail, or
 whether plan mode is available, and never open it with a label such as "Next step:"
 or a leading "Also,". State what happened, never a list of what did not (no
-"neither", "no X and no Y").
+"neither", "no X and no Y"). Say nothing about pushing: no "only in your local
+repo", no push command.
 
 Name every heuristic in words with its id, never the id alone. Name a path or
 temp file only when the user must act on it; refer to the memory directory and

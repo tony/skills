@@ -162,6 +162,13 @@ mode:
 - `diff`: a unified diff or `git log -p` output on stdin.
 - `messages`: `git log -z --format=%H%x1f%B` output on stdin.
 
+Every `--out <path>` is a fresh temp file the caller creates outside the
+repo, so the tree stays clean; print and reuse its literal path:
+
+```console
+$ mktemp "${TMPDIR:-/tmp}/slop-findings.XXXXXX"
+```
+
 Pass the override as `--override .claude/slop.local.yml` when that file
 exists. `--registry` takes the skill's absolute `<signatures.yml>` path,
 or `<path>` for `--taxonomy=<path>` with no override.

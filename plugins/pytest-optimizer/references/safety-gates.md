@@ -101,6 +101,7 @@ Only after gates 1–3 pass:
 
 ## Measurement hygiene
 
-- Never compare a parallel run's wall-time to a serial baseline as the speedup:
-  benchmark the change with the run mode fixed, then evaluate parallelism as its
-  own candidate.
+- Never compare a parallel run's wall-time to a serial baseline as the speedup
+  of another change: benchmark that change with the run mode fixed. Parallelism
+  is its own candidate (H19), measured as the serial control against the same
+  command plus `-n auto`.

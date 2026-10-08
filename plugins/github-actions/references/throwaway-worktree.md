@@ -34,10 +34,15 @@ calls:
 $ mktemp -d "${TMPDIR:-/tmp}/worktree.XXXXXX"
 ```
 
-Create the worktree on a named local branch, never detached: commits on a
-detached HEAD are unreachable once the worktree is removed. Use the branch
-name the skill gives, or `wip/<topic>`. If the branch already exists,
-pick another name; never reset an existing one.
+A worktree may start detached while the phases are read-only
+(`git -C <repo> worktree add --detach <printed-path> <remote>/<default>`).
+Before its first commit it switches to a named local branch
+(`git -C <printed-path> switch -c <branch>`): commits on a detached HEAD
+are unreachable once the worktree is removed, so none lands there. Use the
+branch name the skill gives, or `wip/<topic>`. If the branch already
+exists, pick another name; never reset an existing one.
+
+A skill that commits straight away creates the branch with the worktree:
 
 ```console
 $ git -C <repo> worktree add \

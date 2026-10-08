@@ -57,13 +57,11 @@ project does not want. The trade-off to state: the enabled set tracks the
 vendor's defaults, so a future release can surface findings without a config
 change.
 
-Enumerating every default code in `select` freezes the set at hundreds of
-config lines to regenerate each release; use it only under change control that
+Enumerating every default code in `select` freezes the set as a long list to
+regenerate each release; use it only under change control that
 requires a frozen list. Never expand `select` to whole linter prefixes: the
 defaults take a subset of each linter, so prefixes enable far more than the
-vendor recommends. Show the measured difference. Before enumerating, try a
-default-set token on a scratch file (`<runner> ruff check --isolated --select <token> <file.py>`)
-and read the error, which lists what the selector accepts.
+vendor recommends. Show the measured difference.
 
 ## Curating what the defaults surface
 

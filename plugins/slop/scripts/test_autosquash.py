@@ -176,3 +176,38 @@ def test_local_commits_atop_pushed_count_pushed_ones(tmp_path: Path) -> None:
     git(repo, "push", "-q", "-u", "origin", "feat")
     commit(repo, "g.txt")
     assert published(repo, base) == "published: 1 of 2 commits, on origin/feat"
+
+
+def test_fixup_and_reword_hit_the_intended_commit_among_equal_subjects(tmp_path: Path) -> None:
+    repo, base = make_repo(tmp_path)
+    shas: list[str] = []
+    for name in ("a.txt", "b.txt"):
+        (repo / name).write_text(f"robust {name}\n")
+        git(repo, "add", name)
+        git(repo, "commit", "-q", "-m", "WIP")
+        shas.append(git(repo, "rev-parse", "HEAD"))
+    first, second = shas
+
+    registry = tmp_path / "signatures.yml"
+    registry.write_text("version: 1\n")
+    run_dir = tmp_path / "run"
+    run_dir.mkdir()
+    (run_dir / f"0001-fixup-{second[:7]}-x.y.patch").write_text(
+        "--- a/b.txt\n+++ b/b.txt\n@@ -1 +1 @@\n-robust b.txt\n+b.txt\n"
+    )
+    (run_dir / f"0002-reword-{first[:7]}.txt").write_text("Add a\n")
+    argv = ["--run-dir", str(run_dir), "--registry", str(registry)]
+    assert render_apply.main([*argv, "--baseline", base, "--trunk-ref", "origin/main"]) == 0
+    applied = subprocess.run(
+        ["sh", str(run_dir / "apply.sh")], cwd=repo, env=ENV, check=False, capture_output=True
+    )
+    assert applied.returncode == 0, applied.stderr
+    subjects = git(repo, "log", "--format=%s", "-2").split("\n")
+    assert subjects == ["amend! " + first, "fixup! " + second]
+
+    done = autosquash(repo, base)
+    assert done.returncode == 0, done.stderr
+    assert git(repo, "log", "--format=%s", f"{base}..HEAD").split("\n") == ["WIP", "Add a"]
+    assert (repo / "b.txt").read_text() == "b.txt\n"
+    assert (repo / "a.txt").read_text() == "robust a.txt\n"
+    assert git(repo, "show", "--format=", "--name-only", "HEAD").split() == ["b.txt"]

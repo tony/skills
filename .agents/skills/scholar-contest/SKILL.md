@@ -113,6 +113,8 @@ beside the serial one.
 
 ## Output
 
+Never mention a file left unchanged ("terms.jsonl is unchanged").
+
 Per `references/output-contract.md`. Hero: `✓ <n> candidates judged, <n>
 killed, 0 open` only when the gate in `references/stage-gates.md` passes;
 `⚠ Gate unmet: <n> claims still open after <n> rounds` when a capped run has

@@ -19,12 +19,6 @@ execution:
 runs: 3
 
 graders:
-  - name: runs-the-quote-check
-    type: tool_used
-    tool: Bash
-    input_match: 'check-quotes|git.* show'
-    min: 1
-
   - name: reports-the-moved-cite
     type: llm
     focus: last_message

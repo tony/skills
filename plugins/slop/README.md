@@ -162,7 +162,8 @@ $ git log -z --format=%H%x1f%B origin/main..HEAD | python3 scripts/slop_detect.p
 
 ## Measured false positives
 
-Measured 2026-10-07 with `slop_detect.py files` and every line treated
+Measured 2026-10-07 on each repository's default-branch tip (no pinned
+commits, so counts will drift) with `slop_detect.py files` and every line treated
 as added (`--added-base` set to the empty tree), read-only, over the
 tracked files of four public Python repositories: aiosqlite (35 files),
 Fixit (111), apscheduler (100), and RapidFuzz (195), plus Apache Airflow
