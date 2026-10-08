@@ -47,3 +47,5 @@ graders:
       upstream or a release date is fine; it does not narrate commit
       history, authors or remotes, and does not promise later work ("I'll
       then ...", "will be researched").
+      The literal label "To continue:" and blank lines before the option
+      bullets are allowed; neither is an extra heading or paragraph.
