@@ -29,16 +29,27 @@ jobs:
         run: uv sync --group dev
 
       - name: Ruff check
-        run: uv run ruff check scripts/ plugins/research/scripts/
+        run: uv run ruff check
 
       - name: Ruff format
-        run: uv run ruff format --check scripts/ plugins/research/scripts/
+        run: uv run ruff format --check
 
       - name: Type check
-        run: uv run basedpyright scripts/ plugins/research/scripts/
+        run: uv run basedpyright
+
+      - name: Type check plugin scripts on Python 3.9
+        run: uv run basedpyright --pythonversion 3.9 plugins
 
       - name: Tests
         run: uv run pytest -q
+
+      - name: Test plugin scripts on Python 3.9
+        run: uv run --no-project --isolated --python 3.9 --with pytest pytest -q plugins
+
+      - name: Claude plugin validate
+        run: |
+          claude plugin validate --strict .
+          for p in plugins/*/; do claude plugin validate --strict "$p"; done
 
       - name: Marketplace lint
         run: uv run scripts/marketplace.py lint
