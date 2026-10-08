@@ -72,7 +72,8 @@ disallowed while it runs; Write is used only for a scratch preview file.
 - Requires long output in `<details>` and pinned source links.
 - Not for filing an issue; use `create-issue`.
 - Rules live in `references/rendered-markdown.md` and
-  `references/source-links.md`; `references/project-links.md` holds the
+  `references/source-links.md`, with repository pins in
+  `references/source-pins.md`. `references/project-links.md` holds the
   link set for a named upstream project, and `references/pr-and-files.md`
   the pull-request, repository-file, and commit-message rules.
 
