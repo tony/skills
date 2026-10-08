@@ -435,7 +435,7 @@ To continue:
 Example unreadable-notes halt:
 
 ```text
-⚠ Stopped: nothing was changed. The release notes for uv 0.7.8 to 0.8.4 could not be read.
+⚠ Stopped: nothing was changed. The release notes for uv 0.6.2 to 0.7.3 could not be read.
 
 To continue:
 - Paste the notes, or point to where they live.
@@ -447,7 +447,7 @@ To continue:
 Example cooldown halt:
 
 ```text
-⚠ Stopped: nothing was changed. uv 0.8.4 was published today and the 7-day cooldown hides it until 2026-10-14.
+⚠ Stopped: nothing was changed. uv 0.7.3 was published today and the 7-day cooldown hides it until 2026-10-14.
 
 To continue:
 - Wait until then and rerun.

@@ -39,7 +39,7 @@ them. To run a phase, read its file and follow it:
   writes `baseline.json`, `capabilities.json`, `collection.txt`,
   `hypotheses.json`.
 - `../01-benchmark/SKILL.md` reads `baseline.json`, `hypotheses.json`; writes
-  `benchmarks.json`.
+  `benchmarks.json` and `control.json`.
 - `../02-plan/SKILL.md` reads `benchmarks.json`, `baseline.json`; writes
   `plan.json`.
 - `../03-execute/SKILL.md` reads `plan.json`, `baseline.json`; writes

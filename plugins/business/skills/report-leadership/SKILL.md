@@ -1,7 +1,7 @@
 ---
 name: report-leadership
 description: "Use when rendering a tier-0 leadership report from a completed business-value run, with SCQA and a conservative value case."
-allowed-tools: ["Bash", "Read", "Write", "Grep", "AskUserQuestion"]
+allowed-tools: ["Bash", "Read", "Write", "Grep", "WebFetch", "AskUserQuestion"]
 argument-hint: "[run directory]"
 user-invocable: true
 disable-model-invocation: true
@@ -20,7 +20,7 @@ until the gate passes:
 - `../../references/measurement.md`: the value build, break-even,
   guardrails, the counterfactual ladder.
 - `../../references/evidence.md`: external context for the
-  pre-answered objections. Re-verify the sources you cite first. Without a
+  pre-answered objections. Re-verify the sources you cite first with WebFetch. Without a
   fetch tool, ask the user to confirm each figure you cite; do not narrate the missing tool.
 - `../../references/audiences.md`: the tier-0 contract.
 

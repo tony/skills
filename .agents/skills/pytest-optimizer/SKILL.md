@@ -42,7 +42,7 @@ them. To run a phase, read its file and follow it:
   writes `baseline.json`, `capabilities.json`, `collection.txt`,
   `hypotheses.json`.
 - the `pytest-optimizer-01-benchmark` skill reads `baseline.json`, `hypotheses.json`; writes
-  `benchmarks.json`.
+  `benchmarks.json` and `control.json`.
 - the `pytest-optimizer-02-plan` skill reads `benchmarks.json`, `baseline.json`; writes
   `plan.json`.
 - the `pytest-optimizer-03-execute` skill reads `plan.json`, `baseline.json`; writes

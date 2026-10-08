@@ -4,7 +4,9 @@
 ``inventory REPO...`` prints one JSON object per repository (a clone path or an
 ``owner/name`` slug) listing every ``uses:`` pin on its default branch.
 ``majors ACTION PIN TARGET`` prints the first release of each major above PIN's
-major and at or below TARGET's. ``tag ACTION TAG`` exits 0 when the tag exists.
+major and at or below TARGET's. ``tag ACTION TAG`` exits 0 when the tag exists,
+1 when it does not (HTTP 404), and 3 when the lookup failed (auth, rate limit,
+network) so the tag could not be checked.
 
 Every git call runs as ``git -C <path>`` and every gh call names its slug, so
 the current directory never decides which repository is read.
@@ -184,10 +186,15 @@ def inventory(repo: str) -> dict[str, object]:
     return {"slug": slug, "default": default, **where, "files": scanned, "pins": pins}
 
 
-def tag_exists(action: str, tag: str) -> bool:
-    """Report whether the tag exists, by the exit status of gh."""
+def tag_status(action: str, tag: str) -> tuple[str, str]:
+    """Return ``exists``, ``missing`` (HTTP 404), or ``unchecked`` plus gh's error."""
     done = _run("gh", "api", f"repos/{action_repo(action)}/git/ref/tags/{tag}")
-    return done.returncode == 0
+    if done.returncode == 0:
+        return "exists", ""
+    err = done.stderr.strip()
+    if "HTTP 404" in err:
+        return "missing", err
+    return "unchecked", err
 
 
 def majors(action: str, pin: str, target: str) -> list[str]:
@@ -216,9 +223,12 @@ def main(argv: list[str]) -> int:
         print("\n".join(majors(argv[1], argv[2], argv[3])))
         return 0
     if len(argv) == 3 and argv[0] == "tag":
-        ok = tag_exists(argv[1], argv[2])
-        print("exists" if ok else "missing")
-        return 0 if ok else 1
+        status, err = tag_status(argv[1], argv[2])
+        if status == "unchecked":
+            sys.stderr.write(f"could not be checked: {err or 'gh failed'}\n")
+            return 3
+        print(status)
+        return 0 if status == "exists" else 1
     sys.stderr.write(__doc__ or "")
     return 2
 

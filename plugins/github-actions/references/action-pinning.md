@@ -120,11 +120,15 @@ Link each kept tag only after the release-URL check passes.
 
 Confirm before writing, and gate on exit status
 (`python3 <absolute-path>/pins.py tag <owner/action> <tag>` does the same
-and exits 1 when the tag is missing):
+and exits 1 when the tag is missing, 3 when the lookup failed):
 
 ```console
 $ gh api repos/<owner>/<action>/git/ref/tags/<tag> >/dev/null 2>&1
 ```
+
+Only an HTTP 404 means the tag is missing. An auth, rate-limit, or network
+failure (`pins.py tag` exit 3) means the tag could not be checked: report
+that, never "missing", and do not write the pin.
 
 Piping `gh api` into `jq` or `sed` first swallows the 404 and reports a
 missing tag as present. Not every action publishes a floating major; run

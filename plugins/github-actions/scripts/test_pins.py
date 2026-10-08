@@ -20,6 +20,10 @@ case "$*" in
   "repo view acme/two"*) echo trunk ;;
   "api repos/actions/checkout/releases"*) printf 'v4.2.2\\nv4.0.0\\nv3.0.0\\nv5.0.0\\n' ;;
   "api repos/actions/checkout/git/ref/tags/v4") echo '{}' ;;
+  "api repos/actions/checkout/git/ref/tags/v99")
+    echo "gh: Not Found (HTTP 404)" >&2; exit 1 ;;
+  "api repos/actions/checkout/git/ref/tags/v77")
+    echo "gh: Bad credentials (HTTP 401)" >&2; exit 1 ;;
   *) echo "unsupported: $*" >&2; exit 1 ;;
 esac
 """
@@ -108,6 +112,11 @@ def test_majors_lists_first_release_of_each_major(
 def test_tag_exit_status(
     tmp_path: Path,
 ) -> None:
-    """A missing tag exits 1; an existing one exits 0."""
+    """Exists exits 0, a 404 exits 1, and any other failure exits 3."""
     assert _run("tag", "actions/checkout", "v4", cwd=tmp_path).returncode == 0
-    assert _run("tag", "actions/checkout", "v99", cwd=tmp_path).returncode == 1
+    missing = _run("tag", "actions/checkout", "v99", cwd=tmp_path)
+    assert (missing.returncode, missing.stdout.strip()) == (1, "missing")
+    failed = _run("tag", "actions/checkout", "v77", cwd=tmp_path)
+    assert failed.returncode == 3
+    assert "could not be checked" in failed.stderr
+    assert "missing" not in failed.stdout

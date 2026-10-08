@@ -50,9 +50,11 @@ comment.
 
 Resolve the latest version, or take the one the user named. Choose the
 target that preserves each repository's shape, then confirm the tag
-exists and gate on exit status (`pins.py tag`). For a SHA pin, resolve the commit SHA as
-the pinning reference shows. Stop if the tag does not resolve, and
-report the shapes that are available.
+exists and gate on exit status (`pins.py tag`: 0 exists, 1 missing, 3 could
+not be checked). For a SHA pin, resolve the commit SHA as the pinning
+reference shows. Stop if the tag is missing, and report the shapes that are
+available. A failed lookup (exit 3) is "could not be checked", not "missing":
+stop and say so.
 
 ### 4. Research the upgrade
 
@@ -163,7 +165,8 @@ here); skip it only in a plan-only or blocked run. On hosts without the
 tool, end with the next steps as text and take none. Never name temp or
 local paths unless the user must act on them. Name the finding, not the
 call that produced it: report no command exit codes, unresolved refs, stub,
-mock, or tool behavior, and no sandbox facts. Claim only what the release
+mock, or tool behavior, and no sandbox facts. Say nothing about upstream
+tracking or a git setting that could not be written. Claim only what the release
 notes state; do not write "nothing applies here" beyond them.
 
 

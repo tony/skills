@@ -52,7 +52,7 @@ Reply in this shape, as plain text outside any code fence, with plain bullets, n
 
 ## Slowest fixtures
 
-- db_session setup runs 3 times at 4.8s each; the cost is billed to the first test (H03 shared-scope attribution).
+- db_session setup runs 3 times at 4.8s each, once per test (H02 slow fixture setup).
 
 ## Hypotheses
 
@@ -153,6 +153,18 @@ in words, not by file:
 ```text
 I stopped before planning because no benchmarks have been recorded.
 Run 01-benchmark first, then run this phase again.
+```
+
+The same shape for the other phases, each naming one missing output:
+
+```text
+I stopped before benchmarking because no baseline has been recorded.
+Run 00-scan first, then run this phase again.
+```
+
+```text
+I stopped before applying because no plan has been recorded.
+Run 02-plan first, then run this phase again.
 ```
 
 ## Per-command body sections

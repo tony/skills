@@ -56,7 +56,7 @@ graders:
   - name: uv-commit-states-why
     type: regex
     target: trace
-    pattern: 'uv[^\n]{0,60}0\.8\.4[\s\S]{0,400}\bwhy:'
+    pattern: 'uv 0\.7\.8 (->|to|→) 0\.8\.4[\s\S]{0,400}why:'
 
   - name: both-pins-moved
     type: regex

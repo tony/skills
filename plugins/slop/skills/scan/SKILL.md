@@ -304,8 +304,7 @@ commit" approves **Apply and commit** and nothing broader: no push.
 
 ## Step 10: Per-finding commit loop
 
-Take the entries of `commits.json` sorted by
-`(file ASC, signature_id ASC, line_range_start ASC)`.
+Take the entries of `commits.json` in list order, which is apply order.
 
 ### 10a. Apply the edit
 

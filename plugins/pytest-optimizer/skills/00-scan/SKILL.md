@@ -155,7 +155,7 @@ paths:
 
 ## Slowest fixtures
 
-- db_session setup runs 3 times at 4.8s each; the cost is billed to the first test (H03 shared-scope attribution).
+- db_session setup runs 3 times at 4.8s each, once per test (H02 slow fixture setup).
 
 ## Hypotheses
 

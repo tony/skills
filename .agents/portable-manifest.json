@@ -101,7 +101,7 @@
         "references/prose-rules.md": "plugins/business/references/prose-rules.md",
         "references/provenance.md": "plugins/business/references/provenance.md"
       },
-      "bytes": 82088
+      "bytes": 82114
     },
     {
       "name": "business-report-org-wide",
@@ -317,7 +317,7 @@
         "references/prose-rules.md": "plugins/github-actions/references/prose-rules.md",
         "references/throwaway-worktree.md": "plugins/github-actions/references/throwaway-worktree.md"
       },
-      "bytes": 39796
+      "bytes": 40540
     },
     {
       "name": "github-actions-update-action",
@@ -332,7 +332,7 @@
         "references/prose-rules.md": "plugins/github-actions/references/prose-rules.md",
         "references/throwaway-worktree.md": "plugins/github-actions/references/throwaway-worktree.md"
       },
-      "bytes": 38374
+      "bytes": 39228
     },
     {
       "name": "github-actions-update-actions",
@@ -346,7 +346,7 @@
         "references/pins.py": "plugins/github-actions/scripts/pins.py",
         "references/prose-rules.md": "plugins/github-actions/references/prose-rules.md"
       },
-      "bytes": 32290
+      "bytes": 32941
     },
     {
       "name": "lean-tighten",
@@ -357,7 +357,7 @@
         "references/lean-rubric.md": "plugins/lean/references/lean-rubric.md",
         "references/prose-rules.md": "plugins/lean/references/prose-rules.md"
       },
-      "bytes": 10583
+      "bytes": 10712
     },
     {
       "name": "lean-trim-comments",
@@ -504,7 +504,7 @@
         "references/repo_facts.py": "plugins/package-updater/scripts/repo_facts.py",
         "references/upstream-links.md": "plugins/package-updater/references/upstream-links.md"
       },
-      "bytes": 51129
+      "bytes": 51649
     },
     {
       "name": "package-updater-updating-packages",
@@ -605,7 +605,7 @@
         "templates/conftest_cache_snippet.py": "plugins/pytest-optimizer/templates/conftest_cache_snippet.py",
         "templates/pytest_optimizer_plugin.py": "plugins/pytest-optimizer/templates/pytest_optimizer_plugin.py"
       },
-      "bytes": 107811
+      "bytes": 108119
     },
     {
       "name": "pytest-optimizer-00-scan",
@@ -624,7 +624,7 @@
         "references/version-matrix.md": "plugins/pytest-optimizer/references/version-matrix.md",
         "templates/pytest_optimizer_plugin.py": "plugins/pytest-optimizer/templates/pytest_optimizer_plugin.py"
       },
-      "bytes": 95561
+      "bytes": 95821
     },
     {
       "name": "pytest-optimizer-01-benchmark",
@@ -639,7 +639,7 @@
         "references/prose-rules.md": "plugins/pytest-optimizer/references/prose-rules.md",
         "references/safety-gates.md": "plugins/pytest-optimizer/references/safety-gates.md"
       },
-      "bytes": 78204
+      "bytes": 78493
     },
     {
       "name": "pytest-optimizer-02-plan",
@@ -654,7 +654,7 @@
         "references/scoring-rubric.md": "plugins/pytest-optimizer/references/scoring-rubric.md",
         "templates/commit-message.tmpl": "plugins/pytest-optimizer/templates/commit-message.tmpl"
       },
-      "bytes": 58927
+      "bytes": 59216
     },
     {
       "name": "pytest-optimizer-03-execute",
@@ -667,7 +667,7 @@
         "references/output-contract.md": "plugins/pytest-optimizer/references/output-contract.md",
         "references/prose-rules.md": "plugins/pytest-optimizer/references/prose-rules.md"
       },
-      "bytes": 58290
+      "bytes": 58579
     },
     {
       "name": "rebase",
@@ -846,7 +846,7 @@
         "references/release-triage.md": "plugins/ruff/references/release-triage.md",
         "references/throwaway-worktree.md": "plugins/ruff/references/throwaway-worktree.md"
       },
-      "bytes": 49685
+      "bytes": 49960
     },
     {
       "name": "scholar-annotate",
@@ -1131,7 +1131,7 @@
         "references/slop_detect.py": "plugins/slop/scripts/slop_detect.py",
         "references/verification-gates.md": "plugins/slop/references/verification-gates.md"
       },
-      "bytes": 77142
+      "bytes": 77115
     },
     {
       "name": "spike-bakeoff",

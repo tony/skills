@@ -88,8 +88,9 @@ never a commit.
    outside the shape, anywhere (not even to say nothing was edited, why,
    or what the session cannot do); do not explain text you kept.
 
-   Then offer next steps via `AskUserQuestion`: commit, or
-   discard the edits. Without a question tool, print the options as a
+   After a proposal-only run (nothing written), offer to apply the proposal
+   or stop; there is nothing to commit or discard. Otherwise offer next
+   steps via `AskUserQuestion`: commit, or discard the edits. Without a question tool, print the options as a
    plain list and stop. Offer a file option only for files on disk; pasted
    text has none and is never matched to a scaffold file. Review the
    printed diff first, since `git checkout -- <file>` resets a tracked

@@ -47,7 +47,8 @@ For each distinct action, resolve the latest version, choose a target
 that preserves the repository's pin shape (an exact patch moves to the
 float), and confirm the tag exists
 (for a SHA pin, resolve the SHA too). Nothing proceeds on an unverified
-tag.
+tag. A lookup that failed (auth, rate limit, network) is "could not be
+checked", never "missing".
 
 ## Phase 3: Research each upgrade
 

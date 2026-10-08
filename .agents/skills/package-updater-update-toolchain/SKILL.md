@@ -87,6 +87,7 @@ for a GitHub tool, the command below; for Node.js,
 
 ```console
 $ gh api repos/<owner>/<repo>/releases \
+    --paginate \
     --jq '.[] | select(.prerelease | not) | [.tag_name, .published_at] | @tsv'
 ```
 
@@ -100,6 +101,12 @@ For each tool, collect the release notes for **every version between the
 current pin and the target**, not just the endpoint. The intermediate
 releases are where a regression usually entered, and a reader has no
 other way to find them.
+
+List the span from the full release history, never the first page: the
+release-list command above with `--paginate` for a GitHub tool, the
+`releases` keys of `https://pypi.org/pypi/<name>/json` for a PyPI tool,
+and the `time` keys of `https://registry.npmjs.org/<name>` for an npm
+tool. A list that could not be read in full counts as unread notes.
 
 Take the URLs from the upstream-links reference — each tool has its own
 shape, and some publish one page per minor rather than per patch.
@@ -208,11 +215,11 @@ Reply in this shape, as plain text outside any code fence, with plain bullets, n
 
 ## Pins
 
-- uv 0.7.8 to 0.8.4 and just 1.36.0 to 1.40.0 in .tool-versions.
+- uv 0.6.2 to 0.7.3 and just 1.30.0 to 1.34.0 in .tool-versions.
 
 ## Spans
 
-- uv 0.7.8 to 0.8.4: the headline change of each release, from the notes read in this run. just 1.36.0 to 1.40.0: same.
+- uv 0.6.2 to 0.7.3: the headline change of each release, from the notes read in this run. just 1.30.0 to 1.34.0: same.
 
 ## Impact
 
@@ -220,7 +227,7 @@ Reply in this shape, as plain text outside any code fence, with plain bullets, n
 
 ## Commits
 
-- 5d12e8f .tool-versions(uv) uv 0.7.8 -> 0.8.4, c07a9b3 .tool-versions(just) just 1.36.0 -> 1.40.0. Not pushed.
+- 5d12e8f .tool-versions(uv) uv 0.6.2 -> 0.7.3, c07a9b3 .tool-versions(just) just 1.30.0 -> 1.34.0. Not pushed.
 
 ## Verification
 
@@ -230,7 +237,9 @@ Reply in this shape, as plain text outside any code fence, with plain bullets, n
 A halted run takes the shape in "Plan stop and halt" in
 the `package-updater-updating-packages` skill; the plan gate is not a halt.
 
-Cooldown halt example, same plain-text form:
+Cooldown halt example, same plain-text form. Say "the 7-day cooldown" and
+stop: never name the file or key that sets it (`pyproject.toml`,
+`exclude-newer`), and give the date without a time of day.
 
 ```text
 ⚠ Stopped: nothing was changed. uv 0.9.5 was published today and the 7-day cooldown hides it until 2026-10-14.
