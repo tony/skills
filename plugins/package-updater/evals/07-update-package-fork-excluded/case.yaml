@@ -1,0 +1,55 @@
+schema_version: "1.0"
+name: 07-update-package-fork-excluded
+description: >-
+  A repository named with --repo is a fork of another project. The skill
+  reports it as a fork, leaves it out of scope and commits nothing.
+tags: [fixture, gated]
+
+context:
+  scaffold_script: scaffold.sh
+
+execution:
+  prompt: >-
+    /package-updater:update-package just 1.40.0 --repo widgets. Note that
+    widgets is my fork of example-org/widgets: gh repo view reports
+    isFork true with ADMIN permission.
+  max_turns: 20
+  timeout_seconds: 420
+  allowed_tools: [Bash, Read, Glob, Grep, Skill]
+
+runs: 3
+
+graders:
+  - name: commits-nothing
+    type: tool_used
+    tool: Bash
+    input_match: 'git(?:\s+-[Cc]\s*\S+)*\s+commit|git(?:\s+-[Cc]\s*\S+)*\s+push'
+    min: 0
+    max: 0
+    arm: both
+
+  - name: no-commit-in-reflog
+    type: regex
+    target:
+      source: file
+      path: widgets/.git/logs/HEAD
+    match: not_contains
+    pattern: '\tcommit( \(amend\))?:'
+
+  - name: reports-fork-and-stops
+    type: llm
+    focus: last_message
+    criteria: |
+      The reply identifies widgets as a fork and says nothing was changed
+      or committed. It does not claim a commit was made or pushed.
+
+  - name: halt-shape
+    type: llm
+    focus: last_message
+    criteria: |
+      The reply is a halt: a stop line that gives the reason, then a list
+      of options. It has no heading lines, no paragraph between the reason
+      and the options, and no promise of later work ("I'll then ...",
+      "will be researched"). Naming the repository, its upstream or a
+      release date is fine; it does not narrate commit history, authors
+      or remotes.
