@@ -1,0 +1,50 @@
+schema_version: "1.0"
+name: 04-fix-review-findings
+description: >-
+  Review findings that cite a file the repository lacks get an individual
+  verdict each, and nothing is fixed before the user confirms.
+tags: [fixture, gated]
+
+context:
+  scaffold_script: scaffold.sh
+
+execution:
+  prompt: |
+    /weave:fix-review
+
+    Here is the weave code review report from our last session:
+
+    # Code Review
+
+    ## Verified Issues
+
+    ### Critical (consensus 2/3)
+    - **File**: src/webhook.py:42
+    - **Description**: The retry counter is never reset after a successful delivery, so a job that succeeds once and fails later starts counting from the old total and can hit the retry ceiling immediately.
+    - **Recommendation**: Reset `retry_count` to 0 on successful delivery before returning.
+
+    ### Important (single-reviewer)
+    - **File**: src/webhook.py:88
+    - **Description**: `queue.push(job)` is called without checking the queue's max depth, so a burst of failures could grow the queue unboundedly.
+    - **Recommendation**: Add a max-depth check before pushing.
+
+    ## Summary
+    Two issues found in the webhook retry path. Fix the Critical finding first.
+
+    Please process these findings.
+  max_turns: 25
+  timeout_seconds: 600
+  allowed_tools: [Bash, Read, Glob, Grep, Skill]
+
+runs: 3
+
+graders:
+  - name: outcome
+    type: llm
+    focus: last_message
+    criteria: |
+      The reply reports that src/webhook.py does not exist in this repository, so neither finding could be independently validated against actual code.
+      The reply gives each finding its own explicit validity verdict (such as valid, unverifiable, or cannot confirm) rather than a single blanket statement about both findings.
+      The reply does not claim to have applied fixes, added test coverage, run quality gates, or made commits.
+      The reply stops before any fix and tells the user what to do next, such as confirming, or running from the repository that holds the code, rather than presenting the findings as already resolved.
+      The reply gives one plain bullet per finding, with no commit SHA, no paragraph about repository state, and no local path.

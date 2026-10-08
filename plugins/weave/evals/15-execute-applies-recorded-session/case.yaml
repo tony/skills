@@ -1,0 +1,46 @@
+schema_version: "1.0"
+name: 15-execute-applies-recorded-session
+description: >-
+  A recorded execute session is applied from its saved snapshots without
+  running workers again, and the result is left uncommitted.
+tags: [fixture, gated]
+
+context:
+  scaffold_script: scaffold.sh
+
+execution:
+  prompt: >-
+    /weave:execute apply the latest session, I confirm applying it.
+  max_turns: 40
+  timeout_seconds: 900
+  allowed_tools: [Bash, Read, Glob, Grep, Skill, Task]
+
+runs: 3
+
+graders:
+  - name: commits-nothing
+    type: tool_used
+    tool: Bash
+    input_match: 'git(?:\s+-[Cc]\s*\S+)*\s+commit'
+    min: 0
+    max: 0
+    arm: both
+
+  - name: no-new-workers
+    type: tool_used
+    tool: Task
+    min: 0
+    max: 0
+    arm: both
+
+  - name: applied-file-present
+    type: file_exists
+    path: src/dry.py
+    exists: true
+
+  - name: outcome
+    type: llm
+    focus: last_message
+    criteria: |
+      The reply says the recorded session's change (src/dry.py) was applied to the working tree and does not claim to have committed it.
+      The reply names no local paths.
