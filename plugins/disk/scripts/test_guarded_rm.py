@@ -1,11 +1,14 @@
 """Delete guard: scope, keeper, and symlink refusals."""
 
-# ruff: noqa: S101, INP001, D103, TC002, TC003
+# ruff: noqa: S101, INP001, D103
 # pyright: reportAny=false, reportUnusedCallResult=false
 
 from __future__ import annotations
 
 import os
+import shutil
+import subprocess
+import sys
 from pathlib import Path
 
 import guarded_rm  # pyright: ignore[reportImplicitRelativeImport]
@@ -13,6 +16,18 @@ import pytest
 
 REFUSED = guarded_rm.EXIT_REFUSED
 OK = guarded_rm.EXIT_OK
+
+
+@pytest.fixture(autouse=True)
+def clear_open_handle_probe(monkeypatch: pytest.MonkeyPatch) -> None:
+    def which(name: str) -> str | None:
+        return name if name == "lsof" else None
+
+    def probe(command: list[str], **_kwargs: object) -> subprocess.CompletedProcess[bytes]:
+        return subprocess.CompletedProcess(command, 1, b"", b"")
+
+    monkeypatch.setattr(shutil, "which", which)
+    monkeypatch.setattr(subprocess, "run", probe)
 
 
 def run(*args: str) -> int:
@@ -57,6 +72,23 @@ def test_scope_root_and_outside_are_refused(tmp_path: Path) -> None:
     assert (tmp_path / "o").exists()
 
 
+@pytest.mark.parametrize("target_name", ["homes", "homes/user"])
+def test_home_and_ancestors_are_refused_with_broader_scope(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, target_name: str
+) -> None:
+    home = tmp_path / "homes" / "user"
+    home.mkdir(parents=True)
+    payload = home / "only-copy"
+    payload.write_text("keep")
+
+    def home_directory(_cls: type[Path]) -> Path:
+        return home
+
+    monkeypatch.setattr(Path, "home", classmethod(home_directory))
+    assert run("--scope", str(tmp_path), "--delete", str(tmp_path / target_name)) == REFUSED
+    assert payload.read_text() == "keep"
+
+
 def test_keeper_overlap_is_refused(tmp_path: Path) -> None:
     (tmp_path / "s" / "a" / "keep").mkdir(parents=True)
     scope = str(tmp_path / "s")
@@ -81,7 +113,9 @@ def test_refuses_mount_point_inside_target(tmp_path: Path, monkeypatch: pytest.M
     def fake_lstat(path: str) -> object:
         st = real_lstat(path)
         if str(path).endswith("mnt"):
-            return type("St", (), {"st_dev": st.st_dev + 1})()
+            fields = list(st)
+            fields[2] += 1
+            return os.stat_result(fields)
         return st
 
     monkeypatch.setattr(os, "lstat", fake_lstat)
@@ -93,3 +127,149 @@ def test_sub_gib_sizes_use_mib_and_kib() -> None:
     assert guarded_rm.human(8 * 1024) == "8 KiB"
     assert guarded_rm.human(3 * 2**20) == "3.0 MiB"
     assert guarded_rm.human(2 * 2**30) == "2.00 GiB"
+
+
+def test_mount_point_as_target_is_refused(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    target = tmp_path / "cache"
+    target.mkdir()
+    payload = target / "only-copy"
+    payload.write_text("keep")
+    real = os.path.ismount
+
+    def mounted(path: str | os.PathLike[str]) -> bool:
+        return str(path) == str(target) or real(path)
+
+    monkeypatch.setattr(os.path, "ismount", mounted)
+    assert run("--scope", str(tmp_path), "--delete", str(target)) == REFUSED
+    assert payload.read_text() == "keep"
+
+
+def test_same_device_bind_mount_is_refused(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    target = tmp_path / "cache"
+    mount = target / "mounted store"
+    mount.mkdir(parents=True)
+    payload = mount / "only-copy"
+    payload.write_text("keep")
+    real_read = Path.read_text
+    escaped = str(mount).replace(" ", r"\040")
+
+    def mount_table(path: Path, *args: object, **kwargs: object) -> str:
+        if str(path) == "/proc/self/mountinfo":
+            return f"1 0 8:1 / {escaped} rw - ext4 /dev/test rw\n"
+        return real_read(path, *args, **kwargs)  # pyright: ignore[reportArgumentType]
+
+    monkeypatch.setattr(sys, "platform", "linux")
+    monkeypatch.setattr(Path, "read_text", mount_table)
+    assert run("--scope", str(tmp_path), "--delete", str(target)) == REFUSED
+    assert payload.read_text() == "keep"
+
+
+def test_unreadable_subtree_refuses_before_deleting_readable_files(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    target = tmp_path / "cache"
+    locked = target / "locked"
+    locked.mkdir(parents=True)
+    payload = target / "keep"
+    payload.write_text("keep")
+    real = os.scandir
+
+    def denied(path: str | os.PathLike[str]) -> object:
+        if str(path) == str(locked):
+            raise PermissionError
+        return real(path)
+
+    monkeypatch.setattr(os, "scandir", denied)
+    assert run("--scope", str(tmp_path), "--delete", str(target)) == REFUSED
+    assert payload.read_text() == "keep"
+
+
+@pytest.mark.parametrize(
+    ("probe_result", "expected"),
+    [((0, b"123", b""), REFUSED), ((1, b"", b"incomplete"), REFUSED), ((1, b"", b""), OK)],
+)
+def test_open_handle_probe_must_finish_before_delete(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    probe_result: tuple[int, bytes, bytes],
+    expected: int,
+) -> None:
+    target = tmp_path / "cache"
+    nested = target / "nested"
+    nested.mkdir(parents=True)
+    payload = nested / "résumé data"
+    payload.write_text("keep")
+    calls: list[list[str]] = []
+    code, stdout, stderr = probe_result
+
+    def probe(command: list[str], **kwargs: object) -> subprocess.CompletedProcess[bytes]:
+        assert payload.read_text() == "keep"
+        assert kwargs["timeout"] == 1
+        calls.append(command)
+        assert command == ["lsof", "-nP", "+w", "+D", str(target)]
+        return subprocess.CompletedProcess(command, code, stdout, stderr)
+
+    monkeypatch.setattr(shutil, "which", str)
+    monkeypatch.setattr(subprocess, "run", probe)
+    assert run("--scope", str(tmp_path), "--delete", str(target)) == expected
+    assert [call[0] for call in calls] == ["lsof"]
+    assert target.exists() == (expected == REFUSED)
+    if expected == REFUSED:
+        assert payload.read_text() == "keep"
+
+
+def test_missing_open_handle_tools_refuses_deletion(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    target = tmp_path / "cache"
+    target.mkdir()
+
+    def missing(_name: str) -> None:
+        return None
+
+    monkeypatch.setattr(shutil, "which", missing)
+    assert run("--scope", str(tmp_path), "--delete", str(target)) == REFUSED
+    assert target.exists()
+
+
+@pytest.mark.parametrize(
+    ("available", "reported"),
+    [
+        ((10, 6), "-4 KiB; cause not checked"),
+        ((10, 14), "+4 KiB; cause not checked"),
+        ((10, 10), "0 KiB; cause not checked"),
+        ((10, None), "unmeasured"),
+        ((None, None), "REFUSED - could not measure filesystem free space"),
+    ],
+)
+def test_deletion_reports_only_observed_delta(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+    available: tuple[int | None, int | None],
+    reported: str,
+) -> None:
+    target = tmp_path / "cache"
+    target.mkdir()
+    payload = target / "payload"
+    payload.write_bytes(b"owned fixture")
+    calls = 0
+
+    def measure(path: str) -> os.statvfs_result:
+        nonlocal calls
+        assert path == str(tmp_path)
+        assert payload.exists() == (calls == 0)
+        value = available[calls]
+        calls += 1
+        if value is None:
+            raise OSError
+        return os.statvfs_result((1024, 1024, 100, value, value, 0, 0, 0, 0, 0))
+
+    monkeypatch.setattr(os, "statvfs", measure)
+    expected = REFUSED if available[0] is None else OK
+    assert run("--scope", str(tmp_path), "--delete", str(target)) == expected
+    assert reported in capsys.readouterr().out
+    if expected == REFUSED:
+        assert payload.read_bytes() == b"owned fixture"
+    else:
+        assert not payload.exists()

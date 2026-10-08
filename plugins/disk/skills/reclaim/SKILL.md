@@ -29,6 +29,8 @@ sits on, and for anything in the redundant tier, the proof outcome.
 
 ## Plan
 
+Write the plan per `../../references/prose-rules.md`.
+
 Enter plan mode before the first edit. In Claude Code call
 `EnterPlanMode`; in Cursor, Codex, or Gemini use `/plan` or `Shift+Tab`.
 Where plan mode is unavailable, present the plan as text.
@@ -44,13 +46,12 @@ The plan states:
 
 Group approvals by tier. Regenerable caches take one blanket approval.
 Redundant copies are listed individually with their proof outcome.
-Stale-but-unique data is decided per directory — a blanket approval
+Data without a proved replacement is decided per directory — a blanket approval
 never covers this tier. Protected history appears as an inventory, or
-as a compression proposal with its access tradeoff stated.
+as a verified native-archival proposal with its access tradeoff stated.
 
-Never present compression as free. Follow
-`../../references/agent-history.md`: propose native compression where the
-tool has it, otherwise an age cutoff the user chooses.
+Follow `../../references/agent-history.md`; unverified archival support
+halts that tier, rather than becoming an in-place compression proposal.
 
 Exit plan mode once approved.
 
@@ -60,14 +61,15 @@ Work the approved plan in tier order, largest first within each tier.
 Track progress with TodoWrite so a long run stays inspectable.
 
 Merges run before the deletions that depend on them. After each merge,
-re-run the path-set comparison with arguments reversed and confirm the
-source now holds nothing unique. Only then may the source be removed.
+re-run both redundancy checks with the source as candidate and the
+destination as keeper. Only a complete content proof permits removal.
 
 Prefer a tool's own prune or archive command over `rm`. It understands
 its own reference counting and leaves the store consistent.
 
 Before any `rm`, run the guard. It resolves the path with `realpath`,
-refuses a target outside the approved scope or overlapping a keeper, and
+refuses a target outside the approved scope, overlapping a keeper, or
+crossing a mount point, and
 prints the target, its size, and its top-level entries. The guard checks scope and keepers, not tier: before each `rm`, say which approved tier and item the target belongs to, and delete nothing the approval did not name. Print the
 absolute path of `../../scripts/guarded_rm.py` once (it resolves from this
 file's directory) and write it literally:
@@ -79,10 +81,15 @@ $ python3 /abs/path/to/scripts/guarded_rm.py \
     <target>
 ```
 
-Exit 2 means stop. On exit 0, check that no process holds the target open
-(`fuser -v <path>`; `lsof +D <path>` walks the whole tree, so use it only
-on a small one), then run the same command with `--delete` added. Pass
-`--keeper` once per redundant-tier keeper.
+Exit 2 means stop. On exit 0, run the same guard command with `--delete`
+added; it checks visible open handles synchronously with `lsof` before
+removal. Missing tools, warnings, timeouts, or open handles refuse deletion.
+`fuser` cannot clear a warned scan: it can silently miss inaccessible
+processes. This preflight is not a lock against new opens or mount changes.
+Do not run a separate probe alongside
+deletion or bypass the guard after refusal, including in commands offered
+to the user. Narrow a large target when
+inspection cannot complete. Pass `--keeper` once per redundant-tier keeper.
 
 Stop and report rather than improvising when a proof fails, a candidate
 turns out to hold unique data, or a repository has unpushed work. A
@@ -92,17 +99,19 @@ route around.
 ## Verify
 
 After each tier, re-read free space on the affected layer and report the
-measured delta rather than the predicted one. When they disagree,
-investigate before continuing. Two checks apply: whether a virtual disk
-has been compacted, and whether a symlink made one directory look like
-two.
+measured delta rather than the predicted one. A guarded deletion reports
+its own before/after delta; retain it as that operation's observation.
+When measured and predicted disagree, check resolved paths and measurement
+layers before continuing. Use the completion template in
+`../../references/output-contract.md`; report the cause as unchecked unless
+an investigation establishes it.
 
 ## Hand off
 
 Finish with `## Only you can run this`, the last section and omitted
 when empty, holding the steps only the user can run: the in-guest
 `sudo fstrim -av`, the guest shutdown, and any host-side compaction. Print
-them only when the balloon is measured above zero or the user asked about
+them only when an apparent size gap is measured or the user asked about
 host space; otherwise write the one sentence the output contract gives,
 with no commands. Take the exact commands from
 `../../references/virtual-disks.md`, one per block, with where each runs

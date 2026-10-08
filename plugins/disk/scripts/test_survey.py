@@ -62,6 +62,7 @@ def test_unreadable_directory_is_reported(tmp_path: Path) -> None:
         locked.chmod(0o700)
     if os.geteuid() != 0:
         assert any("locked" in e for e in out["errors"])
+        assert out["complete"] is False
 
 
 def test_skip_root_is_skipped_unless_survey_is_inside_it(tmp_path: Path) -> None:
@@ -81,3 +82,12 @@ def test_expired_time_limit_marks_result_incomplete(tmp_path: Path) -> None:
     assert run(tmp_path, 3, 0)["complete"] is True
     out = run(tmp_path, 3, 0, limit=-1)
     assert out["complete"] is False
+
+
+def test_repeated_directory_inode_is_counted_once(tmp_path: Path) -> None:
+    file_bytes = 100_000
+    (tmp_path / "payload").write_bytes(b"x" * file_bytes)
+    walker = survey.Walker(tmp_path.stat().st_dev, 3)
+    assert walker.walk(str(tmp_path)) >= file_bytes
+    assert walker.walk(str(tmp_path)) == 0
+    assert walker.skipped == [str(tmp_path)]

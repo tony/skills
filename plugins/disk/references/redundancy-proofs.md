@@ -30,7 +30,7 @@ meanings, and they point in opposite directions:
 2. There are no shared paths at all. A and B are disjoint, and A is
    entirely unique.
 
-Reading case 2 as case 1 deletes the only copy. **Never classify on a
+Reading case 2 as case 1 can delete data without a proved replacement. **Never classify on a
 `differ` count without also establishing the size of the intersection.**
 
 ## Required proof for "redundant"
@@ -83,18 +83,17 @@ A candidate is mergeable into a keeper when it holds unique files and
 no shared path differs in content. The merge is then additive; no
 existing file is written.
 
-Never write into an agent history store with `rsync`: the owning tool
-indexes sessions in a state database and does not see files it did not
-write. Merge history only through the tool's own import path. For any
-other tree, an additive merge is:
+Merge agent history only through the owning tool's verified import path;
+follow `agent-history.md` to establish discovery and indexing behavior.
+For any other tree, an additive merge is:
 
 ```console
 $ rsync -a --ignore-existing <candidate>/ <keeper>/
 ```
 
-Re-run the path-set comparison afterward with the arguments reversed.
-The set unique to the candidate must now be empty, which is what makes
-the candidate safe to remove.
+Re-run both checks afterward with the source as candidate and the
+destination as keeper. The source must have no unique entries or
+content differences before it can be removed.
 
 ## Classification outcomes
 
@@ -109,5 +108,5 @@ differ. Never resolve this automatically. Report both sides and stop;
 a differing transcript usually means two divergent forks of one
 session, and picking a winner is the user's call.
 
-**Unique** — no overlap with any keeper. Not a backup at all, despite
-its name. Treat as primary data.
+**Unique** — no overlap with the compared keeper. Treat as primary
+data unless another keeper proves redundancy.

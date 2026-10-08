@@ -1,7 +1,7 @@
 # disk
 
 Safely reclaim disk space. Classifies consumers as regenerable cache, proven
-redundant copy, stale-but-unique data (decided per directory), or protected
+redundant copy, data needing a directory-specific decision, or protected
 history, and deletes only what is proven safe.
 
 ## Installation
@@ -42,7 +42,7 @@ Claude Code uses a leading slash (`/disk:…`). Codex omits it (`disk:…`).
 ## Skills
 
 - `/disk:usage` is a read-only survey of every filesystem layer. It
-  classifies what is regenerable, redundant, stale-but-unique, or
+  classifies what is regenerable, redundant, needs a decision, or
   protected, and takes an optional path.
 - `/disk:reclaim` runs the full pipeline: survey, classify, plan (needs
   approval), reclaim, verify.
@@ -63,8 +63,8 @@ The `disk` skill triggers either flow automatically under disk pressure.
 
 ## Inspection scope
 
-- Filesystem layers: compares guest and host footprint to find gaps
-  between backing-file size and used space.
+- Filesystem layers: measures guest usage and backing-file apparent size
+  separately from host allocation; their gap is not a recovery estimate.
 - Upstream clones: ranks clones by size and shallow versus full history,
   and checks for unpushed commits and uncommitted changes.
 
@@ -72,14 +72,18 @@ The `disk` skill triggers either flow automatically under disk pressure.
 
 - `df`, `du`, `find`, `findmnt` (Linux), `git`, `python3` (3.9 or newer),
   `realpath`, `rsync` (checksum comparison in the redundancy proof), and
-  `lsof` or `fuser` (open-file check before deleting)
+  `lsof` (open-file check before deleting; any warning refuses removal)
 - WSL only: GNU `find` and `numfmt` (backing-file size) and `fstrim`
   (in-guest trim, run by you)
 - (Optional) `dust` for faster surveying, `strings` and `rg` for binary
-  inspection, `zstd` for compressing history
+  inspection
 
 Compaction of a live vhdx is documented from Microsoft's pages but has not
 been run against one.
+
+Open-file checks cover processes visible to the caller, not privileged or
+hidden processes. They do not lock out new opens or mount changes. Stop
+active owners first or use the owning tool's prune mechanism.
 
 Scope is WSL-first: virtual-disk guidance covers WSL, with pointers for
 Docker Desktop and Hyper-V. macOS APFS and Time Machine snapshots are not
