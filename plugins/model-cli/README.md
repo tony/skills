@@ -61,8 +61,8 @@ The prompt is also an argument of the CLI process, so other local users can
 see it in `ps`.
 
 `codex` also passes `--skip-git-repo-check`, which removes Codex's repo guard.
-Commit or stash first; outside a git repository nothing the run changes can be
-undone. Before allowing a failed tier to fall back, the runner compares the
+Commit or stash first; outside a git repository the runner cannot verify
+unchanged state. Before allowing a failed tier to fall back, it compares the
 whole repository's tracked and non-ignored files, index, branch, and HEAD.
 Changed state stops fallback; a failed write-enabled run also stops when the
 state is unreadable. Ignored files and writes outside the repository are
