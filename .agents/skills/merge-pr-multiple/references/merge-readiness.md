@@ -193,8 +193,8 @@ retargeted. Drop the flag from that merge and say so in the report. Pass it
 on the last PR of the stack if the user asked for it.
 
 After the last PR of the stack merges, and only when the user passed
-`--delete-branch`, delete each parent's remote head branch that is still
-there:
+`--delete-branch`, delete the remote head branch of every PR in the stack
+that is still there, the last PR's included (the user's flag covers it):
 
 ```console
 $ git push origin --delete <parent head branch>
@@ -233,7 +233,7 @@ Applies to both skills' reports:
   Never quote the subject you composed in its place.
 - Do not describe how a check works (patch fingerprints, ancestry tests) or
   how PR text was handled; report only the result.
-- Report a stack child's remote branch only when the user must act on it.
+- Say nothing about a stack child's remote branch; the run deletes it.
 - Say nothing about a missing question tool or next-steps panel.
 - Name a flag only when the run added or dropped one; say nothing about
   flags that were not touched.

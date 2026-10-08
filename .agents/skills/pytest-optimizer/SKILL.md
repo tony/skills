@@ -3,7 +3,7 @@ name: pytest-optimizer
 description: >-
   Use when pytest tests or fixtures are slow and you want them faster: speed
   up the suite with measured, safety-gated optimization.
-allowed-tools: ["Bash", "Read", "Grep", "Glob", "AskUserQuestion"]
+allowed-tools: ["Bash", "Read", "Grep", "Glob", "Write", "Edit", "AskUserQuestion"]
 metadata:
   argument-hint: "[test-path-or-marker] [--phase=scan|benchmark|plan|execute] [--force] [--hygiene] [--memory-dir=<path>]"
   source: "plugins/pytest-optimizer/skills/pytest-optimizer/SKILL.md"
@@ -74,7 +74,7 @@ nothing was run, state no projected timing, and call a scope change a
 hypothesis to benchmark, not a fix.
 
 A halted run (no suite here, pytest cannot start, or a prior phase's output missing) is one result
-sentence naming the first check that failed, then one sentence on what the user
+sentence naming the first check that failed as a single clause (add no second cause, such as a dead interpreter plus a missing pytest), then one sentence on what the user
 does, with no sections, panel, bold, local paths, or projected timings. Write it
 per `references/prose-rules.md`. Reply in this shape, as plain text outside
 any code fence, with plain sentences and no bold:
@@ -149,12 +149,12 @@ the memory-schema reference unless the user chooses to commit it.
 ## Graceful degradation
 
 - **Old pytest:** gate features via the version matrix; widen `k` when duration
-  precision is coarser (pre-6.0 used `time.time()`).
+  precision is coarser (pytest before 6.0 used `time.time()`).
 - **No xdist, randomly, or deadfixtures:** fall back to serial runs, manual
   reversed-order isolation checks, and the built-in `--fixtures` vs
   `--fixtures-per-test` diff.
-- **Dirty working tree:** `00-scan` may run; `01-benchmark` and `03-execute`
-  refuse until it is clean. The memory directory does not count.
+- **Dirty working tree:** `00-scan` may run; `01-benchmark` (tracked files only)
+  and `03-execute` (tracked and untracked) refuse until it is clean. The memory directory does not count.
 
 ## References
 

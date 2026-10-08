@@ -56,9 +56,9 @@ its committed copy (the lock reference has the command); a non-zero exit
 means a count dropped or a provider block vanished. When a count dropped, restore the platforms from the
 names the lock reference finds in the repository's CI and task files, or
 ask. If the count is still short, or the question goes unanswered
-(headless included), restore that lock from git, leave it out of the
-commit, list the root module under `## Failures` with the before and
-after counts, and stop after the other root modules finish.
+(headless included), restore that lock from git and leave it out of the commit. When other
+root modules were refreshed, list this one under `## Failures` with the
+before and after counts; when none were, end with the stopped line.
 
 A root module whose `init` fails has its lock restored from git, and the
 others carry on. Record the failure and continue.
@@ -67,7 +67,7 @@ others carry on. Record the failure and continue.
 
 One commit for the lock files that kept every platform (or got the
 user's explicit yes), kept out of any commit carrying authored changes. With `--no-commit`, leave them in the working tree and say what
-would have been committed. Write the message and the report per
+would have been committed. Name the commit by subject in the report, never by SHA. Write the message and the report per
 `../../references/prose-rules.md`.
 
 ### 6. Verify and report

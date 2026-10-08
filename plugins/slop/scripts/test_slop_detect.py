@@ -251,6 +251,9 @@ TIER_A_FIXTURES = [
     ("brittle.commit-message-markdown-leak", "message", "feat(x) Add y with - dash", False),
     ("low-value.todo-noise", "diff", "# TODO: revisit later", True),
     ("low-value.todo-noise", "diff", "# TODO(alice): revisit after PROJ-12", False),
+    ("low-value.todo-noise", "diff", "# TODO: revisit later, see PROJ-12", False),
+    ("low-value.todo-noise", "diff", "# TODO: revisit later, see #42", False),
+    ("low-value.todo-noise", "diff", "# TODO: revisit later https://x.test/i/1", False),
 ]
 
 
@@ -353,3 +356,63 @@ def test_conventions_requiring_disclosure_demote_attribution_to_tier_b(
     assert footer[0]["tier"] == "B"
     assert footer[0]["registry_tier"] == "A"
     assert footer[0]["demoted_by"] == "conventions"
+
+
+@pytest.mark.parametrize(
+    "trailer",
+    [
+        "Co-Authored-By: Claude <noreply@anthropic.com>",
+        "Co-authored-by: Copilot <copilot@github.com>",
+        "co-authored-by: Claude Opus 4 <NOREPLY@ANTHROPIC.COM>",
+    ],
+)
+def test_ai_coauthor_trailer_forms_match(trailer: str) -> None:
+    assert _hits("ai-slop.co-authored-by-ai", "message", f"feat(x) Add y\n\n{trailer}")
+
+
+def test_human_coauthor_trailer_does_not_match() -> None:
+    human = "feat(x) Add y\n\nCo-authored-by: Ada Lovelace <ada@example.com>"
+    assert not _hits("ai-slop.co-authored-by-ai", "message", human)
+
+
+def _repo(tmp_path: Path, name: str, text: str) -> None:
+    def run(*args: str) -> None:
+        subprocess.run(["git", *args], cwd=tmp_path, env=ENV, check=True, capture_output=True)
+
+    run("init", "-q")
+    (tmp_path / name).write_text(text + "\n")
+    run("add", "--", name)
+    run("commit", "-q", "-m", "x")
+
+
+def test_present_keeps_hostile_text_and_paths_as_data(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    name = "-odd name.txt"
+    payload = 'TODO: revisit $(touch pwned) `touch pwned` "; touch pwned #'
+    _repo(tmp_path, name, payload)
+    gone = {"file": name, "text": "TODO: revisit later"}
+    kept = {"file": name, "text": payload}
+    findings = tmp_path / "f.json"
+    findings.write_text(json.dumps({"findings": [kept, gone]}))
+    monkeypatch.chdir(tmp_path)
+    assert detect.main(["present", "--findings", str(findings)]) == 0
+    out = json.loads(capsys.readouterr().out)
+    assert out["findings"] == [kept]
+    assert not (tmp_path / "pwned").exists()
+
+
+def test_out_writes_json_and_prints_counts(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    reg = tmp_path / "r.yml"
+    reg.write_text(MINI)
+    target = tmp_path / "a.txt"
+    target.write_text("# TODO: revisit later\n")
+    dest = tmp_path / "out.json"
+    args = ["files", "--registry", str(reg), "--out", str(dest), str(target)]
+    assert detect.main(args) == 0
+    shown = capsys.readouterr().out
+    assert "findings: 1" in shown
+    assert not shown.lstrip().startswith("{")
+    assert json.loads(dest.read_text())["findings"][0]["tier"] == "B"

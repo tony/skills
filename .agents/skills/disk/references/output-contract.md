@@ -29,10 +29,16 @@ with the approval question, and states projected figures as projections.
 A declined environment halt (the user asked the agent to run
 `wsl --shutdown` itself) uses the same shape. Add a line saying what the
 shutdown interrupts, then the command in a `powershell` fence for the
-user to run. Print it when the balloon is measured above zero or
-unmeasured, since compaction returns space without any deletion. Say
-"not yet known" when the backing file could not be read, and say no
-shutdown is needed only when the balloon was measured near zero.
+user to run. Print it when the balloon is measured above zero, since
+compaction returns space without any deletion. Say "not yet known" when
+the backing file could not be read, and say no shutdown is needed only
+when the balloon was measured near zero.
+
+The same test governs the hand-off after the `disk-reclaim` skill: print the
+commands only when the balloon is measured above zero or the user asked
+about host space. Otherwise write one sentence, "Host recovery is
+unmeasured; run the `disk-usage` skill to measure the vhdx", with no commands and no
+claim that none are needed.
 
 Reply in this shape, as plain text outside any code fence, with plain
 bullets, no bold (never `- **Label:** ...`), and no local paths:
@@ -71,7 +77,7 @@ Do not delete notes-backup-2026: it holds two files that notes lacks, and
 the root filesystem has 344 GiB free.
 
 - Proof: the two trees share no paths, so the backup is unique.
-- Size: 8 KiB on the guest ext4 filesystem.
+- Size: 8 KiB on the guest ext4 filesystem, of 344 GiB free.
 - Your call: keep it, or move the two files into notes and re-run the
   comparison.
 ```
@@ -79,7 +85,9 @@ the root filesystem has 344 GiB free.
 ## Hero block
 
 One to four lines naming the binding constraint. Prefix with `⚠` when
-a layer is 90% used or more, `✓` otherwise. No prose paragraphs. Name a
+a layer is 90% used or more, `✓` otherwise. No prose paragraphs. When
+the reply opens with a one-sentence verdict, that sentence is the hero;
+add no second prefixed line. Name a
 host layer as the constraint only from a measurement.
 
 The binding constraint is the filesystem closest to full, which may not be
@@ -197,8 +205,9 @@ State a claim about what a tool supports (for example, that it reads
 compressed transcripts) only with the help text, docs page, or binary
 string you read; otherwise say it was not checked.
 
-Use GiB at or above 1 GiB and MiB or KiB below it, one unit per
-figure, converting what a tool printed (`1007G`, `14 GB`), and write `~` instead of the home path in commands.
+Use GiB at or above 1 GiB and MiB or KiB below it (`6 MiB`, never
+`0.0061 GiB`), one unit per figure, converting what a tool printed
+(`1007G`, `14 GB`). Write `~` instead of the home path in commands.
 
 Name what was skipped. A report that silently omits protected history
 reads as having missed it rather than having preserved it.

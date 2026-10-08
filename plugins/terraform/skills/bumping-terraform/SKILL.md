@@ -92,7 +92,12 @@ one of them; offer the others as next steps.
   which to move. Leave out anything about what the run would do after the
   edit (`init` could not run, no lock to refresh, both keep `~>`), the
   branch, history, untracked files, the driving tool, or a question. With
-  no such finding, write no bullets.
+  no such finding, write no bullets. The declared pins are the usual
+  finding; lock files, backends, which root calls which module, and the
+  installed `terraform` version stay out, as does whether a pin or an
+  installed version would satisfy the target. A stop after the edits may
+  state the new constraint and the lock's selected version in one bullet. A bullet never asks the user
+  for anything, and the step ends with its request, with no "then" clause.
 
   Reply in this shape, as plain text outside any code fence, with plain bullets, no bold (never `- **Label:** ...`), and no local paths:
 
@@ -101,7 +106,7 @@ one of them; offer the others as next steps.
 
   Tell me you confirmed 6.57.0 yourself, or allow registry.terraform.io so I can check it.
 
-  - envs/prod and modules/network both declare hashicorp/aws, at ~> 6.56.0 and ~> 6.55.0.
+  - envs/prod and modules/network both declare hashicorp/aws, at ~> 6.56.0 and ~> 6.55.0, so the pins disagree.
   ```
 
 - `--audit-only` writes nothing and is a result, not a stop. Its hero is

@@ -141,8 +141,9 @@ carry a `parent`; never emit `kind: type`.
 added later without guessing what unversioned rows meant.
 
 `definition` is drawn from the corpus, not composed. Where the corpus never
-defines the term, record the definition its usage implies and say so in the
-citation's quote by choosing a passage that shows the usage.
+defines the term, record the definition its usage implies. Keep the definition
+free of provenance notes ("implied by usage"); the analyzer scores definition
+text. Mark an implied definition in `evidence/`.
 
 ## Rules
 

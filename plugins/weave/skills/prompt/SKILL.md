@@ -13,9 +13,11 @@ Run an implementation prompt across independent adversarial workers, using host-
 
 The implementation prompt comes from `$ARGUMENTS`. If there are none, ask the user what they want implemented.
 
+When the arguments ask to apply the latest session instead of giving a task, run no workers: follow `../../references/mutating-run.md` (Apply a recorded session) with this skill's `adopt` and `update` commands from its final phase, and skip the other phases.
+
 `<engine>` is `../../scripts/engine.py` resolved from this skill's directory to an absolute path, written literally in every command, and run with `python3`. It prints JSON; `"ok": false` carries the reason. `../../references/ensemble-core.md` holds the shared steps this skill calls by section name.
 
-This command needs a git repository with at least one commit, because workers run in worktrees and the engine stashes your uncommitted work. Without one, `init` fails: relay its `error` in one sentence and stop.
+This command needs a git repository with at least one commit, because workers run in worktrees and the engine stashes your uncommitted work. Without one, `init` fails: relay its `error` in one sentence, with no local paths, then tell the user to run it from a project checkout, and stop.
 
 ## Worker selection
 
@@ -72,7 +74,7 @@ Follow `ensemble-core.md` (Dispatch lanes) with `--mutating`, with these changes
 - **subagents**: every role gets a worktree and may modify only that worktree. No worker touches the main checkout.
 - **model-clis**: only `agy` and `gpt` get worktrees. The `claude` lane's Task agent works in the main checkout and is the only lane that writes it.
 
-Under **subagents**, then confirm nothing touched the main checkout with `ensemble-core.md` (Close the repo guard). Skip that step under **model-clis**.
+Under **subagents**, confirm nothing touched the main checkout with `ensemble-core.md` (Close the repo guard). Skip that step under **model-clis**.
 
 ---
 

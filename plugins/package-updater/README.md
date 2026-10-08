@@ -52,17 +52,13 @@ Each skill runs as `/package-updater:<name>` in Claude Code and
 Defaults: Current repository, commit on default branch, no push.
 
 Flags:
+
 - `--branch <name>`: Work on a specific branch.
 - `--pr`: Open a pull request.
 - `--push`: Push the commits; without `--push` or `--pr`, commit locally and print the push command.
 - `--root <dir>`: Sweep every repo beneath a directory.
 - `--repo <path|slug>`: Target individual repositories.
 - `--owner <name>`: Keep only repos belonging to given accounts.
-
-## Behavior
-
-`updating-packages` holds the procedure; the references under
-`references/` hold the rules.
 
 ## Out of Scope
 

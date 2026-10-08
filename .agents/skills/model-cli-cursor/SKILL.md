@@ -36,8 +36,8 @@ Cursor's read-only plan mode.
 Pass `--require-flag=-f` on a normal run and `--require-flag=--mode` on a
 `mode:plan` run.
 
-Failure of this tier, including credit exhaustion, ends the run: report it. Do not suggest or
-run another vendor's CLI.
+Failure of this tier, including credit exhaustion, ends the run: report it.
+Do not suggest or run another vendor's CLI.
 
 
 ## Portability notes

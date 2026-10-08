@@ -190,7 +190,8 @@ flagged hunks (expensive, precise).
 
 ```console
 $ git -c core.quotepath=off log -p --reverse "<BASELINE_SHA>..HEAD" | python3 <slop_detect.py> diff \
-    --registry <signatures.yml>
+    --registry <signatures.yml> \
+    --out <findings.json>
 ```
 
 - `message-subject` and `message-body` (skip under `--targets=diff`):
@@ -200,10 +201,19 @@ $ git log -z --format=%H%x1f%B "<BASELINE_SHA>..HEAD" | python3 <slop_detect.py>
     --registry <signatures.yml>
 ```
 
-Drop a diff finding whose `text` no longer appears in its file at `HEAD`
-(`git grep -F -e "<text>" HEAD -- "<file>"`): a later commit removed
-it, and its fixup could not apply. Then run the Guard check. A finding
-has `{commit_sha, signature_id, file, line_start, tier, confidence: regex,
+Save the `diff` output with `--out <findings.json>` (a `mktemp` path;
+use its literal value). Then drop findings whose `text` a later commit
+removed, since their fixups could not apply; the matcher reads the JSON
+itself, so audited text never enters a shell string:
+
+```console
+$ python3 <slop_detect.py> present \
+    --findings <findings.json> \
+    --out <present.json>
+```
+
+Read `<present.json>` for the survivors, then run the Guard check. A
+finding has `{commit_sha, signature_id, file, line_start, tier, confidence: regex,
 action}`.
 
 **Pass B.** Follow `references/detect-pipeline.md` § Pass B with a
@@ -276,11 +286,11 @@ write that file's diff as the finding's patch, then stage the file so the
 next diff starts from the edited state:
 
 ```console
-$ git -C "<scratch>" diff -- "<file>"
+$ git -C "<scratch>" diff -- '<file>'
 ```
 
 ```console
-$ git -C "<scratch>" add -- "<file>"
+$ git -C "<scratch>" add -- '<file>'
 ```
 
 When every patch is cut, remove the worktree:
@@ -458,17 +468,12 @@ Verifier: enabled (6 commits scanned; 0 skipped)
 Commits: 6 (3 fixups folded)
 Backup branch: feat-login-pre-deslop-20261005-142530
 
-Open findings
-=============
-- brittle.line-numbers src/queue.py:12
-- brittle.counts 7c1e9d4 body
-
 Quality gates (final)
 =====================
 format=pass | lint=pass | typecheck=pass | tests=skipped
 
 Patch series: <run-dir>
-Next: git rebase -i --autosquash origin/main
+Next: git push --force-with-lease --force-if-includes
 ```
 
 Print the `Patch series:` line with the path Step 8 printed, because

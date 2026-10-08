@@ -87,7 +87,7 @@ Trash and recycle directories; old tool version installs; superseded
 toolchain versions; downloads; workspace snapshots from tools no longer
 in use.
 
-Present these individually with size, age,. A
+Present these individually with size and age. A
 blanket "clear stale data" approval does not cover this tier.
 
 ## Protected
@@ -118,5 +118,5 @@ it never influences classification.
 ## Ambiguity
 
 Report a directory that resists classification as unclassified, with its
-size, creation source if determinable, and why it is ambiguous. Do not
+size and why it is ambiguous. Do not
 guess or fold it into a blanket approval group.

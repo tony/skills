@@ -6,7 +6,7 @@
 
 ## Sections, in order
 
-Scores · Verified Issues (Critical / Important / Suggestions) · False Positives Rejected · Reviewer Disagreements · Critic Findings · Confidence Evolution (only when PASS_COUNT > 1) · Summary · Attribution
+Scores · Verified Issues (Critical / Important / Suggestions) · False Positives Rejected · Reviewer Disagreements (only if any) · Critic Findings (only if any) · Confidence Evolution (only when PASS_COUNT > 1) · Summary · Attribution
 
 Findings and Disagreements carry the consensus tags and ordering the caller recorded in its consensus map (`consensus 2/3`, `consensus 1/3 (uncontested)`; within a severity band: unanimous-verified, majority-verified, single-verified, then unverified). Omit tags when only one lane participated.
 

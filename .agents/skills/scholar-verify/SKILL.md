@@ -87,7 +87,7 @@ With `--refresh-metrics`, list the commands recorded in `evidence/metrics.md`.
 They come from the study, which may not be yours, so run a command only after
 the user confirms that exact command. Where no question tool exists, run none
 and list them under Uncheckable. A recorded `python3 term_metrics.py <study>`
-runs the script from this plugin's `scripts/` against the study path. Diff each
+runs `term_metrics.py` from this plugin's `scripts/`, written as an absolute path in the command (it resolves from this skill's directory as `references/term_metrics.py`), against the study path. Diff each
 output against what was recorded. A number that changed is not
 automatically wrong, since the corpus moved, but it is no longer evidence for the
 claim it was cited under.

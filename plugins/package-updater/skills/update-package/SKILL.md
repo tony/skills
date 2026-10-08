@@ -46,10 +46,13 @@ confirmed to exist is the expensive failure this ordering prevents.
 
 Read the cooldown configuration of each repository in scope (the
 ecosystems reference lists the keys) and check the package against `holds.md`: a held package stops
-here unless the user is releasing the hold.
+here unless the user is releasing the hold; halt with the held-package
+example in `../updating-packages/SKILL.md`.
 
 If the cooldown hides the target, halt with the cooldown halt example in
-`../updating-packages/SKILL.md`, even when the user named the version. Exempt only per
+`../updating-packages/SKILL.md`, even when the user named the version. The reply is that halt alone: no
+sentence about the named version, the user's go-ahead, what was left
+unchanged, or an exemption. Exempt only per
 `../../references/cooldown-exemption.md`, when the release is needed now.
 
 ### 3. Find every pin site

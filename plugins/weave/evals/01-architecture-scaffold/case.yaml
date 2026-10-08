@@ -19,6 +19,14 @@ execution:
 runs: 3
 
 graders:
+  - name: no-adoption-or-commit
+    type: tool_used
+    tool: Bash
+    input_match: 'engine\.py (adopt|reset-main)|git (commit|stash drop)'
+    min: 0
+    max: 0
+    arm: both
+
   - name: outcome
     type: llm
     focus: last_message

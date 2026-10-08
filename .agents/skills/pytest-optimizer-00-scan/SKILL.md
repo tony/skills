@@ -83,7 +83,7 @@ environment, and without it the detector takes its fallback.
 
 Run the command below once without the redirect as a warm-up; its `seconds` is
 `t`. The scan costs about `(runs + 2) * t` in total: the warm-up, `--runs`
-baseline runs, and the profile run. Above the default budget of 900 seconds
+baseline runs, and the profile run; print that estimate before the first timed run. Above the default budget of 900 seconds
 (the project's own limit, when its docs set one, replaces it), ask the user to
 confirm or lower `--runs` (never below 3); without an interactive question tool, lower
 `--runs` to 3 and say so in the closing line. Then time `--runs` serial,
@@ -138,7 +138,33 @@ flags false, token).
 
 Emit the `00-scan` sections from `references/output-contract.md`. Write the
 prose per `references/prose-rules.md`. Report only measured numbers; project
-no speedup before `01-benchmark`.
+no speedup before `01-benchmark`. Reply in this shape, as plain text outside any
+code fence, with plain bullets, no bold (never `- **Label:** ...`), and no local
+paths:
+
+```text
+✓ scan complete: baseline 12.5s, noise band 0.44s, 2 hypotheses
+
+## Environment
+
+- pytest 8.3.2 with xdist 3.6.1; deadfixtures not installed, so its check is skipped.
+
+## Baseline
+
+- Median 12.5s over 5 runs; trust floor 125ms (1% of the median).
+
+## Slowest tests
+
+- test_export_large spends 0.61s in one call (H01 slow test body, a measurement, not a hypothesis).
+
+## Slowest fixtures
+
+- db_session setup runs 3 times at 4.8s each; the cost is billed to the first test (H03 shared-scope attribution).
+
+## Hypotheses
+
+- H10 mis-scoped fixture: widen db_session to session scope, 4.8s of setup repeated per test.
+```
 
 Close with an `ask-user-choice` panel offering to benchmark the hypotheses,
 narrow scope, or stop. Without one, stop after the report and name the next

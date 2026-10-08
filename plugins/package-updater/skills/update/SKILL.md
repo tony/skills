@@ -173,5 +173,5 @@ To continue:
 End with an `AskUserQuestion` panel of next steps, for example: run the
 sibling command for the handoff items, drop a cooldown exemption whose
 block has lapsed, take a gated release once it ages out, or stop here.
-Without a question tool, list the options as text and take none. In plan
+Without a question tool, list the options as text under `To continue:` and take none. In plan
 mode, skip the panel.

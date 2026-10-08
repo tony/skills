@@ -72,7 +72,7 @@ aggregating.
 When the output must be parsed reliably, prefer JUnit XML over scraping the table:
 
 ```console
-$ pytest --junit-xml=report.xml -o junit_duration_report=call
+$ pytest --junit-xml=<runs-dir>/report.xml -o junit_duration_report=call
 ```
 
 Read `testcase@time` for per-test `call` time (the default reports

@@ -5,6 +5,7 @@
 
 from __future__ import annotations
 
+import os
 from pathlib import Path
 
 import guarded_rm  # pyright: ignore[reportImplicitRelativeImport]
@@ -70,3 +71,25 @@ def test_keeper_overlap_is_refused(tmp_path: Path) -> None:
 def test_missing_target_is_refused(tmp_path: Path) -> None:
     (tmp_path / "s").mkdir()
     assert run("--scope", str(tmp_path / "s"), str(tmp_path / "s" / "nope")) == REFUSED
+
+
+def test_refuses_mount_point_inside_target(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    cache = tmp_path / "s" / "cache"
+    (cache / "mnt").mkdir(parents=True)
+    real_lstat = os.lstat
+
+    def fake_lstat(path: str) -> object:
+        st = real_lstat(path)
+        if str(path).endswith("mnt"):
+            return type("St", (), {"st_dev": st.st_dev + 1})()
+        return st
+
+    monkeypatch.setattr(os, "lstat", fake_lstat)
+    assert run("--scope", str(tmp_path / "s"), "--delete", str(cache)) == REFUSED
+    assert (cache / "mnt").exists()
+
+
+def test_sub_gib_sizes_use_mib_and_kib() -> None:
+    assert guarded_rm.human(8 * 1024) == "8 KiB"
+    assert guarded_rm.human(3 * 2**20) == "3.0 MiB"
+    assert guarded_rm.human(2 * 2**30) == "2.00 GiB"

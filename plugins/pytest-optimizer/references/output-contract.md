@@ -14,7 +14,7 @@ headings, declared order, no invented sections.
 1. **Hero block** (1-4 lines, required on every reply that has sections): a `⚠`/`✓`
    prefix or a one-line summary, no prose paragraphs.
 2. **Body sections** in the order each command declares (below). Skip a section
-   only when it is empty, and say so in one line.
+   only when it is empty, and say so in one line ("None."). Place a candidate under the section its measurement earned (a count drop is `## Rejected`), and advise nothing the runs did not measure.
 3. **Next-step panel**: an `AskUserQuestion` so the user can act without composing
    a follow-up command. Skip it inside plan mode, where the plan is the decision
    point. Without an interactive question tool, list the options as text and take
@@ -178,10 +178,10 @@ Run 01-benchmark first, then run this phase again.
 
 **`02-plan`**
 
-- `## Ranked plan` — ordered commits with score breakdown, target files, draft
+- `## Ranked plan` — ordered commits (only items whose target file exists at `HEAD` or is created by the item; the hero counts only these) with score breakdown, target files, draft
   subject (in the same sentence, no `Draft subject:` label), verify command.
   A hygiene item says it is a hygiene item with no timing.
-- `## Dropped at the gate` — candidates below `safety 0.4` or `impact 0`, with the
+- `## Dropped at the gate` — candidates below `safety 0.4` or `impact 0`, and items whose target file is absent at `HEAD`, with the
   prerequisite refactor surfaced separately. Name a refactor only for an item that
   has one; never state that an item needs none.
 - `## Ordering rationale` — why safety-gate fixes and typings precede scope and
@@ -192,3 +192,6 @@ Run 01-benchmark first, then run this phase again.
 - `## Applied` — per item: commit SHA, measured verify result.
 - `## Skipped` — per item: revert reason (failed green-verify, conflict).
 - `## Result` — post-suite wall-time vs `baseline.json`, total recovered.
+
+The reply ends on `## Result`; it carries no remark about commit trailers or
+what the host adds.

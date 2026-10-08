@@ -139,7 +139,8 @@ dependabot pull request only after that pull request merges.
 When pushing is requested, run `git log <remote>/<default>..HEAD
 --format=%h%x20%s` first and push only when every listed commit is a bump
 commit; a re-run then resumes unpushed bumps. Any other commit is the
-user's: do not push, name it, and print the push command. Stop the fleet
+user's: do not push, name it and how the branch diverges, never advise a
+reset or drop of it, and print the push command. Stop the fleet
 loop on a rate-limit error or a rejected push and report which
 repositories remain.
 

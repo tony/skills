@@ -90,6 +90,7 @@ merged", "I did not use --admin"). The hero states the cause only.
    strategy and the PR URL (its reply keeps all three sections; see the
    queued example). Name a flag only when the run dropped or added
    one the user did not pass; never the head pin or the user's own flags.
+   Say nothing about the title's characters or how the message was passed.
 3. `## Trunk`: the post-merge trunk state and the result of the
    contains-the-merge-commit check, or that the sync was skipped and why.
    Report a mismatch as a fact with the short SHAs; give no cause and do

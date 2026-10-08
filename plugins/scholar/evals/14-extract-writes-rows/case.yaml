@@ -38,6 +38,13 @@ graders:
       path: notes/ontology/tiny-lib/terms.jsonl
     pattern: '"quote":\s*"[^"]+'
 
+  - name: rows-carry-a-source
+    type: regex
+    target:
+      source: file
+      path: notes/ontology/tiny-lib/terms.jsonl
+    pattern: '"source":\s*"[^"]+'
+
   - name: runs-the-term-gate
     type: tool_used
     tool: Bash

@@ -192,7 +192,8 @@ Run the matcher over the Step 2 files. `files` mode reads each `file`
 and `diff` signature against current content; `--added-base` marks the
 lines `BASELINE_SHA..HEAD` added, so an added-line rule (`^\+`) stays
 Tier A on those lines and drops to Tier B on every other line. Omit
-`--added-base` when there is no trunk, and `--override` when
+`--added-base` when there is no trunk (every added-line rule then drops
+to Tier B), and `--override` when
 `.claude/slop.local.yml` is absent; with `--taxonomy=<path>`, pass it as
 `--registry` and drop `--override`. With `--paths`, narrow the
 `git ls-files -z` list the same way as Step 2.
@@ -201,8 +202,12 @@ Tier A on those lines and drops to Tier B on every other line. Omit
 $ git ls-files -z | python3 <slop_detect.py> files \
     --registry <signatures.yml> \
     --override .claude/slop.local.yml \
-    --added-base "<BASELINE_SHA>"
+    --added-base "<BASELINE_SHA>" \
+    --out <findings.json>
 ```
+
+`--out` writes the JSON to a `mktemp` file (use its literal path later)
+and prints counts per tier and signature. Read it with `jq`, not `cat`.
 
 Under `--with-history`, also run the diff and message modes over the
 captured log. Their findings carry `historical_only`.
@@ -309,10 +314,10 @@ in the finding's `.patch` file.
 ### 10b. Stage explicit paths
 
 ```console
-$ git add -- "<file>"
+$ git add -- '<file>'
 ```
 
-Never `git add -A` or `git add .`.
+Write file names single-quoted, each `'` as `'\''`. Never `git add -A` or `git add .`.
 
 ### 10c. Run touched-file gates
 
@@ -340,14 +345,13 @@ $ <TEST_CMD>
 ```
 
 - The formatter applies its changes; re-stage only `<file>` with
-  `git add -- "<file>"`. A project-wide formatter may also rewrite other
-  files: after the gates, run `git status --porcelain`, and restore
-  every path other than `<file>` with
-  `git restore --source=HEAD --staged --worktree -- "<path>"`, or, for
-  an untracked (`??`) path the formatter created,
-  `git clean -fd -- "<path>"`, so the next finding starts from a clean
-  tree. A path in `DIRTY_AT_START` is
-  never restored; treat a change to it as a gate failure.
+  `git add -- '<file>'`. A project-wide formatter may also rewrite other
+  files: after the gates, run `git status --porcelain` and restore every
+  path other than `<file>` with
+  `git restore --source=HEAD --staged --worktree -- '<path>'` (for an
+  untracked `??` path, `git clean -fd -- '<path>'`), so the next finding
+  starts clean. Never restore a `DIRTY_AT_START` path; a change to one
+  is a gate failure.
 - A linter with `--fix` applies fixes; re-stage. An error it cannot fix
   is a gate failure.
 - A type checker never modifies files; its errors are gate failures.
@@ -360,7 +364,7 @@ change. The file is never one of `DIRTY_AT_START`, so no user edit is
 lost:
 
 ```console
-$ git restore --source=HEAD --staged --worktree -- "<file>"
+$ git restore --source=HEAD --staged --worktree -- '<file>'
 ```
 
 Then clean up after a project-wide formatter as in 10c: run
@@ -431,10 +435,9 @@ With `--run-tests`:
 $ <TEST_CMD>
 ```
 
-Then run `git status --porcelain` again. A formatter that rewrote files
-leaves a dirty tree: list those paths under `Quality gates (final)`
-as `Gate left uncommitted changes: <paths>`, and never commit or
-restore them.
+Run `git status --porcelain` again. List files a formatter rewrote as
+`Gate left uncommitted changes: <paths>` under `Quality gates (final)`;
+never commit or restore them.
 
 The hero line is `Slop scan summary`; sections follow in the order
 shown: summary block, `Open findings`, `Quality gates (final)`,
@@ -464,10 +467,6 @@ Historical-only: 0
 Tone calibration: demoted "robust", "seamless"
 Verifier: enabled (42 files scanned; 0 skipped)
 
-Open findings
-=============
-- low-value.log-debris src/cli.py:88
-
 Quality gates (final)
 =====================
 format=pass | lint=pass | typecheck=pass | tests=skipped
@@ -486,9 +485,9 @@ Patch series: <run-dir>
 Next: git push
 ```
 
-`Patch series:` carries the path Step 8 printed, because the user
-reviews `commits.json` and `advisory.md` there. Do not push; the user
-decides. A plain `git push` suffices because no history changed.
+`Patch series:` carries the path Step 8 printed; the user reviews
+`commits.json` and `advisory.md` there. Do not push; no history
+changed, so a plain `git push` suffices.
 
 End with the next step, through `AskUserQuestion` when available,
 otherwise as a plain line: after an audit, the `--apply --from=<run-dir>` re-run; after

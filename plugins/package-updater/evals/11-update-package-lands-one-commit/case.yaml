@@ -61,6 +61,13 @@ graders:
     match: not_contains
     pattern: '[Cc]o-[Aa]uthored-[Bb]y|[Gg]enerated with'
 
+  - name: commit-body-links-release
+    type: regex
+    target:
+      source: file
+      path: .git/COMMIT_EDITMSG
+    pattern: 'https://\S*requests\S*2\.32\.3'
+
   - name: never-pushes
     type: tool_used
     tool: Bash

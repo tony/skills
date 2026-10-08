@@ -191,7 +191,8 @@ sections in order, each omitted when it has nothing to report:
    claim was checked. A span that reaches nothing gets one line saying
    so.
 4. `## Commits` — the commits made, one per tool per repository, and
-   whether they were pushed.
+   whether they were pushed. List each commit's hash and subject only;
+   never describe what its body contains or why it has one.
 5. `## Verification` — the quality checks run per repository and their
    real results, including whether the lockfile still resolves.
 6. `## Drift` — tools pinned to different versions across the fleet, and
@@ -240,7 +241,7 @@ To continue:
 End with an `ask-user-choice` panel of next steps, for example: align
 the fleet on one version, refresh lockfiles against the new toolchain,
 drop a runtime version the project no longer supports, or stop here.
-Without a question tool, list the options as text and take none. In plan
+Without a question tool, list the options as text under `To continue:` and take none. In plan
 mode, skip the panel.
 
 

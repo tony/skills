@@ -657,11 +657,7 @@ def _is_runtime_instruction(rel: Path) -> bool:
     return rel.parts[:2] != ("docs", "specs")
 
 
-# SPIKE: the split above is by name, not by reachability. The exact question is
-# whether any skill can reach the file, which the portable export
-# already answers when it walks a bundle. Wiring that walk in would let a spec
-# that a skill actually loads be checked, and would stop a new prose directory
-# from silently opting itself out.
+# The split is by name, not reachability: a spec a skill loads goes unchecked.
 
 
 def _citation_error(owner: str, token: str, *, exists: bool, runtime: bool) -> str | None:
@@ -800,6 +796,23 @@ def _escapes_plugin(source: Path, link: str, plugin_dir: Path) -> bool:
     return not target.is_relative_to(plugin_dir.resolve())
 
 
+def _bundled_links(text: str) -> list[str]:
+    """Return relative links into a plugin's bundled directories, fences included.
+
+    Examples
+    --------
+    >>> _bundled_links("Run `python3 ../scripts/x.py` and read ../../references/y.md.")
+    ['../scripts/x.py', '../../references/y.md']
+    >>> _bundled_links("See ../../docs/z.md; a reference writes ../scripts/.")
+    []
+    """
+    return [
+        link.rstrip(".,;:")
+        for link in t.cast("list[str]", _RELATIVE_LINK_RE.findall(text))
+        if re.match(r"(?:\.\./)+(?:scripts|references|skills)/[^/.]", link)
+    ]
+
+
 PLAN_PRELUDE = (
     "Enter plan mode before the first edit. In Claude Code call `EnterPlanMode`; "
     "in Cursor, Codex, or Gemini use `/plan` or `Shift+Tab`. "
@@ -866,6 +879,11 @@ def _check_estate_rules(plugin_dir: Path) -> list[str]:
                 for link in links
                 if _escapes_plugin(path, link, plugin_dir)
             )
+        errors.extend(
+            f"[{name}] {rel}: '{link}' does not resolve from this file"
+            for link in _bundled_links(text)
+            if not _escapes_plugin(path, link, plugin_dir) and not (path.parent / link).exists()
+        )
         # The agent's shell runs in the user's project, not the skill directory.
         script_ref = "../../scripts/" if path.name == "SKILL.md" else "../scripts/"
         if script_ref in text and not re.search(
@@ -2087,11 +2105,8 @@ def _check_body_paths(skill: BuiltSkill) -> list[str]:
     ``docs/`` is the one ambiguous prefix in this repo: weave owns
     ``docs/repo-guard-protocol.md`` while slop and pr quote ``docs/install.md``
     as a file in the *user's* project. An unresolved ``docs/`` path is reported
-    rather than failed; every other prefix must resolve.
-
-    SPIKE: that escape hatch is prefix-wide, so a genuinely broken ``docs/`` link
-    inside a plugin would be reported as external instead of failing the check.
-    Closing it needs the sources to distinguish bundle docs from project docs.
+    rather than failed, so a broken bundled ``docs/`` link is not caught here;
+    every other prefix must resolve.
     """
     errors: list[str] = []
     known = set(skill.files)

@@ -243,10 +243,10 @@ A routine toolchain bump, link block only:
 ```text
 .tool-versions(just) just 1.55.1 -> 1.57.0
 
-- just
-  - https://github.com/casey/just/blob/1.57.0/CHANGELOG.md
-  - https://github.com/casey/just/releases/tag/1.56.0
-  - https://github.com/casey/just/releases/tag/1.57.0
+See also:
+- https://github.com/casey/just/blob/1.57.0/CHANGELOG.md
+- https://github.com/casey/just/releases/tag/1.56.0
+- https://github.com/casey/just/releases/tag/1.57.0
 ```
 
 A drift consolidation, where the reason is the drift itself:

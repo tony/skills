@@ -37,6 +37,8 @@ login`, or the PR number to pass).
 
 ### 2. Fetch the diff context
 
+When the target names another repository, add `--repo <owner>/<repo>` to each `gh pr diff` command.
+
 ```console
 $ gh pr diff <number> --name-only
 ```
@@ -113,7 +115,7 @@ Reply in this shape, as plain text outside any code fence, with plain bullets, n
 Good; adding a runnable verification step is the highest-impact fix.
 ```
 
-`## What works`: specific strengths, so the author keeps them. Check each against the PR text before listing it; drop one that holds for only some bullets or sections. A limit of the review (no diff, a pasted body) is never a strength.
+`## What works`: specific strengths, so the author keeps them. Check each against the PR text before listing it; drop one that holds for only some bullets or sections. A limit of the review (no diff, a pasted body) is never a strength: with no diff, never list proportionality or size under What works.
 
 `## Suggested improvements`: one action per suggestion (split a compound fix into separate
 suggestions), each with a concrete markdown snippet, never vague advice like "add more detail".

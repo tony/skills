@@ -101,8 +101,11 @@ two.
 ## Hand off
 
 Finish with `## Only you can run this`, the last section and omitted
-when empty, holding the steps only the user can run: the guest shutdown,
-and any host-side compaction. Take the exact commands from
+when empty, holding the steps only the user can run: the in-guest
+`sudo fstrim -av`, the guest shutdown, and any host-side compaction. Print
+them only when the balloon is measured above zero or the user asked about
+host space; otherwise write the one sentence the output contract gives,
+with no commands. Take the exact commands from
 `../../references/virtual-disks.md`, one per block, with where each runs
 and what it interrupts stated before it. Where that file cites no
 command for the user's host, say so rather than writing one from memory.

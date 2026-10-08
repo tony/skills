@@ -121,7 +121,7 @@ The PR number came from the branch name, and the base is the local origin/main, 
 
 After the message, add one line only for a fact the user must act on: where the PR number came from, the number to append when none was found, or a base other than `origin/<trunk>`. Always name the base and say it is the local `origin/<trunk>`, which may be stale, unless the user fetched it this session. Do not explain the message's wording or the commit history.
 
-A run that stops early (empty log, no base) is one sentence stating the stop and that nothing changed, then what the user must do. State the first stop reason only, one cause: do not list other possible causes or mention tools that were unavailable, and no speculation about other problems, no colon-delimited aside, no local paths. Reply in this shape:
+A run that stops early (empty log, no base) is one sentence stating the stop and that nothing changed, then what the user must do. State the first stop reason only, one cause, and name one next step: do not list other possible causes or mention tools that were unavailable, and no speculation about other problems, no colon-delimited aside, no local paths. Reply in this shape:
 
 ```text
 chore/bump-ruff has no commits ahead of origin/main, so no message was drafted and nothing changed. Commit your changes, then run this again.

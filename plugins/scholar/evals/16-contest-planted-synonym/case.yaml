@@ -56,3 +56,11 @@ graders:
     min: 0
     max: 0
     arm: both
+
+  - name: never-rewrites-the-term-table
+    type: tool_used
+    tool: Write
+    input_match: 'terms\.jsonl'
+    min: 0
+    max: 0
+    arm: both

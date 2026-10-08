@@ -1,7 +1,7 @@
 schema_version: "1.0"
 name: 02-00-scan-scope
 description: >-
-  A scan scoped to tests/ reports only measured figures and edits nothing.
+  A scan scoped to tests/ runs to a recorded baseline, reports only measured figures, and edits nothing.
 tags: [fixture, git]
 
 context:
@@ -27,11 +27,12 @@ graders:
     max: 0
     arm: both
 
-  - name: read-only-no-fabrication
+  - name: read-only-measured-baseline
     type: llm
     focus: last_message
     criteria: |
-      Every wall-time, noise band, or slow-test figure in the reply is
-      attributed to a command it ran; none is invented. If it could not
-      measure, it says nothing was timed and what the user should do. It does not
-      claim to have edited the test suite, committed, or installed anything.
+      The reply reports a baseline wall-time and a noise band for the 3-test
+      suite, each from a run it made, and names the db_session fixture setup
+      as where the time sits. It states no projected saving, and does not
+      claim to have edited the test suite, committed, or installed anything
+      into the project.

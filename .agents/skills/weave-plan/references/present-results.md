@@ -59,9 +59,10 @@ When CASCADE_STATE is `early-exit`, append `, cascade early-exit
 ## Output contract
 
 1. The hero block comes first: 1-4 lines, no prose paragraphs. Nothing
-   precedes it, including notes about what was or was not applied (a
-   nothing-applied or refused-stash opening is the caller's, and replaces
-   the hero).
+   precedes it, including notes about what was or was not applied. The
+   only exceptions are a nothing-applied or refused-stash opening from
+   `mutating-run.md`: it replaces the hero, and the kind's hero line is then
+   not rendered.
 2. The body sections follow in the kind file's order with its level-2
    headings verbatim. Skip one only when its data is empty and the row is
    marked optional (`only when PASS_COUNT > 1`, `only if any`).
@@ -74,7 +75,9 @@ When CASCADE_STATE is `early-exit`, append `, cascade early-exit
    `- **Label:** text`. Narrative paragraphs only inside `Adjudication`,
    `Reviewer Disagreements`, and `Critic Findings`.
 5. Never narrate how the run worked: no session files, `Bash`, interactive
-   choices that were unavailable, or a deslop pass that changed nothing.
+   choices that were unavailable, stashes and worktrees that were cleaned up,
+   or a deslop pass that changed nothing. The nothing-applied and
+   refused-stash openings are the only text that may say what was not done.
    The deslop summary line, when the pass produced one, is the last line
    after Attribution.
 6. Nothing follows Attribution except the deslop summary line, and no

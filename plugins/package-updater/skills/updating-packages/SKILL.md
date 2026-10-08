@@ -258,6 +258,11 @@ When a check fails, establish whether it fails on the default branch too
 before attributing it to a bump. Report pre-existing failures as such;
 fix none, conceal none.
 
+When a bump causes the failure, stop before the next bump, keep the
+commits already made, and report them with the failing command. This is
+a result, not a halt: the hero is `✓ <commits that landed>` and a
+`## Failed check` section names the command and the first error line.
+
 A bump that is knowingly red until its follow-up is not a failure, but
 the body must have said so, and the follow-up must land before the run
 is reported complete. Never report green without having read the output
@@ -304,7 +309,10 @@ Shape, which the three commands in this plugin share:
    trailer because the skill says so", "it has a `why:` because it crosses
    a 0.x minor"), no note about the harness (a stubbed tool or mocked
    response), no cooldown config key or file name, and no promise of
-   later work.
+   later work. The hero line is the `✓` form alone, never a first-person
+   sentence ("I updated 2 tools ..."). Never state what a commit message says
+   or why it was written that way, and never state a rule as a reason
+   ("so its dependencies belong upstream").
 5. End with the next-step options. Without a question tool, list them
    as text under the label `To continue:` and take none. Name the
    repository by its name, never "cwd", "cwd repo" or "current repo"; with
@@ -335,8 +343,8 @@ To continue:
 ```
 
 A halt is a stop for a reason the user must resolve: a scope or ownership
-question, a fork, a cooldown, a failed check, an unconfirmable version, notes
-that cannot be read, or nothing to audit (not a clean result). It prints the hero line
+question, a fork, a cooldown, an unconfirmable version, a held package,
+notes that cannot be read, or nothing to audit (not a clean result). It prints the hero line
 `⚠ Stopped: nothing was changed.` plus one sentence stating the single
 reason, then the options, and nothing between or
 after: no second paragraph, no section, no plan.
@@ -347,9 +355,12 @@ after: no second paragraph, no section, no plan.
   evidence such as a bot-only history) or the release (publication date inside the window, with the
   date it becomes visible). Never a rule of this skill, the
   repository's history or remotes, or what the sandbox refused.
+- Options never name the network, the sandbox, or credentials; a lookup that
+  could not run is not an option.
 - Options are actions for the user, never a promise of what happens next
   ("Exempt uv from the cooldown", not "Exempt uv and I'll then commit").
-- Print nothing before the hero line and nothing after the options; the
+- Print nothing before the hero line and nothing after the options, and
+  no sentence beyond the hero line's one reason; the
   reason is one sentence, with no second sentence explaining a rule.
 - The reason is the only fact: no pins, installed versions, lockfile
   state or other machine fact beyond it, and no clause about a pin left
@@ -367,7 +378,28 @@ Example halt, as plain text outside any code fence:
 
 To continue:
 - Confirm the version from your own source.
-- Name the repository that holds the pin.
+- Name a version that is published.
+- Stop here.
+```
+
+Example held-package halt:
+
+```text
+⚠ Stopped: nothing was changed. pydantic is held at 1.x in api until the migration is done.
+
+To continue:
+- Release the hold and update pydantic.
+- Leave pydantic as it is.
+- Stop here.
+```
+
+Example no-latest-release halt:
+
+```text
+⚠ Stopped: nothing was changed. The latest releases of uv and just could not be confirmed as published.
+
+To continue:
+- Name the versions to move to.
 - Stop here.
 ```
 

@@ -21,7 +21,7 @@ graders:
   - name: reports-the-budget-it-was-given
     type: regex
     target: last_message
-    pattern: 'strict'
+    pattern: 'Budget:\s*strict'
     flags: i
 
   - name: catches-the-attribution-footer

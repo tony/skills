@@ -47,10 +47,13 @@ Before the first normal run, record the baseline for the failure checks below
 with this command, and keep its output:
 
 ```console
-$ git status --porcelain; git diff HEAD | cksum
+$ git status --porcelain; git diff HEAD | cksum; git ls-files -o --exclude-standard -z | xargs -0 -r cksum
 ```
 
-The checksum catches further edits to a file that was already modified.
+The checksums catch further edits to a tracked file that was already modified
+and to untracked files, which `git status` lists the same way whether or not
+they changed. Outside a git repository the command fails, so a failed run
+cannot be checked.
 
 ## Run a tier
 
@@ -126,7 +129,8 @@ defines `credit`.
 Count retries and tiers run. No tier runs more than twice. Stop when the
 tiers run so far total more than twice the timeout. Say
 `<tier> failed (<class>). Relaunching with <next tier>.` before each
-relaunch.
+relaunch. That line is interim progress; the final reply still starts with the
+header or "No tier returned output."
 
 Model IDs in the skills are defaults. A model the user names in the request
 replaces the default for the tier it fits.
@@ -153,11 +157,12 @@ When every tier fails or none is installed:
    a paraphrase ("Codex did not return an answer because ...").
 2. One line per tier tried, with its class and the one stderr line that shows
    it. Leave out host, sandbox, and URL detail, and your own diagnosis. After
-   a `timeout`, `crash`, `credit`, `rate-limit`, or `empty` normal run, add one line from this list,
-   worded exactly, and nothing more: "The status check found <paths> changed since the run
-   began", "The status check found no changes", "The status check could not
-   cover <path>; check `git status`", or, when no check ran, "Files may have
-   changed; check `git status`".
+   a `timeout`, `crash`, `credit`, `rate-limit`, or `empty` normal run, add
+   one line from this list, worded exactly, and nothing more:
+   - "The status check found <paths> changed since the run began"
+   - "The status check found no changes"
+   - "The status check could not cover <path>; check `git status`"
+   - "Files may have changed; check `git status`", when no check ran
 3. What the user must do (install, log in, raise a quota).
 
 Reply in this shape, as plain text outside any code fence, with plain

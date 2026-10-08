@@ -30,7 +30,7 @@ version: 1
 
 signatures:
 
-  # ─── Tier A — auto-apply (deterministic, near-zero FP) ──────────
+  # ─── Tier A — auto-apply (deterministic, exact-match) ──────────
 
   - id: ai-slop.signatures
     tier: A
@@ -69,8 +69,8 @@ signatures:
     action: remove
     kind: regex
     target: [diff]
-    pattern: '^\+.*\b(TODO|FIXME|XXX|HACK):?\s*(revisit|later|someday|figure out|come back)\b'
-    rationale: Net-new vague TODOs with no owner or ticket reference.
+    pattern: '^\+(?!.*(#\d+|https?://|\b[A-Z]{2,}-\d+))(?=.*\b(TODO|FIXME|XXX|HACK):?\s*(revisit|later|someday|figure out|come back)\b)'
+    rationale: Net-new vague TODOs with no issue number, URL, or ticket key.
     fp-guard: 'Added lines only; a TODO already on trunk is never auto-removed.'
 
   # ─── Tier B — suggest, user-confirmed ───────────────────────────
@@ -158,7 +158,7 @@ signatures:
     action: remove
     kind: regex
     target: [message-body]
-    pattern: '^Co-Authored-By:\s*\S+.*<.*(claude|gpt|codex|copilot|cursor|gemini)\b.*>'
+    pattern: '(?i)^Co-Authored-By:.*\b(claude|gpt|codex|copilot|cursor|gemini)\b|^Co-Authored-By:.*<[^>]*@anthropic\.com>'
     rationale: AI co-author trailer; user-confirmed because legitimate Co-Authored-By usage exists for human pair-programming.
     fp-guard: 'Demote to advisory when trunk history shows human `Co-Authored-By:` trailers.'
 

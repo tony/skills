@@ -36,9 +36,11 @@ swap in their own hero and sections:
 
 ## A halted run
 
-When a prerequisite is missing or a gate fails, report only the hero line
-(`⚠ Blocked: <reason>`), one sentence naming what is missing, and the step the
-user takes to unblock it. Print none of the skill's sections, no empty
+The first line of the reply is the hero, `⚠ Blocked: <reason>`: no sentence
+before it and no code fence around the reply. When a prerequisite is missing
+or a gate fails, report only that line, one sentence naming what is missing
+and the step the user takes to unblock it. Nothing follows that sentence (no
+"Next step"). Print none of the skill's sections, no empty
 placeholders, no guesses from partial input, and no next-step list. Do not
 list files you did not create. The sentence names the unblock; it does not
 restate the hero, list what was searched, or say what was not written.
@@ -54,7 +56,13 @@ Run scholar-gather on the corpus first.
 - Bullets are plain sentences. Do not put a bold label on every bullet.
 - Report only what happened. Never claim a write, a gate pass, or a command
   run that did not occur.
-- Do not narrate process, justify a step ("this is what the stage exists to
+- The hero is one line with no second sentence.
+- Write no sentence about a file left alone ("I left `terms.jsonl`
+  unchanged") or an input that could not be reached ("the sandbox blocked
+  github.com"). Report the verdict and its evidence.
+- A fix for a failed gate is one sentence; do not explain how a finding was
+  counted.
+- Do not narrate process ("I raised one more candidate myself"), justify a step ("this is what the stage exists to
   prevent"), or say what you did not do ("I wrote no files", "I did not
   search the corpus").
 - Name no local absolute paths or temp files. Show paths relative to the study

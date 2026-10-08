@@ -66,6 +66,10 @@ Multi-pass differs by command:
 
 Worker backends are strictly isolated: retry and fallback stay inside the chosen backend.
 
+### When not to use
+
+Skip weave for a task one agent answers in a single pass: a typo, a rename, a question whose answer is in one file. Each run pays for three workers, a blind judge, and a critic, so expect roughly three times the worker tokens of a single agent plus the judge and critic. The benefit is independent attempts whose disagreements get verified against the code; it shows on ambiguous design choices, risky changes, and reviews, not on mechanical edits. No measured comparison against a single agent ships with the plugin.
+
 ### Command categories
 
 Commands that need commits (`execute`, `prompt`, `architecture`, `review`, `fix-review`) refuse in one sentence without a git repository that has at least one commit. `ask` and `plan` degrade with a stated "no repository" note. `brainstorm`, `brainstorm-and-refine`, `refine`, and `serene-bliss` run anywhere: with no usable repository the repo guard is off and workers start in an empty scratch directory. A checkout rooted at `/`, at your home directory, or at a directory containing your home directory counts as no repository, and a command that snapshots, stashes, or adds worktrees refuses it.
@@ -222,7 +226,6 @@ To confirm which model the Antigravity lane runs, pass the first `agy` model lis
 ```console
 $ agy \
     --model "<pinned model>" \
-    --dangerously-skip-permissions \
     -p "Report your exact model ID and reasoning level." </dev/null
 ```
 

@@ -12,7 +12,7 @@ The BENCHMARKED sources for triangulating internal claims. An
 internal savings claim must land near the study that measures the
 same outcome, or explain its divergence.
 
-Last verified: see the run README; this file is never edited.
+Not verified since authoring; a maintainer dates this table at release. This file is never edited during a run.
 
 The studies measure different outcomes, so there is no pooled range.
 Place an internal figure by outcome:

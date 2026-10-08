@@ -42,6 +42,12 @@ graders:
     flags: im
     match: not_contains
 
+  - name: no-fractional-gib
+    type: regex
+    target: last_message
+    pattern: '\b0\.\d+ GiB'
+    match: not_contains
+
   - name: no-sandbox-talk
     type: regex
     target: last_message

@@ -103,7 +103,7 @@ Everything already merged stays merged; the report says exactly
 where the run stopped and why.
 
 After the last PR of a stack merges, carry out the user's `--delete-branch`
-for the parents, per the reference's stack-parents section.
+for every branch still on the remote, per the reference's stack-parents section.
 
 ## Output
 
@@ -123,8 +123,8 @@ merged"). The hero states the cause only: not "so neither PR was merged".
    any (a clean rebase is "rebased onto <base>", nothing more), CI outcome, merge commit short SHA with its subject as read back from
    the commit. Note a dropped `--delete-branch` on a stack parent, and the
    parent branches deleted after the last merge. Diagnostics about the
-   environment belong in no bullet. Report a stack child's remote branch
-   only when the user must act on it.
+   environment belong in no bullet. Name a flag only when the run
+   dropped or added one; never the user's own flags.
 3. `## Trunk`: the post-run trunk state and the result of the
    contains-the-merge-commit check. Report a mismatch as a fact with the
    short SHAs; give no cause.

@@ -162,5 +162,4 @@ A corpus with no git remote cannot be cited by permalink. Publish it first, or
 cite `path@commit`, which `verify` checks with `git show`.
 
 A small repository does not need every stage: run `gather` and `extract`, then
-`render`, and add `distill` and `contest` once the term table passes about 20
-terms and has siblings to tell apart.
+`render`, and add `distill` and `contest` once the term table has siblings to tell apart.

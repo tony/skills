@@ -62,28 +62,32 @@ $ git ls-remote \
     https://github.com/OWNER/REPO
 ```
 
-For a local checkout, run these checks first. Each must hold or the pin cannot
-be reproduced elsewhere:
+For a local checkout, run these checks first, each against the corpus with
+`git -C <corpus>`, since the corpus is not necessarily the working directory.
+Each must hold or the pin cannot be reproduced elsewhere:
 
 ```console
-$ git status \
-    --porcelain \
-    -- . ':(exclude)notes/ontology/<subject>'
+$ git -C <corpus> status \
+    --porcelain
 ```
 
-Pass the real `--out` in place of `notes/ontology/<subject>`. Output means
-uncommitted edits: the working tree differs from the commit, so
-stop and ask the user to commit or pass a scope that excludes them.
+Output means uncommitted edits: the working tree differs from the commit, so
+stop and ask the user to commit or pass a scope that excludes them. When the
+study's `--out` directory lives inside the corpus checkout, add
+`-- . ':(exclude)<out relative to the corpus>'` so the study's own files do
+not count.
 
 ```console
-$ git branch --remotes --contains HEAD
+$ git -C <corpus> branch \
+    --remotes \
+    --contains HEAD
 ```
 
 No output means the commit is not pushed, so a permalink to it can 404. Pin a
 pushed ref instead, or record the source without a URL (below).
 
 ```console
-$ git rev-parse --short HEAD
+$ git -C <corpus> rev-parse --short HEAD
 ```
 
 Resolve the ref to the commit it points at, and record that as `commit`, so
@@ -142,7 +146,8 @@ these four values.
 - Report results, not reasons: no "has no title because" or "uses search-string
   because" in the output.
 - Never justify a step in the output ("the edition comes from the request",
-  "saved word for word"): state what was recorded.
+  "saved word for word", "the commit field is empty, and citations are
+  located by search string"): state what was recorded ("commit: none").
 - "Out of scope" is not a reason in `why`. Say what the source contains and why
   that does not bear on the vocabulary.
 

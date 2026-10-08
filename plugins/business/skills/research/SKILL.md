@@ -1,7 +1,7 @@
 ---
 name: research
 description: "Use when collecting evidence for the business value of an AI skill or workflow into a provenance-tagged research package."
-allowed-tools: ["Bash", "Read", "Write", "Grep", "AskUserQuestion", "EnterPlanMode"]
+allowed-tools: ["Bash", "Read", "Write", "Grep", "AskUserQuestion", "EnterPlanMode", "ExitPlanMode"]
 argument-hint: "[skill or workflow to measure] [date range, e.g. 2026-04-01..2026-06-30]"
 user-invocable: true
 disable-model-invocation: true
@@ -116,9 +116,10 @@ Rendering a report. Then exactly these sections:
    unavailable one leaves unknown.
 3. `## Collected`: per instrument, what the data shows and what landed
    in `raw/` and `measurements/`; one fact per bullet, one sentence per
-   bullet.
-4. `## Package`: the run location, the count of registered assumptions,
-   and the count of open unknowns; the unknowns themselves stay in
+   bullet, with no clause defending a choice or restating the hero.
+4. `## Package`: the run location, the count of registered assumptions
+   (0 is valid; a measured count is not an assumption), and the count
+   of open unknowns; the unknowns themselves stay in
    `findings.md`.
 
 End with an `AskUserQuestion` panel: generate a report (ask which

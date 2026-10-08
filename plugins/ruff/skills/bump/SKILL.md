@@ -65,7 +65,7 @@ The worktree reference describes when to use a worktree and other push targets; 
 
 Only when the resolver cannot see the target version; skip it when the resolver already sees the release. Diagnose the layer per `../../references/pin-sites-and-gating.md`, and if it is a cooldown, exempt per `../../references/cooldown-exemption.md`.
 
-For uv, read the installed uv's documentation (`uv --help`, the settings reference for its version) for a per-package `exclude-newer-package` form that carries no date. If the installed uv has none, write a dated entry at or after the publication timestamp, and name the commit that removes it in the annotation. In the plan, always describe the exemption in full: ruff only, its own first commit annotated with the removal condition, reverted before merge (a pre-merge requirement in the pull request), and the lapse time. State the choice between waiting and exempting as facts; recommend exempting only when the user said the release is needed now.
+For uv, read the installed uv's documentation (`uv --help`, the settings reference for its version) for a per-package `exclude-newer-package` form that carries no date. If the installed uv has none, write a dated entry at or after the publication timestamp, and name the commit that removes it in the annotation. In the plan, always describe the exemption in full: ruff only, its own first commit annotated with the removal condition, reverted before merge (a pre-merge requirement in the pull request), and the lapse time. Without an interactive question tool, write no exemption: a "go ahead" approves the local work, not a hole in the cooldown, so report when the release becomes visible. State the choice between waiting and exempting as facts; recommend exempting only when the user said the release is needed now.
 
 ### 7. Raise the floor and refresh the lockfile
 
@@ -77,21 +77,21 @@ If the release changed the default rule set and a repository sets an explicit `s
 
 ### 9. One rule, one commit
 
-Enumerate only the rule codes the previous version (phase 1) did not report. A code it already reported is pre-existing: leave it, and name it under `## Verification` as pre-existing. Resolve `../scripts/default_delta.py` against this skill's directory to an absolute path, write it literally, and run:
+Enumerate only the findings the previous version (phase 1) did not report: codes it never reported, and codes that now fire in more places. A code whose count did not grow is pre-existing: leave it, and name it under `## Verification` as pre-existing. Resolve `../../scripts/default_delta.py` against this skill's directory to an absolute path, write it literally, and run:
 
 ```console
-$ python3 ../scripts/default_delta.py \
+$ python3 ../../scripts/default_delta.py \
     --new-since "uv run --no-sync --isolated --with ruff==<previous> ruff" \
     -- uv run ruff
 ```
 
-It prints `code<TAB>count` for each new code. Where no ephemeral runner works or the previous version is unknown, enumerate every reported code and say the pre-existing ones could not be separated. For each new code, in its own commit: apply that rule's safe fixes alone (`<runner> ruff check --select <CODE> --fix`), hand-fix what the autofix leaves, re-run the project's quality checks, and commit with a body that explains why the rule exists, what changed, and, for behavior-changing rules, the behavior delta. Close each body with the rule's documentation URL. Write each per `../../references/prose-rules.md`. Commit messages carry no `Co-Authored-By` line, no "Generated with" or other tool trailer, and no emoji.
+It prints `code<TAB>count<TAB>was` for each new or grown code (`was` is 0 for a new one). Where no ephemeral runner works or the previous version is unknown, enumerate every reported code and say the pre-existing ones could not be separated. For each listed code, in its own commit (a grown code's body states the increase, from `was` to `count`): apply that rule's safe fixes alone (`<runner> ruff check --select <CODE> --fix`), hand-fix what the autofix leaves, re-run the project's quality checks, and commit with a body that explains why the rule exists, what changed, and, for behavior-changing rules, the behavior delta. Close each body with the rule's documentation URL. Write each per `../../references/prose-rules.md`. Commit messages carry no `Co-Authored-By` line, no "Generated with" or other tool trailer, and no emoji.
 
 A rule with a large mechanical diff is still one commit. Run the formatter after the last rule, as its own commit, and say so when it rewrote file types it never covered before.
 
 Do not add code comments explaining a lint fix; the commit message carries the rationale. A temporary resolver exemption in a configuration file is the exception and must be annotated where it lives.
 
-Apply unsafe fixes one at a time, reviewing each. Never bundle rules, or a rule with the floor bump.
+Apply unsafe fixes one at a time, reviewing each. Never bundle rules, or a rule with the floor bump. Stage only the files the step edited; leave untracked files (`.venv`, a lockfile the repository does not track) out of `git add`.
 
 ### 10. Verify before claiming anything
 
@@ -119,7 +119,7 @@ Watch CI to a conclusion, and attribute failures before blaming the bump. If CI 
 
 ## Output
 
-Never write a "no X" or "does not" item (no changelog, no CI, no formatter commit, unchanged coverage, nothing stabilized, nothing disagreed, no check defined); list only what exists, and never describe the fixture, the measurement runner, or what you will do later. Never name a repository `cwd`; use its slug or directory basename.
+Never write a "no X" or "does not" item (no changelog, no CI, no formatter commit, no resolver gate, no lockfile, no exemption needed, unchanged coverage, nothing stabilized, nothing disagreed, no check defined); list only what exists, and never describe the fixture, the measurement runner, or what you will do later. Write direct statements, not first person ("ruff resolves to 0.12.4", not "I confirmed"). Name a repository by its slug or the basename of `git rev-parse --show-toplevel`, never `cwd`. When the repository tracks no lockfile, say nothing about one.
 
 Write the report per `../../references/prose-rules.md`. The hero is the first line of the reply, with nothing before it: `✓ N repos on ruff X.Y.Z`, `⚠ Audit only: N repos behind` (append `, target version unconfirmed` when the target could not be confirmed), `⚠ Nothing to do: N repos skipped`, or `⚠ M of N repos halted`. Then exactly these sections:
 
@@ -135,12 +135,12 @@ Omit a section with nothing to report, except `## Per repo` and `## Verification
 
 Nothing goes between the hero and the first heading. When nothing new is stabilized and nothing else changed, write `Bug fixes only.` under `## Release` and stop. When the release changes only the default rule set, write that one change and stop. Report an environment fault (blocked network, sandbox, git config) only when the user must act on it, in one clause, with no advice about sandbox settings; never narrate which skill rule or host default you followed, the sandbox, or what a fault stopped you from doing; the user needs the failing step and the command to run next. Never say where input came from (a pasted excerpt instead of a checkout). State the vendor's default rule set only from a run of the project's runner (`check --show-settings`), never from memory. Recommend a course only when phase 6 allows it.
 
-An audit-only run whose target version cannot be confirmed still reports what needs no release: `## Scope` with the current pins and `## Default rule set` with each explicit `select` as an opt-out finding, and the unconfirmed target stated under the hero. End an audit reply on its last section, which names the re-run command when something blocked it. A run that stops before any change (nothing behind, every repository skipped, the target unconfirmed outside an audit, or the user declined) is the hero, one result sentence, then what the user must do to proceed, with no extra findings. State what blocked in one clause (for example, "pypi.org was unreachable"). All example values below are invented. Reply in this shape, as plain text outside any code fence:
+An audit-only run whose target version cannot be confirmed still reports what needs no release: `## Scope` with the current pins and `## Default rule set` with each explicit `select` as an opt-out finding, and the unconfirmed target stated under the hero. End an audit reply on its last section, which names the re-run command when something blocked it; an audit stops in plan mode, so it carries no panel. A run that stops before any change (nothing behind, every repository skipped, the target unconfirmed outside an audit, or the user declined) is the hero, one result sentence, then what the user must do to proceed, with no extra findings. State what blocked in one clause (for example, "pypi.org was unreachable"), never a guess about what a later step will need. All example values below are invented. Reply in this shape, as plain text outside any code fence:
 
 ```text
 ⚠ Nothing to do: 1 repo skipped
 
-I changed nothing: the branch ruff-bump-9.4.2 already exists in api.
+Nothing changed: the branch ruff-bump-9.4.2 already exists in api.
 
 To proceed, delete that branch or re-run with `--branch <name>`.
 ```
@@ -153,17 +153,17 @@ An audit-only reply uses the same rules. With the target confirmed:
 ## Release
 
 - Changelog: https://example.invalid/ruff/blob/9.4.2/CHANGELOG.md, measured with ruff 9.4.2.
-- Newly stabilized: ZZ101. No formatter scope change.
+- Newly stabilized: ZZ101.
 
 ## Scope
 
-- api: 9.1.0 to 9.4.2. No resolver gate. Predicted: 1 rule (ZZ101), 3 commits, default-set delta 9 findings.
-- web: 9.3.0 to 9.4.2. Resolver gate needed (7 day cooldown). Predicted: no rules, 3 commits, default-set delta 0.
+- api: 9.1.0 to 9.4.2. Predicted: 1 rule (ZZ101), 3 commits, default-set delta 9 findings.
+- web: 9.3.0 to 9.4.2. Resolver gate needed (7 day cooldown). Predicted: 3 commits, default-set delta 0.
 
 ## Default rule set
 
 - api: opted out (`select = ["E", "F"]`), so it never picks up rules added to the default set. Delta if it adopted the defaults: 9 findings. Recommended: unset `select` and move additions to `extend-select`.
-- web: uses the defaults. Delta: 0.
+- web: uses the defaults. Delta: 0 findings.
 ```
 
 With the target unconfirmed, the hero ends `, target version unconfirmed`, `## Release` is omitted, and the delta reads `unmeasured`:
@@ -212,4 +212,4 @@ Name the formatter commit in `## Per repo` only when the formatter rewrote files
 - Default rule set gains ZZ310.
 ```
 
-End with an `AskUserQuestion` panel offering next steps, for example: push the branch, drop the resolver exemptions now that the block has lapsed, adopt a newly stabilized rule that is currently unselected, or stop here. Headless: no panel; end after the last section. Skip the panel only in plan mode.
+End with an `AskUserQuestion` panel offering next steps, for example: push the branch, drop the resolver exemptions now that the block has lapsed, adopt a newly stabilized rule that is currently unselected, or stop here. Headless: no panel; end after the last section. Skip the panel only in plan mode, which includes every `--audit-only` run.

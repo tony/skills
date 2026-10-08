@@ -105,3 +105,21 @@ def test_linked_worktree_and_non_repo(tmp_path: pathlib.Path) -> None:
     plain = tmp_path / "plain"
     plain.mkdir()
     assert "error" in repo_facts.facts(str(plain))
+
+
+def test_remoteless_repo_reads_pins_from_current_branch(tmp_path: pathlib.Path) -> None:
+    """Without a remote, pins come from the current branch."""
+    repo = tmp_path / "solo"
+    repo.mkdir()
+    _git(repo, "init", "-q", "-b", "main")
+    _git(repo, "config", "user.email", "t@example.com")
+    _git(repo, "config", "user.name", "t")
+    (repo / ".tool-versions").write_text("uv 0.7.8\n")
+    _git(repo, "add", ".")
+    _git(repo, "commit", "-q", "-m", "base")
+
+    out = repo_facts.facts(str(repo))
+
+    assert out["default_branch"] is None
+    assert out["pins_ref"] == "main"
+    assert out["pins"] == {".tool-versions": {"uv": "0.7.8"}}

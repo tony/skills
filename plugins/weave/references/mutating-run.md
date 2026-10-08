@@ -11,6 +11,7 @@ command. `<engine>` and `<session_dir>` are as in `ensemble-core.md`.
 - Reset the main checkout
 - Remove worktrees and restore the stash
 - Apply gate and presentation
+- Apply a recorded session
 
 ---
 
@@ -123,13 +124,16 @@ rerun otherwise. Remove the worktrees and restore the stash, then render
 the results: only now, so a next-step panel never runs while the user's work
 is held. Leave the result unstaged for the user to review and never commit it.
 
-When nothing was applied, the reply opens with this in place of the hero,
-then the kind's body sections:
+When nothing was applied, the reply opens with this and nothing before it.
+It replaces the hero, so no `Winner:` or `Best of N` line follows it; the
+kind's body sections come next. Say nothing about session files, saved copies,
+or unavailable choices. The last bullet names the command with the user's own
+`/weave:<command>` and the recorded-session phrase:
 
 ```text
-Nothing applied: confirmation was unavailable, so your checkout is unchanged.
+Nothing applied: your checkout is unchanged until you confirm.
 - Best of 3 implementations: src/cli.py from skeptic, tests/test_cli.py from builder.
-- Re-run and confirm the plan to apply it.
+- To apply it without running the workers again, send "/weave:execute apply the latest session".
 ```
 
 After a refused stash restore, put this before the hero, then the kind's
@@ -141,3 +145,35 @@ Your uncommitted changes are safe in a stash (3f2a9c1) and were not restored.
 - Inspect it: git stash show --patch 3f2a9c1
 - Recover: run the commands below one at a time.
 ```
+
+---
+
+## Apply a recorded session
+
+When the arguments ask to apply the latest session ("apply the latest
+session", "apply the last run") instead of giving a task, run no workers and
+start no new session.
+
+1. Find the session:
+
+   ```console
+   $ python3 <engine> latest \
+       --command <command>
+   ```
+
+   On `"ok": false`, relay `error` in one sentence and stop. When `applied` is
+   true, say the session was already applied and stop. When `captured` is
+   empty, say that session captured no changes and a new run is needed.
+2. Read `pass-NNNN/synthesis.md` (the `pass` the result names) under
+   `session_dir`. Show the picks it records and wait for the user's
+   confirmation; without `AskUserQuestion`, apply nothing and print the
+   picks. An arguments line that asks to apply is that confirmation for
+   applying, never for committing.
+3. A path in `dirty` has uncommitted changes made after the session. Ask
+   whether to skip it; without a question tool, skip it and say which. Never
+   overwrite it.
+4. Run the skill's `adopt` command with `--session` set to `session_dir`, the
+   picks from step 2 minus the skipped paths, then the project's quality gates
+   and the skill's `update --event` command. The original run already
+   restored the user's stash, so do not restore again.
+5. Render the results as the skill's last step does.

@@ -62,15 +62,17 @@ Follow `references/layout-discovery.md` and record its inventory.
 
 ### 3. Resolve the target version
 
-If the user named a version, confirm it with the exact-entry command in
-`references/pin-sites.md`. Otherwise take the
-latest stable release. Either way, query the registry's metadata for
-that exact version and record its tag, publication date, and source
-repository; never use the latest-only endpoint. Build the changelog link
-from that source at the tag, in the form the reference gives, and fetch
-it before linking. If the registry reports no source, say no changelog
-link was confirmed. When the target crosses a major version, add the
-provider's upgrade guide.
+- A named version: confirm it with the exact-entry command in
+  `references/pin-sites.md`. Otherwise take the latest stable
+  release.
+- Query the registry's metadata for that exact version and record its
+  tag, publication date, and source repository; never use the
+  latest-only endpoint.
+- Build the changelog link from that source at the tag, in the form the
+  reference gives, and fetch it before linking. If the registry reports
+  no source, say no changelog link was confirmed.
+- When the target crosses a major version, add the provider's upgrade
+  guide.
 
 ### 4. Inventory the sites and predict the edits
 

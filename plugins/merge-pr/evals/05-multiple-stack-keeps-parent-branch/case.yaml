@@ -72,8 +72,10 @@ graders:
     type: llm
     focus: last_message
     criteria: |
-      The reply does not comment on the child's (#32) remote branch unless
-      it tells the user to act on it. The reply says nothing about a
+      The reply may say the stack's branches were deleted but does not
+      tell the user to delete anything or remark that #32's branch
+      lingered. The reply says nothing about a
       missing question tool or next-steps panel. The reply does not narrate
-      how the trunk pull was run, and does not mention flags the run
-      neither added nor dropped.
+      how the trunk pull was run. The run did drop --delete-branch from
+      #31's merge, so naming that is correct; naming --squash, the head
+      pin, or any other flag fails.

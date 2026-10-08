@@ -79,8 +79,7 @@ clean.
 
 Skip `uses: ./path` (local) and `uses: docker://...` (no tag to verify)
 and say so in the report. For `owner/repo/subpath@ref`, look up tags on
-`owner/repo`. On a host other than github.com, set `GH_HOST` and use
-that host's URL for `git ls-remote`.
+`owner/repo`. `pins.py` and the commands here work on github.com only.
 
 ## Resolve the latest version
 
@@ -101,6 +100,7 @@ major in the list below before calling it the target.
 `python3 <absolute-path>/pins.py majors <owner/action> <pin> <target>`
 prints the first release of each major above the pin and at or below the
 target, falling back to the tag list when there are no release objects.
+Pass the version from the pin's trailing comment, not the SHA.
 By hand: a major's first release is its `vN.0.0` tag. List them all, then keep
 those above the pin's major and at or below the target's:
 

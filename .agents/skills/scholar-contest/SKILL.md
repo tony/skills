@@ -105,7 +105,8 @@ beside the serial one.
 - A verdict cites or measures. "On reflection this seems fine" is not a
   verdict.
 - Do not edit `terms.jsonl` to make a finding go away. Revise the claim and
-  record why.
+  record why. A definition edit that removes a phrase the corpus does not
+  contain is a recorded revision, not hiding a finding.
 - A claim raised and not settled goes in `evidence/contested.md` as open, not
   in the brief.
 
@@ -116,7 +117,9 @@ killed, 0 open` only when the gate in `references/stage-gates.md` passes;
 `⚠ Gate unmet: <n> claims still open after <n> rounds` when a capped run has
 open claims; or `⚠ Blocked: <reason>`. With no distilled ontology on disk,
 the reason names distill as the missing stage and the one sentence after it
-says to run the `scholar-distill` skill, never the `scholar-ontology` skill. Nothing follows that
+says to run the `scholar-distill` skill, never the `scholar-ontology` skill. The reply's first
+line is the hero: never a sentence about what is or is not in the working
+directory before it. Nothing follows that
 sentence: no paths searched, no "I wrote nothing", no offer to look elsewhere:
 
 ```text
@@ -142,7 +145,7 @@ Open: update-action / update-actions, whether the two are one concept.
 Run another round, or widen the corpus to settle them.
 ```
 
-Print no text before the hero. Report only what the run recorded. Write no sentence about a file left alone ("I left `terms.jsonl` unchanged"). Sections:
+The hero line is the template and nothing more: no second sentence. Sections:
 
 1. `## Findings`: what the analyzer proposed, by kind.
 2. `## Verdicts`: each candidate, its objection, and how it resolved.

@@ -90,15 +90,17 @@ that the installed CLI satisfies the new `required_version`; if it does
 not, skip `init`, report it unverifiable, and name the installed version.
 
 Otherwise re-run `init` in each root module that has a committed,
-unmodified lock. Use plain `init` per the lock reference, never
-`-upgrade`: a CLI bump moves no provider, so `lockctl.py diff` with no
-`--allow` must exit 0. A non-zero exit (a version change or a platform
-count drop) means restore the lock from git and report it. A CLI bump can
-change the lock file's own format; that change is part of the commit.
+unmodified lock:
 
-A root module with no committed lock is skipped and reported: `init`
-there would create a lock and pick providers. Run it only after the user
-approves that outcome.
+- Use plain `init` per the lock reference, never `-upgrade`: a CLI bump
+  moves no provider, so `lockctl.py diff` with no `--allow` must exit 0.
+- A non-zero exit (a version change or a platform count drop) means
+  restore the lock from git and report it.
+- A CLI bump can change the lock file's own format; that change is part
+  of the commit.
+- A root module with no committed lock is skipped and reported: `init`
+  there would create a lock and pick providers. Run it only after the
+  user approves that outcome.
 
 A failed `init`, or a lock restored for a version change or dropped
 count, stops the run with nothing committed. Leave the pin edits in the

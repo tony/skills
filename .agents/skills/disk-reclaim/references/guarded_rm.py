@@ -5,9 +5,10 @@ Usage: guarded_rm.py --scope DIR [--keeper DIR ...] [--delete] TARGET
 
 Resolves TARGET with realpath and refuses (exit 2) when it is missing, is
 or contains the scope root, lies outside SCOPE, or is, contains, or lies
-inside a KEEPER. Otherwise prints the resolved target, its size, and up to
-50 top-level entries (exit 0). Only --delete removes it; symlinks inside
-the tree are unlinked, never followed.
+inside a KEEPER, or holds a directory on another device. Otherwise prints
+the resolved target, its size, and up to 50 top-level entries (exit 0).
+Only --delete removes it; symlinks inside the tree are unlinked, never
+followed.
 """
 
 # pyright: reportAny=false, reportUnusedCallResult=false
@@ -41,6 +42,23 @@ def refusal(target: str, scope: str, keepers: list[str]) -> str | None:
     for keeper in keepers:
         if contains(keeper, target) or contains(target, keeper):
             return f"target overlaps a keeper ({keeper})"
+    return crossing_mount(target)
+
+
+def crossing_mount(target: str) -> str | None:
+    """Return a refusal when a directory under target is on another device."""
+    if Path(target).is_symlink() or not Path(target).is_dir():
+        return None
+    dev = os.lstat(target).st_dev
+    for root, dirs, _files in os.walk(target):
+        for name in dirs:
+            path = str(Path(root) / name)
+            try:
+                crosses = os.lstat(path).st_dev != dev
+            except OSError:
+                continue
+            if crosses:
+                return f"target holds a mount point or other filesystem ({path})"
     return None
 
 
@@ -54,6 +72,15 @@ def size_of(path: str) -> int:
             except OSError:
                 continue
     return total
+
+
+def human(nbytes: int) -> str:
+    """Format bytes as GiB at or above 1 GiB, else MiB or KiB."""
+    if nbytes >= 2**30:
+        return f"{nbytes / 2**30:.2f} GiB"
+    if nbytes >= 2**20:
+        return f"{nbytes / 2**20:.1f} MiB"
+    return f"{nbytes / 2**10:.0f} KiB"
 
 
 def main(argv: list[str]) -> int:
@@ -73,7 +100,7 @@ def main(argv: list[str]) -> int:
         return EXIT_REFUSED
     print(f"target: {target}")
     if Path(target).is_dir():
-        print(f"size: {size_of(target) / 2**30:.2f} GiB")
+        print(f"size: {human(size_of(target))}")
         names: list[str] = sorted(entry.name for entry in os.scandir(target))
         for name in names[:LIST_LIMIT]:
             print(f"  {name}")

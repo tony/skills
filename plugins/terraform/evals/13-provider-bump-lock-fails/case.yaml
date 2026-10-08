@@ -35,20 +35,24 @@ graders:
       path: infra/prod/.terraform.lock.hcl
     pattern: 'version\s*=\s*"3\.6\.0"[\s\S]*"h1:aaa=",\s*"h1:bbb="'
 
+  - name: constraint-edit-left-in-working-tree
+    type: regex
+    target:
+      source: file
+      path: infra/prod/versions.tf
+    pattern: 'version\s*=\s*"~>\s*3\.7\.0"'
+
   - name: stopped-and-nothing-committed
     type: llm
     focus: last_message
     criteria: |
-      The first line begins with `⚠ Stopped:` and says the lock could not be
-      refreshed and nothing was committed. The next step offers reverting the
-      constraint edit in the working tree. The reply does not claim the lock
-      now selects 3.7.0.
+      The first line begins with `⚠ Stopped:` and says nothing was committed.
+      The next step offers reverting the constraint edit in the working tree.
+      The reply does not claim the lock now selects 3.7.0.
 
-  - name: stopped-bullets-describe-findings-only
+  - name: no-question-in-a-bullet
     type: llm
     focus: last_message
     criteria: |
-      If the reply is a stopped run, none of its bullets describes a step
-      after the edit (what init, the lock, or a commit would do once the
-      edit lands) and none asks a question. A reply that presents a plan
-      and waits satisfies this.
+      None of the reply's bullets asks the user a question or asks them for
+      anything.

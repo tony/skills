@@ -102,7 +102,8 @@ For each plan item not yet applied:
    and the non-passing count (`total - passed`) equals the baseline's.
    For a typing or parametrize item (H26–H32), the type checker must cover
    `tests/` and pass; such an item records no timing.
-3. **On success** — commit this change by itself with the drafted why/what
+3. **On success** — stage the plan's files for this item (a created file
+   included) and commit them by themselves with the drafted why/what
    message, written per `references/prose-rules.md`. No `Co-Authored-By`,
    no "Generated with" or other tool trailer, no emoji: hosts add them by
    default. Do not mention the omission in the reply. First write the log entry with `pending_subject`, then commit, then
@@ -158,9 +159,32 @@ $ python3 <measure.py> compare \
 
 Emit the
 `03-execute` sections from `references/output-contract.md`, hero line
-first (`✓ 1 applied, 1 skipped`), nothing before it. Write the prose per
-`references/prose-rules.md`. Add at most one closing sentence, and no
-commentary on trailers, sandbox placeholders, or what the host adds.
+first, nothing before it. Write the prose per
+`references/prose-rules.md`. End on the last section; Step 4 adds the
+next step, and nothing else follows. Say nothing about trailers, sandbox
+placeholders, or what the host adds, and advise no change the runs did not
+measure. Reply in this shape, as plain text outside any code
+fence, with plain bullets, no bold (never `- **Label:** ...`), and no local
+paths:
+
+```text
+✓ 1 applied, 1 skipped
+
+## Applied
+
+- 7c1e9d4 Share db_session across the session, verify green, 12.5s to 7.9s.
+
+## Skipped
+
+- H33 fixed sleep in test_report: reverted, test_report failed once the sleep was removed.
+
+## Result
+
+- 7.9s against a 12.5s baseline, 4.6s recovered.
+```
+
+A run that skipped every item has no `## Applied` section; a dry run says
+"verified, nothing committed" in the hero.
 
 ## Step 4: Offer another pass
 

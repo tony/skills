@@ -49,15 +49,19 @@ def test_unparseable_settings_exit_2(tmp_path: pathlib.Path) -> None:
     assert stop.value.code == 2
 
 
-def test_new_since_lists_only_codes_the_old_version_missed(
+def test_new_since_lists_new_and_grown_codes(
     tmp_path: pathlib.Path, capsys: pytest.CaptureFixture[str]
 ) -> None:
-    """A code the old version already reported is not new."""
+    """A code is listed when its count grew; an unchanged count is not."""
     old = tmp_path / "old"
     old.mkdir()
-    old_exe = _fake(old, '#!/bin/sh\necho \'[{"code":"F401","count":2}]\'\n')
-    rows = '[{"code":"F401","count":3},{"code":"UP006","count":5},{"code":"B007","count":1}]'
+    old_body = '#!/bin/sh\necho \'[{"code":"F401","count":2},{"code":"E711","count":2}]\'\n'
+    old_exe = _fake(old, old_body)
+    rows = (
+        '[{"code":"F401","count":3},{"code":"UP006","count":5},'
+        '{"code":"B007","count":1},{"code":"E711","count":2}]'
+    )
     new_exe = _fake(tmp_path, f"#!/bin/sh\necho '{rows}'\n")
     args = ["--cwd", str(tmp_path), "--new-since", old_exe, "--", new_exe]
     assert default_delta.main(args) == 0
-    assert capsys.readouterr().out.splitlines() == ["B007\t1", "UP006\t5"]
+    assert capsys.readouterr().out.splitlines() == ["B007\t1\t0", "F401\t3\t2", "UP006\t5\t0"]

@@ -106,17 +106,14 @@ _PHRASE_FIXES = (
     (re.compile(_SKILL_PHRASE + r"(?:[ \t]+slash)?(?:[ \t]+|[ \t]*\n[ \t]*)command\b"), r"\1"),
 )
 """Repairs for the article and noun left behind when a slash command becomes a skill."""
-# SPIKE: grammar repair by pattern, covering only the shapes this corpus produces
-# ("the /p:c command", "the /p:c"). A new phrasing in a source file would slip through
-# and read awkwardly; nothing detects that, so it needs a re-read after adding skills.
+# Covers only the phrasings this corpus uses ("the /p:c command", "the /p:c");
+# a new phrasing passes through unrepaired and undetected.
 
 _BASH_LINE_RE = re.compile(r"^`!(?P<cmd>.+)`\s*$")
 _INLINE_BANG_RE = re.compile(r"`!([^`\n]*)`")
 _ASK_RE = re.compile(r"\bAskUserQuestion\b")
 _FENCE_RE = re.compile(r"^\s*(```|~~~)")
-# SPIKE: fence tracking is a plain open/close toggle. It ignores fence length and
-# indentation rules, so a nested fence of a different length would desynchronize it.
-# No component in plugins/ nests fences; a real implementation should tokenize.
+# An open/close toggle that ignores fence length, so a nested fence desynchronizes it.
 
 
 @dataclasses.dataclass(frozen=True)
@@ -613,10 +610,8 @@ class SkillBuilder:
             if src.suffix == _MARKDOWN_SUFFIX:
                 text = self._transform_markdown(raw, plugin, base)
             else:
-                # SPIKE: non-markdown resources get path rewriting but not the
-                # inline-bash or choice-prompt transforms, on the assumption that a
-                # .sh/.py/.yml payload never carries them. The check greps every
-                # emitted file for both, so a future one would fail loudly.
+                # Path rewriting only; the emitted-file check fails on any inline
+                # bash or choice prompt a non-markdown payload carries.
                 text = self._rewrite_tokens(raw, plugin, base)
             self._files[rel] = (text.encode("utf-8"), mode)
 
@@ -670,9 +665,8 @@ class SkillBuilder:
     def _allocate(self, preferred: str) -> str:
         """Pick a free output-relative path, disambiguating on basename clashes.
 
-        SPIKE: first writer keeps the plain name and later ones get prefixed, so the
-        assignment depends on traversal order. It is reproducible because the traversal
-        is sorted, but a symmetric scheme would name both copies for their source.
+        The first writer keeps the plain name and later ones get a prefix; the
+        traversal is sorted, so the assignment is reproducible.
         """
         if preferred not in self._files and preferred not in self._vendored.values():
             return preferred

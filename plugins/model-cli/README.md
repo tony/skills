@@ -56,7 +56,8 @@ see it in `ps`.
 
 `codex` also passes `--skip-git-repo-check`, which removes Codex's repo guard.
 Commit or stash first; outside a git repository nothing the run changes can be
-undone.
+undone. The check that runs after a timeout or crash needs a git repository;
+outside one, the run stops and reports that it could not check.
 
 ## Plan mode
 

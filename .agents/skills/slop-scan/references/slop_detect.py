@@ -5,6 +5,12 @@ Usage:
   slop_detect.py files    --registry PATH [--override PATH] [--added-base SHA] [PATH ...]
   slop_detect.py diff     --registry PATH [--override PATH] [--historical]
   slop_detect.py messages --registry PATH [--override PATH] [--historical]
+  slop_detect.py present  --findings FILE [--rev REV] [--out FILE]
+
+Every scanning mode takes ``--out FILE``: the JSON goes to the file and stdout
+gets a count per tier and signature. ``present`` drops the diff findings whose
+text is gone from its file at REV (default HEAD); text and path reach ``git grep``
+as argv elements, never through a shell.
 
 ``files`` reads NUL-separated paths from stdin when none are given
 (``git ls-files -z``). ``diff`` reads a unified diff or ``git log -p`` output
@@ -458,17 +464,72 @@ def scan_messages(rules: list[Rule], text: str, *, historical: bool) -> list[dic
     return found
 
 
+def emit(doc: dict[str, Any], out: Path | None) -> None:
+    """Print the JSON, or write it to ``out`` and print per-signature counts."""
+    if out is None:
+        json.dump(doc, sys.stdout)
+        sys.stdout.write("\n")
+        return
+    out.write_text(json.dumps(doc), encoding="utf-8")
+    counts: dict[str, int] = {}
+    for f in doc["findings"]:
+        key = f"{f['tier']} {f['signature_id']}"
+        counts[key] = counts.get(key, 0) + 1
+    print(f"findings: {len(doc['findings'])} (full JSON in the --out file)")
+    for key, n in sorted(counts.items()):
+        print(f"{n:6d}  {key}")
+
+
+def still_present(finding: dict[str, Any], rev: str) -> bool:
+    """Whether a diff finding's text is still in its file at ``rev``.
+
+    Text and path travel as argv elements, never through a shell.
+    """
+    if "file" not in finding or "text" not in finding:
+        return True
+    proc = subprocess.run(  # noqa: S603
+        ["git", "grep", "-F", "-q", "-e", str(finding["text"]), rev, "--", str(finding["file"])],  # noqa: S607
+        capture_output=True,
+        check=False,
+    )
+    return proc.returncode == 0
+
+
+def run_present(findings_file: Path | None, rev: str, out: Path | None) -> int:
+    """Drop findings whose text a later commit removed; print the rest as JSON."""
+    if findings_file is None:
+        print("detect: present needs --findings", file=sys.stderr)
+        return 2
+    try:
+        doc = json.loads(findings_file.read_text(encoding="utf-8"))
+    except (OSError, ValueError) as exc:
+        print(f"detect: {exc}", file=sys.stderr)
+        return 2
+    doc["findings"] = [f for f in doc.get("findings", []) if still_present(f, rev)]
+    emit(doc, out)
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     """Run the requested mode; return the process exit code."""
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("mode", choices=["files", "diff", "messages"])
+    parser.add_argument("mode", choices=["files", "diff", "messages", "present"])
     parser.add_argument("paths", nargs="*")
-    parser.add_argument("--registry", type=Path, required=True)
+    parser.add_argument("--registry", type=Path)
     parser.add_argument("--override", type=Path)
     parser.add_argument("--added-base")
     parser.add_argument("--historical", action="store_true")
+    parser.add_argument("--out", type=Path, help="write the JSON here and print a summary")
+    parser.add_argument("--findings", type=Path, help="present: detector JSON to filter")
+    parser.add_argument("--rev", default="HEAD", help="present: revision to search")
     args = parser.parse_intermixed_args(argv)
 
+    if args.mode == "present":
+        return run_present(args.findings, args.rev, args.out)
+
+    if args.registry is None:
+        print("detect: --registry is required", file=sys.stderr)
+        return 2
     try:
         sigs, counts = load_registry(args.registry, args.override)
         rules = build_rules(sigs)
@@ -486,8 +547,7 @@ def main(argv: list[str] | None = None) -> int:
         findings = scan_messages(rules, sys.stdin.read(), historical=args.historical)
 
     demote_by_conventions(rules, findings)
-    json.dump({"loaded": {**counts, "active": len(sigs)}, "findings": findings}, sys.stdout)
-    sys.stdout.write("\n")
+    emit({"loaded": {**counts, "active": len(sigs)}, "findings": findings}, args.out)
     return 0
 
 

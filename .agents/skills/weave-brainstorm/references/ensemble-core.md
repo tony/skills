@@ -162,11 +162,14 @@ $ python3 <engine> worktrees create \
     --participants maintainer,skeptic,builder
 ```
 
-**Write probe (mutating commands).** Before launching, write a one-line file
-named `.weave-probe` in each worktree path (a Bash `echo` is enough), read it
-back, then delete it with `rm`. A write refused by both the tool and Bash means
-the lane would lose its work after dispatch: stop before any lane runs, remove
-the worktrees (`worktrees remove`), and reply with this and nothing more:
+**Write probe (mutating commands).** Before launching, probe through a Task
+agent, because workers are Task agents and may hold fewer permissions than you:
+launch one `general-purpose` Task agent rooted in the first worktree path, with
+the prompt "Write a one-line file named `.weave-probe` here, read it back,
+delete it, and reply `ok` or the error." A write refused by both its file tool
+and Bash means the lanes would lose their work after dispatch: stop before any
+lane runs, remove the worktrees (`worktrees remove`), restore the stash, and
+reply with this and nothing more (no mention of stashes or worktrees):
 
 ```text
 Stopped before any worker started: file writes are blocked for this session.
@@ -174,7 +177,7 @@ Stopped before any worker started: file writes are blocked for this session.
 ```
 
 Name no role and no path. Under `model-clis`, probe only the `claude`
-lane's checkout the same way; the engine runs `agy` and `gpt` itself.
+lane the same way, in the main checkout; the engine runs `agy` and `gpt` itself.
 
 Launch a fresh `general-purpose` Task agent per role, rooted in its worktree
 path from the JSON, with the prompt "Read `<composed prompt path>` and follow

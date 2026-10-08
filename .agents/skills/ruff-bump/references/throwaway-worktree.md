@@ -6,6 +6,10 @@ branch that differs from the remote's, and the commits must start from the
 remote default branch. The local default branch may be stale, and
 a push from it is rejected as a non-fast-forward.
 
+`<repo>` below is the repository's top-level directory
+(`git rev-parse --show-toplevel`). Every git command names its repository
+with `git -C`, so none depends on the shell's directory.
+
 `<remote>` below is the remote the default branch tracks: `origin` when it
 exists, the only remote when there is one, otherwise ask (`git remote -v`
 lists them).
@@ -18,7 +22,7 @@ not `$HOME`: the toplevel is a physical path, and home may be a symlink.
 Fetch the default branch first:
 
 ```console
-$ git fetch <remote> <default>
+$ git -C <repo> fetch <remote> <default>
 ```
 
 Then create the directory. The command prints its path; use that literal
@@ -35,24 +39,24 @@ name the skill gives, or `wip/<topic>`. If the branch already exists,
 pick another name; never reset an existing one.
 
 ```console
-$ git worktree add \
+$ git -C <repo> worktree add \
     -b <branch> \
     <printed-path> \
     <remote>/<default>
 ```
 
-Commit there. Push only when the request asks to push, and only to the
-target the calling skill names. A skill that lands commits on the default
+Commit with `git -C <printed-path>`. Push only when the request asks to
+push, and only to the target the calling skill names. A skill that lands commits on the default
 branch directly pushes `HEAD` to it:
 
 ```console
-$ git push <remote> HEAD:<default>
+$ git -C <printed-path> push <remote> HEAD:<default>
 ```
 
 A skill that opens a pull request pushes its own branch:
 
 ```console
-$ git push \
+$ git -C <printed-path> push \
     --set-upstream \
     <remote> <branch>
 ```
@@ -60,7 +64,7 @@ $ git push \
 Remove the worktree afterwards; the branch and its commits stay:
 
 ```console
-$ git worktree remove <printed-path>
+$ git -C <repo> worktree remove <printed-path>
 ```
 
 Without a push request, report the branch name and print the push
@@ -68,5 +72,5 @@ command for the user to run, using the same target (`<target>` is
 `<default>` or `<branch>`):
 
 ```console
-$ git push <remote> <branch>:<target>
+$ git -C <repo> push <remote> <branch>:<target>
 ```

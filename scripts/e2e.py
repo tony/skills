@@ -32,6 +32,7 @@ Test both sources:
 
 from __future__ import annotations
 
+import ast
 import json
 import os
 import re
@@ -357,8 +358,8 @@ def _assert_weave_worker_reference(reference_path: Path) -> None:
     """Assert the shared weave worker protocol's strategy boundary."""
     _assert(reference_path.is_file(), "weave: missing references/worker-backends.md")
     text = reference_path.read_text(encoding="utf-8")
-    subagent_label = "Adversarial sub-agents (Recommended)"
-    cli_label = "Separate model CLIs"
+    subagent_label = "**Adversarial sub-agents (Recommended)**"
+    cli_label = "**Separate model CLIs**"
     _assert(subagent_label in text, f"weave workers: missing '{subagent_label}'")
     _assert(cli_label in text, f"weave workers: missing '{cli_label}'")
     _assert(
@@ -541,8 +542,10 @@ def _assert_weave_engine_body(command_path: Path, text: str) -> None:
             "--mutating" in text, f"{rel}: a mutating skill must start its session with --mutating"
         )
         _assert("## Orchestration Plan" in text, f"{rel}: mutating skill has no Orchestration Plan")
+        run_ref = WEAVE_DIR / "references" / "mutating-run.md"
+        cited = text + run_ref.read_text(encoding="utf-8") if "mutating-run.md" in text else text
         required = ("capture", "adopt", "worktrees remove", "stash-restore", "reset-main")
-        missing = [cmd for cmd in required if f"<engine> {cmd}" not in text]
+        missing = [cmd for cmd in required if f"<engine> {cmd}" not in cited]
         _assert(not missing, f"{rel}: mutating lifecycle calls are missing: {', '.join(missing)}")
     else:
         _assert(
@@ -962,22 +965,19 @@ def _check_weave_engine_runner() -> None:
 def _check_weave_engine_credit_strings() -> None:
     patterns = t.cast("list[str]", _engine_eval("list(engine.CREDIT_PATTERNS)"))
     known = {item.lower() for item in patterns}
-    lists: list[tuple[Path, list[str]]] = []
-    for path in sorted((REPO_ROOT / "plugins" / "model-cli").rglob("*.md")):
-        blocks = t.cast(
-            "list[str]",
-            re.findall(
-                r"stderr patterns:?(.*?)(?:\n\n|\.\s)", path.read_text(encoding="utf-8"), re.DOTALL
-            ),
-        )
-        lists.extend((path, t.cast("list[str]", re.findall(r"`([^`]+)`", b))) for b in blocks)
-    _assert(bool(lists), "model-cli: no credit-exhaustion string list found to compare with")
-    for path, listed in lists:
-        missing = [item for item in listed if item.lower() not in known]
-        _assert(
-            not missing,
-            f"weave engine: credit strings in {path.relative_to(REPO_ROOT)} are missing: {missing}",
-        )
+    runner = REPO_ROOT / "plugins" / "model-cli" / "scripts" / "run_tier.py"
+    listed = next(
+        (
+            t.cast("list[str]", ast.literal_eval(node.value))
+            for node in ast.parse(runner.read_text(encoding="utf-8")).body
+            if isinstance(node, ast.Assign)
+            and any(isinstance(n, ast.Name) and n.id == "CREDIT_PATTERNS" for n in node.targets)
+        ),
+        t.cast("list[str]", []),
+    )
+    _assert(bool(listed), "model-cli: run_tier.py has no CREDIT_PATTERNS to compare with")
+    missing = [item for item in listed if item.lower() not in known]
+    _assert(not missing, f"weave engine: model-cli credit strings are missing: {missing}")
 
 
 def _check_weave_engine_session_record() -> None:

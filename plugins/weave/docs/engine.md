@@ -49,6 +49,7 @@ Session
 - `update --session S`: `--status`, `--completed-passes`, `--event` with
   `--event-json`, `--drop <lane>`, `--set key=<json>`, `--link-latest`.
 - `pass-dir --session S --pass N`: creates `pass-NNNN` for a later pass.
+- `latest --command <name>`: the newest session of that command for the repository: `session_dir`, `status`, the last captured `pass`, `captured` manifests per participant, `dirty` (captured paths the checkout changed since), and `applied`. Read-only; it backs applying a recorded session.
 
 Prompts and lanes
 - `prompt --lane <lane> --file F --out O`: writes the lane's prompt: role

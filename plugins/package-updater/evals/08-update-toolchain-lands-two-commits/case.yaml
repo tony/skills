@@ -44,7 +44,14 @@ graders:
     target:
       source: file
       path: .git/logs/HEAD
-    pattern: '(?=[\s\S]*\tcommit: [^\n]*\buv\b)(?=[\s\S]*\tcommit: [^\n]*\bjust\b)'
+    pattern: '(?=[\s\S]*\tcommit: (?![^\n]*\bjust\b)[^\n]*\buv\b)(?=[\s\S]*\tcommit: (?![^\n]*\buv\b)[^\n]*\bjust\b)'
+
+  - name: last-commit-links-its-release
+    type: regex
+    target:
+      source: file
+      path: .git/COMMIT_EDITMSG
+    pattern: 'casey/just/releases/tag/1\.40\.0'
 
   - name: both-pins-moved
     type: regex
@@ -56,7 +63,7 @@ graders:
   - name: never-pushes-or-stages-interactively
     type: tool_used
     tool: Bash
-    input_match: 'git push|git add (-p|--patch)|git commit .*(-[a-z]*a|--all)'
+    input_match: 'git push|git add (-p|--patch)|git commit (-[a-z]*a[a-z]* |--all)'
     min: 0
     max: 0
     arm: both
@@ -68,3 +75,12 @@ graders:
       The reply says uv and just were committed separately, one commit for
       each, and that nothing was pushed. It does not describe a single
       commit that moves both tools, and it does not claim a push happened.
+
+  - name: reply-hero-shape
+    type: llm
+    focus: last_message
+    criteria: >-
+      The reply opens with a single line starting with a check mark that
+      says what landed, and does not open with a first-person sentence. It
+      does not explain that a commit message has a why because of a rule,
+      and it does not say a commit message "explains" anything.

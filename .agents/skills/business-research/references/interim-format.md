@@ -59,8 +59,8 @@ Scope (what is measured and why), the pinned window (explicit start
 and end dates, plus any excluded novelty-ramp window), the
 instrument inventory with each instrument marked available or
 unavailable, environment versions for the tools used to collect, and
-a `Names:` line listing every organization, repository, team, and
-person name the run touches, comma-separated. Research fills it from
+a `Names:` line listing every organization, repository, team,
+person, and internal workflow or skill name the run touches, comma-separated. Research fills it from
 the repositories and teams it queried and the people the user named; the tier-3 scan
 reads it as the `--deny` list. `gate` fails when the line is absent;
 write `Names: none` when the run touches no names.
@@ -102,7 +102,8 @@ required on every entry, written as flat `key: value` lines with no
 trailing comments, quotes, or nesting; `references/business.py assumptions <file>`
 checks that and the two enumerations. A MEASURED entry's `source_ref`
 names a `sources.md` entry; an assumption with no instrument behind
-it is ESTIMATED.
+it is ESTIMATED. An empty file passes: a run that only measures
+registers no assumptions.
 
 ### raw/
 
@@ -239,6 +240,9 @@ in bullets. State a figure as what was measured, never as what the
 skill caused: "median 18 min per task gross, net unknown
 (DIRECTIONAL, MEASURED, n=3)", not "the skill saved 18 min".
 Write adoption and realization in words, never as `(a)` and `(r)`.
+The hero is the measurement, with the word "gross" when net is unknown ("18 min median per
+draft gross"), never an effect ("18 min less per draft"); a bullet
+never repeats it. Cite a benchmark with its qualifier ("METR, early-2025 tools").
 
 Reply in this shape, as plain text outside any code fence, with plain bullets, no bold (never `- **Label:** ...`), and no local paths:
 

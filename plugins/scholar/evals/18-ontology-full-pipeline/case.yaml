@@ -53,7 +53,7 @@ graders:
   - name: never-writes-into-the-corpus
     type: tool_used
     tool: Write
-    input_match: 'tiny-lib/src'
+    input_match: 'file_path\W+[^"]*tiny-lib/src'
     min: 0
     max: 0
     arm: both

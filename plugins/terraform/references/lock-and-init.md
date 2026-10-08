@@ -171,15 +171,15 @@ a version and the constraint admits a newer one, pin it for the refresh:
 1. Set the provider's constraint to `= <version>` at every declaring site,
    as a temporary working-tree edit on top of the planned constraints.
 2. Drop the block and run plain `init` as above.
-3. Put the planned constraints back (`git checkout -- <declaring-file>...`
-   when they are committed, a re-edit otherwise), then run `providers lock` naming the
+3. Re-edit the declaring files back to the planned constraints (never
+   `git checkout` them: that would discard the planned edit), then run `providers lock` naming the
    provider with the platforms the lock tracked (the running platform when
    the count did not drop). Read the lock's `constraints` line back with
    `git diff`: it must show the restored form and the named version. When
    it still shows `= <version>`, restore the lock as in step 4 and stop.
 4. Read the version with `lockctl.py state`. If it is not exactly the named
    version, restore the lock from git, put the declaring files back as in
-   step 3, report the version that was selected, and stop:
+   step 3, report the version that was selected, and stop. Restore the lock with:
 
 ```console
 $ git checkout \
@@ -263,8 +263,9 @@ $ git checkout \
     -- <root-module-dir>/.terraform.lock.hcl
 ```
 
-Report it as held back with the before and after counts, and end the run
-with the stopped line. A bump skill commits nothing in this case.
+Report it as held back with the before and after counts. A bump skill
+commits nothing in this case and ends with the stopped line;
+`refresh-lock` follows its step 4.
 
 ## When the resolver cannot see the version
 

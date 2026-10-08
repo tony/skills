@@ -150,7 +150,7 @@ CREDIT_PATTERNS = (
     "quota_exceeded",
     "insufficient_quota",
     "exceeded your current quota",
-    "billing",
+    r"billing (?:limit|error|issue)",
     "capacity exhausted",
     "usage limit",
 )
@@ -1890,6 +1890,50 @@ def adopt_files(
     return {"ok": True, "copied": copied, "deleted": deletes}
 
 
+def latest_session(repo: str, command: str) -> Json:
+    """Describe the newest ``command`` session of ``repo`` and what it captured.
+
+    ``captured`` maps each participant of the last pass that has diffs to its
+    manifest; ``dirty`` lists captured paths the checkout has changed since.
+    """
+    info = resolve_repo(repo)
+    if not info.git:
+        msg = f"{command} needs a git repository with at least one commit: {info.reason}."
+        raise EngineError(msg)
+    origin = git(info.top, "remote", "get-url", "origin", check=False)
+    _, _, repo_dir = repo_identity(info.top, origin)
+    root = aip_root() / "repos" / repo_dir / "sessions" / command
+    link = root / "latest"
+    if link.is_symlink() and link.resolve().is_dir():
+        sdir = link.resolve()
+    else:
+        found = sorted(d for d in root.glob("*") if d.is_dir() and not d.is_symlink())
+        if not found:
+            msg = f"no {command} session recorded for this repository"
+            raise EngineError(msg)
+        sdir = found[-1]
+    session = load_session(sdir)
+    passes = sorted(d for d in sdir.glob("pass-*") if (d / "diffs").is_dir())
+    captured: Json = {}
+    if passes:
+        for manifest in sorted((passes[-1] / "diffs").glob("*.json")):
+            captured[manifest.stem] = json.loads(manifest.read_text(encoding="utf-8"))
+    paths = {p for m in captured.values() for p in m["changed"] + m["deleted"]}
+    status = git_z(info.top, "status", "--porcelain", "-z", "--no-renames", "--untracked-files=all")
+    dirty = sorted(paths & {entry[3:] for entry in status})
+    events = sdir / "events.jsonl"
+    text = events.read_text(encoding="utf-8") if events.is_file() else ""
+    return {
+        "ok": True,
+        "session_dir": str(sdir),
+        "status": session.get("status"),
+        "pass": int(passes[-1].name[5:]) if passes else None,
+        "captured": captured,
+        "dirty": dirty,
+        "applied": any(f'"{e}"' in text for e in ("synthesis_applied", "adoption_applied")),
+    }
+
+
 def stash_entry(top: str, sha: str) -> str | None:
     """Return the ``stash@{N}`` ref whose commit is ``sha``."""
     for line in git(top, "stash", "list", "--format=%H %gd").splitlines():
@@ -2148,6 +2192,10 @@ def build_parser() -> argparse.ArgumentParser:  # noqa: PLR0915
     p.add_argument("--delete", action="append", default=[], help="path to remove")
     p.add_argument("--all", dest="whole", help="adopt everything this participant captured")
 
+    p = sub.add_parser("latest", help="describe the newest session of a command")
+    p.add_argument("--command", choices=sorted(PROFILES), required=True)
+    p.add_argument("--repo", default=".")
+
     p = sub.add_parser("guard", help="compare the checkout with the pre-dispatch snapshot")
     p.add_argument("action", choices=["check", "resolve", "finish", "prune"])
     p.add_argument("--session")
@@ -2256,6 +2304,8 @@ def run(args: argparse.Namespace) -> Json:  # noqa: PLR0911
         )  # fmt: skip
         out.write_text(text, encoding="utf-8")
         return {"ok": True, "path": str(out)}
+    if cmd == "latest":
+        return latest_session(args.repo, args.command)
     if cmd == "guard":
         return _guard_command(args)
     if cmd == "panel-merge":

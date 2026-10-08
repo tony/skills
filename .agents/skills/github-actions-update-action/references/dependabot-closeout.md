@@ -118,18 +118,29 @@ An empty result means no run has started yet; retry once the push has
 registered:
 
 ```console
-$ gh run watch --exit-status "$(gh run list \
+$ gh run list \
     --repo <slug> \
     --commit <sha> \
     --limit 1 \
     --json databaseId \
-    --jq '.[0].databaseId')"
+    --jq '.[0].databaseId'
+```
+
+Then watch that run id:
+
+```console
+$ gh run watch \
+    --repo <slug> \
+    --exit-status \
+    <run-id>
 ```
 
 When the work goes through a pull request instead, watch its checks:
 
 ```console
-$ gh pr checks --watch
+$ gh pr checks <number> \
+    --repo <slug> \
+    --watch
 ```
 
 ## Scope discipline

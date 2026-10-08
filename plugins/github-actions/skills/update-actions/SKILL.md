@@ -63,7 +63,7 @@ One commit per repository and action, one repository at a time. With
 `--push`, push as each completes so an interrupted run resumes, after
 `git log <remote>/<default>..HEAD --format=%h%x20%s` lists bump commits
 alone for that repository (any other commit is the user's: do not push,
-name it); otherwise report each local branch holding commits and print
+name it, never advise a reset or drop of it); otherwise report each local branch holding commits and print
 its push command. With
 `--pr`, branch, push, and open a pull request per repository, then close
 dependabot pull requests only after those merge. Write commit messages,

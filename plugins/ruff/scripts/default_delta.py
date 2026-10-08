@@ -9,8 +9,9 @@ default codes come from ``--isolated --show-settings`` run on a scratch file;
 exits 2 when that output lists no codes.
 
 With ``--new-since "<old ruff command>"`` it instead prints the codes the
-command reports now that the old command did not, one ``code<TAB>count`` line
-each, so a version bump commits only rules the previous version never raised.
+command reports in more places than the old command did, one
+``code<TAB>count<TAB>was`` line each, so a version bump commits only the
+findings the previous version never raised.
 """
 
 # ruff: noqa: S603
@@ -90,12 +91,12 @@ def measure(cmd: list[str], cwd: str) -> list[tuple[str, int, int]]:
     return [(c, configured.get(c, 0), widened[c]) for c in sorted(widened)]
 
 
-def new_codes(old_cmd: list[str], cmd: list[str], cwd: str) -> list[tuple[str, int]]:
-    """Return ``(code, count)`` for codes ``cmd`` reports and ``old_cmd`` does not."""
+def new_codes(old_cmd: list[str], cmd: list[str], cwd: str) -> list[tuple[str, int, int]]:
+    """Return ``(code, count, was)`` for codes ``cmd`` reports more often than ``old_cmd``."""
     base = ("check", "--no-cache", "--statistics", "--output-format", "json")
     before = counts(_ruff(old_cmd, *base, cwd=cwd))
     after = counts(_ruff(cmd, *base, cwd=cwd))
-    return [(c, n) for c, n in sorted(after.items()) if n > 0 and before.get(c, 0) == 0]
+    return [(c, n, before.get(c, 0)) for c, n in sorted(after.items()) if n > before.get(c, 0)]
 
 
 def render(rows: list[tuple[str, int, int]]) -> str:
@@ -118,7 +119,7 @@ def main(argv: list[str]) -> int:
     parser.add_argument(
         "--new-since",
         metavar="OLD_RUFF_COMMAND",
-        help="list codes this ruff reports that the quoted old command does not",
+        help="list codes this ruff reports more often than the quoted old command",
     )
     parser.add_argument("ruff", nargs=argparse.REMAINDER, help="-- <ruff command>")
     args = parser.parse_args(argv)
@@ -127,7 +128,7 @@ def main(argv: list[str]) -> int:
         parser.error("give the ruff command after --")
     if args.new_since:
         rows = new_codes(shlex.split(args.new_since), cmd, args.cwd)
-        print("\n".join(f"{c}\t{n}" for c, n in rows))
+        print("\n".join(f"{c}\t{n}\t{was}" for c, n, was in rows))
         return 0
     print(render(measure(cmd, args.cwd)))
     return 0

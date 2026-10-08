@@ -96,7 +96,8 @@ rule. Beyond those:
 - Terragrunt: `terraform_version_constraint` in `terragrunt.hcl` or
   `root.hcl`.
 - HCP Terraform or Terraform Enterprise: `terraform_version` on a
-  `tfe_workspace` resource, which pins the CLI the remote runs use.
+  `tfe_workspace` resource, which pins the CLI the remote runs use
+  ([tfe_workspace](https://registry.terraform.io/providers/hashicorp/tfe/latest/docs/resources/workspace)).
 
 Three traps make a search report a clean repository that is not one.
 

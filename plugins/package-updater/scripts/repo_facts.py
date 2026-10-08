@@ -132,6 +132,9 @@ def facts(repo: str, *, fetch: bool = False) -> dict[str, object]:
         "dirty": bool(_git(repo, "status", "--porcelain")[1]),
     }
     if remote is None:
+        ref = str(out["branch"] or "HEAD")
+        out["pins_ref"] = ref
+        out["pins"] = _pins(repo, ref)
         return out
     if fetch:
         out["fetch_ok"] = _git(repo, "fetch", remote)[0] == 0

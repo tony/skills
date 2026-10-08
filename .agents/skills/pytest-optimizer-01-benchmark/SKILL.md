@@ -63,7 +63,7 @@ line.
 
 **Control run.** The baseline ran in the user's tree; candidates run in a fresh
 worktree with no bytecode cache and a new virtualenv, so the two differ before
-any change. Run steps 1, 3 and 5 once with no change applied, append its runs to
+any change. Run the per-hypothesis steps 1, 3 and 5 once with no change applied, append its runs to
 `<runs-dir>/control-runs.jsonl`, and save its summary in the memory directory:
 
 ```console
@@ -180,7 +180,30 @@ floor. Nothing in this phase touches the user's tree, history, or any remote. Up
 ## Step 4: Report
 
 Emit the `01-benchmark` sections from `references/output-contract.md`. Write
-the prose per `references/prose-rules.md`.
+the prose per `references/prose-rules.md`. Put each candidate under the
+section its measurement earned: a candidate rejected for a count drop or a gate
+failure is under `## Rejected`, never `## Validated`. An empty section says
+"None." in one line. Advise nothing the runs did not measure (no "make X
+cheaper"). When the phase halted before any run, print the halted-run shape
+instead, with one cause and no list of what is absent. Reply in this shape, as
+plain text outside any code fence, with plain bullets, no bold (never
+`- **Label:** ...`), and no local paths:
+
+```text
+✓ 1 validated, 1 rejected
+
+## Validated
+
+- H10 mis-scoped fixture: db_session to session scope saves 4.6s, above the 0.44s band, confidence 0.9.
+
+## Rejected
+
+- H33 fixed sleep in test_report: removing it saves 0.02s, inside the noise band.
+
+## Safety-gate results
+
+- H10 mis-scoped fixture: order independence held across 3 seeds and collection is deterministic.
+```
 
 Close with an `ask-user-choice` panel offering to build the plan, re-benchmark a
 subset, or stop. Without one, stop after the report and name the single next step in

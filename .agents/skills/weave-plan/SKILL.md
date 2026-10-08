@@ -36,7 +36,7 @@ The selected backend governs the whole session: dispatch, retry, judging, refine
 
 ## Phase 0: Enter plan mode
 
-Call `EnterPlanMode` immediately and stay in it: the final output is the host's plan file, and the user approves execution from it. Never call `ExitPlanMode`. Emit `Plan mode active — drafting implementation plan…`.
+Call `EnterPlanMode` immediately and stay in it: the final output is the host's plan file, and the user approves execution from it. Never call `ExitPlanMode`. Emit `Plan mode active: drafting implementation plan.`
 
 In plan mode the main agent reads (`Read`, `Grep`, `Glob`), asks questions, launches Task agents, and writes the plan file. It runs read-only engine commands (`flags`, `context`, `judge-parse`) directly. Everything else that writes goes to a **session agent**: a `general-purpose` Task agent with `mode: "default"`. Give it the exact engine commands or file contents; it returns each command's JSON verbatim. This covers `init`, `prompt`, `worktrees`, `labels`, `update`, `guard`, and every file written under `<session_dir>`.
 
@@ -68,11 +68,11 @@ The shared worker prompt body is:
 > 3. **Architecture decisions**: key choices justified by existing patterns
 > 4. **Test strategy**: tests to add or extend, using the project's test patterns
 > 5. **Risks and edge cases**: potential problems and mitigations
-> 6. **Commit boundaries**: each step is one atomic commit, with a commit message and the quality gates (lint, format, type-check, fast tests) to verify before committing
+> 6. **Commit boundaries**: each step is one atomic commit, with a commit message (no `Co-Authored-By`, no tool trailer, no emoji) and the quality gates (lint, format, type-check, fast tests) to verify before committing
 >
 > Be specific: reference actual files, functions, and patterns from the codebase.
 
-Follow `ensemble-core.md` (Dispatch lanes) with this body, running the engine commands through the session agent, then (Close the repo guard). If no external lane is available, continue with the Claude lane alone and say so.
+Follow `ensemble-core.md` (Dispatch lanes) with this body, running the engine commands through the session agent, then (Close the repo guard). If only one lane responds, continue with it alone and say so.
 
 ---
 
@@ -82,7 +82,7 @@ Apply `ensemble-core.md` (Blind judging, Synthesis protocol) to this pass's outp
 
 Steps 2 to 4 run on the final pass only (pass 1 when `passes` is 1, else the last pass of Phase 4), so the plan is rendered once. In this order:
 
-1. Have the session agent write the synthesis to `<session_dir>/pass-NNNN/synthesis.md` per `references/prose-rules.md`. The plan must tell the executor to run the project's quality gates before each commit.
+1. Have the session agent write the synthesis to `<session_dir>/pass-NNNN/synthesis.md` per `references/prose-rules.md`. The plan must tell the executor to run the project's quality gates before each commit, and to write commit messages with no `Co-Authored-By` line, no "Generated with" or other tool trailer, and no emoji.
 
 2. Unless `--no-deslop` was set, deslop through the session agent: plan mode makes the main agent read-only, and the pass needs `Edit` and a file copy. Tell the session agent to read `references/deslop-pass.md` and apply it with `ARTIFACT_PATH` set to that file, `SESSION_DIR`, `BASELINE_SHA` set to `baseline_sha` from `init`, and `DESLOP_MODE` from the flags, and to return the one-line summary. Re-read `synthesis.md` for the desloped plan. The summary block stays out of the plan body; print its one line after `Plan ready for review.`
 

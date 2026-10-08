@@ -117,4 +117,4 @@ order: `--memory-dir`, the in-tree directory, the cache directory. See
 ## Scope
 
 The pipeline is runner-agnostic, but the heuristics are pytest-specific
-(degrading gracefully down to pytest 6.x).
+(degrading gracefully across the pytest versions in `references/version-matrix.md`).

@@ -300,11 +300,9 @@ def check_assumptions(text: str, sources: Collection[str] | None = None) -> list
     >>> check_assumptions("- id: a\n  value: 1")[0]
     'entry a: missing description'
     >>> check_assumptions("")
-    ['no entries']
+    []
     """
     entries = _parse_register(text)
-    if not entries:
-        return ["no entries"]
     problems: list[str] = []
     for index, entry in enumerate(entries, start=1):
         name = entry.get("id") or f"#{index}"

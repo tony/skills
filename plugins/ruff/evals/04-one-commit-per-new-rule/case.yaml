@@ -25,10 +25,10 @@ execution:
 runs: 3
 
 graders:
-  - name: three-commits-at-least
+  - name: at-least-two-commits
     type: tool_used
     tool: Bash
-    input_match: 'git\b.*\bcommit'
+    input_match: '\bgit\s+commit\b'
     min: 2
     arm: both
 

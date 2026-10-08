@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import io
 import json
+import re
 import subprocess
 from pathlib import Path
 
@@ -391,10 +392,32 @@ def test_dispatch_credit_falls_back_to_agent_without_retry(repo: Path, bindir: P
     assert doc["model"] == "gpt-5.4-high"
 
 
-@pytest.mark.parametrize("text", engine.CREDIT_PATTERNS)
+CREDIT_SAMPLES = (
+    "RESOURCE_EXHAUSTED",
+    "quota exceeded",
+    "quota_exceeded",
+    "insufficient_quota",
+    "exceeded your current quota",
+    "billing limit reached",
+    "capacity exhausted",
+    "usage limit",
+)
+
+
+def test_credit_samples_cover_every_pattern() -> None:
+    for pattern in engine.CREDIT_PATTERNS:
+        assert any(re.search(pattern, s, re.IGNORECASE) for s in CREDIT_SAMPLES), pattern
+
+
+@pytest.mark.parametrize("text", CREDIT_SAMPLES)
 def test_every_credit_string_is_classified(text: str) -> None:
     got = engine.classify(returncode=1, timed_out=False, output_size=0, stderr=f"x {text} y")
     assert got == "credit"
+
+
+def test_bare_billing_is_not_credit() -> None:
+    got = engine.classify(returncode=1, timed_out=False, output_size=0, stderr="billing")
+    assert got == "crash"
 
 
 def test_dispatch_rate_limit_retries_then_falls_back(repo: Path, bindir: Path) -> None:
@@ -1079,3 +1102,24 @@ def test_plan_judges_with_every_participant_dropped(repo: Path) -> None:
     )  # fmt: skip
     for mode in ("round-robin", "panel"):
         assert engine.plan_judges(sdir, mode, 1)["mode"] == "host"
+
+
+def test_latest_session_reports_snapshots_and_paths_dirtied_since(repo: Path) -> None:
+    with pytest.raises(engine.EngineError, match="no execute session"):
+        engine.latest_session(".", "execute")
+    sdir = Path(init(command="execute", mutating=True)["session_dir"])
+    engine.create_worktrees(sdir, ["maintainer"])
+    wt = Path(engine.load_session(sdir)["worktrees"]["maintainer"]["path"])
+    (wt / "sub" / "new.py").write_text("x = 1\n")
+    (wt / "a.txt").unlink()
+    engine.capture_tree(sdir, 1, "maintainer", None)
+    engine.remove_worktrees(sdir, None)
+    engine.restore_stash(sdir)
+    (repo / "sub").mkdir(exist_ok=True)
+    (repo / "sub" / "new.py").write_text("user\n")
+    found = engine.latest_session(".", "execute")
+    assert found["session_dir"] == str(sdir)
+    assert found["pass"] == 1
+    assert found["captured"]["maintainer"] == {"changed": ["sub/new.py"], "deleted": ["a.txt"]}
+    assert found["dirty"] == ["sub/new.py"]
+    assert found["applied"] is False

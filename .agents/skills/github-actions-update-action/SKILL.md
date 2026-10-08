@@ -73,9 +73,11 @@ breaking changes and which repositories they reach, and how many commits
 this produces. List the dependabot PRs for this action that step 7 will
 close (destructive): repo, number, title, and the commit each maps to.
 Wait for approval, then exit plan mode before writing. A headless run
-stops here and writes nothing, replying in the plan-only shape in
-`references/output-shapes.md` (read it first), unless the request
-explicitly authorizes the action named; that never covers closing PRs.
+stops here and writes nothing, unless the request explicitly authorizes
+the action named; that never covers closing PRs. Its whole reply is the
+plan-only shape in `references/output-shapes.md` (read it first):
+the first line is `⚠ Plan only: N commits proposed, nothing written`, with
+no lead-in sentence, and it ends with no question.
 
 ### 6. Commit
 
@@ -92,8 +94,8 @@ bump changed.
 
 Commit locally. Push only with `--push`, and only after `git log
 <remote>/<default>..HEAD --format=%h%x20%s` lists bump commits alone; any
-other commit is the user's, so do not push, name it, and print the push
-command. Without `--push`, report the local branch holding the commit and
+other commit is the user's, so do not push, name it and how the branch
+diverges, never advise a reset or drop of it, and print the push command. Without `--push`, report the local branch holding the commit and
 print its push command. With `--pr`, branch, push, and open a pull
 request instead of committing to the default branch.
 
@@ -139,7 +141,7 @@ bullets, no bold (never `- **Label:** ...`), and no local paths:
 
 ## Target
 
-- v6 confirmed via git/ref/tags/v6; the repo pins a major float, so the float moves.
+- v6 confirmed to exist; the repo pins a major float, so the float moves.
 
 ## Upgrade
 

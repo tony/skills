@@ -42,7 +42,7 @@ $ python3 <engine> context \
     --full-diff
 ```
 
-It returns `repo`, `trunk`, `base`, `branch`, `commits` on the branch, and the diff stat and full diff in `markdown`. `base` is `origin/<trunk>` as last fetched, else the local trunk, so the comparison may be stale; say so in the plan. When `repo` is false there is nothing to review: reply in one sentence, with no local paths, that `review` needs a git repository with commits, and stop. Read the project's CLAUDE.md / AGENTS.md as well.
+It returns `repo`, `trunk`, `base`, `branch`, `commits` on the branch, and the diff stat and full diff in `markdown`. `base` is `origin/<trunk>` as last fetched, else the local trunk, so the comparison may be stale; say so in the plan. When `repo` is false there is nothing to review: reply in one sentence, with no local paths, that `review` needs a git repository with commits, add one line telling the user to run it from a project checkout, and stop. Read the project's CLAUDE.md / AGENTS.md as well.
 
 The plan must contain:
 
@@ -95,7 +95,7 @@ The shared worker prompt body is:
 >
 > Assign a confidence score (0-100) to each issue. Only report issues with confidence >= 70.
 
-Follow `ensemble-core.md` (Dispatch lanes) with this body, substituting `base` from `context` for `<base>`, then (Close the repo guard). If no external reviewer is available, continue with the Claude lane alone and say so.
+Follow `ensemble-core.md` (Dispatch lanes) with this body, substituting `base` from `context` for `<base>`, then (Close the repo guard). If only one reviewer responds, continue with it alone and say so.
 
 ---
 
