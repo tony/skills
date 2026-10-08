@@ -1,0 +1,27 @@
+{
+  "name": "skill-style",
+  "version": "0.1.0",
+  "description": "Hold SKILL.md files to a deletion test: a line stays only when removing it would change what the agent does. Frontmatter, code blocks, and sections survive verbatim.",
+  "author": {
+    "name": "Tony Narlock",
+    "email": "tony@git-pull.com"
+  },
+  "homepage": "https://github.com/tony/skills/tree/main/plugins/skill-style",
+  "repository": "https://github.com/tony/skills",
+  "license": "MIT",
+  "keywords": [
+    "skills",
+    "SKILL.md",
+    "style",
+    "trimming"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Skill Style",
+    "shortDescription": "Hold SKILL.md files to a deletion test: a line stays only when removing it would change what the agent does.",
+    "longDescription": "Hold SKILL.md files to a deletion test: a line stays only when removing it would change what the agent does. Frontmatter, code blocks, and sections survive verbatim.",
+    "developerName": "Tony Narlock",
+    "category": "Development",
+    "websiteURL": "https://github.com/tony/skills/tree/main/plugins/skill-style"
+  }
+}
