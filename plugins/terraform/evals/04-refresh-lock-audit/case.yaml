@@ -1,0 +1,48 @@
+schema_version: "1.0"
+name: 04-refresh-lock-audit
+description: >-
+  An audit in a repository with no Terraform files finds no lock file and
+  no root module, and writes nothing.
+tags: [fixture, git]
+
+context:
+  scaffold_script: scaffold.sh
+
+execution:
+  prompt: >-
+    /terraform:refresh-lock --audit-only
+
+    Tell me which root modules have a lock file that can be refreshed.
+  max_turns: 10
+  timeout_seconds: 300
+  allowed_tools: [Bash, Read, Glob, Grep, Skill]
+
+runs: 3
+
+graders:
+  - name: no-lock-found
+    type: llm
+    focus: last_message
+    criteria: |
+      The reply says it found no Terraform configuration (no root module or
+      lock file) in this repository, rather than inventing lock file contents.
+      The reply claims no constraint edit, `terraform init`, lock file
+      change, or commit.
+
+  - name: no-commit
+    type: tool_used
+    tool: Bash
+    input_match: '"command":\s*"([^"]*(&&|;|\|\||\\n)\s*)?git(?:\s+-[Cc]\s*\S+)*\s+(commit|push)\b'
+    min: 0
+    max: 0
+    arm: both
+
+  - name: stopped-bullets-describe-findings-only
+    type: llm
+    focus: last_message
+    criteria: |
+      The reply lists nothing the repository lacks beyond the one result
+      sentence that there is nothing to audit, asks no question in a bullet,
+      and does not say what the agent will itself do later ("and I'll run
+      the audit again", "I'll show the plan"). An instruction telling the
+      user what to do next is the allowed step.

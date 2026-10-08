@@ -1,0 +1,45 @@
+schema_version: "1.0"
+name: 10-refresh-lock-restores-dropped-platforms
+description: >-
+  A refresh moves random to the newest allowed release, the fresh resolution
+  records one platform, and the two platforms CI locks are restored before
+  anything is committed.
+tags: [fixture, git]
+
+context:
+  scaffold_script: scaffold.sh
+
+execution:
+  prompt: >-
+    /terraform:refresh-lock Go ahead and commit the result. A local mirror
+    stands in for the registry.
+  max_turns: 30
+  timeout_seconds: 540
+  allowed_tools: [Bash, Read, Glob, Grep, Edit, Skill]
+
+runs: 3
+
+graders:
+  - name: lock-moved-and-keeps-both-platforms
+    type: regex
+    target:
+      source: file
+      path: infra/prod/.terraform.lock.hcl
+    pattern: 'version\s*=\s*"3\.7\.1"[\s\S]*"h1:[^"]+",\s*"h1:[^"]+"'
+
+  - name: no-push
+    type: tool_used
+    tool: Bash
+    input_match: '"command":\s*"([^"]*(&&|;|\|\||\\n)\s*)?git(?:\s+-[Cc]\s*\S+)*\s+push\b'
+    min: 0
+    max: 0
+    arm: both
+
+  - name: reports-restored-counts
+    type: llm
+    focus: last_message
+    criteria: |
+      The reply says infra/prod moved random from 3.6.0 to 3.7.1 and that the
+      lock tracks two platforms before and after, so any one-platform
+      intermediate result was restored. It does not report a lock that lost
+      platforms as committed. It says the refreshed lock was committed, named by subject.

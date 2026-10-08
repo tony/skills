@@ -1,0 +1,60 @@
+schema_version: "1.0"
+name: 09-provider-bump-stub-registry
+description: >-
+  A named provider version under a range constraint lands exactly, the lock
+  keeps both tracked platforms, and the commit never carries a narrowed lock.
+tags: [fixture, git]
+
+context:
+  scaffold_script: scaffold.sh
+
+execution:
+  prompt: >-
+    /terraform:bump-provider random 3.7.0. Go ahead: edit the constraint,
+    refresh the lock, and commit. I confirmed 3.7.0 is published, and a
+    local mirror stands in for the registry.
+  max_turns: 30
+  timeout_seconds: 540
+  allowed_tools: [Bash, Read, Glob, Grep, Edit, Skill]
+
+runs: 3
+
+graders:
+  - name: constraint-moved
+    type: regex
+    target:
+      source: file
+      path: infra/prod/versions.tf
+    pattern: 'version\s*=\s*"~> 3\.7\.0"'
+
+  - name: lock-holds-named-version-and-both-platforms
+    type: regex
+    target:
+      source: file
+      path: infra/prod/.terraform.lock.hcl
+    pattern: 'version\s*=\s*"3\.7\.0"[\s\S]*"h1:[^"]+",\s*"h1:[^"]+"'
+
+  - name: no-push
+    type: tool_used
+    tool: Bash
+    input_match: '"command":\s*"([^"]*(&&|;|\|\||\\n)\s*)?git(?:\s+-[Cc]\s*\S+)*\s+push\b'
+    min: 0
+    max: 0
+    arm: both
+
+  - name: reports-platforms-and-version
+    type: llm
+    focus: last_message
+    criteria: |
+      The reply says the lock for infra/prod now selects random 3.7.0 and
+      tracks two platforms, the same count as before. It does not claim 3.7.1
+      was selected, and it does not report a lock that lost platforms as
+      committed. It also says the constraint edit and the refreshed lock went into one commit, named by subject.
+
+  - name: hero-follows-shape
+    type: llm
+    focus: last_message
+    criteria: |
+      The first line of the reply is exactly a hero of the form
+      `✓ hashicorp/random 3.6.0 -> 3.7.0 across N root modules` (singular "root module" when N is 1) with nothing appended after it (no "but", no failing
+      gate); any failure appears in a later section.

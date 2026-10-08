@@ -1,0 +1,54 @@
+schema_version: "1.0"
+name: 14-refresh-lock-unknown-platforms
+description: >-
+  A refresh that narrows a two-platform lock, with no record of which
+  platforms to restore, restores the committed lock and commits nothing.
+tags: [fixture, git]
+
+context:
+  scaffold_script: scaffold.sh
+
+execution:
+  prompt: >-
+    /terraform:refresh-lock Go ahead and commit the result. A local mirror
+    stands in for the registry. Do not ask me questions; take the default.
+  max_turns: 30
+  timeout_seconds: 540
+  allowed_tools: [Bash, Read, Glob, Grep, Edit, Skill]
+
+runs: 3
+
+graders:
+  - name: no-commit-or-push
+    type: tool_used
+    tool: Bash
+    input_match: '"command":\s*"([^"]*(&&|;|\|\||\\n)\s*)?git(?:\s+-[Cc]\s*\S+)*\s+(commit|push)\b'
+    min: 0
+    max: 0
+    arm: both
+
+  - name: lock-restored-as-committed
+    type: regex
+    target:
+      source: file
+      path: infra/prod/.terraform.lock.hcl
+    pattern: 'version\s*=\s*"3\.6\.0"[\s\S]*"h1:aaa=",\s*"h1:bbb="'
+
+  - name: reports-held-back
+    type: llm
+    focus: last_message
+    criteria: |
+      The reply says infra/prod's lock was restored to its committed
+      state because the refresh would have tracked fewer platforms (the
+      lock tracked two), and that nothing was committed. It does not
+      report a narrowed lock as committed or as the result.
+
+  - name: stopped-step-states-no-absences-or-own-plans
+    type: llm
+    focus: last_message
+    criteria: |
+      The reply lists no absences, such as a missing CI or task file or a
+      missing backend, and states no later action the agent will take on
+      its own ("then I'll rerun it"). Telling the user what to give or
+      confirm is allowed, and so is saying which platforms the lock
+      tracks or the mirror serves.

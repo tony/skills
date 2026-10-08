@@ -1,0 +1,78 @@
+schema_version: "1.0"
+name: 11-cli-bump-committed-lock
+description: >-
+  A CLI bump moves required_version and the version-manager pin together,
+  keeps the operator, and leaves the committed lock's providers and platforms
+  untouched.
+tags: [fixture, git]
+
+context:
+  scaffold_script: scaffold.sh
+
+execution:
+  prompt: >-
+    /terraform:bump-terraform 1.14.0. Go ahead: edit the pins and commit. I
+    confirmed 1.14.0 is published, and a local mirror stands in for the
+    provider registry.
+  max_turns: 30
+  timeout_seconds: 540
+  allowed_tools: [Bash, Read, Glob, Grep, Edit, Skill]
+
+runs: 3
+
+graders:
+  - name: constraint-moved-keeping-operator
+    type: regex
+    target:
+      source: file
+      path: infra/prod/versions.tf
+    pattern: 'required_version\s*=\s*"~> 1\.14\.0"'
+
+  - name: version-manager-pin-moved
+    type: regex
+    target:
+      source: file
+      path: .tool-versions
+    pattern: 'terraform\s+1\.14\.0'
+
+  - name: lock-untouched
+    type: regex
+    target:
+      source: file
+      path: infra/prod/.terraform.lock.hcl
+    pattern: 'version\s*=\s*"3\.6\.0"[\s\S]*"h1:aaa=",\s*"h1:bbb="'
+
+  - name: no-push
+    type: tool_used
+    tool: Bash
+    input_match: '"command":\s*"([^"]*(&&|;|\|\||\\n)\s*)?git(?:\s+-[Cc]\s*\S+)*\s+push\b'
+    min: 0
+    max: 0
+    arm: both
+
+  - name: reports-pins-and-lock
+    type: llm
+    focus: last_message
+    criteria: |
+      The reply says required_version and the .tool-versions pin moved to
+      1.14.0 and records 1.14.0 as confirmed by the user. It says the random
+      lock stayed at 3.6.0 with two platforms, or that the lock was left alone
+      because init could not verify it under the installed CLI. It does not
+      claim a provider moved.
+
+  - name: hero-follows-shape
+    type: llm
+    focus: last_message
+    criteria: |
+      The first line of the reply is exactly a hero of the form
+      `✓ terraform <old> -> <new> across N pin sites` with nothing appended after it (no "but", no failing
+      gate); any failure appears in a later section.
+
+  - name: drift-does-not-restate
+    type: llm
+    focus: last_message
+    criteria: |
+      If the reply has a `## Drift` section, none of its bullets repeats a
+      fact already stated in `## Sites`, `## Target`, or `## Locks`. A
+      reply with no `## Drift` section satisfies this. Any version after
+      `terraform` in the hero is an exact version or `mixed`, never a range.
