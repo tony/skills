@@ -7,7 +7,9 @@ tiers.
    writing the reply, not recalled from earlier. When the user's `AGENTS.md`, `CLAUDE.md`, or
    equivalent prescribes a commit format, use it exactly: subject pattern,
    body structure, line-wrap budget, component naming. Use the project's `type`
-   for docs edits and its component style (for example `docs(CHANGES)`). The
+   for docs edits and its component style. Keep the pattern's order: under
+   `Scope(type[detail])` the subject starts `CHANGES(docs) ...`, never
+   `docs(CHANGES) ...`, whatever form earlier commits in the log used. The
    body says why the changelog changed and what it adds, wrapped to the
    prescribed width.
 2. With no documented convention, use `docs(CHANGES) <description>` and no

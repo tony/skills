@@ -30,8 +30,12 @@ anything the user cannot get back.
   probably is, size the unread remainder (including used minus measured),
   guess which layer is the cause, describe an unmeasured path by its
   contents, or claim that TRIM or a `discard` mount option returns guest
-  deletions to the host.
+  deletions to the host. Forbidden phrasings: "which I'd expect to hold
+  most of it", "almost all of the used space is outside what I could
+  read", "likely in your home directory".
 - **Never run `sudo`.** Print the full command for the user and stop.
+  Introduce it as "run this in your own shell", never as "it needs
+  root, so I won't run it myself".
   This covers system-tier cleanup such as `apt clean` and
   `journalctl --vacuum-size`.
 - **A blanket approval covers only the regenerable tier.** Stale-but-unique

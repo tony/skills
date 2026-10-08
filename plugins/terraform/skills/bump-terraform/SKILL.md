@@ -129,8 +129,9 @@ messages and the report per `../../references/prose-rules.md`.
 ## Output
 
 Open with a one-line hero (`✓ terraform <old> -> <new> across N pin
-sites` or `Audit only: N sites disagree`; `<old>` is the version the pins
-agreed on, or `mixed` when they disagreed), then these sections in
+sites` or `Audit only: N sites disagree`; `<old>` is the version only when
+every pin is exact and equal; otherwise `mixed`, never a range or a
+`1.9.x` shorthand), then these sections in
 order:
 
 1. `## Target`: the resolved version, how it was confirmed (registry
@@ -144,13 +145,14 @@ order:
    skipped (and why), and the platform count tracked before and after.
 5. `## Verification`: the gates run and their real results, including
    whether each root module now initialises.
-6. `## Drift`: every disagreement found before the bump, and every one
-   still outstanding after it. Omit it when nothing disagreed.
+6. `## Drift`: every disagreement found before the bump that `## Sites`
+   does not already show, and every one still outstanding after it. Omit it when nothing disagreed.
 
 Name the commit by subject in `## Sites`, never by SHA.
 State a root module that could not be initialised in `## Locks` only;
-`## Verification` does not repeat it. `## Drift` states nothing
-`## Sites` already says.
+`## Verification` does not repeat it. A `## Drift` bullet that repeats a
+`## Sites`, `## Target`, or `## Locks` line is deleted, and with none
+left the section is omitted.
 
 Reply in this shape, as plain text outside any code fence, with plain bullets, no bold (never `- **Label:** ...`), and no local paths:
 

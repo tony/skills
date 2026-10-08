@@ -24,8 +24,8 @@ graders:
     type: llm
     focus: last_message
     criteria: |
-      The reply says it found no root module and no `.terraform.lock.hcl`
-      file in this repository, rather than inventing lock file contents.
+      The reply says it found no Terraform configuration (no root module or
+      lock file) in this repository, rather than inventing lock file contents.
       The reply claims no constraint edit, `terraform init`, lock file
       change, or commit.
 
@@ -36,3 +36,13 @@ graders:
     min: 0
     max: 0
     arm: both
+
+  - name: stopped-bullets-describe-findings-only
+    type: llm
+    focus: last_message
+    criteria: |
+      The reply lists nothing the repository lacks beyond the one result
+      sentence that there is nothing to audit, asks no question in a bullet,
+      and does not say what the agent will itself do later ("and I'll run
+      the audit again", "I'll show the plan"). An instruction telling the
+      user what to do next is the allowed step.

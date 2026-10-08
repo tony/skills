@@ -69,22 +69,27 @@ The step ends with its request, with no "and I'll refresh it again" clause.
 A root module whose `init` fails has its lock restored from git, and the
 others carry on. Record the failure and continue.
 
-### 5. Commit
+### 5. Verify, then commit
 
-One commit for the lock files that kept every platform (or got the
-user's explicit yes), kept out of any commit carrying authored changes. With `--no-commit`, leave them in the working tree and say what
-would have been committed. Name the commit by subject in the report, never by SHA. Write the message and the report per
-`references/prose-rules.md`.
-
-### 6. Verify and report
-
-Read each lock back and compare the selected versions to the starting
-state. Report per root module what moved, what did not, and, where a
-provider stayed put, whether a constraint is holding it.
+Verify on the working tree before any commit. Read each lock back and
+compare the selected versions to the starting state. Report per root
+module what moved, what did not, and, where a provider stayed put,
+whether a constraint is holding it.
 
 Run the detected tool's `fmt -check -recursive` (`tofu` where OpenTofu
 drives the repository) and the repository's own gates. Never report a
-gate as passing without reading the output that says so.
+gate as passing without reading the output that says so. A gate that
+fails on a file this run changed, or that the refresh plausibly caused,
+is a mid-run stop: leave the refreshed locks in the working tree, commit
+nothing, and end with the stopped line (the umbrella has its mid-run
+form). A failure in code the run did not touch is pre-existing; report it
+as such and carry on.
+
+Then make one commit for the lock files that kept every platform (or got
+the user's explicit yes), kept out of any commit carrying authored
+changes. With `--no-commit`, leave them in the working tree. Name the
+commit by subject in the report, never by SHA. Write the message and the
+report per `references/prose-rules.md`.
 
 ## Output
 

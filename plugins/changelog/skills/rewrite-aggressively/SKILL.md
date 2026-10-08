@@ -182,7 +182,7 @@ Target: CHANGES.md, Unreleased, Features, after the "### Features" heading. No v
 Run only after the Phase 3 approval.
 
 1. Read the commit format from `AGENTS.md` / `CLAUDE.md` now, even when not
-   committing: the subject you commit or offer uses it. Apply with Edit. With `--commit` in `$ARGUMENTS`, commit once at the tip per
+   committing: the subject you commit or offer follows its pattern in order (`Scope(type[detail])` gives `CHANGES(docs) ...`, not `docs(CHANGES) ...`), not the log's older subjects. Apply with Edit. With `--commit` in `$ARGUMENTS`, commit once at the tip per
    `commit-message.md`; the project's own subject format wins. Write no
    `Co-Authored-By`, no "Generated with" or other tool trailer, and no emoji.
    Without `--commit`, leave the edit uncommitted and show a ready-to-use

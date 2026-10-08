@@ -57,5 +57,7 @@ graders:
     criteria: |
       After the draft body, the reply has at most one sentence.
       That sentence does not restate which checks went unrun (duplicates,
-      security policy, templates, pins) and does not ask a list of
-      questions.
+      security policy, templates, pins) and contains no question mark.
+      One statement naming several fields the user must supply, such as
+      "Before filing, add your OS, your exact Node version, and the full
+      stack trace.", is a single sentence and passes.

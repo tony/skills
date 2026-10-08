@@ -23,8 +23,7 @@ graders:
     criteria: |
       The reply reports that the staging and prod root modules already pin
       different CLI versions (1.9.5 and 1.10.2) before or while proposing the
-      bump, since exact `required_version` pins keep them from sharing one
-      install.
+      bump, or that they disagree.
       The reply does not assert that 1.14.0 is a confirmed published Terraform
       release unless it states how it confirmed it, or it says the version
       still needs checking against the release list.

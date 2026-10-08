@@ -50,3 +50,13 @@ graders:
     min: 0
     max: 0
     arm: both
+
+  - name: stopped-bullets-describe-findings-only
+    type: llm
+    focus: last_message
+    criteria: |
+      The reply lists nothing the repository lacks beyond the one result
+      sentence that there is nothing to audit, asks no question in a bullet,
+      and does not say what the agent will itself do later ("and I'll run
+      the audit again", "I'll show the plan"). An instruction telling the
+      user what to do next is the allowed step.

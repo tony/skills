@@ -75,8 +75,9 @@ When CASCADE_STATE is `early-exit`, append `, cascade early-exit
    `- **Label:** text`. Narrative paragraphs only inside `Adjudication`,
    `Reviewer Disagreements`, and `Critic Findings`. An artifact's own
    headings, bold sub-labels, and opening summary sentence do not carry into
-   a slot: write a sub-heading as a plain line ending in a colon, and start
-   the reply with the hero, never a sentence about what was run.
+   a slot: fold a sub-heading into the first words of its paragraph or
+   bullet (`- Cursor: ...`), never a line of its own, and start the reply
+   with the hero, never a sentence about what was run.
 5. Never narrate how the run worked: no session files, `Bash`, interactive
    choices that were unavailable, stashes and worktrees that were cleaned up,
    or a deslop pass that changed nothing. The nothing-applied and

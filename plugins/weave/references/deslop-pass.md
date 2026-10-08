@@ -38,8 +38,8 @@ The caller is responsible for honouring `--no-deslop`: if set, do **not**
 invoke this reference at all. Skip cleanly with no banner, no sibling
 file, no summary block.
 
-Print nothing while the pass runs. Return the summary block (or the no-op
-line) to the caller, which places it after the result's last section. It never
+Print nothing while the pass runs. Return the summary block (nothing for a
+no-op) to the caller, which places it after the result's last section. It never
 comes before the hero line, and the reply never mentions this file's
 storage or the rollback sibling.
 
@@ -234,9 +234,5 @@ Held trims are listed in the report; nothing was removed from the result.
 
 ### No-op
 
-If Steps 3–5 produced zero applied edits, emit one line and no block. Scan
-details and verifier status stay in `deslop-report.md`:
-
-```
-Synthesis already clean (no deslop edits applied)
-```
+If Steps 3-5 produced zero applied edits, emit nothing: no line and no block.
+Scan details and verifier status stay in `deslop-report.md`.

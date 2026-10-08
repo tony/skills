@@ -1,5 +1,6 @@
 ---
 type: llm
+focus: last_message
 ---
 The reply flags the "Notes" heading as needing renaming or removal, since it names no step or decision.
 The reply flags the filler paragraph explaining why formatting is important, since removing it changes nothing the agent does.

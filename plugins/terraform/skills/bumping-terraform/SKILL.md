@@ -83,37 +83,51 @@ one of them; offer the others as next steps.
   classifying by you". A bullet states a finding, not scope the plan
   already gave. The hero is the line the skill's shape gives with
   nothing appended; a failing gate goes in `## Verification`, stated as
-  observed.
+  observed. Every reply, not only a stopped one, omits what the
+  repository lacks ("no other file pins the CLI", "no child modules
+  found", "tflint isn't installed", "the repository defines no other
+  gates") and never states what the run will do on its own later ("I'll
+  run the audit again"). With `--no-commit`, do not say nothing was
+  committed.
 - A run that cannot proceed (nothing declared, no version named and the
   release list unreachable, a dirty tree it cannot work around, a lock
-  that failed after the edits) ends with `⚠ Stopped: <one result
-  sentence>`, then the step the user must take. The result sentence says
-  what state the repository is in: `so nothing was edited` before the
-  first edit, or `so nothing was committed` after it. A run stopped after
-  its edits leaves them in the working tree, and the step offers
-  reverting them (`git restore -- <paths>`) first.
+  that failed after the edits, a gate the edits plausibly broke) ends
+  with `⚠ Stopped: <one result sentence>`, then the step the user must
+  take. The result sentence says what state the repository is in: `so
+  nothing was edited` before the first edit, or `so nothing was
+  committed` after it. A run stopped after its edits leaves them in the
+  working tree, and the step offers reverting them (`git restore --
+  <paths>`) first.
 
-  No sections, no recap, and no numbered next-step list: the step is one
-  or two sentences. Bullets are optional, at most three, with no lead-in
-  sentence. A bullet is a finding about the repository as it stands that
-  the step depends on, such as the pins that disagree when the step asks
-  which to move. Leave out anything about what the run would do after the
-  edit (`init` could not run, no lock to refresh, both keep `~>`), the
-  branch, history, untracked files, the driving tool, or a question. With
-  no such finding, write no bullets. The declared pins are the usual
-  finding; lock files, backends, which root calls which module, and the
-  installed `terraform` version stay out, as does whether a pin or an
-  installed version would satisfy the target. A stop after the edits may
-  state the new constraint and the lock's selected version in one bullet,
-  as the repository stands now ("the lock selects 3.7.0 with 1 platform,
-  2 before"), never as what the run did. A bullet never asks the user
-  for anything, and the step ends with its request. Never state what the
-  run will do on its own later ("I'll show the plan", "and I'll rerun
-  it", a "then" clause); telling the user what to do next is the step
-  itself. List nothing the repository lacks ("neither directory has a
-  backend block or a lock file", "no CI or task file runs providers
-  lock"). Name no sandbox or network block; say the registry or mirror
-  was unreachable.
+  The reply has no sections, no recap, and no numbered next-step list.
+  The step is one or two sentences and ends with its request. Bullets are
+  optional, at most three, with no lead-in sentence, and follow these
+  rules:
+
+  - A bullet is a finding about the repository as it stands that the
+    step depends on, such as the pins that disagree when the step asks
+    which to move. With no such finding, write no bullets.
+  - The declared pins are the usual finding. Lock files, backends, which
+    root calls which module, and the installed `terraform` version stay
+    out, as does whether a pin or an installed version would satisfy the
+    target. The one exception is the roots outside `--root-module` that
+    call a child module the run would edit: the result sentence names
+    them.
+  - Leave out anything about what the run would do after the edit
+    (`init` could not run, no lock to refresh, both keep `~>`), the
+    branch, history, untracked files, the driving tool, or a question.
+  - A stop after the edits may state the new constraint and the lock's
+    selected version in one bullet, as the repository stands now ("the
+    lock selects 3.7.0 with 1 platform, 2 before"), never as what the run
+    did.
+  - A bullet never asks the user for anything.
+  - Never state what the run will do on its own later ("I'll show the
+    plan", "and I'll rerun it", "after that I'll ...", a "then" clause);
+    telling the user what to do next is the step itself.
+  - List nothing the repository lacks ("neither directory has a backend
+    block or a lock file", "no CI or task file runs providers lock").
+  - Name no sandbox or network block; say the registry or mirror was
+    unreachable.
 
   Reply in this shape, as plain text outside any code fence, with plain bullets, no bold (never `- **Label:** ...`), and no local paths:
 

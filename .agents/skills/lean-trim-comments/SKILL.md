@@ -134,8 +134,9 @@ With no paths, the scope is the lines this branch added or changed.
    - Next steps: a plain list after the last section, with no heading.
 
    The hero line is `N comments: K kept, R rewritten, D deleted`; the
-   counts sum to N. Tally the verdicts before writing any reply text, so
-   the first line is final; never recount or correct it inline. A
+   counts sum to N. Draft the verdict bullets first, then count them by verdict
+   (a bullet per comment, so N equals the bullet count) and write the hero
+   from that count; never recount or correct it inline. A
    comment you shorten or reword is rewritten, not kept; kept means
    the text is unchanged. A rewrite preserves every instruction in the
    original, such as what not to change and what to test first, and adds

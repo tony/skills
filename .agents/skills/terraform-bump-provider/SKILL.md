@@ -158,9 +158,10 @@ order:
 5. `## Verification`: the gates run and their real results, with any
    pre-existing failure named as pre-existing.
 6. `## Drift`: pin sites that disagreed with each other before the
-   bump, root modules that did not move and why, and modules whose
-   constraints already admitted the target. State nothing `## Sites` or
-   `## Locks` already says. Omit it when none apply.
+   bump, unless the from and to pairs in `## Sites` already show it, root modules that did not move and why, and modules whose
+   constraints already admitted the target. A bullet that repeats a
+   `## Sites` or `## Locks` line is deleted; with none left, omit the
+   section.
 
 Name the commit by subject in `## Sites`, never by SHA, and do not
 report the temporary exact pin used to land a named version.
