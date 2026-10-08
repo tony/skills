@@ -52,3 +52,5 @@ graders:
       The reply names the unresolved decision about the retry budget as the
       thing that is blocking, drawing on the earlier conversation rather than
       asking the user to recall it.
+      That conversation is supplied in the prompt context. Using it does not
+      require reading a transcript file or printing an explicit citation.
