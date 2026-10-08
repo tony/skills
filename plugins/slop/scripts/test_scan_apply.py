@@ -97,6 +97,7 @@ def test_success_preserves_partial_staging_unicode_and_executable_mode(
     hook = repo / ".git/hooks/post-merge"
     hook.write_text("#!/bin/sh\nprintf 'damaged\\n' > user.txt\n")
     hook.chmod(0o755)
+    os.utime(repo / "café.sh", (1_000_000_000, 1_000_000_000))
     result = invoke(run, head, capsys, "--allow-dirty")
     assert result["status"] == "committed", result
     assert protected(repo) == before

@@ -158,6 +158,8 @@ def _publish(  # noqa: PLR0913
                 _expect_tip(repo, branch, expected)
                 _clean_target(repo, name, expected)
                 shutil.copyfile(index, isolated_index)
+                # Git apply checks cached stat data even when the file's bytes match.
+                _git(repo, "update-index", "-q", "--refresh", index=isolated_index)
                 _git(repo, "apply", "--index", str(patch), index=isolated_index)
                 applied = True
                 updated = _git(
