@@ -1,0 +1,30 @@
+schema_version: "1.0"
+name: 08-align-halted-bare-thread
+description: >-
+  align runs with no arguments in a thread that holds no analysis. It must
+  restate nothing and ask the user for a topic or a file path.
+tags: [align]
+
+execution:
+  prompt: /double-check:align
+  max_turns: 6
+  timeout_seconds: 180
+  allowed_tools: [Read, Glob, Grep, Skill]
+
+runs: 1
+
+graders:
+  - name: invents-no-analysis
+    type: regex
+    target: last_message
+    match: not_contains
+    pattern: 'MAX_RETRIES|RETRY_BACKOFF|retry cap'
+    flags: i
+
+  - name: halts-and-asks
+    type: llm
+    focus: last_message
+    criteria: |
+      The reply says in a sentence that there is nothing to restate, then tells
+      the user what to supply (a topic, question, or file path). It does not
+      present an analysis of any subject.

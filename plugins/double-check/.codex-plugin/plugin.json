@@ -1,0 +1,27 @@
+{
+  "name": "double-check",
+  "version": "0.1.0",
+  "description": "Forces verification requests to return re-derived answers instead of diffs against prior turns. The align skill restates a chat's analysis standalone after a revision-log reply.",
+  "author": {
+    "name": "Tony Narlock",
+    "email": "tony@git-pull.com"
+  },
+  "homepage": "https://github.com/tony/skills/tree/main/plugins/double-check",
+  "repository": "https://github.com/tony/skills",
+  "license": "MIT",
+  "keywords": [
+    "verification",
+    "re-derive",
+    "review",
+    "accuracy"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Double Check",
+    "shortDescription": "Forces verification requests to return re-derived answers instead of diffs against prior turns.",
+    "longDescription": "Forces verification requests to return re-derived answers instead of diffs against prior turns. The align skill restates a chat's analysis standalone after a revision-log reply.",
+    "developerName": "Tony Narlock",
+    "category": "Productivity",
+    "websiteURL": "https://github.com/tony/skills/tree/main/plugins/double-check"
+  }
+}

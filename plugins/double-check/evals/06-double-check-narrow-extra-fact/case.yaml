@@ -1,0 +1,65 @@
+schema_version: "1.0"
+name: 06-double-check-narrow-extra-fact
+description: >-
+  A narrow question ("are you sure about the backoff?") on a file with a second
+  material fact. The reply must give the backoff from source and state the
+  extra fact as a standalone finding, not as a correction of the earlier answer.
+tags: [history]
+
+context:
+  scaffold_script: scaffold.sh
+  history_file: history.jsonl
+
+execution:
+  prompt: Are you sure about the backoff? Double-check it against the file.
+  max_turns: 15
+  timeout_seconds: 420
+  allowed_tools: [Read, Glob, Grep, Skill]
+
+runs: 1
+
+graders:
+  - name: skill-fired
+    type: tool_used
+    tool: Skill
+    input_match: '"skill":\s*"(double-check:)?double-check"'
+
+  - name: reads-the-file-again
+    type: tool_used
+    tool: Read
+    input_match: 'client\.py'
+    arm: both
+
+  - name: states-the-backoff-from-source
+    type: regex
+    target: last_message
+    pattern: '(RETRY_BACKOFF_SECONDS|backoff)\D{0,40}2'
+    flags: i
+
+  - name: does-not-carry-the-earlier-five-forward
+    type: regex
+    target: last_message
+    match: not_contains
+    pattern: 'RETRY_BACKOFF_SECONDS\s*=\s*5|5[ -]seconds?'
+    flags: i
+
+  - name: states-the-retryable-statuses
+    type: regex
+    target: last_message
+    pattern: '429'
+
+  - name: no-revision-verdict-language
+    type: regex
+    target: last_message
+    match: not_contains
+    pattern: 'overstated|as I (mentioned|said) (before|earlier)|still holds|verdict update|what changed'
+    flags: i
+
+  - name: extra-fact-is-standalone
+    type: llm
+    focus: last_message
+    criteria: |
+      The reply gives the backoff as two seconds and also states, as a plain
+      fact about the client, that only 429 and 503 responses are retried. It
+      presents that fact as part of the answer, not as a correction, a
+      "by the way", or a comparison with an earlier answer.
