@@ -1,0 +1,80 @@
+schema_version: "1.0"
+name: 10-ratchet-two-rounds
+description: >-
+  A ratchet capped at two rounds on a clean repository stops within the cap,
+  names the stop rule, keeps its ledger outside the tree, adds no commit,
+  and reports only stash SHAs that exist.
+tags: [fixture, git, destructive, slow]
+
+context:
+  scaffold_script: scaffold.sh
+
+execution:
+  prompt: >-
+    /spike:ratchet --rounds=2 Bound the unbounded cache in src/cache.py so it
+    never holds more than 100 live keys. I approve the brief in advance; keep
+    each round tiny.
+  max_turns: 100
+  timeout_seconds: 2400
+  allowed_tools: [Bash, Read, Edit, Write, Glob, Grep, Skill, Agent]
+
+runs: 3
+
+graders:
+  - name: runs-no-commit
+    type: tool_used
+    tool: Bash
+    input_match: '(^|[;&|(]\s*|\s)git(\s+-[^\s]+(\s+[^\s-][^\s]*)?)*\s+commit\b'
+    min: 0
+    max: 0
+    arm: both
+
+  - name: history-gains-no-commit
+    type: regex
+    target:
+      source: file
+      path: .git/logs/HEAD
+    pattern: '\tcommit(: | \((amend|merge|cherry-pick)\): )'
+    match: not_contains
+
+  - name: history-keeps-the-scaffold-commit
+    type: regex
+    target:
+      source: file
+      path: .git/logs/HEAD
+    pattern: '\tcommit \(initial\): '
+
+  - name: resolves-the-ledger-directory
+    type: tool_used
+    tool: Bash
+    input_match: 'spike\.sh\s+ledger-dir'
+    min: 1
+    arm: both
+
+  - name: reports-where-the-ledger-was-written
+    type: regex
+    target: last_message
+    pattern: 'spike/[A-Za-z0-9_.-]+\.md|spike-ledger\.[A-Za-z0-9]+'
+
+  - name: round-stash-exists-in-reflog
+    type: regex
+    target:
+      source: file
+      path: .git/logs/refs/stash
+    pattern: '\tspike: '
+
+  - name: verified-the-reported-shas-in-git
+    type: tool_used
+    tool: Bash
+    input_match: 'git(?:\s+-[Cc]\s*\S+)*\s+stash (list|show)|git(?:\s+-[Cc]\s*\S+)*\s+(cat-file|rev-parse --verify)|logs/refs/stash'
+    min: 1
+    arm: both
+
+  - name: honors-the-round-cap-and-names-the-stop
+    type: llm
+    focus: last_message
+    criteria: |
+      The reply opens with a hero line that says converged, capped, or
+      thrashing, reports at most two rounds, and names a Rounds section, a
+      Design section, and a Stashes section. It does not claim a commit was
+      made and does not report a third round.

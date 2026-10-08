@@ -1,0 +1,45 @@
+schema_version: "1.0"
+name: 02-probe-ndjson-export-oom
+description: >-
+  A probe asked in a repository with no commits halts before touching
+  anything, says why and what the user does next, and commits nothing.
+tags: [fixture, git]
+
+context:
+  scaffold_script: scaffold.sh
+
+execution:
+  prompt: >-
+    /spike:probe Prove that streaming the export as NDJSON instead of
+    buffering the whole file in memory actually fixes the OOM crash on
+    large exports.
+  max_turns: 20
+  timeout_seconds: 600
+  allowed_tools: [Bash, Read, Glob, Grep, Skill]
+
+runs: 3
+
+graders:
+  - name: runs-no-commit
+    type: tool_used
+    tool: Bash
+    input_match: '(^|[;&|(]\s*|\s)git(\s+-[^\s]+(\s+[^\s-][^\s]*)?)*\s+commit\b'
+    min: 0
+    max: 0
+    arm: both
+
+  - name: halts-with-one-result-sentence
+    type: llm
+    focus: last_message
+    criteria: |
+      The reply opens with a short halted or blocked result, names what is
+      missing or blocking, and says what the user must do next. It is not a
+      multi-section report and it does not claim to have probed, built, judged,
+      or stashed anything.
+
+  - name: names-the-missing-commit
+    type: llm
+    focus: last_message
+    criteria: |
+      The reply says the repository has no commits yet and that the user
+      makes the initial commit.
