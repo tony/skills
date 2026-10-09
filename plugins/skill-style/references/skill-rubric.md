@@ -11,6 +11,7 @@ The skill body labels each library standard as host fact or house rule.
 - What the test never touches
 - Naming
 - Descriptions
+- Invocation variables
 - Sections and headings
 - Progressive disclosure
 - Degrees of freedom
@@ -139,6 +140,17 @@ Descriptions too vague to identify a workflow: `Helps with documents`,
 Setting `disable-model-invocation: true` on a skill that only makes
 sense when asked for by name keeps it invocable while removing it from
 the corpus every other description competes in.
+
+## Invocation variables
+
+These names are literal syntax in the target skill, not values from this
+invocation.
+
+- `argument-hint` is required when the target body consumes `$ARGUMENTS`.
+  A skill that never reads `$ARGUMENTS` gets no `argument-hint`. A table of
+  flags alone is not argument consumption.
+- `${CLAUDE_PLUGIN_ROOT}` is not substituted by Codex. Address bundled
+  files by climbing out of the skill directory.
 
 ## Sections and headings
 

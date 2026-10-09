@@ -15,6 +15,17 @@ import skill_diff  # pyright: ignore[reportImplicitRelativeImport]
 EXIT_MISSING = 2
 
 
+def test_audit_rules_are_not_host_interpolation_slots() -> None:
+    plugin = Path(__file__).parents[1]
+    body = (plugin / "skills/skill-style/SKILL.md").read_text()
+    rubric = (plugin / "references/skill-rubric.md").read_text()
+    assert body.count("$ARGUMENTS") == 1
+    assert "<invocation-arguments>\n$ARGUMENTS\n</invocation-arguments>" in body
+    assert "${CLAUDE_PLUGIN_ROOT}" not in body
+    assert "$ARGUMENTS" in rubric
+    assert "${CLAUDE_PLUGIN_ROOT}" in rubric
+
+
 def test_report_graders_reject_malformed_replies() -> None:
     graders = Path(__file__).parents[1] / "evals/01-skill-style-bloated-helper/graders"
     patterns = [
