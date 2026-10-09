@@ -39,12 +39,12 @@ $ codex plugin add terraform@skills
 
 ## When to use it
 
-Use it when one bump must land across several root modules and their
-child modules together, or when a lock file must keep the platforms it
-already tracks. It is an on-demand run by an agent, not a scheduled
-service. Renovate and Dependabot open one pull request per dependency; this
-moves a constraint in a child module and every root module that calls it
-in one commit, and refreshes a lock without dropping its platforms.
+Use it for on-demand bumps across several root modules and their child
+modules together. A provider bump moves the declaring constraints and
+affected locks in one commit, leaving other provider blocks unchanged.
+Lock refreshes check for checksum loss and validate the platform names
+declared by the repository or confirmed by the user. Hash counts alone
+do not establish platform coverage.
 
 ## Skills
 
@@ -93,8 +93,8 @@ request is conversational (e.g., "the providers here are ancient").
 - `skills/bumping-terraform/SKILL.md`: routes a conversational request to one of the three skills above and holds the conventions they share.
 - `references/layout-discovery.md`: root and child module classification, child-to-root mapping, the `.terraform/` cache trap, `.tofu` shadowing, Terragrunt and stacks.
 - `references/pin-sites.md`: every file a provider or CLI version is pinned in, operator preservation, registry lookups.
-- `references/lock-and-init.md`: per-root-module `init` and its guard, the platform-narrowing trap, blocked resolvers, verification gates.
-- `scripts/lockctl.py`: per-provider lock state, single-block removal, stable-version filter, platform names from CI and task files that run `providers lock`, and a provider-by-provider lock comparison that exits non-zero on an unexpected change or a platform-count drop.
+- `references/lock-and-init.md`: per-root-module `init` and its guard, checksum loss and required platforms, blocked resolvers, verification gates.
+- `scripts/lockctl.py`: per-provider lock state, single-block removal, stable-version filter, platform names from CI and task files that run `providers lock`, and a provider-by-provider lock comparison that exits non-zero on an unexpected block change or an `h1:` checksum-count drop.
 
 ## Prerequisites
 

@@ -33,28 +33,31 @@ or ignored lock but no committed one is a finding, not an absence.
 
 ### 2. Record the starting state
 
-Per root module: the version selected for each provider, and how many
-platforms each provider's entry tracks (the lock reference has the
-count command). The first reports what moved; the second detects a
-narrowed file. In an audit, also report the platform names the repository's CI and task
+Per root module: the version selected for each provider and its `h1:`
+checksum count (the lock reference has the command). The count detects
+checksum loss; it does not establish platform coverage. Record the
+platform names the repository's CI and task
 files pass to `providers lock` (the lock reference has the command), when
-they pass any.
+they pass any; include those declared names in an audit without claiming
+they were checked.
 
 ### 3. Present the plan and wait
 
-Per the umbrella's Orchestration Plan, show the root modules to be refreshed and how many platforms each lock
-tracks. With `--audit-only`, stop here and write nothing.
+Per the umbrella's Orchestration Plan, show the root modules to be refreshed,
+each provider's `h1:` count and the declared platform names. With
+`--audit-only`, stop here and write nothing.
 
 ### 4. Refresh, one root module at a time
 
 Apply the lock reference's guard to each root module: the lock must be
 committed and unmodified, else skip and report it. Then run its
 `init -upgrade` command (this skill moves every provider its constraints
-allow) and compare each lock with `lockctl.py diff --allow '*'` against
-its committed copy (the lock reference has the command); a non-zero exit
-means a count dropped or a provider block vanished. When a count dropped, restore the platforms from the
-names the lock reference finds in the repository's CI and task files, or
-ask. If the count is still short, or the question goes unanswered
+allow). Check the declared platform names with `providers lock` for changed
+providers, per the lock reference, then compare each lock with
+`lockctl.py diff --allow '*'` against its committed copy; a non-zero exit
+means an `h1:` count dropped or a provider block vanished. A count drop
+needs the required platform names from CI/task files or the user. If the
+count is still short, or the question goes unanswered
 (headless included), restore that lock from git and leave it out of the commit. When other
 root modules were refreshed, list this one under `## Failures` with the
 before and after counts; when none were, end with the stopped line.
@@ -81,8 +84,8 @@ nothing, and end with the stopped line (the umbrella has its mid-run
 form). A failure in code the run did not touch is pre-existing; report it
 as such and carry on.
 
-Then make one commit for the lock files that kept every platform (or got
-the user's explicit yes), kept out of any commit carrying authored
+Then make one commit for the lock files that passed the checksum and
+declared-platform checks (or got the user's explicit yes), kept out of any commit carrying authored
 changes. With `--no-commit`, leave them in the working tree. Name the
 commit by subject in the report, never by SHA. Write the message and the
 report per `../../references/prose-rules.md`.
@@ -96,7 +99,8 @@ file moved` when M is 1, or `Audit only: M lock files found`), then these sectio
    backend but no committed lock file, and in an audit the platform
    names CI passes to `providers lock`.
 2. `## Changes`: per root module and provider: the version before and
-   after, and the platform count tracked before and after.
+   after and the `h1:` checksum counts before and after. Give the platform
+   names successfully checked with `providers lock`, or coverage unverified.
 3. `## Held back`: providers that did not move, and the constraint
    holding each. In an audit, only providers a constraint is already
    blocking; omit the section otherwise.
@@ -114,7 +118,7 @@ Reply in this shape, as plain text outside any code fence, with plain bullets, n
 
 ## Changes
 
-- envs/prod: aws 6.56.1 to 6.56.4, random unchanged; 3 platforms before and after.
+- envs/prod: aws 6.56.1 to 6.56.4, 3 h1 records before and after; checked linux_amd64, linux_arm64 and darwin_arm64. Random unchanged.
 
 ## Held back
 

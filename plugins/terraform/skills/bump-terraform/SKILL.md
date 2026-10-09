@@ -95,16 +95,16 @@ unmodified lock:
 
 - Use plain `init` per the lock reference, never `-upgrade`: a CLI bump
   moves no provider, so `lockctl.py diff` with no `--allow` must exit 0.
-- A non-zero exit (a version change or a platform count drop) means
+- A non-zero exit (any provider-block change, including checksums) means
   restore the lock from git and report it.
-- A CLI bump can change the lock file's own format; that change is part
-  of the commit.
+- A CLI bump can change the lock file's header outside provider blocks;
+  provider blocks must remain byte-identical.
 - A root module with no committed lock is skipped and reported: `init`
   there would create a lock and pick providers. Run it only after the
   user approves that outcome.
 
-A failed `init`, or a lock restored for a version change or dropped
-count, stops the run with nothing committed. Leave the pin edits in the
+A failed `init`, or a lock restored for a provider-block change, stops
+the run with nothing committed. Leave the pin edits in the
 working tree and end with the stopped line (the umbrella has its mid-run
 form). A dropped count is committed only with the user's explicit yes.
 
@@ -144,7 +144,9 @@ order:
    it, and whether each was edited or left alone with the reason. A file
    with no CLI pin is not a pin site; actionable missing pins go in `## Drift`.
 4. `## Locks`: per root module: whether the lock was re-initialised or
-   skipped (and why), and the platform count tracked before and after.
+   skipped (and why), and the `h1:` checksum counts before and after.
+   Report platform coverage unverified unless a successful command
+   checked the required platform names; counts alone do not prove it.
 5. `## Verification`: the gates run and their real results, including
    whether each root module now initialises.
 6. `## Drift`: actionable missing pins or disagreements not already
@@ -173,7 +175,7 @@ Reply in this shape, as plain text outside any code fence, with plain bullets, n
 
 ## Locks
 
-- envs/prod: re-initialised, versions unchanged, 3 platforms before and after.
+- envs/prod: re-initialised, provider blocks unchanged, 3 h1 records before and after; platform coverage unverified.
 - envs/staging: no committed lock, skipped.
 
 ## Verification
