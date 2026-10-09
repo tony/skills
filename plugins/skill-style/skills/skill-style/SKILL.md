@@ -185,10 +185,11 @@ These are this marketplace's limits. Apply them only when the project's
    project file names a skill linter, run it for description length,
    headings, and invocation-argument checks, and spend your own pass on
    the deletion test.
-2. **Fix the description before touching a line of the body**, and
-   check it by read-through: three prompts a user would type must
-   match it, and one that belongs to a neighboring skill must not.
-   This is a reading, not a test; never report it as a run.
+2. **Review the description before the body.** Identify a vague task,
+   missing condition, or incorrect scope; preserve an adequate description.
+   Use the rubric's Trigger testing to distinguish proposed coverage from
+   observed routing. Report the concrete ambiguity, not a prompt-by-prompt
+   reading or an unmeasured improvement in matching.
 3. **Measure the resolved targets only.** Line counts locate the
    bloat. Skip this step for a draft in play.
 

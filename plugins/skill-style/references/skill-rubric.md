@@ -147,9 +147,12 @@ the corpus every other description competes in.
 These names are literal syntax in the target skill, not values from this
 invocation.
 
-- `argument-hint` is required when the target body consumes `$ARGUMENTS`.
-  A skill that never reads `$ARGUMENTS` gets no `argument-hint`. A table of
-  flags alone is not argument consumption.
+- This marketplace requires `argument-hint` when the target body consumes
+  `$ARGUMENTS`; a flag table alone does not trigger that rule. The hint is
+  autocomplete guidance, not an argument parser. Claude Code appends
+  invocation arguments when no placeholder receives them, so an absent
+  placeholder does not prove mode flags are unavailable. See
+  [argument delivery](https://code.claude.com/docs/en/skills#pass-arguments-to-skills).
 - `${CLAUDE_PLUGIN_ROOT}` is not substituted by Codex. Address bundled
   files by climbing out of the skill directory.
 
@@ -254,18 +257,17 @@ the current instruction set.
 
 ## Trigger testing
 
-A description is not finished until it has been tested as a router
-input.
+A read-through can identify an ambiguous trigger; only an executed host
+evaluation measures routing. An adequate description needs no rewrite.
 
 1. Write three prompts a user would actually type, in their words, not
    the skill's.
-2. Read the description against each and decide whether this skill is
-   the right answer. This is a read-through, not a test; never report
-   it as one.
-3. Write one prompt that belongs to a neighboring skill, and confirm
-   it goes there instead.
-4. When a positive fails, the fix is almost always vocabulary: the
-   user's word is missing from the description.
+2. Read the description against each and record the expected choice as
+   a hypothesis, not an observed match.
+3. Include a neighboring task to check whether the description states
+   a useful boundary. A reading cannot confirm which skill a host selects.
+4. Rewrite only a concrete omission or scope ambiguity. Extra synonyms
+   do not establish better routing; that claim needs a host comparison.
 
 Beyond routing, build evaluations before writing the body. Run the
 task without the skill first and record where the agent actually
