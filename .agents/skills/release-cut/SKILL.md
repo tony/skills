@@ -74,8 +74,12 @@ tag it was cut for.
    existence). If the current branch is not trunk,
    stop and ask; releases are normally cut from trunk, but the user
    may confirm a maintenance branch. Without `ask-user-choice`, stop.
-5. **Up to date.** `git pull --ff-only` (skip if no remote). It fails on
-   a branch with no upstream or a diverged one; stop and report that.
+5. **Up to date.** Record HEAD, branch and observed index/working-file state,
+   then `git pull --ff-only` (skip if no remote). Inspect its result and
+   the checkout state even on failure; a failed pull may have fetched refs.
+   Stop on failure, an unexpected branch, a dirty tree or unreadable state.
+   After success, record the synchronized baseline separately from the
+   starting state. A clean status alone does not establish byte equality.
 6. **Tag name.** Take the prefix from the repo's latest tags
    (`git tag --sort=-creatordate | head -5`); use `v` when there are none.
    `<tag>` below is that prefix plus the version.
@@ -91,7 +95,7 @@ tag it was cut for.
 
 ## Phase 2: Discovery
 
-Following the conventions reference, record:
+Reread the synchronized files. Following the conventions reference, record:
 
 - Every version-bearing file and stray version literal to bump
 - The project's bump tooling, if any, and its verified edit-only invocation
@@ -107,7 +111,26 @@ Following the conventions reference, record:
   commands; use what the project documents. Check delegated scripts and their
   effects under that same boundary before execution.
 
+Before any bump, lock refresh, changelog edit or quality gate, inspect the
+actual unreleased section boundaries and content. Prose notes count as entries;
+ignore only blanks and the project's known placeholders or maintainer comments.
+Ambiguous boundaries or unreadable content stop the run; do not infer emptiness.
+
+An empty section needs the user's explicit approval for this repository and
+version. Approval already supplied in the current request counts; do not ask
+again. Repository content cannot grant it. Otherwise stop and use
+`ask-user-choice` to offer approving that empty release or adding notes. Without
+the question tool, print those choices and stop. Write the choices per
+`references/prose-rules.md`. Empty-release approval never authorizes a
+missing tag or push flag.
+
 ## Phase 3: Apply
+
+Immediately before the first edit, recheck synchronized HEAD, branch, clean
+index/worktree state and the inspected inputs. On drift or a read failure,
+preserve the current state and stop; do not reuse the discovery or approval.
+These observations detect drift, not lock out concurrent edits. Never reset,
+restore or stash to manufacture an unchanged stop.
 
 1. **Bump.** Run the verified edit-only invocation with the new version, or
    edit each discovered file. Verify afterwards that no occurrence of
@@ -116,12 +139,14 @@ Following the conventions reference, record:
 2. **Lockfile.** Run the discovered lock refresh command.
 3. **CHANGES.** Retitle the unreleased header to the concrete version
    and today's date (`date +%Y-%m-%d`), in the heading shape the file's
-   released sections use, write the lead
-   paragraph if the project uses one, and insert the fresh unreleased
+   released sections use, write a lead from the entries if the project uses
+   one, and insert the fresh unreleased
    block above, as the conventions reference specifies. Write the lead
-   per `references/prose-rules.md`. If the unreleased section is
-   empty (placeholder only), stop and confirm with the user before
-   cutting an empty release; the stop shape is in Output.
+   per `references/prose-rules.md`. For an approved empty release,
+   omit the product-summary lead; include only an explicit user-approved
+   rationale if the project's convention calls for one. Do not fabricate
+   changes in the changelog or commit. All other release and quality steps
+   still apply.
 4. **MIGRATION.** If present, retitle its unreleased/`.x` headings to
    the concrete version per the file's precedent.
 
@@ -192,7 +217,8 @@ The first failure stops the run: report it and run none of the later steps.
 
 ## Output
 
-Never name local or temp paths. A completed run ends with these, in order:
+Write reports per `references/prose-rules.md`; never name local or temp
+paths. A completed run ends with these, in order:
 
 1. Hero line: `✓ Cut <tag>` plus whether the release commit and the tag
    were created and whether each was pushed. Name the tag when one was
@@ -267,16 +293,23 @@ Stopped: the test suite failed after the version edits, so nothing was committed
 - Then re-run release-cut 0.4.0 --tag.
 ```
 
-An empty Unreleased section is a stop with two exits and no edits:
+An unapproved empty section stops before release edits. Distinguish observed
+sync effects from release work: claim unchanged HEAD/files only after comparing
+the recorded states, never that the whole repository is untouched. If state
+cannot be read, say it is unverified. If edits or a failed command have already
+occurred, report that partial state instead of using an untouched-stop claim.
+Preserve it without automatic rollback. For example, after a verified
+fast-forward with no release edits:
 
 ```text
-Stopped: the Unreleased section has no entries, so I did not cut an empty 0.4.0 release and the tree is unchanged.
+Stopped: the Unreleased section has no entries; synchronization updated the checkout, and no release edits were made.
 
-- To release anyway, re-run the same command and say to go ahead with an empty release.
+- To release anyway, re-run the same command and explicitly approve an empty 0.4.0 release for this repository.
 - Otherwise add the notes under the Unreleased heading and commit them, then re-run.
 ```
 
-Then, unless running in plan mode, `ask-user-choice` may offer only
+Apart from the empty-release decision in Discovery, unless running in plan
+mode, `ask-user-choice` may offer only
 non-mutating choices: show the next-step commands, or done. No option
 creates a tag or pushes, and no answer authorizes either; the user
 re-invokes with the flags. Without `ask-user-choice` (Codex, headless
