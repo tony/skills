@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import io
 import json
+import os
 import re
 import shlex
 import shutil
@@ -1345,6 +1346,162 @@ def test_latest_session_reports_snapshots_and_paths_dirtied_since(repo: Path) ->
     assert found["applied"] is False
 
 
+@pytest.fixture
+def recorded_session(repo: Path) -> Path:
+    (repo / "B").write_text("staged user edit\n")
+    sh(repo, "git", "add", "B")
+    (repo / "B").write_text("working user edit\n")
+    sdir = Path(init(command="execute", backend="model-clis", mutating=True)["session_dir"])
+    entry = engine.create_worktrees(sdir, ["claude"])["worktrees"]["claude"]
+    wt = Path(entry["path"])
+    (wt / "a.txt").write_text("approved worker result\n")
+    (wt / "[literal]").write_text("new worker file\n")
+    (wt / "C").unlink()
+    engine.capture_tree(sdir, 1, "claude", None)
+    engine.remove_worktrees(sdir, None)
+    assert engine.restore_stash(sdir)["restored"] is True
+    assert engine.guard_finish(sdir)["clean"] is True
+    engine.update_session(
+        sdir, status="completed", completed_passes=1, event="session_complete",
+        event_json="{}", drop=[], sets=[], link_latest=True,
+    )  # fmt: skip
+    return sdir
+
+
+@pytest.mark.parametrize(
+    "change", ["edit", "edit-branch", "mode", "removed", "delete", "add-literal"]
+)
+def test_recorded_adoption_refuses_committed_target_drift(
+    repo: Path, recorded_session: Path, change: str
+) -> None:
+    sdir = recorded_session
+    if "branch" in change:
+        sh(repo, "git", "checkout", "-q", "-b", "user-branch")
+    target = "a.txt"
+    if change in {"edit", "edit-branch"}:
+        (repo / target).write_text("newer committed user implementation\n")
+    elif change == "mode":
+        (repo / target).chmod(0o755)
+    elif change == "removed":
+        (repo / target).unlink()
+    elif change == "delete":
+        target = "C"
+        (repo / target).write_text("newer committed deletion target\n")
+    else:
+        target = "[literal]"
+        (repo / target).write_text("committed user file\n")
+    sh(repo, "git", "--literal-pathspecs", "add", "--", target)
+    sh(
+        repo,
+        "git",
+        "--literal-pathspecs",
+        "commit",
+        "-q",
+        "-m",
+        "user work",
+        "--only",
+        "--",
+        target,
+    )
+    before = user_state(repo)
+    index = (repo / ".git/index").read_bytes()
+    head = sh(repo, "git", "rev-parse", "HEAD")
+    branch = sh(repo, "git", "symbolic-ref", "HEAD")
+    mode = (repo / "a.txt").stat().st_mode if change != "removed" else None
+    found = engine.latest_session(str(repo), "execute")
+    assert found["dirty"] == [target]
+    assert "session base" in found["conflicts"][target]
+    selections: list[tuple[list[str], list[str], str | None]] = [
+        ([], [], "claude"),
+        (["a.txt=claude", "[literal]=claude"], ["C"], None),
+    ]
+    for picks, deletes, whole in selections:
+        with pytest.raises(engine.EngineError, match="session base"):
+            engine.adopt_files(sdir, 1, picks, deletes, whole=whole)
+        assert user_state(repo) == before
+        if mode is not None:
+            assert (repo / "a.txt").stat().st_mode == mode
+    assert engine.load_session(sdir).get("applied") is not True
+    clean_path = "a.txt" if target == "[literal]" else "[literal]"
+    engine.adopt_files(sdir, 1, [f"{clean_path}=claude"], [])
+    before[clean_path] = (
+        "approved worker result\n" if clean_path == "a.txt" else "new worker file\n"
+    )
+    assert user_state(repo) == before
+    assert (repo / ".git/index").read_bytes() == index
+    assert sh(repo, "git", "rev-parse", "HEAD") == head
+    assert sh(repo, "git", "symbolic-ref", "HEAD") == branch
+
+
+@pytest.mark.parametrize("switch_branch", [False, True])
+def test_recorded_adoption_allows_unrelated_commits_and_preserves_staging(
+    repo: Path, recorded_session: Path, switch_branch: bool
+) -> None:
+    sdir = recorded_session
+    if switch_branch:
+        sh(repo, "git", "checkout", "-q", "-b", "user-branch")
+    (repo / "l").write_text("unrelated user file\n")
+    sh(repo, "git", "add", "l")
+    sh(repo, "git", "commit", "-q", "-m", "unrelated user work", "--only", "--", "l")
+    index = (repo / ".git/index").read_bytes()
+    head = sh(repo, "git", "rev-parse", "HEAD")
+    branch = sh(repo, "git", "symbolic-ref", "HEAD")
+    assert engine.latest_session(str(repo), "execute")["dirty"] == []
+    engine.adopt_files(sdir, 1, ["a.txt=claude", "[literal]=claude"], ["C"])
+    assert (repo / "a.txt").read_text() == "approved worker result\n"
+    assert (repo / "[literal]").read_text() == "new worker file\n"
+    assert not (repo / "C").exists()
+    assert (repo / "B").read_text() == "working user edit\n"
+    assert (repo / "l").read_text() == "unrelated user file\n"
+    (repo / "a.txt").write_text("user edit after adoption\n")
+    with pytest.raises(engine.EngineError, match="already applied"):
+        engine.adopt_files(sdir, 1, [], [], whole="claude")
+    assert (repo / "a.txt").read_text() == "user edit after adoption\n"
+    assert (repo / ".git/index").read_bytes() == index
+    assert sh(repo, "git", "rev-parse", "HEAD") == head
+    assert sh(repo, "git", "symbolic-ref", "HEAD") == branch
+
+
+@pytest.mark.parametrize("hidden", ["mode", "stat-cache", "unreadable"])
+def test_recorded_adoption_rehashes_selected_paths(
+    repo: Path, recorded_session: Path, hidden: str, capsys: pytest.CaptureFixture[str]
+) -> None:
+    target = repo / "a.txt"
+    if hidden == "mode":
+        sh(repo, "git", "config", "core.filemode", "false")
+        target.chmod(0o755)
+    elif hidden == "stat-cache":
+        sh(repo, "git", "config", "core.trustctime", "false")
+        os.utime(target, (1, 1))
+        sh(repo, "git", "status", "--porcelain")
+        target.write_text("two\n")
+        os.utime(target, (1, 1))
+    else:
+        target.chmod(0)
+    mode = target.stat().st_mode
+    index = (repo / ".git/index").read_bytes()
+    head = sh(repo, "git", "rev-parse", "HEAD")
+    try:
+        code = engine.main(["latest", "--repo", str(repo), "--command", "execute"])
+        found = json.loads(capsys.readouterr().out)
+        if code == 1:
+            assert hidden == "unreadable"
+            assert "Permission denied" in found["error"]
+        else:
+            assert code == 0
+            assert found["dirty"] == ["a.txt"]
+        with pytest.raises(engine.EngineError):
+            engine.adopt_files(recorded_session, 1, [], [], whole="claude")
+        assert target.stat().st_mode == mode
+        assert (repo / ".git/index").read_bytes() == index
+        assert sh(repo, "git", "rev-parse", "HEAD") == head
+        assert not (repo / "[literal]").exists()
+        assert (repo / "C").read_text() == "c1\n"
+    finally:
+        target.chmod(0o644)
+    assert target.read_text() == ("two\n" if hidden == "stat-cache" else "one\n")
+
+
 def test_capture_and_adopt_keep_symlinks_as_links(repo: Path) -> None:
     sdir = Path(init(command="execute", mutating=True)["session_dir"])
     engine.create_worktrees(sdir, ["maintainer"])
@@ -1375,7 +1532,11 @@ def test_adopt_replaces_a_symlink_without_writing_through_it(repo: Path) -> None
     (wt / "n.txt").unlink()
     (wt / "n.txt").write_text("from worker\n")
     engine.capture_tree(sdir, 1, "maintainer", None)
-    engine.adopt_files(sdir, 1, ["n.txt=maintainer"], [])
+    outside.chmod(0)
+    try:
+        engine.adopt_files(sdir, 1, ["n.txt=maintainer"], [])
+    finally:
+        outside.chmod(0o644)
     assert not (repo / "n.txt").is_symlink()
     assert (repo / "n.txt").read_text() == "from worker\n"
     assert outside.read_text() == "keep\n"

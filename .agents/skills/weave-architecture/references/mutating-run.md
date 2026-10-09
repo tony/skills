@@ -151,13 +151,18 @@ start no new session.
    confirmation; without `ask-user-choice`, apply nothing and print the
    picks. An arguments line that asks to apply is that confirmation for
    applying, never for committing.
-3. A path in `dirty` has uncommitted changes made after the session. Ask
-   whether to skip it; without a question tool, skip it and say which. Never
-   overwrite it.
+3. A path in `dirty` is blocked: read its `conflicts` reason. It may have
+   uncommitted changes, a committed version that differs from the session's
+   base, or an unsafe target. Ask whether to skip it; without a question
+   tool, skip it and say which. Never overwrite it. Unrelated commits or a
+   branch switch permit explicit application when the selected paths still
+   match the recorded base.
 4. Run the skill's `adopt` command with `--session` set to `session_dir`, the
    picks from step 2 minus the skipped paths, then the project's quality gates
    and the skill's `update --event` command. The original run already
    restored the user's stash, so do not restore again. `adopt` refuses the
-   whole selection before writing if any target is dirty or has a symlinked
-   parent; remove that target from the selection and ask before retrying.
+   whole selection before writing if any target conflicts, and refuses an
+   already-applied session. Put all approved picks and deletions in one
+   invocation. On a target conflict, remove that target from the selection
+   and ask before retrying.
 5. Render the results as the skill's last step does.

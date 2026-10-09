@@ -77,14 +77,21 @@ Prompts and lanes
   Symlinks are captured and adopted as symlinks (dangling ones too); the
   manifest lists their targets under `links`. The whole selection is refused
   before any write if a target is dirty, ignored, a directory, reached
-  through a symlinked parent, or marked assume-unchanged/skip-worktree.
-  This also applies to completed sessions and is a point-in-time check,
-  not a lock against concurrent working-file edits.
+  through a symlinked parent, marked assume-unchanged/skip-worktree, or has a
+  committed version different from the session's base. This applies to
+  completed sessions too: unrelated commits and branch changes permit
+  explicit adoption when the selected paths still match. A session may be
+  applied once; combine its approved picks/deletions in one invocation.
+  Selected working files are rehashed through a temporary index, including
+  executable bits even when Git ignores mode changes. Unreadable files stop
+  adoption; terminal symlinks are observed as links, without reading their targets.
+  Session updates are serialized, but target preflight remains a point-in-time
+  check, not a lock against concurrent working-file edits.
 - `check-paths [--repo R] path...`: uses the same preflight before editing,
   additionally refusing terminal symlinks. Paths are literal and relative to
   the checkout top. Returns `clean` and per-path `conflicts`; no source index
-  bytes or flags are changed. `latest` reports the same conflicts before
-  recorded-session adoption.
+  bytes or flags are changed. `latest` also compares captured paths with the
+  recorded commit before recorded-session adoption.
 - `commit --message-file F [--repo R] path...`: captures the named files and
   runs commit hooks in an isolated worktree. The candidate must keep exactly
   those bytes and one parent; hook edits or tool trailers stop publication.

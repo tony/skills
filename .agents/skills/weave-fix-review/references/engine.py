@@ -617,22 +617,45 @@ def compare_base(top: str | Path, trunk: str) -> str | None:
 # --- repo guard -----------------------------------------------------------
 
 
-def snapshot_tree(top: str | Path) -> str:
+def snapshot_tree(top: str | Path, *, paths: Sequence[str] | None = None) -> str:
     """Return the tree of the working directory without touching the user's index.
 
     Tracked changes, deletions, and untracked non-ignored files are all included.
     Rebuild a temporary index without stat-cache or shortcut flags so live
     edits cannot hide behind assume-unchanged or skip-worktree entries.
+    ``paths`` limits observation to literal paths, including their executable bits.
     """
     require_safe_toplevel(top)
     fd, name = tempfile.mkstemp(prefix="weave-index-")
     os.close(fd)
     env = {"GIT_INDEX_FILE": name}
     try:
-        entries = git_bytes(top, "ls-files", "--stage", "-z")
+        pathspec = ["--", *paths] if paths is not None else []
+        entries = (
+            git_bytes(top, "--literal-pathspecs", "ls-files", "--stage", "-z", *pathspec)
+            if paths is None or paths
+            else b""
+        )
         git(top, "read-tree", "--empty", env=env)
         git_bytes(top, "update-index", "-z", "--index-info", stdin=entries, env=env)
-        git(top, "-c", "core.sparseCheckout=false", "add", "-A", "--", ".", env=env)
+        add_paths = ["."]
+        mode_config: list[str] = []
+        if paths is not None:
+            tracked = {
+                item.partition("\t")[2]
+                for item in entries.decode("utf-8", "surrogateescape").split("\0")
+                if item
+            }
+            add_paths = [
+                path for path in paths
+                if path in tracked or (Path(top) / path).is_symlink() or (Path(top) / path).exists()
+            ]  # fmt: skip
+            mode_config = ["-c", "core.filemode=true"]
+        if add_paths:
+            git(
+                top, "--literal-pathspecs", "-c", "core.sparseCheckout=false", *mode_config,
+                "add", "-A", "--", *add_paths, env=env,
+            )  # fmt: skip
         return git(top, "write-tree", env=env)
     finally:
         Path(name).unlink(missing_ok=True)
@@ -2009,6 +2032,28 @@ def _path_conflicts(top: Path, paths: Sequence[str], *, editing: bool = False) -
     return conflicts
 
 
+def _adoption_conflicts(top: Path, paths: Sequence[str], session: Json) -> dict[str, str]:
+    conflicts = _path_conflicts(top, paths)
+    paths = [str(Path(_safe_rel(path))) for path in paths]
+    if paths:
+        baseline = _guard_of(session)["head"]
+        changed = git_z(
+            top, "--literal-pathspecs", "diff", "--name-only", "-z", "--no-renames",
+            "--no-ext-diff", "--no-textconv", baseline, "HEAD", "--", *paths,
+        )  # fmt: skip
+        for path in changed:
+            conflicts.setdefault(path, "committed path differs from the session base")
+        observable = [path for path in paths if path not in conflicts]
+        if observable:
+            tree = snapshot_tree(top, paths=observable)
+            for path in git_z(
+                top, "--literal-pathspecs", "diff", "--name-only", "-z", "--no-renames",
+                "--no-ext-diff", "--no-textconv", baseline, tree, "--", *observable,
+            ):  # fmt: skip
+                conflicts[path] = "working path differs from the session base"
+    return conflicts
+
+
 def adopt_files(
     session_dir: Path,
     n: int,
@@ -2018,14 +2063,24 @@ def adopt_files(
 ) -> Json:
     """Copy chosen ``path=participant`` snapshots into the main checkout; remove deleted paths.
 
-    ``whole`` adopts every change one participant captured in pass ``n``.
+    ``whole`` adopts every change one participant captured in pass ``n``. A
+    session may be applied once; every selected path must still match its base.
     """
+    with session_lock(session_dir):
+        return _adopt_files(session_dir, n, picks, deletes, whole)
+
+
+def _adopt_files(
+    session_dir: Path, n: int, picks: Sequence[str], deletes: Sequence[str], whole: str | None
+) -> Json:
     session = load_session(session_dir)
+    if session.get("applied"):
+        msg = "session was already applied; review the checkout instead of applying it again"
+        raise EngineError(msg)
     top = Path(session["toplevel"])
     require_safe_toplevel(top)
     if (
         session.get("status") == "in_progress"
-        and not session.get("applied")
         and guard_check(session_dir, "before-adopt")["violation"]
     ):
         msg = (
@@ -2052,7 +2107,7 @@ def adopt_files(
         sources[rel] = src
     deletes = [_safe_rel(rel) for rel in deletes]
     paths = [*sources, *deletes]
-    conflicts = _path_conflicts(top, paths)
+    conflicts = _adoption_conflicts(top, paths, session)
     if conflicts:
         msg = "refusing to overwrite paths: " + "; ".join(
             f"{path!r}: {reason}" for path, reason in conflicts.items()
@@ -2318,7 +2373,7 @@ def latest_session(repo: str, command: str) -> Json:
         for manifest in sorted((passes[-1] / "diffs").glob("*.json")):
             captured[manifest.stem] = json.loads(manifest.read_text(encoding="utf-8"))
     paths = {p for m in captured.values() for p in m["changed"] + m["deleted"]}
-    conflicts = _path_conflicts(Path(info.top), sorted(paths))
+    conflicts = _adoption_conflicts(Path(info.top), sorted(paths), session)
     events = sdir / "events.jsonl"
     text = events.read_text(encoding="utf-8") if events.is_file() else ""
     return {
