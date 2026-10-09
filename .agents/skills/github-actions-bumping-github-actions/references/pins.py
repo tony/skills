@@ -12,21 +12,22 @@ Clone commands name their path; GitHub CLI queries name their repository and
 github.com host independently of the working directory and host environment.
 """
 
-# ruff: noqa: S603, PLR2004, TRY003, EM102
+# ruff: noqa: S603, S607, PLR2004, TRY003, EM102
 # pyright: reportUnusedCallResult=false, reportAny=false
 from __future__ import annotations
 
 import json
+import os
 import re
 import subprocess
 import sys
 from pathlib import Path
-from urllib.parse import urlsplit
+from urllib.parse import quote, urlsplit
 
 USES = re.compile(r"^\s*-?\s*uses:\s*(?P<ref>[^\s#]+)\s*(?:#\s*(?P<note>.*))?$")
 SLUG = re.compile(r"^[\w.-]+/[\w.-]+$")
 SCP_REMOTE = re.compile(r"(?:[\w.-]+@)?github\.com:(?P<path>.+)", re.IGNORECASE | re.ASCII)
-WORKFLOW = re.compile(r"^\.github/(workflows|actions)/.+\.ya?ml$")
+WORKFLOW = re.compile(r"\.github/(workflows|actions)/.+\.ya?ml", re.DOTALL)
 MAJOR = re.compile(r"^v(\d+)(?:\.(\d+))?(?:\.(\d+))?$")
 
 
@@ -174,27 +175,35 @@ def _scan(files: dict[str, str]) -> tuple[list[dict[str, str]], list[str]]:
 
 def _read_clone(path: str, remote: str, default: str) -> dict[str, str]:
     ref = f"{remote}/{default}"
-    names = _out("git", "-C", path, "ls-tree", "-r", "--name-only", ref, ".github")
+    # Text-mode newline conversion would change CR and CRLF inside filenames.
+    done = subprocess.run(
+        ["git", "-C", path, "ls-tree", "-r", "-z", "--name-only", ref, ".github"],
+        capture_output=True,
+        check=False,
+    )
+    if done.returncode:
+        sys.stderr.write(done.stderr.decode(errors="replace") or "git ls-tree failed\n")
+        raise SystemExit(1)
+    names = (os.fsdecode(name) for name in done.stdout.split(b"\0"))
     return {
-        n: _out("git", "-C", path, "show", f"{ref}:{n}")
-        for n in names.splitlines()
-        if WORKFLOW.match(n)
+        n: _out("git", "-C", path, "show", f"{ref}:{n}") for n in names if WORKFLOW.fullmatch(n)
     }
 
 
 def _read_slug(slug: str, default: str) -> dict[str, str]:
-    tree = _out(
-        "gh", "api", "--hostname", "github.com", f"repos/{slug}/git/trees/{default}?recursive=1",
-        "--jq", '.tree[] | select(.type == "blob") | .path',
-    )  # fmt: skip
+    ref = quote(default, safe="")
+    tree = json.loads(_out(
+        "gh", "api", "--hostname", "github.com", f"repos/{slug}/git/trees/{ref}?recursive=1",
+    ))  # fmt: skip
+    names = (entry["path"] for entry in tree["tree"] if entry["type"] == "blob")
     return {
         n: _out(
             "gh", "api", "--hostname", "github.com",
             "-H", "Accept: application/vnd.github.raw+json",
-            f"repos/{slug}/contents/{n}?ref={default}",
+            f"repos/{slug}/contents/{quote(n, safe='/')}?ref={ref}",
         )
-        for n in tree.splitlines()
-        if WORKFLOW.match(n)
+        for n in names
+        if WORKFLOW.fullmatch(n)
     }  # fmt: skip
 
 

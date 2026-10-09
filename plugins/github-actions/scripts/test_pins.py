@@ -10,12 +10,26 @@ import re
 import subprocess
 import sys
 from pathlib import Path
+from urllib.parse import parse_qs, unquote, urlsplit
 
 import pins  # pyright: ignore[reportImplicitRelativeImport]
 import pytest
 
 SCRIPT = Path(__file__).with_name("pins.py")
 EXIT_UNCHECKED = 3
+WORKFLOW_NAMES = (
+    ".github/workflows/space name.yml",
+    '.github/workflows/quote"name.yaml',
+    ".github/workflows/back\\slash.yml",
+    ".github/workflows/tab\tname.yml",
+    ".github/workflows/line\nname.yml",
+    ".github/workflows/line\rname.yml",
+    ".github/workflows/line\r\nname.yml",
+    ".github/workflows/caf\u00e9.yml",
+    ".github/workflows/separator\u2028name.yml",
+    ".github/workflows/hash#query?percent%25.yml",
+    ".github/actions/nested\naction/action.yaml",
+)
 
 GH_STUB = """#!/bin/sh
 if [ "$1" = api ]; then
@@ -27,7 +41,9 @@ case "$*" in
   "repo view https://github.com/acme/one"*) echo main ;;
   "repo view https://github.com/acme/two"*) echo trunk ;;
   "api repos/acme/one/git/trees/main?recursive=1"*)
-    printf '.github/workflows/ci.yml\\n.github/README.md\\n' ;;
+    printf '%s\\n' '{"tree":[
+      {"type":"blob","path":".github/workflows/ci.yml"},
+      {"type":"blob","path":".github/README.md"}]}' ;;
   "api -H "*" repos/acme/one/contents/.github/workflows/ci.yml?ref=main")
     echo 'uses: actions/checkout@v4' ;;
   "api repos/actions/checkout/releases"*) printf 'v4.2.2\\nv4.0.0\\nv3.0.0\\nv5.0.0\\n' ;;
@@ -162,6 +178,81 @@ def test_inventory_reads_each_repo_by_its_own_path(
         assert [(p["action"], p["ref"]) for p in actions] == [("actions/checkout", ref)]
         assert rec["files"] == [".github/workflows/ci.yml"]
     assert [p["kind"] for p in first["pins"]] == ["action", "local"]
+
+
+@pytest.mark.integration
+@pytest.mark.usefixtures("stub_path")
+@pytest.mark.skipif(os.name != "posix", reason="native byte filenames require POSIX")
+@pytest.mark.parametrize("quote_path", ["true", "false"])
+def test_clone_inventory_preserves_filename_bytes(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, quote_path: str
+) -> None:
+    """Native Git paths survive quoting, framing and the CLI JSON round trip."""
+    for name in tuple(os.environ):
+        if name.startswith("GIT_"):
+            monkeypatch.delenv(name)
+    monkeypatch.setenv("GIT_CONFIG_NOSYSTEM", "1")
+    monkeypatch.setenv("GIT_CONFIG_GLOBAL", os.devnull)
+    monkeypatch.setenv("GIT_ALLOW_PROTOCOL", "file")
+    repo = _make_repo(tmp_path, "acme/one", "main", "v3")
+    expected = {".github/workflows/ci.yml": "v3"}
+    for i, name in enumerate((*WORKFLOW_NAMES, ".github/workflows/byte-\udcff.yml")):
+        target = repo / name
+        target.parent.mkdir(parents=True, exist_ok=True)
+        target.write_text(f"uses: actions/checkout@v{i + 10}\n")
+        expected[name] = f"v{i + 10}"
+    (repo / ".github/workflows/excluded.yml\n").write_text("uses: wrong/action@v1\n")
+    _git("add", ".github", cwd=repo)
+    _git("-c", "user.name=t", "-c", "user.email=t@t", "commit", "-qm", "paths", cwd=repo)
+    _git("push", "-q", "origin", "main", cwd=repo)
+    _git("config", "core.quotePath", quote_path, cwd=repo)
+
+    done = _run("inventory", str(repo), cwd=tmp_path)
+
+    assert done.returncode == 0, done.stderr
+    record = json.loads(done.stdout)
+    assert record["files"] == sorted(expected)
+    assert {p["file"]: p["ref"] for p in record["pins"] if p["kind"] == "action"} == expected
+    with pytest.raises(SystemExit):
+        pins._read_clone(str(repo), "origin", "absent-branch")
+
+
+@pytest.mark.parametrize("default", ["main", "release/#ready&tested%"])
+def test_slug_inventory_preserves_json_paths(monkeypatch: pytest.MonkeyPatch, default: str) -> None:
+    """API paths remain JSON data and reserved characters cannot alter a lookup."""
+    expected = {name: f"uses: actions/checkout@v{i}\n" for i, name in enumerate(WORKFLOW_NAMES)}
+    paths = [*expected, ".github/workflows/excluded.yml\n", ".github/README.md"]
+    observed: list[str] = []
+
+    def api(*args: str) -> str:
+        assert args[:4] == ("gh", "api", "--hostname", "github.com")
+        endpoint = next(arg for arg in args if arg.startswith("repos/"))
+        url = urlsplit(endpoint)
+        if "/git/trees/" in url.path:
+            assert unquote(url.path.removeprefix("repos/acme/one/git/trees/")) == default
+            assert parse_qs(url.query) == {"recursive": ["1"]}
+            if "--jq" in args:
+                return "\n".join(paths) + "\n"
+            return json.dumps(
+                {
+                    "tree": [
+                        *({"type": "blob", "path": name} for name in paths),
+                        {"type": "tree", "path": ".github/workflows/directory.yml"},
+                    ],
+                }
+            )
+        assert args[4:6] == ("-H", "Accept: application/vnd.github.raw+json")
+        name = unquote(url.path.removeprefix("repos/acme/one/contents/"))
+        assert parse_qs(url.query) == {"ref": [default]}
+        assert not url.fragment
+        assert name in expected, repr(name)
+        observed.append(name)
+        return expected[name]
+
+    monkeypatch.setattr(pins, "_out", api)
+
+    assert pins._read_slug("acme/one", default) == expected
+    assert sorted(observed) == sorted(expected)
 
 
 @pytest.mark.integration

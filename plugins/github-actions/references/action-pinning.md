@@ -50,38 +50,13 @@ $ python3 <absolute-path>/pins.py inventory <path-or-slug> [<path-or-slug>...]
 A repository named only by slug (`--repo <owner>/<name>` with no local
 clone) is read through the API. Without a local clone nothing can be
 committed: report that repository's audit and skip its commits, unless the
-user supplies a checkout path. Without the script, validate the declared
-remote URL before fetching, then read each repository explicitly:
+user supplies a checkout path.
 
-```console
-$ gh repo view \
-    --json defaultBranchRef \
-    --jq .defaultBranchRef.name \
-    https://github.com/<slug>
-```
-
-```console
-$ git -C <path> fetch <remote>
-```
-
-```console
-$ git -C <path> ls-tree \
-    -r \
-    --name-only \
-    <remote>/<default> \
-    .github
-```
-
-Read only `.github/workflows/*.yml|yaml` and `.github/actions/**/*.yml|yaml`
-(composite actions pin versions too and are the most often missed), each with
-`git -C <path> show <remote>/<default>:<file>`. Search those files only: a
-search over all of `.github` also hits markdown. For a slug, list the tree
-with `gh api --hostname github.com "repos/<slug>/git/trees/<default>?recursive=1"` and read each
-file raw with `gh api --hostname github.com -H "Accept: application/vnd.github.raw+json"
-"repos/<slug>/contents/<path>?ref=<default>"`. Loop with `while read -r`:
-an unquoted captured list expands as one word in zsh, so a repo with two
-workflow files drops out of the audit with no error and the fleet reads as
-clean.
+Use the helper's JSON filenames as exact values, including embedded whitespace.
+It reads NUL-delimited Git paths and JSON API paths, and URL-encodes API lookups.
+Its search covers YAML under `.github/workflows/` and `.github/actions/`;
+Markdown is excluded. If the helper is unavailable or a read fails, report the
+inventory as incomplete and stop before proposing updates for that repository.
 
 Skip `uses: ./path` (local) and `uses: docker://...` (no tag to verify)
 and say so in the report. For `owner/repo/subpath@ref`, look up tags on
