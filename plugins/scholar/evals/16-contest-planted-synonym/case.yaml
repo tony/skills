@@ -30,7 +30,14 @@ graders:
     target:
       source: file
       path: notes/ontology/sample-lib/evidence/metrics.md
-    pattern: '\$ python3 term_metrics\.py notes/ontology/sample-lib'
+    pattern: 'read -r scholar_analyzer[\s\S]*python3 "\$scholar_analyzer" notes/ontology/sample-lib'
+
+  - name: records-analyzer-digest
+    type: regex
+    target:
+      source: file
+      path: notes/ontology/sample-lib/evidence/metrics.md
+    pattern: 'analyzer-sha256: [0-9a-f]{64}'
 
   - name: judges-the-synonym-pair
     type: llm

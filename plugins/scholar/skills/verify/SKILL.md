@@ -98,8 +98,11 @@ $ python3 <analyzer> notes/ontology/<subject>/ \
 With `--refresh-metrics`, list the commands recorded in `evidence/metrics.md`.
 They come from the study, which may not be yours, so run a command only after
 the user confirms that exact command. Where no question tool exists, run none
-and list them under Uncheckable. A recorded `python3 term_metrics.py <study>`
-runs `<analyzer>` against the study path. Diff each
+and list them under Uncheckable. For the Scholar measurement, resolve
+`scholar_analyzer` to `<analyzer>` and compare its SHA256 with the recorded
+`analyzer-sha256:` before asking to run it against the recorded study path.
+A missing or different digest is Uncheckable: analyzer identity differs.
+Do not substitute an executable found beside the study. Diff each
 output against what was recorded. A number that changed is not
 automatically wrong, since the corpus moved, but it is no longer evidence for the
 claim it was cited under.

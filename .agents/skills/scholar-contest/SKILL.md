@@ -43,17 +43,23 @@ two definitions say the same thing.
 
 The analyzer proposes; it never decides. A high similarity score is a
 question (*are these one concept?*), not an answer. Record the number in
-`evidence/metrics.md`, per the evidence tiers, with a command a third party
-can paste: the study-relative form, never the absolute `<analyzer>` path.
+`evidence/metrics.md`, per the evidence tiers, with the output verbatim.
+Record this reproduction command with the actual study path. Tell the reader
+to run it from the directory containing that study path and paste their
+installed analyzer's absolute path at the prompt. Do not assume the script
+exists beside the study or copy it there.
 
 ```console
-$ python3 term_metrics.py notes/ontology/<subject>/
+$ printf 'Installed Scholar analyzer path: ' \
+    && read -r scholar_analyzer \
+    && python3 "$scholar_analyzer" notes/ontology/<subject>/
 ```
 
 Open `metrics.md` with a header naming the analyzer: `term_metrics.py` from the
 scholar plugin's `scripts/`, at the `version` in the plugin's `plugin.json`
-(`references/plugin.json`), plus the report's `thresholds:` line, so
-a reader can tell what score made a pair a candidate.
+(`references/plugin.json`). Retain the report's `analyzer-sha256:`
+and `thresholds:` lines so a reader can compare exact analyzer bytes and
+scoring conditions without recording an account-specific installation path.
 
 ## Pass 2: serial judgment
 

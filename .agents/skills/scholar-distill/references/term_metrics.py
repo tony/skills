@@ -169,6 +169,7 @@ cited in ``evidence/hierarchy.md``:
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import math
 import re
@@ -708,6 +709,7 @@ def main(argv: list[str]) -> int:
         ("circular evidence", circular(terms)),
         ("fan-out", [f"{p}: {n}" for p, n in sorted(fan_out(terms).items())]),
     ]
+    print(f"analyzer-sha256: {hashlib.sha256(Path(__file__).read_bytes()).hexdigest()}")
     print(f"thresholds: synonymy >= {SYNONYMY_THRESHOLD}, polysemy < {POLYSEMY_THRESHOLD}")
     for title, rows in sections:
         print(f"== {title} ==")

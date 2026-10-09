@@ -4,15 +4,13 @@
 # pyright: reportAny=false, reportUnusedCallResult=false, reportPrivateUsage=false
 from __future__ import annotations
 
+import hashlib
 import json
 import subprocess
-from typing import TYPE_CHECKING
+from pathlib import Path
 
 import pytest
 import term_metrics  # pyright: ignore[reportImplicitRelativeImport]
-
-if TYPE_CHECKING:
-    from pathlib import Path
 
 
 @pytest.mark.parametrize(
@@ -187,6 +185,7 @@ def _study(root: Path, commit: str, locator: str, quote: str) -> Path:
         ("src/a.py", "beta", ["Uncheckable: t (src/a.py)"]),
     ],
 )
+@pytest.mark.integration
 def test_check_quotes_against_a_local_clone(
     tmp_path: Path,
     capsys: pytest.CaptureFixture[str],
@@ -204,6 +203,7 @@ def test_check_quotes_against_a_local_clone(
     assert len(out) == len(expected)
 
 
+@pytest.mark.integration
 def test_check_quotes_reports_a_commit_missing_from_the_clone(
     tmp_path: Path, capsys: pytest.CaptureFixture[str]
 ) -> None:
@@ -214,9 +214,14 @@ def test_check_quotes_reports_a_commit_missing_from_the_clone(
     assert capsys.readouterr().out.startswith("Uncheckable: t (src/a.py:1-1): commit not in")
 
 
-def test_report_discloses_thresholds(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
-    """The analyzer output states the thresholds a finding was scored against."""
+def test_report_discloses_measurement_identity(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """The report identifies the analyzer bytes and scoring thresholds used."""
     row = '{"term": "a", "definition": "x"}'
     (tmp_path / "terms.jsonl").write_text(row + "\n", encoding="utf-8")
     assert term_metrics.main([str(tmp_path)]) == 0
-    assert "thresholds: synonymy >= 0.5, polysemy < 0.3" in capsys.readouterr().out
+    output = capsys.readouterr().out
+    expected = hashlib.sha256(Path(term_metrics.__file__).read_bytes()).hexdigest()
+    assert f"analyzer-sha256: {expected}" in output
+    assert "thresholds: synonymy >= 0.5, polysemy < 0.3" in output
