@@ -1,4 +1,4 @@
-"""Tests for rewrite.py against temporary repositories."""
+"""Outer-loop Git rewrites, hooks and recovery against temporary repositories."""
 
 # ruff: noqa: S101, S603, S607, INP001, D103
 # pyright: reportAny=false, reportUnusedCallResult=false
@@ -14,6 +14,8 @@ from pathlib import Path
 from typing import cast
 
 import pytest
+
+pytestmark = pytest.mark.integration
 
 SCRIPT = Path(__file__).resolve().parent / "rewrite.py"
 ENV = {

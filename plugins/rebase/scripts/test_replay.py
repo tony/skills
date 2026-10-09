@@ -118,6 +118,7 @@ def repo(tmp_path: Path) -> Path:
     return tmp_path
 
 
+@pytest.mark.integration
 def test_inspect_empty_overlap_and_replay_pin_the_actual_target(repo: Path) -> None:
     tip = git(repo, "rev-parse", "HEAD")
     code, plan = run(repo, "inspect", "--onto", "main")
@@ -137,6 +138,7 @@ def test_inspect_empty_overlap_and_replay_pin_the_actual_target(repo: Path) -> N
     assert (repo / "upstream").read_text() == "upstream\n"
 
 
+@pytest.mark.integration
 def test_partial_staging_and_untracked_edits_survive(repo: Path) -> None:
     (repo / "notes").write_text("staged\n")
     git(repo, "add", "notes")
@@ -151,6 +153,7 @@ def test_partial_staging_and_untracked_edits_survive(repo: Path) -> None:
     assert str(result["stash"]) in git(repo, "stash", "list", "--format=%H")
 
 
+@pytest.mark.integration
 @pytest.mark.parametrize("filename", ["cache", "draft"])
 def test_incoming_ignored_or_untracked_file_is_preserved(repo: Path, filename: str) -> None:
     git(repo, "switch", "-q", "main")
@@ -177,6 +180,7 @@ def conflict(repo: Path, *, notes: bool = False) -> None:
     git(repo, "switch", "-q", "feature")
 
 
+@pytest.mark.integration
 def test_continue_keeps_exact_stash_after_restore_conflict(repo: Path) -> None:
     conflict(repo, notes=True)
     (repo / "notes").write_text("another caller's notes\n")
@@ -207,6 +211,7 @@ def test_continue_keeps_exact_stash_after_restore_conflict(repo: Path) -> None:
     assert saved in git(repo, "stash", "list", "--format=%H")
 
 
+@pytest.mark.integration
 def test_manual_abort_then_restore_keeps_partial_staging(repo: Path) -> None:
     conflict(repo)
     tip = git(repo, "rev-parse", "HEAD")
@@ -225,6 +230,7 @@ def test_manual_abort_then_restore_keeps_partial_staging(repo: Path) -> None:
     assert (repo / "notes").read_text() == "working\n"
 
 
+@pytest.mark.integration
 def test_continue_refuses_unrelated_staged_work(repo: Path) -> None:
     conflict(repo)
     code, result = run(repo, "start", "--onto", "main")
@@ -241,6 +247,7 @@ def test_continue_refuses_unrelated_staged_work(repo: Path) -> None:
     assert git(repo, "show", ":notes") == "user staged"
 
 
+@pytest.mark.integration
 def test_continue_preserves_ignored_work_added_while_paused(repo: Path) -> None:
     (repo / "cache").write_text("branch cache\n")
     git(repo, "add", "-f", "cache")
@@ -258,6 +265,7 @@ def test_continue_preserves_ignored_work_added_while_paused(repo: Path) -> None:
     assert (repo / "cache").read_text() == "new user work\n"
 
 
+@pytest.mark.integration
 def test_hook_edits_block_restore_and_both_versions_survive(repo: Path) -> None:
     (repo / "notes").write_text("user edit\n")
     hook = repo / ".git" / "hooks" / "post-rewrite"
@@ -271,6 +279,7 @@ def test_hook_edits_block_restore_and_both_versions_survive(repo: Path) -> None:
     assert git(repo, "show", f"{result['stash']}:notes") == "user edit"
 
 
+@pytest.mark.integration
 def test_pre_rebase_hook_edits_are_not_lost(repo: Path) -> None:
     (repo / "notes").write_text("user edit\n")
     hook = repo / ".git" / "hooks" / "pre-rebase"
@@ -283,6 +292,7 @@ def test_pre_rebase_hook_edits_are_not_lost(repo: Path) -> None:
     assert git(repo, "show", f"{result['stash']}:notes") == "user edit"
 
 
+@pytest.mark.integration
 @pytest.mark.parametrize("change", ["commit", "ignored"])
 def test_pre_rebase_hook_cannot_introduce_unprotected_changes(repo: Path, change: str) -> None:
     git(repo, "switch", "-q", "main")
@@ -308,6 +318,7 @@ def test_pre_rebase_hook_cannot_introduce_unprotected_changes(repo: Path, change
         assert (repo / "cache").read_text() == "hook ignored work\n"
 
 
+@pytest.mark.integration
 def test_restore_preserves_new_ignored_work_on_deleted_path(repo: Path) -> None:
     git(repo, "switch", "-q", "main")
     git(repo, "rm", "notes")
@@ -324,6 +335,7 @@ def test_restore_preserves_new_ignored_work_on_deleted_path(repo: Path) -> None:
     assert git(repo, "show", f"{result['stash']}:notes") == "user edit"
 
 
+@pytest.mark.integration
 def test_rejecting_hook_restores_the_original_index(repo: Path) -> None:
     (repo / "notes").write_text("staged\n")
     git(repo, "add", "notes")
@@ -338,6 +350,7 @@ def test_rejecting_hook_restores_the_original_index(repo: Path) -> None:
     assert git(repo, "show", ":notes") == "staged"
 
 
+@pytest.mark.integration
 def test_continue_does_not_follow_a_moved_target_ref(repo: Path) -> None:
     conflict(repo)
     code, first = run(repo, "start", "--onto", "main")
