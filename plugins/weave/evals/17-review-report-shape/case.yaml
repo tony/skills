@@ -21,7 +21,11 @@ execution:
     python3 .eval-state/collect_review.py to copy its raw evidence for grading.
   prompt: >-
     /weave:review --workers=subagents --passes=1 focus on error handling in
-    the charge retry path
+    the charge retry path. Keep each independent review within 400 words and
+    the final report within 600 words, retaining every materially distinct
+    issue category, its evidence, conditional recommendations and actual
+    consensus tags. Use brief diagnostic quotes in verification and consensus
+    artifacts; preserve raw reviewer outputs unchanged.
   max_turns: 60
   timeout_seconds: 1500
   allowed_tools: [Bash, Read, Glob, Grep, Write, Task, Skill]
@@ -34,7 +38,7 @@ graders:
     focus: last_message
     criteria: |
       The reply's first line is a hero: it starts with "⚠" followed by a count of blockers before merge, or with "✓ No blockers". No sentence about what was run comes before it.
-      Every markdown heading in the reply is one of Scores, Verified Issues, Critical, Important, Suggestions, False Positives Rejected, Reviewer Disagreements, Critic Findings, Confidence Evolution, Summary, or Attribution.
+      Every markdown heading in the reply is one of Scores, Verified Issues, Critical, Important, Suggestions, False Positives Rejected, Reviewer Disagreements, Confidence Evolution, Summary, or Attribution.
       Headings from the main list appear in that relative order.
 
   - name: findings-and-bullets
@@ -55,3 +59,12 @@ graders:
     criteria: |
       Compare the synthesis's Verified Issues against the raw per-reviewer outputs in this fixture-collected JSON. A finding's consensus numerator counts reviewers who actually reported that issue, and its denominator is the number who responded. The participant list alone is not evidence that a reviewer reported a finding. It never claims three-reviewer agreement on an issue only the host added.
       Agreement alone never raises severity: a unanimous Suggestion remains a Suggestion unless verification supplies a concrete higher-impact reason independent of reviewer count.
+
+  - name: impact-and-synthesis
+    type: llm
+    focus: last_message
+    criteria: |
+      The fixed one-second delay proves a per-failure wait, not that every caller retries in lockstep or exactly once per second. Synchronized retries may be described as a risk conditional on coincident failures; request duration and caller timing are not established by this fixture.
+      Each unresolved client/server contract is explained once in Summary; a brief reference from a finding to that explanation is acceptable. A critic's contribution is integrated into its owning finding, rejection or unresolved check, not repeated in a separate Critic Findings section.
+      The report presents the final evidence and recommendation. It does not narrate a critic's unused proposal or classify a proposal as false merely because the client contract is unknown.
+      The call site supplies a POST endpoint and an amount payload. That does not establish whether the unseen client adds an idempotency header or whether the server deduplicates requests. The report must not call absence of end-to-end idempotency confirmed. Recommendations to retry ambiguous outcomes such as timeouts remain conditional on resolving that contract; moving the caveat to Summary does not make unconditional retry advice safe.

@@ -66,7 +66,7 @@ The shared worker prompt body is:
 > 5. **Risks and edge cases**: potential problems and mitigations
 > 6. **Commit boundaries**: each step is one atomic commit, with a commit message (no `Co-Authored-By`, no tool trailer, no emoji) and the quality gates (lint, format, type-check, fast tests) to verify before committing
 >
-> Be specific: reference actual files, functions, and patterns from the codebase.
+> Be specific: reference actual files, functions, and patterns from the codebase. Separate the user's requirements from proposed defaults. Explain how normal, failure and capacity paths satisfy each hard constraint, and state the assumptions behind resource estimates.
 
 Follow `ensemble-core.md` (Dispatch lanes) with this body, running the engine commands through the session agent, then (Close the repo guard). If only one lane responds, continue with it alone and say so.
 
@@ -75,6 +75,15 @@ Follow `ensemble-core.md` (Dispatch lanes) with this body, running the engine co
 ## Phase 3: Synthesize the best plan
 
 Apply `ensemble-core.md` (Blind judging, Synthesis protocol) to this pass's outputs, with the default rubric. The convergence mode is **Merge**: agreed points are the foundation, then adjudicated resolutions, then the best unique contributions ordered by score, with unverified claims stripped. The main agent reads the outputs and judges; the session agent writes the artifacts.
+
+During Verify Claims, record the task's hard constraints in `verification.md`
+and trace the proposed design through normal operation, failures and capacity
+limits. A fallback must satisfy the same requirement as the main path;
+agreement between workers cannot authorize an exception. Keep an unresolved
+policy choice explicit and block the affected step until the user decides.
+For a quantitative bound, verify its units, representation, scope and omitted
+costs. A payload calculation does not bound containers, keys or total process
+memory. Recheck these constraints after integrating critic findings.
 
 Steps 2 to 4 run on the final pass only (pass 1 when `passes` is 1, else the last pass of Phase 4), so the plan is rendered once. In this order:
 

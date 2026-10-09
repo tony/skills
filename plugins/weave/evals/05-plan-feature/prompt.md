@@ -10,4 +10,4 @@ append_system_prompt: >-
   with AI_AIP_ROOT="$PWD/.eval-state/weave". Set this before init; never
   change roots to bypass a denied write.
 ---
-/weave:plan Add rate limiting to the public API so a single client can't exceed 100 requests per minute.
+/weave:plan Add rate limiting to the public API so a single client can't exceed 100 requests per minute. Plan only the limiter module and its API integration seam, in at most four commits; do not scaffold a whole service. Explain normal, exception and capacity paths, and what any memory estimate includes.

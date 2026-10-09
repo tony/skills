@@ -428,6 +428,8 @@ Surface it in the output:
   unanimous-verified, majority-verified, single-verified, then unverified.
   Split findings that verification could not settle appear under Reviewer
   Disagreements with both positions and each side's evidence; they are never dropped.
+  Once verification settles a dispute, retain its vote history in `consensus.md`
+  and render its conclusion only in the result section that owns that status.
 - **ask**: the Disagreements section renders every split and
   majority-with-dissent item: both positions, which was adopted, and the deciding
   evidence, or "unresolved, both positions retained".
