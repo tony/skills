@@ -93,7 +93,11 @@ Avoid commit-prefix headings like `#### cli(sync): ...`; they describe the
 commit. Detail beyond 4 lines or a bullet list means splitting into one entry
 per shipped surface.
 
-PR references: `(#512)` when the number is known, `(#???)` when no PR exists.
+PR references: `(#512)` when the number is known, `(#???)` when it is unknown.
+An authentication, network, service, or tool failure does not establish that
+no PR exists. When a reply includes PR status, use `unverified` for an
+unsuccessful lookup unless the result explicitly establishes no matching PR;
+only then use `none`.
 
 ## Voice
 

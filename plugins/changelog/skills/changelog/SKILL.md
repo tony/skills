@@ -42,8 +42,8 @@ Write entries, commit messages, and user-facing replies per
      release.
    - Entry shape and typical length.
 5. **Check for a PR.** `gh pr view --json number,title,body,labels` returns the
-   number, title, body, and labels. A failure means no PR; use `(#???)`
-   placeholders.
+   number, title, body, and labels. Apply the PR-reference and lookup-status
+   rules in `entry-rules.md` when the number cannot be verified.
 6. **Check the changelog is clean** per `commit-message.md`; an untracked
    file already present belongs to the user. When it is not clean, insert
    only and say why.
@@ -69,7 +69,8 @@ Approval gate. Do not edit before approval. Approval comes from, in order:
 
 Present, in this order:
 
-1. Summary line: `Branch: <branch-name> | Commits: <count> | PR: #<number> (or "none")`.
+1. Summary line: `Branch: <branch-name> | Commits: <count> | PR: #<number>`;
+   use `none` or `unverified` per `entry-rules.md` when no number is known.
 2. The proposed entries in a fenced `markdown` block, showing the exact text.
 3. The voice check and target line from `entry-rules.md`.
 4. The commit message the entries would land under, built per
