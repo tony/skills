@@ -46,8 +46,8 @@ $ python3 <measure.py> chain \
     <every logged commit_sha, in order>
 ```
 
-Exit 1 means someone else's commit sits in the range or a logged commit is
-gone: stop, print its `reason`, and tell the user to run
+Exit 1 means the recorded history could not be verified: stop, print its
+`reason`, and tell the user to run
 `pytest-optimizer:00-scan --force`.
 
 Read `plan.json`, `baseline.json`, `state.json`, and the project quality-check +

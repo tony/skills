@@ -584,9 +584,17 @@ def chain(root: pathlib.Path, base: str, logged: Sequence[str]) -> dict[str, t.A
     >>> (ok, none_logged, foreign)
     (True, False, False)
     """
+    ancestor = _git(root, "merge-base", "--is-ancestor", "--", base, "HEAD")
+    if ancestor.returncode == 1:
+        return {"ok": False, "reason": "base is not an ancestor of HEAD"}
+    if ancestor.returncode != 0:
+        return {
+            "ok": False,
+            "reason": ancestor.stderr.strip() or "could not verify base ancestry",
+        }
     proc = _git(root, "rev-list", "--reverse", f"{base}..HEAD")
     if proc.returncode != 0:
-        return {"ok": False, "reason": "base is not an ancestor of HEAD"}
+        return {"ok": False, "reason": proc.stderr.strip() or "could not read commit range"}
     actual = proc.stdout.split()
     expected: list[str] = []
     for sha in logged:
