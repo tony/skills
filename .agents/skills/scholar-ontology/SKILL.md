@@ -45,8 +45,8 @@ stage directly.
    what was read and what was skipped, into `sources.jsonl`.
 2. `extract`: harvest the terms the corpus uses, with a citation and
    a locator each, into `terms.jsonl`.
-3. `distill`: build the three layers: types, members with
-   discriminators, and the controlled vocabulary.
+3. `distill`: build the three layers: source-supported types, memberships,
+   and the controlled vocabulary.
 4. `contest`: judge the ontology adversarially, one candidate at a
    time, recording the kills.
 5. `render`: write `brief.md` and the evidence documents, and gate
@@ -99,15 +99,14 @@ types, <n> contested` or `⚠ Blocked: <reason>`. Sections:
    read, with the reason. Never write that a checkout was clean or left
    unchanged, that nothing was left unread, or a claim about the sandbox; an
    unpushed commit reads "commit not on a remote; recorded without URL".
-2. `## Ontology`: the type hierarchy in prose, each type with its
-   discriminator, and the vocabulary's preferred terms.
+2. `## Ontology`: the supported type hierarchy and vocabulary, distinguishing
+   declared types, documented roles, and unresolved relations.
 3. `## Contested`: what was challenged and how it resolved, including what
    was killed and what the kill revealed.
 4. `## Where it lives`: the study directory path and which stages ran.
 
-A blocked run follows the halted-run shape in the output contract: hero, one
-sentence naming the missing corpus, and one line saying what to point the study
-at (a repository URL, a local directory, or a document on disk). No bold, no
+A blocked run contains the hero and one unblock sentence naming the required
+input (a repository URL, a local directory, or a document on disk). No bold, no
 options list, no plan for what happens next, no sections, no guesses from a
 pasted snippet, no local paths:
 

@@ -888,7 +888,7 @@
         "references/stage-gates.md": "plugins/scholar/references/stage-gates.md",
         "references/term_metrics.py": "plugins/scholar/scripts/term_metrics.py"
       },
-      "bytes": 47166
+      "bytes": 48522
     },
     {
       "name": "scholar-distill",
@@ -902,7 +902,7 @@
         "references/stage-gates.md": "plugins/scholar/references/stage-gates.md",
         "references/term_metrics.py": "plugins/scholar/scripts/term_metrics.py"
       },
-      "bytes": 43241
+      "bytes": 44354
     },
     {
       "name": "scholar-extract",
@@ -917,7 +917,7 @@
         "references/stage-gates.md": "plugins/scholar/references/stage-gates.md",
         "references/term_metrics.py": "plugins/scholar/scripts/term_metrics.py"
       },
-      "bytes": 49478
+      "bytes": 50052
     },
     {
       "name": "scholar-gather",
@@ -932,7 +932,7 @@
         "references/stage-gates.md": "plugins/scholar/references/stage-gates.md",
         "references/term_metrics.py": "plugins/scholar/scripts/term_metrics.py"
       },
-      "bytes": 48190
+      "bytes": 48764
     },
     {
       "name": "scholar-ontology",
@@ -948,7 +948,7 @@
         "references/stage-gates.md": "plugins/scholar/references/stage-gates.md",
         "references/term_metrics.py": "plugins/scholar/scripts/term_metrics.py"
       },
-      "bytes": 48246
+      "bytes": 49125
     },
     {
       "name": "scholar-render",
@@ -956,12 +956,13 @@
         "plugins/scholar/skills/render/SKILL.md"
       ],
       "bundled": {
+        "references/evidence-tiers.md": "plugins/scholar/references/evidence-tiers.md",
         "references/output-contract.md": "plugins/scholar/references/output-contract.md",
         "references/prose-rules.md": "plugins/scholar/references/prose-rules.md",
         "references/stage-gates.md": "plugins/scholar/references/stage-gates.md",
         "references/term_metrics.py": "plugins/scholar/scripts/term_metrics.py"
       },
-      "bytes": 41244
+      "bytes": 44097
     },
     {
       "name": "scholar-revise",
@@ -1493,6 +1494,7 @@
     "plugins/package-updater/references/stopped-run.md": 4,
     "plugins/package-updater/scripts/repo_facts.py": 4,
     "plugins/pr/references/branch-context.md": 4,
+    "plugins/scholar/references/evidence-tiers.md": 4,
     "plugins/scholar/references/source-pins.md": 4,
     "plugins/terraform/references/prose-rules.md": 4,
     "plugins/terraform/scripts/lockctl.py": 4,
@@ -1518,7 +1520,6 @@
     "plugins/pytest-optimizer/references/heuristic-catalog.md": 3,
     "plugins/respond/references/feedback-sources.md": 3,
     "plugins/respond/references/prose-rules.md": 3,
-    "plugins/scholar/references/evidence-tiers.md": 3,
     "plugins/spike/references/prose-rules.md": 3,
     "plugins/spike/references/spike-core.md": 3,
     "plugins/spike/references/verification-gates.md": 3,

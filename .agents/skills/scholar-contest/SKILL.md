@@ -37,9 +37,9 @@ It compares sibling definitions for synonymy (tf-idf cosine over the
 `definition` text of rows sharing a parent), compares the definitions of rows
 sharing one `term` for polysemy, walks `parent` links for orphans and
 hierarchy cycles, tests whether a citation's quote contains the term it
-supports for circular evidence, and counts children per parent for fan-out. It
-reads definitions and parents, never the names, so a high synonymy score means
-two definitions say the same thing.
+supports for circular evidence, and counts children per parent for fan-out.
+Similarity scores measure definition text, not identity or disjointness of
+the things defined. An absent finding does not establish semantic separation.
 
 The analyzer proposes; it never decides. A high similarity score is a
 question (*are these one concept?*), not an answer. Record the number in
@@ -72,6 +72,11 @@ One candidate at a time. For each, write to `evidence/contested.md`:
 - Verdict: upheld, revised, killed, or open. An open claim states the
   objection and what evidence would settle it.
 
+Check each structural assertion against its pinned source, not its repetition
+in an earlier evidence document. Withdrawing an unsupported disjointness
+claim leaves overlap unknown; it does not establish the opposite. Keep the
+verdict open if the unsupported claim remains in the ontology.
+
 Record kills; do not discard them. A kill often carries more than a survivor, because it names a boundary
 the ontology drew in the wrong place. A candidate rejected for the wrong reason
 tells you the type above it is mis-specified.
@@ -86,8 +91,8 @@ Read `sources.jsonl` and ask what the study does not know:
 - Which sources were never opened, and whether the vocabulary plausibly lives
   in one of them.
 - Which terms rest on a single citation.
-- Which types have exactly one member. A one-member type is usually a
-  description, not a type.
+- Which types have few observed members and what supports their membership.
+  A source-declared type can have no observed members in the scoped corpus.
 - Which terms have no citation that shows them in use, only in definition.
 
 ## Pass 4: stop condition
@@ -163,7 +168,8 @@ The hero line is the template and nothing more: no second sentence. Sections:
 3. `## Kills`: what was killed and what the kill revealed.
 4. `## Coverage`: what the study does not know, from pass 3.
 
-Next-step options: another round, run render, widen the corpus, stop here.
+Next-step options: another round, widen the corpus, stop here. Offer run
+render only when the contest gate passes.
 
 Write it per `references/prose-rules.md`.
 

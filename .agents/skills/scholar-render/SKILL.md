@@ -22,6 +22,7 @@ condition.
 User arguments: $ARGUMENTS
 
 Read `references/output-contract.md` before writing study files.
+Read `references/evidence-tiers.md` before choosing the brief's claims.
 
 ## The prohibition
 
@@ -34,7 +35,9 @@ a version or identifier with a digit outside backticks fails. Spelled-out
 counts ("twelve plugins") are numbers too; the analyzer cannot see them, so
 write none.
 
-The analyzer enforces the rule. Run it before reporting success. A missing
+The analyzer checks URLs, digits and common inline Markdown links. Other
+citation forms, evidence-file existence and claim support require review.
+Run it before reporting success. A missing
 `brief.md` exits 2: write the brief first. A brief the user asked to keep
 unchanged is gated as is; report its findings and leave it.
 
@@ -48,10 +51,15 @@ Four movements, in prose, each linking to the evidence file that holds its
 support:
 
 1. What the corpus is about, and where its vocabulary lives.
-2. The type hierarchy, with each type's discriminator stated plainly.
+2. The type hierarchy and its supported memberships, distinguishing declared
+   types from their documented roles.
 3. The controlled vocabulary: the preferred terms, and the collisions that
    made them necessary.
 4. What `contest` overturned, and what the kills revealed.
+
+Trace each assertion to support in the existing evidence documents. Remove
+unsupported assertions from the brief; name `contest` as the stage needed
+to resolve them without rewriting its evidence or declaring them settled.
 
 Write it per `references/prose-rules.md`, for a reader who was not
 present. They do not have the corpus open, they do not know the analyst, and
@@ -59,11 +67,11 @@ they will judge the study by whether they can disagree with it.
 
 ## What the evidence documents hold
 
-`evidence/hierarchy.md`: the is-a claims, one citation each, with the
-discriminators.
+`evidence/hierarchy.md`: type declarations and is-a claims, each with its
+source-supported membership basis and citation.
 
-`evidence/vocabulary.md`: preferred and deprecated terms, and the
-disjointness constraints.
+`evidence/vocabulary.md`: preferred terms, aliases and senses, and the
+relations the source supports or leaves unknown.
 
 `evidence/metrics.md`: every distributional claim with the command that
 produced it and the output it produced.

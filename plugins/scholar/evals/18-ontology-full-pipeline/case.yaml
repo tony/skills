@@ -58,6 +58,35 @@ graders:
       covers the corpus, the ontology, what was contested, and where the
       study lives. It does not repeat a separate report per stage.
 
+  - name: brief-claims-follow-the-source
+    type: llm
+    focus:
+      source: file
+      path: notes/ontology/tiny-lib/brief.md
+    criteria: |
+      The corpus contains only three class declarations with docstrings:
+      PortAdapter wraps a third-party client behind the port interface;
+      EventBus publishes domain events to subscribed handlers; EventHandler
+      receives one domain event and acts on it. There are no method bodies
+      or usage examples. The brief may describe these stated roles, not
+      claim tested implementation behavior. It must not infer an
+      architectural pattern, exclusive roles, or disjoint types from those
+      names alone. Claims that the adapter never touches events, callers
+      never meet the client, or the bus never acts on events are unsupported
+      and fail, including equivalent wording. Unsupported hypotheses belong
+      in contested evidence, not in the brief as established conclusions.
+
+  - name: report-does-not-add-unsupported-claims
+    type: llm
+    focus: last_message
+    criteria: |
+      The report limits factual behavior claims to the corpus's docstrings:
+      wrapping a third-party client, publishing domain events to subscribed
+      handlers, and receiving and acting on one domain event. The empty
+      classes do not establish exclusive roles, a hexagonal architecture,
+      or that callers never meet the client. It may report those hypotheses
+      as unsupported, rejected, or open, but not as established conclusions.
+
   - name: never-writes-into-the-corpus
     type: tool_used
     tool: Write

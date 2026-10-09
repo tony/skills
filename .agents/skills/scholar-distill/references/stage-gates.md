@@ -23,7 +23,12 @@ not failed.
 
 ## distill
 
-Every type is a `kind: type` row with its discriminator as `definition`,
+Every type is a `kind: type` row with a corpus-supported definition and a
+cited declaration or membership basis in `evidence/hierarchy.md`. Every
+asserted parent relation, equivalence, or disjointness constraint has source
+support; `root` remains the special top-level anchor. Review that support
+per `evidence-tiers.md`; the analyzer checks table structure, not entailment.
+
 `--check-terms` still exits zero, and `term_metrics.py` reports no orphans and
 no hierarchy cycles. An orphan is a term with no parent, or a parent that is
 neither another term nor `root`, or a non-type term parented to `root`; a cycle is a parent chain that returns to
@@ -38,7 +43,10 @@ passed: it reports `⚠ Gate unmet`, never `✓`.
 
 ## render
 
-The brief gate exits zero:
+Every assertion in the brief has support in its linked evidence document,
+and each link resolves within the study's `evidence/` directory. Review these
+per `evidence-tiers.md`; the analyzer does not judge entailment or resolve
+every Markdown citation form. Its mechanical gate must also exit zero:
 
 ```console
 $ python3 <analyzer> notes/ontology/<subject>/ --check-brief

@@ -67,7 +67,7 @@ Harvest terms and their definitions into a term table, each with the citation th
 $ /scholar:extract
 ```
 
-Build the three layers: types, members with discriminators, and the controlled vocabulary:
+Build source-supported types, memberships, and the controlled vocabulary:
 
 ```console
 $ /scholar:distill
@@ -130,7 +130,7 @@ notes/ontology/<subject>/
 ├── quotations.jsonl      prose only: {source, locator_kind, locator, quote, note}
 └── evidence/
     ├── hierarchy.md      the type hierarchy, one citation per is-a claim
-    ├── vocabulary.md     preferred and deprecated terms, disjointness constraints
+    ├── vocabulary.md     terms, senses, aliases, and source-supported relations
     ├── metrics.md        distributional claims, each with its command and output
     ├── contested.md      claim, objection, verdict, including the kills
     └── corrections.md    retractions: what was believed, and why it failed
@@ -140,10 +140,11 @@ notes/ontology/<subject>/
 other; they read and write these files. A term table written by hand, or by a
 different tool entirely, is a valid input to `contest` and `render`.
 
-`brief.md` may not contain a citation, a permalink, or a bare number. Where it
-wants one it links into `evidence/`. `render` enforces this with
-`scripts/term_metrics.py --check-brief`, so the top layer stays readable by
-construction rather than by discipline.
+`brief.md` puts citations and measurements behind links into `evidence/`.
+`render` checks URLs, digits and common inline links with
+`scripts/term_metrics.py --check-brief`, then reviews link destinations and
+claim support. A passing mechanical check does not establish that the
+evidence supports a conclusion.
 
 ## Composition
 

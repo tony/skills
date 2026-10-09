@@ -1,8 +1,8 @@
 ---
 name: scholar-distill
 description: >-
-  Build the three ontology layers from a term table: types, members with
-  discriminators, and the controlled vocabulary
+  Build source-supported types, memberships, and controlled vocabulary from
+  a term table
 disable-model-invocation: true
 allowed-tools: ["Bash", "Read", "Grep", "Glob", "Edit", "Write", "AskUserQuestion"]
 metadata:
@@ -28,47 +28,45 @@ Read `references/output-contract.md` before writing study files.
 
 The is-a hierarchy. What kinds of thing the corpus contains.
 
-Write it to `evidence/hierarchy.md`, one citation per is-a claim. Each type is
-also a row in `terms.jsonl` with `kind: type`, its discriminator as
-`definition`, and `parent` set to another type or the literal string `root`.
+Write it to `evidence/hierarchy.md`, citing each type declaration and is-a
+claim. Each type is also a row in `terms.jsonl` with `kind: type`, its
+corpus-supported `definition`, and `parent` set to another type or the literal
+string `root`.
 Write each type's name onto its members' rows as `parent`. A type row you create
 carries no `cites`; the `--check-terms` gate exempts a `kind: type` row that
 has a `parent`, and the citations live in `hierarchy.md`. A type the corpus
 already names (a `class`) keeps the row `extract` wrote: change its `kind` from
 `class` to `type` in place, `cites` included.
 
-Types come from the corpus's own distinctions. If a project separates ports
-from adapters everywhere, those are types. If the analyst finds it tidy to
-group four things, that is not a type.
+Each non-root parent needs a source-supported is-a or member relation.
+Sharing a file, directory, or prefix does not establish that relation.
+`root` is the special anchor for top-level types, not an invented type.
 
-## Layer 2: members with discriminators
+## Layer 2: supported memberships
 
-For each type, the test that decides membership. Write it into
-`evidence/hierarchy.md` beside the type.
+Record the corpus's basis for membership in `evidence/hierarchy.md`. A code
+declaration supports a named type even when the corpus gives no behavioral
+membership test. Keep its documented role separate from that declaration.
 
-This is what separates an ontology from a labelled list:
+Use a necessary-and-sufficient discriminator only when the source establishes
+both directions. A docstring describing a type's role does not establish that
+everything with that role belongs to the type, or that its members have no
+other roles. Keep the extracted definition and citations; do not strengthen
+a role description into such a test.
 
-- A discriminator: *a plugin is an agent domain iff its name denotes a doer
-  rather than the thing acted on.*
-- Not a discriminator: *these four feel similar.*
-
-A type whose discriminator you cannot write is not a type yet. Either find the
-test, or dissolve the type and return its members to their parent.
+An analyst-proposed type without a supported membership relation remains
+unsupported. Record the gap rather than inventing a type or parent.
 
 ## Layer 3: the controlled vocabulary
 
-Write `evidence/vocabulary.md`: per act or relation the corpus performs, the
-preferred term, its deprecated variants, and the disjointness constraints
-between siblings.
+Write `evidence/vocabulary.md`: the corpus's terms, their senses, preferred
+spellings, observed aliases, and any source-declared deprecations.
 
-Three properties, all checkable by `contest`:
-
-- One term, one referent. No polysemy. A term standing for two concepts is
-  the failure that makes a vocabulary unusable.
-- One referent, one term. No synonymy. Four names for one act is four
-  chances to miss the fourth.
-- Siblings disjoint. No two sibling terms both correctly describe one
-  instance.
+Preserve supported synonymy, multiple senses, and overlap. Cite each asserted
+equivalence or disjointness constraint; sibling placement does not imply
+disjointness. When the source leaves a relationship unknown, record that
+limit without asserting either overlap or exclusion. Lexical similarity
+proposes a question for `contest`, not a semantic relation.
 
 The preferred term is the one the corpus already uses most, not the one that
 reads best. A vocabulary that renames what the corpus says has stopped
@@ -93,11 +91,10 @@ another term nor `root`. Report a member (non-type row) whose parent is
 `root` as an orphan too: only types sit under `root`. The analyzer's `hierarchy cycles` section lists any
 parent chain that returns to itself, such as `a -> b -> a` or a term that is
 its own parent; fix each by re-reading the corpus's own is-a claim. An orphan
-is a finding: either the corpus has a
-concept the hierarchy has not named, or the term does not belong in the table.
-Never invent a type to house an orphan, and never split a type to tidy its
-fan-out. Both produce a hierarchy that describes the analyst's sense of order
-rather than the corpus.
+may be a valid term whose parent the corpus does not establish. Retain it
+and report the failed gate. Do not drop it or promote it without source
+support to clear a finding. Never invent a type to house an orphan or split
+a type to tidy its fan-out.
 
 ## Rules
 
@@ -129,7 +126,7 @@ Re-read the corpus evidence for checkpoint, stage, and phase before assigning pa
 
 Sections:
 
-1. `## Types`: the hierarchy, each type with its discriminator.
+1. `## Types`: the hierarchy and each type's supported membership basis.
 2. `## Vocabulary`: preferred terms with their deprecated variants.
 3. `## Unresolved`: terms that resisted placement, and what that suggests
    about the corpus rather than about the table.
