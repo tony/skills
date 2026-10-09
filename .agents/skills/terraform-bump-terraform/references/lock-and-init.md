@@ -309,6 +309,18 @@ those, run the checks the repository defines in its `AGENTS.md`,
 `CLAUDE.md`, or CI workflow, such as `tflint` or a policy check, never
 assumed commands.
 
+A failed gate is pre-existing only when the same failure was observed
+before this run's first edit, with the original lock and provider selections,
+configuration, gates, and tool conditions unchanged. Report that observation
+before continuing. A gate the repository requires to pass still blocks
+publication when its failure is pre-existing.
+
+Without that observation, or when the original state could not reach the
+failing gate, the failure is unestablished. Do not construct a post-failure
+scratch baseline to authorize publication. A repaired or re-resolved
+diagnostic copy cannot supply baseline evidence. New, plausibly caused, or
+unestablished gate failures stop publication.
+
 A `plan` is not a verification step unless the project asks for it: it needs
 backend credentials, reaches live infrastructure, and a non-empty plan is
 often pre-existing drift.

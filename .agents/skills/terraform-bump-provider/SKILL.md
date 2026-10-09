@@ -130,10 +130,9 @@ non-zero names any other provider that changed or any count that dropped;
 report it. Run the repository's own gates (`validate`, `tflint`, policy
 checks).
 
-A gate that fails on a file this run edited, or that the bump plausibly
-caused, is a mid-run stop: leave the edits, commit nothing, and end with
-the stopped line. A failure in code the run did not touch is
-pre-existing; report it as such and carry on.
+Apply [Verification gates](references/lock-and-init.md#verification-gates)
+to classify failures before publication. When it requires a stop, leave the
+edits, commit nothing, and end with the stopped line.
 
 With `--no-commit`, leave everything in the working tree. Otherwise make
 one commit holding the constraint edits and the refreshed locks. Report

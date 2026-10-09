@@ -81,12 +81,11 @@ whether a constraint is holding it.
 
 Run the detected tool's `fmt -check -recursive` (`tofu` where OpenTofu
 drives the repository) and the repository's own gates. Never report a
-gate as passing without reading the output that says so. A gate that
-fails on a file this run changed, or that the refresh plausibly caused,
-is a mid-run stop: leave the refreshed locks in the working tree, commit
-nothing, and end with the stopped line (the umbrella has its mid-run
-form). A failure in code the run did not touch is pre-existing; report it
-as such and carry on.
+gate as passing without reading the output that says so. Apply
+[Verification gates](references/lock-and-init.md#verification-gates)
+to classify failures before publication. When it requires a stop, leave the
+refreshed locks in the working tree, commit nothing, and end with the
+stopped line (the umbrella has its mid-run form).
 
 Then make one commit for the lock files that passed the checksum and
 declared-platform checks (or got the user's explicit yes), kept out of any commit carrying authored
