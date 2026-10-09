@@ -45,17 +45,18 @@ def test_state_counts_each_provider_separately(
     ]
 
 
+@pytest.mark.parametrize("newline", ["\n", "\r\n"])
 def test_drop_leaves_the_other_block_byte_identical(
-    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+    tmp_path: Path, capsys: pytest.CaptureFixture[str], newline: str
 ) -> None:
     lock = tmp_path / ".terraform.lock.hcl"
-    lock.write_text(LOCK)
+    original = LOCK.replace("\n", newline).encode()
+    lock.write_bytes(original)
     argv = ["lockctl.py", "drop", str(lock), "registry.terraform.io/hashicorp/aws"]
     assert lockctl.main(argv) == 0
     assert capsys.readouterr().out.strip() == "dropped"
-    assert (
-        lock.read_text() == LOCK[LOCK.index('provider "registry.terraform.io/hashicorp/random"') :]
-    )
+    other = b'provider "registry.terraform.io/hashicorp/random"'
+    assert lock.read_bytes() == original[original.index(other) :]
     assert [p.name for p in tmp_path.iterdir()] == [".terraform.lock.hcl"]
 
 
@@ -161,20 +162,36 @@ def test_diff_rejects_other_block_content_changes(
     assert lockctl.main(["lockctl.py", "diff", "--allow", "*", before, after]) == 0
 
 
+@pytest.mark.integration
 def test_diff_reads_a_git_object_as_the_before_side(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
     capsys: pytest.CaptureFixture[str],
 ) -> None:
-    run = ["git", "-c", "user.name=t", "-c", "user.email=t@example.com"]
+    run = [
+        "git",
+        "-c",
+        "core.autocrlf=false",
+        "-c",
+        "user.name=t",
+        "-c",
+        "user.email=t@example.com",
+    ]
     subprocess.run(["git", "init", "-q"], cwd=tmp_path, check=True)
     lock = tmp_path / ".terraform.lock.hcl"
-    lock.write_text(LOCK)
-    subprocess.run(["git", "add", "."], cwd=tmp_path, check=True)
+    original = LOCK.replace("\n", "\r\n").encode()
+    lock.write_bytes(original)
+    subprocess.run([*run, "add", "."], cwd=tmp_path, check=True)
     subprocess.run([*run, "commit", "-qm", "lock"], cwd=tmp_path, check=True)
     monkeypatch.chdir(tmp_path)
     argv = ["lockctl.py", "diff", "HEAD:.terraform.lock.hcl", ".terraform.lock.hcl"]
     assert lockctl.main(argv) == 0
     assert capsys.readouterr().out == ""
-    lock.write_text(LOCK.replace("3.6.0", "3.7.0"))
-    assert lockctl.main(argv) == 1
+    for edited in (
+        original.replace(b"3.6.0", b"3.7.0"),
+        original.replace(b"h1:ddd=", b"h1:unexpected="),
+        original.replace(b"\r\n", b"\n"),
+    ):
+        lock.write_bytes(edited)
+        assert lockctl.main(argv) == 1
+        assert "registry.terraform.io/hashicorp/random\tchanged" in capsys.readouterr().out

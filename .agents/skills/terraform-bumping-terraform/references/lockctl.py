@@ -243,8 +243,8 @@ def _diff_command(rest: list[str]) -> int:
 def _write_atomic(path: Path, text: str) -> None:
     fd, tmp = tempfile.mkstemp(dir=path.parent, prefix=path.name + ".")
     try:
-        with os.fdopen(fd, "w") as handle:
-            _ = handle.write(text)
+        with os.fdopen(fd, "wb") as handle:
+            _ = handle.write(text.encode())
         _ = Path(tmp).replace(path)
     except BaseException:
         Path(tmp).unlink(missing_ok=True)
@@ -270,7 +270,7 @@ def main(argv: list[str]) -> int:
         return 0
     if cmd == "drop" and len(rest[1:]) == 1:
         path = Path(rest[0])
-        text, dropped = drop(path.read_text(), rest[1])
+        text, dropped = drop(path.read_bytes().decode(), rest[1])
         if dropped:
             _write_atomic(path, text)
         print("dropped" if dropped else "absent")

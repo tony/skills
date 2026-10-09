@@ -1219,7 +1219,7 @@
         "references/pin-sites.md": "plugins/terraform/references/pin-sites.md",
         "references/prose-rules.md": "plugins/terraform/references/prose-rules.md"
       },
-      "bytes": 56224
+      "bytes": 56244
     },
     {
       "name": "terraform-bump-terraform",
@@ -1233,7 +1233,7 @@
         "references/pin-sites.md": "plugins/terraform/references/pin-sites.md",
         "references/prose-rules.md": "plugins/terraform/references/prose-rules.md"
       },
-      "bytes": 56105
+      "bytes": 56125
     },
     {
       "name": "terraform-bumping-terraform",
@@ -1244,7 +1244,7 @@
         "references/lockctl.py": "plugins/terraform/scripts/lockctl.py",
         "references/prose-rules.md": "plugins/terraform/references/prose-rules.md"
       },
-      "bytes": 25388
+      "bytes": 25408
     },
     {
       "name": "terraform-refresh-lock",
@@ -1257,7 +1257,7 @@
         "references/lockctl.py": "plugins/terraform/scripts/lockctl.py",
         "references/prose-rules.md": "plugins/terraform/references/prose-rules.md"
       },
-      "bytes": 42259
+      "bytes": 42279
     },
     {
       "name": "ticket-draft",
