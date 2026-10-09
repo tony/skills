@@ -37,6 +37,17 @@ def test_package_json_scoped_name(tmp_path: pathlib.Path) -> None:
     assert '"~1.1.0"' in f.read_text()
 
 
+def test_pin_edit_preserves_other_bytes_and_mode(tmp_path: pathlib.Path) -> None:
+    f = tmp_path / "requirements.txt"
+    before = "# café\r\nfoo==1.0.0\rother==9.0.0\n".encode()
+    f.write_bytes(before)
+    f.chmod(0o640)
+    mode = f.stat().st_mode
+    assert bump_pin.bump(f, "foo", "1.0.0", "1.1.0") == 1
+    assert f.read_bytes() == before.replace(b"foo==1.0.0", b"foo==1.1.0")
+    assert f.stat().st_mode == mode
+
+
 def test_no_match_leaves_file_and_exits_1(
     tmp_path: pathlib.Path, capsys: pytest.CaptureFixture[str]
 ) -> None:

@@ -47,11 +47,11 @@ def pin_pattern(manifest: str, name: str, old: str) -> re.Pattern[str]:
 
 def bump(manifest: Path, name: str, old: str, new: str) -> int:
     """Rewrite matching pins in place and return how many changed."""
-    text = manifest.read_text(encoding="utf-8")
+    text = manifest.read_bytes().decode("utf-8")
     pattern = pin_pattern(manifest.name, name, old)
     updated, count = pattern.subn(lambda m: m.group(1) + new, text)
     if count:
-        manifest.write_text(updated, encoding="utf-8")
+        manifest.write_bytes(updated.encode("utf-8"))
     return count
 
 
