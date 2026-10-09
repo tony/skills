@@ -679,7 +679,7 @@
       "bundled": {
         "references/release-conventions.md": "plugins/release/references/release-conventions.md"
       },
-      "bytes": 11487
+      "bytes": 12993
     },
     {
       "name": "release-cut",
@@ -690,7 +690,7 @@
         "references/prose-rules.md": "plugins/release/references/prose-rules.md",
         "references/release-conventions.md": "plugins/release/references/release-conventions.md"
       },
-      "bytes": 22989
+      "bytes": 24612
     },
     {
       "name": "release-update-downstream-packages",

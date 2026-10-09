@@ -94,8 +94,8 @@ tag it was cut for.
 Following the conventions reference, record:
 
 - Every version-bearing file and stray version literal to bump
-- The project's bump tooling, if any (justfile/Makefile recipe, bump
-  script) — prefer it over manual edits
+- The project's bump tooling, if any, and its verified edit-only invocation
+  under the conventions reference's bump-tooling boundary
 - The lockfile and its refresh command
 - The changelog file, its unreleased-header variant, placeholder
   wording, and whether released sections open with a lead paragraph
@@ -104,11 +104,12 @@ Following the conventions reference, record:
   placeholder header carries no version, name its header text instead
 - The project's quality gates from AGENTS.md / CLAUDE.md (test suite,
   linters, type checkers, docs build). Never assume ecosystem
-  commands; use what the project documents.
+  commands; use what the project documents. Check delegated scripts and their
+  effects under that same boundary before execution.
 
 ## Phase 3: Apply
 
-1. **Bump.** Run the project's bump tooling with the new version, or
+1. **Bump.** Run the verified edit-only invocation with the new version, or
    edit each discovered file. Verify afterwards that no occurrence of
    the old version remains outside the lockfile and historical
    changelog entries.

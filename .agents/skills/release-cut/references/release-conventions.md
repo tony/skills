@@ -45,14 +45,35 @@ CLI `--version` fallback). Leave coincidental matches alone.
 
 ### Bump tooling
 
-Prefer the project's own bump tooling when it exists:
+Prefer the project's own bump tooling only after verifying an edit-only path:
 
 - A `justfile` / `Makefile` recipe such as `bump-version <version>`
 - A `scripts/` bump script referenced by that recipe
 - Ecosystem tools the project demonstrably uses (`npm version`,
   changesets, `cargo set-version`)
 
-If none exists, edit the discovered files directly.
+Inspect the selected recipe, commands it invokes, lifecycle scripts and effective
+options before execution. Before the release commit, bump, lock and quality-gate
+commands must not commit, create or move tags, push refs, or publish artifacts.
+Git operations confined to fresh, run-owned offline test repositories are
+permitted; their writes must stay inside those fixtures.
+The user's tag/push flags authorize later steps, not these early side effects.
+
+Use a documented edit-only mode only when its invoked scripts also satisfy this
+boundary. A tool's no-tag option need not suppress lifecycle scripts; those
+scripts may publish independently. Preserve required generation and validation,
+Git hooks and signing policy; do not disable them to make a command appear safe.
+
+If no verified edit-only path exists, edit the discovered version files directly
+and run only the project's supported nonpublishing generation and lock steps.
+If their effects cannot be established or required work cannot be preserved,
+stop before running the command and ask for the project's release procedure.
+
+Record the chosen command and inspected inputs, then recheck those inputs before
+execution. Observe HEAD, refs, index and working changes after each command;
+unexpected effects stop later steps and remain available for inspection. Do not
+reset, retag or retry to hide them. These observations detect drift; they do not
+make an opaque command safe to run.
 
 ### Lockfiles
 
@@ -60,7 +81,8 @@ Never hand-edit a lockfile. After bumping the manifest, refresh with
 the ecosystem's lock command (`uv lock`, `npm install
 --package-lock-only`, `pnpm install --lockfile-only`, `cargo update
 --workspace`, ...). The lockfile refresh belongs in the same release
-commit as the version bump.
+commit as the version bump. Inspect the command's scripts and options under the
+bump-tooling boundary before running it.
 
 ## Version schemes
 
