@@ -69,23 +69,31 @@ def state(text: str) -> list[tuple[str, str, int]]:
     >>> state(lock)
     [('r/a/b', '1.0.0', 2), ('r/a/c', '2.0.0', 1)]
     """
-    rows: list[tuple[str, str, int]] = []
+    return [(source, version, count) for source, version, count, _ in _blocks(text)]
+
+
+def _blocks(text: str) -> list[tuple[str, str, int, str]]:
+    rows: list[tuple[str, str, int, str]] = []
     source = ""
     version = ""
     count = 0
-    for line in text.splitlines():
+    lines: list[str] = []
+    for line in text.splitlines(keepends=True):
         match = _BLOCK.match(line)
         if match:
             source, version, count = match.group(1), "", 0
-        elif source and line.startswith("}"):
-            rows.append((source, version, count))
-            source = ""
+            lines = [line]
         elif source:
-            found = _VERSION.match(line)
-            if found:
-                version = found.group(1)
-            elif _H1.match(line):
-                count += 1
+            lines.append(line)
+            if line.startswith("}"):
+                rows.append((source, version, count, "".join(lines)))
+                source = ""
+            else:
+                found = _VERSION.match(line)
+                if found:
+                    version = found.group(1)
+                elif _H1.match(line):
+                    count += 1
     return rows
 
 
@@ -150,31 +158,29 @@ def platforms(text: str) -> list[str]:
     return found
 
 
-def _fmt(entry: tuple[str, int] | None) -> str:
+def _fmt(entry: tuple[str, int, str] | None) -> str:
     return "-" if entry is None else f"{entry[0]}/{entry[1]}"
 
 
 def diff(
-    before: list[tuple[str, str, int]],
-    after: list[tuple[str, str, int]],
+    before: str,
+    after: str,
     allow: frozenset[str],
 ) -> tuple[list[str], bool]:
     r"""Return report lines and whether any difference is unexpected.
 
-    >>> old = [("a", "1.0.0", 3), ("b", "2.0.0", 1)]
+    >>> old = 'provider "a" {\n  version = "1.0.0"\n}\n'
     >>> diff(old, old, frozenset())
     ([], False)
-    >>> diff(old, [("a", "1.1.0", 3), ("b", "2.0.0", 1)], frozenset({"a"}))
-    (['a\tmoved\t1.0.0/3\t1.1.0/3'], False)
-    >>> diff(old, [("a", "1.1.0", 1), ("b", "2.0.0", 1)], frozenset({"a"}))[1]
+    >>> diff(old, old.replace("1.0.0", "1.1.0"), frozenset({"a"}))
+    (['a\tmoved\t1.0.0/0\t1.1.0/0'], False)
+    >>> diff(old, old.replace("1.0.0", "1.1.0"), frozenset())[1]
     True
-    >>> diff(old, [("a", "1.0.0", 3), ("b", "2.1.0", 1)], frozenset({"a"}))[1]
-    True
-    >>> diff(old, [("a", "1.0.0", 3)], frozenset({"*"}))
-    (['b\tremoved\t2.0.0/1\t-'], True)
+    >>> diff(old, "", frozenset({"*"}))
+    (['a\tremoved\t1.0.0/0\t-'], True)
     """
-    old = {s: (v, n) for s, v, n in before}
-    new = {s: (v, n) for s, v, n in after}
+    old = {s: (v, n, block) for s, v, n, block in _blocks(before)}
+    new = {s: (v, n, block) for s, v, n, block in _blocks(after)}
     lines: list[str] = []
     bad = False
     for source in list(old) + [s for s in new if s not in old]:
@@ -200,7 +206,7 @@ def diff(
 def _load(arg: str) -> str:
     path = Path(arg)
     if path.is_file():
-        return path.read_text()
+        return path.read_bytes().decode()
     if ":" in arg:
         out = subprocess.run(  # noqa: S603
             ["git", "show", arg],  # noqa: S607
@@ -224,7 +230,7 @@ def _diff_command(rest: list[str]) -> int:
         _ = sys.stderr.write(__doc__ or "")
         return 2
     try:
-        before, after = (state(_load(f)) for f in files)
+        before, after = (_load(f) for f in files)
     except (OSError, subprocess.CalledProcessError) as exc:
         _ = sys.stderr.write(f"cannot read lock: {exc}\n")
         return 2

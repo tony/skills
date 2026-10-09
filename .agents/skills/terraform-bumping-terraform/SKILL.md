@@ -122,7 +122,7 @@ one of them; offer the others as next steps.
     branch, history, untracked files, the driving tool, or a question.
   - A stop after the edits may state the new constraint and the lock's
     selected version in one bullet, as the repository stands now ("the
-    lock selects 3.7.0 with 1 platform, 2 before"), never as what the run
+    lock selects 3.7.0 with 1 h1 checksum, 2 before"), never as what the run
     did.
   - A bullet never asks the user for anything.
   - Never state what the run will do on its own later ("I'll show the
@@ -170,8 +170,8 @@ the user when there is more than one. When `--root-module` limits the run, list 
 calls a child module the run would edit (or declares the target pin). Such a root would be left
 inconsistent, its lock failing `init`, so stop and name them, or widen the scope on the user's yes
 (headless: stop). Never widen scope as a side effect:
-no repository-wide operator normalising, no platforms the lock never
-tracked, no reformatting of modules the change did not touch.
+no repository-wide operator normalising, no invented platform names,
+no reformatting of modules the change did not touch.
 
 ## Orchestration Plan
 
@@ -184,8 +184,8 @@ Present a plan covering:
 - The target version, and the evidence it exists.
 - Every pin site to be edited, the operator each one keeps, and the
   sites left alone with the reason.
-- Which lock files will be refreshed, and how many platforms each
-  tracks.
+- Which lock files will be refreshed, each provider's `h1:` count, and
+  any platform names declared by the repository or confirmed by the user.
 - The commit this produces (constraints and locks together) and whether
   it will be pushed.
 - Drift found that this run will not fix.

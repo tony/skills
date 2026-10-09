@@ -143,11 +143,11 @@ assigned worktree. Keep the worktree across that role's refinement passes.
 Compare and snapshot changes by participant ID, then adopt selected work only
 through the command's synthesis flow.
 
-After a read-only WorkItem returns, or after a mutating participant's diffs
-and snapshots have been captured, remove only that participant's exact
-session-scoped worktree. Native workers never run `checkout`, `clean`, or
-`reset` against the user's checkout. The repo guard reports any change to the
-checkout and never repairs it on its own.
+After a read-only WorkItem returns, remove only its exact session-scoped
+worktree. Keep mutating worktrees through refinement and the apply decision;
+the command's cleanup owns their removal after capture. Native workers never
+run `checkout`, `clean`, or `reset` against the user's checkout. The repo guard
+reports any checkout change and never repairs it on its own.
 
 A mutating native run that detects live-checkout drift stops without cleanup
 or adoption. Keep the leaked files, worktrees, and original user stash for
@@ -175,7 +175,10 @@ Fallbacks stay within the lane's chain. If a lane exhausts that chain, mark
 its lane artifact ID unavailable; do not replace it with a host-native sub-agent.
 
 Every read-only CLI lane runs in a disposable worktree built from the
-pre-dispatch snapshot; a mutating lane runs in its own branch worktree.
+pre-dispatch snapshot; a mutating lane runs in its own registered branch
+worktree, including the host `claude` lane. Mutating checkout drift halts
+adoption and cleanup under this backend too; preserve worktrees and the
+original user stash for inspection.
 
 ## Shared execution semantics
 

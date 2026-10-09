@@ -1,8 +1,18 @@
 # Review results
 
-Critic Findings states an additional verified issue or a rejected claim with
-its deciding evidence. Omit it when the critic only improved wording or
-repeated another section. Never narrate how the report was edited.
+Each claim has one home, whether it came from a reviewer or the critic:
+
+- Verified Issues owns verified defects, their supported impact and fixes
+  whose preconditions are established. An unresolved precondition goes to
+  Summary; the finding can point to it without treating it as satisfied.
+- False Positives Rejected owns claims contradicted by deciding evidence.
+- Reviewer Disagreements owns unsettled reviewer disputes with both sides'
+  evidence; Summary owns unknown contracts and the checks needed to settle them.
+
+Integrate a critic's qualification into the existing finding. A proposal
+left unused because a contract is unknown is not a disproved claim. Keep
+raw critic deltas in `critic.md`; render the final evidence and recommendation,
+not the sequence of proposed and rejected report edits.
 
 ## Hero
 
@@ -10,7 +20,7 @@ repeated another section. Never narrate how the report was edited.
 
 ## Sections, in order
 
-Scores · Verified Issues (Critical / Important / Suggestions) · False Positives Rejected · Reviewer Disagreements (only if any) · Critic Findings (only if any) · Confidence Evolution (only when PASS_COUNT > 1) · Summary · Attribution
+Scores · Verified Issues (Critical / Important / Suggestions) · False Positives Rejected · Reviewer Disagreements (only if any) · Confidence Evolution (only when PASS_COUNT > 1) · Summary · Attribution
 
 Findings and Disagreements carry the consensus tags and ordering the caller recorded in its consensus map (`consensus 2/3`, `consensus 1/3 (uncontested)`; within a severity band: unanimous-verified, majority-verified, single-verified, then unverified). Omit tags when only one lane participated.
 Put the tag on the finding's first bullet line, before any supporting test

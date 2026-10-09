@@ -150,6 +150,9 @@ if parallel dispatch is unavailable, launch them one after another. A failed
 lane never blocks the run. Wait for lane results by ending your turn on them, not
 with a sleep or background timer, so the results message stays your last one.
 
+Create worktrees before dispatch. Reuse registered worktrees on later mutating
+passes; do not recreate them and discard the participants' work.
+
 **subagents**: the lanes are `maintainer`, `skeptic`, `builder`. Give each a
 worktree. Read-only commands start it from the snapshot, so the lane sees the
 user's uncommitted work:
@@ -160,8 +163,20 @@ $ python3 <engine> worktrees create \
     --participants maintainer,skeptic,builder
 ```
 
+**model-clis**: for a mutating command, create worktrees for every participant
+from `init`, including `claude`; `<participants>` is that comma-separated list.
+For a read-only command use only `claude` here; external CLI attempts create
+their own disposable snapshot worktrees.
+
+```console
+$ python3 <engine> worktrees create \
+    --session "<session_dir>" \
+    --participants <participants>
+```
+
 Each returned worktree includes `worker_instructions`. Include that text
-verbatim in every native worker's launch prompt. It gives a literal directory
+verbatim in every host Task worker's launch prompt, including the `claude`
+model-clis lane. It gives a literal directory
 prefix for **every** shell call and requires absolute file-tool paths. Saying
 "your working directory is ..." does not change tool cwd, and a prior `cd`
 does not persist between calls. Do not supply an undocumented `cwd` tool
@@ -174,9 +189,11 @@ launch one `general-purpose` Task agent with the first worktree's
 one-line file at `<absolute worktree path>/.weave-probe`, read that absolute
 path back, delete it, and reply `ok` or the error.
 If writing is denied or unavailable, return the error without trying another
-tool." A failed probe means the lanes would lose their work after dispatch: stop before any
-lane runs, remove the worktrees (`worktrees remove`), restore the stash, and
-reply with this and nothing more (no mention of stashes or worktrees):
+tool." On a failed probe, stop before any lane runs and run Close the repo
+guard below. Checkout drift takes precedence over the write-denied reply and
+keeps all recovery state. Otherwise remove the worktrees (`worktrees remove`),
+restore the stash, and reply with this and nothing more (no mention of stashes
+or worktrees):
 
 ```text
 Stopped before any worker started: file writes are blocked for this session.
@@ -184,23 +201,18 @@ Stopped before any worker started: file writes are blocked for this session.
 ```
 
 Name no role and no path. Under `model-clis`, probe only the `claude`
-lane the same way, in the main checkout; the engine runs `agy` and `gpt` itself.
+lane the same way, in its registered worktree; the engine runs `agy` and `gpt`
+itself.
 
-Launch a fresh `general-purpose` Task agent per role with its full
+**subagents**: launch a fresh `general-purpose` Task agent per role with its full
 `worker_instructions` from the JSON, then "Read `<absolute composed prompt
 path>` and follow it exactly." Do not shorten the per-call path rules. Write
 its reply to `<session_dir>/pass-NNNN/outputs/<role>.md`.
-Read-only commands then remove the worktrees:
-
-```console
-$ python3 <engine> worktrees remove \
-    --session "<session_dir>"
-```
 
 **model-clis**: the lanes are the `participants` from `init`.
-- `claude`: a Task agent with the same "Read the composed prompt" instruction.
-  Read-only commands root it in a snapshot worktree (`worktrees create
-  --participants claude`). Write its reply to `outputs/claude.md`.
+- `claude`: a Task agent with its complete `worker_instructions` and the same
+  "Read the composed prompt" instruction. Both read-only and mutating commands
+  use its registered worktree. Write its reply to `outputs/claude.md`.
 - `agy` and `gpt`: one command per lane, in parallel. It builds the lane's
   prompt, runs the CLI in a disposable worktree built from the snapshot,
   classifies failures, retries, and falls back down the lane's chain:
@@ -221,6 +233,13 @@ $ python3 <engine> worktrees remove \
   and continue. If a lane times out persistently, ask whether to retry with a
   higher timeout, and warn that retries spawn external agents billed to other
   provider accounts.
+
+Read-only commands then remove the registered worktrees:
+
+```console
+$ python3 <engine> worktrees remove \
+    --session "<session_dir>"
+```
 
 If one lane succeeds, say that adversarial comparison was unavailable. If every
 lane fails, stop and report each failure.
@@ -259,7 +278,7 @@ supplies the prompt body, the preamble (if any), and what to show.
 
 ## Close the repo guard
 
-Run this after all read-only lanes or native mutating lanes finish, before judging.
+Run this after all lanes finish, before judging, under either backend.
 It reports `"unguarded": true` and nothing else when the session has no
 repository; skip the rest of this section then.
 
@@ -409,6 +428,8 @@ Surface it in the output:
   unanimous-verified, majority-verified, single-verified, then unverified.
   Split findings that verification could not settle appear under Reviewer
   Disagreements with both positions and each side's evidence; they are never dropped.
+  Once verification settles a dispute, retain its vote history in `consensus.md`
+  and render its conclusion only in the result section that owns that status.
 - **ask**: the Disagreements section renders every split and
   majority-with-dissent item: both positions, which was adopted, and the deciding
   evidence, or "unresolved, both positions retained".

@@ -11,6 +11,7 @@ The skill body labels each library standard as host fact or house rule.
 - What the test never touches
 - Naming
 - Descriptions
+- Invocation variables
 - Sections and headings
 - Progressive disclosure
 - Degrees of freedom
@@ -75,10 +76,11 @@ is.
 
 ### Block-level ablation
 
-Run the test on whole sections too. A section whose lines each survive
-in isolation still goes when the section as a whole describes the
-agent's default behavior. "Analyze the code, then suggest
-improvements" survives line by line and teaches nothing.
+First exclude the protected content listed in the skill body. Then
+test whole blocks of remaining prose: "Analyze the code, then suggest
+improvements" describes default behavior and teaches nothing. Removing
+a heading or table around protected content does not permit deleting
+that content.
 
 ### The ledger
 
@@ -139,6 +141,20 @@ Descriptions too vague to identify a workflow: `Helps with documents`,
 Setting `disable-model-invocation: true` on a skill that only makes
 sense when asked for by name keeps it invocable while removing it from
 the corpus every other description competes in.
+
+## Invocation variables
+
+These names are literal syntax in the target skill, not values from this
+invocation.
+
+- This marketplace requires `argument-hint` when the target body consumes
+  `$ARGUMENTS`; a flag table alone does not trigger that rule. The hint is
+  autocomplete guidance, not an argument parser. Claude Code appends
+  invocation arguments when no placeholder receives them, so an absent
+  placeholder does not prove mode flags are unavailable. See
+  [argument delivery](https://code.claude.com/docs/en/skills#pass-arguments-to-skills).
+- `the plugin root` is not substituted by Codex. Address bundled
+  files by climbing out of the skill directory.
 
 ## Sections and headings
 
@@ -241,18 +257,17 @@ the current instruction set.
 
 ## Trigger testing
 
-A description is not finished until it has been tested as a router
-input.
+A read-through can identify an ambiguous trigger; only an executed host
+evaluation measures routing. An adequate description needs no rewrite.
 
 1. Write three prompts a user would actually type, in their words, not
    the skill's.
-2. Read the description against each and decide whether this skill is
-   the right answer. This is a read-through, not a test; never report
-   it as one.
-3. Write one prompt that belongs to a neighboring skill, and confirm
-   it goes there instead.
-4. When a positive fails, the fix is almost always vocabulary: the
-   user's word is missing from the description.
+2. Read the description against each and record the expected choice as
+   a hypothesis, not an observed match.
+3. Include a neighboring task to check whether the description states
+   a useful boundary. A reading cannot confirm which skill a host selects.
+4. Rewrite only a concrete omission or scope ambiguity. Extra synonyms
+   do not establish better routing; that claim needs a host comparison.
 
 Beyond routing, build evaluations before writing the body. Run the
 task without the skill first and record where the agent actually

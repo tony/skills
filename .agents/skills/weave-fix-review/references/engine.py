@@ -8,7 +8,7 @@ POSIX only: it needs ``git`` and process groups.
 
 Commands: flags, detect, init, context, prompt, pass-dir, labels, dispatch,
 judge-plan, judge-parse, panel-merge, worktrees, capture, adopt, commit,
-guard, reset-main, stash-restore, update.
+guard, stash-restore, update.
 """
 
 # pyright: reportAny=false, reportExplicitAny=false, reportUnusedCallResult=false
@@ -850,7 +850,7 @@ def guard_resolve(session_dir: Path, action: str) -> Json:
 
 
 def _drop_session_refs(top: str, session_id: str) -> None:
-    """Delete the session's pins except the ``pre-reset-*`` ones ``reset-main`` recovers from."""
+    """Delete the session's transient pins, preserving existing recovery snapshots."""
     prefix = f"{GUARD_REFS}/{session_id}/"
     for ref in git(top, "for-each-ref", "--format=%(refname)", prefix).splitlines():
         if not ref.startswith(prefix + RECOVERY_PREFIX):
@@ -861,7 +861,7 @@ def guard_finish(session_dir: Path) -> Json:
     """Run the last check, log ``repo_guard_final``, and drop the pinned refs when clean.
 
     An adopted session changes the checkout on purpose, so it skips the check.
-    Pins that ``reset-main`` made before discarding changes are always kept.
+    Existing recovery snapshots are always kept.
     """
     session = load_session(session_dir)
     top = session["toplevel"]
@@ -1994,13 +1994,12 @@ def adopt_files(
     top = Path(session["toplevel"])
     require_safe_toplevel(top)
     if (
-        session.get("worker_backend") == "subagents"
-        and session.get("status") == "in_progress"
+        session.get("status") == "in_progress"
         and not session.get("applied")
         and guard_check(session_dir, "before-adopt")["violation"]
     ):
         msg = (
-            "checkout changed during native worker dispatch; "
+            "checkout changed during worker dispatch; "
             "preserve the checkout and worktrees, then stop"
         )
         raise EngineError(msg)
@@ -2314,34 +2313,6 @@ def stash_entry(top: str, sha: str) -> str | None:
     return None
 
 
-def reset_main(session_dir: Path) -> Json:
-    """Discard working-tree changes, but only when the user's changes are safe.
-
-    Refuses unless the session either found a clean tree or holds a stash that
-    still exists. The discarded state is pinned first.
-    """
-    session = load_session(session_dir)
-    if session.get("worker_backend") == "subagents":
-        msg = "native workers must not write the main checkout; refusing to reset it"
-        raise EngineError(msg)
-    top = session["toplevel"]
-    stash: Json = session.get("stash") or {}
-    state = stash.get("state")
-    if state == "stashed" and stash_entry(top, stash["sha"]) is None:
-        msg = "recorded user stash is missing; not resetting"
-        raise EngineError(msg)
-    if state not in ("stashed", "none-needed"):
-        msg = "session has no stash record; not resetting"
-        raise EngineError(msg)
-    pin_tree(
-        top, session["session_id"], f"pre-reset-{random.randbytes(2).hex()}",
-        snapshot_tree(top), git(top, "rev-parse", "HEAD"),
-    )  # fmt: skip
-    git(top, "reset", "--hard", "HEAD")
-    git(top, "clean", "-fd")
-    return {"ok": True}
-
-
 def stash_overlap(top: str, sha: str) -> list[str]:
     """Return the paths both the stash and the working tree changed."""
     held = set(git(top, "diff", "--name-only", f"{sha}^1", sha, check=False).splitlines())
@@ -2587,9 +2558,8 @@ def build_parser() -> argparse.ArgumentParser:  # noqa: PLR0915
     p.add_argument("--days", type=float, default=14)
     p.add_argument("--repo", default=".")
 
-    for cmd, text in (("reset-main", "discard main-tree changes"), ("stash-restore", "pop stash")):
-        p = sub.add_parser(cmd, help=text)
-        p.add_argument("--session", required=True)
+    p = sub.add_parser("stash-restore", help="pop the session's own stash")
+    p.add_argument("--session", required=True)
 
     p = sub.add_parser("update", help="update session.json and append an event")
     p.add_argument("--session", required=True)
@@ -2743,8 +2713,6 @@ def run(args: argparse.Namespace) -> Json:  # noqa: PLR0911
         return capture_tree(session_dir, args.n, args.participant, args.tree)
     if cmd == "adopt":
         return adopt_files(session_dir, args.n, args.pick, args.delete, args.whole)
-    if cmd == "reset-main":
-        return reset_main(session_dir)
     if cmd == "stash-restore":
         return restore_stash(session_dir)
     return update_session(

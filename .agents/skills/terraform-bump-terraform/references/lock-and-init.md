@@ -14,7 +14,7 @@ the same.
 - `-backend=false` removes the credential requirement
 - `-upgrade` moves every provider
 - Moving one provider, and landing a version the user named
-- Selecting a new version narrows the lock to one platform
+- Check checksum loss and required platforms
 - When the resolver cannot see the version
 - Confirm the lock actually moved
 - Verification gates
@@ -40,7 +40,9 @@ the repository root, and prints one line per difference: source, status
 and 0 otherwise. `--allow <source>` lets that provider's version move
 (repeat it, or pass `'*'` for every provider); a count drop fails
 regardless. A pure rise in the `h1:` count on an unchanged version is
-reported as `changed` and exits 1 without `--allow`.
+reported as `changed` and exits 1 without `--allow`. Non-target provider
+blocks must be byte-identical, including constraints and checksum values;
+equal versions and counts do not make a changed block acceptable.
 
 ## Guard every `init`
 
@@ -72,7 +74,8 @@ then `git add` the new lock so `git commit -- <paths>` can include it.
 With no interactive question tool, skip the module.
 
 After `init`, compare the lock with its committed copy (the `diff` command under
-"Moving one provider"). When `init` fails, or `diff` exits non-zero,
+"Moving one provider"). A checksum-count drop follows the platform recovery
+below. When `init` fails or another provider block changes unexpectedly,
 restore the committed file and report why:
 
 ```console
@@ -144,10 +147,9 @@ $ python3 references/lockctl.py drop \
     <provider-source-address>
 ```
 
-Then run the plain `init` command from "One run per root module". The new
-block holds hashes for the running platform only; restore the platforms the
-old block tracked as the next section describes, naming the provider so no
-other block is touched.
+Then run the plain `init` command from "One run per root module". Check
+checksum loss and the repository's required platforms as the next section
+describes, naming the provider so no other block is touched.
 
 Only the target provider's `version`, `constraints`, and `hashes` move.
 Check it with `diff`, naming the target in `--allow`:
@@ -174,8 +176,9 @@ a version and the constraint admits a newer one, pin it for the refresh:
 2. Drop the block and run plain `init` as above.
 3. Re-edit the declaring files back to the planned constraints (never
    `git checkout` them: that would discard the planned edit), then run `providers lock` naming the
-   provider with the platforms the lock tracked (the running platform when
-   the count did not drop). Read the lock's `constraints` line back with
+   provider with the repository's declared platforms. With no declared
+   list and no count drop, use the running platform and report coverage
+   unverified; a count drop needs the recovery below. Read the lock's `constraints` line back with
    `git diff`: it must show the restored form and the named version. When
    it still shows `= <version>`, restore the lock as in step 4 and stop.
 4. Read the version with `lockctl.py state`. If it is not exactly the named
@@ -187,26 +190,20 @@ $ git checkout \
     -- <root-module-dir>/.terraform.lock.hcl
 ```
 
-## Selecting a new version narrows the lock to one platform
+## Check checksum loss and required platforms
 
-`h1:` hashes are per-platform. `terraform init` records them only for the
-platform it runs on; teams that need more use
-`terraform providers lock -platform=...`
+`h1:` records package-content checksums; `zh:` records archive checksums.
+An origin registry's signed checksums can cover other platforms even when
+the lock has only one `h1:` record. A mirror install may record only the
+running platform's package
 ([dependency lock file](https://developer.hashicorp.com/terraform/language/files/dependency-lock)).
-A provider that moves to a different version comes back tracking only the
-platform that ran the bump, and the diff looks like an ordinary version
-change. The next `init` on another platform then rewrites
-the lock, which fails under `-lockfile=readonly` or any CI step that checks
-the tree is clean.
+The flat hash list identifies no platforms. Its `h1:` count is neither a
+platform count nor proof of coverage, and cannot predict readonly success.
 
-The lock file names no platforms: each provider block holds a flat list of
-opaque `h1:` and `zh:` strings. The count of platforms is readable; which
-ones is not, and `providers lock -platform=` requires exact names.
-
-Use the count as a tripwire. `lockctl.py diff` compares provider by
-provider, so a drop cannot hide behind a provider that tracks more
-platforms (a file-wide maximum would). `state` prints the counts
-themselves, one line per provider:
+Use `h1:` loss as a conservative tripwire. `lockctl.py diff` compares each
+provider separately, so another provider's larger count cannot hide a
+drop. Equal counts do not prove the same platforms remain covered. `state`
+prints the checksum counts, one line per provider:
 
 ```console
 $ python3 references/lockctl.py state \
@@ -214,15 +211,15 @@ $ python3 references/lockctl.py state \
 ```
 
 Output is `<source-address><TAB><version><TAB><h1 count>`. On a lock with
-`aws` tracking three platforms and `random` tracking one it prints:
+three `h1:` records for `aws` and one for `random` it prints:
 
 ```text
 registry.terraform.io/hashicorp/aws	5.60.0	3
 registry.terraform.io/hashicorp/random	3.6.0	1
 ```
 
-If `diff` reports `count-dropped`, find the platform names where the repository writes
-them down:
+Before refreshing, find the required platform names where the repository
+writes them down:
 
 ```console
 $ python3 references/lockctl.py platforms
@@ -233,8 +230,8 @@ target), tracked or not yet added, that runs `providers lock` and the `-platform
 documentation that merely mentions the command is not scanned. Where it
 prints nothing, ask the user for the names. It reads literal
 `-platform=` values only: a loop or variable (`-platform=$p`) prints
-nothing. Restore the platforms with
-them:
+nothing. After a provider changes, run `providers lock` for the declared
+names even if its `h1:` count did not fall:
 
 ```console
 $ terraform -chdir=<root-module-dir> providers lock \
@@ -249,13 +246,15 @@ omit the address only to restore every provider. `providers lock` ignores
 `provider_installation` in the CLI configuration, so when the repository
 resolves through a mirror, pass the same one with `-fs-mirror=<dir>` or
 `-net-mirror=<url>`, as the CI command that locks does (a relative path
-resolves from the `-chdir` directory). Never infer the platform
-list: a repository that tracked one platform should keep tracking one.
-Run `diff` again afterwards; it must exit 0.
+resolves from the `-chdir` directory). Use only repository-declared or
+user-confirmed names. A successful command checks packages for those
+names; report them separately from the before/after `h1:` counts.
+Run `diff` again afterwards; it must exit 0. With no platform list and
+no count drop, report platform coverage unverified.
 
-Never commit a lock that tracks fewer platforms than it started with
-unless the user says yes to that exact file. When the names are unknown,
-or the count is still short after `providers lock`, ask. Without an
+Never commit a lock with fewer `h1:` records unless the user says yes to
+that exact file. A count drop needs the required platform names; when
+they are unknown, or the count is still short after `providers lock`, ask. Without an
 interactive question tool, or with no answer, restore the committed lock
 and leave that root module out of the commit:
 
@@ -264,7 +263,7 @@ $ git checkout \
     -- <root-module-dir>/.terraform.lock.hcl
 ```
 
-Report it as held back with the before and after counts. A bump skill
+Report it as held back with the before and after checksum counts. A bump skill
 commits nothing in this case and ends with the stopped line;
 `refresh-lock` follows its step 4.
 

@@ -86,8 +86,8 @@ that call an edited child module.
 ### 5. Present the plan and wait
 
 Per the umbrella's Orchestration Plan, show the sites to be edited with the operator each keeps, the sites left
-alone with the reason, the lock files to be refreshed with how many
-platforms each tracks, and any drift found. With `--audit-only`, stop
+alone with the reason, the lock files to be refreshed with each provider's
+`h1:` count and declared platform names, and any drift found. With `--audit-only`, stop
 here and write nothing.
 
 ### 6. Edit the constraints
@@ -108,14 +108,14 @@ Unless `--no-lock`, refresh each affected root module's lock.
 - A root module with no committed lock is skipped and reported, since
   `init` would create one; run it there only after the user approves.
 - A failed `init` restores the lock from git.
-- Compare each lock with `lockctl.py diff`, passing the bumped provider
-  to `--allow` (the lock reference has the command), and restore a
-  dropped platform count for the bumped provider with `providers lock`
-  naming it.
-- A lock that lost platforms is committed only with the user's explicit
-  yes to that file.
+- Check the declared platforms with `providers lock`, naming the bumped
+  provider, per the lock reference. Compare each lock with `lockctl.py diff`,
+  passing the bumped provider to `--allow`, and recover a dropped `h1:`
+  count using the required platform names.
+- A lock with fewer `h1:` records is committed only with the user's explicit
+  yes to that file. Equal counts alone do not prove platform coverage.
 
-Any lock that fails, or stays short of its platforms without that yes
+Any lock that fails, or keeps fewer `h1:` records without that yes
 (headless: always), stops the run with nothing committed. Restore that
 lock from git, leave every constraint edit in the working tree, and end
 with the stopped line (the umbrella has its mid-run form).
@@ -154,7 +154,8 @@ order:
 3. `## Sites`: a list of every declaration found, whether it was edited or
    deliberately left alone, and the operator each kept.
 4. `## Locks`: per root module: the version selected before and after,
-   and the platform count tracked before and after.
+   the `h1:` checksum counts before and after, and the platform names
+   successfully checked with `providers lock`, or coverage unverified.
 5. `## Verification`: the gates run and their real results, with any
    pre-existing failure named as pre-existing.
 6. `## Drift`: pin sites that disagreed with each other before the
@@ -187,8 +188,8 @@ Reply in this shape, as plain text outside any code fence, with plain bullets, n
 
 ## Locks
 
-- envs/prod: 6.56.1 to 6.57.0, 3 platforms before and after.
-- envs/staging: 6.56.1 to 6.57.0, 1 platform before and after.
+- envs/prod: 6.56.1 to 6.57.0, 3 h1 records before and after; checked linux_amd64, linux_arm64 and darwin_arm64.
+- envs/staging: 6.56.1 to 6.57.0, 1 h1 record before and after; platform coverage unverified.
 
 ## Verification
 
@@ -201,8 +202,8 @@ panel and no `Next steps:` list.
 
 End with an `ask-user-choice` panel offering next steps, for example:
 converge the pin sites that disagree, refresh the lock files this run
-left alone, restore multi-platform coverage to a lock that only ever
-tracked one, or stop here. Skip the panel only in plan mode. Without a question tool, print the
+left alone, check required platforms whose coverage is unverified, or
+stop here. Skip the panel only in plan mode. Without a question tool, print the
 umbrella's `Next steps:` list and stop.
 
 

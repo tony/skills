@@ -2,6 +2,12 @@
 
 Plan renders into the host's plan file, not chat. IN_PLAN_MODE is true, so there is no next-step panel.
 
+Architecture Decision distinguishes required behavior from proposed defaults
+and states the failure policy. Implementation Steps and Test Strategy enforce
+that same contract; an unresolved requirement blocks its affected step.
+Place units, scope and assumptions beside each estimate. Label a partial
+storage estimate as payload only, not a worst-case memory bound.
+
 Critic Findings states the risk, the chosen safeguard, and its place in the
 final plan. It does not describe defects in earlier drafts or their repair.
 Use "None." when no distinct risk remains to explain.

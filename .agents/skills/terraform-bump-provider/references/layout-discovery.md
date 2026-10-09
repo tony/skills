@@ -174,8 +174,8 @@ once the discovery above finds no backend and no lock file.
 
 ## What to record
 
-Per directory: kind, lock file presence, how many platforms that lock
-tracks per provider, and the providers and `required_version` it
+Per directory: kind, lock file presence, each provider's `h1:` checksum count,
+and the providers and `required_version` it
 declares. Map each child module to the roots that call it, then ask the
 questions below together once the inventory exists.
 

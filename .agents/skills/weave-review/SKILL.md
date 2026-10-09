@@ -116,6 +116,17 @@ Apply `ensemble-core.md` (Blind judging, Synthesis protocol, Consensus map) to t
 
 In Verify Claims, read the file and line of each reported issue to confirm it exists, check that a "Critical" has a real impact (exploitable or crash-worthy), and check each convention violation against the cited rule. An unstated client default or server guarantee remains unknown: absence at a call site does not prove the behavior is absent. Put these unresolved checks in Summary, not Verified Issues or the blocker count. A verified generic defect does not verify every example: catching all exceptions proves broad retry, not that an unseen client raises on a decline or invalid input. Keep its evidence to a reproducible exception from a stub client. Missing input validation is a defect only when a known contract forbids those inputs. When the project has no test runner, propose test behavior without choosing a framework.
 
+Separate per-call behavior from system-wide consequences. A fixed retry delay
+establishes the wait after one failure; synchronized callers also require
+aligned failures, and request duration affects their rate. State those
+conditions when describing the risk instead of claiming that every caller
+retries together. Apply the same evidence boundary to each finding's impact
+and recommendation: a fix cannot assume a guarantee left unresolved in
+Summary. Describe only the request arguments visible at the call site;
+transport-added headers and server handling require their own evidence.
+If retry safety depends on an unknown idempotency contract, condition the
+retry recommendation on that check instead of prescribing retries first.
+
 ### Deduplicate and calibrate severity
 
 Group findings that refer to the same issue (same file, similar description). Each group carries its consensus tag and severity:
@@ -128,7 +139,7 @@ In `consensus.md`, record a short diagnostic quote from each reviewer counted fo
 
 ### Write the report
 
-Read `references/present-results.md` and `references/review.md` before writing the report to `<session_dir>/pass-NNNN/synthesis.md` per `references/prose-rules.md`. If an agent writes it, give that agent these references too. Raw critic deltas stay in `critic.md`; the report's Critic Findings follows the result template. With several reviewers, every finding bullet ends with its actual consensus tag, including Important and Suggestions; use the responding reviewer count as the denominator. With one reviewer, omit consensus tags. State the stale-base caveat in Summary; nothing sits between the hero and Scores. Do not render anything yet: results are presented once, in Phase 6, after the last pass.
+Read `references/present-results.md` and `references/review.md` before writing the report to `<session_dir>/pass-NNNN/synthesis.md` per `references/prose-rules.md`. If an agent writes it, give that agent these references too. Raw critic deltas stay in `critic.md`; integrate their verified substance into the owning report sections from the result template. With several reviewers, every finding bullet ends with its actual consensus tag, including Important and Suggestions; use the responding reviewer count as the denominator. With one reviewer, omit consensus tags. State the stale-base caveat in Summary; nothing sits between the hero and Scores. Do not render anything yet: results are presented once, in Phase 6, after the last pass.
 
 ---
 
@@ -159,7 +170,14 @@ The final pass's `synthesis.md` (pass 1 when `passes` is 1) feeds Phase 6. When 
 
 1. Unless `--no-deslop` was set, read `references/deslop-pass.md` and apply it once, with `ARTIFACT_PATH` set to the final pass's `synthesis.md`, `SESSION_DIR`, `BASELINE_SHA` set to `baseline_sha` from `init`, and `DESLOP_MODE` from the flags. Re-read `synthesis.md` for the desloped report; the deslop summary block follows the Attribution section.
 
-2. Read `references/present-results.md` and `references/review.md`, and apply them with `RESULT_KIND` = `review`, `ARTIFACT_PATH` = the final `synthesis.md`, `SESSION_DIR`, `PASS_COUNT` = the resolved pass count, `IN_PLAN_MODE` = false, `LABEL_MAP_PATH` = `<session_dir>/pass-NNNN/label-map.json`, `CASCADE_STATE` = `early-exit`, `escalated`, or null without `--cascade`. Read `WORKER_BACKEND`, `PARTICIPANTS`, `EXECUTORS`, and `MODELS` from `session.json`.
+2. Check the polished report against `verification.md` and the issue-matching
+   quotes in `consensus.md`. Check every clause of each finding, including
+   examples, impact and fixes, not only its headline. Move unsupported clauses
+   to Summary or omit them; a later qualification does not repair an earlier
+   absolute. Render settled disputes only in their owning result section.
+   Keep the verified wording when presenting it.
+
+3. Read `references/present-results.md` and `references/review.md`, and apply them with `RESULT_KIND` = `review`, `ARTIFACT_PATH` = the final `synthesis.md`, `SESSION_DIR`, `PASS_COUNT` = the resolved pass count, `IN_PLAN_MODE` = false, `LABEL_MAP_PATH` = `<session_dir>/pass-NNNN/label-map.json`, `CASCADE_STATE` = `early-exit`, `escalated`, or null without `--cascade`. Read `WORKER_BACKEND`, `PARTICIPANTS`, `EXECUTORS`, and `MODELS` from `session.json`.
 
 ---
 
