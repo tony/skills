@@ -65,7 +65,8 @@ too.
 Recommend one applicable corrective from the goal-derivation reference
 and say why; offer only correctives that agree with your own verdict (never offer
 to drop work you called sound). Do not assume the goal wins: when the excursion was the
-better instinct, update the ticket or pull request body to match.
+better instinct, propose widening the ticket or pull request goal. Scope
+edits require a separate user request; this assessment executes nothing.
 
 ## Output
 

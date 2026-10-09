@@ -20,7 +20,7 @@ cat >bin/gh <<'SH'
 case "$1 $2" in
   "pr view")
     cat <<'JSON'
-{"number":42,"title":"Quote-aware CSV parsing","state":"OPEN","isDraft":false,"url":"https://example.invalid/pull/42","headRefName":"feat/quoted-csv","headRefOid":"0123456789abcdef0123456789abcdef01234567","baseRefName":"main","body":"Parse quoted fields instead of splitting on every comma.","reviewDecision":"CHANGES_REQUESTED","statusCheckRollup":[{"name":"unit-tests","status":"COMPLETED","conclusion":"FAILURE"},{"name":"lint","status":"COMPLETED","conclusion":"SUCCESS"}],"commits":[{"oid":"0123456","messageHeadline":"Parse quoted CSV fields"}]}
+{"number":42,"title":"Quote-aware CSV parsing","state":"OPEN","isDraft":false,"url":"https://example.invalid/fixture/parser/pull/42","headRefName":"feat/quoted-csv","headRefOid":"0123456789abcdef0123456789abcdef01234567","baseRefName":"main","body":"Parse quoted fields instead of splitting on every comma.","reviewDecision":"CHANGES_REQUESTED","statusCheckRollup":[{"name":"unit-tests","status":"COMPLETED","conclusion":"FAILURE"},{"name":"lint","status":"COMPLETED","conclusion":"SUCCESS"}],"commits":[{"oid":"0123456","messageHeadline":"Parse quoted CSV fields"}]}
 JSON
     ;;
   "pr diff")

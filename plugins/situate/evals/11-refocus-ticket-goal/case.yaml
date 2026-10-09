@@ -39,7 +39,7 @@ graders:
   - name: read-only
     type: tool_used
     tool: Bash
-    input_match: '"command":\s*"([^"]*(&&|;|\|\|)\s*)?(git( -\S+( \S+)?)* (commit|push|checkout|switch|reset|rebase|revert|fetch|add|merge|clean|restore|pull|cherry-pick|worktree (add|remove|prune|move)|branch -[dDmM]|stash (push|save|pop|apply|drop))|gh pr (checkout|merge))\b'
+    input_match: '"command":\s*"([^"]*(&&|;|\|\|)\s*)?(git( -\S+( \S+)?)* (commit|push|checkout|switch|reset|rebase|revert|fetch|add|merge|merge-tree|clean|restore|pull|cherry-pick|worktree (add|remove|prune|move)|branch -[dDmM]|stash (push|save|pop|apply|drop))|gh (pr|issue) (edit|create|close|reopen|checkout|merge))\b'
     min: 0
     max: 0
     arm: both

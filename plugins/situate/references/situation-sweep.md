@@ -8,8 +8,9 @@ diff.
 
 Never blur two findings: nothing found is "none" (`none is open`,
 `none is referenced`); a lookup that could not run is `unavailable`
-with the reason. Say where a layer was looked, never "I checked". A repository with no remote has no pull request to
-check, so write `no remote, so no pull request is open or checkable`.
+with the reason. Say where a layer was looked, never "I checked". Without
+a hosted repository identity, the pull-request layer is unavailable;
+a missing or local-only remote does not prove that no pull request exists.
 Say where a "none" was looked: `none is referenced in commits, the
 branch name, or a pull request body`.
 
@@ -46,29 +47,33 @@ Script paths here (`../scripts/...`) resolve from this file's directory, not the
 ## Read-only contract
 
 The one contract for every situate skill. Reading files, git history,
-and `gh` views is allowed. Never commit, push, edit files, stash, switch
-branches, or run `git fetch`: it rewrites remote-tracking refs, which
-changes what every other command sees. Work from the refs already in the
-repository. The position script reports `last_fetch`, when the refs were
-last fetched, apart from `trunk_tip_age`, when the trunk tip commit was
-made. In a linked worktree `last_fetch` reads "unknown" after a fetch run
-from another checkout. Say the comparison against trunk may be stale when
-`last_fetch` is old or "unknown", and let the user decide whether to
-fetch. Never call trunk "current" or "up to date": no local ref proves
-it.
+and `gh` views is allowed. Never edit tickets or pull requests, commit,
+push, edit files, stash, switch branches, or run `git fetch`, which rewrites
+remote-tracking refs. Work from existing refs. `last_fetch` dates FETCH_HEAD,
+not a particular ref; fetching another branch does not establish trunk's
+freshness. A linked worktree can report "unknown" after another checkout
+fetches. `trunk_tip_age` dates the commit, not a fetch. Warn that the
+comparison may be stale when the fetch age is old or unknown. Never call
+trunk "current" or "up to date": no local ref proves it.
+
+Do not synthesize merges with `git merge-tree --write-tree`: it writes
+Git objects even without touching the index or working files. Describe
+overlapping changes without claiming a proven merge conflict unless
+existing conflict state or a hosted mergeability result establishes it.
 
 ## 1. Position
 
 Run the position script. It only reads git, never fetches, and prints
-JSON with no paths:
+JSON with relative untracked paths and no absolute root path:
 
 ```console
 $ python3 ../scripts/position.py
 ```
 
-Add `--trunk origin/<baseRefName>` when a pull request is the subject.
-A non-zero exit means the directory is not a git repository: say so and
-ask which directory holds the project.
+For a pull-request subject, apply the identity checks in that section
+before using local position or a `--trunk` override.
+Exit 2 means the directory is not a Git working tree. Other failures make
+the position unavailable; do not infer repository state from them.
 
 Read its fields:
 
@@ -78,7 +83,7 @@ Read its fields:
   holds the project. The script prints nothing else in these cases.
 - `trunk`, `trunk_source`, `trunk_tip_age`, `last_fetch`: the remote's own
   HEAD, else `origin/main` or `origin/master`; the tip's age says how old
-  the last commit is, `last_fetch` how fresh the ref is. When `trunk_source` starts with
+  the last commit is, `last_fetch` dates FETCH_HEAD, not that ref. When `trunk_source` starts with
   "assumed", say which was assumed. A null `trunk` means no trunk ref.
 - `ahead`, `behind`, `branch` (null is a detached HEAD), `staged`,
   `modified`, `conflicts` (unmerged paths from a merge or rebase in
@@ -87,6 +92,11 @@ Read its fields:
   records is what a new session cannot see. `untracked` already omits
   editor and shell files; never list, count, or mention the ones it
   omits, `ignored_untracked` included.
+- A null worktree or stash field means its lookup failed, not that the
+  tree is clean or has no stashes. Report the affected layer unavailable
+  using `failed`; keep the other layers.
+- `upstream` names the configured tracking branch. A missing upstream
+  does not prove that the branch was never pushed.
 - `on_trunk` true with nothing ahead: there is no branch story to tell;
   report recent trunk activity and the open pull requests instead, and
   say so.
@@ -96,9 +106,9 @@ Read its fields:
 The script's `base` is where this branch diverged from what it will
 merge into. `base_source` says which it is: `trunk` in the ordinary
 case, `upstream` only for a stacked branch whose upstream is a
-*different* branch (the branch's own `origin/<branch>` is ignored: its
-merge-base is the last pushed commit and would hide what is already on
-the remote).
+*different* branch (the branch's own published branch on any remote is
+excluded from base selection: its merge-base is the last pushed commit
+and would hide what is already on the remote).
 
 A null `base` means the layer is unavailable: say which lookups
 `failed` lists, and never substitute `HEAD` and log an empty range,
@@ -122,60 +132,82 @@ from trunk mid-branch.
 $ gh pr view --json number,title,state,isDraft,url,headRefName,headRefOid,baseRefName,body,statusCheckRollup,reviewDecision
 ```
 
-No pull request means the work has not been proposed yet. With no remote,
-none can exist or be checked.
+Only a successful lookup can establish that no pull request was found
+for the searched branch and hosted repository. A missing or local-only
+remote leaves that lookup unavailable unless the user supplies a hosted
+repository identity. It does not establish whether the work was proposed.
+
+Bind subsequent lookups to the pull request's repository, not the local
+checkout. Take the host, owner, repository, and number from its returned
+URL; validate the repository and number as above and the host against
+`[A-Za-z0-9.-]+`. If the URL cannot be resolved, report those lookups
+unavailable. Use `--repo "<host>/<owner>/<repo>"` on every PR and run
+lookup, and explicit host/owner/repo arguments on GraphQL.
 
 `gh pr view` cannot return review threads. Read them with one GraphQL
 call, taking `<number>` from the output above (`-F` sends it as an
-integer and fills `{owner}` and `{repo}` from the repository):
+integer):
 
 ```console
 $ gh api graphql \
-    -F owner='{owner}' \
-    -F repo='{repo}' \
+    --hostname "<host>" \
+    -F owner="<owner>" \
+    -F repo="<repo>" \
     -F number=<number> \
-    -f query='query($owner: String!, $repo: String!, $number: Int!) { repository(owner: $owner, name: $repo) { pullRequest(number: $number) { reviewThreads(first: 100) { nodes { isResolved isOutdated path comments(first: 1) { nodes { author { login } body } } } } } } }'
+    -f query='query($owner: String!, $repo: String!, $number: Int!) { repository(owner: $owner, name: $repo) { pullRequest(number: $number) { reviewThreads(first: 100) { pageInfo { hasNextPage } nodes { isResolved isOutdated path comments(first: 1) { nodes { author { login } body } } } } } } }'
 ```
 
-Keep the nodes where `isResolved` is false. A repository with more
-than 100 threads needs `--paginate` and an `after` cursor; say the
-list is partial instead.
+Keep the nodes where `isResolved` is false. When `hasNextPage` is true
+or missing, label the list partial. A partial page with no unresolved
+thread does not prove there are none elsewhere.
 
 Report failing checks by job name, and unresolved review threads by
 what they ask for. A green rollup on a run from before the last push is
-not a passing branch. Compare `headRefOid` with the local `HEAD`, and
-list the runs on that commit:
+not a passing branch. Compare `headRefOid` with the local `HEAD`; the PR's
+`statusCheckRollup` describes its reported head, not unpushed local work.
+List GitHub Actions runs on that commit separately:
 
 ```console
-$ gh run list --commit <headRefOid> --json name,status,conclusion
+$ gh run list \
+    --repo "<host>/<owner>/<repo>" \
+    --commit <headRefOid> \
+    --json name,status,conclusion
 ```
 
-No run on that commit means the checks have not run against it. Review
-comments are the highest-value layer: another person's opinion, and what
-a resumed session most often forgot.
+An empty result means no Actions runs were returned by that lookup, not
+that no checks ran. External checks and commit statuses may still appear
+in `statusCheckRollup`. Report their observed states independently.
 
 ## Pull request as the subject
 
 A positional pull request number or URL replaces layers 1-2's local
-`HEAD` with the pull request's head. Never check it out. Add `<n>` after
-`gh pr view` in layer 3, and read the change and base from the pull
-request:
+`HEAD` with the pull request's head. Never check it out. Pass the supplied
+number or full URL to the initial `gh pr view`; derive the hosted
+repository identity from that result before the remaining queries.
+Read the change and base:
 
 ```console
-$ gh pr view <n> --json commits,headRefName,baseRefName
+$ gh pr view \
+    --repo "<host>/<owner>/<repo>" \
+    --json commits,headRefName,baseRefName \
+    <n>
 ```
 
 ```console
-$ gh pr diff <n> --name-only
+$ gh pr diff \
+    --repo "<host>/<owner>/<repo>" \
+    --name-only \
+    <n>
 ```
 
-Read the diff of the files that matter with `gh pr diff <n>`; a pull
+Read the diff with the same repository binding; a pull
 request touching many files gets its names first and the diff by area.
 
-The base is `origin/<baseRefName>`. Local ahead/behind, uncommitted work,
-and stashes describe a different branch, so report them as not applying
-unless the current branch is the pull request's head; then run the
-position script with `--trunk origin/<baseRefName>`.
+Use `origin/<baseRefName>` only if origin is that hosted repository.
+Local ahead/behind, uncommitted work, and stashes describe the checkout,
+not the pull request. Apply them to the PR only after both repository
+identity and local HEAD match its `headRefOid`; a matching branch name
+alone is insufficient. Otherwise report local position as not applying.
 
 ## 4. Tickets
 
@@ -194,7 +226,8 @@ $ gh issue view <n> \
     --json number,title,state,labels,body,url
 ```
 
-Omit `--repo` for a bare `#123`, which belongs to the current repository.
+A bare `#123` belongs to the repository whose commit or PR supplied it,
+not necessarily the checkout. Keep that hosted repository binding.
 
 Resolve Linear and other trackers through whatever MCP server the
 session has connected. When none is available, report the ID unresolved,
@@ -206,6 +239,10 @@ nowhere in the evidence does not go in the report.
 Read `AGENTS.md`, `CLAUDE.md`, and any nested equivalents that cover the
 directories the branch touched; nested files override the root for their
 subtree.
+
+For a PR in another repository, local files are not its conventions.
+Read the target's rules at its head revision through a read-only route,
+or report that layer unavailable.
 
 Report only the rules that bear on the current change: the commit
 message format, the quality gates that must pass before a commit,

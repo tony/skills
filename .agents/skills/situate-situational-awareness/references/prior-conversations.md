@@ -25,9 +25,9 @@ left no artifact, work resumed after a gap.
 ## Requirements
 
 `agentgrep` reads Codex, Claude, Cursor, Gemini, Antigravity, Grok, Pi,
-and OpenCode stores. Run it through `uvx` so no install is needed, pinned
-to one exact release so no unreviewed code runs; use this spelling in
-every command below:
+and OpenCode stores. `uvx` provisions the pinned version in an isolated
+environment; the pin selects a release, not proof of a code review. Use
+this spelling in every command below:
 
 ```console
 $ uvx agentgrep@0.1.0a52 search \
@@ -39,11 +39,10 @@ $ uvx agentgrep@0.1.0a52 search \
 Flags change between releases; run `uvx agentgrep@0.1.0a52 search --help`
 first and adjust to what it lists.
 
-Absent network or a `uvx` failure, fall back to `Grep` over the current
-project's Claude Code session store (`~/.claude/projects/`, the
-directory named for this repository), capped at the same twenty
-matches. When that is unreadable too, report the layer unavailable and
-continue with the rest of the sweep. It is never a hard dependency.
+Absent network or a `uvx` failure, report the layer unavailable and
+continue with the rest of the sweep. Do not fall back to raw transcript
+files, which can mix prompts with private reasoning or sensitive tool
+results. The search is never a hard dependency.
 Report it in one clause about the search, such as "earlier conversations
 could not be searched here"; never name the search tool, the session
 store, the host's sandbox, or any path.
@@ -62,22 +61,26 @@ $ uvx agentgrep@0.1.0a52 search \
     '<term>'
 ```
 
+Omit `--branch` on a detached HEAD, where the branch name is empty.
+
 `--only-here` matches on each record's working directory. In a git
 worktree that is not where earlier sessions ran, so the layer comes back
 empty, indistinguishable from a real dry result. Resolve the primary
 checkout before scoping:
 
 ```console
-$ dirname "$(git rev-parse --path-format=absolute --git-common-dir)"
+$ git worktree list --porcelain
 ```
 
-That returns the current directory in an ordinary clone and the primary
-checkout from a worktree. When it differs from the current directory,
-scope to it explicitly:
+The first record identifies the primary worktree, even when its Git
+directory is stored separately. If that record is bare, there is no
+primary checkout: keep the current worktree scope and state that scope
+limit. Otherwise, when its `worktree` path differs from this checkout's
+root, scope to that primary checkout explicitly:
 
 ```console
 $ uvx agentgrep@0.1.0a52 search \
-    --repo <primary-checkout> \
+    --repo "<primary-checkout>" \
     --limit 20 \
     '<term>'
 ```

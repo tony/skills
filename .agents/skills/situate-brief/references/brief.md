@@ -90,7 +90,9 @@ unrelated branch, trunk, and remote lookups earn no line, even if unavailable.
 **Paid — only on an existing reference.** `gh pr view` when the branch
 actually has a pull request, `gh issue view` when a ticket ID appears in
 the branch name, a commit, or the pull request body. Skip both when the
-session already knows their state.
+session already knows their state and the question does not require a
+fresh observation. Otherwise refresh the referenced item or describe its
+state as last observed; cached CI or review state is not a current check.
 
 **Never.** `git fetch`, full diff reads, transcript search, convention
 files.

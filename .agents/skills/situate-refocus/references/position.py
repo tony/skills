@@ -2,7 +2,7 @@
 """Print the repository position for the situation sweep as JSON.
 
 Read-only: runs only git queries, never fetches, and takes no optional locks.
-Paths are never printed; the root is reported as flags and its basename.
+The root is reported as flags and its basename; untracked paths are relative.
 
 Keys: ``root_name``, ``dotfile_repo`` (root is, or contains, the home
 directory), ``has_commits``, ``branch`` (null when detached), ``trunk``,
@@ -13,6 +13,7 @@ directory), ``has_commits``, ``branch`` (null when detached), ``trunk``,
 ``ahead``, ``behind``, ``on_trunk``, ``staged``, ``modified``, ``conflicts``
 (unmerged paths, counted once and not in the other two), ``untracked``,
 ``ignored_untracked`` (environment files filtered out) and ``stashes``.
+Failed status or stash queries leave their fields null, not empty or zero.
 Exits 2 with a message on stderr outside a git repository.
 """
 
@@ -22,6 +23,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import subprocess
 import sys
 import time
@@ -33,8 +35,6 @@ _ENV_NAMES = frozenset(
         ".eval-artifacts",
         ".gitconfig",
         ".idea",
-        ".gitmodules",
-        ".mcp.json",
         ".profile",
         ".ripgreprc",
         ".vscode",
@@ -46,7 +46,7 @@ _ENV_PREFIXES = (".bash", ".zsh")
 
 
 def _git(*args: str, strip: bool = True) -> str | None:
-    """Return stdout (stripped unless ``strip`` is false), or None on failure.
+    """Return stdout without its final newline, or None on failure.
 
     >>> _git("definitely-not-a-subcommand") is None
     True
@@ -55,11 +55,11 @@ def _git(*args: str, strip: bool = True) -> str | None:
         ["git", "--no-optional-locks", *args],  # noqa: S607
         check=False,
         capture_output=True,
-        text=True,
     )
     if done.returncode != 0:
         return None
-    return done.stdout.strip() if strip else done.stdout
+    output = os.fsdecode(done.stdout)
+    return output.removesuffix("\n") if strip else output
 
 
 def _age(seconds: float) -> str:
@@ -164,6 +164,29 @@ def _split_status(raw: str) -> tuple[int, int, int, list[str]]:
     return staged, modified, conflicts, untracked
 
 
+def _worktree_status(failed: list[str]) -> dict[str, object]:
+    """Read worktree counts, leaving failed observations unknown."""
+    raw = _git("status", "--porcelain=v1", "-z", "--untracked-files=normal", strip=False)
+    if raw is None:
+        failed.append("worktree status")
+        return {
+            "staged": None,
+            "modified": None,
+            "conflicts": None,
+            "untracked": None,
+            "ignored_untracked": None,
+        }
+    staged, modified, conflicts, untracked = _split_status(raw)
+    visible = [p for p in untracked if not is_env_entry(p)]
+    return {
+        "staged": staged,
+        "modified": modified,
+        "conflicts": conflicts,
+        "untracked": visible,
+        "ignored_untracked": len(untracked) - len(visible),
+    }
+
+
 def position(trunk_override: str | None = None) -> dict[str, object]:
     """Gather the position from the current directory."""
     root = _git("rev-parse", "--show-toplevel")
@@ -185,10 +208,10 @@ def position(trunk_override: str | None = None) -> dict[str, object]:
     out["last_fetch"] = last_fetch_age()
 
     upstream = _git("rev-parse", "--abbrev-ref", "@{upstream}")
-    if upstream == f"origin/{out['branch']}":
-        upstream = None
     out["upstream"] = upstream
-    stacked = upstream if upstream and upstream != trunk else None
+    tracked_branch = _git("config", "--get", f"branch.{out['branch']}.merge")
+    own_branch = tracked_branch == f"refs/heads/{out['branch']}"
+    stacked = upstream if upstream and upstream != trunk and not own_branch else None
 
     failed: list[str] = []
     head = _git("rev-parse", "HEAD")
@@ -212,17 +235,17 @@ def position(trunk_override: str | None = None) -> dict[str, object]:
     out["base"], out["base_source"], out["failed"] = base, base_source, failed
 
     counts = _git("rev-list", "--left-right", "--count", f"{trunk}...HEAD") if trunk else None
+    if trunk and counts is None:
+        failed.append("ahead/behind with trunk")
     behind, ahead = (int(n) for n in counts.split()) if counts else (None, None)
     out["ahead"], out["behind"] = ahead, behind
     out["on_trunk"] = bool(trunk) and ahead == 0 and base == head
 
-    raw = _git("status", "--porcelain=v1", "-z", "--untracked-files=normal", strip=False) or ""
-    staged, modified, conflicts, untracked = _split_status(raw)
-    out["staged"], out["modified"], out["conflicts"] = staged, modified, conflicts
-    out["untracked"] = [p for p in untracked if not is_env_entry(p)]
-    out["ignored_untracked"] = len(untracked) - len(out["untracked"])
-    stash = _git("stash", "list") or ""
-    out["stashes"] = len(stash.splitlines())
+    out.update(_worktree_status(failed))
+    stash = _git("stash", "list")
+    if stash is None:
+        failed.append("stash list")
+    out["stashes"] = len(stash.splitlines()) if stash is not None else None
     return out
 
 

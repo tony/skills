@@ -14,8 +14,9 @@ it. Cite a commit by its subject, never a bare SHA. Never guess at why
 someone did something or what they intended. Report only conventions a
 file states, never ones inferred from commit history. Tool state (a `gh`
 sign-in, a missing network) is `unavailable` with a one-clause reason,
-never a finding, gap, or option. An earlier conversation is cited with
-its date, never as "earlier in this session".
+never a finding, gap, or option. Cite a stored conversation with its date
+or "undated" when none is recorded; a decision supplied in this session's
+context is "earlier in this session".
 
 The hero is `✓ <branch>: <what it does> · <n> commits · PR #<n> <state>`,
 or `⚠ <what is blocking or unclear>`. When there is nothing to measure
@@ -29,7 +30,8 @@ result sentence, then what the user needs to do.
 2. `## Change` — what the branch does and how far along it is, grouped
    by area, with the commit sequence's shape.
 3. `## Pull request` — state, checks by job name, unresolved review
-   threads and what they ask for; or `none is open`.
+   threads and what they ask for; or the scoped absence/unavailability
+   established by the sweep.
 4. `## Tickets` — each linked issue with its state and what it asks
    for; or `none is referenced`.
 5. `## Conventions` — the rules that bear on this change and the gates
@@ -39,7 +41,7 @@ result sentence, then what the user needs to do.
 7. `## Open questions` — only blockers and decisions: what is unresolved, mid-flight, or
    contradictory, each tied to evidence in the repository; no prediction
    of what a later session would do and no guess at elapsed time. Anything decided in an earlier conversation and still open
-   belongs here, with its date.
+   belongs here, with the provenance described above.
 
 Mark an inference with one hedging word ("probably", "appears"); an
 unmarked statement was read. State a blocker only when something is

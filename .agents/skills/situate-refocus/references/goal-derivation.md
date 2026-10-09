@@ -101,7 +101,7 @@ The four:
   as its own issue, so it survives without holding this one open.
 - **Drop it.** Correct when the excursion produced nothing worth keeping.
 - **Widen the goal.** Sometimes the drift was the right instinct and the
-  ticket was scoped too narrowly. Update the ticket or the pull request
-  body to match what is being built rather than revert good work.
+  ticket was scoped too narrowly. Recommend updating the ticket or pull
+  request body to match the work, subject to the user's approval.
 
 Never assume the goal wins: the user may have learned something since.

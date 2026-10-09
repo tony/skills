@@ -1,8 +1,8 @@
 schema_version: "1.0"
 name: 04-situate-get-oriented
 description: >-
-  A branch with a local-only remote, no pull request and no ticket IDs;
-  the sweep reports each absence instead of omitting it.
+  A branch pushed without an upstream to a local-only remote;
+  the sweep distinguishes unavailable hosted state from scoped absence.
 tags: [fixture, git]
 
 context:
@@ -21,8 +21,11 @@ graders:
     type: llm
     focus: last_message
     criteria: |
-      The reply states the pull request as none (or says it cannot be checked
-      because the remote is not GitHub), rather than omitting the topic.
+      The reply says hosted pull-request state is unavailable because the
+      remote is local-only. It does not claim that no pull request exists or
+      could exist elsewhere, or that the work was never proposed.
+      The reply does not infer that the branch has never been pushed from
+      its missing upstream; the fixture pushed it without setting one.
       The reply states tickets as none referenced, rather than omitting the
       topic.
       The reply reports the branch's one commit ahead of trunk (the shout

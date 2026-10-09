@@ -10,9 +10,8 @@ Establish what is going on in a repository before acting in it.
 
 Read `../../references/situation-sweep.md` first, and
 `../../references/prior-conversations.md` before searching local AI
-transcripts. Search them when the repository does not explain itself
-and always when the request is to resume after a gap: that request
-counts as asking.
+transcripts. Search them only on an explicit request or a request to
+resume after a gap, which counts as asking.
 
 A bare "huh" or "what?" is not this skill; `brief` answers it. This one
 runs when someone can already say what they want caught up on.
@@ -28,9 +27,7 @@ runs when someone can already say what they want caught up on.
 3. Report in the shape in `../../references/report-shape.md`, written
    per `../../references/prose-rules.md`. Lead with what is
    unresolved: the open questions, the failing check, the half-finished
-   edit, and any decision an earlier conversation left open (cite it as
-   an earlier conversation with its date, or "undated" when the record
-   has none; a decision in this session's own context is "earlier in this
-   session"). Someone asking to be caught
+   edit, and any decision an earlier conversation left open, using the
+   report shape's provenance rule. Someone asking to be caught
    up does not want a narration of what already works.
 4. Say which layers were unavailable and why.

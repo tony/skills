@@ -81,7 +81,8 @@ Banned and Confidence sections), plus these:
 The body, then the options. Nothing else: no title, no framing
 sentence, no offer to go deeper.
 
-Reply in this shape, as plain text outside any code fence, with plain bullets, no bold (never `- **Label:** ...`), and no local paths:
+Reply in this shape, as plain text outside any code fence, without bullets,
+bold, or local paths:
 
 ```text
 ⚠ CI is red on PR #12: the type-check job fails on three files this branch added.

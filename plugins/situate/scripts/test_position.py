@@ -1,19 +1,19 @@
 """Tests for position.py against throwaway repositories."""
 
 # ruff: noqa: S101, S603, S607, INP001, PLR2004
-# pyright: reportAny=false, reportUnusedCallResult=false
+# pyright: reportAny=false, reportUnusedCallResult=false, reportPrivateUsage=false
 from __future__ import annotations
 
 import json
+import os
 import subprocess
 from typing import TYPE_CHECKING
 
 import position  # pyright: ignore[reportImplicitRelativeImport]
+import pytest
 
 if TYPE_CHECKING:
     import pathlib
-
-    import pytest
 
 
 def _git(cwd: pathlib.Path, *args: str) -> None:
@@ -61,6 +61,8 @@ def test_branch_ahead_of_trunk_with_filtered_untracked(
     (repo / ".zshrc").write_text("x\n")
     (repo / "notes.md").write_text("x\n")
     (repo / "a.stash").write_text("x\n")
+    (repo / ".gitmodules").write_text('[submodule "lib"]\n')
+    (repo / ".mcp.json").write_text("{}\n")
     monkeypatch.chdir(repo)
 
     assert position.main([]) == 0
@@ -71,7 +73,7 @@ def test_branch_ahead_of_trunk_with_filtered_untracked(
     assert got["base_source"] == "trunk"
     assert got["on_trunk"] is False
     assert got["modified"] == 1
-    assert sorted(got["untracked"]) == ["a.stash", "notes.md"]
+    assert sorted(got["untracked"]) == [".gitmodules", ".mcp.json", "a.stash", "notes.md"]
     assert got["ignored_untracked"] == 1
     assert got["stashes"] == 0
 
@@ -216,6 +218,87 @@ def test_stacked_branch_takes_its_parent_as_base(
         text=True,
     ).stdout.strip()
     assert got["base"] == parent
+
+
+@pytest.mark.parametrize("remote", ["origin", "fork"])
+def test_own_published_branch_is_not_a_stack(
+    tmp_path: pathlib.Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+    remote: str,
+) -> None:
+    """Published work stays in the range regardless of the remote's name."""
+    repo = _repo_with_origin(tmp_path)
+    monkeypatch.chdir(repo)
+    trunk = position._git("rev-parse", "origin/main")  # noqa: SLF001
+    if remote != "origin":
+        _git(repo, "remote", "add", remote, "../origin.git")
+    _git(repo, "switch", "-q", "-c", "feature")
+    _git(repo, "commit", "-q", "--allow-empty", "-m", "published work")
+    _git(repo, "push", "-q", "-u", remote, "feature")
+    _git(repo, "commit", "-q", "--allow-empty", "-m", "local work")
+
+    got = _run(capsys)
+    assert got["upstream"] == f"{remote}/feature"
+    assert got["base_source"] == "trunk"
+    assert got["base"] == trunk
+    assert got["ahead"] == 2
+
+
+def test_failed_status_reports_unknown_instead_of_clean(
+    tmp_path: pathlib.Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """A malformed index leaves worktree fields unknown without changing bytes."""
+    repo = _repo_with_origin(tmp_path)
+    index = repo / ".git" / "index"
+    index.write_bytes(b"invalid index")
+    monkeypatch.chdir(repo)
+
+    got = _run(capsys)
+    for field in ("staged", "modified", "conflicts", "untracked", "ignored_untracked"):
+        assert got[field] is None
+    assert got["failed"] == ["worktree status"]
+    assert index.read_bytes() == b"invalid index"
+
+
+def test_failed_stash_query_reports_unknown(
+    tmp_path: pathlib.Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """A failed stash lookup is not evidence that there are no stashes."""
+    repo = _repo_with_origin(tmp_path)
+    monkeypatch.chdir(repo)
+    original = position._git  # noqa: SLF001
+
+    def fail_stash(*args: str, strip: bool = True) -> str | None:
+        return None if args == ("stash", "list") else original(*args, strip=strip)
+
+    monkeypatch.setattr(position, "_git", fail_stash)
+    got = _run(capsys)
+    assert got["stashes"] is None
+    assert got["failed"] == ["stash list"]
+
+
+@pytest.mark.skipif(os.name != "posix", reason="POSIX permits non-UTF-8 path bytes")
+def test_untracked_byte_filename_round_trips(
+    tmp_path: pathlib.Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """NUL-delimited paths preserve undecodable bytes and embedded CRLF."""
+    repo = _repo_with_origin(tmp_path)
+    name = os.fsdecode(b"untracked-\xff\r\n.txt")
+    (repo / name).touch()
+    index = repo / ".git" / "index"
+    before = index.read_bytes()
+    monkeypatch.chdir(repo)
+
+    got = _run(capsys)
+    assert got["untracked"] == [name]
+    assert index.read_bytes() == before
 
 
 def test_unmerged_paths_count_once_as_conflicts(
