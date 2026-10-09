@@ -24,8 +24,9 @@ The script counts findings per rule as configured, counts them again with the
 binary's own default codes added, and prints `code`, configured, with-defaults,
 and delta, tab-separated, ending in a `total` line. It reads the default codes
 from `--isolated --show-settings` and exits 2 when that output lists none, so
-a format change in ruff fails loudly. It passes `--no-cache`, so it writes
-nothing to the repository.
+a format change in ruff fails loudly. It disables fix and fix-only modes,
+clears `RUFF_OUTPUT_FILE`, and passes `--no-cache`. These controls apply to
+Ruff; the runner must also leave the checkout unchanged.
 
 In an audit, pass the ephemeral runner (`uv run` would create `.venv` and a
 lockfile):

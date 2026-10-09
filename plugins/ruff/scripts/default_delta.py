@@ -20,6 +20,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import re
 import shlex
 import subprocess
@@ -60,7 +61,16 @@ def counts(statistics_json: str) -> dict[str, int]:
 
 
 def _ruff(cmd: list[str], *args: str, cwd: str, ok: tuple[int, ...] = (0, 1)) -> str:
-    done = subprocess.run([*cmd, *args], cwd=cwd, capture_output=True, text=True, check=False)
+    environment = os.environ.copy()
+    environment.pop("RUFF_OUTPUT_FILE", None)
+    done = subprocess.run(
+        [*cmd, *args, "--no-fix", "--no-fix-only"],
+        cwd=cwd,
+        env=environment,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
     if done.returncode not in ok:
         sys.stderr.write(done.stderr)
         raise SystemExit(2)

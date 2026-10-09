@@ -65,3 +65,38 @@ def test_new_since_lists_new_and_grown_codes(
     args = ["--cwd", str(tmp_path), "--new-since", old_exe, "--", new_exe]
     assert default_delta.main(args) == 0
     assert capsys.readouterr().out.splitlines() == ["B007\t1\t0", "F401\t3\t2", "UP006\t5\t0"]
+
+
+@pytest.mark.parametrize("new_since", [False, True])
+def test_measurement_disables_file_writes(
+    tmp_path: pathlib.Path,
+    monkeypatch: pytest.MonkeyPatch,
+    new_since: bool,
+) -> None:
+    """Both measurement modes disable fixes and inherited output redirection."""
+    app = tmp_path / "app.py"
+    app.write_text("import os\n")
+    report = tmp_path / "report.txt"
+    report.write_text("keep the report\n")
+    before = {path: path.read_bytes() for path in (app, report)}
+    monkeypatch.setenv("RUFF_OUTPUT_FILE", str(report))
+    writes = """#!/bin/sh
+for flag in --no-fix --no-fix-only; do
+  case " $* " in
+    *" $flag "*) ;;
+    *) printf 'fixed\\n' > app.py ;;
+  esac
+done
+if [ -n "${RUFF_OUTPUT_FILE:-}" ]; then
+  printf 'redirected\\n' > "$RUFF_OUTPUT_FILE"
+fi
+"""
+    exe = _fake(tmp_path, writes + FAKE.partition("\n")[2])
+    args = ["--cwd", str(tmp_path)]
+    if new_since:
+        args.extend(["--new-since", exe])
+    args.extend(["--", exe])
+
+    assert default_delta.main(args) == 0
+
+    assert {path: path.read_bytes() for path in before} == before

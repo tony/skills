@@ -838,7 +838,7 @@
         "references/release-triage.md": "plugins/ruff/references/release-triage.md",
         "references/throwaway-worktree.md": "plugins/ruff/references/throwaway-worktree.md"
       },
-      "bytes": 50368
+      "bytes": 50666
     },
     {
       "name": "scholar-annotate",
