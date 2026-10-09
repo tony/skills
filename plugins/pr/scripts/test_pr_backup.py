@@ -12,6 +12,9 @@ from pathlib import Path
 
 import pytest
 
+# Every case drives CLI subprocesses against an owned Git repository.
+pytestmark = pytest.mark.integration
+
 SCRIPT = Path(__file__).with_name("pr_backup.py")
 BODY = "## Summary\n\n- Add a parser\nline with trailing space \n\n"
 

@@ -17,6 +17,8 @@ import scan_apply  # pyright: ignore[reportImplicitRelativeImport]
 if TYPE_CHECKING:
     from pathlib import Path
 
+pytestmark = pytest.mark.integration(reason="uses owned Git repositories and scan publication")
+
 
 def git(repo: Path, *args: str) -> bytes:
     return subprocess.run(["git", "-C", str(repo), *args], check=True, capture_output=True).stdout

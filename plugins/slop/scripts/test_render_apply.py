@@ -47,6 +47,7 @@ def run_sh(script: Path, repo: Path) -> subprocess.CompletedProcess[str]:
     )
 
 
+@pytest.mark.integration(reason="uses owned Git repositories and rendered apply.sh")
 def test_apply_creates_fixup_for_dotted_finding_id(tmp_path: Path) -> None:
     repo = tmp_path / "repo"
     repo.mkdir()
@@ -109,6 +110,7 @@ def test_render_rejects_unsafe_value() -> None:
     raise AssertionError
 
 
+@pytest.mark.integration(reason="uses owned Git repositories and rendered apply.sh")
 def test_second_fixup_in_one_file_applies_only_when_cut_after_the_first(tmp_path: Path) -> None:
     repo = tmp_path / "repo"
     repo.mkdir()
@@ -154,6 +156,7 @@ def test_second_fixup_in_one_file_applies_only_when_cut_after_the_first(tmp_path
     assert (repo / "a.txt").read_text() == "two\nfour\n"
 
 
+@pytest.mark.integration(reason="uses owned Git repositories and rendered apply.sh")
 def test_apply_stages_a_non_ascii_path(tmp_path: Path) -> None:
     repo = tmp_path / "repo"
     repo.mkdir()
@@ -180,6 +183,7 @@ def test_apply_stages_a_non_ascii_path(tmp_path: Path) -> None:
     assert git(repo, "status", "--porcelain") == ""
 
 
+@pytest.mark.integration(reason="uses owned Git repositories and rendered apply.sh")
 @pytest.mark.parametrize("overlaps", [False, True])
 def test_failed_hook_retains_concurrent_edits_and_backup(tmp_path: Path, overlaps: bool) -> None:
     repo = tmp_path / "repo"

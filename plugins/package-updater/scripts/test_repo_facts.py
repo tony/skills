@@ -13,6 +13,8 @@ import repo_facts  # pyright: ignore[reportImplicitRelativeImport]
 if TYPE_CHECKING:
     import pathlib
 
+# Native Git fixtures use the outer loop; lock-text parsing stays in the unit loop.
+
 
 def _git(cwd: pathlib.Path, *args: str) -> None:
     subprocess.run(["git", *args], cwd=cwd, check=True, capture_output=True)
@@ -40,6 +42,7 @@ def _make(tmp_path: pathlib.Path) -> pathlib.Path:
     return repo
 
 
+@pytest.mark.integration
 def test_pins_come_from_default_branch_not_working_tree(tmp_path: pathlib.Path) -> None:
     """A feature branch with a different pin does not change what is reported."""
     repo = _make(tmp_path)
@@ -60,6 +63,7 @@ def test_pins_come_from_default_branch_not_working_tree(tmp_path: pathlib.Path) 
     }
 
 
+@pytest.mark.integration
 def test_upstream_remote_is_a_fork_signal(tmp_path: pathlib.Path) -> None:
     """An upstream remote flags a fork; a plain clone has no signal."""
     repo = _make(tmp_path)
@@ -68,6 +72,7 @@ def test_upstream_remote_is_a_fork_signal(tmp_path: pathlib.Path) -> None:
     assert repo_facts.facts(str(repo))["fork_signal"] is True
 
 
+@pytest.mark.integration
 def test_default_branch_falls_back_to_ls_remote(tmp_path: pathlib.Path) -> None:
     """With origin/HEAD unset the remote is asked; behind count is reported."""
     repo = _make(tmp_path)
@@ -88,6 +93,7 @@ def test_default_branch_falls_back_to_ls_remote(tmp_path: pathlib.Path) -> None:
     assert out["behind_remote"] == 1
 
 
+@pytest.mark.integration
 def test_behind_remote_is_null_without_local_default(tmp_path: pathlib.Path) -> None:
     """An absent local default ref reports null, not a silent zero."""
     repo = _make(tmp_path)
@@ -97,6 +103,7 @@ def test_behind_remote_is_null_without_local_default(tmp_path: pathlib.Path) -> 
     assert out["behind_remote"] is None
 
 
+@pytest.mark.integration
 def test_linked_worktree_and_non_repo(tmp_path: pathlib.Path) -> None:
     """A linked worktree is flagged; a plain directory reports an error."""
     repo = _make(tmp_path)
@@ -108,6 +115,7 @@ def test_linked_worktree_and_non_repo(tmp_path: pathlib.Path) -> None:
     assert "error" in repo_facts.facts(str(plain))
 
 
+@pytest.mark.integration
 def test_remoteless_repo_reads_pins_from_current_branch(tmp_path: pathlib.Path) -> None:
     """Without a remote, pins come from the current branch."""
     repo = tmp_path / "solo"
@@ -133,6 +141,7 @@ def _lock(*pairs: tuple[str, str]) -> str:
     )
 
 
+@pytest.mark.integration
 def test_lock_diff_splits_majors_from_in_range(tmp_path: pathlib.Path) -> None:
     """A new major, or a new 0.x minor, is a major; a minor or patch is in range."""
     repo = tmp_path / "locked"
@@ -164,6 +173,7 @@ def test_lock_diff_splits_majors_from_in_range(tmp_path: pathlib.Path) -> None:
     }
 
 
+@pytest.mark.integration
 def test_failed_status_is_unknown_and_preserves_index(
     tmp_path: pathlib.Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -185,6 +195,7 @@ def test_failed_status_is_unknown_and_preserves_index(
     assert broken.read_bytes() == b"invalid index"
 
 
+@pytest.mark.integration
 def test_multiple_non_origin_remotes_need_a_choice(tmp_path: pathlib.Path) -> None:
     """Choosing the alphabetically first remote can target another repository."""
     repo = _make(tmp_path)
@@ -199,6 +210,7 @@ def test_multiple_non_origin_remotes_need_a_choice(tmp_path: pathlib.Path) -> No
     assert "pins" not in out
 
 
+@pytest.mark.integration
 def test_remote_name_with_slash_keeps_default_branch(tmp_path: pathlib.Path) -> None:
     """A slash belongs to the remote name, not the default branch."""
     repo = _make(tmp_path)
@@ -240,6 +252,7 @@ def test_lock_spelling_cannot_hide_major(quote: str, newline: str) -> None:
     }
 
 
+@pytest.mark.integration
 def test_lock_diff_reads_crlf_blob_without_trimming(tmp_path: pathlib.Path) -> None:
     """Git blob content keeps the line ending after the final version field."""
     repo = _make(tmp_path)
@@ -262,6 +275,7 @@ def test_lock_diff_reads_crlf_blob_without_trimming(tmp_path: pathlib.Path) -> N
     assert (repo / "Cargo.lock").read_bytes() == changed
 
 
+@pytest.mark.integration
 def test_unreadable_head_lock_is_not_an_empty_baseline(
     tmp_path: pathlib.Path,
     monkeypatch: pytest.MonkeyPatch,

@@ -14,10 +14,14 @@ import pytest
 
 SPIKE = pathlib.Path(__file__).with_name("spike.sh")
 
-pytestmark = pytest.mark.skipif(
-    shutil.which("git") is None or shutil.which("bash") is None,
-    reason="spike.sh needs bash and git",
-)
+# Native Bash/Git workflows run against owned repositories.
+pytestmark = [
+    pytest.mark.integration,
+    pytest.mark.skipif(
+        shutil.which("git") is None or shutil.which("bash") is None,
+        reason="spike.sh needs bash and git",
+    ),
+]
 
 
 def git(repo: pathlib.Path, *args: str) -> str:
