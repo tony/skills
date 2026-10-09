@@ -26,8 +26,8 @@ when the skill loads) and run the helper by its absolute path. Below and in the 
 - Claude Code: your session name, from `ListAgents`. Your inbox is
   `$CLAUDE_CODE_MESSAGING_SOCKET`.
 
-If neither resolves, say your address is unknown. Never invent one (a pid is not an address)
-and send with `want=none`.
+If neither resolves, compose with `@unknown` and `want=none` in step 4.
+Never invent an address; a pid is not one. Step 5's plan owns the reply-route limit.
 
 ## 2. Find the target
 
@@ -182,9 +182,10 @@ $ sqlite3 "file:${CODEX_HOME:-$HOME/.codex}/queue_1.sqlite?mode=ro" \
 ```
 
   Without the `sqlite3` CLI, skip the read-back and report delivery unconfirmed.
-  A row still present has not been consumed. Its disappearance proves dequeue, not delivery
-  to the model. Require the receiver's turn to carry the exact payload or its acknowledgment
-  to carry the relay id. A backlog drains one message per idle transition, so batch into a single message.
+  Report whether that row is present or absent. An absent row does not identify who
+  removed it or prove delivery to the model. Require the receiver's turn to carry the exact
+  payload or its acknowledgment to carry the relay id. A backlog drains one message per idle
+  transition, so batch into a single message.
   The durable queue wins the next turn ahead of a process-local tmux follow-up.
 
 - To Claude Code, there is no receipt. Require an acknowledgment carrying your relay id, or
@@ -282,12 +283,12 @@ convention alone.
 ## 10. Report
 
 Write the report per `../../references/prose-rules.md`. Open with one result sentence naming
-the outcome (delivered, queued or consumed with delivery unconfirmed, staged and pending,
+the outcome (delivered, queued or queue item absent with delivery unconfirmed, staged and pending,
 withheld, or refused) and the relay id, then
-exactly four short bullets: target and what identified it, route used, delivery
-evidence, what the user needs to do next. Put each fact in one bullet only.
-Each bullet is one sentence of at most 25 words. State the observed queue row,
-receiver turn, or acknowledgment; never infer who removed a missing queue item.
+exactly four short bullets. Target identifies the session; Route names only the
+transport; Evidence states the observed row, receiver turn, or acknowledgment;
+Next gives the user's verification step. Each bullet is one sentence of at most
+25 words. Apply the evidence limits from step 7 to the result sentence too.
 After the last tool result, check the reply against this four-bullet shape.
 Omit the payload and transport mechanics; the plan already carries the payload.
 Name no local paths or temp files unless the user must act on them.
@@ -296,7 +297,7 @@ Reply in this shape, as plain text outside any code fence, with plain bullets, n
 (never `- **Route:** ...`), and no local paths:
 
 ```text
-Queue item consumed; delivery to reviewer is unconfirmed (relay id 019a3c-2, hop 0).
+Queue item absent; delivery to reviewer is unconfirmed (relay id 019a3c-2, hop 0).
 
 - Target: reviewer, resolved from the Codex thread index by name.
 - Route: codex-queue.

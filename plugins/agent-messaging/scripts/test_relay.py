@@ -8,6 +8,7 @@ from __future__ import annotations
 import json
 import os
 import pathlib
+import re
 import shutil
 import socket
 import subprocess
@@ -21,6 +22,33 @@ needs_tools = pytest.mark.skipif(
     shutil.which("jq") is None or shutil.which("bash") is None,
     reason="relay.sh needs bash and jq",
 )
+
+
+def test_report_shape_accepts_observation_and_rejects_extra_claim_slots() -> None:
+    case = RELAY.parents[1] / "evals/08-consumed-queue-unconfirmed/case.yaml"
+    block = case.read_text().split("  - name: report-shape\n", 1)[1]
+    pattern = next(
+        line.removeprefix("    pattern: '").removesuffix("'")
+        for line in block.splitlines()
+        if line.startswith("    pattern: '")
+    )
+    valid = (
+        "Queue item absent; delivery is unconfirmed (relay id abc-1).\n\n"
+        "- Target: reviewer, the supplied Codex thread.\n"
+        "- Route: codex-queue.\n"
+        "- Evidence: the returned queue item is absent; no receiving turn was observed.\n"
+        "- Next: check the reviewer session for this relay id.\n"
+    )
+    assert re.fullmatch(pattern, valid)
+    for invalid in (
+        valid.replace("- Route:", "- **Route:**"),
+        valid.replace("codex-queue.", "codex-queue, sent once."),
+        valid.replace(
+            "the returned queue item is absent; no receiving turn was observed.", "word " * 25
+        ),
+        valid + "\nExtra report.\n",
+    ):
+        assert not re.fullmatch(pattern, invalid)
 
 
 @needs_tools

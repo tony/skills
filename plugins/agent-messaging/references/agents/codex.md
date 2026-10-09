@@ -87,8 +87,8 @@ which the skill loads for any Claude target.
 - Target not running: documented as durable, but restart delivery is `UNKNOWN`
   empirically.
 - Ordering: FIFO by monotonically increasing `queue_order`; consumed rows disappear and
-  remaining orders are not renumbered. Disappearance proves dequeue, not that the model
-  received the payload; require its turn or an acknowledgment of the relay id.
+  remaining orders are not renumbered. An absent row alone identifies neither its remover
+  nor receiver delivery; require the receiver's turn or an acknowledgment of the relay id.
 - Caps: 100 items, 1,048,576 characters, text only `(unverified — from source)`.
 
 ### tmux
