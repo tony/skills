@@ -34,15 +34,16 @@ remain untouched.
 
 ## Isolation
 
-Every external CLI lane runs in a disposable detached worktree created from the
+Every read-only external CLI lane runs in a disposable detached worktree created from the
 snapshot commit, so the CLI reads the user's uncommitted work and any write lands
 in the throwaway tree. Each attempt gets a fresh worktree under the session
 directory, and the engine removes it afterwards. If the worktree cannot be
 created the lane fails; it never falls back to the user's checkout.
 
 Host sub-agents of a read-only command also get snapshot worktrees
-(`worktrees create`). Mutating commands start worker worktrees from `HEAD` after
-stashing the user's changes.
+(`worktrees create`). Mutating commands start every worker's registered
+worktree from `HEAD` after stashing the user's changes, including the host
+`claude` lane under `model-clis`.
 Native launches include the engine's literal per-call directory prefix and
 absolute file-path rules. These instructions are not a sandbox: a shell `cd`
 does not persist between sub-agent tool calls, and hosts do not universally
@@ -72,9 +73,9 @@ the touched set includes both.
 
 ## Decision
 
-Native mutating runs halt on any drift. The engine refuses adoption while an
-active native run differs from its dispatch baseline and refuses `reset-main`
-for native workers. Worktrees, leaked files, and the original stash stay intact.
+Mutating runs halt on any drift under either backend. The engine refuses the
+first adoption while an active run differs from its dispatch baseline.
+Worktrees, leaked files, and the original stash stay intact.
 
 Read-only runs offer once; headless runs keep and report.
 
@@ -98,8 +99,7 @@ run with no adoption compares against its initial working bytes, staging, and
 HEAD after stash restoration. An adopted run reports no unchanged attestation.
 When the session never recorded a
 difference it deletes the session's pinned refs; otherwise they stay as
-evidence. The `pre-reset-*` pins that `reset-main` writes before it discards
-changes are never deleted by `finish`, so a reset stays recoverable.
+evidence. Existing `pre-reset-*` recovery pins are never deleted by `finish`.
 `guard prune --days N` deletes pinned refs older than `N` days in a
 repository, and the skills run it once per session at the end. Pins are
 ordinary refs, so `git push --mirror` would publish them; prune first.

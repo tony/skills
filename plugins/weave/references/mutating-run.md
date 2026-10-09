@@ -8,7 +8,6 @@ command. `<engine>` and `<session_dir>` are as in `ensemble-core.md`.
 ## Contents
 
 - Refinement passes
-- Reset the main checkout
 - Remove worktrees and restore the stash
 - Apply gate and presentation
 - Apply a recorded session
@@ -44,42 +43,15 @@ $ python3 <engine> pass-dir \
 >
 > For each item, give your resolution with evidence (file paths, line numbers, code references).
 
-Then repeat the skill's dispatch and analysis phases with pass `<N>`, reusing
-each participant's work:
-
-- **subagents**: keep every worktree and redispatch a fresh role-matched
-  sub-agent into the same one.
-- **model-clis**: discard the main-tree changes and rebuild the external
-  worktrees with fresh branches. Run both commands, then create the worktrees
-  again as in the skill's dispatch phase. Reference prior artifacts by path for
-  `claude` and inline them for external lanes.
-
-  ```console
-  $ python3 <engine> reset-main \
-      --session "<session_dir>"
-  ```
-
-  ```console
-  $ python3 <engine> worktrees remove \
-      --session "<session_dir>"
-  ```
+Then repeat the skill's dispatch and analysis phases with pass `<N>`. Keep
+every registered worktree and redispatch its participant into the same one,
+under either backend. Use a fresh host Task agent with the same complete
+`worker_instructions`; reference prior artifacts by path for host workers and
+inline them for external CLI lanes.
 
 Re-score only affected dimensions. Stop early when no score moved by more than
 1 and no new conflict appeared. Carry the final-pass analysis into the apply
 phase.
-
----
-
-## Reset the main checkout
-
-Under **model-clis**, the `claude` lane's agent wrote the main checkout. Discard
-its changes before applying a result. The command refuses unless the user's
-stash is recorded and still present:
-
-```console
-$ python3 <engine> reset-main \
-    --session "<session_dir>"
-```
 
 ---
 
@@ -114,13 +86,12 @@ results.
 
 Show the plan or comparison and wait for the user's confirmation before
 touching the main checkout. Without `AskUserQuestion`, apply nothing: report
-the plan, then run only the cleanup (under **model-clis** `reset-main`, then
-remove the worktrees and restore the stash) and render the nothing-applied
+the plan, then remove the worktrees and restore the stash, and render the nothing-applied
 opening below. A request that explicitly says to apply the result is that
 confirmation for applying, never for committing.
 
-For native workers, run the repo guard again immediately before adoption or
-cleanup. Any drift stops the run without changing or moving the checkout,
+Under either backend, run the repo guard again immediately before adoption,
+or before cleanup when nothing was applied. Any drift stops the run without changing or moving the checkout,
 removing worktrees, or restoring a stash over it. Preserve recovery evidence
 and report the affected paths; never use the nothing-applied opening below.
 

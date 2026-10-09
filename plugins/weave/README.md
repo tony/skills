@@ -97,7 +97,7 @@ Measured 2026-10-08 with Claude Code 2.1.294 on three eval cases whose prompts n
 Commands that need commits (`execute`, `prompt`, `architecture`, `review`, `fix-review`) refuse in one sentence without a git repository that has at least one commit. `ask` and `plan` degrade with a stated "no repository" note. `brainstorm`, `brainstorm-and-refine`, `refine`, and `serene-bliss` run anywhere: with no usable repository the repo guard is off and workers start in an empty scratch directory. A checkout rooted at `/`, at your home directory, or at a directory containing your home directory counts as no repository, and a command that snapshots, stashes, or adds worktrees refuses it.
 
 - **Read-only** (`ask`, `plan`, `brainstorm`, `refine`, `brainstorm-and-refine`, `serene-bliss`, `review`): gather perspectives and synthesize. Workers and executable verification use scratch worktrees; the final guard must attest checkout state before the result is presented.
-- **Write**: each participant works in its own worktree, with one exception: under `--workers=model-clis` the `claude` lane runs as a host sub-agent in your main checkout and is the only lane that writes it. The engine stashes your uncommitted work first, and `reset-main` discards that lane's changes only while the stash is recorded and present. `prompt` picks one winner, `execute` cherry-picks the best parts, `architecture` cherry-picks conventions, skills, and scaffolding per file, and `fix-review` commits findings one by one.
+- **Write**: `prompt`, `execute`, and `architecture` give every participant its own worktree, including the host `claude` lane under `--workers=model-clis`. The engine stashes your uncommitted work first and restores it after the apply decision. `prompt` picks one winner, `execute` selects the best parts, and `architecture` selects conventions, skills, and scaffolding per file. Only approved snapshots reach your checkout. `fix-review` edits the checkout and commits findings one by one.
 
 ### Shared protocols
 
@@ -118,14 +118,14 @@ Shared judgment prose lives in `references/ensemble-core.md` (context packet, di
 
 `init` records tracked and non-ignored untracked content, staging, and HEAD.
 It pins the content snapshot under `refs/weave-guard/<session>/`. Read-only
-lanes use snapshot worktrees; mutating native lanes use their own branches.
+lanes use snapshot worktrees; mutating lanes use their own branches.
 Native prompts specify an absolute root for every file and shell call. These
 are cooperative instructions, not a filesystem sandbox: a worker can escape
 through an absolute path or an incorrectly rooted tool call.
 
 The guard compares content, staging, and HEAD after dispatch and before
 presentation. Drift retains recovery snapshots without rewriting the checkout.
-A native mutating violation stops before adoption or cleanup, preserving leaked
+A mutating violation stops before adoption or cleanup, preserving leaked
 work and the original user stash for inspection. Read-only runs can offer keep,
 revert, or quarantine; headless runs keep the drift and cannot claim unchanged.
 `docs/repo-guard-protocol.md` describes the recovery choices and final attestation.

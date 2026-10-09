@@ -69,6 +69,8 @@ Prompts and lanes
   binary patch, changed-file snapshots, and manifest; the index is not touched.
 - `adopt --session S --pass N --pick path=P --delete path`: copies snapshots into
   the main checkout. `--all P` adopts everything `P` captured.
+  Before the first adoption of an active session, any checkout, index or branch
+  drift from its dispatch snapshot refuses the whole operation under either backend.
   Symlinks are captured and adopted as symlinks (dangling ones too); the
   manifest lists their targets under `links`. The whole selection is refused
   before any write if a target is dirty, ignored, a directory, reached
@@ -93,8 +95,7 @@ Prompts and lanes
   branch already advanced and retains the prepared index. Returns `commit`,
   `committed`, `still_staged`, and any cleanup `warning`. Hooks are trusted
   project programs, not sandboxed against explicit writes outside their cwd.
-- `reset-main`, `stash-restore`: discard the main tree's changes only when the
-  user's stash is recorded and present; pop the session's own stash entry. A
+- `stash-restore`: pop the session's own stash entry by its recorded identity. A
   refused or conflicting pop returns `ok: false`, `stash_kept`, `stash_sha`,
   `overlap` (paths both the stash and the tree changed), `inspect`, `apply`, and
   `recover` (ordered commands); the stash is never dropped.
@@ -123,7 +124,7 @@ Guard
   decision.
 - `guard finish --session S`: verifies an unapplied session's original working
   bytes, staging, and HEAD, logs `repo_guard_final`, drops pinned refs when
-  clean, and keeps the `pre-reset-*` pins `reset-main` needs for recovery.
+  clean, and preserves existing `pre-reset-*` recovery pins.
 - `guard prune [--repo R] [--days N]`: drops old pinned refs.
 
 `repo-guard-protocol.md` describes the guard.
@@ -177,8 +178,8 @@ stderr file.
 5. Dispatch with `ensemble-core.md` (Dispatch lanes). Variants add `--variant`;
    judges add `--judge` and use `judge-plan`; a refinement pass starts with
    `pass-dir`. Mutating skills add `--mutating`, `worktrees create`, `capture`,
-   `adopt`, `reset-main`, and `stash-restore`.
-6. Read-only skills close the guard (Close the repo guard) after the lanes.
+   `adopt` and `stash-restore`.
+6. Close the guard (Close the repo guard) after the lanes under either backend.
 7. Judge and synthesize with the shared sections, naming the convergence mode and
    rubric. Deslop and render with `deslop-pass.md`, `present-results.md`, and `results/<kind>.md`.
 8. Finish with `ensemble-core.md` (Finish).

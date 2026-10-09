@@ -525,26 +525,37 @@ def test_mutating_lane_runs_in_registered_worktree(repo: Path, bindir: Path) -> 
     assert engine.load_session(sdir)["worktrees"] == {}
 
 
-def test_capture_and_adopt_whole_participant(repo: Path) -> None:
-    sdir = Path(init(command="execute", mutating=True)["session_dir"])
-    engine.create_worktrees(sdir, ["maintainer"])
-    wt = Path(engine.load_session(sdir)["worktrees"]["maintainer"]["path"])
+@pytest.mark.parametrize(
+    ("backend", "participant"), [("subagents", "maintainer"), ("model-clis", "claude")]
+)
+def test_capture_and_adopt_whole_participant(repo: Path, backend: str, participant: str) -> None:
+    (repo / "B").write_text("staged user edit\n")
+    sh(repo, "git", "add", "B")
+    (repo / "B").write_text("working user edit\n")
+    staged = sh(repo, "git", "diff", "--cached", "--binary")
+    sdir = Path(init(command="execute", backend=backend, mutating=True)["session_dir"])
+    engine.create_worktrees(sdir, [participant])
+    wt = Path(engine.load_session(sdir)["worktrees"][participant]["path"])
     (wt / "a.txt").unlink()
     (wt / "sub" / "new.py").write_text("x = 1\n")
     sh(wt, "git", "add", "-A")
     sh(wt, "git", "commit", "-q", "-m", "worker ignored the no-commit protocol")
     worker_head = sh(wt, "git", "rev-parse", "HEAD")
     source_head = sh(repo, "git", "rev-parse", "HEAD")
-    cap = engine.capture_tree(sdir, 1, "maintainer", None)
+    cap = engine.capture_tree(sdir, 1, participant, None)
     assert cap["deleted"] == ["a.txt"]
     assert cap["changed"] == ["sub/new.py"]
-    done = engine.adopt_files(sdir, 1, [], [], whole="maintainer")
+    done = engine.adopt_files(sdir, 1, [], [], whole=participant)
     assert done["copied"] == ["sub/new.py"]
     assert not (repo / "a.txt").exists()
     assert (repo / "sub" / "new.py").read_text() == "x = 1\n"
     assert sh(wt, "git", "rev-parse", "HEAD") == worker_head
     assert sh(repo, "git", "rev-parse", "HEAD") == source_head
     assert engine.latest_session(str(repo), "execute")["applied"] is True
+    engine.remove_worktrees(sdir, None)
+    assert engine.restore_stash(sdir)["restored"] is True
+    assert (repo / "B").read_text() == "working user edit\n"
+    assert sh(repo, "git", "diff", "--cached", "--binary") == staged
 
 
 def test_participant_paths_are_rejected_before_worktree_mutation(repo: Path) -> None:
@@ -591,39 +602,68 @@ def test_mutating_init_stashes_and_restore_pops_own_entry(repo: Path) -> None:
     (repo / "other.txt").write_text("o")
     sh(repo, "git", "stash", "push", "-q", "--include-untracked", "-m", "unrelated")
     (repo / "synth.txt").write_text("synth\n")
-    assert engine.reset_main(sdir)["ok"]
-    assert not (repo / "synth.txt").exists()
     assert engine.restore_stash(sdir)["restored"] is True
+    assert (repo / "synth.txt").read_text() == "synth\n"
     assert (repo / "a.txt").read_text() == "user edit\n"
     assert (repo / "new.txt").exists()
 
 
-def test_reset_main_refuses_without_stash_record_or_missing_stash(repo: Path) -> None:
-    sdir = Path(init(backend="model-clis")["session_dir"])
-    with pytest.raises(engine.EngineError, match="no stash record"):
-        engine.reset_main(sdir)
-    (repo / "a.txt").write_text("user edit\n")
-    sdir = Path(init(command="execute", backend="model-clis", mutating=True)["session_dir"])
-    sh(repo, "git", "stash", "drop")
-    with pytest.raises(engine.EngineError, match="missing"):
-        engine.reset_main(sdir)
+def test_reset_main_is_not_a_command_and_preserves_checkout(repo: Path) -> None:
+    (repo / "a.txt").write_text("staged user edit\n")
+    sh(repo, "git", "add", "a.txt")
+    (repo / "a.txt").write_text("working user edit\n")
+    (repo / "notes").symlink_to("missing-target")
+    index = (repo / ".git/index").read_bytes()
+    head = sh(repo, "git", "rev-parse", "HEAD")
+    branch = sh(repo, "git", "symbolic-ref", "HEAD")
+    with pytest.raises(SystemExit) as exc:
+        engine.main(["reset-main", "--session", str(repo / "absent-session")])
+    assert exc.value.code == 2
+    assert (repo / ".git/index").read_bytes() == index
+    assert (repo / "a.txt").read_text() == "working user edit\n"
+    assert (repo / "notes").is_symlink()
+    assert sh(repo, "git", "rev-parse", "HEAD") == head
+    assert sh(repo, "git", "symbolic-ref", "HEAD") == branch
 
 
 def test_clean_tree_mutating_init_needs_no_stash(repo: Path) -> None:
     doc = init(command="execute", backend="model-clis", mutating=True)
     assert doc["stash"] == {"state": "none-needed"}
-    assert engine.reset_main(Path(doc["session_dir"]))["ok"]
     assert engine.restore_stash(Path(doc["session_dir"]))["restored"] is False
 
 
-def test_native_no_adoption_restores_partial_staging_and_attests_original(repo: Path) -> None:
+@pytest.mark.parametrize(
+    ("backend", "participant"), [("subagents", "maintainer"), ("model-clis", "claude")]
+)
+@pytest.mark.parametrize("worker_exit", [0, 1])
+def test_no_adoption_restores_partial_staging_and_attests_original(
+    repo: Path, backend: str, participant: str, worker_exit: int
+) -> None:
     (repo / "a.txt").write_text("staged\n")
     sh(repo, "git", "add", "a.txt")
     (repo / "a.txt").write_text("working\n")
     (repo / "notes").symlink_to("missing-target")
     before_index = sh(repo, "git", "ls-files", "--stage", "-v")
-    sdir = Path(init(command="execute", mutating=True)["session_dir"])
+    original_head = sh(repo, "git", "rev-parse", "HEAD")
+    sdir = Path(init(command="execute", backend=backend, mutating=True)["session_dir"])
+    made = engine.create_worktrees(sdir, [participant])["worktrees"][participant]
+    worktree = Path(made["path"])
+    prefix = "cd -- " + shlex.quote(str(worktree)) + " && "
+    assert prefix in made["worker_instructions"]
+    dispatch_index = (repo / ".git/index").read_bytes()
+    command = prefix + f"printf 'worker output\\n' > worker.txt; exit {worker_exit}"
+    worker = subprocess.run(
+        ["/bin/sh", "-c", command], cwd=repo, capture_output=True, text=True, check=False
+    )
+    assert worker.returncode == worker_exit
+    assert not (repo / "worker.txt").exists()
+    assert (worktree / "worker.txt").read_text() == "worker output\n"
+    assert (repo / ".git/index").read_bytes() == dispatch_index
+    assert sh(repo, "git", "rev-parse", "HEAD") == original_head
+    captured = engine.capture_tree(sdir, 1, participant, None)
+    assert captured["changed"] == ["worker.txt"]
     assert engine.guard_check(sdir)["violation"] is False
+    engine.remove_worktrees(sdir, None)
     assert engine.restore_stash(sdir)["restored"] is True
     assert sh(repo, "git", "ls-files", "--stage", "-v") == before_index
     assert (repo / "a.txt").read_text() == "working\n"
@@ -632,12 +672,17 @@ def test_native_no_adoption_restores_partial_staging_and_attests_original(repo: 
 
 
 @pytest.mark.parametrize("drift", ["working", "index", "branch"])
-def test_native_checkout_drift_halts_without_repair(repo: Path, drift: str) -> None:
-    sdir = Path(init(command="execute", mutating=True)["session_dir"])
-    made = engine.create_worktrees(sdir, ["builder"])
-    worktree = Path(made["worktrees"]["builder"]["path"])
+@pytest.mark.parametrize(
+    ("backend", "participant"), [("subagents", "builder"), ("model-clis", "claude")]
+)
+def test_checkout_drift_halts_without_repair(
+    repo: Path, drift: str, backend: str, participant: str
+) -> None:
+    sdir = Path(init(command="execute", backend=backend, mutating=True)["session_dir"])
+    made = engine.create_worktrees(sdir, [participant])
+    worktree = Path(made["worktrees"][participant]["path"])
     (worktree / "a.txt").write_text("approved worker result\n")
-    engine.capture_tree(sdir, 1, "builder", None)
+    engine.capture_tree(sdir, 1, participant, None)
     if drift == "working":
         (repo / "escaped").symlink_to("missing-target")
     elif drift == "index":
@@ -649,9 +694,10 @@ def test_native_checkout_drift_halts_without_repair(repo: Path, drift: str) -> N
     before = sh(repo, "git", "status", "--porcelain")
     index = (repo / ".git/index").read_bytes()
     with pytest.raises(engine.EngineError, match="checkout changed"):
-        engine.adopt_files(sdir, 1, ["a.txt=builder"], [])
-    with pytest.raises(engine.EngineError, match="refusing to reset"):
-        engine.reset_main(sdir)
+        engine.adopt_files(sdir, 1, [f"a.txt={participant}"], [])
+    with pytest.raises(SystemExit) as exc:
+        engine.main(["reset-main", "--session", str(sdir)])
+    assert exc.value.code == 2
     done = engine.guard_finish(sdir)
     assert done["ok"] is False
     assert done["clean"] is False
@@ -1080,19 +1126,20 @@ def test_failed_init_leaves_no_session_directory_and_returns_the_stash(
     assert sh(repo, "git", "stash", "list") == ""
 
 
-def test_guard_finish_keeps_the_pins_reset_main_needs(repo: Path) -> None:
+def test_guard_finish_keeps_existing_recovery_pins(repo: Path) -> None:
     (repo / "a.txt").write_text("user edit\n")
     sdir = Path(init(command="execute", backend="model-clis", mutating=True)["session_dir"])
-    sid = engine.load_session(sdir)["session_id"]
-    (repo / "synth.txt").write_text("discarded synthesis\n")
-    engine.reset_main(sdir)
+    session = engine.load_session(sdir)
+    sid = session["session_id"]
+    initial = session["initial_guard"]
+    engine.pin_tree(str(repo), sid, "pre-reset-existing", initial["tree"], initial["head"])
     engine.restore_stash(sdir)
     assert engine.guard_finish(sdir)["refs_pruned"] is True
     refs = sh(repo, "git", "for-each-ref", "--format=%(refname)", f"refs/weave-guard/{sid}/")
     pins = [r for r in refs.split() if "/pre-reset-" in r]
     assert len(pins) == 1
     assert len(refs.split()) == 1
-    assert sh(repo, "git", "show", f"{pins[0]}:synth.txt") == "discarded synthesis\n"
+    assert sh(repo, "git", "show", f"{pins[0]}:a.txt") == "user edit\n"
 
 
 # --- judge parsing, flags, errors, context -----------------------------------

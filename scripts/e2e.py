@@ -558,9 +558,14 @@ def _assert_weave_engine_body(command_path: Path, text: str) -> None:
         _assert("## Orchestration Plan" in text, f"{rel}: mutating skill has no Orchestration Plan")
         run_ref = WEAVE_DIR / "references" / "mutating-run.md"
         cited = text + run_ref.read_text(encoding="utf-8") if "mutating-run.md" in text else text
-        required = ("capture", "adopt", "worktrees remove", "stash-restore", "reset-main")
+        required = ("capture", "adopt", "worktrees remove", "stash-restore")
         missing = [cmd for cmd in required if f"<engine> {cmd}" not in cited]
         _assert(not missing, f"{rel}: mutating lifecycle calls are missing: {', '.join(missing)}")
+        _assert(
+            "registered worktree" in cited and "Under either backend, run the repo guard" in cited,
+            f"{rel}: mutating workers must preserve the checkout under either backend",
+        )
+        _assert("reset-main" not in cited, f"{rel}: mutating lifecycle still resets the checkout")
     else:
         _assert(
             "Close the repo guard" in text,
