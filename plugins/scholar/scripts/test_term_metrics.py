@@ -25,9 +25,17 @@ if TYPE_CHECKING:
         ),
         ('{"term": "a", "definition": "x", "cites": "q"}', "line 1: 'cites' must be a list"),
         ('["a"]', "line 1: row must be a JSON object"),
+        (
+            '{"term": "a", "cites": [{"quote": "q", "source": {}}]}',
+            "line 1: 'source' must be a string",
+        ),
+        (
+            '{"term": "a", "cites": [{"quote": "q", "source": "s", "locator": []}]}',
+            "line 1: 'locator' must be a string",
+        ),
     ],
 )
-@pytest.mark.parametrize("flags", [[], ["--check-terms"]])
+@pytest.mark.parametrize("flags", [[], ["--check-terms"], ["--check-quotes", "unused-clone"]])
 def test_malformed_row_is_a_finding(
     tmp_path: Path,
     capsys: pytest.CaptureFixture[str],
@@ -39,6 +47,25 @@ def test_malformed_row_is_a_finding(
     (tmp_path / "terms.jsonl").write_text(row + "\n", encoding="utf-8")
     assert term_metrics.main([str(tmp_path), *flags]) == 1
     assert finding in capsys.readouterr().out
+
+
+@pytest.mark.parametrize(
+    ("locator", "kind", "verdict"),
+    [
+        ("src/a.py", "line-range", "uncheckable"),
+        ("src/a.py:0", "line-range", "uncheckable"),
+        ("src/a.py:2-1", "line-range", "uncheckable"),
+        ("src/a.py:1-4", "line-range", "uncheckable"),
+        ("src/a.py", "unknown", "uncheckable"),
+        ("src/a.py", "search-string", "ok"),
+        ("src/a.py:2", "line-range", "ok"),
+    ],
+)
+def test_quote_verification_never_broadens_an_invalid_range(
+    locator: str, kind: str, verdict: str
+) -> None:
+    """Only a valid recorded range or explicit search can verify the quote."""
+    assert term_metrics.check_quote(locator, kind, "beta", "alpha\nbeta\n") == verdict
 
 
 def test_bare_www_url_fails_the_brief_gate(
@@ -141,6 +168,7 @@ def _study(root: Path, commit: str, locator: str, quote: str) -> Path:
         ("src/a.py:1-1", "beta gamma", ["Misquoted: t (src/a.py:1-1): quote not found"]),
         ("src/gone.py:1-1", "beta", ["Vanished: t (src/gone.py:1-1)"]),
         ("see chapter 2", "beta", ["Uncheckable: t (see chapter 2)"]),
+        ("src/a.py", "beta", ["Uncheckable: t (src/a.py)"]),
     ],
 )
 def test_check_quotes_against_a_local_clone(

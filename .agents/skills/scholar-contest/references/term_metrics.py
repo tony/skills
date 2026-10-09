@@ -181,6 +181,8 @@ from typing import TypedDict, cast
 class _Cite(TypedDict, total=False):
     quote: str
     source: str
+    locator: str
+    url: str
 
 
 class _RowBase(TypedDict):
@@ -456,6 +458,8 @@ def parse_locator(locator: str) -> tuple[str, int, int] | None:
         return None
     first = int(match.group(2) or 0)
     last = int(match.group(3) or first)
+    if match.group(2) is not None and not 1 <= first <= last:
+        return None
     return match.group(1), first, last
 
 
@@ -466,15 +470,22 @@ def _squash(text: str) -> str:
 def check_quote(locator: str, kind: str, quote: str, text: str) -> str:
     """Return ``ok``, ``misquoted``, or ``uncheckable`` for one cite against file *text*.
 
-    A ``line-range`` locator limits the search to its lines; every other kind
-    searches the whole file. Whitespace differences do not count.
+    A ``line-range`` locator must identify existing lines. Other recognized
+    kinds search the whole file. Whitespace differences do not count.
     """
     parsed = parse_locator(locator)
-    if parsed is None or not _squash(quote):
+    if (
+        parsed is None
+        or kind not in {"line-range", "search-string", "section", "page"}
+        or not _squash(quote)
+    ):
         return "uncheckable"
     _, first, last = parsed
-    if kind == "line-range" and first:
-        text = "\n".join(text.splitlines()[first - 1 : last])
+    if kind == "line-range":
+        lines = text.splitlines()
+        if not 1 <= first <= last <= len(lines):
+            return "uncheckable"
+        text = "\n".join(lines[first - 1 : last])
     return "ok" if _squash(quote) in _squash(text) else "misquoted"
 
 
@@ -548,11 +559,13 @@ def check_quotes(
 
 
 def _cite_problem(cite: object) -> str | None:
-    """Describe why *cite* is not an object with a string ``quote``, or ``None``."""
+    """Describe why *cite* is not a well-typed citation, or return ``None``."""
     if not isinstance(cite, dict):
         return "each entry in 'cites' must be an object"
-    if not isinstance(cast("dict[str, object]", cite).get("quote", ""), str):
-        return "'quote' must be a string"
+    fields = cast("dict[str, object]", cite)
+    for key in ("quote", "source", "locator", "url"):
+        if not isinstance(fields.get(key, ""), str):
+            return f"'{key}' must be a string"
     return None
 
 

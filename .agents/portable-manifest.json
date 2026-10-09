@@ -888,7 +888,7 @@
         "references/stage-gates.md": "plugins/scholar/references/stage-gates.md",
         "references/term_metrics.py": "plugins/scholar/scripts/term_metrics.py"
       },
-      "bytes": 45844
+      "bytes": 46224
     },
     {
       "name": "scholar-distill",
@@ -902,7 +902,7 @@
         "references/stage-gates.md": "plugins/scholar/references/stage-gates.md",
         "references/term_metrics.py": "plugins/scholar/scripts/term_metrics.py"
       },
-      "bytes": 42291
+      "bytes": 42671
     },
     {
       "name": "scholar-extract",
@@ -917,7 +917,7 @@
         "references/stage-gates.md": "plugins/scholar/references/stage-gates.md",
         "references/term_metrics.py": "plugins/scholar/scripts/term_metrics.py"
       },
-      "bytes": 48528
+      "bytes": 48908
     },
     {
       "name": "scholar-gather",
@@ -932,7 +932,7 @@
         "references/stage-gates.md": "plugins/scholar/references/stage-gates.md",
         "references/term_metrics.py": "plugins/scholar/scripts/term_metrics.py"
       },
-      "bytes": 47240
+      "bytes": 47620
     },
     {
       "name": "scholar-ontology",
@@ -948,7 +948,7 @@
         "references/stage-gates.md": "plugins/scholar/references/stage-gates.md",
         "references/term_metrics.py": "plugins/scholar/scripts/term_metrics.py"
       },
-      "bytes": 47296
+      "bytes": 47676
     },
     {
       "name": "scholar-render",
@@ -961,7 +961,7 @@
         "references/stage-gates.md": "plugins/scholar/references/stage-gates.md",
         "references/term_metrics.py": "plugins/scholar/scripts/term_metrics.py"
       },
-      "bytes": 40294
+      "bytes": 40674
     },
     {
       "name": "scholar-revise",
@@ -973,7 +973,7 @@
         "references/prose-rules.md": "plugins/scholar/references/prose-rules.md",
         "references/term_metrics.py": "plugins/scholar/scripts/term_metrics.py"
       },
-      "bytes": 36948
+      "bytes": 37328
     },
     {
       "name": "scholar-verify",
@@ -987,7 +987,7 @@
         "references/source-pins.md": "plugins/scholar/references/source-pins.md",
         "references/term_metrics.py": "plugins/scholar/scripts/term_metrics.py"
       },
-      "bytes": 46388
+      "bytes": 46768
     },
     {
       "name": "self-improvement-apply",
