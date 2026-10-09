@@ -1810,7 +1810,7 @@ def create_worktrees(
     when: str | None = None,
     base: str | None = None,
 ) -> Json:
-    """Create one worktree per participant and record them in ``session.json``.
+    """Create or reuse each participant's registered worktree.
 
     ``base`` is ``pre`` (the guard snapshot, detached) or ``head`` (a new branch
     ``weave/<name>/<when>``). The default is ``head`` for mutating sessions and
@@ -1820,6 +1820,26 @@ def create_worktrees(
         return _create_worktrees(session_dir, participants, when, base)
 
 
+def _check_registered_worktree(session: Json, path: Path, entry: Json, base: str | None) -> None:
+    if entry["path"] != str(path) or not path.is_dir() or (path / ".git").is_symlink():
+        msg = f"registered worktree is missing or replaced: {path}; preserve it and stop"
+        raise EngineError(msg)
+    if session.get("unguarded"):
+        return
+    top = Path(session["toplevel"])
+    common = (path / git(path, "rev-parse", "--git-common-dir")).resolve()
+    expected = (top / git(top, "rev-parse", "--git-common-dir")).resolve()
+    branch = git(path, "symbolic-ref", "-q", "--short", "HEAD", check=False) or None
+    if (
+        git(path, "rev-parse", "--show-toplevel") != str(path.resolve())
+        or common != expected
+        or branch != entry["branch"]
+        or (base is not None and (base == "pre") != (branch is None))
+    ):
+        msg = f"registered worktree identity/base differs: {path}; preserve it and stop"
+        raise EngineError(msg)
+
+
 def _create_worktrees(
     session_dir: Path, participants: Sequence[str], when: str | None, base: str | None
 ) -> Json:
@@ -1827,10 +1847,21 @@ def _create_worktrees(
     session = load_session(session_dir)
     top = session["toplevel"]
     made: Json = session.setdefault("worktrees", {})
+    for name in participants:
+        path = session_dir / "worktrees" / name
+        if path.is_symlink() or path.parent.is_symlink():
+            msg = f"worktree path is a symlink: {path}; preserve it and stop"
+            raise EngineError(msg)
+        if name in made:
+            _check_registered_worktree(session, path, made[name], base)
+        elif path.exists():
+            msg = f"unregistered worktree path already exists: {path}; preserve it and stop"
+            raise EngineError(msg)
     if session.get("unguarded"):
         for name in participants:
+            if name in made:
+                continue
             path = session_dir / "worktrees" / name
-            shutil.rmtree(path, ignore_errors=True)
             path.mkdir(mode=0o700, parents=True)
             made[name] = {
                 "path": str(path),
@@ -1843,10 +1874,9 @@ def _create_worktrees(
     base = base or ("head" if session.get("mutating") else "pre")
     when = when or datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S")
     for name in participants:
+        if name in made:
+            continue
         path = session_dir / "worktrees" / name
-        git(top, "worktree", "remove", "--force", str(path), check=False)
-        shutil.rmtree(path, ignore_errors=True)
-        git(top, "worktree", "prune", check=False)
         if base == "pre":
             git(top, "worktree", "add", "-q", "--detach", str(path), session["guard"]["pre"])
             made[name] = {"path": str(path), "branch": None}
@@ -1856,7 +1886,7 @@ def _create_worktrees(
             made[name] = {"path": str(path), "branch": branch}
         made[name]["worker_instructions"] = _worker_root_protocol(path)
         made[name]["base"] = git(path, "rev-parse", "HEAD")
-    save_session(session_dir, session)
+        save_session(session_dir, session)
     return {"ok": True, "worktrees": made}
 
 

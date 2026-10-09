@@ -62,7 +62,10 @@ Prompts and lanes
   Returns `ok`, `output`, `stderr`, `executor`, `model`, `attempts`,
   `guard_violations`, or `failure_class`.
 - `worktrees create|remove --session S --participants a,b [--base pre|head]`:
-  per-participant worktrees recorded in `session.json`.
+  per-participant worktrees recorded in `session.json`. Create reuses each
+  valid registration without changing its files, index, HEAD or original
+  capture base. Missing/replaced registrations, a conflicting base request,
+  and unregistered path collisions stop before creating any requested tree.
 - `capture --session S --pass N --participant P [--tree PATH]`: a participant's
   changes against its recorded starting commit, even if it committed inside
   the worktree; no history reset is needed. Saves a

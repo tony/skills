@@ -542,13 +542,31 @@ def test_capture_and_adopt_whole_participant(repo: Path, backend: str, participa
     sh(wt, "git", "commit", "-q", "-m", "worker ignored the no-commit protocol")
     worker_head = sh(wt, "git", "rev-parse", "HEAD")
     source_head = sh(repo, "git", "rev-parse", "HEAD")
+    (wt / "sub/new.py").write_text("x = 2\n")
+    sh(wt, "git", "add", "sub/new.py")
+    (wt / "sub/new.py").write_text("x = 3\n")
+    (wt / "uncaptured").symlink_to("missing-target")
+    worker_index = Path(sh(wt, "git", "rev-parse", "--git-path", "index").strip())
+    index = worker_index.read_bytes()
+    source_index = (repo / ".git/index").read_bytes()
+    registered = engine.load_session(sdir)["worktrees"][participant]
+    for when in (None, "a-later-pass"):
+        reused = engine.create_worktrees(sdir, [participant], when=when)["worktrees"][participant]
+        assert reused == registered
+        assert worker_index.read_bytes() == index
+        assert (repo / ".git/index").read_bytes() == source_index
+        assert sh(wt, "git", "rev-parse", "HEAD") == worker_head
+        assert sh(wt, "git", "branch", "--show-current").strip() == registered["branch"]
+        assert (wt / "sub/new.py").read_text() == "x = 3\n"
+        assert (wt / "uncaptured").readlink() == Path("missing-target")
     cap = engine.capture_tree(sdir, 1, participant, None)
     assert cap["deleted"] == ["a.txt"]
-    assert cap["changed"] == ["sub/new.py"]
+    assert cap["changed"] == ["sub/new.py", "uncaptured"]
     done = engine.adopt_files(sdir, 1, [], [], whole=participant)
-    assert done["copied"] == ["sub/new.py"]
+    assert done["copied"] == ["sub/new.py", "uncaptured"]
     assert not (repo / "a.txt").exists()
-    assert (repo / "sub" / "new.py").read_text() == "x = 1\n"
+    assert (repo / "sub" / "new.py").read_text() == "x = 3\n"
+    assert (repo / "uncaptured").readlink() == Path("missing-target")
     assert sh(wt, "git", "rev-parse", "HEAD") == worker_head
     assert sh(repo, "git", "rev-parse", "HEAD") == source_head
     assert engine.latest_session(str(repo), "execute")["applied"] is True
@@ -573,6 +591,43 @@ def test_participant_paths_are_rejected_before_worktree_mutation(repo: Path) -> 
         assert sentinel.read_text() == "owned recovery marker\n"
 
 
+@pytest.mark.parametrize("state", ["missing", "replaced", "symlink", "unregistered"])
+def test_repeated_create_refuses_changed_registration_without_removal(
+    repo: Path, state: str
+) -> None:
+    sdir = Path(init(command="execute", mutating=True)["session_dir"])
+    entry = engine.create_worktrees(sdir, ["maintainer"])["worktrees"]["maintainer"]
+    wt = Path(entry["path"])
+    (wt / "a.txt").write_text("uncaptured\n")
+    saved = wt if state == "unregistered" else wt.with_name("preserved-worker")
+    if state == "unregistered":
+        session = engine.load_session(sdir)
+        session["worktrees"] = {}
+        engine.save_session(sdir, session)
+    else:
+        wt.rename(saved)
+        if state == "symlink":
+            wt.symlink_to(saved, target_is_directory=True)
+        elif state == "replaced":
+            wt.mkdir()
+            sh(wt, "git", "init", "-q", "-b", "unrelated")
+            (wt / "keep").write_text("replacement data\n")
+    session_bytes = (sdir / "session.json").read_bytes()
+    index = (repo / ".git/index").read_bytes()
+    head = sh(repo, "git", "rev-parse", "HEAD")
+    with pytest.raises(engine.EngineError, match="worktree"):
+        engine.create_worktrees(sdir, ["builder", "maintainer"], when="repeat")
+    assert not (sdir / "worktrees/builder").exists()
+    assert (sdir / "session.json").read_bytes() == session_bytes
+    assert (repo / ".git/index").read_bytes() == index
+    assert sh(repo, "git", "rev-parse", "HEAD") == head
+    assert (saved / "a.txt").read_text() == "uncaptured\n"
+    if state == "replaced":
+        assert (wt / "keep").read_text() == "replacement data\n"
+    if state == "symlink":
+        assert wt.is_symlink()
+
+
 def test_read_only_worktrees_start_from_the_snapshot(repo: Path) -> None:
     (repo / "a.txt").write_text(DIRTY_A)
     sdir = Path(init()["session_dir"])
@@ -588,6 +643,10 @@ def test_read_only_worktrees_start_from_the_snapshot(repo: Path) -> None:
         sh(repo, "sh", "-c", prefix + "touch " + name)
         assert (wt / name).exists()
         assert not (repo / name).exists()
+    assert engine.create_worktrees(sdir, ["maintainer"])["worktrees"] == made["worktrees"]
+    with pytest.raises(engine.EngineError, match="identity/base"):
+        engine.create_worktrees(sdir, ["maintainer"], base="head")
+    assert (wt / "first").exists()
     engine.remove_worktrees(sdir, None)
     assert not wt.exists()
 
@@ -1074,6 +1133,10 @@ def test_no_repo_mode_runs_read_only_commands_unguarded(
     made = engine.create_worktrees(sdir, ["maintainer"])["worktrees"]
     assert Path(made["maintainer"]["path"]).is_dir()
     assert not any(Path(made["maintainer"]["path"]).iterdir())
+    marker = Path(made["maintainer"]["path"]) / "uncaptured"
+    marker.write_text("worker\n")
+    assert engine.create_worktrees(sdir, ["maintainer"])["worktrees"] == made
+    assert marker.read_text() == "worker\n"
     engine.remove_worktrees(sdir, None)
 
 

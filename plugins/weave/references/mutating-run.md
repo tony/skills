@@ -45,7 +45,9 @@ $ python3 <engine> pass-dir \
 
 Then repeat the skill's dispatch and analysis phases with pass `<N>`. Keep
 every registered worktree and redispatch its participant into the same one,
-under either backend. Use a fresh host Task agent with the same complete
+under either backend. `worktrees create` reuses valid registrations. If its
+identity check fails, stop and preserve the directory; do not remove or
+recreate it to retry. Use a fresh host Task agent with the same complete
 `worker_instructions`; reference prior artifacts by path for host workers and
 inline them for external CLI lanes.
 
