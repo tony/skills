@@ -51,6 +51,7 @@ def make_repo(path: Path) -> Path:
     return path
 
 
+@pytest.mark.integration(reason="executes the worktree-path CLI")
 def test_slug_truncates_at_word_boundary(tmp_path: Path) -> None:
     title = tmp_path / "t.txt"
     title.write_text("Handle the extremely long webhook retry timeout configuration case\n")
@@ -61,6 +62,7 @@ def test_slug_truncates_at_word_boundary(tmp_path: Path) -> None:
     assert name == "tea-123-handle-the-extremely-long-webhook-retry-timeout"
 
 
+@pytest.mark.integration(reason="executes the worktree-path CLI")
 def test_slug_hostile_title_is_inert(tmp_path: Path) -> None:
     title = tmp_path / "t.txt"
     title.write_text("$(touch pwned); `id` Fix\n")
@@ -73,12 +75,14 @@ def test_slug_long_single_word() -> None:
     assert len(wp.branch_name("x" * 100, "tea-1")) == 60
 
 
+@pytest.mark.integration(reason="compares against the native cksum CLI")
 @pytest.mark.parametrize("data", [b"", b"a", b"123456789", b"/home/user/work/shop"])
 def test_cksum_matches_system(data: bytes) -> None:
     out = subprocess.run(["cksum"], input=data, capture_output=True, check=True)
     assert wp.posix_cksum(data) == int(out.stdout.split()[0])
 
 
+@pytest.mark.integration(reason="uses owned Git worktrees and the worktree-path CLI")
 def test_path_local_from_linked_worktree(tmp_path: Path) -> None:
     repo = make_repo(tmp_path / "shop")
     linked = tmp_path / "shop-other"
@@ -92,6 +96,7 @@ def test_path_local_from_linked_worktree(tmp_path: Path) -> None:
     assert done.stdout.strip() == f"{repo}-feat-tea-1-login"
 
 
+@pytest.mark.integration(reason="uses an owned Git repository and the worktree-path CLI")
 def test_path_temp(tmp_path: Path) -> None:
     repo = make_repo(tmp_path / "shop")
     done = run(repo, "path", "--branch", "a/b", "--temp", env={**ENV, "TMPDIR": "/var/tmp/x/"})
@@ -99,6 +104,7 @@ def test_path_temp(tmp_path: Path) -> None:
     assert done.stdout.strip() == f"/var/tmp/x/action-worktrees/shop-{digest}/a-b"
 
 
+@pytest.mark.integration(reason="uses an owned Git repository and the worktree-path CLI")
 def test_guard_refuses_repo_at_or_above_home(tmp_path: Path) -> None:
     real_home = tmp_path / "real" / "home"
     repo = make_repo(real_home)
@@ -109,6 +115,7 @@ def test_guard_refuses_repo_at_or_above_home(tmp_path: Path) -> None:
     assert done.stdout.startswith("refuse:")
 
 
+@pytest.mark.integration(reason="uses an owned Git repository and the worktree-path CLI")
 def test_guard_refuses_repo_above_home(tmp_path: Path) -> None:
     repo = make_repo(tmp_path / "dots")
     (repo / "u").mkdir()
@@ -116,6 +123,7 @@ def test_guard_refuses_repo_above_home(tmp_path: Path) -> None:
     assert done.returncode == wp.REFUSED
 
 
+@pytest.mark.integration(reason="uses an owned Git repository and the worktree-path CLI")
 def test_guard_allows_project_under_home(tmp_path: Path) -> None:
     (tmp_path / "home").mkdir()
     repo = make_repo(tmp_path / "home" / "app")
@@ -124,6 +132,9 @@ def test_guard_allows_project_under_home(tmp_path: Path) -> None:
     assert done.stdout == ""
 
 
+@pytest.mark.integration(
+    reason="executes the worktree-path CLI and native Git outside a repository"
+)
 def test_guard_outside_repo_exits_1(tmp_path: Path) -> None:
     (tmp_path / "plain").mkdir()
     done = run(

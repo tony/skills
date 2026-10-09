@@ -51,6 +51,7 @@ def test_report_shape_accepts_observation_and_rejects_extra_claim_slots() -> Non
         assert not re.fullmatch(pattern, invalid)
 
 
+@pytest.mark.integration(reason="executes the relay shell selftest")
 @needs_tools
 def test_selftest() -> None:
     result = subprocess.run(
@@ -63,6 +64,7 @@ def test_selftest() -> None:
     assert "selftest ok" in result.stdout
 
 
+@pytest.mark.integration(reason="executes the relay CLI with an owned socket and nc stub")
 @needs_tools
 def test_socket_send_maps_nc_failure_to_exit_6() -> None:
     with tempfile.TemporaryDirectory() as tmp:
@@ -89,6 +91,7 @@ def test_socket_send_maps_nc_failure_to_exit_6() -> None:
     assert result.returncode == 6, result.stderr
 
 
+@pytest.mark.integration(reason="executes the relay CLI with an owned socket and nc stub")
 @needs_tools
 def test_socket_send_adds_n_when_help_exits_nonzero() -> None:
     with tempfile.TemporaryDirectory() as tmp:
@@ -121,6 +124,7 @@ def test_socket_send_adds_n_when_help_exits_nonzero() -> None:
         assert "-N" in log.read_text()
 
 
+@pytest.mark.integration(reason="executes the relay shell CLI")
 @needs_tools
 @pytest.mark.parametrize(
     "extra",
@@ -135,6 +139,7 @@ def test_envelope_rejects_header_injection(extra: list[str]) -> None:
     assert result.stdout == ""
 
 
+@pytest.mark.integration(reason="executes the relay CLI with an owned socket and nc stub")
 @needs_tools
 def test_file_payload_preserves_shell_metacharacters(tmp_path: pathlib.Path) -> None:
     body = "It's literal: $(touch injected) `touch backtick` RELAY_BODY_END"

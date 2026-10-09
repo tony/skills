@@ -9,6 +9,10 @@ import os
 import subprocess
 from pathlib import Path
 
+import pytest
+
+pytestmark = pytest.mark.integration(reason="uses owned Git repositories and the rebase shell CLI")
+
 SCRIPT = Path(__file__).with_name("rebase-todo.sh")
 REFUSED = 2
 

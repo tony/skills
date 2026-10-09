@@ -86,6 +86,7 @@ def tier(
     return json.loads(out.stdout)
 
 
+@pytest.mark.integration(reason="executes the tier CLI and a shell stub")
 def test_ok_passes_prompt_as_one_last_argument(tmp_path: Path) -> None:
     result = tier(tmp_path, stub(tmp_path, 'echo "$#:${@: -1}"'), prompt="two words\nline2")
     assert result["class"] == "ok"
@@ -93,6 +94,7 @@ def test_ok_passes_prompt_as_one_last_argument(tmp_path: Path) -> None:
     assert result["stdout"] == "3:two words\nline2\n"
 
 
+@pytest.mark.integration(reason="executes the tier CLI and shell stubs")
 def test_credit_from_stderr_only(tmp_path: Path) -> None:
     failing = tier(tmp_path, stub(tmp_path, "echo RESOURCE_EXHAUSTED >&2; exit 1"))
     assert failing["class"] == "credit"
@@ -102,6 +104,7 @@ def test_credit_from_stderr_only(tmp_path: Path) -> None:
     assert bare["class"] == "crash"
 
 
+@pytest.mark.integration(reason="executes the tier CLI and shell stubs")
 def test_auth_and_unknown_model(tmp_path: Path) -> None:
     assert tier(tmp_path, stub(tmp_path, "echo 'Not logged in' >&2; exit 1"))["class"] == "auth"
     assert (
@@ -110,11 +113,13 @@ def test_auth_and_unknown_model(tmp_path: Path) -> None:
     )
 
 
+@pytest.mark.integration(reason="executes the tier CLI and shell stubs")
 def test_empty_and_rate_limit(tmp_path: Path) -> None:
     assert tier(tmp_path, stub(tmp_path, "exit 0"))["class"] == "empty"
     assert tier(tmp_path, stub(tmp_path, "echo 'rate limit' >&2; exit 1"))["class"] == "rate-limit"
 
 
+@pytest.mark.integration(reason="terminates an owned process group through the tier CLI")
 def test_timeout_kills_the_process_group(tmp_path: Path) -> None:
     result = tier(tmp_path, stub(tmp_path, "sleep 30 & sleep 30"), timeout="0.5")
     assert result["class"] == "timeout"
@@ -122,12 +127,14 @@ def test_timeout_kills_the_process_group(tmp_path: Path) -> None:
     assert float(str(result["elapsed"])) < 5
 
 
+@pytest.mark.integration(reason="executes the tier CLI with a missing child binary")
 def test_missing_binary_is_crash(tmp_path: Path) -> None:
     result = tier(tmp_path, tmp_path / "absent")
     assert result["class"] == "crash"
     assert result["exit_code"] == 127
 
 
+@pytest.mark.integration(reason="executes the tier CLI and a shell stub")
 def test_oversized_prompt_is_passed_as_a_file_reference(tmp_path: Path) -> None:
     result = tier(tmp_path, stub(tmp_path, 'echo "${@: -1}"'), prompt="x" * 200_000)
     assert result["class"] == "ok"
@@ -137,11 +144,13 @@ def test_oversized_prompt_is_passed_as_a_file_reference(tmp_path: Path) -> None:
 HELP_STUB = 'if [ "$1" = --help ]; then echo "  --sandbox <MODE>"; exit 0; fi; echo ran'
 
 
+@pytest.mark.integration(reason="executes the tier CLI and a shell help stub")
 def test_required_flag_present_runs_the_tier(tmp_path: Path) -> None:
     result = tier(tmp_path, stub(tmp_path, HELP_STUB), require=("--sandbox",))
     assert result["class"] == "ok"
 
 
+@pytest.mark.integration(reason="executes a shell help stub")
 def test_codex_help_advertises_canonical_flag_not_alias(tmp_path: Path) -> None:
     flag = "--dangerously-bypass-approvals-and-sandbox"
     binary = stub(
@@ -152,6 +161,7 @@ def test_codex_help_advertises_canonical_flag_not_alias(tmp_path: Path) -> None:
     assert runner.missing_flags([str(binary), "exec", "--yolo"], ["--yolo"]) == ["--yolo"]
 
 
+@pytest.mark.integration(reason="executes the tier CLI and a shell help stub")
 def test_required_flag_missing_runs_nothing(tmp_path: Path) -> None:
     marker = tmp_path / "ran"
     body = f'if [ "$1" = --help ]; then echo "  --other"; exit 0; fi; touch {marker}; echo ran'
@@ -161,12 +171,14 @@ def test_required_flag_missing_runs_nothing(tmp_path: Path) -> None:
     assert not marker.exists()
 
 
+@pytest.mark.integration(reason="executes the tier CLI and a shell help stub")
 def test_flag_must_match_whole_word(tmp_path: Path) -> None:
     body = 'if [ "$1" = --help ]; then echo "--sandbox-mode"; exit 0; fi; echo ran'
     result = tier(tmp_path, stub(tmp_path, body), require=("--sandbox",))
     assert result["class"] == "unsupported-flag"
 
 
+@pytest.mark.integration(reason="executes the tier CLI argument validation")
 @pytest.mark.parametrize("timeout", ["5m", "nan", "inf", "0", "-1"])
 def test_invalid_timeout_stops_before_help_or_task(tmp_path: Path, timeout: str) -> None:
     prompt_file = tmp_path / "prompt.txt"
@@ -218,6 +230,7 @@ def repo(tmp_path: Path) -> Path:
     return tmp_path
 
 
+@pytest.mark.integration(reason="uses an owned Git repository and the tier CLI")
 @pytest.mark.parametrize(
     ("edit", "path"),
     [
@@ -240,6 +253,7 @@ def test_failed_tier_checks_dirty_files_and_index_from_subdirectory(
     assert result["state_check"] == {"status": "changed", "paths": [path], "history_changed": False}
 
 
+@pytest.mark.integration(reason="uses an owned Git repository and the tier CLI")
 def test_help_probe_edits_are_included_in_state_check(repo: Path) -> None:
     result = tier(
         repo,
@@ -254,16 +268,19 @@ def test_help_probe_edits_are_included_in_state_check(repo: Path) -> None:
     }
 
 
+@pytest.mark.integration(reason="uses an owned Git repository and the tier CLI")
 def test_detaching_head_is_a_change_even_when_files_match(repo: Path) -> None:
     result = tier(repo, stub(repo, "git checkout --detach -q; exit 1"))
     assert result["state_check"] == {"status": "changed", "paths": [], "history_changed": True}
 
 
+@pytest.mark.integration(reason="uses an owned Git repository and the tier CLI")
 def test_unchanged_dirty_tree_allows_fallback(repo: Path) -> None:
     result = tier(repo, stub(repo, "exit 1"))
     assert result["state_check"] == {"status": "unchanged", "paths": [], "history_changed": False}
 
 
+@pytest.mark.integration(reason="uses an owned Git repository and the tier CLI")
 def test_special_file_reports_why_state_is_unavailable(repo: Path) -> None:
     (repo / "pipe").write_text("tracked\n")
     subprocess.run(["git", "add", "pipe"], cwd=repo, check=True)
@@ -277,6 +294,7 @@ def test_special_file_reports_why_state_is_unavailable(repo: Path) -> None:
     }
 
 
+@pytest.mark.integration(reason="uses an owned Git repository and the tier CLI")
 def test_tracked_configuration_is_checked_even_when_ignored(repo: Path) -> None:
     (repo / ".gitignore").write_text(".gitmodules\n")
     (repo / ".gitmodules").write_text("original\n")
@@ -289,6 +307,7 @@ def test_tracked_configuration_is_checked_even_when_ignored(repo: Path) -> None:
     }
 
 
+@pytest.mark.integration(reason="uses an owned Git repository and the tier CLI")
 @pytest.mark.parametrize("channel", ["stdout", "stderr", "help"])
 def test_invalid_output_bytes_retain_state_check(repo: Path, channel: str) -> None:
     body = "printf changed >tracked.txt; printf '\\377'"
@@ -302,6 +321,9 @@ def test_invalid_output_bytes_retain_state_check(repo: Path, channel: str) -> No
     }
 
 
+@pytest.mark.integration(
+    reason="terminates owned help-probe processes and verifies file-lock release"
+)
 @pytest.mark.parametrize("parent_exits", [False, True])
 def test_help_probe_terminates_children(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, parent_exits: bool

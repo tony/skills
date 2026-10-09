@@ -10,7 +10,10 @@ import subprocess
 import sys
 from pathlib import Path
 
+import pytest
 import render_apply  # pyright: ignore[reportImplicitRelativeImport]
+
+pytestmark = pytest.mark.integration(reason="uses owned Git repositories and the autosquash CLI")
 
 SCRIPT = Path(__file__).resolve().parent / "autosquash.py"
 EXIT_CONFLICT = 10

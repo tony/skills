@@ -15,6 +15,8 @@ import pytest
 if TYPE_CHECKING:
     import pathlib
 
+pytestmark = pytest.mark.integration(reason="executes native Git repository queries")
+
 
 def _git(cwd: pathlib.Path, *args: str) -> None:
     subprocess.run(

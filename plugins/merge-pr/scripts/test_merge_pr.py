@@ -12,6 +12,8 @@ from pathlib import Path
 
 import pytest
 
+pytestmark = pytest.mark.integration(reason="uses an owned Git repository and the merge-pr CLI")
+
 SCRIPT = Path(__file__).with_name("merge_pr.py")
 GH_STUB = """#!/bin/sh
 case "$1 $2" in
