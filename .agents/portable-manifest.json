@@ -699,9 +699,10 @@
       ],
       "bundled": {
         "references/bump_pin.py": "plugins/release/scripts/bump_pin.py",
+        "references/consumer_inventory.py": "plugins/release/scripts/consumer_inventory.py",
         "references/prose-rules.md": "plugins/release/references/prose-rules.md"
       },
-      "bytes": 22972
+      "bytes": 50452
     },
     {
       "name": "research-assess",
@@ -1618,6 +1619,7 @@
     "plugins/rebase/references/prose-rules.md": 1,
     "plugins/rebase/scripts/replay.py": 1,
     "plugins/release/scripts/bump_pin.py": 1,
+    "plugins/release/scripts/consumer_inventory.py": 1,
     "plugins/research/references/analysis.md": 1,
     "plugins/research/references/assessment.md": 1,
     "plugins/research/references/continue.md": 1,

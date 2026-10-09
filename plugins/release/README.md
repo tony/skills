@@ -80,7 +80,9 @@ Rolls out published releases to local consumer repos.
 - `--roots`: names the directories that hold your checkouts.
 - `--push`: pushes the commits to trunk; without it they stay local.
 
-Pin edits run `scripts/bump_pin.py`, a standard-library Python script.
+Read-only discovery uses `scripts/consumer_inventory.py` to inventory
+repositories and inspect branch inputs. Pin edits use `scripts/bump_pin.py`;
+both scripts use only Python's standard library.
 
 ## Shared reference
 
@@ -90,5 +92,6 @@ templates.
 ## Prerequisites
 
 - git and gh.
-- python3 (3.9 or newer) on `PATH`, for `scripts/bump_pin.py`.
+- python3 (3.9 or newer) on `PATH`, for the bundled scripts.
+- POSIX process groups for downstream repository discovery and checkout checks.
 - The target project's toolchain (as required by quality gates).

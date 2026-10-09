@@ -58,37 +58,80 @@ the user names at the gate; opening pull requests is out of scope.
 
 ## Phase 2: Discover Consumers
 
-Scan each workspace root for repos whose manifest depends on the package.
-Take the manifest names from the ecosystem the package is published to
-(`pyproject.toml` and `package.json` below are one example; add
-requirements files, `Cargo.toml`, `go.mod`, and lockfile-only consumers where
-the ecosystem uses them). Match the whole
-package name, so `foo` does not hit `foo-bar`. PyPI treats runs of `-`, `_`,
-and `.` as one separator and ignores case (PEP 503), so for a PyPI package
-lowercase the name, split it on those separators, and rejoin the parts with
-`[-_.]+` and match case-insensitively: `Foo.Bar` becomes `foo[-_.]+bar`.
-For other ecosystems match the name exactly, escaping `.`:
+Inventory repositories before searching for dependencies. Resolve
+`references/consumer_inventory.py` against this SKILL.md's directory and
+write its absolute path literally in each command. Resolve the user's root
+globs to explicit directories without evaluating shell text; missing or ambiguous
+roots need clarification. Never show the helper or local root paths in replies.
 
 ```console
-$ rg -i -l '(^|[^A-Za-z0-9_.-])foo[-_.]+bar([^A-Za-z0-9_.-]|$)' \
-    --max-depth 2 \
-    -g pyproject.toml \
-    -g package.json \
-    -g requirements*.txt \
-    <root>
+$ python3 <absolute-consumer-inventory.py> inventory <root> <other-root> > <new-inventory.json>
 ```
 
-For each hit, record:
+The helper scans nested and hidden directories without ignore filters. Its JSON
+keeps each checkout and its Git/common-directory identities, available refs and
+explicit omissions. It never fetches or checks out; exit 1 means incomplete
+evidence, 2 means usage failure. Read errors, symlink boundaries, missing metadata
+and resource limits must not become "no consumers." Resolve coverage gaps or
+report them as outstanding per `references/prose-rules.md`; a partial
+inventory cannot establish that every maintained consumer was found.
 
-- **Worktree?** A `.git` that is a file marks a linked worktree; skip it,
-  the primary checkout is found on its own.
+Retain each full JSON result in a fresh run-owned artifact outside every consumer
+checkout, including failed or incomplete attempts. Inspect `complete`,
+`omissions`, repository/branch identities and the relevant tree or checkout
+classifications selectively; decode only the requested inputs needed for review.
+Do not print the full tree, index and working records into the conversation.
+
+The byte budget covers Git output, requested blobs and every tracked regular
+file read during checkout validation. On a resource-limit omission, retain the
+unresolved roots or branch row and the limits used. Review the observed cost
+and choose an explicit finite budget for the next invocation; place
+`--max-entries`, `--max-bytes` and `--max-seconds` before `inventory` or `snapshot`.
+Rerun the incomplete scope with those reviewed bounds and a fresh artifact.
+If coverage still cannot be established within the agreed bounds, keep it under
+`## Stopped repos`; never drop roots, branches or inputs to obtain completion.
+
+Select trunk and any user-named maintained branches for every candidate repo
+before excluding nonconsumers. Ask about additional branches now, not only for
+repositories with a current-checkout match. Keep separate repo/branch rows.
+Group checkouts by common-directory identity without dropping a distinct branch;
+a gitfile primary or an in-scope linked checkout is not a reason to skip.
+Do not select an out-of-scope primary in place of the supplied checkout.
+
+Read each full branch ref without switching the checkout:
+
+```console
+$ python3 <absolute-consumer-inventory.py> snapshot \
+    --repo <checkout> \
+    --ref refs/heads/<branch> > <new-snapshot.json>
+```
+
+Use the complete recursive tree to find manifest, workspace, lock and gate inputs
+for the project's ecosystem, including nested or lockfile-only consumers. Repeat
+the snapshot with `--read <tree-path>` for every relevant input; it returns exact
+blob identities and base64 bytes. Read referenced gate scripts/configuration too.
+Missing refs/objects remain unverified; the helper cannot establish remote
+freshness. Resolve every reported gitlink or symlink boundary separately before
+claiming coverage. An uninitialized submodule needs its own supplied checkout;
+never create one during discovery. A submodule's identity and branch are distinct
+from its parent's, and approval does not authorize changing the parent's gitlink.
+
+Use project tooling or inspect actual dependency declarations to establish a
+consumer. Whole-file name matches only identify candidates; ambiguous formats
+remain unverified. Respect ecosystem name normalization, including PyPI's
+case-insensitive equivalence of runs of `-`, `_` and `.`. This helper does not
+parse or authorize dependency edits.
+
+For each repo/branch, record:
+
+- **Snapshot**: checkout/Git/common identity, full branch ref, observed commit
+  and exact input paths/blob identities. These are local observations.
 - **Trunk**: `git symbolic-ref refs/remotes/<remote>/HEAD`, falling
   back to whichever of `main`/`master` exists. `<remote>` is trunk's
   upstream remote (`origin` by default).
 - **Owner**: from `git remote get-url <remote>`. Group repos by owner
   org; the user confirms which orgs are in scope at the gate.
-- **Current pin(s)**: the pinned version(s) of the package and any
-  siblings in the manifest.
+- **Current pin(s)**: that branch's versions of the package and any siblings.
 - **Source overrides**: dependency sources that shadow the index (for
   example `[tool.uv.sources]` entries, npm `file:`/`link:`/`git:` specs).
   Remove the override so the published package is used, as its own commit
@@ -100,18 +143,27 @@ For each hit, record:
   release at lock time, so add it as its own commit before the bump.
 - **Gates**: the repo's own quality checks, from its AGENTS.md / CLAUDE.md.
   Note when none are documented.
-- **Dirty?** Repos with uncommitted changes get reported and skipped
-  unless the user says otherwise.
+- **Checkout state**: for the checked-out branch, repeat the snapshot with
+  `--require-checkout` and the relevant `--read` inputs. It compares the selected
+  commit with non-converting index records and every tracked regular file's raw
+  bytes and executable bit, including files outside `--read`. It reports staged,
+  raw-byte/mode, untracked and unsupported states without executing filters.
+  Exact byte equality can pass with an applicable identity filter. Transformed
+  bytes, sparse entries, symlinks and submodules need separate inspection;
+  a refusal cannot establish cleanliness. Never replace this check with status
+  or disable filters to obtain a pass. Report and skip changed or unresolved
+  rows until their state is handled explicitly.
 
 ## Phase 3: Confirmation Gate (mandatory)
 
-Present the plan before mutating anything:
+Present the plan before mutating anything, per `references/prose-rules.md`:
 
-- Per repo: path, owner, branch to update, current pin → new version,
+- Per repo/branch: repository label, owner, observed commit, current pin → new version,
   any prep commits needed (source-override removal, cooldown
   exemption additions), and the gates it will run (or that none are
   documented).
-- Skipped repos with reasons (worktree, dirty, org out of scope).
+- Skipped repos and unresolved coverage, each with its reason. Do not silently
+  omit unsearched roots, branches or input formats from the rollout target.
 - Whether pushes will happen (only with `--push`).
 - Every mutation outside the working trees: the resolver cache clean, the
   per-key `gh cache delete` of that repo's dependency caches, and the failed-run `gh run rerun`
@@ -123,15 +175,16 @@ Print the plan in this shape, as plain text with plain bullets and no bold:
 Plan: example-pkg 1.4.0 → 1.5.0, pushes on (--push)
 
 - app-one (acme) on main: pin 1.4.0 → 1.5.0, prep commit removing the uv source override, gates: make test
-- app-two (acme) on main and release/1.x: pin 1.4.0 → 1.5.0, no prep, gates: none documented
+- app-two (acme) on main: pin 1.4.0 → 1.5.0, no prep, gates: none documented
+- app-two (acme) on release/1.x: pin 1.3.0 → 1.5.0, no prep, gates: make test
 - Skipped: app-three (dirty tree), tools-fork (owner outside scope)
 - Outside the working trees: uv cache clean example-pkg, gh cache delete per dependency-cache key in each pushed repo, gh run rerun --failed at most once per run
 ```
 
-Ask the user via `ask-user-choice` which owner orgs are in scope and
-whether any repo needs a branch override or an **additional** long-lived
-branch beyond trunk (the user names it; the same per-repo procedure runs on
-it). Do not proceed without confirmation. Without `ask-user-choice` (Codex,
+Ask the user via `ask-user-choice` to confirm owner orgs and the complete
+repo/branch plan. A changed or additional branch returns to Discovery for its
+own inputs and confirmation; it never inherits another row's pins or gates.
+Do not proceed without confirmation. Without `ask-user-choice` (Codex,
 headless runs), print the plan and stop; a request to run the command is not
 confirmation of the plan.
 
@@ -141,11 +194,28 @@ Repos are independent: parallelize with background agents batched by owner
 org (up to 4 batches), or run sequentially. Each repo, on each of its
 confirmed branches:
 
-0. **Fresh resolver cache**: once, after the gate and before the first
-   lock, clear the package manager's resolver cache so every lock resolves
-   against the newly published files (uv: `uv cache clean <package>`, once per
-   package and sibling).
-1. **Sync**: `git checkout <branch> && git pull --ff-only`.
+0. **Sync and revalidate**: check the approved checkout identity and its current
+   branch with the helper's `--require-checkout`, then perform the authorized
+   checkout and fast-forward sync. Observe branch, HEAD/refs, index and working
+   state after each command, even on failure. Stop the row on failure, unreadable
+   state or unexpected changes; preserve its observed effects and report per
+   `references/prose-rules.md`.
+
+   Reread that branch's pins, overrides, resolver settings, lock inputs and gates
+   before any cache clean, prep change, pin edit or lock step. Re-run its snapshot
+   with every approved `--read` input plus `--expect-commit <approved-oid>` and
+   `--require-checkout`. Raw equality is narrower than project-normalized Git
+   cleanliness: content transformations remain unresolved, never silently
+   normalized, bypassed or repaired. Resolve every reported coverage limit.
+
+   If sync changed the commit, inputs or proposed work, present the revised row
+   and obtain fresh approval; headless runs stop. Rediscover added or removed
+   inputs rather than relying on the old list. Preserve the synchronized state
+   without reset/stash. An unchanged row can proceed. After any approval, repeat
+   the check immediately before execution; observations do not lock out writers.
+1. **Fresh resolver cache**: only after revalidation, perform the approved cache
+   clean before the first lock (uv: `uv cache clean <package>`, once per package
+   and sibling). Revalidate every additional branch independently.
 2. **Prep commits** (each on its own, only if discovery flagged it):
    - Remove the source override so the repo consumes the published
      index package. Commit it alone, in the repo's own commit style.
@@ -251,15 +321,24 @@ For every pushed repo:
 
 ## Output
 
-1. Hero line: `✓ <package> <old> → <new> across N repos`, or
+Write the report per `references/prose-rules.md` in this order:
+
+1. Hero line: when discovery coverage is complete,
+   `✓ <package> <old> → <new> across N repos`, or
    `⚠ <package> <old> → <new>: K of N repos stopped` when any repo stopped.
    Example: `⚠ libvcs 0.37.0 → 0.38.0: 1 of 3 repos stopped`.
+   When roots, maintained branches or input formats remain unverified, use
+   `⚠ <package> <old> → <new>: partial rollout; consumer total unverified`.
+   Do not invent a denominator from the discovered subset.
 2. `## Rollout summary`: per repo, branch, prep commits, bump commit,
    pushed or local, CI status.
 3. `## Stopped repos`: any halted on prerelease warnings, dirty trees, rejected pushes, or
    persistent CI failures, each with what the user should look at.
-4. Next-step `ask-user-choice` panel: rerun failed CI checks, retry stopped
-   repos, push the local commits, or done. Each choice needs its own
+   Include unresolved roots, maintained branches, input formats and exhausted
+   resource bounds here, even when their consumer repositories are unknown.
+   Give each a label, the coverage gap and the action needed to resolve it.
+4. Next-step `ask-user-choice` panel: resolve discovery gaps, rerun failed CI
+   checks, retry stopped repos, push the local commits, or done. Each choice needs its own
    confirmation of the exact repos. Without `ask-user-choice`, list the
    options and stop.
 
@@ -288,7 +367,7 @@ whether the same job failed before the bump, as a bullet under
 Reply in this shape, as plain text outside any code fence, with plain bullets, no bold (never `- **Label:** ...`), and no local paths:
 
 ```text
-✓ libvcs 0.37.0 → 0.38.0 across 2 repos
+⚠ libvcs 0.37.0 → 0.38.0: 1 of 3 repos stopped
 
 ## Rollout summary
 
