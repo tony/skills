@@ -554,7 +554,9 @@ def restore(memory: pathlib.Path, cwd: pathlib.Path, home: pathlib.Path) -> dict
                 "restored": False,
                 "reason": "memory directory is inside the tree and not ignored",
             }
-    _git(root, "reset", "--hard", "HEAD")
+    reset = _git(root, "reset", "--hard", "HEAD")
+    if reset.returncode != 0:
+        return {"restored": False, "reason": reset.stderr.strip() or "git reset failed"}
     proc = _git(root, "clean", "-fd")
     return {"restored": proc.returncode == 0, "reason": proc.stderr.strip() or None}
 

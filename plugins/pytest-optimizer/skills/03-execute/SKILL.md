@@ -132,7 +132,9 @@ For each plan item not yet applied:
        --memory-dir <memory-dir>
    ```
 
-   Exit 1 means it refused and changed nothing: stop and report its `reason`.
+   If reset fails, the script does not run `git clean`. Exit 1
+   means restoration did not complete: stop and report its `reason`, preserving
+   the remaining state for inspection.
    Otherwise mark the item `skipped` with the reason, mark every item whose
    `depends_on` names it `skipped` too ("depends on a skipped item"), and
    continue. The tree was clean before the item, so `git clean -fd` removes
