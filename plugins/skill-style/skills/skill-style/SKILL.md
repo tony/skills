@@ -74,10 +74,6 @@ Name one and the line stays. Name none and the line goes. *Adds
 context*, *reads better*, *rounds it out*, and *harmless* are not
 names; they are the absence of one.
 
-Run it on whole blocks too. A section whose every line survives
-individually still goes when the agent already does that by default;
-the test asks what breaks, not what is true.
-
 ## Lines the test never touches
 
 The test judges claims. These are not claims:
@@ -97,6 +93,10 @@ The test judges claims. These are not claims:
   paid for by someone else.
 
 Where a fence and its prose say the same thing, the prose goes.
+
+Exclude protected content before applying the test to a whole block.
+A block's remaining prose may go when it only describes default
+behavior. Keep the protected content when removing its wrapper.
 
 ## Sections
 

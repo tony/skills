@@ -76,10 +76,11 @@ is.
 
 ### Block-level ablation
 
-Run the test on whole sections too. A section whose lines each survive
-in isolation still goes when the section as a whole describes the
-agent's default behavior. "Analyze the code, then suggest
-improvements" survives line by line and teaches nothing.
+First exclude the protected content listed in the skill body. Then
+test whole blocks of remaining prose: "Analyze the code, then suggest
+improvements" describes default behavior and teaches nothing. Removing
+a heading or table around protected content does not permit deleting
+that content.
 
 ### The ledger
 
