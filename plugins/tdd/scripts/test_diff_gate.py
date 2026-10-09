@@ -6,10 +6,12 @@
 from __future__ import annotations
 
 import os
+import stat
 import subprocess
 import sys
 from pathlib import Path
 
+import diff_gate  # pyright: ignore[reportImplicitRelativeImport]
 import pytest
 
 SCRIPT = Path(__file__).resolve().parent / "diff_gate.py"
@@ -23,6 +25,26 @@ ENV = {
     "GIT_CONFIG_SYSTEM": os.devnull,
 }
 PATTERNS = ["--pattern", "**/test_*.py", "--pattern", "tests/**"]
+
+
+@pytest.mark.parametrize(
+    ("returncode", "diagnostic"),
+    [
+        (0, "warning: could not open directory 'tests/': Permission denied\n"),
+        (128, "fatal: unable to read index\n"),
+        (128, ""),
+    ],
+)
+def test_git_diagnostics_or_failure_stop_observation(
+    monkeypatch: pytest.MonkeyPatch, returncode: int, diagnostic: str
+) -> None:
+    def run(*_args: object, **_kwargs: object) -> subprocess.CompletedProcess[str]:
+        return subprocess.CompletedProcess(["git"], returncode, stdout="", stderr=diagnostic)
+
+    monkeypatch.setattr(subprocess, "run", run)
+    with pytest.raises(SystemExit) as error:
+        diff_gate.changed_paths()
+    assert str(error.value) == f"git status incomplete (exit {returncode}): {diagnostic.strip()}"
 
 
 @pytest.fixture
@@ -47,11 +69,13 @@ def gate(repo: Path, mode: str) -> tuple[int, list[str]]:
     return done.returncode, done.stdout.split()
 
 
+@pytest.mark.integration(reason="uses an owned Git repository and the gate CLI")
 def test_clean_tree_passes(repo: Path) -> None:
     assert gate(repo, "test-only") == (0, [])
     assert gate(repo, "source-only") == (0, [])
 
 
+@pytest.mark.integration(reason="uses an owned Git repository and the gate CLI")
 def test_test_only_flags_source_and_untracked_source(repo: Path) -> None:
     (repo / "test_a.py").write_text("t = 2\n")
     (repo / "a.py").write_text("x = 2\n")
@@ -59,6 +83,7 @@ def test_test_only_flags_source_and_untracked_source(repo: Path) -> None:
     assert gate(repo, "test-only") == (1, ["a.py", "b.py"])
 
 
+@pytest.mark.integration(reason="uses an owned Git repository and the gate CLI")
 def test_source_only_flags_modified_and_untracked_tests(repo: Path) -> None:
     (repo / "a.py").write_text("x = 2\n")
     (repo / "tests").mkdir()
@@ -67,6 +92,7 @@ def test_source_only_flags_modified_and_untracked_tests(repo: Path) -> None:
     assert gate(repo, "source-only") == (1, ["test_a.py", "tests/case.py"])
 
 
+@pytest.mark.integration(reason="uses an owned Git repository and the gate CLI")
 def test_untracked_caches_are_ignored(repo: Path) -> None:
     for cache in ("__pycache__", ".pytest_cache", "node_modules/.cache"):
         (repo / cache).mkdir(parents=True)
@@ -75,6 +101,7 @@ def test_untracked_caches_are_ignored(repo: Path) -> None:
     assert gate(repo, "test-only") == (0, [])
 
 
+@pytest.mark.integration(reason="uses an owned Git repository and the gate CLI")
 def test_tracked_cache_change_still_counts(repo: Path) -> None:
     (repo / "__pycache__").mkdir()
     (repo / "__pycache__" / "k.txt").write_text("1")
@@ -84,6 +111,50 @@ def test_tracked_cache_change_still_counts(repo: Path) -> None:
     assert gate(repo, "test-only") == (1, ["__pycache__/k.txt"])
 
 
+@pytest.mark.integration(reason="uses an owned Git repository and the gate CLI")
 def test_staged_rename_counts_both_paths(repo: Path) -> None:
     subprocess.run(["git", "mv", "a.py", "c.py"], cwd=repo, env=ENV, check=True)
     assert gate(repo, "test-only") == (1, ["c.py", "a.py"])
+
+
+@pytest.mark.integration(reason="uses an owned Git repository and a real permission boundary")
+def test_unreadable_untracked_directory_stops(repo: Path) -> None:
+    hidden = repo / "tests"
+    hidden.mkdir()
+    payload = b"assert False\n"
+    (hidden / "case.py").write_bytes(payload)
+    mode = stat.S_IMODE(hidden.stat().st_mode)
+    env = {**ENV, "LC_ALL": "C"}
+    hidden.chmod(0)
+    try:
+        try:
+            list(hidden.iterdir())
+        except PermissionError:
+            pass
+        else:
+            pytest.skip("directory permissions do not deny reads for this process")
+        raw = subprocess.run(
+            ["git", "status", "--porcelain", "-z", "--untracked-files=all"],
+            cwd=repo,
+            env=env,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        assert raw.returncode == 0
+        assert raw.stdout == ""
+        assert "Permission denied" in raw.stderr
+        done = subprocess.run(
+            [sys.executable, str(SCRIPT), "source-only", *PATTERNS],
+            cwd=repo,
+            env=env,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        assert done.returncode == 1
+        assert done.stdout == ""
+        assert done.stderr == f"git status incomplete (exit 0): {raw.stderr.strip()}\n"
+    finally:
+        hidden.chmod(mode)
+    assert (hidden / "case.py").read_bytes() == payload

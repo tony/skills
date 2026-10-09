@@ -34,9 +34,11 @@ with `python3`. It reads `git status`, ignores untracked build caches
 (`__pycache__/`, `.pytest_cache/`, `node_modules/.cache/`), prints each
 offending path, and exits 1 when any exist. The tree is clean when the
 workflow starts, so every other change belongs to the commit being prepared.
+Any Git failure or diagnostic stops the gate as an incomplete observation,
+even when Git exits zero. The error includes Git's exit status and diagnostic.
 
 Before a source-only commit, run the gate in `source-only` mode; it prints
-every modified or untracked test file and must print nothing:
+every modified or untracked test file and must exit 0 without output:
 
 ```console
 $ python3 <diff-gate> source-only \
@@ -45,7 +47,7 @@ $ python3 <diff-gate> source-only \
 ```
 
 Before a test-only commit, run it in `test-only` mode; it prints every
-modified or untracked file outside the patterns and must print nothing:
+modified or untracked file outside the patterns and must exit 0 without output:
 
 ```console
 $ python3 <diff-gate> test-only \

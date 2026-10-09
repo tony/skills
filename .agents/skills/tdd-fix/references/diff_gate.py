@@ -11,6 +11,8 @@ inside one path component. ``test-only`` prints every changed file that
 matches no pattern; ``source-only`` prints every changed file that matches a
 pattern. Output is empty and the exit status 0 when the gate passes;
 otherwise the offending paths print one per line and the status is 1.
+Any Git failure or diagnostic stops the gate with status 1 and an incomplete
+observation message on stderr, including Git's exit status and diagnostic.
 Untracked build caches (``__pycache__/``, ``.pytest_cache/``, ``.mypy_cache/``,
 ``.ruff_cache/``, ``node_modules/.cache/``, ``*.pyc``) never count.
 """
@@ -85,8 +87,8 @@ def changed_paths() -> list[str]:
         text=True,
         check=False,
     )
-    if done.returncode != 0:
-        raise SystemExit(f"git status failed: {done.stderr.strip()}")
+    if done.returncode != 0 or done.stderr:
+        raise SystemExit(f"git status incomplete (exit {done.returncode}): {done.stderr.strip()}")
     paths: list[str] = []
     fields = done.stdout.split("\0")
     i = 0

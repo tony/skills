@@ -1194,7 +1194,7 @@
         "references/prose-rules.md": "plugins/tdd/references/prose-rules.md",
         "references/xfail-mechanisms.md": "plugins/tdd/references/xfail-mechanisms.md"
       },
-      "bytes": 23268
+      "bytes": 23634
     },
     {
       "name": "tdd-xfail",
@@ -1207,7 +1207,7 @@
         "references/prose-rules.md": "plugins/tdd/references/prose-rules.md",
         "references/xfail-mechanisms.md": "plugins/tdd/references/xfail-mechanisms.md"
       },
-      "bytes": 29129
+      "bytes": 29495
     },
     {
       "name": "terraform-bump-provider",
