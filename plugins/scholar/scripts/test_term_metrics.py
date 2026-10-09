@@ -77,6 +77,22 @@ def test_bare_www_url_fails_the_brief_gate(
     assert "URL belongs in evidence/" in capsys.readouterr().out
 
 
+@pytest.mark.parametrize(
+    ("brief", "valid"),
+    [
+        ("See [the source](paper.md).", False),
+        ("Similarity is [0.575](evidence/../../outside.md).", False),
+        ("Similarity is [0.575](evidence/metrics.md).", True),
+    ],
+)
+def test_brief_links_stay_in_evidence(brief: str, *, valid: bool) -> None:
+    """Only contained evidence links exempt their labels from the brief gate."""
+    findings = term_metrics.check_brief(brief)
+    assert (not findings) is valid
+    if not valid:
+        assert "link target must stay in evidence/" in findings[0]
+
+
 def test_type_row_needs_no_citation_but_a_member_does(
     tmp_path: Path, capsys: pytest.CaptureFixture[str]
 ) -> None:

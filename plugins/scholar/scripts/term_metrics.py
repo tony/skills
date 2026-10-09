@@ -206,7 +206,8 @@ POLYSEMY_THRESHOLD = 0.3
 
 _WORD = re.compile(r"[a-z0-9]+")
 _URL = re.compile(r"https?://|\bwww\.", re.IGNORECASE)
-_EVIDENCE_LINK = re.compile(r"\[[^\]]*\]\(evidence/[^)]*\)")
+_MARKDOWN_LINK = re.compile(r"!?\[[^\]]*\]\(([^)]*)\)")
+_EVIDENCE_TARGET = re.compile(r"evidence/[\w./-]+(?:#[\w.-]+)?")
 _CODE_SPAN = re.compile(r"`[^`]*`")
 _LIST_MARKER = re.compile(r"^\s*(?:\d+[.)]|[-*+])\s+")
 _DIGIT = re.compile(r"\d")
@@ -406,11 +407,21 @@ def circular(terms: list[_Row]) -> list[str]:
     return hits
 
 
+def _strip_evidence_link(match: re.Match[str]) -> str:
+    """Exempt only lexical descendants of ``evidence/``."""
+    target = match.group(1)
+    if _EVIDENCE_TARGET.fullmatch(target) and ".." not in target.split("#", 1)[0].split("/"):
+        return ""
+    return match.group(0)
+
+
 def check_brief(text: str) -> list[str]:
-    """List findings for a brief that carries a citation, a permalink, or a bare number."""
+    """Find URLs, bare numbers, and inline links outside ``evidence/``."""
     findings: list[str] = []
     for number, line in enumerate(text.splitlines(), start=1):
-        bare = _EVIDENCE_LINK.sub("", line)
+        bare = _MARKDOWN_LINK.sub(_strip_evidence_link, line)
+        if _MARKDOWN_LINK.search(bare):
+            findings.append(f"line {number}: link target must stay in evidence/")
         if _URL.search(bare):
             findings.append(f"line {number}: URL belongs in evidence/, not the brief")
         bare = _LIST_MARKER.sub("", _CODE_SPAN.sub("", bare))
