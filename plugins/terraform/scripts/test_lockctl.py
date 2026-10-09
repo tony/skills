@@ -1,6 +1,6 @@
 """lockctl: lock-file state, block removal, and stable-version filtering."""
 
-# ruff: noqa: S101, S603, S607, PLR2004, INP001, D103, TC002, TC003
+# ruff: noqa: S101, S603, S607, PLR2004, INP001, D103, TC003
 # pyright: reportAny=false, reportUnusedCallResult=false
 
 from __future__ import annotations
@@ -138,6 +138,27 @@ def test_diff_fails_on_a_count_drop_even_for_the_allowed_provider(
     argv = ["lockctl.py", "diff", "--allow", "*", before, after]
     assert lockctl.main(argv) == 1
     assert "count-dropped\t5.60.0/3\t5.61.0/1" in capsys.readouterr().out
+
+
+@pytest.mark.parametrize(
+    ("old", "new"),
+    [
+        ("h1:ddd=", "h1:unexpected="),
+        ('    "zh:333",\n', ""),
+        ("~> 3.6", "= 3.6.0"),
+        ("\n", "\r\n"),
+    ],
+)
+def test_diff_rejects_other_block_content_changes(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str], old: str, new: str
+) -> None:
+    before = _write(tmp_path / "a", LOCK)
+    after = _write(tmp_path / "b", LOCK.replace("5.60.0", "5.61.0").replace(old, new))
+    aws = "registry.terraform.io/hashicorp/aws"
+    random = "registry.terraform.io/hashicorp/random"
+    assert lockctl.main(["lockctl.py", "diff", "--allow", aws, before, after]) == 1
+    assert f"{random}\tchanged\t3.6.0/1\t3.6.0/1" in capsys.readouterr().out
+    assert lockctl.main(["lockctl.py", "diff", "--allow", "*", before, after]) == 0
 
 
 def test_diff_reads_a_git_object_as_the_before_side(
