@@ -82,6 +82,10 @@ toolchain pin files, `rust-toolchain.toml`, the `go.mod` `go` and
 a feature branch reports pins the branch that ships does not have. When
 `fetch_ok` is false, say the pins may be stale.
 
+An `error`, a nonempty `failed` list, or a null `dirty` value leaves the
+affected repository unverified. Stop that repository before editing or
+publishing; unavailable status is not a clean checkout.
+
 When `branch` is not the default branch, `dirty` is true, or
 `behind_remote` is more than 0, create the
 throwaway worktree per `../../references/throwaway-worktree.md`, but
@@ -118,7 +122,9 @@ npm are bounded by `ncu --target minor`. uv, Poetry and Cargo have no such
 flag, so after the refresh run `../../scripts/repo_facts.py --lock-diff
 <repo>` (resolve the path from this skill's directory to an absolute one):
 `majors` lists each package whose new version is a new major, or for 0.x a
-new minor. When `majors` is not empty, restore the lockfile to `HEAD`,
+new minor, including another version added beside an existing one. A lock
+with an `error` is unclassified: keep it for inspection and stop before
+staging. When `majors` is not empty, restore the lockfile to `HEAD`,
 update only the `in_range` names (`uv lock --upgrade-package <name>`,
 `poetry update <name>`, `cargo update --package <name>`), rerun the
 script until `majors` is empty, and make each major its own named bump.

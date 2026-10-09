@@ -26,12 +26,16 @@ LOCKFILES = ("uv.lock", "poetry.lock", "Cargo.lock")
 PIN_FILES = (".tool-versions", ".nvmrc", ".python-version", ".ruby-version")
 
 
-def _git(repo: str, *args: str) -> tuple[int, str]:
+def _git(repo: str, *args: str, strip_newline: bool = True) -> tuple[int, str]:
     env = {**os.environ, "GIT_TERMINAL_PROMPT": "0"}
     done = subprocess.run(
-        ["git", "-C", repo, *args], capture_output=True, text=True, check=False, env=env
+        ["git", "--no-optional-locks", "-C", repo, *args],
+        capture_output=True,
+        check=False,
+        env=env,
     )
-    return done.returncode, done.stdout.strip()
+    output = os.fsdecode(done.stdout)
+    return done.returncode, output.removesuffix("\n") if strip_newline else output
 
 
 def _remotes(repo: str) -> dict[str, str]:
@@ -45,16 +49,17 @@ def _remotes(repo: str) -> dict[str, str]:
 
 
 def _default_branch(repo: str, remote: str) -> str | None:
-    code, out = _git(repo, "symbolic-ref", "--short", f"refs/remotes/{remote}/HEAD")
-    if code == 0 and out:
-        return out.split("/", 1)[1]
+    prefix = f"refs/remotes/{remote}/"
+    code, out = _git(repo, "symbolic-ref", f"{prefix}HEAD")
+    if code == 0 and out.startswith(prefix):
+        return out.removeprefix(prefix)
     code, out = _git(repo, "ls-remote", "--symref", remote, "HEAD")
     match = re.search(r"^ref: refs/heads/(\S+)\s+HEAD", out, re.MULTILINE)
     return match.group(1) if code == 0 and match else None
 
 
 def _show(repo: str, ref: str, path: str) -> str | None:
-    code, out = _git(repo, "show", f"{ref}:{path}")
+    code, out = _git(repo, "show", f"{ref}:{path}", strip_newline=False)
     return out if code == 0 else None
 
 
@@ -129,7 +134,10 @@ def facts(repo: str, *, fetch: bool = False) -> dict[str, object]:
     _, common = _git(repo, "rev-parse", "--path-format=absolute", "--git-common-dir")
     _, super_wt = _git(repo, "rev-parse", "--show-superproject-working-tree")
     remotes = _remotes(repo)
-    remote = "origin" if "origin" in remotes else next(iter(remotes), None)
+    remote = (
+        "origin" if "origin" in remotes else (next(iter(remotes)) if len(remotes) == 1 else None)
+    )
+    status, changes = _git(repo, "status", "--porcelain", "--untracked-files=no")
     out: dict[str, object] = {
         "path": top,
         "linked_worktree": git_dir != common,
@@ -139,8 +147,12 @@ def facts(repo: str, *, fetch: bool = False) -> dict[str, object]:
         "fork_signal": "upstream" in remotes,
         "default_branch": None,
         "branch": _git(repo, "branch", "--show-current")[1],
-        "dirty": bool(_git(repo, "status", "--porcelain", "--untracked-files=no")[1]),
+        "dirty": bool(changes) if status == 0 else None,
+        "failed": ["worktree status"] if status else [],
     }
+    if remote is None and remotes:
+        out["error"] = "multiple remotes without origin"
+        return out
     if remote is None:
         ref = str(out["branch"] or "HEAD")
         out["pins_ref"] = ref
@@ -165,11 +177,25 @@ def facts(repo: str, *, fetch: bool = False) -> dict[str, object]:
 def _lock_versions(text: str) -> dict[str, set[str]]:
     """Map package name to its versions from ``[[package]]`` tables (uv, Poetry, Cargo)."""
     found: dict[str, set[str]] = {}
-    for block in re.split(r"^\[\[package\]\]\s*$", text, flags=re.MULTILINE)[1:]:
-        name = re.search(r'^name\s*=\s*"([^"]+)"', block, re.MULTILINE)
-        version = re.search(r'^version\s*=\s*"([^"]+)"', block, re.MULTILINE)
-        if name and version:
-            found.setdefault(name.group(1), set()).add(version.group(1))
+    blocks = re.split(
+        r"^\[\[package\]\][ \t]*(?:#.*)?$",
+        text.replace("\r\n", "\n"),
+        flags=re.MULTILINE,
+    )
+    if len(blocks) == 1:
+        message = "no readable package tables"
+        raise ValueError(message)
+    for block in blocks[1:]:
+        name = re.search(
+            r"""^name\s*=\s*(['"])([^'"\r\n]+)\1[ \t]*(?:#.*)?$""", block, re.MULTILINE
+        )
+        version = re.search(
+            r"""^version\s*=\s*(['"])([^'"\r\n]+)\1[ \t]*(?:#.*)?$""", block, re.MULTILINE
+        )
+        if not name or not version:
+            message = "package name or version is not readable"
+            raise ValueError(message)
+        found.setdefault(name.group(2), set()).add(version.group(2))
     return found
 
 
@@ -192,7 +218,7 @@ def lock_changes(old: str, new: str) -> dict[str, list[dict[str, object]]]:
             continue
         entry: dict[str, object] = {"name": name, "from": gone, "to": came}
         old_series = {_series(v) for v in before.get(name, set())}
-        crossed = bool(gone) and any(_series(v) not in old_series for v in came)
+        crossed = bool(old_series) and any(_series(v) not in old_series for v in came)
         (majors if crossed else in_range).append(entry)
     return {"majors": majors, "in_range": in_range}
 
@@ -202,12 +228,18 @@ def lock_diff(repo: str, lockfiles: list[str]) -> dict[str, object]:
     out: dict[str, object] = {"path": repo}
     for name in lockfiles or [n for n in LOCKFILES if (Path(repo) / n).is_file()]:
         old = _show(repo, "HEAD", f"./{name}")
+        if old is None:
+            out[name] = {"error": "HEAD baseline is not readable"}
+            continue
         try:
             new = (Path(repo) / name).read_text()
-        except OSError:
+        except (OSError, UnicodeError):
             out[name] = {"error": "not readable"}
             continue
-        out[name] = lock_changes(old or "", new)
+        try:
+            out[name] = lock_changes(old, new)
+        except ValueError as error:
+            out[name] = {"error": str(error)}
     return out
 
 

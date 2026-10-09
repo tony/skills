@@ -69,6 +69,10 @@ Each package under `majors` is a named bump (`uv lock --upgrade-package
 same treatment with `poetry update <name>` and `cargo update --package
 <name>`.
 
+A file-level `error` leaves its moves unclassified. Stop before staging
+that lock; an unreadable committed baseline or unsupported package table
+cannot prove that no major changed.
+
 ## Python with poetry or pip
 
 Marked by `poetry.lock`, or by `requirements*.txt` with no lock at all.

@@ -458,7 +458,7 @@
         "references/repo_facts.py": "plugins/package-updater/scripts/repo_facts.py",
         "references/stopped-run.md": "plugins/package-updater/references/stopped-run.md"
       },
-      "bytes": 34363
+      "bytes": 35568
     },
     {
       "name": "package-updater-update-package",
@@ -477,7 +477,7 @@
         "references/stopped-run.md": "plugins/package-updater/references/stopped-run.md",
         "references/upstream-links.md": "plugins/package-updater/references/upstream-links.md"
       },
-      "bytes": 63436
+      "bytes": 64703
     },
     {
       "name": "package-updater-update-toolchain",
@@ -494,7 +494,7 @@
         "references/stopped-run.md": "plugins/package-updater/references/stopped-run.md",
         "references/upstream-links.md": "plugins/package-updater/references/upstream-links.md"
       },
-      "bytes": 58557
+      "bytes": 59824
     },
     {
       "name": "package-updater-updating-packages",
@@ -514,7 +514,7 @@
         "references/throwaway-worktree.md": "plugins/package-updater/references/throwaway-worktree.md",
         "references/upstream-links.md": "plugins/package-updater/references/upstream-links.md"
       },
-      "bytes": 74733
+      "bytes": 76345
     },
     {
       "name": "pr",

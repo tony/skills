@@ -5,8 +5,9 @@
 from __future__ import annotations
 
 import subprocess
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
+import pytest
 import repo_facts  # pyright: ignore[reportImplicitRelativeImport]
 
 if TYPE_CHECKING:
@@ -161,3 +162,134 @@ def test_lock_diff_splits_majors_from_in_range(tmp_path: pathlib.Path) -> None:
             {"name": "pytest", "from": ["7.4.4"], "to": ["7.5.1"]},
         ],
     }
+
+
+def test_failed_status_is_unknown_and_preserves_index(
+    tmp_path: pathlib.Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """An unreadable status cannot authorize work in the user's checkout."""
+    repo = _make(tmp_path)
+    _git(repo, "remote", "set-head", "origin", "main")
+    index = repo / ".git" / "index"
+    before = index.read_bytes()
+    broken = tmp_path / "broken-index"
+    broken.write_bytes(b"invalid index")
+    monkeypatch.setenv("GIT_INDEX_FILE", str(broken))
+
+    out = repo_facts.facts(str(repo))
+
+    assert out["dirty"] is None
+    assert out["failed"] == ["worktree status"]
+    assert index.read_bytes() == before
+    assert broken.read_bytes() == b"invalid index"
+
+
+def test_multiple_non_origin_remotes_need_a_choice(tmp_path: pathlib.Path) -> None:
+    """Choosing the alphabetically first remote can target another repository."""
+    repo = _make(tmp_path)
+    _git(repo, "remote", "rename", "origin", "alpha")
+    _git(repo, "remote", "add", "beta", "../another.git")
+
+    out = repo_facts.facts(str(repo), fetch=True)
+
+    assert out["remote"] is None
+    assert out["error"] == "multiple remotes without origin"
+    assert "fetch_ok" not in out
+    assert "pins" not in out
+
+
+def test_remote_name_with_slash_keeps_default_branch(tmp_path: pathlib.Path) -> None:
+    """A slash belongs to the remote name, not the default branch."""
+    repo = _make(tmp_path)
+    _git(repo, "remote", "set-head", "origin", "main")
+    _git(repo, "remote", "rename", "origin", "team/fork")
+
+    out = repo_facts.facts(str(repo))
+
+    assert out["default_branch"] == "main"
+    assert out["pins_ref"] == "team/fork/main"
+    pins = cast("dict[str, object]", out["pins"])
+    assert pins[".tool-versions"] == {"uv": "0.7.8", "just": "1.36.0"}
+
+
+def test_added_parallel_major_is_not_in_range() -> None:
+    """A lock may retain an old version while adding an incompatible one."""
+    changes = repo_facts.lock_changes(
+        _lock(("demo", "1.0.0")),
+        _lock(("demo", "1.0.0"), ("demo", "2.0.0")),
+    )
+
+    assert changes == {
+        "majors": [{"name": "demo", "from": [], "to": ["2.0.0"]}],
+        "in_range": [],
+    }
+
+
+@pytest.mark.parametrize(("quote", "newline"), [("'", "\n"), ('"', "\r\n"), ("'", "\r\n")])
+def test_lock_spelling_cannot_hide_major(quote: str, newline: str) -> None:
+    """TOML string quotes and CRLF preserve package identity and version."""
+    changes = repo_facts.lock_changes(
+        _lock(("demo", "1.0.0")).replace('"', quote).replace("\n", newline),
+        _lock(("demo", "2.0.0")).replace('"', quote).replace("\n", newline),
+    )
+
+    assert changes == {
+        "majors": [{"name": "demo", "from": ["1.0.0"], "to": ["2.0.0"]}],
+        "in_range": [],
+    }
+
+
+def test_lock_diff_reads_crlf_blob_without_trimming(tmp_path: pathlib.Path) -> None:
+    """Git blob content keeps the line ending after the final version field."""
+    repo = _make(tmp_path)
+    _git(repo, "config", "core.autocrlf", "false")
+    base = b'[[package]]\r\nname = "demo"\r\nversion = "1.0.0"\r\n'
+    (repo / "Cargo.lock").write_bytes(base)
+    _git(repo, "add", "Cargo.lock")
+    _git(repo, "commit", "-q", "-m", "lock")
+    changed = base.replace(b"1.0.0", b"2.0.0")
+    (repo / "Cargo.lock").write_bytes(changed)
+    index = (repo / ".git" / "index").read_bytes()
+
+    out = repo_facts.lock_diff(str(repo), ["Cargo.lock"])
+
+    assert out["Cargo.lock"] == {
+        "majors": [{"name": "demo", "from": ["1.0.0"], "to": ["2.0.0"]}],
+        "in_range": [],
+    }
+    assert (repo / ".git" / "index").read_bytes() == index
+    assert (repo / "Cargo.lock").read_bytes() == changed
+
+
+def test_unreadable_head_lock_is_not_an_empty_baseline(
+    tmp_path: pathlib.Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Missing Git objects leave classification unavailable without writes."""
+    repo = _make(tmp_path)
+    original = _lock(("demo", "1.0.0"))
+    (repo / "uv.lock").write_text(original)
+    _git(repo, "add", "uv.lock")
+    _git(repo, "commit", "-q", "-m", "lock")
+    candidate = _lock(("demo", "2.0.0"))
+    (repo / "uv.lock").write_text(candidate)
+    index = repo / ".git" / "index"
+    before = index.read_bytes()
+    objects = tmp_path / "empty-objects"
+    objects.mkdir()
+    monkeypatch.setenv("GIT_OBJECT_DIRECTORY", str(objects))
+
+    out = repo_facts.lock_diff(str(repo), ["uv.lock"])
+
+    assert out["uv.lock"] == {"error": "HEAD baseline is not readable"}
+    assert index.read_bytes() == before
+    assert (repo / "uv.lock").read_text() == candidate
+
+
+def test_unrecognized_lock_is_not_no_changes() -> None:
+    """Unsupported or incomplete package fields cannot bypass classification."""
+    with pytest.raises(ValueError, match="no readable package tables"):
+        repo_facts.lock_changes("version = 1", "unreadable")
+    with pytest.raises(ValueError, match="package name or version is not readable"):
+        repo_facts.lock_changes(_lock(("demo", "1.0.0")), '[[package]]\nname = "demo"\n')

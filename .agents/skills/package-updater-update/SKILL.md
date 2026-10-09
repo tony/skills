@@ -42,8 +42,9 @@ repositories whose remote belongs to the given accounts.
 Run the skill's inventory and discovery phases across the whole scope
 before touching anything. The inventory gathers each repository's
 remote, default branch, manifests, lockfiles, toolchain pins and quality
-commands; a failed command means the repository lacks that file, so
-record "none".
+commands. A successful lookup may establish that a file is absent; a
+failed lookup leaves that part of the inventory unavailable. Stop changes
+to a repository whose required inventory could not be read.
 
 Sort what you find into the four commit tracks now. A move sorted wrong
 here produces a commit that cannot be reverted independently later.
