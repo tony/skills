@@ -94,7 +94,8 @@ Fast rows are not benchmarks. To judge a later change:
 2. `measure.py band <file>` prints the **median**, the **MAD**, and the noise
    band `max(k * 1.4826 * MAD, floor)` (`k = 3`; the **trust floor**, the larger
    of 50 ms and 1% of the median (125 ms at a 12.5 s median), keeps identical runs from producing a zero band). It reports `valid: false` when any run exits
-   non-zero or the counts differ between runs.
+   non-zero, outcome counts are unavailable or empty, or counts differ between
+   runs. Unavailable output is a measurement failure, not proof of failing tests.
 3. `measure.py compare baseline.json <candidate .jsonl>` counts a candidate's
    saving (`baseline_median - candidate_median`) only when it exceeds the band
    (widened by the candidate's own MAD), every run exits 0, and the test counts

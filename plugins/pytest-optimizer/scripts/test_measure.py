@@ -45,6 +45,78 @@ def test_restore_requires_successful_reset_before_clean(
     assert calls == expected
 
 
+def test_run_preserves_unavailable_count_evidence(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Successful quiet output is not evidence of a zero-test run."""
+
+    def run_command(argv: list[str], **_kwargs: object) -> subprocess.CompletedProcess[str]:
+        return subprocess.CompletedProcess(argv, 0, ".... [100%]\n", "")
+
+    monkeypatch.setattr(subprocess, "run", run_command)
+    result = measure.run_once(["pytest"])
+
+    assert result["exit"] == 0
+    assert result["passed"] is None
+    assert result["total"] is None
+    assert result["reason"] == "test outcome summary unavailable"
+    assert measure.parse_summary("no tests ran in 0.01s") == {"total": 0}
+
+
+@pytest.mark.parametrize(
+    "counts",
+    [
+        {"passed": None, "total": None},
+        {"passed": 0, "total": 0},
+        {"passed": True, "total": 1},
+        {"passed": -1, "total": 1},
+        {"passed": 1.0, "total": 1},
+        {"passed": 2, "total": 1},
+        {},
+    ],
+)
+def test_invalid_counts_cannot_form_or_compare_a_baseline(counts: dict[str, object]) -> None:
+    """Malformed or absent evidence fails on both sides of a comparison."""
+    good = [{"seconds": 1.0, "exit": 0, "passed": 5, "total": 5}] * 3
+    baseline = measure.band(good)
+    invalid = [{"seconds": 0.1, "exit": 0, **counts}] * 3
+
+    assert measure.band(invalid)["valid"] is False
+    assert measure.compare(baseline, invalid)["valid"] is False
+    assert measure.compare({**baseline, "tests": counts}, good)["valid"] is False
+
+
+@pytest.mark.parametrize(
+    ("base_passed", "passed", "total", "target", "valid"),
+    [
+        (5, 4, 4, 4, True),
+        (5, 0, 4, 4, False),
+        (4, 3, 4, 4, True),
+        (4, 4, 4, 4, False),
+        (4, 2, 4, 4, False),
+        (5, 5, 5, None, True),
+        (5, 4, 5, None, False),
+        (5, 0, 0, 0, False),
+        (5, 1, 1, True, False),
+    ],
+)
+def test_expected_total_conserves_non_passing_outcomes(
+    base_passed: int,
+    passed: int,
+    total: int,
+    target: int | None,
+    *,
+    valid: bool,
+) -> None:
+    """Approved deselection cannot authorize a different non-passing count."""
+    base_run = {"seconds": 10.0, "exit": 0, "passed": base_passed, "total": 5}
+    baseline = measure.band([base_run] * 3)
+    runs = [{"seconds": 1.0, "exit": 0, "passed": passed, "total": total}] * 3
+
+    result = measure.compare(baseline, runs, expect_total=target)
+
+    assert result["valid"] is valid
+    assert result["clears_noise"] is valid
+
+
 @pytest.mark.parametrize(
     ("ancestor_exit", "stderr", "reason"),
     [

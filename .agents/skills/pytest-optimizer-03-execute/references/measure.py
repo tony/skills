@@ -93,8 +93,8 @@ def trust_floor(median: float) -> float:
     return round(max(TRUST_FLOOR, REL_FLOOR * median), 6)
 
 
-def parse_summary(output: str) -> dict[str, int]:
-    r"""Count outcomes from the last pytest summary line (``-q`` or verbose).
+def parse_summary(output: str) -> dict[str, int] | None:
+    r"""Count the last pytest outcome summary, or return None when unavailable.
 
     >>> parse_summary("....\n2 passed, 1 skipped, 3 deselected in 0.05s")
     {'passed': 2, 'skipped': 1, 'total': 3}
@@ -111,12 +111,16 @@ def parse_summary(output: str) -> dict[str, int]:
     for number, word in _OUTCOME.findall(line):
         key = "error" if word.startswith("error") else word
         counts[key] = counts.get(key, 0) + int(number)
+    if not counts and "no tests ran" not in line:
+        return None
     counts["total"] = sum(counts.values())
     return counts
 
 
 def run_once(argv: Sequence[str], cwd: str | None = None) -> dict[str, t.Any]:
     """Run a command once; return wall seconds, exit code, and outcome counts.
+
+    Unrecognized summaries produce null counts, refused by band and compare.
 
     >>> r = run_once([sys.executable, "-c", "print('2 passed in 0.01s')"])
     >>> (r["exit"], r["passed"], r["total"])
@@ -136,15 +140,38 @@ def run_once(argv: Sequence[str], cwd: str | None = None) -> dict[str, t.Any]:
             check=False,
         )
     except OSError:
-        return {"seconds": 0.0, "exit": 127, "passed": 0, "total": 0}
+        return {"seconds": 0.0, "exit": 127, "passed": None, "total": None}
     seconds = time.perf_counter() - start
     counts = parse_summary(proc.stdout + "\n" + proc.stderr)
-    return {
+    result: dict[str, t.Any] = {
         "seconds": round(seconds, 4),
         "exit": proc.returncode,
-        "passed": counts.get("passed", 0),
-        "total": counts["total"],
+        "passed": counts.get("passed", 0) if counts is not None else None,
+        "total": counts["total"] if counts is not None else None,
     }
+    if counts is None:
+        result["reason"] = "test outcome summary unavailable"
+    return result
+
+
+def _count_error(counts: object) -> str | None:
+    """Reject absent, empty or internally inconsistent outcome evidence."""
+    if not isinstance(counts, dict):
+        return "test outcome counts unavailable"
+    record = t.cast("dict[str, object]", counts)
+    passed, total = record.get("passed"), record.get("total")
+    if (
+        not isinstance(passed, int)
+        or isinstance(passed, bool)
+        or not isinstance(total, int)
+        or isinstance(total, bool)
+    ):
+        return "test outcome counts must be observed integers"
+    if total <= 0:
+        return "no test outcomes were reported"
+    if not 0 <= passed <= total:
+        return "passed count must be between zero and total"
+    return None
 
 
 def _validity(runs: Sequence[dict[str, t.Any]]) -> str | None:
@@ -164,6 +191,10 @@ def _validity(runs: Sequence[dict[str, t.Any]]) -> str | None:
     bad = next((r["exit"] for r in runs if r["exit"] != 0), None)
     if bad is not None:
         return f"a run exited {bad}, not 0"
+    for run in runs:
+        reason = _count_error(run)
+        if reason is not None:
+            return reason
     if len({(r["passed"], r["total"]) for r in runs}) > 1:
         return "passed/total counts differ between runs"
     return None
@@ -212,8 +243,8 @@ def compare(
 ) -> dict[str, t.Any]:
     """Decide whether candidate runs beat the baseline noise band.
 
-    A candidate counts only when every run exits 0 and the collected-test
-    counts match the baseline (or ``expect_total`` for a count-changing change).
+    Every run needs observed positive outcome counts and exit 0. A reduced
+    ``expect_total`` permits fewer passing tests, preserving non-passing counts.
 
     >>> base = band([{"seconds": s, "exit": 0, "passed": 5, "total": 5} for s in (10.0, 10.0)])
     >>> fast = [{"seconds": 7.0, "exit": 0, "passed": 5, "total": 5}] * 3
@@ -239,11 +270,19 @@ def compare(
     >>> compare(base, fewer, expect_total=4)["clears_noise"]
     True
     """
-    reason = _validity(runs)
-    tests = baseline["tests"]
+    tests = t.cast("dict[str, int]", baseline.get("tests"))
+    reason = _count_error(tests)
+    if reason is not None:
+        reason = f"baseline: {reason}"
+    else:
+        reason = _validity(runs)
     if reason is None and expect_total is not None:
-        if runs[0]["total"] != expect_total:
-            reason = f"collected count {runs[0]['total']} differs from expected {expect_total}"
+        if _count_error({"passed": 0, "total": expect_total}) is not None:
+            reason = "expected total must be a positive integer"
+        elif runs[0]["total"] != expect_total:
+            reason = f"outcome count {runs[0]['total']} differs from expected {expect_total}"
+        elif runs[0]["total"] - runs[0]["passed"] != tests["total"] - tests["passed"]:
+            reason = "non-passing count differs from baseline"
     elif reason is None and (runs[0]["total"], runs[0]["passed"]) != (
         tests["total"],
         tests["passed"],

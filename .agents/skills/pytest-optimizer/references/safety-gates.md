@@ -8,7 +8,7 @@ failure drops it at the rubric's hard safety gate.
 
 - Gate 1: order independence
 - Gate 2: collection determinism
-- Gate 3: green run, same tests
+- Gate 3: green run, expected outcomes
 - Parallelism decision tree
 - Measurement hygiene
 
@@ -72,14 +72,15 @@ baseline `collection.txt` the same way. `same: false` is a hard xdist blocker;
 - Collection that branches on the clock, `random`, or environment → make it
   deterministic.
 
-## Gate 3 — green run, same tests
+## Gate 3 — green run, expected outcomes
 
 Every candidate, not only order or scope changes, must pass a clean serial run
-(cache disabled) before its delta is measured: every run exits 0 and the passed
-and collected-test counts equal the baseline's. `measure.py compare` enforces
-this and returns `valid: false` with the reason otherwise. A hypothesis that
-deliberately removes tests passes `--expect-total` with the count it should
-leave.
+(cache disabled) before its delta is measured: every run exits 0, reports a
+positive total, and has observed passed/total counts matching the baseline. `measure.py compare`
+returns `valid: false` with the reason for unavailable, empty or inconsistent
+counts. A deliberate deselection passes `--expect-total` with the approved
+remaining count; the non-passing count must still equal the baseline's.
+Equal counts do not establish identical tests or unchanged assertions.
 
 ## Parallelism decision tree
 

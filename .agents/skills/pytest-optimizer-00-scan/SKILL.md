@@ -98,8 +98,11 @@ $ python3 <measure.py> run \
 
 Substitute `test_command` for `pytest`. `measure.py band <runs-dir>/baseline-runs.jsonl`
 prints the median, MAD, and noise band (floored at the larger of 50 ms and 1% of
-the median), and exits 1 when any run fails or the test counts differ. A failing baseline means
-the suite is red: stop and report it. Write the env fingerprint, versions,
+the median). If `valid` is false, stop and report its `reason`: failed tests,
+unavailable outcome counts and inconsistent counts are distinct failures.
+Remeasure unavailable counts only when the same runner and selection expose
+an outcome summary; never fill them from a separate collection command.
+Write the env fingerprint, versions,
 capabilities, the band, and the passed/total counts to `baseline.json`. See
 `references/durations-parsing.md`.
 

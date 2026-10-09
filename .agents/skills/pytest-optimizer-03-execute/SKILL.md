@@ -32,6 +32,10 @@ Resolve the memory directory by the lookup order in
 `references/memory-schema.md`. If none exists or `plan.json` is missing,
 stop with the halted-run shape in `references/output-contract.md`.
 
+Resolve `<runs-dir>` using the "Run files" section of
+`references/memory-schema.md`; keep each item's verification record there,
+outside the working tree.
+
 Read `execution-log.json` if present. A fresh run has no entry with a
 `commit_sha`: recompute the idempotency token as `00-scan` Step 2 does, and if
 `state.json` records an `env_token` and the result differs, the baseline
@@ -90,11 +94,15 @@ For each plan item not yet applied:
 2. **Verify green.** Run the project quality checks (formatter, linter, type
    checker) as declared in the project's `AGENTS.md`/`CLAUDE.md`, then the
    `test_command` from `baseline.json` through the script, so the run is checked
-   for exit 0 and an unchanged test count:
+   for exit 0 and the approved outcome counts. Write a fresh record for this item:
 
    ```console
    $ python3 <measure.py> run \
-       -- pytest -p no:cacheprovider -p no:randomly -q
+       -- pytest \
+       -p no:cacheprovider \
+       -p no:randomly \
+       -q \
+       > <runs-dir>/verify-<order>.jsonl
    ```
 
    Substitute `test_command` from `baseline.json` for `pytest`. Get the expected
@@ -109,8 +117,19 @@ For each plan item not yet applied:
        <memory-dir>/execution-log.json
    ```
 
-   The item passes
-   when `exit` is 0, `total` equals the expected count for this item, and the non-passing count (`total - passed`) equals the baseline's.
+   Check that record with the shared count gate:
+
+   ```console
+   $ python3 <measure.py> compare \
+       --expect-total <expected-total output> \
+       <memory-dir>/baseline.json \
+       <runs-dir>/verify-<order>.jsonl
+   ```
+
+   The item passes only when the project quality checks pass and `valid` is true.
+   Missing or empty outcomes fail this gate; a command's exit 0 is insufficient.
+   `clears_noise` is not the gate for this single verification run, which does
+   not establish a speedup.
    For a typing or parametrize item (H26–H32), the type checker must cover
    `tests/` and pass; such an item records no timing.
 3. **On success** — stage the plan's files for this item (a created file

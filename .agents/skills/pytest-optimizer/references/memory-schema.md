@@ -99,14 +99,19 @@ used only when the user must act on the files. Delete a run file before its firs
 or a post-execute re-scan never mixes old samples into a band. Nothing here
 shows in `git status`, which `03-execute` requires to be empty.
 
+`run` exits 0 when it records a command; its `exit` field holds the command's
+status. An unavailable outcome summary produces null `passed` and `total`
+fields with a `reason`. `band` and `compare` reject these records, empty
+outcomes and invalid counts. Never substitute a separate collection count.
+
 ## Baseline-diff rule
 
 The noise band is `max(k * 1.4826 * MAD, trust floor)` (`k = 3`; the trust floor is
 the larger of `0.05` s and 1% of the median, so a 12.5 s median gives `0.125` s), measured per project in `00-scan`
 from N serial, cache-disabled runs. `compare` widens the dispersion with the
 candidate's own MAD, `hypot(baseline MAD, candidate MAD)`. A candidate is a real
-speedup only when every run exits 0, its passed and collected-test counts match
-the baseline, and its median saving exceeds that band:
+speedup only when every run exits 0, its reported outcome counts match the
+baseline, and its median saving exceeds that band:
 
 ```
 real_speedup  <=>  baseline_median - candidate_median > band
@@ -114,6 +119,10 @@ real_speedup  <=>  baseline_median - candidate_median > band
 
 `measure.py band` and `measure.py compare` apply this; never do the arithmetic
 by hand or quote the band as a fixed number.
+
+An approved `--expect-total` can reduce passing outcomes while preserving
+`total - passed`. Report that result as time saved by deselection. These counts
+do not prove test identity or preserved assertions.
 
 ## Files and shapes
 

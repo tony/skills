@@ -140,6 +140,10 @@ to the baseline's. When it does not differ, say nothing about the control.
    reports the saving as time not spent on those tests. `02-plan` shows that
    number at the approval gate.
 
+   This permits removal of passing outcomes only: the baseline's non-passing
+   count must remain unchanged. Removing skipped or xfailed cases needs a
+   separate selection policy; an expected total does not authorize it.
+
    A typing or parametrize hypothesis (H26-H32) saves no time by design: skip the
    timing. Run the suite once and the project's type checker over the test
    directory; it counts when both pass and the test count is unchanged. Record it
