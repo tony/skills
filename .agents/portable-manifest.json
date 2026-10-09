@@ -690,7 +690,7 @@
         "references/prose-rules.md": "plugins/release/references/prose-rules.md",
         "references/release-conventions.md": "plugins/release/references/release-conventions.md"
       },
-      "bytes": 26760
+      "bytes": 28647
     },
     {
       "name": "release-update-downstream-packages",

@@ -106,6 +106,9 @@ Reread the synchronized files. Following the conventions reference, record:
   linters, type checkers, docs build). Never assume ecosystem
   commands; use what the project documents. Check delegated scripts and their
   effects under that same boundary before execution.
+- Documented gate outputs and supported output locations. Use existing ignored
+  outputs or a supported run-owned location without skipping required generation
+  or adding ignore rules to hide changes.
 
 Before any bump, lock refresh, changelog edit or quality gate, inspect the
 actual unreleased section boundaries and content. Prose notes count as entries;
@@ -149,24 +152,32 @@ restore or stash to manufacture an unchanged stop.
 ## Phase 4: Verify
 
 Run the project's quality gates discovered in Phase 2. All must pass
-before committing. If a gate fails, stop and report the failure.
-Never commit a release on a red gate, and never weaken a gate to get
-to green. The edits stay in the tree and a re-run of `cut` is refused,
-so the stop carries the recovery from Output.
+before committing; never weaken gates, hooks or signing to get to green.
+Before each gate or commit attempt, record HEAD/refs, staged and working
+changes, and relevant files and output paths. Stop before the command if these
+observations fail. After a failed command, inspect them again, including
+untracked and relevant ignored files; preserve the observed state and stop.
+Mark unreadable state unverified. Never reset, restore, stash or retry to
+manufacture a clean stop. Report the failure and recovery from Output per
+`../../references/prose-rules.md`.
 
-Compare `git status --porcelain` with the clean Phase 1 tree and remove
-only the new untracked paths the gates created (bytecode caches, build
-output) before Phase 5, so the Phase 6 tree check passes.
+Review the resulting changes before Phase 5. A clean starting status, new path
+or release-related name does not prove ownership of its contents. Preserve
+unexplained changes and artifacts; do not delete status-listed paths. If they
+would prevent an approved release-only commit and a clean post-commit tree,
+stop before committing and request the user's exact disposition per
+`../../references/prose-rules.md`.
 
 ## Phase 5: Commit
 
-Stage the release files and commit with the subject and body the
-conventions reference specifies. Write it per
+Review the index and worktree, then stage only approved release changes and
+commit with the subject and body the conventions reference specifies. Do not
+include unrelated changes a command staged. Write the commit per
 `../../references/prose-rules.md`. No `Co-Authored-By` line, no
 "Generated with" or other tool trailer, no emoji.
 
-If the commit fails (a hook rejected it, nothing staged), stop. Report the
-failure and do not tag or push anything.
+If the commit fails, follow Phase 4's observation and stop rules; hooks may
+have changed the index or working files. Do not tag or push anything.
 
 ## Phase 6: Flag-Gated Actions
 
@@ -237,9 +248,11 @@ paths. A completed run ends with these, in order:
 No paragraph between the hero line and the first heading.
 
 A stopped or refused run is one result sentence (what stopped and why),
-then what the user needs to do. Nothing else: no gate results, no
-description of the edits beyond whether they stay in the tree, no second
-sentence of extra findings, and one command per bullet.
+including the observed repository state, then what the user needs to do.
+Distinguish staged, working and untracked changes and HEAD/ref changes where
+relevant, and include observed tag/push outcomes. Mark unavailable evidence
+unverified. No gate logs or inferred unchanged-state claims. Use one command
+per bullet.
 
 Reply in this shape, as plain text outside any code fence, with plain bullets, no bold (never `- **Label:** ...`), and no local paths:
 
@@ -263,30 +276,38 @@ Reply in this shape, as plain text outside any code fence, with plain bullets, n
 - git push --no-follow-tags origin refs/tags/v0.4.0
 ```
 
-A stopped run uses the same plain-text shape, opens with "Stopped:", and
-states no gate results. After a failed commit the
-edits stay staged; offer no discard command, because the recovery is to
-commit and then run the authorized flag steps from `Next steps` yourself:
+A stopped run opens with "Stopped:". After a gate or commit failure, recovery
+requires reviewing surviving changes, repairing the failure without weakening
+gates, hooks or signing, rerunning all original required quality gates, and
+rechecking HEAD/refs, index and working files before staging only approved
+release changes and retrying the commit. A prior green result does not cover
+repairs or hook edits.
+If state is unreadable or changed unexpectedly, preserve it and stop for review.
+After a successful retry, follow Phase 6 under the original flags.
+
+Use only states verified for this run. For example, after a signing failure
+with unchanged HEAD/refs, release edits still staged and no tag or push performed:
 
 ```text
-Stopped: the release commit failed (signing error), so no tag was created and nothing was pushed.
+Stopped: the release commit failed (signing error); HEAD and refs are unchanged, release edits remain staged, no tag was created and nothing was pushed.
 
-- Fix the commit error, then commit the staged release files with the subject "Tag v0.4.0".
-- Then run the tag command you wanted: git tag -a v0.4.0 -m "v0.4.0"
-- Then run the push command you wanted: git push --no-follow-tags
+- Review surviving changes and fix signing without disabling it or the hooks.
+- Re-run all original quality gates, recheck repository state, stage only approved release changes and retry the commit with the subject "Tag v0.4.0".
+- After a successful commit and the Phase 6 checks, run only the tag and push steps authorized by the original flags.
 ```
 
-After a red gate the edits are unstaged in the tree, and `cut` refuses a
-re-run on a dirty tree. Give both exits and no gate output. The restore
-command lists the release files this run edited and resets index and tree
-to `HEAD`; print it for the user, never run it:
+After a failed gate, offer recovery or a reviewed start-over. `cut` refuses
+a dirty tree; a start-over choice does not authorize discarding unrelated
+changes in the same files. Preserve current work and review the exact edits
+before selecting an undo; never print a blanket whole-path restore recipe.
+For a gate that left both staged and working edits with unchanged HEAD/refs:
 
 ```text
-Stopped: the test suite failed after the version edits, so nothing was committed, tagged or pushed.
+Stopped: the test suite failed; HEAD and refs are unchanged, and release edits remain staged and unstaged.
 
-- To resume: fix the failure, commit the release files with the subject "Tag v0.4.0", then run the tag and push commands you wanted yourself.
-- To start over: git restore --source=HEAD --staged --worktree -- pyproject.toml CHANGES.md
-- Then re-run /release:cut 0.4.0 --tag.
+- To resume: review surviving changes, fix the failure without weakening gates, hooks or signing, re-run all original quality gates, recheck repository state, and stage only approved release changes before retrying the release commit.
+- To start over: preserve current work and select the exact release edits to undo without discarding independent changes in the same files.
+- Re-run /release:cut 0.4.0 --tag only after the reviewed undo leaves a clean tree.
 ```
 
 An unapproved empty section stops before release edits. Distinguish observed
