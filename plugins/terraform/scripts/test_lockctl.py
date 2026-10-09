@@ -1,10 +1,12 @@
 """lockctl: lock-file state, block removal, and stable-version filtering."""
 
-# ruff: noqa: S101, S603, S607, PLR2004, INP001, D103, TC003
+# ruff: noqa: S101, S603, S607, PLR2004, INP001, D103
 # pyright: reportAny=false, reportUnusedCallResult=false
 
 from __future__ import annotations
 
+import re
+import shlex
 import subprocess
 from pathlib import Path
 
@@ -94,6 +96,7 @@ def test_platforms_scans_ci_and_task_files_only(
     ]
 
 
+@pytest.mark.integration
 def test_platforms_includes_untracked_ci_files(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -195,3 +198,38 @@ def test_diff_reads_a_git_object_as_the_before_side(
         lock.write_bytes(edited)
         assert lockctl.main(argv) == 1
         assert "registry.terraform.io/hashicorp/random\tchanged" in capsys.readouterr().out
+
+
+@pytest.mark.integration
+def test_configuration_searches_include_tofu_json(tmp_path: Path) -> None:
+    subprocess.run(["git", "init", "-q"], cwd=tmp_path, check=True)
+    (tmp_path / "infra/json").mkdir(parents=True)
+    (tmp_path / "modules/policy").mkdir(parents=True)
+    (tmp_path / "infra/json/main.tofu.json").write_text(
+        """{"terraform":{"backend":{"local":{}},"required_version":"= 1.10.0"},
+"module":{"policy":{"source":"../../modules/policy"}}}
+"""
+    )
+    (tmp_path / "modules/policy/versions.tofu.json").write_text(
+        """{"terraform":{"required_providers":{"random":
+{"source":"hashicorp/random","version":"~> 3.6"}}}}
+"""
+    )
+    subprocess.run(["git", "add", "infra", "modules"], cwd=tmp_path, check=True)
+    plugin = Path(__file__).resolve().parents[1]
+    checked = 0
+    for relative in (
+        "references/layout-discovery.md",
+        "references/pin-sites.md",
+        "skills/bump-provider/SKILL.md",
+    ):
+        for command in re.findall(
+            r"```console\n\$ (.*?)\n```", (plugin / relative).read_text(), re.DOTALL
+        ):
+            argv = shlex.split(command.replace("\\\n", " "))
+            if argv[:2] not in (["git", "ls-files"], ["git", "grep"]) or "*.tf" not in argv:
+                continue
+            result = subprocess.run(argv, cwd=tmp_path, capture_output=True, check=True)
+            assert b".tofu.json" in result.stdout, (relative, command)
+            checked += 1
+    assert checked == 5

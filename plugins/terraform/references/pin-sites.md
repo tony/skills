@@ -29,8 +29,9 @@ names. Every declaration of a provider moves in one commit, or none does.
 
 ## Finding the declarations
 
-Constraints live in a `terraform` block's `required_providers`, in any `.tf`,
-`.tofu`, or `.tf.json` file under any filename. Search for the block, not the filename.
+Constraints live in a `terraform` block's `required_providers`, in `.tf`,
+`.tofu`, `.tf.json`, or `.tofu.json` files. Search for the block, then apply
+the selected tool's file precedence from the layout reference.
 
 Identity is the source address, not the local name: modules can call one
 provider by different local names, and one local name can point at different
@@ -95,9 +96,12 @@ rule. Beyond those:
   variables in a `Makefile` or `justfile`.
 - Atlantis: `terraform_version` in `atlantis.yaml`, per project or under
   `workflows`.
-- pre-commit: a `rev:` under a Terraform hook repository in
-  `.pre-commit-config.yaml`; read the file by path, since the name and the
-  version sit on different lines.
+- pre-commit: read `.pre-commit-config.yaml` by path. A repository's `rev`
+  selects the hook release; leave it unchanged during a CLI bump. For hooks
+  supporting `--hook-config=--tool-version`, inspect the hook identity and
+  `--tf-path` to establish whether that version selects Terraform, OpenTofu,
+  or another tool. A path to an executable selects an installed binary;
+  leave the path intact rather than treating it as a release version.
 - Terragrunt: `terraform_version_constraint` in `terragrunt.hcl` or
   `root.hcl`.
 - HCP Terraform or Terraform Enterprise: `terraform_version` on a
@@ -120,13 +124,14 @@ matches every `terraform plan` line in a `justfile`. Require the tool name
 **Read version files by path.** `.terraform-version` holds a bare version
 number, so no name-based filter matches it. Take every line.
 
-`required_version` is declared in `.tf`, `.tofu`, and `.tf.json` files at any depth; list
-every declaration with:
+`required_version` can be declared in `.tf`, `.tofu`, `.tf.json`, or
+`.tofu.json` files at any depth; list declarations before filtering by
+the selected tool's file precedence:
 
 ```console
 $ git grep \
     -n -I -e 'required_version' \
-    -- '*.tf' '*.tofu' '*.tf.json'
+    -- '*.tf' '*.tofu' '*.tf.json' '*.tofu.json'
 ```
 
 One search covers the first two traps, case-insensitively at any depth:
@@ -137,7 +142,7 @@ $ git grep \
     -e '(terraform|tofu|tf_?version).*[0-9]+\.[0-9]+' \
     -- ':(icase)*justfile' ':(icase)*makefile' '*Dockerfile*' \
     '*devcontainer.json' '*.tool-versions' '*mise.toml' '*mise/config.toml' \
-    '*terragrunt.hcl' '*root.hcl' '*atlantis.yaml' '*.tf.json' \
+    '*terragrunt.hcl' '*root.hcl' '*atlantis.yaml' '*.tf.json' '*.tofu.json' \
     '.github/*' '.gitlab-ci.yml' '.gitlab/*' '.circleci/*'
 ```
 

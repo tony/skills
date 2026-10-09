@@ -5,7 +5,7 @@ Read before deciding what is in scope.
 ## Contents
 
 - Search tracked files only
-- Find root modules from the `.tf` files
+- Find root modules from configuration files
 - Classify by signal, never by name
 - Map each child module to the roots that call it
 - The lock file belongs to the configuration, not the module
@@ -34,13 +34,13 @@ bump the next `terraform init` erases.
 Scope the search to tracked files:
 
 ```console
-$ git ls-files -z -- '*.tf' '*.tofu' '*.tf.json'
+$ git ls-files -z -- '*.tf' '*.tofu' '*.tf.json' '*.tofu.json'
 ```
 
 Apply the same exclusion to `.terragrunt-cache/`, and to any vendor
 directory the repository keeps.
 
-## Find root modules from the `.tf` files
+## Find root modules from configuration files
 
 A lock file may be untracked or gitignored, so a lock listing alone
 misses root modules. Start from the configuration. Directories holding a
@@ -51,7 +51,7 @@ $ git grep \
     -l -E \
     -e '^[[:space:]]*(backend[[:space:]]+"|cloud[[:space:]]*\{)' \
     -e '"(backend|cloud)"[[:space:]]*:' \
-    -- '*.tf' '*.tofu' '*.tf.json'
+    -- '*.tf' '*.tofu' '*.tf.json' '*.tofu.json'
 ```
 
 Lock files that are tracked or untracked-but-not-ignored:
@@ -111,7 +111,7 @@ $ git grep \
     -n -E \
     -e '^[[:space:]]*source[[:space:]]*=[[:space:]]*"\.\.?/' \
     -e '"source"[[:space:]]*:[[:space:]]*"\.\.?/' \
-    -- '*.tf' '*.tofu' '*.tf.json'
+    -- '*.tf' '*.tofu' '*.tf.json' '*.tofu.json'
 ```
 
 Resolve each `source` against the directory of the file that holds it.
@@ -141,13 +141,16 @@ OpenTofu reads both extensions, and same-named files do not merge:
 >
 > Source: [OpenTofu Files](https://opentofu.org/docs/language/files/)
 
-A `versions.tf` that OpenTofu never reads changes nothing when edited. When
-a directory holds any `.tofu` file, resolve each base name and write to the
-file the tool loads.
+A `versions.tf` that OpenTofu never reads changes nothing when edited.
+The same precedence applies to `.tofu.json` over `.tf.json`
+([OpenTofu JSON syntax](https://opentofu.org/docs/language/syntax/json/)).
+For each base name, inventory and edit the file the selected tool loads.
+Terraform ignores `.tofu` and `.tofu.json`; do not change those files during
+a Terraform-only bump.
 
 ## JSON syntax is not a text edit
 
-A constraint in `.tf.json` is a string inside nested objects, and
+A constraint in `.tf.json` or `.tofu.json` is a string inside nested objects, and
 line-oriented HCL edits corrupt it. Parse, modify, and re-serialise, or leave
 the file alone and report it.
 
@@ -175,8 +178,8 @@ once the discovery above finds no backend and no lock file.
 ## What to record
 
 Per directory: kind, lock file presence, each provider's `h1:` checksum count,
-and the providers and `required_version` it
-declares. Map each child module to the roots that call it, then ask the
+and the providers and `required_version` it declares. Map each child module
+to the roots that call it, then ask the
 questions below together once the inventory exists.
 
 ## What to ask

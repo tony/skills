@@ -34,9 +34,10 @@ $ git grep \
     -n -E \
     -e '^[[:space:]]*source[[:space:]]*=' \
     -e '"source"[[:space:]]*:' \
-    -- '*.tf' '*.tofu' '*.tf.json'
+    -- '*.tf' '*.tofu' '*.tf.json' '*.tofu.json'
 ```
 
+Apply the selected tool's file precedence from the layout reference.
 The list mixes provider and module sources, and each hit names its file
 and line. Keep only hits inside a `required_providers` block: read the
 file around the line to tell. As a first cut, a provider address has two

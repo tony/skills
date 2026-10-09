@@ -53,7 +53,8 @@ Follow `../../references/layout-discovery.md` and record its inventory.
 ### 3. Inventory every pin site
 
 Both kinds, per the pin-sites reference: `required_version` in every
-module (the reference's `git grep` lists them across `.tf`, `.tofu`, and `.tf.json`), and the pins outside the configuration (`.terraform-version`,
+module (the reference searches `.tf`, `.tofu`, `.tf.json`, and `.tofu.json`
+before applying the selected tool's file precedence), and the pins outside the configuration (`.terraform-version`,
 `.tool-versions`, `mise.toml`, `.mise/config.toml`, workflow files, image tags, devcontainer
 configuration, Makefile variables, `atlantis.yaml`, `.pre-commit-config.yaml`).
 With `--root-module`, apply the umbrella's scope rule to roots outside it
