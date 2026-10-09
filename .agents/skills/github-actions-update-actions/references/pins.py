@@ -8,8 +8,8 @@ major and at or below TARGET's. ``tag ACTION TAG`` exits 0 when the tag exists,
 1 when it does not (HTTP 404), and 3 when the lookup failed (auth, rate limit,
 network) so the tag could not be checked.
 
-Every git call runs as ``git -C <path>`` and every gh call names its slug, so
-the current directory never decides which repository is read.
+Clone commands name their path; GitHub CLI queries name their repository and
+github.com host independently of the working directory and host environment.
 """
 
 # ruff: noqa: S603, PLR2004, TRY003, EM102
@@ -21,10 +21,11 @@ import re
 import subprocess
 import sys
 from pathlib import Path
+from urllib.parse import urlsplit
 
 USES = re.compile(r"^\s*-?\s*uses:\s*(?P<ref>[^\s#]+)\s*(?:#\s*(?P<note>.*))?$")
 SLUG = re.compile(r"^[\w.-]+/[\w.-]+$")
-REMOTE_SLUG = re.compile(r"github\.com[:/](?P<slug>[\w.-]+/[\w.-]+?)(?:\.git)?/?$")
+SCP_REMOTE = re.compile(r"(?:[\w.-]+@)?github\.com:(?P<path>.+)", re.IGNORECASE | re.ASCII)
 WORKFLOW = re.compile(r"^\.github/(workflows|actions)/.+\.ya?ml$")
 MAJOR = re.compile(r"^v(\d+)(?:\.(\d+))?(?:\.(\d+))?$")
 
@@ -116,17 +117,47 @@ def _remote(path: str) -> str:
     raise SystemExit(f"{path}: no origin and {len(names)} remotes; name one")
 
 
+def _github_slug(url: str) -> str | None:
+    if any(c.isspace() or ord(c) < 32 or ord(c) == 127 for c in url) or any(
+        c in url for c in "\\?#"
+    ):
+        return None
+    if "://" in url:
+        try:
+            parsed = urlsplit(url)
+            # urlsplit defers port validation until this property is read.
+            _ = parsed.port
+        except ValueError:
+            return None
+        if (
+            parsed.scheme not in {"https", "ssh"}
+            or parsed.hostname != "github.com"
+            or parsed.netloc.count("@") > 1
+        ):
+            return None
+        path = parsed.path.removeprefix("/")
+    else:
+        match = SCP_REMOTE.fullmatch(url)
+        if not match:
+            return None
+        path = match.group("path")
+    slug = path.removesuffix("/").removesuffix(".git")
+    if not SLUG.fullmatch(slug) or any(part in {".", ".."} for part in slug.split("/")):
+        return None
+    return slug
+
+
 def _slug_from_remote(path: str, remote: str) -> str:
-    url = _out("git", "-C", path, "config", "--get", f"remote.{remote}.url").strip()
-    m = REMOTE_SLUG.search(url)
-    if not m:
+    url = _out("git", "-C", path, "config", "--get-all", f"remote.{remote}.url")
+    slug = _github_slug(url.removesuffix("\n"))
+    if slug is None:
         raise SystemExit(f"{path}: remote {remote} is not a github.com URL")
-    return m.group("slug")
+    return slug
 
 
 def _default_branch(slug: str) -> str:
     return _out(
-        "gh", "repo", "view", slug, "--json", "defaultBranchRef",
+        "gh", "repo", "view", f"https://github.com/{slug}", "--json", "defaultBranchRef",
         "--jq", ".defaultBranchRef.name",
     ).strip()  # fmt: skip
 
@@ -153,12 +184,13 @@ def _read_clone(path: str, remote: str, default: str) -> dict[str, str]:
 
 def _read_slug(slug: str, default: str) -> dict[str, str]:
     tree = _out(
-        "gh", "api", f"repos/{slug}/git/trees/{default}?recursive=1",
+        "gh", "api", "--hostname", "github.com", f"repos/{slug}/git/trees/{default}?recursive=1",
         "--jq", '.tree[] | select(.type == "blob") | .path',
     )  # fmt: skip
     return {
         n: _out(
-            "gh", "api", "-H", "Accept: application/vnd.github.raw+json",
+            "gh", "api", "--hostname", "github.com",
+            "-H", "Accept: application/vnd.github.raw+json",
             f"repos/{slug}/contents/{n}?ref={default}",
         )
         for n in tree.splitlines()
@@ -170,12 +202,12 @@ def inventory(repo: str) -> dict[str, object]:
     """Inventory one repository by clone path or slug."""
     if Path(repo).is_dir():
         remote = _remote(repo)
-        _out("git", "-C", repo, "fetch", remote)
         slug = _slug_from_remote(repo, remote)
+        _out("git", "-C", repo, "fetch", remote)
         default = _default_branch(slug)
         files = _read_clone(repo, remote, default)
         where: dict[str, object] = {"path": repo, "remote": remote}
-    elif SLUG.match(repo):
+    elif SLUG.fullmatch(repo):
         slug = repo
         default = _default_branch(slug)
         files = _read_slug(slug, default)
@@ -188,7 +220,9 @@ def inventory(repo: str) -> dict[str, object]:
 
 def tag_status(action: str, tag: str) -> tuple[str, str]:
     """Return ``exists``, ``missing`` (HTTP 404), or ``unchecked`` plus gh's error."""
-    done = _run("gh", "api", f"repos/{action_repo(action)}/git/ref/tags/{tag}")
+    done = _run(
+        "gh", "api", "--hostname", "github.com", f"repos/{action_repo(action)}/git/ref/tags/{tag}"
+    )
     if done.returncode == 0:
         return "exists", ""
     err = done.stderr.strip()
@@ -202,7 +236,8 @@ def majors(action: str, pin: str, target: str) -> list[str]:
     repo = action_repo(action)
     above, upto = _major_of(pin), _major_of(target)
     done = _run(
-        "gh", "api", f"repos/{repo}/releases", "--paginate", "--jq", ".[].tag_name",
+        "gh", "api", "--hostname", "github.com", f"repos/{repo}/releases",
+        "--paginate", "--jq", ".[].tag_name",
     )  # fmt: skip
     tags = done.stdout.split() if done.returncode == 0 else []
     picked = first_of_majors(tags, above, upto)

@@ -19,7 +19,9 @@ Read before writing any version string into a workflow.
 Own repositories only. Check the fork flag, not the owner name:
 
 ```console
-$ gh repo view <owner>/<name> --json isFork
+$ gh repo view \
+    --json isFork \
+    https://github.com/<owner>/<name>
 ```
 
 A fork (`isFork: true`) is out of scope unless the user names it with
@@ -27,14 +29,17 @@ A fork (`isFork: true`) is out of scope unless the user names it with
 
 ## Inventory pins from trunk, not the working tree
 
-Every inventory, fetch, and commit command names its repository: `git -C
-<path>` for a clone, `gh repo view <slug>` and `gh api repos/<slug>/...`
-for the API. A fleet run loops over repositories, and a command that reads
-the current directory reads the wrong repository's default branch and tree.
+Pin reads name their repository and host: `git -C <path>` for a clone,
+`gh repo view https://github.com/<slug>` and
+`gh api --hostname github.com repos/<slug>/...` for the API. The working
+directory and inherited `GH_HOST` or `GH_REPO` must not select the target.
 
 `../scripts/pins.py` does this deterministically (Python 3.9 or newer). It
-resolves the remote (`origin`, else the only remote), fetches, reads the
-default branch from the API, and prints one JSON object per repository with
+resolves the remote (`origin`, else the only remote), requires one declared
+HTTPS or SSH URL whose hostname is exactly `github.com`, then fetches and
+reads the default branch from the API. Git URL rewrites and SSH configuration
+can redirect transport; this check validates the declared URL only.
+It prints one JSON object per repository with
 every `uses:` pin in workflow and composite-action YAML files. Print the
 script's absolute path once and write it literally in each command:
 
@@ -45,13 +50,14 @@ $ python3 <absolute-path>/pins.py inventory <path-or-slug> [<path-or-slug>...]
 A repository named only by slug (`--repo <owner>/<name>` with no local
 clone) is read through the API. Without a local clone nothing can be
 committed: report that repository's audit and skip its commits, unless the
-user supplies a checkout path. Without the script, do the same by hand per
-repository:
+user supplies a checkout path. Without the script, validate the declared
+remote URL before fetching, then read each repository explicitly:
 
 ```console
-$ gh repo view <slug> \
+$ gh repo view \
     --json defaultBranchRef \
-    --jq .defaultBranchRef.name
+    --jq .defaultBranchRef.name \
+    https://github.com/<slug>
 ```
 
 ```console
@@ -70,8 +76,8 @@ Read only `.github/workflows/*.yml|yaml` and `.github/actions/**/*.yml|yaml`
 (composite actions pin versions too and are the most often missed), each with
 `git -C <path> show <remote>/<default>:<file>`. Search those files only: a
 search over all of `.github` also hits markdown. For a slug, list the tree
-with `gh api "repos/<slug>/git/trees/<default>?recursive=1"` and read each
-file raw with `gh api -H "Accept: application/vnd.github.raw+json"
+with `gh api --hostname github.com "repos/<slug>/git/trees/<default>?recursive=1"` and read each
+file raw with `gh api --hostname github.com -H "Accept: application/vnd.github.raw+json"
 "repos/<slug>/contents/<path>?ref=<default>"`. Loop with `while read -r`:
 an unquoted captured list expands as one word in zsh, so a repo with two
 workflow files drops out of the audit with no error and the fleet reads as
@@ -86,7 +92,10 @@ and say so in the report. For `owner/repo/subpath@ref`, look up tags on
 Ask the registry, not memory:
 
 ```console
-$ gh api repos/<owner>/<action>/releases/latest --jq .tag_name
+$ gh api \
+    --hostname github.com \
+    --jq .tag_name \
+    repos/<owner>/<action>/releases/latest
 ```
 
 Some actions publish only tags; when `releases/latest` returns nothing,
@@ -105,9 +114,11 @@ By hand: a major's first release is its `vN.0.0` tag. List them all, then keep
 those above the pin's major and at or below the target's:
 
 ```console
-$ gh api repos/<owner>/<action>/releases \
+$ gh api \
+    --hostname github.com \
     --paginate \
-    --jq '.[].tag_name | select(test("^v[0-9]+\\.0\\.0$"))'
+    --jq '.[].tag_name | select(test("^v[0-9]+\\.0\\.0$"))' \
+    repos/<owner>/<action>/releases
 ```
 
 For an action pinned at v3 with a v6 target, keep `v4.0.0`, `v5.0.0`, and
@@ -123,7 +134,9 @@ Confirm before writing, and gate on exit status
 and exits 1 when the tag is missing, 3 when the lookup failed):
 
 ```console
-$ gh api repos/<owner>/<action>/git/ref/tags/<tag> >/dev/null 2>&1
+$ gh api \
+    --hostname github.com \
+    repos/<owner>/<action>/git/ref/tags/<tag> >/dev/null 2>&1
 ```
 
 Only an HTTP 404 means the tag is missing. An auth, rate-limit, or network
@@ -141,7 +154,10 @@ comparing two tags by it makes identical tags look different. Dereference
 when the type is `tag`:
 
 ```console
-$ gh api repos/<owner>/<action>/git/tags/<tag-object-sha> --jq .object.sha
+$ gh api \
+    --hostname github.com \
+    --jq .object.sha \
+    repos/<owner>/<action>/git/tags/<tag-object-sha>
 ```
 
 This confirms claims like "the floating v6 tag now points at the v7 commit",
