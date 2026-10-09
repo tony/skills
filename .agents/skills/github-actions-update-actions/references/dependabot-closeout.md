@@ -47,8 +47,9 @@ unmapped.
 Present the mapping to the user, one line per PR: repo, number,
 title, bumped action, commit SHA or "obsolete". A title that names
 several actions (a grouped update) or comes from another bot is reported as
-unmapped. Show the exact commands below with every placeholder
-filled in. Run them only after the user confirms those commands. On
+unmapped. Show each complete comment body and the exact commands below with
+every placeholder filled in. Run them only after the user confirms the text
+and commands. On
 hosts without an interactive question tool, or in a headless run, print the
 filled commands for the user to run and run none; "go ahead and close them" in the request does not change this.
 
@@ -63,12 +64,28 @@ $ gh pr list \
     --json number,title
 ```
 
-Comment, then close:
+Create a temporary file for each comment:
+
+```console
+$ mktemp "${TMPDIR:-/tmp}/action-closeout.XXXXXX"
+```
+
+Write the body to the printed path with a file-writing tool, inserting
+repository and API values as literal text. Never construct the body through
+a shell command. Use the printed path, shell-quoted as one argument, for
+`<comment-file>`:
+
+```text
+Superseded by [`<sha12>`](https://github.com/<slug>/commit/<sha>) on `<trunk>`, which bumps `<action>`.
+```
+
+After confirmation, reread the file. If its text differs from the approved
+body, request confirmation again. Comment, then close:
 
 ```console
 $ gh pr comment <n> \
     --repo <slug> \
-    --body "Superseded by [\`<sha12>\`](https://github.com/<slug>/commit/<sha>) on \`<trunk>\`, which bumps \`<action>\`."
+    --body-file '<comment-file>'
 ```
 
 ```console
@@ -76,12 +93,11 @@ $ gh pr close <n> --repo <slug>
 ```
 
 A PR for an action no longer referenced by any workflow closes as
-obsolete, not superseded; comment without a commit, then close it as above:
+obsolete, not superseded. Use this body in its comment file, then comment
+and close it as above:
 
-```console
-$ gh pr comment <n> \
-    --repo <slug> \
-    --body "Closing as obsolete: \`<action>\` is no longer referenced by any workflow."
+```text
+Closing as obsolete: `<action>` is no longer referenced by any workflow.
 ```
 
 List every closed PR by URL in the report so each can be reopened.

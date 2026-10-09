@@ -320,7 +320,7 @@
         "references/prose-rules.md": "plugins/github-actions/references/prose-rules.md",
         "references/throwaway-worktree.md": "plugins/github-actions/references/throwaway-worktree.md"
       },
-      "bytes": 40945
+      "bytes": 41428
     },
     {
       "name": "github-actions-update-action",
@@ -335,7 +335,7 @@
         "references/prose-rules.md": "plugins/github-actions/references/prose-rules.md",
         "references/throwaway-worktree.md": "plugins/github-actions/references/throwaway-worktree.md"
       },
-      "bytes": 39666
+      "bytes": 40149
     },
     {
       "name": "github-actions-update-actions",
@@ -349,7 +349,7 @@
         "references/pins.py": "plugins/github-actions/scripts/pins.py",
         "references/prose-rules.md": "plugins/github-actions/references/prose-rules.md"
       },
-      "bytes": 33480
+      "bytes": 33963
     },
     {
       "name": "lean-tighten",

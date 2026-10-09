@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import subprocess
 import sys
 from pathlib import Path
@@ -121,3 +122,51 @@ def test_tag_exit_status(
     assert failed.returncode == EXIT_UNCHECKED
     assert "could not be checked" in failed.stderr
     assert "missing" not in failed.stdout
+
+
+def test_closeout_comment_keeps_branch_literal(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A valid Git branch containing shell syntax remains comment data."""
+    branch = "release$(printf${IFS}OWNED_MARKER)"
+    _git("check-ref-format", "--branch", branch, cwd=tmp_path)
+    reference = (SCRIPT.parent.parent / "references" / "dependabot-closeout.md").read_text()
+    command = re.findall(r"```console\n\$ (gh pr comment.*?)\n```", reference, re.DOTALL)[0]
+    values = {
+        "<n>": "41",
+        "<slug>": "acme/widgets",
+        "<sha12>": "a" * 12,
+        "<sha>": "a" * 40,
+        "<trunk>": branch,
+        "<action>": "actions/checkout",
+        "<comment-file>": "comment body.md",
+    }
+    for placeholder, value in values.items():
+        command = command.replace(placeholder, value)
+    body = f"Superseded on `{branch}`.\n"
+    (tmp_path / "comment body.md").write_text(body)
+    gh = tmp_path / "gh"
+    gh.write_text(
+        f"""#!{sys.executable}
+import json, sys
+from pathlib import Path
+args = sys.argv[1:]
+if '--body-file' in args:
+    body = Path(args[args.index('--body-file') + 1]).read_text()
+else:
+    body = args[args.index('--body') + 1]
+print(json.dumps({{"body": body}}))
+"""
+    )
+    gh.chmod(0o755)
+    monkeypatch.setenv("PATH", f"{tmp_path}{os.pathsep}{os.environ['PATH']}")
+
+    done = subprocess.run(
+        ["sh", "-c", command], cwd=tmp_path, capture_output=True, text=True, check=False
+    )
+
+    assert done.returncode == 0, done.stderr
+    assert branch in json.loads(done.stdout)["body"]
+    assert json.loads(done.stdout)["body"] == body
+    assert (tmp_path / "comment body.md").read_text() == body
