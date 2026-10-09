@@ -166,11 +166,22 @@ confirmed branches:
    $ python3 ../../scripts/bump_pin.py pyproject.toml <name> <old-version> <new-version>
    ```
 
-   It prints the count of pins changed. A non-zero exit means no pin matched
-   and the file is untouched. A `>=` or `~=` floor is such a case: ask the
-   user whether to raise the floor to the new version, then edit the line
-   by hand or use the package manager's own install command. Review `git diff`: only the
-   intended pins changed.
+   Exit 0 prints the count of pins changed. Exit 1 means no pin matched and
+   no write was attempted. Only on exit 1, if the dependency uses a `>=` or
+   `~=` floor, ask whether to raise it; edit it by hand or use the package
+   manager's own install command only after approval. Exit 2 is a usage
+   error; exit 3 is a file refusal, access, decode or write failure. On either
+   error or any unexpected status, stop this repo and report the failure per
+   `../../references/prose-rules.md`, without retrying or editing by another
+   method. A write failure may leave
+   partial content: do not call the file untouched. Ask the user to inspect
+   it before any further action. Review successful edits with `git diff`:
+   only the intended pins should have changed.
+
+   The helper refuses pre-existing leaf symlinks, hardlinks and non-regular
+   entries before reading. It does not guard parent aliases or concurrent
+   path replacement, make writes atomic, or establish that every text match
+   is a dependency declaration.
 
 4. **Re-lock**: the ecosystem's lock command (`uv lock`,
    `npm install --package-lock-only`, ...). On a resolution failure,

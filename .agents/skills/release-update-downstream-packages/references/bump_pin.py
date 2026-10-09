@@ -4,14 +4,19 @@
 Usage: ``bump_pin.py <manifest> <name> <old> <new>``. Rewrites ``==`` pins
 in ``pyproject.toml`` and requirements files, and ``"name": "<old>"`` entries
 (with an optional ``^``/``~`` range prefix) in ``package.json``. Prints the
-number of pins changed. Exits 1 and leaves the file untouched when no pin
-matches; exits 2 on a usage error.
+number of pins changed. Exits 1 without writing when no pin matches, 2 on a
+usage error, or 3 on file refusal, access, decode or write failure. A failed
+write may leave partial content.
+
+Rejects pre-existing linked or non-regular leaf entries before reading.
+Parent aliases and concurrent replacements are not guarded; writes are in place.
 """
 
 # pyright: reportAny=false, reportUnusedCallResult=false
 from __future__ import annotations
 
 import re
+import stat
 import sys
 from pathlib import Path
 
@@ -47,6 +52,10 @@ def pin_pattern(manifest: str, name: str, old: str) -> re.Pattern[str]:
 
 def bump(manifest: Path, name: str, old: str, new: str) -> int:
     """Rewrite matching pins in place and return how many changed."""
+    metadata = manifest.lstat()
+    if not stat.S_ISREG(metadata.st_mode) or metadata.st_nlink != 1:
+        message = f"refusing {manifest}: expected a regular file with exactly one link"
+        raise OSError(message)
     text = manifest.read_bytes().decode("utf-8")
     pattern = pin_pattern(manifest.name, name, old)
     updated, count = pattern.subn(lambda m: m.group(1) + new, text)
@@ -61,7 +70,14 @@ def main(argv: list[str]) -> int:
         sys.stderr.write(__doc__ or "")
         return 2
     manifest, name, old, new = argv
-    count = bump(Path(manifest), name, old, new)
+    try:
+        count = bump(Path(manifest), name, old, new)
+    except (OSError, UnicodeError) as error:
+        sys.stderr.write(f"pin update failed for {manifest}: {error}\n")
+        sys.stderr.write(
+            "Stop and inspect the file; a failed write may have changed its content.\n"
+        )
+        return 3
     if not count:
         sys.stderr.write(f"no pin of {name} at {old} in {manifest}; edit it by hand\n")
         return 1

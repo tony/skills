@@ -701,7 +701,7 @@
         "references/bump_pin.py": "plugins/release/scripts/bump_pin.py",
         "references/prose-rules.md": "plugins/release/references/prose-rules.md"
       },
-      "bytes": 21559
+      "bytes": 22972
     },
     {
       "name": "research-assess",

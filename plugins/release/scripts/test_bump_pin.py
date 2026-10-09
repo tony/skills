@@ -4,14 +4,15 @@
 # pyright: reportUnusedCallResult=false
 from __future__ import annotations
 
+import os
+import pathlib
 from typing import TYPE_CHECKING
 
 import bump_pin  # pyright: ignore[reportImplicitRelativeImport]
+import pytest
 
 if TYPE_CHECKING:
-    import pathlib
-
-    import pytest
+    from typing import NoReturn
 
 
 def test_inline_array_and_name_casing(tmp_path: pathlib.Path) -> None:
@@ -56,3 +57,105 @@ def test_no_match_leaves_file_and_exits_1(
     assert bump_pin.main([str(f), "foo", "0.1.1", "0.2.0"]) == 1
     assert f.read_text() == 'dependencies = ["foo>=0.1.1"]\n'
     assert "edit it by hand" in capsys.readouterr().err
+
+
+@pytest.mark.parametrize("kind", ["symlink", "dangling", "hardlink", "directory", "fifo"])
+def test_linked_or_nonregular_leaf_refuses_before_read(
+    tmp_path: pathlib.Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+    kind: str,
+) -> None:
+    target = tmp_path / "outside.txt"
+    target.write_bytes(b"foo==1.0.0\r\n")
+    target.chmod(0o640)
+    manifest = tmp_path / "requirements.txt"
+    if kind == "symlink":
+        manifest.symlink_to(target)
+    elif kind == "dangling":
+        manifest.symlink_to(tmp_path / "absent")
+    elif kind == "hardlink":
+        os.link(target, manifest)
+    elif kind == "directory":
+        manifest.mkdir()
+    else:
+        if not hasattr(os, "mkfifo"):
+            pytest.skip("FIFO creation requires os.mkfifo")
+        os.mkfifo(manifest)
+    before = manifest.lstat()
+    target_before = target.stat()
+
+    def forbidden_read(_path: pathlib.Path) -> NoReturn:
+        pytest.fail("a refused leaf must not be opened for content")
+
+    with monkeypatch.context() as patch:
+        patch.setattr(pathlib.Path, "read_bytes", forbidden_read)
+        status = bump_pin.main([str(manifest), "foo", "1.0.0", "1.1.0"])
+    assert status == 3  # noqa: PLR2004
+    assert manifest.lstat() == before
+    assert target.stat() == target_before
+    assert target.read_bytes() == b"foo==1.0.0\r\n"
+    output = capsys.readouterr()
+    assert not output.out
+    assert "refus" in output.err
+    assert "edit it by hand" not in output.err
+    assert "untouched" not in output.err
+
+
+@pytest.mark.parametrize("failure", ["lstat", "read", "decode", "write", "missing"])
+def test_file_failures_return_distinct_status_without_unchanged_claim(
+    tmp_path: pathlib.Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+    failure: str,
+) -> None:
+    manifest = tmp_path / "requirements.txt"
+    before = b"foo==1.0.0\r\n" if failure != "decode" else b"foo==1.0.0\xff"
+    if failure != "missing":
+        manifest.write_bytes(before)
+    original_write = pathlib.Path.write_bytes
+
+    def failed_operation(_path: pathlib.Path) -> NoReturn:
+        message = "injected observation/read failure"
+        raise OSError(message)
+
+    def partial_write(path: pathlib.Path, data: bytes) -> NoReturn:
+        original_write(path, data[:4])
+        message = "injected partial write failure"
+        raise OSError(message)
+
+    with monkeypatch.context() as patch:
+        if failure == "lstat":
+            patch.setattr(pathlib.Path, "lstat", failed_operation)
+        elif failure == "read":
+            patch.setattr(pathlib.Path, "read_bytes", failed_operation)
+        elif failure == "write":
+            patch.setattr(pathlib.Path, "write_bytes", partial_write)
+        status = bump_pin.main([str(manifest), "foo", "1.0.0", "1.1.0"])
+    assert status == 3  # noqa: PLR2004
+    output = capsys.readouterr()
+    assert not output.out
+    assert "pin update failed" in output.err
+    assert "may have changed" in output.err
+    assert "untouched" not in output.err
+    assert "edit it by hand" not in output.err
+    if failure == "missing":
+        assert not manifest.exists()
+    else:
+        assert manifest.read_bytes() == (b"foo=" if failure == "write" else before)
+
+
+@pytest.mark.parametrize("usage", [False, True])
+def test_normal_no_match_and_usage_keep_distinct_statuses(
+    tmp_path: pathlib.Path,
+    usage: bool,
+) -> None:
+    manifest = tmp_path / "requirements.txt"
+    before = b"other==1.0.0\r\n"
+    manifest.write_bytes(before)
+    metadata = manifest.stat()
+    argv = [] if usage else [str(manifest), "foo", "1.0.0", "1.1.0"]
+    assert bump_pin.main(argv) == (2 if usage else 1)
+    assert manifest.stat().st_ino == metadata.st_ino
+    assert manifest.stat().st_mode == metadata.st_mode
+    assert manifest.read_bytes() == before
