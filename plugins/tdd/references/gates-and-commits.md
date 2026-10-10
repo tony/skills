@@ -171,7 +171,8 @@ mode and observed reproduction results; and for `xfail` the fix-isolation
 result once the fix exists), then `## Follow-ups` (omit when empty). Follow-ups list only
 actions for the user, never narration of what the run did. A scoped run that
 stopped after the failing test lists one commit and says in the hero line that
-the fix is not made. Name no local paths or temp files.
+the fix is not made. Name no local paths or temp files. Report results only,
+never the workflow rules followed (trailers, commit format, gate policy).
 
 For skip mode, include the unskipped assertion failure and, when a fix exists,
 its unskipped pass. Report annotated skips as skips, never as XPASS or proof
@@ -217,7 +218,8 @@ state section, then `## To continue` with what the user must do. No other
 sections.
 
 - Before approval, or when a Phase 0 gate stops the run, the state section is
-  `## Plan`: plain bullets without bold labels, the diagnosis in one bullet,
+  `## Plan`: plain bullets with no bold labels or noun-colon leads (never
+  "Diagnosis: ..."), the diagnosis in one bullet,
   no paragraph between the hero line and the heading.
 - After a recovery stop, it is `## State`: commits made, files left
   uncommitted, any stash SHA, and what was tried.

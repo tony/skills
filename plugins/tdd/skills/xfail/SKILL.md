@@ -26,7 +26,8 @@ unavailable, present the plan as text.
 
 The plan always opens with four full sentences, no bold labels and no
 noun-colon leads (never "Bug summary: ..."): the first states the symptom,
-expected behavior, trigger, and affected component; the second names the test
+the root cause when the report or code shows it, expected behavior, trigger,
+and affected component; the second names the test
 file, fixtures, and xfail mechanism; the third says whether mocks are needed,
 what real behavior they replace, and how you will verify the failure is genuine
 and not mock-induced; the fourth names the phases that run (all, or only the
@@ -59,8 +60,9 @@ and the run stops after Gate 2 with the test committed. Never start Phase 3
 unasked.
 
 The plan needs no repository: when a Phase 0 gate (dirty tree, wrong
-repository) stops the run, the stopped report still states the plan, asks the
-user to approve it, and says what to fix in the repository.
+repository) stops the run, the stopped report still states the full plan under
+`## Plan`, asks the user to approve it, and says what to fix in the
+repository.
 
 ## Output shape
 

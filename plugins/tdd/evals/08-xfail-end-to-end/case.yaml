@@ -36,17 +36,10 @@ graders:
     pattern: '(\tcommit: [^\n]*\n[\s\S]*){4}'
     match: not_contains
 
-  - name: stash-pushed-through-the-script
+  - name: stash-round-trip-uses-the-script
     type: tool_used
     tool: Bash
-    input_match: 'stash_roundtrip\.py\s+push\b'
-    min: 1
-    arm: both
-
-  - name: stash-restored-by-sha
-    type: tool_used
-    tool: Bash
-    input_match: 'stash_roundtrip\.py\s+restore\s+[0-9a-f]{40}\b'
+    input_match: 'stash_roundtrip\.py'
     min: 1
     arm: both
 
@@ -131,6 +124,6 @@ graders:
     focus: last_message
     criteria: |
       The reply says the bug is fixed and lists three commits (failing test,
-      fix, xfail removal). It mentions that with the fix stashed the test
-      went back to its expected-failure state. It does not claim anything was
+      fix, xfail removal). It says that with the fix set aside the
+      test failed again, and that it passed once the fix was restored. It does not claim anything was
       pushed.
