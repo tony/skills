@@ -50,7 +50,10 @@ fixed order:
    ramp (and the excluded novelty window), and where results are
    likely to differ.
 
-Anonymize individuals to roles. Team and repo names stay.
+Anonymize individuals to roles. Team and repo names stay. Take every
+item from the run package; a part it does not hold (maintainer, build
+time, lessons) is written as unknown with the data that would resolve
+it, never supplied from inference.
 
 Write it per `references/prose-rules.md`.
 

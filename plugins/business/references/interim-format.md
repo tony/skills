@@ -247,7 +247,7 @@ never repeats it. Cite a benchmark with its qualifier ("METR, early-2025 tools")
 Reply in this shape, as plain text outside any code fence, with plain bullets, no bold (never `- **Label:** ...`), and no local paths:
 
 ```text
-✓ Leadership report: 310 engineer-hours per quarter projected (DERIVED)
+✓ Leadership report: net +310 engineer-hours per quarter projected, upside +520 (DERIVED)
 
 ## Run
 

@@ -85,8 +85,8 @@ Then run the money check, step 4 of `interim-format.md` § Rendering a report.
 
 ## Output
 
-Hero success form: `✓ Org-wide projection: <conservative figure with
-tag>`. Sections and stopped-run shape as in `interim-format.md`; `## Gate` also gives the
+Hero success form: `✓ Org-wide projection: <conservative figure>,
+upside <figure> (<tag>)`. Sections and stopped-run shape as in `interim-format.md`; `## Gate` also gives the
 adoption and realization values used with their register ids, and `## Report` names
 the most sensitive input. Panel options: write an internal case study
 next (read the `business-case-study-internal` skill and follow it), revisit

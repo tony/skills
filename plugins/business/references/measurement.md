@@ -84,7 +84,7 @@ Projection inputs must be finite and nonnegative. A measured slowdown is a
 loss to report, not a savings-rate input to turn positive.
 
 Segment the population: addressable ⊃ served ⊃ realized. Reporting
-only the addressable figure is the most common inflation — always
+only the addressable figure overstates the result — always
 show all three segments.
 
 `business.py project <run>` does the arithmetic from these register
@@ -159,7 +159,7 @@ any savings claim:
 - CI failure and retry rates.
 
 Activity metrics (lines of code, commit counts, PR counts) never
-stand alone, per Forsgren et al., "The SPACE of Developer
-Productivity" (ACM Queue 19(1), 2021,
-https://queue.acm.org/detail.cfm?id=3454124). They may appear only next
-to a quality or outcome metric.
+stand alone. Forsgren et al., "The SPACE of Developer Productivity"
+(ACM Queue 19(1), 2021, https://queue.acm.org/detail.cfm?id=3454124),
+argue that no single metric or dimension measures productivity. They
+may appear only next to a quality or outcome metric.

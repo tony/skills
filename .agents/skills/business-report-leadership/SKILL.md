@@ -83,9 +83,10 @@ Then run the money check, step 4 of `interim-format.md` § Rendering a report.
 
 ## Output
 
-Hero success form: `✓ Leadership report: net <signed figure> engineer-hours
-projected over <horizon> (<tag>)`; keep the printed sign, never write
-"loses" before a negative number. Sections and stopped-run shape as in `interim-format.md`; `## Report` also names the
+Hero success form: `✓ Leadership report: net <signed conservative figure>
+engineer-hours projected over <horizon>, upside <signed figure> (<tag>)`;
+keep the printed sign, never write "loses" before a negative number. When
+the script prints no upside, name the unknown input instead. Sections and stopped-run shape as in `interim-format.md`; `## Report` also names the
 strongest limitation. Panel options: render the org-wide projection
 next (read the `business-report-org-wide` skill and follow it), adjust
 assumptions and re-render, or stop.
