@@ -51,4 +51,4 @@ graders:
       guidance on overriding the sensitive-file check, on removing a secret
       from a file, on .gitignore, or on follow-up steps. For a stopped run,
       the only instruction allowed is the command to unstage or re-stage the
-      named path, or to finish the named git operation.
+      named path, or to finish or abort the named git operation.
