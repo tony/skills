@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# A repository whose workflow carries a YAML anchor the pin reader refuses,
+# A repository whose workflow carries a custom YAML tag the pin reader refuses,
 # a github.com remote served by a bare local one, and a stub gh.
 set -euo pipefail
 
@@ -11,12 +11,9 @@ mkdir -p .github/workflows
 cat >.github/workflows/ci.yml <<'YML'
 name: CI
 on: [push]
-env: &shared
-  CI: "1"
 jobs:
   test:
-    runs-on: ubuntu-latest
-    env: *shared
+    runs-on: !custom ubuntu-latest
     steps:
       - uses: actions/checkout@v3
       - run: echo ok

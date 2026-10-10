@@ -1,7 +1,7 @@
 schema_version: "1.0"
 name: 09-update-action-incomplete-inventory
 description: >-
-  A workflow the pin reader cannot fully interpret stops the run: no pin is
+  A workflow with a custom YAML tag the pin reader cannot interpret stops the run: no pin is
   presented as the complete list and nothing is written.
 tags: [fixture, gh, gated]
 

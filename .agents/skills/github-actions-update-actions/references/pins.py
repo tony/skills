@@ -43,6 +43,8 @@ WORKFLOW = re.compile(
 MAJOR = re.compile(r"^v(\d+)(?:\.(\d+))?(?:\.(\d+))?$")
 VERSION = re.compile(r"^v?(\d+(?:\.\d+){0,2})(?![\w.-])")
 EXIT_INCOMPLETE = 4
+ANCHOR = re.compile(r"&([^\s,\[\]{}]+)\s*(.*)", re.DOTALL)
+ALIAS = re.compile(r"\*([^\s,\[\]{}]+)\s*(?:#.*)?")
 
 
 @final
@@ -135,13 +137,26 @@ def _flow_depth(text: str, line: int) -> int:
     return depth
 
 
+def _merge_sources(value: Node, line: int) -> dict[str, Node]:
+    """Combine the mappings a ``<<`` key names; earlier sources win."""
+    sources = cast("list[Node]", value) if isinstance(value, list) else [value]
+    merged: dict[str, Node] = {}
+    for source in sources:
+        if not isinstance(source, dict):
+            raise UnsupportedError(line, "merge key value is not a mapping")
+        for name, item in cast("dict[str, Node]", source).items():
+            merged.setdefault(name, item)
+    return merged
+
+
 @final
 class _Flow:
     """Parses one complete flow collection held in a single string."""
 
-    def __init__(self, text: str, line: int) -> None:
+    def __init__(self, text: str, line: int, anchors: dict[str, Node]) -> None:
         self.text = text
         self.line = line
+        self.anchors = anchors
 
     def skip(self, i: int) -> int:
         while i < len(self.text) and self.text[i] in " \t":
@@ -157,8 +172,20 @@ class _Flow:
             return self.mapping(i + 1)
         if ch == "[":
             return self.sequence(i + 1)
-        if ch in "&*!|>%@`":
-            raise UnsupportedError(self.line, "anchor, alias, tag or reserved indicator")
+        if ch == "*":
+            m = ALIAS.match(self.text, i)
+            if not m or m.group(1) not in self.anchors:
+                raise UnsupportedError(self.line, "unknown or malformed alias")
+            return self.anchors[m.group(1)], m.end(1)
+        if ch == "&":
+            m = ANCHOR.match(self.text[i:])
+            if not m:
+                raise UnsupportedError(self.line, "malformed anchor")
+            value, end = self.node(i + 1 + len(m.group(1)))
+            self.anchors[m.group(1)] = value
+            return value, end
+        if ch in "!|>%@`":
+            raise UnsupportedError(self.line, "tag or reserved indicator")
         if ch in "\"'":
             end = _quoted_end(self.text, i)
             if end < 0:
@@ -181,14 +208,17 @@ class _Flow:
             if self.text[i] == "}":
                 return result, i + 1
             name, i = self.node(i)
-            if not isinstance(name, Scalar) or name == "<<":
+            if not isinstance(name, Scalar):
                 raise UnsupportedError(self.line, "unsupported flow mapping key")
             i = self.skip(i)
             value: Node = None
             if i < len(self.text) and self.text[i] == ":":
                 value, i = self.node(i + 1)
                 i = self.skip(i)
-            result[str(name)] = value
+            if name == "<<":
+                result = {**_merge_sources(value, self.line), **result}
+            else:
+                result[str(name)] = value
             if i < len(self.text) and self.text[i] == ",":
                 i += 1
 
@@ -217,6 +247,7 @@ class _Reader:
 
     def __init__(self, rows: list[Row]) -> None:
         self.rows = rows
+        self.anchors: dict[str, Node] = {}
 
     def next(self, i: int) -> int:
         while i < len(self.rows) and (not self.rows[i][1] or self.rows[i][1].startswith("#")):
@@ -262,32 +293,39 @@ class _Reader:
         return items, i
 
     def mapping(self, i: int, indent: int) -> tuple[Node, int]:
-        result: dict[str, Node] = {}
+        explicit: dict[str, Node] = {}
+        merged: dict[str, Node] = {}
         while i < len(self.rows) and self.rows[i][0] == indent:
             _, text, no = self.rows[i]
             pair = self.key(text, no)
             if pair is None:
                 raise UnsupportedError(no, "expected a mapping key")
             name, rest = pair
-            if name == "<<":
-                raise UnsupportedError(no, "merge key")
             if not rest or rest.startswith("#"):
-                j = self.next(i + 1)
-                if j < len(self.rows) and self.rows[j][0] > indent:
-                    value, i = self.node(j, indent)
-                elif (
-                    j < len(self.rows)
-                    and self.rows[j][0] == indent
-                    and (self.rows[j][1] == "-" or self.rows[j][1].startswith("- "))
-                ):
-                    value, i = self.sequence(j, indent)
-                else:
-                    value, i = None, j
+                value, i = self.below(i, indent, same=True)
             else:
                 value, i = self.inline(i, rest, indent)
-            result[name] = value
+            if name == "<<":
+                for key_, item in _merge_sources(value, no).items():
+                    merged.setdefault(key_, item)
+            else:
+                explicit[name] = value
             i = self.next(i)
-        return result, i
+        return {**merged, **explicit}, i
+
+    def below(self, i: int, indent: int, *, same: bool) -> tuple[Node, int]:
+        """Read the value on the lines after row ``i``; None when there is none."""
+        j = self.next(i + 1)
+        if j < len(self.rows) and self.rows[j][0] > indent:
+            return self.node(j, indent)
+        if (
+            same
+            and j < len(self.rows)
+            and self.rows[j][0] == indent
+            and (self.rows[j][1] == "-" or self.rows[j][1].startswith("- "))
+        ):
+            return self.sequence(j, indent)
+        return None, j
 
     def key(self, text: str, no: int) -> tuple[str, str] | None:
         """Split ``key: rest``; None when the line is not a mapping entry."""
@@ -317,8 +355,15 @@ class _Reader:
         first = text[0]
         if first in "|>":
             return self.block(i, text, parent)
-        if first in "&*!%@`":
-            raise UnsupportedError(no, "anchor, alias, tag or reserved indicator")
+        if first == "&":
+            return self.anchored(i, text, parent)
+        if first == "*":
+            m = ALIAS.fullmatch(text)
+            if not m or m.group(1) not in self.anchors:
+                raise UnsupportedError(no, "unknown or malformed alias")
+            return self.anchors[m.group(1)], i + 1
+        if first in "!%@`":
+            raise UnsupportedError(no, "tag or reserved indicator")
         if first in "{[":
             return self.flow(i, text)
         if first in "\"'":
@@ -337,6 +382,21 @@ class _Reader:
                 body += " " + more
                 j += 1
         return Scalar(body.strip(), no, comment), j
+
+    def anchored(self, i: int, text: str, parent: int) -> tuple[Node, int]:
+        no = self.rows[i][2]
+        m = ANCHOR.fullmatch(text)
+        if not m:
+            raise UnsupportedError(no, "malformed anchor")
+        name, rest = m.group(1), m.group(2).strip()
+        if not rest or rest.startswith("#"):
+            value, j = self.below(i, parent, same=self.rows[i][0] == parent)
+        elif self.key(rest, no) is not None:
+            raise UnsupportedError(no, "anchor on a mapping key")
+        else:
+            value, j = self.inline(i, rest, parent)
+        self.anchors[name] = value
+        return value, j
 
     def block(self, i: int, text: str, parent: int) -> tuple[Node, int]:
         lines: list[str] = []
@@ -374,7 +434,7 @@ class _Reader:
             text = self.rows[j][1]
             j += 1
         joined = " ".join(parts)
-        node, end = _Flow(joined, no).node(0)
+        node, end = _Flow(joined, no, self.anchors).node(0)
         if joined[end:].strip():
             raise UnsupportedError(no, "text after flow collection")
         return node, j
@@ -418,8 +478,13 @@ def step_uses(documents: list[Node]) -> list[Scalar]:
         mapping = _mapping(holder)
         if "uses" in mapping:
             value = mapping["uses"]
-            if not isinstance(value, Scalar) or value.block:
-                raise UnsupportedError(getattr(value, "line", 0), "uses is not a plain string")
+            if not isinstance(value, Scalar):
+                raise UnsupportedError(getattr(value, "line", 0), "uses is not a string")
+            if value.block:
+                lines = [row.strip() for row in value.splitlines() if row.strip()]
+                if len(lines) != 1:
+                    raise UnsupportedError(value.line, "uses block scalar is not one line")
+                value = Scalar(lines[0], value.line, value.comment)
             found.append(value)
 
     def steps(holder: Node) -> None:

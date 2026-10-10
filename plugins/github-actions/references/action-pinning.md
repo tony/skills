@@ -71,8 +71,9 @@ Use the helper's JSON filenames as exact values, including embedded whitespace.
 It reads NUL-delimited Git paths and JSON API paths, and URL-encodes API lookups.
 
 `"complete": false` means the list is not every pin. `unparsed` names each
-file and line the reader could not interpret (anchors, aliases, merge keys,
-complex keys, tabs, block-scalar `uses`), and `unresolved` names each local
+file and line the reader could not interpret (custom tags, an alias with
+no matching anchor, complex keys, tab indentation, a `uses` that is not one
+string), and `unresolved` names each local
 action that is missing or outside the repository. Report both as they are,
 list the pins found as partial, and propose no update for that repository.
 If the helper is unavailable or a read fails, report the inventory as

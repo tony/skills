@@ -70,8 +70,8 @@ Retitle or close PR #42 yourself, then ask again.
 ```
 
 ```text
-⚠ Blocked: .github/workflows/ci.yml uses a YAML alias on line 3 that the pin reader cannot interpret, so its pins are not a complete list.
-Replace the alias with its literal value, then ask again.
+⚠ Blocked: .github/workflows/ci.yml uses a custom YAML tag on line 3 that the pin reader cannot interpret, so its pins are not a complete list.
+Remove the tag, then ask again.
 ```
 
 ```text

@@ -524,6 +524,8 @@ jobs:
       - {name: node, uses: 'actions/setup-node@v4'}
       - uses:
           actions/cache@v4
+      - uses: >-
+          acme/folded@v8
       - name: inputs are not pins
         uses: acme/real@v5
         with: {uses: acme/input-only@v1}
@@ -543,6 +545,7 @@ def test_scan_reads_structure_not_text() -> None:
         ("actions/checkout@v3", "3"),
         ("actions/setup-node@v4", "4"),
         ("actions/cache@v4", "4"),
+        ("acme/folded@v8", "8"),
         ("acme/real@v5", "5"),
         ("a/one@v1", "1"),
         ("a/two@v2", "2"),
@@ -554,9 +557,11 @@ def test_scan_reads_structure_not_text() -> None:
     "text",
     [
         "jobs:\n  b:\n    steps:\n      - uses: *checkout\n",
-        "base: &base\n  uses: x/y@v1\njobs:\n  b:\n    steps:\n      - *base\n",
+        "jobs:\n  b:\n    runs-on: !custom ubuntu\n    steps: []\n",
+        "jobs:\n  b:\n    steps:\n      - &a name: x\n",
+        "a: &a [1]\nb: *a extra\n",
         "jobs:\n  b:\n    <<: *defaults\n",
-        "jobs:\n  b:\n    steps:\n      - uses: |\n          a/b@v1\n",
+        "jobs:\n  b:\n    steps:\n      - uses: |\n          a/b@v1\n          c/d@v1\n",
         "jobs:\n  b:\n    steps:\n      - uses: [a/b@v1]\n",
         "jobs:\n  b:\n    steps:\n      - {uses: 'a/b@v1\n",
         "jobs:\n  b:\n\tsteps: []\n",
@@ -662,3 +667,46 @@ def test_proposal_separates_pin_changes_from_everything_else(
         ("actions/cache", "3.0.0", "4.1.0"),
     ]
     assert got["other"] == 2 + 1 + 2
+
+
+ANCHORED = """\
+x-defaults: &defaults
+  runs-on: ubuntu-latest
+  env: &env {CI: "1"}
+x-steps: &steps
+  - uses: actions/checkout@v3
+  - &cache
+    uses: actions/cache@v4
+jobs:
+  one:
+    <<: *defaults
+    steps: *steps
+  two:
+    <<: [*defaults, {runs-on: windows-latest}]
+    runs-on: macos-latest
+    steps:
+      - *cache
+      - &setup {uses: "actions/setup-node@v4"}
+      - *setup
+      - uses: &pin acme/own@v7
+      - name: &note literal
+        uses: *pin
+"""
+
+
+def test_scan_resolves_anchors_aliases_and_merge_keys() -> None:
+    """Anchored steps are pins at each use; merge keys let explicit keys win."""
+    result = pins._scan({".github/workflows/ci.yml": ANCHORED}, lambda _name: None)
+    assert result["complete"] is True
+    assert [p["uses"] for p in result["pins"]] == [
+        "actions/checkout@v3",
+        "actions/cache@v4",
+        "actions/cache@v4",
+        "actions/setup-node@v4",
+        "actions/setup-node@v4",
+        "acme/own@v7",
+        "acme/own@v7",
+    ]
+    docs = pins.load_documents(ANCHORED)
+    assert docs[0]["jobs"]["one"]["runs-on"] == "ubuntu-latest"
+    assert docs[0]["jobs"]["two"]["runs-on"] == "macos-latest"
