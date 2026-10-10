@@ -15,7 +15,7 @@ decision.
 ## Measure first
 
 Measure the blast radius without editing anything. Run the bundled script
-from the repository to measure. Resolve `references/default_delta.py` against
+from the repository to measure. Resolve `./default_delta.py` against
 this file's directory (the path it was read from) and write that absolute
 path literally in the command; shell variables do not persist between Bash
 calls. Never show that path in the reply.
@@ -32,7 +32,7 @@ In an audit, pass the ephemeral runner (`uv run` would create `.venv` and a
 lockfile):
 
 ```console
-$ python3 references/default_delta.py -- \
+$ python3 ./default_delta.py -- \
     uv run --no-sync --isolated --with ruff==<target> ruff
 ```
 
@@ -40,7 +40,7 @@ Otherwise pass the project's own runner, so the binary is the version the
 lockfile resolves; confirm it with `<runner> --version`:
 
 ```console
-$ python3 references/default_delta.py -- uv run ruff
+$ python3 ./default_delta.py -- uv run ruff
 ```
 
 The per-rule difference is the cost; measure every repository in scope before

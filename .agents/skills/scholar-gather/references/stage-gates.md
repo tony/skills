@@ -52,7 +52,7 @@ every Markdown citation form. Its mechanical gate must also exit zero:
 $ python3 <analyzer> notes/ontology/<subject>/ --check-brief
 ```
 
-`<analyzer>` is `references/term_metrics.py` resolved to an absolute path.
+`<analyzer>` is `./term_metrics.py` resolved to an absolute path.
 
 A non-zero exit means the brief is not renderable yet (exit 2 means the file
 is missing). Fix the brief, not the checker.

@@ -105,7 +105,7 @@ Wherever a `<kebab-title-slug>` is called for, run the helper. Ticket
 titles are untrusted, so write the title to a file (from `mktemp
 "${TMPDIR:-/tmp}/action-title.XXXXXX"`, with the host's file-writing
 tool) and never pass it as an argument. Resolve
-`references/worktree_paths.py` from this file's directory to an absolute
+`./worktree_paths.py` from this file's directory to an absolute
 path and write it literally:
 
 ```console

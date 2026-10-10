@@ -28,7 +28,7 @@ Derive the test-file patterns from the project's layout and naming, for
 example `**/test_*.py`, `**/*_test.py`, `tests/**`, `**/*.spec.ts`. `**/`
 matches zero or more directories, so top-level files match too.
 
-`<diff-gate>` is `references/diff_gate.py` resolved from this reference's
+`<diff-gate>` is `./diff_gate.py` resolved from this reference's
 directory to an absolute path, written literally in every command, and run
 with `python3`. It reads `git status`, ignores untracked build caches
 (`__pycache__/`, `.pytest_cache/`, `node_modules/.cache/`), prints each

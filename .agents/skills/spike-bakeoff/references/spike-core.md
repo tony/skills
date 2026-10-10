@@ -16,7 +16,7 @@ the `spike-ratchet` skill read this file instead of each other.
 
 ## Scripts
 
-`references/spike.sh` holds the git plumbing. The shell's working directory
+`./spike.sh` holds the git plumbing. The shell's working directory
 is the project, not this file, so resolve `../scripts` against this file's
 directory to an absolute path and write that path literally in every command
 below, where `<scripts>` stands. The script exits 1 with a one-line reason

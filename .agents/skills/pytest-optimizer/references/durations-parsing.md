@@ -27,7 +27,7 @@ high-variance.
 2. **It does not attribute cost per fixture.** A `setup` row is the whole chain
    for one item, and a shared higher-scope fixture is billed to the **first**
    item that triggers it. Per-fixture attribution needs the opt-in timing plugin
-   (`templates/pytest_optimizer_plugin.py`).
+   (`../templates/pytest_optimizer_plugin.py`).
 3. **It does not include collection.** Profile collection separately with
    `time pytest --co -q` (H22).
 

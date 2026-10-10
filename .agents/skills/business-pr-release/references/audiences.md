@@ -77,7 +77,7 @@ by sourcing figures only from the public case study.
    ("Atlas", not "Atlas team"):
 
    ```console
-   $ references/business.py scan \
+   $ ./business.py scan \
        --deny <name> \
        --allow-url https://arxiv.org/ \
        --allow UTF-8 \

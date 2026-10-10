@@ -45,7 +45,7 @@ it as `mode:plan`.
 
 ## Run a tier
 
-`<runner>` is `references/run_tier.py`, resolved from this file's directory to
+`<runner>` is `./run_tier.py`, resolved from this file's directory to
 an absolute path written literally in every command. It
 enforces the timeout itself, closes stdin, terminates the tier's process group
 on completion or timeout, and prints one JSON object:

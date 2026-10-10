@@ -82,7 +82,7 @@ ran, or the session has been working in this repo, that is the evidence;
 re-reading what is already in context is the common way this gets slow.
 
 **Cheap — run when the session's own memory is thin.** The position
-script (`references/position.py`: branch, trunk, ahead/behind,
+script (`./position.py`: branch, trunk, ahead/behind,
 uncommitted work) and the branch's commit subjects. These are local and
 fast. A narrow file question takes only that file's status and diff;
 unrelated branch, trunk, and remote lookups earn no line, even if unavailable.

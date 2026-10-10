@@ -24,7 +24,7 @@ Contents:
    directory, credentials included, into a sibling checkout. The helper
    compares physical paths (a symlinked home, common on WSL and macOS,
    slips past a string compare) and covers `/`. Resolve
-   `references/worktree_paths.py` from this file's directory to an
+   `./worktree_paths.py` from this file's directory to an
    absolute path and write it literally:
 
 ```console

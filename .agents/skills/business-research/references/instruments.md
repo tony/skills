@@ -146,7 +146,7 @@ unavailable, not worked around.
   full query output that shows the zero, so the absence is MEASURED.
 - Compute distributions client-side from the raw snapshots: the API
   returns events; medians, IQRs, and intervals are computed locally
-  with `references/business.py stats`.
+  with `./business.py stats`.
 - A snapshot found defective is never edited: add a superseding
   snapshot and record the supersession in the run README and
   `sources.md`.

@@ -99,7 +99,7 @@ A list of entries:
 `source_type` is one of MEASURED | DERIVED | BENCHMARKED |
 ESTIMATED; `confidence` is high | medium | low. Every field above is
 required on every entry, written as flat `key: value` lines with no
-trailing comments, quotes, or nesting; `references/business.py assumptions <file>`
+trailing comments, quotes, or nesting; `./business.py assumptions <file>`
 checks that and the two enumerations. A MEASURED entry's `source_ref`
 names a `sources.md` entry; an assumption with no instrument behind
 it is ESTIMATED. An empty file passes: a run that only measures
@@ -151,7 +151,7 @@ named workflow, else the newest business run. List runs newest
 first, ordered by the date in the path:
 
 ```console
-$ references/business.py runs
+$ ./business.py runs
 ```
 
 It searches only `~/Documents` and, on WSL, the Windows users'
@@ -167,7 +167,7 @@ section instead of asking.
 Report commands refuse to render from an incomplete package. Run:
 
 ```console
-$ references/business.py gate <run>
+$ ./business.py gate <run>
 ```
 
 It prints each problem and exits 1, or prints `ok`. It checks that
@@ -203,7 +203,7 @@ Value is engineer-hours, cycle time, and capacity, never money.
    reply; use the absolute path to the script:
 
    ```console
-   $ references/business.py scan \
+   $ ./business.py scan \
        --rules currency,money-term \
        <run>/reports/<name>.md
    ```

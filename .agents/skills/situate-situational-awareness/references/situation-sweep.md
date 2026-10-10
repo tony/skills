@@ -67,7 +67,7 @@ Run the position script. It only reads git, never fetches, and prints
 JSON with relative untracked paths and no absolute root path:
 
 ```console
-$ python3 references/position.py
+$ python3 ./position.py
 ```
 
 For a pull-request subject, apply the identity checks in that section

@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Render ``references/apply-template.sh`` into a run directory's ``apply.sh``.
+"""Render ``./apply-template.sh`` into a run directory's ``apply.sh``.
 
 Usage: render_apply.py --run-dir DIR --baseline SHA --trunk-ref REF [--registry PATH]
 

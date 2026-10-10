@@ -49,7 +49,7 @@ $ pytest --setup-plan
 ```
 
 For true per-fixture timing, generate the opt-in plugin
-(`templates/pytest_optimizer_plugin.py`), which records each fixture's own setup
+(`../templates/pytest_optimizer_plugin.py`), which records each fixture's own setup
 seconds.
 
 ## Mis-scoped fixture (H10/H13)

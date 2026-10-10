@@ -119,7 +119,7 @@ The committed number is always the conservative one.
 - A median paired difference is not the difference of the two medians.
   Compute before and after medians separately, or report only the paired gap.
 - Bootstrapped BCa intervals for medians, computed by
-  `references/business.py stats` (absolute path; one number per line on stdin or
+  `./business.py stats` (absolute path; one number per line on stdin or
   in files). It prints n, median, quartiles, the 95% interval, the
   seed, and the resample count; paste them next to the result.
   Below n=5, `stats` prints `range_lo` and `range_hi` instead and no `ci95_*`; call that

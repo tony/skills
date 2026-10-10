@@ -177,7 +177,7 @@ stable versions:
 ```console
 $ curl -fsS https://registry.terraform.io/v1/providers/hashicorp/aws/versions \
     | jq -r '.versions[].version' \
-    | python3 references/lockctl.py stable 3
+    | python3 ./lockctl.py stable 3
 ```
 
 To confirm a version the user named, test for that exact entry. The command
@@ -232,7 +232,7 @@ are tags on its GitHub repository; list the latest stable ones with:
 ```console
 $ git ls-remote --tags --refs https://github.com/opentofu/opentofu.git 'v*' \
     | sed 's#.*refs/tags/v##' \
-    | python3 references/lockctl.py stable 3
+    | python3 ./lockctl.py stable 3
 ```
 
 Confirm a named OpenTofu version by its tag; the command exits 2 when the

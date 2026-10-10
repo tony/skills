@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import dataclasses
 import json
+import posixpath
 import re
 import typing as t
 from pathlib import Path
@@ -89,7 +90,8 @@ project's own name inside a URL from reading as a citation.
 
 TOKEN_RE = re.compile(
     r"""
-      (?P<root>\$\{CLAUDE_PLUGIN_ROOT\}(?P<root_path>/[A-Za-z0-9._/-]+)?)
+      (?<=\]\()(?P<link>(?!/)[A-Za-z0-9._/-]+)(?=[)#\s])
+    | (?P<root>\$\{CLAUDE_PLUGIN_ROOT\}(?P<root_path>/[A-Za-z0-9._/-]+)?)
     | (?P<repo>"""
     + REPO_PATH_PATTERN
     + r""")(?::\d+(?:-\d+)?)?
@@ -193,6 +195,12 @@ class BuiltSkill:
         Path-shaped tokens left verbatim because they name the user's project.
     unresolved : list[str]
         Host command references with no counterpart in the export.
+    links : list[tuple[str, str, str]]
+        ``(emitting file, spelled path, intended file)`` for every bundled
+        path rewritten into the output, all output-relative. The spelled path
+        must resolve from the emitting file's directory to the intended file.
+    collisions : list[str]
+        Output-relative paths that two different sources both wanted.
     description : str
         Description the builder intended to emit, for round-trip verification.
     """
@@ -203,6 +211,8 @@ class BuiltSkill:
     vendored: dict[str, str]
     external: list[str]
     unresolved: list[str]
+    links: list[tuple[str, str, str]]
+    collisions: list[str]
     description: str
 
 
@@ -599,6 +609,9 @@ class SkillBuilder:
         self._pending: list[tuple[Path, Path]] = []
         self._external: set[str] = set()
         self._unresolved: set[str] = set()
+        self._links: list[tuple[str, str, str]] = []
+        self._collisions: list[str] = []
+        self._emitting: str = "SKILL.md"
         self._notes: set[str] = set()
         self._description: str = ""
 
@@ -636,6 +649,8 @@ class SkillBuilder:
             vendored={rel: str(src.relative_to(REPO_ROOT)) for src, rel in self._vendored.items()},
             external=sorted(self._external),
             unresolved=sorted(self._unresolved),
+            links=sorted(set(self._links)),
+            collisions=sorted(self._collisions),
             description=" ".join(self._description.split()),
         )
 
@@ -667,6 +682,7 @@ class SkillBuilder:
         while self._pending:
             src, plugin = self._pending.pop(0)
             rel = self._vendored[src]
+            self._emitting = rel
             mode = src.stat().st_mode & 0o777
             try:
                 raw = src.read_text(encoding="utf-8")
@@ -735,36 +751,36 @@ class SkillBuilder:
             return ""
         return "\n\n## Portability notes\n\n" + "\n".join(bullets) + "\n"
 
-    def _allocate(self, preferred: str) -> str:
-        """Pick a free output-relative path, disambiguating on basename clashes.
-
-        The first writer keeps the plain name and later ones get a prefix; the
-        traversal is sorted, so the assignment is reproducible.
-        """
-        if preferred not in self._files and preferred not in self._vendored.values():
-            return preferred
-        head, _, tail = preferred.rpartition("/")
-        counter = 2
-        while True:
-            candidate = f"{head}/{counter}-{tail}"
-            if candidate not in self._files and candidate not in self._vendored.values():
-                return candidate
-            counter += 1
-
     def _vendor(self, src: Path, plugin: Path) -> str:
-        """Queue a resource for copying and return its output-relative path."""
+        """Queue a resource for copying and return its output-relative path.
+
+        Two different sources with one basename in one output directory are
+        recorded as a collision; the later one is renamed so the build
+        completes, and ``portable --check`` fails on the record.
+        """
         known = self._vendored.get(src)
         if known is not None:
             return known
         rel_in_plugin = src.relative_to(plugin)
         top = rel_in_plugin.parts[0] if rel_in_plugin.parts[0] in RESOURCE_DIRS else _VENDOR_ROOT
-        preferred = f"{top}/{src.name}"
-        if any(rel == preferred for rel in self._vendored.values()):
-            preferred = f"{top}/{plugin.name}-{src.name}"
-        rel = self._allocate(preferred)
+        rel = f"{top}/{src.name}"
+        if rel in self._vendored.values() or rel in self._files:
+            self._collisions.append(rel)
+            counter = 2
+            while f"{top}/{counter}-{src.name}" in self._vendored.values():
+                counter += 1
+            rel = f"{top}/{counter}-{src.name}"
         self._vendored[src] = rel
         self._pending.append((src, plugin))
         return rel
+
+    def _spell(self, target: str) -> str:
+        """Spell an output-relative path from the file being emitted."""
+        start = posixpath.dirname(self._emitting)
+        if not start:
+            return target
+        spelled = posixpath.relpath(target, start)
+        return spelled if spelled.startswith("..") else f"./{spelled}"
 
     def _rewrite_fenced(
         self, text: str, plugin: Path, base: Path, *, verbatim: bool = False
@@ -830,12 +846,15 @@ class SkillBuilder:
             if raw is None:
                 return "the plugin root", False
             return self._replace_path(raw.lstrip("/"), plugin, plugin)
-        if match.group("rel") is not None:
+        link = match.group("link")
+        if match.group("rel") is not None or link is not None:
             # A skill addresses its plugin's shared resources by climbing out of
             # its own directory, the spelling both hosts resolve without
             # substitution. Flattening the export severs that climb, so the
             # target is vendored exactly as a ${CLAUDE_PLUGIN_ROOT} path was.
-            return self._replace_path(match.group("rel"), plugin, base)
+            return self._replace_path(
+                link or match.group("rel"), plugin, base, link=link is not None
+            )
         return self._replace_path(match.group("res"), plugin, base)
 
     def _replace_slash(self, token: str) -> tuple[str | None, bool]:
@@ -863,8 +882,14 @@ class SkillBuilder:
             )
         return _describe_source_path(plugin_name, rel), True
 
-    def _replace_path(self, raw: str, plugin: Path, base: Path) -> tuple[str | None, bool]:
-        """Vendor a resource path, name a peer component, or leave it verbatim."""
+    def _replace_path(
+        self, raw: str, plugin: Path, base: Path, *, link: bool = False
+    ) -> tuple[str | None, bool]:
+        """Vendor a resource path, name a peer component, or leave it verbatim.
+
+        A Markdown link target that names no bundled file is a plain link, not
+        a project path, and is left alone without being recorded as external.
+        """
         for candidate in (raw, raw.rstrip(".,;:")):
             resolved = self._resolve(candidate, plugin, base)
             if resolved is None:
@@ -876,8 +901,12 @@ class SkillBuilder:
                     return "this skill", True
                 return f"the `{name}` skill", True
             suffix = raw[len(candidate) :]
-            return self._vendor(target, owner) + suffix, False
-        self._external.add(raw)
+            key = self._vendor(target, owner)
+            spelled = self._spell(key)
+            self._links.append((self._emitting, spelled, key))
+            return spelled + suffix, False
+        if not link or raw.startswith(("../", *RESOURCE_DIRS)):
+            self._external.add(raw)
         return None, False
 
     def _resolve(self, raw: str, plugin: Path, base: Path) -> tuple[Path, Path] | None:

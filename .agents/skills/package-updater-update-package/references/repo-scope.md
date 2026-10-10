@@ -61,7 +61,7 @@ different names. Deduplicate by remote URL and keep one.
 
 ## Find the default branch
 
-`references/repo_facts.py --fetch <repo>...` fetches the remote, resolves
+`./repo_facts.py --fetch <repo>...` fetches the remote, resolves
 the default branch (local `HEAD` ref, then `ls-remote`), and prints
 `default_branch`, `behind_remote`, `fork_signal`, `linked_worktree` and the
 pins read from that branch as one JSON object per repository. It uses the

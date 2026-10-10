@@ -27,7 +27,7 @@ address, selected version, `h1:` hash count), `drop` removes one provider
 block, `stable` filters a version list, `platforms` lists the
 `-platform=` values the repository's CI and task files pass to
 `providers lock`, and `diff` compares two locks provider by provider.
-The commands below name it as `references/lockctl.py`, relative to this
+The commands below name it as `./lockctl.py`, relative to this
 file's directory. Print its absolute path once and write that path
 literally in each command, since shell variables do not persist between
 Bash calls.
@@ -142,7 +142,7 @@ the command prints `dropped`, or `absent` when the provider is new in
 this directory:
 
 ```console
-$ python3 references/lockctl.py drop \
+$ python3 ./lockctl.py drop \
     <root-module-dir>/.terraform.lock.hcl \
     <provider-source-address>
 ```
@@ -155,7 +155,7 @@ Only the target provider's `version`, `constraints`, and `hashes` move.
 Check it with `diff`, naming the target in `--allow`:
 
 ```console
-$ python3 references/lockctl.py diff \
+$ python3 ./lockctl.py diff \
     --allow <provider-source-address> \
     HEAD:<root-module-dir>/.terraform.lock.hcl \
     <root-module-dir>/.terraform.lock.hcl
@@ -206,7 +206,7 @@ drop. Equal counts do not prove the same platforms remain covered. `state`
 prints the checksum counts, one line per provider:
 
 ```console
-$ python3 references/lockctl.py state \
+$ python3 ./lockctl.py state \
     <root-module-dir>/.terraform.lock.hcl
 ```
 
@@ -222,7 +222,7 @@ Before refreshing, find the required platform names where the repository
 writes them down:
 
 ```console
-$ python3 references/lockctl.py platforms
+$ python3 ./lockctl.py platforms
 ```
 
 It prints each CI or task file (workflows, a Makefile or justfile
@@ -293,7 +293,7 @@ Read the version out of the lock file and compare it to the target; a zero
 exit code proves nothing:
 
 ```console
-$ python3 references/lockctl.py state \
+$ python3 ./lockctl.py state \
     <root-module-dir>/.terraform.lock.hcl
 ```
 

@@ -20,6 +20,7 @@ import ast
 import concurrent.futures
 import json
 import os
+import posixpath
 import re
 import shutil
 import subprocess
@@ -2139,23 +2140,13 @@ def _check_one_skill(skill: BuiltSkill) -> list[str]:
             errors.append(f"portable: [{skill.name}] '{rel}' still contains an inline-bash span")
         if re.search(r"(?<![A-Za-z0-9._/-])plugins/[a-z]", body):
             errors.append(f"portable: [{skill.name}] '{rel}' still contains an in-repo path")
-        climb = re.search(
-            r"(?<![A-Za-z0-9._/-])(?:\.\./)+(?:" + "|".join(RESOURCE_DIRS) + r")/",
-            body,
-        )
-        if climb is not None:
-            # A source skill reaches its plugin's shared files by climbing out of
-            # its own directory, and the flattened export severs that climb. Only
-            # a climb into a resource directory is a bundle path; '../myproject'
-            # names a sibling of the user's own checkout and must survive intact.
-            errors.append(f"portable: [{skill.name}] '{rel}' still climbs out of the skill")
     errors.extend(_check_frontmatter(skill, text))
     errors.extend(
         f"portable: [{skill.name}] bundled path '{rel}' was not emitted"
         for rel in sorted(skill.vendored)
         if rel not in skill.files
     )
-    errors.extend(_check_body_paths(skill))
+    errors.extend(_check_paths(skill))
     errors.extend(_check_verbatim_fences(skill))
     return errors
 
@@ -2211,30 +2202,50 @@ def _check_frontmatter(skill: BuiltSkill, text: str) -> list[str]:
     return errors
 
 
-def _check_body_paths(skill: BuiltSkill) -> list[str]:
-    """Verify every bundled-shaped relative path resolves inside the skill.
+_PATH_RE = re.compile(
+    r"(?<![A-Za-z0-9._/-])(?:(?:\.\./)+[A-Za-z0-9._/-]*[A-Za-z0-9_]|(?:"
+    + "|".join(RESOURCE_DIRS)
+    + r")/[A-Za-z0-9._/-]+)"
+)
 
-    ``docs/`` is the one ambiguous prefix in this repo: weave owns
+
+def _check_paths(skill: BuiltSkill) -> list[str]:
+    """Resolve every relative path in every emitted file from its own directory.
+
+    Each rewritten path is checked against the file the builder meant, so a
+    sibling link that lands on a different file fails; any other bundle-shaped
+    path must name an emitted file. ``docs/`` is the one ambiguous prefix: weave owns
     ``docs/repo-guard-protocol.md`` while slop and pr quote ``docs/install.md``
-    as a file in the *user's* project. An unresolved ``docs/`` path is reported
-    rather than failed, so a broken bundled ``docs/`` link is not caught here;
-    every other prefix must resolve.
+    as a file in the *user's* project, so an unresolved ``docs/`` token the
+    builder left verbatim is not reported. A ``..`` climb toward a name outside
+    the resource directories is a user-project path and survives.
     """
     errors: list[str] = []
-    known = set(skill.files)
+    files = set(skill.files)
     external = set(skill.external)
-    pattern = re.compile(
-        r"(?<![A-Za-z0-9._/-])(?:" + "|".join(RESOURCE_DIRS) + r")/[A-Za-z0-9._/-]+"
+    errors.extend(
+        f"portable: [{skill.name}] '{path}' collides with another source of the same name"
+        for path in skill.collisions
     )
+    for emitted, spelled, intended in skill.links:
+        landed = posixpath.normpath(posixpath.join(posixpath.dirname(emitted), spelled))
+        if landed != intended:
+            errors.append(
+                f"portable: [{skill.name}] '{emitted}' '{spelled}' -> '{landed}', not '{intended}'"
+            )
     for rel, (content, _mode) in sorted(skill.files.items()):
         body = strip_frontmatter(content.decode("utf-8", errors="replace"))
-        for match in pattern.finditer(body):
-            token = match.group(0)
-            if token in known or token.rstrip(".,;:") in known:
+        here = posixpath.dirname(rel)
+        for match in _PATH_RE.finditer(body):
+            token = match.group(0).rstrip(".,;:")
+            if posixpath.normpath(posixpath.join(here, token)) in files:
                 continue
             if token.startswith("docs/") and token in external:
                 continue
-            errors.append(f"portable: [{skill.name}] '{rel}' references unbundled '{token}'")
+            first = next((p for p in token.split("/") if p != ".."), "")
+            if token.startswith("../") and first not in RESOURCE_DIRS:
+                continue
+            errors.append(f"portable: [{skill.name}] '{rel}' path '{token}' does not resolve")
     return errors
 
 

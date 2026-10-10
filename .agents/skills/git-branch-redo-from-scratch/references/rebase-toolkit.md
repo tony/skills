@@ -31,7 +31,7 @@ message.
 
 ## The toolkit script
 
-`scripts/rebase-todo.sh`, at `references/rebase-todo.sh` from this file,
+`scripts/rebase-todo.sh`, at `./rebase-todo.sh` from this file,
 wraps the idioms below. It refuses a dirty tree or an operation in
 progress, and reports a rebase it left stopped.
 
