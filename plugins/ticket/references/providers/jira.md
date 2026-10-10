@@ -122,6 +122,9 @@ covers create, edit, comment, link, search, and transition, with the body
 supplied through `--description`, `--description-file`, `--from-file`,
 `--from-json`, or `--editor`, in plain text or ADF ([acli jira workitem create](https://developer.atlassian.com/cloud/acli/reference/commands/jira-workitem-create/)).
 
+Read a created or edited work item back with `acli jira workitem view
+<KEY> --json` ([acli jira workitem view](https://developer.atlassian.com/cloud/acli/reference/commands/jira-workitem-view/)).
+
 Cloud platform REST [v3](https://developer.atlassian.com/cloud/jira/platform/rest/v3/intro/)
 and [v2](https://developer.atlassian.com/cloud/jira/platform/rest/v2/intro/)
 expose the same operations; v3 takes rich text as [ADF](https://developer.atlassian.com/cloud/jira/platform/apis/document/structure/)

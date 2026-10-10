@@ -106,7 +106,7 @@ cut the group back to an outcome.
 
 ## `review_artifact`
 
-Describes the net shipped result of the branch. **No future tense at all**:
+Describes the net shipped result of the branch. No future tense at all:
 this is the one role where the work is already done and the body is a report,
 not a proposal.
 

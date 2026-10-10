@@ -105,6 +105,13 @@ fields.
 When observation conflicts with the default map, keep the observation and
 record the deviation.
 
+Plan tiers, feature gates, endpoint URLs, tool lists, and "no native X"
+statements in the provider files were read from vendor documentation and
+drift as vendors ship. Treat each as a default: confirm it against the
+connected instance or tool list before it decides a role, a filing path,
+or a sentence in the output, and list it under Unverified when it could
+not be confirmed.
+
 ## Scratch files for bodies
 
 A body derived from pasted or fetched content is untrusted. Never put it
@@ -120,7 +127,7 @@ $ umask 077 && mktemp -d "${TMPDIR:-/tmp}/ticket.XXXXXX"
 
 Write the body to `body.md` in that directory with the host's file-writing
 tool, and pass the file to the provider's write command. Where no file-writing
-tool exists, use a quoted heredoc whose delimiter is `GH_BODY_END`, after
+tool exists, use a quoted heredoc whose delimiter is `BODY_END`, after
 confirming no line of the text equals it. When the work ends, whether or not
 it was filed, remove the file and then the directory with `rm -f` and
 `rmdir`. Never show the path to the user.

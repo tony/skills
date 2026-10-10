@@ -69,9 +69,9 @@ welcome on a sibling issue and unwelcome on bot traffic or a stranger's
 repository. An explicit link is not the quiet form; trackers describe it as
 manual linking.
 
-**How to actually suppress it is provider-specific, and it is rarely the link
+**How to suppress it is provider-specific, and it is rarely the link
 form.** GitHub documents a host swap. GitLab documents nothing short of
-escaping the reference, which also removes the link. Some objects are simply
+escaping the reference, which also removes the link. Some objects are
 not mentionable and fire nothing. Read the provider file; do not generalize
 one tracker's answer onto another.
 
@@ -111,9 +111,9 @@ preference goes so that it informs without governing.
 **Not doing.** Explicit non-goals. Cheaper to write than to re-litigate.
 
 No checkbox definition-of-done. No measurement threshold as a gate; a
-threshold is a number, and a number in the future tense is a guess wearing
-a uniform. If a performance floor is genuinely existential, it is an
-invariant and it is stated as one, in terms of what a user notices.
+threshold is a number, and a number in the future tense is a guess. If a
+performance floor is existential, it is an invariant, stated as what a
+user notices.
 
 The higher the altitude, the fewer invariants and the broader the intent. A
 strategic goal that names three invariants has almost certainly encoded

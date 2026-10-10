@@ -33,9 +33,17 @@ graders:
     input_match: 'acli jira workitem create.*--description-file'
     min: 1
 
+  - name: reads-the-item-back
+    type: regex
+    target:
+      source: file
+      path: calls.log
+    pattern: 'create\n(?:[\s\S]*\n)?view'
+
   - name: reports-filing
     type: llm
     focus: last_message
     criteria: |
-      The reply says the work item was created and gives WIDGET-91. It does
-      not mention a temporary file or its path.
+      The reply opens with a line that says the work item was filed and
+      gives WIDGET-91. It does not mention a temporary file or its path, and
+      it does not repeat the title or the body.

@@ -19,14 +19,19 @@ case "$1 $2 $3" in
   "jira workitem create")
     case " $* " in *" --help "*) echo "usage: acli jira workitem create [flags]"; exit 0 ;; esac
     echo "$*" >>create.log
+    echo create >>calls.log
     while [ $# -gt 0 ]; do
       [ "$1" = "--description-file" ] && cp "$2" filed-body.txt
+      [ "$1" = "--summary" ] && printf '%s' "$2" >filed-summary.txt
       shift
     done
     if grep -q -e '###' -e '`' filed-body.txt 2>/dev/null; then
       echo "error: description contains markdown" >&2; exit 1
     fi
     echo "Created WIDGET-91" ;;
+  "jira workitem view")
+    echo view >>calls.log
+    jq -nc --arg s "$(cat filed-summary.txt 2>/dev/null)" '{key:"WIDGET-91",summary:$s,url:"https://example.atlassian.net/browse/WIDGET-91"}' ;;
   *) echo "unsupported: $*" >&2; exit 1 ;;
 esac
 SH

@@ -1299,7 +1299,7 @@
         "references/prose-rules.md": "plugins/ticket/references/prose-rules.md",
         "references/resolve.md": "plugins/ticket/references/resolve.md"
       },
-      "bytes": 45176
+      "bytes": 46094
     },
     {
       "name": "ticket-rebuild",
@@ -1313,7 +1313,7 @@
         "references/prose-rules.md": "plugins/ticket/references/prose-rules.md",
         "references/resolve.md": "plugins/ticket/references/resolve.md"
       },
-      "bytes": 42597
+      "bytes": 43311
     },
     {
       "name": "weave-architecture",

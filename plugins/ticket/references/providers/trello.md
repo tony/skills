@@ -16,11 +16,11 @@ Workspace for navigation; they do not re-parent anything.
 Trello's only native work-decomposition chain is Card > Checklist > Checklist item.
 That is the whole ladder.
 
-List is **not** a decomposition level. A List physically contains Cards but usually
+List is not a decomposition level. A List physically contains Cards but usually
 encodes workflow state, phase, queue, or category. A Card sitting in "In Progress" has
 no deliverable relationship to that List.
 
-Trello has **no** native Initiative, Epic, Project, Feature, Milestone, Sprint, release,
+Trello has no native Initiative, Epic, Project, Feature, Milestone, Sprint, release,
 or timebox object. Do not invent one. Above the Card there is only the Board, and a
 Board is a container, not a deliverable. Anything resembling a higher level is
 convention built from generic materials: a Card titled "Epic: Authentication", a Board
@@ -73,7 +73,7 @@ no URL you can hand to someone. Promote it to a Card before treating it as work_
 comments, and checklist items, but
 ["Trello's web version doesn't support the complete Markdown syntax"](https://support.atlassian.com/trello/docs/how-to-format-your-text-in-trello/).
 A URL becomes a smart link whose display you pick from "URL", "Inline", "Card", or
-"Embed". There is **no** `#N` autolink, **no** issue-key sigil, **no** commit-SHA
+"Embed". There is no `#N` autolink, no issue-key sigil, no commit-SHA
 autolink, and no cross-container shorthand of any kind. The only mention syntax is
 `@username`, `@card`, and `@board`, documented for
 [comments](https://support.atlassian.com/trello/docs/commenting-on-cards/) and checklist
@@ -92,7 +92,7 @@ visible event on a target.
   an unlabeled smart link.
 - Wanting the backreference: attach the Card, do not do it in the description. `desc` is
   a plain string field and attachments are a separate resource, so writing `desc` cannot
-  mint an attachment record on the target. **Unverified:** whether pasting a Card URL
+  mint an attachment record on the target. UNVERIFIED: whether pasting a Card URL
   into the description in the web UI offers a prompt that converts it into an
   attachment. Community reports describe a "Connect cards" affordance; no official doc
   confirms it. Do not rely on it and do not tell the user it happened.
@@ -108,7 +108,7 @@ visible event on a target.
 - Never put a bare URL in a Card **name**. A URL as a card title creates a Link card, or
   a Mirror card in a paid Workspace, a different object that cannot hold a description
   or comments.
-- Use `@` only when the notification is wanted. **Unverified:** whether `@mention` in a
+- Use `@` only when the notification is wanted. UNVERIFIED: whether `@mention` in a
   card *description* notifies; official docs cover comments and checklist items only.
 
 **Markdown deltas.** Nested blockquotes are unsupported. Tables, images, and task-list

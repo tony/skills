@@ -123,6 +123,9 @@ user names one.
 $ gh issue create --title "..." --body-file "<scratch path>"
 ```
 
+Read a created or edited Issue back with
+`gh issue view <number> --json number,title,body,url`.
+
 `gh issue edit`, `gh issue view` and `gh project item-add` cover rewriting an
 Issue and attaching it to a Project. Sub-issue relations are CLI flags: `--parent` on create, and `--parent`,
 `--add-sub-issue`, `--remove-sub-issue` and `--remove-parent` on `gh issue edit`.

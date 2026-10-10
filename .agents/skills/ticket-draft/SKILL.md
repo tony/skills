@@ -87,7 +87,8 @@ provider file, and read each candidate before dismissing it. A search
 that could not include closed items goes under Unverified as "Closed
 items not searched". When one matches, open or closed, name it, stop, and offer one
 thing: a comment on it with the new evidence. Draft nothing, and offer
-no new item or reopening until the user asks.
+no new item or reopening until the user asks. Posting that comment is a
+write: show its exact text and post only after the user approves it.
 
 When no tracker is reachable to search, put "Duplicate check not run"
 under Unverified.
@@ -276,6 +277,13 @@ show the path to the user.
 Where no backend exists, print the approved body for the user to paste
 and say plainly that is what is happening.
 
+Read the created item back through the provider's read path and take the
+key, URL, and title from that output, not from the write command's
+claim. When the readback fails or the title differs, the hero line says
+`Filed, readback failed:` or names the difference (`Filed as KEY: URL,
+but the title reads back as "<title>".`), and gives what the write
+command printed.
+
 After filing, stop: no options panel and no offer of a next step. Reply
 in this shape, as plain text outside any code fence, with plain bullets,
 no bold (never `- **Label:** ...`), and no local paths:
@@ -289,8 +297,10 @@ Filed as WIDGET-91, a Jira work item: https://example.atlassian.net/browse/WIDGE
 ```
 
 The hero line holds the key, the provider's noun, and the URL when there
-is one. Do not repeat the Title or Body. Keep `## Unverified` only for items that still apply, and omit
-it otherwise.
+is one. The reply is that line and, when items still apply, `## Unverified`.
+Any prose between them is wrong, including the title, a summary of the
+body, the duplicate search, and a readback that matched: the key and URL
+in the hero line already come from the readback.
 
 ## Rules
 

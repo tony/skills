@@ -131,6 +131,9 @@ $ az boards work-item create --title "..." --type "User Story" --project "..." -
   clients the remote server's Microsoft Entra ID sign-in supports, and use the local one where it does not
   ([Azure DevOps MCP Server](https://learn.microsoft.com/en-us/azure/devops/mcp-server/mcp-server-overview)).
 
+Read a created or updated work item back with
+`az boards work-item show --id <id>`, which prints JSON.
+
 A field is either Markdown or HTML, and a Markdown comment cannot be converted back to HTML. Detect
 the field's editor before emitting Markdown; HTML fields need HTML, and a soft line break needs two trailing spaces.
 

@@ -29,8 +29,7 @@ item; a Sub-issue decomposes one and is itself a full Issue.
 
 Linear has no native Epic level. A Linear Project is normally the closest
 analogue to a Jira, GitLab or Shortcut Epic, but it is not one, and Linear does
-not use the word. There is likewise no native release object and no native
-metric or key-result object.
+not use the word. It has no native metric or key-result object.
 
 ## Semantic roles
 
@@ -55,7 +54,10 @@ metric or key-result object.
 - Pull Request or Merge Request: review_artifact. external, optional.
 - strategic_measure: absent. Convention: state it in the Initiative
   description, an initiative update, or an attached Document.
-- release_group: absent. Convention: a label, or a Project per release.
+- Release: release_group. native_tier_gated (Releases, Business and
+  Enterprise), optional; a unit within a release pipeline, with a commit SHA
+  and linked Issues ([Releases](https://linear.app/docs/releases)). Without
+  the feature, convention: a label, or a Project per release.
 
 ## Orthogonal objects
 
@@ -145,7 +147,8 @@ Never say, in Linear-native output:
 - `#123`: `#` opens a heading, and Linear has no `#N`. Write `ENG-123`.
 - "Milestone" unqualified: say Project Milestone.
 - "Sprint": the timebox is a Cycle, and it is not tied to a release.
-- "Release", "Fix Version", "Version": no such object exists.
+- "Fix Version", "Version": Linear has none; a Release belongs to a release
+  pipeline.
 - "Board" as an object: it is a display mode of a View.
 - "Story", "Task", "Sub-task", "Ticket": Linear has Issue and Sub-issue.
 - "Backlog" as a container: it is a workflow status category.

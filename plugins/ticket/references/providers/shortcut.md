@@ -13,9 +13,9 @@ a Story belongs to a Workspace and carries a Team field.
 
 ## Native hierarchy
 
-Objective > Epic > Story > Sub-task. Shortcut has **no native Project work
-level** (`Project` survives only as a legacy field) and **no native
-release object**.
+Objective > Epic > Story > Sub-task. Shortcut has no native Project work
+level (`Project` survives only as a legacy field) and no native
+release object.
 
 - **Objective** is ["Shortcut's top-level planning object"](https://www.shortcut.com/help/objectives/objectives-overview/).
   A *Tactical Objective* is Epic-driven and on all plans; it becomes *Strategic*
@@ -71,7 +71,7 @@ markdown link. `@member` and `@team-handle` are resolved in Story and Epic
 descriptions and comments, and in Objective and Iteration descriptions
 ([Teams](https://www.shortcut.com/help/teams/teams-overview/)). No body-text
 shorthand for an Epic, Objective, Iteration, or Doc is documented; whether one
-exists is **unverified**, so use the permalink rather than guess a sigil.
+exists is UNVERIFIED, so use the permalink rather than guess a sigil.
 
 **Which references have a side effect on the target.** An `@` mention does: it
 stores `member_mention_ids` / `group_mention_ids` on the object and raises email,
@@ -87,7 +87,7 @@ Stories, and Doc
 ["Relationships are a two-way street; the link is shown from both the Doc and the entity being linked"](https://www.shortcut.com/help/docs/docs-overview/).
 So set the relationship field when the link must exist on the other object; the
 inline token is enough when it is only context. Whether that token also records
-anything on the target is **unverified**; do not rely on it.
+anything on the target is UNVERIFIED; do not rely on it.
 
 **Other Workspace.** Story public IDs are per-Workspace and `#123` resolves
 against the reading Workspace, so a bare token aimed at another Workspace

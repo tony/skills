@@ -133,6 +133,8 @@ documented, so feed an approved draft through command substitution rather than r
 $ glab issue create -t "..." -d "$(cat "<scratch path>")" -y
 ```
 
+Read the result back with `glab issue view <iid> -F json`.
+
 A very large body can exceed the argument-size limit. Then print the body
 for the user to paste, or send it through `glab api` with the body read
 from the file (UNVERIFIED: confirm the file-input flag with `glab api
