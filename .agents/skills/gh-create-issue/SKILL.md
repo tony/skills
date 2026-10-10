@@ -303,7 +303,7 @@ to the unchecked items in the reply's first line.
 Scan the file for local paths, emails, and tokens first:
 
 ```console
-$ grep -nE '/home/|/Users/|@[a-z]+\.|gh[pousr]_|github_pat_|glpat-|A[KS]IA[0-9A-Z]{12}|xox[a-z]-|x(app|wfp)-|(^|[^A-Za-z0-9])sk-[A-Za-z0-9]' PATH
+$ grep -nE '/home/|/Users/|@[a-z]+\.|gh[pousr]_|github_pat_|glpat-|A[KS]IA[0-9A-Z]{12}|xox[a-z]-|x(app|wfp)-|sk-ant-' PATH
 ```
 
 A match is a lead: fix it, or confirm it is not personal. A clean scan
