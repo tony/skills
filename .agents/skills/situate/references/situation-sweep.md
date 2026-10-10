@@ -207,7 +207,9 @@ Use `origin/<baseRefName>` only if origin is that hosted repository.
 Local ahead/behind, uncommitted work, and stashes describe the checkout,
 not the pull request. Apply them to the PR only after both repository
 identity and local HEAD match its `headRefOid`; a matching branch name
-alone is insufficient. Otherwise report local position as not applying.
+alone is insufficient. Otherwise report local position as not applying, in one line that names the
+pull request's repository and the checkout's, with no other checkout
+details.
 
 ## 4. Tickets
 
@@ -241,8 +243,19 @@ directories the branch touched; nested files override the root for their
 subtree.
 
 For a PR in another repository, local files are not its conventions.
-Read the target's rules at its head revision through a read-only route,
-or report that layer unavailable.
+Read the target's rules at its head revision (a 40-hex `headRefOid`)
+through the hosted contents route, once per file:
+
+```console
+$ gh api \
+    --hostname "<host>" \
+    -H "Accept: application/vnd.github.raw+json" \
+    "repos/<owner>/<repo>/contents/AGENTS.md?ref=<headRefOid>"
+```
+
+A lookup that fails makes the layer `unavailable: not readable at the PR
+head`. Name no checkout, stub, or sandbox limit as the reason, and make
+no unavailability claim before a lookup has run.
 
 Report only the rules that bear on the current change: the commit
 message format, the quality gates that must pass before a commit,

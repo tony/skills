@@ -65,9 +65,10 @@ numbered, so the reader can answer with a digit instead of a sentence.
 Offer them only when there is a real fork; an obvious next step ends at
 the body.
 
-Offer no option the session cannot back: no fix the explanation never
-gave, no pointer into code when there is no repository. Two to four
-options. Each names an action, not a topic: `2. Resolve the
+Re-explaining supplied text is not a fork: end after the body. Offer no
+option the session cannot back: no fix the explanation never gave, no
+offer to inspect code, no pointer into code when there is no repository.
+Two to four options when there is a fork. Each names an action, not a topic: `2. Resolve the
 three review threads on PR #12`, never `2. Review feedback`.
 
 Do not use `AskUserQuestion`; a modal panel is heavier than the five
@@ -117,6 +118,9 @@ guessing and should say what it does not know instead.
 - Any line that would be true in every repository on any day.
 - A guess at why uncommitted work was left, or an option phrased as
   "what was probably intended".
+- Any sentence about what was not checked, read, or tested.
+- Repository facts when the confusion is about text already in the
+  session.
 - Bullets, bold, and headings.
 - Diagnosing drift. If the work has wandered from what it was for, say
   so in one line and offer `/situate:refocus` as an option.

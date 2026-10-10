@@ -2,6 +2,15 @@
 
 Shared by this skill and the `situational-awareness` skill.
 
+## Contents
+
+- Rules
+- Sections
+- Example
+- Options
+
+## Rules
+
 Exactly one hero line (a missing layer goes under its section, never in
 the hero), then these sections in this order, then a next-step
 panel. No other headings, no bold label on every bullet, no recap ending.
@@ -10,7 +19,8 @@ run is `unavailable` with the reason. Never list, count, or mention
 untracked editor or shell files. Never name an absolute path or a temp
 directory. Report what was found and where, never "I checked", "I read", or "I
 haven't tested"; leave out what was not examined rather than narrating
-it. Cite a commit by its subject, never a bare SHA. Never guess at why
+it. Write in the third person: no "I", "I couldn't", or "I can't tell
+you". Cite a commit by its subject, never a bare SHA. Never guess at why
 someone did something or what they intended. Report only conventions a
 file states, never ones inferred from commit history. Tool state (a `gh`
 sign-in, a missing network) is `unavailable` with a one-clause reason,
@@ -19,14 +29,23 @@ or "undated" when none is recorded; a decision supplied in this session's
 context is "earlier in this session".
 
 The hero is `✓ <branch>: <what it does> · <n> commits · PR #<n> <state>`,
-or `⚠ <what is blocking or unclear>`. When there is nothing to measure
+or `⚠ <what is blocking or unclear>`. Name a pull request in the hero
+only when a lookup found one; an unestablished one is `PR unavailable`,
+never "no PR found" or "no PR can exist". When there is nothing to measure
 (no commits, or the root is the home directory) the hero is
 `⚠ Nothing to measure yet: <why>`. A run that stops early gets one
 result sentence, then what the user needs to do.
 
+## Sections
+
 1. `## Position` — branch, trunk, ahead/behind, uncommitted work,
    stashes, and when the refs were last fetched (`last_fetch`), never
-   "current".
+   "current". Name each untracked file without saying what it usually
+   means. A stale or unknown fetch age is a caveat here, never an option.
+   For a pull request subject whose head differs from the checkout, one
+   line names the pull request's host, owner, and repository, names the
+   checkout's own repository when origin identifies one, and says local
+   position does not apply; nothing else about the checkout appears.
 2. `## Change` — what the branch does and how far along it is, grouped
    by area, with the commit sequence's shape.
 3. `## Pull request` — state, checks by job name, unresolved review
@@ -40,7 +59,8 @@ result sentence, then what the user needs to do.
    was decided earlier, when, and whether the repository agrees.
 7. `## Open questions` — only blockers and decisions: what is unresolved, mid-flight, or
    contradictory, each tied to evidence in the repository; no prediction
-   of what a later session would do and no guess at elapsed time. Anything decided in an earlier conversation and still open
+   of what a later session would do, no guess at elapsed time, and no
+   cause for a failing check unless its log was read. Anything decided in an earlier conversation and still open
    belongs here, with the provenance described above.
 
 Mark an inference with one hedging word ("probably", "appears"); an
@@ -48,6 +68,8 @@ unmarked statement was read. State a blocker only when something is
 actually blocked. An open decision that halts unfinished work (a stub
 waiting on it, a question an earlier conversation stopped on) is a
 blocker: name it in the hero line and in `## Open questions`.
+
+## Example
 
 Reply in this shape, as plain text outside any code fence, with plain bullets, no bold (never `- **Label:** ...`), and no local paths:
 
@@ -84,6 +106,8 @@ Reply in this shape, as plain text outside any code fence, with plain bullets, n
 1. Fix the three type errors and push
 2. Address the unresolved review thread
 ```
+
+## Options
 
 One option per finding (a gap, failing check, unresolved thread, open
 decision), each a distinct action. Never offer "keep working", "continue

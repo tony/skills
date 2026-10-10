@@ -1027,7 +1027,7 @@
         "references/report-shape.md": "plugins/situate/references/report-shape.md",
         "references/situation-sweep.md": "plugins/situate/references/situation-sweep.md"
       },
-      "bytes": 36652
+      "bytes": 37923
     },
     {
       "name": "situate-brief",
@@ -1040,7 +1040,7 @@
         "references/prose-rules.md": "plugins/situate/references/prose-rules.md",
         "references/situation-sweep.md": "plugins/situate/references/situation-sweep.md"
       },
-      "bytes": 31733
+      "bytes": 32461
     },
     {
       "name": "situate-refocus",
@@ -1053,7 +1053,7 @@
         "references/prose-rules.md": "plugins/situate/references/prose-rules.md",
         "references/situation-sweep.md": "plugins/situate/references/situation-sweep.md"
       },
-      "bytes": 35652
+      "bytes": 36382
     },
     {
       "name": "situate-situational-awareness",
@@ -1067,7 +1067,7 @@
         "references/report-shape.md": "plugins/situate/references/report-shape.md",
         "references/situation-sweep.md": "plugins/situate/references/situation-sweep.md"
       },
-      "bytes": 36119
+      "bytes": 37390
     },
     {
       "name": "situate-what",
@@ -1080,7 +1080,7 @@
         "references/prose-rules.md": "plugins/situate/references/prose-rules.md",
         "references/situation-sweep.md": "plugins/situate/references/situation-sweep.md"
       },
-      "bytes": 34485
+      "bytes": 35213
     },
     {
       "name": "skill-style",

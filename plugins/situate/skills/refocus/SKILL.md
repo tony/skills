@@ -31,7 +31,9 @@ User arguments: $ARGUMENTS
 Otherwise take the first source in the goal-derivation precedence.
 
 Say which source the goal came from and how confident it is: acceptance
-criteria and a branch name are not the same evidence. If no source
+criteria and a branch name are not the same evidence. Say a pull request
+is absent only when the sweep reference's lookup established it;
+otherwise leave the pull request out. If no source
 yields one, stop and ask; never infer the goal from the diff.
 
 ### 2. Read what was actually done
@@ -43,7 +45,8 @@ when `base` is null. Never list, count, or mention untracked editor or shell fil
 script already filters them.
 
 Then read the commits since that base, the diff behind them, and the
-uncommitted changes. Uncommitted work counts: drift often lives there
+uncommitted changes, including each name in `untracked`; one that cannot
+be read is listed as unreadable. Uncommitted work counts: drift often lives there
 first.
 
 ### 3. Classify
@@ -87,7 +90,8 @@ directory; see the sweep reference). Then exactly these sections:
 4. `## Gap` — criteria the goal asks for with nothing on the branch
    addressing them; or that there are none.
 5. `## Realign` — the recommended correction and the reasoning, and no
-   account of what you did or did not run. A run
+   account of what you did or did not run, test, or classify, and no first
+   person. A run
    with nothing to measure prints the hero, `## Goal`, and one `## Realign`
    line saying what the user must do; skip the other sections.
 
