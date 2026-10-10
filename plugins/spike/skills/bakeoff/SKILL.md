@@ -37,7 +37,8 @@ A second bakeoff because the first winner hit new resistance means
 A BAKEOFF PRODUCES ZERO COMMITS
 ```
 
-Inherited from `/spike:probe`, rationalization table included: no
+The zero-commit rule and its rationalization table are in
+`../../references/spike-core.md` (Zero commits): no
 commits in any worktree or on any contender branch, not even to snapshot
 a contender. A worktree commit is no more harmless than a trunk commit,
 and `git diff` across stash SHAs compares contenders fine. Losers are
@@ -50,8 +51,7 @@ prune, and write the verdict.
 
 ## `$ARGUMENTS` contract
 
-Non-flag text is the goal. Resolve it by the same ladder as
-`/spike:probe`:
+Non-flag text is the goal. Resolve it by the ladder below:
 
 1. **Typed goal wins**: non-flag `$ARGUMENTS` text, verbatim.
 2. **Empty → mine the conversation** (review findings, a failing
@@ -115,7 +115,7 @@ Present the **bakeoff brief**:
    contenders plus the judges) and let the user confirm or trim it.
 3. What "proven" means per contender: the shared smoke check every
    contender must pass to reach judging.
-4. The judging rubric (Phase 4 lenses, plus any goal-specific
+4. The judging rubric (the lenses in `bakeoff-round.md`, plus any goal-specific
    criteria the user cares about).
 5. Discovered gate commands and the local-vs-CI split.
 6. Worktree names and root; the exit path: stash-and-teardown /
@@ -125,145 +125,49 @@ Wait for approval, then exit plan mode. If plan mode is unavailable,
 present the brief inline and proceed on confirmation. In a
 non-interactive run, record the brief in the report and proceed.
 
-## Phase 2: The bake
+## Phase 2: The round
 
-For each contender, create its worktree and run it as an independent
-sub-agent when the host supports it, or sequentially
-otherwise:
+Run `../../references/bakeoff-round.md` in full: bake, gate, judge, then
+stash and tear down. Its judging lenses and any goal-specific ones come
+from the brief's rubric. Then:
 
-```console
-$ git worktree add \
-    --detach \
-    <root>/<n>-<slug> \
-    HEAD
-```
-
-Each contender follows the probe loop in `../../references/spike-core.md`
-inside its own worktree, aiming at the shared "proven" check. Tell every
-sub-agent its worktree's absolute path and to work only inside it: read
-and edit by absolute path under that directory, begin every Bash command
-with `cd <that path> &&` (the shell's directory resets between calls),
-and never touch the main checkout or another worktree.
-
-Contenders are **blind to each other**: no shared scratch files, no
-peeking. They bake in parallel but never stash: the coordinator stashes
-in Phase 5, one contender at a time, because every worktree shares one
-stash stack.
-
-A contender that cannot reach "proven" exits with a failure note (what
-blocked it), which is evidence for the verdict.
-
-## Phase 3: Contest exit gate
-
-In each worktree, run the fast local buckets exactly as discovered:
-`format`, `lint`, `typecheck`, scoped `test`, right-sized per
-`../../references/verification-gates.md`. Gate results are **judging
-inputs, not work**: fix only formatting; record everything else on the
-scorecard. If a mutating gate changes files, re-run the shared proving
-check once.
-
-## Phase 4: Judging
-
-Adversarial comparison, one pass per lens, each judge trying to
-**refute** the contender's claim to the win rather than admire it:
-
-- **Correctness**: does the proving check really demonstrate the
-  goal, or does a `SPIKE:` marker hide the hard part?
-- **Blast radius**: diff size and files touched; what does each
-  approach entangle?
-- **Simplicity / idiom fit**: which reads like the project already
-  wrote it?
-- **Gate status**: what passed, what failed, what was deferred.
-- Any goal-specific lenses from the brief (performance, migration
-  cost, dependency posture).
-
-Run the lenses as independent sub-agent judges when the host supports
-them, otherwise sequentially. Produce a scorecard per contender, a
-**winner**, and a **graft list**: ideas from runners-up worth carrying
-into the winner's plan (a test case, an edge-case guard).
-
-A split verdict is valid: report `⚠ inconclusive` with the scorecards.
-
-## Phase 5: Stash all contenders, then tear down
-
-**Stash first, prune second**, one contender at a time, one `spike.sh`
-stash command per Bash call, never in parallel or batched: every worktree
-shares one stash stack and the script refuses an overlapping stash. For each
-contender:
-
-1. In its worktree, run the Stash steps in `../../references/spike-core.md`
-   (`untracked`, message file, `stash -F`) with the message
-   `bakeoff <n>-<slug>: <strategy> (<verdict>)`, adding `--keep` before
-   `-F` under `--keep-trees` so the worktree keeps the work. A contender
-   that printed `no changes` is recorded as "no changes", not given a SHA.
-2. Record the printed SHA; `git stash apply <sha>` recovers it from the
-   main checkout after its worktree is gone.
-3. Only after the SHA is recorded, check what removal will delete.
-   Files matched by `.gitignore` (build output, `.env`, local caches)
-   are not stashed and go with the worktree:
-
-```console
-$ git -C <root>/<n>-<slug> status --ignored --short
-```
-
-   Report the ignored files and confirm they are disposable output of this
-   contender. Preserve anything else before removing the worktree
-   (skip with `--keep-trees`). `teardown` removes bytecode and ignored output
-   with `--force` when needed, but refuses remaining source edits, staged
-   changes, or commits absent from the recorded stash. If `--leave` kept
-   other files, keep the worktree or explicitly approve their removal first:
-
-```console
-$ <scripts>/spike.sh teardown <root>/<n>-<slug> <stash sha>
-```
-
-   Pass `none` in place of the SHA for a contender that printed
-   `no changes`. The script refuses a SHA that is not a listed stash.
-
-   It prints `removed` only when `git worktree list` no longer shows the
-   worktree; otherwise it exits non-zero and the report names that worktree
-   as still present.
-
-4. After all contenders: run `git worktree list` and verify the main
-   tree is untouched (`git status`).
-5. After a stash-first Phase 0, restore the user's work with
+1. After a stash-first Phase 0, restore the user's work with
    `<scripts>/spike.sh restore <user-work sha>` unless `--replay` runs,
    which restores it after its last item. A refused restore keeps the
-   stash: report the SHA. Under `--keep-trees`, name each kept worktree
-   path in the report: the user must act on it (`git worktree remove`).
-   `/spike:ratchet` follows steps 1 through 4 and skips this restore.
+   stash: report the SHA.
+2. Under `--keep-trees`, name each kept worktree path in the report: the
+   user must act on it (`git worktree remove`).
 
-## Phase 6: The verdict and replay plan
+## Phase 3: The verdict and replay plan
 
 Produce the verdict, then a commit-by-commit plan for the **winner's
-stash**, built as the probe's Phase 5 in `../probe/SKILL.md`
-(subjects in the project's commit format, contents per commit,
+stash**, built per `../../references/replay.md` (The replay plan:
+subjects in the project's commit format, contents per commit,
 `SPIKE:` decisions to resolve, per-commit gates), plus:
 
 - **Grafts**: plan items that pull specific hunks from runner-up
   stashes (by SHA and file), stated as recommendations. Mark them
   **unproven in combination**: no contender was built with them. When
   they are too substantial to land blind, recommend re-probing: apply
-  the winner's stash and the graft hunks, then follow
-  `../probe/SKILL.md` on that tree, answering its dirty-tree halt with
+  the winner's stash and the graft hunks, then run
+  `/spike:probe` on that tree, answering its dirty-tree halt with
   *probe on top of it*. That proves winner-plus-grafts as one tree at
   zero commits.
 - The losing strategies, one line each: why they lost, and under what
   conditions they would have won.
 
 Close with the local-vs-CI table and the post-push watch command
-when observable, as in probe.
+when observable, as in the replay plan.
 
-## Phase 7: Replay (only with `--replay`, after approval)
+## Phase 4: Replay (only with `--replay`, after approval)
 
-Follow Phase 6 of `../probe/SKILL.md` from the main checkout: apply
+Follow `../../references/replay.md` (Replay) from the main checkout: apply
 the winner's stash with `<scripts>/spike.sh replay-apply <sha>` (apply,
 not pop), land plan items one gated commit at a time, apply graft hunks
 from runner-up stashes where the plan says so, and only after the final
 green gate drop the contender stashes by SHA with
 `<scripts>/spike.sh drop`, never the user-work stash. Commit
-messages follow the probe's rules: no `Co-Authored-By`, no "Generated
-with" or other tool trailers, no emoji.
+messages follow that reference's rules.
 
 Re-run the shared proving check before committing **each** plan item
 that carries a graft, not once after the last: a graft in an early
@@ -277,7 +181,10 @@ Write the report, and any replay commit message, per
 `../../references/prose-rules.md`.
 
 The first line of the reply is exactly the hero line: no lead-in sentence,
-no first-person opener. Report results, not process: never narrate a
+no progress note sent while sub-agents ran, no first-person opener, no
+"I recommend". Print every SHA abbreviated to 7 characters. After the last section
+only the panel or the default line follows: no table, no closing question
+in prose. Report results, not process: never narrate a
 departure from these steps or name the brief or the skill; do the step or
 halt. State what happened, never what a contender or step did not do: no
 "not hidden", "no user work was saved", "nothing was X" restatements.
@@ -298,11 +205,7 @@ that needs attention) go inside `## Stashes`, never before the first section.
    A run that halts before any worktree exists (no commit, repository
    rooted at home, dirty tree declined, missing code or goal) is a
    `⚠ bakeoff halted` hero line, one result sentence naming every
-   blocker (order and rule as in `../probe/SKILL.md`'s output contract),
-   then one line with what the user must do next. No sections, no panel,
-   no stash SHAs, no local or temp paths, no command echo, no description
-   of the environment. The result sentence names only the blockers, never
-   why a file or tree is in that state.
+   blocker per `../../references/spike-core.md` (Halted run).
 2. `## Contenders`: one line per strategy: what it tried, proven or
    blocked, headline gate status.
 3. `## Verdict`: one plain line per lens naming each contender's standing
@@ -320,7 +223,7 @@ that needs attention) go inside `## Stashes`, never before the first section.
 7. End with an `AskUserQuestion` panel: replay the winner / probe the
    grafted winner (still zero commits) / keep stashes
    and stop / discard all, unless already in plan mode or `--replay`
-   was given. Recommend the probe exit when Phase 6 judged the grafts
+   was given. Recommend the probe exit when the verdict judged the grafts
    too substantial to land blind. In a non-interactive run, state the
    default taken ("Default: keep the stashes.") instead of asking.
 

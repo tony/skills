@@ -512,6 +512,20 @@ def test_teardown_preserves_commits_absent_from_stash(
     assert (tree / "notes.txt").read_text() == "new commit\n"
 
 
+def test_teardown_none_preserves_unreferenced_commits(
+    repo: pathlib.Path, tmp_path: pathlib.Path
+) -> None:
+    tree = tmp_path / "wt"
+    git(repo, "worktree", "add", "--detach", str(tree), "HEAD")
+    (tree / "notes.txt").write_text("committed\n")
+    git(tree, "add", "notes.txt")
+    git(tree, "commit", "-m", "contender work")
+    result = spike(repo, "teardown", str(tree), "none")
+    assert result.returncode == 1
+    assert "reachable from no ref" in result.stderr
+    assert (tree / "notes.txt").read_text() == "committed\n"
+
+
 def test_ledger_dir_falls_back_when_the_git_dir_is_unwritable(
     repo: pathlib.Path,
 ) -> None:

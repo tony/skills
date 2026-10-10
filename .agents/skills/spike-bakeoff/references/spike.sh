@@ -291,6 +291,9 @@ cmd_teardown() {
       die "no stash $2; stash the work before removing $1"
     git merge-base --is-ancestor "$(git -C "$1" rev-parse HEAD)" "$full" ||
       die "worktree has commits absent from stash $2: $1"
+  else
+    [ -n "$(git for-each-ref --count=1 --contains "$(git -C "$1" rev-parse HEAD)")" ] ||
+      die "worktree has commits reachable from no ref: $1"
   fi
   git -C "$1" diff --cached --quiet || die "worktree holds unstashed staged changes: $1"
   [ -z "$(git -C "$1" ls-files --modified --others --exclude-standard -- ':/' "${BYTECODE[@]}")" ] ||

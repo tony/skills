@@ -44,13 +44,7 @@ checkpoint". Exit paths: stash (default), `--keep-tree` (leave changes
 unstaged), or `--replay` (commits only *after* the plan is approved, one
 plan item at a time, each behind a green gate).
 
-| Rationalization | Reality |
-|---|---|
-| "The owner said 'we'll clean it up later' so commit now, clean later" | "Later" is this command's Phase 5. A commit *is* the cleanup being deferred; stash instead. |
-| "They need it before a meeting, so a commit is the fastest handoff" | A stash plus the plan is the same speed and leaves history clean. Show the demo from the working tree. |
-| "It's all green, so it's safe to commit" | Green ≠ reviewed. The probe skipped naming, API, and scope decisions on purpose; the plan surfaces them first. |
-| "One commit is easier to undo than a stash" | A stash with a recorded ref is exactly as recoverable and never entangles trunk or the branch. |
-| "I'll commit on a scratch branch, that doesn't count" | It counts. Scratch branches leak into PRs and get merged. Stash. |
+Rationalizations and their answers: `../../references/spike-core.md` (Zero commits).
 
 **Red flags (STOP, you are about to violate the Iron Rule):**
 typing `git commit` in any form; "checkpoint commit"; "WIP commit";
@@ -137,54 +131,11 @@ Bash call, before writing the report.
 
 ## Phase 5: The replay plan
 
-Produce the commit-by-commit plan. For each planned commit:
-
-- **Subject** in the project's commit format (from Phase 0).
-- **Contents**: which files/hunks from the spike's changes it takes (the
-  delta after a probe on top), and what gets rewritten rather than
-  replayed.
-- **Decisions to resolve**: each `SPIKE:` marker landing in this commit,
-  as a question with a recommendation.
-- **Gates**: the per-commit gate commands, right-sized per
-  `../../references/verification-gates.md`.
-
-Close the plan with the local-vs-CI table and the post-push watch
-command: `gh pr checks --watch` for a PR, `gh run watch` when no PR
-exists yet, or "none (no remote)".
+Produce the plan per `../../references/replay.md` (The replay plan).
 
 ## Phase 6: Replay (only with `--replay`, after approval)
 
-1. From the original branch, never a scratch branch, apply the spike
-   (apply, not pop). The stash stays until the replay finishes green.
-   Their own edits are never part of a plan item: after a probe on top,
-   pass the user-work SHA so only the spike's delta is applied.
-
-```console
-$ <scripts>/spike.sh replay-apply <spike sha> [<user-work sha>]
-```
-
-2. Land plan items in order: stage only that item's changes (never a
-   `SPIKE:` marker; resolve it per the plan's decision or leave the item
-   out), run its gates, commit with the planned message, written per
-   `../../references/prose-rules.md`, with no `Co-Authored-By`, no
-   "Generated with" or other tool trailers, and no emoji. A red gate
-   stops the replay; report and hand back. Never amend a commit or
-   rewrite landed history: a mistake in a landed item gets a follow-up
-   item or a hand-back. Prefer file-level splits;
-   to split one file, write the relevant hunks to a patch file and
-   `git apply --cached <patch>` (`git add -p` is interactive).
-3. After the final item: run any end-of-run `build` bucket, drop the
-   spike stash by SHA (it refuses the user-work stash; an `already
-   gone` result means nothing to drop), and if the branch has a remote
-   counterpart offer to push and watch CI:
-
-```console
-$ <scripts>/spike.sh drop <spike sha>
-```
-
-4. After a stash-first run, restore their work with
-   `<scripts>/spike.sh restore <user-work sha>`. It stays uncommitted. A refused
-   restore keeps the stash: report the SHA.
+Land it per `../../references/replay.md` (Replay).
 
 ## Output contract
 
@@ -192,7 +143,10 @@ Write the report, and any replay commit message, per
 `../../references/prose-rules.md`.
 
 The first line of the reply is exactly the hero line: no lead-in sentence,
-no first-person opener. Report results, not process: never narrate a
+no progress note sent while sub-agents ran, no first-person opener, no
+"I recommend". Print every SHA abbreviated to 7 characters. After the last section
+only the panel or the default line follows: no table, no closing question
+in prose. Report results, not process: never narrate a
 departure from these steps or name the brief or the skill; do the step or
 halt. State what happened, never what a contender or step did not do: no
 "not hidden", "no user work was saved", "nothing was X" restatements.
@@ -209,15 +163,8 @@ that needs attention) go inside `## Stash`, never before the first section.
 1. Hero block (1–3 lines): `✓ spike proven` / `⚠ spike blocked` +
    goal + exit path taken.
 
-   A run that halts before probing (no commit, repository rooted at
-   home, dirty tree declined, goal missing) is the hero line, one result
-   sentence, then one line with what the user must do next. Several
-   blockers at once: name every one in that single result sentence, in
-   the order no commits, repository at home, dirty tree, missing code or
-   goal, and make the action line cover them all. No sections, no panel,
-   no stash SHA, no local or temp paths, no command echo, no description
-   of the environment. The result sentence names only the blockers, never
-   why a file or tree is in that state.
+   A run that halts before probing is the hero line and the blocker
+   sentence per `../../references/spike-core.md` (Halted run).
 2. `## Spike findings`: what was proven, stumbling blocks, `SPIKE:`
    markers, observed-not-addressed list. State stumbling blocks even
    when the probe succeeded: a path that fought you throughout is the

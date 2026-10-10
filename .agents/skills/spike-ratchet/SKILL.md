@@ -33,8 +33,8 @@ named approaches competing once is the `spike-bakeoff` skill.
 EVERY ROUND PRODUCES ZERO COMMITS
 ```
 
-Inherited whole from the `spike-probe` skill, rationalization table included,
-regardless of round count. Rounds end in stashes; commits happen
+The rule and its rationalization table are in
+`references/spike-core.md` (Zero commits), regardless of round count. Rounds end in stashes; commits happen
 only in `--replay`, after the final plan is approved.
 
 **Red flag** unique to this skill: "round 3 is basically final, commit
@@ -83,14 +83,14 @@ Keep every entry to a line or two.
 
 ## `$ARGUMENTS` contract
 
-Non-flag text is the goal, resolved by the same ladder as
-the `spike-probe` skill: typed goal wins, empty mines the conversation,
+Non-flag text is the goal, resolved by this ladder: typed goal wins, empty mines the conversation
+(several candidates: ask; none: ask; non-interactive: halt and name them),
 provenance recorded in the brief.
 
 | Flag | Default | Effect |
 |---|---|---|
 | `--rounds=<n>` | 3 | Cap on rounds run unprompted; only the closing panel takes it further. |
-| `--replay` | off | At Phase 4, land the approved plan per Phase 6 of the `spike-probe` skill instead of stopping at the panel. Never applies to a round. |
+| `--replay` | off | At Phase 4, land the approved plan per `references/replay.md` (Replay) instead of stopping at the panel. Never applies to a round. |
 
 ## Phase 0: Situational awareness
 
@@ -143,12 +143,11 @@ Repeat until Phase 3 says stop. Each round:
    phases belong to the ratchet's exit, and so does restoring the user's
    work: never run `restore` between rounds.
 2. **Branch on what fought back.** A stumbling block with two or more
-   genuinely different resolutions calls for the `spike-bakeoff` skill: read
-   the `spike-bakeoff` skill and follow its Phases 2 through 4 and Phase 5
-   steps 1 through 4 with those resolutions as contenders, using the
-   worktree root from Phase 0. Skip its Phase 0 (the ratchet's stands in
-   for it), its brief, and Phase 5 step 5, which would restore the user's
-   work mid-run. A block with one obvious fix folds into the next probe.
+   genuinely different resolutions calls for a bakeoff: run
+   `references/bakeoff-round.md` in full with those resolutions as
+   contenders, using the worktree root from Phase 0. The ratchet's Phase 0
+   and brief stand in for the bakeoff's, and the user's work is not
+   restored mid-run. A block with one obvious fix folds into the next probe.
    Stash serially: one stash command per Bash call, never from parallel
    contenders.
 3. **Re-probe the graft.** Grafts are unproven in combination, so the
@@ -195,8 +194,8 @@ Offer the two exits. Write any commit message per
   is the user's call. Right when the code carries the marks of abandoned
   rounds.
 - **Landing plan**: a commit-by-commit plan for the final stash, built
-  as Phase 5 of the `spike-probe` skill, landed under `--replay` as its
-  Phase 6. Right when the last round's code is what the design wants.
+  per `references/replay.md` (The replay plan), landed under
+  `--replay` per its Replay section. Right when the last round's code is what the design wants.
 
 Then restore the user's saved work with
 `<scripts>/spike.sh restore <user-work sha>`, unless `--replay` runs, which
@@ -212,7 +211,10 @@ them by SHA.
 Write the report per `references/prose-rules.md`.
 
 The first line of the reply is exactly the hero line: no lead-in sentence,
-no first-person opener. Report results, not process: never narrate a
+no progress note sent while sub-agents ran, no first-person opener, no
+"I recommend". Print every SHA abbreviated to 7 characters. After the last section
+only the panel or the default line follows: no table, no closing question
+in prose. Report results, not process: never narrate a
 departure from these steps or name the brief or the skill; do the step or
 halt. State what happened, never what a contender or step did not do: no
 "not hidden", "no user work was saved", "nothing was X" restatements.
@@ -233,11 +235,7 @@ that needs attention) go inside `## Stashes`, never before the first section.
    A run that halts before round 1 (no commit, repository rooted at
    home, dirty tree declined, missing code or goal) is a
    `⚠ ratchet halted` hero line, one result sentence naming every
-   blocker (order and rule as in the `spike-probe` skill's output contract),
-   then one line with what the user must do next. No sections, no panel,
-   no stash SHAs, no local or temp paths, no command echo, no description
-   of the environment. The result sentence names only the blockers, never
-   why a file or tree is in that state.
+   blocker per `references/spike-core.md` (Halted run).
 2. `## Rounds`: one block per round: what was probed, what fought
    back, bakeoff winner if any, what got locked.
 3. `## Design`: the locked decisions as a specification, not a history.

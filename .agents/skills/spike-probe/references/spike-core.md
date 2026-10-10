@@ -7,6 +7,8 @@ the `spike-ratchet` skill read this file instead of each other.
 ## Contents
 
 - Scripts
+- Zero commits
+- Halted run
 - Preflight
 - Setup
 - The probe loop
@@ -21,6 +23,32 @@ is the project, not this file, so resolve `../scripts` against this file's
 directory to an absolute path and write that path literally in every command
 below, where `<scripts>` stands. The script exits 1 with a one-line reason
 when it refuses, 2 on a usage error.
+
+## Zero commits
+
+Every spike skill, and every round and contender, produces zero commits:
+not on trunk, the feature branch, a scratch branch, or a contender
+worktree, and not "just to checkpoint". Commits happen only in a replay,
+after the plan is approved.
+
+| Rationalization | Reality |
+|---|---|
+| "The owner said 'we'll clean it up later' so commit now, clean later" | "Later" is the replay plan. A commit *is* the cleanup being deferred; stash instead. |
+| "They need it before a meeting, so a commit is the fastest handoff" | A stash plus the plan is the same speed and leaves history clean. Show the demo from the working tree. |
+| "It's all green, so it's safe to commit" | Green ≠ reviewed. The probe skipped naming, API, and scope decisions on purpose; the plan surfaces them first. |
+| "One commit is easier to undo than a stash" | A stash with a recorded ref is exactly as recoverable and never entangles trunk or the branch. |
+| "I'll commit on a scratch branch, that doesn't count" | It counts. Scratch branches leak into PRs and get merged. Stash. |
+
+## Halted run
+
+A run that halts before it touches anything replies with its skill's
+`⚠ ... halted` or `⚠ spike blocked` hero line, one result sentence naming
+every blocker in this order (no commits, repository rooted at home, dirty
+tree declined, missing code or goal), then one line with what the user
+must do next, covering all of them. No sections, no panel, no stash SHAs,
+no local or temp paths, no command echo, no description of the
+environment. The sentence names only the blockers, never why a file or
+tree is in that state.
 
 ## Preflight
 

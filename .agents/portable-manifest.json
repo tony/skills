@@ -14,7 +14,7 @@
         "references/worktree-setup.md": "plugins/action/references/worktree-setup.md",
         "references/worktree_paths.py": "plugins/action/scripts/worktree_paths.py"
       },
-      "bytes": 46556
+      "bytes": 47221
     },
     {
       "name": "action-worktrees",
@@ -29,7 +29,7 @@
         "references/worktree-setup.md": "plugins/action/references/worktree-setup.md",
         "references/worktree_paths.py": "plugins/action/scripts/worktree_paths.py"
       },
-      "bytes": 47601
+      "bytes": 48458
     },
     {
       "name": "agent-messaging-session-relay",
@@ -1006,7 +1006,7 @@
         "references/prose-rules.md": "plugins/self-improvement/references/prose-rules.md",
         "references/sweep.py": "plugins/self-improvement/scripts/sweep.py"
       },
-      "bytes": 48092
+      "bytes": 49377
     },
     {
       "name": "self-improvement-sweep",
@@ -1019,7 +1019,7 @@
         "references/sweep.py": "plugins/self-improvement/scripts/sweep.py",
         "references/worked-example-spike.md": "plugins/self-improvement/references/worked-example-spike.md"
       },
-      "bytes": 65569
+      "bytes": 65871
     },
     {
       "name": "situate",
@@ -1144,12 +1144,14 @@
         "plugins/spike/skills/bakeoff/SKILL.md"
       ],
       "bundled": {
+        "references/bakeoff-round.md": "plugins/spike/references/bakeoff-round.md",
         "references/prose-rules.md": "plugins/spike/references/prose-rules.md",
+        "references/replay.md": "plugins/spike/references/replay.md",
         "references/spike-core.md": "plugins/spike/references/spike-core.md",
         "references/spike.sh": "plugins/spike/scripts/spike.sh",
         "references/verification-gates.md": "plugins/spike/references/verification-gates.md"
       },
-      "bytes": 45487
+      "bytes": 50213
     },
     {
       "name": "spike-probe",
@@ -1158,11 +1160,12 @@
       ],
       "bundled": {
         "references/prose-rules.md": "plugins/spike/references/prose-rules.md",
+        "references/replay.md": "plugins/spike/references/replay.md",
         "references/spike-core.md": "plugins/spike/references/spike-core.md",
         "references/spike.sh": "plugins/spike/scripts/spike.sh",
         "references/verification-gates.md": "plugins/spike/references/verification-gates.md"
       },
-      "bytes": 41539
+      "bytes": 42874
     },
     {
       "name": "spike-ratchet",
@@ -1170,12 +1173,14 @@
         "plugins/spike/skills/ratchet/SKILL.md"
       ],
       "bundled": {
+        "references/bakeoff-round.md": "plugins/spike/references/bakeoff-round.md",
         "references/prose-rules.md": "plugins/spike/references/prose-rules.md",
+        "references/replay.md": "plugins/spike/references/replay.md",
         "references/spike-core.md": "plugins/spike/references/spike-core.md",
         "references/spike.sh": "plugins/spike/scripts/spike.sh",
         "references/verification-gates.md": "plugins/spike/references/verification-gates.md"
       },
-      "bytes": 41748
+      "bytes": 50624
     },
     {
       "name": "tailwind-spacing-audit",
@@ -1531,6 +1536,7 @@
     "plugins/respond/references/feedback-sources.md": 3,
     "plugins/respond/references/prose-rules.md": 3,
     "plugins/spike/references/prose-rules.md": 3,
+    "plugins/spike/references/replay.md": 3,
     "plugins/spike/references/spike-core.md": 3,
     "plugins/spike/references/verification-gates.md": 3,
     "plugins/spike/scripts/spike.sh": 3,
@@ -1595,6 +1601,7 @@
     "plugins/slop/references/signatures.yml": 2,
     "plugins/slop/references/verification-gates.md": 2,
     "plugins/slop/scripts/slop_detect.py": 2,
+    "plugins/spike/references/bakeoff-round.md": 2,
     "plugins/tdd/references/gates-and-commits.md": 2,
     "plugins/tdd/references/prose-rules.md": 2,
     "plugins/tdd/references/xfail-mechanisms.md": 2,
