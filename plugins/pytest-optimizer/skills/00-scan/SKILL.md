@@ -185,6 +185,8 @@ paths:
 Benchmarking the 2 hypotheses measures what each recovers.
 ```
 
-Close with an `AskUserQuestion` panel offering to benchmark the hypotheses,
-narrow scope, or stop. Without one, stop after the report and name the next
-step in one sentence.
+After the last section write at most one closing sentence (files the timed runs
+wrote, a dirty tree, a lowered run count), then an `AskUserQuestion` panel
+offering to benchmark the hypotheses, narrow scope, or stop. Print no options as
+text. Without a question tool, the one closing sentence also names the next step;
+add no second paragraph.
