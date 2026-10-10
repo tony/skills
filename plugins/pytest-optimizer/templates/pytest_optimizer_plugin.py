@@ -4,8 +4,8 @@ pytest core has no per-fixture timer. A ``setup`` row in ``--durations`` is the
 whole setup chain for one test item, and a shared higher-scope fixture is billed
 to the first item that triggers it. This plugin wraps ``pytest_fixture_setup`` to
 attribute setup cost to the *individual* fixture, then prints the slowest
-fixtures (aggregated by name + scope) in the terminal summary -- filling the one
-gap the stock durations table cannot.
+fixtures (aggregated by definition: name, scope and defining conftest or module)
+in the terminal summary -- filling the one gap the stock durations table cannot.
 
 Load it from the rootdir ``conftest.py`` with
 ``pytest_plugins = ["pytest_optimizer_plugin"]`` (pytest rejects ``pytest_plugins``
@@ -15,7 +15,11 @@ Remove it once you have the timings you need; it adds a small per-fixture overhe
 Notes
 -----
 - Only cache *misses* are timed: pytest reuses a fixture's ``cached_result``
-  within its scope, so a session-scoped fixture is timed once.
+  within its scope, so a session-scoped fixture is timed once. A parametrized
+  fixture is set up again whenever its parameter changes, so its count can
+  exceed one even at session scope.
+- A fixture overridden in a nearer conftest or module is a different
+  definition and gets its own row.
 - Under xdist the timings accumulate in the workers while the summary hook runs
   only in the controller, so no table prints; profile serially.
 """
@@ -28,8 +32,13 @@ from collections import defaultdict
 
 import pytest
 
-# (fixture_name, scope) -> list of per-setup wall seconds
-_TIMINGS: dict[tuple[str, str], list[float]] = defaultdict(list)
+# (fixture_name, scope, defining node id) -> list of per-setup wall seconds
+_TIMINGS: dict[tuple[str, str, str], list[float]] = defaultdict(list)
+
+
+def pytest_sessionstart(session: pytest.Session) -> None:
+    """Forget earlier sessions when pytest runs more than once in one process."""
+    _TIMINGS.clear()
 
 
 @pytest.hookimpl(hookwrapper=True)
@@ -41,7 +50,8 @@ def pytest_fixture_setup(
     start = time.perf_counter()
     yield
     elapsed = time.perf_counter() - start
-    _TIMINGS[(fixturedef.argname, str(fixturedef.scope))].append(elapsed)
+    key = (fixturedef.argname, str(fixturedef.scope), fixturedef.baseid or "(plugin)")
+    _TIMINGS[key].append(elapsed)
 
 
 def pytest_terminal_summary(
@@ -55,18 +65,18 @@ def pytest_terminal_summary(
 
     limit = int(config.getini("optimizer_fixture_timing_limit") or 20)
     rows = [
-        (sum(samples), len(samples), name, scope)
-        for (name, scope), samples in _TIMINGS.items()
+        (sum(samples), len(samples), name, scope, base)
+        for (name, scope, base), samples in _TIMINGS.items()
     ]
     rows.sort(reverse=True)  # by total time descending
 
     tr = terminalreporter
     tr.write_sep("=", "slowest fixtures (setup, by total time)")
-    tr.write_line(f"{'total':>8}  {'n':>4}  {'each':>8}  scope     fixture")
-    for total, count, name, scope in rows[:limit]:
+    tr.write_line(f"{'total':>8}  {'n':>4}  {'each':>8}  scope     fixture (defined in)")
+    for total, count, name, scope, base in rows[:limit]:
         each = total / count if count else 0.0
         tr.write_line(
-            f"{total:8.3f}  {count:4d}  {each:8.3f}  {scope:<8}  {name}"
+            f"{total:8.3f}  {count:4d}  {each:8.3f}  {scope:<8}  {name} ({base or 'rootdir'})"
         )
 
 
