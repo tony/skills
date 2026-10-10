@@ -271,18 +271,22 @@ Include only the ones you have content for; never invent another.
    awkward today.
 3. `### Reproduction` (defects): numbered steps, one command per
    fence. Use the steps the user gave; add no step, version, or runtime
-   they did not state.
+   they did not state. A comparison the user reported (works on 2.3.0)
+   goes in `### Environment` or `### Expected`, not in a step.
 4. `### Expected` and `### Actual` (defects): two short sections, not
    a table.
 5. `### Environment` (defects): versions, inside `<details>`.
 6. `### Evidence`: logs, traces, and full output, inside
    `<details>`.
-7. `### Proposal`: the change being suggested, when there is one.
+7. `### Proposal`: the change the user suggested, when they suggested
+   one. Never author a fix of your own; a cause the user stated goes in
+   `### Summary` in their words.
    Nested sections for competing options; no table.
 8. `### Alternatives`: only when one was genuinely weighed and
    rejected, with the reason.
 9. `### References`: pinned links to code, related issues, upstream
-   releases, and specs.
+   releases, and specs. Link only a target the user supplied or a lookup
+   resolved; build no compare or release URL from a version string.
 
 ## Phase 7: Sanitize, then preview
 
@@ -295,7 +299,7 @@ to the unchecked items in the reply's first line.
 Scan the file for local paths, emails, and tokens first:
 
 ```console
-$ grep -nE '/home/|/Users/|@[a-z]+\.|ghp_|github_pat_' PATH
+$ grep -nE '/home/|/Users/|@[a-z]+\.|gh[pousr]_|github_pat_|glpat-|A[KS]IA[0-9A-Z]{12}|xox[a-z]-|x(app|wfp)-|(^|[^A-Za-z0-9])sk-[A-Za-z0-9]' PATH
 ```
 
 A match is a lead: fix it, or confirm it is not personal. A clean scan
@@ -406,6 +410,14 @@ Remove the scratch file on the way out, whichever branch ended the run
 $ rm -f PATH
 ```
 
+Read the created issue back before replying, and take the URL from it:
+
+```console
+$ gh issue view URL \
+    --repo OWNER/REPO \
+    --json number,title,state,url
+```
+
 After filing, the reply is exactly `Filed: URL` (not "I filed the issue: URL") and nothing else: no recap of
 the checks, the title, or the body, and no sentence about what you did
 not run or could not pin. Those caveats belong in the body, written
@@ -415,6 +427,15 @@ filed. Reply in these shapes, as plain text with no bullets and no bold:
 
 ```text
 Filed: https://github.com/example/widgets/issues/42
+```
+
+A create that printed a URL whose readback fails or shows a different
+title is one sentence beginning `Filed, readback failed:` with the URL
+the create printed. Never report `Filed:` for a create whose output
+held no URL.
+
+```text
+Filed, readback failed: https://github.com/example/widgets/issues/42 was printed, but `gh issue view` could not read it back. Check the issue on GitHub.
 ```
 
 ```text

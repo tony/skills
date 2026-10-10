@@ -34,6 +34,13 @@ graders:
     tool: Bash
     input_match: 'gh issue create[\s\S]*?--body-file'
 
+  - name: reads-the-issue-back
+    type: regex
+    target:
+      source: file
+      path: calls.log
+    pattern: 'create\n(?:[\s\S]*\n)?view'
+
   - name: no-inline-body
     type: tool_used
     tool: Bash

@@ -22,7 +22,16 @@ JSON
   "label list") echo '[{"name":"bug","description":"Something is broken"}]' ;;
   "issue create")
     echo "$*" >>create.log
+    echo create >>calls.log
+    while [ $# -gt 0 ]; do
+      [ "$1" = "--title" ] && printf '%s' "$2" >issue-title.txt
+      shift
+    done
     echo "https://example.invalid/example/widgets/issues/42"
+    ;;
+  "issue view")
+    echo view >>calls.log
+    jq -nc --arg t "$(cat issue-title.txt 2>/dev/null)" '{number:42,title:$t,state:"OPEN",url:"https://example.invalid/example/widgets/issues/42"}'
     ;;
   "api repos/example/widgets/private-vulnerability-reporting") echo "false" ;;
   "api repos/example/widgets/contents/.github/ISSUE_TEMPLATE")

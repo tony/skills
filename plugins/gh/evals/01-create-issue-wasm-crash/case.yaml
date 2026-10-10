@@ -61,3 +61,17 @@ graders:
       One statement naming several fields the user must supply, such as
       "Before filing, add your OS, your exact Node version, and the full
       stack trace.", is a single sentence and passes.
+
+  - name: no-invented-steps-or-links
+    type: llm
+    focus: last_message
+    criteria: |
+      The Reproduction section holds only steps the user gave: building with
+      `widgets build --target=wasm` on 2.4.1 with Node 20. It adds no step of its own (no "repeat on v2.3.0" step, no
+      "check out" step beyond the user's clean checkout of v2.4.1).
+      The body has no Proposal section and offers no fix of its own, since
+      the user suggested none; the stated cause appears only as the user's
+      statement.
+      The body links no compare or release URL built from a version string.
+      A link to src/build.js at the user's tag passes when the body says the
+      tag was not checked.

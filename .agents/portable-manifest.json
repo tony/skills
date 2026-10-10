@@ -260,7 +260,7 @@
         "references/source-links.md": "plugins/gh/references/source-links.md",
         "references/source-pins.md": "plugins/gh/references/source-pins.md"
       },
-      "bytes": 39979
+      "bytes": 40959
     },
     {
       "name": "gh-rendered-markdown",
