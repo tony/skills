@@ -59,7 +59,7 @@ passage.
 - The quotation is verbatim. An ellipsis marks every omission.
 - A term the author uses without defining is still a term. Quote a passage
   showing the usage rather than skipping it.
-- Where the author defines a term explicitly, quote the definition and mark it,
+- Where the author defines a term explicitly, quote the definition and begin its note with `definition:`,
   so `extract` can use it directly rather than inferring one.
 
 ## Output
@@ -77,8 +77,8 @@ Run /scholar:gather on the source, or add its row by hand, then run annotate aga
 
 Sections:
 
-1. `## Quotations`: the `quotations.jsonl` path under the study directory, the count by `locator_kind`, and the concepts they name.
-2. `## Locator`: which `locator_kind` this source uses, including any
+1. `## Quotations`: the `quotations.jsonl` path under the study directory, the count by `locator_kind`, and the concepts they name, and nothing about what was appended or kept.
+2. `## Locator`: one line naming the `locator_kind` this source uses, and any
    fallback to `search-string`. Give no reasons.
 3. `## Undefined`: terms the author uses without defining, which `extract`
    will have to infer from usage.

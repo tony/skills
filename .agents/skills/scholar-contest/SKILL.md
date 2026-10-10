@@ -73,7 +73,12 @@ One candidate at a time. For each, write to `evidence/contested.md`:
   objection and what evidence would settle it.
 
 Check each structural assertion against its pinned source, not its repetition
-in an earlier evidence document. Withdrawing an unsupported disjointness
+in an earlier evidence document or in the quotations stored in `terms.jsonl`.
+Read the cited text from the corpus at the recorded `commit`: a checkout read
+in place once `git -C <corpus> rev-parse HEAD` matches, or `git -C <corpus>
+show <commit>:<path>`. Record `upheld` only after that read. Where the corpus
+is not on disk, the verdict stays open and names the unread source as the
+evidence needed. Withdrawing an unsupported disjointness
 claim leaves overlap unknown; it does not establish the opposite. Keep the
 verdict open if the unsupported claim remains in the ontology.
 

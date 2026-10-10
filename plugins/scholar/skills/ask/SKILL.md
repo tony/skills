@@ -67,6 +67,8 @@ Distinguish three cases, because they mean different things:
 Per `../../references/output-contract.md`. Hero: `✓ answered from <n> terms`,
 `⚠ Not covered: <what would have to be read>` when the study exists but does
 not settle the question, or `⚠ Blocked: <reason>` when no study is at the path.
+A question the study answers in part takes the `✓` hero, with the rest under
+`## Gaps`.
 A blocked run prints the hero, one sentence on the unblock (the real study
 path, or `/scholar:ontology` to build one), and nothing else: no paths
 searched, no "I found no terms.jsonl anywhere". Reply as plain
@@ -83,8 +85,12 @@ Sections, for the first two heroes:
 1. `## Answer`: the answer, each claim citing its evidence file and row.
 2. `## Evidence`: the chain: definitions, citations with locators, and any
    verdict recorded about the terms involved.
-3. `## Gaps`: what the study does not settle, and which of the three cases
-   applies.
+3. `## Gaps`: what the question needs and the study does not settle, and
+   which of the three cases applies. Add no gap the question did not ask
+   about.
+
+The hero is exactly the line above, with nothing after the count. Bullets are
+plain sentences, never a bold label. Say nothing about a file you did not use.
 
 Next-step options: widen the study to cover the gap, ask another question, stop
 here.

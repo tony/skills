@@ -46,8 +46,9 @@ wrong about the other.
 
 **Coverage.** What each table has that the other has no counterpart for. A
 concept present in one and absent in the other is either a genuine difference
-in what the projects do, or a gap in one of the studies. Say which you think
-it is and why.
+in what the projects do, or a gap in one of the studies. Say which only when
+`sources.jsonl` shows what each study read; otherwise it is unknown, and the
+reply names the source whose reading would settle it.
 
 ### 3. Judge by reading
 
@@ -61,6 +62,9 @@ The hero counts are counts of findings, not scores.
   stay as they are.
 - Two terms with alike definitions are a candidate mapping, not a mapping.
   Say what the definitions have in common and where they part.
+- State only what the two tables say. Do not add behavior, architecture, or
+  where a feature "would live" that no definition or citation states; what
+  the definitions leave out is unknown.
 - Where the two studies read corpora at different depths, say so. A coverage
   gap between an exhaustive study and a shallow one is a fact about the
   studies, not about the projects.

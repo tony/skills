@@ -865,7 +865,7 @@
         "references/output-contract.md": "plugins/scholar/references/output-contract.md",
         "references/prose-rules.md": "plugins/scholar/references/prose-rules.md"
       },
-      "bytes": 14666
+      "bytes": 14745
     },
     {
       "name": "scholar-ask",
@@ -876,7 +876,7 @@
         "references/output-contract.md": "plugins/scholar/references/output-contract.md",
         "references/prose-rules.md": "plugins/scholar/references/prose-rules.md"
       },
-      "bytes": 12291
+      "bytes": 12608
     },
     {
       "name": "scholar-compare",
@@ -887,7 +887,7 @@
         "references/output-contract.md": "plugins/scholar/references/output-contract.md",
         "references/prose-rules.md": "plugins/scholar/references/prose-rules.md"
       },
-      "bytes": 12270
+      "bytes": 12577
     },
     {
       "name": "scholar-contest",
@@ -903,7 +903,7 @@
         "references/stage-gates.md": "plugins/scholar/references/stage-gates.md",
         "references/term_metrics.py": "plugins/scholar/scripts/term_metrics.py"
       },
-      "bytes": 48643
+      "bytes": 49011
     },
     {
       "name": "scholar-distill",
@@ -963,7 +963,7 @@
         "references/stage-gates.md": "plugins/scholar/references/stage-gates.md",
         "references/term_metrics.py": "plugins/scholar/scripts/term_metrics.py"
       },
-      "bytes": 49246
+      "bytes": 49548
     },
     {
       "name": "scholar-render",
@@ -989,7 +989,7 @@
         "references/prose-rules.md": "plugins/scholar/references/prose-rules.md",
         "references/term_metrics.py": "plugins/scholar/scripts/term_metrics.py"
       },
-      "bytes": 38028
+      "bytes": 38668
     },
     {
       "name": "scholar-verify",

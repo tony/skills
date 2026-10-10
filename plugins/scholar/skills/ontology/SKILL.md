@@ -102,6 +102,11 @@ types, <n> contested` or `⚠ Blocked: <reason>`. Sections:
    was killed and what the kill revealed.
 4. `## Where it lives`: the study directory path and which stages ran.
 
+Call a gate passed only when its analyzer check ran in this session and
+exited zero. The support reviews (hierarchy basis, contest verdicts, brief
+claims) are judgment: report them as reviewed, with any claim left unsupported
+or open. Add no claim to the report that the evidence layer does not hold.
+
 A blocked run contains the hero and one unblock sentence naming the required
 input (a repository URL, a local directory, or a document on disk). No bold, no
 options list, no plan for what happens next, no sections, no guesses from a

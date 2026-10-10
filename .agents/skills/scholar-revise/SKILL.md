@@ -38,7 +38,16 @@ Usually from the `scholar-verify` skill (a citation that no longer says what it 
 quoted as saying) or from the `scholar-contest` skill (a later round that killed an
 earlier verdict). Take the claim as it currently stands, verbatim.
 
-### 2. Append to evidence/corrections.md
+Read the source the claim rested on at its recorded pin, and the evidence that
+overturns it. A correction written from the study's stored quotations alone
+repeats whatever they got wrong. When the source cannot be read, stop with
+`⚠ Blocked` naming it.
+
+### 2. Record the correction first
+
+Append the entry to `evidence/corrections.md` before any edit to
+`terms.jsonl`, an evidence document, or the brief. An interrupted run then
+leaves the retraction on disk rather than a claim changed with no record.
 
 ```markdown
 ## <the term or claim>
@@ -52,12 +61,13 @@ Failed because: what overturned it, cited or measured.
 Now: the replacement claim, or a statement that the question is open.
 ```
 
-Append. Never rewrite an existing correction: a correction that was itself
-wrong gets its own entry beneath.
+Append with `Edit` at the end of the file; never `Write` it back whole. Never
+rewrite an existing correction: a correction that was itself wrong gets its
+own entry beneath.
 
 ### 3. Update the study
 
-Change the affected row in `terms.jsonl` and the affected evidence document,
+Only after step 2 is on disk, change the affected row in `terms.jsonl` and the affected evidence document,
 then link the correction from the brief's section so a reader of the brief
 meets it. A brief edit can break the brief gate, so run it and report the
 result in `## Touched`:
@@ -83,11 +93,12 @@ Per `references/output-contract.md`. Hero: `✓ corrected <claim>` or `⚠
 Blocked: <reason>`. Sections:
 
 1. `## Correction`: the four fields as plain `Was: ...` lines, never bold.
-2. `## Touched`: the rows and evidence documents updated.
+2. `## Touched`: the rows and evidence documents updated, with no sentence
+   about an entry or file left as it was.
 3. `## Downstream`: anything else in the study that rested on the same
    evidence and may now be unsupported.
 
-A halted run (no study, or no standing claim to correct) is the hero and one
+A halted run (no study, no standing claim to correct, or an unreadable source) is the hero and one
 unblock sentence, with no temp path and no "I didn't change anything". Do not
 comment on the correction text the user supplied:
 
