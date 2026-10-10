@@ -87,7 +87,7 @@ def test_order_puts_stack_parent_first(repo: Path, tmp_path: Path) -> None:
     assert out["topology"] == "stack"
     assert out["order"] == [31, 32]
     assert out["trunk"] == "main"
-    assert out["heads"]["31"] == "oid31"
+    assert set(out) == {"topology", "order", "trunk", "parents"}
 
 
 def test_order_independent_keeps_given_order(repo: Path, tmp_path: Path) -> None:

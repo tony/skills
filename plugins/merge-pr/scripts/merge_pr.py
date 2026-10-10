@@ -116,7 +116,6 @@ def order_prs(prs: list[dict[str, object]]) -> dict[str, object]:
         "order": ordered,
         "trunk": trunks[0] if len(trunks) == 1 else None,
         "parents": {str(n): parents[n] for n in given},
-        "heads": {str(p["number"]): p["headRefOid"] for p in prs},
     }
 
 
