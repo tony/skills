@@ -33,7 +33,8 @@ anything the user cannot get back.
   deletions to the host. Forbidden phrasings: "which I'd expect to hold
   most of it", "almost all of the used space is outside what I could
   read", "likely in your home directory", "the rest is elsewhere on this
-  filesystem".
+  filesystem", "I tried to read ~/.cache and none of it could be read" when only
+  the home directory was attempted.
 - **Linux and WSL only.** The scripts and commands have run on Linux, and
   no live Windows VHDX compaction has been tried. On macOS, report APFS
   snapshots and purgeable space as unmeasured, and say the guard's

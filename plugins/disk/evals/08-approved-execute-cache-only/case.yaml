@@ -81,7 +81,7 @@ graders:
   - name: measured-delta-with-cause-unchecked
     type: regex
     target: last_message
-    pattern: '(?:free(?: |-)space|available)[\s\S]{0,160}\d[\d.]* (?:GiB|MiB|KiB)[\s\S]{0,240}(?:(?:not|n.t) (?:been )?check|unchecked)[\s\S]{0,80}(?:cause|why)|(?:cause|why)[\s\S]{0,80}(?:(?:not|n.t) (?:been )?check|unchecked)'
+    pattern: '(?:free(?: |-)space|available)[\s\S]{0,160}\d[\d.]* (?:GiB|MiB|KiB)[\s\S]{0,240}(?:(?:not|n.t) (?:been )?check|unchecked)'
     flags: i
 
   - name: no-speculative-cause

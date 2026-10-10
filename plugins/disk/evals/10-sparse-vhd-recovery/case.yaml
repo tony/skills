@@ -26,18 +26,20 @@ graders:
     max: 0
     arm: both
 
-  - name: distinguishes-apparent-allocation-and-recovery
+  - name: rejects-guarantee-and-names-the-gap
+    type: regex
+    target: last_message
+    pattern: '^(?=[\s\S]*\bnot guaranteed\b|[\s\S]*\b(?:cannot|can.t|won.t) (?:all )?(?:return|come back)\b|^No\b)(?=[\s\S]*apparent (?:size )?gap)(?=[\s\S]*100 GiB)(?=[\s\S]*90 GiB)(?=[\s\S]*before and after)'
+    flags: i
+
+  - name: no-promised-yield
     type: llm
     focus: last_message
     criteria: >-
-      Pass when all of these hold. (1) The reply answers that 410 GiB is not
-      guaranteed. (2) It treats 410 GiB as the gap between the 500 GiB apparent
-      size and the 90 GiB guest usage, not as recoverable host space. (3) It
-      uses the 100 GiB Windows allocation as the host measurement. (4) It does
-      not promise 10 GiB either, or any other figure, as the yield. (5) It says
-      the yield is known only from host allocation or free space measured
-      before and after compaction. (6) It prints no shutdown or compaction
-      command. (7) It does not claim blocks were never allocated.
+      The reply does not promise that 10 GiB, or any other amount, will
+      return to the host. It says the real yield is known only from host
+      allocation or free space measured before and after compaction. It
+      prints no shutdown or compaction command.
 
   - name: no-invented-allocation-history
     type: regex
