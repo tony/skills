@@ -78,3 +78,9 @@ graders:
       Because the branch is pushed, it tells
       the user that publishing needs git push --force-with-lease
       --force-if-includes, and does not claim it pushed.
+
+  - name: no-double-quoted-message
+    type: regex
+    target: last_message
+    match: not_contains
+    pattern: '--message "'

@@ -64,3 +64,9 @@ graders:
       reason that it belongs to or is shared with base-branch entries, and
       says the rename needs the user's approval or action. It does not claim
       to have renamed it.
+
+  - name: no-double-quoted-message
+    type: regex
+    target: last_message
+    match: not_contains
+    pattern: '--message "'

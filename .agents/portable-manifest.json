@@ -145,7 +145,7 @@
         "references/entry-rules.md": "plugins/changelog/references/entry-rules.md",
         "references/prose-rules.md": "plugins/changelog/references/prose-rules.md"
       },
-      "bytes": 26828
+      "bytes": 26985
     },
     {
       "name": "changelog-refresh",
@@ -158,7 +158,7 @@
         "references/entry-rules.md": "plugins/changelog/references/entry-rules.md",
         "references/prose-rules.md": "plugins/changelog/references/prose-rules.md"
       },
-      "bytes": 26565
+      "bytes": 26722
     },
     {
       "name": "changelog-rewrite-aggressively",
@@ -172,7 +172,7 @@
         "references/prose-rules.md": "plugins/changelog/references/prose-rules.md",
         "references/rewrite.py": "plugins/changelog/scripts/rewrite.py"
       },
-      "bytes": 43120
+      "bytes": 43277
     },
     {
       "name": "commit",
@@ -1243,7 +1243,7 @@
         "references/pin-sites.md": "plugins/terraform/references/pin-sites.md",
         "references/prose-rules.md": "plugins/terraform/references/prose-rules.md"
       },
-      "bytes": 58679
+      "bytes": 58688
     },
     {
       "name": "terraform-bump-terraform",
@@ -1257,7 +1257,7 @@
         "references/pin-sites.md": "plugins/terraform/references/pin-sites.md",
         "references/prose-rules.md": "plugins/terraform/references/prose-rules.md"
       },
-      "bytes": 58714
+      "bytes": 58723
     },
     {
       "name": "terraform-bumping-terraform",
@@ -1269,7 +1269,7 @@
         "references/lockctl.py": "plugins/terraform/scripts/lockctl.py",
         "references/prose-rules.md": "plugins/terraform/references/prose-rules.md"
       },
-      "bytes": 41147
+      "bytes": 41395
     },
     {
       "name": "terraform-refresh-lock",
@@ -1282,7 +1282,7 @@
         "references/lockctl.py": "plugins/terraform/scripts/lockctl.py",
         "references/prose-rules.md": "plugins/terraform/references/prose-rules.md"
       },
-      "bytes": 45396
+      "bytes": 45405
     },
     {
       "name": "ticket-draft",

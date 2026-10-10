@@ -39,3 +39,9 @@ graders:
       The reply stops, names the uncommitted changes in the working tree as the
       reason, and tells the user what to do (commit or stash them, then re-run).
       It does not claim to have rebased, dropped any commit, or committed.
+
+  - name: no-double-quoted-message
+    type: regex
+    target: last_message
+    match: not_contains
+    pattern: '--message "'

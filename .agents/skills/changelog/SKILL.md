@@ -165,7 +165,7 @@ To commit it, run:
 
 ```console
 $ git commit \
-    --message "docs(CHANGES) Cache key eviction" \
+    --message 'docs(CHANGES) Cache key eviction' \
     -- CHANGES.md
 ```
 ````

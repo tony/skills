@@ -61,3 +61,9 @@ graders:
     min: 0
     max: 0
     arm: both
+
+  - name: no-double-quoted-message
+    type: regex
+    target: last_message
+    match: not_contains
+    pattern: '--message "'

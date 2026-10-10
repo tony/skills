@@ -91,3 +91,9 @@ graders:
       branch, and says one new commit was added at the tip. The commit subject
       follows the project's Scope(type[detail]) format, such as CHANGES(docs),
       rather than docs(CHANGES). It does not claim a push or say code changed.
+
+  - name: no-double-quoted-message
+    type: regex
+    target: last_message
+    match: not_contains
+    pattern: '--message "'

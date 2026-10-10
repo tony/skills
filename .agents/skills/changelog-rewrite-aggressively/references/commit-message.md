@@ -37,9 +37,13 @@ Commit the changelog file by path, which leaves other staged files out:
 
 ```console
 $ git commit \
-    --message "<message>" \
+    --message '<message>' \
     -- <changelog-file>
 ```
+
+Single-quote the message and write each `'` in it as `'\''`. Subjects come
+from PR and commit text; inside double quotes, `$(...)` and backticks would
+run.
 
 A file created by this run needs `git add -- <changelog-file>` first.
 Never `git add -A`, never a dirty code file, never push, never tag.
