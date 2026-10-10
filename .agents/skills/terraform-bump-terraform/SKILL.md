@@ -4,7 +4,7 @@ description: >-
   Use when updating the Terraform or OpenTofu CLI across module constraints,
   version-manager files, CI, and images.
 disable-model-invocation: true
-allowed-tools: ["Bash", "Read", "Grep", "Glob", "Edit", "AskUserQuestion"]
+allowed-tools: ["Bash", "Read", "Grep", "Glob", "Edit", "Write", "AskUserQuestion"]
 metadata:
   argument-hint: "[version] [--root-module <dir>...] [--audit-only] [--no-lock] [--no-commit]"
   source: "plugins/terraform/skills/bump-terraform/SKILL.md"

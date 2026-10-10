@@ -1,7 +1,7 @@
 ---
 name: bumping-terraform
 description: "Use when Terraform or OpenTofu providers, CLI pins, or lockfiles are outdated or behind; bump or upgrade them across root modules."
-allowed-tools: ["Bash", "Read", "Grep", "Glob", "Edit", "AskUserQuestion"]
+allowed-tools: ["Bash", "Read", "Grep", "Glob", "Edit", "Write", "AskUserQuestion"]
 ---
 
 # Bumping Terraform
@@ -58,6 +58,10 @@ one of them; offer the others as next steps.
   none, the body names no link. Take the subject format from the
   project's AGENTS.md or CLAUDE.md. Write them per
   `../../references/prose-rules.md`.
+- Write each commit message to a temp file with the file tool and commit
+  with `git commit -F <file> -- <paths>`. Messages quote registry text
+  (sources, tags, links), which a double-quoted `-m` or a heredoc would
+  expand or end early.
 - Commit messages carry no `Co-Authored-By`, no "Generated with" or other
   tool trailers, and no emoji.
 - Where there is no interactive question tool (Codex, headless runs),

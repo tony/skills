@@ -1,7 +1,7 @@
 ---
 name: bump-terraform
 description: "Use when updating the Terraform or OpenTofu CLI across module constraints, version-manager files, CI, and images."
-allowed-tools: ["Bash", "Read", "Grep", "Glob", "Edit", "AskUserQuestion"]
+allowed-tools: ["Bash", "Read", "Grep", "Glob", "Edit", "Write", "AskUserQuestion"]
 argument-hint: "[version] [--root-module <dir>...] [--audit-only] [--no-lock] [--no-commit]"
 disable-model-invocation: true
 ---

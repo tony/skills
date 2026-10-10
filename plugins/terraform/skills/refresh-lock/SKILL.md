@@ -1,7 +1,7 @@
 ---
 name: refresh-lock
 description: "Use when refreshing Terraform or OpenTofu root lockfiles within existing constraints while preserving platform coverage."
-allowed-tools: ["Bash", "Read", "Grep", "Glob", "AskUserQuestion"]
+allowed-tools: ["Bash", "Read", "Grep", "Glob", "Write", "AskUserQuestion"]
 argument-hint: "[--root-module <dir>...] [--audit-only] [--no-commit]"
 disable-model-invocation: true
 ---

@@ -4,7 +4,7 @@ description: >-
   Use when updating one Terraform or OpenTofu provider across modules and
   refreshing root lockfiles without losing platforms.
 disable-model-invocation: true
-allowed-tools: ["Bash", "Read", "Grep", "Glob", "Edit", "AskUserQuestion"]
+allowed-tools: ["Bash", "Read", "Grep", "Glob", "Edit", "Write", "AskUserQuestion"]
 metadata:
   argument-hint: "<provider> [version] [--root-module <dir>...] [--audit-only] [--no-lock] [--no-commit]"
   source: "plugins/terraform/skills/bump-provider/SKILL.md"

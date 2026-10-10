@@ -4,7 +4,7 @@ description: >-
   Use when refreshing Terraform or OpenTofu root lockfiles within existing
   constraints while preserving platform coverage.
 disable-model-invocation: true
-allowed-tools: ["Bash", "Read", "Grep", "Glob", "AskUserQuestion"]
+allowed-tools: ["Bash", "Read", "Grep", "Glob", "Write", "AskUserQuestion"]
 metadata:
   argument-hint: "[--root-module <dir>...] [--audit-only] [--no-commit]"
   source: "plugins/terraform/skills/refresh-lock/SKILL.md"

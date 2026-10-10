@@ -1,7 +1,7 @@
 ---
 name: bump-provider
 description: "Use when updating one Terraform or OpenTofu provider across modules and refreshing root lockfiles without losing platforms."
-allowed-tools: ["Bash", "Read", "Grep", "Glob", "Edit", "AskUserQuestion"]
+allowed-tools: ["Bash", "Read", "Grep", "Glob", "Edit", "Write", "AskUserQuestion"]
 argument-hint: "<provider> [version] [--root-module <dir>...] [--audit-only] [--no-lock] [--no-commit]"
 disable-model-invocation: true
 ---
