@@ -26,6 +26,11 @@ cached:
 | `package` | once per package | the package |
 | `session` | once per test run | the whole run |
 
+A parametrized fixture is set up again each time its parameter changes, because
+pytest caches one instance at a time, so a wide scope can still set up more than
+once. A fixture overridden in a nearer conftest or module is a different
+definition with its own cost; count them separately.
+
 The core mis-scope smell: an **expensive `function`-scoped fixture whose value
 is shared and not mutated** re-runs N times when one setup would do. Widening
 the scope is often the highest-impact, lowest-risk speedup, *if* the value is

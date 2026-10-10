@@ -55,9 +55,9 @@ Score sets the priority, but some changes must precede others regardless of scor
 2. **Typing and parametrize migrations early** (H26-H32): low-risk hygiene items,
    and they make later diffs readable.
 3. **Scope and consolidation before parallelism**: fix fixture scope (H10) and
-   merge duplicates (H11, H25) before `-n auto` (H19).
-4. **One speedup per commit**, so a failed green-verify reverts exactly one
-   change.
+   merge duplicates (H11) before `-n auto` (H19).
+4. **One speedup per commit**, so a failed verify discards exactly one change
+   in the scratch worktree.
 
 ## Worked examples
 

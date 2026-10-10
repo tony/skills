@@ -22,7 +22,7 @@ Replace `pytest` with the project's resolved test command.
 | H03 | Shared higher-scope fixture cost mis-attributed to one test | `--setup-show` shows an `S`/`P`/`M`/`C`-scope fixture with one large setup row on the first item that triggers it | Attribute the cost to the fixture; confirm per-fixture via the opt-in `pytest11` timing plugin (pytest core has no per-fixture timer) | low / small |
 | H04 | Want the complete unfiltered picture on a small suite | `pytest --durations=0 --durations-min=0` (equivalent to `--durations=0 -vv`) | Capture every setup/call/teardown row incl. `0.00s`; bucket by phase token; persist to `baseline.json` | low / trivial |
 | H05 | Durations vary run-to-run; fast rows unstable | Re-run the same durations command N ≥ 3× and diff top rows; compute the median and MAD | Run serially (no `-n`), raise `--durations-min` above the floor; only count a saving above `k * MAD` | low / small |
-| H06 | Profiling must be clean and not mutate the repo | Baseline command includes `-p no:cacheprovider` and omits `-n`/xdist | Disable cacheprovider and parallelism while measuring, for reproducible wall-time and one fewer timed hook per phase | low / trivial |
+| H06 | Timed runs must be reproducible | Baseline command includes `-p no:cacheprovider` and no xdist workers (`-n 0` when inherited) | Disable cacheprovider and parallelism while measuring, for reproducible wall-time and one fewer timed hook per phase; the tests themselves can still write files | low / trivial |
 | H07 | Need machine-readable per-test timing for the store | `pytest --junit-xml=<runs-dir>/report.xml -o junit_duration_report=call` | Parse `testcase@time` from XML instead of scraping the human table; store structured timings | low / small |
 
 ## B. Fixtures: unused, duplicate, scope, autouse
@@ -80,7 +80,7 @@ Replace `pytest` with the project's resolved test command.
 
 | ID | Signal | Detect | Action | Risk / Effort |
 |----|--------|--------|--------|---------------|
-| H25 | Duplicate tracks: in-body data loop, or duplicated helpers | `rg` duplicated helper defs in sibling conftests; tests looping a data list inside the body instead of parametrize | Consolidate into one `NamedTuple` + `test_id` parametrized track; hoist shared helpers into one support module/`pytest11` plugin | medium / small |
+| H25 | Duplicated helpers across sibling conftests | `rg` duplicated helper defs in sibling conftests | Hoist shared helpers into one support module/`pytest11` plugin; node ids and counts stay unchanged (turning an in-body loop into `parametrize` changes both and is outside this tool) | medium / small |
 | H36 | Repeated near-identical object construction across tests/params | `rg 'SomeType\(' tests/`; duplicated builder boilerplate | Introduce a factory (callable) fixture that yields a closure, tracks instances, tears down in reverse order | low / small |
 | H38 | Shared expensive fixtures copy-pasted across conftests/repos | Diff conftest fixtures across packages; `rg 'pytest_plugins' .` | Package fixtures as an installable `pytest11` plugin (`entry-points.pytest11`) or `pytest_plugins = ('pkg.module',)`; register markers via `addinivalue_line` | low / medium |
 

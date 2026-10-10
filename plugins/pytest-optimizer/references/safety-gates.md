@@ -80,7 +80,8 @@ positive total, and has observed passed/total counts matching the baseline. `mea
 returns `valid: false` with the reason for unavailable, empty or inconsistent
 counts. A deliberate deselection passes `--expect-total` with the approved
 remaining count; the non-passing count must still equal the baseline's.
-Equal counts do not establish identical tests or unchanged assertions.
+Equal counts do not establish identical tests: the phases also compare
+collected node ids (`measure.py ids`), and neither shows unchanged assertions.
 
 ## Parallelism decision tree
 

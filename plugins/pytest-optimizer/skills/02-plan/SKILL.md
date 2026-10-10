@@ -28,11 +28,20 @@ Resolve the memory directory by the lookup order in
 missing, stop with the halted-run shape in `../../references/output-contract.md`
 and tell the user to run `pytest-optimizer:01-benchmark` first.
 
-Read `benchmarks.json` and `baseline.json`. Score every `validated` candidate
-with `../../references/scoring-rubric.md`: get `impact` from
-`measure.py impact --delta <median_delta> --baseline <median> --clears-noise`,
-judge the other four dimensions against the rubric anchors, then run
-`measure.py score` with all five. It returns the total and a `dropped` reason.
+Read `benchmarks.json`, `baseline.json` and `state.json`. The evidence must
+still describe this checkout: `state.json` has `dirty` false, `git rev-parse HEAD`
+equals its `base_head`, and every entry you score has an `env_token` equal to
+its `env_token`, a `patch_sha256` and a `base_head` equal to it. Otherwise stop
+with the halted-run shape and send the user to `pytest-optimizer:00-scan --force`
+(a different `HEAD` or token) or `pytest-optimizer:01-benchmark --force` (an
+entry with no token or patch).
+
+Score every `validated` candidate with `../../references/scoring-rubric.md`: get
+`impact` from `measure.py impact --delta <median_delta> --baseline <median>`,
+adding `--clears-noise` only when that entry's `clears_noise` is true (a
+validated entry where it is not true has impact 0 and is dropped), judge the
+other four dimensions against the rubric anchors, then run `measure.py score`
+with all five. It returns the total and a `dropped` reason.
 A candidate benchmarked as `kind: "hygiene"` (H26-H32) has no timing: pass
 `--hygiene` to `measure.py score` (impact 0), which skips the noise gate and
 scores the other four dimensions. Plan it as a hygiene item, never drop it for
@@ -55,18 +64,24 @@ target project's convention. Write the message per
 `../../references/prose-rules.md`. No `Co-Authored-By`, no "Generated with" or
 other tool trailer, no emoji: hosts add them by default. Each entry records
 order, heuristic id, score breakdown, target files, draft subject and body, the
-verify command (project tests and quality checks), `expected_total` (the
+verify command (project tests and quality checks), the entry's `env_token`,
+`patch`, `patch_sha256`, `files`, `cache` and `removed_ids`, `expected_total` (the
 collected-test count after this item and every earlier item apply: the baseline
 `tests.total`, less the tests each earlier or current deselecting item removes), and
 `depends_on`. The approval reply shows the draft subject only; the body goes into `plan.json` on approval. Keep the draft in the reply, not on disk: nothing is written until
 approval.
 
-Confirm each target file exists at `HEAD`, unless the item creates it. An
+Confirm each path in `files` exists at `HEAD`, unless the patch creates it. An
 item whose target is absent is not planned: list it under `## Dropped at the
 gate` with "target file absent at HEAD", and count only the kept items in the
-hero line and the recovered-time total. A deselecting item (`removes_tests` in `benchmarks.json`) states "removes
+hero line. A deselecting item (`removes_tests` in `benchmarks.json`) states "removes
 N tests from the default run" and sets `expected_total` to the reduced count, carries that count into every later item's `expected_total`, and
-its saving reads as time not spent on those tests.
+its saving reads as time not spent on those tests, not as a faster suite.
+
+Each saving was measured alone against the control. Independent changes can
+overlap (widening a sleeping fixture and removing its sleep do not add), so
+never sum the savings or call them recovered: the plan states each as measured
+alone, and `03-execute` measures the combined result.
 
 ## Step 4: Present for approval
 
@@ -83,11 +98,11 @@ hero line comes first and carries the approval request, with no remark about pla
 mode before it and no closing note after the last section. Wait for the reply:
 
 ```text
-✓ 1 commit planned, 2.7s of the 12.5s baseline recovered; reply "approve" to record the plan, or name items to drop or reorder
+✓ 1 commit planned; reply "approve" to record the plan, or name items to drop or reorder
 
 ## Ranked plan
 
-- 1. H10 mis-scoped fixture: widen make_config to session scope in tests/conftest.py under the subject "tests(fixtures) Widen make_config to session scope", total score 0.87, saves 2.7s above the 0.44s band, verified with pytest expecting 40 of 40 passing.
+- 1. H10 mis-scoped fixture: widen make_config to session scope in tests/conftest.py under the subject "tests(fixtures) Widen make_config to session scope", total score 0.87, saved 2.7s measured alone above the 0.44s band, verified with pytest expecting 40 of 40 passing.
 ```
 
 Without an interactive session, write nothing and stop: an unapproved plan is not

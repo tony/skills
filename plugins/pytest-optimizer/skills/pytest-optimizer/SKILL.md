@@ -8,11 +8,13 @@ argument-hint: "[test-path-or-marker] [--phase=scan|benchmark|plan|execute] [--f
 # pytest-optimizer
 
 Profile a pytest suite, find safe speedups, and apply each as its own verified
-commit through a resumable, idempotent four-phase loop.
+commit on a new branch, through a resumable, idempotent four-phase loop.
 
 Measure before you mutate, and prove a speedup against the project's own timing
 noise before you trust it. A change whose measured saving falls inside the noise
-band, whose run exits non-zero, or whose test count changes is never committed.
+band, whose run exits non-zero, or whose collected tests change is never
+committed, except a deselection the user approved with its test count, which is
+reported as a smaller default run, not a faster suite.
 
 `$ARGUMENTS` may name a test path or marker to scope the run, a `--phase` to jump
 to, `--force` to ignore idempotency tokens and re-run, `--hygiene` to add the opt-in typing
@@ -38,16 +40,17 @@ them. To run a phase, read its file and follow it:
   writes `baseline.json`, `capabilities.json`, `collection.txt`,
   `hypotheses.json`.
 - `../01-benchmark/SKILL.md` reads `baseline.json`, `hypotheses.json`; writes
-  `benchmarks.json` and `control.json`.
+  `benchmarks.json`, `control.json` and one hash-bound patch per candidate.
 - `../02-plan/SKILL.md` reads `benchmarks.json`, `baseline.json`; writes
   `plan.json`.
-- `../03-execute/SKILL.md` reads `plan.json`, `baseline.json`; writes
-  `execution-log.json` and commits.
+- `../03-execute/SKILL.md` reads `plan.json`, `baseline.json`, `control.json`;
+  writes `execution-log.json` and commits on a new branch in a scratch
+  worktree, leaving the user's checkout, index and branches untouched.
 
 ## Step 1: Read-only preflight
 
-Make no writes here; `00-scan` owns capability probing and creating the memory
-directory.
+Make no writes to the project here; `00-scan` owns capability probing and
+creating the memory directory.
 
 1. Read the project's own test and quality-check commands from `AGENTS.md`,
    `CLAUDE.md`, `justfile`, `tox.ini`, and `pyproject.toml`; the runner
@@ -56,7 +59,8 @@ directory.
    `../../references/memory-schema.md`. If one exists, read `state.json` for the
    resume point.
 3. Read the installed pytest version, for the plan only, through the project's
-   runner so the project environment answers, not the system Python:
+   runner so the project environment answers, not the system Python (a runner
+   such as `uv run` may sync its environment first):
 
    ```console
    $ pytest --version
@@ -106,8 +110,10 @@ Present a plan stating:
 - the starting phase (fresh `00-scan`, or resume) and the scope (`$ARGUMENTS`
   path or marker, or the whole suite);
 - whether the opt-in typing detectors (`--hygiene`) are on;
-- that suite edits happen only in `03-execute`, one commit per speedup, each
-  verified green with unchanged test counts.
+- that suite edits happen only in `03-execute`, inside a scratch worktree on a
+  new branch, one commit per speedup, each applied from its measured patch and
+  verified green with the same collected tests; your checkout is not touched and
+  you merge the branch yourself.
 
 Let the user narrow scope, exclude risky heuristics, or cap the commit count.
 Wait for approval, then exit plan mode before running any phase. Without plan
@@ -126,9 +132,8 @@ each phase's panel.
 After `03-execute`, present the result per `../../references/output-contract.md`
 and write it per `../../references/prose-rules.md`, then offer a re-scan, the
 opt-in scaffolds, or stop. Without an interactive question tool, stop after the
-report. End on the report's last section plus at most one closing sentence, as
-`03-execute` Step 3 says; add no note on pushing, a probe file, or what remains to
-speed up. Test that a directory is writable with the real write, never a probe file.
+report. The contract's closing sentence (the merge command) is the only ending;
+add no note on pushing or on what remains to speed up.
 
 ## Opt-in scaffolds
 
@@ -151,8 +156,10 @@ the memory-schema reference unless the user chooses to commit it.
 - **No xdist, randomly, or deadfixtures:** fall back to serial runs, manual
   reversed-order isolation checks, and the built-in `--fixtures` vs
   `--fixtures-per-test` diff.
-- **Dirty working tree:** `00-scan` may run; `01-benchmark` (tracked files only)
-  and `03-execute` (tracked and untracked) refuse until it is clean. The memory directory does not count.
+- **Dirty working tree:** `00-scan` may run for inspection; `01-benchmark` and
+  every later phase refuse evidence from a dirty scan, and `01-benchmark`
+  refuses a dirty tree. `03-execute` works in its own worktree and does not
+  care. The memory directory does not count.
 
 ## References
 
@@ -164,8 +171,11 @@ the memory-schema reference unless the user chooses to commit it.
   token, baseline-diff rule.
 - `../../references/durations-parsing.md`: invoking and parsing `--durations`,
   phase bucketing, JUnit XML, the noise band.
-- `../../scripts/measure.py`: median, MAD, noise band, outcome counts, order
-  comparison, token, rubric arithmetic, memory-dir lookup.
+- `../../scripts/measure.py`: median, MAD, noise band, outcome counts, node-id
+  identity, order comparison, token, rubric arithmetic, memory-dir lookup,
+  resume check.
+- `../../scripts/isolate.py`: input digest, owned scratch worktrees, bound
+  patches, the commit gate.
 - `../../references/fixture-analysis.md`: scope model and the
   unused/duplicate/mis-scope recipes.
 - `../../references/safety-gates.md`: order independence, collection determinism,

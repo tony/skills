@@ -6,6 +6,7 @@ headings, declared order, no invented sections.
 ## Contents
 
 - Shape
+- What a reply may claim
 - Halted run
 - Per-command body sections
 
@@ -22,11 +23,13 @@ headings, declared order, no invented sections.
 
 After the last section, add at most one closing sentence in plain words for
 anything the user must know that has no section (a stale baseline, a lowered run
-count, an unrecorded approval). Name no state field, file, sandbox detail, or
-whether plan mode is available, and never open it with a label such as "Next step:"
-or a leading "Also,". State what happened, never a list of what did not (no
-"neither", "no X and no Y"). Say nothing about pushing: no "only in your local
-repo", no push command.
+count, an unrecorded approval, files the timed runs wrote). In `03-execute` that
+sentence is the merge command for the result branch. It comes before the
+next-step panel and, with no question tool, is the whole next step. Name no
+state field, file, sandbox detail, or whether plan mode is available, and never
+open it with a label such as "Next step:" or a leading "Also,". State what
+happened, never a list of what did not (no "neither", "no X and no Y"). Say
+nothing about pushing: no "only in your local repo", no push command.
 
 Name every heuristic in words with its id, never the id alone. Name a path or
 temp file only when the user must act on it; refer to the memory directory and
@@ -87,11 +90,11 @@ parallelism omits `## Safety-gate results` and says nothing about gates.
 A `02-plan` reply:
 
 ```text
-✓ 1 commit planned, 2.7s of the 12.5s baseline recovered; reply "approve" to record the plan, or name items to drop or reorder
+✓ 1 commit planned; reply "approve" to record the plan, or name items to drop or reorder
 
 ## Ranked plan
 
-- 1. H10 mis-scoped fixture: widen make_config to session scope in tests/conftest.py under the subject "tests(fixtures) Widen make_config to session scope", total score 0.87, saves 2.7s above the 0.44s band, verified with pytest expecting 40 of 40 passing.
+- 1. H10 mis-scoped fixture: widen make_config to session scope in tests/conftest.py under the subject "tests(fixtures) Widen make_config to session scope", total score 0.87, saved 2.7s measured alone above the 0.44s band, verified with pytest expecting 40 of 40 passing.
 
 ## Dropped at the gate
 
@@ -99,7 +102,9 @@ A `02-plan` reply:
 ```
 
 A deselecting item (H15, H37) says "removes N tests from the default run" in its
-`## Ranked plan` bullet, so the user sees the count at the approval gate.
+`## Ranked plan` bullet, so the user sees the count at the approval gate. With
+several items the hero counts commits only, and each bullet gives its own
+saving measured alone.
 
 A plan with one commit omits `## Ordering rationale`.
 
@@ -109,20 +114,48 @@ approval request, and nothing precedes it or follows the last section.
 A `03-execute` reply:
 
 ```text
-✓ 1 applied, 1 skipped
+✓ 1 applied, 1 skipped on branch pytest-optimizer/run-1
 
 ## Applied
 
-- 7c1e9d4 Share db_session across the session, verify green, 12.5s to 7.9s.
+- 7c1e9d4 Share db_session across the session, verify green.
 
 ## Skipped
 
-- H33 fixed sleep in test_report: reverted, test_report failed once the sleep was removed.
+- H33 fixed sleep in test_report: discarded in the scratch worktree, test_report failed once the sleep was removed.
 
 ## Result
 
-- 7.9s against a 12.5s baseline, 4.6s recovered.
+- 7.9s against 12.5s for the same checkout without the changes, 4.6s faster; the same 40 tests ran.
+
+Merge it with git merge --ff-only pytest-optimizer/run-1 when you are ready.
 ```
+
+A deselecting item changes the last bullet to "the default run shrank from 42 to
+40 tests and takes 7.9s against 12.5s".
+
+## What a reply may claim
+
+State only what a command printed or a file showed in this run.
+
+- Time is recovered only after `03-execute` measures it. Before that, say
+  "measured alone" for a benchmark and "projected" for a plan. Never add the
+  savings of several items together.
+- A deselecting item (H15, H37) saves time by running fewer tests: say the
+  default run shrinks from N to M tests. A change that keeps every test is a
+  faster suite: say the same N tests ran. Never use one phrase for both.
+- Time no run attributed is unattributed. Do not call it startup, collection or
+  anything the suite cannot reduce.
+- Name the project command that failed or was missing ("the project's test
+  command cannot start"), not what is absent from every environment. Do not
+  suggest installing pytest or changing the runner.
+- A threshold, limit or minimum seen only in a stand-in runner is a fact about
+  that runner. Offer no further change (a smaller sleep, another threshold) that
+  no run measured.
+- A failed verification is reported as the printed result (counts and exit
+  status). Give no cause, and no threshold read from the runner's source.
+- Counts and node ids show which tests ran, not that their assertions are
+  unchanged.
 
 ## Halted run
 
@@ -173,7 +206,8 @@ Run 02-plan first, then run this phase again.
 
 - `## Environment` — pytest + plugin versions, gated-off capabilities, resolved
   test command, memory dir.
-- `## Baseline` — median wall-time, noise band, trust floor.
+- `## Baseline` — median wall-time, noise band, trust floor, and the unattributed
+  share when profiling leaves one.
 - `## Slowest tests` — top `call` rows with root-cause notes.
 - `## Slowest fixtures` — top `setup`/`teardown` rows; note shared-scope
   attribution.
@@ -202,9 +236,9 @@ Run 02-plan first, then run this phase again.
 
 **`03-execute`**
 
-- `## Applied` — per item: commit SHA, measured verify result. Omitted when nothing was applied.
-- `## Skipped` — per item: revert reason (failed green-verify, conflict). Omitted when nothing was skipped.
-- `## Result` — post-suite wall-time vs `baseline.json`, total recovered.
+- `## Applied` — per item: commit SHA, subject, verify result. Omitted when nothing was applied.
+- `## Skipped` — per item: why it was discarded in the scratch worktree (failed verify, patch no longer applies, files outside the plan). Omitted when nothing was skipped.
+- `## Result` — post-suite wall-time against the control (the same checkout without the changes), how much faster, and the test-count statement for the item kind.
 
-The reply ends on `## Result`; it carries no remark about commit trailers or
-what the host adds.
+The closing sentence is the merge command; the reply carries no remark about
+commit trailers or what the host adds.

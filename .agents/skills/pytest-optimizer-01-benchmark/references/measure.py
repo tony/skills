@@ -4,8 +4,8 @@
 Each command prints one JSON object on stdout. Exit codes: 0 success, 1 a
 reported failure (the JSON says why), 2 a usage error. Standard library only.
 
-Commands: run, band, compare, expected-total, order, token, hash, impact, score,
-memory-dir, restore, chain.
+Commands: run, band, compare, expected-total, ids, order, token, hash, impact,
+score, memory-dir, chain.
 `run` exits 0 whenever it timed the command; read `exit` in its JSON for the
 suite's own status.
 Run ``measure.py <command> --help`` for arguments.
@@ -22,9 +22,11 @@ import os
 import pathlib
 import platform
 import re
+import signal
 import statistics
 import subprocess
 import sys
+import tempfile
 import time
 import typing as t
 
@@ -36,6 +38,10 @@ REL_FLOOR = 0.01
 DEFAULT_K = 3.0
 MAD_SCALE = 1.4826
 MEMORY_DIRNAME = ".pytest-optimizer"
+MIN_RUNS = 3
+DEFAULT_TIMEOUT = 1800.0
+OUTPUT_TAIL = 1 << 20
+TIMED_OUT = 124
 
 WEIGHTS = {
     "safety": 0.35,
@@ -117,9 +123,28 @@ def parse_summary(output: str) -> dict[str, int] | None:
     return counts
 
 
-def run_once(argv: Sequence[str], cwd: str | None = None) -> dict[str, t.Any]:
+def _stop(proc: subprocess.Popen[bytes]) -> None:
+    """Kill the command and every process it started."""
+    try:
+        if os.name == "posix":
+            os.killpg(proc.pid, signal.SIGKILL)
+        else:
+            proc.kill()
+    except OSError:
+        pass
+    proc.wait()
+
+
+def run_once(
+    argv: Sequence[str],
+    cwd: str | None = None,
+    timeout: float | None = DEFAULT_TIMEOUT,
+) -> dict[str, t.Any]:
     """Run a command once; return wall seconds, exit code, and outcome counts.
 
+    Output goes to a temporary file and only its last mebibyte is parsed, so a
+    chatty or undecodable run cannot exhaust memory or break the JSON contract.
+    A run past ``timeout`` seconds is killed and reports ``exit`` 124.
     Unrecognized summaries produce null counts, refused by band and compare.
 
     >>> r = run_once([sys.executable, "-c", "print('2 passed in 0.01s')"])
@@ -129,27 +154,42 @@ def run_once(argv: Sequence[str], cwd: str | None = None) -> dict[str, t.Any]:
     3
     >>> run_once(["no-such-command-here"])["exit"]
     127
+    >>> slow = run_once([sys.executable, "-c", "import time; time.sleep(30)"], timeout=0.2)
+    >>> (slow["exit"], slow["reason"])
+    (124, 'timed out after 0.2s')
     """
     start = time.perf_counter()
-    try:
-        proc = subprocess.run(  # noqa: S603
-            list(argv),
-            cwd=cwd,
-            capture_output=True,
-            text=True,
-            check=False,
-        )
-    except OSError:
-        return {"seconds": 0.0, "exit": 127, "passed": None, "total": None}
-    seconds = time.perf_counter() - start
-    counts = parse_summary(proc.stdout + "\n" + proc.stderr)
+    with tempfile.TemporaryFile() as sink:
+        try:
+            proc = subprocess.Popen(  # noqa: S603
+                list(argv),
+                cwd=cwd,
+                stdout=sink,
+                stderr=subprocess.STDOUT,
+                start_new_session=os.name == "posix",
+            )
+        except OSError:
+            return {"seconds": 0.0, "exit": 127, "passed": None, "total": None}
+        timed_out = False
+        try:
+            code = proc.wait(timeout=timeout)
+        except subprocess.TimeoutExpired:
+            _stop(proc)
+            code, timed_out = TIMED_OUT, True
+        seconds = time.perf_counter() - start
+        size = sink.seek(0, os.SEEK_END)
+        sink.seek(max(0, size - OUTPUT_TAIL))
+        text = sink.read().decode("utf-8", "replace")
+    counts = parse_summary(text)
     result: dict[str, t.Any] = {
         "seconds": round(seconds, 4),
-        "exit": proc.returncode,
+        "exit": code,
         "passed": counts.get("passed", 0) if counts is not None else None,
         "total": counts["total"] if counts is not None else None,
     }
-    if counts is None:
+    if timed_out:
+        result["reason"] = f"timed out after {timeout}s"
+    elif counts is None:
         result["reason"] = "test outcome summary unavailable"
     return result
 
@@ -174,7 +214,7 @@ def _count_error(counts: object) -> str | None:
     return None
 
 
-def _validity(runs: Sequence[dict[str, t.Any]]) -> str | None:
+def _validity(runs: Sequence[dict[str, t.Any]], min_runs: int = 1) -> str | None:  # noqa: PLR0911
     """Return why a set of runs cannot be timed, or None when they can.
 
     >>> ok = {"seconds": 1.0, "exit": 0, "passed": 5, "total": 5}
@@ -185,12 +225,18 @@ def _validity(runs: Sequence[dict[str, t.Any]]) -> str | None:
     'passed/total counts differ between runs'
     >>> _validity([])
     'no runs'
+    >>> _validity([ok, ok], min_runs=3)
+    '2 of 3 required runs recorded'
     """
     if not runs:
         return "no runs"
+    if any(r.get("exit") == TIMED_OUT for r in runs):
+        return "a run timed out"
     bad = next((r["exit"] for r in runs if r["exit"] != 0), None)
     if bad is not None:
         return f"a run exited {bad}, not 0"
+    if len(runs) < min_runs:
+        return f"{len(runs)} of {min_runs} required runs recorded"
     for run in runs:
         reason = _count_error(run)
         if reason is not None:
@@ -204,10 +250,15 @@ def band(
     runs: Sequence[dict[str, t.Any]],
     k: float = DEFAULT_K,
     floor: float | None = None,
+    min_runs: int = MIN_RUNS,
 ) -> dict[str, t.Any]:
     """Summarize baseline runs into the ``baseline.json`` noise fields.
 
+    Fewer than ``min_runs`` runs cannot estimate a spread and are refused.
+
     >>> rs = [{"seconds": s, "exit": 0, "passed": 5, "total": 5} for s in (1.0, 1.0, 1.0)]
+    >>> band(rs[:2])["reason"]
+    '2 of 3 required runs recorded'
     >>> out = band(rs)
     >>> (out["valid"], out["noise"]["median"], out["noise"]["mad"], out["noise"]["band"])
     (True, 1.0, 0.0, 0.05)
@@ -216,7 +267,7 @@ def band(
     >>> band([{"seconds": 1.0, "exit": 2, "passed": 0, "total": 0}])["valid"]
     False
     """
-    reason = _validity(runs)
+    reason = _validity(runs, min_runs)
     if reason is not None:
         return {"valid": False, "reason": reason}
     med, mad = median_mad([r["seconds"] for r in runs])
@@ -240,13 +291,15 @@ def compare(
     baseline: dict[str, t.Any],
     runs: Sequence[dict[str, t.Any]],
     expect_total: int | None = None,
+    min_runs: int = MIN_RUNS,
 ) -> dict[str, t.Any]:
     """Decide whether candidate runs beat the baseline noise band.
 
     Every run needs observed positive outcome counts and exit 0. A reduced
     ``expect_total`` permits fewer passing tests, preserving non-passing counts.
+    A single verification run passes ``min_runs=1`` and reads ``valid`` only.
 
-    >>> base = band([{"seconds": s, "exit": 0, "passed": 5, "total": 5} for s in (10.0, 10.0)])
+    >>> base = band([{"seconds": s, "exit": 0, "passed": 5, "total": 5} for s in (10.0,) * 3])
     >>> fast = [{"seconds": 7.0, "exit": 0, "passed": 5, "total": 5}] * 3
     >>> out = compare(base, fast)
     >>> (out["clears_noise"], out["median_delta"])
@@ -269,13 +322,17 @@ def compare(
     'passed/total 4/4 differs from baseline 5/5'
     >>> compare(base, fewer, expect_total=4)["clears_noise"]
     True
+    >>> compare(base, fewer[:1], expect_total=4)["reason"]
+    '1 of 3 required runs recorded'
+    >>> compare(base, fewer[:1], expect_total=4, min_runs=1)["valid"]
+    True
     """
     tests = t.cast("dict[str, int]", baseline.get("tests"))
     reason = _count_error(tests)
     if reason is not None:
         reason = f"baseline: {reason}"
     else:
-        reason = _validity(runs)
+        reason = _validity(runs, min_runs)
     if reason is None and expect_total is not None:
         if _count_error({"passed": 0, "total": expect_total}) is not None:
             reason = "expected total must be a positive integer"
@@ -392,6 +449,59 @@ def order(a: str, b: str) -> dict[str, t.Any]:
     return {"same": na == nb, "count": len(na), "first_difference": diff}
 
 
+def _removed_ids(
+    plan: Sequence[dict[str, t.Any]], applied: Sequence[int], through: int | None
+) -> set[str]:
+    """Node ids that the applied (or ``through``) plan items deselect."""
+    removed: set[str] = set()
+    for item in plan:
+        if through is not None and item["order"] > through:
+            continue
+        if item["order"] in applied or item["order"] == through:
+            removed.update(item.get("removed_ids", []))
+    return removed
+
+
+def identity(
+    baseline: str,
+    candidate: str,
+    removed: set[str] | None = None,
+) -> dict[str, t.Any]:
+    r"""Compare collected node ids, allowing only the approved removals.
+
+    This checks which tests exist, not what they assert.
+
+    >>> base = "a::t1\na::t2\na::t3\n3 tests collected in 0.02s"
+    >>> identity(base, "a::t3\na::t1\na::t2")["same"]
+    True
+    >>> out = identity(base, "a::t1\na::t3\na::t4")
+    >>> (out["same"], out["missing"], out["unexpected"])
+    (False, ['a::t2'], ['a::t4'])
+    >>> identity(base, "a::t1\na::t3", removed={"a::t2"})["same"]
+    True
+    >>> identity("2 tests collected", "2 tests collected")["reason"]
+    'no node ids in the baseline listing'
+    """
+    old, new = set(_nodeids(baseline)), set(_nodeids(candidate))
+    if not old:
+        return {
+            "same": False,
+            "missing": [],
+            "unexpected": [],
+            "reason": "no node ids in the baseline listing",
+        }
+    want = old - (removed or set())
+    missing, unexpected = sorted(want - new), sorted(new - want)
+    return {
+        "same": not missing and not unexpected,
+        "missing": missing,
+        "unexpected": unexpected,
+        "reason": None
+        if not missing and not unexpected
+        else "collected node ids differ from the plan",
+    }
+
+
 def env_fingerprint() -> str:
     """Return a short machine-and-interpreter fingerprint.
 
@@ -401,19 +511,34 @@ def env_fingerprint() -> str:
     return f"{platform.python_version()}|{platform.platform()}|{platform.machine()}"
 
 
-def token(head: str, collection: str, versions: Sequence[str], env: str) -> str:
-    r"""Return the idempotency token: HEAD, sorted node ids, versions, environment.
+def token(
+    head: str,
+    collection: str,
+    versions: Sequence[str],
+    env: str,
+    bound: Sequence[str] = (),
+) -> str:
+    r"""Return the idempotency token for the measured checkout and command.
+
+    It covers HEAD, sorted node ids, versions, the environment, and the
+    ``bound`` parts: the digest of dirty and untracked inputs and the resolved
+    test command.
 
     >>> a = token("abc", "x::2\nx::1", ["pytest=9.0"], "env")
     >>> a == token("abc", "x::1\nx::2", ["pytest=9.0"], "env")
     True
     >>> a == token("abd", "x::1\nx::2", ["pytest=9.0"], "env")
     False
+    >>> a == token("abc", "x::1\nx::2", ["pytest=9.0"], "env", ["dirty"])
+    False
+    >>> a == token("abc", "x::1\nx::2", ["pytest=9.0"], "env", ["", "pytest -x"])
+    False
     >>> len(a)
     64
     """
     digest = hashlib.sha256()
-    for part in (head, "\n".join(sorted(_nodeids(collection))), *sorted(versions), env):
+    parts = (head, "\n".join(sorted(_nodeids(collection))), *sorted(versions), env, *bound)
+    for part in parts:
         digest.update(part.encode())
         digest.update(b"\0")
     return digest.hexdigest()
@@ -532,12 +657,12 @@ def memory_dir(
 
 
 def _read_runs(path: str) -> list[dict[str, t.Any]]:
-    text = sys.stdin.read() if path == "-" else pathlib.Path(path).read_text(encoding="utf-8")
+    text = sys.stdin.read() if path == "-" else _read_text(path)
     return [json.loads(ln) for ln in text.splitlines() if ln.strip()]
 
 
 def _read_text(path: str) -> str:
-    return pathlib.Path(path).read_text(encoding="utf-8")
+    return pathlib.Path(path).read_text(encoding="utf-8", errors="replace")
 
 
 def _emit(obj: dict[str, t.Any], ok: bool = True) -> int:
@@ -564,47 +689,16 @@ def _git(root: pathlib.Path, *args: str) -> subprocess.CompletedProcess[str]:
     )
 
 
-def restore(memory: pathlib.Path, cwd: pathlib.Path, home: pathlib.Path) -> dict[str, t.Any]:
-    """Reset tracked files and delete untracked ones, never touching ``memory``.
+def chain(
+    root: pathlib.Path,
+    base: str,
+    logged: Sequence[str],
+    head: str = "HEAD",
+) -> dict[str, t.Any]:
+    """Check that ``head`` is ``base`` plus exactly the logged commits, in order.
 
-    Refuses when the repo toplevel is ``home`` or contains it, and when
-    ``memory`` is inside the tree without being git-ignored.
-
-    >>> import tempfile
-    >>> with tempfile.TemporaryDirectory() as d:
-    ...     root = pathlib.Path(d).resolve()
-    ...     _ = _git(root, "init", "-q")
-    ...     out = restore(root / ".mem", root, root)
-    >>> out["restored"], out["reason"]
-    (False, 'repo toplevel is or contains the home directory')
-    """
-    top = _git(cwd, "rev-parse", "--show-toplevel").stdout.strip()
-    if not top:
-        return {"restored": False, "reason": "not a git repository"}
-    root = pathlib.Path(top).resolve()
-    home = home.resolve()
-    if root == home or root in home.parents:
-        return {"restored": False, "reason": "repo toplevel is or contains the home directory"}
-    memory = memory.resolve()
-    if root in memory.parents:
-        rel = memory.relative_to(root).as_posix()
-        if _git(root, "check-ignore", "-q", rel + "/").returncode != 0:
-            return {
-                "restored": False,
-                "reason": "memory directory is inside the tree and not ignored",
-            }
-    reset = _git(root, "reset", "--hard", "HEAD")
-    if reset.returncode != 0:
-        return {"restored": False, "reason": reset.stderr.strip() or "git reset failed"}
-    proc = _git(root, "clean", "-fd")
-    return {"restored": proc.returncode == 0, "reason": proc.stderr.strip() or None}
-
-
-def chain(root: pathlib.Path, base: str, logged: Sequence[str]) -> dict[str, t.Any]:
-    """Check that ``HEAD`` is ``base`` plus exactly the logged commits, in order.
-
-    A resumed ``03-execute`` run compares against this instead of the scan-time
-    token, which includes ``HEAD`` and so changes with the run's own commits.
+    A resumed ``03-execute`` run checks its result branch with this instead of
+    the scan-time token, which includes ``HEAD``.
 
     >>> import tempfile
     >>> with tempfile.TemporaryDirectory() as d:
@@ -623,15 +717,15 @@ def chain(root: pathlib.Path, base: str, logged: Sequence[str]) -> dict[str, t.A
     >>> (ok, none_logged, foreign)
     (True, False, False)
     """
-    ancestor = _git(root, "merge-base", "--is-ancestor", "--", base, "HEAD")
+    ancestor = _git(root, "merge-base", "--is-ancestor", "--", base, head)
     if ancestor.returncode == 1:
-        return {"ok": False, "reason": "base is not an ancestor of HEAD"}
+        return {"ok": False, "reason": f"base is not an ancestor of {head}"}
     if ancestor.returncode != 0:
         return {
             "ok": False,
             "reason": ancestor.stderr.strip() or "could not verify base ancestry",
         }
-    proc = _git(root, "rev-list", "--reverse", f"{base}..HEAD")
+    proc = _git(root, "rev-list", "--reverse", f"{base}..{head}")
     if proc.returncode != 0:
         return {"ok": False, "reason": proc.stderr.strip() or "could not read commit range"}
     actual = proc.stdout.split()
@@ -644,34 +738,46 @@ def chain(root: pathlib.Path, base: str, logged: Sequence[str]) -> dict[str, t.A
     if actual != expected:
         return {
             "ok": False,
-            "reason": f"HEAD is base plus {len(actual)} commits; the log holds {len(expected)}",
+            "reason": f"{head} is base plus {len(actual)} commits; the log holds {len(expected)}",
         }
     return {"ok": True, "reason": None}
 
 
-def build_parser() -> argparse.ArgumentParser:
+def build_parser() -> argparse.ArgumentParser:  # noqa: PLR0915
     """Build the command-line parser."""
     parser = argparse.ArgumentParser(description=__doc__)
     sub = parser.add_subparsers(dest="command", required=True)
 
     p = sub.add_parser("run", help="time one command and count its outcomes")
     p.add_argument("--cwd")
+    p.add_argument(
+        "--timeout", type=float, default=DEFAULT_TIMEOUT, help="seconds before the run is killed"
+    )
     p.add_argument("argv", nargs=argparse.REMAINDER, help="after --, the command")
 
     p = sub.add_parser("band", help="noise fields from a JSONL file of baseline runs")
     p.add_argument("runs", help="JSONL file from `run`, or - for stdin")
     p.add_argument("--k", type=float, default=DEFAULT_K)
     p.add_argument("--floor", type=float, default=None)
+    p.add_argument("--min-runs", type=int, default=MIN_RUNS)
 
     p = sub.add_parser("compare", help="judge candidate runs against baseline.json")
     p.add_argument("baseline", help="baseline.json")
     p.add_argument("runs", help="JSONL file from `run`, or - for stdin")
     p.add_argument("--expect-total", type=int)
+    p.add_argument("--min-runs", type=int, default=MIN_RUNS, help="1 for a single verification run")
 
     p = sub.add_parser("expected-total", help="test count after the applied plan items")
     p.add_argument("baseline", help="baseline.json")
     p.add_argument("plan", help="plan.json")
     p.add_argument("log", help="execution-log.json")
+    p.add_argument("--through", type=int, help="order of the item being verified")
+
+    p = sub.add_parser("ids", help="compare collected node ids, allowing the approved removals")
+    p.add_argument("baseline", help="collection.txt")
+    p.add_argument("candidate", help="collect-only -q output of the candidate")
+    p.add_argument("--plan", help="plan.json, for the approved removed_ids")
+    p.add_argument("--log", help="execution-log.json, for the applied items")
     p.add_argument("--through", type=int, help="order of the item being verified")
 
     p = sub.add_parser("order", help="compare two collect-only outputs in order")
@@ -682,6 +788,8 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--head", required=True)
     p.add_argument("--collection", required=True, help="collect-only -q output file")
     p.add_argument("--version", action="append", default=[], help="NAME=VERSION")
+    p.add_argument("--inputs-digest", default="", help="digest from isolate.py inputs")
+    p.add_argument("--command", dest="test_command", default="", help="the resolved test command")
 
     p = sub.add_parser("hash", help="sha256 of a file, for plan_hash")
     p.add_argument("file")
@@ -696,12 +804,9 @@ def build_parser() -> argparse.ArgumentParser:
         p.add_argument(f"--{name}", type=float, required=True)
     p.add_argument("--hygiene", action="store_true", help="skip the noise gate (typing items)")
 
-    p = sub.add_parser("restore", help="git reset --hard and clean, with home and memory guards")
-    p.add_argument("--memory-dir", dest="explicit", required=True)
-    p.add_argument("--cwd", default=".")
-
-    p = sub.add_parser("chain", help="check HEAD is base plus exactly the logged commits")
+    p = sub.add_parser("chain", help="check a branch is base plus exactly the logged commits")
     p.add_argument("--base", required=True)
+    p.add_argument("--head", default="HEAD", help="branch or commit to check")
     p.add_argument("--cwd", default=".")
     p.add_argument("commits", nargs="*", help="logged commit shas, in order")
 
@@ -722,38 +827,43 @@ def _strip_separator(argv: Sequence[str]) -> list[str]:
     return list(argv[1:] if argv[:1] == ["--"] else argv)
 
 
-def main(argv: Sequence[str] | None = None) -> int:  # noqa: PLR0911
-    """Dispatch one command.
-
-    >>> main(["impact", "--delta", "5", "--baseline", "10", "--clears-noise"])
-    {"impact": 1.0}
-    0
-    """
-    args = build_parser().parse_args(argv)
+def _dispatch(args: argparse.Namespace) -> int:  # noqa: PLR0911
     cmd = args.command
     if cmd == "run":
         cmdline = _strip_separator(args.argv)
         if not cmdline:
             print("run: give the command after --", file=sys.stderr)
             return 2
-        return _emit(run_once(cmdline, args.cwd))
+        return _emit(run_once(cmdline, args.cwd, args.timeout))
     if cmd == "band":
-        out = band(_read_runs(args.runs), args.k, args.floor)
+        out = band(_read_runs(args.runs), args.k, args.floor, args.min_runs)
         return _emit(out, out["valid"])
     if cmd == "compare":
         baseline = json.loads(_read_text(args.baseline))
-        out = compare(baseline, _read_runs(args.runs), args.expect_total)
+        out = compare(baseline, _read_runs(args.runs), args.expect_total, args.min_runs)
         return _emit(out, out["valid"])
     if cmd == "expected-total":
         done = _applied_orders(args.log)
         total = json.loads(_read_text(args.baseline))["tests"]["total"]
         plan = json.loads(_read_text(args.plan))
         return _emit({"expected_total": expected_total(total, plan, done, args.through)})
+    if cmd == "ids":
+        plan: list[dict[str, t.Any]] = json.loads(_read_text(args.plan)) if args.plan else []
+        done = _applied_orders(args.log) if args.log else []
+        removed = _removed_ids(plan, done, args.through)
+        out = identity(_read_text(args.baseline), _read_text(args.candidate), removed)
+        return _emit(out, out["same"])
     if cmd == "order":
         out = order(_read_text(args.a), _read_text(args.b))
         return _emit(out, out["same"])
     if cmd == "token":
-        digest = token(args.head, _read_text(args.collection), args.version, env_fingerprint())
+        digest = token(
+            args.head,
+            _read_text(args.collection),
+            args.version,
+            env_fingerprint(),
+            [args.inputs_digest, args.test_command],
+        )
         return _emit({"token": digest})
     if cmd == "hash":
         return _emit({"hash": hashlib.sha256(pathlib.Path(args.file).read_bytes()).hexdigest()})
@@ -763,13 +873,28 @@ def main(argv: Sequence[str] | None = None) -> int:  # noqa: PLR0911
         dims = {name: getattr(args, name) for name in WEIGHTS}
         return _emit(score(dims, args.hygiene))
     if cmd == "chain":
-        out = chain(pathlib.Path(args.cwd), args.base, args.commits)
+        out = chain(pathlib.Path(args.cwd), args.base, args.commits, args.head)
         return _emit(out, out["ok"])
-    if cmd == "restore":
-        out = restore(pathlib.Path(args.explicit), pathlib.Path(args.cwd), pathlib.Path.home())
-        return _emit(out, out["restored"])
     root = pathlib.Path(args.repo_root)
     return _emit(memory_dir(args.explicit, root, os.environ, _git_remote(root)))
+
+
+def main(argv: Sequence[str] | None = None) -> int:
+    """Dispatch one command; unreadable or malformed input is a reported failure.
+
+    >>> main(["impact", "--delta", "5", "--baseline", "10", "--clears-noise"])
+    {"impact": 1.0}
+    0
+    >>> main(["band", "/nonexistent/runs.jsonl"])
+    {"reason": "unreadable input: FileNotFoundError", "valid": false}
+    1
+    """
+    args = build_parser().parse_args(argv)
+    try:
+        return _dispatch(args)
+    except (OSError, ValueError, KeyError, TypeError, IndexError) as exc:
+        reason = f"unreadable input: {type(exc).__name__}"
+        return _emit({"valid": False, "reason": reason}, ok=False)
 
 
 if __name__ == "__main__":

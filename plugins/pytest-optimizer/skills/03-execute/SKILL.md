@@ -1,6 +1,6 @@
 ---
 name: 03-execute
-description: "Use when applying an approved pytest optimization plan as separate verified commits with resumable progress."
+description: "Use when applying an approved pytest optimization plan as separate verified commits in an isolated worktree, with resumable progress."
 allowed-tools: ["Bash", "Read", "Grep", "Glob", "Write", "Edit", "AskUserQuestion"]
 argument-hint: "[--from=<index>] [--dry-run] [--memory-dir=<path>]"
 disable-model-invocation: true
@@ -8,19 +8,22 @@ disable-model-invocation: true
 
 # 03-execute
 
-Land the plan as separate, verified commits. This is the only phase that edits
-the suite or writes history.
+Land the plan as separate, verified commits on a new branch cut from the
+approved base. Every edit, test run and commit happens in an owned scratch
+worktree. The user's checkout, index and branches are never modified; the run
+ends by naming the result branch and the command that merges it.
 
 `$ARGUMENTS` may pass `--from=<index>` to start at a specific plan item,
-`--dry-run` to apply and verify without committing (reverting after each; it writes
-nothing to `execution-log.json` or `state.json`), and
+`--dry-run` to run the same steps in a detached worktree that is discarded
+(it writes nothing to `execution-log.json` or `state.json`), and
 `--memory-dir` to override the memory location.
 
-Arithmetic goes through `../../scripts/measure.py` (Python 3 standard
-library). That path resolves from this skill's own directory, not the
-project's working directory: resolve this file's directory, join
-`../../scripts/measure.py`, print the absolute path once, and write that
-literal path in each command below where `<measure.py>` appears.
+Arithmetic goes through `../../scripts/measure.py` and Git isolation through
+`../../scripts/isolate.py` (Python 3 standard library). Both paths resolve from
+this skill's own directory, not the project's working directory: resolve this
+file's directory, join each path, print the absolute paths once, and write those
+literal paths in each command below where `<measure.py>` and `<isolate.py>`
+appear.
 
 ## Step 1: Preconditions
 
@@ -29,81 +32,132 @@ Resolve the memory directory by the lookup order in
 stop with the halted-run shape in `../../references/output-contract.md`.
 
 Resolve `<runs-dir>` using the "Run files" section of
-`../../references/memory-schema.md`; keep each item's verification record there,
-outside the working tree.
+`../../references/memory-schema.md`; keep each item's verification record there.
 
-Read `execution-log.json` if present. A fresh run has no entry with a
-`commit_sha`: recompute the idempotency token as `00-scan` Step 2 does, and if
-`state.json` records an `env_token` and the result differs, the baseline
-predates the current `HEAD`: stop and tell the user to run
-`pytest-optimizer:00-scan --force`. A resumed run skips the token, which this
-run's own commits changed. It checks instead that `HEAD` is `base_head` from
-`state.json` plus exactly the logged commits, in order:
+Read `plan.json` and `state.json`. Refuse to run unless all hold, checking in
+this order and naming only the first that fails:
+
+- `state.json` has `completed.plan=true`; otherwise the plan was never approved:
+  run `pytest-optimizer:02-plan`;
+- its `plan_hash` equals the output of `measure.py hash <memory-dir>/plan.json`;
+  otherwise the plan changed after approval: approve it again with
+  `pytest-optimizer:02-plan`;
+- `state.json` has an `env_token`, every plan item carries that same `env_token`
+  and a `patch_sha256`, and `git rev-parse HEAD` equals `base_head`. Otherwise
+  the evidence is unbound or predates the checkout: run
+  `pytest-optimizer:00-scan --force`.
+
+Then read `baseline.json`, `control.json`, `collection.txt`,
+`execution-log.json` if present, and the project quality-check and test
+commands. The user's checkout may be dirty and may keep changing while this
+skill runs: nothing here reads or writes its files, index or branches, so a
+dirty tree is not a stop.
+
+A resumed run (`state.json` has `exec_branch`) checks the result branch instead
+of the checkout, listing every logged `commit_sha` in order:
 
 ```console
 $ python3 <measure.py> chain \
     --base <base_head> \
+    --head <exec_branch> \
     <every logged commit_sha, in order>
 ```
 
 Exit 1 means the recorded history could not be verified: stop, print its
-`reason`, and tell the user to run
-`pytest-optimizer:00-scan --force`.
-
-Read `plan.json`, `baseline.json`, `state.json`, and the project quality-check +
-test commands. Refuse to run unless all hold, checking in this order:
-
-- `state.json` has `completed.plan=true`. Otherwise stop: the plan was never
-  approved, so run `pytest-optimizer:02-plan`;
-- its `plan_hash` equals the output of `measure.py hash <memory-dir>/plan.json`. Otherwise
-  stop: the plan changed after approval, so approve it again with
-  `pytest-optimizer:02-plan`. Name the one check that failed, never both;
-- `git rev-parse --show-toplevel` neither equals nor contains the physical home
-  directory (`(cd ~ && pwd -P)`, never the string `$HOME`): a dotfile repo rooted at home hides its untracked files from `git status`,
-  and Step 2's cleanup would delete them;
-- the memory directory is outside the working tree, or listed in the local
-  exclude file (`git rev-parse --git-path info/exclude`), so cleanup cannot
-  delete it;
-- `git status --porcelain` is empty (the excluded memory directory does not
-  show). A failed precondition is never waived: plan approval, a benign
-  explanation, or files that look host-made (untracked dotfiles) do not
-  excuse it, because `restore` deletes untracked files. Stop and list the
-  files from `git status --short`. Only on a resumed run, where a crash left an
-  item half applied, discard them with the `restore` command in Step 2.4, and
-  only once the user confirms the changes are the run's own. Without an
-  interactive question tool, stop and name that command.
-
-If the last log entry has `pending_subject` and no `commit_sha`, a crash fell
-between commit and checkpoint: when `git log -1 --format=%s` equals that subject,
-record `HEAD` as its `commit_sha` and add it to the chain check above; otherwise
-treat the tree as half applied.
+`reason`, and tell the user to run `pytest-optimizer:00-scan --force`.
 
 Resume from `last_applied_index + 1` (or `--from`). Never re-apply an item that
-already has a `commit_sha`. Nothing in this skill pushes: the commits stay local.
+already has a `commit_sha`. Nothing in this skill pushes.
 
-## Step 2: Apply each item in order
+## Step 2: Open the owned worktree
+
+A fresh run (no `exec_branch`) cuts the result branch from the approved base:
+
+```console
+$ python3 <isolate.py> start \
+    --repo . \
+    --base <base_head> \
+    --branch pytest-optimizer/<run_id>
+```
+
+Print its `tree` and `dir`, and store `exec_branch` and `exec_dir` in
+`state.json`. A dry run omits `--branch`, which detaches the worktree, and
+stores nothing. When the host refuses the worktree, stop: execution needs a real
+branch.
+
+A resumed run reuses `exec_dir`'s `tree` when it still exists, otherwise reopens
+the branch:
+
+```console
+$ python3 <isolate.py> start \
+    --repo . \
+    --base <base_head> \
+    --branch <exec_branch> \
+    --existing
+```
+
+Then clear any half-applied item, inside the owned tree only:
+
+```console
+$ python3 <isolate.py> reset \
+    --cwd <tree>
+```
+
+If the last log entry has `pending_tree` and no `commit_sha`, a crash fell
+between commit and checkpoint. Check whether the branch tip is that commit:
+
+```console
+$ python3 <isolate.py> landed \
+    --cwd <tree> \
+    --parent <pending_parent> \
+    --tree <pending_tree>
+```
+
+On success, record the tip as the entry's `commit_sha`. On failure, reset the
+owned tree to the item's `pending_parent` with `isolate.py reset --cwd <tree>
+--to <pending_parent>` and re-apply the item; a matching commit subject never
+establishes identity.
+
+Run every command below with `<tree>` as the working directory (`cd <tree> &&`,
+`git -C <tree>`, `--cwd <tree>`). The tree holds only tracked files: rebuild the
+environment there with the project's sync command, as `01-benchmark` does. The
+tree is a Git boundary, not a sandbox: a project hook or an absolute path in a
+test can still write outside it.
+
+## Step 3: Apply each item in order
 
 For each plan item not yet applied:
 
-1. **Apply** the single change (the heuristic's action). Touch only the files the
-   plan lists for this item.
-2. **Verify green.** Run the project quality checks (formatter, linter, type
-   checker) as declared in the project's `AGENTS.md`/`CLAUDE.md`, then the
-   `test_command` from `baseline.json` through the script, so the run is checked
-   for exit 0 and the approved outcome counts. Write a fresh record for this item:
+1. **Apply** the item's measured patch, bound by the hash `01-benchmark`
+   recorded. Do not re-describe or retype the change:
+
+   ```console
+   $ python3 <isolate.py> apply \
+       --cwd <tree> \
+       --patch <memory-dir>/<patch> \
+       --sha256 <patch_sha256> \
+       --file <each path in files>
+   ```
+
+   Exit 1 (altered patch, stale context, a path outside the plan) is a failed
+   item: go to 4.
+2. **Verify green.** Run the project quality checks as declared in the
+   project's `AGENTS.md`/`CLAUDE.md`, then the `test_command` from
+   `baseline.json` with the item's measurement flags
+   (`../../references/durations-parsing.md`, "Measurement command"):
 
    ```console
    $ python3 <measure.py> run \
+       --cwd <tree> \
        -- pytest \
        -p no:cacheprovider \
        -p no:randomly \
-       -q \
        > <runs-dir>/verify-<order>.jsonl
    ```
 
-   Substitute `test_command` from `baseline.json` for `pytest`. Get the expected
-   count from the script, which counts only the items already applied (a skipped
-   earlier deselecting item does not lower it):
+   Substitute `test_command` for `pytest`, and drop `-p no:cacheprovider` when
+   the item's `cache` is `enabled`. Get the expected count from the script, which
+   counts only the items already applied:
 
    ```console
    $ python3 <measure.py> expected-total \
@@ -113,114 +167,165 @@ For each plan item not yet applied:
        <memory-dir>/execution-log.json
    ```
 
-   Check that record with the shared count gate:
+   Check outcome counts with the shared gate, which reads `valid` here and
+   never `clears_noise`, since one run does not establish a speedup. Pass the
+   number in the `expected_total` field as `--expect-total`:
 
    ```console
    $ python3 <measure.py> compare \
-       --expect-total <expected-total output> \
+       --min-runs 1 \
+       --expect-total <expected_total> \
        <memory-dir>/baseline.json \
        <runs-dir>/verify-<order>.jsonl
    ```
 
-   The item passes only when the project quality checks pass and `valid` is true.
-   Missing or empty outcomes fail this gate; a command's exit 0 is insufficient.
-   `clears_noise` is not the gate for this single verification run, which does
-   not establish a speedup.
-   For a typing or parametrize item (H26–H32), the type checker must cover
-   `tests/` and pass; such an item records no timing.
-3. **On success** — stage the plan's files for this item (a created file
-   included) and commit them by themselves with the drafted why/what
-   message, written per `../../references/prose-rules.md`. No `Co-Authored-By`,
-   no "Generated with" or other tool trailer, no emoji: hosts add them by
-   default. Do not mention the omission in the reply. First write the log entry with `pending_subject`, then commit, then
-   record the `commit_sha` and the verify run's `seconds`.
-
-   When the commit fails after a green verify (a hook rejects it, signing is
-   unavailable), never retry with `--no-verify` or `--no-gpg-sign`. Restore the
-   tree as in 4, set the entry's `applied` to false with `skip_reason` "commit
-   failed: <first line of the error>", remove its `pending_subject`, and stop
-   without starting the next item. Report the error and tell the user to fix the
-   hook or signing and re-run `pytest-optimizer:03-execute --from=<index>`.
-4. **On failure** — the tree was clean before the item. Restore it, files the
-   item created included, with the script, which repeats the home-directory and
-   memory-directory checks before it runs `git reset --hard HEAD` and
-   `git clean -fd`:
+   Check that the same tests exist. Write the listing from `test_command`
+   (not a bare `pytest`) run in the tree to
+   `<runs-dir>/verify-<order>-collection.txt` as `00-scan` Step 2 does, and
+   compare node ids against `collection.txt`, allowing only the removals of
+   applied items (skip this for a typing or parametrize item, which changes ids
+   by design):
 
    ```console
-   $ python3 <measure.py> restore \
-       --memory-dir <memory-dir>
+   $ python3 <measure.py> ids \
+       --plan <memory-dir>/plan.json \
+       --log <memory-dir>/execution-log.json \
+       --through <order> \
+       <memory-dir>/collection.txt \
+       <runs-dir>/verify-<order>-collection.txt
    ```
 
-   If reset fails, the script does not run `git clean`. Exit 1
-   means restoration did not complete: stop and report its `reason`, preserving
-   the remaining state for inspection.
-   Otherwise mark the item `skipped` with the reason, mark every item whose
-   `depends_on` names it `skipped` too ("depends on a skipped item"), and
-   continue. The tree was clean before the item, so `git clean -fd` removes
-   only what the item created.
-5. **Checkpoint** — complete the entry in `execution-log.json` and update
+   The item passes only when the quality checks pass, `valid` is true, and the
+   ids match. Missing or empty outcomes fail; an exit 0 is insufficient. For a
+   typing or parametrize item (H26-H32) the type checker must cover `tests/`.
+3. **Gate, then commit.** Check that the staged bytes are exactly the item's
+   files and the verification created or changed nothing else:
+
+   ```console
+   $ python3 <isolate.py> gate \
+       --cwd <tree> \
+       --file <each path in files>
+   ```
+
+   On exit 1 the item failed (go to 4); the verification changed paths outside
+   the plan, which includes a formatter rewriting the patched files. On success
+   write the log entry with `pending_subject`, `pending_parent` and
+   `pending_tree` from the gate output, then commit with the drafted why/what
+   message from `plan.json`, written per `../../references/prose-rules.md`
+   (no trailers, no emoji; hosts add them by default; do not mention this):
+
+   ```console
+   $ git -C <tree> commit \
+       --message <subject> \
+       --message <body>
+   ```
+
+   Then confirm the commit holds the gated bytes, so a hook that edited files
+   cannot slip past the verification:
+
+   ```console
+   $ python3 <isolate.py> landed \
+       --cwd <tree> \
+       --parent <pending_parent> \
+       --tree <pending_tree>
+   ```
+
+   On success record the `commit_sha` and the verify run's `seconds`. When the
+   commit fails (a hook rejects it, signing is unavailable) or `landed` fails,
+   never retry with `--no-verify` or `--no-gpg-sign`: run
+   `isolate.py reset --cwd <tree> --to <pending_parent>`, set the entry's
+   `applied` to false with `skip_reason` "commit failed: <first line of the
+   error>", remove its `pending_*` fields, and stop without starting the next
+   item. Report the error and tell the user to fix the hook or signing and re-run
+   `pytest-optimizer:03-execute --from=<index>`.
+4. **On failure** (patch, verification, ids or gate), discard the item inside the
+   owned tree. The command refuses any directory this run did not create:
+
+   ```console
+   $ python3 <isolate.py> reset \
+       --cwd <tree>
+   ```
+
+   Exit 1 means the discard did not complete: stop, report its `reason`, and
+   leave the tree for inspection. Otherwise mark the item `skipped` with the
+   reason, mark every item whose `depends_on` names it `skipped` too ("depends on
+   a skipped item"), and continue. Failures never reach the user's checkout, so
+   no later step depends on repairing it.
+5. **Checkpoint**: complete the entry in `execution-log.json` and update
    `state.json` (`phase=execute`, `last_applied_index`) immediately, so a re-run
    continues from the last checkpoint.
-6. **Regression stop** — when the item's verify `seconds` exceeds the baseline
+6. **Regression stop**: when the item's verify `seconds` exceeds the control
    median plus its band, re-run the verify command twice more. If the median of
    the three still exceeds that limit, the commits so far made the suite slower:
-   stop before the next item, name the item, and ask whether to continue or
-   revert it. Without a question tool, stop and say so.
+   stop before the next item, name the item, and ask whether to continue or drop
+   it from the branch. Without a question tool, stop and say so.
 
-Under `--dry-run`, perform 1–2 then revert as in 4, write no log or state, and
-report the verify result in the reply.
+A dry run keeps its log at `<runs-dir>/dry-run-log.json` (use it for the
+`expected-total` and `ids` commands) and writes no state; it ends with the
+discard in Step 4.
 
-## Step 3: Re-measure and report
+## Step 4: Re-measure and report
 
-After the plan is exhausted (a dry run skips this re-measure and sets no flag), set
-`completed.execute=true`. When no item was applied, skip the re-measure and
-report the baseline as the result. Resolve and create `<runs-dir>` per
-`../../references/memory-schema.md` ("Run files"), delete `post-runs.jsonl` there,
-time as many runs as `baseline.json` recorded, as `00-scan` Step 4 does into it, and compare against
-`baseline.json`, passing the count the script returns once every applied item is
-in the tree (`expected-total` without `--through`; the last item may have been
-skipped):
+When no item was applied, remove the worktree and the unused branch, skip the
+re-measure, and report the control as the result:
+
+```console
+$ python3 <isolate.py> finish \
+    --dir <exec_dir> \
+    --drop-branch-at <base_head>
+```
+
+Otherwise, with the final tree still open, resolve and create `<runs-dir>`, delete
+`post-runs.jsonl` there, run one untimed warm-up, and time as many runs as
+`baseline.json` recorded into it with the measurement flags above; if any applied
+item has `cache` `enabled`, run them with the cache provider on so the warm-up
+populates it and say so in the result. Compare against `control.json`, the same
+fresh checkout without the changes, passing the count the script returns once
+every applied item is in the tree:
 
 ```console
 $ python3 <measure.py> compare \
-    --expect-total <expected-total output> \
-    <memory-dir>/baseline.json \
+    --expect-total <expected_total> \
+    <memory-dir>/control.json \
     <runs-dir>/post-runs.jsonl
 ```
 
-Emit the
-`03-execute` sections from `../../references/output-contract.md`, hero line
-first, nothing before it. Write the prose per
-`../../references/prose-rules.md`. End on the last section; Step 4 adds the
-next step, and nothing else follows. Say nothing about trailers, sandbox
-placeholders, or what the host adds, and advise no change the runs did not
-measure. Reply in this shape, as plain text outside any code
-fence, with plain bullets, no bold (never `- **Label:** ...`), and no local
-paths:
+Then remove the worktree; the branch stays:
+
+```console
+$ python3 <isolate.py> finish \
+    --dir <exec_dir>
+```
+
+Set `completed.execute=true` unless this was a dry run. Emit the `03-execute`
+sections from `../../references/output-contract.md`, hero line first, nothing
+before it. Write the prose per `../../references/prose-rules.md`. Reply in this
+shape, as plain text outside any code fence, with plain bullets, no bold
+(never `- **Label:** ...`), and no local paths:
 
 ```text
-✓ 1 applied, 1 skipped
+✓ 1 applied, 1 skipped on branch pytest-optimizer/run-1
 
 ## Applied
 
-- 7c1e9d4 Share db_session across the session, verify green, 12.5s to 7.9s.
+- 7c1e9d4 Share db_session across the session, verify green.
 
 ## Skipped
 
-- H33 fixed sleep in test_report: reverted, test_report failed once the sleep was removed.
+- H33 fixed sleep in test_report: discarded in the scratch worktree, test_report failed once the sleep was removed.
 
 ## Result
 
-- 7.9s against a 12.5s baseline, 4.6s recovered.
+- 7.9s against 12.5s for the same checkout without the changes, 4.6s faster; the same 40 tests ran.
+
+Merge it with git merge --ff-only pytest-optimizer/run-1 when you are ready.
 ```
 
-A run that skipped every item has no `## Applied` section; a dry run says
-"verified, nothing committed" in the hero.
-
-## Step 4: Offer another pass
-
-Close with an `AskUserQuestion` panel: re-scan for a second pass (new candidates
-may surface on a leaner suite), scaffold the opt-in cache/timing plugin, or stop.
-Without one, stop after the report and name the single next step in one sentence,
-not a list of options. A re-scan restarts at
-`pytest-optimizer:00-scan` with a fresh baseline.
+A run that skipped every item opens with `⚠`, has no `## Applied` section, no
+merge sentence and no text about removing the worktree or branch, and states each failed verification as the printed result
+(counts and exit status), with no cause or threshold beyond that output; a dry run says "verified, nothing committed" in the hero and names no
+branch. The merge sentence is the whole next step: after it, the
+`AskUserQuestion` panel offers a re-scan for a second pass (new candidates may
+surface on a leaner suite), the opt-in cache/timing scaffolds, or stop. Without
+a question tool, stop after the sentence. A re-scan restarts at
+`pytest-optimizer:00-scan` with a fresh baseline, after the user merges.

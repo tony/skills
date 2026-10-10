@@ -1,6 +1,6 @@
 # Typed parametrize convention
 
-The target shape for typed tests and typed parametrize. Backs `H25`–`H32`. A migration is correct when failures name the **scenario**, not
+The target shape for typed tests and typed parametrize. Backs `H26`–`H32`. A migration is correct when failures name the **scenario**, not
 `param0`, and a type checker covers the test as strictly as the source.
 
 The **hard rule**: a `test_id` field is present and `ids=` is derived from it.
@@ -86,7 +86,6 @@ def test_length(case: CaseFixture) -> None:
 | Module missing `from __future__ import annotations` (H31) | Add it; switch `Tuple`/`List` to builtin generics |
 | Untyped test/fixture (H27) | Annotate params + return; run the project strict checker over `tests/` |
 | `class TestFoo` used only to group (H32) | Flatten into module-level `def test_*` with descriptive names |
-| In-body `for case in DATA:` loop covering distinct cases (H25) | Convert the loop into a parametrized track so each case is a reported test |
 
 ## Verification
 

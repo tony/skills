@@ -588,6 +588,7 @@
         "references/durations-parsing.md": "plugins/pytest-optimizer/references/durations-parsing.md",
         "references/fixture-analysis.md": "plugins/pytest-optimizer/references/fixture-analysis.md",
         "references/heuristic-catalog.md": "plugins/pytest-optimizer/references/heuristic-catalog.md",
+        "references/isolate.py": "plugins/pytest-optimizer/scripts/isolate.py",
         "references/measure.py": "plugins/pytest-optimizer/scripts/measure.py",
         "references/memory-schema.md": "plugins/pytest-optimizer/references/memory-schema.md",
         "references/output-contract.md": "plugins/pytest-optimizer/references/output-contract.md",
@@ -599,7 +600,7 @@
         "templates/conftest_cache_snippet.py": "plugins/pytest-optimizer/templates/conftest_cache_snippet.py",
         "templates/pytest_optimizer_plugin.py": "plugins/pytest-optimizer/templates/pytest_optimizer_plugin.py"
       },
-      "bytes": 111407
+      "bytes": 139500
     },
     {
       "name": "pytest-optimizer-00-scan",
@@ -610,6 +611,7 @@
         "references/durations-parsing.md": "plugins/pytest-optimizer/references/durations-parsing.md",
         "references/fixture-analysis.md": "plugins/pytest-optimizer/references/fixture-analysis.md",
         "references/heuristic-catalog.md": "plugins/pytest-optimizer/references/heuristic-catalog.md",
+        "references/isolate.py": "plugins/pytest-optimizer/scripts/isolate.py",
         "references/measure.py": "plugins/pytest-optimizer/scripts/measure.py",
         "references/memory-schema.md": "plugins/pytest-optimizer/references/memory-schema.md",
         "references/output-contract.md": "plugins/pytest-optimizer/references/output-contract.md",
@@ -618,7 +620,7 @@
         "references/version-matrix.md": "plugins/pytest-optimizer/references/version-matrix.md",
         "templates/pytest_optimizer_plugin.py": "plugins/pytest-optimizer/templates/pytest_optimizer_plugin.py"
       },
-      "bytes": 99162
+      "bytes": 127618
     },
     {
       "name": "pytest-optimizer-01-benchmark",
@@ -626,14 +628,17 @@
         "plugins/pytest-optimizer/skills/01-benchmark/SKILL.md"
       ],
       "bundled": {
+        "references/durations-parsing.md": "plugins/pytest-optimizer/references/durations-parsing.md",
         "references/heuristic-catalog.md": "plugins/pytest-optimizer/references/heuristic-catalog.md",
+        "references/isolate.py": "plugins/pytest-optimizer/scripts/isolate.py",
         "references/measure.py": "plugins/pytest-optimizer/scripts/measure.py",
         "references/memory-schema.md": "plugins/pytest-optimizer/references/memory-schema.md",
         "references/output-contract.md": "plugins/pytest-optimizer/references/output-contract.md",
         "references/prose-rules.md": "plugins/pytest-optimizer/references/prose-rules.md",
-        "references/safety-gates.md": "plugins/pytest-optimizer/references/safety-gates.md"
+        "references/safety-gates.md": "plugins/pytest-optimizer/references/safety-gates.md",
+        "templates/pytest_optimizer_plugin.py": "plugins/pytest-optimizer/templates/pytest_optimizer_plugin.py"
       },
-      "bytes": 81938
+      "bytes": 117764
     },
     {
       "name": "pytest-optimizer-02-plan",
@@ -648,7 +653,7 @@
         "references/scoring-rubric.md": "plugins/pytest-optimizer/references/scoring-rubric.md",
         "templates/commit-message.tmpl": "plugins/pytest-optimizer/templates/commit-message.tmpl"
       },
-      "bytes": 62264
+      "bytes": 71322
     },
     {
       "name": "pytest-optimizer-03-execute",
@@ -656,12 +661,15 @@
         "plugins/pytest-optimizer/skills/03-execute/SKILL.md"
       ],
       "bundled": {
+        "references/durations-parsing.md": "plugins/pytest-optimizer/references/durations-parsing.md",
+        "references/isolate.py": "plugins/pytest-optimizer/scripts/isolate.py",
         "references/measure.py": "plugins/pytest-optimizer/scripts/measure.py",
         "references/memory-schema.md": "plugins/pytest-optimizer/references/memory-schema.md",
         "references/output-contract.md": "plugins/pytest-optimizer/references/output-contract.md",
-        "references/prose-rules.md": "plugins/pytest-optimizer/references/prose-rules.md"
+        "references/prose-rules.md": "plugins/pytest-optimizer/references/prose-rules.md",
+        "templates/pytest_optimizer_plugin.py": "plugins/pytest-optimizer/templates/pytest_optimizer_plugin.py"
       },
-      "bytes": 62322
+      "bytes": 99178
     },
     {
       "name": "rebase",
@@ -1509,6 +1517,9 @@
     "plugins/package-updater/references/stopped-run.md": 4,
     "plugins/package-updater/scripts/repo_facts.py": 4,
     "plugins/pr/references/branch-context.md": 4,
+    "plugins/pytest-optimizer/references/durations-parsing.md": 4,
+    "plugins/pytest-optimizer/scripts/isolate.py": 4,
+    "plugins/pytest-optimizer/templates/pytest_optimizer_plugin.py": 4,
     "plugins/scholar/references/evidence-tiers.md": 4,
     "plugins/scholar/references/source-pins.md": 4,
     "plugins/terraform/references/lock-and-init.md": 4,
@@ -1578,13 +1589,11 @@
     "plugins/pr/references/resolve-and-backup.md": 2,
     "plugins/pr/references/template-resolution.md": 2,
     "plugins/pr/scripts/pr_backup.py": 2,
-    "plugins/pytest-optimizer/references/durations-parsing.md": 2,
     "plugins/pytest-optimizer/references/fixture-analysis.md": 2,
     "plugins/pytest-optimizer/references/parametrize-convention.md": 2,
     "plugins/pytest-optimizer/references/safety-gates.md": 2,
     "plugins/pytest-optimizer/references/scoring-rubric.md": 2,
     "plugins/pytest-optimizer/references/version-matrix.md": 2,
-    "plugins/pytest-optimizer/templates/pytest_optimizer_plugin.py": 2,
     "plugins/release/references/prose-rules.md": 2,
     "plugins/release/references/release-conventions.md": 2,
     "plugins/release/scripts/publish.py": 2,

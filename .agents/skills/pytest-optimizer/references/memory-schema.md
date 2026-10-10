@@ -59,19 +59,25 @@ tell the user to add those paths.
 token = hash(git HEAD
              + sorted collection node-ids
              + pytest version + plugin versions
-             + environment fingerprint)
+             + environment fingerprint
+             + digest of dirty and untracked inputs
+             + resolved test command)
 ```
 
-`measure.py token` computes it and sorts the node ids itself. The environment
-fingerprint is Python version, OS, and machine architecture. A phase is a no-op
-on re-run when `state.json` marks it `completed`, the token is unchanged, and its
-output file exists; `--force` overrides all three. `01-benchmark` and a fresh
-`03-execute` run recompute the token before reading `baseline.json` and halt on
-a mismatch with `state.json`'s `env_token`, naming `00-scan --force` as the fix.
-`03-execute`'s own commits change `HEAD` and the collected node ids, so a resumed
-run skips the token and checks instead that `HEAD` is `base_head` plus exactly
-the commits in `execution-log.json` (`measure.py chain`). The next `00-scan`
-re-baselines.
+`measure.py token` computes it and sorts the node ids itself; `isolate.py inputs`
+supplies the digest of tracked edits and untracked files (gitignored files are
+outside it). The environment fingerprint is Python version, OS, and machine
+architecture. A phase is a no-op on re-run when `state.json` marks it
+`completed`, the token is unchanged, and its output file exists; `--force`
+overrides all three. `01-benchmark` runs no collection: it halts on a missing
+`env_token`, a true `dirty`, or a `HEAD`, inputs digest, test command or pytest
+version that differs from the scan's, naming `00-scan --force` as the fix.
+`02-plan` and `03-execute` run no tests: they require `HEAD` to equal
+`base_head` and every entry or plan item to carry `state.json`'s `env_token`
+and a patch hash.
+`03-execute` commits to its own branch, so a resumed run checks that the branch
+is `base_head` plus exactly the commits in `execution-log.json`
+(`measure.py chain --head`). The next `00-scan` re-baselines.
 
 ## Run files
 
@@ -97,7 +103,7 @@ A temp directory does not outlive the session; a later session re-creates its ru
 files, since each is deleted before its first timed run. Say which location was
 used only when the user must act on the files. Delete a run file before its first timed run, so a re-run, `--force`,
 or a post-execute re-scan never mixes old samples into a band. Nothing here
-shows in `git status`, which `03-execute` requires to be empty.
+shows in `git status`.
 
 `run` exits 0 when it records a command; its `exit` field holds the command's
 status. An unavailable outcome summary produces null `passed` and `total`
@@ -110,8 +116,9 @@ The noise band is `max(k * 1.4826 * MAD, trust floor)` (`k = 3`; the trust floor
 the larger of `0.05` s and 1% of the median, so a 12.5 s median gives `0.125` s), measured per project in `00-scan`
 from N serial, cache-disabled runs. `compare` widens the dispersion with the
 candidate's own MAD, `hypot(baseline MAD, candidate MAD)`. A candidate is a real
-speedup only when every run exits 0, its reported outcome counts match the
-baseline, and its median saving exceeds that band:
+speedup only when at least three runs exit 0, its reported outcome counts match
+the baseline, its collected node ids match the scan's, and its median saving
+exceeds that band:
 
 ```
 real_speedup  <=>  baseline_median - candidate_median > band
@@ -144,6 +151,10 @@ judged against), each file's shape follows. The JSONL run files
   "env_token": "string",
   "hygiene": false,
   "base_head": "git sha of HEAD when 00-scan ran",
+  "inputs_digest": "isolate.py inputs digest when 00-scan ran",
+  "dirty": false,
+  "exec_branch": "pytest-optimizer/<run_id>, set when 03-execute starts",
+  "exec_dir": "owned scratch directory of that run",
   "completed": { "scan": true, "benchmark": false, "plan": false, "execute": false },
   "plan_hash": null,
   "last_applied_index": -1
@@ -169,6 +180,7 @@ of an earlier phase clears the later flags.
   "pytest_version": "<version>",
   "plugins": { "pytest-xdist": "3.x", "pytest-randomly": "3.x" },
   "test_command": "<project test command>",
+  "measurement_flags": ["-p", "no:cacheprovider", "-p", "no:randomly"],
   "capabilities": { "durations_min": true, "stash": true },
   "runs": [ { "wall_seconds": 12.4 }, { "wall_seconds": 12.6 } ],
   "noise": { "median": 12.5, "mad": 0.1, "floor": 0.125, "k": 3, "band": 0.44478 },
@@ -205,6 +217,11 @@ re-scans. A re-baseline after `03-execute` re-opens all candidates.
     "env_token": "string",
     "diff_summary": "scope=\"function\" -> scope=\"session\" on make_config",
     "runs": 5,
+    "base_head": "git sha the candidate was cut from",
+    "patch": "patches/H10-conftest-make_config.patch",
+    "patch_sha256": "string",
+    "files": ["tests/conftest.py"],
+    "cache": "disabled",
     "median_delta": 2.7,
     "clears_noise": true,
     "gates": { "order_indep": true, "collection_det": true, "green": true },
@@ -217,9 +234,14 @@ re-scans. A re-baseline after `03-execute` re-opens all candidates.
 ```
 
 `env_token` is `state.json`'s `env_token` when the entry was recorded: an entry
-whose token differs from the current one is stale and is re-benchmarked.
+whose token differs from the current one, or has none, is stale and is
+re-benchmarked. `patch` is the change `isolate.py capture` wrote in the scratch
+worktree and `patch_sha256` binds its bytes; `03-execute` applies that patch,
+never a re-described change. `cache` is `enabled` for a cross-run cache
+candidate (H24), measured and verified with the cache provider on.
 `removes_tests` is the number of tests a deselecting change (H15, H37) drops from
-the default run; it is absent otherwise. `kind` is `"hygiene"` for a typing or parametrize item (H26-H32): no timing,
+the default run and `removed_ids` lists their node ids; both are absent
+otherwise. `kind` is `"hygiene"` for a typing or parametrize item (H26-H32): no timing,
 `median_delta` and `clears_noise` null, `verdict` `validated` when the suite and
 type checker pass. Every other entry is `"speedup"` (the default when absent).
 
@@ -233,6 +255,11 @@ type checker pass. Every other entry is `"speedup"` (the default when absent).
     "score": { "safety": 0.9, "impact": 0.75, "effort": 1.0, "confidence": 0.9, "reversibility": 0.9, "total": 0.87 },
     "files": ["tests/conftest.py"],
     "commit": { "subject": "test(fixtures) widen make_config to session scope", "body": "why: ...\n\nwhat:\n- ..." },
+    "env_token": "string",
+    "patch": "patches/H10-conftest-make_config.patch",
+    "patch_sha256": "string",
+    "cache": "disabled",
+    "removed_ids": [],
     "verify": "<project test command>",
     "expected_total": 40,
     "depends_on": []
@@ -261,7 +288,13 @@ count.
 ]
 ```
 
-An entry is written with `pending_subject` (the commit subject) before the commit
-is made, then completed with `commit_sha`. A resume that finds an entry with
-`pending_subject` and no `commit_sha` adopts `HEAD` as its commit when `HEAD`'s
-subject matches.
+An entry is written with `pending_subject`, `pending_parent` (the branch tip)
+and `pending_tree` (the tree `isolate.py gate` printed) before the commit is
+made, then completed with `commit_sha`. A resume that finds an entry with
+`pending_tree` and no `commit_sha` adopts the branch tip only when
+`isolate.py landed` confirms it is one commit on `pending_parent` holding
+exactly `pending_tree`; a matching subject proves nothing.
+
+`patches/` under the memory directory holds one patch per benchmarked
+hypothesis, and the scratch worktree and result branch of a run are owned by
+`isolate.py` (`owner.json` beside the worktree).

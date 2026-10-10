@@ -11,8 +11,8 @@ the project's own timing noise and has cleared a safety gate.
 ```
 00-scan  ->  01-benchmark  ->  02-plan  ->  03-execute
 profile      prove each        rank by       apply each speedup
-+ detect     hypothesis vs      the safety    as a separate commit,
-+ hypothesize  noise band       rubric        verify green, resume
++ detect     hypothesis vs      the safety    as a separate commit
++ hypothesize  noise band       rubric        on a new branch
 ```
 
 ## Installation
@@ -57,8 +57,25 @@ reads and writes a durable JSON file under `.pytest-optimizer/`, keeping the
 pipeline:
 
 - Idempotent: Re-running a phase is a no-op if inputs are unchanged.
-- Resumable: `03-execute` checkpoints after every commit and, on resume, checks that `HEAD` holds only its own commits.
+- Resumable: `03-execute` checkpoints after every commit and, on resume, checks that its result branch holds only its own commits.
 - Auditable: The plan is a reviewable artifact before any code changes.
+
+## What execution touches
+
+`03-execute` never edits your checkout, index or branches. It cuts a new
+branch from the commit the scan measured, applies each benchmarked patch in a
+scratch worktree it owns, verifies and commits there, and discards a failed item
+inside that worktree only. It ends by naming the branch and the command that
+merges it, and does not merge or push:
+
+```console
+$ git merge --ff-only pytest-optimizer/<run-id>
+```
+
+Your checkout can stay dirty and keep changing meanwhile. The worktree is a Git
+boundary, not a sandbox: a project hook or an absolute path in a test can still
+write elsewhere. `00-scan` runs the project's tests in your tree, so it
+compares the working tree before and after and reports files the tests wrote.
 
 ## What it looks for
 
@@ -66,7 +83,7 @@ The detection rules are in `references/heuristic-catalog.md`:
 
 - Slowest test bodies and fixture setup, ranked from `--durations` rows.
 - Unused, duplicate, and mis-scoped fixtures, with a `getfixturevalue` guard.
-- Duplicate tests and loops that belong in one parametrized track.
+- Duplicated helpers across sibling conftests.
 - Safe parallelism, gated on order independence and deterministic collection.
 - With `--hygiene`, untyped tests and fixtures and untyped `parametrize` data, planned as hygiene items that save no time. Off by default: they rewrite test signatures and ids.
 - Opt-in project-owned helpers: a per-fixture timing plugin and a
@@ -89,9 +106,9 @@ Candidates are ranked and gated (see `references/scoring-rubric.md`):
 | Skill | Phase | Writes |
 |---------|-------|--------|
 | `/pytest-optimizer:00-scan` | Profile, detect, hypothesize | `baseline.json`, `capabilities.json`, `collection.txt`, `hypotheses.json` |
-| `/pytest-optimizer:01-benchmark` | Prove each hypothesis vs the noise band | `benchmarks.json`, `control.json` |
+| `/pytest-optimizer:01-benchmark` | Prove each hypothesis vs the noise band | `benchmarks.json`, `control.json`, `patches/` |
 | `/pytest-optimizer:02-plan` | Rank into a commit plan (plan-mode gated) | `plan.json` |
-| `/pytest-optimizer:03-execute` | Apply each speedup as a commit, verify, resume | `execution-log.json` |
+| `/pytest-optimizer:03-execute` | Apply each patch as a commit on a new branch, verify, resume | `execution-log.json`, the result branch |
 
 Use `pytest-optimizer` as an orchestrator for conversational phrases like
 "speed up my tests". The four phase skills are invoked by name only, so the
@@ -107,7 +124,7 @@ order: `--memory-dir`, the in-tree directory, the cache directory. See
 ## Prerequisites
 
 - A git repository with a pytest suite.
-- `python3` (3.9 or newer) on `PATH` for `scripts/measure.py`, which does the timing arithmetic.
+- `python3` (3.9 or newer) on `PATH` for `scripts/measure.py` and `scripts/isolate.py`, which do the timing arithmetic and the Git isolation.
 - A test command the skills can read from `AGENTS.md`, `CLAUDE.md`, `justfile`, `tox.ini`, or `pyproject.toml`.
 - Optional auto-detected plugins: `pytest-xdist`, `pytest-randomly`,
   `pytest-deadfixtures`, `pytest-timeout`. The skills ask before installing any of them into your environment.
@@ -118,7 +135,8 @@ order: `--memory-dir`, the in-tree directory, the cache directory. See
 - `skills/pytest-optimizer/SKILL.md`: orchestrator with planning and
   degradation.
 - `references/`: recipes, schemas, rubric, and capabilities.
-- `scripts/measure.py`: median, MAD, noise band, test-count and order gates, rubric arithmetic, memory lookup, resume check.
+- `scripts/measure.py`: median, MAD, noise band, test-count and node-id gates, rubric arithmetic, memory lookup, resume check.
+- `scripts/isolate.py`: input digest, owned scratch worktrees, hash-bound patches, commit gate.
 - `templates/`: opt-in scaffolds (timing plugin, cache snippet) and the commit message template.
 
 ## Scope
