@@ -922,10 +922,29 @@ def _drop_session_refs(top: str, session_id: str) -> None:
             git(top, "update-ref", "-d", ref)
 
 
+def _unexpected_after_apply(top: str, session: Json) -> Json | None:
+    """Return what differs from the original checkout beyond the adopted paths.
+
+    ``None`` means the original state or the adopted paths were not recorded, so
+    nothing can be said.
+    """
+    initial = session.get("initial_guard")
+    applied = session.get("applied_paths")
+    if not initial or applied is None:
+        return None
+    touched = _touched(top, initial["tree"], snapshot_tree(top))
+    return {
+        "touched": {rel: status for rel, status in touched.items() if rel not in applied},
+        "head_changed": git(top, "rev-parse", "HEAD") != initial["head"]
+        or git(top, "symbolic-ref", "-q", "HEAD", check=False) != initial.get("head_ref"),
+        "index_changed": _index_state(top) != initial.get("index"),
+    }
+
+
 def guard_finish(session_dir: Path) -> Json:
     """Run the last check, log ``repo_guard_final``, and drop the pinned refs when clean.
 
-    An adopted session changes the checkout on purpose, so it skips the check.
+    An adopted session is compared with its original state, excluding the adopted paths.
     Existing recovery snapshots are always kept.
     """
     session = load_session(session_dir)
@@ -937,12 +956,15 @@ def guard_finish(session_dir: Path) -> Json:
         )
         return {"ok": True, "clean": None, "unguarded": True, "refs_pruned": False, "touched": {}}
     if session.get("applied"):
-        event: Json = {"event": "repo_guard_final", "timestamp": stamp(), "repo_clean": None}
+        unexpected = _unexpected_after_apply(top, session)
+        clean = None if unexpected is None else not any(unexpected.values())
+        event: Json = {"event": "repo_guard_final", "timestamp": stamp(), "repo_clean": clean}
         append_jsonl(session_dir / "events.jsonl", event)
         pruned = not (session_dir / "guard" / "last.json").exists()
         if pruned:
             _drop_session_refs(top, session["session_id"])
-        return {"ok": True, "clean": None, "refs_pruned": pruned, "touched": {}}
+        found = unexpected or {"touched": {}}
+        return {"ok": True, "clean": clean, "refs_pruned": pruned, **found}
     if session.get("mutating") and not session.get("initial_guard"):
         return {
             "ok": False,
@@ -2164,6 +2186,7 @@ def _adopt_files(
         (top / rel).unlink(missing_ok=True)
     if copied or deletes:
         session["applied"] = True
+        session["applied_paths"] = sorted({*copied, *deletes})
         save_session(session_dir, session)
     return {"ok": True, "copied": copied, "deleted": deletes}
 

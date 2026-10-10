@@ -976,7 +976,7 @@ def test_bare_session_has_no_workers_or_guard(repo: Path) -> None:
         )  # fmt: skip
 
 
-def test_adopted_session_finish_skips_the_comparison_and_drops_refs(repo: Path) -> None:
+def test_adopted_session_finish_attests_only_the_adopted_paths(repo: Path) -> None:
     sdir = Path(init(command="execute", mutating=True)["session_dir"])
     sid = engine.load_session(sdir)["session_id"]
     made = engine.create_worktrees(sdir, ["builder"])
@@ -984,9 +984,29 @@ def test_adopted_session_finish_skips_the_comparison_and_drops_refs(repo: Path) 
     engine.capture_tree(sdir, 1, "builder", None)
     engine.adopt_files(sdir, 1, [], [], whole="builder")
     done = engine.guard_finish(sdir)
-    assert done["clean"] is None
+    assert done["clean"] is True
+    assert done["touched"] == {}
     assert done["refs_pruned"] is True
     assert sh(repo, "git", "for-each-ref", f"refs/weave-guard/{sid}/") == ""
+
+
+def test_adopted_session_finish_reports_unrestored_and_stray_changes(repo: Path) -> None:
+    (repo / "a.txt").write_text("staged\n")
+    sh(repo, "git", "add", "a.txt")
+    (repo / "a.txt").write_text("working\n")
+    sdir = Path(init(command="execute", mutating=True)["session_dir"])
+    made = engine.create_worktrees(sdir, ["builder"])
+    (Path(made["worktrees"]["builder"]["path"]) / "adopted.txt").write_text("synthesis\n")
+    engine.capture_tree(sdir, 1, "builder", None)
+    engine.adopt_files(sdir, 1, [], [], whole="builder")
+    held = engine.guard_finish(sdir)
+    assert held["clean"] is False
+    assert held["touched"] == {"a.txt": "M"}
+    engine.remove_worktrees(sdir, None)
+    assert engine.restore_stash(sdir)["restored"] is True
+    assert engine.guard_finish(sdir)["clean"] is True
+    (repo / "B").write_text("stray\n")
+    assert engine.guard_finish(sdir)["touched"] == {"B": "M"}
 
 
 def test_context_reports_trunk_branch_and_commits(

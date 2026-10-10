@@ -449,6 +449,9 @@ $ python3 <engine> guard finish \
 On `"ok": false`, stop and report checkout drift or missing verification;
 do not mark the session complete or render an unchanged claim. A mutating
 run with no adoption must return `"clean": true` before saying unchanged.
+After an adoption, `"clean": true` means only the adopted paths differ from
+the original checkout; otherwise name `touched`, `head_changed` or
+`index_changed` and make no claim that the user's edits are intact.
 The halt is one result sentence and the required user action; name affected
 repository-relative paths, but do not append the withheld report.
 
