@@ -81,16 +81,7 @@ Worker backends are strictly isolated: retry and fallback stay inside the chosen
 
 ### When not to use
 
-Skip weave for a task one agent answers in a single pass: a typo, a rename, a question whose answer is in one file. Independent workers, judging, and refinement add cost. Use them when comparing alternatives and checking disagreements is worth that cost; the small comparison below did not establish a quality advantage.
-
-### Measured against a single agent
-
-Measured 2026-10-08 with Claude Code 2.1.294 on three eval cases whose prompts name no command: `refine-draft` (polish a paragraph), `brainstorm-ideas` (undo/redo designs), and `brainstorm-and-refine-pipeline` (pagination design). Each case ran twice per arm with `claude plugin eval --ablation with-without`: weave loaded in one arm and no plugin in the other. [Measurement records](docs/measurements.json) preserve the per-run cost and duration reported by the CLI.
-
-- Cost: summed within each case, weave cost 8.3 to 11.4 times as much and took 3.3 to 8.6 times as long. These are CLI-reported dollar estimates including judges and elapsed durations, not measured token counts or billed charges.
-- Quality: a retained comparison ledger contains 5 votes for weave, 6 for the baseline, and 1 invalid result. Across six run pairs, the two votes agree on weave once and the baseline once; three pairs split and one is incomplete. The original comparison prompts and judge responses are unavailable, so these votes are not reproducible evidence of a quality gain.
-- The cases' built-in graders require weave's process or result shape. Their zero baseline scores do not measure a content-quality difference.
-- Unmeasured: seeded-defect catch rate, other task classes, and `--workers=model-clis`.
+Skip weave for a task one agent answers in a single pass: a typo, a rename, a question whose answer is in one file. Independent workers, judging, and refinement add cost. Use them when comparing alternatives and checking disagreements is worth that cost.
 
 ### Command categories
 
@@ -110,7 +101,7 @@ Commands that need commits (`execute`, `prompt`, `architecture`, `review`, `fix-
 
 ## Engine
 
-`scripts/engine.py` runs the deterministic work: flag parsing, session setup, model-CLI dispatch with retry and fallback, worktrees, diff capture, judging helpers, and the repo guard. It needs `python3` (3.9 or newer) and `git` on a POSIX system. `scripts/test_engine.py` tests it against real git repositories and stub CLIs. [`docs/engine.md`](docs/engine.md) lists every command and how to convert a skill.
+`scripts/engine.py` runs the deterministic work: flag parsing, session setup, model-CLI dispatch with retry and fallback, worktrees, diff capture, judging helpers, and the repo guard. It needs `python3` (3.9 or newer) and `git` on a POSIX system. `scripts/test_engine.py` tests it against real git repositories and stub CLIs. `python3 scripts/engine.py --help` lists every command.
 
 Shared judgment prose lives in `references/ensemble-core.md` (context packet, dispatch, blind judging, synthesis, consensus), `references/ensemble-techniques.md` (cascade and residual re-attack), `references/present-results.md` (shared rendering rules, plus one file per result kind in `references/results/`), and `references/deslop-pass.md`. `references/worker-backends.md` defines the two backends.
 
@@ -128,7 +119,6 @@ presentation. Drift retains recovery snapshots without rewriting the checkout.
 A mutating violation stops before adoption or cleanup, preserving leaked
 work and the original user stash for inspection. Read-only runs can offer keep,
 revert, or quarantine; headless runs keep the drift and cannot claim unchanged.
-`docs/repo-guard-protocol.md` describes the recovery choices and final attestation.
 
 ## Flags
 

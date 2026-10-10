@@ -91,9 +91,8 @@ answer and is preferred over an inferred one.
 ## Support
 
 The plugin relies on undocumented internals: the `queue_1.sqlite` schema, transcript
-`origin` records, and the session registry layout. A release of either CLI can change them.
-The routes were tested with `codex` 0.160.1 and Claude Code 2.1.292; these are the versions
-checked, not minimums. The skill probes each route at run time before choosing it:
+`origin` records, and the session registry layout. A release of either CLI can change them, so the skill probes each route at run time
+before choosing it:
 
 - `codex queue --help` must exit 0 for the `codex-queue` route.
 - `claude agents --json` must succeed for the inbox-socket route.
