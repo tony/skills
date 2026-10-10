@@ -5,7 +5,9 @@ A cooldown hides releases younger than a threshold from the resolver. An
 exemption is a hole in a supply-chain guard, so keep it small and
 temporary.
 
-Exempt only when the resolver cannot see a release needed now. Skip it
+Exempt only when the resolver cannot see a release needed now, and only
+after its refusal names the release as excluded by date. Any other refusal
+leaves the cause unconfirmed: report it so and write no exemption. Skip it
 when the resolver already sees the release or the window is short enough
 to wait out; a version the user named does not override the wait.
 
@@ -20,7 +22,10 @@ to wait out; a version the user named does not override the wait.
   commit message instead.
 - Land it as its own commit, first in the branch, so one revert removes
   it.
-- Compute when the block lapses (publication timestamp plus the window),
-  state it in the commit body, and revert the exemption then.
+- For a rolling window, compute when the block lapses (the package
+  index's upload time for the release's files plus the window; a release
+  page's date is not an upload time), state it in the commit body, and
+  revert the exemption then. For a fixed cutoff date, the revert
+  condition is the cutoff moving past the release, not a time.
 - When the work goes through a pull request, name the revert as a
-  pre-merge requirement in its body, with the lapse time.
+  pre-merge requirement in its body, with that condition.

@@ -3,9 +3,12 @@
 
 The calling skill says when to use one. The usual reasons: the checkout
 is on a feature branch, has uncommitted work, or holds a local default
-branch that differs from the remote's, and the commits must start from the
-remote default branch. The local default branch may be stale, and
-a push from it is rejected as a non-fast-forward.
+branch that differs from the remote's, and the commits must start from a
+known base. The local default branch may be stale, and a push from it is
+rejected as a non-fast-forward.
+
+`<base>` below is the commit the calling skill names; without one it is
+`<remote>/<default>`.
 
 `<repo>` below is the repository's top-level directory
 (`git rev-parse --show-toplevel`). Every git command names its repository
@@ -35,7 +38,7 @@ $ mktemp -d "${TMPDIR:-/tmp}/worktree.XXXXXX"
 ```
 
 A worktree may start detached while the phases are read-only
-(`git -C <repo> worktree add --detach <printed-path> <remote>/<default>`).
+(`git -C <repo> worktree add --detach <printed-path> <base>`).
 Before its first commit it switches to a named local branch
 (`git -C <printed-path> switch -c <branch>`): commits on a detached HEAD
 are unreachable once the worktree is removed, so none lands there. Use the
@@ -50,12 +53,14 @@ A skill that commits straight away creates the branch with the worktree:
 $ git -C <repo> worktree add \
     -b <branch> \
     <printed-path> \
-    <remote>/<default>
+    <base>
 ```
 
-Commit with `git -C <printed-path>`. Push only when the request asks to
-push, and only to the target the calling skill names. A skill that lands commits on the default
-branch directly pushes `HEAD` to it:
+Commit with `git -C <printed-path>`. Run the project's required checks in
+the worktree before any push; a failure caused by the change publishes
+nothing. Push only when the request asks to push, and only to the target
+the calling skill names. A skill that lands commits on the default branch
+directly pushes `HEAD` to it:
 
 ```console
 $ git -C <printed-path> push <remote> HEAD:<default>
@@ -69,7 +74,8 @@ $ git -C <printed-path> push \
     <remote> <branch>
 ```
 
-Remove the worktree afterwards; the branch and its commits stay:
+Remove the worktree after the checks and any push; the branch and its
+commits stay:
 
 ```console
 $ git -C <repo> worktree remove <printed-path>
