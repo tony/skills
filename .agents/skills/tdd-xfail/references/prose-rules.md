@@ -82,6 +82,8 @@ comes to", "in order to", "going forward", "let's dive in".
 - No headings over two-sentence sections. Bold only a term the reader must
   not miss; never a bold label on every bullet, never bold mid-sentence.
 - Use bullets for parallel items, prose for an argument.
+- When the skill gives a reply shape, the reply is that shape filled in:
+  nothing before its first line, nothing after its last.
 - Em dashes: none in short text, one or two in long text where a comma or
   period reads worse.
 - One command per code block, with the explanation outside the fence.
