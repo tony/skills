@@ -6,6 +6,7 @@ Usage:
     skill_diff.py snapshot --stdin
     skill_diff.py diff DIR [--work]
     skill_diff.py clean DIR
+    skill_diff.py report DIR MODE
 
 ``snapshot`` copies each FILE twice (``orig`` and ``work``), prints DIR, then one
 ``<work copy>TAB<label>`` line per file. ``diff`` prints a unified diff of the
@@ -13,7 +14,10 @@ snapshot against the live files, or against the work copies with ``--work``.
 ``snapshot --stdin`` snapshots pasted text read from stdin as ``SKILL.md``; use
 ``diff --work`` on it. Labels are cwd-relative paths (basename outside cwd, widened with the parent
 directory when two targets would share one), never temp paths. ``snapshot`` and
-``diff`` exit 2 on a missing or non-UTF-8 target.
+``diff`` exit 2 on a missing or non-UTF-8 target. ``report`` renders the reply
+(MODE is ``edited``, ``audit``, ``diff-only`` or ``inline``) from ``target.txt``,
+``cuts.txt``, ``ledger.md`` and optional ``behavior.md`` in DIR, prints it, then
+deletes DIR; it exits 2 and keeps DIR when a file is missing or malformed.
 """
 
 # ruff: noqa: D103
@@ -125,6 +129,69 @@ def clean(root: Path) -> None:
     shutil.rmtree(root)
 
 
+OPENINGS = {
+    "edited": "{subject} loses {cuts}.",
+    "audit": "{subject} has {cuts} to cut.",
+    "diff-only": "{subject} would lose {cuts}.",
+    "inline": "The draft loses {cuts}.",
+}
+MAX_OPENING_WORDS = 20
+
+
+def _bullets(text: str, name: str) -> str:
+    lines = text.splitlines()
+    if not lines:
+        msg = f"{name} is empty"
+        raise ValueError(msg)
+    for line in lines:
+        if line.startswith(("- **", "#", "|")):
+            msg = f"{name}: plain bullets only, got: {line}"
+            raise ValueError(msg)
+        if line and not line.startswith(("- ", " ")):
+            msg = f"{name}: every line is a bullet or its continuation, got: {line}"
+            raise ValueError(msg)
+    return text
+
+
+def _read(root: Path, name: str, *, required: bool = True) -> str:
+    path = root / name
+    if not path.is_file():
+        if required:
+            msg = f"missing {name} in the snapshot directory"
+            raise ValueError(msg)
+        return ""
+    return path.read_text(encoding="utf-8").strip()
+
+
+def report(mode: str, root: Path) -> str:
+    r"""Render the reply from the text files in ROOT.
+
+    >>> import tempfile
+    >>> d = Path(tempfile.mkdtemp())
+    >>> _ = (d / "target.txt").write_text("db-helper")
+    >>> _ = (d / "cuts.txt").write_text("an intro")
+    >>> _ = (d / "ledger.md").write_text("- Intro: repeats the title.\n")
+    >>> report("audit", d)
+    'db-helper has an intro to cut.\n\n## Ledger\n\n- Intro: repeats the title.\n'
+    """
+    target = _read(root, "target.txt", required=mode != "inline")
+    opening = OPENINGS[mode].format(subject=target, cuts=_read(root, "cuts.txt"))
+    if "\n" in opening or len(opening.split()) > MAX_OPENING_WORDS:
+        msg = f"opening is one line of at most {MAX_OPENING_WORDS} words: {opening}"
+        raise ValueError(msg)
+    parts = [opening, "## Ledger\n\n" + _bullets(_read(root, "ledger.md"), "ledger.md")]
+    behavior = _read(root, "behavior.md", required=False)
+    if behavior:
+        parts.append("## Behavior changes\n\n" + _bullets(behavior, "behavior.md"))
+    if mode != "audit":
+        body = diff(root, work=mode != "edited")
+        if not body:
+            msg = "no changes to report"
+            raise ValueError(msg)
+        parts.append("## Diff\n\n```diff\n" + body.rstrip("\n") + "\n```")
+    return "\n\n".join(parts) + "\n"
+
+
 def _is_utf8(path: Path) -> bool:
     try:
         path.read_bytes().decode("utf-8")
@@ -168,7 +235,22 @@ def main(argv: list[str]) -> int:
     p_diff.add_argument("--work", action="store_true")
     p_clean = sub.add_parser("clean")
     p_clean.add_argument("dir", type=Path)
+    p_rep = sub.add_parser("report")
+    p_rep.add_argument("dir", type=Path)
+    p_rep.add_argument("mode", choices=sorted(OPENINGS))
     args = parser.parse_args(argv)
+    if args.cmd == "report":
+        try:
+            text = report(args.mode, args.dir)
+            clean(args.dir)
+        except (OSError, ValueError, UnicodeDecodeError) as err:
+            print(err, file=sys.stderr)
+            return 2
+        sys.stdout.write(text)
+        print(
+            "The user cannot see the text above. Send it as your reply unchanged.", file=sys.stderr
+        )
+        return 0
     if args.cmd == "snapshot":
         return _snapshot_cmd(args.files, use_stdin=args.stdin)
     if args.cmd == "diff":

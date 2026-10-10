@@ -213,78 +213,70 @@ These are this marketplace's limits. Apply them only when the project's
    `--diff-only`. Without `ask-user-choice`, edit only when the
    request explicitly authorizes it ("apply", "go ahead", "edit in
    place"); otherwise behave as `--diff-only`.
-6. **Snapshot, edit, diff.** Skip under `--audit`. When the user
-   forbids running commands, skip the script: edit a copy in your head,
-   write the diff by hand without hunk line counts in the `@@` headers,
-   and say so in one clause. Before any edit, snapshot every target;
-   the first output line is the snapshot directory and each later line
-   is a work copy and the label for it. The snapshot is what the diff
-   compares against, so earlier uncommitted edits to a target never
-   show as yours.
+6. **Snapshot and edit.** Before any edit, snapshot every target; the
+   first output line is the snapshot directory and each later line is a
+   work copy and the label for it. The snapshot is what the diff compares
+   against, so earlier uncommitted edits to a target never show as yours.
+   Under `--audit` snapshot too, edit nothing.
 
    ```console
    $ references/skill_diff.py snapshot <targets>
    ```
 
-   - Edits written: edit the targets in place, then diff against the
-     snapshot.
-
-     ```console
-     $ references/skill_diff.py diff <snapshot-dir>
-     ```
-
+   - Edits written: edit the targets in place.
    - `--diff-only`, or an unauthorized edit: write nothing to the
-     targets. Edit the work copies, then diff against them.
-
-     ```console
-     $ references/skill_diff.py diff <snapshot-dir> --work
-     ```
-
-   Then delete the snapshot, and never name its path in the reply.
-
-   ```console
-   $ references/skill_diff.py clean <snapshot-dir>
-   ```
-
+     targets. Edit the work copies.
    - Inline draft: run `mktemp -d "${TMPDIR:-/tmp}/skill-paste.XXXXXX"`
      and note the printed directory. Write the pasted text to
      `SKILL.md` in it with the host's file-writing tool, pass that file
      to `snapshot`, then remove the file and directory. Edit the work
-     copy, diff with `--work`, then clean. No confirmation, no git. The
-     diff labels it `SKILL.md`. If a file write is denied, stop; do not
-     route the pasted text through a shell command to bypass it.
+     copy. No confirmation, no git. The diff labels it `SKILL.md`. If a
+     file write is denied, stop; do not route the pasted text through a
+     shell command to bypass it.
+   - A `snapshot` that exits 2 means a target is missing or not UTF-8:
+     stop and name the file.
+   - When the user forbids running commands, skip the script: edit a
+     copy in your head, write the diff by hand without hunk line counts
+     in the `@@` headers, and say so in one clause. Use step 7's format.
 
-   - A `snapshot` or `diff` that exits 2 means a target is missing or
-     not UTF-8: stop and name the file.
+7. **Write the reply** using `references/prose-rules.md`. With
+   the host's file-writing tool, write these files in the snapshot
+   directory; shell commands never carry their text.
 
-7. **Write the reply** using `references/prose-rules.md` and this
-   format. The reply consists of the opening sentence and the applicable
-   sections below, without an introduction or recap.
+   - `target.txt`: the skill name (omit for an inline draft).
+   - `cuts.txt`: what goes, in at most 12 words, such as `its intro,
+     Notes section and two filler steps`. Renames and frontmatter
+     changes are not cuts.
+   - `ledger.md`: one plain bullet per cut, quoting it and explaining why
+     nothing breaks, or naming one library-standards defect or command
+     flaw left as written, never a corrected command or a replacement
+     flag, even in passing.
+   - `behavior.md`: one bullet per rename, frontmatter change, or added or
+     changed claim. Omit when there are none.
 
-   Choose the mode's opening and substitute only the target and cuts.
-   Keep one sentence of at most 20 words; renames and frontmatter changes
-   belong in Behavior changes, not the opening.
+   Bullets have no bold labels, tables, coded labels, or paths. Then run
+   the mode (`edited`, `audit`, `diff-only`, or `inline`):
 
-   - Edited: `db-helper loses its intro, Notes section and two filler steps.`
-   - Audit: `db-helper has an intro, Notes section and two filler steps to cut.`
-   - Diff only: `db-helper would lose its intro, Notes section and two filler steps.`
-   - Inline draft: `The draft loses its intro, Notes section and two filler steps.`
+   ```console
+   $ references/skill_diff.py report \
+       <snapshot-dir> \
+       <mode>
+   ```
 
-   Use these headings verbatim, in this order, with no other sections:
+   The command prints the whole reply and deletes the snapshot: opening,
+   `## Ledger`, `## Behavior changes` when `behavior.md` has bullets, and
+   `## Diff` except under `--audit`. Your next message is that output
+   verbatim, with nothing added or reworded. If it exits 2, nothing is
+   deleted: fix the named file and rerun. On any other stop, delete the
+   snapshot with `references/skill_diff.py clean <snapshot-dir>`.
+   Never name the snapshot path in the reply.
 
-   - `## Ledger`: one plain bullet per cut, quoting it and explaining why
-     nothing breaks. Include library-standards defects and command flaws
-     left as written. A command flaw gets one bullet naming the fault,
-     never a corrected command or alternative flag. Keep Behavior changes
-     out of this section.
-   - `## Behavior changes`: renames, frontmatter changes, added or changed
-     claims, separate from cuts. Omit this section when none occur.
-   - `## Diff`: the generated diff in a `diff` fence. Omit under `--audit`.
-
-   Use plain bullets, without bold labels, tables, coded labels, line-removal
-   counts, local or temporary paths, or tool narration except the required
-   hand-written-diff clause. Before sending, check the opening against its
-   template and word limit, then the headings against the list above.
+   Without the script, write the reply by hand: a one-sentence opening
+   of at most 20 words in the mode's template (`db-helper loses its
+   intro.`, `db-helper has an intro to cut.`, `db-helper would lose its
+   intro.`, `The draft loses its intro.`), then `## Ledger`, `## Behavior
+   changes` (omit when empty), and `## Diff` in a `diff` fence (omit under
+   `--audit`), with no other sections.
 
    Nothing to cut or flag: one sentence saying so, with no sections.
    A stopped run states the result, then what the user must supply or

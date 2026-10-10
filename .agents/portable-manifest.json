@@ -1100,7 +1100,7 @@
         "references/skill-rubric.md": "plugins/skill-style/references/skill-rubric.md",
         "references/skill_diff.py": "plugins/skill-style/scripts/skill_diff.py"
       },
-      "bytes": 42610
+      "bytes": 45703
     },
     {
       "name": "slop-deslop",

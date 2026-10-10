@@ -43,14 +43,14 @@ graders:
       path: skills/tidy/SKILL.md
     pattern: 'Imports are an important part of any Python program'
 
-  - name: creates-nothing
-    type: tool_used
-    tool: Write
-    min: 0
-    max: 0
-    arm: both
-
-  - name: hero-line-is-one-short-sentence
+  - name: hero-follows-mode-template
     type: regex
     target: last_message
-    pattern: '^\s*(?:[^\s;]+[ \t]+){0,19}[^\s;]+[ \t]*\n'
+    pattern: '^[^\s]+ has (?:[^\s;.!?]+[ \t]+){0,15}[^\s;.!?]+ to cut\.[ \t]*\n'
+
+  - name: only-contract-headings
+    type: regex
+    target: last_message
+    pattern: '^## (?!Ledger$|Behavior changes$|Diff$)'
+    flags: m
+    match: not_contains

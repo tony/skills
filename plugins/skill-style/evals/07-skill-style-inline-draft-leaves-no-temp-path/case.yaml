@@ -53,13 +53,20 @@ graders:
     flags: m
     match: not_contains
 
-  - name: hero-line-is-one-short-sentence
+  - name: hero-follows-mode-template
     type: regex
     target: last_message
-    pattern: '^\s*(?:[^\s;]+[ \t]+){0,19}[^\s;]+[ \t]*\n'
+    pattern: '^The draft loses (?:[^\s;.!?]+[ \t]+){0,15}[^\s;.!?]+\.[ \t]*\n'
 
   - name: diff-cuts-the-filler
     type: regex
     target: last_message
     pattern: '^-Imports are an important part'
     flags: m
+
+  - name: only-contract-headings
+    type: regex
+    target: last_message
+    pattern: '^## (?!Ledger$|Behavior changes$|Diff$)'
+    flags: m
+    match: not_contains

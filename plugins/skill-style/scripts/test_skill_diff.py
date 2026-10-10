@@ -149,13 +149,15 @@ def test_missing_final_newline_gets_marker(tmp_path: Path, monkeypatch: pytest.M
 def test_non_utf8_target_exits_2_and_leaves_no_snapshot(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
 ) -> None:
+    scratch = tmp_path / "scratch"
+    scratch.mkdir()
+    monkeypatch.setattr(tempfile, "tempdir", str(scratch))
     monkeypatch.chdir(tmp_path)
     target = tmp_path / "SKILL.md"
     target.write_bytes(b"caf\xe9\n")
-    before = set(Path(tempfile.gettempdir()).glob(f"{skill_diff.PREFIX}*"))
     assert skill_diff.main(["snapshot", str(target)]) == EXIT_MISSING
     assert "not UTF-8" in capsys.readouterr().err
-    assert set(Path(tempfile.gettempdir()).glob(f"{skill_diff.PREFIX}*")) == before
+    assert not list(scratch.iterdir())
 
 
 def test_outside_cwd_labels_are_unique(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
@@ -171,3 +173,28 @@ def test_outside_cwd_labels_are_unique(tmp_path: Path, monkeypatch: pytest.Monke
     root, out = skill_diff.snapshot(targets, cwd)
     assert [label for _, label in out] == ["a/SKILL.md", "b/SKILL.md"]
     skill_diff.clean(root)
+
+
+def test_report_renders_contract_and_rejects_malformed_bullets(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    monkeypatch.chdir(tmp_path)
+    target = tmp_path / "SKILL.md"
+    target.write_text("a\nfiller\n")
+    root, _ = skill_diff.snapshot([target], tmp_path)
+    target.write_text("a\n")
+    (root / "target.txt").write_text("demo")
+    (root / "cuts.txt").write_text("its filler")
+    (root / "ledger.md").write_text("- **Cut:** filler.\n")
+    assert skill_diff.main(["report", str(root), "edited"]) == EXIT_MISSING
+    assert "plain bullets" in capsys.readouterr().err
+    assert root.exists()
+    (root / "ledger.md").write_text("- Cut: filler.\n")
+    assert skill_diff.main(["report", str(root), "edited"]) == 0
+    out = capsys.readouterr().out
+    assert out.startswith(
+        "demo loses its filler.\n\n## Ledger\n\n- Cut: filler.\n\n## Diff\n\n```diff\n"
+    )
+    assert "## Behavior changes" not in out
+    assert out.endswith("-filler\n```\n")
+    assert not root.exists()

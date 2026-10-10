@@ -43,11 +43,12 @@ Claude Code uses a leading slash (`/skill-style:…`). Codex omits it (`skill-st
 
 Routes while a SKILL.md is being written, and takes targets when
 invoked by name (`/skill-style:skill-style <paths>`). It edits the
-targets in place, shows a diff against a pre-edit snapshot
-(`scripts/skill_diff.py`), and never commits, pushes, or scans the
+targets in place, shows a diff against a pre-edit snapshot, and
+renders the reply (opening, ledger, diff) with `scripts/skill_diff.py`.
+It never commits, pushes, or scans the
 repository unprompted.
 
-Flags: `--audit` reports the ledger and writes nothing; `--diff-only`
+Flags: `--audit` reports the ledger and writes nothing to the targets; `--diff-only`
 shows the edits without writing them. A SKILL.md pasted inline is
 trimmed without confirmation or git.
 
