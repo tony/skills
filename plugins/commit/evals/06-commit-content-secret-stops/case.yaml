@@ -56,4 +56,5 @@ graders:
     type: regex
     target: last_message
     match: not_contains
-    pattern: '(?i)\b(I|I''m|I''ve|me|my|we|our)\b'
+    pattern: '\b(I|I''m|I''ve|me|my|we|our)\b'
+    flags: i
