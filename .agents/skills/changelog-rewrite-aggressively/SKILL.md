@@ -211,14 +211,14 @@ Run only after the Phase 3 approval.
    `git push --force-with-lease --force-if-includes` the user needs.
 
    Reply in this shape, with plain bullets, no bold labels, and no local
-   paths. Read the project's commit format at reply time. Notes hold facts
-   the user must act on; omit passed checks, subject-format explanations,
-   and comparisons with earlier entries. Do not repeat dropped commit
-   subjects or old entry text; the dropped count and backup identify the
-   operation. Name a retained mixed commit only.
-   The example shows a committed result. For an uncommitted edit, state that
-   fact in the first sentence and replace the commit bullet with one
-   pasteable `console` command following `commit-message.md`.
+   paths. Read the project's commit format at reply time. Bullets follow
+   `entry-rules.md` Notes, plus no subject-format explanations. The dropped
+   count and backup identify the operation. A retained mixed commit gets one
+   bullet: its subject and that it also changes code.
+   The example shows a committed result. For an uncommitted edit, drop "added" from
+   the first sentence, state that the edit is uncommitted, and replace the commit bullet with one
+   pasteable `console` command in the exact `$ git commit \` form of
+   `commit-message.md`.
 
    ````text
    Rewrote the changelog history of feat/cache-evict: 3 changelog-only commits dropped, 1 added.

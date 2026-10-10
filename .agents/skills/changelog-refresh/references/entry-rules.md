@@ -10,6 +10,7 @@
 - Proportionality
 - Good and bad framing
 - Voice check and target line
+- Notes
 
 ## Project conventions outrank these defaults
 
@@ -124,8 +125,7 @@ Rewrite a draft entry that contains any of these:
 - Implementation flags, constants, and internal env vars.
 - Numeric tallies: file, line, test, or commit counts.
 - Git refs: SHAs, branch names, tag names, line numbers.
-- Version predictions: "new in v1.53", "landing in 2.0". Naming a version
-  that already shipped is fine ("restores the behaviour removed in 1.2").
+- Version predictions, per `branch-scope.md`.
 - Non-user-visible work: behavior-neutral refactors, type-only annotations,
   internal renames, lint cleanups, CI tweaks, test infrastructure,
   dev-tooling bumps.
@@ -187,3 +187,22 @@ presenting; never present it with a blank.
 A `Target` that names anything but the unreleased section means the user
 explicitly asked for a release. Otherwise stop and re-read the branch-scope
 rules.
+
+## Notes
+
+A reply is its template and nothing else: the result sentence, the summary
+line, entries, voice check, `Target`, then `Notes`. Prose outside the
+template is cut. `Notes` holds only these bullets, each stated once:
+
+- A change left out, with the evidence that is missing.
+- An unverified PR number: `(#???)` appears and the lookup failed or was not
+  authenticated.
+- Work left undone that needs the user's approval, named, with no offer to do
+  it and no advice on how to proceed.
+- A retained mixed commit: its subject and that it also changes code, nothing
+  about its changelog lines.
+- The backup branch and the push command, for a rewrite.
+
+Everything else is cut: advice ("you may want"), citations of rules, checks
+that passed, critique or description of old entries, and the reason a heading
+was not created.

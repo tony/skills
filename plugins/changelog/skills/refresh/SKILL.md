@@ -94,8 +94,8 @@ in order:
    (`Branch: <name> | Base: <base> | Changelog commits: <count>`), the proposed
    old to new markdown for each touched entry, the statement that everything
    else in the file is untouched, the voice check and `Target` line from
-   `entry-rules.md`, and `Notes` only for a fact the user must act on, such as
-   an out-of-reach correction left undone. Never recap checks that passed.
+   `entry-rules.md`, and `Notes` per `entry-rules.md`, such as an out-of-reach
+   correction left undone.
    Refer to commits by subject in prose, never by bare SHA. Close with the
    question, or when stopping, one line: nothing was edited; re-run with
    "refresh the entries" to edit only, or with `--commit` to apply and commit.
@@ -114,8 +114,8 @@ in order:
    ```
 
    Omit `Notes` when nothing was left undone. Each Notes bullet names what
-   was left undone and that it needs the user's approval; no alternatives or
-   offers beyond that.
+   was left undone and that it needs the user's approval. The no-change reply
+   ends after `Notes`.
 
    Reply in this shape, as plain text outside any code fence, with plain bullets, no bold (never `- **Label:** ...`), and no local paths:
 
@@ -145,7 +145,9 @@ in order:
    `git diff origin/<base>...HEAD -- <changelog-file>` for the committed
    footprint and `git diff -- <changelog-file>` for the edit; the edit must
    touch no line outside the Phase 1 footprint and the approved insertions.
-4. With `--commit` in `$ARGUMENTS`, commit the edit as one new commit on top,
+4. The reply opens with the summary line. A committed reply adds
+   `Committed as <subject>.` after the `Target` line. With `--commit` in
+   `$ARGUMENTS`, commit the edit as one new commit on top,
    per `commit-message.md`: no `Co-Authored-By`, no "Generated with" or other
    tool trailer, no emoji. Otherwise leave it uncommitted and show a
    ready-to-use commit message.

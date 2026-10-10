@@ -113,8 +113,7 @@ or local paths.
 
 When approval was already given, skip the Phase 3 reply and send only the
 Phase 4 reply, which carries the summary line, entries, voice check, `Target`
-line, and `Notes` itself. `Notes` holds only facts that explain an omission
-or that the user must act on, each stated once; leave out advice such as "you may want" and never justify the commit subject format.
+line, and `Notes` itself. `Notes` follows `entry-rules.md`.
 
 A stopped run (no commits ahead, on the base branch) is one result sentence,
 then what the user needs to do.

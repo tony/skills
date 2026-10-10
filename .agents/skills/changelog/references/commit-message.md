@@ -21,8 +21,8 @@ tiers.
    - The subject names what the changelog covers, not that one was added.
      Good: `docs(CHANGES) Help-on-empty CLI and sync --all flag`. Bad:
      `docs(CHANGES) Add changelog entry for help-on-empty CLI`.
-   - No version anywhere: not in a component (`docs(CHANGES[v1.53.x])`), the
-     subject, or the body ("for the 1.53 release").
+   - No version in the component (`docs(CHANGES[v1.53.x])`), subject, or
+     body, per `branch-scope.md`.
 
 Before the edit, run `git status --porcelain -- <changelog-file>`. Output
 means the user already has uncommitted content there, including an untracked
@@ -30,8 +30,7 @@ file: do not commit it, leave the edit uncommitted, and say why. A new file
 created by this run after approval may be staged and committed.
 
 Before committing, run the applicable project checks from `AGENTS.md` /
-`CLAUDE.md`. A failed check leaves the edit and backup refs available; report
-the failure and stop. Recheck the staged and unstaged changelog diffs before
+`CLAUDE.md`. A failed check leaves the edit in place; report the failure and stop. Recheck the staged and unstaged changelog diffs before
 the commit. If new user changes appeared, leave them uncommitted.
 
 Commit the changelog file by path, which leaves other staged files out:

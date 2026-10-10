@@ -18,7 +18,9 @@ whatever the branch is named.
   `## [1.2.3] - YYYY-MM-DD`). Entries land in the unreleased section.
 - Never state, predict, or derive the version the changes will land in, in
   any text you write (entries, headings, commit message, summary). A breaking
-  change does not make this `2.0.0`; do not reason about SemVer.
+  change does not make this `2.0.0`; do not reason about SemVer. "New in
+  v1.53" and "landing in 2.0" are predictions; naming a version that already
+  shipped is fine ("restores the behaviour removed in 1.2").
 - Never edit version files (`pyproject.toml`, `package.json`, `Cargo.toml`,
   `__about__.py`, `version.*`), create tags, or convert an `Unreleased` or
   placeholder heading into a version heading.

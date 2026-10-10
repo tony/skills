@@ -145,7 +145,7 @@
         "references/entry-rules.md": "plugins/changelog/references/entry-rules.md",
         "references/prose-rules.md": "plugins/changelog/references/prose-rules.md"
       },
-      "bytes": 26006
+      "bytes": 26698
     },
     {
       "name": "changelog-refresh",
@@ -158,7 +158,7 @@
         "references/entry-rules.md": "plugins/changelog/references/entry-rules.md",
         "references/prose-rules.md": "plugins/changelog/references/prose-rules.md"
       },
-      "bytes": 25522
+      "bytes": 26435
     },
     {
       "name": "changelog-rewrite-aggressively",
@@ -172,7 +172,7 @@
         "references/prose-rules.md": "plugins/changelog/references/prose-rules.md",
         "references/rewrite.py": "plugins/changelog/scripts/rewrite.py"
       },
-      "bytes": 42143
+      "bytes": 42990
     },
     {
       "name": "commit",
