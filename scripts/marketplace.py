@@ -2253,8 +2253,9 @@ def _check_paths(skill: BuiltSkill) -> list[str]:
     sibling link that lands on a different file fails; any other bundle-shaped
     path must name an emitted file. ``docs/`` is the one ambiguous prefix: slop and
     pr quote ``docs/install.md`` as a file in the *user's* project, so an
-    unresolved ``docs/`` token the builder left verbatim is not reported. A ``..`` climb toward a name outside
-    the resource directories is a user-project path and survives.
+    unresolved ``docs/`` token the builder left verbatim is not reported. A
+    ``..`` climb toward a name outside the resource directories is a
+    user-project path and survives.
     """
     errors: list[str] = []
     files = set(skill.files)
