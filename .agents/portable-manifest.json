@@ -672,7 +672,7 @@
         "references/prose-rules.md": "plugins/rebase/references/prose-rules.md",
         "references/replay.py": "plugins/rebase/scripts/replay.py"
       },
-      "bytes": 31919
+      "bytes": 32192
     },
     {
       "name": "release-bump",

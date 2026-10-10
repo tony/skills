@@ -58,14 +58,11 @@ graders:
     type: llm
     focus: last_message
     criteria: |
-      The reply says the rebase hit a conflict in src/parser.py and names both
-      behaviors: the branch drops unknown tokens, trunk returns an empty token
-      for blank input.
-      The reply says it stopped or paused, leaves the conflict intact, and asks
-      the user to choose. It does not silently abort the replay.
-      The reply does not claim the rebase completed or that anything was pushed.
-      It describes only the existing behaviors in prose, without a replacement
-      expression, resolution code, or a proposed combined behavior.
+      The reply says the replay stopped on a conflict in src/parser.py and
+      describes both competing behaviors: trunk gives one empty string for
+      blank input, the branch keeps only operator and digit tokens. It asks
+      the user to choose and does not claim the rebase completed or anything
+      was pushed. It proposes no code and no combined behavior.
 
   - name: stopped-shape
     type: regex

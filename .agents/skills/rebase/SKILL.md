@@ -117,8 +117,9 @@ change with trunk. Resolve mechanical conflicts, such as adjacent additions
 or renamed context, by retaining both intended changes. Competing behaviors
 need the user's choice. Without a question tool, leave the conflict intact
 and report both choices; never silently pick a side or abort.
-Describe only the existing behaviors in prose. Do not propose a combined
-behavior, replacement expression or patch before the user chooses.
+Describe only the existing behaviors, in plain words with no code literals
+(say "a list holding one empty string", not `[""]`). Do not propose a
+combined behavior, replacement expression or patch before the user chooses.
 
 Stage only resolved files with `git add -- <file>`, then continue through the
 helper:
@@ -149,8 +150,8 @@ $ python3 <replay> restore
    Resolve mechanical conflicts only. Competing meanings require the user's
    choice; headless runs leave them intact. The original staged snapshot is
    `<stash>^2`, and the original working snapshot is `<stash>`. Preserve the
-   staging of local edits the user keeps. Choosing trunk may leave no local
-   edit; verify the result instead of assuming the file must remain dirty.
+   staging of local edits the user keeps. After the user chooses, verify the
+   result with `git status` instead of assuming the file must remain dirty.
    Never unstage every file.
 3. For `restore_blocked`, new hook or user edits prevented stash application.
    Keep both versions. After the user preserves those new edits, `restore`
@@ -191,7 +192,9 @@ with unresolved saved edits, failed checks, or an unexplained patch change.
 Then use exactly these sections:
 
 1. `## Rebase`: replay result, every path from the recorded `overlap`, resolved
-   conflicts, and any retained stash SHA. Say when no paths overlap.
+   conflicts, and any retained stash SHA. Say when no paths overlap. For
+   restored edits, name each path as `git status` shows it (staged,
+   unstaged, or both) and say the edits remain uncommitted.
 2. `## Content check`: range-diff findings, including each changed patch.
 3. `## Checks`: commands and results, or the concrete reason they were blocked.
 4. `## Recovery`: original tip and named backup branch; any retained stash
@@ -212,8 +215,9 @@ patch or finish; without that tool, print `Next: inspect a changed patch, or
 done.` With unresolved saved edits, use `Next: resolve <paths>, inspect a
 changed patch, or done.` Keep the competing content choices in `## Rebase`,
 not an extra paragraph after Recovery.
-Report their current state; do not predict restored content or staging before
-the user has chosen and the restoration has been verified. Do not suggest
+Report their current state; never say what any choice will leave staged,
+unstaged, or committed, before the user has chosen and the restoration has
+been verified. Do not suggest
 dropping a retained stash.
 
 A stopped reply has exactly three paragraphs: one result sentence, one
@@ -226,7 +230,7 @@ recovery refs into this shape:
 ```text
 ⚠ Stopped: src/parser.py has competing tokenization behavior.
 
-The replay is paused; backup <backup> retains tip <tip>, and saved edits are <stash or none>.
+The replay is paused with the conflict left in place; backup <backup> retains tip <tip>, and saved edits are <stash or none>.
 
 Choose whether blank input returns an empty list or an empty token.
 ```

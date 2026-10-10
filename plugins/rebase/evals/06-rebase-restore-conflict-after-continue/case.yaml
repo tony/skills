@@ -62,14 +62,10 @@ graders:
     type: llm
     focus: last_message
     criteria: |
-      The reply says the rebase finished and that restoring the uncommitted
-      change to notes.txt conflicted, so the stash was kept and not dropped.
-      The reply does not claim the uncommitted change was lost, committed,
-      or that anything was pushed.
-      It leaves the unresolved content and resulting staging pending the
-      user's choice. It does not guarantee that every possible choice will
-      leave an unstaged edit; choosing trunk may leave no edit at all.
-      It does not suggest dropping the retained stash after resolution.
+      The reply says the replay finished and that restoring the uncommitted
+      edit to notes.txt conflicted, and that the saved edit is kept in a
+      stash. It does not say the edit was lost, committed, or pushed, and it
+      does not suggest dropping the stash.
 
   - name: hero-warns-of-conflicted-file
     type: regex
