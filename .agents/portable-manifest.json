@@ -1042,7 +1042,7 @@
         "references/report-shape.md": "plugins/situate/references/report-shape.md",
         "references/situation-sweep.md": "plugins/situate/references/situation-sweep.md"
       },
-      "bytes": 38110
+      "bytes": 38135
     },
     {
       "name": "situate-brief",
@@ -1082,7 +1082,7 @@
         "references/report-shape.md": "plugins/situate/references/report-shape.md",
         "references/situation-sweep.md": "plugins/situate/references/situation-sweep.md"
       },
-      "bytes": 37602
+      "bytes": 37627
     },
     {
       "name": "situate-what",

@@ -29,17 +29,18 @@ left no artifact, work resumed after a gap.
 
 `agentgrep` reads Codex, Claude, Cursor, Gemini, Antigravity, Grok, Pi,
 and OpenCode stores. `uvx` provisions the pinned version in an isolated
-environment; the pin selects a release, not proof of a code review. Use
-this spelling in every command below:
+environment; the pin selects a release, not proof of a code review.
+`<agentgrep>` below stands for `uvx agentgrep@0.1.0a52`, the only place the
+pin is written; spell it out in each command:
 
 ```console
-$ uvx agentgrep@0.1.0a52 search \
+$ <agentgrep> search \
     --only-here \
     --limit 20 \
     '<term>'
 ```
 
-Flags change between releases; run `uvx agentgrep@0.1.0a52 search --help`
+Flags change between releases; run `<agentgrep> search --help`
 first and adjust to what it lists.
 
 Absent network or a `uvx` failure, report the layer unavailable and
@@ -57,7 +58,7 @@ current repository; `--here` merely boosts them and will drag in
 unrelated projects.
 
 ```console
-$ uvx agentgrep@0.1.0a52 search \
+$ <agentgrep> search \
     --only-here \
     --branch "$(git branch --show-current)" \
     --limit 20 \
@@ -82,7 +83,7 @@ limit. Otherwise, when its `worktree` path differs from this checkout's
 root, scope to that primary checkout explicitly:
 
 ```console
-$ uvx agentgrep@0.1.0a52 search \
+$ <agentgrep> search \
     --repo "<primary-checkout>" \
     --limit 20 \
     '<term>'
@@ -100,7 +101,7 @@ confirm the exact command with the user when a term holds shell
 metacharacters (`$`, backticks, `;`, `|`, `&`, newlines).
 
 ```console
-$ uvx agentgrep@0.1.0a52 search \
+$ <agentgrep> search \
     --only-here \
     --limit 20 \
     'ENG-123 OR "retry backoff"'
