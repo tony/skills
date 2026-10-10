@@ -77,6 +77,7 @@ Open with a one-line hero (`✓ <topic>: <verdict>, <confidence> confidence`, `�
 2. `## Criteria`: one line per criterion: the rating for each option, confidence, source ids and their kinds.
 3. `## Open`: unknown ratings and open questions, one bullet each; the last bullet is the ship-check result (`check ok`, `check failing: <checks>`, or `check not run`).
 4. `## Run`: date, `<namespace>/<topic>`, and mode; no path.
+5. `## Next`: the one recommended step.
 
 Write per `prose-rules.md`: plain bullets, no bold labels, no sentence narrating your own edits ("I added…"), no closing recap.
 

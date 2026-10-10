@@ -64,7 +64,13 @@ One repository at a time, quoting `<repo-url>`, which is the filtered URL from s
 $ git clone -- <repo-url> "$HOME/study/<language>/<repo-name>/"
 ```
 
-When the directory exists, update it:
+When the directory exists, compare its origin with `<repo-url>` first; a different repository is `failed: directory holds another repository`, and nothing is fetched into it:
+
+```console
+$ git -C "$HOME/study/<language>/<repo-name>/" remote get-url origin
+```
+
+When the origin matches, update it:
 
 ```console
 $ git -C "$HOME/study/<language>/<repo-name>/" fetch --tags --force

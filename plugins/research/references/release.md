@@ -66,7 +66,7 @@ Open with a one-line hero (`✓ Released <hash> to <who>` or `✓ Released <hash
 
 Write per `prose-rules.md`: plain bullets, no bold labels, no sentence narrating your own edits ("I added…"), no closing recap.
 
-A check-only run has no `## Trail`. Offer only options that can run now: with a failing check, no release, decision, or export. Panel options: fix and check again, record the decision, export, stop. Without an interactive host, print the options as a numbered list.
+A check-only run has no `## Trail`. Offer only options that can run now: with a failing check, no release, decision, or export. When the check passed offline only, the panel offers release on the captures alone (`--offline --allow-offline`, the user's call), wait for network access and check again, and stop; `## Next` carries no options. Panel options otherwise: fix and check again, record the decision, export, stop. Without an interactive host, print the options as a numbered list.
 
 Reply in this shape, as plain text outside any code fence, with plain bullets, no bold (never `- **Label:** ...`), and no local paths:
 
