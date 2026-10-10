@@ -32,6 +32,6 @@ graders:
     focus: last_message
     criteria: |
       The reply says it did not apply anything because there is no plan to
-      execute, and tells the user to run the plan phase (02-plan) and approve it.
+      execute, and tells the user to run the plan phase (02-plan) first.
       It reports no commit SHA or wall-time comparison, and does not claim to
       have applied or committed any item.

@@ -1,8 +1,9 @@
 schema_version: "1.0"
 name: 10-pipeline-success-commit
 description: >-
-  With a validated speedup recorded, an approved plan is applied, verified
-  green, and committed locally as one commit, never pushed.
+  With a validated speedup recorded, an approved plan is applied from its bound
+  patch, verified green, and committed as one commit on a new branch, leaving
+  the user's checkout untouched and never pushing.
 tags: [fixture, git]
 
 context:
@@ -13,7 +14,7 @@ execution:
     /pytest-optimizer:pytest-optimizer --phase=plan
 
     Plan and apply the benchmarked speedup. I approve the orchestration plan and
-    the one-commit plan: lower DELAY in tests/test_slow.py and commit it locally.
+    the one-commit plan: lower DELAY in tests/test_slow.py and commit it.
   max_turns: 60
   timeout_seconds: 1200
   allowed_tools: [Bash, Read, Edit, Write, Glob, Grep, Skill]
@@ -36,11 +37,29 @@ graders:
     max: 0
     arm: both
 
-  - name: reports-the-applied-commit
+  - name: tracked-file-unchanged
+    type: regex
+    target:
+      source: file
+      path: tests/test_slow.py
+    pattern: '^import time\n\nDELAY = 0\.8\n\n\ndef test_slow\(\):\n    time\.sleep\(DELAY\)\n$'
+
+  - name: never-merges-or-cleans
+    type: tool_used
+    tool: Bash
+    input_match: 'git(?:\s+-[Cc]\s*\S+)*\s+(?:merge|clean|checkout|stash|pull|rebase)'
+    min: 0
+    max: 0
+    arm: both
+
+  - name: reports-the-branch-commit
     type: llm
     focus: last_message
     criteria: |
-      The reply says one speedup was applied and committed, gives a commit SHA or
-      subject, and gives a measured suite time lower than the 0.8s baseline. It
-      does not claim to have pushed anything or to have applied more than one
-      change.
+      The reply says one speedup was applied and committed on a new branch, gives
+      a commit SHA or subject, gives a measured suite time lower than the 0.8s
+      starting time, and ends by telling the user the command that merges that
+      branch (git merge --ff-only with the branch name). It does not claim the
+      branch was merged or that anything was pushed, does not claim more than one
+      change was applied, and does not call the saving "recovered" before it was
+      measured on the final tree.

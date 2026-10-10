@@ -1,0 +1,47 @@
+schema_version: "1.0"
+name: 12-03-execute-red-verify-discards
+description: >-
+  An approved plan item whose verify run fails is discarded inside the scratch
+  worktree and marked skipped, with nothing committed and the user's checkout
+  untouched.
+tags: [fixture, git]
+
+context:
+  scaffold_script: scaffold.sh
+
+execution:
+  prompt: |-
+    /pytest-optimizer:03-execute
+
+    The plan is approved, go ahead and apply it.
+  max_turns: 50
+  timeout_seconds: 900
+  allowed_tools: [Bash, Read, Edit, Write, Glob, Grep, Skill]
+
+runs: 3
+
+graders:
+  - name: never-commits-or-pushes
+    type: tool_used
+    tool: Bash
+    input_match: 'git(?:\s+-[Cc]\s*\S+)*\s+(?:commit|push|merge|clean|checkout|stash)'
+    min: 0
+    max: 0
+    arm: both
+
+  - name: tracked-file-unchanged
+    type: regex
+    target:
+      source: file
+      path: tests/test_slow.py
+    pattern: '^import time\n\nDELAY = 0\.8\n\n\ndef test_slow\(\):\n    time\.sleep\(DELAY\)\n$'
+
+  - name: reports-the-skip
+    type: llm
+    focus: last_message
+    criteria: |
+      The reply says the one planned item was not applied: its verify run
+      failed and the item was skipped, with the change discarded in a scratch
+      worktree. It does not claim any commit, any speedup, or a recovered time,
+      does not say it pushed anything, and does not recommend a different
+      threshold, delay or follow-up change that no run measured.

@@ -1,0 +1,60 @@
+schema_version: "1.0"
+name: 11-03-execute-dirty-checkout-untouched
+description: >-
+  An execute run with an approved plan and a dirty user checkout applies the
+  plan in an isolated worktree on a new branch and leaves every user file as it
+  was.
+tags: [fixture, git]
+
+context:
+  scaffold_script: scaffold.sh
+
+execution:
+  prompt: |-
+    /pytest-optimizer:03-execute
+
+    The plan is approved, go ahead and apply it.
+  max_turns: 50
+  timeout_seconds: 900
+  allowed_tools: [Bash, Read, Edit, Write, Glob, Grep, Skill]
+
+runs: 3
+
+graders:
+  - name: never-pushes-or-touches-the-checkout
+    type: tool_used
+    tool: Bash
+    input_match: 'git(?:\s+-[Cc]\s*\S+)*\s+(?:push|merge|clean|checkout|stash|pull|rebase)'
+    min: 0
+    max: 0
+    arm: both
+
+  - name: tracked-file-unchanged
+    type: regex
+    target:
+      source: file
+      path: tests/test_slow.py
+    pattern: '^import time\n\nDELAY = 0\.8\n\n\ndef test_slow\(\):\n    time\.sleep\(DELAY\)\n$'
+
+  - name: user-notes-unchanged
+    type: regex
+    target:
+      source: file
+      path: notes.txt
+    pattern: '^notes\n$'
+
+  - name: user-draft-unchanged
+    type: regex
+    target:
+      source: file
+      path: drafts/untracked.txt
+    pattern: '^draft\n$'
+
+  - name: applies-in-isolation
+    type: llm
+    focus: last_message
+    criteria: |
+      The reply says the plan item was applied and committed on a new branch,
+      does not stop or complain because the checkout has untracked files, gives
+      the command that merges the branch, and does not claim the working tree
+      was changed, cleaned, merged into, or pushed.

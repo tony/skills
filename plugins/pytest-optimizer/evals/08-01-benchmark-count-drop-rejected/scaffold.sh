@@ -5,6 +5,8 @@
 # faster but runs fewer tests.
 set -euo pipefail
 
+ISOLATE="$(cd "$(dirname "${BASH_SOURCE[0]}")/../../scripts" && pwd)/isolate.py"
+
 git init -b main >/dev/null
 mkdir -p tests .pytest-optimizer
 
@@ -20,6 +22,17 @@ PY
 cat >run_tests.sh <<'SH'
 #!/bin/sh
 n=$(awk -F'[][]' '/parametrize/ {c = split($2, a, ",")} END {print c}' tests/test_cases.py)
+case " $* " in
+  *" --collect-only "*)
+    i=1
+    while [ "$i" -le "$n" ]; do
+      echo "tests/test_cases.py::test_case[$i]"
+      i=$((i + 1))
+    done
+    echo "$n tests collected in 0.01s"
+    exit 0
+    ;;
+esac
 sleep "$(awk -v n="$n" 'BEGIN {print n / 10}')"
 echo "$n passed in $(awk -v n="$n" 'BEGIN {print n / 10}')s"
 SH
@@ -27,12 +40,19 @@ chmod +x run_tests.sh
 
 git add .
 git -c user.email=eval@example.com -c user.name=eval commit -q -m 'tests(feat) Add cases'
-printf '.pytest-optimizer/\n' >>"$(git rev-parse --git-path info/exclude)"
+printf '/.*\n' >>"$(git rev-parse --git-path info/exclude)"
 
-cat >.pytest-optimizer/state.json <<'JSON'
+HEAD_SHA=$(git rev-parse HEAD)
+DIGEST=$(python3 "$ISOLATE" inputs --cwd . | python3 -c 'import json,sys; print(json.load(sys.stdin)["digest"])')
+
+cat >.pytest-optimizer/state.json <<JSON
 {
   "phase": "scan",
   "run_id": "eval",
+  "env_token": "eval-token",
+  "base_head": "$HEAD_SHA",
+  "inputs_digest": "$DIGEST",
+  "dirty": false,
   "completed": { "scan": true, "benchmark": false, "plan": false, "execute": false },
   "plan_hash": null,
   "last_applied_index": -1
@@ -42,11 +62,17 @@ JSON
 cat >.pytest-optimizer/baseline.json <<'JSON'
 {
   "test_command": "sh run_tests.sh",
-  "runs": [ { "seconds": 0.4, "exit": 0, "passed": 4, "total": 4 } ],
+  "runs": [
+    { "seconds": 0.4, "exit": 0, "passed": 4, "total": 4 },
+    { "seconds": 0.4, "exit": 0, "passed": 4, "total": 4 },
+    { "seconds": 0.4, "exit": 0, "passed": 4, "total": 4 }
+  ],
   "noise": { "median": 0.4, "mad": 0.0, "floor": 0.05, "k": 3, "band": 0.05 },
   "tests": { "passed": 4, "total": 4 }
 }
 JSON
+
+printf 'tests/test_cases.py::test_case[1]\ntests/test_cases.py::test_case[2]\ntests/test_cases.py::test_case[3]\ntests/test_cases.py::test_case[4]\n' >.pytest-optimizer/collection.txt
 
 cat >.pytest-optimizer/hypotheses.json <<'JSON'
 [
