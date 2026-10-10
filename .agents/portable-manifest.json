@@ -260,7 +260,7 @@
         "references/source-links.md": "plugins/gh/references/source-links.md",
         "references/source-pins.md": "plugins/gh/references/source-pins.md"
       },
-      "bytes": 40062
+      "bytes": 39979
     },
     {
       "name": "gh-rendered-markdown",
@@ -275,7 +275,7 @@
         "references/source-links.md": "plugins/gh/references/source-links.md",
         "references/source-pins.md": "plugins/gh/references/source-pins.md"
       },
-      "bytes": 26465
+      "bytes": 26420
     },
     {
       "name": "git-branch-redo-from-scratch",
@@ -1299,7 +1299,7 @@
         "references/prose-rules.md": "plugins/ticket/references/prose-rules.md",
         "references/resolve.md": "plugins/ticket/references/resolve.md"
       },
-      "bytes": 45413
+      "bytes": 45176
     },
     {
       "name": "ticket-rebuild",
@@ -1313,7 +1313,7 @@
         "references/prose-rules.md": "plugins/ticket/references/prose-rules.md",
         "references/resolve.md": "plugins/ticket/references/resolve.md"
       },
-      "bytes": 42834
+      "bytes": 42597
     },
     {
       "name": "weave-architecture",

@@ -12,12 +12,12 @@ three years. Write it per `../../references/prose-rules.md`.
 
 Read these references before drafting:
 
-- `../../references/rendered-markdown.md` — wrapping, symbols, code
+- `../../references/rendered-markdown.md`: wrapping, symbols, code
   fences, `<details>`, structure, mentions, what to leave out, and the
   preview command.
-- `../../references/source-links.md` — autolinking and
+- `../../references/source-links.md`: autolinking and
   cross-repo references.
-- `../../references/source-pins.md` — pinned refs and verification of cited contents.
+- `../../references/source-pins.md`: pinned refs and verification of cited contents.
 
 For a pull-request description, a repository markdown file, or a commit
 message, also read `../../references/pr-and-files.md`.

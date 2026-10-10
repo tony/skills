@@ -19,7 +19,7 @@ Use evidence in this order, stopping at the first that answers:
 4. Integration metadata.
 5. An explicit statement from the user.
 6. A branch-name or ticket-key convention.
-7. Textual inference — last resort, and say that you inferred.
+7. Textual inference: last resort, and say that you inferred.
 
 Key shape is not provider evidence. `#123` fits GitHub, GitLab, and Azure
 DevOps. `ENG-123` fits Jira, Linear, and Shortcut. The words `Epic`,
@@ -48,7 +48,7 @@ provider has no such concept. Follow child links only when they are useful.
 Do not infer a parent because two items share a project, a milestone, a
 sprint, a cycle, an iteration, a version, a board, a label, a document, or an
 assignee. Shared membership is `grouped_by`, `scheduled_in`, or
-`visualized_by` — never `parent_of`.
+`visualized_by`: never `parent_of`.
 
 ## Collect orthogonal context separately
 
@@ -64,7 +64,7 @@ Record the parent and ancestors apart from associations such as `scheduled_in`
 
 The absence of a level is information. Report it.
 
-A GitHub issue with no parent is an issue with no parent — not an implied
+A GitHub issue with no parent is an issue with no parent, not an implied
 epic. A Linear issue with no project is reported with its team; a project is
 not inferred from labels or title wording. A Jira story with no epic is
 unparented, and its sprint or version is not its parent. A Trello card is
@@ -96,7 +96,7 @@ Space, it is not the root work container.`
 Provider defaults, in the provider files below, are fallback
 guidance and not proof
 of how an installation is set up. Inspect real metadata when it is
-reachable — Jira's configured hierarchy and renamed work types, GitHub custom
+reachable: Jira's configured hierarchy and renamed work types, GitHub custom
 issue types, GitLab tier and configured work item types, Azure DevOps process
 customization, Trello custom fields and power-ups, Shortcut workspace
 features, Linear plan-dependent sub-initiatives, Asana portfolios and custom
@@ -140,7 +140,7 @@ agent can actually read and write.
 - `providers/shortcut.md`
 - `providers/trello.md`
 - `providers/asana.md`
-- `providers/generic.md` — the fallback for anything else, which
+- `providers/generic.md`: the fallback for anything else, which
   assumes nothing is auto-detected and no write backend exists.
 
 The defaults in those files are fallback guidance. An instance's own

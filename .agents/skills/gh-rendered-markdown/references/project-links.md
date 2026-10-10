@@ -10,7 +10,7 @@ Render the project name linked to its primary home, with the rest
 alongside (project and version below are illustrative):
 
 ```
-[vitest](https://vitest.dev) — [repo](https://github.com/vitest-dev/vitest), [docs](https://vitest.dev/guide/), [v1.2.3 release notes](https://github.com/vitest-dev/vitest/releases/tag/v1.2.3), [npm](https://www.npmjs.com/package/vitest)
+[vitest](https://vitest.dev): [repo](https://github.com/vitest-dev/vitest), [docs](https://vitest.dev/guide/), [v1.2.3 release notes](https://github.com/vitest-dev/vitest/releases/tag/v1.2.3), [npm](https://www.npmjs.com/package/vitest)
 ```
 
 Drop a slot that genuinely does not exist rather than pointing two
@@ -93,5 +93,5 @@ specific version. When a project publishes no releases, link a tag-pinned
 - [RubyGems API](https://guides.rubygems.org/rubygems-org-api/)
 - [Go modules reference, GOPROXY protocol](https://go.dev/ref/mod#goproxy-protocol)
 - [npm `package.json` `repository`](https://docs.npmjs.com/cli/v10/configuring-npm/package-json#repository)
-- [REST: releases](https://docs.github.com/en/rest/releases/releases) — "latest release"
-- [crates.io data access policy](https://crates.io/data-access) — user-agent requirement
+- [REST: releases](https://docs.github.com/en/rest/releases/releases): "latest release"
+- [crates.io data access policy](https://crates.io/data-access): user-agent requirement

@@ -19,14 +19,14 @@ Source: https://developers.asana.com/docs/object-hierarchy
 
 Portfolio is tier-gated to Advanced and above; a Project may sit in more than one
 Portfolio. Project is the principal delivery container. Section is project-local ordering
-and grouping — a phase, column, or category; a Task occupies one Section per Project it is
+and grouping, a phase, column, or category; a Task occupies one Section per Project it is
 homed in, and a Section is not a container of record. Subtask is itself a full Task with
 the same fields.
 
 There is no native timebox: Asana ships no Sprint, Iteration, or Cycle object. There is
 no native release group: nothing corresponds to a GitHub Milestone, a GitLab Milestone,
 or a Jira Version. Do not invent one. Teams approximate both with a Section, a
-dedicated Project, a Portfolio, or a custom field — convention, not a native level.
+dedicated Project, a Portfolio, or a custom field: convention, not a native level.
 
 Task subtypes are a field, not a label: `resource_subtype` takes `approval`, `custom`,
 `default_task`, or `milestone`
@@ -34,33 +34,33 @@ Task subtypes are a field, not a label: `resource_subtype` takes `approval`, `cu
 
 ## Semantic roles
 
-- Workspace / Organization — scope_container. native, required.
-- Team — scope_container, second level. native, required for a Project in an Organization.
-- Portfolio — delivery_group, higher order. native_tier_gated (Advanced+), optional.
-- Project — delivery_group, principal. native, required.
-- Section — no canonical role; default meaning is project-local grouping or workflow state. native, optional. `grouped_by`, never `parent_of`.
-- Task — work_item. native, required.
-- Subtask — sub_item. native, optional. `child_of` its Task.
-- Task with `resource_subtype: milestone` — checkpoint. native, optional. `checkpoint_of`
+- Workspace / Organization: scope_container. native, required.
+- Team: scope_container, second level. native, required for a Project in an Organization.
+- Portfolio: delivery_group, higher order. native_tier_gated (Advanced+), optional.
+- Project: delivery_group, principal. native, required.
+- Section: no canonical role; default meaning is project-local grouping or workflow state. native, optional. `grouped_by`, never `parent_of`.
+- Task: work_item. native, required.
+- Subtask: sub_item. native, optional. `child_of` its Task.
+- Task with `resource_subtype: milestone`: checkpoint. native, optional. `checkpoint_of`
   a Project; per the Tasks reference it cannot carry a start date.
-- Task with `resource_subtype: approval` — work_item. native_tier_gated (Advanced+),
+- Task with `resource_subtype: approval`: work_item. native_tier_gated (Advanced+),
   optional. It gates work rather than reviewing code, so record the gating edge as
   `blocks`. https://help.asana.com/s/article/how-to-use-approvals
-- Goal — strategic_goal. native_tier_gated (Advanced+), optional.
-- Goal metric — strategic_measure. native_tier_gated, optional. Written via
+- Goal: strategic_goal. native_tier_gated (Advanced+), optional.
+- Goal metric: strategic_measure. native_tier_gated, optional. Written via
   `POST /goals/{goal_gid}/setMetricCurrentValue`.
   https://developers.asana.com/reference/updategoalmetric
-- Project brief, and Project or Portfolio status update — document. native, optional.
-- Project views (List, Board, Timeline, Calendar) and saved reporting — view. native,
+- Project brief, and Project or Portfolio status update: document. native, optional.
+- Project views (List, Board, Timeline, Calendar) and saved reporting: view. native,
   optional, `visualized_by`.
-- timebox and release_group — absent natively; convention only.
+- timebox and release_group: absent natively; convention only.
 
 ## Orthogonal objects
 
 None of the following is a parent of a work item. A Milestone Task is `checkpoint_of` a
 Project: it marks a date, holds nothing under it, groups nothing. A Project brief is
 `documented_by` on the Project; a status update is `documented_by` on the Project,
-Portfolio, or Goal it reports on. Project views are `visualized_by` — switching to Board
+Portfolio, or Goal it reports on. Project views are `visualized_by`: switching to Board
 view changes no containment. An Approval Task is an ordinary Task that gates others and
 owns none of them, so it `blocks` rather than parents. Task `dependencies` /
 `dependents` are `blocks`. `review_artifact` is reserved for an external Pull Request
@@ -76,11 +76,11 @@ never `parent_of`. Source: https://developers.asana.com/reference/goal-relations
 First axis, auto-detection: Asana's renderer detects nothing in plain text. No `#N`, no
 issue key, no sigil, no commit-SHA autolink. A Task identifier is an opaque numeric `gid`
 that renders as literal digits and tells a reader nothing. The GitHub instinct "leave it
-bare" inverts here — a bare reference in Asana is always noise, so every reference must
+bare" inverts here; a bare reference in Asana is always noise, so every reference must
 be an explicit link.
 
 Body format is HTML, not markdown. "The rich text field name for an object is equivalent
-to its plain text field name prefixed with `html_`" — `html_notes` on a Task, `html_text`
+to its plain text field name prefixed with `html_`": `html_notes` on a Task, `html_text`
 on a comment. Content must be valid XML wrapped in `<body>`. Supported tags: `<body>`,
 `<strong>`, `<em>`, `<u>`, `<s>`, `<code>`, `<ol>`, `<ul>`, `<li>`, `<a>`, `<blockquote>`,
 `<pre>`, `<h1>`, `<h2>`, `<hr/>`, `<img>`, `<table>`, `<tr>`, `<td>`, `<object>`. "Only
@@ -94,21 +94,21 @@ live object name. Source: https://developers.asana.com/docs/rich-text
 
 Second axis, side effects on the target: one case is documented, and it is the one to be
 careful with. Asana's help docs state that @mentioning a PERSON in a task description or
-comment adds them as a collaborator on the task and sends them an Inbox notification — a
+comment adds them as a collaborator on the task and sends them an Inbox notification: a
 user mention is a write against a human's queue. To merely name someone, write their name
 as plain text and do not link the user GID.
 Source: https://help.asana.com/s/article/collaborating-in-asana
 
 UNVERIFIED: whether mentioning a Task, Project, Portfolio, or Goal produces any visible
-backreference — story, activity entry, or notification — on the target. Asana's help
+backreference (story, activity entry, or notification) on the target. Asana's help
 material describes object mentions only as creating a link that connects work; no official
 page found states a target-side event, and the Stories reference publishes no enumerated
 `resource_subtype` list in which such an event could be confirmed. Assume no backreference
 exists: if the connection must be discoverable FROM the target, a description link is not
-enough — use a native relation (dependency, subtask, multi-home, or goal relationship).
+enough; use a native relation (dependency, subtask, multi-home, or goal relationship).
 
 Cross-container: a `gid` is unique across the workspace, so the link form for a Task in
-another Project, Team, or Portfolio is identical — there is no `owner/repo#N`-style
+another Project, Team, or Portfolio is identical; there is no `owner/repo#N`-style
 qualifier and no cross-container penalty to weigh. Across workspaces, or for a reader
 without access, the GID anchor will not resolve for them; use the object's `permalink_url`
 in a plain `<a href="...">`, expect a permission wall rather than a broken link, and name
@@ -148,8 +148,8 @@ closed items goes under Unverified.
 - Never say "Section" to mean containment; it is project-local grouping.
 - Never say "Portfolio" to mean a container of Tasks; it gathers Projects and Portfolios.
 - Never say "Sprint", "Iteration", "Cycle", "Epic", "Version", or "Release" as if Asana has
-  such an object. Name what the team actually built — a Section, a Project, a Portfolio, a
-  custom field — and say it is a convention.
+  such an object. Name what the team actually built (a Section, a Project, a Portfolio, a
+  custom field) and say it is a convention.
 - Never say "Tag" to mean a container; it is a cross-project label.
 - Never assume one Project per Task. Multi-homing is normal Asana practice, so "move this
   to Project X" may need to be "also add it to Project X."

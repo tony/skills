@@ -24,7 +24,7 @@ Three default levels, numbered by Jira itself: level 1 Epic-level work item,
 level 0 standard work item (Story, Task, Bug, Incident, Request, and every
 other standard Work Type), level -1 Subtask ([configure the work type
 hierarchy](https://support.atlassian.com/jira-cloud-administration/docs/configure-the-issue-type-hierarchy/)).
-A Jira Task is level 0 — beside Story and Bug, never beneath them — and nothing
+A Jira Task is level 0 (beside Story and Bug, never beneath them) and nothing
 sits between the Epic level and the standard level.
 
 The level-1 type can be renamed and still stays level 1. Levels above 1 are
@@ -40,32 +40,32 @@ unparented, not an implied Epic.
 
 ## Semantic roles
 
-- **Jira Space** — scope_container; native, required.
+- **Jira Space**: scope_container; native, required.
   Every work item is `contained_by` exactly one.
-- **Epic-level work item** — delivery_group; native, optional; `parent_of`
+- **Epic-level work item**: delivery_group; native, optional; `parent_of`
   standard work items.
-- **Configured level above Epic** — strategic_goal; native_tier_gated and
+- **Configured level above Epic**: strategic_goal; native_tier_gated and
   configurable, optional; absent on Free and Standard.
-- **Standard work item** (Story, Task, Bug, Incident, Request) — work_item;
+- **Standard work item** (Story, Task, Bug, Incident, Request), work_item;
   native, required as the thing written.
-- **Subtask** — sub_item; native, optional, `child_of` required once created.
-- **Linked work items** (blocks, is blocked by, relates to, duplicates) —
+- **Subtask**: sub_item; native, optional, `child_of` required once created.
+- **Linked work items** (blocks, is blocked by, relates to, duplicates),
   `blocks` and `relates_to`; native, optional, reciprocal by construction.
-- **strategic_measure** — absent natively; convention only, via a custom field
+- **strategic_measure**: absent natively; convention only, via a custom field
   or a configured Work Type. Do not present it as native.
 
 ## Orthogonal objects
 
-- **Sprint** — timebox; native to Jira Software, optional; `scheduled_in`.
-- **Version**, surfaced as Release — release_group; native, optional;
+- **Sprint**: timebox; native to Jira Software, optional; `scheduled_in`.
+- **Version**, surfaced as Release: release_group; native, optional;
   `released_in`.
-- **Board** — view; native, optional; `visualized_by`. A filter, not a
+- **Board**: view; native, optional; `visualized_by`. A filter, not a
   container.
-- **Plan** (cross-Space) — view; native_tier_gated, optional; `visualized_by`.
-- **Timeline** — view; native, optional; `visualized_by`.
-- **Confluence page or Jira Docs content** — document; external, optional;
+- **Plan** (cross-Space): view; native_tier_gated, optional; `visualized_by`.
+- **Timeline**: view; native, optional; `visualized_by`.
+- **Confluence page or Jira Docs content**: document; external, optional;
   `documented_by`.
-- **External Pull Request or Merge Request** — review_artifact; external,
+- **External Pull Request or Merge Request**: review_artifact; external,
   optional; `implemented_by`. Name it after its host.
 
 Jira has no universal native Milestone object. Translate by intent and say
@@ -77,7 +77,7 @@ item, component, or custom field.
 ## References and autolinks
 
 What the Cloud editor auto-detects in a description or comment: a typed work
-item key becomes a hyperlink to that work item — the behavior Atlassian's
+item key becomes a hyperlink to that work item, the behavior Atlassian's
 standing request to disable it describes ([JRACLOUD-37224](https://jira.atlassian.com/browse/JRACLOUD-37224));
 a pasted URL converts to a Smart Link, stored as an ADF [inlineCard](https://developer.atlassian.com/cloud/jira/platform/apis/document/nodes/inlineCard/)
 node and rendered inline by default ([Smart Link view options](https://support.atlassian.com/platform-experiences/docs/smart-link-view-options/));
@@ -106,13 +106,13 @@ Smart Link registers on the target; whether a Confluence URL inside a Jira body
 registers on the page; whether a bare key written through the API rather than
 typed in the editor still renders as a link.
 
-Applied. Same site, any Space, work item exists: bare uppercase key, no link —
+Applied. Same site, any Space, work item exists: bare uppercase key, no link,
 the renderer links it and nothing lands on the target. Any Atlassian object
 without a key (Sprint, Version, Board, Plan, Confluence page): titled
 `[text](url)`, so the reference still reads when the reader cannot unfurl it.
 Different Atlassian site, or any non-Atlassian tracker: full titled link, since
 a key resolves only inside its own site. For a visible reciprocal relationship
-do not lean on prose — create a Linked work item of the right type, the one
+do not lean on prose: create a Linked work item of the right type, the one
 in-tracker mechanism that shows on both objects by design.
 
 ## Reading and writing
@@ -127,12 +127,12 @@ and [v2](https://developer.atlassian.com/cloud/jira/platform/rest/v2/intro/)
 expose the same operations; v3 takes rich text as [ADF](https://developer.atlassian.com/cloud/jira/platform/apis/document/structure/)
 JSON, v2 takes wiki markup strings. Neither accepts markdown, and
 autoformatting is an editor behavior, so `[text](url)` inside an ADF text node
-stays literal — emit a text node carrying a `link` mark for a titled link, or
+stays literal: emit a text node carrying a `link` mark for a titled link, or
 an `inlineCard` node for a Smart Link, and the two-axis choice is exactly yours.
 
 MCP: the hosted [Atlassian Rovo MCP Server](https://support.atlassian.com/atlassian-rovo-mcp-server/docs/supported-tools/)
-groups Jira tools into read, write, and search — get a work item, create one,
-edit fields, add a comment, link two work items, JQL search — gated by
+groups Jira tools into read, write, and search (get a work item, create one,
+edit fields, add a comment, link two work items, JQL search) gated by
 org-granted permission groups, over OAuth or an API token.
 
 Write format. The Jira description field takes plain text or ADF, never
@@ -166,6 +166,6 @@ the Atlassian Project reporting object. Never say Space when you mean a
 Confluence Space. Never say Issue Type where the instance says Work Type. Never
 say Initiative unless you have read that level in the configuration. Never call
 a Jira Task a subtask, and never map it onto a GitLab Task or an Azure DevOps
-Task. Never say Milestone — name the Version, Sprint, date, or field you
+Task. Never say Milestone: name the Version, Sprint, date, or field you
 actually mean. Never call a Sprint, Version, Board, or Plan a parent. Never
 write `#123`, and never invent a sigil for anything Jira does not key.

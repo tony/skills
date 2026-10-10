@@ -32,31 +32,31 @@ Canonical form: Epic > Feature > requirement-level Work Item > Task, joined by P
 ## Semantic roles
 
 - Organization, Project: scope_container, native, required; everything is contained_by a Project. Team is
-  also scope_container (native, required — a default team exists) but groups by Area Path subscription
+  also scope_container (native, required, a default team exists) but groups by Area Path subscription
   rather than by containment.
 - Epic, Feature: delivery_group, native, optional, parent_of the level beneath.
-- User Story / Product Backlog Item / Issue (Basic) / Requirement (CMMI): work_item, native, required —
+- User Story / Product Backlog Item / Issue (Basic) / Requirement (CMMI): work_item, native, required;
   this is the thing the ticket is. Task: sub_item, native, optional, child_of one of those. Bug:
   work_item or sub_item, configurable per Team, optional.
 - strategic_goal: absent natively. A custom portfolio backlog above Epic is configurable; anything else is
-  convention (tag, field, query). strategic_measure: absent — no native objective or key-result object,
+  convention (tag, field, query). strategic_measure: absent (no native objective or key-result object),
   so measured_by is convention via fields, tags, queries or a dashboard chart.
 
 ## Orthogonal objects
 
 - Iteration Path / Sprint: timebox, native, optional; scheduled_in.
 - Area Path: ownership and product grouping, native, required (defaults to the Project root node);
-  grouped_by. Most often mistaken for a parent — it is a field, not a link.
-- Classic release pipeline stage: release_group and deployment context, native but configurable — the
+  grouped_by. Most often mistaken for a parent; it is a field, not a link.
+- Classic release pipeline stage: release_group and deployment context, native but configurable; the
   Deployment control requires a Classic release pipeline and does not support YAML stages. released_in,
   via the "Integrated in release stage" link. checkpoint: absent natively; milestones are convention.
 - Board, Backlog, Taskboard, Query, Dashboard, Delivery Plan: view; visualized_by. Delivery Plans need
-  Basic access or higher — Stakeholders cannot use them.
+  Basic access or higher; Stakeholders cannot use them.
 - Wiki page, README: document, native, optional, via the Wiki link type; documented_by. Azure Repos Pull
   Request: review_artifact, native, optional, via the Pull Request external link type; implemented_by.
   Say "Pull Request", never "MR".
-- Test Plan, Test Suite, Test Case: no canonical role, native_tier_gated — test-management
-  objects, not code review. `review_artifact` is the Azure Repos Pull Request above and
+- Test Plan, Test Suite, Test Case: no canonical role, native_tier_gated (test-management
+  objects, not code review). `review_artifact` is the Azure Repos Pull Request above and
   nothing else. Test Case Management requires Basic + Test Plans access
   ([Access levels](https://learn.microsoft.com/en-us/azure/devops/organizations/security/access-levels?view=azure-devops)).
 
@@ -69,13 +69,13 @@ Auto-detected inside a Work Item description, rich-text field or Discussion comm
 - `#` plus a Work Item ID opens a picker and renders the reference as a link. Leave it bare; do not
   hand-write `[#1234](url)` for a same-Organization item.
 - `@` opens the identity picker and the mention emails the target. Never `@`-mention someone merely to name
-  them in prose — write the plain name. Through an API the raw form is `@<userID>` in the Markdown editor,
+  them in prose, write the plain name. Through an API the raw form is `@<userID>` in the Markdown editor,
   or an anchor carrying `data-vss-mention` in the HTML editor
   ([Use @mentions](https://learn.microsoft.com/en-us/azure/devops/organizations/notifications/at-mentions?view=azure-devops)).
 - `!` opens a pull request picker and inserts a clickable link; documented for GitHub pull requests in a
   connected repository
   ([Link GitHub commits, PRs, branches, and issues](https://learn.microsoft.com/en-us/azure/devops/boards/github/link-to-from-github?view=azure-devops)).
-- Escape a hash you do not mean as a reference — write `\#` for hex colors — or the editor offers
+- Escape a hash you do not mean as a reference (write `\#` for hex colors) or the editor offers
   work-item suggestions. In table cells, leave a blank space around a work item or pull request mention.
   Bare URL autolinking is documented for pull request comments and wikis but is UNVERIFIED for Work Item
   fields; use an explicit `[text](url)` there.
@@ -84,7 +84,7 @@ Which of those create a side effect on the target:
 
 - `@mention` sends email. Loudest side effect in the product.
 - `#ID` inside a Work Item field renders a link in the body. Whether it also writes a relation onto the
-  target's Links tab is UNVERIFIED — the docs say "link to another work item" without stating a link
+  target's Links tab is UNVERIFIED; the docs say "link to another work item" without stating a link
   relation is created. The Comments REST API does return parsed `mentions` with an `artifactType` of person
   or work item, so the reference is recorded on the comment. When a durable, queryable relation is wanted,
   add a real Related or Parent/Child link instead of relying on `#`.
@@ -92,7 +92,7 @@ Which of those create a side effect on the target:
   Azure Repos pull request description creates a Pull Request link. Both are real writes
   ([Link work items to objects](https://learn.microsoft.com/en-us/azure/devops/boards/backlogs/add-link?view=azure-devops)).
 - From GitHub, `AB#{ID}` creates a link only from a commit message, pull request description, or issue
-  description — in a comment or a pull request title it creates nothing. Keywords in front of it
+  description: in a comment or a pull request title it creates nothing. Keywords in front of it
   (`Fixed AB#123`, `Closed AB#123`) also transition the work item's state. That is a mutation, not a
   reference; never emit one unless the user asked for the transition.
 
@@ -103,7 +103,7 @@ Cross-container:
   ([Rename a project](https://learn.microsoft.com/en-us/azure/devops/organizations/projects/rename-project?view=azure-devops)).
   Whether the `#` picker searches outside the current Project is UNVERIFIED, so write an explicit titled
   link: `[Contoso 1234](https://dev.azure.com/{org}/{project}/_workitems/edit/1234)`.
-- Another Organization: `#ID` does not resolve — use the full URL. For a tracked relation use Remote
+- Another Organization: `#ID` does not resolve: use the full URL. For a tracked relation use Remote
   Related, Consumes From, or Produces For, which require both organizations to be managed by the same
   Microsoft Entra ID
   ([Link type reference](https://learn.microsoft.com/en-us/azure/devops/boards/queries/link-type-reference?view=azure-devops)).
@@ -147,14 +147,14 @@ $ az boards query --wiql "SELECT [System.Id], [System.Title], [System.State] FRO
 
 Never write, in a drafted Azure DevOps body:
 
-- Bare "Project" meaning a delivery_group — an Azure DevOps Project is a scope_container.
-- Bare "Issue" — the requirement-level type in Basic, and a separate off-backlog type in Agile and CMMI.
+- Bare "Project" meaning a delivery_group: an Azure DevOps Project is a scope_container.
+- Bare "Issue": the requirement-level type in Basic, and a separate off-backlog type in Agile and CMMI.
 - "Story" in a Scrum or CMMI Project; those types are Product Backlog Item and Requirement, and "User
   Story" is Agile-only.
-- "Epic" as a strategic_goal — it is a delivery_group, present in all four processes.
+- "Epic" as a strategic_goal: it is a delivery_group, present in all four processes.
 - "Sprint" when you mean the field; the field is Iteration Path. "Area" or Area Path as a parent, an epic,
-  or an owner queue — it is a grouped_by field.
+  or an owner queue; it is a grouped_by field.
 - "Release" as a Boards object; releases and stages live in Azure Pipelines. "Backlog", "Board",
   "Taskboard", "Delivery Plan" as containers; all four are views.
-- "Ticket", "card", "MR", "sub-task", "milestone", "Team Project" — the natives are Work Item, Pull
+- "Ticket", "card", "MR", "sub-task", "milestone", "Team Project": the natives are Work Item, Pull
   Request, Task, Project, and for milestones nothing at all.

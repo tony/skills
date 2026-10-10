@@ -1,4 +1,4 @@
-# Altitude — what each kind of body carries
+# Altitude: what each kind of body carries
 
 Contents: Roles that are never authored; strategic_goal; strategic_measure; delivery_group; work_item; sub_item; document; review_artifact.
 
@@ -28,12 +28,12 @@ If someone asks for "a ticket for the Q3 milestone", they mean a
 
 ## `strategic_goal`
 
-Carries: **Outcome** — one paragraph on what changes and for whom.
-**Why now** — what makes this the moment, when there is an answer.
-**Not doing** — the adjacent things it will be mistaken for.
-**Delivery groups** — links to children.
+Carries **Outcome**: one paragraph on what changes and for whom.
+**Why now**: what makes this the moment, when there is an answer.
+**Not doing**: the adjacent things it will be mistaken for.
+**Delivery groups**: links to children.
 
-Invariants only when existential; most name none. No technical content. No dates as gates. No evidence section — a goal is not
+Invariants only when existential; most name none. No technical content. No dates as gates. No evidence section; a goal is not
 a defect report.
 
 ## `strategic_measure`
@@ -46,13 +46,13 @@ never grows a task list.
 
 ## `delivery_group`
 
-Carries: **Outcome** — the user-visible result, in a paragraph.
-**Evidence** — only when the group exists because something is broken, and
+Carries **Outcome**: the user-visible result, in a paragraph.
+**Evidence**: only when the group exists because something is broken, and
 only enough to establish that it is.
-**Invariants** — the few whose violation makes the whole group pointless.
-**Intent** — the current direction, labelled non-binding.
-**Not doing** — explicit non-goals.
-**Children** — links, each with one line on why it belongs.
+**Invariants**: the few whose violation makes the whole group pointless.
+**Intent**: the current direction, labelled non-binding.
+**Not doing**: explicit non-goals.
+**Children**: links, each with one line on why it belongs.
 
 No implementation. No storage engines, no schemas, no file layouts, no CLI
 surfaces. If that thinking exists, it belongs in a `document` and the group
@@ -65,17 +65,17 @@ everything below inherits it.
 
 The full contract shape, and where most of the work happens.
 
-Carries: **Summary** — what happens and who it affects, in two or three
+Carries **Summary**: what happens and who it affects, in two or three
 sentences. Always present.
-**Motivation** — for proposals: what is awkward or impossible today, shown
+**Motivation** (for proposals): what is awkward or impossible today, shown
 concretely.
-**Reproduction**, **Expected**, **Actual**, **Environment** — for defects.
+**Reproduction**, **Expected**, **Actual**, **Environment** (for defects).
 Numbered steps, one command per fence, versions folded into a details block.
-**Evidence** — logs and output, folded, read for secrets first.
-**Invariants** — what would make the fix worthless or break a neighbour.
-**Intent** — the suggested approach, labelled non-binding.
-**Not doing** — non-goals, when there is a plausible misreading.
-**References** — pinned links, per `contract.md` and the provider file.
+**Evidence**: logs and output, folded, read for secrets first.
+**Invariants**: what would make the fix worthless or break a neighbour.
+**Intent**: the suggested approach, labelled non-binding.
+**Not doing**: non-goals, when there is a plausible misreading.
+**References**: pinned links, per `contract.md` and the provider file.
 
 Include only the sections you have content for. A one-line typo report does
 not get nine headings. Match the shape to the finding.
@@ -83,7 +83,7 @@ not get nine headings. Match the shape to the finding.
 ## `sub_item`
 
 Short. What to do, and a link to the parent. Concrete and technical is
-correct here — this is the altitude that specifics belong to.
+correct here; this is the altitude that specifics belong to.
 
 Do not restate the parent's invariants. They are inherited, and restating
 them creates a second copy to drift.
@@ -93,9 +93,9 @@ its own intent section is a `work_item` that was filed in the wrong place.
 
 ## `document`
 
-Carries: **What this decides** — the decisions, each with what it chose
-against. **What it leaves open** — named explicitly, so nobody reads silence
-as settled. **References** — pinned.
+Carries **What this decides**: the decisions, each with what it chose
+against. **What it leaves open**: named explicitly, so nobody reads silence
+as settled. **References**: pinned.
 
 No acceptance criteria. No schedule. No assignee. A document is not tracked
 work; it is the thing tracked work points at.
@@ -106,15 +106,15 @@ cut the group back to an outcome.
 
 ## `review_artifact`
 
-Describes the net shipped result of the branch. **No future tense at all** —
+Describes the net shipped result of the branch. **No future tense at all**:
 this is the one role where the work is already done and the body is a report,
 not a proposal.
 
-Carries: **Summary** — bullets opening with an impact label.
-**Changes by area** — grouped, for multi-module work.
-**Design decisions** — the trade-offs made, with the alternative and why not.
-**Verification** — copyable commands.
-**Test plan** — what each item validates, not just the command.
+Carries **Summary**: bullets opening with an impact label.
+**Changes by area**: grouped, for multi-module work.
+**Design decisions**: the trade-offs made, with the alternative and why not.
+**Verification**: copyable commands.
+**Test plan**: what each item validates, not just the command.
 
 Describe the branch's net result, not its internal evolution. Fixups,
 reverts-then-re-adds, and intermediate states belong in the commits that made

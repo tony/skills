@@ -1,13 +1,13 @@
 # The content contract
 
-Contents: Past — the cost-to-relearn filter; Present — nothing that rots; Future — invariants and intent; The rule that catches the worst failure.
+Contents: Past (the cost-to-relearn filter); Present (nothing that rots); Future (invariants and intent); The rule that catches the worst failure.
 
 Every body this plugin writes follows three rules, one per tense, the same
 for a GitHub issue, a Linear project, a Confluence page, and a merge request.
 How much of each an object carries is in `altitude.md`; how a renderer
 expresses a reference is in the provider's file, indexed in `resolve.md`.
 
-## Past — the cost-to-relearn filter
+## Past: the cost-to-relearn filter
 
 Carry what cannot be recovered from the repository. Drop what can.
 
@@ -36,10 +36,10 @@ happened while drafting: carry the final form, not the move.
 The test: **if this were deleted, would the reader have to redo work to get
 it back?** Yes, keep it. No, cut it.
 
-Quote a durable source verbatim and pin the link. Paraphrase a conversation —
+Quote a durable source verbatim and pin the link. Paraphrase a conversation;
 there is nothing to pin, and inventing a citation is worse than having none.
 
-## Present — nothing that rots
+## Present: nothing that rots
 
 A reference must survive the next refactor and must not create side effects
 you did not intend.
@@ -48,7 +48,7 @@ Do not write insertion counts, file counts, test counts, or line counts. Do
 not write "as of <date>". Do not link `blob/main`. Do not put a line anchor
 on an unpinned ref. Name the symbol, the path, or a pinned permalink instead.
 
-Counts, dates, and hashes stay when they *are* the evidence — a benchmark
+Counts, dates, and hashes stay when they *are* the evidence: a benchmark
 result, the version a bug first appeared in, the commit a revert targets.
 Evidence is not slop. The difference is whether the number is the claim or
 merely decoration on one.
@@ -85,7 +85,7 @@ Never `@mention` anyone in a generated body, including mentions in a body
 being rebuilt. A mention subscribes and notifies the person, and re-saving a
 body can send it again.
 
-## Future — invariants and intent
+## Future: invariants and intent
 
 A body states what it is for and what would make it worthless. It does not
 pre-commit the implementation.
@@ -110,7 +110,7 @@ preference goes so that it informs without governing.
 
 **Not doing.** Explicit non-goals. Cheaper to write than to re-litigate.
 
-No checkbox definition-of-done. No measurement threshold as a gate — a
+No checkbox definition-of-done. No measurement threshold as a gate; a
 threshold is a number, and a number in the future tense is a guess wearing
 a uniform. If a performance floor is genuinely existential, it is an
 invariant and it is stated as one, in terms of what a user notices.

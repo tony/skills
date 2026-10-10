@@ -40,7 +40,7 @@ Strip before publishing, every time:
 - Machine names, internal hostnames, LAN addresses, and container ids.
 - Email addresses, real names of people who did not consent to be
   named, and account handles used as attribution.
-- Tokens, keys, cookies, session ids, and signed URLs — including
+- Tokens, keys, cookies, session ids, and signed URLs, including
   inside pasted logs and stack traces.
 - Internal-only URLs a reader outside the org cannot open. Say what
   they contain instead of linking them.
@@ -56,7 +56,7 @@ Use a fenced block for anything a reader would otherwise retype.
 - No comments inside a fence. Explanation goes above the block as
   ordinary prose.
 - A single long command may span lines with a trailing `\`, and a
-  multi-statement one-liner may use `\;` — that is still one command.
+  multi-statement one-liner may use `\;`; that is still one command.
 - Shell commands use `console` with a `$ ` prefix; a multi-line script
   uses `bash` with no prompts. Tag source `python`, `ts`, `rust` when
   highlighting earns it. Plain output and logs may stay untagged.
@@ -79,7 +79,7 @@ matrices, and anything else a reader scrolls past to reach the point.
 - The blank line after `</summary>` is required. Without it the body
   is raw HTML and every fence, list, and `**bold**` renders literally.
   This is the single most common way a body ships broken.
-- No markdown inside `<summary>` — asterisks and backticks render as
+- No markdown inside `<summary>`: asterisks and backticks render as
   themselves there. Use `<b>` or `<code>`, or plain text.
 - `<details open>` works, and blocks nest, each level needing its own
   blank line after its `</summary>`.
@@ -102,7 +102,7 @@ duplicates it. GitHub's own issue templates emit `###` per section.
 ### Alerts stay at the top level
 
 `> [!NOTE]`, `> [!TIP]`, `> [!IMPORTANT]`, `> [!WARNING]`,
-`> [!CAUTION]` — and no others. GitHub does not support an alert nested
+`> [!CAUTION]`, and no others. GitHub does not support an alert nested
 inside another element, such as a `<details>` block or a list item. The
 marker sits alone on its blockquote line.
 
@@ -119,7 +119,7 @@ issue. Citing twenty related issues notifies twenty threads.
 - Preamble and sign-off. Start at the finding.
 - Test counts, file counts, line counts, and "as of" dates.
 - Line numbers in prose. Pin a permalink instead.
-- Narration of the draft itself — "I have updated the section above".
+- Narration of the draft itself: "I have updated the section above".
 - `comprehensive`, `robust`, `seamless`, `production-ready`,
   `leverage`, `delve`. Say what the thing does.
 - Coded labels (`[R1]`, `Option B`) in text a human reads.

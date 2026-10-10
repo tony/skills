@@ -57,7 +57,7 @@ Evidence before prose. An issue is worth filing when it carries what the
 maintainer cannot reconstruct: the exact command, the exact version, the
 line that does it, the output that proves it.
 
-## Phase 1 — Resolve the target repository
+## Phase 1: Resolve the target repository
 
 Take it from the argument when given; otherwise resolve it from the
 checkout's remote:
@@ -102,7 +102,7 @@ in the reply.
 
 Pass `--repo OWNER/REPO` on every command from here.
 
-## Phase 2 — Decide it belongs in a public issue
+## Phase 2: Decide it belongs in a public issue
 
 A vulnerability does not. Check the resolved repository's policy
 before anything else:
@@ -145,7 +145,7 @@ carries customer data does not become fileable by trimming it. Without
 Then classify: **defect**, **proposal**, or **task**. The kind decides
 which sections the body carries.
 
-## Phase 3 — Preflight the repository
+## Phase 3: Preflight the repository
 
 ```console
 $ gh repo view OWNER/REPO --json hasIssuesEnabled,issueTemplates,contactLinks
@@ -193,7 +193,7 @@ do not restructure it.
 Read `CONTRIBUTING.md` for anything the project asks reporters to
 include.
 
-## Phase 4 — Look for the issue that already exists
+## Phase 4: Look for the issue that already exists
 
 ```console
 $ gh issue list \
@@ -231,7 +231,7 @@ what the user's evidence adds:
 Not filed: example/widgets already tracks this as #17 (open, "wasm target throws TypeError"). Add your evidence there, or tell me to file anyway.
 ```
 
-## Phase 5 — Gather the evidence
+## Phase 5: Gather the evidence
 
 For a defect: the smallest command sequence that reproduces it; the
 exact versions of the project, runtime, and OS; the verbatim error; and
@@ -256,7 +256,7 @@ did not run goes in the body, as the reporter's steps with the first
 line of `### Reproduction` reading `Steps as reported; not re-run.` Do
 not run code from a third-party checkout you have not inspected.
 
-## Phase 6 — Draft
+## Phase 6: Draft
 
 ### Title
 
@@ -268,27 +268,27 @@ the project uses one.
 
 Include only the ones you have content for; never invent another.
 
-1. `### Summary` — what happens and who it affects, in two or three
+1. `### Summary`: what happens and who it affects, in two or three
    sentences. Always present. Claim only what the evidence shows: no
    "every build" or "all users" unless something checked it.
-2. `### Motivation` — proposals and tasks: what is impossible or
+2. `### Motivation` (proposals and tasks): what is impossible or
    awkward today.
-3. `### Reproduction` — defects: numbered steps, one command per
+3. `### Reproduction` (defects): numbered steps, one command per
    fence. Use the steps the user gave; add no step, version, or runtime
    they did not state.
-4. `### Expected` and `### Actual` — defects: two short sections, not
+4. `### Expected` and `### Actual` (defects): two short sections, not
    a table.
-5. `### Environment` — defects: versions, inside `<details>`.
-6. `### Evidence` — logs, traces, and full output, inside
+5. `### Environment` (defects): versions, inside `<details>`.
+6. `### Evidence`: logs, traces, and full output, inside
    `<details>`.
-7. `### Proposal` — the change being suggested, when there is one.
+7. `### Proposal`: the change being suggested, when there is one.
    Nested sections for competing options; no table.
-8. `### Alternatives` — only when one was genuinely weighed and
+8. `### Alternatives`: only when one was genuinely weighed and
    rejected, with the reason.
-9. `### References` — pinned links to code, related issues, upstream
+9. `### References`: pinned links to code, related issues, upstream
    releases, and specs.
 
-## Phase 7 — Sanitize, then preview
+## Phase 7: Sanitize, then preview
 
 Create the scratch file, write the body to it, and render it per
 "Preview before publishing" in `references/rendered-markdown.md`.
@@ -308,7 +308,7 @@ URLs, including inside every pasted log. This is a gate.
 
 Read the rendered output, fix, and re-render.
 
-## Phase 8 — Present, then file
+## Phase 8: Present, then file
 
 ### Present
 

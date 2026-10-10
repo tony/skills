@@ -26,7 +26,7 @@ quote the lines in a fence next to the link.
 
 `#123` for an issue or pull request, and a 7-character commit ref for
 a commit. Both autolink with no markdown syntax. Issues and pull
-requests share one number space, so `#123` may land on either — do not
+requests share one number space, so `#123` may land on either; do not
 assert which in prose.
 
 Wrapping a reference in `[text](url)` suppresses the shortening;
@@ -71,10 +71,10 @@ page.
 
 ## Primary sources
 
-- [Creating a permanent link to a code snippet](https://docs.github.com/en/get-started/writing-on-github/working-with-advanced-formatting/creating-a-permanent-link-to-a-code-snippet) — snippet rendering scope, `?plain=1`
+- [Creating a permanent link to a code snippet](https://docs.github.com/en/get-started/writing-on-github/working-with-advanced-formatting/creating-a-permanent-link-to-a-code-snippet): snippet rendering scope, `?plain=1`
 - [Autolinked references and URLs](https://docs.github.com/en/get-started/writing-on-github/working-with-advanced-formatting/autolinked-references-and-urls)
-- [REST: autolinks](https://docs.github.com/en/rest/repos/autolinks) — admin only
+- [REST: autolinks](https://docs.github.com/en/rest/repos/autolinks): admin only
 - [REST: Git references](https://docs.github.com/en/rest/git/refs)
-- [Renaming a repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/renaming-a-repository) — redirects, and what breaks them
+- [Renaming a repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/renaming-a-repository): redirects, and what breaks them
 - [Renaming a branch](https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-branches-in-your-repository/renaming-a-branch)
 - [Rate limits for the REST API](https://docs.github.com/en/rest/using-the-rest-api/rate-limits-for-the-rest-api)

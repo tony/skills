@@ -34,37 +34,37 @@ no URL you can hand to someone. Promote it to a Card before treating it as work_
 
 ## Semantic roles
 
-- **Workspace** — scope_container. native, required.
-- **Board** — scope_container (the Card container). native, required. Reading it as a
+- **Workspace**: scope_container. native, required.
+- **Board**: scope_container (the Card container). native, required. Reading it as a
   project or workflow is convention; say so.
-- **List** — no canonical role; default meaning is workflow state. native, required (a
+- **List**: no canonical role; default meaning is workflow state. native, required (a
   Card must be in one). Never map a List to delivery_group or strategic_goal, and never
   emit `parent_of` from a List to its Cards.
-- **Card** — work_item. native, required.
-- **Checklist** — a named group of sub_items, `grouped_by` from the item's side. native,
+- **Card**: work_item. native, required.
+- **Checklist**: a named group of sub_items, `grouped_by` from the item's side. native,
   optional.
-- **Checklist item** — sub_item, `child_of` its Card. native, optional.
-- **Card description and attachments** — document (contextual). native, optional,
+- **Checklist item**: sub_item, `child_of` its Card. native, optional.
+- **Card description and attachments**: document (contextual). native, optional,
   `documented_by`. Linked external files or pages are external documents.
-- **Label / Custom Field** — the practical carrier for delivery_group, strategic_goal,
+- **Label / Custom Field**: the practical carrier for delivery_group, strategic_goal,
   or release_group when a Workspace actually uses one. Label is native; Custom Field is
   native_tier_gated (Standard and up). Both optional. Emit `grouped_by`, never
   `parent_of`.
-- **Board view** — view. native_tier_gated (Timeline, Calendar, Table, Dashboard, Map
+- **Board view**: view. native_tier_gated (Timeline, Calendar, Table, Dashboard, Map
   need Premium or Enterprise). optional.
 - **delivery_group, strategic_goal, strategic_measure, release_group, timebox,
-  checkpoint, review_artifact** — absent natively; convention at best, and only on
+  checkpoint, review_artifact**: absent natively; convention at best, and only on
   Workspace evidence. Trello has comments, not reviews.
 
 ## Orthogonal objects
 
-- **Due date and start date** — per-Card scheduling fields, not a timebox object. There
+- **Due date and start date**: per-Card scheduling fields, not a timebox object. There
   is no Sprint, so `scheduled_in` has no native target to point at.
-- **Board views and Workspace views** — `visualized_by` only. A Card on a Timeline is
-  not contained by it. **Labels, Custom Fields, Collections** — `grouped_by` only.
-- **Mirror card** (paid Workspaces) — the same Card surfaced on another Board, not a
+- **Board views and Workspace views**: `visualized_by` only. A Card on a Timeline is
+  not contained by it. **Labels, Custom Fields, Collections**: `grouped_by` only.
+- **Mirror card** (paid Workspaces): the same Card surfaced on another Board, not a
   child. **Board card** and **Link card** are pointers, not parents.
-- **Attachments and comments** — `documented_by`. A checked checklist item is the
+- **Attachments and comments**: `documented_by`. A checked checklist item is the
   nearest thing to a checkpoint and is still a sub_item, not a `checkpoint_of`.
 
 ## References and autolinks
@@ -88,7 +88,7 @@ visible event on a target.
 
 - Referring to another Card, same Board or any other, with no backreference wanted:
   write an explicit titled Markdown link to the target's `shortUrl`. There is no bare
-  form to prefer — Trello has no shorthand to leave bare, and a raw URL renders only as
+  form to prefer; Trello has no shorthand to leave bare, and a raw URL renders only as
   an unlabeled smart link.
 - Wanting the backreference: attach the Card, do not do it in the description. `desc` is
   a plain string field and attachments are a separate resource, so writing `desc` cannot
@@ -106,13 +106,13 @@ visible event on a target.
   "Numeric ID for the card on this board. Only unique to the board, and subject to
   change as the card moves." Not globally unique, and Trello does not linkify it.
 - Never put a bare URL in a Card **name**. A URL as a card title creates a Link card, or
-  a Mirror card in a paid Workspace — a different object that cannot hold a description
+  a Mirror card in a paid Workspace, a different object that cannot hold a description
   or comments.
 - Use `@` only when the notification is wanted. **Unverified:** whether `@mention` in a
   card *description* notifies; official docs cover comments and checklist items only.
 
 **Markdown deltas.** Nested blockquotes are unsupported. Tables, images, and task-list
-checkboxes are not documented as supported — do not emit them. A single newline does not
+checkboxes are not documented as supported; do not emit them. A single newline does not
 break a line; Trello
 ["requires an empty line to separate lines"](https://support.atlassian.com/trello/docs/special-characters/).
 Emoji use `:shortcode:`. Wrap a URL in backticks to show it raw inside a checklist item.
@@ -157,16 +157,16 @@ closed items goes under Unverified.
 
 Never say, in output or in a mapping:
 
-- **"Project"** — no Project object exists. Say Board or Workspace, and mark any project
+- **"Project"**: no Project object exists. Say Board or Workspace, and mark any project
   reading as convention.
 - **"Epic"**, **"Initiative"**, **"Feature"**, **"Story"**, **"Task"** as native types.
   They are Cards. A Card titled "Epic: X" is a Card.
-- **"Milestone"**, **"Sprint"**, **"Release"**, **"Iteration"**, **"Cycle"** — none
+- **"Milestone"**, **"Sprint"**, **"Release"**, **"Iteration"**, **"Cycle"**: none
   exist. A due date is a date, not a milestone.
-- **"Column"** — the noun is List; reserve "column" for Table view. **"Swimlane"** — not
-  a Trello object. **"Team"** — renamed to Workspace.
-- **"Sub-task"** for a checklist item — it is a checklist item, not independently
-  trackable. **"Sub-card"**, **"child card"**, **"parent card"** — Trello has no
+- **"Column"**: the noun is List; reserve "column" for Table view. **"Swimlane"**: not
+  a Trello object. **"Team"**: renamed to Workspace.
+- **"Sub-task"** for a checklist item: it is a checklist item, not independently
+  trackable. **"Sub-card"**, **"child card"**, **"parent card"**: Trello has no
   card-to-card parentage; an attachment between Cards is `relates_to`.
 - **"Ticket"** or **"issue"** for a Card in text that lands in Trello; the native noun is
   Card. **"#N"** for a Card, or any claim that a number, key, or SHA autolinks.
