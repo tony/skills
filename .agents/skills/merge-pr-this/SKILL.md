@@ -39,7 +39,7 @@ and every other `gh` call, and check the repo scope as the reference
 describes.
 
 ```console
-$ gh pr view <n> --json number,title,url,state,isDraft,baseRefName,mergeable,mergeStateStatus,reviewDecision
+$ gh pr view <n> --json number,title,url,state,isDraft,baseRefName,headRefOid,mergeable,mergeStateStatus,reviewDecision
 ```
 
 Trunk is the PR's `baseRefName`.
@@ -62,7 +62,7 @@ no "Generated with" or other tool trailer, and no emoji.
 ### 4. Merge
 
 Pass the user's `gh pr merge` flags through verbatim, with the strategy flag
-and `--match-head-commit <sha>`. Pass the composed message through the
+and the reference's `--match-head-commit <sha>` pin. Pass the composed message through the
 reference's `merge_pr.py merge` command, never inside a shell string. Use
 `--admin` only within the reference's policy.
 
@@ -98,7 +98,8 @@ merged", "I did not use --admin"). The hero states the cause only.
 
 State a failure as the fact the user needs; never quote the tool's error
 text or explain how a check works. Follow the reference's "Report wording".
-Write the sections per `references/prose-rules.md`.
+Write the sections per `references/prose-rules.md`, impersonally:
+no first person.
 
 Reply in this shape, as plain text outside any code fence, with plain
 bullets, no bold (never `- **Label:** ...`), and no local paths:
@@ -109,7 +110,7 @@ bullets, no bold (never `- **Label:** ...`), and no local paths:
 ## Merge readiness
 
 - Open, not a draft. CI green on the head after a wait on the lint job.
-- Behind main by one commit; rebased and force-pushed with the user's approval.
+- Behind main by one commit; rebased and force-pushed with the user's approval; previous head 3b1c9e4.
 
 ## Merge
 

@@ -203,7 +203,12 @@ def merge(message_file: str, gh_args: list[str]) -> int:
 
     The first line of the file is the subject; the body follows a blank line.
     Neither passes through a shell. The file and its directory are removed.
+    A merge without ``--match-head-commit`` is refused so an unverified push
+    cannot land.
     """
+    if not any(a == "--match-head-commit" or a.startswith("--match-head-commit=") for a in gh_args):
+        sys.stderr.write("refusing to merge without --match-head-commit <sha>\n")
+        return 2
     cmd = ["gh", "pr", "merge", *gh_args]
     msg = Path(message_file) if message_file else None
     body_file: Path | None = None

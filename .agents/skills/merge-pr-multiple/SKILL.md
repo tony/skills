@@ -31,7 +31,8 @@ conversation touched more PRs than the user likely means, or an
 argument doesn't match an open PR), present the candidates via
 `ask-user-choice` and let the user pick; without a question tool, halt and
 list them. Show the final roster
-before merging anything.
+before merging anything, with the statement that a PR found behind or
+conflicting is rebased and its branch force-pushed.
 
 List the open PRs to check the roster against. A failure means `gh` is
 unavailable or unauthenticated: report it and stop. `--limit` lifts the
@@ -120,7 +121,7 @@ merged"). The hero states the cause only: not "so neither PR was merged".
 1. `## Roster`: the PRs, detected topology (stack or independent),
    and merge order.
 2. `## Merges`: one bullet per PR: the gate result, rebase and conflicts if
-   any (a clean rebase is "rebased onto <base>", nothing more), CI outcome, merge commit short SHA with its subject as read back from
+   any (a clean rebase is "rebased onto <base>; previous head <short sha>", nothing more), CI outcome, merge commit short SHA with its subject as read back from
    the commit. Note a dropped `--delete-branch` on a stack parent, and the
    parent branches deleted after the last merge. Diagnostics about the
    environment belong in no bullet. Name a flag only when the run
@@ -131,7 +132,8 @@ merged"). The hero states the cause only: not "so neither PR was merged".
 
 State a failure as the fact the user needs; never quote the tool's error
 text or explain how a check works. Follow the reference's "Report wording".
-Write the sections per `references/prose-rules.md`.
+Write the sections per `references/prose-rules.md`, impersonally:
+no first person.
 
 Reply in this shape, as plain text outside any code fence, with plain
 bullets, no bold (never `- **Label:** ...`), and no local paths:
@@ -146,7 +148,7 @@ bullets, no bold (never `- **Label:** ...`), and no local paths:
 ## Merges
 
 - #31: gate passed, CI green, merged as 4f2a9c1 "sync(fix[client]) Retry transient network errors (#31)".
-- #32: rebased onto main; the type-check job failed. Not merged.
+- #32: rebased onto main (previous head 9ad03e1); the type-check job failed. Not merged.
 - #33: not attempted.
 
 ## Trunk

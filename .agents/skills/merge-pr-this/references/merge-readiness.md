@@ -47,7 +47,7 @@ than guessing. Without a question tool (Codex, headless runs), every
 Every read below carries the user's `--repo`, so the gate inspects the repo
 the merge will hit.
 
-- **Open and not draft**: `gh pr view <n> --json state,isDraft`.
+- **Open and not draft**: `gh pr view <n> --json state,isDraft,headRefOid`.
   A draft or closed PR halts the run.
 - **CI**: `gh pr checks <n>`. Pending checks (exit code 8) are waited on
   with `gh pr checks <n> --watch`. Failing checks halt the run: report
@@ -150,16 +150,21 @@ core loop, covered by the roster shown up front.
    Fix failures before pushing.
 7. Force-push the PR branch, and only that branch, with
    `git push --force-with-lease --force-if-includes`, never bare `--force`.
+   The report names the short head SHA from before the rebase (the
+   `headRefOid` read at the start), so the old branch tip stays recoverable. A halt after this step also names the branch now checked
+   out.
 8. Wait for CI on the rebased head with `gh pr checks <n> --watch`, unless
    the PR has no checks.
 
 ## Strategy and flag passthrough
 
-Pin the merge to the head that was verified: after the final CI wait, read
-`gh pr view <n> --json headRefOid` and pass `--match-head-commit <sha>`,
-unless the user supplied their own. A push after the checks passed then
-fails the merge instead of landing unreviewed commits; on that failure,
-re-run the gate and get a fresh `message-path`, because the merge
+Pin the merge to the head that was verified. Read `headRefOid` with the
+state the gate uses, and again after the final CI wait or push. If the two
+differ, the checks ran against another commit: re-run the gate. Pass the
+settled value as `--match-head-commit <sha>` unless the user supplied their
+own; `merge_pr.py merge` refuses to run without one. A push after the checks
+passed then fails the merge instead of landing unreviewed commits; on that
+failure, re-run the gate and get a fresh `message-path`, because the merge
 deleted the old message file.
 
 The default strategy is a merge commit (`--merge`). `--squash` and

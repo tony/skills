@@ -22,7 +22,7 @@ graders:
   - name: merges-with-strategy-and-head-pin
     type: tool_used
     tool: Bash
-    input_match: '(?:gh pr merge|merge_pr\.py merge)(?=[\s\S]*--squash)(?=[\s\S]*--match-head-commit[ =]0123456789abcdef0123456789abcdef01234567)'
+    input_match: '(?:gh pr merge|merge_pr\.py merge|\$\{?\w+\}? merge(?= --))(?=[\s\S]*--squash)(?=[\s\S]*--match-head-commit[ =]0123456789abcdef0123456789abcdef01234567)'
 
   - name: subject-follows-history-suffix
     type: tool_used
@@ -32,7 +32,7 @@ graders:
   - name: never-uses-admin
     type: tool_used
     tool: Bash
-    input_match: '(?:gh pr merge|merge_pr\.py merge)[\s\S]*--admin'
+    input_match: '(?:gh pr merge|merge_pr\.py merge|\$\{?\w+\}? merge(?= --))[\s\S]*--admin'
     min: 0
     max: 0
     arm: both

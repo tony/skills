@@ -22,7 +22,7 @@ graders:
   - name: merges-the-pr
     type: tool_used
     tool: Bash
-    input_match: '(?:gh pr merge|merge_pr\.py merge)(?:(?!merge_pr\.py|\bgh )[\s\S])*--match-head-commit'
+    input_match: '(?:gh pr merge|merge_pr\.py merge|\$\{?\w+\}? merge(?= --))(?:(?!merge_pr\.py|\bgh )[\s\S])*--match-head-commit'
 
   - name: message-passed-from-a-file
     type: tool_used
@@ -40,7 +40,7 @@ graders:
   - name: body-never-inline
     type: tool_used
     tool: Bash
-    input_match: '(?:gh pr merge|merge_pr\.py merge)(?:(?!merge_pr\.py|\bgh )[\s\S])*\s(-b|--body)\s'
+    input_match: '(?:gh pr merge|merge_pr\.py merge|\$\{?\w+\}? merge(?= --))(?:(?!merge_pr\.py|\bgh )[\s\S])*\s(-b|--body)\s'
     min: 0
     max: 0
     arm: both

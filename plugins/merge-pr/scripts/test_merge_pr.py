@@ -15,6 +15,7 @@ import pytest
 pytestmark = pytest.mark.integration(reason="uses an owned Git repository and the merge-pr CLI")
 
 SCRIPT = Path(__file__).with_name("merge_pr.py")
+PIN = ("--match-head-commit", "abc1234")
 GH_STUB = """#!/bin/sh
 case "$1 $2" in
   "pr view") cat "$STUB_DIR/pr-$3.json" ;;
@@ -174,7 +175,7 @@ def test_merge_passes_hostile_message_as_arguments(repo: Path, tmp_path: Path) -
     subject = "fix: `rm -rf` $(id) (#9)"
     body = "line one\nMERGE_MSG_END\n$(touch pwned)\n"
     Path(path).write_text(f"{subject}\n\n{body}")
-    done = _script(repo, "merge", "--message-file", path, "--", "9", "--squash")
+    done = _script(repo, "merge", "--message-file", path, "--", "9", "--squash", *PIN)
     assert done.returncode == 0
     args = (tmp_path / "stub" / "merge.args").read_text().splitlines()
     assert args[:4] == ["pr", "merge", "9", "--squash"]
@@ -186,6 +187,13 @@ def test_merge_passes_hostile_message_as_arguments(repo: Path, tmp_path: Path) -
 
 def test_merge_without_message_passes_flags_alone(repo: Path, tmp_path: Path) -> None:
     """No message file means no -t or -F."""
-    _script(repo, "merge", "--", "9", "--rebase")
+    _script(repo, "merge", "--", "9", "--rebase", *PIN)
     args = (tmp_path / "stub" / "merge.args").read_text().splitlines()
-    assert args == ["pr", "merge", "9", "--rebase"]
+    assert args == ["pr", "merge", "9", "--rebase", *PIN]
+
+
+def test_merge_refuses_without_head_pin(repo: Path, tmp_path: Path) -> None:
+    """A merge that does not pin the verified head never reaches gh."""
+    done = _script(repo, "merge", "--", "9", "--squash")
+    assert done.returncode != 0
+    assert not (tmp_path / "stub" / "merge.args").exists()
