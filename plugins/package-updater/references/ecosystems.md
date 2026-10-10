@@ -69,9 +69,13 @@ Each package under `majors` is a named bump (`uv lock --upgrade-package
 same treatment with `poetry update <name>` and `cargo update --package
 <name>`.
 
+With no lockfile argument the command compares every tracked lock at any
+depth, so a nested workspace lock is covered. A lock reported as
+`{"new": true}` is not in `HEAD` and has no baseline to compare.
+
 A file-level `error` leaves its moves unclassified. Stop before staging
-that lock; an unreadable committed baseline or unsupported package table
-cannot prove that no major changed.
+that lock; an unreadable committed baseline, an unsupported package table
+or an unrecognized version cannot prove that no major changed.
 
 ## Python with poetry or pip
 
@@ -98,12 +102,25 @@ set; prefer `ncu` so discovery and apply agree on what "outdated" means.
 
 **Apply** the in-range manifest bump, then install. `--target minor`
 keeps every major out of the bulk refresh (`ncu --help` documents
-`--target`); `ncu` takes majors by default. A major is
-a named bump with its own commit, applied with `ncu -u --target latest
-<name>`:
+`--target`) but still moves a 0.x package across a minor, which is a
+breaking move. A major is a named bump with its own commit, applied with
+`ncu -u --target latest <name>`:
 
 ```console
 $ ncu -u --target minor
+```
+
+Then classify the manifest edits before installing. The script reads
+every tracked `package.json`, so workspace members are covered. Each
+package under `majors` is a named bump: restore its range in
+`package.json` and apply it on its own. A range under `unclassified` (a URL, `workspace:` or
+`latest`) names no version to compare, so read it by hand; an `error`
+stops the bump:
+
+```console
+$ python3 <absolute path to repo_facts.py> \
+    --manifest-diff \
+    <repo>
 ```
 
 ```console
@@ -242,8 +259,8 @@ $ ncu --help
 
 Search the output and the vendor's settings page for `exclude-newer`
 (uv), `minimumReleaseAge` (pnpm), `min-release-age` (npm), and
-`cooldown` (ncu); these are search hints, not keys to copy. A tool that lists none has no cooldown support in the
-installed version. Settings pages:
+`cooldown` (ncu); these are search hints, not keys to copy. A tool that
+lists none has no cooldown support in the installed version. Settings pages:
 [uv](https://docs.astral.sh/uv/reference/settings/),
 [pnpm](https://pnpm.io/settings),
 [npm](https://docs.npmjs.com/cli/using-npm/config).
@@ -254,6 +271,17 @@ fails the install or falls back, and whether the lockfile records the
 window. Read what the tool prints on a run to confirm the window is in
 effect, and do not report versions it gates as current.
 
+The setting is either a rolling duration or a fixed cutoff timestamp
+(uv accepts both). A rolling window lapses when the release ages past it,
+so waiting works. A fixed cutoff never lapses by waiting: a release
+published after it stays hidden until the cutoff is changed. Name which
+form the repository uses, and do not give an eligible day for a fixed
+cutoff.
+
+A resolver may test each file of a release against the window by that
+file's upload time, so a release's earliest file being old enough does not
+make every file visible.
+
 Check for a cooldown before reporting a package as current: a release
 inside the window is invisible to the resolver, so a gated tree looks up
 to date.
@@ -261,14 +289,21 @@ to date.
 ## Release publication time
 
 The cooldown check compares a release's publication time with the
-window. Read the time from the registry in this run; an empty result or
-a non-zero exit means the version is not published, so stop. Each
-command prints one timestamp (PyPI's is the earliest file upload).
+window. Read the time from the registry in this run, with `set -o
+pipefail` set so a failed `curl` is not hidden by the `jq` after it. Each
+command prints one timestamp (PyPI's is the latest file upload, which
+errs toward waiting).
+
+Only an answer from the registry that lacks the version (HTTP 404, or a
+listing without it) shows it is unpublished. A non-zero exit, a timeout,
+an authentication failure or output that does not parse leaves
+publication unconfirmed: stop and say so, never that the version does
+not exist.
 
 PyPI, for a Python package or a tool published there (uv):
 
 ```console
-$ curl -fsS https://pypi.org/pypi/<name>/<version>/json | jq -r '[.urls[].upload_time_iso_8601] | min'
+$ curl -fsS https://pypi.org/pypi/<name>/<version>/json | jq -r '[.urls[].upload_time_iso_8601] | max'
 ```
 
 npm, for any Node package:

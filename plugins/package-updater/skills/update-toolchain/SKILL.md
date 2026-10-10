@@ -59,6 +59,11 @@ For a Go toolchain, the newest stable entry of
 python.org's release feed (`https://www.python.org/api/v2/downloads/release/`).
 Confirm the version exists before writing it.
 
+A pin that lists several versions (a mise array, several versions on one
+`.tool-versions` line) is a support set. Move one entry only when the user
+names it; otherwise list the set and ask. A pin file `repo_facts.py` lists
+under `failed` is unread: report it as not checked.
+
 Prefer the pin granularity the repository already uses. A repository
 pinning `3.14` rather than `3.14.2` has chosen to track the latest patch
 deliberately — do not "fix" it to an exact version.
@@ -140,7 +145,6 @@ needs them separated.
 Subject names the file and the tool. A routine bump's body is a link
 block and nothing else; `../../references/commit-conventions.md` has the
 shape. Write the message per `../../references/prose-rules.md`.
-No `Co-Authored-By`, no "Generated with" or other tool trailers, no emoji; do not mention the omission.
 
 A bump takes a `why:` above the link block when it:
 
@@ -163,12 +167,13 @@ pins, so they land here and never with a dependency bump. An `engines`
 floor takes a `why:`/`what:` body instead of a link block, because a
 floor exists for a reason the diff does not record.
 
-Branch and push handling follows Phase 4 of `../updating-packages/SKILL.md`.
+Branch handling follows Phase 4 of `../updating-packages/SKILL.md`; a
+push waits for step 7 and Phase 5.
 
-### 7. Verify
+### 7. Verify, then publish
 
 A toolchain bump changes what resolves, so run the project's own quality
-checks after it — including a lockfile check, since a new resolver may
+checks after it, before any push or worktree removal — including a lockfile check, since a new resolver may
 disagree with the committed lock. Attribute failures against the default
 branch before blaming the bump.
 
@@ -188,15 +193,17 @@ Open with the one-line hero `✓ N tools across M repos` (nothing else on that l
 sections in order, each omitted when it has nothing to report:
 
 1. `## Pins` — per repository, each tool's current version and target,
-   and what was excluded as not pinning it or already current.
+   and what was excluded as not pinning it or already current, and what
+   was not checked because a lookup failed.
 2. `## Spans` — per tool, every release between pin and target with
    verified links, and the headline changes each release carries.
    Describe the intermediate releases; do not just link them.
 3. `## Impact` — per repository and per tool, what the span actually
    reaches there: the behavior that changes underneath it, and what it
-   leaves untouched. Name gains, not only exclusions; where a claim rests on a command
-   the user can rerun, name it. A span that reaches nothing gets one line saying
-   so. No first-person sentence ("I checked ...") and no inventory of
+   leaves untouched. Name gains, not only exclusions; where a claim rests
+   on a command the user can rerun, name it. A span that reaches nothing
+   gets one line saying so only when a search or command run in this run
+   shows it; otherwise say the reach was not checked. No first-person sentence ("I checked ...") and no inventory of
    what the repository lacks (no justfile, no CI, no cooldown).
 4. `## Commits` — the commits made, one per tool per repository, and
    whether they were pushed. List each commit's hash and subject only;
@@ -219,11 +226,11 @@ Reply in this shape, as plain text outside any code fence, with plain bullets, n
 
 ## Spans
 
-- uv 0.6.2 to 0.7.3: the headline change of each release, from the notes read in this run. just 1.30.0 to 1.34.0: same.
+- uv 0.6.2 to 0.7.3: the headline change of each release, from the notes read in this run, with <release link per version>. just 1.30.0 to 1.34.0: same.
 
 ## Impact
 
-- The changes named above checked against this repo; `uv lock --check` passes, so uv.lock is unaffected.
+- The changes named above checked against this repo; `uv lock --check` passes, so uv.lock still resolves.
 
 ## Commits
 
@@ -237,11 +244,10 @@ Reply in this shape, as plain text outside any code fence, with plain bullets, n
 Label a repository by its name or directory name, never `cwd`. Never say
 a tool or response is a stub or mock; report only what the lookup
 returned. The bans of "Phase 6" in `../updating-packages/SKILL.md` apply
-to every section: no upstream fact from memory, no narration of this
-skill's rules ("so the commit has a `why:`") or of the link check ("all
-links return 200"), no inventory of absences ("the repo sets no
-cooldown"), no speculation about consumers or code not read, no statement
-that other branches or files are untouched, and no promise of later work.
+to every section, as do these: no narration of the link check ("all links
+return 200"), no inventory of absences ("the repo sets no cooldown"), no
+speculation about consumers or code not read, and no statement that other
+branches or files are untouched.
 
 When the run halts, read `../../references/stopped-run.md` in full and use
 its stopped-run contract. The plan gate is not a halt.

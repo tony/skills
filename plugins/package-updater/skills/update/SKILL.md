@@ -69,13 +69,13 @@ Exit plan mode before landing changes.
 ### 5. Land
 
 Work through repositories one at a time in the skill's commit order,
-pushing as each completes only when `--push` or `--pr` was passed, so an
-interrupted run resumes cleanly, except where the plan marked a
-repository local-only. Write
-commit messages and the report per `../../references/prose-rules.md`.
-No `Co-Authored-By`, no "Generated with" or other tool trailers, no emoji; do not mention the omission.
+verifying each (step 6) before it is pushed. Push only when `--push` or
+`--pr` was passed, the checks allow it per Phase 5 of the skill, and the
+plan did not mark the repository local-only; an interrupted run then
+resumes cleanly. Write commit messages and the report per
+`../../references/prose-rules.md`.
 
-Branch and push handling follows Phase 4 of the skill.
+Branch handling follows Phase 4 of the skill.
 
 With `--issue`, the audit is filed before the work starts: create the
 issue or Linear card listing what is outstanding, derive the branch name
@@ -88,11 +88,11 @@ the sweep, then `## Outstanding` with one plain bullet per repository
 and move (package or tool, current version, target, track). The pull
 request body is one sentence on what landed, then one bullet per track.
 
-### 6. Verify and report
+### 6. Verify, publish and report
 
 Run the project's own quality checks per repository, per the skill's
-verification phase. Attribute failures against the default branch before
-blaming a bump.
+verification phase, before any push or worktree removal. Attribute
+failures against the default branch before blaming a bump.
 
 ## Rules
 
@@ -111,18 +111,23 @@ blaming a bump.
 
 ## Output
 
-Open with a one-line hero (`✓ N commits across M repos` or, for
+A scope with no manifest, lockfile or pin file halts per
+`../../references/stopped-run.md`, also under `--audit-only`; it never
+prints an audit hero or "0 outdated".
+
+Otherwise open with a one-line hero (`✓ N commits across M repos` or, for
 `--audit-only`, `⚠ Audit only: N packages outdated`), then these
 sections in order, each omitted when it has nothing to report:
 
 1. `## Audit` — per repository, the ecosystems found and what is
    outdated in each, separated into what moves in-range and what needs a
    manifest edit. Note what was excluded as fork, unowned, or already
-   current.
+   current, and what was not checked because a lookup failed.
 2. `## Gated` — releases the cooldown currently hides, with the date each
    becomes visible.
 3. `## Moves` — one entry per distinct chain: what changed upstream,
-   verified links, and which repositories it reaches.
+   the links to every release in its span, and which repositories it
+   reaches.
 4. `## Commits` — per repository, the commits made in landing order and
    whether they were pushed.
 5. `## Follow-ups` — config, snapshot and migration commits, and any bump
@@ -149,7 +154,7 @@ Reply in this shape, as plain text outside any code fence, with plain bullets, n
 
 ## Moves
 
-- requests 2.31.0 to 2.32.3: the headline change of each release, from the notes read in this run; reaches api only.
+- requests 2.31.0 to 2.32.3: the headline change of each release, from the notes read in this run, with <release link per version>; reaches api only.
 
 ## Commits
 

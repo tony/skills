@@ -82,18 +82,22 @@ toolchain pin files, `rust-toolchain.toml`, the `go.mod` `go` and
 a feature branch reports pins the branch that ships does not have. When
 `fetch_ok` is false, say the pins may be stale.
 
-An `error`, a nonempty `failed` list, or a null `dirty` value leaves the
-affected repository unverified. Stop that repository before editing or
-publishing; unavailable status is not a clean checkout.
+An `error`, a null `dirty` value, or a `failed` entry for worktree
+status or the default branch leaves the repository unverified. Stop that
+repository before editing or publishing; unavailable status is not a
+clean checkout. A `failed` pin file is unknown, not absent: the toolchain
+track skips it and the report names the file as not checked.
 
-When `branch` is not the default branch, `dirty` is true, or
+`pins_ref` is the base the commits start from: the remote's default
+branch, or the local default branch when it is ahead of the remote and not
+behind it. When `branch` is not the default branch, `dirty` is true, or
 `behind_remote` is more than 0, create the
 throwaway worktree per `../../references/throwaway-worktree.md`, but
 detached: `git -C <repo> worktree add --detach <printed-path>
-<remote>/<default>`, with no `-b`. A repository with no remote has no
-`<remote>/<default>`: detach from its local default branch, say the base is
-local, and treat the repository as local-only, so it halts before any
-`--push` or `--pr`. Phase 2 and Phase 3 run there so
+<pins_ref>`, with no `-b`. A repository with no remote has no default
+branch: its base is the current branch, it needs a worktree only when
+`dirty`, and it is local-only, so `--push` and `--pr` do not apply to it.
+Phase 2 and Phase 3 run there so
 discovery sees the pins read here, and the repository gains no branch
 until the plan is approved. On a halt, a plan stop, `--audit-only` or a
 declined plan, remove the worktree (`git -C <repo> worktree remove
@@ -113,21 +117,26 @@ because the wrapper is the maintained path.
 **Check the cooldown before calling anything current.** A release
 published inside the window is invisible to the resolver, so a tree that
 looks up to date may only be gated. Report gated releases separately
-from current ones, with the date each becomes visible.
+from current ones, with the date each becomes visible; under a fixed
+cutoff no date does, so say the release stays hidden until the cutoff
+moves.
 
 Separate what moves in-range from what needs a manifest edit; they are
 different commits. A major is never part of the bulk refresh: bound the
-refresh to in-range moves and treat each major as a named bump. pnpm and
-npm are bounded by `ncu --target minor`. uv, Poetry and Cargo have no such
-flag, so after the refresh run `../../scripts/repo_facts.py --lock-diff
-<repo>` (resolve the path from this skill's directory to an absolute one):
-`majors` lists each package whose new version is a new major, or for 0.x a
-new minor, including another version added beside an existing one. A lock
-with an `error` is unclassified: keep it for inspection and stop before
-staging. When `majors` is not empty, restore the lockfile to `HEAD`,
+refresh to in-range moves and treat each major as a named bump. `ncu
+--target minor` keeps majors out but still moves a 0.x package across a
+minor, and uv, Poetry and Cargo have no bounding flag. After the refresh
+run `../../scripts/repo_facts.py --lock-diff <repo>` for lockfiles, or
+`--manifest-diff <repo>` for npm and pnpm manifests (resolve the path from
+this skill's directory to an absolute one): `majors` lists each package
+whose new version is a new major, or for 0.x a new minor, including another
+version added beside an existing one. A file with an `error`, or a range
+under `unclassified`, is not classified: keep it for inspection and stop
+before staging. When `majors` is not empty, restore the file to `HEAD`,
 update only the `in_range` names (`uv lock --upgrade-package <name>`,
-`poetry update <name>`, `cargo update --package <name>`), rerun the
-script until `majors` is empty, and make each major its own named bump.
+`poetry update <name>`, `cargo update --package <name>`, or their ranges
+in `package.json`), rerun the script until `majors` is empty, and make
+each major its own named bump.
 
 **Audit the existing holds in the same pass.** Every `reject` entry in
 every config in the tree, not just the root one, per the holds
@@ -143,7 +152,8 @@ For each named package and each toolchain pin: read the release notes
 for every version in the span, work out what the change means for *this*
 repository, and collect the links per the upstream-links reference.
 Verify every URL resolves before it reaches a commit body. State no
-upstream fact that was not read in this run.
+upstream fact that was not read in this run. A lookup that fails leaves
+that package or release unchecked, never absent or unpublished.
 
 When the notes cannot be read for any release in the span (the page
 fails to load, the changelog is empty or points elsewhere) on a major
@@ -167,7 +177,9 @@ across the span, named release by release, and what those changes reach
 here. Prove the intersection before the plan: a resolver or lockfile
 check, a search for the input format a release now rejects, the test lane
 that exercises the changed code path. A general claim written into a body
-it does not fit is false in that repository's history permanently.
+it does not fit is false in that repository's history permanently. Say a
+span reaches nothing only when a search or command run in this run shows
+it, and name that command; otherwise say the reach was not checked.
 
 ## Orchestration Plan
 
@@ -184,8 +196,10 @@ Present a plan, as text, covering:
   red until its follow-up lands.
 - For each repository: the branch the commits land on and the push
   target, and any unpushed commits already ahead of the remote
-  (`git log <remote>/<default>..<default>`) that are not bumps (a push publishes them too). A repository whose ownership rested on the fallback signals
-  alone is listed as local-only unless the user approves its push here.
+  (`git log <remote>/<default>..<default>`) that are not bumps (a push
+  publishes them too). A repository whose ownership rested on the fallback
+  signals alone is listed as local-only unless the user approves its push
+  here.
 - How many commits this produces.
 - Any destructive step, such as a clean reinstall, with the exact
   directories it deletes.
@@ -227,13 +241,21 @@ unblocks.
 
 A repository that got a worktree in Phase 1 commits there. After the
 plan is approved and before the first edit, name the branch inside it
-with `git -C <printed-path> switch -c <branch>` (the branch the plan
-gave, else `wip/<topic>`; if it exists and is not checked out elsewhere,
-`switch` to it; if another worktree has it, pick another name). Commits on a
-detached HEAD are unreachable once the worktree is removed. After the
-last commit and any approved push, remove the worktree with
-`git -C <repo> worktree remove <printed-path>`; the branch stays, and the
-report names it.
+with `git -C <printed-path> switch -c <branch>`: the branch the plan or
+`--branch` gave, else a generated `wip/<topic>`. A branch the user named
+that exists and is not checked out elsewhere is switched to, never reset.
+A generated name that is taken gets a suffix (`wip/<topic>-2`), so a stale
+branch never carries an old base, and a name another worktree holds means
+another name. Commits on a detached HEAD are unreachable once the
+worktree is removed.
+
+A repository without a worktree is edited in place only while it is
+clean: re-read `git status` just before the first edit, and a change since
+the inventory sends the repository to a worktree. Stage only the files the
+move edited, by path; never `git add -A`, `git add .` or `git commit -a`.
+If a commit hook rejects or rewrites the commit, stop that repository and
+report the hook's first error line; never `--no-verify`.
+
 Commit messages the skill writes itself may go through a quoted heredoc
 whose delimiter appears nowhere in the body, or through a file. Text
 quoted from release notes goes through a file.
@@ -242,12 +264,7 @@ Commits land on the default branch by default, or on the `wip/` branch
 of a worktree. `--branch <name>` works
 on a branch; `--push` pushes the commits; `--pr` pushes a branch and
 opens a pull request from it. Without `--push` or `--pr`, commit locally,
-stop, and print the push command.
-
-Make the run resumable: push whenever the local branch is ahead of the
-remote, `--push` or `--pr` was passed, and the plan approved the push
-(including any non-bump commits it listed as ahead), not only when this
-invocation created the commits.
+stop, and print the push command. Phase 5 owns when a push happens.
 
 ### Trunk or a pull request
 
@@ -277,10 +294,11 @@ notes, which are untrusted. Write it to a file with the host's
 file-writing tool and pass `--body-file <file>` to `gh`; never put it in
 a shell heredoc or an inline `--body`.
 
-## Phase 5: Verify
+## Phase 5: Verify, then publish
 
 A fresh worktree has no installed dependencies; install them the
-project's own way before the first check.
+project's own way before the first check. The worktree stays until
+verification ends.
 
 Run the project's own quality checks after each commit: the lint,
 format, type-check and test commands its `AGENTS.md`, `CLAUDE.md`,
@@ -293,12 +311,25 @@ fix none, conceal none.
 When a bump causes the failure, stop before the next bump, keep the
 commits already made, and report them with the failing command. This is
 a result, not a halt: the hero is `✓ <commits that landed>` and a
-`## Failed check` section names the command and the first error line.
+`## Failed check` section names the command and the first error line
+and says the commits were not pushed when a push was requested. Under
+`## Verification` list only the checks that passed. Offer no option that
+discards the commits.
 
 A bump that is knowingly red until its follow-up is not a failure, but
 the body must have said so, and the follow-up must land before the run
 is reported complete. Never report green without having read the output
 that says so.
+
+Publish and clean up only after verification. Push when `--push` or `--pr`
+was passed, the plan approved the push, and the checks passed or failed
+only for a reason no bump caused; a bump-caused failure publishes nothing.
+Make the run resumable: push whenever the local branch is ahead of the
+remote, `--push` or `--pr` was passed, and the plan approved the push
+(including any non-bump commits it listed as ahead), not only when this
+invocation created the commits. Then remove each worktree with `git -C
+<repo> worktree remove <printed-path>`, without `--force`; the branch
+stays, and the report names it.
 
 ## Phase 6: Report
 
@@ -306,7 +337,9 @@ Write it per `../../references/prose-rules.md`. Say what moved, what was
 deliberately held, and what belongs to a sibling plugin. Two findings
 explain most drift and are worth surfacing every run: pins that disagree
 with each other across a workspace, and packages held back with no
-recorded reason.
+recorded reason. Name each repository, package or pin file whose lookup
+failed as not checked, in the section it belongs to, and never report a
+result that rests on it as current.
 
 Reply in this shape, as plain text outside any code fence, with plain bullets, no bold (never `- **Label:** ...`), and no local paths:
 
@@ -336,14 +369,16 @@ Shape, which the three commands in this plugin share:
    X, I'll ...") or line after the options ("Pick one"), no local
    absolute path, temp directory, or machine fact (installed tool
    versions, sandbox or network settings, an empty history) the user
-   need not act on. A report that is not a halt omits any lookup that failed.
+   need not act on. Say that a lookup failed only as "not checked", with no
+   error text or retry story.
    No upstream fact from memory (omit a claim that rests on memory), no speculation about the latest
    release, no narration of this skill's own rules (never "I left out the
    trailer because the skill says so", "it has a `why:` because it crosses
    a 0.x minor"), no note about the harness (a stubbed tool or mocked
    response), no cooldown config key or file name, and no promise of
    later work. The hero line is the `✓` form alone, never a first-person
-   sentence ("I updated 2 tools ..."). Never state what a commit message says
+   sentence ("I updated 2 tools ..."), and no section holds one either
+   ("I didn't push ..."). Never state what a commit message says
    or why it was written that way, and never state a rule as a reason
    ("so its dependencies belong upstream").
 5. End with the next-step options. Without a question tool, list them

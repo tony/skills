@@ -65,10 +65,13 @@ different names. Deduplicate by remote URL and keep one.
 the default branch (local `HEAD` ref, then `ls-remote`), and prints
 `default_branch`, `behind_remote`, `fork_signal`, `linked_worktree` and the
 pins read from that branch as one JSON object per repository. It uses the
-repository's own remote (`origin`, else the only one). When `fetch_ok` is
-false, say in the report that pins may be stale; when `default_branch` is
-null, ask the user. The script path resolves from this reference's
-directory to an absolute path; write it literally in the command.
+repository's own remote (`origin`, else the only one); with several remotes
+and no `origin` it prints an `error` and the user names the remote. When
+`fetch_ok` is false, say in the report that pins may be stale; when
+`default_branch` is null, ask the user. A `failed` entry means that fact
+could not be read and is unknown, not clean or absent. The script path
+resolves from this reference's directory to an absolute path; write it
+literally in the command.
 
 ## Ask the forge first
 
@@ -110,13 +113,14 @@ the default branch found above, not on the working tree's branch:
 $ git -C <repo> log \
     --max-count=10 \
     --format='%an <%ae>' \
-    origin/<default-branch>
+    <remote>/<default-branch>
 ```
 
-Compare the commit emails with `git config user.email`. Match on the
-domain rather than one exact address: the same person commits as more
-than one identity, and a project run under an organisation's own address
-is still theirs.
+Compare the commit emails with `git config user.email`, exact address
+only. A shared domain (a consumer mail provider, a forge's noreply
+domain, an employer with many projects) proves nothing about who
+maintains this repository, so a domain match alone is a disagreeing
+signal.
 
 Agreeing signals decide it, but a repository settled this way is
 committed locally and not pushed unless the user approves the push in the

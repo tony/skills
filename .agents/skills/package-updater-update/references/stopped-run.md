@@ -7,7 +7,9 @@ commit is a result: report the landed commits and failed check.
 Write the stopped reply as plain text, with no enclosing fence or bold:
 
 1. `⚠ Stopped: nothing was changed.` followed on the same line by one
-   sentence naming the fact the user must resolve.
+   sentence naming the fact the user must resolve, with no first-person
+   subject ("Ownership of X could not be confirmed", never "I couldn't
+   confirm").
 2. `To continue:` and a plain list of available actions. Use a question
    tool when available; otherwise list the options and take none.
 
@@ -15,6 +17,12 @@ Nothing precedes the stop line, separates it from the options, or follows
 the options. No headings, second reason, plan, recap, or promise of later
 work. Options name user actions, not commands that failed or future steps
 the assistant promises to take.
+
+## Contents
+
+- State the evidence
+- Examples for unconfirmed ownership, unreadable notes, a held package,
+  an unreadable fact, a rolling cooldown and a fixed cutoff
 
 ## State the evidence
 
@@ -24,9 +32,13 @@ the assistant promises to take.
   version crossing triggers the stop.
 - Unconfirmed version: name the package and version that could not be
   confirmed as published. Do not infer an alternative from memory.
-- Cooldown: give the publication day, window, and eligible day, without a
-  time of day or the configuration file or key that sets the window.
+- Cooldown: for a rolling window give the publication day, window, and
+  eligible day; for a fixed cutoff give the publication day and the
+  cutoff day, since waiting does not lift it. No time of day, and no
+  configuration file or key.
 - Hold: name the package, held version, and recorded reason.
+- Unreadable repository fact: name the repository and the fact (status,
+  default branch, a pin file) that could not be read.
 - Scope or ownership: give the unresolved repository or fork relationship,
   not an inventory of remotes, history, credentials, or lookup attempts.
 - No manifest or pin file: say that none was found in the selected scope.
@@ -63,7 +75,30 @@ To continue:
 - Stop here.
 ```
 
-For a cooldown, substitute the observed publication day and computed end:
+For a held package, substitute the recorded package, version and reason:
+
+```text
+⚠ Stopped: nothing was changed. <package> is held at <version>: <recorded reason>.
+
+To continue:
+
+- Release the hold.
+- Stop here.
+```
+
+For an unreadable fact, name only the repository and the fact:
+
+```text
+⚠ Stopped: nothing was changed. The <fact> of <repository> could not be read.
+
+To continue:
+
+- Fix access to the repository and rerun.
+- Skip this repository.
+- Stop here.
+```
+
+For a rolling cooldown, substitute the observed publication day and computed end:
 
 ```text
 ⚠ Stopped: nothing was changed. <package> <version> was published <day> and the <N>-day cooldown hides it until <eligible day>.
@@ -71,6 +106,18 @@ For a cooldown, substitute the observed publication day and computed end:
 To continue:
 
 - Wait until then and rerun.
+- Exempt this package from the cooldown for this release.
+- Stop here.
+```
+
+For a fixed cutoff, the options drop waiting:
+
+```text
+⚠ Stopped: nothing was changed. <package> <version> was published <day>, after the <cutoff day> cooldown cutoff.
+
+To continue:
+
+- Move the cutoff past <day>.
 - Exempt this package from the cooldown for this release.
 - Stop here.
 ```

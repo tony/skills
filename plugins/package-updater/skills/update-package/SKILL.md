@@ -44,9 +44,9 @@ registry in the "Release publication time" section of
 confirmed to exist is the expensive failure this ordering prevents.
 
 Read the cooldown configuration of each repository in scope (the
-ecosystems reference lists the keys) and check the package against `holds.md`: a held package stops
-here unless the user is releasing the hold; halt with the held-package
-example in `../updating-packages/SKILL.md`.
+ecosystems reference lists the keys) and check the package against
+`holds.md`: a held package stops here unless the user is releasing the
+hold; halt with the hold form in `../../references/stopped-run.md`.
 
 If the cooldown hides the target, read `../../references/stopped-run.md`
 and use its cooldown form, even when the user named the version. The reply is that halt alone: no
@@ -102,14 +102,13 @@ messages and the report per `../../references/prose-rules.md`.
 One commit per repository, subject and body per the commit-conventions
 reference, `why:` then `what:`, written through a heredoc or a file.
 The follow-up lands immediately after as its own commit.
-No `Co-Authored-By`, no "Generated with" or other tool trailers, no emoji; do not mention the omission.
 
-Branch and push handling follows Phase 4 of `../updating-packages/SKILL.md`;
-pull request text goes through `--body-file`.
+Branch handling follows Phase 4 of `../updating-packages/SKILL.md`; a push
+waits for step 7 and Phase 5. Pull request text goes through `--body-file`.
 
-### 7. Verify
+### 7. Verify, then publish
 
-Run the project's own quality checks. Attribute failures against the
+Run the project's own quality checks before any push or worktree removal. Attribute failures against the
 default branch before blaming the bump. A knowingly-red bump is only
 acceptable when its body said so and its follow-up lands in the same
 run.
@@ -143,7 +142,8 @@ audit-only run omits `## Commits` and `## Verification`:
    links resolved").
 2. `## Pin sites` — per repository, every place the package is pinned
    and its current shape, plus what was excluded as not pinning it or
-   already current. Name no ref the pins were read from and no release-age
+   already current, and what was not checked because a lookup failed.
+   Name no ref the pins were read from and no release-age
    setting the repository lacks.
 3. `## Impact` — per repository, what the release actually reaches
    there, and where the general claim does not apply. No first-person
@@ -165,7 +165,7 @@ Reply in this shape, as plain text outside any code fence, with plain bullets, n
 
 ## Release
 
-- 2.31.0 to 2.32.3: the headline change of each release, from the notes read in this run; links verified for each tag.
+- 2.31.0 to 2.32.3: the headline change of each release, from the notes read in this run, with <release link per version>.
 
 ## Pin sites
 
@@ -187,11 +187,9 @@ Reply in this shape, as plain text outside any code fence, with plain bullets, n
 
 Label a repository by its name or directory name, never `cwd`. Never say a tool
 or response is a stub or mock; report only what the lookup returned. The bans
-of "Phase 6" in `../updating-packages/SKILL.md` apply to every section: no
-upstream fact from memory, no narration of this skill's rules or of the link
-check, no inventory of absences, no sandbox or write-permission remark, no
-speculation about consumers or code not read, no statement that other branches
-or files are untouched, and no promise of later work.
+of "Phase 6" in `../updating-packages/SKILL.md` apply to every section, as do
+these: no inventory of absences, no speculation about consumers or code not
+read, and no statement that other branches or files are untouched.
 
 When the run halts, read `../../references/stopped-run.md` in full and use
 its stopped-run contract. The plan gate is not a halt.
