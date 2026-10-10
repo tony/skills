@@ -93,3 +93,17 @@ def test_check_needs_only_the_backup_files(repo: Path) -> None:
     out = Path(_run(repo, "save", "17").stdout.strip())
     assert sorted(f.name for f in (repo / out).iterdir()) == ["body.md", "number.txt", "title.txt"]
     assert _run(repo, "check", str(repo / out)).returncode == 0
+
+
+def test_verify_reads_the_edit_back(repo: Path) -> None:
+    """Verify passes when the PR carries the edit files and fails when it does not."""
+    out = str(repo / _run(repo, "save", "17").stdout.strip())
+    body = repo.parent / "body.new.md"
+    title = repo.parent / "title.new.txt"
+    body.write_text("## Summary\n\n- New\n")
+    title.write_text("New title\n")
+    assert _run(repo, "verify", out, str(body), str(title)).returncode == 1
+    (repo.parent / "stub.json").write_text(
+        json.dumps({"number": 17, "title": "New title", "body": "## Summary\r\n\r\n- New\r\n"})
+    )
+    assert _run(repo, "verify", out, str(body), str(title)).returncode == 0

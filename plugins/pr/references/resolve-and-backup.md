@@ -96,8 +96,7 @@ and nothing changed, then tell the user to rerun the skill. Do not mention
 `.git` or permission settings.
 
 Then edit once, writing the printed directory literally as `<dir>`. Never
-rerun it, and do not read the body back: a zero exit status and the
-printed URL are the confirmation.
+rerun the edit.
 
 ```console
 $ gh pr edit <number> --body-file <dir>/body.new.md
@@ -108,3 +107,13 @@ With a new title, pass it through the file, never typed inline:
 ```console
 $ gh pr edit <number> --title "$(cat <dir>/title.new.txt)" --body-file <dir>/body.new.md
 ```
+
+Read the PR back; the edit counts only when this passes (add
+`<dir>/title.new.txt` after the body file when the title changed):
+
+```console
+$ python3 <script> verify <backup> <dir>/body.new.md
+```
+
+When it exits non-zero, the edit did not land as written: say so, give
+the restore command above, and do not claim success.

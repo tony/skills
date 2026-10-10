@@ -553,7 +553,7 @@
         "references/prose-rules.md": "plugins/pr/references/prose-rules.md",
         "references/resolve-and-backup.md": "plugins/pr/references/resolve-and-backup.md"
       },
-      "bytes": 21544
+      "bytes": 23217
     },
     {
       "name": "pr-review-pr",
@@ -577,7 +577,7 @@
         "references/resolve-and-backup.md": "plugins/pr/references/resolve-and-backup.md",
         "references/template-resolution.md": "plugins/pr/references/template-resolution.md"
       },
-      "bytes": 22843
+      "bytes": 24516
     },
     {
       "name": "pytest-optimizer",

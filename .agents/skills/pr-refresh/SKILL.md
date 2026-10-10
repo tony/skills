@@ -95,8 +95,8 @@ Apply with gh pr edit?
 - Compare only the changing sections.
 - Update the title only when it is factually stale; keep its style.
 - Ask whether to apply. Without an interactive question tool, show the proposal, list the options, and stop; edit nothing, and do not mention the missing tool. A request that explicitly approves the edit ("apply it") is that approval for `gh pr edit` only, never a commit or push.
-- On approval, apply per "Apply the edit" in `references/resolve-and-backup.md`: `check`, stage the files in a scratch directory, then one `gh pr edit` (with `--title` from the title file when the title is stale).
-- Confirm with the PR URL and the backup path. Say nothing about the edit's mechanics, retries, staging files, or the test setup. When the check or the staging fails, the reply is the stopped-run sentence below, with no mention of `.git` or permissions.
+- On approval, apply per "Apply the edit" in `references/resolve-and-backup.md`: `check`, stage the files in a scratch directory, then one `gh pr edit` (with `--title` from the title file when the title is stale), then the `verify` readback.
+- Confirm with the PR URL and the backup path only after `verify` passes. Say nothing about the edit's mechanics, retries, staging files, or the test setup. When the check or the staging fails, the reply is the stopped-run sentence below, with no mention of `.git` or permissions.
 
 A run that stops early is one sentence saying what happened and that nothing changed, then what the user must do. No colon-delimited aside, no forecast. Reply in this shape:
 
@@ -104,10 +104,16 @@ A run that stops early is one sentence saying what happened and that nothing cha
 PR #17 was not refreshed because its head branch feature/child is not checked out and nothing changed. Check out feature/child, then run this again.
 ```
 
-A failed check or a failed write of the edit files stops the same way, for example:
+A failed check or a failed write of the edit files stops the same way. A failed `verify` says the PR does not read back as written and gives the restore command from the backup. The check and write failures read, for example:
 
 ```text
 PR #17 was not refreshed because the edit files could not be written and nothing changed. Run this again.
+```
+
+For a failed readback:
+
+```text
+PR #17 was edited but does not read back as written. Restore the old description with: gh pr edit 17 --body-file <backup>/body.md
 ```
 
 ## Rules

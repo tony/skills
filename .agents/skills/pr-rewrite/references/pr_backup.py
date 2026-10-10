@@ -6,7 +6,9 @@ new directory under the git ``pr-backups`` path (a ``mktemp -d`` directory
 when that path is unwritable), checks the copy with ``cmp``
 against the fetched body, and prints the directory. ``check DIR`` refetches
 the PR and exits 1 when its body or title differs from ``DIR/body.md`` or
-``DIR/title.txt``.
+``DIR/title.txt``. ``verify DIR BODY [TITLE]`` refetches the PR after an edit
+and exits 1 unless its body (and title, when given) equals the files, ignoring
+CRLF versus LF.
 """
 
 # ruff: noqa: S603, S607, PLR2004
@@ -78,13 +80,37 @@ def check(directory: str) -> int:
     return 1
 
 
+def _norm(text: str) -> str:
+    return text.replace("\r\n", "\n")
+
+
+def verify(directory: str, body: str, title: str | None) -> int:
+    """Return 1 when the PR does not read back as the edit files."""
+    number = (Path(directory) / "number.txt").read_text(encoding="utf-8").strip()
+    pr_json = _fetch(number)
+    want_body = Path(body).read_text(encoding="utf-8")
+    ok = _norm(str(pr_json["body"])) == _norm(want_body)
+    if title is not None:
+        want_title = Path(title).read_text(encoding="utf-8").rstrip("\n")
+        ok = ok and str(pr_json["title"]) == want_title
+    if not ok:
+        sys.stderr.write("the PR does not read back as the edited text\n")
+        return 1
+    sys.stdout.write("verified\n")
+    return 0
+
+
 def main(argv: list[str]) -> int:
     """Dispatch ``save`` or ``check``."""
     if argv[:1] == ["save"] and len(argv) <= 2:
         return save(argv[1] if len(argv) == 2 else "")
     if argv[:1] == ["check"] and len(argv) == 2:
         return check(argv[1])
-    sys.stderr.write("usage: pr_backup.py save [PR] | check BACKUP_DIR\n")
+    if argv[:1] == ["verify"] and len(argv) in {3, 4}:
+        return verify(argv[1], argv[2], argv[3] if len(argv) == 4 else None)
+    sys.stderr.write(
+        "usage: pr_backup.py save [PR] | check BACKUP_DIR | verify BACKUP_DIR BODY [TITLE]\n"
+    )
     return 2
 
 

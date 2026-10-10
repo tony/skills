@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # A PR stacked on feature/base whose description claims retry logic the branch
-# does not contain, with a stub gh. Every gh pr edit call is appended to edit.log.
+# does not contain, with a stub gh. Every gh pr edit call is appended to edit.log and
+# changes the body and title that gh pr view returns.
 set -euo pipefail
 
 git init -b main >/dev/null
@@ -21,6 +22,7 @@ cat >.gitignore <<'MD'
 .zshrc
 bin
 edit.log
+pr-state.json
 MD
 
 mkdir -p src
@@ -55,6 +57,7 @@ cat >bin/gh <<'SH'
 #!/usr/bin/env bash
 json='{"number":17,"title":"Add the parser","url":"https://example.invalid/pull/17","state":"OPEN","baseRefName":"feature/base","headRefName":"feature/child","headRefOid":"HEADOID","body":"## Summary\n\n- **Add** a key=value parser\n- **Add** retry logic to the client so transient errors do not fail the run\n\n## Reviewer notes\n\nBenchmarks pending, see the dashboard."}'
 json="${json/HEADOID/$(git rev-parse HEAD)}"
+[ -f pr-state.json ] && json=$(jq -c --slurpfile s pr-state.json '. + $s[0]' <<<"$json")
 case "$1 $2" in
   "pr view")
     jq_filter=""
@@ -68,7 +71,17 @@ case "$1 $2" in
       printf '%s\n' "$json"
     fi
     ;;
-  "pr edit") echo "$*" >>edit.log ;;
+  "pr edit")
+    echo "$*" >>edit.log
+    args=("$@")
+    [ -f pr-state.json ] || echo '{}' >pr-state.json
+    for ((i = 0; i < ${#args[@]}; i++)); do
+      case "${args[i]}" in
+        --body-file) jq -c --rawfile v "${args[i+1]}" '.body = $v' pr-state.json >pr-state.tmp && mv pr-state.tmp pr-state.json ;;
+        --title) jq -c --arg v "${args[i+1]}" '.title = $v' pr-state.json >pr-state.tmp && mv pr-state.tmp pr-state.json ;;
+      esac
+    done
+    ;;
   *) echo "unsupported: $*" >&2; exit 1 ;;
 esac
 SH
