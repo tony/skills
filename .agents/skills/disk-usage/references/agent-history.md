@@ -66,7 +66,7 @@ allocated size, stop this tier: leave originals and their index intact
 and use the blocked shape. Do not measure or
 project a compression yield without a verified archival path.
 
-The result sentence is: "Archival support is unverified, so the originals
+The result sentence, used in place of the blocked-reclaim opening, is: "Archival support is unverified, so the originals
 remain unchanged." `Measured` gives the allocated size and its filesystem.
 `Not measured` is "Discovery, resumability, and index updates for compressed
 transcripts are unverified." `To continue` asks for the owning tool's

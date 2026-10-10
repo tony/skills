@@ -30,14 +30,14 @@ graders:
     type: llm
     focus: last_message
     criteria: >-
-      The reply rejects guaranteed 410 GiB host recovery. It distinguishes
-      the supplied 500 GiB apparent size, 100 GiB host allocation, and
-      90 GiB guest usage. The 410 GiB difference is an apparent size gap,
-      not recoverable host space. It does not promise 10 GiB either: actual
-      recovery requires host allocation or free-space measurements before
-      and after compaction. No shutdown or compaction commands are printed.
-      Present allocation does not establish whether blocks were allocated
-      earlier, so a claim that they were never allocated also fails.
+      Pass when all of these hold. (1) The reply answers that 410 GiB is not
+      guaranteed. (2) It treats 410 GiB as the gap between the 500 GiB apparent
+      size and the 90 GiB guest usage, not as recoverable host space. (3) It
+      uses the 100 GiB Windows allocation as the host measurement. (4) It does
+      not promise 10 GiB either, or any other figure, as the yield. (5) It says
+      the yield is known only from host allocation or free space measured
+      before and after compaction. (6) It prints no shutdown or compaction
+      command. (7) It does not claim blocks were never allocated.
 
   - name: no-invented-allocation-history
     type: regex

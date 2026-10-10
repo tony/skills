@@ -22,7 +22,10 @@ bullets, one sentence each: `Measured`, `Not measured`, and `To continue`;
 put any necessary command after the last bullet. Fill `Measured` from
 the survey's `filesystem` fields and classified in-scope directories;
 leave rejected probe inventory out. Fill `Not measured` from `errors`
-or a recorded command failure. Unknown usage stays unknown,
+or a recorded command failure, naming only paths that were attempted and
+failed; a parent that failed does not make its children, or the default
+locations of a requested category, unreadable. A path under `skipped` was
+not attempted: write "not surveyed", never "could not be read". Unknown usage stays unknown,
 with no guessed location. No unrelated cleanup,
 TRIM findings, or recap. Never estimate what was not measured,
 and never attribute unmeasured space to a path or directory. Give no
@@ -36,7 +39,9 @@ no in-scope candidate passed its checks." Keep the opening separate from
 the measured figures. `To continue` asks for the missing measurement or
 a readable path; it does not explain where the missing usage might be.
 
-After an incomplete open-handle probe, `To continue` is: "Resolve the
+A refused guard opens with the blocked-reclaim sentence and uses the same
+three bullets; print no command, since the guard call stays in the
+transcript. After an incomplete open-handle probe, `To continue` is: "Resolve the
 reported lsof error and retry the same guard; if it refuses again, leave
 the target in place." This checks caller-visible handles, not every
 process on the machine.
@@ -190,7 +195,8 @@ once; omit unchanged inventory. Data excluded from the approved plan
 belongs under `## Needs a decision` or `## Protected`, not `## Left alone`.
 
 `## Reclaimed` — what was actually deleted or merged, with the
-measured free-space delta per layer. When measured and predicted
+measured free-space delta per layer, one bullet per item. Leave out how
+the guard was invoked (PATH, fixture or output files). When measured and predicted
 disagree, state both. Give a cause only if checked; otherwise say
 "cause not checked" without speculating about concurrent writers.
 

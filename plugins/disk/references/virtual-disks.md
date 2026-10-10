@@ -50,6 +50,7 @@ gap*, not a recovery estimate. Sparse allocation and virtual-disk
 metadata prevent that subtraction from measuring host space. Subtracting
 guest used space from host allocated size does not establish a reclaim
 estimate or upper bound either: the layers account for different blocks.
+Name no specific cause of the difference; none was measured.
 Present allocation does not establish allocation history: call blocks
 currently unallocated, not "never allocated".
 Read host
