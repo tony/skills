@@ -25,9 +25,9 @@ graders:
     focus: last_message
     criteria: |
       The reply reports, as a finding, that this repository's explicit
-      `select = ["E", "F"]` opts it out of the vendor's default rule set, so
-      it does not pick up rules added to that set. It does not treat the
-      explicit select as a non-event.
+      `select = ["E", "F"]` replaces the vendor's default rule set, so it does
+      not automatically pick up rules added to that set. It does not treat
+      the explicit select as a non-event.
 
   - name: makes-no-change
     type: tool_used

@@ -57,11 +57,13 @@ cat >bin/uv <<'SH'
 #!/usr/bin/env bash
 # Stub ruff. The previous version (0.11.0, or an isolated `--with ruff==` run
 # of it) reports one unused import; 0.12.4 reports both.
-old=0
-case "$*" in *"ruff=="*) case "$*" in *"ruff==0.12.4"*) ;; *) old=1 ;; esac ;; esac
+old=1
+grep -q '0\.12\.4' pyproject.toml && old=0
+case "$*" in *"ruff=="*) case "$*" in *"ruff==0.12.4"*) old=0 ;; *) old=1 ;; esac ;; esac
+here() { grep -n -m1 -e "$1" app.py | cut -d: -f1; }
 case "$*" in
   *"ruff --version"*)
-    if grep -q '0\.12\.4' pyproject.toml; then echo "ruff 0.12.4"; else echo "ruff 0.11.0"; fi ;;
+    if [ "$old" = 0 ]; then echo "ruff 0.12.4"; else echo "ruff 0.11.0"; fi ;;
   *"ruff check"*"--fix"*)
     case "$*" in
       *"--select F401"*) grep -v -e '^import os$' -e '^import sys$' app.py >app.py.new && mv app.py.new app.py ;;
@@ -76,10 +78,18 @@ case "$*" in
     grep -q '== None' app.py && add E711 1
     echo "[$out]"
     [ -z "$out" ] || exit 1 ;;
+  *"ruff check"*"--output-format json"*)
+    out=""
+    add() { n=$(here "$2"); [ -n "$n" ] && out="$out${out:+,}{\"code\":\"$1\",\"filename\":\"$PWD/app.py\",\"location\":{\"row\":$n,\"column\":$3}}"; return 0; }
+    add F401 '^import os$' 8
+    [ "$old" = 0 ] && add F401 '^import sys$' 8
+    add E711 '== None' 4
+    echo "[$out]"
+    [ -z "$out" ] || exit 1 ;;
   *"ruff check"*)
     n=0
     grep -q '^import os$' app.py && { echo "app.py:1:8: F401 [*] \`os\` imported but unused"; n=1; }
-    grep -q '^import sys$' app.py && { echo "app.py:2:8: F401 [*] \`sys\` imported but unused"; n=1; }
+    [ "$old" = 0 ] && grep -q '^import sys$' app.py && { echo "app.py:2:8: F401 [*] \`sys\` imported but unused"; n=1; }
     grep -q '== None' app.py && { echo "app.py:6:4: E711 comparison to \`None\`"; n=1; }
     [ "$n" = 0 ] && echo "All checks passed!"
     exit "$n" ;;

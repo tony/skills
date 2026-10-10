@@ -47,15 +47,17 @@ cat >bin/uv <<'SH'
 #!/usr/bin/env bash
 # Stub ruff. Findings come from app.py. The previous version (0.11.0, or an
 # isolated `--with ruff==` run of it) reports only E711; 0.12.4 reports all.
-old=0
-case "$*" in *"ruff=="*) case "$*" in *"ruff==0.12.4"*) ;; *) old=1 ;; esac ;; esac
+old=1
+grep -q '0\.12\.4' pyproject.toml && old=0
+case "$*" in *"ruff=="*) case "$*" in *"ruff==0.12.4"*) old=0 ;; *) old=1 ;; esac ;; esac
+here() { grep -n -m1 -e "$1" app.py | cut -d: -f1; }
 case "$*" in
   *"ruff --version"*)
-    if grep -q '0\.12\.4' pyproject.toml; then echo "ruff 0.12.4"; else echo "ruff 0.11.0"; fi ;;
+    if [ "$old" = 0 ]; then echo "ruff 0.12.4"; else echo "ruff 0.11.0"; fi ;;
   *"ruff check"*"--fix"*)
     case "$*" in
       *"--select F401"*) grep -v '^import os$' app.py >app.py.new && mv app.py.new app.py ;;
-      *"--select F841"*) grep -v 'unused = 1' app.py >app.py.new && mv app.py.new app.py ;;
+      *"--select UP034"*) sed -e 's/print(("hi"))/print("hi")/' app.py >app.py.new && mv app.py.new app.py ;;
     esac
     echo "Found 1 error (1 fixed, 0 remaining)." ;;
   *"ruff check"*"--statistics"*)
@@ -63,16 +65,26 @@ case "$*" in
     add() { out="$out${out:+,}{\"code\":\"$1\",\"count\":1}"; }
     if [ "$old" = 0 ]; then
       grep -q '^import os$' app.py && add F401
-      grep -q 'unused = 1' app.py && add F841
+      grep -q 'print(("hi"))' app.py && add UP034
     fi
     grep -q '== None' app.py && add E711
     echo "[$out]"
     [ -z "$out" ] || exit 1 ;;
+  *"ruff check"*"--output-format json"*)
+    out=""
+    add() { n=$(here "$2"); [ -n "$n" ] && out="$out${out:+,}{\"code\":\"$1\",\"filename\":\"$PWD/app.py\",\"location\":{\"row\":$n,\"column\":$3}}"; return 0; }
+    if [ "$old" = 0 ]; then
+      add F401 '^import os$' 8
+      add UP034 'print(("hi"))' 11
+    fi
+    add E711 '== None' 4
+    echo "[$out]"
+    [ -z "$out" ] || exit 1 ;;
   *"ruff check"*)
     n=0
-    grep -q '^import os$' app.py && { echo "app.py:1:8: F401 [*] \`os\` imported but unused"; n=1; }
-    grep -q 'unused = 1' app.py && { echo "app.py:3:5: F841 [*] local variable \`unused\` is assigned to but never used"; n=1; }
-    grep -q '== None' app.py && { echo "app.py:5:4: E711 comparison to \`None\`"; n=1; }
+    [ "$old" = 0 ] && grep -q '^import os$' app.py && { echo "app.py:1:8: F401 [*] \`os\` imported but unused"; n=1; }
+    [ "$old" = 0 ] && grep -q 'print(("hi"))' app.py && { echo "app.py:5:11: UP034 [*] Avoid extraneous parentheses"; n=1; }
+    grep -q '== None' app.py && { echo "app.py:9:4: E711 comparison to \`None\`"; n=1; }
     [ "$n" = 0 ] && echo "All checks passed!"
     exit "$n" ;;
   *"ruff format"*) ;;

@@ -48,10 +48,9 @@ mkdir -p bin
 cat >bin/uv <<'SH'
 #!/usr/bin/env bash
 # Stub ruff. RUF100 fires on stale noqa comments only when the configuration
-# does not pin `select` to E and F (or when the default codes are added).
+# no longer pins `select` to E and F (the defaults then apply).
 adopted=0
-grep -q 'select = \["E", "F"\]' pyproject.toml || adopted=1
-case "$*" in *"--extend-select"*) adopted=1 ;; esac
+grep -q '^select = \["E", "F"\]' pyproject.toml || adopted=1
 case "$*" in
   *"ruff --version"*)
     if grep -q '0\.13\.1' pyproject.toml; then echo "ruff 0.13.1"; else echo "ruff 0.13.0"; fi ;;
@@ -66,6 +65,12 @@ case "$*" in
     case "$*" in *"ruff==0.13.0"*) adopted=0 ;; esac
     if [ "$adopted" = 1 ] && grep -q 'noqa' app.py; then
       echo '[{"code":"RUF100","count":2}]'; exit 1
+    fi
+    echo '[]' ;;
+  *"ruff check"*"--output-format json"*)
+    if [ "$adopted" = 1 ] && grep -q 'noqa' app.py; then
+      printf '[{"code":"RUF100","filename":"%s/app.py","location":{"row":1,"column":8}},{"code":"RUF100","filename":"%s/app.py","location":{"row":2,"column":8}}]\n' "$PWD" "$PWD"
+      exit 1
     fi
     echo '[]' ;;
   *"ruff check"*)

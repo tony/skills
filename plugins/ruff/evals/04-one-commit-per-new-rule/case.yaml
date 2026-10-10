@@ -42,7 +42,7 @@ graders:
   - name: commits-the-second-new-rule
     type: tool_used
     tool: Bash
-    input_match: '\bgit\b[^\n]*\bcommit\b[\s\S]*F841'
+    input_match: '\bgit\b[^\n]*\bcommit\b[\s\S]*UP034'
     min: 1
     arm: both
 
@@ -59,7 +59,7 @@ graders:
     focus: last_message
     criteria: |
       The reply reports a commit that raises the ruff floor, a separate
-      commit for F401, and a separate commit for F841. It does not describe
+      commit for F401, and a separate commit for UP034. It does not describe
       one commit that bundles two of these. It does not report a commit that
       fixes E711 as part of the bump: E711 is either left alone or named as
       already reported by the previous version.

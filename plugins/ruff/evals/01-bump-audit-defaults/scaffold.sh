@@ -49,10 +49,11 @@ case "$*" in
   *"--show-settings"*)
     printf 'linter.rules.enabled = [\n\tunused-import (F401),\n\tmodule-import-not-at-top-of-file (E402),\n\tunused-noqa (RUF100),\n]\n' ;;
   *"ruff check"*"--statistics"*)
-    case "$*" in
-      *"--extend-select"*) echo '[{"code":"F401","count":1},{"code":"RUF100","count":2}]' ;;
-      *) echo '[{"code":"F401","count":1}]' ;;
-    esac
+    if grep -q extend-select pyproject.toml; then
+      echo '[{"code":"F401","count":1},{"code":"RUF100","count":2}]'
+    else
+      echo '[{"code":"F401","count":1}]'
+    fi
     exit 1 ;;
   *"ruff check"*) echo "app.py:1:8: F401 [*] \`os\` imported but unused"; exit 1 ;;
   *) echo "uv stub: $*" ;;
