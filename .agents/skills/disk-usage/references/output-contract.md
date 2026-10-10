@@ -31,7 +31,9 @@ TRIM findings, or recap. Never estimate what was not measured,
 and never attribute unmeasured space to a path or directory. Give no
 size for what was not read, including used-minus-measured arithmetic,
 and do not guess which layer is the cause ("probably", "more likely").
-Say "could not be read" about the layer.
+Say "could not be read" about the layer. Name no cache location in
+`Not measured`; candidate locations appear only in the command the user
+runs.
 
 A blocked usage report opens: "The survey is incomplete; the location of
 unmeasured usage is unknown." A blocked reclaim opens: "No cleanup ran:
@@ -200,8 +202,8 @@ belongs under `## Needs a decision` or `## Protected`, not `## Left alone`.
 `## Reclaimed` — what was actually deleted or merged, with the
 measured free-space delta per layer, one bullet per item. Leave out how
 the guard was invoked (PATH, fixture or output files). When measured and predicted
-disagree, state both. Give a cause only if checked; otherwise say
-"cause not checked" without speculating about concurrent writers.
+disagree, state both. Give a cause only if checked; otherwise write "cause not checked"
+verbatim, with no variation such as "whether anything else caused it".
 
 `## Left alone` — what the plan covered but execution skipped, with
 the reason. A failed proof, a repository with unpushed work, or a
