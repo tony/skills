@@ -84,7 +84,10 @@ classes. Work in this order:
 4. Flatten single-child wrappers. Move the alignment classes onto
    the child.
 5. Keep intentional breaks. A divider between nav groups is
-   deliberate. Ask before normalizing a difference that may be design.
+   deliberate, and so is the margin around it (`mx-*` on a `w-px` or
+   `<hr>` element): keep both, never remove or shrink it, and list it as
+   a kept difference with the distance it produces. Ask before
+   normalizing a difference that may be design.
    Without a question tool, or when the user said not to ask ("no
    questions"), keep the break, ask nothing, and report it as a kept
    difference after the findings, never as a finding, with no guessed
@@ -120,7 +123,8 @@ in order, with these headings:
    a pattern number, with no bold lead-ins. For a file or directory
    audit, name each finding's `path:line`. Put each kept difference in
    one plain sentence after the last finding, not among them
-3. Proposed refactor: a focused diff or before/after
+3. Proposed refactor: a focused diff or before/after, with every
+   distance the refactor changes given as old to new ("12px to 8px")
 4. Validation checklist: Step 4 filled in
 
 Reply in this shape, as plain text outside any code fence, with plain
@@ -156,8 +160,8 @@ nav (p-4, no gap)
 Use the full shape when auditing a file or directory. For a pasted
 snippet with one finding, collapse it to a short explanation and the
 code, with no bold anywhere and no counted lead-in ("for three
-reasons:"). State each visible change once. Do not restate that
-distances stay the same.
+reasons:"). State each visible change once. Do not restate that distances stay
+the same.
 
 Never offer a divider, a separate group, or any way to keep the wide
 gap in the next-step list or anywhere else, unless the user said the

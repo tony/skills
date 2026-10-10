@@ -1200,7 +1200,7 @@
         "references/patterns.md": "plugins/tailwind/skills/spacing-audit/references/patterns.md",
         "references/prose-rules.md": "plugins/tailwind/references/prose-rules.md"
       },
-      "bytes": 34255
+      "bytes": 34518
     },
     {
       "name": "tdd-fix",
