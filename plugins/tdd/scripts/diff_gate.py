@@ -13,6 +13,8 @@ pattern. Output is empty and the exit status 0 when the gate passes;
 otherwise the offending paths print one per line and the status is 1.
 Any Git failure or diagnostic stops the gate with status 1 and an incomplete
 observation message on stderr, including Git's exit status and diagnostic.
+A tracked file flagged skip-worktree or assume-unchanged hides edits from
+``git status``, so any such flag stops the gate the same way.
 Untracked build caches (``__pycache__/``, ``.pytest_cache/``, ``.mypy_cache/``,
 ``.ruff_cache/``, ``node_modules/.cache/``, ``*.pyc``) never count.
 """
@@ -79,6 +81,19 @@ def is_cache(path: str) -> bool:
     return any(a == "node_modules" and b == ".cache" for a, b in zip(parts, parts[1:]))
 
 
+def hidden_paths() -> list[str]:
+    """List tracked paths flagged skip-worktree or assume-unchanged."""
+    done = subprocess.run(
+        ["git", "ls-files", "-v", "-z"],  # noqa: S607
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    if done.returncode != 0 or done.stderr:
+        raise SystemExit(f"git ls-files incomplete (exit {done.returncode}): {done.stderr.strip()}")
+    return [e[2:] for e in done.stdout.split("\0") if e[:1] == "S" or e[:1].islower()]
+
+
 def changed_paths() -> list[str]:
     """List modified, staged, and untracked paths, minus untracked caches."""
     done = subprocess.run(
@@ -105,6 +120,9 @@ def changed_paths() -> list[str]:
         if status == "??" and is_cache(path):
             continue
         paths.append(path)
+    hidden = hidden_paths()
+    if hidden:
+        raise SystemExit("git status cannot see flagged paths: " + ", ".join(hidden))
     return paths
 
 

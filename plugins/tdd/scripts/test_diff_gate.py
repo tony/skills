@@ -158,3 +158,21 @@ def test_unreadable_untracked_directory_stops(repo: Path) -> None:
     finally:
         hidden.chmod(mode)
     assert (hidden / "case.py").read_bytes() == payload
+
+
+@pytest.mark.integration(reason="uses an owned Git repository and the gate CLI")
+@pytest.mark.parametrize("flag", ["--assume-unchanged", "--skip-worktree"])
+def test_flagged_tracked_file_stops(repo: Path, flag: str) -> None:
+    subprocess.run(["git", "update-index", flag, "a.py"], cwd=repo, env=ENV, check=True)
+    (repo / "a.py").write_text("x = 2\n")
+    done = subprocess.run(
+        [sys.executable, str(SCRIPT), "test-only", *PATTERNS],
+        cwd=repo,
+        env=ENV,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    assert done.returncode == 1
+    assert done.stdout == ""
+    assert done.stderr == "git status cannot see flagged paths: a.py\n"

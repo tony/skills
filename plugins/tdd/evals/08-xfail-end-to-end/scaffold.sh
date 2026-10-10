@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Same repo as case 05: a committed repo with a green two-test suite and an off-by-one in bizdays.py.
+# Same repo as case 05, plus a stash entry that belongs to someone else.
 set -euo pipefail
 
 git init -b main >/dev/null
@@ -36,5 +36,10 @@ MD
 
 printf '.*\n!.gitignore\n' >.gitignore
 
+echo "draft" >notes.txt
+
 git add -A
 git -c user.name=eval -c user.email=eval@example.com commit -qm "Add bizdays"
+
+echo "peer edit" >notes.txt
+git -c user.name=peer -c user.email=peer@example.com stash push -q -m "peer work"

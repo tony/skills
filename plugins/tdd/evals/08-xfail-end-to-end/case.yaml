@@ -2,7 +2,8 @@ schema_version: "1.0"
 name: 08-xfail-end-to-end
 description: >-
   An approved /tdd:xfail run makes three commits (test only, source only, test
-  only), stashes the fix and pops it again, and does not push.
+  only), stashes the fix and restores it by stash SHA, leaves a peer's
+  pre-existing stash untouched, and does not push.
 tags: [fixture, git]
 
 context:
@@ -35,34 +36,42 @@ graders:
     pattern: '(\tcommit: [^\n]*\n[\s\S]*){4}'
     match: not_contains
 
-  - name: stash-pushed
+  - name: stash-pushed-through-the-script
     type: tool_used
     tool: Bash
-    input_match: 'git(?:\s+-[Cc]\s*\S+)*\s+(-\w+ \S+ )*stash\s+push\b'
+    input_match: 'stash_roundtrip\.py\s+push\b'
     min: 1
     arm: both
 
-  - name: stash-popped
+  - name: stash-restored-by-sha
     type: tool_used
     tool: Bash
-    input_match: 'git(?:\s+-[Cc]\s*\S+)*\s+(-\w+ \S+ )*stash\s+pop\b'
+    input_match: 'stash_roundtrip\.py\s+restore\s+[0-9a-f]{40}\b'
     min: 1
     arm: both
 
-  - name: stash-ref-checked-before-and-after
+  - name: never-pops-drops-or-clears-by-hand
     type: tool_used
     tool: Bash
-    input_match: 'git(?:\s+-[Cc]\s*\S+)*\s+(-\w+ \S+ )*(stash\s+list|rev-parse\b[^;&|\n]*refs/stash)'
-    min: 1
-    arm: both
-
-  - name: never-drops-the-stash
-    type: tool_used
-    tool: Bash
-    input_match: 'git(?:\s+-[Cc]\s*\S+)*\s+(-\w+ \S+ )*stash\s+(drop|clear)\b'
+    input_match: 'git(?:\s+-[Cc]\s*\S+)*\s+(-\w+ \S+ )*stash\s+(pop|drop|clear)\b'
     min: 0
     max: 0
     arm: both
+
+  - name: peer-stash-survives
+    type: regex
+    target:
+      source: file
+      path: .git/logs/refs/stash
+    pattern: 'On main: peer work\n$'
+
+  - name: own-stash-is-gone
+    type: regex
+    target:
+      source: file
+      path: .git/logs/refs/stash
+    pattern: 'tdd-xfail-'
+    match: not_contains
 
   - name: stages-source-file-alone-for-the-fix
     type: tool_used

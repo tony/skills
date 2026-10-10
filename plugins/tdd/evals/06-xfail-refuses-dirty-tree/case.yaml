@@ -35,6 +35,21 @@ graders:
     max: 0
     arm: both
 
+  - name: dirty-file-kept-byte-for-byte
+    type: regex
+    target:
+      source: file
+      path: bizdays.py
+    pattern: 'weekday <= 5\n\n# work in progress\n$'
+
+  - name: test-file-untouched
+    type: regex
+    target:
+      source: file
+      path: test_bizdays.py
+    pattern: 'is_business_day\(5\)'
+    match: not_contains
+
   - name: no-test-written
     type: llm
     focus: last_message
