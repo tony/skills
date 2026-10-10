@@ -129,8 +129,9 @@ Present:
 
 Wait for approval, then exit plan mode. If plan mode is unavailable,
 present the same plan inline and proceed on confirmation. In a
-non-interactive run (CI, or a the `action-worktrees` skill fan-out, which holds
-its own plan gate), record the plan in the report and proceed.
+non-interactive run (no answer can be collected: `claude -p`, `codex exec`,
+CI, or a the `action-worktrees` skill fan-out, which holds its own plan gate),
+record the plan in the report and proceed; never stop to ask for approval.
 
 ## Phase 3: Worktree & branch
 
@@ -228,7 +229,7 @@ TEA-45, worktree ../app-add-signup-validation
 ## Verification
 
 - Ran the project's test and lint gates locally: green.
-- CI not run yet; no push.
+- Deferred to CI: the full test matrix. Not pushed.
 ```
 
 Under `--setup-only`, reply in this shape (no `## Commits`, a `## Primer`):

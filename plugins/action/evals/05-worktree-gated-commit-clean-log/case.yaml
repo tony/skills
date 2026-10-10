@@ -64,3 +64,10 @@ graders:
       The reply reports at least one commit on the new branch, says the
       project's checks passed for it, and says nothing was pushed. The
       commit subject it quotes follows the `Scope(type) summary` form.
+
+  - name: no-transient-wording-or-log-dump
+    type: regex
+    target: last_message
+    match: not_contains
+    pattern: '\byet\b|\bfor now\b|^commit [0-9a-f]{7,40}$|^Author: '
+    flags: im

@@ -187,7 +187,8 @@ rules, list repo facts outside these sections (unset gates, missing
 config), mention an upstream before a push, use transient wording
 ("yet", "for now"), or name a commit by bare SHA where a ref exists. Write results in the
 passive, not as "I" or "the run"; never say plan mode or a question panel
-was unavailable. Every commit, branch,
+was unavailable. Append nothing after the last section: no commit-message
+dump, no closing question outside the panel. Every commit, branch,
 and path reported was read back from Git after the step, not recalled. A
 setup-only run claims only worktrees and primers.
 
@@ -237,7 +238,7 @@ Sequential, exit axis: gated commit.
 ## Verification
 
 - Shared gates ran in each worktree: green.
-- CI not run yet; no push.
+- Deferred to CI: the full test matrix. Not pushed.
 ```
 
 Under `--setup-only`, reply in this shape (no commits, a `## Primer`):
