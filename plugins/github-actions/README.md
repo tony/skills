@@ -61,13 +61,14 @@ commits on a local `wip/` branch instead.
 `bumping-github-actions` is the shared procedure; it also triggers on its
 own when you mention out-of-date actions or Dependabot's action PRs.
 
-Pinning rules, the fork rule, and the Dependabot close-out protocol live in
-`references/action-pinning.md` and `references/dependabot-closeout.md`.
+Pinning rules, the scope rule, commit and push boundaries, and the Dependabot
+close-out protocol live in `references/action-pinning.md`,
+`references/commit-and-push.md`, and `references/dependabot-closeout.md`.
 
 ## Prerequisites
 
 - git: reads workflow content from the default branch.
-- python3 (3.9 or newer): runs `scripts/pins.py`, the pin inventory, tag
-  check, and majors list.
+- python3 (3.9 or newer): runs `scripts/pins.py`: the pin inventory, tag
+  check, majors list, and pull-request proposal reader.
 - gh: tag verification, release lookup, CI watching, and closing
   dependabot PRs.

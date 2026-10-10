@@ -37,19 +37,21 @@ mkdir -p bin
 cat >bin/gh <<'SH'
 #!/usr/bin/env bash
 args="$*"
+args=${args//--hostname github.com /}
 case "$args" in
-  "repo view acme/alpha"*isFork*|"repo view acme/beta"*isFork*) echo '{"isFork":false}' ;;
-  "repo view acme/alpha"*defaultBranchRef*) echo main ;;
-  "repo view acme/beta"*defaultBranchRef*) echo trunk ;;
-  "repo view acme/alpha"*nameWithOwner*) echo acme/alpha ;;
-  "repo view acme/beta"*nameWithOwner*) echo acme/beta ;;
-  "api repos/actions/checkout/releases/latest"*) echo v4.2.2 ;;
-  "api repos/actions/checkout/releases --paginate"*) printf 'v4.2.2\nv4.0.0\nv3.0.0\nv2.0.0\n' ;;
-  "api repos/actions/checkout/git/ref/tags/v4"*) echo '{}' ;;
-  "api repos/acme/alpha/git/trees/main"*) echo .github/workflows/ci.yml ;;
-  "api repos/acme/beta/git/trees/trunk"*) echo .github/workflows/ci.yml ;;
-  "api repos/actions/checkout/releases/tags/"*tag_name*) t=${args#*releases/tags/}; echo "${t%% *}" ;;
-  "api repos/actions/checkout/releases/tags/"*) echo "v4 runs on a newer Node runtime." ;;
+  "repo view https://github.com/acme/alpha"*isFork*|"repo view https://github.com/acme/beta"*isFork*) echo '{"isFork":false}' ;;
+  "repo view https://github.com/acme/alpha"*defaultBranchRef*) echo main ;;
+  "repo view https://github.com/acme/beta"*defaultBranchRef*) echo trunk ;;
+  "repo view https://github.com/acme/alpha"*nameWithOwner*) echo acme/alpha ;;
+  "repo view https://github.com/acme/beta"*nameWithOwner*) echo acme/beta ;;
+  "api "*"repos/actions/checkout/releases/latest"*) echo v4.2.2 ;;
+  "api "*"repos/actions/checkout/releases --paginate"*) printf 'v4.2.2\nv4.0.0\nv3.0.0\nv2.0.0\n' ;;
+  "api "*"repos/actions/checkout/tags"*) printf 'v4.2.2\nv4.0.0\nv3.0.0\nv2.0.0\n' ;;
+  "api "*"repos/actions/checkout/git/ref/tags/v4"*) echo '{}' ;;
+  "api "*"repos/acme/alpha/git/trees/main"*) echo .github/workflows/ci.yml ;;
+  "api "*"repos/acme/beta/git/trees/trunk"*) echo .github/workflows/ci.yml ;;
+  "api "*"repos/actions/checkout/releases/tags/"*tag_name*) t=${args#*releases/tags/}; echo "${t%% *}" ;;
+  "api "*"repos/actions/checkout/releases/tags/"*) echo "v4 runs on a newer Node runtime." ;;
   "pr list"*) echo '[]' ;;
   *) echo "unsupported: $args" >&2; exit 1 ;;
 esac

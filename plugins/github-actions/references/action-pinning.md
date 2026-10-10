@@ -16,7 +16,12 @@ Read before writing any version string into a workflow.
 
 ## Scope
 
-Own repositories only. Check the fork flag, not the owner name:
+Scope is what the user named: the current repository, each `--repo`, and
+the accounts in `--owner`. Under `--root` with no `--owner`, discovery finds
+repositories by path only; list each with its remote's owner in the plan and
+write to none the user has not approved. A fork flag says nothing about
+ownership, since a non-fork can belong to someone else. Forks are out of
+scope unless the user names them with `--repo`:
 
 ```console
 $ gh repo view \
@@ -24,8 +29,7 @@ $ gh repo view \
     https://github.com/<owner>/<name>
 ```
 
-A fork (`isFork: true`) is out of scope unless the user names it with
-`--repo`. Report which repositories were excluded and why.
+Report which repositories were excluded and why.
 
 ## Inventory pins from trunk, not the working tree
 
@@ -39,13 +43,20 @@ resolves the remote (`origin`, else the only remote), requires one declared
 HTTPS or SSH URL whose hostname is exactly `github.com`, then fetches and
 reads the default branch from the API. Git URL rewrites and SSH configuration
 can redirect transport; this check validates the declared URL only.
-It prints one JSON object per repository with
-every `uses:` pin in workflow and composite-action YAML files. Print the
-script's absolute path once and write it literally in each command:
+It prints one JSON object per repository. Print the script's absolute path
+once and write it literally in each command:
 
 ```console
 $ python3 <absolute-path>/pins.py inventory <path-or-slug> [<path-or-slug>...]
 ```
+
+The JSON lists `pins` from the YAML structure of workflow files, action
+metadata files, and every local action a `uses: ./path` names, wherever it
+lives in the repository; shell text, comments, and input names such as
+`with: {uses: ...}` are not pins. Each pin has `action`, `ref`, `note` (the
+trailing comment), and `version` (from the ref, else from the comment; empty
+when neither names one). `dependabot` lists the Dependabot configuration
+files present on the default branch.
 
 A repository named only by slug (`--repo <owner>/<name>` with no local
 clone) is read through the API at one resolved default-branch commit.
@@ -58,13 +69,20 @@ audit and skip its commits, unless the user supplies a checkout path.
 
 Use the helper's JSON filenames as exact values, including embedded whitespace.
 It reads NUL-delimited Git paths and JSON API paths, and URL-encodes API lookups.
-Its search covers YAML under `.github/workflows/` and `.github/actions/`;
-Markdown is excluded. If the helper is unavailable or a read fails, report the
-inventory as incomplete and stop before proposing updates for that repository.
 
-Skip `uses: ./path` (local) and `uses: docker://...` (no tag to verify)
-and say so in the report. For `owner/repo/subpath@ref`, look up tags on
-`owner/repo`. `pins.py` and the commands here work on github.com only.
+`"complete": false` means the list is not every pin. `unparsed` names each
+file and line the reader could not interpret (anchors, aliases, merge keys,
+complex keys, tabs, block-scalar `uses`), and `unresolved` names each local
+action that is missing or outside the repository. Report both as they are,
+list the pins found as partial, and propose no update for that repository.
+If the helper is unavailable or a read fails, report the inventory as
+incomplete in the same way.
+
+A pin with an empty `version` (a SHA with no version comment, a branch)
+has no known version: report it as unknown and bump it only to a target the
+user names. Skip `uses: docker://...` (no tag to verify) and say so. For
+`owner/repo/subpath@ref`, look up tags on `owner/repo`. `pins.py` and the
+commands here work on github.com only.
 
 ## Resolve the latest version
 
@@ -78,33 +96,34 @@ $ gh api \
 ```
 
 Some actions publish only tags; when `releases/latest` returns nothing,
-list them with `git ls-remote --tags --refs
-https://github.com/<owner>/<action>.git` and take the highest. `releases/latest` is the most recently published release, which
-can be a backport on an older major line; compare it against the highest
-major in the list below before calling it the target.
+list them (see below) and take the highest. `releases/latest` is the most
+recently published release, which can be a backport on an older major line;
+compare it against the highest major in the tag list before calling it the
+target.
 
 ## List the majors between the pin and the target
 
 `python3 <absolute-path>/pins.py majors <owner/action> <pin> <target>`
-prints the first release of each major above the pin and at or below the
-target, falling back to the tag list when there are no release objects.
-Pass the version from the pin's trailing comment, not the SHA.
-By hand: a major's first release is its `vN.0.0` tag. List them all, then keep
-those above the pin's major and at or below the target's:
+prints the earliest listed tag of each major above the pin and at or below
+the target, read from the repository's full tag list (a release list can
+omit tag-only majors). Pass the version from the pin's trailing comment, not
+the SHA. Exit 4 means a crossed major has no listed tag: the lines printed
+are what exists, and stderr names the gap. Report the gap; it is never
+evidence that the major changed nothing. By hand, list every tag and take
+the lowest `vN.x.y` of each major in range:
 
 ```console
 $ gh api \
     --hostname github.com \
     --paginate \
-    --jq '.[].tag_name | select(test("^v[0-9]+\\.0\\.0$"))' \
-    repos/<owner>/<action>/releases
+    --jq '.[].name' \
+    repos/<owner>/<action>/tags
 ```
 
-For an action pinned at v3 with a v6 target, keep `v4.0.0`, `v5.0.0`, and
-`v6.0.0` from whatever the list prints. An action with no
-`vN.0.0` release tags its majors as bare `vN`: list them with `git
-ls-remote --tags` and take the first release of each major from the tags.
-Link each kept tag only after the release-URL check passes.
+For an action pinned at v3 with a v6 target, expect one tag each for v4, v5,
+and v6. Link each kept tag only after the release-URL check passes; a tag
+with no release object is described as "tag only" and linked as
+`https://github.com/<owner>/<action>/tree/<tag>`.
 
 ## Verify the target tag exists
 
@@ -118,9 +137,12 @@ $ gh api \
     repos/<owner>/<action>/git/ref/tags/<tag> >/dev/null 2>&1
 ```
 
-Only an HTTP 404 means the tag is missing. An auth, rate-limit, or network
-failure (`pins.py tag` exit 3) means the tag could not be checked: report
-that, never "missing", and do not write the pin.
+A tag is missing only when the lookup returns HTTP 404 and the repository
+itself reads (`gh api --hostname github.com repos/<owner>/<action>`), since
+GitHub also answers 404 for a private repository this login cannot see. An
+auth, rate-limit, or network failure, or a repository that does not read
+(`pins.py tag` exit 3), means the tag could not be checked: report that,
+never "missing", and do not write the pin.
 
 Piping `gh api` into `jq` or `sed` first swallows the 404 and reports a
 missing tag as present. Not every action publishes a floating major; run
@@ -161,24 +183,24 @@ An empty result means the tag does not exist; stop.
 
 ## Choose the pin, preserving the repo's shape
 
-Default to the major-level float: it collects patches without a commit per
-patch release.
+A bump keeps each pin's shape:
 
-A major float (`@v6`) moves to the next major float (`@v7`).
+- A major float (`@v6`) moves to the next major float (`@v7`).
+- An exact tag (`@v4.0.1`) moves to the newest exact tag.
+- A commit SHA with a version comment moves the SHA and the trailing
+  comment together; a stale `# v8.1.0` beside a v9 SHA is worse than no
+  comment.
+- A moving branch (`@main`, `@master`) is left alone and reported as drift;
+  bump it only when the user names a target.
+- When upstream has no major tag, pin the exact release and say why in the
+  commit body, so no one "fixes" it to a float that does not exist.
 
-An exact patch (`@v4.0.1`) is repinned to the float (`@v4`) when it
-exists and resolves to at least that patch. Say `repin X -> Y` in the
-subject; "from 4.0.1 to 4" reads as a downgrade otherwise.
-
-A commit SHA with a version comment moves the SHA and the trailing
-comment together; a stale `# v8.1.0` beside a v9 SHA is worse than no
-comment.
-
-A moving branch (`@main`, `@master`) is left alone and reported as drift;
-bump it only when the user names a target.
-
-When upstream has no major tag, pin the exact release and say why in the
-commit body, so no one "fixes" it to a float that does not exist.
+Repinning an exact tag to its float (`@v4.0.1` to `@v4`) collects patches
+without a commit per release but gives up reproducibility, since tags can
+be moved. It is a pin-policy change, not a bump: list it in the plan as its
+own choice, apply it only when approved, and say `repin X -> Y` in the
+subject. Only a full commit SHA is immutable; never describe an exact tag
+as equivalent to one.
 
 ## Check the gates the research surfaces
 
@@ -191,6 +213,11 @@ workflows for each breaking change the release notes name:
 - A new runtime requirement. Self-hosted `runs-on` values gate every
   bump to a newer Node runtime.
 - Package-manager declaration and lockfile requirements.
+
+State a compatibility conclusion (for example, that the runners meet a new
+Node requirement) only from the release note's stated requirement and the
+workflows' own `runs-on` values. A requirement the notes do not state, or a
+runner the workflows do not name, is reported as unknown.
 
 A fleet-wide fact is not a per-repo fact: where a general claim ("this repo
 authenticates via OIDC") does not hold, override the body for that repo.

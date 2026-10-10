@@ -33,7 +33,9 @@ Default scope is the current repository. `--root` audits every git
 repository beneath a directory; `--owner` keeps only those whose remote
 belongs to the given accounts or organisations; `--repo` names
 individual ones by path or slug. A slug with no clone is audited
-read-only. The fork rule and the slug-only read are in
+read-only. Under `--root` without `--owner`, list each discovered
+repository with its owner in the plan before any write. The scope rule and
+the slug-only read are in
 `references/action-pinning.md`.
 
 ### 2. Inventory and verify
@@ -66,24 +68,21 @@ written. Exit plan mode before committing.
 
 ### 5. Commit
 
-One commit per repository and action, one repository at a time. With
-`--push`, push as each completes so an interrupted run resumes, after
-`git log <remote>/<default>..HEAD --format=%h%x20%s` lists bump commits
-alone for that repository (any other commit is the user's: do not push,
-name it, never advise a reset or drop of it); otherwise report each local branch holding commits and print
-its push command. With
-`--pr`, branch, push, and open a pull request per repository, then close
+One commit per repository and action, one repository at a time, edited,
+staged, committed and pushed as `references/commit-and-push.md`
+directs. With `--push`, push as each repository completes so an
+interrupted run resumes; otherwise report each local branch holding
+commits and print its push command. With `--pr`, branch, push, and open a pull request per repository, then close
 dependabot pull requests only after those merge. Write commit messages,
 pull-request comments, and the report per `references/prose-rules.md`.
 No `Co-Authored-By`, no "Generated with" or other tool trailer, no emoji.
 
 ### 6. Verify and close out
 
-Watch CI per repository and attribute failures before blaming the
-bumps. Then close the dependabot pull requests per the closing
-protocol: show the user the exact commands for every PR whose action was
-bumped (citing its commit) or is no longer in any workflow (obsolete),
-and run them only after the user confirms.
+Watch every CI run per repository and attribute failures before
+blaming the bumps. Then close the dependabot pull requests per the closing
+protocol: show the user the exact commands for every PR the protocol maps
+to a commit or to obsolete, and run them only after the user confirms.
 
 ## Rules
 
@@ -101,7 +100,9 @@ Use the output shape in the `github-actions-bumping-github-actions` skill. The h
 `--audit-only`. A plan-only run, and a halted run (no workflows, no
 `gh`, an unverifiable tag, a PR title carrying shell syntax, PRs that
 cannot be listed or mapped), use the shapes in
-`references/output-shapes.md`; read it before replying.
+`references/output-shapes.md`; read it before replying. Under a
+fleet scope, a repository with an incomplete inventory is listed under
+`## Audit` as excluded, with its file and line, and the run continues.
 
 
 ## Portability notes

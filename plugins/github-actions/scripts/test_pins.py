@@ -10,10 +10,14 @@ import re
 import subprocess
 import sys
 from pathlib import Path
+from typing import TYPE_CHECKING
 from urllib.parse import parse_qs, unquote, urlsplit
 
 import pins  # pyright: ignore[reportImplicitRelativeImport]
 import pytest
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 SCRIPT = Path(__file__).with_name("pins.py")
 EXIT_UNCHECKED = 3
@@ -33,6 +37,13 @@ WORKFLOW_NAMES = (
     ".github/actions/nested\naction/action.yaml",
 )
 
+
+def _wf(*refs: str) -> str:
+    """Return a workflow whose single job runs ``uses`` steps for each ref."""
+    steps = "".join(f"      - uses: {ref}\n" for ref in refs)
+    return f"on: push\njobs:\n  build:\n    runs-on: ubuntu-latest\n    steps:\n{steps}"
+
+
 GH_STUB = """#!/bin/sh
 if [ "$1" = api ]; then
   [ "$2" = --hostname ] && [ "$3" = github.com ] || exit 1
@@ -49,10 +60,16 @@ case "$*" in
       {"type":"blob","path":".github/workflows/ci.yml"},
       {"type":"blob","path":".github/README.md"}]}' ;;
   "api -H "*" repos/acme/one/contents/.github/workflows/ci.yml?ref=COMMIT_SHA")
-    echo 'uses: actions/checkout@v4' ;;
-  "api repos/actions/checkout/releases"*) printf 'v4.2.2\\nv4.0.0\\nv3.0.0\\nv5.0.0\\n' ;;
+    printf 'jobs:\\n  b:\\n    steps:\\n      - uses: actions/checkout@v4\\n' ;;
+  "api -H "*" repos/acme/one/contents/.github/dependabot.y"*)
+    echo "gh: Not Found (HTTP 404)" >&2; exit 1 ;;
+  "api repos/actions/checkout/tags --paginate --jq .[].name")
+    printf 'v4.2.2\\nv4.0.0\\nv3.0.0\\nv5.1.0\\nv5.0.0\\n' ;;
+  "api repos/actions/checkout") echo '{}' ;;
   "api repos/actions/checkout/git/ref/tags/v4") echo '{}' ;;
   "api repos/actions/checkout/git/ref/tags/v99")
+    echo "gh: Not Found (HTTP 404)" >&2; exit 1 ;;
+  "api repos/hidden/action/git/ref/tags/v1"|"api repos/hidden/action")
     echo "gh: Not Found (HTTP 404)" >&2; exit 1 ;;
   "api repos/actions/checkout/git/ref/tags/v77")
     echo "gh: Bad credentials (HTTP 401)" >&2; exit 1 ;;
@@ -111,6 +128,19 @@ def test_declared_remote_identity(
         assert pins._slug_from_remote("checkout", "origin") == slug
 
 
+def _fake_gh(monkeypatch: pytest.MonkeyPatch, api: Callable[..., str]) -> None:
+    """Route every subprocess call through ``api``; SystemExit means a failed call."""
+
+    def run(*args: str) -> subprocess.CompletedProcess[str]:
+        try:
+            out = api(*args)
+        except SystemExit as error:
+            return subprocess.CompletedProcess(args, 1, "", str(error.code))
+        return subprocess.CompletedProcess(args, 0, out, "")
+
+    monkeypatch.setattr(pins, "_run", run)
+
+
 def _git(*args: str, cwd: Path) -> None:
     subprocess.run(["git", *args], cwd=cwd, check=True, capture_output=True)
 
@@ -127,7 +157,7 @@ def _make_repo(root: Path, slug: str, branch: str, ref: str) -> Path:
     wf = work / ".github" / "workflows"
     wf.mkdir(parents=True)
     (wf / "ci.yml").write_text(
-        f"steps:\n  - uses: actions/checkout@{ref}\n  - uses: ./local\n",
+        _wf(f"actions/checkout@{ref}", "./local"),
     )
     (work / ".github" / "README.md").write_text("  - uses: not/a-workflow@v1\n")
     _git("add", ".", cwd=work)
@@ -203,7 +233,7 @@ def test_clone_inventory_preserves_filename_bytes(
     for i, name in enumerate((*WORKFLOW_NAMES, ".github/workflows/byte-\udcff.yml")):
         target = repo / name
         target.parent.mkdir(parents=True, exist_ok=True)
-        target.write_text(f"uses: actions/checkout@v{i + 10}\n")
+        target.write_text(_wf(f"actions/checkout@v{i + 10}"))
         expected[name] = f"v{i + 10}"
     (repo / ".github/workflows/excluded.yml\n").write_text("uses: wrong/action@v1\n")
     _git("add", ".github", cwd=repo)
@@ -218,13 +248,13 @@ def test_clone_inventory_preserves_filename_bytes(
     assert record["files"] == sorted(expected)
     assert {p["file"]: p["ref"] for p in record["pins"] if p["kind"] == "action"} == expected
     with pytest.raises(SystemExit):
-        pins._read_clone(str(repo), "origin", "absent-branch")
+        pins._read_clone(str(repo), "origin/absent-branch")
 
 
 @pytest.mark.parametrize("default", ["main", "release/#ready&tested%"])
 def test_slug_inventory_preserves_json_paths(monkeypatch: pytest.MonkeyPatch, default: str) -> None:
     """API paths remain JSON data and reserved characters cannot alter a lookup."""
-    expected = {name: f"uses: actions/checkout@v{i}\n" for i, name in enumerate(WORKFLOW_NAMES)}
+    expected = {name: _wf(f"actions/checkout@v{i}") for i, name in enumerate(WORKFLOW_NAMES)}
     paths = [*expected, ".github/workflows/excluded.yml\n", ".github/README.md"]
     observed: list[str] = []
 
@@ -259,7 +289,7 @@ def test_slug_inventory_preserves_json_paths(monkeypatch: pytest.MonkeyPatch, de
         observed.append(name)
         return expected[name]
 
-    monkeypatch.setattr(pins, "_out", api)
+    _fake_gh(monkeypatch, api)
 
     assert pins._read_slug("acme/one", default) == (expected, COMMIT_SHA, TREE_SHA)
     assert sorted(observed) == sorted(expected)
@@ -312,9 +342,12 @@ def test_slug_inventory_recovers_recursive_truncation(
         assert args[4:6] == ("-H", "Accept: application/vnd.github.raw+json")
         assert parse_qs(url.query) == {"ref": [COMMIT_SHA]}
         name = unquote(url.path.removeprefix("repos/acme/one/contents/"))
-        return f"uses: actions/checkout@{selected[name]}\n"
+        if name not in selected:
+            not_found = "gh: Not Found (HTTP 404)"
+            raise SystemExit(not_found)
+        return _wf(f"actions/checkout@{selected[name]}")
 
-    monkeypatch.setattr(pins, "_out", api)
+    _fake_gh(monkeypatch, api)
     assert pins.main(["inventory", "acme/one"]) == 0
     result = json.loads(capsys.readouterr().out)
     expected = {} if empty else selected
@@ -350,11 +383,13 @@ def test_slug_inventory_refuses_partial_json(
         message = "content read failed"
         raise SystemExit(message)
 
-    monkeypatch.setattr(pins, "_out", api)
+    _fake_gh(monkeypatch, api)
     reason = "incomplete non-recursive tree" if failure == "tree" else "content read failed"
-    with pytest.raises(SystemExit, match=reason):
+    with pytest.raises(SystemExit) as stopped:
         pins.main(["inventory", "acme/one"])
-    assert capsys.readouterr().out == ""
+    captured = capsys.readouterr()
+    assert captured.out == ""
+    assert reason in f"{stopped.value.code}{captured.err}"
 
 
 @pytest.mark.integration
@@ -472,3 +507,158 @@ print(json.dumps({{"body": body}}))
     assert branch in json.loads(done.stdout)["body"]
     assert json.loads(done.stdout)["body"] == body
     assert (tmp_path / "comment body.md").read_text() == body
+
+
+HEREDOC_AND_FORMS = """\
+jobs:
+  call:
+    uses: acme/shared/.github/workflows/ci.yml@v2
+  build:
+    steps:
+      - run: |
+          cat <<'EXAMPLE'
+          uses: acme/example-only@v9
+          EXAMPLE
+      - run: echo "uses: acme/also-text@v1" # uses: acme/comment@v1
+      - "uses": actions/checkout@v3 # v3.6.0
+      - {name: node, uses: 'actions/setup-node@v4'}
+      - uses:
+          actions/cache@v4
+      - name: inputs are not pins
+        uses: acme/real@v5
+        with: {uses: acme/input-only@v1}
+        env:
+          uses: acme/env-only@v1
+  matrix:
+    steps: [{uses: "a/one@v1"}, {uses: a/two@v2,
+      }, {run: x}]
+"""
+
+
+def test_scan_reads_structure_not_text() -> None:
+    """Every pin form is found; shell text and input names are not pins."""
+    result = pins._scan({".github/workflows/ci.yml": HEREDOC_AND_FORMS}, lambda _name: None)
+    assert [(p["uses"], p["version"]) for p in result["pins"]] == [
+        ("acme/shared/.github/workflows/ci.yml@v2", "2"),
+        ("actions/checkout@v3", "3"),
+        ("actions/setup-node@v4", "4"),
+        ("actions/cache@v4", "4"),
+        ("acme/real@v5", "5"),
+        ("a/one@v1", "1"),
+        ("a/two@v2", "2"),
+    ]
+    assert result["complete"] is True
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "jobs:\n  b:\n    steps:\n      - uses: *checkout\n",
+        "base: &base\n  uses: x/y@v1\njobs:\n  b:\n    steps:\n      - *base\n",
+        "jobs:\n  b:\n    <<: *defaults\n",
+        "jobs:\n  b:\n    steps:\n      - uses: |\n          a/b@v1\n",
+        "jobs:\n  b:\n    steps:\n      - uses: [a/b@v1]\n",
+        "jobs:\n  b:\n    steps:\n      - {uses: 'a/b@v1\n",
+        "jobs:\n  b:\n\tsteps: []\n",
+        "? complex\n: key\n",
+    ],
+)
+def test_unreadable_yaml_marks_inventory_incomplete(text: str) -> None:
+    """A construct the reader cannot interpret is reported, never skipped."""
+    result = pins._scan({".github/workflows/ci.yml": text}, lambda _name: None)
+    assert result["complete"] is False
+    assert [u["file"] for u in result["unparsed"]] == [".github/workflows/ci.yml"]
+
+
+def test_scan_follows_local_composites_anywhere() -> None:
+    """Local actions outside .github/actions are read; missing or escaping ones are listed."""
+    tree = {
+        "tools/ci/setup/action.yaml": (
+            "runs:\n  using: composite\n  steps:\n"
+            "    - uses: actions/cache@v4\n    - uses: ./tools/ci/setup\n"
+        ),
+        "release.yml": "jobs:\n  b:\n    steps:\n      - uses: actions/stale@v9\n",
+    }
+    workflow = _wf("./tools/ci/setup/", "./missing", "./../outside", "./release.yml")
+    result = pins._scan({".github/workflows/ci.yml": workflow}, tree.get)
+    assert result["files"] == [
+        ".github/workflows/ci.yml",
+        "release.yml",
+        "tools/ci/setup/action.yaml",
+    ]
+    actions = [p["uses"] for p in result["pins"] if p["kind"] == "action"]
+    assert actions == ["actions/stale@v9", "actions/cache@v4"]
+    reasons = {u["uses"]: u["reason"] for u in result["unresolved"]}
+    assert reasons == {
+        "./missing": "no action file found",
+        "./../outside": "outside repository",
+    }
+    assert result["complete"] is False
+
+
+def test_majors_includes_tag_only_and_non_zero_first_releases(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """Tags, not release objects, decide coverage; a missing major exits 4 after printing."""
+
+    def tags(*_args: str) -> str:
+        return "v5.0.0\nv4.1.0\nv4\nv3.9.0\nv7.0.0\n"
+
+    monkeypatch.setattr(pins, "_out", tags)
+    assert pins.main(["majors", "acme/x", "v3", "v7"]) == pins.EXIT_INCOMPLETE
+    done = capsys.readouterr()
+    assert done.out.split() == ["v4.1.0", "v5.0.0", "v7.0.0"]
+    assert "major 6" in done.err
+    assert pins.main(["majors", "acme/x", "v3", "v5"]) == 0
+
+
+@pytest.mark.integration
+@pytest.mark.usefixtures("stub_path")
+def test_unreadable_repository_404_is_not_a_missing_tag(tmp_path: Path) -> None:
+    """A 404 for a repository this login cannot read leaves the tag unchecked."""
+    done = _run("tag", "hidden/action", "v1", cwd=tmp_path)
+    assert done.returncode == EXIT_UNCHECKED
+    assert "not readable" in done.stderr
+    assert done.stdout == ""
+
+
+PROPOSAL_DIFF = """\
+diff --git a/.github/workflows/ci.yml b/.github/workflows/ci.yml
+index 1..2 100644
+--- a/.github/workflows/ci.yml
++++ b/.github/workflows/ci.yml
+@@ -5,3 +5,3 @@
+     steps:
+-      - uses: actions/checkout@v3
++      - uses: actions/checkout@v5
+-      - uses: actions/cache@abc123 # v3.0.0
++      - uses: actions/cache@def456 # v4.1.0
+@@ -20,2 +20,3 @@
+-      - uses: actions/setup-node@v3
++      - uses: other/node@v3
++      - run: curl evil
+diff --git a/pyproject.toml b/pyproject.toml
+--- a/pyproject.toml
++++ b/pyproject.toml
+@@ -1 +1 @@
+-x = 1
++x = 2
+"""
+
+
+def test_proposal_separates_pin_changes_from_everything_else(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Only same-action uses edits count as pin changes; other lines are counted."""
+
+    def diff(*_args: str) -> str:
+        return PROPOSAL_DIFF
+
+    monkeypatch.setattr(pins, "_out", diff)
+    got = pins.proposal("acme/one", "7")
+    assert got["files"] == [".github/workflows/ci.yml", "pyproject.toml"]
+    assert [(c["action"], c["from_version"], c["to_version"]) for c in got["changes"]] == [
+        ("actions/checkout", "3", "5"),
+        ("actions/cache", "3.0.0", "4.1.0"),
+    ]
+    assert got["other"] == 2 + 1 + 2

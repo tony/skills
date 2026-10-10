@@ -2,42 +2,470 @@
 """Deterministic pin checks for GitHub Actions workflows.
 
 ``inventory REPO...`` prints one JSON object per repository (a clone path or an
-``owner/name`` slug) listing every ``uses:`` pin on its default branch.
-``majors ACTION PIN TARGET`` prints the first release of each major above PIN's
-major and at or below TARGET's. ``tag ACTION TAG`` exits 0 when the tag exists,
-1 when it does not (HTTP 404), and 3 when the lookup failed (auth, rate limit,
-network) so the tag could not be checked.
+``owner/name`` slug) listing every ``uses`` pin on its default branch. Workflow
+and composite-action YAML is parsed, not line-matched; local composite actions
+named by a ``uses: ./path`` are followed wherever they live. ``dependabot``
+lists the Dependabot configuration files present. ``complete`` is false when a
+file could not be parsed (``unparsed``) or a local action could not be found
+(``unresolved``); such an inventory is not a list of every pin.
+``majors ACTION PIN TARGET`` prints the first tag of each major above PIN's
+major and at or below TARGET's, and exits 4 after printing when a major has no
+listed tag. ``tag ACTION TAG`` exits 0 when the tag exists, 1 when it does not,
+and 3 when the lookup could not decide (auth, rate limit, network, or a
+repository this login cannot read). ``proposal SLUG NUMBER`` prints the pin
+changes a pull request makes and how many changed lines are anything else.
 
 Clone commands name their path; GitHub CLI queries name their repository and
 github.com host independently of the working directory and host environment.
 """
 
-# ruff: noqa: S603, S607, PLR2004, TRY003, EM102
-# pyright: reportUnusedCallResult=false, reportAny=false
+# ruff: noqa: S603, S607, PLR2004, PLR0911, TRY003, EM102
+# pyright: reportUnusedCallResult=false, reportAny=false, reportExplicitAny=false
 from __future__ import annotations
 
 import json
 import os
+import posixpath
 import re
 import subprocess
 import sys
+from collections.abc import Callable
 from pathlib import Path
+from typing import Any, cast, final
 from urllib.parse import quote, urlsplit
 
 USES = re.compile(r"^\s*-?\s*uses:\s*(?P<ref>[^\s#]+)\s*(?:#\s*(?P<note>.*))?$")
 SLUG = re.compile(r"^[\w.-]+/[\w.-]+$")
 SCP_REMOTE = re.compile(r"(?:[\w.-]+@)?github\.com:(?P<path>.+)", re.IGNORECASE | re.ASCII)
-WORKFLOW = re.compile(r"\.github/(workflows|actions)/.+\.ya?ml", re.DOTALL)
+WORKFLOW = re.compile(
+    r"\.github/workflows/.+\.ya?ml|\.github/actions/(?:.+/)?action\.ya?ml", re.DOTALL
+)
 MAJOR = re.compile(r"^v(\d+)(?:\.(\d+))?(?:\.(\d+))?$")
+VERSION = re.compile(r"^v?(\d+(?:\.\d+){0,2})(?![\w.-])")
+EXIT_INCOMPLETE = 4
+
+
+@final
+class UnsupportedError(Exception):
+    """A construct the workflow reader cannot interpret; the file stays unread."""
+
+    def __init__(self, line: int, reason: str) -> None:
+        super().__init__(f"line {line}: {reason}")
+        self.line = line
+        self.reason = reason
+
+
+@final
+class Scalar(str):  # noqa: SLOT000
+    """A YAML scalar with its source line, trailing comment and block flag."""
+
+    line: int = 0
+    comment: str = ""
+    block: bool = False
+
+    def __new__(cls, text: str, line: int, comment: str = "", block: bool = False) -> Scalar:
+        """Build a scalar holding ``text``."""
+        obj = super().__new__(cls, text)
+        obj.line = line
+        obj.comment = comment
+        obj.block = block
+        return obj
+
+
+Node = Any
+Row = tuple[int, str, int]
+
+
+def _quoted_end(text: str, start: int) -> int:
+    """Return the index of the quote closing the scalar opened at ``start``, or -1."""
+    opener, i = text[start], start + 1
+    while i < len(text):
+        ch = text[i]
+        if opener == '"' and ch == "\\":
+            i += 2
+            continue
+        if ch == opener:
+            if opener == "'" and text[i + 1 : i + 2] == "'":
+                i += 2
+                continue
+            return i
+        i += 1
+    return -1
+
+
+def _unquote(text: str) -> str:
+    if text[0] == "'":
+        return text[1:-1].replace("''", "'")
+    return text[1:-1].replace('\\"', '"').replace("\\\\", "\\")
+
+
+def _comment_at(text: str) -> int:
+    """Return the index of the first comment marker outside quotes, or -1."""
+    i = 0
+    while i < len(text):
+        ch = text[i]
+        if ch in "\"'" and (i == 0 or text[i - 1] in " \t[{,:"):
+            end = _quoted_end(text, i)
+            if end < 0:
+                return -1
+            i = end + 1
+            continue
+        if ch == "#" and (i == 0 or text[i - 1] in " \t"):
+            return i
+        i += 1
+    return -1
+
+
+def _flow_depth(text: str, line: int) -> int:
+    depth, i = 0, 0
+    while i < len(text):
+        ch = text[i]
+        if ch in "\"'":
+            end = _quoted_end(text, i)
+            if end < 0:
+                return 1
+            i = end
+        elif ch in "{[":
+            depth += 1
+        elif ch in "}]":
+            depth -= 1
+            if depth < 0:
+                raise UnsupportedError(line, "unbalanced flow collection")
+        i += 1
+    return depth
+
+
+@final
+class _Flow:
+    """Parses one complete flow collection held in a single string."""
+
+    def __init__(self, text: str, line: int) -> None:
+        self.text = text
+        self.line = line
+
+    def skip(self, i: int) -> int:
+        while i < len(self.text) and self.text[i] in " \t":
+            i += 1
+        return i
+
+    def node(self, i: int) -> tuple[Node, int]:
+        i = self.skip(i)
+        if i >= len(self.text):
+            return None, i
+        ch = self.text[i]
+        if ch == "{":
+            return self.mapping(i + 1)
+        if ch == "[":
+            return self.sequence(i + 1)
+        if ch in "&*!|>%@`":
+            raise UnsupportedError(self.line, "anchor, alias, tag or reserved indicator")
+        if ch in "\"'":
+            end = _quoted_end(self.text, i)
+            if end < 0:
+                raise UnsupportedError(self.line, "unterminated quoted scalar")
+            return Scalar(_unquote(self.text[i : end + 1]), self.line), end + 1
+        start = i
+        while i < len(self.text):
+            colon = self.text[i] == ":" and (i + 1 == len(self.text) or self.text[i + 1] in " \t")
+            if self.text[i] in ",]}" or colon:
+                break
+            i += 1
+        return Scalar(self.text[start:i].strip(), self.line), i
+
+    def mapping(self, i: int) -> tuple[Node, int]:
+        result: dict[str, Node] = {}
+        while True:
+            i = self.skip(i)
+            if i >= len(self.text):
+                raise UnsupportedError(self.line, "unterminated flow mapping")
+            if self.text[i] == "}":
+                return result, i + 1
+            name, i = self.node(i)
+            if not isinstance(name, Scalar) or name == "<<":
+                raise UnsupportedError(self.line, "unsupported flow mapping key")
+            i = self.skip(i)
+            value: Node = None
+            if i < len(self.text) and self.text[i] == ":":
+                value, i = self.node(i + 1)
+                i = self.skip(i)
+            result[str(name)] = value
+            if i < len(self.text) and self.text[i] == ",":
+                i += 1
+
+    def sequence(self, i: int) -> tuple[Node, int]:
+        result: list[Node] = []
+        while True:
+            i = self.skip(i)
+            if i >= len(self.text):
+                raise UnsupportedError(self.line, "unterminated flow sequence")
+            if self.text[i] == "]":
+                return result, i + 1
+            item, i = self.node(i)
+            i = self.skip(i)
+            if i < len(self.text) and self.text[i] == ":" and isinstance(item, Scalar):
+                value, i = self.node(i + 1)
+                item = {str(item): value}
+                i = self.skip(i)
+            result.append(item)
+            if i < len(self.text) and self.text[i] == ",":
+                i += 1
+
+
+@final
+class _Reader:
+    """Reads the block and flow YAML a workflow uses and refuses the rest."""
+
+    def __init__(self, rows: list[Row]) -> None:
+        self.rows = rows
+
+    def next(self, i: int) -> int:
+        while i < len(self.rows) and (not self.rows[i][1] or self.rows[i][1].startswith("#")):
+            i += 1
+        return i
+
+    def document(self) -> Node:
+        i = self.next(0)
+        if i >= len(self.rows):
+            return None
+        node, i = self.node(i, -1)
+        i = self.next(i)
+        if i < len(self.rows):
+            raise UnsupportedError(self.rows[i][2], "unexpected content")
+        return node
+
+    def node(self, i: int, parent: int) -> tuple[Node, int]:
+        indent, text, no = self.rows[i]
+        if text == "-" or text.startswith("- "):
+            return self.sequence(i, indent)
+        if self.key(text, no) is not None:
+            return self.mapping(i, indent)
+        return self.inline(i, text, parent)
+
+    def sequence(self, i: int, indent: int) -> tuple[Node, int]:
+        items: list[Node] = []
+        while i < len(self.rows) and self.rows[i][0] == indent:
+            _, text, no = self.rows[i]
+            if not (text == "-" or text.startswith("- ")):
+                break
+            rest = text[1:].lstrip(" ")
+            if not rest or rest.startswith("#"):
+                j = self.next(i + 1)
+                if j < len(self.rows) and self.rows[j][0] > indent:
+                    item, i = self.node(j, indent)
+                else:
+                    item, i = None, j
+            else:
+                self.rows[i] = (indent + len(text) - len(rest), rest, no)
+                item, i = self.node(i, indent)
+            items.append(item)
+            i = self.next(i)
+        return items, i
+
+    def mapping(self, i: int, indent: int) -> tuple[Node, int]:
+        result: dict[str, Node] = {}
+        while i < len(self.rows) and self.rows[i][0] == indent:
+            _, text, no = self.rows[i]
+            pair = self.key(text, no)
+            if pair is None:
+                raise UnsupportedError(no, "expected a mapping key")
+            name, rest = pair
+            if name == "<<":
+                raise UnsupportedError(no, "merge key")
+            if not rest or rest.startswith("#"):
+                j = self.next(i + 1)
+                if j < len(self.rows) and self.rows[j][0] > indent:
+                    value, i = self.node(j, indent)
+                elif (
+                    j < len(self.rows)
+                    and self.rows[j][0] == indent
+                    and (self.rows[j][1] == "-" or self.rows[j][1].startswith("- "))
+                ):
+                    value, i = self.sequence(j, indent)
+                else:
+                    value, i = None, j
+            else:
+                value, i = self.inline(i, rest, indent)
+            result[name] = value
+            i = self.next(i)
+        return result, i
+
+    def key(self, text: str, no: int) -> tuple[str, str] | None:
+        """Split ``key: rest``; None when the line is not a mapping entry."""
+        if text[0] == "\t":
+            raise UnsupportedError(no, "tab indentation")
+        if text == "?" or text.startswith("? "):
+            raise UnsupportedError(no, "complex mapping key")
+        if text[0] in "\"'":
+            end = _quoted_end(text, 0)
+            if end < 0:
+                return None
+            tail = text[end + 1 :].lstrip(" ")
+            if tail.startswith(":") and (len(tail) == 1 or tail[1] in " \t"):
+                return _unquote(text[: end + 1]), tail[1:].strip()
+            return None
+        if text[0] in "{[&*!|>%@`":
+            return None
+        for i, ch in enumerate(text):
+            if ch == ":" and (i + 1 == len(text) or text[i + 1] in " \t"):
+                return text[:i].rstrip(), text[i + 1 :].strip()
+            if ch == "#" and i and text[i - 1] in " \t":
+                return None
+        return None
+
+    def inline(self, i: int, text: str, parent: int) -> tuple[Node, int]:
+        no = self.rows[i][2]
+        first = text[0]
+        if first in "|>":
+            return self.block(i, text, parent)
+        if first in "&*!%@`":
+            raise UnsupportedError(no, "anchor, alias, tag or reserved indicator")
+        if first in "{[":
+            return self.flow(i, text)
+        if first in "\"'":
+            return self.quoted(i, text)
+        cut = _comment_at(text)
+        body = text if cut < 0 else text[:cut]
+        comment = "" if cut < 0 else text[cut + 1 :].strip()
+        j = i + 1
+        while j < len(self.rows):
+            indent, more, _ = self.rows[j]
+            if not more:
+                j += 1
+            elif more.startswith("#") or indent <= parent:
+                break
+            else:
+                body += " " + more
+                j += 1
+        return Scalar(body.strip(), no, comment), j
+
+    def block(self, i: int, text: str, parent: int) -> tuple[Node, int]:
+        lines: list[str] = []
+        j = i + 1
+        while j < len(self.rows) and (not self.rows[j][1] or self.rows[j][0] > parent):
+            lines.append(self.rows[j][1])
+            j += 1
+        cut = _comment_at(text)
+        comment = "" if cut < 0 else text[cut + 1 :].strip()
+        return Scalar("\n".join(lines), self.rows[i][2], comment, block=True), j
+
+    def quoted(self, i: int, text: str) -> tuple[Node, int]:
+        no, j = self.rows[i][2], i + 1
+        while _quoted_end(text, 0) < 0:
+            if j >= len(self.rows):
+                raise UnsupportedError(no, "unterminated quoted scalar")
+            text += " " + self.rows[j][1]
+            j += 1
+        end = _quoted_end(text, 0)
+        tail = text[end + 1 :].strip()
+        if tail and not tail.startswith("#"):
+            raise UnsupportedError(no, "text after quoted scalar")
+        return Scalar(_unquote(text[: end + 1]), no, tail[1:].strip()), j
+
+    def flow(self, i: int, text: str) -> tuple[Node, int]:
+        no, j = self.rows[i][2], i + 1
+        parts: list[str] = []
+        while True:
+            cut = _comment_at(text)
+            parts.append(text if cut < 0 else text[:cut])
+            if _flow_depth(" ".join(parts), no) == 0:
+                break
+            if j >= len(self.rows):
+                raise UnsupportedError(no, "unterminated flow collection")
+            text = self.rows[j][1]
+            j += 1
+        joined = " ".join(parts)
+        node, end = _Flow(joined, no).node(0)
+        if joined[end:].strip():
+            raise UnsupportedError(no, "text after flow collection")
+        return node, j
+
+
+def _documents(text: str) -> list[list[Row]]:
+    """Split text into per-document ``(indent, content, line)`` rows."""
+    documents: list[list[Row]] = [[]]
+    for no, raw in enumerate(re.split(r"\r\n|\r|\n", text.removeprefix("﻿")), 1):
+        if raw == "---" or raw.startswith(("--- ", "---\t")):
+            tail = raw[3:].strip()
+            if tail and not tail.startswith("#"):
+                raise UnsupportedError(no, "content after document marker")
+            documents.append([])
+        elif raw == "..." or raw.startswith("%"):
+            continue
+        else:
+            content = raw.lstrip(" ")
+            documents[-1].append((len(raw) - len(content), content.rstrip(" \t"), no))
+    return documents
+
+
+def load_documents(text: str) -> list[Node]:
+    """Parse every YAML document in ``text``; raise UnsupportedError when unclear."""
+    return [_Reader(rows).document() for rows in _documents(text)]
+
+
+def _mapping(node: Node) -> dict[str, Node]:
+    return cast("dict[str, Node]", node) if isinstance(node, dict) else {}
+
+
+def _items(node: Node) -> list[Node]:
+    return cast("list[Node]", node) if isinstance(node, list) else []
+
+
+def step_uses(documents: list[Node]) -> list[Scalar]:
+    """Return ``uses`` values of jobs and steps in workflows and composite actions."""
+    found: list[Scalar] = []
+
+    def take(holder: Node) -> None:
+        mapping = _mapping(holder)
+        if "uses" in mapping:
+            value = mapping["uses"]
+            if not isinstance(value, Scalar) or value.block:
+                raise UnsupportedError(getattr(value, "line", 0), "uses is not a plain string")
+            found.append(value)
+
+    def steps(holder: Node) -> None:
+        for step in _items(_mapping(holder).get("steps")):
+            take(step)
+
+    for doc in documents:
+        top = _mapping(doc)
+        for job in _mapping(top.get("jobs")).values():
+            take(job)
+            steps(job)
+        steps(top.get("runs"))
+    return found
+
+
+def pin_version(ref: str, note: str) -> str:
+    """Return the version a pin names: its ref when a version, else its comment's.
+
+    >>> pin_version("v4", ""), pin_version("a1b2c3", "v4.2.1"), pin_version("main", "")
+    ('4', '4.2.1', '')
+    """
+    if MAJOR.match(ref):
+        return ref.removeprefix("v")
+    m = VERSION.match(note.strip())
+    return m.group(1) if m else ""
+
+
+def _pin(raw: str, note: str, line: int) -> dict[str, str]:
+    raw = raw.strip()
+    base = {"line": str(line), "uses": raw, "note": note}
+    if raw.startswith("./"):
+        return {**base, "kind": "local", "action": raw, "ref": "", "version": ""}
+    if raw.startswith("docker://"):
+        return {**base, "kind": "docker", "action": raw, "ref": "", "version": ""}
+    action, _, ref = raw.partition("@")
+    version = pin_version(ref, note)
+    return {**base, "kind": "action", "action": action, "ref": ref, "version": version}
 
 
 def parse_uses(line: str) -> dict[str, str] | None:
-    """Parse one ``uses:`` line; return None when it is not one.
+    """Parse one diff or text line holding ``uses:``; None when it is not one.
 
     >>> parse_uses("  - uses: actions/checkout@v3")["ref"]
     'v3'
-    >>> parse_uses("uses: a/b/sub@abc123 # v1.2.3")["note"]
-    'v1.2.3'
+    >>> parse_uses("uses: a/b/sub@abc123 # v1.2.3")["version"]
+    '1.2.3'
     >>> parse_uses("uses: ./local")["kind"]
     'local'
     >>> parse_uses("run: echo uses: x") is None
@@ -46,14 +474,7 @@ def parse_uses(line: str) -> dict[str, str] | None:
     m = USES.match(line)
     if not m:
         return None
-    raw = m.group("ref").strip("'\"")
-    note = (m.group("note") or "").strip()
-    if raw.startswith("./"):
-        return {"uses": raw, "kind": "local", "action": raw, "ref": "", "note": note}
-    if raw.startswith("docker://"):
-        return {"uses": raw, "kind": "docker", "action": raw, "ref": "", "note": note}
-    action, _, ref = raw.partition("@")
-    return {"uses": raw, "kind": "action", "action": action, "ref": ref, "note": note}
+    return _pin(m.group("ref").strip("'\""), (m.group("note") or "").strip(), 0)
 
 
 def action_repo(action: str) -> str:
@@ -66,28 +487,31 @@ def action_repo(action: str) -> str:
 
 
 def first_of_majors(tags: list[str], above: int, upto: int) -> list[str]:
-    """Pick the first release tag of each major in (above, upto].
+    """Pick the earliest listed tag of each major in (above, upto].
 
-    Prefers ``vN.0.0``, then ``vN.0``, then ``vN``.
+    Prefers the lowest ``vN.x.y``, then ``vN.x``, then the floating ``vN``.
 
     >>> first_of_majors(["v4.2.2", "v4.0.0", "v5.0.0", "v6.0.0", "v6.1.0"], 3, 5)
     ['v4.0.0', 'v5.0.0']
-    >>> first_of_majors(["v4", "v5", "v5.1.0"], 3, 5)
-    ['v4', 'v5']
+    >>> first_of_majors(["v4", "v5", "v5.1.0", "v5.0.3"], 3, 5)
+    ['v4', 'v5.0.3']
+    >>> first_of_majors(["v4.1.0", "v5.0.1"], 3, 5)
+    ['v4.1.0', 'v5.0.1']
     """
-    found: dict[int, dict[int, str]] = {}
+    found: dict[int, list[tuple[int, int, int, str]]] = {}
     for tag in tags:
         m = MAJOR.match(tag)
         if not m:
             continue
         major = int(m.group(1))
-        rank = {(None, None): 2, ("0", None): 1, ("0", "0"): 0}.get(
-            (m.group(2), m.group(3)),
-        )
-        if rank is None or not above < major <= upto:
+        if not above < major <= upto:
             continue
-        found.setdefault(major, {})[rank] = tag
-    return [found[n][min(found[n])] for n in sorted(found)]
+        parts = [g for g in m.groups()[1:] if g is not None]
+        rank = 2 - len(parts)
+        found.setdefault(major, []).append(
+            (rank, int(parts[0]) if parts else 0, int(parts[1]) if len(parts) > 1 else 0, tag)
+        )
+    return [min(found[n])[3] for n in sorted(found)]
 
 
 def _major_of(ref: str) -> int:
@@ -163,18 +587,85 @@ def _default_branch(slug: str) -> str:
     ).strip()  # fmt: skip
 
 
-def _scan(files: dict[str, str]) -> tuple[list[dict[str, str]], list[str]]:
-    pins: list[dict[str, str]] = []
-    for name in sorted(files):
-        for no, line in enumerate(files[name].splitlines(), 1):
-            pin = parse_uses(line)
-            if pin:
-                pins.append({"file": name, "line": str(no), **pin})
-    return pins, sorted(files)
+Fetch = Callable[[str], "str | None"]
 
 
-def _read_clone(path: str, remote: str, default: str) -> dict[str, str]:
-    ref = f"{remote}/{default}"
+def _local_files(raw: str) -> list[str] | None:
+    """Return candidate files for ``uses: ./path``; None when it leaves the repository."""
+    path = posixpath.normpath(raw)
+    if path == ".." or path.startswith(("../", "/")):
+        return None
+    if path.endswith((".yml", ".yaml")):
+        return [path]
+    return [posixpath.normpath(posixpath.join(path, f"action.{ext}")) for ext in ("yml", "yaml")]
+
+
+def _scan(files: dict[str, str], fetch: Fetch) -> dict[str, Any]:
+    """Parse files, following local composite actions through ``fetch``."""
+    texts = dict(files)
+    results: dict[str, list[Scalar]] = {}
+    unparsed: list[dict[str, object]] = []
+    unresolved: list[dict[str, str]] = []
+    absent: set[str] = set()
+    queue = sorted(texts)
+    while queue:
+        name = queue.pop(0)
+        try:
+            results[name] = step_uses(load_documents(texts[name]))
+        except UnsupportedError as err:
+            unparsed.append({"file": name, "line": err.line, "reason": err.reason})
+            continue
+        for value in results[name]:
+            if not value.startswith("./"):
+                continue
+            candidates = _local_files(value.strip())
+            if candidates is None:
+                unresolved.append({"file": name, "uses": value, "reason": "outside repository"})
+                continue
+            for cand in candidates:
+                if cand not in texts and cand not in absent:
+                    text = fetch(cand)
+                    if text is None:
+                        absent.add(cand)
+                    else:
+                        texts[cand] = text
+                        queue.append(cand)
+            if not any(c in texts for c in candidates):
+                unresolved.append({"file": name, "uses": value, "reason": "no action file found"})
+    pins = [
+        {"file": name, **_pin(str(value), value.comment, value.line)}
+        for name in sorted(results)
+        for value in results[name]
+    ]
+    return {
+        "files": sorted(texts),
+        "pins": pins,
+        "unparsed": sorted(unparsed, key=lambda u: str(u["file"])),
+        "unresolved": unresolved,
+        "complete": not unparsed and not unresolved,
+    }
+
+
+def _clone_fetch(path: str, ref: str) -> Fetch:
+    def fetch(name: str) -> str | None:
+        done = subprocess.run(
+            ["git", "-C", path, "ls-tree", "-z", ref, "--", name],
+            capture_output=True,
+            check=False,
+        )
+        if done.returncode:
+            sys.stderr.write(done.stderr.decode(errors="replace") or "git ls-tree failed\n")
+            raise SystemExit(1)
+        for entry in done.stdout.split(b"\0"):
+            meta, _, found = entry.partition(b"\t")
+            if os.fsdecode(found) == name and meta.split()[1:2] == [b"blob"]:
+                return _out("git", "-C", path, "show", f"{ref}:{name}")
+        return None
+
+    return fetch
+
+
+def _read_clone(path: str, ref: str) -> dict[str, str]:
     # Text-mode newline conversion would change CR and CRLF inside filenames.
     done = subprocess.run(
         ["git", "-C", path, "ls-tree", "-r", "-z", "--name-only", ref, ".github"],
@@ -223,71 +714,159 @@ def _tree_paths(slug: str, tree_sha: str) -> list[str]:
     return names
 
 
+def _slug_fetch(slug: str, commit: str) -> Fetch:
+    def fetch(name: str) -> str | None:
+        done = _run(
+            "gh", "api", "--hostname", "github.com",
+            "-H", "Accept: application/vnd.github.raw+json",
+            f"repos/{slug}/contents/{quote(name, safe='/')}?ref={commit}",
+        )  # fmt: skip
+        if done.returncode == 0:
+            return done.stdout
+        if "HTTP 404" in done.stderr:
+            return None
+        sys.stderr.write(done.stderr or "gh failed\n")
+        raise SystemExit(1)
+
+    return fetch
+
+
 def _read_slug(slug: str, default: str) -> tuple[dict[str, str], str, str]:
     ref = quote(f"heads/{default}", safe="")
     snapshot = json.loads(_out(
         "gh", "api", "--hostname", "github.com", f"repos/{slug}/commits/{ref}",
     ))  # fmt: skip
     commit, tree = snapshot["sha"], snapshot["commit"]["tree"]["sha"]
-    files = {
-        n: _out(
-            "gh", "api", "--hostname", "github.com",
-            "-H", "Accept: application/vnd.github.raw+json",
-            f"repos/{slug}/contents/{quote(n, safe='/')}?ref={commit}",
-        )
-        for n in _tree_paths(slug, tree)
-    }  # fmt: skip
+    fetch = _slug_fetch(slug, commit)
+    files: dict[str, str] = {}
+    for name in _tree_paths(slug, tree):
+        text = fetch(name)
+        if text is None:
+            raise SystemExit(f"{slug}: {name} listed in tree {tree} but unreadable")
+        files[name] = text
     return files, commit, tree
 
 
-def inventory(repo: str) -> dict[str, object]:
+def inventory(repo: str) -> dict[str, Any]:
     """Inventory one repository by clone path or slug."""
     if Path(repo).is_dir():
         remote = _remote(repo)
         slug = _slug_from_remote(repo, remote)
         _out("git", "-C", repo, "fetch", remote)
         default = _default_branch(slug)
-        files = _read_clone(repo, remote, default)
-        where: dict[str, object] = {"path": repo, "remote": remote}
+        commit = _out(
+            "git", "-C", repo, "rev-parse", "--verify", f"{remote}/{default}^{{commit}}"
+        ).strip()
+        files = _read_clone(repo, commit)
+        fetch = _clone_fetch(repo, commit)
+        where: dict[str, object] = {"path": repo, "remote": remote, "commit": commit}
     elif SLUG.fullmatch(repo):
         slug = repo
         default = _default_branch(slug)
         files, commit, tree = _read_slug(slug, default)
+        fetch = _slug_fetch(slug, commit)
         where = {"path": None, "commit": commit, "tree": tree}
     else:
         raise SystemExit(f"not a directory or owner/name slug: {repo}")
-    pins, scanned = _scan(files)
-    return {"slug": slug, "default": default, **where, "files": scanned, "pins": pins}
+    configs = [
+        n for n in (".github/dependabot.yml", ".github/dependabot.yaml") if fetch(n) is not None
+    ]
+    return {"slug": slug, "default": default, **where, **_scan(files, fetch), "dependabot": configs}
 
 
 def tag_status(action: str, tag: str) -> tuple[str, str]:
-    """Return ``exists``, ``missing`` (HTTP 404), or ``unchecked`` plus gh's error."""
+    """Return ``exists``, ``missing`` or ``unchecked``, plus gh's error.
+
+    A 404 also answers a repository this login cannot read, so ``missing``
+    needs the repository itself to be readable.
+    """
+    repo = action_repo(action)
     done = _run(
-        "gh", "api", "--hostname", "github.com", f"repos/{action_repo(action)}/git/ref/tags/{tag}"
-    )
+        "gh", "api", "--hostname", "github.com",
+        f"repos/{repo}/git/ref/tags/{quote(tag, safe='/')}",
+    )  # fmt: skip
     if done.returncode == 0:
         return "exists", ""
     err = done.stderr.strip()
-    if "HTTP 404" in err:
+    if "HTTP 404" not in err:
+        return "unchecked", err
+    if _run("gh", "api", "--hostname", "github.com", f"repos/{repo}").returncode == 0:
         return "missing", err
-    return "unchecked", err
+    return "unchecked", f"{err} (repository {repo} is not readable with this login)"
 
 
-def majors(action: str, pin: str, target: str) -> list[str]:
-    """List the first release of each major between pin and target."""
+def majors(action: str, pin: str, target: str) -> tuple[list[str], list[int]]:
+    """Return the first tag of each major between pin and target, and majors with none."""
     repo = action_repo(action)
     above, upto = _major_of(pin), _major_of(target)
-    done = _run(
-        "gh", "api", "--hostname", "github.com", f"repos/{repo}/releases",
-        "--paginate", "--jq", ".[].tag_name",
-    )  # fmt: skip
-    tags = done.stdout.split() if done.returncode == 0 else []
+    tags = _out(
+        "gh", "api", "--hostname", "github.com", f"repos/{repo}/tags",
+        "--paginate", "--jq", ".[].name",
+    ).split()  # fmt: skip
     picked = first_of_majors(tags, above, upto)
-    if picked:
-        return picked
-    refs = _out("git", "ls-remote", "--tags", "--refs", f"https://github.com/{repo}.git")
-    tags = [r.rsplit("refs/tags/", 1)[-1] for r in refs.splitlines()]
-    return first_of_majors(tags, above, upto)
+    listed = {_major_of(tag) for tag in picked}
+    return picked, [n for n in range(above + 1, upto + 1) if n not in listed]
+
+
+def proposal(slug: str, number: str) -> dict[str, Any]:
+    """Return the pin changes a pull request makes and the changed lines that are not pins."""
+    diff = _out(
+        "gh", "api", "--hostname", "github.com", "-H", "Accept: application/vnd.github.diff",
+        f"repos/{slug}/pulls/{number}",
+    )  # fmt: skip
+    changes: list[dict[str, str]] = []
+    files: list[str] = []
+    other = 0
+    current = ""
+    removed: list[str] = []
+    added: list[str] = []
+
+    def flush() -> None:
+        nonlocal other
+        for old, new in zip(removed, added):
+            was, now = parse_uses(old), parse_uses(new)
+            if was and now and was["action"] == now["action"] and was["kind"] == "action":
+                changes.append(
+                    {
+                        "file": current,
+                        "action": was["action"],
+                        "from": was["uses"].partition("@")[2],
+                        "to": now["uses"].partition("@")[2],
+                        "from_version": was["version"],
+                        "to_version": now["version"],
+                    }
+                )
+            else:
+                other += 2
+        other += abs(len(removed) - len(added))
+        removed.clear()
+        added.clear()
+
+    in_hunk = False
+    for line in diff.split("\n"):
+        if line.startswith("diff --git "):
+            flush()
+            in_hunk = False
+        elif not in_hunk and line.startswith("+++ "):
+            current = line[4:].removeprefix("b/")
+            files.append(current)
+        elif line.startswith("@@"):
+            flush()
+            in_hunk = True
+        elif in_hunk and line.startswith("-"):
+            removed.append(line[1:])
+        elif in_hunk and line.startswith("+"):
+            added.append(line[1:])
+        elif in_hunk and line.startswith("\\"):
+            continue
+        else:
+            flush()
+            if not in_hunk and line.startswith(
+                ("rename ", "new file", "deleted file", "old mode", "new mode", "Binary files")
+            ):
+                other += 1
+    flush()
+    return {"slug": slug, "number": number, "files": files, "changes": changes, "other": other}
 
 
 def main(argv: list[str]) -> int:
@@ -297,7 +876,12 @@ def main(argv: list[str]) -> int:
             print(json.dumps(inventory(repo)))
         return 0
     if len(argv) == 4 and argv[0] == "majors":
-        print("\n".join(majors(argv[1], argv[2], argv[3])))
+        picked, missing = majors(argv[1], argv[2], argv[3])
+        print("\n".join(picked))
+        if missing:
+            listed = ", ".join(str(n) for n in missing)
+            sys.stderr.write(f"no tag listed for major {listed}; coverage is incomplete\n")
+            return EXIT_INCOMPLETE
         return 0
     if len(argv) == 3 and argv[0] == "tag":
         status, err = tag_status(argv[1], argv[2])
@@ -306,6 +890,9 @@ def main(argv: list[str]) -> int:
             return 3
         print(status)
         return 0 if status == "exists" else 1
+    if len(argv) == 3 and argv[0] == "proposal" and SLUG.fullmatch(argv[1]) and argv[2].isdigit():
+        print(json.dumps(proposal(argv[1], argv[2])))
+        return 0
     sys.stderr.write(__doc__ or "")
     return 2
 

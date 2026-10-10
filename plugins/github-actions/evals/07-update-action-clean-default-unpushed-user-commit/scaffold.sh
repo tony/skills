@@ -5,7 +5,8 @@ set -euo pipefail
 
 git init -q --bare ../origin.git
 git init -q -b main
-git remote add origin ../origin.git
+git remote add origin https://github.com/acme/widgets.git
+git config "url.$(cd .. && pwd)/origin.git.insteadOf" https://github.com/acme/widgets.git
 mkdir -p .github/workflows
 cat >.github/workflows/ci.yml <<'YML'
 name: ci
@@ -30,15 +31,17 @@ mkdir -p bin
 cat >bin/gh <<'SH'
 #!/usr/bin/env bash
 args="$*"
+args=${args//--hostname github.com /}
 case "$args" in
   "repo view"*isFork*) echo '{"isFork":false}' ;;
   "repo view"*defaultBranchRef*) echo main ;;
   "repo view"*nameWithOwner*) echo acme/widgets ;;
-  "api repos/actions/checkout/releases/latest"*) echo v4.2.2 ;;
-  "api repos/actions/checkout/releases --paginate"*) printf 'v4.2.2\nv4.0.0\nv3.0.0\n' ;;
-  "api repos/actions/checkout/git/ref/tags/v4"*|"api repos/actions/checkout/git/ref/tags/v4.2.2"*) echo '{}' ;;
-  "api repos/actions/checkout/releases/tags/"*tag_name*) t=${args#*releases/tags/}; echo "${t%% *}" ;;
-  "api repos/actions/checkout/releases/tags/v4"*) echo "v4 runs on a newer Node runtime." ;;
+  "api "*"repos/actions/checkout/releases/latest"*) echo v4.2.2 ;;
+  "api "*"repos/actions/checkout/releases --paginate"*) printf 'v4.2.2\nv4.0.0\nv3.0.0\n' ;;
+  "api "*"repos/actions/checkout/tags"*) printf 'v4.2.2\nv4.0.0\nv3.0.0\n' ;;
+  "api "*"repos/actions/checkout/git/ref/tags/v4"*|"api "*"repos/actions/checkout/git/ref/tags/v4.2.2"*) echo '{}' ;;
+  "api "*"repos/actions/checkout/releases/tags/"*tag_name*) t=${args#*releases/tags/}; echo "${t%% *}" ;;
+  "api "*"repos/actions/checkout/releases/tags/v4"*) echo "v4 runs on a newer Node runtime." ;;
   "pr list"*) echo '[]' ;;
   *) echo "unsupported: $args" >&2; exit 1 ;;
 esac

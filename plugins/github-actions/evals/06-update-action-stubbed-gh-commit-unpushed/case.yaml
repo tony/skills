@@ -62,7 +62,7 @@ graders:
   - name: inspects-the-commit-file-list
     type: tool_used
     tool: Bash
-    input_match: 'git(?:\s+-[Cc]\s*\S+)*\s+(-C \S+ )?(show|log|diff-tree)\b.*--name-(only|status)'
+    input_match: 'git(?:\s+-[Cc]\s*\S+)*\s+(-C \S+ )?(show|log|diff-tree|diff)\b.*(--name-(only|status)|-U0|--cached|--patch|\s-p\b)'
     min: 1
 
   - name: commit-file-list-is-the-workflow-only

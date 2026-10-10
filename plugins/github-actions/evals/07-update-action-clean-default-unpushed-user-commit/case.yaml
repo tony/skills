@@ -31,7 +31,7 @@ graders:
   - name: bump-pushed-from-the-worktree
     type: tool_used
     tool: Bash
-    input_match: 'git -C \S+ push\b[^\n]*\s(HEAD|\S+):(refs/heads/)?(main|master)(\s|$)'
+    input_match: 'git -C \S+ push\b[^\n]*\s(HEAD|\S+):(refs/heads/)?(main|master)(\s|;|$)'
     min: 1
 
   - name: bump-built-outside-the-checkout

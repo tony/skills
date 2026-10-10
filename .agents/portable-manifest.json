@@ -314,13 +314,14 @@
       ],
       "bundled": {
         "references/action-pinning.md": "plugins/github-actions/references/action-pinning.md",
+        "references/commit-and-push.md": "plugins/github-actions/references/commit-and-push.md",
         "references/dependabot-closeout.md": "plugins/github-actions/references/dependabot-closeout.md",
         "references/output-shapes.md": "plugins/github-actions/references/output-shapes.md",
         "references/pins.py": "plugins/github-actions/scripts/pins.py",
         "references/prose-rules.md": "plugins/github-actions/references/prose-rules.md",
         "references/throwaway-worktree.md": "plugins/github-actions/references/throwaway-worktree.md"
       },
-      "bytes": 44565
+      "bytes": 73293
     },
     {
       "name": "github-actions-update-action",
@@ -329,13 +330,14 @@
       ],
       "bundled": {
         "references/action-pinning.md": "plugins/github-actions/references/action-pinning.md",
+        "references/commit-and-push.md": "plugins/github-actions/references/commit-and-push.md",
         "references/dependabot-closeout.md": "plugins/github-actions/references/dependabot-closeout.md",
         "references/output-shapes.md": "plugins/github-actions/references/output-shapes.md",
         "references/pins.py": "plugins/github-actions/scripts/pins.py",
         "references/prose-rules.md": "plugins/github-actions/references/prose-rules.md",
         "references/throwaway-worktree.md": "plugins/github-actions/references/throwaway-worktree.md"
       },
-      "bytes": 43328
+      "bytes": 71792
     },
     {
       "name": "github-actions-update-actions",
@@ -344,12 +346,13 @@
       ],
       "bundled": {
         "references/action-pinning.md": "plugins/github-actions/references/action-pinning.md",
+        "references/commit-and-push.md": "plugins/github-actions/references/commit-and-push.md",
         "references/dependabot-closeout.md": "plugins/github-actions/references/dependabot-closeout.md",
         "references/output-shapes.md": "plugins/github-actions/references/output-shapes.md",
         "references/pins.py": "plugins/github-actions/scripts/pins.py",
         "references/prose-rules.md": "plugins/github-actions/references/prose-rules.md"
       },
-      "bytes": 37120
+      "bytes": 65586
     },
     {
       "name": "lean-tighten",
@@ -1507,6 +1510,7 @@
     "plugins/changelog/references/prose-rules.md": 3,
     "plugins/disk/references/output-contract.md": 3,
     "plugins/github-actions/references/action-pinning.md": 3,
+    "plugins/github-actions/references/commit-and-push.md": 3,
     "plugins/github-actions/references/dependabot-closeout.md": 3,
     "plugins/github-actions/references/output-shapes.md": 3,
     "plugins/github-actions/references/prose-rules.md": 3,
