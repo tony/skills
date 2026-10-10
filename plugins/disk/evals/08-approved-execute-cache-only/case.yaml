@@ -58,7 +58,7 @@ graders:
     target:
       source: file
       path: guard-results.txt
-    pattern: 'target: ([^\r\n]*/home/\.cache/thumbnails)\n(?:(?!DELETED)[\s\S])*OK - --delete checks open handles before removal[\s\S]*target: \1\n[\s\S]*open handles: none visible\nDELETED\nfilesystem free-space delta: (?:[+-]?\d[\d.]* (?:GiB|MiB|KiB); cause not checked|unmeasured)'
+    pattern: 'target: ([^\r\n]*/home/\.cache/thumbnails(?:/[^\r\n]*)?)\n(?:(?!DELETED)[\s\S])*OK - --delete checks open handles before removal[\s\S]*target: \1\n[\s\S]*open handles: none visible\nDELETED\nfilesystem free-space delta: (?:[+-]?\d[\d.]* (?:GiB|MiB|KiB); cause not checked|unmeasured)'
 
   - name: probe-observed-preview-before-delete
     type: regex
