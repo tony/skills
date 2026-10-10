@@ -682,7 +682,7 @@
       "bundled": {
         "references/release-conventions.md": "plugins/release/references/release-conventions.md"
       },
-      "bytes": 12993
+      "bytes": 13699
     },
     {
       "name": "release-cut",
@@ -691,9 +691,10 @@
       ],
       "bundled": {
         "references/prose-rules.md": "plugins/release/references/prose-rules.md",
+        "references/publish.py": "plugins/release/scripts/publish.py",
         "references/release-conventions.md": "plugins/release/references/release-conventions.md"
       },
-      "bytes": 28777
+      "bytes": 50945
     },
     {
       "name": "release-update-downstream-packages",
@@ -703,9 +704,10 @@
       "bundled": {
         "references/bump_pin.py": "plugins/release/scripts/bump_pin.py",
         "references/consumer_inventory.py": "plugins/release/scripts/consumer_inventory.py",
-        "references/prose-rules.md": "plugins/release/references/prose-rules.md"
+        "references/prose-rules.md": "plugins/release/references/prose-rules.md",
+        "references/publish.py": "plugins/release/scripts/publish.py"
       },
-      "bytes": 50582
+      "bytes": 85650
     },
     {
       "name": "research-assess",
@@ -1577,6 +1579,7 @@
     "plugins/pytest-optimizer/templates/pytest_optimizer_plugin.py": 2,
     "plugins/release/references/prose-rules.md": 2,
     "plugins/release/references/release-conventions.md": 2,
+    "plugins/release/scripts/publish.py": 2,
     "plugins/research/references/prose-rules.md": 2,
     "plugins/respond/references/screening-rubric.md": 2,
     "plugins/respond/references/verification-gates.md": 2,

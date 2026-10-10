@@ -18,7 +18,7 @@ Arguments: $ARGUMENTS
 This command can push to trunk of many repos. Phases 1 and 2 only read;
 every cache clean, commit, push, and CI rerun waits for the Phase 3 gate.
 Without `--push` it leaves commits local and prints the push command per
-repo, and CI verification does not apply. It pushes to trunk or a branch
+repo (`git push --no-follow-tags --recurse-submodules=no <remote> <commit>:refs/heads/<branch>`), and CI verification does not apply. It pushes to trunk or a branch
 the user names at the gate; opening pull requests is out of scope.
 
 ---
@@ -31,7 +31,8 @@ the user names at the gate; opening pull requests is out of scope.
    `https://pypi.org/pypi/<package>/json`; npm: `npm view <package> version`;
    crates.io: `https://crates.io/api/v1/crates/<package>`; Go:
    `https://proxy.golang.org/<module>/@latest`).
-   Confirm it exists on the index before touching anything; each check
+   Confirm it exists on the index before touching anything, and confirm every
+   sibling version the same way (step 4); each check
    returns 200 or prints the version when it exists, and 404 otherwise:
 
    - PyPI: `https://pypi.org/pypi/<package>/<version>/json`
@@ -50,13 +51,16 @@ the user names at the gate; opening pull requests is out of scope.
    which directories hold their checkouts; assume no layout.
 4. **Sibling packages**: if the package is developed in a workspace repo
    that publishes several packages versioned together, list the siblings
-   (from the source repo's manifests or the index). They bump together.
+   (from the source repo's manifests or the index). They bump together only
+   when each sibling's target version is confirmed on the index. An
+   unconfirmed sibling stops the rollout until the user supplies its version
+   or removes it from the plan.
 
 ## Phase 2: Discover Consumers
 
 Inventory repositories before searching for dependencies. Resolve
 `../../scripts/consumer_inventory.py` against this SKILL.md's directory and
-write its absolute path literally in each command. Resolve the user's root
+write its absolute path literally in each command; resolve `../../scripts/publish.py` and `../../scripts/bump_pin.py` the same way. Resolve the user's root
 globs to explicit directories without evaluating shell text; missing or ambiguous
 roots need clarification. Never show the helper or local root paths in replies.
 
@@ -125,18 +129,28 @@ For each repo/branch, record:
 - **Trunk**: `git symbolic-ref refs/remotes/<remote>/HEAD`, falling
   back to whichever of `main`/`master` exists. `<remote>` is trunk's
   upstream remote (`origin` by default).
-- **Owner**: from `git remote get-url <remote>`. Group repos by owner
-  org; the user confirms which orgs are in scope at the gate.
+- **Owner and push endpoint**: from the helper below. Group repos by the
+  owner of the push URL; the user confirms which orgs are in scope at the
+  gate. A refusal (several push URLs, credentials in the URL, a rewrite rule,
+  a mirror or push-option setting) stops that repo's row.
+
+  ```console
+  $ python3 <absolute-publish.py> --repo <checkout> inspect --remote <remote>
+  ```
 - **Current pin(s)**: that branch's versions of the package and any siblings.
 - **Source overrides**: dependency sources that shadow the index (for
   example `[tool.uv.sources]` entries, npm `file:`/`link:`/`git:` specs).
   Remove the override so the published package is used, as its own commit
-  before the bump.
+  before the bump, only when the confirmed plan lists that conversion;
+  otherwise leave a deliberately local source and report the row as stopped.
 - **Resolver cutoffs**: a cooldown setting that hides fresh releases (uv's
   `exclude-newer` is one). Read the tool's current documentation for its
-  key names and per-package exemption syntax. If one is set, check that the
-  package and every sibling are exempt; a missing entry blocks the fresh
-  release at lock time, so add it as its own commit before the bump.
+  key names and per-package exemption syntax. A missing exemption is not
+  proof the target is excluded: compare the effective cutoff with the upload
+  time of the package and each sibling on the index. Propose an exemption,
+  as its own commit before the bump, only when a target is excluded, and
+  state in the plan how long it stays and the condition that removes it
+  (the release aging past the cutoff). The user approves its duration.
 - **Gates**: the repo's own quality checks, from its AGENTS.md / CLAUDE.md.
   Note when none are documented.
 - **Checkout state**: for the checked-out branch, repeat the snapshot with
@@ -160,21 +174,25 @@ Present the plan before mutating anything, per `../../references/prose-rules.md`
   documented).
 - Skipped repos and unresolved coverage, each with its reason. Do not silently
   omit unsearched roots, branches or input formats from the rollout target.
-- Whether pushes will happen (only with `--push`).
-- Every mutation outside the working trees: the resolver cache clean, the
-  per-key `gh cache delete` of that repo's dependency caches, and the failed-run `gh run rerun`
-  (at most once per run).
+- Whether pushes will happen (only with `--push`), and each repo's push URL
+  and destination branch.
+- The CI wait budget per repo.
+- Every mutation outside the working trees: a resolver cache clean after a
+  resolution failure, a `gh cache delete` of exact cache keys that a failed
+  run's log shows were restored, and the failed-run `gh run rerun` (at most
+  once per repo).
 
 Print the plan in this shape, as plain text with plain bullets and no bold:
 
 ```text
 Plan: example-pkg 1.4.0 → 1.5.0, pushes on (--push)
 
-- app-one (acme) on main: pin 1.4.0 → 1.5.0, prep commit removing the uv source override, gates: make test
-- app-two (acme) on main: pin 1.4.0 → 1.5.0, no prep, gates: none documented
+- app-one (acme, pushes to git@github.com:acme/app-one.git) on main: pin 1.4.0 → 1.5.0, prep commit removing the uv source override, gates: make test
+- app-two (acme, pushes to git@github.com:acme/app-two.git) on main: pin 1.4.0 → 1.5.0, no prep, gates: none documented
 - app-two (acme) on release/1.x: pin 1.3.0 → 1.5.0, no prep, gates: make test
 - Skipped: app-three (dirty tree), tools-fork (owner outside scope)
-- Outside the working trees: uv cache clean example-pkg, gh cache delete per dependency-cache key in each pushed repo, gh run rerun --failed at most once per run
+- CI wait budget: 20 minutes per repo
+- Outside the working trees: uv cache clean example-pkg after a resolution failure, gh cache delete of exact keys a failed run restored, gh run rerun --failed at most once per repo
 ```
 
 Ask the user via `AskUserQuestion` to confirm owner orgs and the complete
@@ -209,24 +227,31 @@ confirmed branches:
    inputs rather than relying on the old list. Preserve the synchronized state
    without reset/stash. An unchanged row can proceed. After any approval, repeat
    the check immediately before execution; observations do not lock out writers.
-1. **Fresh resolver cache**: only after revalidation, perform the approved cache
-   clean before the first lock (uv: `uv cache clean <package>`, once per package
-   and sibling). Revalidate every additional branch independently.
-2. **Prep commits** (each on its own, only if discovery flagged it):
+1. **Revalidate every additional branch independently** before touching it.
+2. **Prep commits** (each on its own, only if discovery flagged it and the plan
+   approved it). They precede the gates and stay local if a later step fails:
+   report their ids under `## Stopped repos`. To resume, list the local commits
+   ahead of the remote and skip a prep commit only when it already holds the
+   approved change; never reset or amend to retry.
    - Remove the source override so the repo consumes the published
      index package. Commit it alone, in the repo's own commit style.
-   - Add missing cooldown exemptions in the tool's documented syntax,
-     keeping the file's ordering. Commit alone, with a body noting the
-     cooldown would otherwise block the fresh release.
+   - Add the approved cooldown exemptions in the tool's documented syntax,
+     keeping the file's ordering. Commit alone, with a body naming the
+     condition that removes them.
 3. **Bump pins**: replace the pinned version for the package and each
    sibling in the manifest, one name at a time, with the project's own
    tooling where it has some. A text edit must anchor on the name and a
    version boundary so `0.1.1` never rewrites `0.1.10`, `0.1.1a1`, or another
    package's pin. For `pyproject.toml`, requirements files, and
-   `package.json`, run the bundled script once per name. It matches the name
+   `package.json`, run the bundled script once per name. It edits only
+   dependency declarations: strings in the `pyproject.toml` dependency arrays,
+   requirements lines outside comments and options, and the
+   `package.json` dependency sections. It matches the name
    case-insensitively with `-`, `_`, and `.` interchangeable, handles pins
-   inside one-line arrays and extras, and rewrites only an exact `==`
+   inside arrays and extras, and rewrites only an exact `==`
    version (`package.json`: the quoted version, with an optional `^` or `~`).
+   Any other manifest or syntax it cannot read unambiguously is refused (exit
+   3); edit those with the project's own tooling after approval.
    Resolve `../../scripts/bump_pin.py` against the directory of this SKILL.md
    (the path it was read from) and write that absolute path literally in the
    command; shell variables do not persist between Bash calls. Never show
@@ -248,21 +273,32 @@ confirmed branches:
    it before any further action. Review successful edits with `git diff`:
    only the intended pins should have changed.
 
-   The helper refuses pre-existing leaf symlinks, hardlinks and non-regular
-   entries before reading. It does not guard parent aliases or concurrent
-   path replacement, make writes atomic, or establish that every text match
-   is a dependency declaration.
+   The helper refuses pre-existing leaf symlinks, hardlinks, non-regular
+   entries and files it would change the owner of, writes through a temporary
+   file and renames it only if the file is unchanged, and keeps every other
+   byte and the file mode. It does not guard parent aliases or a writer that
+   wins the final check-to-rename window.
 
 4. **Re-lock**: the ecosystem's lock command (`uv lock`,
    `npm install --package-lock-only`, ...). On a resolution failure,
    clear the resolver cache and retry once.
+   Then read the lock diff: the package and each sibling must resolve to the
+   new version from the index, not from a source override. A registry check
+   does not prove that.
 5. **Prerelease warnings mean stop.** If locking warns about prerelease
    resolution or would need `--prerelease` flags or config to accept the
-   version, add none of them; halt this repo and report. The cause is
-   upstream: a stale cache, a missing cooldown exemption, or a bad publish.
+   version, add none of them; halt this repo and report the observed
+   diagnostic with its cause unverified. Candidates include a stale cache, a
+   cooldown, the resolver's prerelease policy or constraints, and the publish.
 6. **Gates**: before any push, run the repo's own quality checks (from
    its AGENTS.md / CLAUDE.md), as the plan listed them. On a failure, halt this repo and report. A red local gate must
    not reach trunk. Parallel agents run exactly the scope the plan names.
+   After the last gate passes, record `<pre-commit>` (the current HEAD) and
+   the gated bytes:
+
+   ```console
+   $ python3 <absolute-publish.py> --repo <checkout> worktree-tree
+   ```
 7. **Commit**: mirror the repo's own previous bump commits for this
    package (`git log --oneline --grep '<package>'`). Fallback subject,
    version-arrow form:
@@ -275,45 +311,81 @@ confirmed branches:
    entry for the version. Write it per
    `../../references/prose-rules.md`. No `Co-Authored-By` line, no
    "Generated with" or other tool trailer, no emoji.
-8. **Push**: With `--push`, `git push --no-follow-tags`; otherwise skip it
-   and print the command in the report. Never force. A rejected push
-   (protected trunk, non-fast-forward) halts this repo: report it as
+
+   Then verify that the commit is the one new commit on `<pre-commit>` with the
+   gated bytes, and record its `commit`. A hook that changed committed bytes
+   (`tree-differs`) needs the gates rerun against the committed tree, as in
+   `../cut/SKILL.md` Phase 5; stop the repo if they fail.
+
+   ```console
+   $ python3 <absolute-publish.py> --repo <checkout> verify-commit \
+       --parent <pre-commit> \
+       --tree <gated-tree> \
+       --branch <branch>
+   ```
+
+8. **Push**: With `--push`, push the verified `commit` to the plan's push URL
+   and read the remote branch back; otherwise skip it and print the command
+   in the report. Never force, never run a raw `git push`. Exit 3 (rejected,
+   hook or protected trunk) or 4 (unverified) halts this repo: report it as
    stopped, never as pushed, and skip Phase 5 for it.
+
+   ```console
+   $ python3 <absolute-publish.py> --repo <checkout> push-branch \
+       --remote <remote> \
+       --branch <branch> \
+       --commit <commit> \
+       --approved-url <push-url>
+   ```
 
 ## Phase 5: Verify with gh
 
-For every pushed repo:
+For every pushed repo, bind each `gh` call to the plan's host, owner and
+repository with `--repo [HOST/]OWNER/REPO`, and to the pushed commit.
 
-1. Clear stale dependency caches so CI resolves fresh. List the caches, then
-   delete each dependency-cache key (never `--all`, which also drops unrelated
-   build caches):
-
-   ```console
-   $ gh cache list --repo <owner>/<repo>
-   ```
+1. List every run for the pushed commit, with its workflow, event, attempt and
+   conclusion:
 
    ```console
-   $ gh cache delete <key> --repo <owner>/<repo>
+   $ gh run list \
+       --repo <owner>/<repo> \
+       --commit <pushed-sha> \
+       --limit 100 \
+       --json databaseId,workflowName,event,attempt,status,conclusion
    ```
 
-2. Find the run for the pushed commit. Retry up to 5 times, a few seconds
-   apart; if no run appears, report CI as unconfirmed for this repo. A run
-   for an older commit is not this one:
+   The expected set is every workflow of the pushed commit that triggers on a
+   push to the branch (read from its workflow files), plus the required checks
+   the host reports for the commit. If a workflow has no run after a few tries,
+   or the expected set cannot be established, report CI as unconfirmed. One
+   green run does not cover the others. A run for an older commit is not this one.
+
+2. Wait for each pending run within the plan's CI wait budget, in the
+   background, and stop waiting when the budget ends. Pending at the deadline
+   is reported as pending, never passed:
 
    ```console
-   $ gh run list --repo <owner>/<repo> --branch <branch> --commit <pushed-sha> --limit 1
+   $ gh run watch <run-id> \
+       --repo <owner>/<repo> \
+       --exit-status
    ```
 
-   Then wait for it to conclude:
+3. CI passes only when every expected workflow and required check concluded
+   successfully for the pushed commit.
+4. On failure, read the failed job's log. Delete a dependency cache only when
+   the log shows it restored a stale cache; delete those exact keys, listed
+   with `gh cache list --repo <owner>/<repo>`, never `--all`, then rerun once:
 
    ```console
-   $ gh run watch <run-id> --repo <owner>/<repo> --exit-status
+   $ gh run rerun <run-id> \
+       --repo <owner>/<repo> \
+       --failed
    ```
 
-3. On failure: clear the dependency caches again and rerun the failed jobs once
-   (`gh run rerun <run-id> --failed`). If it still fails, compare with the
-   run before the bump and report a pre-existing failure as such.
-4. Where the repo deploys docs from CI, confirm the docs job succeeded too.
+   If it still fails, call the failure pre-existing only when the same job
+   failed with a matching error on the run for the parent commit; otherwise
+   report its cause as unknown.
+5. Where the repo deploys docs from CI, the docs job is part of the expected set.
 
 ## Output
 
@@ -327,9 +399,11 @@ Write the report per `../../references/prose-rules.md` in this order:
    `⚠ <package> <old> → <new>: partial rollout; consumer total unverified`.
    Do not invent a denominator from the discovered subset.
 2. `## Rollout summary`: per repo, branch, prep commits, bump commit,
-   pushed or local, CI status.
+   pushed (read back) or local, CI status (passed, failed, pending at the
+   budget, or unconfirmed).
 3. `## Stopped repos`: any halted on prerelease warnings, dirty trees, rejected pushes, or
-   persistent CI failures, each with what the user should look at.
+   persistent CI failures, each with what the user should look at and the
+   ids of any local prep commits it left.
    Include unresolved roots, maintained branches, input formats and exhausted
    resource bounds here, even when their consumer repositories are unknown.
    Give each a label, the coverage gap and the action needed to resolve it.
@@ -338,8 +412,10 @@ Write the report per `../../references/prose-rules.md` in this order:
    confirmation of the exact repos. Without `AskUserQuestion`, list the
    options and stop.
 
-A stopped run (missing package, version not on the index, no gate
-confirmation, CI failure) is one result sentence, then what the user needs to do. Name
+A run that stops before the plan (missing package, version not on the index,
+an unconfirmed sibling, no roots) is one result sentence, then what the user
+needs to do. A headless run that reaches the plan prints the plan and stops.
+Name
 the unconfirmed precondition and what the user supplies, never the sandbox
 or network environment. No promise of what happens next.
 
@@ -353,7 +429,7 @@ Stopped: example-pkg 2.0.0 is not confirmed on its package index, so nothing was
 ```
 
 A CI failure is a stop for that repo: name the repo, the failed job, and
-whether the same job failed before the bump, as a bullet under
+whether the same job failed before the bump or that is unknown, as a bullet under
 `## Stopped repos`. Do not paste log output. For example:
 
 ```text
@@ -367,7 +443,7 @@ Reply in this shape, as plain text outside any code fence, with plain bullets, n
 
 ## Rollout summary
 
-- vcspull on main: bump commit 4e1a9b2, pushed, CI passed.
+- vcspull on main: bump commit 4e1a9b2, pushed and read back, CI passed.
 - g on main: removed the uv source override (1d7c3f0), bump commit a95e260, kept local.
 
 ## Stopped repos

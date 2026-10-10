@@ -86,16 +86,19 @@ bump-tooling boundary before running it.
 
 ## Version schemes
 
-Classify the project's scheme from its current version and recent tags
-(`git tag --sort=-creatordate | head -20`):
+Classify the project's scheme from its current version and the
+version-sorted recent tags (`git tag --list --sort=-version:refname`), and
+order versions with the project's own parser or version tool when it has one:
 
 - **PEP 440 prerelease track**: `0.0.1a35`, `0.1.0a41`. Increments:
   next prerelease (`a35` → `a36`), segment promotion (`a` → `b` →
   `rc`), graduation to final (`0.0.1a35` → `0.0.1`).
 - **Stable semver**: `0.1.9`, `1.74.0`. Increments: patch
   (`0.1.9` → `0.1.10`), minor (`0.1.9` → `0.2.0`), major
-  (`0.1.9` → `1.0.0`), or starting a prerelease series for the next
-  version (`0.1.9` → `0.2.0a0`).
+  (`0.1.9` → `1.0.0`). A SemVer prerelease joins the identifier with a
+  hyphen: `0.2.0-rc.1`.
+- **PEP 440 series start**: a stable PEP 440 project begins a prerelease
+  series without a hyphen: `0.1.9` → `0.2.0a0`.
 - **npm prerelease**: `0.1.0-next.11` → `0.1.0-next.12`, or
   graduation to `0.1.0`.
 

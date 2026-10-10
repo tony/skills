@@ -1,0 +1,91 @@
+schema_version: "1.0"
+name: 12-bump-explicit-version-cuts-locally
+description: >-
+  `bump` with an explicit version validates it against the manifest, tags and
+  changelog, then cuts it locally: the release commit is made and nothing is
+  tagged or pushed.
+tags: [fixture, git]
+
+context:
+  scaffold_script: scaffold.sh
+
+execution:
+  prompt: /release:bump 0.4.0
+  max_turns: 60
+  timeout_seconds: 1200
+  allowed_tools: [Bash, Read, Glob, Grep, Skill, Edit, Write]
+
+runs: 3
+
+graders:
+  - name: commits-the-release
+    type: tool_used
+    tool: Bash
+    input_match: 'git(?:\s+-[Cc]\s*\S+)*\s+commit\b'
+    min: 1
+    max: 99
+    arm: both
+
+  - name: never-tags
+    type: tool_used
+    tool: Bash
+    input_match: '\bgit\b[^|;&\n"]*\btag\b +(?!-l\b|-n\b|--list\b|--sort\b)\S'
+    min: 0
+    max: 0
+    arm: both
+
+  - name: never-pushes
+    type: tool_used
+    tool: Bash
+    input_match: '\bgit\b[^|;&\n"]*\bpush\b(?![.=])'
+    min: 0
+    max: 0
+    arm: both
+
+  - name: binds-the-release-commit
+    type: tool_used
+    tool: Bash
+    input_match: 'verify-commit[\s\S]{0,200}?--parent'
+    min: 1
+    max: 99
+    arm: both
+
+  - name: manifest-at-new-version
+    type: regex
+    target:
+      source: file
+      path: pyproject.toml
+    pattern: 'version = "0\.4\.0"'
+
+  - name: changelog-retitled
+    type: regex
+    target:
+      source: file
+      path: CHANGES.md
+    pattern: '^#{2} +0\.4\.0 +\(\d{4}-\d{2}-\d{2}\)'
+    flags: m
+
+  - name: fresh-unreleased-section
+    type: regex
+    target:
+      source: file
+      path: CHANGES.md
+    pattern: '^#{2} +Unreleased'
+    flags: m
+
+  - name: release-commit-subject
+    type: tool_used
+    tool: Bash
+    input_match: 'git(?:\s+-[Cc]\s*\S+)*\s+commit[\s\S]*Tag v0\.4\.0'
+    min: 1
+    max: 99
+    arm: both
+
+  - name: reports-nothing-tagged-or-pushed
+    type: llm
+    focus: last_message
+    criteria: |
+      The reply states that the release was committed locally and that no tag was
+      created and nothing was pushed.
+      The reply offers the commands for tagging and pushing as something the user
+      runs or re-invokes with flags, and does not run them or claim to have run them.

@@ -50,17 +50,24 @@ quality gates, and commits.
 
 Safety model (requires explicit flags):
 - Default: Commit stays local (no push/tag).
-- `--push`: Pushes commit (`git push --no-follow-tags`).
-- `--tag`: Creates a local annotated tag: the repo's tag prefix (`v` when it has none) plus the version.
-- `--push-tag`: Pushes that tag (often triggers publish workflow).
-  Requires `--tag` in the same run; alone it is refused before anything
-  runs.
+- `--push`: Pushes the release commit to the remote's single push URL, by remote
+  name with one explicit `commit:branch` refspec, then reads the branch back.
+- `--tag`: Creates a local annotated tag at the verified release commit: the repo's
+  tag prefix (`v` when it has none) plus the version. Signing failures stop the run.
+- `--push-tag`: Pushes that tag object (often triggers publish workflow) and reads
+  back the tag object and its peeled commit. Requires `--tag` in the same run;
+  alone it is refused before anything runs.
 
 Only the literal flags authorize these steps. A question-panel answer
 never does. The run stops at the first failed commit or push and never
 pushes a tag after a failed commit push. Unused flags print as
 ready-to-run commands. A flag authorizes its step even when the target
 repo's `AGENTS.md` reserves tags for a human.
+
+The release commit must have exactly the gated bytes, one parent on the
+synchronized base and no tracked changes. A hook that changes committed bytes sends the
+run back through the gates before any tag or push. A remote with several push URLs,
+credentials in its URL, rewrite rules or a mirror setting is refused.
 
 `Bash` is pre-approved on these skills, so the guard against an
 unwanted tag or push is the skill text and your own permission rules,
@@ -81,8 +88,10 @@ Rolls out published releases to local consumer repos.
 - `--push`: pushes the commits to trunk; without it they stay local.
 
 Read-only discovery uses `scripts/consumer_inventory.py` to inventory
-repositories and inspect branch inputs. Pin edits use `scripts/bump_pin.py`;
-both scripts use only Python's standard library.
+repositories and inspect branch inputs. Pin edits use `scripts/bump_pin.py`, which
+changes only dependency declarations in `pyproject.toml`, requirements files and
+`package.json`. Verified commits and pushes use `scripts/publish.py`. The scripts use
+only Python's standard library.
 
 ## Shared reference
 
@@ -91,7 +100,8 @@ templates.
 
 ## Prerequisites
 
-- git and gh.
+- git, gh and ripgrep (`rg`).
 - python3 (3.9 or newer) on `PATH`, for the bundled scripts.
-- POSIX process groups for downstream repository discovery and checkout checks.
+- POSIX process groups for downstream repository discovery, checkout checks and
+  publication timeouts.
 - The target project's toolchain (as required by quality gates).

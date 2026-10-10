@@ -1,8 +1,8 @@
 schema_version: "1.0"
 name: 09-cut-tag-push-tag-to-bare-origin
 description: >-
-  `--tag --push-tag` creates the tag and pushes only `refs/tags/<tag>` to the
-  remote, with `--no-follow-tags`; the trunk branch is not pushed.
+  `--tag --push-tag` creates the tag and pushes only `refs/tags/<tag>` through the
+  publication script, which reads the remote back; the trunk branch is not pushed.
 tags: [fixture, git]
 
 context:
@@ -25,34 +25,34 @@ graders:
     max: 99
     arm: both
 
-  - name: creates-the-tag
+  - name: binds-the-release-commit
     type: tool_used
     tool: Bash
-    input_match: 'git(?:\s+-[Cc]\s*\S+)*\s+tag +(?!-l\b|--list\b|--sort\b)\S.*v0\.4\.0'
+    input_match: 'verify-commit[\s\S]{0,200}?--parent'
     min: 1
     max: 99
     arm: both
 
-  - name: pushes-only-the-tag-ref
+  - name: creates-the-tag-through-the-script
     type: tool_used
     tool: Bash
-    input_match: '\bgit\b[^|;&\n]*\bpush\b[^|;&\n]*--no-follow-tags[^|;&\n]*refs/tags/v0\.4\.0'
+    input_match: '(?<!push-)\btag[\s\\n]+--tag\s+v0\.4\.0'
     min: 1
     max: 99
     arm: both
 
-  - name: no-other-push
+  - name: pushes-the-tag-through-the-script
     type: tool_used
     tool: Bash
-    input_match: '\bgit\b[^|;&\n]*\bpush\b(?![.=])(?![^|;&\n]*refs/tags/v0\.4\.0)'
-    min: 0
-    max: 0
+    input_match: 'push-tag[\s\S]{0,400}?v0\.4\.0'
+    min: 1
+    max: 99
     arm: both
 
-  - name: no-force-or-bulk-tag-push
+  - name: never-runs-raw-push
     type: tool_used
     tool: Bash
-    input_match: '\bgit\b[^|;&\n]*\bpush\b[^|;&\n]*(--force|--tags\b|(?<!no-)--follow-tags|--mirror| -f\b)'
+    input_match: '\bgit\b[^|;&\n"]*\bpush\b(?![.=])'
     min: 0
     max: 0
     arm: both
@@ -60,11 +60,11 @@ graders:
   - name: reports-tag-created-and-pushed
     type: regex
     target: last_message
-    pattern: 'tag v0\.4\.0 created and pushed'
+    pattern: 'tag v0\.4\.0[^\n]*created[^\n]*pushed'
     flags: i
 
   - name: gives-branch-push-as-next-step
     type: regex
     target: last_message
-    pattern: 'git push --no-follow-tags\s*$'
+    pattern: '^- git push --no-follow-tags --recurse-submodules=no origin [0-9a-f]+:refs/heads/main\s*$'
     flags: m

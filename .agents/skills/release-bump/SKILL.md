@@ -32,16 +32,21 @@ Gather three signals and check they agree:
 
 1. **Manifest version**: from the version-bearing files (conventions
    reference).
-2. **Latest tag**: `git tag --sort=-creatordate | head -20`, noting the
-   prefix convention and the increment vocabulary the project has used (aN,
-   bN, rcN, postN, devN, `-next.N`, plain semver).
+2. **Latest tag**: `git tag --list --sort=-version:refname` within the
+   namespace of the manifest version (its prefix, such as `v` or `pkg@`),
+   noting the prefix convention and the increment vocabulary the project
+   has used (aN, bN, rcN, postN, devN, `-next.N`, plain semver). Creation
+   order says nothing about version order.
 3. **CHANGES unreleased header**: the version it already targets. A
    stable-track header like `## <project> 0.63.x (unreleased)` constrains
    the next release to the `0.63` series unless the user overrides; a
    prerelease-track header names the next version outright.
 
 If the signals disagree (manifest ahead of tags, CHANGES targeting a
-different series), surface the discrepancy before proposing anything.
+different series), surface the discrepancy before proposing anything. When
+the repo holds several version-bearing packages or tag namespaces and the
+arguments do not name one, ask which release track this is; without a
+question tool, list the tracks and stop.
 
 If the current version cannot be established (no manifest version, no tags,
 no changelog), stop. Name the three signals, say which are absent, and
@@ -63,7 +68,9 @@ one.
 ## Phase 3: Resolve the Version
 
 - **Explicit version argument** (e.g. `0.2.0a0`): validate it sorts after
-  the current version and fits the scheme, then proceed. If it breaks the
+  the current version and fits the scheme, then proceed. Order versions with
+  the project's own parser or version tool when it has one; otherwise apply the
+  conventions reference's scheme rules and show the comparison. If it breaks the
   scheme (a `-next.N` version in a PEP 440 project), stop and ask.
 - **Bump-type argument** (`patch`, `minor`, `major`, `prerelease`, `final`):
   map it to the concrete candidate. If the mapping is ambiguous
