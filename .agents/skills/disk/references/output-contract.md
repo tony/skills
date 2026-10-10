@@ -92,7 +92,9 @@ When the user asks about one path ("is X safe to delete?") and the run
 is not blocked, skip the sections. Open with one sentence giving the
 verdict and the measurement behind it, with no `✓` or `⚠` prefix, then
 bullets for the proof outcome, the size and its layer, and the decision
-that is the user's. Open with what the path holds ("holds two files that
+that is the user's. The bullets start `- Proof:`, `- Size:`, and
+`- Your call:` with no bold, and the proof bullet ends "no other copy was
+established" verbatim. Open with what the path holds ("holds two files that
 notes lacks"), never "it isn't a copy of notes". End on the last bullet, with no recap of what was or
 was not changed.
 
@@ -137,7 +139,8 @@ total.
 
 `## Regenerable` — caches, stores, and build artifacts, with the
 command that rebuilds each. Aggregate per ecosystem rather than listing
-every directory.
+every directory. Give the measured size only; omit the byte counts a
+rebuild script writes.
 
 `## Redundant` — candidate copies with their proof outcome:
 redundant, mergeable, conflicted, or unique. Every entry names the
