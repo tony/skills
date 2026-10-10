@@ -256,7 +256,7 @@ A halted run replies in this shape:
 ```text
 ⚠ ratchet halted: converge on an async/await port of the retry queue.
 
-Nothing was probed: the repository has no commits yet.
+Blocked: the repository has no commits.
 Make the initial commit yourself, then run /spike:ratchet again with the same goal.
 ```
 

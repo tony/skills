@@ -1160,7 +1160,7 @@
         "references/spike.sh": "plugins/spike/scripts/spike.sh",
         "references/verification-gates.md": "plugins/spike/references/verification-gates.md"
       },
-      "bytes": 50570
+      "bytes": 50560
     },
     {
       "name": "spike-probe",
@@ -1174,7 +1174,7 @@
         "references/spike.sh": "plugins/spike/scripts/spike.sh",
         "references/verification-gates.md": "plugins/spike/references/verification-gates.md"
       },
-      "bytes": 43231
+      "bytes": 43220
     },
     {
       "name": "spike-ratchet",
@@ -1189,7 +1189,7 @@
         "references/spike.sh": "plugins/spike/scripts/spike.sh",
         "references/verification-gates.md": "plugins/spike/references/verification-gates.md"
       },
-      "bytes": 50981
+      "bytes": 50966
     },
     {
       "name": "tailwind-spacing-audit",

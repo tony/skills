@@ -43,3 +43,10 @@ graders:
     criteria: |
       The reply says the repository has no commits yet and that the user
       makes the initial commit.
+
+  - name: no-nothing-was-restatement
+    type: regex
+    target: last_message
+    match: not_contains
+    pattern: '^Nothing was '
+    flags: m

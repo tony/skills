@@ -232,7 +232,7 @@ A halted run replies in this shape:
 ```text
 ⚠ bakeoff halted: compare an LRU dict with a Redis-backed session cache.
 
-Nothing was built: the working tree has uncommitted changes that a worktree would not carry.
+Blocked: the working tree has uncommitted changes that a worktree would not carry.
 Commit or stash them yourself, then run /spike:bakeoff again.
 ```
 

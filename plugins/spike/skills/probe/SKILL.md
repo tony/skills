@@ -190,7 +190,7 @@ A halted run replies in this shape:
 ```text
 ⚠ spike blocked: stream the NDJSON export instead of buffering it.
 
-Nothing was probed: the repository has no commits and the export code is missing.
+Blocked: the repository has no commits and the export code is missing.
 Make the initial commit yourself, since a spike never commits, open the project that holds the export code, then run /spike:probe again.
 ```
 
