@@ -241,6 +241,11 @@ refused path, the command `git restore --staged <path>`). Add nothing else:
 no `.gitignore` tips, secret-handling guidance, how to override the scan,
 how to remove a secret from a file, or follow-up suggestions.
 
+```text
+Nothing committed: a merge is in progress and lib/parse.py has unresolved conflicts.
+Resolve them, run `git add lib/parse.py`, then `git commit`; or run `git merge --abort`.
+```
+
 ---
 
 ## Commit Quality Guide

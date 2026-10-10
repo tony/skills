@@ -183,7 +183,7 @@
         "references/prose-rules.md": "plugins/commit/references/prose-rules.md",
         "references/sensitive.py": "plugins/commit/scripts/sensitive.py"
       },
-      "bytes": 22038
+      "bytes": 22225
     },
     {
       "name": "disk",
