@@ -686,7 +686,7 @@ def _is_runtime_instruction(rel: Path) -> bool:
 
     A doc a skill loads at runtime is not exempt just for living in ``docs/``:
 
-    >>> _is_runtime_instruction(Path("docs/repo-guard-protocol.md"))
+    >>> _is_runtime_instruction(Path("docs/protocol.md"))
     True
     """
     if rel.parts == ("README.md",):
@@ -1087,6 +1087,39 @@ def _check_verifier_parity() -> list[str]:
     return ["weave deslop-pass.md: verifier prose constraint differs from slop detect-pipeline.md"]
 
 
+PLUGIN_LAYOUT = frozenset(
+    {
+        ".claude-plugin",
+        ".codex-plugin",
+        "README.md",
+        "skills",
+        "references",
+        "scripts",
+        "evals",
+        "templates",
+    }
+)
+
+
+def unexpected_entries(plugin_dir: Path) -> list[str]:
+    """Return top-level entries outside the AGENTS.md plugin layout.
+
+    Every entry installs with the plugin, so maintainer notes belong elsewhere.
+
+    >>> import tempfile
+    >>> d = Path(tempfile.mkdtemp())
+    >>> for n in ("skills", "docs", "__pycache__"):
+    ...     (d / n).mkdir()
+    >>> unexpected_entries(d)
+    ['docs']
+    """
+    return sorted(
+        e.name
+        for e in plugin_dir.iterdir()
+        if e.name not in PLUGIN_LAYOUT and e.name != "__pycache__"
+    )
+
+
 def validate_plugin_dir(plugin_dir: Path) -> list[str]:
     """Validate a single plugin directory structure.
 
@@ -1102,6 +1135,10 @@ def validate_plugin_dir(plugin_dir: Path) -> list[str]:
     """
     errors: list[str] = []
     name = plugin_dir.name
+    errors.extend(
+        f"[{name}] '{entry}' is outside the plugin layout in AGENTS.md"
+        for entry in unexpected_entries(plugin_dir)
+    )
 
     plugin_json_path = plugin_dir / ".claude-plugin" / "plugin.json"
     if not plugin_json_path.exists():
@@ -2214,10 +2251,9 @@ def _check_paths(skill: BuiltSkill) -> list[str]:
 
     Each rewritten path is checked against the file the builder meant, so a
     sibling link that lands on a different file fails; any other bundle-shaped
-    path must name an emitted file. ``docs/`` is the one ambiguous prefix: weave owns
-    ``docs/repo-guard-protocol.md`` while slop and pr quote ``docs/install.md``
-    as a file in the *user's* project, so an unresolved ``docs/`` token the
-    builder left verbatim is not reported. A ``..`` climb toward a name outside
+    path must name an emitted file. ``docs/`` is the one ambiguous prefix: slop and
+    pr quote ``docs/install.md`` as a file in the *user's* project, so an
+    unresolved ``docs/`` token the builder left verbatim is not reported. A ``..`` climb toward a name outside
     the resource directories is a user-project path and survives.
     """
     errors: list[str] = []

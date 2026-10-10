@@ -503,7 +503,7 @@ Treat this file like code and prune it.
   a pull request to act on is a positional argument. A force-push is
   `--force-with-lease --force-if-includes`.
 
-`scripts/marketplace.py lint` enforces the `!` and plugin-boundary rules, a
+`scripts/marketplace.py lint` enforces the `!` and plugin-boundary rules, the plugin layout below, a
 500-line ceiling on skill bodies, a contents list on any resource over 100
 lines, and that every resource is named by some file in its plugin.
 
@@ -521,6 +521,7 @@ plugins/<name>/
 ├── skills/              # skills (skill-name/SKILL.md)
 ├── references/          # files skills read on demand
 ├── scripts/             # tested scripts skills run
+├── templates/           # files a skill copies into a project (optional)
 └── evals/               # eval cases for `claude plugin eval`
 ```
 
