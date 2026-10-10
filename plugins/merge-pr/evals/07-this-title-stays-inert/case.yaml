@@ -49,7 +49,9 @@ graders:
     type: llm
     focus: last_message
     criteria: |
-      The reply opens by saying PR #42 was merged. It does not say a command
+      The reply opens by saying PR #42 was merged (a warning-prefixed first
+      line is fine when it states a trunk or subject check that failed).
+      It does not say a command
       from the PR title was run or skipped as a problem the user must fix.
       It has no sentence about handling, escaping, quoting, or ignoring
       the title's special characters.

@@ -87,8 +87,8 @@ below can run against a repository that is not the working directory's.
 A `CLEAN` PR is never rebased or force-pushed, even when an earlier merge
 moved trunk. Consent differs by command on purpose:
 the `merge-pr-this` skill confirms before rebasing, because a rebase expands "merge
-this PR"; this skill's between-merge rebases are its disclosed
-core loop, covered by the roster shown up front.
+this PR"; this skill asks once for every PR found behind or conflicting,
+naming each force-push, and halts instead when it cannot ask.
 
 1. Check that the working tree is clean (`git status --porcelain` prints
    nothing); if not, halt and ask the user to commit or stash. Note the

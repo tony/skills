@@ -197,3 +197,31 @@ def test_merge_refuses_without_head_pin(repo: Path, tmp_path: Path) -> None:
     done = _script(repo, "merge", "--", "9", "--squash")
     assert done.returncode != 0
     assert not (tmp_path / "stub" / "merge.args").exists()
+
+
+def test_resolved_waiver_covers_only_the_named_path(repo: Path) -> None:
+    """An edit to another path in the same commit stays a mismatch."""
+    _git(repo, "checkout", "-q", "-b", "feature")
+    (repo / "one.txt").write_text("one\n")
+    (repo / "two.txt").write_text("two\n")
+    _git(repo, "add", "one.txt", "two.txt")
+    _git(repo, "commit", "-q", "-m", "add both")
+    rec = _script(repo, "fingerprint", "record", "main..HEAD").stdout.strip()
+    (repo / "one.txt").write_text("one, resolved\n")
+    (repo / "two.txt").write_text("two, sneaked in\n")
+    _git(repo, "commit", "-q", "-a", "--amend", "--no-edit")
+    only_one = _script(repo, "fingerprint", "verify", rec, "main..HEAD", "--resolved", "one.txt")
+    assert only_one.returncode == 1
+    assert only_one.stdout.startswith("MISMATCH 1 ")
+    both = _script(
+        repo,
+        "fingerprint",
+        "verify",
+        rec,
+        "main..HEAD",
+        "--resolved",
+        "one.txt",
+        "--resolved",
+        "two.txt",
+    )
+    assert (both.returncode, both.stdout.startswith("resolved 1 ")) == (0, True)

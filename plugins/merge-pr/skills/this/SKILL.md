@@ -72,7 +72,10 @@ merge), open with the queued hero and skip the sync.
 ## Output
 
 Open with a one-line hero (`✓ Merged #N: <title>`,
-`✓ Queued #N: <title>` for an `--auto` merge, or `⚠ Blocked: <reason>`),
+`✓ Queued #N: <title>` for an `--auto` merge, `⚠ Blocked: <reason>`, or
+`⚠ Merged #N: <title>; <trunk fact>` when the PR merged but the
+contains-the-merge-commit check failed or the subject was not verified,
+so the first line is never a false success),
 then exactly these sections. A run that stops before
 the merge (including `gh` unavailable: `⚠ Blocked: gh is not authenticated`)
 gives the hero and one sentence on what the user must do; no
@@ -138,12 +141,31 @@ in a merged run:
 - Sync skipped: the merge has not happened yet.
 ```
 
+A merged PR whose trunk check failed:
+
+```text
+⚠ Merged #42: Retry transient sync failures; local main does not contain merge commit 4f2a9c1.
+
+## Merge readiness
+
+- Open, not a draft. CI green on the head.
+
+## Merge
+
+- Strategy --squash. Merge commit 4f2a9c1; the subject was not verified.
+- https://github.com/acme/widgets/pull/42
+
+## Trunk
+
+- Local main is at 9ad03e1, which does not contain 4f2a9c1.
+```
+
 A stopped run:
 
 ```text
 ⚠ Blocked: #42 needs an approving review before branch protection allows the merge.
 
-Get the review, or tell me to merge with --admin.
+Get the review, or approve --admin.
 ```
 
 End with an `AskUserQuestion` panel offering next steps (for example:

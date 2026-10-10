@@ -132,13 +132,38 @@ def order(repo: str, numbers: list[str]) -> int:
     return 0
 
 
-def _patch_ids(rev_range: str) -> list[str]:
-    revs = _run("git", "rev-list", "--reverse", rev_range)
-    if not revs.strip():
-        return []
-    patches = _run("git", "diff-tree", "--stdin", "-p", "-U0", stdin=revs)
-    ids = _run("git", "patch-id", "--stable", stdin=patches)
-    return [line.split(" ", 1)[0] for line in ids.splitlines() if line]
+def _commit_patch_ids(sha: str) -> dict[str, str]:
+    """Map each path a commit touches to the stable patch id of its hunks."""
+    names = _run("git", "diff-tree", "--no-commit-id", "--name-only", "-r", "-z", sha).split("\0")
+    text = _run("git", "diff-tree", "--no-commit-id", "-p", "-U0", "-r", sha)
+    sections = [part for part in re.split(r"(?m)^(?=diff --git )", text) if part]
+    ids: dict[str, str] = {}
+    for path, section in zip([n for n in names if n], sections):
+        out = _run("git", "patch-id", "--stable", stdin=section).split()
+        ids[path] = out[0] if out else ""
+    return ids
+
+
+def _patch_ids(rev_range: str) -> list[dict[str, str]]:
+    shas = _run("git", "rev-list", "--reverse", rev_range).split()
+    return [_commit_patch_ids(sha) for sha in shas]
+
+
+def _encode(ids: list[dict[str, str]]) -> str:
+    rows = "".join(
+        f"{i}\t{pid}\t{path}\n" for i, commit in enumerate(ids, 1) for path, pid in commit.items()
+    )
+    return f"{rows}commits\t{len(ids)}\n"
+
+
+def _decode(text: str) -> list[dict[str, str]]:
+    lines = text.splitlines()
+    count = int(lines[-1].split("\t")[1]) if lines and lines[-1].startswith("commits\t") else 0
+    ids: list[dict[str, str]] = [{} for _ in range(count)]
+    for line in lines[:-1]:
+        i, pid, path = line.split("\t", 2)
+        ids[int(i) - 1][path] = pid
+    return ids
 
 
 def _write_record(root: Path, text: str) -> str:
@@ -156,7 +181,7 @@ def record(rev_range: str) -> int:
     Falls back to a fresh temporary directory when the git directory is not
     writable, as in a sandboxed host.
     """
-    ids = "".join(f"{pid}\n" for pid in _patch_ids(rev_range))
+    ids = _encode(_patch_ids(rev_range))
     root = Path(_run("git", "rev-parse", "--git-path", "merge-pr-fingerprints").strip())
     try:
         name = _write_record(root, ids)
@@ -169,11 +194,12 @@ def record(rev_range: str) -> int:
 def verify(record_path: str, rev_range: str, resolved: list[str]) -> int:
     """Compare ``rev_range`` with a record; exit 1 on an unexplained difference.
 
-    A commit whose patch id differs is tolerated when it touches a path in
-    ``resolved`` (a file whose conflicts were resolved by hand), even when
-    the change goes beyond the conflict hunks.
+    Patch ids are compared per commit and per path. A path whose patch id
+    differs, appears, or vanishes is tolerated only when it is in
+    ``resolved`` (a file whose conflicts were resolved by hand); any other
+    path is a ``MISMATCH``.
     """
-    old = Path(record_path).read_text(encoding="utf-8").split()
+    old = _decode(Path(record_path).read_text(encoding="utf-8"))
     new = _patch_ids(rev_range)
     if len(old) != len(new):
         sys.stdout.write(f"count differs: recorded {len(old)}, now {len(new)}\n")
@@ -181,10 +207,10 @@ def verify(record_path: str, rev_range: str, resolved: list[str]) -> int:
     shas = _run("git", "rev-list", "--reverse", rev_range).split()
     bad = 0
     for i, (was, now) in enumerate(zip(old, new)):
-        if was == now:
+        changed = {p for p in was.keys() | now.keys() if was.get(p) != now.get(p)}
+        if not changed:
             continue
-        files = _run("git", "diff-tree", "--no-commit-id", "--name-only", "-r", shas[i]).split()
-        tag = "resolved" if set(files) & set(resolved) else "MISMATCH"
+        tag = "resolved" if changed <= set(resolved) else "MISMATCH"
         bad += tag == "MISMATCH"
         sys.stdout.write(f"{tag} {i + 1} {shas[i][:7]}\n")
     sys.stdout.write("ok\n" if not bad else "")

@@ -26,9 +26,15 @@ conversation has been working on. If the set is ambiguous (the
 conversation touched more PRs than the user likely means, or an
 argument doesn't match an open PR), present the candidates via
 `AskUserQuestion` and let the user pick; without a question tool, halt and
-list them. Show the final roster
-before merging anything, with the statement that a PR found behind or
-conflicting is rebased and its branch force-pushed.
+list them. Show the final roster.
+
+Read each roster PR's `mergeStateStatus` (`gh pr view <n> --json mergeStateStatus`).
+When any is `BEHIND` or `DIRTY`, confirm via `AskUserQuestion` before the
+first merge, naming each such PR and its branch as a force-push
+(`--force-with-lease --force-if-includes`). The approval also covers a
+roster PR that falls behind after an earlier merge. Without a question tool,
+or if the user declines, halt before any rebase or push. When every PR is
+`CLEAN`, the approval is still asked at the first PR that needs a rebase.
 
 List the open PRs to check the roster against. A failure means `gh` is
 unavailable or unauthenticated: report it and stop. `--limit` lifts the
@@ -72,7 +78,8 @@ order:
 2. **Readiness gate**: apply the gate from the reference, on the
    retargeted state. A halt reports what landed and what remains.
 3. **Bring up to date**: when the PR is `BEHIND` or `DIRTY` (or `UNKNOWN`
-   after the gate's retries), follow the reference's rebase procedure; with
+   after the gate's retries) and the force-push is approved, follow the
+   reference's rebase procedure; unapproved, ask as in step 1 or halt; with
    scope `remote` that halts the run. Leave a `CLEAN` PR alone: no rebase,
    no force-push. For a stacked child, use its `--onto` form with the
    parent's roster-time `headRefOid`, because a squash merge leaves the
@@ -104,7 +111,9 @@ for every branch still on the remote, per the reference's stack-parents section.
 
 ## Output
 
-Open with a one-line hero (`✓ Merged N of M PRs` or
+Open with a one-line hero (`✓ Merged N of M PRs`, or
+`⚠ Merged N of M PRs; <trunk fact>` when a contains-the-merge-commit check
+failed or a subject was not verified, or
 `⚠ Halted at #N: <reason>`; an `--auto` merge halts with
 `⚠ Halted at #N: queued with --auto, merges once checks pass`), then
 exactly these sections. Report only what

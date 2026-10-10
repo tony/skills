@@ -12,6 +12,8 @@ context:
 execution:
   prompt: >-
     /merge-pr:multiple #31 #32 --squash --delete-branch
+    (Force-pushing a rebased branch with --force-with-lease
+    --force-if-includes is approved.)
     (gh is a local stub: run every command with PATH="$PWD/bin:$PATH".)
   max_turns: 40
   timeout_seconds: 900
