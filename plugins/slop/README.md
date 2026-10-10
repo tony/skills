@@ -168,28 +168,6 @@ $ git log -z --format=%H%x1f%B origin/main..HEAD | python3 scripts/slop_detect.p
     --registry references/signatures.yml
 ```
 
-## Detector sample
-
-Measured 2026-10-07 on each repository's default-branch tip (no pinned
-commits, so counts will drift) with `slop_detect.py files` and every line treated
-as added (`--added-base` set to the empty tree), read-only, over the
-tracked files of four public Python repositories: aiosqlite (35 files),
-Fixit (111), apscheduler (100), and RapidFuzz (195), plus Apache Airflow
-(12,763 files).
-
-- Tier A: 1 finding in 13,204 files. Tier A edits stay in the
-  audit-first flow.
-- Tier B: 0 in aiosqlite, 8 in Fixit, 191 in apscheduler, 241 in
-  RapidFuzz, and 19,143 in Airflow. Nearly all of the larger counts are
-  `hardcoded.test-runner` matches on CI configuration and contributor
-  docs, where `pytest` is the intended runner. The rule's guard (manifest
-  present) is applied by the agent, not the script, so the script alone
-  over-reports it.
-- Tier C: 98 findings in Airflow, 0 elsewhere.
-
-These are raw matches from unpinned snapshots, not a measured precision
-rate. Keep every Tier A edit in the reviewable patch series.
-
 ## Safety
 
 - Audit first: without an apply flag, nothing changes.
@@ -207,7 +185,7 @@ rate. Keep every Tier A edit in the reviewable patch series.
 
 ## Prerequisites
 
-- **git**
-- **python3** (3.9 or newer): runs the regex matcher and the `apply.sh` renderer
-- **Formatter, linter, type-checker**: discovered at runtime from the
+- git
+- python3 (3.9 or newer): runs the regex matcher and the `apply.sh` renderer
+- Formatter, linter, type-checker: discovered at runtime from the
   project's conventions files.

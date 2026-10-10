@@ -349,8 +349,11 @@ $ python3 <autosquash.py> \
     --baseline "<BASELINE_SHA>"
 ```
 
-Without a question tool, add `--abort-on-conflict` so a conflict aborts
-the rebase instead of pausing it. Exit 0 skips to Step 12. Exit 10 means
+Add `--force-rewrite-pushed` only when the user passed it. Without a
+question tool, add `--abort-on-conflict` so a conflict aborts the rebase
+instead of pausing it. Exit 2 means the script refused (merge commits or a
+published range) and rewrote nothing; report its message. Exit 0 skips to
+Step 12. Exit 10 means
 a conflict stopped the rebase; go to Step 11 unless it aborted. Exit 1
 is any other failure: if a rebase is paused, run `git rebase --abort`,
 then report git's message and the backup branch.
@@ -406,14 +409,15 @@ summary`; sections follow in the order shown: summary block,
 `Open findings` lists each Tier A and B finding not applied as
 `signature_id file:line` (`signature_id <short-sha> subject` or `body`
 for a message finding), at most 10, then `and N more`; omit it when none
-remain. A halted or
-refused run prints one sentence naming the cause, then what the user
-must do (commit or stash, or re-run with `--force-rewrite-pushed`):
+remain. A halted or refused run prints only one sentence naming the
+cause, then what the user must do (commit or stash, or re-run with
+`--force-rewrite-pushed`), with no `Slop summary` header.
 
-Print only this report, starting literally with `Slop summary`. Use
-plain text outside a code fence and plain bullets: no preamble, recap,
-bold labels, or extra sections. Omit local paths except the patch-series
-path and commands that use it:
+Otherwise print only this report, starting literally with `Slop summary`.
+Use plain text outside a code fence and plain bullets: no preamble,
+recap, bold labels, process commentary (sandbox limits, retries, leftover
+directories), or extra sections. Omit local paths except the
+patch-series path and commands that use it:
 
 ```text
 Slop summary

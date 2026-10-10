@@ -1127,7 +1127,7 @@
         "references/slop_detect.py": "plugins/slop/scripts/slop_detect.py",
         "references/verification-gates.md": "plugins/slop/references/verification-gates.md"
       },
-      "bytes": 94198
+      "bytes": 95235
     },
     {
       "name": "slop-scan",
@@ -1144,7 +1144,7 @@
         "references/slop_detect.py": "plugins/slop/scripts/slop_detect.py",
         "references/verification-gates.md": "plugins/slop/references/verification-gates.md"
       },
-      "bytes": 94524
+      "bytes": 94659
     },
     {
       "name": "spike-bakeoff",

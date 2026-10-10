@@ -397,9 +397,11 @@ when `--on-fail=stop` halted it. Under `Gate-failed findings`, name the
 failure, whether the checkout was preserved, and the required next step.
 Do not add process or rule-compliance commentary.
 
-Print only this report, starting literally with `Slop scan summary`.
+A precondition refusal prints no `Slop scan summary` header. Otherwise
+print only this report, starting literally with `Slop scan summary`.
 Use plain text outside a code fence and plain bullets: no preamble,
-recap, bold labels, or extra sections. Omit local paths except the
+recap, bold labels, process commentary (sandbox limits, retries,
+template choices), or extra sections. Omit local paths except the
 patch-series path and commands that use it:
 
 ```text

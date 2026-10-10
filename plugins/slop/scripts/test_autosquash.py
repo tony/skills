@@ -17,6 +17,7 @@ pytestmark = pytest.mark.integration(reason="uses owned Git repositories and the
 
 SCRIPT = Path(__file__).resolve().parent / "autosquash.py"
 EXIT_CONFLICT = 10
+EXIT_REFUSED = 2
 ENV = {
     **os.environ,
     "GIT_AUTHOR_NAME": "t",
@@ -214,3 +215,37 @@ def test_fixup_and_reword_hit_the_intended_commit_among_equal_subjects(tmp_path:
     assert (repo / "b.txt").read_text() == "b.txt\n"
     assert (repo / "a.txt").read_text() == "robust a.txt\n"
     assert git(repo, "show", "--format=", "--name-only", "HEAD").split() == ["b.txt"]
+
+
+def test_refuses_published_range_unless_forced(tmp_path: Path) -> None:
+    repo = make_clone(tmp_path)
+    base = git(repo, "rev-parse", "HEAD")
+    git(repo, "switch", "-q", "-c", "feat")
+    commit(repo, "f.txt")
+    git(repo, "push", "-q", "-u", "origin", "feat")
+    commit(repo, "g.txt")
+    git(repo, "commit", "-q", "--allow-empty", "--fixup", "HEAD~1")
+    tip = git(repo, "rev-parse", "HEAD")
+
+    refused = autosquash(repo, base)
+    assert refused.returncode == EXIT_REFUSED
+    assert "origin/feat" in refused.stderr
+    assert git(repo, "rev-parse", "HEAD") == tip
+
+    forced = autosquash(repo, base, "--force-rewrite-pushed")
+    assert forced.returncode == 0, forced.stderr
+    assert git(repo, "rev-parse", "HEAD") != tip
+
+
+def test_refuses_merge_commits_in_range(tmp_path: Path) -> None:
+    repo, base = make_repo(tmp_path)
+    git(repo, "switch", "-q", "-c", "side")
+    commit(repo, "s.txt")
+    git(repo, "switch", "-q", "main")
+    commit(repo, "m.txt")
+    git(repo, "merge", "-q", "--no-ff", "-m", "merge side", "side")
+    tip = git(repo, "rev-parse", "HEAD")
+    refused = autosquash(repo, base)
+    assert refused.returncode == EXIT_REFUSED
+    assert "merge commits" in refused.stderr
+    assert git(repo, "rev-parse", "HEAD") == tip

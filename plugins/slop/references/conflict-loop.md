@@ -91,5 +91,5 @@ Three rules shape it:
 
    `python3 <autosquash.py> --abort-on-conflict` does this unattended.
    Report the failing pick and remind the user that the backup branch
-   still exists; `git reset --hard <backup>` returns to the pre-run
-   state.
+   still exists. Offer `git reset --hard <backup>` only after the user
+   saves current changes and approves discarding the commits made since.

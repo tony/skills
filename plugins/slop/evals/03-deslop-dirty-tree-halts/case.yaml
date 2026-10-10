@@ -30,6 +30,13 @@ graders:
     pattern: 'commit|stash'
     flags: i
 
+  - name: halt-is-one-result-sentence
+    type: llm
+    focus: last_message
+    criteria: |
+      The reply is a halt of one or two sentences naming the dirty tree and what to do.
+      It does not start with a "Slop summary" header and lists no findings, budget or counts.
+
   - name: rewrites-no-history
     type: tool_used
     tool: Bash

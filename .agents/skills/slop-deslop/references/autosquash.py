@@ -1,12 +1,14 @@
 #!/usr/bin/env python3
 """Run ``git rebase -i --autosquash`` over a baseline, unattended.
 
-Usage: autosquash.py --baseline SHA [--abort-on-conflict]
+Usage: autosquash.py --baseline SHA [--abort-on-conflict] [--force-rewrite-pushed]
        autosquash.py --baseline SHA --check-published
 
 Exit codes: 0 the rebase completed; 10 it stopped on a conflict (aborted
 when ``--abort-on-conflict`` is set, otherwise left paused for the conflict
-loop); 1 any other failure, with git's stderr passed through.
+loop); 1 any other failure, with git's stderr passed through; 2 refused before
+touching anything (merge commits in range, or a published range without
+``--force-rewrite-pushed``).
 
 ``--check-published`` rewrites nothing. It prints ``published: <n> of <m>
 commits, on <refs>`` when any remote-tracking ref contains a commit of
@@ -25,6 +27,7 @@ import sys
 from pathlib import Path
 
 EXIT_CONFLICT = 10
+EXIT_REFUSED = 2
 
 
 def _git(*args: str, env: dict[str, str] | None = None) -> subprocess.CompletedProcess[str]:
@@ -71,6 +74,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--baseline", required=True)
     parser.add_argument("--abort-on-conflict", action="store_true")
     parser.add_argument("--check-published", action="store_true")
+    parser.add_argument("--force-rewrite-pushed", action="store_true")
     args = parser.parse_args(argv)
 
     if args.check_published:
@@ -80,6 +84,15 @@ def main(argv: list[str] | None = None) -> int:
         else:
             print("local-only")
         return 0
+
+    if _git("rev-list", "--merges", f"{args.baseline}..HEAD").stdout.split():
+        sys.stderr.write("autosquash: the range holds merge commits; nothing was rewritten\n")
+        return EXIT_REFUSED
+    count, total, refs = published(args.baseline)
+    if count and not args.force_rewrite_pushed:
+        on = " ".join(refs)
+        sys.stderr.write(f"autosquash: {count} of {total} commits are on {on}; nothing rewritten\n")
+        return EXIT_REFUSED
 
     done = _git(
         "-c",
