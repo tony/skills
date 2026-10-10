@@ -53,3 +53,8 @@ executor that cannot ask skips it and reports it.
    unit before any push or PR. Report the failure verbatim under
    `## Verification` and leave the worktree in place for inspection.
    One unit's failure never blocks other units.
+4. Read the result back before reporting: `git log --oneline <start>..HEAD`
+   in the worktree for the commits that landed, and `git status --short`
+   for what the gates or the commit left uncommitted. Report only those
+   commits, and call the tree clean only when `git status --short`
+   printed nothing.

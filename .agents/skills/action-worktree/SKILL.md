@@ -172,7 +172,11 @@ Report results only. Never narrate the skill's own rules ("because the
 commit rules exclude it"), list repo facts outside these sections
 (unset gates, missing config), mention an upstream before a push, use
 transient wording ("yet", "until you choose", "for now"), or name a
-commit by bare SHA where a ref exists. A setup-only run claims only the
+commit by bare SHA where a ref exists. Write results in the passive, not
+as "I" or "the run"; never say plan mode or a question panel was
+unavailable. Append nothing after the last section: no commit-message
+dump, no closing question outside the panel. Every commit, branch, and path
+reported was read back from Git after the step, not recalled. A setup-only run claims only the
 worktree and primer.
 
 1. Hero block (1–4 lines): `✓ <branch> ready: N commit(s), <exit>`,
@@ -190,7 +194,8 @@ worktree and primer.
    to hand to the next session. List only fields the ticket has; never
    say a field is missing, and omit the setup line when the project
    documents no setup command. No diagnosis of the code (no file or
-   function names), no speculation about what the user may need.
+   function names), no commit-format or branch-convention remarks, no
+   speculation about what the user may need.
 5. `## Commits` — one bullet per commit: SHA, subject, ticket ID(s),
    gate result. Omitted with `--setup-only`.
 6. `## Verification` — gate commands run and results; the local-vs-CI
