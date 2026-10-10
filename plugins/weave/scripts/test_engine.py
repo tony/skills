@@ -1873,3 +1873,194 @@ def test_commit_locks_source_head_during_publication(repo: Path, tmp_path: Path)
     assert int(attempt.read_text()) != 0
     assert sh(repo, "git", "symbolic-ref", "HEAD").strip() == "refs/heads/main"
     assert not (repo / ".git/HEAD.lock").exists()
+
+
+# --- alias safety: engine-owned writes never reach another file -------------
+
+
+def link_alias(kind: str, link: Path, live: Path) -> None:
+    link.parent.mkdir(parents=True, exist_ok=True)
+    link.unlink(missing_ok=True)
+    if kind == "symlink":
+        link.symlink_to(live)
+    else:
+        os.link(live, link)
+
+
+def staged_plus_working(repo: Path) -> Path:
+    live = repo / "a.txt"
+    live.write_text("staged\n")
+    sh(repo, "git", "add", "a.txt")
+    live.write_text("staged plus working\n")
+    return live
+
+
+def checkout_state(repo: Path) -> tuple[bytes, str, str]:
+    return (
+        (repo / ".git/index").read_bytes(),
+        sh(repo, "git", "rev-parse", "HEAD"),
+        (repo / "a.txt").read_text(),
+    )
+
+
+@pytest.mark.parametrize("kind", ["symlink", "hardlink"])
+@pytest.mark.parametrize("site", ["blind", "label-map", "prompt", "session", "events"])
+def test_session_writes_replace_aliases_instead_of_writing_through(
+    repo: Path, kind: str, site: str
+) -> None:
+    live = staged_plus_working(repo)
+    sdir = Path(init(backend="model-clis")["session_dir"])
+    base = sdir / "pass-0001"
+    (base / "outputs").mkdir(parents=True, exist_ok=True)
+    (base / "outputs" / "x.md").write_text("answer\n")
+    before = checkout_state(repo)
+    target = {
+        "blind": base / "blind" / "response-A.md",
+        "label-map": base / "label-map.json",
+        "prompt": base / "prompts" / "gpt.md",
+        "session": sdir / "session.json",
+        "events": sdir / "events.jsonl",
+    }[site]
+    link_alias(kind, target, live)
+    if site in {"blind", "label-map"}:
+        engine.label_participants(sdir, 1, ["x"])
+    elif site == "prompt":
+        body = prompt_file({"session_dir": str(sdir)})
+        assert (
+            engine.main(["prompt", "--lane", "gpt", "--file", str(body), "--out", str(target)]) == 0
+        )
+    elif site == "session":
+        engine.save_session(sdir, {"x": 1})
+    else:
+        engine.append_jsonl(target, {"event": "x"})
+    assert checkout_state(repo) == before
+    assert not target.is_symlink()
+    assert target.stat().st_nlink == 1
+    assert live.stat().st_nlink == 1
+
+
+@pytest.mark.parametrize("kind", ["symlink", "hardlink"])
+def test_dispatch_outputs_replace_aliases_instead_of_writing_through(
+    repo: Path, bindir: Path, kind: str
+) -> None:
+    stub(bindir, "codex", "printf answer; echo warn >&2")
+    live = staged_plus_working(repo)
+    sdir, _ = read_only_session()
+    before = checkout_state(repo)
+    base = sdir / "pass-0001"
+    for name in ("outputs/gpt.md", "stderr/gpt.txt", "prompts/gpt.md"):
+        link_alias(kind, base / name, live)
+    doc = dispatch(sdir, "gpt")
+    assert doc["ok"], doc
+    assert Path(doc["output"]).read_text() == "answer"
+    assert checkout_state(repo) == before
+
+
+@pytest.mark.parametrize("kind", ["symlink", "hardlink"])
+def test_capture_copies_replace_aliases(repo: Path, kind: str) -> None:
+    live = staged_plus_working(repo)
+    sdir = Path(init(command="execute", mutating=True)["session_dir"])
+    engine.create_worktrees(sdir, ["maintainer"])
+    wt = Path(engine.load_session(sdir)["worktrees"]["maintainer"]["path"])
+    (wt / "made.txt").write_text("worker\n")
+    base = sdir / "pass-0001"
+    before = checkout_state(repo)
+    for name in ("files/maintainer/made.txt", "diffs/maintainer.patch", "diffs/maintainer.json"):
+        link_alias(kind, base / name, live)
+    engine.capture_tree(sdir, 1, "maintainer", None)
+    assert checkout_state(repo) == before
+    assert (base / "files" / "maintainer" / "made.txt").read_text() == "worker\n"
+
+
+@pytest.mark.parametrize("kind", ["symlink", "hardlink"])
+def test_guard_records_replace_aliases(repo: Path, kind: str) -> None:
+    sdir = Path(init(backend="model-clis")["session_dir"])
+    other = repo.parent / "outside.txt"
+    other.write_text("keep\n")
+    (repo / "B").write_text("changed\n")
+    index = (repo / ".git/index").read_bytes()
+    link_alias(kind, sdir / "guard-events.jsonl", other)
+    found = engine.guard_check(sdir, "probe")
+    assert found["violation"] is True
+    assert (Path(found["dir"]) / "post-copy" / "B").read_text() == "changed\n"
+    assert other.read_text() == "keep\n"
+    assert (repo / ".git/index").read_bytes() == index
+
+
+@pytest.mark.parametrize("name", ["blind", "files", "diffs", "prompts"])
+def test_symlinked_session_subdirectory_is_refused(repo: Path, name: str) -> None:
+    staged_plus_working(repo)
+    sdir = Path(init(command="execute", mutating=True)["session_dir"])
+    engine.create_worktrees(sdir, ["maintainer"])
+    wt = Path(engine.load_session(sdir)["worktrees"]["maintainer"]["path"])
+    (wt / "made.txt").write_text("worker\n")
+    base = sdir / "pass-0001"
+    (base / "outputs").mkdir(parents=True, exist_ok=True)
+    (base / "outputs" / "x.md").write_text("answer\n")
+    before = checkout_state(repo)
+    inside = repo / "sub"
+    link = base / name
+    if link.exists():
+        shutil.rmtree(link)
+    link.symlink_to(inside, target_is_directory=True)
+    listing = sorted(p.name for p in inside.iterdir())
+    if name == "prompts":
+        body = prompt_file({"session_dir": str(sdir)})
+        out = str(link / "gpt.md")
+        assert engine.main(["prompt", "--lane", "gpt", "--file", str(body), "--out", out]) == 1
+    else:
+        call = (
+            (lambda: engine.label_participants(sdir, 1, ["x"]))
+            if name == "blind"
+            else (lambda: engine.capture_tree(sdir, 1, "maintainer", None))
+        )
+        with pytest.raises(engine.EngineError, match="symlink"):
+            call()
+    assert sorted(p.name for p in inside.iterdir()) == listing
+    assert checkout_state(repo) == before
+
+
+def test_edit_preflight_refuses_hard_linked_files(
+    repo: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    outside = repo.parent / "alias.txt"
+    os.link(repo / "B", outside)
+    assert engine.main(["check-paths", "--", "B", "C"]) == 1
+    doc = json.loads(capsys.readouterr().out)
+    assert set(doc["conflicts"]) == {"B"}
+    assert outside.read_text() == "b1\n"
+
+
+def test_adopt_breaks_a_hard_link_without_changing_the_other_name(repo: Path) -> None:
+    outside = repo.parent / "alias.txt"
+    os.link(repo / "B", outside)
+    sdir = Path(init(command="execute", mutating=True)["session_dir"])
+    engine.create_worktrees(sdir, ["maintainer"])
+    wt = Path(engine.load_session(sdir)["worktrees"]["maintainer"]["path"])
+    (wt / "B").write_text("worker\n")
+    engine.capture_tree(sdir, 1, "maintainer", None)
+    engine.adopt_files(sdir, 1, [], [], whole="maintainer")
+    assert (repo / "B").read_text() == "worker\n"
+    assert outside.read_text() == "b1\n"
+
+
+@pytest.mark.parametrize("swap", ["file", "directory"])
+def test_guard_revert_replaces_symlink_swaps_without_writing_through(repo: Path, swap: str) -> None:
+    sdir = Path(init(backend="model-clis")["session_dir"])
+    outside = repo.parent / "outside"
+    outside.mkdir()
+    (outside / "S").write_text("keep\n")
+    (outside / "B").write_text("keep\n")
+    if swap == "file":
+        (repo / "B").unlink()
+        (repo / "B").symlink_to(outside / "B")
+    else:
+        shutil.rmtree(repo / "sub")
+        (repo / "sub").symlink_to(outside, target_is_directory=True)
+    engine.guard_resolve(sdir, "revert")
+    assert not (repo / "B").is_symlink()
+    assert not (repo / "sub").is_symlink()
+    assert (repo / "B").read_text() == "b1\n"
+    assert (repo / "sub" / "S").read_text() == "s1\n"
+    assert (outside / "S").read_text() == "keep\n"
+    assert (outside / "B").read_text() == "keep\n"

@@ -25,6 +25,7 @@ import re
 import shlex
 import shutil
 import signal
+import stat
 import subprocess
 import sys
 import tempfile
@@ -220,18 +221,59 @@ def git_z(top: str | Path, *args: str, env: Mapping[str, str] | None = None) -> 
     return [p for p in git(top, *args, env=env).split("\0") if p]
 
 
-def write_atomic(path: Path, text: str) -> None:
-    """Write ``text`` to ``path`` through a temporary file and a rename."""
+def claim_path(path: Path, root: Path | None = None) -> Path:
+    """Make ``path`` safe to create without reaching another file.
+
+    A symlink, a hard-linked file, or a special file already at ``path`` is
+    removed (what it pointed to is untouched). A symlinked parent is refused,
+    checking every parent below ``root`` when ``path`` lies under it.
+    """
+    parents = [path.parent]
+    if root is not None and root in path.parents:
+        parents = [p for p in path.parents if root in p.parents]
+    for parent in parents:
+        if parent.is_symlink():
+            msg = f"refusing to write through symlinked directory {str(parent)!r}"
+            raise EngineError(msg)
+    try:
+        info = path.lstat()
+    except FileNotFoundError:
+        return path
+    if stat.S_ISDIR(info.st_mode):
+        msg = f"refusing to replace directory {str(path)!r}"
+        raise EngineError(msg)
+    if not stat.S_ISREG(info.st_mode) or info.st_nlink > 1:
+        path.unlink()
+    return path
+
+
+def write_atomic(path: Path, data: str | bytes, root: Path | None = None) -> None:
+    """Write ``data`` to ``path`` through a new temporary file and a rename.
+
+    The rename replaces a symlink or hard link at ``path`` instead of writing through it.
+    """
+    claim_path(path, root)
     tmp = path.with_name(f".{path.name}.{os.getpid()}.{random.randbytes(3).hex()}.tmp")
-    tmp.write_text(text, encoding="utf-8")
+    payload = data.encode("utf-8") if isinstance(data, str) else data
+    flags = os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW
+    with os.fdopen(os.open(tmp, flags, 0o666), "wb") as fh:
+        fh.write(payload)
     tmp.replace(path)
+
+
+def copy_owned(src: Path, dest: Path, root: Path | None = None) -> None:
+    """Copy ``src`` to a fresh ``dest`` (a symlink is copied as a symlink)."""
+    claim_path(dest, root)
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    claim_path(dest, root)
+    shutil.copy2(src, dest, follow_symlinks=False)
 
 
 @contextlib.contextmanager
 def session_lock(session_dir: Path) -> Generator[None]:
     """Serialize read-modify-write updates of ``session.json`` across processes."""
     session_dir.mkdir(mode=0o700, parents=True, exist_ok=True)
-    with (session_dir / ".lock").open("a", encoding="utf-8") as fh:
+    with claim_path(session_dir / ".lock").open("a", encoding="utf-8") as fh:
         fcntl.flock(fh, fcntl.LOCK_EX)
         try:
             yield
@@ -241,7 +283,7 @@ def session_lock(session_dir: Path) -> Generator[None]:
 
 def append_jsonl(path: Path, doc: Json) -> None:
     """Append one JSON line to ``path``."""
-    with path.open("a", encoding="utf-8") as fh:
+    with claim_path(path).open("a", encoding="utf-8") as fh:
         fh.write(json.dumps(doc, ensure_ascii=False) + "\n")
 
 
@@ -752,15 +794,15 @@ def guard_check(session_dir: Path, label: str = "check", *, initial: bool = Fals
     vdir = gdir / vid
     vdir.mkdir(mode=0o700)
     touched = _touched(top, pre["tree"], post_tree)
-    (vdir / "touched.json").write_text(json.dumps(touched, indent=2) + "\n", encoding="utf-8")
+    write_atomic(vdir / "touched.json", json.dumps(touched, indent=2) + "\n", session_dir)
     patch = git_bytes(top, "diff", "--binary", "--no-renames", pre["tree"], post_tree)
-    (vdir / "violation.patch").write_bytes(patch)
-    (vdir / "index-entries").write_bytes(git_bytes(top, "ls-files", "--stage", "-v", "-z"))
+    write_atomic(vdir / "violation.patch", patch, session_dir)
+    entries = git_bytes(top, "ls-files", "--stage", "-v", "-z")
+    write_atomic(vdir / "index-entries", entries, session_dir)
     for rel, status in touched.items():
         src = Path(top) / rel
         if status != "D" and (src.is_symlink() or src.is_file()):
-            (vdir / "post-copy" / rel).parent.mkdir(parents=True, exist_ok=True)
-            shutil.copy2(src, vdir / "post-copy" / rel, follow_symlinks=False)
+            copy_owned(src, vdir / "post-copy" / rel, session_dir)
     pin_tree(top, session["session_id"], f"post-{vid}", post_tree, pre["pre"])
     result: Json = {
         "ok": True,
@@ -771,7 +813,7 @@ def guard_check(session_dir: Path, label: str = "check", *, initial: bool = Fals
         "head_changed": head_changed,
         "index_changed": index_changed,
     }
-    last.write_text(json.dumps({**current, "result": result}) + "\n", encoding="utf-8")
+    write_atomic(last, json.dumps({**current, "result": result}) + "\n", session_dir)
     append_jsonl(
         session_dir / "guard-events.jsonl",
         {
@@ -1275,9 +1317,9 @@ def label_participants(
     src_dir = outputs or base / "outputs"
     for label, name in labels.items():
         src = src_dir / f"{name}.md"
-        if src.is_file():
-            shutil.copyfile(src, blind / f"response-{label}.md")
-    write_atomic(base / "label-map.json", json.dumps(labels, indent=2) + "\n")
+        if src.is_file() and not src.is_symlink():
+            write_atomic(blind / f"response-{label}.md", src.read_bytes(), session_dir)
+    write_atomic(base / "label-map.json", json.dumps(labels, indent=2) + "\n", session_dir)
     return {"ok": True, "labels": labels, "map": str(base / "label-map.json")}
 
 
@@ -1494,6 +1536,7 @@ def dispatch_lane(  # noqa: PLR0913, PLR0915
     out, err = task.out, task.err
     for path in (out, err):
         path.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
+        claim_path(path, session_dir)
     prompt = compose_prompt(
         lane,
         prompt_file.read_text(encoding="utf-8"),
@@ -1504,7 +1547,7 @@ def dispatch_lane(  # noqa: PLR0913, PLR0915
     )
     prompt_out = session_dir / pass_name(n) / "prompts" / f"{task.name}.md"
     prompt_out.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
-    prompt_out.write_text(prompt, encoding="utf-8")
+    write_atomic(prompt_out, prompt, session_dir)
 
     attempts: list[Json] = []
     retries = 0
@@ -1964,22 +2007,18 @@ def capture_tree(session_dir: Path, n: int, participant: str, tree: str | None) 
     )
     patch_path = base / "diffs" / f"{participant}.patch"
     patch_path.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
-    patch_path.write_bytes(patch)
+    write_atomic(patch_path, patch, session_dir)
     links: dict[str, str] = {}
     for rel in changed:
         src = Path(path) / rel
-        dest = base / "files" / participant / rel
-        dest.parent.mkdir(parents=True, exist_ok=True)
-        dest.unlink(missing_ok=True)
         if src.is_symlink():
             links[rel] = os.readlink(src)  # noqa: PTH115
-        shutil.copy2(src, dest, follow_symlinks=False)
+        copy_owned(src, base / "files" / participant / rel, session_dir)
     manifest: Json = {"changed": changed, "deleted": deleted}
     if links:
         manifest["links"] = links
-    (base / "diffs" / f"{participant}.json").write_text(
-        json.dumps(manifest, indent=2) + "\n", encoding="utf-8"
-    )
+    manifest_text = json.dumps(manifest, indent=2) + "\n"
+    write_atomic(base / "diffs" / f"{participant}.json", manifest_text, session_dir)
     return {"ok": True, "participant": participant, "patch": str(patch_path), **manifest}
 
 
@@ -2016,6 +2055,8 @@ def _path_conflicts(top: Path, paths: Sequence[str], *, editing: bool = False) -
                 conflicts[rel] = "symlink target cannot be edited in place"
         elif target.exists() and not target.is_file():
             conflicts[rel] = "directory or special file"
+        elif editing and target.is_file() and target.stat().st_nlink > 1:
+            conflicts[rel] = "hard-linked file; an in-place edit also changes its other names"
     paths = [path for path in paths if path not in conflicts]
     if paths:
         env = {"GIT_OPTIONAL_LOCKS": "0"}
@@ -2740,7 +2781,7 @@ def run(args: argparse.Namespace) -> Json:  # noqa: PLR0911
             args.lane, body, mutating=args.mutating, variant=variant,
             preamble=_read_preamble(args), role=not (args.judge or variant),
         )  # fmt: skip
-        out.write_text(text, encoding="utf-8")
+        write_atomic(out, text)
         return {"ok": True, "path": str(out)}
     if cmd == "commit":
         return commit_paths(args.repo, args.message_file, args.paths)
