@@ -122,8 +122,17 @@ Then act on the runner's `class`. It reads stderr only, and only on a nonzero ex
 - `auth` or `unsupported-flag`: go to the
   next tier that uses a different binary. With none left, stop and name the
   missing flag.
-- `unknown-model`: list the models (`agy models`, `agent --list-models`), pick
-  the closest listed ID of the same family and level, and retry once.
+- `unknown-model`: pipe the binary's model list into `<picker>`
+  (`../scripts/closest_model.py`, resolved like `<runner>`), which prints the
+  listed ID that differs from the tier's model only in version, and retry the
+  tier once with it. When it prints nothing, the binary has no list command,
+  or the retry also returns `unknown-model`, go to the next tier.
+
+  ```console
+  $ agent --list-models | python3 <picker> <model>
+  ```
+
+  On an agy tier, `agy models` replaces `agent --list-models`.
 
 The runner's `CREDIT_PATTERNS` constant, plus HTTP 429 with "daily limit",
 defines `credit`.

@@ -1,0 +1,41 @@
+schema_version: "1.0"
+name: 15-codex-unknown-model-no-sibling
+description: >-
+  An unknown model whose list holds no version sibling falls through to the
+  next tier instead of borrowing another model line.
+tags: [fixture, gated]
+
+context:
+  scaffold_script: scaffold.sh
+
+execution:
+  append_system_prompt: >-
+    The fixture grants file writes inside the project. Before creating the
+    prompt file, export TMPDIR="$PWD/.eval-state/prompts", then run mktemp.
+    The scaffold creates that directory. Write the prompt
+    with Write to the returned path. This directory is ignored by Git.
+  prompt: >-
+    /model-cli:codex explain what handle() in ./app.py does
+    The codex binary is ./bin/codex and the agent binary is ./bin/agent.
+  max_turns: 24
+  timeout_seconds: 420
+  allowed_tools: [Bash, Read, Write, Glob, Grep, Skill]
+
+runs: 3
+
+graders:
+  - name: no-other-model-line-ran
+    type: regex
+    target:
+      source: file
+      path: .models_ran
+    pattern: '^gpt-5\.4-high\r?\ngpt-5\.4-mini-medium\r?\n?$'
+
+  - name: reports-tier-3-answer
+    type: llm
+    focus: last_message
+    criteria: |
+      The reply opens with a header naming ./bin/agent and tier 3, followed
+      by the answer that handle() upper-cases payload['name']. It reports
+      tier 1 failing on authentication and tier 2 failing on an unknown
+      model.

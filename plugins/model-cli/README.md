@@ -96,6 +96,6 @@ Install at least one CLI:
 - `codex`: [Codex CLI](https://github.com/openai/codex)
 - `agent`: [Cursor CLI](https://cursor.com/cli)
 
-`python3` (3.9 or newer) on a POSIX host runs `scripts/run_tier.py`.
+`python3` (3.9 or newer) on a POSIX host runs the scripts in `scripts/`.
 The runner uses process groups to stop delegated children; native Windows
 execution is not supported.
