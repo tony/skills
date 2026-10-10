@@ -190,21 +190,54 @@ def _read_clone(path: str, remote: str, default: str) -> dict[str, str]:
     }
 
 
-def _read_slug(slug: str, default: str) -> dict[str, str]:
-    ref = quote(default, safe="")
+def _tree_paths(slug: str, tree_sha: str) -> list[str]:
     tree = json.loads(_out(
-        "gh", "api", "--hostname", "github.com", f"repos/{slug}/git/trees/{ref}?recursive=1",
+        "gh", "api", "--hostname", "github.com",
+        f"repos/{slug}/git/trees/{tree_sha}?recursive=1",
     ))  # fmt: skip
-    names = (entry["path"] for entry in tree["tree"] if entry["type"] == "blob")
-    return {
+    if not tree["truncated"]:
+        return [
+            entry["path"]
+            for entry in tree["tree"]
+            if entry["type"] == "blob" and WORKFLOW.fullmatch(entry["path"])
+        ]
+
+    names: list[str] = []
+    pending = [("", tree_sha)]
+    while pending:
+        prefix, sha = pending.pop()
+        subtree = json.loads(_out(
+            "gh", "api", "--hostname", "github.com", f"repos/{slug}/git/trees/{sha}",
+        ))  # fmt: skip
+        if subtree["truncated"]:
+            raise SystemExit(f"{slug}: incomplete non-recursive tree {sha}")
+        for entry in subtree["tree"]:
+            name = prefix + entry["path"]
+            if entry["type"] == "blob" and WORKFLOW.fullmatch(name):
+                names.append(name)
+            elif entry["type"] == "tree" and (
+                name in {".github", ".github/workflows", ".github/actions"}
+                or name.startswith((".github/workflows/", ".github/actions/"))
+            ):
+                pending.append((name + "/", entry["sha"]))
+    return names
+
+
+def _read_slug(slug: str, default: str) -> tuple[dict[str, str], str, str]:
+    ref = quote(f"heads/{default}", safe="")
+    snapshot = json.loads(_out(
+        "gh", "api", "--hostname", "github.com", f"repos/{slug}/commits/{ref}",
+    ))  # fmt: skip
+    commit, tree = snapshot["sha"], snapshot["commit"]["tree"]["sha"]
+    files = {
         n: _out(
             "gh", "api", "--hostname", "github.com",
             "-H", "Accept: application/vnd.github.raw+json",
-            f"repos/{slug}/contents/{quote(n, safe='/')}?ref={ref}",
+            f"repos/{slug}/contents/{quote(n, safe='/')}?ref={commit}",
         )
-        for n in names
-        if WORKFLOW.fullmatch(n)
+        for n in _tree_paths(slug, tree)
     }  # fmt: skip
+    return files, commit, tree
 
 
 def inventory(repo: str) -> dict[str, object]:
@@ -219,8 +252,8 @@ def inventory(repo: str) -> dict[str, object]:
     elif SLUG.fullmatch(repo):
         slug = repo
         default = _default_branch(slug)
-        files = _read_slug(slug, default)
-        where = {"path": None}
+        files, commit, tree = _read_slug(slug, default)
+        where = {"path": None, "commit": commit, "tree": tree}
     else:
         raise SystemExit(f"not a directory or owner/name slug: {repo}")
     pins, scanned = _scan(files)

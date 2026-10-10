@@ -17,6 +17,8 @@ import pytest
 
 SCRIPT = Path(__file__).with_name("pins.py")
 EXIT_UNCHECKED = 3
+COMMIT_SHA = "a" * 40
+TREE_SHA = "b" * 40
 WORKFLOW_NAMES = (
     ".github/workflows/space name.yml",
     '.github/workflows/quote"name.yaml',
@@ -40,11 +42,13 @@ fi
 case "$*" in
   "repo view https://github.com/acme/one"*) echo main ;;
   "repo view https://github.com/acme/two"*) echo trunk ;;
-  "api repos/acme/one/git/trees/main?recursive=1"*)
-    printf '%s\\n' '{"tree":[
+  "api repos/acme/one/commits/heads%2Fmain")
+    printf '%s\\n' '{"sha":"COMMIT_SHA","commit":{"tree":{"sha":"TREE_SHA"}}}' ;;
+  "api repos/acme/one/git/trees/TREE_SHA?recursive=1"*)
+    printf '%s\\n' '{"sha":"TREE_SHA","truncated":false,"tree":[
       {"type":"blob","path":".github/workflows/ci.yml"},
       {"type":"blob","path":".github/README.md"}]}' ;;
-  "api -H "*" repos/acme/one/contents/.github/workflows/ci.yml?ref=main")
+  "api -H "*" repos/acme/one/contents/.github/workflows/ci.yml?ref=COMMIT_SHA")
     echo 'uses: actions/checkout@v4' ;;
   "api repos/actions/checkout/releases"*) printf 'v4.2.2\\nv4.0.0\\nv3.0.0\\nv5.0.0\\n' ;;
   "api repos/actions/checkout/git/ref/tags/v4") echo '{}' ;;
@@ -54,7 +58,7 @@ case "$*" in
     echo "gh: Bad credentials (HTTP 401)" >&2; exit 1 ;;
   *) echo "unsupported: $*" >&2; exit 1 ;;
 esac
-"""
+""".replace("COMMIT_SHA", COMMIT_SHA).replace("TREE_SHA", TREE_SHA)
 
 
 @pytest.mark.parametrize(
@@ -228,13 +232,19 @@ def test_slug_inventory_preserves_json_paths(monkeypatch: pytest.MonkeyPatch, de
         assert args[:4] == ("gh", "api", "--hostname", "github.com")
         endpoint = next(arg for arg in args if arg.startswith("repos/"))
         url = urlsplit(endpoint)
+        if "/commits/" in url.path:
+            assert unquote(url.path.removeprefix("repos/acme/one/commits/")) == f"heads/{default}"
+            assert not url.query
+            assert not url.fragment
+            return json.dumps({"sha": COMMIT_SHA, "commit": {"tree": {"sha": TREE_SHA}}})
         if "/git/trees/" in url.path:
-            assert unquote(url.path.removeprefix("repos/acme/one/git/trees/")) == default
+            assert url.path == f"repos/acme/one/git/trees/{TREE_SHA}"
             assert parse_qs(url.query) == {"recursive": ["1"]}
-            if "--jq" in args:
-                return "\n".join(paths) + "\n"
+            assert "--jq" not in args
             return json.dumps(
                 {
+                    "sha": TREE_SHA,
+                    "truncated": False,
                     "tree": [
                         *({"type": "blob", "path": name} for name in paths),
                         {"type": "tree", "path": ".github/workflows/directory.yml"},
@@ -243,7 +253,7 @@ def test_slug_inventory_preserves_json_paths(monkeypatch: pytest.MonkeyPatch, de
             )
         assert args[4:6] == ("-H", "Accept: application/vnd.github.raw+json")
         name = unquote(url.path.removeprefix("repos/acme/one/contents/"))
-        assert parse_qs(url.query) == {"ref": [default]}
+        assert parse_qs(url.query) == {"ref": [COMMIT_SHA]}
         assert not url.fragment
         assert name in expected, repr(name)
         observed.append(name)
@@ -251,8 +261,100 @@ def test_slug_inventory_preserves_json_paths(monkeypatch: pytest.MonkeyPatch, de
 
     monkeypatch.setattr(pins, "_out", api)
 
-    assert pins._read_slug("acme/one", default) == expected
+    assert pins._read_slug("acme/one", default) == (expected, COMMIT_SHA, TREE_SHA)
     assert sorted(observed) == sorted(expected)
+
+
+@pytest.mark.parametrize("empty", [False, True])
+def test_slug_inventory_recovers_recursive_truncation(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str], empty: bool
+) -> None:
+    """Complete immutable subtrees recover every selected path, including an empty set."""
+    github, workflows, nested = "c" * 40, "d" * 40, "e" * 40
+    selected = {
+        ".github/workflows/ci.yml": "v3",
+        ".github/workflows/nested #/caf\u00e9.yaml": "v4",
+    }
+    trees = {
+        TREE_SHA: [] if empty else [("tree", ".github", github), ("tree", "vendor", "f" * 40)],
+        github: [("tree", "workflows", workflows)],
+        workflows: [("blob", "ci.yml", "1" * 40), ("tree", "nested #", nested)],
+        nested: [("blob", "caf\u00e9.yaml", "2" * 40)],
+    }
+    observed: list[str] = []
+
+    def api(*args: str) -> str:
+        if args[1] == "repo":
+            assert args[2:4] == ("view", "https://github.com/acme/one")
+            return "main\n"
+        assert args[:4] == ("gh", "api", "--hostname", "github.com")
+        endpoint = next(arg for arg in args if arg.startswith("repos/"))
+        url = urlsplit(endpoint)
+        if "/commits/" in url.path:
+            assert unquote(url.path) == "repos/acme/one/commits/heads/main"
+            return json.dumps({"sha": COMMIT_SHA, "commit": {"tree": {"sha": TREE_SHA}}})
+        if "/git/trees/" in url.path:
+            sha = url.path.removeprefix("repos/acme/one/git/trees/")
+            if url.query:
+                assert sha == TREE_SHA
+                assert parse_qs(url.query) == {"recursive": ["1"]}
+                return json.dumps({"sha": sha, "truncated": True, "tree": []})
+            observed.append(sha)
+            return json.dumps(
+                {
+                    "sha": sha,
+                    "truncated": False,
+                    "tree": [
+                        {"type": kind, "path": name, "sha": oid} for kind, name, oid in trees[sha]
+                    ],
+                }
+            )
+        assert args[4:6] == ("-H", "Accept: application/vnd.github.raw+json")
+        assert parse_qs(url.query) == {"ref": [COMMIT_SHA]}
+        name = unquote(url.path.removeprefix("repos/acme/one/contents/"))
+        return f"uses: actions/checkout@{selected[name]}\n"
+
+    monkeypatch.setattr(pins, "_out", api)
+    assert pins.main(["inventory", "acme/one"]) == 0
+    result = json.loads(capsys.readouterr().out)
+    expected = {} if empty else selected
+    assert result["files"] == sorted(expected)
+    assert {pin["file"]: pin["ref"] for pin in result["pins"]} == expected
+    assert (result["commit"], result["tree"]) == (COMMIT_SHA, TREE_SHA)
+    assert set(observed) == ({TREE_SHA} if empty else {TREE_SHA, github, workflows, nested})
+
+
+@pytest.mark.parametrize("failure", ["tree", "content"])
+def test_slug_inventory_refuses_partial_json(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str], failure: str
+) -> None:
+    """An incomplete nonrecursive tree or failed content read cannot print success."""
+
+    def api(*args: str) -> str:
+        if args[1] == "repo":
+            return "main\n"
+        assert args[:4] == ("gh", "api", "--hostname", "github.com")
+        endpoint = next(arg for arg in args if arg.startswith("repos/"))
+        if "/commits/" in endpoint:
+            return json.dumps({"sha": COMMIT_SHA, "commit": {"tree": {"sha": TREE_SHA}}})
+        if "/git/trees/" in endpoint:
+            return json.dumps(
+                {
+                    "sha": TREE_SHA,
+                    "truncated": failure == "tree",
+                    "tree": []
+                    if failure == "tree"
+                    else [{"type": "blob", "path": ".github/workflows/ci.yml"}],
+                }
+            )
+        message = "content read failed"
+        raise SystemExit(message)
+
+    monkeypatch.setattr(pins, "_out", api)
+    reason = "incomplete non-recursive tree" if failure == "tree" else "content read failed"
+    with pytest.raises(SystemExit, match=reason):
+        pins.main(["inventory", "acme/one"])
+    assert capsys.readouterr().out == ""
 
 
 @pytest.mark.integration
@@ -293,6 +395,7 @@ def test_slug_inventory_binds_github_host(tmp_path: Path) -> None:
     assert done.returncode == 0, done.stderr
     record = json.loads(done.stdout)
     assert (record["slug"], record["default"]) == ("acme/one", "main")
+    assert (record["commit"], record["tree"]) == (COMMIT_SHA, TREE_SHA)
     assert record["files"] == [".github/workflows/ci.yml"]
     assert [(pin["action"], pin["ref"]) for pin in record["pins"]] == [("actions/checkout", "v4")]
 

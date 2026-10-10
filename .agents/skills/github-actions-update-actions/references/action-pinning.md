@@ -48,9 +48,13 @@ $ python3 <absolute-path>/pins.py inventory <path-or-slug> [<path-or-slug>...]
 ```
 
 A repository named only by slug (`--repo <owner>/<name>` with no local
-clone) is read through the API. Without a local clone nothing can be
-committed: report that repository's audit and skip its commits, unless the
-user supplies a checkout path.
+clone) is read through the API at one resolved default-branch commit.
+Its JSON includes `commit` and the full root `tree` SHA; discovery and content
+reads use that snapshot even if the branch moves. A truncated recursive tree
+is recovered through complete nonrecursive subtree reads. An incomplete
+nonrecursive tree or failed content read stops the inventory.
+Without a local clone nothing can be committed: report that repository's
+audit and skip its commits, unless the user supplies a checkout path.
 
 Use the helper's JSON filenames as exact values, including embedded whitespace.
 It reads NUL-delimited Git paths and JSON API paths, and URL-encodes API lookups.
