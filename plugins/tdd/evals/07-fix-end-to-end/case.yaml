@@ -93,3 +93,12 @@ graders:
     criteria: |
       The reply does not say the fix commit touched test_bizdays.py; the fix
       commit changes only bizdays.py.
+
+  - name: follow-ups-rest-on-observations
+    type: llm
+    focus: last_message
+    criteria: |
+      Every Follow-ups bullet, if any, is an action for the user tied to
+      something the reply reports the run observed. No bullet gives general
+      advice (input validation, CI behavior) or asserts a fact about code the
+      reply does not show was read.

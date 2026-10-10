@@ -169,7 +169,9 @@ single sentence, then `## Evidence` (every commit made, with short hashes,
 including extra commits for a regression or a mid-run correction; the selected
 mode and observed reproduction results; and for `xfail` the fix-isolation
 result once the fix exists), then `## Follow-ups` (omit when empty). Follow-ups list only
-actions for the user, never narration of what the run did. A scoped run that
+actions for the user, at most one per thing this run observed, each naming
+that observation; no general advice (input validation, CI behavior) and no
+claim the run did not check, never narration of what the run did. A scoped run that
 stopped after the failing test lists one commit and says in the hero line that
 the fix is not made. Name no local paths or temp files. Report results only,
 never the workflow rules followed (trailers, commit format, gate policy).

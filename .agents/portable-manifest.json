@@ -1215,7 +1215,7 @@
         "references/stash_roundtrip.py": "plugins/tdd/scripts/stash_roundtrip.py",
         "references/xfail-mechanisms.md": "plugins/tdd/references/xfail-mechanisms.md"
       },
-      "bytes": 31983
+      "bytes": 32140
     },
     {
       "name": "tdd-xfail",
@@ -1229,7 +1229,7 @@
         "references/stash_roundtrip.py": "plugins/tdd/scripts/stash_roundtrip.py",
         "references/xfail-mechanisms.md": "plugins/tdd/references/xfail-mechanisms.md"
       },
-      "bytes": 37313
+      "bytes": 37470
     },
     {
       "name": "terraform-bump-provider",
