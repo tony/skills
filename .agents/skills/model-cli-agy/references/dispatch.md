@@ -156,6 +156,12 @@ On success:
 3. If more than one tier ran, one line per failed tier with its class. Add
    the retry count when it is not zero. Say nothing about tiers
    that were skipped.
+4. After a write-enabled run, and after a `mode:plan` run whose state check
+   is not `unchanged`, the status-check line for the tier that
+   answered, worded exactly as in the failed-run list below. A `changed`
+   result names the paths; a changed branch or HEAD is reported even when no
+   path changed. Never write that nothing changed unless `state_check`
+   said `unchanged`.
 
 When every tier fails or none is installed:
 
@@ -166,12 +172,14 @@ When every tier fails or none is installed:
    a failed normal run, add
    one line from this list, worded exactly, and nothing more:
    - "The status check found <paths> changed since the run began"
+   - "The status check found the branch or HEAD changed since the run began"
    - "The status check found no changes"
    - "The status check could not cover <path>; check `git status`"
    - "Files may have changed; check `git status`", when no check ran
 3. What the user must do (install, log in, raise a quota). When paths changed,
-   end with exactly "Open and review <paths> before retrying." Substitute
-   only the reported paths; add no file classification, baseline description
+   end with exactly "Open and review <paths> before retrying."; when only the
+   branch or HEAD changed, end with exactly "Review the branch and HEAD before
+   retrying." Substitute only the reported paths; add no file classification, baseline description
    or explanation of who changed them. This action also covers untracked files.
 
 Reply in this shape, as plain text outside any code fence, with plain
@@ -183,6 +191,7 @@ agent (gemini-3.1-pro, tier 2, write-enabled) exited 0.
 <the CLI output, unedited>
 
 - Tier 1 failed (auth): agy not logged in.
+- The status check found no changes.
 ```
 
 A failed run:

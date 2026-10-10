@@ -43,6 +43,7 @@ graders:
     type: llm
     focus: last_message
     criteria: |
-      The reply presents a plan or says one was produced, and states that
-      the run was read-only or plan-only. It does not claim to have edited,
-      created, or applied changes to any file.
+      The reply presents a plan or says one was produced, and its header
+      names mode:plan. It does not claim to have edited, created, or applied
+      changes to any file. For a supplied binary the header may omit any
+      read-only claim.

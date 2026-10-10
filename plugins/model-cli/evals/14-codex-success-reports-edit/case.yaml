@@ -1,0 +1,39 @@
+schema_version: "1.0"
+name: 14-codex-success-reports-edit
+description: >-
+  A successful write-enabled run that edited a file reports the changed
+  path from the status check, not an unchanged tree.
+tags: [fixture, gated]
+
+context:
+  scaffold_script: scaffold.sh
+
+execution:
+  append_system_prompt: >-
+    The fixture grants file writes inside the project. Before creating the
+    prompt file, export TMPDIR="$PWD/.eval-state/prompts", then run mktemp.
+    The scaffold creates that directory. Write the prompt
+    with Write to the returned path. This directory is ignored by Git.
+  prompt: |-
+    /model-cli:codex add a comment to ./app.py
+    The codex binary is ./bin/codex and the agent binary is ./bin/agent.
+  max_turns: 20
+  timeout_seconds: 420
+  allowed_tools: [Bash, Read, Write, Glob, Grep, Skill]
+
+runs: 3
+
+graders:
+  - name: fallback-never-ran
+    type: file_exists
+    path: .agent_ran
+    exists: false
+
+  - name: reports-changed-file
+    type: llm
+    focus: last_message
+    criteria: |
+      The reply opens with a header naming ./bin/codex and tier 1, shows the
+      binary's answer, and states that the status check found app.py changed
+      since the run began. It does not say nothing changed or that the tree
+      is clean.

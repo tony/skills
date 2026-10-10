@@ -424,7 +424,7 @@
         "references/prose-rules.md": "plugins/model-cli/references/prose-rules.md",
         "references/run_tier.py": "plugins/model-cli/scripts/run_tier.py"
       },
-      "bytes": 28750
+      "bytes": 29350
     },
     {
       "name": "model-cli-codex",
@@ -436,7 +436,7 @@
         "references/prose-rules.md": "plugins/model-cli/references/prose-rules.md",
         "references/run_tier.py": "plugins/model-cli/scripts/run_tier.py"
       },
-      "bytes": 28848
+      "bytes": 29448
     },
     {
       "name": "model-cli-cursor",
@@ -448,7 +448,7 @@
         "references/prose-rules.md": "plugins/model-cli/references/prose-rules.md",
         "references/run_tier.py": "plugins/model-cli/scripts/run_tier.py"
       },
-      "bytes": 28008
+      "bytes": 28608
     },
     {
       "name": "package-updater-update",
