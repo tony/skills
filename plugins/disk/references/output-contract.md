@@ -263,12 +263,16 @@ disposable-fixture test. Binary strings are clues, not capability proof.
 
 A comparison proves uniqueness only relative to its named keeper. Without
 a wider search, say "no other copy was established", not "your only copy"
-or "I found no other copy anywhere". Name the actual search scope when
-reporting that a search found no copy.
+or "I found no other copy" with or without "anywhere". Name the actual
+search scope when reporting that a search found no copy. In a
+single-path or `## Needs a decision` entry, write the proof as "compared
+against <keeper> only; no other copy was established" or "no replacement
+was proved".
 
 Use GiB at or above 1 GiB and MiB or KiB below it (`6 MiB`, never
 `0.0061 GiB`), one unit per figure, converting what a tool printed
-(`1007G`, `14 GB`); do not repeat raw byte counters.
+(`1007G`, `14 GB`); do not repeat raw byte counters, including one read from a script, file,
+or fixture (write `2.9 MiB`, not `3,000,000 bytes`).
 
 Write every path in the reply relative to the approved scope or as `~/…`,
 and a Windows profile as `/mnt/c/Users/<account>/…`; no absolute path or

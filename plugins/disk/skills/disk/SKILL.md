@@ -32,7 +32,8 @@ anything the user cannot get back.
   contents, or claim that TRIM or a `discard` mount option returns guest
   deletions to the host. Forbidden phrasings: "which I'd expect to hold
   most of it", "almost all of the used space is outside what I could
-  read", "likely in your home directory".
+  read", "likely in your home directory", "the rest is elsewhere on this
+  filesystem".
 - **Linux and WSL only.** The scripts and commands have run on Linux, and
   no live Windows VHDX compaction has been tried. On macOS, report APFS
   snapshots and purgeable space as unmeasured, and say the guard's
