@@ -217,11 +217,18 @@ def test_verified_commit_binds_gated_bytes(fx: Fixture) -> None:
     )
     assert status == 0, record
     (fx.work / "stray.txt").write_text("x")
+    assert (
+        cli(
+            fx.work, "verify-commit", "--parent", base, "--tree", gated["tree"], "--branch", "main"
+        )[0]
+        == 0
+    )
+    (fx.work / "version.txt").write_text("edited after commit\n")
     status, record = cli(
         fx.work, "verify-commit", "--parent", base, "--tree", gated["tree"], "--branch", "main"
     )
     assert status == 1
-    assert record["reason"] == "the tree is not clean"
+    assert record["reason"] == "tracked files differ from HEAD"
 
 
 def test_rejected_push_and_failing_hook_report_failure_without_moving_remote(fx: Fixture) -> None:

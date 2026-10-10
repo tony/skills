@@ -209,7 +209,7 @@ def worktree_tree(repo: Path, also: list[str], timeout: float) -> dict[str, obje
 def verify_commit(
     repo: Path, parent: str, tree: str, branch: str, timeout: float
 ) -> tuple[dict[str, object], int]:
-    """Require HEAD to be a one-parent commit on ``branch`` with ``tree`` and a clean tree."""
+    """Require HEAD to be a one-parent commit on ``branch`` with ``tree`` and no tracked changes."""
     _oid(parent, "--parent")
     _oid(tree, "--tree")
     ref = _ref_name(repo, "heads", branch, timeout)
@@ -218,7 +218,7 @@ def verify_commit(
     parents = _must(repo, ["rev-list", "--parents", "-n", "1", "HEAD"], timeout, "rev-list").split()
     committed = _local_oid(repo, "HEAD^{tree}", timeout)
     status = _must(
-        repo, ["status", "--porcelain=v1", "-z", "--untracked-files=all"], timeout, "status"
+        repo, ["status", "--porcelain=v1", "-z", "--untracked-files=no"], timeout, "status"
     )
     record: dict[str, object] = {"commit": head, "tree": committed, "parents": parents[1:]}
     if current != ref or head is None:
@@ -230,7 +230,11 @@ def verify_commit(
             "reason": "HEAD is not a single commit on the recorded synchronized base",
         }, _REFUSED
     if status:
-        return {**record, "outcome": "refused", "reason": "the tree is not clean"}, _REFUSED
+        return {
+            **record,
+            "outcome": "refused",
+            "reason": "tracked files differ from HEAD",
+        }, _REFUSED
     if committed != tree:
         return {
             **record,
