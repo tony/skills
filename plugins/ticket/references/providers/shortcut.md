@@ -14,8 +14,8 @@ a Story belongs to a Workspace and carries a Team field.
 ## Native hierarchy
 
 Objective > Epic > Story > Sub-task. Shortcut has no native Project work
-level (`Project` survives only as a legacy field) and no native
-release object.
+level (its help lists Projects as deprecated) and documents no release
+object.
 
 - **Objective** is ["Shortcut's top-level planning object"](https://www.shortcut.com/help/objectives/objectives-overview/).
   A *Tactical Objective* is Epic-driven and on all plans; it becomes *Strategic*
@@ -48,9 +48,9 @@ release object.
 ## Orthogonal objects
 
 - **Iteration**: timebox. native, optional. Stories are `scheduled_in` it.
-- **release_group**: absent. No release or version object exists; use a Label or
+- **release_group**: absent. Shortcut documents no release or version object; use a Label or
   Custom Field by convention and say which.
-- **checkpoint**: absent. No phase or dated-checkpoint object exists.
+- **checkpoint**: absent. Shortcut documents no phase or dated-checkpoint object.
 - **Epic Health / Objective Health**: no canonical role. native, optional. A
   dated status (On Track, At Risk, Off Track) with a comment, kept as health
   history. It reports on progress rather than marking a point in it.
