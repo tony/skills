@@ -38,6 +38,12 @@ cmd_guard() {
   case "$home/" in
     "${top%/}"/*) die "repository root contains home: $top" ;;
   esac
+  # save-user's add -A plus reset --hard would erase an operation's state.
+  local op
+  for op in MERGE_HEAD CHERRY_PICK_HEAD REVERT_HEAD rebase-merge rebase-apply; do
+    [ ! -e "$(git rev-parse --git-path "$op")" ] || die "$op present: finish or abort that operation first"
+  done
+  [ -z "$(git ls-files -u)" ] || die "unmerged paths: resolve them first"
   echo ok
 }
 

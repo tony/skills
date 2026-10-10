@@ -94,6 +94,19 @@ def test_guard_refuses_no_commits(tmp_path: pathlib.Path) -> None:
     assert "no commits" in result.stderr
 
 
+def test_guard_refuses_conflicted_merge(repo: pathlib.Path) -> None:
+    git(repo, "checkout", "-q", "-b", "side")
+    (repo / "notes.txt").write_text("side\n")
+    git(repo, "commit", "-qam", "side")
+    git(repo, "checkout", "-q", "main")
+    (repo / "notes.txt").write_text("main\n")
+    git(repo, "commit", "-qam", "main")
+    subprocess.run(["git", "merge", "-q", "side"], cwd=repo, capture_output=True, check=False)
+    result = spike(repo, "guard")
+    assert result.returncode == 1
+    assert "MERGE_HEAD" in result.stderr
+
+
 def test_guard_refuses_root_containing_home(repo: pathlib.Path) -> None:
     home = repo / "sub" / "home"
     home.mkdir(parents=True)
