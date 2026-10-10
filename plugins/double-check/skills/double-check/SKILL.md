@@ -32,7 +32,9 @@ If the chat holds no prior answer, treat the request as a first ask and
 verify the claim the user names. If the claim has no checkable artifact
 (a web fact, a memory), label the answer recall unless you opened a
 source, and name the source you did open; never answer "verified" from
-recall. When the source is a command with long or nondeterministic
+recall. A source that would not open (blocked, offline) is named as
+unreachable, not as checked. The lead line carries the label, and every
+bullet written from memory says so; nothing from memory reads as fact. When the source is a command with long or nondeterministic
 output, run it again and quote only the lines the claim depends on.
 
 ## Output shape
@@ -51,6 +53,16 @@ still append facts the question's subject depends on that you found
 while re-deriving, as a standalone fact about the subject ("the ADR
 also permits Y"), never as a correction of your prior answer. Leave out
 facts about other subjects.
+
+A recalled answer leads with its label:
+
+```text
+From memory, not checked against a source: 308 resends the request with
+the same method and body.
+
+- 307 has the same rule; 308 is its permanent form (from memory).
+- I could not reach the RFC, so no section is cited.
+```
 
 When the artifact cannot be opened, nothing is verified. Reply with one
 result sentence, then what the user must supply:

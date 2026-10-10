@@ -234,7 +234,7 @@
         "references/prose-rules.md": "plugins/double-check/references/prose-rules.md",
         "references/verification-contract.md": "plugins/double-check/references/verification-contract.md"
       },
-      "bytes": 11616
+      "bytes": 12091
     },
     {
       "name": "double-check-align",
