@@ -30,12 +30,13 @@ git commit -q -m "Add demo skills"
 
 python3 - <<'PY'
 import json
+import time
 
 with open("history.jsonl", "w", encoding="utf-8") as fh:
     for i in range(12):
         rec = {
             "display": f"/demo:used run {i}",
-            "timestamp": 1790000000000 + i * 86400000,
+            "timestamp": int(time.time() * 1000) - (20 - i) * 86400000,
             "project": f"/work/proj{i % 3}",
         }
         fh.write(json.dumps(rec) + "\n")

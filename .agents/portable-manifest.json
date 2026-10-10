@@ -1015,7 +1015,7 @@
         "references/prose-rules.md": "plugins/self-improvement/references/prose-rules.md",
         "references/sweep.py": "plugins/self-improvement/scripts/sweep.py"
       },
-      "bytes": 49377
+      "bytes": 49226
     },
     {
       "name": "self-improvement-sweep",
@@ -1028,7 +1028,7 @@
         "references/sweep.py": "plugins/self-improvement/scripts/sweep.py",
         "references/worked-example-spike.md": "plugins/self-improvement/references/worked-example-spike.md"
       },
-      "bytes": 65871
+      "bytes": 65779
     },
     {
       "name": "situate",

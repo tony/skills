@@ -33,7 +33,7 @@ python3 - <<'PY'
 import json
 from datetime import datetime, timezone
 
-start = datetime(2026, 2, 1, tzinfo=timezone.utc).timestamp() * 1000
+start = (datetime.now(timezone.utc).timestamp() - 14 * 86400) * 1000
 with open("history.jsonl", "w", encoding="utf-8") as fh:
     for i in range(12):
         tail = " and only touch *.log files" if i < 8 else ""

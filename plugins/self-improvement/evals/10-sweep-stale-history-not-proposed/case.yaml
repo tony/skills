@@ -1,0 +1,36 @@
+schema_version: "1.0"
+name: 10-sweep-stale-history-not-proposed
+description: >-
+  The same repeated instruction as case 08, but the history ended 120 days
+  ago. The sweep proposes nothing and lists the pattern as not proposed.
+tags: [fixture]
+
+context:
+  scaffold_script: scaffold.sh
+
+execution:
+  prompt: >-
+    /self-improvement:sweep. Use history.jsonl in this directory as the prompt
+    history, and treat the skill-tool channel as unavailable on this host.
+  max_turns: 40
+  timeout_seconds: 900
+  allowed_tools: [Bash, Read, Write, Glob, Grep, Skill]
+
+runs: 3
+
+graders:
+  - name: stale-pattern-not-proposed
+    type: llm
+    focus: last_message
+    criteria: >-
+      The reply proposes no finding. It lists the repeated "only touch *.log
+      files" instruction on demo:used as not proposed because its latest
+      occurrence is older than 30 days, and gives that last date.
+
+  - name: no-ledger
+    type: tool_used
+    tool: Bash
+    input_match: 'ledger-save'
+    min: 0
+    max: 0
+    arm: both

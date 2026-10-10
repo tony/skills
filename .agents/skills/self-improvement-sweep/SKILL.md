@@ -42,7 +42,9 @@ A finding needs all three:
 
 - Repetition: at least 5 occurrences of the pattern in its window.
 - Spread: at least 2 distinct projects among them.
-- Currency: the occurrences fall in the era of the catalog about to change.
+- Currency: the occurrences fall in the era of the catalog about to change,
+  and the latest is within the last 30 days. An older pattern goes under
+  `## Not proposed` with its last date.
 
 One project's friction is that project's quirk; one dead era's friction is
 history. These minimums are defaults. Echo any other number you use, and
@@ -187,7 +189,7 @@ ask what to sweep; in a non-interactive run, stop with the halted report.
 
 ## Phase 1: Count every skill
 
-Say first which searches you are about to run. The transcript search is
+The transcript search is
 scoped to the last 90 days unless the user asks for all of it, because an
 exhaustive one reads every store on disk. Then follow
 `references/detecting-invocations.md`: collect the tool channel, and run `<sweep.py> counts` once. The script
@@ -262,10 +264,10 @@ tree, and prints its `path`, `key`, and `resweep_on`. If the write is
 refused (a sandbox can block the git directory), rerun with
 `--out <scratch>/ledger.json` and tell the user that path, because `apply`
 needs it as `--ledger`. The key is the sha256
-hex digest of the repository `HEAD` hash and each finding's `id`, `verdict`,
-`skill`, and `expected_change`, the fields the `self-improvement-apply` skill acts on.
-`apply` recomputes it with `ledger-verify`, so a moved `HEAD` or an edited
-finding is caught. Evidence fields are not in the key. With no finding, write
+hex digest of the repository `HEAD` hash and every field of every finding.
+`apply` recomputes it with `ledger-verify`, which catches a moved `HEAD` or
+a finding edited without recomputing the key; it is a consistency check,
+not tamper protection. With no finding, write
 no ledger.
 
 ## Output contract
@@ -307,7 +309,7 @@ entry is one clause, the first bar the cluster failed, and nothing after
 it. Add no section beyond these (no `Caveat` or `Notes`); a caveat goes in
 `## Corpus`.
 
-Reply in this shape, as plain text outside any code fence, with plain bullets, no bold (never `- **Label:** ...`), and no local paths:
+Reply in this shape, as plain text outside any code fence, with plain bullets, no bold (never `- **Label:** ...`), and no local paths except the ledger path the panel prints:
 
 ```text
 1 finding across 1 skill, 3 of 4 history sources searched

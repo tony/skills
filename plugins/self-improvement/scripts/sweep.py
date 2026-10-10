@@ -334,9 +334,8 @@ def window_count(
 def ledger_key(head: str, findings: Sequence[dict[str, object]]) -> str:
     r"""Return the ledger key: sha256 hex of ``head`` and the finding set.
 
-    The hashed text is ``<head>\n`` followed by one compact JSON array per
-    finding, sorted by id: ``[id, verdict, skill, expected_change]``. Those
-    are the fields ``apply`` acts on; evidence fields stay out.
+    The hashed text is ``<head>\n`` followed by each finding as compact JSON
+    with sorted keys, the findings sorted by that text.
 
     Examples
     --------
@@ -352,13 +351,9 @@ def ledger_key(head: str, findings: Sequence[dict[str, object]]) -> str:
     >>> a == ledger_key("abc", [f1, {**f2, "expected_change": "w"}])
     False
     >>> a == ledger_key("abc", [f1, {**f2, "prompt": "w"}])
-    True
+    False
     """
-    lines = sorted(
-        json.dumps([f["id"], f["verdict"], f["skill"], f["expected_change"]], separators=(",", ":"))
-        + "\n"
-        for f in findings
-    )
+    lines = sorted(json.dumps(f, sort_keys=True, separators=(",", ":")) + "\n" for f in findings)
     return hashlib.sha256((head + "\n" + "".join(lines)).encode()).hexdigest()
 
 

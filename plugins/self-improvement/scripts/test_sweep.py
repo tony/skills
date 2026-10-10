@@ -81,10 +81,10 @@ def test_ledger_round_trip_rejects_edited_skill(
     assert "findings changed" in capsys.readouterr().out
 
 
-def test_ledger_key_ignores_evidence_fields() -> None:
-    """Evidence edits keep the key; every acted-on field changes it."""
+def test_ledger_key_covers_every_field() -> None:
+    """Editing any finding field, evidence included, changes the key."""
     base = sweep.ledger_key("h", [_finding()])
-    assert base == sweep.ledger_key("h", [{**_finding(), "ratio": "9 of 10"}])
+    assert base != sweep.ledger_key("h", [{**_finding(), "ratio": "9 of 10"}])
     for field in ("verdict", "skill", "expected_change"):
         assert base != sweep.ledger_key("h", [_finding(**{field: "changed"})])
 
