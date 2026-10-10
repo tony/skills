@@ -30,13 +30,21 @@ commits' capitalization, tense, and level of detail.
 
 ### 1. Gather State
 
-Sensitive files: `.env`, `.env.*`, `*.pem`, `*.key`, `*.p12`, `*.pfx`,
-`*.jks`, `*.p8`, `*.keystore`, `id_*` (but not `*.pub`), `*credentials*`,
-`*secret*`, `*.tfvars`, `.git-credentials`, `.npmrc`, `.pypirc`, `.netrc`,
-`.pgpass`. A name ending in `.example` or
-`.sample` is not sensitive. The user may override for one path by naming it
-in the request or hint (for example "commit .env.test"); that path alone
-may be staged or committed. Without that, a match is never committed.
+Run the sensitive-path scan first. `../../scripts/sensitive.py` resolves
+from this skill's directory to an absolute path; write that path literally
+in the command:
+
+```console
+$ python3 /absolute/path/to/scripts/sensitive.py scan
+```
+
+It prints one line per changed path: `ok` or `refuse`, the state (`staged`,
+`partial` for staged plus unstaged edits, `unstaged`, `untracked`), the path,
+and the reason (a sensitive name, or a private-key or token marker in the
+changed lines). It never prints a matched value. Exit 1 means a staged or
+partial path is refused. When the user names one path in the request or hint
+(for example "commit .env.test"), add `--allow <path>` for that path alone;
+without that, a `refuse` path is never committed.
 
 Run these and read the output:
 
@@ -46,14 +54,12 @@ Run these and read the output:
 - `git diff --cached --stat` and `git diff --stat`: staged and unstaged changes.
 - `git diff HEAD --shortstat`: size of the tracked diff. Read the full diff
   when it is a few thousand lines or fewer; otherwise read it per file. Append
-  `-- . ':(exclude)<path>'` for every sensitive path in the status output
-  (for example `git diff HEAD -- . ':(exclude).env'`), so a sensitive body
-  never enters context. Never read a sensitive file's content. A diff that
-  adds a private key block or a live-looking token commits nothing: name the
-  file, not the value.
+  `-- . ':(exclude)<path>'` for every `refuse` path (for example
+  `git diff HEAD -- . ':(exclude).env'`), so a sensitive body never enters
+  context. Never read a `refuse` file's content; name the file, not the
+  value.
 - `git ls-files --others --exclude-standard`: untracked files, which the diff
-  omits. Read each new file that is not sensitive; skim a large or binary
-  file by name only.
+  omits. Read each new `ok` file; skim a large or binary file by name only.
 - `git log --oneline -10`: recent commits, for style matching.
 - `git symbolic-ref --short refs/remotes/origin/HEAD`: the remote's default
   branch. A failure means the default branch is unknown; compare against
@@ -66,9 +72,10 @@ cherry-pick, or revert in progress (`git status` says so): commit nothing
 and tell the user to finish or abort it. `git diff HEAD` fails in a repository with no commits; use
 `git diff --cached` there. No tracked changes and no untracked files: report
 "Nothing to commit" and stop.
-On the default branch, commit anyway and say so in the reply; the commit
-stays local. If the project's AGENTS.md or CLAUDE.md requires feature
-branches, commit nothing and tell the user to switch branches.
+On the default branch, commit anyway; the first reply line names the
+branch (step 7) and nothing else says so. If the project's AGENTS.md or
+CLAUDE.md requires feature branches, commit nothing and tell the user to
+switch branches.
 
 ### 2. Analyze Changes
 
@@ -77,23 +84,21 @@ branches, commit nothing and tell the user to switch branches.
 - Determine the scope/component from the files and modules touched
 - Check topic coherence: if the changes span unrelated topics and nothing is
   staged, commit only the largest coherent topic's files, name the files left
-  out, and suggest committing them separately. Staged files are always
+  out. Staged files are always
   committed as staged. Do not wait for a reply.
 
 ### 3. Determine Staging
 
 - **Files already staged** (`git diff --cached` is non-empty): respect the
-  user's staging and commit only what is staged. If a staged path matches the
-  sensitive list (and the user did not override it), commit nothing: name the
-  path and tell the user to unstage it (`git restore --staged <path>`).
+  user's staging and commit only what is staged. If the scan refuses a
+  staged or partial path, commit nothing: name the path and give the unstage
+  command (`git restore --staged <path>`).
   Otherwise name the unstaged and untracked files left out. Before
-  committing, note each staged path that also has unstaged changes (listed by
-  both `git diff --cached --name-only` and `git diff --name-only`): it is
-  partially staged.
-- **Nothing staged**: stage changed files, never a sensitive one. Name each
-  skipped file in the reply and say it matches the sensitive-file list. Use
-  `git add <specific-files>`, never `git add -A` or `git add .`. Tell the
-  user which files you are staging.
+  committing, note each `partial` path from the scan: it is partially staged.
+- **Nothing staged**: stage changed `ok` files, never a `refuse` one. Name
+  each skipped file in the reply and say it matches the sensitive-file list.
+  Use `git add <specific-files>`, never `git add -A` or `git add .`, and name
+  the staged files in the reply.
 
 Once staging is final, read `git diff --cached --name-only`; step 7 compares
 the commit against it.
@@ -168,7 +173,8 @@ COMMIT_MSG_END
 )"
 ```
 
-If a pre-commit hook fails:
+If a pre-commit hook fails, note the rejection (what it rejected) for the
+step 7 bullet:
 
 - Read the hook output to understand the failure.
 - Fix the issue (formatting, lint, etc.) in the staged files only; leave
@@ -217,21 +223,23 @@ what:
 - Working tree is clean.
 ```
 
+The reply is impersonal: no first person ("I committed", "tell me").
 The first line is the hash, the stored subject, and `(local, not pushed)`
 when the remote-tracking check was empty; on a default branch it reads
 `(local on <branch>, not pushed)` with the branch's name. When a
 remote-tracking ref holds the commit, write `(on <ref>)` instead. The stored
-body follows verbatim when there is one. Bullets cover only files staged, files left out,
-the working tree state, a hook that changed the committed paths or message,
-and a hook rejection that preceded the commit (say
-what it rejected and what you changed; include that bullet only when a hook
-rejected an attempt). Skip the working-tree bullet when the
-left-out bullets already name every remaining file, unless it adds a fact.
-Add no other advice or remarks.
+body follows verbatim when there is one. Bullets cover only: files staged,
+files left out, the working tree state, a hook that changed the committed paths or message, and, whenever a hook
+rejected any attempt in step 6, one bullet saying what it rejected and what
+changed before the commit (required in that case). Skip the working-tree
+bullet when the left-out bullets already name every remaining file, unless
+it adds a fact. Add no other advice or remarks, including why a commit
+landed on the default branch.
 
-A stopped run is one result sentence, then what the user needs to do. Add
-no other advice, such as `.gitignore` tips, secret-handling guidance, or
-follow-up suggestions.
+A stopped run is one result sentence, then what the user needs to do (for a
+refused path, the command `git restore --staged <path>`). Add nothing else:
+no `.gitignore` tips, secret-handling guidance, how to override the scan,
+how to remove a secret from a file, or follow-up suggestions.
 
 ---
 

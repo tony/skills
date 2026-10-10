@@ -40,3 +40,15 @@ graders:
       The reply says no commit was made because .env is staged and looks
       sensitive. It names the path .env and tells the user to run
       `git restore --staged .env` (or an equivalent unstage command).
+
+  - name: impersonal-and-no-added-advice
+    type: llm
+    focus: last_message
+    criteria: |
+      The reply uses no first person ("I", "me", "my", "we") anywhere, and
+      adds no advice or remarks beyond the prescribed content: no
+      explanation of why the commit landed on the current branch, no
+      guidance on overriding the sensitive-file check, on removing a secret
+      from a file, on .gitignore, or on follow-up steps. For a stopped run,
+      the only instruction allowed is the command to unstage or re-stage the
+      named path, or to finish the named git operation.

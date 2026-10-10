@@ -45,19 +45,10 @@ draft a conventional commit message, and commit.
 
 ## How It Works
 
-1. Gather state: read the branch, status, diffs, untracked files, and recent
-   commits. Stop on a non-repository, a detached HEAD, an unfinished merge or rebase, nothing to commit, or
-   a branch-convention violation.
-2. Analyze changes: review the diff, determine type and scope, check topic
-   coherence.
-3. Determine staging: respect existing staged files, and auto-stage only if
-   nothing is staged. A staged secret, by name or by key content in the diff, stops the run.
-4. Draft the commit message: follow `AGENTS.md`/`CLAUDE.md` and recent
-   commit styles, with proportional detail and verified version-bump URLs.
-5. Commit: retry on pre-commit hook failures, never bypassing the hook.
-6. Confirm the result: read back the stored message, committed paths,
-   whether any remote-tracking ref holds the commit, and the remaining
-   working tree state.
+The skill reads the repository state, drafts a message in the project's
+format, commits what is staged (or stages the non-sensitive changes when
+nothing is), and reads the stored commit back. The steps live in
+`skills/commit/SKILL.md`.
 
 ## Arguments
 
@@ -84,7 +75,7 @@ recent commits for style matching. Falls back to Conventional Commits
 
 - No destructive commands: never runs `git push` or `git reset --hard`.
 - No history rewriting: never uses `--amend`, and always creates new commits.
-- Secret filtering: never stages `.env`, credentials, or key files, and names any it skips.
+- Secret filtering: `scripts/sensitive.py` refuses sensitive file names (`.env`, key, state, and credential files) and private-key or token content in changed lines, and the skill names any path it skips.
 - No tool credit: commit messages carry no `Co-Authored-By` trailer, tool footer, or emoji.
 - Explicit staging: stages specific files only, never `git add -A`, `git add .`, or `git commit -a`.
 

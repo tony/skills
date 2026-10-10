@@ -180,9 +180,10 @@
         "plugins/commit/skills/commit/SKILL.md"
       ],
       "bundled": {
-        "references/prose-rules.md": "plugins/commit/references/prose-rules.md"
+        "references/prose-rules.md": "plugins/commit/references/prose-rules.md",
+        "references/sensitive.py": "plugins/commit/scripts/sensitive.py"
       },
-      "bytes": 15862
+      "bytes": 22038
     },
     {
       "name": "disk",
@@ -1633,6 +1634,7 @@
     "plugins/business/references/instruments.md": 1,
     "plugins/changelog/scripts/rewrite.py": 1,
     "plugins/commit/references/prose-rules.md": 1,
+    "plugins/commit/scripts/sensitive.py": 1,
     "plugins/disk/references/candidate-catalog.md": 1,
     "plugins/disk/references/redundancy-proofs.md": 1,
     "plugins/disk/references/study-repos.md": 1,

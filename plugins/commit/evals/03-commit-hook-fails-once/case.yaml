@@ -43,6 +43,19 @@ graders:
     focus: last_message
     criteria: |
       The reply states that a commit was created, identified by its hash or
-      subject line. If the reply mentions a rejected attempt, it says what the
-      hook rejected and reports the commit made after the retry. It does not claim to have bypassed,
-      disabled, or removed the hook.
+      subject line. It contains a bullet saying a hook rejected the first
+      attempt, what it rejected, and what changed before the second attempt
+      succeeded. It does not claim to have bypassed, disabled, or removed
+      the hook.
+
+  - name: impersonal-and-no-added-advice
+    type: llm
+    focus: last_message
+    criteria: |
+      The reply uses no first person ("I", "me", "my", "we") anywhere, and
+      adds no advice or remarks beyond the prescribed content: no
+      explanation of why the commit landed on the current branch, no
+      guidance on overriding the sensitive-file check, on removing a secret
+      from a file, on .gitignore, or on follow-up steps. For a stopped run,
+      the only instruction allowed is the command to unstage or re-stage the
+      named path, or to finish the named git operation.

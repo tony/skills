@@ -43,3 +43,15 @@ graders:
       it stopped because app.py is partially staged and tells the user to
       re-stage it with `git add -p`. It does not claim the unstaged hunk was
       committed.
+
+  - name: impersonal-and-no-added-advice
+    type: llm
+    focus: last_message
+    criteria: |
+      The reply uses no first person ("I", "me", "my", "we") anywhere, and
+      adds no advice or remarks beyond the prescribed content: no
+      explanation of why the commit landed on the current branch, no
+      guidance on overriding the sensitive-file check, on removing a secret
+      from a file, on .gitignore, or on follow-up steps. For a stopped run,
+      the only instruction allowed is the command to unstage or re-stage the
+      named path, or to finish the named git operation.
