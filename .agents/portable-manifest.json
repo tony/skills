@@ -1282,7 +1282,7 @@
         "references/lockctl.py": "plugins/terraform/scripts/lockctl.py",
         "references/prose-rules.md": "plugins/terraform/references/prose-rules.md"
       },
-      "bytes": 45405
+      "bytes": 45373
     },
     {
       "name": "ticket-draft",

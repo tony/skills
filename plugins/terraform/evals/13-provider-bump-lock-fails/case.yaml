@@ -45,7 +45,7 @@ graders:
   - name: stopped-and-nothing-committed
     type: regex
     target: last_message
-    pattern: '^⚠ Stopped:[^\n]*(?:nothing (?:was |is )?committed|no commit|did not commit|not committed)'
+    pattern: '^⚠ Stopped:[^\n]*(?:nothing (?:was |is )?committed|no commit|did not commit|didn''t commit|not committed)'
     flags: i
 
   - name: recovery-matches-the-stopped-state

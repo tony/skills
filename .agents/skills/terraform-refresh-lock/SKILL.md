@@ -157,7 +157,7 @@ After a refresh, use this shape, as plain text outside any code fence, with plai
 
 ## Held back
 
-- envs/staging: aws 6.56.4; confirmed release 6.57.0 is excluded by ~> 6.56.0 in modules/network.
+- envs/staging: aws 6.56.4, held by ~> 6.56.0 in modules/network.
 
 ## Verification
 
