@@ -44,7 +44,8 @@ cmd_envelope() {
   [ "$hop" -le "$MAX_HOP" ] || die "hop $hop exceeds the cap of $MAX_HOP; do not send" 4
   case $want in reply|ack|none) ;; *) die "--want must be reply, ack, or none" ;; esac
   [ "$body" = '-' ] && body=$(cat)
-  case $body in *$'\n'*|*$'\r'*) die "body must be a single line" ;; esac
+  # The tmux route types the envelope as keys: ESC or ^C would act on the receiver.
+  case $body in *[[:cntrl:]]*) die "body must be a single line with no control characters" ;; esac
   [ -n "$body" ] || die "body is empty"
   [ "${#body}" -le "$MAX_BODY" ] || die "body is ${#body} characters; the cap is $MAX_BODY" 5
 
@@ -55,7 +56,7 @@ cmd_envelope() {
     [ "$want" = none ] || die "no address: a reply cannot be routed, use --want none" 3
     addr=unknown
   fi
-  case $from$to in *$'\n'*|*$'\r'*) die "--from and --to must be single-line" ;; esac
+  case $from$to in *[[:cntrl:]]*) die "--from and --to must be single-line, with no control characters" ;; esac
   if [ -n "$seq" ]; then
     case $seq in *[!0-9-]*) die "--seq must be digits and hyphens" ;; esac
   else
@@ -135,6 +136,10 @@ cmd_selftest() {
   check bad-seq 'digits and hyphens' "$out"
   out=$("$self" envelope --from p:c@s --to $'r\nx' --hop 0 --body hi 2>&1) && fail=1
   check newline-to 'single-line' "$out"
+  out=$("$self" envelope --from p:c@s --to r --hop 0 --body $'a\033b' 2>&1) && fail=1
+  check escape-body 'control characters' "$out"
+  out=$("$self" envelope --from $'p:c\003@s' --to r --hop 0 --body hi 2>&1) && fail=1
+  check ctrl-c-from 'control characters' "$out"
   out=$(printf "it's done" | "$self" envelope --from p:c@s --to r --hop 0 --seq 1 --body -)
   check stdin-body "] it's done" "$out"
   out=$("$self" envelope --from p:c@s --to r --hop 0 --body "$(head -c 900 /dev/zero | tr '\0' x)" 2>&1) && fail=1
