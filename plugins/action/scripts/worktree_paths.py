@@ -27,6 +27,7 @@ never takes the title as an argument.
 from __future__ import annotations
 
 import argparse
+import hashlib
 import os
 import re
 import subprocess
@@ -42,10 +43,18 @@ SAFE_BRANCH = re.compile(r"[A-Za-z0-9._/][A-Za-z0-9._/-]*")
 def slugify(title: str) -> str:
     """Lowercase, collapse non-alphanumeric runs to ``-``, trim ``-``.
 
+    A title with no ASCII letters or digits gets ``goal-`` and a short hash,
+    so the slug is never empty.
+
     >>> slugify("Fix: login redirect (v2)!")
     'fix-login-redirect-v2'
+    >>> slugify("日本語")
+    'goal-77710aed'
     """
-    return re.sub(r"[^a-z0-9]+", "-", title.lower()).strip("-")
+    slug = re.sub(r"[^a-z0-9]+", "-", title.lower()).strip("-")
+    if slug:
+        return slug
+    return "goal-" + hashlib.sha256(title.encode()).hexdigest()[:8]
 
 
 def branch_name(title: str, prefix: str = "") -> str:

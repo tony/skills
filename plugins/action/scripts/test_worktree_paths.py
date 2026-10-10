@@ -161,3 +161,11 @@ def test_check_prints_safe_name(tmp_path: Path, capsys: pytest.CaptureFixture[st
     f.write_text("tea-123/fix-login\n")
     assert wp.main(["check", "--file", str(f)]) == 0
     assert capsys.readouterr().out.strip() == "tea-123/fix-login"
+
+
+def test_slug_non_ascii_title_is_not_empty(tmp_path: Path) -> None:
+    name = wp.branch_name("日本語の目標")
+    assert name.startswith("goal-")
+    f = tmp_path / "name"
+    f.write_text(name)
+    assert wp.main(["check", "--file", str(f)]) == 0
