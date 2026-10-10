@@ -63,7 +63,7 @@ $ strings -n 6 <binary> | rg -o '[a-z_]*compress[a-z_]*'
 
 Unknown archival support is a failed proof. After measuring the store's
 allocated size, stop this tier: leave originals and their index intact
-and use the blocked shape in `output-contract.md`. Do not measure or
+and use the blocked shape. Do not measure or
 project a compression yield without a verified archival path.
 
 The result sentence is: "Archival support is unverified, so the originals

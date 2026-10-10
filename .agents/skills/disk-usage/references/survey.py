@@ -13,7 +13,8 @@ be read are listed under "errors" and their contents are missing from
 the sizes. Directories under /mnt are
 skipped (listed under "skipped") unless PATH is inside /mnt. When the
 time limit (default 90 seconds) runs out or a path cannot be read,
-"complete" is false and sizes are lower bounds.
+"complete" is false and sizes are lower bounds. The limit is checked
+between directory entries, so one blocked system call can overrun it.
 """
 
 # pyright: reportAny=false
@@ -83,8 +84,14 @@ class Walker:
             if key in self.seen:
                 self.skipped.append(path)
                 return 0
+            entries: list[os.DirEntry[str]] = []
             with os.scandir(path) as it:
-                entries = sorted(it, key=lambda e: e.name)
+                for entry in it:
+                    if time.monotonic() > self.deadline:
+                        self.timed_out = True
+                        return total
+                    entries.append(entry)
+            entries.sort(key=lambda e: e.name)
             self.seen.add(key)
             total += st.st_blocks * BLOCK
         except OSError as err:
@@ -163,6 +170,10 @@ def main(argv: list[str]) -> int:
     _ = parser.add_argument("--floor-pct", type=float, default=DEFAULT_FLOOR_PCT)
     _ = parser.add_argument("--time-limit", type=float, default=DEFAULT_TIME_LIMIT)
     args = parser.parse_args(argv[1:])
+    if args.depth < 0:
+        parser.error("--depth must be nonnegative")
+    if not math.isfinite(args.time_limit) or args.time_limit < 0:
+        parser.error("--time-limit must be finite and nonnegative")
     if not Path(args.path).is_dir():
         _ = sys.stderr.write(f"{args.path}: not a directory\n")
         return 2

@@ -83,9 +83,8 @@ A candidate is mergeable into a keeper when it holds unique files and
 no shared path differs in content. The merge is then additive; no
 existing file is written.
 
-Merge agent history only through the owning tool's verified import path;
-follow `agent-history.md` to establish discovery and indexing behavior.
-For any other tree, an additive merge is:
+Merge agent history only through the owning tool's verified import path,
+after its discovery and indexing behavior is established. For any other tree, an additive merge is:
 
 ```console
 $ rsync -a --ignore-existing <candidate>/ <keeper>/

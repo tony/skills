@@ -9,6 +9,11 @@
 - WSL: shutdown, compact, sparse
 - Docker Desktop and Hyper-V
 
+Only Linux and WSL guests have been exercised. The Windows commands below
+come from Microsoft's pages and have not been run against a live VHDX;
+macOS APFS snapshots and Time Machine are not covered. Say so instead of
+inferring either from Linux behavior.
+
 When the filesystem being cleaned lives inside a virtual disk, measure
 guest and host recovery separately. Guest deletion alone proves neither
 host recovery nor the need for compaction.

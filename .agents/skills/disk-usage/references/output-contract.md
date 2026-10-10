@@ -11,7 +11,9 @@
 Every command reports in the same fixed order. A hero block may precede
 it. Omit a section that has no findings rather than writing that it is
 empty; that includes `## Protected` when no history was found. No bold
-labels on bullets, no recap ending.
+labels on bullets, no recap ending. The first line of the reply is the hero
+or result sentence; nothing precedes it, including a note on which tool,
+skill, or process ran.
 
 A blocked or halted run (any layer or path that cannot be read, a failed
 proof, a declined approval) uses the blocked shape and no `##` sections:
@@ -266,9 +268,12 @@ reporting that a search found no copy.
 
 Use GiB at or above 1 GiB and MiB or KiB below it (`6 MiB`, never
 `0.0061 GiB`), one unit per figure, converting what a tool printed
-(`1007G`, `14 GB`); do not repeat raw byte counters. In commands for the
-user, replace an absolute home prefix with `~`. Literal absolute installed
-script paths belong in internal tool calls, not in the final reply.
+(`1007G`, `14 GB`); do not repeat raw byte counters.
+
+Write every path in the reply relative to the approved scope or as `~/…`,
+and a Windows profile as `/mnt/c/Users/<account>/…`; no absolute path or
+account name appears in it. Literal absolute installed script paths belong
+in internal tool calls, not in the final reply.
 
 Name what was skipped. A report that silently omits protected history
 reads as having missed it rather than having preserved it.

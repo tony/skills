@@ -8,7 +8,8 @@ or contains the scope or home root, lies outside SCOPE, or is, contains, or lies
 inside a KEEPER, crosses a mount point, or cannot be fully inspected.
 Otherwise prints the resolved target, size, and top-level entries (exit 0).
 Only --delete removes it, after a synchronous open-handle check with lsof.
-Missing or inconclusive probes refuse deletion. Symlinks inside
+Missing or inconclusive probes, including one that exceeds its time limit,
+refuse deletion. Symlinks inside
 the tree are unlinked, never followed. A completed deletion reports the
 filesystem's observed free-space delta, without attributing its cause.
 """
@@ -28,6 +29,7 @@ from pathlib import Path
 EXIT_OK = 0
 EXIT_REFUSED = 2
 LIST_LIMIT = 50
+LSOF_TIMEOUT = 30
 
 
 def contains(parent: str, child: str) -> bool:
@@ -101,7 +103,7 @@ def _open_file_refusal(target: str) -> str | None:
     command.append(target)
     try:
         result = subprocess.run(  # noqa: S603
-            command, capture_output=True, timeout=1, check=False
+            command, capture_output=True, timeout=LSOF_TIMEOUT, check=False
         )
     except (OSError, subprocess.TimeoutExpired):
         return "open-handle inspection failed or was incomplete"

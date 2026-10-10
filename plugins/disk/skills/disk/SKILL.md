@@ -33,6 +33,10 @@ anything the user cannot get back.
   deletions to the host. Forbidden phrasings: "which I'd expect to hold
   most of it", "almost all of the used space is outside what I could
   read", "likely in your home directory".
+- **Linux and WSL only.** The scripts and commands have run on Linux, and
+  no live Windows VHDX compaction has been tried. On macOS, report APFS
+  snapshots and purgeable space as unmeasured, and say the guard's
+  mount check there lacks the Linux mountinfo layer.
 - **Never run `sudo`.** Print the full command for the user and stop.
   Introduce it as "run this in your own shell", never as "it needs
   root, so I won't run it myself".

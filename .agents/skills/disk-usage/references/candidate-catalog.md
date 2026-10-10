@@ -70,7 +70,7 @@ Three cautions apply even here:
 ## Redundant
 
 A second copy of data that exists elsewhere. Safe to delete only once
-the copy is *proved* redundant — see `redundancy-proofs.md`. Nothing in
+the copy is *proved* redundant. Nothing in
 this tier is reclaimed on the strength of a directory's name.
 
 Backup directories, snapshot trees, pre-migration copies, and
@@ -95,8 +95,7 @@ blanket "clear stale data" approval does not cover this tier.
 ## Protected
 
 Irreplaceable. Modify a live history store only through its verified
-owning-tool archival path, or after proving a copy redundant. See
-`agent-history.md` for verification and access tradeoffs.
+owning-tool archival path, or after proving a copy redundant.
 
 Agent transcripts and session stores; local databases not backed by a
 remote; anything under a path the user has named as history.

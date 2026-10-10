@@ -76,7 +76,7 @@ separately. A clean branch alone does not prove the clone disposable.
 
 ## Cost two: build artifacts
 
-Classify output under study trees with `candidate-catalog.md`; active
+Classify output under study trees with the four tiers; active
 projects and hand-written or tracked files remain protected.
 
 Aggregate artifact directories across the whole study root before
