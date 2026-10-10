@@ -467,6 +467,24 @@ def test_teardown_removes_a_worktree_holding_left_in_place_files(
     assert git(repo, "rev-parse", "--verify", sha)
 
 
+def test_teardown_names_ignored_files_it_removes(
+    repo: pathlib.Path, tmp_path: pathlib.Path
+) -> None:
+    (repo / ".gitignore").write_text("dist/\n")
+    git(repo, "add", ".gitignore")
+    git(repo, "commit", "-q", "-m", "ignore dist")
+    tree = tmp_path / "wt"
+    git(repo, "worktree", "add", "--detach", str(tree), "HEAD")
+    (tree / "dist").mkdir()
+    (tree / "dist" / "bundle.js").write_text("x\n")
+    (tree / "feature.txt").write_text("x\n")
+    sha = spike(tree, "stash", message="spike: wt").stdout.strip()
+    result = spike(repo, "teardown", str(tree), sha)
+    assert result.returncode == 0, result.stderr
+    assert result.stdout.strip() == "removed"
+    assert "removing ignored dist/" in result.stderr
+
+
 def test_teardown_refuses_without_a_recorded_stash(
     repo: pathlib.Path, tmp_path: pathlib.Path
 ) -> None:

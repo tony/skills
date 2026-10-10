@@ -304,6 +304,9 @@ cmd_teardown() {
   git -C "$1" diff --cached --quiet || die "worktree holds unstashed staged changes: $1"
   [ -z "$(git -C "$1" ls-files --modified --others --exclude-standard -- ':/' "${BYTECODE[@]}")" ] ||
     die "worktree holds unstashed changes: $1"
+  local left
+  left=$(git -C "$1" ls-files --others --ignored --exclude-standard --directory -- ':/' "${BYTECODE[@]}")
+  [ -z "$left" ] || printf '%s\n' "$left" | sed 's/^/spike.sh: removing ignored /' >&2
   git worktree remove "$1" 2>/dev/null || git worktree remove --force "$1" || true
   git worktree prune
   local abs
