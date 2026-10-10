@@ -399,7 +399,7 @@
         "references/merge_pr.py": "plugins/merge-pr/scripts/merge_pr.py",
         "references/prose-rules.md": "plugins/merge-pr/references/prose-rules.md"
       },
-      "bytes": 39690
+      "bytes": 41320
     },
     {
       "name": "merge-pr-this",
@@ -411,7 +411,7 @@
         "references/merge_pr.py": "plugins/merge-pr/scripts/merge_pr.py",
         "references/prose-rules.md": "plugins/merge-pr/references/prose-rules.md"
       },
-      "bytes": 38516
+      "bytes": 40134
     },
     {
       "name": "model-cli-agy",
