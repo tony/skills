@@ -6,9 +6,15 @@ Pins are read from the default branch ref, not the working tree. With
 ``--fetch`` the remote is fetched first and ``fetch_ok`` reports the result.
 
 ``repo_facts.py --lock-diff REPO [LOCKFILE...]`` compares each lockfile
-(default: ``uv.lock``, ``poetry.lock``, ``Cargo.lock`` in REPO) at ``HEAD``
-with the working tree and splits the changed packages into ``majors`` (a new
-major, or for 0.x a new minor) and ``in_range``.
+(default: every tracked ``uv.lock``, ``poetry.lock`` and ``Cargo.lock`` in REPO,
+at any depth) at ``HEAD`` with the working tree and splits the changed packages
+into ``majors`` (a new major, or for 0.x a new minor) and ``in_range``.
+
+``repo_facts.py --manifest-diff REPO [MANIFEST...]`` does the same for the
+dependency ranges of each ``package.json`` (default: every tracked one).
+
+A file that cannot be read is reported as an ``error`` or in ``failed``, never
+as absent or unchanged. A file missing from ``HEAD`` is ``{"new": true}``.
 """
 
 # ruff: noqa: S603, S607, PLR2004
@@ -21,9 +27,12 @@ import re
 import subprocess
 import sys
 from pathlib import Path
+from typing import TYPE_CHECKING, cast
+
+if TYPE_CHECKING:
+    from collections.abc import Callable
 
 LOCKFILES = ("uv.lock", "poetry.lock", "Cargo.lock")
-PIN_FILES = (".tool-versions", ".nvmrc", ".python-version", ".ruby-version")
 
 
 def _git(repo: str, *args: str, strip_newline: bool = True) -> tuple[int, str]:
@@ -58,71 +67,165 @@ def _default_branch(repo: str, remote: str) -> str | None:
     return match.group(1) if code == 0 and match else None
 
 
-def _show(repo: str, ref: str, path: str) -> str | None:
-    code, out = _git(repo, "show", f"{ref}:{path}", strip_newline=False)
-    return out if code == 0 else None
+PRESENT, ABSENT, FAILED = "present", "absent", "failed"
+DEPENDENCY_SECTIONS = (
+    "dependencies",
+    "devDependencies",
+    "optionalDependencies",
+    "peerDependencies",
+)
+MANIFEST = "package.json"
 
 
-def _mise_tools(text: str) -> dict[str, str]:
-    """Read ``tool = "version"`` and ``tool = ["version", ...]`` lines under ``[tools]``."""
-    tools: dict[str, str] = {}
-    in_tools = False
+def _read(repo: str, ref: str, path: str) -> tuple[str, str]:
+    """Read ``path`` at ``ref``: ``(PRESENT, text)``, ``(ABSENT, "")`` or ``(FAILED, "")``."""
+    code, listed = _git(repo, "ls-tree", "--name-only", ref, "--", f"./{path}")
+    if code:
+        return FAILED, ""
+    if not listed:
+        return ABSENT, ""
+    code, out = _git(repo, "show", f"{ref}:./{path}", strip_newline=False)
+    return (PRESENT, out) if code == 0 else (FAILED, "")
+
+
+def _scan_toml(line: str) -> tuple[str, int]:
+    """Return ``line`` without its comment and its bracket depth outside strings."""
+    quote, depth = "", 0
+    kept: list[str] = []
+    for char in line:
+        if quote:
+            quote = "" if char == quote else quote
+        elif char in "\"'":
+            quote = char
+        elif char == "#":
+            break
+        elif char in "[{":
+            depth += 1
+        elif char in "]}":
+            depth -= 1
+        kept.append(char)
+    return "".join(kept), depth
+
+
+def _versions(values: list[str]) -> str | list[str]:
+    return values[0] if len(values) == 1 else values
+
+
+def _mise_tools(text: str) -> tuple[dict[str, object], bool]:
+    """Read the ``[tools]`` table of a mise file; the flag is False when a line is not understood.
+
+    Understood values: ``"v"``, ``["v", ...]`` (also across lines) and
+    ``{ version = "v" | [...], ... }``.
+    """
+    tools: dict[str, object] = {}
+    ok, in_tools, pending, depth = True, False, "", 0
     for raw in text.splitlines():
-        line = raw.split("#")[0].strip()
-        if line.startswith("["):
+        line, delta = _scan_toml(raw)
+        line = line.strip()
+        if pending:
+            pending, depth = f"{pending} {line}", depth + delta
+            if depth > 0:
+                continue
+            line, pending, depth = pending, "", 0
+        elif line.startswith("["):
             in_tools = line == "[tools]"
+            ok = ok and not line.startswith("[tools.")
             continue
-        match = re.match(r"""["']?([^"'=\s]+)["']?\s*=\s*(.*)$""", line)
-        if in_tools and match:
-            value = re.search(r"""["']([^"']+)["']""", match.group(2))
-            tools[match.group(1)] = value.group(1) if value else match.group(2).strip()
+        elif delta > 0:
+            pending, depth = line, delta
+            continue
+        if not line or not in_tools:
+            continue
+        match = re.match(r"""(["']?)([^"'=\s]+)\1\s*=\s*(.+)$""", line)
+        if not match:
+            ok = False
+            continue
+        value = match.group(3).strip()
+        if value.startswith("{"):
+            inner = re.search(r"""\bversion\s*=\s*(\[[^\]]*\]|["'][^"']*["'])""", value)
+            value = inner.group(1) if inner else ""
+        found = [m.group(2) for m in re.finditer(r"""(["'])((?:(?!\1).)*)\1""", value)]
+        if found:
+            tools[match.group(2)] = _versions(found)
+        else:
+            ok = False
+    return tools, ok
+
+
+def _first_line(text: str) -> str | None:
+    return text.splitlines()[0].strip() if text.strip() else None
+
+
+def _tool_versions(text: str) -> dict[str, object] | None:
+    tools: dict[str, object] = {}
+    for line in text.splitlines():
+        parts = line.split("#")[0].split()
+        if len(parts) == 1:
+            return None
+        if parts:
+            tools[parts[0]] = _versions(parts[1:])
     return tools
 
 
-def _pins(repo: str, ref: str) -> dict[str, object]:
+def _mise(text: str) -> dict[str, object] | None:
+    tools, understood = _mise_tools(text)
+    return tools if understood else None
+
+
+def _rust_channel(text: str) -> str | None:
+    if text.lstrip().startswith("["):
+        match = re.search(r"""^\s*channel\s*=\s*(["'])([^"'\r\n]+)\1""", text, re.MULTILINE)
+        return match.group(2) if match else None
+    return _first_line(text)
+
+
+def _go_pins(text: str) -> dict[str, object]:
     pins: dict[str, object] = {}
-    for name in PIN_FILES:
-        text = _show(repo, ref, name)
-        if text is None:
-            continue
-        if name == ".tool-versions":
-            tools = {}
-            for line in text.splitlines():
-                parts = line.split("#")[0].split()
-                if len(parts) >= 2:
-                    tools[parts[0]] = parts[1]
-            pins[name] = tools
-        else:
-            pins[name] = text.splitlines()[0].strip() if text else ""
-    for name in ("mise.toml", ".mise.toml"):
-        mise = _show(repo, ref, name)
-        if mise is not None:
-            pins[name] = _mise_tools(mise)
-    toolchain = _show(repo, ref, "rust-toolchain.toml")
-    if toolchain is not None:
-        match = re.search(r'^\s*channel\s*=\s*"([^"]+)"', toolchain, re.MULTILINE)
-        pins["rust-toolchain.toml"] = match.group(1) if match else ""
-    plain = _show(repo, ref, "rust-toolchain")
-    if plain is not None:
-        pins["rust-toolchain"] = plain.splitlines()[0].strip() if plain else ""
-    gomod = _show(repo, ref, "go.mod")
-    if gomod is not None:
-        go = {}
-        for key in ("go", "toolchain"):
-            match = re.search(rf"^{key}\s+(\S+)", gomod, re.MULTILINE)
-            if match:
-                go[key] = match.group(1)
-        pins["go.mod"] = go
-    package = _show(repo, ref, "package.json")
-    if package is not None:
-        try:
-            data = json.loads(package)
-        except ValueError:
-            data = {}
-        picked: dict[str, object] = {k: data[k] for k in ("packageManager", "engines") if k in data}
-        if picked:
-            pins["package.json"] = picked
+    for key in ("go", "toolchain"):
+        match = re.search(rf"^{key}\s+(\S+)", text, re.MULTILINE)
+        if match:
+            pins[key] = match.group(1)
     return pins
+
+
+def _package_pins(text: str) -> dict[str, object] | None:
+    try:
+        data = json.loads(text)
+    except ValueError:
+        return None
+    if not isinstance(data, dict):
+        return None
+    return {k: data[k] for k in ("packageManager", "engines") if k in data}
+
+
+PIN_PARSERS: dict[str, Callable[[str], object | None]] = {
+    ".tool-versions": _tool_versions,
+    ".nvmrc": _first_line,
+    ".python-version": _first_line,
+    ".ruby-version": _first_line,
+    "mise.toml": _mise,
+    ".mise.toml": _mise,
+    "rust-toolchain.toml": _rust_channel,
+    "rust-toolchain": _rust_channel,
+    "go.mod": _go_pins,
+    MANIFEST: _package_pins,
+}
+
+
+def _pins(repo: str, ref: str) -> tuple[dict[str, object], list[str]]:
+    """Read the toolchain pin files at ``ref``; an unreadable or unparsed file is in ``failed``."""
+    pins: dict[str, object] = {}
+    failed: list[str] = []
+    for name, parse in PIN_PARSERS.items():
+        state, text = _read(repo, ref, name)
+        if state == ABSENT:
+            continue
+        value = parse(text) if state == PRESENT else None
+        if value is None:
+            failed.append(name)
+        elif value or name != MANIFEST:
+            pins[name] = value
+    return pins, failed
 
 
 def facts(repo: str, *, fetch: bool = False) -> dict[str, object]:
@@ -138,6 +241,7 @@ def facts(repo: str, *, fetch: bool = False) -> dict[str, object]:
         "origin" if "origin" in remotes else (next(iter(remotes)) if len(remotes) == 1 else None)
     )
     status, changes = _git(repo, "status", "--porcelain", "--untracked-files=no")
+    failed = ["worktree status"] if status else []
     out: dict[str, object] = {
         "path": top,
         "linked_worktree": git_dir != common,
@@ -148,7 +252,7 @@ def facts(repo: str, *, fetch: bool = False) -> dict[str, object]:
         "default_branch": None,
         "branch": _git(repo, "branch", "--show-current")[1],
         "dirty": bool(changes) if status == 0 else None,
-        "failed": ["worktree status"] if status else [],
+        "failed": failed,
     }
     if remote is None and remotes:
         out["error"] = "multiple remotes without origin"
@@ -156,21 +260,28 @@ def facts(repo: str, *, fetch: bool = False) -> dict[str, object]:
     if remote is None:
         ref = str(out["branch"] or "HEAD")
         out["pins_ref"] = ref
-        out["pins"] = _pins(repo, ref)
+        out["pins"], pin_failures = _pins(top, ref)
+        failed.extend(pin_failures)
         return out
     if fetch:
         out["fetch_ok"] = _git(repo, "fetch", remote)[0] == 0
     default = _default_branch(repo, remote)
     out["default_branch"] = default
     if default is None:
+        failed.append("default branch")
         return out
     ref = f"{remote}/{default}"
     if _git(repo, "rev-parse", "--verify", "--quiet", ref)[0] != 0:
         ref = default
     behind = _git(repo, "rev-list", "--count", f"{default}..{remote}/{default}")
+    ahead = _git(repo, "rev-list", "--count", f"{remote}/{default}..{default}")
     out["behind_remote"] = int(behind[1]) if behind[0] == 0 and behind[1] else None
+    out["ahead_remote"] = int(ahead[1]) if ahead[0] == 0 and ahead[1] else None
+    if out["ahead_remote"] and out["behind_remote"] == 0:
+        ref = default
     out["pins_ref"] = ref
-    out["pins"] = _pins(repo, ref)
+    out["pins"], pin_failures = _pins(top, ref)
+    failed.extend(pin_failures)
     return out
 
 
@@ -201,34 +312,106 @@ def _lock_versions(text: str) -> dict[str, set[str]]:
 
 def _series(version: str) -> tuple[int, ...]:
     """Return ``(major,)``, or ``(0, minor)`` for a 0.x version."""
-    nums = [int(n) for n in re.findall(r"\d+", version.split("+", maxsplit=1)[0])[:2]]
-    nums += [0] * (2 - len(nums))
-    return (nums[0],) if nums[0] else (0, nums[1])
+    match = re.match(r"v?(\d+)(?:\.(\d+))?", version.strip())
+    if not match:
+        message = f"unrecognized version {version!r}"
+        raise ValueError(message)
+    major, minor = int(match.group(1)), int(match.group(2) or 0)
+    return (major,) if major else (0, minor)
+
+
+def _split(
+    changed: list[tuple[dict[str, object], set[str], set[str]]],
+) -> dict[str, list[dict[str, object]]]:
+    """Split changes into new-series (``majors``) and same-series (``in_range``) moves."""
+    majors: list[dict[str, object]] = []
+    in_range: list[dict[str, object]] = []
+    for entry, before, after in changed:
+        gone, came = sorted(before - after), sorted(after - before)
+        if not gone and not came:
+            continue
+        old_series = {_series(v) for v in before}
+        crossed = bool(old_series) and any(_series(v) not in old_series for v in came)
+        (majors if crossed else in_range).append({**entry, "from": gone, "to": came})
+    return {"majors": majors, "in_range": in_range}
 
 
 def lock_changes(old: str, new: str) -> dict[str, list[dict[str, object]]]:
     """Split the packages that differ between two lock texts into majors and in-range moves."""
     before, after = _lock_versions(old), _lock_versions(new)
-    majors: list[dict[str, object]] = []
-    in_range: list[dict[str, object]] = []
-    for name in sorted(set(before) | set(after)):
-        gone = sorted(before.get(name, set()) - after.get(name, set()))
-        came = sorted(after.get(name, set()) - before.get(name, set()))
-        if not gone and not came:
+    return _split(
+        [
+            ({"name": name}, before.get(name, set()), after.get(name, set()))
+            for name in sorted(set(before) | set(after))
+        ]
+    )
+
+
+def _spec_version(spec: str) -> str | None:
+    """Return the first version number in a dependency range, or None when it names none."""
+    if "://" in spec or spec.startswith(("file:", "link:", "workspace:", "catalog:", "git")):
+        return None
+    match = re.search(r"\d+(?:\.\d+)*", spec)
+    return match.group(0) if match else None
+
+
+def _ranges(text: str) -> dict[tuple[str, str], str]:
+    data: object = json.loads(text)
+    if not isinstance(data, dict):
+        message = "manifest is not a JSON object"
+        raise ValueError(message)  # noqa: TRY004
+    found: dict[tuple[str, str], str] = {}
+    for section in DEPENDENCY_SECTIONS:
+        table: object = cast("dict[str, object]", data).get(section, {})
+        if not isinstance(table, dict):
+            message = f"{section} is not a JSON object"
+            raise ValueError(message)  # noqa: TRY004
+        found.update(
+            {
+                (section, k): v
+                for k, v in cast("dict[str, object]", table).items()
+                if isinstance(v, str)
+            }
+        )
+    return found
+
+
+def manifest_changes(old: str, new: str) -> dict[str, list[dict[str, object]]]:
+    """Split changed dependency ranges into majors, in-range moves and unclassified ones."""
+    before, after = _ranges(old), _ranges(new)
+    unclassified: list[dict[str, object]] = []
+    changed: list[tuple[dict[str, object], set[str], set[str]]] = []
+    for key in sorted(set(before) | set(after)):
+        old_spec, new_spec = before.get(key), after.get(key)
+        if old_spec == new_spec:
             continue
-        entry: dict[str, object] = {"name": name, "from": gone, "to": came}
-        old_series = {_series(v) for v in before.get(name, set())}
-        crossed = bool(old_series) and any(_series(v) not in old_series for v in came)
-        (majors if crossed else in_range).append(entry)
-    return {"majors": majors, "in_range": in_range}
+        entry: dict[str, object] = {"section": key[0], "name": key[1]}
+        old_v = _spec_version(old_spec) if old_spec else None
+        new_v = _spec_version(new_spec) if new_spec else None
+        if (old_spec and old_v is None) or (new_spec and new_v is None):
+            unclassified.append({**entry, "from": old_spec, "to": new_spec})
+            continue
+        changed.append((entry, {old_v} if old_v else set(), {new_v} if new_v else set()))
+    return {**_split(changed), "unclassified": unclassified}
 
 
-def lock_diff(repo: str, lockfiles: list[str]) -> dict[str, object]:
-    """Compare each lockfile at HEAD with the working tree."""
+def _tracked(repo: str, names: tuple[str, ...]) -> list[str] | None:
+    """Return tracked files at any depth whose basename is in ``names``; None if unreadable."""
+    code, out = _git(repo, "ls-files", "-z")
+    if code:
+        return None
+    return sorted(p for p in out.split("\0") if p and p.rsplit("/", maxsplit=1)[-1] in names)
+
+
+def _diff_files(
+    repo: str,
+    names: list[str],
+    compare: Callable[[str, str], dict[str, list[dict[str, object]]]],
+) -> dict[str, object]:
     out: dict[str, object] = {"path": repo}
-    for name in lockfiles or [n for n in LOCKFILES if (Path(repo) / n).is_file()]:
-        old = _show(repo, "HEAD", f"./{name}")
-        if old is None:
+    for name in names:
+        state, old = _read(repo, "HEAD", name)
+        if state == FAILED:
             out[name] = {"error": "HEAD baseline is not readable"}
             continue
         try:
@@ -236,18 +419,45 @@ def lock_diff(repo: str, lockfiles: list[str]) -> dict[str, object]:
         except (OSError, UnicodeError):
             out[name] = {"error": "not readable"}
             continue
+        if state == ABSENT:
+            out[name] = {"new": True}
+            continue
         try:
-            out[name] = lock_changes(old, new)
+            out[name] = compare(old, new)
         except ValueError as error:
             out[name] = {"error": str(error)}
     return out
 
 
+def _default_names(repo: str, basenames: tuple[str, ...]) -> list[str] | dict[str, object]:
+    tracked = _tracked(repo, basenames)
+    if tracked is None:
+        return {"path": repo, "error": "tracked files are not readable"}
+    return sorted({*tracked, *(n for n in basenames if (Path(repo) / n).is_file())})
+
+
+def lock_diff(repo: str, lockfiles: list[str]) -> dict[str, object]:
+    """Compare each lockfile at HEAD with the working tree."""
+    names = lockfiles or _default_names(repo, LOCKFILES)
+    if isinstance(names, dict):
+        return names
+    return _diff_files(repo, names, lock_changes)
+
+
+def manifest_diff(repo: str, manifests: list[str]) -> dict[str, object]:
+    """Compare each ``package.json`` at HEAD with the working tree."""
+    names = manifests or _default_names(repo, (MANIFEST,))
+    if isinstance(names, dict):
+        return names
+    return _diff_files(repo, names, manifest_changes)
+
+
 def main(argv: list[str]) -> int:
     """Print one JSON line per repository."""
-    if argv[:1] == ["--lock-diff"] and len(argv) > 1:
-        sys.stdout.write(json.dumps(lock_diff(argv[1], argv[2:])) + "\n")
-        return 0
+    for flag, diff in (("--lock-diff", lock_diff), ("--manifest-diff", manifest_diff)):
+        if argv[:1] == [flag] and len(argv) > 1:
+            sys.stdout.write(json.dumps(diff(argv[1], argv[2:])) + "\n")
+            return 0
     fetch = "--fetch" in argv
     repos = [a for a in argv if a != "--fetch"] or ["."]
     for repo in repos:

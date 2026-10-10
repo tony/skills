@@ -1,6 +1,6 @@
 """Tests for repo_facts.py against throwaway repositories."""
 
-# ruff: noqa: S101, S603, S607, INP001
+# ruff: noqa: S101, S603, S607, INP001, SLF001
 # pyright: reportAny=false, reportUnusedCallResult=false
 from __future__ import annotations
 
@@ -56,7 +56,7 @@ def test_pins_come_from_default_branch_not_working_tree(tmp_path: pathlib.Path) 
     assert out["branch"] == "topic"
     assert out["pins"] == {
         ".tool-versions": {"uv": "0.7.8", "just": "1.36.0"},
-        "mise.toml": {"node": "20", "npm:prettier": "3.3.0", "python": "3.12"},
+        "mise.toml": {"node": "20", "npm:prettier": "3.3.0", "python": ["3.12", "3.11"]},
         "rust-toolchain.toml": "1.80.0",
         "go.mod": {"go": "1.22", "toolchain": "go1.22.3"},
         "package.json": {"packageManager": "pnpm@9.0.0"},
@@ -307,3 +307,126 @@ def test_unrecognized_lock_is_not_no_changes() -> None:
         repo_facts.lock_changes("version = 1", "unreadable")
     with pytest.raises(ValueError, match="package name or version is not readable"):
         repo_facts.lock_changes(_lock(("demo", "1.0.0")), '[[package]]\nname = "demo"\n')
+
+
+def test_pin_arrays_keep_every_version() -> None:
+    """A support set is not collapsed to its first entry; unknown syntax is reported."""
+    text = (
+        "[tools]\n"
+        'node = { version = "22", os = ["linux"] }  # tracked\n'
+        "python = [\n"
+        '  "3.12",  # newest\n'
+        "  '3.11',\n"
+        "]\n"
+        "[tools.go]\n"
+    )
+
+    tools, understood = repo_facts._mise_tools(text)  # pyright: ignore[reportPrivateUsage]
+
+    assert tools == {"node": "22", "python": ["3.12", "3.11"]}
+    assert understood is False
+    assert repo_facts._mise_tools("[tools]\nnode = latest\n")[1] is False  # pyright: ignore[reportPrivateUsage]
+
+
+@pytest.mark.integration
+def test_unreadable_or_malformed_pins_are_failed_not_absent(
+    tmp_path: pathlib.Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Unreadable or unparsed pin files are named in failed, not treated as absent."""
+    repo = _make(tmp_path)
+    (repo / "package.json").write_text("{not json")
+    (repo / ".tool-versions").write_text("python 3.12 3.11\nnodejs\n")
+    _git(repo, "commit", "-qam", "malformed")
+    _git(repo, "push", "-q", "origin", "main")
+
+    out = repo_facts.facts(str(repo))
+
+    assert out["failed"] == [".tool-versions", "package.json"]
+    pins = cast("dict[str, object]", out["pins"])
+    assert "package.json" not in pins
+    assert pins["go.mod"] == {"go": "1.22", "toolchain": "go1.22.3"}
+
+    objects = tmp_path / "empty-objects"
+    objects.mkdir()
+    monkeypatch.setenv("GIT_OBJECT_DIRECTORY", str(objects))
+    unreadable = repo_facts.facts(str(repo))
+    assert "go.mod" in cast("list[str]", unreadable["failed"])
+    assert unreadable["pins"] == {}
+
+
+@pytest.mark.integration
+def test_local_default_ahead_of_remote_is_reported(tmp_path: pathlib.Path) -> None:
+    """A local default ahead of the remote is the base, and its unpushed commits are surfaced."""
+    repo = _make(tmp_path)
+    _git(repo, "remote", "set-head", "origin", "main")
+    (repo / "f").write_text("x")
+    _git(repo, "add", "f")
+    _git(repo, "commit", "-q", "-m", "local only")
+
+    out = repo_facts.facts(str(repo))
+
+    assert out["ahead_remote"] == 1
+    assert out["pins_ref"] == "main"
+    assert out["behind_remote"] == 0
+
+
+@pytest.mark.integration
+def test_lock_diff_finds_nested_locks_and_new_locks(tmp_path: pathlib.Path) -> None:
+    """Tracked locks at any depth are compared; a lock absent from HEAD is new, not unreadable."""
+    repo = _make(tmp_path)
+    (repo / "pkg").mkdir()
+    (repo / "pkg" / "uv.lock").write_text(_lock(("demo", "1.0.0")))
+    _git(repo, "add", "pkg")
+    _git(repo, "commit", "-q", "-m", "nested lock")
+    (repo / "pkg" / "uv.lock").write_text(_lock(("demo", "2.0.0")))
+    (repo / "Cargo.lock").write_text(_lock(("demo", "1.0.0")))
+
+    out = repo_facts.lock_diff(str(repo), [])
+
+    assert out["pkg/uv.lock"] == {
+        "majors": [{"name": "demo", "from": ["1.0.0"], "to": ["2.0.0"]}],
+        "in_range": [],
+    }
+    assert out["Cargo.lock"] == {"new": True}
+
+
+def test_manifest_diff_catches_zero_x_minor_and_unclassified_ranges() -> None:
+    """A 0.x minor in a range edit is a major; ranges naming no version are unclassified."""
+    old = (
+        '{"dependencies": {"a": "^0.1.0", "b": "^1.2.3", "c": "workspace:*"},'
+        ' "devDependencies": {"d": "~2.0.0"}}'
+    )
+    new = (
+        '{"dependencies": {"a": "^0.2.1", "b": "^1.9.0", "c": "latest"},'
+        ' "devDependencies": {"d": "~3.0.0", "e": "^1.0.0"}}'
+    )
+
+    out = repo_facts.manifest_changes(old, new)
+
+    assert [m["name"] for m in out["majors"]] == ["a", "d"]
+    assert [m["name"] for m in out["in_range"]] == ["b", "e"]
+    assert [m["name"] for m in out["unclassified"]] == ["c"]
+
+
+def test_unrecognized_version_cannot_pass_as_zero_series() -> None:
+    """A version with no leading number stops classification instead of reading as 0.0."""
+    with pytest.raises(ValueError, match="unrecognized version"):
+        repo_facts.lock_changes(_lock(("demo", "1.0.0")), _lock(("demo", "main")))
+
+
+def test_lock_changes_reads_uv_lock_as_written_by_uv() -> None:
+    """Fields uv writes around name and version (sources, wheels) do not hide a package."""
+    block = (
+        '[[package]]\nname = "requests"\nversion = "{v}"\n'
+        'source = {{ registry = "https://pypi.org/simple" }}\n'
+        'dependencies = [\n    {{ name = "idna" }},\n]\n'
+        'sdist = {{ url = "https://example.invalid/r.tar.gz", hash = "sha256:00", size = 1 }}\n'
+        "wheels = [\n"
+        '    {{ url = "https://example.invalid/r.whl", hash = "sha256:00", size = 1 }},\n]\n'
+    )
+    head = 'version = 1\nrevision = 3\nrequires-python = ">=3.9"\n\n'
+
+    out = repo_facts.lock_changes(head + block.format(v="2.31.0"), head + block.format(v="3.0.0"))
+
+    assert out["majors"] == [{"name": "requests", "from": ["2.31.0"], "to": ["3.0.0"]}]
