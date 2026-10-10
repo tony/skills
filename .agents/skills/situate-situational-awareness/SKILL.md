@@ -14,8 +14,8 @@ Establish what is going on in a repository before acting in it.
 
 Read `references/situation-sweep.md` first, and
 `references/prior-conversations.md` before searching local AI
-transcripts. Search them only on an explicit request or a request to
-resume after a gap, which counts as asking.
+transcripts. Search them only on an explicit request; a request to resume
+after a gap gets a question first, as that reference describes.
 
 A bare "huh" or "what?" is not this skill; `brief` answers it. This one
 runs when someone can already say what they want caught up on.

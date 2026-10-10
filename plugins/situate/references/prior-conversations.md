@@ -3,7 +3,10 @@
 Shared by `/situate:situate` and the `situational-awareness` skill. This layer
 runs only when the user passes `--with-agentgrep` or asks for it in
 words. A request to resume after a gap ("I'm back after a break", "where
-did I leave off") counts as asking: run one capped search.
+did I leave off") is not that request: ask first, naming that the search
+downloads `agentgrep` and reads every AI CLI's local transcripts. Without
+a question tool (Codex, headless runs), print the search command for the
+user and skip this layer.
 
 ## Contents
 
