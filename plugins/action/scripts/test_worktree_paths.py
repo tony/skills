@@ -144,3 +144,20 @@ def test_guard_outside_repo_exits_1(tmp_path: Path) -> None:
     )
     assert done.returncode == 1
     assert "not a git repository" in done.stderr
+
+
+@pytest.mark.parametrize(
+    "name",
+    ["feat/a$(id)b", "x`id`", "a;b", "a b", "-rf", "../x", "a..b"],
+)
+def test_check_refuses_unsafe_names(tmp_path: Path, name: str) -> None:
+    f = tmp_path / "name"
+    f.write_text(name)
+    assert wp.main(["check", "--file", str(f)]) == wp.REFUSED
+
+
+def test_check_prints_safe_name(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    f = tmp_path / "name"
+    f.write_text("tea-123/fix-login\n")
+    assert wp.main(["check", "--file", str(f)]) == 0
+    assert capsys.readouterr().out.strip() == "tea-123/fix-login"

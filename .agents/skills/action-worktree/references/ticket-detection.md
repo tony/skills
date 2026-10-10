@@ -147,16 +147,21 @@ $ git log --merges --oneline -50
 5. **Kebab-slug fallback**: a kebab slug of the goal, when no ticket,
    convention, or norms exist.
 
-Whatever rung wins, validate the name before deriving paths from it:
+Whatever rung wins, validate the name before any command uses it. A
+tracker field, `--branch` or a remote ref can carry shell syntax, so write
+the candidate to a file with the file tool, never through the shell, then
+check it (the script path resolves as above):
 
 ```console
-$ git check-ref-format --branch <name>
+$ python3 /abs/path/to/scripts/worktree_paths.py check --file <name-file>
 ```
 
-An invalid name from a slugged title (illegal characters, trailing
-dot, `..`) is re-slugged and re-validated; an invalid explicit name
-(rung 1) is a question back to the user, never a silent rewrite
-(non-interactive: report `⚠ blocked`, change nothing).
+It prints the name when it is safe (letters, digits, `.`, `_`, `/`, `-`, no
+leading `-`, and `git check-ref-format --branch` accepts it); only that
+printed name enters later commands. A refused name from a slugged title is
+re-slugged and re-checked; a refused explicit name (rung 1) is a question
+back to the user, never a silent rewrite (non-interactive: report
+`⚠ blocked`, change nothing).
 
 **Multi-ticket (crosscutting) branches** skip rung 3. Propose a
 **theme slug** (e.g. `auth-error-handling`) and confirm it at the plan

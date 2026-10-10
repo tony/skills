@@ -35,6 +35,8 @@ from pathlib import Path
 
 MAX_NAME = 60
 REFUSED = 2
+# A name that passes this is inert in a shell word; git's own check is not.
+SAFE_BRANCH = re.compile(r"[A-Za-z0-9._/][A-Za-z0-9._/-]*")
 
 
 def slugify(title: str) -> str:
@@ -69,6 +71,23 @@ def branch_name(title: str, prefix: str = "") -> str:
     if prefix and not slug:
         return prefix
     return head + slug
+
+
+def branch_problem(name: str) -> str | None:
+    """Return why ``name`` cannot be used as a branch, or ``None``.
+
+    >>> branch_problem("tea-123-fix-login")
+    >>> branch_problem("feat/a$(id)b")
+    'characters outside A-Z a-z 0-9 . _ / -, or a leading -'
+    """
+    if not SAFE_BRANCH.fullmatch(name):
+        return "characters outside A-Z a-z 0-9 . _ / -, or a leading -"
+    ok = subprocess.run(
+        ["git", "check-ref-format", "--branch", name],
+        capture_output=True,
+        check=False,
+    )
+    return None if ok.returncode == 0 else "git check-ref-format rejects it"
 
 
 def posix_cksum(data: bytes) -> int:
@@ -161,6 +180,15 @@ def _main_checkout() -> str:
     raise RuntimeError(msg)
 
 
+def _check(name: str) -> int:
+    problem = branch_problem(name)
+    if problem:
+        print(f"refuse: {problem}")
+        return REFUSED
+    print(name)
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     """Run the CLI."""
     parser = argparse.ArgumentParser(description=(__doc__ or "").split("\n\n")[0])
@@ -172,7 +200,12 @@ def main(argv: list[str] | None = None) -> int:
     p_path.add_argument("--branch", required=True)
     p_path.add_argument("--temp", action="store_true")
     sub.add_parser("guard")
+    p_check = sub.add_parser("check")
+    p_check.add_argument("--file", required=True)
     args = parser.parse_args(argv)
+
+    if args.cmd == "check":
+        return _check(Path(args.file).read_text(encoding="utf-8").strip())
 
     if args.cmd == "slug":
         title = Path(args.file).read_text(encoding="utf-8")
