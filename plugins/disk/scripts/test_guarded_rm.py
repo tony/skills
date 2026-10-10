@@ -204,7 +204,7 @@ def test_open_handle_probe_must_finish_before_delete(
 
     def probe(command: list[str], **kwargs: object) -> subprocess.CompletedProcess[bytes]:
         assert payload.read_text() == "keep"
-        assert kwargs["timeout"] == 1
+        assert kwargs["timeout"] == guarded_rm.LSOF_TIMEOUT
         calls.append(command)
         assert command == ["lsof", "-nP", "+w", "+D", str(target)]
         return subprocess.CompletedProcess(command, code, stdout, stderr)
@@ -273,3 +273,25 @@ def test_deletion_reports_only_observed_delta(
         assert payload.read_bytes() == b"owned fixture"
     else:
         assert not payload.exists()
+
+
+def test_nested_approved_target_previews_and_deletes_the_same_path(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    scope = tmp_path / "home"
+    nested = scope / ".cache" / "thumbnails" / "large"
+    nested.mkdir(parents=True)
+    (nested / "thumb-1.png").write_bytes(b"\0" * 4096)
+    sibling = scope / ".cache" / "thumbnails" / "small"
+    sibling.mkdir()
+    (sibling / "thumb-2.png").write_bytes(b"keep")
+    unique = scope / "old-experiments" / "notes.txt"
+    unique.parent.mkdir()
+    unique.write_text("keep")
+    assert run("--scope", str(scope), str(nested)) == OK
+    assert run("--scope", str(scope), "--delete", str(nested)) == OK
+    targets = [ln for ln in capsys.readouterr().out.splitlines() if ln.startswith("target: ")]
+    assert targets == [f"target: {nested.resolve()}"] * 2
+    assert not nested.exists()
+    assert (sibling / "thumb-2.png").read_bytes() == b"keep"
+    assert unique.read_text() == "keep"

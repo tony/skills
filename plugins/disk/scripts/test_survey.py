@@ -7,11 +7,13 @@ from __future__ import annotations
 
 import json
 import os
+from types import SimpleNamespace
 from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     from pathlib import Path
 
+import pytest
 import survey  # pyright: ignore[reportImplicitRelativeImport]
 
 
@@ -91,3 +93,19 @@ def test_repeated_directory_inode_is_counted_once(tmp_path: Path) -> None:
     assert walker.walk(str(tmp_path)) >= file_bytes
     assert walker.walk(str(tmp_path)) == 0
     assert walker.skipped == [str(tmp_path)]
+
+
+def test_listing_stops_at_the_deadline_and_cli_rejects_bad_limits(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    for name in "abc":
+        (tmp_path / name).write_bytes(b"x")
+    ticks = iter([0.0, 0.0, 0.0, 9.0, 9.0, 9.0, 9.0, 9.0])
+    monkeypatch.setattr(survey, "time", SimpleNamespace(monotonic=lambda: next(ticks, 9.0)))
+    walker = survey.Walker(tmp_path.stat().st_dev, 3, deadline=1.0)
+    _ = walker.walk(str(tmp_path))
+    assert walker.timed_out
+    for flag, value in (("--depth", "-1"), ("--time-limit", "nan"), ("--time-limit", "-1")):
+        with pytest.raises(SystemExit):
+            survey.main(["survey.py", str(tmp_path), flag, value])
+        assert "must be" in capsys.readouterr().err
