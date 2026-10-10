@@ -71,15 +71,12 @@ The `disk` skill triggers either flow automatically under disk pressure.
 ## Prerequisites
 
 - `df`, `du`, `find`, `findmnt` (Linux), `git`, `python3` (3.9 or newer),
-  `realpath`, `rsync` (checksum comparison in the redundancy proof), and
+  `realpath`, `rsync` (additive merge), and
   `lsof` (open-file check before deleting; any warning refuses removal)
 - WSL only: GNU `find` and `numfmt` (backing-file size) and `fstrim`
   (in-guest trim, run by you)
 - (Optional) `dust` for faster surveying, `strings` and `rg` for binary
   inspection
-
-Compaction of a live vhdx is documented from Microsoft's pages but has not
-been run against one.
 
 Open-file checks cover processes visible to the caller, not privileged or
 hidden processes. They do not lock out new opens or mount changes. Stop

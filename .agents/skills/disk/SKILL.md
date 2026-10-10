@@ -40,10 +40,9 @@ anything the user cannot get back.
   read", "likely in your home directory", "the rest is elsewhere on this
   filesystem", "I tried to read ~/.cache and none of it could be read" when only
   the home directory was attempted.
-- **Linux and WSL only.** The scripts and commands have run on Linux, and
-  no live Windows VHDX compaction has been tried. On macOS, report APFS
-  snapshots and purgeable space as unmeasured, and say the guard's
-  mount check there lacks the Linux mountinfo layer.
+- **Linux and WSL only.** macOS is unsupported: report APFS snapshots and
+  purgeable space as unmeasured, and say the guard's mount check there
+  lacks the Linux mountinfo layer. Native Windows is untested.
 - **Never run `sudo`.** Print the full command for the user and stop.
   Introduce it as "run this in your own shell", never as "it needs
   root, so I won't run it myself".

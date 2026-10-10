@@ -35,9 +35,10 @@ Reading case 2 as case 1 can delete data without a proved replacement. **Never c
 
 ## Required proof for "redundant"
 
-Compare path sets directly and report the intersection, both
-differences, and the byte size of each. A directory is redundant only
-when the set unique to it is empty and every entry in both trees was
+Compare path sets, then the content of every shared path, and report
+the intersection, both differences, and the byte size of each. A
+directory is redundant only when the set unique to it is empty, every
+shared file has the same SHA-256 in both trees, and every entry was
 readable. Run the script:
 
 ```console
@@ -46,36 +47,19 @@ $ python3 /abs/path/to/scripts/redundancy.py \
     <keeper>
 ```
 
-Exit status 0 is REDUNDANT, 1 is NOT REDUNDANT, 2 is INCONCLUSIVE. A directory
+Exit status 0 is REDUNDANT, 1 is NOT REDUNDANT, 2 is INCONCLUSIVE. The
+script never prints REDUNDANT on path sets alone: size and mtime are not
+compared, because size collisions are common in append-structured
+formats such as JSONL transcripts. NOT REDUNDANT lists the shared paths
+whose content differs; unique paths are counted separately. A directory
 that cannot be listed, or a regular file that cannot be opened, in either tree
 makes the result INCONCLUSIVE and lists the entries; what cannot be read
 cannot be proved duplicated. Report an INCONCLUSIVE proof as failed and
 classify the candidate as unique until access is fixed.
 
-Symlinks (including broken ones) count as entries sized by `lstat`.
+Symlinks (including broken ones) count as entries compared by target.
 Empty directories are not compared; the script counts them, and the
 report names them as skipped.
-
-Shared paths must then be confirmed identical by content, not by size
-or mtime. Size collisions are common in append-structured formats such
-as JSONL transcripts.
-
-```console
-$ rsync -rcn --itemize-changes <candidate>/ <keeper>/
-```
-
-The `-c` flag forces a checksum comparison. Output lines show how the
-trees differ, not only whether they do:
-
-- `>f+++++++++ <path>`: the candidate holds a file the keeper lacks.
-- `>fcsT...... <path>`: a shared path differs in content.
-- No lines: nothing in the candidate is missing from or different in the
-  keeper.
-- `skipping non-regular file "<name>"`: a symlink was not compared.
-  Report it as skipped.
-
-An empty rsync output plus a REDUNDANT result from the script
-proves redundancy. Either one alone does not.
 
 ## Required proof for "mergeable"
 
@@ -90,7 +74,7 @@ after its discovery and indexing behavior is established. For any other tree, an
 $ rsync -a --ignore-existing <candidate>/ <keeper>/
 ```
 
-Re-run both checks afterward with the source as candidate and the
+Re-run the proof afterward with the source as candidate and the
 destination as keeper. The source must have no unique entries or
 content differences before it can be removed.
 

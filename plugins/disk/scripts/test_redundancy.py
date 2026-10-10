@@ -33,6 +33,30 @@ def test_subset_is_redundant(tmp_path: Path, capsys: pytest.CaptureFixture[str])
     assert "REDUNDANT" in out
 
 
+def test_same_paths_different_content_is_not_redundant(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    cand = tree(tmp_path / "c", {"a": "1", "b": "same"})
+    keep = tree(tmp_path / "k", {"a": "2", "b": "same"})
+    code, out = run(cand, keep, capsys)
+    assert code == redundancy.EXIT_NOT_REDUNDANT
+    assert "different content: 1" in out
+    assert "\nREDUNDANT" not in out
+
+
+def test_changed_symlink_target_is_not_redundant(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    cand = tmp_path / "c"
+    keep = tmp_path / "k"
+    cand.mkdir()
+    keep.mkdir()
+    (cand / "l").symlink_to("one")
+    (keep / "l").symlink_to("two")
+    code, _ = run(cand, keep, capsys)
+    assert code == redundancy.EXIT_NOT_REDUNDANT
+
+
 def test_disjoint_is_not_redundant(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
     cand = tree(tmp_path / "c", {"a": "1"})
     keep = tree(tmp_path / "k", {"b": "1"})

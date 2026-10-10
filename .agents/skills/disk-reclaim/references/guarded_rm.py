@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
 """Check, list, and optionally delete one approved path.
 
-Usage: guarded_rm.py --scope DIR [--keeper DIR ...] [--delete] TARGET
+Usage: guarded_rm.py --scope DIR [--keeper DIR ...] [--allow-history]
+       [--delete] TARGET
 
 Resolves TARGET with realpath and refuses (exit 2) when it is missing, is
 or contains the scope or home root, lies outside SCOPE, or is, contains, or lies
-inside a KEEPER, crosses a mount point, or cannot be fully inspected.
+inside a KEEPER, is, contains, or lies inside an agent-history root (unless
+--allow-history), crosses a mount point, or cannot be fully inspected.
 Otherwise prints the resolved target, size, and top-level entries (exit 0).
 Only --delete removes it, after a synchronous open-handle check with lsof.
 Missing or inconclusive probes, including one that exceeds its time limit,
@@ -19,6 +21,7 @@ filesystem's observed free-space delta, without attributing its cause.
 from __future__ import annotations
 
 import argparse
+import contextlib
 import os
 import re
 import shutil
@@ -30,6 +33,12 @@ EXIT_OK = 0
 EXIT_REFUSED = 2
 LIST_LIMIT = 50
 LSOF_TIMEOUT = 30
+HISTORY_SUFFIXES = (
+    (".claude", "projects"),
+    (".codex", "sessions"),
+    (".codex", "archived_sessions"),
+)
+WINDOWS_PROFILES = "/mnt/c/Users"
 
 
 def contains(parent: str, child: str) -> bool:
@@ -37,7 +46,40 @@ def contains(parent: str, child: str) -> bool:
     return os.path.commonpath([parent, child]) == parent
 
 
-def refusal(target: str, scope: str, keepers: list[str]) -> str | None:
+def history_roots() -> list[str]:
+    """Return existing agent-history roots in the home and Windows profiles."""
+    homes = [str(Path.home().resolve())]
+    with contextlib.suppress(OSError):
+        homes += [e.path for e in os.scandir(WINDOWS_PROFILES) if e.is_dir()]
+    return [str(Path(h, *suffix)) for h in homes for suffix in HISTORY_SUFFIXES]
+
+
+def history_refusal(target: str) -> str | None:
+    """Return the history root target is, contains, or lies inside, else None."""
+    parts = Path(target).parts
+    for suffix in HISTORY_SUFFIXES:
+        width = len(suffix)
+        for i in range(len(parts) - width + 1):
+            if parts[i : i + width] == suffix:
+                return str(Path(*parts[: i + width]))
+    for root in history_roots():
+        if contains(target, root):
+            return root
+    return None
+
+
+def overlap_refusal(target: str, keepers: list[str], allow_history: bool) -> str | None:
+    """Return why target overlaps a keeper or agent history, else None."""
+    for keeper in keepers:
+        if contains(keeper, target) or contains(target, keeper):
+            return f"target overlaps a keeper ({keeper})"
+    root = None if allow_history else history_refusal(target)
+    if root:
+        return f"target is, contains, or lies inside agent history ({root})"
+    return None
+
+
+def refusal(target: str, scope: str, keepers: list[str], allow_history: bool = False) -> str | None:
     """Return why a resolved target must not be removed, else None."""
     if not os.path.lexists(target):
         return "target does not exist"
@@ -45,9 +87,9 @@ def refusal(target: str, scope: str, keepers: list[str]) -> str | None:
         return "target is or contains the approved scope or home directory"
     if not contains(scope, target):
         return "target resolves outside the approved scope"
-    for keeper in keepers:
-        if contains(keeper, target) or contains(target, keeper):
-            return f"target overlaps a keeper ({keeper})"
+    overlap = overlap_refusal(target, keepers, allow_history)
+    if overlap:
+        return overlap
     try:
         return crossing_mount(target, scope)
     except (OSError, ValueError, IndexError) as exc:
@@ -128,13 +170,18 @@ def main(argv: list[str]) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--scope", required=True)
     parser.add_argument("--keeper", action="append", default=[])
+    parser.add_argument(
+        "--allow-history",
+        action="store_true",
+        help="permit agent-history targets; pass only after the user names that history",
+    )
     parser.add_argument("--delete", action="store_true")
     parser.add_argument("target")
     args = parser.parse_args(argv[1:])
     target = os.path.realpath(args.target)
     scope = os.path.realpath(args.scope)
     keepers = [os.path.realpath(k) for k in args.keeper]
-    reason = refusal(target, scope, keepers)
+    reason = refusal(target, scope, keepers, args.allow_history)
     if reason:
         print(f"REFUSED - {reason}: {target}")
         return EXIT_REFUSED

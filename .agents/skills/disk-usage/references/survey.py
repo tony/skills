@@ -8,7 +8,9 @@ the floor in bytes (P percent of total, default 1), and every directory
 within N levels of PATH (default 3) whose size meets the floor, largest
 first. Sizes are allocated bytes (st_blocks), each inode is counted once
 under the first path in name order, symlinks are never
-followed, and the walk stays on PATH's filesystem. Paths that could not
+followed, and the walk stays on PATH's filesystem. "largest" lists the
+LARGEST_COUNT biggest directories below PATH regardless of the floor, so a
+partly unreadable filesystem still yields a ranking. Paths that could not
 be read are listed under "errors" and their contents are missing from
 the sizes. Directories under /mnt are
 skipped (listed under "skipped") unless PATH is inside /mnt. When the
@@ -35,6 +37,7 @@ DEFAULT_FLOOR_PCT = 1.0
 DEFAULT_TIME_LIMIT = 90.0
 SKIP_ROOT = "/mnt"
 BLOCK = 512
+LARGEST_COUNT = 5
 
 
 @final
@@ -151,11 +154,17 @@ def survey(
         key=lambda item: item[1],
         reverse=True,
     )
+    below = sorted(
+        ((p, s) for p, s in walker.sizes.items() if p != real),
+        key=lambda item: item[1],
+        reverse=True,
+    )
     return {
         "path": real,
         "filesystem": {"total": total_bytes, "used": used, "available": avail},
         "floor": floor,
         "directories": [{"path": p, "bytes": s} for p, s in found],
+        "largest": [{"path": p, "bytes": s} for p, s in below[:LARGEST_COUNT]],
         "errors": walker.errors,
         "skipped": walker.skipped,
         "complete": not walker.timed_out and not walker.errors,

@@ -89,6 +89,30 @@ def test_home_and_ancestors_are_refused_with_broader_scope(
     assert payload.read_text() == "keep"
 
 
+@pytest.mark.parametrize(
+    "target_name",
+    [".claude/projects", ".claude/projects/proj", ".codex/sessions/2026", ".claude", ".codex"],
+)
+def test_agent_history_is_refused_unless_allowed(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, target_name: str
+) -> None:
+    home = tmp_path / "home"
+    (home / ".claude" / "projects" / "proj").mkdir(parents=True)
+    (home / ".codex" / "sessions" / "2026").mkdir(parents=True)
+    target = home / target_name
+
+    def home_directory(_cls: type[Path]) -> Path:
+        return home
+
+    monkeypatch.setattr(Path, "home", classmethod(home_directory))
+    scope = str(tmp_path)
+    assert run("--scope", scope, "--delete", str(target)) == REFUSED
+    assert target.exists()
+    if target_name.count("/"):
+        assert run("--scope", scope, "--allow-history", "--delete", str(target)) == OK
+        assert not target.exists()
+
+
 def test_keeper_overlap_is_refused(tmp_path: Path) -> None:
     (tmp_path / "s" / "a" / "keep").mkdir(parents=True)
     scope = str(tmp_path / "s")

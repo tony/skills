@@ -65,16 +65,16 @@ Work the approved plan in tier order, largest first within each tier.
 Track progress with TodoWrite so a long run stays inspectable.
 
 Merges run before the deletions that depend on them. After each merge,
-re-run both redundancy checks with the source as candidate and the
+re-run the redundancy proof with the source as candidate and the
 destination as keeper. Only a complete content proof permits removal.
 
 Prefer a tool's own prune or archive command over `rm`. It understands
 its own reference counting and leaves the store consistent.
 
 Before any `rm`, run the guard. It resolves the path with `realpath`,
-refuses a target outside the approved scope, overlapping a keeper, or
-crossing a mount point, and
-prints the target, its size, and its top-level entries. The guard checks scope and keepers, not tier: before each `rm`, say which approved tier and item the target belongs to, and delete nothing the approval did not name. Print the
+refuses a target outside the approved scope, overlapping a keeper, inside
+agent history, or crossing a mount point, and
+prints the target, its size, and its top-level entries. The guard refuses agent-history roots; pass `--allow-history` only after the user names that history target. It does not check tier: before each `rm`, say which approved tier and item the target belongs to, and delete nothing the approval did not name. Print the
 absolute path of `references/guarded_rm.py` once (it resolves from this
 file's directory) and write it literally:
 

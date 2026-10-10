@@ -109,3 +109,14 @@ def test_listing_stops_at_the_deadline_and_cli_rejects_bad_limits(
         with pytest.raises(SystemExit):
             survey.main(["survey.py", str(tmp_path), flag, value])
         assert "must be" in capsys.readouterr().err
+
+
+def test_largest_ranks_below_floor_directories(tmp_path: Path) -> None:
+    (tmp_path / "small").mkdir()
+    (tmp_path / "small" / "f").write_bytes(b"x" * 20_000)
+    (tmp_path / "bigger").mkdir()
+    (tmp_path / "bigger" / "f").write_bytes(b"x" * 90_000)
+    out = run(tmp_path, 3, 99)
+    assert out["directories"] == []
+    ranked = [d["path"] for d in out["largest"]]
+    assert ranked == [str(tmp_path / "bigger"), str(tmp_path / "small")]

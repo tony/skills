@@ -20,7 +20,10 @@ proof, a declined approval) uses the blocked shape and no `##` sections:
 four sentences total: one result sentence, then exactly three plain
 bullets, one sentence each: `Measured`, `Not measured`, and `To continue`;
 put any necessary command after the last bullet. Fill `Measured` from
-the survey's `filesystem` fields and classified in-scope directories;
+the survey's `filesystem` fields and classified in-scope directories,
+and rank the survey's `largest` readable directories with their sizes
+and filesystem, even when none reaches the floor, so the reply carries
+triage before it asks for elevated help;
 leave rejected probe inventory out. Fill `Not measured` from `errors`
 or a recorded command failure, naming only paths that were attempted and
 failed; a parent that failed does not make its children, or the default
@@ -36,8 +39,10 @@ Say "could not be read" about the layer. Name no cache location in
 runs.
 
 A blocked usage report opens: "The survey is incomplete; the location of
-unmeasured usage is unknown." A blocked reclaim opens: "No cleanup ran:
-no in-scope candidate passed its checks." Keep the opening separate from
+unmeasured usage is unknown." A blocked reclaim opens "No cleanup ran:
+no in-scope candidate passed its checks." when candidates were classified
+and each failed a check, and "No cleanup ran: nothing was classified."
+when no candidate was surveyed. Keep the opening separate from
 the measured figures. `To continue` asks for the missing measurement or
 a readable path; it does not explain where the missing usage might be.
 
@@ -73,9 +78,10 @@ Reply in this shape, as plain text outside any code fence, with plain
 bullets, no bold (never `- **Label:** ...`), and no local paths:
 
 ````text
-No cleanup ran: no in-scope cache was verified.
+No cleanup ran: nothing was classified.
 
-- Measured: the WSL guest, 61% used, 344 GiB available.
+- Measured: the WSL guest, 61% used, 344 GiB available; largest readable
+  directories: var/lib/docker 4.1 GiB, usr 3.2 GiB, opt 1.4 GiB.
 - Not measured: the home directory could not be read.
 - To continue: share a readable cache path or run the command below in
   your own shell and share its output.
@@ -104,7 +110,7 @@ Reply in this shape, as plain text outside any code fence, with plain
 bullets, no bold (never `- **Label:** ...`), and no local paths:
 
 ```text
-Do not delete notes-backup-2026: it holds two files that notes lacks, and
+Do not delete notes-backup: it holds two files that notes lacks, and
 the root filesystem has 344 GiB free.
 
 - Proof: the two trees share no paths; no other copy was established.
