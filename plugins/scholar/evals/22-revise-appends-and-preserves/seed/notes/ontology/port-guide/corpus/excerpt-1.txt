@@ -1,0 +1,12 @@
+# Port Guide
+Edition: Review Fixture Press, 2026, first printing.
+
+## PortAdapter
+This is a named type.
+An instance wraps a client behind the port interface.
+The example uses a third-party client.
+The client may be first-party or third-party.
+
+## EventBus
+This is a named type.
+An instance publishes domain events to subscribed handlers.

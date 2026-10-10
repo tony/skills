@@ -1,0 +1,197 @@
+schema_version: "1.0"
+name: 22-revise-appends-and-preserves
+description: >-
+  Correct a sourced overgeneralization while retaining the earlier correction,
+  unrelated study content and the complete seeded prose excerpt.
+tags: [fixture, gated]
+
+context:
+  scaffold_script: scaffold.sh
+
+execution:
+  prompt: |-
+    /scholar:revise "PortAdapter wraps only third-party clients." --study=notes/ontology/port-guide/
+    Correct this standing claim. The study's pinned Port Guide excerpt is
+    in its corpus/excerpt-1.txt; its PortAdapter section explicitly permits
+    first-party or third-party clients. Check that source before revising.
+    Preserve the exact earlier correction, unrelated EventBus row and
+    sections, all other study files, the corpus and USER-NOTES.txt. Only
+    terms.jsonl, evidence/vocabulary.md, evidence/corrections.md and brief.md
+    need changes. Append the correction under a PortAdapter heading and
+    link that entry from the brief's Adapter section. Complete revise's
+    brief check after the final brief edit. Do not run another workflow.
+  max_turns: 25
+  timeout_seconds: 300
+  allowed_tools: [Bash, Read, Write, Edit, Glob, Grep, Skill]
+
+runs: 3
+
+graders:
+  - name: history-is-an-exact-prefix-before-new-entry
+    type: regex
+    target:
+      source: file
+      path: notes/ontology/port-guide/evidence/corrections.md
+    pattern: '^# Corrections\n\n## EventBus\n\nWas: EventBus publishes requests\.\n\nRested on: Port Guide, Review Fixture Press, 2026, first printing, EventBus section\.\n\nFailed because: that section states "An instance publishes domain events to subscribed handlers\."\n\nNow: EventBus publishes domain events to subscribed handlers\.\n\n+## PortAdapter\n'
+
+  - name: correction-record-is-grounded
+    type: llm
+    focus:
+      source: file
+      path: notes/ontology/port-guide/evidence/corrections.md
+    criteria: |
+      The new PortAdapter entry has Was, Rested on, Failed because and Now.
+      Was quotes exactly "PortAdapter wraps only third-party clients."
+      Rested on identifies the PortAdapter section of Port Guide, Review
+      Fixture Press, 2026, first printing, and its example using a third-party
+      client. Failed because cites that same section's explicit statement
+      "The client may be first-party or third-party." The correction explains
+      the example did not establish an exclusive restriction; it must not
+      claim the source or edition changed. Now permits first-party or
+      third-party clients without adding undocumented behavior or exclusivity.
+      Prior EventBus history is history, not a new current factual claim.
+
+  - name: unrelated-term-line-is-exact-and-no-row-is-dropped
+    type: regex
+    target:
+      source: file
+      path: notes/ontology/port-guide/terms.jsonl
+    pattern: '^[^\r\n]+\n\{"schema":1,"term":"EventBus","definition":"An instance publishes domain events to subscribed handlers\.","kind":"type","parent":"root","cites":\[\{"source":"corpus/excerpt-1\.txt","locator":"EventBus","quote":"An instance publishes domain events to subscribed handlers\."\}\]\}\n(?![\s\S])'
+
+  - name: affected-term-carries-supported-replacement
+    type: llm
+    focus:
+      source: file
+      path: notes/ontology/port-guide/terms.jsonl
+    criteria: |
+      The first JSON object is still PortAdapter, kind type, parent root.
+      Its definition permits a first-party or a third-party client, rather
+      than restricting clients to third parties. Its citation names
+      corpus/excerpt-1.txt, locator PortAdapter, and includes the exact source
+      sentence "The client may be first-party or third-party."
+      It may also quote "An instance wraps a client behind the port interface."
+      No invented URL, line range, implementation result, synonym merger,
+      behavioral membership test, or disjointness claim appears. The second
+      object is the existing EventBus row, not a replacement term.
+
+  - name: unrelated-vocabulary-section-is-exact
+    type: regex
+    target:
+      source: file
+      path: notes/ontology/port-guide/evidence/vocabulary.md
+    pattern: '\n\n## EventBus\n\nAn instance publishes domain events to subscribed handlers\.\n\nSupport: Port Guide, Review Fixture Press, 2026, first printing, EventBus section: "An instance publishes domain events to subscribed handlers\."\n(?![\s\S])'
+
+  - name: affected-evidence-is-corrected
+    type: llm
+    focus:
+      source: file
+      path: notes/ontology/port-guide/evidence/vocabulary.md
+    criteria: |
+      The PortAdapter section records that the client may be first-party or
+      third-party, supported by that exact sentence in the PortAdapter
+      section of Port Guide, Review Fixture Press, 2026, first printing.
+      It does not leave "only third-party clients" as the standing claim.
+      It may quote the old claim only when clearly marked as retracted and
+      linked to the correction. It does not add behavior or infer relations
+      between PortAdapter and EventBus. The source is a prose excerpt, not a
+      tested implementation or a newly fetched edition.
+
+  - name: brief-links-the-specific-correction-from-adapter
+    type: regex
+    target:
+      source: file
+      path: notes/ontology/port-guide/brief.md
+    pattern: '## Adapter\n(?:(?!\n## )[\s\S])*\[[^\]\r\n]+\]\(evidence/corrections\.md#portadapter\)(?:(?!\n## )[\s\S])*\n## Bus\n'
+
+  - name: unrelated-brief-sections-are-exact
+    type: regex
+    target:
+      source: file
+      path: notes/ontology/port-guide/brief.md
+    pattern: '\n\n## Bus\n\n`EventBus` publishes domain events to subscribed handlers\. \[Vocabulary\]\(evidence/vocabulary\.md\)\.\n\n## Corrections\n\n\[Earlier bus correction\]\(evidence/corrections\.md#eventbus\)\.\n(?![\s\S])'
+
+  - name: seeded-corpus-text-is-exact
+    type: regex
+    target:
+      source: file
+      path: notes/ontology/port-guide/corpus/excerpt-1.txt
+    pattern: '^# Port Guide\nEdition: Review Fixture Press, 2026, first printing\.\n\n## PortAdapter\nThis is a named type\.\nAn instance wraps a client behind the port interface\.\nThe example uses a third-party client\.\nThe client may be first-party or third-party\.\n\n## EventBus\nThis is a named type\.\nAn instance publishes domain events to subscribed handlers\.\n(?![\s\S])'
+
+  - name: source-row-is-exact
+    type: regex
+    target:
+      source: file
+      path: notes/ontology/port-guide/sources.jsonl
+    pattern: '^\{"source":"corpus/excerpt-1\.txt","ref":"Review Fixture Press, 2026, first printing","commit":"","scope":"PortAdapter and EventBus sections","locator_kind":"section","read":true,"why":""\}\n(?![\s\S])'
+
+  - name: hierarchy-is-exact
+    type: regex
+    target:
+      source: file
+      path: notes/ontology/port-guide/evidence/hierarchy.md
+    pattern: '^# Hierarchy\n\nPortAdapter and EventBus are named types anchored at root\.\n\nEach section of Port Guide, Review Fixture Press, 2026, first printing states "This is a named type\." Root is the study''s top-level anchor, not a source type\.\n\nNo relation between these types is established by the excerpt\.\n(?![\s\S])'
+
+  - name: metrics-is-exact
+    type: regex
+    target:
+      source: file
+      path: notes/ontology/port-guide/evidence/metrics.md
+    pattern: '^# Metrics\n\nNo distributional measurement is used by this study\.\n(?![\s\S])'
+
+  - name: contest-record-is-exact
+    type: regex
+    target:
+      source: file
+      path: notes/ontology/port-guide/evidence/contested.md
+    pattern: '^# Contested\n\nNo contest run is recorded\. This file certifies no contest gate\.\n(?![\s\S])'
+
+  - name: unrelated-user-file-is-exact
+    type: regex
+    target:
+      source: file
+      path: USER-NOTES.txt
+    pattern: '^User-owned note: retain spelling, spacing, and final newline\.\n(?![\s\S])'
+
+  - name: records-the-correction-before-editing-terms
+    type: tool_order
+    before:
+      tool: Edit
+      input_match: 'evidence/corrections\.md'
+    after:
+      tool: Edit
+      input_match: 'terms\.jsonl'
+
+  - name: records-the-correction-before-editing-evidence
+    type: tool_order
+    before:
+      tool: Edit
+      input_match: 'evidence/corrections\.md'
+    after:
+      tool: Edit
+      input_match: 'evidence/vocabulary\.md'
+
+  - name: invokes-the-brief-gate
+    type: tool_used
+    tool: Bash
+    input_match: 'term_metrics\.py[^\r\n]*--check-brief|--check-brief[^\r\n]*term_metrics\.py'
+    min: 1
+
+  - name: fixed-final-section-order
+    type: regex
+    target: last_message
+    pattern: '^✓ corrected [^\r\n]+\n\n## Correction(?=\n)(?:(?!\n## )[\s\S])*\n## Touched(?=\n)(?:(?!\n## )[\s\S])*\n## Downstream(?=\n)(?:(?!\n## )[\s\S])*(?![\s\S])'
+
+  - name: plain-correction-fields
+    type: regex
+    target: last_message
+    pattern: '## Correction\n\nWas: [^\n]+\n\nRested on: [^\n]+\n\nFailed because: [^\n]+\n\nNow: [^\n]+\n'
+
+  - name: no-bold-and-no-left-alone-sentence
+    type: regex
+    target: last_message
+    pattern: '^(?![\s\S]*\*\*)(?![\s\S]*([Uu]nchanged|[Uu]ntouched|left as|left alone|still there|still intact|[Pp]reserved))'
+
+  - name: reports-the-brief-check-outcome
+    type: regex
+    target: last_message
+    pattern: '(check-brief|[Bb]rief (check|gate))[^\n]*(exit(ed|s)? (code )?0|passed|zero)'

@@ -1,0 +1,79 @@
+schema_version: "1.0"
+name: 23-annotate-appends-quotations
+description: >-
+  Annotate appends verbatim quotations with stable locators to an existing
+  quotations.jsonl, keeping the earlier source's row and the prose source
+  untouched.
+tags: [fixture]
+
+context:
+  scaffold_script: scaffold.sh
+
+execution:
+  prompt: >-
+    /scholar:annotate corpus/essay.txt --out=notes/ontology/style-guide/
+    The essay is notes/ontology/style-guide/corpus/essay.txt and its row is
+    already in sources.jsonl. Take reading notes so I can extract terms from
+    it later. Do not ask me anything.
+  max_turns: 20
+  timeout_seconds: 300
+  allowed_tools: [Read, Write, Edit, Glob, Grep, Skill]
+
+runs: 3
+
+graders:
+  - name: earlier-row-is-an-exact-prefix
+    type: regex
+    target:
+      source: file
+      path: notes/ontology/style-guide/quotations.jsonl
+    pattern: '^\{"source":"older-essay","locator_kind":"section","locator":"ch\.1","quote":"a seam is where behavior can change without editing in place","note":"the older author names the seam"\}\n\{'
+
+  - name: quotes-the-explicit-definition-verbatim
+    type: regex
+    target:
+      source: file
+      path: notes/ontology/style-guide/quotations.jsonl
+    pattern: 'A port is the line a module''s public surface stops at\.'
+
+  - name: never-replaces-the-quotation-file
+    type: tool_used
+    tool: Write
+    input_match: 'quotations\.jsonl'
+    min: 0
+    max: 0
+
+  - name: essay-is-untouched
+    type: regex
+    target:
+      source: file
+      path: notes/ontology/style-guide/corpus/essay.txt
+    pattern: '^# On Boundaries\nEdition: Example Press, 2026, first printing\.\n\n## 1\. Ports\nA port is the line a module''s public surface stops at\.\nEvery adapter answers to a port\.\n\n## 2\. Adapters\nThe adapter hides which client answers the port\.\nA caller never learns the client behind an adapter\.\n(?![\s\S])'
+
+  - name: new-rows-are-verbatim-and-sectioned
+    type: llm
+    focus:
+      source: file
+      path: notes/ontology/style-guide/quotations.jsonl
+    criteria: |
+      After the older-essay row there is at least one new JSON row. Every
+      new row has source corpus/essay.txt, locator_kind section, a locator
+      naming section 1 or 2 of the essay, a quote that is a word-for-word
+      substring of the essay, and a non-empty note. No new row has a url.
+      At least one new row quotes a passage about the adapter. Extra fields
+      and the analyst's own reading in the note are acceptable.
+
+  - name: fixed-final-report
+    type: regex
+    target: last_message
+    pattern: '^✓ \d+ quotations? from [^\r\n]+\n\n## Quotations(?=\n)(?:(?!\n## )[\s\S])*\n## Locator(?=\n)(?:(?!\n## )[\s\S])*\n## Undefined(?=\n)(?:(?!\n## )[\s\S])*(?![\s\S])'
+
+  - name: lists-adapter-as-undefined-and-not-port
+    type: regex
+    target: last_message
+    pattern: '## Undefined\n(?:(?!- port)[\s\S])*?- adapter(?:(?!- port)[\s\S])*$'
+
+  - name: no-append-or-keep-recap
+    type: regex
+    target: last_message
+    pattern: '^(?![\s\S]*([Aa]ppended|still there|[Kk]ept|left alone|[Uu]nchanged|earlier row))'

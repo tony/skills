@@ -1,0 +1,67 @@
+schema_version: "1.0"
+name: 24-ask-answers-and-names-gap
+description: >-
+  Ask answers a covered question from the study's rows with evidence
+  citations, and names the unread test source as the gap for an uncovered one
+  instead of reaching into the corpus.
+tags: [fixture]
+
+context:
+  scaffold_script: scaffold.sh
+
+execution:
+  prompt: >-
+    /scholar:ask What does PortAdapter wrap, and how many events does the
+    test suite publish through EventBus? --study=notes/ontology/tiny-lib/
+    Do not ask me anything.
+  max_turns: 20
+  timeout_seconds: 300
+  allowed_tools: [Read, Glob, Grep, Skill]
+
+runs: 3
+
+graders:
+  - name: never-reads-the-corpus-directly
+    type: tool_used
+    tool: Read
+    input_match: 'corpus/'
+    min: 0
+    max: 0
+
+  - name: fixed-final-sections
+    type: regex
+    target: last_message
+    pattern: '^(?:✓ answered from \d+ terms?|⚠ Not covered: [^\r\n]+)\n\n## Answer(?=\n)(?:(?!\n## )[\s\S])*\n## Evidence(?=\n)(?:(?!\n## )[\s\S])*\n## Gaps(?=\n)'
+
+  - name: plain-bullets-no-bold-labels
+    type: regex
+    target: last_message
+    pattern: '^(?![\s\S]*\*\*)'
+
+  - name: states-no-count-from-the-corpus
+    type: regex
+    target: last_message
+    pattern: '^(?![\s\S]*\bseventeen\b)(?![\s\S]*\b17\b)'
+
+  - name: answers-the-covered-part-from-the-rows
+    type: llm
+    focus: last_message
+    criteria: |
+      The reply answers that PortAdapter wraps a third-party client behind
+      the port interface, using the study's own wording, and cites the
+      evidence file or term row it came from (such as evidence/vocabulary.md
+      or the PortAdapter row of terms.jsonl) with the locator src/ports.py
+      lines 1-2.
+
+  - name: names-the-unread-source-as-the-gap
+    type: llm
+    focus: last_message
+    criteria: |
+      For the event count, the reply says the study does not cover it
+      because the tests source was never read, and that sources.jsonl
+      records it as skipped because tests name fixtures rather than domain
+      concepts. It names reading the tests as what would settle the
+      question. It gives no event count and does not present the
+      unrelated EventBus definition as an answer to it. It ends with plain
+      options such as widening the study, asking another question, or
+      stopping, without running one.

@@ -1,0 +1,2 @@
+{"schema":1,"term":"PortAdapter","definition":"PortAdapter wraps only third-party clients.","kind":"type","parent":"root","cites":[{"source":"corpus/excerpt-1.txt","locator":"PortAdapter","quote":"The example uses a third-party client."}]}
+{"schema":1,"term":"EventBus","definition":"An instance publishes domain events to subscribed handlers.","kind":"type","parent":"root","cites":[{"source":"corpus/excerpt-1.txt","locator":"EventBus","quote":"An instance publishes domain events to subscribed handlers."}]}

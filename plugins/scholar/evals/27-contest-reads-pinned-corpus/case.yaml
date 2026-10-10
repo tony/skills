@@ -1,0 +1,53 @@
+schema_version: "1.0"
+name: 27-contest-reads-pinned-corpus
+description: >-
+  Contest checks a subtype claim against the pinned corpus instead of the
+  quotation stored for it, and does not uphold a claim the corpus lacks.
+tags: [fixture]
+
+context:
+  scaffold_script: scaffold.sh
+
+execution:
+  prompt: >-
+    /scholar:contest --rounds=1 The study is notes/ontology/tiny-lib/ and is
+    already distilled. Its corpus is the local clone ./tiny-lib at the
+    recorded commit. Judge the study's claims. Do not ask me anything.
+  max_turns: 30
+  timeout_seconds: 600
+  allowed_tools: [Bash, Read, Write, Edit, Glob, Grep, Skill]
+
+runs: 3
+
+graders:
+  - name: records-verdicts
+    type: file_exists
+    path: notes/ontology/tiny-lib/evidence/contested.md
+
+  - name: reads-the-corpus
+    type: tool_used
+    tool: Bash
+    input_match: 'tiny-lib'
+    min: 1
+
+  - name: eventbus-subtype-is-not-upheld
+    type: llm
+    focus:
+      source: file
+      path: notes/ontology/tiny-lib/evidence/contested.md
+    criteria: |
+      The file records a verdict on the claim that EventBus is a
+      PortAdapter. The verdict is killed, revised, or open, not upheld. Its
+      evidence says the corpus at the recorded commit declares EventBus
+      with no base class, so the stored quotation naming PortAdapter as its
+      base does not appear there. A verdict of upheld that rests on the
+      stored quotation or on the definition text fails.
+
+  - name: reply-does-not-uphold-the-subtype
+    type: llm
+    focus: last_message
+    criteria: |
+      The reply does not present EventBus as a subtype of PortAdapter as
+      upheld or established. It reports the claim as killed, revised, or
+      open because the corpus does not contain the quoted declaration. It
+      does not report the contest gate as passed while that claim is open.
