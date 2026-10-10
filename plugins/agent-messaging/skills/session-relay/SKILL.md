@@ -288,10 +288,17 @@ withheld, or refused) and the relay id, then
 exactly four short bullets. Target identifies the session; Route names only the
 transport; Evidence states the observed row, receiver turn, or acknowledgment;
 Next gives the user's verification step. Each bullet is one sentence of at most
-25 words. Apply the evidence limits from step 7 to the result sentence too.
+25 words, and nothing follows the Next bullet. Apply the evidence limits from step 7
+to the result sentence too.
 After the last tool result, check the reply against this four-bullet shape.
 Omit the payload and transport mechanics; the plan already carries the payload.
-Name no local paths or temp files unless the user must act on them.
+Leave out the reply-address limit, fallback routes, and the checks that a body ran
+nothing; the plan carried them. Name no local paths or temp files unless the user must
+act on them.
+
+Name who acted (who removed a queue item, who sent, who read) only when an observed
+record shows it. Otherwise write the fact passively ("the item is absent") or say the
+actor is unknown; never infer the receiver or any session consumed it.
 
 Reply in this shape, as plain text outside any code fence, with plain bullets, no bold
 (never `- **Route:** ...`), and no local paths:

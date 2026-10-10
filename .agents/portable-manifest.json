@@ -42,7 +42,7 @@
         "references/prose-rules.md": "plugins/agent-messaging/references/prose-rules.md",
         "references/relay.sh": "plugins/agent-messaging/scripts/relay.sh"
       },
-      "bytes": 44491
+      "bytes": 44885
     },
     {
       "name": "business-case-study-internal",
