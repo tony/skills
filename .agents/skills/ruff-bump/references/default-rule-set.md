@@ -7,26 +7,29 @@
 - Curating what the defaults surface
 - Landing it
 
-An explicit `select` replaces the default set, so a repository with one gets
-no diagnostics from a newly curated default set and stays opted out at every
-future release. Nothing in the config records the opt-out; make it an explicit
-decision.
+An explicit `select` replaces the default set, so the repository takes a rule
+added to the defaults only where its own prefixes already cover it. Nothing in
+the config records the opt-out; make it an explicit decision.
 
 ## Measure first
 
-Measure the blast radius without editing anything. Run the bundled script
-from the repository to measure. Resolve `./default_delta.py` against
-this file's directory (the path it was read from) and write that absolute
-path literally in the command; shell variables do not persist between Bash
-calls. Never show that path in the reply.
+Measure the blast radius without editing the repository. Resolve
+`./default_delta.py` against this file's directory (the path it was
+read from) and write that absolute path literally in the command; shell
+variables do not persist between Bash calls. Never show that path in the
+reply.
 
-The script counts findings per rule as configured, counts them again with the
-binary's own default codes added, and prints `code`, configured, with-defaults,
-and delta, tab-separated, ending in a `total` line. It reads the default codes
-from `--isolated --show-settings` and exits 2 when that output lists none, so
-a format change in ruff fails loudly. It disables fix and fix-only modes,
-clears `RUFF_OUTPUT_FILE`, and passes `--no-cache`. These controls apply to
-Ruff; the runner must also leave the checkout unchanged.
+The script counts findings per rule as configured, then again under the
+recommended shape: a scratch copy of the repository in which every `select`
+becomes `extend-select` (merged into an existing `extend-select`), so the
+vendor defaults apply and the repository's `ignore` and `per-file-ignores`
+stay in force. It prints `code`, configured, proposed, and delta,
+tab-separated, ending in a `total` line, and names the files it rewrote on
+stderr. It exits 2 for a configuration it cannot rewrite (an inline-table
+`select`, or an `extend` file outside the repository): report the delta as
+unmeasured with that reason. It disables fix modes, clears
+`RUFF_OUTPUT_FILE`, and measures with `--no-cache`; the runner must itself
+leave the checkout unchanged.
 
 In an audit, pass the ephemeral runner (`uv run` would create `.venv` and a
 lockfile):
@@ -53,7 +56,7 @@ under-reported that class.
 ## Config shapes
 
 Default to leaving `select` unset and using `extend-select` for the
-repository's own additions, with `ignore` and `per-file-ignores` for what the
+repository's own additions (the shape the script measures), with `ignore` and `per-file-ignores` for what the
 project does not want. The trade-off to state: the enabled set tracks the
 vendor's defaults, so a future release can surface findings without a config
 change.

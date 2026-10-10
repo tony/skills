@@ -4,7 +4,9 @@ What a ruff release does to a given repository, worked out before touching a fil
 
 ## Read the release, not the version number
 
-A bump can carry breaking changes whatever its version number; read the changelog for the target tag. Three sources, in order of authority:
+A bump can carry breaking changes whatever its version number; read the changelog for the target tag, and every section between the resolved version and the target (the target tag's changelog holds the earlier sections). Changes from an intervening release count as much as the target's.
+
+Three sources, in order of authority:
 
 1. The repository's own `CHANGELOG.md` at the release tag, `https://github.com/astral-sh/ruff/blob/<tag>/CHANGELOG.md`. This is canonical and complete.
 2. The vendor's release blog post, when one exists for that version. Better narrative, sometimes omits detail.
@@ -26,11 +28,11 @@ If a local clone of the linter's source is available, reading the changelog at t
 
 ## Intersect the release with each repo's configuration
 
-A rule can only fire if the repo selects it. For each repo, extract the effective rule selection with `<runner> check --show-settings <file.py>` (it resolves `extend`, `ruff.toml` against `pyproject.toml`, and per-file ignores) rather than reading config by hand. It covers `select`, `extend-select`, `ignore`, `extend-ignore`, per-file ignores, and whether preview mode is on. Then intersect:
+A rule can only fire if the repo selects it. For each repo, extract the effective rule selection with `<runner> check --no-cache --show-settings <file.py>` (it resolves `extend`, `ruff.toml` against `pyproject.toml`, and per-file ignores) rather than reading config by hand; before approval `<runner>` is the ephemeral runner. It covers `select`, `extend-select`, `ignore`, `extend-ignore`, per-file ignores, and whether preview mode is on. Then intersect:
 
 - A newly stabilized rule fires only if its prefix is selected and its code is not ignored.
 - A behavior change fires only if that specific rule was already selected.
-- A default-set change fires only if the repo has no explicit `select`.
+- A default-set change fires where the repo has no explicit `select`; with one, only the added rules its prefixes cover.
 - Formatter changes apply regardless of rule selection.
 
 Write the prediction down before running anything. A rule you predicted that does not fire is fine: the code was already clean. A rule that fires and you did not predict means your reading of either the release or the config was wrong, and you need to resolve that discrepancy rather than reflexively applying the autofix.

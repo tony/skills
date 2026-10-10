@@ -59,7 +59,7 @@ Arguments:
 - `--owner <name>...`: Filter by account ownership.
 - `--branch <name>`: Name the working branch.
 - `--audit-only`: Report predicted work without writing to the checkout.
-- `--adopt-defaults`: Carry through the default-rule-set change.
+- `--adopt-defaults`: Carry through the default-rule-set change, including in a repository already on the target version.
 - `--push`: Push each branch after confirmation; without `--push` or `--pr`, stop after local commits and print the push command.
 - `--pr`: Push and open a pull request.
 - `--no-changelog`: Skip the changelog entry.
@@ -73,12 +73,13 @@ Arguments:
 - `references/cooldown-exemption.md`: exempting one package from a resolver cooldown
 - `references/throwaway-worktree.md`: working on a branch in an isolated worktree
 - `references/prose-rules.md`: rules for commit, PR, and report prose
-- `scripts/default_delta.py`: per-rule finding delta between the configured and default rule sets, and the codes a version reports that its predecessor did not
+- `references/reply-shape.md`: the reply's sections, required facts, and templates
+- `scripts/default_delta.py`: per-rule finding delta between the configured rule set and the recommended default-set shape (measured in a scratch copy), and the findings a version reports at locations a pre-bump snapshot lacked
 
 ## Prerequisites
 
 - `git`; remote push access only for `--push` or `--pr`
 - `curl`, or GitHub CLI (`gh`) for release lookups; `gh`, authenticated, only for fork checks and `--pr`
-- `jq`, for reading the measurement output in `references/default-rule-set.md`
+- `jq`, for resolving a rule's documentation slug in `references/default-rule-set.md`
 - `python3` (3.9 or newer) for the bundled measurement script
 - Project's resolver and quality-check commands (defined in `AGENTS.md`/`CLAUDE.md` or CI workflow)

@@ -842,9 +842,10 @@
         "references/pin-sites-and-gating.md": "plugins/ruff/references/pin-sites-and-gating.md",
         "references/prose-rules.md": "plugins/ruff/references/prose-rules.md",
         "references/release-triage.md": "plugins/ruff/references/release-triage.md",
+        "references/reply-shape.md": "plugins/ruff/references/reply-shape.md",
         "references/throwaway-worktree.md": "plugins/ruff/references/throwaway-worktree.md"
       },
-      "bytes": 50769
+      "bytes": 61585
     },
     {
       "name": "scholar-annotate",
@@ -1649,6 +1650,7 @@
     "plugins/ruff/references/pin-sites-and-gating.md": 1,
     "plugins/ruff/references/prose-rules.md": 1,
     "plugins/ruff/references/release-triage.md": 1,
+    "plugins/ruff/references/reply-shape.md": 1,
     "plugins/ruff/references/throwaway-worktree.md": 1,
     "plugins/ruff/scripts/default_delta.py": 1,
     "plugins/scholar/.claude-plugin/plugin.json": 1,

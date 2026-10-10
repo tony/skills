@@ -22,23 +22,23 @@ A repository frequently pins the same tool in more than one file, and they drift
 
 Raise every site in the same commit. A partial bump leaves two tools disagreeing about what "clean" means.
 
-## Prefer a floor to an exact pin
+## Keep the constraint style
 
-Write `>=` rather than `==` for the version constraint. The lockfile already reproduces one exact version for anyone using the lock; the constraint exists to stop a contributor whose environment resolved something older from producing a locally-clean run that fails CI. An exact pin in the constraint duplicates the lockfile's job and turns every future bump into a wider diff.
-
-Pre-commit is the exception: its `rev:` is a single tag by design, so it takes an exact tag.
+Raise each site within its own style: `>=` stays a floor, `==` stays exact, and pre-commit's `rev:` is a single tag by design. A floor leans on the lockfile to reproduce one exact version, so loosening an exact pin to a floor in a repository without a tracked lock makes the next resolve drift. Loosening is a policy change: offer it in the plan and make it only when approved.
 
 ## When the resolver cannot see the release
 
 A newly published version can be invisible to the resolver for reasons that have nothing to do with your constraint. Diagnose which one before working around it:
 
-**Publication cooldown.** Some resolvers hide releases younger than a configured threshold. A release inside the window does not exist as far as resolution is concerned, though the package index shows it. This is the most common cause. For uv, a cooldown can live in the user config, a `uv.toml`, a `[tool.uv]` table in any `pyproject.toml` (workspace members included), or the `UV_EXCLUDE_NEWER` environment variable, and per-package forms (`exclude-newer-package`) match the same search. Search the tree and the user config in one command; a missing file is not an error:
+**Publication cooldown.** Some resolvers hide releases younger than a configured threshold. A release inside the window does not exist as far as resolution is concerned, though the package index shows it. For uv, a cooldown can live in the user config, a `uv.toml`, a `[tool.uv]` table in any `pyproject.toml` (workspace members included), or the `UV_EXCLUDE_NEWER` environment variable, and per-package forms (`exclude-newer-package`) match the same search. Search the tree and the user config in one command; a missing file is not an error:
 
 ```console
 $ grep -rIiH --exclude-dir=.git --exclude-dir=.venv --exclude-dir=node_modules --include=uv.toml --include=pyproject.toml exclude-newer . "${UV_CONFIG_FILE:-${XDG_CONFIG_HOME:-$HOME/.config}/uv/uv.toml}" 2>/dev/null
 ```
 
-Then check `UV_EXCLUDE_NEWER` in the environment. Settings merge, so the search shows candidates, not the effective value. Run `uv lock --dry-run` and read the refusal for the effective cause.
+Then check `UV_EXCLUDE_NEWER` in the environment. Settings merge, so the search shows candidates, not the effective value. Run `uv lock --dry-run` and read the refusal: the cause is a cooldown only when the refusal names the release as excluded by date and one setting found above matches it. A search that finds a setting, a failed run, or a refusal that is silent about the date leaves the cause unconfirmed; report it as unconfirmed and write no exemption.
+
+uv compares the upload time of each distribution file, not the release date, so take times from the package index (`releases.<version>[].upload_time_iso_8601`), never from a GitHub release page. The release becomes visible when the latest file the platform needs passes the window.
 
 Other resolvers (pip, poetry, pdm) have their own cooldown settings; find them in the resolver's documentation. The same exemption rules apply.
 
