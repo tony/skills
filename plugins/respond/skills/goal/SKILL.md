@@ -100,22 +100,33 @@ the loop posts.
 **4. Push.** Only with `--push`. First print the head SHA
 (`git rev-parse HEAD`) and the time (`date -u +%Y-%m-%dT%H:%M:%SZ`) and
 keep the literal values, since the wait in step 6 depends on both. Push
-normally; a rejected push is a halt condition, never forced.
+normally; a rejected push is a halt condition, never forced. Then read
+the head back; a head that differs from the printed SHA halts the loop:
 
-**5. Watch CI.** The script polls until at least one check exists on
-the head and none is pending, stopping at the first failure or at the
-cap. It prints a JSON status and exits 0 (green), 1 (failed), 2
-(timeout), 3 (no check appeared within the grace period), or 4 (`gh`
-failed; stderr says why, and the loop halts):
+```console
+$ gh pr view <pr> \
+    --json headRefOid \
+    --jq .headRefOid
+```
+
+**5. Watch CI.** The script polls until the pull request head is the
+pushed SHA, at least one check exists on it, and none is pending,
+stopping at the first failure or at the cap. It prints a JSON status and
+exits 0 (green), 1 (failed), 2 (timeout), 3 (no check appeared within
+the grace period), 4 (`gh` failed; stderr says why, and the loop halts),
+or 5 (the head never became the pushed SHA, so no check can be trusted;
+the loop halts):
 
 ```console
 $ python3 ../../scripts/wait_pr.py ci <pr> \
+    --sha <head-sha> \
     --timeout <ci-wait>
 ```
 
 Exit 4 (and the same on the agents wait) halts the loop with `gh`'s
-message as the reason; it never means "nothing to wait on". Exit 3 means there is nothing to wait on; say so in the report and test
-the exit condition on the agents alone. A failure becomes next round's feedback, with the failing log as its
+message as the reason; it never means "nothing to wait on". Exit 3 means no check ran, which is not green: say so in the
+report, never write "CI green", and test the exit condition on the
+agents alone. A failure becomes next round's feedback, with the failing log as its
 evidence. A timeout halts the loop.
 
 **6. Wait for the agents.** The script polls reviews and comments until
@@ -193,8 +204,10 @@ reason for skipping approval.
 4. `## Still open` — deferred findings with follow-up recommendations,
    declined findings with their replies, and any agent that never
    weighed in.
-5. `## Verification` — the final head SHA, the CI state on it, and the
-   gate commands run.
+5. `## Verification` — the final head SHA as `gh pr view` reports it
+   (the local `HEAD` when no push ran), the CI state on it, and the gate
+   commands run. State `no CI check ran` instead of `green` when exit 3
+   ended the wait.
 6. End with an `AskUserQuestion` panel (skip inside plan mode): run
    another round past the cap, post the drafted replies, open the
    follow-ups, or stop. When the loop halted for lack of a pull request,

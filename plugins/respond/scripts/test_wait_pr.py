@@ -16,8 +16,10 @@ if TYPE_CHECKING:
     import pytest
 
 
-def _fake(reply: str, only: str = "") -> Callable[..., str]:
+def _fake(reply: str, only: str = "", head: str = "abc") -> Callable[..., str]:
     def gh(*args: str, **_kw: bool) -> str:
+        if "headRefOid" in args:
+            return head + "\n"
         return reply if only in " ".join(args) else ""
 
     return gh
@@ -29,7 +31,7 @@ def test_ci_failure_exits_one(
     """A failed bucket stops the wait even with checks still pending."""
     out = json.dumps([{"bucket": "fail"}, {"bucket": "pending"}])
     monkeypatch.setattr(wait_pr, "_gh", _fake(out))
-    assert wait_pr.main(["ci", "7", "--interval", "0"]) == 1
+    assert wait_pr.main(["ci", "7", "--sha", "abc", "--interval", "0"]) == 1
     assert json.loads(capsys.readouterr().out) == {"status": "failed"}
 
 
@@ -38,7 +40,7 @@ def test_ci_no_checks_after_grace_exits_three(
 ) -> None:
     """An empty check list is not green; it is reported as none."""
     monkeypatch.setattr(wait_pr, "_gh", _fake("[]"))
-    assert wait_pr.main(["ci", "7", "--grace", "0", "--interval", "0"]) == 3
+    assert wait_pr.main(["ci", "7", "--sha", "abc", "--grace", "0", "--interval", "0"]) == 3
     assert json.loads(capsys.readouterr().out) == {"status": "none"}
 
 
@@ -72,7 +74,7 @@ def test_ci_green_exits_zero(
     """Passing and skipped checks end the wait green."""
     out = json.dumps([{"bucket": "pass"}, {"bucket": "skipping"}])
     monkeypatch.setattr(wait_pr, "_gh", _fake(out))
-    assert wait_pr.main(["ci", "7", "--interval", "0"]) == 0
+    assert wait_pr.main(["ci", "7", "--sha", "abc", "--interval", "0"]) == 0
     assert json.loads(capsys.readouterr().out) == {"status": "green"}
 
 
@@ -81,7 +83,7 @@ def test_ci_pending_past_cap_exits_two(
 ) -> None:
     """A check still pending at the cap is a timeout."""
     monkeypatch.setattr(wait_pr, "_gh", _fake(json.dumps([{"bucket": "pending"}])))
-    assert wait_pr.main(["ci", "7", "--timeout", "0", "--interval", "0"]) == 2
+    assert wait_pr.main(["ci", "7", "--sha", "abc", "--timeout", "0", "--interval", "0"]) == 2
     assert json.loads(capsys.readouterr().out) == {"status": "timeout"}
 
 
@@ -114,8 +116,21 @@ def test_agents_skip_null_logins(
     assert json.loads(capsys.readouterr().out) == {"missing": ["a"]}
 
 
-def _run_result(code: int, out: str, err: str) -> Callable[..., object]:
-    def run(*_a: object, **_k: object) -> subprocess.CompletedProcess[str]:
+def test_ci_head_mismatch_exits_five(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """Green checks on another head are not the pushed head's checks."""
+    out = json.dumps([{"bucket": "pass"}])
+    monkeypatch.setattr(wait_pr, "_gh", _fake(out, head="old"))
+    argv = ["ci", "7", "--sha", "abc", "--timeout", "0", "--interval", "0"]
+    assert wait_pr.main(argv) == 5
+    assert json.loads(capsys.readouterr().out) == {"status": "head-mismatch", "head": "old"}
+
+
+def _run_result(code: int, out: str, err: str, *, head_ok: bool = True) -> Callable[..., object]:
+    def run(*a: object, **_k: object) -> subprocess.CompletedProcess[str]:
+        if head_ok and "headRefOid" in str(a):
+            return subprocess.CompletedProcess([], 0, "abc\n", "")
         return subprocess.CompletedProcess([], code, out, err)
 
     return run
@@ -125,8 +140,8 @@ def test_gh_failure_exits_four_with_stderr(
     monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
 ) -> None:
     """An unauthenticated ``gh`` is an error, not "no checks" or "waiting"."""
-    monkeypatch.setattr(subprocess, "run", _run_result(1, "", "gh auth login"))
-    assert wait_pr.main(["ci", "7", "--interval", "0"]) == 4
+    monkeypatch.setattr(subprocess, "run", _run_result(1, "", "gh auth login", head_ok=False))
+    assert wait_pr.main(["ci", "7", "--sha", "abc", "--interval", "0"]) == 4
     captured = capsys.readouterr()
     assert "gh auth login" in captured.err
     assert captured.out == ""
@@ -140,7 +155,7 @@ def test_gh_checks_nonzero_exit_with_output_is_read(
     """``gh pr checks`` exits nonzero on failing checks yet prints them."""
     out = json.dumps([{"bucket": "fail"}])
     monkeypatch.setattr(subprocess, "run", _run_result(1, out, ""))
-    assert wait_pr.main(["ci", "7", "--interval", "0"]) == 1
+    assert wait_pr.main(["ci", "7", "--sha", "abc", "--interval", "0"]) == 1
     assert json.loads(capsys.readouterr().out) == {"status": "failed"}
 
 
@@ -149,5 +164,5 @@ def test_gh_no_checks_reported_is_none(
 ) -> None:
     """``gh pr checks`` on a head with no checks is the grace-period case."""
     monkeypatch.setattr(subprocess, "run", _run_result(1, "", "no checks reported"))
-    assert wait_pr.main(["ci", "7", "--grace", "0", "--interval", "0"]) == 3
+    assert wait_pr.main(["ci", "7", "--sha", "abc", "--grace", "0", "--interval", "0"]) == 3
     assert json.loads(capsys.readouterr().out) == {"status": "none"}

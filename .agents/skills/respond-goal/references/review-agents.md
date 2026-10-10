@@ -42,6 +42,9 @@ whether or not it writes prose.
 Record the result as a short roster: who reviews, by which surface, and
 whether their arrival is observable. An empty roster is a finding, not
 an error — it means the loop waits on CI alone and finishes sooner.
+Report it as `no review agent observed`, naming what was read (recent
+pull requests, configuration files, required checks), never as "none are
+set up": an agent that has not yet commented is unseen, not absent.
 
 ## Knowing an agent has seen the current head
 

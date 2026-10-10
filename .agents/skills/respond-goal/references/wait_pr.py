@@ -2,13 +2,15 @@
 """Bounded waits for a pull request's CI checks and review agents.
 
 ``ci`` polls ``gh pr checks`` until at least one check exists on the head and
-none is pending. ``agents`` polls reviews and comments until every named login
+none is pending; it trusts the checks only while the pull request's head is
+the ``--sha`` that was pushed. ``agents`` polls reviews and comments until every named login
 has weighed in on a head SHA; a trailing ``[bot]`` is ignored on both sides.
 Reviews and issue comments are read; inline review comments are not. Each
 prints one JSON line.
 
 Exit codes: 0 done, 1 a check failed, 2 timed out, 3 no check appeared within
-the grace period, 4 ``gh`` failed (its stderr is printed).
+the grace period, 4 ``gh`` failed (its stderr is printed), 5 the pull request
+head never became ``--sha``.
 """
 
 # ruff: noqa: S603
@@ -109,20 +111,30 @@ def _lines(raw: str) -> list[dict[str, str]]:
     return [json.loads(line) for line in raw.splitlines() if line.strip()]
 
 
+def _head(pr: str) -> str:
+    return _gh("pr", "view", pr, "--json", "headRefOid", "--jq", ".headRefOid").strip()
+
+
 def _wait_ci(args: argparse.Namespace) -> int:
     deadline = time.monotonic() + args.timeout * 60
     grace = time.monotonic() + args.grace * 60
     state = "none"
+    head = ""
     while True:
-        raw = _gh("pr", "checks", args.pr, "--json", "name,bucket,state", checks=True)
-        state = classify_ci(json.loads(raw) if raw.strip() else [])
-        if state in {"green", "failed"}:
-            break
-        if state == "none" and time.monotonic() >= grace:
-            break
+        head = _head(args.pr)
+        if head == args.sha:
+            raw = _gh("pr", "checks", args.pr, "--json", "name,bucket,state", checks=True)
+            state = classify_ci(json.loads(raw) if raw.strip() else [])
+            if state in {"green", "failed"}:
+                break
+            if state == "none" and time.monotonic() >= grace:
+                break
         if time.monotonic() >= deadline:
             break
         time.sleep(args.interval)
+    if head != args.sha:
+        print(json.dumps({"status": "head-mismatch", "head": head}))
+        return 5
     timed_out = state == "pending" or (state == "none" and time.monotonic() >= deadline)
     print(json.dumps({"status": "timeout" if timed_out else state}))
     if state == "failed":
@@ -164,6 +176,7 @@ def main(argv: list[str] | None = None) -> int:
     sub = parser.add_subparsers(dest="cmd", required=True)
     ci = sub.add_parser("ci")
     ci.add_argument("pr")
+    ci.add_argument("--sha", required=True, help="the pushed head the checks must belong to")
     ci.add_argument("--timeout", type=float, default=30, help="minutes")
     ci.add_argument("--grace", type=float, default=2, help="minutes to wait for a first check")
     ci.add_argument("--interval", type=float, default=30, help="seconds")

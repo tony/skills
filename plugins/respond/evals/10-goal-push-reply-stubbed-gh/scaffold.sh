@@ -51,15 +51,20 @@ cat >bin/gh <<'SH2'
 args="$*"
 root=$(cd "$(dirname "$0")/.." && pwd -P)
 case "$args" in
+  "pr view"*"--jq"*)
+    git -C "$root" rev-parse HEAD ;;
   "pr view"*)
-    echo '{"number":7,"title":"Add cache reads","headRefOid":"abc","state":"OPEN","isDraft":false,"reviewDecision":"","statusCheckRollup":[]}' ;;
+    echo '{"number":7,"title":"Add cache reads","headRefOid":"'"$(git -C "$root" rev-parse HEAD)"'","state":"OPEN","isDraft":false,"reviewDecision":"","statusCheckRollup":[]}' ;;
   "pr checks"*)
     echo '[{"name":"ci","bucket":"pass","state":"SUCCESS"}]' ;;
   *"api graphql"*)
     echo '{"data":{"repository":{"pullRequest":{"reviewThreads":{"nodes":[]}}}}}' ;;
-  "pr comment"*|*"/replies"*|*"-X POST"*|*"-f "*|*"-F "*)
+  "pr comment"*)
     echo "$args" >>"$root/gh-writes.log"
-    echo '{}' ;;
+    echo 'https://example.invalid/acme/widgets/pull/7#issuecomment-601' ;;
+  *"/replies"*|*"-X POST"*|*"-f "*|*"-F "*)
+    echo "$args" >>"$root/gh-writes.log"
+    echo '{"id":601,"html_url":"https://example.invalid/acme/widgets/pull/7#discussion_r601"}' ;;
   "api repos/"*"/pulls/7/comments"*)
     echo '[{"id":501,"user":{"login":"alex","type":"User"},"body":"Wrap the cache read in a lock.","path":"src/cache.py","line":7,"in_reply_to_id":null}]' ;;
   "api repos/"*"/pulls/7/reviews"*|"api repos/"*"/issues/7/comments"*)

@@ -810,7 +810,7 @@
         "references/user_stash.py": "plugins/respond/scripts/user_stash.py",
         "references/verification-gates.md": "plugins/respond/references/verification-gates.md"
       },
-      "bytes": 46283
+      "bytes": 46689
     },
     {
       "name": "respond-check",
@@ -837,7 +837,7 @@
         "references/verification-gates.md": "plugins/respond/references/verification-gates.md",
         "references/wait_pr.py": "plugins/respond/scripts/wait_pr.py"
       },
-      "bytes": 35280
+      "bytes": 36526
     },
     {
       "name": "ruff-bump",

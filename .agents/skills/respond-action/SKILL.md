@@ -230,7 +230,16 @@ non-interactive run skips it and says so.
 
 After all findings: run the consented autosquash if any `fixup!`
 commits exist, re-run the fast gates once, then restore a Phase 0
-stash.
+stash. Read the landed commits back; an autosquash rewrites their SHAs,
+so the report takes every SHA and subject from this output:
+
+```console
+$ git log \
+    --format='%h %s' \
+    <base>..HEAD
+```
+
+Check that `git status --porcelain` lists only Phase 0's paths.
 
 ## Phase 4: Replies
 
@@ -263,7 +272,9 @@ $ gh pr comment <n> \
     --body-file <reply-file>
 ```
 
-Delete each reply file after posting, with `rm -- <reply-file>`. Never post without that confirmation (a
+Mark a reply posted only when its command exited 0 and printed the new
+comment's URL or id; otherwise report it as not posted, with `gh`'s
+message. Delete each reply file after posting, with `rm -- <reply-file>`. Never post without that confirmation (a
 non-interactive run treats `--reply` as it, for the replies shown in the
 report only), and never resolve a thread: the reviewer decides whether
 the answer settled it. Without `--reply`, the replies stay in the
