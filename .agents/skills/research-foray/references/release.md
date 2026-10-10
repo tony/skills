@@ -58,7 +58,7 @@ The bag holds evidence and working material the scan does not cover (cards, raw 
 
 ## Output
 
-Open with a one-line hero (`✓ Released <hash> to <who>` or `✓ Released <hash> to <who> on an offline check`, `✓ Bag <file>: <n> files`, `⚠ Not released: <failing checks>`, `⚠ Not released: check passed offline only; needs your call`, or for a check alone `✓ Ready: check ok` and `⚠ Not ready: <failing checks>`), then exactly these sections, with no sentence before the hero:
+Open with a one-line hero (`✓ Released <hash> to <who>` or `✓ Released <hash> to <who> on an offline check`, `✓ Bag <file>: <n> files`, `⚠ Not released: <failing checks>`, `⚠ Not released: a release needs a live check and none ran; releasing on the captures alone is your call`, or for a check alone `✓ Ready: check ok` and `⚠ Not ready: <failing checks>`), then exactly these sections, with no sentence before the hero:
 
 1. `## Check`: each check's result from this call, counts only; reasons and consequences go under `## Next`.
 2. `## Trail`: the release, decision, or bag written, with its hash.
