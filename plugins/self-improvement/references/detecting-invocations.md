@@ -168,21 +168,8 @@ intent differently, so extract per host. When a host's channel comes back
 near-empty, treat it as "the extraction does not fit this host" until
 proven otherwise, not as "this host does not use skills".
 
-`agentgrep` searches the stores of several hosts at once and is an
-optional alternative to the host's search tool. It runs through `uvx`, so
-`uv` must be installed. It reads every transcript store, so run only a
-pinned version: `uvx agentgrep@0.1.0a52`. Before relying on it, show the user this exact command and
-run it only once they confirm:
-
-```console
-$ uvx agentgrep@0.1.0a52 search --help
-```
-
-Use only the flags that help lists. Without that confirmation, skip the
-tool and report the other hosts' stores as not searched. If `uv` or the tool is missing, the
-command fails, or a flag the query needs is absent, stop using it: fall back
-to the host's search tool or the `rg` command above, and report the other
-hosts' stores as not searched.
+Other hosts' stores are not searched unless the user names a search tool
+for them; report them as not searched.
 
 Whatever the tool, confirm the run completed before drawing conclusions.
 A bounded or partial result looks identical to a genuine absence. Read the

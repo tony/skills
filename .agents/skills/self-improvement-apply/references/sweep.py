@@ -699,9 +699,30 @@ def _tracked_changes_without_head() -> list[str]:
     return [ln[3:].split(" -> ")[-1] for ln in porcelain.splitlines() if ln[3:]]
 
 
+def _autosquash_refusal(base: str) -> str:
+    """Return why a rebase from ``base`` must not run, or an empty string."""
+    ancestor = subprocess.run(  # noqa: S603
+        ["git", "merge-base", "--is-ancestor", base, "HEAD"],  # noqa: S607
+        capture_output=True,
+        check=False,
+    )
+    if ancestor.returncode != 0:
+        return f"{base} is not an ancestor of HEAD"
+    if _git("branch", "--remotes", "--contains", base):
+        return f"{base} is already on a remote branch"
+    if _git("status", "--porcelain", "--untracked-files=no"):
+        return "tracked files have uncommitted changes"
+    return ""
+
+
 def _cmd_autosquash(args: Args) -> int:
     """Fold ``fixup!`` commits into their targets, starting at ``--onto``."""
     base = args.onto
+    refusal = _autosquash_refusal(base)
+    if refusal:
+        print(f"error: {refusal}; nothing rewritten", file=sys.stderr)
+        print(json.dumps({"squashed": False, "refused": refusal}))
+        return 2
     parent = subprocess.run(  # noqa: S603
         ["git", "rev-parse", "--verify", "--quiet", f"{base}^"],  # noqa: S607
         capture_output=True,
@@ -833,7 +854,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     squash = sub.add_parser(
         "autosquash",
-        help="fold fixup! commits since --onto; exit 1 if any remain, 2 after a conflict abort",
+        help="fold fixup! commits since --onto; exit 1 if any remain, 2 if refused or aborted",
     )
     _ = squash.add_argument("--onto", required=True, help="commit the earliest fixup targets")
 

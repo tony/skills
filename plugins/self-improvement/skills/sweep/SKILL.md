@@ -271,8 +271,9 @@ Write the report per `../../references/prose-rules.md`.
 1. Hero line, first line of the reply: `N findings across M skills`, plus
    how much of the corpus the search reached. Nothing precedes it.
 2. `## Usage`: the catalog ranked twice by invocation count, all-time and
-   current-era. Channels unioned, renames summed. Name never-invoked skills
-   as that, each with its age.
+   current-era. Channels unioned, renames summed. Name a skill
+   never-invoked only when `complete` is true; otherwise say no invocation
+   was found in the searched sources. Give each its age.
 3. `## Findings`: one entry per pattern in plain prose or plain bullets, no
    bold label on each bullet: category, ratio and denominator, window and
    anchor date, spread, verdict with its evidence, the change class it
@@ -287,11 +288,11 @@ Write the report per `../../references/prose-rules.md`.
    date; never print the ledger key. With no ledger, name no date.
 6. End with an `AskUserQuestion` panel: apply the ledger, narrow the sweep
    and rerun, or stop. `apply` is user-invoked only, so the first option
-   prints `/self-improvement:apply <ledger path>` for the user to run; if
-   the user explicitly asked to apply, read `../apply/SKILL.md` and follow
-   it instead. In a non-interactive run, print the options as a plain list
+   prints `/self-improvement:apply <ledger path>` for the user to run, even
+   when the user asked to apply: this skill never applies. In a non-interactive run, print the options as a plain list
    and stop; do not explain why there is no panel.
 
+Write results in the passive, never "I" or "you said".
 Report only gates and checks the project defines; do not narrate the
 catalog reader, skipped steps, or sandbox state. A corpus line states only
 what limits the findings. A halt is one sentence, then the action.

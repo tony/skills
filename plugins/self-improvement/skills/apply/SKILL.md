@@ -140,6 +140,11 @@ mapping. Write the message per `../../references/prose-rules.md`.
 The message carries no `Co-Authored-By` trailer, no "Generated with" or
 other tool trailer, and no emoji. Hosts add them by default, so strip them.
 
+After each commit, read it back with `git log -1 --format=%s` and
+`git show --stat --format= HEAD`. The subject and edit you report come
+from that output, and the diffstat names only the paths the finding
+planned; the ledger is never among them.
+
 ## Phase 5: Verify what you wrote
 
 Gates cannot see contradictions in skill prose. One pass, as an independent
@@ -169,14 +174,16 @@ $ python3 <sweep.py> autosquash \
 ```
 
 Exit 1 lists the fixup commits still unfolded; report them under
-`## Verification`. Exit 2 means a fixup conflicted with a later commit: the
-script aborted the rebase and the branch is unchanged, so leave the fixup
-commits in place and report that under `## Verification`. Once pushed, the
+`## Verification`. Exit 2 means the script refused (dirty tracked files, a
+base that is pushed or not an ancestor) or a fixup conflicted with a later
+commit and it aborted the rebase. Either way nothing was rewritten, so leave
+the fixup commits in place and report that under `## Verification`. Once pushed, the
 fix lands as its own commit.
 
 ## Output contract
 
-Write the report per `../../references/prose-rules.md`.
+Write the report per `../../references/prose-rules.md`, in the passive,
+never "I".
 
 1. Hero line, first line of the reply: `N applied, M skipped` plus the
    branch. Nothing precedes it.
@@ -217,8 +224,9 @@ A `--dry-run` reply has the hero line `N planned, M skipped`, then `## Plan`
 and `## Skipped`, then the panel (apply for real, or stop). It has no
 preamble, no `## Applied`, no `## Verification`, and no commentary on the
 ledger's prompts or the project's commit style. Plan bullets give the
-finding id, the edit, the files, the gate, and the `expected_change`, and
-nothing else: no commit or branch line, no remark on dates. Reply
+finding id, the edit, the files, the gate (`none defined` when the project
+has none, with no reason), and the `expected_change`, and nothing else: no
+commit or branch line, no remark on dates, no note on missing config. Reply
 in this shape, as plain text outside any code fence, with plain bullets:
 
 ```text

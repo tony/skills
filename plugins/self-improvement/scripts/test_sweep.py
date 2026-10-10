@@ -210,6 +210,27 @@ def test_autosquash_conflict_aborts_and_exits_2(
     assert not Path(_git(tmp_path, "rev-parse", "--git-path", "rebase-merge")).exists()
 
 
+def test_autosquash_refuses_dirty_tree_and_foreign_base(
+    tmp_path: pathlib.Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """A dirty tracked tree or a non-ancestor base is refused before any rewrite."""
+    _repo(tmp_path)
+    _ = (tmp_path / "a.txt").write_text("a", encoding="utf-8")
+    _ = _git(tmp_path, "add", "a.txt")
+    _ = _git(tmp_path, "commit", "-q", "-m", "Add a")
+    head = _git(tmp_path, "rev-parse", "HEAD")
+    _ = (tmp_path / "a.txt").write_text("dirty", encoding="utf-8")
+    monkeypatch.chdir(tmp_path)
+    assert sweep.main(["autosquash", "--onto", head]) == AUTOSQUASH_ABORTED
+    assert "uncommitted" in json.loads(capsys.readouterr().out)["refused"]
+    assert sweep.main(["autosquash", "--onto", "deadbeef"]) == AUTOSQUASH_ABORTED
+    assert "not an ancestor" in json.loads(capsys.readouterr().out)["refused"]
+    assert _git(tmp_path, "rev-parse", "HEAD") == head
+    assert (tmp_path / "a.txt").read_text(encoding="utf-8") == "dirty"
+
+
 def test_counts_window_numerator_and_denominator(
     tmp_path: pathlib.Path, capsys: pytest.CaptureFixture[str]
 ) -> None:

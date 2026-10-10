@@ -6,7 +6,7 @@ land the changes that usage evidence supports.
 The counter reads Claude Code's prompt history (`~/.claude/history.jsonl`)
 and its transcripts. Other hosts keep no per-prompt file in a shape the
 script can parse, so they are covered only by `--history` pointed at a file
-in the same JSONL shape, or by the optional `agentgrep` route. Skills are
+in the same JSONL shape. Skills are
 found under `plugins/*/skills/` by default; `--catalog-glob` handles
 `skills/` and `.claude/skills/` layouts.
 
@@ -79,7 +79,6 @@ clear.
 - python 3.9 or newer (standard library only), for `scripts/sweep.py`
 - git, for dating rules, mapping renames, and dating each skill's first commit
 - the host's session-search tool, or `rg`, to collect skill-tool launches
-- optional: `uv`, to run a pinned `agentgrep` across other hosts' stores, after you confirm the command
 
 ## Counting and the ledger
 
