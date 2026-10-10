@@ -145,7 +145,7 @@
         "references/entry-rules.md": "plugins/changelog/references/entry-rules.md",
         "references/prose-rules.md": "plugins/changelog/references/prose-rules.md"
       },
-      "bytes": 26985
+      "bytes": 27126
     },
     {
       "name": "changelog-refresh",
