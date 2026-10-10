@@ -51,7 +51,9 @@ Run these and read the output:
   when it is a few thousand lines or fewer; otherwise read it per file. Append
   `-- . ':(exclude)<path>'` for every sensitive path in the status output
   (for example `git diff HEAD -- . ':(exclude).env'`), so a sensitive body
-  never enters context. Never read a sensitive file's content.
+  never enters context. Never read a sensitive file's content. A diff that
+  adds a private key block or a live-looking token commits nothing: name the
+  file, not the value.
 - `git ls-files --others --exclude-standard`: untracked files, which the diff
   omits. Read each new file that is not sensitive; skim a large or binary
   file by name only.
@@ -62,7 +64,9 @@ Run these and read the output:
 
 A failure of the first command means this is not a git repository: report it
 and stop. On a detached HEAD, commit nothing: say so and tell the user to
-switch to a branch. `git diff HEAD` fails in a repository with no commits; use
+switch to a branch. Unmerged paths (`U` in the status) or a merge, rebase,
+cherry-pick, or revert in progress (`git status` says so): commit nothing
+and tell the user to finish or abort it. `git diff HEAD` fails in a repository with no commits; use
 `git diff --cached` there. No tracked changes and no untracked files: report
 "Nothing to commit" and stop.
 On the default branch, commit anyway and say so in the reply; the commit
@@ -93,6 +97,9 @@ branches, commit nothing and tell the user to switch branches.
   skipped file in the reply and say it matches the sensitive-file list. Use
   `git add <specific-files>`, never `git add -A` or `git add .`. Tell the
   user which files you are staging.
+
+Once staging is final, read `git diff --cached --name-only`; step 7 compares
+the commit against it.
 
 ### 4. Draft Commit Message
 
@@ -181,8 +188,19 @@ If a pre-commit hook fails:
 
 ### 7. Confirm Result
 
-- Run `git log --oneline -1` to show the created commit
-- Run `git status` to show the remaining working tree state
+Read the result back; the reply states what these commands show, not what
+was intended:
+
+- `git show --stat --format='%h%n%B' HEAD`: the short hash, the message as
+  stored (a hook can rewrite it), and the committed paths.
+- `git branch --remotes --contains HEAD`: empty output means no
+  remote-tracking ref holds the commit.
+- `git status --short`: the remaining working tree.
+
+Compare the committed paths with the index read in step 3. A difference
+(a hook added or dropped a path), or a committed path that status now shows
+modified (a hook rewrote it after staging), gets its own bullet naming the
+paths.
 
 Reply in this shape, as plain text outside any code fence, with plain
 bullets, no bold (never `- **Label:** ...`), and no local paths:
@@ -202,18 +220,21 @@ what:
 - Working tree is clean.
 ```
 
-The first line is the hash, the subject, and `(local, not pushed)`; on a
-default branch it reads `(local on <branch>, not pushed)` with the branch's
-name. The commit body follows
-verbatim when there is one. Bullets cover only files staged, files left out,
-the working tree state, and a hook rejection that preceded the commit (say
+The first line is the hash, the stored subject, and `(local, not pushed)`
+when the remote-tracking check was empty; on a default branch it reads
+`(local on <branch>, not pushed)` with the branch's name. When a
+remote-tracking ref holds the commit, write `(on <ref>)` instead. The stored
+body follows verbatim when there is one. Bullets cover only files staged, files left out,
+the working tree state, a hook that changed the committed paths or message,
+and a hook rejection that preceded the commit (say
 what it rejected and what you changed; include that bullet only when a hook
 rejected an attempt). Skip the working-tree bullet when the
 left-out bullets already name every remaining file, unless it adds a fact.
 Add no other advice or remarks.
 
 A stopped run is one result sentence, then what the user needs to do. Add
-no other advice, such as `.gitignore` tips or follow-up suggestions.
+no other advice, such as `.gitignore` tips, secret-handling guidance, or
+follow-up suggestions.
 
 ---
 

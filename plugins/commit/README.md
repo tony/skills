@@ -46,17 +46,18 @@ draft a conventional commit message, and commit.
 ## How It Works
 
 1. Gather state: read the branch, status, diffs, untracked files, and recent
-   commits. Stop on a non-repository, a detached HEAD, nothing to commit, or
+   commits. Stop on a non-repository, a detached HEAD, an unfinished merge or rebase, nothing to commit, or
    a branch-convention violation.
 2. Analyze changes: review the diff, determine type and scope, check topic
    coherence.
 3. Determine staging: respect existing staged files, and auto-stage only if
-   nothing is staged. A staged secret stops the run.
+   nothing is staged. A staged secret, by name or by key content in the diff, stops the run.
 4. Draft the commit message: follow `AGENTS.md`/`CLAUDE.md` and recent
    commit styles, with proportional detail and verified version-bump URLs.
 5. Commit: retry on pre-commit hook failures, never bypassing the hook.
-6. Confirm the result: show the created commit and the remaining working
-   tree state.
+6. Confirm the result: read back the stored message, committed paths,
+   whether any remote-tracking ref holds the commit, and the remaining
+   working tree state.
 
 ## Arguments
 
