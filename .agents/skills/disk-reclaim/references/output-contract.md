@@ -262,6 +262,8 @@ is not (no "it isn't X: it is Y").
 
 Distinguish measured from projected in the words themselves. Do not
 promise a compaction yield from guest free space or apparent file size.
+Say "currently unallocated", never "never allocated" or "never took host
+space". Name the host drive only when a measurement named it.
 
 State a claim about what a tool supports (for example, that it reads
 compressed transcripts) only with help text, documentation, or a
@@ -277,11 +279,11 @@ was proved".
 
 Use GiB at or above 1 GiB and MiB or KiB below it (`6 MiB`, never
 `0.0061 GiB`), one unit per figure, converting what a tool printed
-(`1007G`, `14 GB`); do not repeat raw byte counters, including one read from a script, file,
+(`1007G`, `14 GB`, `3 MB`); never write MB, GB or KB; do not repeat raw byte counters, including one read from a script, file,
 or fixture (write `2.9 MiB`, not `3,000,000 bytes`).
 
-Write every path in the reply relative to the approved scope or as `~/…`,
-and a Windows profile as `/mnt/c/Users/<account>/…`; no absolute path or
+Write every path in the reply relative to the approved scope, or as `~/…`
+only for a path inside the real home directory, and a Windows profile as `/mnt/c/Users/<account>/…`; no absolute path or
 account name appears in it. Literal absolute installed script paths belong
 in internal tool calls, not in the final reply.
 
