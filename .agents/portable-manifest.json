@@ -1192,9 +1192,10 @@
         "references/diff_gate.py": "plugins/tdd/scripts/diff_gate.py",
         "references/gates-and-commits.md": "plugins/tdd/references/gates-and-commits.md",
         "references/prose-rules.md": "plugins/tdd/references/prose-rules.md",
+        "references/stash_roundtrip.py": "plugins/tdd/scripts/stash_roundtrip.py",
         "references/xfail-mechanisms.md": "plugins/tdd/references/xfail-mechanisms.md"
       },
-      "bytes": 23755
+      "bytes": 31841
     },
     {
       "name": "tdd-xfail",
@@ -1205,9 +1206,10 @@
         "references/diff_gate.py": "plugins/tdd/scripts/diff_gate.py",
         "references/gates-and-commits.md": "plugins/tdd/references/gates-and-commits.md",
         "references/prose-rules.md": "plugins/tdd/references/prose-rules.md",
+        "references/stash_roundtrip.py": "plugins/tdd/scripts/stash_roundtrip.py",
         "references/xfail-mechanisms.md": "plugins/tdd/references/xfail-mechanisms.md"
       },
-      "bytes": 29616
+      "bytes": 37101
     },
     {
       "name": "terraform-bump-provider",
@@ -1589,6 +1591,7 @@
     "plugins/tdd/references/prose-rules.md": 2,
     "plugins/tdd/references/xfail-mechanisms.md": 2,
     "plugins/tdd/scripts/diff_gate.py": 2,
+    "plugins/tdd/scripts/stash_roundtrip.py": 2,
     "plugins/terraform/references/pin-sites.md": 2,
     "plugins/ticket/references/altitude.md": 2,
     "plugins/ticket/references/contract.md": 2,

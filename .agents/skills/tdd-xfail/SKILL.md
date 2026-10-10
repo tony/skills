@@ -28,12 +28,13 @@ Enter plan mode before the first edit. In Claude Code call `EnterPlanMode`;
 in Cursor, Codex, or Gemini use `/plan` or `Shift+Tab`. Where plan mode is
 unavailable, present the plan as text.
 
-The plan always opens with three full sentences, no bold labels and no
+The plan always opens with four full sentences, no bold labels and no
 noun-colon leads (never "Bug summary: ..."): the first states the symptom,
 expected behavior, trigger, and affected component; the second names the test
 file, fixtures, and xfail mechanism; the third says whether mocks are needed,
 what real behavior they replace, and how you will verify the failure is genuine
-and not mock-induced.
+and not mock-induced; the fourth names the phases that run (all, or only the
+failing test) and, when the bug spans a dependency, the dependency checkout.
 
 Add a further sentence only when it differs from this workflow's defaults (the
 project's own gates, test-only and source-only patterns, marker-removal run and
@@ -48,7 +49,8 @@ Short plan for a pure function:
 is_business_day(5) returns True for Saturday, but Saturday is not a business
 day; the function is in bizdays.py and the trigger is any weekday value of 5.
 The xfail test goes in test_bizdays.py with @unittest.expectedFailure and no
-fixtures. No mocks are involved, so a failure there is the real bug.
+fixtures. No mocks are involved, so a failure there is the real bug. All
+phases run, and no dependency is involved.
 ```
 
 Present the plan and wait for approval per the approval rule in
@@ -66,7 +68,7 @@ user to approve it, and says what to fix in the repository.
 
 ## Output shape
 
-Report per the final-report, stopped-run, and plan-awaiting-approval shapes in
+Report per the final-report and stopped-run shapes in
 `references/gates-and-commits.md`. Name commits by purpose (xfail test,
 fix, xfail removal), never by phase or number. Name no local paths.
 
@@ -93,7 +95,8 @@ fix, xfail removal), never by phase or number. Name no local paths.
 
 ## Phase 1: Reproduce with an xfail test
 
-Create a test that reproduces the bug, marked expected-to-fail.
+Create an implemented test with the selected expected-failure annotation or
+skip. Verify reproduction with the annotation removed in Phase 2.
 
 The test must exercise real code paths. When mocking is unavoidable (network,
 filesystem, external services), the failure must match the bug's actual
@@ -101,33 +104,19 @@ symptom (exception type, message, or wrong-value pattern). If the mock causes
 the failure, discard the test and start over.
 
 1. Study existing test patterns in the target file.
-2. Write a test with a descriptive name, existing fixtures, the strict
-   mechanism, and an assertion of the correct behavior (not the buggy one).
-3. Run it. It must report an expected failure (`xfail` in pytest, not `FAILED`).
+2. Write a test with a descriptive name, existing fixtures, the selected
+   annotation, and an assertion of the correct behavior (not the buggy one).
+3. Run it. Strict mode must accept its expected failure; skip mode must report
+   it skipped. Check the result against the mechanism reference.
 4. Run the full test file.
 5. Run all quality gates.
 
-### Frameworks without strict xfail
-
-A skipped test never executes, so it cannot XPASS. Run a skip-remove-run-reskip
-cycle at each verification phase:
-
-- Phase 1: write the test with the skip. Run it and confirm it is skipped.
-- Phase 2: remove the skip, run the test (it must fail for the right reason),
-  restore the skip.
-- Phase 3: apply the fix, remove the skip, run the test (it must pass), restore
-  the skip.
-- Phase 4: stash the fix, remove the skip, run the test (it must fail again),
-  restore the skip, pop the stash.
-- Phase 5: remove the skip permanently.
-
-The diff gates and three-commit structure are unchanged.
-
 ### Gate 1: xfail confirmation
 
-The test must produce an expected-failure result. If it passes outright, it does
-not reproduce the bug; rewrite it. If it fails with an exception not matching
-`raises`, it targets the wrong symptom.
+The selected test must produce its mode's annotated broken-state result.
+An unexpected success or ordinary pass does not reproduce the bug. A skip
+confirms only the annotation; Phase 2 must establish the genuine failure.
+Stop on setup failures or exceptions that do not match the bug's symptom.
 
 Then commit test file changes only; `diff_gate.py` in `test-only` mode (see
 the reference's "Diff gates" section) must print nothing.
@@ -136,11 +125,11 @@ the reference's "Diff gates" section) must print nothing.
 
 Prove the test fails because of the bug, not the test setup.
 
-1. Temporarily remove the xfail marker.
+1. Temporarily remove the expected-failure annotation or skip.
 2. Run the test; it must fail.
 3. Check that the error matches the bug's symptom, the exception type is the
    expected one, and no misconfigured mock could produce the same failure.
-4. Restore the marker.
+4. Restore the annotation before continuing.
 
 ### Gate 2: genuine-failure confirmation
 
@@ -156,67 +145,46 @@ Fix the source. Zero test file changes in this commit. Apply the minimal fix
 (see the gates-and-commits reference).
 
 1. Apply the fix to the source code.
-2. Run the xfail test. A strict mechanism now reports the unexpected pass as a
-   failure: pytest shows `[XPASS(strict)]`; Jest `it.failing`, Vitest
-   `it.fails`, and Rust `#[should_panic]` report a failed test.
-3. Run the non-test quality gates (formatter, linter, type checker). Skip the
-   full test suite; the strict XPASS failure confirms the fix.
+2. Run steps 1 to 3 of "Fix commit" in the gates-and-commits reference.
+   Do not commit yet; Phase 4 verifies fix isolation first.
 
 ### Gate 3: zero-diff on test files
 
-Run `diff_gate.py` in `source-only` mode (see the reference's "Diff gates"
-section). It must print nothing.
-
-If test files changed, move those changes to Phase 5.
-
-Do not commit yet; Phase 4 verifies fix isolation first.
+The `source-only` diff gate must print nothing. If test files changed, move
+those changes to Phase 5.
 
 ## Phase 4: Verify Fix Isolation
 
-Prove the fix, not an unrelated change, resolved the test.
+Prove the fix, not an unrelated change, resolved the test. Use the "Stash
+round trip" commands in the gates-and-commits reference.
 
-1. Print the current stash ref (`none` when there is no stash):
-
-   ```console
-   $ git rev-parse -q --verify refs/stash || echo none
-   ```
-2. Stash the fix:
-
-   ```console
-   $ git stash push --include-untracked
-   ```
-3. Print the stash ref again. A changed value means the stash was created.
-   An unchanged value means nothing was stashed: do not pop, and treat the
-   missing fix as a Phase 3 failure.
-4. Run the xfail test; it must xfail again.
-5. The stash also holds any untracked build caches (`__pycache__/`,
-   `.pytest_cache/`), and step 4 may have recreated them, which makes the pop
-   refuse to overwrite them. Delete the untracked caches that step 4 created
-   (they regenerate), never other untracked files. Then restore the fix, only
-   when step 3 showed a new stash:
-
-   ```console
-   $ git stash pop
-   ```
-   On a pop conflict, stop. Keep the stash, report the SHA
-   printed by `git rev-parse refs/stash`, and never run `git stash drop`.
-6. Print the stash ref a third time. It must equal the step 1 value;
-   otherwise a stash remains, so report its SHA.
-7. Run the xfail test; it must XPASS again.
+1. Stash the fix with `push` and keep the SHA it prints. No SHA means nothing
+   was stashed: treat the missing fix as a Phase 3 failure.
+2. Verify the broken state in the mechanism reference: the annotated test must
+   produce the selected mode's result. Temporarily remove the annotation and
+   confirm the same assertion fails for the bug's symptom, then restore the
+   annotation before restoring the fix.
+3. Delete the untracked caches that step 2 created, then `restore` the SHA.
+   On a failure, stop and report the SHA.
+4. List the stashes. The list must not hold your SHA; report any stash of
+   yours that remains.
+5. Repeat the mechanism reference's fixed-state check with the fix restored.
 
 ### Gate 4: stash round-trip confirmation
 
-If the test does not return to xfail with the fix stashed, something else
-resolved it. Check for a stale build cache, an unrelated working-tree change, or
-a dependency update.
+The unannotated assertion must fail for the original symptom with the fix
+stashed, and pass with the fix restored. Both annotated results must also
+match the selected mode. If any check differs, investigate stale build caches,
+unrelated changes, or dependency updates; a skip cannot prove isolation.
 
-Then commit the fix with the root cause in the message.
+Repeat the source-only diff gate after restoring the annotation, then commit
+the fix with the root cause in the message.
 
 ## Phase 5: Remove xfail Marker
 
 Convert the xfail test to a regression test. Zero source changes in this commit.
 
-1. Remove the expected-failure marker.
+1. Remove the expected-failure annotation or skip.
 2. Rewrite test comments to describe a regression test, not a bug report.
 3. Run the test; it must pass.
 4. Run the full suite for the affected file or module.
@@ -246,21 +214,24 @@ never rewrite the three commits.
 
 ## Recovery
 
-When the test still xfails after the fix, revert the fix, re-examine whether
-the test exercises the code path you fixed, and redo the root cause analysis.
+When the unannotated assertion still fails after the fix, re-examine whether
+the test exercises the code path you fixed and redo the root cause analysis.
+An annotated result outside the mechanism reference's fixed-state outcome
+also requires investigation; strict unexpected success is the expected result.
 The 3-attempt stop rule is in the gates-and-commits reference.
 
 ## CI Integration
 
-Push only when the user asks. The fix commit is red on purpose (strict XPASS),
-so never push it unasked; without an answer, push nothing. When the user
-opts in and the project has CI, push after each commit to verify the sequence:
+Push only when the user asks; without an answer, push nothing. When the user
+opts in and the project has CI, verify the sequence against the selected mode:
 
-- xfail test commit: green. The xfail is an expected failure.
-- Fix commit: red. A strict mechanism makes the XPASS a failure.
-- xfail removal commit: green. The marker is gone and the test passes.
+- Test commit: green, with an accepted expected failure or a skip.
+- Fix commit: strict mode is red specifically for unexpected success; skip
+  mode stays green with the test skipped. The skip is not fix evidence.
+- Annotation-removal commit: green, with the regression assertion executed.
 
-Without CI, the diff gates and stash round-trip give equivalent confidence.
+Report the CI results observed. When CI is absent or unobserved, report only
+the local checks; do not infer CI success from the diff or isolation gates.
 
 
 ## Portability notes
