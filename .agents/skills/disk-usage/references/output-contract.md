@@ -21,9 +21,10 @@ four sentences total: one result sentence, then exactly three plain
 bullets, one sentence each: `Measured`, `Not measured`, and `To continue`;
 put any necessary command after the last bullet. Fill `Measured` from
 the survey's `filesystem` fields and classified in-scope directories,
-and rank the survey's `largest` readable directories with their sizes
-and filesystem, even when none reaches the floor, so the reply carries
-triage before it asks for elevated help;
+and, when the user asked about the whole disk or a path rather than a
+category, rank the survey's `largest` readable directories with their
+sizes and filesystem even when none reaches the floor, so the reply
+carries triage before it asks for elevated help;
 leave rejected probe inventory out. Fill `Not measured` from `errors`
 or a recorded command failure, naming only paths that were attempted and
 failed; a parent that failed does not make its children, or the default
