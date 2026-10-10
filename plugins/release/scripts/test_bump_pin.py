@@ -1,6 +1,6 @@
 """Tests for bump_pin.py."""
 
-# ruff: noqa: S101, INP001, D103
+# ruff: noqa: S101, INP001, D103, PLR2004
 # pyright: reportUnusedCallResult=false
 from __future__ import annotations
 
@@ -17,18 +17,84 @@ if TYPE_CHECKING:
 
 def test_inline_array_and_name_casing(tmp_path: pathlib.Path) -> None:
     f = tmp_path / "pyproject.toml"
-    f.write_text('dependencies = ["Foo_Bar[x]==0.1.1", "other==0.1.1", "foo-bar==0.1.10"]\n')
+    f.write_text(
+        '[project]\ndependencies = ["Foo_Bar[x]==0.1.1", "other==0.1.1", "foo-bar==0.1.10"]\n'
+    )
     assert bump_pin.bump(f, "foo-bar", "0.1.1", "0.2.0") == 1
     assert f.read_text() == (
-        'dependencies = ["Foo_Bar[x]==0.2.0", "other==0.1.1", "foo-bar==0.1.10"]\n'
+        '[project]\ndependencies = ["Foo_Bar[x]==0.2.0", "other==0.1.1", "foo-bar==0.1.10"]\n'
     )
 
 
-def test_requirements_file_and_prerelease_boundary(tmp_path: pathlib.Path) -> None:
+def test_toml_edits_only_dependency_arrays(tmp_path: pathlib.Path) -> None:
+    f = tmp_path / "pyproject.toml"
+    before = (
+        "[project]\n"
+        'description = """multi\nline foo==1.0.0"""\n'
+        'dependencies = [\n  "foo==1.0.0",  # foo==1.0.0\n]\n'
+        "[project.optional-dependencies]\n"
+        "dev = [\"foo==1.0.0; python_version >= '3.9'\"]\n"
+        "[dependency-groups]\n"
+        'test = ["foo==1.0.0", {include-group = "dev"}]\n'
+        "[tool.docs]\n"
+        'example = "foo==1.0.0"\n'
+        "# foo==1.0.0\n"
+    )
+    f.write_bytes(before.replace("\n", "\r\n").encode())
+    assert bump_pin.bump(f, "foo", "1.0.0", "1.1.0") == 3
+    after = f.read_bytes().decode()
+    assert after.count("foo==1.1.0") == 3
+    assert after.count("foo==1.0.0") == 4
+    assert 'example = "foo==1.0.0"' in after
+    assert "# foo==1.0.0\r\n" in after
+
+
+def test_toml_dependency_array_with_multiline_string_is_refused(tmp_path: pathlib.Path) -> None:
+    f = tmp_path / "pyproject.toml"
+    before = '[project]\ndependencies = ["""foo==1.0.0"""]\n'
+    f.write_text(before)
+    assert bump_pin.main([str(f), "foo", "1.0.0", "1.1.0"]) == 3
+    assert f.read_text() == before
+
+
+def test_json_edits_only_dependency_sections(tmp_path: pathlib.Path) -> None:
+    f = tmp_path / "package.json"
+
+    def document(prefix: str, version: str) -> str:
+        deps = f'"dependencies": {{"foo": "{prefix}{version}", "foo-x": "1.0.0"}}'
+        dev = f'"devDependencies": {{"foo": "{version}"}}'
+        other = '"config": {"foo": "1.0.0"}, "scripts": {"foo": "1.0.0"}'
+        return f"{{{other}, {deps},\n {dev}}}\n"
+
+    f.write_text(document("^", "1.0.0"))
+    assert bump_pin.bump(f, "foo", "1.0.0", "1.1.0") == 2
+    assert f.read_text() == document("^", "1.1.0")
+
+
+def test_json_duplicate_keys_are_refused(tmp_path: pathlib.Path) -> None:
+    f = tmp_path / "package.json"
+    before = '{"dependencies": {"foo": "1.0.0", "foo": "1.0.0"}}'
+    f.write_text(before)
+    assert bump_pin.main([str(f), "foo", "1.0.0", "1.1.0"]) == 3
+    assert f.read_text() == before
+
+
+def test_requirements_file_comments_options_and_prerelease_boundary(
+    tmp_path: pathlib.Path,
+) -> None:
     f = tmp_path / "requirements.txt"
-    f.write_text("foo==0.1.1a1\nfoo==0.1.1\n")
+    f.write_text("foo==0.1.1a1\nfoo==0.1.1  # foo==0.1.1\n# foo==0.1.1\n--hash=foo==0.1.1\n")
     assert bump_pin.bump(f, "foo", "0.1.1", "0.1.2") == 1
-    assert f.read_text() == "foo==0.1.1a1\nfoo==0.1.2\n"
+    assert f.read_text() == (
+        "foo==0.1.1a1\nfoo==0.1.2  # foo==0.1.1\n# foo==0.1.1\n--hash=foo==0.1.1\n"
+    )
+
+
+def test_unsupported_manifest_is_refused(tmp_path: pathlib.Path) -> None:
+    f = tmp_path / "setup.cfg"
+    f.write_text("foo==1.0.0\n")
+    assert bump_pin.main([str(f), "foo", "1.0.0", "1.1.0"]) == 3
+    assert f.read_text() == "foo==1.0.0\n"
 
 
 def test_package_json_scoped_name(tmp_path: pathlib.Path) -> None:
@@ -36,6 +102,24 @@ def test_package_json_scoped_name(tmp_path: pathlib.Path) -> None:
     f.write_text('{"dependencies": {"@s/pkg": "~1.0.0"}}\n')
     assert bump_pin.bump(f, "@s/pkg", "1.0.0", "1.1.0") == 1
     assert '"~1.1.0"' in f.read_text()
+
+
+def test_change_during_preparation_writes_nothing(
+    tmp_path: pathlib.Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    f = tmp_path / "requirements.txt"
+    f.write_text("foo==1.0.0\n")
+    real = bump_pin.edit
+
+    def racing(manifest: pathlib.Path, *args: str) -> tuple[str, int]:
+        result = real(manifest, *args)
+        manifest.write_text("foo==1.0.0\n# concurrent\n")
+        return result
+
+    monkeypatch.setattr(bump_pin, "edit", racing)
+    assert bump_pin.main([str(f), "foo", "1.0.0", "1.1.0"]) == 3
+    assert f.read_text() == "foo==1.0.0\n# concurrent\n"
+    assert [p.name for p in tmp_path.iterdir()] == ["requirements.txt"]
 
 
 def test_pin_edit_preserves_other_bytes_and_mode(tmp_path: pathlib.Path) -> None:
@@ -53,9 +137,9 @@ def test_no_match_leaves_file_and_exits_1(
     tmp_path: pathlib.Path, capsys: pytest.CaptureFixture[str]
 ) -> None:
     f = tmp_path / "pyproject.toml"
-    f.write_text('dependencies = ["foo>=0.1.1"]\n')
+    f.write_text('[project]\ndependencies = ["foo>=0.1.1"]\n')
     assert bump_pin.main([str(f), "foo", "0.1.1", "0.2.0"]) == 1
-    assert f.read_text() == 'dependencies = ["foo>=0.1.1"]\n'
+    assert f.read_text() == '[project]\ndependencies = ["foo>=0.1.1"]\n'
     assert "edit it by hand" in capsys.readouterr().err
 
 
@@ -91,7 +175,7 @@ def test_linked_or_nonregular_leaf_refuses_before_read(
     with monkeypatch.context() as patch:
         patch.setattr(pathlib.Path, "read_bytes", forbidden_read)
         status = bump_pin.main([str(manifest), "foo", "1.0.0", "1.1.0"])
-    assert status == 3  # noqa: PLR2004
+    assert status == 3
     assert manifest.lstat() == before
     assert target.stat() == target_before
     assert target.read_bytes() == b"foo==1.0.0\r\n"
@@ -102,7 +186,7 @@ def test_linked_or_nonregular_leaf_refuses_before_read(
     assert "untouched" not in output.err
 
 
-@pytest.mark.parametrize("failure", ["lstat", "read", "decode", "write", "missing"])
+@pytest.mark.parametrize("failure", ["lstat", "read", "decode", "replace", "missing"])
 def test_file_failures_return_distinct_status_without_unchanged_claim(
     tmp_path: pathlib.Path,
     monkeypatch: pytest.MonkeyPatch,
@@ -113,15 +197,9 @@ def test_file_failures_return_distinct_status_without_unchanged_claim(
     before = b"foo==1.0.0\r\n" if failure != "decode" else b"foo==1.0.0\xff"
     if failure != "missing":
         manifest.write_bytes(before)
-    original_write = pathlib.Path.write_bytes
 
-    def failed_operation(_path: pathlib.Path) -> NoReturn:
+    def failed_operation(*_args: object) -> NoReturn:
         message = "injected observation/read failure"
-        raise OSError(message)
-
-    def partial_write(path: pathlib.Path, data: bytes) -> NoReturn:
-        original_write(path, data[:4])
-        message = "injected partial write failure"
         raise OSError(message)
 
     with monkeypatch.context() as patch:
@@ -129,10 +207,10 @@ def test_file_failures_return_distinct_status_without_unchanged_claim(
             patch.setattr(pathlib.Path, "lstat", failed_operation)
         elif failure == "read":
             patch.setattr(pathlib.Path, "read_bytes", failed_operation)
-        elif failure == "write":
-            patch.setattr(pathlib.Path, "write_bytes", partial_write)
+        elif failure == "replace":
+            patch.setattr(pathlib.Path, "replace", failed_operation)
         status = bump_pin.main([str(manifest), "foo", "1.0.0", "1.1.0"])
-    assert status == 3  # noqa: PLR2004
+    assert status == 3
     output = capsys.readouterr()
     assert not output.out
     assert "pin update failed" in output.err
@@ -142,7 +220,8 @@ def test_file_failures_return_distinct_status_without_unchanged_claim(
     if failure == "missing":
         assert not manifest.exists()
     else:
-        assert manifest.read_bytes() == (b"foo=" if failure == "write" else before)
+        assert manifest.read_bytes() == before
+        assert [p.name for p in tmp_path.iterdir()] == ["requirements.txt"]
 
 
 @pytest.mark.parametrize("usage", [False, True])
