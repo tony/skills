@@ -95,11 +95,13 @@ Otherwise re-run `init` in each root module that has a committed,
 unmodified lock:
 
 - Use plain `init` per the lock reference, never `-upgrade`: a CLI bump
-  moves no provider, so `lockctl.py diff` with no `--allow` must exit 0.
+  moves no provider. Compare with `lockctl.py diff` without `--allow`.
+  An unqualified pass requires exit 0.
 - A non-zero exit (any provider-block change, including checksums) means
   restore the lock from git and report it.
 - A CLI bump can change the lock file's header outside provider blocks;
-  provider blocks must remain byte-identical.
+  provider blocks must remain byte-identical unless the user explicitly
+  approves checksum loss under the lock reference's exception.
 - A root module with no committed lock is skipped and reported: `init`
   there would create a lock and pick providers. Run it only after the
   user approves that outcome.
@@ -107,7 +109,8 @@ unmodified lock:
 A failed `init`, or a lock restored for a provider-block change, stops
 the run with nothing committed. Leave the pin edits in the
 working tree and end with the stopped line (the umbrella has its mid-run
-form). A dropped count is committed only with the user's explicit yes.
+form). The checksum-loss exception never permits a provider version or
+constraint to change, and its report must state the approved reduction.
 
 ### 8. Verify, then commit
 
@@ -136,9 +139,9 @@ every pin is exact and equal; otherwise `mixed`, never a range or a
 order:
 
 1. `## Target`: the resolved version, how it was confirmed (registry
-   or "confirmed by you" with no reason), the version installed locally, and the
-   changelog link (or that none was confirmed).
-2. `## Layout`: root modules and child modules discovered (the umbrella
+   or `<version>, confirmed by you`), and the version installed locally.
+   Add a changelog link only after fetching it.
+2. `## Layout`: the discovered root modules and child modules (the umbrella
    says when to name the tool).
 3. `## Sites`: every existing pin, inside the configuration and outside
    it, and whether each was edited or left alone with the reason. A file
@@ -147,12 +150,11 @@ order:
    skipped (and why), and the `h1:` checksum counts before and after.
    Report platform coverage unverified unless a successful command
    checked the required platform names; counts alone do not prove it.
-5. `## Verification`: the gates run and their real results, including
-   whether each root module now initialises.
+5. `## Verification`: the gates run and their real results.
 6. `## Drift`: actionable missing pins or disagreements not already
    reported in `## Sites`. Omit it when none remain. This section owns a
    CI workflow's missing pin; do not repeat it in `## Sites`. An
-   installed-CLI mismatch belongs in `## Locks`, and a failing gate
+   installed-CLI mismatch belongs in `## Locks`, and a pre-existing gate failure
    belongs in `## Verification`.
 
 Name the commit by subject in `## Sites`, never by SHA.
@@ -162,25 +164,29 @@ State a root module that could not be initialised in `## Locks` only;
 Reply in this shape, as plain text outside any code fence, with plain bullets, no bold (never `- **Label:** ...`), and no local paths:
 
 ```text
-✓ terraform 1.14.5 -> 1.15.8 across 4 pin sites
+✓ terraform mixed -> 1.14.0 across 2 pin sites
 
 ## Target
 
-- 1.15.8 confirmed on releases.hashicorp.com; 1.15.8 installed locally; changelog linked at v1.15.8.
+- 1.14.0, confirmed by you; 1.16.5 installed locally.
+
+## Layout
+
+- Root module: infra/prod.
 
 ## Sites
 
-- envs/prod/versions.tf, .tool-versions, and the Dockerfile image tag edited.
-- .github/workflows/plan.yml pinned 1.14.0, a third version, and was edited.
+- infra/prod/versions.tf: required_version ~> 1.9.0 to ~> 1.14.0.
+- .tool-versions: terraform 1.9.5 to 1.14.0.
+- Commit: "Bump Terraform CLI to 1.14.0".
 
 ## Locks
 
-- envs/prod: re-initialised, provider blocks unchanged, 3 h1 records before and after; platform coverage unverified.
-- envs/staging: no committed lock, skipped.
+- infra/prod: initialization skipped because installed Terraform 1.16.5 does not satisfy ~> 1.14.0; initialization and validation unverified. The lock retains random 3.6.0 with 2 h1 records before and after; platform coverage unverified.
 
 ## Verification
 
-- envs/prod initialises under 1.15.8; fmt -check passes.
+- fmt -check passes.
 ```
 
 A run that cannot proceed ends with the stopped line from

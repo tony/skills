@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# A root module whose lock tracks two platforms for random, with a local
+# A root module whose lock has two h1 records for random, with a local
 # filesystem mirror standing in for the registry (3.6.0, 3.7.0, 3.7.1).
 set -euo pipefail
 
@@ -46,8 +46,8 @@ provider "registry.terraform.io/hashicorp/random" {
   version     = "3.6.0"
   constraints = "~> 3.6.0"
   hashes = [
-    "h1:aaa=",
-    "h1:bbb=",
+    "h1:4yvMK6WWXCorZpBQ7p5jXAYHZGcY65gjb73L32J5AN8=",
+    "h1:fxEaWMDPE2VVnwsdP+X7SgJPIs6xN/o7crNA4/zaB8Y=",
   ]
 }
 HCL

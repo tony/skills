@@ -2,9 +2,9 @@
 
 Read before running `init` anywhere.
 
-Every command below names `terraform`. Substitute `tofu` when OpenTofu
-drives the repository; the subcommands, flags, and lock file format are
-the same.
+Every command below names `terraform` and was exercised against it.
+Substitute `tofu` when OpenTofu drives the repository, and confirm each
+flag with `tofu <subcommand> -help` before relying on it.
 
 ## Contents
 
@@ -12,7 +12,7 @@ the same.
 - Guard every `init`
 - One run per root module
 - `-backend=false` removes the credential requirement
-- `-upgrade` moves every provider
+- `-upgrade` reselects providers
 - Moving one provider, and landing a version the user named
 - Check checksum loss and required platforms
 - When the resolver cannot see the version
@@ -107,7 +107,7 @@ providers and writing the lock file, so refreshes work with no cloud
 credentials. `-input=false` turns any prompt into an error instead of a
 wait ([init options](https://developer.hashicorp.com/terraform/cli/commands/init)).
 
-## `-upgrade` moves every provider
+## `-upgrade` reselects providers
 
 > Upgrade all previously-selected plugins to the newest version that
 > complies with the configuration's version constraints. This will
@@ -117,9 +117,10 @@ wait ([init options](https://developer.hashicorp.com/terraform/cli/commands/init
 >
 > Source: [terraform init](https://developer.hashicorp.com/terraform/cli/commands/init)
 
-`init` has no per-provider upgrade flag, so `-upgrade` moves every provider
-a constraint allows to move. Use it only where that is the goal
-(`refresh-lock`):
+`init` has no per-provider upgrade flag. `-upgrade` ignores existing
+selections and resolves against the constraints and available packages.
+Use it only when all providers may be re-resolved (`refresh-lock`);
+read the resulting lock to establish which versions changed:
 
 ```console
 $ terraform -chdir=<root-module-dir> init -backend=false -upgrade -input=false
@@ -228,9 +229,9 @@ $ python3 ../scripts/lockctl.py platforms
 It prints each CI or task file (workflows, a Makefile or justfile
 target), tracked or not yet added, that runs `providers lock` and the `-platform=` values it names;
 documentation that merely mentions the command is not scanned. Where it
-prints nothing, ask the user for the names. It reads literal
-`-platform=` values only: a loop or variable (`-platform=$p`) prints
-nothing. After a provider changes, run `providers lock` for the declared
+prints nothing, the required set is unknown; a count drop requires the
+user's answer as described below. It reads literal `-platform=` values
+only: a loop or variable (`-platform=$p`) prints nothing. After a provider changes, run `providers lock` for the declared
 names even if its `h1:` count did not fall:
 
 ```console
@@ -247,14 +248,18 @@ omit the address only to restore every provider. `providers lock` ignores
 resolves through a mirror, pass the same one with `-fs-mirror=<dir>` or
 `-net-mirror=<url>`, as the CI command that locks does (a relative path
 resolves from the `-chdir` directory). Use only repository-declared or
-user-confirmed names. A successful command checks packages for those
-names; report them separately from the before/after `h1:` counts.
-Run `diff` again afterwards; it must exit 0. With no platform list and
-no count drop, report platform coverage unverified.
+user-confirmed names. A successful command checks package availability
+and records checksums for those names; it does not execute the providers.
+Report the checked names separately from the before/after `h1:` counts.
+A failed command follows the same lock-restoration path as a failed `init`.
+Run `diff` again afterwards; it must exit 0 for an unqualified pass.
+With no platform list and no count drop, report coverage unverified.
 
-Never commit a lock with fewer `h1:` records unless the user says yes to
-that exact file. A count drop needs the required platform names; when
-they are unknown, or the count is still short after `providers lock`, ask. Without an
+Never commit a lock with fewer `h1:` records unless the user approves that
+exact file and reduction. This is an exception, not a passing `diff`;
+it does not approve other unexpected provider changes or failed package checks.
+A count drop needs the required platform names; when they are unknown,
+or the count is still short after `providers lock`, ask. Without an
 interactive question tool, or with no answer, restore the committed lock
 and leave that root module out of the commit:
 
@@ -290,7 +295,7 @@ route around a supply-chain control as a side effect of a version bump.
 The constraint edit and the lock refresh can both succeed while the selected
 version stays put (a child module cap, a mirror serving an older release).
 Read the version out of the lock file and compare it to the target; a zero
-exit code proves nothing:
+exit code is required but does not prove the selected version:
 
 ```console
 $ python3 ../scripts/lockctl.py state \
@@ -308,6 +313,20 @@ per root module. `terraform fmt -check -recursive` runs anywhere. Beyond
 those, run the checks the repository defines in its `AGENTS.md`,
 `CLAUDE.md`, or CI workflow, such as `tflint` or a policy check, never
 assumed commands.
+
+Before the run's first edit, run each gate on the original tree and record
+its exit status and failure text. For `validate`, first install the
+committed lock's providers in each root module (the lock stays untouched):
+
+```console
+$ terraform -chdir=<root-module-dir> init \
+    -backend=false \
+    -input=false \
+    -lockfile=readonly
+```
+
+If that `init` fails, the original tree cannot reach `validate`, and its
+failure is unestablished.
 
 A failed gate is pre-existing only when the same failure was observed
 before this run's first edit, with the original lock and provider selections,

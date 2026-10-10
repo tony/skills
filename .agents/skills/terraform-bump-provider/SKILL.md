@@ -70,8 +70,8 @@ Follow `references/layout-discovery.md` and record its inventory.
   tag, publication date, and source repository; never use the
   latest-only endpoint.
 - Build the changelog link from that source at the tag, in the form the
-  reference gives, and fetch it before linking. If the registry reports
-  no source, say no changelog link was confirmed.
+  reference gives, and fetch it before linking. Include only metadata
+  and links supported by fetched sources.
 - When the target crosses a major version, add the provider's upgrade
   guide.
 
@@ -145,17 +145,18 @@ modules` or `Audit only: N sites behind`), then these sections in
 order:
 
 1. `## Target`: the provider's resolved source address, the target
-   version, its publication date, the changelog link taken from the
-   registry's source (or that none was confirmed), and the upgrade
-   guide on a major jump. Say "confirmed by you", with no reason, for a
-   version the user confirmed.
+   version, and how it was confirmed. Add the publication date and
+   changelog link only when fetched sources confirm them, and the upgrade
+   guide on a major jump. A user-confirmed version is reported as
+   `<version>, confirmed by you`.
 2. `## Layout`: root modules and child modules discovered, and any
    classification the user settled (the umbrella says when to name the tool).
 3. `## Sites`: a list of every declaration found, whether it was edited or
    deliberately left alone, and the operator each kept.
 4. `## Locks`: per root module: the version selected before and after,
    the `h1:` checksum counts before and after, and the platform names
-   successfully checked with `providers lock`, or coverage unverified.
+   whose package checks passed and where the required names came from,
+   or coverage unverified.
 5. `## Verification`: the gates run and their real results, with any
    pre-existing failure named as pre-existing.
 6. `## Drift`: pin sites that disagreed with each other before the
@@ -175,7 +176,7 @@ Reply in this shape, as plain text outside any code fence, with plain bullets, n
 
 ## Target
 
-- registry.terraform.io/hashicorp/aws <version>, published <date>; changelog taken from the registry's source at v<version>.
+- registry.terraform.io/hashicorp/aws 6.57.0, confirmed by you.
 
 ## Layout
 
@@ -188,7 +189,7 @@ Reply in this shape, as plain text outside any code fence, with plain bullets, n
 
 ## Locks
 
-- envs/prod: 6.56.1 to 6.57.0, 3 h1 records before and after; checked linux_amd64, linux_arm64 and darwin_arm64.
+- envs/prod: 6.56.1 to 6.57.0, 3 h1 records before and after; package checks passed for CI-required linux_amd64, linux_arm64 and darwin_arm64.
 - envs/staging: 6.56.1 to 6.57.0, 1 h1 record before and after; platform coverage unverified.
 
 ## Verification

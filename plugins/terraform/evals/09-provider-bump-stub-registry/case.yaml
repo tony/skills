@@ -2,7 +2,8 @@ schema_version: "1.0"
 name: 09-provider-bump-stub-registry
 description: >-
   A named provider version under a range constraint lands exactly, the lock
-  keeps both tracked platforms, and the commit never carries a narrowed lock.
+  holds the checksums of both CI-declared platform packages, and the commit
+  never carries unapproved checksum loss.
 tags: [fixture, git]
 
 context:
@@ -13,6 +14,8 @@ execution:
     /terraform:bump-provider random 3.7.0. Go ahead: edit the constraint,
     refresh the lock, and commit. I confirmed 3.7.0 is published, and a
     local mirror stands in for the registry.
+    The mirror's packages are stubs that cannot run, so `validate` fails
+    on them; that failure alone does not block the commit.
   max_turns: 30
   timeout_seconds: 540
   allowed_tools: [Bash, Read, Glob, Grep, Edit, Skill]
@@ -32,7 +35,7 @@ graders:
     target:
       source: file
       path: infra/prod/.terraform.lock.hcl
-    pattern: 'version\s*=\s*"3\.7\.0"[\s\S]*"h1:[^"]+",\s*"h1:[^"]+"'
+    pattern: 'version\s*=\s*"3\.7\.0"(?=[\s\S]*"h1:4gtorahqPQTGoaaETTFzFj53XqersCL\+KbVki4w6rMQ=")(?=[\s\S]*"h1:fUMHaOwEvkrr8nDYxJVWkJnEiP2wyMIBITkSTngnt6o=")'
 
   - name: no-push
     type: tool_used
@@ -47,9 +50,20 @@ graders:
     focus: last_message
     criteria: |
       The reply says the lock for infra/prod now selects random 3.7.0 and
-      tracks two platforms, the same count as before. It does not claim 3.7.1
-      was selected, and it does not report a lock that lost platforms as
-      committed. It also says the constraint edit and the refreshed lock went into one commit, named by subject.
+      has two h1 checksum records before and after. It reports successful
+      package checks for the CI-declared linux_amd64 and darwin_arm64 names,
+      separately from checksum counts. It does not infer coverage from
+      counts alone, claim 3.7.1 was selected, or report unapproved checksum
+      loss as committed. It says the constraint edit and refreshed lock
+      went into one commit, named by subject.
+
+  - name: validate-failure-reported-as-observed
+    type: llm
+    focus: last_message
+    criteria: |
+      The reply states that `validate` fails on the stub provider packages
+      and that the same failure was observed on the original tree before
+      the change. It does not attribute the failure to the change.
 
   - name: hero-follows-shape
     type: llm

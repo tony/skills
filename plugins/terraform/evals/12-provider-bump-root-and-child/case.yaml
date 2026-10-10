@@ -13,6 +13,8 @@ execution:
     /terraform:bump-provider random 3.7.0. Go ahead: edit the constraints,
     refresh the lock, and commit. I confirmed 3.7.0 is published, and a
     local mirror stands in for the registry.
+    The mirror's packages are stubs that cannot run, so `validate` fails
+    on them; that failure alone does not block the commit.
   max_turns: 30
   timeout_seconds: 540
   allowed_tools: [Bash, Read, Glob, Grep, Edit, Skill]
@@ -48,7 +50,7 @@ graders:
     target:
       source: file
       path: infra/prod/.terraform.lock.hcl
-    pattern: 'version\s*=\s*"3\.7\.0"[\s\S]*"h1:[^"]+",\s*"h1:[^"]+"'
+    pattern: 'version\s*=\s*"3\.7\.0"(?=[\s\S]*"h1:4gtorahqPQTGoaaETTFzFj53XqersCL\+KbVki4w6rMQ=")(?=[\s\S]*"h1:fUMHaOwEvkrr8nDYxJVWkJnEiP2wyMIBITkSTngnt6o=")'
 
   - name: no-push
     type: tool_used
@@ -63,10 +65,11 @@ graders:
     focus: last_message
     criteria: |
       The reply says the constraints in infra/prod and modules/net both moved
-      to 3.7.0 and that the infra/prod lock selects random 3.7.0 with two
-      platforms, the same count as before. It does not claim 3.7.1 was
-      selected, and it does not report a lock that lost platforms as
-      committed.
+      to 3.7.0 and that the infra/prod lock selects random 3.7.0 with two h1
+      checksum records before and after. It reports successful package checks
+      for the CI-declared linux_amd64 and darwin_arm64 names, separately from
+      checksum counts. It does not infer coverage from counts alone, claim
+      3.7.1 was selected, or report unapproved checksum loss as committed.
 
   - name: hero-follows-shape
     type: llm

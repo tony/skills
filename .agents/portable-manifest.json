@@ -1234,7 +1234,7 @@
         "references/pin-sites.md": "plugins/terraform/references/pin-sites.md",
         "references/prose-rules.md": "plugins/terraform/references/prose-rules.md"
       },
-      "bytes": 57708
+      "bytes": 58679
     },
     {
       "name": "terraform-bump-terraform",
@@ -1248,7 +1248,7 @@
         "references/pin-sites.md": "plugins/terraform/references/pin-sites.md",
         "references/prose-rules.md": "plugins/terraform/references/prose-rules.md"
       },
-      "bytes": 57550
+      "bytes": 58714
     },
     {
       "name": "terraform-bumping-terraform",
@@ -1256,10 +1256,11 @@
         "plugins/terraform/skills/bumping-terraform/SKILL.md"
       ],
       "bundled": {
+        "references/lock-and-init.md": "plugins/terraform/references/lock-and-init.md",
         "references/lockctl.py": "plugins/terraform/scripts/lockctl.py",
         "references/prose-rules.md": "plugins/terraform/references/prose-rules.md"
       },
-      "bytes": 25538
+      "bytes": 41147
     },
     {
       "name": "terraform-refresh-lock",
@@ -1272,7 +1273,7 @@
         "references/lockctl.py": "plugins/terraform/scripts/lockctl.py",
         "references/prose-rules.md": "plugins/terraform/references/prose-rules.md"
       },
-      "bytes": 43259
+      "bytes": 45396
     },
     {
       "name": "ticket-draft",
@@ -1510,6 +1511,7 @@
     "plugins/pr/references/branch-context.md": 4,
     "plugins/scholar/references/evidence-tiers.md": 4,
     "plugins/scholar/references/source-pins.md": 4,
+    "plugins/terraform/references/lock-and-init.md": 4,
     "plugins/terraform/references/prose-rules.md": 4,
     "plugins/terraform/scripts/lockctl.py": 4,
     "plugins/changelog/references/branch-scope.md": 3,
@@ -1541,7 +1543,6 @@
     "plugins/spike/references/verification-gates.md": 3,
     "plugins/spike/scripts/spike.sh": 3,
     "plugins/terraform/references/layout-discovery.md": 3,
-    "plugins/terraform/references/lock-and-init.md": 3,
     "plugins/weave/references/mutating-run.md": 3,
     "plugins/weave/references/refine-cycle.md": 3,
     "plugins/action/references/implement-and-commit.md": 2,

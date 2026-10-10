@@ -2,8 +2,8 @@ schema_version: "1.0"
 name: 10-refresh-lock-restores-dropped-platforms
 description: >-
   A refresh moves random to the newest allowed release, the fresh resolution
-  records one platform, and the two platforms CI locks are restored before
-  anything is committed.
+  records one h1 checksum, and checksums for both CI-declared platform
+  packages are recorded before anything is committed.
 tags: [fixture, git]
 
 context:
@@ -13,6 +13,8 @@ execution:
   prompt: >-
     /terraform:refresh-lock Go ahead and commit the result. A local mirror
     stands in for the registry.
+    The mirror's packages are stubs that cannot run, so `validate` fails
+    on them; that failure alone does not block the commit.
   max_turns: 30
   timeout_seconds: 540
   allowed_tools: [Bash, Read, Glob, Grep, Edit, Skill]
@@ -25,7 +27,7 @@ graders:
     target:
       source: file
       path: infra/prod/.terraform.lock.hcl
-    pattern: 'version\s*=\s*"3\.7\.1"[\s\S]*"h1:[^"]+",\s*"h1:[^"]+"'
+    pattern: 'version\s*=\s*"3\.7\.1"(?=[\s\S]*"h1:LlTk0i2Lzi8r0ChHRoqr/ZTA\+lJ8H/0wYCFDGKyW2AU=")(?=[\s\S]*"h1:MMpYUspAfigAUE31\+ALpXvuKcATxoWCvp3RFlsnXrTs=")'
 
   - name: no-push
     type: tool_used
@@ -40,6 +42,16 @@ graders:
     focus: last_message
     criteria: |
       The reply says infra/prod moved random from 3.6.0 to 3.7.1 and that the
-      lock tracks two platforms before and after, so any one-platform
-      intermediate result was restored. It does not report a lock that lost
-      platforms as committed. It says the refreshed lock was committed, named by subject.
+      lock has two h1 records before and after. It reports successful package
+      checks for the CI-declared linux_amd64 and darwin_arm64 names,
+      separately from checksum counts. It does not infer coverage from
+      counts alone or report unapproved checksum loss as committed. It says
+      the refreshed lock was committed, named by subject.
+
+  - name: validate-failure-reported-as-observed
+    type: llm
+    focus: last_message
+    criteria: |
+      The reply states that `validate` fails on the stub provider packages
+      and that the same failure was observed on the original tree before
+      the change. It does not attribute the failure to the change.

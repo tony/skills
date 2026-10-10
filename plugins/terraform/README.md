@@ -42,9 +42,11 @@ $ codex plugin add terraform@skills
 Use it for on-demand bumps across several root modules and their child
 modules together. A provider bump moves the declaring constraints and
 affected locks in one commit, leaving other provider blocks unchanged.
-Lock refreshes check for checksum loss and validate the platform names
-declared by the repository or confirmed by the user. Hash counts alone
-do not establish platform coverage.
+Lock refreshes check for checksum loss and check packages for platform
+names declared by the repository or confirmed by the user. Hash counts
+alone do not establish platform coverage. The commands are exercised
+against `terraform`; OpenTofu runs rely on `tofu` accepting the same
+flags.
 
 ## Skills
 

@@ -1,8 +1,8 @@
 schema_version: "1.0"
 name: 06-audit-lock-platform-counts
 description: >-
-  With a lock tracking three platforms for aws and one for random, an audit
-  reports the platform count per provider and changes nothing.
+  With three h1 checksum records for aws and one for random, an audit
+  reports each provider's count without inferring platform coverage.
 tags: [fixture, git]
 
 context:
@@ -21,9 +21,12 @@ graders:
     type: llm
     focus: last_message
     criteria: |
-      The reply reports the platform count per provider for the prod root
-      module: aws tracks three platforms and random tracks one. A single
-      count for the whole lock file does not satisfy this.
+      The reply reports h1 checksum counts per provider for the prod root
+      module: three for aws and one for random. A single file-wide count
+      does not satisfy this. It says platform coverage is unverified; it
+      does not equate the counts with three and one platforms or invent
+      platform names. It does not assert that permissive constraints alone
+      prove a refresh would select newer provider versions.
 
   - name: runs-no-init-or-commit
     type: tool_used

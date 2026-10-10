@@ -258,9 +258,9 @@ target version's metadata above and link
 `CHANGELOG.md`, `<source>/blob/<tag>/CHANGELOG.md` is the alternative. Fetch
 the page before linking it.
 
-If the page cannot be fetched, report no changelog link instead of
-guessing one, in the report and in the commit body alike. Cite release notes
-at the tag the registry reported, not at a branch.
+Include release metadata and links in the report or commit body only
+when fetched sources support them. Cite release notes at the tag the
+registry reported, not at a branch.
 
 When the user says they confirmed a version themselves, write it, record
 "confirmed by you" as how it was confirmed, and treat the changelog link

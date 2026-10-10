@@ -36,11 +36,23 @@ one of them; offer the others as next steps.
   commands. Commit only this run's paths with `git commit -- <paths>`,
   after `git add <path>` for any new file such as a lock file (`git
   commit -- <untracked path>` fails). Stop when a path to commit is
-  already in the recorded list.
+  already in the recorded list. Also before the first edit, record each
+  gate's result on the original tree, as [Verification
+  gates](../../references/lock-and-init.md#verification-gates) describes.
 - Script paths: `../../scripts/lockctl.py` resolves from a skill's
   directory (a reference writes `../scripts/`). Print the absolute path
   once and write it literally in each command, since shell variables do
   not persist between Bash calls.
+- Run `init`, `providers lock`, `lockctl.py diff`, each repository gate,
+  and `git commit` in separate Bash calls, one command per call. Read
+  that command's returned exit status before continuing. Read long
+  output from the host's saved result separately; a display filter or
+  trailing command can hide the operation's failure.
+- After `git commit`, read it back in separate calls: `git show
+  --name-status --format=%s HEAD` lists exactly this run's paths, and
+  `git status --porcelain` adds nothing to the recorded list beyond
+  `init`'s `.terraform/` cache. Report the commit only when both hold;
+  otherwise report what differs.
 - Commit bodies say what moved and why, and cite release notes at the
   tag the registry reported only when the run fetched that page; with
   none, the body names no link. Take the subject format from the
@@ -82,13 +94,13 @@ one of them; offer the others as next steps.
   write "X, not Y" contrasts or filler such as "nothing needed
   classifying by you". A bullet states a finding, not scope the plan
   already gave. The hero is the line the skill's shape gives with
-  nothing appended; a failing gate goes in `## Verification`, stated as
-  observed. Every reply, not only a stopped one, omits what the
-  repository lacks ("no other file pins the CLI", "no child modules
+  nothing appended. A completed report states gate results in
+  `## Verification`; a halted run uses the stopped form below. Every
+  reply omits what the repository lacks ("no other file pins the CLI", "no child modules
   found", "tflint isn't installed", "the repository defines no other
   gates") and never states what the run will do on its own later ("I'll
-  run the audit again"). With `--no-commit`, do not say nothing was
-  committed.
+  run the audit again"). A completed `--no-commit` report does not say
+  nothing was committed.
 - A run that cannot proceed (nothing declared, no version named and the
   release list unreachable, a dirty tree it cannot work around, a lock
   that failed after the edits, a gate the edits plausibly broke) ends
@@ -100,35 +112,29 @@ one of them; offer the others as next steps.
   <paths>`) first.
 
   The reply has no sections, no recap, and no numbered next-step list.
-  The step is one or two sentences and ends with its request. Bullets are
-  optional, at most three, with no lead-in sentence, and follow these
-  rules:
+  The step is one or two sentences and ends with its request; it states
+  nothing the run will do afterwards ("I'll show the plan", "then I'll
+  rerun it", "so I can ..."). A stop caused by missing configuration says
+  so once, in the result sentence, and does not list the files or commits
+  searched for.
 
-  - A bullet is a finding about the repository as it stands that the
-    step depends on, such as the pins that disagree when the step asks
-    which to move. With no such finding, write no bullets.
-  - The declared pins are the usual finding. Lock files, backends, which
-    root calls which module, and the installed `terraform` version stay
-    out, as does whether a pin or an installed version would satisfy the
-    target. The one exception is the roots outside `--root-module` that
-    call a child module the run would edit: the result sentence names
-    them.
-  - Leave out anything about what the run would do after the edit
-    (`init` could not run, no lock to refresh, both keep `~>`), the
-    branch, history, untracked files, the driving tool, or a question.
-  - A stop after the edits may state the new constraint and the lock's
-    selected version in one bullet, as the repository stands now ("the
-    lock selects 3.7.0 with 1 h1 checksum, 2 before"), never as what the run
-    did.
-  - A bullet never asks the user for anything.
-  - Never state what the run will do on its own later ("I'll show the
-    plan", "and I'll rerun it", "after that I'll ...", a "then" clause, or a
-    "so I can ..." clause after the user's step);
-    telling the user what to do next is the step itself.
-  - List nothing the repository lacks ("neither directory has a backend
-    block or a lock file", "no CI or task file runs providers lock").
-  - Name no sandbox or network block; say the registry or mirror was
-    unreachable.
+  Bullets are optional, at most three, and each states a repository fact
+  the step depends on, usually the declared pins that disagree. Write no
+  bullets when there is no such fact. Never write a bullet about:
+
+  - lock files, backends, call graphs, or the installed CLI, or whether a
+    pin or installed version satisfies the target;
+  - the branch, history, untracked files, or the driving tool;
+  - what the run would do after the edit, or anything the repository lacks
+    ("no lock file", "no CI file runs providers lock");
+  - a question or request.
+
+  Exceptions: the result sentence names roots outside `--root-module` that
+  call a child module the run would edit, and a stop after the edits may
+  carry one bullet with the new constraint and the lock's selected version
+  as they stand ("the lock selects 3.7.0 with 1 h1 checksum, 2 before").
+  Name no sandbox or network block; say the registry or mirror was
+  unreachable.
 
   Reply in this shape, as plain text outside any code fence, with plain bullets, no bold (never `- **Label:** ...`), and no local paths:
 
@@ -138,6 +144,16 @@ one of them; offer the others as next steps.
   Tell me you confirmed 6.57.0 yourself, or allow registry.terraform.io.
 
   - envs/prod and modules/network both declare hashicorp/aws, at ~> 6.56.0 and ~> 6.55.0, so the pins disagree.
+  ```
+
+  After edits, with the lock restored and the constraint edit remaining:
+
+  ```text
+  ⚠ Stopped: infra/prod cannot resolve random 3.7.0 from its mirror, so nothing was committed.
+
+  Revert the constraint edit with `git restore -- infra/prod/versions.tf`, or supply the required provider packages.
+
+  - infra/prod declares ~> 3.7.0; its committed lock selects 3.6.0 with 2 h1 records.
   ```
 
 - `--audit-only` writes nothing and is a result, not a stop. Its hero is

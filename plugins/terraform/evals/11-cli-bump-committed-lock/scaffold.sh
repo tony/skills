@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# A root module whose lock tracks two platforms for random, with a local
+# A root module whose lock has two h1 records for random, with a local
 # filesystem mirror standing in for the registry (3.6.0, 3.7.0, 3.7.1).
 set -euo pipefail
 

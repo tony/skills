@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # A root module (random ~> 3.6.1) and a child module (random ~> 3.6.0),
-# the lock tracking two platforms, with a local
+# the lock holding two h1 records, with a local
 # filesystem mirror standing in for the registry (3.6.0, 3.6.1, 3.7.0, 3.7.1).
 set -euo pipefail
 
@@ -64,8 +64,8 @@ provider "registry.terraform.io/hashicorp/random" {
   version     = "3.6.1"
   constraints = "~> 3.6.1"
   hashes = [
-    "h1:aaa=",
-    "h1:bbb=",
+    "h1:NwAJgK+hAyb44sXEmoaG8uO7c49UyBCLUstgvJb2JFA=",
+    "h1:lkUCsaCF4ZxEkiI1jrfBFt6ypQk/m6e3mdJjlmRVKoI=",
   ]
 }
 HCL

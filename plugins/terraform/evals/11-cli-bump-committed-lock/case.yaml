@@ -2,8 +2,7 @@ schema_version: "1.0"
 name: 11-cli-bump-committed-lock
 description: >-
   A CLI bump moves required_version and the version-manager pin together,
-  keeps the operator, and leaves the committed lock's providers and platforms
-  untouched.
+  keeps the operator, and leaves the committed provider blocks untouched.
 tags: [fixture, git]
 
 context:
@@ -56,9 +55,11 @@ graders:
     criteria: |
       The reply says required_version and the .tool-versions pin moved to
       1.14.0 and records 1.14.0 as confirmed by the user. It says the random
-      lock stayed at 3.6.0 with two platforms, or that the lock was left alone
+      lock stayed at 3.6.0 with two h1 checksum records, or that the lock was left alone
       because init could not verify it under the installed CLI. It does not
-      claim a provider moved.
+      claim a provider moved. It reports platform coverage unverified unless
+      the required platform packages were checked; the checksum count or
+      CI platform list alone is not a successful package check.
 
   - name: hero-follows-shape
     type: regex

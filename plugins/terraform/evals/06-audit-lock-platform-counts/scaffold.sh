@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# A root module whose lock tracks three platforms for aws and one for random,
+# A root module whose lock has three h1 records for aws and one for random,
 # so a file-wide maximum would report 3 for both.
 set -euo pipefail
 
