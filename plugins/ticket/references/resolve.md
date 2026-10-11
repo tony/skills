@@ -152,7 +152,16 @@ $ umask 077 && mktemp -d "${TMPDIR:-/tmp}/ticket.XXXXXX"
 ```
 
 Write the body to `body.md` in that directory with the host's file-writing
-tool, and pass the file to the provider's write command. Where no file-writing
+tool, and pass the file to the provider's write command. For a provider whose
+write format is not markdown, write the markdown to `draft.md` and let the
+provider file's converter write `body.md`; the converted text is what the
+preview shows, and a converter exit 1 is covered by "When the body cannot be
+written":
+
+```console
+$ python3 <scripts>/<converter> <dir>/draft.md > <dir>/body.md
+```
+ Where no file-writing
 tool exists, use a quoted heredoc whose delimiter is `BODY_END`, after
 confirming no line of the text equals it. When the work ends, whether or not
 it was filed, remove the file and then the directory with `rm -f` and

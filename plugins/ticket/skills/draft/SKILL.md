@@ -92,14 +92,9 @@ Write it per `../../references/prose-rules.md`.
 
 ## Phase 7: Save, scan, preview
 
-Save the title as `title.txt` and the body as a scratch file, as
-`resolve.md` describes. For a provider
-whose write format is not markdown, save the markdown as `draft.md` and
-let the provider file's converter write `body.md`:
-
-```console
-$ python3 <scripts>/<converter> <dir>/draft.md > <dir>/body.md
-```
+Save the title as `title.txt` and the body as a scratch file, converted
+where the provider needs it, as `resolve.md` "Scratch files for bodies"
+describes.
 
 A converter that exits 1 means the body cannot be written
 (`resolve.md`). The converted text is what `## Body`

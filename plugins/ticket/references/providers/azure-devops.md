@@ -139,8 +139,6 @@ Read back:
 $ az boards work-item show --help | grep -e '--id'
 ```
 
-When a check fails, treat that capability as absent and print the body to paste.
-
 A field is either Markdown or HTML, and a Markdown comment cannot be converted back to HTML.
 Detect the field's editor first. A Markdown field takes the markdown body. For an HTML field,
 print the body for the user to paste: Microsoft documents no tag allowlist for it, so no

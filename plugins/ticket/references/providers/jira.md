@@ -180,8 +180,6 @@ Read back:
 $ acli jira workitem view --help | grep -e '--json'
 ```
 
-When a check fails, treat that capability as absent and print the body to paste.
-
 ## Duplicate search
 
 Search every status; a JQL query with no `status` clause includes closed

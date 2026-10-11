@@ -141,14 +141,8 @@ naming its subject.
 Write it per `../../references/prose-rules.md`.
 
 Save the new title as `title.txt` and the new body as `body.md` in the
-same directory. For a provider
-whose write format is not markdown, save the markdown as `draft.md` and
-let the provider file's converter write `body.md`; a converter that exits
-1 means the body cannot be written (`resolve.md`). The converted text is what the preview shows.
-
-```console
-$ python3 <scripts>/<converter> <dir>/draft.md > <dir>/body.md
-```
+same directory, converted where the provider needs it, as `resolve.md`
+"Scratch files for bodies" describes.
 
 Scan the title too, fix each remaining row, and keep one only as evidence
 the scan cannot see (the scan already drops pasted count rows, per draft

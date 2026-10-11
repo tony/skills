@@ -163,8 +163,6 @@ Epics and other work items:
 $ glab --help | grep -e work-items
 ```
 
-When a check fails, treat that capability as absent and print the body to paste.
-
 ### Read recipe
 
 Read with comments, saving the output for the checks (body field path `description`):
