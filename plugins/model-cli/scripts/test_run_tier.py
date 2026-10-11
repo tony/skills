@@ -116,7 +116,10 @@ def test_auth_and_unknown_model(tmp_path: Path) -> None:
 @pytest.mark.integration(reason="executes the tier CLI and shell stubs")
 def test_empty_and_rate_limit(tmp_path: Path) -> None:
     assert tier(tmp_path, stub(tmp_path, "exit 0"))["class"] == "empty"
-    assert tier(tmp_path, stub(tmp_path, "echo 'rate limit' >&2; exit 1"))["class"] == "rate-limit"
+    assert (
+        tier(tmp_path, stub(tmp_path, "echo 'rate limit exceeded' >&2; exit 1"))["class"]
+        == "rate-limit"
+    )
 
 
 @pytest.mark.integration(reason="terminates an owned process group through the tier CLI")
@@ -366,3 +369,110 @@ print('--sandbox', flush=True)
         timeout=0.5,
         check=True,
     )
+
+
+@pytest.mark.parametrize(
+    "stderr",
+    [
+        'raise AuthenticationError("api key missing")',
+        '    raise RateLimit("429 Too Many Requests")',
+        'print("quota exceeded")',
+        '  File "client.py", line 429, in call',
+        "assert status != 401  # unauthorized",
+        "the docs say: log in first, then retry",
+        "rate limit handler here",
+        "authentication helper loaded",
+        "usage limit docs",
+        "api key rotation notes",
+    ],
+)
+def test_echoed_code_is_a_crash_not_a_vendor_failure(stderr: str) -> None:
+    got = runner.classify(exit_code=1, timed_out=False, stdout="", stderr=stderr)
+    assert got == "crash"
+
+
+@pytest.mark.parametrize(
+    ("stderr", "want"),
+    [
+        ("warning: retrying\nError: 429 Too Many Requests", "rate-limit"),
+        ("ERROR: You've hit your usage limit.", "credit"),
+        ("Please log in to continue", "auth"),
+        (
+            "\u26a0 Workspace Trust Required\n\nPass --trust, --yolo, or -f to trust it",
+            "untrusted",
+        ),
+        ("HTTP 401 Unauthorized", "auth"),
+        ("Authentication required. Please run 'agent login'", "auth"),
+        ("Rate limit exceeded, retry in 20s", "rate-limit"),
+        ("stream error: HTTP 429 Too Many Requests", "rate-limit"),
+        ("Error: Cannot use this model: x", "unknown-model"),
+    ],
+)
+def test_error_lines_still_classify(stderr: str, want: str) -> None:
+    assert runner.classify(exit_code=1, timed_out=False, stdout="", stderr=stderr) == want
+
+
+@pytest.mark.integration(reason="executes the tier CLI and a shell stub")
+def test_stdin_mode_keeps_the_prompt_out_of_argv(tmp_path: Path) -> None:
+    prompt_file = tmp_path / "prompt.txt"
+    prompt_file.write_text("secret prompt\n" + "x" * 150_000)
+    binary = stub(tmp_path, 'echo "args:$#"; wc -c')
+    out = subprocess.run(
+        [
+            sys.executable,
+            str(SCRIPT),
+            "--prompt-file",
+            str(prompt_file),
+            "--stdin",
+            "--",
+            str(binary),
+            "-",
+        ],
+        capture_output=True,
+        text=True,
+        check=True,
+        cwd=tmp_path,
+    )
+    result = json.loads(out.stdout)
+    assert result["class"] == "ok"
+    assert str(result["stdout"]).split() == ["args:1", "150014"]
+
+
+def test_permission_flags_are_derived_from_the_command() -> None:
+    command = ["agent", "-p", "--mode", "plan", "--trust", "--model", "m", "--"]
+    assert runner.required_flags(command, []) == ["--mode", "--trust"]
+    assert runner.required_flags(["codex", "exec", "--sandbox", "read-only", "-"], ["--x"]) == [
+        "--sandbox",
+        "--x",
+    ]
+
+
+@pytest.mark.integration(reason="executes the tier CLI and a shell help stub")
+def test_derived_flag_missing_from_help_runs_nothing(tmp_path: Path) -> None:
+    binary = stub(tmp_path, 'case " $* " in *" --help "*) echo "  -p"; exit 0;; esac; echo ran')
+    prompt_file = tmp_path / "prompt.txt"
+    prompt_file.write_text("hi")
+    out = subprocess.run(
+        [
+            sys.executable,
+            str(SCRIPT),
+            "--prompt-file",
+            str(prompt_file),
+            "--tier-number",
+            "2",
+            "--",
+            str(binary),
+            "-p",
+            "--sandbox",
+            "read-only",
+            "--",
+        ],
+        capture_output=True,
+        text=True,
+        check=True,
+        cwd=tmp_path,
+    )
+    result = json.loads(out.stdout)
+    assert result["class"] == "unsupported-flag"
+    ledger = json.loads((tmp_path / "prompt.txt.ledger").read_text())
+    assert ledger == {"tier": 2, "class": "unsupported-flag", "elapsed": 0.0}

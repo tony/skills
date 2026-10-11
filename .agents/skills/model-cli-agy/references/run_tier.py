@@ -1,17 +1,20 @@
 #!/usr/bin/env python3
 """Run one model-CLI tier and print a JSON result with its failure class.
 
-Usage: run_tier.py --prompt-file FILE [--timeout SECONDS|none]
-       [--require-flag=FLAG ...] -- BINARY ARGS...
+Usage: run_tier.py --prompt-file FILE [--timeout SECONDS|none] [--stdin]
+       [--tier-number N] [--require-flag=FLAG ...] -- BINARY ARGS...
 
-Each --require-flag=FLAG (the = is required) is checked against
+The permission flags present in the command (PERMISSION_FLAGS), plus each
+--require-flag=FLAG (the = is required), are checked against
 `BINARY [SUBCOMMAND] --help` before the run; a missing flag prints class
-"unsupported-flag" and skips the task.
+"unsupported-flag" and skips the task. With --tier-number N the tier's class
+and elapsed time are appended to FILE.ledger for tier_plan.py.
 
 The prompt file's text is appended to the command as its last argument; a
 prompt over MAX_ARG_BYTES is replaced by an instruction to read the file.
-Stdin is closed. Output keys: exit_code (null on timeout), class, elapsed, stdout,
-stderr.
+With --stdin the prompt is written to the command's stdin instead and never
+appears in its argv; otherwise stdin is closed. Output keys: exit_code (null on
+timeout), class, elapsed, stdout, stderr.
 """
 
 from __future__ import annotations
@@ -32,6 +35,7 @@ from pathlib import Path
 from typing import TypedDict, cast
 
 MAX_ARG_BYTES = 100_000
+LEDGER_SUFFIX = ".ledger"
 
 CREDIT_PATTERNS = (
     "RESOURCE_EXHAUSTED",
@@ -41,18 +45,70 @@ CREDIT_PATTERNS = (
     "exceeded your current quota",
     r"billing (?:limit|error|issue)",
     "capacity exhausted",
-    "usage limit",
+    r"hit your usage limit|usage limit (?:reached|exceeded)",
+    r"(?<![\w:.])429(?![\w:.,]).*daily limit",
 )
 CREDIT_RE = re.compile("|".join(CREDIT_PATTERNS), re.IGNORECASE)
-RATE_RE = re.compile(r"rate.?limit|too many requests|\b429\b", re.IGNORECASE)
-AUTH_RE = re.compile(
-    r"not logged in|log in|login required|authentication|unauthori[sz]ed|\b401\b|api key",
-    re.IGNORECASE,
+RATE_PATTERNS = (
+    r"rate.?limit(?:ed| exceeded| reached)",
+    "rate_limit_exceeded",
+    r"hit your rate.?limit",
+    "too many requests",
+    r"(?:http|status|error)[ :]*429\b",
 )
+RATE_RE = re.compile("|".join(RATE_PATTERNS), re.IGNORECASE)
+AUTH_PATTERNS = (
+    "not logged in",
+    "login required",
+    "please log ?in",
+    "not authenticated",
+    "authentication (?:required|failed)",
+    "unauthori[sz]ed",
+    r"(?:http|status|error)[ :]*401\b",
+    "(?:invalid|missing) api key",
+    "api key (?:required|missing|invalid)",
+)
+AUTH_RE = re.compile("|".join(AUTH_PATTERNS), re.IGNORECASE)
+TRUST_RE = re.compile(r"workspace trust required", re.IGNORECASE)
 MODEL_RE = re.compile(
     r"unknown model|invalid model|model not found|cannot use this model", re.IGNORECASE
 )
-FAILURES = (("rate-limit", RATE_RE), ("unknown-model", MODEL_RE), ("auth", AUTH_RE))
+FAILURES = (
+    ("rate-limit", RATE_RE),
+    ("unknown-model", MODEL_RE),
+    ("untrusted", TRUST_RE),
+    ("auth", AUTH_RE),
+)
+PERMISSION_FLAGS = frozenset(
+    {
+        "--dangerously-bypass-approvals-and-sandbox",
+        "--dangerously-skip-permissions",
+        "--sandbox",
+        "--mode",
+        "--trust",
+        "--force",
+        "-f",
+    }
+)
+CODE_CHARS = frozenset('"`(){}=;<>#')
+MAX_LEAD = 40
+
+
+def message_hit(pattern: re.Pattern[str], stderr: str) -> bool:
+    """Match a failure phrase only where an error message would put it.
+
+    A line counts when it is not indented and nothing but a short prefix
+    without code punctuation precedes the phrase, so a CLI echoing source
+    such as `raise AuthError("api key missing")` is not a failure.
+    """
+    for line in stderr.splitlines():
+        if line[:1] in {" ", "\t"}:
+            continue
+        for hit in pattern.finditer(line):
+            lead = line[: hit.start()]
+            if len(lead) <= MAX_LEAD and not CODE_CHARS & set(lead):
+                return True
+    return False
 
 
 class RepositoryState(TypedDict):
@@ -157,6 +213,8 @@ def classify(*, exit_code: int | None, timed_out: bool, stdout: str, stderr: str
     'credit'
     >>> classify(exit_code=1, timed_out=False, stdout="", stderr="429 Too Many Requests")
     'rate-limit'
+    >>> classify(exit_code=1, timed_out=False, stdout="", stderr="⚠ Workspace Trust Required")
+    'untrusted'
     >>> classify(exit_code=1, timed_out=False, stdout="", stderr="Not logged in")
     'auth'
     >>> classify(exit_code=1, timed_out=False, stdout="", stderr="Unknown model x")
@@ -171,15 +229,21 @@ def classify(*, exit_code: int | None, timed_out: bool, stdout: str, stderr: str
     'crash'
     >>> classify(exit_code=0, timed_out=False, stdout="billing", stderr="billing")
     'ok'
+    >>> classify(exit_code=1, timed_out=False, stdout="", stderr='raise AuthError("api key")')
+    'crash'
+    >>> classify(exit_code=1, timed_out=False, stdout="", stderr="    log in again # 401")
+    'crash'
+    >>> classify(exit_code=1, timed_out=False, stdout="", stderr="Error: 401 Unauthorized")
+    'auth'
     """
     if timed_out:
         return "timeout"
     if exit_code == 0:
         return "ok" if stdout.strip() else "empty"
-    if CREDIT_RE.search(stderr) or ("429" in stderr and "daily limit" in stderr.lower()):
+    if message_hit(CREDIT_RE, stderr):
         return "credit"
     for name, pattern in FAILURES:
-        if pattern.search(stderr):
+        if message_hit(pattern, stderr):
             return name
     return "crash"
 
@@ -209,13 +273,15 @@ def _stop_group(proc: subprocess.Popen[str]) -> None:
         os.killpg(proc.pid, signal.SIGKILL)
 
 
-def _execute(command: list[str], timeout: float | None) -> dict[str, object]:
+def _execute(
+    command: list[str], timeout: float | None, stdin_text: str | None = None
+) -> dict[str, object]:
     """Reap the command and terminate its group before checking repository state."""
     start = time.monotonic()
     try:
         proc = subprocess.Popen(  # noqa: S603
             command,
-            stdin=subprocess.DEVNULL,
+            stdin=subprocess.DEVNULL if stdin_text is None else subprocess.PIPE,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             text=True,
@@ -233,7 +299,7 @@ def _execute(command: list[str], timeout: float | None) -> dict[str, object]:
         }
     timed_out = False
     try:
-        stdout, stderr = proc.communicate(timeout=timeout)
+        stdout, stderr = proc.communicate(input=stdin_text, timeout=timeout)
     except subprocess.TimeoutExpired:
         timed_out = True
         _stop_group(proc)
@@ -250,10 +316,30 @@ def _execute(command: list[str], timeout: float | None) -> dict[str, object]:
     }
 
 
+def required_flags(command: list[str], explicit: list[str]) -> list[str]:
+    """Permission flags present in the command, then any explicit ones, without repeats."""
+    derived = [word for word in command if word in PERMISSION_FLAGS]
+    return list(dict.fromkeys([*derived, *explicit]))
+
+
+def record_result(prompt_file: Path, tier: int, result: dict[str, object]) -> None:
+    """Append the tier's class and elapsed time to the ledger beside the prompt file."""
+    entry = {"tier": tier, "class": result["class"], "elapsed": result["elapsed"]}
+    with prompt_file.with_name(prompt_file.name + LEDGER_SUFFIX).open("a") as handle:
+        _ = handle.write(json.dumps(entry) + "\n")
+
+
 def run(
-    command: list[str], prompt: str, timeout: float | None, prompt_file: Path | None = None
+    command: list[str],
+    prompt: str,
+    timeout: float | None,
+    prompt_file: Path | None = None,
+    *,
+    use_stdin: bool = False,
 ) -> dict[str, object]:
-    """Run with the prompt as one argument, or a file reference above the OS limit."""
+    """Run with the prompt on stdin, or as one argument (a file reference above the OS limit)."""
+    if use_stdin:
+        return _execute(command, timeout, prompt)
     if prompt_file is not None and len(prompt.encode()) > MAX_ARG_BYTES:
         prompt = f"Read the file {prompt_file.resolve()} and follow its instructions exactly."
     return _execute([*command, prompt], timeout)
@@ -265,6 +351,8 @@ def main(argv: list[str] | None = None) -> int:
     _ = parser.add_argument("--prompt-file", required=True, type=Path)
     _ = parser.add_argument("--timeout", default="540")
     _ = parser.add_argument("--require-flag", action="append", default=[])
+    _ = parser.add_argument("--stdin", action="store_true")
+    _ = parser.add_argument("--tier-number", type=int)
     _ = parser.add_argument("command", nargs=argparse.REMAINDER)
     args = parser.parse_args(argv)
     prompt_file = cast("Path", args.prompt_file)
@@ -290,23 +378,26 @@ def main(argv: list[str] | None = None) -> int:
     except (OSError, subprocess.CalledProcessError) as exc:
         before = None
         before_error = str(exc)
-    missing = missing_flags(command, cast("list[str]", args.require_flag))
+    tier_number = cast("int | None", args.tier_number)
+    missing = missing_flags(command, required_flags(command, cast("list[str]", args.require_flag)))
     if missing:
-        json.dump(
-            {
-                "exit_code": None,
-                "class": "unsupported-flag",
-                "elapsed": 0.0,
-                "stdout": "",
-                "stderr": f"{command[0]} --help does not list: {', '.join(missing)}",
-                "state_check": check_state(before, before_error),
-            },
-            sys.stdout,
-        )
+        failed: dict[str, object] = {
+            "exit_code": None,
+            "class": "unsupported-flag",
+            "elapsed": 0.0,
+            "stdout": "",
+            "stderr": f"{command[0]} --help does not list: {', '.join(missing)}",
+            "state_check": check_state(before, before_error),
+        }
+        if tier_number is not None:
+            record_result(prompt_file, tier_number, failed)
+        json.dump(failed, sys.stdout)
         _ = sys.stdout.write("\n")
         return 0
-    result = run(command, prompt, timeout, prompt_file)
+    result = run(command, prompt, timeout, prompt_file, use_stdin=cast("bool", args.stdin))
     result["state_check"] = check_state(before, before_error)
+    if tier_number is not None:
+        record_result(prompt_file, tier_number, result)
     json.dump(result, sys.stdout)
     _ = sys.stdout.write("\n")
     return 0
