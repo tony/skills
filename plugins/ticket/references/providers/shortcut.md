@@ -14,8 +14,8 @@ a Story belongs to a Workspace and carries a Team field.
 ## Native hierarchy
 
 Objective > Epic > Story > Sub-task. Shortcut has no native Project work
-level (its help lists Projects as deprecated) and documents no release
-object.
+level (it is sunsetting Projects) and no release object: the
+[REST API](https://developer.shortcut.com/api/rest/v3) lists none.
 
 - **Objective** is ["Shortcut's top-level planning object"](https://www.shortcut.com/help/objectives/objectives-overview/).
   A *Tactical Objective* is Epic-driven and on all plans; it becomes *Strategic*
@@ -48,9 +48,10 @@ object.
 ## Orthogonal objects
 
 - **Iteration**: timebox. native, optional. Stories are `scheduled_in` it.
-- **release_group**: absent. Shortcut documents no release or version object; use a Label or
+- **release_group**: absent. The REST API has no release or version object; use a Label or
   Custom Field by convention and say which.
-- **checkpoint**: absent. Shortcut documents no phase or dated-checkpoint object.
+- **checkpoint**: absent. The REST API has no phase or dated-checkpoint object; its
+  deprecated Milestones became Objectives.
 - **Epic Health / Objective Health**: no canonical role. native, optional. A
   dated status (On Track, At Risk, Off Track) with a comment, kept as health
   history. It reports on progress rather than marking a point in it.

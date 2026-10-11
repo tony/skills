@@ -20,8 +20,9 @@ List is not a decomposition level. A List physically contains Cards but usually
 encodes workflow state, phase, queue, or category. A Card sitting in "In Progress" has
 no deliverable relationship to that List.
 
-Trello documents no native Initiative, Epic, Project, Feature, Milestone, Sprint,
-release, or timebox object. Do not invent one. Above the Card there is only the Board, and a
+Trello has no native Initiative, Epic, Project, Feature, Milestone, Sprint,
+release, or timebox object; the [REST API](https://developer.atlassian.com/cloud/trello/rest/)
+lists none. Do not invent one. Above the Card there is only the Board, and a
 Board is a container, not a deliverable. Anything resembling a higher level is
 convention built from generic materials: a Card titled "Epic: Authentication", a Board
 card (native card type that "is a link to another board"), a Label, a Custom Field
@@ -157,12 +158,12 @@ closed items goes under Unverified.
 
 Never say, in output or in a mapping:
 
-- **"Project"**: Trello documents no Project object. Say Board or Workspace, and mark any project
+- **"Project"**: no Project object exists. Say Board or Workspace, and mark any project
   reading as convention.
 - **"Epic"**, **"Initiative"**, **"Feature"**, **"Story"**, **"Task"** as native types.
   They are Cards. A Card titled "Epic: X" is a Card.
-- **"Milestone"**, **"Sprint"**, **"Release"**, **"Iteration"**, **"Cycle"**: Trello
-  documents none of them. A due date is a date, not a milestone.
+- **"Milestone"**, **"Sprint"**, **"Release"**, **"Iteration"**, **"Cycle"**: none
+  exist. A due date is a date, not a milestone.
 - **"Column"**: the noun is List; reserve "column" for Table view. **"Swimlane"**: not
   a Trello object. **"Team"**: renamed to Workspace.
 - **"Sub-task"** for a checklist item: it is a checklist item, not independently
