@@ -95,9 +95,7 @@ Cross-container: an issue ID already carries its owning Team, so `ENG-123`
 resolves from any Team in the Workspace and no `team/ENG-123` form exists.
 Across Workspaces there is no shorthand; use the full URL
 `https://linear.app/<workspace>/issue/ENG-123/<slug>`, assume the reader may
-lack access, and carry a one-line human summary beside it. Moving an Issue to another Team
-reissues its identifier; old ones keep resolving
-([Edit issues](https://linear.app/docs/editing-issues)).
+lack access, and carry a one-line human summary beside it.
 
 Pointing from a git host into Linear is where an opt-out is documented: a magic
 word plus the issue ID in a pull request title or description (`Fixes ENG-123`)

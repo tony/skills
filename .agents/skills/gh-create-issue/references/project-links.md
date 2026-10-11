@@ -12,7 +12,7 @@ packaging. Research each; do not reconstruct URLs from memory (project and
 version below are illustrative):
 
 ```
-[vitest](https://vitest.dev): [v1.2.3 release notes](https://github.com/vitest-dev/vitest/releases/tag/v1.2.3)
+[vitest](https://vitest.dev): [v1.6.0 release notes](https://github.com/vitest-dev/vitest/releases/tag/v1.6.0)
 ```
 
 A slot that does not exist is left out, never pointed at the same page as
