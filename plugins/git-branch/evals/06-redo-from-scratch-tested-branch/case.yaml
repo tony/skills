@@ -31,14 +31,21 @@ graders:
   - name: backs-up-the-original-branch
     type: tool_used
     tool: Bash
-    input_match: 'git(?:\s+-[Cc]\s*\S+)*\s+branch (\\"|")?(backup/|\$)'
+    input_match: 'git(?:\s+-[Cc]\s*\S+)*\s+branch (\\"|")?(backup/|\$)|(?:branch_gate\.py(?:\\"|'')?|python3?\s+(?:\\"|'')?\$\{?[A-Za-z_]\w*\}?(?:\\"|'')?)\s+backup'
     min: 1
     arm: both
 
   - name: copies-spec-tests-from-the-backup
     type: tool_used
     tool: Bash
-    input_match: 'git(?:\s+-[Cc]\s*\S+)*\s+(checkout|restore) [^"]*backup/[^"]* -- [^"]*test_slugify'
+    input_match: 'git(?:\s+-[Cc]\s*\S+)*\s+(checkout|restore) [^"]*backup/[^"]* -- [^"]*test_slugify|(?:branch_gate\.py(?:\\"|'')?|python3?\s+(?:\\"|'')?\$\{?[A-Za-z_]\w*\}?(?:\\"|'')?)\s+carry\s[^"]*backup/[^"]*test_slugify'
+    min: 1
+    arm: both
+
+  - name: reads-series-back
+    type: tool_used
+    tool: Bash
+    input_match: '(?:branch_gate\.py(?:\\"|'')?|python3?\s+(?:\\"|'')?\$\{?[A-Za-z_]\w*\}?(?:\\"|'')?)\s+series'
     min: 1
     arm: both
 

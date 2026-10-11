@@ -30,7 +30,7 @@ graders:
   - name: creates-no-backup-branch
     type: tool_used
     tool: Bash
-    input_match: 'git(?:\s+-[Cc]\s*\S+)*\s+(branch|switch -c|checkout -b) [^"]*backup/'
+    input_match: 'git(?:\s+-[Cc]\s*\S+)*\s+(branch|switch -c|checkout -b) [^"]*backup/|(?:branch_gate\.py(?:\\"|'')?|python3?\s+(?:\\"|'')?\$\{?[A-Za-z_]\w*\}?(?:\\"|'')?)\s+backup'
     min: 0
     max: 0
     arm: both

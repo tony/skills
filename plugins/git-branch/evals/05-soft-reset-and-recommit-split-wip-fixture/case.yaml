@@ -23,7 +23,14 @@ graders:
   - name: backs-up-before-collapsing
     type: tool_used
     tool: Bash
-    input_match: 'git(?:\s+-[Cc]\s*\S+)*\s+branch .*backup/.*&&\s*git(?:\s+-[Cc]\s*\S+)*\s+reset --soft'
+    input_match: 'git(?:\s+-[Cc]\s*\S+)*\s+branch .*backup/.*&&\s*git(?:\s+-[Cc]\s*\S+)*\s+reset --soft|(?:branch_gate\.py(?:\\"|'')?|python3?\s+(?:\\"|'')?\$\{?[A-Za-z_]\w*\}?(?:\\"|'')?)\s+backup\s[^"]*--soft-reset'
+    min: 1
+    arm: both
+
+  - name: reads-series-back-and-checks-authors
+    type: tool_used
+    tool: Bash
+    input_match: '(?:branch_gate\.py(?:\\"|'')?|python3?\s+(?:\\"|'')?\$\{?[A-Za-z_]\w*\}?(?:\\"|'')?)\s+series\s[^"]*--authors-of'
     min: 1
     arm: both
 
