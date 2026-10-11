@@ -1002,7 +1002,7 @@ def _check_testpaths() -> list[str]:
     ]
 
 
-def _engine_strings(source: str) -> list[str]:
+def _engine_strings(source: str, *, models: bool = True) -> list[str]:
     """Return the model IDs and credit-exhaustion patterns the weave engine hard-codes.
 
     Examples
@@ -1010,8 +1010,10 @@ def _engine_strings(source: str) -> list[str]:
     >>> src = 'LANES = {"x": (("agy", "Pro"), ("codex", None))}; CREDIT_PATTERNS = ("quota",)'
     >>> _engine_strings(src)
     ['Pro', 'quota']
+    >>> _engine_strings(src, models=False)
+    ['quota']
     """
-    models: list[str] = []
+    ids: list[str] = []
     patterns: list[str] = []
     for node in ast.walk(ast.parse(source)):
         if isinstance(node, ast.AnnAssign) and isinstance(node.target, ast.Name):
@@ -1027,18 +1029,21 @@ def _engine_strings(source: str) -> list[str]:
                 if isinstance(pair, ast.Tuple) and len(pair.elts) > 1:
                     model = pair.elts[1]
                     if isinstance(model, ast.Constant) and isinstance(model.value, str):
-                        models.append(model.value)
+                        ids.append(model.value)
         elif name == "CREDIT_PATTERNS":
             patterns.extend(
                 c.value
                 for c in ast.walk(value)
                 if isinstance(c, ast.Constant) and isinstance(c.value, str)
             )
-    return [*dict.fromkeys(models), *patterns]
+    return [*dict.fromkeys(ids), *patterns] if models else patterns
 
 
 def _check_engine_parity() -> list[str]:
-    """Fail when the weave engine names a model or credit pattern model-cli never mentions."""
+    """Fail when the weave engine names a credit pattern model-cli never mentions.
+
+    Model IDs are exempt: model-cli picks them from the live listing at run time.
+    """
     engine = PLUGINS_DIR / "weave" / "scripts" / "engine.py"
     model_cli = PLUGINS_DIR / "model-cli"
     if not engine.exists() or not model_cli.exists():
@@ -1053,7 +1058,7 @@ def _check_engine_parity() -> list[str]:
     )
     return [
         f"weave engine.py: '{s}' appears in neither model-cli's dispatch.md, skills, nor scripts"
-        for s in _engine_strings(engine.read_text(encoding="utf-8"))
+        for s in _engine_strings(engine.read_text(encoding="utf-8"), models=False)
         if s not in haystack
     ]
 
