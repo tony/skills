@@ -1321,7 +1321,7 @@
         "references/prose-rules.md": "plugins/ticket/references/prose-rules.md",
         "references/resolve.md": "plugins/ticket/references/resolve.md"
       },
-      "bytes": 47805
+      "bytes": 53017
     },
     {
       "name": "weave-architecture",
