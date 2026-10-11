@@ -1300,13 +1300,10 @@
         "plugins/ticket/skills/draft/SKILL.md"
       ],
       "bundled": {
-        "references/altitude.md": "plugins/ticket/references/altitude.md",
-        "references/contract.md": "plugins/ticket/references/contract.md",
-        "references/hierarchy.md": "plugins/ticket/references/hierarchy.md",
         "references/prose-rules.md": "plugins/ticket/references/prose-rules.md",
         "references/resolve.md": "plugins/ticket/references/resolve.md"
       },
-      "bytes": 46158
+      "bytes": 20979
     },
     {
       "name": "ticket-rebuild",
@@ -1314,14 +1311,10 @@
         "plugins/ticket/skills/rebuild/SKILL.md"
       ],
       "bundled": {
-        "references/altitude.md": "plugins/ticket/references/altitude.md",
-        "references/compare_body.py": "plugins/ticket/scripts/compare_body.py",
-        "references/contract.md": "plugins/ticket/references/contract.md",
-        "references/hierarchy.md": "plugins/ticket/references/hierarchy.md",
         "references/prose-rules.md": "plugins/ticket/references/prose-rules.md",
         "references/resolve.md": "plugins/ticket/references/resolve.md"
       },
-      "bytes": 53017
+      "bytes": 23588
     },
     {
       "name": "weave-architecture",
@@ -1632,9 +1625,6 @@
     "plugins/tdd/scripts/diff_gate.py": 2,
     "plugins/tdd/scripts/stash_roundtrip.py": 2,
     "plugins/terraform/references/pin-sites.md": 2,
-    "plugins/ticket/references/altitude.md": 2,
-    "plugins/ticket/references/contract.md": 2,
-    "plugins/ticket/references/hierarchy.md": 2,
     "plugins/ticket/references/prose-rules.md": 2,
     "plugins/ticket/references/resolve.md": 2,
     "plugins/weave/references/ensemble-techniques.md": 2,
@@ -1710,7 +1700,6 @@
     "plugins/tailwind/references/prose-rules.md": 1,
     "plugins/tailwind/scripts/detect.py": 1,
     "plugins/tailwind/skills/spacing-audit/references/patterns.md": 1,
-    "plugins/ticket/scripts/compare_body.py": 1,
     "plugins/weave/references/results/architecture.md": 1,
     "plugins/weave/references/results/ask.md": 1,
     "plugins/weave/references/results/brainstorm-and-refine.md": 1,
@@ -1724,7 +1713,9 @@
     "../../scripts": [
       "spike-bakeoff",
       "spike-probe",
-      "spike-ratchet"
+      "spike-ratchet",
+      "ticket-draft",
+      "ticket-rebuild"
     ],
     "../../scripts/": [
       "merge-pr-multiple",

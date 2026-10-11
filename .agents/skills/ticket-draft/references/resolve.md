@@ -1,15 +1,34 @@
 # Resolving a work item's provider and context
 
-Contents: Detect the provider before interpreting any noun; Capture native type and semantic role separately; Traverse only actual hierarchy relations; Collect orthogonal context separately; Never synthesize a missing level; Prefer native nouns in output; Respect instance configuration over defaults; Scratch files for bodies; Provider files.
+Contents: What to read; Finding the backend; Detect the provider before interpreting any noun; Capture native type and semantic role separately; Traverse only actual hierarchy relations; Collect orthogonal context separately; Never synthesize a missing level; Prefer native nouns in output; Respect instance configuration over defaults; Scratch files for bodies; When the body cannot be written; Reading back; Readback by provider; Provider files.
 
 Procedure for working out what an object actually is before writing about
 it. The taxonomy it resolves against is in `hierarchy.md`.
 
-## Detect the provider before interpreting any noun
+## What to read
 
-To tell which backend is connected, check the available tools for the
-provider's MCP server, then `which` for its CLI (`gh`, `glab`, `acli`, and so
-on). Prefer what is connected; if neither is present, no write backend exists.
+Both skills start here. Read what applies:
+
+- `contract.md`: what a body carries and how it is written. Always.
+- `altitude.md`: the sections each kind of object carries. Always.
+- The matched provider's file, from the index below: hierarchy, reference
+  syntax, duplicate search, read and write mechanics.
+- `hierarchy.md`: only when the role is ambiguous or a native noun collides
+  across providers.
+- `replies.md`: when presenting.
+- `prose-rules.md`: when writing prose.
+
+## Finding the backend
+
+Discover what is connected, never assume it. List the configured MCP servers
+(`claude mcp list` in Claude Code, `codex mcp list` in Codex) and read the tool
+list the client exposes for a read tool and a create or update tool; for a CLI,
+run `which <cli>` and `<cli> <command> --help`. Prefer what is connected. The
+provider file names what to look for and the check that confirms it. When a
+tool, flag, or endpoint is absent, there is no write path for it (see "When the
+body cannot be written").
+
+## Detect the provider before interpreting any noun
 
 Use evidence in this order, stopping at the first that answers:
 
@@ -33,7 +52,7 @@ reasoning. Neither substitutes for the other.
 Record the provider, the native type, the display type the organization uses,
 the semantic role, and what the mapping rests on (convention, metadata, or
 the user's word). State them in
-the hero line, or under Unverified when they matter.
+the hero line.
 
 For example, a GitHub Issue the organization classifies as an Epic. That does
 not mean GitHub exposes a native Epic object, and the body must not imply
@@ -105,12 +124,19 @@ fields.
 When observation conflicts with the default map, keep the observation and
 record the deviation.
 
-Plan tiers, feature gates, endpoint URLs, tool lists, and "no native X"
-statements in the provider files were read from vendor documentation and
-drift as vendors ship. Treat each as a default: confirm it against the
-connected instance or tool list before it decides a role, a filing path,
-or a sentence in the output, and list it under Unverified when it could
-not be confirmed.
+Plan gates, endpoint URLs, flags, tool names, and "no native X" statements in the
+provider files were read from the vendor page each one cites, and drift as vendors
+ship. Run the provider file's check for each capability the run uses (or read the
+connected tool list) before relying on it. When a check fails, or a gate cannot be confirmed against the
+instance, treat the fact as absent and record an Unverified entry.
+
+## When the body cannot be written
+
+A run has no write path when no write backend exists, a capability check fails, a
+converter exits 1 (it names what the format cannot carry), a rebuild has no saved
+fetch, or the original holds media the write format cannot carry. The update or
+filing is then not possible: print the approved body to paste and say so, and offer
+only the restricted options (`replies.md`).
 
 ## Scratch files for bodies
 
@@ -131,6 +157,31 @@ tool exists, use a quoted heredoc whose delimiter is `BODY_END`, after
 confirming no line of the text equals it. When the work ends, whether or not
 it was filed, remove the file and then the directory with `rm -f` and
 `rmdir`. Never show the path to the user.
+
+## Reading back
+
+A script compares files, so a readback needs the provider's read output in a
+file. For a shell command, redirect its output. For an MCP tool, save the tool
+result to a file only where the client offers a way; retyping a result into a
+file makes the compare circular. Without a saved result, quote the fetched
+title and body verbatim and record an Unverified entry.
+
+## Readback by provider
+
+The body and title field paths come from each provider's read recipe; the mode
+says which comparison to run (`compare_body.py --exact` where the provider stores
+and returns markdown, the default word compare where it converts on write).
+
+| Provider | Body path | Title path | Mode | Converter |
+|---|---|---|---|---|
+| GitHub | `body` | `title` | exact | none |
+| GitLab | `description` | `title` | exact | none |
+| Jira | `fields/description` | `fields/summary` | words | `jira_text.py` |
+| Azure DevOps | `fields/System.Description` | `fields/System.Title` | exact (Markdown field only) | none; an HTML field is print-only |
+| Linear | `data/issue/description` | `data/issue/title` | exact | none |
+| Shortcut | `description` | `name` | exact | none |
+| Asana | `data/html_notes` | `data/name` | words | `asana_html.py` |
+| Trello | `desc` | `name` | exact | none |
 
 ## Provider files
 

@@ -19,8 +19,7 @@ sub-issues per parent issue and create up to eight levels of nested sub-issues"
 Issue type (Task, Bug, Feature, or an organization-defined type) classifies an
 Issue and establishes no hierarchy level. Types live in Organization settings,
 default to task, bug and feature, and cap at 25 per organization
-([issue types][types]), so personal-account repositories have none. Which paid
-plans expose issue types is UNVERIFIED; that page states no gate.
+([issue types][types]), so the docs describe none for personal-account repositories.
 
 GitHub has no native Initiative or Epic level. Express one as a parent Issue
 with sub-issues, a custom issue type, a label, a Project field or a tracking
@@ -33,18 +32,18 @@ Issue, and say in the reply that the Epic role rests on convention. A custom iss
 - Issue (work_item): native, required.
 - Sub-issue (sub_item): native, optional; `child_of` a parent Issue, which is
   `parent_of` it. The only native `parent_of` GitHub has.
-- Issue type (no canonical role): native_tier_gated to organization-owned
-  repositories, optional. A classification facet, not a level.
+- Issue type (no canonical role): native, configured in organization
+  settings, optional. A classification facet, not a level.
 - Epic or Initiative (delivery_group or strategic_goal): convention, optional.
 - Objective or key result (strategic_goal, strategic_measure): absent; a
   Project number field or tracking Issue is the nearest convention.
 
 ## Orthogonal objects
 
-- GitHub Project (view): native to organization-owned repositories, absent on
-  personal accounts, optional; items are `grouped_by` it. It collects and
-  presents work, and parents none of it. Spans repositories, holds draft
-  issues, caps at 50 fields ([projects][proj]).
+- GitHub Project (view): native, owned by an organization or a personal
+  account, optional; items are `grouped_by` it. It collects and presents
+  work, and parents none of it. Spans repositories, holds draft issues,
+  caps at 50 fields ([projects][proj], [creating a project][mkproj]).
 - Project view, table, board or roadmap (view): native, optional; the Project
   is `visualized_by` them. A board is a layout, not an object.
 - Project iteration field (timebox): native, optional; items `scheduled_in` it.
@@ -86,15 +85,13 @@ titled link for disambiguation, `redirect.github.com` to avoid the event.
 
 House forms:
 - Same repository, commit reachable from trunk: bare 7-character ref, no link.
-- Same repository, Issue or pull request: bare `#N`, no link.
+- Issue or pull request: `ref_form.py github` prints the form for the intent (it
+  applies the two rules above: bare `#N` in the same repository, a titled link
+  elsewhere, and the `redirect.github.com` host to stay off the timeline).
 - Same repository, Dependabot alert: `[dependabot#{repo}#{n}](URL)`. Alerts are
   numbered in their own per-repository namespace under `/security/dependabot/`,
   confirmed by `GET /repos/{owner}/{repo}/dependabot/alerts/{alert_number}`
   ([Dependabot alerts API][dep]), so `#5` never means alert 5.
-- Any other repository: full titled link, because `owner/repo#N` posts a
-  cross-reference onto someone else's tracker and reads as ambiguous out of
-  context. A `github.com` link posts it too; swap the host to stay off that
-  timeline.
 - Cross-repository commit: `owner/repo@SHA`, or `user@SHA` when the repository
   name is the same under a different owner.
 
@@ -106,14 +103,13 @@ prefix renders as literal text and the reference dies silently.
 
 `@username` and `@org/team-name` are side effects, not formatting: they
 subscribe the person or team and notify them, switchable per team by maintainers
-([team notifications][team]). UNVERIFIED:
-whether a bare `#N` resolves to a Discussion, and whether a Project item has any
-bare reference form.
+([team notifications][team]).
 
 ## Reading and writing
 
-`gh issue create` takes `--title`, `--body-file`, `--label`, `--milestone`,
-`--project`, `--type`, `--parent`, `--blocked-by` and `--blocking`, so a
+`gh issue create` takes the body from a file with `--body-file`, and `--type` and
+`--parent` when the user names them
+([gh issue create](https://cli.github.com/manual/gh_issue_create)), so a
 drafted body goes in from a file undamaged by shell quoting. The scratch path
 comes from the skill's filing step. `--type` takes an issue type the owner
 defines; add it only when the
@@ -123,31 +119,58 @@ user names one.
 $ gh issue create --title "..." --body-file "<scratch path>"
 ```
 
-Read a created or edited Issue back with
-`gh issue view <number> --json number,title,body,url`.
-
-`gh issue edit`, `gh issue view` and `gh project item-add` cover rewriting an
-Issue and attaching it to a Project. Sub-issue relations are CLI flags: `--parent` on create, and `--parent`,
-`--add-sub-issue`, `--remove-sub-issue` and `--remove-parent` on `gh issue edit`.
-A flag the installed version lacks fails the command; report that and print the body instead.
-
-Reach for REST only where the CLI does not go: `PATCH
-/repos/{owner}/{repo}/issues/{issue_number}/sub_issues/priority` to reorder,
-`GET .../sub_issues` and `GET .../parent` to read ([sub-issues API][subapi]).
-`POST .../sub_issues` takes `sub_issue_id`, the database `id`, not the `#`
-number. GitHub also maintains an official MCP server, remote at
-`https://api.githubcopilot.com/mcp/`, with per-toolset selection and a read-only
-mode ([GitHub MCP Server][mcp]); prefer read-only until a write is approved.
-Preview the render first: autolinks, label chips and cross-references only
+`gh issue edit` rewrites a body, and `--parent` on create, or `--parent` and
+`--add-sub-issue` on edit, set sub-issue relations ([gh issue edit][edit], and its
+`--help`). Preview the render first: autolinks, label chips and cross-references only
 appear then.
+
+Check each capability you use, and only those. Create (add the `--type` and
+`--parent` lines only when the user names a type or a parent):
+
+```console
+$ gh issue create --help | grep -e '--body-file'
+```
+
+```console
+$ gh issue create --help | grep -e '--type'
+```
+
+```console
+$ gh issue create --help | grep -e '--parent'
+```
+
+Edit:
+
+```console
+$ gh issue edit --help | grep -e '--body-file'
+```
+
+Read back:
+
+```console
+$ gh issue view --help | grep -e '--json'
+```
+
+### Read recipe
+
+Read with comments, saving the output for the checks (body field path `body`):
+
+```console
+$ gh issue view <number> --json number,title,body,url,state,labels,milestone,issueType,parent,subIssues,comments > "<scratch dir>/first.json"
+```
+
+`gh issue view --json` with no value prints its field list; `issueType`, `parent` and
+`subIssues` were in it when this was written, so drop any the installed version
+lacks. The role and the children come from `issueType`, `parent` and `subIssues`. Rewrite a body with
+`gh issue edit <number> --body-file "<scratch path>"` ([gh issue edit][edit]).
 
 ## Duplicate search
 
 Search open and closed items together; `gh issue list` hides closed ones by
-default.
+default and fetches 30 unless `--limit` says otherwise (`gh issue list --help`).
 
 ```console
-$ gh issue list --state all --search "<keywords>"
+$ gh issue list --state all --limit 100 --search "<keywords>"
 ```
 
 ## Naming traps
@@ -175,3 +198,6 @@ a link the pull request does not declare.
 [subapi]: https://docs.github.com/en/rest/issues/sub-issues
 [team]: https://docs.github.com/en/organizations/organizing-members-into-teams/configuring-team-notifications
 [types]: https://docs.github.com/en/issues/tracking-your-work-with-issues/configuring-issues/managing-issue-types-in-an-organization
+[mkproj]: https://docs.github.com/en/issues/planning-and-tracking-with-projects/creating-projects/creating-a-project
+[mcprepo]: https://github.com/github/github-mcp-server
+[edit]: https://cli.github.com/manual/gh_issue_edit

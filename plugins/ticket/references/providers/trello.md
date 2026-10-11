@@ -4,11 +4,11 @@ Contents: Scope; Native hierarchy; Semantic roles; Orthogonal objects; Reference
 
 ## Scope
 
-Enterprise (Enterprise plan only) > Workspace > Board > List > Card > Checklist >
+Enterprise > Workspace > Board > List > Card > Checklist >
 Checklist item.
 
 This chain is physical containment, nothing more. A Card lives in exactly one List on
-exactly one Board in exactly one Workspace. Collections (Premium) group Boards inside a
+exactly one Board in exactly one Workspace. Collections group Boards inside a
 Workspace for navigation; they do not re-parent anything.
 
 ## Native hierarchy
@@ -26,7 +26,7 @@ lists none. Do not invent one. Above the Card there is only the Board, and a
 Board is a container, not a deliverable. Anything resembling a higher level is
 convention built from generic materials: a Card titled "Epic: Authentication", a Board
 card (native card type that "is a link to another board"), a Label, a Custom Field
-(native, Standard plan and up), a card-to-card attachment, or a Power-Up. Say in the
+(native), a card-to-card attachment, or a Power-Up. Say in the
 reply that the role rests on convention; the native object is still a Card (or
 Label, Custom Field).
 
@@ -49,10 +49,9 @@ no URL you can hand to someone. Promote it to a Card before treating it as work_
   `documented_by`. Linked external files or pages are external documents.
 - **Label / Custom Field**: the practical carrier for delivery_group, strategic_goal,
   or release_group when a Workspace actually uses one. Label is native; Custom Field is
-  native_tier_gated (Standard and up). Both optional. Emit `grouped_by`, never
+  native_tier_gated. Both optional. Emit `grouped_by`, never
   `parent_of`.
-- **Board view**: view. native_tier_gated (Timeline, Calendar, Table, Dashboard, Map
-  need Premium or Enterprise). optional.
+- **Board view**: view. native_tier_gated (Timeline, Calendar, Table, Dashboard, Map). optional.
 - **delivery_group, strategic_goal, strategic_measure, release_group, timebox,
   checkpoint, review_artifact**: absent natively; convention at best, and only on
   Workspace evidence. Trello has comments, not reviews.
@@ -63,7 +62,7 @@ no URL you can hand to someone. Promote it to a Card before treating it as work_
   is no Sprint, so `scheduled_in` has no native target to point at.
 - **Board views and Workspace views**: `visualized_by` only. A Card on a Timeline is
   not contained by it. **Labels, Custom Fields, Collections**: `grouped_by` only.
-- **Mirror card** (paid Workspaces): the same Card surfaced on another Board, not a
+- **Mirror card**: the same Card surfaced on another Board, not a
   child. **Board card** and **Link card** are pointers, not parents.
 - **Attachments and comments**: `documented_by`. A checked checklist item is the
   nearest thing to a checkpoint and is still a sub_item, not a `checkpoint_of`.
@@ -93,10 +92,8 @@ visible event on a target.
   an unlabeled smart link.
 - Wanting the backreference: attach the Card, do not do it in the description. `desc` is
   a plain string field and attachments are a separate resource, so writing `desc` cannot
-  mint an attachment record on the target. UNVERIFIED: whether pasting a Card URL
-  into the description in the web UI offers a prompt that converts it into an
-  attachment. Community reports describe a "Connect cards" affordance; no official doc
-  confirms it. Do not rely on it and do not tell the user it happened.
+  mint an attachment record on the target. Pasting a Card URL into the description is not
+  documented to create an attachment; do not tell the user it did.
 - Cross-container is identical. A Card URL is globally addressable
   (`https://trello.com/c/<shortLink>`), so another Board or another Workspace uses the
   same form. There is no `board/card#N` equivalent. Access is the constraint, not
@@ -107,10 +104,9 @@ visible event on a target.
   "Numeric ID for the card on this board. Only unique to the board, and subject to
   change as the card moves." Not globally unique, and Trello does not linkify it.
 - Never put a bare URL in a Card **name**. A URL as a card title creates a Link card, or
-  a Mirror card in a paid Workspace, a different object that cannot hold a description
+  a Mirror card, a different object that cannot hold a description
   or comments.
-- Use `@` only when the notification is wanted. UNVERIFIED: whether `@mention` in a
-  card *description* notifies; official docs cover comments and checklist items only.
+- Use `@` only when the notification is wanted.
 
 **Markdown deltas.** Nested blockquotes are unsupported. Tables, images, and task-list
 checkboxes are not documented as supported; do not emit them. A single newline does not
@@ -120,39 +116,43 @@ Emoji use `:shortcode:`. Wrap a URL in backticks to show it raw inside a checkli
 
 ## Reading and writing
 
-The
-[REST API](https://developer.atlassian.com/cloud/trello/rest/) is at
-`https://api.trello.com/1/`, authenticated with an API key plus token. Create with
-`POST /cards` (requires `idList`), update with `PUT /cards/{id}`, comment with
-`POST /cards/{id}/actions/comments`, attach with `POST /cards/{id}/attachments`. The body
-field is `desc`, capped at 16384 characters; re-check the limit in the REST reference before
-writing a long draft.
+The [REST API](https://developer.atlassian.com/cloud/trello/rest/) creates a Card with
+`POST /1/cards` (requires `idList`) and updates one with `PUT /1/cards/{id}`; the body
+field is `desc`. Send the key and token in an `Authorization: OAuth` header
+([authorization guide](https://developer.atlassian.com/cloud/trello/guides/rest-api/authorization/)),
+not in the URL query, where they land in shell history and server logs. Trello also
+documents an official MCP server ([connect Trello to AI assistants](https://support.atlassian.com/trello/docs/connect-trello-to-ai-assistants-with-trello-mcp/)),
+found through the connected tool list (`resolve.md`, "Finding the backend").
 
-Send the key and token in an `Authorization: OAuth` header, which the
-[authorization guide](https://developer.atlassian.com/cloud/trello/guides/rest-api/authorization/)
-documents, not in the URL query, where they land in shell history and server logs:
+Check the endpoint and credentials (the request the authorization guide itself shows):
 
 ```console
-$ curl -s \
-    -H "Authorization: OAuth oauth_consumer_key=\"$TRELLO_KEY\", oauth_token=\"$TRELLO_TOKEN\"" \
-    "https://api.trello.com/1/cards/$CARD_ID"
+$ curl -fsS -H "Authorization: OAuth oauth_consumer_key=\"$TRELLO_KEY\", oauth_token=\"$TRELLO_TOKEN\"" https://api.trello.com/1/members/me
 ```
 
-The [official Trello MCP server](https://support.atlassian.com/trello/docs/connect-trello-to-ai-assistants-with-trello-mcp/)
-is at `https://mcp.trello.com/v1`, OAuth 2.0 only (API tokens are not accepted for MCP),
-and covers boards, lists, cards, and checklists. It refuses destructive deletes: an
-assistant can archive a Card or List but cannot permanently delete one.
+### Read recipe
 
-With neither backend configured, draft the Card
-title, description, and checklist as Trello-flavored Markdown and emit the approved text
-for the user to paste. That is a normal outcome, not a degraded one.
+Read a Card, saving the output for the checks (body field path `desc`), with the
+documented `Authorization: OAuth` header form
+([authorization](https://developer.atlassian.com/cloud/trello/guides/rest-api/authorization/),
+[cards](https://developer.atlassian.com/cloud/trello/rest/api-group-cards/)):
+
+```console
+$ curl -fsS \
+    -H "Authorization: OAuth oauth_consumer_key=\"$TRELLO_KEY\", oauth_token=\"$TRELLO_TOKEN\"" \
+    "https://api.trello.com/1/cards/<card id>?fields=name,desc" > "<scratch dir>/first.json"
+```
+
+`PUT /1/cards/{id}` takes `desc` in a JSON body. The `filter` values of
+`GET /1/cards/{id}/actions` are undocumented, so read comments through the MCP
+server.
 
 ## Duplicate search
 
-Search with the connected tool's search call, and include completed,
-closed, or archived items. UNVERIFIED: this file names no filter for
-that; read the tool's parameters first. A search that cannot include
-closed items goes under Unverified.
+Trello's `is:open` operator returns open Cards, and the advanced search has a filter that
+excludes closed Boards and archived Cards ([searching for Cards](https://support.atlassian.com/trello/docs/searching-for-cards-all-boards/)).
+The REST `GET /search` reference documents no archived-Card behavior
+([search](https://developer.atlassian.com/cloud/trello/rest/api-group-search/)).
 
 ## Naming traps
 

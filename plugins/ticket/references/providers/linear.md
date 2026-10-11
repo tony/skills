@@ -20,7 +20,7 @@ Initiative (strategic_goal) > optional Sub-initiative > Project
 
 An Initiative groups Projects around a company objective at the workspace level
 and must be switched on in workspace settings before it exists; Sub-initiatives
-nest Initiatives and are Enterprise-only (plan tiers change: confirm in the
+nest Initiatives and are plan-gated (confirm in the
 workspace)
 ([Initiatives](https://linear.app/docs/initiatives),
 [Sub-initiatives](https://linear.app/docs/sub-initiatives)). A Project is an
@@ -37,25 +37,22 @@ not use the word. It has no native metric or key-result object.
 - Team: scope_container. native, required; an Issue is always linked to one
   Team and must have a title and a status
   ([Create issues](https://linear.app/docs/creating-issues)).
-- Sub-team: scope_container. native_tier_gated (Business and Enterprise;
-  nesting past one level is Enterprise), optional.
+- Sub-team: scope_container. native_tier_gated, optional.
 - Initiative: strategic_goal. configurable, optional; it must be switched on
   in workspace settings before it exists.
-- Sub-initiative: nested strategic_goal. native_tier_gated (Enterprise),
+- Sub-initiative: nested strategic_goal. native_tier_gated,
   optional.
 - Project: delivery_group. native, optional; may exist with no Initiative.
 - Issue: work_item. native, required; may exist with no Project.
 - Sub-issue: sub_item. native, optional.
 - Cycle: timebox. configurable, optional; enabled per Team.
 - Project Milestone: checkpoint. native, optional.
-- Custom View: view. native, optional; Initiative views are native_tier_gated
-  (Enterprise).
+- Custom View: view. native, optional; Initiative views are native_tier_gated.
 - Document: document. native, optional.
 - Pull Request or Merge Request: review_artifact. external, optional.
 - strategic_measure: absent. Convention: state it in the Initiative
   description, an initiative update, or an attached Document.
-- Release: release_group. native_tier_gated (Releases, Business and
-  Enterprise), optional; a unit within a release pipeline, with a commit SHA
+- Release: release_group. native_tier_gated, optional; a unit within a release pipeline, with a commit SHA
   and linked Issues ([Releases](https://linear.app/docs/releases)). Without
   the feature, convention: a label, or a Project per release.
 
@@ -89,8 +86,7 @@ issue's sidebar ([Issue relations](https://linear.app/docs/issue-relations)),
 and mentioning a user notifies their Inbox and subscribes them. Linear inverts
 GitHub's default: the cheap idiomatic form also mints a relation. So write bare
 `ENG-123` whenever you want that relation, which is most of the time. When you
-do not, Linear publishes no opt-out for the body. Whether a titled markdown link
-or an inline-code identifier suppresses the relation is UNVERIFIED; Linear
+do not, Linear publishes no opt-out for the body. Linear
 documents no escape syntax and no `redirect.` host equivalent, so do not promise
 suppression. The documented remedy is after the fact: hover the related issue
 and click the X, or run Remove relation.
@@ -99,8 +95,7 @@ Cross-container: an issue ID already carries its owning Team, so `ENG-123`
 resolves from any Team in the Workspace and no `team/ENG-123` form exists.
 Across Workspaces there is no shorthand; use the full URL
 `https://linear.app/<workspace>/issue/ENG-123/<slug>`, assume the reader may
-lack access, and carry a one-line human summary beside it: whether such a URL
-mentions or relates anything is UNVERIFIED. Moving an Issue to another Team
+lack access, and carry a one-line human summary beside it. Moving an Issue to another Team
 reissues its identifier; old ones keep resolving
 ([Edit issues](https://linear.app/docs/editing-issues)).
 
@@ -114,29 +109,52 @@ Markdown dialect: Linear converts typed or pasted markdown to rich text and
 supports most of it. Two documented divergences from GFM: `+++ Title` opens and
 `+++` closes a collapsible section, and a `mermaid` code block renders as a
 diagram. `:shortcode:` emoji work; Linear-hosted images sit behind
-authentication and will not render outside it. Whether pasted GFM pipe tables
-convert is UNVERIFIED, and no commit-SHA autolinking is documented, write
+authentication and will not render outside it. No commit-SHA
+autolinking is documented: write
 commit refs as full git-host URLs.
 
 ## Reading and writing
 
-- Official remote MCP server at `https://mcp.linear.app/mcp` over Streamable
-  HTTP, read-only variant at `https://mcp.linear.app/mcp/readonly`. Auth is
-  OAuth 2.1 with dynamic client registration, or a bearer API key; tools find,
-  create and update issues, projects and comments
-  ([MCP server](https://linear.app/docs/mcp)). Prefer this.
-- GraphQL API at `https://api.linear.app/graphql`, personal API key in the
-  `Authorization` header or an OAuth bearer token. `issueUpdate` takes the
-  shorthand `ENG-123` as well as a UUID, and create-then-correct may or may not
-  stay out of the activity log (UNVERIFIED: no documented window).
-- Official TypeScript SDK, `@linear/sdk`.
+Prefer Linear's MCP server, found through the connected tool list (`resolve.md`,
+"Finding the backend"); its setup is documented at [MCP server](https://linear.app/docs/mcp).
+Use a tool that creates or updates issues or projects; without one, the fallback is the
+GraphQL API at `https://api.linear.app/graphql`, or printing the body to paste.
+
+Check the GraphQL endpoint and key (the documented `viewer` query,
+[getting started](https://linear.app/developers/graphql)):
+
+```console
+$ curl -fsS -H "Content-Type: application/json" -H "Authorization: $LINEAR_API_KEY" --data '{"query": "{ viewer { id } }"}' https://api.linear.app/graphql
+```
+
+### Read recipe
+
+Read over GraphQL, saving the output for the checks (body field path
+`data/issue/description`). A personal API key goes in `Authorization` without a
+`Bearer` prefix, and the documented example queries `issue(id: "BLA-123")` by
+identifier ([getting started](https://linear.app/developers/graphql)):
+
+```console
+$ curl -fsS \
+    -H "Content-Type: application/json" \
+    -H "Authorization: $LINEAR_API_KEY" \
+    --data '{"query": "{ issue(id: \"<ENG-123>\") { identifier title description state { name } project { name } parent { identifier } children { nodes { identifier } } } }"}' \
+    https://api.linear.app/graphql > "<scratch dir>/first.json"
+```
+
+The docs' examples show only `id`, `title` and `description`; the other fields come from
+Linear's schema, and a field the schema lacks returns an `errors` array with HTTP 200
+([working with the GraphQL API](https://developers.linear.app/docs/graphql/working-with-the-graphql-api)),
+so read the response for `errors`. Read comments with
+the MCP server.
 
 ## Duplicate search
 
-Search with the connected tool's search call, and include completed,
-closed, or archived items. UNVERIFIED: this file names no filter for
-that; read the tool's parameters first. A search that cannot include
-closed items goes under Unverified.
+Archived issues are hidden from paginated GraphQL queries unless the query
+passes `includeArchived: true` ([working with the GraphQL API](https://developers.linear.app/docs/graphql/working-with-the-graphql-api)). Linear's
+[MCP docs](https://linear.app/docs/mcp) list no tool parameters, so the schema the
+connected server reports is the only source: use a parameter that reaches archived and
+completed issues.
 
 ## Naming traps
 

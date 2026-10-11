@@ -28,8 +28,7 @@ A Jira Task is level 0 (beside Story and Bug, never beneath them) and nothing
 sits between the Epic level and the standard level.
 
 The level-1 type can be renamed and still stays level 1. Levels above 1 are
-configurable and tier-gated to Premium and Enterprise (tiers change: confirm
-in the instance), named whatever the org
+configurable and plan-gated, named whatever the org
 chose: Initiative, Theme, Program, Capability ([custom hierarchy levels](https://support.atlassian.com/jira-software-cloud/docs/configure-custom-hierarchy-levels-in-advanced-roadmaps/)).
 Never assert Initiative exists, or sits at a given level, without reading the
 instance's work type hierarchy.
@@ -45,7 +44,7 @@ unparented, not an implied Epic.
 - **Epic-level work item**: delivery_group; native, optional; `parent_of`
   standard work items.
 - **Configured level above Epic**: strategic_goal; native_tier_gated and
-  configurable, optional; absent on Free and Standard.
+  configurable, optional; absent where the plan lacks them.
 - **Standard work item** (Story, Task, Bug, Incident, Request), work_item;
   native, required as the thing written.
 - **Subtask**: sub_item; native, optional, `child_of` required once created.
@@ -101,17 +100,9 @@ Confluence page mints a reciprocal remote link back onto the work item, shown
 as Mentioned in ([Jira and Confluence together](https://support.atlassian.com/confluence-cloud/docs/use-jira-and-confluence-together/),
 [missing Mentioned in](https://support.atlassian.com/jira/kb/mentioned-in-confluence-page-is-not-displaying-on-individual-jira-issues/)).
 
-Unverified, no Atlassian doc addressing any of them: whether a Jira-to-Jira
-Smart Link registers on the target; whether a Confluence URL inside a Jira body
-registers on the page; whether a bare key written through the API rather than
-typed in the editor still renders as a link.
-
-Applied. Same site, any Space, work item exists: bare uppercase key, no link,
-the renderer links it and nothing lands on the target. Any Atlassian object
-without a key (Sprint, Version, Board, Plan, Confluence page): titled
-`[text](url)`, so the reference still reads when the reader cannot unfurl it.
-Different Atlassian site, or any non-Atlassian tracker: full titled link, since
-a key resolves only inside its own site. For a visible reciprocal relationship
+Applied: `ref_form.py jira` prints the form (a bare key on the same site, where the
+renderer links it and nothing lands on the target; a titled link for an object without a
+key, another site, or another tracker). For a visible reciprocal relationship
 do not lean on prose: create a Linked work item of the right type, the one
 in-tracker mechanism that shows on both objects by design.
 
@@ -122,36 +113,74 @@ covers create, edit, comment, link, search, and transition, with the body
 supplied through `--description`, `--description-file`, `--from-file`,
 `--from-json`, or `--editor`, in plain text or ADF ([acli jira workitem create](https://developer.atlassian.com/cloud/acli/reference/commands/jira-workitem-create/)).
 
-Read a created or edited work item back with `acli jira workitem view
-<KEY> --json` ([acli jira workitem view](https://developer.atlassian.com/cloud/acli/reference/commands/jira-workitem-view/)).
-
-Cloud platform REST [v3](https://developer.atlassian.com/cloud/jira/platform/rest/v3/intro/)
-and [v2](https://developer.atlassian.com/cloud/jira/platform/rest/v2/intro/)
-expose the same operations; v3 takes rich text as [ADF](https://developer.atlassian.com/cloud/jira/platform/apis/document/structure/)
-JSON, v2 takes wiki markup strings. Neither accepts markdown, and
-autoformatting is an editor behavior, so `[text](url)` inside an ADF text node
-stays literal: emit a text node carrying a `link` mark for a titled link, or
-an `inlineCard` node for a Smart Link, and the two-axis choice is exactly yours.
-
-MCP: the hosted [Atlassian Rovo MCP Server](https://support.atlassian.com/atlassian-rovo-mcp-server/docs/supported-tools/)
-groups Jira tools into read, write, and search (get a work item, create one,
-edit fields, add a comment, link two work items, JQL search) gated by
-org-granted permission groups, over OAuth or an API token.
+A description is plain text or ADF ([ADF](https://developer.atlassian.com/cloud/jira/platform/apis/document/structure/)),
+never markdown, and the editor's autoformatting does not apply to API input.
 
 Write format. The Jira description field takes plain text or ADF, never
-markdown, so a markdown body is converted before any write. Convert to plain
-text: a `###` heading becomes its text on its own line, `**` and backticks
-are dropped, a fenced block becomes its lines indented four spaces,
-`[text](url)` becomes `text (url)`, `- ` lists and `1. ` numbered steps stay
-as they are, and a `<details>` block becomes its summary line followed by
-its content, unfolded. The
-converted text is what the preview shows and what `--description-file`
-receives. Print the body for the user to paste, and file nothing, when the
-body holds a table or a nested list that plain text would flatten. ADF
-output is unverified here: no acli flag is documented to take markdown.
+markdown, so a markdown body is converted before any write. Run
+`jira_text.py` (in the plugin's `scripts/`) on the saved body: it drops
+heading, bold, and code markers, indents fenced blocks four spaces, turns
+`[text](url)` into `text (url)`, keeps `- ` and `1. ` lists, and unfolds a
+`<details>` block under its summary line. It exits 1 and prints the reason
+when the body holds an image, a table, or a nested list that plain text would drop or
+flatten;
+print the body for the user to paste and file nothing then. The converted
+text is what the preview shows and what `--description-file` receives. acli
+accepts ADF, but no documented flag converts markdown to it, so this skill
+writes plain text.
 
-With none of the three configured, the adapter drafts the body and emits the
-approved text for the user to paste. A normal outcome.
+### Commands
+
+Create ([acli jira workitem create](https://developer.atlassian.com/cloud/acli/reference/commands/jira-workitem-create/)):
+
+```console
+$ acli jira workitem create \
+    --project "<KEY>" \
+    --type "<Work Type>" \
+    --summary "<title>" \
+    --description-file "<scratch path>"
+```
+
+Update ([acli jira workitem edit](https://developer.atlassian.com/cloud/acli/reference/commands/jira-workitem-edit/)),
+where `--yes` skips the confirmation prompt:
+
+```console
+$ acli jira workitem edit \
+    --key "<KEY>" \
+    --summary "<title>" \
+    --description-file "<scratch path>" \
+    --yes
+```
+
+Read the body and its comments, saving the output for the checks:
+
+```console
+$ acli jira workitem view <KEY> --json --fields summary,description,comment,issuetype,parent,subtasks,issuelinks > "<scratch dir>/first.json"
+```
+
+`--fields` takes a comma-separated list and `--json` is documented. The shape of acli's
+JSON is not documented, so find the body's key path in the output; the REST v3 issue
+puts it at `fields/description`.
+
+Check each capability you use, and only those. Create:
+
+```console
+$ acli jira workitem create --help | grep -e '--description-file'
+```
+
+Edit:
+
+```console
+$ acli jira workitem edit --help | grep -e '--description-file'
+```
+
+Read back:
+
+```console
+$ acli jira workitem view --help | grep -e '--json'
+```
+
+When a check fails, treat that capability as absent and print the body to paste.
 
 ## Duplicate search
 

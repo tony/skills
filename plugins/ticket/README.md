@@ -46,21 +46,21 @@ Claude Code uses a leading slash (`/ticket:…`). Codex omits it
 
 Drafts new items across supported trackers. Resolves provider roles,
 reads templates, gathers evidence, and presents before filing. Emits
-text to paste if no backend exists.
+text to paste if no backend exists. Scans the body for credentials,
+local paths, and rotting references before any preview, and checks
+the filed item reads back as written. Jira and Asana bodies are
+converted by tested scripts; an Azure DevOps HTML field is print-only.
 
 ### `/ticket:rebuild`
 
 Rebuilds messy live items. Sorts the body into keep, cut, relocate,
 demote, and repair. Relocates depth to linked documents. Updates only on
-approval.
+approval, and checks the body, title, and inline images read back.
 
 ## Content Rules
 
-- Past: include unrecoverable context (dead ends, conditions). Drop
-  what the logs show.
-- Present: avoid rotting references and unwanted backlinks.
-- Future: state a constraint only when the input states it. A figure
-  or technical choice becomes non-binding intent, not a checkbox.
+`references/contract.md` holds the rules for what a body carries
+(past, present, future) and how it is written.
 
 ## Provider Object Graphs
 
@@ -73,9 +73,11 @@ canonical roles (for example, Linear Project is close to Jira Epic).
 
 ## When to Use
 
-- `ticket`: for non-GitHub trackers, non-issue objects (epics,
-  projects), or rebuilding items.
-- `gh`: for standard GitHub issues (`gh:create-issue`).
+- `ticket`: for any tracker, GitHub included, any object from a single
+  issue to an epic or project, and for rebuilding items.
+- `gh:create-issue`: a separate, narrower skill for a plain GitHub bug
+  report. `ticket:draft` also files GitHub issues, with the security
+  halt, duplicate search, scan, and readback.
 - `pr`: for branch pull request descriptions.
 - `lean`: for shortening already-accurate text.
 

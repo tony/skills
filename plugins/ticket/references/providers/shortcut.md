@@ -14,12 +14,12 @@ a Story belongs to a Workspace and carries a Team field.
 ## Native hierarchy
 
 Objective > Epic > Story > Sub-task. Shortcut has no native Project work
-level (it is sunsetting Projects) and no release object: the
+level and no release object: the
 [REST API](https://developer.shortcut.com/api/rest/v3) lists none.
 
 - **Objective** is ["Shortcut's top-level planning object"](https://www.shortcut.com/help/objectives/objectives-overview/).
   A *Tactical Objective* is Epic-driven and on all plans; it becomes *Strategic*
-  once it has a Key Result, which is gated to Business and Enterprise plans.
+  once it has a Key Result, which is plan-gated.
 - **Epic** aligns to an Objective directly, or to a Key Result on a Strategic
   Objective. Stories have no Objective field; a Story reaches an Objective only
   through its Epic.
@@ -51,7 +51,7 @@ level (it is sunsetting Projects) and no release object: the
 - **release_group**: absent. The REST API has no release or version object; use a Label or
   Custom Field by convention and say which.
 - **checkpoint**: absent. The REST API has no phase or dated-checkpoint object; its
-  deprecated Milestones became Objectives.
+  Milestones are marked deprecated in favor of Objectives ([REST API](https://developer.shortcut.com/api/rest/v3)).
 - **Epic Health / Objective Health**: no canonical role. native, optional. A
   dated status (On Track, At Risk, Off Track) with a comment, kept as health
   history. It reports on progress rather than marking a point in it.
@@ -71,8 +71,8 @@ to a Story in the same Workspace. Write the bare token; do not wrap it in a
 markdown link. `@member` and `@team-handle` are resolved in Story and Epic
 descriptions and comments, and in Objective and Iteration descriptions
 ([Teams](https://www.shortcut.com/help/teams/teams-overview/)). No body-text
-shorthand for an Epic, Objective, Iteration, or Doc is documented; whether one
-exists is UNVERIFIED, so use the permalink rather than guess a sigil.
+shorthand for an Epic, Objective, Iteration, or Doc is documented; none is
+documented, so use the permalink rather than guess a sigil.
 
 **Which references have a side effect on the target.** An `@` mention does: it
 stores `member_mention_ids` / `group_mention_ids` on the object and raises email,
@@ -87,15 +87,13 @@ is one `StoryLink` record (subject, verb, object) listed in `story_links` on bot
 Stories, and Doc
 ["Relationships are a two-way street; the link is shown from both the Doc and the entity being linked"](https://www.shortcut.com/help/docs/docs-overview/).
 So set the relationship field when the link must exist on the other object; the
-inline token is enough when it is only context. Whether that token also records
-anything on the target is UNVERIFIED; do not rely on it.
+inline token is enough when it is only context.
 
 **Other Workspace.** Story public IDs are per-Workspace and `#123` resolves
 against the reading Workspace, so a bare token aimed at another Workspace
 silently points at the wrong Story. Use a titled markdown link around the
 permalink copied from that Story's dialog, which embeds the Workspace URL slug.
-Whether that registers anything on the target is unverified; assume not, and
-assume the reader may lack access.
+Assume it registers nothing on the target, and that the reader may lack access.
 
 **Code host.** Do not narrate PR URLs in the body; let the VCS integration attach
 them. Reference runs git-to-Shortcut, using
@@ -112,40 +110,41 @@ not automatic. Going the other way, `#123` inside a Shortcut body means Story
 
 ## Reading and writing
 
-Shortcut hosts an OAuth MCP server at `https://mcp.shortcut.com/mcp` (no token
-to store) and documents the Claude Code setup, so a local agent reads and
-writes directly.
+Prefer Shortcut's MCP server, found through the connected tool list (`resolve.md`,
+"Finding the backend"); its setup and coverage are documented at
+[MCP Server docs](https://www.shortcut.com/help/integrations/mcp-server/). Use a tool that
+creates or updates Stories. Objectives and Key Results are not writable unless the tool
+list shows a tool for them; otherwise print the body to paste. The fallback is the
+[REST API v3](https://developer.shortcut.com/api/rest/v3), whose read recipe below is
+also its check: `curl -f` fails on a rejected token or a wrong id.
+
+### Read recipe
+
+Read a Story over REST, saving the output for the checks (body field path
+`description`). The Story object carries a `comments` array, and requests send the
+token in the `Shortcut-Token` header ([REST API v3](https://developer.shortcut.com/api/rest/v3)):
 
 ```console
-$ claude mcp add --transport http shortcut https://mcp.shortcut.com/mcp
+$ curl -fsS \
+    -H "Shortcut-Token: $SHORTCUT_API_TOKEN" \
+    https://api.app.shortcut.com/api/v3/stories/<story-public-id> > "<scratch dir>/first.json"
 ```
 
-Coverage per the [MCP Server](https://www.shortcut.com/help/integrations/mcp-server/)
-docs: Stories retrieve, create, and update including comments and Sub-tasks;
-Epics and Iterations retrieve and create; Docs retrieve, create, and update;
-Objectives, Teams, Members, and Workflows read-only. Drafting an Objective or a
-Key Result therefore still ends in approved text for the user to paste.
-Otherwise use the [REST API v3](https://developer.shortcut.com/api/rest/v3) at
-`https://api.app.shortcut.com/api/v3` with a `Shortcut-Token` header, covering
-stories and story search, sub-tasks, epics, objectives, key-results, iterations,
-and documents. The official client is the JavaScript
-`@shortcut/client`.
+`PUT /api/v3/stories/{story-public-id}` takes `description` for a rewrite.
 
 ## Duplicate search
 
-Search with the connected tool's search call, and include completed,
-closed, or archived items. UNVERIFIED: this file names no filter for
-that; read the tool's parameters first. A search that cannot include
-closed items goes under Unverified.
+Shortcut's `is:archived` search operator selects archived Stories
+([Archiving FAQ](https://help.shortcut.com/hc/en-us/articles/360018662831-Archiving-in-Shortcut-FAQ)).
+The [MCP docs](https://www.shortcut.com/help/integrations/mcp-server/) list no search
+tool or parameters, so read the schema the connected server reports.
 
 ## Naming traps
 
 Never say **ticket** or **issue**; say Story. Never say **sprint**; say
-Iteration. Never say **board**; say Workflow. Never say **milestone** or
-**Group** in prose, those are the legacy and API names for an Objective and a
-Team, and `/milestones` endpoints still carry the old one. Never say **Project**
-for a delivery grouping; the field is deprecated and the delivery_group is an
-Epic. Never call a **Space** a container; it is a saved filtered view. Never call
+Iteration. Never say **board**; say Workflow. Never say **milestone**: the REST API marks it deprecated in favor of Objectives.
+Never say **Group**: the API's `group_id` field is the Team field. Never say **Project** for a delivery
+grouping; the delivery_group is an Epic. Never call a **Space** a container; it is a saved filtered view. Never call
 an **Epic** the top-level goal, or a **Key Result** a parent of an Epic. Never
 conflate a **Task** (checklist item, `/stories/{id}/tasks`) with a **Sub-task**
 (child Story, `/stories/{id}/sub-tasks`).

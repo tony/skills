@@ -15,22 +15,22 @@ project name" ([GLFM references][refs]).
 
 Epic > child Epic > Issue > Task. Every level is a work item; the relation, not the object
 class, makes one a child of another. Parent relations are optional throughout: an Issue
-with no Epic is a complete Issue. Epic is Premium and Ultimate, group-level only
+with no Epic is a complete Issue. Epics are group-level only and tier-gated
 ([manage epics][epics]). Nesting is capped:
 "Epics can contain multiple nested child epics, up to a total of 7 levels deep",
-multi-level hierarchies are Ultimate, single-level child items are Free, and an Issue "can
+multi-level hierarchies are tier-gated, and an Issue "can
 be set as a child item of at most one epic" ([child items][child]). Task is the sub-item
-beneath an Issue, on Free. GitLab has no native level above Epic other than another Epic;
+beneath an Issue. GitLab has no native level above Epic other than another Epic;
 express an Initiative as a top-level Epic and say in the reply that the role rests on convention.
 
-Type names are instance-dependent. Configurable work item types are Premium and Ultimate,
+Type names are instance-dependent. Configurable work item types are tier-gated,
 exist at the project level only, "their widgets and hierarchy restrictions match those of
 issues", and cap at 40 per top-level group ([configurable types][conf]). An instance may
 ship a type called Story or Bug that behaves exactly like an Issue. Resolve the list from
 the instance.
 
 The strategic family stays separate: Objective > child Objective, and Objective > Key
-Result. OKRs are Ultimate and may sit behind a feature flag; check that the instance has them. Key results cannot have children, and "issues cannot be children of objectives or
+Result. OKRs are tier-gated and may sit behind a feature flag; check that the instance has them. Key results cannot have children, and "issues cannot be children of objectives or
 key results" ([OKRs][okr]). An Objective states intent; an Epic coordinates delivery.
 Never translate one into the other.
 
@@ -47,15 +47,14 @@ Never translate one into the other.
   Issue. Configurable work item type (work_item): configurable, optional.
 - Objective (strategic_goal) and Key Result (strategic_measure): native_tier_gated and
   experimental, optional. An Objective is `measured_by` a Key Result.
-- Weight: native_tier_gated, Premium and up ([weight][weight]). A field, not a level, and
-  absent on Free.
+- Weight: native_tier_gated ([weight][weight]). A field, not a level.
 
 ## Orthogonal objects
 
 - Iteration (timebox): native_tier_gated. "Iterations are only available to groups"
   ([iterations][iter]). Work is `scheduled_in` one. An iteration cadence schedules
   iterations; it owns no work items.
-- Milestone (release_group): native, Free, project- or group-scoped. "Group milestones
+- Milestone (release_group): native, project- or group-scoped. "Group milestones
   apply to any issue, epic, or merge request in that group's projects"
   ([milestones][mile]). Work is `released_in` one. Milestones and Iterations coexist on the
   same Issue and neither parents it.
@@ -106,48 +105,77 @@ you don't want `#123` to link to an issue, add a leading backslash `\#123`") whi
 kills the link.
 
 Label, milestone, iteration, cadence, feature flag, contact and project references appear
-to create no cross-reference event, because those objects are not mentionable. UNVERIFIED
-in the docs: treat it as likely, and preview before posting.
+to create no cross-reference event, because those objects are not mentionable; the docs do not say so, so preview
+before posting.
 
 `@user_name` and `@group_name` are side effects, not formatting: "GitLab notifies all
 mentioned users with to-do items and emails", and the person becomes a participant
 ([mentions][ment]). Avoid `@all`.
 
-House forms: bare short ref for a same-Project commit reachable from trunk; bare `#123` or
-`!123` in-Project; bare `project#123` for another Project in the same namespace; bare
-`namespace/project#123` anywhere else; `namespace/project@9ba12248` for a cross-project
-commit. Unlike GitHub, a titled link buys nothing cross-container; it posts the same
-cross-reference onto the other tracker and adds noise. If naming an object must not touch
-their timeline, put it in a code span or escape it and accept the loss of the link.
+House forms: bare short ref for a same-Project commit reachable from trunk, and
+`namespace/project@9ba12248` for a cross-project commit. For an Issue or Merge Request,
+`ref_form.py gitlab` prints the form for the intent: bare `#123` in-Project, the
+`namespace/project#123` path elsewhere, and an escape or code span when the target's
+timeline must stay untouched (the link is lost). Unlike GitHub, a titled link buys nothing
+cross-container; it posts the same cross-reference.
 
 ## Reading and writing
 
-`glab` is GitLab's CLI,
-authenticated with `glab auth login` ([GitLab CLI][cli]). It has `issue`, `mr`,
-`work-items`, `milestone` and `api` command groups; there is no `epic` group. `glab issue
-create` takes `-t/--title`, `-d/--description`, `-l/--label`, `-m/--milestone`,
-`-a/--assignee`, `--epic`, `-w/--weight` and `-c/--confidential`. No file flag is
-documented, so feed an approved draft through command substitution rather than retyping it. The scratch path comes from the skill's filing step.
+`glab` is GitLab's CLI, authenticated with `glab auth login` ([GitLab CLI][cli]). It has
+`issue`, `mr`, `work-items`, `milestone` and `api` command groups; there is no `epic`
+group. `glab issue create` takes `-t/--title`, `-d/--description`, `--description-file`
+(`-` reads standard input), `-l/--label`, `-m/--milestone`, `-a/--assignee`, `--epic`,
+`-w/--weight`, `-c/--confidential`, `--linked-issues` and `--no-editor`
+([glab issue create][create]). A drafted body goes in from a file, undamaged by shell
+quoting. The scratch path comes from the skill's filing step; a flag the installed version
+lacks fails the command, so report that and print the body instead.
 
 ```console
-$ glab issue create -t "..." -d "$(cat "<scratch path>")" -y
+$ glab issue create --title "..." --description-file "<scratch path>" --yes
 ```
 
-Read the result back with `glab issue view <iid> -F json`.
+Epics and other configurable work items are not created by `glab issue create`;
+the `work-items` command group is the route for them ([GitLab CLI][cli]). Preview the
+rendered body before posting: sigils, label chips, `+` expansions and
+cross-references only reveal themselves after render.
 
-A very large body can exceed the argument-size limit. Then print the body
-for the user to paste, or send it through `glab api` with the body read
-from the file (UNVERIFIED: confirm the file-input flag with `glab api
---help` first).
+Check each capability you use, and only those. Create:
 
-Issues, Merge Requests and Milestones are also plain REST ([Issues API][restapi]). Epics,
-Tasks, Objectives and Key Results are work items and belong to GraphQL: `workItemCreate`
-and `workItemUpdate` take a `workItemTypeId` global ID and set parentage through the
-hierarchy widget ([workItemCreate][gql]). Query the instance's type list first. GitLab also
-ships an official MCP server at `https://<gitlab.example.com>/api/v4/mcp`, when an
-administrator has enabled it ([MCP server][mcp]); it exposes read and write tools, so prefer read until the user
-approves a write. Preview the rendered body before posting: sigils, label chips, `+`
-expansions and cross-references only reveal themselves after render.
+```console
+$ glab issue create --help | grep -e '--description-file'
+```
+
+Update:
+
+```console
+$ glab issue update --help | grep -e '--description-file'
+```
+
+Read back:
+
+```console
+$ glab issue view --help | grep -e '--comments'
+```
+
+Epics and other work items:
+
+```console
+$ glab --help | grep -e work-items
+```
+
+When a check fails, treat that capability as absent and print the body to paste.
+
+### Read recipe
+
+Read with comments, saving the output for the checks (body field path `description`):
+
+```console
+$ glab issue view <iid> --comments -F json > "<scratch dir>/first.json"
+```
+
+`-c/--comments` and `-F/--output json` are documented ([glab issue view][view]); the
+JSON is the issue object of the [Issues API][restapi]. Rewrite a body with
+`glab issue update <iid> --description-file "<scratch path>"` ([glab issue update][upd]).
 
 ## Duplicate search
 
@@ -170,6 +198,7 @@ sigil for one that has none.
 
 [child]: https://docs.gitlab.com/user/work_items/child_items/
 [cli]: https://docs.gitlab.com/cli/
+[create]: https://docs.gitlab.com/cli/issue/create/
 [close]: https://docs.gitlab.com/user/project/issues/managing_issues/#closing-issues-automatically
 [conf]: https://docs.gitlab.com/user/work_items/configurable_work_item_types/
 [cross]: https://docs.gitlab.com/user/project/issues/crosslinking_issues/#from-linked-issues
@@ -184,3 +213,5 @@ sigil for one that has none.
 [refs]: https://docs.gitlab.com/user/markdown/#gitlab-specific-references
 [restapi]: https://docs.gitlab.com/api/issues/
 [weight]: https://docs.gitlab.com/user/work_items/weight/
+[view]: https://docs.gitlab.com/cli/issue/view/
+[upd]: https://docs.gitlab.com/cli/issue/update/

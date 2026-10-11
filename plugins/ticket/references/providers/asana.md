@@ -17,7 +17,7 @@ Source: https://developers.asana.com/docs/object-hierarchy
 
 ## Native hierarchy
 
-Portfolio is tier-gated to Advanced and above; a Project may sit in more than one
+Portfolio is plan-gated; a Project may sit in more than one
 Portfolio. Project is the principal delivery container. Section is project-local ordering
 and grouping, a phase, column, or category; a Task occupies one Section per Project it is
 homed in, and a Section is not a container of record. Subtask is itself a full Task with
@@ -36,17 +36,17 @@ Task subtypes are a field, not a label: `resource_subtype` takes `approval`, `cu
 
 - Workspace / Organization: scope_container. native, required.
 - Team: scope_container, second level. native, required for a Project in an Organization.
-- Portfolio: delivery_group, higher order. native_tier_gated (Advanced+), optional.
+- Portfolio: delivery_group, higher order. native_tier_gated, optional.
 - Project: delivery_group, principal. native, required.
 - Section: no canonical role; default meaning is project-local grouping or workflow state. native, optional. `grouped_by`, never `parent_of`.
 - Task: work_item. native, required.
 - Subtask: sub_item. native, optional. `child_of` its Task.
 - Task with `resource_subtype: milestone`: checkpoint. native, optional. `checkpoint_of`
   a Project; per the Tasks reference it cannot carry a start date.
-- Task with `resource_subtype: approval`: work_item. native_tier_gated (Advanced+),
+- Task with `resource_subtype: approval`: work_item. native_tier_gated,
   optional. It gates work rather than reviewing code, so record the gating edge as
   `blocks`. https://help.asana.com/s/article/how-to-use-approvals
-- Goal: strategic_goal. native_tier_gated (Advanced+), optional.
+- Goal: strategic_goal. native_tier_gated, optional.
 - Goal metric: strategic_measure. native_tier_gated, optional. Written via
   `POST /goals/{goal_gid}/setMetricCurrentValue`.
   https://developers.asana.com/reference/updategoalmetric
@@ -99,12 +99,9 @@ user mention is a write against a human's queue. To merely name someone, write t
 as plain text and do not link the user GID.
 Source: https://help.asana.com/s/article/collaborating-in-asana
 
-UNVERIFIED: whether mentioning a Task, Project, Portfolio, or Goal produces any visible
-backreference (story, activity entry, or notification) on the target. Asana's help
-material describes object mentions only as creating a link that connects work; no official
-page found states a target-side event, and the Stories reference publishes no enumerated
-`resource_subtype` list in which such an event could be confirmed. Assume no backreference
-exists: if the connection must be discoverable FROM the target, a description link is not
+Asana's help material describes a Task, Project, Portfolio, or Goal mention only as
+creating a link that connects work, and states no target-side event. Assume no
+backreference exists: if the connection must be discoverable FROM the target, a description link is not
 enough; use a native relation (dependency, subtask, multi-home, or goal relationship).
 
 Cross-container: a `gid` is unique across the workspace, so the link form for a Task in
@@ -112,31 +109,72 @@ another Project, Team, or Portfolio is identical; there is no `owner/repo#N`-sty
 qualifier and no cross-container penalty to weigh. Across workspaces, or for a reader
 without access, the GID anchor will not resolve for them; use the object's `permalink_url`
 in a plain `<a href="...">`, expect a permission wall rather than a broken link, and name
-the object in prose as well as linking it. UNVERIFIED: whether pasting a bare
-`app.asana.com` URL auto-converts into a titled smart link. Write the anchor.
+the object in prose as well as linking it. Write the anchor.
 
 ## Reading and writing
 
-Prefer the official MCP server at `https://mcp.asana.com/v2/mcp` over Streamable HTTP with OAuth. Documented tools include
-`search_objects`, `get_task`, `get_my_tasks`, `search_tasks`, `get_project`, `create_tasks`,
-`update_tasks`, `add_comment`, and `create_project_status_update`, plus tools that
-render a confirmation UI before committing. Tokens issued for MCP apps work only against
-the MCP server, not the standard REST API. Otherwise use the REST API at
-`https://app.asana.com/api/1.0` with a personal access token or OAuth, plus the official
-Python or JavaScript client library.
-([MCP tools](https://developers.asana.com/docs/mcp-tools-reference),
-[client libraries](https://developers.asana.com/docs/client-libraries)).
+Prefer Asana's MCP server, found through the connected tool list (`resolve.md`,
+"Finding the backend"); its tools are documented at
+[MCP tools](https://developers.asana.com/docs/mcp-tools-reference). Use its task read and
+task update tools; tokens issued for MCP apps work only against the MCP server. The
+fallback is the REST API ([REST reference](https://developers.asana.com/reference/rest-api-reference)).
 
-The writing gotcha that outranks the rest: send HTML, never markdown. A body drafted in
-markdown is stored and displayed as literal asterisks and brackets. Convert before the
-write, and validate the fragment parses as XML.
+Check the REST base URL and token (`me` is the documented current-user identifier,
+[get a user](https://developers.asana.com/reference/getuser)):
+
+```console
+$ curl -fsS -H "Authorization: Bearer $ASANA_TOKEN" https://app.asana.com/api/1.0/users/me
+```
+
+Send HTML, never markdown: a markdown body is stored as literal asterisks and
+brackets. Run `asana_html.py` (in the plugin's `scripts/`) on the saved body: it emits
+only the supported tags above, maps `#` to `<h1>` and deeper headings to `<h2>`, checks
+the result parses as XML, and exits 1 for what the tag set cannot carry (an image, a
+table, a nested list, raw HTML).
+
+### Commands
+
+Update a Task body with the MCP task-update tool, or over REST with `PUT /tasks/{task_gid}` and `html_notes` in the `data` object
+([update a task](https://developers.asana.com/reference/updatetask)). Wrap the saved HTML
+in the JSON envelope without retyping it:
+
+```console
+$ jq -Rs '{data: {html_notes: .}}' "<scratch path>" > "<scratch dir>/payload.json"
+```
+
+```console
+$ curl -fsS -X PUT \
+    -H "Authorization: Bearer $ASANA_TOKEN" \
+    -H "Content-Type: application/json" \
+    --data @"<scratch dir>/payload.json" \
+    "https://app.asana.com/api/1.0/tasks/<task_gid>"
+```
+
+Read the Task, saving the output for the checks (body field path `data/html_notes`).
+`html_notes` is opt-in, so name it in `opt_fields` ([get a task](https://developers.asana.com/reference/gettask),
+bearer scheme):
+
+```console
+$ curl -fsS \
+    -H "Authorization: Bearer $ASANA_TOKEN" \
+    "https://app.asana.com/api/1.0/tasks/<task_gid>?opt_fields=name,html_notes" > "<scratch dir>/first.json"
+```
+
+Read comments from the Task's stories ([get stories for a task](https://developers.asana.com/reference/getstoriesfortask)):
+
+```console
+$ curl -fsS \
+    -H "Authorization: Bearer $ASANA_TOKEN" \
+    "https://app.asana.com/api/1.0/tasks/<task_gid>/stories?opt_fields=html_text" > "<scratch dir>/comments.json"
+```
 
 ## Duplicate search
 
-Search with the connected tool's search call, and include completed,
-closed, or archived items. UNVERIFIED: this file names no filter for
-that; read the tool's parameters first. A search that cannot include
-closed items goes under Unverified.
+The REST task search takes a `completed` boolean, "Filter to completed tasks", with
+no documented default ([search tasks](https://developers.asana.com/reference/searchtasksforworkspace)),
+so run it once with `completed` true and once with false. For an MCP search tool, read
+its parameters in the tool list for a completion filter; the vendor documents which
+tools carry one ([MCP tools](https://developers.asana.com/docs/mcp-tools-reference)).
 
 ## Naming traps
 

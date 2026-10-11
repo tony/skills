@@ -50,15 +50,13 @@ Canonical form: Epic > Feature > requirement-level Work Item > Task, joined by P
 - Classic release pipeline stage: release_group and deployment context, native but configurable; the
   Deployment control requires a Classic release pipeline and does not support YAML stages. released_in,
   via the "Integrated in release stage" link. checkpoint: absent natively; milestones are convention.
-- Board, Backlog, Taskboard, Query, Dashboard, Delivery Plan: view; visualized_by. Delivery Plans need
-  Basic access or higher; Stakeholders cannot use them.
+- Board, Backlog, Taskboard, Query, Dashboard, Delivery Plan: view; visualized_by. Delivery Plans are access-gated.
 - Wiki page, README: document, native, optional, via the Wiki link type; documented_by. Azure Repos Pull
   Request: review_artifact, native, optional, via the Pull Request external link type; implemented_by.
   Say "Pull Request", never "MR".
 - Test Plan, Test Suite, Test Case: no canonical role, native_tier_gated (test-management
   objects, not code review). `review_artifact` is the Azure Repos Pull Request above and
-  nothing else. Test Case Management requires Basic + Test Plans access
-  ([Access levels](https://learn.microsoft.com/en-us/azure/devops/organizations/security/access-levels?view=azure-devops)).
+  nothing else.
 
 ## References and autolinks
 
@@ -77,15 +75,14 @@ Auto-detected inside a Work Item description, rich-text field or Discussion comm
   ([Link GitHub commits, PRs, branches, and issues](https://learn.microsoft.com/en-us/azure/devops/boards/github/link-to-from-github?view=azure-devops)).
 - Escape a hash you do not mean as a reference (write `\#` for hex colors) or the editor offers
   work-item suggestions. In table cells, leave a blank space around a work item or pull request mention.
-  Bare URL autolinking is documented for pull request comments and wikis but is UNVERIFIED for Work Item
+  Bare URL autolinking is documented for pull request comments and wikis not for Work Item
   fields; use an explicit `[text](url)` there.
 
 Which of those create a side effect on the target:
 
 - `@mention` sends email. Loudest side effect in the product.
-- `#ID` inside a Work Item field renders a link in the body. Whether it also writes a relation onto the
-  target's Links tab is UNVERIFIED; the docs say "link to another work item" without stating a link
-  relation is created. The Comments REST API does return parsed `mentions` with an `artifactType` of person
+- `#ID` inside a Work Item field renders a link in the body. The docs say "link to another work item" without stating that a link
+  relation is created on the target's Links tab. The Comments REST API does return parsed `mentions` with an `artifactType` of person
   or work item, so the reference is recorded on the comment. When a durable, queryable relation is wanted,
   add a real Related or Parent/Child link instead of relying on `#`.
 - `#ID` in an Azure Repos commit message creates a Commit link on the work item once pushed; `#ID` in an
@@ -101,7 +98,7 @@ Cross-container:
 - Another Project, same Organization: IDs are Organization-unique, so `#1234` is not ambiguous, and any
   valid project segment in the URL resolves the item
   ([Rename a project](https://learn.microsoft.com/en-us/azure/devops/organizations/projects/rename-project?view=azure-devops)).
-  Whether the `#` picker searches outside the current Project is UNVERIFIED, so write an explicit titled
+  Across Projects, write an explicit titled
   link: `[Contoso 1234](https://dev.azure.com/{org}/{project}/_workitems/edit/1234)`.
 - Another Organization: `#ID` does not resolve: use the full URL. For a tracked relation use Remote
   Related, Consumes From, or Produces For, which require both organizations to be managed by the same
@@ -118,29 +115,51 @@ A local agent can read and write for real; this adapter is not paste-only.
   create`, `show`, `update`, `delete`, and `az boards work-item relation add` / `remove` / `show` /
   `list-type` ([az boards work-item](https://learn.microsoft.com/en-us/cli/azure/boards/work-item?view=azure-cli-latest)).
   `--description` and `--discussion` take body text; `--fields` sets reference-named fields. The scratch path comes from the skill's filing step;
-  feed the approved body through command substitution, never an inline string.
+  `az boards work-item create` documents no file parameter, so this is the exception to passing a file: feed the saved body through command substitution, never retyped as an inline string.
 
 ```console
 $ az boards work-item create --title "..." --type "User Story" --project "..." --description "$(cat "<scratch path>")"
 ```
 
-- REST API: Work Item Tracking. Work items are created and patched with JSON Patch; comments use a
-  separate endpoint, versioned independently, whose body is `{"text": "..."}`
-  ([Comments - Add](https://learn.microsoft.com/en-us/rest/api/azure/devops/wit/comments/add?view=azure-devops-rest-7.1)).
-- MCP: Microsoft ships an official Azure DevOps MCP Server, remote and local. Check the server docs for which
-  clients the remote server's Microsoft Entra ID sign-in supports, and use the local one where it does not
-  ([Azure DevOps MCP Server](https://learn.microsoft.com/en-us/azure/devops/mcp-server/mcp-server-overview)).
+Check each capability you use, and only those. Create or update:
 
-Read a created or updated work item back with
-`az boards work-item show --id <id>`, which prints JSON.
+```console
+$ az boards work-item create --help | grep -e '--description'
+```
 
-A field is either Markdown or HTML, and a Markdown comment cannot be converted back to HTML. Detect
-the field's editor before emitting Markdown; HTML fields need HTML, and a soft line break needs two trailing spaces.
+Duplicate search:
+
+```console
+$ az boards query --help | grep -e '--wiql'
+```
+
+Read back:
+
+```console
+$ az boards work-item show --help | grep -e '--id'
+```
+
+When a check fails, treat that capability as absent and print the body to paste.
+
+A field is either Markdown or HTML, and a Markdown comment cannot be converted back to HTML.
+Detect the field's editor first. A Markdown field takes the markdown body. For an HTML field,
+print the body for the user to paste: Microsoft documents no tag allowlist for it, so no
+converter is shipped.
+
+### Read recipe
+
+`az boards work-item show` prints JSON; save it for the checks (body field path
+`fields/System.Description`):
+
+```console
+$ az boards work-item show --id <id> > "<scratch dir>/first.json"
+```
 
 ## Duplicate search
 
 Search every state; a WIQL query with no `System.State` clause includes
-closed work items.
+closed work items. `az boards query` supports flat queries only
+([az boards](https://learn.microsoft.com/en-us/cli/azure/boards?view=azure-cli-latest)).
 
 ```console
 $ az boards query --wiql "SELECT [System.Id], [System.Title], [System.State] FROM WorkItems WHERE [System.Title] CONTAINS '<keywords>'"
