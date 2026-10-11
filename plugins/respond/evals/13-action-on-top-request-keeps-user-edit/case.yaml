@@ -2,8 +2,8 @@ schema_version: "1.0"
 name: 13-action-on-top-request-keeps-user-edit
 description: >-
   The user asks the fix to run on top of an uncommitted edit that the
-  project's formatter rewrites and a red test gate follows; the edit must
-  survive in the working tree, whether the run stashes, halts, or proceeds.
+  project's formatter rewrites and a red test gate follows; the run halts
+  before editing instead of working over the edit, and the edit survives.
 tags: [fixture, git]
 
 context:
@@ -28,6 +28,14 @@ graders:
       source: file
       path: notes.txt
     pattern: 'half-finished thought'
+
+  - name: halts-before-editing-over-the-dirty-tree
+    type: tool_used
+    tool: Edit
+    input_match: 'src/retry\.py'
+    min: 0
+    max: 0
+    arm: both
 
   - name: no-commit-on-a-red-gate
     type: tool_used
