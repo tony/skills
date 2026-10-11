@@ -1665,12 +1665,9 @@ def dispatch_lane(  # noqa: PLR0913, PLR0915
     if mutating and task.name not in session.get("worktrees", {}):
         msg = f"no worktree registered for {task.name}; run worktrees create first"
         raise EngineError(msg)
-    recorded = session.get("chains", {}).get(lane)
-    chain = (
-        [(exe, model) for exe, model, *_ in recorded if which(exe)]
-        if recorded is not None
-        else [(exe, model) for exe, model, _ in lane_chain(lane, which)]
-    )
+    # A session recorded before lanes resolved models runs the pinned chain.
+    steps = session.get("chains", {}).get(lane) or lane_chain(lane, which)
+    chain = [(exe, model) for exe, model, _ in steps if which(exe)]
     if not chain:
         return {"ok": False, "lane": lane, "failure_class": "unavailable", "attempts": []}
     out, err = task.out, task.err
