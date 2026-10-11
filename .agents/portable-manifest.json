@@ -254,13 +254,19 @@
         "plugins/gh/skills/create-issue/SKILL.md"
       ],
       "bundled": {
+        "references/issue-body.md": "plugins/gh/references/issue-body.md",
+        "references/issue-filing.md": "plugins/gh/references/issue-filing.md",
+        "references/issue-templates.md": "plugins/gh/references/issue-templates.md",
+        "references/issue.py": "plugins/gh/scripts/issue.py",
         "references/project-links.md": "plugins/gh/references/project-links.md",
         "references/prose-rules.md": "plugins/gh/references/prose-rules.md",
+        "references/registry-links.md": "plugins/gh/references/registry-links.md",
         "references/rendered-markdown.md": "plugins/gh/references/rendered-markdown.md",
+        "references/security-path.md": "plugins/gh/references/security-path.md",
         "references/source-links.md": "plugins/gh/references/source-links.md",
         "references/source-pins.md": "plugins/gh/references/source-pins.md"
       },
-      "bytes": 41045
+      "bytes": 77015
     },
     {
       "name": "gh-rendered-markdown",
@@ -268,6 +274,7 @@
         "plugins/gh/skills/rendered-markdown/SKILL.md"
       ],
       "bundled": {
+        "references/issue.py": "plugins/gh/scripts/issue.py",
         "references/pr-and-files.md": "plugins/gh/references/pr-and-files.md",
         "references/project-links.md": "plugins/gh/references/project-links.md",
         "references/prose-rules.md": "plugins/gh/references/prose-rules.md",
@@ -275,7 +282,7 @@
         "references/source-links.md": "plugins/gh/references/source-links.md",
         "references/source-pins.md": "plugins/gh/references/source-pins.md"
       },
-      "bytes": 26420
+      "bytes": 58369
     },
     {
       "name": "git-branch-redo-from-scratch",
@@ -1579,6 +1586,7 @@
     "plugins/gh/references/rendered-markdown.md": 2,
     "plugins/gh/references/source-links.md": 2,
     "plugins/gh/references/source-pins.md": 2,
+    "plugins/gh/scripts/issue.py": 2,
     "plugins/git-branch/references/branch-safety.md": 2,
     "plugins/git-branch/references/commit-messages.md": 2,
     "plugins/git-branch/references/prose-rules.md": 2,
@@ -1645,7 +1653,12 @@
     "plugins/disk/references/study-repos.md": 1,
     "plugins/disk/scripts/guarded_rm.py": 1,
     "plugins/disk/scripts/survey.py": 1,
+    "plugins/gh/references/issue-body.md": 1,
+    "plugins/gh/references/issue-filing.md": 1,
+    "plugins/gh/references/issue-templates.md": 1,
     "plugins/gh/references/pr-and-files.md": 1,
+    "plugins/gh/references/registry-links.md": 1,
+    "plugins/gh/references/security-path.md": 1,
     "plugins/git-branch/references/rebuild-contract.md": 1,
     "plugins/lean/scripts/scope.py": 1,
     "plugins/package-updater/references/throwaway-worktree.md": 1,

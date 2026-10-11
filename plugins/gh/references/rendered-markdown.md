@@ -1,6 +1,6 @@
 # Rendered markdown
 
-Contents: The test, Comment bodies are never hard-wrapped, Symbols, Nothing local, nothing personal, Code blocks, Long output goes in `<details>`, Structure, In a body, mentions are notifications, What to leave out, Preview before publishing, Primary sources.
+Contents: The test, Comment bodies are never hard-wrapped, Length, Symbols, Nothing local, nothing personal, Code blocks, Long output goes in `<details>`, Structure, In a body, mentions are notifications, Preview before publishing, Primary sources.
 
 The writing rules for text GitHub renders for a human in an issue,
 discussion, or comment body.
@@ -20,6 +20,16 @@ GitHub renders a single newline inside a paragraph of an issue,
 discussion, or comment body as a line break. Write each paragraph as one
 long line and separate paragraphs with a blank line. A body wrapped at 72
 or 80 columns renders as ragged short lines.
+
+## Length
+
+The API rejects an oversized issue or comment body with an error naming a
+maximum of 65536 characters. That figure is observed from the API's error;
+GitHub's documentation does not state it. If a create or edit fails on
+length, report GitHub's error text verbatim, never the number above, so a
+changed limit stays visible. To avoid that, keep the finding and a trimmed excerpt in the body and link the full log from a
+gist or a file in the user's repository (`<details>` collapses text but
+does not shorten it).
 
 ## Symbols
 
@@ -45,16 +55,12 @@ Strip before publishing, every time:
 - Internal-only URLs a reader outside the org cannot open. Say what
   they contain instead of linking them.
 
-Pasted output is where these leak: read every line of a log before it
-goes into a body.
-
 ## Code blocks
 
 Use a fenced block for anything a reader would otherwise retype.
 
-- One command per block, so each copies independently.
-- No comments inside a fence. Explanation goes above the block as
-  ordinary prose.
+- Commands follow `prose-rules.md`. User-supplied scripts, configs, and
+  logs stay verbatim, comments included.
 - A single long command may span lines with a trailing `\`, and a
   multi-statement one-liner may use `\;`; that is still one command.
 - Shell commands use `console` with a `$ ` prefix; a multi-line script
@@ -76,23 +82,20 @@ matrices, and anything else a reader scrolls past to reach the point.
 </details>
 ```
 
-- The blank line after `</summary>` is required. Without it the body
+- The blank line after `</summary>` is required ([GitHub's example](https://docs.github.com/en/get-started/writing-on-github/working-with-advanced-formatting/organizing-information-with-collapsed-sections#creating-a-collapsed-section) shows it). Without it the body
   is raw HTML and every fence, list, and `**bold**` renders literally.
   This is the single most common way a body ships broken.
 - No markdown inside `<summary>`: asterisks and backticks render as
-  themselves there. Use `<b>` or `<code>`, or plain text.
+  themselves there (observed; the docs show only plain text). Use `<b>`
+  or `<code>`, or plain text.
 - `<details open>` works, and blocks nest, each level needing its own
   blank line after its `</summary>`.
 - Indenting a `<details>` four or more spaces past its container's
-  content column turns it into a code block. Under a numbered step,
+  content column turns it into a code block ([GFM indented code
+  blocks](https://github.github.com/gfm/#indented-code-blocks)). Under a numbered step,
   three spaces is right.
 
 ## Structure
-
-### No tables
-
-Use nested sections, or a list with a repeated leading label, so the
-text reflows on a narrow screen.
 
 ### Start a body's headings at `###`
 
@@ -103,26 +106,17 @@ duplicates it. GitHub's own issue templates emit `###` per section.
 
 `> [!NOTE]`, `> [!TIP]`, `> [!IMPORTANT]`, `> [!WARNING]`,
 `> [!CAUTION]`, and no others. GitHub does not support an alert nested
-inside another element, such as a `<details>` block or a list item. The
+inside another element, such as a `<details>` block or a list item
+([alerts](https://docs.github.com/en/get-started/writing-on-github/getting-started-with-writing-and-formatting-on-github/basic-writing-and-formatting-syntax#alerts)). The
 marker sits alone on its blockquote line.
 
 ## In a body, mentions are notifications
 
-`@person` and `@org/team` send mail. Name someone only when you are
+`@person` and `@org/team` send mail ([mentions](https://docs.github.com/en/get-started/writing-on-github/getting-started-with-writing-and-formatting-on-github/basic-writing-and-formatting-syntax#mentioning-people-and-teams)). Name someone only when you are
 asking them for something.
 
 Every rendered issue reference also writes a backlink onto the target
 issue. Citing twenty related issues notifies twenty threads.
-
-## What to leave out
-
-- Preamble and sign-off. Start at the finding.
-- Test counts, file counts, line counts, and "as of" dates.
-- Line numbers in prose. Pin a permalink instead.
-- Narration of the draft itself: "I have updated the section above".
-- `comprehensive`, `robust`, `seamless`, `production-ready`,
-  `leverage`, `delve`. Say what the thing does.
-- Coded labels (`[R1]`, `Option B`) in text a human reads.
 
 ## Preview before publishing
 
@@ -138,13 +132,39 @@ $ mktemp "${TMPDIR:-/tmp}/gh-body.XXXXXX"
 Write the body to that path with the host's file-writing tool, never a
 shell heredoc: pasted text can hold the delimiter line, and the rest of
 the body would run as shell. If the tool refuses to overwrite a file you
-have not read, read it first. Then render it:
+have not read, read it first.
+
+Scan it before anything leaves the machine, since the render sends the
+body to GitHub. Add `--title "TITLE"` when the text has a title. Each row
+is `<line>\t<category>` (`title` for the title); the match is never
+printed. A row is a lead: fix it, or confirm it is intended.
+
+```console
+$ python3 /absolute/path/to/scripts/issue.py scan PATH
+```
+
+The scan's token list is partial (GitHub, AWS, Slack, Anthropic, OpenAI,
+Google, npm, Stripe, and PyPI prefixes, matching providers on GitHub's
+[supported secret-scanning patterns](https://docs.github.com/en/code-security/secret-scanning/introduction/supported-secret-scanning-patterns)),
+so a clean scan does not clear the body. Reread every line for hostnames
+and internal URLs, including inside pasted logs. This is a gate.
+
+Lint it for rendering faults (rows read the same way); `--file` is for a
+repository file, and `--tables` only when the project's rules forbid
+tables:
+
+```console
+$ python3 /absolute/path/to/scripts/issue.py lint PATH
+```
+
+Then render it, read the output, and re-scan after any fix:
 
 ```console
 $ gh api --method POST /markdown -f mode=gfm -f context=OWNER/REPO -F text=@PATH
 ```
 
-Needs `gh auth login`. Remove the scratch file when the run ends.
+Needs `gh auth login`. On GitHub Enterprise, add `--hostname HOST` to
+the `gh` call. Remove the scratch file when the run ends.
 
 Literal `**` or ``` ``` ``` in that output means a `<details>` block
 is missing its blank line. A `<br>` inside a prose paragraph means the

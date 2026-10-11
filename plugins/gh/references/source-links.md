@@ -26,8 +26,9 @@ quote the lines in a fence next to the link.
 
 `#123` for an issue or pull request, and a 7-character commit ref for
 a commit. Both autolink with no markdown syntax. Issues and pull
-requests share one number space, so `#123` may land on either; do not
-assert which in prose.
+requests share one number space ([autolinked
+references](https://docs.github.com/en/get-started/writing-on-github/working-with-advanced-formatting/autolinked-references-and-urls)),
+so `#123` may land on either; do not assert which in prose.
 
 Wrapping a reference in `[text](url)` suppresses the shortening;
 wrapping it in backticks suppresses the link. Use both deliberately.
@@ -66,8 +67,8 @@ page.
 - A repository rename redirects, until someone re-creates the old name
   under the old owner. Then it silently points somewhere else.
 - A branch rename redirects normal URLs.
-- Unauthenticated GitHub API calls are capped at 60 per hour per IP.
-  Route them through `gh`.
+- Unauthenticated REST calls have a low hourly cap (see the rate-limits
+  page below). Route them through `gh`.
 
 ## Primary sources
 

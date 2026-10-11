@@ -1,60 +1,25 @@
 # Project links
 
 Read this only when the text names an upstream open-source project.
-Pinning rules for each link are in `source-links.md`.
+Package-registry lookups are in `registry-links.md`, which
+`create-issue` loads. Pinning rules for each link are in `source-links.md`.
 
-On first mention, give the whole set: repository, homepage,
-documentation, the changelog at the release in question, and the
-package-registry page. Research it; do not reconstruct URLs from memory.
-Render the project name linked to its primary home, with the rest
-alongside (project and version below are illustrative):
+On first mention, link the project to its primary home, and add only the
+links the claim depends on: the changelog at the release for a claim about
+a version, the repository for a claim about code, the documentation for a
+claim about documented behavior, the registry page for a claim about
+packaging. Research each; do not reconstruct URLs from memory (project and
+version below are illustrative):
 
 ```
-[vitest](https://vitest.dev): [repo](https://github.com/vitest-dev/vitest), [docs](https://vitest.dev/guide/), [v1.2.3 release notes](https://github.com/vitest-dev/vitest/releases/tag/v1.2.3), [npm](https://www.npmjs.com/package/vitest)
+[vitest](https://vitest.dev): [v1.2.3 release notes](https://github.com/vitest-dev/vitest/releases/tag/v1.2.3)
 ```
 
-Drop a slot that genuinely does not exist rather than pointing two
-slots at the same page.
+A slot that does not exist is left out, never pointed at the same page as
+another.
 
-## Resolving the set from a registry
-
-npm, including `repository.directory` for a package inside a monorepo:
-
-```console
-$ curl -s 'https://registry.npmjs.org/PKG/latest' | jq '{version, homepage, repository, bugs}'
-```
-
-PyPI, where the link set is maintainer-labeled free text:
-
-```console
-$ curl -s 'https://pypi.org/pypi/PROJECT/json' \
-    | jq '.info | {package_url, home_page, project_urls}'
-```
-
-crates.io, which requires an identifying user agent that includes a contact. Ask the user for a project URL or email to put in place of `CONTACT`; without `AskUserQuestion`, or without an answer, skip this lookup and leave the crates.io slot out:
-
-```console
-$ curl -s \
-    -A 'issue-authoring (CONTACT)' \
-    'https://crates.io/api/v1/crates/CRATE' \
-    | jq '.crate | {homepage, documentation, repository, default_version}'
-```
-
-RubyGems exposes `changelog_uri`:
-
-```console
-$ curl -s 'https://rubygems.org/api/v1/gems/GEM.json' \
-    | jq '{homepage_uri, source_code_uri, documentation_uri, changelog_uri}'
-```
-
-Go, resolving version, tag ref, and commit in one call:
-
-```console
-$ curl -s 'https://proxy.golang.org/MODULE/@latest'
-```
-
-Second-source the repository itself, since a registry records what was
-true at publish time:
+Confirm the repository itself; a registry records what was true at publish
+time:
 
 ```console
 $ gh repo view OWNER/REPO --json url,homepageUrl,description,isArchived
@@ -66,10 +31,7 @@ $ gh repo view OWNER/REPO --json url,homepageUrl,description,isArchived
 https://github.com/OWNER/REPO/releases/tag/v2.40.0
 ```
 
-Copy that URL from the API rather than building it: monorepo tags carry
-prefixes and encodings not derivable from a version number
-(`@scope/pkg@1.2.3` becomes `%40scope/pkg%401.2.3`, Go
-submodules tag as `module1/v1.2.3`).
+Copy `html_url` from the API rather than building the URL:
 
 ```console
 $ gh api repos/OWNER/REPO/releases/tags/v2.40.0 --jq '{tag_name, html_url}'
@@ -80,18 +42,7 @@ and moves as releases are published; never use it for a claim about a
 specific version. When a project publishes no releases, link a tag-pinned
 `CHANGELOG` file, or a `/compare/<old>...<new>` URL.
 
-## What rots in registry data
-
-- A registry-recorded repository URL can predate a rename; it resolves
-  only through that redirect.
-- `npm` `repository.url` is a VCS URL (`git+https://….git`), not a
-  browsable link. `homepage` is often just the README anchor.
-
 ## Primary sources
 
-- [PyPI JSON API](https://docs.pypi.org/api/json/)
-- [RubyGems API](https://guides.rubygems.org/rubygems-org-api/)
-- [Go modules reference, GOPROXY protocol](https://go.dev/ref/mod#goproxy-protocol)
-- [npm `package.json` `repository`](https://docs.npmjs.com/cli/v10/configuring-npm/package-json#repository)
+- `gh repo view --help` and `gh release view --help`
 - [REST: releases](https://docs.github.com/en/rest/releases/releases): "latest release"
-- [crates.io data access policy](https://crates.io/data-access): user-agent requirement

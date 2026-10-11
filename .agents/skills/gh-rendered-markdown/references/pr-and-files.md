@@ -1,8 +1,7 @@
-# Pull requests, repository files, and commit messages
+# Pull requests and repository files
 
 Rules that differ from an issue or comment body. Read this only when the
-text is a pull-request description, a repository markdown file, or a
-commit message; `rendered-markdown.md` holds the rules every surface
+text is a pull-request description or a repository markdown file; `rendered-markdown.md` holds the rules every surface
 shares.
 
 ## Pull requests
@@ -10,14 +9,10 @@ shares.
 Describe the branch's net change, not the route it took; the commits
 already carry renames, reverted attempts, and fixups.
 
-Leave out:
+The `Keep out of the record` list in `prose-rules.md` applies.
 
-- Renames of symbols that never shipped.
-- "Previously X" framing for behavior no released user saw.
-- Any paraphrase of the diff.
-
-A pull-request body is rendered like a comment body: never hard-wrap it.
-Start its headings at `###`.
+A pull-request body follows the comment-body rules in
+`rendered-markdown.md`.
 
 ## Repository files
 
@@ -28,8 +23,3 @@ never re-wrap a file because a body nearby is unwrapped.
 
 A file keeps its `#` title heading. To reference an issue from a file, use
 the full URL, which does not depend on a renderer's autolinking.
-
-## Commit messages
-
-They are not rendered markdown at all, and they wrap. The project's own
-commit convention governs.
