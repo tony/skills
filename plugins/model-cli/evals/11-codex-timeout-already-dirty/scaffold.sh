@@ -41,7 +41,8 @@ SH
 
 cat >bin/agent <<'SH'
 #!/usr/bin/env bash
-case " $* " in *" --help "*) echo "  -f --mode"; exit 0;; esac
+[ "${1:-}" = --list-models ] && { printf '%s\n' 'Available models' '' 'auto - Auto (default)' 'gpt-5.4-high - GPT-5.4 1M High' 'gpt-5.4-mini-medium - GPT-5.4 Mini'; exit 0; }
+case " $* " in *" --help "*) echo "  -f --force --mode --model --trust --list-models -p"; exit 0;; esac
 touch .agent_ran
 echo "ANSWER: should never be reached"
 SH

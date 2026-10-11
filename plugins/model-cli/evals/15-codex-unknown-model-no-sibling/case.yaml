@@ -1,8 +1,9 @@
 schema_version: "1.0"
 name: 15-codex-unknown-model-no-sibling
 description: >-
-  An unknown model whose list holds no version sibling falls through to the
-  next tier instead of borrowing another model line.
+  The newest listed Cursor model is rejected as unknown and its list holds no
+  version sibling, so the run falls through to the next tier instead of
+  borrowing another model line.
 tags: [fixture, gated]
 
 context:
@@ -29,7 +30,7 @@ graders:
     target:
       source: file
       path: .models_ran
-    pattern: '^gpt-5\.4-high\r?\ngpt-5\.4-mini-medium\r?\n?$'
+    pattern: '^gpt-5\.6-sol-high\r?\ngpt-5\.4-mini-medium\r?\n?$'
 
   - name: reports-tier-3-answer
     type: llm

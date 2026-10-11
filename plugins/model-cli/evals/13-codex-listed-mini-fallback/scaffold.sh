@@ -17,7 +17,7 @@ SH
 
 cat >bin/agent <<'SH'
 #!/usr/bin/env bash
-case " $* " in *" --help "*) echo "  -f --force --mode --model --sandbox -p"; exit 0;; esac
+case " $* " in *" --help "*) echo "  -f --force --mode --model --sandbox --trust --list-models -p"; exit 0;; esac
 case " $* " in *" --list-models "*) printf '%s\n' 'gpt-5.4-high - GPT-5.4 1M High' 'gpt-5.4-mini-medium - GPT-5.4 Mini'; exit 0;; esac
 case " $* " in *" --sandbox "*) echo "stub: preserve configured sandbox" >&2; exit 2;; esac
 case " $* " in *" -f "*) ;; *) echo "stub: expected -f" >&2; exit 2;; esac

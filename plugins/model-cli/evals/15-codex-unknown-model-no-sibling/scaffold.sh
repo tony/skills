@@ -18,13 +18,13 @@ SH
 
 cat >bin/agent <<'SH'
 #!/usr/bin/env bash
-case " $* " in *" --help "*) echo "  -f --force --mode --model --sandbox -p"; exit 0;; esac
+case " $* " in *" --help "*) echo "  -f --force --mode --model --sandbox --trust --list-models -p"; exit 0;; esac
 case " $* " in *" --list-models "*) printf '%s\n' 'Available models' '' 'gpt-5.5-codex-high - Codex 5.5 High' 'gpt-5.6-sol-high - GPT-5.6 Sol 1M High' 'gpt-5.4-mini-medium - GPT-5.4 Mini'; exit 0;; esac
 case " $* " in *" -f "*) ;; *) echo "stub: expected -f" >&2; exit 2;; esac
 model=$(printf '%s\n' "$@" | sed -n '/^--model$/{n;p;}')
 echo "$model" >>.models_ran
 case "$model" in
-  gpt-5.4-high) echo "Cannot use this model: gpt-5.4-high" >&2; exit 1;;
+  gpt-5.6-sol-high) echo "Cannot use this model: gpt-5.6-sol-high" >&2; exit 1;;
   *) echo "ANSWER: handle() upper-cases payload['name'].";;
 esac
 SH

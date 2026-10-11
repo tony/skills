@@ -29,6 +29,13 @@ graders:
     path: .agent_ran
     exists: false
 
+  - name: prompt-read-from-stdin
+    type: regex
+    target:
+      source: file
+      path: .codex_prompt
+    pattern: '^last:-\r?\nstdin:[1-9][0-9]*\r?\n?$'
+
   - name: reports-changed-file
     type: llm
     focus: last_message

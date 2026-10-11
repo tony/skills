@@ -26,6 +26,7 @@ cat >.gitignore <<'MD'
 .zshrc
 .agent_ran
 .calls
+.codex_prompt
 bin
 MD
 
@@ -35,13 +36,15 @@ case " $* " in *" --help "*) echo "  --dangerously-bypass-approvals-and-sandbox 
 case " $* " in *" --dangerously-bypass-approvals-and-sandbox "*) ;; *) echo "stub: expected --dangerously-bypass-approvals-and-sandbox" >&2; exit 2;; esac
 n=$(cat .calls 2>/dev/null || echo 0)
 echo $((n + 1)) >.calls
+printf 'last:%s\nstdin:%s\n' "${!#}" "$(cat | wc -c | tr -d ' ')" >.codex_prompt
 echo "# edited by codex" >>app.py
 echo "ANSWER: added a comment to app.py."
 SH
 
 cat >bin/agent <<'SH'
 #!/usr/bin/env bash
-case " $* " in *" --help "*) echo "  -f --mode"; exit 0;; esac
+[ "${1:-}" = --list-models ] && { printf '%s\n' 'Available models' '' 'auto - Auto (default)' 'gpt-5.4-high - GPT-5.4 1M High' 'gpt-5.4-mini-medium - GPT-5.4 Mini'; exit 0; }
+case " $* " in *" --help "*) echo "  -f --force --mode --model --trust --list-models -p"; exit 0;; esac
 touch .agent_ran
 echo "ANSWER: should never be reached"
 SH

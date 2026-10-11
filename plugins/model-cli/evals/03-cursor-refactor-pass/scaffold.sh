@@ -11,9 +11,10 @@ PY
 
 cat >bin/agent <<'SH'
 #!/usr/bin/env bash
-case " $* " in *" --help "*) echo "  -f --force --mode --model --sandbox -p"; exit 0;; esac
+case " $* " in *" --help "*) echo "  -f --force --mode --model --sandbox --trust --list-models -p"; exit 0;; esac
 case " $* " in *" --sandbox "*) echo "stub: preserve configured sandbox" >&2; exit 2;; esac
 case " $* " in *" -f "*) ;; *) echo "stub: expected -f" >&2; exit 2;; esac
+case " $* " in *" --trust "*) ;; *) echo "stub: expected --trust" >&2; exit 2;; esac
 echo "ANSWER: use a parameterized query: db.query(\"SELECT * FROM users WHERE id = ?\", (id,))"
 SH
 chmod +x bin/agent
