@@ -4,6 +4,7 @@
 # pyright: reportUnusedCallResult=false
 from __future__ import annotations
 
+import json
 import subprocess
 from typing import TYPE_CHECKING
 
@@ -80,4 +81,86 @@ def test_restore_conflict_keeps_stash(
     _git(repo, "commit", "-q", "-am", "fix")
     assert user_stash.main(["restore", sha]) == 1
     assert f"kept stash {sha}" in capsys.readouterr().out
+    assert sha in _git(repo, "stash", "list", "--format=%H")
+
+
+def test_restore_keeps_staged_state(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """A staged edit comes back staged, with its unstaged part still unstaged."""
+    repo = _repo(tmp_path)
+    (repo / "a.txt").write_text("staged\n")
+    _git(repo, "add", "a.txt")
+    (repo / "a.txt").write_text("staged\nunstaged\n")
+    monkeypatch.chdir(repo)
+    assert user_stash.main(["save"]) == 0
+    sha = capsys.readouterr().out.strip()
+    assert user_stash.main(["restore", sha]) == 0
+    assert _git(repo, "status", "--porcelain").startswith("MM a.txt")
+
+
+def test_restore_falls_back_when_the_index_cannot_apply(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """A staged hunk that already landed restores without its staged state."""
+    repo = _repo(tmp_path)
+    (repo / "a.txt").write_text("ONE\n")
+    _git(repo, "add", "a.txt")
+    (repo / "a.txt").write_text("one\n")
+    monkeypatch.chdir(repo)
+    assert user_stash.main(["save"]) == 0
+    sha = capsys.readouterr().out.strip()
+    (repo / "a.txt").write_text("uno\n")
+    _git(repo, "commit", "-q", "-am", "rewrite the line")
+    assert user_stash.main(["restore", sha]) == 0
+    assert "staged state not restored" in capsys.readouterr().err
+    assert (repo / "a.txt").read_text() == "uno\n"
+    assert _git(repo, "stash", "list") == ""
+
+
+def test_paths_and_verify_compare_the_tree_with_the_stash(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """``verify`` passes on the stash's own paths and names a stray one otherwise."""
+    repo = _repo(tmp_path)
+    (repo / "a.txt").write_text("edited\n")
+    (repo / "new.txt").write_text("new\n")
+    monkeypatch.chdir(repo)
+    assert user_stash.main(["save"]) == 0
+    sha = capsys.readouterr().out.strip()
+    assert user_stash.main(["verify"]) == 0  # clean tree, no stash expected
+    assert user_stash.main(["paths", sha]) == 0
+    assert json.loads(capsys.readouterr().out) == ["a.txt", "new.txt"]
+    assert user_stash.main(["restore", sha]) == 0
+    assert user_stash.main(["verify", sha]) == 0
+    (repo / "stray.txt").write_text("x\n")
+    assert user_stash.main(["verify", sha]) == 1
+    assert json.loads(capsys.readouterr().out) == {"unexpected": ["stray.txt"], "missing": []}
+
+
+def test_restore_refuses_when_a_stashed_path_changed_since_the_save(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """The tree stays clean and the stash stays, with the clashing path named."""
+    repo = _repo(tmp_path)
+    (repo / "a.txt").write_text("user edit\n")
+    monkeypatch.chdir(repo)
+    assert user_stash.main(["save"]) == 0
+    sha = capsys.readouterr().out.strip()
+    (repo / "a.txt").write_text("fix\n")
+    _git(repo, "commit", "-q", "-am", "fix")
+    assert user_stash.main(["restore", sha]) == 1
+    captured = capsys.readouterr()
+    assert "overlaps changes since the save: a.txt" in captured.err
+    assert f"kept stash {sha}" in captured.out
+    assert _git(repo, "status", "--porcelain") == ""
+    assert (repo / "a.txt").read_text() == "fix\n"
     assert sha in _git(repo, "stash", "list", "--format=%H")

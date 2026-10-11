@@ -818,14 +818,18 @@
       ],
       "bundled": {
         "references/bloat-discipline.md": "plugins/respond/references/bloat-discipline.md",
+        "references/collect_feedback.py": "plugins/respond/scripts/collect_feedback.py",
         "references/feedback-sources.md": "plugins/respond/references/feedback-sources.md",
+        "references/ghcli.py": "plugins/respond/scripts/ghcli.py",
         "references/ledger_key.py": "plugins/respond/scripts/ledger_key.py",
         "references/prose-rules.md": "plugins/respond/references/prose-rules.md",
+        "references/repo_state.py": "plugins/respond/scripts/repo_state.py",
+        "references/report-contract.md": "plugins/respond/references/report-contract.md",
         "references/screening-rubric.md": "plugins/respond/references/screening-rubric.md",
         "references/user_stash.py": "plugins/respond/scripts/user_stash.py",
         "references/verification-gates.md": "plugins/respond/references/verification-gates.md"
       },
-      "bytes": 46689
+      "bytes": 76026
     },
     {
       "name": "respond-check",
@@ -833,12 +837,16 @@
         "plugins/respond/skills/check/SKILL.md"
       ],
       "bundled": {
+        "references/collect_feedback.py": "plugins/respond/scripts/collect_feedback.py",
         "references/feedback-sources.md": "plugins/respond/references/feedback-sources.md",
+        "references/ghcli.py": "plugins/respond/scripts/ghcli.py",
         "references/ledger_key.py": "plugins/respond/scripts/ledger_key.py",
         "references/prose-rules.md": "plugins/respond/references/prose-rules.md",
+        "references/repo_state.py": "plugins/respond/scripts/repo_state.py",
+        "references/report-contract.md": "plugins/respond/references/report-contract.md",
         "references/screening-rubric.md": "plugins/respond/references/screening-rubric.md"
       },
-      "bytes": 30194
+      "bytes": 55375
     },
     {
       "name": "respond-goal",
@@ -846,13 +854,18 @@
         "plugins/respond/skills/goal/SKILL.md"
       ],
       "bundled": {
+        "references/collect_feedback.py": "plugins/respond/scripts/collect_feedback.py",
         "references/feedback-sources.md": "plugins/respond/references/feedback-sources.md",
+        "references/ghcli.py": "plugins/respond/scripts/ghcli.py",
         "references/prose-rules.md": "plugins/respond/references/prose-rules.md",
+        "references/repo_state.py": "plugins/respond/scripts/repo_state.py",
+        "references/report-contract.md": "plugins/respond/references/report-contract.md",
         "references/review-agents.md": "plugins/respond/references/review-agents.md",
+        "references/review_roster.py": "plugins/respond/scripts/review_roster.py",
         "references/verification-gates.md": "plugins/respond/references/verification-gates.md",
         "references/wait_pr.py": "plugins/respond/scripts/wait_pr.py"
       },
-      "bytes": 36526
+      "bytes": 63930
     },
     {
       "name": "ruff-bump",
@@ -1560,6 +1573,10 @@
     "plugins/pytest-optimizer/references/heuristic-catalog.md": 3,
     "plugins/respond/references/feedback-sources.md": 3,
     "plugins/respond/references/prose-rules.md": 3,
+    "plugins/respond/references/report-contract.md": 3,
+    "plugins/respond/scripts/collect_feedback.py": 3,
+    "plugins/respond/scripts/ghcli.py": 3,
+    "plugins/respond/scripts/repo_state.py": 3,
     "plugins/spike/references/prose-rules.md": 3,
     "plugins/spike/references/replay.md": 3,
     "plugins/spike/references/spike-core.md": 3,
@@ -1677,6 +1694,7 @@
     "plugins/research/scripts/topic.py": 1,
     "plugins/respond/references/bloat-discipline.md": 1,
     "plugins/respond/references/review-agents.md": 1,
+    "plugins/respond/scripts/review_roster.py": 1,
     "plugins/respond/scripts/user_stash.py": 1,
     "plugins/respond/scripts/wait_pr.py": 1,
     "plugins/ruff/references/cooldown-exemption.md": 1,
@@ -1762,6 +1780,9 @@
     "../scripts/": [
       "merge-pr-multiple",
       "merge-pr-this",
+      "respond-action",
+      "respond-check",
+      "respond-goal",
       "terraform-bumping-terraform"
     ],
     "../scripts/...": [

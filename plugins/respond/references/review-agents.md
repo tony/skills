@@ -1,39 +1,33 @@
 # Automated Review Agents
 
 A loop that pushes and immediately declares itself done has not run a
-review loop — it has skipped the review. This is how to find out which
+review loop; it has skipped the review. This is how to find out which
 machines review this repository, how to tell when they have looked at
 the current head, and how to wait for them without hanging.
 
 ## Detection
 
-**Past behavior first.** What has actually commented on this
+**Past behavior first.** What has commented on this
 repository's pull requests beats any configuration file, because a
-configured app that never fires is not a reviewer:
+configured app that never fires is not a reviewer. The script reads the
+reviews, issue comments, and inline review comments of recent pull requests
+and lists each account with its REST `user.type`:
+
+Write `../scripts/` from this file as an absolute path:
 
 ```console
-$ gh pr list \
-    --state all \
-    --limit 20 \
-    --json reviews,comments \
-    --jq '[.[] | (.reviews[]?.author.login, .comments[]?.author.login)] | unique'
+$ python3 ../scripts/review_roster.py \
+    --limit 10
 ```
 
-A login ending in `[bot]` is an automated reviewer. `gh` JSON may
-drop that suffix, so also test each remaining login:
-
-```console
-$ gh api users/<login> --jq .type
-```
-
-`Bot` marks an app account; `User` is a person. Note which ones post
-*reviews* and which post plain comments — that changes how their
-arrival is detected below.
+An account is automated when `type` is `Bot` (or the login ends in `[bot]`);
+`User` is a person. The output also says which surfaces each account posts
+on, which changes how its arrival is detected below.
 
 **Configuration second**, for agents installed but not yet seen: a
-CodeRabbit config, a Cursor Bugbot instruction file, a Greptile or
-Sourcery config, Copilot instructions, or a workflow under
-`.github/workflows/` that runs a review action on `pull_request`.
+review-app config file in the repository root or `.github/`, instruction
+files addressed to a review agent, or a workflow under `.github/workflows/`
+that runs a review action on `pull_request`.
 
 **Required checks third.** A review agent that reports as a status
 check appears in `gh pr checks`, and its verdict gates the merge
@@ -41,15 +35,15 @@ whether or not it writes prose.
 
 Record the result as a short roster: who reviews, by which surface, and
 whether their arrival is observable. An empty roster is a finding, not
-an error — it means the loop waits on CI alone and finishes sooner.
+an error; it means the loop waits on CI alone and finishes sooner.
 Report it as `no review agent observed`, naming what was read (recent
 pull requests, configuration files, required checks), never as "none are
 set up": an agent that has not yet commented is unseen, not absent.
 
 ## Knowing an agent has seen the current head
 
-Reviews carry the commit they were submitted against, which is the
-only reliable "has looked at this" signal:
+Reviews and inline review comments carry the commit they were made against
+(`commit_id`), which is the only reliable "has looked at this" signal:
 
 ```console
 $ gh api repos/{owner}/{repo}/pulls/<n>/reviews \
@@ -57,10 +51,9 @@ $ gh api repos/{owner}/{repo}/pulls/<n>/reviews \
     --jq '.[] | {login: .user.login, commit: .commit_id, at: .submitted_at}'
 ```
 
-An agent has weighed in on the current head when a review of theirs
-carries the head SHA. For agents that post plain issue comments and
-never submit reviews, there is no SHA to match: compare the comment
-timestamp against the moment the push landed, and treat anything older
+An agent has weighed in on the current head when a review or inline
+comment of theirs carries the head SHA. For agents that post plain issue
+comments, there is no SHA to match: compare the comment timestamp against the moment the push landed, and treat anything older
 as belonging to a previous round.
 
 Never treat "no new comment yet" as approval. Absence during the wait
@@ -77,15 +70,15 @@ after a push `gh pr checks` can list nothing, which is not "none
 pending"; the script waits for a first check, then for none pending,
 and stops at the first failure or at the cap.
 
-**The agents**, which have none. The script polls reviews and issue
-comments and stops the moment every named login has weighed in on the
+**The agents**, which have none. The script polls reviews, issue comments,
+and inline review comments, and stops the moment every named login has weighed in on the
 head SHA or commented since the push, or at the cap, and prints the
 logins still missing. Roster logins match with or without `[bot]`.
 
 The cap (`--wait` in `/respond:goal`) is not optional. Past it, the
 loop is holding a session open in the hope of an event that
-has already failed to happen. Report who was still missing and move on
-— an agent that arrives later is picked up by the next round, and the
+has already failed to happen. Report who was still missing and move on;
+an agent that arrives later is picked up by the next round, and the
 loop can be re-entered at any time.
 
 ## Ordering

@@ -16,10 +16,12 @@ a colleague, a bot, or a review run earlier in this session, passes the
 six gates in `references/screening-rubric.md` and leaves with a
 verdict, its evidence, and a reply the reviewer can argue with.
 
-This skill changes nothing: no edits, commits, posted comments, or
-resolved threads. Acting on the ledger is the `respond-action` skill's job.
+This skill edits no tracked file, makes no commit, posts no comment, and
+resolves no thread. Its only writes are the temp file that holds pasted
+feedback for hashing. Acting on the ledger is the `respond-action` skill's job.
 
-`../../scripts/` resolves from the directory this SKILL.md was loaded from. Write the resulting absolute path literally in each command; shell variables do not persist between Bash calls.
+Write each `../../scripts/` path as an absolute path; the reply rules and
+script paths are in `references/report-contract.md`.
 
 ## `$ARGUMENTS` contract
 
@@ -31,7 +33,7 @@ for the feedback rather than inventing a review.
 
 | Flag | Default | Effect |
 |---|---|---|
-| `--base=<ref>` | merge-base with `origin/<trunk>` | Override the provenance baseline (a stacked branch's parent, for instance). |
+| `--base=<ref>` | the pull request's base branch | Override the provenance baseline (a stacked branch's parent, for instance). |
 | `--include-resolved` | off | Screen resolved and outdated threads too, instead of treating them as already settled. |
 
 ## Phase 0: What this project has already decided
@@ -43,17 +45,16 @@ branch's own stated purpose (pull request body, commit messages,
 ticket). A project with nothing written down has no decisions to cite;
 never substitute a preference for a citation.
 
-Resolve the provenance base here too (see the rubric's Provenance
-gate), and note the branch's push state with `git status -sb`. This
-skill does not fetch, so `origin/<trunk>` is read as last fetched; say
-in the report that provenance may be stale when the remote has moved.
+Resolve the provenance base here too, per the rubric's Provenance gate and
+without `--fetch`; the report says provenance may be stale when the remote
+has moved.
 
 ## Phase 1: Collect
 
 Gather from every channel `references/feedback-sources.md`
 describes that applies to this run: pasted text, this session's earlier
-review output, the pull request's three comment surfaces, and failing
-CI.
+review output, and the pull request (reviews, comments, threads, and
+failing CI, all from `collect_feedback.py`).
 
 Normalize, split, drop, and merge per that file, including its rule
 for re-posts of findings declined earlier in this session.
@@ -80,32 +81,29 @@ citation is genuinely contested, or where the code is not available.
 Everything else is decided here. In a non-interactive run, leave them
 as `ask` in the ledger.
 
-## Phase 3: Report — the output contract
+## Phase 3: Report: the output contract
 
-Write the report and replies per `references/prose-rules.md`. Use
-exactly the headings below, in this order, and no others. The hero line
-is the literal first line of the reply: no sentence, label, or note
-precedes it, including on a run with no readable code, and nothing
-follows the prescribed parts. Never name local absolute paths, temp
-files, or a file and line number (name the function), and write no first person.
+Write the report and replies per `references/prose-rules.md` and
+`references/report-contract.md`. Use exactly the headings below, in
+this order, and no others.
 
 1. Hero block (1–3 lines): `N to fix, M deferred, K declined`, then
    `, J ask` when any finding is an `ask`, plus the branch name and the
    feedback sources screened.
-2. `## Ledger` — one entry per finding: id, source (author, and whether
+2. `## Ledger`: one entry per finding: id, source (author, and whether
    it is a bot), the claim quoted, location, the gate results with
    their evidence, and the verdict with its reason, as one inline-prose
    bullet (no labeled sub-bullets). Merged duplicates
    list all their sources on one entry.
-3. `## To fix` — omitted when nothing is accepted; else the accepted findings in the order they should land,
+3. `## To fix`: omitted when nothing is accepted; else the accepted findings in the order they should land,
    each with the minimal fix and whether it wants a forward commit or a
    `fixup!`. Name a `fixup!` target only when the branch's log shows
    the causal commit; otherwise it is a forward commit.
-4. `## Deferred & declined` — omitted when empty; else the follow-up
+4. `## Deferred & declined`: omitted when empty; else the follow-up
    recommendation or the drafted reply. A declined `improbable` reply states the trigger the
    scenario needs, so a reviewer who knows a caller that produces it
    can say so.
-5. `## Ledger key` — branch, `HEAD` (7-character SHA, the only place a
+5. `## Ledger key`: branch, `HEAD` (7-character SHA, the only place a
    SHA appears), and the feedback digest, as the rubric's ledger section
    defines them. A second bullet says provenance may be stale when the
    remote has moved; omit it when no remote exists. the `respond-action` skill checks this key to know the
@@ -119,40 +117,11 @@ files, or a file and line number (name the function), and write no first person.
    label, and stop.
    Invoked by the `respond-goal` skill, skip the panel.
 
-Compute the digest with `ledger_key.py`, from the feedback as the
-rubric's ledger section defines it. the `respond-action` skill runs the same
-commands, so the keys compare. For a pull request, one command covers
-the three comment surfaces:
+Compute the digest per the rubric's ledger section, from a pull request
+with `--pr` or from pasted text as one block. the `respond-action` skill runs the
+same commands, so the keys compare.
 
-```bash
-{
-  gh api repos/{owner}/{repo}/pulls/<n>/reviews --paginate \
-    --jq '.[] | [.id, .body] | @tsv'
-  gh api repos/{owner}/{repo}/issues/<n>/comments --paginate \
-    --jq '.[] | [.id, .body] | @tsv'
-  gh api repos/{owner}/{repo}/pulls/<n>/comments --paginate \
-    --jq '.[] | [.id, .body] | @tsv'
-} | python3 references/ledger_key.py
-```
-
-For pasted text or a session's review output, never use a shell heredoc:
-a line equal to its delimiter ends it and the rest runs as shell. Make a
-file, write the findings into it with the file tool, and hash it as one
-block under the id `paste` or `session`:
-
-```console
-$ mktemp "${TMPDIR:-/tmp}/respond-feedback.XXXXXX"
-```
-
-```console
-$ python3 references/ledger_key.py \
-    --block paste \
-    <path-printed-above>
-```
-
-Delete that file afterwards with `rm -- <path-printed-above>`.
-
-Reply in this shape, as plain text outside any code fence, with plain bullets, no bold (never `- **Label:** ...`), and no local paths:
+Reply in this shape:
 
 ```text
 2 to fix, 1 deferred, 1 declined on feat/retry-after. Screened 5 PR comments from alex and 2 bots.
@@ -196,7 +165,7 @@ with one `ask` entry per finding, and `## Ledger key`. Every finding is an
 `ask` entry, never under `## Deferred & declined`, and each says
 what is missing in one line. Add no hypothetical, no "if X then fix"
 branch, no claim about code you have not read, and no extra heading.
-Reply in this shape, with the same plain bullets:
+Reply in this shape:
 
 ```text
 0 to fix, 0 deferred, 0 declined, 4 ask on main. Screened 4 pasted comments; no code is available.
@@ -216,7 +185,7 @@ Reply in this shape, with the same plain bullets:
 2. Stop
 ```
 
-If a fix seems obvious enough to just do, write it in `## To fix` and
+If a fix seems obvious enough to do, write it in `## To fix` and
 hand off.
 
 

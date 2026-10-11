@@ -18,7 +18,8 @@ waits, so it runs only when invoked by name. Invoking it authorizes the
 rounds and commits described below, and nothing broader; only `--push`
 authorizes pushes.
 
-Write each `../../scripts/` path as an absolute path, as `../check/SKILL.md` describes.
+Write each `../../scripts/` path as an absolute path; the reply rules and
+script paths are in `../../references/report-contract.md`.
 
 ## Exit condition
 
@@ -30,12 +31,13 @@ first round runs and measure every round against it:
 
 > The loop is finished when a round lands no new fixes, CI is green on
 > the current head, and every review agent on the roster has weighed in
-> on that head — or when the round cap is reached or the loop goes
+> on that head, or when the round cap is reached or the loop goes
 > quiet (see Stopping), whichever comes first.
 
-When the host has a standing-goal mechanism (Claude Code: `/goal`),
-register that sentence with it; otherwise restate the condition at the
-top of every round.
+When the host has a standing-goal mechanism (a command or setting that
+keeps the session working until a stated condition holds), register that
+sentence with it; otherwise restate the condition at the top of every
+round.
 
 ## `$ARGUMENTS` contract
 
@@ -45,7 +47,7 @@ top of every round.
 | `--max-rounds=<n>` | `3` | Hard cap on rounds. Reached means stop and report, not raise. |
 | `--wait=<minutes>` | `10` | Cap on waiting for review agents per round. |
 | `--ci-wait=<minutes>` | `30` | Cap on waiting for CI per round. |
-| `--push` | off | Push after each round and run the CI and review-agent conditions. Without it, run one local round on session or pasted feedback with steps 4-6 skipped, finished when the local gates are green; the report prints the push command. |
+| `--push` | off | Push after each round and run the CI and review-agent conditions. Without it, run one local round on session or pasted feedback with steps 4-6 skipped, finished when the local gates are green; the report prints the push command (`repo_state.py push-target <pr>` gives it). |
 | `--reply` | off | Post the drafted replies for declined and deferred findings once, when the loop ends, with the commands in `../action/SKILL.md` Phase 4. Confirm first; a non-interactive run treats the flag as that confirmation, for the replies shown in the report only. |
 
 ## Phase 0: Reconnaissance
@@ -62,10 +64,12 @@ top of every round.
    empty roster shortens the loop to CI alone.
 3. Resolve the gate buckets and the CI-coverage split per
    `../../references/verification-gates.md`.
-4. Run `git rev-parse --show-toplevel` and halt when it is the home
-   directory (compare with `(cd ~ && pwd -P)`) or contains it. Run `git fetch origin`; when it fails, go on with
-   provenance marked possibly stale. Confirm a clean working tree and
-   note the push state; a dirty tree halts.
+4. Run the home-directory guard from
+   `../../references/report-contract.md`; exit 3 halts. Resolve the base
+   with `repo_state.py base --pr <n> --fetch`, as the rubric's Provenance
+   gate describes; `fetched: false` or no remote marks provenance
+   possibly stale; exit 4 halts with `gh`'s reason. Confirm a clean working tree (`repo_state.py changes`
+   prints an empty array) and note the push state; a dirty tree halts.
 
 ## Phase 1: Orchestration plan
 
@@ -73,8 +77,8 @@ Enter plan mode before the first edit. In Claude Code call `EnterPlanMode`; in C
 
 The plan covers the exit
 condition, the roster, the caps in effect, the discovered gate
-commands, and what the loop will never do without asking: force-push,
-merge, resolve a thread, or rewrite pushed history.
+commands, and the standing limits in
+`../../references/report-contract.md`, plus never rewriting pushed history.
 
 Wait for approval, then exit plan mode. In a non-interactive run,
 record the plan in the report and proceed.
@@ -89,8 +93,10 @@ forward the previous rounds' declines per the re-post rule there.
 settle what this round does.
 
 **3. Act.** Read `../action/SKILL.md` and follow it in loop mode on the
-accepted findings, which lands one gated commit each. A round with no accepted findings skips
-straight to the exit test.
+accepted findings, which lands one gated commit each. A round with no
+accepted findings lands no commit but is not done: with `--push`, steps 4
+to 6 still run, because the exit condition needs CI green on the current
+head and the roster observed on it, and neither is known until then.
 
 Both skills run in loop mode here: this loop's plan approval stands, so
 neither enters plan mode or ends with its panel, and the action steps
@@ -99,23 +105,37 @@ the loop posts.
 
 **4. Push.** Only with `--push`. First print the head SHA
 (`git rev-parse HEAD`) and the time (`date -u +%Y-%m-%dT%H:%M:%SZ`) and
-keep the literal values, since the wait in step 6 depends on both. Push
-normally; a rejected push is a halt condition, never forced. Then read
-the head back; a head that differs from the printed SHA halts the loop:
+keep the literal values, since the wait in step 6 depends on both. The
+script resolves the remote and branch from the pull request
+(`headRepository` and `headRefName` of `gh pr view`, matched to a git
+remote by URL, so a fork works) and pushes `HEAD` to that branch with
+`git push <remote> HEAD:refs/heads/<branch>`
+(<https://git-scm.com/docs/git-push>). It pushes only when the local head
+is ahead of the pull request head. After a push it reads the pull request
+head back and prints it as `head`; a mismatch exits 1. `state` is
+`up-to-date`, `ahead`, `behind`, or `diverged`:
 
 ```console
-$ gh pr view <pr> \
-    --json headRefOid \
-    --jq .headRefOid
+$ python3 ../../scripts/repo_state.py push <pr>
 ```
+
+Exit 0 with `up-to-date` pushed nothing, and the round continues to the
+waits. Exit 1 prints why and halts the loop (see Stopping).
 
 **5. Watch CI.** The script polls until the pull request head is the
 pushed SHA, at least one check exists on it, and none is pending,
-stopping at the first failure or at the cap. It prints a JSON status and
-exits 0 (green), 1 (failed), 2 (timeout), 3 (no check appeared within
-the grace period), 4 (`gh` failed; stderr says why, and the loop halts),
-or 5 (the head never became the pushed SHA, so no check can be trusted;
-the loop halts):
+stopping at the first failure or at the cap. `gh pr checks --help`
+documents the `bucket` values it reads (`pass`, `fail`, `pending`,
+`skipping`, `cancel`) and exit 8 for pending checks. It prints a JSON
+status and exits:
+
+- 0: green.
+- 1: a check failed.
+- 2: timeout at the cap.
+- 3: no check appeared within the grace period.
+- 4: `gh` failed; stderr says why, and the loop halts.
+- 5: the head never became the pushed SHA, so no check can be trusted; the
+  loop halts.
 
 ```console
 $ python3 ../../scripts/wait_pr.py ci <pr> \
@@ -124,16 +144,21 @@ $ python3 ../../scripts/wait_pr.py ci <pr> \
 ```
 
 Exit 4 (and the same on the agents wait) halts the loop with `gh`'s
-message as the reason; it never means "nothing to wait on". Exit 3 means no check ran, which is not green: say so in the
-report, never write "CI green", and test the exit condition on the
-agents alone. A failure becomes next round's feedback, with the failing log as its
-evidence. A timeout halts the loop.
+message as the reason; it never means "nothing to wait on". Exit 3 means
+no check ran, which is not green: say so in the report, never write "CI
+green", and test the exit condition on the agents alone. A failure becomes
+next round's feedback, with the failing log as its evidence. A timeout
+halts the loop.
 
-**6. Wait for the agents.** The script polls reviews and comments until
-every named roster login has reviewed the head SHA or commented since
-the push time, bounded by `--wait`. It reads reviews and issue comments,
-not inline review comments, and ignores a trailing `[bot]` on logins. It
-prints the logins still missing:
+**6. Wait for the agents.** The script polls reviews, issue comments, and
+inline review comments until every named roster login has reviewed the
+head SHA or commented since the push time, bounded by `--wait`. It ignores
+a trailing `[bot]` on logins and prints the logins still missing. Its exit
+codes:
+
+- 0: every named login weighed in.
+- 2: logins were still missing at the cap.
+- 4: `gh` failed; the loop halts as for CI.
 
 ```console
 $ python3 ../../scripts/wait_pr.py agents <pr> \
@@ -150,61 +175,58 @@ Then test the exit condition. Not met and rounds remain → next round.
 
 ## Stopping
 
-**Finished** — a round landed no new fixes, CI is green on the current
+**Finished**: a round landed no new fixes, CI is green on the current
 head, and the roster has weighed in on it.
 Without `--push`, the local gates are green instead.
 
-**Capped** — `--max-rounds` reached. Report what is still open and what
+**Capped**: `--max-rounds` reached. Report what is still open and what
 the next round would do.
 
-**Quiet** — two consecutive rounds that landed no new fixes while the
+**Quiet**: two consecutive rounds that landed no new fixes while the
 exit condition stayed unmet because a roster agent never arrived.
 More rounds will not change that. Report it as quiet, listing who
 never weighed in.
 
-**Halted** — stop the loop and report, without another round:
+**Halted**: stop the loop and report, without another round:
 
 - No pull request exists with `--push`, or no pull request and no
   feedback to screen (Phase 0).
 - A quality gate fails in a way no accepted fix resolves.
-- A push is rejected, or the branch needs a rebase or a force-push.
+- A push is rejected, the head read back after it differs, or the branch
+  needs a rebase.
 - Screening returns an `ask` verdict that needs the author's intent.
 - The working tree is dirty from something the loop did not do.
 - The repository is rooted at the home directory, or `gh` fails.
 - CI fails for a reason outside the branch, such as a flaky job, an
   outage, or a missing secret, or is still pending after `--ci-wait`.
 
-Halting is a result; never work around a halt condition. The loop never merges the pull request, never force-pushes, never
-resolves a review thread, and never approves anything on a reviewer's
-behalf.
+Halting is a result; never work around a halt condition. The standing
+limits in `../../references/report-contract.md` apply.
 
-## Phase 3: Report — the output contract
+## Phase 3: Report: the output contract
 
-Write the report and replies per `../../references/prose-rules.md`.
-The hero line is the literal first line of the reply: nothing precedes
-it and nothing follows the prescribed parts. Never name local absolute
-paths, temp files, credential file names, file and line numbers,
-the test harness or its stubs, or internal phase and step names.
+Write the report and replies per `../../references/prose-rules.md` and
+`../../references/report-contract.md`.
 
 A halted run reports one result sentence naming the halt condition,
 then what the user needs to do, then only the sections that have
 content, headings included. It never recaps what the
-loop inspected; a home-directory halt names no file it found there. Two
-examples below show a halted run. In a non-interactive
+loop inspected. A home-directory halt follows the contract reference; the
+first example below shows another halted run. In a non-interactive
 run, state the plan in one sentence after the hero line and give no
 reason for skipping approval.
 
 1. Hero block (1–3 lines): the outcome (finished, capped, quiet, or
    halted), rounds run, and total fixed / deferred / declined.
-2. `## Rounds` — per round: findings collected and from whom, verdicts,
+2. `## Rounds`: per round: findings collected and from whom, verdicts,
    commits landed, CI result, and which agents weighed in.
-3. `## What the fixes added` — the aggregate of every test, comment,
+3. `## What the fixes added`: the aggregate of every test, comment,
    code path, and dependency the loop introduced, with the finding that
    justified each.
-4. `## Still open` — deferred findings with follow-up recommendations,
+4. `## Still open`: deferred findings with follow-up recommendations,
    declined findings with their replies, and any agent that never
    weighed in.
-5. `## Verification` — the final head SHA as `gh pr view` reports it
+5. `## Verification`: the final head SHA as `gh pr view` reports it
    (the local `HEAD` when no push ran), the CI state on it, and the gate
    commands run. State `no CI check ran` instead of `green` when exit 3
    ended the wait.
@@ -215,7 +237,7 @@ reason for skipping approval.
    non-interactive run, list the options in the report and default to
    stopping.
 
-Reply in this shape, as plain text outside any code fence, with plain bullets, no bold (never `- **Label:** ...`), and no local paths:
+Reply in this shape:
 
 ```text
 Finished after 2 rounds on feat/retry-after: 3 fixed, 1 deferred, 1 declined.
@@ -242,23 +264,12 @@ Finished after 2 rounds on feat/retry-after: 3 fixed, 1 deferred, 1 declined.
 2. Stop
 ```
 
-A halted run replies in this shape, with the same plain bullets:
+A halted run replies in this shape:
 
 ```text
 Halted before round 1: feat/retry-after has no pull request, and --push was passed.
 
 Open a pull request for the branch, then run /respond:goal again.
-
-1. Stop
-```
-
-A halt because the repository is rooted at the home directory replies
-in this shape:
-
-```text
-Halted before round 1: this repository is rooted at your home directory.
-
-Run /respond:goal again from the project's own checkout.
 
 1. Stop
 ```

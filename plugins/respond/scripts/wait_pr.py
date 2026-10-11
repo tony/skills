@@ -5,23 +5,32 @@
 none is pending; it trusts the checks only while the pull request's head is
 the ``--sha`` that was pushed. ``agents`` polls reviews and comments until every named login
 has weighed in on a head SHA; a trailing ``[bot]`` is ignored on both sides.
-Reviews and issue comments are read; inline review comments are not. Each
-prints one JSON line.
+Reviews, issue comments, and inline review comments are all read. Each prints
+one JSON line.
 
-Exit codes: 0 done, 1 a check failed, 2 timed out, 3 no check appeared within
-the grace period, 4 ``gh`` failed (its stderr is printed), 5 the pull request
-head never became ``--sha``.
+``gh pr checks --help`` documents the ``bucket`` values (``pass``, ``fail``,
+``pending``, ``skipping``, ``cancel``) and exit 8 for pending checks.
+
+Exit codes of ``ci``: 0 green, 1 a check failed, 2 timed out, 3 no check
+appeared within the grace period, 4 ``gh`` failed (its stderr is printed), 5
+the pull request head never became ``--sha``.
+
+Exit codes of ``agents``: 0 every named login weighed in, 2 some logins were
+still missing at the cap (they are printed), 4 ``gh`` failed.
 """
 
-# ruff: noqa: S603
 # pyright: reportAny=false, reportUnusedCallResult=false
 from __future__ import annotations
 
 import argparse
 import json
-import subprocess
 import sys
 import time
+
+import ghcli  # pyright: ignore[reportImplicitRelativeImport]
+
+GhError = ghcli.GhError
+_gh = ghcli.gh
 
 _FAIL = {"fail", "cancel"}
 
@@ -52,10 +61,6 @@ def _bare(login: str) -> str:
     return login.removesuffix("[bot]")
 
 
-class GhError(Exception):
-    """``gh`` could not run or exited nonzero without usable output."""
-
-
 def missing_agents(
     roster: list[str],
     reviews: list[dict[str, str]],
@@ -65,7 +70,9 @@ def missing_agents(
 ) -> list[str]:
     """Return roster logins with no review on ``sha`` and no comment since.
 
-    Timestamps are ISO 8601 UTC, so string comparison orders them.
+    A ``reviews`` entry counts when its ``commit`` is ``sha``; a ``comments``
+    entry counts when its ``at`` is not before ``since``. Timestamps are ISO
+    8601 UTC, so string comparison orders them.
 
     >>> r = [{"login": "a", "commit": "abc"}, {"login": "b", "commit": "old"}]
     >>> c = [{"login": "c", "at": "2026-01-02T00:00:00Z"}]
@@ -81,34 +88,12 @@ def missing_agents(
     return [login for login in roster if _bare(login) not in seen]
 
 
-def _gh(*args: str, checks: bool = False) -> str:
-    """Return ``gh`` stdout; raise ``GhError`` on failure.
-
-    ``gh pr checks`` exits nonzero for failing or pending checks while still
-    printing them, and for a head with no checks; ``checks=True`` accepts both.
-    """
-    try:
-        done = subprocess.run(
-            ["gh", *args],  # noqa: S607
-            check=False,
-            capture_output=True,
-            text=True,
-        )
-    except OSError as exc:
-        msg = f"gh: {exc}"
-        raise GhError(msg) from exc
-    if done.returncode == 0:
-        return done.stdout
-    if checks and done.stdout.strip():
-        return done.stdout
-    if checks and "no checks reported" in done.stderr:
-        return ""
-    msg = done.stderr.strip() or f"gh exited {done.returncode}"
-    raise GhError(msg)
-
-
 def _lines(raw: str) -> list[dict[str, str]]:
     return [json.loads(line) for line in raw.splitlines() if line.strip()]
+
+
+def _checks(pr: str) -> list[dict[str, str]]:
+    return ghcli.pr_checks(pr, "name,bucket,state", _gh)
 
 
 def _head(pr: str) -> str:
@@ -123,8 +108,7 @@ def _wait_ci(args: argparse.Namespace) -> int:
     while True:
         head = _head(args.pr)
         if head == args.sha:
-            raw = _gh("pr", "checks", args.pr, "--json", "name,bucket,state", checks=True)
-            state = classify_ci(json.loads(raw) if raw.strip() else [])
+            state = classify_ci(_checks(args.pr))
             if state in {"green", "failed"}:
                 break
             if state == "none" and time.monotonic() >= grace:
@@ -146,23 +130,24 @@ def _wait_ci(args: argparse.Namespace) -> int:
 
 def _wait_agents(args: argparse.Namespace) -> int:
     deadline = time.monotonic() + args.timeout * 60
-    base = f"repos/{{owner}}/{{repo}}/pulls/{args.pr}/reviews"
-    reviews_jq = "-q"
+    pull = f"repos/{{owner}}/{{repo}}/pulls/{args.pr}"
+    issue = f"repos/{{owner}}/{{repo}}/issues/{args.pr}/comments"
     while True:
         reviews = _lines(
-            _gh(
-                "api", base, "--paginate", reviews_jq,
-                ".[] | {login: .user.login, commit: .commit_id}",
-            )
+            _gh("api", f"{pull}/reviews", "--paginate", "-q",
+                ".[] | {login: .user.login, commit: .commit_id}")
         )  # fmt: skip
         comments = _lines(
-            _gh(
-                "api", f"repos/{{owner}}/{{repo}}/issues/{args.pr}/comments",
-                "--paginate", reviews_jq,
-                ".[] | {login: .user.login, at: .created_at}",
-            )
+            _gh("api", issue, "--paginate", "-q",
+                ".[] | {login: .user.login, at: .created_at}")
         )  # fmt: skip
-        missing = missing_agents(args.agents, reviews, comments, args.sha, args.since)
+        inline = _lines(
+            _gh("api", f"{pull}/comments", "--paginate", "-q",
+                ".[] | {login: .user.login, commit: .commit_id, at: .created_at}")
+        )  # fmt: skip
+        missing = missing_agents(
+            args.agents, reviews + inline, comments + inline, args.sha, args.since
+        )
         if not missing or time.monotonic() >= deadline:
             break
         time.sleep(args.interval)

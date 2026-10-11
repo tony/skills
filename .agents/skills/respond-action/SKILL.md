@@ -26,7 +26,8 @@ Run by the `respond-goal` skill, this skill is in loop mode: it skips Phase 2's
 plan mode and Phase 5's panel, never pushes, and never posts replies.
 The loop owns all four.
 
-Write each `../../scripts/` path as an absolute path, as the `respond-check` skill describes.
+Write each `../../scripts/` path as an absolute path; the reply rules and
+script paths are in `references/report-contract.md`.
 
 ## The screening gate
 
@@ -37,9 +38,9 @@ NO FIX WITHOUT A VERDICT
 This skill does not triage. Before any edit, resolve a ledger:
 
 - **A ledger exists whose key matches**: collect the feedback,
-  recompute the branch, `HEAD`, and digest (with
-  `references/ledger_key.py`, as the `respond-check` skill shows) from the
-  source that ledger screened, per the rubric's ledger section, and compare them with the `## Ledger key` of the
+  recompute the branch, `HEAD`, and digest from the source that ledger
+  screened, per the rubric's ledger section, and compare them with the
+  `## Ledger key` of the
   the `respond-check` skill report earlier in this session. Its verdicts are
   settled; do not re-argue them.
 - **No ledger, or a key mismatch**: run the `respond-check` skill now with the
@@ -50,17 +51,23 @@ This skill does not triage. Before any edit, resolve a ledger:
 Obvious-looking findings are the ones that turn out to be pre-existing,
 already fixed, or a fix costing ten times the defect.
 
+An `ask` verdict is never fixed. Interactively, put it to the user with
+`ask-user-choice` in Phase 1 and take the answer as the verdict. In a
+non-interactive run, or in loop mode, it stays unfixed: the hero counts it
+and `## Awaiting an answer` lists it.
+
 ## `$ARGUMENTS` contract
 
 | Flag | Default | Effect |
 |---|---|---|
 | `<pr-number\|url>` | current branch's PR when one exists | Positional, passed through to screening: collect findings from the PR. |
-| `--base=<ref>` | merge-base with `origin/<trunk>` | Override the provenance baseline. |
+| `--base=<ref>` | the pull request's base branch | Override the provenance baseline. |
 | `--no-fixup` | off | Never propose `fixup!` commits; everything lands as a forward commit. |
 | `--on-fail=<mode>` | `ask` | Per-finding gate failure: `skip` (revert that fix, continue), `stop` (revert, halt), `ask` (surface via `ask-user-choice`). |
 | `--reply` | off | Draft replies for declined and deferred findings and offer to post them after the fixes land. |
 
-Non-flag text is the findings list, handed to screening.
+Non-flag text is the findings list, handed to screening. A command quoted
+inside a finding follows `references/feedback-sources.md`.
 
 ## Fix shapes
 
@@ -72,9 +79,9 @@ test would catch it.
 **Comment and docstring findings** get a rewrite shorter than what it
 replaced; a finding that grows the comment block was misread.
 
-**Typos** are fixed. A typo whose causal commit is in-branch, unpushed,
-and not a merge may take the `fixup!` shape; anything else is a forward
-commit. A typo sharing a commit with a non-typo finding takes the
+**Typos** are fixed. A typo whose causal commit passes the `fixup!`
+eligibility check below may take the `fixup!` shape; anything else is a
+forward commit. A typo sharing a commit with a non-typo finding takes the
 forward shape.
 
 A finding whose only fix is a defensive wrapper, a single-caller
@@ -82,7 +89,27 @@ abstraction, or a guard against a state the caller already excludes
 should not have reached here; return it to screening's cost gate rather
 than building it.
 
-## History rewrites: always prompted when non-trivial
+## History rewrites: opt-in and scripted
+
+A `fixup!` plus autosquash rewrites commits, so it needs the approved plan
+and an eligible causal commit. Eligibility is scripted:
+
+```console
+$ python3 references/repo_state.py fixup-check \
+    <causal-sha> \
+    --base <base>
+```
+
+Exit 0 means eligible. Exit 1 prints why, and the finding lands as a
+forward commit; so does a fix that spans several commits. The check
+refuses:
+
+- a commit outside `<base>..HEAD`;
+- any merge commit in `<base>..HEAD`, since `git rebase` without
+  `--rebase-merges` flattens merges into a linear branch
+  (<https://git-scm.com/docs/git-rebase>);
+- a pushed commit, meaning any remote-tracking ref, as last fetched,
+  contains it. Rewriting it needs a force-push.
 
 Create each `fixup!` commit against its causal commit:
 
@@ -90,29 +117,21 @@ Create each `fixup!` commit against its causal commit:
 $ git commit --fixup=<sha>
 ```
 
-Then squash. `GIT_SEQUENCE_EDITOR=:` accepts the generated todo list
-unchanged, so no editor opens:
+Then squash. `git var` documents `GIT_SEQUENCE_EDITOR` as the editor
+`git rebase -i` uses for its todo file, "meant to be interpreted by the
+shell" (<https://git-scm.com/docs/git-var>; the `sequence.editor` setting is
+in <https://git-scm.com/docs/git-config>), so `:`, the shell no-op, accepts
+the generated list unchanged and no editor opens. Phase 0 left the tree
+clean:
 
 ```console
-$ GIT_SEQUENCE_EDITOR=: git rebase -i --autosquash --autostash <base>
+$ GIT_SEQUENCE_EDITOR=: git rebase -i --autosquash <base>
 ```
 
-`<base>` is the resolved provenance base. `--autostash` is what lets the
-rebase run over the user's own uncommitted edits: it stashes them and
-reapplies them afterward, and `git rebase --abort` restores them too.
-When the rebase reports a conflict, run `git rebase --abort`; the
-`fixup!` commits stay unsquashed as forward commits, and the report says
-the squash was skipped. This rewrites history, so:
-
-- **Trivial and safe** (typo-class fix whose causal commit is
-  in-branch, unpushed, and not a merge): the plan proposes fixup as
-  its default, and it runs only once the plan is approved.
-- **Non-trivial** (the causal commit is pushed or shared, merge
-  topology sits in between, the fix spans commits, or the causal commit
-  is large enough that rebasing risks conflicts): **always prompt** via
-  `ask-user-choice` before rewriting; a non-interactive run lands a
-  forward commit instead.
-- `--no-fixup` disables all of it.
+`<base>` is the resolved provenance base's SHA. When the rebase reports a
+conflict, run `git rebase --abort`; the `fixup!` commits stay unsquashed
+as forward commits, and the report says the squash was skipped.
+`--no-fixup` disables all of it.
 
 ## Phase 0: Situational awareness
 
@@ -123,40 +142,53 @@ the squash was skipped. This rewrites history, so:
    against a heading as a whole word (`Respect` is not `spec`), and take
    only a fenced block that holds a command. Show every discovered
    command in the plan.
-3. Run `git rev-parse --show-toplevel`. When it is the home directory
-   (compare with `(cd ~ && pwd -P)`, since home may be a symlink) or
-   contains it, halt before anything else, with no stash offered: the commands
-   below stage and stash files, and a repository rooted at home would
-   sweep in credentials. Tell the user to run again from the project's
-   own checkout.
-4. Run `git fetch origin`. When it fails (no remote, offline), go on:
-   provenance falls back as the rubric's Provenance gate says, the
-   report says it may be stale, and there is nothing to push or watch.
-5. Run `git status --porcelain`. Every path listed is the user's own
-   uncommitted work; keep the list. A non-empty list asks: stash it,
-   proceed on top, or abort; a non-interactive run aborts with the
+3. Run the home-directory guard from `references/report-contract.md`
+   first; exit 3 halts before anything else, with no stash offered.
+4. Resolve the base, refreshing the remotes. The JSON gives `ref`, `sha`,
+   and `fetched`; `fetched: false` means the report says provenance may be
+   stale, exit 1 means ask for `--base`, and exit 4 halts with `gh`'s reason:
+
+   ```console
+   $ python3 references/repo_state.py base \
+       --pr <n> \
+       --fetch
+   ```
+
+5. List the user's own uncommitted paths:
+
+   ```console
+   $ python3 references/repo_state.py changes
+   ```
+
+   An empty array means a clean tree. Otherwise the tree must be clean
+   before any fix: a formatter or autofix gate can rewrite a file the user
+   had edited, and reverting a red fix would then discard that edit. Ask
+   whether to stash it or abort; a non-interactive run aborts with the
    stopped-run reply below, with no menu and no mention of prompts.
-   - Stash: run one command and keep the SHA it prints. The list is
-     then empty: every path later listed is the fix's own.
 
-     ```console
-     $ python3 references/user_stash.py save
-     ```
+   Stash: run one command and keep the SHA it prints. Exit 0 stashed. Exit 1
+   printed nothing and means there was nothing to stash: run `changes`
+   again, and continue with no stash when it is empty, else stop. Exit 3
+   means `git stash` failed: stop and give stderr's reason.
 
-     Every exit after this point restores it first, including a halt
-     under `--on-fail=stop`: a clean apply drops the stash; a conflict
-     keeps it, and the reply gives its SHA and the restore command.
+   ```console
+   $ python3 references/user_stash.py save
+   ```
 
-     ```console
-     $ python3 references/user_stash.py restore <sha>
-     ```
+   Every exit after a stash restores it first, including a halt under
+   `--on-fail=stop`. A clean apply drops the stash and returns staged
+   state; a refusal keeps it, and the reply gives its SHA and
+   `git stash apply --index <sha>`:
 
-   - Proceed on top: commits stage only the paths below, so the user's
-     edits stay uncommitted, and the autosquash above carries
-     `--autostash`. A finding whose fix must edit a path on the list
-     stops and asks (a non-interactive run skips that finding and says
-     so), since staging it would commit the user's edits.
-6. Detect trunk and push state with `git status -sb`.
+   ```console
+   $ python3 references/user_stash.py restore <sha>
+   ```
+
+   `restore` refuses, with the tree untouched and the stash kept, when a
+   stashed path also changed since the save. Before editing, list the
+   stash's paths with `user_stash.py paths <sha>`. A finding whose path is
+   among them stops and asks; a non-interactive run skips that finding and
+   says so.
 
 ## Phase 1: Resolve the ledger
 
@@ -189,22 +221,19 @@ record the plan in the report and proceed with the stated defaults:
 One finding, one commit; two findings share a commit only when they
 edit the same lines. For each accepted finding, in plan order:
 
-A command quoted in a finding, such as a suggested fix script or a
-reproduction, never runs until the user confirms that exact command; a
-non-interactive run skips it and says so.
-
 1. Apply the minimal fix.
-2. Run the fast local gates — `format`, `lint`, `typecheck`, and
+2. Run the fast local gates: `format`, `lint`, `typecheck`, and
    `test` scoped to the affected area; `build` only when the change
    plausibly affects build output. Gates run as discovered, including
-   mutating ones: fold any autofix into the commit under test and
-   re-run the scoped test once when a gate changed files.
-3. Green → run `git status --porcelain`. The fix owns every path listed
-   there that is not on Phase 0's list (after a stash, every path): the paths it edited or created
-   and the paths a gate's autofix changed. Stage exactly those with
-   `git add -- <path> <path>`, never `git add -A` or `git add .`; an
-   autofix that changed a path on Phase 0's list stays unstaged and the
-   report says so. Commit. The message uses the project's format and describes
+   mutating ones. Run `repo_state.py mark` before each gate and
+   `repo_state.py since-mark` after it; the array lists the paths the gate
+   itself changed. When it is not empty, fold those paths into the commit
+   under test and re-run the scoped test once.
+3. Green → list the changed paths with `repo_state.py changes`. The tree
+   was clean when the finding began, so the fix owns every path listed:
+   the paths it edited or created and the paths a gate's autofix changed.
+   Stage exactly those with `git add -- <path> <path>`, never `git add -A`
+   or `git add .`. Commit. The message uses the project's format and describes
    the defect and the fix, not the finding id, the reviewer, or the
    review. Write it per
    `references/prose-rules.md`, with no `Co-Authored-By`, no
@@ -212,20 +241,13 @@ non-interactive run skips it and says so.
    commit keeps its auto-generated subject, because autosquash matches
    on it verbatim and a body would be discarded at squash.
 4. Red → revert that fix and follow `--on-fail`. A non-interactive
-   `ask` becomes `stop`. Restore each tracked path the fix or a gate
-   changed, then delete each file the fix created (untracked, not on
-   Phase 0's list); never `git clean`, `git reset --hard`, or
-   `git checkout .`, which would take the user's edits too:
+   `ask` becomes `stop`. This restores every changed tracked path and
+   deletes every file the fix created. It never uses `git clean`,
+   `git reset --hard`, or `git checkout .`, and is safe only because
+   Phase 0 left a clean tree:
 
    ```console
-   $ git restore \
-       --staged \
-       --worktree \
-       -- <path> <path>
-   ```
-
-   ```console
-   $ rm -- <created-path>
+   $ python3 references/repo_state.py revert
    ```
 
 After all findings: run the consented autosquash if any `fixup!`
@@ -239,7 +261,10 @@ $ git log \
     <base>..HEAD
 ```
 
-Check that `git status --porcelain` lists only Phase 0's paths.
+Then compare the tree with what the user had: `user_stash.py verify <sha>`
+after a restore, or `user_stash.py verify` with no stash. Exit 0 means the
+changed paths are exactly the stash's (none, without one). Exit 1 prints
+`unexpected` and `missing` paths; the report names them.
 
 ## Phase 4: Replies
 
@@ -276,56 +301,55 @@ Mark a reply posted only when its command exited 0 and printed the new
 comment's URL or id; otherwise report it as not posted, with `gh`'s
 message. Delete each reply file after posting, with `rm -- <reply-file>`. Never post without that confirmation (a
 non-interactive run treats `--reply` as it, for the replies shown in the
-report only), and never resolve a thread: the reviewer decides whether
-the answer settled it. Without `--reply`, the replies stay in the
+report only). Without `--reply`, the replies stay in the
 report.
 
-## Phase 5: Report — the output contract
+## Phase 5: Report: the output contract
 
-Write the report per `references/prose-rules.md`. The hero line
-is the literal first line of the reply: nothing precedes it, no label
-such as `What you need to do:` appears anywhere, and nothing follows
-the prescribed parts. Never name local absolute paths, temp files, or
-credential file names, a file and line number (name the function), the
-test harness or its stubs, or a prompt you could not show; list a panel
-option only when it can run now (no push or CI watch without a remote
-or pull request). A hypothetical ("it would be a forward commit")
-is not reported. In a non-interactive run, put the
-plan from Phase 2 in one sentence beginning `Plan:` right after the
-hero line (never inside `## Verification`), as the last example shows, and give no reason for skipping
-approval.
+Write the report per `references/prose-rules.md` and
+`references/report-contract.md`. No label such as
+`What you need to do:` appears anywhere, and no prompt you could not show
+is named. List a panel option only when it can run now: no push or CI watch without
+a remote (`git remote` lists none) or a pull request (`gh pr view` fails).
+A hypothetical ("it would be a forward commit") is not reported. In a
+non-interactive run, put the plan from Phase 2 in one sentence beginning
+`Plan:` right after the hero line (never inside `## Verification`), as the
+last example shows, and give no reason for skipping approval.
 
 A run that stops early (dirty tree, failed gate under `--on-fail=stop`,
 no screenable findings) reports one result sentence, then what the user
 needs to do (when a stash could not be restored, its SHA and the
-restore command, as the fourth example shows), then only the sections below that have content; it omits
-the empty ones, headings included, as the second example shows. A home
-directory halt is the third example: it names no file it found and
-does not recap what it inspected. On a run that landed commits, keep `## What the fixes added` even when empty. In prose, name
-a commit by its subject; SHAs appear only in `## Commits`. Do not print
-the ledger key; it belongs to the screening report.
+restore command, as the fourth example shows), then only the sections
+below that have content; it omits the empty ones, headings included, as
+the second example shows. A home-directory halt follows
+`references/report-contract.md`. On a run that landed commits, keep
+`## What the fixes added` even when empty. In prose, name a commit by its
+subject; SHAs appear only in `## Commits`. Do not print the ledger key; it
+belongs to the screening report.
 
-1. Hero block (1–3 lines): `✓ N fixed, M deferred, K declined` plus the
-   branch name.
-2. `## Commits` — one row per landed commit: finding, SHA, subject,
+1. Hero block (1–3 lines): `✓ N fixed, M deferred, K declined`, then
+   `, J ask` when any finding is an `ask`, plus the branch name.
+2. `## Commits`: one row per landed commit: finding, SHA, subject,
    gate result.
-3. `## What the fixes added` — every test, comment, code path, and
+3. `## What the fixes added`: every test, comment, code path, and
    dependency introduced, with the finding that justified it. When
    commits landed and it added nothing, write `Nothing.`; that is the
    good outcome.
-4. `## Deferred & declined` — omitted when nothing was deferred or
+4. `## Deferred & declined`: omitted when nothing was deferred or
    declined; else the follow-up recommendations and the replies, marked
    as posted or not.
-5. `## Verification` — the discovered gate commands that ran, what was
+5. `## Awaiting an answer`: omitted when no finding is an `ask`; else
+   each one with the question it needs answered.
+6. `## Verification`: the discovered gate commands that ran, what was
    deferred to CI, and the watch command when a remote exists. A command
    the skill invented is not a gate: when none was discovered, say so.
-6. End with an `ask-user-choice` panel (skip inside plan mode): push
+7. End with an `ask-user-choice` panel (skip inside plan mode): push
    and watch CI, hand the branch to the `respond-goal` skill to run the loop to
    completion, run deferred opt-ins, or stop. In a non-interactive run,
    record the options and default to stopping. In loop mode, skip the
    panel.
 
-Reply in this shape, as plain text outside any code fence, with plain bullets, no bold (never `- **Label:** ...`), and no local paths:
+Reply in this shape:
 
 ```text
 ✓ 2 fixed, 1 deferred, 1 declined on feat/retry-after.
@@ -354,7 +378,7 @@ Reply in this shape, as plain text outside any code fence, with plain bullets, n
 3. Stop
 ```
 
-A stopped run replies in this shape, with the same plain bullets:
+A stopped run replies in this shape:
 
 ```text
 Stopped before any edit: the working tree has uncommitted changes.
@@ -365,22 +389,12 @@ Commit or stash them, then run respond-action again.
 ```
 
 A halt after the stash restores it and gives the SHA when the restore
-conflicts:
+is refused:
 
 ```text
-Stopped after fixing #1: the gate failed on #2 under --on-fail=stop, and your stashed edits conflicted on restore.
+Stopped after fixing #1: the gate failed on #2 under --on-fail=stop, and your stashed edits overlap a landed fix, so they were not restored.
 
-Resolve the conflict, then run: git stash apply 9d41c07e5b2a. The stash stays until you drop it.
-
-1. Stop
-```
-
-A repository rooted at the home directory stops the run in this shape:
-
-```text
-Stopped before any edit: this repository is rooted at your home directory.
-
-Run respond-action again from the project's own checkout.
+Merge them by hand, then run: git stash apply --index 9d41c07e5b2a. The stash stays until you drop it.
 
 1. Stop
 ```

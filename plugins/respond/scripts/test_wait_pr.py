@@ -60,10 +60,10 @@ def test_agents_match_bot_logins_across_suffix(
     monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
 ) -> None:
     """A roster login without ``[bot]`` matches the REST login with it, and back."""
-    review = json.dumps({"login": "coderabbitai[bot]", "commit": "abc"})
+    review = json.dumps({"login": "reviewer-app[bot]", "commit": "abc"})
     monkeypatch.setattr(wait_pr, "_gh", _fake(review, "reviews"))
     argv = ["agents", "7", "--sha", "abc", "--since", "2026-01-01T00:00:00Z"]
-    argv += ["--agents", "coderabbitai", "other[bot]", "--timeout", "0", "--interval", "0"]
+    argv += ["--agents", "reviewer-app", "other[bot]", "--timeout", "0", "--interval", "0"]
     assert wait_pr.main(argv) == 2
     assert json.loads(capsys.readouterr().out) == {"missing": ["other[bot]"]}
 
@@ -159,10 +159,38 @@ def test_gh_checks_nonzero_exit_with_output_is_read(
     assert json.loads(capsys.readouterr().out) == {"status": "failed"}
 
 
-def test_gh_no_checks_reported_is_none(
+def _checks_fail(rollup: str) -> Callable[..., object]:
+    def run(*a: object, **_k: object) -> subprocess.CompletedProcess[str]:
+        text = str(a)
+        if "headRefOid" in text:
+            return subprocess.CompletedProcess([], 0, "abc\n", "")
+        if "statusCheckRollup" in text:
+            return subprocess.CompletedProcess([], 0, rollup, "")
+        return subprocess.CompletedProcess([], 1, "", "some other wording")
+
+    return run
+
+
+def test_empty_rollup_means_no_checks_whatever_gh_prints(
     monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
 ) -> None:
-    """``gh pr checks`` on a head with no checks is the grace-period case."""
-    monkeypatch.setattr(subprocess, "run", _run_result(1, "", "no checks reported"))
+    """A head with an empty ``statusCheckRollup`` has no checks, by field, not by message."""
+    monkeypatch.setattr(subprocess, "run", _checks_fail("0\n"))
     assert wait_pr.main(["ci", "7", "--sha", "abc", "--grace", "0", "--interval", "0"]) == 3
     assert json.loads(capsys.readouterr().out) == {"status": "none"}
+
+
+def test_agents_inline_review_comments_count(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """An agent that posts only inline review comments has weighed in."""
+    inline = json.dumps({"login": "a[bot]", "commit": "abc", "at": "2026-01-02T00:00:00Z"})
+
+    def gh(*args: str, **_kw: bool) -> str:
+        return inline if "pulls/7/comments" in " ".join(args) else ""
+
+    monkeypatch.setattr(wait_pr, "_gh", gh)
+    argv = ["agents", "7", "--sha", "abc", "--since", "2026-01-01T00:00:00Z"]
+    argv += ["--agents", "a", "--timeout", "0", "--interval", "0"]
+    assert wait_pr.main(argv) == 0
+    assert json.loads(capsys.readouterr().out) == {"missing": []}

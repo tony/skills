@@ -14,7 +14,7 @@ A finding that clears all six is accepted for fixing.
 
 ### 1. Locate
 
-Tie the claim to a specific place in the code — file and symbol, not a
+Tie the claim to a specific place in the code: file and symbol, not a
 line number that the next commit invalidates. A finding whose target
 cannot be found is `unlocatable`: report it, ask the reviewer what they
 meant, and never guess at a fix for it.
@@ -42,31 +42,36 @@ longer exists.
 NO FIX WITHOUT PROVENANCE
 ```
 
-Resolve the base: `--base=<ref>` if given, else the merge-base with the
-remote trunk:
+Write each `../scripts/` path in this file as an absolute path. Resolve
+the base with the script, which prints JSON with `ref`, `sha` (the
+merge-base with `HEAD`), `source`, and `fetched`:
 
 ```console
-$ git merge-base origin/<trunk> HEAD
+$ python3 ./repo_state.py base \
+    --pr <n> \
+    --base <ref>
 ```
 
-this skill and the `respond-goal` skill run `git fetch origin` first.
-the `respond-check` skill does not, so its provenance may be stale.
-
-With no remote, or when `git fetch origin` fails, fall back to
-`origin/<trunk>` as last fetched, then to the local trunk (`main` or
-`master`), and say provenance may be stale; when none resolves, ask for
-the base rather than guessing.
+It takes `--base` first; else the pull request's base branch from
+`gh pr view --json baseRefName`, looked up on `upstream`, `origin`, other
+remotes, then locally; else the remote's `HEAD`; else `main` or `master`.
+this skill and the `respond-goal` skill add `--fetch`, which refreshes the
+first remote before resolving. the `respond-check` skill does not fetch, so its
+provenance may be stale, and the report says so. Exit 1 means nothing
+resolved: ask for the base rather than guessing. Exit 4 means the named pull
+request could not be read, so no base is assumed. Report `source` whenever it
+is not `pr` or `flag`: the base was a guess.
 
 Then test whether this branch introduced or last touched the flagged
-code — `git diff <base>...HEAD -- <file>` for the region, and
+code: `git diff <base>...HEAD -- <file>` for the region, and
 `git log -L<range>:<file> <base>..HEAD` or blame when the diff is
 ambiguous. Classify:
 
-- `in-branch` — this branch added or changed it. Proceeds.
-- `pre-existing` — present at the base. Deferred by default.
-- `mixed` — the branch touched part of it. Split at that boundary: the
+- `in-branch`: this branch added or changed it. Proceeds.
+- `pre-existing`: present at the base. Deferred by default.
+- `mixed`: the branch touched part of it. Split at that boundary: the
   branch's part proceeds, the remainder defers.
-- `disputed` — settled at gate 2 already.
+- `disputed`: settled at gate 2 already.
 
 A reviewer flags; the branch owner scopes. Pre-existing findings get
 their own branch and review.
@@ -87,7 +92,7 @@ reply names the decision, so the reviewer can argue with it.
 
 ### 5. Odds
 
-How often does the scenario actually fire? Classify the trigger it
+How often does the scenario fire? Classify the trigger it
 needs and the damage it does; do not invent a probability.
 
 Trigger:
@@ -137,15 +142,15 @@ needed a condition. Offer the smaller fix.
 Every finding leaves screening with exactly one, never a conditional
 ("fix if X"):
 
-- **`fix`** — cleared all six gates. Goes to this skill with the
+- **`fix`**: cleared all six gates. Goes to this skill with the
   intended fix shape recorded.
-- **`defer`** — true and worth doing, but not this branch's work.
+- **`defer`**: true and worth doing, but not this branch's work.
   Pre-existing findings land here, with a follow-up recommendation.
-- **`decline`** — with a reason: `wrong`, `misaligned`, `improbable`,
+- **`decline`**: with a reason: `wrong`, `misaligned`, `improbable`,
   `cost-exceeds-value`, or `duplicate` (another finding or an existing
   test already covers it). Each carries the evidence and a drafted
   reply.
-- **`ask`** — screening genuinely cannot settle it: the truth depends
+- **`ask`**: screening genuinely cannot settle it: the truth depends
   on intent only the author has, or the alignment citation is
   contested. Goes to the user, not to a coin flip.
 
@@ -157,11 +162,11 @@ One record per finding. The whole ledger is keyed by three values,
 printed in the report's `## Ledger key` section and read back from the
 session by this skill:
 
-- **branch** — `git branch --show-current`; `none` when empty or
+- **branch**: `git branch --show-current`; `none` when empty or
   outside a repository.
-- **`HEAD`** — `git rev-parse --short=7 HEAD`; `none` when it fails (no commits,
+- **`HEAD`**: `git rev-parse --short=7 HEAD`; `none` when it fails (no commits,
   no repository).
-- **digest** — the first 12 hex characters of the SHA-256 of the
+- **digest**: the first 12 hex characters of the SHA-256 of the
   collected feedback as the reviewers wrote it: one line per comment,
   review body, or pasted block, `<id>` TAB `<original text>`, whitespace
   collapsed, sorted bytewise, newline-terminated. The id is the one the
@@ -174,8 +179,32 @@ session by this skill:
   covers every comment before splitting, dropping, or merging, so new or
   edited feedback changes it.
 
-The plugin's `ledger_key.py` computes it from those lines.
-the `respond-check` skill shows the commands.
+`ledger_key.py` computes the digest. For a pull request it fetches the
+reviews, issue comments, and inline review comments itself; `current` names
+the current branch's pull request. A failed `gh` call exits 4 and prints no
+digest:
+
+```console
+$ python3 ./ledger_key.py \
+    --pr <n|url|current>
+```
+
+For pasted text or a session's review output, never use a shell heredoc: a
+line equal to its delimiter ends it and the rest runs as shell. Make a file,
+write the findings into it with the file tool, and hash it as one block
+under the id `paste` or `session`:
+
+```console
+$ mktemp "${TMPDIR:-/tmp}/respond-feedback.XXXXXX"
+```
+
+```console
+$ python3 ./ledger_key.py \
+    --block paste \
+    <path-printed-above>
+```
+
+Delete that file afterwards with `rm -- <path-printed-above>`.
 
 this skill recomputes all three from the feedback it collects.
 Any mismatch means the ledger is stale, and screening runs again rather
@@ -184,14 +213,14 @@ session, there is no ledger.
 
 Each record carries:
 
-- **id** — stable within the run; the reviewer's own id when it has
+- **id**: stable within the run; the reviewer's own id when it has
   one.
-- **source** — the author's login, whether that author is a bot, and the
+- **source**: the author's login, whether that author is a bot, and the
   thread or review it came from.
-- **claim** — the reviewer's words, quoted and trimmed to the assertion.
-- **location** — file and symbol.
-- **gates** — each gate that ran, with its evidence.
-- **verdict** — one of the four above, with its reason.
-- **fix shape** — for `fix`: the minimal change, forward commit or
+- **claim**: the reviewer's words, quoted and trimmed to the assertion.
+- **location**: file and symbol.
+- **gates**: each gate that ran, with its evidence.
+- **verdict**: one of the four above, with its reason.
+- **fix shape**: for `fix`: the minimal change, forward commit or
   `fixup!`.
-- **reply** — for `decline` and `defer`: text a reviewer can answer.
+- **reply**: for `decline` and `defer`: text a reviewer can answer.

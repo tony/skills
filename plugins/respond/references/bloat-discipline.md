@@ -12,13 +12,13 @@ anything bad.
 
 Two questions before the first edit, answered per finding:
 
-**Why now** — what makes this branch the place? Either this branch
+**Why now:** what makes this branch the place? Either this branch
 caused it, or shipping the branch without it breaks something. A fix
 that would have been equally welcome last month and will be equally
 welcome next month is a backlog item, and the honest response is a
 follow-up, not a commit stapled to unrelated work.
 
-**Why this** — what is the smallest change that removes the defect?
+**Why this:** what is the smallest change that removes the defect?
 Say so in the reply when it differs from the reviewer's proposal.
 
 ## Test bloat
@@ -38,8 +38,8 @@ is testing the test. If the scenario needs the test to build a state no
 caller can produce, the finding failed the odds gate and this fix
 should not exist.
 
-Never assert the implementation's shape — mock call counts, internal
-ordering, private attribute values — in place of its behavior. Those
+Never assert the implementation's shape (mock call counts, internal
+ordering, private attribute values) in place of its behavior. Those
 tests fail on refactors that broke nothing and pass through changes
 that broke everything.
 
@@ -52,20 +52,20 @@ line?**
 Keep the ones that survive it. Invariants that the code cannot state
 itself, protocol and platform constraints, security boundaries, an
 upstream bug the workaround exists for, and the reason the obvious
-implementation is wrong here — that reason is the single most valuable
-comment class and the one most often missing.
+implementation is wrong here. That reason is the most valuable comment
+class and the one most often missing.
 
 Delete, or never write:
 
 - Comments restating the code the reader is already looking at.
-- Change narration — "now also handles empty input", "moved from the
-  parser" — which describes a diff the reader does not have.
+- Change narration ("now also handles empty input", "moved from the
+  parser"), which describes a diff the reader does not have.
 - Review breadcrumbs: "per review feedback", "as discussed", the
   reviewer's name, a link back to the thread.
 - **Ticket, issue, and pull request numbers.** A number is a pointer to
   a system the reader may not have, holding a discussion that assumes
   context they lack, about a decision that may have been superseded.
-  Where the context matters, state the constraint itself — that is what
+  Where the context matters, state the constraint itself: that is what
   the number was standing in for. A pinned upstream link explaining a
   workaround in someone else's code is different: that is evidence for
   a reader who would otherwise delete the workaround, and it stays.
@@ -85,9 +85,9 @@ Each of these is a fix that costs more than the defect:
 - An abstraction, indirection, or helper with exactly one caller.
 - A configuration knob nobody asked for, which is a promise to support
   both settings forever.
-- An early return duplicating a check the caller just made.
+- An early return duplicating a check the caller already made.
 - A new dependency for something the standard library does adequately.
 
 When a finding's only available fix is one of these, the finding is
-answered in the reply, not in the code — and the reply says which
+answered in the reply, not in the code, and the reply says which
 scenario would change the answer.

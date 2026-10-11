@@ -42,7 +42,7 @@ Claude Code uses a leading slash (`/respond:…`). Codex omits it (`respond:…`
 ## Skills
 
 Screen every claim against six gates and emit a ledger of verdicts with
-evidence and drafted replies. Changes nothing. In Claude Code:
+evidence and drafted replies. Edits no tracked file. In Claude Code:
 
 ```text
 /respond:check [findings]
@@ -81,16 +81,9 @@ respond:goal
 ```
 
 Every skill takes a pull request number or URL to collect feedback from.
-Further flags per skill:
-
-- `check`: `--base=<ref>` overrides the provenance baseline;
-  `--include-resolved` screens settled threads.
-- `action`: `--base=<ref>`; `--no-fixup` lands forward commits only;
-  `--on-fail=skip|stop|ask` sets what a failed gate does; `--reply` posts
-  drafted replies.
-- `goal`: `--max-rounds=<n>`, `--wait=<minutes>`, `--ci-wait=<minutes>`;
-  `--reply` posts drafted replies; `--push` pushes each round and watches CI
-  (without it, one local round).
+Each skill's flags are listed under `$ARGUMENTS contract` in its
+`skills/<name>/SKILL.md`; the limits all three share (no force-push, no
+resolved threads, no merge) are in `references/report-contract.md`.
 
 ## What a fix is allowed to add
 
@@ -109,7 +102,7 @@ and no more verification is run than each fix needs.
 
 ## Prerequisites
 
-- **git** — provenance uses merge-base, diff, log -L, and blame
-- **gh** (optional) — enables pull-request feedback, CI watching, and
+- **git**: provenance uses merge-base, diff, log -L, and blame
+- **gh** (optional): enables pull-request feedback, CI watching, and
   review-agent detection
-- **python3** (3.9 or newer) — runs the ledger digest and stash scripts, and in `goal` the CI and review-agent wait script
+- **python3** (3.9 or newer): runs the scripts for the ledger digest, base resolution, stash, revert, push, and in `goal` the CI and review-agent waits
