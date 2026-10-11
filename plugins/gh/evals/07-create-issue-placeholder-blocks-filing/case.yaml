@@ -57,3 +57,9 @@ graders:
       bullet list, no bold labels, and no second paragraph.
       It does not mention a sandbox, a blocked command, or a network
       restriction, and does not recap the lookups that ran.
+
+  - name: starts-with-the-halt-words
+    type: regex
+    target: last_message
+    pattern: '^\s*Not filed'
+    flags: i

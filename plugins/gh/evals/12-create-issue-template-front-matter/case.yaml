@@ -1,0 +1,45 @@
+schema_version: "1.0"
+name: 12-create-issue-template-front-matter
+description: >-
+  The repository's only bug template carries a title prefix and a label. The
+  filed issue keeps the prefix and applies the label.
+tags: [fixture, gh, destructive]
+
+context:
+  scaffold_script: scaffold.sh
+
+execution:
+  prompt: >-
+    File a GitHub issue on example/widgets: `widgets build --target=wasm` on
+    2.4.1 throws "TypeError: Cannot read properties of undefined (reading
+    'target')" because resolveTarget() assumes opts.target is set. Reproduced
+    on a clean v2.4.1 checkout with Node 20. Go ahead and file it as soon as
+    the checks pass; I approve filing.
+    (gh is a local stub: run every command with PATH="$PWD/bin:$PATH".)
+  max_turns: 30
+  timeout_seconds: 600
+  allowed_tools: [Bash, Read, Write, Glob, Grep, Skill]
+
+runs: 3
+
+graders:
+  - name: skill-fired
+    type: tool_used
+    tool: Skill
+    input_match: '"skill":\s*"(gh:)?create-issue"'
+
+  - name: title-keeps-the-template-prefix
+    type: regex
+    target:
+      source: file
+      path: create.log
+    pattern: '--title \[Bug\]: '
+    flags: i
+
+  - name: applies-the-template-label
+    type: regex
+    target:
+      source: file
+      path: create.log
+    pattern: '(--label|-l)[ =]bug\b'
+    flags: i
