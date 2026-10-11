@@ -16,28 +16,12 @@ Run a prompt through Cursor's `agent` CLI. There is no fallback tier. Follow
 and the report. Write the report per
 `references/prose-rules.md`.
 
-## Step 1: Detect the CLI
+## Tier
 
-```console
-$ command -v agent
-```
+One tier, `agent`, with no `--model`, so Cursor uses its default model.
 
-If `agent` is not found, stop and give the failed-run report from
-`references/dispatch.md`.
-
-## Step 2: Run the tier
-
-Normal runs are write-enabled and preserve Cursor's configured sandbox.
-`mode:plan` runs use `agent --mode plan`, Cursor's read-only plan mode.
-
-1. Normal: `agent -p -f --`
+1. Normal: `agent -p -f --trust --`
    Plan: `agent -p --mode plan --`
-
-Pass `--require-flag=-f` on a normal run and `--require-flag=--mode` on a
-`mode:plan` run.
-
-Failure of this tier, including credit exhaustion, ends the run: report it.
-Do not suggest or run another vendor's CLI.
 
 
 ## Portability notes

@@ -430,9 +430,10 @@
         "references/closest_model.py": "plugins/model-cli/scripts/closest_model.py",
         "references/dispatch.md": "plugins/model-cli/references/dispatch.md",
         "references/prose-rules.md": "plugins/model-cli/references/prose-rules.md",
-        "references/run_tier.py": "plugins/model-cli/scripts/run_tier.py"
+        "references/run_tier.py": "plugins/model-cli/scripts/run_tier.py",
+        "references/tier_plan.py": "plugins/model-cli/scripts/tier_plan.py"
       },
-      "bytes": 39286
+      "bytes": 46230
     },
     {
       "name": "model-cli-codex",
@@ -443,9 +444,10 @@
         "references/closest_model.py": "plugins/model-cli/scripts/closest_model.py",
         "references/dispatch.md": "plugins/model-cli/references/dispatch.md",
         "references/prose-rules.md": "plugins/model-cli/references/prose-rules.md",
-        "references/run_tier.py": "plugins/model-cli/scripts/run_tier.py"
+        "references/run_tier.py": "plugins/model-cli/scripts/run_tier.py",
+        "references/tier_plan.py": "plugins/model-cli/scripts/tier_plan.py"
       },
-      "bytes": 39384
+      "bytes": 46450
     },
     {
       "name": "model-cli-cursor",
@@ -456,9 +458,10 @@
         "references/closest_model.py": "plugins/model-cli/scripts/closest_model.py",
         "references/dispatch.md": "plugins/model-cli/references/dispatch.md",
         "references/prose-rules.md": "plugins/model-cli/references/prose-rules.md",
-        "references/run_tier.py": "plugins/model-cli/scripts/run_tier.py"
+        "references/run_tier.py": "plugins/model-cli/scripts/run_tier.py",
+        "references/tier_plan.py": "plugins/model-cli/scripts/tier_plan.py"
       },
-      "bytes": 38544
+      "bytes": 45571
     },
     {
       "name": "package-updater-update",
@@ -1546,6 +1549,7 @@
     "plugins/model-cli/references/prose-rules.md": 3,
     "plugins/model-cli/scripts/closest_model.py": 3,
     "plugins/model-cli/scripts/run_tier.py": 3,
+    "plugins/model-cli/scripts/tier_plan.py": 3,
     "plugins/package-updater/references/commit-conventions.md": 3,
     "plugins/package-updater/references/cooldown-exemption.md": 3,
     "plugins/package-updater/references/ecosystems.md": 3,

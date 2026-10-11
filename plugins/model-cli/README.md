@@ -52,17 +52,19 @@ classes, and the report format.
 ## Risks
 
 Your prompt, and any code in it, is sent to the vendor behind the CLI. Normal
-runs are write-enabled. Codex bypasses approvals and sandboxing with
-`--dangerously-bypass-approvals-and-sandbox`; agy auto-approves tools with
-`--dangerously-skip-permissions`. Cursor's `agent -f` allows commands while
-preserving its configured sandbox. These runs can edit files, execute commands,
-and use the network. Use `mode:plan` for a review that must not change anything.
-The prompt is also an argument of the CLI process, so other local users can
-see it in `ps`.
+runs are write-enabled and can edit files, execute commands, and use the
+network. Codex normal runs pass `--dangerously-bypass-approvals-and-sandbox`,
+agy normal runs pass `--dangerously-skip-permissions`, and Cursor normal runs
+pass `-f` and `--trust`; `references/dispatch.md` has the details. Use
+`mode:plan` for a review, noting that it is not a documented write block for
+agy.
 
-`codex` also passes `--skip-git-repo-check`, which removes Codex's repo guard.
-Commit or stash first; outside a git repository the runner cannot verify
-unchanged state. Before allowing a failed tier to fall back, it compares the
+The prompt is an argument of the `agy` and `agent` processes, so other local
+users can see it in `ps`; `codex` receives it on stdin.
+
+Codex refuses to run outside a git repository unless you ask for
+`--skip-git-repo-check`, and there the runner cannot verify unchanged state.
+Before allowing a failed tier to fall back, it compares the
 whole repository's tracked and non-ignored files, index, branch, and HEAD.
 Changed state stops fallback; a failed write-enabled run also stops when the
 state is unreadable. Ignored files and writes outside the repository are
@@ -76,9 +78,10 @@ CLI's own read-only mode; the flags are in each skill's `SKILL.md`.
 
 ## Models and fallback
 
-Each skill lists its tiers and default models. A model you name in the request
-replaces the default for the tier it fits, and an unknown ID triggers a lookup
-with `agy models` or `agent --list-models`. A tier that fails (for example,
+Each skill lists its tiers and picks each model from the CLI's own listing
+(`agy models` or `agent --list-models`); when the listing holds no match the
+tier runs on the CLI's default model. A model you name in the request replaces the pick, and an
+unknown ID triggers a lookup in the same listing. A tier that fails (for example,
 not logged in) falls through to the next tier; which tier depends on the failure
 class, listed in `references/dispatch.md`.
 
