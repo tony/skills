@@ -1004,15 +1004,21 @@ def _check_testpaths() -> list[str]:
     ]
 
 
-# Agents call bundled scripts as `G=<path>; python3 $G sub`, which a grader
-# keyed on the filename alone never matches.
+# Agents assign `G=<path>` and call `python3 $G sub` in one command, so only a
+# script name followed by an adjacency requirement (` sub`, `\s+sub`) misses it.
 SCRIPT_VAR_FORM = r"\$\{?[A-Za-z_]\w*\}?"
 _VAR_REF_RE = re.compile(r"\\\$(?:\\\{\?)?(?:\\w|\[A-Za-z_\])")
-SCRIPT_VAR_BASELINE = REPO_ROOT / "scripts" / "script-var-baseline.txt"
+_OPTIONAL_QUOTE_RE = re.compile(
+    r"""(?:\[[^\]]*(?:"|'|\\x27)[^\]]*\]|\(\?:[^()]*(?:"|')[^()]*\))\?"""
+)
+_SPAN_OR_END_RE = re.compile(r"$|\||\)|\.[*+]|\[\\s\\S\][*+]|\[\^\\r\\n\][*+]")
 
 
 def _lacks_script_var_form(pattern: str, scripts: list[str]) -> bool:
     r"""Return whether a grader pattern names a bundled script but no shell-variable form.
+
+    A name offends only when an adjacency requirement follows it (past one optional
+    quote); the end, `|`, `)`, or a `.*`-style span means a variable call still matches.
 
     Examples
     --------
@@ -1025,13 +1031,35 @@ def _lacks_script_var_form(pattern: str, scripts: list[str]) -> bool:
     False
     >>> _lacks_script_var_form(r"git push", ["branch_gate.py"])
     False
+    >>> _lacks_script_var_form(r"pr_backup\.py", ["pr_backup.py"])
+    False
+    >>> _lacks_script_var_form(r"pr_backup\.py save", ["pr_backup.py"])
+    True
+    >>> _lacks_script_var_form(r"scan_body\.py.*--media", ["scan_body.py"])
+    False
+    >>> _lacks_script_var_form(r"replay\.py[\"\x27]?\s+start\b", ["replay.py"])
+    True
+    >>> _lacks_script_var_form(r"term_metrics\.py[^\r\n]*--check-brief", ["term_metrics.py"])
+    False
+    >>> _lacks_script_var_form(r"autosquash\.py|git rebase", ["autosquash.py"])
+    False
     """
-    plain = pattern.replace("\\", "")
-    return any(name in plain for name in scripts) and not _VAR_REF_RE.search(pattern)
+    if _VAR_REF_RE.search(pattern):
+        return False
+    for name in scripts:
+        for spelling in {name.replace(".", r"\."), name}:
+            for match in re.finditer(re.escape(spelling), pattern):
+                rest = pattern[match.end() :]
+                quote = _OPTIONAL_QUOTE_RE.match(rest)
+                if quote:
+                    rest = rest[quote.end() :]
+                if not _SPAN_OR_END_RE.match(rest):
+                    return True
+    return False
 
 
 def _script_var_offenders() -> set[str]:
-    """Return `plugin/case:grader` for each Bash grader that lacks the variable form."""
+    """Return `plugin/case:grader` for each Bash matcher that lacks the variable form."""
     offenders: set[str] = set()
     for case in sorted(PLUGINS_DIR.glob("*/evals/*/case.yaml")):
         plugin_dir = case.parents[2]
@@ -1044,26 +1072,23 @@ def _script_var_offenders() -> set[str]:
             continue
         data = t.cast("dict[str, object]", yaml.safe_load(case.read_text(encoding="utf-8")) or {})
         for grader in t.cast("list[dict[str, object]]", data.get("graders") or []):
-            pattern = grader.get("input_match")
-            bash = grader.get("type") == "tool_used" and grader.get("tool") == "Bash"
-            if bash and isinstance(pattern, str) and _lacks_script_var_form(pattern, scripts):
-                offenders.add(f"{plugin_dir.name}/{case.parent.name}:{grader.get('name')}")
+            matchers = [grader] if grader.get("type") == "tool_used" else []
+            if grader.get("type") == "tool_order":
+                matchers = [m for m in (grader.get("before"), grader.get("after")) if m]
+            for matcher in t.cast("list[dict[str, object]]", matchers):
+                pattern = matcher.get("input_match")
+                bash = matcher.get("tool") == "Bash" and isinstance(pattern, str)
+                if bash and _lacks_script_var_form(t.cast("str", pattern), scripts):
+                    offenders.add(f"{plugin_dir.name}/{case.parent.name}:{grader.get('name')}")
     return offenders
 
 
 def _check_script_var_graders() -> list[str]:
-    """Fail on new script-keyed graders without the variable form, and on stale baseline lines."""
-    baseline = {
-        line.strip()
-        for line in SCRIPT_VAR_BASELINE.read_text(encoding="utf-8").splitlines()
-        if line.strip() and not line.startswith("#")
-    }
-    offenders = _script_var_offenders()
-    rel = SCRIPT_VAR_BASELINE.relative_to(REPO_ROOT)
+    """Fail on each Bash grader that names a bundled script but not a shell-variable call."""
     return [
         f"{o}: names a bundled script but not `python3 $VAR`; add `{SCRIPT_VAR_FORM}`"
-        for o in sorted(offenders - baseline)
-    ] + [f"{rel}: '{b}' no longer offends; remove it" for b in sorted(baseline - offenders)]
+        for o in sorted(_script_var_offenders())
+    ]
 
 
 def _engine_strings(source: str, *, models: bool = True) -> list[str]:

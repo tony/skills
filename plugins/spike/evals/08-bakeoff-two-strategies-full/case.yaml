@@ -88,7 +88,7 @@ graders:
   - name: stashes-one-at-a-time
     type: tool_used
     tool: Bash
-    input_match: 'spike\.sh\s+stash[\s\S]*spike\.sh\s+stash'
+    input_match: '(?:spike\.sh|(?:(?:ba)?sh\s+)?(?:\\"|'')?\$\{?[A-Za-z_]\w*\}?(?:\\"|'')?)\s+stash[\s\S]*(?:spike\.sh|(?:(?:ba)?sh\s+)?(?:\\"|'')?\$\{?[A-Za-z_]\w*\}?(?:\\"|'')?)\s+stash'
     min: 0
     max: 0
     arm: both

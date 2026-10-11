@@ -47,7 +47,7 @@ graders:
   - name: resolves-the-ledger-directory
     type: tool_used
     tool: Bash
-    input_match: 'spike\.sh\s+ledger-dir'
+    input_match: '(?:spike\.sh\s+ledger-dir|(?:(?:ba)?sh\s+)?(?:\\"|'')?\$\{?[A-Za-z_]\w*\}?(?:\\"|'')?\s+ledger-dir)'
     min: 1
     arm: both
 

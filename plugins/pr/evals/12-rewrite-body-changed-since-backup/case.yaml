@@ -24,12 +24,12 @@ graders:
   - name: backs-up-the-body
     type: tool_used
     tool: Bash
-    input_match: 'pr_backup\.py save'
+    input_match: '(?:pr_backup\.py save|python3?\s+(?:\\"|'')?\$\{?[A-Za-z_]\w*\}?(?:\\"|'')?\s+save\b)'
 
   - name: checks-before-editing
     type: tool_used
     tool: Bash
-    input_match: 'pr_backup\.py check'
+    input_match: '(?:pr_backup\.py check|python3?\s+(?:\\"|'')?\$\{?[A-Za-z_]\w*\}?(?:\\"|'')?\s+check\b)'
 
   - name: never-edits
     type: tool_used

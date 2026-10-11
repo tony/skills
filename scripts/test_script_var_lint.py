@@ -13,12 +13,23 @@ if t.TYPE_CHECKING:
 
     import pytest
 
-_CASE = """\
-graders:
+_LITERAL = """\
   - name: literal
     type: tool_used
     tool: Bash
     input_match: 'gate\\.py\\s+backup'
+"""
+_ORDER = """\
+  - name: order
+    type: tool_order
+    before:
+      tool: Bash
+      input_match: 'git fetch'
+    after:
+      tool: Bash
+      input_match: 'gate\\.py\\s+backup'
+"""
+_VARIABLE = """\
   - name: variable
     type: tool_used
     tool: Bash
@@ -26,25 +37,20 @@ graders:
 """
 
 
-def test_new_offender_and_stale_baseline_line_fail(
+def test_offender_fails_and_variable_form_passes(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
-    """A grader missing the variable form and a stale baseline line each fail."""
+    """Graders and order matchers missing the variable form fail; the form passes."""
     plugin = tmp_path / "plugins" / "p"
     (plugin / "scripts").mkdir(parents=True)
     _ = (plugin / "scripts" / "gate.py").write_text("", encoding="utf-8")
     (plugin / "evals" / "01-c").mkdir(parents=True)
-    _ = (plugin / "evals" / "01-c" / "case.yaml").write_text(_CASE, encoding="utf-8")
-    baseline = tmp_path / "scripts" / "script-var-baseline.txt"
-    baseline.parent.mkdir()
-    monkeypatch.setattr(marketplace, "REPO_ROOT", tmp_path)
+    case = plugin / "evals" / "01-c" / "case.yaml"
+    _ = case.write_text("graders:\n" + _LITERAL + _ORDER + _VARIABLE, encoding="utf-8")
     monkeypatch.setattr(marketplace, "PLUGINS_DIR", tmp_path / "plugins")
-    monkeypatch.setattr(marketplace, "SCRIPT_VAR_BASELINE", baseline)
 
-    _ = baseline.write_text("# header\np/01-c:gone\n", encoding="utf-8")
-    new, stale = marketplace._check_script_var_graders()
-    assert new.startswith("p/01-c:literal: names a bundled script")
-    assert "'p/01-c:gone' no longer offends" in stale
+    errors = marketplace._check_script_var_graders()
+    assert [e.split(": ")[0] for e in errors] == ["p/01-c:literal", "p/01-c:order"]
 
-    _ = baseline.write_text("p/01-c:literal\n", encoding="utf-8")
+    _ = case.write_text("graders:\n" + _VARIABLE, encoding="utf-8")
     assert marketplace._check_script_var_graders() == []

@@ -31,7 +31,7 @@ graders:
   - name: reads-the-pr-back
     type: tool_used
     tool: Bash
-    input_match: 'pr_backup\.py verify'
+    input_match: '(?:pr_backup\.py verify|python3?\s+(?:\\"|'')?\$\{?[A-Za-z_]\w*\}?(?:\\"|'')?\s+verify\b)'
     min: 1
 
   - name: never-commits-or-pushes

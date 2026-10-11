@@ -23,7 +23,7 @@ graders:
   - name: no-stash-or-worktree
     type: tool_used
     tool: Bash
-    input_match: 'git(?:\s+-[Cc]\s*\S+)*\s+(stash|worktree)|engine\.py (init|worktrees)'
+    input_match: 'git(?:\s+-[Cc]\s*\S+)*\s+(stash|worktree)|(?:engine\.py (init|worktrees)|python3?\s+(?:\\"|'')?\$\{?[A-Za-z_]\w*\}?(?:\\"|'')?\s+(?:init|worktrees))'
     min: 0
     max: 0
     arm: both

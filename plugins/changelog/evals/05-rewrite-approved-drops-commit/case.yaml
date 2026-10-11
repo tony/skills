@@ -23,7 +23,7 @@ graders:
   - name: drops-the-draft-commit-through-the-helper
     type: tool_used
     tool: Bash
-    input_match: 'rewrite\.py drop'
+    input_match: '(?:rewrite\.py drop|python3?\s+(?:\\"|'')?\$\{?[A-Za-z_]\w*\}?(?:\\"|'')?\s+drop)'
     min: 1
     arm: both
 

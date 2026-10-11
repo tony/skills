@@ -20,7 +20,7 @@ graders:
   - name: never-rebases
     type: tool_used
     tool: Bash
-    input_match: '(git(?:\s+-[Cc]\s*\S+)*\s+(pull --rebase|rebase)|replay\.py["\x27]?\s+start\b)'
+    input_match: '(git(?:\s+-[Cc]\s*\S+)*\s+(pull --rebase|rebase)|(?:replay\.py(?:\\?["\x27])?\s+start\b|python3?\s+(?:\\"|'')?\$\{?[A-Za-z_]\w*\}?(?:\\"|'')?\s+start\b))'
     min: 0
     max: 0
     arm: both

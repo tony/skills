@@ -20,7 +20,7 @@ graders:
   - name: rebase-attempted
     type: tool_used
     tool: Bash
-    input_match: 'replay\.py["\x27]?\s+start\b'
+    input_match: '(?:replay\.py(?:\\?["\x27])?\s+start\b|python3?\s+(?:\\"|'')?\$\{?[A-Za-z_]\w*\}?(?:\\"|'')?\s+start\b)'
 
   - name: never-stages-a-resolution
     type: tool_used
@@ -33,7 +33,7 @@ graders:
   - name: never-continues-past-the-conflict
     type: tool_used
     tool: Bash
-    input_match: '(rebase\s+--continue|replay\.py["\x27]?\s+continue\b)'
+    input_match: '(rebase\s+--continue|(?:replay\.py(?:\\?["\x27])?\s+continue\b|python3?\s+(?:\\"|'')?\$\{?[A-Za-z_]\w*\}?(?:\\"|'')?\s+continue\b))'
     min: 0
     max: 0
     arm: both

@@ -21,12 +21,12 @@ graders:
   - name: rebases-with-the-recovery-helper
     type: tool_used
     tool: Bash
-    input_match: 'replay\.py["\x27]?\s+start\b'
+    input_match: '(?:replay\.py(?:\\?["\x27])?\s+start\b|python3?\s+(?:\\"|'')?\$\{?[A-Za-z_]\w*\}?(?:\\"|'')?\s+start\b)'
 
   - name: continues-through-the-recovery-helper
     type: tool_used
     tool: Bash
-    input_match: 'replay\.py["\x27]?\s+continue\b'
+    input_match: '(?:replay\.py(?:\\?["\x27])?\s+continue\b|python3?\s+(?:\\"|'')?\$\{?[A-Za-z_]\w*\}?(?:\\"|'')?\s+continue\b)'
 
   - name: never-pushes
     type: tool_used

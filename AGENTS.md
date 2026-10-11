@@ -510,7 +510,7 @@ Treat this file like code and prune it.
 500-line ceiling on skill bodies, a contents list on any resource over 100
 lines, that every resource is named by some file in its plugin, and that a
 Bash grader naming a bundled script also matches it called through a shell
-variable (`python3 $G sub`), outside `scripts/script-var-baseline.txt`.
+variable (`python3 $G sub`).
 
 ### Plugin Directory Structure
 

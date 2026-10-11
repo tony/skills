@@ -27,7 +27,7 @@ graders:
   - name: message-passed-from-a-file
     type: tool_used
     tool: Bash
-    input_match: 'merge_pr\.py merge(?:(?!\bgh )[\s\S])*--message-file|<<-?\s*\\?[''"][A-Za-z_]+[''"]'
+    input_match: '(?:merge_pr\.py merge|python3?\s+(?:\\"|'')?\$\{?[A-Za-z_]\w*\}?(?:\\"|'')?\s+merge)(?:(?!\bgh )[\s\S])*--message-file|<<-?\s*\\?[''"][A-Za-z_]+[''"]'
 
   - name: subject-never-inside-double-quotes-on-the-command-line
     type: tool_used
