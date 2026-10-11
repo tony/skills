@@ -16,6 +16,7 @@ no third-party package. Frontmatter arrives already parsed on
 
 from __future__ import annotations
 
+import ast
 import dataclasses
 import json
 import posixpath
@@ -591,6 +592,37 @@ def _plugin_of(path: Path) -> Path | None:
     return PLUGINS_DIR / rel.parts[0]
 
 
+def imported_modules(source: str) -> set[str]:
+    r"""Return the top-level names of absolute imports anywhere in ``source``.
+
+    Examples
+    --------
+    >>> sorted(imported_modules("import a.b\nfrom c import d\nfrom . import e"))
+    ['a', 'c']
+    >>> sorted(imported_modules("def f():\n    import g"))
+    ['g']
+    >>> imported_modules("def (")
+    set()
+    """
+    try:
+        tree = ast.parse(source)
+    except SyntaxError:
+        return set()
+    names: set[str] = set()
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Import):
+            names.update(alias.name.split(".")[0] for alias in node.names)
+        elif isinstance(node, ast.ImportFrom) and node.level == 0 and node.module:
+            names.add(node.module.split(".")[0])
+    return names
+
+
+def sibling_module(scripts_dir: Path, name: str) -> Path | None:
+    """Return ``scripts_dir/name.py`` when it is a bundleable sibling module."""
+    path = scripts_dir / f"{name}.py"
+    return path if not name.startswith("test_") and path.is_file() else None
+
+
 class SkillBuilder:
     """Render one output skill, vendoring every resource it reaches.
 
@@ -703,6 +735,11 @@ class SkillBuilder:
                 # bash or choice prompt a non-markdown payload carries.
                 text = self._rewrite_tokens(raw, plugin, base)
             self._files[rel] = (text.encode("utf-8"), mode)
+            if src.suffix == ".py" and src.parent == plugin / "scripts":
+                for name in sorted(imported_modules(raw)):
+                    sibling = sibling_module(src.parent, name)
+                    if sibling is not None:
+                        _ = self._vendor(sibling, plugin)
 
     def _transform_markdown(self, text: str, plugin: Path, base: Path) -> str:
         """Apply every portability transform to a markdown body."""
@@ -932,5 +969,7 @@ __all__ = [
     "PortableIndex",
     "SkillBuilder",
     "SourceComponent",
+    "imported_modules",
+    "sibling_module",
     "strip_frontmatter",
 ]

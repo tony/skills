@@ -48,7 +48,9 @@ from _portable_render import (  # pyright: ignore[reportImplicitRelativeImport]
     SourceComponent,
     fenced_blocks,
     has_verbatim_fences,
+    imported_modules,
     render_openai_yaml,
+    sibling_module,
     strip_frontmatter,
 )
 from _private_path import PrivatePath  # pyright: ignore[reportImplicitRelativeImport]
@@ -2256,6 +2258,27 @@ def _check_one_skill(skill: BuiltSkill) -> list[str]:
     )
     errors.extend(_check_paths(skill))
     errors.extend(_check_verbatim_fences(skill))
+    errors.extend(_check_sibling_imports(skill))
+    return errors
+
+
+def _check_sibling_imports(skill: BuiltSkill) -> list[str]:
+    """Verify each emitted script ships the sibling modules it imports."""
+    errors: list[str] = []
+    for rel, src_rel in sorted(skill.vendored.items()):
+        if not rel.endswith(".py") or rel not in skill.files:
+            continue
+        scripts_dir = (REPO_ROOT / src_rel).parent
+        if scripts_dir.name != "scripts":
+            continue
+        out_dir = posixpath.dirname(rel)
+        for name in sorted(imported_modules(skill.files[rel][0].decode("utf-8", "replace"))):
+            sibling = sibling_module(scripts_dir, name)
+            if sibling is None:
+                continue
+            want = str(sibling.relative_to(REPO_ROOT))
+            if skill.vendored.get(f"{out_dir}/{name}.py") != want:
+                errors.append(f"portable: [{skill.name}] '{rel}' imports '{name}', not emitted")
     return errors
 
 

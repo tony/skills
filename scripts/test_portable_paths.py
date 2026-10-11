@@ -97,3 +97,41 @@ def test_validator_rejects_missing_path(tmp_path: Path, monkeypatch: pytest.Monk
     content, mode = built.files["references/page.md"]
     built.files["references/page.md"] = (content + b"see references/run.py\n", mode)
     assert any("does not resolve" in e for e in _check(built))
+
+
+def _sibling_fixture(root: Path) -> None:
+    _write(
+        root,
+        "plugins/demo/skills/s/SKILL.md",
+        "---\nname: s\ndescription: d\n---\n../../scripts/a.py\n",
+    )
+    _write(root, "plugins/demo/scripts/a.py", "from b import f\n\n\ndef g():\n    import c\n")
+    _write(root, "plugins/demo/scripts/b.py", "import d\n\nf = 1\n")
+    _write(root, "plugins/demo/scripts/d.py", "")
+    _write(root, "plugins/demo/scripts/c.py", "import json\n")
+    _write(root, "plugins/demo/scripts/test_b.py", "import a\n")
+
+
+def test_script_siblings_it_imports_are_bundled(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A linked script ships the modules it imports, transitively, never tests."""
+    _sibling_fixture(tmp_path)
+    built = _build(tmp_path, monkeypatch)
+    emitted = {rel for rel in built.files if rel.endswith(".py")}
+    assert emitted == {f"references/{m}.py" for m in "abcd"}
+
+
+def test_missing_sibling_import_fails_check(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """The check names an emitted script whose sibling import was not emitted."""
+    _sibling_fixture(tmp_path)
+    monkeypatch.setattr(marketplace, "REPO_ROOT", tmp_path)
+    built = _build(tmp_path, monkeypatch)
+    assert marketplace._check_sibling_imports(built) == []
+    del built.files["references/b.py"]
+    del built.vendored["references/b.py"]
+    errors = marketplace._check_sibling_imports(built)
+    assert len(errors) == 1
+    assert "imports 'b'" in errors[0]
