@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# Vendored from shared/closest_model.py; edit that file, then run 'scripts/marketplace.py portable'.
 """Pick a model from a model list on stdin (`agent --list-models`, `agy models`).
 
 Usage: <model list command> | closest_model.py MODEL

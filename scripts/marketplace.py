@@ -23,6 +23,7 @@ import os
 import posixpath
 import re
 import shutil
+import stat
 import subprocess
 import tempfile
 import tomllib
@@ -951,10 +952,11 @@ def _check_estate_rules(plugin_dir: Path) -> list[str]:
         if rel.parts[0] not in (*RESOURCE_DIRS, "scripts") or path.name.startswith("test_"):
             continue
         # A README may name a contributor file, but a vendored copy must be
-        # read by some skill, or it ships unused.
-        vendored = VENDOR_MARKER in texts[path].partition("\n")[0]
+        # read by some skill or imported by a script, or it ships unused.
+        vendored = any(VENDOR_MARKER in line for line in texts[path].splitlines()[:2])
         named = any(
             path.name in other_text
+            or (other.suffix == ".py" and path.stem in imported_modules(other_text))
             for other, other_text in texts.items()
             if other != path and not (vendored and other.name == "README.md")
         )
@@ -2595,12 +2597,33 @@ def _vendor_banner(name: str) -> str:
     return f"<!-- {text} -->\n" if name.endswith(".md") else f"# {text}\n"
 
 
+def _vendor_render(name: str, source: str) -> str:
+    r"""Return a plugin's copy of a shared file: the banner on line 1, or line 2 under a shebang.
+
+    >>> _vendor_render("a.py", "#!/usr/bin/env python3\nx = 1\n").splitlines()[0]
+    '#!/usr/bin/env python3'
+    >>> _vendor_render("a.py", "#!/usr/bin/env python3\nx = 1\n").splitlines()[1][:10]
+    '# Vendored'
+    """
+    banner = _vendor_banner(name)
+    if source.startswith("#!"):
+        shebang, _, rest = source.partition("\n")
+        return f"{shebang}\n{banner}{rest}"
+    return banner + source
+
+
+def _vendor_dest(plugin: str, name: str) -> Path:
+    """Return where a plugin keeps its copy: scripts/ for code, references/ otherwise."""
+    folder = "scripts" if name.endswith(".py") else "references"
+    return PLUGINS_DIR / plugin / folder / name
+
+
 def _vendor_plan() -> tuple[dict[Path, str], list[str]]:
     """Map each vendored destination to its fresh render, plus manifest errors.
 
     ``shared/vendor.yml`` maps a file name under ``shared/`` to the plugins that
-    ship it. Each plugin carries its own copy in ``references/`` so it installs
-    standalone.
+    ship it. Each plugin carries its own copy, in ``scripts/`` for a ``.py`` file
+    and ``references/`` otherwise, so it installs standalone.
     """
     if not VENDOR_MANIFEST_PATH.is_file():
         return {}, []
@@ -2617,12 +2640,12 @@ def _vendor_plan() -> tuple[dict[Path, str], list[str]]:
         if not source.is_file():
             errors.append(f"vendor: shared/{name} is listed in vendor.yml but missing")
             continue
-        text = _vendor_banner(name) + source.read_text(encoding="utf-8")
+        text = _vendor_render(name, source.read_text(encoding="utf-8"))
         for plugin in plugins:
             if not (PLUGINS_DIR / plugin).is_dir():
                 errors.append(f"vendor: shared/{name} names unknown plugin '{plugin}'")
                 continue
-            plan[PLUGINS_DIR / plugin / "references" / name] = text
+            plan[_vendor_dest(plugin, name)] = text
     return plan, errors
 
 
@@ -2637,10 +2660,14 @@ def _check_vendor(plan: dict[Path, str]) -> list[str]:
         elif dest.read_text(encoding="utf-8") != content:
             fix = f"edit {source}, not the copy, then run 'scripts/marketplace.py portable'"
             errors.append(f"vendor: '{rel}' differs from {source}; {fix}")
-    for path in sorted(PLUGINS_DIR.glob("*/references/*")):
+        elif dest.suffix == ".py" and not dest.stat().st_mode & stat.S_IXUSR:
+            errors.append(
+                f"vendor: '{rel}' lost its exec bit; run 'scripts/marketplace.py portable'"
+            )
+    for path in sorted([*PLUGINS_DIR.glob("*/references/*"), *PLUGINS_DIR.glob("*/scripts/*")]):
         if path.is_file() and path not in plan:
-            head = path.read_text(encoding="utf-8", errors="replace").partition("\n")[0]
-            if VENDOR_MARKER in head:
+            head = path.read_text(encoding="utf-8", errors="replace").splitlines()[:2]
+            if any(VENDOR_MARKER in line for line in head):
                 rel = path.relative_to(REPO_ROOT)
                 errors.append(f"vendor: '{rel}' carries a banner but shared/vendor.yml omits it")
     return errors
@@ -2676,6 +2703,8 @@ def portable(*, check: bool = False) -> None:
         for dest, content in sorted(vendor_plan.items()):
             dest.parent.mkdir(parents=True, exist_ok=True)
             _ = dest.write_text(content, encoding="utf-8")
+            if dest.suffix == ".py":
+                dest.chmod(dest.stat().st_mode | 0o111)
     sources = _collect_sources()
     built = _build_portable()
     codex_files = _codex_files()

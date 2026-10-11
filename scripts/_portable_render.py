@@ -245,8 +245,12 @@ def strip_vendor_banner(text: str) -> str:
     '# A\n'
     >>> strip_vendor_banner("# A\n")
     '# A\n'
+    >>> strip_vendor_banner("#!/usr/bin/env python3\n# Vendored from shared/a.py; edit\nx = 1\n")
+    '#!/usr/bin/env python3\nx = 1\n'
     """
     first, sep, rest = text.partition("\n")
+    if sep and first.startswith("#!"):
+        return f"{first}\n{strip_vendor_banner(rest)}"
     return rest if sep and VENDOR_MARKER in first else text
 
 

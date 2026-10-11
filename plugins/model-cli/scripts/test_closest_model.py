@@ -4,6 +4,9 @@
 # pyright: reportUnusedCallResult=false
 from __future__ import annotations
 
+import doctest
+import importlib.machinery
+import importlib.util
 import subprocess
 import sys
 from pathlib import Path
@@ -132,3 +135,15 @@ def test_match_without_a_hit_or_header_line_exits_1() -> None:
 
 def test_newest_rejects_a_template_without_version() -> None:
     assert newest(AGY, "gemini-pro").returncode == 2
+
+
+def test_doctests() -> None:
+    # Copies of this vendored module share a basename, so pytest collects none.
+    loader = importlib.machinery.SourceFileLoader("closest_model_doctests", str(SCRIPT))
+    spec = importlib.util.spec_from_loader(loader.name, loader)
+    assert spec is not None
+    module = importlib.util.module_from_spec(spec)
+    loader.exec_module(module)
+    result = doctest.testmod(module)
+    assert result.attempted > 0
+    assert result.failed == 0
