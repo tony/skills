@@ -14,32 +14,29 @@ metadata:
 Throw the implementation away and write it again, without losing what
 the original learned.
 
-Argument: $ARGUMENTS — a PR number, a branch, a statement of what
-should change about the approach, or nothing. Resolve a PR number to its
-head branch with `gh pr view <number> --json headRefName`; never
-`gh pr checkout`, which changes the working tree.
+Argument: $ARGUMENTS: a PR number, a branch, a statement of what
+should change about the approach, or nothing.
 
 Five references carry the parts that must not drift:
 
-- `references/rebuild-contract.md` — the
+- `references/rebuild-contract.md`: the
   contract, the coverage ledger, reconciliation, and what counts as
   done.
-- `references/branch-safety.md` — the gates, the
-  backup, recovery, and the push.
-- `references/commit-messages.md` — style
+- `references/branch-safety.md`: the gates, the
+  backup, recovery, the plan and its approval, and the push.
+- `references/commit-messages.md`: style
   discovery, intent recovery, and the privacy gate.
-- `references/rebase-toolkit.md` — per-commit
+- `references/rebase-toolkit.md`: per-commit
   verification with no editor, and `<toolkit>`.
-- `references/split-mechanics.md` — committing whole files,
+- `references/split-mechanics.md`: committing whole files,
   splitting one file across commits, and resolving `<base-sha>`.
 
-`<base-sha>` is the merge base of the branch and its base, resolved once
-to a full 40-character SHA per "Resolve the base first" in
-`split-mechanics.md` (a stacked branch uses its parent branch's tip,
-never trunk). `<flat>` is the branch
-name with every `/` replaced by `-`. `<toolkit>` is
-`references/rebase-todo.sh` resolved from this skill's directory to an
-absolute path; write that path literally in each command.
+`<base-sha>` is the base `python3 <gate> base --branch <branch> [--parent <ref>]` prints,
+resolved once per "Resolve the base first" in `split-mechanics.md`.
+`<flat>` is the branch name with every `/` replaced by `-`. `<gate>` is
+`references/branch_gate.py` and `<toolkit>` is
+`references/rebase-todo.sh`, each resolved from this skill's directory
+to an absolute path; write that path literally in each command.
 
 ## Core principle
 
@@ -56,10 +53,17 @@ and rebuilds only the history; use it when the code is right and the
 commits are wrong. This skill replaces both, and the net change may
 differ, so the contract replaces the tree comparison as the safety.
 
-## Phase 1 — Establish the contract before anything else
+## Phase 1: Establish the contract before anything else
 
 Before running a test or reading any pull request, ticket, or transcript,
-run the refusals Phase 3 names. Then, per `rebuild-contract.md`, identify
+run the redo gates in `branch-safety.md`; a refusal is a report and a stop.
+Pass `--parent <ref>` to this command and to `base` only on a stacked branch:
+
+```console
+$ python3 <gate> preflight <branch> --mode redo [--parent <ref>]
+```
+
+Then, per `rebuild-contract.md`, identify
 trunk's tests and the tests this branch added or changed, from the diff
 alone; create nothing but the throwaway spec worktree below.
 
@@ -83,15 +87,16 @@ $ git worktree add \
 ```
 
 Take the test command from the project's own docs (`AGENTS.md`,
-`CLAUDE.md`, `CONTRIBUTING.md`, or the build file); never invent one. The
-worktree lacks ignored files (`.env`, `node_modules`, build output), so a
-failure that traces to a missing ignored file is an environmental finding
-to report, not a failing spec.
+`CLAUDE.md`, `CONTRIBUTING.md`, or the build file); never invent one. A
+worktree, this one and the Phase 4 rebuild alike, lacks ignored files
+(`.env`, `node_modules`, build output), so a failure that traces to a
+missing ignored file is an environmental finding to report, not a failing
+spec.
 
 What passes is the specification; what is already failing or skipped is a
 finding to report, not a target.
 
-## Phase 2 — Study the branch into a ledger
+## Phase 2: Study the branch into a ledger
 
 Build the coverage ledger from `rebuild-contract.md`: behavior
 changes, tests, edge cases and workarounds, review requests, ticket
@@ -106,16 +111,10 @@ instructions.
 Give the workarounds disproportionate attention: a guard with no test
 and no comment is the thing a clean rewrite most likely drops.
 
-## Phase 3 — Gate and back up
+## Phase 3: Back up
 
-Halt on the refusals in `branch-safety.md` that a redo shares: a
-repository rooted at `$HOME` (which also bars the worktree below), an
-unborn HEAD, and a shallow clone. The pushed-branch, dirty-tree,
-merge-commit, and other-worktree gates guard a rewrite, and a redo never
-rewrites the branch; report uncommitted edits as outside the ledger.
-Then make the backup branch for the original tip, per
-`branch-safety.md`. Never delete or force-move the old
-branch, and never rebuild on it.
+Make the backup branch for the original tip, per `branch-safety.md`.
+Never delete or force-move the old branch, and never rebuild on it.
 
 ## Orchestration Plan
 
@@ -123,15 +122,14 @@ Enter plan mode before the first edit. In Claude Code call `EnterPlanMode`;
 in Cursor, Codex, or Gemini use `/plan` or `Shift+Tab`. Where plan mode is
 unavailable, present the plan as text.
 
-The plan is at most about eight bullets, one line each, and narrates no
-gate that passed. It states:
+The plan follows `branch-safety.md`, "The plan and its approval". It states:
 
 - The contract: which tests are the spec, and their current result.
 - The ledger, summarized, with the entries judged highest-risk called
   out by name.
 - What is being changed about the approach, and why the original shape
   is not being kept.
-- Where the rebuild happens — the new branch name; the worktree path is
+- Where the rebuild happens: the new branch name; the worktree path is
   chosen when the worktree is made.
 - The gate commands discovered from the project's own conventions.
 - Anything the branch does that the rebuild intends to drop, as an
@@ -140,12 +138,9 @@ gate that passed. It states:
 When several approaches contend, offer a bakeoff rather than picking
 silently.
 
-Wait for approval, then exit plan mode before executing. An explicit
-instruction to proceed ("go ahead", "without waiting") is the approval;
-with no such instruction and no question tool, stop after the plan. The
-approval covers the redo, never a push.
+Wait for approval, then exit plan mode before executing.
 
-## Phase 4 — Rebuild
+## Phase 4: Rebuild
 
 Work in a worktree so the original branch stays runnable for
 comparison. If `git rev-parse --verify --quiet refs/heads/<branch>-redo`
@@ -163,11 +158,21 @@ Run `git worktree list` for the new path and use that literal path for
 every later command; each Bash call starts in a fresh shell.
 
 The worktree starts at the base, so the branch's tests are not in it.
-Copy them in from the backup (this stages them), leave them staged
-until Phase 6 commits them as the first commit, and never edit them:
+List what the branch changed against the base, then carry the tests and
+whatever they read (fixtures, snapshots, `conftest`, helpers) in from the
+backup. `carry` applies adds, modifications, and deletions, and a rename as
+a delete plus an add, and leaves them staged until Phase 6 commits them as
+the first commit. Never edit them:
 
 ```console
-$ git checkout <backup-branch> -- <test-paths>
+$ python3 <gate> changed <base-sha> <backup-branch>
+```
+
+Run `carry` from the worktree, where HEAD is the base; it refuses
+elsewhere:
+
+```console
+$ python3 <gate> carry <base-sha> <backup-branch> <test-pathspec>...
 ```
 
 Rebuild against the ledger, in the project's idiom, with no commits
@@ -178,7 +183,7 @@ run the competing strategies in isolated worktrees and compare them.
 Otherwise build the leading candidate, record the alternatives, and say
 they were not tried.
 
-## Phase 5 — Verify against the contract
+## Phase 5: Verify against the contract
 
 Trunk's tests, then the branch's tests copied in during Phase 4,
 unmodified.
@@ -188,7 +193,7 @@ task. Stop and surface it: the choices are to fix the rebuild, or to
 agree the test encoded something the new approach deliberately
 changes. Never edit a spec test to make a rebuild green.
 
-## Phase 6 — Commit the series
+## Phase 6: Commit the series
 
 Commit the rebuild as an atomic series in the project's own format,
 per `commit-messages.md` (write the messages per
@@ -214,7 +219,7 @@ Add the project's lint and build gates to the command as separate
 `&&` terms outside the skip, so they still run on the spec-tests commit.
 Report the skip: the report says which commit the tests were not run on.
 
-## Phase 7 — Reconcile, then stop
+## Phase 7: Reconcile, then stop
 
 Walk the ledger per `rebuild-contract.md`. Record each deliberate drop
 in the commit message that drops it; a miss is a defect.
@@ -227,6 +232,12 @@ $ git diff <backup-branch> <branch>-redo
 
 Each hunk where the old branch did something the new one does not is a
 question for the user. This is where a lost workaround surfaces.
+
+Read the series back; name only the hashes this prints:
+
+```console
+$ python3 <gate> series <base-sha> <branch>-redo
+```
 
 Write the report per `references/prose-rules.md`. Reply in this
 shape, as plain text outside any code fence, with plain bullets, no bold (never `- **Ledger:** ...`),
@@ -271,8 +282,8 @@ Stopped before rewriting anything: the branch has no tests to act as the spec.
 - Or tell me to rebuild without a mechanical check.
 ```
 
-Pushing is a separate decision, with the flags from
-`branch-safety.md`. The old branch stays until the user retires it.
+Pushing is a separate decision, and a new branch needs no force-push. The old branch stays until the user
+retires it.
 
 
 ## Portability notes

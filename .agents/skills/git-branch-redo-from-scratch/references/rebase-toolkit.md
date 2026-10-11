@@ -162,17 +162,11 @@ cleared.
 `git rebase --abort` restores the branch. `git rebase --quit` leaves HEAD
 detached at the half-rewritten result and restores nothing.
 
-Detect an in-progress operation by probing the git dir, never HEAD:
-`git status` reports a detached HEAD with no sign a rebase is underway.
-
-```console
-$ git rev-parse --git-path rebase-merge
-```
-
-The names worth probing are `rebase-merge`, `rebase-apply`,
-`MERGE_HEAD`, `CHERRY_PICK_HEAD`, `REVERT_HEAD`, `BISECT_LOG`, and
-`sequencer`. Resolve each through `git rev-parse --git-path`; in a
-linked worktree `.git` is a file.
+Detect an in-progress operation with `status` (or `preflight` in
+`branch-safety.md`), never from HEAD: `git status` reports a detached HEAD
+with no sign a rebase is underway. The script resolves each marker through
+[`git rev-parse --git-path`](https://git-scm.com/docs/git-rev-parse),
+because in a linked worktree `.git` is a file.
 
 ## Things that eat commits
 

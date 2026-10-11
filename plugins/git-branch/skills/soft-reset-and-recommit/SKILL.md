@@ -10,21 +10,23 @@ allowed-tools: ["Bash", "Read", "Write", "Grep", "Glob", "AskUserQuestion"]
 Rebuild a branch's history so the commits explain the change, without
 changing a byte of the result.
 
-Argument: $ARGUMENTS — a PR number, a base ref, a hint about how to
-split, or nothing. Resolve a PR number to its head branch with
-`gh pr view <number> --json headRefName`; never `gh pr checkout`, which
-changes the working tree.
+Argument: $ARGUMENTS: a PR number, a base ref, a hint about how to
+split, or nothing.
 
 Four references carry the parts that must not drift:
 
-- `../../references/branch-safety.md` — the gates, the
-  backup, recovery, and the push.
-- `../../references/split-mechanics.md` — base
+- `../../references/branch-safety.md`: the gates, the
+  backup, recovery, the plan and its approval, and the push.
+- `../../references/split-mechanics.md`: base
   resolution, the collapse, staging, splitting, verification.
-- `../../references/commit-messages.md` — style
+- `../../references/commit-messages.md`: style
   discovery, intent recovery, and the privacy gate.
-- `../../references/rebase-toolkit.md` — interactive
-  rebase with no editor, plus `../../scripts/rebase-todo.sh`.
+- `../../references/rebase-toolkit.md`: interactive
+  rebase with no editor, plus `<toolkit>`.
+
+`<gate>` is `../../scripts/branch_gate.py` and `<toolkit>` is
+`../../scripts/rebase-todo.sh`, each resolved from this skill's directory
+to an absolute path; write that path literally in each command.
 
 ## Core principle
 
@@ -33,28 +35,35 @@ The tree is the invariant. The history is the deliverable.
 A recommit that changes what the branch produces is a bug, however good
 the commits look.
 
-## Phase 1 — Run the gates and resolve the base
+## Phase 1: Run the gates and resolve the base
 
-Run every refusal in `branch-safety.md` before reading any pull
-request, ticket, or transcript: repository rooted at the home directory,
-unborn HEAD, HEAD that is not the target branch (`git symbolic-ref
---short HEAD` must equal it; a detached HEAD or another branch halts
-with "check out <branch> first", and a PR number never changes that), shallow clone, dirty tree, operation in progress, merge
-commits in the range, branch held by another worktree. Detect a pushed
-branch and whether anyone else has pushed to it, without refreshing the
-remote-tracking ref, and record the remote tip SHA for the push offer.
+Before reading any pull request, ticket, or transcript, run the gates in
+`branch-safety.md` on the target branch. Pass `--parent <ref>` to
+both commands only on a stacked branch (`split-mechanics.md` names the
+parent):
 
-Resolve the base to a full 40-character SHA once, per
-`split-mechanics.md`. On a stacked branch the base is the parent branch
-tip, never trunk. A remote-tracking base may be stale; say so in the plan.
-Find trunk and the parent with the commands in `split-mechanics.md`.
+```console
+$ python3 <gate> preflight <branch> [--parent <ref>]
+```
 
-A refusal is a report and a stop.
+A refusal is a report and a stop. Then resolve the base SHA once, record
+the branch tip, and read the remote tip:
 
-`<toolkit>` is `../../scripts/rebase-todo.sh` resolved from this skill's
-directory to an absolute path; write that path literally in each command.
+```console
+$ python3 <gate> base [--parent <ref>]
+```
 
-## Phase 2 — Gather intent, before anything destructive
+```console
+$ git rev-parse --verify HEAD
+```
+
+```console
+$ python3 <gate> remote-tip <branch>
+```
+
+A remote-tracking base may be stale; say so in the plan.
+
+## Phase 2: Gather intent, before anything destructive
 
 The collapse destroys the original commit boundaries. Read first:
 every original message whole, the trailers, the pull request body
@@ -67,7 +76,7 @@ claims and re-state them, never copy a span out of a transcript.
 Record what each original commit was *for*. That mapping is the raw
 material for every message written later.
 
-## Phase 3 — Discover the conventions
+## Phase 3: Discover the conventions
 
 The commit format, per `commit-messages.md` Part 1.
 
@@ -77,16 +86,16 @@ project defines them. Never invent one. These become the
 per-commit gate in Phase 6, so copy any harness outside the repository
 and call it by absolute path.
 
-## Phase 4 — Plan the series, and get it approved
+## Phase 4: Plan the series, and get it approved
 
 Enter plan mode before the first edit. In Claude Code call `EnterPlanMode`;
 in Cursor, Codex, or Gemini use `/plan` or `Shift+Tab`. Where plan mode is
 unavailable, present the plan as text.
 
-The plan is at most about eight bullets, one line each, and narrates no
-gate that passed. It states:
+The plan follows `branch-safety.md`, "The plan and its approval". It states:
 
 - The resolved base SHA and how it was resolved.
+- Pushed: yes or no, and the remote tip.
 - The backup branch name.
 - The proposed commit series, in order: for each, its subject, the
   paths or hunks it takes, and the intent it came from.
@@ -99,23 +108,19 @@ Order the series so it builds: a refactor before the behavior that
 depends on it. Declare any dependency between commits. Split a commit
 whose body needs to describe two concerns.
 
-Wait for approval, then exit plan mode before executing. An explicit
-instruction to proceed ("go ahead", "without waiting") is the approval;
-with no such instruction and no question tool, stop after the plan. The
-approval covers the recommit, never a push.
+Wait for approval, then exit plan mode before executing.
 
-## Phase 5 — Back up, then collapse
+## Phase 5: Back up, then collapse
 
-Create the backup branch, then collapse, in one command so the backup
-cannot be skipped. The backup name is the single-segment form in
-`branch-safety.md`; read it back later with
-`git branch --list 'backup/<flat>-*'` and report it:
+Create the backup branch from the tip recorded in Phase 1, read it back,
+and collapse, in one command so the backup cannot be skipped. The command
+prints the backup name; report it:
 
 ```console
-$ git branch "backup/<flat>-$(date -u +%Y%m%dT%H%M%SZ)" <branch> && git reset --soft <base-sha>
+$ python3 <gate> backup <branch> <tip-sha> --soft-reset <base-sha>
 ```
 
-## Phase 6 — Rebuild, one commit at a time
+## Phase 6: Rebuild, one commit at a time
 
 Per `split-mechanics.md`: whole files with `git commit -F <file> --only
 -- <paths>` (message flags before the `--`; write each message file with
@@ -143,7 +148,7 @@ rebase is aborted. Run `git rebase --abort`, fix the series (reorder it
 with `apply`, or move the change into the commit that needs it), keep
 the tree equal to the backup, and re-run `verify`.
 
-## Phase 7 — Prove it, then hand back
+## Phase 7: Prove it, then hand back
 
 The gate, not a formality:
 
@@ -159,6 +164,15 @@ Then show the user how the history was regrouped:
 
 ```console
 $ git range-diff <base-sha> backup/<flat>-<ts> HEAD
+```
+
+Read the series back and compare its authors and dates with the backup's.
+Exit 2 means a commit carries an author or date the original series
+lacked, or an original author is missing; fix the commit before reporting.
+Name only the hashes this prints:
+
+```console
+$ python3 <gate> series <base-sha> HEAD --authors-of backup/<flat>-<ts>
 ```
 
 Name any gate that did not run on every commit, and the commits it skipped.
@@ -193,20 +207,11 @@ Stopped before rewriting anything: the working tree has uncommitted edits.
 - Commit or stash them, then run this again.
 ```
 
-## Phase 8 — Pushing is a separate decision
+## Phase 8: Pushing is a separate decision
 
-Never push as part of the recommit. Offer it, with the lease form from
-`branch-safety.md`, and let the user decide:
-
-```console
-$ git push \
-    --force-with-lease=<branch>:<remote-tip-sha> \
-    --force-if-includes \
-    origin <branch>
-```
-
-Use the SHA recorded in Phase 1. With no upstream there is nothing to
-lease against; say so instead of offering a push.
+Never push as part of the recommit. Offer the `push=` command that
+`remote-tip` printed in Phase 1, per `branch-safety.md`, and let the user
+decide. When it printed `pushed=no`, offer no force-push.
 
 After a successful rebuild, end with a next-step panel through
 `AskUserQuestion`: show the push command, show the range-diff, or stop.
@@ -215,12 +220,7 @@ with no commentary on the options; never push as the default. A halted run skips
 
 ## Rules
 
-- Prove tree equality before reporting success.
-- Never rewrite a pushed branch without explicit consent, and never
-  when someone else has pushed to it.
 - Never `git add -A` or `git add .`.
 - Never delete the backup branch. The user does that when they are
   satisfied.
-- Never bare `--force`, and never `git fetch` while a lease is being
-  relied on.
 - Never invent a version or a ticket ID.

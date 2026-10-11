@@ -5,10 +5,13 @@ index up one logical change at a time. The working tree stays pinned at
 the branch's final content, so intermediate commits are checked only
 after the series is committed, with the toolkit's `verify`.
 
+`<gate>` is `../scripts/branch_gate.py` and `<toolkit>` is
+`../scripts/rebase-todo.sh`, each resolved to an absolute path by the
+calling skill.
+
 ## Contents
 
 - Resolve the base first, once, to a SHA
-- Refuse before collapsing
 - Collapse
 - Commit whole files
 - Split one file across several commits
@@ -17,75 +20,54 @@ after the series is committed, with the toolkit's `verify`.
 
 ## Resolve the base first, once, to a SHA
 
-A remote-tracking base such as `origin/main` is the last-fetched copy
-and may be stale; this workflow never fetches, so say in the plan when
-the base is one.
-
 Two-dot `git diff <base-branch>..HEAD` against a *moving ref* invents
-deletions of files the base branch added after the fork. Resolve the
-base to a full 40-character SHA once, then use that SHA. Expand an
-abbreviation with `git rev-parse --verify "<abbrev>^{commit}"`; the
-per-commit gate compares against it.
-
-Find the base ref. Trunk is the remote's default branch:
+deletions of files the base branch added after the fork. Resolve the base
+to a full 40-character SHA once, then use that SHA everywhere; the
+per-commit gate compares against it:
 
 ```console
-$ git symbolic-ref --short refs/remotes/origin/HEAD
+$ python3 <gate> base
 ```
 
-When `origin/HEAD` is unset it fails; fall back to whichever of
-`origin/main` or `origin/master` exists. A branch with a pull request names
-its own base, which is the parent on a stacked branch:
+The base is the merge base of the branch and its parent, never the
+parent's tip: when the parent has advanced since the fork, a soft reset to
+its tip would revert the parent's new commits in the staged diff.
+[`git merge-base`](https://git-scm.com/docs/git-merge-base) prints the
+fork commit, and with `--fork-point` it consults the base ref's reflog to
+survive a force-updated base. `--fork-point` prints nothing and exits 1
+when the reflog lacks the fork point (a fresh clone or CI). The subcommand
+prefers the fork point, falls back to the plain merge base on that empty
+answer, and refuses unless exactly one merge base exists, because
+without `--all` git-merge-base prints only one of several.
+
+With no `--parent`, the parent is trunk: the remote's default branch
+(`origin/HEAD`), else `origin/main`, `origin/master`, `main`, `master`.
+A branch with a pull request names its own parent, which on a stacked
+branch is the branch below it:
 
 ```console
 $ gh pr view --json baseRefName
 ```
 
-Without `gh` or a pull request, ask the user for the parent.
+Pass it as `--parent <ref>`. Without `gh` or a pull request, ask the user
+for the parent. Recutting a child against trunk absorbs the parent pull
+request, so recommit a stack bottom-up and re-derive each child's base
+after its parent is rebuilt.
 
-Refuse to continue unless exactly one merge base exists; with two,
-`git merge-base` picks one without warning.
-
-```console
-$ git merge-base --all <base-ref> HEAD | wc -l
-```
-
-Prefer the fork point, which consults the base ref's reflog and
-survives a force-updated base branch:
-
-```console
-$ git merge-base --fork-point <base-ref> HEAD
-```
-
-It prints nothing and exits 1 when the reflog is empty (a fresh clone or
-CI). Treat empty output as "no answer" and fall back to plain
-`git merge-base`; never pass an empty string to `git reset --soft`.
-
-**On a stacked branch the base is the parent branch tip, never
-trunk.** Recutting a child against trunk absorbs the parent pull
-request. Recommit a stack bottom-up, and re-derive each child's base after
-its parent is rebuilt.
-
-## Refuse before collapsing
-
-- Merge commits in the range. `git rev-list --merges <base>..HEAD`
-  must be empty. Collapsing across a merge silently produces a
-  single-parent commit: work reachable only through the second parent
-  is erased from history while its content survives, so every content
-  check still passes.
-- A dirty tree, or any operation in progress.
-- `git reset --soft` is fatal mid-merge; check for `MERGE_HEAD`.
+A remote-tracking parent such as `origin/main` is the last-fetched copy
+and may be stale; the subcommand says so on stderr, and the plan repeats it.
+This workflow never fetches. A redo off its branch passes
+`--branch <branch>`.
 
 ## Collapse
 
-```console
-$ git reset --soft <base-sha>
-```
-
-HEAD and the branch ref move to the base; the index and working tree
-are untouched (assert with `git write-tree` before and after). Use
-`--soft`, never `--mixed`: mixed drops gitignored-but-force-added files
-from the index, after which `git add` on them fails without `-f`.
+The collapse is `git reset --soft <base-sha>`, which `backup
+--soft-reset` runs after the backup is created and read back
+(`branch-safety.md`). HEAD and the branch ref move to the base; the index
+and working tree are untouched. Use `--soft`, never `--mixed`: mixed
+resets the index to the base tree, so a gitignored-but-force-added file
+the branch added is no longer tracked, and `git add` on it fails without
+`-f` ([git-reset](https://git-scm.com/docs/git-reset)).
 
 Take the inventory of what is now staged:
 
@@ -130,7 +112,7 @@ a pathspec, so `git commit --only -- file.txt -F msg.txt` makes git
 look for files named `-F` and `msg.txt`.
 
 `--only` records the *working tree* content of those paths, not the
-index. That is safe for whole files and unsafe for a file being
+index ([git-commit](https://git-scm.com/docs/git-commit)). That is safe for whole files and unsafe for a file being
 split, where the index differs from the working tree.
 
 A rename is a delete plus an add in the index. If you unstaged one side,
@@ -151,7 +133,7 @@ $ git add -u -- old-name
 ## Split one file across several commits
 
 Unstage the file once, then loop. Regenerate the patch from the
-*current* index every round — replaying pre-generated patches lets
+*current* index every round; replaying pre-generated patches lets
 context drift.
 
 ```console
@@ -174,15 +156,14 @@ $ mktemp -d "${TMPDIR:-/tmp}/split.XXXXXX"
 ```
 
 Each round, generate, filter, apply to the index only, and commit.
-`w[1]=1` keeps hunk 1; list more hunks with `w[2]=1` and so on:
+`hunks` keeps the patch header and the listed hunks, numbered from 1:
 
 ```console
 $ git diff --binary -- path/to/file > <scratch>/round.patch
 ```
 
 ```console
-$ awk 'BEGIN{w[1]=1} /^@@/{n++;k=(n in w);if(k)print;next} n==0{print;next} k' \
-    <scratch>/round.patch > <scratch>/part.patch
+$ python3 <gate> hunks <scratch>/round.patch 1,3 > <scratch>/part.patch
 ```
 
 ```console
@@ -206,10 +187,12 @@ Notes on the patch step:
   untracked.
 
 Assert the staged set before every commit: a bare `git commit` after
-`git apply --cached` commits the *entire* index:
+`git apply --cached` commits the *entire* index. `staged` lists each
+unexpected or missing path and exits 2 unless the set is exactly the paths
+named:
 
 ```console
-$ git diff --cached --name-only
+$ python3 <gate> staged path/to/file
 ```
 
 ## Preserve authorship
@@ -231,10 +214,20 @@ Prefer the environment variables over `--author`: a value without angle
 brackets is silently treated as a search pattern over history, copies no
 date, and is fatal when nothing matches.
 
-Harvest the identities before collapsing:
+Harvest the identities from the backup, which keeps the original series:
 
 ```console
-$ git log --no-merges --format='%H %an <%ae> %aI' <base>..HEAD
+$ git log --no-merges --format='%H %an <%ae> %aI' <base-sha>..backup/<flat>-<ts>
+```
+
+After the rebuild, `series` prints each commit as `hash author <email>
+date subject` for the report, and with `--authors-of` exits 2 when a
+commit carries an author or date the original series lacked, or an
+original author is missing from both the authors and the messages'
+`Co-authored-by` trailers:
+
+```console
+$ python3 <gate> series <base-sha> HEAD --authors-of backup/<flat>-<ts>
 ```
 
 ## Prove the recommit changed nothing

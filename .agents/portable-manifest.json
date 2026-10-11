@@ -291,6 +291,7 @@
       ],
       "bundled": {
         "references/branch-safety.md": "plugins/git-branch/references/branch-safety.md",
+        "references/branch_gate.py": "plugins/git-branch/scripts/branch_gate.py",
         "references/commit-messages.md": "plugins/git-branch/references/commit-messages.md",
         "references/prose-rules.md": "plugins/git-branch/references/prose-rules.md",
         "references/rebase-todo.sh": "plugins/git-branch/scripts/rebase-todo.sh",
@@ -298,7 +299,7 @@
         "references/rebuild-contract.md": "plugins/git-branch/references/rebuild-contract.md",
         "references/split-mechanics.md": "plugins/git-branch/references/split-mechanics.md"
       },
-      "bytes": 53678
+      "bytes": 76123
     },
     {
       "name": "git-branch-soft-reset-and-recommit",
@@ -307,13 +308,14 @@
       ],
       "bundled": {
         "references/branch-safety.md": "plugins/git-branch/references/branch-safety.md",
+        "references/branch_gate.py": "plugins/git-branch/scripts/branch_gate.py",
         "references/commit-messages.md": "plugins/git-branch/references/commit-messages.md",
         "references/prose-rules.md": "plugins/git-branch/references/prose-rules.md",
         "references/rebase-todo.sh": "plugins/git-branch/scripts/rebase-todo.sh",
         "references/rebase-toolkit.md": "plugins/git-branch/references/rebase-toolkit.md",
         "references/split-mechanics.md": "plugins/git-branch/references/split-mechanics.md"
       },
-      "bytes": 47093
+      "bytes": 68842
     },
     {
       "name": "github-actions-bumping-github-actions",
@@ -1589,6 +1591,7 @@
     "plugins/git-branch/references/prose-rules.md": 2,
     "plugins/git-branch/references/rebase-toolkit.md": 2,
     "plugins/git-branch/references/split-mechanics.md": 2,
+    "plugins/git-branch/scripts/branch_gate.py": 2,
     "plugins/git-branch/scripts/rebase-todo.sh": 2,
     "plugins/github-actions/references/throwaway-worktree.md": 2,
     "plugins/lean/references/comment-policy.md": 2,

@@ -5,9 +5,9 @@ written again.
 
 `/git-branch:soft-reset-and-recommit` can promise the result is
 byte-identical, and gates on it. A redo cannot: a ground-up rebuild
-that produced an identical tree would just be a recommit. Something
+that produced an identical tree would be a recommit. Something
 weaker has to carry the guarantee, and it has to be named before any
-code is written — otherwise "it still works" means whatever the person
+code is written; otherwise "it still works" means whatever the person
 looking at it wants it to mean.
 
 ## Contents
@@ -51,8 +51,8 @@ Say so plainly, and stop before rebuilding.
 An untested branch has no mechanical invariant at all, which makes a
 redo a rewrite with human review as the only safety net. The useful
 move is to offer to write characterization tests **against the
-existing implementation first** — landing them on the old branch, or
-as the rebuild's first commit — so that a spec exists before anything
+existing implementation first** (landing them on the old branch, or
+as the rebuild's first commit), so that a spec exists before anything
 is thrown away.
 
 A characterization test does not assert what the code *should* do; it
@@ -69,19 +69,19 @@ messy.
 Every entry records what it is, where the evidence is, and whether the
 rebuild addressed it. Gather:
 
-- **Behavior changes** — every observable difference from trunk, from
+- **Behavior changes**: every observable difference from trunk, from
   the diff and the commit messages.
-- **Tests** — each test the branch added or changed, and what it pins.
-- **Edge cases and workarounds** — a fix in a later commit for a case
+- **Tests**: each test the branch added or changed, and what it pins.
+- **Edge cases and workarounds**: a fix in a later commit for a case
   the first commit missed, a guard for a platform quirk, a retry, a
   defensive branch. These are the highest-risk entries: they usually
   have no comment explaining them and a clean rewrite drops them.
-- **Review requests** — anything a reviewer asked for on the pull
+- **Review requests**: anything a reviewer asked for on the pull
   request, resolved or not.
-- **Ticket acceptance criteria** — what the work was for.
-- **Public surface** — exports, CLI flags, config keys, migrations,
+- **Ticket acceptance criteria**: what the work was for.
+- **Public surface**: exports, CLI flags, config keys, migrations,
   schema changes.
-- **Dependencies** — anything added, removed, or pinned.
+- **Dependencies**: anything added, removed, or pinned.
 
 ## Reconciling
 
@@ -98,7 +98,7 @@ is a defect in the rebuild.
 $ git diff <old-branch> <new-branch>
 ```
 
-This is not a gate and must not be treated as one — the whole point
+This is not a gate and must not be treated as one; the whole point
 was to write different code. Read it as a list of questions. Every
 hunk where the old branch did something the new one does not is a
 prompt: was that deliberate?

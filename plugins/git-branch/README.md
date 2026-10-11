@@ -50,9 +50,9 @@ Signatures are lost unless `RECUT_SIGN` is set.
 1. **Gathers intent:** Reads commit messages, trailers, PR bodies, reviews,
    and linked tickets before altering boundaries.
 2. **Resolves base & validates:** Stops on dirty trees, operations in
-   progress, and merge commits; asks before rewriting a pushed branch and
-   stops if someone else pushed. Identifies correct base for
-   stacked branches.
+   progress, and merge commits; asks before rewriting a pushed branch
+   (including one pushed without `-u`) and stops if someone else pushed.
+   Uses the merge base with the parent for stacked branches.
 3. **Discovers commit format:** Reads from `AGENTS.md`, `CONTRIBUTING.md`,
    commitlint configs, or mining history. Asks if mixed.
 4. **Plans and waits:** Presents proposed commits and contents for approval
@@ -79,7 +79,7 @@ Retains original branch as a reference.
 
 ### Which skill to use
 
-- **`soft-reset-and-recommit`**: Code is correct, but history is messy.
+- **`soft-reset-and-recommit`**: History is messy; the code is correct.
   Guarantees byte-identical changes.
 - **`redo-from-scratch`**: Code approach needs changing. Guarantees
   only what the tests and the coverage ledger cover.
@@ -93,20 +93,26 @@ Run it from anywhere. The subcommands (`status`, `show`, `apply`,
 [`references/rebase-toolkit.md`](references/rebase-toolkit.md). It needs a
 POSIX shell (WSL or Git Bash on Windows).
 
-## Relationship to other git plugins
+### The gate script
 
-- **Use `/git-branch:soft-reset-and-recommit`**: When the branch content is
-  correct but history is messy.
-- **Use `/slop:deslop`**: When commit messages need cleaning but boundaries are
-  fine (uses autosquash without splitting commits).
-- **Use `/rebase:rebase`**: When moving a branch onto the current trunk.
-- **Use `/commit:commit`**: When creating a new commit rather than rebuilding
-  existing ones.
+`scripts/branch_gate.py` carries the deterministic steps the skills would
+otherwise re-derive: `preflight` (every refusal, with a code and a reason),
+`base`, `backup`, `remote-tip`, `staged`, `hunks`, `changed` and `carry`,
+and `series`. The refusal codes, the backup name, and the push form are in
+[`references/branch-safety.md`](references/branch-safety.md). It runs under
+the stock `python3` (3.9 or later) and needs nothing installed.
+
+## Relationship to other plugins
+
+Other plugins in this marketplace may cover cleaning commit messages without moving
+boundaries, rebasing a branch onto trunk, or writing a new commit. Use
+`/git-branch:soft-reset-and-recommit` when the branch content is correct
+but its history is messy.
 
 ## Prerequisites
 
-- **git** — 2.30+ for `--force-if-includes`; 2.38+ for
-  `RECUT_UPDATE_REFS` (`--update-refs`).
-  Check with `git --version`.
-- **gh** — (Optional) to read PRs, reviews, and linked issues. Degrades to
+- **git**: 2.38+ for `RECUT_UPDATE_REFS` (`--update-refs`). Check with
+  `git --version`.
+- **python3**: 3.9+ for `scripts/branch_gate.py`.
+- **gh**: (Optional) to read PRs, reviews, and linked issues. Degrades to
   git-only if missing.
