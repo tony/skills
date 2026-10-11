@@ -1002,6 +1002,68 @@ def _check_testpaths() -> list[str]:
     ]
 
 
+# Agents call bundled scripts as `G=<path>; python3 $G sub`, which a grader
+# keyed on the filename alone never matches.
+SCRIPT_VAR_FORM = r"\$\{?[A-Za-z_]\w*\}?"
+_VAR_REF_RE = re.compile(r"\\\$(?:\\\{\?)?(?:\\w|\[A-Za-z_\])")
+SCRIPT_VAR_BASELINE = REPO_ROOT / "scripts" / "script-var-baseline.txt"
+
+
+def _lacks_script_var_form(pattern: str, scripts: list[str]) -> bool:
+    r"""Return whether a grader pattern names a bundled script but no shell-variable form.
+
+    Examples
+    --------
+    >>> _lacks_script_var_form(r"branch_gate\.py\s+series", ["branch_gate.py"])
+    True
+    >>> form = r"(?:branch_gate\.py|python3?\s+\$\{?[A-Za-z_]\w*\}?)\s+series"
+    >>> _lacks_script_var_form(form, ["branch_gate.py"])
+    False
+    >>> _lacks_script_var_form(r"(?:merge_pr\.py merge|\$\{?\w+\}? merge)", ["merge_pr.py"])
+    False
+    >>> _lacks_script_var_form(r"git push", ["branch_gate.py"])
+    False
+    """
+    plain = pattern.replace("\\", "")
+    return any(name in plain for name in scripts) and not _VAR_REF_RE.search(pattern)
+
+
+def _script_var_offenders() -> set[str]:
+    """Return `plugin/case:grader` for each Bash grader that lacks the variable form."""
+    offenders: set[str] = set()
+    for case in sorted(PLUGINS_DIR.glob("*/evals/*/case.yaml")):
+        plugin_dir = case.parents[2]
+        scripts = [
+            p.name
+            for p in (plugin_dir / "scripts").glob("*")
+            if p.suffix in {".py", ".sh"} and not p.name.startswith("test_")
+        ]
+        if not scripts:
+            continue
+        data = t.cast("dict[str, object]", yaml.safe_load(case.read_text(encoding="utf-8")) or {})
+        for grader in t.cast("list[dict[str, object]]", data.get("graders") or []):
+            pattern = grader.get("input_match")
+            bash = grader.get("type") == "tool_used" and grader.get("tool") == "Bash"
+            if bash and isinstance(pattern, str) and _lacks_script_var_form(pattern, scripts):
+                offenders.add(f"{plugin_dir.name}/{case.parent.name}:{grader.get('name')}")
+    return offenders
+
+
+def _check_script_var_graders() -> list[str]:
+    """Fail on new script-keyed graders without the variable form, and on stale baseline lines."""
+    baseline = {
+        line.strip()
+        for line in SCRIPT_VAR_BASELINE.read_text(encoding="utf-8").splitlines()
+        if line.strip() and not line.startswith("#")
+    }
+    offenders = _script_var_offenders()
+    rel = SCRIPT_VAR_BASELINE.relative_to(REPO_ROOT)
+    return [
+        f"{o}: names a bundled script but not `python3 $VAR`; add `{SCRIPT_VAR_FORM}`"
+        for o in sorted(offenders - baseline)
+    ] + [f"{rel}: '{b}' no longer offends; remove it" for b in sorted(baseline - offenders)]
+
+
 def _engine_strings(source: str, *, models: bool = True) -> list[str]:
     """Return the model IDs and credit-exhaustion patterns the weave engine hard-codes.
 
@@ -1512,9 +1574,13 @@ def lint() -> None:
         if not readme_errors:
             console.print(f"  Table: [green]OK[/green] ({len(manifest.plugins)} rows)")
 
-    errors.extend(_check_testpaths())
-    errors.extend(_check_engine_parity())
-    errors.extend(_check_verifier_parity())
+    for repo_check in (
+        _check_testpaths,
+        _check_engine_parity,
+        _check_verifier_parity,
+        _check_script_var_graders,
+    ):
+        errors.extend(repo_check())
 
     # Run claude plugin validate if CLI is available
     cli_errors, cli_warnings = _lint_claude_validate()

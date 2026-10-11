@@ -1,0 +1,47 @@
+# Bash graders that name a bundled script but not a shell-variable call
+# (python3 $G sub). marketplace.py lint fails on any offender missing here
+# and on any line here that no longer offends; fix a plugin's lines in its review.
+changelog/03-rewrite-dirty-tree-stops:never-rebases-resets-or-commits
+changelog/04-rewrite-needs-explicit-approval:never-rebases-or-resets
+changelog/05-rewrite-approved-drops-commit:drops-the-draft-commit-through-the-helper
+changelog/07-rewrite-mixed-commit-pushed:drops-through-the-helper
+merge-pr/07-this-title-stays-inert:message-passed-from-a-file
+merge-pr/08-this-behind-needs-confirmation:no-rebase-push-or-merge-unconfirmed
+merge-pr/09-multiple-behind-needs-confirmation:no-rebase-push-or-merge-unconfirmed
+pr/07-refresh-stacked-backup-then-ask:backs-up-the-body
+pr/08-rewrite-apply-after-approval:backs-up-the-body
+pr/11-rewrite-head-branch-mismatch:never-backs-up
+pr/12-rewrite-body-changed-since-backup:backs-up-the-body
+pr/12-rewrite-body-changed-since-backup:checks-before-editing
+pr/13-rewrite-edit-not-read-back:reads-the-pr-back
+rebase/01-rebase-onto-trunk:rebase-performed
+rebase/02-rebase-competing-conflict:never-continues-past-the-conflict
+rebase/02-rebase-competing-conflict:rebase-attempted
+rebase/03-rebase-preserves-partial-staging:rebases-with-the-recovery-helper
+rebase/04-rebase-merge-commit-stops:never-rebases
+rebase/05-rebase-already-up-to-date:never-rebases
+rebase/06-rebase-restore-conflict-after-continue:continues-through-the-recovery-helper
+rebase/06-rebase-restore-conflict-after-continue:rebases-with-the-recovery-helper
+rebase/07-rebase-fork-upstream-remote:never-rebases-onto-origin
+rebase/07-rebase-fork-upstream-remote:rebases-onto-upstream
+research/11-check-before-ready:releases-nothing
+research/16-decide-without-release:no-release-forced
+respond/08-action-dirty-tree-keeps-user-edits:never-stashes-or-resets
+respond/09-action-home-root-halt:no-stash-stage-or-commit
+scholar/17-distill-planted-cycle-orphan:runs-the-analyzer
+scholar/22-revise-appends-and-preserves:invokes-the-brief-gate
+slop/07-deslop-merge-commits-refuse:runs-no-rebase
+slop/08-deslop-apply-rebase-completes:runs-autosquash
+spike/06-probe-dirty-tree-on-top:never-drops-the-user-stash
+spike/07-probe-dirty-tree-stash-first:never-drops-the-user-stash
+spike/08-bakeoff-two-strategies-full:stashes-one-at-a-time
+spike/10-ratchet-two-rounds:resolves-the-ledger-directory
+tailwind/07-directory-scan-margin-leak:scans-with-a-command
+tdd/08-xfail-end-to-end:stash-round-trip-uses-the-script
+ticket/09-draft-jira-approved-filing:converts-with-jira-text
+ticket/09-draft-jira-approved-filing:scans-the-body-before-filing
+ticket/10-rebuild-approved-update-reads-back:checks-media-after-write
+ticket/13-draft-pasted-secret-rotates:scans-the-body
+weave/01-architecture-scaffold:no-adoption-or-commit
+weave/06-prompt-implementation:no-adoption-or-commit
+weave/14-execute-refuses-home-toplevel:no-stash-or-worktree
