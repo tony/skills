@@ -151,7 +151,93 @@ def test_init_model_clis_roster_follows_installed_clis(repo: Path, bindir: Path)
     assert doc["participants"] == ["claude", "agy", "gpt"]
     assert doc["executors"] == {"claude": "host", "agy": "agent", "gpt": "codex"}
     session = json.loads((Path(doc["session_dir"]) / "session.json").read_text())
-    assert "agy: gemini-3.1-pro" in session["models"]
+    assert "agy: gemini-3.1-pro [pinned]" in session["models"]
+    assert "gpt: default" in session["models"]
+
+
+AGENT_LISTING = (
+    "Available models",
+    "",
+    "auto - Auto (default)",
+    "gpt-5.5-high - GPT-5.5 1M High",
+    "gpt-5.6-sol-high - GPT-5.6 Sol 1M High",
+    "gpt-5.6-luna-high - GPT-5.6 Luna 1M High",
+    "gpt-5.9-mini-high - GPT-5.9 Mini High",
+    "gpt-5.4-mini-medium - GPT-5.4 Mini",
+    "gemini-3.1-pro - Gemini 3.1 Pro",
+)
+AGY_LISTING = (
+    "Fetching available models...",
+    "gemini-3.8-flash-high\tGemini 3.8 Flash (High)",
+    "gemini-3.9-flash-high\tGemini 3.9 Flash (High)",
+    "gemini-3.2-pro-high\tGemini 3.2 Pro (High)",
+    "gemini-3.2-pro-low\tGemini 3.2 Pro (Low)",
+)
+
+
+def lister_stub(bindir: Path, name: str, flag: str, lines: tuple[str, ...], log: Path) -> None:
+    """Install a CLI that logs each call, prints ``lines`` for ``flag``, else answers ``ran``."""
+    quoted = " ".join(shlex.quote(line) for line in lines)
+    script = [
+        f'echo "{name} $*" >> {shlex.quote(str(log))}',
+        f'[ "$1" = {flag} ] && {{ printf "%s\\n" {quoted}; exit 0; }}',
+        "printf ran",
+    ]
+    stub(bindir, name, "\n".join(script))
+
+
+def test_init_resolves_lane_models_from_live_listings(repo: Path, bindir: Path) -> None:
+    log = repo.parent / "calls.log"
+    stub(bindir, "codex", "exit 0")
+    lister_stub(bindir, "agent", "--list-models", AGENT_LISTING, log)
+    lister_stub(bindir, "agy", "models", AGY_LISTING, log)
+    session = engine.load_session(init(backend="model-clis")["session_dir"])
+    assert session["chains"]["agy"] == [
+        ["agy", "Gemini 3.2 Pro (High)", "live"],
+        ["agent", "gemini-3.1-pro", "live"],
+        ["agy", "Gemini 3.9 Flash (High)", "live"],
+    ]
+    assert session["chains"]["gpt"] == [
+        ["codex", None, "default"],
+        ["agent", "gpt-5.6-sol-high", "live"],
+        ["agent", "gpt-5.4-mini-medium", "live"],
+    ]
+    assert "agy: Gemini 3.2 Pro (High) [live]" in session["models"]
+    assert "gpt: default" in session["models"]
+
+
+@pytest.mark.parametrize("body", ["exit 1", "exit 0", "exec sleep 30"])
+def test_init_pins_models_when_listing_fails_or_matches_nothing(
+    repo: Path, bindir: Path, monkeypatch: pytest.MonkeyPatch, body: str
+) -> None:
+    monkeypatch.setattr(engine, "LIST_TIMEOUT", 0.3)
+    stub(bindir, "agent", body)
+    stub(bindir, "agy", body)
+    chains = engine.load_session(init(backend="model-clis")["session_dir"])["chains"]
+    assert chains["agy"] == [
+        ["agy", "Gemini 3.1 Pro (High)", "pinned"],
+        ["agent", "gemini-3.1-pro", "pinned"],
+        ["agy", "Gemini 3.8 Flash (High)", "pinned"],
+    ]
+    assert chains["gpt"] == [
+        ["agent", "gpt-5.4-high", "pinned"],
+        ["agent", "gpt-5.4-mini-medium", "pinned"],
+    ]
+
+
+def test_dispatch_runs_the_recorded_chain_without_listing_again(repo: Path, bindir: Path) -> None:
+    log = repo.parent / "calls.log"
+    stub(bindir, "codex", 'echo "insufficient_quota" >&2; exit 1')
+    lister_stub(bindir, "agent", "--list-models", AGENT_LISTING, log)
+    sdir, _ = read_only_session()
+    lister_stub(bindir, "agent", "--list-models", ("gpt-9.9-high - Newer",), log)
+    log.write_text("")
+    doc = dispatch(sdir, "gpt")
+    assert doc["ok"], doc
+    assert doc["model"] == "gpt-5.6-sol-high"
+    calls = log.read_text()
+    assert "--list-models" not in calls
+    assert "--model gpt-5.6-sol-high" in calls
 
 
 def test_update_drops_participant_and_links_latest(repo: Path, bindir: Path) -> None:

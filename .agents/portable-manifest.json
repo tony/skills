@@ -1341,6 +1341,7 @@
       ],
       "bundled": {
         "references/architecture.md": "plugins/weave/references/results/architecture.md",
+        "references/closest_model.py": "plugins/weave/scripts/closest_model.py",
         "references/engine.py": "plugins/weave/scripts/engine.py",
         "references/ensemble-core.md": "plugins/weave/references/ensemble-core.md",
         "references/mutating-run.md": "plugins/weave/references/mutating-run.md",
@@ -1348,7 +1349,7 @@
         "references/prose-rules.md": "plugins/weave/references/prose-rules.md",
         "references/worker-backends.md": "plugins/weave/references/worker-backends.md"
       },
-      "bytes": 181025
+      "bytes": 191034
     },
     {
       "name": "weave-ask",
@@ -1357,6 +1358,7 @@
       ],
       "bundled": {
         "references/ask.md": "plugins/weave/references/results/ask.md",
+        "references/closest_model.py": "plugins/weave/scripts/closest_model.py",
         "references/deslop-pass.md": "plugins/weave/references/deslop-pass.md",
         "references/engine.py": "plugins/weave/scripts/engine.py",
         "references/ensemble-core.md": "plugins/weave/references/ensemble-core.md",
@@ -1365,7 +1367,7 @@
         "references/prose-rules.md": "plugins/weave/references/prose-rules.md",
         "references/worker-backends.md": "plugins/weave/references/worker-backends.md"
       },
-      "bytes": 186213
+      "bytes": 196222
     },
     {
       "name": "weave-brainstorm",
@@ -1374,12 +1376,13 @@
       ],
       "bundled": {
         "references/brainstorm.md": "plugins/weave/references/results/brainstorm.md",
+        "references/closest_model.py": "plugins/weave/scripts/closest_model.py",
         "references/engine.py": "plugins/weave/scripts/engine.py",
         "references/ensemble-core.md": "plugins/weave/references/ensemble-core.md",
         "references/present-results.md": "plugins/weave/references/present-results.md",
         "references/worker-backends.md": "plugins/weave/references/worker-backends.md"
       },
-      "bytes": 164362
+      "bytes": 174371
     },
     {
       "name": "weave-brainstorm-and-refine",
@@ -1388,6 +1391,7 @@
       ],
       "bundled": {
         "references/brainstorm-and-refine.md": "plugins/weave/references/results/brainstorm-and-refine.md",
+        "references/closest_model.py": "plugins/weave/scripts/closest_model.py",
         "references/deslop-pass.md": "plugins/weave/references/deslop-pass.md",
         "references/engine.py": "plugins/weave/scripts/engine.py",
         "references/ensemble-core.md": "plugins/weave/references/ensemble-core.md",
@@ -1395,7 +1399,7 @@
         "references/refine-cycle.md": "plugins/weave/references/refine-cycle.md",
         "references/worker-backends.md": "plugins/weave/references/worker-backends.md"
       },
-      "bytes": 181961
+      "bytes": 191970
     },
     {
       "name": "weave-execute",
@@ -1403,6 +1407,7 @@
         "plugins/weave/skills/execute/SKILL.md"
       ],
       "bundled": {
+        "references/closest_model.py": "plugins/weave/scripts/closest_model.py",
         "references/engine.py": "plugins/weave/scripts/engine.py",
         "references/ensemble-core.md": "plugins/weave/references/ensemble-core.md",
         "references/execute.md": "plugins/weave/references/results/execute.md",
@@ -1411,7 +1416,7 @@
         "references/prose-rules.md": "plugins/weave/references/prose-rules.md",
         "references/worker-backends.md": "plugins/weave/references/worker-backends.md"
       },
-      "bytes": 179897
+      "bytes": 189906
     },
     {
       "name": "weave-fix-review",
@@ -1419,12 +1424,13 @@
         "plugins/weave/skills/fix-review/SKILL.md"
       ],
       "bundled": {
+        "references/closest_model.py": "plugins/weave/scripts/closest_model.py",
         "references/engine.py": "plugins/weave/scripts/engine.py",
         "references/fix-review.md": "plugins/weave/references/results/fix-review.md",
         "references/present-results.md": "plugins/weave/references/present-results.md",
         "references/prose-rules.md": "plugins/weave/references/prose-rules.md"
       },
-      "bytes": 143459
+      "bytes": 153468
     },
     {
       "name": "weave-plan",
@@ -1432,6 +1438,7 @@
         "plugins/weave/skills/plan/SKILL.md"
       ],
       "bundled": {
+        "references/closest_model.py": "plugins/weave/scripts/closest_model.py",
         "references/deslop-pass.md": "plugins/weave/references/deslop-pass.md",
         "references/engine.py": "plugins/weave/scripts/engine.py",
         "references/ensemble-core.md": "plugins/weave/references/ensemble-core.md",
@@ -1440,7 +1447,7 @@
         "references/prose-rules.md": "plugins/weave/references/prose-rules.md",
         "references/worker-backends.md": "plugins/weave/references/worker-backends.md"
       },
-      "bytes": 182628
+      "bytes": 192637
     },
     {
       "name": "weave-prompt",
@@ -1448,6 +1455,7 @@
         "plugins/weave/skills/prompt/SKILL.md"
       ],
       "bundled": {
+        "references/closest_model.py": "plugins/weave/scripts/closest_model.py",
         "references/engine.py": "plugins/weave/scripts/engine.py",
         "references/ensemble-core.md": "plugins/weave/references/ensemble-core.md",
         "references/mutating-run.md": "plugins/weave/references/mutating-run.md",
@@ -1456,7 +1464,7 @@
         "references/prose-rules.md": "plugins/weave/references/prose-rules.md",
         "references/worker-backends.md": "plugins/weave/references/worker-backends.md"
       },
-      "bytes": 179126
+      "bytes": 189135
     },
     {
       "name": "weave-refine",
@@ -1464,6 +1472,7 @@
         "plugins/weave/skills/refine/SKILL.md"
       ],
       "bundled": {
+        "references/closest_model.py": "plugins/weave/scripts/closest_model.py",
         "references/deslop-pass.md": "plugins/weave/references/deslop-pass.md",
         "references/engine.py": "plugins/weave/scripts/engine.py",
         "references/ensemble-core.md": "plugins/weave/references/ensemble-core.md",
@@ -1472,7 +1481,7 @@
         "references/refine.md": "plugins/weave/references/results/refine.md",
         "references/worker-backends.md": "plugins/weave/references/worker-backends.md"
       },
-      "bytes": 180484
+      "bytes": 190493
     },
     {
       "name": "weave-review",
@@ -1480,6 +1489,7 @@
         "plugins/weave/skills/review/SKILL.md"
       ],
       "bundled": {
+        "references/closest_model.py": "plugins/weave/scripts/closest_model.py",
         "references/deslop-pass.md": "plugins/weave/references/deslop-pass.md",
         "references/engine.py": "plugins/weave/scripts/engine.py",
         "references/ensemble-core.md": "plugins/weave/references/ensemble-core.md",
@@ -1489,7 +1499,7 @@
         "references/review.md": "plugins/weave/references/results/review.md",
         "references/worker-backends.md": "plugins/weave/references/worker-backends.md"
       },
-      "bytes": 194732
+      "bytes": 204741
     },
     {
       "name": "weave-serene-bliss",
@@ -1498,6 +1508,7 @@
       ],
       "bundled": {
         "references/brainstorm.md": "plugins/weave/references/results/brainstorm.md",
+        "references/closest_model.py": "plugins/weave/scripts/closest_model.py",
         "references/deslop-pass.md": "plugins/weave/references/deslop-pass.md",
         "references/engine.py": "plugins/weave/scripts/engine.py",
         "references/ensemble-core.md": "plugins/weave/references/ensemble-core.md",
@@ -1506,13 +1517,14 @@
         "references/refine.md": "plugins/weave/references/results/refine.md",
         "references/worker-backends.md": "plugins/weave/references/worker-backends.md"
       },
-      "bytes": 186498
+      "bytes": 196507
     }
   ],
   "duplication": {
     "plugins/scholar/references/output-contract.md": 11,
     "plugins/scholar/references/prose-rules.md": 11,
     "plugins/weave/references/present-results.md": 11,
+    "plugins/weave/scripts/closest_model.py": 11,
     "plugins/weave/scripts/engine.py": 11,
     "plugins/weave/references/ensemble-core.md": 10,
     "plugins/weave/references/worker-backends.md": 10,

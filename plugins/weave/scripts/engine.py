@@ -34,6 +34,8 @@ import typing as t
 from datetime import datetime, timezone
 from pathlib import Path
 
+import closest_model  # pyright: ignore[reportImplicitRelativeImport]
+
 if t.TYPE_CHECKING:
     from collections.abc import Callable, Generator, Mapping, Sequence
 
@@ -135,16 +137,39 @@ HARDEN_HOST = (
     "repository. This is a READ-ONLY research task.\n"
 )
 
-# Fallback order per external lane: (executable, model). A step whose executable
-# is missing is skipped, so the last entry is the lesser-model fallback.
-LANES: dict[str, tuple[tuple[str, str | None], ...]] = {
+
+class Step(t.NamedTuple):
+    """One lane step: an executable and how to choose its model.
+
+    ``template`` is a ``closest_model.newest`` template resolved against the
+    executable's live listing; ``fallback`` is the pinned model used when the
+    listing fails or matches nothing. A step with no template runs the
+    executable's default model.
+    """
+
+    exe: str
+    fallback: str | None
+    template: str | None = None
+    exclude: tuple[str, ...] = ()
+    label: bool = False
+
+
+# Fallback order per external lane. A step whose executable is missing is
+# skipped, so the last entry is the lesser-model fallback.
+LANES: dict[str, tuple[Step, ...]] = {
     "agy": (
-        ("agy", "Gemini 3.1 Pro (High)"),
-        ("agent", "gemini-3.1-pro"),
-        ("agy", "Gemini 3.8 Flash (High)"),
+        Step("agy", "Gemini 3.1 Pro (High)", "gemini-{v}-pro-high", label=True),
+        Step("agent", "gemini-3.1-pro", "gemini-{v}-pro"),
+        Step("agy", "Gemini 3.8 Flash (High)", "gemini-{v}-flash-high", label=True),
     ),
-    "gpt": (("codex", None), ("agent", "gpt-5.4-high"), ("agent", "gpt-5.4-mini-medium")),
+    "gpt": (
+        Step("codex", None),
+        Step("agent", "gpt-5.4-high", "gpt-{v}-*high", ("mini",)),
+        Step("agent", "gpt-5.4-mini-medium", "gpt-{v}-mini-medium"),
+    ),
 }
+LIST_COMMANDS = {"agy": ("agy", "models"), "agent": ("agent", "--list-models")}
+LIST_TIMEOUT = 20
 
 CREDIT_PATTERNS = (
     "RESOURCE_EXHAUSTED",
@@ -471,26 +496,87 @@ def parse_flags(text: str, command: str, *, default_timeout: int | None = None) 
     }
 
 
-def lane_chain(
-    lane: str, which: Callable[[str], str | None] = shutil.which
-) -> list[tuple[str, str | None]]:
-    """Return the installed ``(executable, model)`` steps for an external lane.
+def list_models(exe: str) -> list[str] | None:
+    """Return the lines ``exe`` lists its models on, or None when it cannot list them.
 
-    >>> lane_chain("gpt", lambda n: "/bin/agent" if n == "agent" else None)
-    [('agent', 'gpt-5.4-high'), ('agent', 'gpt-5.4-mini-medium')]
-    >>> [m for _, m in lane_chain("agy", lambda n: "/bin/agy" if n == "agy" else None)]
-    ['Gemini 3.1 Pro (High)', 'Gemini 3.8 Flash (High)']
+    Runs outside the user's checkout so a listing can never touch it.
     """
-    return [(exe, model) for exe, model in LANES[lane] if which(exe)]
+    argv = LIST_COMMANDS.get(exe)
+    if argv is None:
+        return None
+    try:
+        done = subprocess.run(  # noqa: S603
+            argv, capture_output=True, text=True, timeout=LIST_TIMEOUT, check=False,
+            stdin=subprocess.DEVNULL, cwd=tempfile.gettempdir(),
+        )  # fmt: skip
+    except (OSError, subprocess.SubprocessError):
+        return None
+    return done.stdout.splitlines() if done.returncode == 0 else None
 
 
-def detect(which: Callable[[str], str | None] = shutil.which) -> Json:
-    """Report installed model CLIs, each lane's chain, and the best search tools."""
+def resolve_step(step: Step, listing: Sequence[str] | None) -> tuple[str | None, str]:
+    """Return ``(model, source)`` for a step; source is live, pinned, or default.
+
+    >>> resolve_step(Step("agent", "gpt-5.4-high", "gpt-{v}-high"), ["gpt-5.5-high - G"])
+    ('gpt-5.5-high', 'live')
+    >>> resolve_step(Step("agent", "gpt-5.4-high", "gpt-{v}-high"), [])
+    ('gpt-5.4-high', 'pinned')
+    >>> resolve_step(Step("codex", None), None)
+    (None, 'default')
+    """
+    if step.template is None:
+        return step.fallback, "default"
+    picked = closest_model.newest(
+        step.template, list(listing or ()), step.exclude, label=step.label
+    )
+    return (picked, "live") if picked else (step.fallback, "pinned")
+
+
+def lane_chain(
+    lane: str,
+    which: Callable[[str], str | None] = shutil.which,
+    lister: Callable[[str], list[str] | None] | None = None,
+) -> list[tuple[str, str | None, str]]:
+    """Return the installed ``(executable, model, source)`` steps for an external lane.
+
+    Without a ``lister`` every step keeps its pinned model; ``detect`` passes
+    one so a session resolves each model once from the CLI's live listing.
+
+    >>> agent_only = lambda n: "/bin/agent" if n == "agent" else None
+    >>> lane_chain("gpt", agent_only)
+    [('agent', 'gpt-5.4-high', 'pinned'), ('agent', 'gpt-5.4-mini-medium', 'pinned')]
+    >>> models = ["gpt-5.6-sol-high - S", "gpt-5.7-mini-high - M", "gpt-5.4-mini-medium - M"]
+    >>> live = lambda exe: models
+    >>> [(m, src) for _, m, src in lane_chain("gpt", agent_only, live)]
+    [('gpt-5.6-sol-high', 'live'), ('gpt-5.4-mini-medium', 'live')]
+    """
+    listings: dict[str, list[str] | None] = {}
+    chain: list[tuple[str, str | None, str]] = []
+    for step in LANES[lane]:
+        if not which(step.exe):
+            continue
+        if lister is not None and step.template and step.exe not in listings:
+            listings[step.exe] = lister(step.exe)
+        model, source = resolve_step(step, listings.get(step.exe))
+        chain.append((step.exe, model, source))
+    return chain
+
+
+def detect(
+    which: Callable[[str], str | None] = shutil.which,
+    lister: Callable[[str], list[str] | None] | None = list_models,
+) -> Json:
+    """Report installed model CLIs, each lane's resolved chain, and the best search tools."""
     lanes: Json = {}
     for lane in LANES:
-        chain = lane_chain(lane, which)
+        chain = lane_chain(lane, which, lister)
         lanes[lane] = (
-            {"executor": chain[0][0], "model": chain[0][1], "chain": [list(s) for s in chain]}
+            {
+                "executor": chain[0][0],
+                "model": chain[0][1],
+                "source": chain[0][2],
+                "chain": [list(s) for s in chain],
+            }
             if chain
             else None
         )
@@ -512,6 +598,9 @@ def build_roster(backend: str, detected: Json | None = None) -> tuple[list[str],
     >>> det = {"lanes": {"agy": None, "gpt": {"executor": "codex", "model": None}}}
     >>> build_roster("model-clis", det)
     (['claude', 'gpt'], {'claude': 'host', 'gpt': 'codex'}, ['gpt: default'])
+    >>> det = {"lanes": {"agy": None, "gpt": {"executor": "agent", "model": "m", "source": "live"}}}
+    >>> build_roster("model-clis", det)[2]
+    ['gpt: m [live]']
     """
     if backend == "subagents":
         names = list(ROLES)
@@ -525,7 +614,8 @@ def build_roster(backend: str, detected: Json | None = None) -> tuple[list[str],
         if found:
             participants.append(lane)
             executors[lane] = found["executor"]
-            models.append(f"{lane}: {found['model'] or 'default'}")
+            model = found["model"]
+            models.append(f"{lane}: {model} [{found['source']}]" if model else f"{lane}: default")
     return participants, executors, models
 
 
@@ -1146,7 +1236,10 @@ def _build_session(  # noqa: PLR0913
     guard = None if bare or not info.git else take_guard_snapshot(top, session_id)
     branch = git(top, "branch", "--show-current") if info.git else ""
     ref = git(top, "rev-parse", "--short", "HEAD") if info.git else ""
-    participants, executors, models = ([], {}, []) if bare else build_roster(t.cast("str", backend))
+    detected = detect() if backend == "model-clis" and not bare else None
+    participants, executors, models = (
+        ([], {}, []) if bare else build_roster(t.cast("str", backend), detected)
+    )
     trunk = detect_trunk(top) if info.git else None
     created = stamp()
     doc: Json = {
@@ -1176,8 +1269,9 @@ def _build_session(  # noqa: PLR0913
         doc["scratch"] = str(scratch)
     if variants:
         doc["variants"] = variants
-    if backend == "model-clis" and not bare:
+    if detected is not None and not bare:
         doc["models"] = models
+        doc["chains"] = {lane: found["chain"] for lane, found in detected["lanes"].items() if found}
     if stash is not None:
         doc["stash"] = stash
     save_session(session_dir, doc)
@@ -1546,14 +1640,20 @@ def dispatch_lane(  # noqa: PLR0913, PLR0915
     A timeout retries at 1.5x the limit, a rate limit retries after ``rate_wait``
     seconds, an empty answer retries once, and a credit or quota error skips the
     retry. A crash ends the lane. After a failed retry the next installed step in the
-    lane's chain runs.
+    lane's chain runs. The chain is the one ``init`` recorded in ``session.json``;
+    dispatch never lists models again.
     """
     session = load_session(session_dir)
     task = task or lane_task(session_dir, lane, n=n)
     if mutating and task.name not in session.get("worktrees", {}):
         msg = f"no worktree registered for {task.name}; run worktrees create first"
         raise EngineError(msg)
-    chain = lane_chain(lane, which)
+    recorded = session.get("chains", {}).get(lane)
+    chain = (
+        [(exe, model) for exe, model, *_ in recorded if which(exe)]
+        if recorded is not None
+        else [(exe, model) for exe, model, _ in lane_chain(lane, which)]
+    )
     if not chain:
         return {"ok": False, "lane": lane, "failure_class": "unavailable", "attempts": []}
     out, err = task.out, task.err
@@ -2562,6 +2662,7 @@ def _update_session(  # noqa: PLR0913
         session["executors"].pop(name, None)
         if "models" in session:
             session["models"] = [m for m in session["models"] if not m.startswith(f"{name}:")]
+        session.get("chains", {}).pop(name, None)
     save_session(session_dir, session)
     if event:
         try:

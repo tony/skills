@@ -223,7 +223,7 @@ $AI_AIP_ROOT/repos/<slug>--<hash>/
 
 With the default backend the participants are `maintainer`, `skeptic`, and `builder`; with `model-clis` they are `claude`, `agy`, and `gpt`. Only files that differ from `HEAD` are snapshotted into `files/<participant>/`; deleted files appear in the manifest only, so a later pass can cross-reference files without depending on worktree persistence. Pass directories use zero-padded numbering and mode 700, and stay after the session.
 
-`session.json` records `session_id`, `command`, `status` (`in_progress` or `completed`), `toplevel`, `branch`, `ref`, `mutating`, `worker_backend`, `participants`, `executors` (participant ID to executor), `models` (only for `model-clis`), `completed_passes`, `prompt_summary` (first 120 characters), `guard` (the snapshot; absent with `unguarded: true` in no-repo mode), and timestamps. `stash` records the user's stashed changes for a write command. `events.jsonl` holds one JSON object per line: `session_start`, `pass_complete`, `repo_guard_final`, and `session_complete`. The engine updates both atomically.
+`session.json` records `session_id`, `command`, `status` (`in_progress` or `completed`), `toplevel`, `branch`, `ref`, `mutating`, `worker_backend`, `participants`, `executors` (participant ID to executor), `models` and `chains` (only for `model-clis`), `completed_passes`, `prompt_summary` (first 120 characters), `guard` (the snapshot; absent with `unguarded: true` in no-repo mode), and timestamps. `stash` records the user's stashed changes for a write command. `events.jsonl` holds one JSON object per line: `session_start`, `pass_complete`, `repo_guard_final`, and `session_complete`. The engine updates both atomically.
 
 To list sessions, scan the `session.json` files under `sessions/<command>/`; `latest` points at the most recently completed session.
 
@@ -241,13 +241,15 @@ For `--workers=model-clis`, install one or more of these CLIs:
 
 If no CLI resolves for a lane, weave reports the lane unavailable. It does not fall back to host sub-agents.
 
+`init` picks each lane step's model once per session from that CLI's own listing (`agy models`, `agent --list-models`) with `scripts/closest_model.py`, taking the newest version of the step's tier. A step whose listing fails, times out, or has no match keeps its pinned model from `LANES` in `scripts/engine.py`, so the lane keeps its vendor; `codex` runs its own default model. `session.json` records the chain under `chains`, each step with its source (`live`, `pinned`, or `default`), and dispatch reuses it.
+
 The engine enforces timeouts itself, so no `timeout` or `gtimeout` binary is needed. It closes each CLI's stdin, appends stderr to a per-lane file, and kills the CLI's whole process group on timeout.
 
-To confirm which model the Antigravity lane runs, pass the first `agy` model listed in `LANES` in `scripts/engine.py`:
+To confirm which model the Antigravity lane runs, pass the `agy` model that a session recorded under `models` in its `session.json`:
 
 ```console
 $ agy \
-    --model "<pinned model>" \
+    --model "<recorded model>" \
     -p "Report your exact model ID and reasoning level." </dev/null
 ```
 
