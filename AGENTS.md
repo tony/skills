@@ -501,7 +501,10 @@ Treat this file like code and prune it.
 - Never `git push` unless the user passed `--push` or asked to push; otherwise
   finish local and print the push command. `--pr` means "open a pull request";
   a pull request to act on is a positional argument. A force-push is
-  `--force-with-lease --force-if-includes`.
+  `--force-with-lease --force-if-includes`, or
+  `--force-with-lease=<ref>:<sha>` alone when the expected tip is known:
+  git-push documents `--force-if-includes` as a no-op beside an explicit
+  `<expect>`.
 
 `scripts/marketplace.py lint` enforces the `!` and plugin-boundary rules, the plugin layout below, a
 500-line ceiling on skill bodies, a contents list on any resource over 100
