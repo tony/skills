@@ -426,7 +426,9 @@ CREDIT_SAMPLES = (
     "exceeded your current quota",
     "billing limit reached",
     "capacity exhausted",
-    "usage limit",
+    "You've hit your usage limit",
+    "usage limit reached",
+    "429 Too Many Requests: daily limit reached",
 )
 
 

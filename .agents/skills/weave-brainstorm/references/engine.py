@@ -154,7 +154,8 @@ CREDIT_PATTERNS = (
     "exceeded your current quota",
     r"billing (?:limit|error|issue)",
     "capacity exhausted",
-    "usage limit",
+    r"hit your usage limit|usage limit (?:reached|exceeded)",
+    r"(?<![\w:.])429(?![\w:.,]).*daily limit",
 )
 CREDIT_RE = re.compile("|".join(CREDIT_PATTERNS), re.IGNORECASE)
 RATE_RE = re.compile(r"rate.?limit|too many requests|\b429\b", re.IGNORECASE)
