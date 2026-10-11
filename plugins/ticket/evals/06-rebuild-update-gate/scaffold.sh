@@ -6,6 +6,13 @@ set -euo pipefail
 mkdir -p bin
 cat >bin/acli <<'SH'
 #!/usr/bin/env bash
+case " $* " in *" --help "*)
+  case "$1 $2 $3" in
+    "jira workitem create") printf 'Flags:\n  -p, --project string\n  -t, --type string\n  -s, --summary string\n  -d, --description string\n      --description-file string\n  -a, --assignee string\n  -l, --label strings\n      --json\n'; exit 0 ;;
+    "jira workitem edit") printf 'Flags:\n  -k, --key string\n  -s, --summary string\n  -d, --description string\n      --description-file string\n  -y, --yes\n      --json\n'; exit 0 ;;
+    "jira workitem view") printf 'Flags:\n  -f, --fields string\n      --json\n  -w, --web\n'; exit 0 ;;
+  esac ;;
+esac
 case "$1 $2 $3" in
   "jira workitem view")
     printf 'WIDGET-482\nTitle: Rework the retry queue\nType: Task\nBody:\nChanged retryQueue.js (+142/-38 lines) to add a circuit breaker. Added new file breaker.js (89 lines).\nWe first tried a token-bucket limiter but abandoned it: thundering-herd retries under load.\nDefinition of done:\n- Backoff capped at exactly 30 seconds\n- retryQueue.js test coverage above 90%%\nComments:\n- maria: Decision from review: the backoff cap is 60 seconds, not 30. This supersedes the body.\n' ;;

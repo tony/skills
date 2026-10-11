@@ -38,8 +38,20 @@ graders:
       path: calls.log
     pattern: 'edit\n(?:[\s\S]*\n)?view'
 
+  - name: checks-media-after-write
+    type: tool_used
+    tool: Bash
+    input_match: 'scan_body\.py.*--media'
+    min: 1
+
   - name: reports-readback
     type: regex
     target: last_message
     flags: i
-    pattern: '^(?=[\s\S]*WIDGET-482)(?=[\s\S]*\b(?:read|fetch(?:ed)?)\b[^.\n]{0,40}\b(?:back|again)\b)'
+    pattern: '^(?=[\s\S]*WIDGET-482)(?=[\s\S]*\b(?:re-?read|read(?:ing)?|fetch(?:ed|ing)?)\b[^.\n]{0,40}\b(?:back|again)\b)'
+
+  - name: prints-the-replaced-body
+    type: regex
+    target: last_message
+    flags: i
+    pattern: 'original body[\s\S]*\+142/-38'

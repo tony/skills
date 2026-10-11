@@ -40,6 +40,25 @@ graders:
       path: calls.log
     pattern: 'create\n(?:[\s\S]*\n)?view'
 
+  - name: scans-the-body-before-filing
+    type: tool_used
+    tool: Bash
+    input_match: 'scan_body\.py'
+    min: 1
+
+  - name: converts-with-jira-text
+    type: tool_used
+    tool: Bash
+    input_match: 'jira_text\.py'
+    min: 1
+
+  - name: sets-no-unsettled-label-or-priority
+    type: regex
+    target:
+      source: file
+      path: create.log
+    pattern: '^(?![\s\S]*--(?:label|priority))[\s\S]+'
+
   - name: reports-filing
     type: llm
     focus: last_message

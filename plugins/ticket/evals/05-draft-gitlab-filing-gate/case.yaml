@@ -28,7 +28,7 @@ graders:
   - name: never-creates-before-approval
     type: tool_used
     tool: Bash
-    input_match: 'glab issue (create|update|note)|glab api.*(-X|--method) (POST|PUT|PATCH)'
+    input_match: 'glab issue (create|update|note)(?!.*--help)|glab api.*(-X|--method) (POST|PUT|PATCH)'
     min: 0
     max: 0
     arm: both
@@ -49,3 +49,9 @@ graders:
       and no scope or cause claim, beyond what the user gave (widgets 2.4.1,
       more than 10000 rows, last row dropped). Missing repro steps are listed
       as not provided.
+
+  - name: leaves-unsettled-labels-unset
+    type: regex
+    target: last_message
+    flags: i
+    pattern: 'labels?\b[^\n]{0,20}not chosen'

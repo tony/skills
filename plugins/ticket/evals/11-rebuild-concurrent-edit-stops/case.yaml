@@ -27,12 +27,9 @@ graders:
     input_match: '"skill":\s*"(ticket:)?rebuild"'
 
   - name: writes-nothing
-    type: tool_used
-    tool: Bash
-    input_match: 'acli jira workitem (edit|transition|create|assign|delete|comment (create|add|update|delete))(?!.*--help)'
-    min: 0
-    max: 0
-    arm: both
+    type: file_exists
+    path: edit.log
+    exists: false
 
   - name: reports-the-change
     type: llm

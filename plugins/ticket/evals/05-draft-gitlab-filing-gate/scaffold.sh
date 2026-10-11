@@ -12,6 +12,14 @@ git commit -q -m 'Initial commit'
 mkdir -p bin
 cat >bin/glab <<'SH'
 #!/usr/bin/env bash
+case " $* " in *" --help "*)
+  case "$1 $2" in
+    "issue create") printf 'Flags:\n  -t, --title string\n  -d, --description string\n      --description-file string\n  -l, --label strings\n  -y, --yes\n'; exit 0 ;;
+    "issue update") printf 'Flags:\n  -t, --title string\n  -d, --description string\n      --description-file string\n'; exit 0 ;;
+    "issue view") printf 'Flags:\n  -c, --comments\n  -F, --output string\n  -w, --web\n'; exit 0 ;;
+    "--help ") printf 'Commands:\n  issue\n  mr\n  work-items\n  milestone\n  api\n'; exit 0 ;;
+  esac ;;
+esac
 case "$1 $2" in
   "auth status") echo "gitlab.com: Logged in as demo" ;;
   "issue list") echo "No open issues match your search" ;;

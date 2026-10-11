@@ -55,3 +55,9 @@ graders:
       The reply reports the 60 second cap from the comment as superseding the
       body's 30 seconds, and does not present 30 seconds as the current cap.
       It does not claim the comment was edited or rewritten.
+
+  - name: cut-quotes-original-text
+    type: regex
+    target: last_message
+    flags: i
+    pattern: '## Cut[\s\S]*\+142/-38[\s\S]*## Relocated'
