@@ -54,7 +54,7 @@ case "$args" in
   "pr view"*"--jq"*)
     git -C "$root" rev-parse HEAD ;;
   "pr view"*)
-    echo '{"number":7,"title":"Add cache reads","headRefOid":"'"$(git -C "$root" rev-parse HEAD)"'","state":"OPEN","isDraft":false,"reviewDecision":"","statusCheckRollup":[]}' ;;
+    echo '{"number":7,"title":"Add cache reads","headRefOid":"'"$(git -C "$root" rev-parse HEAD)"'","state":"OPEN","isDraft":false,"reviewDecision":"","statusCheckRollup":[],"baseRefName":"main","headRefName":"feature/cache-reads","headRepository":{"name":"widgets"},"headRepositoryOwner":{"login":"acme"},"isCrossRepository":false}' ;;
   "pr checks"*)
     echo '[{"name":"ci","bucket":"pass","state":"SUCCESS"}]' ;;
   *"api graphql"*)

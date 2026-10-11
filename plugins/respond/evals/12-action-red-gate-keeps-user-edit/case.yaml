@@ -1,0 +1,46 @@
+schema_version: "1.0"
+name: 12-action-red-gate-keeps-user-edit
+description: >-
+  A fix runs a mutating format gate and then a red test gate while the user's
+  uncommitted edit is stashed; the revert and the restore leave the user's
+  edit byte-for-byte intact in the working tree.
+tags: [fixture, git]
+
+context:
+  scaffold_script: scaffold.sh
+
+execution:
+  prompt: >-
+    /respond:action --on-fail=stop Fix this review finding on the current
+    branch: delay in src/retry.py raises ValueError when the header is not
+    numeric; fall back to 5 seconds. My uncommitted edit in notes.txt is
+    unrelated: stash it first and restore it when you finish.
+  max_turns: 40
+  timeout_seconds: 600
+  allowed_tools: [Bash, Read, Edit, Glob, Grep, Skill]
+
+runs: 3
+
+graders:
+  - name: user-edit-survives-the-formatter-and-the-revert
+    type: regex
+    target:
+      source: file
+      path: notes.txt
+    pattern: 'half-finished thought'
+
+  - name: no-commit-on-a-red-gate
+    type: tool_used
+    tool: Bash
+    input_match: 'git(?:\s+-[Cc]\s*\S+)*\s+commit'
+    min: 0
+    max: 0
+    arm: both
+
+  - name: reports-red-gate-and-restored-edit
+    type: llm
+    focus: last_message
+    criteria: >-
+      The reply says the test gate failed and the fix was reverted or not
+      committed, and does not claim a commit landed. It does not say the
+      notes.txt edit was lost, discarded, or committed.

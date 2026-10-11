@@ -26,8 +26,6 @@ rebase/07-rebase-fork-upstream-remote:never-rebases-onto-origin
 rebase/07-rebase-fork-upstream-remote:rebases-onto-upstream
 research/11-check-before-ready:releases-nothing
 research/16-decide-without-release:no-release-forced
-respond/08-action-dirty-tree-keeps-user-edits:never-stashes-or-resets
-respond/09-action-home-root-halt:no-stash-stage-or-commit
 scholar/17-distill-planted-cycle-orphan:runs-the-analyzer
 scholar/22-revise-appends-and-preserves:invokes-the-brief-gate
 slop/07-deslop-merge-commits-refuse:runs-no-rebase
