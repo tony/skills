@@ -245,7 +245,7 @@ If no CLI resolves for a lane, weave reports the lane unavailable. It does not f
 
 The engine enforces timeouts itself, so no `timeout` or `gtimeout` binary is needed. It closes each CLI's stdin, appends stderr to a per-lane file, and kills the CLI's whole process group on timeout.
 
-To confirm which model the Antigravity lane runs, pass the `agy` model that a session recorded under `models` in its `session.json`:
+To confirm which model the Antigravity lane runs, pass the model a session recorded for its first `agy` step under `chains` in its `session.json`:
 
 ```console
 $ agy \

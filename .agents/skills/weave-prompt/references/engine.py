@@ -15,6 +15,7 @@ guard, stash-restore, update.
 from __future__ import annotations
 
 import argparse
+import concurrent.futures
 import contextlib
 import fcntl
 import hashlib
@@ -164,7 +165,7 @@ LANES: dict[str, tuple[Step, ...]] = {
     ),
     "gpt": (
         Step("codex", None),
-        Step("agent", "gpt-5.4-high", "gpt-{v}-*high", ("mini",)),
+        Step("agent", "gpt-5.4-high", "gpt-{v}-*high", ("mini", "xhigh")),
         Step("agent", "gpt-5.4-mini-medium", "gpt-{v}-mini-medium"),
     ),
 }
@@ -505,13 +506,20 @@ def list_models(exe: str) -> list[str] | None:
     if argv is None:
         return None
     try:
-        done = subprocess.run(  # noqa: S603
-            argv, capture_output=True, text=True, timeout=LIST_TIMEOUT, check=False,
-            stdin=subprocess.DEVNULL, cwd=tempfile.gettempdir(),
+        proc = subprocess.Popen(  # noqa: S603
+            argv, stdin=subprocess.DEVNULL, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
+            text=True, cwd=tempfile.gettempdir(), start_new_session=True,
         )  # fmt: skip
-    except (OSError, subprocess.SubprocessError):
+    except OSError:
         return None
-    return done.stdout.splitlines() if done.returncode == 0 else None
+    try:
+        out, _ = proc.communicate(timeout=LIST_TIMEOUT)
+    except subprocess.TimeoutExpired:
+        # A child holding the pipe would outlive a plain kill of the CLI.
+        os.killpg(proc.pid, signal.SIGKILL)
+        _ = proc.communicate()
+        return None
+    return out.splitlines() if proc.returncode == 0 else None
 
 
 def resolve_step(step: Step, listing: Sequence[str] | None) -> tuple[str | None, str]:
@@ -566,10 +574,19 @@ def detect(
     which: Callable[[str], str | None] = shutil.which,
     lister: Callable[[str], list[str] | None] | None = list_models,
 ) -> Json:
-    """Report installed model CLIs, each lane's resolved chain, and the best search tools."""
+    """Report installed model CLIs, each lane's resolved chain, and the best search tools.
+
+    Each installed CLI is listed once, all at the same time, so a session waits at
+    most one ``LIST_TIMEOUT``.
+    """
+    exes = sorted({s.exe for steps in LANES.values() for s in steps if s.template and which(s.exe)})
+    listings: dict[str, list[str] | None] = {}
+    if lister is not None and exes:
+        with concurrent.futures.ThreadPoolExecutor(len(exes)) as pool:
+            listings = dict(zip(exes, pool.map(lister, exes)))
     lanes: Json = {}
     for lane in LANES:
-        chain = lane_chain(lane, which, lister)
+        chain = lane_chain(lane, which, listings.get if lister is not None else None)
         lanes[lane] = (
             {
                 "executor": chain[0][0],

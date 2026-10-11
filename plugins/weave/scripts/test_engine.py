@@ -11,6 +11,7 @@ import re
 import shlex
 import shutil
 import subprocess
+import time
 from pathlib import Path
 
 import engine  # pyright: ignore[reportImplicitRelativeImport]
@@ -47,7 +48,8 @@ def repo(tmp_path: Path, repo_template: Path, monkeypatch: pytest.MonkeyPatch) -
     return root
 
 
-@pytest.fixture
+# Autouse: no test may reach the developer's real model CLIs or their network listings.
+@pytest.fixture(autouse=True)
 def bindir(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
     path = tmp_path / "bin"
     path.mkdir()
@@ -160,6 +162,7 @@ AGENT_LISTING = (
     "",
     "auto - Auto (default)",
     "gpt-5.5-high - GPT-5.5 1M High",
+    "gpt-5.6-sol-xhigh - GPT-5.6 Sol 1M Extra High",
     "gpt-5.6-sol-high - GPT-5.6 Sol 1M High",
     "gpt-5.6-luna-high - GPT-5.6 Luna 1M High",
     "gpt-5.9-mini-high - GPT-5.9 Mini High",
@@ -204,16 +207,23 @@ def test_init_resolves_lane_models_from_live_listings(repo: Path, bindir: Path) 
     ]
     assert "agy: Gemini 3.2 Pro (High) [live]" in session["models"]
     assert "gpt: default" in session["models"]
+    calls = log.read_text().splitlines()
+    assert calls.count("agent --list-models") == 1
+    assert calls.count("agy models") == 1
 
 
-@pytest.mark.parametrize("body", ["exit 1", "exit 0", "exec sleep 30"])
+@pytest.mark.parametrize(
+    "body", ["exit 1", "exit 0", "exec sleep 30", "(sleep 30)", "echo 'Error: not logged in'"]
+)
 def test_init_pins_models_when_listing_fails_or_matches_nothing(
     repo: Path, bindir: Path, monkeypatch: pytest.MonkeyPatch, body: str
 ) -> None:
     monkeypatch.setattr(engine, "LIST_TIMEOUT", 0.3)
     stub(bindir, "agent", body)
     stub(bindir, "agy", body)
+    started = time.monotonic()
     chains = engine.load_session(init(backend="model-clis")["session_dir"])["chains"]
+    assert time.monotonic() - started < 5
     assert chains["agy"] == [
         ["agy", "Gemini 3.1 Pro (High)", "pinned"],
         ["agent", "gemini-3.1-pro", "pinned"],
@@ -238,6 +248,20 @@ def test_dispatch_runs_the_recorded_chain_without_listing_again(repo: Path, bind
     calls = log.read_text()
     assert "--list-models" not in calls
     assert "--model gpt-5.6-sol-high" in calls
+
+
+def test_dispatch_without_recorded_chains_runs_the_pinned_chain(repo: Path, bindir: Path) -> None:
+    log = repo.parent / "calls.log"
+    lister_stub(bindir, "agent", "--list-models", AGENT_LISTING, log)
+    sdir, _ = read_only_session()
+    session = engine.load_session(sdir)
+    del session["chains"]
+    engine.save_session(sdir, session)
+    log.write_text("")
+    doc = dispatch(sdir, "gpt")
+    assert doc["ok"], doc
+    assert doc["model"] == "gpt-5.4-high"
+    assert "--list-models" not in log.read_text()
 
 
 def test_update_drops_participant_and_links_latest(repo: Path, bindir: Path) -> None:
