@@ -423,7 +423,8 @@ def test_series_compares_authors_and_dates(tmp_path: Path) -> None:
     author_commit(repo, "b", "bob", "2026-10-02T09:30:00+02:00")
     done = gate(repo, "series", base, "HEAD", "--authors-of", "backup")
     assert done.returncode == 0, done.stdout
-    assert "ada <ada@example.com> 2026-10-01T09:30:00+00:00 add a" in done.stdout
+    # %aI prints a UTC offset as +00:00, or as Z on newer git.
+    assert re.search(r"ada <ada@example\.com> 2026-10-01T09:30:00(\+00:00|Z) add a", done.stdout)
     git(repo, "reset", "-q", "--soft", "HEAD~1")
     git(repo, "commit", "-q", "-m", "add b", "--date", "2026-10-09T00:00:00+00:00")
     forged = gate(repo, "series", base, "HEAD", "--authors-of", "backup")
