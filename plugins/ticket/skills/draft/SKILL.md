@@ -274,7 +274,8 @@ and say plainly that is what is happening.
 
 Read the created item back through the provider's read path and take the
 key, URL, and title from that output, not from the write command's
-claim. When the readback fails or the title differs, the hero line says
+claim. When the readback fails or the title's words differ (case and
+punctuation the provider changes do not count), the hero line says
 `Filed, readback failed:` or names the difference (`Filed as KEY: URL,
 but the title reads back as "<title>".`), and gives what the write
 command printed.

@@ -16,7 +16,10 @@ case "$1 $2 $3" in
       body=$'Changed retryQueue.js (+142/-38 lines) to add a circuit breaker.\nDefinition of done:\n- Backoff capped at 30 seconds\n- Breaker opens after 5 consecutive failures'
     fi
     title=$(cat current-title.txt 2>/dev/null || echo 'Add a circuit breaker to the retry queue')
-    printf 'WIDGET-482\nTitle: %s\nType: Task\nBody:\n%s\nComments: none\n' "$title" "$body" ;;
+    case " $* " in
+      *" --json "*) jq -nc --arg t "$title" --arg b "$body" '{key:"WIDGET-482",fields:{summary:$t,description:$b}}' ;;
+      *) printf 'WIDGET-482\nTitle: %s\nType: Task\nBody:\n%s\nComments: none\n' "$title" "$body" ;;
+    esac ;;
   "jira workitem comment") [ "${4:-}" = "list" ] && echo "No comments" || { echo "unsupported: $*" >&2; exit 1; } ;;
   "jira workitem edit")
     case " $* " in *" --help "*) echo "usage: acli jira workitem edit [flags]"; exit 0 ;; esac
