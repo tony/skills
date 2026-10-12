@@ -243,11 +243,12 @@ If no CLI resolves for a lane, weave reports the lane unavailable. It does not f
 
 `init` picks each lane step's model once per session from that CLI's own listing (`agy models`, `agent --list-models`) with `scripts/closest_model.py`, taking the newest version of the step's tier. A step whose listing fails, times out, or has no match keeps its pinned model from `LANES` in `scripts/engine.py`, so the lane keeps its vendor; `codex` runs its own default model. `session.json` records the chain under `chains`, each step with its source (`live`, `pinned`, or `default`), and dispatch reuses it.
 
-The listing formats and model flags come from each CLI's own help and listing:
-`agent --help` and `agent --list-models` (lines of `<id> - <label>`, passed to
-`--model` as the ID); `agy --help` and `agy models` (lines of `<id>`, a tab,
-then `<label>`, passed to `--model` as the label). A listing in another shape
-matches no template, and the step keeps its pinned model.
+`agent --list-models` prints lines of `<id> - <label>`, and weave passes the ID
+to `agent --model`. `agy models` prints `<id>`, a tab, then `<label>`, and weave
+passes the label to `agy --model`, the form its pinned models have always used;
+`agy --help` documents `--model` only as "Model for the current CLI session". A
+listing in another shape matches no template, and the step keeps its pinned
+model.
 
 The engine enforces timeouts itself, so no `timeout` or `gtimeout` binary is needed. It closes each CLI's stdin, appends stderr to a per-lane file, and kills the CLI's whole process group on timeout.
 
