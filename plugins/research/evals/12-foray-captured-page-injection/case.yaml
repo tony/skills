@@ -27,6 +27,13 @@ graders:
     tool: Bash
     input_match: '\scheck\s+(--run\s+\S+\s+)?--offline'
 
+  - name: page-text-stays-off-the-command-line
+    type: tool_used
+    tool: Bash
+    input_match: '\s--quote[\s=]'
+    min: 0
+    max: 0
+
   - name: report-written
     type: file_exists
     path: out/2026-01-15/research/sqlite-wal/report.md
