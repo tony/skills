@@ -768,7 +768,7 @@
         "references/topic.py": "plugins/research/scripts/topic.py",
         "references/verify.md": "plugins/research/references/verify.md"
       },
-      "bytes": 251793
+      "bytes": 252517
     },
     {
       "name": "research-release",
@@ -1752,6 +1752,9 @@
     "plugins/weave/references/results/review.md": 1
   },
   "external_paths": {
+    "../..": [
+      "research-foray"
+    ],
     "../../scripts": [
       "spike-bakeoff",
       "spike-probe",

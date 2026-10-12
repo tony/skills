@@ -682,6 +682,32 @@ def test_route_refuses_unknown_options_and_bad_values(text: str, reason: str) ->
     assert reason in row["error"]
 
 
+@pytest.mark.parametrize(
+    ("text", "flags"),
+    [
+        ("status --root .", {"root": "."}),
+        ("status --root ../.. --namespace x", {"root": "../..", "namespace": "x"}),
+        ('report wal --root="/srv/a b".', {"root": "/srv/a b"}),
+    ],
+)
+def test_route_keeps_dot_paths_and_quoted_values(text: str, flags: dict[str, str]) -> None:
+    assert topic.route_arguments(text)["flags"] == flags
+
+
+@pytest.mark.parametrize(
+    ("text", "reason"),
+    [
+        ("wal --to 'the platform", "unterminated quote"),
+        ("wal --root=", "needs a value"),
+        ("wal --root ''", "needs a value"),
+        ("wal --root a --root b", "given twice"),
+    ],
+)
+def test_route_refuses_unclosed_empty_or_repeated_values(text: str, reason: str) -> None:
+    with pytest.raises(ValueError, match=reason):
+        topic.route_arguments(text)
+
+
 def test_route_reads_arguments_from_stdin(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setattr(sys, "stdin", io.StringIO("continue 'sqlite wal' --fill\n"))
     code, out = cli("route", "--stdin")

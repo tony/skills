@@ -3874,7 +3874,7 @@ ROUTE_FLAGS: dict[str, tuple[str, ...]] = {
 ROUTE_BOOLS = frozenset({"resume", "fill", "offline"})
 # A quoted phrase is one token only when the quote opens a word, so an apostrophe
 # ("don't") never starts one.
-ROUTE_TOKEN = re.compile(r"""(?<!\S)(['"])(.*?)\1[.,;:!?)]*(?=\s|$)|\S+""", re.DOTALL)
+ROUTE_TOKEN = re.compile(r"""(?<!\S)(--[\w-]+=)?(['"])(.*?)\2[.,;:!?)]*(?=\s|$)|\S+""", re.DOTALL)
 SENTENCE_TAIL = ".,;:!?)"
 
 
@@ -3883,8 +3883,24 @@ def route_tokens(text: str) -> list[str]:
 
     >>> route_tokens("report wal. Use --to 'the platform team', don't wait")
     ['report', 'wal.', 'Use', '--to', 'the platform team', "don't", 'wait']
+    >>> route_tokens('status --root="/srv/a b".')
+    ['status', '--root=/srv/a b']
     """
-    return [m.group(2) if m.group(1) else m.group(0) for m in ROUTE_TOKEN.finditer(text)]
+    return [
+        (m.group(1) or "") + m.group(3) if m.group(2) else m.group(0)
+        for m in ROUTE_TOKEN.finditer(text)
+    ]
+
+
+def strip_tail(value: str) -> str:
+    """Drop sentence punctuation after a value, never from a path made of dots.
+
+    >>> strip_tail("2026-01-15."), strip_tail("."), strip_tail("../.."), strip_tail("out,")
+    ('2026-01-15', '.', '../..', 'out')
+    """
+    if set(value) <= set("./"):
+        return value
+    return value.rstrip(SENTENCE_TAIL)
 
 
 def route_flags(tokens: list[str]) -> tuple[dict[str, str | bool], list[str]]:
@@ -3914,10 +3930,16 @@ def route_flags(tokens: list[str]) -> tuple[dict[str, str | bool], list[str]]:
             continue
         if not eq and i < len(tokens) and not tokens[i].startswith("--"):
             value, i = tokens[i], i + 1
-        elif not eq:
+        if value[:1] in {"'", '"'}:
+            msg = f"--{name}: unterminated quote in {value!r}"
+            raise ValueError(msg)
+        value = strip_tail(value)
+        if not value:
             msg = f"--{name} needs a value"
             raise ValueError(msg)
-        value = value.rstrip(SENTENCE_TAIL)
+        if name in flags:
+            msg = f"--{name} is given twice"
+            raise ValueError(msg)
         choices = ROUTE_FLAGS[name]
         if choices and value not in choices:
             msg = f"--{name} {value!r}: use one of {', '.join(choices)}"
