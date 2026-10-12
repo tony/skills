@@ -60,7 +60,7 @@ The question this topic answers.
 ## Log
 
 - 2026-01-15: opened
-- 2026-10-06: reviewed 1 cited line in report.md (f703085b)
+- 2026-10-06: reviewed 1 cited line in report.md (7548d43d)
 MD
 
 cat >"$run/report.md" <<'MD'
@@ -90,7 +90,7 @@ Read the vendor's 4.2 release notes.
 
 | Id | Source | Author | Kind | Ref | Retrieved | Capture | Check |
 |---|---|---|---|---|---|---|---|
-| S1 | [Vendor Y release notes](https://docs.vendor-y.io/notes/4.2) | Vendor Y | vendor | 4.2 | 2026-10-07 | provided | intact |
+| S1 | [Vendor Y release notes](https://docs.vendor-y.io/notes/4.2) | Vendor Y | vendor | 4.2 | 2026-10-07 | provided | checked |
 MD
 
 cat >"$run/references/sources.jsonl" <<'JSON'

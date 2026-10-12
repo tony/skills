@@ -56,3 +56,4 @@ prior: null
 
 - $day: opened
 MD
+printf '%s\n' "- $(date +%F): opened" >>"$run/index.md"

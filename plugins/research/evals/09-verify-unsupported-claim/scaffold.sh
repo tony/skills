@@ -35,6 +35,7 @@ Can Vendor Y replicas serve reads for the dashboard?
 
 - 2026-01-15: opened
 MD
+printf '%s\n' "- $(date +%F): opened" >>"$run/index.md"
 
 printf '{"added": "2026-01-15", "author": "Vendor Y", "capture": "file", "card": "S1-vendor-y-notes.md", "carried_from": null, "file": "%s", "id": "S1", "kind": "vendor", "quotes": ["Replicas lag the primary by up to five seconds"], "ref": "4.2", "replaces": null, "retrieved": "2026-01-15T09:00:00Z", "sha256": "%s", "title": "Vendor Y release notes", "url": "https://vendor-y.example/notes/4.2"}\n' "$raw" "$sha" >"$run/references/sources.jsonl"
 

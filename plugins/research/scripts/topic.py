@@ -3,9 +3,10 @@
 
 A topic lives in ``<root>/<YYYY-MM-DD>/<namespace>/<topic>/``, one directory per
 run. The run's source manifest records what it rests on and is
-append-only; cards and ``index.md`` frontmatter are views of it. Without
-``--resume``, a run on an earlier date is never written again: a later run
-carries its sources forward.
+append-only; cards and ``index.md`` frontmatter are views of it. A run on an
+earlier date takes no new evidence or authored state unless ``open --resume``
+reopened it today: a later run carries its sources forward. Release, decision,
+export, and check records about a run are still written to it.
 
 Run ``topic.py <command> --help`` for each command.
 """
@@ -45,7 +46,7 @@ from datetime import date, datetime, timezone
 from pathlib import Path
 
 if t.TYPE_CHECKING:
-    from collections.abc import Callable, Iterable
+    from collections.abc import Callable, Iterable, Mapping
 
     Fetch = Callable[[str], tuple[int, str, bytes, dict[str, str]]]
 
@@ -91,6 +92,9 @@ NOISE_HOSTS = frozenset({
 })  # fmt: skip
 ASSET_SUFFIXES = (".css", ".js", ".png", ".jpg", ".jpeg", ".gif", ".svg", ".ico", ".woff2")
 
+SEARCH_FAILURES = ("error", "rate-limit", "auth", "blocked")
+EXPORTS = REFS + "/exports.jsonl"
+
 LEAKS = (
     ("home-path", re.compile(r"(?:(?<![\w.:/-])|(?<=://)|(?<=:///))/home/[\w.-]+")),
     ("home-path", re.compile(r"(?:(?<![\w.:/-])|(?<=://)|(?<=:///))/Users/[\w.-]+(?: [\w.-]+)?")),
@@ -101,7 +105,19 @@ LEAKS = (
         re.compile(r"\\\\wsl(?:\.localhost|\$)\\[^\\\s]+\\home\\[^\\\s]+", re.IGNORECASE),
     ),
     ("email", re.compile(r"\b[\w.+-]+@[\w-]+(?:\.[\w-]+)*\.[A-Za-z]{2,}\b(?!:)")),
+    ("secret", re.compile(r"\bgh[po]_[A-Za-z0-9]{30,}|\bgithub_pat_[A-Za-z0-9_]{30,}")),
+    ("secret", re.compile(r"\bAKIA(?![0-9A-Z]*EXAMPLE)[0-9A-Z]{16}\b")),
+    ("secret", re.compile(r"\bxox[abpr]-[A-Za-z0-9-]{10,}")),
+    ("secret", re.compile(r"-----BEGIN (?:[A-Z]+ )*PRIVATE KEY-----")),
 )
+INTERNAL_HOSTS = (
+    re.compile(
+        r"(?<![\w.-])(?:[A-Za-z0-9-]+\.)+(?:internal|corp|local|lan|intranet|home\.arpa)(?![\w-]|\.\w)",
+        re.IGNORECASE,
+    ),
+    re.compile(r"(?<![\w.-])localhost\b", re.IGNORECASE),
+)
+IPV4 = re.compile(r"(?<![\w.])(?:\d{1,3}\.){3}\d{1,3}(?![\w]|\.\d)")
 TICKET = re.compile(r"\b([A-Z][A-Z0-9]{1,9})-\d+\b")
 NOT_TICKETS = frozenset({
     "AES", "ANSI", "ARM", "COVID", "CVE", "CWE", "DDR", "ECMA", "GHSA", "GPT", "HTTP", "IEC",
@@ -183,7 +199,13 @@ SLOP_PATTERNS = tuple(
         ("recap ending", r"^(?:in conclusion|ultimately|overall)\b"),
     )
 )
-FAILURES = frozenset({"vanished", "moved", "changed", "misquoted", "unreachable", "unverifiable"})
+FAILED_STATES = ("vanished", "moved", "changed", "misquoted", "unreachable", "unverifiable")
+FAILURES = frozenset(FAILED_STATES)
+SOURCE_STATES = (
+    "fresh", "unverified", "stale", "unchecked", "unretrieved", "intact", "reachable", "verified",
+    *FAILED_STATES,
+)  # fmt: skip
+TABLE_STATES = {"verified": "checked", "intact": "checked", "reachable": "unchecked"}
 KINDS = ("vendor", "independent", "measured")
 BRANCH_REFS = frozenset({"main", "master", "head", "trunk", "develop", "dev", "latest", "stable"})
 MOVING_URL = re.compile(
@@ -199,7 +221,8 @@ ABSOLUTES = re.compile(
     r"\b(?:closed|solved|safe|guaranteed|always|never|eliminat\w*|proven|settled)\b", re.IGNORECASE
 )
 EMOJI = re.compile("[\U0001f300-\U0001faff\u2600-\u27bf]")
-MISSING_EVIDENCE = re.compile(r"unsourced|no source|not sourced|untested", re.IGNORECASE)
+MISSING_EVIDENCE_PHRASES = ("unsourced", "no source", "not sourced", "untested", "no evidence")
+MISSING_EVIDENCE = re.compile("|".join(map(re.escape, MISSING_EVIDENCE_PHRASES)), re.IGNORECASE)
 STOPWORDS = frozenset({
     "that", "this", "with", "from", "have", "were", "they", "their", "there", "than", "then",
     "when", "what", "which", "will", "would", "could", "should", "does", "into", "only", "also",
@@ -211,6 +234,8 @@ SECTION_ORDER = (
     "exhibits", "sources",
 )  # fmt: skip
 MIN_CLAIM_WORDS = 10
+MIN_BRIEF_WORDS = 4
+REDACT_STEP = "set redact in index.md: the names to hide, or [] when there are none"
 
 
 class Args(argparse.Namespace):
@@ -274,6 +299,13 @@ class Args(argparse.Namespace):
     release: str | None = None
     revisit: str | None = None
     bag: str | None = None
+    digest: str | None = None
+    fields: str | None = None
+    link: str | None = None
+    failed: str | None = None
+    markdown: bool = False
+    words: list[str] | None = None
+    stdin: bool = False
 
 
 # --- names, dates, roots -------------------------------------------------------
@@ -385,21 +417,34 @@ def windows_users(path_env: str) -> list[str]:
     return sorted({str(name) for name in t.cast("list[object]", found)})
 
 
-def resolve_root(arg: str | None) -> Path:
-    """Return ``--root``, else ``RESEARCH_ROOT``, else the detected default (never the temp dir)."""
-    explicit = arg or os.environ.get("RESEARCH_ROOT")
+def resolve_root(
+    arg: str | None,
+    env: Mapping[str, str] | None = None,
+    proc_version: Path | None = None,
+    windows_users_dir: Path | None = None,
+    home: Path | None = None,
+) -> Path:
+    """Return ``--root``, else ``RESEARCH_ROOT``, else the detected default (never the temp dir).
+
+    The keyword arguments stand in for the process environment, ``/proc/version``,
+    ``/mnt/c/Users``, and the home directory.
+    """
+    env = os.environ if env is None else env
+    explicit = arg or env.get("RESEARCH_ROOT")
     if explicit:
         return Path(explicit).expanduser()
     try:
-        wsl = "microsoft" in Path("/proc/version").read_text(encoding="utf-8").lower()
+        version = (proc_version or Path("/proc/version")).read_text(encoding="utf-8")
+        wsl = "microsoft" in version.lower()
     except OSError:
         wsl = False
-    found = sorted(Path("/mnt/c/Users").glob("*/Documents")) if wsl else None
-    hints = windows_users(os.environ.get("PATH", ""))
+    users = windows_users_dir or Path("/mnt/c/Users")
+    found = sorted(users.glob("*/Documents")) if wsl else None
+    hints = windows_users(env.get("PATH", ""))
     if wsl:
         with contextlib.suppress(KeyError, OSError):  # < 3.13: no login name, no passwd entry
             hints.append(getpass.getuser())
-    root = pick_root(Path.home(), found, hints)
+    root = pick_root(home or Path.home(), found, hints)
     temp = Path(tempfile.gettempdir()).resolve()
     if root.resolve() == temp or temp in root.resolve().parents:
         msg = f"default root {root} is a temp directory; pass --root"
@@ -480,16 +525,25 @@ def append_jsonl(path: Path, rows: Iterable[Row]) -> None:
             _ = fh.write(dumps(row).encode())
 
 
+class LedgerError(ValueError):
+    """A ledger row that is not a JSON object."""
+
+
 def read_jsonl(path: Path) -> list[Row]:
-    r"""Read JSON-lines rows, skipping blank and unparsable lines.
+    r"""Read JSON-lines rows, skipping blank lines; a damaged row raises `LedgerError`.
+
+    A row dropped silently would hand its id to the next source.
 
     Examples
     --------
     >>> with tempfile.TemporaryDirectory() as d:
     ...     p = Path(d) / "s.jsonl"
-    ...     _ = p.write_text('{"id": "S1"}\n\nnot json\n[1]\n', encoding="utf-8")
-    ...     read_jsonl(p)
-    [{'id': 'S1'}]
+    ...     _ = p.write_text('{"id": "S1"}\n\nnot json\n', encoding="utf-8")
+    ...     try:
+    ...         _ = read_jsonl(p)
+    ...     except LedgerError as e:
+    ...         print(e)
+    s.jsonl line 3 is damaged; repair or delete that line
 
     Rows split on newlines only: ``dumps`` writes U+2028 and U+0085 raw, and
     ``str.splitlines`` would cut a row there.
@@ -503,13 +557,17 @@ def read_jsonl(path: Path) -> list[Row]:
     if not path.is_file():
         return []
     rows: list[Row] = []
-    for line in path.read_text(encoding="utf-8").split("\n"):
+    for n, line in enumerate(path.read_text(encoding="utf-8").split("\n"), 1):
+        if not line.strip():
+            continue
         try:
             value = t.cast("object", json.loads(line))
         except json.JSONDecodeError:
-            continue
-        if isinstance(value, dict):
-            rows.append(t.cast("Row", value))
+            value = None
+        if not isinstance(value, dict):
+            msg = f"{path.name} line {n} is damaged; repair or delete that line"
+            raise LedgerError(msg)
+        rows.append(t.cast("Row", value))
     return rows
 
 
@@ -713,7 +771,7 @@ def framing_from(prior_index: str) -> dict[str, str]:
 def render_index(meta: Row, carried: int, framing: dict[str, str] | None = None) -> str:
     """Render a new ``index.md``: frontmatter, carried framing, and sections to fill in."""
     prior = _str(meta, "prior")
-    log = f"- {meta['date']}: opened"
+    log = f"- {parse_date(None)}: opened"
     if prior:
         log += f"; carried {carried} sources from {prior}, re-verification pending"
     if meta.get("mode") == "assessment":
@@ -748,9 +806,15 @@ def carry(prior_run: Path, prior_date: str, run: Path) -> int:
 
     Rows keep their ids and ``retrieved``; ``carried_from`` names the run they came
     from. Captures are hard-linked where possible, so each run stays self-contained.
-    Sources carry forward, conclusions do not: ``data/`` and the report stay behind.
-    The search log and the recorded conflicts carry with the sources they concern.
+    Sources carry forward, conclusions do not: the report stays behind, and of
+    ``data/`` only the ``*.csv`` files come across, to be updated. The search log
+    and the recorded conflicts carry with the sources they concern.
     """
+    for table in sorted((prior_run / "data").glob("*.csv")):
+        dest = run / "data" / table.name
+        if not dest.exists():
+            dest.parent.mkdir(parents=True, exist_ok=True)
+            _ = shutil.copyfile(table, dest)
     for ledger in (SEARCHES, CONFLICTS):
         kept = [{**r, "carried_from": prior_date} for r in read_jsonl(prior_run / ledger)]
         if kept:
@@ -880,6 +944,14 @@ def open_result(run: Path, runs: list[tuple[str, Path]], **flags: object) -> Row
     return {"run_dir": str(run), **flags, "prior": prior, "meta": read_meta(run)}
 
 
+def require_root(root: Path) -> Path:
+    """``root`` when it is a readable directory; a missing one is not an empty one."""
+    if not root.is_dir() or not os.access(root, os.R_OK | os.X_OK):
+        msg = f"root {root} is missing or unreadable; pass --root or set RESEARCH_ROOT"
+        raise ValueError(msg)
+    return root
+
+
 def cmd_open(a: Args) -> int:
     """Open today's run of a topic; a same-day rerun returns the same run unchanged."""
     root = resolve_root(a.root)
@@ -893,14 +965,27 @@ def cmd_open(a: Args) -> int:
                 kept = _str(meta, flag)
                 msg = f"--resume keeps the run's {flag} ({kept}); drop --{flag} or open a new run"
                 raise ValueError(msg)
-        visited = f"- {day}: resumed" in (run / "index.md").read_text(encoding="utf-8")
-        if runs[0][0] != day and not visited:
+        today = parse_date(None)
+        log = (run / "index.md").read_text(encoding="utf-8")
+        if f"- {today}: resumed" not in log and f"- {today}: opened" not in log:
             snapshot_report(run)
-            append_log(run, f"{day}: resumed")
+            append_log(run, f"{today}: resumed")
         emit(open_result(run, runs, created=False, resumed=True, carried=0))
         return 0
     run = root / day / namespace / topic
     if (run / "index.md").is_file():
+        meta = read_meta(run)
+        differs = [
+            f
+            for f, given in (("mode", a.mode), ("audience", a.audience))
+            if given and given != _str(meta, f)
+        ]
+        if differs:
+            have = f"mode {_str(meta, 'mode')}, audience {_str(meta, 'audience')}"
+            msg = (
+                f"the run for {day} exists with {have}; drop --{' and --'.join(differs)} to keep it"
+            )
+            raise ValueError(msg)
         emit(open_result(run, runs, created=False, resumed=False, carried=0))
         return 0
     if not runs and not a.new_topic:
@@ -921,14 +1006,10 @@ def cmd_open(a: Args) -> int:
         "date": day,
         "prior": prior_day or None,
     }
-    if prior_meta.get("redact"):
+    if isinstance(prior_meta.get("redact"), list):
         meta["redact"] = prior_meta["redact"]
     run.mkdir(parents=True, exist_ok=True)
     carried = carry(prior_run, prior_day, run) if prior_run else 0
-    criteria = prior_run / "data" / "criteria.csv" if prior_run else None
-    if criteria and criteria.is_file() and meta["mode"] == "assessment":
-        (run / "data").mkdir(parents=True, exist_ok=True)
-        _ = shutil.copyfile(criteria, run / "data" / "criteria.csv")
     framing = (
         framing_from((prior_run / "index.md").read_text(encoding="utf-8"))
         if prior_run and (prior_run / "index.md").is_file()
@@ -941,7 +1022,8 @@ def cmd_open(a: Args) -> int:
 
 def cmd_prior(a: Args) -> int:
     """List a topic's runs, newest first."""
-    runs = list_runs(resolve_root(a.root), slugify(a.namespace or "research"), slugify(a.topic))
+    root = require_root(resolve_root(a.root))
+    runs = list_runs(root, slugify(a.namespace or "research"), slugify(a.topic))
     emit([{"date": d, "run_dir": str(p)} for d, p in runs])
     return 0
 
@@ -967,7 +1049,7 @@ def _stem(title: str, url: str) -> str:
 CARD_KEYS = (
     "id", "title", "author", "url", "ref", "retrieved", "sha256", "file", "response",
     "unretrieved", "command", "exit", "outputs", "quotes", "kind", "carried_from", "replaces",
-    "replaced_by",
+    "replaced_by", "requested_url",
 )  # fmt: skip
 CARD_TEMPLATE = "What this source supports, and where."
 
@@ -1346,6 +1428,82 @@ def run_dir(arg: str) -> Path:
     return run
 
 
+def writable_run(arg: str) -> Path:
+    """``--run`` for a command that adds evidence or edits authored state.
+
+    A run is writable when its date is today or later, or its log shows ``open``
+    created it or ``open --resume`` reopened it today. A run opened on an earlier
+    day is read-only; release, decision, export, and check records are not such writes.
+    """
+    run = run_dir(arg)
+    day, today = run.parent.parent.name, parse_date(None)
+    if is_date(day) and day < today:
+        log = (run / "index.md").read_text(encoding="utf-8")
+        if f"- {today}: resumed" not in log and f"- {today}: opened" not in log:
+            msg = (
+                f"{run.parent.name}/{run.name} is dated {day}, before today ({today}); "
+                "open the topic to carry its sources into today's run, "
+                "or reopen it with open --resume"
+            )
+            raise ValueError(msg)
+    return run
+
+
+def enclosing_run(path: Path) -> Path | None:
+    """Return the topic run that holds ``path``, if any."""
+    return next(
+        (
+            p
+            for p in path.resolve().parents
+            if (p / "index.md").is_file() and is_date(p.parent.parent.name)
+        ),
+        None,
+    )
+
+
+FIELD_KEYS = {"add": ("quote", "title", "author"), "run": ("quote",), "searched": ("query",)}
+
+
+def apply_fields(a: Args, command: str) -> None:
+    """Fold a ``--fields`` JSON file into the options it names; a scalar given both ways is refused.
+
+    Page text goes in the file, written with a file tool, so no shell parses it.
+    """
+    if not a.fields:
+        return
+    name, allowed = Path(a.fields).name, FIELD_KEYS[command]
+    try:
+        data = t.cast("object", json.loads(Path(a.fields).read_text(encoding="utf-8")))
+    except (OSError, ValueError) as e:
+        msg = f"--fields {name}: cannot read it as JSON ({e})"
+        raise ValueError(msg) from e
+    if not isinstance(data, dict):
+        msg = f"--fields {name}: expected a JSON object with {', '.join(allowed)}"
+        raise ValueError(msg)  # noqa: TRY004 - every refusal exits 2 through ValueError
+    fields = t.cast("Row", data)
+    unknown = sorted(set(fields) - set(allowed))
+    if unknown:
+        msg = (
+            f"--fields {name}: {unknown[0]!r} is not a field of {command}; use {', '.join(allowed)}"
+        )
+        raise ValueError(msg)
+    for key, value in fields.items():
+        items = t.cast("list[object]", value) if isinstance(value, list) else [value]
+        if not all(isinstance(x, str) for x in items) or (len(items) != 1 and key != "quote"):
+            msg = f"--fields {name}: {key!r} must be a string" + (
+                " or a list of strings" if key == "quote" else ""
+            )
+            raise ValueError(msg)
+        given = [str(x) for x in items]
+        if key == "quote":
+            a.quote = [*(a.quote or []), *given]
+        elif getattr(a, key):
+            msg = f"--fields {name}: {key!r} is also given as --{key}; give it once"
+            raise ValueError(msg)
+        else:
+            setattr(a, key, given[0])
+
+
 RUN_FIELDS = ("command", "exit", "wall_seconds", "outputs")
 
 
@@ -1375,8 +1533,12 @@ def cmd_add(a: Args, fetch: Fetch = http_fetch, extra: Row | None = None) -> int
     or a corrected title, author, or quote append a version under the same id. A
     re-add without a capture keeps the old one, along with whether it was carried.
     ``extra`` carries fields only ``run`` records: the command, its exit, its outputs.
+    A fetch that followed a redirect records the final address as the source's
+    ``url`` and keeps the address asked for as ``requested_url``.
     """
-    run = run_dir(a.run)
+    run = writable_run(a.run)
+    apply_fields(a, "add")
+    resolve_link(a, run)
     if not a.url and a.source_kind == "measured" and a.file:
         a.url = f"measured:{measured_name(run, Path(a.file))}"
     if not re.match(r"https?://|measured:", a.url):
@@ -1386,13 +1548,20 @@ def cmd_add(a: Args, fetch: Fetch = http_fetch, extra: Row | None = None) -> int
     ref = a.ref or None
     latest = latest_by_id(rows)
     empty: Row = {}
-    matches = (r for r in current(rows) if same_url(_str(r, "url"), a.url))
+    matches = (
+        r
+        for r in current(rows)
+        if same_url(_str(r, "url"), a.url) or same_url(_str(r, "requested_url"), a.url)
+    )
     prev = next(matches, empty)
     add_guards(a, prev, latest)
     got = read_capture(a, fetch)
+    final = _str(got[3], "final_url") if got else ""
+    requested = a.url if final else _str(prev, "requested_url")
+    url = final or (_str(prev, "url") if requested else a.url)
     row: Row = {
         "id": _str(prev, "id") or next_id(rows),
-        "url": a.url,
+        "url": url,
         "ref": ref or prev.get("ref"),
         "title": a.title or prev.get("title"),
         "author": a.author or prev.get("author"),
@@ -1407,11 +1576,12 @@ def cmd_add(a: Args, fetch: Fetch = http_fetch, extra: Row | None = None) -> int
         "replaces": a.replaces or prev.get("replaces"),
         "kind": a.source_kind or prev.get("kind"),
         **({} if got else {k: prev[k] for k in RUN_FIELDS if k in prev}),
+        **({"requested_url": requested} if requested else {}),
         **(extra or {}),
     }
     data = got[0] if got else None
     if got:
-        row["file"] = f"raw/{capture_name(_str(row, 'title'), got[0], a.url, got[1])}"
+        row["file"] = f"raw/{capture_name(_str(row, 'title'), got[0], url, got[1])}"
     elif prev.get("file"):
         row["file"] = prev["file"]
         data = (run / REFS / _str(prev, "file")).read_bytes()
@@ -1420,12 +1590,12 @@ def cmd_add(a: Args, fetch: Fetch = http_fetch, extra: Row | None = None) -> int
         hint = "copy quotes verbatim from the capture"
         if got and prev and not a.set_quotes:
             hint += "; after a new capture, --set-quotes replaces the old quotes"
-        msg = f"quote not in the capture of {a.url}: {missing[0]!r}; {hint}"
+        msg = f"quote not in the capture of {url}: {missing[0]!r}; {hint}"
         raise ValueError(msg)
     if prev and all(prev.get(k) == row.get(k) for k in VERSION_KEYS):
         emit({**prev, "duplicate": True})
         return 0
-    row["card"] = _str(prev, "card") or f"{row['id']}-{_stem(_str(row, 'title'), a.url)}.md"
+    row["card"] = _str(prev, "card") or f"{row['id']}-{_stem(_str(row, 'title'), url)}.md"
     if got:
         atomic_write(run / REFS / _str(row, "file"), got[0])
     append_jsonl(run / MANIFEST, [row])
@@ -1433,12 +1603,45 @@ def cmd_add(a: Args, fetch: Fetch = http_fetch, extra: Row | None = None) -> int
     if a.replaces:
         rewrite_card(run, latest[a.replaces], replaced_by=row["id"])
     version = sum(r.get("id") == row["id"] for r in rows) + 1
-    warnings = pin_warnings(a.url, _str(row, "ref") or None)
+    warnings = pin_warnings(url, _str(row, "ref") or None)
     warnings += capture_warnings(row, got, prev)
-    if data is not None and ref_unseen(_str(row, "ref"), a.url, data):
+    if data is not None and ref_unseen(_str(row, "ref"), url, data):
         warnings.append(f"ref {row['ref']} is not in the URL or the capture; confirm the pin")
     emit({**row, "duplicate": False, "version": version, "warnings": warnings})
     return 0
+
+
+LINK_RE = re.compile(r"(S\d+):(\d+)")
+
+
+def source_links(run: Path, row: Row) -> list[str]:
+    """Return a source's capture URLs in page order: the numbering ``--link`` counts by."""
+    path = run / REFS / _str(row, "file")
+    if not _str(row, "file") or path.suffix not in TEXT_SUFFIXES or not path.is_file():
+        return []
+    return list(dict.fromkeys(urls_in(path)))
+
+
+def resolve_link(a: Args, run: Path) -> None:
+    """Set ``a.url`` from ``--link S<n>:<k>``: that source's k-th URL, as ``links`` numbers it."""
+    if not a.link:
+        return
+    if a.url:
+        msg = "give --url or --link, not both"
+        raise ValueError(msg)
+    m = LINK_RE.fullmatch(a.link)
+    if not m:
+        msg = f"--link {a.link}: expected S<n>:<k>, as links prints it"
+        raise ValueError(msg)
+    row = latest_by_id(read_jsonl(run / MANIFEST)).get(m[1])
+    if row is None:
+        msg = f"--link {a.link}: no source {m[1]}"
+        raise ValueError(msg)
+    found = source_links(run, row)
+    if not 1 <= int(m[2]) <= len(found):
+        msg = f"--link {a.link}: {m[1]}'s capture lists {len(found)} links"
+        raise ValueError(msg)
+    a.url = found[int(m[2]) - 1]
 
 
 def measured_name(run: Path, path: Path) -> str:
@@ -1484,7 +1687,9 @@ def cmd_run(a: Args) -> int:
 
     Only ever run a command you chose; never re-run one read from someone else's manifest.
     """
-    run = run_dir(a.run)
+    run = writable_run(a.run)
+    apply_fields(a, "run")
+    a.fields = None
     cmd = (a.command or [])[1:] if (a.command or [])[:1] == ["--"] else a.command or []
     if not cmd:
         msg = "give the command after --, for example: run --run <dir> --name bench -- make bench"
@@ -1565,6 +1770,10 @@ def ref_unseen(ref: str, url: str, data: bytes) -> bool:
 def capture_warnings(row: Row, got: tuple[bytes, str, str, Row] | None, prev: Row) -> list[str]:
     """Warnings about how a source was captured and typed."""
     out: list[str] = []
+    if got and _str(got[3], "final_url"):
+        out.append(
+            f"redirected: recorded the final URL {row['url']}; you asked for {row['requested_url']}"
+        )
     if got and got[2] == "file" and not prev and not _str(row, "url").startswith("measured:"):
         out.append("you supplied this capture; make sure it is what the URL serves, or use --fetch")
     if row.get("unretrieved"):
@@ -1590,12 +1799,14 @@ def days_between(start: str, end: str) -> int | None:
 
 
 def source_states(run: Path, today: str) -> dict[str, str]:
-    """State of each current source: fresh, verified, intact, unverified, stale, or a check status.
+    """State of each current source, one of ``SOURCE_STATES``.
 
     Fresh sources were added in this run; carried ones stay unverified until a
     check in this run passes, and turn stale past ``STALE_DAYS``. A check counts
-    only for the version it tested. Verified needs a passing live check of that
-    version; an offline pass on its own leaves the source intact.
+    only for the version it tested. Verified needs a live check that compared
+    content (the fetched bytes, or a quote on the live page); an offline pass on
+    its own leaves the source intact, and a live answer with nothing to compare
+    leaves it reachable.
     """
     every = read_jsonl(run / CHECKS)
     checks = latest_by_id(every)
@@ -1648,6 +1859,11 @@ def open_questions(run: Path) -> list[str]:
     ...     open_questions(Path(d))
     ['Does WAL survive NFS?']
     """
+    return question_items(run, " ")
+
+
+def question_items(run: Path, mark: str) -> list[str]:
+    """Items under ``## Open questions`` whose box holds ``mark``: a space is open, ``x`` ticked."""
     try:
         text = (run / "index.md").read_text(encoding="utf-8")
     except OSError:
@@ -1655,47 +1871,148 @@ def open_questions(run: Path) -> list[str]:
     section = re.search(r"^## Open questions\s*$(.*?)(?=^## |\Z)", text, re.MULTILINE | re.DOTALL)
     if not section:
         return []
-    items = re.findall(r"^\s*[-*] \[ \] (.+?)\s*$", section[1], re.MULTILINE)
+    box = r"\[ \]" if mark == " " else r"\[[xX]\]"
+    items = re.findall(rf"^\s*[-*] {box} (.+?)\s*$", section[1], re.MULTILINE)
     return [str(i) for i in t.cast("list[object]", items)]
 
 
+def ticked_since_prior(run: Path) -> int:
+    r"""Count the carried run's open questions that this run has ticked.
+
+    Examples
+    --------
+    >>> with tempfile.TemporaryDirectory() as d:
+    ...     old, new = (Path(d) / day / "research" / "wal" for day in ("2026-01-08", "2026-01-15"))
+    ...     old.mkdir(parents=True)
+    ...     new.mkdir(parents=True)
+    ...     q = "## Open questions\n\n- [{}] Does WAL survive NFS?\n"
+    ...     _ = (old / "index.md").write_text(q.format(" "), encoding="utf-8")
+    ...     _ = (new / "index.md").write_text("---\nprior: 2026-01-08\n---\n" + q.format("x"))
+    ...     ticked_since_prior(new)
+    1
+    """
+    prior_day = _str(read_meta(run), "prior")
+    if not prior_day:
+        return 0
+    prior = run.parent.parent.parent / prior_day / run.parent.name / run.name
+    carried = {normalize(q) for q in open_questions(prior)}
+    return sum(normalize(q) in carried for q in question_items(run, "x"))
+
+
+def updated_on(run: Path, day: str) -> str:
+    r"""Return the latest date the run was worked on: its own, or its last dated log entry.
+
+    Examples
+    --------
+    >>> with tempfile.TemporaryDirectory() as d:
+    ...     log = "## Log\n\n- 2026-01-08: opened\n- 2026-02-01: resumed\n"
+    ...     _ = (Path(d) / "index.md").write_text(log)
+    ...     updated_on(Path(d), "2026-01-08")
+    '2026-02-01'
+    """
+    try:
+        log = (run / "index.md").read_text(encoding="utf-8")
+    except OSError:
+        return day
+    return max([day, *re.findall(r"(?m)^- (\d{4}-\d{2}-\d{2}):", log)])
+
+
+def next_step(row: Row) -> tuple[int, str]:
+    """``(urgency, action)`` for a topic's ``status`` row; urgency 1 is the most urgent.
+
+    Examples
+    --------
+    >>> next_step({"sources": {"moved": 1}, "open_questions": ["x"], "report": True})
+    (2, 'verify')
+    >>> next_step({"sources": {"intact": 3}, "open_questions": [], "report": False})
+    (7, 'report')
+    """
+    counts = t.cast("dict[str, int]", row["sources"])
+    failed = any(state in FAILURES for state in counts)
+    aging = any(state in ("stale", "unverified", "unchecked") for state in counts)
+    ladder = (
+        (bool(row.get("releases_affected")), "continue"),
+        (failed, "verify"),
+        (bool(row.get("conflicts_open")), "continue"),
+        (aging, "continue"),
+        (bool(row.get("open_questions") or row.get("criteria_gaps")), "continue --fill"),
+        (bool(row.get("moving_pins")), "add"),
+        (not row.get("report"), "report"),
+    )
+    return next(
+        ((n, act) for n, (hit, act) in enumerate(ladder, 1) if hit), (len(ladder) + 1, "none")
+    )
+
+
+def topic_status(ns: str, topic: str, runs: list[tuple[str, Path]], today: str) -> Row:
+    """One ``status`` row: a topic's latest run, source states, and what to do next."""
+    day, run = max(runs)
+    meta = read_meta(run)
+    states = source_states(run, today)
+    counts: dict[str, int] = {}
+    for state in states.values():
+        counts[state] = counts.get(state, 0) + 1
+    row: Row = {
+        "namespace": ns, "topic": topic, "latest": day, "updated": updated_on(run, day),
+        "runs": sorted((d for d, _ in runs), reverse=True), "run_dir": str(run),
+        "mode": meta.get("mode"), "subject": meta.get("subject"), "sources": counts,
+        "open_questions": open_questions(run), "report": (run / "report.md").is_file(),
+        "cards_without_notes": unannotated(run),
+        "criteria_gaps": criteria_gaps(run),
+        "moving_pins": sorted(
+            _str(r, "id") for r in current(read_jsonl(run / MANIFEST))
+            if pin_warnings(_str(r, "url"), _str(r, "ref") or None)
+        ),
+        "conflicts_open": [_str(c, "about") for c in latest_conflicts(run) if not c.get("weight")],
+        "releases_affected": affected_releases(runs, run, states),
+    }  # fmt: skip
+    row["urgency"], row["next_action"] = next_step(row)
+    return row
+
+
 def cmd_status(a: Args) -> int:
-    """Every topic under the root: latest run, sources by state, open questions."""
-    root = resolve_root(a.root)
+    """Every topic under the root, most urgent first: latest run, sources by state, next action.
+
+    ``recent`` names the topic worked on last. A topic with a damaged ledger is listed
+    with its ``error``, and the exit is 1.
+    """
+    root = require_root(resolve_root(a.root))
     today = parse_date(a.date)
     topics: dict[tuple[str, str], list[tuple[str, Path]]] = {}
-    days = [d for d in root.iterdir() if d.is_dir() and is_date(d.name)] if root.is_dir() else []
-    for run in (r for day in days for r in day.glob("*/*")):
+    for run in (
+        r for day in root.iterdir() if day.is_dir() and is_date(day.name) for r in day.glob("*/*")
+    ):
         ns = run.parent.name
         managed = (run / "index.md").is_file() and not run.name.startswith((".", "_"))
         if managed and (a.namespace is None or slugify(a.namespace) == ns):
             topics.setdefault((ns, run.name), []).append((run.parent.parent.name, run))
     out: list[Row] = []
     for (ns, topic), runs in sorted(topics.items()):
-        day, run = max(runs)
-        meta = read_meta(run)
-        states = source_states(run, today)
-        counts: dict[str, int] = {}
-        for state in states.values():
-            counts[state] = counts.get(state, 0) + 1
-        out.append({
-            "namespace": ns, "topic": topic, "latest": day,
-            "runs": sorted((d for d, _ in runs), reverse=True), "run_dir": str(run),
-            "mode": meta.get("mode"), "subject": meta.get("subject"), "sources": counts,
-            "open_questions": open_questions(run), "report": (run / "report.md").is_file(),
-            "cards_without_notes": unannotated(run),
-            "criteria_gaps": criteria_gaps(run),
-            "moving_pins": sorted(
-                _str(r, "id") for r in current(read_jsonl(run / MANIFEST))
-                if pin_warnings(_str(r, "url"), _str(r, "ref") or None)
-            ),
-            "conflicts_open": [
-                _str(c, "about") for c in latest_conflicts(run) if not c.get("weight")
-            ],
-            "releases_affected": affected_releases(runs, run, states),
-        })  # fmt: skip
-    emit({"root": str(root), "topics": out})
-    return 0
+        try:
+            out.append(topic_status(ns, topic, runs, today))
+        except LedgerError as e:
+            out.append(
+                {
+                    "namespace": ns,
+                    "topic": topic,
+                    "latest": max(runs)[0],
+                    "error": str(e),
+                    "urgency": 0,
+                }
+            )
+    out.sort(key=lambda r: str(r.get("updated", r["latest"])), reverse=True)
+    out.sort(key=lambda r: t.cast("int", r["urgency"]))
+    recent = max(
+        (r for r in out if "updated" in r),
+        key=lambda r: (_str(r, "updated"), _str(r, "namespace"), _str(r, "topic")),
+        default=None,
+    )
+    emit({
+        "root": str(root),
+        "recent": f"{_str(recent, 'namespace')}/{_str(recent, 'topic')}" if recent else None,
+        "topics": out,
+    })  # fmt: skip
+    return 1 if any("error" in r for r in out) else 0
 
 
 # --- privacy -------------------------------------------------------------------
@@ -1720,6 +2037,15 @@ def scan_text(
     [(1, 'name', 'Jane Doe'), (1, 'ticket', 'ABC-123')]
     >>> scan_text("GPT-4 on RAID-5", "public", [])
     []
+
+    Secrets show at every audience; internal hosts and addresses only at public.
+
+    >>> scan_text("key AKIAABCDEFGHIJKLMNOP", "private", [])
+    [(1, 'secret', 'AKIAABCDEFGHIJKLMNOP')]
+    >>> scan_text("see wiki.acme.internal and 10.0.0.5, not 8.8.8.8", "public", [])
+    [(1, 'internal-host', 'wiki.acme.internal'), (1, 'internal-host', '10.0.0.5')]
+    >>> scan_text("see wiki.acme.internal", "internal", [])
+    []
     """
     found: list[tuple[int, str, str]] = []
     in_fence = False
@@ -1731,12 +2057,27 @@ def scan_text(
             hits.append((n, "home-path", home))
         if audience in ("internal", "public"):
             hits.extend((n, "name", name) for name in redact if name and _has_word(line, name))
+        if audience == "public":
+            hits.extend((n, "internal-host", host_) for host_ in internal_hosts(line))
         if audience == "public" and not in_fence:
             hits.extend(
                 (n, "ticket", m[0]) for m in TICKET.finditer(line) if m[1] not in NOT_TICKETS
             )
         found.extend(hits)
     return found
+
+
+def internal_hosts(line: str) -> list[str]:
+    """List internal host names and private or loopback IPv4 addresses in ``line``."""
+    found = [(m.start(), m[0]) for pat in INTERNAL_HOSTS for m in pat.finditer(line)]
+    for m in IPV4.finditer(line):
+        try:
+            ip = ipaddress.ip_address(m[0])
+        except ValueError:
+            continue
+        if ip.is_private or ip.is_loopback or ip.is_link_local:
+            found.append((m.start(), m[0]))
+    return [text for _, text in sorted(found)]
 
 
 def audience_of(meta: Row, arg: str | None) -> str:
@@ -1872,7 +2213,11 @@ def check_capture(run: Path, row: Row) -> tuple[str, str, bytes | None]:
 
 
 def check_live(row: Row, fetch: Fetch) -> tuple[str, str, Row]:
-    """Online check of a source's URL: ``(status, detail, extra fields)``."""
+    """Online check of a source's URL: ``(status, detail, extra fields)``.
+
+    ``ok`` means live content matched the fetched capture or the recorded quotes;
+    a 200 with neither to compare is only ``reachable``.
+    """
     url = _str(row, "url")
     status, final, body, _ = fetch(url)
     extra: Row = {"http": status}
@@ -1895,7 +2240,13 @@ def check_live(row: Row, fetch: Fetch) -> tuple[str, str, Row]:
     missing = missing_quotes(quotes_of(row), body)
     if missing:
         return "misquoted", f"not on the live page: {missing[0]!r}", extra
-    return "ok", "live", extra
+    compared = row.get("capture") == "fetch" or bool(quotes_of(row))
+    state = (
+        ("ok", "live")
+        if compared
+        else ("reachable", "answered; nothing fetched or quoted to compare")
+    )
+    return state[0], state[1], extra
 
 
 def version_key(row: Row) -> str:
@@ -1951,9 +2302,13 @@ def check_source(run: Path, row: Row, fetch: Fetch | None) -> Row:
     if status == "ok" and measured:
         status, detail = check_outputs(run, row)
         detail = detail or "capture intact"
+    compared = not row.get("carried_from") if measured else fetch is not None
     if status in ("ok", "unchecked") and fetch is not None and not measured:
+        offline = status
         status, detail, extra = check_live(row, fetch)
-    head["live"] = fetch is not None or measured
+        if status == "reachable" and offline == "ok":
+            status, detail, compared = "ok", "capture intact; the live page was not compared", False
+    head["live"] = compared
     return {**head, "status": status, "detail": detail, **extra}
 
 
@@ -2041,7 +2396,11 @@ def host(url: str) -> str:
 
 
 def cmd_links(a: Args) -> int:
-    """URLs that captures and cards mention but the manifest lacks: leads for missed sources."""
+    """URLs that captures and cards mention but the manifest lacks: leads for missed sources.
+
+    ``from`` gives each lead as ``S<n>:<k>``, the k-th link of that source's capture:
+    ``add --link S<n>:<k>`` records it, so a page's address never passes through a shell.
+    """
     run = run_dir(a.run)
     rows = read_jsonl(run / MANIFEST)
     known = {url_key(_str(r, "url")) for r in rows}
@@ -2055,8 +2414,13 @@ def cmd_links(a: Args) -> int:
                 chrome = host(url) == own and "/" not in path_part and "." not in path_part
                 if url_key(url) not in known and not chrome:
                     seen[url] = seen.get(url, 0) + 1
+    refs: dict[str, list[str]] = {}
+    for row in current(rows):
+        for k, url in enumerate(source_links(run, row), 1):
+            if url in seen:
+                refs.setdefault(url, []).append(f"{_str(row, 'id')}:{k}")
     ranked = sorted(seen.items(), key=lambda kv: (-kv[1], kv[0]))
-    emit([{"url": u, "mentions": n} for u, n in ranked])
+    emit([{"url": u, "mentions": n, "from": refs.get(u, [])} for u, n in ranked])
     return 0
 
 
@@ -2153,7 +2517,8 @@ def searches_table(rows: list[Row]) -> str:
         "|---|---|---|---|---|",
     ]
     for r in rows:
-        count = "" if r.get("results") is None else str(r["results"])
+        count = f"failed: {_str(r, 'failure')}" if r.get("status") == "failed" else ""
+        count = count or ("" if r.get("results") is None else str(r["results"]))
         cells = [_str(r, "at")[:10], _str(r, "where"), _str(r, "query"), count, _str(r, "note")]
         lines.append("| " + " | ".join(cell(c) for c in cells) + " |")
     return "\n".join([*lines, ""])
@@ -2163,8 +2528,11 @@ def sources_section(run: Path) -> str:
     """Body of a report's ``## Sources`` section: the sources table, then the search log.
 
     The ledgers keep what was recorded; the section is scrubbed for the run's audience.
+    The Check column reads the same after an offline check and a live one:
+    ``TABLE_STATES`` folds verified and intact into checked.
     """
-    table = sources_table(read_jsonl(run / MANIFEST), source_states(run, parse_date(None)))
+    states = {k: TABLE_STATES.get(v, v) for k, v in source_states(run, parse_date(None)).items()}
+    table = sources_table(read_jsonl(run / MANIFEST), states)
     searches = searches_table(read_jsonl(run / SEARCHES))
     meta = read_meta(run)
     body = table + (f"\n{searches}" if searches else "")
@@ -2185,10 +2553,22 @@ def scrub(text: str, audience: str, redact: list[str]) -> str:
 
 
 def cmd_searched(a: Args) -> int:
-    """Log a search: what was asked, where, and how many results came back."""
-    run = run_dir(a.run)
+    """Log a search: what was asked, where, and how many results came back, or why it failed.
+
+    A failed search found nothing and shows nothing: it is a gap, never an absence.
+    """
+    run = writable_run(a.run)
+    apply_fields(a, "searched")
+    if not a.query:
+        msg = "give the query with --query, or as query in --fields"
+        raise ValueError(msg)
+    if a.failed and a.results is not None:
+        msg = "--failed and --results conflict: a failed search has no result count"
+        raise ValueError(msg)
     row: Row = {"at": now_utc(), "query": a.query, "where": a.where, "results": a.results}
     row["note"] = a.note
+    if a.failed:
+        row.update(status="failed", failure=a.failed)
     row = {k: v for k, v in row.items() if v not in (None, "")}
     append_jsonl(run / SEARCHES, [row])
     emit(row)
@@ -2197,20 +2577,52 @@ def cmd_searched(a: Args) -> int:
 
 def cmd_sources(a: Args) -> int:
     """Print the run's current sources as a markdown table; --write puts it under ## Sources."""
-    run = run_dir(a.run)
-    table = sources_section(run)
-    if a.write:
-        report = run / "report.md"
-        text = report.read_text(encoding="utf-8")
-        if not re.search(r"(?m)^## Sources\s*$", text):
-            msg = f"{report} has no ## Sources section"
-            raise ValueError(msg)
-        text = re.sub(
-            r"(?ms)^## Sources\s*$.*?(?=^## |\Z)", lambda _m: f"## Sources\n\n{table}\n", text
-        )
-        atomic_write(report, text.rstrip("\n").encode() + b"\n")
+    run = writable_run(a.run) if a.write else run_dir(a.run)
+    table = write_sources(run) if a.write else sources_section(run)
     print(table, end="")
     return 0
+
+
+def write_sources(run: Path) -> str:
+    """Put the sources table under the report's ``## Sources`` heading and return it."""
+    report = run / "report.md"
+    if not report.is_file():
+        msg = f"{run.name} has no report.md; write it first"
+        raise ValueError(msg)
+    text = report.read_text(encoding="utf-8")
+    if not re.search(r"(?m)^## Sources\s*$", text):
+        msg = f"{report.name} has no ## Sources section"
+        raise ValueError(msg)
+    table = sources_section(run)
+    text = re.sub(
+        r"(?ms)^## Sources\s*$.*?(?=^## |\Z)", lambda _m: f"## Sources\n\n{table}\n", text
+    )
+    atomic_write(report, text.rstrip("\n").encode() + b"\n")
+    return table
+
+
+def cmd_prepare(a: Args, fetch: Fetch = http_fetch) -> int:
+    """Run the report pipeline's first two steps in order: verify, then write the Sources table.
+
+    Exit 1 when a source failed; the table is still written, so it shows the failure.
+    Then run ``claims --reviewed``, then ``check``.
+    """
+    run = writable_run(a.run)
+    if not (run / "report.md").is_file():
+        msg = f"{run.name} has no report.md; write it first"
+        raise ValueError(msg)
+    results, failures = verify_rows(
+        run, current(read_jsonl(run / MANIFEST)), None if a.offline else fetch
+    )
+    _ = write_sources(run)
+    counts: dict[str, int] = {}
+    for r in results:
+        counts[_str(r, "status")] = counts.get(_str(r, "status"), 0) + 1
+    emit({
+        "checked": len(results), "counts": counts, "failures": failures,
+        "sources_table": "written", "next": "claims --reviewed, then check",
+    })  # fmt: skip
+    return 1 if failures else 0
 
 
 def claim_lines(text: str, rows: list[Row]) -> Row:
@@ -2243,14 +2655,37 @@ def claim_lines(text: str, rows: list[Row]) -> Row:
     return {"lines": lines, "quotes": quotes, "unverified": unverified}
 
 
+def review_stamp(report: Path) -> str:
+    """Short hash of what a claims review covers: the report and the brief beside it."""
+    brief = report.parent / "brief.md"
+    extra = b"\0" + brief.read_bytes() if brief.is_file() else b""
+    return sha256(report.read_bytes() + extra)[:8]
+
+
 def cmd_claims(a: Args) -> int:
-    """List every cited claim beside its sources' quotes; --reviewed logs that you checked them."""
+    """List every cited claim beside its sources' quotes; --reviewed logs that you checked them.
+
+    A ``brief.md`` beside the report is listed too, its lines marked ``"from": "brief.md"``
+    under ``brief``, and the review covers both.
+    """
     report = Path(a.report)
     rows = read_jsonl(report.parent / MANIFEST)
     out = claim_lines(report.read_text(encoding="utf-8"), rows)
     lines = t.cast("list[Row]", out["lines"])
+    brief = report.parent / "brief.md"
+    if brief.is_file():
+        extra = claim_lines(brief.read_text(encoding="utf-8"), rows)
+        from_brief = [{**r, "from": "brief.md"} for r in t.cast("list[Row]", extra["lines"])]
+        out["brief"] = from_brief
+        out["quotes"] = {**t.cast("Row", extra["quotes"]), **t.cast("Row", out["quotes"])}
+        out["unverified"] = [
+            *t.cast("list[Row]", out["unverified"]),
+            *({**r, "from": "brief.md"} for r in t.cast("list[Row]", extra["unverified"])),
+        ]
+        lines = [*lines, *from_brief]
     if a.reviewed:
-        stamp = sha256(report.read_bytes())[:8]
+        _ = writable_run(str(report.parent))
+        stamp = review_stamp(report)
         count = f"{len(lines)} cited line{'' if len(lines) == 1 else 's'}"
         index = report.parent / "index.md"
         earlier = rf"(?m)^- \S+: reviewed \d+ cited lines? in {re.escape(report.name)} \(\w+\)\n"
@@ -2263,8 +2698,8 @@ def cmd_claims(a: Args) -> int:
 
 
 def claims_reviewed(report: Path) -> bool:
-    """Whether index.md logs a claims review of this exact version of ``report``."""
-    stamp = sha256(report.read_bytes())[:8]
+    """Whether index.md logs a claims review of this exact version of ``report`` and its brief."""
+    stamp = review_stamp(report)
     index = report.parent / "index.md"
     return index.is_file() and f"in {report.name} ({stamp})" in index.read_text(encoding="utf-8")
 
@@ -2744,8 +3179,221 @@ def lint_criteria(csv_text: str, by_id: dict[str, Row]) -> list[Row]:
     return found
 
 
+LADDER = ("unknown", "weak", "adequate", "strong")
+NON_OPTIONS = frozenset({"criterion", "weight", "confidence", "sources", "note"})
+
+
+def tally_criteria(csv_text: str) -> Row:
+    r"""Count each option's ratings, and test whether the leader survives one rating moving one grade.
+
+    The leader has the highest unweighted rating total (strong 3, adequate 2, weak 1, unknown
+    0), used only to find which single move changes the leader; it is not reported as a score.
+    A blank or unrecognised cell counts as unknown.
+
+    Examples
+    --------
+    >>> text = "criterion,a,b,sources\nSpeed,strong,weak,S1\nCost,adequate,adequate,S2\nRisk,strong,unknown,\n"
+    >>> out = tally_criteria(text)
+    >>> out["leader"], out["tally"]["a"]["strong"], out["tally"]["b"]["unknown"], out["criteria"]
+    ('a', 2, 1, 3)
+    >>> out["sensitivity"]["survives"]
+    True
+    >>> tally_criteria("criterion,a,b\nSpeed,strong,adequate\nCost,weak,weak\n")["sensitivity"]["flips"][0]
+    {'criterion': 'Speed', 'option': 'a', 'from': 'strong', 'to': 'adequate', 'then': 'tie'}
+    """  # noqa: E501
+    table = csv_rows(csv_text)
+
+    def grade(cell: str | None) -> str:
+        word = (cell or "").strip().lower()
+        return word if word in RATINGS else "unknown"
+
+    options = option_columns(table)
+    grid = {o: [grade(r.get(o)) for r in table] for o in options}
+    names = [r.get("criterion") or f"row {n}" for n, r in enumerate(table, 2)]
+
+    def leader_of(g: dict[str, list[str]]) -> str | None:
+        totals = {o: sum(RATINGS[x] for x in v) for o, v in g.items()}
+        top = max(totals.values(), default=0.0)
+        best = [o for o, total in totals.items() if total == top]
+        return best[0] if len(best) == 1 else None
+
+    leader = leader_of(grid)
+    flips: list[Row] = []
+    for o in options:
+        for i, name in enumerate(names):
+            at = LADDER.index(grid[o][i])
+            for step in (at - 1, at + 1):
+                if 0 <= step < len(LADDER) and leader is not None:
+                    moved = {k: [*v] for k, v in grid.items()}
+                    moved[o][i] = LADDER[step]
+                    after = leader_of(moved)
+                    if after != leader:
+                        flips.append({
+                            "criterion": name, "option": o, "from": grid[o][i],
+                            "to": LADDER[step], "then": after or "tie",
+                        })  # fmt: skip
+    return {
+        "criteria": len(table),
+        "tally": {o: {g: grid[o].count(g) for g in reversed(LADDER)} for o in options},
+        "leader": leader,
+        "sensitivity": None
+        if len(options) < 2  # noqa: PLR2004
+        else {"survives": leader is not None and not flips, "flips": flips},
+    }
+
+
+def criteria_markdown(csv_text: str, by_id: dict[str, Row]) -> str:
+    r"""Render the ``## Criteria`` section: one line per criterion, from the CSV and the manifest.
+
+    Examples
+    --------
+    >>> text = "criterion,uv,pip,confidence,sources\nLock,strong,adequate,high,S2;S9\n"
+    >>> print(criteria_markdown(text, {"S2": {"id": "S2", "kind": "independent"}}))
+    ## Criteria
+    <BLANKLINE>
+    - Lock: uv strong, pip adequate; high confidence; S2 (independent), S9 (not in the manifest).
+    """
+    table = csv_rows(csv_text)
+    options = option_columns(table)
+    lines = ["## Criteria", ""]
+    for n, r in enumerate(table, 2):
+        ids = [i for i in re.split(r"[;,\s]+", r.get("sources") or "") if i]
+        cited = ", ".join(
+            f"{i} ({_str(by_id[i], 'kind') or 'no kind'})"
+            if i in by_id
+            else f"{i} (not in the manifest)"
+            for i in ids
+        )
+        rated = ", ".join(f"{o} {(r.get(o) or 'unknown').strip().lower()}" for o in options)
+        confidence = (r.get("confidence") or "").strip()
+        parts = [
+            rated,
+            f"{confidence} confidence" if confidence else "confidence not stated",
+            cited or "no source",
+        ]
+        lines.append(f"- {r.get('criterion') or f'row {n}'}: " + "; ".join(parts) + ".")
+    return "\n".join(lines)
+
+
+def option_columns(table: list[dict[str, str]]) -> list[str]:
+    """List the columns of a criteria table that rate an option: any with a rating word in it."""
+    cols = list(table[0]) if table else []
+    return [
+        c
+        for c in cols
+        if c not in NON_OPTIONS and any((r.get(c) or "").strip().lower() in RATINGS for r in table)
+    ]
+
+
+def cmd_tally(a: Args) -> int:
+    """Print an assessment's tally and sensitivity, or with ``--markdown`` its Criteria section."""
+    run = run_dir(a.run)
+    path = run / "data" / "criteria.csv"
+    if not path.is_file():
+        msg = "no data/criteria.csv in the run"
+        raise ValueError(msg)
+    text = path.read_text(encoding="utf-8")
+    if a.markdown:
+        print(
+            criteria_markdown(text, {_str(r, "id"): r for r in current(read_jsonl(run / MANIFEST))})
+        )
+    else:
+        emit(tally_criteria(text))
+    return 0
+
+
 def _finding(level: str, rule: str, line: int, detail: str) -> Row:
     return {"level": level, "rule": rule, "line": line, "detail": detail}
+
+
+def search_gaps(rows: list[Row]) -> list[Row]:
+    """Failed searches that no later search of the same query made good.
+
+    Examples
+    --------
+    >>> log = [{"query": "wal nfs", "status": "failed", "failure": "blocked"},
+    ...        {"query": "wal fsync", "status": "failed", "failure": "auth"},
+    ...        {"query": "WAL  NFS", "results": 3}]
+    >>> [g["query"] for g in search_gaps(log)]
+    ['wal fsync']
+    """
+    out: list[Row] = []
+    for i, row in enumerate(rows):
+        key = normalize(_str(row, "query"))
+        retried = any(
+            r.get("status") != "failed" and normalize(_str(r, "query")) == key
+            for r in rows[i + 1 :]
+        )
+        if row.get("status") == "failed" and not retried:
+            out.append({k: row.get(k) for k in ("query", "where", "failure")})
+    return out
+
+
+def lint_searches(text: str, gaps: list[Row]) -> list[Row]:
+    """Each unretried failed search must appear under Open questions: a gap, never an absence."""
+    listed = normalize(sections(strip_fences(text)).get("Open questions", ""))
+    return [
+        _finding(
+            "warn",
+            "failed-search",
+            1,
+            f"search {_str(g, 'query')!r} failed ({_str(g, 'failure')}): rerun it or list the gap",
+        )
+        for g in gaps
+        if normalize(_str(g, "query")) not in listed
+    ]
+
+
+def brief_sentences(text: str) -> list[tuple[int, str]]:
+    r"""List ``(line, sentence)`` for each statement in a brief, not headings, tables, or labels.
+
+    A sentence is a statement from ``MIN_BRIEF_WORDS`` words up, once links are dropped.
+
+    Examples
+    --------
+    >>> brief_sentences("# T\n\nWAL lets readers proceed during writes.\nIt wins [S1].")
+    [(3, 'WAL lets readers proceed during writes.')]
+    """
+    out: list[tuple[int, str]] = []
+    para: list[str] = []
+    first = 0
+    for n, line in enumerate([*strip_fences(text).splitlines(), ""], 1):
+        s = line.strip()
+        if s and not s.startswith(("#", "|", "![")):
+            first = first or n
+            para.append(s)
+            continue
+        joined = re.sub(r"\[([^\]]*)\]\([^)]*\)", "", " ".join(para))
+        out.extend(
+            (first, x.strip())
+            for x in re.split(r"(?<=[.!?])\s+", joined)
+            if len(x.split()) >= MIN_BRIEF_WORDS
+        )
+        para, first = [], 0
+    return out
+
+
+def lint_brief(run: Path, report_text: str) -> list[Row]:
+    """Flag what a brief adds to the report: a citation or an uncited sentence it lacks."""
+    brief = run / "brief.md"
+    if not brief.is_file():
+        return []
+    body = strip_fences(report_text)
+    cited = {m[1] for m in CITE_RE.finditer(body)}
+    known = " ".join(re.sub(r"\s*\[(?:S\d+|unverified)\]", "", body).split())
+    text = brief.read_text(encoding="utf-8")
+    found: list[Row] = []
+    for n, line in enumerate(strip_fences(text).splitlines(), 1):
+        found.extend(
+            _finding("error", "brief-citation", n, f"[{sid}] is not cited in report.md")
+            for sid in dict.fromkeys(m[1] for m in CITE_RE.finditer(line))
+            if sid not in cited
+        )
+    for n, sentence in brief_sentences(text):
+        if not CITE_RE.search(sentence) and " ".join(sentence.split()) not in known:
+            detail = f"{sentence[:60]!r} is not in report.md; the brief adds no claim"
+            found.append(_finding("error", "brief-new-claim", n, detail))
+    return found
 
 
 def lint_report(report: Path, audience_arg: str | None = None) -> tuple[str, list[Row]]:
@@ -2764,6 +3412,7 @@ def lint_report(report: Path, audience_arg: str | None = None) -> tuple[str, lis
     conflicts = latest_conflicts(run)
     findings += lint_citations(text, rows) + lint_analysis(text, rows, conflicts)
     findings += lint_conflicts(text, conflicts, replaced)
+    findings += lint_searches(text, search_gaps(read_jsonl(run / SEARCHES)))
     if meta.get("mode") == "assessment":
         findings += lint_assessment(text, run, rows)
     if CITE_RE.search(text) and not claims_reviewed(report):
@@ -2792,7 +3441,7 @@ def cmd_lint_report(a: Args) -> int:
 
 def cmd_conflict(a: Args) -> int:
     """Record where sources disagree, or, with ``--id``, how a recorded disagreement was weighed."""
-    run = run_dir(a.run)
+    run = writable_run(a.run)
     latest = latest_by_id(read_jsonl(run / CONFLICTS))
     prev: Row = latest.get(a.conflict or "", {})
     if a.conflict and not prev:
@@ -2823,33 +3472,113 @@ def cmd_conflict(a: Args) -> int:
     return 0
 
 
+def report_open_questions(text: str) -> list[str]:
+    r"""List the unticked items under the report's ``## Open questions``.
+
+    Examples
+    --------
+    >>> report_open_questions("## Open questions\n\n- Does WAL hold?\n- [x] Done\n- [ ] Why?\n")
+    ['Does WAL hold?', 'Why?']
+    """
+    body = sections(strip_fences(text)).get("Open questions", "")
+    item = r"^\s*(?:[-*]|\d+[.)])\s+(?!\[[xX]\])(?:\[ \]\s+)?(.+?)\s*$"
+    items = re.findall(item, body, re.MULTILINE)
+    return [str(i) for i in t.cast("list[object]", items)]
+
+
+def reconcile_questions(in_index: list[str], in_report: list[str]) -> list[str]:
+    """Merge two lists of open questions; one that starts with the other is the same question.
+
+    Examples
+    --------
+    >>> reconcile_questions(["Does WAL hold?"], ["does wal hold? A test would settle it.", "Why?"])
+    ['Does WAL hold?', 'Why?']
+    """
+    merged = list(in_index)
+    for item in in_report:
+        key = normalize(item)
+        if not any(key.startswith(normalize(m)) or normalize(m).startswith(key) for m in merged):
+            merged.append(item)
+    return merged
+
+
+def report_counts(run: Path, text: str, states: dict[str, str]) -> Row:
+    r"""Count what a hero quotes: findings, sources, carried sources, open and ticked questions.
+
+    ``open_questions`` merges index.md's unchecked items with the report's ``## Open questions``.
+
+    Examples
+    --------
+    >>> with tempfile.TemporaryDirectory() as d:
+    ...     body = "## Findings\n\n### A finding holds up\n\nx\n\n### Another finding holds\n"
+    ...     report_counts(Path(d), body, {"S1": "verified", "S2": "fresh"})["findings"]
+    2
+    """
+    rows = current(read_jsonl(run / MANIFEST))
+    section = ""
+    findings = 0
+    for _, level, title in headings(text):
+        section = section_key(title) if level == 2 else section  # noqa: PLR2004
+        findings += level == 3 and section == "findings"  # noqa: PLR2004
+    by_state: dict[str, int] = {}
+    for state in states.values():
+        by_state[state] = by_state.get(state, 0) + 1
+    in_index = open_questions(run)
+    in_report = report_open_questions(text)
+    failed = sum(n for state, n in by_state.items() if state in FAILURES)
+    open_count = len(reconcile_questions(in_index, in_report))
+    return {
+        "findings": findings, "sources": len(rows),
+        "carried": sum(bool(r.get("carried_from")) for r in rows),
+        "states": by_state, "open_questions": open_count,
+        "open_in_index": len(in_index), "open_in_report": len(in_report),
+        "failed_sources": failed, "open_items": open_count + failed,
+        "ticked": ticked_since_prior(run),
+    }  # fmt: skip
+
+
 def gate(run: Path, fetch: Fetch | None) -> Row:
-    """Run every ship check fresh: sources, the Sources table, the report lint, and the leak scan.
+    """Run every ship check fresh: sources, Sources table, claims review, lint, brief, redact, scan.
 
     ``ok`` is the only verdict: a report ships when every check passes in this call.
+    ``next`` lists the fixes in pipeline order and ``first_failing`` names the first
+    prerequisite that failed: verify, sources, claims, lint, redact, or scan.
     """
     report = run / "report.md"
     if not report.is_file():
         msg = f"{run.name} has no report.md; write it first"
         raise ValueError(msg)
     results, failures = verify_rows(run, current(read_jsonl(run / MANIFEST)), fetch)
-    body = sections(report.read_text(encoding="utf-8")).get("Sources", "")
+    text = report.read_text(encoding="utf-8")
+    body = sections(text).get("Sources", "")
     table = "current" if body.strip() == sources_section(run).strip() else "stale"
     audience, lint = lint_report(report)
+    unreviewed = [f for f in lint if f["rule"] == "claims-unreviewed"]
+    lint_rest = [f for f in lint if f["rule"] != "claims-unreviewed"]
+    brief = lint_brief(run, text)
+    decided = isinstance(read_meta(run).get("redact"), list)
+    public = audience == "public"
     leaks = scan_run(run, audience, [], include_references=False)
     steps = [
-        (failures, "fix each failed source as verify.md says"),
-        (table == "stale", "sources --write, then claims --reviewed"),
-        (lint, "fix the lint findings, then claims --reviewed"),
-        (leaks, "remove what scan lists"),
-    ]
-    todo = [step for failed, step in steps if failed]
+        ("verify", failures, "fix each failed source as verify.md says"),
+        ("sources", table == "stale", "prepare: verify, then sources --write"),
+        ("claims", unreviewed, "claims --reviewed"),
+        ("lint", lint_rest or brief, "fix the lint and brief findings, then claims --reviewed"),
+        ("redact", public and not decided, REDACT_STEP),
+        ("scan", leaks, "remove what scan lists"),
+    ]  # fmt: skip
+    todo = [(name, step) for name, failed, step in steps if failed]
+    states = source_states(run, parse_date(None))
     return {
         "ok": not todo,
         "at": now_utc(), "live": fetch is not None, "sha256": sha256(report.read_bytes()),
         "audience": audience, "sources": {"checked": len(results), "failures": failures},
-        "sources_table": table, "lint": lint, "scan": leaks,
-        "next": [*todo, "check again"] if todo else [],
+        "sources_table": table, "lint": lint, "brief": brief, "scan": leaks,
+        "redact_decision": "recorded" if decided else "missing" if public else "not needed",
+        "search_gaps": search_gaps(read_jsonl(run / SEARCHES)),
+        "counts": report_counts(run, text, states),
+        "first_failing": todo[0][0] if todo else None,
+        "next": [*(step for _, step in todo), "check again"] if todo else [],
     }  # fmt: skip
 
 
@@ -2873,8 +3602,15 @@ def evidence_key(row: Row) -> str:
 
 
 def cmd_release(a: Args, fetch: Fetch = http_fetch) -> int:
-    """Release the report: pass every check fresh, keep that exact version, log who got it."""
+    """Release the report: pass every check fresh, keep that exact version, log who got it.
+
+    ``--audience`` is the reader's, and must equal the run's.
+    """
     run = run_dir(a.run)
+    held = audience_of(read_meta(run), None)
+    if a.audience != held:
+        msg = f"the run's audience is {held}, but release asked for a {a.audience} reader"
+        raise ValueError(msg)
     if a.offline and not a.allow_offline:
         msg = "release needs a live check; pass --allow-offline to release on captures alone"
         raise ValueError(msg)
@@ -2960,6 +3696,25 @@ def affected_releases(
     return out
 
 
+def bag_path(path: str) -> str:
+    r"""``path`` as a BagIt manifest writes it: ``%``, CR, and LF percent-encoded (RFC 8493 2.1.3).
+
+    Examples
+    --------
+    >>> bag_path("data/data/50%.csv"), bag_path("a\nb")
+    ('data/data/50%25.csv', 'a%0Ab')
+    >>> unbag_path(bag_path("50%0A\r"))
+    '50%0A\r'
+    """
+    return path.replace("%", "%25").replace("\r", "%0D").replace("\n", "%0A")
+
+
+def unbag_path(path: str) -> str:
+    """Inverse of `bag_path`; the escapes may be written in either case."""
+    codes = {"25": "%", "0d": "\r", "0a": "\n"}
+    return re.sub(r"%(25|0[dD]|0[aA])", lambda m: codes[m[1].lower()], path)
+
+
 def write_bag(run: Path, out: Path) -> Row:
     r"""Pack every file of ``run`` into a zipped BagIt bag (RFC 8493) at ``out``.
 
@@ -2986,7 +3741,9 @@ def write_bag(run: Path, out: Path) -> Row:
             f"Bagging-Date: {parse_date(None)}\nBag-Software-Agent: {USER_AGENT}\n"
             f"External-Identifier: {ident}\nPayload-Oxum: {size}.{len(entries)}\n"
         ),
-        "manifest-sha256.txt": "".join(f"{sha256(p.read_bytes())}  {arc}\n" for arc, p in entries),
+        "manifest-sha256.txt": "".join(
+            f"{sha256(p.read_bytes())}  {bag_path(arc)}\n" for arc, p in entries
+        ),
     }
     tags["tagmanifest-sha256.txt"] = "".join(
         f"{sha256(body.encode())}  {name}\n" for name, body in tags.items()
@@ -3007,8 +3764,12 @@ def write_bag(run: Path, out: Path) -> Row:
     return {"bag": out.name, "files": len(entries), "bytes": size}
 
 
-def check_bag(path: Path) -> Row:
+def check_bag(path: Path, expected: str | None = None) -> Row:
     """Re-hash a bag against both its manifests: files missing, changed, or unlisted.
+
+    The manifests sit inside the zip, so they catch damage, not a rewrite of the
+    files and both manifests together. ``expected`` is the zip's own SHA-256, kept
+    elsewhere when the bag was made; a different zip fails.
 
     Examples
     --------
@@ -3032,8 +3793,10 @@ def check_bag(path: Path) -> Row:
                     raise ValueError(msg)
                 body = z.read(top + name).decode("utf-8")
                 manifests[name] = {
-                    rel: digest
-                    for digest, _, rel in (ln.partition("  ") for ln in body.splitlines())
+                    unbag_path(rel): digest
+                    for digest, _, rel in (
+                        ln.partition("  ") for ln in re.split(r"\r\n|\r|\n", body) if ln
+                    )
                 }
             listed = {**manifests["manifest-sha256.txt"], **manifests["tagmanifest-sha256.txt"]}
             changed = [
@@ -3045,20 +3808,28 @@ def check_bag(path: Path) -> Row:
     payload = {f for f in files if f.startswith("data/")}
     missing = sorted(set(listed) - files)
     extra = sorted(payload - set(manifests["manifest-sha256.txt"]))
+    digest = sha256(path.read_bytes())
     return {
         "bag": path.name,
-        "ok": not (missing or extra or changed),
+        "ok": not (missing or extra or changed) and expected in (None, digest),
+        "sha256": digest,
         "files": len(manifests["manifest-sha256.txt"]),
         "missing": missing,
         "changed": changed,
         "extra": extra,
+        **({"sha256_expected": expected} if expected and expected != digest else {}),
     }
 
 
 def cmd_export(a: Args) -> int:
-    """Pack a run as a zipped BagIt bag beside it, or ``--check`` an existing bag's fixity."""
+    """Pack a run as a zipped BagIt bag beside it, or ``--check`` an existing bag's fixity.
+
+    Never overwrites a bag. The written bag is re-opened and checked before success is
+    reported, and its SHA-256 goes to ``exports.jsonl`` and the run's log, so the
+    release trail can carry it.
+    """
     if a.bag:
-        result = check_bag(Path(a.bag))
+        result = check_bag(Path(a.bag), a.digest)
         emit(result)
         return 0 if result["ok"] else 1
     if not a.run:
@@ -3069,7 +3840,143 @@ def cmd_export(a: Args) -> int:
     if out.resolve().is_relative_to(run.resolve()):
         msg = "--out is inside the run; the bag would pack itself"
         raise ValueError(msg)
-    emit(write_bag(run, out))
+    if out.exists():
+        msg = f"{out.name} already exists; pass --out with another name, or remove it first"
+        raise ValueError(msg)
+    packed = write_bag(run, out)
+    verdict = check_bag(out)
+    if not verdict["ok"]:
+        out.unlink()
+        bad = [x for k in ("missing", "changed", "extra") for x in t.cast("list[str]", verdict[k])]
+        msg = f"{out.name} failed its own check and was removed (first problem: {bad[0]})"
+        raise ValueError(msg)
+    digest = _str(verdict, "sha256")
+    append_jsonl(run / EXPORTS, [{"at": now_utc(), **packed, "sha256": digest}])
+    append_log(run, f"{parse_date(None)}: exported bag {out.name} (sha256 {digest[:8]})")
+    emit({**packed, "sha256": digest, "checked": True})
+    return 0
+
+
+# --- routing -------------------------------------------------------------------
+
+STEPS = {
+    "assess": ("start.md", "assessment.md"),
+    "status": ("status.md",),
+    "continue": ("continue.md",),
+    "verify": ("verify.md",),
+    "report": ("report.md",),
+    "release": ("release.md",),
+}
+ROUTE_FLAGS: dict[str, tuple[str, ...]] = {
+    "mode": MODES, "audience": AUDIENCES, "namespace": (), "root": (), "date": (), "expand": (),
+    "to": (), "resume": (), "fill": (), "offline": (),
+}  # fmt: skip
+ROUTE_BOOLS = frozenset({"resume", "fill", "offline"})
+# A quoted phrase is one token only when the quote opens a word, so an apostrophe
+# ("don't") never starts one.
+ROUTE_TOKEN = re.compile(r"""(?<!\S)(['"])(.*?)\1[.,;:!?)]*(?=\s|$)|\S+""", re.DOTALL)
+SENTENCE_TAIL = ".,;:!?)"
+
+
+def route_tokens(text: str) -> list[str]:
+    """Split free text into words, keeping a quoted phrase whole and never failing.
+
+    >>> route_tokens("report wal. Use --to 'the platform team', don't wait")
+    ['report', 'wal.', 'Use', '--to', 'the platform team', "don't", 'wait']
+    """
+    return [m.group(2) if m.group(1) else m.group(0) for m in ROUTE_TOKEN.finditer(text)]
+
+
+def route_flags(tokens: list[str]) -> tuple[dict[str, str | bool], list[str]]:
+    """Split tokens into validated ``--flag[=value]`` options and the remaining words.
+
+    Sentence punctuation after a flag or its value is dropped, so a request written
+    as prose ("Use --date 2026-01-15.") reads the same as a bare command line.
+    """
+    flags: dict[str, str | bool] = {}
+    words: list[str] = []
+    i = 0
+    while i < len(tokens):
+        token, i = tokens[i], i + 1
+        if not token.startswith("--") or len(token.rstrip(SENTENCE_TAIL)) <= 2:  # noqa: PLR2004
+            words.append(token)
+            continue
+        name, eq, value = token[2:].partition("=")
+        name = name.rstrip(SENTENCE_TAIL)
+        if name not in ROUTE_FLAGS:
+            msg = f"unknown option --{name}; known: {', '.join(f'--{k}' for k in ROUTE_FLAGS)}"
+            raise ValueError(msg)
+        if name in ROUTE_BOOLS:
+            if eq:
+                msg = f"--{name} takes no value"
+                raise ValueError(msg)
+            flags[name] = True
+            continue
+        if not eq and i < len(tokens) and not tokens[i].startswith("--"):
+            value, i = tokens[i], i + 1
+        elif not eq:
+            msg = f"--{name} needs a value"
+            raise ValueError(msg)
+        value = value.rstrip(SENTENCE_TAIL)
+        choices = ROUTE_FLAGS[name]
+        if choices and value not in choices:
+            msg = f"--{name} {value!r}: use one of {', '.join(choices)}"
+            raise ValueError(msg)
+        if name == "date" and not is_date(value):
+            msg = f"--date {value!r}: expected YYYY-MM-DD"
+            raise ValueError(msg)
+        flags[name] = value
+    return flags, words
+
+
+def route_arguments(text: str) -> Row:
+    r"""Parse a foray argument string: the step word, the flags, and the request left over.
+
+    ``topic`` is set only when the rest is one name or one quoted phrase; otherwise the
+    request is prose and the agent reads the topic from ``request``.
+
+    Examples
+    --------
+    >>> out = route_arguments("continue sqlite-wal --fill --root=/r")
+    >>> out["step"], out["topic"], out["flags"]
+    ('continue', 'sqlite-wal', {'fill': True, 'root': '/r'})
+    >>> out = route_arguments("report wal. Use --root out and --date 2026-01-15.")
+    >>> out["step"], out["topic"], out["flags"], out["request"]
+    ('report', None, {'root': 'out', 'date': '2026-01-15'}, 'wal. Use and')
+    >>> route_arguments("sqlite-wal --fill.")["step"]
+    'continue'
+    """
+    tokens = route_tokens(text)
+    first = tokens[0].rstrip(SENTENCE_TAIL) if tokens else ""
+    step = first if first in STEPS else ""
+    flags, words = route_flags(tokens[1:] if step else tokens)
+    if "fill" in flags and "expand" in flags:
+        msg = "--fill and --expand are alternatives; pick one"
+        raise ValueError(msg)
+    inferred = not step and ("fill" in flags or "expand" in flags)
+    step = "continue" if inferred else step
+    rest = [w.rstrip(SENTENCE_TAIL) if len(words) == 1 else w for w in words]
+    out: Row = {
+        "step": step or None,
+        "topic": rest[0] if len(rest) == 1 and rest[0] else None,
+        "request": " ".join(words),
+        "flags": flags,
+        "references": list(STEPS[step]) if step else [],
+    }
+    if inferred:
+        out["inferred"] = "continue, from --fill or --expand"
+    return out
+
+
+def cmd_route(a: Args) -> int:
+    """Parse the arguments a foray skill received (from ``--stdin`` or after ``--``) into JSON."""
+    words = a.words or []
+    text = (
+        sys.stdin.read()
+        if a.stdin
+        else " ".join(shlex.quote(w) for w in words[words[:1] == ["--"] :])
+    )
+    emit(route_arguments(text))
     return 0
 
 
@@ -3242,6 +4149,9 @@ def cmd_chart(a: Args) -> int:
     if len(cols) < 2:  # noqa: PLR2004
         msg = f"{a.csv} needs a label column and at least one value column"
         raise ValueError(msg)
+    home = enclosing_run(Path(a.out).parent)
+    if home:
+        _ = writable_run(str(home))
     title = a.title or Path(a.csv).stem.replace("-", " ").capitalize()
     note = a.note or f"Data: {Path(a.csv).name}"
     if a.kind == "line":
@@ -3288,6 +4198,9 @@ COMMANDS: dict[str, Callable[[Args], int]] = {
     "release": cmd_release,
     "decide": cmd_decide,
     "export": cmd_export,
+    "tally": cmd_tally,
+    "prepare": cmd_prepare,
+    "route": cmd_route,
 }
 
 
@@ -3323,6 +4236,10 @@ def build_parser() -> argparse.ArgumentParser:  # noqa: PLR0915 - one statement 
     ad = sub.add_parser("add", help="record a source and its capture")
     _ = ad.add_argument("--run", required=True)
     _ = ad.add_argument("--url", default="", help="omit only for --kind measured with --file")
+    _ = ad.add_argument("--link", metavar="S<n>:<k>", help="the k-th URL links lists for S<n>")
+    _ = ad.add_argument(
+        "--fields", metavar="FILE", help="JSON object with quote (string or list), title, author"
+    )
     _ = ad.add_argument("--ref", help="tag, commit, edition, or version the claim rests on")
     _ = ad.add_argument("--title")
     _ = ad.add_argument("--author")
@@ -3403,7 +4320,13 @@ def build_parser() -> argparse.ArgumentParser:  # noqa: PLR0915 - one statement 
 
     se = sub.add_parser("searched", help="log a search: the query, where, and the result count")
     _ = se.add_argument("--run", required=True)
-    _ = se.add_argument("--query", required=True, help="the query exactly as run")
+    _ = se.add_argument("--query", default="", help="the query exactly as run")
+    _ = se.add_argument("--fields", metavar="FILE", help="JSON object with query")
+    _ = se.add_argument(
+        "--failed",
+        choices=SEARCH_FAILURES,
+        help="the search failed, so it found nothing and shows nothing: a gap, not an absence",
+    )
     _ = se.add_argument("--where", help="search engine, site, index, or archive")
     _ = se.add_argument("--results", type=int, help="how many results came back")
     _ = se.add_argument("--note", help="what the search found or missed")
@@ -3414,6 +4337,7 @@ def build_parser() -> argparse.ArgumentParser:  # noqa: PLR0915 - one statement 
     _ = ru.add_argument("--title")
     _ = ru.add_argument("--output", action="append", help="file under data/ it writes (repeatable)")
     _ = ru.add_argument("--quote", action="append", help="exact output a claim rests on")
+    _ = ru.add_argument("--fields", metavar="FILE", help="JSON object with quote (string or list)")
     _ = ru.add_argument("--timeout", type=float, help="seconds before the command is stopped")
     _ = ru.add_argument("command", nargs=argparse.REMAINDER, help="-- then the command")
 
@@ -3433,6 +4357,9 @@ def build_parser() -> argparse.ArgumentParser:  # noqa: PLR0915 - one statement 
     rl = sub.add_parser("release", help="pass check, keep the exact report, log who got it")
     _ = rl.add_argument("--run", required=True)
     _ = rl.add_argument("--to", required=True, help="who receives it, as a role or group")
+    _ = rl.add_argument(
+        "--audience", required=True, choices=AUDIENCES, help="the reader's; must equal the run's"
+    )
     _ = rl.add_argument("--note")
     _ = rl.add_argument("--offline", action="store_true", help="captures only, no network")
     _ = rl.add_argument(
@@ -3451,6 +4378,23 @@ def build_parser() -> argparse.ArgumentParser:  # noqa: PLR0915 - one statement 
     _ = ex.add_argument("--run")
     _ = ex.add_argument("--out", default="", help="bag path, default beside the run")
     _ = ex.add_argument("--check", dest="bag", help="check a bag's fixity instead")
+    _ = ex.add_argument(
+        "--sha256", dest="digest", help="with --check: the zip's SHA-256 printed when it was packed"
+    )
+
+    ta = sub.add_parser("tally", help="an assessment's rating counts and one-grade sensitivity")
+    _ = ta.add_argument("--run", required=True)
+    _ = ta.add_argument(
+        "--markdown", action="store_true", help="print the report's ## Criteria section instead"
+    )
+
+    pp = sub.add_parser("prepare", help="verify, then write the report's Sources table")
+    _ = pp.add_argument("--run", required=True)
+    _ = pp.add_argument("--offline", action="store_true", help="captures only, no network")
+
+    ro = sub.add_parser("route", help="parse a foray argument string into step, topic, and flags")
+    _ = ro.add_argument("--stdin", action="store_true", help="read the arguments from stdin")
+    _ = ro.add_argument("words", nargs=argparse.REMAINDER, help="-- then the arguments")
     return p
 
 

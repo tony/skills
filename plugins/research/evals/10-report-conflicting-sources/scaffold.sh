@@ -58,3 +58,4 @@ At what WAL size does SQLite checkpoint by default?
 
 - $day: opened
 MD
+printf '%s\n' "- $(date +%F): opened" >>"$run/index.md"

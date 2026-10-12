@@ -37,6 +37,7 @@ Is Vendor X reliable enough for a public status page?
 
 - 2026-01-15: opened
 MD
+printf '%s\n' "- $(date +%F): opened" >>"$run/index.md"
 
 printf '{"added": "2026-01-15", "author": "Vendor X", "capture": "file", "card": "S1-vendor-x-uptime.md", "carried_from": null, "file": "%s", "id": "S1", "quotes": ["99.95%% monthly uptime across 12 months"], "ref": "2025", "replaces": null, "retrieved": "2026-01-15T09:00:00Z", "sha256": "%s", "title": "Vendor X uptime report", "url": "https://vendor-x.example/uptime"}\n' "$raw" "$sha" >"$run/references/sources.jsonl"
 
