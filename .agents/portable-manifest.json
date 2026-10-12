@@ -800,9 +800,11 @@
         "plugins/research/skills/study-deps/SKILL.md"
       ],
       "bundled": {
-        "references/prose-rules.md": "plugins/research/references/prose-rules.md"
+        "references/deps.py": "plugins/research/scripts/deps.py",
+        "references/prose-rules.md": "plugins/research/references/prose-rules.md",
+        "references/reply-contract.md": "plugins/research/references/reply-contract.md"
       },
-      "bytes": 14369
+      "bytes": 70117
     },
     {
       "name": "research-verify",
@@ -1642,6 +1644,7 @@
     "plugins/release/references/release-conventions.md": 2,
     "plugins/release/scripts/publish.py": 2,
     "plugins/research/references/prose-rules.md": 2,
+    "plugins/research/references/reply-contract.md": 2,
     "plugins/respond/references/screening-rubric.md": 2,
     "plugins/respond/references/verification-gates.md": 2,
     "plugins/respond/scripts/ledger_key.py": 2,
@@ -1700,11 +1703,11 @@
     "plugins/research/references/continue.md": 1,
     "plugins/research/references/layout.md": 1,
     "plugins/research/references/release.md": 1,
-    "plugins/research/references/reply-contract.md": 1,
     "plugins/research/references/report.md": 1,
     "plugins/research/references/start.md": 1,
     "plugins/research/references/status.md": 1,
     "plugins/research/references/verify.md": 1,
+    "plugins/research/scripts/deps.py": 1,
     "plugins/research/scripts/topic.py": 1,
     "plugins/respond/references/bloat-discipline.md": 1,
     "plugins/respond/references/review-agents.md": 1,
