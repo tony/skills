@@ -3,7 +3,8 @@
 A third-party marketplace of language-agnostic AI workflow plugins. Plugins
 install into [Claude Code](https://code.claude.com/docs/en/plugin-marketplaces.md)
 and [Codex](https://developers.openai.com/plugins/build/plugins), and are
-readable by agents scanning `.agents/skills/`.
+readable by agents scanning `.agents/skills/`. The marketplace is not
+affiliated with or endorsed by Anthropic or OpenAI.
 
 > **Warning:** Review plugins before installing. Anthropic does not control plugin
 > contents and cannot verify they work as intended.
