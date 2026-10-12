@@ -761,13 +761,14 @@
         "references/layout.md": "plugins/research/references/layout.md",
         "references/prose-rules.md": "plugins/research/references/prose-rules.md",
         "references/release.md": "plugins/research/references/release.md",
+        "references/reply-contract.md": "plugins/research/references/reply-contract.md",
         "references/report.md": "plugins/research/references/report.md",
         "references/start.md": "plugins/research/references/start.md",
         "references/status.md": "plugins/research/references/status.md",
         "references/topic.py": "plugins/research/scripts/topic.py",
         "references/verify.md": "plugins/research/references/verify.md"
       },
-      "bytes": 242227
+      "bytes": 251793
     },
     {
       "name": "research-release",
@@ -1699,6 +1700,7 @@
     "plugins/research/references/continue.md": 1,
     "plugins/research/references/layout.md": 1,
     "plugins/research/references/release.md": 1,
+    "plugins/research/references/reply-contract.md": 1,
     "plugins/research/references/report.md": 1,
     "plugins/research/references/start.md": 1,
     "plugins/research/references/status.md": 1,

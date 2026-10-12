@@ -124,7 +124,19 @@ $ python3 plugins/research/scripts/topic.py check \
 
 The other commands are `prior`, `status`, `scan`, `find`, `links`,
 `sources`, `claims`, `lint-report`, `chart`, `searched`, `run`, `conflict`,
-`release`, `decide`, and `export`.
+`release`, `decide`, `export`, `prepare`, `route`, and `tally`. `prepare`
+verifies every source and writes the report's Sources section. `route` parses
+a foray argument string from stdin. `tally` counts an assessment's ratings and
+tests whether its leader survives one rating moving one grade; `tally
+--markdown` prints the report's `## Criteria` section.
+
+Text copied from a page never goes on a command line: `add` and `run` take a
+`--fields` JSON file for quotes, titles, and authors, `searched` takes one for
+the query, and `add --link S2:3` records a URL that `links` found. `searched
+--failed` logs a search that errored or was blocked as a gap, not an absence.
+`release --audience` must equal the run's audience. `export` refuses an
+existing bag and prints the zip's SHA-256; `export --check BAG --sha256
+DIGEST` catches a bag rewritten together with its manifests.
 
 ## Network and data retention
 
@@ -143,21 +155,19 @@ installs, to read their source. A topic can then cite that source at its tag.
 
 ### How It Works
 
-The skill reads the project's manifests and lockfiles, resolves each dependency's
-source repository, shows the plan, and waits for confirmation before cloning.
-Only `https://` repositories are cloned. When no tag matches the resolved version,
-the worktree is named for the default branch and its commit, and the report says it
-is unpinned. Without an interactive host it prints the plan and stops.
+The skill reads the project's manifests and lockfiles, shows the plan, and waits
+for confirmation. Only after approval does it look up missing repositories in the
+package registry, clone, and create worktrees. Only `https://` repositories are
+cloned. A tag that matches the resolved version gives a pinned worktree. A matched
+branch, or the default branch when nothing matches, gives an unpinned worktree
+named for the branch and its commit, and the report says it is unpinned. Without
+an interactive host it prints the plan and stops.
 
-Manifests, lockfiles, and tag resolution follow steps 1 and 6 of
-`skills/study-deps/SKILL.md`.
+`scripts/deps.py` runs the deterministic steps: manifest scan, URL vetting, path
+planning, tag resolution, clone, worktree, and the report. The skill's
+`SKILL.md` defines the filter and the `--lang` and `--no-worktree` flags.
 
-### Arguments
-
-| Flag | Effect |
-|------|--------|
-| `--lang <language>` | Override auto-detected language |
-| `--no-worktree` | Clone only, no worktree |
+Invocations: one package, all, one category, a language override, and clone only.
 
 ```text
 /research:study-deps vite
@@ -184,10 +194,11 @@ Manifests, lockfiles, and tag resolution follow steps 1 and 6 of
 Clones structure under `~/study/`:
 - Main clone: `~/study/<language>/<repo>/`
 - Pinned worktree: `~/study/<language>/<repo>-<version>/`
+- Unpinned worktree: `~/study/<language>/<repo>-<branch>-<sha7>/`
 
 Monorepos clone once, with worktrees containing all packages.
 
 ## Prerequisites
 
-- python3 3.9 or newer, for topics.
+- python3 3.9 or newer, for topics and dependency study.
 - git, and a project with a supported manifest, for dependency study.

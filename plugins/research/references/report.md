@@ -16,14 +16,14 @@ How a research or assessment report is laid out, and the checks it passes before
 
 ## Writing it
 
-1. Read `index.md`, every card, and the prior run's report when there is one. With no topic named, use the most recently updated topic from `status.md`. Read `analysis.md`.
+1. Read `index.md`, every card, and the prior run's report when there is one. With no topic named, use `recent` from `status`. Read `analysis.md`.
 2. Decide the answer before writing. It becomes the title and the summary's first sentence.
 3. Rank the findings by how much the answer depends on them; the first finding carries the most weight. Group by theme across sources, never one finding per source.
-4. Draw each exhibit from `data/` with `python3 <topic.py> chart --csv <run_dir>/data/<name>.csv --out <run_dir>/charts/<name>.svg`, and embed it as `![<takeaway>](charts/<name>.svg)`.
+4. Draw each exhibit from `data/` with `python3 <topic.py> chart --csv <run_dir>/data/<name>.csv --out <run_dir>/charts/<name>.svg --title "<takeaway>"`, and embed it as `![<takeaway>](charts/<name>.svg)`.
 5. Write `report.md` in today's run, ending with an empty `## Sources` heading. A rerun writes a new report in the new run; the earlier one stays where it is. A resumed run keeps the previous version under `history/`.
-6. Run `python3 <topic.py> verify --run <run_dir>` after the last `add`, then write the Sources table instead of typing it: `python3 <topic.py> sources --write --run <run_dir>` fills the report's `## Sources` section.
-7. After the last edit, run `python3 <topic.py> claims --reviewed <run_dir>/report.md` and check every cited line against its quotes, per `verify.md` step 3. `--reviewed` logs the check against this exact version of the report; editing it again means checking again.
-8. Run `python3 <topic.py> check --run <run_dir>` and quote its result.
+6. After the last `add` and the last edit, run `python3 <topic.py> prepare --run <run_dir>`: it verifies every source, then writes the report's `## Sources` section instead of you typing it. Add `--offline` when the request says there is no network.
+7. Run `python3 <topic.py> claims <run_dir>/report.md`. It lists every line that cites a source with the quotes each cited source records, and every `[unverified]` line. Read each pair: the quote must say what the line claims. Read each unverified line and source it now if you can: find the passage with `python3 <topic.py> find --run <run_dir> "<words>"` and add it (`add` with `--quote`), cite a source that says it, or move the claim to Open questions. No script judges that a quote supports a claim. Once you have read every pair, run `claims --reviewed` on the same file: it logs your own read against this exact version of the report, and any edit means starting again at step 6.
+8. Run `python3 <topic.py> check --run <run_dir>` and quote its result. When it fails, `first_failing` names the first prerequisite that failed (verify, sources, claims, lint, redact, or scan) and `next` lists the fixes in order; resume the pipeline at that step.
 
 ## Shape
 
@@ -39,19 +39,20 @@ Fixed order. The reader gets the answer in the first screen and the evidence aft
 8. **`## Open questions`.** Each with the data or source that would settle it.
 9. **`## Method`.** Scope, what was read and what was skipped and why, the sources that could not be retrieved, the assumptions the answer rests on, and how each number was computed (the `run` that produced it, or formula plus inputs).
 10. **`## Exhibits`.** Charts, one message each, titled with the takeaway, each with its data file and source ids beneath. Omit the section when there are no numbers to draw; do not chart a table of words.
-11. **`## Sources`.** What `topic.py sources --write` puts there: the sources table (id, linked title, author, kind, ref, retrieved, capture, and state), then the search log.
+11. **`## Sources`.** What `topic.py sources --write` puts there: the sources table (id, linked title, author, kind, ref, retrieved, capture, and check), then the search log. The Check column folds verified and intact into `checked` and reachable into `unchecked`, so it reads the same after an offline check and a live one; `status` and `check` keep the finer states.
 
 Assessments add a verdict line to the summary and a criteria table as the first finding. See `assessment.md`.
 
 ## A client cut
 
-For a reader who decides and moves on, add `brief.md` beside the report: the title, the summary, the one number or options table that decides it, what would flip it, and a link to `report.md`. It carries no new claims, so it needs no citations of its own. Keep `## Since` and its retractions in the full report.
+For a reader who decides and moves on, add `brief.md` beside the report: the title, the summary, the one number or options table that decides it, what would flip it, and a link to `report.md`. It adds no claim: it cites only sources the report cites, and `check` fails on a `[S#]` that `report.md` lacks (`brief-citation`) or on an uncited sentence of four or more words that does not appear in the report (`brief-new-claim`). Copy its sentences from the report. `claims` also lists the brief's cited lines, and `claims --reviewed` covers report and brief together, so edit neither after the review. Keep `## Since` and its retractions in the full report.
 
 ## Numbers
 
 - Every figure has a unit, a denominator, and a date window: "41 of 52 PRs (79%), 2026-04-01..2026-06-30".
 - A point estimate carries its range when one exists.
 - A number you cannot source goes under Open questions, not into a finding.
+- Put two figures side by side only when they share a build, a setting, and a date window, and name those in the finding.
 
 ## Exhibits
 
@@ -62,13 +63,17 @@ For a reader who decides and moves on, add `brief.md` beside the report: the tit
 
 ## Audience
 
-`scan` runs at the run's audience before a report ships. It covers what ships: the report, `index.md`, and other authored markdown, CSV, SVG, and text files. The Sources section `sources --write` generates is scrubbed for the audience; the ledgers keep what was recorded. Source cards under `<run>/references/` and report snapshots under `history/` are working notes, skipped unless `--include-references` is given; keep them out of anything you publish.
+`check` runs `scan` at the run's audience before a report ships. It reads the `.md`, `.txt`, `.csv`, and `.svg` files under the run line by line, with the `redact:` line of `index.md` blanked so the list does not flag itself. It skips `raw/` always, and skips source cards under `references/`, `history/`, and `releases/` unless `--include-references` is given; keep those out of anything you publish. It does not read `.log`, `.json`, or `.jsonl` files, so command logs and ledgers keep what was recorded. The Sources section `sources --write` generates is scrubbed for the audience.
+
+A public run also needs its `redact` decision recorded: set `redact` in the `index.md` frontmatter yourself to a list of names to hide, or to `[]` when there are none. `check` reports `redact_decision` as `missing` and fails at `redact` until you do.
 
 The audience is who can read the report where it ends up, not who it is addressed to. A report sent to one team but stored or forwarded where more people read it takes the wider audience; a narrow recipient never lowers it.
 
-- **private**: no local paths or emails in authored files.
-- **internal**: also no personal names; roles instead ("a senior engineer").
-- **public**: also no organization, repository, team, or ticket identifiers and no internal URLs. Aggregates and ranges only.
+- **every audience**: scan flags home paths, emails, and secrets (GitHub `ghp_`, `gho_`, and `github_pat_` tokens, AWS `AKIA` keys, Slack `xox[abpr]-` tokens, private-key headers).
+- **internal**: also the names on the run's `redact` list (`redact:` in `index.md`, or `scan --redact`). Use roles ("a senior engineer") for everyone else.
+- **public**: also internal hosts (`.internal`, `.corp`, `.local`, `.lan`, `.intranet`, `.home.arpa`, `localhost`, and private, loopback, and link-local IPv4 addresses) and ticket ids outside code fences. Aggregates and ranges only.
+
+Scan does not find organization, team, or repository names. Put each one in the `redact` list, or the scan is clean over a report that names them.
 
 ## Prose
 
@@ -85,15 +90,13 @@ Write for a reader who was not there and will judge the report by whether they c
 
 ## Output
 
-Open with a one-line hero (`✓ <namespace>/<topic> <date>: <n> findings, <n> sources, check ok` (`check ok, offline` when `check` ran with `--offline`) or `⚠ Not shippable: <failing checks>`), then exactly these sections:
+Open with a one-line hero, with `<n> findings` and `<n> sources` copied from `check`'s `counts`: `✓ <namespace>/<topic> <date>: <n> findings, <n> sources, check ok` (`check ok, offline` when `check` ran with `--offline`) or `⚠ Not ready: <failing checks>`. Then exactly these sections:
 
 1. `## Answer`: the report's title and summary, verbatim.
 2. `## Checks`: the `check` result from this session, each gate with its counts, and nothing else.
 3. `## Open`: open questions and unresolved conflicts, one line each; omit when none.
 
-Write per `prose-rules.md`: plain bullets, no bold labels, no sentence narrating your own edits ("I added…"), no closing recap.
-
-Reply in this shape, as plain text outside any code fence, with plain bullets, no bold (never `- **Label:** ...`), and no local paths:
+Write the reply per `reply-contract.md`.
 
 ```text
 ✓ research/sqlite-wal 2026-07-14: 5 findings, 6 sources, check ok
@@ -107,11 +110,11 @@ Readers do not block the writer, and checkpoints are the one stall to plan for. 
 ## Checks
 
 - Sources: 6 intact, 0 failed.
-- Report: lint 0 warnings; scan clean at private; claims reviewed.
+- Report: lint 0 warnings; scan clean at private; claims reviewed by the agent.
 
 ## Open
 
 - Whether WAL holds up on network filesystems.
 ```
 
-State each finding once, plainly; do not contrast a figure with a different build or setting unless the report does. The panel offers verify sources, tighten the prose, and stop; no bullet repeats it.
+Panel options: verify sources, tighten the prose, stop.

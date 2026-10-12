@@ -17,7 +17,15 @@ Every finding and recommendation states one, with its reason:
 - **Medium**: one outside source, vendor sources only, or a conflict weighed but not settled.
 - **Low**: inference from indirect evidence, a single report, or a claim marked `[unverified]`.
 
-Confidence grades the evidence. When a finding forecasts, also give its likelihood in words (almost certain, likely, roughly even, unlikely, remote), and keep the two apart.
+Confidence grades the evidence. When a finding forecasts, also give its likelihood in words, and keep the two apart. The words are this plugin's scale, each covering a probability range:
+
+- almost certain: 95 to 100 percent.
+- likely: 65 to 95 percent.
+- roughly even: 35 to 65 percent.
+- unlikely: 5 to 35 percent.
+- remote: under 5 percent.
+
+State the number as well when the reader will act on it.
 
 ## Conflicting evidence
 
@@ -37,7 +45,8 @@ When sources disagree:
 
 - Log each search as you run it (`searched`): the log is how a reader reproduces the search and judges its coverage.
 - Record what you could not retrieve, and why (`add --unretrieved`). Such a source is a gap, never a citation.
-- Report an absence only when the search that would have found it is logged.
+- A search that failed (`searched --failed`) is a gap, not an absence: it found nothing and shows nothing. `check` lists those not since rerun under `search_gaps`.
+- Report an absence only when the search that would have found it is logged and did not fail.
 
 ## Unverified claims
 

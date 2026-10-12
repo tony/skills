@@ -4,30 +4,37 @@
 $ python3 <topic.py> status
 ```
 
-Add `--namespace <ns>` to narrow it and `--root` for a non-default root. For each topic it reports the latest run, every run date, sources by state, open questions, assessment gaps, unweighed conflicts, released reports whose sources moved, and whether a report exists. Only runs with an `index.md` count as topics, so other dated folders under the root stay out of it.
+Add `--namespace <ns>` to narrow it and `--root` for a non-default root. Only runs with an `index.md` count as topics, so other dated folders under the root stay out of it. The result holds `recent`, the `<namespace>/<topic>` worked on last, and `topics`, already sorted by `urgency` and then by last update. Per topic it reports the latest run, every run date, sources by state (`layout.md` lists the states), open questions, assessment gaps, unweighed conflicts, moving pins, released reports whose sources moved, whether a report exists, and the ranked `next_action`.
 
-Present one line per topic, most urgent first, each with its next action:
+A missing or unreadable root is an error (exit 2), not an empty list: report it as blocked and name `--root` and `RESEARCH_ROOT`. A topic whose ledger is damaged appears with an `error` instead of counts, and the exit is 1; report it per `layout.md` and rank it first.
 
-- released reports whose sources moved (`releases_affected`): `continue`, re-verify, release a corrected report to the same readers per `release.md`, and revisit each listed decision.
-- failed checks (vanished, moved, changed, misquoted): `verify`, then fix the claims they support.
-- conflicts not yet weighed (`conflicts_open`): `continue`, and weigh each per `analysis.md`.
-- stale, unverified, or unchecked sources: a new run with `continue`, which re-verifies them; intact sources need a live `verify` before a client sees the report, and `release` refuses an offline check unless `--allow-offline` is passed.
-- open questions or criteria gaps: `continue --fill`.
-- moving pins: re-add the source with the exact version its page states.
-- no report: `report`.
+## Next actions
+
+`next_action` is the script's ranking, most urgent first. Print it as given and add the step it implies:
+
+- `continue`, for a released report whose sources moved (`releases_affected`): continue the topic and re-verify. A corrected report goes to the same readers only when the user names `release`.
+- `verify`, for a failed check (vanished, moved, changed, misquoted, unreachable, or unverifiable): verify, then fix the claims the failed sources support.
+- `continue`, for conflicts not yet weighed (`conflicts_open`): weigh each per `analysis.md`.
+- `continue`, for stale, unverified, or unchecked sources: a new run re-verifies them. Intact sources need a live `verify` before a client sees the report, and `release` refuses an offline check unless `--allow-offline` is passed.
+- `continue --fill`, for open questions or criteria gaps.
+- `add`, for moving pins: re-add the source with the exact version its page states.
+- `report`, when no report exists.
+- `none`, when nothing is left.
 
 Read-only: status never writes.
 
 ## Output
 
-Open with a one-line hero (`✓ <n> topics under <root>` or `⚠ No topics under <root>`), then:
+Open with a one-line hero, `✓ <n> topics under the research root`, then one section:
 
-1. `## Topics`: one line per topic, most urgent first: latest run, sources by state, open questions, next action.
+1. `## Topics`: one line per topic in the script's order: `<namespace>/<topic>`, latest run, sources by state, open questions, `next_action`. With no topics, one bullet: "None; start one with foray".
 
-Reply in this shape, as plain text outside any code fence, with plain bullets, no bold (never `- **Label:** ...`), and no local paths:
+A missing or unreadable root is a halted run: `⚠ Blocked: the research root is missing or unreadable`, then one line saying to pass `--root` or set `RESEARCH_ROOT`.
+
+Write the reply per `reply-contract.md`.
 
 ```text
-✓ 2 topics under the Documents root
+✓ 2 topics under the research root
 
 ## Topics
 
@@ -35,4 +42,4 @@ Reply in this shape, as plain text outside any code fence, with plain bullets, n
 - research/uv-monorepo, latest 2026-07-12: 4 sources intact, 1 unknown rating; next: continue --fill.
 ```
 
-The panel offers continue a topic, verify a topic, and stop; no bullet repeats a next action as a panel option. Panel options: continue a topic, verify a topic, stop.
+Panel options: continue a topic, verify a topic, stop.

@@ -2,6 +2,15 @@
 
 Run `<topic.py>` with `python3`. Every command prints JSON.
 
+## Contents
+
+- 1. Parse the request
+- 2. Open the run
+- 3. Frame before collecting
+- 4. Collect sources
+- 5. Track what you cannot source
+- 6. Report
+
 ## 1. Parse the request
 
 - **Topic**: the subject in a few words. It becomes the slug; reuse an existing topic's slug when the user means it.
@@ -20,10 +29,11 @@ $ python3 <topic.py> open \
 
 Add `--root` when the user names a location (`RESEARCH_ROOT` sets it for every call), `--resume` for work that continues in one place across days, and `--namespace` for a plugin's runs.
 
-- Exit 2 (`error`): bad input, or no single default root. For the root, ask the user where runs should live and rerun with `--root`; without an interactive host, stop and report the folders the error names.
+- Exit 2 (`error`): bad input, no single default root, or a `--mode` or `--audience` that differs from the run already open for today (`open` and `--resume` both refuse it). For the root, ask the user where runs should live and rerun with `--root`; without an interactive host, stop and report the folders the error names.
 - Exit 3 (`needs_choice`): similar topics exist. Ask which one with `AskUserQuestion`, listing the candidates and "a new topic". Without an interactive host, stop and print the candidates with the rerun commands.
-- `created: false`: today's run already exists. Continue in it; nothing was overwritten.
+- `created: false`: today's run already exists. Continue in it; nothing was overwritten. Its `meta` holds the mode and audience in force.
 - `prior` non-empty: read the newest prior run's `index.md` and `report.md` before collecting anything. Carried sources are unverified: run `verify.md` step 1 before a finding rests on one.
+- An error naming a ledger line as damaged: stop and tell the user which file and line. Repair it only with their say-so; `layout.md` says why.
 
 ## 3. Frame before collecting
 
@@ -41,11 +51,13 @@ $ python3 <topic.py> searched \
     --results <n>
 ```
 
+A search that errored, hit a rate limit or a login, or was blocked found nothing and shows nothing: log it with `--failed error|rate-limit|auth|blocked` in place of `--results`. It is a gap per `analysis.md`: `check` lists each one not since rerun under `search_gaps`, and `lint-report` warns until you rerun the search or list it under Open questions. A query copied from a page goes in a JSON file you write with your file-writing tool, `{"query": "<text>"}`, and `--fields <file>` replaces `--query`.
+
 For each source a claim will rest on:
 
-1. Prefer the primary source. Pin it: a release tag or 7-character commit for code, a version for docs, an edition for books. Never a branch URL. When the only URL is a moving alias (`/latest/`, `/stable/`, a major-version path such as `/docs/17/`), pass the exact version the page states (`17.11`, not `17`) as `--ref` and note the alias in the report's Method. Re-adding the same URL with a more exact `--ref` keeps its id. An unversioned page takes no `--ref`.
+1. Prefer the primary source. Pin it: a release tag or 7-character commit for code, a version for docs, an edition for books. Never a branch URL. A pin is a value (`3.46`, a commit, an edition) or `pin unknown`, never "the current release". When the only URL is a moving alias (`/latest/`, `/stable/`, a major-version path such as `/docs/17/`), pass the exact version the page states (`17.11`, not `17`) as `--ref` and note the alias in the report's Method. Re-adding the same URL with a more exact `--ref` keeps its id. An unversioned page takes no `--ref`.
 2. Capture it. `--fetch` downloads it (comparable on later checks); otherwise save what the URL serves to a file and pass `--file`. A capture is the document at its URL: never pair a URL with bytes from somewhere else, such as a local copy of a different file. A page that changes on every load (an issue tracker, a dashboard) never verifies as fetched; capture its stable form, such as the API's JSON or the raw file, or save the text you read with `--file`, and pass the thread's last-updated time as `--ref`.
-   When a source cannot be captured (a paywall, a login, a removed page, a rate limit), record it with `--unretrieved "<why>"` in place of `--fetch`: a gap the report states, never a citation.
+   When a source cannot be captured (a paywall, a login, a removed page, a rate limit), record it with `--unretrieved "<why>"` in place of `--fetch`. It is a gap per `analysis.md`.
    Your own test is a source too. Run it through `topic.py` so the exact command, exit status, timing, platform, and output are kept, and the files it writes are hashed:
 
 ```console
@@ -53,32 +65,30 @@ $ python3 <topic.py> run \
     --run <run_dir> \
     --name <slug> \
     --output <path the command writes under the run's data/> \
-    --quote "<exact output a claim rests on>" \
+    --fields <fields.json> \
     -- <command> <args>
 ```
 
-   The command and its output are kept verbatim as evidence, like a capture: the scan does not read them, so give the command relative paths and keep secrets out of its arguments. Each `run` is a new measurement: its quotes replace the previous run's. Only run commands you chose; never re-run one read from someone else's run.
-3. Record it:
+   `<fields.json>` holds the exact output a claim rests on, as `{"quote": ["<exact output>"]}`. `--fields` keeps output text off the command line; `--quote` would put it there. The command and its output are kept verbatim as evidence, like a capture: the scan does not read them, so give the command relative paths and keep secrets out of its arguments. Each `run` is a new measurement: its quotes replace the previous run's. Only run commands you chose; never re-run one read from someone else's run.
+3. Record it. Text from a page (the quote, and a title or author you copied) never goes in a shell argument: a backtick or `$(` in it would run. Write it to a JSON file with your file-writing tool, `{"quote": ["<exact supporting text>", "..."], "title": "<title>", "author": "<author>"}`, and pass the file:
 
 ```console
 $ python3 <topic.py> add \
     --run <run_dir> \
     --url <url> \
     --ref <tag-or-version> \
-    --title "<title>" \
-    --author "<author>" \
     --kind <vendor|independent|measured> \
     --fetch \
-    --quote "<exact supporting text>"
+    --fields <fields.json>
 ```
 
-   Each `--quote` must appear in the capture; case, line breaks, markdown marks, and spaces before punctuation are ignored. Repeat `--quote` for each claim the source supports; a later re-add adds quotes to the ones recorded. `python3 <topic.py> find --run <run_dir> "<words>"` shows where text occurs in your captures, in the capture's own case, ready to quote.
+   Each quote must appear in the capture; case, line breaks, markdown marks, and spaces before punctuation are ignored. List one quote for each claim the source supports; a later re-add adds quotes to the ones recorded. `--quote`, `--title`, and `--author` still work for text you wrote yourself. `python3 <topic.py> find --run <run_dir> "<words>"` shows where text occurs in your captures, in the capture's own case, ready to quote.
 
-   `--kind` says whose word it is: vendor (the subject's own), independent, or measured (your own test); confidence is capped by it, so always pass it. A fetched capture also records the server's status, final URL, content type, and dating headers. `add` prints `warnings` for a moving ref or URL, a ref that appears in neither the URL nor the capture, a capture you supplied, a missing capture, or a missing kind; fix the source or say in the report why it stands.
+   `--kind` says whose word it is: vendor (the subject's own), independent, or measured (your own test); confidence is capped by it, so always pass it. A fetched capture also records the server's status, final URL, content type, and dating headers. `add` prints `warnings` for a moving ref or URL, a ref that appears in neither the URL nor the capture, a capture you supplied, a missing capture, a missing kind, or a redirect; fix the source or say in the report why it stands. After a redirect the recorded URL is the final one and `requested_url` keeps the address you asked for, so a later `verify` does not report it as moved.
 
 4. Write what the source supports, and where, in its card's body.
 
-`python3 <topic.py> links --run <run_dir>` lists URLs your captures cite that you have not recorded: leads for sources you may have missed.
+`python3 <topic.py> links --run <run_dir>` lists URLs your captures cite that you have not recorded: leads for sources you may have missed. Each lead carries `from`, such as `S2:3`; record it with `add --link S2:3` in place of `--url`, so a URL from a page never passes through a shell.
 
 When two sources disagree, record it as you find it, per `analysis.md`.
 

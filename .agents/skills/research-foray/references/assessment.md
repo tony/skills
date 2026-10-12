@@ -46,24 +46,32 @@ Migration effort,2,adequate,strong,medium,S7,Three CI images need rebuilding
 - Ratings: strong, adequate, weak, or unknown. Unknown is a finding.
 - `confidence`: high, medium, or low, from how direct the evidence is and what kind it is.
 - `sources`: source ids from `<run>/references/sources.jsonl`, semicolon-separated. A rating with no source is unknown.
-- `note`: why the ratings differ. A note that admits the evidence is missing contradicts any rating but unknown.
+- `note`: why the ratings differ. A note containing `unsourced`, `no source`, `not sourced`, `untested`, or `no evidence` contradicts any rating but unknown, and `lint-report` flags it.
 - `weight` is optional. Do not sum weighted ratings into a single score; the verdict is a judgment the criteria support, and a decimal invites false precision.
 
 For an adopt, trial, hold, or reject question about one product, a single `rating` column for that product is enough.
 
 ## The verdict
 
-- One of the options named in the question, stated in the summary's first sentence, with the tally of ratings ("strong on 3 of 5 criteria, unknown on 1").
+- One of the options named in the question, stated in the summary's first sentence, with the tally of ratings for each option compared ("uv strong on 3 of 5 criteria and unknown on 1; pip-tools strong on 1, adequate on 3"). A single product gets one tally.
 - The two or three criteria that decided it, and one line on why each losing option lost.
 - Sensitivity: whether the verdict survives any one rating moving one grade, and which rating it hinges on.
 - What would flip it: the specific evidence or threshold that would change the answer.
 - Confidence, and the open question that most limits it.
 
+Take the tally and the sensitivity from the script, not by hand:
+
+```console
+$ python3 <topic.py> tally --run <run_dir>
+```
+
+`tally` counts each option's ratings and finds the leader by an unweighted total (strong 3, adequate 2, weak 1, unknown 0). The total only locates which single move changes the leader; never report it as a score. `sensitivity.flips` lists each rating whose one-grade move changes the leader, and is empty when the verdict survives. It reports no sensitivity for one option.
+
 ## In the report
 
-The options table (criteria against options) is the first finding, closed like every finding with a stated confidence. Each decisive criterion gets its own finding. The verdict is a recommendation; once the decider acts on a released report, record it with `decide` per `release.md`. Draw the table with `topic.py chart --csv <run_dir>/data/criteria.csv --out <run_dir>/charts/criteria.svg --value uv --value pip-tools`: rating words map to 3, 2, 1, and 0, each option gets its own bar, and an unknown rating draws none.
+The options table (criteria against options) is the first finding, closed like every finding with a stated confidence. Each decisive criterion gets its own finding. The verdict is a recommendation; once the decider acts on a released report, record it with `decide` per `release.md`. Draw the table with `topic.py chart --csv <run_dir>/data/criteria.csv --out <run_dir>/charts/criteria.svg --title "<takeaway>" --value uv --value pip-tools`: rating words map to 3, 2, 1, and 0, each option gets its own bar, and an unknown rating draws none.
 
-`lint-report` on an assessment also checks that the report states its sensitivity and what would flip it, and that each rating in `data/criteria.csv` has a known source, no vendor-only high confidence, and no note contradicting it.
+`lint-report` on an assessment also checks that the report states its sensitivity and what would flip it, and that each rating in `data/criteria.csv` has a known source, no vendor-only high confidence, and no note containing one of the contradiction phrases above.
 
 ## On a rerun
 
@@ -71,24 +79,22 @@ The options table (criteria against options) is the first finding, closed like e
 
 ## Output
 
-Open with a one-line hero (`✓ <topic>: <verdict>, <confidence> confidence`, `⚠ <topic>: <verdict>, ship check failing` when the last `check` failed, `⚠ <topic>: <verdict>, ship check not run` when none ran, or `⚠ Blocked: <reason>`), then exactly these sections, each copied from the run's files, never stated beyond them:
+Open with a one-line hero (`✓ <namespace>/<topic> <date>: <verdict>, <confidence> confidence`, `⚠ <namespace>/<topic> <date>: <verdict>, ship check failing` when the last `check` failed, or `⚠ <namespace>/<topic> <date>: <verdict>, ship check not run` when none ran), then exactly these sections, each copied from the run's files.
 
 1. `## Verdict`: the option chosen, the criteria that decided it, why each losing option lost, the sensitivity, and what would flip it.
-2. `## Criteria`: one line per criterion: the rating for each option, confidence, source ids and their kinds.
+2. `## Criteria`: the section `python3 <topic.py> tally --run <run_dir> --markdown` prints, pasted unchanged: one line per criterion with the rating for each option, confidence, and source ids with their kinds.
 3. `## Open`: unknown ratings and open questions, one bullet each; the last bullet is the ship-check result (`check ok`, `check failing: <checks>`, or `check not run`).
 4. `## Run`: date, `<namespace>/<topic>`, and mode; no path.
 5. `## Next`: the one recommended step.
 
-Write per `prose-rules.md`: plain bullets, no bold labels, no sentence narrating your own edits ("I added…"), no closing recap.
-
-Reply in this shape, as plain text outside any code fence, with plain bullets, no bold (never `- **Label:** ...`), and no local paths:
+Write the reply per `reply-contract.md`.
 
 ```text
-✓ uv-monorepo: adopt, medium confidence
+✓ research/uv-monorepo 2026-10-07: adopt, medium confidence
 
 ## Verdict
 
-- Adopt uv: strong on 3 of 5 criteria, unknown on 1.
+- Adopt uv: strong on 3 of 5 criteria and unknown on 1; pip-tools strong on 1, adequate on 3.
 - Lockfile reproducibility and CI time decided it; pip-tools lost on both.
 - The verdict holds if any one rating moves a grade, except migration effort.
 - It flips if the three CI images cannot be rebuilt within a sprint.
@@ -112,4 +118,4 @@ Reply in this shape, as plain text outside any code fence, with plain bullets, n
 - Measure Windows runner support to settle the open rating.
 ```
 
-`## Next` names the one recommended step; the panel offers the others and never repeats it. Panel options: fill the unknowns, verify sources, stop.
+Panel options: fill the unknowns, verify sources, stop.

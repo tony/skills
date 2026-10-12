@@ -1,6 +1,15 @@
 # Check, release, decide, export
 
-What happens between a finished report and the people who act on it. `<run_dir>` is the run that holds the report, usually the newest. These steps record what became of that run's own report, so they write into it even when it is dated before today; they never change its report, sources, or captures.
+## Contents
+
+- 1. Check, fresh
+- 2. Release
+- 3. Decide
+- 4. Watch it
+- 5. Export
+- Output
+
+What happens between a finished report and the people who act on it. `<run_dir>` is the run that holds the report, usually the newest. These steps record what became of that run's own report, so they write into it even when it was last opened before today (`layout.md`, Reruns); they never change its report, sources, or captures.
 
 ## 1. Check, fresh
 
@@ -8,19 +17,20 @@ What happens between a finished report and the people who act on it. `<run_dir>`
 $ python3 <topic.py> check --run <run_dir>
 ```
 
-`check` reruns every ship check in one call: each source against its capture and live URL, the report's Sources table against the manifest, `lint-report --strict`, and the leak scan.
+`check` reruns every ship check in one call: each source against its capture and live URL, the report's Sources table against the manifest, `lint-report --strict`, what `brief.md` adds beyond the report (a citation or an uncited sentence), the `redact` decision on a public run, and the leak scan.
 
-When it fails, `next` lists the fixes in order. The usual loop: fix, `sources --write`, `claims --reviewed`, then `check` again. When `<run_dir>` is dated before today, do not fix its report in place: continue the topic per `continue.md` and release from today's run. Without network, `--offline` checks the captures only; `live: false` in the result says so, and a hero that reports it names the check as offline.
+When it fails, `first_failing` names the first prerequisite that failed (verify, sources, claims, lint, redact, or scan) and `next` lists the fixes in order. The usual loop: fix, run the pipeline from that step per `report.md` steps 6 to 8, then `check` again. On a public run, `redact_decision: missing` means the `redact` key is not set in `index.md`: `release` refuses until it is a list or `[]` (`report.md`, Audience). `counts` holds the numbers a hero quotes. When `<run_dir>` was last opened before today, do not fix its report in place: continue the topic per `continue.md` and release from today's run. `--offline` checks the captures only and makes no request; use it when the request says there is no network. `live: false` in the result says so, and a hero that reports it names the check as offline. Without `--offline`, `check` fetches every URL and writes `unreachable` rows to `checks.jsonl` when it cannot reach one.
 
 ## 2. Release
 
 ```console
 $ python3 <topic.py> release \
     --run <run_dir> \
-    --to "<who receives it, as a role or group>"
+    --to "<who receives it, as a role or group>" \
+    --audience <the reader's audience: private, internal, or public>
 ```
 
-`release` runs the same checks and refuses on any failure. It also refuses `--offline`: a report a client reads needs a live check. When no network is reachable, pass `--offline --allow-offline` only after the user says the readers accept captures-only evidence; otherwise stop and offer it as a choice (without an interactive host, stop and say so). The release row records `live: false`. On a pass it keeps the exact report (and `brief.md`, when there is one) under `releases/`, named by its hash, and appends to `<run_dir>/references/releases.jsonl`: when, to whom, at which audience, the report's sha256, and which version of each cited source it rested on. Name recipients by role at internal and public audiences.
+`release` refuses when `--audience` differs from the run's audience. It runs the same checks and refuses on any failure. It also refuses `--offline`: a report a client reads needs a live check. When no network is reachable, pass `--offline --allow-offline` only after the user says the readers accept captures-only evidence; otherwise stop and offer it as a choice (without an interactive host, stop and say so). The release row records `live: false`. On a pass it keeps the exact report (and `brief.md`, when there is one) under `releases/`, named by its hash, and appends to `<run_dir>/references/releases.jsonl`: when, to whom, at which audience, the report's sha256, and which version of each cited source it rested on. Name recipients by role at internal and public audiences.
 
 ## 3. Decide
 
@@ -40,7 +50,7 @@ The decision traces to the latest release in `<run_dir>`, or to `--release <hash
 
 ## 4. Watch it
 
-`status` lists the latest release to each reader whose cited sources have since changed, failed a check, or been retired, with the decisions taken on it. When one appears: continue the topic, re-verify, and release a corrected report to the same readers, naming what changed; that release clears the flag. Then revisit each listed decision against its `revisit` condition.
+`status` lists the latest release to each reader whose cited sources have since changed, failed a check, or been retired, with the decisions taken on it. When one appears, name the release and its readers to the user and offer `continue`. A corrected report goes to the same readers only when the user names `release` again, with what changed in `--note`; that release clears the flag. Revisit each listed decision against its `revisit` condition.
 
 ## 5. Export
 
@@ -48,36 +58,42 @@ The decision traces to the latest release in `<run_dir>`, or to `--release <hash
 $ python3 <topic.py> export --run <run_dir>
 ```
 
-`export` packs the whole run into a zipped [BagIt](https://www.rfc-editor.org/rfc/rfc8493) bag beside it: every capture, card, ledger, report, and release, with a SHA-256 manifest. Hand the bag over, or archive it. Anyone can check that nothing in it changed since:
+`export` packs the whole run into a zipped [BagIt](https://www.rfc-editor.org/rfc/rfc8493) bag beside it: every capture, card, ledger, report, and release, with a SHA-256 manifest. It refuses a bag name that exists (pass `--out` with another name), re-opens the bag it wrote, and prints the zip's SHA-256, which it also records in `exports.jsonl`. Hand the bag over, or archive it, and keep the digest apart from the zip.
+
+Both manifests sit inside the zip. Checking the bag alone catches a missing, altered, or extra file, but not a rewrite of files together with both manifests:
 
 ```console
 $ python3 <topic.py> export --check <bag.zip>
+```
+
+The digest catches that rewrite, because any change to the zip changes it:
+
+```console
+$ python3 <topic.py> export \
+    --check <bag.zip> \
+    --sha256 <digest>
 ```
 
 The bag holds evidence and working material the scan does not cover (cards, raw captures, command logs, history), so treat it as private to the team that did the work.
 
 ## Output
 
-Open with a one-line hero (`✓ Released <hash> to <who>` or `✓ Released <hash> to <who> on an offline check`, `✓ Bag <file>: <n> files`, `⚠ Not released: <failing checks>`, `⚠ Not released: a release needs a live check and none ran; releasing on the captures alone is your call`, or for a check alone `✓ Ready: check ok` and `⚠ Not ready: <failing checks>`), then exactly these sections, with no sentence before the hero:
+Open with a one-line hero (`✓ Released <hash> to <who>` or `✓ Released <hash> to <who> on an offline check`, `✓ Bag <file>: <n> files, sha256 <digest>`, `⚠ Not released: <failing checks>`, `⚠ Not released: a release needs a live check and none ran; releasing on the captures alone is your call`, or for a check alone `✓ Ready: check ok` and `⚠ Not ready: <failing checks>`), then exactly these sections:
 
 1. `## Check`: each check's result from this call, counts only; reasons and consequences go under `## Next`.
-2. `## Trail`: the release, decision, or bag written, with its hash.
-3. `## Next`: affected releases and decisions to revisit, or the fix `check` listed; at most three bullets, and the panel never repeats them.
+2. `## Trail`: the release, decision, or bag written, with its hash, or for a bag its SHA-256.
+3. `## Next`: affected releases and decisions to revisit, or the fix `check` listed; at most three bullets.
 
-Write per `prose-rules.md`: plain bullets, no bold labels, no sentence narrating your own edits ("I added…"), no closing recap.
-
-A check-only run has no `## Trail`. Offer only options that can run now: with a failing check, no release, decision, or export. When the check passed offline only, the panel offers release on the captures alone (`--offline --allow-offline`, the user's call), wait for network access and check again, and stop; `## Next` carries no options. Panel options otherwise: fix and check again, record the decision, export, stop. Without an interactive host, print the options as a numbered list.
-
-Reply in this shape, as plain text outside any code fence, with plain bullets, no bold (never `- **Label:** ...`), and no local paths:
+Write the reply per `reply-contract.md`. A check-only run has no `## Trail`. When the check passed offline only, the panel offers release on the captures alone (`--offline --allow-offline`, the user's call), wait for network access and check again, and stop; `## Next` carries no options. Panel options otherwise: fix and check again, record the decision, export, stop.
 
 ```text
-⚠ Not released: audience is internal, release asked for a public reader
+⚠ Not released: scan found 2 internal hosts at public audience
 
 ## Check
 
 - Sources: 6 intact, 0 failed.
 - Report: lint 0 warnings.
-- Scan: 2 internal identifiers at public audience.
+- Scan: 2 internal hosts at public audience.
 
 ## Trail
 
@@ -85,7 +101,5 @@ Reply in this shape, as plain text outside any code fence, with plain bullets, n
 
 ## Next
 
-- Rename the identifiers, or set the audience to internal and name an internal recipient.
+- Remove the hosts, then check again.
 ```
-
-The panel offers fix and check again, record the decision, export, and stop, minus anything that cannot run; no `## Next` bullet repeats an option.
