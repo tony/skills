@@ -78,7 +78,8 @@ With current `0.1.9a1` on a prerelease track it returns the next prerelease
 segment promotion (`a` to `b` to `rc`) only if the tag history uses those
 segments. With current `0.1.9` on a stable track it returns patch `0.1.10`,
 minor `0.2.0`, major `1.0.0`, and a new prerelease series in the project's
-vocabulary (`0.2.0a0`, or `0.2.0-next.0` on npm). Offer `post`/`dev` releases
+vocabulary (`0.2.0a0`, or `0.2.0-next.0` on npm; the scheme rules are cited under Sources
+in the conventions reference). Offer `post`/`dev` releases
 only when the user asks or the argument names one. A refusal (a `.post`
 or `.dev` current version, a non-`MAJOR.MINOR.PATCH` stable version) means
 asking the user for the version.
@@ -86,11 +87,14 @@ asking the user for the version.
 ## Phase 3: Resolve the Version
 
 - Explicit version argument (e.g. `0.2.0a0`): it must sort after the current
-  version under one scheme. A refusal stops the run with its reason; a
-  `-next.N` version in a PEP 440 project is one.
+  version under the project's scheme, which the script reads from the tag
+  history. A refusal stops the run with its reason; a `-next.N` version in a
+  PEP 440 project is one.
 
   ```console
-  $ python3 <absolute-release_plan.py> compare <manifest-version> <version>
+  $ python3 <absolute-release_plan.py> compare <manifest-version> <version> \
+      --repo <repo> \
+      --prefix <tag-prefix>
   ```
 
 - Bump-type argument (`patch`, `minor`, `major`, `prerelease`, `final`): rerun

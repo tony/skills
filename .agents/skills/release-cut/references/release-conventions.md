@@ -139,8 +139,9 @@ Detect the project's variant:
 
 Stable-track projects target `MAJOR.MINOR.x` for the next unreleased
 version, since the patch number is unknowable in advance; after cutting
-`1.70.1` the placeholder usually reads `1.71.x`, but the file's own past
-release-to-placeholder transitions are the specification. Prerelease-track
+`1.70.1` the placeholder usually reads `1.71.x`; `release_plan.py next-target`
+computes that default, and the file's own past release-to-placeholder
+transitions override it. Prerelease-track
 projects target the full next prerelease (after `0.0.1a35`, `0.0.1a36`).
 Mirror a `v` prefix in the header if the project uses one.
 
@@ -222,6 +223,13 @@ No `Co-Authored-By` line, no "Generated with" or other tool trailer, no emoji.
   [`pnpm install --lockfile-only`](https://pnpm.io/cli/install),
   [`cargo update --workspace`](https://doc.rust-lang.org/cargo/commands/cargo-update.html).
 - `cargo set-version`: [cargo-edit](https://github.com/killercup/cargo-edit).
+- Yanked releases: [PEP 592](https://peps.python.org/pep-0592/) defines
+  yanking per file; the PyPI JSON API reports it as `yanked` and
+  `yanked_reason` on each file under `urls`. `downstream_check.py index`
+  refuses a release whose files are all yanked.
+- npm deprecation: [npm deprecate](https://docs.npmjs.com/cli/v10/commands/npm-deprecate)
+  updates the registry entry with a warning; the version document carries it
+  as a `deprecated` string, which `index` reports without refusing.
 - Index endpoints behind `downstream_check.py index`:
   [PyPI JSON API](https://docs.pypi.org/api/json/),
   [npm registry API](https://github.com/npm/registry/blob/main/docs/REGISTRY-API.md).

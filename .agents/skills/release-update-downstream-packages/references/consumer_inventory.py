@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 """Read repository inventories and immutable branch inputs without checkout.
 
-``inventory ROOT...`` includes nested and hidden directories. ``snapshot --repo
+``inventory ROOT...`` includes nested and hidden directories, except virtual
+environments (a directory holding ``pyvenv.cfg``) and ``node_modules``, which it lists
+under ``skipped``; ``--include-dependencies`` scans them. ``snapshot --repo
 ROOT --ref refs/heads/BRANCH --read PATH...`` returns the complete commit tree
 and requested blobs. Add ``--expect-commit OID --require-checkout`` to compare
 the selected tree, index and every tracked regular file's actual bytes/mode.
@@ -224,8 +226,50 @@ def _check_symlink(path: Path, roots: list[str]) -> None:
         _fail("symlink to a directory outside the scanned roots was not traversed")
 
 
-def _inventory(reader: _Reader, roots: list[Path]) -> dict[str, Any]:
-    result: dict[str, Any] = {"roots": [], "repositories": [], "omissions": []}
+def _without_dependencies(
+    path: Path, names: set[str], entries: list[str], skipped: list[dict[str, str]]
+) -> list[str] | None:
+    """Return the entries to walk, or None to skip a virtualenv; record what is skipped."""
+    if "pyvenv.cfg" in names:
+        skipped.append({"path": str(path), "reason": "virtual environment"})
+        return None
+    if "node_modules" in names:
+        skipped.append({"path": str(path / "node_modules"), "reason": "installed npm packages"})
+        return [name for name in entries if name != "node_modules"]
+    return entries
+
+
+def _checkout_identity(reader: _Reader, path: Path) -> dict[str, Any]:
+    marker = (path / ".git").lstat()
+    if not (stat.S_ISDIR(marker.st_mode) or stat.S_ISREG(marker.st_mode)):
+        _fail("unsupported .git entry type")
+    return _identity(reader, path)
+
+
+def _unclassified(found: list[Path], administrative: set[Path]) -> list[dict[str, str]]:
+    return [
+        {
+            "path": str(path),
+            "reason": "Git administrative or bare directory has no validated checkout",
+        }
+        for path in found
+        if path not in administrative
+    ]
+
+
+def _listing(reader: _Reader, path: Path) -> list[str]:
+    entries: list[str] = []
+    with os.scandir(path) as listing:
+        for entry in listing:
+            reader.tick()
+            entries.append(entry.name)
+    return entries
+
+
+def _inventory(
+    reader: _Reader, roots: list[Path], *, include_dependencies: bool = False
+) -> dict[str, Any]:
+    result: dict[str, Any] = {"roots": [], "repositories": [], "omissions": [], "skipped": []}
     seen: set[tuple[int, int]] = set()
     pending: list[Path] = []
     administrative: set[Path] = set()
@@ -253,17 +297,15 @@ def _inventory(reader: _Reader, roots: list[Path]) -> dict[str, Any]:
             if identity in seen:
                 continue
             seen.add(identity)
-            entries: list[str] = []
-            with os.scandir(path) as listing:
-                for entry in listing:
-                    reader.tick()
-                    entries.append(entry.name)
+            entries = _listing(reader, path)
             names = set(entries)
+            if not include_dependencies:
+                kept = _without_dependencies(path, names, entries, result["skipped"])
+                if kept is None:
+                    continue
+                entries = kept
             if ".git" in names:
-                marker = (path / ".git").lstat()
-                if not (stat.S_ISDIR(marker.st_mode) or stat.S_ISREG(marker.st_mode)):
-                    _fail("unsupported .git entry type")
-                repo = _identity(reader, path)
+                repo = _checkout_identity(reader, path)
                 result["repositories"].append(repo)
                 administrative.update((Path(repo["git_dir"]), Path(repo["common_dir"])))
             elif {"HEAD", "objects", "refs"} <= names:
@@ -277,14 +319,7 @@ def _inventory(reader: _Reader, roots: list[Path]) -> dict[str, Any]:
                     {"reason": "remaining paths unvisited", "count": len(pending)}
                 )
                 break
-    result["omissions"].extend(
-        {
-            "path": str(path),
-            "reason": "Git administrative or bare directory has no validated checkout",
-        }
-        for path in unclassified_git
-        if path not in administrative
-    )
+    result["omissions"].extend(_unclassified(unclassified_git, administrative))
     result["complete"] = not result["omissions"]
     return result
 
@@ -580,6 +615,7 @@ def main(argv: list[str] | None = None) -> int:
     commands = parser.add_subparsers(dest="command", required=True)
     inventory = commands.add_parser("inventory")
     inventory.add_argument("roots", nargs="+", type=Path)
+    inventory.add_argument("--include-dependencies", action="store_true")
     snapshot = commands.add_parser("snapshot")
     snapshot.add_argument("--repo", required=True, type=Path)
     snapshot.add_argument("--ref", required=True)
@@ -592,7 +628,9 @@ def main(argv: list[str] | None = None) -> int:
         parser.error("resource limits must be positive")
     reader = _Reader(*limits)
     result = (
-        _inventory(reader, args.roots) if args.command == "inventory" else _snapshot(reader, args)
+        _inventory(reader, args.roots, include_dependencies=args.include_dependencies)
+        if args.command == "inventory"
+        else _snapshot(reader, args)
     )
     print(json.dumps(result, ensure_ascii=True, sort_keys=True))
     return 0 if result["complete"] else 1

@@ -434,3 +434,29 @@ def test_call_budget_is_a_flag_and_not_a_fixed_second(
     inventory._Reader(100, 100, 30, 5.0).git(tmp_path, "rev-parse", "HEAD")
     inventory._Reader(100, 100, 30).git(tmp_path, "rev-parse", "HEAD")
     assert deadlines == [105.0, 101.0]
+
+
+@pytest.mark.integration(reason="walks a tree that holds a virtualenv and node_modules")
+def test_inventory_skips_virtualenvs_and_node_modules_but_reports_them(
+    tmp_path: Path,
+    git_environment: None,
+) -> None:
+    del git_environment
+    root = tmp_path / "root"
+    repo = root / "proj"
+    _repo(repo)
+    site = repo / ".venv/lib/python3/site-packages/pkg"
+    site.mkdir(parents=True)
+    (repo / ".venv/pyvenv.cfg").write_text("home = /usr/bin\n")
+    for number in range(200):
+        (site / f"mod{number}.py").write_text("")
+    (repo / "node_modules/dep").mkdir(parents=True)
+    rows = inventory._inventory(_reader(entries=100), [root])
+    assert rows["complete"], rows["omissions"]
+    assert {(item["reason"], Path(item["path"]).name) for item in rows["skipped"]} == {
+        ("virtual environment", ".venv"),
+        ("installed npm packages", "node_modules"),
+    }
+    everything = inventory._inventory(_reader(entries=100), [root], include_dependencies=True)
+    assert not everything["complete"]
+    assert everything["skipped"] == []

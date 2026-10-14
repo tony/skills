@@ -48,18 +48,9 @@ Claude Code uses a leading slash (`/release:…`). Codex omits it (`release:…`
 Cuts a release: bumps versions, refreshes lockfiles, dates changelogs, runs
 quality gates, and commits.
 
-Safety model (requires explicit flags):
-- Default: Commit stays local (no push/tag).
-- `--push`: Pushes the release commit to the remote's single push URL, by remote
-  name with one explicit `commit:branch` refspec, then reads the branch back.
-- `--tag`: Creates a local annotated tag at the verified release commit: the repo's
-  tag prefix (`v` when it has none) plus the version. Signing failures stop the run.
-- `--push-tag`: Pushes that tag object (often triggers publish workflow) and reads
-  back the tag object and its peeled commit. Requires `--tag` in the same run;
-  alone it is refused before anything runs.
-
-Only the literal flags authorize these steps. The full contract (refusals,
-push URL checks, hooks, signing, read-back) lives in `skills/cut/SKILL.md`.
+By default the commit stays local. The flags `--push`, `--tag` and `--push-tag`
+and the full safety contract (refusals, push URL checks, hooks, signing,
+read-back) are defined in `skills/cut/SKILL.md`.
 
 `Bash` is pre-approved on these skills, so the guard against an
 unwanted tag or push is the skill text and your own permission rules,

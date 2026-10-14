@@ -68,7 +68,7 @@ tag it was cut for.
 
 ## Phase 1: Preflight
 
-1. Flags. Apply the `--push-tag` refusal before any other step.
+1. Flags. Parse them per the Safety Contract before any other step.
 2. Version argument. The first non-flag argument is the version (accept
    it with or without a leading `v`; strip it, because files and CHANGES
    use the bare version and only the tag carries the prefix). If no version
@@ -81,24 +81,28 @@ tag it was cut for.
    `main`/`master` existence). If the current branch is not trunk, stop and
    ask; releases are normally cut from trunk, but the user may confirm a
    maintenance branch. Without `AskUserQuestion`, stop.
-5. Up to date. Record HEAD and the branch, then bind the working bytes to
-   the commit: `worktree-tree` must print the same tree as
-   `git rev-parse HEAD^{tree}`, otherwise stop.
+5. Up to date. Record HEAD and the branch, then:
+   1. Run `worktree-tree`. It must print the same tree as
+      `git rev-parse HEAD^{tree}`; otherwise stop.
 
-   ```console
-   $ python3 <absolute-publish.py> --repo <repo> worktree-tree
-   ```
+      ```console
+      $ python3 <absolute-publish.py> --repo <repo> worktree-tree
+      ```
 
-   Run `git pull --ff-only` (skip if no remote). Inspect its result and the
-   checkout state even on failure; a failed pull may have fetched refs. Stop
-   on failure, an unexpected branch, a dirty tree or unreadable state. After
-   success, repeat the tree comparison and record the synchronized commit as
-   `<base>`, separately from the starting state.
+   2. Run `git pull --ff-only` (skip if no remote). Inspect its result and the
+      checkout state even on failure, since a failed pull may have fetched
+      refs. Stop on failure, an unexpected branch, a dirty tree or unreadable
+      state.
+   3. Run `worktree-tree` again and compare it with `git rev-parse HEAD^{tree}`
+      as in step 1.
+   4. Record the synchronized commit as `<base>`, separately from the starting
+      state.
 6. Version sanity. Read the current version from the manifest, then require
    the new version to sort after it. A refusal stops the run with its reason.
 
    ```console
-   $ python3 <absolute-release_plan.py> compare <current-version> <version>
+   $ python3 <absolute-release_plan.py> compare <current-version> <version> \
+       --repo <repo>
    ```
 
 7. Tag name. The script takes the prefix from the tag of the current
@@ -148,8 +152,10 @@ Reread the synchronized files. Following the conventions reference, record:
 - The changelog file, its unreleased-header variant, placeholder
   wording, and whether released sections open with a lead paragraph
 - Whether a MIGRATION file exists and its heading pattern
-- The next unreleased target, per the conventions reference; when the
-  placeholder header carries no version, name its header text instead
+- The next unreleased target: `release_plan.py next-target <version>` gives
+  the default and the conventions reference says when the file's precedent
+  overrides it; when the placeholder header carries no version, name its
+  header text instead
 - The project's quality gates from AGENTS.md / CLAUDE.md (test suite,
   linters, type checkers, docs build). Never assume ecosystem
   commands; use what the project documents. Check delegated scripts and their

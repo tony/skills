@@ -3,7 +3,9 @@
 
 Subcommands, each printing one JSON record on stdout:
 
-``compare OLD NEW``   Require NEW to sort after OLD (PEP 440 or SemVer 2.0.0).
+``compare OLD NEW``   Require NEW to sort after OLD (PEP 440 or SemVer 2.0.0); with
+                      ``--scheme`` or ``--repo`` also require the project's scheme.
+``next-target V``     Name the unreleased changelog target after releasing V.
 ``candidates``        List the next-version candidates for ``--current``.
 ``tags``              Group a repository's tags into namespaces; resolve the tag
                       prefix of ``--version`` and whether the tag for ``--new`` exists.
@@ -144,16 +146,48 @@ def shared_scheme(*versions: Version) -> str:
     return next(iter(schemes), "pep440")
 
 
-def compare(old: str, new: str) -> dict[str, object]:
-    """Require ``new`` to sort after ``old``."""
+def compare(old: str, new: str, project: str | None = None) -> dict[str, object]:
+    """Require ``new`` to sort after ``old``, and to fit the project's scheme when known."""
     a, b = parse_version(old), parse_version(new)
-    scheme = shared_scheme(a, b)
+    if project is not None:
+        for version in (a, b):
+            if version.scheme not in ("plain", project):
+                message = f"{version.text} is a {version.scheme} version in a {project} project"
+                raise Refusal(message)
+    scheme = project or shared_scheme(a, b)
     ka, kb = a.key(scheme), b.key(scheme)
     if kb <= ka:
         relation = "equal to" if kb == ka else "before"
         message = f"{new} does not sort after {old}: it sorts {relation} it under {scheme}"
         raise Refusal(message)
     return {"old": old, "new": new, "scheme": scheme, "order": "after"}
+
+
+def next_target(released: str) -> dict[str, object]:
+    """Name the unreleased target after releasing ``released``.
+
+    >>> next_target("1.70.1")["target"]
+    '1.71.x'
+    >>> next_target("0.0.1a35")["target"]
+    '0.0.1a36'
+    """
+    cur = parse_version(released)
+    if cur.is_pre:
+        found, _ = candidates_for(released, None, [])
+        return {"released": released, "target": found[0].version, "track": "prerelease"}
+    if len(cur.release) < 2:  # noqa: PLR2004
+        message = f"{released} has no MAJOR.MINOR to advance"
+        raise Refusal(message)
+    target = f"{cur.release[0]}.{cur.release[1] + 1}.x"
+    return {"released": released, "target": target, "track": "stable"}
+
+
+def project_scheme(repo: Path, prefix: str | None, current: str) -> str | None:
+    """Return the one non-plain scheme the namespace's tags use, else None."""
+    tags, _ = parse_tags(list_tags(repo))
+    chosen = prefix if prefix is not None else resolve_prefix(tags, current)[0]
+    schemes = {t.version.scheme for t in tags if t.prefix == chosen} - {"plain"}
+    return next(iter(schemes)) if len(schemes) == 1 else None
 
 
 class TagInfo(NamedTuple):
@@ -480,6 +514,11 @@ def _parser() -> argparse.ArgumentParser:
     cmp_ = sub.add_parser("compare")
     cmp_.add_argument("old")
     cmp_.add_argument("new")
+    cmp_.add_argument("--scheme", choices=["pep440", "semver"])
+    cmp_.add_argument("--repo", type=Path)
+    cmp_.add_argument("--prefix")
+    nxt = sub.add_parser("next-target")
+    nxt.add_argument("released")
     cand = sub.add_parser("candidates")
     cand.add_argument("--current", required=True)
     cand.add_argument(
@@ -503,7 +542,12 @@ def _parser() -> argparse.ArgumentParser:
 
 def _dispatch(args: argparse.Namespace) -> dict[str, object]:
     if args.command == "compare":
-        return compare(args.old, args.new)
+        scheme = args.scheme
+        if scheme is None and args.repo is not None:
+            scheme = project_scheme(args.repo, args.prefix, args.old)
+        return compare(args.old, args.new, scheme)
+    if args.command == "next-target":
+        return next_target(args.released)
     if args.command == "candidates":
         return candidates_command(args.current, args.kind, args.pre_style, args.repo, args.prefix)
     if args.command == "tags":

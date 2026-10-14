@@ -74,7 +74,9 @@ $ python3 <absolute-consumer-inventory.py> inventory <root> <other-root> > <new-
 The helper scans nested and hidden directories without ignore filters. Its JSON
 keeps each checkout and its Git/common-directory identities, available refs and
 explicit omissions. It never fetches or checks out; exit 1 means incomplete
-evidence, 2 means usage failure. A file symlink, a dangling link and a
+evidence, 2 means usage failure. It skips virtual environments (a directory
+holding `pyvenv.cfg`) and `node_modules`, listing them under `skipped`; report
+them, and pass `--include-dependencies` only when a consumer lives inside one. A file symlink, a dangling link and a
 directory link that stays inside the scanned roots do not stop coverage; a
 directory link leaving the roots does. Read errors, missing metadata and
 resource limits must not become "no consumers." Resolve coverage gaps or

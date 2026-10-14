@@ -204,3 +204,40 @@ def test_leftover_ignores_lockfiles_changelogs_and_longer_versions(tmp_path: Pat
     assert "1 occurrence(s) of 0.1.9 remain" in err
     (tmp_path / "pkg/__about__.py").write_text('__version__ = "0.2.0"\n')
     assert cli("leftover", "--repo", str(tmp_path), "--old", "0.1.9")[0] == 0
+
+
+def test_compare_refuses_a_semver_suffix_in_a_pep440_project() -> None:
+    assert plan.compare("0.1.9", "0.2.0-next.1")["order"] == "after"
+    with pytest.raises(
+        plan.Refusal, match=r"0\.2\.0-next\.1 is a semver version in a pep440 project"
+    ):
+        plan.compare("0.1.9", "0.2.0-next.1", "pep440")
+    assert plan.compare("0.1.9", "0.2.0a1", "pep440")["scheme"] == "pep440"
+    status, _, err = cli("compare", "0.1.9", "0.2.0-next.1", "--scheme", "pep440")
+    assert status == 1
+    assert "semver version in a pep440 project" in err
+
+
+@pytest.mark.integration
+def test_compare_reads_the_project_scheme_from_tags(tmp_path: Path) -> None:
+    subprocess.run(["git", "init", "-q", "-b", "main", str(tmp_path)], check=True)
+    subprocess.run(
+        ["git", "-C", str(tmp_path), "-c", "user.name=t", "-c", "user.email=t@e.invalid",
+         "commit", "-q", "--allow-empty", "-m", "x"],
+        check=True,
+    )  # fmt: skip
+    for name in ("v0.1.8a1", "v0.1.9"):
+        subprocess.run(["git", "-C", str(tmp_path), "tag", name], check=True)
+    status, _, err = cli("compare", "0.1.9", "0.2.0-next.1", "--repo", str(tmp_path))
+    assert (status, "pep440 project" in err) == (1, True)
+    assert cli("compare", "0.1.9", "0.2.0a0", "--repo", str(tmp_path))[0] == 0
+
+
+def test_next_target_advances_the_series_or_the_prerelease() -> None:
+    assert plan.next_target("1.70.1")["target"] == "1.71.x"
+    assert plan.next_target("0.63.0")["target"] == "0.64.x"
+    assert plan.next_target("0.0.1a35")["target"] == "0.0.1a36"
+    assert plan.next_target("0.1.0-next.11")["target"] == "0.1.0-next.12"
+    status, out, _ = cli("next-target", "1.70.1")
+    assert (status, json.loads(out)["track"]) == (0, "stable")
+    assert cli("next-target", "7")[0] == 1
