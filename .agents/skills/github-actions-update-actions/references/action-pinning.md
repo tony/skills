@@ -19,9 +19,13 @@ Read before writing any version string into a workflow.
 ## Scope
 
 Scope is what the user named: the current repository, each `--repo`, and
-the accounts in `--owner`. `./fleet.py discover <root>
-[--owner <name>]...` walks a `--root` directory and prints one JSON object per
-git repository: `slug`, `owner`, `fork`, `in_scope`, and the `reason` when it
+the accounts in `--owner`. This walks a `--root` directory:
+
+```console
+$ python3 <absolute-path>/fleet.py discover <root> [--owner <name>]...
+```
+
+It prints one JSON object per git repository: `slug`, `owner`, `fork`, `in_scope`, and the `reason` when it
 is not. A non-fork can belong to someone else, so under `--root` with no
 `--owner` list each in-scope repository with its owner in the plan and write
 to none the user has not approved. Forks are out of scope unless the user
