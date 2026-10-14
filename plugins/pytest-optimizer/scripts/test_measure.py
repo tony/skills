@@ -486,3 +486,82 @@ def test_plan_build_and_log_cli(
         (2, False, "depends on a skipped item"),
     ]
     assert json.loads((mem / "state.json").read_text())["last_applied_index"] == 1
+
+
+def test_record_reads_capture_and_ids_outputs(
+    tmp_path: pathlib.Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """Hash, files and removed ids come from the tools' own JSON, not from copying."""
+    mem = tmp_path / "mem"
+    (mem / "patches").mkdir(parents=True)
+    state = mem / "state.json"
+    state.write_text(json.dumps({"env_token": "t", "base_head": "h"}))
+    cap = tmp_path / "cap.json"
+    cap.write_text(
+        json.dumps({"patch": str(mem / "patches" / "a.patch"), "sha256": "abc", "paths": ["f.py"]})
+    )
+    ids = tmp_path / "ids.json"
+    ids.write_text(json.dumps({"same": False, "missing": ["x::t2"], "unexpected": []}))
+
+    code, _ = _run_cli(
+        capsys, "record", str(mem / "benchmarks.json"), "--state", str(state), "--id", "a",
+        "--capture-json", str(cap), "--ids-json", str(ids),
+    )  # fmt: skip
+    entry = json.loads((mem / "benchmarks.json").read_text())[0]
+
+    assert code == 0
+    assert (entry["patch"], entry["patch_sha256"], entry["files"]) == (
+        "patches/a.patch", "abc", ["f.py"],
+    )  # fmt: skip
+    assert (entry["removed_ids"], entry["removes_tests"]) == (["x::t2"], 1)
+
+
+def test_plan_build_names_an_unknown_or_rejected_item(
+    tmp_path: pathlib.Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """The refusal says which item and why, in one line."""
+    (tmp_path / "state.json").write_text(json.dumps({"env_token": "t"}))
+    (tmp_path / "baseline.json").write_text(
+        json.dumps({"noise": {"median": 10.0}, "tests": {"passed": 1, "total": 1}})
+    )
+    (tmp_path / "benchmarks.json").write_text(
+        json.dumps([{"id": "r", "verdict": "rejected", "reason": "count drop"}])
+    )
+    dims = {"safety": 1, "effort": 1, "confidence": 1, "reversibility": 1}
+    reasons: list[object] = []
+    for item in ("ghost", "r"):
+        draft = tmp_path / "d.json"
+        draft.write_text(json.dumps([{"order": 1, "id": item, "score": dims, "commit": {}}]))
+        code, out = _run_cli(capsys, "plan-build", "--memory-dir", str(tmp_path),
+                             "--draft", str(draft))  # fmt: skip
+        assert code == 1
+        reasons.append(out["reason"])
+
+    assert reasons == [
+        "ghost is not in benchmarks.json",
+        "r is rejected, not validated: count drop",
+    ]
+
+
+def test_log_reads_gate_and_run_outputs(
+    tmp_path: pathlib.Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """Pending tree, parent and verify seconds come straight from gate and run."""
+    (tmp_path / "plan.json").write_text(json.dumps([{"order": 1, "id": "a"}]))
+    gate = tmp_path / "gate.json"
+    gate.write_text(json.dumps({"ok": True, "tree": "T", "parent": "P"}))
+    run = tmp_path / "verify.jsonl"
+    run.write_text(json.dumps({"seconds": 7.9, "exit": 0}) + "\n")
+    base = ["log", "--memory-dir", str(tmp_path), "--order", "1"]
+
+    _run_cli(capsys, *base[:1], "begin", *base[1:], "--gate-json", str(gate))
+    pending = json.loads((tmp_path / "execution-log.json").read_text())[0]
+    assert (pending["pending_parent"], pending["pending_tree"]) == ("P", "T")
+
+    _run_cli(capsys, *base[:1], "commit", *base[1:], "--run-json", str(run),
+             "--set", 'commit_sha="abc"')  # fmt: skip
+    done = json.loads((tmp_path / "execution-log.json").read_text())[0]
+    assert (done["verify"]["seconds"], "pending_tree" in done) == (7.9, False)

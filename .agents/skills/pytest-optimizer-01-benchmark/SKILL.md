@@ -175,7 +175,8 @@ to the baseline's. When it does not differ, say nothing about the control.
    ```console
    $ python3 <isolate.py> capture \
        --cwd <tree> \
-       --out <memory-dir>/patches/<hypothesis-id>.patch
+       --out <memory-dir>/patches/<hypothesis-id>.patch \
+       > <runs-dir>/<hypothesis-id>-capture.json
    ```
 
    Create `patches/` first. The output holds the patch's `sha256` and `paths`;
@@ -204,7 +205,8 @@ to the baseline's. When it does not differ, say nothing about the control.
    ```console
    $ python3 <measure.py> ids \
        <memory-dir>/collection.txt \
-       <runs-dir>/<hypothesis-id>-collection.txt
+       <runs-dir>/<hypothesis-id>-collection.txt \
+       > <runs-dir>/<hypothesis-id>-ids.json
    ```
 
    A candidate counts only when `valid` is true, `clears_noise` is true, and the
@@ -258,16 +260,17 @@ to the baseline's. When it does not differ, say nothing about the control.
 ## Step 3: Record
 
 Upsert each benchmarked id's entry in the shape `references/memory-schema.md`
-gives, one `--set` per field (the patch's `patch` path relative to the memory
-directory, `patch_sha256`, `files`, the measured fields, `verdict`):
+gives. Save the `capture` output (step 2) and the `ids` output (step 3) as files
+in `<runs-dir>`; the command reads the patch path, hash and files from the first
+and, for a deselecting candidate, `removed_ids` and `removes_tests` from the
+second. Add the measured fields with `--set`:
 
 ```console
 $ python3 <measure.py> record <memory-dir>/benchmarks.json \
     --state <memory-dir>/state.json \
     --id <hypothesis-id> \
-    --set 'patch="patches/<hypothesis-id>.patch"' \
-    --set 'patch_sha256="<sha256>"' \
-    --set 'files=["<path>"]' \
+    --capture-json <runs-dir>/<hypothesis-id>-capture.json \
+    --ids-json <runs-dir>/<hypothesis-id>-ids.json \
     --set 'median_delta=<seconds>' \
     --set 'clears_noise=<true|false>' \
     --set 'verdict="<validated|rejected>"'

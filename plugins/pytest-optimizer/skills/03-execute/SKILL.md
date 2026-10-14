@@ -230,16 +230,15 @@ For each plan item not yet applied:
 
    On exit 1 the item failed (go to 4); the verification changed paths outside
    the plan, which includes a formatter rewriting the patched files. On success
-   write the log entry with `pending_subject`, `pending_parent` and
-   `pending_tree` from the gate output:
+   save the gate output (`> <runs-dir>/gate-<order>.json`) and write the log
+   entry from it, with the drafted subject:
 
    ```console
    $ python3 <measure.py> log begin \
        --memory-dir <memory-dir> \
        --order <order> \
-       --set 'pending_subject="<subject>"' \
-       --set 'pending_parent="<parent>"' \
-       --set 'pending_tree="<tree sha>"'
+       --gate-json <runs-dir>/gate-<order>.json \
+       --set 'pending_subject="<subject>"'
    ```
 
    Then commit with the drafted why/what
@@ -262,15 +261,15 @@ For each plan item not yet applied:
        --tree <pending_tree>
    ```
 
-   On success record the `commit_sha` and the verify run's `seconds`, which
-   also checkpoints `state.json`:
+   On success record the `commit_sha` and the verify run's `seconds` (read from
+   the `verify-<order>.jsonl` run line), which also checkpoints `state.json`:
 
    ```console
    $ python3 <measure.py> log commit \
        --memory-dir <memory-dir> \
        --order <order> \
-       --set 'commit_sha="<sha>"' \
-       --set 'seconds=<verify seconds>'
+       --run-json <runs-dir>/verify-<order>.jsonl \
+       --set 'commit_sha="<sha>"'
    ```
 
    When the commit fails (a hook rejects it, signing is unavailable) or `landed`
@@ -286,7 +285,8 @@ For each plan item not yet applied:
        --no-propagate \
        --set 'reason="commit failed: <first line of the error>"'
    ```
- Report the error and tell the user to fix the hook or signing and re-run
+
+   Report the error and tell the user to fix the hook or signing and re-run
    `pytest-optimizer:03-execute --from=<index>`.
 4. **On failure** (patch, verification, ids or gate), discard the item inside the
    owned tree. The command refuses any directory this run did not create:

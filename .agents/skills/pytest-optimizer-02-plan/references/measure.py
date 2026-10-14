@@ -894,8 +894,12 @@ def plan_build(
     removes: list[dict[str, t.Any]] = []
     for item in sorted(draft, key=lambda i: i["order"]):
         entry = by_id.get(item["id"])
-        if entry is None or entry.get("verdict") != "validated":
-            msg = f"{item['id']} has no validated benchmark entry"
+        if entry is None:
+            msg = f"{item['id']} is not in benchmarks.json"
+            raise ValueError(msg)
+        if entry.get("verdict") != "validated":
+            why = entry.get("reason") or "no reason recorded"
+            msg = f"{item['id']} is {entry.get('verdict')}, not validated: {why}"
             raise ValueError(msg)
         if entry.get("env_token") != state.get("env_token"):
             msg = f"{item['id']} has a different token"
@@ -1337,6 +1341,8 @@ def build_parser() -> argparse.ArgumentParser:  # noqa: PLR0915
     p.add_argument("--state", help="state.json; stamps env_token and base_head when given")
     p.add_argument("--entry", help="JSON file holding the entry")
     p.add_argument("--id", help="entry id, when --entry is not given or lacks one")
+    p.add_argument("--capture-json", help="isolate.py capture output: sets patch, hash, files")
+    p.add_argument("--ids-json", help="measure.py ids output: sets removed_ids, removes_tests")
     p.add_argument("--set", dest="fields", action="append", default=[], help="KEY=JSON")
 
     p = sub.add_parser("hyp-id", help="content-derived hypothesis id")
@@ -1359,6 +1365,8 @@ def build_parser() -> argparse.ArgumentParser:  # noqa: PLR0915
     p.add_argument("--memory-dir", required=True)
     p.add_argument("--order", type=int, required=True)
     p.add_argument("--set", dest="fields", action="append", default=[], help="KEY=JSON")
+    p.add_argument("--gate-json", help="isolate.py gate output: sets pending_parent, pending_tree")
+    p.add_argument("--run-json", help="measure.py run output: sets the verify seconds")
     p.add_argument("--no-propagate", action="store_true", help="skip: leave dependents alone")
     p.add_argument("--log-file", help="dry-run log path; state.json is then left alone")
 
@@ -1426,6 +1434,31 @@ _EXTRA = (
 )
 
 
+def _record_cmd(args: argparse.Namespace) -> int:
+    """Upsert one entry into a benchmarks or hypotheses file."""
+    entry: dict[str, t.Any] = json.loads(_read_text(args.entry)) if args.entry else {}
+    if args.capture_json:
+        cap = json.loads(_read_text(args.capture_json))
+        rel = os.path.relpath(cap["patch"], pathlib.Path(args.file).resolve().parent)
+        entry.update(patch=rel, patch_sha256=cap["sha256"], files=cap["paths"])
+    if args.ids_json:
+        gone = json.loads(_read_text(args.ids_json)).get("missing", [])
+        if gone:
+            entry.update(removed_ids=gone, removes_tests=len(gone))
+    entry.update({k: json.loads(v) for k, v in (f.split("=", 1) for f in args.fields)})
+    if args.id:
+        entry["id"] = args.id
+    state = _load_object(pathlib.Path(args.state)) if args.state else None
+    bound = state is None or (state.get("env_token") and state.get("base_head"))
+    if "id" not in entry or not bound:
+        reason = "entry needs an id; state needs env_token and base_head"
+        return _emit({"ok": False, "reason": reason}, ok=False)
+    path = pathlib.Path(args.file)
+    current: list[dict[str, t.Any]] = json.loads(_read_text(args.file)) if path.exists() else []
+    _write_json(path, record(current, entry, state))
+    return _emit({"ok": True, "id": entry["id"]})
+
+
 _RECORDS = ("record", "hyp-id", "pending", "plan-build", "log")
 
 
@@ -1433,19 +1466,7 @@ def _records(args: argparse.Namespace) -> int:  # noqa: PLR0911
     """Run the commands that edit the per-phase record files."""
     cmd = args.command
     if cmd == "record":
-        entry: dict[str, t.Any] = json.loads(_read_text(args.entry)) if args.entry else {}
-        entry.update({k: json.loads(v) for k, v in (f.split("=", 1) for f in args.fields)})
-        if args.id:
-            entry["id"] = args.id
-        state = _load_object(pathlib.Path(args.state)) if args.state else None
-        bound = state is None or (state.get("env_token") and state.get("base_head"))
-        if "id" not in entry or not bound:
-            reason = "entry needs an id; state needs env_token and base_head"
-            return _emit({"ok": False, "reason": reason}, ok=False)
-        path = pathlib.Path(args.file)
-        current: list[dict[str, t.Any]] = json.loads(_read_text(args.file)) if path.exists() else []
-        _write_json(path, record(current, entry, state))
-        return _emit({"ok": True, "id": entry["id"]})
+        return _record_cmd(args)
     if cmd == "hyp-id":
         return _emit({"id": hyp_id(args.heuristic, args.file, args.evidence)})
     if cmd == "pending":
@@ -1458,12 +1479,15 @@ def _records(args: argparse.Namespace) -> int:  # noqa: PLR0911
         return _emit({"ids": ids})
     if cmd == "plan-build":
         mem = pathlib.Path(args.memory_dir)
-        built = plan_build(
-            json.loads(sys.stdin.read() if args.draft == "-" else _read_text(args.draft)),
-            json.loads(_read_text(str(mem / "benchmarks.json"))),
-            _load_object(mem / "state.json"),
-            _load_object(mem / "baseline.json"),
-        )
+        try:
+            built = plan_build(
+                json.loads(sys.stdin.read() if args.draft == "-" else _read_text(args.draft)),
+                json.loads(_read_text(str(mem / "benchmarks.json"))),
+                _load_object(mem / "state.json"),
+                _load_object(mem / "baseline.json"),
+            )
+        except ValueError as exc:
+            return _emit({"valid": False, "reason": str(exc)}, ok=False)
         if args.out:
             _write_json(pathlib.Path(args.out), built["plan"])
         return _emit(built)
@@ -1471,8 +1495,16 @@ def _records(args: argparse.Namespace) -> int:  # noqa: PLR0911
         mem = pathlib.Path(args.memory_dir)
         plan = json.loads(_read_text(str(mem / "plan.json")))
         log_path = pathlib.Path(args.log_file) if args.log_file else mem / "execution-log.json"
-        current = json.loads(_read_text(str(log_path))) if log_path.exists() else []
-        fields = {k: json.loads(v) for k, v in (f.split("=", 1) for f in args.fields)}
+        current: list[dict[str, t.Any]] = (
+            json.loads(_read_text(str(log_path))) if log_path.exists() else []
+        )
+        fields: dict[str, t.Any] = {}
+        if args.gate_json:
+            gate = json.loads(_read_text(args.gate_json))
+            fields.update(pending_parent=gate["parent"], pending_tree=gate["tree"])
+        if args.run_json:
+            fields["seconds"] = json.loads(_read_text(args.run_json))["seconds"]
+        fields.update({k: json.loads(v) for k, v in (f.split("=", 1) for f in args.fields)})
         new = log_step(current, plan, args.action, args.order, fields, not args.no_propagate)
         _write_json(log_path, new)
         if not args.log_file:
