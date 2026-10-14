@@ -1,6 +1,6 @@
 {
   "name": "pytest-optimizer",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Profile and optimize pytest suites. Ranks and applies safe speedups as verified, independent commits.",
   "author": {
     "name": "Tony Narlock",
