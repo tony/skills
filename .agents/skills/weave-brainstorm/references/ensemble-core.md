@@ -341,7 +341,7 @@ mode.
 
 1. Judge: verify and score. Launch a fresh `general-purpose` sub-agent in a
    `judge` snapshot participant (Close the repo guard) with the reply delivery
-   text for `pass-NNNN/judges/judge.md`. Its brief, written by you to
+   text for `pass-NNNN/judges/judge.md` (`--as judge`). Its brief, written by you to
    `pass-NNNN/judge-brief.md`, holds the task, the rubric, and the calling
    skill's verification instructions; it reads the brief and `packet.md`. The
    judge:

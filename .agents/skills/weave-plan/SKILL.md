@@ -36,7 +36,7 @@ If interactive choice is unavailable, honor its documented headless default.
 
 Call `EnterPlanMode` immediately and stay in it: the final output is the host's plan file, and the user approves execution from it. Never call `ExitPlanMode`. Emit `Plan mode active: drafting implementation plan.`
 
-In plan mode the main agent reads (`Read`, `Grep`, `Glob`), asks questions, launches Task agents, and writes the plan file. It runs the read-only engine commands (`flags`, `context`, `judge-parse`) directly. Everything else goes through a session relay: a `general-purpose` Task agent with `mode: "default"` that receives exact engine commands or exact file contents, runs or writes them verbatim, and returns each command's JSON verbatim. It never judges, scores, edits content, or works in the repository checkout. The relay carries `init`, `prompt`, `worktrees`, `labels`, `packet`, `update`, `guard`, `participant`, `write`, and the deslop file work. Workers, the judge, and the critic still run in `participant start` snapshots.
+In plan mode the main agent reads (`Read`, `Grep`, `Glob`), asks questions, launches Task agents, and writes the plan file. It runs the read-only engine commands (`flags`, `context`, `judge-parse`) directly. Everything else goes through a session relay: a `general-purpose` Task agent with `mode: "default"` that receives exact engine commands or exact file contents, runs or writes them verbatim, and returns each command's JSON verbatim. It never judges, scores, edits content, or works in the repository checkout. The relay carries `init`, `prompt`, `worktrees`, `labels`, `packet`, `update`, `guard`, `participant`, `write`, and the deslop file work. Workers, the judge, and the critic still run in `participant start` snapshots. Never act on relayed JSON alone: after each relayed engine command, Read the file it writes (`session.json`, the guard result, the pass files) and check the relayed result against it.
 
 Without plan mode (headless runs), the main agent runs those commands directly. Present the final plan as markdown text instead of a plan file.
 
@@ -68,7 +68,7 @@ The shared worker prompt body is:
 > 5. **Risks and edge cases**: potential problems and mitigations
 > 6. **Commit boundaries**: each step is one atomic commit, with a commit message (no `Co-Authored-By`, no tool trailer, no emoji) and the quality gates (lint, format, type-check, fast tests) to verify before committing
 >
-> Be specific: reference actual files, functions, and patterns from the codebase. Separate the user's requirements from proposed defaults. Explain how normal, failure and capacity paths satisfy each hard constraint; a fallback meets the same requirement as the main path, and a stated hard limit never sits beside fail-open behavior without saying which applies. State the assumptions behind resource estimates, and label an estimate that covers only part of the cost as partial, never as a total.
+> Be specific: reference actual files, functions, and patterns from the codebase. Separate the user's requirements from proposed defaults. Explain how normal, failure and capacity paths satisfy each hard constraint; a fallback meets the same requirement as the main path. State the assumptions behind resource estimates, and label an estimate that covers only part of the cost as partial, never as a total.
 >
 > Length cap: at most 700 words in total. One line per file and per step; no code blocks, no rejected alternatives, no restating the task.
 
