@@ -71,7 +71,7 @@ graders:
   - name: lists-adapter-as-undefined-and-not-port
     type: regex
     target: last_message
-    pattern: '## Undefined\n(?:(?!- port)[\s\S])*?- adapter(?:(?!- port)[\s\S])*$'
+    pattern: '## Undefined\n(?:(?!- [Pp]ort)[\s\S])*?- [Aa]dapter(?:(?!- [Pp]ort)[\s\S])*$'
 
   - name: no-append-or-keep-recap
     type: regex
