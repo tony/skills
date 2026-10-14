@@ -2487,16 +2487,17 @@ _ENGINE_OWNED = ("session.json", "guard", STATE_DIR)
 
 
 def reply_patterns(name: str) -> list[str]:
-    """Return the session paths a participant named ``name`` may write: its own replies."""
+    """Return the session paths a participant named ``name`` may write, by role.
+
+    ``critic`` writes ``critic.md``; ``judge`` and ``judge-*`` write their own judge file;
+    every other participant is a lane and writes its outputs and variants.
+    """
     own = re.escape(name)
-    found = [
-        rf"pass-\d{{4}}/outputs/{own}\.md",
-        rf"outputs/{own}-v\d+\.md",
-        rf"pass-\d{{4}}/judges/{own}\.md",
-    ]
     if name == "critic":
-        found.append(r"pass-\d{4}/critic\.md")
-    return found
+        return [r"pass-\d{4}/critic\.md"]
+    if name == "judge" or name.startswith("judge-"):
+        return [rf"pass-\d{{4}}/judges/{own}\.md"]
+    return [rf"pass-\d{{4}}/outputs/{own}\.md", rf"outputs/{own}-v\d+\.md"]
 
 
 def require_own_reply(name: str, rel: str) -> None:
@@ -2506,9 +2507,10 @@ def require_own_reply(name: str, rel: str) -> None:
         re.fullmatch(pattern, rel) for pattern in reply_patterns(name)
     ):
         msg = (
-            f"{name!r} may write only its own reply paths"
-            f" (pass-NNNN/outputs/{name}.md, outputs/{name}-vN.md, pass-NNNN/judges/{name}.md,"
-            f" and pass-NNNN/critic.md for the critic); refused {rel!r}"
+            f"{name!r} may write only its own reply path for its role"
+            " (lane: pass-NNNN/outputs/<name>.md or outputs/<name>-vN.md;"
+            " judge, judge-*: pass-NNNN/judges/<name>.md; critic: pass-NNNN/critic.md);"
+            f" refused {rel!r}"
         )
         raise EngineError(msg)
 

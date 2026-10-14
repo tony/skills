@@ -2346,7 +2346,8 @@ def test_scoped_write_and_claim_reach_only_the_participants_own_replies(
     own = [
         ("skeptic", "pass-0001/outputs/skeptic.md"),
         ("skeptic", "outputs/skeptic-v2.md"),
-        ("skeptic", "pass-0001/judges/skeptic.md"),
+        ("judge-skeptic", "pass-0001/judges/judge-skeptic.md"),
+        ("judge", "pass-0001/judges/judge.md"),
         ("critic", "pass-0001/critic.md"),
     ]
     for who, rel in own:
@@ -2361,13 +2362,22 @@ def test_scoped_write_and_claim_reach_only_the_participants_own_replies(
         ("skeptic", "pass-0001/blind/response-A.md"),
         ("maintainer", "outputs/skeptic-v1.md"),
         ("skeptic", "events.jsonl"),
+        ("skeptic", "pass-0001/judges/skeptic.md"),
+        ("gpt", "pass-0001/judges/gpt.md"),
+        ("skeptic", "pass-0001/judges/judge-skeptic.md"),
+        ("judge-skeptic", "pass-0001/judges/judge-maintainer.md"),
+        ("judge-skeptic", "pass-0001/outputs/judge-skeptic.md"),
+        ("judge", "pass-0001/outputs/maintainer.md"),
+        ("critic", "pass-0001/outputs/critic.md"),
+        ("critic", "pass-0001/judges/critic.md"),
+        ("critic", "pass-0001/judges/judge.md"),
     ]
     for who, rel in refused:
         for command in ("write", "claim"):
             capsys.readouterr()
             assert attempt(who, rel, command) == 1, (who, rel, command)
             assert (
-                "may write only its own reply paths" in json.loads(capsys.readouterr().out)["error"]
+                "may write only its own reply path" in json.loads(capsys.readouterr().out)["error"]
             )
     assert (sdir / "pass-0001" / "label-map.json").read_text() == label_map
     assert (sdir / "pass-0001" / "outputs" / "maintainer.md").read_text() == "maintainer reply\n"
