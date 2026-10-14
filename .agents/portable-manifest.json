@@ -832,7 +832,7 @@
         "references/user_stash.py": "plugins/respond/scripts/user_stash.py",
         "references/verification-gates.md": "plugins/respond/references/verification-gates.md"
       },
-      "bytes": 76026
+      "bytes": 76149
     },
     {
       "name": "respond-check",

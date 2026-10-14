@@ -46,8 +46,10 @@ def test_save_restore_round_trip_drops_stash(
     (repo / "new.txt").write_text("new\n")
     monkeypatch.chdir(repo)
     assert user_stash.main(["save"]) == 0
-    sha = capsys.readouterr().out.strip()
+    out = capsys.readouterr()
+    sha = out.out.strip()
     assert len(sha) == 40
+    assert out.err == "stashed: a.txt, new.txt; edit none of these before the restore\n"
     assert _git(repo, "status", "--porcelain") == ""
     assert user_stash.main(["restore", sha]) == 0
     assert (repo / "a.txt").read_text() == "edited\n"

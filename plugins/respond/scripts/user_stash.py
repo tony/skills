@@ -45,6 +45,8 @@ def save() -> int:
         sys.stderr.write("nothing to stash\n")
         return 1
     sys.stdout.write(after + "\n")
+    held = ", ".join(stash_paths(after))
+    sys.stderr.write(f"stashed: {held}; edit none of these before the restore\n")
     return 0
 
 
