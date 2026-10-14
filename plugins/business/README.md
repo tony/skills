@@ -4,10 +4,9 @@ Measure and report the business value of AI workflows with
 provenance-tagged data: metrics in engineer-hours and cycle time,
 never currency.
 
-> Never use money. Value is stated in engineer-hours, cycle-time
-> deltas, throughput, quality rates, and capacity language. All figures
-> carry a provenance tag (MEASURED, DERIVED, BENCHMARKED, ESTIMATED) and
-> appropriate qualifiers.
+Every figure carries a provenance tag (MEASURED, DERIVED, BENCHMARKED,
+or ESTIMATED); `references/provenance.md` holds the tag rules and the
+no-currency contract.
 
 ## Installation
 
@@ -58,18 +57,19 @@ tagged interim package. Unavailable data is recorded as unknown.
 
 - `/business:report-leadership` (tier 0): full-detail leadership
   report with SCQA, exhibits, explicit multipliers, conservative
-  scenarios, and inline assumptions.
+  scenarios, and inline assumptions. A measured loss is reported as one.
 - `/business:report-org-wide` (tier 1): org-wide projection
   (`V * F * t * s * a * r`) with adoption and realization inputs,
   segmentation, and sensitivity ranking. Team aggregates only.
 - `/business:case-study-internal` (tier 2): internal narrative
-  (situation, outcomes, lessons, replication guide). Individuals
+  (situation, outcomes, lessons, replication guide). Asks you for the
+  maintainer, lessons, and build time the run does not hold. Individuals
   appear as roles.
 - `/business:case-study-public` (tier 3): public case study.
-  Sanitized of names, ticket IDs, and internal URLs, with outcomes
-  triangulated against external evidence.
+  Sanitized of names, ticket IDs, and internal URLs, with each headline
+  claim placed against external evidence or marked as having none.
 - `/business:pr-release` (tier 3): one-page announcement derived from
-  the public case study.
+  the public case study, with every figure traced to it.
 
 ### Handing hours to finance
 
@@ -86,8 +86,8 @@ Read from `references/`:
   contract.
 - `measurement.md`: saving and projection formulas, statistics
   discipline, quality guardrails.
-- `evidence.md`: external studies with pinned links and a re-verify
-  step.
+- `evidence.md`: external studies with pinned links, a re-verify step,
+  and what the evidence can and cannot support.
 - `instruments.md`: probes, pinned-window conventions, absence
   snapshots.
 - `interim-format.md`: run-directory layout, completeness gate, and
@@ -96,17 +96,34 @@ Read from `references/`:
 
 ## Script
 
-`scripts/business.py` (Python 3 standard library) does the
-deterministic work: `stats` (median, quartiles, seeded BCa interval, or
-the range below n=5), `scan` (tier-3 identifier and money-term scan,
-with `--allow` and `--allow-url` for false positives and citation links,
-and `--rules` to check only some kinds), `gate` (the
-completeness gate, recomputing `check:` figures from `raw/`),
-`assumptions` (register check), `project` (org-wide projection,
-scenarios, and sensitivity from register ids), `breakeven` (net
-per-instance and per-period saving and break-even from register ids),
-`collect-prs` (per-PR cycle-time and first-review CSV from
-`gh api graphql` pages), and `runs` (newest-first run listing).
+`scripts/business.py` (Python 3 standard library). Run
+`business.py <command> --help` for each command.
+
+- `init`: create a run directory, refusing one whose `raw/` holds
+  snapshots.
+- `collect-prs`: per-PR cycle-time and first-review CSV from
+  `gh api graphql` pages. `--output` writes the CSV only when the pages
+  parse and refuses to overwrite a snapshot; it warns when reviews were
+  truncated or a column is absent from the rows.
+- `stats`: median, quartiles, and a seeded BCa interval, or the range
+  below n=5.
+- `gate`: the completeness gate, recomputing `check:` figures from
+  `raw/`.
+- `assumptions`: register check, including one id per quantity.
+- `project`: org-wide projection, scenarios, and sensitivity from
+  register ids; a negative savings rate is a measured loss.
+- `breakeven`: net per-instance and per-period saving and break-even
+  from register ids.
+- `runs`: newest-first run listing.
+- `scan`: tier-3 identifier and money-term scan. `--run <run>` reads the
+  README `Names:` line as the deny list, `--names-file <file>` adds
+  names from a file, `--allow` and `--allow-url` skip false positives and
+  citation links, `--rules` checks only some kinds, and stdin is scanned
+  when no file is given.
+- `stamp` and `fresh`: record the inputs a report was written from, then
+  report any report that is unstamped or whose inputs changed.
+- `trace`: list the numbers in a derived text, such as the PR release,
+  that its source text, such as the case study, does not contain.
 
 ## Prerequisites
 

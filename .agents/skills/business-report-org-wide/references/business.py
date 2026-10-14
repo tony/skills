@@ -1377,7 +1377,10 @@ def stale_reports(run: Path) -> list[str]:
     """Return one line per report that is unstamped or whose recorded inputs changed."""
     stamps = _load_stamps(run)
     problems: list[str] = []
-    for report in sorted(p.name for p in (run / "reports").glob("*.md")):
+    # A dotfile under reports/ is scratch (a reply check), not a report.
+    for report in sorted(
+        p.name for p in (run / "reports").glob("*.md") if not p.name.startswith(".")
+    ):
         recorded = stamps.get(report)
         if recorded is None:
             problems.append(f"{report}: no recorded inputs; stamp it after writing")

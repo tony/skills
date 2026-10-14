@@ -51,7 +51,9 @@ results, the run description, and next steps:
   appear only as citations, not as identities of the measured group.
 - Aggregates and ranges only. Round to honest precision: a
   number's precision must not exceed what its interval supports.
-- Every headline claim triangulated against an outcome-matched study.
+- Every headline claim placed per `evidence.md`: against a study of the
+  same outcome where one exists, otherwise stated as having no external
+  comparator.
 - A candid limitations section is mandatory; credibility is the PR
   asset.
 - Provenance tags remain on every figure, rendered as tag plus
@@ -66,22 +68,23 @@ results, the run description, and next steps:
 ## Tier-3 final checklist
 
 this skill runs this as an explicit final pass
-over the finished draft. the `business-pr-release` skill inherits the result
+over the saved report. the `business-pr-release` skill inherits the result
 by sourcing figures only from the public case study.
 
-1. Run the scanner (by its absolute path) over the draft. `--run` makes it
-   read the names itself from the `Names:` line of the run's `README.md`; no
-   name is ever typed into a shell. It refuses (exit 2) when the README has no
-   `Names:` line, and `Names: none` means no names. A person, team, or
-   workflow name on that line is denied whole and by each of its words, in any
-   case and with any separator:
+1. Scan the saved file, not a draft, with the absolute path to the
+   script. `--run` makes the scanner read the names itself from the
+   `Names:` line of the run's `README.md`, so no name is ever typed into
+   a shell. It exits 2 when the README has no `Names:` line, and `Names:
+   none` means no names. A person, team, or workflow name on that line is
+   denied whole and by each of its words, in any case and with any
+   separator:
 
    ```console
    $ ./business.py scan \
        --run <run> \
        --allow-url https://arxiv.org/ \
        --allow UTF-8 \
-       <draft file>
+       <run>/reports/<name>.md
    ```
 
    It flags ticket IDs, URLs, hosts, IP addresses, local paths, emails,
@@ -89,13 +92,14 @@ by sourcing figures only from the public case study.
    money terms (exit 1 on any hit). `--allow-url <prefix>` keeps
    the pinned citation links BENCHMARKED figures need, one prefix
    per cited host; `--allow <text>` skips a false positive such as
-   a slash pair or a version string. Both allow flags repeat. Remove or reword every other
-   hit. Then read the draft once for names the scanner cannot know
-   and for the re-identification rule above.
+   a slash pair or a version string. Both allow flags repeat. Reword
+   every other hit in the file and scan again until it prints `clean`.
+   Then read the file once for names the scanner cannot know and for
+   the re-identification rule above.
 2. Confirm every figure is an aggregate or a range, rounded to
    honest precision, with its provenance tag and denominator.
-3. Confirm every headline claim passed triangulation or carries its
-   methodology defense.
+3. Confirm every headline claim carries its external placement or "no
+   external comparator", or its methodology defense.
 4. Confirm the limitations section is present and candid.
 5. Confirm no currency appears; external text travels furthest.
 
@@ -105,22 +109,32 @@ Name removed categories, never the excluded strings: "personal names removed",
 not the names themselves. In `## Run`, use the task category and rounded
 window; in `## Report`, name only the report's filename, not an internal path.
 
-Before replying, use `mktemp <run>/reports/.reply-check.XXXXXX` to reserve an
-owned scratch file; write and scan the reply there with the report's same
-`--run` and allow flags. Reword every hit and send only the checked text.
-Remove only that scratch file afterwards. A clean
-report does not establish that its accompanying reply is safe to publish.
-For a stopped run, never repeat excluded strings or the supplied run path;
-name the failed category and the skill to run next. Without a run directory,
-use that generic refusal without creating files.
+Before replying, pipe the reply to the scanner on stdin with the same
+`--run` and allow flags, then reword every hit and scan again until it
+prints `clean`:
+
+```console
+$ ./business.py scan \
+    --run <run> \
+    --allow-url https://arxiv.org/ \
+    --allow UTF-8 <<'EOF'
+<the reply text>
+EOF
+```
+
+Send only the checked text. A clean report does not establish that its
+accompanying reply is safe to publish. For a stopped run, never repeat
+excluded strings or the supplied run path; name the failed category and
+the skill to run next. Without a run directory, use that generic refusal
+without creating files or scanning.
 
 ## Firewall sweep
 
 the `business-pr-release` skill verifies the public case study instead of
 trusting it. Before deriving the announcement, run checklist items 1,
-2, 4, and 5 over it; triangulation was the case study's job. The only
-thing it reads from the run is the `Names:` line of `README.md` for
-`--deny`; no figure comes from there.
+2, 4, and 5 over the saved case study; placement against external evidence
+was the case study's job. The only thing it reads from the run is the
+`Names:` line of `README.md`, through `--run`; no figure comes from there.
 
 Any failure stops the run: regenerate via this skill,
 never patch around it in the release. Report a passing sweep in

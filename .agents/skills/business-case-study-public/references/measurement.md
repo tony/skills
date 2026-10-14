@@ -12,7 +12,7 @@
 
 Formulas, statistics discipline, counterfactual quality, and quality
 guardrails for `/business:*`. The variable definitions here are the
-only definitions — commands use them verbatim, never re-derive them.
+only definitions; commands use them verbatim, never re-derive them.
 
 ## Net per-instance saving
 
@@ -22,14 +22,15 @@ S_inst = (t_manual - (t_ai + t_verify)) - (p_fail * t_rework)
 
 `S_inst` and every `t_*` input are in minutes per instance.
 
-- `t_manual` — baseline time per instance without the skill.
-  Measured, not self-reported; see the counterfactual ladder.
-- `t_ai` — AI-assisted time per instance, including failed and
+- `t_manual`: baseline time per instance without the skill. This is the
+  one manual baseline: register it as `manual-minutes` (`baseline-minutes`
+  is refused). Measured, not self-reported; see the counterfactual ladder.
+- `t_ai`: AI-assisted time per instance, including failed and
   abandoned runs.
-- `t_verify` — verification and review time. Always inside the task
+- `t_verify`: verification and review time. Always inside the task
   boundary.
-- `p_fail` — probability the AI-assisted result needs rework.
-- `t_rework` — time to rework a failed instance.
+- `p_fail`: probability the AI-assisted result needs rework.
+- `t_rework`: time to rework a failed instance.
 
 ## Net over a period, and break-even
 
@@ -64,33 +65,32 @@ N_breakeven = (C_build + C_maint * periods) * 60 / S_inst
 Annual_hours_saved = V * F * (t / 60) * s * a * r
 ```
 
-- `V` — addressable population: people whose work contains the task.
-- `F` — instances per person per year.
-- `t` — baseline minutes per instance (measured, not self-reported).
-- `s` — savings rate net of the verification tax. When the run has
-  `S_inst` and `t_manual`, `s = S_inst / t_manual`.
-- `a` — adoption: active use, not license-holding. Strictly < 1.0.
-- `r` — realization: the fraction of gross saved time that becomes
-  usable capacity, since scattered minutes rarely convert. Strictly
-  < 1.0.
+- `V`: addressable population, the people whose work contains the task.
+- `F`: instances per person per year.
+- `t`: baseline minutes per instance, the `manual-minutes` entry.
+- `s`: savings rate net of the verification tax, `s = S_inst / t_manual`.
+  When the register also holds the parts of `S_inst`, a registered
+  `savings-rate` must agree with the rate they imply, or `assumptions`
+  and `project` refuse it.
+- `a`: adoption, meaning active use rather than license-holding. Strictly < 1.0.
+- `r`: realization, the fraction of gross saved time that becomes
+  usable capacity. An ESTIMATED input unless an instrument measures it.
+  Strictly < 1.0.
 
-Refuse to default `a` or `r` to 1.0. If either is absent from the
-assumptions register, ask the user, then append the answer as an
-ESTIMATED entry (or MEASURED, when an instrument export gives it)
-with rationale and owner before projecting. With no one to ask,
-halt and name the missing input.
+Never default `a` or `r` to 1.0; each must be a registered entry
+(`report-org-wide` asks for the missing ones).
 
-Projection inputs must be finite and nonnegative. A measured slowdown is a
-loss to report, not a savings-rate input to turn positive.
+Projection inputs must be finite and nonnegative, except `s`: a negative
+savings rate is a measured loss, and the projection reports it as one.
 
 Segment the population: addressable ⊃ served ⊃ realized. Reporting
-only the addressable figure overstates the result — always
+only the addressable figure overstates the result: always
 show all three segments.
 
 `business.py project <run>` does the arithmetic from these register
 ids, with `F` per person per year and `t` in minutes:
 `addressable-population` (`V`), `instances-per-person-year` (`F`),
-`baseline-minutes` (`t`), `savings-rate` (`s`), `adoption-rate` (`a`),
+`manual-minutes` (`t`), `savings-rate` (`s`), `adoption-rate` (`a`),
 `realization-rate` (`r`). It prints the three scenarios, the segment
 hours, and the one-way sensitivity ranking; never recompute them by
 hand.
@@ -106,24 +106,26 @@ fewer than 5 observations they are the observed min and max, labeled a range.
 - Base: every input at `value`.
 - Upside: every input at `high`, cost inputs at `low`.
 
-When `S_inst` is negative, more instances deepen the loss: `S_net` uses
-the high task count in the conservative case and the low count in the upside.
+When `S_inst` or `s` is negative, more instances deepen the loss:
+`S_net` and the projection use the high volume in the conservative case
+and the low volume in the upside.
 An input without `low` or `high` stays at `value` in that scenario.
 The chosen horizon, `periods`, stays at `value` in every scenario.
 The committed number is always the conservative one.
 
 ## Statistics discipline
 
-- Medians plus IQR, not means: task durations are right-skewed,
-  roughly log-normal, and means chase the tail.
+- Medians plus IQR, not means: task durations are right-skewed, and a
+  few long tasks move a mean far more than a median.
 - A median paired difference is not the difference of the two medians.
   Compute before and after medians separately, or report only the paired gap.
 - Bootstrapped BCa intervals for medians, computed by
   `./business.py stats` (absolute path; one number per line on stdin or
   in files). It prints n, median, quartiles, the 95% interval, the
   seed, and the resample count; paste them next to the result.
-  Below n=5, `stats` prints `range_lo` and `range_hi` instead and no `ci95_*`; call that
-  a range, never a "95% interval".
+  Below n=5, `stats` prints `range_lo` and `range_hi` instead and no
+  `ci95_*`; call that a range, never a "95% interval". This is the one
+  statement of that rule.
 - Fewer than 20 observations, whether paired comparisons or single
   distributions: present the raw values, the median (or median
   difference), and the wide interval (the range when n<5), and label the result
@@ -138,13 +140,15 @@ The committed number is always the conservative one.
 
 ## Counterfactual quality ladder
 
-Best → worst. Label which rung every comparison sits on:
+This plugin's ordering of designs by how well they rule out a
+non-AI explanation, not a published standard. Best to worst; label which
+rung every comparison sits on:
 
 1. Self-A/B with tasks pre-specified before randomization.
 2. Paired task design.
 3. Pre-period cycle-time distribution.
 4. Matched historical tasks.
-5. Retrospective recall — weakest; always labeled as such.
+5. Retrospective recall: weakest; always labeled as such.
 
 ## Quality guardrails
 

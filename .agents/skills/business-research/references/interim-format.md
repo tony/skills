@@ -32,6 +32,22 @@ they confirm the root. Non-interactive: this skill prints its
 plan and stops unless the request names the root; the report commands
 write only inside the run they were given.
 
+Open a new run with `init` (absolute path to the script; `--date` takes
+`YYYY-MM-DD` and defaults to today's local date). It creates `index.md`,
+a `README.md` skeleton, `raw/`, `measurements/`, and `reports/`, keeps
+any file already there, and prints the run path:
+
+```console
+$ ./business.py init \
+    --root <root> \
+    <workflow>
+```
+
+`init` exits 2 when the workflow is not a kebab-case slug or when `raw/`
+of that day's run already holds snapshots. To add data to an existing
+run, skip `init` and write new snapshots under new names; otherwise ask
+the user for another date.
+
 ## Layout
 
 ```
@@ -61,15 +77,20 @@ instrument inventory with each instrument marked available or
 unavailable, environment versions for the tools used to collect, and
 a `Names:` line listing every organization, repository, team,
 person, and internal workflow or skill name the run touches, comma-separated. Research fills it from
-the repositories and teams it queried and the people the user named; the tier-3 scan
-reads it as the `--deny` list. `gate` fails when the line is absent;
-write `Names: none` when the run touches no names.
+the repositories and teams it queried and the people the user named; `scan --run <run>`
+reads it as the deny list. `gate` fails when the line is empty;
+write `Names: none` when the run touches no names. The skeleton `init`
+writes has an empty `Names:` line, so the gate fails until it is filled.
+A `collect-prs` warning that rows lack a column or that reviews were
+truncated is recorded here as well as in `sources.md`.
 
 ### sources.md
 
 The source manifest: one `## <name>` entry per collected artifact,
 named stably (for example `gh-pr-cycle-times`) so figures can cite
-it. Every entry has these labeled lines:
+it. Every entry has these labeled lines; `executed` is read from the
+clock (`date -u +%FT%TZ`) when the query runs, because the gate rejects
+anything that is not an ISO timestamp:
 
 ```text
 - query: the command, verbatim
@@ -77,6 +98,9 @@ it. Every entry has these labeled lines:
 - tool version: gh 2.60.1
 - output: raw/pr-cycle-times.json
 ```
+
+A warning the collector printed goes in the entry as a `- warning:`
+line.
 
 ### assumptions.yaml
 
@@ -98,17 +122,21 @@ A list of entries:
 
 `source_type` is one of MEASURED | DERIVED | BENCHMARKED |
 ESTIMATED; `confidence` is high | medium | low. Every field above is
-required on every entry, written as flat `key: value` lines with no
-trailing comments, quotes, or nesting; `./business.py assumptions <file>`
-checks that and the two enumerations. A MEASURED entry's `source_ref`
-names a `sources.md` entry; an assumption with no instrument behind
-it is ESTIMATED. An empty file passes: a run that only measures
-registers no assumptions.
+required on every entry (`provenance.md` says what `source_ref` and
+`retrieved` hold for each type), and `low` and `high` are optional.
+Write bare `key: value` lines: a `- id:` line at the left margin, its
+fields indented two spaces, no quotes, no trailing `# comment`, no
+nesting. `./business.py assumptions <file>` checks the format,
+the two enumerations, numeric `value`s, ISO dates, and that one quantity
+has one id (`measurement.md` names the ids). A MEASURED entry's
+`source_ref` names a `sources.md` entry; an assumption with no
+instrument behind it is ESTIMATED. An empty file passes: a run that only
+measures registers no assumptions.
 
 ### raw/
 
 Immutable snapshots of instrument output, written before anything is
-derived from them. Never mutated after write — corrections happen by
+derived from them. Never mutated after write; corrections happen by
 adding a new snapshot, never by editing an old one.
 
 Per-person data (logins, per-user adoption) stays out of `raw/` when an
@@ -119,9 +147,10 @@ write no per-person data.
 ### measurements/
 
 Per-topic tables (timing, cycle times, rework, adoption, ...).
-Every figure tagged MEASURED, DERIVED, BENCHMARKED, or ESTIMATED, denominator stated.
+Every figure tagged per `provenance.md`, denominator stated.
 
-A figure computed from a CSV in `raw/` gets a line the gate recomputes:
+A MEASURED figure computed from a CSV in `raw/` gets a line the gate
+recomputes:
 
 ```text
 check: median raw/task-timings.csv minutes_manual-minutes_ai = 18
@@ -130,7 +159,7 @@ check: median raw/task-timings.csv minutes_manual-minutes_ai = 18
 The statistic is `median`, `mean`, `min`, `max`, or `n`; the column is
 one header or `a-b` for a per-row difference. Rows with a blank cell
 in a needed column drop out. `business.py stats --csv <file> --column
-<column>` takes the same column syntax for medians and intervals (a range below n=5).
+<column>` takes the same column syntax for medians and intervals.
 
 ### findings.md
 
@@ -155,8 +184,9 @@ $ ./business.py runs
 ```
 
 It searches only `~/Documents` and, on WSL, the Windows users'
-Documents folders, skipping any it cannot read; `--root <dir>`
-searches that directory instead. It never searches the current
+Documents folders, skipping any it cannot read. Pass `--root <dir>`
+whenever the run lives under another root, such as the one the user
+named; it then searches that directory instead. It never searches the current
 directory. Confirm the chosen run with the
 user before rendering anything from it. Non-interactive:
 proceed with the newest run and say which one in the output's Run
@@ -172,15 +202,17 @@ $ ./business.py gate <run>
 
 It prints each problem and exits 1, or prints `ok`. It checks that
 `README.md` states a pinned window and has a `Names:` line (`Names: none` is allowed); that every `sources.md` entry has a
-query, timestamp, tool version, and an existing output file; that
-`assumptions.yaml` passes `business.py assumptions` plus numeric
-values, ISO dates, and resolving MEASURED `source_ref`s; that every
-MEASURED figure cites an existing `sources.md` entry; that figures
-with units carry a tag; that every `check:` line recomputes from
-`raw/`; that no currency symbol or code appears in `measurements/` or
-`findings.md`; and that each bullet under a heading containing
-"unknown" names the data that would resolve it (the bullet
-must contain one of `resolve`, `need`, `require`, `data`, `export`).
+query, an ISO `executed` timestamp, a tool version, and an existing
+output file; that `assumptions.yaml` passes `business.py assumptions`
+and its MEASURED `source_ref`s resolve; that every figure with a unit
+sits in a sentence that carries a tag; that every MEASURED figure cites
+an existing `sources.md` entry and, when that entry's output is a CSV,
+has a `check:` line over it; that every `check:` line recomputes from
+`raw/`; that no currency symbol, code, or money vocabulary (negations
+included) appears in `measurements/` or `findings.md`; and that each
+bullet under a heading containing "unknown" names the data that would
+resolve it (the bullet must contain one of `resolve`, `need`,
+`require`, `data`, `export`, and not only to say there is none).
 
 The script cannot judge whether a tag is right or a figure is
 missing a unit it does not recognize. Read `measurements/` and
@@ -199,8 +231,8 @@ Value is engineer-hours, cycle time, and capacity, never money.
 2. Run the completeness gate (above). Load the skill's other references only
    after it passes.
 3. Render the body, then write the report to `<run>/reports/<name>.md`.
-4. Check the finished report for money. This is the last step before the
-   reply; use the absolute path to the script:
+4. Check the saved report for money, with the absolute path to the
+   script:
 
    ```console
    $ ./business.py scan \
@@ -210,6 +242,20 @@ Value is engineer-hours, cycle time, and capacity, never money.
 
    Reword every hit and rerun until it prints `clean`. Say the report was
    scanned only after this ran.
+5. Record what the report was written from; use the absolute path:
+
+   ```console
+   $ ./business.py stamp \
+       <run> \
+       <name>.md
+   ```
+
+   Before rendering from or deriving off an earlier report, run
+   `./business.py fresh <run>`: it prints one line per report
+   that is unstamped or whose inputs changed since it was written, or
+   `ok`. Only the lines for the reports you rely on matter. A stale case
+   study is regenerated by its skill, and a stale release is derived
+   again.
 
 ### Finished run
 
@@ -218,7 +264,8 @@ report: <supported claim, unknowns named>` when the package holds no
 committable figure (early instrumentation, open unknowns). Then these sections,
 with any the skill adds:
 
-1. `## Run`: the run chosen and its pinned window.
+1. `## Run`: the run chosen and its pinned window. A tier-3 reply writes
+   the task category and rounded window instead (`audiences.md`).
 2. `## Gate`: the completeness result.
 3. `## Report`: where it was written and the headline.
 
@@ -226,7 +273,11 @@ End with an `ask-user-choice` panel offering the skill's next steps.
 Skip it in plan mode. Where no question tool exists (Codex, headless
 runs), print the options as a plain list after `## Report` and stop.
 
-One fact per bullet, one sentence per bullet; split a bullet that needs two. Each bullet says something new: the hero states the claim, the
+Reply form, owned here: plain text outside any code fence, plain
+bullets, no bold labels (never `- **Label:** ...`), no expanded local
+paths (a root as the user would type it, such as `~/Documents`, is
+fine), and nothing before the first line or after the last. One fact per bullet,
+one sentence per bullet; split a bullet that needs two. Each bullet says something new: the hero states the claim, the
 headline bullet states what the data supports and where a committed
 figure would go, and the limitation bullet names a limitation the
 headline lacks. A request to convert to money is declined in one
@@ -234,17 +285,17 @@ sentence as the first bullet of `## Report`, never ahead of the hero,
 and says "money" or "currency", never a unit or the word "dollars". The
 finance handoff (hours with their interval, the pinned window, and the
 population, for finance to convert) is the next bullet.
-An n<5 spread is a range (`range_lo`..`range_hi`); the reply never uses the words "95%" or "interval" for it, not even to deny them.
+An n<5 spread is a range (`range_lo`..`range_hi`, `measurement.md`); the reply never uses the words "95%" or "interval" for it, not even to deny them.
 Name an unknown or a missing input, never a script's exit status or command. Every figure in the reply keeps its provenance tag, in the hero and
 in bullets. State a figure as what was measured, never as what the
-skill caused: "median 18 min per task gross, net unknown
+skill caused: "median 18 min per task gross, range 11..22 min, net unknown
 (DIRECTIONAL, MEASURED, n=3)", not "the skill saved 18 min".
 Write adoption and realization in words, never as `(a)` and `(r)`.
 The hero is the measurement, with the word "gross" when net is unknown ("18 min median per
-draft gross"), never an effect ("18 min less per draft"); a bullet
+draft gross, range 11..22 min"), never an effect ("18 min less per draft"); a bullet
 never repeats it. Cite a benchmark with its qualifier ("METR, early-2025 tools").
 
-Reply in this shape, as plain text outside any code fence, with plain bullets, no bold (never `- **Label:** ...`), and no local paths:
+Reply in this shape:
 
 ```text
 ✓ Leadership report: net +310 engineer-hours per quarter projected, upside +520 (DERIVED)

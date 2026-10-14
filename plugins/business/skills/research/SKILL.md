@@ -24,8 +24,8 @@ Read these first; they bind every step:
   collect.
 
 Load `../../references/measurement.md` only for the counterfactual
-ladder and the statistics discipline. Intervals come from
-`../../scripts/business.py stats` (absolute path).
+ladder and the statistics discipline, which owns the n<5 range rule.
+Intervals come from `../../scripts/business.py stats` (absolute path).
 
 User arguments: $ARGUMENTS
 
@@ -40,15 +40,16 @@ Enter plan mode before the first edit. In Claude Code call
 Present the plan (shape below) and ask where to write the run,
 defaulting per `interim-format.md` § Where runs live. Write nothing,
 including `index.md`, until the user approves. Exit plan mode, then
-open the run at the approved root.
+open the run at the approved root with `business.py init`, per
+`interim-format.md` § Where runs live. Pass `--date` when the request
+names a dated run path; if `init` refuses, follow the same section.
 
 Non-interactive (no question tool, headless): print the plan with the
 default root and stop. A request that itself names the root approves
 the plan; record the root in the run README and continue.
 
-Reply in this shape, as plain text outside any code fence, with plain
-bullets and no bold (never `- **Label:** ...`). Open with the first
-line, no greeting, and name roots as the user would type them:
+Reply in this shape (reply form per `interim-format.md` § Finished
+run), with no greeting, naming roots as the user would type them:
 
 ```text
 Plan: review-skill, window 2026-04-01..2026-06-30. Nothing is written yet.
@@ -77,10 +78,10 @@ probed.
 
 Probe each instrument per `instruments.md`; never assume one exists.
 Record every instrument as available or unavailable in the run
-README. Data an unavailable instrument would have provided is
+README (for `gh auth status`, only that it succeeded). Data an unavailable instrument would have provided is
 `unknown`, never fabricated and never silently skipped, unless the
 user supplies an assumption, which is registered as ESTIMATED with
-rationale and owner.
+rationale and owner (`provenance.md` gives its fields).
 
 ### 3. Collect
 
@@ -88,18 +89,22 @@ For each available instrument, run pinned-window queries per
 `instruments.md` and snapshot raw output into `raw/` before deriving
 anything. Collect the targets listed there; record the rest as
 unknown. Derive pull-request tables with `business.py collect-prs`,
-piping the query into it so reviewer and author logins never reach
-`raw/`, rather than rewriting the query or the filter.
+piping the query into it with `--output` so reviewer and author logins
+never reach `raw/`, rather than rewriting the query or the filter. Take
+each `sources.md` `executed` time from `date -u +%FT%TZ` when the query
+runs. Record every `collect-prs` warning, including "rows lack" ones, in
+that entry and in the README.
 
 ### 4. Write the package
 
-Emit the full interim format from `interim-format.md`: run README,
+Fill the package `init` started, per `interim-format.md`: run README,
 source manifest with verbatim queries, assumptions register, raw
-snapshots, per-topic measurements, and `findings.md`. Every figure
-tagged; every unknown listed with what data would resolve it. List every organization, repository, team, and person name the run
+snapshots, per-topic measurements, and `findings.md`. Tag every figure
+per `provenance.md`; list every unknown with what data would resolve it.
+List every organization, repository, team, and person name the run
 touched on the README `Names:` line; the tier-3 scan depends on it.
-Compute medians, quartiles, and intervals with `business.py stats` (n<5 prints a range; never call it a 95% interval)
-(`--csv <file> --column <a-b>` for a CSV column). Give each
+Compute medians, quartiles, and intervals with `business.py stats`
+(`--csv <file> --column <a-b>` for a CSV column). Give each MEASURED
 figure computed from a `raw/` CSV a `check:` line. Run
 `business.py gate <run>` and fix every problem before reporting.
 Write prose per `../../references/prose-rules.md`.
@@ -125,7 +130,7 @@ End with an `AskUserQuestion` panel: generate a report (ask which
 tier), collect more, or stop.
 Panel rules as in `interim-format.md` § Finished run.
 
-Reply in this shape, as plain text outside any code fence, with plain bullets, no bold (never `- **Label:** ...`), and no local paths:
+Reply in this shape:
 
 ```text
 ✓ Run written: 2026-07-14/business/review-skill, window 2026-04-01..2026-06-30

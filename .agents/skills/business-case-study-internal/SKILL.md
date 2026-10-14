@@ -14,8 +14,7 @@ metadata:
 
 Turn a run package into a narrative case study for internal
 circulation: what happened, what it measured, what other teams can
-take from it. Tier 2: internal team and repo names allowed;
-individuals anonymized to roles.
+take from it. The tier-2 contract is in `audiences.md`.
 
 Read `references/interim-format.md` first. It defines the run
 location, the completeness gate, and the output frame. Defer these
@@ -32,7 +31,20 @@ User arguments: $ARGUMENTS
 
 Per `interim-format.md` § Rendering a report.
 
-### 2. Render the case study
+### 2. Ask for what the run package lacks
+
+The run package holds no maintainer, no lessons, and no replication
+notes, and may hold no build time. With a question tool, ask the user
+once, in one batch (`ask-user-choice`), for: the maintainer's role, the
+build time if `build-hours` is not registered, what worked and what did
+not, and what the team would change. Record the answers in
+`findings.md` under a `## User-supplied context` heading, with a
+build time also appended to `assumptions.yaml` as an ESTIMATED entry
+(`provenance.md`); then run `business.py gate <run>` again. Name a
+person only as a role. Without a question tool, or without an answer, write
+each such part as unknown with the data that would resolve it.
+
+### 3. Render the case study
 
 Write `<run>/reports/case-study-internal.md` as a narrative in this
 fixed order:
@@ -50,14 +62,14 @@ fixed order:
    ramp (and the excluded novelty window), and where results are
    likely to differ.
 
-Anonymize individuals to roles. Team and repo names stay. Take every
-item from the run package; a part it does not hold (maintainer, build
-time, lessons) is written as unknown with the data that would resolve
+Take every item from the run package or the user's answers; a part
+neither holds is written as unknown with the data that would resolve
 it, never supplied from inference.
 
 Write it per `references/prose-rules.md`.
 
-Then run the money check, step 4 of `interim-format.md` § Rendering a report.
+Then run steps 4 and 5 of `interim-format.md` § Rendering a report: the
+money check, then `stamp`.
 
 ## Output
 
@@ -69,5 +81,6 @@ adjust the narrative, or stop.
 
 ## Portability notes
 
+- `ask-user-choice` — present the listed options and wait for the user to pick one. Hosts with a structured multiple-choice tool (Claude Code's `AskUserQuestion`) should use it; otherwise print a numbered list and wait for a numbered reply. Never proceed on an assumed answer.
 - `$ARGUMENTS` — the text the user passed when invoking this skill. If your host does not substitute it, read it as the user's request in the current turn, and ask when there is none.
 - Bundled files — every relative path in this skill points at a file shipped inside this skill directory. Read them from here, not from the host's plugin tree.

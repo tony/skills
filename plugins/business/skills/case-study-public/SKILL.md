@@ -10,7 +10,8 @@ disable-model-invocation: true
 
 Turn a run package into a case study fit for external publication.
 Tier 3 is the hard sanitization tier: no internal identifiers of any
-kind, aggregates and ranges only, every headline claim triangulated.
+kind, aggregates and ranges only, every headline claim placed against
+external evidence or marked as having none.
 
 Read `../../references/interim-format.md` first. It defines the run
 location, the completeness gate, and the output frame. Defer these
@@ -19,8 +20,8 @@ until the gate passes:
 - `../../references/provenance.md`
 - `../../references/measurement.md`: statistics discipline and the
   counterfactual quality ladder; use its rung definitions verbatim.
-- `../../references/evidence.md`: the external evidence table and the
-  triangulation procedure. Re-verify the sources you cite first.
+- `../../references/evidence.md`: the external evidence table, its
+  re-verify step, and the triangulation procedure.
 - `../../references/audiences.md`: the tier-3 contract and the final
   checklist.
 
@@ -47,25 +48,29 @@ Draft in this order, sanitized from the first word, not afterwards:
 
 ### 3. Triangulate every headline claim
 
-Apply the triangulation procedure from `evidence.md` to each
-headline claim. A claim outside the defensible external range is
-removed or kept only with an explicit methodology defense. Record
-each outcome.
+Apply the triangulation procedure from `evidence.md` to each headline
+claim. Where a source measures the same outcome and the claim is far
+from it, remove the claim or keep it with an explicit methodology
+defense. Where none does, as for PR cycle time and review latency, write
+"no external comparator" and keep the counterfactual rung and the
+limitation. Record each outcome.
 
-### 4. Final checklist pass
+### 4. Write, scan, and stamp
 
-Run the tier-3 final checklist from `audiences.md` over the finished
-draft, item by item, including the scanner. Fix every hit, then write
-`<run>/reports/case-study-public.md`.
-
-Write it per `../../references/prose-rules.md`.
+Write the draft per `../../references/prose-rules.md` to
+`<run>/reports/case-study-public.md`. Run the tier-3 final checklist from
+`audiences.md` over that saved file, item by item, starting with
+`scan --run <run>`; rewrite the file and scan it again until the scan
+prints `clean`. Then run `stamp` (`interim-format.md` § Rendering a
+report, step 5).
 
 ## Output
 
 Hero success form: `✓ Public case study: <headline with tag>`.
-Sections and stopped-run shape as in `interim-format.md`, with `## Sanitization` between
-`## Gate` and `## Report`: the checklist results item by item and the
-triangulation outcome per headline claim, sanitized and scanned under the
-tier-3 reply contract in `audiences.md`. Panel options: derive the PR
+Sections and stopped-run shape as in `interim-format.md`, with `## Run`
+in its tier-3 form and `## Sanitization` between `## Gate` and
+`## Report`: the checklist results item by item and the external
+placement per headline claim, sanitized and scanned under the tier-3
+reply contract in `audiences.md`. Panel options: derive the PR
 release next (read `../pr-release/SKILL.md` and follow it), tighten a
 claim, or stop.

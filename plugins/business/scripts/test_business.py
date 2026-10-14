@@ -725,6 +725,7 @@ def test_stamp_and_fresh_detect_a_changed_input(
     reports.mkdir()
     (reports / "case-study-public.md").write_text("study\n")
     (reports / "pr-release.md").write_text("release\n")
+    (reports / ".reply-check.md").write_text("scratch\n")
     assert business.main(["fresh", str(run)]) == 1
     assert "case-study-public.md: no recorded inputs" in capsys.readouterr().out
     for name in ("case-study-public.md", "pr-release.md"):

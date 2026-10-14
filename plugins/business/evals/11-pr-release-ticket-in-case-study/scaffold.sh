@@ -38,3 +38,5 @@ ticket PROJ-482.
 Three timed tasks, one team, no counterfactual beyond a manual baseline;
 verification time was not measured.
 MD
+
+python3 "$(cd "$(dirname "${BASH_SOURCE[0]}")/../../scripts" && pwd)/business.py" stamp "$run" "$run/reports/case-study-public.md" >/dev/null

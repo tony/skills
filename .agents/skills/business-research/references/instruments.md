@@ -33,7 +33,8 @@ $ git --version
 
 ### gh
 
-Probe authentication:
+Probe authentication. Record only that it succeeded; its output names
+the account login, which stays out of the README:
 
 ```console
 $ gh auth status
@@ -46,12 +47,12 @@ $ gh api rate_limit
 ```
 
 If the remaining GraphQL budget cannot cover the planned pagination,
-say so in the plan and shrink the window — never sample silently.
+say so in the plan and shrink the window; never sample silently.
 
 ### Ticket trackers
 
 Look for MCP servers or CLIs for Jira, Linear, or whatever the team
-uses — check the host's MCP listing and the project's
+uses; check the host's MCP listing and the project's
 AGENTS.md/CLAUDE.md for tracker mentions. Nothing found →
 unavailable.
 
@@ -70,17 +71,20 @@ unavailable, not worked around.
   locally: compare `gh api rate_limit` with `ceil(PR count / 100)`
   pages before starting on a large repository.
 - State the timezone convention once in the run README and hold it:
-  forge timestamps are UTC; git author/committer dates are local —
+  forge timestamps are UTC; git author/committer dates are local;
   convert to UTC before windowing, and note the offset. State the
   cohort rule per metric in `sources.md` (for example: PR cycle time
   by mergedAt-in-window; review latency by mergedAt-in-window too).
 - Snapshot each response to `raw/` and add its `sources.md` entry
   before computing anything from it, except responses that carry
-  logins: aggregate those before they reach disk.
-- Prefer GraphQL over the Search API for PR and issue queries —
-  search results truncate and drift; GraphQL with cursor pagination
-  is reliable. Paginate to exhaustion or record the cutoff
-  explicitly.
+  logins: aggregate those before they reach disk. Take each entry's
+  `executed` time from the clock (`date -u +%FT%TZ`) at the moment the
+  query runs; the gate rejects a value that is not an ISO timestamp.
+- Prefer GraphQL over the Search API for PR and issue queries. The
+  [REST search API](https://docs.github.com/en/rest/search/search)
+  returns up to 1,000 results per search and sets `incomplete_results`
+  when a query times out. Paginate GraphQL by cursor to exhaustion or
+  record the cutoff explicitly.
 - Window query shape: page every pull request by cursor to
   exhaustion and pipe the pages straight into `collect-prs`; the
   window filter runs locally. Author and reviewer logins are read
@@ -126,19 +130,27 @@ unavailable, not worked around.
   `additions`, `deletions`. First-review latency is the earliest
   review by someone other than the author and not a bot; it is blank
   when there is none. It prints `warning:` on stderr for every PR
-  whose reviews exceeded the 50 fetched: record each warning in
-  `sources.md` and the README, and treat that PR's latency as
-  unreliable.
+  whose reviews exceeded the 50 fetched, and for each of `reopened`,
+  `additions`, and `deletions` that the pages lack (`N of M rows lack
+  <column>; left blank, not zero`). Record every warning in
+  `sources.md` and the README; treat a truncated PR's latency as
+  unreliable and a column that rows lack as unknown, not zero.
 
   Record the pipeline verbatim in `sources.md`, with the CSV as the
   entry's output file. Figures from the CSV take `check:` lines
   (`check: median raw/pr-metrics.csv cycle_hours = 31.5`); a
   `stats --csv raw/pr-metrics.csv --column cycle_hours` gives the
-  interval.
-- GraphQL event-count trap: `timelineItems(...).totalCount` ignores
-  the `itemTypes` filter and returns the count of all timeline
-  items. Use `filteredCount` for reopened/closed event counts, and
-  sanity-check any surprising count against one item fetched raw.
+  interval. `stats` drops blank cells, so beside each statistic report
+  its n and how many merged PRs were dropped for a blank cell.
+- GraphQL event-count trap: `timelineItems(itemTypes: [...])` still
+  reports `totalCount` over all timeline items. The schema describes
+  `itemTypes` as "Filter timeline items by type", `totalCount` as "the
+  total count of items in the connection", and `filteredCount` as "the
+  count of items after applying `before` and `after` filters". A live
+  query against github.com for merged PRs returned the same `totalCount`
+  with and without `itemTypes: [REOPENED_EVENT]`, while `filteredCount`
+  dropped to 0 (for example 0 against a `totalCount` of 169). Use `filteredCount` for
+  reopened/closed event counts.
 - Prove absences with snapshots, not assertions: a "0 reverts" or
   "no AI-attribution markers" claim gets a `raw/` snapshot of the
   full query output that shows the zero, so the absence is MEASURED.
@@ -174,7 +186,7 @@ confidence and say so.
 
 ### Adoption
 
-Distinct users who actually invoked the skill in the window, vs the
+Distinct users who invoked the skill in the window, vs the
 eligible population. License-holding and active use are different
 numbers; report both or mark the missing one unknown.
 

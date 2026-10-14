@@ -35,3 +35,5 @@ causal effect or organization-wide realized capacity.
 MD
 
 printf 'User-owned draft: keep this file unchanged.\n' >"$run/reports/.reply-check.md"
+
+python3 "$(cd "$(dirname "${BASH_SOURCE[0]}")/../../scripts" && pwd)/business.py" stamp "$run" "$run/reports/case-study-public.md" >/dev/null

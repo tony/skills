@@ -6,20 +6,39 @@ file. A figure that cannot satisfy it does not ship.
 
 ## The four tags
 
-Every figure carries exactly one tag. DIRECTIONAL (n<20, set by the
-script) is a label beside the tag, not a second tag:
+Every figure sits in a sentence that carries its tag. One tag may cover
+two figures in one sentence when both have that provenance; figures of
+different provenance go in separate sentences. DIRECTIONAL (n<20, set by
+the script) is a label beside the tag, not a second tag:
 
 - MEASURED: read from instrumented data. Cite the
   source-manifest entry in the run's `sources.md` by its stable name.
+  A figure computed from a CSV in `raw/` also needs a `check:` line
+  over it (`interim-format.md` § measurements/).
 - DERIVED: computed from tagged inputs. Show the formula
   inline next to the figure; each input keeps its own tag. A calculation
   using assumptions remains an estimate, not a measured outcome.
 - BENCHMARKED: from an external source. Pinned link (URL, DOI,
-  or report ID) plus retrieval date. Vendor sources carry an
-  additional `(vendor)` flag and are never used as internal inputs.
+  or report ID) plus the date this run confirmed the figure at that
+  link (`evidence.md` § Re-verify before citing). A figure the run
+  could not confirm is not cited. A vendor source (a study of its own
+  authors' product or platform, or a vendor's own report) carries a
+  `(vendor)` flag and is never an internal input; a consultancy report
+  is flagged as one.
 - ESTIMATED: an assumption. Rationale plus confidence
   (high | medium | low); the entry lives in `assumptions.yaml` and
   the figure cites its assumption id.
+
+Every `assumptions.yaml` entry fills `source_ref` and `retrieved`:
+
+- MEASURED: `source_ref: sources.md#<entry name>`; `retrieved` is the
+  date of that entry's `executed` line.
+- DERIVED: `source_ref` names the formula and its input ids;
+  `retrieved` is the date computed.
+- BENCHMARKED: `source_ref` is the pinned link; `retrieved` is the date
+  confirmed.
+- ESTIMATED: `source_ref: none`; `retrieved` is the date the owner gave
+  the estimate.
 
 ### Inline rendering
 
@@ -40,7 +59,7 @@ internal source refs.
 A hard contract, not a preference:
 
 - No currency symbols, currency codes, or currency units. No prices,
-  no cost-in-money, no dollar ROI — anywhere, in any artifact or
+  no cost-in-money, no dollar ROI, anywhere, in any artifact or
   command output.
 - The only value units: engineer-hours (and engineer-days or
   engineer-weeks), cycle-time deltas, throughput, quality and
@@ -51,16 +70,18 @@ A hard contract, not a preference:
   asked to convert savings into money, decline and cite this
   contract.
 - Money-adjacent vocabulary counts as currency: "ROI", "dollar",
-  "cost savings", "monetize", "payback" in money terms. Do not use
-  them even in negations ("no ROI claim is made") — name the time or
-  capacity claim instead.
+  "cost savings", "monetize", "payback", "salary", "revenue", "profit"
+  and similar. The gate and the scanner reject them even in negations
+  ("no ROI claim is made"); name the time or capacity claim instead.
 
 ## Anti-inflation rules
 
 - Never output a figure you cannot tag. Unknown → write "unknown"
   and state what data would resolve it. No invented or
   pleasing-round numbers; no interpolation of unmeasured values.
-- Every point estimate carries a range or interval.
+- Every point estimate carries a range or interval wherever it
+  appears, hero lines and replies included. A projection's conservative
+  and upside figures are its range; a single observation says so.
 - Every ratio and percentage states its denominator.
 - Every "hours saved" states across how many engineers and over what
   period.
@@ -70,7 +91,7 @@ A hard contract, not a preference:
 - Deterministic seeds for any resampling (bootstrap, Monte Carlo);
   record the seed next to the result.
 - Failed and abandoned AI runs count their time. Verification and
-  review time is inside the task boundary — a saving net of neither
+  review time is inside the task boundary; a saving net of neither
   is untaggable.
 - Skill build and maintenance cost is amortized into net savings,
   never dropped.

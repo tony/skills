@@ -15,8 +15,9 @@ nothing from the interim package.
 
 Read `../../references/interim-format.md` first, only § Where runs live,
 § Locating an existing run, and § Rendering a report; there is no
-completeness gate here. The run's `README.md` is read only for the names the sweep denies. Defer these
-until the firewall (the public case study) is located:
+completeness gate here. The scanner reads the run's `README.md` only for
+the names the sweep denies. Defer these until the firewall (the public
+case study) is located:
 
 - `../../references/provenance.md`
 - `../../references/audiences.md`: the tier-3 contract and the
@@ -37,10 +38,13 @@ Check for `<run>/reports/case-study-public.md`. If it is missing,
 ask via `AskUserQuestion` whether to write it now (read
 `../case-study-public/SKILL.md` and follow it) or stop; never draft
 the release straight from the interim package. Without a question
-tool, halt with `⚠ Refused: no public case study for this run` and
-tell the user to run `/business:case-study-public`. If present, run
-the firewall sweep from `audiences.md`; a sweep failure routes back
-to the public case study, never into hand-patching here.
+tool, halt with the second stopped-run example in `interim-format.md`.
+If present, run `../../scripts/business.py fresh <run>` (absolute path):
+a `case-study-public.md` line means the case study is unstamped or its
+run inputs changed, so regenerate it with
+`/business:case-study-public` before going on. Then run the firewall
+sweep from `audiences.md`; a sweep failure routes back to the public
+case study, never into hand-patching here.
 
 ### 3. Compose one page
 
@@ -55,24 +59,31 @@ From the public case study only:
 4. Limitations one-liner: a single candid sentence distilled
    from the case study's limitations section.
 
-Write `<run>/reports/pr-release.md`. Every figure must trace to the
-public case study verbatim or by stated rounding; if a wanted figure
-is not there, extend the case study first instead of reaching into
-the run's measurements.
+Write `<run>/reports/pr-release.md` per
+`../../references/prose-rules.md`, with every figure copied verbatim
+from the public case study; if a wanted figure is not there, extend the
+case study first instead of reaching into the run's measurements. Then:
 
-Write it per `../../references/prose-rules.md`.
+1. Scan the saved release with `scan --run <run> <release>` and rewrite
+   until it prints `clean` (`audiences.md` § Tier-3 final checklist).
+2. Run `trace <release> --against <run>/reports/case-study-public.md`;
+   it lists each number the case study lacks. Rewrite until it prints
+   `ok`.
+3. Run `stamp` (`interim-format.md` § Rendering a report, step 5).
 
 ## Output
 
 Hero success form: `✓ PR release: <headline>`; a stopped run follows
 `interim-format.md` § Rendering a report. Sections:
 
-1. `## Run`: the run chosen.
-2. `## Firewall`: the public case study used, and confirmation that
-   every figure traces to it.
+1. `## Run`: the task category and rounded window, per `audiences.md`
+   tier 3, never the run name.
+2. `## Firewall`: the public case study used, and that `trace` found
+   every figure in it.
 3. `## Report`: where it was written and the headline.
 
 Panel options: revise the headline, regenerate after updating the
 case study (read `../case-study-public/SKILL.md` and follow it), or stop.
 Panel rules as in `interim-format.md` § Finished run.
-Apply the tier-3 reply scan from `audiences.md` before sending the reply.
+Scan the reply as `audiences.md` § Tier-3 final checklist describes
+before sending it.

@@ -23,8 +23,8 @@ until the gate passes:
 - `references/measurement.md`: the value build, break-even,
   guardrails, the counterfactual ladder.
 - `references/evidence.md`: external context for the
-  pre-answered objections. Re-verify the sources you cite first with WebFetch. Without a
-  fetch tool, ask the user to confirm each figure you cite; do not narrate the missing tool.
+  pre-answered objections. Re-verify the sources you cite first, per
+  its § Re-verify before citing; do not narrate a missing fetch tool.
 - `references/audiences.md`: the tier-0 contract.
 
 User arguments: $ARGUMENTS
@@ -37,8 +37,9 @@ Per `interim-format.md` § Rendering a report.
 
 ### 2. Compute the figures
 
-Run `references/business.py breakeven <run>` (absolute path) and
-`references/business.py stats` for intervals (n<5 prints a range, never a "95% interval"). Every computed
+Run `references/business.py breakeven <run>` (absolute path). For an
+interval, run `references/business.py stats --csv <file> --column
+<column>` on a `raw/` CSV, or pass one number per line on stdin. Every computed
 figure in the report (`S_inst`, `S_net`, `N_breakeven`, and the
 conservative, base, and upside scenarios) comes from that output,
 copied as printed; never compute, round, or convert one yourself.
@@ -75,11 +76,14 @@ Write `<run>/reports/leadership.md` with this fixed structure:
 8. Pre-answered objections: at minimum: how do you know the
    skill caused this (name the counterfactual rung); does the
    savings rate survive the verification tax; who maintains the
-   skill.
+   skill. The maintainer is a run-package fact only when the register or
+   findings name an owner; otherwise ask the user once, or write
+   "unknown" with the data that would resolve it.
 
 Write it per `references/prose-rules.md`.
 
-Then run the money check, step 4 of `interim-format.md` § Rendering a report.
+Then run steps 4 and 5 of `interim-format.md` § Rendering a report: the
+money check, then `stamp`.
 
 ## Output
 
