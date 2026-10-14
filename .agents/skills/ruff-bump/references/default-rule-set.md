@@ -17,7 +17,7 @@ Measure the blast radius without editing the repository. Resolve
 `./default_delta.py` against this file's directory (the path it was
 read from) and write that absolute path literally in the command; shell
 variables do not persist between Bash calls. Never show that path in the
-reply.
+reply. Pass `--cwd` with the repository or worktree measured.
 
 The script counts findings per rule as configured, then again under the
 recommended shape: a scratch copy of the repository in which every `select`
@@ -31,27 +31,29 @@ unmeasured with that reason. It disables fix modes, clears
 `RUFF_OUTPUT_FILE`, and measures with `--no-cache`; the runner must itself
 leave the checkout unchanged.
 
-In an audit, pass the ephemeral runner (`uv run` would create `.venv` and a
-lockfile):
+In an audit, pass the ephemeral runner (the skill's runner rule):
 
 ```console
-$ python3 ./default_delta.py -- \
-    uv run --no-sync --isolated --with ruff==<target> ruff
+$ python3 ./default_delta.py \
+    --cwd <repo> \
+    -- uv run --no-sync --isolated --with ruff==<target> ruff
 ```
 
 Otherwise pass the project's own runner, so the binary is the version the
 lockfile resolves; confirm it with `<runner> --version`:
 
 ```console
-$ python3 ./default_delta.py -- uv run ruff
+$ python3 ./default_delta.py \
+    --cwd <worktree> \
+    -- uv run ruff
 ```
 
 The per-rule difference is the cost; measure every repository in scope before
-proposing anything. A local measurement is a lower bound: rules that depend on
-the host filesystem (executable bit, symlinks, case, line endings) can fire only
-on the CI runner. Treat such a CI failure as a platform gap, confirm it by
-reading the rule's implementation for a platform guard, and say the measurement
-under-reported that class.
+proposing anything. A local measurement can under-report rules that depend on
+the host filesystem (executable bit, symlinks, case, line endings), which can fire only
+on the CI runner. When a CI failure fits that class, read the rule's
+implementation for a platform guard to confirm it, and say the measurement
+under-reported it.
 
 ## Config shapes
 
@@ -89,10 +91,11 @@ the fix preserves.
 
 ## Landing it
 
-The config change is one commit, alone, before any fix or ignore, with the
-enabled-rule count before and after in its body. Then one commit per rule fixed
-and one per ignore added, each body carrying the rule's documentation URL,
-`https://docs.astral.sh/ruff/rules/<name>/`; that site tracks the latest
+Write the config change with `default_delta.py --cwd <worktree> --apply`, so
+the committed shape is the measured one; it lands alone, with the
+enabled-rule count before and after in its body. Rule and ignore commits
+follow as the skill's one-rule-one-commit step describes. The documentation
+URL is `https://docs.astral.sh/ruff/rules/<name>/`; that site tracks the latest
 release, so read `<runner> rule <CODE>` for the pinned version's text.
 Resolve the slug from the rule's name, not its code:
 

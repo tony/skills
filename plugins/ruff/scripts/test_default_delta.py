@@ -160,3 +160,82 @@ def test_real_ruff_keeps_retained_ignores(
     assert default_delta.main(["--cwd", str(tmp_path), "--", "ruff"]) == 0
     codes = {line.split("\t")[0] for line in capsys.readouterr().out.splitlines()}
     assert codes == {"I001", "total"}
+
+
+def test_notebook_cells_with_equal_locations_are_distinct() -> None:
+    """Two cells can report one row and column; the cell index tells them apart."""
+    row = '{"code":"F401","filename":"/r/n.ipynb","location":{"row":1,"column":8},"cell":%d}'
+    one = default_delta.findings(f"[{row % 1}]", "/r")
+    two = default_delta.findings(f"[{row % 1},{row % 2}]", "/r")
+    assert default_delta.new_findings(one, two) == [("F401", 1, 2, 1)]
+
+
+@needs_git
+def test_symlinked_config_is_not_written_through(tmp_path: pathlib.Path) -> None:
+    """The measurement rewrites a scratch copy, never the file a symlink points at."""
+    outside = tmp_path / "outside.toml"
+    outside.write_text('[lint]\nselect = ["F"]\n')
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    (repo / "app.py").write_text("import os\n")
+    (repo / "ruff.toml").symlink_to(outside)
+    subprocess.run(["git", "init", "-q", str(repo)], check=True)
+    exe = _fake(tmp_path, FAKE.replace("pyproject.toml", "ruff.toml"))
+    assert default_delta.main(["--cwd", str(repo), "--", exe]) == 0
+    assert outside.read_text() == '[lint]\nselect = ["F"]\n'
+
+
+@needs_git
+def test_apply_writes_the_measured_rewrite(
+    tmp_path: pathlib.Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """--apply edits the extended file too and names every file it changed."""
+    (tmp_path / "ruff.toml").write_text('extend = "base.toml"\n[lint]\nselect = ["F"]\n')
+    (tmp_path / "base.toml").write_text('[lint]\nselect = ["E"]\n')
+    subprocess.run(["git", "init", "-q", str(tmp_path)], check=True)
+    assert default_delta.main(["--cwd", str(tmp_path), "--apply"]) == 0
+    assert capsys.readouterr().out.splitlines() == ["base.toml", "ruff.toml"]
+    assert 'extend-select = ["F"]' in (tmp_path / "ruff.toml").read_text()
+    assert 'extend-select = ["E"]' in (tmp_path / "base.toml").read_text()
+
+
+@needs_git
+def test_apply_refuses_a_symlinked_config(tmp_path: pathlib.Path) -> None:
+    """A symlink would write outside the repository, so --apply stops."""
+    outside = tmp_path / "outside.toml"
+    outside.write_text('[lint]\nselect = ["F"]\n')
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    (repo / "ruff.toml").symlink_to(outside)
+    subprocess.run(["git", "init", "-q", str(repo)], check=True)
+    assert default_delta.main(["--cwd", str(repo), "--apply"]) == 2
+    assert outside.read_text() == '[lint]\nselect = ["F"]\n'
+
+
+@needs_git
+def test_extend_outside_the_repository_exits_2(
+    tmp_path: pathlib.Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """A configuration extending a file outside the repository cannot be measured."""
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    (repo / "ruff.toml").write_text('extend = "../shared.toml"\n')
+    subprocess.run(["git", "init", "-q", str(repo)], check=True)
+    exe = _fake(tmp_path)
+    assert default_delta.main(["--cwd", str(repo), "--", exe]) == 2
+    assert "outside the repository" in capsys.readouterr().err
+
+
+@needs_git
+def test_non_git_cwd_exits_2(tmp_path: pathlib.Path, capsys: pytest.CaptureFixture[str]) -> None:
+    """Without a repository there is nothing to copy, so the run refuses."""
+    exe = _fake(tmp_path)
+    assert default_delta.main(["--cwd", str(tmp_path), "--", exe]) == 2
+    assert "not a git repository" in capsys.readouterr().err
+
+
+def test_cwd_is_required() -> None:
+    """A call that omits --cwd must not fall back to the shell's directory."""
+    with pytest.raises(SystemExit) as stop:
+        default_delta.main(["--snapshot", "x", "--", "ruff"])
+    assert stop.value.code == 2

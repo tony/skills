@@ -883,9 +883,10 @@
         "references/prose-rules.md": "plugins/ruff/references/prose-rules.md",
         "references/release-triage.md": "plugins/ruff/references/release-triage.md",
         "references/reply-shape.md": "plugins/ruff/references/reply-shape.md",
+        "references/ruff_pins.py": "plugins/ruff/scripts/ruff_pins.py",
         "references/throwaway-worktree.md": "plugins/ruff/references/throwaway-worktree.md"
       },
-      "bytes": 62134
+      "bytes": 72398
     },
     {
       "name": "scholar-annotate",
@@ -1729,6 +1730,7 @@
     "plugins/ruff/references/reply-shape.md": 1,
     "plugins/ruff/references/throwaway-worktree.md": 1,
     "plugins/ruff/scripts/default_delta.py": 1,
+    "plugins/ruff/scripts/ruff_pins.py": 1,
     "plugins/scholar/.claude-plugin/plugin.json": 1,
     "plugins/self-improvement/references/detecting-invocations.md": 1,
     "plugins/self-improvement/references/worked-example-spike.md": 1,

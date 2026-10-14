@@ -4,7 +4,7 @@ Raising a linter's version floor fails two ways: a pin site is missed, so CI kee
 
 ## Every place a linter version can be pinned
 
-A repository frequently pins the same tool in more than one file, and they drift. Find all of them before editing any of them. Search the whole tree for the tool's name, skipping `.git`, `.venv`, and `node_modules`, then check each hit against this list:
+A repository frequently pins the same tool in more than one file, and they drift. Find all of them before editing any of them. `ruff_pins.py sites <repo>` prints each line that names the tool with a version, across the files below and skipping `.git`, `.venv`, and `node_modules`; check its hits against this list for a site type it does not scan:
 
 **Python project metadata.** `pyproject.toml`: dependency groups (`[dependency-groups]`), extras (`[project.optional-dependencies]`), and legacy tool-specific sections. A repo often lists the linter in both a broad `dev` group and a narrow `lint` group; both need raising or CI and local development diverge.
 
@@ -18,7 +18,7 @@ A repository frequently pins the same tool in more than one file, and they drift
 
 **Node-side wrappers.** Some polyglot repos install the linter through a JavaScript package manager as well; `package.json` will carry its own pin.
 
-**Editor and container configuration.** `.vscode/`, `.devcontainer/`, and similar. Not load-bearing for CI, but a stale pin here makes a contributor's editor disagree with the build.
+**Editor and container configuration.** `.vscode/`, `.devcontainer/`, and similar.
 
 Raise every site in the same commit. A partial bump leaves two tools disagreeing about what "clean" means.
 
@@ -30,15 +30,15 @@ Raise each site within its own style: `>=` stays a floor, `==` stays exact, and 
 
 A newly published version can be invisible to the resolver for reasons that have nothing to do with your constraint. Diagnose which one before working around it:
 
-**Publication cooldown.** Some resolvers hide releases younger than a configured threshold. A release inside the window does not exist as far as resolution is concerned, though the package index shows it. For uv, a cooldown can live in the user config, a `uv.toml`, a `[tool.uv]` table in any `pyproject.toml` (workspace members included), or the `UV_EXCLUDE_NEWER` environment variable, and per-package forms (`exclude-newer-package`) match the same search. Search the tree and the user config in one command; a missing file is not an error:
+**Publication cooldown.** Some resolvers hide releases younger than a configured threshold. A release inside the window does not exist as far as resolution is concerned, though the package index shows it. For uv, a cooldown can live in the system config (`/etc/uv/uv.toml`), the user config, a `uv.toml`, a `[tool.uv]` table in any `pyproject.toml` (workspace members included), or the `UV_EXCLUDE_NEWER` environment variable, and per-package forms (`exclude-newer-package`) match the same search. Search the tree and the user config in one command; a missing file is not an error:
 
 ```console
-$ grep -rIiH --exclude-dir=.git --exclude-dir=.venv --exclude-dir=node_modules --include=uv.toml --include=pyproject.toml exclude-newer . "${UV_CONFIG_FILE:-${XDG_CONFIG_HOME:-$HOME/.config}/uv/uv.toml}" 2>/dev/null
+$ grep -rIiH --exclude-dir=.git --exclude-dir=.venv --exclude-dir=node_modules --include=uv.toml --include=pyproject.toml exclude-newer . /etc/uv/uv.toml "${UV_CONFIG_FILE:-${XDG_CONFIG_HOME:-$HOME/.config}/uv/uv.toml}" 2>/dev/null
 ```
 
 Then check `UV_EXCLUDE_NEWER` in the environment. Settings merge, so the search shows candidates, not the effective value. Run `uv lock --dry-run` and read the refusal: the cause is a cooldown only when the refusal names the release as excluded by date and one setting found above matches it. A search that finds a setting, a failed run, or a refusal that is silent about the date leaves the cause unconfirmed; report it as unconfirmed and write no exemption.
 
-uv compares the upload time of each distribution file, not the release date, so take times from the package index (`releases.<version>[].upload_time_iso_8601`), never from a GitHub release page. The release becomes visible when the latest file the platform needs passes the window.
+uv compares the upload time of each distribution file, not the release date (`uv help lock`, `--exclude-newer`), so take times from the package index (`releases.<version>[].upload_time_iso_8601`), never from a GitHub release page. The release becomes visible when the latest file the platform needs passes the window; `ruff_pins.py lapse` computes it.
 
 Other resolvers (pip, poetry, pdm) have their own cooldown settings; find them in the resolver's documentation. The same exemption rules apply.
 

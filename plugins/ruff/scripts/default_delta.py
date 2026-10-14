@@ -11,6 +11,11 @@ scratch copy of the repository: every ``select`` becomes ``extend-select``
 the repository's own ``ignore`` and ``per-file-ignores`` stay in force.
 Exits 2 when a configuration cannot be rewritten that way.
 
+``--apply`` writes that same rewrite into the repository, so the committed
+configuration is the measured one; it refuses a symlinked configuration.
+
+``--cwd`` is required, so a call never measures the shell's directory.
+
 ``--snapshot FILE`` records the findings of the ruff command, with locations.
 ``--new-since FILE`` prints ``code<TAB>new<TAB>now<TAB>was`` for each code with
 a finding at a location the snapshot did not hold: ``new`` counts those
@@ -60,6 +65,9 @@ def counts(statistics_json: str) -> dict[str, int]:
 def findings(diagnostics_json: str, cwd: str) -> list[list[object]]:
     """Return ``[file, code, row, column]`` per diagnostic, files relative to ``cwd``.
 
+    A notebook diagnostic carries its cell index as a fifth item, because two
+    cells can report the same row and column.
+
     >>> d = '[{"code": "F401", "filename": "/r/a.py", "location": {"row": 1, "column": 8}}]'
     >>> findings(d, "/r")
     [['a.py', 'F401', 1, 8]]
@@ -72,6 +80,7 @@ def findings(diagnostics_json: str, cwd: str) -> list[list[object]]:
             row["code"] or "syntax-error",
             row["location"]["row"],
             row["location"]["column"],
+            *([row["cell"]] if row.get("cell") is not None else []),
         ]
         for row in rows
     ]
@@ -232,9 +241,26 @@ def _extends(text: str, *, pyproject: bool) -> list[str]:
     return found
 
 
-def propose(root: Path) -> list[str]:
-    """Rewrite every ruff configuration under ``root``; return the files changed."""
-    pending = [p for p in root.rglob("*") if p.name in _CONFIG_NAMES and p.is_file()]
+def _listing(cwd: str) -> list[str]:
+    """Return the paths git tracks or could track in ``cwd``, relative to it."""
+    listing = subprocess.run(
+        ["git", "-C", cwd, "ls-files", "-z", "--cached", "--others", "--exclude-standard"],
+        capture_output=True,
+        check=False,
+    )
+    if listing.returncode:
+        msg = "cwd is not a git repository"
+        raise UnsupportedError(msg)
+    return [os.fsdecode(raw) for raw in listing.stdout.split(b"\0") if raw]
+
+
+def propose(root: Path, files: Sequence[str], *, dereference: bool) -> list[str]:
+    """Rewrite every ruff configuration among ``files`` under ``root``.
+
+    Return the files changed. A symlinked configuration is replaced by a regular
+    file when ``dereference`` is set (a scratch copy) and refused otherwise.
+    """
+    pending = [root / f for f in files if Path(f).name in _CONFIG_NAMES]
     changed: list[str] = []
     done: set[Path] = set()
     while pending:
@@ -252,29 +278,24 @@ def propose(root: Path) -> list[str]:
             pending.append(target)
         new = adopt_defaults(text, pyproject=pyproject)
         if new != text:
+            if path.is_symlink():
+                if not dereference:
+                    msg = f"{path.relative_to(root)} is a symlink"
+                    raise UnsupportedError(msg)
+                path.unlink()
             path.write_text(new)
             changed.append(str(path.relative_to(root)))
     return sorted(changed)
 
 
-def _copy(cwd: str, scratch: str) -> None:
-    """Copy the files git tracks or could track in ``cwd`` into ``scratch``."""
-    listing = subprocess.run(
-        ["git", "-C", cwd, "ls-files", "-z", "--cached", "--others", "--exclude-standard"],
-        capture_output=True,
-        check=False,
-    )
-    if listing.returncode:
-        msg = "cwd is not a git repository"
-        raise UnsupportedError(msg)
-    for raw in listing.stdout.split(b"\0"):
-        if not raw:
-            continue
-        source = Path(cwd, os.fsdecode(raw))
+def _copy(cwd: str, scratch: str, files: Sequence[str]) -> None:
+    """Copy ``files`` of ``cwd`` into ``scratch``, leaving out the scratch directory."""
+    for name in files:
+        source = Path(cwd, name)
         if Path(scratch).resolve() in source.resolve().parents:
             continue
         if source.is_symlink() or source.is_file():
-            target = Path(scratch, os.fsdecode(raw))
+            target = Path(scratch, name)
             target.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy2(source, target, follow_symlinks=False)
 
@@ -300,8 +321,9 @@ def measure(cmd: list[str], cwd: str) -> list[tuple[str, int, int]]:
     """Return ``(code, configured, proposed)`` sorted by code."""
     configured = counts(_ruff(cmd, *_STATS, cwd=cwd))
     with tempfile.TemporaryDirectory() as scratch:
-        _copy(cwd, scratch)
-        changed = propose(Path(scratch))
+        files = _listing(cwd)
+        _copy(cwd, scratch, files)
+        changed = propose(Path(scratch), files, dereference=True)
         sys.stderr.write(
             f"proposed: select to extend-select in {', '.join(changed) or 'nothing'}\n"
         )
@@ -310,11 +332,18 @@ def measure(cmd: list[str], cwd: str) -> list[tuple[str, int, int]]:
     return [(c, configured.get(c, 0), proposed.get(c, 0)) for c in codes]
 
 
+def apply(cwd: str) -> list[str]:
+    """Write the proposed rewrite into the repository at ``cwd``; return the files changed."""
+    return propose(Path(cwd), _listing(cwd), dereference=False)
+
+
 def snapshot(cmd: list[str], cwd: str, path: str) -> None:
-    """Write the ruff command's version and findings to ``path``."""
+    """Write the ruff command's version and findings to ``path``, then read them back."""
     version = _ruff(cmd, "--version", cwd=cwd, guard=False).strip()
     rows = findings(_ruff(cmd, *_FINDINGS, cwd=cwd), cwd)
     Path(path).write_text(json.dumps({"version": version, "findings": rows}))
+    saved = json.loads(Path(path).read_text())
+    sys.stderr.write(f"snapshot: {len(saved['findings'])} findings, {saved['version']}\n")
 
 
 def new_since(cmd: list[str], cwd: str, path: str) -> list[tuple[str, int, int, int]]:
@@ -341,17 +370,23 @@ def render(rows: list[tuple[str, int, int]]) -> str:
 def main(argv: list[str]) -> int:
     """Parse arguments, measure, and print the table."""
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--cwd", default=".", help="repository to measure")
+    parser.add_argument("--cwd", required=True, help="repository to measure")
     modes = parser.add_mutually_exclusive_group()
+    modes.add_argument(
+        "--apply", action="store_true", help="write the proposed configuration into --cwd"
+    )
     modes.add_argument("--snapshot", metavar="FILE", help="write current findings to FILE")
     modes.add_argument("--new-since", metavar="FILE", help="list findings absent from a snapshot")
     parser.add_argument("ruff", nargs=argparse.REMAINDER, help="-- <ruff command>")
     args = parser.parse_args(argv)
     cmd = args.ruff[1:] if args.ruff[:1] == ["--"] else args.ruff
-    if not cmd:
+    if not cmd and not args.apply:
         parser.error("give the ruff command after --")
     try:
-        if args.snapshot:
+        if args.apply:
+            changed = apply(args.cwd)
+            print("\n".join(changed))
+        elif args.snapshot:
             snapshot(cmd, args.cwd, args.snapshot)
         elif args.new_since:
             rows = new_since(cmd, args.cwd, args.new_since)

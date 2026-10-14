@@ -22,7 +22,7 @@ If a local clone of the linter's source is available, reading the changelog at t
 
 **Default configuration changes.** Changes to what is selected when the repo does not say. Check which case each repo is in (explicit `select`, `extend-select` only, or neither) before predicting anything. The opt-out rules are in the default-rule-set reference.
 
-**Formatter changes.** New syntax handled, changed output, or, the expensive one, new *file types* brought into the formatter's scope. A formatter that starts formatting embedded code inside documentation files will rewrite files that no formatter has ever touched in that repo, and the diff can dwarf every lint fix combined. Predict this by running `ruff format --check` before and after the version change and comparing the count of files it would reformat.
+**Formatter changes.** New syntax handled, changed output, or, the expensive one, new *file types* brought into the formatter's scope. A formatter that starts formatting embedded code inside documentation files will rewrite files that no formatter has ever touched in that repo, and the diff can dwarf every lint fix combined. Predict this by running `<runner> format --check --no-cache` before and after the version change and comparing the count on its last line (`N files would be reformatted`).
 
 **Output and interface changes.** Serialization formats, exit codes, CLI flags, suppression-comment syntax. These break tooling that parses the linter's output (CI annotation scripts, editor integrations, report generators), not the code being linted. Grep the repo for anything that consumes the linter's machine-readable output.
 
@@ -47,8 +47,6 @@ For each rule that actually fires, fetch its documentation page and read the *wh
 
 **Behavior-changing.** The current code is subtly wrong, and fixing it changes what the program does. Exception-handling, logging, iterator-protocol and return-type rules land here. Explain the behavior delta in the commit body, ideally with a test that would have caught the old behavior.
 
-Ruff distinguishes safe from unsafe fixes. Applying unsafe fixes wholesale is how a lint bump silently changes semantics. Apply the safe set by default; take unsafe fixes one at a time, reviewing each.
-
 ## Suppressions are a last resort with a stated reason
 
-A suppression means the rule is wrong about this code or the fix is not worth its cost. Write the reason in the commit body. Prefer a per-file ignore in the configuration to inline suppressions, because it is visible in one place and shows up in review when the policy changes. A rule that fires broadly with no real findings gets one `ignore` entry with a comment.
+A suppression means the rule is wrong about this code or the fix is not worth its cost. Write the reason in the commit body. Where to put it is in `default-rule-set.md`, under curating.

@@ -1,6 +1,6 @@
 # Reply shape
 
-The reply to `/ruff:bump`. Plain text outside any code fence, plain bullets with no bold label, direct statements rather than first person.
+The reply to the bump skill. Plain text outside any code fence, plain bullets with no bold label, direct statements rather than first person.
 
 ## Contents
 
@@ -78,7 +78,7 @@ Drift holds only these: pin sites that disagreed before the bump, repositories w
 - Advice about sandbox settings. Report an environment fault only when the user must act on it, in one clause with the failing step and the command to run next.
 - A repository named by `cwd`. Use its remote slug or `[project] name`, or the basename of `git rev-parse --show-toplevel` when that is not generic.
 
-State the vendor's default rule set only from a run of the project's runner (`check --show-settings`), never from memory. Recommend a course only when phase 6 allows it.
+State the vendor's default rule set only from a run of the project's runner (`check --show-settings`), never from memory. Recommend exempting only when the user said the release is needed now.
 
 ## Halted and blocked runs
 
