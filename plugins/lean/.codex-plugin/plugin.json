@@ -1,6 +1,6 @@
 {
   "name": "lean",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Writing discipline and cleanup tools for tight, slop-free prose and code.",
   "author": {
     "name": "Tony Narlock",
