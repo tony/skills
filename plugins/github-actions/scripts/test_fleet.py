@@ -4,10 +4,7 @@
 # pyright: reportAny=false, reportUnusedCallResult=false, reportPrivateUsage=false
 from __future__ import annotations
 
-import io
-import json
 import subprocess
-import sys
 from pathlib import Path
 
 import fleet  # pyright: ignore[reportImplicitRelativeImport]
@@ -45,52 +42,10 @@ def _clone(root: Path, name: str, url: str = "") -> Path:
     return work
 
 
-def _call(argv: list[str], stdin: str = "") -> tuple[int, str]:
-    sys.stdin = io.StringIO(stdin)
-    return fleet.main(argv), ""
-
-
-def test_args_parse_flags_and_quoting(capsys: pytest.CaptureFixture[str], tmp_path: Path) -> None:
-    """Options become fields; a quoted shell word stays one literal value."""
-    code, _ = _call(
-        ["args", "update-actions"],
-        f"--root {tmp_path} --owner acme --owner 'b-co' --audit-only --push",
-    )
-    got = json.loads(capsys.readouterr().out)
-    assert code == 0
-    assert (got["owner"], got["audit_only"], got["push"], got["pr"]) == (
-        ["acme", "b-co"],
-        True,
-        True,
-        False,
-    )
-    _call(["args", "update-action"], "actions/checkout v4 --pr")
-    got = json.loads(capsys.readouterr().out)
-    assert (got["action"], got["target"], got["pr"]) == ("actions/checkout", "v4", True)
-
-
-@pytest.mark.parametrize(
-    ("skill", "text", "reason"),
-    [
-        ("update-actions", "--frobnicate", "unrecognized arguments"),
-        ("update-actions", "--root /nonexistent-dir-xyz", "is not a directory"),
-        ("update-actions", "--owner", "expected one argument"),
-        ("update-actions", "--owner 'a;b'", "--owner takes account names"),
-        ("update-action", "--audit-only", "unrecognized arguments"),
-        ("update-action", "'actions/x;id'", "is not owner/name"),
-        ("update-action", "actions/checkout main", "is not a version"),
-        ("update-action", "--repo 'not a slug'", "is not a directory or owner/name slug"),
-    ],
-)
-def test_args_refuse_with_one_line(
-    skill: str, text: str, reason: str, capsys: pytest.CaptureFixture[str]
-) -> None:
-    """Every refusal exits 2 with a single reason line."""
-    code, _ = _call(["args", skill], text)
-    err = capsys.readouterr().err
-    assert code == 2
-    assert reason in err
-    assert len(err.splitlines()) == 1
+def test_discover_refuses_bad_owner(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    """An owner that is not an account name exits 2 with one reason line."""
+    assert fleet.main(["discover", str(tmp_path), "--owner", "a;b"]) == 2
+    assert capsys.readouterr().err == "--owner takes account names\n"
 
 
 def _fork_is_acme_fork(slug: str) -> bool:

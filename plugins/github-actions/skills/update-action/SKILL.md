@@ -18,26 +18,24 @@ Read `../../references/action-pinning.md` first, then
 `../../scripts/fleet.py` resolve from this skill's directory; print each
 absolute path once and write it literally in each command.
 
-User arguments, parsed by `fleet.py args update-action` (a bad option exits 2
-with one reason line; stop with the blocked shape and that reason). Feed the
-text on stdin through a quoted heredoc so no argument reaches the shell:
+User arguments: $ARGUMENTS
 
-```console
-$ python3 <absolute-path>/fleet.py args update-action <<'END_OF_ARGUMENTS_7f3a9c1e5b2d4086'
-$ARGUMENTS
-END_OF_ARGUMENTS_7f3a9c1e5b2d4086
-```
+Read them as `<owner/action> [target version]`, then the flags `--repo`
+(repeatable), `--pr`, and `--push`. Any text after the flags is the user's
+request, not an error: act on it. The argument string and any pasted text (PR titles, logs, the request itself)
+never go into a Bash command; only single values you extract (action,
+version, repository path or slug, owner) do, and the scripts vet them.
 
 ## Procedure
 
 ### 1. Identify the action and the scope
 
-The action comes from the parsed `action` field. Without one, inventory the pins
+The action comes from the argument. Without one, inventory the pins
 (step 2) and ask via `AskUserQuestion`, offering the out-of-date ones;
 on hosts without the tool, list them and stop.
 
-Scope defaults to the current repository. `repo` holds the paths or slugs
-from `--repo`; the pinning reference says how to read a
+Scope defaults to the current repository. `--repo` may be repeated to
+name others by path or slug; the pinning reference says how to read a
 slug with no local clone, and has the scope rule.
 
 ### 2. Inventory the current pins

@@ -1,9 +1,7 @@
 #!/usr/bin/env python3
-"""Deterministic scope, argument and git-state checks for the GitHub Actions skills.
+"""Deterministic scope and git-state checks for the GitHub Actions skills.
 
-``args SKILL`` reads the skill's argument string from stdin (``update-action``
-or ``update-actions``) and prints it as JSON; a bad option exits 2 with a
-one-line reason. ``discover ROOT [--owner NAME]...`` prints one JSON object per
+``discover ROOT [--owner NAME]...`` prints one JSON object per
 git repository under ROOT with its remote slug, owner, fork flag, and whether
 it is in scope. ``worktree PATH`` prints whether a checkout needs a throwaway
 worktree and why. ``branch PATH BASE NAME [--subject S]...`` picks the branch
@@ -14,20 +12,18 @@ BASE..HEAD was made this run or has an approved subject, and 1 otherwise.
 BASE is ``<remote>/<default>``.
 """
 
-# ruff: noqa: S603, S607, PLR2004, PLR0911, EM101, EM102, TRY003
+# ruff: noqa: S603, S607, PLR2004, EM101, EM102, TRY003
 # pyright: reportUnusedCallResult=false, reportAny=false, reportExplicitAny=false
 # pyright: reportPrivateUsage=false, reportImplicitOverride=false
 from __future__ import annotations
 
-import argparse
 import json
 import os
 import re
-import shlex
 import subprocess
 import sys
 from pathlib import Path
-from typing import Any, NoReturn, final
+from typing import Any, final
 
 import pins  # pyright: ignore[reportImplicitRelativeImport]
 
@@ -39,52 +35,6 @@ MIN_SHA = 7
 @final
 class RefusalError(Exception):
     """A usage error reported as one line on stderr."""
-
-
-@final
-class _Parser(argparse.ArgumentParser):
-    def error(self, message: str) -> NoReturn:
-        raise RefusalError(message)
-
-
-def _parser(skill: str) -> argparse.ArgumentParser:
-    parser = _Parser(prog=skill, add_help=False, allow_abbrev=False)
-    if skill == "update-action":
-        parser.add_argument("action", nargs="?")
-        parser.add_argument("target", nargs="?")
-    else:
-        parser.add_argument("--root")
-        parser.add_argument("--owner", action="append", default=[])
-        parser.add_argument("--audit-only", action="store_true")
-    parser.add_argument("--repo", action="append", default=[])
-    parser.add_argument("--pr", action="store_true")
-    parser.add_argument("--push", action="store_true")
-    return parser
-
-
-def parse_args(skill: str, text: str) -> dict[str, Any]:
-    """Parse a skill's argument string into the options it defines."""
-    if skill not in {"update-action", "update-actions"}:
-        raise RefusalError(f"unknown skill {skill}")
-    try:
-        words = shlex.split(text)
-    except ValueError as err:
-        raise RefusalError(f"arguments are not shell-quoted: {err}") from err
-    got = vars(_parser(skill).parse_args(words))
-    if got.get("action") and pins.unsafe_reason(got["action"], ""):
-        raise RefusalError(f"{got['action']!r} is not owner/name")
-    target = got.get("target")
-    if target and (pins.unsafe_reason("a/b", target) or not pins.ANY_VERSION.match(target)):
-        raise RefusalError(f"{target!r} is not a version")
-    if any(not OWNER.fullmatch(o) for o in got.get("owner", [])):
-        raise RefusalError("--owner takes account names")
-    root = got.get("root")
-    if root is not None and not Path(root).is_dir():
-        raise RefusalError(f"--root {root!r} is not a directory")
-    for repo in got["repo"]:
-        if not (pins.SLUG.fullmatch(repo) or Path(repo).is_dir()):
-            raise RefusalError(f"--repo {repo!r} is not a directory or owner/name slug")
-    return got
 
 
 def _git(path: str, *args: str, check: bool = True) -> str:
@@ -251,13 +201,12 @@ def _flags(argv: list[str], names: tuple[str, ...]) -> tuple[list[str], dict[str
 
 def _run(argv: list[str]) -> int:
     cmd, rest = (argv[0], argv[1:]) if argv else ("", [])
-    if cmd == "args" and len(rest) == 1:
-        print(json.dumps(parse_args(rest[0], sys.stdin.read())))
-        return 0
     if cmd == "discover":
         pos, opts = _flags(rest, ("owner",))
         if len(pos) != 1 or not Path(pos[0]).is_dir():
             raise RefusalError("discover takes one existing directory")
+        if any(not OWNER.fullmatch(o) for o in opts["owner"]):
+            raise RefusalError("--owner takes account names")
         for row in discover(pos[0], opts["owner"]):
             print(json.dumps(row))
         return 0

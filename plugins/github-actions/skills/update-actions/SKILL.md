@@ -17,18 +17,15 @@ scope. It owns the phase structure, the references, and the Orchestration
 Plan; `../../references/output-shapes.md` owns the reply. For a single named action, use
 `/github-actions:update-action` instead.
 
-User arguments, parsed by `fleet.py args update-actions`. A bad option exits
-2 with one reason line; stop with the blocked shape and that reason. Feed the
-text on stdin through a quoted heredoc so no argument reaches the shell.
-`../../scripts/fleet.py` and `../../scripts/pins.py` resolve from this skill's
-directory; print each absolute path once and write it literally in each
-command:
+User arguments: $ARGUMENTS
 
-```console
-$ python3 <absolute-path>/fleet.py args update-actions <<'END_OF_ARGUMENTS_7f3a9c1e5b2d4086'
-$ARGUMENTS
-END_OF_ARGUMENTS_7f3a9c1e5b2d4086
-```
+Read them as the flags `--root`, `--owner` (repeatable), `--repo`
+(repeatable), `--audit-only`, `--pr`, and `--push`. Any text after the flags is
+the user's request, not an error: act on it. The argument string and any pasted text (PR titles, logs, the request itself)
+never go into a Bash command; only single values you extract (action,
+version, repository path or slug, owner) do, and the scripts vet them. `../../scripts/fleet.py`
+and `../../scripts/pins.py` resolve from this skill's directory; print each
+absolute path once and write it literally in each command.
 
 ## Procedure
 
@@ -36,11 +33,11 @@ This skill supplies the scope and the fan-out.
 
 ### 1. Scope
 
-Default scope is the current repository. `root` audits every git
-repository beneath a directory, found by `fleet.py discover`; `owner` keeps
+Default scope is the current repository. `--root` audits every git
+repository beneath a directory, found by `fleet.py discover`; `--owner` keeps
 only those whose remote belongs to the given accounts or organisations;
-`repo` names individual ones by path or slug. A slug with no clone is audited
-read-only. Under `root` without `owner`, list each discovered
+`--repo` names individual ones by path or slug. A slug with no clone is audited
+read-only. Under `--root` without `--owner`, list each discovered
 repository with its owner in the plan before any write. The scope rule and
 the slug-only read are in
 `../../references/action-pinning.md`.
