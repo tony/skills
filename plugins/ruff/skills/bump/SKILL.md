@@ -55,9 +55,9 @@ $ python3 <absolute path>/ruff_pins.py scope \
     --cwd <repo>
 ```
 
-It prints path, slug, owner match, ruff config, pin count and whether the branch exists, one repository per line, and exits 2 listing any `--repo` it could not resolve. Drop `owner` `no` rows. The rest is judgment and network. Exclude forks (`gh repo view <slug> --json isFork`, never the owner name) and, when `--push` or `--pr` is passed, repositories you cannot push to, and say why. List each repository's resolved version in the plan.
+It prints path, slug, owner match, the ruff configuration files at any depth, pin count, and whether the branch and a worktree of that name exist, one repository per line, and exits 2 listing any `--repo` it could not resolve. Drop `owner` `no` rows. The rest is judgment and network. Exclude forks (`gh repo view <slug> --json isFork`, never the owner name) and, when `--push` or `--pr` is passed, repositories you cannot push to, and say why. List each repository's resolved version in the plan.
 
-Drop repositories whose `ruff` column is `none` and that have no pins. Skip, and list as skipped, a repository whose `branch` column is `exists`, or where a worktree of the intended name exists. A repository whose resolved version is `current` or `ahead` skips phases 6 and 7; it drops out unless `--adopt-defaults` is passed, which keeps it for phase 8.
+Drop repositories whose `ruff` column is `none` and that have no pins. Skip, and list as skipped, a repository whose `branch` or `worktree` column is `exists`. A repository whose resolved version is `current` or `ahead` skips phases 6 and 7; it drops out unless `--adopt-defaults` is passed, which keeps it for phase 8.
 
 ### 3. Research the release once, then intersect it per repository
 

@@ -148,6 +148,40 @@ def test_scope_walks_roots_and_matches_owner(
     by = {r[1]: r for r in rows}
     assert by["mine/a"][5] == "exists"
     assert by["theirs/b"][5] == "none"
-    assert by["mine/a"][2:5] == ["yes", "config", "1"]
+    assert by["theirs/b"][6] == "none"
+    assert by["mine/a"][2:5] == ["yes", "ruff.toml", "1"]
     assert by["theirs/b"][2:5] == ["no", "none", "0"]
     assert by["unresolved"][0] == "nobody/none"
+
+
+def test_arguments_one_word_and_tokens_agree(capsys: pytest.CaptureFixture[str]) -> None:
+    """The argument string may arrive quoted as one word or already split."""
+    assert ruff_pins.main(["arguments", "--repo a b --push"]) == 0
+    one = capsys.readouterr().out
+    assert ruff_pins.main(["arguments", "--repo", "a", "b", "--push"]) == 0
+    assert capsys.readouterr().out == one
+    assert json.loads(one)["repo"] == ["a", "b"]
+
+
+@pytest.mark.integration
+def test_scope_finds_nested_config_and_worktree(
+    tmp_path: pathlib.Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """A nested-only ruff config is reported by path, and a worktree on the branch shows."""
+    repo = tmp_path / "mono"
+    (repo / "pkg").mkdir(parents=True)
+    (repo / "pkg" / "pyproject.toml").write_text("[tool.ruff]\nline-length = 99\n")
+    (repo / "svc").mkdir()
+    (repo / "svc" / ".ruff.toml").write_text("[lint]\n")
+    subprocess.run(["git", "init", "-q", "-b", "main", str(repo)], check=True)
+    ident = ["-c", "user.name=t", "-c", "user.email=t@t"]
+    subprocess.run(["git", "-C", str(repo), "add", "."], check=True)
+    subprocess.run(["git", "-C", str(repo), *ident, "commit", "-q", "-m", "x"], check=True)
+    wt = tmp_path / "elsewhere"
+    subprocess.run(
+        ["git", "-C", str(repo), "worktree", "add", "-q", "-b", "bump", str(wt)], check=True
+    )
+    assert ruff_pins.main(["scope", "--repo", str(repo), "--branch", "bump"]) == 0
+    row = capsys.readouterr().out.splitlines()[0].split("\t")
+    assert row[3] == "pkg/pyproject.toml,svc/.ruff.toml"
+    assert row[6] == "exists"

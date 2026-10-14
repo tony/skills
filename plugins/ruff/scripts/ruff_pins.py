@@ -12,16 +12,18 @@ or ``==`` pin that resolves ruff, with ``<TAB>behind|current|ahead`` against
 ``--target``. A version that is not dotted numbers prints with an ``error``
 status, the other rows still print, and the exit status is 2.
 
-``arguments TEXT...`` splits the skill's argument string and prints it as JSON:
+``arguments TEXT...`` splits the skill's argument string, given as one word or
+as separate tokens, and prints it as JSON:
 ``version``, ``root``, ``repo``, ``owner``, ``branch`` and the boolean flags.
 
 ``scope [--root DIR] [--repo P...] [--owner N...] [--branch B] [--cwd DIR]``
-prints ``path<TAB>slug<TAB>owner<TAB>ruff<TAB>pins<TAB>branch`` per git
+prints ``path<TAB>slug<TAB>owner<TAB>ruff<TAB>pins<TAB>branch<TAB>worktree`` per git
 repository: the walked ``--root`` repositories, the ``--repo`` paths or slugs,
 else ``--cwd``. ``owner`` is ``yes``/``no`` against ``--owner`` (``-`` without
-it), ``ruff`` is ``config`` or ``none``, ``pins`` counts pin lines, ``branch``
-is ``exists`` or ``none``. A ``--repo`` that matches nothing prints
-``unresolved`` in the slug column and exits 2.
+it), ``ruff`` lists the ruff configuration files at any depth (comma-separated
+paths) or ``none``, ``pins`` counts pin lines, ``branch`` and ``worktree`` are
+``exists`` or ``none`` (a worktree on the branch or in a directory of that name). A ``--repo`` that
+matches nothing prints ``unresolved`` in the slug column and exits 2.
 
 ``lapse --version V --cooldown 7d [--filename-contains S]... [--json FILE]``
 reads the package index JSON (stdin by default) and prints the latest upload
@@ -209,13 +211,32 @@ def _repos_under(root: Path) -> list[Path]:
     return found
 
 
-def _has_config(repo: Path) -> bool:
-    if (repo / "ruff.toml").exists() or (repo / ".ruff.toml").exists():
-        return True
-    pyproject = repo / "pyproject.toml"
-    return pyproject.is_file() and "[tool.ruff" in pyproject.read_text(
-        encoding="utf-8", errors="replace"
-    )
+def _configs(repo: Path) -> list[str]:
+    """Return the tracked or trackable ruff configuration files, relative to ``repo``."""
+    listing = _git(repo, "ls-files", "--cached", "--others", "--exclude-standard")
+    found: list[str] = []
+    for name in listing.splitlines():
+        path = Path(name)
+        if path.name in ("ruff.toml", ".ruff.toml"):
+            found.append(name)
+        elif path.name == "pyproject.toml" and (repo / path).is_file():
+            text = (repo / path).read_text(encoding="utf-8", errors="replace")
+            if "[tool.ruff" in text:
+                found.append(name)
+    return sorted(found)
+
+
+def _worktree_for(repo: Path, branch: str) -> bool:
+    """Return whether a worktree has ``branch`` checked out or sits in a directory of that name."""
+    if not branch:
+        return False
+    for block in _git(repo, "worktree", "list", "--porcelain").split("\n\n"):
+        lines = block.splitlines()
+        if f"branch refs/heads/{branch}" in lines:
+            return True
+        if lines and lines[0].startswith("worktree ") and Path(lines[0][9:]).name == branch:
+            return True
+    return False
 
 
 def scope(
@@ -238,7 +259,7 @@ def scope(
         elif match:
             chosen.extend(match)
         else:
-            rows.append((name, "unresolved", "-", "-", "-", "-"))
+            rows.append((name, "unresolved", "-", "-", "-", "-", "-"))
             unresolved = True
     if not roots and not repos:
         chosen.append(Path(cwd))
@@ -250,14 +271,16 @@ def scope(
         wanted = {o.lower() for o in owners}
         owned = "-" if not owners else "yes" if slug.split("/")[0].lower() in wanted else "no"
         exists = bool(branch) and bool(_git(repo, "rev-parse", "--verify", f"refs/heads/{branch}"))
+        configs = _configs(repo)
         rows.append(
             (
                 str(repo),
                 slug or "-",
                 owned,
-                "config" if _has_config(repo) else "none",
+                ",".join(configs) or "none",
                 str(len(sites(str(repo)))),
                 "exists" if exists else "none",
+                "exists" if _worktree_for(repo, branch) else "none",
             )
         )
     return rows, unresolved
@@ -303,14 +326,17 @@ def main(argv: list[str]) -> int:
     when.add_argument("--cooldown", required=True)
     when.add_argument("--filename-contains", action="append", default=[])
     when.add_argument("--json", help="index JSON file; stdin when omitted")
+    if argv[:1] == ["arguments"]:
+        rest = argv[1:]
+        words = shlex.split(rest[0]) if len(rest) == 1 else rest
+        print(json.dumps(parse_arguments(words)))
+        return 0
     args = parser.parse_args(argv)
     failed = False
     try:
         if args.command == "sites":
             for path, number, text in sites(args.dir):
                 print(f"{path}\t{number}\t{text}")
-        elif args.command == "arguments":
-            print(json.dumps(parse_arguments(shlex.split(" ".join(args.text)))))
         elif args.command == "scope":
             rows, failed = scope(args.root, args.repo, args.owner, args.branch, args.cwd)
             for row in rows:
