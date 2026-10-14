@@ -372,3 +372,29 @@ def test_paths_resolve_tracked_globs_and_untracked_literals(
     assert capsys.readouterr().out == "a.py\ttracked\nnew.md\tuntracked\n"
     assert scope.main(["--paths", "missing.md"]) == 2
     assert "not a file: missing.md" in capsys.readouterr().err
+
+
+def test_paths_glob_matches_tracked_and_untracked(
+    tmp_path: pathlib.Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """A glob lists untracked matches beside tracked ones."""
+    _topic_repo(tmp_path)
+    (tmp_path / "new.py").write_text("x = 1\n")
+    monkeypatch.chdir(tmp_path)
+    assert scope.main(["--paths", "*.py"]) == 0
+    assert capsys.readouterr().out == "a.py\ttracked\nnew.py\tuntracked\n"
+
+
+def test_paths_marks_a_tracked_file_deleted_from_the_worktree(
+    tmp_path: pathlib.Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """A tracked file removed from disk is reported deleted, not tracked."""
+    f = _topic_repo(tmp_path)
+    f.unlink()
+    monkeypatch.chdir(tmp_path)
+    assert scope.main(["--paths", "a.py"]) == 0
+    assert capsys.readouterr().out == "a.py\tdeleted\n"

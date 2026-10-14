@@ -20,3 +20,8 @@ def test_refuses_unusable_input(text: str, reason: str) -> None:
     """Empty input or an unknown verdict word raises with the reason."""
     with pytest.raises(ValueError, match=reason):
         _ = tally.tally(text)
+
+
+def test_singular_for_one_comment() -> None:
+    """One bullet reads "1 comment"."""
+    assert tally.tally("- Kept x\n") == "1 comment: 1 kept, 0 rewritten, 0 deleted"

@@ -378,7 +378,7 @@
         "references/prose-rules.md": "plugins/lean/references/prose-rules.md",
         "references/scope.py": "plugins/lean/scripts/scope.py"
       },
-      "bytes": 20302
+      "bytes": 20579
     },
     {
       "name": "lean-trim-comments",
@@ -392,7 +392,7 @@
         "references/scope.py": "plugins/lean/scripts/scope.py",
         "references/tally.py": "plugins/lean/scripts/tally.py"
       },
-      "bytes": 30208
+      "bytes": 31277
     },
     {
       "name": "lean-writing",

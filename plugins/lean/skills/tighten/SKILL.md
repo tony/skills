@@ -44,8 +44,9 @@ the reply.
    $ python3 ../../scripts/scope.py --paths <paths/globs>
    ```
 
-   It prints `path<TAB>tracked|untracked` per file, and exits 2 naming a
-   path that matches no file: report that and stop.
+   It prints `path<TAB>tracked|untracked|deleted` per file, and exits 2
+   naming a path that matches no file: report that and stop. Skip a
+   `deleted` row: nothing is on disk to edit.
 2. **Load the rules and voice.** Read
    `../../references/prose-rules.md` and
    `../../references/lean-rubric.md`, then `./AGENTS.md` and

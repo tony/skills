@@ -19,6 +19,8 @@ def tally(text: str) -> str:
 
     >>> tally("- Kept a\n- Deleted b\n- Rewrote c\n- Deleted d\n")
     '4 comments: 1 kept, 1 rewritten, 2 deleted'
+    >>> tally("- Kept a")
+    '1 comment: 1 kept, 0 rewritten, 0 deleted'
     """
     counts = [0, 0, 0]
     for line in text.splitlines():
@@ -32,7 +34,9 @@ def tally(text: str) -> str:
     if not sum(counts):
         msg = "no verdict bullets"
         raise ValueError(msg)
-    return f"{sum(counts)} comments: {counts[0]} kept, {counts[1]} rewritten, {counts[2]} deleted"
+    total = sum(counts)
+    noun = "comment" if total == 1 else "comments"
+    return f"{total} {noun}: {counts[0]} kept, {counts[1]} rewritten, {counts[2]} deleted"
 
 
 def main() -> int:

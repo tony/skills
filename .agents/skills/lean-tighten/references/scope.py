@@ -7,7 +7,7 @@ whole tree (``--all``, ranges omitted). Paths are relative to the current
 directory. Untracked files outside ignore rules count as added in full on a
 branch run. Lockfiles, vendored trees, and files marked linguist-generated
 or linguist-vendored are left out. ``--paths P...`` resolves each path or
-glob to ``path<TAB>tracked|untracked`` instead. Exits 2 with a message on
+glob to ``path<TAB>tracked|untracked|deleted`` instead. Exits 2 with a message on
 stderr outside a git repository, when no trunk ref or merge base exists,
 when a path matches no file, or when nothing changed.
 """
@@ -205,18 +205,20 @@ def _scan(top: str, *, staged: bool) -> tuple[str, list[str]]:
 
 
 def _resolve(patterns: list[str]) -> int:
-    """Print ``path<TAB>tracked|untracked`` for each pattern, or fail on a miss."""
+    """Print ``path<TAB>tracked|untracked|deleted`` per match, or fail on a miss."""
     rows: list[tuple[str, str]] = []
     for pat in patterns:
         tracked = _git_z("ls-files", "-z", "--", pat)
-        if tracked:
-            rows.extend((os.path.relpath(Path.cwd() / n), "tracked") for n in tracked)
-        elif Path(pat).is_file():
-            rows.append((os.path.relpath(pat), "untracked"))
-        else:
+        fresh = _git_z("ls-files", "-z", "--others", "--exclude-standard", "--", pat)
+        found = [(n, "tracked" if Path(n).exists() else "deleted") for n in tracked]
+        found += [(n, "untracked") for n in fresh]
+        if not found and Path(pat).is_file():
+            found = [(pat, "untracked")]
+        if not found:
             print(f"not a file: {pat}", file=sys.stderr)
             return 2
-    for name, state in dict.fromkeys(rows):
+        rows.extend((os.path.relpath(Path.cwd() / n), state) for n, state in found)
+    for name, state in sorted(dict.fromkeys(rows)):
         print(f"{name}\t{state}")
     return 0
 

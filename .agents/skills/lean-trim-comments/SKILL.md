@@ -79,11 +79,12 @@ With no paths, the scope is the lines this branch added or changed.
 
    The script prints `path<TAB>start-end,...` per file; `--all` prints
    names only, meaning judge the whole file; `--paths` prints
-   `path<TAB>tracked|untracked`, also meaning the whole file. A path with an empty range
+   `path<TAB>tracked|untracked|deleted`, also meaning the whole file. A path with an empty range
    had only deletions: skip it. Paths are relative to the current
-   directory, and untracked files count as added in full. Exit 2 means no
-   trunk ref or no changes: report that and stop rather than widening
-   the scope. The script already leaves out lockfiles, vendored trees, and
+   directory, and untracked files count as added in full. Exit 2 means not a git
+   repository, no trunk ref, no merge base with it, or no changes; the
+   script prints which on stderr: report it and stop rather than widening
+   the scope. A `--paths` row marked `deleted` has no text to judge: skip it. The script already leaves out lockfiles, vendored trees, and
    generated files, and names any untracked file it skipped on stderr;
    do not judge a skipped file.
 
@@ -126,41 +127,37 @@ With no paths, the scope is the lines this branch added or changed.
    `--diff-only`, and runs that edited nothing.
 
 7. **Report and hand off.** Write it per
-   `references/prose-rules.md`, in the shape for the run:
+   `references/prose-rules.md`. Reply as plain text outside any
+   code fence, with plain bullets, no bold (never `- **Label:** ...`),
+   and no local paths. The reply adds no sentence outside the shape,
+   anywhere (not even to say nothing was edited or why); do not narrate
+   comments you did not judge. A stopped run is one result sentence,
+   then what the user needs to do. Build the reply in these parts.
 
-   - `--stdin` and pasted code: the hero line, the trimmed code in one
-     fence, `## Verdicts`, then `## For the commit message`. Pasted code
-     has no file: never offer a file option or match it to a scaffold file.
-   - `--diff-only` and runs that edited nothing: the hero line,
-     `## Verdicts`, then `## For the commit message`, without fenced code
-     (the step 4 list is not printed twice).
-   - Edited runs: the hero line, the line "The verdicts are in the
-     preview above." in place of `## Verdicts`, then
-     `## For the commit message`.
-
-   Every shape ends with the next steps, then nothing. The hero line is
-   `N comments: K kept, R rewritten, D deleted`. Draft the verdict
-   bullets first, each starting `Kept`, `Rewrote`, or `Deleted`, pipe
-   them to the tally, and paste its line as the hero; never recount or
-   correct it inline:
+   **7a. Verdict bullets and hero.** Draft one bullet per comment first,
+   each starting `Kept`, `Rewrote`, or `Deleted`. A comment you shorten
+   or reword is rewritten, not kept; kept means the text is unchanged. A
+   rewrite preserves every instruction in the original, such as what not
+   to change and what to test first, adds no fact the original lacks,
+   and names the gate the old text failed, not one the new text passes.
+   Pipe the bullets to the tally and paste its line as the hero, first,
+   with no paragraph before it; never recount or correct it inline:
 
    ```console
    $ python3 references/tally.py
    ```
 
-   A comment you shorten or reword is rewritten, not kept; kept means
-   the text is unchanged. A rewrite preserves every instruction in the
-   original, such as what not to change and what to test first, and adds
-   no fact the original lacks. A rewrite verdict names the gate the old
-   text failed, not one the new text passes. The hero comes first, with
-   no paragraph before it. `## For the commit message` holds only
-   rationale moved out of a deleted or rewritten comment, never text
-   still present in the code or in a kept or rewritten comment; omit it,
-   and say nothing about it, when nothing moved. The reply adds no
-   sentence outside the shape, anywhere (not even to say nothing was
-   edited or why); do not narrate comments you did not judge.
+   The hero line reads `N comments: K kept, R rewritten, D deleted`.
 
-   Reply in this shape, as plain text outside any code fence, with plain bullets, no bold (never `- **Label:** ...`), and no local paths:
+   **7b. Commit-message section.** `## For the commit message` holds only
+   rationale moved out of a deleted or rewritten comment, never text
+   still present in the code or in a kept or rewritten comment. Omit it,
+   and say nothing about it, when nothing moved.
+
+   **7c. Shape for `--stdin` and pasted code.** Hero, the trimmed code in
+   one fence, `## Verdicts`, then `## For the commit message`. Pasted
+   code has no file: never offer a file option or match it to a scaffold
+   file.
 
    ````text
    5 comments: 2 kept, 1 rewritten, 2 deleted
@@ -186,11 +183,44 @@ With no paths, the scope is the lines this branch added or changed.
    - Tighten the prose too with `lean-tighten`
    ````
 
-   Next steps follow `references/handoff.md`: commit, tighten the
-   prose too with the `lean-tighten` skill, or discard. A `--diff-only` run offers
-   to apply the deletions instead. Never offer to widen the scope to
-   comments the branch did not touch. A stopped run is one result
-   sentence, then what the user needs to do.
+   **7d. Shape for `--diff-only` and runs that edited nothing.** Hero,
+   `## Verdicts`, then `## For the commit message`, with no fenced code
+   (the step 4 list is not printed twice).
+
+   ````text
+   2 comments: 0 kept, 0 rewritten, 2 deleted
+
+   ## Verdicts
+
+   - Deleted "fetches a URL with retries": fails Elite, the name says it.
+   - Deleted "retries up to 3 times": fails Upkeep, repeats MAX_RETRIES.
+
+   Next steps:
+   - Apply the deletions
+   ````
+
+   **7e. Shape for edited runs.** Hero, the line "The verdicts are in
+   the preview above." in place of `## Verdicts`, then
+   `## For the commit message`.
+
+   ````text
+   3 comments: 1 kept, 1 rewritten, 1 deleted
+
+   The verdicts are in the preview above.
+
+   ## For the commit message
+
+   - The retry was added after intermittent DNS failures on Windows CI.
+
+   Next steps:
+   - Commit the edits
+   - Tighten the prose too with `lean-tighten`
+   - Discard with `git checkout -- <file>`
+   ````
+
+   **7f. Next steps.** Follow `references/handoff.md`: commit,
+   tighten the prose too with the `lean-tighten` skill, or discard. Never offer to
+   widen the scope to comments the branch did not touch.
 
 ## What this does not do
 
