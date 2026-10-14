@@ -5,8 +5,8 @@ corpus. The product is a type hierarchy plus a controlled vocabulary, a short
 human-readable brief, and an evidence layer that lets a third party check
 every claim.
 
-An agent that has read a corpus usually returns a summary. A summary cannot be
-checked, does not compose, and rots without saying so. The test this plugin is
+An agent that has read a corpus usually returns a summary, which no reader can
+check, build on, or tell has gone stale. The test this plugin is
 built against: can a reader who was not present disagree with a specific
 claim, find what it rests on, and re-derive it?
 
