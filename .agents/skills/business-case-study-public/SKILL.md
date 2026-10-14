@@ -35,7 +35,8 @@ User arguments: $ARGUMENTS
 
 ### 1. Locate the run and pass the gate
 
-Per `interim-format.md` § Rendering a report.
+Per `interim-format.md` § Rendering a report. When the request names a
+workflow, take the first line of `runs --workflow <slug>` as the run.
 
 ### 2. Draft under the tier-3 contract
 

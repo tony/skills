@@ -29,7 +29,8 @@ User arguments: $ARGUMENTS
 
 ### 1. Locate the run and pass the gate
 
-Per `interim-format.md` § Rendering a report.
+Per `interim-format.md` § Rendering a report. When the request names a
+workflow, take the first line of `runs --workflow <slug>` as the run.
 
 ### 2. Compute the figures
 
@@ -78,8 +79,11 @@ Write `<run>/reports/leadership.md` with this fixed structure:
 
 Write it per `../../references/prose-rules.md`.
 
-Then run steps 4 and 5 of `interim-format.md` § Rendering a report: the
-money check, then `stamp`.
+Then run `../../scripts/business.py trace <run>/reports/leadership.md --run <run>`
+(absolute path). It lists every number the report holds that neither the
+`project`/`breakeven` output nor the run's records contain; correct each
+to the printed value and rerun until it prints `ok`. Then run steps 4 and 5 of
+`interim-format.md` § Rendering a report: the money check, then `stamp`.
 
 ## Output
 

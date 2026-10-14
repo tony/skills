@@ -8,6 +8,9 @@ from __future__ import annotations
 
 import io
 import json
+import re
+import shutil
+import subprocess
 import typing as t
 from pathlib import Path
 
@@ -755,3 +758,176 @@ def test_assumptions_reject_quoted_commented_and_nested_fields(tmp_path: Path) -
     register.write_text(REGISTER + "  notes:\n    - a\n")
     assert any("nested structure" in p for p in business.check_assumptions(register.read_text()))
     assert business.check_assumptions("# a note\n" + REGISTER) == []
+
+
+def test_runs_workflow_lists_only_that_slug_newest_first(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    for name in ("2026-01-15/business/a", "2026-01-20/business/a", "2026-02-01/business/b"):
+        (tmp_path / name).mkdir(parents=True)
+    assert business.main(["runs", "--root", str(tmp_path), "--workflow", "a"]) == 0
+    lines = capsys.readouterr().out.splitlines()
+    assert [Path(x).parent.parent.name for x in lines] == ["2026-01-20", "2026-01-15"]
+    assert business.main(["runs", "--root", str(tmp_path), "--workflow", "none-such"]) == 0
+    assert capsys.readouterr().out == ""
+
+
+def _report_run(root: Path) -> Path:
+    run = make_run(root)
+    (run / "assumptions.yaml").write_text(BREAKEVEN_REGISTER + "\n" + PROJECT_REGISTER + "\n")
+    return run
+
+
+def test_trace_run_checks_report_figures_against_script_output(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    run = _report_run(tmp_path)
+    report = tmp_path / "leadership.md"
+    report.write_text("Base net 92 engineer-hours, conservative 45 hours, break-even 140.\n")
+    assert business.main(["trace", str(report), "--run", str(run)]) == 0
+    report.write_text("Base net 93 engineer-hours.\n")
+    assert business.main(["trace", str(report), "--run", str(run)]) == 1
+    assert "figure not in the source text: 93" in capsys.readouterr().out
+    assert business.main(["trace", str(report)]) == 2
+
+
+def test_trace_run_accepts_a_percent_of_a_registered_ratio(tmp_path: Path) -> None:
+    run = _report_run(tmp_path)
+    assert business.untraced_figures("40% saved", business.run_figure_source(run)) == []
+
+
+def _readme(run: Path, extra: str) -> None:
+    (run / "README.md").write_text(f"Window: 2026-04-01..2026-06-30.\nNames: Atlas\n{extra}")
+
+
+def test_scan_tier_one_and_two_deny_people_but_allow_teams(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    run = make_run(tmp_path)
+    draft = tmp_path / "report.md"
+    draft.write_text("The Atlas team, led by Priya, ran https://corp.example/x for PROJ-1.\n")
+    _readme(run, "People: Priya Raman\n")
+    for tier in ("1", "2"):
+        assert business.main(["scan", "--run", str(run), "--tier", tier, str(draft)]) == 1
+        assert capsys.readouterr().out == "1:24: denied-name: Priya\n"
+    assert business.main(["scan", "--run", str(run), str(draft)]) == 1
+    assert "denied-name: Atlas" in capsys.readouterr().out
+    _readme(run, "People: none\n")
+    assert business.main(["scan", "--run", str(run), "--tier", "1", str(draft)]) == 0
+    _readme(run, "")
+    assert business.main(["scan", "--run", str(run), "--tier", "2", str(draft)]) == 2
+    assert "README.md has no People: line" in capsys.readouterr().err
+
+
+def test_collect_prs_records_output_hash_and_gate_verifies_it(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    run = make_run(tmp_path)
+    target = run / "raw" / "pr-metrics.csv"
+    monkeypatch.setattr("sys.stdin", io.StringIO(_review_page(has_next=False)))
+    args = ["collect-prs", "--start", "2026-04-01", "--end", "2026-04-30", "--output", str(target)]
+    assert business.main([*args, "--sources", str(run / "sources.md"), "--entry", "prs"]) == 0
+    entry = (run / "sources.md").read_text().split("## prs\n")[1].splitlines()
+    assert [x.split(":")[0] for x in entry] == ["- output", "- executed", "- sha256"]
+    assert entry[0] == "- output: raw/pr-metrics.csv"
+    assert entry[2] == f"- sha256: {business.file_sha256(target)} raw/pr-metrics.csv"
+    problems = business.check_run(run)
+    assert [p.split(": missing ")[-1] for p in problems] == ["query", "tool version"]
+    sources = run / "sources.md"
+    sources.write_text(sources.read_text() + "- query: gh\n- tool version: gh 2\n")
+    assert business.check_run(run) == []
+    target.write_text(target.read_text() + "tampered\n")
+    assert business.check_run(run) == [
+        "sources.md entry prs: raw/pr-metrics.csv does not match its sha256"
+    ]
+
+
+def test_collect_prs_sources_flags_go_together(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    monkeypatch.setattr("sys.stdin", io.StringIO(_review_page(has_next=False)))
+    args = ["collect-prs", "--start", "2026-04-01", "--end", "2026-04-30"]
+    assert business.main([*args, "--sources", str(tmp_path / "sources.md")]) == 2
+    assert "--sources and --entry go together and need --output" in capsys.readouterr().err
+
+
+def test_stats_csv_prints_rows_dropped_blanks_and_input_hash(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    sample = tmp_path / "t.csv"
+    sample.write_text("a,b\n10,4\n9,\n8,2\n7,\n")
+    assert business.main(["stats", "--csv", str(sample), "--column", "b"]) == 0
+    out = capsys.readouterr().out.splitlines()
+    assert "n: 2" in out
+    assert "rows: 4" in out
+    assert "dropped_blank: 2" in out
+    assert f"input_sha256: {business.file_sha256(sample)}" in out
+
+
+def test_stats_csv_bad_column_names_the_column(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    sample = tmp_path / "t.csv"
+    sample.write_text("a,b\n1,2\n")
+    assert business.main(["stats", "--csv", str(sample), "--column", "zzz"]) == 2
+    assert f"column 'zzz' not found or not numeric in {sample}" in capsys.readouterr().err
+
+
+def test_gate_requires_a_pinned_link_on_a_benchmarked_figure(tmp_path: Path) -> None:
+    run = make_run(tmp_path)
+    (run / "findings.md").write_text("METR measured 19% slower (BENCHMARKED, early-2025 tools).\n")
+    assert len(business.check_run(run)) == 1
+    assert "BENCHMARKED figure has no pinned link" in business.check_run(run)[0]
+    (run / "findings.md").write_text(
+        "METR measured 19% slower (BENCHMARKED: https://arxiv.org/abs/2507.09089, 2026-10-10).\n"
+    )
+    assert business.check_run(run) == []
+
+
+def test_scan_flags_short_commit_shas_but_not_hex_looking_words() -> None:
+    assert [h[3] for h in business.scan_text("Fixed in 9a29b1a and 9a29b1a2c3d4e5f6.")] == [
+        "9a29b1a",
+        "9a29b1a2c3d4e5f6",
+    ]
+    prose = "A defaced facade, the accede decade, 1234567 and 2026-06-30 and cafe."
+    assert business.scan_text(prose) == []
+    assert business.scan_text("See https://git.example/c/9a29b1a") == [
+        (1, 5, "url", "https://git.example/c/9a29b1a")
+    ]
+
+
+def _gh(*args: str) -> subprocess.CompletedProcess[str]:
+    return subprocess.run(["gh", *args], capture_output=True, text=True, check=False)  # noqa: S603, S607
+
+
+def _gh_ready() -> bool:
+    return shutil.which("gh") is not None and _gh("auth", "status").returncode == 0
+
+
+@pytest.mark.integration
+@pytest.mark.skipif(not _gh_ready(), reason="gh is missing or not authenticated")
+def test_plugin_query_runs_against_the_live_github_api() -> None:
+    """Run the query printed in instruments.md, unmodified, against a public repository."""
+    text = (Path(__file__).parents[1] / "references" / "instruments.md").read_text(encoding="utf-8")
+    found = re.search(r"-f query='(.*?)'\s*\\", text, re.DOTALL)
+    assert found
+    result = _gh(
+        "api",
+        "graphql",
+        "-f",
+        "owner=octocat",
+        "-f",
+        "name=Hello-World",
+        "-f",
+        f"query={found.group(1)}",
+    )
+    if "HTTP 5" in result.stderr:
+        pytest.skip("GitHub API unavailable")
+    assert result.returncode == 0, result.stderr
+    page = json.loads(result.stdout)["data"]["repository"]["pullRequests"]
+    assert page["nodes"]
+    assert all(
+        "filteredCount" in n["reopened"] and "pageInfo" in n["reviews"] for n in page["nodes"]
+    )
+    rows = business.collect_prs(result.stdout, "2000-01-01", "2100-01-01")
+    assert all(r["reopened"].isdigit() for r in rows)

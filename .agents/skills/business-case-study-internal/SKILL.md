@@ -29,7 +29,8 @@ User arguments: $ARGUMENTS
 
 ### 1. Locate the run and pass the gate
 
-Per `interim-format.md` § Rendering a report.
+Per `interim-format.md` § Rendering a report. When the request names a
+workflow, take the first line of `runs --workflow <slug>` as the run.
 
 ### 2. Ask for what the run package lacks
 
@@ -68,8 +69,11 @@ it, never supplied from inference.
 
 Write it per `references/prose-rules.md`.
 
-Then run steps 4 and 5 of `interim-format.md` § Rendering a report: the
-money check, then `stamp`.
+Then scan for individuals with `references/business.py scan --run <run>
+--tier 2 <run>/reports/case-study-internal.md` (absolute path); it reads the README
+`People:` line and reports each name; rewrite it as a role, since tier 2
+allows roles only. Then run steps 4 and 5 of `interim-format.md` § Rendering
+a report: the money check, then `stamp`.
 
 ## Output
 

@@ -79,8 +79,11 @@ a `Names:` line listing every organization, repository, team,
 person, and internal workflow or skill name the run touches, comma-separated. Research fills it from
 the repositories and teams it queried and the people the user named; `scan --run <run>`
 reads it as the deny list. `gate` fails when the line is empty;
-write `Names: none` when the run touches no names. The skeleton `init`
-writes has an empty `Names:` line, so the gate fails until it is filled.
+write `Names: none` when the run touches no names. A separate `People:`
+line lists the individuals among them, comma-separated (`People: none`
+when there are none); tiers 1 and 2 deny only that line. The skeleton
+`init` writes has an empty `Names:` line, so the gate fails until it is
+filled.
 A `collect-prs` warning that rows lack a column or that reviews were
 truncated is recorded here as well as in `sources.md`.
 
@@ -181,6 +184,14 @@ first, ordered by the date in the path:
 
 ```console
 $ ../scripts/business.py runs
+```
+
+For a named workflow, list only that slug; the first line is its
+newest run:
+
+```console
+$ ../scripts/business.py runs \
+    --workflow <slug>
 ```
 
 It searches only `~/Documents` and, on WSL, the Windows users'

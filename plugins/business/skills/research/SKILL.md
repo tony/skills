@@ -102,9 +102,11 @@ source manifest with verbatim queries, assumptions register, raw
 snapshots, per-topic measurements, and `findings.md`. Tag every figure
 per `provenance.md`; list every unknown with what data would resolve it.
 List every organization, repository, team, and person name the run
-touched on the README `Names:` line; the tier-3 scan depends on it.
+touched on the README `Names:` line, and the individuals among them on
+the `People:` line; the scans depend on both.
 Compute medians, quartiles, and intervals with `business.py stats`
-(`--csv <file> --column <a-b>` for a CSV column). Give each MEASURED
+(`--csv <file> --column <a-b>` for a CSV column); copy its `n`, `rows`,
+and `dropped_blank` beside each statistic. Give each MEASURED
 figure computed from a `raw/` CSV a `check:` line. Run
 `business.py gate <run>` and fix every problem before reporting.
 Write prose per `../../references/prose-rules.md`.

@@ -42,10 +42,14 @@ from urllib.parse import urlsplit
 if t.TYPE_CHECKING:
     from collections.abc import Callable, Collection, Sequence
 
+    Subparsers = argparse._SubParsersAction[argparse.ArgumentParser]  # noqa: SLF001  # pyright: ignore[reportPrivateUsage]
+
 DIRECTIONAL_BELOW = 20
 MIN_OBSERVATIONS = 2
 MIN_INTERVAL_N = 5
 REGISTER_INDENT = 2
+TIER_PUBLIC = 3
+README_FIELDS = ("Scope:", "Window:", "Instruments:", "Timezone: UTC", "Names:", "People:")
 
 _NOT_TICKETS = "ISO|SHA|UTF|GPT|COVID|RFC|CVE|CWE|PEP|AES|RSA|TLS|SSL|UTC|GMT"
 _HOST_SUFFIXES = (
@@ -114,6 +118,7 @@ SCAN_RULES: tuple[tuple[str, re.Pattern[str]], ...] = (
             rf"(?<![\w@/.-])(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+(?:{_HOST_SUFFIXES})(?![\w-])"
         ),
     ),
+    ("commit-sha", re.compile(r"\b(?=[0-9a-f]*\d)(?=[0-9a-f]*[a-f])[0-9a-f]{7,40}\b")),
     ("ip", re.compile(rf"(?<![\w.])(?:{_OCTET}\.){{3}}{_OCTET}(?!\w|\.\d)")),
     ("handle", re.compile(r"(?<![\w.+@-])@[A-Za-z0-9][A-Za-z0-9_-]{0,38}(?![\w@]|\.\w)")),
     (
@@ -135,7 +140,7 @@ SCAN_RULES: tuple[tuple[str, re.Pattern[str]], ...] = (
     ),
 )
 COVERING_KINDS = frozenset({"url", "email", "path", "secret"})
-COVERED_KINDS = frozenset({"host", "ip", "handle", "repo-slug"})
+COVERED_KINDS = frozenset({"host", "ip", "handle", "repo-slug", "commit-sha"})
 COMMON_PAIRS = frozenset(
     {
         "read/write", "input/output", "client/server", "true/false", "pass/fail", "before/after",
@@ -149,7 +154,7 @@ MIN_NAME_WORD = 3
 NAME_STOPWORDS = frozenset(
     {"the", "and", "for", "inc", "llc", "ltd", "corp", "co", "team", "group", "org", "project"}
 )
-NAMES_LINE_VALUE = re.compile(r"^Names:[ \t]*(.*)$", re.MULTILINE)
+PEOPLE_LINE = re.compile(r"^People:[ \t]*\S", re.MULTILINE)
 
 ASSUMPTION_FIELDS = (
     "id",
@@ -187,6 +192,7 @@ FIGURE = re.compile(
     rf"\d(?:\.\d+)?[\s-]?(?:%|(?:{_TIME_UNITS}|PRs?|engineers?|tasks?|drafts?|instances?)\b)",
     re.IGNORECASE,
 )
+PINNED_LINK = re.compile(r"https?://\S+|\bdoi:\s*\S+|\b10\.\d{4,9}/\S+|\barXiv:\s*\d{4}\.\d{4,5}")
 SENTENCE_END = re.compile(r"(?<=[.!?;])\s+(?=[A-Z])")
 _GATE_MONEY_FORMS = (
     "roi", "dollars?", "cost[- ]?savings?", r"monetiz\w*", "payback", "salar(?:y|ies)",
@@ -327,8 +333,10 @@ def parse_numbers(text: str) -> list[float]:
     return [float(line.split("#")[0]) for line in text.splitlines() if line.split("#")[0].strip()]
 
 
-def parse_names(text: str) -> list[str]:
-    r"""Return the names on the ``Names:`` lines of a README; ``none`` means no names.
+def parse_names(text: str, label: str = "Names") -> list[str]:
+    r"""Return the names on the ``Names:`` (or ``label:``) lines of a README.
+
+    ``none`` means no names.
 
     Examples
     --------
@@ -336,9 +344,11 @@ def parse_names(text: str) -> list[str]:
     ['Acme', 'lean-tighten', 'Priya Raman']
     >>> parse_names("Names: none\n")
     []
+    >>> parse_names("Names: Acme\nPeople: Priya Raman\n", "People")
+    ['Priya Raman']
     """
     names: list[str] = []
-    for match in NAMES_LINE_VALUE.finditer(text):
+    for match in re.finditer(rf"^{label}:[ \t]*(.*)$", text, re.MULTILINE):
         names.extend(n.strip().strip("`'\"*_ ") for n in re.split(r"[,;]", match.group(1)))
     names = [n for n in names if n]
     return [] if [n.lower() for n in names] == ["none"] else names
@@ -865,8 +875,10 @@ def breakeven(register: str) -> tuple[dict[str, float | None], list[str], list[s
     return figures, list(dict.fromkeys(missing)), []
 
 
-def list_runs(roots: Sequence[Path]) -> list[Path]:
+def list_runs(roots: Sequence[Path], workflow: str = "") -> list[Path]:
     """List ``<root>/<date>/business/<workflow>`` directories, newest date first.
+
+    A non-empty ``workflow`` keeps only runs of that slug, so the first is its newest.
 
     Examples
     --------
@@ -878,6 +890,11 @@ def list_runs(roots: Sequence[Path]) -> list[Path]:
     ...         Path(d, p).mkdir(parents=True)
     ...     [str(r.relative_to(d)) for r in list_runs([Path(d)])]
     ['2026-02-01/business/b', '2026-02-01/business/a', '2026-01-15/business/a']
+    >>> with tempfile.TemporaryDirectory() as d:
+    ...     for p in ("2026-02-01/business/b", "2026-01-15/business/a", "2026-01-20/business/a"):
+    ...         Path(d, p).mkdir(parents=True)
+    ...     [str(r.relative_to(d)) for r in list_runs([Path(d)], "a")]
+    ['2026-01-20/business/a', '2026-01-15/business/a']
     """
     found: list[Path] = []
     for root in roots:
@@ -885,7 +902,9 @@ def list_runs(roots: Sequence[Path]) -> list[Path]:
             found.extend(
                 run
                 for run in root.glob("*/business/*")
-                if run.is_dir() and DATE_DIR.fullmatch(run.parent.parent.name)
+                if run.is_dir()
+                and DATE_DIR.fullmatch(run.parent.parent.name)
+                and (not workflow or run.name == workflow)
             )
         except OSError:
             continue
@@ -931,6 +950,17 @@ def _check_sources(run: Path, entries: dict[str, list[str]]) -> list[str]:
             if not any(pattern.match(line) for line in lines)
         )
         for line in lines:
+            recorded = SHA_LINE.match(line)
+            if recorded:
+                target = run / recorded.group(2)
+                if not target.is_file():
+                    problems.append(
+                        f"sources.md entry {name}: hashed file {recorded.group(2)} is gone"
+                    )
+                elif file_sha256(target) != recorded.group(1):
+                    problems.append(
+                        f"sources.md entry {name}: {recorded.group(2)} does not match its sha256"
+                    )
             stamp = TIMESTAMP_VALUE.match(line)
             if stamp and not _is_timestamp(stamp.group(1)):
                 problems.append(
@@ -965,6 +995,8 @@ def _check_figures(
             if FIGURE.search(unit):
                 problems.append(f"{label}: figure without a provenance tag: {unit[:60]}")
             continue
+        if "BENCHMARKED" in unit and not PINNED_LINK.search(unit):
+            problems.append(f"{label}: BENCHMARKED figure has no pinned link: {unit[:60]}")
         if "MEASURED" not in unit:
             continue
         cited: list[str] = CITATION.findall(unit)
@@ -1025,6 +1057,64 @@ def _column(rows: list[dict[str, str]], expr: str) -> list[float] | None:
 def _read_csv_column(path: Path, expr: str) -> list[float] | None:
     with path.open(encoding="utf-8", newline="") as handle:
         return _column(list(csv.DictReader(handle)), expr)
+
+
+def _csv_rows(path: Path) -> list[dict[str, str]]:
+    with path.open(encoding="utf-8", newline="") as handle:
+        return list(csv.DictReader(handle))
+
+
+def file_sha256(path: Path) -> str:
+    """Return the hex SHA-256 of a file."""
+    return hashlib.sha256(path.read_bytes()).hexdigest()
+
+
+SHA_LINE = re.compile(r"^\W*sha256\s*:\s*(\S+)\s+(\S+)\s*$", re.IGNORECASE)
+
+
+def record_source(sources: Path, entry: str, output: Path) -> None:
+    r"""Write ``output`` (relative to ``sources``), its hash, and a clock time into an entry.
+
+    The entry is created when absent; the query and tool version stay the caller's.
+
+    Examples
+    --------
+    >>> import tempfile
+    >>> with tempfile.TemporaryDirectory() as d:
+    ...     _ = (Path(d) / "snap.csv").write_text("a")
+    ...     record_source(Path(d) / "sources.md", "snap", Path(d) / "snap.csv")
+    ...     [line.split(":")[0] for line in (Path(d) / "sources.md").read_text().splitlines()]
+    ['## snap', '- output', '- executed', '- sha256']
+    """
+    rel = output.resolve().relative_to(sources.resolve().parent).as_posix()
+    lines = sources.read_text(encoding="utf-8").splitlines() if sources.is_file() else []
+    start = next(
+        (
+            i
+            for i, x in enumerate(lines)
+            if x.startswith("## ") and x[3:].strip().strip("`") == entry
+        ),
+        None,
+    )
+    if start is None:
+        if lines and lines[-1].strip():
+            lines.append("")
+        lines.append(f"## {entry}")
+        start = len(lines) - 1
+    end = next((i for i in range(start + 1, len(lines)) if lines[i].startswith("## ")), len(lines))
+    body = [
+        x for x in lines[start + 1 : end] if not ((m := SHA_LINE.match(x)) and m.group(2) == rel)
+    ]
+    while body and not body[-1].strip():
+        _ = body.pop()
+    if not any(OUTPUT_LINE.match(x) for x in body):
+        body.append(f"- output: {rel}")
+    if not any(TIMESTAMP_VALUE.match(x) for x in body):
+        stamp = dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+        body.append(f"- executed: {stamp}")
+    body.append(f"- sha256: {file_sha256(output)} {rel}")
+    lines[start + 1 : end] = [*body, ""] if end < len(lines) else body
+    _ = sources.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 
 def _recompute(stat: str, values: list[float]) -> float:
@@ -1396,6 +1486,28 @@ _NUMBER = re.compile(r"(?<![\w.])\d[\d,]*(?:\.\d+)?")
 _LIST_MARKER = re.compile(r"^\s*(?:#+\s*)?(?:\d+\.|[-*])\s+")
 
 
+def run_figure_source(run: Path) -> str:
+    """Return the text a report's figures may come from: script output and the run's records.
+
+    That is the ``project`` and ``breakeven`` output, plus the README, index, source
+    manifest, register, findings, and measurements.
+    """
+    chunks: list[str] = []
+    for command in (lambda: _project_command(run), lambda: _breakeven_command(Args(run=str(run)))):
+        buffer = io.StringIO()
+        with contextlib.redirect_stdout(buffer), contextlib.redirect_stderr(io.StringIO()):
+            _ = command()
+        chunks.append(buffer.getvalue())
+    for name in ("index.md", *RUN_INPUTS):
+        path = run / name
+        if path.is_file():
+            chunks.append(path.read_text(encoding="utf-8"))
+    chunks.extend(
+        p.read_text(encoding="utf-8") for p in sorted((run / "measurements").glob("*.md"))
+    )
+    return "\n".join(chunks)
+
+
 def _canonical_number(token: str) -> str:
     try:
         return format(decimal.Decimal(token.replace(",", "")).normalize(), "f")
@@ -1417,6 +1529,11 @@ def untraced_figures(text: str, source: str) -> list[tuple[int, int, str]]:
     [(1, 10, '30')]
     """
     known = {_canonical_number(m.group()) for m in _NUMBER.finditer(source)}
+    known |= {
+        _canonical_number(str(decimal.Decimal(n) * 100))
+        for n in known
+        if decimal.Decimal(n) < 1 and "." in n
+    }
     found: list[tuple[int, int, str]] = []
     for number, line in enumerate(text.splitlines(), start=1):
         marker = _LIST_MARKER.match(line)
@@ -1465,7 +1582,7 @@ def init_run(root: Path, workflow: str, date: str) -> Path:
         (run / sub).mkdir(parents=True, exist_ok=True)
     skeletons = {
         "index.md": f"---\nnamespace: business\ntopic: {workflow}\ndate: {date}\n---\n",
-        "README.md": f"# {workflow}\n\nScope:\nWindow:\nInstruments:\nTimezone: UTC\nNames:\n",
+        "README.md": f"# {workflow}\n\n" + "\n".join(README_FIELDS) + "\n",
     }
     for name, body in skeletons.items():
         with contextlib.suppress(FileExistsError), (run / name).open("x", encoding="utf-8") as fh:
@@ -1570,8 +1687,22 @@ def _gate_command(run: Path) -> int:
 
 def _stats_command(args: Args) -> int:
     try:
+        extra: dict[str, object] = {}
         if args.csv_file:
-            values = _read_csv_column(Path(args.csv_file), args.column) or []
+            rows = _csv_rows(Path(args.csv_file))
+            column = _column(rows, args.column)
+            if column is None:
+                print(
+                    f"column {args.column!r} not found or not numeric in {args.csv_file}",
+                    file=sys.stderr,
+                )
+                return 2
+            values = column
+            extra = {
+                "rows": len(rows),
+                "dropped_blank": len(rows) - len(values),
+                "input_sha256": file_sha256(Path(args.csv_file)),
+            }
         else:
             values = parse_numbers(_read(args.files))
         if len(values) < MIN_OBSERVATIONS:
@@ -1581,7 +1712,7 @@ def _stats_command(args: Args) -> int:
     except (ValueError, OverflowError) as exc:
         print(str(exc), file=sys.stderr)
         return 2
-    for key, value in summary.items():
+    for key, value in {**summary, **extra}.items():
         print(f"{key}: {value}")
     return 0
 
@@ -1594,9 +1725,15 @@ def _names_for_scan(args: Args) -> list[str] | str:
         if not readme.is_file():
             return f"no README.md in {args.run}"
         text = readme.read_text(encoding="utf-8")
-        if not NAMES_LINE.search(text):
-            return "README.md has no Names: line (write `Names: none` when there are none)"
-        names.extend(parse_names(text))
+        if args.tier == TIER_PUBLIC:
+            if not NAMES_LINE.search(text):
+                return "README.md has no Names: line (write `Names: none` when there are none)"
+            names.extend(parse_names(text))
+            names.extend(parse_names(text, "People"))
+        elif not PEOPLE_LINE.search(text):
+            return "README.md has no People: line (write `People: none` when there are none)"
+        else:
+            names.extend(parse_names(text, "People"))
     if args.names_file:
         listed = Path(args.names_file)
         if not listed.is_file():
@@ -1620,7 +1757,7 @@ def _scan_command(args: Args) -> int:
         names,
         args.allow,
         args.allow_url,
-        [r for r in args.rules.split(",") if r],
+        [r for r in args.rules.split(",") if r] if args.tier == TIER_PUBLIC else ["denied-name"],
     )
     for line, col, kind, match in hits:
         print(f"{line}:{col}: {kind}: {match}")
@@ -1642,6 +1779,9 @@ def _collect_prs_command(args: Args) -> int:
     writer = csv.writer(buffer, lineterminator="\n")
     writer.writerow(PR_COLUMNS)
     writer.writerows([row[c] for c in PR_COLUMNS] for row in rows)
+    if bool(args.sources) != bool(args.entry) or (args.sources and not args.output):
+        print("--sources and --entry go together and need --output", file=sys.stderr)
+        return 2
     if not args.output:
         _ = sys.stdout.write(buffer.getvalue())
         return 0
@@ -1651,15 +1791,22 @@ def _collect_prs_command(args: Args) -> int:
     except FileExistsError:
         print(f"refusing to overwrite the snapshot {args.output}", file=sys.stderr)
         return 2
+    if args.sources:
+        record_source(Path(args.sources), args.entry, Path(args.output))
     return 0
 
 
 def _trace_command(args: Args) -> int:
+    if not (args.against or args.run):
+        print("trace needs --against or --run", file=sys.stderr)
+        return 2
     try:
         text = Path(args.file).read_text(encoding="utf-8")
-        source = Path(args.against).read_text(encoding="utf-8")
+        source = Path(args.against).read_text(encoding="utf-8") if args.against else ""
+        if args.run:
+            source += run_figure_source(Path(args.run))
     except OSError:
-        print(f"cannot read {args.file} or {args.against}", file=sys.stderr)
+        print(f"cannot read {args.file}, {args.against}, or the run {args.run}", file=sys.stderr)
         return 2
     missing = untraced_figures(text, source)
     for line, col, number in missing:
@@ -1703,7 +1850,7 @@ def _init_command(args: Args) -> int:
 
 
 def _runs_command(args: Args) -> int:
-    for run in list_runs([Path(r) for r in args.root] or default_roots()):
+    for run in list_runs([Path(r) for r in args.root] or default_roots(), args.workflow):
         print(run)
     return 0
 
@@ -1727,20 +1874,17 @@ class Args(argparse.Namespace):
     start: str = ""
     end: str = ""
     output: str = ""
+    sources: str = ""
+    entry: str = ""
     names_file: str = ""
+    tier: int = 3
     against: str = ""
     report: str = ""
     workflow: str = ""
     date: str = ""
 
 
-def main(argv: list[str] | None = None) -> int:
-    """Run the command line."""
-    parser = argparse.ArgumentParser(
-        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
-    )
-    sub = parser.add_subparsers(dest="command", required=True)
-
+def _add_text_parsers(sub: Subparsers) -> None:
     p_stats = sub.add_parser("stats", help="median, IQR, BCa interval; one number per line")
     _ = p_stats.add_argument("files", nargs="*", help="files of numbers; stdin when omitted")
     _ = p_stats.add_argument(
@@ -1762,6 +1906,13 @@ def main(argv: list[str] | None = None) -> int:
         "--run", default="", help="run directory; its README.md Names: line is the deny list"
     )
     _ = p_scan.add_argument(
+        "--tier",
+        type=int,
+        choices=(1, 2, 3),
+        default=3,
+        help="3 (default): every rule, denying Names and People; 1 or 2: only the People line",
+    )
+    _ = p_scan.add_argument(
         "--names-file", default="", help="file of names to deny, one per line or comma-separated"
     )
     _ = p_scan.add_argument(
@@ -1780,6 +1931,8 @@ def main(argv: list[str] | None = None) -> int:
         help="comma-separated kinds to check, e.g. currency,money-term; all when omitted",
     )
 
+
+def _add_run_parsers(sub: Subparsers) -> None:
     p_gate = sub.add_parser("gate", help="completeness gate for a run; exit 1 on any problem")
     _ = p_gate.add_argument("run", help="run directory")
 
@@ -1801,11 +1954,21 @@ def main(argv: list[str] | None = None) -> int:
         help="write the CSV here, refusing to overwrite; stdout when omitted",
     )
 
-    p_trace = sub.add_parser(
-        "trace", help="list numbers in a text that its source text does not contain"
+    _ = p_prs.add_argument(
+        "--sources", default="", help="sources.md to record the output, its hash, and the time in"
     )
-    _ = p_trace.add_argument("file", help="derived text, such as the PR release")
-    _ = p_trace.add_argument("--against", required=True, help="source text, such as the case study")
+    _ = p_prs.add_argument("--entry", default="", help="sources.md entry name for --sources")
+
+    p_trace = sub.add_parser(
+        "trace", help="list numbers in a text that its source text or run does not contain"
+    )
+    _ = p_trace.add_argument("file", help="derived text, such as the PR release or a report")
+    _ = p_trace.add_argument("--against", default="", help="source text, such as the case study")
+    _ = p_trace.add_argument(
+        "--run",
+        default="",
+        help="run directory: project and breakeven output, README, findings, measurements",
+    )
 
     p_stamp = sub.add_parser(
         "stamp", help="record the hashes of the files a written report was derived from"
@@ -1837,7 +2000,19 @@ def main(argv: list[str] | None = None) -> int:
 
     p_runs = sub.add_parser("runs", help="list runs newest first")
     _ = p_runs.add_argument("--root", action="append", default=[], help="run root; repeatable")
+    _ = p_runs.add_argument(
+        "--workflow", default="", help="only runs of this workflow slug; the first line is newest"
+    )
 
+
+def main(argv: list[str] | None = None) -> int:
+    """Run the command line."""
+    parser = argparse.ArgumentParser(
+        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
+    )
+    sub = parser.add_subparsers(dest="command", required=True)
+    _add_text_parsers(sub)
+    _add_run_parsers(sub)
     args = parser.parse_args(argv, namespace=Args())
     handlers: dict[str, Callable[[Args], int]] = {
         "stats": _stats_command,

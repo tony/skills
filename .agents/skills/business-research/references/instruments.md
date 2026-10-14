@@ -120,7 +120,9 @@ unavailable, not worked around.
     | /abs/path/to/scripts/business.py collect-prs \
         --start 2026-04-01 \
         --end 2026-06-30 \
-        --output /abs/path/to/run/raw/pr-metrics.csv
+        --output /abs/path/to/run/raw/pr-metrics.csv \
+        --sources /abs/path/to/run/sources.md \
+        --entry gh-pr-metrics
   ```
 
   `collect-prs` (the script's absolute path, written literally)
@@ -136,21 +138,24 @@ unavailable, not worked around.
   `sources.md` and the README; treat a truncated PR's latency as
   unreliable and a column that rows lack as unknown, not zero.
 
-  Record the pipeline verbatim in `sources.md`, with the CSV as the
-  entry's output file. Figures from the CSV take `check:` lines
+  `--sources` and `--entry` make `collect-prs` write the entry's
+  `output:` line, its `executed` time from the clock, and a
+  `sha256: <hash> <path>` line for the CSV; the gate fails when the file
+  later stops matching its hash. Add the pipeline verbatim as the
+  entry's `query:` line and the tool version. Figures from the CSV take `check:` lines
   (`check: median raw/pr-metrics.csv cycle_hours = 31.5`); a
   `stats --csv raw/pr-metrics.csv --column cycle_hours` gives the
-  interval. `stats` drops blank cells, so beside each statistic report
-  its n and how many merged PRs were dropped for a blank cell.
+  interval. `stats --csv` drops blank cells and prints `n`, `rows`,
+  `dropped_blank`, and `input_sha256`; report `n` and `dropped_blank`
+  beside each statistic.
 - GraphQL event-count trap: `timelineItems(itemTypes: [...])` still
-  reports `totalCount` over all timeline items. The schema describes
-  `itemTypes` as "Filter timeline items by type", `totalCount` as "the
-  total count of items in the connection", and `filteredCount` as "the
-  count of items after applying `before` and `after` filters". A live
-  query against github.com for merged PRs returned the same `totalCount`
-  with and without `itemTypes: [REOPENED_EVENT]`, while `filteredCount`
-  dropped to 0 (for example 0 against a `totalCount` of 169). Use `filteredCount` for
-  reopened/closed event counts.
+  reports `totalCount` over all timeline items. The
+  [schema](https://docs.github.com/en/graphql/reference/objects#pullrequesttimelineitemsconnection)
+  describes `totalCount` as "the total count of items in the connection"
+  and `filteredCount` as "the count of items after applying `before` and
+  `after` filters"; a live query returns the same `totalCount` with and
+  without `itemTypes: [REOPENED_EVENT]` while `filteredCount` applies the
+  filter. Use `filteredCount` for reopened/closed event counts.
 - Prove absences with snapshots, not assertions: a "0 reverts" or
   "no AI-attribution markers" claim gets a `raw/` snapshot of the
   full query output that shows the zero, so the absence is MEASURED.

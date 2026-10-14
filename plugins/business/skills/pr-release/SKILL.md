@@ -30,7 +30,8 @@ User arguments: $ARGUMENTS
 ### 1. Locate the run
 
 The `$ARGUMENTS` path if given, else per `interim-format.md` §
-Locating an existing run.
+Locating an existing run; for a named workflow, the first line of
+`runs --workflow <slug>`.
 
 ### 2. Locate and verify the firewall
 
