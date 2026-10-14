@@ -105,8 +105,9 @@ releases are where a regression usually entered, and a reader has no
 other way to find them.
 
 List the span from the full release history, never the first page: the
-release-list command above with `--paginate` for a GitHub tool, the
-`versions` list of the PyPI Index API for a PyPI tool
+release-list command above with `--paginate` for a GitHub tool, and the
+`time` keys of `https://registry.npmjs.org/<name>` for an npm tool. For a
+PyPI tool, read the `versions` list of the PyPI Index API
 ([PEP 691 JSON](https://docs.pypi.org/api/index-api/); the JSON API's
 `releases` key is deprecated):
 
@@ -114,12 +115,12 @@ release-list command above with `--paginate` for a GitHub tool, the
 $ curl -fsS \
     -H 'Accept: application/vnd.pypi.simple.v1+json' \
     https://pypi.org/simple/<name>/ \
-    | jq -r .versions[]
+    | jq -r '.versions[]'
 ```
 
-and the `time` keys of `https://registry.npmjs.org/<name>` for an npm
-tool; keep stable versions only (drop prereleases and npm's `created` and
-`modified`) and sort by version. A list that could not be read in full counts as unread notes.
+Keep stable versions only (drop prereleases and npm's `created` and
+`modified`) and sort by version. A list that could not be read in full
+counts as unread notes.
 
 Take the URLs from the upstream-links reference — each tool has its own
 shape, and some publish one page per minor rather than per patch.

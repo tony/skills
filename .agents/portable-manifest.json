@@ -520,7 +520,7 @@
         "references/stopped-run.md": "plugins/package-updater/references/stopped-run.md",
         "references/upstream-links.md": "plugins/package-updater/references/upstream-links.md"
       },
-      "bytes": 93395
+      "bytes": 93403
     },
     {
       "name": "package-updater-updating-packages",
