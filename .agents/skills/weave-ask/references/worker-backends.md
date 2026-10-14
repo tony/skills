@@ -98,7 +98,8 @@ unavailable. Never write native role IDs to `models`.
 Use three independent host-native sub-agents. Dispatch them in parallel when
 the host has capacity; otherwise queue them without combining roles or sharing
 intermediate answers. Each WorkItem launches a fresh sub-agent, which writes
-its own reply to the declared output path (`ensemble-core.md`, Dispatch lanes).
+its own reply to the declared output path with `write --as <participant>`
+(`ensemble-core.md`, Dispatch lanes).
 
 ### Maintainer
 
@@ -197,7 +198,7 @@ limit:
 - `agy` has no sandbox in any mode: it runs with `--dangerously-skip-permissions`.
 - Mutating `codex` runs with `--dangerously-bypass-approvals-and-sandbox`, and
   mutating `agent` with `-f`.
-- Host sub-agents, critics, judges, and verifiers hold the host's permissions
+- Host sub-agents, critics and judges hold the host's permissions
   and follow their `worker_instructions`. They run in `participant start`
   snapshots, which the guard checks at `participant finish`.
 

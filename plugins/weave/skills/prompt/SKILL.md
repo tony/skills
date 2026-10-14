@@ -83,7 +83,7 @@ Follow `ensemble-core.md` (Dispatch lanes) with `--mutating`, then (Close the re
 
 2. **Quality gates.** In each participant's registered worktree, run the project's gates from AGENTS.md / CLAUDE.md: formatter, linter, type checker, tests. Write pass/fail per gate and participant to `pass-NNNN/quality-gates.md`.
 
-3. **Judge** per `ensemble-core.md` (Blind judging, Synthesis protocol). The convergence mode is **pick-winner**: the highest-scoring implementation wins, and no code merges across implementations. Verify what each implementation does against what its participant claims. A failing quality gate caps that implementation's Correctness at 3.
+3. **Judge** per `ensemble-core.md` (Blind judging, Synthesis protocol); the judge participant, not the coordinator, scores. The convergence mode is **pick-winner**: the highest-scoring implementation wins, and no code merges across implementations. Its brief names `files/<participant>/` and the quality-gate results as readable, and asks it to verify what each implementation does against what its participant claims. A failing quality gate caps that implementation's Correctness at 3.
 
 4. Write the comparison (scores per implementation, quality-gate results, the winner and why) to `<session_dir>/pass-NNNN/synthesis.md` per `../../references/prose-rules.md`.
 

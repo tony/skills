@@ -1352,7 +1352,7 @@
         "references/prose-rules.md": "plugins/weave/references/prose-rules.md",
         "references/worker-backends.md": "plugins/weave/references/worker-backends.md"
       },
-      "bytes": 220710
+      "bytes": 217195
     },
     {
       "name": "weave-ask",
@@ -1362,6 +1362,7 @@
       "bundled": {
         "references/ask.md": "plugins/weave/references/results/ask.md",
         "references/closest_model.py": "plugins/weave/scripts/closest_model.py",
+        "references/consensus-map.md": "plugins/weave/references/consensus-map.md",
         "references/deslop-pass.md": "plugins/weave/references/deslop-pass.md",
         "references/engine.py": "plugins/weave/scripts/engine.py",
         "references/ensemble-core.md": "plugins/weave/references/ensemble-core.md",
@@ -1370,7 +1371,7 @@
         "references/prose-rules.md": "plugins/weave/references/prose-rules.md",
         "references/worker-backends.md": "plugins/weave/references/worker-backends.md"
       },
-      "bytes": 225112
+      "bytes": 222990
     },
     {
       "name": "weave-brainstorm",
@@ -1383,9 +1384,10 @@
         "references/engine.py": "plugins/weave/scripts/engine.py",
         "references/ensemble-core.md": "plugins/weave/references/ensemble-core.md",
         "references/present-results.md": "plugins/weave/references/present-results.md",
+        "references/variants.md": "plugins/weave/references/variants.md",
         "references/worker-backends.md": "plugins/weave/references/worker-backends.md"
       },
-      "bytes": 203194
+      "bytes": 200848
     },
     {
       "name": "weave-brainstorm-and-refine",
@@ -1400,9 +1402,10 @@
         "references/ensemble-core.md": "plugins/weave/references/ensemble-core.md",
         "references/present-results.md": "plugins/weave/references/present-results.md",
         "references/refine-cycle.md": "plugins/weave/references/refine-cycle.md",
+        "references/variants.md": "plugins/weave/references/variants.md",
         "references/worker-backends.md": "plugins/weave/references/worker-backends.md"
       },
-      "bytes": 221113
+      "bytes": 219125
     },
     {
       "name": "weave-execute",
@@ -1419,7 +1422,7 @@
         "references/prose-rules.md": "plugins/weave/references/prose-rules.md",
         "references/worker-backends.md": "plugins/weave/references/worker-backends.md"
       },
-      "bytes": 219574
+      "bytes": 216059
     },
     {
       "name": "weave-fix-review",
@@ -1433,7 +1436,7 @@
         "references/present-results.md": "plugins/weave/references/present-results.md",
         "references/prose-rules.md": "plugins/weave/references/prose-rules.md"
       },
-      "bytes": 178308
+      "bytes": 178875
     },
     {
       "name": "weave-plan",
@@ -1450,7 +1453,7 @@
         "references/prose-rules.md": "plugins/weave/references/prose-rules.md",
         "references/worker-backends.md": "plugins/weave/references/worker-backends.md"
       },
-      "bytes": 222260
+      "bytes": 217557
     },
     {
       "name": "weave-prompt",
@@ -1467,7 +1470,7 @@
         "references/prose-rules.md": "plugins/weave/references/prose-rules.md",
         "references/worker-backends.md": "plugins/weave/references/worker-backends.md"
       },
-      "bytes": 218803
+      "bytes": 215283
     },
     {
       "name": "weave-refine",
@@ -1484,7 +1487,7 @@
         "references/refine.md": "plugins/weave/references/results/refine.md",
         "references/worker-backends.md": "plugins/weave/references/worker-backends.md"
       },
-      "bytes": 219636
+      "bytes": 215766
     },
     {
       "name": "weave-review",
@@ -1493,6 +1496,7 @@
       ],
       "bundled": {
         "references/closest_model.py": "plugins/weave/scripts/closest_model.py",
+        "references/consensus-map.md": "plugins/weave/references/consensus-map.md",
         "references/deslop-pass.md": "plugins/weave/references/deslop-pass.md",
         "references/engine.py": "plugins/weave/scripts/engine.py",
         "references/ensemble-core.md": "plugins/weave/references/ensemble-core.md",
@@ -1502,7 +1506,7 @@
         "references/review.md": "plugins/weave/references/results/review.md",
         "references/worker-backends.md": "plugins/weave/references/worker-backends.md"
       },
-      "bytes": 233841
+      "bytes": 231124
     },
     {
       "name": "weave-serene-bliss",
@@ -1518,9 +1522,10 @@
         "references/present-results.md": "plugins/weave/references/present-results.md",
         "references/refine-cycle.md": "plugins/weave/references/refine-cycle.md",
         "references/refine.md": "plugins/weave/references/results/refine.md",
+        "references/variants.md": "plugins/weave/references/variants.md",
         "references/worker-backends.md": "plugins/weave/references/worker-backends.md"
       },
-      "bytes": 225623
+      "bytes": 223639
     }
   ],
   "duplication": {
@@ -1600,6 +1605,7 @@
     "plugins/terraform/references/layout-discovery.md": 3,
     "plugins/weave/references/mutating-run.md": 3,
     "plugins/weave/references/refine-cycle.md": 3,
+    "plugins/weave/references/variants.md": 3,
     "plugins/action/references/implement-and-commit.md": 2,
     "plugins/action/references/prose-rules.md": 2,
     "plugins/action/references/ticket-detection.md": 2,
@@ -1667,6 +1673,7 @@
     "plugins/terraform/references/pin-sites.md": 2,
     "plugins/ticket/references/prose-rules.md": 2,
     "plugins/ticket/references/resolve.md": 2,
+    "plugins/weave/references/consensus-map.md": 2,
     "plugins/weave/references/ensemble-techniques.md": 2,
     "plugins/weave/references/results/brainstorm.md": 2,
     "plugins/weave/references/results/refine.md": 2,

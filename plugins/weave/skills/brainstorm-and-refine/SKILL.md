@@ -7,7 +7,7 @@ argument-hint: "[--variants=N] [--passes=N] [--timeout=N|none] [--mode=fast|bala
 
 # Weave Brainstorm and Refine
 
-Generate independent originals from adversarial participants, let the user choose which enter refinement, then refine them: a judge picks the best, the weave folds in the runners-up's strengths, and the woven result goes back to every participant for another round. Host-native sub-agents are the default; separate model CLIs are optional. This command asks workers to leave your repository alone and runs them in snapshot worktrees; the repo guard checks the checkout within the scope in `ensemble-core.md` (Close the repo guard). Session artifacts live in the session directory, outside the repository.
+Generate independent originals from adversarial participants, let the user choose which enter refinement, then refine them: a judge picks the best, the weave folds in the runners-up's strengths, and the woven result goes back to every participant for another round. Host-native sub-agents are the default; separate model CLIs are optional. Session artifacts live in the session directory, outside the repository.
 
 The prompt comes from `$ARGUMENTS`. If there are none, ask the user what to brainstorm and refine.
 
@@ -27,7 +27,7 @@ If interactive choice is unavailable, honor its documented headless default.
 
 ## Phase 1: Start the session
 
-Follow `ensemble-core.md` (Start the session) with `--command brainstorm-and-refine`, resolving variants per `ensemble-core.md` (Variants). The flags result also reports `judge` (`host` or `round-robin`) and the deslop flags in `flags`. The pass count covers the pass that judges the originals, so `passes` 1 judges and weaves once.
+Follow `ensemble-core.md` (Start the session) with `--command brainstorm-and-refine`, resolving variants per `../../references/variants.md`. The flags result also reports `judge` (`host` or `round-robin`) and the deslop flags in `flags`. The pass count covers the pass that judges the originals, so `passes` 1 judges and weaves once.
 
 Build the context packet per `ensemble-core.md` (Context packet). Lead with conventions and the files the prompt touches.
 
@@ -43,13 +43,13 @@ The shared worker prompt body is:
 >
 > Provide a clear, well-structured response. Cite specific files and line numbers where relevant.
 
-Follow `ensemble-core.md` (Dispatch lanes) and (Variants), then (Close the repo guard).
+Follow `ensemble-core.md` (Dispatch lanes) and `../../references/variants.md`, then (Close the repo guard).
 
 ---
 
 ## Phase 3: Show the originals and ask which to refine
 
-Show every original as `ensemble-core.md` (Variants) step 5 says.
+Show every original as `../../references/variants.md` step 5 says.
 
 Ask through `AskUserQuestion` which originals enter refinement:
 
@@ -88,6 +88,5 @@ Copy the final woven text to `<session_dir>/final.md`, then follow `ensemble-cor
 
 ## Rules
 
-- Do not modify project files. Workers run in snapshot worktrees; the guard's scope is in `ensemble-core.md` (Close the repo guard).
 - Every refinement pass goes to all participants. The judge picks and weaves but never refines alone.
 - Verify every model claim against the codebase before it enters the weave.

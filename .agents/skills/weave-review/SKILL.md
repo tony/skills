@@ -12,7 +12,7 @@ metadata:
 
 # Weave Code Review
 
-Run code review through independent adversarial workers in parallel, then synthesize findings into a report with evidence-backed adjudication. Host-native sub-agents are the default; separate model CLIs are optional. This command asks workers to leave your repository alone and runs them in snapshot worktrees; the repo guard checks the checkout within the scope in `ensemble-core.md` (Close the repo guard). Session artifacts live at the configured state root, outside the repository by default.
+Run code review through independent adversarial workers in parallel, then synthesize findings into a report with evidence-backed adjudication. Host-native sub-agents are the default; separate model CLIs are optional. Session artifacts live at the configured state root, outside the repository by default.
 
 The focus area comes from `$ARGUMENTS`; without one, review the whole branch.
 
@@ -90,11 +90,13 @@ The shared worker prompt body is:
 > - Severity: Critical / Important / Suggestion
 > - File and line: exact location
 > - Description: what the issue is
-> - Recommendation: how to fix it, with the evidence it rests on. Go no further than that evidence: advice that depends on a contract you did not see (idempotency, client defaults, server behavior) is conditional on it.
+> - Recommendation: how to fix it, with the evidence it rests on
+>
+> State only what the code you read shows. A value seen once (a delay, a limit) is not a rate or a guarantee. Behavior that depends on code or a contract you did not see (client defaults, server handling, idempotency) is unknown: say so, and make any recommendation that relies on it conditional.
+>
+> Report an issue only when it cites file:line and a reason another reviewer or the judge can check; drop any issue that cannot be checked.
 >
 > Use plain bullets with no bold.
->
-> Assign a confidence score (0-100) to each issue. Only report issues with confidence >= 70.
 >
 > Length cap: at most 500 words in total, the highest-severity issues first, one short paragraph each, no code blocks beyond one-line quotes.
 
@@ -104,7 +106,7 @@ Follow `ensemble-core.md` (Dispatch lanes) with this body, substituting `base` f
 
 ## Phase 4: Synthesize findings
 
-Apply `ensemble-core.md` (Blind judging, Synthesis protocol, Consensus map) to this pass's outputs. The convergence mode is **Merge**: verified points first, agreed ones leading, then adjudicated resolutions, then the best unique contributions ordered by score, with unverified claims stripped. Use this rubric in place of the default one:
+Apply `ensemble-core.md` (Blind judging, Synthesis protocol) and `references/consensus-map.md` to this pass's outputs. The convergence mode is **Merge**: verified points first, agreed ones leading, then adjudicated resolutions, then the best unique contributions ordered by score, with unverified claims stripped. Use this rubric in place of the default one:
 
 | Dimension | Weight | Description |
 |-----------|--------|-------------|
@@ -114,18 +116,9 @@ Apply `ensemble-core.md` (Blind judging, Synthesis protocol, Consensus map) to t
 | Actionability | 1x | Clear fix recommendations |
 | Convention coverage | 1x | Checks project-specific rules from CLAUDE.md |
 
-In Verify Claims, read the file and line of each reported issue to confirm it exists, check that a "Critical" has a real impact (exploitable or crash-worthy), and check each convention violation against the cited rule. An unstated client default or server guarantee remains unknown: absence at a call site does not prove the behavior is absent. Put these unresolved checks in Summary, not Verified Issues or the blocker count. A verified generic defect does not verify every example: catching all exceptions proves broad retry, not that an unseen client raises on a decline or invalid input. Keep its evidence to a reproducible exception from a stub client. Missing input validation is a defect only when a known contract forbids those inputs. When the project has no test runner, propose test behavior without choosing a framework.
+These weights are this plugin's own convention, like the default rubric.
 
-Separate per-call behavior from system-wide consequences. A fixed retry delay
-is the wait after one failure, never a retry rate; synchronized callers also
-need aligned failures, so state that condition instead of claiming every caller
-retries together. Each finding's impact and Recommendation rest on its
-evidence and go no further: a fix cannot assume a guarantee left unresolved in
-Summary, only the request arguments visible at the call site count, and
-transport headers and server handling need their own evidence. A
-recommendation that depends on an unknown idempotency contract is conditional
-on that check. When code states a hard limit and also fails open, say which
-applies.
+Put these verification instructions in the judge's brief. Read the file and line of each reported issue to confirm it exists, check that a "Critical" has a real impact (exploitable or crash-worthy), and check each convention violation against the cited rule. A claim that rests on an unknown contract stays in Summary, not Verified Issues or the blocker count, and a recommendation that relies on it is conditional on it. A verified generic defect does not verify every example of it. Missing input validation is a defect only when a known contract forbids those inputs. When the project has no test runner, propose test behavior without choosing a framework.
 
 ### Deduplicate and calibrate severity
 
@@ -187,7 +180,6 @@ Follow `ensemble-core.md` (Finish).
 
 ## Rules
 
-- Do not modify project code. Reviewers run in snapshot worktrees; the guard's scope is in `ensemble-core.md` (Close the repo guard).
 - Run every available reviewer, even when one fails, and attribute each finding to the reviewers that found it.
 - Consensus findings take priority over single-reviewer findings.
 

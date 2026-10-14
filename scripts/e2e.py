@@ -558,9 +558,10 @@ def _assert_weave_engine_body(command_path: Path, text: str) -> None:
     core = (WEAVE_DIR / "references" / "ensemble-core.md").read_text(encoding="utf-8")
     _assert(f"--command {name}" in text, f"{rel}: the session does not start with --command {name}")
     _assert(
-        core.index("**subagents**")
-        < core.index("**model-clis**")
-        < core.index("<engine> dispatch"),
+        -1
+        < core.find("- `subagents`:")
+        < core.find("- `model-clis`, `agy`")
+        < core.find("<engine> dispatch"),
         "ensemble-core: dispatch must sit under the model-clis branch, after subagents",
     )
     if name in WEAVE_MUTATING_SKILLS:

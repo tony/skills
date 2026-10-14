@@ -101,9 +101,9 @@ Commands that need commits (`execute`, `prompt`, `architecture`, `review`, `fix-
 
 ## Engine
 
-`scripts/engine.py` runs the deterministic work: flag parsing, session setup, model-CLI dispatch with retry and fallback, worktrees, diff capture, judging helpers, and the repo guard. It needs `python3` (3.9 or newer) and `git` on a POSIX system. `scripts/test_engine.py` tests it against real git repositories and stub CLIs. `python3 scripts/engine.py --help` lists every command. Beyond setup and dispatch: `participant start|finish` (snapshot for a critic, judge, or agent), `claim` and `write` (alias-safe writes into the session), `packet` (blind responses in one file), `guard finish`, `worktrees remove --ack-drift`, `stash-restore --ack-drift`, and `adopt --replace-aliases` (after the user decides about their own symlinks or hard links). A refused `stash-restore` returns `recover` commands and `apply_fallback`.
+`scripts/engine.py` runs the deterministic work: flag parsing, session setup, model-CLI dispatch with retry and fallback, worktrees, diff capture, judging helpers, and the repo guard. It needs `python3` (3.9 or newer) and `git` on a POSIX system. `scripts/test_engine.py` tests it against real git repositories and stub CLIs. `python3 scripts/engine.py --help` lists every command. Beyond setup and dispatch: `participant start|finish` (snapshot for a critic or judge), `claim` and `write [--as <participant>]` (alias-safe writes into the session; `--as` confines a participant to its own reply paths), `packet` (blind responses in one file), `guard finish`, `worktrees remove --ack-drift`, `stash-restore --ack-drift`, and `adopt --replace-aliases` (after the user decides about their own symlinks or hard links). A refused `stash-restore` returns `recover` commands and `apply_fallback`. `restore_severed_links` in a result lists hard links the stash restore severed; it is a note, and `clean: true` stays valid.
 
-Shared judgment prose lives in `references/ensemble-core.md` (context packet, dispatch, blind judging, synthesis, consensus), `references/ensemble-techniques.md` (cascade and residual re-attack), `references/present-results.md` (shared rendering rules, plus one file per result kind in `references/results/`), and `references/deslop-pass.md`. `references/worker-backends.md` defines the two backends.
+Shared judgment prose lives in `references/ensemble-core.md` (context packet, dispatch, guard, blind judging, synthesis), `references/variants.md`, `references/consensus-map.md`, `references/ensemble-techniques.md` (cascade and residual re-attack), `references/present-results.md` (shared rendering rules, plus one file per result kind in `references/results/`), and `references/deslop-pass.md`. `references/worker-backends.md` defines the two backends.
 
 ## Repo Guard
 
@@ -126,9 +126,9 @@ until the user decides (`--ack-drift`). Read-only runs can offer keep, revert,
 or quarantine; headless runs keep the drift and cannot claim unchanged.
 
 Sandboxes differ by executor: read-only `codex` runs `-s read-only`, read-only
-`agent` runs `--mode plan`, and `agy` has none. Critics, judges, verifiers, and
-the plan skill's session agent run in `participant start` snapshots and end
-with `participant finish`.
+`agent` runs `--mode plan`, and `agy` has none. Critics and judges run in
+`participant start` snapshots and end with `participant finish`; the
+coordinator never judges a lane's output.
 
 ## Flags
 
@@ -156,7 +156,7 @@ When a flag is set the matching question is skipped. Otherwise the command asks 
 
 ## Plan Mode
 
-`review`, `fix-review`, `execute`, `prompt`, and `architecture` enter plan mode to produce an orchestration plan, present it for approval, then exit plan mode before executing. `plan` enters plan mode first and stays there: the host's plan file is the deliverable, and host sub-agents handle the non-readonly work.
+`review`, `fix-review`, `execute`, `prompt`, and `architecture` enter plan mode to produce an orchestration plan, present it for approval, then exit plan mode before executing. `plan` enters plan mode first and stays there: the host's plan file is the deliverable, and the main agent writes the plan file and session files itself.
 
 | Tool | Enter plan mode | Exit plan mode |
 |------|----------------|----------------|

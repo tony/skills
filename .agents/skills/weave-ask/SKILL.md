@@ -12,7 +12,7 @@ metadata:
 
 # Weave Ask
 
-Ask independent adversarial workers the same question in parallel, then synthesize the best answer from their responses. Host-native sub-agents are the default; separate model CLIs are optional. This command asks workers to leave your repository alone and runs them in snapshot worktrees; the repo guard checks the checkout within the scope in `ensemble-core.md` (Close the repo guard). Session artifacts live in the session directory, outside the repository.
+Ask independent adversarial workers the same question in parallel, then synthesize the best answer from their responses. Host-native sub-agents are the default; separate model CLIs are optional. Session artifacts live in the session directory, outside the repository.
 
 The question comes from `$ARGUMENTS`. If there are none, ask the user what they want to know.
 
@@ -60,7 +60,7 @@ Follow `ensemble-core.md` (Dispatch lanes) with this body, then (Close the repo 
 
 ## Phase 4: Synthesize the best answer
 
-Apply `ensemble-core.md` (Blind judging, Synthesis protocol, Consensus map) to this pass's outputs. The convergence mode for `ask` is **Merge**: verified points first, agreed ones leading, then adjudicated resolutions, then the best unique contributions ordered by score, with unverified claims stripped.
+Apply `ensemble-core.md` (Blind judging, Synthesis protocol) and `references/consensus-map.md` to this pass's outputs. The convergence mode for `ask` is **Merge**: verified points first, agreed ones leading, then adjudicated resolutions, then the best unique contributions ordered by score, with unverified claims stripped.
 
 Write the synthesis to `<session_dir>/pass-NNNN/synthesis.md` per `references/prose-rules.md`.
 
@@ -95,7 +95,6 @@ Follow `ensemble-core.md` (Finish).
 
 ## Rules
 
-- Do not modify project files. Workers run in snapshot worktrees; the guard's scope is in `ensemble-core.md` (Close the repo guard).
 - Verify every model claim against the codebase before it enters the synthesis, and cite files and line numbers.
 - When models contradict each other, check the code and state which is correct.
 

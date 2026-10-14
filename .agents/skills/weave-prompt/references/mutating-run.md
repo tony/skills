@@ -88,6 +88,10 @@ reason: it applies without `--index`, so staged changes return unstaged. Do not
 run any of them unprompted, and do not drop the stash or suggest dropping it.
 Then render the results.
 
+`restore_severed_links` in a `stash-restore` or `guard finish` result is a
+note, not a halt: tell the user "these hard links were severed by the stash
+restore; git cannot preserve them", and treat `"clean": true` as valid.
+
 ---
 
 ## Apply gate and presentation

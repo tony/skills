@@ -11,7 +11,7 @@ metadata:
 
 # Weave Brainstorm
 
-Generate independent original responses from adversarial participants in parallel, with optional variants per participant. No scoring, ranking, or synthesis: the pool of originals is the product, and it can feed the `weave-refine` skill or the `weave-brainstorm-and-refine` skill. Host-native sub-agents are the default; separate model CLIs are optional. This command asks workers to leave your repository alone and runs them in snapshot worktrees; the repo guard checks the checkout within the scope in `ensemble-core.md` (Close the repo guard). Session artifacts live in the session directory, outside the repository.
+Generate independent original responses from adversarial participants in parallel, with optional variants per participant. No scoring, ranking, or synthesis: the pool of originals is the product, and it can feed the `weave-refine` skill or the `weave-brainstorm-and-refine` skill. Host-native sub-agents are the default; separate model CLIs are optional. Session artifacts live in the session directory, outside the repository.
 
 The prompt comes from `$ARGUMENTS`. If there are none, ask the user what they want to brainstorm.
 
@@ -31,7 +31,7 @@ If interactive choice is unavailable, honor its documented headless default.
 
 ## Phase 1: Start the session
 
-Follow `ensemble-core.md` (Start the session) with `--command brainstorm`, resolving variants per `ensemble-core.md` (Variants), which asks through `ask-user-choice`. This command has no passes question. When the prompt asks for several distinct approaches and sets no variant count, use 3 variants without asking: one variant per participant would converge on the conventional design.
+Follow `ensemble-core.md` (Start the session) with `--command brainstorm`, resolving variants per `references/variants.md`, which asks through `ask-user-choice`. This command has no passes question. When the prompt asks for several distinct approaches and sets no variant count, use 3 variants without asking: one variant per participant would converge on the conventional design.
 
 Build the context packet per `ensemble-core.md` (Context packet). Lead with conventions and the files the prompt touches.
 
@@ -47,7 +47,7 @@ The shared worker prompt body is:
 >
 > Provide a clear, well-structured response. Cite specific files and line numbers where relevant. Where the prompt asks for alternatives, make each one differ from the obvious design in mechanism (the underlying data structure or control flow), not in naming or detail.
 
-Follow `ensemble-core.md` (Dispatch lanes) and (Variants), then (Close the repo guard).
+Follow `ensemble-core.md` (Dispatch lanes) and `references/variants.md`, then (Close the repo guard).
 
 ---
 
@@ -55,17 +55,13 @@ Follow `ensemble-core.md` (Dispatch lanes) and (Variants), then (Close the repo 
 
 Read `references/present-results.md` and `references/brainstorm.md`, and apply them with `RESULT_KIND` = `brainstorm`, `ARTIFACT_PATH` = the session's `outputs/` directory, `SESSION_DIR`, `PASS_COUNT` = 1, `IN_PLAN_MODE` = false, `LABEL_MAP_PATH` = null.
 
-Reply with the hero and sections of `results/brainstorm.md` in that order, and nothing after Attribution. Head each response as `ensemble-core.md` (Variants) step 5 says. Do not group responses, count how many distinct designs they cover, merge them, or comment on overlap, rank them, or recommend one in your own voice.
+Reply with the hero and sections of `results/brainstorm.md` in that order, and nothing after Attribution. Head each response as `references/variants.md` step 5 says. Do not group responses, count how many distinct designs they cover, merge them, or comment on overlap, rank them, or recommend one in your own voice.
 
 ---
 
 ## Finish
 
 Follow `ensemble-core.md` (Finish).
-
-## Rules
-
-- Do not modify project files. Workers run in snapshot worktrees; the guard's scope is in `ensemble-core.md` (Close the repo guard).
 
 
 ## Portability notes

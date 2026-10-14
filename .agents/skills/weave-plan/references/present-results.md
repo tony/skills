@@ -23,7 +23,7 @@ The caller sets these variables before invoking this reference:
 
 | Variable | Type | Purpose |
 |---|---|---|
-| RESULT_KIND | review, plan, ask, brainstorm, brainstorm-and-refine, refine, prompt, architecture, execute, fix-review, serene-bliss | Selects the `results/` file |
+| RESULT_KIND | review, plan, ask, brainstorm, brainstorm-and-refine, refine, prompt, architecture, execute, fix-review | Selects the `results/` file; `serene-bliss` renders as `refine` |
 | ARTIFACT_PATH | absolute path | Desloped final artifact (single file); for `brainstorm`, the directory of per-participant outputs |
 | SESSION_DIR | absolute path | Session directory for auxiliary writes |
 | PASS_COUNT | integer | Toggles Evolution/Confidence sections |
@@ -42,6 +42,8 @@ The caller sets these variables before invoking this reference:
 Finish the caller's checkout guard before rendering. Never infer "unchanged"
 from an absent adoption: a native worker may have escaped its worktree. A
 failed final check produces a safety halt, not the normal result template.
+`restore_severed_links` is a note, not a halt: state that those hard links
+were severed by the stash restore and git cannot preserve them.
 
 Read ARTIFACT_PATH (a single markdown file; a directory only for
 `brainstorm`). Emit the kind file's hero (1-4 lines) from the artifact's

@@ -7,7 +7,7 @@ argument-hint: "[--passes=N] [--timeout=N|none] [--mode=fast|balanced|deep] [--n
 
 # Weave Serene Bliss
 
-A three-lens brainstorm-and-refine pipeline for developer-experience, documentation, and tooling-UX design. Each participant writes three originals, one per serene-DX lens. The user chooses which enter refinement, then every pass is judged by a panel of the participants and merged by peer-only averaging, which cancels self-favoritism. Host-native sub-agents are the default; separate model CLIs are optional. This command asks workers to leave your repository alone and runs them in snapshot worktrees; the repo guard checks the checkout within the scope in `ensemble-core.md` (Close the repo guard). Session artifacts live in the session directory, outside the repository.
+A three-lens brainstorm-and-refine pipeline for developer-experience, documentation, and tooling-UX design. Each participant writes three originals, one per serene-DX lens. The user chooses which enter refinement, then every pass is judged by a panel of the participants and merged by peer-only averaging, which cancels self-favoritism. Host-native sub-agents are the default; separate model CLIs are optional. Session artifacts live in the session directory, outside the repository.
 
 The prompt comes from `$ARGUMENTS`. If there are none, ask the user which DX artifact, docs page, or tooling surface to brainstorm and refine.
 
@@ -81,7 +81,7 @@ The shared worker prompt body is:
 >
 > Provide a clear, well-structured response. Cite specific files and line numbers where relevant.
 
-Follow `ensemble-core.md` (Dispatch lanes) and (Variants) with these changes: M is 3, every variant uses `--preamble-file "<session_dir>/preamble.md"`, and there is no role preamble. Then (Close the repo guard). The cost line counts the panel's judge runs too: 3 per pass.
+Follow `ensemble-core.md` (Dispatch lanes) and `../../references/variants.md` with these changes: M is 3, every variant uses `--preamble-file "<session_dir>/preamble.md"`, and there is no role preamble. Then (Close the repo guard). The cost line counts the panel's judge runs too: 3 per pass.
 
 ---
 
@@ -107,13 +107,12 @@ The panel is the same participants every pass. For each pass after the first, di
 
 Unless `--no-deslop` was set, read `../../references/deslop-pass.md` and apply it with `ARTIFACT_PATH` = `<session_dir>/pass-<final>/woven.md`, `SESSION_DIR`, `BASELINE_SHA` set to `baseline_sha` from `init`, and `DESLOP_MODE` from the flags (`quiet`, `verbose`, or `default`). Re-read `woven.md` for the desloped text.
 
-Read `../../references/present-results.md` and `../../references/results/refine.md`, and apply them with `RESULT_KIND` = `serene-bliss`, `ARTIFACT_PATH` = `<session_dir>/pass-<final>/woven.md`, `SESSION_DIR`, `PASS_COUNT` = the completed passes, `IN_PLAN_MODE` = false, `LABEL_MAP_PATH` = null. Put "judged by a panel of <the participants that judged>, peer-only averaging, across N pass(es)" in Attribution; add no line after it.
+Read `../../references/present-results.md` and `../../references/results/refine.md`, and apply them with `RESULT_KIND` = `refine`, `ARTIFACT_PATH` = `<session_dir>/pass-<final>/woven.md`, `SESSION_DIR`, `PASS_COUNT` = the completed passes, `IN_PLAN_MODE` = false, `LABEL_MAP_PATH` = null. Put "judged by a panel of <the participants that judged>, peer-only averaging, across N pass(es)" in Attribution; add no line after it.
 
 Copy the final woven text to `<session_dir>/final.md`, then follow `ensemble-core.md` (Finish).
 
 ## Rules
 
-- Do not modify project files. Workers run in snapshot worktrees; the guard's scope is in `ensemble-core.md` (Close the repo guard).
 - Run every phase even when the artifact is small; never stop the pipeline and write the design yourself.
 - Every refinement pass goes to all participants. The panel judges and the host weaves; nothing refines alone.
 - Verify every model claim against the codebase before it enters the weave.

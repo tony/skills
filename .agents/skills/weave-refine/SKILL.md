@@ -11,7 +11,7 @@ metadata:
 
 # Weave Refine
 
-Improve an artifact through independent adversarial critique and weaving. Every pass, all participants critique and improve the artifact, a judge picks the best version, the weave folds in the runners-up's strengths, and the woven result goes back to all participants. Host-native sub-agents are the default; separate model CLIs are optional. This command asks workers to leave your repository alone and runs them in snapshot worktrees; the repo guard checks the checkout within the scope in `ensemble-core.md` (Close the repo guard). Session artifacts live in the session directory, outside the repository.
+Improve an artifact through independent adversarial critique and weaving. Every pass, all participants critique and improve the artifact, a judge picks the best version, the weave folds in the runners-up's strengths, and the woven result goes back to all participants. Host-native sub-agents are the default; separate model CLIs are optional. Session artifacts live in the session directory, outside the repository.
 
 The artifact comes from `$ARGUMENTS`: an existing file path (read it) or inline text. If there are none, ask the user what to refine.
 
@@ -78,7 +78,6 @@ Copy the final woven text to `<session_dir>/final.md`, then follow `ensemble-cor
 
 ## Rules
 
-- Do not modify project files. Workers run in snapshot worktrees; the guard's scope is in `ensemble-core.md` (Close the repo guard).
 - Every pass goes to all participants. The judge picks and weaves but never refines alone.
 - Verify every model claim against the codebase before it enters the weave, and cite files and line numbers.
 - When models contradict each other, check the code and keep the correct version.

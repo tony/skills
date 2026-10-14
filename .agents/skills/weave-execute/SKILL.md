@@ -92,7 +92,7 @@ Follow `ensemble-core.md` (Dispatch lanes) with `--mutating`, then (Close the re
 
 2. **Quality gates.** In each participant's registered worktree, run the project's gates from AGENTS.md / CLAUDE.md: formatter, linter, type checker, tests. Write pass/fail per gate and participant to `pass-NNNN/quality-gates.md`.
 
-3. **Judge** per `ensemble-core.md` (Blind judging, Synthesis protocol). The convergence mode is **file-by-file**. For each file any participant modified, read the original (`git show HEAD:<file>`) and each snapshot, verify what the code does against what the participant claims, score each version with the rubric per file, and select the best version per file. The best versions can come from different participants. Fix cross-file consistency when converging.
+3. **Judge** per `ensemble-core.md` (Blind judging, Synthesis protocol); the judge participant, not the coordinator, scores. The convergence mode is **file-by-file**. Its brief names `files/<participant>/` and the quality-gate results as readable, and asks it, for each file any participant modified, to compare the original (`git show HEAD:<file>`) with each snapshot, verify what the code does against what the participant claims, and score each version per file. Select the best version per file from its scores. The best versions can come from different participants. Fix cross-file consistency when converging.
 
 4. Write the file-by-file analysis (selected version per file, scores, deleted paths, quality-gate failures) to `<session_dir>/pass-NNNN/synthesis.md` per `references/prose-rules.md`.
 

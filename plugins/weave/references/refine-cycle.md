@@ -26,6 +26,8 @@ that is the `## Improved Version` section of its output.
 Score each candidate 0-10 on Quality (clarity, precision, accuracy),
 Originality (novel improvements), Completeness (nothing important missing), and
 Coherence (consistent, well structured). The total is the sum, at most 40.
+This scale is the plugin's own convention; it orders candidates within one run
+and carries no calibration across runs.
 
 ---
 
@@ -40,12 +42,13 @@ Coherence (consistent, well structured). The total is the sum, at most 40.
        --pass <N>
    ```
 
-   Each judge's `how` is `host`, `native`, or `external`. A panel reports
+   Each judge's `how` is `host`, `native`, or `external`. A `host` judge is a
+   fresh sub-agent named `judge-host`; the coordinator never scores candidates,
+   because it ran the `claude` lane or wove the earlier pass. A panel reports
    `feasibility`; say in one line when it is `degraded` (single-peer scoring) or
-   `host-fallback` (the host judges alone).
+   `host-fallback` (a `judge-host` participant judges alone).
 
-2. A `host` judge reads every candidate, scores it, and writes
-   `pass-NNNN/judge.md` in this shape:
+2. Every judge scores in this shape:
 
    ```markdown
    # Judge's Assessment, Pass NNNN
@@ -78,21 +81,22 @@ Coherence (consistent, well structured). The total is the sum, at most 40.
 
    On a tie, prefer the shorter candidate that keeps every verified point.
 
-3. A `native` or `external` judge needs a judge prompt in
-   `pass-NNNN/judge-prompt.md`: the rubric, the shape above (columns are the
-   candidate ids), then every candidate inline, because external judges cannot
-   read session files. For a panel, open with: "You are one of several judges.
+3. Every judge needs a judge prompt in `pass-NNNN/judge-prompt.md`: the
+   rubric, the shape above (columns are the candidate ids), then every
+   candidate inline, because a confined judge reads only its prompt and external
+   judges cannot read session files. For a panel, open with: "You are one of several judges.
    Score every candidate honestly, including your own model's; peer-only
    averaging drops self-scores."
 
-   - `native`: compose the prompt with `prompt --judge --lane <judge> --file
-     <judge-prompt> --out pass-NNNN/prompts/judge-<judge>.md`, start a
-     `judge-<judge>` snapshot participant (`ensemble-core.md`, Close the repo
-     guard), and launch a fresh `general-purpose` sub-agent with its
-     `worker_instructions` to read the prompt and follow it exactly. It delivers
-     `pass-NNNN/judges/<judge>.md` by the reply delivery text in
-     `ensemble-core.md` (Dispatch lanes), and you run `participant finish` after
-     it replies.
+   - `host` and `native`: compose the prompt with `prompt --judge --lane
+     <judge> --file <judge-prompt> --out pass-NNNN/prompts/judge-<judge>.md`
+     (`<judge>` is `host` for a host judge), start a `judge-<judge>` snapshot
+     participant (`ensemble-core.md`, Close the repo guard), and launch a fresh
+     `general-purpose` sub-agent with its `worker_instructions` to read the
+     prompt and follow it exactly. It delivers `pass-NNNN/judges/judge-<judge>.md`
+     by the reply delivery text in `ensemble-core.md` (Dispatch lanes), with
+     `--as judge-<judge>`, and you
+     run `participant finish` after it replies.
    - `external`: `dispatch --judge --lane <agy|gpt> --pass <N> --timeout <T>
      --prompt-file pass-NNNN/judge-prompt.md`. The output is
      `pass-NNNN/judges/<lane>.md`.
@@ -103,34 +107,34 @@ Coherence (consistent, well structured). The total is the sum, at most 40.
 
    ```console
    $ python3 <engine> judge-parse \
-       --file "<session_dir>/pass-NNNN/judges/<judge>.md"
+       --file "<session_dir>/pass-NNNN/judges/<judge file>.md"
    ```
 
    `ok: false` drops that judge. A round-robin pass with no usable judge falls
-   back to the host; say so in `judge.md`. The parser accepts decimal scores,
+   back to a `judge-host` participant; say so in `judge.md`. The parser accepts decimal scores,
    strips a role suffix from a column (`claude (Maintainer)` is `claude`), and
    recomputes a total that is not the sum of its rows (`warnings` names it), and
    reads a missing Winner section as the unique highest total
    (`winner_declared` is false). For a judge that scored blind labels, add
    `--label-map "<session_dir>/pass-NNNN/label-map.json"`.
 
-5. A single external or native judge becomes `judge.md` with the header
-   `**Judged by**: <judge>`. If the host disagrees with a judge that picked its
-   own output, the host may override the winner for the weave and records
-   `**Override**: <reason>`.
+5. A single judge becomes `judge.md` with the header `**Judged by**: <judge>`.
+   If a native judge picked its own output, run a fresh `judge-host` over the
+   same candidates and take its winner.
 
    A panel merges with peer-only averaging:
 
    ```console
    $ python3 <engine> panel-merge \
-       --judge <judge>="<session_dir>/pass-NNNN/judges/<judge>.md" \
-       --judge <judge>="<session_dir>/pass-NNNN/judges/<judge>.md"
+       --judge <judge>="<session_dir>/pass-NNNN/judges/<judge file>.md" \
+       --judge <judge>="<session_dir>/pass-NNNN/judges/<judge file>.md"
    ```
 
    Add the same `--label-map` when the judges scored blind labels.
 
-   Take `winner` and `totals`. When `tied` lists candidates, the host picks one
-   and states why in a sentence. When `ok` is false, the host judges alone. Write
+   Take `winner` and `totals`. When `tied` lists candidates, take the shorter
+   one that keeps every verified point. When `ok` is false, a `judge-host`
+   participant judges alone. Write
    `judge.md` with the merged totals, the winner, the runner-up strengths that
    several judges noted (one bullet each), and the judges that succeeded.
 
