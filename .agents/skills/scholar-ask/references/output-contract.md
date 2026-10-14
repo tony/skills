@@ -42,18 +42,36 @@ swap in their own hero and sections:
 ## A halted run
 
 The first line of the reply is the hero, `⚠ Blocked: <reason>`: no sentence
-before it and no code fence around the reply. When a prerequisite is missing
-or a gate fails, report only that line, one sentence naming what is missing
-and the step the user takes to unblock it. Nothing follows that sentence (no
-"Next step"). Print none of the skill's sections, no empty
-placeholders, no guesses from partial input, and no next-step list. Do not
-list files you did not create. The sentence names the unblock; it does not
-restate the hero, list what was searched, or say what was not written.
+before it and no code fence around the reply. When a prerequisite is missing,
+report only that line, then one sentence naming what is missing and the step
+the user takes to unblock it. Nothing follows that sentence (no "Next step").
+Print none of the skill's sections, no empty placeholders, no guesses from
+partial input, and no next-step list. Do not list files you did not create.
+The sentence names the unblock; it does not restate the hero, list what was
+searched, or say what was not written.
 
 ```text
 ⚠ Blocked: no sources.jsonl for this study.
 
 Run scholar-gather on the corpus first.
+```
+
+## A failed gate
+
+A gate that fails is reported, not worked around. The hero is `⚠ Gate failed:
+<count and kind>`, or the skill's own gate name (`⚠ Brief gate failed`). Under it, one plain line per finding (the analyzer's lines,
+with absolute paths stripped, under `## Gate` when the skill says so), then one
+sentence naming the fix. No other sections, no quoted corpus text, no
+next-step list. `contest` is the exception: its `⚠ Gate unmet` reply keeps its
+own sections.
+
+```text
+⚠ Gate failed: 1 orphan, 1 cycle
+
+- Orphan: checkpoint
+- Cycle: phase -> stage -> phase
+
+Re-read the corpus evidence for checkpoint, stage, and phase before assigning parents, then rerun the gate.
 ```
 
 ## Content

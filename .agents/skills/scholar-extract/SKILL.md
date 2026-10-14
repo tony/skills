@@ -48,53 +48,59 @@ Take `sources.jsonl` from `gather`. Harvest only from sources marked
 
 ### 2. Put the corpus on disk, read-only
 
-Read each code source at its recorded `commit`, never at a moving branch. A
-checkout already on disk is read in place once `git -C <corpus> rev-parse
-HEAD` matches the row's `commit` and the dirty-tree check prints nothing; a
-mismatch or a dirty tree is reported, not harvested. Run both against the
-checkout, never the current directory. When the study lives inside that
-checkout, the check leaves out the study directory so the study does not
-block itself; otherwise drop the pathspec. With the study at
-`notes/ontology/<subject>/`:
+Read each code source at its recorded `commit`, never at a moving branch.
+`<pins>` is `references/scholar_pins.py`, resolved against this skill's directory to
+an absolute path.
+
+A checkout already on disk is read in place when this exits zero; `<study>` is
+the study directory, which the dirty-tree check leaves out when it sits inside
+the checkout:
 
 ```console
-$ git -C <corpus> status \
-    --porcelain \
-    -- . ':(exclude)notes/ontology/<subject>'
+$ python3 <pins> local <corpus> \
+    --study <study> \
+    --expect <commit>
 ```
+
+A refusal (uncommitted edits, or HEAD at another commit) is reported, not
+harvested.
 
 A remote source gets a throwaway checkout outside the study and outside the
 current repository, fetched with plain git from the `source` URL, so any host
-that serves git over HTTPS works. Take URL and COMMIT from `sources.jsonl`;
-run the command only when URL is `https://` followed by a host and path of
-letters, digits, `.`, `_`, `-`, and `/`, and COMMIT is 40 hex digits;
-otherwise mark the source unharvested. This command prints its path; use that
-literal path afterwards:
+that serves git over HTTPS works. Take URL and COMMIT from `sources.jsonl`.
+The command refuses a URL or commit it does not accept (mark that source
+unharvested) and prints the checkout path on success; use that literal path
+afterwards:
 
 ```console
-$ dir=$(mktemp -d "${TMPDIR:-/tmp}/scholar-corpus.XXXXXX") \
-    && git -C "$dir" init --quiet \
-    && git -C "$dir" fetch --quiet --depth 1 URL COMMIT \
-    && git -C "$dir" checkout --quiet FETCH_HEAD \
-    && echo "$dir"
+$ python3 <pins> remote URL COMMIT
 ```
 
-A failed fetch (including a host that refuses to serve a commit by SHA) means
-the source is unreachable; mark it unharvested and say
-so. Prose sources need no checkout: harvest from `quotations.jsonl` in the study
+A refusal, including a host that will not serve a commit by SHA, means the
+source is unreachable: mark it unharvested and say so. When harvesting and the
+gate are done, delete each throwaway checkout:
+
+```console
+$ python3 <pins> release <checkout>
+```
+
+Prose sources need no checkout: harvest from `quotations.jsonl` in the study
 directory, or stop and name `annotate` if it is missing.
 
 ### 3. Harvest
 
-For code, the cheapest high-yield passes. `<corpus>` is the
-checkout path from step 2:
+For code, the cheapest high-yield pass. `<corpus>` is the checkout path from
+step 2. The pattern covers declaration modifiers (`public`, `abstract`,
+`export default`, `async`, `sealed`, `data`) and the keywords `class`,
+`struct`, `interface`, `enum`, `trait`, `type`, `object`, `def`, `fn`, `fun`
+and `func`; a language that declares names another way needs its own pattern:
 
 ```console
 $ rg \
     -o \
     --no-filename \
     -r '$1' \
-    '^\s*(?:export\s+|pub(?:\([a-z]+\))?\s+)?(?:class|struct|interface|enum|trait|type|def)\s+(\w+)' \
+    '^\s*(?:(?:export|default|public|private|protected|internal|static|final|abstract|sealed|open|data|async|pub(?:\([a-z]+\))?)\s+)*(?:class|struct|interface|enum|trait|type|def|fn|fun|func|object)\s+(\w+)' \
     <corpus> \
     | sort | uniq -c | sort -rn
 ```
@@ -128,17 +134,18 @@ A prose cite has no `url`; it names its source by id instead:
 {"schema": 1, "term": "boundary", "definition": "the line a module's public surface stops at", "parent": "", "kind": "concept", "cites": [{"source": "style-guide-essay", "locator": "ch.3 §2", "quote": "the boundary is where the public surface stops"}]}
 ```
 
-`source` is the `source` value of the cite's row in `sources.jsonl`; the
-fields are defined in `references/citation.md`.
+`source` is the `source` value of the cite's row in `sources.jsonl`: for a
+pasted excerpt that is its `corpus/excerpt-<n>.txt` path. The fields are
+defined in `references/citation.md`.
 
 `parent` stays empty here. `distill` assigns it.
 
 `kind` is one of `class`, `module`, `verb`, `role`, `message`, or `concept`
-(prose).
+(prose); the term gate rejects any other value.
 
-A class, struct, interface, or type-alias name is `kind: class`. `distill` alone writes
-`kind: type` rows, and the term gate lets those skip a citation only when they
-carry a `parent`; never emit `kind: type`.
+A class, struct, interface, or type-alias name is `kind: class`. `distill` alone
+writes `kind: type` rows (exemption in `references/stage-gates.md`);
+never emit `kind: type`.
 
 `schema` is the row format's version. It costs one integer now and cannot be
 added later without guessing what unversioned rows meant.
@@ -148,8 +155,8 @@ defines the term, record the definition its usage implies. Keep the definition
 free of provenance notes ("implied by usage"); the analyzer scores definition
 text. Record an implied definition as an open claim in `evidence/contested.md`
 with the Claim, Objection, Evidence and Verdict (`open`) fields `contest`
-uses. Create the file when missing; otherwise Read it and Write it back whole
-with the entry appended.
+uses. `Write` creates the file only when it is missing; otherwise add the entry with
+`Edit` at its end.
 
 ## Rules
 
@@ -162,33 +169,19 @@ with the entry appended.
 ## Output
 
 Per `references/output-contract.md`. Hero: `✓ <n> terms extracted from
-<n> sources` or `⚠ Blocked: <reason>`. Sections:
+<n> sources`, `⚠ Gate failed: <n> findings`, or `⚠ Blocked: <reason>`. Sections:
 
 1. `## Terms`: count by `kind`, and the ten most frequent with their
    definitions.
 2. `## Rejected`: candidates that looked like terms and were not, with why.
-3. `## Gate`: the output of the term check, which exits zero only when every
-   row has a definition and a quoted citation:
+3. `## Gate`: the output of the term check and the quote check in
+   `references/stage-gates.md`, run once per source checkout from step 2.
+   Report `Uncheckable` lines without failing. A failing check, or a
+   `Misquoted` or `Vanished` line, is a failed gate: fix the row from the
+   corpus text and rerun before reporting.
 
-   ```console
-   $ python3 <analyzer> notes/ontology/<subject>/ --check-terms
-   ```
-
-   Then the quote check against the step 2 checkout of each source, which
-   tests every quote against its cited lines at the recorded commit:
-
-   ```console
-   $ python3 <analyzer> notes/ontology/<subject>/ --check-quotes <corpus>
-   ```
-
-   The command exits non-zero on any line, so judge by the lines. A
-   `Misquoted` or `Vanished` line halts the run: fix the row from the
-   corpus text and rerun. Report `Uncheckable` lines (including cites into
-   another source's checkout) without failing the gate.
-
-A halted run follows the halted-run shape in the output contract: the hero,
-then one sentence naming the unblock, never a restatement of the hero. Do not
-name the checkout path:
+A halted run follows the halted-run shape in the output contract. Do not name
+the checkout path:
 
 ```text
 ⚠ Blocked: the corpus checkout has uncommitted edits.

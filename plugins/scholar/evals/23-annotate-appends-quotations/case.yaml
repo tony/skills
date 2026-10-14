@@ -17,7 +17,7 @@ execution:
     it later. Do not ask me anything.
   max_turns: 20
   timeout_seconds: 300
-  allowed_tools: [Read, Write, Edit, Glob, Grep, Skill]
+  allowed_tools: [Bash, Read, Write, Edit, Glob, Grep, Skill]
 
 runs: 3
 

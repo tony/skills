@@ -35,8 +35,9 @@ a version or identifier with a digit outside backticks fails. Spelled-out
 counts ("twelve plugins") are numbers too; the analyzer cannot see them, so
 write none.
 
-The analyzer checks URLs, digits and common inline Markdown links. Other
-citation forms, evidence-file existence and claim support require review.
+The analyzer checks URLs, digits, common inline Markdown links, and that each
+link into `evidence/` names an existing file. Other citation forms and claim
+support require review.
 Run it before reporting success. A missing
 `brief.md` exits 2: write the brief first. A brief the user asked to keep
 unchanged is gated as is; report its findings and leave it.
@@ -78,7 +79,8 @@ produced it and the output it produced.
 
 `evidence/contested.md`: what `contest` judged, including the kills.
 
-`evidence/corrections.md`: created empty, written by the `scholar-revise` skill.
+`evidence/corrections.md`: created empty (Write with empty content) when
+missing, written by the `scholar-revise` skill.
 
 ## Rules
 
@@ -101,14 +103,12 @@ Per `references/output-contract.md`. Hero: `✓ rendered <subject>: brief +
 3. `## Gate`: the brief check's output, verbatim, with absolute paths
    stripped.
 
-On a failed gate, print the hero, `## Gate`, and the fix: edit the brief, or
-leave it and stop. Name each flagged URL and number, and say only that each moves into the
-matching `evidence/` file and is linked. One sentence closes the reply: never
-add a lead-in ("You can fix this in one of two ways") or explain how a finding
-was counted (that `v1.0.0` or `#L12` "counts as a bare number"). Never claim a command produced a
-number the brief's author wrote by hand. Reply as plain text outside any code
-fence, with plain bullets, no bold (never `- **Label:** ...`), and no local
-paths:
+A failed gate is the contract's failed-gate reply with the hero and `## Gate`:
+name each flagged URL and number, and say only that each moves into the
+matching `evidence/` file and is linked, or that the brief stays as is. Never
+add a lead-in or explain how a finding was counted (that `v1.0.0` or `#L12`
+"counts as a bare number"). Never claim a command produced a number the
+brief's author wrote by hand:
 
 ```text
 ⚠ Brief gate failed: 2 findings
@@ -122,8 +122,7 @@ Move the URL (github.com/example/sample-lib/.../ports.py) and the numbers 14 and
 ```
 
 Omit `## Brief` and `## Evidence` for anything not
-written, and offer no other next step. Never say what was left alone ("I left the brief as you wrote it"); report the gate result. A missing study follows the halted-run
-shape in the output contract.
+written. A missing study follows the halted-run shape in the output contract.
 
 Next-step options: compare against another study, stop here.
 

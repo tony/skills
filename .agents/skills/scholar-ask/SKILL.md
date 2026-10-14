@@ -18,6 +18,11 @@ study already earned.
 
 User arguments: $ARGUMENTS
 
+Without `--study`, the study is found as stage-gates.md describes under "The
+study directory" (`references/stage-gates.md`).
+
+Read `references/output-contract.md` before answering.
+
 ## Answer from the evidence, or name the gap
 
 An agent asked a question about a corpus it has partly read will reason from
@@ -72,10 +77,8 @@ Per `references/output-contract.md`. Hero: `✓ answered from <n> terms`,
 not settle the question, or `⚠ Blocked: <reason>` when no study is at the path.
 A question the study answers in part takes the `✓` hero, with the rest under
 `## Gaps`.
-A blocked run prints the hero, one sentence on the unblock (the real study
-path, or the `scholar-ontology` skill to build one), and nothing else: no paths
-searched, no "I found no terms.jsonl anywhere". Reply as plain
-text outside any code fence:
+A blocked run is the halted-run shape; the unblock is the real study path, or
+the `scholar-ontology` skill to build one:
 
 ```text
 ⚠ Blocked: no study at notes/ontology/sample-lib/, so there is no terms.jsonl to answer from.
@@ -92,8 +95,7 @@ Sections, for the first two heroes:
    which of the three cases applies. Add no gap the question did not ask
    about.
 
-The hero is exactly the line above, with nothing after the count. Bullets are
-plain sentences, never a bold label. Say nothing about a file you did not use.
+The hero is exactly the line above, with nothing after the count.
 
 Next-step options: widen the study to cover the gap, ask another question, stop
 here.

@@ -32,7 +32,8 @@ Read `references/output-contract.md` before writing study files.
 ## Survey the workspace
 
 Run `ls notes/ontology/` to list existing studies. A failure means there are
-none.
+none. `<subject>` and the default study follow "The study directory" in
+`references/stage-gates.md`.
 
 ## Stages
 
@@ -56,7 +57,9 @@ For prose, follow the `scholar-annotate` skill before `extract` to produce quota
 with stable locators.
 
 Run the stages silently: no stage's own `## Output` report or next-step panel.
-Report once, at the end, in the shape under Output.
+Report once, at the end, in the shape under Output. A stage whose gate fails
+stops the run: reply with the contract's failed-gate shape for that stage and
+run no later stage.
 
 `--resume=<stage>` starts at that stage against an existing study directory.
 
@@ -82,9 +85,8 @@ start stage 1 without approval. A request that already approves the plan
 ## Rules
 
 - Never write into the corpus being studied. Output lands under `--out`,
-  defaulting to `notes/ontology/<subject>/` in the current repository. When
-  the current repository is the corpus, that default stands: `extract`'s
-  dirty-tree check leaves the study directory out.
+  defaulting to `notes/ontology/<subject>/` in the current repository, even
+  when that repository is the corpus (`gather` explains the dirty-tree check).
 - A pasted snippet is not a corpus. With no repository, directory, or document
   on disk to pin, report `⚠ Blocked` at stage 1 and say what to point the
   study at. A pasted prose excerpt can only be pinned by running `gather`
@@ -93,12 +95,12 @@ start stage 1 without approval. A request that already approves the plan
 ## Output
 
 Per `references/output-contract.md`. Hero: `✓ <subject>: <n> terms, <n>
-types, <n> contested` or `⚠ Blocked: <reason>`. Sections:
+types, <n> contested`, `⚠ Gate failed: <stage>, <n> findings`, or `⚠ Blocked:
+<reason>`. Sections:
 
 1. `## Corpus`: each source, its resolved ref, and what was deliberately not
-   read, with the reason. Never write that a checkout was clean or left
-   unchanged, that nothing was left unread, or a claim about the sandbox; an
-   unpushed commit reads "commit not on a remote; recorded without URL".
+   read, with the reason. An unpushed commit reads "commit not on a remote;
+   recorded without URL".
 2. `## Ontology`: the supported type hierarchy and vocabulary, distinguishing
    declared types, documented roles, and unresolved relations.
 3. `## Contested`: what was challenged and how it resolved, including what
@@ -110,10 +112,9 @@ exited zero. The support reviews (hierarchy basis, contest verdicts, brief
 claims) are judgment: report them as reviewed, with any claim left unsupported
 or open. Add no claim to the report that the evidence layer does not hold.
 
-A blocked run contains the hero and one unblock sentence naming the required
-input (a repository URL, a local directory, or a document on disk). No bold, no
-options list, no plan for what happens next, no sections, no guesses from a
-pasted snippet, no local paths:
+A blocked run is the contract's halted-run shape; the unblock sentence names
+the required input (a repository URL, a local directory, or a document on
+disk):
 
 ```text
 ⚠ Blocked: no corpus on disk to study, only a pasted snippet.

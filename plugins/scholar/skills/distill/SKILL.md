@@ -30,8 +30,8 @@ claim. Each type is also a row in `terms.jsonl` with `kind: type`, its
 corpus-supported `definition`, and `parent` set to another type or the literal
 string `root`.
 Write each type's name onto its members' rows as `parent`. A type row you create
-carries no `cites`; the `--check-terms` gate exempts a `kind: type` row that
-has a `parent`, and the citations live in `hierarchy.md`. A type the corpus
+carries `"schema": 1` and no `cites`; the gate exempts it
+(`../../references/stage-gates.md`), and the citations live in `hierarchy.md`. A type the corpus
 already names (a `class`) keeps the row `extract` wrote: change its `kind` from
 `class` to `type` in place, `cites` included.
 
@@ -71,23 +71,18 @@ describing it.
 
 ## The orphan gate
 
-Run the analyzer and read its `orphans` section:
-
-```console
-$ python3 <analyzer> notes/ontology/<subject>/
-```
-
-Then confirm the table still passes the term gate:
+Run the term gate and the hierarchy gate from
+`../../references/stage-gates.md`; both must exit zero:
 
 ```console
 $ python3 <analyzer> notes/ontology/<subject>/ --check-terms
 ```
 
-A term with no `parent` is an orphan, as is one whose parent is neither
-another term nor `root`. Report a member (non-type row) whose parent is
-`root` as an orphan too: only types sit under `root`. The analyzer's `hierarchy cycles` section lists any
-parent chain that returns to itself, such as `a -> b -> a` or a term that is
-its own parent; fix each by re-reading the corpus's own is-a claim. An orphan
+```console
+$ python3 <analyzer> notes/ontology/<subject>/ --check-hierarchy
+```
+
+Fix each cycle by re-reading the corpus's own is-a claim. An orphan
 may be a valid term whose parent the corpus does not establish. Retain it
 and report the failed gate. Do not drop it or promote it without source
 support to clear a finding. Never invent a type to house an orphan or split
@@ -104,19 +99,15 @@ a type to tidy its fan-out.
 
 Per `../../references/output-contract.md`. Hero: `✓ <n> types, <n> terms, <n>
 preferred terms`, `⚠ Gate failed: <n> orphans, <n> cycles`, or `⚠ Blocked:
-<reason>`. A failed gate prints the hero, then each orphan or cycle on its own
-line, then one sentence naming the terms whose corpus evidence must be
-re-read before assigning parents, with no
-quoted corpus text, not even in parentheses; no other sections. Reply as plain text outside any code
-fence, with plain bullets, no bold (never `- **Label:** ...`), and no local
-paths. Never narrate files you did not write ("I changed nothing"), and never
-quote the skill's own instructions:
+<reason>`. A failed gate lists each orphan or cycle on its own line, then one
+sentence naming the terms whose corpus evidence must be re-read before
+assigning parents (no quoted corpus text, not even in parentheses):
 
 ```text
 ⚠ Gate failed: 1 orphan, 1 cycle
 
-- Orphan: checkpoint has no parent.
-- Cycle: phase -> stage -> phase.
+- Orphan: checkpoint
+- Cycle: phase -> stage -> phase
 
 Re-read the corpus evidence for checkpoint, stage, and phase before assigning parents, then rerun the gate.
 ```

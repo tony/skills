@@ -904,9 +904,10 @@
       "bundled": {
         "references/citation.md": "plugins/scholar/references/citation.md",
         "references/output-contract.md": "plugins/scholar/references/output-contract.md",
-        "references/prose-rules.md": "plugins/scholar/references/prose-rules.md"
+        "references/prose-rules.md": "plugins/scholar/references/prose-rules.md",
+        "references/term_metrics.py": "plugins/scholar/scripts/term_metrics.py"
       },
-      "bytes": 14745
+      "bytes": 60764
     },
     {
       "name": "scholar-ask",
@@ -915,9 +916,11 @@
       ],
       "bundled": {
         "references/output-contract.md": "plugins/scholar/references/output-contract.md",
-        "references/prose-rules.md": "plugins/scholar/references/prose-rules.md"
+        "references/prose-rules.md": "plugins/scholar/references/prose-rules.md",
+        "references/stage-gates.md": "plugins/scholar/references/stage-gates.md",
+        "references/term_metrics.py": "plugins/scholar/scripts/term_metrics.py"
       },
-      "bytes": 12608
+      "bytes": 62016
     },
     {
       "name": "scholar-compare",
@@ -926,9 +929,11 @@
       ],
       "bundled": {
         "references/output-contract.md": "plugins/scholar/references/output-contract.md",
-        "references/prose-rules.md": "plugins/scholar/references/prose-rules.md"
+        "references/prose-rules.md": "plugins/scholar/references/prose-rules.md",
+        "references/stage-gates.md": "plugins/scholar/references/stage-gates.md",
+        "references/term_metrics.py": "plugins/scholar/scripts/term_metrics.py"
       },
-      "bytes": 12577
+      "bytes": 62033
     },
     {
       "name": "scholar-contest",
@@ -941,10 +946,11 @@
         "references/output-contract.md": "plugins/scholar/references/output-contract.md",
         "references/plugin.json": "plugins/scholar/.claude-plugin/plugin.json",
         "references/prose-rules.md": "plugins/scholar/references/prose-rules.md",
+        "references/scholar_pins.py": "plugins/scholar/scripts/scholar_pins.py",
         "references/stage-gates.md": "plugins/scholar/references/stage-gates.md",
         "references/term_metrics.py": "plugins/scholar/scripts/term_metrics.py"
       },
-      "bytes": 49011
+      "bytes": 78690
     },
     {
       "name": "scholar-distill",
@@ -958,7 +964,7 @@
         "references/stage-gates.md": "plugins/scholar/references/stage-gates.md",
         "references/term_metrics.py": "plugins/scholar/scripts/term_metrics.py"
       },
-      "bytes": 44475
+      "bytes": 64900
     },
     {
       "name": "scholar-extract",
@@ -969,11 +975,12 @@
         "references/citation.md": "plugins/scholar/references/citation.md",
         "references/output-contract.md": "plugins/scholar/references/output-contract.md",
         "references/prose-rules.md": "plugins/scholar/references/prose-rules.md",
+        "references/scholar_pins.py": "plugins/scholar/scripts/scholar_pins.py",
         "references/source-pins.md": "plugins/scholar/references/source-pins.md",
         "references/stage-gates.md": "plugins/scholar/references/stage-gates.md",
         "references/term_metrics.py": "plugins/scholar/scripts/term_metrics.py"
       },
-      "bytes": 50173
+      "bytes": 79400
     },
     {
       "name": "scholar-gather",
@@ -984,11 +991,12 @@
         "references/citation.md": "plugins/scholar/references/citation.md",
         "references/output-contract.md": "plugins/scholar/references/output-contract.md",
         "references/prose-rules.md": "plugins/scholar/references/prose-rules.md",
+        "references/scholar_pins.py": "plugins/scholar/scripts/scholar_pins.py",
         "references/source-pins.md": "plugins/scholar/references/source-pins.md",
         "references/stage-gates.md": "plugins/scholar/references/stage-gates.md",
         "references/term_metrics.py": "plugins/scholar/scripts/term_metrics.py"
       },
-      "bytes": 48885
+      "bytes": 77744
     },
     {
       "name": "scholar-ontology",
@@ -1004,7 +1012,7 @@
         "references/stage-gates.md": "plugins/scholar/references/stage-gates.md",
         "references/term_metrics.py": "plugins/scholar/scripts/term_metrics.py"
       },
-      "bytes": 49548
+      "bytes": 70742
     },
     {
       "name": "scholar-render",
@@ -1018,7 +1026,7 @@
         "references/stage-gates.md": "plugins/scholar/references/stage-gates.md",
         "references/term_metrics.py": "plugins/scholar/scripts/term_metrics.py"
       },
-      "bytes": 44218
+      "bytes": 65026
     },
     {
       "name": "scholar-revise",
@@ -1028,9 +1036,10 @@
       "bundled": {
         "references/output-contract.md": "plugins/scholar/references/output-contract.md",
         "references/prose-rules.md": "plugins/scholar/references/prose-rules.md",
+        "references/stage-gates.md": "plugins/scholar/references/stage-gates.md",
         "references/term_metrics.py": "plugins/scholar/scripts/term_metrics.py"
       },
-      "bytes": 38668
+      "bytes": 62249
     },
     {
       "name": "scholar-verify",
@@ -1041,10 +1050,12 @@
         "references/citation.md": "plugins/scholar/references/citation.md",
         "references/output-contract.md": "plugins/scholar/references/output-contract.md",
         "references/prose-rules.md": "plugins/scholar/references/prose-rules.md",
+        "references/scholar_pins.py": "plugins/scholar/scripts/scholar_pins.py",
         "references/source-pins.md": "plugins/scholar/references/source-pins.md",
+        "references/stage-gates.md": "plugins/scholar/references/stage-gates.md",
         "references/term_metrics.py": "plugins/scholar/scripts/term_metrics.py"
       },
-      "bytes": 47699
+      "bytes": 79867
     },
     {
       "name": "self-improvement-apply",
@@ -1540,19 +1551,19 @@
   "duplication": {
     "plugins/scholar/references/output-contract.md": 11,
     "plugins/scholar/references/prose-rules.md": 11,
+    "plugins/scholar/scripts/term_metrics.py": 11,
     "plugins/weave/references/present-results.md": 11,
     "plugins/weave/scripts/closest_model.py": 11,
     "plugins/weave/scripts/engine.py": 11,
+    "plugins/scholar/references/stage-gates.md": 10,
     "plugins/weave/references/ensemble-core.md": 10,
     "plugins/weave/references/worker-backends.md": 10,
-    "plugins/scholar/scripts/term_metrics.py": 8,
     "plugins/weave/references/prose-rules.md": 7,
     "plugins/business/references/interim-format.md": 6,
     "plugins/business/references/prose-rules.md": 6,
     "plugins/business/references/provenance.md": 6,
     "plugins/business/scripts/business.py": 6,
     "plugins/scholar/references/citation.md": 6,
-    "plugins/scholar/references/stage-gates.md": 6,
     "plugins/weave/references/deslop-pass.md": 6,
     "plugins/business/references/audiences.md": 5,
     "plugins/pr/references/prose-rules.md": 5,
@@ -1576,6 +1587,7 @@
     "plugins/pytest-optimizer/templates/pytest_optimizer_plugin.py": 4,
     "plugins/scholar/references/evidence-tiers.md": 4,
     "plugins/scholar/references/source-pins.md": 4,
+    "plugins/scholar/scripts/scholar_pins.py": 4,
     "plugins/terraform/references/lock-and-init.md": 4,
     "plugins/terraform/references/prose-rules.md": 4,
     "plugins/terraform/scripts/lockctl.py": 4,

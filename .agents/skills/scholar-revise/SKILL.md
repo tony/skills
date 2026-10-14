@@ -17,6 +17,9 @@ than quietly making it true.
 
 User arguments: $ARGUMENTS
 
+Without `--study`, the study is found as "The study directory" describes in
+`references/stage-gates.md`.
+
 Read `references/output-contract.md` before writing study files.
 
 ## Why a correction is kept
@@ -98,9 +101,8 @@ Blocked: <reason>`. Sections:
 3. `## Downstream`: anything else in the study that rested on the same
    evidence and may now be unsupported.
 
-A halted run (no study, no standing claim to correct, or an unreadable source) is the hero and one
-unblock sentence, with no temp path and no "I didn't change anything". Do not
-comment on the correction text the user supplied:
+A halted run (no study, no standing claim to correct, or an unreadable source)
+is the halted-run shape:
 
 ```text
 ⚠ Blocked: no study at notes/ontology/sample-lib/ to correct.

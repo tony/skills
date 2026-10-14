@@ -16,7 +16,7 @@ execution:
     Both studies are distilled. Do not ask me anything.
   max_turns: 20
   timeout_seconds: 300
-  allowed_tools: [Read, Glob, Write, Skill]
+  allowed_tools: [Bash, Read, Glob, Write, Skill]
 
 runs: 3
 

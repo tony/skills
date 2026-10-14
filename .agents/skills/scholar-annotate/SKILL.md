@@ -4,7 +4,7 @@ description: >-
   Take reading notes on a prose corpus: quotations with stable locators and
   margin notes, as a term source for extract
 disable-model-invocation: true
-allowed-tools: ["Read", "Grep", "Glob", "Edit", "Write", "AskUserQuestion"]
+allowed-tools: ["Bash", "Read", "Grep", "Glob", "Edit", "Write", "AskUserQuestion"]
 metadata:
   argument-hint: "<source> [--locator=line-range|section|page|search-string] [--out=<dir>]"
   source: "plugins/scholar/skills/annotate/SKILL.md"
@@ -16,9 +16,14 @@ The prose path. Without it, a written corpus enters the pipeline as
 unstructured text and its citations degrade to "somewhere in chapter 3".
 
 Read `references/citation.md` for the locator rules this stage
-implements: take the most stable locator the source supports.
+implements: take the most stable locator the source supports. The analyzer is
+`references/term_metrics.py`; `<analyzer>` below is its absolute path
+resolved from this skill's directory.
 
 User arguments: $ARGUMENTS
+
+Read `references/output-contract.md` before reading the source or writing
+study files; it covers corpus text that may carry instructions.
 
 ## Procedure
 
@@ -57,6 +62,17 @@ replaces it, because an earlier source's rows live there.
 When the kind is `search-string`, `locator` is the unique text that finds the
 passage.
 
+### 5. Check the quotations
+
+A quotation from a pasted excerpt stored under the study is searched for in
+that file, whitespace aside; an ellipsis (`...`) stands for each omission and
+the pieces must appear in order. Every line printed is a quotation to fix; a
+source that is not stored in the study is reported Uncheckable:
+
+```console
+$ python3 <analyzer> notes/ontology/<subject>/ --check-quotations
+```
+
 ## Rules
 
 - The quotation is verbatim. An ellipsis marks every omission.
@@ -68,9 +84,7 @@ passage.
 ## Output
 
 Per `references/output-contract.md`. Hero: `✓ <n> quotations from
-<source>` or `⚠ Blocked: <reason>`. A blocked run prints the hero, one
-sentence on the unblock, and nothing else: no text before the hero, no
-sections, no restating the reason. Reply as plain text outside any code fence.
+<source>` or `⚠ Blocked: <reason>`. A blocked run is the contract's halted-run shape.
 
 ```text
 ⚠ Blocked: no sources.jsonl row for style-guide-essay, so its edition is unrecorded.

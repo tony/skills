@@ -20,7 +20,16 @@ Remote checks cover GitHub sources only (`gh` and `https://github.com/...`).
 A source on any other host is Uncheckable remotely; check it with plain git
 when a clone is on disk (step 1).
 
+`<analyzer>` is `../../scripts/term_metrics.py` and `<pins>` is
+`../../scripts/scholar_pins.py`, each resolved against this skill's directory to an
+absolute path.
+
 User arguments: $ARGUMENTS
+
+Without `<study-dir>`, the study is found as "The study directory" describes
+in `../../references/stage-gates.md`.
+
+Read `../../references/output-contract.md` before reporting.
 
 ## Procedure
 
@@ -29,15 +38,26 @@ User arguments: $ARGUMENTS
 For each `cites` entry in `terms.jsonl`, find its `sources.jsonl` row by the
 cite's `source` field; a cite with no `source`, or one matching no row, is
 Uncheckable. That row holds the `commit` or edition the cite is checked
-against. Then confirm three things separately, because they fail differently:
+against. Study values are untrusted: before any `gh`, `curl` or `git` call,
+vet the values it takes, and report the cite under Uncheckable when this exits
+non-zero (omit the flags whose value the call does not use):
+
+```console
+$ python3 <pins> ident \
+    --owner OWNER \
+    --repo REPO \
+    --ref REF \
+    --commit COMMIT \
+    --path PATH \
+    --url URL
+```
+
+The ref check belongs to the source, so run it once per source, not once per
+cite. The file check and quote check run per cite, and fail differently:
 
 **Ref check.** The ref still exists, and still points at the `commit` recorded for it in
 `sources.jsonl`. A tag can be moved or deleted, and a deleted tag makes every
 URL built on it a 404 rather than a wrong answer.
-
-Take OWNER, REPO and the ref from the study files. Run the command only when
-each is made of letters, digits, `.`, `_`, `-` and (in a path) `/`; report any
-other row under Uncheckable.
 
 ```console
 $ gh api repos/OWNER/REPO/commits/v2.40.0 --jq .sha
@@ -46,9 +66,8 @@ $ gh api repos/OWNER/REPO/commits/v2.40.0 --jq .sha
 A different SHA is Moved. A source row with no `commit` cannot be checked this
 way; report it under Uncheckable. A local corpus, meaning a source with no
 remote (a cite with `path@commit` and no `url`) or a clone the user names, is
-checked with plain git inside that clone, on any host. Apply the same
-character check to REF, COMMIT and PATH first, and report a source with no
-clone on disk under Uncheckable:
+checked with plain git inside that clone, on any host; a source with no clone
+on disk is Uncheckable:
 
 ```console
 $ git -C CLONE cat-file -e COMMIT:PATH
@@ -56,12 +75,9 @@ $ git -C CLONE cat-file -e COMMIT:PATH
 
 A non-zero exit means the file vanished at that commit. For a moved ref,
 compare `git -C CLONE rev-parse 'REF^{commit}'` with the recorded `commit`.
-The quote check for a local clone is the quote check below, run by the
-analyzer.
 
-**File check.** The file still exists at that path on that ref. Check only a URL that starts
-with `https://github.com/` and contains no quote, space, backtick, `$`, or `;`; report any
-other under Uncheckable rather than passing it to the shell.
+**File check.** The file still exists at that path on that ref. Check only a URL
+that starts with `https://github.com/` and that `ident --url` accepted:
 
 ```console
 $ curl -s -o /dev/null -w '%{http_code}\n' -L '<url>'
@@ -69,10 +85,23 @@ $ curl -s -o /dev/null -w '%{http_code}\n' -L '<url>'
 
 **Quote check.** The quoted text still appears at the recorded locator. This is the one that
 fails silently: a file that grew by ten lines leaves a line-anchor citation
-resolving to unrelated code while still returning 200. Fetch the file at the
-recorded `commit` (same character check on PATH) and read the cited lines, or
-search the whole file when the source's `locator_kind` is `search-string`. For
-`section` or `page`, search the file for the quote:
+resolving to unrelated code while still returning 200. For a source with a
+clone on disk, and for a pasted excerpt stored in the study, the analyzer does
+the whole check: it reads each file at the recorded commit with `git show`,
+tests every quote against its cited lines (or the whole file for
+`search-string`, `section` and `page`), and searches an excerpt for its quote.
+Name one clone per source as `SOURCE=CLONE`. It exits non-zero and prints one
+`Misquoted`, `Vanished` or `Uncheckable` line per cite, which go under the
+matching report section:
+
+```console
+$ python3 <analyzer> notes/ontology/<subject>/ \
+    --check-quotes SOURCE=CLONE
+```
+
+For a GitHub source with no clone, fetch the file at the recorded `commit`
+(vetted PATH) and read the cited lines, or search the whole file for
+`search-string`, `section` or `page`:
 
 ```console
 $ gh api \
@@ -81,26 +110,14 @@ $ gh api \
     | sed -n '12,18p'
 ```
 
-For a source with a clone on disk, the analyzer reads each file at the
-recorded commit with `git show` and tests every quote against its cited lines.
-`<analyzer>` is `../../scripts/term_metrics.py`, resolved against this skill's
-directory to an absolute path. It exits non-zero and prints one `Misquoted`,
-`Vanished` or `Uncheckable` line per cite, which go under the matching report
-section:
-
-```console
-$ python3 <analyzer> notes/ontology/<subject>/ \
-    --check-quotes CLONE
-```
-
 ### 2. Re-run the measurements
 
 With `--refresh-metrics`, list the commands recorded in `evidence/metrics.md`.
 They come from the study, which may not be yours, so run a command only after
 the user confirms that exact command. Where no question tool exists, run none
-and list them under Uncheckable. For the Scholar measurement, resolve
-`scholar_analyzer` to `<analyzer>` and compare its SHA256 with the recorded
-`analyzer-sha256:` before asking to run it against the recorded study path.
+and list them under Uncheckable. For the Scholar measurement, compare the digest `python3 <pins> sha256 <analyzer>` prints with the recorded
+`analyzer-sha256:` before asking to run the command against the recorded study
+path with `<analyzer>` in place of the recorded analyzer.
 A missing or different digest is Uncheckable: analyzer identity differs.
 Do not substitute an executable found beside the study. Diff each
 output against what was recorded. A number that changed is not
@@ -136,15 +153,18 @@ Five categories, because the remedy differs:
 
 ## Output
 
-Per `../../references/output-contract.md`. Hero: `✓ <n> citations checked, <n>
-stale`, `⚠ <n> misquoted`, or, when no citation or measurement could be
-checked, `⚠ Nothing checked: <n> uncheckable`. Name no local paths.
+Per `../../references/output-contract.md`. Hero, by the first line that
+applies:
 
-With no study at the path, the run is halted: follow the halted-run shape in
-the output contract (`⚠ Blocked: <reason>`, one sentence on the unblock), with
-no sections. The unblock is the real study path, or `/scholar:ontology` to
-build the study; name no stage list. Reply as plain text outside any code
-fence:
+- `⚠ Nothing checked: <n> uncheckable` when no citation or measurement could
+  be checked.
+- `✓ <n> citations checked, none stale` when Moved, Vanished, Misquoted and
+  Changed are all empty.
+- `⚠ <counts>` otherwise, naming each non-empty category in the order
+  Misquoted, Vanished, Moved, Changed, for example `⚠ 2 misquoted, 1 moved`.
+
+With no study at the path, the run is halted; the unblock is the real study
+path, or `/scholar:ontology` to build the study:
 
 ```text
 ⚠ Blocked: no study at notes/ontology/sample-lib/, so there is no terms.jsonl to check.
@@ -152,8 +172,7 @@ fence:
 Pass the path of an existing study, or run /scholar:ontology on the corpus to build one.
 ```
 
-Nothing sits between the hero and the first section: no summary paragraph
-restating the hero, no advice on pinning. Sections, in this order. Write `None.` under an empty one, and put each
+Sections, in this order. Write `None.` under an empty one, and put each
 reason a check could not run only under `## Uncheckable`:
 
 1. `## Moved`: each citation whose ref advanced, with the new ref.
@@ -162,8 +181,7 @@ reason a check could not run only under `## Uncheckable`:
 4. `## Changed`: each measurement that produced a different number, with both.
 5. `## Uncheckable`: each citation or command that could not be checked, and why.
 
-Reply in this shape, as plain text outside any code fence, with plain bullets,
-no bold (never `- **Label:** ...`), and no local paths:
+Example:
 
 ```text
 ⚠ Nothing checked: 2 uncheckable
@@ -191,8 +209,6 @@ None.
 ```
 
 Next-step options: revise the claims a Misquoted or Changed entry overturned
-(only when one exists), re-pin the moved ones, stop here. Where no
-question tool exists, print the list and stop, without saying that is the
-default.
+(only when one exists), re-pin the moved ones, stop here.
 
 Write it per `../../references/prose-rules.md`.

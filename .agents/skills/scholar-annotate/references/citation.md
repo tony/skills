@@ -3,8 +3,9 @@
 How to pin a source so the citation still works in three years, and what a
 citation has to carry before it counts as evidence.
 
-Record the resolved commit of a repository ref as `commit` in `sources.jsonl`;
-`verify` compares it against the ref later to detect moved tags.
+Record the resolved 40-digit commit of a repository ref as `commit` in
+`sources.jsonl`; `verify` compares it against the ref later to detect moved
+tags.
 
 ## Every citation carries a locator
 
@@ -21,7 +22,8 @@ supports, in this order:
    number without an edition is true of one printing only.
 4. `search-string`: a source with no stable anchor, such as a PDF without
    pagination or a transcript. The `locator` is enough unique text to be found
-   by search, and `verify` checks it by search.
+   by search. The analyzer searches it only in a pasted excerpt stored under
+   the study; for any other source `verify` reports the cite Uncheckable.
 
 A source with no remote has no permalink. Publish it first; otherwise cite it
 as `path@commit` with no `url`, and `verify` checks it with `git show`.
@@ -34,7 +36,8 @@ costs a reader more than an honest search string.
 Every entry in a row's `cites` carries these fields:
 
 - `source`: the `source` value of the cite's row in `sources.jsonl` (a
-  repository URL, or the id `gather` gave a prose document). It ties the cite
+  repository URL; for a pasted prose excerpt, its `corpus/excerpt-<n>.txt`
+  path under the study; for a book, the id `gather` gave it). It ties the cite
   to the pinned ref or edition, and `verify` reads it.
 - `locator`: where in the source, in the row's `locator_kind`.
 - `quote`: the text at that locator.

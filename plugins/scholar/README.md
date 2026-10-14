@@ -163,12 +163,14 @@ beside the serial one.
   `extract` fetches a remote corpus with plain git over HTTPS from the recorded
   source URL, so any host that serves git works.
 - rg, to inventory a corpus without reading all of it.
-- Python 3.9+, to run `scripts/term_metrics.py`. It uses the standard library
-  only, so it runs inside any corpus checkout with no package manager present.
+- Python 3.9+, to run `scripts/term_metrics.py` (the stage gates and the
+  analyzer) and `scripts/scholar_pins.py` (local pins, throwaway checkouts, identifier
+  checks). Both use the standard library only, so they run inside any corpus
+  checkout with no package manager present.
 
 A corpus with no git remote cannot be cited by permalink. Publish it first, or
 cite `path@commit`, which `verify` checks with `git show` through
-`term_metrics.py --check-quotes <clone>`.
+`term_metrics.py --check-quotes SOURCE=<clone>` (repeat per source).
 
 A small repository does not need every stage: run `gather` and `extract`, then
 `render`, and add `distill` and `contest` once the term table has siblings to tell apart.

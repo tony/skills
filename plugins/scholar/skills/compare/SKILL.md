@@ -1,7 +1,7 @@
 ---
 name: compare
 description: "Set two term tables against each other: same concept different term, same term different concept, and what each covers that the other lacks"
-allowed-tools: ["Read", "Glob", "Write", "AskUserQuestion"]
+allowed-tools: ["Bash", "Read", "Glob", "Write", "AskUserQuestion"]
 argument-hint: "<study-dir> <study-dir> [--out=<file>]"
 disable-model-invocation: true
 ---
@@ -28,20 +28,22 @@ documentation.
 
 ### 1. Load both tables
 
-Take `terms.jsonl` from each study directory. Both must have passed
-`distill`'s gate, or the `parent` fields are empty and the sibling comparison
-is meaningless.
+Take `terms.jsonl` from each study directory. Run the hierarchy gate in
+`../../references/stage-gates.md` on each; a table that fails has empty or
+dangling `parent` fields, so stop with the contract's failed-gate shape.
+`<analyzer>` is `../../scripts/term_metrics.py`, resolved against this skill's
+directory to an absolute path.
 
 ### 2. Report three sections
 
-**Same concept, different term.** Definitions that say the same thing
-while the terms differ. These are the translation table.
+Mappings: definitions that say the same thing while the terms differ. These
+are the translation table.
 
-**Same term, different concept.** Identical terms whose definitions describe
-different things. These are the traps: the reader who knows one project will be confidently
+Collisions: identical terms whose definitions describe different things.
+These are the traps: the reader who knows one project will be confidently
 wrong about the other.
 
-**Coverage.** What each table has that the other has no counterpart for. A
+Coverage: what each table has that the other has no counterpart for. A
 concept present in one and absent in the other is either a genuine difference
 in what the projects do, or a gap in one of the studies. Say which only when
 `sources.jsonl` shows what each study read; otherwise it is unknown, and the
@@ -68,7 +70,8 @@ The hero counts are counts of findings, not scores.
 
 ## Output
 
-Per `../../references/output-contract.md`. Hero: `✓ <n> mappings, <n>
+Per `../../references/output-contract.md`, which you read before writing
+`--out`. Hero: `✓ <n> mappings, <n>
 collisions, <n> uncovered` or `⚠ Blocked: <reason>`. Sections:
 
 1. `## Mappings`: same concept, different term, with both definitions.
@@ -78,8 +81,8 @@ collisions, <n> uncovered` or `⚠ Blocked: <reason>`. Sections:
    is a difference or a gap.
 
 A halted run (a study with no `terms.jsonl`, or fewer than two studies) is the
-hero and one sentence naming each missing study directory and the unblock
-(`/scholar:ontology` to build it). No mappings, collisions, or coverage, and nothing after the unblock sentence (no "Next step"). Reply as plain text outside any code fence:
+halted-run shape, naming each missing study directory and the unblock
+(`/scholar:ontology` to build it):
 
 ```text
 ⚠ Blocked: neither notes/ontology/sample-lib/ nor notes/ontology/other-lib/ exists.

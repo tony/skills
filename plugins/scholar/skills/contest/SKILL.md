@@ -72,8 +72,10 @@ One candidate at a time. For each, write to `evidence/contested.md`:
 Check each structural assertion against its pinned source, not its repetition
 in an earlier evidence document or in the quotations stored in `terms.jsonl`.
 Read the cited text from the corpus at the recorded `commit`: a checkout read
-in place once `git -C <corpus> rev-parse HEAD` matches, or `git -C <corpus>
-show <commit>:<path>`. Record `upheld` only after that read. Where the corpus
+in place once `python3 <pins> local <corpus> --expect <commit>` exits zero
+(`<pins>` is `../../scripts/scholar_pins.py` resolved against this skill's directory),
+or `git -C <corpus> show <commit>:<path>`. Record `upheld` only after that
+read. Where the corpus
 is not on disk, the verdict stays open and names the unread source as the
 evidence needed. Withdrawing an unsupported disjointness
 claim leaves overlap unknown; it does not establish the opposite. Keep the
@@ -100,8 +102,10 @@ Read `sources.jsonl` and ask what the study does not know:
 ## Pass 4: stop condition
 
 A round is passes 1 to 3 rerun against the current table. Stop when a round
-surfaces no new contested claim, or at `--rounds` (default 3). A stop at `--rounds` with any claim still open leaves the gate unmet; the
-hero says so (see Output).
+surfaces no new contested claim, or at `--rounds` (default 3). Run the ledger check in `../../references/stage-gates.md`
+(`--check-verdicts`) at the end of each round: its `Unjudged` and `Open` lines
+are the claims still to judge. A stop at `--rounds` with any of them leaves the
+gate unmet; the hero says so (see Output).
 
 ## Panels
 
@@ -128,8 +132,6 @@ beside the serial one.
 
 ## Output
 
-Never mention a file left unchanged ("terms.jsonl is unchanged").
-
 Per `../../references/output-contract.md`. Hero: `✓ <n> candidates judged, <n>
 killed, 0 open` only when the gate in `../../references/stage-gates.md` passes;
 `⚠ Gate unmet: <n> claims still open after <n> rounds` when a capped run has
@@ -146,11 +148,11 @@ sentence: no paths searched, no "I wrote nothing", no offer to look elsewhere:
 Run /scholar:distill on the study, then run contest again.
 ```
 
-A capped run with open claims replies in this shape, as plain text outside any
-code fence, with the sections below under the hero (shown here with one):
+A capped run with open claims keeps all four sections below under the hero
+(`## Kills` and `## Coverage` read `None.` when empty):
 
 ```text
-⚠ Gate unmet: 3 claims still open after 3 rounds.
+⚠ Gate unmet: 3 claims still open after 3 rounds
 
 ## Findings
 
@@ -159,6 +161,14 @@ Synonymy: update-action / update-actions at 0.91. Circular evidence: ratchet.
 ## Verdicts
 
 Open: update-action / update-actions, whether the two are one concept.
+
+## Kills
+
+None.
+
+## Coverage
+
+None.
 
 Run another round, or widen the corpus to settle them.
 ```
