@@ -378,7 +378,7 @@
         "references/prose-rules.md": "plugins/lean/references/prose-rules.md",
         "references/scope.py": "plugins/lean/scripts/scope.py"
       },
-      "bytes": 20579
+      "bytes": 20661
     },
     {
       "name": "lean-trim-comments",

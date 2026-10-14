@@ -49,8 +49,9 @@ the reply.
    `deleted` row: nothing is on disk to edit.
 2. **Load the rules and voice.** Read
    `../../references/prose-rules.md` and
-   `../../references/lean-rubric.md`, then `./AGENTS.md` and
-   `./CLAUDE.md` for the host's rubric and accepted voice. For
+   `../../references/lean-rubric.md` before drafting any rewrite,
+   `--stdin` included: the cut list lives there. Then read `./AGENTS.md`
+   and `./CLAUDE.md` for the host's rubric and accepted voice. For
    `--gates`, take the format/lint/typecheck commands from a checks
    section in those files; if none is defined, skip gates.
 3. **Detect.** Flag what the prose rules list as cut. Preserve every
