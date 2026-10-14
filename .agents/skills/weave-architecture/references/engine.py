@@ -38,7 +38,7 @@ from pathlib import Path
 import closest_model  # pyright: ignore[reportImplicitRelativeImport]
 
 if t.TYPE_CHECKING:
-    from collections.abc import Callable, Collection, Generator, Mapping, Sequence
+    from collections.abc import Callable, Collection, Generator, Iterator, Mapping, Sequence
 
 Json = dict[str, t.Any]
 
@@ -852,8 +852,49 @@ def pin_tree(top: str | Path, session_id: str, name: str, tree: str, parent: str
     return commit
 
 
-def _index_state(top: str | Path) -> str:
-    return hashlib.sha256(git_bytes(top, "ls-files", "--stage", "-v", "-z")).hexdigest()
+def tracked_entries(top: str | Path) -> bytes:
+    """Return `git ls-files --stage -v -z`; one listing serves the index and guard states."""
+    return git_bytes(top, "ls-files", "--stage", "-v", "-z")
+
+
+def _entries(raw: bytes) -> Iterator[tuple[str, str]]:
+    """Yield ``(mode, path)`` for each entry of ``tracked_entries`` output."""
+    for entry in raw.decode("utf-8", "surrogateescape").split("\0"):
+        meta, _, rel = entry.partition("\t")
+        if rel:
+            yield meta[2:].partition(" ")[0], rel
+
+
+def _index_state(top: str | Path, entries: bytes | None = None) -> str:
+    return hashlib.sha256(tracked_entries(top) if entries is None else entries).hexdigest()
+
+
+def _sets_hooks_path(dotgit: Path) -> bool:
+    """Tell whether any config file git reads for this repository mentions ``hooksPath``."""
+    home = Path(os.environ.get("HOME", "~")).expanduser()
+    xdg = Path(os.environ.get("XDG_CONFIG_HOME") or home / ".config")
+    for path in (
+        dotgit / "config",
+        home / ".gitconfig",
+        xdg / "git" / "config",
+        Path("/etc/gitconfig"),
+    ):
+        try:
+            if "hookspath" in path.read_text(encoding="utf-8", errors="replace").lower():
+                return True
+        except OSError:
+            continue
+    return False
+
+
+def _git_paths(top: str | Path) -> dict[str, str]:
+    """Locate the guarded git files; ask git only when the layout or hooks path is unusual."""
+    dotgit = Path(top) / ".git"
+    names = ("packed-refs", "config", "config.worktree", "hooks")
+    if dotgit.is_dir() and not _sets_hooks_path(dotgit):
+        return {name: str(dotgit / name) for name in names}
+    out = git(top, "rev-parse", *[a for n in names for a in ("--git-path", n)])
+    return dict(zip(names, out.splitlines()))
 
 
 def _file_digest(path: Path) -> str:
@@ -878,16 +919,19 @@ def _target_state(link: Path) -> str:
             return f"file:{real}:unreadable:{info.st_size}:{info.st_mtime_ns}"
     if stat.S_ISDIR(info.st_mode):
         digest = hashlib.sha256()
-        with os.scandir(real) as entries:
-            for entry in sorted(entries, key=lambda e: e.name):
-                with contextlib.suppress(OSError):
-                    st = entry.stat(follow_symlinks=False)
-                    digest.update(f"{entry.name}\0{st.st_size}\0{st.st_mtime_ns}\n".encode())
+        try:
+            with os.scandir(real) as entries:
+                for entry in sorted(entries, key=lambda e: e.name):
+                    with contextlib.suppress(OSError):
+                        st = entry.stat(follow_symlinks=False)
+                        digest.update(f"{entry.name}\0{st.st_size}\0{st.st_mtime_ns}\n".encode())
+        except OSError:
+            return f"dir:{real}:unreadable"
         return f"dir:{real}:{digest.hexdigest()}"
     return f"other:{real}"
 
 
-def collect_state(top: str | Path) -> Json:
+def collect_state(top: str | Path, entries: bytes | None = None) -> Json:
     """Return what a worker can change outside the working-tree snapshot.
 
     Each category maps a name to a short fingerprint, so two states diff to names.
@@ -898,13 +942,7 @@ def collect_state(top: str | Path) -> Json:
         name, obj, sym = line.split("\0")
         if not name.startswith(STATE_IGNORED_REFS):
             refs[name] = sym or obj
-    names = ("packed-refs", "config", "config.worktree", "hooks")
-    where = dict(
-        zip(
-            names,
-            git(top, "rev-parse", *[a for n in names for a in ("--git-path", n)]).splitlines(),
-        )
-    )
+    where = _git_paths(top)
     packed: dict[str, str] = {}
     packed_file = Path(top) / where["packed-refs"]
     if packed_file.is_file():
@@ -921,14 +959,11 @@ def collect_state(top: str | Path) -> Json:
     hooks_dir = Path(top) / where["hooks"]
     if hooks_dir.is_dir():
         for hook in sorted(hooks_dir.iterdir()):
-            if hook.is_file():
+            if hook.is_file() and hook.suffix != ".sample":
                 hooks[hook.name] = _file_digest(hook)
     symlinks: dict[str, str] = {}
     hardlinks: dict[str, str] = {}
-    entries = git_bytes(top, "ls-files", "--stage", "-z").decode("utf-8", "surrogateescape")
-    for entry in entries.split("\0"):
-        meta, _, rel = entry.partition("\t")
-        mode = meta.partition(" ")[0]
+    for mode, rel in _entries(tracked_entries(top) if entries is None else entries):
         if mode == "120000":
             symlinks[rel] = _target_state(Path(top) / rel)
         elif mode in {"100644", "100755"}:
@@ -953,12 +988,13 @@ def escaping_symlinks(top: str | Path) -> list[str]:
     is covered by the tree; these two resolve elsewhere from a snapshot.
     """
     found: list[str] = []
-    entries = git_bytes(top, "ls-files", "--stage", "-z").decode("utf-8", "surrogateescape")
-    for entry in entries.split("\0"):
-        meta, _, rel = entry.partition("\t")
-        if not meta.startswith("120000"):
+    for mode, rel in _entries(tracked_entries(top)):
+        if mode != "120000":
             continue
-        link = os.readlink(Path(top) / rel)  # noqa: PTH115
+        try:
+            link = os.readlink(Path(top) / rel)  # noqa: PTH115
+        except OSError:
+            continue
         if Path(link).is_absolute():
             continue
         reach = os.path.normpath(Path(rel).parent / link)
@@ -1003,10 +1039,50 @@ def _load_state(session_dir: Path, guard: Json) -> Json | None:
     return t.cast("Json", json.loads(path.read_text(encoding="utf-8"))) if path.is_file() else None
 
 
-def _outside_changes(session_dir: Path, top: str, guard: Json, skip: Collection[str] = ()) -> Json:
-    """Diff the current outside-the-tree state against the one recorded with ``guard``."""
+def _stash_paths(top: str, session: Json) -> set[str]:
+    """Return the paths the session's own stash covered (tracked, staged, and untracked)."""
+    stash: Json = session.get("stash") or {}
+    sha = stash.get("sha")
+    if not sha or not stash.get("restored"):
+        return set()
+    out = git(top, "diff", "--name-only", "-z", f"{sha}^1", sha, check=False)
+    held = {p for p in out.split("\0") if p}
+    out = git(top, "ls-tree", "-r", "--name-only", "-z", f"{sha}^3", check=False)
+    return held | {p for p in out.split("\0") if p}
+
+
+def _outside_changes(
+    session_dir: Path,
+    top: str,
+    guard: Json,
+    skip: Collection[str] = (),
+    entries: bytes | None = None,
+) -> tuple[Json, list[str]]:
+    """Diff the current outside-the-tree state against the one recorded with ``guard``.
+
+    Returns the changes and the paths whose hard link the engine's own stash restore
+    severed (git cannot preserve hard links); those are a note, not a change.
+    """
     before = _load_state(session_dir, guard)
-    return {} if before is None else diff_state(before, collect_state(top), skip)
+    if before is None:
+        return {}, []
+    found = diff_state(before, collect_state(top, entries), skip)
+    if "hardlinks" not in found:
+        return found, []
+    covered = _stash_paths(top, load_session(session_dir))
+    pre_links = before["hardlinks"]
+    shared = {pre_links[p].rpartition(":")[0] for p in covered if p in pre_links}
+    notes = [
+        p
+        for p in found["hardlinks"]
+        if p in covered or pre_links.get(p, "").rpartition(":")[0] in shared
+    ]
+    rest = [p for p in found["hardlinks"] if p not in notes]
+    if rest:
+        found["hardlinks"] = rest
+    else:
+        del found["hardlinks"]
+    return found, notes
 
 
 def take_guard_snapshot(
@@ -1017,15 +1093,16 @@ def take_guard_snapshot(
     head = git(top, "rev-parse", "HEAD")
     tree = snapshot_tree(top)
     commit = pin_tree(top, session_id, name, tree, head)
+    entries = tracked_entries(top)
     doc: Json = {
         "pre": commit,
         "tree": tree,
         "head": head,
-        "index": _index_state(top),
+        "index": _index_state(top, entries),
         "head_ref": git(top, "symbolic-ref", "-q", "HEAD", check=False),
     }
     if session_dir is not None:
-        _save_state(session_dir, name, collect_state(top))
+        _save_state(session_dir, name, collect_state(top, entries))
         doc["state"] = name
     return doc
 
@@ -1060,13 +1137,15 @@ def guard_check(session_dir: Path, label: str = "check", *, initial: bool = Fals
     pre = session["initial_guard"] if initial else _guard_of(session)
     post_tree = snapshot_tree(top)
     head = git(top, "rev-parse", "HEAD")
-    index = _index_state(top)
+    entries = tracked_entries(top)
+    index = _index_state(top, entries)
     head_ref = git(top, "symbolic-ref", "-q", "HEAD", check=False)
     index_changed = index != pre.get("index", index)
     head_changed = head != pre["head"] or head_ref != pre.get("head_ref", head_ref)
-    outside = _outside_changes(session_dir, top, pre)
+    outside, severed = _outside_changes(session_dir, top, pre, entries=entries)
+    severed_note: Json = {"restore_severed_links": severed} if severed else {}
     if post_tree == pre["tree"] and not head_changed and not index_changed and not outside:
-        return {"ok": True, "violation": False}
+        return {"ok": True, "violation": False, **severed_note}
     current = {
         "tree": post_tree,
         "head": head,
@@ -1090,7 +1169,6 @@ def guard_check(session_dir: Path, label: str = "check", *, initial: bool = Fals
     write_atomic(vdir / "outside.json", json.dumps(outside, indent=2) + "\n", session_dir)
     patch = git_bytes(top, "diff", "--binary", "--no-renames", pre["tree"], post_tree)
     write_atomic(vdir / "violation.patch", patch, session_dir)
-    entries = git_bytes(top, "ls-files", "--stage", "-v", "-z")
     write_atomic(vdir / "index-entries", entries, session_dir)
     for rel, status in touched.items():
         src = Path(top) / rel
@@ -1106,6 +1184,7 @@ def guard_check(session_dir: Path, label: str = "check", *, initial: bool = Fals
         "head_changed": head_changed,
         "index_changed": index_changed,
         "outside": outside,
+        **severed_note,
     }
     write_atomic(last, json.dumps({**current, "result": result}) + "\n", session_dir)
     append_jsonl(
@@ -1259,9 +1338,11 @@ def _unexpected_after_apply(session_dir: Path, top: str, session: Json) -> Json 
     if not initial or applied is None:
         return None
     touched = _touched(top, initial["tree"], snapshot_tree(top))
+    outside, severed = _outside_changes(Path(session_dir), top, initial, applied)
     return {
         "touched": {rel: status for rel, status in touched.items() if rel not in applied},
-        "outside": _outside_changes(Path(session_dir), top, initial, applied),
+        "outside": outside,
+        "restore_severed_links": severed,
         "head_changed": git(top, "rev-parse", "HEAD") != initial["head"]
         or git(top, "symbolic-ref", "-q", "HEAD", check=False) != initial.get("head_ref"),
         "index_changed": _index_state(top) != initial.get("index"),
@@ -1284,7 +1365,11 @@ def guard_finish(session_dir: Path) -> Json:
         return {"ok": True, "clean": None, "unguarded": True, "refs_pruned": False, "touched": {}}
     if session.get("applied"):
         unexpected = _unexpected_after_apply(session_dir, top, session)
-        clean = None if unexpected is None else not any(unexpected.values())
+        clean = (
+            None
+            if unexpected is None
+            else not any(v for k, v in unexpected.items() if k != "restore_severed_links")
+        )
         event: Json = {"event": "repo_guard_final", "timestamp": stamp(), "repo_clean": clean}
         append_jsonl(session_dir / "events.jsonl", event)
         pruned = not (session_dir / "guard" / "last.json").exists()
@@ -1316,6 +1401,7 @@ def guard_finish(session_dir: Path) -> Json:
         "head_changed": found.get("head_changed", False),
         "index_changed": found.get("index_changed", False),
         "outside": found.get("outside", {}),
+        "restore_severed_links": found.get("restore_severed_links", []),
         "scope": _scope(top),
     }
 
@@ -2400,13 +2486,43 @@ def finish_participant(session_dir: Path, name: str) -> Json:
 _ENGINE_OWNED = ("session.json", "guard", STATE_DIR)
 
 
-def claim_session_path(session_dir: Path, rel: str) -> Path:
+def reply_patterns(name: str) -> list[str]:
+    """Return the session paths a participant named ``name`` may write: its own replies."""
+    own = re.escape(name)
+    found = [
+        rf"pass-\d{{4}}/outputs/{own}\.md",
+        rf"outputs/{own}-v\d+\.md",
+        rf"pass-\d{{4}}/judges/{own}\.md",
+    ]
+    if name == "critic":
+        found.append(r"pass-\d{4}/critic\.md")
+    return found
+
+
+def require_own_reply(name: str, rel: str) -> None:
+    """Refuse ``rel`` unless it is one of the participant's own reply paths."""
+    name = _safe_participant(name)
+    if os.path.normpath(rel) != rel or not any(
+        re.fullmatch(pattern, rel) for pattern in reply_patterns(name)
+    ):
+        msg = (
+            f"{name!r} may write only its own reply paths"
+            f" (pass-NNNN/outputs/{name}.md, outputs/{name}-vN.md, pass-NNNN/judges/{name}.md,"
+            f" and pass-NNNN/critic.md for the critic); refused {rel!r}"
+        )
+        raise EngineError(msg)
+
+
+def claim_session_path(session_dir: Path, rel: str, *, as_participant: str | None = None) -> Path:
     """Return the absolute path for ``rel`` under the session after detaching any alias there.
 
     A symlink or hard link already at the path is removed (its target is untouched);
     a symlinked parent or a directory at the path is refused. Call this just before a
-    host tool writes the file.
+    host tool writes the file. ``as_participant`` limits ``rel`` to that participant's
+    own reply paths.
     """
+    if as_participant is not None:
+        require_own_reply(as_participant, rel)
     rel = _safe_rel(rel)
     if not rel or Path(rel).parts[0] in _ENGINE_OWNED:
         msg = f"{rel!r} is engine-owned or empty; the coordinator does not write it"
@@ -2417,9 +2533,11 @@ def claim_session_path(session_dir: Path, rel: str) -> Path:
     return claim_path(path, session_dir)
 
 
-def write_session_file(session_dir: Path, rel: str, data: bytes) -> Json:
+def write_session_file(
+    session_dir: Path, rel: str, data: bytes, *, as_participant: str | None = None
+) -> Json:
     """Write ``data`` to ``rel`` under the session through an alias-safe replace."""
-    path = claim_session_path(session_dir, rel)
+    path = claim_session_path(session_dir, rel, as_participant=as_participant)
     write_atomic(path, data, session_dir)
     return {"ok": True, "path": str(path), "bytes": len(data)}
 
@@ -3038,6 +3156,10 @@ def restore_stash(session_dir: Path, *, ack_drift: bool = False) -> Json:
                 "git stash show --patch stash@{0}",
             ],
         }
+    with session_lock(session_dir):
+        session = load_session(session_dir)
+        session["stash"]["restored"] = True
+        save_session(session_dir, session)
     return {"ok": True, "restored": True}
 
 
@@ -3129,6 +3251,7 @@ def _lane_args(p: argparse.ArgumentParser) -> None:
     p.add_argument("--judge", action="store_true", help="judge prompt: no role preamble")
 
 
+_AS_HELP = "confined participant: may write only its own reply paths"
 _ACK_HELP = "the user decided about the recorded checkout drift; allow this command"
 
 
@@ -3215,10 +3338,12 @@ def build_parser() -> argparse.ArgumentParser:  # noqa: PLR0915
 
     p = sub.add_parser("claim", help="detach aliases at session paths before a host tool writes")
     p.add_argument("--session", required=True)
+    p.add_argument("--as", dest="as_participant", help=_AS_HELP)
     p.add_argument("paths", nargs="+", help="paths relative to the session directory")
 
     p = sub.add_parser("write", help="write stdin to a session path through an alias-safe replace")
     p.add_argument("--session", required=True)
+    p.add_argument("--as", dest="as_participant", help=_AS_HELP)
     p.add_argument("path", help="path relative to the session directory")
 
     p = sub.add_parser("packet", help="assemble a pass's blind responses into one file")
@@ -3424,10 +3549,15 @@ def run(args: argparse.Namespace) -> Json:  # noqa: PLR0911, PLR0915
     if cmd == "claim":
         return {
             "ok": True,
-            "paths": [str(claim_session_path(session_dir, rel)) for rel in args.paths],
+            "paths": [
+                str(claim_session_path(session_dir, rel, as_participant=args.as_participant))
+                for rel in args.paths
+            ],
         }
     if cmd == "write":
-        return write_session_file(session_dir, args.path, sys.stdin.buffer.read())
+        return write_session_file(
+            session_dir, args.path, sys.stdin.buffer.read(), as_participant=args.as_participant
+        )
     if cmd == "packet":
         return synthesis_packet(session_dir, args.n, Path(args.out) if args.out else None)
     if cmd == "capture":

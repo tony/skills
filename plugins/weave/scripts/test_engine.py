@@ -2272,14 +2272,105 @@ def test_guard_finish_names_what_it_checked_and_what_it_cannot(repo: Path) -> No
     assert any("ignored" in item for item in scope["checked"])
 
 
-def test_restore_that_severs_a_hard_link_is_not_called_clean(repo: Path) -> None:
+def test_restore_severed_links_are_a_note_and_other_severed_links_stay_violations(
+    repo: Path,
+) -> None:
     commit_link_fixture(repo)
+    os.link(repo / "B", repo / "b2.txt")
+    sh(repo, "git", "add", "b2.txt")
+    sh(repo, "git", "commit", "-qm", "second pair")
     (repo / "C").write_text("dirty\n")
     sdir = Path(init(command="execute", mutating=True)["session_dir"])
     assert engine.restore_stash(sdir)["restored"] is True
     done = engine.guard_finish(sdir)
+    assert done["clean"] is True
+    assert done["restore_severed_links"] == ["C", "hard.txt"]
+    (repo / "b2.txt").unlink()
+    (repo / "b2.txt").write_text("b1\n")
+    done = engine.guard_finish(sdir)
     assert done["clean"] is False
-    assert done["outside"]["hardlinks"] == ["C", "hard.txt"]
+    assert done["outside"]["hardlinks"] == ["B", "b2.txt"]
+    assert done["restore_severed_links"] == ["C", "hard.txt"]
+
+
+@pytest.mark.parametrize("change", ["file", "deleted", "directory"])
+def test_finish_reports_a_changed_tracked_symlink_instead_of_crashing(
+    repo: Path, change: str
+) -> None:
+    (repo / "lnk").symlink_to("../elsewhere.txt")
+    sh(repo, "git", "add", "lnk")
+    sh(repo, "git", "commit", "-qm", "link")
+    sdir = Path(init(backend="model-clis")["session_dir"])
+    (repo / "lnk").unlink()
+    if change == "file":
+        (repo / "lnk").write_text("now a file\n")
+    elif change == "directory":
+        (repo / "lnk").mkdir()
+    done = engine.guard_finish(sdir)
+    assert done["clean"] is False
+    assert done["outside"]["symlinks"] == ["lnk"]
+    assert done["scope"]["unverified_symlinks"] == []
+
+
+def test_finish_after_adopting_over_a_tracked_symlink_is_clean(repo: Path) -> None:
+    (repo / "lnk").symlink_to("../elsewhere.txt")
+    sh(repo, "git", "add", "lnk")
+    sh(repo, "git", "commit", "-qm", "link")
+    sdir = Path(init(command="execute", mutating=True)["session_dir"])
+    engine.create_worktrees(sdir, ["maintainer"])
+    wt = Path(engine.load_session(sdir)["worktrees"]["maintainer"]["path"])
+    (wt / "lnk").unlink()
+    (wt / "lnk").write_text("worker\n")
+    engine.capture_tree(sdir, 1, "maintainer", None)
+    engine.adopt_files(sdir, 1, ["lnk=maintainer"], [], replace_aliases=True)
+    engine.remove_worktrees(sdir, None)
+    assert engine.restore_stash(sdir)["ok"] is True
+    done = engine.guard_finish(sdir)
+    assert done["ok"] is True
+    assert done["clean"] is True
+
+
+def test_scoped_write_and_claim_reach_only_the_participants_own_replies(
+    repo: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    sdir = Path(init(backend="subagents")["session_dir"])
+    engine.label_participants(sdir, 1, ["maintainer", "skeptic", "builder"])
+    label_map = (sdir / "pass-0001" / "label-map.json").read_text()
+    (sdir / "pass-0001" / "outputs" / "maintainer.md").write_text("maintainer reply\n")
+    capsys.readouterr()
+
+    def attempt(who: str, rel: str, command: str = "write") -> int:
+        monkeypatch.setattr("sys.stdin", io.TextIOWrapper(io.BytesIO(b"forged\n")))
+        return engine.main([command, "--session", str(sdir), "--as", who, rel])
+
+    own = [
+        ("skeptic", "pass-0001/outputs/skeptic.md"),
+        ("skeptic", "outputs/skeptic-v2.md"),
+        ("skeptic", "pass-0001/judges/skeptic.md"),
+        ("critic", "pass-0001/critic.md"),
+    ]
+    for who, rel in own:
+        assert attempt(who, rel) == 0, rel
+        assert (sdir / rel).read_text() == "forged\n"
+    refused = [
+        ("skeptic", "pass-0001/label-map.json"),
+        ("skeptic", "pass-0001/outputs/maintainer.md"),
+        ("skeptic", "pass-0001/critic.md"),
+        ("skeptic", "pass-0001/./outputs/skeptic.md"),
+        ("skeptic", "pass-0001/outputs/skeptic.md.bak"),
+        ("skeptic", "pass-0001/blind/response-A.md"),
+        ("maintainer", "outputs/skeptic-v1.md"),
+        ("skeptic", "events.jsonl"),
+    ]
+    for who, rel in refused:
+        for command in ("write", "claim"):
+            capsys.readouterr()
+            assert attempt(who, rel, command) == 1, (who, rel, command)
+            assert (
+                "may write only its own reply paths" in json.loads(capsys.readouterr().out)["error"]
+            )
+    assert (sdir / "pass-0001" / "label-map.json").read_text() == label_map
+    assert (sdir / "pass-0001" / "outputs" / "maintainer.md").read_text() == "maintainer reply\n"
 
 
 def leaked_session(repo: Path) -> Path:
