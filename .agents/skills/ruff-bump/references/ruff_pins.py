@@ -13,16 +13,18 @@ or ``==`` pin that resolves ruff, with ``<TAB>behind|current|ahead`` against
 status, the other rows still print, and the exit status is 2.
 
 ``scope [--root DIR] [--repo P...] [--owner N...] [--branch B] [--cwd DIR]``
-prints ``path<TAB>slug<TAB>owner<TAB>ruff<TAB>pins<TAB>branch<TAB>worktree`` per git
-repository: the walked ``--root`` repositories, the ``--repo`` paths or slugs,
-else ``--cwd``. ``owner`` is ``yes``/``no`` against ``--owner`` (``-`` without
-it), ``ruff`` lists the ruff configuration files at any depth (comma-separated
-paths) or ``none``, ``pins`` counts pin lines, ``branch`` and ``worktree`` are
-``exists`` or ``none`` (a worktree on the branch or in a directory of that name). A ``--repo`` that
-matches nothing prints ``unresolved`` in the slug column and exits 2. A
-``--repo`` must name an existing directory or look like ``owner/name``,
-``--owner`` must be an account name, and ``--branch`` must pass
-``git check-ref-format --branch``; anything else exits 2.
+prints ``path<TAB>slug<TAB>owner<TAB>ruff<TAB>pins<TAB>branch<TAB>worktree<TAB>linked``
+per git repository: the walked ``--root`` repositories, the ``--repo`` paths or
+slugs, else ``--cwd``. Linked worktrees of one repository fold into its main
+worktree and are named in ``linked`` (comma-separated, or ``none``). ``owner``
+is ``yes``/``no`` against ``--owner`` (``-`` without it), ``ruff`` lists the
+ruff configuration files at any depth (comma-separated paths) or ``none``,
+``pins`` counts pin lines, ``branch`` and ``worktree`` are ``exists`` or
+``none`` (a worktree on the branch or in a directory of that name). A
+``--repo`` that matches nothing prints ``unresolved`` in the slug column and
+exits 2. A ``--repo`` must name an existing directory or look like
+``owner/name``, ``--owner`` must be an account name, and ``--branch`` must
+pass ``git check-ref-format --branch``; anything else exits 2.
 
 ``lapse --version V --cooldown 7d [--filename-contains S]... [--json FILE]``
 reads the package index JSON (stdin by default) and prints the latest upload
@@ -262,6 +264,23 @@ def _vet_branch(branch: str) -> None:
         raise ValueError(msg)
 
 
+def _common_dir(repo: Path) -> Path:
+    out = _git(repo, "rev-parse", "--git-common-dir")
+    return (repo / out).resolve() if out else repo
+
+
+def _by_repository(paths: Sequence[Path]) -> list[tuple[Path, list[Path]]]:
+    """Group worktree paths by shared git directory: ``(main worktree, linked worktrees)``."""
+    groups: dict[Path, list[Path]] = {}
+    for path in dict.fromkeys(p.resolve() for p in paths):
+        groups.setdefault(_common_dir(path), []).append(path)
+    out: list[tuple[Path, list[Path]]] = []
+    for members in groups.values():
+        main = next((m for m in members if (m / ".git").is_dir()), members[0])
+        out.append((main, [m for m in members if m != main]))
+    return out
+
+
 def scope(
     roots: Sequence[str],
     repos: Sequence[str],
@@ -285,11 +304,11 @@ def scope(
         elif match:
             chosen.extend(match)
         else:
-            rows.append((name, "unresolved", "-", "-", "-", "-", "-"))
+            rows.append((name, "unresolved", "-", "-", "-", "-", "-", "-"))
             unresolved = True
     if not roots and not repos:
         chosen.append(Path(cwd))
-    for repo in dict.fromkeys(r.resolve() for r in chosen):
+    for repo, linked in _by_repository(chosen):
         remote = _git(repo, "remote", "get-url", "origin") or _git(
             repo, "remote", "get-url", _git(repo, "remote").split("\n")[0] or "origin"
         )
@@ -307,6 +326,7 @@ def scope(
                 str(len(sites(str(repo)))),
                 "exists" if exists else "none",
                 "exists" if _worktree_for(repo, branch) else "none",
+                ",".join(str(w) for w in linked) or "none",
             )
         )
     return rows, unresolved

@@ -198,3 +198,25 @@ def test_scope_accepts_directory_paths(
     assert ruff_pins.main(args) == 0
     rows = [line.split("\t")[0] for line in capsys.readouterr().out.splitlines()]
     assert rows == [str(tmp_path / "sibling"), str(tmp_path / "my repo")]
+
+
+@pytest.mark.integration
+def test_scope_lists_a_repository_once_with_its_linked_worktrees(
+    tmp_path: pathlib.Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """Linked worktrees under --root fold into their main worktree's row."""
+    main = tmp_path / "main"
+    subprocess.run(["git", "init", "-q", "-b", "main", str(main)], check=True)
+    ident = ["-c", "user.name=t", "-c", "user.email=t@t"]
+    commit = ["git", "-C", str(main), *ident, "commit", "-q", "--allow-empty", "-m", "x"]
+    subprocess.run(commit, check=True)
+    for name in ("wt1", "wt2"):
+        add = ["git", "-C", str(main), "worktree", "add", "-q", "-b", name, str(tmp_path / name)]
+        subprocess.run(add, check=True)
+    assert ruff_pins.main(["scope", "--root", str(tmp_path)]) == 0
+    rows = [line.split("\t") for line in capsys.readouterr().out.splitlines()]
+    assert [r[0] for r in rows] == [str(main.resolve())]
+    assert rows[0][7].split(",") == [
+        str((tmp_path / "wt1").resolve()),
+        str((tmp_path / "wt2").resolve()),
+    ]

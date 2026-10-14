@@ -886,7 +886,7 @@
         "references/ruff_pins.py": "plugins/ruff/scripts/ruff_pins.py",
         "references/throwaway-worktree.md": "plugins/ruff/references/throwaway-worktree.md"
       },
-      "bytes": 79915
+      "bytes": 80885
     },
     {
       "name": "scholar-annotate",
