@@ -70,7 +70,7 @@ Rank slowest **test bodies** (H01):
 $ pytest --durations=25 --durations-min=0.005 -p no:randomly -p no:cacheprovider
 ```
 
-Rank slowest **fixture setup/teardown** (H02) — use `--durations=0` so no phase is
+Rank slowest **fixture setup/teardown** (H02): use `--durations=0` so no phase is
 sliced away before you filter:
 
 ```console

@@ -7,7 +7,7 @@ The **hard rule**: a `test_id` field is present and `ids=` is derived from it.
 First-field placement and the `Fixture` vs `Case` class name are conventions, not
 requirements.
 
-## Unpacked fields — one test parameter per NamedTuple field
+## Unpacked fields: one test parameter per NamedTuple field
 
 Each field becomes a test argument. `test_id` is both the first parameter and the
 case id, so adding a field wires it into every test signature automatically.
@@ -42,7 +42,7 @@ def test_length(test_id: str, given: str, expected: int) -> None:
     assert measure(given) == expected
 ```
 
-`list(CaseFixture._fields)` derives the argnames from the type — no
+`list(CaseFixture._fields)` derives the argnames from the type, with no
 hand-maintained `"test_id,given,expected"` string to drift out of sync.
 
 ## Single case object

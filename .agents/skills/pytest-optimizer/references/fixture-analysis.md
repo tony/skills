@@ -90,7 +90,7 @@ $ pytest -o addopts='' --fixtures-per-test 2>/dev/null
 The first command lists project-defined fixtures; the second lists what each test
 actually requests. **Gotcha:** if the project's `addopts` enables
 `--doctest-modules`, `--fixtures-per-test` raises `INTERNALERROR` (a `DoctestItem`
-has no `.function`) and `2>/dev/null` does not hide it — so override addopts with
+has no `.function`) and `2>/dev/null` does not hide it, so override addopts with
 `-o addopts=''` as above. Fixture introspection does not run the suite, so
 clearing addopts here is safe.
 

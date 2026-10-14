@@ -275,5 +275,4 @@ Benchmarking the 2 hypotheses measures what each recovers.
 After the last section write at most one closing sentence (files the timed runs
 wrote, a dirty tree, a lowered run count), then an `AskUserQuestion` panel
 offering to benchmark the hypotheses, narrow scope, or stop. Without a question
-tool, print those options as a plain list and stop, as the output contract's
-next-step rule says.
+tool, follow the output contract's next-step rule.

@@ -10,7 +10,7 @@ Each dimension is scored `0.0`–`1.0`. The total is their weighted sum. The wei
 | Dimension | Weight | `1.0` means | `0.0` means |
 |-----------|-------:|-------------|-------------|
 | `safety` | 0.35 | Behavior-preserving: pure config/selection, or widening the scope of read-only setup that passed the order-independence (H17) and collection-determinism (H18) gates. | Parallelizing across known shared mutable state, or deleting a fixture reachable only via `getfixturevalue`. |
-| `impact` | 0.30 | **Measured** in `01-benchmark`: recovers > 40% of suite wall-time, or removes the single dominant test/fixture. | Saving within the noise band — indistinguishable from jitter. |
+| `impact` | 0.30 | **Measured** in `01-benchmark`: recovers > 40% of suite wall-time, or removes the single dominant test/fixture. | Saving within the noise band: indistinguishable from jitter. |
 | `effort` | 0.15 | Trivial: `addopts`/marker/flag, or a one-line scope change. | Restructuring shared global state across modules. |
 | `confidence` | 0.12 | Serial, cache-disabled, repeated runs; delta many multiples of the noise floor. | Collection-bound or xdist-contended numbers known to be distorted, or sub-50ms rows. |
 | `reversibility` | 0.08 | A single isolated commit, config-only revert. | An entangled multi-file refactor. |
@@ -25,12 +25,12 @@ total = 0.35*safety + 0.30*impact + 0.15*effort
 
 Mid-scale anchors keep scoring consistent:
 
-- `safety = 0.5` — scope change on a possibly-mutated resource, autouse removal,
+- `safety = 0.5`: scope change on a possibly-mutated resource, autouse removal,
   or xdist with grouping.
 - `impact` anchors (defaults, like the weights), from the measured saving as a share of baseline wall-time:
   `0` within the noise band, `0.25` clears the band but under 5%, `0.5` for
   5–15%, `0.75` for 15–40%, `1.0` above 40%. `measure.py impact` applies them.
-- `effort = 0.6` — hoist a build into a fixture and add a reset; `0.3` — introduce
+- `effort = 0.6`: hoist a build into a fixture and add a reset; `0.3`: introduce
   a factory fixture or a filelock single-exec pattern.
 
 ## Hard gates (applied before ranking)

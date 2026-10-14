@@ -130,41 +130,41 @@ Run 02-plan first, then run this phase again.
 
 **`00-scan`**
 
-- `## Environment` — pytest + plugin versions, gated-off capabilities, resolved
+- `## Environment`: pytest + plugin versions, gated-off capabilities, resolved
   test command, memory dir.
-- `## Baseline` — median wall-time, noise band, trust floor, and the unattributed
+- `## Baseline`: median wall-time, noise band, trust floor, and the unattributed
   share when profiling leaves one.
-- `## Slowest tests` — top `call` rows with root-cause notes.
-- `## Slowest fixtures` — top `setup`/`teardown` rows; note shared-scope
+- `## Slowest tests`: top `call` rows with root-cause notes.
+- `## Slowest fixtures`: top `setup`/`teardown` rows; note shared-scope
   attribution.
-- `## Hypotheses` — candidates as bullets: heuristic id and name, evidence,
+- `## Hypotheses`: candidates as bullets: heuristic id and name, evidence,
   prior risk/effort.
 
 **`01-benchmark`**
 
-- `## Validated` — candidates whose measured delta cleared the noise band and
+- `## Validated`: candidates whose measured delta cleared the noise band and
   passed the gates (id, median delta, confidence).
-- `## Rejected` — within-noise or gate-failing candidates, each with the reason.
-- `## Safety-gate results` — order-independence and collection-determinism
+- `## Rejected`: within-noise or gate-failing candidates, each with the reason.
+- `## Safety-gate results`: order-independence and collection-determinism
   outcomes for each candidate that needed them. A scope, order, or parallelism
   change needs both. Omit the section when no candidate did.
 
 **`02-plan`**
 
-- `## Ranked plan` — ordered commits (only items whose target file exists at `HEAD` or is created by the item; the hero counts only these) with score breakdown, target files, draft
+- `## Ranked plan`: ordered commits (only items whose target file exists at `HEAD` or is created by the item; the hero counts only these) with score breakdown, target files, draft
   subject (in the same sentence, no `Draft subject:` label), verify command.
   A hygiene item says it is a hygiene item with no timing.
-- `## Dropped at the gate` — candidates below `safety 0.4` or `impact 0`, and items whose target file is absent at `HEAD`, with the
+- `## Dropped at the gate`: candidates below `safety 0.4` or `impact 0`, and items whose target file is absent at `HEAD`, with the
   prerequisite refactor surfaced separately. Name a refactor only for an item that
   has one; never state that an item needs none.
-- `## Ordering rationale` — why safety-gate fixes and typings precede scope and
+- `## Ordering rationale`: why safety-gate fixes and typings precede scope and
   parallelism, in one line. Omit the section when the plan has one commit.
 
 **`03-execute`**
 
-- `## Applied` — per item: commit SHA, subject, verify result. Omitted when nothing was applied.
-- `## Skipped` — per item: why it was discarded in the scratch worktree (failed verify, patch no longer applies, files outside the plan). Omitted when nothing was skipped.
-- `## Result` — post-suite wall-time against the control (the same checkout without the changes), how much faster, and the test-count statement for the item kind.
+- `## Applied`: per item: commit SHA, subject, verify result. Omitted when nothing was applied.
+- `## Skipped`: per item: why it was discarded in the scratch worktree (failed verify, patch no longer applies, files outside the plan). Omitted when nothing was skipped.
+- `## Result`: post-suite wall-time against the control (the same checkout without the changes), how much faster, and the test-count statement for the item kind.
 
 The closing sentence is the merge command; the reply carries no remark about
 commit trailers or what the host adds.

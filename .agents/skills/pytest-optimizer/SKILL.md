@@ -119,7 +119,7 @@ After `03-execute`, present the result per `references/output-contract.md`
 and write it per `references/prose-rules.md`, then offer a re-scan, the
 opt-in scaffolds, or stop. The contract's closing sentence (the merge command)
 comes first and carries no note on pushing or on what remains to speed up.
-Without an interactive question tool, print the options as a plain list and stop.
+Without an interactive question tool, follow the contract's next-step rule.
 
 ## Opt-in scaffolds
 

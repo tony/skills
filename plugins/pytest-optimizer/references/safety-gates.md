@@ -12,7 +12,7 @@ failure drops it at the rubric's hard safety gate.
 - Parallelism decision tree
 - Measurement hygiene
 
-## Gate 1 — order independence (H17)
+## Gate 1: order independence (H17)
 
 A suite is order-independent when every test passes regardless of what ran
 before it. Run the project's own test command with `pytest-randomly` added to its
@@ -41,7 +41,7 @@ dependencies.
 Fix the coupling, do not hide it: reset the mutated global in a fixture teardown
 or make it function-scoped. Only then is a parallel or reorder speedup eligible.
 
-## Gate 2 — collection determinism (H18)
+## Gate 2: collection determinism (H18)
 
 xdist workers must collect the **same** set in the **same** order. Collect
 twice into a scratch directory outside the working tree (the run directory
@@ -72,7 +72,7 @@ baseline `collection.txt` the same way. `same: false` is a hard xdist blocker;
 - Collection that branches on the clock, `random`, or environment → make it
   deterministic.
 
-## Gate 3 — green run, expected outcomes
+## Gate 3: green run, expected outcomes
 
 Every candidate, not only order or scope changes, must pass a clean serial run
 (cache disabled) before its delta is measured: every run exits 0, reports a

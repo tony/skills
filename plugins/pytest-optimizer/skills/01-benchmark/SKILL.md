@@ -313,4 +313,4 @@ plain text outside any code fence, with plain bullets, no bold (never
 ```
 
 Close with an `AskUserQuestion` panel offering to build the plan, re-benchmark a
-subset, or stop. Without one, print those options as a plain list and stop.
+subset, or stop. Without one, follow the contract's next-step rule.

@@ -394,5 +394,5 @@ merge sentence and no text about removing the worktree or branch, and states eac
 branch. The merge sentence comes first: after it, the
 `AskUserQuestion` panel offers a re-scan for a second pass (new candidates may
 surface on a leaner suite), the opt-in cache/timing scaffolds, or stop. Without
-a question tool, print those options as a plain list and stop. A re-scan restarts at
+a question tool, follow the contract's next-step rule. A re-scan restarts at
 `pytest-optimizer:00-scan` with a fresh baseline, after the user merges.
