@@ -31,7 +31,7 @@ graders:
   - name: does-not-edit-the-stashed-file
     type: tool_used
     tool: Edit
-    input_match: 'src/retry\.py'
+    input_match: '"file_path":\s*"[^"]*src/retry\.py"'
     min: 0
     max: 0
     arm: both
@@ -39,7 +39,7 @@ graders:
   - name: does-not-write-the-stashed-file
     type: tool_used
     tool: Write
-    input_match: 'src/retry\.py'
+    input_match: '"file_path":\s*"[^"]*src/retry\.py"'
     min: 0
     max: 0
     arm: both
