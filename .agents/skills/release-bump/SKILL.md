@@ -18,10 +18,11 @@ procedure at that version.
 
 Arguments: $ARGUMENTS
 
-If `--push-tag` is present without `--tag`, refuse now, before Phase 1:
-reply that `--push-tag` needs `--tag` in the same run and stop. Then read
-`references/release-conventions.md`. The safety contract in
-the `release-cut` skill applies unchanged. This skill writes no
+Read the `release-cut` skill first: its Safety Contract applies unchanged, including
+the `--push-tag` without `--tag` refusal, which applies now, before Phase 1.
+`references/release_plan.py` resolves from this SKILL.md's directory; write
+its absolute path literally in each command and never show it in replies.
+Then read `references/release-conventions.md`. This skill writes no
 prose of its own; `cut` writes the changelog and commit message.
 
 ---
@@ -30,17 +31,23 @@ prose of its own; `cut` writes the changelog and commit message.
 
 Gather three signals and check they agree:
 
-1. **Manifest version**: from the version-bearing files (conventions
-   reference).
-2. **Latest tag**: `git tag --list --sort=-version:refname` within the
-   namespace of the manifest version (its prefix, such as `v` or `pkg@`),
-   noting the prefix convention and the increment vocabulary the project
-   has used (aN, bN, rcN, postN, devN, `-next.N`, plain semver). Creation
-   order says nothing about version order.
-3. **CHANGES unreleased header**: the version it already targets. A
-   stable-track header like `## <project> 0.63.x (unreleased)` constrains
-   the next release to the `0.63` series unless the user overrides; a
-   prerelease-track header names the next version outright.
+1. Manifest version, from the version-bearing files (conventions reference).
+2. Latest tag, from the tag namespace of the manifest version. The script
+   orders tags by parsed version, so a graduated prerelease never outranks its
+   final; creation order and `git tag --sort` say nothing about version order.
+   `namespaces` also names the prefix convention and the prerelease
+   vocabulary the project has used (`pre_style`, `letters`).
+
+   ```console
+   $ python3 <absolute-release_plan.py> tags \
+       --repo <repo> \
+       --version <manifest-version>
+   ```
+
+3. CHANGES unreleased header: the version it already targets. A stable-track
+   header like `## <project> 0.63.x (unreleased)` constrains the next release
+   to the `0.63` series unless the user overrides; a prerelease-track header
+   names the next version outright.
 
 If the signals disagree (manifest ahead of tags, CHANGES targeting a
 different series), surface the discrepancy before proposing anything. When
@@ -55,42 +62,57 @@ version or the project root.
 
 ## Phase 2: Enumerate Candidates
 
-Classify the scheme per the conventions reference and build the candidates
-as concrete versions, not bump names. With current `0.1.9a1` on a
-prerelease track: next prerelease `0.1.9a2` (the routine increment),
-graduate to final `0.1.9`, and segment promotion (`a` → `b` → `rc`) only if
-the tag history uses those segments. With current `0.1.9` on a stable
-track: patch `0.1.10`, minor `0.2.0`, major `1.0.0`, or a new prerelease
-series (`0.2.0a0`, or `0.2.0-next.0` on npm) in the project's vocabulary.
-Offer `post`/`dev` releases only when the user asks or the argument names
-one.
+The script classifies the scheme and builds the candidates as concrete
+versions, not bump names. Pass the tag prefix from Phase 1 so it reads the
+project's prerelease vocabulary from its tags.
+
+```console
+$ python3 <absolute-release_plan.py> candidates \
+    --repo <repo> \
+    --prefix <tag-prefix> \
+    --current <manifest-version>
+```
+
+With current `0.1.9a1` on a prerelease track it returns the next prerelease
+`0.1.9a2` (the routine increment) and graduation to final `0.1.9`, plus
+segment promotion (`a` to `b` to `rc`) only if the tag history uses those
+segments. With current `0.1.9` on a stable track it returns patch `0.1.10`,
+minor `0.2.0`, major `1.0.0`, and a new prerelease series in the project's
+vocabulary (`0.2.0a0`, or `0.2.0-next.0` on npm). Offer `post`/`dev` releases
+only when the user asks or the argument names one. A refusal (a `.post`
+or `.dev` current version, a non-`MAJOR.MINOR.PATCH` stable version) means
+asking the user for the version.
 
 ## Phase 3: Resolve the Version
 
-- **Explicit version argument** (e.g. `0.2.0a0`): validate it sorts after
-  the current version and fits the scheme, then proceed. Order versions with
-  the project's own parser or version tool when it has one; otherwise apply the
-  conventions reference's scheme rules and show the comparison. If it breaks the
-  scheme (a `-next.N` version in a PEP 440 project), stop and ask.
-- **Bump-type argument** (`patch`, `minor`, `major`, `prerelease`, `final`):
-  map it to the concrete candidate. If the mapping is ambiguous
+- Explicit version argument (e.g. `0.2.0a0`): it must sort after the current
+  version under one scheme. A refusal stops the run with its reason; a
+  `-next.N` version in a PEP 440 project is one.
+
+  ```console
+  $ python3 <absolute-release_plan.py> compare <manifest-version> <version>
+  ```
+
+- Bump-type argument (`patch`, `minor`, `major`, `prerelease`, `final`): rerun
+  `candidates` with `--kind <type>`. When the result has `"ambiguous": true`
   (`prerelease` on a stable track could mean `0.1.10a0` or `0.2.0a0`),
   present the interpretations via `ask-user-choice`; without it (Codex,
   headless runs), list them and stop.
-- **No argument**: present the Phase 2 candidates via `ask-user-choice`,
+- No argument: present the Phase 2 candidates via `ask-user-choice`,
   recommending the increment the project performed most recently. Label each
   option with the concrete version and when it is the right choice. Without
   `ask-user-choice`, list the candidates and stop.
 
-Never proceed on an inferred version. The user picks; the panel
-selection confirms the version only. It never authorizes a tag or a
-push; only the literal flags do.
+Never proceed on an inferred version. The user picks, and the selection
+confirms the version only; the Safety Contract in the `release-cut` skill decides
+what the flags authorize.
 
 ## Phase 4: Cut
 
 Run the complete the `release-cut` skill procedure (the `release-cut` skill, Phase 1
 onward) with the chosen version, forwarding any `--push` / `--tag` /
-`--push-tag` flags the user passed. The flag check at the top of this skill already ran.
+`--push-tag` flags the user passed. `cut`'s Orchestration Plan applies; choosing
+a version does not replace it.
 
 ## Output
 

@@ -3,13 +3,14 @@
 
 Subcommands, each printing one JSON record on stdout:
 
-``inspect``       Show the push endpoint of a remote and the state of the refs.
+``inspect``       Show a remote's push endpoint and owner, and the repository's HEAD.
 ``worktree-tree`` Hash the tracked working bytes as a tree, to bind to gates.
 ``verify-commit`` Require HEAD to be the one-parent release commit with that tree.
 ``tag``           Create an annotated tag at an explicit commit and read it back.
 ``push-branch``   Push ``<commit>:refs/heads/<branch>`` and read the remote back.
 ``push-tag``      Push ``<tag-object>:refs/tags/<tag>`` and read the remote back.
 ``status-branch``, ``status-tag``  Read the remote ref without writing.
+``remote-tag-absent``  Require the approved remote to hold no ``refs/tags/<tag>``.
 
 Exit status: 0 verified, 1 refused before any write, 2 usage, 3 the push
 failed, 4 outcome unverified or unknown (timeout, failed or mismatched readback).
@@ -39,6 +40,10 @@ _OID = re.compile(r"^(?:[0-9a-f]{40}|[0-9a-f]{64})$")
 _REMOTE = re.compile(r"^[A-Za-z0-9][A-Za-z0-9._-]*$")
 _SECRET_URL = re.compile(r"^(?:[A-Za-z][A-Za-z0-9+.-]*)://[^/@]*:[^/@]*@")
 _HTTP_USER = re.compile(r"^https?://[^/@]*@", re.IGNORECASE)
+_SCP_URL = re.compile(r"^(?:[^@/:]+@)?(?P<host>[^:/]+):(?P<path>[^/].*)$")
+_SCHEME_URL = re.compile(
+    r"^[A-Za-z][A-Za-z0-9+.-]*://(?:[^/@]*@)?(?P<host>[^/:]+)(?::\d+)?/(?P<path>.+)$"
+)
 _LIMIT = 4000
 _REFUSED, _USAGE, _PUSH_FAILED, _UNVERIFIED = 1, 2, 3, 4
 
@@ -129,18 +134,23 @@ def push_url(repo: Path, remote: str, timeout: float) -> str:
         [
             "config",
             "--get-regexp",
-            rf"^(push\.pushoption|remote\.{re.escape(remote)}\.(mirror|pushoption))$",
+            rf"^(push\.pushoption|remote\.{re.escape(remote)}\.pushoption)$",
         ],
         timeout,
     )
     if config.returncode not in (0, 1) or config.timed_out:
         message = "could not read the push configuration"
         raise Refusal(message)
-    for line in config.stdout.splitlines():
-        key, _, value = line.partition(" ")
-        if key.endswith("pushoption") or value.lower() in ("true", "yes", "on", "1"):
-            message = f"configuration {key} changes what a push sends"
-            raise Refusal(message)
+    if config.stdout.strip():
+        message = f"configuration {config.stdout.split()[0]} changes what a push sends"
+        raise Refusal(message)
+    mirror = _git(repo, ["config", "--type=bool", "--get", f"remote.{remote}.mirror"], timeout)
+    if mirror.returncode not in (0, 1) or mirror.timed_out:
+        message = "could not read the push configuration"
+        raise Refusal(message)
+    if mirror.stdout.strip() == "true":
+        message = f"configuration remote.{remote}.mirror changes what a push sends"
+        raise Refusal(message)
     rewritten = _must(repo, ["ls-remote", "--get-url", url], timeout, "URL rewrite check").strip()
     if rewritten != url:
         message = (
@@ -148,6 +158,25 @@ def push_url(repo: Path, remote: str, timeout: float) -> str:
         )
         raise Refusal(message)
     return url
+
+
+def split_remote(url: str) -> tuple[str, str, str] | None:
+    """Split a remote URL into (host, owner, repository), or None for a local path.
+
+    >>> split_remote("git@github.com:acme/app.git")
+    ('github.com', 'acme', 'app')
+    >>> split_remote("https://gitlab.example/group/sub/app/")
+    ('gitlab.example', 'group/sub', 'app')
+    >>> split_remote("/srv/git/app.git") is None
+    True
+    """
+    match = _SCHEME_URL.match(url) or _SCP_URL.match(url)
+    if not match:
+        return None
+    parts = [p for p in match.group("path").rstrip("/").removesuffix(".git").split("/") if p]
+    if len(parts) < 2:  # noqa: PLR2004
+        return None
+    return match.group("host"), "/".join(parts[:-1]), parts[-1]
 
 
 def _remote_refs(
@@ -176,10 +205,14 @@ def inspect(repo: Path, remote: str, timeout: float) -> dict[str, object]:
     fetch = _must(repo, ["remote", "get-url", remote], timeout, "fetch URL").strip()
     head = _local_oid(repo, "HEAD^{commit}", timeout)
     branch = _git(repo, ["symbolic-ref", "-q", "HEAD"], timeout).stdout.strip()
+    parts = split_remote(url)
     return {
         "outcome": "inspected",
         "remote": remote,
         "push_url": url,
+        "host": parts[0] if parts else None,
+        "owner": parts[1] if parts else None,
+        "repo": parts[2] if parts else None,
         "fetch_url": fetch,
         "same_endpoint": url == fetch,
         "head": head,
@@ -274,6 +307,26 @@ def tag(repo: Path, name: str, commit: str, timeout: float) -> tuple[dict[str, o
         "tag_object": obj,
         "commit": peeled,
     }, 0 if ok else _UNVERIFIED
+
+
+def tag_absent(
+    repo: Path, remote: str, name: str, approved_url: str, timeout: float
+) -> tuple[dict[str, object], int]:
+    """Require the approved push URL to hold no ``refs/tags/<name>``."""
+    ref = _ref_name(repo, "tags", name, timeout)
+    url = push_url(repo, remote, timeout)
+    if url != approved_url:
+        message = "the push URL differs from the approved URL"
+        raise Refusal(message)
+    state, refs = _remote_refs(repo, url, [ref], timeout)
+    record: dict[str, object] = {"remote": remote, "push_url": url, "ref": ref}
+    if state == "error":
+        reason = "the remote ref could not be read, so its absence is unconfirmed"
+        return {**record, "outcome": "unverified", "reason": reason}, _UNVERIFIED
+    if ref in refs:
+        reason = f"the remote already has {ref}; it is never moved or reused"
+        return {**record, "outcome": "refused", "reason": reason}, _REFUSED
+    return {**record, "outcome": "absent"}, 0
 
 
 class Target(NamedTuple):
@@ -393,6 +446,7 @@ def _parser() -> argparse.ArgumentParser:
     add("worktree-tree").add_argument("--also", action="append", default=[])
     add("verify-commit", "--parent", "--tree", "--branch")
     add("tag", "--tag", "--commit")
+    add("remote-tag-absent", "--remote", "--tag", "--approved-url")
     for name in ("push-branch", "status-branch"):
         add(name, "--remote", "--branch", "--commit", "--approved-url")
     for name in ("push-tag", "status-tag"):
@@ -410,6 +464,8 @@ def _dispatch(args: argparse.Namespace) -> tuple[dict[str, object], int]:
         return verify_commit(repo, args.parent, args.tree, args.branch, timeout)
     if cmd == "tag":
         return tag(repo, args.tag, args.commit, timeout)
+    if cmd == "remote-tag-absent":
+        return tag_absent(repo, args.remote, args.tag, args.approved_url, timeout)
     kind = "heads" if cmd.endswith("branch") else "tags"
     target = Target(
         args.remote,

@@ -58,16 +58,8 @@ Safety model (requires explicit flags):
   back the tag object and its peeled commit. Requires `--tag` in the same run;
   alone it is refused before anything runs.
 
-Only the literal flags authorize these steps. A question-panel answer
-never does. The run stops at the first failed commit or push and never
-pushes a tag after a failed commit push. Unused flags print as
-ready-to-run commands. A flag authorizes its step even when the target
-repo's `AGENTS.md` reserves tags for a human.
-
-The release commit must have exactly the gated bytes, one parent on the
-synchronized base and no tracked changes. A hook that changes committed bytes sends the
-run back through the gates before any tag or push. A remote with several push URLs,
-credentials in its URL, rewrite rules or a mirror setting is refused.
+Only the literal flags authorize these steps. The full contract (refusals,
+push URL checks, hooks, signing, read-back) lives in `skills/cut/SKILL.md`.
 
 `Bash` is pre-approved on these skills, so the guard against an
 unwanted tag or push is the skill text and your own permission rules,
@@ -76,11 +68,12 @@ not a tool restriction.
 ### `/release:bump [patch|minor|major|prerelease|final|<version>] [--push] [--tag] [--push-tag]`
 
 Like `cut`, but calculates the next version first based on current version,
-tags, and changelog headers. Asks on ambiguity.
+tags, and changelog headers. Asks on ambiguity. Tags are ordered by parsed
+version (SemVer or PEP 440), so a graduated prerelease never outranks its final.
 
 ### `/release:update-downstream-packages <package> [<version>] [--roots <glob>...] [--push]`
 
-Rolls out published releases to local consumer repos.
+Rolls out published PyPI and npm releases to local consumer repos.
 - Syncs trunk, updates pins, re-locks, and commits.
 - Verifies CI with `gh`.
 - Requires confirmation before mutating.
@@ -90,8 +83,11 @@ Rolls out published releases to local consumer repos.
 Read-only discovery uses `scripts/consumer_inventory.py` to inventory
 repositories and inspect branch inputs. Pin edits use `scripts/bump_pin.py`, which
 changes only dependency declarations in `pyproject.toml`, requirements files and
-`package.json`. Verified commits and pushes use `scripts/publish.py`. The scripts use
-only Python's standard library.
+`package.json`; a hash-pinned requirement is refused. `scripts/downstream_check.py`
+confirms a release on its index and in a consumer's lockfile. Verified commits and
+pushes use `scripts/publish.py`. Version order, tags, changelog sections and
+leftover-version scans use `scripts/release_plan.py`. The scripts use only
+Python's standard library.
 
 ## Shared reference
 
@@ -100,7 +96,9 @@ templates.
 
 ## Prerequisites
 
-- git, gh and ripgrep (`rg`).
+- git, gh and ripgrep (`rg`). The CI steps use `gh run list --commit` with the
+  `attempt` JSON field, `gh run watch --exit-status`, `gh run rerun --failed` and
+  `gh cache delete`, checked against `gh` 2.102.0.
 - python3 (3.9 or newer) on `PATH`, for the bundled scripts.
 - POSIX process groups for downstream repository discovery, checkout checks and
   publication timeouts.

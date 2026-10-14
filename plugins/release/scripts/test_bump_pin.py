@@ -97,6 +97,32 @@ def test_unsupported_manifest_is_refused(tmp_path: pathlib.Path) -> None:
     assert f.read_text() == "foo==1.0.0\n"
 
 
+def test_hash_pinned_requirement_is_refused_not_half_edited(
+    tmp_path: pathlib.Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    f = tmp_path / "requirements.txt"
+    before = "foo==1.0.0 \\\n    --hash=sha256:abc\nbar==1.0.0 --hash=sha256:def\n"
+    f.write_text(before)
+    for name in ("foo", "bar"):
+        assert bump_pin.main([str(f), name, "1.0.0", "1.1.0"]) == 3
+    err = capsys.readouterr().err
+    assert err.count("carries --hash digests") == 2
+    assert err.count("Nothing was written.") == 2
+    assert f.read_text() == before
+
+
+def test_refusal_says_nothing_was_written_and_names_supported_manifests(
+    tmp_path: pathlib.Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    f = tmp_path / "Cargo.toml"
+    f.write_text('[dependencies]\nfoo = "=1.0.0"\n')
+    assert bump_pin.main([str(f), "foo", "1.0.0", "1.1.0"]) == 3
+    err = capsys.readouterr().err
+    assert "unsupported manifest Cargo.toml" in err
+    assert "Nothing was written." in err
+    assert "may have changed" not in err
+
+
 def test_package_json_scoped_name(tmp_path: pathlib.Path) -> None:
     f = tmp_path / "package.json"
     f.write_text('{"dependencies": {"@s/pkg": "~1.0.0"}}\n')

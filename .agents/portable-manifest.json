@@ -718,9 +718,10 @@
         "plugins/release/skills/bump/SKILL.md"
       ],
       "bundled": {
-        "references/release-conventions.md": "plugins/release/references/release-conventions.md"
+        "references/release-conventions.md": "plugins/release/references/release-conventions.md",
+        "references/release_plan.py": "plugins/release/scripts/release_plan.py"
       },
-      "bytes": 13699
+      "bytes": 36217
     },
     {
       "name": "release-cut",
@@ -728,11 +729,13 @@
         "plugins/release/skills/cut/SKILL.md"
       ],
       "bundled": {
+        "references/cut-recovery.md": "plugins/release/references/cut-recovery.md",
         "references/prose-rules.md": "plugins/release/references/prose-rules.md",
         "references/publish.py": "plugins/release/scripts/publish.py",
-        "references/release-conventions.md": "plugins/release/references/release-conventions.md"
+        "references/release-conventions.md": "plugins/release/references/release-conventions.md",
+        "references/release_plan.py": "plugins/release/scripts/release_plan.py"
       },
-      "bytes": 50945
+      "bytes": 78601
     },
     {
       "name": "release-update-downstream-packages",
@@ -742,10 +745,11 @@
       "bundled": {
         "references/bump_pin.py": "plugins/release/scripts/bump_pin.py",
         "references/consumer_inventory.py": "plugins/release/scripts/consumer_inventory.py",
+        "references/downstream_check.py": "plugins/release/scripts/downstream_check.py",
         "references/prose-rules.md": "plugins/release/references/prose-rules.md",
         "references/publish.py": "plugins/release/scripts/publish.py"
       },
-      "bytes": 85650
+      "bytes": 102338
     },
     {
       "name": "research-assess",
@@ -1681,6 +1685,7 @@
     "plugins/release/references/prose-rules.md": 2,
     "plugins/release/references/release-conventions.md": 2,
     "plugins/release/scripts/publish.py": 2,
+    "plugins/release/scripts/release_plan.py": 2,
     "plugins/research/references/prose-rules.md": 2,
     "plugins/research/references/reply-contract.md": 2,
     "plugins/respond/references/screening-rubric.md": 2,
@@ -1735,8 +1740,10 @@
     "plugins/pytest-optimizer/templates/conftest_cache_snippet.py": 1,
     "plugins/rebase/references/prose-rules.md": 1,
     "plugins/rebase/scripts/replay.py": 1,
+    "plugins/release/references/cut-recovery.md": 1,
     "plugins/release/scripts/bump_pin.py": 1,
     "plugins/release/scripts/consumer_inventory.py": 1,
+    "plugins/release/scripts/downstream_check.py": 1,
     "plugins/research/references/analysis.md": 1,
     "plugins/research/references/assessment.md": 1,
     "plugins/research/references/continue.md": 1,

@@ -49,6 +49,7 @@ _REDIRECTS = {
 }
 _OID = re.compile(rb"[0-9a-f]{40}(?:[0-9a-f]{24})?\Z")
 _REGULAR = {"100644", "100755"}
+_SYMLINK = "120000"
 _SHA1_HEX_LENGTH = 40
 
 
@@ -63,7 +64,10 @@ def _fail(message: str) -> NoReturn:
 def _execute(argv: list[str], cwd: Path, env: dict[str, str], limit: int, deadline: float) -> bytes:
     if os.name != "posix":
         _fail("read-only process cleanup requires POSIX process groups")
-    timeout_message = "Git read exceeded its time budget (at most one second)"
+    timeout_message = (
+        "Git read exceeded its time budget; --max-seconds bounds the run and "
+        "--max-call-seconds bounds each Git call"
+    )
     if time.monotonic() >= deadline:
         _fail(timeout_message)
     with subprocess.Popen(  # noqa: S603
@@ -112,7 +116,10 @@ def _execute(argv: list[str], cwd: Path, env: dict[str, str], limit: int, deadli
 
 @final
 class _Reader:
-    def __init__(self, max_entries: int, max_bytes: int, max_seconds: float) -> None:
+    def __init__(
+        self, max_entries: int, max_bytes: int, max_seconds: float, call_seconds: float = 1.0
+    ) -> None:
+        self.call_seconds = call_seconds
         self.entries = max_entries
         self.remaining_bytes = max_bytes
         self.deadline = time.monotonic() + max_seconds
@@ -156,7 +163,7 @@ class _Reader:
             root,
             env,
             self.remaining_bytes,
-            min(self.deadline, time.monotonic() + 1),
+            min(self.deadline, time.monotonic() + self.call_seconds),
         )
         self.remaining_bytes -= len(result)
         return result
@@ -204,6 +211,19 @@ def _identity(reader: _Reader, root: Path) -> dict[str, Any]:
     }
 
 
+def _check_symlink(path: Path, roots: list[str]) -> None:
+    """Accept a link that cannot hide a repository: to a file, nowhere, or inside a scanned root."""
+    try:
+        target = path.stat()
+    except OSError:
+        return
+    if not stat.S_ISDIR(target.st_mode):
+        return
+    real = os.path.realpath(path)
+    if not any(os.path.commonpath([real, root]) == root for root in roots):
+        _fail("symlink to a directory outside the scanned roots was not traversed")
+
+
 def _inventory(reader: _Reader, roots: list[Path]) -> dict[str, Any]:
     result: dict[str, Any] = {"roots": [], "repositories": [], "omissions": []}
     seen: set[tuple[int, int]] = set()
@@ -225,7 +245,8 @@ def _inventory(reader: _Reader, roots: list[Path]) -> dict[str, Any]:
                 continue
             metadata = path.lstat()
             if stat.S_ISLNK(metadata.st_mode):
-                _fail("symlink boundary was not traversed")
+                _check_symlink(path, result["roots"])
+                continue
             if not stat.S_ISDIR(metadata.st_mode):
                 continue
             identity = (metadata.st_dev, metadata.st_ino)
@@ -366,6 +387,26 @@ def _working(reader: _Reader, root: Path, name: str, oid: str) -> dict[str, Any]
     }
 
 
+def _working_link(reader: _Reader, root: Path, name: str, oid: str) -> dict[str, Any]:
+    path = root / name
+    _physical(path.parent)
+    if not stat.S_ISLNK(path.lstat().st_mode):
+        _fail("working entry is not a symlink")
+    target = os.fsencode(path.readlink())
+    reader.tick()
+    digest = hashlib.new(
+        "sha1" if len(oid) == _SHA1_HEX_LENGTH else "sha256", usedforsecurity=False
+    )
+    digest.update(b"blob " + str(len(target)).encode("ascii") + b"\0" + target)
+    return {
+        "path": name,
+        "oid": digest.hexdigest(),
+        "sha256": hashlib.sha256(target).hexdigest(),
+        "mode": _SYMLINK,
+        "bytes": len(target),
+    }
+
+
 def _checkout(
     reader: _Reader,
     root: Path,
@@ -408,19 +449,20 @@ def _checkout(
             result["staged"].append({"path": name, "reason": "index differs from selected commit"})
         if entry["flag"].upper() == "S" or entry["mode"] == "040000":
             result["sparse"].append({"path": name, "reason": "skip-worktree or sparse index entry"})
-        if entry["mode"] not in _REGULAR:
+        if entry["mode"] not in _REGULAR and entry["mode"] != _SYMLINK:
             result["unsupported"].append({"path": name, "reason": "non-regular index entry"})
             continue
         try:
-            working = _working(reader, root, name, entry["oid"])
+            link = entry["mode"] == _SYMLINK
+            working = (_working_link if link else _working)(reader, root, name, entry["oid"])
             result["working"].append(working)
             if working["oid"] != entry["oid"]:
-                result["unstaged"].append(
-                    {
-                        "path": name,
-                        "reason": "raw bytes differ; edit or content transformation unresolved",
-                    }
+                reason = (
+                    "symlink target differs"
+                    if link
+                    else "raw bytes differ; edit or content transformation unresolved"
                 )
+                result["unstaged"].append({"path": name, "reason": reason})
             if working["mode"] != entry["mode"]:
                 result["unstaged"].append({"path": name, "reason": "executable mode differs"})
         except (OSError, _ReadError) as error:
@@ -481,7 +523,13 @@ def _snapshot(reader: _Reader, args: argparse.Namespace) -> dict[str, Any]:
         result["commit"] = commit
         entries = _tree(reader.git(root, "ls-tree", "-r", "-z", "--full-tree", commit))
         result["tree"] = entries
-        result["boundaries"] = [entry for entry in entries if entry["mode"] not in _REGULAR]
+        links = [entry["path"] for entry in entries if entry["mode"] == _SYMLINK]
+        result["symlinks"] = links
+        result["boundaries"] = [
+            entry
+            for entry in entries
+            if entry["mode"] not in _REGULAR and entry["mode"] != _SYMLINK
+        ]
         for boundary in result["boundaries"]:
             omission = _boundary_omission(root, boundary)
             if omission is not None:
@@ -489,6 +537,8 @@ def _snapshot(reader: _Reader, args: argparse.Namespace) -> dict[str, Any]:
         selected = {entry["path"]: entry for entry in entries}
         for name in args.read:
             reader.tick()
+            if name in links:
+                _fail(f"requested input is a symlink; read its target path instead: {name}")
             if name not in selected or selected[name]["mode"] not in _REGULAR:
                 _fail(f"requested input is missing or not a regular blob: {name}")
             content = reader.git(root, "cat-file", "blob", selected[name]["oid"])
@@ -526,6 +576,7 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--max-entries", type=int, default=100000)
     parser.add_argument("--max-bytes", type=int, default=4 * 1024 * 1024)
     parser.add_argument("--max-seconds", type=float, default=10)
+    parser.add_argument("--max-call-seconds", type=float, default=1.0)
     commands = parser.add_subparsers(dest="command", required=True)
     inventory = commands.add_parser("inventory")
     inventory.add_argument("roots", nargs="+", type=Path)
@@ -536,11 +587,10 @@ def main(argv: list[str] | None = None) -> int:
     snapshot.add_argument("--expect-commit")
     snapshot.add_argument("--require-checkout", action="store_true")
     args = parser.parse_args(argv)
-    if min(args.max_entries, args.max_bytes, args.max_seconds) <= 0 or not math.isfinite(
-        args.max_seconds
-    ):
+    limits = (args.max_entries, args.max_bytes, args.max_seconds, args.max_call_seconds)
+    if min(limits) <= 0 or not all(math.isfinite(v) for v in limits[2:]):
         parser.error("resource limits must be positive")
-    reader = _Reader(args.max_entries, args.max_bytes, args.max_seconds)
+    reader = _Reader(*limits)
     result = (
         _inventory(reader, args.roots) if args.command == "inventory" else _snapshot(reader, args)
     )

@@ -348,8 +348,23 @@ def _spans_for(manifest: Path, text: str, name: str, old: str) -> list[tuple[int
         return _Toml(text).scan()
     if manifest.suffix in (".txt", ".in"):
         return _requirement_spans(text)
-    message = f"unsupported manifest {manifest.name}"
+    message = (
+        f"unsupported manifest {manifest.name}; only pyproject.toml, requirements *.txt/*.in "
+        "and package.json are edited"
+    )
     raise AmbiguousError(message)
+
+
+def _refuse_hashed(text: str, pattern: re.Pattern[str]) -> None:
+    for line in re.sub(r"\\\r?\n", " ", text).split("\n"):
+        if line.lstrip().startswith(("#", "-")):
+            continue
+        if "--hash" in line and pattern.search(line):
+            message = (
+                "the pin carries --hash digests that a version change would invalidate; "
+                "regenerate the file with its compile tool"
+            )
+            raise AmbiguousError(message)
 
 
 def edit(manifest: Path, text: str, name: str, old: str, new: str) -> tuple[str, int]:
@@ -361,6 +376,8 @@ def edit(manifest: Path, text: str, name: str, old: str, new: str) -> tuple[str,
             updated = updated[:start] + new + updated[end:]
         return updated, len(spans)
     pattern = pin_pattern(name, old)
+    if manifest.suffix in (".txt", ".in"):
+        _refuse_hashed(text, pattern)
     updated = text
     count = 0
     for start, end in reversed(spans):
@@ -399,11 +416,11 @@ def bump(manifest: Path, name: str, old: str, new: str) -> int:
     """Rewrite matching dependency pins and return how many changed."""
     metadata = manifest.lstat()
     if not stat.S_ISREG(metadata.st_mode) or metadata.st_nlink != 1:
-        message = f"refusing {manifest}: expected a regular file with exactly one link"
-        raise OSError(message)
+        message = f"{manifest} is not a regular file with exactly one link"
+        raise AmbiguousError(message)
     if hasattr(os, "geteuid") and metadata.st_uid != os.geteuid():
-        message = f"refusing {manifest}: a rewrite would change its owner"
-        raise OSError(message)
+        message = f"a rewrite of {manifest} would change its owner"
+        raise AmbiguousError(message)
     original = manifest.read_bytes()
     updated, count = edit(manifest, original.decode("utf-8"), name, old, new)
     if count:
@@ -422,7 +439,10 @@ def main(argv: list[str]) -> int:
         return 2
     try:
         count = bump(Path(manifest), name, old, new)
-    except (OSError, UnicodeError, AmbiguousError) as error:
+    except AmbiguousError as error:
+        sys.stderr.write(f"pin update refused for {manifest}: {error}\nNothing was written.\n")
+        return 3
+    except (OSError, UnicodeError) as error:
         sys.stderr.write(f"pin update failed for {manifest}: {error}\n")
         sys.stderr.write(
             "Stop and inspect the file; a failed write may have changed its content.\n"

@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 # Builds a repo where a release could actually be cut: clean tree, on trunk,
-# a version manifest, a populated unreleased section and a remote. Everything
-# is ready except the one thing the prompt withholds — which version.
+# a version manifest, a populated unreleased section and a remote.
 set -euo pipefail
 
 git init -b main >/dev/null

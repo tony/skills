@@ -12,6 +12,7 @@ contract lives in the `release-cut` skill.
 - CHANGES
 - MIGRATION
 - Release commit
+- Sources
 
 ## Version-bearing files
 
@@ -50,11 +51,14 @@ Prefer the project's own bump tooling only after verifying an edit-only path:
 - A `justfile` / `Makefile` recipe such as `bump-version <version>`
 - A `scripts/` bump script referenced by that recipe
 - Ecosystem tools the project demonstrably uses (`npm version`,
-  changesets, `cargo set-version`)
+  changesets, `cargo set-version`, which comes from the cargo-edit
+  extension and is not part of cargo)
 
 Inspect the selected recipe, commands it invokes, lifecycle scripts and effective
 options before execution. Before the release commit, bump, lock and quality-gate
 commands must not commit, create or move tags, push refs, or publish artifacts.
+`npm version` commits and tags by default, and runs the project's `preversion`,
+`version` and `postversion` scripts.
 Git operations confined to fresh, run-owned offline test repositories are
 permitted; their writes must stay inside those fixtures.
 The user's tag/push flags authorize later steps, not these early side effects.
@@ -80,15 +84,17 @@ make an opaque command safe to run.
 Never hand-edit a lockfile. After bumping the manifest, refresh with
 the ecosystem's lock command (`uv lock`, `npm install
 --package-lock-only`, `pnpm install --lockfile-only`, `cargo update
---workspace`, ...). The lockfile refresh belongs in the same release
+--workspace`, ...; see Sources). The lockfile refresh belongs in the same release
 commit as the version bump. Inspect the command's scripts and options under the
 bump-tooling boundary before running it.
 
 ## Version schemes
 
-Classify the project's scheme from its current version and the
-version-sorted recent tags (`git tag --list --sort=-version:refname`), and
-order versions with the project's own parser or version tool when it has one:
+Classify the project's scheme from its current version and its tags.
+`release_plan.py` orders versions and tags (`compare`, `tags`, `candidates`).
+Never rely on `git tag --sort=-version:refname`: git sorts a tag with a
+suffix after the same version without one, so `v1.0.0-rc.1` lists above
+`v1.0.0` unless `versionsort.suffix` is set.
 
 - **PEP 440 prerelease track**: `0.0.1a35`, `0.1.0a41`. Increments:
   next prerelease (`a35` → `a36`), segment promotion (`a` → `b` →
@@ -106,8 +112,8 @@ Mirror the vocabulary the project has actually used in its tags. Do
 not introduce `rc`/`post`/`dev` segments into a project whose history
 never used them unless the user asks.
 
-Tags are usually `v`-prefixed (`v0.62.0`); confirm against the repo's
-existing tags. `<tag>` is that prefix plus the version.
+Tags are usually `v`-prefixed (`v0.62.0`); `release_plan.py tags` reports the
+prefixes the repo uses. `<tag>` is that prefix plus the version.
 
 ## CHANGES
 
@@ -183,9 +189,6 @@ The subject is plain, never the `Scope(type[detail])` format:
 Tag <tag>
 ```
 
-An optional short parenthetical is acceptable when the release has one
-headline: `Tag v0.62.0 (self-location and winlink resolution)`.
-
 Body uses the project's convention (why/what blocks or a bullet list),
 covering:
 
@@ -201,3 +204,28 @@ what:
 ```
 
 Add a MIGRATION line when that file was retitled.
+
+## Sources
+
+- SemVer precedence, including that a prerelease sorts below its release:
+  [semver.org](https://semver.org/spec/v2.0.0.html), items 9 and 11.
+- PEP 440 ordering, prerelease and post-release segments:
+  [PEP 440](https://peps.python.org/pep-0440/).
+- Git tag sorting with suffixes:
+  [`versionsort.suffix`](https://git-scm.com/docs/git-config).
+- `npm version` commits, tags and runs lifecycle scripts:
+  [npm version](https://docs.npmjs.com/cli/v10/commands/npm-version).
+- Lock refresh:
+  [`npm install --package-lock-only`](https://docs.npmjs.com/cli/v10/commands/npm-install),
+  [`pnpm install --lockfile-only`](https://pnpm.io/cli/install),
+  [`cargo update --workspace`](https://doc.rust-lang.org/cargo/commands/cargo-update.html).
+- `cargo set-version`: [cargo-edit](https://github.com/killercup/cargo-edit).
+- Index endpoints behind `downstream_check.py index`:
+  [PyPI JSON API](https://docs.pypi.org/api/json/),
+  [npm registry API](https://github.com/npm/registry/blob/main/docs/REGISTRY-API.md).
+- The `gh` commands the downstream rollout runs, as of the version recorded
+  in the README prerequisites:
+  [`gh run list`](https://cli.github.com/manual/gh_run_list),
+  [`gh run watch`](https://cli.github.com/manual/gh_run_watch),
+  [`gh run rerun`](https://cli.github.com/manual/gh_run_rerun),
+  [`gh cache delete`](https://cli.github.com/manual/gh_cache_delete).

@@ -176,6 +176,49 @@ def test_unsafe_configuration_refuses(
     assert refs(fx.origin)["refs/heads/main"] != commit
 
 
+def test_bare_mirror_key_refuses_before_any_write(fx: Fixture) -> None:
+    config = fx.work / ".git" / "config"
+    config.write_text(
+        config.read_text().replace('[remote "origin"]\n', '[remote "origin"]\n\tmirror\n')
+    )
+    assert git(fx.work, "config", "--type=bool", "remote.origin.mirror") == "true"
+    _, commit = release_commit(fx)
+    for command, extra in (
+        ("inspect", ["--remote", "origin"]),
+        ("push-branch", branch_args(fx, commit)),
+    ):
+        status, record = cli(fx.work, command, *extra)
+        assert status == 1, record
+        assert "remote.origin.mirror changes what a push sends" in record["reason"]
+    assert refs(fx.origin)["refs/heads/main"] != commit
+
+
+def test_inspect_names_the_owner_of_the_push_url(fx: Fixture) -> None:
+    status, record = cli(fx.work, "inspect", "--remote", "origin")
+    assert (status, record["owner"], record["host"]) == (0, None, None)
+    git(fx.work, "config", "remote.origin.url", "git@github.com:acme/app-one.git")
+    git(fx.work, "config", "remote.origin.pushurl", "git@github.com:acme/app-one.git")
+    status, record = cli(fx.work, "inspect", "--remote", "origin")
+    assert (record["host"], record["owner"], record["repo"]) == ("github.com", "acme", "app-one")
+
+
+def test_remote_tag_absent_distinguishes_absent_present_and_unreadable(fx: Fixture) -> None:
+    _, commit = release_commit(fx)
+    args = ["--remote", "origin", "--tag", "v2", "--approved-url", str(fx.origin)]
+    status, record = cli(fx.work, "remote-tag-absent", *args)
+    assert (status, record["outcome"]) == (0, "absent")
+    git(fx.work, "push", "-q", "origin", f"{commit}:refs/tags/v2")
+    status, record = cli(fx.work, "remote-tag-absent", *args)
+    assert status == 1
+    assert "already has refs/tags/v2" in record["reason"]
+    status, record = cli(fx.work, "remote-tag-absent", *args[:-1], str(fx.other))
+    assert status == 1
+    assert "differs from the approved URL" in record["reason"]
+    git(fx.work, "config", "remote.origin.url", str(fx.root / "missing.git"))
+    status, record = cli(fx.work, "remote-tag-absent", *args[:-1], str(fx.root / "missing.git"))
+    assert (status, record["outcome"]) == (4, "unverified")
+
+
 def test_credentials_in_url_refuse(fx: Fixture) -> None:
     git(fx.work, "config", "remote.origin.url", "https://user:secret@example.invalid/r.git")
     status, record = cli(fx.work, "inspect", "--remote", "origin")

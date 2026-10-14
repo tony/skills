@@ -366,3 +366,71 @@ def test_submodule_boundary_stays_explicit(tmp_path: Path, git_environment: None
         {"path": "module", "reason": "non-regular index entry"}
     ]
     assert _files(tmp_path) == before
+
+
+@pytest.mark.integration(reason="walks a real checkout that holds file and directory symlinks")
+def test_inventory_covers_file_links_and_in_root_directory_links(
+    tmp_path: Path,
+    git_environment: None,
+) -> None:
+    del git_environment
+    root, outside = tmp_path / "root", tmp_path / "outside"
+    repo = root / "proj"
+    _repo(repo)
+    outside.mkdir()
+    (repo / "CLAUDE.md").symlink_to("AGENTS.md")
+    (repo / ".venv/lib").mkdir(parents=True)
+    (repo / ".venv/lib64").symlink_to("lib")
+    (repo / ".venv/python").symlink_to("/usr/bin/env")
+    (repo / "dangling").symlink_to("absent")
+    rows = inventory._inventory(_reader(), [root])
+    assert rows["complete"], rows["omissions"]
+    assert [row["root"] for row in rows["repositories"]] == [str(repo)]
+    (repo / "escape").symlink_to(outside)
+    rows = inventory._inventory(_reader(), [root])
+    assert not rows["complete"]
+    assert [o["reason"] for o in rows["omissions"]] == [
+        "symlink to a directory outside the scanned roots was not traversed"
+    ]
+
+
+@pytest.mark.integration(reason="validates a checkout whose index holds a symlink")
+def test_checkout_validates_tracked_symlinks_by_target(
+    tmp_path: Path,
+    git_environment: None,
+) -> None:
+    del git_environment
+    repo = tmp_path / "proj"
+    _repo(repo)
+    (repo / "CLAUDE.md").symlink_to("AGENTS.md")
+    _git(repo, "add", "--", "CLAUDE.md")
+    _git(repo, "commit", "-m", "link")
+    result = _snapshot(repo, require_checkout=True)
+    assert result["complete"], result["omissions"]
+    assert result["symlinks"] == ["CLAUDE.md"]
+    assert result["boundaries"] == []
+    (repo / "CLAUDE.md").unlink()
+    (repo / "CLAUDE.md").symlink_to("package.json")
+    result = _snapshot(repo, require_checkout=True)
+    assert not result["complete"]
+    assert result["checkout"]["unstaged"] == [
+        {"path": "CLAUDE.md", "reason": "symlink target differs"}
+    ]
+    refused = _snapshot(repo, read=["CLAUDE.md"])
+    assert "requested input is a symlink" in refused["omissions"][0]["reason"]
+
+
+def test_call_budget_is_a_flag_and_not_a_fixed_second(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    deadlines: list[float] = []
+
+    def execute(_a: list[str], _c: Path, _e: dict[str, str], _l: int, deadline: float) -> bytes:
+        deadlines.append(deadline)
+        return b""
+
+    monkeypatch.setattr(time, "monotonic", lambda: 100.0)
+    monkeypatch.setattr(inventory, "_execute", execute)
+    inventory._Reader(100, 100, 30, 5.0).git(tmp_path, "rev-parse", "HEAD")
+    inventory._Reader(100, 100, 30).git(tmp_path, "rev-parse", "HEAD")
+    assert deadlines == [105.0, 101.0]
