@@ -46,7 +46,7 @@ def test_moved_compares_once_per_source() -> None:
     out = verify_report.moved(rows, {"o/r": "b" * 40})
     assert out == {
         "moved": ["o/r: v1 now bbbbbbb"],
-        "uncheckable": ["o/p: no commit recorded", "o/q: host unreachable"],
+        "uncheckable": ["o/p: no commit recorded", "o/q: no current SHA supplied"],
     }
 
 
@@ -181,3 +181,32 @@ def test_local_checks_moved_and_vanished_offline(tmp_path: Path) -> None:
     assert again["moved"][0].startswith("s: v1 now ")
     subprocess.run([*git, "tag", "-d", "v1"], check=True)
     assert verify_report.local(rows, terms, clones)["vanished"][0] == "s: ref v1 is gone"
+
+
+def test_moved_states_why_a_sha_is_missing() -> None:
+    """The caller says whether the lookup was skipped or failed."""
+    rows: list[dict[str, object]] = [{"source": "o/q", "ref": "v3", "commit": "c" * 40}]
+    skipped = verify_report.moved(rows, {})
+    failed = verify_report.moved(rows, {}, "host unreachable")
+    assert skipped["uncheckable"] == ["o/q: no current SHA supplied"]
+    assert failed["uncheckable"] == ["o/q: host unreachable"]
+
+
+def test_moved_cli_missing_flag(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    """``--missing unreachable`` selects the failed-lookup wording."""
+    (tmp_path / "s.jsonl").write_text('{"source": "o/q", "commit": "c"}\n', encoding="utf-8")
+    (tmp_path / "c.json").write_text("{}", encoding="utf-8")
+    argv = ["moved", str(tmp_path / "s.jsonl"), str(tmp_path / "c.json")]
+    assert verify_report.main([*argv, "--missing", "unreachable"]) == 0
+    assert json.loads(capsys.readouterr().out)["uncheckable"] == ["o/q: host unreachable"]
+
+
+def test_local_source_without_a_clone_is_uncheckable() -> None:
+    """A source with no remote and no --clone is reported, not silently skipped."""
+    rows: list[dict[str, object]] = [
+        {"source": "tiny-lib", "ref": "main", "commit": "a" * 40},
+        {"source": "https://github.com/o/r", "ref": "v1", "commit": "b" * 40},
+        {"source": "corpus/excerpt-1.txt", "ref": "ed", "commit": ""},
+    ]
+    out = verify_report.local(rows, [], {})
+    assert out == {"moved": [], "vanished": [], "uncheckable": ["tiny-lib: no clone on disk"]}

@@ -49,8 +49,16 @@ _SECTIONS = (
 _HERO_ORDER = ("misquoted", "vanished", "moved", "changed")
 
 
-def moved(sources: list[dict[str, object]], current: dict[str, str]) -> dict[str, list[str]]:
-    """Compare each source's recorded commit with *current*, once per source."""
+def moved(
+    sources: list[dict[str, object]],
+    current: dict[str, str],
+    missing: str = "no current SHA supplied",
+) -> dict[str, list[str]]:
+    """Compare each source's recorded commit with *current*, once per source.
+
+    *missing* is the reason given for a source absent from *current*; the
+    caller knows whether it never looked the source up or the lookup failed.
+    """
     out: dict[str, list[str]] = {"moved": [], "uncheckable": []}
     seen: set[str] = set()
     for row in sources:
@@ -62,12 +70,13 @@ def moved(sources: list[dict[str, object]], current: dict[str, str]) -> dict[str
         if not recorded:
             out["uncheckable"].append(f"{source}: no commit recorded")
         elif source not in current:
-            out["uncheckable"].append(f"{source}: host unreachable")
+            out["uncheckable"].append(f"{source}: {missing}")
         elif current[source] != recorded:
             out["moved"].append(f"{source}: {row.get('ref', '')} now {current[source][:7]}")
     return out
 
 
+_MISSING = {"unsupplied": "no current SHA supplied", "unreachable": "host unreachable"}
 _SAFE = re.compile(r"^[A-Za-z0-9._/-]+$")
 _HEX = re.compile(r"^[0-9a-f]{7,40}$")
 
@@ -132,6 +141,10 @@ def local(
     rows = {str(r.get("source", "")): r for r in reversed(sources)}
     for source, clone in clones.items():
         _check_source(source, rows.get(source), clone, terms, out)
+    for source, row in rows.items():
+        no_remote = not source.startswith(("http://", "https://"))
+        if no_remote and str(row.get("commit", "")).strip() and source not in clones:
+            out["uncheckable"].append(f"{source}: no clone on disk")
     return out
 
 
@@ -235,6 +248,12 @@ def _parser() -> argparse.ArgumentParser:
     one = sub.add_parser("moved", help="compare recorded commits with current ones")
     _ = one.add_argument("sources")
     _ = one.add_argument("current")
+    _ = one.add_argument(
+        "--missing",
+        choices=sorted(_MISSING),
+        default="unsupplied",
+        help="why a source has no current SHA: never looked up, or the lookup failed",
+    )
     two = sub.add_parser("changed", help="diff recorded measurements against fresh output")
     _ = two.add_argument("metrics")
     _ = two.add_argument("fresh")
@@ -252,7 +271,8 @@ def _run(args: argparse.Namespace) -> int:
         current = cast("dict[str, object]", _json(cast("str", args.current)))
         if not all(isinstance(v, str) for v in current.values()):
             return _refuse("current SHAs must all be strings")
-        data = moved(_sources(cast("str", args.sources)), cast("dict[str, str]", current))
+        reason = _MISSING[cast("str", args.missing)]
+        data = moved(_sources(cast("str", args.sources)), cast("dict[str, str]", current), reason)
         print(json.dumps(data))
     elif command == "local":
         study = cast("str", args.study)

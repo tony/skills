@@ -67,13 +67,17 @@ $ gh api repos/OWNER/REPO/commits/v2.40.0 --jq .sha
 
 Collect the current SHA of every source (one call per source) into a JSON
 object `{"SOURCE": "SHA"}` in a temporary file, leaving out a source whose call
-failed. This compares it with the recorded commits and prints the `moved` and
-`uncheckable` lists:
+failed or that you did not look up (a non-GitHub source). This compares it
+with the recorded commits and prints the `moved` and `uncheckable` lists.
+`--missing unreachable` words an omitted source as "host unreachable" (the
+call failed); the default `unsupplied` says no current SHA was supplied. Run it
+once for each wording that applies:
 
 ```console
 $ python3 <report> moved \
     notes/ontology/<subject>/sources.jsonl \
-    CURRENT.json
+    CURRENT.json \
+    --missing unreachable
 ```
 
 A different SHA is Moved. A source row with no `commit` cannot be checked this
@@ -82,7 +86,8 @@ remote (a cite with `path@commit` and no `url`) or a clone the user names, is
 checked offline against that clone, on any host; a source with no clone on
 disk is Uncheckable. The script re-resolves each recorded ref in its clone
 (a different commit is Moved, an unresolvable ref is Vanished) and tests that
-every cited file exists at the recorded commit (otherwise Vanished). It prints
+every cited file exists at the recorded commit (otherwise Vanished). A source
+with no remote and no `--clone` is Uncheckable ("no clone on disk"). It prints
 the `moved`, `vanished` and `uncheckable` lists to put in the results:
 
 ```console
