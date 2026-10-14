@@ -378,7 +378,7 @@
         "references/prose-rules.md": "plugins/lean/references/prose-rules.md",
         "references/scope.py": "plugins/lean/scripts/scope.py"
       },
-      "bytes": 20661
+      "bytes": 20778
     },
     {
       "name": "lean-trim-comments",
@@ -392,7 +392,7 @@
         "references/scope.py": "plugins/lean/scripts/scope.py",
         "references/tally.py": "plugins/lean/scripts/tally.py"
       },
-      "bytes": 31277
+      "bytes": 31354
     },
     {
       "name": "lean-writing",
@@ -405,7 +405,7 @@
         "references/lean-rubric.md": "plugins/lean/references/lean-rubric.md",
         "references/prose-rules.md": "plugins/lean/references/prose-rules.md"
       },
-      "bytes": 13355
+      "bytes": 13548
     },
     {
       "name": "merge-pr-multiple",

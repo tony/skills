@@ -16,7 +16,7 @@ Governs code comments and docstrings.
 ## The three gates
 
 A comment ships only if it passes all three. Fail any: delete or
-rewrite. Borderline: delete — borderline means the information is
+rewrite. Borderline: delete. Borderline means the information is
 reconstructible, which is what makes deletion cheap.
 
 **Loss.** Three years from now, would losing this cost a maintainer
@@ -49,7 +49,7 @@ per second" survives; "this is the right trade for now" does not.
 ## Exemptions
 
 Doctests, minimal usage examples, and param, return, and raises lines
-on public API are exempt from the loss gate — they serve the caller,
+on public API are exempt from the loss gate; they serve the caller,
 not the maintainer. They are exempt from nothing else. Ceiling: a good
 man page entry.
 
@@ -85,8 +85,8 @@ Otherwise keep:
 - Ticket and issue numbers. They say nothing to a reader without
   tracker access, and they rot when the tracker moves. Unfinished work
   goes in the tracker, not the source.
-- Transient observations — "currently", "for now", "the latest
-  release" — that go stale with no nearby edit.
+- Transient observations ("currently", "for now", "the latest
+  release") that go stale with no nearby edit.
 
 ## Validation order
 
@@ -107,40 +107,40 @@ Run these in order on every comment, new or existing.
 
 ## Calibration
 
-Delete — fully recoverable:
+Delete: fully recoverable:
 
 ```python
 # Increment the retry count.
 retry_count += 1
 ```
 
-Delete — two hand-synced values, stale the first time either moves:
+Delete: two hand-synced values, stale the first time either moves:
 
 ```python
 # Handles all 4 retry states (see line 212).
 ```
 
-Delete — an unfinished thought, and it belongs in the commit:
+Delete: an unfinished thought, and it belongs in the commit:
 
 ```python
 # Went with a dict over a class for now, may revisit.
 ```
 
-Keep — a durable constraint, invisible in the code, nothing to sync:
+Keep: a durable constraint, invisible in the code, nothing to sync:
 
 ```python
 # Monotonic: wall-clock adjustments must not shorten the lease.
 deadline = monotonic() + timeout
 ```
 
-Keep — what the loss gate exists to protect. `Python < 3.11` is a
+Keep: what the loss gate exists to protect. `Python < 3.11` is a
 frozen external fact, not a value tracking your own code:
 
 ```python
 # CPython < 3.11 has no ExceptionGroup, so this branch stays.
 ```
 
-Rewrite — the same fact, with the argument cut away (GCC's
+Rewrite: the same fact, with the argument cut away (GCC's
 [`-Wdangling-reference`](https://gcc.gnu.org/onlinedocs/gcc-14.2.0/gcc/C_002b_002b-Dialect-Options.html)
 warns on this pattern):
 
@@ -148,8 +148,8 @@ warns on this pattern):
 // By value, though the answer is cached and a reference would be
 // valid. The default argument builds a temporary `path`, and a
 // function that takes a reference and returns one is
-// indistinguishable — to GCC's `-Wdangling-reference`, and to a
-// reader — from one that hands back a reference into that temporary.
+// indistinguishable, to GCC's `-Wdangling-reference` and to a
+// reader, from one that hands back a reference into that temporary.
 // `Version` is four scalars; copying it costs nothing next to being
 // obviously correct.
 ```

@@ -8,6 +8,15 @@ the `lean-trim-comments` skill.
 A commit message carries no `Co-Authored-By`, no "Generated with" or
 other tool trailer, and no emoji.
 
+## Printing the diff
+
+For a tracked target print `git diff -- <file>`. For an untracked one
+print `git diff --no-index -- /dev/null <file>`.
+
+## Stopped runs
+
+A stopped run is one result sentence, then what the user needs to do.
+
 ## Discarding edits
 
 Review the printed diff first. `git checkout -- <file>` resets a tracked

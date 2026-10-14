@@ -33,13 +33,13 @@ authorizes the edits it names, never a commit.
 
 ## `$ARGUMENTS`
 
-- `paths/globs` — files to audit in full, resolved by `scope.py --paths`.
-- `--stdin` — code pasted in the message or read from stdin; print the
+- `paths/globs`: files to audit in full, resolved by `scope.py --paths`.
+- `--stdin`: code pasted in the message or read from stdin; print the
   trimmed code and edit nothing. Pasted code with no paths implies it.
-- `--staged` — judge comments on staged lines rather than the branch diff.
-- `--all` — audit every tracked file in full. Expect a large diff; say
+- `--staged`: judge comments on staged lines rather than the branch diff.
+- `--all`: audit every tracked file in full. Expect a large diff; say
   so before confirming.
-- `--diff-only` — classify and show what would change, edit nothing.
+- `--diff-only`: classify and show what would change, edit nothing.
 
 With no paths, the scope is the lines this branch added or changed.
 
@@ -119,8 +119,7 @@ With no paths, the scope is the lines this branch added or changed.
    Never delete a directive or a sole-body docstring, whatever the
    preview said.
 
-6. **Diff.** For a tracked target print `git diff -- <file>`; for an
-   untracked one print `git diff --no-index -- /dev/null <file>`. Skip for `--stdin`,
+6. **Diff.** Print the diff per `../../references/handoff.md`. Skip for `--stdin`,
    `--diff-only`, and runs that edited nothing.
 
 7. **Report and hand off.** Write it per
@@ -128,8 +127,8 @@ With no paths, the scope is the lines this branch added or changed.
    code fence, with plain bullets, no bold (never `- **Label:** ...`),
    and no local paths. The reply adds no sentence outside the shape,
    anywhere (not even to say nothing was edited or why); do not narrate
-   comments you did not judge. A stopped run is one result sentence,
-   then what the user needs to do. Build the reply in these parts.
+   comments you did not judge. A stopped run follows
+   `../../references/handoff.md`. Build the reply in these parts.
 
    **7a. Verdict bullets and hero.** Draft one bullet per comment first,
    each starting `Kept`, `Rewrote`, or `Deleted`. A comment you shorten

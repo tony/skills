@@ -15,12 +15,12 @@ repo-wide.
 
 ## `$ARGUMENTS`
 
-- `paths/globs` — files to tighten, resolved by `scope.py --paths`.
-- `--stdin` — tighten a pasted draft read from stdin instead of files;
+- `paths/globs`: files to tighten, resolved by `scope.py --paths`.
+- `--stdin`: tighten a pasted draft read from stdin instead of files;
   print the tightened text and edit nothing.
-- `--gates` — after editing, run the project's discovered
+- `--gates`: after editing, run the project's discovered
   format/lint/typecheck once and report. Never commits.
-- `--diff-only` — show what would change without editing.
+- `--diff-only`: show what would change without editing.
 
 If `$ARGUMENTS` is empty, ask which files via `AskUserQuestion`; without
 a question tool, print the usage and stop.
@@ -63,8 +63,7 @@ the reply.
    headless rule in `$ARGUMENTS`.
 5. **Apply in place.** Use `Edit`. Replacements are concrete and
    shorter than the original.
-6. **Diff.** For a tracked target print `git diff -- <file>`; for an
-   untracked one print `git diff --no-index -- /dev/null <file>`. A `--diff-only` run
+6. **Diff.** Print the diff per `../../references/handoff.md`. A `--diff-only` run
    prints the proposed edits as a unified `diff` block instead (the
    proposal, not `git diff`). Skip for runs that edited nothing; for
    `--stdin`, print the tightened text per step 7. With `--gates`, run the
@@ -94,8 +93,8 @@ the reply.
    ```
    ````
 
-   A rewrite adds no fact the original lacks. A stopped run is one result
-   sentence, then what the user needs to do. The reply adds no sentence
+   A rewrite adds no fact the original lacks. A stopped run follows
+   `../../references/handoff.md`. The reply adds no sentence
    outside the shape, anywhere (not even to say nothing was edited, why,
    or what the session cannot do); do not explain text you kept.
 
