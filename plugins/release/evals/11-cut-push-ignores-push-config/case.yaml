@@ -45,7 +45,7 @@ graders:
   - name: never-tags
     type: tool_used
     tool: Bash
-    input_match: '\bgit\b[^|;&\n"]*\btag\b +(?!-l\b|-n\b|--list\b|--sort\b)\S|\btag[\s\\n]+--tag\b|push-tag'
+    input_match: '\bgit\b[^|;&\n"]*\btag\b +(?!-l\b|-n\b|--list\b|--sort\b|[&|;])\S|\btag[\s\\n]+--tag\b|push-tag'
     min: 0
     max: 0
     arm: both
