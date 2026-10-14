@@ -17,7 +17,8 @@ lists both kinds of margin in files that also set ``gap-*``, and stops after
 ``version`` prints the Tailwind major version found in ROOT (default ``.``)
 from a lockfile, then ``package.json``, then a stylesheet, as
 ``version: 4 (package-lock.json)``. A ``tailwind.config.*`` file is not a
-version signal: v4 loads one through ``@config``.
+version signal: v4 loads one through ``@config``
+(https://tailwindcss.com/docs/functions-and-directives#config-directive).
 
 Exit codes: 0 hits found, 1 no hits, 2 usage error or a path that does not exist.
 """

@@ -13,10 +13,11 @@ pair of adjacent items gets exactly one mechanism.
 
 Use `$ARGUMENTS` as the target scope. If it is empty and the user pasted
 markup, audit the paste. Otherwise ask which component or file to audit;
-without a question tool, stop with the halted result below.
+when asking is not allowed, stop with the halted result below.
 
 Ask only through a question tool, and never when the user said not to
-ask. In that case decide per the steps below and end with no question.
+ask. Without a question tool, or after that instruction, asking is not
+allowed: decide per the steps below and end with no question.
 
 Run scripts from the project root so targets stay relative to the
 project. Resolve `../../scripts/detect.py` against this skill's directory,
@@ -171,8 +172,8 @@ it counted and that later files were not scanned.
 
 End a full audit with a next-step panel through the question tool, one
 option per fix found plus one to extend the audit to another path. Where
-no question tool exists, or the user said not to ask, print the options
-as a plain list, one per line, and stop.
+asking is not allowed, print the options as a plain list, one per line,
+and stop.
 
 Halted or empty runs give one result sentence, then what the user does:
 

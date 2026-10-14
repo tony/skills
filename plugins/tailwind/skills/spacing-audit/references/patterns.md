@@ -32,7 +32,8 @@ when a path does not exist. Needs `python3`. If it cannot run, use the
 `python3 <absolute path to detect.py> version <project root>` prints the
 Tailwind major version and the file it came from, or `version: unknown`
 with exit 1. A `tailwind.config.*` file is not a signal: v4 loads one
-through `@config`.
+through
+[`@config`](https://tailwindcss.com/docs/functions-and-directives#config-directive).
 
 The commands are candidate finders, not proof. They search class tokens
 in single, double, and backtick strings, so `class='...'`, `cn("...")`,
