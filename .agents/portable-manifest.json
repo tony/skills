@@ -644,7 +644,7 @@
         "references/version-matrix.md": "plugins/pytest-optimizer/references/version-matrix.md",
         "templates/pytest_optimizer_plugin.py": "plugins/pytest-optimizer/templates/pytest_optimizer_plugin.py"
       },
-      "bytes": 172786
+      "bytes": 172915
     },
     {
       "name": "pytest-optimizer-01-benchmark",

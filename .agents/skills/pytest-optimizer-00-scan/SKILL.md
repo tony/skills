@@ -276,8 +276,10 @@ paths:
 Benchmarking the 2 hypotheses measures what each recovers.
 ```
 
-After the last section write at most one closing sentence (files the timed runs
-wrote, a dirty tree, a lowered run count), then an `ask-user-choice` panel
+Environment names the runner, its plugins and the skipped checks only; the
+scan's own notes and exclude line are never reported. After the last section
+write at most one closing sentence (files the timed runs wrote, a dirty tree, a
+lowered run count), then an `ask-user-choice` panel
 offering to benchmark the hypotheses, narrow scope, or stop. Without a question
 tool, follow the output contract's next-step rule.
 
