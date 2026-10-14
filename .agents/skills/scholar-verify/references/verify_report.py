@@ -25,9 +25,12 @@ from __future__ import annotations
 import argparse
 import json
 import re
+import subprocess
 import sys
 from pathlib import Path
 from typing import cast
+
+from term_metrics import parse_locator  # pyright: ignore[reportImplicitRelativeImport]
 
 _FENCE = re.compile(r"^```(\w*)\s*$")
 _IDENTITY = ("analyzer-sha256:", "analyzer-version:")
@@ -65,12 +68,85 @@ def moved(sources: list[dict[str, object]], current: dict[str, str]) -> dict[str
     return out
 
 
+_SAFE = re.compile(r"^[A-Za-z0-9._/-]+$")
+_HEX = re.compile(r"^[0-9a-f]{7,40}$")
+
+
+def _git(clone: str, *args: str) -> subprocess.CompletedProcess[str]:
+    return subprocess.run(  # noqa: S603
+        ["git", "-C", clone, *args],  # noqa: S607
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+
+
+def _safe(value: str) -> bool:
+    parts = value.split("/")
+    return (
+        bool(_SAFE.match(value)) and not value.startswith("-") and not {"", ".", ".."} & set(parts)
+    )
+
+
+def _check_source(
+    source: str,
+    row: dict[str, object] | None,
+    clone: str,
+    terms: list[dict[str, object]],
+    out: dict[str, list[str]],
+) -> None:
+    ref = str(row.get("ref", "")) if row else ""
+    commit = str(row.get("commit", "")) if row else ""
+    if not (_safe(ref) and _HEX.match(commit)):
+        out["uncheckable"].append(f"{source}: no usable ref and commit")
+        return
+    done = _git(clone, "rev-parse", "--verify", "--quiet", f"{ref}^{{commit}}")
+    if done.returncode != 0:
+        out["vanished"].append(f"{source}: ref {ref} is gone")
+    elif not done.stdout.strip().startswith(commit):
+        out["moved"].append(f"{source}: {ref} now {done.stdout.strip()[:7]}")
+    if _git(clone, "cat-file", "-e", f"{commit}^{{commit}}").returncode != 0:
+        out["uncheckable"].append(f"{source}: commit not in the clone")
+        return
+    for term in terms:
+        for cite in cast("list[dict[str, object]]", term.get("cites", [])):
+            parsed = parse_locator(str(cite.get("locator", "")))
+            if cite.get("source") != source or parsed is None:
+                continue
+            if _git(clone, "cat-file", "-e", f"{commit}:{parsed[0]}").returncode != 0:
+                label = f"{term.get('term', '')} ({cite.get('locator', '')})"
+                out["vanished"].append(f"{label}: {parsed[0]} is not in the commit")
+
+
+def local(
+    sources: list[dict[str, object]],
+    terms: list[dict[str, object]],
+    clones: dict[str, str],
+) -> dict[str, list[str]]:
+    """Check sources that have a clone on disk, offline.
+
+    Moved: the recorded ref now resolves to another commit. Vanished: the ref
+    no longer resolves, or a cited file is not in the recorded commit.
+    """
+    out: dict[str, list[str]] = {"moved": [], "vanished": [], "uncheckable": []}
+    rows = {str(r.get("source", "")): r for r in reversed(sources)}
+    for source, clone in clones.items():
+        _check_source(source, rows.get(source), clone, terms, out)
+    return out
+
+
 def recorded_measurements(text: str) -> list[tuple[str, str]]:
     r"""Return ``(command, recorded output)`` for each console block with a text block after it.
 
     >>> md = "```console\n$ cmd a\n```\n\n```text\n1 2\n```\n"
     >>> recorded_measurements(md)
     [('cmd a', '1 2')]
+
+    A command that continues over several lines is keyed by its whole text:
+
+    >>> md = "```console\n$ a \\\\\n    && b\n```\n```text\n1\n```\n"
+    >>> recorded_measurements(md)[0][0]
+    'a \\\\\n    && b'
     """
     out: list[tuple[str, str]] = []
     lines = text.splitlines()
@@ -83,8 +159,8 @@ def recorded_measurements(text: str) -> list[tuple[str, str]]:
         end = next((j for j in range(i + 1, len(lines)) if lines[j].startswith("```")), len(lines))
         body = lines[i + 1 : end]
         if match.group(1) == "console":
-            first = next((x for x in body if x.startswith("$ ")), None)
-            command = first[2:].strip() if first else None
+            text = "\n".join(line.rstrip() for line in body).strip()
+            command = text[2:].strip() if text.startswith("$ ") else None
         elif command is not None:
             out.append((command, "\n".join(body).strip()))
             command = None
@@ -126,10 +202,10 @@ def report(results: dict[str, object]) -> str:
                 lists[key].append(str(line)[len(prefix) :])
     checked = int(cast("int", results.get("checked", 0)))
     stale = [f"{len(lists[k])} {k}" for k in _HERO_ORDER if lists[k]]
-    if not checked:
-        hero = f"⚠ Nothing checked: {len(lists['uncheckable'])} uncheckable"
-    elif stale:
+    if stale:
         hero = "⚠ " + ", ".join(stale)
+    elif not checked:
+        hero = f"⚠ Nothing checked: {len(lists['uncheckable'])} uncheckable"
     else:
         hero = f"✓ {checked} citations checked, none stale"
     parts = [hero]
@@ -148,8 +224,12 @@ def _sources(path: str) -> list[dict[str, object]]:
     return cast("list[dict[str, object]]", rows)
 
 
-def main(argv: list[str]) -> int:
-    """Run one subcommand."""
+def _refuse(message: str) -> int:
+    print(f"verify_report.py: {message}", file=sys.stderr)
+    return 2
+
+
+def _parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="verify_report.py", allow_abbrev=False)
     sub = parser.add_subparsers(dest="command", required=True)
     one = sub.add_parser("moved", help="compare recorded commits with current ones")
@@ -158,29 +238,47 @@ def main(argv: list[str]) -> int:
     two = sub.add_parser("changed", help="diff recorded measurements against fresh output")
     _ = two.add_argument("metrics")
     _ = two.add_argument("fresh")
+    loc = sub.add_parser("local", help="check sources that have a clone on disk")
+    _ = loc.add_argument("study")
+    _ = loc.add_argument("--clone", action="append", default=[], metavar="SOURCE=CLONE")
     three = sub.add_parser("report", help="print the verify report from results JSON")
     _ = three.add_argument("results")
+    return parser
+
+
+def _run(args: argparse.Namespace) -> int:
+    command = cast("str", args.command)
+    if command == "moved":
+        current = cast("dict[str, object]", _json(cast("str", args.current)))
+        if not all(isinstance(v, str) for v in current.values()):
+            return _refuse("current SHAs must all be strings")
+        data = moved(_sources(cast("str", args.sources)), cast("dict[str, str]", current))
+        print(json.dumps(data))
+    elif command == "local":
+        study = cast("str", args.study)
+        pairs = [c.partition("=") for c in cast("list[str]", args.clone)]
+        clones = {a: b for a, sep, b in pairs if sep and a}
+        sources = _sources(f"{study}/sources.jsonl")
+        print(json.dumps(local(sources, _sources(f"{study}/terms.jsonl"), clones)))
+    elif command == "changed":
+        text = Path(cast("str", args.metrics)).read_text(encoding="utf-8")
+        fresh = cast("dict[str, str]", _json(cast("str", args.fresh)))
+        print(json.dumps(changed(text, fresh)))
+    else:
+        print(report(cast("dict[str, object]", _json(cast("str", args.results)))))
+    return 0
+
+
+def main(argv: list[str]) -> int:
+    """Run one subcommand."""
     try:
-        args = parser.parse_args(argv)
+        args = _parser().parse_args(argv)
     except SystemExit as exc:
         return exc.code if isinstance(exc.code, int) else 2
-    command = cast("str", args.command)
     try:
-        if command == "moved":
-            data = moved(
-                _sources(cast("str", args.sources)),
-                cast("dict[str, str]", _json(cast("str", args.current))),
-            )
-            print(json.dumps(data))
-        elif command == "changed":
-            text = Path(cast("str", args.metrics)).read_text(encoding="utf-8")
-            print(json.dumps(changed(text, cast("dict[str, str]", _json(cast("str", args.fresh))))))
-        else:
-            print(report(cast("dict[str, object]", _json(cast("str", args.results)))))
+        return _run(args)
     except (OSError, ValueError) as exc:
-        print(f"verify_report.py: {exc}", file=sys.stderr)
-        return 2
-    return 0
+        return _refuse(str(exc))
 
 
 if __name__ == "__main__":

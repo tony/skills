@@ -212,12 +212,14 @@ ANALYZER_VERSION = 2
 """Bumped when a change alters scoring output; the digest alone cannot say that."""
 
 KNOWN_ANALYZERS = {
-    "15ec84ee562768a3897b7159a5660f053d26fe86d4bba630e5fbfc5fb79fd5c1": 0,
-    "30c6d6b19969d461526822365b29aef91cb665b8e180aeeed96e28401487ca88": 1,
+    "15ec84ee562768a3897b7159a5660f053d26fe86d4bba630e5fbfc5fb79fd5c1": (0, "tokenizer changed"),
+    "30c6d6b19969d461526822365b29aef91cb665b8e180aeeed96e28401487ca88": (1, ""),
+    "ce90f484318b8425911d45f450f81433b8af4a0805a54c82581b5bc3ec37a624": (2, ""),
 }
-"""Digests of earlier versions whose synonymy, polysemy, orphan and fan-out
-output matches this one on the same table, so studies measured by them stay
-comparable. Append the outgoing digest here when ``ANALYZER_VERSION`` moves."""
+"""Digest -> (version, reason it is not comparable, or ``""``). Comparable means
+the report matches this analyzer's on the same table, accented and plural terms
+included. Append the outgoing digest here whenever the script changes, with a
+reason if its output differs."""
 
 SYNONYMY_THRESHOLD = 0.5
 """Sibling definitions at or above this are candidates for one term, not two."""
@@ -889,6 +891,20 @@ def check_quotations(
 _CORRECTION_FIELDS = ("Was:", "Rested on:", "Failed because:", "Now:")
 
 
+def _field_values(lines: list[str]) -> dict[str, str]:
+    """Map each correction field to its text, which may continue on later lines."""
+    values: dict[str, str] = {}
+    current: str | None = None
+    for line in lines:
+        field = next((f for f in _CORRECTION_FIELDS if line.startswith(f)), None)
+        if field:
+            current = field
+            values[field] = line[len(field) :].strip()
+        elif current and line:
+            values[current] = f"{values[current]} {line}".strip()
+    return values
+
+
 def check_corrections(text: str, claim: str = "") -> list[str]:
     r"""List ``corrections.md`` entries missing a field, or a last entry that is not *claim*.
 
@@ -901,6 +917,8 @@ def check_corrections(text: str, claim: str = "") -> list[str]:
     ['last correction is not other']
     >>> check_corrections("## t\nWas: a\n")
     ['t: missing Rested on:, Failed because:, Now:']
+    >>> check_corrections("## t\nWas: a\nRested on: b\nFailed because:\nNow: d\n")
+    ['t: empty Failed because:']
     """
     entries: list[tuple[str, list[str]]] = []
     for line in text.splitlines():
@@ -908,11 +926,15 @@ def check_corrections(text: str, claim: str = "") -> list[str]:
             entries.append((line[3:].strip(), []))
         elif entries:
             entries[-1][1].append(line.strip())
-    findings = [
-        f"{name}: missing {', '.join(missing)}"
-        for name, lines in entries
-        if (missing := [f for f in _CORRECTION_FIELDS if not any(x.startswith(f) for x in lines)])
-    ]
+    findings: list[str] = []
+    for name, lines in entries:
+        values = _field_values(lines)
+        missing = [f for f in _CORRECTION_FIELDS if f not in values]
+        empty = [f for f in _CORRECTION_FIELDS if f in values and not values[f]]
+        if missing:
+            findings.append(f"{name}: missing {', '.join(missing)}")
+        if empty:
+            findings.append(f"{name}: empty {', '.join(empty)}")
     if claim and (not entries or entries[-1][0].casefold() != claim.strip().casefold()):
         findings.append(f"last correction is not {claim}")
     return findings
@@ -1241,7 +1263,11 @@ def check_analyzer(digest: str) -> int:
         print(f"current: version {ANALYZER_VERSION}")
         return 0
     if digest in KNOWN_ANALYZERS:
-        print(f"comparable: version {KNOWN_ANALYZERS[digest]}, now {ANALYZER_VERSION}")
+        version, reason = KNOWN_ANALYZERS[digest]
+        if reason:
+            print(f"not comparable: {reason}", file=sys.stderr)
+            return 1
+        print(f"comparable: version {version}, now {ANALYZER_VERSION}")
         return 0
     print("analyzer identity differs", file=sys.stderr)
     return 1

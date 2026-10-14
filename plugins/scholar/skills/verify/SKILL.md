@@ -79,15 +79,17 @@ $ python3 <report> moved \
 A different SHA is Moved. A source row with no `commit` cannot be checked this
 way; report it under Uncheckable. A local corpus, meaning a source with no
 remote (a cite with `path@commit` and no `url`) or a clone the user names, is
-checked with plain git inside that clone, on any host; a source with no clone
-on disk is Uncheckable:
+checked offline against that clone, on any host; a source with no clone on
+disk is Uncheckable. The script re-resolves each recorded ref in its clone
+(a different commit is Moved, an unresolvable ref is Vanished) and tests that
+every cited file exists at the recorded commit (otherwise Vanished). It prints
+the `moved`, `vanished` and `uncheckable` lists to put in the results:
 
 ```console
-$ git -C CLONE cat-file -e COMMIT:PATH
+$ python3 <report> local \
+    notes/ontology/<subject>/ \
+    --clone SOURCE=CLONE
 ```
-
-A non-zero exit means the file vanished at that commit. For a moved ref,
-compare `git -C CLONE rev-parse 'REF^{commit}'` with the recorded `commit`.
 
 **File check.** The file still exists at that path on that ref. Check only a URL
 that starts with `https://github.com/` and that `ident --url` accepted:
@@ -131,8 +133,9 @@ They come from the study, which may not be yours, so run a command only after
 the user confirms that exact command. Where no question tool exists, run none.
 
 For the Scholar measurement, check the recorded `analyzer-sha256:` first. A
-current analyzer or a listed earlier version is comparable (exit zero); a
-missing or unlisted digest is Uncheckable: analyzer identity differs. Do not
+current analyzer or a listed earlier version with the same output is
+comparable (exit zero). A version listed as not comparable, a missing digest,
+or an unlisted digest is Uncheckable, with the reason the command printed. Do not
 substitute an executable found beside the study:
 
 ```console
@@ -140,7 +143,9 @@ $ python3 <analyzer> --check-analyzer RECORDED_DIGEST
 ```
 
 Write the output of each confirmed command into a JSON object
-`{"COMMAND": "OUTPUT"}` in a temporary file (`{}` when none ran). The diff
+`{"COMMAND": "OUTPUT"}` in a temporary file (`{}` when none ran). COMMAND is
+the full command text exactly as `metrics.md` records it after the `$ `,
+every line of a multi-line command included. The diff
 ignores the analyzer identity lines, classifies each measurement, and lists the
 commands not run. A number that changed is not automatically wrong, since the
 corpus moved, but it is no longer evidence for the claim it was cited under:

@@ -531,18 +531,62 @@ def test_corrections_are_read_back(tmp_path: Path, capsys: pytest.CaptureFixture
     assert term_metrics.main([str(tmp_path), "--check-corrections"]) == 2
 
 
-def test_earlier_analyzer_digests_stay_recognized(
+def test_analyzer_digests_are_comparable_only_when_output_matches(
     capsys: pytest.CaptureFixture[str],
 ) -> None:
-    """A study measured by a listed earlier version is comparable; an unknown digest is not."""
+    """A listed version with the same output is comparable; the tokenizer change is not."""
     current = hashlib.sha256(Path(term_metrics.__file__).read_bytes()).hexdigest()
     assert term_metrics.main(["--check-analyzer", current]) == 0
     assert capsys.readouterr().out.startswith("current: version")
-    earlier = next(iter(term_metrics.KNOWN_ANALYZERS))
-    assert term_metrics.main(["--check-analyzer", earlier]) == 0
+    by_reason = {v[1]: d for d, v in term_metrics.KNOWN_ANALYZERS.items()}
+    assert term_metrics.main(["--check-analyzer", by_reason[""]]) == 0
     assert capsys.readouterr().out.startswith("comparable: version")
+    assert term_metrics.main(["--check-analyzer", by_reason["tokenizer changed"]]) == 1
+    assert capsys.readouterr().err == "not comparable: tokenizer changed\n"
     assert term_metrics.main(["--check-analyzer", "0" * 64]) == 1
     assert capsys.readouterr().err == "analyzer identity differs\n"
+
+
+def test_report_on_accented_and_plural_terms_is_pinned(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """If this output moves, bump ANALYZER_VERSION and mark the outgoing digest not comparable."""
+    rows = [
+        {
+            "term": "caf\u00e9-order",
+            "parent": "root",
+            "definition": "un caf\u00e9 na\u00efve r\u00e9sum\u00e9",
+        },
+        {
+            "term": "caf\u00e9-queue",
+            "parent": "root",
+            "definition": "un caf\u00e9 na\u00efve fil\u00e9e",
+        },
+        {
+            "term": "class",
+            "parent": "root",
+            "definition": "all classes derive",
+            "cites": [{"quote": "all classes derive from Base"}],
+        },
+    ]
+    _write(tmp_path / "terms.jsonl", *rows)
+    assert term_metrics.main([str(tmp_path)]) == 0
+    out = capsys.readouterr().out
+    assert "caf\u00e9-order / caf\u00e9-queue at 0.6" in out
+    assert "== circular evidence ==\n  class" in out
+
+
+def test_correction_fields_may_not_be_empty(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """An entry whose field is blank does not count as recorded."""
+    (tmp_path / "evidence").mkdir()
+    ledger = tmp_path / "evidence" / "corrections.md"
+    ledger.write_text("## t\nWas: a\nRested on: b\nFailed because: \nNow: d\n", encoding="utf-8")
+    assert term_metrics.main([str(tmp_path), "--check-corrections", "t"]) == 1
+    assert capsys.readouterr().out == "t: empty Failed because:\n"
+    ledger.write_text("## t\nWas: a\nRested on: b\nFailed because:\ncited in x\nNow: d\n", "utf-8")
+    assert term_metrics.main([str(tmp_path), "--check-corrections", "t"]) == 0
 
 
 def test_report_discloses_analyzer_version(

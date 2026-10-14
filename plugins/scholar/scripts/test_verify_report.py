@@ -1,10 +1,11 @@
 """Tests for verify_report.py: ref comparison, measurement diff, report assembly."""
 
-# ruff: noqa: S101, INP001, PLR2004
+# ruff: noqa: S101, S603, S607, INP001, PLR2004
 # pyright: reportAny=false, reportUnusedCallResult=false
 from __future__ import annotations
 
 import json
+import subprocess
 from typing import TYPE_CHECKING
 
 import pytest
@@ -108,3 +109,75 @@ def test_cli_refuses_a_missing_file(capsys: pytest.CaptureFixture[str]) -> None:
     """A missing input is a one-line refusal, not a traceback."""
     assert verify_report.main(["report", "/nonexistent/results.json"]) == 2
     assert capsys.readouterr().err.startswith("verify_report.py: ")
+
+
+def test_changed_keys_a_multi_line_command_by_its_whole_text() -> None:
+    """The command contest records spans lines; fresh output is keyed by that exact text."""
+    command = "printf 'path: ' \\\n    && read -r p \\\n    && python3 \"$p\" study/"
+    md = f"```console\n$ {command}\n```\n\n```text\nsynonymy: a / b at 0.600\n```\n"
+    assert verify_report.recorded_measurements(md) == [(command, "synonymy: a / b at 0.600")]
+    out = verify_report.changed(md, {command: "synonymy: a / b at 0.500"})
+    assert len(out["changed"]) == 1
+    assert verify_report.changed(md, {})["uncheckable"] == [
+        f"Metrics command `{command}`: not run, no confirmation"
+    ]
+
+
+def test_report_with_nothing_checked_still_lists_moved() -> None:
+    """A moved ref found offline is not hidden behind the nothing-checked hero."""
+    text = verify_report.report({"checked": 0, "moved": ["o/r: v1 now bbbbbbb"]})
+    assert text.splitlines()[0] == "⚠ 1 moved"
+    assert "- o/r: v1 now bbbbbbb" in text
+
+
+def test_moved_refuses_a_non_string_sha(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    """A malformed current-SHA file is one line, not a traceback."""
+    (tmp_path / "s.jsonl").write_text('{"source": "o/r", "commit": "a"}\n', encoding="utf-8")
+    (tmp_path / "c.json").write_text('{"o/r": 5}', encoding="utf-8")
+    assert verify_report.main(["moved", str(tmp_path / "s.jsonl"), str(tmp_path / "c.json")]) == 2
+    assert capsys.readouterr().err == "verify_report.py: current SHAs must all be strings\n"
+
+
+@pytest.mark.integration
+def test_local_checks_moved_and_vanished_offline(tmp_path: Path) -> None:
+    """Rev-parse against the recorded commit finds a moved tag; cat-file finds a gone file."""
+    repo = tmp_path / "clone"
+    repo.mkdir()
+    git = ["git", "-C", str(repo), "-c", "user.name=t", "-c", "user.email=t@example.com"]
+    subprocess.run(["git", "init", "--quiet", str(repo)], check=True)
+    (repo / "a.py").write_text("x\n", encoding="utf-8")
+    subprocess.run([*git, "add", "."], check=True)
+    subprocess.run([*git, "commit", "--quiet", "-m", "one"], check=True)
+    first = subprocess.run(
+        [*git, "rev-parse", "HEAD"], capture_output=True, text=True, check=True
+    ).stdout.strip()
+    subprocess.run([*git, "tag", "v1"], check=True)
+    study = tmp_path / "study"
+    study.mkdir()
+    source = {"source": "s", "ref": "v1", "commit": first}
+    cites = [
+        {"source": "s", "locator": "a.py:1-1", "quote": "x"},
+        {"source": "s", "locator": "gone.py:1-1", "quote": "x"},
+    ]
+    (study / "sources.jsonl").write_text(json.dumps(source) + "\n", encoding="utf-8")
+    (study / "terms.jsonl").write_text(
+        json.dumps({"term": "t", "definition": "d", "cites": cites}) + "\n", encoding="utf-8"
+    )
+    clones = {"s": str(repo)}
+    rows = [json.loads(x) for x in (study / "sources.jsonl").read_text("utf-8").splitlines()]
+    terms = [json.loads(x) for x in (study / "terms.jsonl").read_text("utf-8").splitlines()]
+    out = verify_report.local(rows, terms, clones)
+    assert out == {
+        "moved": [],
+        "vanished": ["t (gone.py:1-1): gone.py is not in the commit"],
+        "uncheckable": [],
+    }
+    (repo / "b.py").write_text("y\n", encoding="utf-8")
+    subprocess.run([*git, "add", "."], check=True)
+    subprocess.run([*git, "commit", "--quiet", "-m", "two"], check=True)
+    subprocess.run([*git, "tag", "-f", "v1"], check=True)
+    again = verify_report.local(rows, terms, clones)
+    assert len(again["moved"]) == 1
+    assert again["moved"][0].startswith("s: v1 now ")
+    subprocess.run([*git, "tag", "-d", "v1"], check=True)
+    assert verify_report.local(rows, terms, clones)["vanished"][0] == "s: ref v1 is gone"
