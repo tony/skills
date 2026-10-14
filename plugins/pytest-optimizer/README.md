@@ -93,13 +93,8 @@ The detection rules are in `references/heuristic-catalog.md`:
 
 Candidates are ranked and gated (see `references/scoring-rubric.md`):
 
-| Dimension | Weight | Meaning |
-|-----------|-------:|---------|
-| safety | 0.35 | Hard gate: a score under 0.4 is dropped. Inverse of correctness risk. |
-| impact | 0.30 | Measured wall-clock delta vs the noise band, as a share of the baseline. (Within-noise scores 0.) |
-| effort | 0.15 | Inverse of refactor cost. |
-| confidence | 0.12 | Quality of timing evidence (e.g., serial, repeated, above noise floor). |
-| reversibility | 0.08 | How cleanly the change is undone if green-verify fails. |
+The five weighted dimensions (safety, impact, effort, confidence,
+reversibility), their anchors and the hard gates are defined once in that file.
 
 ## Skills
 
@@ -125,6 +120,7 @@ order: `--memory-dir`, the in-tree directory, the cache directory. See
 
 - A git repository with a pytest suite.
 - `python3` (3.9 or newer) on `PATH` for `scripts/measure.py` and `scripts/isolate.py`, which do the timing arithmetic and the Git isolation.
+- `rg` (ripgrep) on `PATH`: the static detectors search with it, and `00-scan` stops when it is missing.
 - A test command the skills can read from `AGENTS.md`, `CLAUDE.md`, `justfile`, `tox.ini`, or `pyproject.toml`.
 - Optional auto-detected plugins: `pytest-xdist`, `pytest-randomly`,
   `pytest-deadfixtures`, `pytest-timeout`. The skills ask before installing any of them into your environment.
@@ -135,8 +131,8 @@ order: `--memory-dir`, the in-tree directory, the cache directory. See
 - `skills/pytest-optimizer/SKILL.md`: orchestrator with planning and
   degradation.
 - `references/`: recipes, schemas, rubric, and capabilities.
-- `scripts/measure.py`: median, MAD, noise band, test-count and node-id gates, rubric arithmetic, memory lookup, resume check.
-- `scripts/isolate.py`: input digest, owned scratch worktrees, hash-bound patches, commit gate.
+- `scripts/measure.py`: timing and noise arithmetic, test-count and node-id gates, and the state, baseline and benchmark records (`--help` lists the commands).
+- `scripts/isolate.py`: input digest, staleness check, owned scratch worktrees, hash-bound patches, commit gate.
 - `templates/`: opt-in scaffolds (timing plugin, cache snippet) and the commit message template.
 
 ## Scope

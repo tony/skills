@@ -7,7 +7,7 @@ ownership marker, so the user's checkout, index and branches are never written.
 Each command prints one JSON object on stdout. Exit codes: 0 success, 1 a
 reported failure (the JSON says why), 2 a usage error. Standard library only.
 
-Commands: inputs, start, finish, reset, capture, apply, gate, landed.
+Commands: inputs, stale, start, finish, reset, capture, apply, gate, landed.
 Run ``isolate.py <command> --help`` for arguments.
 """
 
@@ -17,6 +17,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import os
 import pathlib
 import shutil
 import subprocess
@@ -25,18 +26,23 @@ import tempfile
 import typing as t
 
 if t.TYPE_CHECKING:
-    from collections.abc import Sequence
+    from collections.abc import Mapping, Sequence
 
 OWNER = "owner.json"
 TREE = "tree"
 PREFIX = "pytest-optimizer."
 
 
-def _git(cwd: pathlib.Path | str, *args: str) -> subprocess.CompletedProcess[bytes]:
+def _git(
+    cwd: pathlib.Path | str,
+    *args: str,
+    env: Mapping[str, str] | None = None,
+) -> subprocess.CompletedProcess[bytes]:
     return subprocess.run(  # noqa: S603
         ["git", "-C", str(cwd), *args],  # noqa: S607
         capture_output=True,
         check=False,
+        env=None if env is None else {**os.environ, **env},
     )
 
 
@@ -81,8 +87,9 @@ def owner_of(tree: pathlib.Path) -> tuple[dict[str, t.Any] | None, str]:
 def inputs(cwd: pathlib.Path) -> dict[str, t.Any]:
     """Digest HEAD plus every tracked and untracked byte that can change a test run.
 
-    Ignored files are outside the digest: gitignored caches and environments are
-    not source the suite is judged on.
+    Covers the whole repository even when ``cwd`` is a subdirectory. Ignored
+    files are outside the digest: gitignored caches and environments are not
+    source the suite is judged on.
 
     >>> import tempfile
     >>> with tempfile.TemporaryDirectory() as d:
@@ -99,7 +106,7 @@ def inputs(cwd: pathlib.Path) -> dict[str, t.Any]:
     for part in (head.encode(), diff):
         digest.update(part)
         digest.update(b"\0")
-    found = sorted(_names(_git(cwd, "ls-files", "-o", "--exclude-standard", "-z")))
+    found = sorted(_names(_git(top, "ls-files", "-o", "--exclude-standard", "-z")))
     for name in found:
         path = top / name
         digest.update(name.encode())
@@ -129,7 +136,9 @@ def start(
 
     With ``branch`` the worktree is on a new branch (or the named existing one);
     without it the worktree is detached. ``export`` copies ``base`` into a fresh
-    one-commit repository for hosts that refuse ``git worktree add``.
+    one-commit repository for hosts that refuse ``git worktree add``, including
+    files marked ``export-ignore``. ``workdir`` is where ``repo`` sits inside
+    the tree, for a project that lives in a subdirectory.
     """
     top = _toplevel(repo)
     if top is None:
@@ -144,6 +153,7 @@ def start(
     elif branch is None:
         proc = _git(top, "worktree", "add", "--detach", str(tree), sha)
     elif existing:
+        _git(top, "worktree", "prune")
         proc = _git(top, "worktree", "add", str(tree), branch)
     else:
         proc = _git(top, "worktree", "add", "-b", branch, str(tree), sha)
@@ -152,22 +162,29 @@ def start(
         return {"ok": False, "reason": _err(proc, "git worktree add failed")}
     record = {"tree": str(tree), "repo": str(top), "branch": branch, "export": export}
     (scratch / OWNER).write_text(json.dumps(record), encoding="utf-8")
-    return {"ok": True, "dir": str(scratch), "tree": str(tree), "branch": branch, "base": sha}
+    try:
+        workdir = tree / repo.resolve().relative_to(top)
+    except ValueError:
+        workdir = tree
+    return {
+        "ok": True,
+        "dir": str(scratch),
+        "tree": str(tree),
+        "workdir": str(workdir),
+        "branch": branch,
+        "base": sha,
+    }
 
 
 def _export(top: pathlib.Path, sha: str, tree: pathlib.Path) -> subprocess.CompletedProcess[bytes]:
+    """Copy every file of ``sha`` (``export-ignore`` included) into a new repository."""
     tree.mkdir()
-    archive = _git(top, "archive", "--format=tar", sha)
-    if archive.returncode != 0:
-        return archive
-    untar = subprocess.run(  # noqa: S603
-        ["tar", "-x", "-C", str(tree)],  # noqa: S607
-        input=archive.stdout,
-        capture_output=True,
-        check=False,
-    )
-    if untar.returncode != 0:
-        return untar
+    with tempfile.TemporaryDirectory(prefix=PREFIX) as holder:
+        index = {"GIT_INDEX_FILE": str(pathlib.Path(holder) / "index")}
+        for args in (("read-tree", sha), ("checkout-index", "-a", f"--prefix={tree}/")):
+            step = _git(top, *args, env=index)
+            if step.returncode != 0:
+                return step
     for args in (
         ("init", "-q"),
         ("add", "-A"),
@@ -351,6 +368,117 @@ def landed(tree: pathlib.Path, parent: str, tree_sha: str) -> dict[str, t.Any]:
     return {"ok": True, "reason": None, "head": head}
 
 
+def _load(path: pathlib.Path) -> object:
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return None
+
+
+def _load_dict(path: pathlib.Path) -> dict[str, t.Any] | None:
+    data = _load(path)
+    return t.cast("dict[str, t.Any]", data) if isinstance(data, dict) else None
+
+
+def _load_list(path: pathlib.Path) -> list[dict[str, t.Any]] | None:
+    data = _load(path)
+    return t.cast("list[dict[str, t.Any]]", data) if isinstance(data, list) else None
+
+
+def _approval_error(memory: pathlib.Path, state: Mapping[str, t.Any]) -> str | None:
+    """Return why ``plan.json`` is not the plan the user approved, or None."""
+    if not state.get("completed", {}).get("plan"):
+        return "the plan was never approved"
+    try:
+        digest = hashlib.sha256((memory / "plan.json").read_bytes()).hexdigest()
+    except OSError:
+        return "plan.json is missing or unreadable"
+    return None if digest == state.get("plan_hash") else "the plan changed after approval"
+
+
+def stale(  # noqa: PLR0911
+    memory: pathlib.Path,
+    cwd: pathlib.Path,
+    phase: str,
+    command: str | None = None,
+    pytest_version: str | None = None,
+) -> dict[str, t.Any]:
+    """Report the first reason the scan's evidence no longer describes this checkout.
+
+    ``phase`` is the phase about to run: ``benchmark``, ``plan`` or ``execute``.
+    ``rerun`` names the phase that repairs the first failure.
+
+    >>> import tempfile
+    >>> with tempfile.TemporaryDirectory() as d:
+    ...     stale(pathlib.Path(d), pathlib.Path(d), "plan")["reason"]
+    'state.json is missing or unreadable'
+    """
+    state = _load_dict(memory / "state.json")
+    if state is None:
+        return {"ok": False, "reason": "state.json is missing or unreadable", "rerun": "00-scan"}
+    if phase == "execute":
+        approved = _approval_error(memory, state)
+        if approved is not None:
+            return {"ok": False, "reason": approved, "rerun": "02-plan"}
+    rerun = "00-scan --force"
+    if not state.get("env_token"):
+        return {"ok": False, "reason": "the scan recorded no environment token", "rerun": rerun}
+    if state.get("dirty"):
+        return {"ok": False, "reason": "the scan ran on a dirty tree", "rerun": rerun}
+    head = _text(_git(cwd, "rev-parse", "--verify", "--quiet", "HEAD"))
+    if head != state.get("base_head"):
+        return {"ok": False, "reason": "HEAD differs from the scan's commit", "rerun": rerun}
+    if phase == "benchmark":
+        found = inputs(cwd)
+        if found["digest"] != state.get("inputs_digest"):
+            return {
+                "ok": False,
+                "reason": "the working tree differs from the scan's",
+                "rerun": rerun,
+            }
+        base = _load_dict(memory / "baseline.json") or {}
+        if command is not None and base.get("test_command") not in (None, command):
+            return {
+                "ok": False,
+                "reason": "the test command differs from the scan's",
+                "rerun": rerun,
+            }
+        recorded = base.get("pytest_version")
+        if pytest_version is not None and recorded not in (None, pytest_version):
+            return {
+                "ok": False,
+                "reason": "the pytest version differs from the scan's",
+                "rerun": rerun,
+            }
+        return {"ok": True, "reason": None}
+    name = "benchmarks.json" if phase == "plan" else "plan.json"
+    entries = _load_list(memory / name)
+    if entries is None:
+        return {"ok": False, "reason": f"{name} is missing or unreadable", "rerun": "00-scan"}
+    for entry in entries:
+        if phase == "plan" and entry.get("verdict") != "validated":
+            continue
+        if entry.get("env_token") != state["env_token"]:
+            return {
+                "ok": False,
+                "reason": f"{entry.get('id')} has a different token",
+                "rerun": rerun,
+            }
+        if not entry.get("patch_sha256"):
+            return {
+                "ok": False,
+                "reason": f"{entry.get('id')} has no patch hash",
+                "rerun": "01-benchmark --force",
+            }
+        if phase == "plan" and entry.get("base_head") != head:
+            return {
+                "ok": False,
+                "reason": f"{entry.get('id')} was cut from another commit",
+                "rerun": rerun,
+            }
+    return {"ok": True, "reason": None}
+
+
 def build_parser() -> argparse.ArgumentParser:
     """Build the command-line parser."""
     parser = argparse.ArgumentParser(description=__doc__)
@@ -358,6 +486,13 @@ def build_parser() -> argparse.ArgumentParser:
 
     p = sub.add_parser("inputs", help="digest of HEAD and every tracked or untracked byte")
     p.add_argument("--cwd", default=".")
+
+    p = sub.add_parser("stale", help="check the scan's evidence still describes this checkout")
+    p.add_argument("--memory-dir", required=True)
+    p.add_argument("--cwd", default=".")
+    p.add_argument("--phase", required=True, choices=("benchmark", "plan", "execute"))
+    p.add_argument("--command", dest="test_command", help="the resolved test command")
+    p.add_argument("--pytest-version", help="version the project's runner reports")
 
     p = sub.add_parser("start", help="create an owned scratch worktree")
     p.add_argument("--repo", default=".")
@@ -402,6 +537,14 @@ def main(argv: Sequence[str] | None = None) -> int:
     path = pathlib.Path
     if cmd == "inputs":
         out = inputs(path(args.cwd))
+    elif cmd == "stale":
+        out = stale(
+            path(args.memory_dir),
+            path(args.cwd),
+            args.phase,
+            args.test_command,
+            args.pytest_version,
+        )
     elif cmd == "start":
         out = start(
             path(args.repo), args.base, args.branch, existing=args.existing, export=args.export

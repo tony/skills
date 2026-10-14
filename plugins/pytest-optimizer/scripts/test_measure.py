@@ -5,15 +5,13 @@
 from __future__ import annotations
 
 import json
+import pathlib
+import re
 import subprocess
 import sys
-from typing import TYPE_CHECKING
 
 import measure  # pyright: ignore[reportImplicitRelativeImport]
 import pytest
-
-if TYPE_CHECKING:
-    import pathlib
 
 
 def test_run_preserves_unavailable_count_evidence() -> None:
@@ -188,3 +186,200 @@ def test_token_cli_binds_inputs_and_command(
         assert measure.main([*base, *extra]) == 0
         tokens.append(json.loads(capsys.readouterr().out)["token"])
     assert len(set(tokens)) == len(tokens)
+
+
+def _run_cli(capsys: pytest.CaptureFixture[str], *argv: str) -> tuple[int, dict[str, object]]:
+    code = measure.main(list(argv))
+    return code, json.loads(capsys.readouterr().out)
+
+
+@pytest.mark.parametrize(("safety", "impact"), [("2", "0.5"), ("0.5", "-1")])
+def test_score_refuses_dimensions_outside_zero_to_one(
+    capsys: pytest.CaptureFixture[str],
+    safety: str,
+    impact: str,
+) -> None:
+    """A negative impact cannot slip past the noise gate."""
+    code, out = _run_cli(
+        capsys,
+        "score",
+        *("--safety", safety, "--impact", impact),
+        *("--effort", "1", "--confidence", "1", "--reversibility", "1"),
+    )
+
+    assert code == 1
+    assert str(out["reason"]).endswith("must be between 0 and 1")
+
+
+def test_memory_dir_resolves_an_explicit_relative_path(
+    tmp_path: pathlib.Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """Phases run from the worktree, so a relative path must not stay relative."""
+    monkeypatch.chdir(tmp_path)
+    code, out = _run_cli(capsys, "memory-dir", "--memory-dir", "rel", "--repo-root", str(tmp_path))
+
+    assert code == 0
+    assert out["path"] == str(tmp_path.resolve() / "rel")
+
+
+def test_state_resume_and_complete_follow_the_phase_order(
+    tmp_path: pathlib.Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """Completing an earlier phase clears the later flags; resume names the first open one."""
+    state = tmp_path / "m" / "state.json"
+    assert _run_cli(capsys, "state", "resume", str(state))[1]["next"] == "scan"
+    for phase in ("scan", "benchmark", "plan"):
+        _run_cli(capsys, "state", "complete", str(state), "--phase", phase)
+    assert _run_cli(capsys, "state", "resume", str(state))[1]["next"] == "execute"
+
+    _, out = _run_cli(
+        capsys, "state", "complete", str(state), "--phase", "scan", "--set", 'env_token="t"'
+    )
+    saved = json.loads(state.read_text())
+
+    assert out["next"] == "benchmark"
+    assert (saved["completed"]["plan"], saved["env_token"], saved["phase"]) == (False, "t", "scan")
+
+    _run_cli(capsys, "state", "update", str(state), "--set", "last_applied_index=2")
+    kept = json.loads(state.read_text())
+    assert (kept["last_applied_index"], kept["completed"]["scan"], kept["phase"]) == (
+        2,
+        True,
+        "scan",
+    )
+
+
+def test_baseline_cli_writes_the_file_and_keeps_later_fields(
+    tmp_path: pathlib.Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """Valid runs become baseline.json; invalid runs write nothing."""
+    run = {"seconds": 1.0, "exit": 0, "passed": 5, "total": 5}
+    runs = tmp_path / "runs.jsonl"
+    runs.write_text("\n".join(json.dumps(run) for _ in range(3)))
+    out_file = tmp_path / "baseline.json"
+    out_file.write_text(json.dumps({"timings": [{"nodeid": "a"}]}))
+    argv = ["--test-command", "pytest", "--pytest-version", "9.1.1", "--plugin", "x=1"]
+
+    code, _ = _run_cli(capsys, "baseline", str(runs), "--out", str(out_file), *argv)
+    saved = json.loads(out_file.read_text())
+
+    assert code == 0
+    assert (saved["tests"], saved["plugins"], saved["timings"]) == (
+        {"passed": 5, "total": 5},
+        {"x": "1"},
+        [{"nodeid": "a"}],
+    )
+    assert measure.compare(saved, [run] * 3)["valid"] is True
+
+    runs.write_text(json.dumps(run))
+    out_file.unlink()
+    code, out = _run_cli(capsys, "baseline", str(runs), "--out", str(out_file), *argv)
+    assert (code, out["valid"], out_file.exists()) == (1, False, False)
+
+
+def test_record_stamps_and_replaces_by_id(
+    tmp_path: pathlib.Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """Entries carry the scan's token and HEAD; a re-benchmark replaces its own entry."""
+    state = tmp_path / "state.json"
+    state.write_text(json.dumps({"env_token": "tok", "base_head": "abc"}))
+    bench = tmp_path / "benchmarks.json"
+    entry = tmp_path / "entry.json"
+    for delta in (1, 2):
+        entry.write_text(json.dumps({"id": "H10", "median_delta": delta}))
+        code, _ = _run_cli(
+            capsys, "record", str(bench), "--state", str(state), "--entry", str(entry)
+        )
+        assert code == 0
+
+    assert json.loads(bench.read_text()) == [
+        {"id": "H10", "median_delta": 2, "env_token": "tok", "base_head": "abc"}
+    ]
+    state.write_text("{}")
+    assert (
+        _run_cli(capsys, "record", str(bench), "--state", str(state), "--entry", str(entry))[0] == 1
+    )
+
+
+def test_budget_totals_and_regress_cli(
+    tmp_path: pathlib.Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """The arithmetic the phases used to do in prose is one command each."""
+    _, out = _run_cli(capsys, "budget", "--phase", "scan", "--seconds", "100", "--runs", "5")
+    assert (out["estimate"], out["over"], out["timeout"]) == (700.0, False, 400.0)
+    _, out = _run_cli(
+        capsys, "budget", "--phase", "benchmark", "--seconds", "100", "--runs", "3",
+        "--hypotheses", "5",
+    )  # fmt: skip
+    assert (out["estimate"], out["fits"]) == (2400.0, 3)
+
+    base = tmp_path / "baseline.json"
+    base.write_text(json.dumps({"tests": {"passed": 10, "total": 10}}))
+    draft = tmp_path / "draft.json"
+    draft.write_text(json.dumps([{"order": 2}, {"order": 1, "removes_tests": 2}]))
+    _, out = _run_cli(capsys, "totals", str(base), str(draft))
+    assert out["totals"] == [{"order": 1, "expected_total": 8}, {"order": 2, "expected_total": 8}]
+
+    control = tmp_path / "control.json"
+    control.write_text(json.dumps({"noise": {"median": 10.0, "band": 0.5}}))
+    assert _run_cli(capsys, "regress", str(control), "11")[1]["rerun"] is True
+    code, out = _run_cli(capsys, "regress", str(control), "11", "12", "10")
+    assert (code, out["regressed"]) == (1, True)
+
+
+def test_expected_total_and_ids_cli_read_the_files(
+    tmp_path: pathlib.Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """The commands 03-execute runs behave end to end, not only through their helpers."""
+    base = tmp_path / "baseline.json"
+    base.write_text(json.dumps({"tests": {"passed": 3, "total": 3}}))
+    plan = tmp_path / "plan.json"
+    plan.write_text(json.dumps([{"order": 1, "expected_total": 2, "removed_ids": ["a::t2"]}]))
+    log = tmp_path / "log.json"
+    log.write_text(json.dumps([]))
+    listing = tmp_path / "collection.txt"
+    listing.write_text("a::t1\na::t2\na::t3\n")
+    after = tmp_path / "after.txt"
+    after.write_text("a::t1\na::t3\n")
+
+    _, out = _run_cli(capsys, "expected-total", "--through", "1", str(base), str(plan), str(log))
+    assert out == {"expected_total": 2}
+    ids = ["ids", "--plan", str(plan), "--log", str(log), str(listing), str(after)]
+    assert _run_cli(capsys, *ids, "--through", "1")[0] == 0
+    assert _run_cli(capsys, *ids)[0] == 1
+
+
+def test_runs_dir_and_exclude_cli(
+    tmp_path: pathlib.Path,
+    tmp_path_factory: pytest.TempPathFactory,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """Run files land in the git directory; the exclude line is added once."""
+    subprocess.run(["git", "init", "-q", str(tmp_path)], check=True)  # noqa: S603, S607
+    root = ["--repo-root", str(tmp_path)]
+
+    _, out = _run_cli(capsys, "runs-dir", *root, "--memory-dir", str(tmp_path / "mem"))
+    assert out["source"] == "git"
+    assert (tmp_path / ".git" / "pytest-optimizer-runs").is_dir()
+    assert _run_cli(capsys, "exclude", *root, ".pytest-optimizer/")[1]["added"] == [
+        ".pytest-optimizer/"
+    ]
+    assert _run_cli(capsys, "exclude", *root, ".pytest-optimizer/")[1]["added"] == []
+    assert (tmp_path / ".git" / "info" / "exclude").read_text().count(".pytest-optimizer/") == 1
+    not_repo = tmp_path_factory.mktemp("plain")
+    assert _run_cli(capsys, "exclude", "--repo-root", str(not_repo), "x")[0] == 1
+
+
+def test_rubric_table_weights_match_the_scorer() -> None:
+    """The reference table and WEIGHTS are two spellings of one rule."""
+    text = (pathlib.Path(__file__).parent.parent / "references" / "scoring-rubric.md").read_text()
+    rows = re.findall(r"^\| `(\w+)` \| ([\d.]+) \|", text, flags=re.MULTILINE)
+
+    assert {name: float(weight) for name, weight in rows} == measure.WEIGHTS

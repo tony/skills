@@ -34,8 +34,9 @@ Paths under `../../scripts/` resolve from this skill's directory: print the abso
 ```
 
 Each phase reads and writes durable JSON under the resolved memory directory;
-re-running resumes at the first phase whose `completed` flag is false. After `03-execute`, re-scan and
-loop until no candidate clears the rubric.
+re-running resumes at the first phase whose `completed` flag is false, which
+`measure.py state resume` reports. After `03-execute`, re-scan and loop until no
+candidate clears the rubric.
 
 The phase skills set `disable-model-invocation`, so this skill cannot invoke
 them. To run a phase, read its file and follow it:
@@ -53,18 +54,19 @@ them. To run a phase, read its file and follow it:
 
 ## Step 1: Read-only preflight
 
-Make no writes to the project here; `00-scan` owns capability probing and
-creating the memory directory.
+Write no project files here; `00-scan` owns capability probing and creating the
+memory directory. The runner may update its own environment (below).
 
 1. Read the project's own test and quality-check commands from `AGENTS.md`,
    `CLAUDE.md`, `justfile`, `tox.ini`, and `pyproject.toml`; the runner
    (`pytest`, `uv run`, `tox`, `nox`, `hatch`) is the project's choice.
 2. Resolve the memory directory by the lookup order in
-   `references/memory-schema.md`. If one exists, read `state.json` for the
-   resume point.
+   `references/memory-schema.md`. If one exists, take the resume point
+   from `measure.py state resume <memory-dir>/state.json`.
 3. Read the installed pytest version, for the plan only, through the project's
    runner so the project environment answers, not the system Python (a runner
-   such as `uv run` may sync its environment first):
+   such as `uv run` may sync its environment first; `uv run --help` lists
+`--no-sync` to avoid it):
 
    ```console
    $ pytest --version
@@ -73,31 +75,11 @@ creating the memory directory.
    Prefix the project's runner when it has one (`uv run pytest --version`,
    `tox -e py -- --version`).
 
-If there is no pytest suite, or pytest cannot start for the project's command, stop with the halted-run shape below, naming that one cause. A saving is a measured number: when
-nothing was run, state no projected timing, and call a scope change a
-hypothesis to benchmark, not a fix.
-
-A halted run (no suite here, pytest cannot start, or a prior phase's output missing) is one result
-sentence naming the first check that failed as a single clause (add no second cause, such as a dead interpreter plus a missing pytest), then one sentence on what the user
-does, with no sections, panel, bold, local paths, or projected timings. Write it
-per `references/prose-rules.md`. Reply in this shape, as plain text outside
-any code fence, with plain sentences and no bold:
-
-```text
-I stopped before measuring because this directory has no pytest suite.
-Run the skill from the project root that holds the tests, or send the path to it.
-```
-
-When the user pasted durations, add one sentence after the first: "Your durations
-put most of the time in db_session setup, which is a hypothesis to benchmark once
-the suite is available."
-
-A phase whose input is missing stops the same way:
-
-```text
-I stopped before planning because no benchmarks have been recorded.
-Run 01-benchmark first, then run this phase again.
-```
+If there is no pytest suite, or pytest cannot start for the project's command,
+stop with the halted-run shape in `references/output-contract.md`, naming
+that one cause. A saving is a measured number: when nothing was run, state no
+projected timing, and call a scope change a hypothesis to benchmark, not a fix.
+A phase whose input is missing stops the same way.
 
 ## Orchestration Plan
 
@@ -135,9 +117,9 @@ each phase's panel.
 
 After `03-execute`, present the result per `references/output-contract.md`
 and write it per `references/prose-rules.md`, then offer a re-scan, the
-opt-in scaffolds, or stop. Without an interactive question tool, stop after the
-report. The contract's closing sentence (the merge command) is the only ending;
-add no note on pushing or on what remains to speed up.
+opt-in scaffolds, or stop. The contract's closing sentence (the merge command)
+comes first and carries no note on pushing or on what remains to speed up.
+Without an interactive question tool, print the options as a plain list and stop.
 
 ## Opt-in scaffolds
 
@@ -175,11 +157,11 @@ the memory-schema reference unless the user chooses to commit it.
   token, baseline-diff rule.
 - `references/durations-parsing.md`: invoking and parsing `--durations`,
   phase bucketing, JUnit XML, the noise band.
-- `references/measure.py`: median, MAD, noise band, outcome counts, node-id
-  identity, order comparison, token, rubric arithmetic, memory-dir lookup,
-  resume check.
-- `references/isolate.py`: input digest, owned scratch worktrees, bound
-  patches, the commit gate.
+- `references/measure.py`: timing and noise arithmetic, outcome and node-id
+  gates, and the phase files' state, baseline and benchmark records
+  (`measure.py --help`).
+- `references/isolate.py`: input digest, staleness check, owned scratch
+  worktrees, bound patches, the commit gate (`isolate.py --help`).
 - `references/fixture-analysis.md`: scope model and the
   unused/duplicate/mis-scope recipes.
 - `references/safety-gates.md`: order independence, collection determinism,

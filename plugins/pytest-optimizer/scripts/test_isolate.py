@@ -5,7 +5,9 @@
 from __future__ import annotations
 
 import hashlib
+import json
 import pathlib
+import shutil
 import subprocess
 import typing as t
 
@@ -248,3 +250,139 @@ def test_inputs_digest_binds_dirty_and_untracked_bytes(repo: pathlib.Path) -> No
     ]
     assert len(set(digests)) == len(digests)
     assert (tracked["dirty"], untracked["untracked"]) == (True, 1)
+
+
+def test_inputs_digest_covers_the_whole_repo_from_a_subdirectory(repo: pathlib.Path) -> None:
+    """A monorepo project directory still binds untracked bytes anywhere in the repo."""
+    sub = repo / "pkg"
+    sub.mkdir()
+    (sub / "m.py").write_text("X = 1\n")
+    git(repo, "add", "-A")
+    git(repo, "commit", "-q", "-m", "pkg")
+    (repo / "top.txt").write_text("a\n")
+    (sub / "new.py").write_text("Y = 1\n")
+    before = isolate.inputs(sub)
+
+    (repo / "top.txt").write_text("b\n")
+    root_edit = isolate.inputs(sub)
+    (sub / "new.py").write_text("Y = 2\n")
+    sub_edit = isolate.inputs(sub)
+
+    digests = {before["digest"], root_edit["digest"], sub_edit["digest"]}
+    assert (before["untracked"], len(digests)) == (2, 3)
+    assert sub_edit["digest"] == isolate.inputs(repo)["digest"]
+
+
+def test_start_reports_the_project_directory_inside_the_tree(repo: pathlib.Path) -> None:
+    """A run started from a subdirectory gets a workdir at the same relative path."""
+    (repo / "pkg").mkdir()
+    (repo / "pkg" / "m.py").write_text("X = 1\n")
+    git(repo, "add", "-A")
+    git(repo, "commit", "-q", "-m", "pkg")
+    started = isolate.start(repo / "pkg", "HEAD")
+
+    assert started["workdir"] == str(pathlib.Path(started["tree"]) / "pkg")
+    assert (pathlib.Path(started["workdir"]) / "m.py").is_file()
+    assert isolate.finish(pathlib.Path(started["dir"]))["removed"]
+
+
+def test_export_keeps_files_marked_export_ignore(repo: pathlib.Path) -> None:
+    """The fallback tree holds every committed file, including the tests."""
+    (repo / ".gitattributes").write_text("tests export-ignore\n")
+    git(repo, "add", "-A")
+    git(repo, "commit", "-q", "-m", "attrs")
+    started = isolate.start(repo, "HEAD", export=True)
+    tree = pathlib.Path(started["tree"])
+
+    assert (tree / "tests" / "test_a.py").read_text() == "DELAY = 0.8\n"
+    assert git(tree, "status", "--porcelain") == ""
+    assert isolate.finish(pathlib.Path(started["dir"]))["removed"]
+
+
+def test_resume_reopens_a_branch_whose_scratch_directory_is_gone(repo: pathlib.Path) -> None:
+    """A cleaned temp directory leaves a stale worktree record that must not block resume."""
+    first = isolate.start(repo, "HEAD", "pytest-optimizer/run3")
+    shutil.rmtree(first["dir"])
+
+    again = isolate.start(repo, "HEAD", "pytest-optimizer/run3", existing=True)
+
+    assert again["ok"], again
+    assert isolate.owner_of(pathlib.Path(again["tree"]))[0] is not None
+    assert isolate.finish(pathlib.Path(again["dir"]))["removed"]
+
+
+def test_stale_names_the_first_check_that_fails(
+    repo: pathlib.Path,
+    tmp_path: pathlib.Path,
+) -> None:
+    """Each broken binding is reported alone, with the phase that repairs it."""
+    memory = tmp_path / "memory"
+    memory.mkdir()
+    head = git(repo, "rev-parse", "HEAD")
+    digest = isolate.inputs(repo)["digest"]
+    state = {
+        "env_token": "tok",
+        "dirty": False,
+        "base_head": head,
+        "inputs_digest": digest,
+        "completed": {"plan": True},
+    }
+    (memory / "baseline.json").write_text(
+        json.dumps({"test_command": "pytest", "pytest_version": "9.1.1"})
+    )
+
+    def check(phase: str = "benchmark", **kw: str) -> dict[str, t.Any]:
+        (memory / "state.json").write_text(json.dumps(state))
+        return isolate.stale(memory, repo, phase, **kw)
+
+    assert check(command="pytest", pytest_version="9.1.1")["ok"]
+    assert check(command="tox")["reason"] == "the test command differs from the scan's"
+    assert check(pytest_version="8.0")["reason"] == "the pytest version differs from the scan's"
+    (repo / "extra.py").write_text("X = 1\n")
+    assert check()["reason"] == "the working tree differs from the scan's"
+    (repo / "extra.py").unlink()
+    state["dirty"] = True
+    assert check()["reason"] == "the scan ran on a dirty tree"
+    state.update(dirty=False, base_head="0" * 40)
+    assert check()["reason"] == "HEAD differs from the scan's commit"
+    state["base_head"] = head
+    (memory / "benchmarks.json").write_text(
+        json.dumps([{"id": "a", "verdict": "validated", "env_token": "old", "base_head": head}])
+    )
+    assert check("plan")["reason"] == "a has a different token"
+    (memory / "benchmarks.json").write_text(
+        json.dumps([{"id": "a", "verdict": "validated", "env_token": "tok", "base_head": head}])
+    )
+    assert check("plan")["reason"] == "a has no patch hash"
+
+
+def test_stale_execute_binds_the_approved_plan(repo: pathlib.Path, tmp_path: pathlib.Path) -> None:
+    """A plan edited after approval is refused before any worktree opens."""
+    plan = tmp_path / "plan.json"
+    plan.write_text(json.dumps([{"id": "a", "env_token": "tok", "patch_sha256": "x"}]))
+    state = {
+        "env_token": "tok",
+        "dirty": False,
+        "base_head": git(repo, "rev-parse", "HEAD"),
+        "completed": {"plan": True},
+        "plan_hash": hashlib.sha256(plan.read_bytes()).hexdigest(),
+    }
+    (tmp_path / "state.json").write_text(json.dumps(state))
+    assert isolate.stale(tmp_path, repo, "execute")["ok"]
+
+    plan.write_text(plan.read_text() + " ")
+    result = isolate.stale(tmp_path, repo, "execute")
+    assert (result["reason"], result["rerun"]) == ("the plan changed after approval", "02-plan")
+    (tmp_path / "state.json").write_text(json.dumps({**state, "env_token": None}))
+    assert isolate.stale(tmp_path, repo, "execute")["reason"] == "the plan changed after approval"
+
+
+def test_main_exits_nonzero_with_a_reason_on_refusal(
+    tmp_path: pathlib.Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """A refused command exits 1 and prints one JSON reason."""
+    assert isolate.main(["reset", "--cwd", str(tmp_path)]) == 1
+    assert json.loads(capsys.readouterr().out)["reason"]
+    assert isolate.main(["stale", "--memory-dir", str(tmp_path), "--phase", "plan"]) == 1
+    assert json.loads(capsys.readouterr().out)["reason"] == "state.json is missing or unreadable"

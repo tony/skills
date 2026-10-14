@@ -39,19 +39,20 @@ The JSON has `path`, `source` (`explicit`, `in-tree`, `cache`, `new`), `exists`,
 and `cache_path`.
 
 `00-scan` creates the in-tree directory and keeps it out of `git status` by
-appending `.pytest-optimizer/` to the local exclude file (not `.gitignore`) when
-that line is absent:
+appending `.pytest-optimizer/` to the local exclude file (not `.gitignore`):
 
 ```console
-$ git rev-parse --git-path info/exclude
+$ python3 <measure.py> exclude \
+    .pytest-optimizer/
 ```
 
-It creates `cache_path` instead when the tree is read-only, the user declines
-an in-tree directory, or the write to the exclude file is refused (some sandboxed
-hosts refuse writes under `.git/`): an unexcluded in-tree directory would dirty
-`git status`. Append the paths of helpers generated from `templates/` to the same
-exclude file unless the user chooses to commit them; when the write is refused,
-tell the user to add those paths.
+The command adds only the lines that are missing and exits 1 with a reason when
+the file is not writable (some sandboxed hosts refuse writes under `.git/`).
+`00-scan` then creates `cache_path` instead, as it does when the tree is
+read-only or the user declines an in-tree directory: an unexcluded in-tree
+directory would dirty `git status`. Pass the paths of helpers generated from
+`templates/` to the same command unless the user chooses to commit them; when it
+exits 1, tell the user to add those paths.
 
 ## Idempotency token
 
@@ -69,7 +70,9 @@ supplies the digest of tracked edits and untracked files (gitignored files are
 outside it). The environment fingerprint is Python version, OS, and machine
 architecture. A phase is a no-op on re-run when `state.json` marks it
 `completed`, the token is unchanged, and its output file exists; `--force`
-overrides all three. `01-benchmark` runs no collection: it halts on a missing
+overrides all three. `isolate.py stale --phase benchmark|plan|execute` applies the bindings below
+and prints the first failure with the phase that repairs it (`rerun`).
+`01-benchmark` runs no collection: it halts on a missing
 `env_token`, a true `dirty`, or a `HEAD`, inputs digest, test command or pytest
 version that differs from the scan's, naming `00-scan --force` as the fix.
 `02-plan` and `03-execute` run no tests: they require `HEAD` to equal
@@ -82,26 +85,20 @@ is `base_head` plus exactly the commits in `execution-log.json`
 ## Run files
 
 `measure.py run` output is appended to JSONL files that live outside the
-working tree, in a per-worktree directory resolved once and printed:
+working tree. The command creates the directory and prints its `path` and
+`source`; write that literal path as `<runs-dir>` in later commands:
 
 ```console
-$ git rev-parse \
-    --path-format=absolute \
-    --git-path pytest-optimizer-runs
+$ python3 <measure.py> runs-dir \
+    --memory-dir <memory-dir>
 ```
 
-Create it with `mkdir -p`, and write that literal path as `<runs-dir>` in later
-commands. When the `mkdir` or the first write fails, use `<memory-dir>/runs`
-instead (the memory directory is already outside `git status`); when that fails
-too, use the directory this prints, and print it once:
-
-```console
-$ mktemp -d "${TMPDIR:-/tmp}/pytest-optimizer-runs.XXXXXX"
-```
-
-A temp directory does not outlive the session; a later session re-creates its run
-files, since each is deleted before its first timed run. Say which location was
-used only when the user must act on the files. Delete a run file before its first timed run, so a re-run, `--force`,
+The `source` is the per-worktree git directory (`git rev-parse --git-path`,
+which every git version supports), else `<memory-dir>/runs` (the memory
+directory is already outside `git status`), else a temporary directory. A
+temporary directory does not outlive the session; a later session re-creates its
+run files, since each is deleted before its first timed run. Say which location
+was used only when the user must act on the files. Delete a run file before its first timed run, so a re-run, `--force`,
 or a post-execute re-scan never mixes old samples into a band. Nothing here
 shows in `git status`.
 
@@ -146,8 +143,7 @@ judged against), each file's shape follows. The JSONL run files
 ```json
 {
   "phase": "benchmark",
-  "run_id": "string",
-  "collection_hash": "string",
+  "run_id": "from measure.py run-id, set when 03-execute starts",
   "env_token": "string",
   "hygiene": false,
   "base_head": "git sha of HEAD when 00-scan ran",
@@ -165,13 +161,48 @@ judged against), each file's shape follows. The JSONL run files
 flag differs re-scans even when the token is unchanged.
 
 Each phase sets its own `completed` flag when it finishes: `00-scan`,
-`01-benchmark`, `02-plan` (on approval), `03-execute` (plan exhausted). A re-run
-of an earlier phase clears the later flags.
+`01-benchmark`, `02-plan` (on approval), `03-execute` (plan exhausted). The
+script owns the flags, so a re-run of an earlier phase clears the later ones and
+a resume reads the first open phase:
+
+```console
+$ python3 <measure.py> state \
+    complete <memory-dir>/state.json \
+    --phase scan \
+    --set 'env_token="<token>"'
+```
+
+```console
+$ python3 <measure.py> state \
+    resume <memory-dir>/state.json
+```
+
+`--set` takes `KEY=JSON` and repeats. `state update` merges `--set` fields
+(`exec_branch`, `last_applied_index`) without touching the flags. `resume` prints `next` (`null` when all
+four phases are complete) and the four flags. A missing file resumes at `scan`.
 
 `plan_hash` stays `null` until the user approves `plan.json`; then it holds the
 `measure.py hash` of that file.
 
 ### `baseline.json`
+
+`measure.py baseline` writes it from the timed runs, keeping fields it does not
+own (the `timings` of `00-scan` Step 5) and writing nothing when the runs are
+invalid:
+
+```console
+$ python3 <measure.py> baseline \
+    <runs-dir>/baseline-runs.jsonl \
+    --out <memory-dir>/baseline.json \
+    --test-command "<test_command>" \
+    --pytest-version <version> \
+    --plugin pytest-xdist=<version> \
+    --flag=-p \
+    --flag=no:cacheprovider
+```
+
+`--plugin` and `--flag` repeat; `--capabilities <file>` embeds
+`capabilities.json`. The output below is its shape.
 
 ```json
 {
@@ -209,6 +240,11 @@ re-scans. A re-baseline after `03-execute` re-opens all candidates.
 ```
 
 ### `benchmarks.json`
+
+`measure.py record <memory-dir>/benchmarks.json --state <memory-dir>/state.json
+--entry <entry.json>` upserts one entry by `id` and stamps `env_token` and
+`base_head` from `state.json`; it exits 1 when the entry has no `id` or the
+state has no token.
 
 ```json
 [
@@ -267,7 +303,8 @@ type checker pass. Every other entry is `"speedup"` (the default when absent).
 ]
 ```
 
-`expected_total` is cumulative: the collected-test count after this item and
+`measure.py totals <memory-dir>/baseline.json <draft.json>` computes it from a
+JSON list of `{order, removes_tests}`. `expected_total` is cumulative: the collected-test count after this item and
 every earlier item apply. It starts at the baseline `tests.total` and drops by
 the tests each deselecting item removes, so a later item inherits the reduced
 count.
@@ -280,7 +317,7 @@ count.
     "order": 1,
     "id": "H10-conftest-make_config",
     "applied": true,
-    "verify": { "passed": true, "seconds": 7.9, "output_ref": "checkpoint-1.txt" },
+    "verify": { "passed": true, "seconds": 7.9, "output_ref": "verify-1.jsonl" },
     "commit_sha": "abc1234",
     "skip_reason": null,
     "ts": "ISO-8601"

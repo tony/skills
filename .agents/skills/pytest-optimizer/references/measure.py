@@ -5,7 +5,8 @@ Each command prints one JSON object on stdout. Exit codes: 0 success, 1 a
 reported failure (the JSON says why), 2 a usage error. Standard library only.
 
 Commands: run, band, compare, expected-total, ids, order, token, hash, impact,
-score, memory-dir, chain.
+score, memory-dir, chain, baseline, record, state, run-id, budget, totals, regress,
+runs-dir, exclude.
 `run` exits 0 whenever it timed the command; read `exit` in its JSON for the
 suite's own status.
 Run ``measure.py <command> --help`` for arguments.
@@ -15,6 +16,7 @@ Run ``measure.py <command> --help`` for arguments.
 from __future__ import annotations
 
 import argparse
+import datetime
 import hashlib
 import json
 import math
@@ -22,6 +24,7 @@ import os
 import pathlib
 import platform
 import re
+import secrets
 import signal
 import statistics
 import subprocess
@@ -39,6 +42,9 @@ DEFAULT_K = 3.0
 MAD_SCALE = 1.4826
 MEMORY_DIRNAME = ".pytest-optimizer"
 MIN_RUNS = 3
+PHASES = ("scan", "benchmark", "plan", "execute")
+BUDGET_LIMITS = {"scan": 900.0, "benchmark": 1800.0}
+TIMEOUT_FACTOR = 4
 DEFAULT_TIMEOUT = 1800.0
 OUTPUT_TAIL = 1 << 20
 TIMED_OUT = 124
@@ -595,7 +601,15 @@ def score(dims: dict[str, float], hygiene: bool = False) -> dict[str, t.Any]:
     ... )
     >>> (out["total"], out["dropped"])
     (1.0, None)
+    >>> score({"safety": 2, "impact": 0, "effort": 1, "confidence": 1, "reversibility": 1})
+    Traceback (most recent call last):
+    ...
+    ValueError: safety must be between 0 and 1
     """
+    bad = next((n for n in WEIGHTS if not 0 <= dims[n] <= 1), None)
+    if bad is not None:
+        msg = f"{bad} must be between 0 and 1"
+        raise ValueError(msg)
     if hygiene:
         rest = 1 - WEIGHTS["impact"]
         total = round(sum(w * dims[n] for n, w in WEIGHTS.items() if n != "impact") / rest, 3)
@@ -641,7 +655,7 @@ def memory_dir(
         base = pathlib.Path(environ.get("XDG_CACHE_HOME") or pathlib.Path.home() / ".cache")
     cache = base / "pytest-optimizer" / repo_id
     if explicit:
-        path, source = pathlib.Path(explicit), "explicit"
+        path, source = pathlib.Path(explicit).resolve(), "explicit"
     elif in_tree.is_dir():
         path, source = in_tree, "in-tree"
     elif cache.is_dir():
@@ -654,6 +668,240 @@ def memory_dir(
         "exists": path.is_dir(),
         "cache_path": str(cache),
     }
+
+
+def run_id(now: datetime.datetime | None = None) -> str:
+    """Return a branch-safe id for one ``03-execute`` run.
+
+    >>> run_id(datetime.datetime(2026, 1, 2, 3, 4, 5, tzinfo=datetime.timezone.utc))[:19]
+    'run-20260102T030405'
+    """
+    stamp = (now or datetime.datetime.now(datetime.timezone.utc)).strftime("%Y%m%dT%H%M%S")
+    return f"run-{stamp}-{secrets.token_hex(2)}"
+
+
+def _write_json(path: pathlib.Path, data: object) -> None:
+    """Replace ``path`` with ``data`` so a crash leaves the old file or the new one."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_name(path.name + ".tmp")
+    tmp.write_text(json.dumps(data, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+    tmp.replace(path)
+
+
+def _load_object(path: pathlib.Path) -> dict[str, t.Any]:
+    """Read a JSON object, or an empty one when the file does not exist."""
+    if not path.exists():
+        return {}
+    data = json.loads(path.read_text(encoding="utf-8"))
+    if not isinstance(data, dict):
+        msg = f"{path.name} is not a JSON object"
+        raise TypeError(msg)
+    return t.cast("dict[str, t.Any]", data)
+
+
+def resume(state: Mapping[str, t.Any]) -> dict[str, t.Any]:
+    """Name the first phase whose ``completed`` flag is not true.
+
+    >>> resume({})["next"]
+    'scan'
+    >>> resume({"completed": {"scan": True, "benchmark": True}})["next"]
+    'plan'
+    >>> resume({"completed": dict.fromkeys(PHASES, True)})["next"]
+    """
+    done = t.cast("Mapping[str, object]", state.get("completed") or {})
+    nxt = next((p for p in PHASES if done.get(p) is not True), None)
+    return {"next": nxt, "completed": {p: done.get(p) is True for p in PHASES}}
+
+
+def complete(state: dict[str, t.Any], phase: str, extra: Mapping[str, t.Any]) -> dict[str, t.Any]:
+    """Mark ``phase`` done, clear every later flag, and merge ``extra`` fields.
+
+    >>> out = complete({"completed": {"scan": True, "benchmark": True}}, "scan", {"dirty": False})
+    >>> (out["phase"], out["completed"]["benchmark"], out["dirty"])
+    ('scan', False, False)
+    """
+    at = PHASES.index(phase)
+    flags = resume(state)["completed"]
+    for name in PHASES[at + 1 :]:
+        flags[name] = False
+    flags[phase] = True
+    return {**state, **extra, "phase": phase, "completed": flags}
+
+
+def baseline_record(
+    runs: Sequence[dict[str, t.Any]],
+    meta: Mapping[str, t.Any],
+    previous: Mapping[str, t.Any] | None = None,
+) -> dict[str, t.Any]:
+    """Assemble ``baseline.json`` from timed runs; keep fields written by later steps.
+
+    >>> rs = [{"seconds": 1.0, "exit": 0, "passed": 5, "total": 5}] * 3
+    >>> out = baseline_record(rs, {"test_command": "pytest"}, {"timings": [1]})
+    >>> (out["valid"], out["test_command"], out["timings"], out["tests"]["total"])
+    (True, 'pytest', [1], 5)
+    >>> baseline_record(rs[:1], {})["valid"]
+    False
+    """
+    out = band(runs)
+    if not out["valid"]:
+        return out
+    stamp = datetime.datetime.now(datetime.timezone.utc).isoformat(timespec="seconds")
+    return {
+        **(previous or {}),
+        "captured_at": stamp,
+        "python": platform.python_version(),
+        **meta,
+        **{k: out[k] for k in ("runs", "noise", "tests")},
+        "valid": True,
+    }
+
+
+def record(
+    entries: Sequence[dict[str, t.Any]],
+    entry: dict[str, t.Any],
+    state: Mapping[str, t.Any],
+) -> list[dict[str, t.Any]]:
+    """Upsert one ``benchmarks.json`` entry by id, stamped with the scan's token and HEAD.
+
+    >>> st = {"env_token": "tok", "base_head": "abc"}
+    >>> out = record([{"id": "a", "median_delta": 1}], {"id": "a", "median_delta": 2}, st)
+    >>> out
+    [{'id': 'a', 'median_delta': 2, 'env_token': 'tok', 'base_head': 'abc'}]
+    >>> [e["id"] for e in record(out, {"id": "b"}, st)]
+    ['a', 'b']
+    """
+    stamped = {**entry, "env_token": state["env_token"], "base_head": state["base_head"]}
+    kept = [stamped if e.get("id") == entry["id"] else e for e in entries]
+    return kept if any(e.get("id") == entry["id"] for e in entries) else [*kept, stamped]
+
+
+def budget(
+    phase: str, seconds: float, runs: int, hypotheses: int = 0, limit: float | None = None
+) -> dict[str, t.Any]:
+    """Estimate a phase's cost from one run's ``seconds`` and compare it to the limit.
+
+    ``scan`` costs ``runs + 2`` runs. ``benchmark`` costs ``runs + 1`` runs for
+    the control and for each hypothesis; ``fits`` counts the hypotheses that fit.
+
+    >>> budget("scan", 10.0, 5)["estimate"]
+    70.0
+    >>> out = budget("benchmark", 10.0, 5, hypotheses=4, limit=200.0)
+    >>> (out["estimate"], out["over"], out["fits"], out["control_fits"])
+    (300.0, True, 2, True)
+    >>> budget("scan", 10.0, 5)["timeout"]
+    40.0
+    """
+    cap = BUDGET_LIMITS[phase] if limit is None else limit
+    if phase == "scan":
+        estimate = (runs + 2) * seconds
+        fits = 0
+    else:
+        each = (runs + 1) * seconds
+        estimate = each * (1 + hypotheses)
+        fits = max(0, min(hypotheses, int(cap // each) - 1)) if each > 0 else hypotheses
+    return {
+        "estimate": round(estimate, 4),
+        "limit": cap,
+        "over": estimate > cap,
+        "fits": fits,
+        "control_fits": phase == "scan" or (runs + 1) * seconds <= cap,
+        "timeout": round(TIMEOUT_FACTOR * seconds, 4),
+    }
+
+
+def totals(baseline_total: int, draft: Sequence[dict[str, t.Any]]) -> list[dict[str, int]]:
+    """Cumulative ``expected_total`` per plan item from each item's ``removes_tests``.
+
+    >>> totals(10, [{"order": 2, "removes_tests": 1}, {"order": 1, "removes_tests": 2}])
+    [{'order': 1, 'expected_total': 8}, {'order': 2, 'expected_total': 7}]
+    """
+    running = baseline_total
+    out: list[dict[str, int]] = []
+    for item in sorted(draft, key=lambda i: i["order"]):
+        running -= int(item.get("removes_tests") or 0)
+        out.append({"order": item["order"], "expected_total": running})
+    return out
+
+
+def regress(control: Mapping[str, t.Any], seconds: Sequence[float]) -> dict[str, t.Any]:
+    """Compare verify timings with the control median plus its band.
+
+    One timing over the limit asks for two more (``rerun``); the median of three
+    over the limit is a regression.
+
+    >>> ctl = {"noise": {"median": 10.0, "band": 0.5}}
+    >>> regress(ctl, [10.2])
+    {'limit': 10.5, 'median': 10.2, 'regressed': False, 'rerun': False}
+    >>> regress(ctl, [11.0])["rerun"]
+    True
+    >>> regress(ctl, [11.0, 12.0, 10.0])["regressed"]
+    True
+    """
+    limit = round(control["noise"]["median"] + control["noise"]["band"], 6)
+    med = round(statistics.median(seconds), 6)
+    over = med > limit
+    return {
+        "limit": limit,
+        "median": med,
+        "regressed": over and len(seconds) >= MIN_RUNS,
+        "rerun": over and len(seconds) < MIN_RUNS,
+    }
+
+
+def runs_dir(root: pathlib.Path, memory: pathlib.Path) -> dict[str, t.Any]:
+    """Pick and create the directory for run files: git dir, memory dir, then a temp dir.
+
+    The git directory is outside ``git status``; a temp directory does not
+    outlive the session.
+
+    >>> import tempfile
+    >>> with tempfile.TemporaryDirectory() as d:
+    ...     r = pathlib.Path(d)
+    ...     _ = _git(r, "init", "-q")
+    ...     out = runs_dir(r, r / "mem")
+    >>> out["source"]
+    'git'
+    """
+    proc = _git(root, "rev-parse", "--git-path", "pytest-optimizer-runs")
+    candidates = [("memory", memory / "runs")]
+    if proc.returncode == 0 and proc.stdout.strip():
+        candidates.insert(0, ("git", (root / proc.stdout.strip()).resolve()))
+    for source, path in candidates:
+        try:
+            path.mkdir(parents=True, exist_ok=True)
+        except OSError:
+            continue
+        if os.access(path, os.W_OK):
+            return {"path": str(path), "source": source}
+    return {"path": tempfile.mkdtemp(prefix="pytest-optimizer-runs."), "source": "temp"}
+
+
+def exclude(root: pathlib.Path, lines: Sequence[str]) -> dict[str, t.Any]:
+    """Append each missing line to the local git exclude file.
+
+    >>> import tempfile
+    >>> with tempfile.TemporaryDirectory() as d:
+    ...     r = pathlib.Path(d)
+    ...     _ = _git(r, "init", "-q")
+    ...     first = exclude(r, [".pytest-optimizer/"])["added"]
+    ...     second = exclude(r, [".pytest-optimizer/"])["added"]
+    >>> (first, second)
+    (['.pytest-optimizer/'], [])
+    """
+    proc = _git(root, "rev-parse", "--git-path", "info/exclude")
+    if proc.returncode != 0:
+        return {"ok": False, "reason": proc.stderr.strip() or "not a git repository"}
+    path = (root / proc.stdout.strip()).resolve()
+    try:
+        current = path.read_text(encoding="utf-8") if path.exists() else ""
+        missing = [ln for ln in lines if ln not in current.splitlines()]
+        if missing:
+            path.parent.mkdir(parents=True, exist_ok=True)
+            sep = "" if not current or current.endswith("\n") else "\n"
+            path.write_text(current + sep + "\n".join(missing) + "\n", encoding="utf-8")
+    except OSError as exc:
+        return {"ok": False, "reason": f"exclude file not writable: {exc.strerror}"}
+    return {"ok": True, "added": missing}
 
 
 def _read_runs(path: str) -> list[dict[str, t.Any]]:
@@ -810,6 +1058,51 @@ def build_parser() -> argparse.ArgumentParser:  # noqa: PLR0915
     p.add_argument("--cwd", default=".")
     p.add_argument("commits", nargs="*", help="logged commit shas, in order")
 
+    p = sub.add_parser("baseline", help="write baseline.json from the timed baseline runs")
+    p.add_argument("runs", help="JSONL file from `run`")
+    p.add_argument("--out", required=True, help="baseline.json; existing fields are kept")
+    p.add_argument("--test-command", required=True)
+    p.add_argument("--pytest-version", required=True)
+    p.add_argument("--plugin", action="append", default=[], help="NAME=VERSION")
+    p.add_argument("--flag", action="append", default=[], help="a measurement flag, repeatable")
+    p.add_argument("--capabilities", help="capabilities.json to embed")
+
+    p = sub.add_parser("record", help="upsert one benchmarks.json entry, stamped from state.json")
+    p.add_argument("file", help="benchmarks.json")
+    p.add_argument("--state", required=True, help="state.json")
+    p.add_argument("--entry", required=True, help="JSON file holding one entry with an id")
+
+    p = sub.add_parser("state", help="read or advance the phase flags in state.json")
+    p.add_argument("action", choices=("resume", "complete", "update"))
+    p.add_argument("file", help="state.json")
+    p.add_argument("--phase", choices=PHASES, help="phase to mark complete")
+    p.add_argument("--set", dest="fields", action="append", default=[], help="KEY=JSON")
+
+    sub.add_parser("run-id", help="id for one 03-execute run")
+
+    p = sub.add_parser("budget", help="estimate a phase's cost against its time limit")
+    p.add_argument("--phase", choices=tuple(BUDGET_LIMITS), required=True)
+    p.add_argument("--seconds", type=float, required=True, help="one run of the test command")
+    p.add_argument("--runs", type=int, required=True)
+    p.add_argument("--hypotheses", type=int, default=0)
+    p.add_argument("--limit", type=float, help="the project's own limit in seconds")
+
+    p = sub.add_parser("totals", help="cumulative expected_total per drafted plan item")
+    p.add_argument("baseline", help="baseline.json")
+    p.add_argument("draft", help="JSON list of {order, removes_tests}")
+
+    p = sub.add_parser("regress", help="compare verify timings with the control median plus band")
+    p.add_argument("control", help="control.json")
+    p.add_argument("seconds", type=float, nargs="+", help="one timing, or three after a rerun")
+
+    p = sub.add_parser("runs-dir", help="create the directory for run files")
+    p.add_argument("--repo-root", default=".")
+    p.add_argument("--memory-dir", required=True)
+
+    p = sub.add_parser("exclude", help="add lines to the local git exclude file")
+    p.add_argument("--repo-root", default=".")
+    p.add_argument("lines", nargs="+")
+
     p = sub.add_parser("memory-dir", help="resolve the memory directory")
     p.add_argument("--memory-dir", dest="explicit")
     p.add_argument("--repo-root", default=".")
@@ -825,6 +1118,78 @@ def _strip_separator(argv: Sequence[str]) -> list[str]:
     ['pytest', '-q']
     """
     return list(argv[1:] if argv[:1] == ["--"] else argv)
+
+
+_EXTRA = (
+    "baseline",
+    "record",
+    "state",
+    "run-id",
+    "budget",
+    "totals",
+    "regress",
+    "runs-dir",
+    "exclude",
+)
+
+
+def _extra(args: argparse.Namespace) -> int:  # noqa: PLR0911
+    """Run the commands that read or write the phase files."""
+    cmd = args.command
+    if cmd == "run-id":
+        return _emit({"run_id": run_id()})
+    if cmd == "runs-dir":
+        root = pathlib.Path(args.repo_root).resolve()
+        return _emit(runs_dir(root, pathlib.Path(args.memory_dir).resolve()))
+    if cmd == "exclude":
+        out = exclude(pathlib.Path(args.repo_root).resolve(), args.lines)
+        return _emit(out, out["ok"])
+    if cmd == "budget":
+        return _emit(budget(args.phase, args.seconds, args.runs, args.hypotheses, args.limit))
+    if cmd == "totals":
+        total = json.loads(_read_text(args.baseline))["tests"]["total"]
+        return _emit({"totals": totals(total, json.loads(_read_text(args.draft)))})
+    if cmd == "regress":
+        out = regress(json.loads(_read_text(args.control)), args.seconds)
+        return _emit(out, not out["regressed"])
+    if cmd == "baseline":
+        out_path = pathlib.Path(args.out)
+        meta: dict[str, t.Any] = {
+            "pytest_version": args.pytest_version,
+            "plugins": dict(p.split("=", 1) for p in args.plugin),
+            "test_command": args.test_command,
+            "measurement_flags": args.flag,
+        }
+        if args.capabilities:
+            meta["capabilities"] = json.loads(_read_text(args.capabilities))
+        out = baseline_record(_read_runs(args.runs), meta, _load_object(out_path))
+        if out["valid"]:
+            _write_json(out_path, {k: v for k, v in out.items() if k != "valid"})
+        return _emit(out, out["valid"])
+    if cmd == "record":
+        entry = json.loads(_read_text(args.entry))
+        state = _load_object(pathlib.Path(args.state))
+        if "id" not in entry or not state.get("env_token") or not state.get("base_head"):
+            return _emit(
+                {"ok": False, "reason": "entry needs an id; state needs env_token and base_head"},
+                ok=False,
+            )
+        path = pathlib.Path(args.file)
+        current: list[dict[str, t.Any]] = json.loads(_read_text(args.file)) if path.exists() else []
+        _write_json(path, record(current, entry, state))
+        return _emit({"ok": True, "id": entry["id"]})
+    path = pathlib.Path(args.file)
+    state = _load_object(path)
+    if args.action == "resume":
+        return _emit(resume(state))
+    extra = {k: json.loads(v) for k, v in (f.split("=", 1) for f in args.fields)}
+    if args.action == "update":
+        _write_json(path, {**state, **extra})
+        return _emit({"ok": True})
+    if not args.phase:
+        return _emit({"ok": False, "reason": "complete needs --phase"}, ok=False)
+    _write_json(path, complete(state, args.phase, extra))
+    return _emit({"ok": True, "next": resume(_load_object(path))["next"]})
 
 
 def _dispatch(args: argparse.Namespace) -> int:  # noqa: PLR0911
@@ -871,10 +1236,15 @@ def _dispatch(args: argparse.Namespace) -> int:  # noqa: PLR0911
         return _emit({"impact": impact(args.delta, args.baseline, args.clears_noise)})
     if cmd == "score":
         dims = {name: getattr(args, name) for name in WEIGHTS}
-        return _emit(score(dims, args.hygiene))
+        try:
+            return _emit(score(dims, args.hygiene))
+        except ValueError as exc:
+            return _emit({"valid": False, "reason": str(exc)}, ok=False)
     if cmd == "chain":
         out = chain(pathlib.Path(args.cwd), args.base, args.commits, args.head)
         return _emit(out, out["ok"])
+    if cmd in _EXTRA:
+        return _extra(args)
     root = pathlib.Path(args.repo_root)
     return _emit(memory_dir(args.explicit, root, os.environ, _git_remote(root)))
 

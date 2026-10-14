@@ -19,11 +19,12 @@ Turn measured candidates into a reviewable commit plan. This phase writes only
 inclusion threshold, `--force` to recompute, and `--memory-dir` to override the
 memory location.
 
-Arithmetic goes through `references/measure.py` (Python 3 standard
-library). That path resolves from this skill's own directory, not the
-project's working directory: resolve this file's directory, join
-`references/measure.py`, print the absolute path once, and write that
-literal path in each command below where `<measure.py>` appears.
+Arithmetic goes through `references/measure.py` and the staleness check
+through `references/isolate.py` (Python 3 standard library). Both paths
+resolve from this skill's own directory, not the project's working directory:
+resolve this file's directory, join each path, print the absolute paths once,
+and write those literal paths in each command below where `<measure.py>` and
+`<isolate.py>` appear.
 
 ## Step 1: Load and score
 
@@ -33,12 +34,18 @@ missing, stop with the halted-run shape in `references/output-contract.md`
 and tell the user to run `pytest-optimizer:01-benchmark` first.
 
 Read `benchmarks.json`, `baseline.json` and `state.json`. The evidence must
-still describe this checkout: `state.json` has `dirty` false, `git rev-parse HEAD`
-equals its `base_head`, and every entry you score has an `env_token` equal to
-its `env_token`, a `patch_sha256` and a `base_head` equal to it. Otherwise stop
-with the halted-run shape and send the user to `pytest-optimizer:00-scan --force`
-(a different `HEAD` or token) or `pytest-optimizer:01-benchmark --force` (an
-entry with no token or patch).
+still describe this checkout (a clean scan at this `HEAD`, and every validated
+entry carrying the scan's `env_token`, a `patch_sha256` and this `HEAD` as its
+`base_head`):
+
+```console
+$ python3 <isolate.py> stale \
+    --memory-dir <memory-dir> \
+    --phase plan
+```
+
+On exit 1, stop with the halted-run shape and send the user to the phase its
+`rerun` names (`pytest-optimizer:` followed by it).
 
 Score every `validated` candidate with `references/scoring-rubric.md`: get
 `impact` from `measure.py impact --delta <median_delta> --baseline <median>`,
@@ -69,18 +76,32 @@ target project's convention. Write the message per
 other tool trailer, no emoji: hosts add them by default. Each entry records
 order, heuristic id, score breakdown, target files, draft subject and body, the
 verify command (project tests and quality checks), the entry's `env_token`,
-`patch`, `patch_sha256`, `files`, `cache` and `removed_ids`, `expected_total` (the
-collected-test count after this item and every earlier item apply: the baseline
-`tests.total`, less the tests each earlier or current deselecting item removes), and
-`depends_on`. The approval reply shows the draft subject only; the body goes into `plan.json` on approval. Keep the draft in the reply, not on disk: nothing is written until
+`patch`, `patch_sha256`, `files`, `cache` and `removed_ids`, `expected_total`
+(the collected-test count after this item and every earlier item apply), and
+`depends_on`. Write the drafted orders and each item's `removes_tests` (0 when it
+deselects nothing) to a scratch JSON list and take every `expected_total` from
+the script, never by hand:
+
+```console
+$ python3 <measure.py> totals \
+    <memory-dir>/baseline.json \
+    <draft.json>
+```
+ The approval reply shows the draft subject only; the body goes into `plan.json` on approval. Keep the draft in the reply, not on disk: nothing is written until
 approval.
 
-Confirm each path in `files` exists at `HEAD`, unless the patch creates it. An
-item whose target is absent is not planned: list it under `## Dropped at the
+Confirm each path in `files` exists at `HEAD` (paths are relative to the
+repository root; exit 1 means absent), unless the patch creates it:
+
+```console
+$ git cat-file -e HEAD:<path>
+```
+
+An item whose target is absent is not planned: list it under `## Dropped at the
 gate` with "target file absent at HEAD", and count only the kept items in the
 hero line. A deselecting item (`removes_tests` in `benchmarks.json`) states "removes
-N tests from the default run" and sets `expected_total` to the reduced count, carries that count into every later item's `expected_total`, and
-its saving reads as time not spent on those tests, not as a faster suite.
+N tests from the default run", and its saving reads as time not spent on those
+tests, not as a faster suite.
 
 Each saving was measured alone against the control. Independent changes can
 overlap (widening a sleeping fixture and removing its sleep do not add), so
@@ -107,6 +128,10 @@ mode before it and no closing note after the last section. Wait for the reply:
 ## Ranked plan
 
 - 1. H10 mis-scoped fixture: widen make_config to session scope in tests/conftest.py under the subject "tests(fixtures) Widen make_config to session scope", total score 0.87, saved 2.7s measured alone above the 0.44s band, verified with pytest expecting 40 of 40 passing.
+
+## Dropped at the gate
+
+- H33 fixed sleep in test_report: saves 0.03s, inside the noise band, so impact is 0.
 ```
 
 Without an interactive session, write nothing and stop: an unapproved plan is not
@@ -119,8 +144,15 @@ draft, then record approval:
 $ python3 <measure.py> hash <memory-dir>/plan.json
 ```
 
-Store that value as `plan_hash` and set `phase=plan` and `completed.plan=true` in
-`state.json`.
+Record the approval, which clears the later flags:
+
+```console
+$ python3 <measure.py> state \
+    complete <memory-dir>/state.json \
+    --phase plan \
+    --set 'plan_hash="<hash>"'
+```
+
 `plan.json` is the contract `pytest-optimizer:03-execute` consumes; a request that
 explicitly says to approve and apply the plan is approval for this plan only.
 

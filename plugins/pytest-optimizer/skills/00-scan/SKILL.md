@@ -40,7 +40,14 @@ substitute it wherever this file writes `pytest`. Every later phase reuses
 
 The measurement flags and how they attach to a wrapper are defined once in
 `../../references/durations-parsing.md` ("Measurement command"); every command
-below writes `pytest` for the resolved `test_command` plus those flags.
+below writes `pytest` for the resolved `test_command` plus those flags, and
+adds `-n 0` where that section says to (an xdist-configured suite), though the
+commands shown omit it.
+
+The static detectors search with `rg` (ripgrep). Run `rg --version`; when it is
+missing, stop with the halted-run shape naming ripgrep as the missing
+prerequisite, since a scan without it would report no hypotheses as if the suite
+were clean.
 
 If the project has no pytest suite, or the test command cannot start (pytest is
 not installed for it), stop with the halted-run shape in
@@ -66,8 +73,8 @@ $ python3 <isolate.py> inputs \
 
 Compute the idempotency token defined in the schema with `measure.py token
 --head <HEAD sha> --collection collection.txt --version <name>=<version> ...`
-(pytest and each plugin) `--inputs-digest <digest> --command "<test_command>"`,
-and store it in `state.json` as `env_token`, with `base_head` set to the same
+(pytest and each plugin) `--inputs-digest <digest> --command "<test_command>"`.
+Step 7 stores it in `state.json` as `env_token`, with `base_head` set to the same
 `HEAD` sha, `inputs_digest`, `dirty` (the digest's flag), and `hygiene` set to
 whether `--hygiene` was passed. A scan of a dirty tree is for inspection only:
 `01-benchmark` and everything after it stop until the tree is clean and the scan
@@ -90,15 +97,24 @@ environment, and without it the detector takes its fallback.
 ## Step 4: Establish the baseline and noise band
 
 Run the command below once without the redirect as a warm-up; its `seconds` is
-`t`. The scan costs about `(runs + 2) * t` in total: the warm-up, `--runs`
-baseline runs, and the profile run; print that estimate before the first timed run. Above the default budget of 900 seconds
-(the project's own limit, when its docs set one, replaces it), ask the user to
-confirm or lower `--runs` (never below 3). Without an interactive question
-tool, use `--runs=3` when that fits the budget and say so in the closing line;
-when even three runs exceed it, stop before the first timed run and print the
-estimate. Then time `--runs` measurement runs. Delete
-`<runs-dir>/baseline-runs.jsonl` first, then append each JSON line to it; pass
-`--timeout` of four times the warm-up's `seconds` so a hung suite is killed:
+`t`. Price the scan (the warm-up, `--runs` baseline runs, and the profile run)
+and print its `estimate` before the first timed run; the project's own limit,
+when its docs set one, replaces the 900-second default:
+
+```console
+$ python3 <measure.py> budget \
+    --phase scan \
+    --seconds <t> \
+    --runs <N>
+```
+
+When `over` is true, ask the user to confirm or lower `--runs` (never below 3).
+Without an interactive question tool, use `--runs=3` when that budget call says
+it fits and say so in the closing line; when even three runs exceed it, stop
+before the first timed run and print the estimate. Then time `--runs`
+measurement runs. Delete `<runs-dir>/baseline-runs.jsonl` first, then append each
+JSON line to it; pass the `timeout` the budget call printed as `--timeout` so a
+hung suite is killed:
 
 ```console
 $ python3 <measure.py> run \
@@ -109,17 +125,25 @@ $ python3 <measure.py> run \
 
 Substitute `test_command` for `pytest`. Run `isolate.py inputs` again: when its
 digest differs from Step 2's, the timed runs wrote files, so list them from
-`git status --short` in the closing line. `measure.py band <runs-dir>/baseline-runs.jsonl`
-prints the median, MAD, and noise band (floored at the larger of 50 ms and 1% of
-the median). If `valid` is false, stop and report its `reason`: failed tests, a
+`git status --short` in the closing line. `measure.py baseline` computes the
+median, MAD and noise band (floored at the larger of 50 ms and 1% of the
+median) and writes `baseline.json` with the environment, versions, capabilities,
+measurement flags and passed/total counts (the shape and arguments are in
+`../../references/memory-schema.md`):
+
+```console
+$ python3 <measure.py> baseline \
+    <runs-dir>/baseline-runs.jsonl \
+    --out <memory-dir>/baseline.json \
+    --test-command "<test_command>" \
+    --pytest-version <version>
+```
+
+If it exits 1, nothing is written: stop and report its `reason`. Failed tests, a
 timeout, too few runs, unavailable outcome counts and inconsistent counts are
-distinct failures.
-Remeasure unavailable counts only when the same runner and selection expose
-an outcome summary; never fill them from a separate collection command.
-Write the env fingerprint, versions,
-capabilities, the measurement flags, the band, and the passed/total counts to
-`baseline.json`. See
-`../../references/durations-parsing.md`.
+distinct failures. Remeasure unavailable counts only when the same runner and
+selection expose an outcome summary; never fill them from a separate collection
+command. See `../../references/durations-parsing.md`.
 
 ## Step 5: Profile slowest tests and fixtures
 
@@ -141,16 +165,27 @@ Run every detector in `../../references/heuristic-catalog.md`, using
 `../../references/fixture-analysis.md` for the fixture recipes and
 `../../references/parametrize-convention.md` for the typing and parametrize
 gaps (H26-H32, only under `--hygiene`). Emit H19 only when `time pytest --co -q` is a small share of
-the baseline (H22 rules it out). Apply the `getfixturevalue` guard (H09)
+the baseline (the collection-time check, H22, rules it out). Apply the `getfixturevalue` guard (H09)
 before proposing any fixture deletion.
 
 ## Step 7: Emit hypotheses
 
 Write `hypotheses.json`: one entry per firing detector with its heuristic id,
-raw evidence, and prior risk/effort. H01-H07 and H17/H18 are measurements and
-gates: they appear in the report sections, never as entries. Estimate no impact here; `01-benchmark`
-measures it. Update `state.json` (`phase=scan`, `completed.scan=true`, the later `completed`
-flags false, token).
+raw evidence, and prior risk/effort. The measurement heuristics (H01-H07) and
+the safety gates (H17, H18) appear in the report sections, never as entries.
+Estimate no impact here; `01-benchmark` measures it. Then record the scan, which
+also clears the later phases' flags:
+
+```console
+$ python3 <measure.py> state \
+    complete <memory-dir>/state.json \
+    --phase scan \
+    --set 'env_token="<token>"' \
+    --set 'base_head="<HEAD sha>"' \
+    --set 'inputs_digest="<digest>"' \
+    --set 'dirty=<true|false>' \
+    --set 'hygiene=<true|false>'
+```
 
 ## Step 8: Report
 
@@ -164,7 +199,7 @@ paths:
 
 ## Environment
 
-- pytest 8.3.2 with xdist 3.6.1; deadfixtures not installed, so its check is skipped.
+- pytest 9.1.1 with xdist 3.8.0; deadfixtures not installed, so its check is skipped.
 
 ## Baseline
 
@@ -181,12 +216,13 @@ paths:
 ## Hypotheses
 
 - H10 mis-scoped fixture: widen db_session to session scope, 4.8s of setup repeated per test.
+- H33 fixed sleep in test_report: time.sleep(0.02) in the test body.
 
 Benchmarking the 2 hypotheses measures what each recovers.
 ```
 
 After the last section write at most one closing sentence (files the timed runs
 wrote, a dirty tree, a lowered run count), then an `AskUserQuestion` panel
-offering to benchmark the hypotheses, narrow scope, or stop. Print no options as
-text. Without a question tool, the one closing sentence also names the next step;
-add no second paragraph.
+offering to benchmark the hypotheses, narrow scope, or stop. Without a question
+tool, print those options as a plain list and stop, as the output contract's
+next-step rule says.

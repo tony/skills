@@ -37,7 +37,7 @@ Replace `pytest` with the project's resolved test command.
 | H13 | Parametrized/indirect fixture pays setup once per param per test | `SETUP .* <name>[` lines in `pytest --setup-show` output; many repeated `[param]` setups | Move the param to a higher-scoped fixture, or cache the per-param resource at module/session scope and select from it | medium / medium |
 | H41 | Fixture/test requests a dependency it never uses | Diff signature params against names used in the body; flag params with 0 in-body uses that are not autouse side-effect fixtures | Drop unused params; if a side-effect is intended, make it `autouse`/`usefixtures` and document it | low / trivial |
 | H42 | conftest with no fixtures/hooks, or dead assign-then-overwrite | Per conftest: `rg -c -e 'def ' -e '@pytest.fixture' -e 'pytest_' <conftest>` == 0; `ruff` `F841` for computed-then-overwritten bindings | Delete the empty conftest; remove the dead first assignment (preserve dropped kwargs) | low / trivial |
-| H43 | `@pytest.mark.*` stacked on a `@pytest.fixture` | Scan for a `@pytest.mark` line immediately preceding `@pytest.fixture` | Remove the mark from the fixture; gate inside the consuming test/fixture body. Silent no-op before 8.0; 8.0 warns | low / trivial |
+| H43 | `@pytest.mark.*` stacked on a `@pytest.fixture` | Scan for a `@pytest.mark` line immediately preceding `@pytest.fixture` | Remove the mark from the fixture; gate inside the consuming test/fixture body. Silent no-op before 8.0; 8.0 warns; 9.0 aborts collection | low / trivial |
 
 ## C. Collection, plugins, capability errors
 

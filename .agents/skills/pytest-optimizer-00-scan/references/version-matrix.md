@@ -2,35 +2,37 @@
 
 The available toolbox depends on the installed pytest and plugins. `00-scan`
 probes once and writes the resolved result to `capabilities.json`; later phases
-use only what exists. Run every probe through the project's runner (for
-example `uv run python -c ...`), so the project environment answers, not the
-system Python.
+use only what exists. Every probe below runs through the project's runner
+(`<runner>` stands for its prefix, for example `uv run`; write nothing when the
+project's command is a bare `python`), so the project environment answers, not
+the system Python. Record a probe the runner could not execute as `unknown`,
+never as absent.
 
 ## Detection procedure
 
 1. Read the pytest version:
 
    ```console
-   $ python3 -c "import pytest; print(pytest.__version__)"
+   $ <runner> python -c "import pytest; print(pytest.__version__)"
    ```
 
 2. Probe flags that may be absent (cheaper and more reliable than version math
    for CLI options):
 
    ```console
-   $ pytest --help 2>/dev/null | rg -- '--durations-min|--import-mode|--dist|--sw-reset'
+   $ <runner> pytest --help 2>/dev/null | rg -- '--durations-min|--import-mode|--dist|--sw-reset'
    ```
 
 3. Probe plugin presence and version:
 
    ```console
-   $ python3 -c "import importlib.metadata as m; [print(d, next((x.version for x in m.distributions() if x.metadata['Name'].lower() == d), 'missing')) for d in ('pytest-xdist', 'pytest-randomly', 'pytest-timeout')]"
+   $ <runner> python -c "import importlib.metadata as m; [print(d, next((x.version for x in m.distributions() if x.metadata['Name'].lower() == d), 'missing')) for d in ('pytest-xdist', 'pytest-randomly', 'pytest-timeout')]"
    ```
 
 4. For API features, import-probe:
 
    ```console
-   $ python3 -c "import pytest; print(hasattr(pytest, 'StashKey'))"
+   $ <runner> python -c "import pytest; print(hasattr(pytest, 'StashKey'))"
    ```
 
 5. Record each feature as `{available, version, flag, fallback}` in
@@ -53,7 +55,7 @@ source for a version: trust the probe, not a number.
 | `Stash` (typed per-run store) | pytest 7.0 | `pytest.Stash` exists | `config.cache` (JSON) cross-run; attach attrs to config/session within-run | [pytest 7.0.0](https://docs.pytest.org/en/stable/changelog.html#pytest-7-0-0-2022-02-03) |
 | `--sw-reset` (stepwise reset) | pytest 8.4 | `--sw-reset` listed in `pytest --help` | `--sw` / `--sw-skip` | [pytest 8.4.0](https://docs.pytest.org/en/stable/changelog.html#pytest-8-4-0-2025-06-02) |
 | Callable (dynamic) fixture `scope` | pytest 5.2 | `@pytest.fixture(scope=<callable>)` | hardcode the scope, or gate via a CLI flag read inside the fixture | [fixtures: Dynamic scope](https://docs.pytest.org/en/stable/how-to/fixtures.html#dynamic-scope) |
-| A mark applied to a fixture warns | pytest 8.0 | `pytest --collect-only -q` reports the warning | where nothing is reported, the fix (skip in body) is identical | [pytest 8.0.0](https://docs.pytest.org/en/stable/changelog.html#pytest-8-0-0-2024-01-27) |
+| A mark applied to a fixture aborts collection (a warning from 8.0) | pytest 9.0 | `pytest --collect-only -q` fails with "Marks cannot be applied to fixtures" (8.x only warns) | the fix (skip in the body) is identical on every version | [pytest 8.0.0](https://docs.pytest.org/en/stable/changelog.html#pytest-8-0-0-2024-01-27), [deprecations](https://docs.pytest.org/en/stable/deprecations.html#applying-a-mark-to-a-fixture-function) |
 | `pytest.register_fixture` (imperative) | pytest 9.1 | `pytest.register_fixture` exists | `@pytest.fixture` decorator (declarative) | [pytest 9.1.0](https://docs.pytest.org/en/stable/changelog.html#pytest-9-1-0-2026-06-13) |
 | `tmp_path` / `tmp_path_factory` | pytest 3.9.1 (3.9.0 was never published) | `rg 'tmp_path' tests/` | `tmpdir`/`tmpdir_factory` (`py.path.local`) on older pytest | [pytest 3.9.0](https://docs.pytest.org/en/stable/changelog.html#pytest-3-9-0-2018-10-15-not-published-due-to-a-release-automation-bug) |
 | `--strict-markers` | pytest 4.5 | `strict-markers` in `addopts` (`rg -e 'strict-markers' -e '--strict' pyproject.toml`) | `--strict` on older pytest | [pytest 4.5.0](https://docs.pytest.org/en/stable/changelog.html#pytest-4-5-0-2019-05-11) |

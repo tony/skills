@@ -22,7 +22,7 @@ ends by naming the result branch and the command that merges it.
 (it writes nothing to `execution-log.json` or `state.json`), and
 `--memory-dir` to override the memory location.
 
-Arithmetic goes through `references/measure.py` and Git isolation through
+Arithmetic and state go through `references/measure.py` and Git isolation through
 `references/isolate.py` (Python 3 standard library). Both paths resolve from
 this skill's own directory, not the project's working directory: resolve this
 file's directory, join each path, print the absolute paths once, and write those
@@ -38,18 +38,19 @@ stop with the halted-run shape in `references/output-contract.md`.
 Resolve `<runs-dir>` using the "Run files" section of
 `references/memory-schema.md`; keep each item's verification record there.
 
-Read `plan.json` and `state.json`. Refuse to run unless all hold, checking in
-this order and naming only the first that fails:
+Read `plan.json` and `state.json`. Refuse to run unless the evidence is bound:
+the plan was approved and is unchanged since (`plan_hash`), `state.json` has an
+`env_token`, every plan item carries it and a `patch_sha256`, and `HEAD` equals
+`base_head`. The command checks them in that order and names the first failure:
 
-- `state.json` has `completed.plan=true`; otherwise the plan was never approved:
-  run `pytest-optimizer:02-plan`;
-- its `plan_hash` equals the output of `measure.py hash <memory-dir>/plan.json`;
-  otherwise the plan changed after approval: approve it again with
-  `pytest-optimizer:02-plan`;
-- `state.json` has an `env_token`, every plan item carries that same `env_token`
-  and a `patch_sha256`, and `git rev-parse HEAD` equals `base_head`. Otherwise
-  the evidence is unbound or predates the checkout: run
-  `pytest-optimizer:00-scan --force`.
+```console
+$ python3 <isolate.py> stale \
+    --memory-dir <memory-dir> \
+    --phase execute
+```
+
+On exit 1, print its `reason` and send the user to the phase its `rerun` names
+(`pytest-optimizer:` followed by it).
 
 Then read `baseline.json`, `control.json`, `collection.txt`,
 `execution-log.json` if present, and the project quality-check and test
@@ -75,7 +76,12 @@ already has a `commit_sha`. Nothing in this skill pushes.
 
 ## Step 2: Open the owned worktree
 
-A fresh run (no `exec_branch`) cuts the result branch from the approved base:
+A fresh run (no `exec_branch`) takes a run id, then cuts the result branch from
+the approved base:
+
+```console
+$ python3 <measure.py> run-id
+```
 
 ```console
 $ python3 <isolate.py> start \
@@ -84,13 +90,15 @@ $ python3 <isolate.py> start \
     --branch pytest-optimizer/<run_id>
 ```
 
-Print its `tree` and `dir`, and store `exec_branch` and `exec_dir` in
-`state.json`. A dry run omits `--branch`, which detaches the worktree, and
+Print its `tree` and `dir`, and store `run_id`, `exec_branch` and `exec_dir` in
+`state.json` with `measure.py state update <memory-dir>/state.json --set
+'exec_branch="<branch>"'` and the same for the others. A dry run omits `--branch`, which detaches the worktree, and
 stores nothing. When the host refuses the worktree, stop: execution needs a real
 branch.
 
 A resumed run reuses `exec_dir`'s `tree` when it still exists, otherwise reopens
-the branch:
+the branch (the command first prunes the stale worktree record a cleaned temp
+directory leaves behind):
 
 ```console
 $ python3 <isolate.py> start \
@@ -122,8 +130,10 @@ owned tree to the item's `pending_parent` with `isolate.py reset --cwd <tree>
 --to <pending_parent>` and re-apply the item; a matching commit subject never
 establishes identity.
 
-Run every command below with `<tree>` as the working directory (`cd <tree> &&`,
-`git -C <tree>`, `--cwd <tree>`). The tree holds only tracked files: rebuild the
+Run the project's commands below with `workdir` from the `start` output as the
+working directory (`<tree>` itself, or the project's subdirectory when the
+repository holds several projects), and the git and `isolate.py` commands on
+`<tree>`. The tree holds only tracked files: rebuild the
 environment there with the project's sync command, as `01-benchmark` does. The
 tree is a Git boundary, not a sandbox: a project hook or an absolute path in a
 test can still write outside it.
@@ -152,7 +162,7 @@ For each plan item not yet applied:
 
    ```console
    $ python3 <measure.py> run \
-       --cwd <tree> \
+       --cwd <workdir> \
        -- pytest \
        -p no:cacheprovider \
        -p no:randomly \
@@ -256,13 +266,27 @@ For each plan item not yet applied:
    a skipped item"), and continue. Failures never reach the user's checkout, so
    no later step depends on repairing it.
 5. **Checkpoint**: complete the entry in `execution-log.json` and update
-   `state.json` (`phase=execute`, `last_applied_index`) immediately, so a re-run
-   continues from the last checkpoint.
-6. **Regression stop**: when the item's verify `seconds` exceeds the control
-   median plus its band, re-run the verify command twice more. If the median of
-   the three still exceeds that limit, the commits so far made the suite slower:
-   stop before the next item, name the item, and ask whether to continue or drop
-   it from the branch. Without a question tool, stop and say so.
+   `state.json` immediately, so a re-run continues from the last checkpoint:
+
+   ```console
+   $ python3 <measure.py> state \
+       update <memory-dir>/state.json \
+       --set 'phase="execute"' \
+       --set 'last_applied_index=<index>'
+   ```
+6. **Regression stop**: compare the item's verify `seconds` with the control:
+
+   ```console
+   $ python3 <measure.py> regress \
+       <memory-dir>/control.json \
+       <seconds>
+   ```
+
+   When `rerun` is true, re-run the verify command twice more and call it again
+   with all three timings. Exit 1 (`regressed`) means the commits so far made the
+   suite slower: stop before the next item, name the item, and ask whether to
+   continue or drop it from the branch. Without a question tool, stop and say
+   so.
 
 A dry run keeps its log at `<runs-dir>/dry-run-log.json` (use it for the
 `expected-total` and `ids` commands) and writes no state; it ends with the
@@ -294,14 +318,16 @@ $ python3 <measure.py> compare \
     <runs-dir>/post-runs.jsonl
 ```
 
-Then remove the worktree; the branch stays:
+Then remove the worktree; the branch stays. Read `removed` in the output: when it
+is not true, the worktree is still there, so say so in the closing sentence:
 
 ```console
 $ python3 <isolate.py> finish \
     --dir <exec_dir>
 ```
 
-Set `completed.execute=true` unless this was a dry run. Emit the `03-execute`
+Unless this was a dry run, mark the phase done with `measure.py state complete
+<memory-dir>/state.json --phase execute`. Emit the `03-execute`
 sections from `references/output-contract.md`, hero line first, nothing
 before it. Write the prose per `references/prose-rules.md`. Reply in this
 shape, as plain text outside any code fence, with plain bullets, no bold
@@ -328,10 +354,10 @@ Merge it with git merge --ff-only pytest-optimizer/run-1 when you are ready.
 A run that skipped every item opens with `⚠`, has no `## Applied` section, no
 merge sentence and no text about removing the worktree or branch, and states each failed verification as the printed result
 (counts and exit status), with no cause or threshold beyond that output; a dry run says "verified, nothing committed" in the hero and names no
-branch. The merge sentence is the whole next step: after it, the
+branch. The merge sentence comes first: after it, the
 `ask-user-choice` panel offers a re-scan for a second pass (new candidates may
 surface on a leaner suite), the opt-in cache/timing scaffolds, or stop. Without
-a question tool, stop after the sentence. A re-scan restarts at
+a question tool, print those options as a plain list and stop. A re-scan restarts at
 `pytest-optimizer:00-scan` with a fresh baseline, after the user merges.
 
 
