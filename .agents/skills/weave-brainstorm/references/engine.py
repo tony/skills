@@ -66,6 +66,12 @@ CHECK_SCOPE: Json = {
     "not_checked": [
         "contents of ignored files and of anything inside an ignored directory",
         "writes outside the repository and outside symlink targets",
+        (
+            "writes through a relative tracked symlink that leaves the checkout, made from a"
+            " participant snapshot: it resolves to a different place there, in directories the"
+            " engine itself rewrites, so no stable before/after state exists"
+            " (see unverified_symlinks)"
+        ),
     ],
 }
 NEEDS_COMMIT = frozenset({"execute", "prompt", "architecture", "review", "fix-review"})
@@ -940,6 +946,31 @@ def collect_state(top: str | Path) -> Json:
     }  # fmt: skip
 
 
+def escaping_symlinks(top: str | Path) -> list[str]:
+    """List tracked relative symlinks that resolve outside the checkout.
+
+    An absolute link resolves the same from a snapshot, and a link inside the repository
+    is covered by the tree; these two resolve elsewhere from a snapshot.
+    """
+    found: list[str] = []
+    entries = git_bytes(top, "ls-files", "--stage", "-z").decode("utf-8", "surrogateescape")
+    for entry in entries.split("\0"):
+        meta, _, rel = entry.partition("\t")
+        if not meta.startswith("120000"):
+            continue
+        link = os.readlink(Path(top) / rel)  # noqa: PTH115
+        if Path(link).is_absolute():
+            continue
+        reach = os.path.normpath(Path(rel).parent / link)
+        if reach == ".." or reach.startswith("../"):
+            found.append(rel)
+    return found
+
+
+def _scope(top: str | Path) -> Json:
+    return {**CHECK_SCOPE, "unverified_symlinks": escaping_symlinks(top)}
+
+
 def diff_state(
     pre: Mapping[str, Mapping[str, str]],
     post: Mapping[str, Mapping[str, str]],
@@ -1260,7 +1291,7 @@ def guard_finish(session_dir: Path) -> Json:
         if pruned:
             _drop_session_refs(top, session["session_id"])
         found = unexpected or {"touched": {}}
-        return {"ok": True, "clean": clean, "refs_pruned": pruned, **found, "scope": CHECK_SCOPE}
+        return {"ok": True, "clean": clean, "refs_pruned": pruned, **found, "scope": _scope(top)}
     if session.get("mutating") and not session.get("initial_guard"):
         return {
             "ok": False,
@@ -1285,7 +1316,7 @@ def guard_finish(session_dir: Path) -> Json:
         "head_changed": found.get("head_changed", False),
         "index_changed": found.get("index_changed", False),
         "outside": found.get("outside", {}),
-        "scope": CHECK_SCOPE,
+        "scope": _scope(top),
     }
 
 
@@ -2552,24 +2583,58 @@ def _adoption_conflicts(top: Path, paths: Sequence[str], session: Json) -> dict[
     return conflicts
 
 
-def adopt_files(
+def adopt_files(  # noqa: PLR0913
     session_dir: Path,
     n: int,
     picks: Sequence[str],
     deletes: Sequence[str],
     whole: str | None = None,
+    *,
+    replace_aliases: bool = False,
 ) -> Json:
     """Copy chosen ``path=participant`` snapshots into the main checkout; remove deleted paths.
 
     ``whole`` adopts every change one participant captured in pass ``n``. A
     session may be applied once; every selected path must still match its base.
+    A target that is the user's symlink or hard link is refused unless
+    ``replace_aliases`` records the user's decision.
     """
     with session_lock(session_dir):
-        return _adopt_files(session_dir, n, picks, deletes, whole)
+        return _adopt_files(session_dir, n, picks, deletes, whole, replace_aliases=replace_aliases)
 
 
-def _adopt_files(
-    session_dir: Path, n: int, picks: Sequence[str], deletes: Sequence[str], whole: str | None
+def _user_aliases(top: Path, paths: Sequence[str]) -> dict[str, str]:
+    found: dict[str, str] = {}
+    for rel in paths:
+        try:
+            info = (top / rel).lstat()
+        except OSError:
+            continue
+        if stat.S_ISLNK(info.st_mode):
+            found[rel] = "symlink"
+        elif stat.S_ISREG(info.st_mode) and info.st_nlink > 1:
+            found[rel] = "hard link"
+    return found
+
+
+def _escaping_link(top: Path, rel: str, src: Path) -> str | None:
+    """Return the link text when a snapshot symlink is absolute or leaves the repository."""
+    link = os.readlink(src)  # noqa: PTH115
+    root = Path(os.path.realpath(top))
+    if Path(link).is_absolute():
+        return link
+    reach = Path(os.path.realpath((top / rel).parent / link))
+    return None if reach == root or root in reach.parents else link
+
+
+def _adopt_files(  # noqa: PLR0913
+    session_dir: Path,
+    n: int,
+    picks: Sequence[str],
+    deletes: Sequence[str],
+    whole: str | None,
+    *,
+    replace_aliases: bool = False,
 ) -> Json:
     session = load_session(session_dir)
     if session.get("applied"):
@@ -2611,6 +2676,28 @@ def _adopt_files(
             f"{path!r}: {reason}" for path, reason in conflicts.items()
         )
         raise EngineError(msg)
+    for rel, src in sources.items():
+        if src.is_symlink():
+            link = _escaping_link(top, rel, src)
+            if link is not None:
+                msg = (
+                    f"refusing to adopt symlink {rel!r} -> {link!r}: it is absolute or"
+                    " resolves outside the repository"
+                )
+                raise EngineError(msg)
+    aliases = _user_aliases(top, paths)
+    if aliases and not replace_aliases:
+        msg = (
+            "refusing to replace the user's "
+            + "; ".join(f"{kind} {path!r}" for path, kind in aliases.items())
+            + "; the user decides, then rerun with --replace-aliases"
+        )
+        raise EngineError(msg)
+    if aliases:
+        append_jsonl(
+            session_dir / "events.jsonl",
+            {"event": "aliases_replaced", "timestamp": stamp(), "paths": aliases},
+        )
     copied: list[str] = []
     for rel, src in sources.items():
         (top / rel).parent.mkdir(parents=True, exist_ok=True)
@@ -3151,6 +3238,11 @@ def build_parser() -> argparse.ArgumentParser:  # noqa: PLR0915
     p.add_argument("--pick", action="append", default=[], help="path=participant")
     p.add_argument("--delete", action="append", default=[], help="path to remove")
     p.add_argument("--all", dest="whole", help="adopt everything this participant captured")
+    p.add_argument(
+        "--replace-aliases",
+        action="store_true",
+        help="the user decided to replace their symlinks or hard links",
+    )
 
     p = sub.add_parser("check-paths", help="refuse edit targets with user changes or unsafe paths")
     p.add_argument("--repo", default=".")
@@ -3341,7 +3433,14 @@ def run(args: argparse.Namespace) -> Json:  # noqa: PLR0911, PLR0915
     if cmd == "capture":
         return capture_tree(session_dir, args.n, args.participant, args.tree)
     if cmd == "adopt":
-        return adopt_files(session_dir, args.n, args.pick, args.delete, args.whole)
+        return adopt_files(
+            session_dir,
+            args.n,
+            args.pick,
+            args.delete,
+            args.whole,
+            replace_aliases=args.replace_aliases,
+        )
     if cmd == "stash-restore":
         return restore_stash(session_dir, ack_drift=args.ack_drift)
     return update_session(

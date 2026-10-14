@@ -1666,7 +1666,7 @@ def test_adopt_replaces_a_symlink_without_writing_through_it(repo: Path) -> None
     engine.capture_tree(sdir, 1, "maintainer", None)
     outside.chmod(0o444)
     try:
-        engine.adopt_files(sdir, 1, ["n.txt=maintainer"], [])
+        engine.adopt_files(sdir, 1, ["n.txt=maintainer"], [], replace_aliases=True)
     finally:
         outside.chmod(0o644)
     assert not (repo / "n.txt").is_symlink()
@@ -2171,7 +2171,7 @@ def test_adopt_breaks_a_hard_link_without_changing_the_other_name(repo: Path) ->
     wt = Path(engine.load_session(sdir)["worktrees"]["maintainer"]["path"])
     (wt / "B").write_text("worker\n")
     engine.capture_tree(sdir, 1, "maintainer", None)
-    engine.adopt_files(sdir, 1, [], [], whole="maintainer")
+    engine.adopt_files(sdir, 1, [], [], whole="maintainer", replace_aliases=True)
     assert (repo / "B").read_text() == "worker\n"
     assert outside.read_text() == "b1\n"
 
@@ -2429,3 +2429,63 @@ def test_packet_assembles_blind_responses_by_path(repo: Path) -> None:
     blind.symlink_to(repo / "a.txt")
     with pytest.raises(engine.EngineError, match="symlinked response"):
         engine.synthesis_packet(sdir, 1)
+
+
+@pytest.mark.parametrize("kind", ["hard link", "symlink"])
+def test_adopt_refuses_the_users_aliases_until_the_user_decides(
+    repo: Path, kind: str, capsys: pytest.CaptureFixture[str]
+) -> None:
+    outside = repo.parent / "alias.txt"
+    if kind == "hard link":
+        os.link(repo / "B", outside)
+    else:
+        outside.write_text("b1\n")
+        (repo / "B").unlink()
+        (repo / "B").symlink_to(outside)
+        sh(repo, "git", "commit", "-qam", "link")
+    sdir = Path(init(command="execute", mutating=True)["session_dir"])
+    engine.create_worktrees(sdir, ["maintainer"])
+    wt = Path(engine.load_session(sdir)["worktrees"]["maintainer"]["path"])
+    (wt / "B").unlink()
+    (wt / "B").write_text("worker\n")
+    engine.capture_tree(sdir, 1, "maintainer", None)
+    capsys.readouterr()
+    argv = ["adopt", "--session", str(sdir), "--pick", "B=maintainer"]
+    assert engine.main(argv) == 1
+    error = json.loads(capsys.readouterr().out)["error"]
+    assert f"{kind} 'B'" in error
+    assert "--replace-aliases" in error
+    assert (repo / "B").is_symlink() is (kind == "symlink")
+    assert outside.read_text() == "b1\n"
+    assert engine.main([*argv, "--replace-aliases"]) == 0
+    assert (repo / "B").read_text() == "worker\n"
+    assert not (repo / "B").is_symlink()
+    assert outside.read_text() == "b1\n"
+    assert '"aliases_replaced"' in (sdir / "events.jsonl").read_text()
+
+
+@pytest.mark.parametrize("link", ["/etc/hostname", "../outside", "sub/../../x"])
+def test_adopt_refuses_worker_symlinks_that_leave_the_repository(repo: Path, link: str) -> None:
+    sdir = Path(init(command="execute", mutating=True)["session_dir"])
+    engine.create_worktrees(sdir, ["maintainer"])
+    wt = Path(engine.load_session(sdir)["worktrees"]["maintainer"]["path"])
+    (wt / "newlink").symlink_to(link)
+    (wt / "inner").symlink_to("sub/S")
+    engine.capture_tree(sdir, 1, "maintainer", None)
+    with pytest.raises(engine.EngineError, match=r"symlink 'newlink'.*outside the repository"):
+        engine.adopt_files(sdir, 1, ["newlink=maintainer"], [])
+    assert not (repo / "newlink").is_symlink()
+    engine.adopt_files(sdir, 1, ["inner=maintainer"], [])
+    assert (repo / "inner").readlink() == Path("sub/S")
+
+
+def test_finish_lists_tracked_symlinks_it_cannot_follow_from_a_snapshot(repo: Path) -> None:
+    (repo / "escape").symlink_to("../elsewhere.txt")
+    (repo / "absolute").symlink_to("/etc/hostname")
+    (repo / "sub" / "inside").symlink_to("S")
+    (repo / "sub" / "deep").symlink_to("../../out")
+    sh(repo, "git", "add", "-A")
+    sh(repo, "git", "commit", "-qm", "links")
+    done = engine.guard_finish(Path(init(backend="model-clis")["session_dir"]))
+    assert done["scope"]["unverified_symlinks"] == ["escape", "sub/deep"]
+    assert any("relative tracked symlink" in item for item in done["scope"]["not_checked"])
