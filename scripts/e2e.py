@@ -530,6 +530,17 @@ def _assert_weave_fix_review_contract(command_path: Path) -> None:
         )
 
 
+def _caller_contract() -> str:
+    """Return the Caller contract section of worker-backends.md, where shared backend rules live."""
+    text = (WEAVE_DIR / "references" / "worker-backends.md").read_text(encoding="utf-8")
+    return text.split("## Caller contract", 1)[1].split("\n## ", 1)[0]
+
+
+def _with_contract(text: str) -> str:
+    """Return a skill's text plus the Caller contract when the skill cites it."""
+    return text + _caller_contract() if WEAVE_WORKER_REFERENCE in text else text
+
+
 def _weave_uses_engine(text: str) -> bool:
     """Return True for a skill whose deterministic steps run through the weave engine."""
     return "<engine>" in text
@@ -539,8 +550,9 @@ def _assert_weave_engine_body(command_path: Path, text: str) -> None:
     """Assert an engine-based skill gates its CLI lanes and starts through the engine."""
     rel = command_path.relative_to(REPO_ROOT)
     name = command_path.parent.name
+    owned = _with_contract(text)
     _assert(
-        "worker_backend == subagents" in text and "**model-clis**" in text,
+        "worker_backend == subagents" in owned and "**model-clis**" in owned,
         f"{rel}: the model-clis instructions are not gated on the worker backend",
     )
     core = (WEAVE_DIR / "references" / "ensemble-core.md").read_text(encoding="utf-8")
@@ -604,6 +616,8 @@ def _assert_weave_worker_command(command_path: Path) -> None:
         _assert("codex exec" in text, f"{rel}: Codex CLI path was removed")
 
     selection = _worker_selection(text, rel)
+    if WEAVE_WORKER_REFERENCE in selection:
+        selection += _caller_contract().lower()
     lifecycle_terms = (
         "whole session",
         "dispatch",
@@ -628,6 +642,8 @@ def _assert_weave_worker_command(command_path: Path) -> None:
         _assert_weave_session_template(command_path, text)
 
     result_call = _result_call(text, rel)
+    if engine_based and WEAVE_WORKER_REFERENCE in text:
+        result_call += _caller_contract()
     _assert("`PARTICIPANTS`" in result_call, f"{rel}: present-results omits PARTICIPANTS")
     models_line = next((line for line in result_call.splitlines() if "`MODELS`" in line), "")
     if engine_based:

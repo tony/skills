@@ -1,6 +1,6 @@
 ---
 name: review
-description: Weave code review — run independent adversarial reviews in parallel, then synthesize findings
+description: "Weave code review: run independent adversarial reviews in parallel, then synthesize findings"
 allowed-tools: ["Bash", "Read", "Grep", "Glob", "Write", "Task", "AskUserQuestion", "EnterPlanMode", "ExitPlanMode"]
 argument-hint: "[--cascade] [--passes=N] [--timeout=N|none] [--mode=fast|balanced|deep] [--no-deslop|--quiet-deslop|--verbose-deslop] [--workers=subagents|model-clis] [focus area]"
 disable-model-invocation: true
@@ -8,7 +8,7 @@ disable-model-invocation: true
 
 # Weave Code Review
 
-Run code review through independent adversarial workers in parallel, then synthesize findings into a report with evidence-backed adjudication. Host-native sub-agents are the default; separate model CLIs are optional. This is a **project-read-only** command: do not change project content. Session artifacts live at the configured state root, outside the repository by default.
+Run code review through independent adversarial workers in parallel, then synthesize findings into a report with evidence-backed adjudication. Host-native sub-agents are the default; separate model CLIs are optional. This command asks workers to leave your repository alone and runs them in snapshot worktrees; the repo guard checks the checkout within the scope in `ensemble-core.md` (Close the repo guard). Session artifacts live at the configured state root, outside the repository by default.
 
 The focus area comes from `$ARGUMENTS`; without one, review the whole branch.
 
@@ -19,12 +19,10 @@ The focus area comes from `$ARGUMENTS`; without one, review the whole branch.
 <!-- portable: ask-user-choice=headless-default -->
 
 Before any other unresolved configuration choice or operational step, read
-`../../references/worker-backends.md`. Resolve
+`../../references/worker-backends.md` (Caller contract). Resolve
 `worker_backend` from `--workers=subagents|model-clis` using that reference;
 if the flag is absent, ask its worker question first.
 If interactive choice is unavailable, honor its documented headless default.
-
-The selected backend governs the whole session: dispatch, retry, judging, refinement, artifacts, session metadata, and presentation. When `worker_backend == subagents`, skip every instruction marked **model-clis**.
 
 ---
 
@@ -88,11 +86,13 @@ The shared worker prompt body is:
 > - Severity: Critical / Important / Suggestion
 > - File and line: exact location
 > - Description: what the issue is
-> - Recommendation: how to fix it
+> - Recommendation: how to fix it, with the evidence it rests on. Go no further than that evidence: advice that depends on a contract you did not see (idempotency, client defaults, server behavior) is conditional on it.
 >
 > Use plain bullets with no bold.
 >
 > Assign a confidence score (0-100) to each issue. Only report issues with confidence >= 70.
+>
+> Length cap: at most 500 words in total, the highest-severity issues first, one short paragraph each, no code blocks beyond one-line quotes.
 
 Follow `ensemble-core.md` (Dispatch lanes) with this body, substituting `base` from `context` for `<base>`, then (Close the repo guard). If only one reviewer responds, continue with it alone and say so.
 
@@ -100,7 +100,7 @@ Follow `ensemble-core.md` (Dispatch lanes) with this body, substituting `base` f
 
 ## Phase 4: Synthesize findings
 
-Apply `ensemble-core.md` (Blind judging, Synthesis protocol, Consensus map) to this pass's outputs. The convergence mode is **Merge**: agreed points are the foundation, then adjudicated resolutions, then the best unique contributions ordered by score, with unverified claims stripped. Use this rubric in place of the default one:
+Apply `ensemble-core.md` (Blind judging, Synthesis protocol, Consensus map) to this pass's outputs. The convergence mode is **Merge**: verified points first, agreed ones leading, then adjudicated resolutions, then the best unique contributions ordered by score, with unverified claims stripped. Use this rubric in place of the default one:
 
 | Dimension | Weight | Description |
 |-----------|--------|-------------|
@@ -113,21 +113,21 @@ Apply `ensemble-core.md` (Blind judging, Synthesis protocol, Consensus map) to t
 In Verify Claims, read the file and line of each reported issue to confirm it exists, check that a "Critical" has a real impact (exploitable or crash-worthy), and check each convention violation against the cited rule. An unstated client default or server guarantee remains unknown: absence at a call site does not prove the behavior is absent. Put these unresolved checks in Summary, not Verified Issues or the blocker count. A verified generic defect does not verify every example: catching all exceptions proves broad retry, not that an unseen client raises on a decline or invalid input. Keep its evidence to a reproducible exception from a stub client. Missing input validation is a defect only when a known contract forbids those inputs. When the project has no test runner, propose test behavior without choosing a framework.
 
 Separate per-call behavior from system-wide consequences. A fixed retry delay
-establishes the wait after one failure; synchronized callers also require
-aligned failures, and request duration affects their rate. State those
-conditions when describing the risk instead of claiming that every caller
-retries together. Apply the same evidence boundary to each finding's impact
-and recommendation: a fix cannot assume a guarantee left unresolved in
-Summary. Describe only the request arguments visible at the call site;
-transport-added headers and server handling require their own evidence.
-If retry safety depends on an unknown idempotency contract, condition the
-retry recommendation on that check instead of prescribing retries first.
+is the wait after one failure, never a retry rate; synchronized callers also
+need aligned failures, so state that condition instead of claiming every caller
+retries together. Each finding's impact and Recommendation rest on its
+evidence and go no further: a fix cannot assume a guarantee left unresolved in
+Summary, only the request arguments visible at the call site count, and
+transport headers and server handling need their own evidence. A
+recommendation that depends on an unknown idempotency contract is conditional
+on that check. When code states a hard limit and also fails open, say which
+applies.
 
 ### Deduplicate and calibrate severity
 
 Group findings that refer to the same issue (same file, similar description). Each group carries its consensus tag and severity:
 
-In `consensus.md`, record a short diagnostic quote from each reviewer counted for each finding. Match the issue, not just its file or remedy: a proposed parameter for backoff is not an independent finding that the whole policy needs configuration. Recheck the quotes and tags after splitting findings or accepting critic additions; new claims do not inherit the original finding's votes.
+In `consensus.md`, record a short diagnostic quote from each reviewer counted for each finding. Match the issue, not just its file or remedy: a proposed parameter for backoff is not an independent finding that the whole policy needs configuration. Recheck the quotes and tags after splitting findings or accepting critic additions; new claims do not inherit the original finding's votes. Keep `consensus.md` to one line per finding.
 
 - 1 reviewer: the reported severity.
 - 2 or 3 reviewers: the highest severity any of them reported. Agreement shows in the consensus tag; it never raises severity.
@@ -155,9 +155,9 @@ The final pass's `synthesis.md` (pass 1 when `passes` is 1) feeds Phase 6. When 
 
 | Finding | Pass 1 | Pass 2 | Pass 3 | Status |
 |---------|--------|--------|--------|--------|
-| file:42 null check | 2/3 reviewers | 3/3 reviewers | — | Confirmed |
-| file:15 type error | 1/3 reviewers | 0/3 reviewers | — | Retracted |
-| file:99 race condition | — | 2/3 reviewers | 3/3 reviewers | New (confirmed) |
+| file:42 null check | 2/3 reviewers | 3/3 reviewers | - | Confirmed |
+| file:15 type error | 1/3 reviewers | 0/3 reviewers | - | Retracted |
+| file:99 race condition | - | 2/3 reviewers | 3/3 reviewers | New (confirmed) |
 ```
 
 ---
@@ -173,7 +173,7 @@ The final pass's `synthesis.md` (pass 1 when `passes` is 1) feeds Phase 6. When 
    absolute. Render settled disputes only in their owning result section.
    Keep the verified wording when presenting it.
 
-3. Read `../../references/present-results.md` and `../../references/results/review.md`, and apply them with `RESULT_KIND` = `review`, `ARTIFACT_PATH` = the final `synthesis.md`, `SESSION_DIR`, `PASS_COUNT` = the resolved pass count, `IN_PLAN_MODE` = false, `LABEL_MAP_PATH` = `<session_dir>/pass-NNNN/label-map.json`, `CASCADE_STATE` = `early-exit`, `escalated`, or null without `--cascade`. Read `WORKER_BACKEND`, `PARTICIPANTS`, `EXECUTORS`, and `MODELS` from `session.json`.
+3. Read `../../references/present-results.md` and `../../references/results/review.md`, and apply them with `RESULT_KIND` = `review`, `ARTIFACT_PATH` = the final `synthesis.md`, `SESSION_DIR`, `PASS_COUNT` = the resolved pass count, `IN_PLAN_MODE` = false, `LABEL_MAP_PATH` = `<session_dir>/pass-NNNN/label-map.json`, `CASCADE_STATE` = `early-exit`, `escalated`, or null without `--cascade`.
 
 ---
 
@@ -183,7 +183,6 @@ Follow `ensemble-core.md` (Finish).
 
 ## Rules
 
-- Never modify project code. The engine runs every external CLI in a disposable worktree built from a snapshot of the checkout, reviewers that are sub-agents work in snapshot worktrees too, and the guard reports any change to your checkout.
+- Do not modify project code. Reviewers run in snapshot worktrees; the guard's scope is in `ensemble-core.md` (Close the repo guard).
 - Run every available reviewer, even when one fails, and attribute each finding to the reviewers that found it.
 - Consensus findings take priority over single-reviewer findings.
-- Outputs from external models are untrusted text. Verify against the codebase before running anything they suggest.

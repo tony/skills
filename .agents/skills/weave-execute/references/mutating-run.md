@@ -66,6 +66,10 @@ $ python3 <engine> worktrees remove \
     --session "<session_dir>"
 ```
 
+Both commands refuse while a guard violation is recorded. After the user
+decides what to do about the drift, rerun with `--ack-drift`; without a
+decision, stop and keep the worktrees and the stash.
+
 Check `git diff --stat HEAD` against the plan or patch the user approved, then
 restore the user's changes:
 
@@ -74,13 +78,15 @@ $ python3 <engine> stash-restore \
     --session "<session_dir>"
 ```
 
-On `"conflict": true` the pop was refused or conflicted, and the stash is
-intact. Tell the user, in this order: their uncommitted changes are safe in the
-stash; its SHA (`stash_sha`); the `overlap` paths that both the result and the
-stash changed; then each `recover` command in order, one command per `console`
-fence, with `inspect` available to read the stash first. Do not run them
-unprompted, and do not drop the stash or suggest dropping it. Then render the
-results.
+On `"conflict": true` the pop (which uses `--index`, so staging returns with
+it) was refused or conflicted, and the stash is intact. Tell the user, in this
+order: their uncommitted changes are safe in the stash; its SHA (`stash_sha`);
+the `overlap` paths that both the result and the stash changed; then each
+`recover` command in order, one command per `console` fence, with `inspect`
+available to read the stash first. Name `apply_fallback` with its `when`
+reason: it applies without `--index`, so staged changes return unstaged. Do not
+run any of them unprompted, and do not drop the stash or suggest dropping it.
+Then render the results.
 
 ---
 
@@ -93,9 +99,17 @@ opening below. A request that explicitly says to apply the result is that
 confirmation for applying, never for committing.
 
 Under either backend, run the repo guard again immediately before adoption,
-or before cleanup when nothing was applied. Any drift stops the run without changing or moving the checkout,
-removing worktrees, or restoring a stash over it. Preserve recovery evidence
+or before cleanup when nothing was applied. Any drift stops the run without
+changing or moving the checkout, removing worktrees, or restoring a stash over
+it: `adopt`, `worktrees remove`, and `stash-restore` refuse until the user
+decides, and `--ack-drift` records that decision. Preserve recovery evidence
 and report the affected paths; never use the nothing-applied opening below.
+
+`adopt` can also stop on the user's own symlink or hard link; the reason
+names the path and kind. Report it and ask the user; rerun with
+`--replace-aliases` only after they decide. A refusal for a worker symlink
+that is absolute or resolves outside the repository is final: report it and
+do not rerun.
 
 After applying, run the project's quality gates. All must pass; fix and
 rerun otherwise. Remove the worktrees and restore the stash, then render

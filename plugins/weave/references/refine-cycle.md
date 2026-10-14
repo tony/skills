@@ -48,7 +48,7 @@ Coherence (consistent, well structured). The total is the sum, at most 40.
    `pass-NNNN/judge.md` in this shape:
 
    ```markdown
-   # Judge's Assessment — Pass NNNN
+   # Judge's Assessment, Pass NNNN
 
    **Judged by**: <host | participant | panel>
 
@@ -86,9 +86,13 @@ Coherence (consistent, well structured). The total is the sum, at most 40.
    averaging drops self-scores."
 
    - `native`: compose the prompt with `prompt --judge --lane <judge> --file
-     <judge-prompt> --out pass-NNNN/prompts/judge-<judge>.md`, then launch a fresh
-     `general-purpose` sub-agent to read it and follow it exactly. Write its reply
-     to `pass-NNNN/judges/<judge>.md`.
+     <judge-prompt> --out pass-NNNN/prompts/judge-<judge>.md`, start a
+     `judge-<judge>` snapshot participant (`ensemble-core.md`, Close the repo
+     guard), and launch a fresh `general-purpose` sub-agent with its
+     `worker_instructions` to read the prompt and follow it exactly. It delivers
+     `pass-NNNN/judges/<judge>.md` by the reply delivery text in
+     `ensemble-core.md` (Dispatch lanes), and you run `participant finish` after
+     it replies.
    - `external`: `dispatch --judge --lane <agy|gpt> --pass <N> --timeout <T>
      --prompt-file pass-NNNN/judge-prompt.md`. The output is
      `pass-NNNN/judges/<lane>.md`.

@@ -11,6 +11,7 @@ session.
 - Backend adapter
 - Adversarial sub-agents
 - Separate model CLIs
+- Containment
 - Shared execution semantics
 
 ## Caller contract
@@ -33,9 +34,13 @@ When interactive choice is unavailable or the session is headless, default to
 `subagents`. The engine records `worker_backend` in session metadata and the
 session-start event.
 
-The selected backend is a session boundary. Retry and fallback may occur
+The selected backend governs the whole session: setup, dispatch, retry,
+artifact capture, judging, cascade, refinement, session metadata, result
+rendering, and cleanup. It is a session boundary. Retry and fallback may occur
 within that backend, but never across it. Never switch from sub-agents to model
 CLIs, or from model CLIs to sub-agents, without a new explicit user choice.
+When `worker_backend == subagents`, skip every instruction marked
+**model-clis**.
 
 Result rendering takes `worker_backend` as `WORKER_BACKEND`, the successful
 artifact IDs as `PARTICIPANTS`, the participant-to-executor mapping as
@@ -44,10 +49,7 @@ artifact IDs as `PARTICIPANTS`, the participant-to-executor mapping as
 
 ## Backend adapter
 
-The selected backend governs the whole session: setup, dispatch, retry,
-artifact capture, judging, cascade, refinement, session metadata, result
-rendering, and cleanup. `init` resolves an ordered participant roster once;
-every later phase uses it.
+`init` resolves an ordered participant roster once; every later phase uses it.
 
 Each roster entry has four independent values:
 
@@ -95,8 +97,8 @@ unavailable. Never write native role IDs to `models`.
 
 Use three independent host-native sub-agents. Dispatch them in parallel when
 the host has capacity; otherwise queue them without combining roles or sharing
-intermediate answers. Each WorkItem launches a fresh sub-agent; the
-orchestrator persists the returned response to its declared output path.
+intermediate answers. Each WorkItem launches a fresh sub-agent, which writes
+its own reply to the declared output path (`ensemble-core.md`, Dispatch lanes).
 
 ### Maintainer
 
@@ -129,13 +131,14 @@ User-facing output names the role and identifies the worker backend as
 executor of every role is `host-native`; record a provider or model only when
 the host reports one.
 
-For project-read-only commands, give every role its own disposable isolated worktree
-under the session directory, created from the pre-dispatch snapshot (`worktrees
+For project-read-only commands, give every role its own disposable isolated worktree under the
+session directory, created from the pre-dispatch snapshot (`worktrees
 create`), so the role sees the user's uncommitted work. Include the engine's
 `worker_instructions` verbatim in its launch prompt: every shell call starts
 with the supplied directory prefix, and file-tool paths are absolute. A prose
-directory assignment does not set tool cwd. This is cooperative containment,
-not a filesystem sandbox; the repo guard detects live-checkout drift.
+directory assignment does not set tool cwd. Sub-agents hold the host's
+permissions, so the instructions are cooperative; Containment states what the
+guard sees.
 
 For mutating commands, give every role its own isolated worktree on a
 dedicated branch, including the Maintainer. A sub-agent may modify only its
@@ -147,11 +150,13 @@ After a read-only WorkItem returns, remove only its exact session-scoped
 worktree. Keep mutating worktrees through refinement and the apply decision;
 the command's cleanup owns their removal after capture. Native workers never
 run `checkout`, `clean`, or `reset` against the user's checkout. The repo guard
-reports any checkout change and never repairs it on its own.
+never repairs the checkout on its own.
 
 A mutating native run that detects live-checkout drift stops without cleanup
 or adoption. Keep the leaked files, worktrees, and original user stash for
 inspection; a concurrent user edit is indistinguishable from an escaped write.
+`adopt`, `worktrees remove`, and `stash-restore` refuse until the user decides
+(`--ack-drift`).
 
 If the host cannot create native sub-agents, stop with a direct explanation.
 In an interactive session, offer a new explicit choice to use separate model
@@ -180,6 +185,22 @@ worktree, including the host `claude` lane. Mutating checkout drift halts
 adoption and cleanup under this backend too; preserve worktrees and the
 original user stash for inspection.
 
+## Containment
+
+The repo guard (`ensemble-core.md`, Close the repo guard) reports its own scope
+under `scope.checked` and `scope.not_checked`. Writes outside the repository
+are not detected, nor is the content of ignored files. Each executor's own
+limit:
+
+- Read-only `codex` runs with `-s read-only`.
+- Read-only `agent` runs with `--mode plan`.
+- `agy` has no sandbox in any mode: it runs with `--dangerously-skip-permissions`.
+- Mutating `codex` runs with `--dangerously-bypass-approvals-and-sandbox`, and
+  mutating `agent` with `-f`.
+- Host sub-agents, critics, judges, and verifiers hold the host's permissions
+  and follow their `worker_instructions`. They run in `participant start`
+  snapshots, which the guard checks at `participant finish`.
+
 ## Shared execution semantics
 
 ### Partial failure
@@ -205,7 +226,8 @@ Panel judging dispatches one independent judge per successful role. Peer-only
 scoring excludes the artifact-producing role's own judge. With too few judges
 for peer scoring, use the command's degraded-panel or host fallback and name the
 degradation. Judges receive immutable copies of the candidate artifacts and the
-shared rubric, and never modify project files or candidates.
+shared rubric, and run in `participant start` snapshots (`ensemble-core.md`,
+Close the repo guard); they are told not to modify project files or candidates.
 
 ### Cascade
 

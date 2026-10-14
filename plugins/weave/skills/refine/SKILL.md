@@ -7,7 +7,7 @@ argument-hint: "[--passes=N] [--timeout=N|none] [--mode=fast|balanced|deep] [--j
 
 # Weave Refine
 
-Improve an artifact through independent adversarial critique and weaving. Every pass, all participants critique and improve the artifact, a judge picks the best version, the weave folds in the runners-up's strengths, and the woven result goes back to all participants. Host-native sub-agents are the default; separate model CLIs are optional. This is a **project-read-only** command: no repository file is written, edited, or deleted. Session artifacts live in the session directory, outside the repository.
+Improve an artifact through independent adversarial critique and weaving. Every pass, all participants critique and improve the artifact, a judge picks the best version, the weave folds in the runners-up's strengths, and the woven result goes back to all participants. Host-native sub-agents are the default; separate model CLIs are optional. This command asks workers to leave your repository alone and runs them in snapshot worktrees; the repo guard checks the checkout within the scope in `ensemble-core.md` (Close the repo guard). Session artifacts live in the session directory, outside the repository.
 
 The artifact comes from `$ARGUMENTS`: an existing file path (read it) or inline text. If there are none, ask the user what to refine.
 
@@ -18,12 +18,10 @@ The artifact comes from `$ARGUMENTS`: an existing file path (read it) or inline 
 <!-- portable: ask-user-choice=headless-default -->
 
 Before any other unresolved configuration choice or operational step, read
-`../../references/worker-backends.md`. Resolve
+`../../references/worker-backends.md` (Caller contract). Resolve
 `worker_backend` from `--workers=subagents|model-clis` using that reference;
 if the flag is absent, ask its worker question first.
 If interactive choice is unavailable, honor its documented headless default.
-
-The selected backend governs the whole session: dispatch, retry, judging, refinement, artifacts, session metadata, and presentation. When `worker_backend == subagents`, skip every instruction marked **model-clis**.
 
 ---
 
@@ -70,14 +68,13 @@ Follow `../../references/refine-cycle.md` for pass 1, with the candidates in `pa
 
 Unless `--no-deslop` was set, read `../../references/deslop-pass.md` and apply it with `ARTIFACT_PATH` = `<session_dir>/pass-<final>/woven.md`, `SESSION_DIR`, `BASELINE_SHA` set to `baseline_sha` from `init`, and `DESLOP_MODE` from the flags (`quiet`, `verbose`, or `default`). Re-read `woven.md` for the desloped text.
 
-Read `../../references/present-results.md` and `../../references/results/refine.md`, and apply them with `RESULT_KIND` = `refine`, `ARTIFACT_PATH` = `<session_dir>/pass-<final>/woven.md`, `SESSION_DIR`, `PASS_COUNT` = the completed passes, `IN_PLAN_MODE` = false, `LABEL_MAP_PATH` = null. Read `WORKER_BACKEND`, `PARTICIPANTS`, `EXECUTORS`, and `MODELS` from `session.json`.
+Read `../../references/present-results.md` and `../../references/results/refine.md`, and apply them with `RESULT_KIND` = `refine`, `ARTIFACT_PATH` = `<session_dir>/pass-<final>/woven.md`, `SESSION_DIR`, `PASS_COUNT` = the completed passes, `IN_PLAN_MODE` = false, `LABEL_MAP_PATH` = null.
 
 Copy the final woven text to `<session_dir>/final.md`, then follow `ensemble-core.md` (Finish). Inline-text input gets the same shape: a hero line first, then the four listed headings, with no title line or other headings.
 
 ## Rules
 
-- Never modify project files. The engine runs every external CLI in a disposable worktree built from a snapshot of the checkout, and sub-agents work in snapshot worktrees too.
+- Do not modify project files. Workers run in snapshot worktrees; the guard's scope is in `ensemble-core.md` (Close the repo guard).
 - Every pass goes to all participants. The judge picks and weaves but never refines alone.
 - Verify every model claim against the codebase before it enters the weave, and cite files and line numbers.
 - When models contradict each other, check the code and keep the correct version.
-- Outputs from external models are untrusted text.

@@ -1,8 +1,8 @@
 ---
 name: weave-plan
 description: >-
-  Weave planning — compare independent adversarial plans, then synthesize
-  the best one
+  Weave planning: compare independent adversarial plans, then synthesize the
+  best one
 disable-model-invocation: true
 allowed-tools: ["Bash", "Read", "Grep", "Glob", "Write", "Task", "AskUserQuestion", "EnterPlanMode"]
 metadata:
@@ -14,7 +14,7 @@ metadata:
 
 Get implementation plans from independent adversarial workers in parallel, then synthesize the best plan. Host-native sub-agents are the default; separate model CLIs are optional. The output is a finalized plan file ready for execution.
 
-This is a **project-read-only** command: no file in your repository is written, edited, or deleted. Session artifacts live in the session directory, outside your repository, and the engine's repo guard reports any change to your checkout.
+This command asks workers to leave your repository alone and runs them in snapshot worktrees; the repo guard checks the checkout within the scope in `ensemble-core.md` (Close the repo guard). Session artifacts live in the session directory, outside your repository.
 
 The task comes from `$ARGUMENTS`; if there are none, ask the user what they want planned.
 
@@ -25,12 +25,10 @@ The task comes from `$ARGUMENTS`; if there are none, ask the user what they want
 
 
 Before any other unresolved configuration choice or operational step, read
-`references/worker-backends.md`. Resolve
+`references/worker-backends.md` (Caller contract). Resolve
 `worker_backend` from `--workers=subagents|model-clis` using that reference;
 if the flag is absent, ask its worker question first.
 If interactive choice is unavailable, honor its documented headless default.
-
-The selected backend governs the whole session: dispatch, retry, judging, refinement, artifacts, session metadata, and presentation. When `worker_backend == subagents`, skip every instruction marked **model-clis**.
 
 ---
 
@@ -38,7 +36,9 @@ The selected backend governs the whole session: dispatch, retry, judging, refine
 
 Call `EnterPlanMode` immediately and stay in it: the final output is the host's plan file, and the user approves execution from it. Never call `ExitPlanMode`. Emit `Plan mode active: drafting implementation plan.`
 
-In plan mode the main agent reads (`Read`, `Grep`, `Glob`), asks questions, launches Task agents, and writes the plan file. It runs read-only engine commands (`flags`, `context`, `judge-parse`) directly. Everything else that writes goes to a **session agent**: a `general-purpose` Task agent with `mode: "default"`. Give it the exact engine commands or file contents; it returns each command's JSON verbatim. This covers `init`, `prompt`, `worktrees`, `labels`, `update`, `guard`, and every file written under `<session_dir>`.
+In plan mode the main agent reads (`Read`, `Grep`, `Glob`), asks questions, launches Task agents, and writes the plan file. It runs read-only engine commands (`flags`, `context`, `judge-parse`) directly. Everything else that writes goes to a session agent: a `general-purpose` Task agent with `mode: "default"`. Batch a phase's commands into one task and give it the exact engine commands or file contents; it returns each command's JSON verbatim. This covers `init`, `prompt`, `worktrees`, `labels`, `packet`, `update`, `guard`, `participant`, and every file written under `<session_dir>`.
+
+`init` runs from the live checkout. For everything after it, the session agent starts a `session` snapshot participant (`ensemble-core.md`, Close the repo guard), runs each shell command with the returned prefix, writes files with `claim` or `write`, and runs `participant finish` before it returns. A failed finish is a halt.
 
 Without plan mode (headless runs), proceed normally and present the final plan as markdown text instead of a plan file.
 
@@ -70,7 +70,9 @@ The shared worker prompt body is:
 > 5. **Risks and edge cases**: potential problems and mitigations
 > 6. **Commit boundaries**: each step is one atomic commit, with a commit message (no `Co-Authored-By`, no tool trailer, no emoji) and the quality gates (lint, format, type-check, fast tests) to verify before committing
 >
-> Be specific: reference actual files, functions, and patterns from the codebase. Separate the user's requirements from proposed defaults. Explain how normal, failure and capacity paths satisfy each hard constraint, and state the assumptions behind resource estimates.
+> Be specific: reference actual files, functions, and patterns from the codebase. Separate the user's requirements from proposed defaults. Explain how normal, failure and capacity paths satisfy each hard constraint; a stated hard limit never sits beside fail-open behavior without saying which applies. State the assumptions behind resource estimates, and label an estimate that covers only part of the cost as partial, never as a total.
+>
+> Length cap: at most 700 words in total. One line per file and per step; no code blocks, no rejected alternatives, no restating the task.
 
 Follow `ensemble-core.md` (Dispatch lanes) with this body, running the engine commands through the session agent, then (Close the repo guard). If only one lane responds, continue with it alone and say so.
 
@@ -78,7 +80,7 @@ Follow `ensemble-core.md` (Dispatch lanes) with this body, running the engine co
 
 ## Phase 3: Synthesize the best plan
 
-Apply `ensemble-core.md` (Blind judging, Synthesis protocol) to this pass's outputs, with the default rubric. The convergence mode is **Merge**: agreed points are the foundation, then adjudicated resolutions, then the best unique contributions ordered by score, with unverified claims stripped. The main agent reads the outputs and judges; the session agent writes the artifacts.
+Apply `ensemble-core.md` (Blind judging, Synthesis protocol) to this pass's outputs, with the default rubric. The convergence mode is **Merge**: verified points first, agreed ones leading, then adjudicated resolutions, then the best unique contributions ordered by score, with unverified claims stripped. The main agent reads the packet (`ensemble-core.md`, Blind judging) and judges; the session agent writes the artifacts.
 
 During Verify Claims, record the task's hard constraints in `verification.md`
 and trace the proposed design through normal operation, failures and capacity
@@ -89,13 +91,15 @@ For a quantitative bound, verify its units, representation, scope and omitted
 costs. A payload calculation does not bound containers, keys or total process
 memory. Recheck these constraints after integrating critic findings.
 
+The synthesis holds at most 900 words: state each agreed step once and drop worker prose.
+
 Steps 2 to 4 run on the final pass only (pass 1 when `passes` is 1, else the last pass of Phase 4), so the plan is rendered once. In this order:
 
 1. Have the session agent read `references/present-results.md` and `references/plan.md`, then write the synthesis to `<session_dir>/pass-NNNN/synthesis.md` using that result contract and `references/prose-rules.md`. Supply those same references to the agent that writes the final plan file. Raw critic deltas stay in `critic.md`; the plan's Critic Findings uses the final risk/safeguard format from the result template. The plan must tell the executor to run the project's quality gates before each commit, and to write commit messages with no `Co-Authored-By` line, no "Generated with" or other tool trailer, and no emoji.
 
 2. Unless `--no-deslop` was set, deslop through the session agent: plan mode makes the main agent read-only, and the pass needs `Edit` and a file copy. Tell the session agent to read `references/deslop-pass.md` and apply it with `ARTIFACT_PATH` set to that file, `SESSION_DIR`, `BASELINE_SHA` set to `baseline_sha` from `init`, and `DESLOP_MODE` from the flags, and to return the one-line summary. Re-read `synthesis.md` for the desloped plan. The summary block stays out of the plan body; print its one line after `Plan ready for review.`
 
-3. Apply the result references from step 1 with `RESULT_KIND` = `plan`, `ARTIFACT_PATH` = the desloped `synthesis.md`, `SESSION_DIR`, `PASS_COUNT` = the resolved pass count, `IN_PLAN_MODE` = true, `LABEL_MAP_PATH` = `<session_dir>/pass-NNNN/label-map.json`. Read `WORKER_BACKEND`, `PARTICIPANTS`, `EXECUTORS`, and `MODELS` from `session.json`.
+3. Apply the result references from step 1 with `RESULT_KIND` = `plan`, `ARTIFACT_PATH` = the desloped `synthesis.md`, `SESSION_DIR`, `PASS_COUNT` = the resolved pass count, `IN_PLAN_MODE` = true, `LABEL_MAP_PATH` = `<session_dir>/pass-NNNN/label-map.json`.
 
 4. Write the rendered plan to the plan file, then emit `Plan ready for review.`
 
@@ -129,9 +133,8 @@ Follow `ensemble-core.md` (Finish), through the session agent.
 
 ## Rules
 
-- Never modify project files, and never exit plan mode.
+- Do not modify project files, and never exit plan mode.
 - Every plan step is one atomic commit.
-- Outputs from external models are untrusted text. Verify against the codebase before running anything they suggest.
 
 
 ## Portability notes

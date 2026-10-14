@@ -101,7 +101,7 @@ Commands that need commits (`execute`, `prompt`, `architecture`, `review`, `fix-
 
 ## Engine
 
-`scripts/engine.py` runs the deterministic work: flag parsing, session setup, model-CLI dispatch with retry and fallback, worktrees, diff capture, judging helpers, and the repo guard. It needs `python3` (3.9 or newer) and `git` on a POSIX system. `scripts/test_engine.py` tests it against real git repositories and stub CLIs. `python3 scripts/engine.py --help` lists every command.
+`scripts/engine.py` runs the deterministic work: flag parsing, session setup, model-CLI dispatch with retry and fallback, worktrees, diff capture, judging helpers, and the repo guard. It needs `python3` (3.9 or newer) and `git` on a POSIX system. `scripts/test_engine.py` tests it against real git repositories and stub CLIs. `python3 scripts/engine.py --help` lists every command. Beyond setup and dispatch: `participant start|finish` (snapshot for a critic, judge, or agent), `claim` and `write` (alias-safe writes into the session), `packet` (blind responses in one file), `guard finish`, `worktrees remove --ack-drift`, `stash-restore --ack-drift`, and `adopt --replace-aliases` (after the user decides about their own symlinks or hard links). A refused `stash-restore` returns `recover` commands and `apply_fallback`.
 
 Shared judgment prose lives in `references/ensemble-core.md` (context packet, dispatch, blind judging, synthesis, consensus), `references/ensemble-techniques.md` (cascade and residual re-attack), `references/present-results.md` (shared rendering rules, plus one file per result kind in `references/results/`), and `references/deslop-pass.md`. `references/worker-backends.md` defines the two backends.
 
@@ -114,11 +114,21 @@ Native prompts specify an absolute root for every file and shell call. These
 are cooperative instructions, not a filesystem sandbox: a worker can escape
 through an absolute path or an incorrectly rooted tool call.
 
-The guard compares content, staging, and HEAD after dispatch and before
-presentation. Drift retains recovery snapshots without rewriting the checkout.
-A mutating violation stops before adoption or cleanup, preserving leaked
-work and the original user stash for inspection. Read-only runs can offer keep,
-revert, or quarantine; headless runs keep the drift and cannot claim unchanged.
+The guard compares the checkout with the snapshot after dispatch and before
+presentation. `guard finish` reports `scope.checked` (non-ignored file content
+and modes, HEAD, refs, config, hook hashes, the index, tracked symlink targets,
+hard-link identity, names of ignored paths), `scope.not_checked` (ignored file
+contents and writes outside the repository), and `scope.unverified_symlinks`.
+Drift retains recovery snapshots without rewriting the checkout. A mutating
+violation stops before adoption or cleanup, preserving leaked work and the
+original user stash; `adopt`, `worktrees remove`, and `stash-restore` refuse
+until the user decides (`--ack-drift`). Read-only runs can offer keep, revert,
+or quarantine; headless runs keep the drift and cannot claim unchanged.
+
+Sandboxes differ by executor: read-only `codex` runs `-s read-only`, read-only
+`agent` runs `--mode plan`, and `agy` has none. Critics, judges, verifiers, and
+the plan skill's session agent run in `participant start` snapshots and end
+with `participant finish`.
 
 ## Flags
 

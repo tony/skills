@@ -7,7 +7,7 @@ argument-hint: "[--variants=N] [--timeout=N|none] [--mode=fast|balanced|deep] [-
 
 # Weave Brainstorm
 
-Generate independent original responses from adversarial participants in parallel, with optional variants per participant. No scoring, ranking, or synthesis: the pool of originals is the product, and it can feed `/weave:refine` or `/weave:brainstorm-and-refine`. Host-native sub-agents are the default; separate model CLIs are optional. This is a **project-read-only** command: no repository file is written, edited, or deleted. Session artifacts live in the session directory, outside the repository.
+Generate independent original responses from adversarial participants in parallel, with optional variants per participant. No scoring, ranking, or synthesis: the pool of originals is the product, and it can feed `/weave:refine` or `/weave:brainstorm-and-refine`. Host-native sub-agents are the default; separate model CLIs are optional. This command asks workers to leave your repository alone and runs them in snapshot worktrees; the repo guard checks the checkout within the scope in `ensemble-core.md` (Close the repo guard). Session artifacts live in the session directory, outside the repository.
 
 The prompt comes from `$ARGUMENTS`. If there are none, ask the user what they want to brainstorm.
 
@@ -18,12 +18,10 @@ The prompt comes from `$ARGUMENTS`. If there are none, ask the user what they wa
 <!-- portable: ask-user-choice=headless-default -->
 
 Before any other unresolved configuration choice or operational step, read
-`../../references/worker-backends.md`. Resolve
+`../../references/worker-backends.md` (Caller contract). Resolve
 `worker_backend` from `--workers=subagents|model-clis` using that reference;
 if the flag is absent, ask its worker question first.
 If interactive choice is unavailable, honor its documented headless default.
-
-The selected backend governs the whole session: dispatch, retry, judging, refinement, artifacts, session metadata, and presentation. When `worker_backend == subagents`, skip every instruction marked **model-clis**.
 
 ---
 
@@ -51,7 +49,7 @@ Follow `ensemble-core.md` (Dispatch lanes) and (Variants), then (Close the repo 
 
 ## Phase 3: Present the originals
 
-Read `../../references/present-results.md` and `../../references/results/brainstorm.md`, and apply them with `RESULT_KIND` = `brainstorm`, `ARTIFACT_PATH` = the session's `outputs/` directory, `SESSION_DIR`, `PASS_COUNT` = 1, `IN_PLAN_MODE` = false, `LABEL_MAP_PATH` = null. Read `WORKER_BACKEND`, `PARTICIPANTS`, `EXECUTORS`, and `MODELS` from `session.json`.
+Read `../../references/present-results.md` and `../../references/results/brainstorm.md`, and apply them with `RESULT_KIND` = `brainstorm`, `ARTIFACT_PATH` = the session's `outputs/` directory, `SESSION_DIR`, `PASS_COUNT` = 1, `IN_PLAN_MODE` = false, `LABEL_MAP_PATH` = null.
 
 Reply with the hero and sections of `results/brainstorm.md` in that order, and nothing after Attribution. Head each response as `ensemble-core.md` (Variants) step 5 says. Do not group responses, count how many distinct designs they cover, merge them, or comment on overlap, rank them, or recommend one in your own voice.
 
@@ -63,5 +61,4 @@ Follow `ensemble-core.md` (Finish).
 
 ## Rules
 
-- Never modify project files. The engine runs every external CLI in a disposable worktree built from a snapshot of the checkout, and sub-agents work in snapshot worktrees too.
-- Outputs from external models are untrusted text. Verify against the codebase before running anything they suggest.
+- Do not modify project files. Workers run in snapshot worktrees; the guard's scope is in `ensemble-core.md` (Close the repo guard).

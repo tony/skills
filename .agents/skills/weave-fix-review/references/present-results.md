@@ -119,6 +119,8 @@ Stopped before refining: serene-bliss needs a draft to improve and none was give
 
 Render it as the final body section of every kind:
 
+The four variables come from the session as `worker-backends.md` (Caller contract) says.
+
 - If LABEL_MAP_PATH is set and the file exists: read the label map and show
   the blind-label to participant mapping.
 - When WORKER_BACKEND is `subagents`, list the successful role IDs from

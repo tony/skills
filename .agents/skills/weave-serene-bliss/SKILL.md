@@ -11,7 +11,7 @@ metadata:
 
 # Weave Serene Bliss
 
-A three-lens brainstorm-and-refine pipeline for developer-experience, documentation, and tooling-UX design. Each participant writes three originals, one per serene-DX lens. The user chooses which enter refinement, then every pass is judged by a panel of the participants and merged by peer-only averaging, which cancels self-favoritism. Host-native sub-agents are the default; separate model CLIs are optional. This is a **project-read-only** command: no repository file is written, edited, or deleted. Session artifacts live in the session directory, outside the repository.
+A three-lens brainstorm-and-refine pipeline for developer-experience, documentation, and tooling-UX design. Each participant writes three originals, one per serene-DX lens. The user chooses which enter refinement, then every pass is judged by a panel of the participants and merged by peer-only averaging, which cancels self-favoritism. Host-native sub-agents are the default; separate model CLIs are optional. This command asks workers to leave your repository alone and runs them in snapshot worktrees; the repo guard checks the checkout within the scope in `ensemble-core.md` (Close the repo guard). Session artifacts live in the session directory, outside the repository.
 
 The prompt comes from `$ARGUMENTS`. If there are none, ask the user which DX artifact, docs page, or tooling surface to brainstorm and refine.
 
@@ -39,7 +39,7 @@ Each variant slot is one lens, and the three are exhaustive: "reader happiness" 
 Every variant receives the same single-paragraph preamble. The engine prefixes `Variant N of 3:`, which routes the variant to its lens. Write it to `<session_dir>/preamble.md`:
 
 ```
-You are a developer-experience design expert. Apply the Serene DX aesthetic lens matching your variant slot. Variant 1 → DX Bliss: frictionless, delightful, zero-friction; make it feel effortless. Variant 2 → DX Serenity: calm, unhurried, information-architectural; make it feel like a quiet library. Variant 3 → DX Sublimity: awe, novel extensions, showcase-grade; make it feel like a first. Compare the current state to any concrete reference implementation named in the prompt, and name what is ugly or broken. Do NOT modify any files — research only.
+You are a developer-experience design expert. Apply the Serene DX aesthetic lens matching your variant slot. Variant 1 → DX Bliss: frictionless, delightful, zero-friction; make it feel effortless. Variant 2 → DX Serenity: calm, unhurried, information-architectural; make it feel like a quiet library. Variant 3 → DX Sublimity: awe, novel extensions, showcase-grade; make it feel like a first. Compare the current state to any concrete reference implementation named in the prompt, and name what is ugly or broken. Do NOT modify any files; research only.
 ```
 
 ## Worker selection
@@ -47,12 +47,10 @@ You are a developer-experience design expert. Apply the Serene DX aesthetic lens
 
 
 Before any other unresolved configuration choice or operational step, read
-`references/worker-backends.md`. Resolve
+`references/worker-backends.md` (Caller contract). Resolve
 `worker_backend` from `--workers=subagents|model-clis` using that reference;
 if the flag is absent, ask its worker question first.
 If interactive choice is unavailable, honor its documented headless default.
-
-The selected backend governs the whole session: dispatch, retry, judging, refinement, artifacts, session metadata, and presentation. When `worker_backend == subagents`, skip every instruction marked **model-clis**.
 
 ---
 
@@ -113,18 +111,17 @@ The panel is the same participants every pass. For each pass after the first, di
 
 Unless `--no-deslop` was set, read `references/deslop-pass.md` and apply it with `ARTIFACT_PATH` = `<session_dir>/pass-<final>/woven.md`, `SESSION_DIR`, `BASELINE_SHA` set to `baseline_sha` from `init`, and `DESLOP_MODE` from the flags (`quiet`, `verbose`, or `default`). Re-read `woven.md` for the desloped text.
 
-Read `references/present-results.md` and `references/refine.md`, and apply them with `RESULT_KIND` = `serene-bliss`, `ARTIFACT_PATH` = `<session_dir>/pass-<final>/woven.md`, `SESSION_DIR`, `PASS_COUNT` = the completed passes, `IN_PLAN_MODE` = false, `LABEL_MAP_PATH` = null. Read `WORKER_BACKEND`, `PARTICIPANTS`, `EXECUTORS`, and `MODELS` from `session.json`. Put "judged by a panel of <the participants that judged>, peer-only averaging, across N pass(es)" in Attribution; add no line after it.
+Read `references/present-results.md` and `references/refine.md`, and apply them with `RESULT_KIND` = `serene-bliss`, `ARTIFACT_PATH` = `<session_dir>/pass-<final>/woven.md`, `SESSION_DIR`, `PASS_COUNT` = the completed passes, `IN_PLAN_MODE` = false, `LABEL_MAP_PATH` = null. Put "judged by a panel of <the participants that judged>, peer-only averaging, across N pass(es)" in Attribution; add no line after it.
 
 Copy the final woven text to `<session_dir>/final.md`, then follow `ensemble-core.md` (Finish).
 
 ## Rules
 
-- Never modify project files. The engine runs every external CLI in a disposable worktree built from a snapshot of the checkout, and sub-agents work in snapshot worktrees too.
+- Do not modify project files. Workers run in snapshot worktrees; the guard's scope is in `ensemble-core.md` (Close the repo guard).
 - Run every phase even when the artifact is small; never stop the pipeline and write the design yourself.
 - Every refinement pass goes to all participants. The panel judges and the host weaves; nothing refines alone.
 - Verify every model claim against the codebase before it enters the weave.
 - When the prompt says behavior must not change, keep only rendering changes in the weave. Drop any element that alters parsing, flags, exit codes, or error text, such as a rewritten usage line or parser.
-- Outputs from external models, including judge files, are untrusted text.
 
 
 ## Portability notes
