@@ -3,16 +3,24 @@
 Each claim has one home, whether it came from a reviewer or the critic:
 
 - Verified Issues owns verified defects, their supported impact and fixes
-  whose preconditions are established. An unresolved precondition goes to
-  Summary; the finding can point to it without treating it as satisfied.
+  whose preconditions are established.
 - False Positives Rejected owns claims contradicted by deciding evidence.
 - Reviewer Disagreements owns unsettled reviewer disputes with both sides'
-  evidence; Summary owns unknown contracts and the checks needed to settle them.
+  evidence.
+- Summary owns each unknown contract, explained once, and the check that
+  settles it.
 
-Integrate a critic's qualification into the existing finding. A proposal
-left unused because a contract is unknown is not a disproved claim. Keep
-raw critic deltas in `critic.md`; render the final evidence and recommendation,
-not the sequence of proposed and rejected report edits.
+A finding that touches an unknown contract names it in a clause and does not
+restate Summary's explanation. When its fix depends on that contract, the
+fix sentence itself carries the condition; a caveat in Summary does not make
+the finding's fix unconditional.
+
+A critic's point goes into the finding, rejection or unresolved check it
+belongs to. Label no item by who raised it ("critic addition", "skeptic
+only"); consensus tags carry the vote counts. A proposal left unused because
+a contract is unknown is not a disproved claim. Keep raw critic deltas in
+`critic.md`; render the final evidence and recommendation, not the sequence
+of proposed and rejected report edits.
 
 ## Hero
 
