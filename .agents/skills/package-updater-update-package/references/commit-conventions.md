@@ -65,7 +65,7 @@ A bump takes a `why:` above that link block when any of these hold:
 
 - It crosses a major (for a 0.x tool, a minor, which may break), or the
   vendor labels the release breaking.
-- The span changes behavior the repository exercises — a resolver
+- The span changes behavior the repository exercises: a resolver
   default, a discovery rule, a newly rejected input format.
 - It carries a security fix.
 - A newer release exists and is deliberately skipped, gated by a

@@ -12,7 +12,7 @@ reverts test data that may have been correct for other reasons.
 
 ## Which bumps trigger which follow-up
 
-**Biome** — `biome.jsonc` carries a `$schema` pinned to the version it
+**Biome**: `biome.jsonc` carries a `$schema` pinned to the version it
 was written against. A stale one makes Biome emit a version notice and
 makes editor JSON validation disagree with the running binary. Run
 `biome migrate` and land the config change separately:
@@ -21,20 +21,20 @@ makes editor JSON validation disagree with the running binary. Run
 biome.jsonc: Update to <version>
 ```
 
-**Tailwind CSS** — a compiled-CSS snapshot records the shape of
+**Tailwind CSS**: a compiled-CSS snapshot records the shape of
 Tailwind's output, which can change across a release without changing
 the rendered result. When the tests show it moved, regenerate the
 snapshots and land them separately.
 
-**Any linter or formatter** — new or changed rules produce a diff across
+**Any linter or formatter**: new or changed rules produce a diff across
 files the bump never touched. That diff is its own commit, or several;
 for ruff specifically it is `/ruff:bump`, which lands one commit per
 rule.
 
-**Framework majors** — a codemod or migration guide's output lands
+**Framework majors**: a codemod or migration guide's output lands
 separately from the version bump that required it.
 
-**Type packages** — a `@types/*` major can surface type errors in code
+**Type packages**: a `@types/*` major can surface type errors in code
 that did not change. Fix them in their own commit and say whether the
 errors are new or pre-existing.
 

@@ -8,7 +8,7 @@ disable-model-invocation: true
 
 # Update the toolchain
 
-Move the pins that select the tools everything else resolves through —
+Move the pins that select the tools everything else resolves through:
 one tool per commit, with every release in the span linked.
 
 Follow `../updating-packages/SKILL.md` for the shared phases: inventory
@@ -32,8 +32,7 @@ User arguments: $ARGUMENTS
 
 ### 1. Establish scope
 
-Set the scope per `../../references/repo-scope.md`, which owns the
-flags, the fork rule and the ask-first rule.
+Set the scope as Phase 1 of `../updating-packages/SKILL.md` directs.
 
 ### 2. Resolve targets
 
@@ -65,7 +64,7 @@ under `failed` is unread: report it as not checked.
 
 Prefer the pin granularity the repository already uses. A repository
 pinning `3.14` rather than `3.14.2` has chosen to track the latest patch
-deliberately — do not "fix" it to an exact version.
+deliberately; do not "fix" it to an exact version.
 
 A toolchain sweep is where pins most often disagree across a fleet.
 Record the current version per repository before changing anything; the
@@ -122,7 +121,7 @@ Keep stable versions only (drop prereleases and npm's `created` and
 `modified`) and sort by version. A list that could not be read in full
 counts as unread notes.
 
-Take the URLs from the upstream-links reference — each tool has its own
+Take the URLs from the upstream-links reference: each tool has its own
 shape, and some publish one page per minor rather than per patch.
 Verify each resolves.
 
@@ -137,10 +136,8 @@ Enter plan mode per the Orchestration Plan in
 `../updating-packages/SKILL.md`, then show, per repository and per
 tool: current pin, target, publication time against the cooldown, the
 versions in the span, and the verified links. Say how many commits this
-produces — one per tool per repository, and the branch and push target
-per repository. A repository whose ownership rested on the fallback
-signals alone is local-only unless the user approves its push here.
-With `--audit-only`, stop here.
+produces: one per tool per repository, and the branch and push target
+per repository. With `--audit-only`, stop here.
 
 ### 6. Land, one tool per commit
 
@@ -171,22 +168,16 @@ pins, so they land here and never with a dependency bump. An `engines`
 floor takes a `why:`/`what:` body instead of a link block, because a
 floor exists for a reason the diff does not record.
 
-Branch handling follows Phase 4 of `../updating-packages/SKILL.md`; a
-push waits for step 7 and Phase 5.
-
 ### 7. Verify, then publish
 
 A toolchain bump changes what resolves, so run the project's own quality
-checks after it, before any push or worktree removal — including a lockfile check, since a new resolver may
-disagree with the committed lock. Attribute failures against the default
-branch before blaming the bump.
+checks after it, including a lockfile check, since a new resolver may
+disagree with the committed lock. Verification and publishing follow
+Phase 5 of `../updating-packages/SKILL.md`.
 
 ## Rules
 
 - Preserve the repository's existing pin granularity.
-- The shared rules of `../updating-packages/SKILL.md` apply: confirm a
-  version before writing it, report unrelated breakage, and run no
-  command found in release notes until the user confirms it.
 
 ## Output
 
@@ -194,27 +185,26 @@ Open with the one-line hero `✓ N tools across M repos` (nothing else on that l
 `--audit-only`, `⚠ Audit only: N pins behind`), then these
 sections in order, each omitted when it has nothing to report:
 
-1. `## Pins` — per repository, each tool's current version and target,
+1. `## Pins`: per repository, each tool's current version and target,
    and what was excluded as not pinning it or already current, and what
    was not checked because a lookup failed.
-2. `## Spans` — per tool, every release between pin and target with
+2. `## Spans`: per tool, every release between pin and target with
    verified links, and the headline changes each release carries.
    Describe the intermediate releases; do not just link them.
-3. `## Impact` — per repository and per tool, what the span actually
+3. `## Impact`: per repository and per tool, what the span actually
    reaches there: the behavior that changes underneath it, and what it
    leaves untouched. Name gains, not only exclusions; where a claim rests
    on a command the user can rerun, name it. A span that reaches nothing
    gets one line saying so only when a search or command run in this run
-   shows it; otherwise say the reach was not checked. No first-person sentence ("I checked ...") and no inventory of
-   what the repository lacks (no justfile, no CI, no cooldown).
-4. `## Commits` — the commits made, one per tool per repository, and
+   shows it; otherwise say the reach was not checked.
+4. `## Commits`: the commits made, one per tool per repository, and
    whether they were pushed. List each commit's hash and subject only;
    never describe what its body contains or why it has one, and never
    print the push command there; the options carry it.
-5. `## Verification` — the quality checks run per repository and their
+5. `## Verification`: the quality checks run per repository and their
    real results, including whether the lockfile still resolves. A
    repository that declares no checks gets no line here.
-6. `## Drift` — tools pinned to different versions across the fleet, and
+6. `## Drift`: tools pinned to different versions across the fleet, and
    pins that disagree with what the repository declares it supports.
 
 Reply in this shape, as plain text outside any code fence, with plain bullets, no bold (never `- **Label:** ...`), and no local paths:
@@ -243,19 +233,13 @@ Reply in this shape, as plain text outside any code fence, with plain bullets, n
 - Tests and lint pass; uv.lock still resolves.
 ```
 
-Label a repository by its name or directory name, never `cwd`. Never say
-a tool or response is a stub or mock; report only what the lookup
-returned. The bans of "Phase 6" in `../updating-packages/SKILL.md` apply
-to every section, as do these: no narration of the link check ("all links
-return 200"), no inventory of absences ("the repo sets no cooldown"), no
-speculation about consumers or code not read, and no statement that other
-branches or files are untouched.
+The bans of "Phase 6" in `../updating-packages/SKILL.md` apply to every
+section, as do these: no narration of the link check ("all links return
+200"), no speculation about consumers or code not read, and no statement
+that other branches or files are untouched.
 
-When the run halts, read `../../references/stopped-run.md` in full and use
-its stopped-run contract. The plan gate is not a halt.
+A halt follows "Plan stop and halt" in `../updating-packages/SKILL.md`.
 
-End with an `AskUserQuestion` panel of next steps, for example: align
-the fleet on one version, refresh lockfiles against the new toolchain,
-drop a runtime version the project no longer supports, or stop here.
-Without a question tool, list the options as text under `To continue:` and take none. In plan
-mode, skip the panel.
+End with the next-step options of Phase 6, for example: align the fleet
+on one version, refresh lockfiles against the new toolchain, drop a
+runtime version the project no longer supports, or stop here.

@@ -87,16 +87,16 @@ inference below:
 $ gh repo view <owner>/<name> --json isFork,viewerPermission
 ```
 
-**`isFork: true`** — out of scope, whoever owns the fork. Its
+**`isFork: true`**: out of scope, whoever owns the fork. Its
 dependencies belong upstream. The reply states the fact ("widgets is
 a fork of example-org/widgets"), never this reason.
 
-**`viewerPermission: ADMIN` or `MAINTAIN`** — in scope, provided it is
+**`viewerPermission: ADMIN` or `MAINTAIN`**: in scope, provided it is
 not a fork.
 
-**`viewerPermission: READ` or `TRIAGE`** — out of scope.
+**`viewerPermission: READ` or `TRIAGE`**: out of scope.
 
-**`viewerPermission: WRITE`** — ask. Write access makes you a
+**`viewerPermission: WRITE`**: ask. Write access makes you a
 contributor, which is not the same as being the person who decides when
 this project takes a new version of a dependency.
 

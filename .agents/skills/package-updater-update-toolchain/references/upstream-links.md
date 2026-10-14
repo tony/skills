@@ -43,20 +43,20 @@ project keeps a good one, release notes first when it does not.
 
 ## Per-tool
 
-**uv** — `https://github.com/astral-sh/uv/releases/tag/<version>` and
+**uv**: `https://github.com/astral-sh/uv/releases/tag/<version>` and
 `https://github.com/astral-sh/uv/blob/<version>/CHANGELOG.md`
 
-**just** — `https://github.com/casey/just/blob/<version>/CHANGELOG.md`
+**just**: `https://github.com/casey/just/blob/<version>/CHANGELOG.md`
 and `https://github.com/casey/just/releases/tag/<version>`
 
-**pnpm** — `https://github.com/pnpm/pnpm/releases/tag/v<version>`, plus
+**pnpm**: `https://github.com/pnpm/pnpm/releases/tag/v<version>`, plus
 the blog post at `https://pnpm.io/blog/releases/<major.minor>` (or
 `<major.minor.patch>` for a patch post) when one exists. Not every
 release has a post; a 404 means cite the GitHub release alone.
 
-**Node.js** — `https://nodejs.org/en/blog/release/v<version>`
+**Node.js**: `https://nodejs.org/en/blog/release/v<version>`
 
-**Python** —
+**Python**:
 `https://docs.python.org/release/<version>/whatsnew/changelog.html`.
 The page has one anchor per release, ending in `-final` or
 `-release-candidate-<N>`; copy the anchor from the page rather than
@@ -64,15 +64,15 @@ building it. Add `https://devguide.python.org/versions/` when the
 support window is part of the reason. A version's release schedule PEP belongs in the
 block when the bump is about the schedule rather than the content.
 
-**Go** — `https://go.dev/blog/go<major.minor>` and
+**Go**: `https://go.dev/blog/go<major.minor>` and
 `https://go.dev/doc/go<major.minor>`. Both are per minor; a
 patch bump cites the minor's pages.
 
-**poetry** —
+**poetry**:
 `https://github.com/python-poetry/poetry/blob/<version>/CHANGELOG.md`
 and `https://github.com/python-poetry/poetry/releases/tag/<version>`
 
-**Biome** — tagged per package rather than by bare version, and its
+**Biome**: tagged per package rather than by bare version, and its
 changelog is not at the repository root. The tag is
 `@biomejs/biome@<version>`, which needs percent-encoding in a URL:
 
@@ -84,18 +84,18 @@ https://github.com/biomejs/biome/releases/tag/%40biomejs%2Fbiome%40<version>
 https://github.com/biomejs/biome/blob/%40biomejs%2Fbiome%40<version>/packages/%40biomejs/biome/CHANGELOG.md
 ```
 
-**ruff** — `https://astral.sh/blog/ruff-v<version>` for a minor,
+**ruff**: `https://astral.sh/blog/ruff-v<version>` for a minor,
 otherwise `https://github.com/astral-sh/ruff/releases/tag/<version>`.
 Rule-level changes take the rule's own documentation page at
 `https://docs.astral.sh/ruff/rules/<rule-name>/`. Bumping ruff's floor
 is the `ruff-bump` skill, not this plugin.
 
-**Terraform and providers** —
+**Terraform and providers**:
 `https://github.com/hashicorp/terraform/releases/tag/v<version>`, and
 for a provider its registry page plus its changelog at the tag. Bumping
 providers is the `terraform-bump-provider` skill, not this plugin.
 
-**GitHub Actions** — `https://github.com/<owner>/<action>/releases/tag/<tag>`
+**GitHub Actions**: `https://github.com/<owner>/<action>/releases/tag/<tag>`
 for every major in the span. Bumping action pins is
 the `github-actions-update-actions` skill, not this plugin.
 

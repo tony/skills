@@ -98,15 +98,15 @@ Releasing one, naming what fixed it:
 Each shares one shape: a condition outside the repository that has not
 happened yet.
 
-- **Upstream bug** — the release is broken for a use this project makes.
+- **Upstream bug**: the release is broken for a use this project makes.
   Released when the fixing version ships.
-- **Ecosystem catch-up** — a major that a framework this project depends
+- **Ecosystem catch-up**: a major that a framework this project depends
   on does not support yet.
-- **Runtime floor** — a release that drops a runtime this project still
+- **Runtime floor**: a release that drops a runtime this project still
   supports. Released when the project drops it too.
-- **Migration not yet done** — a major whose upgrade is real work,
+- **Migration not yet done**: a major whose upgrade is real work,
   deliberately deferred.
-- **Maintainer broke the package** — a release that changed something
+- **Maintainer broke the package**: a release that changed something
   fundamental in a way that is not going to be reverted.
 
 A hold is not a way to skip release notes: "this looked risky" is a
@@ -118,7 +118,7 @@ Every sweep checks the existing holds, not just the outdated packages.
 For each `reject` entry and each bound or constraint above, report:
 
 - The condition recorded in the commit that added it, and whether that
-  condition is now met — a hold whose fixing version has shipped should
+  condition is now met: a hold whose fixing version has shipped should
   be released in this run.
 - Holds with no recoverable reason. Do not silently release these; a
   reason that was never written down might still be real. Surface them

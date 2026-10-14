@@ -373,7 +373,9 @@ Shape, which the three commands in this plugin share:
    absolute path, temp directory, or machine fact (installed tool
    versions, sandbox or network settings, an empty history) the user
    need not act on. Say that a lookup failed only as "not checked", with no
-   error text or retry story.
+   error text or retry story. No inventory of what the repository lacks
+   (no justfile, no CI, no cooldown), and no line under `## Verification`
+   for a repository that declares no checks.
    No upstream fact from memory (omit a claim that rests on memory), no speculation about the latest
    release, no narration of this skill's own rules (never "I left out the
    trailer because the skill says so", "it has a `why:` because it crosses
@@ -385,7 +387,8 @@ Shape, which the three commands in this plugin share:
    or why it was written that way, and never state a rule as a reason
    ("so its dependencies belong upstream").
 5. End with the next-step options. Without a question tool, list them
-   as text under the label `To continue:` and take none. Name the
+   as text under the label `To continue:` and take none; in plan mode,
+   skip the panel. Name the
    repository by its name, never "cwd", "cwd repo" or "current repo"; with
    no remote name, use its directory name, or no label for a single
    repository. Label the options `To continue:`, never "Next steps".

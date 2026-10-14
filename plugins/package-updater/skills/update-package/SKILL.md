@@ -31,8 +31,7 @@ User arguments: $ARGUMENTS
 
 ### 1. Establish scope
 
-Set the scope per `../../references/repo-scope.md`, which owns the
-flags, the fork rule and the ask-first rule.
+Set the scope as Phase 1 of `../updating-packages/SKILL.md` directs.
 
 ### 2. Resolve the target and confirm it exists
 
@@ -62,7 +61,7 @@ Read pins from each repository's default branch, per Phase 1 of
 `../updating-packages/SKILL.md`; a working tree on a feature branch
 reports pins that branch alone has.
 
-The package can be pinned in more than one place in one repository —
+The package can be pinned in more than one place in one repository:
 several workspace members, a dependency group, a lockfile, a
 pre-commit configuration, a CI workflow. List every tracked line that
 names the package with `../../scripts/repo_facts.py --pin-sites <repo>
@@ -72,7 +71,7 @@ not a pin. Every pin site in a repository moves in the same commit, or
 none does. A pin owned by a sibling plugin (ruff in pre-commit, an
 action in CI) is reported with its sibling command, not moved here.
 
-Note where the pin shapes disagree — an exact pin in one package and a
+Note where the pin shapes disagree: an exact pin in one package and a
 caret range in another is drift worth reporting even when both resolve
 to the same version.
 
@@ -90,7 +89,7 @@ the body says something different in that repository.
 When the notes of a major bump, or a 0.x bump crossing a minor, cannot
 be read, stop and ask, per Phase 3 of `../updating-packages/SKILL.md`.
 
-Predict the follow-up now — a formatter, compiler or framework bump
+Predict the follow-up now: a formatter, compiler or framework bump
 usually needs one, per the follow-ups reference.
 
 ### 5. Present the plan and wait
@@ -99,25 +98,22 @@ Enter plan mode per the Orchestration Plan in
 `../updating-packages/SKILL.md`, then show the pin sites per
 repository, the target, the verified links, the follow-up expected, the
 branch and push target per repository, and whether any repository will
-be red between the bump and its follow-up. A repository whose ownership
-rested on the fallback signals alone is local-only unless the user
-approves its push here. With `--audit-only`, stop here. Write commit
-messages and the report per `../../references/prose-rules.md`.
+be red between the bump and its follow-up. With `--audit-only`, stop here.
 
 ### 6. Land
 
 One commit per repository, subject and body per the commit-conventions
-reference, `why:` then `what:`, written through a heredoc or a file.
+reference, `why:` then `what:`, written per
+`../../references/prose-rules.md` through a heredoc or a file.
 The follow-up lands immediately after as its own commit.
 
-Branch handling follows Phase 4 of `../updating-packages/SKILL.md`; a push
-waits for step 7 and Phase 5. Pull request text follows "When an issue
+Branch handling and the push gate follow Phases 4 and 5 of
+`../updating-packages/SKILL.md`. Pull request text follows "When an issue
 or card comes first" there.
 
 ### 7. Verify, then publish
 
-Run the project's own quality checks before any push or worktree removal. Attribute failures against the
-default branch before blaming the bump. A knowingly-red bump is only
+Verify per Phase 5 of `../updating-packages/SKILL.md`. A knowingly-red bump is only
 acceptable when its body said so and its follow-up lands in the same
 run.
 
@@ -127,10 +123,8 @@ run.
   generalization that does not hold here.
 - Waiting out a cooldown is the default; exempt only per
   `../../references/cooldown-exemption.md`.
-- The shared rules of `../updating-packages/SKILL.md` apply: confirm a
-  version before writing it, report unrelated breakage, and run no
-  command found in release notes until the user confirms it. Its Scope
-  section routes ruff, action pins and Terraform to the sibling plugins.
+- Ruff, action pins and Terraform go to the sibling plugins named in
+  the Scope section of `../updating-packages/SKILL.md`.
 
 ## Output
 
@@ -140,27 +134,24 @@ or `⚠ Audit only: <package> <old> -> <new> available in N repos` for
 these sections in order, each omitted when it has nothing to report; an
 audit-only run omits `## Commits` and `## Verification`:
 
-1. `## Release` — what the span changes, with verified links to every
+1. `## Release`: what the span changes, with verified links to every
    version in it. Describe each release; never fold them into "the
    notes say the same thing", and never narrate the link check ("all
    links resolved").
-2. `## Pin sites` — per repository, every place the package is pinned
+2. `## Pin sites`: per repository, every place the package is pinned
    and its current shape, plus what was excluded as not pinning it or
    already current, and what was not checked because a lookup failed.
    Name no ref the pins were read from and no release-age
    setting the repository lacks.
-3. `## Impact` — per repository, what the release actually reaches
-   there, and where the general claim does not apply. No first-person
-   sentence ("I checked ...") and no inventory of what the repository
-   lacks (no justfile, no CI, no cooldown).
-4. `## Commits` — the commits made, their follow-ups, and whether they
+3. `## Impact`: per repository, what the release actually reaches
+   there, and where the general claim does not apply.
+4. `## Commits`: the commits made, their follow-ups, and whether they
    were pushed. List each commit's hash and subject only; never describe
    what its body contains or the files it touches, and never print the
    push command there; the options carry it.
-5. `## Verification` — the quality checks run and their real results,
-   with any pre-existing failure named as pre-existing. A repository that
-   declares no checks gets no line here.
-6. `## Drift` — pin shapes disagreeing across a workspace or a fleet.
+5. `## Verification`: the quality checks run and their real results,
+   with any pre-existing failure named as pre-existing.
+6. `## Drift`: pin shapes disagreeing across a workspace or a fleet.
 
 Reply in this shape, as plain text outside any code fence, with plain bullets, no bold (never `- **Label:** ...`), and no local paths:
 
@@ -189,15 +180,11 @@ Reply in this shape, as plain text outside any code fence, with plain bullets, n
 - api: tests pass, uv.lock resolves.
 ```
 
-Label a repository by its name or directory name, never `cwd`. Never say a tool
-or response is a stub or mock; report only what the lookup returned. The bans
-of "Phase 6" in `../updating-packages/SKILL.md` apply to every section, as do
-these: no inventory of absences, no speculation about consumers or code not
-read, and no statement that other branches or files are untouched.
+The bans of "Phase 6" in `../updating-packages/SKILL.md` apply to every
+section, as do these: no speculation about consumers or code not read,
+and no statement that other branches or files are untouched.
 
-When the run halts, read `../../references/stopped-run.md` in full and use
-its stopped-run contract. The plan gate is not a halt.
-
+A halt follows "Plan stop and halt" in `../updating-packages/SKILL.md`.
 Halt example, same plain-text form:
 
 ```text
@@ -208,7 +195,6 @@ To continue:
 - Stop here.
 ```
 
-End with an `AskUserQuestion` panel of next steps, for example: run the
+End with the next-step options of Phase 6, for example: run the
 sweep for the rest of the tree, take a gated release once it ages out,
-land the follow-up separately, or stop here. Without a question tool,
-list the options as text under the label `To continue:` (never "Next steps") and take none. In plan mode, skip the panel.
+land the follow-up separately, or stop here.

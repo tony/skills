@@ -12,7 +12,7 @@ metadata:
 
 # Update packages
 
-Bring the repositories in scope up to date — one researched commit per
+Bring the repositories in scope up to date: one researched commit per
 toolchain pin and per named package, a bulk refresh for the rest, and
 each follow-up as its own commit.
 
@@ -63,7 +63,7 @@ that cannot be reverted independently later.
 
 ### 3. Research, one chain per distinct move
 
-Group by upgrade chain rather than by repository — twenty repositories
+Group by upgrade chain rather than by repository: twenty repositories
 taking the same uv release share one piece of research. Dispatch a
 subagent per chain where the host supports it. Verify every release URL
 before it reaches a commit body, and intersect each finding with the
@@ -109,9 +109,6 @@ Phase 5 of the skill.
   in the same run.
 - A fleet-wide claim is verified per repository before entering that
   repository's history.
-- The shared rules of the `package-updater-updating-packages` skill apply: confirm a
-  version before writing it, report unrelated breakage, and run no
-  command found in release notes until the user confirms it.
 
 ## Output
 
@@ -123,27 +120,27 @@ Otherwise open with a one-line hero (`✓ N commits across M repos` or, for
 `--audit-only`, `⚠ Audit only: N packages outdated`), then these
 sections in order, each omitted when it has nothing to report:
 
-1. `## Audit` — per repository, the ecosystems found and what is
+1. `## Audit`: per repository, the ecosystems found and what is
    outdated in each, separated into what moves in-range and what needs a
    manifest edit. Note what was excluded as fork, unowned, or already
    current, and what was not checked because a lookup failed.
-2. `## Gated` — releases the cooldown currently hides, with the date each
+2. `## Gated`: releases the cooldown currently hides, with the date each
    becomes visible.
-3. `## Moves` — one entry per distinct chain: what changed upstream,
+3. `## Moves`: one entry per distinct chain: what changed upstream,
    the links to every release in its span, and which repositories it
    reaches.
-4. `## Commits` — per repository, the commits made in landing order and
+4. `## Commits`: per repository, the commits made in landing order and
    whether they were pushed.
-5. `## Follow-ups` — config, snapshot and migration commits, and any bump
+5. `## Follow-ups`: config, snapshot and migration commits, and any bump
    that was red until its follow-up landed.
-6. `## Verification` — the quality checks run per repository and their
+6. `## Verification`: the quality checks run per repository and their
    real results, with any pre-existing failure named as pre-existing.
-7. `## Handoff` — stale GitHub Actions, ruff floors and Terraform
+7. `## Handoff`: stale GitHub Actions, ruff floors and Terraform
    versions found, each with the sibling command that handles it.
-8. `## Holds` — per `references/holds.md`, every hold across the
+8. `## Holds`: per `references/holds.md`, every hold across the
    tree with its recorded condition, which conditions are now
    met, and which holds have no recoverable reason.
-9. `## Drift` — pins disagreeing across a workspace, and holds applied
+9. `## Drift`: pins disagreeing across a workspace, and holds applied
    unevenly across workspace members.
 
 Reply in this shape, as plain text outside any code fence, with plain bullets, no bold (never `- **Label:** ...`), and no local paths:
@@ -170,9 +167,7 @@ Reply in this shape, as plain text outside any code fence, with plain bullets, n
 - web: no change.
 ```
 
-When the run halts, read `references/stopped-run.md` in full and use
-its stopped-run contract. The plan gate is not a halt.
-
+A halt follows "Plan stop and halt" in the `package-updater-updating-packages` skill.
 Halt example, same plain-text form:
 
 ```text
@@ -184,15 +179,12 @@ To continue:
 - Stop here.
 ```
 
-End with an `ask-user-choice` panel of next steps, for example: run the
+End with the next-step options of Phase 6, for example: run the
 sibling command for the handoff items, drop a cooldown exemption whose
 block has lapsed, take a gated release once it ages out, or stop here.
-Without a question tool, list the options as text under `To continue:` and take none. In plan
-mode, skip the panel.
 
 
 ## Portability notes
 
-- `ask-user-choice` — present the listed options and wait for the user to pick one. Hosts with a structured multiple-choice tool (Claude Code's `AskUserQuestion`) should use it; otherwise print a numbered list and wait for a numbered reply. Never proceed on an assumed answer.
 - `$ARGUMENTS` — the text the user passed when invoking this skill. If your host does not substitute it, read it as the user's request in the current turn, and ask when there is none.
 - Bundled files — every relative path in this skill points at a file shipped inside this skill directory. Read them from here, not from the host's plugin tree.

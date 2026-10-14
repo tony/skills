@@ -185,7 +185,7 @@ catalog by hand on every sweep.
 
 `.ncurc` carries a `reject` array of packages `ncu` must not offer. It
 resolves next to the package file, so a workspace member can hold a
-package its siblings track — a root-only scan under-reports holds.
+package its siblings track: a root-only scan under-reports holds.
 
 Adding and releasing a hold are both commits, and both name the
 condition; the commit message carries the reason.
