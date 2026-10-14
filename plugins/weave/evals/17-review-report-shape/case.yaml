@@ -68,3 +68,8 @@ graders:
       Each unresolved client/server contract is explained once in Summary; a brief reference from a finding to that explanation is acceptable. A critic's contribution is integrated into its owning finding, rejection or unresolved check, not repeated in a separate Critic Findings section.
       The report presents the final evidence and recommendation. It does not narrate a critic's unused proposal or classify a proposal as false merely because the client contract is unknown.
       The call site supplies a POST endpoint and an amount payload. That does not establish whether the unseen client adds an idempotency header or whether the server deduplicates requests. The report must not call absence of end-to-end idempotency confirmed. Recommendations to retry ambiguous outcomes such as timeouts remain conditional on resolving that contract; moving the caveat to Summary does not make unconditional retry advice safe.
+
+  - name: judge-runs-in-a-snapshot
+    type: tool_used
+    tool: Bash
+    input_match: 'participant(?:\\"|'')?\s+start'
