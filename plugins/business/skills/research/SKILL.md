@@ -90,10 +90,12 @@ For each available instrument, run pinned-window queries per
 anything. Collect the targets listed there; record the rest as
 unknown. Derive pull-request tables with `business.py collect-prs`,
 piping the query into it with `--output` so reviewer and author logins
-never reach `raw/`, rather than rewriting the query or the filter. Take
-each `sources.md` `executed` time from `date -u +%FT%TZ` when the query
-runs. Record every `collect-prs` warning, including "rows lack" ones, in
-that entry and in the README.
+never reach `raw/`, rather than rewriting the query or the filter. Write
+every `sources.md` entry with `business.py source <run> <entry> <file>
+--query <command> --tool-version <version>` (absolute path) right after the
+command produces `<file>`: the script writes the output path, the clock
+time, and the sha256, so none is typed by hand. Record every `collect-prs`
+warning, including "rows lack" ones, in that entry and in the README.
 
 ### 4. Write the package
 
@@ -101,9 +103,9 @@ Fill the package `init` started, per `interim-format.md`: run README,
 source manifest with verbatim queries, assumptions register, raw
 snapshots, per-topic measurements, and `findings.md`. Tag every figure
 per `provenance.md`; list every unknown with what data would resolve it.
-List every organization, repository, team, and person name the run
-touched on the README `Names:` line, and the individuals among them on
-the `People:` line; the scans depend on both.
+List every organization, repository, team, and workflow name the run
+touched on the README `Names:` line, and every individual on the
+`People:` line (never on both); the scans depend on both.
 Compute medians, quartiles, and intervals with `business.py stats`
 (`--csv <file> --column <a-b>` for a CSV column); copy its `n`, `rows`,
 and `dropped_blank` beside each statistic. Give each MEASURED

@@ -36,7 +36,7 @@ def make_run(root: Path, *, claimed: str = "18", cite: str = "task-timings") -> 
     run = root / "2026-06-30" / "business" / "lean-tighten"
     (run / "raw").mkdir(parents=True)
     (run / "measurements").mkdir()
-    (run / "README.md").write_text("Window: 2026-04-01..2026-06-30.\nNames: none\n")
+    (run / "README.md").write_text("Window: 2026-04-01..2026-06-30.\nNames: none\nPeople: none\n")
     (run / "sources.md").write_text(
         "## task-timings\n- query: cat raw/t.csv\n- executed: 2026-06-30T10:00:00Z\n"
         "- tool version: coreutils 9.4\n- output: raw/t.csv\n"
@@ -60,7 +60,12 @@ def test_gate_passes_complete_run(tmp_path: Path) -> None:
 def test_gate_requires_names_line(tmp_path: Path) -> None:
     run = make_run(tmp_path)
     (run / "README.md").write_text("Window: 2026-04-01..2026-06-30.\n")
-    assert [p.split(":")[0] for p in business.check_run(run)] == ["README.md has no Names"]
+    assert [p.split(" (")[0] for p in business.check_run(run)] == [
+        "README.md has no Names: line",
+        "README.md has no People: line",
+    ]
+    (run / "README.md").write_text("Window: 2026-04-01..2026-06-30.\nNames: none\nPeople: none\n")
+    assert business.check_run(run) == []
 
 
 def test_gate_recomputes_figure_from_raw(tmp_path: Path) -> None:
@@ -480,6 +485,17 @@ def test_scan_reads_names_from_the_run_readme(
     assert "README.md has no Names: line" in capsys.readouterr().err
 
 
+def test_scan_tier_three_denies_people_absent_from_names(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    run = make_run(tmp_path)
+    (run / "README.md").write_text("Names: none\nPeople: Priya Raman\n")
+    draft = tmp_path / "draft.md"
+    draft.write_text("Thanks to Priya.\n")
+    assert business.main(["scan", "--run", str(run), str(draft)]) == 1
+    assert capsys.readouterr().out == "1:11: denied-name: Priya\n"
+
+
 def test_scan_reads_names_from_a_file(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
     names = tmp_path / "names.txt"
     names.write_text("Priya Raman\nlean-tighten, Atlas\n")
@@ -896,6 +912,32 @@ def test_scan_flags_short_commit_shas_but_not_hex_looking_words() -> None:
     ]
 
 
+def test_source_writes_the_entry_from_the_clock_and_the_file(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    run = make_run(tmp_path)
+    snap = run / "raw" / "export.json"
+    snap.write_text("{}")
+    args = ["source", str(run), "usage-export", str(snap)]
+    assert business.main([*args, "--query", "cat export", "--tool-version", "cat 9"]) == 0
+    entry = (run / "sources.md").read_text().split("## usage-export\n")[1].splitlines()
+    assert [x.split(":")[0] for x in entry] == [
+        "- output",
+        "- executed",
+        "- query",
+        "- tool version",
+        "- sha256",
+    ]
+    assert business._is_timestamp(entry[1].split(": ", 1)[1])
+    assert entry[4] == f"- sha256: {business.file_sha256(snap)} raw/export.json"
+    assert business.check_run(run) == []
+    assert business.main(["source", str(run), "x", str(tmp_path / "gone")]) == 2
+    outside = tmp_path / "outside.csv"
+    outside.write_text("a")
+    assert business.main(["source", str(run), "x", str(outside)]) == 2
+    assert "is not inside the run" in capsys.readouterr().err
+
+
 def _gh(*args: str) -> subprocess.CompletedProcess[str]:
     return subprocess.run(["gh", *args], capture_output=True, text=True, check=False)  # noqa: S603, S607
 
@@ -931,3 +973,33 @@ def test_plugin_query_runs_against_the_live_github_api() -> None:
     )
     rows = business.collect_prs(result.stdout, "2000-01-01", "2100-01-01")
     assert all(r["reopened"].isdigit() for r in rows)
+
+    def counts(query: str) -> dict[int, tuple[int, int]]:
+        reply = _gh(
+            "api",
+            "graphql",
+            "-f",
+            "owner=octocat",
+            "-f",
+            "name=Hello-World",
+            "-f",
+            f"query={query}",
+        )
+        if "HTTP 5" in reply.stderr:
+            pytest.skip("GitHub API unavailable")
+        nodes = json.loads(reply.stdout)["data"]["repository"]["pullRequests"]["nodes"]
+        return {
+            n["number"]: (n["reopened"]["filteredCount"], n["reopened"]["totalCount"])
+            for n in nodes
+        }
+
+    filtered = "reopened: timelineItems(itemTypes: [REOPENED_EVENT]) { filteredCount }"
+    assert filtered in found.group(1)
+    small = found.group(1).replace("pullRequests(first: 100", "pullRequests(first: 5")
+    assert small != found.group(1)
+    with_filter = counts(small.replace("{ filteredCount }", "{ filteredCount totalCount }"))
+    without = counts(
+        small.replace(filtered[len("reopened: ") :], "timelineItems { filteredCount totalCount }")
+    )
+    assert {k: v[1] for k, v in with_filter.items()} == {k: v[1] for k, v in without.items()}
+    assert any(filt < total for filt, total in with_filter.values())

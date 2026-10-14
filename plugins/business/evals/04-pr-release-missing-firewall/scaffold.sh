@@ -18,6 +18,7 @@ cat >"$run/README.md" <<'MD'
 
 Window: 2026-04-01..2026-06-30.
 Names: none
+People: none
 MD
 
 cat >"$run/measurements/timing.md" <<'MD'

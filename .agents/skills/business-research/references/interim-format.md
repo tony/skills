@@ -75,15 +75,16 @@ Scope (what is measured and why), the pinned window (explicit start
 and end dates, plus any excluded novelty-ramp window), the
 instrument inventory with each instrument marked available or
 unavailable, environment versions for the tools used to collect, and
-a `Names:` line listing every organization, repository, team,
-person, and internal workflow or skill name the run touches, comma-separated. Research fills it from
-the repositories and teams it queried and the people the user named; `scan --run <run>`
-reads it as the deny list. `gate` fails when the line is empty;
-write `Names: none` when the run touches no names. A separate `People:`
-line lists the individuals among them, comma-separated (`People: none`
-when there are none); tiers 1 and 2 deny only that line. The skeleton
-`init` writes has an empty `Names:` line, so the gate fails until it is
-filled.
+a `Names:` line listing every organization, repository, team, and
+internal workflow or skill name the run touches, comma-separated. Research fills it from
+the repositories and teams it queried; `scan --run <run>` reads it as
+the deny list. `gate` fails when the line is empty; write `Names: none`
+when the run touches no names. A `People:` line lists every individual,
+comma-separated, and only there (`People: none` when there are none);
+`gate` fails when it is absent. Tier 3 denies both lines, tiers 1 and 2
+only `People:`. The skeleton
+`init` writes empty `Names:` and `People:` lines, so the gate fails until
+they are filled.
 A `collect-prs` warning that rows lack a column or that reviews were
 truncated is recorded here as well as in `sources.md`.
 
@@ -91,9 +92,10 @@ truncated is recorded here as well as in `sources.md`.
 
 The source manifest: one `## <name>` entry per collected artifact,
 named stably (for example `gh-pr-cycle-times`) so figures can cite
-it. Every entry has these labeled lines; `executed` is read from the
-clock (`date -u +%FT%TZ`) when the query runs, because the gate rejects
-anything that is not an ISO timestamp:
+it. `business.py source <run> <entry> <file>` writes the entry's
+`output`, `executed` (the clock), and `sha256` lines; the gate rejects an
+`executed` that is not an ISO timestamp. Every entry has these labeled
+lines:
 
 ```text
 - query: the command, verbatim

@@ -9,6 +9,7 @@ cat >"$run/README.md" <<'MD'
 
 Window: 2026-04-01..2026-06-30.
 Names: Acme, Atlas
+People: none
 
 Internal forecast: 9999 hours. Never a public-case-study input.
 MD

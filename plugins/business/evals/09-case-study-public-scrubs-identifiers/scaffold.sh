@@ -20,7 +20,8 @@ Scope: time to tighten a draft, measured per task.
 Window: 2026-04-01..2026-06-30. Excluded novelty ramp: none.
 Instruments: git available, gh unavailable.
 Timezone: UTC. Tools: git 2.43.
-Names: Acme Corp, Atlas team, Priya Raman
+Names: Acme Corp, Atlas team
+People: Priya Raman
 MD
 
 cat >"$run/sources.md" <<'MD'

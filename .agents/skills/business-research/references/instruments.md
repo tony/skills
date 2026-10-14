@@ -77,9 +77,10 @@ unavailable, not worked around.
   by mergedAt-in-window; review latency by mergedAt-in-window too).
 - Snapshot each response to `raw/` and add its `sources.md` entry
   before computing anything from it, except responses that carry
-  logins: aggregate those before they reach disk. Take each entry's
-  `executed` time from the clock (`date -u +%FT%TZ`) at the moment the
-  query runs; the gate rejects a value that is not an ISO timestamp.
+  logins: aggregate those before they reach disk. Write each entry with
+  `business.py source <run> <entry> <file> --query <command>
+  --tool-version <version>`, which records the output path, the clock
+  time, and the sha256; the gate rejects a hash that no longer matches.
 - Prefer GraphQL over the Search API for PR and issue queries. The
   [REST search API](https://docs.github.com/en/rest/search/search)
   returns up to 1,000 results per search and sets `incomplete_results`

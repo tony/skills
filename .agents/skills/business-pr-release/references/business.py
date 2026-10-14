@@ -7,6 +7,7 @@ Subcommands:
 - ``scan``: tier-3 sanitization scan of a draft for identifiers, secrets, names, and money terms.
 - ``trace``: check that every figure in a derived text appears in its source text.
 - ``stamp`` and ``fresh``: record, then verify, the inputs each written report derives from.
+- ``source``: write a ``sources.md`` entry (path, clock time, hash) for an output file.
 - ``init``: create a run directory, refusing to reuse one that holds raw snapshots.
 - ``assumptions``: required-field check of an ``assumptions.yaml`` register.
 - ``runs``: list run directories newest first, ordered by the date in the path.
@@ -1072,10 +1073,13 @@ def file_sha256(path: Path) -> str:
 SHA_LINE = re.compile(r"^\W*sha256\s*:\s*(\S+)\s+(\S+)\s*$", re.IGNORECASE)
 
 
-def record_source(sources: Path, entry: str, output: Path) -> None:
+def record_source(
+    sources: Path, entry: str, output: Path, query: str = "", tool_version: str = ""
+) -> None:
     r"""Write ``output`` (relative to ``sources``), its hash, and a clock time into an entry.
 
-    The entry is created when absent; the query and tool version stay the caller's.
+    The entry is created when absent. A given ``query`` or ``tool_version`` is written
+    unless the entry already has that line.
 
     Examples
     --------
@@ -1085,6 +1089,11 @@ def record_source(sources: Path, entry: str, output: Path) -> None:
     ...     record_source(Path(d) / "sources.md", "snap", Path(d) / "snap.csv")
     ...     [line.split(":")[0] for line in (Path(d) / "sources.md").read_text().splitlines()]
     ['## snap', '- output', '- executed', '- sha256']
+    >>> with tempfile.TemporaryDirectory() as d:
+    ...     _ = (Path(d) / "snap.csv").write_text("a")
+    ...     record_source(Path(d) / "sources.md", "snap", Path(d) / "snap.csv", "cat x", "cat 9")
+    ...     [x.split(":")[0] for x in (Path(d) / "sources.md").read_text().splitlines()]
+    ['## snap', '- output', '- executed', '- query', '- tool version', '- sha256']
     """
     rel = output.resolve().relative_to(sources.resolve().parent).as_posix()
     lines = sources.read_text(encoding="utf-8").splitlines() if sources.is_file() else []
@@ -1112,6 +1121,12 @@ def record_source(sources: Path, entry: str, output: Path) -> None:
     if not any(TIMESTAMP_VALUE.match(x) for x in body):
         stamp = dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
         body.append(f"- executed: {stamp}")
+    if query and not any(re.match(r"^\W*(?:query|command)\s*:", x, re.IGNORECASE) for x in body):
+        body.append(f"- query: {query}")
+    if tool_version and not any(
+        re.match(r"^\W*(?:tool )?version\s*:", x, re.IGNORECASE) for x in body
+    ):
+        body.append(f"- tool version: {tool_version}")
     body.append(f"- sha256: {file_sha256(output)} {rel}")
     lines[start + 1 : end] = [*body, ""] if end < len(lines) else body
     _ = sources.write_text("\n".join(lines) + "\n", encoding="utf-8")
@@ -1178,6 +1193,8 @@ def check_run(run: Path) -> list[str]:
         problems.append("README.md states no pinned window (start..end dates on a Window line)")
     if readme is not None and not NAMES_LINE.search(readme):
         problems.append("README.md has no Names: line (write `Names: none` when there are none)")
+    if readme is not None and not PEOPLE_LINE.search(readme):
+        problems.append("README.md has no People: line (write `People: none` when there are none)")
     sources = read("sources.md")
     entries: dict[str, list[str]] = {}
     if sources is None:
@@ -1796,6 +1813,20 @@ def _collect_prs_command(args: Args) -> int:
     return 0
 
 
+def _source_command(args: Args) -> int:
+    run = Path(args.run)
+    output = Path(args.output_file)
+    if not run.is_dir() or not output.is_file():
+        print(f"need a run directory and an existing output file: {args.run}", file=sys.stderr)
+        return 2
+    try:
+        record_source(run / "sources.md", args.entry, output, args.query, args.tool_version)
+    except ValueError:
+        print(f"{args.output_file} is not inside the run {args.run}", file=sys.stderr)
+        return 2
+    return 0
+
+
 def _trace_command(args: Args) -> int:
     if not (args.against or args.run):
         print("trace needs --against or --run", file=sys.stderr)
@@ -1875,6 +1906,9 @@ class Args(argparse.Namespace):
     end: str = ""
     output: str = ""
     sources: str = ""
+    output_file: str = ""
+    query: str = ""
+    tool_version: str = ""
     entry: str = ""
     names_file: str = ""
     tier: int = 3
@@ -1970,6 +2004,16 @@ def _add_run_parsers(sub: Subparsers) -> None:
         help="run directory: project and breakeven output, README, findings, measurements",
     )
 
+    p_source = sub.add_parser(
+        "source",
+        help="write a sources.md entry for an output file: path, clock time, sha256, query",
+    )
+    _ = p_source.add_argument("run", help="run directory")
+    _ = p_source.add_argument("entry", help="stable entry name")
+    _ = p_source.add_argument("output_file", help="the file the command produced, inside the run")
+    _ = p_source.add_argument("--query", default="", help="the command that produced it, verbatim")
+    _ = p_source.add_argument("--tool-version", default="", help="e.g. 'gh 2.60.1'")
+
     p_stamp = sub.add_parser(
         "stamp", help="record the hashes of the files a written report was derived from"
     )
@@ -2020,6 +2064,7 @@ def main(argv: list[str] | None = None) -> int:
         "collect-prs": _collect_prs_command,
         "trace": _trace_command,
         "stamp": _stamp_command,
+        "source": _source_command,
         "fresh": _fresh_command,
         "init": _init_command,
         "assumptions": lambda a: _assumptions_command(Path(a.file)),

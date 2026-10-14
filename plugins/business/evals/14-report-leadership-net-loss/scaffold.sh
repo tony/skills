@@ -10,6 +10,7 @@ cat >"$run/README.md" <<'MD'
 Scope: manual and assisted editing of paired drafts.
 Window: 2026-04-01..2026-06-30. Excluded novelty ramp: none.
 Names: none
+People: none
 MD
 
 cat >"$run/sources.md" <<'MD'
