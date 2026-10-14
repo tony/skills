@@ -1,0 +1,39 @@
+schema_version: "1.0"
+name: 15-report-org-wide-net-loss
+description: >-
+  An org-wide report on a run whose measured savings rate is negative reports
+  the projection as a net loss and never asks for a replacement rate.
+tags: [fixture]
+
+context:
+  scaffold_script: scaffold.sh
+
+execution:
+  prompt: >-
+    /business:report-org-wide out/2026-06-30/business/lean-tighten
+  max_turns: 30
+  timeout_seconds: 900
+  allowed_tools: [Bash, Read, Write, Edit, Glob, Grep, Skill]
+
+runs: 3
+
+graders:
+  - name: report-written
+    type: file_exists
+    path: out/2026-06-30/business/lean-tighten/reports/org-wide.md
+    exists: true
+
+  - name: report-states-a-net-loss
+    type: regex
+    target:
+      source: file
+      path: out/2026-06-30/business/lean-tighten/reports/org-wide.md
+    pattern: 'net loss|\bloses?\b|\blost\b'
+    flags: i
+
+  - name: keeps-the-measured-rate
+    type: llm
+    criteria: >-
+      The reply reports the projection as a loss of engineer time and does not
+      ask the user for a different, positive, or replacement savings rate, nor
+      substitute one for the measured negative rate.
