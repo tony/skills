@@ -2,6 +2,7 @@
 """Find candidate Tailwind spacing anti-patterns in template files.
 
 Usage: detect.py PATTERN PATH [PATH ...]
+       detect.py version [ROOT]
 
 PATTERN is one of ``margin``, ``vmargin``, ``margin-in-gap``, ``gap``,
 ``width``, ``interactive``, ``wrapper``, ``space-gap``, ``space``. Each hit
@@ -13,6 +14,11 @@ needs a read in context.
 lists both kinds of margin in files that also set ``gap-*``, and stops after
 50 hits.
 
+``version`` prints the Tailwind major version found in ROOT (default ``.``)
+from a lockfile, then ``package.json``, then a stylesheet, as
+``version: 4 (package-lock.json)``. A ``tailwind.config.*`` file is not a
+version signal: v4 loads one through ``@config``.
+
 Exit codes: 0 hits found, 1 no hits, 2 usage error or a path that does not exist.
 """
 
@@ -20,10 +26,11 @@ Exit codes: 0 hits found, 1 no hits, 2 usage error or a path that does not exist
 
 from __future__ import annotations
 
+import json
 import re
 import sys
 from pathlib import Path
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
 if TYPE_CHECKING:
     from collections.abc import Iterator
@@ -36,14 +43,20 @@ EXTENSIONS = (
     ".astro",
     ".html",
     ".erb",
-    ".blade.php",
+    ".php",
+    ".twig",
+    ".njk",
+    ".hbs",
+    ".heex",
+    ".mdx",
+    ".liquid",
 )
-SKIP_DIRS = {"node_modules", ".git", "dist", "build", ".next", ".nuxt"}
+SKIP_DIRS = {"node_modules", ".git", "dist", "build", ".next", ".nuxt", "vendor"}
 MIN_ARGS = 3
 
 QUOTES = "\"'`"
 LEAD = r"(?<![^\sQQ:!])"
-STEP = r"(?:[0-9\[]|px\b)"
+STEP = r"(?:[0-9\[]|\(--|px\b)"
 GAP = r"gap(?:-[xy])?-" + STEP
 SPACE = r"space-[xy]-" + STEP
 MAX_SNIPPET = 200
@@ -59,7 +72,7 @@ def _rx(template: str) -> re.Pattern[str]:
 SIMPLE: dict[str, re.Pattern[str]] = {
     "margin": _rx(LEAD + r"-?m[xesrl]?-" + STEP),
     "gap": _rx(LEAD + GAP),
-    "width": _rx(LEAD + r"w-[0-9\[]"),
+    "width": _rx(LEAD + r"w-(?:[0-9\[]|\(--)"),
     "space": _rx(LEAD + SPACE),
 }
 VMARGIN = _rx(LEAD + r"-?m[ytb]-" + STEP)
@@ -148,20 +161,105 @@ def find(pattern: str, text: str) -> list[tuple[int, str]]:
     ]
 
 
+def _walk(root: Path, suffixes: tuple[str, ...]) -> Iterator[Path]:
+    """Yield files under ``root`` with ``suffixes``, skipping only directories below ``root``."""
+    for f in sorted(root.rglob("*")):
+        if (
+            f.is_file()
+            and f.name.endswith(suffixes)
+            and not SKIP_DIRS.intersection(f.relative_to(root).parts[:-1])
+        ):
+            yield f
+
+
 def iter_files(paths: list[str]) -> Iterator[Path]:
     """Yield template files under each path; a file path is taken as given."""
     for raw in paths:
         p = Path(raw)
         if p.is_file():
             yield p
-            continue
-        for f in sorted(p.rglob("*")):
-            if f.is_file() and f.name.endswith(EXTENSIONS) and not SKIP_DIRS.intersection(f.parts):
-                yield f
+        else:
+            yield from _walk(p, EXTENSIONS)
+
+
+LOCKFILES = {
+    "package-lock.json": re.compile(r'"node_modules/tailwindcss":\s*\{\s*"version":\s*"(\d+)\.'),
+    "pnpm-lock.yaml": re.compile(
+        r"(?m)(?<![\w@/.-])/?tailwindcss[@/](\d+)\.|^\s+tailwindcss:\n\s+specifier:.*\n\s+version: (\d+)\."  # noqa: E501
+    ),
+    "yarn.lock": re.compile(r'(?m)^"?tailwindcss@[^\n]*:\n\s+version:? "?(\d+)\.'),
+    "bun.lock": re.compile(r"(?<![\w@/.-])tailwindcss@(\d+)\."),
+}
+RANGE_MAJOR = re.compile(r"\d+")
+V4_IMPORT = re.compile(r"""@import\s+["']tailwindcss["/]""")
+V3_DIRECTIVE = re.compile(r"@tailwind\s+(?:base|components|utilities)\b")
+
+
+def _read(path: Path) -> str:
+    try:
+        return path.read_text(encoding="utf-8", errors="replace")
+    except OSError:
+        return ""
+
+
+def _majors(found: list[str]) -> str:
+    return "/".join(sorted(set(found), key=int))
+
+
+def _package_range(root: Path) -> str:
+    """Return the ``tailwindcss`` range declared in ``package.json``, or ``""``."""
+    try:
+        pkg = cast("dict[str, dict[str, object]]", json.loads(_read(root / "package.json") or "{}"))
+        for section in ("dependencies", "devDependencies", "peerDependencies"):
+            spec = pkg[section]["tailwindcss"] if section in pkg else None
+            if isinstance(spec, str):
+                return spec
+    except (ValueError, KeyError, TypeError):
+        pass
+    return ""
+
+
+def tailwind_version(root: Path) -> tuple[str, str] | None:
+    """Return ``(majors, source)`` for the Tailwind version in ``root``, or ``None``.
+
+    >>> import tempfile
+    >>> with tempfile.TemporaryDirectory() as d:
+    ...     _ = (Path(d) / "tailwind.config.js").write_text("module.exports = {}")
+    ...     tailwind_version(Path(d))
+    """
+    for name, rx in LOCKFILES.items():
+        found = [g for m in rx.finditer(_read(root / name)) for g in m.groups() if g]
+        if found:
+            return _majors(found), name
+    m = RANGE_MAJOR.search(_package_range(root))
+    if m:
+        return m.group(), "package.json"
+    for css in _walk(root, (".css",)):
+        text = _read(css)
+        if V4_IMPORT.search(text):
+            return "4", css.relative_to(root).as_posix()
+        if V3_DIRECTIVE.search(text):
+            return "3", css.relative_to(root).as_posix()
+    return None
+
+
+def _version_cli(raw: str) -> int:
+    root = Path(raw)
+    if not root.is_dir():
+        sys.stderr.write(f"detect.py: no such directory: {root}\n")
+        return 2
+    found = tailwind_version(root)
+    if found is None:
+        sys.stdout.write("version: unknown\n")
+        return 1
+    sys.stdout.write(f"version: {found[0]} ({found[1]})\n")
+    return 0
 
 
 def main(argv: list[str]) -> int:
     """Print hits for ``argv[1]`` in the paths ``argv[2:]``."""
+    if argv[1:2] == ["version"] and len(argv) <= MIN_ARGS:
+        return _version_cli(argv[2] if len(argv) == MIN_ARGS else ".")
     if len(argv) < MIN_ARGS or argv[1] not in PATTERNS:
         sys.stderr.write(__doc__ or "")
         return 2

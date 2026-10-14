@@ -19,6 +19,9 @@ Use `$ARGUMENTS` as the target scope. If it is empty and the user pasted
 markup, audit the paste. Otherwise ask which component or file to audit;
 without a question tool, stop with the halted result below.
 
+Ask only through a question tool, and never when the user said not to
+ask. In that case decide per the steps below and end with no question.
+
 Run scripts from the project root so targets stay relative to the
 project. Resolve `references/detect.py` against this skill's directory,
 print the absolute path once, and write it literally in each command,
@@ -32,19 +35,17 @@ Find the template files in scope and the class attribute each uses:
 
 - `*.tsx`, `*.jsx`: `className=`
 - `*.vue`: `class=`, `:class=`
-- `*.svelte`, `*.astro`, `*.html`, `*.erb`, `*.blade.php`: `class=`
+- `*.svelte`, `*.astro`, `*.html`, `*.erb`, `*.php`, `*.twig`, `*.njk`,
+  `*.hbs`, `*.heex`, `*.mdx`, `*.liquid`: `class=`
 
 The detect commands in `references/patterns.md` run
-`references/detect.py` (needs `python3`) and name an `rg` fallback for
-when it cannot run. If neither runs, read the files in scope.
+`references/detect.py` and name an `rg` fallback. If neither runs,
+read the files in scope.
 
-Read the installed Tailwind version: the `tailwindcss` entry in the
-lockfile (`package-lock.json`, `pnpm-lock.yaml`, `yarn.lock`,
-`bun.lock`), else the range in `package.json`. As a cross-check, an
-`@import "tailwindcss"` line in a stylesheet means v4, and
-`@tailwind base` or a `tailwind.config.*` file means v3. If the version
-cannot be found, say so in the result and keep `space-x` and `space-y` advice
-version-neutral.
+Read the installed Tailwind version with the `version` command described
+in `references/patterns.md`, run on the project root. If it prints
+`version: unknown`, say so in the result and keep `space-x` and
+`space-y` advice version-neutral.
 
 ### Step 1: Structural audit
 
@@ -87,21 +88,22 @@ classes. Work in this order:
    deliberate, and so is the margin around it (`mx-*` on a `w-px` or
    `<hr>` element): keep both, never remove or shrink it, and list it as
    a kept difference with the distance it produces. Ask before
-   normalizing a difference that may be design.
-   Without a question tool, or when the user said not to ask ("no
-   questions"), keep the break, ask nothing, and report it as a kept
-   difference after the findings, never as a finding, with no guessed
-   rationale. When you keep separate containers, name the evidence that
-   they are separate groups (a divider, different roles, a
-   `justify-between`), or merge them. Never end a reply with a question
-   to the user when they said not to ask.
+   normalizing a difference that may be design; when asking is not
+   allowed, keep the break and report it as a kept difference after the
+   findings, never as a finding, with no guessed rationale. Offer a
+   divider, a separate group, or any way to keep a wide gap only when
+   the user said the wide gap is meant to stay. When you keep separate
+   containers, name the evidence that they are separate groups (a
+   divider, different roles, a `justify-between`), or merge them.
 6. Report every difference you leave unchanged, such as a peer with
    different padding: list it as a kept difference or fix it as a
    finding; never mention it only to guess why it is fine.
 
 ### Step 4: Validate
 
-Redraw the spacing map and confirm:
+After editing files, re-run the detect command for each pattern fixed
+on the edited files and read the changed lines back; report any hit that
+remains. Then redraw the spacing map and confirm:
 
 - [ ] Every adjacent pair has exactly one spacing authority
 - [ ] Each visual group shares one parent container
@@ -163,15 +165,18 @@ code, with no bold anywhere and no counted lead-in ("for three
 reasons:"). State each visible change once. Do not restate that distances stay
 the same.
 
-Never offer a divider, a separate group, or any way to keep the wide
-gap in the next-step list or anywhere else, unless the user said the
-wide gap is meant to stay. State the Tailwind version only when it changes the
-advice. The default spacing scale is assumed (`gap-3` is 12px); say so
-once if the project sets a custom `theme.spacing`. End a full audit
-with a plain list of the fixes found, offered for applying or extending, one per
-line, with no "say the word" phrasing. When `detect.py` reports that it
-stopped at its hit cap, say which files it counted and that later files
-were not scanned.
+State the Tailwind version only when it changes the advice. Distances
+assume the default spacing scale (`gap-3` is 12px in v3 and in v4, where
+`--spacing` is `0.25rem`: [v3.4.0 `stubs/config.full.js`](https://github.com/tailwindlabs/tailwindcss/blob/v3.4.0/stubs/config.full.js),
+[v4.0.0 `theme.css`](https://github.com/tailwindlabs/tailwindcss/blob/v4.0.0/packages/tailwindcss/theme.css));
+say so once if the project sets a custom `theme.spacing` or `--spacing`.
+When `detect.py` reports that it stopped at its hit cap, say which files
+it counted and that later files were not scanned.
+
+End a full audit with a next-step panel through the question tool, one
+option per fix found plus one to extend the audit to another path. Where
+no question tool exists, or the user said not to ask, print the options
+as a plain list, one per line, and stop.
 
 Halted or empty runs give one result sentence, then what the user does:
 

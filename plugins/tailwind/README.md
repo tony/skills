@@ -46,9 +46,7 @@ in Tailwind CSS layouts. It finds candidates with `scripts/detect.py`,
 falls back to `rg`, then to reading files. See
 [`SKILL.md`](skills/spacing-audit/SKILL.md) for the steps.
 
-The supported template files are `.tsx` and `.jsx` (`className`), `.vue`
-(`class`, `:class`), and `.svelte`, `.astro`, `.html`, `.erb`, and
-`.blade.php` (`class`).
+Step 0 of `SKILL.md` lists the supported template files.
 
 ## Arguments
 

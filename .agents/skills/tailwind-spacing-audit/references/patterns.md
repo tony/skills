@@ -10,27 +10,33 @@ are the same anti-pattern.
 ## Contents
 
 - Detect command limits
-- Pattern 1: Container fragmentation
-- Pattern 2: Margin and gap mixing
-- Pattern 3: Padding asymmetry
-- Pattern 4: Fixed width on content-sized items
-- Pattern 5: Wrapper nesting
-- Pattern 6: Hit target inconsistency
-- Pattern 7: space-x and space-y with gap (v3 and v4)
+- Container fragmentation
+- Margin and gap mixing
+- Padding asymmetry
+- Fixed width on content-sized items
+- Wrapper nesting
+- Hit target inconsistency
+- space-x and space-y with gap
 - Decision tree
 
 ## Detect command limits
 
 Each pattern's command is `python3 <absolute path to detect.py> <name> <path>`,
 run from the project root; `<path>` is the target from `$ARGUMENTS`,
-relative to the project. It prints `path:line:text` for each hit, exits
-1 when there is none, and exits 2 when a path does not exist. Needs
-`python3`. If it cannot run, use the `rg` fallback
-under the pattern.
+relative to the project and quoted when it holds spaces. It prints
+`path:line:text` for each hit, exits 1 when there is none, and exits 2
+when a path does not exist. Needs `python3`. If it cannot run, use the
+`rg` fallback under the pattern. The scan skips `node_modules`, `.git`,
+`dist`, `build`, `.next`, `.nuxt`, and `vendor` below `<path>`.
+
+`python3 <absolute path to detect.py> version <project root>` prints the
+Tailwind major version and the file it came from, or `version: unknown`
+with exit 1. A `tailwind.config.*` file is not a signal: v4 loads one
+through `@config`.
 
 The commands are candidate finders, not proof. They search class tokens
 in single, double, and backtick strings, so `class='...'`, `cn("...")`,
-`clsx(...)`, and template literals match. Patterns 3, 5, and 6 match
+`clsx(...)`, and template literals match. `interactive` and `wrapper` match
 tags split over several lines.
 
 They cannot see:
@@ -48,13 +54,13 @@ They cannot see:
 - `mt-auto`, `mx-auto`, and the other `auto` margins, which push instead
   of space
 - `space-*` combined with `gap-*` across separate `cn()` arguments
-  (Pattern 7 has a second command for this)
+  (`space`, under space-x and space-y with gap, lists them all)
 
 Zero hits is not proof of a clean file. When a command returns nothing
 for a file the user named, read that file and apply the pattern by eye.
 Every hit needs a read in context.
 
-## Pattern 1: Container fragmentation
+## Container fragmentation
 
 Items that read as one row are split across sibling containers, each
 with its own spacing rule. No `rg` pattern finds this; walk the DOM.
@@ -63,7 +69,7 @@ Detect: list the visual peers, then check that all share one flex or
 grid parent. The command lists every all-sides and horizontal margin
 (`m-`, `ml-`, `mr-`, `ms-`, `me-`, `mx-` with a number or arbitrary
 value; `auto` is skipped; vertical margins are `vmargin`, under
-Pattern 2). It has no sibling logic; walk the DOM to see which margins
+Margin and gap mixing). It has no sibling logic; walk the DOM to see which margins
 compensate for a split.
 
 ```console
@@ -72,13 +78,13 @@ $ python3 <absolute path to detect.py> \
     <path>
 ```
 
-Fallback if the script cannot run (replace `.` with the target):
+Fallback if the script cannot run:
 
 ```console
 $ rg -n \
-    -e '(?:^|[\s"\x27\x60:!])-?m[xesrl]?-(?:[0-9\[]|px\b)' \
-    -g '*.{tsx,jsx,vue,svelte,astro,html,erb,blade.php}' \
-    .
+    -e '(?:^|[\s"\x27\x60:!])-?m[xesrl]?-(?:[0-9\[]|\(--|px\b)' \
+    -g '*.{tsx,jsx,vue,svelte,astro,html,erb,php,twig,njk,hbs,heex,mdx,liquid}' \
+    <path>
 ```
 
 Before:
@@ -110,7 +116,7 @@ After:
 One container, one `gap-1`. Pick the gap value you want the whole row
 to have.
 
-## Pattern 2: Margin and gap mixing
+## Margin and gap mixing
 
 A flex or grid parent sets `gap-*`, and some children also carry
 margin. The margin adds to the gap on that edge.
@@ -136,15 +142,15 @@ $ python3 <absolute path to detect.py> \
     <path>
 ```
 
-Fallback if the script cannot run (replace `.` with the target). It lists
+Fallback if the script cannot run. It lists
 every margin; keep the ones in files that also match the `gap` pattern,
 and take the first 50 hits per run:
 
 ```console
 $ rg -n \
-    -e '(?:^|[\s"\x27\x60:!])-?m[xesrlytb]?-(?:[0-9\[]|px\b)' \
-    -g '*.{tsx,jsx,vue,svelte,astro,html,erb,blade.php}' \
-    .
+    -e '(?:^|[\s"\x27\x60:!])-?m[xesrlytb]?-(?:[0-9\[]|\(--|px\b)' \
+    -g '*.{tsx,jsx,vue,svelte,astro,html,erb,php,twig,njk,hbs,heex,mdx,liquid}' \
+    <path>
 ```
 
 Before:
@@ -171,8 +177,8 @@ After, uniform:
 </nav>
 ```
 
-After, only when the user wants the wide gap kept, make it a visible
-divider instead of margin arithmetic:
+After, when the user said the wide gap is meant to stay, make it a
+visible divider instead of margin arithmetic:
 
 ```tsx
 <nav className="flex items-center gap-3">
@@ -190,7 +196,7 @@ Leave alone: a margin on the first or last child that insets from the
 container edge. `gap-*` does not govern edge space, but padding on the
 parent is cleaner.
 
-## Pattern 3: Padding asymmetry
+## Padding asymmetry
 
 Peer interactive elements in one row have different `px-*`, `py-*`, or
 `p-*`. Their content sits unevenly even when the gaps match.
@@ -207,15 +213,15 @@ $ python3 <absolute path to detect.py> \
     <path>
 ```
 
-Fallback if the script cannot run (replace `.` with the target):
+Fallback if the script cannot run:
 
 ```console
 $ rg -n \
     -U \
     -o \
     -e '<(?:a|button|Button|Link|NavLink|[A-Z]\w*(?:Button|Link))\s(?:[^>]|=>)*?(?:class|className)=(?:"[^"]*"|\x27[^\x27]*\x27|\{[^}]*\})' \
-    -g '*.{tsx,jsx,vue,svelte,astro,html,erb,blade.php}' \
-    .
+    -g '*.{tsx,jsx,vue,svelte,astro,html,erb,php,twig,njk,hbs,heex,mdx,liquid}' \
+    <path>
 ```
 
 Before:
@@ -239,12 +245,12 @@ After: all three use `px-2`.
 If text-heavy items truly need more padding, they probably belong to a
 different visual group.
 
-## Pattern 4: Fixed width on content-sized items
+## Fixed width on content-sized items
 
 One item in a flex row has `w-*` while its siblings size to content.
 Extra space pools inside it and it reads wider than its peers.
 
-Detect: `w-` followed by a digit or `[`, at the start of a token, so
+Detect: `w-` followed by a digit, `[`, or `(--`, at the start of a token, so
 `min-w-*` and `max-w-*` do not match:
 
 ```console
@@ -253,13 +259,13 @@ $ python3 <absolute path to detect.py> \
     <path>
 ```
 
-Fallback if the script cannot run (replace `.` with the target):
+Fallback if the script cannot run:
 
 ```console
 $ rg -n \
-    -e '(?:^|[\s"\x27\x60:])w-[0-9\[]' \
-    -g '*.{tsx,jsx,vue,svelte,astro,html,erb,blade.php}' \
-    .
+    -e '(?:^|[\s"\x27\x60:!])w-(?:[0-9\[]|\(--)' \
+    -g '*.{tsx,jsx,vue,svelte,astro,html,erb,php,twig,njk,hbs,heex,mdx,liquid}' \
+    <path>
 ```
 
 Before:
@@ -281,7 +287,7 @@ Leave alone: `min-w-*` and `max-w-*` (they constrain, not fix); grid
 cells that must align; form inputs that share a field width; counters
 whose text length varies enough to cause layout shift.
 
-## Pattern 5: Wrapper nesting
+## Wrapper nesting
 
 A single-child `<div>` with flex alignment classes wraps an element that
 could take those classes itself. The parent's `gap-*` then acts between
@@ -298,14 +304,14 @@ $ python3 <absolute path to detect.py> \
     <path>
 ```
 
-Fallback if the script cannot run (replace `.` with the target):
+Fallback if the script cannot run:
 
 ```console
 $ rg -n \
     -U \
     -e '<div\s(?:[^>]|=>)*?(?:class|className)=\{?(?:\w+\()?["\x27\x60](?:[^"\x27\x60]*\s)?(?:flex\s(?:[^"\x27\x60]*\s)?items-center|items-center\s(?:[^"\x27\x60]*\s)?flex)(?:\s[^"\x27\x60]*)?["\x27\x60]' \
-    -g '*.{tsx,jsx,vue,svelte,astro,html,erb,blade.php}' \
-    .
+    -g '*.{tsx,jsx,vue,svelte,astro,html,erb,php,twig,njk,hbs,heex,mdx,liquid}' \
+    <path>
 ```
 
 Before:
@@ -326,12 +332,12 @@ After: the button is a direct child of the gap container, and
 Leave alone: a wrapper that carries padding, background, or border the
 child cannot take, and any wrapper around more than one child.
 
-## Pattern 6: Hit target inconsistency
+## Hit target inconsistency
 
 Peer interactive elements have different `h-*` classes, so clickable
 areas differ and items jitter vertically.
 
-Detect: run the Pattern 3 command, then compare the `h-*` classes of
+Detect: run the `interactive` command from Padding asymmetry, then compare the `h-*` classes of
 the peers in one container.
 
 Before:
@@ -349,12 +355,14 @@ Before:
 After: every peer uses the bar height (`h-12`) with `items-center`, and
 the icon keeps its visual size.
 
-## Pattern 7: space-x and space-y with gap
+## space-x and space-y with gap
 
 `space-x-*` and `space-y-*` put margin on children, and `gap-*` adds
 space between them, so on one container every gap becomes gap plus
-margin. The space utilities also misbehave with wrapping and grids. The
-selector depends on the Tailwind version found in Step 0:
+margin. The Tailwind docs say the space utilities are not designed for
+grids or layouts that wrap
+([margin, Limitations](https://tailwindcss.com/docs/margin#limitations)).
+The selector depends on the Tailwind version found in Step 0:
 
 - v4: margin goes on every child except the last
   (`> :not(:last-child)`). Hiding the last child leaves its previous
@@ -367,7 +375,7 @@ selector depends on the Tailwind version found in Step 0:
 
 Selector sources: v4 is the section on the `space-x-*` and `space-y-*`
 selector change in the
-[Tailwind v4 upgrade guide](https://tailwindcss.com/docs/upgrade-guide),
+[Tailwind v4 upgrade guide](https://tailwindcss.com/docs/upgrade-guide#space-between-selector),
 which also recommends migrating to `gap` when the change causes
 problems. v3 is the `space` plugin in
 [`corePlugins.js` at v3.4.0](https://github.com/tailwindlabs/tailwindcss/blob/v3.4.0/src/corePlugins.js).
@@ -383,15 +391,15 @@ $ python3 <absolute path to detect.py> \
     <path>
 ```
 
-Fallback if the script cannot run (replace `.` with the target):
+Fallback if the script cannot run:
 
 ```console
 $ rg -n \
     -U \
-    -e '["\x27\x60](?:[^"\x27\x60]*\s)?gap(?:-[xy])?-[0-9\[][^"\x27\x60]*\sspace-[xy]-[0-9\[]' \
-    -e '["\x27\x60](?:[^"\x27\x60]*\s)?space-[xy]-[0-9\[][^"\x27\x60]*\sgap(?:-[xy])?-[0-9\[]' \
-    -g '*.{tsx,jsx,vue,svelte,astro,html,erb,blade.php}' \
-    .
+    -e '["\x27\x60](?:[^"\x27\x60]*\s)?gap(?:-[xy])?-(?:[0-9\[]|\(--|px\b)[^"\x27\x60]*\sspace-[xy]-(?:[0-9\[]|\(--|px\b)' \
+    -e '["\x27\x60](?:[^"\x27\x60]*\s)?space-[xy]-(?:[0-9\[]|\(--|px\b)[^"\x27\x60]*\sgap(?:-[xy])?-(?:[0-9\[]|\(--|px\b)' \
+    -g '*.{tsx,jsx,vue,svelte,astro,html,erb,php,twig,njk,hbs,heex,mdx,liquid}' \
+    <path>
 ```
 
 If the utilities sit in different arguments, such as
@@ -404,13 +412,13 @@ $ python3 <absolute path to detect.py> \
     <path>
 ```
 
-Fallback if the script cannot run (replace `.` with the target):
+Fallback if the script cannot run:
 
 ```console
 $ rg -n \
-    -e '(?:^|[\s"\x27\x60:!])space-[xy]-(?:[0-9\[]|px\b)' \
-    -g '*.{tsx,jsx,vue,svelte,astro,html,erb,blade.php}' \
-    .
+    -e '(?:^|[\s"\x27\x60:!])space-[xy]-(?:[0-9\[]|\(--|px\b)' \
+    -g '*.{tsx,jsx,vue,svelte,astro,html,erb,php,twig,njk,hbs,heex,mdx,liquid}' \
+    <path>
 ```
 
 Before:
@@ -448,23 +456,23 @@ For a spacing issue between items A and B:
 
 ```text
 Does the parent have both gap-* and space-*?
-+-- Yes --> Pattern 7. Remove space-*.
++-- Yes --> space-x and space-y with gap. Remove space-*.
 +-- No --> Is A in a different container than B?
-    +-- Yes --> Pattern 1. Merge containers.
+    +-- Yes --> Container fragmentation. Merge containers.
     +-- No --> Does the parent have gap-*?
         +-- Yes --> Does A or B also have margin?
-        |   +-- Yes --> Pattern 2. Remove margin.
+        |   +-- Yes --> Margin and gap mixing. Remove margin.
         |   +-- No --> Do A and B have different px-*?
-        |       +-- Yes --> Pattern 3. Standardize.
+        |       +-- Yes --> Padding asymmetry. Standardize.
         |       +-- No --> Does A or B have a fixed w-*?
-        |           +-- Yes --> Pattern 4. Remove w-*.
+        |           +-- Yes --> Fixed width. Remove w-*.
         |           +-- No --> Is A or B a single-child wrapper?
-        |               +-- Yes --> Pattern 5. Flatten.
+        |               +-- Yes --> Wrapper nesting. Flatten.
         |               +-- No --> Do A and B have different h-*?
-        |                   +-- Yes --> Pattern 6. Standardize heights.
+        |                   +-- Yes --> Hit target inconsistency. Standardize heights.
         |                   +-- No --> Spacing may be correct. Verify visually.
         +-- No --> Is spacing done via margins?
-            +-- Yes --> Pattern 2. Add gap-* to the parent, remove margins.
-            +-- No --> Check Patterns 3 to 6 as in the gap branch above.
+            +-- Yes --> Margin and gap mixing. Add gap-* to the parent, remove margins.
+            +-- No --> Check padding, width, wrapper, and height as in the gap branch above.
                 If none applies, spacing may be correct. Verify visually.
 ```
