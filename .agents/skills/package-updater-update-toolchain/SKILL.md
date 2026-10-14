@@ -83,7 +83,7 @@ repository sets for its packages is applied to its toolchain pins as a
 policy choice (uv's `exclude-newer` gates uv's resolution of packages,
 not the uv binary), and a repository with none has no gate. For each target, read its publication time with
 the command in the "Release publication time" section of that
-reference. A target younger than the window stops that tool, even when
+reference, and the visible date from `plan_rules.py lapse` (same reference). A target younger than the window stops that tool, even when
 the user named the version: read `references/stopped-run.md` and use its cooldown form.
 When the user asks
 for an older release instead, find the newest one outside the window by
@@ -110,7 +110,17 @@ other way to find them.
 
 List the span from the full release history, never the first page: the
 release-list command above with `--paginate` for a GitHub tool, the
-`releases` keys of `https://pypi.org/pypi/<name>/json` for a PyPI tool,
+`versions` list of the PyPI Index API for a PyPI tool
+([PEP 691 JSON](https://docs.pypi.org/api/index-api/); the JSON API's
+`releases` key is deprecated):
+
+```console
+$ curl -fsS \
+    -H 'Accept: application/vnd.pypi.simple.v1+json' \
+    https://pypi.org/simple/<name>/ \
+    | jq -r .versions[]
+```
+
 and the `time` keys of `https://registry.npmjs.org/<name>` for an npm
 tool; keep stable versions only (drop prereleases and npm's `created` and
 `modified`) and sort by version. A list that could not be read in full counts as unread notes.

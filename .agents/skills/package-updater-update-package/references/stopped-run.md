@@ -98,7 +98,9 @@ To continue:
 - Stop here.
 ```
 
-For a rolling cooldown, substitute the observed publication day and computed end:
+For a rolling cooldown, substitute the observed publication day and the end
+`plan_rules.py lapse` computes (see "Supply-chain cooldown" in
+`ecosystems.md`):
 
 ```text
 ⚠ Stopped: nothing was changed. <package> <version> was published <day> and the <N>-day cooldown hides it until <eligible day>.

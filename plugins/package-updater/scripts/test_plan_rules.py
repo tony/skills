@@ -126,3 +126,14 @@ def test_pin_files_classify_by_name(capsys: pytest.CaptureFixture[str]) -> None:
     assert out[".tool-versions"] == out["sub/.nvmrc"] == "toolchain"
     assert out["package.json"].startswith("mixed")
     assert out["x"] == "unknown"
+
+
+@pytest.mark.parametrize("window", ["-3", "0"])
+def test_non_positive_window_exits_2(capsys: pytest.CaptureFixture[str], window: str) -> None:
+    """A window that would put the date before publication is refused."""
+    args = ["lapse", "--published", "2026-01-01T12:00:00Z", "--window", window, "--unit", "days"]
+
+    assert plan_rules.main(args) == 2
+    captured = capsys.readouterr()
+    assert captured.out == ""
+    assert "positive window" in captured.err

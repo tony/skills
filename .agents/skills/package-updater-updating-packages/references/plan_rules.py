@@ -13,7 +13,8 @@ a new minor), ``bulk`` for an in-range move, ``by-hand`` for a range or file the
 not classify. ``--pin`` classifies pin files by name. Whether an in-range package earns its own
 commit, and which packages form a release train, stay a judgment.
 
-Exit status: 0, 1 when the input carries an error, 2 on bad usage.
+Exit status: 0, 1 when ``track`` stdin is not a diff result, 2 on bad usage. A file-level error
+in the diff is data: it goes to ``by_hand`` and the exit is 0.
 """
 
 # ruff: noqa: PLR2004
@@ -72,8 +73,8 @@ def lapse(
     if cutoff is not None:
         visible = published <= cutoff
         return {"kind": "cutoff", "visible_at": None, "visible": visible, "waiting_helps": False}
-    if window is None:
-        message = "a window or a cutoff is required"
+    if window is None or window <= timedelta(0):
+        message = "a positive window or a cutoff is required"
         raise ValueError(message)
     at = published + window
     return {

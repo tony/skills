@@ -43,7 +43,9 @@ It prints one JSON row per repository with `remote_key`, `fork_signal`,
 `author_email`, `email_in_recent`, `bot_only` and `excluded`. `excluded`
 names the rule that drops the repository, or is null:
 
-- `submodule`: a submodule of another repository.
+- `submodule`: a submodule of another repository. A `--root` walk stops
+  at each repository and never reaches its submodules, so one appears
+  only when named with `--repo`.
 - `worktree`: a linked worktree shares its history with a canonical
   clone, so updating both produces the same commit twice, or a conflict.
   The row's `clone` is the clone to act on instead.

@@ -41,7 +41,8 @@ release, with the command for the package's registry in "Latest stable
 release" of `../../references/ecosystems.md`. Either way confirm it is published and record its publication
 timestamp for the cooldown check, using the command for the package's
 registry in the "Release publication time" section of
-`../../references/ecosystems.md`. A version written before it is
+`../../references/ecosystems.md`, and compute the visible date with
+`plan_rules.py lapse` (same reference). A version written before it is
 confirmed to exist is the expensive failure this ordering prevents.
 
 Read the cooldown configuration of each repository in scope (the
