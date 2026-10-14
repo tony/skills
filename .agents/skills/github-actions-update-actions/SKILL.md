@@ -29,9 +29,9 @@ directory; print each absolute path once and write it literally in each
 command:
 
 ```console
-$ python3 <absolute-path>/fleet.py args update-actions <<'END_OF_ARGUMENTS'
+$ python3 <absolute-path>/fleet.py args update-actions <<'END_OF_ARGUMENTS_7f3a9c1e5b2d4086'
 $ARGUMENTS
-END_OF_ARGUMENTS
+END_OF_ARGUMENTS_7f3a9c1e5b2d4086
 ```
 
 ## Procedure
@@ -96,8 +96,7 @@ to a commit or to obsolete, and run them only after the user confirms.
 ## Rules
 
 - No version string is written before its tag is confirmed to exist.
-- The dependabot pull request cites the commit, never the reverse
-  (`references/dependabot-closeout.md`).
+- Citing dependabot follows `references/dependabot-closeout.md`.
 - A fleet-wide claim is verified per repository before it enters that
   repository's commit body.
 - Report unrelated breakage; fix it only when a bump caused it.

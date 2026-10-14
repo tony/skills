@@ -23,12 +23,13 @@ or CLAUDE.md. The body says what changed upstream, what it means for this
 repository, and links every major release in the span. Write the commit
 message, and any pull-request title and body, per `prose-rules.md`. No
 `Co-Authored-By`, no "Generated with" or other tool trailer, no emoji, and
-no mention of that rule in the reply. Never cite a dependabot pull request
-(`dependabot-closeout.md` holds that rule).
+no mention of that rule in the reply. `dependabot-closeout.md` holds the
+rule on citing dependabot.
 
 ## Commit
 
-Stage the named workflow files with `git -C <path> add -- '<file>'...`; never
+Stage the named workflow files with `git -C <path> add -- <file>...`, each
+`<file>` pasted in its `quoted_files` form from the inventory; never
 `add -A`, `add .`, or `commit -a`. Then read what is staged:
 
 ```console

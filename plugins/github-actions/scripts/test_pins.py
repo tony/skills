@@ -7,6 +7,7 @@ from __future__ import annotations
 import json
 import os
 import re
+import shlex
 import subprocess
 import sys
 from pathlib import Path
@@ -769,7 +770,15 @@ def test_pin_version_reads_prerelease_unprefixed_and_tag_comment(
 
 @pytest.mark.parametrize(
     ("left", "right", "order"),
-    [("4.2.1", "v4.10", "lt"), ("v6", "6.0.1", "eq"), ("7", "6.9.9", "gt")],
+    [
+        ("4.2.1", "v4.10", "lt"),
+        ("v6", "6.0.1", "eq"),
+        ("7", "6.9.9", "gt"),
+        ("v4.0.0-rc.1", "v4", "lt"),
+        ("v4.0.0", "4.0.0-rc.1", "gt"),
+        ("4.0.0-rc.2", "4.0.0-rc.10", "lt"),
+        ("4.0.0-rc.1", "4.0.0-rc.1", "eq"),
+    ],
 )
 def test_compare_orders_numerically(
     left: str, right: str, order: str, capsys: pytest.CaptureFixture[str]
@@ -890,3 +899,28 @@ def test_pr_state_reads_back_the_pull_request(
     reply["state"] = "CLOSED"
     monkeypatch.setattr(pins, "_out", _returns(json.dumps(reply)))
     assert pins.main(["pr-state", "acme/x", "7", "closed"]) == 0
+
+
+def test_latest_and_majors_read_bare_version_tags(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """Unprefixed tags count the way inventory reads them; a bare year does not."""
+    monkeypatch.setattr(pins, "_out", _returns("1.75.0\n1.80.1\n2024\nv1.2\n"))
+    assert pins.main(["latest", "rust-lang/x"]) == 0
+    assert capsys.readouterr().out.strip() == "1.80.1"
+    monkeypatch.setattr(pins, "_out", _returns("2.0.0\n3.1.0\n3.0.0\n2024\n"))
+    assert pins.main(["majors", "acme/x", "1.75.0", "3"]) == 0
+    assert capsys.readouterr().out.split() == ["2.0.0", "3.0.0"]
+
+
+def test_inventory_quotes_file_names_for_the_shell() -> None:
+    """A file name with a quote is pasted in its shell-quoted form."""
+    name = ".github/workflows/it's;touch x.yml"
+    result = pins._scan({name: _wf("acme/ok@v1")}, lambda _name: None)
+    assert result["files"] == [name]
+    quoted = result["quoted_files"][name]
+    assert quoted == shlex.quote(name)
+    echoed = subprocess.run(
+        ["sh", "-c", f"printf %s {quoted}"], capture_output=True, text=True, check=True
+    )
+    assert echoed.stdout == name

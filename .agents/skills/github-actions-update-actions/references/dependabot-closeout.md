@@ -55,7 +55,8 @@ these hold:
 - The version now pinned on trunk for that action, read from a fresh
   inventory, is at or above the PR's `to_version` by `pins.py compare`
   (`lt` means the PR proposes more than trunk has, so it is not
-  superseded).
+  superseded). A prerelease trunk pin is `lt` its stable target, so it never
+  satisfies one.
 
 A PR whose `changes` name only actions that appear in no pin of a
 complete inventory of trunk, with `other` 0, closes as obsolete. An

@@ -38,6 +38,7 @@ import json
 import os
 import posixpath
 import re
+import shlex
 import subprocess
 import sys
 from collections.abc import Callable
@@ -51,10 +52,10 @@ SCP_REMOTE = re.compile(r"(?:[\w.-]+@)?github\.com:(?P<path>.+)", re.IGNORECASE 
 WORKFLOW = re.compile(
     r"\.github/workflows/.+\.ya?ml|\.github/actions/(?:.+/)?action\.ya?ml", re.DOTALL
 )
-MAJOR = re.compile(r"^v(\d+)(?:\.(\d+))?(?:\.(\d+))?$")
+MAJOR = re.compile(r"^(v)?(\d+)(?:\.(\d+))?(?:\.(\d+))?$")
 VERSION = re.compile(r"^(?:tag\s*[=:]\s*)?v?(\d+(?:\.\d+){0,2}(?:-[0-9A-Za-z.-]+)?)(?![\w.-])")
 REF_VERSION = re.compile(r"^(?:v\d+(?:\.\d+){0,2}|\d+\.\d+(?:\.\d+)?)(?:-[0-9A-Za-z.-]+)?$")
-ANY_VERSION = re.compile(r"^v?(\d+)(?:\.(\d+))?(?:\.(\d+))?(?:-[0-9A-Za-z.-]+)?$")
+ANY_VERSION = re.compile(r"^v?(\d+)(?:\.(\d+))?(?:\.(\d+))?(?:-(?P<pre>[0-9A-Za-z.-]+))?$")
 SAFE_ACTION = re.compile(r"[A-Za-z0-9_.-]+(?:/[A-Za-z0-9_.-]+)+", re.ASCII)
 SAFE_REF = re.compile(r"[A-Za-z0-9_][A-Za-z0-9_.+/-]*", re.ASCII)
 SHELL_SYNTAX = re.compile(r"[$`;|&<>\\'\"\x00-\x1f\x7f]")
@@ -591,21 +592,49 @@ def unsafe_reason(action: str, ref: str) -> str:
 def compare_versions(left: str, right: str) -> str:
     """Compare over the components both versions name: ``lt``, ``eq`` or ``gt``.
 
+    A prerelease sorts below the release it precedes, as in semver.
+
     >>> compare_versions("4.2.1", "v4.10"), compare_versions("v6", "6.0.1")
     ('lt', 'eq')
-    >>> compare_versions("7", "6.9")
-    'gt'
+    >>> compare_versions("7", "6.9"), compare_versions("v4.0.0-rc.1", "v4")
+    ('gt', 'lt')
+    >>> compare_versions("4.0.0-rc.2", "4.0.0-rc.10")
+    'lt'
     """
-    a, b = _parts(left), _parts(right)
+    a, apre = _parts(left)
+    b, bpre = _parts(right)
     n = min(len(a), len(b))
-    return "lt" if a[:n] < b[:n] else "gt" if a[:n] > b[:n] else "eq"
+    if a[:n] != b[:n]:
+        return "lt" if a[:n] < b[:n] else "gt"
+    if bool(apre) != bool(bpre):
+        return "lt" if apre else "gt"
+    ka, kb = _pre_key(apre), _pre_key(bpre)
+    return "lt" if ka < kb else "gt" if ka > kb else "eq"
 
 
-def _parts(version: str) -> list[int]:
+def _pre_key(pre: str) -> list[tuple[int, int, str]]:
+    return [(0, int(x), "") if x.isdigit() else (1, 0, x) for x in pre.split(".") if x]
+
+
+def _parts(version: str) -> tuple[list[int], str]:
     m = ANY_VERSION.match(version)
     if not m:
         raise SystemExit(f"not a version: {version}")
-    return [int(g) for g in m.groups() if g is not None]
+    return [int(g) for g in m.groups()[:3] if g is not None], m.group("pre") or ""
+
+
+def tag_parts(tag: str) -> list[int] | None:
+    """Return ``[major, minor, patch]`` parts of a stable tag, with or without ``v``.
+
+    A bare tag needs a dot, so a year-like ``2024`` is not a version.
+
+    >>> tag_parts("v4"), tag_parts("1.75.0"), tag_parts("2024"), tag_parts("v1.2.3-rc.1")
+    ([4], [1, 75, 0], None, None)
+    """
+    m = MAJOR.match(tag)
+    if not m or (not m.group(1) and m.group(3) is None):
+        return None
+    return [int(g) for g in m.groups()[1:] if g is not None]
 
 
 def first_of_majors(tags: list[str], above: int, upto: int) -> list[str]:
@@ -622,22 +651,18 @@ def first_of_majors(tags: list[str], above: int, upto: int) -> list[str]:
     """
     found: dict[int, list[tuple[int, int, int, str]]] = {}
     for tag in tags:
-        m = MAJOR.match(tag)
-        if not m:
+        nums = tag_parts(tag)
+        if nums is None or not above < nums[0] <= upto:
             continue
-        major = int(m.group(1))
-        if not above < major <= upto:
-            continue
-        parts = [g for g in m.groups()[1:] if g is not None]
-        rank = 2 - len(parts)
-        found.setdefault(major, []).append(
-            (rank, int(parts[0]) if parts else 0, int(parts[1]) if len(parts) > 1 else 0, tag)
+        rest = nums[1:]
+        found.setdefault(nums[0], []).append(
+            (3 - len(nums), rest[0] if rest else 0, rest[1] if len(rest) > 1 else 0, tag)
         )
     return [min(found[n])[3] for n in sorted(found)]
 
 
 def _major_of(ref: str) -> int:
-    return _parts(ref)[0]
+    return _parts(ref)[0][0]
 
 
 def _run(*args: str) -> subprocess.CompletedProcess[str]:
@@ -765,6 +790,7 @@ def _scan(files: dict[str, str], fetch: Fetch) -> dict[str, Any]:
                 pins.append(pin)
     return {
         "files": sorted(texts),
+        "quoted_files": {name: shlex.quote(name) for name in sorted(texts)},
         "pins": pins,
         "unparsed": sorted(unparsed, key=lambda u: str(u["file"])),
         "unresolved": unresolved,
@@ -965,10 +991,9 @@ def highest_tag(tags: list[str]) -> str:
     """
     best: tuple[list[int], int, str] | None = None
     for tag in tags:
-        m = MAJOR.match(tag)
-        if not m:
+        parts = tag_parts(tag)
+        if parts is None:
             continue
-        parts = [int(g) for g in m.groups() if g is not None]
         key = (parts + [0] * (3 - len(parts)), len(parts), tag)
         if best is None or key[:2] > best[:2]:
             best = key

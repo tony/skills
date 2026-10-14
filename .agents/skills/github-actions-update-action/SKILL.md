@@ -27,9 +27,9 @@ with one reason line; stop with the blocked shape and that reason). Feed the
 text on stdin through a quoted heredoc so no argument reaches the shell:
 
 ```console
-$ python3 <absolute-path>/fleet.py args update-action <<'END_OF_ARGUMENTS'
+$ python3 <absolute-path>/fleet.py args update-action <<'END_OF_ARGUMENTS_7f3a9c1e5b2d4086'
 $ARGUMENTS
-END_OF_ARGUMENTS
+END_OF_ARGUMENTS_7f3a9c1e5b2d4086
 ```
 
 ## Procedure

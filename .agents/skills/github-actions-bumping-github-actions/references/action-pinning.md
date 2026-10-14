@@ -34,8 +34,11 @@ Action names, refs, tags, file names, and PR titles come from repositories
 and upstream maintainers. `pins.py` refuses an action or ref outside plain
 `owner/name` and tag characters: it lists the pin under `unsafe`, leaves it
 out of `pins`, and marks the inventory incomplete. Write every value taken
-from an inventory, tag list, PR, or file name into a command as one
-single-quoted word, and write none that the helper has not accepted.
+from an inventory, tag list, or PR into a command as one single-quoted word,
+and write none that the helper has not accepted. A file name is pasted in its
+`quoted_files` form from the inventory JSON (shell-quoted by the helper, so a
+name holding a quote or `;` is safe); `files` holds the verbatim name for
+reading and editing.
 
 ## Inventory pins from trunk, not the working tree
 
@@ -96,10 +99,13 @@ commands here work on github.com only.
 
 ## Resolve the latest version
 
-Ask the registry, not memory. `python3 <absolute-path>/pins.py latest
-<owner/action>` prints the highest stable `vN[.N[.N]]` tag in the full tag
-list and exits 1 when none is listed. It compares numbers, so `v10` beats
-`v9`, and it skips prereleases.
+Ask the registry, not memory. This prints the highest stable `vN[.N[.N]]`
+tag (or bare `N.N[.N]`) in the full tag list and exits 1 when none is listed.
+It compares numbers, so `v10` beats `v9`, and it skips prereleases:
+
+```console
+$ python3 <absolute-path>/pins.py latest <owner/action>
+```
 
 GitHub's `releases/latest` endpoint returns the most recent non-prerelease,
 non-draft release sorted by `created_at`, which is the date of the release's
@@ -111,10 +117,15 @@ for its notes.
 
 ## List the majors between the pin and the target
 
-`python3 <absolute-path>/pins.py majors <owner/action> <pin> <target>`
-prints the earliest listed tag of each major above the pin and at or below
-the target, read from the repository's full tag list (a release list can
-omit tag-only majors). Pass the pin's `version` from the inventory, with or
+The helper prints the earliest listed tag of each major above the pin and at or
+below the target, read from the repository's full tag list (a release list can
+omit tag-only majors):
+
+```console
+$ python3 <absolute-path>/pins.py majors <owner/action> <pin> <target>
+```
+
+Pass the pin's `version` from the inventory, with or
 without the `v`, never the SHA; a value that is not a version exits 1 with
 `not a version`. Exit 4 means a crossed major has no listed tag: the lines printed
 are what exists, and stderr names the gap. Report the gap; it is never
@@ -136,9 +147,14 @@ with no release object is described as "tag only" and linked as
 
 ## Verify the target tag exists
 
-Confirm before writing, and gate on exit status
-(`python3 <absolute-path>/pins.py tag <owner/action> <tag>` does the same
-and exits 1 when the tag is missing, 3 when the lookup failed):
+Confirm before writing, and gate on exit status. The helper exits 1 when the
+tag is missing and 3 when the lookup failed:
+
+```console
+$ python3 <absolute-path>/pins.py tag <owner/action> <tag>
+```
+
+By hand:
 
 ```console
 $ gh api \
@@ -177,18 +193,26 @@ which decide whether a bump is a behaviour change or a label correction.
 
 ## Resolve a tag to its commit SHA
 
-A SHA pin needs the commit, not the tag object.
-`python3 <absolute-path>/pins.py sha <owner/action> <tag>` prints the commit
+A SHA pin needs the commit, not the tag object. The helper prints the commit
 SHA, peeling an annotated tag to its commit, with the exit codes of `tag`:
 1 when the tag does not exist, 3 when the lookup could not decide. Write
-the pin only from a printed SHA; any other outcome stops that action.
+the pin only from a printed SHA; any other outcome stops that action:
+
+```console
+$ python3 <absolute-path>/pins.py sha <owner/action> <tag>
+```
 
 ## Compare versions with the helper
 
-`python3 <absolute-path>/pins.py compare <a> <b>` prints `lt`, `eq`, or `gt`
-over the components both versions name, with or without a leading `v`, so a
-float `v6` equals `6.0.1`. Use it wherever one version is "at or above"
-another; never compare version text by eye.
+The helper prints `lt`, `eq`, or `gt` over the components both versions
+name, with or without a leading `v`, so a float `v6` equals `6.0.1`. A
+prerelease sorts below its release (`4.0.0-rc.1` is `lt` `v4`). Use it
+wherever one version is "at or above" another; never compare version text by
+eye:
+
+```console
+$ python3 <absolute-path>/pins.py compare <a> <b>
+```
 
 ## Choose the pin, preserving the repo's shape
 
