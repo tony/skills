@@ -1,6 +1,6 @@
 {
   "name": "release",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Cut and bump releases with safe defaults (no automatic push/tag). Rolls out releases to downstream consumers with CI verification.",
   "author": {
     "name": "Tony Narlock",
