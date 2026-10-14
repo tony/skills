@@ -3,6 +3,7 @@
 ## Contents
 
 - Edit exactly the approved lines
+- Commit message
 - Commit
 - Reuse a branch
 - Push
@@ -15,9 +16,19 @@ checkout the commit is made in (its worktree path when it uses one). When
 the old text is not found, the file changed after the inventory: stop for
 that repository and inventory it again. Do not edit by line number.
 
+## Commit message
+
+The subject and body follow the project's own conventions from its AGENTS.md
+or CLAUDE.md. The body says what changed upstream, what it means for this
+repository, and links every major release in the span. Write the commit
+message, and any pull-request title and body, per `prose-rules.md`. No
+`Co-Authored-By`, no "Generated with" or other tool trailer, no emoji, and
+no mention of that rule in the reply. Never cite a dependabot pull request
+(`dependabot-closeout.md` holds that rule).
+
 ## Commit
 
-Stage the named workflow files with `git -C <path> add -- <files>`; never
+Stage the named workflow files with `git -C <path> add -- '<file>'...`; never
 `add -A`, `add .`, or `commit -a`. Then read what is staged:
 
 ```console
@@ -46,33 +57,45 @@ other content makes the commit unexpected: report it and do not push.
 
 ## Reuse a branch
 
-A branch left by an earlier run is reused only when
-`git -C <path> log <remote>/<default>..<branch> --format=%h%x20%s` lists
-nothing but bump commits matching approved plan entries and no other
-worktree has it checked out. Otherwise create a new name with a numeric
-suffix. Never reset, rebase, or force an existing branch.
+```console
+$ python3 <absolute-path>/fleet.py branch \
+    --subject '<approved subject>' \
+    '<path>' \
+    '<remote>/<default>' \
+    '<branch>'
+```
+
+prints the branch to commit on: `<branch>` when it is free, the same name
+when an earlier run left it holding only commits with an approved
+`--subject` (repeat the flag per plan entry) and no other worktree has it
+checked out, otherwise `<branch>-2`, `<branch>-3`. Use the printed name; its
+`reuse` field says whether it exists. Never reset, rebase, or force an
+existing branch.
 
 ## Push
 
-Push only with `--push` (or an explicit request to push), and only to the
-target the calling skill names. Before pushing, list what the push would
-publish:
+Push only with `--push`, an explicit request to push, or `--pr`, which
+pushes its own branch and nothing else. With `--push` and no `--pr`, push
+`HEAD` to the default branch: `git -C <path> push <remote> HEAD:<default>`
+from the worktree. A bare `--push` in a headless run is an explicit request.
+Before pushing, check what the push would publish:
 
 ```console
-$ git -C <path> log \
-    <remote>/<default>..HEAD \
-    --format=%h%x20%s
+$ python3 <absolute-path>/fleet.py pushable \
+    --made '<sha>' \
+    '<path>' \
+    '<remote>/<default>'
 ```
 
-Push only when every listed commit was made in this run (its SHA was
-recorded) or, on resume, matches an approved plan entry and passes the
-`show` check above. Any other commit is the user's: do not push, name it
-and how the branch diverges, never advise a reset or drop of it, and print
-the push command. Stop a fleet loop on a rate-limit error or a rejected
-push and report which repositories remain. A rejected push is not retried
-with force. A local default branch holding the user's commits has diverged
-from the remote after a push from a worktree; report it as diverged, not
-behind.
+Repeat `--made` for every commit SHA recorded this run, and add `--subject`
+for each approved plan entry when resuming. Exit 0 means every commit that
+would be published qualifies. Exit 1 prints the commits that do not: they are
+the user's, so do not push, name them and how the branch diverges, never
+advise a reset or drop of them, and print the push command. Stop a fleet
+loop on a rate-limit error or a rejected push and report which repositories
+remain. A rejected push is not retried with force. A local default branch
+holding the user's commits has diverged from the remote after a push from a
+worktree; report it as diverged, not behind.
 
 ## Read back what was published
 
@@ -88,3 +111,13 @@ Report "pushed" only when it prints the SHA just pushed. A different or
 empty answer is reported as unconfirmed, with the SHA the remote returned.
 Without a push, report the local branch holding the commit and print its
 push command.
+
+After opening a pull request with `--pr`, read it back from the number in the
+URL `gh pr create` printed:
+
+```console
+$ python3 <absolute-path>/pins.py pr-state <slug> <n> open
+```
+
+Report the pull request only when it exits 0; the URL it prints is the one to
+list.

@@ -1,0 +1,190 @@
+"""Tests for fleet.py against throwaway local git repositories."""
+
+# ruff: noqa: S101, INP001, S603, S607, PLR2004
+# pyright: reportAny=false, reportUnusedCallResult=false, reportPrivateUsage=false
+from __future__ import annotations
+
+import io
+import json
+import subprocess
+import sys
+from pathlib import Path
+
+import fleet  # pyright: ignore[reportImplicitRelativeImport]
+import pytest
+
+pytestmark = pytest.mark.integration
+
+
+def _git(path: Path, *args: str) -> str:
+    done = subprocess.run(
+        ["git", "-C", str(path), "-c", "user.name=t", "-c", "user.email=t@t", *args],
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    return done.stdout.strip()
+
+
+def _clone(root: Path, name: str, url: str = "") -> Path:
+    """Create a clone of a bare remote holding one commit on main."""
+    bare = root / f"{name}-bare.git"
+    subprocess.run(["git", "init", "-q", "--bare", "-b", "main", str(bare)], check=True)
+    work = root / name
+    work.mkdir()
+    subprocess.run(["git", "init", "-q", "-b", "main", str(work)], check=True)
+    _git(work, "remote", "add", "origin", url or str(bare))
+    if url:
+        _git(work, "config", f"url.{bare}.insteadOf", url)
+    (work / "ci.yml").write_text("on: push\n")
+    _git(work, "add", ".")
+    _git(work, "commit", "-q", "-m", "ci")
+    _git(work, "push", "-q", "origin", "main")
+    _git(work, "fetch", "-q", "origin")
+    _git(work, "remote", "set-head", "origin", "main")
+    return work
+
+
+def _call(argv: list[str], stdin: str = "") -> tuple[int, str]:
+    sys.stdin = io.StringIO(stdin)
+    return fleet.main(argv), ""
+
+
+def test_args_parse_flags_and_quoting(capsys: pytest.CaptureFixture[str], tmp_path: Path) -> None:
+    """Options become fields; a quoted shell word stays one literal value."""
+    code, _ = _call(
+        ["args", "update-actions"],
+        f"--root {tmp_path} --owner acme --owner 'b-co' --audit-only --push",
+    )
+    got = json.loads(capsys.readouterr().out)
+    assert code == 0
+    assert (got["owner"], got["audit_only"], got["push"], got["pr"]) == (
+        ["acme", "b-co"],
+        True,
+        True,
+        False,
+    )
+    _call(["args", "update-action"], "actions/checkout v4 --pr")
+    got = json.loads(capsys.readouterr().out)
+    assert (got["action"], got["target"], got["pr"]) == ("actions/checkout", "v4", True)
+
+
+@pytest.mark.parametrize(
+    ("skill", "text", "reason"),
+    [
+        ("update-actions", "--frobnicate", "unrecognized arguments"),
+        ("update-actions", "--root /nonexistent-dir-xyz", "is not a directory"),
+        ("update-actions", "--owner", "expected one argument"),
+        ("update-actions", "--owner 'a;b'", "--owner takes account names"),
+        ("update-action", "--audit-only", "unrecognized arguments"),
+        ("update-action", "'actions/x;id'", "is not owner/name"),
+        ("update-action", "actions/checkout main", "is not a version"),
+        ("update-action", "--repo 'not a slug'", "is not a directory or owner/name slug"),
+    ],
+)
+def test_args_refuse_with_one_line(
+    skill: str, text: str, reason: str, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """Every refusal exits 2 with a single reason line."""
+    code, _ = _call(["args", skill], text)
+    err = capsys.readouterr().err
+    assert code == 2
+    assert reason in err
+    assert len(err.splitlines()) == 1
+
+
+def _fork_is_acme_fork(slug: str) -> bool:
+    return slug == "acme/fork"
+
+
+def test_discover_scopes_by_owner_and_fork(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Owner filter, forks, unreadable remotes, and nested repositories."""
+    root = tmp_path / "fleet"
+    root.mkdir()
+    _clone(root, "own", "https://github.com/acme/own.git")
+    _clone(root, "fork", "https://github.com/acme/fork.git")
+    _clone(root, "other", "git@github.com:rival/other.git")
+    _clone(root, "elsewhere", "https://example.com/acme/x.git")
+    nested = root / "group"
+    nested.mkdir()
+    _clone(nested, "deep", "https://github.com/acme/deep.git")
+    monkeypatch.setattr(fleet, "_is_fork", _fork_is_acme_fork)
+    rows = {Path(r["path"]).name: r for r in fleet.discover(str(root), ["ACME"])}
+    assert {n: r["in_scope"] for n, r in rows.items()} == {
+        "own": True,
+        "fork": False,
+        "other": False,
+        "elsewhere": False,
+        "deep": True,
+    }
+    assert rows["fork"]["reason"] == "repository is a fork"
+    assert rows["other"]["reason"] == "owner not in --owner"
+    assert "not a github.com URL" in rows["elsewhere"]["reason"]
+    everyone = fleet.discover(str(root), [])
+    assert {r["owner"] for r in everyone if r["in_scope"]} == {"acme", "rival"}
+
+
+def test_worktree_need(tmp_path: Path) -> None:
+    """A clean default branch needs none; feature branches, dirt, and drift each do."""
+    work = _clone(tmp_path, "w")
+    clean = fleet.worktree_need(str(work))
+    assert (clean["need"], clean["relation"], clean["default"]) == (False, "same", "main")
+    (work / "mine.txt").write_text("x")
+    assert fleet.worktree_need(str(work))["reasons"] == ["uncommitted or untracked files"]
+    (work / "mine.txt").unlink()
+    _git(work, "commit", "-q", "--allow-empty", "-m", "local only")
+    ahead = fleet.worktree_need(str(work))
+    assert (ahead["need"], ahead["relation"]) == (True, "ahead")
+    _git(work, "switch", "-q", "-c", "feature/x")
+    assert any("feature/x" in r for r in fleet.worktree_need(str(work))["reasons"])
+    _git(work, "switch", "-q", "--detach")
+    assert "detached HEAD" in fleet.worktree_need(str(work))["reasons"]
+
+
+def test_branch_reuse_and_suffix(tmp_path: Path) -> None:
+    """A branch is reused only for approved subjects and an unoccupied checkout."""
+    work = _clone(tmp_path, "b")
+    base = "origin/main"
+    free = fleet.pick_branch(str(work), base, "bump/checkout", set())
+    assert free == {"branch": "bump/checkout", "reuse": False}
+    _git(work, "switch", "-q", "-c", "bump/checkout")
+    _git(work, "commit", "-q", "--allow-empty", "-m", "Bump actions/checkout v3 -> v4")
+    _git(work, "switch", "-q", "main")
+    ok = fleet.pick_branch(str(work), base, "bump/checkout", {"Bump actions/checkout v3 -> v4"})
+    assert ok == {"branch": "bump/checkout", "reuse": True}
+    other = fleet.pick_branch(str(work), base, "bump/checkout", set())
+    assert other == {"branch": "bump/checkout-2", "reuse": False}
+    elsewhere = tmp_path / "elsewhere"
+    _git(work, "worktree", "add", "-q", str(elsewhere), "bump/checkout")
+    busy = fleet.pick_branch(str(work), base, "bump/checkout", {"Bump actions/checkout v3 -> v4"})
+    assert busy["branch"] == "bump/checkout-2"
+    with pytest.raises(fleet.RefusalError, match="not a valid branch name"):
+        fleet.pick_branch(str(work), base, "bad..name", set())
+
+
+def test_pushable_names_commits_not_made_this_run(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """Only commits recorded this run, or with an approved subject, may be pushed."""
+    work = _clone(tmp_path, "p")
+    _git(work, "commit", "-q", "--allow-empty", "-m", "Draft notes")
+    mine_sha = _git(work, "rev-parse", "HEAD")
+    _git(work, "commit", "-q", "--allow-empty", "-m", "Bump actions/checkout v3 -> v4")
+    path = str(work)
+    code = fleet.main(["pushable", path, "origin/main", "--made", mine_sha[:12]])
+    err = capsys.readouterr().err
+    assert code == 1
+    assert err == f"not made in this run: {_git(work, 'rev-parse', 'HEAD')[:7]}\n"
+    ok = fleet.main(
+        [
+            "pushable",
+            path,
+            "origin/main",
+            "--made",
+            mine_sha[:12],
+            "--subject",
+            "Bump actions/checkout v3 -> v4",
+        ]
+    )
+    assert ok == 0
+    assert fleet.main(["pushable", path, "origin/main", "--made", "abc"]) == 2

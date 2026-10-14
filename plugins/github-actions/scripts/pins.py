@@ -6,14 +6,25 @@
 and composite-action YAML is parsed, not line-matched; local composite actions
 named by a ``uses: ./path`` are followed wherever they live. ``dependabot``
 lists the Dependabot configuration files present. ``complete`` is false when a
-file could not be parsed (``unparsed``) or a local action could not be found
-(``unresolved``); such an inventory is not a list of every pin.
+file could not be parsed (``unparsed``), a local action could not be found
+(``unresolved``), or a pin names an action or ref outside plain
+``owner/name`` and tag characters (``unsafe``, left out of ``pins``); such an
+inventory is not a list of every pin.
 ``majors ACTION PIN TARGET`` prints the first tag of each major above PIN's
 major and at or below TARGET's, and exits 4 after printing when a major has no
-listed tag. ``tag ACTION TAG`` exits 0 when the tag exists, 1 when it does not,
-and 3 when the lookup could not decide (auth, rate limit, network, or a
-repository this login cannot read). ``proposal SLUG NUMBER`` prints the pin
-changes a pull request makes and how many changed lines are anything else.
+listed tag. PIN and TARGET are versions with or without a leading ``v``
+(``4``, ``v4.2.1``); anything else exits 1 with ``not a version``.
+``latest ACTION`` prints the highest stable ``vN[.N[.N]]`` tag in the full tag
+list. ``compare A B`` prints ``lt``, ``eq`` or ``gt`` over the components both
+versions name, so a ``v6`` float equals ``6.0.1``. ``tag ACTION TAG`` exits 0
+when the tag exists, 1 when it does not, and 3 when the lookup could not decide
+(auth, rate limit, network, or a repository this login cannot read);
+``sha ACTION TAG`` prints the tag's commit SHA with the same exit codes.
+``proposal SLUG NUMBER`` prints the pin changes a pull request makes and how
+many changed lines are anything else. ``pulls SLUG`` prints the open
+Dependabot pull requests and exits 5 when a title carries shell syntax.
+``pr-state SLUG NUMBER STATE`` exits 0 when the pull request is in STATE
+(``open``, ``closed`` or ``merged``) and 1 otherwise. A bad argument exits 2.
 
 Clone commands name their path; GitHub CLI queries name their repository and
 github.com host independently of the working directory and host environment.
@@ -41,8 +52,15 @@ WORKFLOW = re.compile(
     r"\.github/workflows/.+\.ya?ml|\.github/actions/(?:.+/)?action\.ya?ml", re.DOTALL
 )
 MAJOR = re.compile(r"^v(\d+)(?:\.(\d+))?(?:\.(\d+))?$")
-VERSION = re.compile(r"^v?(\d+(?:\.\d+){0,2})(?![\w.-])")
+VERSION = re.compile(r"^(?:tag\s*[=:]\s*)?v?(\d+(?:\.\d+){0,2}(?:-[0-9A-Za-z.-]+)?)(?![\w.-])")
+REF_VERSION = re.compile(r"^(?:v\d+(?:\.\d+){0,2}|\d+\.\d+(?:\.\d+)?)(?:-[0-9A-Za-z.-]+)?$")
+ANY_VERSION = re.compile(r"^v?(\d+)(?:\.(\d+))?(?:\.(\d+))?(?:-[0-9A-Za-z.-]+)?$")
+SAFE_ACTION = re.compile(r"[A-Za-z0-9_.-]+(?:/[A-Za-z0-9_.-]+)+", re.ASCII)
+SAFE_REF = re.compile(r"[A-Za-z0-9_][A-Za-z0-9_.+/-]*", re.ASCII)
+SHELL_SYNTAX = re.compile(r"[$`;|&<>\\'\"\x00-\x1f\x7f]")
+STATES = {"open": "OPEN", "closed": "CLOSED", "merged": "MERGED"}
 EXIT_INCOMPLETE = 4
+EXIT_UNSAFE = 5
 ANCHOR = re.compile(r"&([^\s,\[\]{}]+)\s*(.*)", re.DOTALL)
 ALIAS = re.compile(r"\*([^\s,\[\]{}]+)\s*(?:#.*)?")
 
@@ -505,8 +523,10 @@ def pin_version(ref: str, note: str) -> str:
 
     >>> pin_version("v4", ""), pin_version("a1b2c3", "v4.2.1"), pin_version("main", "")
     ('4', '4.2.1', '')
+    >>> pin_version("v4.0.0-rc.1", ""), pin_version("1.75.0", ""), pin_version("a1", "tag=v3.1.0")
+    ('4.0.0-rc.1', '1.75.0', '3.1.0')
     """
-    if MAJOR.match(ref):
+    if REF_VERSION.match(ref):
         return ref.removeprefix("v")
     m = VERSION.match(note.strip())
     return m.group(1) if m else ""
@@ -551,6 +571,43 @@ def action_repo(action: str) -> str:
     return "/".join(action.split("/")[:2])
 
 
+def unsafe_reason(action: str, ref: str) -> str:
+    """Return why an action or ref cannot be written into a command, else ``""``.
+
+    >>> unsafe_reason("actions/checkout", "v4"), unsafe_reason("a/b", "")
+    ('', '')
+    >>> unsafe_reason("evil/x;touch${IFS}PWNED", "v1")
+    'action is not owner/name'
+    >>> unsafe_reason("a/b", "v1$(id)")
+    'ref is not a plain tag, branch or SHA'
+    """
+    if not SAFE_ACTION.fullmatch(action) or any(p in {".", ".."} for p in action.split("/")):
+        return "action is not owner/name"
+    if ref and (not SAFE_REF.fullmatch(ref) or ".." in ref or "//" in ref or ref.endswith("/")):
+        return "ref is not a plain tag, branch or SHA"
+    return ""
+
+
+def compare_versions(left: str, right: str) -> str:
+    """Compare over the components both versions name: ``lt``, ``eq`` or ``gt``.
+
+    >>> compare_versions("4.2.1", "v4.10"), compare_versions("v6", "6.0.1")
+    ('lt', 'eq')
+    >>> compare_versions("7", "6.9")
+    'gt'
+    """
+    a, b = _parts(left), _parts(right)
+    n = min(len(a), len(b))
+    return "lt" if a[:n] < b[:n] else "gt" if a[:n] > b[:n] else "eq"
+
+
+def _parts(version: str) -> list[int]:
+    m = ANY_VERSION.match(version)
+    if not m:
+        raise SystemExit(f"not a version: {version}")
+    return [int(g) for g in m.groups() if g is not None]
+
+
 def first_of_majors(tags: list[str], above: int, upto: int) -> list[str]:
     """Pick the earliest listed tag of each major in (above, upto].
 
@@ -580,10 +637,7 @@ def first_of_majors(tags: list[str], above: int, upto: int) -> list[str]:
 
 
 def _major_of(ref: str) -> int:
-    m = MAJOR.match(ref)
-    if not m:
-        raise SystemExit(f"not a version: {ref}")
-    return int(m.group(1))
+    return _parts(ref)[0]
 
 
 def _run(*args: str) -> subprocess.CompletedProcess[str]:
@@ -697,17 +751,25 @@ def _scan(files: dict[str, str], fetch: Fetch) -> dict[str, Any]:
                         queue.append(cand)
             if not any(c in texts for c in candidates):
                 unresolved.append({"file": name, "uses": value, "reason": "no action file found"})
-    pins = [
-        {"file": name, **_pin(str(value), value.comment, value.line)}
-        for name in sorted(results)
-        for value in results[name]
-    ]
+    pins: list[dict[str, str]] = []
+    unsafe: list[dict[str, str]] = []
+    for name in sorted(results):
+        for value in results[name]:
+            pin = {"file": name, **_pin(str(value), value.comment, value.line)}
+            why = unsafe_reason(pin["action"], pin["ref"]) if pin["kind"] == "action" else ""
+            if why:
+                unsafe.append(
+                    {"file": name, "line": pin["line"], "uses": pin["uses"], "reason": why}
+                )
+            else:
+                pins.append(pin)
     return {
         "files": sorted(texts),
         "pins": pins,
         "unparsed": sorted(unparsed, key=lambda u: str(u["file"])),
         "unresolved": unresolved,
-        "complete": not unparsed and not unresolved,
+        "unsafe": unsafe,
+        "complete": not unparsed and not unresolved and not unsafe,
     }
 
 
@@ -839,8 +901,8 @@ def inventory(repo: str) -> dict[str, Any]:
     return {"slug": slug, "default": default, **where, **_scan(files, fetch), "dependabot": configs}
 
 
-def tag_status(action: str, tag: str) -> tuple[str, str]:
-    """Return ``exists``, ``missing`` or ``unchecked``, plus gh's error.
+def _tag_ref(action: str, tag: str) -> tuple[str, str, str]:
+    """Return ``exists``, ``missing`` or ``unchecked``, gh's error, and the ref JSON.
 
     A 404 also answers a repository this login cannot read, so ``missing``
     needs the repository itself to be readable.
@@ -851,13 +913,75 @@ def tag_status(action: str, tag: str) -> tuple[str, str]:
         f"repos/{repo}/git/ref/tags/{quote(tag, safe='/')}",
     )  # fmt: skip
     if done.returncode == 0:
-        return "exists", ""
+        return "exists", "", done.stdout
     err = done.stderr.strip()
     if "HTTP 404" not in err:
-        return "unchecked", err
+        return "unchecked", err, ""
     if _run("gh", "api", "--hostname", "github.com", f"repos/{repo}").returncode == 0:
-        return "missing", err
-    return "unchecked", f"{err} (repository {repo} is not readable with this login)"
+        return "missing", err, ""
+    return "unchecked", f"{err} (repository {repo} is not readable with this login)", ""
+
+
+def tag_status(action: str, tag: str) -> tuple[str, str]:
+    """Return ``exists``, ``missing`` or ``unchecked``, plus gh's error."""
+    status, err, _ = _tag_ref(action, tag)
+    return status, err
+
+
+def tag_commit(action: str, tag: str) -> tuple[str, str, str]:
+    """Return the tag's status, gh's error, and its commit SHA when it exists.
+
+    An annotated tag points at a tag object; the loop peels it to the commit.
+    """
+    status, err, body = _tag_ref(action, tag)
+    if status != "exists":
+        return status, err, ""
+    repo = action_repo(action)
+    try:
+        obj = json.loads(body)["object"]
+        for _ in range(5):
+            if obj["type"] == "commit":
+                return "exists", "", str(obj["sha"])
+            if obj["type"] != "tag":
+                break
+            done = _run(
+                "gh", "api", "--hostname", "github.com", f"repos/{repo}/git/tags/{obj['sha']}"
+            )
+            if done.returncode:
+                return "unchecked", done.stderr.strip() or "gh failed", ""
+            obj = json.loads(done.stdout)["object"]
+    except (KeyError, TypeError, ValueError):
+        pass
+    return "unchecked", "unexpected ref response", ""
+
+
+def highest_tag(tags: list[str]) -> str:
+    """Return the highest stable ``vN[.N[.N]]`` tag, preferring the fuller spelling.
+
+    >>> highest_tag(["v4", "v4.2.2", "v5", "v5.0.0", "v5.0.0-rc.1", "latest", "v3.9.9"])
+    'v5.0.0'
+    >>> highest_tag(["nightly"])
+    ''
+    """
+    best: tuple[list[int], int, str] | None = None
+    for tag in tags:
+        m = MAJOR.match(tag)
+        if not m:
+            continue
+        parts = [int(g) for g in m.groups() if g is not None]
+        key = (parts + [0] * (3 - len(parts)), len(parts), tag)
+        if best is None or key[:2] > best[:2]:
+            best = key
+    return best[2] if best else ""
+
+
+def latest_tag(action: str) -> str:
+    """Return the highest stable tag in the repository's full tag list."""
+    tags = _out(
+        "gh", "api", "--hostname", "github.com", f"repos/{action_repo(action)}/tags",
+        "--paginate", "--jq", ".[].name",
+    ).split()  # fmt: skip
+    return highest_tag(tags)
 
 
 def majors(action: str, pin: str, target: str) -> tuple[list[str], list[int]]:
@@ -890,7 +1014,14 @@ def proposal(slug: str, number: str) -> dict[str, Any]:
         nonlocal other
         for old, new in zip(removed, added):
             was, now = parse_uses(old), parse_uses(new)
-            if was and now and was["action"] == now["action"] and was["kind"] == "action":
+            if (
+                was
+                and now
+                and was["action"] == now["action"]
+                and was["kind"] == "action"
+                and not unsafe_reason(was["action"], was["ref"])
+                and not unsafe_reason(now["action"], now["ref"])
+            ):
                 changes.append(
                     {
                         "file": current,
@@ -934,32 +1065,112 @@ def proposal(slug: str, number: str) -> dict[str, Any]:
     return {"slug": slug, "number": number, "files": files, "changes": changes, "other": other}
 
 
+def pulls(slug: str) -> dict[str, Any]:
+    """List open Dependabot pull requests; ``blocked`` holds numbers whose title is unsafe."""
+    limit = 100
+    while True:
+        rows = json.loads(_out(
+            "gh", "pr", "list", "--repo", slug, "--app", "dependabot", "--state", "open",
+            "--limit", str(limit), "--json", "number,title",
+        ))  # fmt: skip
+        if len(rows) < limit:
+            break
+        limit *= 2
+    prs = [
+        {
+            "number": row["number"],
+            "title": row["title"],
+            "safe": not SHELL_SYNTAX.search(row["title"]),
+        }
+        for row in rows
+    ]
+    return {"slug": slug, "prs": prs, "blocked": [p["number"] for p in prs if not p["safe"]]}
+
+
+def pr_state(slug: str, number: str) -> dict[str, str]:
+    """Read a pull request's state and URL back from GitHub."""
+    data = json.loads(_out(
+        "gh", "pr", "view", number, "--repo", slug, "--json", "state,url",
+    ))  # fmt: skip
+    return {"state": str(data["state"]), "url": str(data["url"])}
+
+
+def _usage(reason: str) -> int:
+    sys.stderr.write(f"{reason}\n{__doc__ or ''}")
+    return 2
+
+
 def main(argv: list[str]) -> int:
     """Run the CLI."""
-    if len(argv) >= 2 and argv[0] == "inventory":
-        for repo in argv[1:]:
+    cmd, args = (argv[0], argv[1:]) if argv else ("", [])
+    if cmd == "inventory" and args:
+        for repo in args:
             print(json.dumps(inventory(repo)))
         return 0
-    if len(argv) == 4 and argv[0] == "majors":
-        picked, missing = majors(argv[1], argv[2], argv[3])
+    if cmd in {"majors", "tag", "sha", "latest", "proposal", "pulls", "pr-state", "compare"}:
+        return _query(cmd, args)
+    return _usage("unknown command" if cmd else "no command")
+
+
+def _query(cmd: str, args: list[str]) -> int:
+    count = {"majors": 3, "tag": 2, "sha": 2, "latest": 1, "proposal": 2, "pulls": 1}
+    if len(args) != count.get(cmd, 3 if cmd == "pr-state" else 2):
+        return _usage(f"{cmd}: wrong number of arguments")
+    if cmd in {"majors", "tag", "sha", "latest"} and unsafe_reason(args[0], ""):
+        return _usage(f"{cmd}: {args[0]!r} is not owner/name")
+    if cmd in {"tag", "sha"} and unsafe_reason(args[0], args[1]):
+        return _usage(f"{cmd}: {args[1]!r} is not a plain tag")
+    if cmd in {"proposal", "pulls", "pr-state"} and not SLUG.fullmatch(args[0]):
+        return _usage(f"{cmd}: {args[0]!r} is not an owner/name slug")
+    if cmd in {"proposal", "pr-state"} and not args[1].isdigit():
+        return _usage(f"{cmd}: {args[1]!r} is not a number")
+    if cmd == "pr-state" and args[2] not in STATES:
+        return _usage("pr-state: state is open, closed or merged")
+    if cmd == "compare":
+        print(compare_versions(args[0], args[1]))
+        return 0
+    if cmd == "majors":
+        picked, missing = majors(args[0], args[1], args[2])
         print("\n".join(picked))
         if missing:
             listed = ", ".join(str(n) for n in missing)
             sys.stderr.write(f"no tag listed for major {listed}; coverage is incomplete\n")
             return EXIT_INCOMPLETE
         return 0
-    if len(argv) == 3 and argv[0] == "tag":
-        status, err = tag_status(argv[1], argv[2])
+    if cmd == "latest":
+        found = latest_tag(args[0])
+        if not found:
+            sys.stderr.write(f"{args[0]}: no stable vN tag is listed\n")
+            return 1
+        print(found)
+        return 0
+    if cmd in {"tag", "sha"}:
+        if cmd == "sha":
+            status, err, commit = tag_commit(args[0], args[1])
+        else:
+            (status, err), commit = tag_status(args[0], args[1]), ""
         if status == "unchecked":
             sys.stderr.write(f"could not be checked: {err or 'gh failed'}\n")
             return 3
-        print(status)
+        print(commit if cmd == "sha" and commit else status)
         return 0 if status == "exists" else 1
-    if len(argv) == 3 and argv[0] == "proposal" and SLUG.fullmatch(argv[1]) and argv[2].isdigit():
-        print(json.dumps(proposal(argv[1], argv[2])))
+    if cmd == "proposal":
+        print(json.dumps(proposal(args[0], args[1])))
         return 0
-    sys.stderr.write(__doc__ or "")
-    return 2
+    if cmd == "pulls":
+        found_prs = pulls(args[0])
+        print(json.dumps(found_prs))
+        if found_prs["blocked"]:
+            first = found_prs["blocked"][0]
+            sys.stderr.write(f"PR #{first} title carries shell syntax; run nothing for it\n")
+            return EXIT_UNSAFE
+        return 0
+    state = pr_state(args[0], args[1])
+    print(json.dumps(state))
+    if state["state"] != STATES[args[2]]:
+        sys.stderr.write(f"PR #{args[1]} is {state['state'].lower()}, not {args[2]}\n")
+        return 1
+    return 0
 
 
 if __name__ == "__main__":

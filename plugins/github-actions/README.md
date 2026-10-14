@@ -68,7 +68,10 @@ close-out protocol live in `references/action-pinning.md`,
 ## Prerequisites
 
 - git: reads workflow content from the default branch.
-- python3 (3.9 or newer): runs `scripts/pins.py`: the pin inventory, tag
-  check, majors list, and pull-request proposal reader.
+- python3 (3.9 or newer): runs `scripts/pins.py` (pin inventory, tag and SHA
+  checks, latest tag, majors list, version compare, Dependabot PR listing,
+  proposal reader, and PR state readback) and `scripts/fleet.py` (argument
+  parsing, repository discovery under `--root`, throwaway-worktree check,
+  branch naming, and push eligibility).
 - gh: tag verification, release lookup, CI watching, and closing
   dependabot PRs.

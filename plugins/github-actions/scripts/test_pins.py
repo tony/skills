@@ -21,6 +21,7 @@ if TYPE_CHECKING:
 
 SCRIPT = Path(__file__).with_name("pins.py")
 EXIT_UNCHECKED = 3
+EXIT_USAGE = 2
 COMMIT_SHA = "a" * 40
 TREE_SHA = "b" * 40
 WORKFLOW_NAMES = (
@@ -710,3 +711,182 @@ def test_scan_resolves_anchors_aliases_and_merge_keys() -> None:
     docs = pins.load_documents(ANCHORED)
     assert docs[0]["jobs"]["one"]["runs-on"] == "ubuntu-latest"
     assert docs[0]["jobs"]["two"]["runs-on"] == "macos-latest"
+
+
+def _returns(value: str) -> Callable[..., str]:
+    def reply(*_args: str) -> str:
+        return value
+
+    return reply
+
+
+def test_scan_flags_unsafe_action_and_ref_names() -> None:
+    """A name carrying shell syntax is left out of pins and makes the inventory incomplete."""
+    text = _wf("'evil/x;touch${IFS}PWNED@v1'", "acme/ok@v1$(id)", "acme/fine@v2")
+    result = pins._scan({".github/workflows/ci.yml": text}, lambda _name: None)
+    assert [p["uses"] for p in result["pins"]] == ["acme/fine@v2"]
+    assert [u["reason"] for u in result["unsafe"]] == [
+        "action is not owner/name",
+        "ref is not a plain tag, branch or SHA",
+    ]
+    assert result["complete"] is False
+
+
+def test_proposal_treats_unsafe_names_as_other(monkeypatch: pytest.MonkeyPatch) -> None:
+    """A PR editing a pin to a hostile ref is not a pin change."""
+    diff = "+++ b/.github/workflows/ci.yml\n@@ -1 +1 @@\n-  - uses: a/b@v1\n+  - uses: a/b@v2;id\n"
+    monkeypatch.setattr(pins, "_out", _returns(diff))
+    got = pins.proposal("acme/one", "7")
+    assert (got["changes"], got["other"]) == ([], 2)
+
+
+def test_majors_accepts_versions_with_or_without_v(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """Inventory emits versions without the v; majors takes them as they are."""
+    monkeypatch.setattr(pins, "_out", _returns("v4.0.0\nv5.0.0\nv6.0.0\n"))
+    assert pins.main(["majors", "actions/checkout", "4.2.1", "v6"]) == 0
+    assert capsys.readouterr().out.split() == ["v5.0.0", "v6.0.0"]
+    with pytest.raises(SystemExit, match="not a version: main"):
+        pins.main(["majors", "actions/checkout", "main", "v6"])
+
+
+@pytest.mark.parametrize(
+    ("ref", "note", "version"),
+    [
+        ("v4.0.0-rc.1", "", "4.0.0-rc.1"),
+        ("1.75.0", "", "1.75.0"),
+        ("deadbeef", "tag=v3.1.0", "3.1.0"),
+        ("1234567", "", ""),
+    ],
+)
+def test_pin_version_reads_prerelease_unprefixed_and_tag_comment(
+    ref: str, note: str, version: str
+) -> None:
+    """Common spellings of a version are read; a numeric SHA is not a version."""
+    assert pins.pin_version(ref, note) == version
+
+
+@pytest.mark.parametrize(
+    ("left", "right", "order"),
+    [("4.2.1", "v4.10", "lt"), ("v6", "6.0.1", "eq"), ("7", "6.9.9", "gt")],
+)
+def test_compare_orders_numerically(
+    left: str, right: str, order: str, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """Versions compare number by number, not as text."""
+    assert pins.main(["compare", left, right]) == 0
+    assert capsys.readouterr().out.strip() == order
+
+
+def test_latest_is_the_highest_stable_tag(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """Prereleases and non-version tags are skipped; v10 beats v9."""
+    monkeypatch.setattr(pins, "_out", _returns("v9.9.9\nv10.0.0-rc.1\nv10\nv10.0.1\nnightly\n"))
+    assert pins.main(["latest", "acme/x"]) == 0
+    assert capsys.readouterr().out.strip() == "v10.0.1"
+
+
+def _gh_tags(monkeypatch: pytest.MonkeyPatch, replies: dict[str, tuple[int, str, str]]) -> None:
+    def run(*args: str) -> subprocess.CompletedProcess[str]:
+        route = args[-1]
+        code, out, err = replies.get(route, (1, "", "gh: unreachable"))
+        return subprocess.CompletedProcess(args, code, out, err)
+
+    monkeypatch.setattr(pins, "_run", run)
+
+
+def test_sha_peels_annotated_tags(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """An annotated tag prints the commit it points at, not the tag object."""
+    ref = json.dumps({"object": {"type": "tag", "sha": "t" * 40}})
+    tag = json.dumps({"object": {"type": "commit", "sha": COMMIT_SHA}})
+    _gh_tags(
+        monkeypatch,
+        {
+            "repos/acme/x/git/ref/tags/v1": (0, ref, ""),
+            f"repos/acme/x/git/tags/{'t' * 40}": (0, tag, ""),
+        },
+    )
+    assert pins.main(["sha", "acme/x", "v1"]) == 0
+    assert capsys.readouterr().out.strip() == COMMIT_SHA
+
+
+def test_sha_failure_is_unchecked_not_missing(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """A lookup that cannot reach GitHub exits 3 and prints no SHA."""
+    _gh_tags(monkeypatch, {})
+    assert pins.main(["sha", "acme/x", "v1"]) == EXIT_UNCHECKED
+    done = capsys.readouterr()
+    assert done.out == ""
+    assert "could not be checked" in done.err
+
+
+def test_sha_missing_tag_exits_1(monkeypatch: pytest.MonkeyPatch) -> None:
+    """A 404 on the tag with a readable repository is a missing tag."""
+    _gh_tags(
+        monkeypatch,
+        {
+            "repos/acme/x/git/ref/tags/v1": (1, "", "gh: Not Found (HTTP 404)"),
+            "repos/acme/x": (0, "{}", ""),
+        },
+    )
+    assert pins.main(["sha", "acme/x", "v1"]) == 1
+
+
+@pytest.mark.parametrize(
+    "argv",
+    [
+        ["tag", "acme/x;id", "v1"],
+        ["tag", "acme/x", "v1$(id)"],
+        ["sha", "acme/x"],
+        ["pr-state", "acme/x", "7", "gone"],
+        ["pulls", "not a slug"],
+        ["frobnicate"],
+        [],
+    ],
+)
+def test_bad_usage_exits_2(argv: list[str], capsys: pytest.CaptureFixture[str]) -> None:
+    """A malformed argument exits 2 with a reason on the first line, before any lookup."""
+    assert pins.main(argv) == EXIT_USAGE
+    first = capsys.readouterr().err.splitlines()[0]
+    assert not first.startswith("Deterministic")
+
+
+def test_pulls_blocks_titles_with_shell_syntax(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """Dependabot PRs are listed by app; one hostile title exits 5 with a one-line reason."""
+    seen: list[tuple[str, ...]] = []
+
+    def out(*args: str) -> str:
+        seen.append(args)
+        return json.dumps(
+            [
+                {"number": 41, "title": "Bump actions/checkout from 3 to 4"},
+                {"number": 42, "title": "Bump foo/bar from 1 to 2 $(touch x)"},
+            ]
+        )
+
+    monkeypatch.setattr(pins, "_out", out)
+    assert pins.main(["pulls", "acme/widgets"]) == pins.EXIT_UNSAFE
+    done = capsys.readouterr()
+    assert "--app" in seen[0]
+    assert json.loads(done.out)["blocked"] == [42]
+    assert done.err == "PR #42 title carries shell syntax; run nothing for it\n"
+
+
+def test_pr_state_reads_back_the_pull_request(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """Closed is reported only when GitHub says so."""
+    reply = {"state": "OPEN", "url": "https://github.com/acme/x/pull/7"}
+    monkeypatch.setattr(pins, "_out", _returns(json.dumps(reply)))
+    assert pins.main(["pr-state", "acme/x", "7", "closed"]) == 1
+    assert capsys.readouterr().err == "PR #7 is open, not closed\n"
+    reply["state"] = "CLOSED"
+    monkeypatch.setattr(pins, "_out", _returns(json.dumps(reply)))
+    assert pins.main(["pr-state", "acme/x", "7", "closed"]) == 0

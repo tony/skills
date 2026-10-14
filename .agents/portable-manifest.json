@@ -326,12 +326,13 @@
         "references/action-pinning.md": "plugins/github-actions/references/action-pinning.md",
         "references/commit-and-push.md": "plugins/github-actions/references/commit-and-push.md",
         "references/dependabot-closeout.md": "plugins/github-actions/references/dependabot-closeout.md",
+        "references/fleet.py": "plugins/github-actions/scripts/fleet.py",
         "references/output-shapes.md": "plugins/github-actions/references/output-shapes.md",
         "references/pins.py": "plugins/github-actions/scripts/pins.py",
         "references/prose-rules.md": "plugins/github-actions/references/prose-rules.md",
         "references/throwaway-worktree.md": "plugins/github-actions/references/throwaway-worktree.md"
       },
-      "bytes": 76370
+      "bytes": 102172
     },
     {
       "name": "github-actions-update-action",
@@ -342,12 +343,13 @@
         "references/action-pinning.md": "plugins/github-actions/references/action-pinning.md",
         "references/commit-and-push.md": "plugins/github-actions/references/commit-and-push.md",
         "references/dependabot-closeout.md": "plugins/github-actions/references/dependabot-closeout.md",
+        "references/fleet.py": "plugins/github-actions/scripts/fleet.py",
         "references/output-shapes.md": "plugins/github-actions/references/output-shapes.md",
         "references/pins.py": "plugins/github-actions/scripts/pins.py",
         "references/prose-rules.md": "plugins/github-actions/references/prose-rules.md",
         "references/throwaway-worktree.md": "plugins/github-actions/references/throwaway-worktree.md"
       },
-      "bytes": 74869
+      "bytes": 101165
     },
     {
       "name": "github-actions-update-actions",
@@ -358,11 +360,12 @@
         "references/action-pinning.md": "plugins/github-actions/references/action-pinning.md",
         "references/commit-and-push.md": "plugins/github-actions/references/commit-and-push.md",
         "references/dependabot-closeout.md": "plugins/github-actions/references/dependabot-closeout.md",
+        "references/fleet.py": "plugins/github-actions/scripts/fleet.py",
         "references/output-shapes.md": "plugins/github-actions/references/output-shapes.md",
         "references/pins.py": "plugins/github-actions/scripts/pins.py",
         "references/prose-rules.md": "plugins/github-actions/references/prose-rules.md"
       },
-      "bytes": 68469
+      "bytes": 97155
     },
     {
       "name": "lean-tighten",
@@ -1579,6 +1582,7 @@
     "plugins/github-actions/references/dependabot-closeout.md": 3,
     "plugins/github-actions/references/output-shapes.md": 3,
     "plugins/github-actions/references/prose-rules.md": 3,
+    "plugins/github-actions/scripts/fleet.py": 3,
     "plugins/github-actions/scripts/pins.py": 3,
     "plugins/lean/references/prose-rules.md": 3,
     "plugins/model-cli/references/dispatch.md": 3,

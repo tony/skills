@@ -5,31 +5,37 @@ Read before writing any version string into a workflow.
 ## Contents
 
 - Scope
+- Values that reach a shell
 - Inventory pins from trunk, not the working tree
 - Resolve the latest version
 - List the majors between the pin and the target
 - Verify the target tag exists
 - Dereference annotated tags before comparing
 - Resolve a tag to its commit SHA
+- Compare versions with the helper
 - Choose the pin, preserving the repo's shape
 - Check the gates the research surfaces
 
 ## Scope
 
 Scope is what the user named: the current repository, each `--repo`, and
-the accounts in `--owner`. Under `--root` with no `--owner`, discovery finds
-repositories by path only; list each with its remote's owner in the plan and
-write to none the user has not approved. A fork flag says nothing about
-ownership, since a non-fork can belong to someone else. Forks are out of
-scope unless the user names them with `--repo`:
+the accounts in `--owner`. `../scripts/fleet.py discover <root>
+[--owner <name>]...` walks a `--root` directory and prints one JSON object per
+git repository: `slug`, `owner`, `fork`, `in_scope`, and the `reason` when it
+is not. A non-fork can belong to someone else, so under `--root` with no
+`--owner` list each in-scope repository with its owner in the plan and write
+to none the user has not approved. Forks are out of scope unless the user
+names them with `--repo`; a fork status that could not be read counts as
+excluded. Report which repositories were excluded and why.
 
-```console
-$ gh repo view \
-    --json isFork \
-    https://github.com/<owner>/<name>
-```
+## Values that reach a shell
 
-Report which repositories were excluded and why.
+Action names, refs, tags, file names, and PR titles come from repositories
+and upstream maintainers. `pins.py` refuses an action or ref outside plain
+`owner/name` and tag characters: it lists the pin under `unsafe`, leaves it
+out of `pins`, and marks the inventory incomplete. Write every value taken
+from an inventory, tag list, PR, or file name into a command as one
+single-quoted word, and write none that the helper has not accepted.
 
 ## Inventory pins from trunk, not the working tree
 
@@ -38,7 +44,8 @@ Pin reads name their repository and host: `git -C <path>` for a clone,
 `gh api --hostname github.com repos/<slug>/...` for the API. The working
 directory and inherited `GH_HOST` or `GH_REPO` must not select the target.
 
-`../scripts/pins.py` does this deterministically (Python 3.9 or newer). It
+`../scripts/pins.py` does this deterministically (Python 3.9 or newer;
+running it with no arguments prints every command). It
 resolves the remote (`origin`, else the only remote), requires one declared
 HTTPS or SSH URL whose hostname is exactly `github.com`, then fetches and
 reads the default branch from the API. Git URL rewrites and SSH configuration
@@ -54,8 +61,9 @@ The JSON lists `pins` from the YAML structure of workflow files, action
 metadata files, and every local action a `uses: ./path` names, wherever it
 lives in the repository; shell text, comments, and input names such as
 `with: {uses: ...}` are not pins. Each pin has `action`, `ref`, `note` (the
-trailing comment), and `version` (from the ref, else from the comment; empty
-when neither names one). `dependabot` lists the Dependabot configuration
+trailing comment), and `version` (from the ref, else from the comment, without
+a leading `v`; a prerelease such as `4.0.0-rc.1`, an unprefixed `1.75.0`, and a
+`tag=v3.1.0` comment all count; empty when nothing names one). `dependabot` lists the Dependabot configuration
 files present on the default branch.
 
 A repository named only by slug (`--repo <owner>/<name>` with no local
@@ -73,8 +81,9 @@ It reads NUL-delimited Git paths and JSON API paths, and URL-encodes API lookups
 `"complete": false` means the list is not every pin. `unparsed` names each
 file and line the reader could not interpret (custom tags, an alias with
 no matching anchor, complex keys, tab indentation, a `uses` that is not one
-string), and `unresolved` names each local
-action that is missing or outside the repository. Report both as they are,
+string), `unresolved` names each local
+action that is missing or outside the repository, and `unsafe` names each
+pin whose action or ref carries shell syntax. Report all three as they are,
 list the pins found as partial, and propose no update for that repository.
 If the helper is unavailable or a read fails, report the inventory as
 incomplete in the same way.
@@ -87,28 +96,27 @@ commands here work on github.com only.
 
 ## Resolve the latest version
 
-Ask the registry, not memory:
+Ask the registry, not memory. `python3 <absolute-path>/pins.py latest
+<owner/action>` prints the highest stable `vN[.N[.N]]` tag in the full tag
+list and exits 1 when none is listed. It compares numbers, so `v10` beats
+`v9`, and it skips prereleases.
 
-```console
-$ gh api \
-    --hostname github.com \
-    --jq .tag_name \
-    repos/<owner>/<action>/releases/latest
-```
-
-Some actions publish only tags; when `releases/latest` returns nothing,
-list them (see below) and take the highest. `releases/latest` is the most
-recently published release, which can be a backport on an older major line;
-compare it against the highest major in the tag list before calling it the
-target.
+GitHub's `releases/latest` endpoint returns the most recent non-prerelease,
+non-draft release sorted by `created_at`, which is the date of the release's
+commit
+([docs](https://docs.github.com/en/rest/releases/releases#get-the-latest-release)).
+A backport on an older major line can win that sort, and tag-only actions
+have no release, so the tag list decides the target. Use a release body only
+for its notes.
 
 ## List the majors between the pin and the target
 
 `python3 <absolute-path>/pins.py majors <owner/action> <pin> <target>`
 prints the earliest listed tag of each major above the pin and at or below
 the target, read from the repository's full tag list (a release list can
-omit tag-only majors). Pass the version from the pin's trailing comment, not
-the SHA. Exit 4 means a crossed major has no listed tag: the lines printed
+omit tag-only majors). Pass the pin's `version` from the inventory, with or
+without the `v`, never the SHA; a value that is not a version exits 1 with
+`not a version`. Exit 4 means a crossed major has no listed tag: the lines printed
 are what exists, and stderr names the gap. Report the gap; it is never
 evidence that the major changed nothing. By hand, list every tag and take
 the lowest `vN.x.y` of each major in range:
@@ -140,7 +148,9 @@ $ gh api \
 
 A tag is missing only when the lookup returns HTTP 404 and the repository
 itself reads (`gh api --hostname github.com repos/<owner>/<action>`), since
-GitHub also answers 404 for a private repository this login cannot see. An
+GitHub answers 404 instead of 403 for a private repository the request cannot
+see
+([docs](https://docs.github.com/en/rest/using-the-rest-api/troubleshooting-the-rest-api#404-not-found-for-an-existing-resource)). An
 auth, rate-limit, or network failure, or a repository that does not read
 (`pins.py tag` exit 3), means the tag could not be checked: report that,
 never "missing", and do not write the pin.
@@ -167,20 +177,18 @@ which decide whether a bump is a behaviour change or a label correction.
 
 ## Resolve a tag to its commit SHA
 
-A SHA pin needs the commit, not the tag object. Ask for the tag and its
-peeled form together: an annotated tag prints two lines (the `^{}` line is
-the commit), a lightweight tag one. `tail -n 1` takes the right line:
+A SHA pin needs the commit, not the tag object.
+`python3 <absolute-path>/pins.py sha <owner/action> <tag>` prints the commit
+SHA, peeling an annotated tag to its commit, with the exit codes of `tag`:
+1 when the tag does not exist, 3 when the lookup could not decide. Write
+the pin only from a printed SHA; any other outcome stops that action.
 
-```console
-$ git ls-remote \
-    https://github.com/<owner>/<action>.git \
-    "refs/tags/<tag>" \
-    "refs/tags/<tag>^{}" \
-    | awk '{print $1}' \
-    | tail -n 1
-```
+## Compare versions with the helper
 
-An empty result means the tag does not exist; stop.
+`python3 <absolute-path>/pins.py compare <a> <b>` prints `lt`, `eq`, or `gt`
+over the components both versions name, with or without a leading `v`, so a
+float `v6` equals `6.0.1`. Use it wherever one version is "at or above"
+another; never compare version text by eye.
 
 ## Choose the pin, preserving the repo's shape
 
