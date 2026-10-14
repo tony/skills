@@ -243,3 +243,132 @@ def test_outside_a_repo_exits_2(
     monkeypatch.chdir(tmp_path)
     assert scope.main([]) == 2
     assert "not inside a git repository" in capsys.readouterr().err
+
+
+def test_unstaged_edit_on_topic_branch_is_in_scope(
+    tmp_path: pathlib.Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """An uncommitted edit to a tracked file counts in branch mode."""
+    f = _topic_repo(tmp_path)
+    _run(tmp_path, "checkout", "-q", "-b", "topic")
+    f.write_text("x = 1\n# gone\ny = 2\n# new\n")
+    monkeypatch.chdir(tmp_path)
+    assert scope.main([]) == 0
+    assert capsys.readouterr().out == "a.py\t4-4\n"
+
+
+def test_origin_head_sets_the_trunk(
+    tmp_path: pathlib.Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """The remote default branch wins over a local main."""
+    origin = tmp_path / "origin"
+    origin.mkdir()
+    _topic_repo(origin)
+    clone = tmp_path / "clone"
+    _run(tmp_path, "clone", "-q", origin.as_uri(), str(clone))
+    _run(clone, "checkout", "-q", "-b", "topic")
+    _commit_file(clone, "t.py")
+    monkeypatch.chdir(clone)
+    assert scope.trunk_ref() == "origin/main"
+    assert scope.main([]) == 0
+    assert capsys.readouterr().out == "t.py\t1-1\n"
+
+
+def test_dangling_origin_head_falls_through_to_main(
+    tmp_path: pathlib.Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """An origin/HEAD pointing at a missing ref does not mask origin/main or main."""
+    _topic_repo(tmp_path)
+    _run(tmp_path, "checkout", "-q", "-b", "topic")
+    _commit_file(tmp_path, "t.py")
+    _run(tmp_path, "symbolic-ref", "refs/remotes/origin/HEAD", "refs/remotes/origin/nope")
+    monkeypatch.chdir(tmp_path)
+    assert scope.trunk_ref() == "main"
+    assert scope.main([]) == 0
+    assert capsys.readouterr().out == "t.py\t1-1\n"
+
+
+def test_tab_in_untracked_name_is_listed(
+    tmp_path: pathlib.Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """A control character in a name never drops the file silently."""
+    _topic_repo(tmp_path)
+    _run(tmp_path, "checkout", "-q", "-b", "topic")
+    (tmp_path / "a\tb.py").write_text("x = 1\n")
+    (tmp_path / "c.py").write_text("x = 1\n")
+    monkeypatch.chdir(tmp_path)
+    assert scope.main([]) == 0
+    assert capsys.readouterr().out == "a\tb.py\t1-1\nc.py\t1-1\n"
+
+
+def test_tab_in_tracked_name_is_listed(
+    tmp_path: pathlib.Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """A quoted diff header decodes back to the real name."""
+    _topic_repo(tmp_path)
+    (tmp_path / "a\tb.py").write_text("x = 1\n")
+    _run(tmp_path, "add", ".")
+    monkeypatch.chdir(tmp_path)
+    assert scope.main(["--staged"]) == 0
+    assert capsys.readouterr().out == "a\tb.py\t1-1\n"
+
+
+def test_binary_untracked_file_is_reported_not_listed(
+    tmp_path: pathlib.Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """A binary untracked file is named on stderr and left out."""
+    _topic_repo(tmp_path)
+    _run(tmp_path, "checkout", "-q", "-b", "topic")
+    (tmp_path / "blob.bin").write_bytes(b"\0\1\2")
+    (tmp_path / "c.py").write_text("x = 1\n")
+    monkeypatch.chdir(tmp_path)
+    assert scope.main([]) == 0
+    out = capsys.readouterr()
+    assert out.out == "c.py\t1-1\n"
+    assert "blob.bin" in out.err
+
+
+def test_lockfiles_and_vendored_trees_are_left_out(
+    tmp_path: pathlib.Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """Lockfiles, vendored dirs, and linguist-generated files never reach the list."""
+    _topic_repo(tmp_path)
+    _run(tmp_path, "checkout", "-q", "-b", "topic")
+    (tmp_path / "uv.lock").write_text("x\n")
+    (tmp_path / "vendor").mkdir()
+    (tmp_path / "vendor" / "v.py").write_text("x = 1\n")
+    (tmp_path / "gen.py").write_text("x = 1\n")
+    (tmp_path / ".gitattributes").write_text("gen.py linguist-generated\n")
+    (tmp_path / "keep.py").write_text("x = 1\n")
+    monkeypatch.chdir(tmp_path)
+    assert scope.main([]) == 0
+    assert capsys.readouterr().out == ".gitattributes\t1-1\nkeep.py\t1-1\n"
+
+
+def test_paths_resolve_tracked_globs_and_untracked_literals(
+    tmp_path: pathlib.Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """--paths tags each file tracked or untracked; a miss exits 2."""
+    _topic_repo(tmp_path)
+    (tmp_path / "new.md").write_text("hi\n")
+    monkeypatch.chdir(tmp_path)
+    assert scope.main(["--paths", "*.py", "new.md"]) == 0
+    assert capsys.readouterr().out == "a.py\ttracked\nnew.md\tuntracked\n"
+    assert scope.main(["--paths", "missing.md"]) == 2
+    assert "not a file: missing.md" in capsys.readouterr().err

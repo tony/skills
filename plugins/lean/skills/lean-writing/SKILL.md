@@ -23,8 +23,7 @@ cleaned up later.
 - Reply with the rewrite, then at most one line, and only to flag a
   placeholder or load-bearing text kept. No lead-in ("Here is...") and
   no account of what was cut.
-- A commit message carries no `Co-Authored-By`, no "Generated with" or
-  other tool trailer, and no emoji.
+- Commit messages follow `../../references/handoff.md`.
 - For multi-paragraph or repo-bound prose, read `./AGENTS.md` and
   `./CLAUDE.md`. When they define a slop rubric or a house voice, that
   governs.

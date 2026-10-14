@@ -373,10 +373,12 @@
         "plugins/lean/skills/tighten/SKILL.md"
       ],
       "bundled": {
+        "references/handoff.md": "plugins/lean/references/handoff.md",
         "references/lean-rubric.md": "plugins/lean/references/lean-rubric.md",
-        "references/prose-rules.md": "plugins/lean/references/prose-rules.md"
+        "references/prose-rules.md": "plugins/lean/references/prose-rules.md",
+        "references/scope.py": "plugins/lean/scripts/scope.py"
       },
-      "bytes": 11134
+      "bytes": 20302
     },
     {
       "name": "lean-trim-comments",
@@ -385,10 +387,12 @@
       ],
       "bundled": {
         "references/comment-policy.md": "plugins/lean/references/comment-policy.md",
+        "references/handoff.md": "plugins/lean/references/handoff.md",
         "references/prose-rules.md": "plugins/lean/references/prose-rules.md",
-        "references/scope.py": "plugins/lean/scripts/scope.py"
+        "references/scope.py": "plugins/lean/scripts/scope.py",
+        "references/tally.py": "plugins/lean/scripts/tally.py"
       },
-      "bytes": 24677
+      "bytes": 30208
     },
     {
       "name": "lean-writing",
@@ -397,10 +401,11 @@
       ],
       "bundled": {
         "references/comment-policy.md": "plugins/lean/references/comment-policy.md",
+        "references/handoff.md": "plugins/lean/references/handoff.md",
         "references/lean-rubric.md": "plugins/lean/references/lean-rubric.md",
         "references/prose-rules.md": "plugins/lean/references/prose-rules.md"
       },
-      "bytes": 12665
+      "bytes": 13355
     },
     {
       "name": "merge-pr-multiple",
@@ -1605,6 +1610,7 @@
     "plugins/github-actions/references/prose-rules.md": 3,
     "plugins/github-actions/scripts/fleet.py": 3,
     "plugins/github-actions/scripts/pins.py": 3,
+    "plugins/lean/references/handoff.md": 3,
     "plugins/lean/references/prose-rules.md": 3,
     "plugins/model-cli/references/dispatch.md": 3,
     "plugins/model-cli/references/prose-rules.md": 3,
@@ -1659,6 +1665,7 @@
     "plugins/github-actions/references/throwaway-worktree.md": 2,
     "plugins/lean/references/comment-policy.md": 2,
     "plugins/lean/references/lean-rubric.md": 2,
+    "plugins/lean/scripts/scope.py": 2,
     "plugins/merge-pr/references/merge-readiness.md": 2,
     "plugins/merge-pr/references/prose-rules.md": 2,
     "plugins/merge-pr/scripts/merge_pr.py": 2,
@@ -1722,7 +1729,7 @@
     "plugins/gh/references/registry-links.md": 1,
     "plugins/gh/references/security-path.md": 1,
     "plugins/git-branch/references/rebuild-contract.md": 1,
-    "plugins/lean/scripts/scope.py": 1,
+    "plugins/lean/scripts/tally.py": 1,
     "plugins/package-updater/references/throwaway-worktree.md": 1,
     "plugins/pytest-optimizer/templates/commit-message.tmpl": 1,
     "plugins/pytest-optimizer/templates/conftest_cache_snippet.py": 1,

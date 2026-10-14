@@ -60,8 +60,8 @@ Hard keeps. Never delete or rewrite these, whatever the gates say:
 - Tool directives: `# noqa`, `# type: ignore`, `# pragma`,
   `# fmt: off`, `// eslint-disable`, and their kin.
 - Shebang and encoding lines, and license or SPDX headers.
-- A docstring that is the only statement in its block: removing it is
-  a syntax error. Report it instead.
+- A docstring that is the only statement in its block: in Python,
+  removing it is a syntax error. Report it instead.
 
 Otherwise keep:
 

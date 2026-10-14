@@ -15,8 +15,7 @@ repo-wide.
 
 ## `$ARGUMENTS`
 
-- `paths/globs` — files to tighten (via `git ls-files -- <glob>` when
-  tracked, else literal paths).
+- `paths/globs` — files to tighten, resolved by `scope.py --paths`.
 - `--stdin` — tighten a pasted draft read from stdin instead of files;
   print the tightened text and edit nothing.
 - `--gates` — after editing, run the project's discovered
@@ -24,18 +23,29 @@ repo-wide.
 - `--diff-only` — show what would change without editing.
 
 If `$ARGUMENTS` is empty, ask which files via `AskUserQuestion`; without
-an interactive question tool (Codex, headless runs), print the usage
-and stop.
+a question tool, print the usage and stop.
 
 With targets but no question tool, act as `--diff-only` unless the
 request itself says "go ahead": that authorizes the edits it names,
 never a commit.
 
+The commands below run from the user's directory. Resolve
+`../../scripts/scope.py` against the directory of this SKILL.md (the path
+it was read from) and write that absolute path literally in each command;
+shell variables do not persist between Bash calls. Never show that path in
+the reply.
+
 ## Steps
 
-1. **Resolve targets.** Expand paths/globs, or read stdin with
-   `--stdin`. Reject an empty target set with a clear message; with `--stdin` and
-   no text, print the usage and stop.
+1. **Resolve targets.** Read stdin with `--stdin`; with `--stdin` and no
+   text, print the usage and stop. Otherwise resolve the paths:
+
+   ```console
+   $ python3 ../../scripts/scope.py --paths <paths/globs>
+   ```
+
+   It prints `path<TAB>tracked|untracked` per file, and exits 2 naming a
+   path that matches no file: report that and stop.
 2. **Load the rules and voice.** Read
    `../../references/prose-rules.md` and
    `../../references/lean-rubric.md`, then `./AGENTS.md` and
@@ -51,11 +61,11 @@ never a commit.
    headless rule in `$ARGUMENTS`.
 5. **Apply in place.** Use `Edit`. Replacements are concrete and
    shorter than the original.
-6. **Diff.** Print `git diff -- <targets>`; for an untracked target print
-   `git diff --no-index -- /dev/null <file>` instead. A `--diff-only` run
+6. **Diff.** For a tracked target print `git diff -- <file>`; for an
+   untracked one print `git diff --no-index -- /dev/null <file>`. A `--diff-only` run
    prints the proposed edits as a unified `diff` block instead (the
    proposal, not `git diff`). Skip for runs that edited nothing; for
-   `--stdin`, print the tightened text as the whole reply. With `--gates`, run the
+   `--stdin`, print the tightened text per step 7. With `--gates`, run the
    discovered checks once and report; never commit, whatever the gates report.
 7. **Report and hand off.** Write it per
    `../../references/prose-rules.md`: a one-line count of findings
@@ -67,7 +77,7 @@ never a commit.
    ```
 
    With `--diff-only`, or no question tool and no go-ahead, the hero is
-   `6 findings proposed, 0 applied.`, followed by the proposed edits in
+   `N findings proposed, 0 applied.`, followed by the proposed edits in
    a `diff` block and nothing else:
 
    ````text
@@ -89,18 +99,12 @@ never a commit.
 
    After a proposal-only run (nothing written), offer to apply the proposal
    or stop; there is nothing to commit or discard. Otherwise offer next
-   steps via `AskUserQuestion`: commit, or discard the edits. Without a question tool, print the options as a
-   plain list and stop. Offer a file option only for files on disk; pasted
-   text has none and is never matched to a scaffold file. Review the
-   printed diff first, since `git checkout -- <file>` resets a tracked
-   file to HEAD and drops any other uncommitted work in it; to discard
-   edits to an untracked file, restore the original text you read before
-   editing, or delete the file when it was untracked before the run and the user says it is new. A commit message carries no
-   `Co-Authored-By`, no "Generated with" or other tool trailer, and no
-   emoji. For `--stdin`, skip the handoff: the reply is the tightened
-   text with no lead-in, then at most one line, and only to name
-   load-bearing text kept that the user might expect cut. Never narrate
-   what was removed.
+   steps as `../../references/handoff.md` describes: commit, or discard
+   the edits. Offer a file option only for files on disk; pasted text has
+   none and is never matched to a scaffold file. For `--stdin`, skip the
+   handoff: the reply is the tightened text with no lead-in, then at most
+   one line, and only to name load-bearing text kept that the user might
+   expect cut. Never narrate what was removed.
 
 ## What this does not do
 

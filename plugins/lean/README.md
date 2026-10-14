@@ -60,5 +60,5 @@ confirms before editing. Prints a diff, never commits.
 
 ## Prerequisites
 
-- `python3` (3.9 or newer) runs `scripts/scope.py` for `trim-comments`.
+- `python3` (3.9 or newer) runs `scripts/scope.py` for both editing skills and `scripts/tally.py` for `trim-comments`.
 - Reads `AGENTS.md` / `CLAUDE.md` at runtime to match repo voice.
