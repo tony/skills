@@ -1,6 +1,6 @@
 {
   "name": "ruff",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Upgrade Ruff across repositories. Works out which new rules can fire against each repo's select list and lands one reviewed commit per rule, citing the upstream rule doc.",
   "author": {
     "name": "Tony Narlock",
