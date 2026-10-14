@@ -235,7 +235,7 @@
         "references/prose-rules.md": "plugins/double-check/references/prose-rules.md",
         "references/verification-contract.md": "plugins/double-check/references/verification-contract.md"
       },
-      "bytes": 13027
+      "bytes": 13028
     },
     {
       "name": "double-check-align",
@@ -246,7 +246,7 @@
         "references/prose-rules.md": "plugins/double-check/references/prose-rules.md",
         "references/verification-contract.md": "plugins/double-check/references/verification-contract.md"
       },
-      "bytes": 12551
+      "bytes": 12552
     },
     {
       "name": "gh-create-issue",

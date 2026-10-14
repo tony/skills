@@ -55,7 +55,8 @@ sentence, after which the answer continues standalone.
   client.py"). When that sentence states the source value, it serves as
   the lead line.
 - The user pointed out a mistake without acting on it. Acknowledge it
-  in one sentence, then deliver the corrected answer whole.
+  in one sentence, without the banned phrases above, then deliver the
+  corrected answer whole.
 
 Otherwise the prior turn does not exist in the output: never write "my
 earlier figure was wrong" or similar. Adoption is the only thing that
@@ -83,8 +84,7 @@ The reply is the shape the skill gives, with nothing after its last
 line. The interactive next-step panel that AGENTS.md asks of skills
 with declared output sections does not apply: these replies are free
 text answering the original request, and a panel after them would
-break the standalone answer. A halted run prints one result sentence,
-then what the user must supply.
+break the standalone answer. Each skill states its own halt shape.
 
 ## What this contract is not
 
