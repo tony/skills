@@ -16,9 +16,9 @@ Banned phrases: `../../references/verification-contract.md`.
 
 ## `$ARGUMENTS`
 
-- Empty — re-anchor on the subject of the most recent analysis
+- Empty: re-anchor on the subject of the most recent analysis
   thread, at its original scope.
-- A topic or question — re-anchor on that instead. Narrowing is a
+- A topic or question: re-anchor on that instead. Narrowing is a
   feature: it discards the earlier answer's scaffolding, which is
   what lets omitted items finally surface.
 
@@ -60,6 +60,6 @@ poller.py sets POLL_INTERVAL_SECONDS = 30 and MAX_POLLS = 4.
 
 - Reference, summarize, or grade the earlier response, except the one
   sentence step 3 allows.
-- Edit files or commit — output is conversation only.
-- Answer a different question than the one recovered or given —
+- Edit files or commit: output is conversation only.
+- Answer a different question than the one recovered or given:
   losing focus is the failure this command repairs.

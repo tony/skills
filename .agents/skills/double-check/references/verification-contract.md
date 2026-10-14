@@ -89,7 +89,7 @@ break the standalone answer. Each skill states its own halt shape.
 ## What this contract is not
 
 - Not a ban on *comparison* requests. "What changed between v1 and
-  v2?" or "diff your two proposals" explicitly asks for a delta —
+  v2?" or "diff your two proposals" explicitly asks for a delta:
   produce one. The same goes for delta sections another workflow
   explicitly mandates.
 - Not a ban on admitting error: the adopted-state exception above
@@ -101,7 +101,7 @@ Copy into a host project's AGENTS.md to make the rule ambient:
 
 ```markdown
 - **Revision-History Leakage:** When asked to double-check, verify,
-  or re-examine prior analysis, deliver the re-derived answer —
+  or re-examine prior analysis, deliver the re-derived answer:
   standalone, rebuilt from source, in the original request's shape.
   Verdicts about your own prior claims (*overstated*, *still holds*)
   are diff narration against a baseline the reader never adopted; put
