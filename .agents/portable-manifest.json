@@ -56,7 +56,7 @@
         "references/prose-rules.md": "plugins/business/references/prose-rules.md",
         "references/provenance.md": "plugins/business/references/provenance.md"
       },
-      "bytes": 91542
+      "bytes": 98555
     },
     {
       "name": "business-case-study-public",
@@ -72,7 +72,7 @@
         "references/prose-rules.md": "plugins/business/references/prose-rules.md",
         "references/provenance.md": "plugins/business/references/provenance.md"
       },
-      "bytes": 103919
+      "bytes": 110932
     },
     {
       "name": "business-pr-release",
@@ -86,7 +86,7 @@
         "references/prose-rules.md": "plugins/business/references/prose-rules.md",
         "references/provenance.md": "plugins/business/references/provenance.md"
       },
-      "bytes": 92561
+      "bytes": 99574
     },
     {
       "name": "business-report-leadership",
@@ -102,7 +102,7 @@
         "references/prose-rules.md": "plugins/business/references/prose-rules.md",
         "references/provenance.md": "plugins/business/references/provenance.md"
       },
-      "bytes": 105303
+      "bytes": 112316
     },
     {
       "name": "business-report-org-wide",
@@ -117,7 +117,7 @@
         "references/prose-rules.md": "plugins/business/references/prose-rules.md",
         "references/provenance.md": "plugins/business/references/provenance.md"
       },
-      "bytes": 100246
+      "bytes": 107259
     },
     {
       "name": "business-research",
@@ -132,7 +132,7 @@
         "references/prose-rules.md": "plugins/business/references/prose-rules.md",
         "references/provenance.md": "plugins/business/references/provenance.md"
       },
-      "bytes": 103721
+      "bytes": 110734
     },
     {
       "name": "changelog",

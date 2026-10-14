@@ -6,6 +6,7 @@ Subcommands:
 - ``stats``: median, IQR, and a seeded BCa bootstrap interval for the median.
 - ``scan``: tier-3 sanitization scan of a draft for identifiers, secrets, names, and money terms.
 - ``trace``: check that every figure in a derived text appears in its source text.
+- ``stamp`` and ``fresh``: record, then verify, the inputs each written report derives from.
 - ``init``: create a run directory, refusing to reuse one that holds raw snapshots.
 - ``assumptions``: required-field check of an ``assumptions.yaml`` register.
 - ``runs``: list run directories newest first, ordered by the date in the path.
@@ -25,6 +26,7 @@ import contextlib
 import csv
 import datetime as dt
 import decimal
+import hashlib
 import io
 import json
 import math
@@ -43,6 +45,7 @@ if t.TYPE_CHECKING:
 DIRECTIONAL_BELOW = 20
 MIN_OBSERVATIONS = 2
 MIN_INTERVAL_N = 5
+REGISTER_INDENT = 2
 
 _NOT_TICKETS = "ISO|SHA|UTF|GPT|COVID|RFC|CVE|CWE|PEP|AES|RSA|TLS|SSL|UTC|GMT"
 _HOST_SUFFIXES = (
@@ -180,7 +183,16 @@ CITATION = re.compile(r"sources\.md(?:#|\s+`)([\w-]+)")
 _TIME_UNITS = (
     "ms|s|secs?|seconds?|mins?|minutes?|h|hrs?|hours?|days?|weeks?|months?|quarters?|years?"
 )
-FIGURE = re.compile(rf"\d(?:\.\d+)?[\s-]?(?:%|(?:{_TIME_UNITS}|PRs?|engineers?)\b)", re.IGNORECASE)
+FIGURE = re.compile(
+    rf"\d(?:\.\d+)?[\s-]?(?:%|(?:{_TIME_UNITS}|PRs?|engineers?|tasks?|drafts?|instances?)\b)",
+    re.IGNORECASE,
+)
+SENTENCE_END = re.compile(r"(?<=[.!?;])\s+(?=[A-Z])")
+_GATE_MONEY_FORMS = (
+    "roi", "dollars?", "cost[- ]?savings?", r"monetiz\w*", "payback", "salar(?:y|ies)",
+    "wages?", "payroll", "revenue", r"profit\w*", "euros?", "bucks?",
+)  # fmt: skip
+GATE_MONEY = re.compile("|".join(_GATE_MONEY_FORMS), re.IGNORECASE)
 UNIT_START = re.compile(r"\s*(?:[-*]|\d+\.|\|)\s?")
 CHECK_LINE = re.compile(r"\s*(?:[-*]\s*)?check:", re.IGNORECASE)
 CHECK_SPEC = re.compile(
@@ -491,6 +503,31 @@ def _parse_register(text: str) -> list[dict[str, str]]:
     return entries
 
 
+def _register_format_problems(text: str, entries: Sequence[dict[str, str]]) -> list[str]:
+    problems: list[str] = []
+    index = -1
+    for number, raw in enumerate(text.splitlines(), start=1):
+        line = raw.rstrip()
+        body = line.lstrip()
+        if not body or body.startswith("#"):
+            continue
+        indent = len(line) - len(body)
+        if body.startswith("- ") and indent == 0:
+            index += 1
+            body = body[2:]
+        elif body.startswith("- ") or indent > REGISTER_INDENT:
+            problems.append(f"line {number}: nested structure; write flat key: value lines")
+            continue
+        name = (entries[index].get("id") if 0 <= index < len(entries) else None) or f"#{index + 1}"
+        key, _, value = body.partition(":")
+        value = value.strip()
+        if value[:1] in ("'", '"'):
+            problems.append(f"entry {name}: line {number}: {key.strip()} is quoted; write it bare")
+        elif re.search(r"\s#", value):
+            problems.append(f"entry {name}: line {number}: {key.strip()} has a trailing # comment")
+    return problems
+
+
 def check_assumptions(text: str, sources: Collection[str] | None = None) -> list[str]:
     r"""Return problems in an ``assumptions.yaml`` register of flat ``key: value`` entries.
 
@@ -521,7 +558,7 @@ def check_assumptions(text: str, sources: Collection[str] | None = None) -> list
     []
     """
     entries = _parse_register(text)
-    problems: list[str] = []
+    problems = _register_format_problems(text, entries)
     seen: set[str] = set()
     for index, entry in enumerate(entries, start=1):
         name = entry.get("id") or f"#{index}"
@@ -909,11 +946,21 @@ def _check_sources(run: Path, entries: dict[str, list[str]]) -> list[str]:
     return problems
 
 
-def _check_figures(label: str, text: str, names: Collection[str]) -> list[str]:
+def _check_figures(
+    label: str, text: str, names: Collection[str], unchecked: Collection[str] = ()
+) -> list[str]:
+    """Check tags per sentence; ``unchecked`` names CSV-backed entries no ``check:`` line covers."""
     problems: list[str] = []
     for unit in _units(text):
         if CHECK_LINE.match(unit):
             continue
+        problems.extend(
+            f"{label}: figure without a provenance tag: {sentence[:60]}"
+            for sentence in SENTENCE_END.split(unit)
+            if FIGURE.search(sentence)
+            and not any(tag in sentence for tag in TAGS)
+            and any(tag in unit for tag in TAGS)
+        )
         if not any(tag in unit for tag in TAGS):
             if FIGURE.search(unit):
                 problems.append(f"{label}: figure without a provenance tag: {unit[:60]}")
@@ -926,7 +973,25 @@ def _check_figures(label: str, text: str, names: Collection[str]) -> list[str]:
         problems.extend(
             f"{label}: cited sources.md entry {c} does not exist" for c in cited if c not in names
         )
+        problems.extend(
+            f"{label}: MEASURED figure has no check: line over the CSV of {c}: {unit[:60]}"
+            for c in cited
+            if c in unchecked
+        )
     return problems
+
+
+def _csv_outputs(lines: Sequence[str]) -> set[str]:
+    outputs: set[str] = set()
+    for line in lines:
+        found = OUTPUT_LINE.match(line)
+        if found:
+            outputs.update(
+                x.strip().strip("`")
+                for x in found.group(1).split(",")
+                if x.strip().endswith(".csv")
+            )
+    return outputs
 
 
 def _column(rows: list[dict[str, str]], expr: str) -> list[float] | None:
@@ -1040,15 +1105,32 @@ def check_run(run: Path) -> list[str]:
     if findings is None:
         problems.append("findings.md is missing")
     else:
-        for label, text in (
+        texts = [
             *((k, v.read_text(encoding="utf-8")) for k, v in docs.items()),
             ("findings.md", findings),
-        ):
-            problems.extend(_check_figures(label, text, set(entries)))
+        ]
+        checked = {
+            Path(m.group(2)).as_posix()
+            for _, text in texts
+            for line in text.splitlines()
+            if (m := CHECK_SPEC.match(line))
+        }
+        unchecked = {
+            name
+            for name, lines in entries.items()
+            if any(Path(c).as_posix() not in checked for c in _csv_outputs(lines))
+        }
+        for label, text in texts:
+            problems.extend(_check_figures(label, text, set(entries), unchecked))
             problems.extend(
                 f"{label}:{line}: currency {match!r}; value is hours, never money"
                 for line, _, kind, match in scan_text(text)
                 if kind == "currency"
+            )
+            problems.extend(
+                f"{label}:{line}: money framing {match!r}; value is hours, never money"
+                for line, _, _, match in scan_text(text, rules=["money-term"])
+                if GATE_MONEY.fullmatch(match)
             )
             problems.extend(_check_recomputed(run, label, text))
         problems.extend(_check_unknowns(findings))
@@ -1237,6 +1319,74 @@ def collect_prs(
             if absent[c]
         )
     return sorted(rows, key=lambda r: int(r["number"]))
+
+
+STAMP_FILE = ".provenance.json"
+RUN_INPUTS = ("README.md", "sources.md", "assumptions.yaml", "findings.md")
+PUBLIC_STUDY = "case-study-public.md"
+
+
+def _input_hashes(run: Path, report: str) -> dict[str, str]:
+    """Hash the files a report is derived from: the public case study for a release."""
+    if report == "pr-release.md":
+        files = [run / "reports" / PUBLIC_STUDY]
+    else:
+        files = [
+            *(run / name for name in RUN_INPUTS),
+            *sorted((run / "measurements").glob("*.md")),
+            *sorted(p for p in (run / "raw").rglob("*") if p.is_file()),
+        ]
+    return {
+        f.relative_to(run).as_posix(): hashlib.sha256(f.read_bytes()).hexdigest()
+        for f in files
+        if f.is_file()
+    }
+
+
+def _load_stamps(run: Path) -> dict[str, dict[str, str]]:
+    path = run / "reports" / STAMP_FILE
+    if not path.is_file():
+        return {}
+    return t.cast("dict[str, dict[str, str]]", json.loads(path.read_text(encoding="utf-8")))
+
+
+def stamp_report(run: Path, report: str) -> None:
+    """Record the hashes of the files ``report`` was written from.
+
+    Examples
+    --------
+    >>> import tempfile
+    >>> with tempfile.TemporaryDirectory() as d:
+    ...     (Path(d) / "reports").mkdir()
+    ...     _ = (Path(d) / "reports" / "leadership.md").write_text("r")
+    ...     _ = (Path(d) / "findings.md").write_text("a")
+    ...     stamp_report(Path(d), "leadership.md")
+    ...     stale_reports(Path(d))
+    ...     _ = (Path(d) / "findings.md").write_text("b")
+    ...     [r.split(":")[0] for r in stale_reports(Path(d))]
+    []
+    ['leadership.md']
+    """
+    stamps = _load_stamps(run)
+    stamps[report] = _input_hashes(run, report)
+    target = run / "reports" / STAMP_FILE
+    _ = target.write_text(json.dumps(stamps, indent=1, sort_keys=True) + "\n", encoding="utf-8")
+
+
+def stale_reports(run: Path) -> list[str]:
+    """Return one line per report that is unstamped or whose recorded inputs changed."""
+    stamps = _load_stamps(run)
+    problems: list[str] = []
+    for report in sorted(p.name for p in (run / "reports").glob("*.md")):
+        recorded = stamps.get(report)
+        if recorded is None:
+            problems.append(f"{report}: no recorded inputs; stamp it after writing")
+            continue
+        now = _input_hashes(run, report)
+        changed = sorted(k for k in now.keys() | recorded.keys() if now.get(k) != recorded.get(k))
+        if changed:
+            problems.append(f"{report}: stale; changed since it was written: {', '.join(changed)}")
+    return problems
 
 
 _NUMBER = re.compile(r"(?<![\w.])\d[\d,]*(?:\.\d+)?")
@@ -1516,6 +1666,29 @@ def _trace_command(args: Args) -> int:
     return 1 if missing else 0
 
 
+def _stamp_command(args: Args) -> int:
+    run = Path(args.run)
+    report = Path(args.report).name
+    if not (run / "reports" / report).is_file():
+        print(f"no reports/{report} in {args.run}", file=sys.stderr)
+        return 2
+    stamp_report(run, report)
+    return 0
+
+
+def _fresh_command(args: Args) -> int:
+    run = Path(args.run)
+    if not (run / "reports").is_dir():
+        print(f"no reports/ in {args.run}", file=sys.stderr)
+        return 2
+    problems = stale_reports(run)
+    for problem in problems:
+        print(problem)
+    if not problems:
+        print("ok")
+    return 1 if problems else 0
+
+
 def _init_command(args: Args) -> int:
     try:
         run = init_run(Path(args.root[0]), args.workflow, args.date or time.strftime("%Y-%m-%d"))
@@ -1553,6 +1726,7 @@ class Args(argparse.Namespace):
     output: str = ""
     names_file: str = ""
     against: str = ""
+    report: str = ""
     workflow: str = ""
     date: str = ""
 
@@ -1630,6 +1804,17 @@ def main(argv: list[str] | None = None) -> int:
     _ = p_trace.add_argument("file", help="derived text, such as the PR release")
     _ = p_trace.add_argument("--against", required=True, help="source text, such as the case study")
 
+    p_stamp = sub.add_parser(
+        "stamp", help="record the hashes of the files a written report was derived from"
+    )
+    _ = p_stamp.add_argument("run", help="run directory")
+    _ = p_stamp.add_argument("report", help="report file name under reports/, e.g. leadership.md")
+
+    p_fresh = sub.add_parser(
+        "fresh", help="exit 1 when a report is unstamped or its inputs changed since it was written"
+    )
+    _ = p_fresh.add_argument("run", help="run directory")
+
     p_init = sub.add_parser(
         "init", help="create a run directory; refuse one whose raw/ holds snapshots"
     )
@@ -1656,6 +1841,8 @@ def main(argv: list[str] | None = None) -> int:
         "scan": _scan_command,
         "collect-prs": _collect_prs_command,
         "trace": _trace_command,
+        "stamp": _stamp_command,
+        "fresh": _fresh_command,
         "init": _init_command,
         "assumptions": lambda a: _assumptions_command(Path(a.file)),
         "gate": lambda a: _gate_command(Path(a.run)),

@@ -680,3 +680,77 @@ def test_register_savings_rate_must_match_its_parts() -> None:
     wrong = problems("- id: savings-rate\n  value: 0.9\n")
     assert len(wrong) == 1
     assert "savings-rate: 0.9 disagrees with the 0.4 its parts imply" in wrong[0]
+
+
+def test_gate_requires_each_sentence_figure_to_sit_in_a_tagged_sentence(tmp_path: Path) -> None:
+    run = make_run(tmp_path)
+    tagged = "Saved 18 min (MEASURED: sources.md `task-timings`, n=3 tasks)."
+    (run / "findings.md").write_text(f"{tagged} Another 300 PRs merged.\n")
+    problems = business.check_run(run)
+    assert problems == ["findings.md: figure without a provenance tag: Another 300 PRs merged."]
+    (run / "findings.md").write_text(
+        "Saved 18 min over 300 PRs (MEASURED: sources.md `task-timings`, n=3 tasks).\n"
+    )
+    assert business.check_run(run) == []
+
+
+def test_gate_requires_a_check_line_over_a_measured_csv(tmp_path: Path) -> None:
+    run = make_run(tmp_path)
+    timing = run / "measurements" / "timing.md"
+    timing.write_text(timing.read_text().split("check:")[0])
+    problems = business.check_run(run)
+    assert len(problems) == 1
+    assert "has no check: line over the CSV of task-timings" in problems[0]
+    (run / "findings.md").write_text(
+        "Saved 18 min (MEASURED: sources.md `task-timings`, n=3 tasks).\n"
+    )
+    assert len(business.check_run(run)) == 2
+
+
+def test_gate_flags_money_framings(tmp_path: Path) -> None:
+    run = make_run(tmp_path)
+    (run / "findings.md").write_text("No ROI claim; cost savings are not made.\n")
+    problems = business.check_run(run)
+    assert problems == [
+        "findings.md:1: money framing 'ROI'; value is hours, never money",
+        "findings.md:1: money framing 'cost savings'; value is hours, never money",
+    ]
+
+
+def test_stamp_and_fresh_detect_a_changed_input(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    run = make_run(tmp_path)
+    reports = run / "reports"
+    reports.mkdir()
+    (reports / "case-study-public.md").write_text("study\n")
+    (reports / "pr-release.md").write_text("release\n")
+    assert business.main(["fresh", str(run)]) == 1
+    assert "case-study-public.md: no recorded inputs" in capsys.readouterr().out
+    for name in ("case-study-public.md", "pr-release.md"):
+        assert business.main(["stamp", str(run), name]) == 0
+    assert business.main(["fresh", str(run)]) == 0
+    (run / "raw" / "t.csv").write_text("task,m,a\n1,31,12\n")
+    assert business.main(["fresh", str(run)]) == 1
+    out = capsys.readouterr().out
+    assert "case-study-public.md: stale; changed since it was written: raw/t.csv" in out
+    assert "pr-release.md" not in out
+    (reports / "case-study-public.md").write_text("regenerated\n")
+    assert "pr-release.md: stale; changed since it was written: reports/case-study-public.md" in (
+        "\n".join(business.stale_reports(run))
+    )
+    assert business.main(["stamp", str(run), "nope.md"]) == 2
+
+
+def test_assumptions_reject_quoted_commented_and_nested_fields(tmp_path: Path) -> None:
+    register = tmp_path / "a.yaml"
+    register.write_text(REGISTER.replace("unit: engineers", 'unit: "engineers" # c'))
+    problems = business.check_assumptions(register.read_text())
+    assert problems == ["entry addressable-population: line 4: unit is quoted; write it bare"]
+    register.write_text(REGISTER.replace("unit: engineers", "unit: engineers # c"))
+    assert business.check_assumptions(register.read_text()) == [
+        "entry addressable-population: line 4: unit has a trailing # comment"
+    ]
+    register.write_text(REGISTER + "  notes:\n    - a\n")
+    assert any("nested structure" in p for p in business.check_assumptions(register.read_text()))
+    assert business.check_assumptions("# a note\n" + REGISTER) == []
