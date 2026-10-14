@@ -1,6 +1,6 @@
 {
   "name": "double-check",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Forces verification requests to return re-derived answers instead of diffs against prior turns. The align skill restates a chat's analysis standalone after a revision-log reply.",
   "author": {
     "name": "Tony Narlock",
