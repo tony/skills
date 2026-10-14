@@ -1439,6 +1439,9 @@ def _record_cmd(args: argparse.Namespace) -> int:
     entry: dict[str, t.Any] = json.loads(_read_text(args.entry)) if args.entry else {}
     if args.capture_json:
         cap = json.loads(_read_text(args.capture_json))
+        if cap.get("ok") is not True:
+            why = cap.get("reason") or "no patch recorded"
+            return _emit({"ok": False, "reason": f"capture did not succeed: {why}"}, ok=False)
         rel = os.path.relpath(cap["patch"], pathlib.Path(args.file).resolve().parent)
         entry.update(patch=rel, patch_sha256=cap["sha256"], files=cap["paths"])
     if args.ids_json:
@@ -1501,9 +1504,15 @@ def _records(args: argparse.Namespace) -> int:  # noqa: PLR0911
         fields: dict[str, t.Any] = {}
         if args.gate_json:
             gate = json.loads(_read_text(args.gate_json))
+            if gate.get("ok") is not True or not (gate.get("parent") and gate.get("tree")):
+                why = gate.get("reason") or "parent or tree missing"
+                return _emit({"ok": False, "reason": f"gate did not pass: {why}"}, ok=False)
             fields.update(pending_parent=gate["parent"], pending_tree=gate["tree"])
         if args.run_json:
-            fields["seconds"] = json.loads(_read_text(args.run_json))["seconds"]
+            ran = json.loads(_read_text(args.run_json))
+            if "seconds" not in ran:
+                return _emit({"ok": False, "reason": "run output has no seconds"}, ok=False)
+            fields["seconds"] = ran["seconds"]
         fields.update({k: json.loads(v) for k, v in (f.split("=", 1) for f in args.fields)})
         new = log_step(current, plan, args.action, args.order, fields, not args.no_propagate)
         _write_json(log_path, new)

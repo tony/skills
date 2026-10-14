@@ -225,13 +225,13 @@ For each plan item not yet applied:
    ```console
    $ python3 <isolate.py> gate \
        --cwd <tree> \
-       --file <each path in files>
+       --file <each path in files> \
+       > <runs-dir>/gate-<order>.json
    ```
 
    On exit 1 the item failed (go to 4); the verification changed paths outside
-   the plan, which includes a formatter rewriting the patched files. On success
-   save the gate output (`> <runs-dir>/gate-<order>.json`) and write the log
-   entry from it, with the drafted subject:
+   the plan, which includes a formatter rewriting the patched files (read the
+   saved file for the `reason`). On success write the log entry from that file, with the drafted subject:
 
    ```console
    $ python3 <measure.py> log begin \

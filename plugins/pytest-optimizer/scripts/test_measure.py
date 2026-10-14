@@ -499,7 +499,14 @@ def test_record_reads_capture_and_ids_outputs(
     state.write_text(json.dumps({"env_token": "t", "base_head": "h"}))
     cap = tmp_path / "cap.json"
     cap.write_text(
-        json.dumps({"patch": str(mem / "patches" / "a.patch"), "sha256": "abc", "paths": ["f.py"]})
+        json.dumps(
+            {
+                "ok": True,
+                "patch": str(mem / "patches" / "a.patch"),
+                "sha256": "abc",
+                "paths": ["f.py"],
+            }
+        )
     )
     ids = tmp_path / "ids.json"
     ids.write_text(json.dumps({"same": False, "missing": ["x::t2"], "unexpected": []}))
@@ -565,3 +572,29 @@ def test_log_reads_gate_and_run_outputs(
              "--set", 'commit_sha="abc"')  # fmt: skip
     done = json.loads((tmp_path / "execution-log.json").read_text())[0]
     assert (done["verify"]["seconds"], "pending_tree" in done) == (7.9, False)
+
+
+def test_log_and_record_name_a_failed_input_instead_of_a_key_error(
+    tmp_path: pathlib.Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """A failed gate or capture is reported by its own reason, exit 1."""
+    (tmp_path / "plan.json").write_text(json.dumps([{"order": 1, "id": "a"}]))
+    gate = tmp_path / "gate.json"
+    gate.write_text(
+        json.dumps({"ok": False, "reason": "staged paths differ from the plan's files"})
+    )
+    argv = ["log", "begin", "--memory-dir", str(tmp_path), "--order", "1"]
+    code, out = _run_cli(capsys, *argv, "--gate-json", str(gate))
+    assert (code, out["reason"]) == (
+        1, "gate did not pass: staged paths differ from the plan's files",
+    )  # fmt: skip
+
+    cap = tmp_path / "cap.json"
+    cap.write_text(json.dumps({"ok": False, "reason": "the worktree has no change against HEAD"}))
+    bench = tmp_path / "benchmarks.json"
+    code, out = _run_cli(capsys, "record", str(bench), "--id", "a", "--capture-json", str(cap))
+    assert (code, out["reason"]) == (
+        1, "capture did not succeed: the worktree has no change against HEAD",
+    )  # fmt: skip
+    assert not bench.exists()
