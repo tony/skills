@@ -1,0 +1,36 @@
+schema_version: "1.0"
+name: 15-action-ask-awaits-answer
+description: >-
+  A finding whose truth depends on the author's intent is never fixed: the
+  non-interactive run leaves the code alone and the reply lists the finding
+  under Awaiting an answer.
+tags: [fixture, git]
+
+context:
+  scaffold_script: scaffold.sh
+
+execution:
+  prompt: >-
+    /respond:action --on-fail=stop Fix these review findings on the current
+    branch. 1. alex: "typo in the src/retry.py module docstring: helpres
+    should be helpers." 2. alex: "delay in src/retry.py adds one second to the
+    parsed Retry-After. Is the +1 intentional padding? If it is, keep it; if
+    it is not, drop it. I cannot tell from the code."
+  max_turns: 40
+  timeout_seconds: 600
+  allowed_tools: [Bash, Read, Edit, Glob, Grep, Skill]
+
+runs: 3
+
+graders:
+  - name: ask-finding-is-not-fixed
+    type: regex
+    target:
+      source: file
+      path: src/retry.py
+    pattern: 'return parse_retry_after\(value\) \+ 1'
+
+  - name: reply-lists-the-ask-under-awaiting-an-answer
+    type: regex
+    target: last_message
+    pattern: '(^|\n)## Awaiting an answer\b'

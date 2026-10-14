@@ -1,0 +1,27 @@
+schema_version: "1.0"
+name: 17-check-reports-fallback-base
+description: >-
+  With no remote and no pull request, the base branch is found by the trunk
+  fallback; the screening reply says the base was a fallback guess.
+tags: [fixture, git]
+
+context:
+  scaffold_script: scaffold.sh
+
+execution:
+  prompt: >-
+    /respond:check Screen this review comment on the current branch. alex:
+    "delay in src/retry.py adds one second to the parsed Retry-After and the
+    function has no test."
+  max_turns: 30
+  timeout_seconds: 600
+  allowed_tools: [Bash, Read, Glob, Grep, Skill]
+
+runs: 3
+
+graders:
+  - name: reply-names-the-base-source
+    type: regex
+    target: last_message
+    pattern: '\bfallback\b'
+    flags: i
