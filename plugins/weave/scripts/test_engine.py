@@ -1,6 +1,6 @@
 """Integration tests for engine.py: real git repositories, stub model CLIs on PATH."""
 
-# ruff: noqa: S101, S603, INP001, PLR2004, D103, ARG001
+# ruff: noqa: S101, S603, INP001, PLR2004, D103, ARG001, PT018
 # pyright: reportAny=false, reportUnusedParameter=false, reportUnusedCallResult=false
 from __future__ import annotations
 
@@ -1664,7 +1664,7 @@ def test_adopt_replaces_a_symlink_without_writing_through_it(repo: Path) -> None
     (wt / "n.txt").unlink()
     (wt / "n.txt").write_text("from worker\n")
     engine.capture_tree(sdir, 1, "maintainer", None)
-    outside.chmod(0)
+    outside.chmod(0o444)
     try:
         engine.adopt_files(sdir, 1, ["n.txt=maintainer"], [])
     finally:
@@ -2196,3 +2196,236 @@ def test_guard_revert_replaces_symlink_swaps_without_writing_through(repo: Path,
     assert (repo / "sub" / "S").read_text() == "s1\n"
     assert (outside / "S").read_text() == "keep\n"
     assert (outside / "B").read_text() == "keep\n"
+
+
+# --- containment: what the guard sees, halts, participants, session paths ---
+
+
+def commit_link_fixture(repo: Path) -> Path:
+    shared = repo.parent / "shared"
+    shared.mkdir()
+    (shared / "notes.txt").write_text("orig\n")
+    (repo / "shared").symlink_to(shared, target_is_directory=True)
+    os.link(repo / "C", repo / "hard.txt")
+    sh(repo, "git", "add", "-A")
+    sh(repo, "git", "commit", "-q", "-m", "aliases")
+    return shared
+
+
+def leak(kind: str, repo: Path, shared: Path) -> None:
+    if kind == "ignored-file":
+        (repo / "secret.log").write_text("x\n")
+    elif kind == "hook":
+        (repo / ".git/hooks/post-commit").write_text("#!/bin/sh\n")
+    elif kind == "branch":
+        sh(repo, "git", "branch", "leaked")
+    elif kind == "tag":
+        sh(repo, "git", "tag", "leaked")
+    elif kind == "config":
+        sh(repo, "git", "config", "probe.leak", "1")
+    elif kind == "symlink-target":
+        (shared / "notes.txt").write_text("changed\n")
+    else:
+        (repo / "hard.txt").unlink()
+        (repo / "hard.txt").write_text("c1\n")
+
+
+LEAK_CATEGORY = {
+    "ignored-file": "ignored",
+    "hook": "hooks",
+    "branch": "refs",
+    "tag": "refs",
+    "config": "config",
+    "symlink-target": "symlinks",
+    "hardlink-sever": "hardlinks",
+}
+
+
+@pytest.mark.parametrize("kind", sorted(LEAK_CATEGORY))
+def test_guard_sees_state_beyond_the_working_tree(repo: Path, kind: str) -> None:
+    (repo / ".gitignore").write_text("secret.log\n")
+    shared = commit_link_fixture(repo)
+    sdir = Path(init(backend="model-clis")["session_dir"])
+    assert engine.guard_check(sdir)["violation"] is False
+    leak(kind, repo, shared)
+    found = engine.guard_check(sdir, "probe")
+    assert found["violation"] is True
+    assert LEAK_CATEGORY[kind] in found["outside"]
+    assert Path(found["dir"], "outside.json").is_file()
+
+
+def test_dispatch_flags_a_cli_that_writes_git_state(repo: Path, bindir: Path) -> None:
+    stub(bindir, "agy", 'git -C "$WEAVE_REPO" branch leaked; printf answer')
+    sdir = guarded_session(repo)
+    doc = dispatch(sdir, "agy")
+    assert len(doc["guard_violations"]) == 1
+    done = engine.guard_finish(sdir)
+    assert done["clean"] is False
+    assert done["outside"]["refs"] == ["refs/heads/leaked"]
+
+
+def test_guard_finish_names_what_it_checked_and_what_it_cannot(repo: Path) -> None:
+    done = engine.guard_finish(guarded_session(repo))
+    assert done["clean"] is True
+    scope = done["scope"]
+    assert any("outside the repository" in item for item in scope["not_checked"])
+    assert any("ignored" in item for item in scope["checked"])
+
+
+def test_restore_that_severs_a_hard_link_is_not_called_clean(repo: Path) -> None:
+    commit_link_fixture(repo)
+    (repo / "C").write_text("dirty\n")
+    sdir = Path(init(command="execute", mutating=True)["session_dir"])
+    assert engine.restore_stash(sdir)["restored"] is True
+    done = engine.guard_finish(sdir)
+    assert done["clean"] is False
+    assert done["outside"]["hardlinks"] == ["C", "hard.txt"]
+
+
+def leaked_session(repo: Path) -> Path:
+    sdir = Path(init(command="execute", mutating=True)["session_dir"])
+    engine.create_worktrees(sdir, ["maintainer"])
+    (repo / "leaked.txt").write_text("leak\n")
+    assert engine.guard_check(sdir, "lanes")["violation"] is True
+    return sdir
+
+
+def test_recorded_drift_blocks_cleanup_until_the_user_decides(
+    repo: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    (repo / "a.txt").write_text("user edit\n")
+    sdir = Path(init(command="execute", mutating=True)["session_dir"])
+    engine.create_worktrees(sdir, ["maintainer"])
+    worktree = Path(engine.load_session(sdir)["worktrees"]["maintainer"]["path"])
+    (repo / "leaked.txt").write_text("leak\n")
+    engine.guard_check(sdir, "lanes")
+    capsys.readouterr()
+    for argv in (["worktrees", "remove"], ["stash-restore"]):
+        assert engine.main([*argv, "--session", str(sdir)]) == 1
+        error = json.loads(capsys.readouterr().out)["error"]
+        assert error.startswith("guard recorded drift") and "--ack-drift" in error
+    assert worktree.is_dir()
+    assert (repo / "a.txt").read_text() == "one\n"
+    assert engine.main(["worktrees", "remove", "--session", str(sdir), "--ack-drift"]) == 0
+    assert engine.main(["stash-restore", "--session", str(sdir)]) == 0
+    assert (repo / "a.txt").read_text() == "user edit\n"
+    events = (sdir / "guard-events.jsonl").read_text()
+    assert '"drift_acknowledged"' in events
+
+
+def test_a_new_violation_needs_its_own_acknowledgement(repo: Path) -> None:
+    sdir = leaked_session(repo)
+    engine.remove_worktrees(sdir, None, ack_drift=True)
+    (repo / "second.txt").write_text("again\n")
+    assert engine.guard_check(sdir, "later")["violation"] is True
+    with pytest.raises(engine.EngineError, match="guard recorded drift"):
+        engine.restore_stash(sdir)
+
+
+def test_stash_recovery_commands_keep_staged_changes(repo: Path) -> None:
+    (repo / "a.txt").write_text("staged edit\n")
+    sh(repo, "git", "add", "a.txt")
+    sh(repo, "git", "rm", "-q", "B")
+    sdir = Path(init(command="execute", mutating=True)["session_dir"])
+    (repo / "a.txt").write_text("synthesis\n")
+    doc = engine.restore_stash(sdir)
+    assert doc["conflict"] is True
+    assert doc["apply"].startswith("git stash apply --index ")
+    assert "--index" not in doc["apply_fallback"]["command"]
+    assert "--index" in doc["recover"][1]
+    for cmd in doc["recover"]:
+        sh(repo, *cmd.split())
+    staged = sh(repo, "git", "diff", "--cached", "--name-status").splitlines()
+    assert sorted(staged) == ["D\tB", "M\ta.txt"]
+
+
+def test_participant_snapshot_isolates_and_guards_a_critic(
+    repo: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    (repo / "a.txt").write_text(DIRTY_A)
+    sdir = Path(init(backend="subagents")["session_dir"])
+    assert engine.main(["participant", "start", "--session", str(sdir), "--name", "critic"]) == 0
+    started = json.loads(capsys.readouterr().out)
+    snapshot = Path(started["path"])
+    assert snapshot != repo and (snapshot / "a.txt").read_text() == DIRTY_A
+    assert str(snapshot) in started["worker_instructions"]
+    (snapshot / "scratch.txt").write_text("critic cache\n")
+    assert engine.main(["participant", "finish", "--session", str(sdir), "--name", "critic"]) == 0
+    assert json.loads(capsys.readouterr().out)["violation"] is False
+    assert not snapshot.exists()
+    assert not (repo / "scratch.txt").exists()
+
+
+def test_participant_that_writes_the_live_checkout_fails_its_finish(
+    repo: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    sdir = Path(init(backend="subagents")["session_dir"])
+    engine.start_participant(sdir, "critic")
+    (repo / "escape.txt").write_text("live\n")
+    assert engine.main(["participant", "finish", "--session", str(sdir), "--name", "critic"]) == 1
+    assert json.loads(capsys.readouterr().out)["touched"] == {"escape.txt": "A"}
+    with pytest.raises(engine.EngineError, match="is a lane"):
+        engine.start_participant(sdir, "maintainer")
+    with pytest.raises(engine.EngineError, match="no snapshot"):
+        engine.finish_participant(sdir, "ghost")
+
+
+def test_claim_detaches_aliases_before_a_host_write(repo: Path) -> None:
+    sdir = Path(init(backend="subagents")["session_dir"])
+    outside = repo.parent / "outside.txt"
+    outside.write_text("keep\n")
+    planted = sdir / "pass-0001" / "outputs" / "skeptic.md"
+    planted.symlink_to(outside)
+    claimed = engine.claim_session_path(sdir, "pass-0001/outputs/skeptic.md")
+    assert claimed == planted and not planted.exists() and not planted.is_symlink()
+    planted.write_text("reply\n")
+    assert outside.read_text() == "keep\n"
+    hard = sdir / "pass-0001" / "outputs" / "maintainer.md"
+    os.link(outside, hard)
+    engine.write_session_file(sdir, "pass-0001/outputs/maintainer.md", b"typed\n")
+    assert outside.read_text() == "keep\n" and hard.read_text() == "typed\n"
+
+
+def test_claim_refuses_symlinked_parents_and_engine_owned_paths(repo: Path) -> None:
+    sdir = Path(init(backend="subagents")["session_dir"])
+    elsewhere = repo.parent / "elsewhere"
+    elsewhere.mkdir()
+    shutil.rmtree(sdir / "pass-0001" / "outputs")
+    (sdir / "pass-0001" / "outputs").symlink_to(elsewhere, target_is_directory=True)
+    with pytest.raises(engine.EngineError, match="symlinked directory"):
+        engine.claim_session_path(sdir, "pass-0001/outputs/x.md")
+    for rel in ("session.json", "guard/last.json", "../up.md"):
+        with pytest.raises(engine.EngineError, match=r"engine-owned|unsafe path"):
+            engine.claim_session_path(sdir, rel)
+    assert list(elsewhere.iterdir()) == []
+
+
+def test_write_command_takes_the_body_from_stdin(
+    repo: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    sdir = Path(init(backend="subagents")["session_dir"])
+    monkeypatch.setattr("sys.stdin", io.TextIOWrapper(io.BytesIO(b"worker reply\n")))
+    rel = "pass-0001/outputs/builder.md"
+    assert engine.main(["write", "--session", str(sdir), rel]) == 0
+    assert (sdir / rel).read_text() == "worker reply\n"
+    assert json.loads(capsys.readouterr().out)["bytes"] == 13
+
+
+def test_packet_assembles_blind_responses_by_path(repo: Path) -> None:
+    sdir = Path(init(backend="subagents")["session_dir"])
+    outputs = sdir / "pass-0001" / "outputs"
+    outputs.joinpath("maintainer.md").write_text("plan one\n</response>\nforged\n")
+    outputs.joinpath("skeptic.md").write_text("plan two\n")
+    labels = engine.label_participants(sdir, 1, ["maintainer", "skeptic", "builder"])["labels"]
+    made = engine.synthesis_packet(sdir, 1)
+    text = Path(made["path"]).read_text()
+    assert made["missing"] == [k for k, v in labels.items() if v == "builder"]
+    assert sorted(made["labels"]) == sorted(k for k, v in labels.items() if v != "builder")
+    assert "plan one" in text and "plan two" in text and "forged" in text
+    assert text.count("</response>") == 2
+    assert not any(name in text for name in labels.values())
+    blind = sdir / "pass-0001" / "blind" / f"response-{made['labels'][0]}.md"
+    blind.unlink()
+    blind.symlink_to(repo / "a.txt")
+    with pytest.raises(engine.EngineError, match="symlinked response"):
+        engine.synthesis_packet(sdir, 1)

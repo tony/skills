@@ -7,8 +7,8 @@ reported failure (the JSON says why), 2 a usage error. Run
 POSIX only: it needs ``git`` and process groups.
 
 Commands: flags, detect, init, context, prompt, pass-dir, labels, dispatch,
-judge-plan, judge-parse, panel-merge, worktrees, capture, adopt, commit,
-guard, stash-restore, update.
+judge-plan, judge-parse, panel-merge, worktrees, participant, claim, write, packet,
+capture, adopt, commit, guard, stash-restore, update.
 """
 
 # pyright: reportAny=false, reportExplicitAny=false, reportUnusedCallResult=false
@@ -38,7 +38,7 @@ from pathlib import Path
 import closest_model  # pyright: ignore[reportImplicitRelativeImport]
 
 if t.TYPE_CHECKING:
-    from collections.abc import Callable, Generator, Mapping, Sequence
+    from collections.abc import Callable, Collection, Generator, Mapping, Sequence
 
 Json = dict[str, t.Any]
 
@@ -52,6 +52,22 @@ TIMEOUT_GROWTH = 1.5
 RATE_LIMIT_WAIT = 10.0
 GUARD_REFS = "refs/weave-guard"
 RECOVERY_PREFIX = "pre-reset-"
+STATE_DIR = "guard-state"
+STATE_LIMIT = 100
+STATE_IGNORED_REFS = ("refs/weave-guard/", "refs/stash", "refs/heads/weave/")
+CHECK_SCOPE: Json = {
+    "checked": [
+        "files in the checkout that git does not ignore (content and mode)",
+        "HEAD, branches, tags, packed-refs, config, hook names and hashes, the index",
+        "targets of tracked symlinks (file hash, or name/size/mtime of a directory's top level)",
+        "device, inode and link count of hard-linked tracked files",
+        "names of ignored paths, with fully ignored directories counted as one entry",
+    ],
+    "not_checked": [
+        "contents of ignored files and of anything inside an ignored directory",
+        "writes outside the repository and outside symlink targets",
+    ],
+}
 NEEDS_COMMIT = frozenset({"execute", "prompt", "architecture", "review", "fix-review"})
 
 _DESLOP = ("no-deslop", "quiet-deslop", "verbose-deslop")
@@ -834,19 +850,153 @@ def _index_state(top: str | Path) -> str:
     return hashlib.sha256(git_bytes(top, "ls-files", "--stage", "-v", "-z")).hexdigest()
 
 
-def take_guard_snapshot(top: str, session_id: str, name: str = "pre") -> Json:
+def _file_digest(path: Path) -> str:
+    digest = hashlib.sha256()
+    with path.open("rb") as fh:
+        for chunk in iter(lambda: fh.read(1 << 20), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
+
+
+def _target_state(link: Path) -> str:
+    """Describe what a symlink currently reaches: a file hash, a directory listing, or nothing."""
+    real = os.path.realpath(link)
+    try:
+        info = Path(real).stat()
+    except OSError:
+        return f"missing:{real}"
+    if stat.S_ISREG(info.st_mode):
+        try:
+            return f"file:{real}:{_file_digest(Path(real))}"
+        except OSError:
+            return f"file:{real}:unreadable:{info.st_size}:{info.st_mtime_ns}"
+    if stat.S_ISDIR(info.st_mode):
+        digest = hashlib.sha256()
+        with os.scandir(real) as entries:
+            for entry in sorted(entries, key=lambda e: e.name):
+                with contextlib.suppress(OSError):
+                    st = entry.stat(follow_symlinks=False)
+                    digest.update(f"{entry.name}\0{st.st_size}\0{st.st_mtime_ns}\n".encode())
+        return f"dir:{real}:{digest.hexdigest()}"
+    return f"other:{real}"
+
+
+def collect_state(top: str | Path) -> Json:
+    """Return what a worker can change outside the working-tree snapshot.
+
+    Each category maps a name to a short fingerprint, so two states diff to names.
+    """
+    refs: dict[str, str] = {}
+    fmt = "%(refname)%00%(objectname)%00%(symref)"
+    for line in git(top, "for-each-ref", f"--format={fmt}").splitlines():
+        name, obj, sym = line.split("\0")
+        if not name.startswith(STATE_IGNORED_REFS):
+            refs[name] = sym or obj
+    names = ("packed-refs", "config", "config.worktree", "hooks")
+    where = dict(
+        zip(
+            names,
+            git(top, "rev-parse", *[a for n in names for a in ("--git-path", n)]).splitlines(),
+        )
+    )
+    packed: dict[str, str] = {}
+    packed_file = Path(top) / where["packed-refs"]
+    if packed_file.is_file():
+        for line in packed_file.read_text(encoding="utf-8", errors="replace").splitlines():
+            obj, _, name = line.partition(" ")
+            if name and not line.startswith(("#", "^")) and not name.startswith(STATE_IGNORED_REFS):
+                packed[name] = obj
+    config: dict[str, str] = {}
+    for name in ("config", "config.worktree"):
+        path = Path(top) / where[name]
+        if path.is_file():
+            config[name] = _file_digest(path)
+    hooks: dict[str, str] = {}
+    hooks_dir = Path(top) / where["hooks"]
+    if hooks_dir.is_dir():
+        for hook in sorted(hooks_dir.iterdir()):
+            if hook.is_file():
+                hooks[hook.name] = _file_digest(hook)
+    symlinks: dict[str, str] = {}
+    hardlinks: dict[str, str] = {}
+    entries = git_bytes(top, "ls-files", "--stage", "-z").decode("utf-8", "surrogateescape")
+    for entry in entries.split("\0"):
+        meta, _, rel = entry.partition("\t")
+        mode = meta.partition(" ")[0]
+        if mode == "120000":
+            symlinks[rel] = _target_state(Path(top) / rel)
+        elif mode in {"100644", "100755"}:
+            try:
+                info = (Path(top) / rel).lstat()
+            except OSError:
+                continue
+            if stat.S_ISREG(info.st_mode) and info.st_nlink > 1:
+                hardlinks[rel] = f"{info.st_dev}:{info.st_ino}:{info.st_nlink}"
+    listing = ("ls-files", "--others", "--ignored", "--exclude-standard", "--directory", "-z")
+    ignored = dict.fromkeys(git_z(top, *listing), "")
+    return {
+        "refs": refs, "packed_refs": packed, "config": config, "hooks": hooks,
+        "symlinks": symlinks, "hardlinks": hardlinks, "ignored": ignored,
+    }  # fmt: skip
+
+
+def diff_state(
+    pre: Mapping[str, Mapping[str, str]],
+    post: Mapping[str, Mapping[str, str]],
+    skip: Collection[str] = (),
+) -> Json:
+    """Return ``{category: [names]}`` for every name added, removed, or changed."""
+    found: Json = {}
+    for category, before in pre.items():
+        after = post.get(category, {})
+        names = sorted(
+            n for n in {*before, *after} if before.get(n) != after.get(n) and n not in skip
+        )
+        if names:
+            found[category] = names[:STATE_LIMIT] + (
+                [f"... and {len(names) - STATE_LIMIT} more"] if len(names) > STATE_LIMIT else []
+            )
+    return found
+
+
+def _save_state(session_dir: Path, name: str, state: Json) -> None:
+    (session_dir / STATE_DIR).mkdir(mode=0o700, exist_ok=True)
+    write_atomic(session_dir / STATE_DIR / f"{name}.json", json.dumps(state) + "\n", session_dir)
+
+
+def _load_state(session_dir: Path, guard: Json) -> Json | None:
+    name = guard.get("state")
+    if not name:
+        return None
+    path = session_dir / STATE_DIR / f"{name}.json"
+    return t.cast("Json", json.loads(path.read_text(encoding="utf-8"))) if path.is_file() else None
+
+
+def _outside_changes(session_dir: Path, top: str, guard: Json, skip: Collection[str] = ()) -> Json:
+    """Diff the current outside-the-tree state against the one recorded with ``guard``."""
+    before = _load_state(session_dir, guard)
+    return {} if before is None else diff_state(before, collect_state(top), skip)
+
+
+def take_guard_snapshot(
+    top: str, session_id: str, name: str = "pre", session_dir: Path | None = None
+) -> Json:
     """Record the checkout as ``refs/weave-guard/<session>/pre``."""
     require_safe_toplevel(top)
     head = git(top, "rev-parse", "HEAD")
     tree = snapshot_tree(top)
     commit = pin_tree(top, session_id, name, tree, head)
-    return {
+    doc: Json = {
         "pre": commit,
         "tree": tree,
         "head": head,
         "index": _index_state(top),
         "head_ref": git(top, "symbolic-ref", "-q", "HEAD", check=False),
     }
+    if session_dir is not None:
+        _save_state(session_dir, name, collect_state(top))
+        doc["state"] = name
+    return doc
 
 
 def _touched(top: str, pre_tree: str, post_tree: str) -> dict[str, str]:
@@ -868,7 +1018,8 @@ def _guard_of(session: Json) -> Json:
 def guard_check(session_dir: Path, label: str = "check", *, initial: bool = False) -> Json:
     """Compare the user's checkout with the pre-dispatch snapshot; never modify it.
 
-    A difference is recorded under ``guard/<id>/``: ``touched.json``, ``violation.patch``,
+    A difference is recorded under ``guard/<id>/``: ``touched.json``, ``outside.json``
+    (state beyond the working tree, see ``CHECK_SCOPE``), ``violation.patch``,
     ``post-copy/`` (current content of every touched file), and a pinned post ref.
     """
     session = load_session(session_dir)
@@ -882,7 +1033,8 @@ def guard_check(session_dir: Path, label: str = "check", *, initial: bool = Fals
     head_ref = git(top, "symbolic-ref", "-q", "HEAD", check=False)
     index_changed = index != pre.get("index", index)
     head_changed = head != pre["head"] or head_ref != pre.get("head_ref", head_ref)
-    if post_tree == pre["tree"] and not head_changed and not index_changed:
+    outside = _outside_changes(session_dir, top, pre)
+    if post_tree == pre["tree"] and not head_changed and not index_changed and not outside:
         return {"ok": True, "violation": False}
     current = {
         "tree": post_tree,
@@ -890,6 +1042,7 @@ def guard_check(session_dir: Path, label: str = "check", *, initial: bool = Fals
         "index": index,
         "head_ref": head_ref,
         "baseline": pre["pre"],
+        "outside": outside,
     }
     gdir = session_dir / "guard"
     gdir.mkdir(mode=0o700, exist_ok=True)
@@ -903,6 +1056,7 @@ def guard_check(session_dir: Path, label: str = "check", *, initial: bool = Fals
     vdir.mkdir(mode=0o700)
     touched = _touched(top, pre["tree"], post_tree)
     write_atomic(vdir / "touched.json", json.dumps(touched, indent=2) + "\n", session_dir)
+    write_atomic(vdir / "outside.json", json.dumps(outside, indent=2) + "\n", session_dir)
     patch = git_bytes(top, "diff", "--binary", "--no-renames", pre["tree"], post_tree)
     write_atomic(vdir / "violation.patch", patch, session_dir)
     entries = git_bytes(top, "ls-files", "--stage", "-v", "-z")
@@ -920,6 +1074,7 @@ def guard_check(session_dir: Path, label: str = "check", *, initial: bool = Fals
         "touched": touched,
         "head_changed": head_changed,
         "index_changed": index_changed,
+        "outside": outside,
     }
     write_atomic(last, json.dumps({**current, "result": result}) + "\n", session_dir)
     append_jsonl(
@@ -932,10 +1087,15 @@ def guard_check(session_dir: Path, label: str = "check", *, initial: bool = Fals
             "touched": sorted(touched),
             "head_changed": head_changed,
             "index_changed": index_changed,
+            "outside": outside,
             "reverted": False,
         },
     )
-    note = f"weave guard: {len(touched)} path(s) in your checkout differ from the snapshot"
+    note = (
+        f"weave guard: {len(touched)} path(s) in your checkout"
+        f" and {sum(len(v) for v in outside.values())} outside-tree item(s) differ"
+        " from the snapshot"
+    )
     print(
         f"{note} taken before dispatch (after {label}); nothing was changed. See {vdir}",
         file=sys.stderr,
@@ -1002,7 +1162,9 @@ def guard_resolve(session_dir: Path, action: str) -> Json:
         _revert_paths(top, pre_tree, touched)
         doc["restored"] = sorted(p for p, s in touched.items() if s != "A")
         doc["removed"] = sorted(p for p, s in touched.items() if s == "A")
-        doc["clean"] = snapshot_tree(top) == pre_tree
+        doc["clean"] = snapshot_tree(top) == pre_tree and not found["outside"]
+        if found["outside"]:
+            doc["not_reverted"] = found["outside"]
     elif action == "quarantine":
         message = f"weave-guard-{session['session_id']}: quarantine"
         before = git(top, "rev-parse", "--quiet", "--verify", "refs/stash", check=False)
@@ -1022,6 +1184,31 @@ def guard_resolve(session_dir: Path, action: str) -> Json:
     return doc
 
 
+def require_drift_decision(session_dir: Path, command: str, *, acknowledge: bool) -> None:
+    """Refuse ``command`` while a recorded guard violation has no user decision.
+
+    ``acknowledge`` records the decision for the newest violation and lets the
+    command run; a later, different violation needs its own acknowledgement.
+    """
+    last = session_dir / "guard" / "last.json"
+    if not last.is_file():
+        return
+    vid = json.loads(last.read_text(encoding="utf-8"))["result"]["id"]
+    ack = session_dir / "guard" / "ack.json"
+    if ack.is_file() and json.loads(ack.read_text(encoding="utf-8")).get("id") == vid:
+        return
+    if not acknowledge:
+        msg = (
+            f"guard recorded drift {vid}; {command} would discard evidence."
+            " Preserve the checkout and worktrees, tell the user, and rerun with --ack-drift"
+            " only after they decide"
+        )
+        raise EngineError(msg)
+    doc = {"id": vid, "command": command, "timestamp": stamp()}
+    write_atomic(ack, json.dumps(doc) + "\n", session_dir)
+    append_jsonl(session_dir / "guard-events.jsonl", {"event": "drift_acknowledged", **doc})
+
+
 def _drop_session_refs(top: str, session_id: str) -> None:
     """Delete the session's transient pins, preserving existing recovery snapshots."""
     prefix = f"{GUARD_REFS}/{session_id}/"
@@ -1030,7 +1217,7 @@ def _drop_session_refs(top: str, session_id: str) -> None:
             git(top, "update-ref", "-d", ref)
 
 
-def _unexpected_after_apply(top: str, session: Json) -> Json | None:
+def _unexpected_after_apply(session_dir: Path, top: str, session: Json) -> Json | None:
     """Return what differs from the original checkout beyond the adopted paths.
 
     ``None`` means the original state or the adopted paths were not recorded, so
@@ -1043,6 +1230,7 @@ def _unexpected_after_apply(top: str, session: Json) -> Json | None:
     touched = _touched(top, initial["tree"], snapshot_tree(top))
     return {
         "touched": {rel: status for rel, status in touched.items() if rel not in applied},
+        "outside": _outside_changes(Path(session_dir), top, initial, applied),
         "head_changed": git(top, "rev-parse", "HEAD") != initial["head"]
         or git(top, "symbolic-ref", "-q", "HEAD", check=False) != initial.get("head_ref"),
         "index_changed": _index_state(top) != initial.get("index"),
@@ -1064,7 +1252,7 @@ def guard_finish(session_dir: Path) -> Json:
         )
         return {"ok": True, "clean": None, "unguarded": True, "refs_pruned": False, "touched": {}}
     if session.get("applied"):
-        unexpected = _unexpected_after_apply(top, session)
+        unexpected = _unexpected_after_apply(session_dir, top, session)
         clean = None if unexpected is None else not any(unexpected.values())
         event: Json = {"event": "repo_guard_final", "timestamp": stamp(), "repo_clean": clean}
         append_jsonl(session_dir / "events.jsonl", event)
@@ -1072,7 +1260,7 @@ def guard_finish(session_dir: Path) -> Json:
         if pruned:
             _drop_session_refs(top, session["session_id"])
         found = unexpected or {"touched": {}}
-        return {"ok": True, "clean": clean, "refs_pruned": pruned, **found}
+        return {"ok": True, "clean": clean, "refs_pruned": pruned, **found, "scope": CHECK_SCOPE}
     if session.get("mutating") and not session.get("initial_guard"):
         return {
             "ok": False,
@@ -1096,6 +1284,8 @@ def guard_finish(session_dir: Path) -> Json:
         "touched": found.get("touched", {}),
         "head_changed": found.get("head_changed", False),
         "index_changed": found.get("index_changed", False),
+        "outside": found.get("outside", {}),
+        "scope": CHECK_SCOPE,
     }
 
 
@@ -1245,12 +1435,16 @@ def _build_session(  # noqa: PLR0913
         )
 
     initial_guard = (
-        take_guard_snapshot(top, session_id, "initial") if mutating and not bare else None
+        take_guard_snapshot(top, session_id, "initial", session_dir)
+        if mutating and not bare
+        else None
     )
     stash: Json | None = stash_user_changes(top, command) if mutating else None
     if stash and stash.get("sha"):
         made["sha"] = stash["sha"]
-    guard = None if bare or not info.git else take_guard_snapshot(top, session_id)
+    guard = (
+        None if bare or not info.git else take_guard_snapshot(top, session_id, "pre", session_dir)
+    )
     branch = git(top, "branch", "--show-current") if info.git else ""
     ref = git(top, "rev-parse", "--short", "HEAD") if info.git else ""
     detected = detect() if backend == "model-clis" and not bare else None
@@ -2093,10 +2287,16 @@ def _create_worktrees(
     return {"ok": True, "worktrees": made}
 
 
-def remove_worktrees(session_dir: Path, participants: Sequence[str] | None) -> Json:
-    """Remove the session's registered worktrees and delete their branches."""
+def remove_worktrees(
+    session_dir: Path, participants: Sequence[str] | None, *, ack_drift: bool = False
+) -> Json:
+    """Remove the session's registered worktrees and delete their branches.
+
+    Refused while a recorded guard violation lacks the user's decision (``ack_drift``).
+    """
     if participants is not None:
         participants = [_safe_participant(name) for name in participants]
+    require_drift_decision(session_dir, "worktrees remove", acknowledge=ack_drift)
     with session_lock(session_dir):
         session = load_session(session_dir)
         top = session["toplevel"]
@@ -2115,6 +2315,126 @@ def remove_worktrees(session_dir: Path, participants: Sequence[str] | None) -> J
             removed.append(name)
         save_session(session_dir, session)
         return {"ok": True, "removed": removed}
+
+
+def _participant_path(session: Json, session_dir: Path, name: str) -> Path:
+    if session.get("unguarded"):
+        return Path(session["scratch"]) / name
+    return session_dir / "worktrees" / f"{name}-ro"
+
+
+def start_participant(session_dir: Path, name: str) -> Json:
+    """Give a participant with no registered worktree a disposable snapshot to work in.
+
+    Critics, judges, and a skill's session agent use this; the snapshot is the
+    one a read-only lane gets, so none of them touches the live checkout.
+    """
+    name = _safe_participant(name)
+    session = load_session(session_dir)
+    if name in session["participants"]:
+        msg = f"{name!r} is a lane; a participant outside the roster needs its own name"
+        raise EngineError(msg)
+    if session.get("unguarded"):
+        path = _participant_path(session, session_dir, name)
+        shutil.rmtree(path, ignore_errors=True)
+        path.mkdir(mode=0o700, parents=True)
+    else:
+        path = snapshot_worktree(session, session_dir, name)
+    return {
+        "ok": True,
+        "participant": name,
+        "path": str(path),
+        "worker_instructions": _worker_root_protocol(path),
+    }
+
+
+def finish_participant(session_dir: Path, name: str) -> Json:
+    """Remove a participant's snapshot, then run the repo guard; a violation fails the result."""
+    name = _safe_participant(name)
+    session = load_session(session_dir)
+    path = _participant_path(session, session_dir, name)
+    if not path.is_dir():
+        msg = f"no snapshot for {name!r}; run participant start first"
+        raise EngineError(msg)
+    if session.get("unguarded"):
+        shutil.rmtree(path, ignore_errors=True)
+    else:
+        git(session["toplevel"], "worktree", "remove", "--force", str(path), check=False)
+        shutil.rmtree(path, ignore_errors=True)
+        git(session["toplevel"], "worktree", "prune", check=False)
+    found = guard_check(session_dir, name)
+    return {**found, "ok": not found["violation"], "participant": name}
+
+
+_ENGINE_OWNED = ("session.json", "guard", STATE_DIR)
+
+
+def claim_session_path(session_dir: Path, rel: str) -> Path:
+    """Return the absolute path for ``rel`` under the session after detaching any alias there.
+
+    A symlink or hard link already at the path is removed (its target is untouched);
+    a symlinked parent or a directory at the path is refused. Call this just before a
+    host tool writes the file.
+    """
+    rel = _safe_rel(rel)
+    if not rel or Path(rel).parts[0] in _ENGINE_OWNED:
+        msg = f"{rel!r} is engine-owned or empty; the coordinator does not write it"
+        raise EngineError(msg)
+    path = session_dir / rel
+    claim_path(path, session_dir)
+    path.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
+    return claim_path(path, session_dir)
+
+
+def write_session_file(session_dir: Path, rel: str, data: bytes) -> Json:
+    """Write ``data`` to ``rel`` under the session through an alias-safe replace."""
+    path = claim_session_path(session_dir, rel)
+    write_atomic(path, data, session_dir)
+    return {"ok": True, "path": str(path), "bytes": len(data)}
+
+
+def synthesis_packet(session_dir: Path, n: int, out: Path | None = None) -> Json:
+    """Assemble the blind responses of pass ``n`` into one file, by path.
+
+    The coordinator hands this file to the synthesis step instead of retyping
+    each reply. Only blind labels appear; a response that is missing or empty is listed.
+    """
+    base = session_dir / pass_name(n)
+    map_path = base / "label-map.json"
+    if not map_path.is_file() or map_path.is_symlink():
+        msg = f"no label-map.json in {pass_name(n)}; run labels first"
+        raise EngineError(msg)
+    labels = sorted(json.loads(map_path.read_text(encoding="utf-8")))
+    parts = [f"# Responses, {pass_name(n)}", ""]
+    present: list[str] = []
+    missing: list[str] = []
+    for label in labels:
+        src = base / "blind" / f"response-{label}.md"
+        if src.is_symlink():
+            msg = f"refusing to read symlinked response {str(src)!r}"
+            raise EngineError(msg)
+        text = src.read_text(encoding="utf-8", errors="replace").strip() if src.is_file() else ""
+        if not text:
+            missing.append(label)
+            continue
+        present.append(label)
+        body = text.replace("</response>", "<\\/response>")
+        parts += [f'<response label="{label}">', body, "</response>", ""]
+    if not present:
+        msg = f"{pass_name(n)} has no blind response to assemble"
+        raise EngineError(msg)
+    target = out or base / "packet.md"
+    claim_path(target, session_dir)
+    target.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
+    text = "\n".join(parts)
+    write_atomic(target, text, session_dir)
+    return {
+        "ok": True,
+        "path": str(target),
+        "labels": present,
+        "missing": missing,
+        "words": len(text.split()),
+    }
 
 
 def capture_tree(session_dir: Path, n: int, participant: str, tree: str | None) -> Json:
@@ -2588,8 +2908,12 @@ def stash_overlap(top: str, sha: str) -> list[str]:
     return sorted(held & dirty)
 
 
-def restore_stash(session_dir: Path) -> Json:
-    """Pop the session's own stash entry, found by commit, never ``stash@{0}`` blindly."""
+def restore_stash(session_dir: Path, *, ack_drift: bool = False) -> Json:
+    """Pop the session's own stash entry, found by commit, never ``stash@{0}`` blindly.
+
+    Refused while a recorded guard violation lacks the user's decision (``ack_drift``).
+    """
+    require_drift_decision(session_dir, "stash-restore", acknowledge=ack_drift)
     session = load_session(session_dir)
     top = session["toplevel"]
     stash: Json = session.get("stash") or {}
@@ -2616,10 +2940,14 @@ def restore_stash(session_dir: Path) -> Json:
             "stash_sha": sha,
             "overlap": stash_overlap(top, sha),
             "inspect": f"git stash show --patch {sha}",
-            "apply": f"git stash apply {sha}",
+            "apply": f"git stash apply --index {sha}",
+            "apply_fallback": {
+                "command": f"git stash apply {sha}",
+                "when": "only if --index reports a conflict; staged changes then return unstaged",
+            },
             "recover": [
                 "git stash push --include-untracked --message weave-synthesis",
-                f"git stash apply {sha}",
+                f"git stash apply --index {sha}",
                 "git stash show --patch stash@{0}",
             ],
         }
@@ -2714,6 +3042,9 @@ def _lane_args(p: argparse.ArgumentParser) -> None:
     p.add_argument("--judge", action="store_true", help="judge prompt: no role preamble")
 
 
+_ACK_HELP = "the user decided about the recorded checkout drift; allow this command"
+
+
 def build_parser() -> argparse.ArgumentParser:  # noqa: PLR0915
     """Build the command-line parser."""
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0] if __doc__ else "")
@@ -2788,6 +3119,25 @@ def build_parser() -> argparse.ArgumentParser:  # noqa: PLR0915
     p.add_argument("--session", required=True)
     p.add_argument("--participants", type=_csv)
     p.add_argument("--base", choices=["pre", "head"], help="default: head if mutating, else pre")
+    p.add_argument("--ack-drift", action="store_true", help=_ACK_HELP)
+
+    p = sub.add_parser("participant", help="disposable snapshot for a critic, judge, or agent")
+    p.add_argument("action", choices=["start", "finish"])
+    p.add_argument("--session", required=True)
+    p.add_argument("--name", required=True)
+
+    p = sub.add_parser("claim", help="detach aliases at session paths before a host tool writes")
+    p.add_argument("--session", required=True)
+    p.add_argument("paths", nargs="+", help="paths relative to the session directory")
+
+    p = sub.add_parser("write", help="write stdin to a session path through an alias-safe replace")
+    p.add_argument("--session", required=True)
+    p.add_argument("path", help="path relative to the session directory")
+
+    p = sub.add_parser("packet", help="assemble a pass's blind responses into one file")
+    p.add_argument("--session", required=True)
+    p.add_argument("--pass", type=int, default=1, dest="n")
+    p.add_argument("--out", help="output file; default pass-NNNN/packet.md")
 
     p = sub.add_parser("capture", help="save a participant's patch and file snapshots")
     p.add_argument("--session", required=True)
@@ -2825,6 +3175,7 @@ def build_parser() -> argparse.ArgumentParser:  # noqa: PLR0915
 
     p = sub.add_parser("stash-restore", help="pop the session's own stash")
     p.add_argument("--session", required=True)
+    p.add_argument("--ack-drift", action="store_true", help=_ACK_HELP)
 
     p = sub.add_parser("update", help="update session.json and append an event")
     p.add_argument("--session", required=True)
@@ -2893,7 +3244,7 @@ def _label_map(path: str | None) -> dict[str, str] | None:
     return t.cast("dict[str, str]", json.loads(Path(path).read_text(encoding="utf-8")))
 
 
-def run(args: argparse.Namespace) -> Json:  # noqa: PLR0911
+def run(args: argparse.Namespace) -> Json:  # noqa: PLR0911, PLR0915
     """Execute a parsed command."""
     cmd = args.cmd
     if cmd == "flags":
@@ -2973,13 +3324,26 @@ def run(args: argparse.Namespace) -> Json:  # noqa: PLR0911
     if cmd == "worktrees":
         if args.action == "create":
             return create_worktrees(session_dir, args.participants or [], base=args.base)
-        return remove_worktrees(session_dir, args.participants)
+        return remove_worktrees(session_dir, args.participants, ack_drift=args.ack_drift)
+    if cmd == "participant":
+        if args.action == "start":
+            return start_participant(session_dir, args.name)
+        return finish_participant(session_dir, args.name)
+    if cmd == "claim":
+        return {
+            "ok": True,
+            "paths": [str(claim_session_path(session_dir, rel)) for rel in args.paths],
+        }
+    if cmd == "write":
+        return write_session_file(session_dir, args.path, sys.stdin.buffer.read())
+    if cmd == "packet":
+        return synthesis_packet(session_dir, args.n, Path(args.out) if args.out else None)
     if cmd == "capture":
         return capture_tree(session_dir, args.n, args.participant, args.tree)
     if cmd == "adopt":
         return adopt_files(session_dir, args.n, args.pick, args.delete, args.whole)
     if cmd == "stash-restore":
-        return restore_stash(session_dir)
+        return restore_stash(session_dir, ack_drift=args.ack_drift)
     return update_session(
         session_dir, status=args.status, completed_passes=args.completed_passes,
         event=args.event, event_json=args.event_json, drop=args.drop, sets=args.sets,
