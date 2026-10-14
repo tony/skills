@@ -27,8 +27,8 @@ User arguments: $ARGUMENTS
 
 ### 1. Locate the run and pass the gate
 
-Per `interim-format.md` § Rendering a report. When the request names a
-workflow, take the first line of `runs --workflow <slug>` as the run.
+Per `interim-format.md` § Rendering a report; a request that names a
+workflow resolves per its § Locating an existing run.
 
 ### 2. Secure the inputs
 
@@ -92,9 +92,9 @@ appears here.
 Write it per `../../references/prose-rules.md`.
 
 Then run `../../scripts/business.py trace <run>/reports/org-wide.md --run <run>`
-(absolute path). It lists every number the report holds that neither the
-`project`/`breakeven` output nor the run's records contain; correct each
-to the printed value and rerun until it prints `ok`. Then run steps 4 and 5 of
+(absolute path). Each number it prints is absent from the `project`
+output, the register, and the run's records: replace it with the printed
+value and trace again until `ok`. Then run steps 4 and 5 of
 `interim-format.md` § Rendering a report: the money check, then `stamp`.
 Then scan for individuals with `../../scripts/business.py scan --run <run>
 --tier 1 <run>/reports/org-wide.md`; it reads the README `People:` line and

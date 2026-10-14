@@ -102,7 +102,7 @@
         "references/prose-rules.md": "plugins/business/references/prose-rules.md",
         "references/provenance.md": "plugins/business/references/provenance.md"
       },
-      "bytes": 129763
+      "bytes": 129727
     },
     {
       "name": "business-report-org-wide",
@@ -117,7 +117,7 @@
         "references/prose-rules.md": "plugins/business/references/prose-rules.md",
         "references/provenance.md": "plugins/business/references/provenance.md"
       },
-      "bytes": 124022
+      "bytes": 123981
     },
     {
       "name": "business-research",
