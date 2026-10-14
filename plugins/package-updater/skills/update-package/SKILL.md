@@ -110,7 +110,8 @@ reference, `why:` then `what:`, written through a heredoc or a file.
 The follow-up lands immediately after as its own commit.
 
 Branch handling follows Phase 4 of `../updating-packages/SKILL.md`; a push
-waits for step 7 and Phase 5. Pull request text goes through `--body-file`.
+waits for step 7 and Phase 5. Pull request text follows "When an issue
+or card comes first" there.
 
 ### 7. Verify, then publish
 

@@ -121,9 +121,9 @@ because the wrapper is the maintained path.
 **Check the cooldown before calling anything current.** A release
 published inside the window is invisible to the resolver, so a tree that
 looks up to date may only be gated. Report gated releases separately
-from current ones, with the date each becomes visible; under a fixed
-cutoff no date does, so say the release stays hidden until the cutoff
-moves.
+from current ones, with the date each becomes visible, from `plan_rules.py lapse` per the
+ecosystems reference; under a fixed cutoff no date does, so say the
+release stays hidden until the cutoff moves.
 
 Separate what moves in-range from what needs a manifest edit; they are
 different commits. A major is never part of the bulk refresh: bound the
@@ -228,17 +228,10 @@ messages through a heredoc or a file, never as a multi-line `-m`
 argument. No `Co-Authored-By`, no "Generated with" or other tool
 trailers, no emoji; do not mention the omission.
 
-The four tracks land in this order within a repository:
-
-1. **Toolchain and runtime**: `.tool-versions`, `.nvmrc`,
-   `.python-version`, `mise.toml`. One tool per commit, even when one
-   file holds three: edit one tool's line, commit, edit the next. Link
-   every release in each tool's span.
-2. **Package manager and engines**: `packageManager`, `engines`. Never
-   mixed with dependencies.
-3. **Named package bumps**: one per package, or per release train when
-   the body can say why they are coupled.
-4. **Bulk lockfile refresh**: in-range moves only, empty body.
+Land the four tracks in the order, and with the commit shape, that
+`references/commit-conventions.md` gives. Stage a file only after
+it holds one commit's edit; when one file holds three tools, edit one
+tool's line, commit, then edit the next.
 
 A follow-up (config schema, snapshots, migrations) lands immediately
 after the bump it belongs to, as its own commit.
@@ -293,9 +286,9 @@ When the user asks for the outstanding work to be filed before it is
 done, the order is: finish the audit, create the issue or card from it,
 derive the branch name from what was created, then work on that branch.
 
-Detect the tracker at runtime: GitHub through `gh`, Linear through
-whatever Linear tool the host provides. Use the branch name Linear
-returns verbatim; for a GitHub issue run `references/repo_facts.py
+Detect the tracker at runtime: GitHub through `gh`, otherwise the
+tracker's own tool. Use the branch name that tool returns verbatim; for a
+GitHub issue run `references/repo_facts.py
 --issue-branch <number> "<title>"` (path resolved as above) and use the
 `branch` it prints.
 

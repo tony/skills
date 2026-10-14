@@ -474,13 +474,15 @@
         "plugins/package-updater/skills/update/SKILL.md"
       ],
       "bundled": {
+        "references/commit-conventions.md": "plugins/package-updater/references/commit-conventions.md",
         "references/holds.md": "plugins/package-updater/references/holds.md",
+        "references/plan_rules.py": "plugins/package-updater/scripts/plan_rules.py",
         "references/prose-rules.md": "plugins/package-updater/references/prose-rules.md",
         "references/repo-scope.md": "plugins/package-updater/references/repo-scope.md",
         "references/repo_facts.py": "plugins/package-updater/scripts/repo_facts.py",
         "references/stopped-run.md": "plugins/package-updater/references/stopped-run.md"
       },
-      "bytes": 50121
+      "bytes": 71586
     },
     {
       "name": "package-updater-update-package",
@@ -493,13 +495,14 @@
         "references/ecosystems.md": "plugins/package-updater/references/ecosystems.md",
         "references/follow-ups.md": "plugins/package-updater/references/follow-ups.md",
         "references/holds.md": "plugins/package-updater/references/holds.md",
+        "references/plan_rules.py": "plugins/package-updater/scripts/plan_rules.py",
         "references/prose-rules.md": "plugins/package-updater/references/prose-rules.md",
         "references/repo-scope.md": "plugins/package-updater/references/repo-scope.md",
         "references/repo_facts.py": "plugins/package-updater/scripts/repo_facts.py",
         "references/stopped-run.md": "plugins/package-updater/references/stopped-run.md",
         "references/upstream-links.md": "plugins/package-updater/references/upstream-links.md"
       },
-      "bytes": 84969
+      "bytes": 98685
     },
     {
       "name": "package-updater-update-toolchain",
@@ -510,13 +513,14 @@
         "references/commit-conventions.md": "plugins/package-updater/references/commit-conventions.md",
         "references/cooldown-exemption.md": "plugins/package-updater/references/cooldown-exemption.md",
         "references/ecosystems.md": "plugins/package-updater/references/ecosystems.md",
+        "references/plan_rules.py": "plugins/package-updater/scripts/plan_rules.py",
         "references/prose-rules.md": "plugins/package-updater/references/prose-rules.md",
         "references/repo-scope.md": "plugins/package-updater/references/repo-scope.md",
         "references/repo_facts.py": "plugins/package-updater/scripts/repo_facts.py",
         "references/stopped-run.md": "plugins/package-updater/references/stopped-run.md",
         "references/upstream-links.md": "plugins/package-updater/references/upstream-links.md"
       },
-      "bytes": 79199
+      "bytes": 92771
     },
     {
       "name": "package-updater-updating-packages",
@@ -529,6 +533,7 @@
         "references/ecosystems.md": "plugins/package-updater/references/ecosystems.md",
         "references/follow-ups.md": "plugins/package-updater/references/follow-ups.md",
         "references/holds.md": "plugins/package-updater/references/holds.md",
+        "references/plan_rules.py": "plugins/package-updater/scripts/plan_rules.py",
         "references/prose-rules.md": "plugins/package-updater/references/prose-rules.md",
         "references/repo-scope.md": "plugins/package-updater/references/repo-scope.md",
         "references/repo_facts.py": "plugins/package-updater/scripts/repo_facts.py",
@@ -536,7 +541,7 @@
         "references/throwaway-worktree.md": "plugins/package-updater/references/throwaway-worktree.md",
         "references/upstream-links.md": "plugins/package-updater/references/upstream-links.md"
       },
-      "bytes": 99359
+      "bytes": 112766
     },
     {
       "name": "pr",
@@ -1559,9 +1564,11 @@
     "plugins/situate/references/situation-sweep.md": 5,
     "plugins/situate/scripts/position.py": 5,
     "plugins/business/references/measurement.md": 4,
+    "plugins/package-updater/references/commit-conventions.md": 4,
     "plugins/package-updater/references/prose-rules.md": 4,
     "plugins/package-updater/references/repo-scope.md": 4,
     "plugins/package-updater/references/stopped-run.md": 4,
+    "plugins/package-updater/scripts/plan_rules.py": 4,
     "plugins/package-updater/scripts/repo_facts.py": 4,
     "plugins/pr/references/branch-context.md": 4,
     "plugins/pytest-optimizer/references/durations-parsing.md": 4,
@@ -1590,7 +1597,6 @@
     "plugins/model-cli/scripts/closest_model.py": 3,
     "plugins/model-cli/scripts/run_tier.py": 3,
     "plugins/model-cli/scripts/tier_plan.py": 3,
-    "plugins/package-updater/references/commit-conventions.md": 3,
     "plugins/package-updater/references/cooldown-exemption.md": 3,
     "plugins/package-updater/references/ecosystems.md": 3,
     "plugins/package-updater/references/holds.md": 3,

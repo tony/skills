@@ -46,8 +46,20 @@ commands. A successful lookup may establish that a file is absent; a
 failed lookup leaves that part of the inventory unavailable. Stop changes
 to a repository whose required inventory could not be read.
 
-Sort what you find into the four commit tracks now. A move sorted wrong
-here produces a commit that cannot be reverted independently later.
+Sort what you find into the commit tracks of
+`references/commit-conventions.md` now. Pipe each `--lock-diff` or
+`--manifest-diff` result from the skill's Phase 2 into `references/plan_rules.py
+track` (resolve the path from this skill's directory to an absolute one):
+it puts every major in `named`, every in-range move in `bulk`, and lists
+under `by_hand` each file or range the diff could not classify. `plan_rules.py
+track --pin <file>...` names the track of each pin file; `package.json` and
+`go.mod` print `mixed` because their toolchain keys and dependency keys
+land as different tracks.
+
+Judgment stays with you: which in-range package earns its own commit
+under the "Named package bumps" conditions in that reference, and which
+packages form a release train. A move sorted wrong here produces a commit
+that cannot be reverted independently later.
 
 ### 3. Research, one chain per distinct move
 
@@ -72,14 +84,9 @@ Exit plan mode before landing changes.
 
 ### 5. Land
 
-Work through repositories one at a time in the skill's commit order,
-verifying each (step 6) before it is pushed. Push only when `--push` or
-`--pr` was passed, the checks allow it per Phase 5 of the skill, and the
-plan did not mark the repository local-only; an interrupted run then
-resumes cleanly. Write commit messages and the report per
-`references/prose-rules.md`.
-
-Branch handling follows Phase 4 of the skill.
+Work through repositories one at a time, landing per Phase 4 of the
+skill and publishing only as Phase 5 allows. Write commit messages and
+the report per `references/prose-rules.md`.
 
 With `--issue`, follow "When an issue or card comes first" in the skill
 for the order, the branch name and `--body-file`; the plan approved in
@@ -91,15 +98,13 @@ request body is one sentence on what landed, then one bullet per track.
 
 ### 6. Verify, publish and report
 
-Run the project's own quality checks per repository, per the skill's
-verification phase, before any push or worktree removal. Attribute
-failures against the default branch before blaming a bump.
+Verify each repository before it is pushed or its worktree removed, per
+Phase 5 of the skill.
 
 ## Rules
 
-- The four tracks (toolchain, package manager, named bumps, bulk
-  refresh) and each follow-up are separate commits. Never bundle across
-  them.
+- Tracks and follow-ups are separate commits, as the commit-conventions
+  reference says. Never bundle across them.
 - A bump left knowingly red says so in its body and its follow-up lands
   in the same run.
 - A fleet-wide claim is verified per repository before entering that

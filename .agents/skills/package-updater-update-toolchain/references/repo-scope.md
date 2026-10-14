@@ -14,7 +14,6 @@ one question. A wrong commit costs someone else's review time.
 ## Contents
 
 - Set the scope
-- Skip worktrees
 - Find the default branch
 - Ask the forge first
 - When the forge cannot answer
@@ -25,10 +24,36 @@ one question. A wrong commit costs someone else's review time.
 Default scope is the current repository, which the user chose by
 running the command there: it is not fork- or ownership-checked, and
 the rules below apply to repositories that `--repo` or `--root` adds.
-`--root <dir>` walks a
-directory for git repositories, `--repo <path|slug>` names individual
-ones, and `--owner <name>` keeps only those whose remote belongs to the
-given accounts or organisations.
+`--root <dir>` walks a directory for git repositories, `--repo
+<path|slug>` names individual ones, and `--owner <name>` keeps only those
+whose remote belongs to the given accounts or organisations.
+
+`./repo_facts.py --scope` applies those flags. Resolve the path
+from this reference's directory to an absolute one and write it literally
+in the command, repeating a flag's values as needed:
+
+```console
+$ python3 <absolute path to repo_facts.py> \
+    --scope \
+    --root <dir> \
+    --owner <name>
+```
+
+It prints one JSON row per repository with `remote_key`, `fork_signal`,
+`author_email`, `email_in_recent`, `bot_only` and `excluded`. `excluded`
+names the rule that drops the repository, or is null:
+
+- `submodule`: a submodule of another repository.
+- `worktree`: a linked worktree shares its history with a canonical
+  clone, so updating both produces the same commit twice, or a conflict.
+  The row's `clone` is the clone to act on instead.
+- `owner`: the remote's owner is not among the `--owner` accounts.
+- `duplicate`: several clones of one repository under different names;
+  the first in the walk stays.
+
+A `--repo` that matches no path or remote prints an `error` row and the
+script exits 1: ask the user. An `error` also covers a directory that is
+not a repository.
 
 Run the rules below on every repository a widened scope turns up. Drop
 repositories that do not pin the package or tool being moved and those
@@ -36,28 +61,6 @@ already at the target. Excluded repositories never come back in through
 a flag or a user request: a fork named by `--repo` is reported as a
 fork and skipped, with no override. When no repository remains, the
 run halts.
-
-## Skip worktrees
-
-A linked worktree shares its history with a canonical clone, so updating
-both produces the same commit twice, or a conflict. In a linked worktree
-the two directories printed here differ:
-
-```console
-$ git -C <repo> rev-parse --path-format=absolute --git-dir --git-common-dir
-```
-
-A submodule prints a path here; drop it from scope too:
-
-```console
-$ git -C <repo> rev-parse --show-superproject-working-tree
-```
-
-Map a worktree back to its clone when you need to, and act on the clone
-named by `--git-common-dir`.
-
-A directory sweep also picks up several clones of one repository under
-different names. Deduplicate by remote URL and keep one.
 
 ## Find the default branch
 
@@ -106,28 +109,21 @@ and require them to agree.
 organisation the user maintains and one they merely contribute to are
 indistinguishable by name.
 
-**Authorship of the default branch.** Read the last ten commits on
-the default branch found above, not on the working tree's branch:
-
-```console
-$ git -C <repo> log \
-    --max-count=10 \
-    --format='%an <%ae>' \
-    <remote>/<default-branch>
-```
-
-Compare the commit emails with `git config user.email`, exact address
-only. A shared domain (a consumer mail provider, a forge's noreply
-domain, an employer with many projects) proves nothing about who
-maintains this repository, so a domain match alone is a disagreeing
-signal.
+**Authorship of the default branch.** `email_in_recent` is true when
+the configured `git config user.email` appears, as an exact address,
+among the last ten commits of the remote's default branch (the working
+tree's branch when no remote head is known). A shared domain (a consumer
+mail provider, a forge's noreply domain, an employer with many projects)
+proves nothing about who maintains this repository, so a domain match
+alone is a disagreeing signal.
 
 Agreeing signals decide it, but a repository settled this way is
 committed locally and not pushed unless the user approves the push in the
 plan. **Disagreeing signals mean ask**, and so
 does either of these on its own:
 
-- Trunk's recent commits are entirely from bots or coding agents, which
+- Trunk's recent commits are entirely from bots or coding agents
+  (`bot_only` catches `[bot]` authors; read the commits for agents), which
   says nothing about who owns the repository.
 - The remote's owner is an organisation and nothing else corroborates
   maintainership.

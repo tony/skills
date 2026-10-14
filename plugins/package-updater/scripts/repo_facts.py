@@ -13,6 +13,11 @@ into ``majors`` (a new major, or for 0.x a new minor) and ``in_range``.
 ``repo_facts.py --manifest-diff REPO [MANIFEST...]`` does the same for the
 dependency ranges of each ``package.json`` (default: every tracked one).
 
+``repo_facts.py --scope [--root DIR...] [--repo PATH|SLUG...] [--owner NAME...]`` prints one
+row per repository found: remote, owner match, worktree, submodule, duplicate-clone and
+fork signals, whether the configured author email appears among the last ten commits, and
+``excluded`` (the rule that drops it, or null). With no flag it covers the current repository.
+
 ``repo_facts.py --pin-sites REPO NAME`` lists every tracked line naming NAME as
 a whole word. ``--free-branch REPO NAME`` prints the first of NAME, NAME-2, ...
 that no local or remote branch uses. ``--issue-branch NUMBER TITLE`` prints
@@ -33,6 +38,7 @@ import os
 import re
 import subprocess
 import sys
+import unicodedata
 from pathlib import Path
 from typing import TYPE_CHECKING, cast
 
@@ -498,6 +504,9 @@ def manifest_diff(repo: str, manifests: list[str]) -> dict[str, object]:
     return _diff_files(repo, names, manifest_changes)
 
 
+SITE_LIMIT = 200
+
+
 def pin_sites(repo: str, name: str) -> dict[str, object]:
     """List every tracked line that mentions ``name`` as a whole word, with its file and line."""
     code, out = _git(repo, "grep", "-n", "-I", "-w", "-F", "-z", "-e", name)
@@ -508,7 +517,8 @@ def pin_sites(repo: str, name: str) -> dict[str, object]:
         parts = record.split("\0")
         if len(parts) == 3 and parts[1].isdigit():
             sites.append({"file": parts[0], "line": int(parts[1]), "text": parts[2].strip()[:200]})
-    return {"path": repo, "name": name, "sites": sites}
+    shown = sites[:SITE_LIMIT]
+    return {"path": repo, "name": name, "total": len(sites), "sites": shown}
 
 
 def free_branch(repo: str, name: str) -> dict[str, object]:
@@ -528,15 +538,135 @@ def free_branch(repo: str, name: str) -> dict[str, object]:
 
 
 def issue_branch(number: str, title: str) -> dict[str, object]:
-    """Return ``<number>-<slug>``; the slug is the title as lowercase ASCII words."""
-    slug = "-".join(re.findall(r"[a-z0-9]+", title.lower()))[:50].strip("-")
+    """Return ``<number>-<slug>``; accents fold to ASCII, letters with no ASCII form drop."""
+    folded = unicodedata.normalize("NFKD", title).encode("ascii", "ignore").decode()
+    slug = "-".join(re.findall(r"[a-z0-9]+", folded.lower()))[:50].strip("-")
     return {"branch": f"{number}-{slug}" if slug else number}
+
+
+SKIP_DIRS = frozenset({"node_modules", ".venv", "venv", "target", "__pycache__"})
+BOT = "[bot]"
+
+
+def _repos_under(root: str) -> list[str]:
+    found: list[str] = []
+    for here, dirs, _ in os.walk(root):
+        if (Path(here) / ".git").exists():
+            found.append(here)
+            dirs[:] = []
+        else:
+            dirs[:] = sorted(d for d in dirs if d not in SKIP_DIRS)
+    return found
+
+
+def _remote_key(url: str) -> str:
+    """Return ``host/owner/name`` lowercased from a git remote URL; ``""`` when unparsable."""
+    match = re.match(
+        r"^(?:[a-z+]+://)?(?:[^@/]+@)?([^/:]+)[:/]+(.+?)(?:\.git)?/?$", url.strip(), re.IGNORECASE
+    )
+    return f"{match.group(1)}/{match.group(2)}".lower() if match else ""
+
+
+def _scope_row(path: str, owners: set[str]) -> dict[str, object]:
+    code, top = _git(path, "rev-parse", "--show-toplevel")
+    if code:
+        return {"path": path, "error": "not a git repository"}
+    _, git_dir = _git(path, "rev-parse", "--path-format=absolute", "--git-dir")
+    _, common = _git(path, "rev-parse", "--path-format=absolute", "--git-common-dir")
+    _, super_wt = _git(path, "rev-parse", "--show-superproject-working-tree")
+    remotes = _remotes(path)
+    remote = "origin" if "origin" in remotes else next(iter(remotes), "")
+    key = _remote_key(remotes.get(remote, ""))
+    owner = key.split("/")[1] if key.count("/") >= 2 else ""
+    ref = "HEAD"
+    if remote:
+        code, head = _git(path, "symbolic-ref", f"refs/remotes/{remote}/HEAD")
+        ref = head.removeprefix("refs/remotes/") if code == 0 else "HEAD"
+    _, log = _git(path, "log", "--max-count=10", "--format=%ae%x09%an", ref)
+    authors = [line.split("\t") for line in log.splitlines()]
+    _, mine = _git(path, "config", "user.email")
+    return {
+        "path": top,
+        "remote_key": key,
+        "owner_match": None if not owners else owner in owners,
+        "linked_worktree": git_dir != common,
+        "clone": str(Path(common).parent) if git_dir != common else top,
+        "submodule": bool(super_wt),
+        "fork_signal": "upstream" in remotes,
+        "author_email": mine or None,
+        "email_in_recent": bool(mine) and any(a[0] == mine for a in authors),
+        "bot_only": bool(authors) and all(BOT in a[-1] for a in authors),
+        "excluded": None,
+    }
+
+
+def scope(
+    roots: list[str], repos: list[str], owners: list[str], cwd: str = "."
+) -> list[dict[str, object]]:
+    """Resolve the repositories a sweep covers and mark each one it excludes, with the rule.
+
+    Exclusion rules, in order: ``submodule``, ``worktree`` (the clone is its own row),
+    ``owner``, ``duplicate`` (same remote as an earlier row). Forge checks stay with the caller.
+    """
+    wanted = {o.lower() for o in owners}
+    found = [r for root in roots for r in _repos_under(root)]
+    chosen = list(found)
+    rows: list[dict[str, object]] = []
+    for name in repos:
+        if (Path(name) / ".git").exists():
+            chosen.append(name)
+            continue
+        matches = [
+            r
+            for r in found
+            if _remote_key(_remotes(r).get("origin", "")).endswith(f"/{name.lower()}")
+        ]
+        if matches:
+            chosen.extend(matches)
+        else:
+            rows.append({"path": name, "error": "repository not found"})
+    if not roots and not repos:
+        chosen.append(cwd)
+    seen_keys: set[str] = set()
+    for path in dict.fromkeys(str(Path(c).resolve()) for c in chosen):
+        row = _scope_row(path, wanted)
+        rows.append(row)
+        if "error" in row:
+            continue
+        key = str(row["remote_key"])
+        if row["submodule"]:
+            row["excluded"] = "submodule"
+        elif row["linked_worktree"]:
+            row["excluded"] = "worktree"
+        elif wanted and not row["owner_match"]:
+            row["excluded"] = "owner"
+        elif key and key in seen_keys:
+            row["excluded"] = "duplicate"
+        elif key:
+            seen_keys.add(key)
+    return rows
+
+
+def _scope_args(args: list[str]) -> tuple[list[str], list[str], list[str]] | None:
+    values: dict[str, list[str]] = {"--root": [], "--repo": [], "--owner": []}
+    current = ""
+    for arg in args:
+        if arg in values:
+            current = arg
+        elif arg.startswith("-") or not current:
+            return None
+        else:
+            values[current].append(arg)
+    if any(not values[k] for k in values if k in args):
+        return None
+    return values["--root"], values["--repo"], values["--owner"]
 
 
 USAGE = (
     "usage: repo_facts.py [--fetch] [REPO...] | --lock-diff REPO [LOCKFILE...] | "
     "--manifest-diff REPO [MANIFEST...] | --pin-sites REPO NAME | "
-    "--free-branch REPO NAME | --issue-branch NUMBER TITLE"
+    "--free-branch REPO NAME | --issue-branch NUMBER TITLE | "
+    "--scope [--root DIR...] [--repo PATH|SLUG...] [--owner NAME...]"
 )
 
 
@@ -553,23 +683,28 @@ def _emit(results: list[dict[str, object]]) -> int:
     return 1 if bad else 0
 
 
-def _run_mode(mode: str, args: list[str]) -> dict[str, object]:
-    if mode == "--lock-diff":
-        return lock_diff(args[0], args[1:])
-    if mode == "--manifest-diff":
-        return manifest_diff(args[0], args[1:])
-    if mode == "--pin-sites":
-        return pin_sites(args[0], args[1])
-    if mode == "--free-branch":
-        return free_branch(args[0], args[1])
-    return issue_branch(args[0], args[1])
+def _lock_mode(a: list[str]) -> dict[str, object]:
+    return lock_diff(a[0], a[1:])
 
 
-def main(argv: list[str]) -> int:
-    """Print one JSON line per repository; exit 2 on bad usage, 1 when a result carries an error."""
-    if argv[:1] in (["--help"], ["-h"]):
-        sys.stdout.write(USAGE + "\n")
-        return 0
+def _manifest_mode(a: list[str]) -> dict[str, object]:
+    return manifest_diff(a[0], a[1:])
+
+
+def _pin_mode(a: list[str]) -> dict[str, object]:
+    return pin_sites(a[0], a[1])
+
+
+def _branch_mode(a: list[str]) -> dict[str, object]:
+    return free_branch(a[0], a[1])
+
+
+def _issue_mode(a: list[str]) -> dict[str, object]:
+    return issue_branch(a[0], a[1])
+
+
+def _run_mode(mode: str, args: list[str]) -> list[dict[str, object]] | None:
+    """Run a mode; None when ``args`` do not fit it."""
     arity = {
         "--lock-diff": (1, None),
         "--manifest-diff": (1, None),
@@ -577,14 +712,39 @@ def main(argv: list[str]) -> int:
         "--free-branch": (2, 2),
         "--issue-branch": (2, 2),
     }
-    if argv and argv[0] in arity:
-        mode, args = argv[0], argv[1:]
-        low, high = arity[mode]
-        if len(args) < low or (high is not None and len(args) > high):
-            sys.stderr.write(f"repo_facts.py: {mode} takes a different number of arguments\n")
-            return 2
-        return _emit([_run_mode(mode, args)])
+    if mode == "--scope":
+        parsed = _scope_args(args)
+        return None if parsed is None else scope(*parsed)
+    low, high = arity[mode]
+    if len(args) < low or (high is not None and len(args) > high):
+        return None
+    one: dict[str, Callable[[list[str]], dict[str, object]]] = {
+        "--lock-diff": _lock_mode,
+        "--manifest-diff": _manifest_mode,
+        "--pin-sites": _pin_mode,
+        "--free-branch": _branch_mode,
+        "--issue-branch": _issue_mode,
+    }
+    return [one[mode](args)]
+
+
+MODES = frozenset(
+    {"--scope", "--lock-diff", "--manifest-diff", "--pin-sites", "--free-branch", "--issue-branch"}
+)
+
+
+def main(argv: list[str]) -> int:
+    """Print one JSON line per repository; exit 2 on bad usage, 1 when a result carries an error."""
+    if argv[:1] in (["--help"], ["-h"]):
+        sys.stdout.write(USAGE + "\n")
+        return 0
     unknown = [a for a in argv if a.startswith("-") and a != "--fetch"]
+    if argv[:1] and argv[0] in MODES:
+        results = _run_mode(argv[0], argv[1:])
+        if results is None:
+            sys.stderr.write(f"repo_facts.py: {argv[0]} takes different arguments\n")
+            return 2
+        return _emit(results)
     if unknown:
         sys.stderr.write(f"repo_facts.py: unknown option {unknown[0]}\n")
         return 2

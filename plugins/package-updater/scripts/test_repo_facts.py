@@ -503,8 +503,81 @@ def test_pin_sites_free_branch_and_issue_branch(
 
     sites = cast("list[dict[str, object]]", repo_facts.pin_sites(str(repo), "requests")["sites"])
     assert [(s["file"], s["line"]) for s in sites] == [("pyproject.toml", 1), ("pyproject.toml", 2)]
+    assert repo_facts.pin_sites(str(repo), "requests")["total"] == len(sites)
     assert repo_facts.pin_sites(str(repo), "absent-name")["sites"] == []
     assert repo_facts.free_branch(str(repo), "wip/deps")["branch"] == "wip/deps-3"
     assert repo_facts.free_branch(str(repo), "wip/new")["branch"] == "wip/new"
     assert repo_facts.main(["--issue-branch", "42", "Bump uv: 0.7 -> 0.8!"]) == 0
     assert '"42-bump-uv-0-7-0-8"' in capsys.readouterr().out
+
+
+def _clone_row(rows: list[dict[str, object]], path: pathlib.Path) -> dict[str, object]:
+    return next(r for r in rows if r["path"] == str(path.resolve()))
+
+
+@pytest.mark.integration
+def test_scope_marks_worktree_owner_and_duplicate_exclusions(tmp_path: pathlib.Path) -> None:
+    """A fleet walk keeps one clone per remote and says which rule dropped each other repo."""
+    root = tmp_path / "fleet"
+    root.mkdir()
+    repos: dict[str, str] = {
+        "a": "git@github.com:mine/a.git",
+        "a-again": "https://github.com/mine/a",
+        "b": "git@github.com:other/b.git",
+    }
+    for name, url in repos.items():
+        repo = root / name
+        repo.mkdir()
+        _git(repo, "init", "-q", "-b", "main")
+        _git(repo, "config", "user.email", "me@example.com")
+        _git(repo, "config", "user.name", "me")
+        _git(repo, "commit", "-q", "--allow-empty", "-m", "x")
+        _git(repo, "remote", "add", "origin", url)
+    _git(root / "a", "worktree", "add", "-q", "-b", "wtb", str(root / "a-wt"))
+
+    rows = repo_facts.scope([str(root)], [], ["Mine"])
+
+    assert _clone_row(rows, root / "a")["excluded"] is None
+    assert _clone_row(rows, root / "a")["email_in_recent"] is True
+    assert _clone_row(rows, root / "a-again")["excluded"] == "duplicate"
+    assert _clone_row(rows, root / "b")["excluded"] == "owner"
+    wt = _clone_row(rows, root / "a-wt")
+    assert wt["excluded"] == "worktree"
+    assert wt["clone"] == str((root / "a").resolve())
+
+
+@pytest.mark.integration
+def test_scope_unresolved_repo_and_email_mismatch(
+    tmp_path: pathlib.Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """A slug that matches nothing is an error row; foreign authors do not match the email."""
+    repo = tmp_path / "r"
+    repo.mkdir()
+    _git(repo, "init", "-q", "-b", "main")
+    _git(repo, "config", "user.email", "me@example.com")
+    _git(
+        repo,
+        "-c",
+        "user.email=bot@example.com",
+        "-c",
+        "user.name=ci[bot]",
+        "commit",
+        "-q",
+        "--allow-empty",
+        "-m",
+        "x",
+    )
+
+    rows = repo_facts.scope([], [str(repo), "nobody/nothing"], [])
+
+    assert _clone_row(rows, repo)["email_in_recent"] is False
+    assert _clone_row(rows, repo)["bot_only"] is True
+    assert {"path": "nobody/nothing", "error": "repository not found"} in rows
+    assert repo_facts.main(["--scope", "--repo", "nobody/nothing"]) == 1
+    assert repo_facts.main(["--scope", "--bogus"]) == 2
+    capsys.readouterr()
+
+
+def test_issue_branch_folds_accents() -> None:
+    """Accented letters fold to ASCII; letters with no ASCII form drop out."""
+    assert repo_facts.issue_branch("7", "Mise à jour: Café 日本")["branch"] == "7-mise-a-jour-cafe"

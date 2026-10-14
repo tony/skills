@@ -148,13 +148,8 @@ Subject names the file and the tool. A routine bump's body is a link
 block and nothing else; `references/commit-conventions.md` has the
 shape. Write the message per `references/prose-rules.md`.
 
-A bump takes a `why:` above the link block when it:
-
-- crosses a major (for a 0.x tool, a minor);
-- is labeled breaking by its vendor;
-- changes behavior this repository exercises;
-- carries a security fix;
-- skips a newer release the cooldown gates.
+A bump takes a `why:` above the link block under the conditions in
+"Toolchain and runtime" of `references/commit-conventions.md`.
 
 When the notes of a bump that crosses a major (for a 0.x tool, a minor)
 cannot be read, or the release list cannot be fetched, stop and ask, per Phase 3 of

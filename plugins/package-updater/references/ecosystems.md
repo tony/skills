@@ -299,6 +299,24 @@ fails the install or falls back, and whether the lockfile records the
 window. Read what the tool prints on a run to confirm the window is in
 effect, and do not report versions it gates as current.
 
+With the unit confirmed, `../scripts/plan_rules.py lapse` does the
+arithmetic offline. Pass the release's publication time, and either the
+window or the cutoff; the path resolves from this reference's directory to
+an absolute path, written literally in the command:
+
+```console
+$ python3 <absolute path to plan_rules.py> \
+    lapse \
+    --published 2026-01-01T12:00:00Z \
+    --window 7 \
+    --unit days
+```
+
+It prints `visible_at` and `visible_day` for a rolling window (visible
+from that instant on) and `waiting_helps: false` for a fixed cutoff,
+where `--cutoff <time>` replaces `--window` and `--unit`. A bare date,
+as Node.js publishes, counts as 23:59 UTC of that day.
+
 The setting is either a rolling duration or a fixed cutoff timestamp
 (uv accepts both). A rolling window lapses when the release ages past it,
 so waiting works. A fixed cutoff never lapses by waiting: a release
@@ -375,7 +393,9 @@ $ curl -fsS https://nodejs.org/dist/index.json | jq -r '.[] | select(.version=="
 Take the target from the registry in this run, then confirm its
 publication time as above. Each command prints one version.
 
-PyPI, whose `info.version` is the project's current release:
+PyPI, whose JSON API returns the project's metadata "at the latest
+version" in `info`
+([PyPI JSON API](https://docs.pypi.org/api/json/)):
 
 ```console
 $ curl -fsS https://pypi.org/pypi/<name>/json | jq -r .info.version
@@ -387,16 +407,24 @@ npm, whose `latest` dist-tag is the version `npm install` takes:
 $ npm view <name> dist-tags.latest
 ```
 
-crates.io, whose `max_stable_version` skips prereleases:
+crates.io, whose `max_stable_version` is "the highest version number for
+this crate that is not a pre-release"
+([crates.io OpenAPI](https://crates.io/api/openapi.json)):
 
 ```console
 $ curl -fsS -A 'package-updater' https://crates.io/api/v1/crates/<name> | jq -r .crate.max_stable_version
 ```
 
-Go module proxy:
+Go module proxy. The `@latest` endpoint is optional and the go command
+uses it only when `@v/list` is empty or has no suitable version; the go
+command otherwise takes the semantically highest release from the list
+([module reference](https://go.dev/ref/mod#goproxy-protocol)):
 
 ```console
-$ curl -fsS https://proxy.golang.org/<module>/@latest | jq -r .Version
+$ curl -fsS https://proxy.golang.org/<module>/@v/list \
+    | grep -v '[-]' \
+    | sort --version-sort \
+    | tail -n 1
 ```
 
 A tool released on GitHub: the releases list, filtered to stable
@@ -426,5 +454,10 @@ $ curl -fsS https://www.python.org/api/v2/downloads/release/ \
 Go toolchain: `https://go.dev/dl/?mode=json` lists stable releases newest
 first.
 
-Node.js: the first entry of `https://nodejs.org/dist/index.json` on the
-repository's major line.
+Node.js: `index.json` lists releases newest first. For the newest release
+of one major line, here 22:
+
+```console
+$ curl -fsS https://nodejs.org/dist/index.json \
+    | jq -r '[.[] | select(.version | startswith("v22."))][0].version'
+```
