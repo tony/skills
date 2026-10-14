@@ -9,6 +9,7 @@ import pathlib
 import re
 import subprocess
 import sys
+import typing as t
 
 import measure  # pyright: ignore[reportImplicitRelativeImport]
 import pytest
@@ -188,27 +189,28 @@ def test_token_cli_binds_inputs_and_command(
     assert len(set(tokens)) == len(tokens)
 
 
+IMPACT_QUARTILE = 0.75
+
+
 def _run_cli(capsys: pytest.CaptureFixture[str], *argv: str) -> tuple[int, dict[str, object]]:
     code = measure.main(list(argv))
     return code, json.loads(capsys.readouterr().out)
 
 
-@pytest.mark.parametrize(("safety", "impact"), [("2", "0.5"), ("0.5", "-1")])
-def test_score_refuses_dimensions_outside_zero_to_one(
+def test_score_derives_impact_and_refuses_out_of_range_dimensions(
     capsys: pytest.CaptureFixture[str],
-    safety: str,
-    impact: str,
 ) -> None:
-    """A negative impact cannot slip past the noise gate."""
-    code, out = _run_cli(
-        capsys,
-        "score",
-        *("--safety", safety, "--impact", impact),
-        *("--effort", "1", "--confidence", "1", "--reversibility", "1"),
-    )
+    """Impact comes from the measured saving, so a stale or negative impact cannot be passed."""
+    rest = ["--effort", "1", "--confidence", "1", "--reversibility", "1", "--safety"]
+    gate = ["--delta", "3", "--baseline", "10"]
 
-    assert code == 1
-    assert str(out["reason"]).endswith("must be between 0 and 1")
+    code, out = _run_cli(capsys, "score", *gate, *rest, "2")
+    assert (code, str(out["reason"]).endswith("must be between 0 and 1")) == (1, True)
+    _, out = _run_cli(capsys, "score", *gate, *rest, "1")
+    assert (out["impact"], out["dropped"]) == (0.0, "impact is 0")
+    _, out = _run_cli(capsys, "score", *gate, "--clears-noise", *rest, "1")
+    assert (out["impact"], out["dropped"]) == (IMPACT_QUARTILE, None)
+    assert _run_cli(capsys, "score", *rest, "1")[0] == 1
 
 
 def test_memory_dir_resolves_an_explicit_relative_path(
@@ -383,3 +385,104 @@ def test_rubric_table_weights_match_the_scorer() -> None:
     rows = re.findall(r"^\| `(\w+)` \| ([\d.]+) \|", text, flags=re.MULTILINE)
 
     assert {name: float(weight) for name, weight in rows} == measure.WEIGHTS
+
+
+def test_baseline_cli_stores_timings_plugins_and_capabilities(
+    tmp_path: pathlib.Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """A literal run records every field the schema names, timings included."""
+    run = {"seconds": 1.0, "exit": 0, "passed": 5, "total": 5}
+    runs = tmp_path / "runs.jsonl"
+    runs.write_text("\n".join(json.dumps(run) for _ in range(3)))
+    caps = tmp_path / "capabilities.json"
+    caps.write_text('{"durations_min": true}')
+    table = tmp_path / "durations.txt"
+    table.write_text("4.80s setup    t.py::a\n0.61s call     t.py::a\n4.80s setup    t.py::a\n")
+    out_file = tmp_path / "baseline.json"
+
+    code, _ = _run_cli(
+        capsys, "baseline", str(runs), "--out", str(out_file), "--test-command", "pytest",
+        "--pytest-version", "9.1.1", "--plugin", "x=1",
+        "--flag=-p", "--flag=no:cacheprovider", "--capabilities", str(caps),
+        "--durations", str(table),
+    )  # fmt: skip
+    saved = json.loads(out_file.read_text())
+
+    assert code == 0
+    assert saved["measurement_flags"] == ["-p", "no:cacheprovider"]
+    assert saved["capabilities"] == {"durations_min": True}
+    assert [(r["nodeid"], r["phase"]) for r in saved["timings"]] == [
+        ("t.py::a", "setup"),
+        ("t.py::a", "call"),
+    ]
+
+
+def test_scan_idempotency_hypothesis_ids_and_pending(
+    tmp_path: pathlib.Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """The skip decision, the ids and the to-do list come from commands, not prose."""
+    mem = tmp_path / "m"
+    state = mem / "state.json"
+    _run_cli(capsys, "state", "complete", str(state), "--phase", "scan",
+             "--set", 'env_token="t"', "--set", 'base_head="h"',
+             "--set", "hygiene=false")  # fmt: skip
+    check = ["state", "unchanged", str(state), "--token", "t", "--hygiene", "false"]
+    assert _run_cli(capsys, *check, "--require", "hypotheses.json")[1]["unchanged"] is False
+    for hid in ("H10", "H33"):
+        _, out = _run_cli(capsys, "hyp-id", "--heuristic", hid, "--file", "a.py", "--evidence", hid)
+        _run_cli(capsys, "record", str(mem / "hypotheses.json"), "--id", str(out["id"]),
+                 "--set", f'heuristic="{hid}"')  # fmt: skip
+    assert _run_cli(capsys, *check, "--require", "hypotheses.json")[1]["unchanged"] is True
+    assert _run_cli(capsys, *check[:-1], "true")[1]["unchanged"] is False
+
+    first = t.cast("list[str]", _run_cli(capsys, "pending", "--memory-dir", str(mem))[1]["ids"])
+    assert len(first) == len(("H10", "H33"))
+    _run_cli(capsys, "record", str(mem / "benchmarks.json"), "--state", str(state),
+             "--id", first[0])  # fmt: skip
+    assert _run_cli(capsys, "pending", "--memory-dir", str(mem))[1]["ids"] == first[1:]
+    forced = _run_cli(capsys, "pending", "--memory-dir", str(mem), "--force")
+    assert forced[1]["ids"] == first
+
+
+def test_plan_build_and_log_cli(
+    tmp_path: pathlib.Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """The plan takes impact and totals from the benchmarks; the log propagates skips."""
+    mem = tmp_path
+    (mem / "state.json").write_text(json.dumps({"env_token": "t", "base_head": "h"}))
+    (mem / "baseline.json").write_text(
+        json.dumps({"noise": {"median": 10.0}, "tests": {"passed": 10, "total": 10}})
+    )
+    entry = {"verdict": "validated", "env_token": "t", "median_delta": 3.0, "clears_noise": True,
+             "files": ["f"], "patch": "p", "patch_sha256": "x"}  # fmt: skip
+    (mem / "benchmarks.json").write_text(
+        json.dumps([{"id": "a", **entry}, {"id": "b", **entry, "clears_noise": False}])
+    )
+    dims = {"safety": 0.9, "effort": 1, "confidence": 0.9, "reversibility": 0.9}
+    draft = tmp_path / "draft.json"
+    draft.write_text(json.dumps([
+        {"order": 1, "id": "a", "score": dims, "commit": {}},
+        {"order": 2, "id": "b", "score": dims, "commit": {}},
+    ]))  # fmt: skip
+    code, out = _run_cli(capsys, "plan-build", "--memory-dir", str(mem), "--draft", str(draft),
+                         "--out", str(mem / "plan.json"))  # fmt: skip
+
+    assert code == 0
+    assert out["dropped"] == [{"id": "b", "reason": "impact is 0"}]
+    assert json.loads((mem / "plan.json").read_text())[0]["score"]["impact"] == IMPACT_QUARTILE
+
+    plan = [{"order": 1, "id": "a"}, {"order": 2, "id": "b", "depends_on": ["a"]}]
+    (mem / "plan.json").write_text(json.dumps(plan))
+    base = ["log", "--memory-dir", str(mem)]
+    _run_cli(capsys, *base, "begin", "--order", "1", "--set", 'pending_tree="T"')
+    _run_cli(capsys, *base, "skip", "--order", "1", "--set", 'reason="red"')
+    saved = json.loads((mem / "execution-log.json").read_text())
+
+    assert [(e["order"], e["applied"], e["skip_reason"]) for e in saved] == [
+        (1, False, "red"),
+        (2, False, "depends on a skipped item"),
+    ]
+    assert json.loads((mem / "state.json").read_text())["last_applied_index"] == 1

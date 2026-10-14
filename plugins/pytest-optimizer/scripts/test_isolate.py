@@ -386,3 +386,59 @@ def test_main_exits_nonzero_with_a_reason_on_refusal(
     assert json.loads(capsys.readouterr().out)["reason"]
     assert isolate.main(["stale", "--memory-dir", str(tmp_path), "--phase", "plan"]) == 1
     assert json.loads(capsys.readouterr().out)["reason"] == "state.json is missing or unreadable"
+
+
+def test_resume_leaves_a_users_prunable_worktree_alone(
+    repo: pathlib.Path,
+    tmp_path: pathlib.Path,
+) -> None:
+    """Only this run's lost record is dropped; a moved user worktree stays listed."""
+    mine = isolate.start(repo, "HEAD", "pytest-optimizer/run4")
+    users = tmp_path / "users"
+    git(repo, "worktree", "add", "-q", "--detach", str(users))
+    users.rename(tmp_path / "users-moved")
+    shutil.rmtree(mine["dir"])
+
+    again = isolate.start(repo, "HEAD", "pytest-optimizer/run4", existing=True)
+
+    assert again["ok"], again
+    listing = git(repo, "worktree", "list", "--porcelain")
+    assert str(users) in listing
+    assert isolate.finish(pathlib.Path(again["dir"]))["removed"]
+
+
+def test_start_refuses_a_repository_that_is_or_contains_home(
+    repo: pathlib.Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A scratch copy of the home directory is refused before anything is created."""
+    for home in (repo, repo / "tests"):
+        monkeypatch.setenv("HOME", str(home))
+        result = isolate.start(repo, "HEAD")
+        assert result["ok"] is False
+        assert "home directory" in result["reason"]
+    monkeypatch.setenv("HOME", str(repo.parent))
+    started = isolate.start(repo, "HEAD")
+    assert started["ok"], started
+    assert isolate.finish(pathlib.Path(started["dir"]))["removed"]
+
+
+def test_exists_lists_missing_paths_and_honors_created_files(
+    repo: pathlib.Path,
+    tmp_path: pathlib.Path,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """A planned file must be at HEAD unless the patch creates it."""
+    started = isolate.start(repo, "HEAD")
+    tree = pathlib.Path(started["tree"])
+    (tree / "tests" / "new.py").write_text("X = 1\n")
+    cap = isolate.capture(tree, tmp_path / "n.patch")
+    assert cap["ok"]
+    assert isolate.finish(pathlib.Path(started["dir"]))["removed"]
+    files = ["tests/test_a.py", "tests/new.py", "tests/gone.py"]
+
+    assert isolate.exists(repo, files)["missing"] == ["tests/new.py", "tests/gone.py"]
+    assert isolate.exists(repo, files, tmp_path / "n.patch")["missing"] == ["tests/gone.py"]
+    argv = ["exists", "--cwd", str(repo), "--file", "tests/gone.py"]
+    assert isolate.main(argv) == 1
+    assert json.loads(capsys.readouterr().out)["reason"] == "absent at HEAD"

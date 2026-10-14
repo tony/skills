@@ -88,13 +88,15 @@ $ python3 <isolate.py> start \
 
 Print its `tree` and `dir`, and store `run_id`, `exec_branch` and `exec_dir` in
 `state.json` with `measure.py state update <memory-dir>/state.json --set
-'exec_branch="<branch>"'` and the same for the others. A dry run omits `--branch`, which detaches the worktree, and
-stores nothing. When the host refuses the worktree, stop: execution needs a real
-branch.
+'exec_branch="<branch>"'` and the same for the others. A dry run omits `--branch`,
+which detaches the worktree, and stores nothing. When `start` fails, stop and
+print its `reason`: execution needs a real branch.
 
 A resumed run reuses `exec_dir`'s `tree` when it still exists, otherwise reopens
-the branch (the command first prunes the stale worktree record a cleaned temp
-directory leaves behind):
+the branch. A cleaned temp directory leaves git's record of the missing worktree
+in place until it is pruned (`git worktree`, "prune"), which would block the
+branch, so the command first drops this tool's own record for that branch and
+leaves the user's other worktrees alone:
 
 ```console
 $ python3 <isolate.py> start \
@@ -121,7 +123,16 @@ $ python3 <isolate.py> landed \
     --tree <pending_tree>
 ```
 
-On success, record the tip as the entry's `commit_sha`. On failure, reset the
+On success, record the tip as the entry's `commit_sha`:
+
+```console
+$ python3 <measure.py> log commit \
+    --memory-dir <memory-dir> \
+    --order <order> \
+    --set 'commit_sha="<tip sha>"'
+```
+
+On failure, reset the
 owned tree to the item's `pending_parent` with `isolate.py reset --cwd <tree>
 --to <pending_parent>` and re-apply the item; a matching commit subject never
 establishes identity.
@@ -190,7 +201,7 @@ For each plan item not yet applied:
    ```
 
    Check that the same tests exist. Write the listing from `test_command`
-   (not a bare `pytest`) run in the tree to
+   (not a bare `pytest`) run in `<workdir>` to
    `<runs-dir>/verify-<order>-collection.txt` as `00-scan` Step 2 does, and
    compare node ids against `collection.txt`, allowing only the removals of
    applied items (skip this for a typing or parametrize item, which changes ids
@@ -207,7 +218,7 @@ For each plan item not yet applied:
 
    The item passes only when the quality checks pass, `valid` is true, and the
    ids match. Missing or empty outcomes fail; an exit 0 is insufficient. For a
-   typing or parametrize item (H26-H32) the type checker must cover `tests/`.
+   typing or parametrize item the type checker must cover `tests/`.
 3. **Gate, then commit.** Check that the staged bytes are exactly the item's
    files and the verification created or changed nothing else:
 
@@ -220,7 +231,18 @@ For each plan item not yet applied:
    On exit 1 the item failed (go to 4); the verification changed paths outside
    the plan, which includes a formatter rewriting the patched files. On success
    write the log entry with `pending_subject`, `pending_parent` and
-   `pending_tree` from the gate output, then commit with the drafted why/what
+   `pending_tree` from the gate output:
+
+   ```console
+   $ python3 <measure.py> log begin \
+       --memory-dir <memory-dir> \
+       --order <order> \
+       --set 'pending_subject="<subject>"' \
+       --set 'pending_parent="<parent>"' \
+       --set 'pending_tree="<tree sha>"'
+   ```
+
+   Then commit with the drafted why/what
    message from `plan.json`, written per `../../references/prose-rules.md`
    (no trailers, no emoji; hosts add them by default; do not mention this):
 
@@ -240,13 +262,31 @@ For each plan item not yet applied:
        --tree <pending_tree>
    ```
 
-   On success record the `commit_sha` and the verify run's `seconds`. When the
-   commit fails (a hook rejects it, signing is unavailable) or `landed` fails,
-   never retry with `--no-verify` or `--no-gpg-sign`: run
-   `isolate.py reset --cwd <tree> --to <pending_parent>`, set the entry's
-   `applied` to false with `skip_reason` "commit failed: <first line of the
-   error>", remove its `pending_*` fields, and stop without starting the next
-   item. Report the error and tell the user to fix the hook or signing and re-run
+   On success record the `commit_sha` and the verify run's `seconds`, which
+   also checkpoints `state.json`:
+
+   ```console
+   $ python3 <measure.py> log commit \
+       --memory-dir <memory-dir> \
+       --order <order> \
+       --set 'commit_sha="<sha>"' \
+       --set 'seconds=<verify seconds>'
+   ```
+
+   When the commit fails (a hook rejects it, signing is unavailable) or `landed`
+   fails, never retry with `--no-verify` or `--no-gpg-sign`: run
+   `isolate.py reset --cwd <tree> --to <pending_parent>`, record the failure
+   (this sets `applied` false, removes the `pending_*` fields, and leaves later
+   items alone), and stop without starting the next item:
+
+   ```console
+   $ python3 <measure.py> log skip \
+       --memory-dir <memory-dir> \
+       --order <order> \
+       --no-propagate \
+       --set 'reason="commit failed: <first line of the error>"'
+   ```
+ Report the error and tell the user to fix the hook or signing and re-run
    `pytest-optimizer:03-execute --from=<index>`.
 4. **On failure** (patch, verification, ids or gate), discard the item inside the
    owned tree. The command refuses any directory this run did not create:
@@ -257,19 +297,20 @@ For each plan item not yet applied:
    ```
 
    Exit 1 means the discard did not complete: stop, report its `reason`, and
-   leave the tree for inspection. Otherwise mark the item `skipped` with the
-   reason, mark every item whose `depends_on` names it `skipped` too ("depends on
-   a skipped item"), and continue. Failures never reach the user's checkout, so
-   no later step depends on repairing it.
-5. **Checkpoint**: complete the entry in `execution-log.json` and update
-   `state.json` immediately, so a re-run continues from the last checkpoint:
+   leave the tree for inspection. Otherwise log the skip, which also marks every
+   item whose `depends_on` names it, directly or through others, as skipped
+   ("depends on a skipped item"), and continue. Failures never reach the user's
+   checkout, so no later step depends on repairing it:
 
    ```console
-   $ python3 <measure.py> state \
-       update <memory-dir>/state.json \
-       --set 'phase="execute"' \
-       --set 'last_applied_index=<index>'
+   $ python3 <measure.py> log skip \
+       --memory-dir <memory-dir> \
+       --order <order> \
+       --set 'reason="<printed result>"'
    ```
+5. **Checkpoint**: every `log` call writes `execution-log.json` and sets
+   `phase` and `last_applied_index` in `state.json`, so a re-run continues from
+   the last checkpoint with nothing more to write.
 6. **Regression stop**: compare the item's verify `seconds` with the control:
 
    ```console
@@ -284,9 +325,9 @@ For each plan item not yet applied:
    continue or drop it from the branch. Without a question tool, stop and say
    so.
 
-A dry run keeps its log at `<runs-dir>/dry-run-log.json` (use it for the
-`expected-total` and `ids` commands) and writes no state; it ends with the
-discard in Step 4.
+A dry run passes `--log-file <runs-dir>/dry-run-log.json` to every `log` call
+(use that file for the `expected-total` and `ids` commands), which leaves
+`state.json` alone; it ends with the discard in Step 4.
 
 ## Step 4: Re-measure and report
 

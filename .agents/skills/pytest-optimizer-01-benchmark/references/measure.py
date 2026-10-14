@@ -6,7 +6,7 @@ reported failure (the JSON says why), 2 a usage error. Standard library only.
 
 Commands: run, band, compare, expected-total, ids, order, token, hash, impact,
 score, memory-dir, chain, baseline, record, state, run-id, budget, totals, regress,
-runs-dir, exclude.
+runs-dir, exclude, hyp-id, pending, plan-build, log.
 `run` exits 0 whenever it timed the command; read `exit` in its JSON for the
 suite's own status.
 Run ``measure.py <command> --help`` for arguments.
@@ -759,9 +759,9 @@ def baseline_record(
 def record(
     entries: Sequence[dict[str, t.Any]],
     entry: dict[str, t.Any],
-    state: Mapping[str, t.Any],
+    state: Mapping[str, t.Any] | None = None,
 ) -> list[dict[str, t.Any]]:
-    """Upsert one ``benchmarks.json`` entry by id, stamped with the scan's token and HEAD.
+    """Upsert one entry by id; with ``state``, stamp the scan's token and HEAD.
 
     >>> st = {"env_token": "tok", "base_head": "abc"}
     >>> out = record([{"id": "a", "median_delta": 1}], {"id": "a", "median_delta": 2}, st)
@@ -769,10 +769,270 @@ def record(
     [{'id': 'a', 'median_delta': 2, 'env_token': 'tok', 'base_head': 'abc'}]
     >>> [e["id"] for e in record(out, {"id": "b"}, st)]
     ['a', 'b']
+    >>> record([], {"id": "h"})
+    [{'id': 'h'}]
     """
-    stamped = {**entry, "env_token": state["env_token"], "base_head": state["base_head"]}
+    stamped = dict(entry)
+    if state is not None:
+        stamped.update(env_token=state["env_token"], base_head=state["base_head"])
     kept = [stamped if e.get("id") == entry["id"] else e for e in entries]
     return kept if any(e.get("id") == entry["id"] for e in entries) else [*kept, stamped]
+
+
+_DURATION = re.compile(r"^\s*(\d+(?:\.\d+)?)s\s+(setup|call|teardown)\s+(\S.*?)\s*$")
+
+
+def parse_durations(text: str) -> list[dict[str, t.Any]]:
+    r"""Read ``--durations`` rows, one per ``(nodeid, phase)``, in the order printed.
+
+    >>> rows = parse_durations("4.80s setup  t.py::a\n0.61s call  t.py::a\n4.80s setup  t.py::a")
+    >>> [(r["nodeid"], r["phase"], r["seconds"]) for r in rows]
+    [('t.py::a', 'setup', 4.8), ('t.py::a', 'call', 0.61)]
+    """
+    seen: set[tuple[str, str]] = set()
+    rows: list[dict[str, t.Any]] = []
+    for line in text.splitlines():
+        match = _DURATION.match(line)
+        if match and (match[3], match[2]) not in seen:
+            seen.add((match[3], match[2]))
+            rows.append({"nodeid": match[3], "phase": match[2], "seconds": float(match[1])})
+    return rows
+
+
+def hyp_id(heuristic: str, files: Sequence[str], evidence: str) -> str:
+    """Content-derived hypothesis id: heuristic, sorted target files, evidence digest.
+
+    >>> hyp_id("H10", ["tests/b.py", "tests/a.py"], "x")
+    'H10-tests_a.py+tests_b.py-2d711642'
+    >>> hyp_id("H10", ["tests/a.py"], "x") == hyp_id("H10", ["tests/a.py"], "y")
+    False
+    """
+    names = "+".join(re.sub(r"[^\w.]+", "_", f) for f in sorted(files))
+    digest = hashlib.sha256(evidence.encode()).hexdigest()[:8]
+    return f"{heuristic}-{names}-{digest}"
+
+
+def pending(
+    hypotheses: Sequence[dict[str, t.Any]],
+    benchmarks: Sequence[dict[str, t.Any]],
+    token: str,
+    only: str | None = None,
+    force: bool = False,
+) -> list[str]:
+    """Ids still to benchmark: open, selected, and not recorded under the current token.
+
+    >>> hs = [{"id": "a"}, {"id": "b", "status": "open"}, {"id": "c", "status": "rejected"}]
+    >>> pending(hs, [{"id": "a", "env_token": "t"}], "t")
+    ['b']
+    >>> pending(hs, [{"id": "a", "env_token": "old"}], "t", only="a")
+    ['a']
+    >>> pending(hs, [{"id": "a", "env_token": "t"}], "t", force=True)
+    ['a', 'b']
+    """
+    done = {b["id"] for b in benchmarks if b.get("env_token") == token}
+    return [
+        h["id"]
+        for h in hypotheses
+        if h.get("status", "open") == "open"
+        and (only is None or h["id"] == only or str(h.get("heuristic")) == only)
+        and (force or h["id"] not in done)
+    ]
+
+
+def unchanged(
+    state: Mapping[str, t.Any], token: str, hygiene: bool, present: bool
+) -> dict[str, t.Any]:
+    """Decide whether a finished scan can be skipped.
+
+    >>> st = {"completed": {"scan": True}, "env_token": "t", "hygiene": False}
+    >>> unchanged(st, "t", False, True)["unchanged"]
+    True
+    >>> unchanged(st, "t", True, True)["reason"]
+    'hygiene differs from the recorded scan'
+    """
+    reason = None
+    done = t.cast("Mapping[str, object]", state.get("completed") or {})
+    if done.get("scan") is not True:
+        reason = "no completed scan"
+    elif state.get("env_token") != token:
+        reason = "the token differs from the recorded scan"
+    elif bool(state.get("hygiene")) != hygiene:
+        reason = "hygiene differs from the recorded scan"
+    elif not present:
+        reason = "the scan's output is missing"
+    return {"unchanged": reason is None, "reason": reason}
+
+
+def plan_build(
+    draft: Sequence[dict[str, t.Any]],
+    benchmarks: Sequence[dict[str, t.Any]],
+    state: Mapping[str, t.Any],
+    baseline: Mapping[str, t.Any],
+) -> dict[str, t.Any]:
+    """Assemble ``plan.json`` from the drafted judgment and the recorded benchmarks.
+
+    A draft item gives ``order``, ``id``, ``commit``, ``verify``, ``depends_on`` and
+    the four judged dimensions in ``score``. Impact comes from the benchmark entry,
+    zero unless it cleared the noise band; items the rubric drops are listed apart.
+
+    >>> st = {"env_token": "t"}
+    >>> base = {"noise": {"median": 10.0}, "tests": {"total": 10}}
+    >>> bench = [{"id": "a", "env_token": "t", "verdict": "validated", "median_delta": 3.0,
+    ...           "clears_noise": True, "files": ["f"], "patch": "p", "patch_sha256": "h"}]
+    >>> dims = dict(safety=0.9, effort=1, confidence=0.9, reversibility=0.9)
+    >>> out = plan_build([{"order": 1, "id": "a", "score": dims, "commit": {}}], bench, st, base)
+    >>> (out["plan"][0]["score"]["impact"], out["plan"][0]["expected_total"], out["dropped"])
+    (0.75, 10, [])
+    >>> bench[0]["clears_noise"] = False
+    >>> plan_build([{"order": 1, "id": "a", "score": dims, "commit": {}}], bench, st, base)[
+    ...     "dropped"]
+    [{'id': 'a', 'reason': 'impact is 0'}]
+    """
+    by_id = {b["id"]: b for b in benchmarks}
+    plan: list[dict[str, t.Any]] = []
+    dropped: list[dict[str, str]] = []
+    removes: list[dict[str, t.Any]] = []
+    for item in sorted(draft, key=lambda i: i["order"]):
+        entry = by_id.get(item["id"])
+        if entry is None or entry.get("verdict") != "validated":
+            msg = f"{item['id']} has no validated benchmark entry"
+            raise ValueError(msg)
+        if entry.get("env_token") != state.get("env_token"):
+            msg = f"{item['id']} has a different token"
+            raise ValueError(msg)
+        hygiene = entry.get("kind") == "hygiene"
+        gain = (
+            0.0
+            if hygiene
+            else impact(
+                entry["median_delta"], baseline["noise"]["median"], bool(entry.get("clears_noise"))
+            )
+        )
+        graded = score({**item["score"], "impact": gain}, hygiene)
+        if graded["dropped"]:
+            dropped.append({"id": item["id"], "reason": graded["dropped"]})
+            continue
+        removes.append({"order": item["order"], "removes_tests": entry.get("removes_tests", 0)})
+        plan.append(
+            {
+                "order": item["order"],
+                "id": item["id"],
+                "score": {k: graded[k] for k in (*WEIGHTS, "total")},
+                "files": entry["files"],
+                "commit": item["commit"],
+                "env_token": entry["env_token"],
+                "patch": entry["patch"],
+                "patch_sha256": entry["patch_sha256"],
+                "cache": entry.get("cache", "disabled"),
+                "removed_ids": entry.get("removed_ids", []),
+                "verify": item.get("verify"),
+                "depends_on": item.get("depends_on", []),
+            }
+        )
+    for row, total in zip(plan, totals(baseline["tests"]["total"], removes)):
+        row["expected_total"] = total["expected_total"]
+    return {"plan": plan, "dropped": dropped}
+
+
+def _dependents(plan: Sequence[dict[str, t.Any]], seed: Sequence[int]) -> list[int]:
+    """Orders that depend, directly or through others, on the ``seed`` orders."""
+    ids = {i["order"]: i["id"] for i in plan}
+    hit = set(seed)
+    grew = True
+    while grew:
+        grew = False
+        for item in plan:
+            deps = set(item.get("depends_on") or [])
+            if item["order"] not in hit and any(o in deps or ids[o] in deps for o in hit):
+                hit.add(item["order"])
+                grew = True
+    return sorted(hit - set(seed))
+
+
+def progress(plan: Sequence[dict[str, t.Any]], log: Sequence[dict[str, t.Any]]) -> int:
+    """Plan position of the last item in the finished prefix (-1 when none).
+
+    An item is finished once it is committed or skipped; one still pending, or
+    reached only by a dependent's skip entry further on, stops the prefix.
+
+    >>> plan = [{"order": 1}, {"order": 2}, {"order": 3}]
+    >>> done = {"order": 1, "applied": True}
+    >>> progress(plan, [done, {"order": 3, "skip_reason": "x"}])
+    0
+    >>> progress(plan, [done, {"order": 2, "applied": False, "skip_reason": None}])
+    0
+    >>> progress(plan, [done, {"order": 2, "skip_reason": "x"}, {"order": 3, "applied": True}])
+    2
+    """
+    seen = {e["order"]: e for e in log if e.get("applied") or e.get("skip_reason")}
+    last = -1
+    for pos, item in enumerate(sorted(plan, key=lambda i: i["order"])):
+        if item["order"] not in seen:
+            break
+        last = pos
+    return last
+
+
+def log_step(  # noqa: PLR0913, PLR0917
+    log: list[dict[str, t.Any]],
+    plan: Sequence[dict[str, t.Any]],
+    action: str,
+    order: int,
+    fields: Mapping[str, t.Any],
+    propagate: bool = True,
+) -> list[dict[str, t.Any]]:
+    """Apply one ``execution-log.json`` transition and return the new log.
+
+    ``begin`` records the pending commit, ``commit`` completes it, and ``skip``
+    marks the item and every item that depends on it as not applied.
+
+    >>> plan = [{"order": 1, "id": "a"}, {"order": 2, "id": "b", "depends_on": ["a"]}]
+    >>> log = log_step([], plan, "begin", 1, {"pending_tree": "T"})
+    >>> log = log_step(log, plan, "commit", 1, {"commit_sha": "abc", "seconds": 7.9})
+    >>> (log[0]["applied"], log[0]["verify"]["seconds"], "pending_tree" in log[0])
+    (True, 7.9, False)
+    >>> out = log_step([], plan, "skip", 1, {"reason": "red"})
+    >>> [(e["order"], e["skip_reason"]) for e in out]
+    [(1, 'red'), (2, 'depends on a skipped item')]
+    """
+    by_order = {i["order"]: i for i in plan}
+    stamp = datetime.datetime.now(datetime.timezone.utc).isoformat(timespec="seconds")
+    rest = [e for e in log if e["order"] != order]
+    old = next((e for e in log if e["order"] == order), t.cast("dict[str, t.Any]", {}))
+    base = {"order": order, "id": by_order[order]["id"], "ts": stamp}
+    if action == "begin":
+        entry = {**base, "applied": False, "skip_reason": None, **fields}
+    elif action == "commit":
+        seconds = fields.get("seconds")
+        entry = {
+            **{k: v for k, v in old.items() if not k.startswith("pending_")},
+            **base,
+            "applied": True,
+            "commit_sha": fields["commit_sha"],
+            "verify": {"passed": True, "seconds": seconds, "output_ref": f"verify-{order}.jsonl"},
+            "skip_reason": None,
+        }
+    else:
+        entry = {
+            **{k: v for k, v in old.items() if not k.startswith("pending_")},
+            **base,
+            "applied": False,
+            "skip_reason": fields["reason"],
+        }
+    out = [*rest, entry]
+    if action == "skip" and propagate:
+        for dep in _dependents(plan, [order]):
+            out = [e for e in out if e["order"] != dep]
+            out.append(
+                {
+                    "order": dep,
+                    "id": by_order[dep]["id"],
+                    "applied": False,
+                    "skip_reason": "depends on a skipped item",
+                    "ts": stamp,
+                }
+            )
+    return sorted(out, key=lambda e: e["order"])
 
 
 def budget(
@@ -1049,7 +1309,11 @@ def build_parser() -> argparse.ArgumentParser:  # noqa: PLR0915
 
     p = sub.add_parser("score", help="weighted rubric total and hard gates")
     for name in WEIGHTS:
-        p.add_argument(f"--{name}", type=float, required=True)
+        if name != "impact":
+            p.add_argument(f"--{name}", type=float, required=True)
+    p.add_argument("--delta", type=float, help="measured saving (median_delta)")
+    p.add_argument("--baseline", type=float, help="baseline median")
+    p.add_argument("--clears-noise", action="store_true", help="the entry's clears_noise is true")
     p.add_argument("--hygiene", action="store_true", help="skip the noise gate (typing items)")
 
     p = sub.add_parser("chain", help="check a branch is base plus exactly the logged commits")
@@ -1066,16 +1330,45 @@ def build_parser() -> argparse.ArgumentParser:  # noqa: PLR0915
     p.add_argument("--plugin", action="append", default=[], help="NAME=VERSION")
     p.add_argument("--flag", action="append", default=[], help="a measurement flag, repeatable")
     p.add_argument("--capabilities", help="capabilities.json to embed")
+    p.add_argument("--durations", help="--durations output to store as timings")
 
-    p = sub.add_parser("record", help="upsert one benchmarks.json entry, stamped from state.json")
-    p.add_argument("file", help="benchmarks.json")
-    p.add_argument("--state", required=True, help="state.json")
-    p.add_argument("--entry", required=True, help="JSON file holding one entry with an id")
+    p = sub.add_parser("record", help="upsert one entry by id into a JSON list")
+    p.add_argument("file", help="benchmarks.json or hypotheses.json")
+    p.add_argument("--state", help="state.json; stamps env_token and base_head when given")
+    p.add_argument("--entry", help="JSON file holding the entry")
+    p.add_argument("--id", help="entry id, when --entry is not given or lacks one")
+    p.add_argument("--set", dest="fields", action="append", default=[], help="KEY=JSON")
+
+    p = sub.add_parser("hyp-id", help="content-derived hypothesis id")
+    p.add_argument("--heuristic", required=True)
+    p.add_argument("--file", action="append", default=[], required=True)
+    p.add_argument("--evidence", required=True)
+
+    p = sub.add_parser("pending", help="hypothesis ids still to benchmark")
+    p.add_argument("--memory-dir", required=True)
+    p.add_argument("--only", help="a hypothesis id or heuristic id")
+    p.add_argument("--force", action="store_true")
+
+    p = sub.add_parser("plan-build", help="assemble plan.json from the draft and benchmarks")
+    p.add_argument("--memory-dir", required=True)
+    p.add_argument("--draft", required=True, help="JSON list of drafted items, or - for stdin")
+    p.add_argument("--out", help="write the kept items here (plan.json)")
+
+    p = sub.add_parser("log", help="apply one execution-log.json transition")
+    p.add_argument("action", choices=("begin", "commit", "skip"))
+    p.add_argument("--memory-dir", required=True)
+    p.add_argument("--order", type=int, required=True)
+    p.add_argument("--set", dest="fields", action="append", default=[], help="KEY=JSON")
+    p.add_argument("--no-propagate", action="store_true", help="skip: leave dependents alone")
+    p.add_argument("--log-file", help="dry-run log path; state.json is then left alone")
 
     p = sub.add_parser("state", help="read or advance the phase flags in state.json")
-    p.add_argument("action", choices=("resume", "complete", "update"))
+    p.add_argument("action", choices=("resume", "complete", "update", "unchanged"))
     p.add_argument("file", help="state.json")
     p.add_argument("--phase", choices=PHASES, help="phase to mark complete")
+    p.add_argument("--token", help="unchanged: the freshly computed env_token")
+    p.add_argument("--hygiene", choices=("true", "false"), help="unchanged: this run's flag")
+    p.add_argument("--require", action="append", default=[], help="unchanged: output file name")
     p.add_argument("--set", dest="fields", action="append", default=[], help="KEY=JSON")
 
     sub.add_parser("run-id", help="id for one 03-execute run")
@@ -1121,8 +1414,8 @@ def _strip_separator(argv: Sequence[str]) -> list[str]:
 
 
 _EXTRA = (
+    *("record", "hyp-id", "pending", "plan-build", "log"),
     "baseline",
-    "record",
     "state",
     "run-id",
     "budget",
@@ -1131,6 +1424,69 @@ _EXTRA = (
     "runs-dir",
     "exclude",
 )
+
+
+_RECORDS = ("record", "hyp-id", "pending", "plan-build", "log")
+
+
+def _records(args: argparse.Namespace) -> int:  # noqa: PLR0911
+    """Run the commands that edit the per-phase record files."""
+    cmd = args.command
+    if cmd == "record":
+        entry: dict[str, t.Any] = json.loads(_read_text(args.entry)) if args.entry else {}
+        entry.update({k: json.loads(v) for k, v in (f.split("=", 1) for f in args.fields)})
+        if args.id:
+            entry["id"] = args.id
+        state = _load_object(pathlib.Path(args.state)) if args.state else None
+        bound = state is None or (state.get("env_token") and state.get("base_head"))
+        if "id" not in entry or not bound:
+            reason = "entry needs an id; state needs env_token and base_head"
+            return _emit({"ok": False, "reason": reason}, ok=False)
+        path = pathlib.Path(args.file)
+        current: list[dict[str, t.Any]] = json.loads(_read_text(args.file)) if path.exists() else []
+        _write_json(path, record(current, entry, state))
+        return _emit({"ok": True, "id": entry["id"]})
+    if cmd == "hyp-id":
+        return _emit({"id": hyp_id(args.heuristic, args.file, args.evidence)})
+    if cmd == "pending":
+        mem = pathlib.Path(args.memory_dir)
+        state = _load_object(mem / "state.json")
+        bench = mem / "benchmarks.json"
+        done: list[dict[str, t.Any]] = json.loads(_read_text(str(bench))) if bench.exists() else []
+        hyps = json.loads(_read_text(str(mem / "hypotheses.json")))
+        ids = pending(hyps, done, state.get("env_token", ""), args.only, args.force)
+        return _emit({"ids": ids})
+    if cmd == "plan-build":
+        mem = pathlib.Path(args.memory_dir)
+        built = plan_build(
+            json.loads(sys.stdin.read() if args.draft == "-" else _read_text(args.draft)),
+            json.loads(_read_text(str(mem / "benchmarks.json"))),
+            _load_object(mem / "state.json"),
+            _load_object(mem / "baseline.json"),
+        )
+        if args.out:
+            _write_json(pathlib.Path(args.out), built["plan"])
+        return _emit(built)
+    if cmd == "log":
+        mem = pathlib.Path(args.memory_dir)
+        plan = json.loads(_read_text(str(mem / "plan.json")))
+        log_path = pathlib.Path(args.log_file) if args.log_file else mem / "execution-log.json"
+        current = json.loads(_read_text(str(log_path))) if log_path.exists() else []
+        fields = {k: json.loads(v) for k, v in (f.split("=", 1) for f in args.fields)}
+        new = log_step(current, plan, args.action, args.order, fields, not args.no_propagate)
+        _write_json(log_path, new)
+        if not args.log_file:
+            state_path = mem / "state.json"
+            _write_json(
+                state_path,
+                {
+                    **_load_object(state_path),
+                    "phase": "execute",
+                    "last_applied_index": len(new) - 1,
+                },
+            )
+        return _emit({"ok": True, "orders": [e["order"] for e in new]})
+    return _emit({"ok": False, "reason": f"unknown command {cmd}"}, ok=False)
 
 
 def _extra(args: argparse.Namespace) -> int:  # noqa: PLR0911
@@ -1162,26 +1518,21 @@ def _extra(args: argparse.Namespace) -> int:  # noqa: PLR0911
         }
         if args.capabilities:
             meta["capabilities"] = json.loads(_read_text(args.capabilities))
+        if args.durations:
+            meta["timings"] = parse_durations(_read_text(args.durations))
         out = baseline_record(_read_runs(args.runs), meta, _load_object(out_path))
         if out["valid"]:
             _write_json(out_path, {k: v for k, v in out.items() if k != "valid"})
         return _emit(out, out["valid"])
-    if cmd == "record":
-        entry = json.loads(_read_text(args.entry))
-        state = _load_object(pathlib.Path(args.state))
-        if "id" not in entry or not state.get("env_token") or not state.get("base_head"):
-            return _emit(
-                {"ok": False, "reason": "entry needs an id; state needs env_token and base_head"},
-                ok=False,
-            )
-        path = pathlib.Path(args.file)
-        current: list[dict[str, t.Any]] = json.loads(_read_text(args.file)) if path.exists() else []
-        _write_json(path, record(current, entry, state))
-        return _emit({"ok": True, "id": entry["id"]})
+    if cmd in _RECORDS:
+        return _records(args)
     path = pathlib.Path(args.file)
     state = _load_object(path)
     if args.action == "resume":
         return _emit(resume(state))
+    if args.action == "unchanged":
+        here = all((path.parent / name).exists() for name in args.require)
+        return _emit(unchanged(state, args.token or "", args.hygiene == "true", here))
     extra = {k: json.loads(v) for k, v in (f.split("=", 1) for f in args.fields)}
     if args.action == "update":
         _write_json(path, {**state, **extra})
@@ -1235,7 +1586,13 @@ def _dispatch(args: argparse.Namespace) -> int:  # noqa: PLR0911
     if cmd == "impact":
         return _emit({"impact": impact(args.delta, args.baseline, args.clears_noise)})
     if cmd == "score":
-        dims = {name: getattr(args, name) for name in WEIGHTS}
+        dims = {name: getattr(args, name, 0.0) for name in WEIGHTS}
+        if not args.hygiene:
+            if args.delta is None or args.baseline is None:
+                return _emit(
+                    {"valid": False, "reason": "score needs --delta and --baseline"}, ok=False
+                )
+            dims["impact"] = impact(args.delta, args.baseline, args.clears_noise)
         try:
             return _emit(score(dims, args.hygiene))
         except ValueError as exc:

@@ -138,10 +138,9 @@ the memory-schema reference unless the user chooses to commit it.
 - **No xdist, randomly, or deadfixtures:** fall back to serial runs, manual
   reversed-order isolation checks, and the built-in `--fixtures` vs
   `--fixtures-per-test` diff.
-- **Dirty working tree:** `00-scan` may run for inspection; `01-benchmark` and
-  every later phase refuse evidence from a dirty scan, and `01-benchmark`
-  refuses a dirty tree. `03-execute` works in its own worktree and does not
-  care. The memory directory does not count.
+- **Dirty working tree:** the rule is in `../../references/memory-schema.md`
+  ("Idempotency token"). `03-execute` works in its own worktree and does not
+  care about edits made after the scan.
 
 ## References
 

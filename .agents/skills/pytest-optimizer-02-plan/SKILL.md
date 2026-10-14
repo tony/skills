@@ -47,16 +47,28 @@ $ python3 <isolate.py> stale \
 On exit 1, stop with the halted-run shape and send the user to the phase its
 `rerun` names (`pytest-optimizer:` followed by it).
 
-Score every `validated` candidate with `references/scoring-rubric.md`: get
-`impact` from `measure.py impact --delta <median_delta> --baseline <median>`,
-adding `--clears-noise` only when that entry's `clears_noise` is true (a
-validated entry where it is not true has impact 0 and is dropped), judge the
-other four dimensions against the rubric anchors, then run `measure.py score`
-with all five. It returns the total and a `dropped` reason.
-A candidate benchmarked as `kind: "hygiene"` (H26-H32) has no timing: pass
-`--hygiene` to `measure.py score` (impact 0), which skips the noise gate and
-scores the other four dimensions. Plan it as a hygiene item, never drop it for
-saving no time.
+Score every `validated` candidate with `references/scoring-rubric.md`:
+judge safety, effort, confidence and reversibility against the rubric anchors,
+then pass them with the entry's measured saving. The script derives `impact`
+itself, zero unless the entry's `clears_noise` is true, and returns the total
+and a `dropped` reason (exit 1 when a dimension is outside 0 to 1):
+
+```console
+$ python3 <measure.py> score \
+    --delta <median_delta> \
+    --baseline <baseline median> \
+    --clears-noise \
+    --safety <0..1> \
+    --effort <0..1> \
+    --confidence <0..1> \
+    --reversibility <0..1>
+```
+
+Leave out `--clears-noise` when the entry's `clears_noise` is not true. A
+candidate benchmarked as `kind: "hygiene"` has no timing: pass `--hygiene` in
+place of `--delta` and `--baseline`, which skips the noise gate and scores the
+other four dimensions. Plan it as a hygiene item, never drop it for saving no
+time.
 
 Drop every candidate whose `dropped` is set. Capture each dropped item's
 prerequisite refactor, if any, as a labeled follow-up, never an auto-applied
@@ -73,35 +85,39 @@ For each planned item, draft a commit from
 `templates/commit-message.tmpl`, adapting the `type(scope)` prefix to the
 target project's convention. Write the message per
 `references/prose-rules.md`. No `Co-Authored-By`, no "Generated with" or
-other tool trailer, no emoji: hosts add them by default. Each entry records
-order, heuristic id, score breakdown, target files, draft subject and body, the
-verify command (project tests and quality checks), the entry's `env_token`,
-`patch`, `patch_sha256`, `files`, `cache` and `removed_ids`, `expected_total`
-(the collected-test count after this item and every earlier item apply), and
-`depends_on`. Write the drafted orders and each item's `removes_tests` (0 when it
-deselects nothing) to a scratch JSON list and take every `expected_total` from
-the script, never by hand:
+other tool trailer, no emoji: hosts add them by default. The approval reply shows
+the draft subject only; the body goes into `plan.json` on approval. Keep the draft
+in the reply, not on disk: nothing is written until approval.
+
+Confirm each item's `files` exist at `HEAD`, unless its patch creates them
+(paths are relative to the repository root; exit 1 lists the absent ones):
 
 ```console
-$ python3 <measure.py> totals \
-    <memory-dir>/baseline.json \
-    <draft.json>
-```
- The approval reply shows the draft subject only; the body goes into `plan.json` on approval. Keep the draft in the reply, not on disk: nothing is written until
-approval.
-
-Confirm each path in `files` exists at `HEAD` (paths are relative to the
-repository root; exit 1 means absent), unless the patch creates it:
-
-```console
-$ git cat-file -e HEAD:<path>
+$ python3 <isolate.py> exists \
+    --cwd . \
+    --patch <memory-dir>/<patch> \
+    --file <each path in files>
 ```
 
 An item whose target is absent is not planned: list it under `## Dropped at the
 gate` with "target file absent at HEAD", and count only the kept items in the
-hero line. A deselecting item (`removes_tests` in `benchmarks.json`) states "removes
-N tests from the default run", and its saving reads as time not spent on those
-tests, not as a faster suite.
+hero line. A deselecting item (`removes_tests` in `benchmarks.json`) states
+"removes N tests from the default run", and its saving reads as time not spent
+on those tests, not as a faster suite.
+
+Assemble the plan from the drafted judgment. Pipe a JSON list of items, each with
+`order`, `id`, `commit` (`subject`, `body`), `verify` (the project tests and
+quality checks), `depends_on` and `score` (the four judged dimensions), to the
+script; it takes impact, files, token, patch, hash, `cache` and `removed_ids`
+from `benchmarks.json`, computes the total and every cumulative `expected_total`,
+and lists the items the rubric drops. Without `--out` it writes nothing, so it
+also previews the plan in plan mode:
+
+```console
+$ python3 <measure.py> plan-build \
+    --memory-dir <memory-dir> \
+    --draft -
+```
 
 Each saving was measured alone against the control. Independent changes can
 overlap (widening a sleeping fixture and removing its sleep do not add), so
@@ -137,8 +153,8 @@ mode before it and no closing note after the last section. Wait for the reply:
 Without an interactive session, write nothing and stop: an unapproved plan is not
 executable.
 
-Once the user approves, exit plan mode, write `plan.json` from the approved
-draft, then record approval:
+Once the user approves, exit plan mode and run the same `plan-build` command
+with `--out <memory-dir>/plan.json` on the approved draft, then hash it:
 
 ```console
 $ python3 <measure.py> hash <memory-dir>/plan.json

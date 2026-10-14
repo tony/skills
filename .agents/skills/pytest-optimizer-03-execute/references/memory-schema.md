@@ -70,7 +70,9 @@ supplies the digest of tracked edits and untracked files (gitignored files are
 outside it). The environment fingerprint is Python version, OS, and machine
 architecture. A phase is a no-op on re-run when `state.json` marks it
 `completed`, the token is unchanged, and its output file exists; `--force`
-overrides all three. `isolate.py stale --phase benchmark|plan|execute` applies the bindings below
+overrides all three. A scan of a dirty tree is for inspection only: every later phase refuses its
+evidence until the tree is clean and the scan is re-run.
+`isolate.py stale --phase benchmark|plan|execute` applies the bindings below
 and prints the first failure with the phase that repairs it (`rerun`).
 `01-benchmark` runs no collection: it halts on a missing
 `env_token`, a true `dirty`, or a `HEAD`, inputs digest, test command or pytest
@@ -132,7 +134,8 @@ do not prove test identity or preserved assertions.
 
 Paths are relative to the memory directory. Besides `state.json` (every phase),
 `collection.txt` (baseline `--collect-only -q` output in collection order),
-`capabilities.json` (resolved version-matrix probes), and `control.json` (the
+`capabilities.json` (resolved version-matrix probes, written with `measure.py
+state update <memory-dir>/capabilities.json --set KEY=JSON`), and `control.json` (the
 unmodified-worktree summary from `measure.py band`, the reference candidates are
 judged against), each file's shape follows. The JSONL run files
 (`baseline-runs.jsonl`, `control-runs.jsonl`, `<hypothesis-id>-runs.jsonl`,
@@ -225,6 +228,9 @@ $ python3 <measure.py> baseline \
 Each `id` derives from content, `<heuristic>-<sorted target files>-<short
 evidence digest>`, not a counter, so an unchanged candidate keeps its id across
 re-scans. A re-baseline after `03-execute` re-opens all candidates.
+`measure.py hyp-id --heuristic <id> --file <path> --evidence <text>` computes it,
+and `measure.py record <memory-dir>/hypotheses.json --id <id> --set KEY=JSON ...`
+(no `--state`, so nothing is stamped) writes the entry.
 
 ```json
 [
@@ -242,9 +248,11 @@ re-scans. A re-baseline after `03-execute` re-opens all candidates.
 ### `benchmarks.json`
 
 `measure.py record <memory-dir>/benchmarks.json --state <memory-dir>/state.json
---entry <entry.json>` upserts one entry by `id` and stamps `env_token` and
-`base_head` from `state.json`; it exits 1 when the entry has no `id` or the
-state has no token.
+--id <id> --set KEY=JSON ...` (or `--entry <file>`) upserts one entry by `id` and
+stamps `env_token` and `base_head` from `state.json`; it exits 1 when the entry
+has no `id` or the state has no token. `measure.py pending --memory-dir
+<memory-dir> [--only <id or heuristic>] [--force]` lists the open hypotheses
+whose entry does not already carry the current token.
 
 ```json
 [
@@ -303,8 +311,12 @@ type checker pass. Every other entry is `"speedup"` (the default when absent).
 ]
 ```
 
-`measure.py totals <memory-dir>/baseline.json <draft.json>` computes it from a
-JSON list of `{order, removes_tests}`. `expected_total` is cumulative: the collected-test count after this item and
+`measure.py plan-build` writes this file from the drafted judgment (`order`,
+`id`, `commit`, `verify`, `depends_on` and the four judged dimensions in
+`score`) and `benchmarks.json`: it derives `impact` and the total, copies the
+patch binding, and computes `expected_total`. `measure.py totals <baseline.json>
+<draft.json>` prints the totals alone from a JSON list of `{order,
+removes_tests}`. `expected_total` is cumulative: the collected-test count after this item and
 every earlier item apply. It starts at the baseline `tests.total` and drops by
 the tests each deselecting item removes, so a later item inherits the reduced
 count.
@@ -324,6 +336,12 @@ count.
   }
 ]
 ```
+
+`measure.py log --memory-dir <memory-dir> begin|commit|skip --order <n> --set
+KEY=JSON ...` writes every transition and updates `last_applied_index` in
+`state.json`; `skip` also marks each item that depends on the skipped one (by
+`id` or `order`, transitively) as not applied. `--log-file <path>` redirects a
+dry run's log and leaves `state.json` alone.
 
 An entry is written with `pending_subject`, `pending_parent` (the branch tip)
 and `pending_tree` (the tree `isolate.py gate` printed) before the commit is

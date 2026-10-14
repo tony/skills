@@ -51,9 +51,15 @@ and tell the user to commit or shelve their changes and run
 edits and untracked files, which the scratch worktree, cut from `HEAD`, would
 lack.
 
-Read `baseline.json` and `hypotheses.json`. Substitute `test_command` from `baseline.json` wherever this file writes
-`pytest`. Skip a hypothesis whose id already has a `benchmarks.json` entry whose
-`env_token` equals `state.json`'s, unless `--force`.
+Read `baseline.json`. Substitute `test_command` from `baseline.json` wherever this
+file writes `pytest`. List the hypotheses to benchmark; the command skips an id
+whose `benchmarks.json` entry already carries `state.json`'s `env_token`, unless
+`--force`, and honors `--only` (a hypothesis id or a heuristic id):
+
+```console
+$ python3 <measure.py> pending \
+    --memory-dir <memory-dir>
+```
 
 Resolve `<runs-dir>` as `../../references/memory-schema.md` ("Run files") says
 and create it. Delete each run file before its first timed run.
@@ -101,7 +107,7 @@ $ python3 <measure.py> compare \
     <runs-dir>/control-runs.jsonl
 ```
 
-Write the control's listing from `test_command` run in the tree, as `00-scan`
+Write the control's listing from `test_command` run in `workdir`, as `00-scan`
 Step 2 does, to `<runs-dir>/control-collection.txt`, and compare node ids:
 
 ```console
@@ -121,10 +127,10 @@ to the baseline's. When it does not differ, say nothing about the control.
 
 **Per hypothesis.** For each open hypothesis, in isolation:
 
-1. **Isolate.** Refuse when `git rev-parse --show-toplevel` equals or contains
-   the physical home directory (`(cd ~ && pwd -P)`; never compare to the string
-   `$HOME`). Create an owned scratch worktree at the baseline commit; the command
-   prints its `dir` and `tree`, so use those literal paths in every later command:
+1. **Isolate.** Create an owned scratch worktree at the baseline commit. The
+   command refuses a repository root that is or contains the home directory, and
+   prints `dir`, `tree` and `workdir`, so use those literal paths in every later
+   command:
 
    ```console
    $ python3 <isolate.py> start \
@@ -137,12 +143,13 @@ to the baseline's. When it does not differ, say nothing about the control.
    repository holds several projects) with the project's own runner. The worktree
    holds only tracked files: no virtualenv and no gitignored build artifacts.
    Rebuild them there with the project's install or sync command (`uv run`
-   builds a fresh `.venv` on first use, which the untimed warm-up absorbs), or
-   mark the hypothesis `rejected` when the suite cannot run from a clean
-   checkout.
+   creates a missing project environment on first use, per the [uv project
+   layout](https://docs.astral.sh/uv/concepts/projects/layout/) docs, which the
+   untimed warm-up absorbs), or mark the hypothesis `rejected` when the suite
+   cannot run from a clean checkout.
 
-   When the host refuses the worktree (it writes under the git directory), add
-   `--export` to the command: the scratch directory then holds a copy of
+   When `start` fails because `git worktree add` fails (its `reason` quotes git),
+   add `--export` to the command: the scratch directory then holds a copy of
    `base_head` in its own one-commit repository, and every later command works
    the same.
 
@@ -152,10 +159,10 @@ to the baseline's. When it does not differ, say nothing about the control.
    source would be measured against the original tree. Check where the package
    imports from, under the runner and from `workdir`, before measuring such a
    hypothesis; if the printed path is outside `tree`, mark it `rejected` with that
-   reason:
+   reason (`<runner>` is the project's runner prefix, such as `uv run`):
 
    ```console
-   $ python -c "import <package>; print(<package>.__file__)"
+   $ <runner> python -c "import <package>; print(<package>.__file__)"
    ```
 2. **Apply** the single change the heuristic prescribes
    (`../../references/heuristic-catalog.md`), then capture it before running
@@ -187,7 +194,7 @@ to the baseline's. When it does not differ, say nothing about the control.
    $ python3 <measure.py> compare <memory-dir>/control.json <runs-dir>/<hypothesis-id>-runs.jsonl
    ```
 
-   When `valid`, write the listing from `test_command` run in the tree, as
+   When `valid`, write the listing from `test_command` run in `workdir`, as
    `00-scan` Step 2 does, and compare node ids with the scan's:
 
    ```console
@@ -203,13 +210,13 @@ to the baseline's. When it does not differ, say nothing about the control.
    drop is a rejection naming the tests lost; it never counts as a speedup unless
    the change is a deliberate deselection below.
 
-   A cross-run cache candidate (H24) measures with the cache provider enabled:
+   A cross-run cache candidate measures with the cache provider enabled:
    drop `-p no:cacheprovider` for it, so the untimed warm-up populates the cache
    and the timed runs hit it. Record `cache: "enabled"`; `03-execute` verifies
    and re-measures it the same way. Its saving applies from the second run
    onward; say so in the record.
 
-   A deselecting candidate (H15, H37) wins by running fewer tests, so it passes
+   A deselecting candidate wins by running fewer tests, so it passes
    `--expect-total <count>`, records `removes_tests` with the number dropped and
    `removed_ids` with the node ids the `ids` command lists as `missing`, and
    reports the saving as time not spent on those tests, not as a faster suite.
@@ -219,18 +226,17 @@ to the baseline's. When it does not differ, say nothing about the control.
    count must remain unchanged. Removing skipped or xfailed cases needs a
    separate selection policy; an expected total does not authorize it.
 
-   A typing or parametrize hypothesis (H26-H32) saves no time by design: skip the
+   A typing or parametrize hypothesis saves no time by design: skip the
    timing. Run the suite once and the project's type checker over the test
    directory; it counts when both pass and the test count is unchanged (node ids
    may change by design). Record it
    with `kind: "hygiene"` and `median_delta` and `clears_noise` null.
 4. **Safety gates** per `../../references/safety-gates.md`: the `valid` check
-   above for every change; order independence (H17) and collection determinism
-   (H18) for a change touching order, scope, or parallelism. A gate failure
+   above for every change; order independence and collection determinism
+   for a change touching order, scope, or parallelism. A gate failure
    rejects the candidate and surfaces the prerequisite refactor as its own
-   follow-up hypothesis. A parallelism candidate (H19) also runs 5-10 times,
-   with the grouping (H20) and single-exec (H21) fixes from the same reference.
-   The parallelism candidate (H19) measures the control command (serial, as in
+   follow-up hypothesis. A parallelism candidate also runs 5-10 times, with the
+   grouping and single-exec fixes from the same reference. It measures the control command (serial, as in
    step 3) and the same command plus `-n auto`, both recorded, the second as
    parallel; the no-xdist rule covers every other candidate.
 5. **Discard** this hypothesis's scratch directory. The command removes only the
@@ -247,14 +253,20 @@ to the baseline's. When it does not differ, say nothing about the control.
 
 ## Step 3: Record
 
-Write each benchmarked id's entry to a scratch JSON file in the shape
-`../../references/memory-schema.md` gives, with the patch's `patch` path
-(relative to the memory directory), `patch_sha256` and `files`, then upsert it:
+Upsert each benchmarked id's entry in the shape `../../references/memory-schema.md`
+gives, one `--set` per field (the patch's `patch` path relative to the memory
+directory, `patch_sha256`, `files`, the measured fields, `verdict`):
 
 ```console
 $ python3 <measure.py> record <memory-dir>/benchmarks.json \
     --state <memory-dir>/state.json \
-    --entry <entry.json>
+    --id <hypothesis-id> \
+    --set 'patch="patches/<hypothesis-id>.patch"' \
+    --set 'patch_sha256="<sha256>"' \
+    --set 'files=["<path>"]' \
+    --set 'median_delta=<seconds>' \
+    --set 'clears_noise=<true|false>' \
+    --set 'verdict="<validated|rejected>"'
 ```
 
 The command stamps `env_token` and `base_head`, keeps the entries for ids this

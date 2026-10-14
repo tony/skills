@@ -7,7 +7,7 @@ ownership marker, so the user's checkout, index and branches are never written.
 Each command prints one JSON object on stdout. Exit codes: 0 success, 1 a
 reported failure (the JSON says why), 2 a usage error. Standard library only.
 
-Commands: inputs, stale, start, finish, reset, capture, apply, gate, landed.
+Commands: inputs, stale, exists, start, finish, reset, capture, apply, gate, landed.
 Run ``isolate.py <command> --help`` for arguments.
 """
 
@@ -143,6 +143,9 @@ def start(
     top = _toplevel(repo)
     if top is None:
         return {"ok": False, "reason": "not a git repository"}
+    home = pathlib.Path.home().resolve()
+    if top == home or top in home.parents:
+        return {"ok": False, "reason": "the repository root is or contains the home directory"}
     sha = _text(_git(top, "rev-parse", "--verify", "--quiet", f"{base}^{{commit}}"))
     if not sha:
         return {"ok": False, "reason": f"base {base} is not a commit"}
@@ -153,7 +156,7 @@ def start(
     elif branch is None:
         proc = _git(top, "worktree", "add", "--detach", str(tree), sha)
     elif existing:
-        _git(top, "worktree", "prune")
+        _drop_lost_records(top, branch)
         proc = _git(top, "worktree", "add", str(tree), branch)
     else:
         proc = _git(top, "worktree", "add", "-b", branch, str(tree), sha)
@@ -174,6 +177,24 @@ def start(
         "branch": branch,
         "base": sha,
     }
+
+
+def _drop_lost_records(top: pathlib.Path, branch: str) -> None:
+    """Forget this tool's own worktree records for ``branch`` whose directory is gone.
+
+    A repository-wide ``git worktree prune`` would also drop records of
+    worktrees the user moved or unmounted, so only matching records go.
+    """
+    common = _text(_git(top, "rev-parse", "--path-format=absolute", "--git-common-dir"))
+    for admin in (pathlib.Path(common) / "worktrees").glob("*"):
+        try:
+            where = pathlib.Path((admin / "gitdir").read_text(encoding="utf-8").strip()).parent
+            head = (admin / "HEAD").read_text(encoding="utf-8").strip()
+        except OSError:
+            continue
+        mine = where.name == TREE and where.parent.name.startswith(PREFIX)
+        if mine and not where.exists() and head == f"ref: refs/heads/{branch}":
+            shutil.rmtree(admin, ignore_errors=True)
 
 
 def _export(top: pathlib.Path, sha: str, tree: pathlib.Path) -> subprocess.CompletedProcess[bytes]:
@@ -479,6 +500,31 @@ def stale(  # noqa: PLR0911
     return {"ok": True, "reason": None}
 
 
+def exists(
+    cwd: pathlib.Path, files: Sequence[str], patch: pathlib.Path | None = None
+) -> dict[str, t.Any]:
+    """List the ``files`` absent at HEAD, except those ``patch`` creates.
+
+    Paths are relative to the repository root.
+    """
+    created: set[str] = set()
+    if patch is not None:
+        lines = patch.read_bytes().decode("utf-8", "replace").splitlines()
+        for before, after in zip(lines, lines[1:]):
+            if before == "--- /dev/null" and after.startswith("+++ b/"):
+                created.add(after[len("+++ b/") :])
+    missing = [
+        f
+        for f in files
+        if f not in created and _git(cwd, "cat-file", "-e", f"HEAD:{f}").returncode != 0
+    ]
+    return {
+        "ok": not missing,
+        "missing": missing,
+        "reason": None if not missing else "absent at HEAD",
+    }
+
+
 def build_parser() -> argparse.ArgumentParser:
     """Build the command-line parser."""
     parser = argparse.ArgumentParser(description=__doc__)
@@ -493,6 +539,11 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--phase", required=True, choices=("benchmark", "plan", "execute"))
     p.add_argument("--command", dest="test_command", help="the resolved test command")
     p.add_argument("--pytest-version", help="version the project's runner reports")
+
+    p = sub.add_parser("exists", help="list planned files absent at HEAD")
+    p.add_argument("--cwd", default=".")
+    p.add_argument("--patch", help="a patch whose created files count as present")
+    p.add_argument("--file", dest="files", action="append", default=[], required=True)
 
     p = sub.add_parser("start", help="create an owned scratch worktree")
     p.add_argument("--repo", default=".")
@@ -545,6 +596,8 @@ def main(argv: Sequence[str] | None = None) -> int:
             args.test_command,
             args.pytest_version,
         )
+    elif cmd == "exists":
+        out = exists(path(args.cwd), args.files, path(args.patch) if args.patch else None)
     elif cmd == "start":
         out = start(
             path(args.repo), args.base, args.branch, existing=args.existing, export=args.export
