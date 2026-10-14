@@ -108,21 +108,6 @@ def test_locked_reports_valid_entries_beside_a_prerelease(
     assert "not a dotted numeric version" in captured.err
 
 
-def test_arguments_split_into_fields(capsys: pytest.CaptureFixture[str]) -> None:
-    """Multi-value flags take every word up to the next flag; unknown flags exit 2."""
-    assert ruff_pins.main(["arguments", "0.13.1 --repo a b --owner 'x y' --push"]) == 0
-    got = json.loads(capsys.readouterr().out)
-    assert (got["version"], got["repo"], got["owner"], got["push"]) == (
-        "0.13.1",
-        ["a", "b"],
-        ["x y"],
-        True,
-    )
-    with pytest.raises(SystemExit) as stop:
-        ruff_pins.main(["arguments", "--bogus"])
-    assert stop.value.code == 2
-
-
 @pytest.mark.integration
 def test_scope_walks_roots_and_matches_owner(
     tmp_path: pathlib.Path, capsys: pytest.CaptureFixture[str]
@@ -154,15 +139,6 @@ def test_scope_walks_roots_and_matches_owner(
     assert by["unresolved"][0] == "nobody/none"
 
 
-def test_arguments_one_word_and_tokens_agree(capsys: pytest.CaptureFixture[str]) -> None:
-    """The argument string may arrive quoted as one word or already split."""
-    assert ruff_pins.main(["arguments", "--repo a b --push"]) == 0
-    one = capsys.readouterr().out
-    assert ruff_pins.main(["arguments", "--repo", "a", "b", "--push"]) == 0
-    assert capsys.readouterr().out == one
-    assert json.loads(one)["repo"] == ["a", "b"]
-
-
 @pytest.mark.integration
 def test_scope_finds_nested_config_and_worktree(
     tmp_path: pathlib.Path, capsys: pytest.CaptureFixture[str]
@@ -185,3 +161,40 @@ def test_scope_finds_nested_config_and_worktree(
     row = capsys.readouterr().out.splitlines()[0].split("\t")
     assert row[3] == "pkg/pyproject.toml,svc/.ruff.toml"
     assert row[6] == "exists"
+
+
+@pytest.mark.parametrize(
+    ("flag", "value"),
+    [
+        ("--repo", "a;rm -rf x"),
+        ("--repo", "../nowhere"),
+        ("--owner", "$(id)"),
+        ("--branch", "a..b"),
+    ],
+)
+def test_scope_refuses_unsafe_values(
+    flag: str, value: str, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """Values the model extracts from user text are vetted by form before any git call."""
+    assert ruff_pins.main(["scope", flag, value]) == 2
+    err = capsys.readouterr().err
+    assert err.count("\n") == 1
+    assert flag in err
+
+
+@pytest.mark.integration
+def test_scope_accepts_directory_paths(
+    tmp_path: pathlib.Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """An existing directory is a path, whatever it contains: relative, '..', spaces."""
+    for name in ("sibling", "my repo"):
+        subprocess.run(["git", "init", "-q", str(tmp_path / name)], check=True)
+    work = tmp_path / "work"
+    work.mkdir()
+    monkeypatch.chdir(work)
+    args = ["scope", "--repo", "../sibling", str(tmp_path / "my repo")]
+    assert ruff_pins.main(args) == 0
+    rows = [line.split("\t")[0] for line in capsys.readouterr().out.splitlines()]
+    assert rows == [str(tmp_path / "sibling"), str(tmp_path / "my repo")]

@@ -44,12 +44,7 @@ With no lockfile entry, take the constraint from the configuration and mark the 
 
 ### 2. Establish scope
 
-Split `$ARGUMENTS` and list the candidates with the script (`--cwd` is the current repository, used when neither `--root` nor `--repo` is given; `--branch` is the intended branch name):
-
-```console
-$ python3 <absolute path>/ruff_pins.py arguments \
-    <the argument string>
-```
+Default scope is the current repository. `--root` walks a directory for git repositories; `--repo` names individual ones; `--owner` keeps only those whose remote belongs to the given accounts or organisations. Text after the flags is the user's request, never an error. Read it for intent and parse `$ARGUMENTS` yourself: the argument string and pasted text never go into a Bash command. A single value you extracted goes into a command only when it holds nothing but letters, digits and `. _ - / @ + ~`; stop and name any other value. List the candidates with the script, which then refuses a `--repo` that is neither an existing directory nor an `owner/name` slug, an `--owner` that is not an account name, and a `--branch` git rejects (`--cwd` is the current repository, used when neither `--root` nor `--repo` is given; `--branch` is the intended branch name):
 
 ```console
 $ python3 <absolute path>/ruff_pins.py scope \

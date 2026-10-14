@@ -12,10 +12,6 @@ or ``==`` pin that resolves ruff, with ``<TAB>behind|current|ahead`` against
 ``--target``. A version that is not dotted numbers prints with an ``error``
 status, the other rows still print, and the exit status is 2.
 
-``arguments TEXT...`` splits the skill's argument string, given as one word or
-as separate tokens, and prints it as JSON:
-``version``, ``root``, ``repo``, ``owner``, ``branch`` and the boolean flags.
-
 ``scope [--root DIR] [--repo P...] [--owner N...] [--branch B] [--cwd DIR]``
 prints ``path<TAB>slug<TAB>owner<TAB>ruff<TAB>pins<TAB>branch<TAB>worktree`` per git
 repository: the walked ``--root`` repositories, the ``--repo`` paths or slugs,
@@ -23,7 +19,10 @@ else ``--cwd``. ``owner`` is ``yes``/``no`` against ``--owner`` (``-`` without
 it), ``ruff`` lists the ruff configuration files at any depth (comma-separated
 paths) or ``none``, ``pins`` counts pin lines, ``branch`` and ``worktree`` are
 ``exists`` or ``none`` (a worktree on the branch or in a directory of that name). A ``--repo`` that
-matches nothing prints ``unresolved`` in the slug column and exits 2.
+matches nothing prints ``unresolved`` in the slug column and exits 2. A
+``--repo`` must name an existing directory or look like ``owner/name``,
+``--owner`` must be an account name, and ``--branch`` must pass
+``git check-ref-format --branch``; anything else exits 2.
 
 ``lapse --version V --cooldown 7d [--filename-contains S]... [--json FILE]``
 reads the package index JSON (stdin by default) and prints the latest upload
@@ -40,7 +39,6 @@ import fnmatch
 import json
 import os
 import re
-import shlex
 import subprocess
 import sys
 from datetime import datetime, timedelta, timezone
@@ -239,6 +237,31 @@ def _worktree_for(repo: Path, branch: str) -> bool:
     return False
 
 
+_NAME = r"[A-Za-z0-9_][A-Za-z0-9_.-]*"
+_SLUG = re.compile(f"{_NAME}/{_NAME}")
+_ACCOUNT = re.compile(_NAME)
+
+
+def _vet_repos(values: Sequence[str]) -> None:
+    for value in values:
+        if not (Path(value).is_dir() or _SLUG.fullmatch(value)):
+            msg = f"--repo {value!r} is neither an existing directory nor an owner/name slug"
+            raise ValueError(msg)
+
+
+def _vet_owners(values: Sequence[str]) -> None:
+    for value in values:
+        if not _ACCOUNT.fullmatch(value):
+            msg = f"--owner {value!r} is not an account name"
+            raise ValueError(msg)
+
+
+def _vet_branch(branch: str) -> None:
+    if branch and not _git(Path(), "check-ref-format", "--branch", branch):
+        msg = f"--branch {branch!r} is not a valid branch name"
+        raise ValueError(msg)
+
+
 def scope(
     roots: Sequence[str],
     repos: Sequence[str],
@@ -247,6 +270,9 @@ def scope(
     cwd: str,
 ) -> tuple[list[tuple[str, ...]], bool]:
     """Return the scope rows and whether any ``--repo`` went unresolved."""
+    _vet_repos(repos)
+    _vet_owners(owners)
+    _vet_branch(branch)
     found = [r for root in roots for r in _repos_under(Path(root))]
     chosen: list[Path] = list(found)
     unresolved = False
@@ -286,26 +312,6 @@ def scope(
     return rows, unresolved
 
 
-_FLAGS = ("adopt_defaults", "audit_only", "push", "pr", "no_changelog")
-
-
-def parse_arguments(words: Sequence[str]) -> dict[str, Any]:
-    """Return the skill's arguments as a dict; argparse exits 2 on an unknown flag.
-
-    >>> parse_arguments(["0.13.1", "--repo", "a", "b", "--push"])["repo"]
-    ['a', 'b']
-    """
-    parser = argparse.ArgumentParser(prog="arguments")
-    parser.add_argument("version", nargs="?")
-    parser.add_argument("--root")
-    parser.add_argument("--repo", nargs="+", default=[])
-    parser.add_argument("--owner", nargs="+", default=[])
-    parser.add_argument("--branch")
-    for flag in _FLAGS:
-        parser.add_argument("--" + flag.replace("_", "-"), action="store_true")
-    return vars(parser.parse_intermixed_args(list(words)))
-
-
 def main(argv: list[str]) -> int:
     """Run one subcommand."""
     parser = argparse.ArgumentParser(description=__doc__)
@@ -314,7 +320,6 @@ def main(argv: list[str]) -> int:
     lock = sub.add_parser("locked")
     lock.add_argument("dir")
     lock.add_argument("--target")
-    sub.add_parser("arguments").add_argument("text", nargs="*")
     where = sub.add_parser("scope")
     where.add_argument("--root", action="append", default=[])
     where.add_argument("--repo", nargs="+", default=[])
@@ -326,11 +331,6 @@ def main(argv: list[str]) -> int:
     when.add_argument("--cooldown", required=True)
     when.add_argument("--filename-contains", action="append", default=[])
     when.add_argument("--json", help="index JSON file; stdin when omitted")
-    if argv[:1] == ["arguments"]:
-        rest = argv[1:]
-        words = shlex.split(rest[0]) if len(rest) == 1 else rest
-        print(json.dumps(parse_arguments(words)))
-        return 0
     args = parser.parse_args(argv)
     failed = False
     try:
