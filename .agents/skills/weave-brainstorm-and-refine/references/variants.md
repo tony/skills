@@ -3,6 +3,19 @@
 For commands that generate several originals per participant. Shared by `brainstorm`, `brainstorm-and-refine`, and `serene-bliss`; `<engine>` and `<session_dir>` are as in `ensemble-core.md`. The skill
 supplies the prompt body, the preamble (if any), and what to show.
 
+Originals prompt. Build the context packet (`ensemble-core.md`, Context
+packet) leading with conventions and the files the prompt touches. The shared
+worker prompt body is:
+
+> Respond to the following prompt about this codebase. Read relevant files to give a thorough, original response. Read CLAUDE.md/AGENTS.md for project conventions.
+>
+> Prompt: <the prompt>
+>
+> Provide a clear, well-structured response. Cite specific files and line numbers where relevant.
+
+A skill may append sentences to it. Dispatch the originals as `ensemble-core.md`
+(Dispatch lanes) says, then close the repo guard.
+
 1. Resolve `variants` from the flags result (`variants`, `variants_recommended`,
    `preamble`); a skill that fixes the count skips the question. When it is
    null, ask with `ask-user-choice`: "How many variants per participant? Each

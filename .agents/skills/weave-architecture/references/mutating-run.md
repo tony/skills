@@ -7,10 +7,85 @@ command. `<engine>` and `<session_dir>` are as in `ensemble-core.md`.
 
 ## Contents
 
+- Shared phases
 - Refinement passes
 - Remove worktrees and restore the stash
 - Apply gate and presentation
 - Apply a recorded session
+
+---
+
+## Shared phases
+
+What `execute`, `prompt`, and `architecture` do alike. Each skill states only
+its own differences.
+
+Orchestration plan. A mutating command changes the working tree, so produce an
+orchestration plan before any phase. Unless the skill says otherwise, its first
+two items are the task scope (what the task changes, and what it must not
+touch) and the files (the code the implementations must integrate with, and
+the test patterns). The rest are the quality gates (the commands from the
+project's AGENTS.md / CLAUDE.md), the workers (the backend, the lanes, and the
+pass count), and the apply policy: the user's uncommitted changes are stashed
+before workers start and restored at the end, and nothing reaches the main
+checkout until the user confirms. Without plan mode, write the plan as
+numbered steps in your response. With `ask-user-choice`, confirm once before
+proceeding.
+Without it (headless or one-shot runs), print the plan and continue without
+asking a text question: nothing reaches the main checkout before the apply
+phase, which has its own gate.
+
+Start and dispatch. Follow `ensemble-core.md` (Start the session) with
+`--mutating`; the stash holds the user's uncommitted work until the apply
+phase. For `execute` and `prompt`, explore the code the task touches, then
+build the context packet with snippets of code the implementations must
+integrate with, the relevant file list, test patterns, and known unknowns. Their
+worker prompt body is:
+
+> Implement the following task in this codebase. Read CLAUDE.md/AGENTS.md for project conventions and follow them strictly.
+>
+> Task: <the task>
+>
+> Follow all project conventions from AGENTS.md/CLAUDE.md. Run the project's quality gates after making changes.
+
+Dispatch with `--mutating` and close the repo guard; every participant,
+including the `claude` lane under `model-clis`, works in its registered
+worktree.
+
+Capture and gates. For each participant, `capture` writes
+`diffs/<participant>.patch` and snapshots of changed files to
+`files/<participant>/`, and lists `changed` and `deleted` paths:
+
+```console
+$ python3 <engine> capture \
+    --session "<session_dir>" \
+    --pass <N> \
+    --participant <participant>
+```
+
+In each participant's registered worktree, run the project's gates from
+AGENTS.md / CLAUDE.md (formatter, linter, type checker, tests) and write
+pass/fail per gate and participant to `pass-NNNN/quality-gates.md`. Judging
+goes to the judge participant, whose brief names `files/<participant>/` and the
+gate results as readable. Record the pass (`update --completed-passes <N>
+--event pass_complete`), and do not render results yet: the user's stash is
+still held, so presentation waits for the apply phase.
+
+Selecting files. In file-by-file mode the best versions can come from different
+participants; fix cross-file consistency when converging, and select the best version per file from the judge's scores, and
+write the analysis (selected version per file, scores, deleted paths,
+quality-gate failures) to `pass-NNNN/synthesis.md` per
+`prose-rules.md`. Copy the chosen snapshot of each file into the main checkout
+and remove each path whose selected version is a deletion; repeat `--pick` and
+`--delete` per path. Snapshots, not worktrees, are the source, so this works
+after worktrees are gone.
+
+Apply. Never apply a result that fails the quality gates, and never apply one
+before the user confirms. Workers are told to stay in their registered
+worktrees; recorded drift stops adoption and cleanup until the user decides.
+After applying, remove the worktrees and restore the user's changes (Remove
+worktrees and restore the stash), checking `git diff --stat HEAD` against the
+approved plan; render the results after a stash conflict too.
 
 ---
 
@@ -19,31 +94,16 @@ command. `<engine>` and `<session_dir>` are as in `ensemble-core.md`.
 Skip when `passes` is 1. For pass N of 2 to `passes`, do not re-run the whole
 task. Target only the unresolved conflicts from the prior adjudication, the
 critic findings from the prior pass, any dimension scored below 5 on any
-response, and the quality-gate failures; the skill adds per-file low scores
-where it judges file by file.
+response, and the quality-gate failures; a file-by-file skill adds per-file low
+scores and re-scores only affected files.
 
 Before each pass, ask the user to confirm. Under **model-clis**, warn that each
 pass spawns external agents billed to other provider accounts. Without
 `ask-user-choice`, run extra passes under **subagents** and stop after pass 1
 under **model-clis**.
 
-Create the pass and write the targeted prompt to `pass-<N>/prompt.md`:
-
-```console
-$ python3 <engine> pass-dir \
-    --session "<session_dir>" \
-    --pass <N>
-```
-
-> The following issues remain from the prior pass. Address ONLY these items:
->
-> **Unresolved conflicts**: [from prior adjudication]
-> **Critic findings**: [from prior critic.md]
-> **Low-confidence areas**: [dimensions and responses scored below 5]
->
-> For each item, give your resolution with evidence (file paths, line numbers, code references).
-
-Then repeat the skill's dispatch and analysis phases with pass `<N>`. Keep
+Create the pass and write the targeted prompt as `ensemble-core.md` (Later
+passes) says. Then repeat the skill's dispatch and analysis phases with pass `<N>`. Keep
 every registered worktree and redispatch its participant into the same one,
 under either backend. `worktrees create` reuses valid registrations. If its
 identity check fails, stop and preserve the directory; do not remove or
@@ -51,9 +111,7 @@ recreate it to retry. Use a fresh host Task agent with the same complete
 `worker_instructions`; reference prior artifacts by path for host workers and
 inline them for external CLI lanes.
 
-Re-score only affected dimensions. Stop early when no score moved by more than
-1 and no new conflict appeared. Carry the final-pass analysis into the apply
-phase.
+Carry the final-pass analysis into the apply phase.
 
 ---
 

@@ -143,6 +143,11 @@ residuals from exactly four sources:
 4. **Split consensus**: items marked `split` in `consensus.md` that
    verification did not settle.
 
+Run each later pass on the ledger: extract `pass-<N-1>/residuals.md` from the
+prior pass, stop on an empty ledger, make the prompt the ledger entries only,
+and merge resolutions back into the prior synthesis (untouched findings carry
+forward verbatim).
+
 `refine` fills its ledger from its Distribute step instead: critique
 points the woven version left unaddressed, runner-up strengths the
 weave could not reconcile, and judge overrides or split judgments.

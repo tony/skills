@@ -12,13 +12,13 @@ metadata:
 
 # Weave Plan
 
-Get implementation plans from independent adversarial workers in parallel, then synthesize the best plan. Host-native sub-agents are the default; separate model CLIs are optional. The output is a finalized plan file ready for execution.
+Get implementation plans from independent adversarial workers in parallel, then synthesize the best plan. The output is a finalized plan file ready for execution.
 
 Session artifacts live in the session directory, outside your repository.
 
 The task comes from `$ARGUMENTS`; if there are none, ask the user what they want planned.
 
-`<engine>` is `references/engine.py` resolved from this skill's directory to an absolute path, written literally in every command, and run with `python3`. It prints JSON; `"ok": false` carries the reason. `references/ensemble-core.md` holds the shared steps this skill calls by section name.
+`<engine>` is `references/engine.py` resolved from this skill's directory to an absolute path, written literally in every command, and run with `python3`.
 
 ## Worker selection
 
@@ -46,7 +46,7 @@ Without plan mode (headless runs), the main agent runs those commands directly. 
 
 1. Read the project's CLAUDE.md / AGENTS.md. Explore the files most relevant to the task for architecture, patterns, and constraints.
 
-2. Follow `ensemble-core.md` (Start the session) with `--command plan`. Run `init` through the relay. The flags result also reports the deslop flags in `flags`. It asks each unresolved setting through `ask-user-choice`.
+2. Follow `references/ensemble-core.md` (Start the session) with `--command plan`. Run `init` through the relay. It asks each unresolved setting through `ask-user-choice`.
 
 3. Build the context packet per `ensemble-core.md` (Context packet), using `context` for the repo state. Without a repository, say "no repository" up front and plan as greenfield: no existing files, conventions, or tests are assumed. Lead with the changed files and their diff stats, key snippets of code the plan touches, and known unknowns the plan should address. The relay writes it to `<session_dir>/context-packet.md`.
 
@@ -78,7 +78,7 @@ Follow `ensemble-core.md` (Dispatch lanes) with this body, running the engine co
 
 ## Phase 3: Synthesize the best plan
 
-Apply `ensemble-core.md` (Blind judging, Synthesis protocol) to this pass's outputs, with the default rubric. The convergence mode is **Merge**: verified points first, agreed ones leading, then adjudicated resolutions, then the best unique contributions ordered by score, with unverified claims stripped. The judge participant scores the packet (`ensemble-core.md`, Synthesis protocol); you adjudicate and the relay writes the artifacts.
+Apply `ensemble-core.md` (Blind judging, Synthesis protocol) to this pass's outputs, with the default rubric. The convergence mode is **Merge**. The judge participant scores the packet (`ensemble-core.md`, Synthesis protocol); you adjudicate and the relay writes the artifacts.
 
 Put in the judge's brief: record the task's hard constraints in `verification.md` and check each plan's constraint traces and bounds as the worker brief requires. A fallback must satisfy the same requirement as the main path. Keep an unresolved policy choice explicit and block the affected step until the user decides, and recheck these constraints after integrating critic findings.
 
@@ -100,21 +100,9 @@ Steps 2 to 4 run on the final pass only (pass 1 when `passes` is 1, else the las
 
 ## Phase 4: Multi-pass refinement
 
-Skip when `passes` is 1. For pass N of 2 to `passes`, do not re-run the task. Target only unresolved conflicts from the prior adjudication, critic findings from the prior pass, and any dimension scored below 5 on any response, with this prompt:
+Skip when `passes` is 1. Run the later passes per `ensemble-core.md` (Later passes), targeting only unresolved conflicts from the prior adjudication, critic findings from the prior pass, and any dimension scored below 5 on any response; the relay creates the pass and writes the prompt. The Claude lane reads prior artifacts by path; external lanes get them inline. Re-synthesize per Phase 3.
 
-> The following issues remain from the prior pass. Address ONLY these items:
->
-> **Unresolved conflicts**: [from prior adjudication]
-> **Critic findings**: [from prior critic.md]
-> **Low-confidence areas**: [dimensions and responses scored below 5]
->
-> For each item, give your resolution with evidence (file paths, line numbers, code references).
-
-1. Create the pass (`pass-dir --session "<session_dir>" --pass <N>`) and write the prompt to `pass-<N>/prompt.md`, both through the relay.
-2. Dispatch as in Phase 2 with pass `<N>`. The Claude lane reads prior artifacts by path; external lanes get them inline.
-3. Re-synthesize per Phase 3: re-score only affected dimensions and re-adjudicate only targeted disputes. Write `pass-<N>/synthesis.md`.
-4. Stop early when no score moved by more than 1 and no new conflict appeared.
-5. On the final pass, run Phase 3 steps 2 to 5 on `pass-<N>/synthesis.md`, adding a **Plan Evolution** section that says what was strengthened, corrected, or added across passes.
+On the final pass, run Phase 3 steps 2 to 5 on `pass-<N>/synthesis.md`, adding a **Plan Evolution** section that says what was strengthened, corrected, or added across passes.
 
 ---
 

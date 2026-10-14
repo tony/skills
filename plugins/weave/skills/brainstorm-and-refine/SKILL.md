@@ -7,11 +7,11 @@ argument-hint: "[--variants=N] [--passes=N] [--timeout=N|none] [--mode=fast|bala
 
 # Weave Brainstorm and Refine
 
-Generate independent originals from adversarial participants, let the user choose which enter refinement, then refine them: a judge picks the best, the weave folds in the runners-up's strengths, and the woven result goes back to every participant for another round. Host-native sub-agents are the default; separate model CLIs are optional. Session artifacts live in the session directory, outside the repository.
+Generate independent originals from adversarial participants, let the user choose which enter refinement, then refine them: a judge picks the best, the weave folds in the runners-up's strengths, and the woven result goes back to every participant for another round.
 
 The prompt comes from `$ARGUMENTS`. If there are none, ask the user what to brainstorm and refine.
 
-`<engine>` is `../../scripts/engine.py` resolved from this skill's directory to an absolute path, written literally in every command, and run with `python3`. It prints JSON; `"ok": false` carries the reason. `../../references/ensemble-core.md` holds the shared steps this skill calls by section name, and `../../references/refine-cycle.md` holds the judge, weave, and distribute cycle.
+`<engine>` is `../../scripts/engine.py` resolved from this skill's directory to an absolute path, written literally in every command, and run with `python3`.
 
 ## Worker selection
 
@@ -27,23 +27,13 @@ If interactive choice is unavailable, honor its documented headless default.
 
 ## Phase 1: Start the session
 
-Follow `ensemble-core.md` (Start the session) with `--command brainstorm-and-refine`, resolving variants per `../../references/variants.md`. The flags result also reports `judge` (`host` or `round-robin`) and the deslop flags in `flags`. The pass count covers the pass that judges the originals, so `passes` 1 judges and weaves once.
-
-Build the context packet per `ensemble-core.md` (Context packet). Lead with conventions and the files the prompt touches.
+Follow `../../references/ensemble-core.md` (Start the session) with `--command brainstorm-and-refine`, resolving variants per `../../references/variants.md`. The pass count covers the pass that judges the originals, so `passes` 1 judges and weaves once.
 
 ---
 
 ## Phase 2: Brainstorm the originals
 
-The shared worker prompt body is:
-
-> Respond to the following prompt about this codebase. Read relevant files to give a thorough, original response. Read CLAUDE.md/AGENTS.md for project conventions.
->
-> Prompt: <the prompt>
->
-> Provide a clear, well-structured response. Cite specific files and line numbers where relevant.
-
-Follow `ensemble-core.md` (Dispatch lanes) and `../../references/variants.md`, then (Close the repo guard).
+Dispatch the unchanged originals prompt of `../../references/variants.md` per `ensemble-core.md` (Dispatch lanes), then (Close the repo guard).
 
 ---
 
@@ -74,19 +64,13 @@ On **None**, follow `ensemble-core.md` (Finish) and stop with the brainstorm out
 
 Follow `../../references/refine-cycle.md` for pass 1, with the selected originals in the session's `outputs/` directory as the candidates. Judge pass 1 with judge mode `host` even under `round-robin`, because originals vary in structure; later passes use `judge`. The weave goes to `pass-0001/woven.md`.
 
-For each later pass up to `passes`, the cycle's Distribute step has already written the prompt. Dispatch it per `ensemble-core.md` (Dispatch lanes) with the new pass number, close the repo guard, then run the cycle again with that pass's `outputs/` as the candidates. The final pass skips Distribute, and an early stop ends the loop.
+For each later pass up to `passes`, the cycle's Distribute step has already written the prompt. Dispatch it per `ensemble-core.md` (Dispatch lanes) with the new pass number, close the repo guard, then run the cycle again with that pass's `outputs/` as the candidates.
 
 ---
 
 ## Phase 5: Deslop and present
 
-Unless `--no-deslop` was set, read `../../references/deslop-pass.md` and apply it with `ARTIFACT_PATH` = `<session_dir>/pass-<final>/woven.md`, `SESSION_DIR`, `BASELINE_SHA` set to `baseline_sha` from `init`, and `DESLOP_MODE` from the flags (`quiet`, `verbose`, or `default`). Re-read `woven.md` for the desloped text.
-
-Read `../../references/present-results.md` and `../../references/results/brainstorm-and-refine.md`, and apply them with `RESULT_KIND` = `brainstorm-and-refine`, `ARTIFACT_PATH` = `<session_dir>/pass-<final>/woven.md`, `SESSION_DIR`, `PASS_COUNT` = the completed passes, `IN_PLAN_MODE` = false, `LABEL_MAP_PATH` = null. The reply starts with the hero line alone on its own line, with no clause appended, and has only the four headings of that kind file: the woven design goes under Final Result as paragraphs and flat bullets, with its own headings and bold labels folded into the first words of a bullet and no label line of its own. The Evolution Summary's Originals bullet comes from the Phase 3 originals: how many there were and what they differed on.
-
-Copy the final woven text to `<session_dir>/final.md`, then follow `ensemble-core.md` (Finish).
+Follow `../../references/refine-cycle.md` (Deslop, present, and finish) with `../../references/deslop-pass.md`, `../../references/present-results.md`, `RESULT_KIND` = `brainstorm-and-refine` and `../../references/results/brainstorm-and-refine.md`. The reply starts with the hero line alone on its own line, with no clause appended, and has only the four headings of that kind file: the woven design goes under Final Result as paragraphs and flat bullets, with its own headings and bold labels folded into the first words of a bullet and no label line of its own. The Evolution Summary's Originals bullet comes from the Phase 3 originals: how many there were and what they differed on.
 
 ## Rules
 
-- Every refinement pass goes to all participants. The judge picks and weaves but never refines alone.
-- Verify every model claim against the codebase before it enters the weave.

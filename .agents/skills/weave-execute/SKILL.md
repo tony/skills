@@ -16,11 +16,9 @@ Run a task across independent adversarial workers, using host-native sub-agents 
 
 The task comes from `$ARGUMENTS`. If there are none, ask the user what they want implemented.
 
-When the arguments ask to apply the latest session instead of giving a task, run no workers: follow `references/mutating-run.md` (Apply a recorded session) with this skill's `adopt` and `update` commands from its final phase, and skip the other phases.
+A request like `this skill apply the latest session` runs no workers: follow `references/mutating-run.md` (Apply a recorded session) with this skill's `adopt` and `update` commands from its final phase, and skip the other phases.
 
-`<engine>` is `references/engine.py` resolved from this skill's directory to an absolute path, written literally in every command, and run with `python3`. It prints JSON; `"ok": false` carries the reason. `references/ensemble-core.md` holds the shared steps this skill calls by section name.
-
-This command needs a git repository with at least one commit, because workers run in worktrees and the engine stashes your uncommitted work. Without one, `init` fails: relay its `error` in one sentence, with no local paths, then tell the user to run it from a project checkout, and stop.
+`<engine>` is `references/engine.py` resolved from this skill's directory to an absolute path, written literally in every command, and run with `python3`.
 
 If context already proves there is no repository or no commit, stop there.
 Use only: "Stopped: execute needs a project checkout with at least one commit."
@@ -43,66 +41,33 @@ If interactive choice is unavailable, honor its documented headless default.
 
 Enter plan mode before the first edit. In Claude Code call `EnterPlanMode`; in Cursor, Codex, or Gemini use `/plan` or `Shift+Tab`. Where plan mode is unavailable, present the plan as text.
 
-This command changes the working tree, so produce an orchestration plan before any phase.
+Produce the plan per `references/mutating-run.md` (Shared phases, Orchestration plan).
 
-The plan must contain:
-
-1. **Task scope**: what the task changes, and what it must not touch
-2. **Files**: the code the implementations must integrate with, and the test patterns
-3. **Quality gates**: the commands from the project's AGENTS.md / CLAUDE.md
-4. **Workers**: the backend, the lanes, and the pass count
-5. **Apply policy**: the user's uncommitted changes are stashed before workers start and restored at the end; nothing reaches the main checkout until the user confirms the synthesis plan
-
-Present the plan and wait for approval, then exit plan mode (`ExitPlanMode`). If plan mode is unavailable, write the plan as numbered steps in your response. With `ask-user-choice`, confirm once before proceeding. Without it (headless or one-shot runs), print the plan and continue without asking a text question: nothing reaches the main checkout before Phase 5, which has its own gate.
+Present the plan and wait for approval, then exit plan mode (`ExitPlanMode`).
 
 ---
 
 ## Phase 1: Start the session
 
-Follow `ensemble-core.md` (Start the session) with `--command execute --mutating`. The stash holds the user's uncommitted work until Phase 5. It asks each unresolved setting through `ask-user-choice`.
-
-Explore the code the task touches, then build the context packet per `ensemble-core.md` (Context packet). Include snippets of code the implementations must integrate with, the relevant file list, test patterns, and known unknowns.
+Follow `references/ensemble-core.md` (Start the session) with `--command execute --mutating`; it asks each unresolved setting through `ask-user-choice`. Then start and dispatch per `references/mutating-run.md` (Shared phases).
 
 ---
 
 ## Phase 2: Implement in parallel
 
-The shared worker prompt body is:
-
-> Implement the following task in this codebase. Read CLAUDE.md/AGENTS.md for project conventions and follow them strictly.
->
-> Task: <the task>
->
-> Follow all project conventions from AGENTS.md/CLAUDE.md. Run the project's quality gates after making changes.
-
-Follow `ensemble-core.md` (Dispatch lanes) with `--mutating`, then (Close the repo guard). Every participant, including the `claude` lane under **model-clis**, works in its registered worktree.
+Use the worker prompt body of `references/mutating-run.md` (Shared phases), with the task as `<the task>`.
 
 ---
 
 ## Phase 3: Analyze the implementations
 
-1. **Capture** each worker's work. It writes `diffs/<participant>.patch` and snapshots of changed files to `files/<participant>/`, and lists `changed` and `deleted` paths:
-
-   ```console
-   $ python3 <engine> capture \
-       --session "<session_dir>" \
-       --pass <N> \
-       --participant <participant>
-   ```
-
-2. **Quality gates.** In each participant's registered worktree, run the project's gates from AGENTS.md / CLAUDE.md: formatter, linter, type checker, tests. Write pass/fail per gate and participant to `pass-NNNN/quality-gates.md`.
-
-3. **Judge** per `ensemble-core.md` (Blind judging, Synthesis protocol); the judge participant, not the coordinator, scores. The convergence mode is **file-by-file**. Its brief names `files/<participant>/` and the quality-gate results as readable, and asks it, for each file any participant modified, to compare the original (`git show HEAD:<file>`) with each snapshot, verify what the code does against what the participant claims, and score each version per file. Select the best version per file from its scores. The best versions can come from different participants. Fix cross-file consistency when converging.
-
-4. Write the file-by-file analysis (selected version per file, scores, deleted paths, quality-gate failures) to `<session_dir>/pass-NNNN/synthesis.md` per `references/prose-rules.md`.
-
-5. Record the pass (`update --completed-passes <N> --event pass_complete`). Do not render results yet: the user's stash is still held, so presentation waits for Phase 5.
+Capture, run the gates, and record the pass per `references/mutating-run.md` (Shared phases). **Judge** per `ensemble-core.md` (Blind judging, Synthesis protocol). The convergence mode is **file-by-file**. Its brief asks it, for each file any participant modified, to compare the original (`git show HEAD:<file>`) with each snapshot, verify what the code does against what the participant claims, and score each version per file. Select the files per `references/mutating-run.md` (Shared phases), and write the analysis per `references/prose-rules.md`.
 
 ---
 
 ## Phase 4: Multi-pass refinement
 
-Follow `references/mutating-run.md` (Refinement passes), repeating Phases 2 and 3. Also target per-file low scores and re-score only affected files.
+Follow `references/mutating-run.md` (Refinement passes), repeating Phases 2 and 3.
 
 ---
 
@@ -110,7 +75,7 @@ Follow `references/mutating-run.md` (Refinement passes), repeating Phases 2 and 
 
 Follow `references/mutating-run.md` (Apply gate and presentation): show the synthesis plan and wait before touching the main checkout.
 
-1. Copy the chosen snapshot of each file into the main checkout and remove each path whose selected version is a deletion. Repeat `--pick` and `--delete` per path. Snapshots, not worktrees, are the source, so this works after worktrees are gone:
+1. Adopt the selected files:
 
    ```console
    $ python3 <engine> adopt \
@@ -132,7 +97,7 @@ Follow `references/mutating-run.md` (Apply gate and presentation): show the synt
        --event synthesis_applied
    ```
 
-4. Remove the worktrees and restore the user's changes with `stash-restore` (`references/mutating-run.md`, Remove worktrees and restore the stash), checking `git diff --stat HEAD` against the synthesis plan. Continue to step 5 after a stash conflict.
+4. Clean up per `references/mutating-run.md` (Shared phases) (Apply).
 
 5. Read `references/present-results.md` and `references/execute.md`, and apply them with `RESULT_KIND` = `execute`, `ARTIFACT_PATH` = `<session_dir>/pass-NNNN/synthesis.md`, `SESSION_DIR`, `PASS_COUNT` = `passes`, `IN_PLAN_MODE` = false, `LABEL_MAP_PATH` = `<session_dir>/pass-NNNN/label-map.json`.
 
@@ -141,11 +106,6 @@ Follow `references/mutating-run.md` (Apply gate and presentation): show the synt
 ## Finish
 
 Follow `ensemble-core.md` (Finish). Report the files applied and the participant each came from, the quality-gate result, and unavailable participants with their failure class.
-
-## Rules
-
-- Never apply a synthesis that fails the quality gates, and never apply one before the user confirms the plan.
-- Workers are told to stay in their registered worktrees. Recorded drift stops adoption and cleanup until the user decides (`references/mutating-run.md`).
 
 
 ## Portability notes

@@ -10,10 +10,10 @@ Each claim has one home, whether it came from a reviewer or the critic:
 - Summary owns each unknown contract, explained once, and the check that
   settles it.
 
-A finding that touches an unknown contract names it in a clause and does not
-restate Summary's explanation. When its fix depends on that contract, the
-fix sentence itself carries the condition; a caveat in Summary does not make
-the finding's fix unconditional.
+A finding that touches an unknown contract names the contract in a clause and
+carries the condition in its fix sentence. It never restates the scenario, the
+error behavior, or the check that Summary explains; a caveat in Summary does
+not make the fix unconditional.
 
 A critic's point goes into the finding, rejection or unresolved check it
 belongs to. Label no item by who raised it ("critic addition", "skeptic

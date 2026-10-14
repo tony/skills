@@ -8,11 +8,11 @@ disable-model-invocation: true
 
 # Weave Code Review
 
-Run code review through independent adversarial workers in parallel, then synthesize findings into a report with evidence-backed adjudication. Host-native sub-agents are the default; separate model CLIs are optional. Session artifacts live at the configured state root, outside the repository by default.
+Run code review through independent adversarial workers in parallel, then synthesize findings into a report with evidence-backed adjudication.
 
 The focus area comes from `$ARGUMENTS`; without one, review the whole branch.
 
-`<engine>` is `../../scripts/engine.py` resolved from this skill's directory to an absolute path, written literally in every command, and run with `python3`. It prints JSON; `"ok": false` carries the reason. `../../references/ensemble-core.md` holds the shared steps this skill calls by section name.
+`<engine>` is `../../scripts/engine.py` resolved from this skill's directory to an absolute path, written literally in every command, and run with `python3`.
 
 ## Worker selection
 
@@ -55,7 +55,7 @@ Present the plan and wait for approval, then exit plan mode (`ExitPlanMode`). If
 
 ## Phase 1: Start the session
 
-Follow `ensemble-core.md` (Start the session) with `--command review`. The flags result also reports `cascade` and the deslop flags in `flags`. It asks each unresolved setting through `AskUserQuestion`.
+Follow `../../references/ensemble-core.md` (Start the session) with `--command review`. It asks each unresolved setting through `AskUserQuestion`.
 
 Build the context packet per `ensemble-core.md` (Context packet), using the approved plan to choose what goes in. Run `context --full-diff` so external reviewers get the diff. Lead with conventions, the changed files with their diff stats, and key snippets of modified code. Known unknowns name the parts of the diff that are hard to review without more context.
 
@@ -102,7 +102,7 @@ Follow `ensemble-core.md` (Dispatch lanes) with this body, substituting `base` f
 
 ## Phase 4: Synthesize findings
 
-Apply `ensemble-core.md` (Blind judging, Synthesis protocol) and `../../references/consensus-map.md` to this pass's outputs. The convergence mode is **Merge**: verified points first, agreed ones leading, then adjudicated resolutions, then the best unique contributions ordered by score, with unverified claims stripped. Use this rubric in place of the default one:
+Apply `ensemble-core.md` (Blind judging, Synthesis protocol) and `../../references/consensus-map.md` to this pass's outputs. The convergence mode is **Merge**. Use this rubric in place of the default one:
 
 | Dimension | Weight | Description |
 |-----------|--------|-------------|
@@ -134,12 +134,7 @@ Read `../../references/present-results.md` and `../../references/results/review.
 
 ## Phase 5: Multi-pass refinement
 
-Skip when `passes` is 1. Read `../../references/ensemble-techniques.md` (Technique 2). For pass N of 2 to `passes`, do not re-run the task: extract `pass-<N-1>/residuals.md` from the prior pass, and stop on an empty ledger.
-
-1. Create the pass: `python3 <engine> pass-dir --session "<session_dir>" --pass <N>`.
-2. Write the residual prompt to `pass-<N>/prompt.md` (ledger entries only), then dispatch as in Phase 3 with pass `<N>`.
-3. Merge resolutions back into the prior synthesis; untouched findings carry forward verbatim. Re-score only affected dimensions and re-adjudicate only the ledger items. Write `pass-<N>/synthesis.md`.
-4. Stop early when no score moved by more than 1 and no new conflict appeared.
+Skip when `passes` is 1. Read `../../references/ensemble-techniques.md` (Technique 2) for the residual ledger, and run the later passes as `ensemble-core.md` (Later passes) says. Only the ledger items are re-adjudicated.
 
 The final pass's `synthesis.md` (pass 1 when `passes` is 1) feeds Phase 6. When `passes` > 1, it carries a **Confidence Evolution** section:
 

@@ -5,7 +5,8 @@ The calling skill supplies its command name, packet emphasis, prompt body,
 convergence mode, and rubric. `<engine>` is the script path the skill defines;
 every engine command prints JSON, and `"ok": false` carries the reason.
 `<session_dir>` is the literal `session_dir` path `init` prints. Paste it into
-each command: shell variables do not survive between Bash calls.
+each command: shell variables do not survive between Bash calls. Session
+artifacts live in the session directory, outside the repository.
 
 Read-only commands do not modify project files: workers, judges, and critics
 run in snapshot worktrees and are told to stay there, and the guard checks the
@@ -25,6 +26,7 @@ means this.
 - Start the session
 - Context packet
 - Dispatch lanes
+- Later passes
 - Close the repo guard
 - Blind judging
 - Synthesis protocol
@@ -55,6 +57,8 @@ means this.
    words included. Read `prompt`, `passes`, `timeout`, `workers`, `flags`,
    `timeout_menu`, `passes_recommended`, and `notes`. Report `notes`. On
    `errors`, stop and show them. With an empty `prompt`, ask the user for it.
+   `flags` also reports `cascade` (ask, review), `judge` (the refine commands),
+   and the deslop flags.
 
 2. Ask for what is still null, skipping anything a flag set. Without
    `AskUserQuestion`, use `passes_recommended` and the default timeout.
@@ -102,7 +106,8 @@ means this.
    once. Lanes then start in an empty scratch directory, the guard steps do
    nothing, and there is no repo state or trunk. A command that needs commits
    (`execute`, `prompt`, `architecture`, `review`, `fix-review`) is refused
-   with `error`; relay it and stop.
+   with `error`; relay it in one sentence with no local paths, tell the user to
+   run it from a project checkout, and stop.
 
 ---
 
@@ -151,10 +156,9 @@ $ python3 <engine> prompt \
     --out "<session_dir>/pass-NNNN/prompts/<lane>.md"
 ```
 
-Launch every lane in the same turn; if parallel dispatch is unavailable,
-launch them one after another. A failed lane never blocks the run. Wait for
-lane results by ending your turn on them, not with a sleep or background timer,
-so the results message stays your last one.
+Launch every lane in the same turn, or one after another if parallel dispatch
+is unavailable. A failed lane never blocks the run. Wait for lane results by
+ending your turn on them, not with a sleep or background timer.
 
 Create worktrees before dispatch, and reuse registered worktrees on later
 mutating passes; do not recreate them and discard the participants' work.
@@ -251,6 +255,32 @@ lane fails, stop and report each failure.
 
 ---
 
+## Later passes
+
+For pass N of 2 to `passes`, do not re-run the task. Create the pass, write
+the targeted prompt to `pass-<N>/prompt.md`, dispatch as above with pass
+`<N>`, re-score only affected dimensions, re-adjudicate only the targeted
+disputes, and write `pass-<N>/synthesis.md`:
+
+```console
+$ python3 <engine> pass-dir \
+    --session "<session_dir>" \
+    --pass <N>
+```
+
+Stop early when no score moved by more than 1 and no new conflict appeared.
+Unless the skill targets residuals, the prompt is:
+
+> The following issues remain from the prior pass. Address ONLY these items:
+>
+> **Unresolved conflicts**: [from prior adjudication]
+> **Critic findings**: [from prior critic.md]
+> **Low-confidence areas**: [dimensions and responses scored below 5]
+>
+> For each item, give your resolution with evidence (file paths, line numbers, code references).
+
+---
+
 ## Close the repo guard
 
 Run this after all lanes finish, before judging, under either backend.
@@ -294,8 +324,7 @@ Scope. The guard compares the checkout with the pre-dispatch snapshot. It
 checks what `guard finish` lists under `scope.checked` and does not see what it
 lists under `scope.not_checked`; writes outside the repository are not
 detected. A clean result means the checked areas match, so say that, with the
-unchecked areas, instead of claiming nothing changed anywhere. Each backend's
-own sandbox is in `worker-backends.md` (Containment).
+unchecked areas, instead of claiming nothing changed anywhere.
 
 Snapshot participants. A critic or judge that is not a roster lane runs in a
 disposable snapshot of the checkout. Start it with `participant start
@@ -328,9 +357,8 @@ scoring is final, substitute participant names for labels everywhere in the
 rendered result; Attribution also shows the label map. Blind labels never
 reach the user's reply.
 
-The coordinator never judges a lane's output, and under `model-clis` it ran the
-`claude` lane. Verification and scoring go to a judge participant (below), so
-no output is judged by the agent that produced it.
+The coordinator never judges a lane's output: verification and scoring go to
+a judge participant (below).
 
 ---
 
@@ -377,7 +405,9 @@ mode.
    evidence supports. A conflict the code cannot settle keeps both positions with
    their evidence.
 
-3. Converge using the caller's mode. Write the converged text with plain
+3. Converge using the caller's mode. Merge (ask, plan, review): verified points
+   first, agreed ones leading, then adjudicated resolutions, then the best
+   unique contributions ordered by score, with unverified claims stripped. Write the converged text with plain
    bullets: drop the bold lead-ins (`- **Label:** ...`) the responses use.
 
 4. Critic. Launch a fresh `general-purpose` sub-agent in a `critic` snapshot

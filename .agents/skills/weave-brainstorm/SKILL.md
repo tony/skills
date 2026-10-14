@@ -11,11 +11,11 @@ metadata:
 
 # Weave Brainstorm
 
-Generate independent original responses from adversarial participants in parallel, with optional variants per participant. No scoring, ranking, or synthesis: the pool of originals is the product, and it can feed the `weave-refine` skill or the `weave-brainstorm-and-refine` skill. Host-native sub-agents are the default; separate model CLIs are optional. Session artifacts live in the session directory, outside the repository.
+Generate independent original responses from adversarial participants in parallel, with optional variants per participant. No scoring, ranking, or synthesis: the pool of originals is the product, and it can feed the `weave-refine` skill or the `weave-brainstorm-and-refine` skill.
 
 The prompt comes from `$ARGUMENTS`. If there are none, ask the user what they want to brainstorm.
 
-`<engine>` is `references/engine.py` resolved from this skill's directory to an absolute path, written literally in every command, and run with `python3`. It prints JSON; `"ok": false` carries the reason. `references/ensemble-core.md` holds the shared steps this skill calls by section name.
+`<engine>` is `references/engine.py` resolved from this skill's directory to an absolute path, written literally in every command, and run with `python3`.
 
 ## Worker selection
 
@@ -31,23 +31,13 @@ If interactive choice is unavailable, honor its documented headless default.
 
 ## Phase 1: Start the session
 
-Follow `ensemble-core.md` (Start the session) with `--command brainstorm`, resolving variants per `references/variants.md`, which asks through `ask-user-choice`. This command has no passes question. When the prompt asks for several distinct approaches and sets no variant count, use 3 variants without asking: one variant per participant would converge on the conventional design.
-
-Build the context packet per `ensemble-core.md` (Context packet). Lead with conventions and the files the prompt touches.
+Follow `references/ensemble-core.md` (Start the session) with `--command brainstorm`, resolving variants per `references/variants.md`, which asks through `ask-user-choice`. This command has no passes question. When the prompt asks for several distinct approaches and sets no variant count, use 3 variants without asking: one variant per participant would converge on the conventional design.
 
 ---
 
 ## Phase 2: Generate the originals
 
-The shared worker prompt body is:
-
-> Respond to the following prompt about this codebase. Read relevant files to give a thorough, original response. Read CLAUDE.md/AGENTS.md for project conventions.
->
-> Prompt: <the prompt>
->
-> Provide a clear, well-structured response. Cite specific files and line numbers where relevant. Where the prompt asks for alternatives, make each one differ from the obvious design in mechanism (the underlying data structure or control flow), not in naming or detail.
-
-Follow `ensemble-core.md` (Dispatch lanes) and `references/variants.md`, then (Close the repo guard).
+Dispatch per `ensemble-core.md` (Dispatch lanes), then (Close the repo guard), using the originals prompt of `references/variants.md` and appending: "Where the prompt asks for alternatives, make each one differ from the obvious design in mechanism (the underlying data structure or control flow), not in naming or detail."
 
 ---
 

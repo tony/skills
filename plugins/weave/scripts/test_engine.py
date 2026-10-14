@@ -1180,7 +1180,12 @@ def test_adopt_then_restore_leaves_synthesis_and_user_changes_before_any_panel(
 def test_write_skills_restore_the_stash_before_presenting_results(skill: str) -> None:
     root = Path(__file__).resolve().parents[1]
     text = (root / "skills" / skill / "SKILL.md").read_text(encoding="utf-8")
-    assert text.index("stash-restore") < text.index("present-results.md")
+    assert text.index("(Shared phases) (Apply)") < text.index("present-results.md")
+    shared = (root / "references" / "mutating-run.md").read_text(encoding="utf-8")
+    apply = shared[shared.index("## Shared phases") : shared.index("## Refinement passes")]
+    assert "(Remove\nworktrees and restore the stash)" in apply
+    restore = shared[shared.index("## Remove worktrees and restore the stash") :]
+    assert "stash-restore" in restore[: restore.index("\n## ", 1)]
 
 
 def test_no_skill_or_reference_advises_stash_drop() -> None:

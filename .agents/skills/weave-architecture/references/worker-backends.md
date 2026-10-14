@@ -189,9 +189,7 @@ original user stash for inspection.
 ## Containment
 
 The repo guard (`ensemble-core.md`, Close the repo guard) reports its own scope
-under `scope.checked` and `scope.not_checked`. Writes outside the repository
-are not detected, nor is the content of ignored files. Each executor's own
-limit:
+under `scope.checked` and `scope.not_checked`. Each executor's own limit:
 
 - Read-only `codex` runs with `-s read-only`.
 - Read-only `agent` runs with `--mode plan`.

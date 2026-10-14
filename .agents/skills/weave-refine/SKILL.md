@@ -11,11 +11,11 @@ metadata:
 
 # Weave Refine
 
-Improve an artifact through independent adversarial critique and weaving. Every pass, all participants critique and improve the artifact, a judge picks the best version, the weave folds in the runners-up's strengths, and the woven result goes back to all participants. Host-native sub-agents are the default; separate model CLIs are optional. Session artifacts live in the session directory, outside the repository.
+Improve an artifact through independent adversarial critique and weaving. Every pass, all participants critique and improve the artifact, a judge picks the best version, the weave folds in the runners-up's strengths, and the woven result goes back to all participants.
 
 The artifact comes from `$ARGUMENTS`: an existing file path (read it) or inline text. If there are none, ask the user what to refine.
 
-`<engine>` is `references/engine.py` resolved from this skill's directory to an absolute path, written literally in every command, and run with `python3`. It prints JSON; `"ok": false` carries the reason. `references/ensemble-core.md` holds the shared steps this skill calls by section name, and `references/refine-cycle.md` holds the judge, weave, and distribute cycle.
+`<engine>` is `references/engine.py` resolved from this skill's directory to an absolute path, written literally in every command, and run with `python3`.
 
 ## Worker selection
 
@@ -31,7 +31,7 @@ If interactive choice is unavailable, honor its documented headless default.
 
 ## Phase 1: Start the session
 
-Follow `ensemble-core.md` (Start the session) with `--command refine`. The flags result also reports `judge` (`host` or `round-robin`) and the deslop flags in `flags`. It asks each unresolved setting through `ask-user-choice`.
+Follow `references/ensemble-core.md` (Start the session) with `--command refine`. It asks each unresolved setting through `ask-user-choice`.
 
 Read the artifact from `prompt`, and write it to `<session_dir>/original.md`. Build the context packet per `ensemble-core.md` (Context packet), leading with conventions and key snippets from the artifact's domain.
 
@@ -64,21 +64,16 @@ Follow `ensemble-core.md` (Dispatch lanes) with this body, then (Close the repo 
 
 ## Phase 3: Judge, weave, distribute
 
-Follow `references/refine-cycle.md` for pass 1, with the candidates in `pass-0001/outputs/` and the judge mode from `judge`. For every later pass up to `passes`, the cycle's Distribute step has already written the prompt, so dispatch it as in Phase 2 (with the new pass number), close the repo guard, and run the cycle again. The final pass skips Distribute, and an early stop ends the loop.
+Follow `references/refine-cycle.md` for pass 1, with the candidates in `pass-0001/outputs/` and the judge mode from `judge`. For every later pass up to `passes`, the cycle's Distribute step has already written the prompt, so dispatch it as in Phase 2 (with the new pass number), close the repo guard, and run the cycle again.
 
 ---
 
 ## Phase 4: Deslop and present
 
-Unless `--no-deslop` was set, read `references/deslop-pass.md` and apply it with `ARTIFACT_PATH` = `<session_dir>/pass-<final>/woven.md`, `SESSION_DIR`, `BASELINE_SHA` set to `baseline_sha` from `init`, and `DESLOP_MODE` from the flags (`quiet`, `verbose`, or `default`). Re-read `woven.md` for the desloped text.
-
-Read `references/present-results.md` and `references/refine.md`, and apply them with `RESULT_KIND` = `refine`, `ARTIFACT_PATH` = `<session_dir>/pass-<final>/woven.md`, `SESSION_DIR`, `PASS_COUNT` = the completed passes, `IN_PLAN_MODE` = false, `LABEL_MAP_PATH` = null.
-
-Copy the final woven text to `<session_dir>/final.md`, then follow `ensemble-core.md` (Finish). Inline-text input gets the same shape: a hero line first, then the four listed headings, with no title line or other headings.
+Follow `references/refine-cycle.md` (Deslop, present, and finish) with `references/deslop-pass.md`, `references/present-results.md`, `RESULT_KIND` = `refine` and `references/refine.md`. Inline-text input gets the same shape: a hero line first, then the four listed headings, with no title line or other headings.
 
 ## Rules
 
-- Every pass goes to all participants. The judge picks and weaves but never refines alone.
 - Verify every model claim against the codebase before it enters the weave, and cite files and line numbers.
 - When models contradict each other, check the code and keep the correct version.
 

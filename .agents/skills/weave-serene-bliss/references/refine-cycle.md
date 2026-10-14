@@ -4,7 +4,9 @@ Shared by `refine`, `brainstorm-and-refine`, and `serene-bliss`. Each pass
 judges its candidates, weaves the best version with the runners-up's strengths,
 and redistributes the result to every participant. The calling skill supplies
 `<engine>`, `<session_dir>`, the judge mode, and the pass's candidate files, and
-dispatches the lanes of each distributed pass.
+dispatches the lanes of each distributed pass. Every pass goes to all
+participants; the judge picks and weaves but never refines alone. The final
+pass skips Distribute, and an early stop ends the loop.
 
 ## Contents
 
@@ -14,6 +16,7 @@ dispatches the lanes of each distributed pass.
 - Distribute
 - Early stop
 - Pass record
+- Deslop, present, and finish
 
 ---
 
@@ -228,3 +231,18 @@ $ python3 <engine> update \
     --event pass_complete \
     --event-json '{"pass": <N>, "winner": "<id>", "winner_score": <score>, "judged_by": "<judge>"}'
 ```
+
+---
+
+## Deslop, present, and finish
+
+After the last pass, unless `--no-deslop` was set, read `deslop-pass.md` and
+apply it with `ARTIFACT_PATH` = `<session_dir>/pass-<final>/woven.md`,
+`SESSION_DIR`, `BASELINE_SHA` set to `baseline_sha` from `init`, and
+`DESLOP_MODE` from the flags (`quiet`, `verbose`, or `default`). Re-read
+`woven.md` for the desloped text. Then read `present-results.md` and the
+skill's kind file in `results/`, and apply them with the skill's `RESULT_KIND`,
+`ARTIFACT_PATH` = `woven.md`, `SESSION_DIR`, `PASS_COUNT` = the completed
+passes, `IN_PLAN_MODE` = false, and `LABEL_MAP_PATH` = null. Copy the final
+woven text to `<session_dir>/final.md`, then follow `ensemble-core.md`
+(Finish).

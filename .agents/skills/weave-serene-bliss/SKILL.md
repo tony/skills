@@ -11,11 +11,11 @@ metadata:
 
 # Weave Serene Bliss
 
-A three-lens brainstorm-and-refine pipeline for developer-experience, documentation, and tooling-UX design. Each participant writes three originals, one per serene-DX lens. The user chooses which enter refinement, then every pass is judged by a panel of the participants and merged by peer-only averaging, which cancels self-favoritism. Host-native sub-agents are the default; separate model CLIs are optional. Session artifacts live in the session directory, outside the repository.
+A three-lens brainstorm-and-refine pipeline for developer-experience, documentation, and tooling-UX design. Each participant writes three originals, one per serene-DX lens. The user chooses which enter refinement, then every pass is judged by a panel of the participants and merged by peer-only averaging, which cancels self-favoritism.
 
 The prompt comes from `$ARGUMENTS`. If there are none, ask the user which DX artifact, docs page, or tooling surface to brainstorm and refine.
 
-`<engine>` is `references/engine.py` resolved from this skill's directory to an absolute path, written literally in every command, and run with `python3`. It prints JSON; `"ok": false` carries the reason. `references/ensemble-core.md` holds the shared steps this skill calls by section name, and `references/refine-cycle.md` holds the judge, weave, and distribute cycle.
+`<engine>` is `references/engine.py` resolved from this skill's directory to an absolute path, written literally in every command, and run with `python3`.
 
 ## When to use
 
@@ -56,7 +56,7 @@ If interactive choice is unavailable, honor its documented headless default.
 
 ## Phase 1: Start the session
 
-Follow `ensemble-core.md` (Start the session) with `--command serene-bliss`. The flags result reports ignored `--variants`, `--preamble`, and `--judge` in `reserved`: this command fixes three variants, the preamble above, and panel judging. If `reserved` is non-empty, tell the user once that those flags were ignored, and that the `weave-brainstorm-and-refine` skill takes them. Add `--variants 3` to `init`, which skips the variants question.
+Follow `references/ensemble-core.md` (Start the session) with `--command serene-bliss`. The flags result reports ignored `--variants`, `--preamble`, and `--judge` in `reserved`: this command fixes three variants, the preamble above, and panel judging. If `reserved` is non-empty, tell the user once that those flags were ignored, and that the `weave-brainstorm-and-refine` skill takes them. Add `--variants 3` to `init`, which skips the variants question.
 
 Build the context packet per `ensemble-core.md` (Context packet), adding what each lens needs to react to:
 
@@ -77,15 +77,7 @@ Stopped before dispatch: serene-bliss needs a reference anchor and a constraint 
 
 ## Phase 2: Brainstorm the originals
 
-The shared worker prompt body is:
-
-> Respond to the following prompt about this codebase. Read relevant files to give a thorough, original response. Read CLAUDE.md/AGENTS.md for project conventions.
->
-> Prompt: <the prompt>
->
-> Provide a clear, well-structured response. Cite specific files and line numbers where relevant.
-
-Follow `ensemble-core.md` (Dispatch lanes) and `references/variants.md` with these changes: M is 3, every variant uses `--preamble-file "<session_dir>/preamble.md"`, and there is no role preamble. Then (Close the repo guard). The cost line counts the panel's judge runs too: 3 per pass.
+Dispatch the originals prompt of `references/variants.md` per `ensemble-core.md` (Dispatch lanes), with these changes: M is 3, every variant uses `--preamble-file "<session_dir>/preamble.md"`, and there is no role preamble. Then (Close the repo guard). The cost line counts the panel's judge runs too: 3 per pass.
 
 ---
 
@@ -109,17 +101,12 @@ The panel is the same participants every pass. For each pass after the first, di
 
 ## Phase 5: Deslop and present
 
-Unless `--no-deslop` was set, read `references/deslop-pass.md` and apply it with `ARTIFACT_PATH` = `<session_dir>/pass-<final>/woven.md`, `SESSION_DIR`, `BASELINE_SHA` set to `baseline_sha` from `init`, and `DESLOP_MODE` from the flags (`quiet`, `verbose`, or `default`). Re-read `woven.md` for the desloped text.
-
-Read `references/present-results.md` and `references/refine.md`, and apply them with `RESULT_KIND` = `refine`, `ARTIFACT_PATH` = `<session_dir>/pass-<final>/woven.md`, `SESSION_DIR`, `PASS_COUNT` = the completed passes, `IN_PLAN_MODE` = false, `LABEL_MAP_PATH` = null. Put "judged by a panel of <the participants that judged>, peer-only averaging, across N pass(es)" in Attribution; add no line after it.
-
-Copy the final woven text to `<session_dir>/final.md`, then follow `ensemble-core.md` (Finish).
+Follow `references/refine-cycle.md` (Deslop, present, and finish) with `references/deslop-pass.md`, `references/present-results.md`, `RESULT_KIND` = `refine` and `references/refine.md`. Put "judged by a panel of <the participants that judged>, peer-only averaging, across N pass(es)" in Attribution; add no line after it.
 
 ## Rules
 
 - Run every phase even when the artifact is small; never stop the pipeline and write the design yourself.
 - Every refinement pass goes to all participants. The panel judges and the host weaves; nothing refines alone.
-- Verify every model claim against the codebase before it enters the weave.
 - When the prompt says behavior must not change, keep only rendering changes in the weave. Drop any element that alters parsing, flags, exit codes, or error text, such as a rewritten usage line or parser.
 
 
