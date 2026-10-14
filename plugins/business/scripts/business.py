@@ -1073,6 +1073,24 @@ def file_sha256(path: Path) -> str:
 SHA_LINE = re.compile(r"^\W*sha256\s*:\s*(\S+)\s+(\S+)\s*$", re.IGNORECASE)
 
 
+ENTRY_NAME = re.compile(r"^[a-z0-9][a-z0-9._-]*$")
+CONTROL_CHAR = re.compile(r"[\x00-\x1f\x7f]")
+
+
+def entry_has(sources: Path, entry: str, pattern: str) -> bool:
+    """Whether ``entry`` in ``sources`` already has a line matching ``pattern``."""
+    if not sources.is_file():
+        return False
+    lines = sources.read_text(encoding="utf-8").splitlines()
+    inside = False
+    for line in lines:
+        if line.startswith("## "):
+            inside = line[3:].strip().strip("`") == entry
+        elif inside and re.match(pattern, line, re.IGNORECASE):
+            return True
+    return False
+
+
 def record_source(
     sources: Path, entry: str, output: Path, query: str = "", tool_version: str = ""
 ) -> None:
@@ -1095,7 +1113,18 @@ def record_source(
     ...     [x.split(":")[0] for x in (Path(d) / "sources.md").read_text().splitlines()]
     ['## snap', '- output', '- executed', '- query', '- tool version', '- sha256']
     """
-    rel = output.resolve().relative_to(sources.resolve().parent).as_posix()
+    if not ENTRY_NAME.match(entry):
+        msg = f"entry name {entry!r} must be a citable slug (a-z, 0-9, '.', '_', '-')"
+        raise ValueError(msg)
+    for field, value in (("query", query), ("tool version", tool_version)):
+        if CONTROL_CHAR.search(value):
+            msg = f"{field} holds a line break or control character"
+            raise ValueError(msg)
+    try:
+        rel = output.resolve().relative_to(sources.resolve().parent).as_posix()
+    except ValueError:
+        msg = f"{output} is not inside the run"
+        raise ValueError(msg) from None
     lines = sources.read_text(encoding="utf-8").splitlines() if sources.is_file() else []
     start = next(
         (
@@ -1118,9 +1147,9 @@ def record_source(
         _ = body.pop()
     if not any(OUTPUT_LINE.match(x) for x in body):
         body.append(f"- output: {rel}")
-    if not any(TIMESTAMP_VALUE.match(x) for x in body):
-        stamp = dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
-        body.append(f"- executed: {stamp}")
+    stamp = dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    body = [x for x in body if not TIMESTAMP_VALUE.match(x)]
+    body.insert(min(1, len(body)), f"- executed: {stamp}")
     if query and not any(re.match(r"^\W*(?:query|command)\s*:", x, re.IGNORECASE) for x in body):
         body.append(f"- query: {query}")
     if tool_version and not any(
@@ -1819,10 +1848,18 @@ def _source_command(args: Args) -> int:
     if not run.is_dir() or not output.is_file():
         print(f"need a run directory and an existing output file: {args.run}", file=sys.stderr)
         return 2
+    sources = run / "sources.md"
+    for flag, value, pattern in (
+        ("--query", args.query, r"^\W*(?:query|command)\s*:"),
+        ("--tool-version", args.tool_version, r"^\W*(?:tool )?version\s*:"),
+    ):
+        if not value and not entry_has(sources, args.entry, pattern):
+            print(f"entry {args.entry} has no {flag[2:]} line; pass {flag}", file=sys.stderr)
+            return 2
     try:
-        record_source(run / "sources.md", args.entry, output, args.query, args.tool_version)
-    except ValueError:
-        print(f"{args.output_file} is not inside the run {args.run}", file=sys.stderr)
+        record_source(sources, args.entry, output, args.query, args.tool_version)
+    except ValueError as exc:
+        print(str(exc), file=sys.stderr)
         return 2
     return 0
 

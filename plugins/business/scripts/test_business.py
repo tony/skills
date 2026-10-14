@@ -934,8 +934,30 @@ def test_source_writes_the_entry_from_the_clock_and_the_file(
     assert business.main(["source", str(run), "x", str(tmp_path / "gone")]) == 2
     outside = tmp_path / "outside.csv"
     outside.write_text("a")
-    assert business.main(["source", str(run), "x", str(outside)]) == 2
+    meta = ["--query", "q", "--tool-version", "v"]
+    assert business.main(["source", str(run), "x", str(outside), *meta]) == 2
     assert "is not inside the run" in capsys.readouterr().err
+
+
+@pytest.mark.parametrize(
+    ("entry", "extra", "reason"),
+    [
+        ("forge", ["--query", "a\n## injected", "--tool-version", "v"], "line break"),
+        ("two words", ["--query", "q", "--tool-version", "v"], "citable slug"),
+        ("bare", ["--tool-version", "v"], "pass --query"),
+        ("bare", ["--query", "q"], "pass --tool-version"),
+    ],
+)
+def test_source_refuses_forged_unciteable_or_incomplete_entries(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str], entry: str, extra: list[str], reason: str
+) -> None:
+    run = make_run(tmp_path)
+    snap = run / "raw" / "export.json"
+    snap.write_text("{}")
+    before = (run / "sources.md").read_text()
+    assert business.main(["source", str(run), entry, str(snap), *extra]) == 2
+    assert reason in capsys.readouterr().err
+    assert (run / "sources.md").read_text() == before
 
 
 def _gh(*args: str) -> subprocess.CompletedProcess[str]:
