@@ -75,7 +75,7 @@ Arguments:
 - `references/prose-rules.md`: rules for commit, PR, and report prose
 - `references/reply-shape.md`: the reply's sections, required facts, and templates
 - `scripts/default_delta.py`: per-rule finding delta between the configured rule set and the recommended default-set shape (measured in a scratch copy), that shape written into a repository with `--apply`, and the findings a version reports at locations a pre-bump snapshot lacked
-- `scripts/ruff_pins.py`: ruff pin sites in a tree, resolved versions from lockfiles compared with a target, and the time a resolver cooldown lapses
+- `scripts/ruff_pins.py`: ruff pin sites in a tree, resolved versions from lockfiles compared with a target, and the time a resolver cooldown lapses, argument splitting, and the repositories in scope
 
 ## Prerequisites
 

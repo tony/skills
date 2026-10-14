@@ -239,3 +239,15 @@ def test_cwd_is_required() -> None:
     with pytest.raises(SystemExit) as stop:
         default_delta.main(["--snapshot", "x", "--", "ruff"])
     assert stop.value.code == 2
+
+
+@needs_git
+def test_apply_refusal_changes_nothing(tmp_path: pathlib.Path) -> None:
+    """An inline select at the root stops --apply before the plain sub-config is written."""
+    (tmp_path / "ruff.toml").write_text('lint = { select = ["E"] }\n')
+    sub = tmp_path / "sub"
+    sub.mkdir()
+    (sub / "ruff.toml").write_text('[lint]\nselect = ["F"]\n')
+    subprocess.run(["git", "init", "-q", str(tmp_path)], check=True)
+    assert default_delta.main(["--cwd", str(tmp_path), "--apply"]) == 2
+    assert (sub / "ruff.toml").read_text() == '[lint]\nselect = ["F"]\n'

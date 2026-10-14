@@ -1,18 +1,18 @@
 """Tests for ruff_pins.py."""
 
-# ruff: noqa: S101, INP001, PLR2004
+# ruff: noqa: S101, S603, S607, INP001, PLR2004
 # pyright: reportAny=false, reportUnusedCallResult=false
 from __future__ import annotations
 
 import json
+import subprocess
 from typing import TYPE_CHECKING
 
+import pytest
 import ruff_pins  # pyright: ignore[reportImplicitRelativeImport]
 
 if TYPE_CHECKING:
     import pathlib
-
-    import pytest
 
 
 def test_sites_finds_each_pin_and_skips_vendored_trees(tmp_path: pathlib.Path) -> None:
@@ -94,3 +94,60 @@ def test_lapse_missing_release_exits_2(
         == 2
     )
     assert "no release 9.9.9" in capsys.readouterr().err
+
+
+def test_locked_reports_valid_entries_beside_a_prerelease(
+    tmp_path: pathlib.Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """One non-numeric entry is its own error row; the valid entries still print."""
+    (tmp_path / "uv.lock").write_text('[[package]]\nname = "ruff"\nversion = "0.9.1"\n')
+    (tmp_path / "poetry.lock").write_text('[[package]]\nname = "ruff"\nversion = "0.13.0rc1"\n')
+    assert ruff_pins.main(["locked", str(tmp_path), "--target", "0.9.2"]) == 2
+    captured = capsys.readouterr()
+    assert captured.out.splitlines() == ["poetry.lock\t0.13.0rc1\terror", "uv.lock\t0.9.1\tbehind"]
+    assert "not a dotted numeric version" in captured.err
+
+
+def test_arguments_split_into_fields(capsys: pytest.CaptureFixture[str]) -> None:
+    """Multi-value flags take every word up to the next flag; unknown flags exit 2."""
+    assert ruff_pins.main(["arguments", "0.13.1 --repo a b --owner 'x y' --push"]) == 0
+    got = json.loads(capsys.readouterr().out)
+    assert (got["version"], got["repo"], got["owner"], got["push"]) == (
+        "0.13.1",
+        ["a", "b"],
+        ["x y"],
+        True,
+    )
+    with pytest.raises(SystemExit) as stop:
+        ruff_pins.main(["arguments", "--bogus"])
+    assert stop.value.code == 2
+
+
+@pytest.mark.integration
+def test_scope_walks_roots_and_matches_owner(
+    tmp_path: pathlib.Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """Repositories under --root are listed with owner, ruff config, pins and branch state."""
+    for name, owner in (("a", "mine"), ("b", "theirs")):
+        repo = tmp_path / name
+        repo.mkdir()
+        subprocess.run(["git", "init", "-q", "-b", "main", str(repo)], check=True)
+        remote = f"git@github.com:{owner}/{name}.git"
+        subprocess.run(["git", "-C", str(repo), "remote", "add", "origin", remote], check=True)
+    (tmp_path / "a" / "ruff.toml").write_text("[lint]\n")
+    (tmp_path / "a" / "requirements.txt").write_text("ruff==0.9.1\n")
+    mine = str(tmp_path / "a")
+    ident = ["-c", "user.name=t", "-c", "user.email=t@t"]
+    subprocess.run(
+        ["git", "-C", mine, *ident, "commit", "-q", "--allow-empty", "-m", "x"], check=True
+    )
+    subprocess.run(["git", "-C", mine, "branch", "bump"], check=True)
+    args = ["scope", "--root", str(tmp_path), "--owner", "mine", "--branch", "bump"]
+    assert ruff_pins.main([*args, "--repo", "nobody/none"]) == 2
+    rows = [line.split("\t") for line in capsys.readouterr().out.splitlines()]
+    by = {r[1]: r for r in rows}
+    assert by["mine/a"][5] == "exists"
+    assert by["theirs/b"][5] == "none"
+    assert by["mine/a"][2:5] == ["yes", "config", "1"]
+    assert by["theirs/b"][2:5] == ["no", "none", "0"]
+    assert by["unresolved"][0] == "nobody/none"

@@ -40,9 +40,24 @@ With no lockfile entry, take the constraint from the configuration and mark the 
 
 ### 2. Establish scope
 
-Default scope is the current repository. `--root` walks a directory for git repositories; `--repo` names individual ones; `--owner` keeps only those whose remote belongs to the given accounts or organisations. Exclude forks (`gh repo view <slug> --json isFork`, never the owner name) and, when `--push` or `--pr` is passed, repositories you cannot push to, and say why. List each repository's resolved version in the plan.
+Split `$ARGUMENTS` and list the candidates with the script (`--cwd` is the current repository, used when neither `--root` nor `--repo` is given; `--branch` is the intended branch name):
 
-Drop repositories with no ruff configuration. Skip, and list as skipped, a repository where a branch or worktree of the intended name already exists. A repository whose resolved version is `current` or `ahead` skips phases 6 and 7; it drops out unless `--adopt-defaults` is passed, which keeps it for phase 8.
+```console
+$ python3 <absolute path>/ruff_pins.py arguments \
+    <the argument string>
+```
+
+```console
+$ python3 <absolute path>/ruff_pins.py scope \
+    --root <dir> \
+    --owner <name> \
+    --branch <branch> \
+    --cwd <repo>
+```
+
+It prints path, slug, owner match, ruff config, pin count and whether the branch exists, one repository per line, and exits 2 listing any `--repo` it could not resolve. Drop `owner` `no` rows. The rest is judgment and network. Exclude forks (`gh repo view <slug> --json isFork`, never the owner name) and, when `--push` or `--pr` is passed, repositories you cannot push to, and say why. List each repository's resolved version in the plan.
+
+Drop repositories whose `ruff` column is `none` and that have no pins. Skip, and list as skipped, a repository whose `branch` column is `exists`, or where a worktree of the intended name exists. A repository whose resolved version is `current` or `ahead` skips phases 6 and 7; it drops out unless `--adopt-defaults` is passed, which keeps it for phase 8.
 
 ### 3. Research the release once, then intersect it per repository
 

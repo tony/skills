@@ -257,11 +257,13 @@ def _listing(cwd: str) -> list[str]:
 def propose(root: Path, files: Sequence[str], *, dereference: bool) -> list[str]:
     """Rewrite every ruff configuration among ``files`` under ``root``.
 
-    Return the files changed. A symlinked configuration is replaced by a regular
-    file when ``dereference`` is set (a scratch copy) and refused otherwise.
+    Return the files changed. Every configuration is checked before any is
+    written, so a refusal leaves the tree untouched. A symlinked configuration
+    is replaced by a regular file when ``dereference`` is set (a scratch copy)
+    and refused otherwise.
     """
     pending = [root / f for f in files if Path(f).name in _CONFIG_NAMES]
-    changed: list[str] = []
+    rewrites: dict[Path, str] = {}
     done: set[Path] = set()
     while pending:
         path = pending.pop()
@@ -278,14 +280,15 @@ def propose(root: Path, files: Sequence[str], *, dereference: bool) -> list[str]
             pending.append(target)
         new = adopt_defaults(text, pyproject=pyproject)
         if new != text:
-            if path.is_symlink():
-                if not dereference:
-                    msg = f"{path.relative_to(root)} is a symlink"
-                    raise UnsupportedError(msg)
-                path.unlink()
-            path.write_text(new)
-            changed.append(str(path.relative_to(root)))
-    return sorted(changed)
+            if path.is_symlink() and not dereference:
+                msg = f"{path.relative_to(root)} is a symlink"
+                raise UnsupportedError(msg)
+            rewrites[path] = new
+    for path, new in rewrites.items():
+        if path.is_symlink():
+            path.unlink()
+        path.write_text(new)
+    return sorted(str(path.relative_to(root)) for path in rewrites)
 
 
 def _copy(cwd: str, scratch: str, files: Sequence[str]) -> None:

@@ -9,7 +9,19 @@ ruff pre-commit repository. ``.git``, ``.venv`` and ``node_modules`` are skipped
 
 ``locked DIR [--target V]`` prints ``file<TAB>version`` for each lockfile entry
 or ``==`` pin that resolves ruff, with ``<TAB>behind|current|ahead`` against
-``--target``. Exits 2 on a version that is not dotted numbers.
+``--target``. A version that is not dotted numbers prints with an ``error``
+status, the other rows still print, and the exit status is 2.
+
+``arguments TEXT...`` splits the skill's argument string and prints it as JSON:
+``version``, ``root``, ``repo``, ``owner``, ``branch`` and the boolean flags.
+
+``scope [--root DIR] [--repo P...] [--owner N...] [--branch B] [--cwd DIR]``
+prints ``path<TAB>slug<TAB>owner<TAB>ruff<TAB>pins<TAB>branch`` per git
+repository: the walked ``--root`` repositories, the ``--repo`` paths or slugs,
+else ``--cwd``. ``owner`` is ``yes``/``no`` against ``--owner`` (``-`` without
+it), ``ruff`` is ``config`` or ``none``, ``pins`` counts pin lines, ``branch``
+is ``exists`` or ``none``. A ``--repo`` that matches nothing prints
+``unresolved`` in the slug column and exits 2.
 
 ``lapse --version V --cooldown 7d [--filename-contains S]... [--json FILE]``
 reads the package index JSON (stdin by default) and prints the latest upload
@@ -17,6 +29,7 @@ time of the release's files and that time plus the cooldown, in UTC. Exits 2
 when the release or a matching file is missing.
 """
 
+# ruff: noqa: S603, S607
 # pyright: reportAny=false, reportExplicitAny=false, reportUnusedCallResult=false
 from __future__ import annotations
 
@@ -25,6 +38,8 @@ import fnmatch
 import json
 import os
 import re
+import shlex
+import subprocess
 import sys
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -164,6 +179,110 @@ def lapse(
     return latest, latest + cooldown
 
 
+def _git(repo: Path, *args: str) -> str:
+    done = subprocess.run(
+        ["git", "-C", str(repo), *args], capture_output=True, text=True, check=False
+    )
+    return done.stdout.strip() if done.returncode == 0 else ""
+
+
+def parse_slug(url: str) -> str:
+    """Return ``owner/name`` from a git remote URL, or ``""``.
+
+    >>> parse_slug("git@github.com:tony/skills.git")
+    'tony/skills'
+    >>> parse_slug("https://github.com/tony/skills")
+    'tony/skills'
+    """
+    match = re.search(r"[:/]([^/:]+)/([^/]+?)(?:\.git)?/?$", url)
+    return f"{match.group(1)}/{match.group(2)}" if match else ""
+
+
+def _repos_under(root: Path) -> list[Path]:
+    found: list[Path] = []
+    for here, dirs, _ in os.walk(root):
+        if (Path(here) / ".git").exists():
+            found.append(Path(here))
+            dirs[:] = []
+        else:
+            dirs[:] = sorted(d for d in dirs if d not in _SKIP)
+    return found
+
+
+def _has_config(repo: Path) -> bool:
+    if (repo / "ruff.toml").exists() or (repo / ".ruff.toml").exists():
+        return True
+    pyproject = repo / "pyproject.toml"
+    return pyproject.is_file() and "[tool.ruff" in pyproject.read_text(
+        encoding="utf-8", errors="replace"
+    )
+
+
+def scope(
+    roots: Sequence[str],
+    repos: Sequence[str],
+    owners: Sequence[str],
+    branch: str,
+    cwd: str,
+) -> tuple[list[tuple[str, ...]], bool]:
+    """Return the scope rows and whether any ``--repo`` went unresolved."""
+    found = [r for root in roots for r in _repos_under(Path(root))]
+    chosen: list[Path] = list(found)
+    unresolved = False
+    rows: list[tuple[str, ...]] = []
+    for name in repos:
+        path = Path(name)
+        match = [r for r in found if parse_slug(_git(r, "remote", "get-url", "origin")) == name]
+        if (path / ".git").exists():
+            chosen.append(path)
+        elif match:
+            chosen.extend(match)
+        else:
+            rows.append((name, "unresolved", "-", "-", "-", "-"))
+            unresolved = True
+    if not roots and not repos:
+        chosen.append(Path(cwd))
+    for repo in dict.fromkeys(r.resolve() for r in chosen):
+        remote = _git(repo, "remote", "get-url", "origin") or _git(
+            repo, "remote", "get-url", _git(repo, "remote").split("\n")[0] or "origin"
+        )
+        slug = parse_slug(remote)
+        wanted = {o.lower() for o in owners}
+        owned = "-" if not owners else "yes" if slug.split("/")[0].lower() in wanted else "no"
+        exists = bool(branch) and bool(_git(repo, "rev-parse", "--verify", f"refs/heads/{branch}"))
+        rows.append(
+            (
+                str(repo),
+                slug or "-",
+                owned,
+                "config" if _has_config(repo) else "none",
+                str(len(sites(str(repo)))),
+                "exists" if exists else "none",
+            )
+        )
+    return rows, unresolved
+
+
+_FLAGS = ("adopt_defaults", "audit_only", "push", "pr", "no_changelog")
+
+
+def parse_arguments(words: Sequence[str]) -> dict[str, Any]:
+    """Return the skill's arguments as a dict; argparse exits 2 on an unknown flag.
+
+    >>> parse_arguments(["0.13.1", "--repo", "a", "b", "--push"])["repo"]
+    ['a', 'b']
+    """
+    parser = argparse.ArgumentParser(prog="arguments")
+    parser.add_argument("version", nargs="?")
+    parser.add_argument("--root")
+    parser.add_argument("--repo", nargs="+", default=[])
+    parser.add_argument("--owner", nargs="+", default=[])
+    parser.add_argument("--branch")
+    for flag in _FLAGS:
+        parser.add_argument("--" + flag.replace("_", "-"), action="store_true")
+    return vars(parser.parse_intermixed_args(list(words)))
+
+
 def main(argv: list[str]) -> int:
     """Run one subcommand."""
     parser = argparse.ArgumentParser(description=__doc__)
@@ -172,19 +291,38 @@ def main(argv: list[str]) -> int:
     lock = sub.add_parser("locked")
     lock.add_argument("dir")
     lock.add_argument("--target")
+    sub.add_parser("arguments").add_argument("text", nargs="*")
+    where = sub.add_parser("scope")
+    where.add_argument("--root", action="append", default=[])
+    where.add_argument("--repo", nargs="+", default=[])
+    where.add_argument("--owner", nargs="+", default=[])
+    where.add_argument("--branch", default="")
+    where.add_argument("--cwd", default=".")
     when = sub.add_parser("lapse")
     when.add_argument("--version", required=True)
     when.add_argument("--cooldown", required=True)
     when.add_argument("--filename-contains", action="append", default=[])
     when.add_argument("--json", help="index JSON file; stdin when omitted")
     args = parser.parse_args(argv)
+    failed = False
     try:
         if args.command == "sites":
             for path, number, text in sites(args.dir):
                 print(f"{path}\t{number}\t{text}")
+        elif args.command == "arguments":
+            print(json.dumps(parse_arguments(shlex.split(" ".join(args.text)))))
+        elif args.command == "scope":
+            rows, failed = scope(args.root, args.repo, args.owner, args.branch, args.cwd)
+            for row in rows:
+                print("\t".join(row))
         elif args.command == "locked":
             for path, version in locked(args.dir):
-                status = f"\t{compare(version, args.target)}" if args.target else ""
+                try:
+                    status = f"\t{compare(version, args.target)}" if args.target else ""
+                except ValueError as err:
+                    status = "\terror"
+                    sys.stderr.write(f"{path}: {err}\n")
+                    failed = True
                 print(f"{path}\t{version}{status}")
         else:
             raw = Path(args.json).read_text(encoding="utf-8") if args.json else sys.stdin.read()
@@ -198,7 +336,7 @@ def main(argv: list[str]) -> int:
     except (ValueError, LookupError) as err:
         sys.stderr.write(f"{err}\n")
         return 2
-    return 0
+    return 2 if failed else 0
 
 
 if __name__ == "__main__":

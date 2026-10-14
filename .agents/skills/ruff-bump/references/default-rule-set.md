@@ -91,11 +91,10 @@ the fix preserves.
 
 ## Landing it
 
-Write the config change with `default_delta.py --cwd <worktree> --apply`, so
-the committed shape is the measured one; it lands alone, with the
-enabled-rule count before and after in its body. Rule and ignore commits
-follow as the skill's one-rule-one-commit step describes. The documentation
-URL is `https://docs.astral.sh/ruff/rules/<name>/`; that site tracks the latest
+The calling skill writes and orders the config commit; its body carries the
+enabled-rule count before and after. Each rule and ignore commit's body carries
+the rule's documentation
+URL, `https://docs.astral.sh/ruff/rules/<name>/`; that site tracks the latest
 release, so read `<runner> rule <CODE>` for the pinned version's text.
 Resolve the slug from the rule's name, not its code:
 
