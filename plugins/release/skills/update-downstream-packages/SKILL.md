@@ -349,8 +349,7 @@ and requires `present`. Each repo, on each of its confirmed branches:
 
    Body: what the new release ships, read from the package's CHANGES
    entry for the version. Write it per
-   `../../references/prose-rules.md`. No `Co-Authored-By` line, no
-   "Generated with" or other tool trailer, no emoji.
+   `../../references/prose-rules.md`; trailers follow `../cut/SKILL.md` Phase 5.
 
    Then verify that the commit is the one new commit on `<pre-commit>` with the
    gated bytes, and record its `commit`. A hook that changed committed bytes

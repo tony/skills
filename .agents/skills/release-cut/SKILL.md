@@ -273,8 +273,7 @@ place and mention them only if they matter to the user.
 Review the index and worktree, then stage only approved release changes and
 commit with the subject and body the conventions reference specifies. Do not
 include unrelated changes a command staged. Write the commit per
-`references/prose-rules.md`. No `Co-Authored-By` line, no
-"Generated with" or other tool trailer, no emoji.
+`references/prose-rules.md` and the conventions reference's trailer rule.
 
 If the commit fails, follow Phase 4's observation and stop rules; hooks may
 have changed the index or working files. Do not tag or push anything.

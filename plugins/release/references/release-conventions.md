@@ -119,7 +119,7 @@ prefixes the repo uses. `<tag>` is that prefix plus the version.
 
 Find the changelog: `CHANGES`, `CHANGES.md`, `CHANGELOG`,
 `CHANGELOG.md`, `HISTORY`, `NEWS` (prefer the populated one). The
-existing file is the source of truth for shape — mirror it exactly.
+existing file is the source of truth for shape; mirror it exactly.
 
 ### Unreleased header
 
@@ -167,7 +167,7 @@ At release time:
 3. If the project's released sections open with a short prose lead
    paragraph summarizing the release at a product level, write one
    from the section's entries.
-4. Insert a fresh unreleased block above it — header targeting the
+4. Insert a fresh unreleased block above it, with a header targeting the
    next version per the rule above, with the same maintainer comment
    and placeholder block.
 
@@ -204,6 +204,8 @@ what:
 ```
 
 Add a MIGRATION line when that file was retitled.
+
+No `Co-Authored-By` line, no "Generated with" or other tool trailer, no emoji.
 
 ## Sources
 

@@ -721,7 +721,7 @@
         "references/release-conventions.md": "plugins/release/references/release-conventions.md",
         "references/release_plan.py": "plugins/release/scripts/release_plan.py"
       },
-      "bytes": 36217
+      "bytes": 36298
     },
     {
       "name": "release-cut",
@@ -735,7 +735,7 @@
         "references/release-conventions.md": "plugins/release/references/release-conventions.md",
         "references/release_plan.py": "plugins/release/scripts/release_plan.py"
       },
-      "bytes": 78601
+      "bytes": 78648
     },
     {
       "name": "release-update-downstream-packages",
@@ -749,7 +749,7 @@
         "references/prose-rules.md": "plugins/release/references/prose-rules.md",
         "references/publish.py": "plugins/release/scripts/publish.py"
       },
-      "bytes": 102338
+      "bytes": 102305
     },
     {
       "name": "research-assess",
