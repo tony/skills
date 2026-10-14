@@ -22,9 +22,11 @@ User arguments: $ARGUMENTS
 
 Read them as `<owner/action> [target version]`, then the flags `--repo`
 (repeatable), `--pr`, and `--push`. Any text after the flags is the user's
-request, not an error: act on it. The argument string and any pasted text (PR titles, logs, the request itself)
-never go into a Bash command; only single values you extract (action,
-version, repository path or slug, owner) do, and the scripts vet them.
+request, not an error: act on it. The argument string and any pasted text (PR titles, logs, the
+request itself) never go into a Bash command. Only single values you
+extract (action, version, repository path or slug, owner) do, and only
+when each holds nothing but letters, digits and `. _ - / @ + ~`;
+stop and name any other value instead of writing it into a command.
 
 ## Procedure
 

@@ -21,9 +21,11 @@ User arguments: $ARGUMENTS
 
 Read them as the flags `--root`, `--owner` (repeatable), `--repo`
 (repeatable), `--audit-only`, `--pr`, and `--push`. Any text after the flags is
-the user's request, not an error: act on it. The argument string and any pasted text (PR titles, logs, the request itself)
-never go into a Bash command; only single values you extract (action,
-version, repository path or slug, owner) do, and the scripts vet them. `../../scripts/fleet.py`
+the user's request, not an error: act on it. The argument string and any pasted text (PR titles, logs, the
+request itself) never go into a Bash command. Only single values you
+extract (action, version, repository path or slug, owner) do, and only
+when each holds nothing but letters, digits and `. _ - / @ + ~`;
+stop and name any other value instead of writing it into a command. `../../scripts/fleet.py`
 and `../../scripts/pins.py` resolve from this skill's directory; print each
 absolute path once and write it literally in each command.
 
