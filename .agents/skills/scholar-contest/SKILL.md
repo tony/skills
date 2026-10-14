@@ -57,8 +57,8 @@ $ printf 'Installed Scholar analyzer path: ' \
 
 Open `metrics.md` with a header naming the analyzer: `term_metrics.py` from the
 scholar plugin's `scripts/`, at the `version` in the plugin's `plugin.json`
-(`references/plugin.json`). Retain the report's `analyzer-sha256:`
-and `thresholds:` lines so a reader can compare exact analyzer bytes and
+(`references/plugin.json`). Retain the report's `analyzer-sha256:`,
+`analyzer-version:` and `thresholds:` lines so a reader can compare exact analyzer bytes and
 scoring conditions without recording an account-specific installation path.
 
 ## Pass 2: serial judgment
@@ -139,17 +139,9 @@ Per `references/output-contract.md`. Hero: `✓ <n> candidates judged, <n>
 killed, 0 open` only when the gate in `references/stage-gates.md` passes;
 `⚠ Gate unmet: <n> claims still open after <n> rounds` when a capped run has
 open claims; or `⚠ Blocked: <reason>`. With no distilled ontology on disk,
-the reason names distill as the missing stage and the one sentence after it
-says to run the `scholar-distill` skill, never the `scholar-ontology` skill. The reply's first
-line is the hero: never a sentence about what is or is not in the working
-directory before it. Nothing follows that
-sentence: no paths searched, no "I wrote nothing", no offer to look elsewhere:
-
-```text
-⚠ Blocked: no study directory or distilled ontology to contest.
-
-Run scholar-distill on the study, then run contest again.
-```
+the reason names distill as the missing stage and the unblock sentence says to
+run the `scholar-distill` skill, never the `scholar-ontology` skill. A blocked run is the
+contract's halted-run shape.
 
 A capped run with open claims keeps all four sections below under the hero
 (`## Kills` and `## Coverage` read `None.` when empty):
@@ -173,10 +165,15 @@ None.
 
 None.
 
-Run another round, or widen the corpus to settle them.
+Next steps:
+- Run another round
+- Widen the corpus
+- Stop here
 ```
 
-The hero line is the template and nothing more: no second sentence. Sections:
+The hero line is the template and nothing more: no second sentence. The reply
+ends with the next-step panel (shown as the plain list used where no question
+tool exists). Sections:
 
 1. `## Findings`: what the analyzer proposed, by kind.
 2. `## Verdicts`: each candidate, its objection, and how it resolved.

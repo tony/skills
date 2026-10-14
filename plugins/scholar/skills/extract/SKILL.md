@@ -172,7 +172,8 @@ Per `../../references/output-contract.md`. Hero: `✓ <n> terms extracted from
    definitions.
 2. `## Rejected`: candidates that looked like terms and were not, with why.
 3. `## Gate`: the output of the term check and the quote check in
-   `../../references/stage-gates.md`, run once per source checkout from step 2.
+   `../../references/stage-gates.md`, run once per source checkout from step 2
+   (a prose-only study passes `--check-quotes` with no checkout).
    Report `Uncheckable` lines without failing. A failing check, or a
    `Misquoted` or `Vanished` line, is a failed gate: fix the row from the
    corpus text and rerun before reporting.

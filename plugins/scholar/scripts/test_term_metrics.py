@@ -491,3 +491,64 @@ def test_brief_gate_fails_on_a_dangling_evidence_link(
     (tmp_path / "evidence").mkdir()
     (tmp_path / "evidence" / "vocabulary.md").write_text("x\n", encoding="utf-8")
     assert term_metrics.main([str(tmp_path), "--check-brief"]) == 0
+
+
+def test_check_quotes_without_a_clone_checks_stored_excerpts(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """A prose-only study has no checkout; the bare flag still searches its excerpts."""
+    study = _prose_study(tmp_path, "INVENTED TEXT NOT IN SOURCE")
+    assert term_metrics.main([str(study), "--check-quotes"]) == 1
+    assert capsys.readouterr().out.startswith("Misquoted: t (p.1)")
+    good = _prose_study(tmp_path / "ok", "is where it stops")
+    assert term_metrics.main([str(good), "--check-quotes"]) == 0
+
+
+def test_locators_may_start_with_an_at_sign() -> None:
+    """Scoped package paths such as ``@types/node`` are plain relative paths."""
+    assert term_metrics.parse_locator("@types/node/index.d.ts:1-3") == (
+        "@types/node/index.d.ts",
+        1,
+        3,
+    )
+    assert term_metrics.parse_locator("src/a.py@9a29b1a:12-18") == ("src/a.py", 12, 18)
+
+
+def test_corrections_are_read_back(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    """A correction that did not land, or lacks a field, fails the read-back."""
+    (tmp_path / "evidence").mkdir()
+    ledger = tmp_path / "evidence" / "corrections.md"
+    ledger.write_text("# Corrections\n", encoding="utf-8")
+    assert term_metrics.main([str(tmp_path), "--check-corrections", "bump"]) == 1
+    assert capsys.readouterr().out == "last correction is not bump\n"
+    entry = "## bump\nWas: a\nRested on: b\nFailed because: c\nNow: d\n"
+    ledger.write_text("# Corrections\n\n" + entry, encoding="utf-8")
+    assert term_metrics.main([str(tmp_path), "--check-corrections", "bump"]) == 0
+    ledger.write_text("## bump\nWas: a\n", encoding="utf-8")
+    assert term_metrics.main([str(tmp_path), "--check-corrections"]) == 1
+    assert "missing Rested on:, Failed because:, Now:" in capsys.readouterr().out
+    ledger.unlink()
+    assert term_metrics.main([str(tmp_path), "--check-corrections"]) == 2
+
+
+def test_earlier_analyzer_digests_stay_recognized(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """A study measured by a listed earlier version is comparable; an unknown digest is not."""
+    current = hashlib.sha256(Path(term_metrics.__file__).read_bytes()).hexdigest()
+    assert term_metrics.main(["--check-analyzer", current]) == 0
+    assert capsys.readouterr().out.startswith("current: version")
+    earlier = next(iter(term_metrics.KNOWN_ANALYZERS))
+    assert term_metrics.main(["--check-analyzer", earlier]) == 0
+    assert capsys.readouterr().out.startswith("comparable: version")
+    assert term_metrics.main(["--check-analyzer", "0" * 64]) == 1
+    assert capsys.readouterr().err == "analyzer identity differs\n"
+
+
+def test_report_discloses_analyzer_version(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """The version prints beside the digest so metrics.md can record both."""
+    _write(tmp_path / "terms.jsonl", {"term": "a", "definition": "x"})
+    assert term_metrics.main([str(tmp_path)]) == 0
+    assert f"analyzer-version: {term_metrics.ANALYZER_VERSION}\n" in capsys.readouterr().out

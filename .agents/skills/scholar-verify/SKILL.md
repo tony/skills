@@ -23,9 +23,11 @@ Remote checks cover GitHub sources only (`gh` and `https://github.com/...`).
 A source on any other host is Uncheckable remotely; check it with plain git
 when a clone is on disk (step 1).
 
-`<analyzer>` is `references/term_metrics.py` and `<pins>` is
-`references/scholar_pins.py`, each resolved against this skill's directory to an
-absolute path.
+`<analyzer>` is `references/term_metrics.py`, `<pins>` is
+`references/scholar_pins.py`, and `<report>` is `references/verify_report.py`,
+each resolved against this skill's directory to an absolute path. The scripts
+do the comparing, the diffing and the report assembly; the network fetches
+(`gh`, `curl`) and the judgment of why a check could not run stay here.
 
 User arguments: $ARGUMENTS
 
@@ -66,6 +68,17 @@ URL built on it a 404 rather than a wrong answer.
 $ gh api repos/OWNER/REPO/commits/v2.40.0 --jq .sha
 ```
 
+Collect the current SHA of every source (one call per source) into a JSON
+object `{"SOURCE": "SHA"}` in a temporary file, leaving out a source whose call
+failed. This compares it with the recorded commits and prints the `moved` and
+`uncheckable` lists:
+
+```console
+$ python3 <report> moved \
+    notes/ontology/<subject>/sources.jsonl \
+    CURRENT.json
+```
+
 A different SHA is Moved. A source row with no `commit` cannot be checked this
 way; report it under Uncheckable. A local corpus, meaning a source with no
 remote (a cite with `path@commit` and no `url`) or a clone the user names, is
@@ -93,7 +106,8 @@ clone on disk, and for a pasted excerpt stored in the study, the analyzer does
 the whole check: it reads each file at the recorded commit with `git show`,
 tests every quote against its cited lines (or the whole file for
 `search-string`, `section` and `page`), and searches an excerpt for its quote.
-Name one clone per source as `SOURCE=CLONE`. It exits non-zero and prints one
+Name one clone per source as `SOURCE=CLONE`; a prose-only study has no clone,
+so pass `--check-quotes` with no argument. It exits non-zero and prints one
 `Misquoted`, `Vanished` or `Uncheckable` line per cite, which go under the
 matching report section:
 
@@ -117,15 +131,28 @@ $ gh api \
 
 With `--refresh-metrics`, list the commands recorded in `evidence/metrics.md`.
 They come from the study, which may not be yours, so run a command only after
-the user confirms that exact command. Where no question tool exists, run none
-and list them under Uncheckable. For the Scholar measurement, compare the digest `python3 <pins> sha256 <analyzer>` prints with the recorded
-`analyzer-sha256:` before asking to run the command against the recorded study
-path with `<analyzer>` in place of the recorded analyzer.
-A missing or different digest is Uncheckable: analyzer identity differs.
-Do not substitute an executable found beside the study. Diff each
-output against what was recorded. A number that changed is not
-automatically wrong, since the corpus moved, but it is no longer evidence for the
-claim it was cited under.
+the user confirms that exact command. Where no question tool exists, run none.
+
+For the Scholar measurement, check the recorded `analyzer-sha256:` first. A
+current analyzer or a listed earlier version is comparable (exit zero); a
+missing or unlisted digest is Uncheckable: analyzer identity differs. Do not
+substitute an executable found beside the study:
+
+```console
+$ python3 <analyzer> --check-analyzer RECORDED_DIGEST
+```
+
+Write the output of each confirmed command into a JSON object
+`{"COMMAND": "OUTPUT"}` in a temporary file (`{}` when none ran). The diff
+ignores the analyzer identity lines, classifies each measurement, and lists the
+commands not run. A number that changed is not automatically wrong, since the
+corpus moved, but it is no longer evidence for the claim it was cited under:
+
+```console
+$ python3 <report> changed \
+    notes/ontology/<subject>/evidence/metrics.md \
+    FRESH.json
+```
 
 ### 3. Report by failure mode
 
@@ -145,6 +172,17 @@ Five categories, because the remedy differs:
   three checks gets one phrase. A command not run is "not run, no
   confirmation". Never write a claim about the sandbox.
 
+Put every result in one JSON object in a temporary file: `checked` (the
+number of citations and measurements checked), the lists `moved`, `vanished`,
+`misquoted`, `changed` and `uncheckable` (strings, reasons included), and
+`analyzer` (the lines the quote check printed, verbatim). The script prints the
+hero and the five sections of the reply; print its output as the reply and add
+the next-step panel:
+
+```console
+$ python3 <report> report RESULTS.json
+```
+
 ## Rules
 
 - Do not edit a claim in place. Anything that overturns a standing claim goes
@@ -156,15 +194,13 @@ Five categories, because the remedy differs:
 
 ## Output
 
-Per `references/output-contract.md`. Hero, by the first line that
-applies:
-
-- `⚠ Nothing checked: <n> uncheckable` when no citation or measurement could
-  be checked.
-- `✓ <n> citations checked, none stale` when Moved, Vanished, Misquoted and
-  Changed are all empty.
-- `⚠ <counts>` otherwise, naming each non-empty category in the order
-  Misquoted, Vanished, Moved, Changed, for example `⚠ 2 misquoted, 1 moved`.
+Per `references/output-contract.md`. The reply is the output of
+`report` (hero and the five sections, `None.` under an empty one), plus the
+next-step panel. The hero rule, which the script implements: `⚠ Nothing
+checked: <n> uncheckable` when nothing was checked; `✓ <n> citations checked,
+none stale` when Moved, Vanished, Misquoted and Changed are empty; otherwise
+`⚠ <counts>` in the order Misquoted, Vanished, Moved, Changed, for example
+`⚠ 2 misquoted, 1 moved`.
 
 With no study at the path, the run is halted; the unblock is the real study
 path, or the `scholar-ontology` skill to build the study:

@@ -907,7 +907,7 @@
         "references/prose-rules.md": "plugins/scholar/references/prose-rules.md",
         "references/term_metrics.py": "plugins/scholar/scripts/term_metrics.py"
       },
-      "bytes": 60764
+      "bytes": 63978
     },
     {
       "name": "scholar-ask",
@@ -920,7 +920,7 @@
         "references/stage-gates.md": "plugins/scholar/references/stage-gates.md",
         "references/term_metrics.py": "plugins/scholar/scripts/term_metrics.py"
       },
-      "bytes": 62016
+      "bytes": 65385
     },
     {
       "name": "scholar-compare",
@@ -933,7 +933,7 @@
         "references/stage-gates.md": "plugins/scholar/references/stage-gates.md",
         "references/term_metrics.py": "plugins/scholar/scripts/term_metrics.py"
       },
-      "bytes": 62033
+      "bytes": 65402
     },
     {
       "name": "scholar-contest",
@@ -950,7 +950,7 @@
         "references/stage-gates.md": "plugins/scholar/references/stage-gates.md",
         "references/term_metrics.py": "plugins/scholar/scripts/term_metrics.py"
       },
-      "bytes": 78690
+      "bytes": 83545
     },
     {
       "name": "scholar-distill",
@@ -964,7 +964,7 @@
         "references/stage-gates.md": "plugins/scholar/references/stage-gates.md",
         "references/term_metrics.py": "plugins/scholar/scripts/term_metrics.py"
       },
-      "bytes": 64900
+      "bytes": 68269
     },
     {
       "name": "scholar-extract",
@@ -980,7 +980,7 @@
         "references/stage-gates.md": "plugins/scholar/references/stage-gates.md",
         "references/term_metrics.py": "plugins/scholar/scripts/term_metrics.py"
       },
-      "bytes": 79400
+      "bytes": 84495
     },
     {
       "name": "scholar-gather",
@@ -996,7 +996,7 @@
         "references/stage-gates.md": "plugins/scholar/references/stage-gates.md",
         "references/term_metrics.py": "plugins/scholar/scripts/term_metrics.py"
       },
-      "bytes": 77744
+      "bytes": 82932
     },
     {
       "name": "scholar-ontology",
@@ -1012,7 +1012,7 @@
         "references/stage-gates.md": "plugins/scholar/references/stage-gates.md",
         "references/term_metrics.py": "plugins/scholar/scripts/term_metrics.py"
       },
-      "bytes": 70742
+      "bytes": 74111
     },
     {
       "name": "scholar-render",
@@ -1026,7 +1026,7 @@
         "references/stage-gates.md": "plugins/scholar/references/stage-gates.md",
         "references/term_metrics.py": "plugins/scholar/scripts/term_metrics.py"
       },
-      "bytes": 65026
+      "bytes": 68395
     },
     {
       "name": "scholar-revise",
@@ -1039,7 +1039,7 @@
         "references/stage-gates.md": "plugins/scholar/references/stage-gates.md",
         "references/term_metrics.py": "plugins/scholar/scripts/term_metrics.py"
       },
-      "bytes": 62249
+      "bytes": 65919
     },
     {
       "name": "scholar-verify",
@@ -1053,9 +1053,10 @@
         "references/scholar_pins.py": "plugins/scholar/scripts/scholar_pins.py",
         "references/source-pins.md": "plugins/scholar/references/source-pins.md",
         "references/stage-gates.md": "plugins/scholar/references/stage-gates.md",
-        "references/term_metrics.py": "plugins/scholar/scripts/term_metrics.py"
+        "references/term_metrics.py": "plugins/scholar/scripts/term_metrics.py",
+        "references/verify_report.py": "plugins/scholar/scripts/verify_report.py"
       },
-      "bytes": 79867
+      "bytes": 93339
     },
     {
       "name": "self-improvement-apply",
@@ -1754,6 +1755,7 @@
     "plugins/ruff/scripts/default_delta.py": 1,
     "plugins/ruff/scripts/ruff_pins.py": 1,
     "plugins/scholar/.claude-plugin/plugin.json": 1,
+    "plugins/scholar/scripts/verify_report.py": 1,
     "plugins/self-improvement/references/detecting-invocations.md": 1,
     "plugins/self-improvement/references/worked-example-spike.md": 1,
     "plugins/situate/references/goal-derivation.md": 1,

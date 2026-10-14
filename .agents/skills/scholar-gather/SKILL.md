@@ -59,9 +59,14 @@ means: stop and ask the user to commit or pass a scope that excludes the
 edits. `"pushed": false` means a permalink to the commit can 404: pin a pushed
 ref instead, or record the source without a URL (below).
 
-For a remote on another host, `git ls-remote URL REF 'REF^{}'` prints it; the
-peeled line (`REF^{}`) is the commit of an annotated tag, else use the plain
-line.
+For a remote on another host, the script vets URL and REF, lists the remote,
+and prints the commit (the peeled commit of an annotated tag, else the plain
+ref; a tag wins over a branch of the same name). A refusal is a one-line
+reason; report the source as unresolved:
+
+```console
+$ python3 <pins> ls-remote URL REF
+```
 
 A checkout with no remote has no URL form. Publish it first, or record
 `source` as the repository's directory name, leave `url` out of every cite, and

@@ -166,3 +166,40 @@ def test_sha256_matches_hashlib(tmp_path: Path, capsys: pytest.CaptureFixture[st
     target.write_bytes(b"abc")
     assert pins.main(["sha256", str(target)]) == 0
     assert capsys.readouterr().out.strip() == hashlib.sha256(b"abc").hexdigest()
+
+
+@pytest.mark.integration
+def test_resolve_remote_peels_annotated_tags_and_prefers_tags(tmp_path: Path) -> None:
+    """An annotated tag resolves to its commit, a branch to its tip, a tag over a branch."""
+    repo = _repo(tmp_path)
+    git = ["git", "-C", str(repo), *_ID]
+    head = subprocess.run(
+        [*git, "rev-parse", "HEAD"], capture_output=True, text=True, check=True
+    ).stdout.strip()
+    subprocess.run([*git, "tag", "-a", "v1", "-m", "release"], check=True)
+    subprocess.run([*git, "branch", "v2"], check=True)
+    assert pins.resolve_remote(repo.as_uri(), "v1") == (head, True)
+    assert pins.resolve_remote(repo.as_uri(), "v2") == (head, False)
+    with pytest.raises(pins.FetchError, match="not found"):
+        pins.resolve_remote(repo.as_uri(), "nope")
+
+
+@pytest.mark.parametrize(
+    ("url", "ref"),
+    [("file:///etc", "v1"), ("https://example.com/o/r", "../x"), ("http://x.org/o/r", "v1")],
+)
+def test_ls_remote_refuses_unsafe_values(
+    capsys: pytest.CaptureFixture[str], url: str, ref: str
+) -> None:
+    """Only a plain https URL and a plain ref reach git."""
+    assert pins.main(["ls-remote", url, ref]) == 2
+    assert capsys.readouterr().err == "the source must be a plain https:// URL and a plain ref\n"
+
+
+def test_release_of_a_missing_checkout_is_one_line(
+    capsys: pytest.CaptureFixture[str],
+) -> None:
+    """A scholar-named path that does not exist exits 2, not with a traceback."""
+    missing = Path(tempfile.gettempdir()) / "scholar-corpus.gone"
+    assert pins.main(["release", str(missing)]) == 2
+    assert capsys.readouterr().err == "no checkout scholar-corpus.gone\n"

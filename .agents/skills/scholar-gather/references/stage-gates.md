@@ -58,6 +58,8 @@ $ python3 <analyzer> notes/ontology/<subject>/ \
     --check-quotes SOURCE=CHECKOUT
 ```
 
+A prose-only study has no checkout: pass `--check-quotes` with no argument to
+search its stored excerpts, and `--check-quotations` for `quotations.jsonl`.
 A `Misquoted` or `Vanished` line stops the stage. An `Uncheckable` line (a
 book, or a source with no checkout) is reported, not failed.
 

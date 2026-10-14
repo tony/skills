@@ -208,6 +208,17 @@ class _Row(_RowBase, total=False):
 
 Vector = dict[str, float]
 
+ANALYZER_VERSION = 2
+"""Bumped when a change alters scoring output; the digest alone cannot say that."""
+
+KNOWN_ANALYZERS = {
+    "15ec84ee562768a3897b7159a5660f053d26fe86d4bba630e5fbfc5fb79fd5c1": 0,
+    "30c6d6b19969d461526822365b29aef91cb665b8e180aeeed96e28401487ca88": 1,
+}
+"""Digests of earlier versions whose synonymy, polysemy, orphan and fan-out
+output matches this one on the same table, so studies measured by them stay
+comparable. Append the outgoing digest here when ``ANALYZER_VERSION`` moves."""
+
 SYNONYMY_THRESHOLD = 0.5
 """Sibling definitions at or above this are candidates for one term, not two."""
 
@@ -628,7 +639,7 @@ def check_sources(sources: list[dict[str, object]]) -> list[str]:
     return findings
 
 
-_LOCATOR = re.compile(r"^([A-Za-z0-9_./-]+?)(?:@[0-9a-fA-F]{7,40})?(?::(\d+)(?:-(\d+))?)?$")
+_LOCATOR = re.compile(r"^([A-Za-z0-9_./@+-]+?)(?:@[0-9a-fA-F]{7,40})?(?::(\d+)(?:-(\d+))?)?$")
 _HEX_COMMIT = re.compile(r"^[0-9a-fA-F]{7,40}$")
 _SNIPPET = 200
 
@@ -875,6 +886,38 @@ def check_quotations(
     return findings
 
 
+_CORRECTION_FIELDS = ("Was:", "Rested on:", "Failed because:", "Now:")
+
+
+def check_corrections(text: str, claim: str = "") -> list[str]:
+    r"""List ``corrections.md`` entries missing a field, or a last entry that is not *claim*.
+
+    An entry is a ``## `` heading followed by the four ``revise`` fields.
+
+    >>> body = "## t\nWas: a\nRested on: b\nFailed because: c\nNow: d\n"
+    >>> check_corrections(body, "t")
+    []
+    >>> check_corrections(body, "other")
+    ['last correction is not other']
+    >>> check_corrections("## t\nWas: a\n")
+    ['t: missing Rested on:, Failed because:, Now:']
+    """
+    entries: list[tuple[str, list[str]]] = []
+    for line in text.splitlines():
+        if line.startswith("## "):
+            entries.append((line[3:].strip(), []))
+        elif entries:
+            entries[-1][1].append(line.strip())
+    findings = [
+        f"{name}: missing {', '.join(missing)}"
+        for name, lines in entries
+        if (missing := [f for f in _CORRECTION_FIELDS if not any(x.startswith(f) for x in lines)])
+    ]
+    if claim and (not entries or entries[-1][0].casefold() != claim.strip().casefold()):
+        findings.append(f"last correction is not {claim}")
+    return findings
+
+
 _CLAIM = re.compile(r"^\s*(?:[-*]\s*)?Claim:\s*(.*)$", re.IGNORECASE)
 _VERDICT = re.compile(r"^\s*(?:[-*]\s*)?Verdict:\s*([A-Za-z]+)", re.IGNORECASE)
 _VERDICTS = frozenset({"upheld", "revised", "killed"})
@@ -1020,6 +1063,7 @@ class _Opts(argparse.Namespace):
     check_hierarchy: bool = False
     check_quotations: bool = False
     check_verdicts: bool = False
+    check_corrections: str | None = None
 
 
 def _parser() -> argparse.ArgumentParser:
@@ -1047,8 +1091,17 @@ def _parser() -> argparse.ArgumentParser:
     _ = gate.add_argument(
         "--check-quotes",
         action="append",
+        nargs="?",
+        const="",
         metavar="[SOURCE=]CLONE",
-        help="check each quote at the recorded commit in a git clone; repeat per source",
+        help="check quotes in a git clone, once per source; bare, check stored excerpts only",
+    )
+    _ = gate.add_argument(
+        "--check-corrections",
+        nargs="?",
+        const="",
+        metavar="CLAIM",
+        help="exit 1 unless every corrections.md entry is complete and the last is CLAIM",
     )
     return parser
 
@@ -1085,7 +1138,7 @@ def _clone_args(values: list[str]) -> tuple[dict[str, str], str | None]:
     """Split ``--check-quotes`` values into per-source clones and a default clone."""
     clones: dict[str, str] = {}
     default: str | None = None
-    for value in values:
+    for value in filter(None, values):
         source, sep, clone = value.partition("=")
         if sep and source and not Path(value).is_dir():
             clones[source] = clone
@@ -1150,6 +1203,7 @@ def _report_all(terms: list[_Row]) -> int:
         ("fan-out", [f"{p}: {n}" for p, n in sorted(fan_out(terms).items())]),
     ]
     print(f"analyzer-sha256: {hashlib.sha256(Path(__file__).read_bytes()).hexdigest()}")
+    print(f"analyzer-version: {ANALYZER_VERSION}")
     print(f"thresholds: synonymy >= {SYNONYMY_THRESHOLD}, polysemy < {POLYSEMY_THRESHOLD}")
     for title, rows in sections:
         print(f"== {title} ==")
@@ -1171,8 +1225,32 @@ def _study_gates(opts: _Opts, study: str) -> int:
     return _report_all(terms) if gated is None else gated
 
 
+def _corrections_gate(study: str, claim: str) -> int:
+    """Read ``evidence/corrections.md`` back; exit 2 when it is missing."""
+    ledger = Path(f"{study}/evidence/corrections.md")
+    if not ledger.is_file():
+        print(f"no evidence/corrections.md in {study}", file=sys.stderr)
+        return 2
+    return _report(check_corrections(ledger.read_text(encoding="utf-8"), claim))
+
+
+def check_analyzer(digest: str) -> int:
+    """Say whether *digest* names this analyzer or a comparable earlier version."""
+    current = hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
+    if digest == current:
+        print(f"current: version {ANALYZER_VERSION}")
+        return 0
+    if digest in KNOWN_ANALYZERS:
+        print(f"comparable: version {KNOWN_ANALYZERS[digest]}, now {ANALYZER_VERSION}")
+        return 0
+    print("analyzer identity differs", file=sys.stderr)
+    return 1
+
+
 def main(argv: list[str]) -> int:
     """Report every finding for the study directory named in *argv*."""
+    if argv[:1] == ["--check-analyzer"]:
+        return check_analyzer(argv[1] if len(argv) == 2 else "")  # noqa: PLR2004
     try:
         opts = _parser().parse_args(argv, namespace=_Opts())
     except SystemExit as exc:
@@ -1182,6 +1260,8 @@ def main(argv: list[str]) -> int:
         return _brief_gate(study)
     if opts.check_sources or opts.check_quotations:
         return _source_gates(opts, study)
+    if opts.check_corrections is not None:
+        return _corrections_gate(study, opts.check_corrections)
     return _study_gates(opts, study)
 
 

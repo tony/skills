@@ -164,8 +164,9 @@ beside the serial one.
   source URL, so any host that serves git works.
 - rg, to inventory a corpus without reading all of it.
 - Python 3.9+, to run `scripts/term_metrics.py` (the stage gates and the
-  analyzer) and `scripts/scholar_pins.py` (local pins, throwaway checkouts, identifier
-  checks). Both use the standard library only, so they run inside any corpus
+  analyzer), `scripts/scholar_pins.py` (local and remote pins,
+  throwaway checkouts, identifier checks) and `scripts/verify_report.py` (the
+  mechanical parts of `verify`). Both use the standard library only, so they run inside any corpus
   checkout with no package manager present.
 
 A corpus with no git remote cannot be cited by permalink. Publish it first, or

@@ -179,7 +179,48 @@ def release(args: _Args) -> int:
     temp = Path(tempfile.gettempdir()).resolve()
     if not path.name.startswith(_PREFIX) or path.resolve().parent != temp:
         return _refuse(f"{path.name} is not a scholar checkout")
+    if not path.is_dir():
+        return _refuse(f"no checkout {path.name}")
     shutil.rmtree(path)
+    return 0
+
+
+def resolve_remote(url: str, ref: str) -> tuple[str, bool]:
+    """Return the commit *ref* names at *url*, and whether an annotated tag was peeled.
+
+    A tag wins over a branch of the same name; the peeled line (``REF^{}``) is
+    the commit an annotated tag points at.
+    """
+    done = _git("ls-remote", url, ref, f"{ref}^{{}}")
+    if done.returncode != 0:
+        message = f"could not list {url}"
+        raise FetchError(message)
+    found: dict[str, str] = {}
+    for line in done.stdout.splitlines():
+        sha, _, name = line.partition("\t")
+        found[name] = sha
+    for name, peeled in (
+        (f"refs/tags/{ref}^{{}}", True),
+        (f"refs/tags/{ref}", False),
+        (f"refs/heads/{ref}", False),
+        (ref, False),
+    ):
+        if name in found and _FULL.match(found[name]):
+            return found[name], peeled
+    message = f"{ref} not found at {url}"
+    raise FetchError(message)
+
+
+def ls_remote(args: _Args) -> int:
+    """Print the commit a ref names at a remote, after vetting both."""
+    url, ref = args.url or "", args.ref or ""
+    if not _HTTPS.match(url) or _path_problem("ref", ref):
+        return _refuse("the source must be a plain https:// URL and a plain ref")
+    try:
+        commit, peeled = resolve_remote(url, ref)
+    except FetchError as exc:
+        return _refuse(str(exc))
+    print(json.dumps({"commit": commit, "peeled": peeled}))
     return 0
 
 
@@ -203,6 +244,7 @@ _COMMANDS = {
     "remote": remote,
     "release": release,
     "ident": ident,
+    "ls-remote": ls_remote,
     "sha256": sha256,
 }
 
@@ -226,6 +268,10 @@ def _parser() -> argparse.ArgumentParser:
     four = sub.add_parser("ident", help="vet identifiers taken from a study")
     for flag in ("owner", "repo", "ref", "commit", "path", "url"):
         _ = four.add_argument(f"--{flag}")
+
+    six = sub.add_parser("ls-remote", help="print the commit REF names at URL")
+    _ = six.add_argument("url")
+    _ = six.add_argument("ref")
 
     five = sub.add_parser("sha256", help="print a file's SHA-256")
     _ = five.add_argument("file")

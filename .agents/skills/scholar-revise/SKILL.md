@@ -17,6 +17,9 @@ than quietly making it true.
 
 User arguments: $ARGUMENTS
 
+`<analyzer>` is `references/term_metrics.py`, resolved against this skill's
+directory to an absolute path.
+
 Without `--study`, the study is found as "The study directory" describes in
 `references/stage-gates.md`.
 
@@ -66,7 +69,14 @@ Now: the replacement claim, or a statement that the question is open.
 
 Append with `Edit` at the end of the file; never `Write` it back whole. Never
 rewrite an existing correction: a correction that was itself wrong gets its
-own entry beneath.
+own entry beneath. Then read it back; this exits zero only when every entry
+carries all four fields and the last one is the claim just recorded, so a
+correction that did not land stops the run before step 3:
+
+```console
+$ python3 <analyzer> notes/ontology/<subject>/ \
+    --check-corrections "<the term or claim>"
+```
 
 ### 3. Update the study
 
@@ -79,8 +89,7 @@ result in `## Touched`:
 $ python3 <analyzer> notes/ontology/<subject>/ --check-brief
 ```
 
-`<analyzer>` is `references/term_metrics.py`, resolved against this skill's
-directory to an absolute path. Fix the brief until it exits zero.
+Fix the brief until it exits zero.
 
 ## Rules
 
