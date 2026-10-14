@@ -1,6 +1,6 @@
 """Tests for repo_facts.py against throwaway repositories."""
 
-# ruff: noqa: S101, S603, S607, INP001, SLF001
+# ruff: noqa: S101, S603, S607, INP001, SLF001, PLR2004
 # pyright: reportAny=false, reportUnusedCallResult=false
 from __future__ import annotations
 
@@ -430,3 +430,81 @@ def test_lock_changes_reads_uv_lock_as_written_by_uv() -> None:
     out = repo_facts.lock_changes(head + block.format(v="2.31.0"), head + block.format(v="3.0.0"))
 
     assert out["majors"] == [{"name": "requests", "from": ["2.31.0"], "to": ["3.0.0"]}]
+
+
+def test_virtual_project_without_version_is_not_an_error() -> None:
+    """Uv writes no version for a dynamic-version project; the lock still classifies."""
+    virtual = '\n[[package]]\nname = "demo"\nsource = { virtual = "." }\n'
+    out = repo_facts.lock_changes(
+        _lock(("requests", "2.31.0")) + virtual, _lock(("requests", "3.0.0")) + virtual
+    )
+
+    assert [m["name"] for m in out["majors"]] == ["requests"]
+    assert out["in_range"] == []
+
+
+def test_widened_ceiling_is_unclassified() -> None:
+    """A range edited without moving its first version is not silently unchanged."""
+    out = repo_facts.manifest_changes(
+        '{"dependencies": {"a": ">=1 <2"}}', '{"dependencies": {"a": ">=1 <3"}}'
+    )
+
+    assert [m["name"] for m in out["unclassified"]] == ["a"]
+
+
+@pytest.mark.integration
+def test_pins_cover_nested_files_and_every_python_version_line(tmp_path: pathlib.Path) -> None:
+    """Nested pin files are keyed by path; a multi-line .python-version keeps every line."""
+    repo = _make(tmp_path)
+    (repo / ".python-version").write_text("3.12.1\n3.11.4\n")
+    (repo / ".node-version").write_text("20.1.0\n")
+    (repo / "sub").mkdir()
+    (repo / "sub" / ".tool-versions").write_text("just 1.0.0\n")
+    (repo / "sub" / "package.json").write_text('{"engines": {"node": ">=20"}}')
+    _git(repo, "add", ".")
+    _git(repo, "commit", "-qm", "more pins")
+    _git(repo, "push", "-q", "origin", "main")
+
+    pins = cast("dict[str, object]", repo_facts.facts(str(repo))["pins"])
+
+    assert pins[".python-version"] == ["3.12.1", "3.11.4"]
+    assert pins[".node-version"] == "20.1.0"
+    assert pins["sub/.tool-versions"] == {"just": "1.0.0"}
+    assert pins["sub/package.json"] == {"engines": {"node": ">=20"}}
+
+
+def test_main_usage_and_exit_codes(
+    tmp_path: pathlib.Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """Help exits 0, bad usage 2, and a result carrying an error 1 with a stderr reason."""
+    assert repo_facts.main(["--help"]) == 0
+    assert capsys.readouterr().out.startswith("usage: repo_facts.py")
+    assert repo_facts.main(["--bogus"]) == 2
+    assert "unknown option --bogus" in capsys.readouterr().err
+    assert repo_facts.main(["--lock-diff"]) == 2
+    assert "--lock-diff takes" in capsys.readouterr().err
+    assert repo_facts.main([str(tmp_path / "missing")]) == 1
+    captured = capsys.readouterr()
+    assert "not a directory" in captured.out
+    assert "carry an error" in captured.err
+
+
+@pytest.mark.integration
+def test_pin_sites_free_branch_and_issue_branch(
+    tmp_path: pathlib.Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """Pin sites list whole-word hits; a taken branch name gets a suffix; slugs are ASCII."""
+    repo = _make(tmp_path)
+    (repo / "pyproject.toml").write_text('dependencies = ["requests>=2"]\n# requests-mock\n')
+    _git(repo, "add", ".")
+    _git(repo, "commit", "-qm", "dep")
+    _git(repo, "branch", "wip/deps")
+    _git(repo, "branch", "wip/deps-2")
+
+    sites = cast("list[dict[str, object]]", repo_facts.pin_sites(str(repo), "requests")["sites"])
+    assert [(s["file"], s["line"]) for s in sites] == [("pyproject.toml", 1), ("pyproject.toml", 2)]
+    assert repo_facts.pin_sites(str(repo), "absent-name")["sites"] == []
+    assert repo_facts.free_branch(str(repo), "wip/deps")["branch"] == "wip/deps-3"
+    assert repo_facts.free_branch(str(repo), "wip/new")["branch"] == "wip/new"
+    assert repo_facts.main(["--issue-branch", "42", "Bump uv: 0.7 -> 0.8!"]) == 0
+    assert '"42-bump-uv-0-7-0-8"' in capsys.readouterr().out

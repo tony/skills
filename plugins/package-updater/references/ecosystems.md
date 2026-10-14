@@ -14,6 +14,7 @@ Read before running anything that resolves a version.
 - Runtime and toolchain pins
 - Supply-chain cooldown
 - Release publication time
+- Latest stable release
 
 Detect an ecosystem by the files present, never by the project's name or
 language tag. A repository can carry several (a Python package with a docs
@@ -22,6 +23,15 @@ track with its own commit.
 
 Run the project's own wrapper when it has one: a `justfile`, `Makefile`,
 or `package.json` script named for the update is the maintained path.
+
+Tool commands below are documented at
+[uv](https://docs.astral.sh/uv/reference/cli/),
+[Poetry](https://python-poetry.org/docs/cli/),
+[pnpm](https://pnpm.io/cli/update),
+[npm-check-updates](https://github.com/raineorshine/npm-check-updates),
+[npm](https://docs.npmjs.com/cli/commands/npm-update),
+[Cargo](https://doc.rust-lang.org/cargo/commands/cargo-update.html) and
+[Go](https://go.dev/doc/modules/managing-dependencies).
 
 ## Python with uv
 
@@ -67,7 +77,7 @@ Each package under `majors` is a named bump (`uv lock --upgrade-package
 <name>`) with its own research; restore `uv.lock` and update only the
 `in_range` names. Poetry (`poetry.lock`) and Cargo (`Cargo.lock`) get the
 same treatment with `poetry update <name>` and `cargo update --package
-<name>`.
+<name>`; for `package.json` ranges, edit only the `in_range` ones.
 
 With no lockfile argument the command compares every tracked lock at any
 depth, so a nested workspace lock is covered. A lock reported as
@@ -101,9 +111,11 @@ $ ncu
 set; prefer `ncu` so discovery and apply agree on what "outdated" means.
 
 **Apply** the in-range manifest bump, then install. `--target minor`
-keeps every major out of the bulk refresh (`ncu --help` documents
-`--target`) but still moves a 0.x package across a minor, which is a
-breaking move. A major is a named bump with its own commit, applied with
+keeps every major out of the bulk refresh but still moves a 0.x package
+across a minor, which is a breaking move: the
+[ncu README](https://github.com/raineorshine/npm-check-updates#readme)
+says `--target minor` updates "the patch and minor versions (including
+major version zero)". A major is a named bump with its own commit, applied with
 `ncu -u --target latest <name>`:
 
 ```console
@@ -182,9 +194,19 @@ For a one-off exclusion that is not worth checking in, `ncu -u -x <name>`.
 
 ## Node with npm or yarn
 
-`npm outdated` and `npm update`; `yarn outdated` and `yarn up`. The
-lockfile is `package-lock.json` or `yarn.lock`. Everything else in the
-pnpm section applies unchanged, except the cooldown key.
+npm: `npm outdated` and `npm update`, with `package-lock.json`
+([outdated](https://docs.npmjs.com/cli/commands/npm-outdated),
+[update](https://docs.npmjs.com/cli/commands/npm-update)). Install with
+`npm install`, and list workspace members with `npm query .workspace`
+instead of the pnpm commands.
+
+Yarn has two generations with different commands. Classic (1.x) has
+[`yarn outdated`](https://classic.yarnpkg.com/en/docs/cli/outdated);
+Yarn 2 and later have no `outdated` and use
+[`yarn up`](https://yarnpkg.com/cli/up). Read the version from
+`packageManager` or `yarn --version` before choosing. `ncu` discovery
+and its `.ncurc` holds work with either manager, and the lockfile is
+`yarn.lock`.
 
 ## Rust
 
@@ -219,10 +241,16 @@ Marked by `.tool-versions`, `.nvmrc`, `.python-version`, or a
 `mise.toml`. These pin the tools that resolve everything above, so they
 move first and on their own, one tool per commit.
 
-Discover with the version manager that reads the file:
+Discover with the version manager that reads the file. `mise outdated`
+compares the installed version with the newest release the configured
+request allows, so an exact pin reports nothing; `--bump` compares
+against the newest release overall, and `--local` skips the global
+config ([mise outdated](https://mise.jdx.dev/cli/outdated.html)):
 
 ```console
-$ mise outdated
+$ mise outdated \
+    --bump \
+    --local
 ```
 
 For a tool with no manager entry, ask the vendor's own release feed
@@ -292,7 +320,9 @@ The cooldown check compares a release's publication time with the
 window. Read the time from the registry in this run, with `set -o
 pipefail` set so a failed `curl` is not hidden by the `jq` after it. Each
 command prints one timestamp (PyPI's is the latest file upload, which
-errs toward waiting).
+errs toward waiting). Replace each `<placeholder>` with a value you
+checked against the registry listing and quote it; a name or version
+taken from release text is untrusted input to a shell.
 
 Only an answer from the registry that lacks the version (HTTP 404, or a
 listing without it) shows it is unpublished. A non-zero exit, a timeout,
@@ -339,3 +369,62 @@ waiting:
 ```console
 $ curl -fsS https://nodejs.org/dist/index.json | jq -r '.[] | select(.version=="v<version>") | .date'
 ```
+
+## Latest stable release
+
+Take the target from the registry in this run, then confirm its
+publication time as above. Each command prints one version.
+
+PyPI, whose `info.version` is the project's current release:
+
+```console
+$ curl -fsS https://pypi.org/pypi/<name>/json | jq -r .info.version
+```
+
+npm, whose `latest` dist-tag is the version `npm install` takes:
+
+```console
+$ npm view <name> dist-tags.latest
+```
+
+crates.io, whose `max_stable_version` skips prereleases:
+
+```console
+$ curl -fsS -A 'package-updater' https://crates.io/api/v1/crates/<name> | jq -r .crate.max_stable_version
+```
+
+Go module proxy:
+
+```console
+$ curl -fsS https://proxy.golang.org/<module>/@latest | jq -r .Version
+```
+
+A tool released on GitHub: the releases list, filtered to stable
+releases and sorted by version, because the `releases/latest` endpoint
+sorts by creation date and can return a backport published after a newer
+release (see [the REST reference](https://docs.github.com/en/rest/releases/releases#get-the-latest-release)).
+It prints the version without a leading `v`; the project's tag may add one:
+
+```console
+$ gh api repos/<owner>/<repo>/releases \
+    --paginate \
+    --jq '.[] | select(.prerelease | not) | select(.draft | not) | .tag_name' \
+    | sed 's/^v//' \
+    | sort --version-sort \
+    | tail -n 1
+```
+
+CPython, from the python.org release feed, which lists every release of
+every product oldest first, so filter to final CPython names and sort by
+version:
+
+```console
+$ curl -fsS https://www.python.org/api/v2/downloads/release/ \
+    | jq -r '[.[] | select(.name | test("^Python [0-9]+[.][0-9]+[.][0-9]+$")) | select(.pre_release | not) | .name | ltrimstr("Python ")] | sort_by(split(".") | map(tonumber)) | last'
+```
+
+Go toolchain: `https://go.dev/dl/?mode=json` lists stable releases newest
+first.
+
+Node.js: the first entry of `https://nodejs.org/dist/index.json` on the
+repository's major line.

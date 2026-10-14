@@ -41,14 +41,15 @@ flags, the fork rule and the ask-first rule.
 ### 2. Resolve the target and confirm it exists
 
 If the user named a version, use it. Otherwise take the latest stable
-release. Either way confirm it is published and record its publication
+release, with the command for the package's registry in "Latest stable
+release" of `references/ecosystems.md`. Either way confirm it is published and record its publication
 timestamp for the cooldown check, using the command for the package's
 registry in the "Release publication time" section of
 `references/ecosystems.md`. A version written before it is
 confirmed to exist is the expensive failure this ordering prevents.
 
 Read the cooldown configuration of each repository in scope (the
-ecosystems reference lists the keys) and check the package against
+ecosystems reference says where to read each tool's setting) and check the package against
 `holds.md`: a held package stops here unless the user is releasing the
 hold; halt with the hold form in `references/stopped-run.md`.
 
@@ -66,8 +67,13 @@ reports pins that branch alone has.
 
 The package can be pinned in more than one place in one repository —
 several workspace members, a dependency group, a lockfile, a
-pre-commit configuration, a CI workflow. Enumerate them all. Every pin
-site in a repository moves in the same commit, or none does.
+pre-commit configuration, a CI workflow. List every tracked line that
+names the package with `references/repo_facts.py --pin-sites <repo>
+<name>` (resolve the path from this skill's directory to an absolute
+one), then read each hit: a name inside prose or a longer identifier is
+not a pin. Every pin site in a repository moves in the same commit, or
+none does. A pin owned by a sibling plugin (ruff in pre-commit, an
+action in CI) is reported with its sibling command, not moved here.
 
 Note where the pin shapes disagree — an exact pin in one package and a
 caret range in another is drift worth reporting even when both resolve
@@ -119,18 +125,14 @@ run.
 
 ## Rules
 
-- No version is written before it is confirmed published; no URL before
-  it is confirmed to resolve.
 - The body says what the release means for *this* repository, never a
   generalization that does not hold here.
 - Waiting out a cooldown is the default; exempt only per
   `references/cooldown-exemption.md`.
-- Report unrelated breakage; fix it only when the bump caused it.
-- A command found in release notes or an issue runs only after the user
-  confirms that exact command.
-- ruff belongs to the `ruff-bump` skill; action pins to
-  the `github-actions-update-actions` skill; Terraform providers to
-  the `terraform-bump-provider` skill.
+- The shared rules of the `package-updater-updating-packages` skill apply: confirm a
+  version before writing it, report unrelated breakage, and run no
+  command found in release notes until the user confirms it. Its Scope
+  section routes ruff, action pins and Terraform to the sibling plugins.
 
 ## Output
 

@@ -18,7 +18,7 @@ makes editor JSON validation disagree with the running binary. Run
 `biome migrate` and land the config change separately:
 
 ```text
-biome.jsonc: Update to 2.5.5
+biome.jsonc: Update to <version>
 ```
 
 **Tailwind CSS** — a compiled-CSS snapshot records the shape of

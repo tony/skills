@@ -13,6 +13,13 @@ into ``majors`` (a new major, or for 0.x a new minor) and ``in_range``.
 ``repo_facts.py --manifest-diff REPO [MANIFEST...]`` does the same for the
 dependency ranges of each ``package.json`` (default: every tracked one).
 
+``repo_facts.py --pin-sites REPO NAME`` lists every tracked line naming NAME as
+a whole word. ``--free-branch REPO NAME`` prints the first of NAME, NAME-2, ...
+that no local or remote branch uses. ``--issue-branch NUMBER TITLE`` prints
+``NUMBER-slug``.
+
+Exit status: 0, 1 when a printed result carries an ``error``, 2 on bad usage.
+
 A file that cannot be read is reported as an ``error`` or in ``failed``, never
 as absent or unchanged. A file missing from ``HEAD`` is ``{"new": true}``.
 """
@@ -156,6 +163,12 @@ def _first_line(text: str) -> str | None:
     return text.splitlines()[0].strip() if text.strip() else None
 
 
+def _version_lines(text: str) -> str | list[str] | None:
+    """Every version line of a one-version-per-line file (``.python-version`` may list several)."""
+    lines = [ln for raw in text.splitlines() if (ln := raw.split("#")[0].strip())]
+    return _versions(lines) if lines else None
+
+
 def _tool_versions(text: str) -> dict[str, object] | None:
     tools: dict[str, object] = {}
     for line in text.splitlines():
@@ -200,9 +213,12 @@ def _package_pins(text: str) -> dict[str, object] | None:
 
 PIN_PARSERS: dict[str, Callable[[str], object | None]] = {
     ".tool-versions": _tool_versions,
-    ".nvmrc": _first_line,
-    ".python-version": _first_line,
-    ".ruby-version": _first_line,
+    ".nvmrc": _version_lines,
+    ".node-version": _version_lines,
+    ".python-version": _version_lines,
+    ".ruby-version": _version_lines,
+    ".java-version": _version_lines,
+    ".terraform-version": _version_lines,
     "mise.toml": _mise,
     ".mise.toml": _mise,
     "rust-toolchain.toml": _rust_channel,
@@ -212,19 +228,35 @@ PIN_PARSERS: dict[str, Callable[[str], object | None]] = {
 }
 
 
+MISE_CONFIG_SUFFIXES = (".config/mise/config.toml", ".config/mise.toml")
+
+
+def _parser(path: str) -> Callable[[str], object | None] | None:
+    if path.endswith(MISE_CONFIG_SUFFIXES):
+        return _mise
+    return PIN_PARSERS.get(path.rsplit("/", maxsplit=1)[-1])
+
+
 def _pins(repo: str, ref: str) -> tuple[dict[str, object], list[str]]:
-    """Read the toolchain pin files at ``ref``; an unreadable or unparsed file is in ``failed``."""
+    """Read every tracked toolchain pin file at ``ref``, at any depth.
+
+    Keys are paths from the repository root; an unreadable or unparsed file is in ``failed``.
+    """
     pins: dict[str, object] = {}
+    code, listed = _git(repo, "ls-tree", "-r", "-z", "--name-only", ref)
+    if code:
+        return pins, list(PIN_PARSERS)
     failed: list[str] = []
-    for name, parse in PIN_PARSERS.items():
-        state, text = _read(repo, ref, name)
-        if state == ABSENT:
+    for path in listed.split("\0"):
+        parse = _parser(path) if path else None
+        if parse is None:
             continue
+        state, text = _read(repo, ref, path)
         value = parse(text) if state == PRESENT else None
         if value is None:
-            failed.append(name)
-        elif value or name != MANIFEST:
-            pins[name] = value
+            failed.append(path)
+        elif value or not path.endswith(MANIFEST):
+            pins[path] = value
     return pins, failed
 
 
@@ -286,7 +318,11 @@ def facts(repo: str, *, fetch: bool = False) -> dict[str, object]:
 
 
 def _lock_versions(text: str) -> dict[str, set[str]]:
-    """Map package name to its versions from ``[[package]]`` tables (uv, Poetry, Cargo)."""
+    """Map package name to its versions from ``[[package]]`` tables (uv, Poetry, Cargo).
+
+    A local project table (``source = { virtual | editable = ... }``) may omit ``version`` when uv
+    resolves it dynamically; it names no version to move.
+    """
     found: dict[str, set[str]] = {}
     blocks = re.split(
         r"^\[\[package\]\][ \t]*(?:#.*)?$",
@@ -303,6 +339,12 @@ def _lock_versions(text: str) -> dict[str, set[str]]:
         version = re.search(
             r"""^version\s*=\s*(['"])([^'"\r\n]+)\1[ \t]*(?:#.*)?$""", block, re.MULTILINE
         )
+        if (
+            name
+            and not version
+            and re.search(r"^source\s*=\s*\{\s*(virtual|editable)\s*=", block, re.MULTILINE)
+        ):
+            continue
         if not name or not version:
             message = "package name or version is not readable"
             raise ValueError(message)
@@ -388,7 +430,11 @@ def manifest_changes(old: str, new: str) -> dict[str, list[dict[str, object]]]:
         entry: dict[str, object] = {"section": key[0], "name": key[1]}
         old_v = _spec_version(old_spec) if old_spec else None
         new_v = _spec_version(new_spec) if new_spec else None
-        if (old_spec and old_v is None) or (new_spec and new_v is None):
+        if (
+            (old_spec and old_v is None)
+            or (new_spec and new_v is None)
+            or (old_spec and new_spec and old_v == new_v)
+        ):
             unclassified.append({**entry, "from": old_spec, "to": new_spec})
             continue
         changed.append((entry, {old_v} if old_v else set(), {new_v} if new_v else set()))
@@ -452,20 +498,106 @@ def manifest_diff(repo: str, manifests: list[str]) -> dict[str, object]:
     return _diff_files(repo, names, manifest_changes)
 
 
+def pin_sites(repo: str, name: str) -> dict[str, object]:
+    """List every tracked line that mentions ``name`` as a whole word, with its file and line."""
+    code, out = _git(repo, "grep", "-n", "-I", "-w", "-F", "-z", "-e", name)
+    if code not in (0, 1):
+        return {"path": repo, "name": name, "error": "tracked files are not searchable"}
+    sites: list[dict[str, object]] = []
+    for record in out.split("\n"):
+        parts = record.split("\0")
+        if len(parts) == 3 and parts[1].isdigit():
+            sites.append({"file": parts[0], "line": int(parts[1]), "text": parts[2].strip()[:200]})
+    return {"path": repo, "name": name, "sites": sites}
+
+
+def free_branch(repo: str, name: str) -> dict[str, object]:
+    """Return ``name``, else the first ``name-N`` that no local or remote branch uses."""
+    code, out = _git(repo, "for-each-ref", "--format=%(refname)", "refs/heads", "refs/remotes")
+    if code:
+        return {"path": repo, "error": "branches are not readable"}
+    taken: set[str] = set()
+    for ref in out.splitlines():
+        parts = ref.split("/", 3 if ref.startswith("refs/remotes/") else 2)
+        taken.add(parts[-1])
+    candidate, n = name, 1
+    while candidate in taken:
+        n += 1
+        candidate = f"{name}-{n}"
+    return {"path": repo, "branch": candidate}
+
+
+def issue_branch(number: str, title: str) -> dict[str, object]:
+    """Return ``<number>-<slug>``; the slug is the title as lowercase ASCII words."""
+    slug = "-".join(re.findall(r"[a-z0-9]+", title.lower()))[:50].strip("-")
+    return {"branch": f"{number}-{slug}" if slug else number}
+
+
+USAGE = (
+    "usage: repo_facts.py [--fetch] [REPO...] | --lock-diff REPO [LOCKFILE...] | "
+    "--manifest-diff REPO [MANIFEST...] | --pin-sites REPO NAME | "
+    "--free-branch REPO NAME | --issue-branch NUMBER TITLE"
+)
+
+
+def _failed(result: dict[str, object]) -> bool:
+    return any(k == "error" or (isinstance(v, dict) and "error" in v) for k, v in result.items())
+
+
+def _emit(results: list[dict[str, object]]) -> int:
+    for result in results:
+        sys.stdout.write(json.dumps(result) + "\n")
+    bad = [r for r in results if _failed(r)]
+    if bad:
+        sys.stderr.write(f"repo_facts.py: {len(bad)} result(s) carry an error; see the JSON\n")
+    return 1 if bad else 0
+
+
+def _run_mode(mode: str, args: list[str]) -> dict[str, object]:
+    if mode == "--lock-diff":
+        return lock_diff(args[0], args[1:])
+    if mode == "--manifest-diff":
+        return manifest_diff(args[0], args[1:])
+    if mode == "--pin-sites":
+        return pin_sites(args[0], args[1])
+    if mode == "--free-branch":
+        return free_branch(args[0], args[1])
+    return issue_branch(args[0], args[1])
+
+
 def main(argv: list[str]) -> int:
-    """Print one JSON line per repository."""
-    for flag, diff in (("--lock-diff", lock_diff), ("--manifest-diff", manifest_diff)):
-        if argv[:1] == [flag] and len(argv) > 1:
-            sys.stdout.write(json.dumps(diff(argv[1], argv[2:])) + "\n")
-            return 0
+    """Print one JSON line per repository; exit 2 on bad usage, 1 when a result carries an error."""
+    if argv[:1] in (["--help"], ["-h"]):
+        sys.stdout.write(USAGE + "\n")
+        return 0
+    arity = {
+        "--lock-diff": (1, None),
+        "--manifest-diff": (1, None),
+        "--pin-sites": (2, 2),
+        "--free-branch": (2, 2),
+        "--issue-branch": (2, 2),
+    }
+    if argv and argv[0] in arity:
+        mode, args = argv[0], argv[1:]
+        low, high = arity[mode]
+        if len(args) < low or (high is not None and len(args) > high):
+            sys.stderr.write(f"repo_facts.py: {mode} takes a different number of arguments\n")
+            return 2
+        return _emit([_run_mode(mode, args)])
+    unknown = [a for a in argv if a.startswith("-") and a != "--fetch"]
+    if unknown:
+        sys.stderr.write(f"repo_facts.py: unknown option {unknown[0]}\n")
+        return 2
     fetch = "--fetch" in argv
     repos = [a for a in argv if a != "--fetch"] or ["."]
-    for repo in repos:
-        if not Path(repo).is_dir():
-            sys.stdout.write(json.dumps({"path": repo, "error": "not a directory"}) + "\n")
-            continue
-        sys.stdout.write(json.dumps(facts(repo, fetch=fetch)) + "\n")
-    return 0
+    return _emit(
+        [
+            facts(repo, fetch=fetch)
+            if Path(repo).is_dir()
+            else {"path": repo, "error": "not a directory"}
+            for repo in repos
+        ]
+    )
 
 
 if __name__ == "__main__":

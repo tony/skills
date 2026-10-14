@@ -11,6 +11,7 @@ indistinguishable from neglect.
 ## Contents
 
 - Where holds live
+- Holds outside ncu
 - The reason cannot live in the file
 - Commit grammar
 - What earns a hold
@@ -18,6 +19,8 @@ indistinguishable from neglect.
 - Cooldown is not a hold
 
 ## Where holds live
+
+This section covers Node. For other ecosystems see "Holds outside ncu".
 
 npm-check-updates reads an `.ncurc` config file in one of several
 formats; `ncu --help` and its documentation list the names and the
@@ -47,6 +50,21 @@ place so the next hold has somewhere to go, or the file deleted outright.
 Follow whichever the repository already does, and do not "tidy" an empty
 `reject` array away, since the next reader sees a difference that `ncu`
 does not.
+
+## Holds outside ncu
+
+Python and Rust have no `reject` list; a hold there is a bound or a
+constraint in the manifest:
+
+- Python: an upper bound in `pyproject.toml` (`pydantic<2`), or a
+  `constraint-dependencies` or `override-dependencies` entry under
+  `[tool.uv]` ([uv settings](https://docs.astral.sh/uv/reference/settings/)).
+- Rust: a `<` bound or an exact `=` requirement in `Cargo.toml`
+  ([Cargo reference](https://doc.rust-lang.org/cargo/reference/specifying-dependencies.html)).
+
+Read each manifest in the tree for these. Find the commit that added one
+with `git log -S'<text>' -- <file>`, and audit it as below. A bound with
+no recoverable reason is reported, not released.
 
 ## The reason cannot live in the file
 
@@ -97,7 +115,7 @@ reason to read them.
 ## Auditing holds
 
 Every sweep checks the existing holds, not just the outdated packages.
-For each entry in every `reject` array, report:
+For each `reject` entry and each bound or constraint above, report:
 
 - The condition recorded in the commit that added it, and whether that
   condition is now met — a hold whose fixing version has shipped should

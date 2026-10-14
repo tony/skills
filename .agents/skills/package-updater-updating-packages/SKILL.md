@@ -40,10 +40,8 @@ References:
 
 ## Never run cargo-outdated
 
-It exhausts memory and the OOM killer can take a constrained host down
-with it. Starting the process is the cost, so there is no safe probe:
-never run it to test a repro, never offer it. Discover Rust updates
-with `cargo update --dry-run`. Only the user can lift this.
+Never run or offer cargo-outdated, not even to test a repro. Discover
+Rust updates with `cargo update --dry-run`. Only the user can lift this.
 
 ## Core principle
 
@@ -80,10 +78,12 @@ one a repository carries updates on its own track.
 Read pins from the default branch rather than the working tree. Run the
 facts script with `--fetch` on each repository in scope: it prints one
 JSON object per repository with `fork_signal`, `linked_worktree`,
-`default_branch`, `behind_remote`, `branch`, `dirty` and `pins` (the
-toolchain pin files, `rust-toolchain.toml`, the `go.mod` `go` and
-`toolchain` lines, and `packageManager`/`engines`). A checkout parked on
-a feature branch reports pins the branch that ships does not have. When
+`default_branch`, `behind_remote`, `ahead_remote`, `branch`, `dirty` and
+`pins`: every tracked toolchain pin file at any depth, keyed by its path
+from the repository root (a `.python-version` listing several versions
+is a list), with the `go.mod` `go` and `toolchain` lines and
+`packageManager`/`engines`. A checkout parked on a feature branch
+reports pins the branch that ships does not have. When
 `fetch_ok` is false, say the pins may be stale.
 
 An `error`, a null `dirty` value, or a `failed` entry for worktree
@@ -137,15 +137,15 @@ whose new version is a new major, or for 0.x a new minor, including another
 version added beside an existing one. A file with an `error`, or a range
 under `unclassified`, is not classified: keep it for inspection and stop
 before staging. When `majors` is not empty, restore the file to `HEAD`,
-update only the `in_range` names (`uv lock --upgrade-package <name>`,
-`poetry update <name>`, `cargo update --package <name>`, or their ranges
-in `package.json`), rerun the script until `majors` is empty, and make
-each major its own named bump.
+update only the `in_range` names with the ecosystem's per-package
+command in the ecosystems reference, rerun the script until `majors` is
+empty, and make each major its own named bump.
 
-**Audit the existing holds in the same pass.** Every `reject` entry in
-every config in the tree, not just the root one, per the holds
-reference. Release a hold whose condition has been met; report one with
-no recoverable reason for the user to decide.
+**Audit the existing holds in the same pass.** Every hold in the tree,
+not just at the root, per the holds reference: `reject` entries, and the
+bounds and constraints that hold a package in other ecosystems. Release a
+hold whose condition has been met; report one with no recoverable reason
+for the user to decide.
 
 ## Phase 3: Research each move
 
@@ -155,7 +155,8 @@ carries no claims. Everything else does.
 For each named package and each toolchain pin: read the release notes
 for every version in the span, work out what the change means for *this*
 repository, and collect the links per the upstream-links reference.
-Verify every URL resolves before it reaches a commit body. State no
+Confirm a version is published before writing it, and verify every URL
+resolves before it reaches a commit body. State no
 upstream fact that was not read in this run. A lookup that fails leaves
 that package or release unchecked, never absent or unpublished.
 
@@ -200,11 +201,14 @@ Present a plan, as text, covering:
   red until its follow-up lands.
 - For each repository: the branch the commits land on and the push
   target, and any unpushed commits already ahead of the remote
-  (`git log <remote>/<default>..<default>`) that are not bumps (a push
+  (`ahead_remote` counts them; list them with
+  `git log <remote>/<default>..<default>`) that are not bumps (a push
   publishes them too). A repository whose ownership rested on the fallback
   signals alone is listed as local-only unless the user approves its push
   here.
 - How many commits this produces.
+- Any issue or card the run files and any pull request it opens, with
+  the repository or tracker each goes to.
 - Any destructive step, such as a clean reinstall, with the exact
   directories it deletes.
 - The quality-check commands this project actually declares.
@@ -248,10 +252,12 @@ plan is approved and before the first edit, name the branch inside it
 with `git -C <printed-path> switch -c <branch>`: the branch the plan or
 `--branch` gave, else a generated `wip/<topic>`. A branch the user named
 that exists and is not checked out elsewhere is switched to, never reset.
-A generated name that is taken gets a suffix (`wip/<topic>-2`), so a stale
-branch never carries an old base, and a name another worktree holds means
-another name. Commits on a detached HEAD are unreachable once the
-worktree is removed.
+For a generated name, run `references/repo_facts.py --free-branch
+<repo> wip/<topic>` (resolve the path from this skill's directory to an
+absolute one) and use the `branch` it prints: the name, or the first
+`-2`, `-3` suffix no local or remote branch holds, so a stale branch
+never carries an old base. Commits on a detached HEAD are unreachable
+once the worktree is removed.
 
 A repository without a worktree is edited in place only while it is
 clean: re-read `git status` just before the first edit, and a change since
@@ -287,9 +293,11 @@ When the user asks for the outstanding work to be filed before it is
 done, the order is: finish the audit, create the issue or card from it,
 derive the branch name from what was created, then work on that branch.
 
-Detect the tracker at runtime: Linear through its MCP tools or CLI,
-GitHub through `gh`. Use Linear's own branch name verbatim; for a GitHub
-issue, derive `<number>-<slug>`.
+Detect the tracker at runtime: GitHub through `gh`, Linear through
+whatever Linear tool the host provides. Use the branch name Linear
+returns verbatim; for a GitHub issue run `references/repo_facts.py
+--issue-branch <number> "<title>"` (path resolved as above) and use the
+`branch` it prints.
 
 The pull request references the issue; the commits do not.
 
@@ -333,7 +341,9 @@ remote, `--push` or `--pr` was passed, and the plan approved the push
 (including any non-bump commits it listed as ahead), not only when this
 invocation created the commits. Then remove each worktree with `git -C
 <repo> worktree remove <printed-path>`, without `--force`; the branch
-stays, and the report names it.
+stays, and the report names it. When git refuses because the worktree
+holds untracked files, leave the worktree in place, never `--force`, and
+say in the report that it remains and which branch it holds.
 
 ## Phase 6: Report
 
@@ -367,7 +377,7 @@ Shape, which the three commands in this plugin share:
 2. The sections of the invoking command's Output contract, in order, with
    `## Failed check` after `## Commits` when a bump failed its check. A
    section with nothing to report is omitted, never filled with "nothing
-   found" or a restated scope. Outside a command, use the `package-updater-update` skill.
+   found" or a restated scope. Outside a command, use `## Commits`, `## Verification` and `## Holds`, in that order.
 3. A halted run follows "Plan stop and halt" below.
 4. No bold label on a bullet, no closing recap, plan preview ("Once
    X, I'll ...") or line after the options ("Pick one"), no local

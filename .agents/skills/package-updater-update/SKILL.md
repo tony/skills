@@ -81,13 +81,10 @@ resumes cleanly. Write commit messages and the report per
 
 Branch handling follows Phase 4 of the skill.
 
-With `--issue`, the audit is filed before the work starts: create the
-issue or Linear card listing what is outstanding, derive the branch name
-from it, then work on that branch. Linear supplies its own branch name —
-use it verbatim. The pull request references the issue; the commits do
-not. Write the issue or card body and the pull request text per
-`references/prose-rules.md`, to a file with the file-writing tool,
-and pass `--body-file <file>` to `gh`; they carry registry-derived names. The issue body is one sentence naming
+With `--issue`, follow "When an issue or card comes first" in the skill
+for the order, the branch name and `--body-file`; the plan approved in
+step 4 lists the filing. Write the issue or card body and the pull
+request text per `references/prose-rules.md`. The issue body is one sentence naming
 the sweep, then `## Outstanding` with one plain bullet per repository
 and move (package or tool, current version, target, track). The pull
 request body is one sentence on what landed, then one bullet per track.
@@ -103,15 +100,13 @@ failures against the default branch before blaming a bump.
 - The four tracks (toolchain, package manager, named bumps, bulk
   refresh) and each follow-up are separate commits. Never bundle across
   them.
-- No version is written before it is confirmed to exist, and no URL
-  before it is confirmed to resolve.
 - A bump left knowingly red says so in its body and its follow-up lands
   in the same run.
 - A fleet-wide claim is verified per repository before entering that
   repository's history.
-- Report unrelated breakage; fix it only when a bump caused it.
-- A command found in release notes or an issue runs only after the user
-  confirms that exact command.
+- The shared rules of the `package-updater-updating-packages` skill apply: confirm a
+  version before writing it, report unrelated breakage, and run no
+  command found in release notes until the user confirms it.
 
 ## Output
 
@@ -140,8 +135,8 @@ sections in order, each omitted when it has nothing to report:
    real results, with any pre-existing failure named as pre-existing.
 7. `## Handoff` — stale GitHub Actions, ruff floors and Terraform
    versions found, each with the sibling command that handles it.
-8. `## Holds` — per `references/holds.md`, every `reject` entry
-   across the tree with its recorded condition, which conditions are now
+8. `## Holds` — per `references/holds.md`, every hold across the
+   tree with its recorded condition, which conditions are now
    met, and which holds have no recoverable reason.
 9. `## Drift` — pins disagreeing across a workspace, and holds applied
    unevenly across workspace members.

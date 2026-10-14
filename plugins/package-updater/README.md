@@ -76,10 +76,12 @@ Handled by sibling plugins:
 
 ## Ecosystem coverage
 
-The uv, pnpm, npm, Cargo, Poetry, pip and Go procedures come from each
+The uv, pnpm, npm, Yarn, Cargo, Poetry, pip and Go procedures come from each
 tool's own documentation. The plugin proposes the command and waits for
-confirmation before the first run in a repository. Eval cases cover the
-`.tool-versions` flow and a named `requests` bump on a uv lock.
+confirmation before the first run in a repository. Eval cases cover
+toolchain and named-package bumps, audit scope, fork and ownership
+exclusion, cooldown stops, feature-branch worktrees and failed checks.
+Ruby, PHP, Java, bun and deno projects are not covered.
 
 ## Prerequisites
 

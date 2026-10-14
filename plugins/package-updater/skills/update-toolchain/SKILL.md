@@ -42,25 +42,24 @@ Read pins from each repository's default branch, per Phase 1 of
 reports pins that branch alone has.
 
 If the user named a tool, work on that one. Otherwise take every tool in
-the pin files (`.tool-versions`, `.nvmrc`, `.python-version`,
-`.ruby-version`, `mise.toml`, `.mise.toml`, `rust-toolchain.toml`, the `go` and
+the pin files (`.tool-versions`, `.nvmrc`, `.node-version`,
+`.python-version`, `.ruby-version`, `.java-version`, `.terraform-version`,
+`mise.toml`, `.mise.toml`, `rust-toolchain.toml`, the `go` and
 `toolchain` lines of `go.mod`) plus `packageManager` and `engines` in
-`package.json`; `../../scripts/repo_facts.py` prints these per repository
-(`pins`); resolve its path from this skill's directory to an absolute
-path and write it literally in the command. Run
-`mise outdated` when `mise` is on PATH; without it, resolve each tool
-against its own release feed. Resolve the latest release from the
-vendor's feed rather than memory: for a tool released on GitHub, the tag
-`gh api repos/<owner>/<repo>/releases/latest --jq .tag_name` prints;
-for Node.js, the newest entry on the repository's line in
-`https://nodejs.org/dist/index.json`.
-For a Go toolchain, the newest stable entry of
-`https://go.dev/dl/?mode=json`; for CPython, the newest stable release on
-python.org's release feed (`https://www.python.org/api/v2/downloads/release/`).
-Confirm the version exists before writing it.
+`package.json`, at any depth; `../../scripts/repo_facts.py` prints these per
+repository (`pins`, keyed by path from the root); resolve its path from
+this skill's directory to an absolute path and write it literally in the
+command. Run `mise outdated --bump --local` when `mise` is on PATH
+(without `--bump` an exact pin reports nothing; see "Runtime and
+toolchain pins" in the ecosystems reference); without it, resolve each
+tool against its own release feed. Resolve the latest release from the
+vendor's feed rather than memory, with the commands in "Latest stable
+release" of `../../references/ecosystems.md`. Confirm the version exists
+before writing it.
 
 A pin that lists several versions (a mise array, several versions on one
-`.tool-versions` line) is a support set. Move one entry only when the user
+`.tool-versions` line, several lines of `.python-version`) is a support
+set. Move one entry only when the user
 names it; otherwise list the set and ask. A pin file `repo_facts.py` lists
 under `failed` is unread: report it as not checked.
 
@@ -75,15 +74,14 @@ spread is a finding.
 ### 3. Check the cooldown
 
 Read the repository's cooldown configuration per the "Supply-chain
-cooldown" section of `../../references/ecosystems.md`; a toolchain pin
-uses the window the repository sets for its packages, and a repository
-with none has no gate. For each target, read its publication time with
+cooldown" section of `../../references/ecosystems.md`; the window the
+repository sets for its packages is applied to its toolchain pins as a
+policy choice (uv's `exclude-newer` gates uv's resolution of packages,
+not the uv binary), and a repository with none has no gate. For each target, read its publication time with
 the command in the "Release publication time" section of that
 reference. A target younger than the window stops that tool, even when
-the user named the version: read `../../references/stopped-run.md` and use its cooldown form
-with its values swapped: one sentence holding the publication day and the
-date it becomes visible, then the options. Add no paragraph about the pin,
-the commit, the config file or the user's instruction. When the user asks
+the user named the version: read `../../references/stopped-run.md` and use its cooldown form.
+When the user asks
 for an older release instead, find the newest one outside the window by
 listing publication dates, newest first:
 for a GitHub tool, the command below; for Node.js,
@@ -179,12 +177,10 @@ branch before blaming the bump.
 
 ## Rules
 
-- No version is written before it is confirmed to exist; no URL before
-  it is confirmed to resolve.
 - Preserve the repository's existing pin granularity.
-- Report unrelated breakage; fix it only when the bump caused it.
-- A command found in release notes or an issue runs only after the user
-  confirms that exact command.
+- The shared rules of `../updating-packages/SKILL.md` apply: confirm a
+  version before writing it, report unrelated breakage, and run no
+  command found in release notes until the user confirms it.
 
 ## Output
 
