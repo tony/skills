@@ -1,5 +1,5 @@
 ---
-max_turns: 15
+max_turns: 25
 timeout_seconds: 420
 allowed_tools: [Bash, Read, Glob, Grep, Write, Skill, Task]
 append_system_prompt: >-
