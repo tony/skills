@@ -49,15 +49,12 @@ _SECTIONS = (
 _HERO_ORDER = ("misquoted", "vanished", "moved", "changed")
 
 
-def moved(
-    sources: list[dict[str, object]],
-    current: dict[str, str],
-    missing: str = "no current SHA supplied",
-) -> dict[str, list[str]]:
+def moved(sources: list[dict[str, object]], current: dict[str, str | None]) -> dict[str, list[str]]:
     """Compare each source's recorded commit with *current*, once per source.
 
-    *missing* is the reason given for a source absent from *current*; the
-    caller knows whether it never looked the source up or the lookup failed.
+    A source absent from *current* was never looked up ("no current SHA
+    supplied"); one mapped to ``None`` was looked up and failed ("host
+    unreachable").
     """
     out: dict[str, list[str]] = {"moved": [], "uncheckable": []}
     seen: set[str] = set()
@@ -67,16 +64,20 @@ def moved(
             continue
         seen.add(source)
         recorded = str(row.get("commit", "")).strip()
+        sha = current.get(source)
         if not recorded:
             out["uncheckable"].append(f"{source}: no commit recorded")
         elif source not in current:
-            out["uncheckable"].append(f"{source}: {missing}")
-        elif current[source] != recorded:
-            out["moved"].append(f"{source}: {row.get('ref', '')} now {current[source][:7]}")
+            out["uncheckable"].append(f"{source}: {_CAUSES[2]}")
+        elif sha is None:
+            out["uncheckable"].append(f"{source}: {_CAUSES[1]}")
+        elif sha != recorded:
+            out["moved"].append(f"{source}: {row.get('ref', '')} now {sha[:7]}")
     return out
 
 
-_MISSING = {"unsupplied": "no current SHA supplied", "unreachable": "host unreachable"}
+_CAUSES = ("no clone on disk", "host unreachable", "no current SHA supplied")
+_CAUSE_LINE = re.compile(r"^(.*): (" + "|".join(_CAUSES) + r")$")
 _SAFE = re.compile(r"^[A-Za-z0-9._/-]+$")
 _HEX = re.compile(r"^[0-9a-f]{7,40}$")
 
@@ -142,9 +143,9 @@ def local(
     for source, clone in clones.items():
         _check_source(source, rows.get(source), clone, terms, out)
     for source, row in rows.items():
-        no_remote = not source.startswith(("http://", "https://"))
-        if no_remote and str(row.get("commit", "")).strip() and source not in clones:
-            out["uncheckable"].append(f"{source}: no clone on disk")
+        github = source.startswith("https://github.com/")
+        if not github and str(row.get("commit", "")).strip() and source not in clones:
+            out["uncheckable"].append(f"{source}: {_CAUSES[0]}")
     return out
 
 
@@ -204,6 +205,30 @@ def changed(metrics: str, fresh: dict[str, str]) -> dict[str, list[str]]:
     return out
 
 
+def _one_cause_per_source(items: list[str]) -> list[str]:
+    """Keep the most specific cause for a source named by more than one entry.
+
+    >>> _one_cause_per_source(["s: no current SHA supplied", "s: no clone on disk"])
+    ['s: no clone on disk']
+    """
+    best: dict[str, int] = {}
+    for item in items:
+        match = _CAUSE_LINE.match(item)
+        if match:
+            rank = _CAUSES.index(match.group(2))
+            best[match.group(1)] = min(rank, best.get(match.group(1), rank))
+    out: list[str] = []
+    seen: set[str] = set()
+    for item in items:
+        match = _CAUSE_LINE.match(item)
+        if not match:
+            out.append(item)
+        elif match.group(1) not in seen:
+            seen.add(match.group(1))
+            out.append(f"{match.group(1)}: {_CAUSES[best[match.group(1)]]}")
+    return out
+
+
 def report(results: dict[str, object]) -> str:
     """Assemble the hero and the five verify sections from *results*."""
     lists: dict[str, list[str]] = {
@@ -213,6 +238,7 @@ def report(results: dict[str, object]) -> str:
         for prefix, key in _BUCKETS:
             if str(line).startswith(prefix):
                 lists[key].append(str(line)[len(prefix) :])
+    lists["uncheckable"] = _one_cause_per_source(lists["uncheckable"])
     checked = int(cast("int", results.get("checked", 0)))
     stale = [f"{len(lists[k])} {k}" for k in _HERO_ORDER if lists[k]]
     if stale:
@@ -248,12 +274,6 @@ def _parser() -> argparse.ArgumentParser:
     one = sub.add_parser("moved", help="compare recorded commits with current ones")
     _ = one.add_argument("sources")
     _ = one.add_argument("current")
-    _ = one.add_argument(
-        "--missing",
-        choices=sorted(_MISSING),
-        default="unsupplied",
-        help="why a source has no current SHA: never looked up, or the lookup failed",
-    )
     two = sub.add_parser("changed", help="diff recorded measurements against fresh output")
     _ = two.add_argument("metrics")
     _ = two.add_argument("fresh")
@@ -269,10 +289,9 @@ def _run(args: argparse.Namespace) -> int:
     command = cast("str", args.command)
     if command == "moved":
         current = cast("dict[str, object]", _json(cast("str", args.current)))
-        if not all(isinstance(v, str) for v in current.values()):
-            return _refuse("current SHAs must all be strings")
-        reason = _MISSING[cast("str", args.missing)]
-        data = moved(_sources(cast("str", args.sources)), cast("dict[str, str]", current), reason)
+        if not all(v is None or isinstance(v, str) for v in current.values()):
+            return _refuse("current SHAs must be strings or null")
+        data = moved(_sources(cast("str", args.sources)), cast("dict[str, str | None]", current))
         print(json.dumps(data))
     elif command == "local":
         study = cast("str", args.study)

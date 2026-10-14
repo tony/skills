@@ -135,7 +135,7 @@ def test_moved_refuses_a_non_string_sha(tmp_path: Path, capsys: pytest.CaptureFi
     (tmp_path / "s.jsonl").write_text('{"source": "o/r", "commit": "a"}\n', encoding="utf-8")
     (tmp_path / "c.json").write_text('{"o/r": 5}', encoding="utf-8")
     assert verify_report.main(["moved", str(tmp_path / "s.jsonl"), str(tmp_path / "c.json")]) == 2
-    assert capsys.readouterr().err == "verify_report.py: current SHAs must all be strings\n"
+    assert capsys.readouterr().err == "verify_report.py: current SHAs must be strings or null\n"
 
 
 @pytest.mark.integration
@@ -183,22 +183,48 @@ def test_local_checks_moved_and_vanished_offline(tmp_path: Path) -> None:
     assert verify_report.local(rows, terms, clones)["vanished"][0] == "s: ref v1 is gone"
 
 
-def test_moved_states_why_a_sha_is_missing() -> None:
-    """The caller says whether the lookup was skipped or failed."""
-    rows: list[dict[str, object]] = [{"source": "o/q", "ref": "v3", "commit": "c" * 40}]
-    skipped = verify_report.moved(rows, {})
-    failed = verify_report.moved(rows, {}, "host unreachable")
-    assert skipped["uncheckable"] == ["o/q: no current SHA supplied"]
-    assert failed["uncheckable"] == ["o/q: host unreachable"]
+def test_moved_tells_a_failed_lookup_from_one_never_made() -> None:
+    """An omitted source was not looked up; a null one failed."""
+    rows: list[dict[str, object]] = [
+        {"source": "o/p", "ref": "v1", "commit": "c" * 40},
+        {"source": "o/q", "ref": "v3", "commit": "c" * 40},
+    ]
+    out = verify_report.moved(rows, {"o/q": None})
+    assert out["uncheckable"] == ["o/p: no current SHA supplied", "o/q: host unreachable"]
 
 
-def test_moved_cli_missing_flag(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
-    """``--missing unreachable`` selects the failed-lookup wording."""
+def test_moved_cli_accepts_null_for_a_failed_lookup(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """The JSON file carries null for a failed lookup."""
     (tmp_path / "s.jsonl").write_text('{"source": "o/q", "commit": "c"}\n', encoding="utf-8")
-    (tmp_path / "c.json").write_text("{}", encoding="utf-8")
+    (tmp_path / "c.json").write_text('{"o/q": null}', encoding="utf-8")
     argv = ["moved", str(tmp_path / "s.jsonl"), str(tmp_path / "c.json")]
-    assert verify_report.main([*argv, "--missing", "unreachable"]) == 0
+    assert verify_report.main(argv) == 0
     assert json.loads(capsys.readouterr().out)["uncheckable"] == ["o/q: host unreachable"]
+
+
+def test_report_keeps_one_cause_per_source() -> None:
+    """Most specific wins: no clone on disk, then host unreachable, then no SHA supplied."""
+    results: dict[str, object] = {
+        "checked": 1,
+        "uncheckable": [
+            "g: no current SHA supplied",
+            "g: no clone on disk",
+            "h: no current SHA supplied",
+            "h: host unreachable",
+            "k: no current SHA supplied",
+            "Metrics command `x`: not run, no confirmation",
+        ],
+    }
+    text = verify_report.report(results)
+    tail = text.split("## Uncheckable\n\n")[1].splitlines()
+    assert tail == [
+        "- g: no clone on disk",
+        "- h: host unreachable",
+        "- k: no current SHA supplied",
+        "- Metrics command `x`: not run, no confirmation",
+    ]
 
 
 def test_local_source_without_a_clone_is_uncheckable() -> None:
@@ -206,7 +232,11 @@ def test_local_source_without_a_clone_is_uncheckable() -> None:
     rows: list[dict[str, object]] = [
         {"source": "tiny-lib", "ref": "main", "commit": "a" * 40},
         {"source": "https://github.com/o/r", "ref": "v1", "commit": "b" * 40},
+        {"source": "https://gitlab.com/o/r", "ref": "v1", "commit": "d" * 40},
         {"source": "corpus/excerpt-1.txt", "ref": "ed", "commit": ""},
     ]
     out = verify_report.local(rows, [], {})
-    assert out == {"moved": [], "vanished": [], "uncheckable": ["tiny-lib: no clone on disk"]}
+    assert sorted(out["uncheckable"]) == [
+        "https://gitlab.com/o/r: no clone on disk",
+        "tiny-lib: no clone on disk",
+    ]

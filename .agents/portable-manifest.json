@@ -1056,7 +1056,7 @@
         "references/term_metrics.py": "plugins/scholar/scripts/term_metrics.py",
         "references/verify_report.py": "plugins/scholar/scripts/verify_report.py"
       },
-      "bytes": 99738
+      "bytes": 100495
     },
     {
       "name": "self-improvement-apply",
