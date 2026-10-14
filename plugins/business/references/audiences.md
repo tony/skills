@@ -69,26 +69,27 @@ results, the run description, and next steps:
 over the finished draft. `/business:pr-release` inherits the result
 by sourcing figures only from the public case study.
 
-1. Run the scanner (by its absolute path) over the draft, passing each name on the
-   `Names:` line of the run's `README.md` as `--deny`, one flag per
-   name. When the README has no `Names:` line, stop and ask the user
-   for the names to deny (`Names: none` is a valid answer, meaning no `--deny` flags, never
-   `--deny none`). List organization and team names as bare words
-   ("Atlas", not "Atlas team"):
+1. Run the scanner (by its absolute path) over the draft. `--run` makes it
+   read the names itself from the `Names:` line of the run's `README.md`; no
+   name is ever typed into a shell. It refuses (exit 2) when the README has no
+   `Names:` line, and `Names: none` means no names. A person, team, or
+   workflow name on that line is denied whole and by each of its words, in any
+   case and with any separator:
 
    ```console
    $ ../scripts/business.py scan \
-       --deny <name> \
+       --run <run> \
        --allow-url https://arxiv.org/ \
        --allow UTF-8 \
        <draft file>
    ```
 
-   It flags ticket IDs, URLs, local paths, emails, currency, and
+   It flags ticket IDs, URLs, hosts, IP addresses, local paths, emails,
+   `@handles`, tokens and private keys, `owner/repo` slugs, currency, and
    money terms (exit 1 on any hit). `--allow-url <prefix>` keeps
    the pinned citation links BENCHMARKED figures need, one prefix
    per cited host; `--allow <text>` skips a false positive such as
-   `UTF-8` or `GPT-4`. `--deny` and both allow flags repeat. Remove or reword every other
+   a slash pair or a version string. Both allow flags repeat. Remove or reword every other
    hit. Then read the draft once for names the scanner cannot know
    and for the re-identification rule above.
 2. Confirm every figure is an aggregate or a range, rounded to
@@ -106,7 +107,7 @@ window; in `## Report`, name only the report's filename, not an internal path.
 
 Before replying, use `mktemp <run>/reports/.reply-check.XXXXXX` to reserve an
 owned scratch file; write and scan the reply there with the report's same
-`--deny` and allow flags. Reword every hit and send only the checked text.
+`--run` and allow flags. Reword every hit and send only the checked text.
 Remove only that scratch file afterwards. A clean
 report does not establish that its accompanying reply is safe to publish.
 For a stopped run, never repeat excluded strings or the supplied run path;

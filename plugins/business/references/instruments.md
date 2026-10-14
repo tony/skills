@@ -86,14 +86,13 @@ unavailable, not worked around.
   window filter runs locally. Author and reviewer logins are read
   only to tell a self-review or a bot from a reviewer and never
   reach `raw/`: the pages are not saved, and `raw/pr-metrics.csv`
-  holds the aggregate rows. Write to a temp file in the same
-  command and move it into `raw/` only when the pipeline succeeds, so
-  a failed `gh` leaves nothing in `raw/`. Use the run's absolute path,
-  since the working directory resets between Bash calls:
+  holds the aggregate rows. `--output` writes the CSV only when the
+  pages parse, so a failed `gh` leaves nothing in `raw/`, and it
+  refuses to overwrite an existing snapshot. Use the run's absolute
+  path, since the working directory resets between Bash calls:
 
   ```bash
   set -o pipefail
-  tmp="$(mktemp "${TMPDIR:-/tmp}/pr-metrics.XXXXXX")"
   gh api graphql --paginate \
     -f owner=acme \
     -f name=widgets \
@@ -117,8 +116,7 @@ unavailable, not worked around.
     | /abs/path/to/scripts/business.py collect-prs \
         --start 2026-04-01 \
         --end 2026-06-30 \
-        > "$tmp" \
-    && mv "$tmp" /abs/path/to/run/raw/pr-metrics.csv
+        --output /abs/path/to/run/raw/pr-metrics.csv
   ```
 
   `collect-prs` (the script's absolute path, written literally)

@@ -1,6 +1,6 @@
 """Tests for the completeness gate, scan allow flags, and permission-safe roots."""
 
-# ruff: noqa: S101, INP001, PLR2004, D103, ARG001
+# ruff: noqa: S101, INP001, PLR2004, D103, ARG001, SLF001
 # pyright: reportAny=false, reportUnusedCallResult=false, reportPrivateUsage=false
 # pyright: reportImplicitStringConcatenation=false, reportUnusedParameter=false
 
@@ -96,9 +96,9 @@ def test_gate_cli_exit_codes(tmp_path: Path, capsys: pytest.CaptureFixture[str])
 
 
 def test_scan_allow_flags() -> None:
-    text = "GPT-4, UTF-8, https://arxiv.org/abs/1 and https://corp.example/x"
-    hits = business.scan_text(text, allow=["UTF-8"], allow_url=["https://arxiv.org/"])
-    assert [h[3] for h in hits] == ["GPT-4", "https://corp.example/x"]
+    text = "PROJ-4, ABC-8, https://arxiv.org/abs/1 and https://corp.example/x"
+    hits = business.scan_text(text, allow=["ABC-8"], allow_url=["https://arxiv.org/"])
+    assert [h[3] for h in hits] == ["PROJ-4", "https://corp.example/x"]
 
 
 def test_scan_rules_limits_kinds() -> None:
@@ -141,7 +141,7 @@ PROJECT_REGISTER = "\n".join(
     for i, v, lo, hi in [
         ("addressable-population", 40, 30, 50),
         ("instances-per-person-year", 100, 100, 100),
-        ("baseline-minutes", 30, 25, 40),
+        ("manual-minutes", 30, 25, 40),
         ("savings-rate", 0.4, 0.3, 0.6),
         ("adoption-rate", 0.5, 0.3, 0.7),
         ("realization-rate", 0.6, 0.4, 0.8),
@@ -405,3 +405,278 @@ def test_unknown_bullet_accepts_any_data_clause(tmp_path: Path) -> None:
     assert business.check_run(run) == []
     (run / "findings.md").write_text("## Unknowns\n\n- Adoption: unknown.\n")
     assert len(business.check_run(run)) == 1
+
+
+LEAKS: dict[str, tuple[str, list[str]]] = {
+    "denied-name": ("Team lead priya shipped it.", ["Priya Raman"]),
+    "denied-name-compound": ("Ran LeanTighten and lean tighten.", ["lean-tighten"]),
+    "host": ("See wiki.acme-internal.example/tighten", []),
+    "host-internal": ("Runs on build01.corp.local", []),
+    "ip": ("Served from 10.2.3.4 today", []),
+    "handle": ("Ask @ann-dev about it", []),
+    "path-opt": ("Config in /opt/acme/app", []),
+    "path-unc": (r"Share at \\fileserver\share", []),
+    "path-drive": ("Saved to C:/Users/ann/x", []),
+    "secret-github": ("Token ghp_abcdefghijklmnopqrstuvwxyz0123456789", []),
+    "secret-aws": ("Key AKIAABCDEFGHIJKLMNOP", []),
+    "secret-slack": ("Hook xoxb-1234567890-abcdefghij", []),
+    "secret-pem": ("-----BEGIN RSA PRIVATE KEY-----", []),
+    "repo-slug": ("Cloned from acme/widgets", []),
+    "money-saving": ("It is a cost-saving move.", []),
+    "money-salary": ("Fits the salary band.", []),
+    "money-euros": ("Worth 5 euros or 150 bucks.", []),
+    "currency-fullwidth": ("Costs \uff045 each", []),
+}
+
+
+@pytest.mark.parametrize("case", sorted(LEAKS))
+def test_scan_flags_every_leak_class(case: str) -> None:
+    text, deny = LEAKS[case]
+    assert business.scan_text(text, deny=deny)
+
+
+def test_scan_denies_each_name_word_but_not_longer_words() -> None:
+    assert [h[3] for h in business.scan_text("priya met Raman.", deny=["Priya Raman"])] == [
+        "priya",
+        "Raman",
+    ]
+    assert business.scan_text("The Atlassian suite.", deny=["Atlas"]) == []
+
+
+def test_scan_leaves_public_citations_and_prose_clean() -> None:
+    text = (
+        "METR (2025) found developers 19% slower (n=16, 246 tasks); Bain reports 10-15% gains.\n"
+        "DORA 2024 measured -1.5% delivery throughput; see arXiv:2507.09089 and Cui et al.\n"
+        "Windows for Q2-2026 follow ISO-8601; SHA-256 and GPT-4 and COVID-19 are not tickets.\n"
+        "Read/write and client/server paths, and/or input/output, ran 24/7 in Node.js.\n"
+        "Median fell from 26 h to 9 h (MEASURED, n=41).\n"
+    )
+    assert business.scan_text(text) == []
+
+
+def test_scan_allow_url_also_allows_the_bare_host() -> None:
+    hits = business.scan_text(
+        "See arxiv.org and docs.corp.example", allow_url=["https://arxiv.org/"]
+    )
+    assert [h[3] for h in hits] == ["docs.corp.example"]
+
+
+def test_scan_reads_names_from_the_run_readme(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    run = make_run(tmp_path)
+    (run / "README.md").write_text("Window: 2026-04-01..2026-06-30.\nNames: Priya Raman, Atlas\n")
+    draft = tmp_path / "draft.md"
+    draft.write_text("Priya on the Atlas team.\n")
+    assert business.main(["scan", "--run", str(run), str(draft)]) == 1
+    assert capsys.readouterr().out == "1:1: denied-name: Priya\n1:14: denied-name: Atlas\n"
+    (run / "README.md").write_text("Names: none\n")
+    assert business.main(["scan", "--run", str(run), str(draft)]) == 0
+    (run / "README.md").write_text("Window: 2026-04-01..2026-06-30.\n")
+    assert business.main(["scan", "--run", str(run), str(draft)]) == 2
+    assert "README.md has no Names: line" in capsys.readouterr().err
+
+
+def test_scan_reads_names_from_a_file(tmp_path: Path, capsys: pytest.CaptureFixture[str]) -> None:
+    names = tmp_path / "names.txt"
+    names.write_text("Priya Raman\nlean-tighten, Atlas\n")
+    draft = tmp_path / "draft.md"
+    draft.write_text("lean tighten by Raman\n")
+    assert business.main(["scan", "--names-file", str(names), str(draft)]) == 1
+    assert [x.split(": ")[2] for x in capsys.readouterr().out.splitlines()] == [
+        "lean tighten",
+        "Raman",
+    ]
+    assert business.main(["scan", "--names-file", str(tmp_path / "gone"), str(draft)]) == 2
+
+
+def test_trace_flags_figures_missing_from_the_case_study(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    study = tmp_path / "case-study-public.md"
+    study.write_text("Median 18 min per task (MEASURED, n=41 PRs), a 12.5% drop, 1,200 tasks.\n")
+    release = tmp_path / "pr-release.md"
+    release.write_text("1. Median 18 min (MEASURED, n=41 PRs), 12.50% drop, 1200 tasks.\n")
+    assert business.main(["trace", str(release), "--against", str(study)]) == 0
+    release.write_text("Median 18 min, saving 30 min over 41 PRs\n")
+    assert business.main(["trace", str(release), "--against", str(study)]) == 1
+    assert capsys.readouterr().out.splitlines()[-1] == "1:23: figure not in the source text: 30"
+    assert business.main(["trace", str(release), "--against", str(tmp_path / "gone")]) == 2
+
+
+def test_gate_rejects_an_invented_timestamp(tmp_path: Path) -> None:
+    run = make_run(tmp_path)
+    sources = run / "sources.md"
+    sources.write_text(sources.read_text().replace("2026-06-30T10:00:00Z", "2026-invented"))
+    assert business.check_run(run) == [
+        "sources.md entry task-timings: executed '2026-invented' is not an ISO timestamp"
+    ]
+    sources.write_text(sources.read_text().replace("2026-invented", "2026-06-30"))
+    assert len(business.check_run(run)) == 1
+
+
+@pytest.mark.parametrize(
+    "clause", ["Adoption: unknown, no data.", "Adoption: unknown; nothing to export."]
+)
+def test_unknown_with_a_negated_data_clause_does_not_resolve(tmp_path: Path, clause: str) -> None:
+    run = make_run(tmp_path)
+    (run / "findings.md").write_text(f"## Unknowns\n\n- {clause}\n")
+    problems = business.check_run(run)
+    assert len(problems) == 1
+    assert "unknown without the data" in problems[0]
+
+
+def test_init_creates_a_run_and_refuses_one_with_snapshots(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    args = ["init", "lean-tighten", "--root", str(tmp_path), "--date", "2026-06-30"]
+    assert business.main(args) == 0
+    run = tmp_path / "2026-06-30" / "business" / "lean-tighten"
+    assert capsys.readouterr().out.strip() == str(run)
+    assert (
+        (run / "index.md").read_text().startswith("---\nnamespace: business\ntopic: lean-tighten")
+    )
+    assert [p.name for p in sorted(run.iterdir())] == [
+        "README.md",
+        "index.md",
+        "measurements",
+        "raw",
+        "reports",
+    ]
+    (run / "README.md").write_text("kept\n")
+    assert business.main(args) == 0
+    assert (run / "README.md").read_text() == "kept\n"
+    (run / "raw" / "t.csv").write_text("a\n")
+    assert business.main(args) == 2
+    assert "raw/ of 2026-06-30/business/lean-tighten already holds 1 snapshot(s)" in (
+        capsys.readouterr().err
+    )
+    assert (run / "raw" / "t.csv").read_text() == "a\n"
+
+
+@pytest.mark.parametrize("bad", ["Lean Tighten", "../x", ""])
+def test_init_refuses_a_non_slug_workflow(tmp_path: Path, bad: str) -> None:
+    assert business.main(["init", bad, "--root", str(tmp_path)]) == 2
+    assert list(tmp_path.iterdir()) == []
+
+
+def test_collect_prs_blanks_absent_fields_and_counts_them(
+    monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    pr: dict[str, object] = {
+        "number": 9,
+        "createdAt": "2026-04-02T00:00:00Z",
+        "mergedAt": "2026-04-02T12:00:00Z",
+        "additions": 4,
+    }
+    page = {"data": {"repository": {"pullRequests": {"nodes": [pr, {**pr, "number": 10}]}}}}
+    monkeypatch.setattr("sys.stdin", io.StringIO(json.dumps(page)))
+    args = ["collect-prs", "--start", "2026-04-01", "--end", "2026-04-30"]
+    assert business.main(args) == 0
+    out = capsys.readouterr()
+    assert out.out.splitlines()[1:] == [
+        "9,2026-04-02T00:00:00Z,2026-04-02T12:00:00Z,12.00,,,4,",
+        "10,2026-04-02T00:00:00Z,2026-04-02T12:00:00Z,12.00,,,4,",
+    ]
+    assert out.err.splitlines() == [
+        "warning: 2 of 2 rows lack reopened; left blank, not zero",
+        "warning: 2 of 2 rows lack deletions; left blank, not zero",
+    ]
+
+
+def test_collect_prs_refuses_empty_input_and_never_overwrites_output(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    target = tmp_path / "pr-metrics.csv"
+    args = ["collect-prs", "--start", "2026-04-01", "--end", "2026-04-30", "--output", str(target)]
+    monkeypatch.setattr("sys.stdin", io.StringIO(""))
+    assert business.main(args) == 2
+    assert not target.exists()
+    monkeypatch.setattr("sys.stdin", io.StringIO(_review_page(has_next=False)))
+    assert business.main(args) == 0
+    first = target.read_text()
+    monkeypatch.setattr("sys.stdin", io.StringIO(_review_page(has_next=False)))
+    assert business.main(args) == 2
+    assert target.read_text() == first
+    assert f"refusing to overwrite the snapshot {target}" in capsys.readouterr().err
+
+
+FIXTURE = Path(__file__).parent / "fixtures" / "graphql-pull-requests.json"
+
+
+def test_collect_prs_reads_recorded_graphql_pages(capsys: pytest.CaptureFixture[str]) -> None:
+    """The fixture holds nodes recorded from the live GitHub GraphQL API with this query.
+
+    The query asks `reopened: timelineItems(itemTypes: [REOPENED_EVENT]) { filteredCount }`;
+    the recording also asked for `totalCount`, which counts every timeline item whatever
+    `itemTypes` says, and `reviews(first: 50)` returned oldest first.
+    """
+    text = FIXTURE.read_text(encoding="utf-8")
+    notes: list[str] = []
+    rows = business.collect_prs(text, "2019-10-01", "2021-06-30", notes)
+    assert notes == []
+    assert [r["number"] for r in rows] == ["1", "3", "5", "3773"]
+    assert [r["reopened"] for r in rows] == ["0", "0", "0", "1"]
+    assert [r["first_review_hours"] for r in rows] == ["", "15.57", "32.78", "3.53"]
+    assert rows[3]["cycle_hours"] == "644.53"
+    assert "totalCount" in text
+    assert all("login" not in value for row in rows for value in row.values())
+    args = ["collect-prs", "--start", "2019-10-01", "--end", "2021-06-30", str(FIXTURE)]
+    assert business.main(args) == 0
+    assert capsys.readouterr().out.splitlines()[0] == ",".join(business.PR_COLUMNS)
+
+
+def test_project_accepts_a_measured_loss_and_reports_it(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    (tmp_path / "assumptions.yaml").write_text(
+        PROJECT_REGISTER.replace(
+            "value: 0.4\n  low: 0.3\n  high: 0.6", "value: -0.2\n  low: -0.3\n  high: -0.1"
+        )
+    )
+    assert business.main(["project", str(tmp_path)]) == 0
+    out = capsys.readouterr().out
+    assert "conservative: -560\n" in out
+    assert "base: -120\n" in out
+    assert "net loss: the base case loses 120 engineer-hours per year\n" in out
+    assert "  s:" in out
+
+
+def test_project_flags_a_range_that_crosses_zero(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    (tmp_path / "assumptions.yaml").write_text(
+        PROJECT_REGISTER.replace(
+            "value: 0.4\n  low: 0.3\n  high: 0.6", "value: 0.1\n  low: -0.1\n  high: 0.3"
+        )
+    )
+    assert business.main(["project", str(tmp_path)]) == 0
+    assert "net loss possible: the conservative case loses" in capsys.readouterr().out
+
+
+def test_register_defines_the_manual_baseline_once(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    both = PROJECT_REGISTER + "\n- id: baseline-minutes\n  value: 30\n"
+    assert business.project(both)[0] == {}
+    assert (
+        "baseline-minutes: same quantity as manual-minutes; register only manual-minutes"
+        in (business.project(both)[1])
+    )
+    register = tmp_path / "assumptions.yaml"
+    register.write_text(both)
+    assert business.main(["assumptions", str(register)]) == 1
+    assert "baseline-minutes: same quantity as manual-minutes" in capsys.readouterr().out
+    alone = PROJECT_REGISTER.replace("manual-minutes", "baseline-minutes")
+    assert "manual-minutes: missing from the assumptions register" in business.project(alone)[1]
+
+
+def test_register_savings_rate_must_match_its_parts() -> None:
+    def problems(extra: str) -> list[str]:
+        entries = business._parse_register(BREAKEVEN_REGISTER + "\n" + extra)
+        return business._check_quantities({e["id"]: e for e in entries})
+
+    assert problems("- id: savings-rate\n  value: 0.4\n") == []
+    wrong = problems("- id: savings-rate\n  value: 0.9\n")
+    assert len(wrong) == 1
+    assert "savings-rate: 0.9 disagrees with the 0.4 its parts imply" in wrong[0]

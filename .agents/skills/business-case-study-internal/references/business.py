@@ -4,7 +4,9 @@
 Subcommands:
 
 - ``stats``: median, IQR, and a seeded BCa bootstrap interval for the median.
-- ``scan``: tier-3 sanitization scan of a draft for identifiers and money terms.
+- ``scan``: tier-3 sanitization scan of a draft for identifiers, secrets, names, and money terms.
+- ``trace``: check that every figure in a derived text appears in its source text.
+- ``init``: create a run directory, refusing to reuse one that holds raw snapshots.
 - ``assumptions``: required-field check of an ``assumptions.yaml`` register.
 - ``runs``: list run directories newest first, ordered by the date in the path.
 - ``project``: the org-wide projection and scenarios from register ids.
@@ -18,17 +20,22 @@ Run ``business.py <command> --help`` for each command.
 from __future__ import annotations
 
 import argparse
+import collections
 import contextlib
 import csv
 import datetime as dt
+import decimal
+import io
 import json
 import math
 import random
 import re
 import statistics
 import sys
+import time
 import typing as t
 from pathlib import Path
+from urllib.parse import urlsplit
 
 if t.TYPE_CHECKING:
     from collections.abc import Callable, Collection, Sequence
@@ -37,17 +44,109 @@ DIRECTIONAL_BELOW = 20
 MIN_OBSERVATIONS = 2
 MIN_INTERVAL_N = 5
 
+_NOT_TICKETS = "ISO|SHA|UTF|GPT|COVID|RFC|CVE|CWE|PEP|AES|RSA|TLS|SSL|UTC|GMT"
+_HOST_SUFFIXES = (
+    "local|localdomain|internal|corp|lan|intranet|home|private|example|test|invalid|localhost"
+    "|com|net|org|io|dev|co|ai|app|cloud|gov|edu"
+)
+_SECRET_FORMS = (
+    r"\bgh[pousr]_[A-Za-z0-9]{20,}",
+    r"\bgithub_pat_\w{20,}",
+    r"\b(?:AKIA|ASIA)[0-9A-Z]{16}\b",
+    r"\bxox[abposr]-[A-Za-z0-9-]{10,}",
+    r"\bsk-[A-Za-z0-9_-]{20,}",
+    r"\bglpat-[\w-]{20,}",
+    r"\bAIza[\w-]{35}\b",
+    r"-----BEGIN [A-Z ]*PRIVATE KEY-----",
+)
+_PATH_FORMS = (
+    r"(?:/home/|/Users/|/mnt/[a-z]/|~/)\S*",
+    r"\b[A-Za-z]:[\\/][\w$.-]+\S*",
+    r"\\\\[\w.$-]+\\\S*",
+    r"(?<![\w/.:~-])/(?:opt|srv|var|etc|usr|root|data|tmp|workspace|app|Volumes)/\S*",
+)
+_MONEY_FORMS = (
+    "ROI",
+    "dollars?",
+    "cost[- ]?savings?",
+    r"monetiz\w*",
+    "payback",
+    "salar(?:y|ies)",
+    "wages?",
+    "payroll",
+    "budgets?",
+    "pric(?:e|es|ed|ing)",
+    "euros?",
+    "bucks?",
+    "yen",
+    "rupees?",
+    "pesos?",
+    "francs?",
+    "revenue",
+    r"profit\w*",
+    "cents?",
+)
+_MONEY_WORDS = "|".join(_MONEY_FORMS)
+_REPO_NAME = r"[A-Za-z][A-Za-z0-9_-]*(?:\.[A-Za-z0-9_-]+)*"
+_OCTET = r"(?:25[0-5]|2[0-4]\d|1\d\d|[1-9]?\d)"
+
 SCAN_RULES: tuple[tuple[str, re.Pattern[str]], ...] = (
-    ("ticket-id", re.compile(r"\b[A-Z][A-Z0-9]+-\d+\b")),
+    (
+        "ticket-id",
+        re.compile(rf"\b(?!(?:{_NOT_TICKETS})-)(?![HQ][1-4]-|FY\d)[A-Z][A-Z0-9]+-\d+\b"),
+    ),
     ("url", re.compile(r"https?://\S+|\bwww\.\S+")),
-    ("path", re.compile(r"(?:/home/|/Users/|/mnt/[a-z]/|~/|[A-Za-z]:\\Users\\)\S*")),
+    (
+        "secret",
+        re.compile("|".join(_SECRET_FORMS)),
+    ),
     ("email", re.compile(r"\b[\w.+-]+@[\w-]+\.[\w.-]+\b")),
-    ("currency", re.compile(r"[$€£¥]|\b(?:USD|EUR|GBP|JPY)\b")),
+    (
+        "path",
+        re.compile("|".join(_PATH_FORMS)),
+    ),
+    (
+        "host",
+        re.compile(
+            rf"(?<![\w@/.-])(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+(?:{_HOST_SUFFIXES})(?![\w-])"
+        ),
+    ),
+    ("ip", re.compile(rf"(?<![\w.])(?:{_OCTET}\.){{3}}{_OCTET}(?!\w|\.\d)")),
+    ("handle", re.compile(r"(?<![\w.+@-])@[A-Za-z0-9][A-Za-z0-9_-]{0,38}(?![\w@]|\.\w)")),
+    (
+        "repo-slug",
+        re.compile(
+            rf"(?<![\w/.:@~-])[A-Za-z][A-Za-z0-9-]{{2,38}}/(?=[\w.-]{{3}}){_REPO_NAME}(?![\w/])"
+        ),
+    ),
+    (
+        "currency",
+        re.compile(r"[$€£¥\uff04\uffe5\uffe1₹₩₽¢]|\b(?:USD|EUR|GBP|JPY|CAD|AUD|CHF|CNY|INR)\b"),
+    ),
     (
         "money-term",
-        re.compile(r"\b(?:ROI|dollars?|cost savings?|monetiz\w*|payback)\b", re.IGNORECASE),
+        re.compile(
+            rf"\b(?:{_MONEY_WORDS})\b",
+            re.IGNORECASE,
+        ),
     ),
 )
+COVERING_KINDS = frozenset({"url", "email", "path", "secret"})
+COVERED_KINDS = frozenset({"host", "ip", "handle", "repo-slug"})
+COMMON_PAIRS = frozenset(
+    {
+        "read/write", "input/output", "client/server", "true/false", "pass/fail", "before/after",
+        "start/end", "build/test", "request/response", "producer/consumer", "source/target",
+        "pros/cons", "and/or", "either/or", "his/her", "he/she", "yes/no", "on/off", "tcp/ip",
+        "stdin/stdout", "http/https", "create/update", "push/pull", "pull/push", "win/loss",
+        "cause/effect", "plan/act", "buy/build", "over/under", "left/right", "up/down",
+    }
+)  # fmt: skip
+MIN_NAME_WORD = 3
+NAME_STOPWORDS = frozenset(
+    {"the", "and", "for", "inc", "llc", "ltd", "corp", "co", "team", "group", "org", "project"}
+)
+NAMES_LINE_VALUE = re.compile(r"^Names:[ \t]*(.*)$", re.MULTILINE)
 
 ASSUMPTION_FIELDS = (
     "id",
@@ -61,6 +160,15 @@ ASSUMPTION_FIELDS = (
     "retrieved",
     "owner",
     "updated",
+)
+QUANTITY_ALIASES = {"baseline-minutes": "manual-minutes"}
+SAVINGS_RATE_TOLERANCE = 0.01
+_SAVING_IDS = (
+    "manual-minutes",
+    "ai-minutes",
+    "verify-minutes",
+    "rework-probability",
+    "rework-minutes",
 )
 SOURCE_TYPES = ("MEASURED", "DERIVED", "BENCHMARKED", "ESTIMATED")
 CONFIDENCES = ("high", "medium", "low")
@@ -81,13 +189,19 @@ CHECK_SPEC = re.compile(
 )
 SOURCE_FIELDS = (
     ("query", re.compile(r"^\W*(?:query|command)\s*:\s*\S", re.IGNORECASE)),
-    ("timestamp", re.compile(r"^\W*(?:executed|timestamp|run at)\s*:\s*\d{4}-", re.IGNORECASE)),
+    ("timestamp", re.compile(r"^\W*(?:executed|timestamp|run at)\s*:\s*\S", re.IGNORECASE)),
     ("tool version", re.compile(r"^\W*(?:tool )?version\s*:\s*\S", re.IGNORECASE)),
     ("output file", re.compile(r"^\W*output(?: file)?\s*:\s*\S", re.IGNORECASE)),
 )
+TIMESTAMP_VALUE = re.compile(r"^\W*(?:executed|timestamp|run at)\s*:\s*(.+?)\s*$", re.IGNORECASE)
 OUTPUT_LINE = re.compile(r"^\W*output(?: file)?\s*:\s*(.+)$", re.IGNORECASE)
 CHECK_TOLERANCE = 0.005
 UNKNOWN_DATA = re.compile(r"\b(?:resolve|needs?|requires?|data|exports?)\b", re.IGNORECASE)
+_RESOLVERS = r"(?:resolve|needs?|requires?|data|exports?)"
+NO_DATA = re.compile(
+    rf"\b(?:no|not|without|lacks?|lacking|nothing|none)\s+(?:\w+\s+){{0,2}}?{_RESOLVERS}\b",
+    re.IGNORECASE,
+)
 
 
 def _median(values: list[float]) -> float:
@@ -201,6 +315,58 @@ def parse_numbers(text: str) -> list[float]:
     return [float(line.split("#")[0]) for line in text.splitlines() if line.split("#")[0].strip()]
 
 
+def parse_names(text: str) -> list[str]:
+    r"""Return the names on the ``Names:`` lines of a README; ``none`` means no names.
+
+    Examples
+    --------
+    >>> parse_names("Window: x\nNames: Acme, `lean-tighten`; Priya Raman\n")
+    ['Acme', 'lean-tighten', 'Priya Raman']
+    >>> parse_names("Names: none\n")
+    []
+    """
+    names: list[str] = []
+    for match in NAMES_LINE_VALUE.finditer(text):
+        names.extend(n.strip().strip("`'\"*_ ") for n in re.split(r"[,;]", match.group(1)))
+    names = [n for n in names if n]
+    return [] if [n.lower() for n in names] == ["none"] else names
+
+
+def name_patterns(names: Sequence[str]) -> list[re.Pattern[str]]:
+    """Return case-insensitive patterns that deny each name and its separator variants.
+
+    A name matches whole, with any run of separators or none between its parts
+    (``lean-tighten``, ``LeanTighten``, ``lean tighten``). A name written as
+    several words also denies each word of three or more letters on its own.
+
+    Examples
+    --------
+    >>> [bool(p.search("Hey PRIYA")) for p in name_patterns(["Priya Raman"])]
+    [False, True, False]
+    >>> any(p.search("a lean_tighten run") for p in name_patterns(["LeanTighten"]))
+    True
+    >>> any(p.search("the Atlassian suite") for p in name_patterns(["Atlas"]))
+    False
+    """
+    patterns: list[re.Pattern[str]] = []
+    for name in names:
+        parts = [w for w in re.split(r"[^A-Za-z0-9]+|(?<=[a-z0-9])(?=[A-Z])", name.strip()) if w]
+        if not parts:
+            continue
+        pieces = ["[\\W_]*".join(re.escape(w) for w in parts)]
+        if len(name.split()) > 1:
+            pieces.extend(
+                re.escape(w)
+                for w in parts
+                if len(w) >= MIN_NAME_WORD and w.lower() not in NAME_STOPWORDS
+            )
+        patterns.extend(
+            re.compile(rf"(?<![A-Za-z0-9]){piece}(?![A-Za-z0-9])", re.IGNORECASE)
+            for piece in pieces
+        )
+    return patterns
+
+
 def scan_text(
     text: str,
     deny: Sequence[str] = (),
@@ -210,8 +376,11 @@ def scan_text(
 ) -> list[tuple[int, int, str, str]]:
     """Return ``(line, column, kind, match)`` for every tier-3 exclusion in ``text``.
 
-    ``allow`` skips hits whose text equals an entry; ``allow_url`` skips URLs that
-    start with an entry; a non-empty ``rules`` keeps only those kinds.
+    ``deny`` names match whole-word, case-insensitively, with separator variants
+    (see ``name_patterns``). ``allow`` skips hits whose text equals an entry;
+    ``allow_url`` skips URLs that start with an entry, and bare hosts of those
+    URLs; a non-empty ``rules`` keeps only those kinds. A host, address, handle,
+    or repository slug inside a URL, email, path, or secret is not reported again.
 
     Examples
     --------
@@ -223,34 +392,76 @@ def scan_text(
     [(1, 1, 'denied-name', 'Acme')]
     >>> scan_text("Median fell from 26 h to 9 h (MEASURED, n=41).")
     []
-    >>> [h[3] for h in scan_text("GPT-4 and UTF-8.", allow=["UTF-8"])]
-    ['GPT-4']
+    >>> scan_text("GPT-4, SHA-256 and Q2-2026 are not tickets.")
+    []
+    >>> [h[3] for h in scan_text("PROJ-4 and ABC-8.", allow=["ABC-8"])]
+    ['PROJ-4']
     >>> scan_text("See https://arxiv.org/abs/2507.09089", allow_url=["https://arxiv.org/"])
     []
     >>> [h[2:] for h in scan_text("ROI at https://x.example, $5", rules=["currency"])]
     [('currency', '$')]
+    >>> [h[2] for h in scan_text("wiki.acme.example, 10.2.3.4, @ann-dev, acme/widgets")]
+    ['host', 'ip', 'handle', 'repo-slug']
     """
     patterns = [
         *SCAN_RULES,
-        *(("denied-name", re.compile(re.escape(d), re.IGNORECASE)) for d in deny),
+        *(("denied-name", pattern) for pattern in name_patterns(deny)),
     ]
     if rules:
         patterns = [(kind, pattern) for kind, pattern in patterns if kind in rules]
-    hits: list[tuple[int, int, str, str]] = []
+    allowed_hosts = {urlsplit(prefix).hostname for prefix in allow_url}
+    hits: set[tuple[int, int, str, str]] = set()
     for number, line in enumerate(text.splitlines(), start=1):
         for kind, pattern in patterns:
-            hits.extend(
-                (number, m.start() + 1, kind, m.group())
-                for m in pattern.finditer(line)
-                if m.group() not in allow
-                and not (kind == "url" and m.group().startswith(tuple(allow_url)))
-            )
-    return sorted(hits)
+            for m in pattern.finditer(line):
+                found = m.group()
+                if found in allow or (kind == "url" and found.startswith(tuple(allow_url))):
+                    continue
+                if kind == "host" and found in allowed_hosts:
+                    continue
+                if kind == "repo-slug" and found.lower() in COMMON_PAIRS:
+                    continue
+                hits.add((number, m.start() + 1, kind, found))
+    return sorted(h for h in hits if not _covered(h, hits))
+
+
+def _covered(hit: tuple[int, int, str, str], hits: Collection[tuple[int, int, str, str]]) -> bool:
+    line, col, kind, found = hit
+    for other in hits:
+        o_line, o_col, o_kind, o_found = other
+        if other == hit or o_line != line:
+            continue
+        inside = o_col <= col and col + len(found) <= o_col + len(o_found)
+        if not inside:
+            continue
+        if kind in COVERED_KINDS and o_kind in COVERING_KINDS:
+            return True
+        if kind == o_kind == "denied-name" and len(o_found) > len(found):
+            return True
+    return False
 
 
 def _is_date(text: str) -> bool:
     try:
         _ = dt.date.fromisoformat(text)
+    except ValueError:
+        return False
+    return True
+
+
+def _is_timestamp(text: str) -> bool:
+    """Return whether ``text`` is an ISO 8601 date and time of day.
+
+    Examples
+    --------
+    >>> [_is_timestamp(x) for x in ("2026-06-30T10:00:00Z", "2026-06-30", "2026-invented")]
+    [True, False, False]
+    """
+    value = text.strip().strip("`")
+    if not re.search(r"\d{2}:\d{2}", value):
+        return False
+    try:
+        _ = dt.datetime.fromisoformat(value.replace("Z", "+00:00"))
     except ValueError:
         return False
     return True
@@ -327,6 +538,41 @@ def check_assumptions(text: str, sources: Collection[str] | None = None) -> list
                 f"entry {name}: confidence {entry['confidence']!r} is not one of {CONFIDENCES}"
             )
         problems.extend(_check_entry_values(name, entry, sources))
+    problems.extend(_check_quantities({e.get("id", ""): e for e in entries}))
+    return problems
+
+
+def _alias_problems(entries: Collection[str]) -> list[str]:
+    return [
+        f"{alias}: same quantity as {canon}; register only {canon}"
+        for alias, canon in QUANTITY_ALIASES.items()
+        if alias in entries
+    ]
+
+
+def _check_quantities(entries: dict[str, dict[str, str]]) -> list[str]:
+    """Return problems where one quantity is registered under two ids.
+
+    ``savings-rate`` is ``S_inst / manual-minutes``; when its parts are registered
+    too, the stated rate must match the one they imply.
+    """
+    problems = _alias_problems(entries)
+    try:
+        v = {i: float(entries[i]["value"]) for i in _SAVING_IDS}
+        rate = float(entries["savings-rate"]["value"])
+    except (KeyError, ValueError):
+        return problems
+    if v["manual-minutes"] > 0:
+        implied = (
+            v["manual-minutes"]
+            - v["ai-minutes"]
+            - v["verify-minutes"]
+            - v["rework-probability"] * v["rework-minutes"]
+        ) / v["manual-minutes"]
+        if abs(implied - rate) > SAVINGS_RATE_TOLERANCE:
+            problems.append(
+                f"savings-rate: {rate:g} disagrees with the {implied:.3g} its parts imply"
+            )
     return problems
 
 
@@ -354,7 +600,7 @@ def _check_entry_values(
 FACTORS = (
     ("V", "addressable-population"),
     ("F", "instances-per-person-year"),
-    ("t", "baseline-minutes"),
+    ("t", "manual-minutes"),
     ("s", "savings-rate"),
     ("a", "adoption-rate"),
     ("r", "realization-rate"),
@@ -368,7 +614,9 @@ def project(register: str) -> tuple[dict[str, float], list[str]]:
     Each factor is the register entry named in ``FACTORS``; its optional ``low``
     and ``high`` fields bound the scenarios. The conservative scenario takes every
     factor at ``low``, base at ``value``, upside at ``high``; a missing bound
-    falls back to ``value``. ``a`` and ``r`` must lie strictly between 0 and 1.
+    falls back to ``value``. ``a`` and ``r`` must lie strictly between 0 and 1. A
+    negative ``savings-rate`` is a measured loss and projects a negative figure; its
+    conservative scenario takes the high-volume factors.
 
     Examples
     --------
@@ -377,7 +625,7 @@ def project(register: str) -> tuple[dict[str, float], list[str]]:
     ...     for i, v, lo, hi in [
     ...         ("addressable-population", 40, 30, 50),
     ...         ("instances-per-person-year", 100, 100, 100),
-    ...         ("baseline-minutes", 30, 25, 40),
+    ...         ("manual-minutes", 30, 25, 40),
     ...         ("savings-rate", 0.4, 0.3, 0.6),
     ...         ("adoption-rate", 0.5, 0.3, 0.7),
     ...         ("realization-rate", 0.6, 0.4, 0.8),
@@ -394,9 +642,14 @@ def project(register: str) -> tuple[dict[str, float], list[str]]:
     ...     "- id: adoption-rate\n  value: 1"
     ... )[1]
     True
+    >>> rate = "value: 0.4\n  low: 0.3\n  high: 0.6"
+    >>> loss = reg.replace(rate, "value: -0.2\n  low: -0.3\n  high: -0.1")
+    >>> figures, problems = project(loss)
+    >>> (problems, figures["conservative"], figures["base"], figures["upside"])
+    ([], -560.0, -120.0, -15.0)
     """
     entries = {e.get("id", ""): e for e in _parse_register(register)}
-    problems: list[str] = []
+    problems = _alias_problems(entries)
     levels: dict[str, tuple[float, float, float]] = {}
     for symbol, ident in FACTORS:
         entry = entries.get(ident)
@@ -415,7 +668,7 @@ def project(register: str) -> tuple[dict[str, float], list[str]]:
             continue
         if not low <= base <= high:
             problems.append(f"{ident}: need low <= value <= high")
-        if low < 0:
+        if low < 0 and symbol != "s":
             problems.append(f"{ident}: value, low, and high must be nonnegative")
         if symbol in ("a", "r"):
             problems.extend(
@@ -440,10 +693,13 @@ def project(register: str) -> tuple[dict[str, float], list[str]]:
     def at(index: int) -> Callable[[str], float]:
         return lambda sym: levels[sym][index]
 
+    def with_savings(volume: int, rate: int) -> Callable[[str], float]:
+        return lambda sym: levels[sym][rate if sym == "s" else volume]
+
     figures: dict[str, float] = {
-        "conservative": hours(at(0)),
+        "conservative": min(hours(with_savings(0, 0)), hours(with_savings(2, 0))),
         "base": hours(at(1)),
-        "upside": hours(at(2)),
+        "upside": max(hours(with_savings(2, 2)), hours(with_savings(0, 2))),
         "addressable": hours(at(1), "s"),
         "served": hours(at(1), "a"),
         "realized": hours(at(1)),
@@ -452,7 +708,7 @@ def project(register: str) -> tuple[dict[str, float], list[str]]:
         swing = hours(lambda sym, s=symbol: levels[sym][2 if sym == s else 1]) - hours(
             lambda sym, s=symbol: levels[sym][0 if sym == s else 1]
         )
-        figures[f"swing_{symbol}"] = swing
+        figures[f"swing_{symbol}"] = abs(swing)
     if not all(math.isfinite(value) for value in figures.values()):
         return {}, ["projection exceeds the supported numeric range"]
     return {k: round(v, 2) for k, v in figures.items()}, []
@@ -638,6 +894,11 @@ def _check_sources(run: Path, entries: dict[str, list[str]]) -> list[str]:
             if not any(pattern.match(line) for line in lines)
         )
         for line in lines:
+            stamp = TIMESTAMP_VALUE.match(line)
+            if stamp and not _is_timestamp(stamp.group(1)):
+                problems.append(
+                    f"sources.md entry {name}: executed {stamp.group(1)!r} is not an ISO timestamp"
+                )
             found = OUTPUT_LINE.match(line)
             if not found:
                 continue
@@ -805,7 +1066,7 @@ def _check_unknowns(findings: str) -> list[str]:
     return [
         f"findings.md: unknown without the data that would resolve it: {unit[:60]}"
         for unit in _units("\n".join(section))
-        if UNIT_START.match(unit) and not UNKNOWN_DATA.search(unit)
+        if UNIT_START.match(unit) and not UNKNOWN_DATA.search(NO_DATA.sub("", unit))
     ]
 
 
@@ -852,6 +1113,13 @@ def _text(value: object) -> str:
     return value if isinstance(value, str) else ""
 
 
+_COUNT_COLUMNS = ("reopened", "additions", "deletions")
+
+
+def _count(value: object) -> str:
+    return str(value) if isinstance(value, int) and not isinstance(value, bool) else ""
+
+
 def _first_review_hours(pr: dict[str, object]) -> str:
     author = _text(_obj(pr.get("author")).get("login"))
     stamps: list[str] = []
@@ -878,9 +1146,11 @@ def collect_prs(
 
     Open and closed-unmerged PRs are excluded. ``first_review_hours`` counts the
     earliest submitted review by someone other than the PR author and not a bot;
-    it is blank when there is none. A PR whose ``reviews.pageInfo.hasNextPage`` is
-    true appends a line to ``warnings``. Logins are read to compare author and
-    reviewer and never written to the rows.
+    it is blank when there is none. A field the page lacks (``reopened``,
+    ``additions``, ``deletions``) is blank, never zero, and appends one line to
+    ``warnings`` with the row count. A PR whose ``reviews.pageInfo.hasNextPage``
+    is true also appends a line. Logins are read to compare author and reviewer
+    and never written to the rows.
 
     Examples
     --------
@@ -908,11 +1178,24 @@ def collect_prs(
     >>> _ = collect_prs(json.dumps(page), "2026-04-01", "2026-04-03", notes)
     >>> notes
     ['PR #7: reviews truncated at 3; first_review_hours may be wrong']
+    >>> bare_pr = {
+    ...     "number": 8, "createdAt": "2026-04-02T00:00:00Z", "mergedAt": "2026-04-03T00:00:00Z"
+    ... }
+    >>> bare = {"data": {"repository": {"pullRequests": {"nodes": [bare_pr]}}}}
+    >>> notes = []
+    >>> rows = collect_prs(json.dumps(bare), "2026-04-01", "2026-04-03", notes)
+    >>> ([rows[0][c] for c in ("reopened", "additions", "deletions")], notes[0])
+    (['', '', ''], '1 of 1 rows lack reopened; left blank, not zero')
     """
     lo = dt.datetime.fromisoformat(f"{start}T00:00:00+00:00")
     hi = dt.datetime.fromisoformat(f"{end}T00:00:00+00:00") + dt.timedelta(days=1)
     rows: list[dict[str, str]] = []
-    for doc in _json_documents(text):
+    absent: collections.Counter[str] = collections.Counter()
+    docs = _json_documents(text)
+    if not docs:
+        msg = "no pages on input"
+        raise ValueError(msg)
+    for doc in docs:
         repo = _obj(_obj(doc).get("data")).get("repository")
         nodes = _items(_obj(_obj(repo).get("pullRequests")).get("nodes"))
         if not isinstance(repo, dict):
@@ -941,12 +1224,100 @@ def collect_prs(
                     "merged_at": _text(pr["mergedAt"]),
                     "cycle_hours": f"{cycle:.2f}",
                     "first_review_hours": _first_review_hours(pr),
-                    "reopened": str(_obj(pr.get("reopened")).get("filteredCount", 0)),
-                    "additions": str(pr.get("additions", 0)),
-                    "deletions": str(pr.get("deletions", 0)),
+                    "reopened": _count(_obj(pr.get("reopened")).get("filteredCount")),
+                    "additions": _count(pr.get("additions")),
+                    "deletions": _count(pr.get("deletions")),
                 }
             )
+    absent.update(c for row in rows for c in _COUNT_COLUMNS if not row[c])
+    if warnings is not None:
+        warnings.extend(
+            f"{absent[c]} of {len(rows)} rows lack {c}; left blank, not zero"
+            for c in _COUNT_COLUMNS
+            if absent[c]
+        )
     return sorted(rows, key=lambda r: int(r["number"]))
+
+
+_NUMBER = re.compile(r"(?<![\w.])\d[\d,]*(?:\.\d+)?")
+_LIST_MARKER = re.compile(r"^\s*(?:#+\s*)?(?:\d+\.|[-*])\s+")
+
+
+def _canonical_number(token: str) -> str:
+    try:
+        return format(decimal.Decimal(token.replace(",", "")).normalize(), "f")
+    except decimal.InvalidOperation:
+        return token
+
+
+def untraced_figures(text: str, source: str) -> list[tuple[int, int, str]]:
+    """Return ``(line, column, number)`` for each number in ``text`` absent from ``source``.
+
+    A number matches by value, so ``1,200`` and ``1200`` agree; list markers and
+    heading numbers are not figures.
+
+    Examples
+    --------
+    >>> untraced_figures("Median 18 min, n=41, 12.50%.", "Median 18 min (n=41), 12.5%.")
+    []
+    >>> untraced_figures("1. Saved 30 min of 41 PRs", "Saved 18 min of 41 PRs")
+    [(1, 10, '30')]
+    """
+    known = {_canonical_number(m.group()) for m in _NUMBER.finditer(source)}
+    found: list[tuple[int, int, str]] = []
+    for number, line in enumerate(text.splitlines(), start=1):
+        marker = _LIST_MARKER.match(line)
+        offset = marker.end() if marker else 0
+        found.extend(
+            (number, m.start() + offset + 1, m.group())
+            for m in _NUMBER.finditer(line[offset:])
+            if _canonical_number(m.group()) not in known
+        )
+    return found
+
+
+KEBAB = re.compile(r"[a-z0-9]+(?:-[a-z0-9]+)*")
+
+
+def init_run(root: Path, workflow: str, date: str) -> Path:
+    """Create ``<root>/<date>/business/<workflow>`` and return it.
+
+    Existing files are never rewritten. A run whose ``raw/`` already holds a
+    snapshot is refused with ``FileExistsError``.
+
+    Examples
+    --------
+    >>> import tempfile
+    >>> with tempfile.TemporaryDirectory() as d:
+    ...     run = init_run(Path(d), "lean-tighten", "2026-06-30")
+    ...     _ = (run / "raw" / "a.csv").write_text("x")
+    ...     try:
+    ...         init_run(Path(d), "lean-tighten", "2026-06-30")
+    ...     except FileExistsError as exc:
+    ...         print(exc)
+    raw/ of 2026-06-30/business/lean-tighten already holds 1 snapshot(s)
+    """
+    if not KEBAB.fullmatch(workflow):
+        msg = f"workflow {workflow!r} is not a kebab-case slug"
+        raise ValueError(msg)
+    if not _is_date(date):
+        msg = f"date {date!r} is not YYYY-MM-DD"
+        raise ValueError(msg)
+    run = root / date / "business" / workflow
+    snapshots = [p for p in (run / "raw").rglob("*") if p.is_file()] if run.is_dir() else []
+    if snapshots:
+        msg = f"raw/ of {date}/business/{workflow} already holds {len(snapshots)} snapshot(s)"
+        raise FileExistsError(msg)
+    for sub in ("raw", "measurements", "reports"):
+        (run / sub).mkdir(parents=True, exist_ok=True)
+    skeletons = {
+        "index.md": f"---\nnamespace: business\ntopic: {workflow}\ndate: {date}\n---\n",
+        "README.md": f"# {workflow}\n\nScope:\nWindow:\nInstruments:\nTimezone: UTC\nNames:\n",
+    }
+    for name, body in skeletons.items():
+        with contextlib.suppress(FileExistsError), (run / name).open("x", encoding="utf-8") as fh:
+            _ = fh.write(body)
+    return run
 
 
 def default_roots() -> list[Path]:
@@ -994,6 +1365,10 @@ def _project_command(run: Path) -> int:
     for key, value in figures.items():
         if not key.startswith("swing_"):
             print(f"{key}: {value:g}")
+    if figures["base"] < 0:
+        print(f"net loss: the base case loses {-figures['base']:g} engineer-hours per year")
+    elif figures["conservative"] < 0:
+        print(f"net loss possible: the conservative case loses {-figures['conservative']:g} hours")
     print("sensitivity (low-to-high swing, engineer-hours per year, largest first):")
     for key in swings:
         print(f"  {key.removeprefix('swing_')}: {figures[key]:g}")
@@ -1058,10 +1433,38 @@ def _stats_command(args: Args) -> int:
     return 0
 
 
+def _names_for_scan(args: Args) -> list[str] | str:
+    """Return the names to deny, or an error message."""
+    names = list(args.deny)
+    if args.run:
+        readme = Path(args.run) / "README.md"
+        if not readme.is_file():
+            return f"no README.md in {args.run}"
+        text = readme.read_text(encoding="utf-8")
+        if not NAMES_LINE.search(text):
+            return "README.md has no Names: line (write `Names: none` when there are none)"
+        names.extend(parse_names(text))
+    if args.names_file:
+        listed = Path(args.names_file)
+        if not listed.is_file():
+            return f"no names file at {args.names_file}"
+        names.extend(
+            n.strip()
+            for line in listed.read_text(encoding="utf-8").splitlines()
+            for n in re.split(r"[,;]", line)
+            if n.strip() and n.strip().lower() != "none"
+        )
+    return names
+
+
 def _scan_command(args: Args) -> int:
+    names = _names_for_scan(args)
+    if isinstance(names, str):
+        print(names, file=sys.stderr)
+        return 2
     hits = scan_text(
         _read(args.files),
-        args.deny,
+        names,
         args.allow,
         args.allow_url,
         [r for r in args.rules.split(",") if r],
@@ -1082,9 +1485,44 @@ def _collect_prs_command(args: Args) -> int:
         return 2
     for warning in warnings:
         print(f"warning: {warning}", file=sys.stderr)
-    writer = csv.writer(sys.stdout, lineterminator="\n")
+    buffer = io.StringIO()
+    writer = csv.writer(buffer, lineterminator="\n")
     writer.writerow(PR_COLUMNS)
     writer.writerows([row[c] for c in PR_COLUMNS] for row in rows)
+    if not args.output:
+        _ = sys.stdout.write(buffer.getvalue())
+        return 0
+    try:
+        with Path(args.output).open("x", encoding="utf-8", newline="") as handle:
+            _ = handle.write(buffer.getvalue())
+    except FileExistsError:
+        print(f"refusing to overwrite the snapshot {args.output}", file=sys.stderr)
+        return 2
+    return 0
+
+
+def _trace_command(args: Args) -> int:
+    try:
+        text = Path(args.file).read_text(encoding="utf-8")
+        source = Path(args.against).read_text(encoding="utf-8")
+    except OSError:
+        print(f"cannot read {args.file} or {args.against}", file=sys.stderr)
+        return 2
+    missing = untraced_figures(text, source)
+    for line, col, number in missing:
+        print(f"{line}:{col}: figure not in the source text: {number}")
+    if not missing:
+        print("ok")
+    return 1 if missing else 0
+
+
+def _init_command(args: Args) -> int:
+    try:
+        run = init_run(Path(args.root[0]), args.workflow, args.date or time.strftime("%Y-%m-%d"))
+    except (ValueError, FileExistsError) as exc:
+        print(str(exc), file=sys.stderr)
+        return 2
+    print(run)
     return 0
 
 
@@ -1112,6 +1550,11 @@ class Args(argparse.Namespace):
     column: str = ""
     start: str = ""
     end: str = ""
+    output: str = ""
+    names_file: str = ""
+    against: str = ""
+    workflow: str = ""
+    date: str = ""
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -1138,6 +1581,12 @@ def main(argv: list[str] | None = None) -> int:
         "--deny", action="append", default=[], help="a name that must not appear; repeatable"
     )
 
+    _ = p_scan.add_argument(
+        "--run", default="", help="run directory; its README.md Names: line is the deny list"
+    )
+    _ = p_scan.add_argument(
+        "--names-file", default="", help="file of names to deny, one per line or comma-separated"
+    )
     _ = p_scan.add_argument(
         "--allow", action="append", default=[], help="a false-positive match to skip; repeatable"
     )
@@ -1169,6 +1618,26 @@ def main(argv: list[str] | None = None) -> int:
     _ = p_prs.add_argument("files", nargs="*", help="saved pages; stdin when omitted")
     _ = p_prs.add_argument("--start", required=True, help="first merged date, YYYY-MM-DD")
     _ = p_prs.add_argument("--end", required=True, help="last merged date, inclusive")
+    _ = p_prs.add_argument(
+        "--output",
+        default="",
+        help="write the CSV here, refusing to overwrite; stdout when omitted",
+    )
+
+    p_trace = sub.add_parser(
+        "trace", help="list numbers in a text that its source text does not contain"
+    )
+    _ = p_trace.add_argument("file", help="derived text, such as the PR release")
+    _ = p_trace.add_argument("--against", required=True, help="source text, such as the case study")
+
+    p_init = sub.add_parser(
+        "init", help="create a run directory; refuse one whose raw/ holds snapshots"
+    )
+    _ = p_init.add_argument("workflow", help="kebab-case slug of the measured workflow")
+    _ = p_init.add_argument(
+        "--root", action="append", required=True, help="run root the user chose"
+    )
+    _ = p_init.add_argument("--date", default="", help="YYYY-MM-DD; today when omitted")
 
     p_break = sub.add_parser(
         "breakeven", help="S_inst, S_net, and break-even per scenario from assumptions.yaml"
@@ -1186,6 +1655,8 @@ def main(argv: list[str] | None = None) -> int:
         "stats": _stats_command,
         "scan": _scan_command,
         "collect-prs": _collect_prs_command,
+        "trace": _trace_command,
+        "init": _init_command,
         "assumptions": lambda a: _assumptions_command(Path(a.file)),
         "gate": lambda a: _gate_command(Path(a.run)),
         "project": lambda a: _project_command(Path(a.run)),

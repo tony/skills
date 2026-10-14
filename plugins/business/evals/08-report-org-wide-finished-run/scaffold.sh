@@ -81,7 +81,7 @@ cat >"$run/assumptions.yaml" <<'MD'
   retrieved: 2026-06-30
   owner: team lead
   updated: 2026-06-30
-- id: baseline-minutes
+- id: manual-minutes
   description: Manual minutes to tighten one draft
   value: 30
   low: 25
