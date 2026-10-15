@@ -1,25 +1,13 @@
 #!/usr/bin/env bash
-# Routing tripwire: every should-not-fire case, plus one trigger case per
-# plugin. Answers "did routing break", not "how good is the answer", so it
-# runs one arm and one run per case.
-#
-#   scripts/fast_evals.sh            # run it
-#   scripts/fast_evals.sh --list     # print the case list and exit
-#
-# Cases carrying a scaffold are skipped: they need per-case tool grants and a
-# throwaway repository, which is the slow suite's job. Run those with the
-# command in each plugin's eval directory.
-#
-# Requires a logged-in Claude Code on the runner. Budget about a minute per
-# case; ensemble cases take longer.
-# No -e on purpose: a failing case must be judged by its verdict and the pass
-# must continue, unlike the scaffolds, which abort on the first error.
+# Routing tripwire: every should-not-fire case plus one trigger case per
+# plugin, one run each. Usage: fast_evals.sh [--list]. Scaffolded cases are
+# skipped; they belong to the slow suite. Needs a logged-in Claude Code.
+# No -e: a failing case is judged by its verdict and the pass continues.
 set -uo pipefail
 
 SELF_DIR="$(cd "$(dirname "$0")" && pwd)"
 
-# The helpers carry a PEP 723 header, so honour it when uv is present rather
-# than silently running them on whatever python3 happens to be first on PATH.
+# The helpers carry a PEP 723 header; uv honours it, bare python3 does not.
 if command -v uv >/dev/null 2>&1; then
   PY_RUN=(uv run --script)
 else
@@ -47,21 +35,18 @@ for eval_dir in plugins/*/evals; do
   for case_dir in "$eval_dir"/*/; do
     [[ -d "$case_dir" ]] || continue
     name="$(basename "$case_dir")"
-    # Only a directory that defines a case is one. Running an eval with its
-    # default output location creates evals/results/, which is not.
+    # evals/results/ is not a case directory.
     [[ -f "$case_dir/case.yaml" || -f "$case_dir/prompt.md" ]] || continue
     # A scaffolded case needs tool grants the tripwire does not hand out.
     [[ -f "$case_dir/scaffold.sh" ]] && continue
-    # Anchored: a case merely containing "neg" (03-negotiate-timeout) is not a
-    # should-not-fire case.
+    # Anchored: "03-negotiate-timeout" is not a should-not-fire case.
     if [[ "$name" == *-neg-* ]]; then
       specs+=("$plugin|$name")
       continue
     fi
     [[ -z "$trigger" ]] && trigger="$name"
-    # Prefer a case that asserts the skill fired. This is a routing tripwire,
-    # and a case graded on the artifact instead fails for want of the write
-    # tools it is never given, which says nothing about routing.
+    # Prefer a case asserting the skill fired; an artifact-graded case fails
+    # for want of write tools and says nothing about routing.
     if [[ -z "$routing_trigger" ]] && grep -hEqs '^[[:space:]]*tool:[[:space:]]*["'"'"']?Skill["'"'"']?[[:space:]]*$' \
       "$case_dir/case.yaml" "$case_dir"/graders/*.md 2>/dev/null; then
       routing_trigger="$name"
@@ -77,19 +62,13 @@ if (( LIST_ONLY )); then
   exit 0
 fi
 
-# Without this every per-case log redirect fails, and each case is recorded as
-# a failure without ever being run.
-# A result passes only when it is complete, free of run errors, and every
-# grader asserting a Skill invocation passed. An aggregate score cannot carry
-# that alone: a routing case usually pairs one routing grader with one answer
-# grader, so at a 0.5 threshold the answer keeps a broken route green.
+# Passes only when complete, error-free, and every Skill-invocation grader
+# passed; at a 0.5 threshold a passing answer grader would keep a broken route green.
 verdict_for() {
   FAST_EVAL_THRESHOLD="$THRESHOLD" "${PY_RUN[@]}" "$SELF_DIR/fast_evals_verdict.py" "$1"
 }
 
-# Durations outlive the results they came from: a completed case is skipped and
-# an incomplete one is deleted, so without this cache every pending case looks
-# equally cheap and longest-first ordering does nothing.
+# Durations outlive their results, which are skipped or deleted, so ordering can use them.
 TIMINGS="$OUT/.timings.json"
 
 record_timing() {
@@ -97,10 +76,10 @@ record_timing() {
     --record "$1|$2" "$OUT/$1--$2/aggregate-result.json" 2>/dev/null || true
 }
 
+# Without it every per-case log redirect fails.
 mkdir -p "$OUT"
 
-# Resolve what a previous pass already settled, so an interrupted run costs
-# only what it has left to do.
+# Skip what a previous pass already settled.
 pending=()
 failed=()
 accounted=0
@@ -146,13 +125,10 @@ run_case() {
 
 if (( ${#pending[@]} > 0 )); then
   echo "Running ${#pending[@]} case(s), $JOBS at a time."
-  # Longest first, so the ten-minute ensemble case starts before the
-  # forty-second ones rather than straggling alone at the end.
+  # Longest first, so the slow ensemble case does not straggle alone at the end.
   if (( JOBS > 1 )); then
-    # Ordering is an optimisation, never a filter. Take the new order only when
-    # the helper succeeded and returned every case it was given; anything else
-    # keeps discovery order. Command substitution, not process substitution,
-    # because the latter hides the helper's exit status.
+    # Ordering never filters: take it only if the helper succeeded and returned
+    # every case. Command substitution keeps the helper's exit status.
     if ordered_out="$(printf '%s\n' "${pending[@]}" \
         | FAST_EVAL_OUT="$OUT" "${PY_RUN[@]}" "$SELF_DIR/fast_evals_order.py")"; then
       ordered=()
@@ -168,9 +144,7 @@ if (( ${#pending[@]} > 0 )); then
       echo "warn: ordering helper failed; keeping discovery order"
     fi
   fi
-  # Batches rather than a `wait -n` pool: macOS ships bash 3.2, which has no
-  # `wait -n`, and a batch keeps the runner readable for the small win it gives
-  # up.
+  # Batches, not a `wait -n` pool: macOS bash 3.2 has no `wait -n`.
   batch=()
   for spec in "${pending[@]}"; do
     run_case "$spec" &
@@ -197,8 +171,7 @@ if (( ${#pending[@]} > 0 )); then
   done
 fi
 
-# Guards the whole class of bug this runner has now hit twice: reporting success
-# for work it never did.
+# Refuse to report success for work that never ran.
 if (( accounted != ${#specs[@]} )); then
   echo
   echo "internal error: accounted for $accounted of ${#specs[@]} cases; refusing to report a result"

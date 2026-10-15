@@ -259,10 +259,8 @@ def lint_description(skill: SkillDoc) -> list[str]:
         problems.append(f"{skill.name}: description is {detail}")
 
     if not skill.model_invocable:
-        # A trigger clause exists so a router can decide to fire the skill. A
-        # skill the user invokes by name is never routed to, so its description
-        # is menu text, and demanding "Use when ..." of it would make every
-        # entry in the menu read like a suggestion the model might act on.
+        # A skill invoked by name is never routed to; its description is menu
+        # text and needs no trigger clause.
         return problems
 
     has_trigger = _TRIGGER.search(skill.description) is not None

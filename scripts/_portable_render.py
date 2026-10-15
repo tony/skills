@@ -889,10 +889,8 @@ class SkillBuilder:
             return self._replace_path(raw.lstrip("/"), plugin, plugin)
         link = match.group("link")
         if match.group("rel") is not None or link is not None:
-            # A skill addresses its plugin's shared resources by climbing out of
-            # its own directory, the spelling both hosts resolve without
-            # substitution. Flattening the export severs that climb, so the
-            # target is vendored exactly as a ${CLAUDE_PLUGIN_ROOT} path was.
+            # Flattening the export severs the climb out of the skill directory,
+            # so the target is vendored as a ${CLAUDE_PLUGIN_ROOT} path is.
             return self._replace_path(
                 link or match.group("rel"), plugin, base, link=link is not None
             )
