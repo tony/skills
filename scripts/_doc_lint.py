@@ -48,6 +48,8 @@ _GNU_ONLY: tuple[tuple[str, re.Pattern[str]], ...] = tuple(
         ("xargs -d", r"\bxargs\s+(?:-\w+\s+)*-d\b"),
     )
 )
+_SED_BRE_RE = re.compile(r"\\[+?|]")
+_SED_EXTENDED_RE = re.compile(r"\s(?:-[A-Za-z]*[Er][A-Za-z]*|--regexp-extended)(?=\s)")
 _SED_I_RE = re.compile(r"\bsed\s+(?:-\w+\s+)*-i(?:\s+(?!['\"]{2}))")
 _SED_I_BSD_RE = re.compile(r"\bsed\s+(?:-\w+\s+)*-i\s+(?:''|\"\")")
 
@@ -260,6 +262,150 @@ def check_portable_shell(text: str) -> list[Violation]:
                         "`sed -i` without the BSD `sed -i ''` form beside it",
                     )
                 )
+    return out
+
+
+def _logical_lines(lines: list[str]) -> list[tuple[int, str]]:
+    r"""Join backslash continuations into ``(first index, command)`` pairs.
+
+    Examples
+    --------
+    >>> _logical_lines(["a \\", "  b", "c"])
+    [(0, 'a    b'), (2, 'c')]
+    """
+    out: list[tuple[int, str]] = []
+    start: int | None = None
+    parts: list[str] = []
+    for index, line in enumerate(lines):
+        if start is None:
+            start = index
+        if line.rstrip().endswith("\\"):
+            parts.append(line.rstrip()[:-1])
+            continue
+        parts.append(line)
+        out.append((start, " ".join(parts)))
+        start, parts = None, []
+    if start is not None:
+        out.append((start, " ".join(parts)))
+    return out
+
+
+def check_sed_bre(text: str) -> list[Violation]:
+    r"""Flag ``\+``, ``\?``, ``\|`` in a ``sed`` expression without ``-E``.
+
+    Examples
+    --------
+    >>> check_sed_bre("```console\n$ sed 's/a\\+/b/' f\n```\n")
+    [('gnu-only', 2, 'GNU-only `\\+` in a sed expression; use `sed -E` with a bare `+`')]
+    >>> check_sed_bre("```console\n$ sed -E 's/a+/b/' f\n```\n")
+    []
+    """
+    out: list[Violation] = []
+    for fence in fences(text):
+        if fence.tag not in SHELL_TAGS | {"console", ""}:
+            continue
+        for index, command in _logical_lines(fence.lines):
+            if not re.search(r"\bsed\b", command) or _SED_EXTENDED_RE.search(command):
+                continue
+            found = _SED_BRE_RE.search(command)
+            if found:
+                token = found.group(0)
+                message = (
+                    f"GNU-only `{token}` in a sed expression; use `sed -E` with a bare `{token[1]}`"
+                )
+                out.append(("gnu-only", fence.start + index, message))
+    return out
+
+
+def check_one_command(text: str) -> list[Violation]:
+    r"""Flag a ``console`` fence holding more than one command.
+
+    A later ``$ `` line passes when the line before it ends in ``\\``, ``&&``,
+    ``;`` or ``|``. Heredoc bodies and fences labelled "Bad:" are skipped.
+
+    Examples
+    --------
+    >>> check_one_command("```console\n$ a\n$ b\n```\n")
+    [('console-multi', 3, 'one command per console block; split the block')]
+    >>> check_one_command("```console\n$ a \\\\\n    --x\n```\n")
+    []
+    >>> check_one_command("```console\n$ a &&\n$ b\n```\n")
+    []
+    """
+    out: list[Violation] = []
+    for fence in fences(text):
+        if fence.tag != "console" or _is_counterexample(fence):
+            continue
+        previous = ""
+        seen = False
+        for index, line in _outside_heredocs(fence.lines):
+            if not line.strip():
+                continue
+            if line.startswith("$ "):
+                if seen and not previous.endswith(("\\", "&&", ";", "|")):
+                    out.append(
+                        (
+                            "console-multi",
+                            fence.start + index,
+                            "one command per console block; split the block",
+                        )
+                    )
+                seen = True
+            previous = line.rstrip()
+    return out
+
+
+COMMENT_RUN_MAX = 3
+_PRAGMA_RE = re.compile(r"noqa|type:|pyright:|SPDX|[Cc]opyright|[Ll]icen[sc]e")
+
+
+def check_comment_runs(text: str) -> list[Violation]:
+    r"""Flag a run of more than ``COMMENT_RUN_MAX`` full-line ``#`` comments.
+
+    Shebangs, ``# /// script`` blocks, and pragma or licence lines do not count
+    and end a run.
+
+    Examples
+    --------
+    >>> check_comment_runs("# a\n# b\n# c\nx = 1\n")
+    []
+    >>> check_comment_runs("# a\n# b\n# c\n# d\nx = 1\n")
+    [('comment-run', 1, 'comment run of 4 lines; keep the constraint, cut the rest')]
+    >>> check_comment_runs("#!/bin/sh\n# /// script\n# a\n# b\n# c\n# d\n# ///\n")
+    []
+    """
+    out: list[Violation] = []
+    run = 0
+    start = 0
+    in_block = False
+
+    def close() -> None:
+        if run > COMMENT_RUN_MAX:
+            out.append(
+                (
+                    "comment-run",
+                    start,
+                    f"comment run of {run} lines; keep the constraint, cut the rest",
+                )
+            )
+
+    for number, raw in enumerate(text.splitlines(), start=1):
+        line = raw.strip()
+        if line.startswith("# /// script"):
+            in_block = True
+        if in_block or line.startswith("#!") or _PRAGMA_RE.search(line):
+            close()
+            run = 0
+            in_block = in_block and line != "# ///"
+            continue
+        if line.startswith("#"):
+            if run == 0:
+                start = number
+            run += 1
+        else:
+            close()
+            run = 0
+    close()
     return out
 
 

@@ -74,6 +74,7 @@ def test_each_rule_refuses_with_one_line(enforced: Path) -> None:
             f"{head}:15: use a `console` fence with `$ ` unless the block is a script",
             f"{head}:19: hardcoded `uv run pytest`; point to the project gates in AGENTS.md",
             f"{head}:20: `mapfile` is GNU-only",
+            f"{head}:20: one command per console block; split the block",
             f"{head}:24: `sed -i` without the BSD `sed -i ''` form beside it",
         ]
     )
@@ -108,3 +109,23 @@ def test_file_exemptions_name_real_files() -> None:
         if not (marketplace.REPO_ROOT / "plugins" / key).is_file()
     ]
     assert missing == []
+
+
+def test_one_command_sed_bre_and_comment_run(enforced: Path) -> None:
+    """Two commands in a block, a GNU sed escape, and a long comment each refuse."""
+    text = "---\nname: s\ndescription: d\n---\n[p](../../references/prose-rules.md)\n\n"
+    text += "```console\n$ git status\n$ git log\n```\n\n"
+    text += "```console\n$ sed 's/a\\+/b/' f\n```\n"
+    _plugin(enforced, "p", text)
+    scripts = enforced / "plugins" / "p" / "scripts"
+    scripts.mkdir()
+    _ = (scripts / "x.py").write_text("# a\n# b\n# c\n# d\nx = 1\n", encoding="utf-8")
+    head = "[p] skills/s/SKILL.md"
+    run = "[p] plugins/p/scripts/x.py:1: comment run of 4 lines; keep the constraint, cut the rest"
+    assert sorted(marketplace._check_doc_rules()) == sorted(
+        [
+            f"{head}:9: one command per console block; split the block",
+            f"{head}:13: GNU-only `\\+` in a sed expression; use `sed -E` with a bare `+`",
+            f"{run}",
+        ]
+    )

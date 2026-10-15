@@ -1548,6 +1548,8 @@ DOC_RULES = (
     "ecosystem-command",
     "gnu-only",
     "prose-rules-link",
+    "console-multi",
+    "comment-run",
 )
 ENFORCED_DOC_RULES: frozenset[str] = frozenset(DOC_RULES)
 """Doc rules that fail ``lint``; the rest are reported by ``doc-report``."""
@@ -1587,6 +1589,8 @@ def _doc_violations_in(plugin: str, rel: Path, text: str) -> list[DocViolation]:
         *_doc_lint.check_console_fences(text),
         *_doc_lint.check_shell_fences(text),
         *_doc_lint.check_portable_shell(text),
+        *_doc_lint.check_sed_bre(text),
+        *_doc_lint.check_one_command(text),
     ]
     if rel.name == "SKILL.md":
         found.extend(_doc_lint.check_user_invocable(text))
@@ -1623,6 +1627,19 @@ def doc_violations() -> list[DocViolation]:
                         "no link to ../../references/prose-rules.md",
                     )
                 )
+    scripts = [
+        *sorted((REPO_ROOT / "scripts").glob("*.[ps][yh]")),
+        *sorted(PLUGINS_DIR.glob("*/scripts/*.[ps][yh]")),
+    ]
+    for path in scripts:
+        rel = path.relative_to(REPO_ROOT)
+        plugin = rel.parts[1] if rel.parts[0] == "plugins" else "(root)"
+        out.extend(
+            DocViolation(rule, plugin, rel.as_posix(), line, msg)
+            for rule, line, msg in _doc_lint.check_comment_runs(
+                path.read_text(encoding="utf-8", errors="replace")
+            )
+        )
     for name in ("AGENTS.md", "README.md"):
         path = REPO_ROOT / name
         if path.exists():

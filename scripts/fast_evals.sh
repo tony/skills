@@ -1,8 +1,7 @@
 #!/usr/bin/env bash
 # Routing tripwire: every should-not-fire case plus one trigger case per
 # plugin, one run each. Usage: fast_evals.sh [--list]. Scaffolded cases are
-# skipped; they belong to the slow suite. Needs a logged-in Claude Code.
-# No -e: a failing case is judged by its verdict and the pass continues.
+# skipped. Needs a logged-in Claude Code. No -e: a failing case is judged by its verdict.
 set -uo pipefail
 
 SELF_DIR="$(cd "$(dirname "$0")" && pwd)"
