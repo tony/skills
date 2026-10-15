@@ -98,3 +98,13 @@ def test_unenforced_rules_stay_quiet(enforced: Path, monkeypatch: pytest.MonkeyP
     _plugin(enforced, "p", _SKILL)
     monkeypatch.setattr(marketplace, "ENFORCED_DOC_RULES", frozenset[str]())
     assert marketplace._check_doc_rules() == []
+
+
+def test_file_exemptions_name_real_files() -> None:
+    """Every fence exemption points at a file that exists."""
+    missing = [
+        key
+        for key in marketplace.DOC_FILE_EXEMPT
+        if not (marketplace.REPO_ROOT / "plugins" / key).is_file()
+    ]
+    assert missing == []

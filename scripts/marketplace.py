@@ -1549,8 +1549,14 @@ DOC_RULES = (
     "gnu-only",
     "prose-rules-link",
 )
-ENFORCED_DOC_RULES: frozenset[str] = frozenset()
+ENFORCED_DOC_RULES: frozenset[str] = frozenset(DOC_RULES)
 """Doc rules that fail ``lint``; the rest are reported by ``doc-report``."""
+DOC_FILE_EXEMPT: dict[str, str] = {
+    "skill-style/references/example-bloated.md": "quotes a sample skill as data",
+    "skill-style/references/example-ideal.md": "quotes a sample skill as data",
+    "disk/references/virtual-disks.md": "WSL-only commands, stated beside each fence",
+}
+"""``plugin/path`` files whose fences are exempt from the shell-fence and gnu-only rules."""
 PROSE_RULES_EXEMPT: dict[str, str] = {
     **dict.fromkeys(
         (
@@ -1560,6 +1566,7 @@ PROSE_RULES_EXEMPT: dict[str, str] = {
         "thin wrapper; foray writes the prose and links the rules",
     ),
     "release/bump": "writes no prose of its own; cut writes the changelog and commit message",
+    "disk/disk": "router; usage and reclaim write the reply and link the rules",
 }
 """``plugin/skill`` names that write no human-facing prose, each with the reason."""
 
@@ -1597,7 +1604,10 @@ def doc_violations() -> list[DocViolation]:
             if rel.parts[0] in {"evals", ".claude-plugin", ".codex-plugin"}:
                 continue
             text = path.read_text(encoding="utf-8", errors="replace")
-            out.extend(_doc_violations_in(plugin_dir.name, rel, text))
+            found = _doc_violations_in(plugin_dir.name, rel, text)
+            if f"{plugin_dir.name}/{rel.as_posix()}" in DOC_FILE_EXEMPT:
+                found = [v for v in found if v.rule not in {"shell-fence", "gnu-only"}]
+            out.extend(found)
             skill = f"{plugin_dir.name}/{rel.parts[1] if len(rel.parts) > 1 else ''}"
             if (
                 path.name == "SKILL.md"
