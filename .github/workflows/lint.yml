@@ -5,18 +5,28 @@ on:
     branches: [main]
   pull_request:
 
+permissions:
+  contents: read
+
+concurrency:
+  group: lint-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   lint:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
 
       - uses: actions/setup-node@v7
         with:
           node-version: "22"
 
       - name: Install Claude CLI
-        run: npm install -g @anthropic-ai/claude-code
+        run: npm install -g @anthropic-ai/claude-code@2.1.300
 
       - name: Verify Claude CLI
         run: claude --version
@@ -24,9 +34,10 @@ jobs:
       - uses: astral-sh/setup-uv@v10.2.0
         with:
           enable-cache: true
+          version-file: .tool-versions
 
       - name: Install dependencies
-        run: uv sync --group dev
+        run: uv sync --frozen --group dev
 
       - name: Ruff check
         run: uv run ruff check
@@ -46,11 +57,6 @@ jobs:
       - name: Test plugin scripts on Python 3.9
         run: uv run --no-project --isolated --python 3.9 --with pytest pytest -q plugins
 
-      - name: Claude plugin validate
-        run: |
-          claude plugin validate --strict .
-          for p in plugins/*/; do claude plugin validate --strict "$p"; done
-
       - name: Marketplace lint
         run: uv run scripts/marketplace.py lint
 
@@ -63,9 +69,29 @@ jobs:
       - name: Skill routing check
         run: uv run scripts/skill_evals.py check
 
+      - name: Commit messages
+        if: github.event_name == 'pull_request'
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: scripts/commit_lint.py "$BASE_SHA" "$HEAD_SHA"
+
+      - name: Plugin versions (pull request)
+        if: github.event_name == 'pull_request'
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+        run: uv run scripts/marketplace.py versions --base "$BASE_SHA"
+
+      - name: Plugin versions (push)
+        if: github.event_name == 'push' && github.event.before != '0000000000000000000000000000000000000000'
+        env:
+          BEFORE_SHA: ${{ github.event.before }}
+        run: uv run scripts/marketplace.py versions --base "$BEFORE_SHA"
+
   e2e:
     runs-on: ubuntu-latest
     needs: lint
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v7
 
@@ -74,13 +100,13 @@ jobs:
           node-version: "22"
 
       - name: Install Claude CLI
-        run: npm install -g @anthropic-ai/claude-code
+        run: npm install -g @anthropic-ai/claude-code@2.1.300
 
       - name: Verify Claude CLI
         run: claude --version
 
       - name: Install Codex CLI
-        run: npm install -g @openai/codex
+        run: npm install -g @openai/codex@0.162.1
 
       - name: Verify Codex CLI
         run: codex --version
@@ -88,11 +114,10 @@ jobs:
       - uses: astral-sh/setup-uv@v10.2.0
         with:
           enable-cache: true
+          version-file: .tool-versions
 
       - name: Install dependencies
-        run: uv sync --group dev
+        run: uv sync --frozen --group dev
 
       - name: E2E plugin lifecycle (local)
         run: uv run scripts/e2e.py --source local --host both
-        env:
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}

@@ -9,14 +9,20 @@ on:
   workflow_dispatch:
     inputs:
       threshold:
-        description: "Minimum per-case score"
+        description: "Minimum per-case score (scripts/fast_evals.sh sets the default)"
         required: false
-        default: "0.5"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: evals-scheduled
+  cancel-in-progress: false
 
 jobs:
   fast:
     runs-on: ubuntu-latest
-    # Per-case duration and the full-pass budget are in evals/README.md.
+    # Per-case duration is in evals/README.md.
     timeout-minutes: 120
     steps:
       - uses: actions/checkout@v7
@@ -26,12 +32,12 @@ jobs:
           node-version: "22"
 
       - name: Install Claude CLI
-        run: npm install -g @anthropic-ai/claude-code
+        run: npm install -g @anthropic-ai/claude-code@2.1.300
 
       - name: Run the fast suite
         env:
           CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
-          FAST_EVAL_THRESHOLD: ${{ github.event.inputs.threshold || '0.5' }}
+          FAST_EVAL_THRESHOLD: ${{ inputs.threshold }}
         run: scripts/fast_evals.sh
 
       - name: Upload results
