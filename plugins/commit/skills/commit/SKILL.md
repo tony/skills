@@ -162,8 +162,8 @@ Pass every message, one line or many, through a quoted heredoc so backticks
 and `$(...)` stay literal. Pick a delimiter that appears nowhere in the
 message; never use double quotes for the message.
 
-```bash
-git commit -m "$(cat <<'COMMIT_MSG_END'
+```console
+$ git commit -m "$(cat <<'COMMIT_MSG_END'
 subject line
 
 why: ...

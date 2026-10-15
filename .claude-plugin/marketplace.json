@@ -12,7 +12,7 @@
     {
       "name": "weave",
       "description": "Run independent, adversarial AI participants via sub-agents or model CLIs to brainstorm, refine, plan, execute, architect, review, and synthesize.",
-      "version": "0.2.0",
+      "version": "0.2.1",
       "author": {
         "name": "Tony Narlock",
         "email": "tony@git-pull.com"
@@ -90,7 +90,7 @@
     {
       "name": "commit",
       "description": "Create git commits following project conventions with format enforcement and safety checks.",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "author": {
         "name": "Tony Narlock",
         "email": "tony@git-pull.com"
@@ -344,7 +344,7 @@
     {
       "name": "business",
       "description": "Measure and report the business value of AI workflows from provenance-tagged data, in engineer-hours and cycle time, never currency.",
-      "version": "0.2.0",
+      "version": "0.2.1",
       "author": {
         "name": "Tony Narlock",
         "email": "tony@git-pull.com"
@@ -482,7 +482,7 @@
     {
       "name": "package-updater",
       "description": "Update dependencies and toolchains across repositories. Checks the supply-chain cooldown first when one is configured, then commits toolchain, named bumps, and lockfile refreshes separately with release notes cited.",
-      "version": "0.2.0",
+      "version": "0.2.1",
       "author": {
         "name": "Tony Narlock",
         "email": "tony@git-pull.com"

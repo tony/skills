@@ -199,8 +199,8 @@ file-writing tool and run `git commit -F <file>`. A message the skill
 authors itself may use a quoted heredoc, with a delimiter that appears
 nowhere in the body (check before running).
 
-```bash
-git commit -F - <<'COMMIT_MSG_END'
+```console
+$ git commit -F - <<'COMMIT_MSG_END'
 js(deps[dev]) @biomejs/biome 2.5.3 -> 2.5.4
 
 why: Track latest Biome patch release (published <date>, now past

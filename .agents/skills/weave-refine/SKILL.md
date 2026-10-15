@@ -70,7 +70,7 @@ Follow `references/refine-cycle.md` for pass 1, with the candidates in `pass-000
 
 ## Phase 4: Deslop and present
 
-Follow `references/refine-cycle.md` (Deslop, present, and finish) with `references/deslop-pass.md`, `references/present-results.md`, `RESULT_KIND` = `refine` and `references/refine.md`. Inline-text input gets the same shape: a hero line first, then the four listed headings, with no title line or other headings.
+Follow `references/refine-cycle.md` (Deslop, present, and finish) with `references/deslop-pass.md`, `references/present-results.md`, `RESULT_KIND` = `refine` and `references/refine.md`. Inline-text input gets the same shape: a hero line first, then the four listed headings, with no title line or other headings. Write the reply per `references/prose-rules.md`.
 
 ## Rules
 

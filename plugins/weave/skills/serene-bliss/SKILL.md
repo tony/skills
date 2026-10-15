@@ -97,7 +97,7 @@ The panel is the same participants every pass. For each pass after the first, di
 
 ## Phase 5: Deslop and present
 
-Follow `../../references/refine-cycle.md` (Deslop, present, and finish) with `../../references/deslop-pass.md`, `../../references/present-results.md`, `RESULT_KIND` = `refine` and `../../references/results/refine.md`. Put "judged by a panel of <the participants that judged>, peer-only averaging, across N pass(es)" in Attribution; add no line after it.
+Follow `../../references/refine-cycle.md` (Deslop, present, and finish) with `../../references/deslop-pass.md`, `../../references/present-results.md`, `RESULT_KIND` = `refine` and `../../references/results/refine.md`. Put "judged by a panel of <the participants that judged>, peer-only averaging, across N pass(es)" in Attribution; add no line after it. Write the reply per `../../references/prose-rules.md`.
 
 ## Rules
 

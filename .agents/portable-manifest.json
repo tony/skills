@@ -132,7 +132,7 @@
         "references/prose-rules.md": "plugins/business/references/prose-rules.md",
         "references/provenance.md": "plugins/business/references/provenance.md"
       },
-      "bytes": 127871
+      "bytes": 127875
     },
     {
       "name": "changelog",
@@ -183,7 +183,7 @@
         "references/prose-rules.md": "plugins/commit/references/prose-rules.md",
         "references/sensitive.py": "plugins/commit/scripts/sensitive.py"
       },
-      "bytes": 22225
+      "bytes": 22230
     },
     {
       "name": "disk",
@@ -487,7 +487,7 @@
         "references/repo_facts.py": "plugins/package-updater/scripts/repo_facts.py",
         "references/stopped-run.md": "plugins/package-updater/references/stopped-run.md"
       },
-      "bytes": 71192
+      "bytes": 71197
     },
     {
       "name": "package-updater-update-package",
@@ -507,7 +507,7 @@
         "references/stopped-run.md": "plugins/package-updater/references/stopped-run.md",
         "references/upstream-links.md": "plugins/package-updater/references/upstream-links.md"
       },
-      "bytes": 97711
+      "bytes": 97716
     },
     {
       "name": "package-updater-update-toolchain",
@@ -525,7 +525,7 @@
         "references/stopped-run.md": "plugins/package-updater/references/stopped-run.md",
         "references/upstream-links.md": "plugins/package-updater/references/upstream-links.md"
       },
-      "bytes": 92055
+      "bytes": 92060
     },
     {
       "name": "package-updater-updating-packages",
@@ -546,7 +546,7 @@
         "references/throwaway-worktree.md": "plugins/package-updater/references/throwaway-worktree.md",
         "references/upstream-links.md": "plugins/package-updater/references/upstream-links.md"
       },
-      "bytes": 113203
+      "bytes": 113208
     },
     {
       "name": "pr",
@@ -1415,10 +1415,11 @@
         "references/engine.py": "plugins/weave/scripts/engine.py",
         "references/ensemble-core.md": "plugins/weave/references/ensemble-core.md",
         "references/present-results.md": "plugins/weave/references/present-results.md",
+        "references/prose-rules.md": "plugins/weave/references/prose-rules.md",
         "references/variants.md": "plugins/weave/references/variants.md",
         "references/worker-backends.md": "plugins/weave/references/worker-backends.md"
       },
-      "bytes": 202030
+      "bytes": 206723
     },
     {
       "name": "weave-brainstorm-and-refine",
@@ -1432,11 +1433,12 @@
         "references/engine.py": "plugins/weave/scripts/engine.py",
         "references/ensemble-core.md": "plugins/weave/references/ensemble-core.md",
         "references/present-results.md": "plugins/weave/references/present-results.md",
+        "references/prose-rules.md": "plugins/weave/references/prose-rules.md",
         "references/refine-cycle.md": "plugins/weave/references/refine-cycle.md",
         "references/variants.md": "plugins/weave/references/variants.md",
         "references/worker-backends.md": "plugins/weave/references/worker-backends.md"
       },
-      "bytes": 220276
+      "bytes": 224969
     },
     {
       "name": "weave-execute",
@@ -1514,11 +1516,12 @@
         "references/engine.py": "plugins/weave/scripts/engine.py",
         "references/ensemble-core.md": "plugins/weave/references/ensemble-core.md",
         "references/present-results.md": "plugins/weave/references/present-results.md",
+        "references/prose-rules.md": "plugins/weave/references/prose-rules.md",
         "references/refine-cycle.md": "plugins/weave/references/refine-cycle.md",
         "references/refine.md": "plugins/weave/references/results/refine.md",
         "references/worker-backends.md": "plugins/weave/references/worker-backends.md"
       },
-      "bytes": 216820
+      "bytes": 221513
     },
     {
       "name": "weave-review",
@@ -1551,12 +1554,13 @@
         "references/engine.py": "plugins/weave/scripts/engine.py",
         "references/ensemble-core.md": "plugins/weave/references/ensemble-core.md",
         "references/present-results.md": "plugins/weave/references/present-results.md",
+        "references/prose-rules.md": "plugins/weave/references/prose-rules.md",
         "references/refine-cycle.md": "plugins/weave/references/refine-cycle.md",
         "references/refine.md": "plugins/weave/references/results/refine.md",
         "references/variants.md": "plugins/weave/references/variants.md",
         "references/worker-backends.md": "plugins/weave/references/worker-backends.md"
       },
-      "bytes": 225169
+      "bytes": 229862
     }
   ],
   "duplication": {
@@ -1564,12 +1568,12 @@
     "plugins/scholar/references/prose-rules.md": 11,
     "plugins/scholar/scripts/term_metrics.py": 11,
     "plugins/weave/references/present-results.md": 11,
+    "plugins/weave/references/prose-rules.md": 11,
     "plugins/weave/scripts/closest_model.py": 11,
     "plugins/weave/scripts/engine.py": 11,
     "plugins/scholar/references/stage-gates.md": 10,
     "plugins/weave/references/ensemble-core.md": 10,
     "plugins/weave/references/worker-backends.md": 10,
-    "plugins/weave/references/prose-rules.md": 7,
     "plugins/business/references/interim-format.md": 6,
     "plugins/business/references/prose-rules.md": 6,
     "plugins/business/references/provenance.md": 6,

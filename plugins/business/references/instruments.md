@@ -96,9 +96,8 @@ unavailable, not worked around.
   refuses to overwrite an existing snapshot. Use the run's absolute
   path, since the working directory resets between Bash calls:
 
-  ```bash
-  set -o pipefail
-  gh api graphql --paginate \
+  ```console
+  $ set -o pipefail; gh api graphql --paginate \
     -f owner=acme \
     -f name=widgets \
     -f query='

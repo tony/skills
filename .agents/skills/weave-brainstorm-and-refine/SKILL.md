@@ -74,7 +74,7 @@ For each later pass up to `passes`, the cycle's Distribute step has already writ
 
 ## Phase 5: Deslop and present
 
-Follow `references/refine-cycle.md` (Deslop, present, and finish) with `references/deslop-pass.md`, `references/present-results.md`, `RESULT_KIND` = `brainstorm-and-refine` and `references/brainstorm-and-refine.md`. The reply starts with the hero line alone on its own line, with no clause appended, and has only the four headings of that kind file: the woven design goes under Final Result as paragraphs and flat bullets, with its own headings and bold labels folded into the first words of a bullet and no label line of its own. The Evolution Summary's Originals bullet comes from the Phase 3 originals: how many there were and what they differed on.
+Follow `references/refine-cycle.md` (Deslop, present, and finish) with `references/deslop-pass.md`, `references/present-results.md`, `RESULT_KIND` = `brainstorm-and-refine` and `references/brainstorm-and-refine.md`. The reply starts with the hero line alone on its own line, with no clause appended, and has only the four headings of that kind file: the woven design goes under Final Result as paragraphs and flat bullets, with its own headings and bold labels folded into the first words of a bullet and no label line of its own. The Evolution Summary's Originals bullet comes from the Phase 3 originals: how many there were and what they differed on. Write the reply per `references/prose-rules.md`.
 
 ## Rules
 

@@ -43,7 +43,7 @@ Dispatch per `ensemble-core.md` (Dispatch lanes), then (Close the repo guard), u
 
 ## Phase 3: Present the originals
 
-Read `references/present-results.md` and `references/brainstorm.md`, and apply them with `RESULT_KIND` = `brainstorm`, `ARTIFACT_PATH` = the session's `outputs/` directory, `SESSION_DIR`, `PASS_COUNT` = 1, `IN_PLAN_MODE` = false, `LABEL_MAP_PATH` = null.
+Read `references/present-results.md` and `references/brainstorm.md`, and apply them with `RESULT_KIND` = `brainstorm`, `ARTIFACT_PATH` = the session's `outputs/` directory, `SESSION_DIR`, `PASS_COUNT` = 1, `IN_PLAN_MODE` = false, `LABEL_MAP_PATH` = null. Write the reply per `references/prose-rules.md`.
 
 Reply with the hero and sections of `results/brainstorm.md` in that order, and nothing after Attribution. Head each response as `references/variants.md` step 5 says. Do not group responses, count how many distinct designs they cover, merge them, or comment on overlap, rank them, or recommend one in your own voice.
 
