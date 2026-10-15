@@ -30,6 +30,7 @@ import tomllib
 import typing as t
 from pathlib import Path
 
+import _doc_lint  # pyright: ignore[reportImplicitRelativeImport]
 import pydantic
 import rich.console
 import rich.markup
@@ -1539,6 +1540,116 @@ def rewrite_readme_rows(manifest: MarketplaceManifest, readme: str) -> str:
     return README_ROW_RE.sub(replace, readme)
 
 
+DOC_RULES = (
+    "user-invocable",
+    "console-prompt",
+    "console-comment",
+    "shell-fence",
+    "ecosystem-command",
+    "gnu-only",
+    "prose-rules-link",
+)
+ENFORCED_DOC_RULES: frozenset[str] = frozenset()
+"""Doc rules that fail ``lint``; the rest are reported by ``doc-report``."""
+PROSE_RULES_EXEMPT: dict[str, str] = {
+    **dict.fromkeys(
+        (
+            f"research/{name}"
+            for name in ("assess", "continue", "release", "report", "status", "verify")
+        ),
+        "thin wrapper; foray writes the prose and links the rules",
+    ),
+    "release/bump": "writes no prose of its own; cut writes the changelog and commit message",
+}
+"""``plugin/skill`` names that write no human-facing prose, each with the reason."""
+
+
+class DocViolation(t.NamedTuple):
+    """One doc-rule violation."""
+
+    rule: str
+    plugin: str
+    path: str
+    line: int
+    message: str
+
+
+def _doc_violations_in(plugin: str, rel: Path, text: str) -> list[DocViolation]:
+    """Run the doc checks that apply to one markdown file."""
+    found: list[_doc_lint.Violation] = [
+        *_doc_lint.check_console_fences(text),
+        *_doc_lint.check_shell_fences(text),
+        *_doc_lint.check_portable_shell(text),
+    ]
+    if rel.name == "SKILL.md":
+        found.extend(_doc_lint.check_user_invocable(text))
+    if plugin not in _doc_lint.TOOL_PLUGINS | {"(root)"}:
+        found.extend(_doc_lint.check_ecosystem_commands(text))
+    return [DocViolation(rule, plugin, rel.as_posix(), line, msg) for rule, line, msg in found]
+
+
+def doc_violations() -> list[DocViolation]:
+    """Collect every doc-rule violation under ``plugins/`` and the root docs."""
+    out: list[DocViolation] = []
+    for plugin_dir in discover_plugins():
+        for path in sorted(plugin_dir.rglob("*.md")):
+            rel = path.relative_to(plugin_dir)
+            if rel.parts[0] in {"evals", ".claude-plugin", ".codex-plugin"}:
+                continue
+            text = path.read_text(encoding="utf-8", errors="replace")
+            out.extend(_doc_violations_in(plugin_dir.name, rel, text))
+            skill = f"{plugin_dir.name}/{rel.parts[1] if len(rel.parts) > 1 else ''}"
+            if (
+                path.name == "SKILL.md"
+                and skill not in PROSE_RULES_EXEMPT
+                and _doc_lint.lacks_prose_rules_link(text)
+            ):
+                out.append(
+                    DocViolation(
+                        "prose-rules-link",
+                        plugin_dir.name,
+                        rel.as_posix(),
+                        1,
+                        "no link to ../../references/prose-rules.md",
+                    )
+                )
+    for name in ("AGENTS.md", "README.md"):
+        path = REPO_ROOT / name
+        if path.exists():
+            out.extend(_doc_violations_in("(root)", Path(name), path.read_text(encoding="utf-8")))
+    return out
+
+
+def _check_doc_rules() -> list[str]:
+    """Return errors for the doc rules listed in ``ENFORCED_DOC_RULES``."""
+    return [
+        f"[{v.plugin}] {v.path}:{v.line}: {v.message}"
+        for v in doc_violations()
+        if v.rule in ENFORCED_DOC_RULES
+    ]
+
+
+@app.command(name="doc-report")
+def doc_report(*, files: bool = False) -> None:
+    """Count doc-rule violations per rule and plugin without failing the build."""
+    found = doc_violations()
+    for rule in DOC_RULES:
+        hits = [v for v in found if v.rule == rule]
+        live = "enforced" if rule in ENFORCED_DOC_RULES else "report only"
+        print(f"{rule}: {len(hits)} ({live})")
+        by_plugin: dict[str, list[DocViolation]] = {}
+        for v in hits:
+            by_plugin.setdefault(v.plugin, []).append(v)
+        for plugin, group in sorted(by_plugin.items()):
+            print(f"  {plugin}: {len(group)}")
+            if files:
+                per_file: dict[str, int] = {}
+                for v in group:
+                    per_file[v.path] = per_file.get(v.path, 0) + 1
+                for path, count in sorted(per_file.items()):
+                    print(f"    {path}: {count}")
+
+
 @app.command()
 def lint() -> None:
     """Validate the marketplace manifest and all plugin directories."""
@@ -1608,6 +1719,7 @@ def lint() -> None:
         _check_engine_parity,
         _check_verifier_parity,
         _check_script_var_graders,
+        _check_doc_rules,
     ):
         errors.extend(repo_check())
 
@@ -1881,13 +1993,110 @@ def _new_entry(name: str, plugin_meta: PluginJson, manifest: MarketplaceManifest
     )
 
 
+def _drifted(entry: PluginEntry, meta: PluginJson) -> bool:
+    """Report whether a marketplace entry disagrees with its ``plugin.json``.
+
+    Examples
+    --------
+    >>> entry = PluginEntry(
+    ...     name="p",
+    ...     description="d",
+    ...     version="0.1.0",
+    ...     author=Author(name="o"),
+    ...     source="./plugins/p",
+    ...     category="development",
+    ... )
+    >>> _drifted(entry, PluginJson(name="p", description="d", version="0.1.0"))
+    False
+    >>> _drifted(entry, PluginJson(name="p", description="d", version="0.2.0"))
+    True
+    """
+    return (
+        entry.description != meta.description
+        or entry.tags != meta.keywords
+        or (meta.version is not None and entry.version != meta.version)
+    )
+
+
+_MIN_PLUGIN_PARTS = 2
+"""Index of the path part after ``plugins/<name>``."""
+
+
+def _git_out(*args: str) -> str | None:
+    """Return stdout of ``git`` run in the repository, or None when it fails."""
+    result = subprocess.run(  # noqa: S603
+        ["git", *args],  # noqa: S607
+        cwd=REPO_ROOT,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    return result.stdout if result.returncode == 0 else None
+
+
+def _manifest_version(text: str | None) -> str | None:
+    """Return the ``version`` in plugin.json ``text``, or None when absent or malformed.
+
+    Examples
+    --------
+    >>> _manifest_version('{"name": "p", "version": "0.2.0"}')
+    '0.2.0'
+    >>> _manifest_version("not json") is None
+    True
+    >>> _manifest_version(None) is None
+    True
+    """
+    if text is None:
+        return None
+    try:
+        version = t.cast("dict[str, t.Any]", json.loads(text)).get("version")
+    except (json.JSONDecodeError, AttributeError):
+        return None
+    return version if isinstance(version, str) else None
+
+
+@app.command()
+def versions(
+    base: t.Annotated[str, typer.Option(help="Git ref to compare the working tree against")],
+) -> None:
+    """Fail when a plugin's files changed since ``base`` but its version did not.
+
+    Generated ``.codex-plugin/`` files do not count as a change on their own.
+    A plugin absent from ``base`` is new and needs no bump.
+    """
+    changed = _git_out("diff", "--name-only", base, "--", "plugins")
+    if changed is None:
+        console.print(f"[red]Error:[/red] cannot diff against '{base}'")
+        raise SystemExit(1)
+    touched = {
+        parts[1]
+        for line in changed.splitlines()
+        if len(parts := line.split("/")) > _MIN_PLUGIN_PARTS
+        and parts[_MIN_PLUGIN_PARTS] != ".codex-plugin"
+    }
+    stale: list[str] = []
+    for name in sorted(touched):
+        rel = f"plugins/{name}/.claude-plugin/plugin.json"
+        old = _manifest_version(_git_out("show", f"{base}:{rel}"))
+        path = REPO_ROOT / rel
+        new = _manifest_version(path.read_text(encoding="utf-8") if path.exists() else None)
+        if old is not None and new is not None and old == new:
+            stale.append(f"{name}: files changed but version is still {new}")
+    if stale:
+        for line in stale:
+            console.print(f"[red]Error:[/red] {rich.markup.escape(line)}")
+        raise SystemExit(1)
+    console.print("[green]Every changed plugin carries a new version.[/green]")
+
+
 @app.command()
 def sync(*, write: bool = False, check: bool = False) -> None:
     """Compare discovered plugins with marketplace manifest.
 
-    Drift is a plugin present on one side only, or an entry whose description
-    or ``tags`` no longer match its ``plugin.json`` (``keywords``). Descriptions
-    are the listing users read, and nothing else in CI compares them.
+    Drift is a plugin present on one side only, or an entry whose description,
+    ``tags``, or ``version`` no longer match its ``plugin.json`` (``keywords``
+    for tags). Descriptions are the listing users read, and nothing else in CI
+    compares them.
 
     Parameters
     ----------
@@ -1922,10 +2131,7 @@ def sync(*, write: bool = False, check: bool = False) -> None:
         entry.name
         for entry in manifest.plugins
         if entry.name in discovered_names
-        and (
-            entry.description != _load_plugin_json(PLUGINS_DIR / entry.name).description
-            or entry.tags != _load_plugin_json(PLUGINS_DIR / entry.name).keywords
-        )
+        and _drifted(entry, _load_plugin_json(PLUGINS_DIR / entry.name))
     )
 
     if not additions and not removals and not stale:
@@ -1943,7 +2149,7 @@ def sync(*, write: bool = False, check: bool = False) -> None:
     for name in removals:
         table.add_row("[red]- Remove[/red]", name)
     for name in stale:
-        table.add_row("[yellow]~ Description or tags[/yellow]", name)
+        table.add_row("[yellow]~ Description, tags, or version[/yellow]", name)
 
     console.print(table)
 
@@ -1972,12 +2178,12 @@ def sync(*, write: bool = False, check: bool = False) -> None:
     # Remove missing plugins
     manifest.plugins = [e for e in manifest.plugins if e.name not in removals]
 
-    # Refresh drifted descriptions
     for entry in manifest.plugins:
         if entry.name in stale:
             meta = _load_plugin_json(PLUGINS_DIR / entry.name)
             entry.description = meta.description
             entry.tags = meta.keywords
+            entry.version = meta.version or entry.version
 
     # Write updated manifest
     _ = MARKETPLACE_PATH.write_text(_serialize_manifest(manifest), encoding="utf-8")
