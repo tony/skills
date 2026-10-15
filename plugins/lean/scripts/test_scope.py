@@ -270,6 +270,8 @@ def test_origin_head_sets_the_trunk(
     _topic_repo(origin)
     clone = tmp_path / "clone"
     _run(tmp_path, "clone", "-q", origin.as_uri(), str(clone))
+    _run(clone, "config", "user.email", "t@example.com")
+    _run(clone, "config", "user.name", "t")
     _run(clone, "checkout", "-q", "-b", "topic")
     _commit_file(clone, "t.py")
     monkeypatch.chdir(clone)
