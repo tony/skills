@@ -1,6 +1,6 @@
 {
   "name": "git-branch",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Rebuild branch history into atomic commits (byte-identical), or reimplement from scratch using existing tests as the spec. Includes an interactive-rebase toolkit.",
   "author": {
     "name": "Tony Narlock",

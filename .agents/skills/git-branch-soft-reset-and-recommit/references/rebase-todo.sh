@@ -1,26 +1,9 @@
 #!/bin/sh
-# rebase-todo.sh — drive git's interactive rebase from an agent, with no
-# editor and no TTY.
-#
-# `git rebase -i` is built around two editor invocations: one for the todo
-# list and one per reworded message. Both are replaced here, so every mode
-# below runs to completion or fails loudly — it never blocks on input.
-#
-# Subcommands:
-#   status                     report any in-progress git operation and exit
-#   show   <base>              print the todo list git would generate
-#   apply  <base> <plan-file>  replay <base>..HEAD using <plan-file> as the todo
-#   verify <base> <command>    run <command> after every commit, in place
-#   squash <base>              fold every pending fixup!/amend! commit
-#
-# Environment:
-#   RECUT_UPDATE_REFS=1        also move local branches that point into the
-#                              range (stacked branches); off by default
-#   RECUT_SIGN=1               re-sign rewritten commits; a rebase strips
-#                              signatures otherwise
-#
-# Exit codes: 0 success, 1 git failed (state may be left in progress — the
-# message says so and prints the abort command), 2 usage or preflight refusal.
+# Drives git rebase -i with no editor and no TTY; every mode finishes or fails
+# loudly. Exit: 0 success, 1 git failed (state may be left in progress), 2 refusal.
+
+# RECUT_UPDATE_REFS=1 also moves local branches pointing into the range;
+# RECUT_SIGN=1 re-signs rewritten commits, which a rebase strips.
 
 set -eu
 

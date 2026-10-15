@@ -142,8 +142,7 @@ cmd_untracked() {
 
 # Stash everything, untracked files included, and print the stash's own SHA
 # (never stash@{0}, which is another entry when nothing changed). With --keep
-# the files stay in the tree, unstaged, so a kept worktree still shows the work.
-# Paths matched by --leave or the bytecode patterns stay in the tree.
+# the files stay in the tree; --leave paths and bytecode patterns always do.
 cmd_stash() {
   parse_stash_args 1 "$@"
   cmd_guard >/dev/null

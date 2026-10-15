@@ -1,7 +1,7 @@
 {
   "name": "action",
   "description": "Convert tickets to branches in isolated worktrees. Uses team branch conventions, lands gated commits, and supports parallel tickets.",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "author": {
     "name": "Tony Narlock",
     "email": "tony@git-pull.com"

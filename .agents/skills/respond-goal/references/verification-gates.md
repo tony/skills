@@ -6,22 +6,22 @@ Language-agnostic, never hardcoded.
 
 ## Local gate buckets
 
-Five buckets, resolved by reading the project's conventions files in
-priority order: `AGENTS.md`, then `CLAUDE.md`, then
-`.github/CONTRIBUTING.md`. Split each file by heading; a heading that
-contains a bucket keyword as a whole word ("Tests" matches `test`;
-"Latest" and "Respect" do not) claims the first fenced code block beneath
-it, when that block holds a command rather than output or an example. The
-first file's command wins on collision. In a non-interactive run, name each
-discovered command in the report before running it.
+Resolve each bucket by reading the project's conventions files in priority
+order: `AGENTS.md`, then `CLAUDE.md`, then `.github/CONTRIBUTING.md`. Split
+each file by heading; a heading that contains a bucket keyword as a whole word
+("Tests" matches `test`; "Latest" and "Respect" do not) claims the first
+fenced code block beneath it, when that block holds a command rather than
+output or an example. The first file's command wins on collision. In a
+non-interactive run, name each discovered command in the report before running
+it.
 
-| Bucket | Heading keywords (case-insensitive) |
-|---|---|
-| `format` | `format`, `fmt` |
-| `lint` | `lint`, `ruff check`, `eslint`, `clippy` |
-| `typecheck` | `typecheck`, `type check`, `mypy`, `pyright`, `tsc` |
-| `test` | `test`, `spec`, `pytest`, `vitest`, `jest` |
-| `build` | `build`, `compile` |
+Buckets and their heading keywords, case-insensitive:
+
+- `format`: `format`, `fmt`
+- `lint`: `lint`, `ruff check`, `eslint`, `clippy`
+- `typecheck`: `typecheck`, `type check`, `mypy`, `pyright`, `tsc`
+- `test`: `test`, `spec`, `pytest`, `vitest`, `jest`
+- `build`: `build`, `compile`
 
 When a bucket is unset **and the manifest shows evidence the project
 has that gate** (a typecheck config such as a `mypy`/`pyright` section

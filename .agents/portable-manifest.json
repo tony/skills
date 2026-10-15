@@ -14,7 +14,7 @@
         "references/worktree-setup.md": "plugins/action/references/worktree-setup.md",
         "references/worktree_paths.py": "plugins/action/scripts/worktree_paths.py"
       },
-      "bytes": 49068
+      "bytes": 49046
     },
     {
       "name": "action-worktrees",
@@ -29,7 +29,7 @@
         "references/worktree-setup.md": "plugins/action/references/worktree-setup.md",
         "references/worktree_paths.py": "plugins/action/scripts/worktree_paths.py"
       },
-      "bytes": 50320
+      "bytes": 50298
     },
     {
       "name": "agent-messaging-session-relay",
@@ -299,7 +299,7 @@
         "references/rebuild-contract.md": "plugins/git-branch/references/rebuild-contract.md",
         "references/split-mechanics.md": "plugins/git-branch/references/split-mechanics.md"
       },
-      "bytes": 76123
+      "bytes": 75266
     },
     {
       "name": "git-branch-soft-reset-and-recommit",
@@ -315,7 +315,7 @@
         "references/rebase-toolkit.md": "plugins/git-branch/references/rebase-toolkit.md",
         "references/split-mechanics.md": "plugins/git-branch/references/split-mechanics.md"
       },
-      "bytes": 68842
+      "bytes": 67985
     },
     {
       "name": "github-actions-bumping-github-actions",
@@ -850,7 +850,7 @@
         "references/user_stash.py": "plugins/respond/scripts/user_stash.py",
         "references/verification-gates.md": "plugins/respond/references/verification-gates.md"
       },
-      "bytes": 76149
+      "bytes": 76127
     },
     {
       "name": "respond-check",
@@ -886,7 +886,7 @@
         "references/verification-gates.md": "plugins/respond/references/verification-gates.md",
         "references/wait_pr.py": "plugins/respond/scripts/wait_pr.py"
       },
-      "bytes": 63930
+      "bytes": 63908
     },
     {
       "name": "ruff-bump",
@@ -1190,7 +1190,7 @@
         "references/slop_detect.py": "plugins/slop/scripts/slop_detect.py",
         "references/verification-gates.md": "plugins/slop/references/verification-gates.md"
       },
-      "bytes": 95235
+      "bytes": 95213
     },
     {
       "name": "slop-scan",
@@ -1207,7 +1207,7 @@
         "references/slop_detect.py": "plugins/slop/scripts/slop_detect.py",
         "references/verification-gates.md": "plugins/slop/references/verification-gates.md"
       },
-      "bytes": 94659
+      "bytes": 94637
     },
     {
       "name": "spike-bakeoff",
@@ -1222,7 +1222,7 @@
         "references/spike.sh": "plugins/spike/scripts/spike.sh",
         "references/verification-gates.md": "plugins/spike/references/verification-gates.md"
       },
-      "bytes": 50766
+      "bytes": 50670
     },
     {
       "name": "spike-probe",
@@ -1236,7 +1236,7 @@
         "references/spike.sh": "plugins/spike/scripts/spike.sh",
         "references/verification-gates.md": "plugins/spike/references/verification-gates.md"
       },
-      "bytes": 43426
+      "bytes": 43330
     },
     {
       "name": "spike-ratchet",
@@ -1251,7 +1251,7 @@
         "references/spike.sh": "plugins/spike/scripts/spike.sh",
         "references/verification-gates.md": "plugins/spike/references/verification-gates.md"
       },
-      "bytes": 51172
+      "bytes": 51076
     },
     {
       "name": "tailwind-spacing-audit",

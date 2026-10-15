@@ -1,6 +1,6 @@
 {
   "name": "slop",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Audit a branch's commits or a repo's tracked files for AI slop and brittle references; fix through fixup or atomic commits.",
   "author": {
     "name": "Tony Narlock",
