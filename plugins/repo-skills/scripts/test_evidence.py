@@ -568,3 +568,19 @@ def test_prompts_sharing_a_long_opening_stay_distinct(tmp_path: Path) -> None:
     export.write_text("\n".join(json.dumps(r) for r in rows), encoding="utf-8")
 
     assert evidence.cmd_transcripts(export, limit=10)["prompts_total"] == 2
+
+
+@pytest.mark.integration(reason="executes native Git repository queries")
+def test_agent_file_commits_include_nested_files(tmp_path: Path) -> None:
+    """A commit touching only a nested AGENTS.md counts as an agent-file commit."""
+    repo = _repo(tmp_path / "site")
+    (repo / "pkg").mkdir()
+    (repo / "pkg" / "AGENTS.md").write_text("rules\n", encoding="utf-8")
+    _git(repo, "add", ".")
+    _git(repo, "commit", "-q", "-m", "ai(rules[pkg]) add nested rules")
+
+    report = evidence.cmd_git(repo, since="10 years ago", top_n=5)
+
+    assert [line.split(" ", 1)[1] for line in report["agent_file_commits"]] == [
+        "ai(rules[pkg]) add nested rules"
+    ]

@@ -39,13 +39,13 @@ import typing as t
 from pathlib import Path
 
 _AGENT_FILES = (
-    "AGENTS.md",
-    "CLAUDE.md",
-    "GEMINI.md",
-    ".agents/",
-    ".claude/",
-    ".codex/",
-    ".cursor/",
+    ":(glob)**/AGENTS.md",
+    ":(glob)**/CLAUDE.md",
+    ":(glob)**/GEMINI.md",
+    ":(glob)**/.agents/**",
+    ":(glob)**/.claude/**",
+    ":(glob)**/.codex/**",
+    ":(glob)**/.cursor/**",
     ".github/copilot-instructions.md",
 )
 _TOOL_OUTPUT_PREFIXES = (
