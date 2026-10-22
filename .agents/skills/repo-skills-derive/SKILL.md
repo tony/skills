@@ -93,7 +93,8 @@ Write raw exports outside the working tree.
    every `cwd_globs` entry, then the summary filtered to this
    repository's directories.
 6. Shell history, unless `--no-shell-history`, passing every checkout
-   path:
+   and every former location the transcript summary's `by_cwd` rows
+   name:
 
    ```console
    $ python3 <evidence.py> --repo <root> shell \

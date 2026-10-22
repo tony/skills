@@ -59,8 +59,10 @@ the exit code is the fact. A command that writes (a formatter without
 sibling clones), `session_dirs` naming where earlier sessions ran, and
 `cwd_globs` covering them. A repository that moved keeps its name, so
 the glob on that name reaches its old path. A `session_dirs` entry that
-matches no checkout is a former location; add it to the shell-history
-paths.
+matches no checkout points at a former location, but its name encodes
+the path lossily (`/` and `.` both become `-`), so never pass it on as a
+path. The transcript summary's `by_cwd` rows carry the real former
+paths; those go to the shell-history `--path` list.
 
 ## AI transcripts
 
