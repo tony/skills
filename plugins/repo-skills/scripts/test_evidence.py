@@ -757,6 +757,9 @@ def test_redact_leaves_ordinary_commands_alone(command: str) -> None:
         ("the password: hunter2 expired", "hunter2"),
         ("db at postgres://u:pw987@h/db", "pw987"),
         ("my API key = abc123def", "abc123def"),
+        ("set DB_PASSWORD=hunter2 in .env", "hunter2"),
+        ("STRIPE_API_KEY=abc123xyz", "abc123xyz"),
+        ("export AWS_SECRET_ACCESS_KEY=wJalrXUtnFEMI", "wJalrXUtnFEMI"),
     ],
 )
 def test_redact_text_masks_credentials_in_prose(text: str, secret: str) -> None:

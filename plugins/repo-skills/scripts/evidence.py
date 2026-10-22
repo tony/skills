@@ -90,7 +90,11 @@ _TOKEN_SHAPES = (
     r"AIza[\w-]{35}\b",
     r"eyJ[\w-]{8,}\.eyJ[\w-]{8,}\.[\w-]{8,}",
 )
+_KEY_NAME = r"(?:API|ACCESS|SECRET|PRIVATE|CLIENT|SIGNING|ENCRYPTION|MASTER|AUTH)_?KEY"
 _CREDENTIAL_WORD = r"(?:password|passwd|passphrase|api[ _-]?key|secret[ _-]?key|access[ _-]?key)"
+_ENV_CREDENTIAL = (
+    r"[A-Z][A-Z0-9_]*(?:TOKEN|SECRET|PASSWORD|PASSWD|PASSPHRASE|CREDENTIALS?|" + _KEY_NAME + ")"
+)
 _TEXT_REDACTIONS = (
     (
         re.compile(
@@ -100,9 +104,9 @@ _TEXT_REDACTIONS = (
     ),
     (re.compile(r"(?<![\w.-])(?:" + "|".join(_TOKEN_SHAPES) + ")"), "…"),
     (re.compile(r"(?i)\b(" + _CREDENTIAL_WORD + r"\s*[:=]\s*)" + _VALUE), r"\1…"),
+    (re.compile(r"(?<![\w-])(" + _ENV_CREDENTIAL + r")=" + _VALUE), r"\1=…"),
 )
 _URL_USERINFO = re.compile(r"\b([a-z][a-z0-9+.-]*://)([^/\s@:?#]*:)?([^/\s@?#]+)@")
-_KEY_NAME = r"(?:API|ACCESS|SECRET|PRIVATE|CLIENT|SIGNING|ENCRYPTION|MASTER|AUTH)_?KEY"
 _CREDENTIAL_NAME = (
     r"[A-Za-z0-9_]*(?:TOKEN|SECRET|PASSWORD|PASSWD|PASSPHRASE|CREDENTIALS?|" + _KEY_NAME + ")"
 )
@@ -550,6 +554,8 @@ def redact_text(text: str) -> str:
     'db at postgres://u:…@host/db'
     >>> redact_text("all 12 tests pass: yes, rotate the token: 24h expiry")
     'all 12 tests pass: yes, rotate the token: 24h expiry'
+    >>> redact_text("set DB_PASSWORD=hunter2 and export GITHUB_TOKEN=abc123")
+    'set DB_PASSWORD=… and export GITHUB_TOKEN=…'
     """
     for pattern, replacement in _TEXT_REDACTIONS:
         text = pattern.sub(replacement, text)
