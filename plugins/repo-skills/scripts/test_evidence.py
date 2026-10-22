@@ -554,3 +554,17 @@ def test_a_staged_but_uncommitted_link_still_needs_commit_2(tmp_path: Path) -> N
     assert evidence.cmd_link(repo, check=False)["changed"] is True
     _git(repo, "commit", "-q", "-m", "link")
     assert evidence.cmd_link(repo, check=False)["changed"] is False
+
+
+def test_prompts_sharing_a_long_opening_stay_distinct(tmp_path: Path) -> None:
+    """Deduplication compares whole prompts, so templated requests keep their variants."""
+    opening = "update the dependency " + "a" * 90
+    rows = [
+        {"agent": "a", "store": "a.history", "text": f"{opening} requests", "timestamp": "2026-01"},
+        {"agent": "a", "store": "a.history", "text": f"{opening} django", "timestamp": "2026-02"},
+        {"agent": "a", "store": "a.history", "text": f"{opening}  django", "timestamp": "2026-03"},
+    ]
+    export = tmp_path / "export.ndjson"
+    export.write_text("\n".join(json.dumps(r) for r in rows), encoding="utf-8")
+
+    assert evidence.cmd_transcripts(export, limit=10)["prompts_total"] == 2

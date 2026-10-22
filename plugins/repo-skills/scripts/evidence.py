@@ -828,7 +828,7 @@ def cmd_transcripts(path: Path, limit: int, keep: list[str] | None = None) -> Tr
             if store.endswith(".history"):
                 history_agents.add(agent)
             if is_human_prompt(store, text):
-                key = f"{agent}\x00{store.endswith('.history')}\x00{text[:100]}"
+                key = f"{agent}\x00{store.endswith('.history')}\x00{' '.join(text.split())}"
                 known = stamps.get(key)
                 if known is None or (stamp and (not known or stamp < known)):
                     stamps[key] = stamp
