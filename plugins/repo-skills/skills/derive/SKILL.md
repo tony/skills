@@ -187,10 +187,11 @@ $ python3 <evidence.py> --repo <root> link
 ```
 
 It replaces per-skill links with one `.claude/skills` link to
-`../.agents/skills`, and stages it past any gitignore. Confirm each
-`.claude/skills/*/SKILL.md` resolves, then commit in the repository's
-format: the why is that a skill added to `.agents/skills` no longer
-needs its own link.
+`../.agents/skills`, and stages it past any gitignore. `changed: false`
+means the link is already committed: skip commit 2 and say so in the
+report. Otherwise confirm each `.claude/skills/*/SKILL.md` resolves, then
+commit in the repository's format: the why is that a skill added to
+`.agents/skills` no longer needs its own link.
 
 Read both commits back with `git log -2 --format=%s` and
 `git show --stat --format= HEAD~1 HEAD`. Never push.

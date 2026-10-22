@@ -854,7 +854,12 @@ def cmd_link(repo: Path, *, check: bool) -> LinkReport:
     if state in {"real-skills", "foreign-links", "other-link", "other"}:
         msg = f".claude/skills is {state} ({', '.join(entries)}); move or remove these first"
         raise UsageError(msg)
-    if check or state == "linked":
+    if state == "linked":
+        tracked = bool(_git(top, "ls-files", "--", ".claude/skills").strip())
+        if not check and not tracked:
+            _git(top, "add", "--force", "--", ".claude/skills")
+        return {"state": state, "entries": entries, "changed": not check and not tracked}
+    if check:
         return {"state": state, "entries": entries, "changed": False}
     if not (top / ".agents" / "skills").is_dir():
         msg = ".agents/skills does not exist; write the skills first"

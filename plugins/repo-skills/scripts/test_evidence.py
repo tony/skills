@@ -428,3 +428,18 @@ def test_duplicate_prompts_keep_their_earliest_timestamp(tmp_path: Path) -> None
 
     assert [p["date"] for p in report["prompts"]] == ["2026-09-01"]
     assert report["prompts_total"] == 1
+
+
+@pytest.mark.integration(reason="executes native Git repository queries")
+def test_link_stages_an_existing_untracked_link(tmp_path: Path) -> None:
+    """A link already on disk but not in git is staged, then reported unchanged."""
+    repo = _repo(tmp_path / "site")
+    (repo / ".agents" / "skills" / "a").mkdir(parents=True)
+    (repo / ".agents" / "skills" / "a" / "SKILL.md").write_text("---\n", encoding="utf-8")
+    (repo / ".claude").mkdir()
+    (repo / ".claude" / "skills").symlink_to("../.agents/skills")
+
+    assert evidence.cmd_link(repo, check=False)["changed"] is True
+    assert _git(repo, "diff", "--cached", "--name-only").split() == [".claude/skills"]
+    _git(repo, "commit", "-q", "-m", "link")
+    assert evidence.cmd_link(repo, check=False)["changed"] is False
