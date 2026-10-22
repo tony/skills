@@ -337,3 +337,17 @@ def test_trunk_is_main_when_origin_head_is_unset(tmp_path: Path) -> None:
 
     assert report["trunk"] == "main"
     assert report["commits"] == 1
+
+
+@pytest.mark.integration(reason="executes native Git repository queries")
+def test_paths_from_a_worktree_name_the_primary_checkout(tmp_path: Path) -> None:
+    """A worktree with a generated name reports the repository's own name."""
+    repo = _repo(tmp_path / "work" / "site")
+    worktree = tmp_path / "wt" / "esk"
+    worktree.parent.mkdir()
+    _git(repo, "worktree", "add", "-q", str(worktree), "-b", "x")
+
+    report = evidence.cmd_paths(worktree, [])
+
+    assert report["root_name"] == "site"
+    assert report["cwd_globs"] == ["*site*", "*wt/esk*"]

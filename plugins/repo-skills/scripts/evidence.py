@@ -231,17 +231,18 @@ def covering_globs(root_name: str, checkouts: list[str]) -> list[str]:
     """Return the fewest ``*name*`` globs that match every checkout path.
 
     The repository's own name comes first. A checkout whose path already
-    contains a kept name adds nothing, so a worktree with a generated
-    basename under a directory named for the repository needs no glob.
+    contains a kept name adds nothing, so a worktree under a directory
+    named for the repository needs no glob. Any other checkout is matched
+    on its last two path components, never on a bare generated basename.
 
-    >>> covering_globs("site", ["~/w/site", "~/w/site-oxc",
-    ...                         "~/.wt/site__x/esk", "~/w/renamed"])
-    ['*renamed*', '*site*']
+    >>> covering_globs("site", ["~/w/site", "~/w/site-oxc", "~/.wt/site__x/esk",
+    ...                         "~/.wt/esk", "~/w/renamed"])
+    ['*.wt/esk*', '*site*', '*w/renamed*']
     """
     kept = [root_name]
     for path in sorted(set(checkouts), key=len):
         if not any(name in path for name in kept):
-            kept.append(Path(path).name)
+            kept.append("/".join(path.rstrip("/").split("/")[-2:]))
     return sorted(f"*{name}*" for name in kept)
 
 
@@ -537,19 +538,22 @@ def cmd_paths(repo: Path, roots: list[Path]) -> PathsReport:
     top = toplevel(repo)
     origin_url = _git(top, "config", "--get", "remote.origin.url", check=False).strip()
     origin = normalize_remote(origin_url) if origin_url else None
-    found: set[str] = {str(top)}
-    for line in _git(top, "worktree", "list", "--porcelain").splitlines():
-        if line.startswith("worktree "):
-            found.add(line[len("worktree ") :])
+    worktrees = [
+        line[len("worktree ") :]
+        for line in _git(top, "worktree", "list", "--porcelain").splitlines()
+        if line.startswith("worktree ")
+    ]
+    primary = Path(worktrees[0]) if worktrees and (Path(worktrees[0]) / ".git").exists() else top
+    found: set[str] = {str(top), *worktrees}
     if origin:
-        for root in roots or [top.parent, top.parent.parent]:
+        for root in roots or [primary.parent, primary.parent.parent]:
             if not root.is_dir():
                 continue
             for child in root.iterdir():
                 if child.is_dir() and _checkout_remote(child) == origin:
                     found.add(str(child))
     projects = Path.home() / ".claude" / "projects"
-    suffix = "-" + encode_session_dir(top.name)
+    suffix = "-" + encode_session_dir(primary.name)
     sessions = (
         sorted(p.name for p in projects.iterdir() if p.name.endswith(suffix))
         if projects.is_dir()
@@ -557,11 +561,11 @@ def cmd_paths(repo: Path, roots: list[Path]) -> PathsReport:
     )
     checkouts = sorted(tilde(p) for p in found)
     return {
-        "root_name": top.name,
+        "root_name": primary.name,
         "origin": origin,
         "checkouts": checkouts,
         "session_dirs": sessions,
-        "cwd_globs": covering_globs(top.name, checkouts),
+        "cwd_globs": covering_globs(primary.name, checkouts),
     }
 
 
