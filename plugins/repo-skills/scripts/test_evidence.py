@@ -605,3 +605,12 @@ def test_session_dirs_separate_own_from_lookalikes(
 
     assert report["session_dirs"] == own
     assert report["other_session_dirs"] == ["-x-my-site", "-x-site"]
+
+
+@pytest.mark.integration(reason="executes native Git repository queries")
+def test_a_stale_origin_head_falls_through_to_main(tmp_path: Path) -> None:
+    """An origin/HEAD naming a deleted branch is skipped, not passed to git log."""
+    repo = _repo(tmp_path / "site")
+    _git(repo, "symbolic-ref", "refs/remotes/origin/HEAD", "refs/remotes/origin/gone")
+
+    assert evidence.cmd_git(repo, since="10 years ago", top_n=5)["trunk"] == "main"

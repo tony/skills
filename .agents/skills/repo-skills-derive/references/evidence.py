@@ -563,14 +563,14 @@ def toplevel(path: Path) -> Path:
 def trunk_ref(repo: Path) -> str:
     """Return the trunk: ``origin``'s default branch, then ``main`` or ``master``.
 
-    Remote branches come before local ones. Only a repository with none of
-    them falls back to the current branch.
+    Remote branches come before local ones, and a name that no longer
+    resolves, such as a stale ``origin/HEAD``, is skipped. Only a repository
+    with none of them falls back to the current branch.
     """
     head = _git(repo, "symbolic-ref", "--quiet", "refs/remotes/origin/HEAD", check=False)
-    if head.strip():
-        return head.strip().replace("refs/remotes/", "", 1)
-    for ref in ("origin/main", "origin/master", "main", "master"):
-        if _git(repo, "rev-parse", "--verify", "--quiet", f"{ref}^{{commit}}", check=False):
+    named = head.strip().replace("refs/remotes/", "", 1)
+    for ref in (named, "origin/main", "origin/master", "main", "master"):
+        if ref and _git(repo, "rev-parse", "--verify", "--quiet", f"{ref}^{{commit}}", check=False):
             return ref
     return _git(repo, "rev-parse", "--abbrev-ref", "HEAD").strip()
 
