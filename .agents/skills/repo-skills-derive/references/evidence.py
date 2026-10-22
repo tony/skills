@@ -31,6 +31,7 @@ import argparse
 import collections
 import json
 import os
+import posixpath
 import re
 import subprocess
 import sys
@@ -99,7 +100,7 @@ _REDACTIONS = (
     (re.compile(r"\b([a-z][a-z0-9+.-]*://[^/\s:@]+:)[^@\s/]+@"), r"\1…@"),
     (re.compile("|".join(_TOKEN_SHAPES)), "…"),
 )
-_CD = re.compile(r"(?:^|[;&|]\s*)(?:cd|pushd)(?=\s|$|[;&|])[ \t]*([^\s;&|]*)")
+_CD = re.compile(r"(?:^|[;&|]\s*)(?:cd|pushd)(?=\s|$|[;&|])[ \t]*(\"[^\"]*\"|'[^']*'|[^\s;&|]*)")
 _ZSH_EXTENDED = re.compile(r"^: (\d+):\d+;(.*)$")
 _ZSH_META = 0x83
 _NESTED_DEPTH = 3
@@ -378,22 +379,36 @@ def parse_fish(text: str) -> list[tuple[int | None, str]]:
 def next_cwd(cwd: str | None, target: str) -> str | None:
     """Return the tracked directory after ``cd <target>``.
 
+    Quotes are stripped, ``$HOME`` becomes ``~``, and ``.`` and ``..`` are
+    resolved. A relative target from an unknown directory, and ``cd -``,
+    leave the directory unknown.
+
     >>> next_cwd(None, "~/w")
     '~/w'
     >>> next_cwd("~/w", "site")
     '~/w/site'
-    >>> next_cwd("~/w", "..") is None
-    True
+    >>> next_cwd("~/w/site", "..")
+    '~/w'
+    >>> next_cwd(None, '"$HOME/w/site"')
+    '~/w/site'
+    >>> next_cwd(None, "~/w/site/..")
+    '~/w'
     >>> next_cwd("/tmp", "")
     '~'
+    >>> next_cwd(None, "..") is None
+    True
     """
+    target = target.strip("\"'")
+    target = re.sub(r"^\$(?:HOME\b|\{HOME\})", "~", target)
     if not target:
         return "~"
-    if target.startswith(("/", "~")):
-        return target
-    if cwd is None or target.startswith(("..", "-")):
+    if target == "-":
         return None
-    return cwd.rstrip("/") + "/" + target
+    if not target.startswith(("/", "~")):
+        if cwd is None:
+            return None
+        target = cwd.rstrip("/") + "/" + target
+    return posixpath.normpath(target)
 
 
 def attribute(

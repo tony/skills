@@ -381,3 +381,19 @@ def test_transcripts_report_a_bounded_scan(tmp_path: Path) -> None:
         "sources_skipped": 0,
     }
     assert report["records"] == 1
+
+
+@pytest.mark.parametrize(
+    ("entries", "kept"),
+    [
+        ([(1, 'cd "$HOME/w/site"'), (2, "make")], ['cd "$HOME/w/site"', "make"]),
+        ([(1, "cd ~/w/site"), (2, 'cd "$HOME/other"'), (3, "make")], ["cd ~/w/site"]),
+        ([(1, "cd ~/w/site/.."), (2, "make")], ["cd ~/w/site/.."]),
+        ([(1, "cd ~/w"), (2, "cd 'site'"), (3, "make")], ["cd 'site'", "make"]),
+    ],
+)
+def test_cd_tracking_reads_quotes_home_and_parents(
+    entries: list[tuple[int | None, str]], kept: list[str]
+) -> None:
+    """Quoted, $HOME, and .. targets move the tracked directory correctly."""
+    assert [c for _, c in evidence.attribute(entries, ["~/w/site"])] == kept
