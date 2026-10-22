@@ -133,6 +133,13 @@ Wait for approval, then exit plan mode. `--dry-run` stops here. Without
 an interactive question tool (Codex, headless runs), print the plan and
 stop.
 
+On the trunk, create the approved branch before the first edit, so both
+commits land on it:
+
+```console
+$ git -C <root> switch -c <prefix>-skills
+```
+
 ## Phase 4: Watch each skill fail first
 
 Before writing a skill, run its baseline per
