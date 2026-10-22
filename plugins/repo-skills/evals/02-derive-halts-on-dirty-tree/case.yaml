@@ -22,7 +22,7 @@ graders:
   - name: gathers-no-git-evidence
     type: tool_used
     tool: Bash
-    input_match: '(?:evidence\.py|python3?\s+\$\{?[A-Za-z_]\w*\}?).*\bgit\b'
+    input_match: '(?:evidence\.py|python3?\s+\$\{?[A-Za-z_]\w*\}?)[\s\S]*\bgit\b'
     min: 0
     max: 0
 
@@ -41,7 +41,6 @@ graders:
     type: llm
     focus: last_message
     criteria: |
-      The reply says the run stopped before gathering anything because
-      notes.md has uncommitted changes, and tells the user to commit or
-      stash them, then run the skill again. It is at most three short
-      sentences and has no section headings.
+      The reply is one result sentence naming notes.md as the blocker,
+      then what the user must do: commit or stash it, and run the skill
+      again. It has no section headings.

@@ -23,17 +23,17 @@ graders:
   - name: summarises-git-history
     type: tool_used
     tool: Bash
-    input_match: '(?:evidence\.py|python3?\s+\$\{?[A-Za-z_]\w*\}?).*\bgit\b'
+    input_match: '(?:evidence\.py|python3?\s+\$\{?[A-Za-z_]\w*\}?)[\s\S]*\bgit\b'
 
   - name: lists-every-location
     type: tool_used
     tool: Bash
-    input_match: '(?:evidence\.py|python3?\s+\$\{?[A-Za-z_]\w*\}?).*\bpaths\b'
+    input_match: '(?:evidence\.py|python3?\s+\$\{?[A-Za-z_]\w*\}?)[\s\S]*\bpaths\b'
 
   - name: searches-transcripts-exhaustively
     type: tool_used
     tool: Bash
-    input_match: 'uvx agentgrep@0\.1\.0a52 search.*depth:exhaustive.*cwd:'
+    input_match: 'uvx\s+(?:--python\s+\S+\s+)?agentgrep@0\.1\.0a52\s+search[\s\S]*depth:exhaustive[\s\S]*cwd:'
 
   - name: writes-no-skill
     type: file_exists
@@ -51,5 +51,4 @@ graders:
       A "## Stale claims" section says AGENTS.md calls make typecheck
       failing on main while it exits 0, or that its port 8000 claim
       disagrees with the serve target's 9100.
-      The reply names no absolute path and says nothing was written or
-      committed.
+      The reply names no absolute path.
