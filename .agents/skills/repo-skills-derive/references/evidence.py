@@ -85,14 +85,14 @@ _TOKEN_SHAPES = (
     r"\bglpat-[\w-]{20,}",
     r"\bAIza[\w-]{35}\b",
 )
+_CREDENTIAL_NAME = r"[A-Z0-9_]*(?:token|secret|passw(?:or)?d|api_?key|credential)[A-Z0-9_]*"
 _REDACTIONS = (
     (
-        re.compile(
-            r"(?i)\b([A-Z0-9_]*(?:token|secret|passw(?:or)?d|api_?key|credential)[A-Z0-9_]*)="
-            + _VALUE
-        ),
+        re.compile(r"(?i)\b(" + _CREDENTIAL_NAME + r")\s*=\s*" + _VALUE),
         r"\1=…",
     ),
+    (re.compile(r"((?:^|\s)(?:-u|--user)[ =]?[^\s:]+:)\S+"), r"\1…"),
+    (re.compile(r"(\bmysql(?:admin|dump)?\b[^|;&\n]*\s-p)(?=\S)\S+"), r"\1…"),
     (
         re.compile(r"(?i)(--(?:token|password|passwd|secret|api-key|apikey)(?:=|\s+))" + _VALUE),
         r"\1…",
@@ -484,6 +484,12 @@ def redact(text: str) -> str:
     "curl -H 'Authorization: Bearer …'"
     >>> redact("psql postgres://u:pw@host/db")
     'psql postgres://u:…@host/db'
+    >>> redact("curl -u admin:hunter2 https://x")
+    'curl -u admin:… https://x'
+    >>> redact("mysql -uroot -phunter2 db; mkdir -p out")
+    'mysql -uroot -p… db; mkdir -p out'
+    >>> redact("SECRET_KEY = abc")
+    'SECRET_KEY=…'
     >>> redact("echo ghp_" + "a" * 36 + " | gh auth login --with-token")
     'echo … | gh auth login --with-token'
     """
