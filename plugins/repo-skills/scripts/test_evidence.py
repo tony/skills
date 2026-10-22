@@ -522,3 +522,20 @@ def test_link_after_moving_real_skills_into_agents(tmp_path: Path) -> None:
 
     assert report["changed"] is True
     assert (repo / ".claude" / "skills" / "local" / "SKILL.md").is_file()
+
+
+def test_shell_reads_a_named_history_file_and_infers_its_shell(tmp_path: Path) -> None:
+    """A history kept outside the defaults is read with the right parser."""
+    saved = tmp_path / "saved.txt"
+    saved.write_text(
+        "- cmd: cd ~/w/site\n  when: 5\n- cmd: make test\n  when: 6\n", encoding="utf-8"
+    )
+
+    report = evidence.cmd_shell(["~/w/site"], top_n=5, histories=[saved])
+
+    source = report["sources"][0]
+    assert (source["shell"], source["file"], source["attributed"]) == (
+        "fish",
+        evidence.tilde(str(saved)),
+        2,
+    )

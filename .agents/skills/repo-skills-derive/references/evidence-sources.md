@@ -128,6 +128,11 @@ timestamps, unstamped lines count only when they name a repository path.
 Expect little here: the signal is how sessions start (a session
 manager, an install step) and commands typed by hand often.
 
+Each source names the `file` it read. A history kept elsewhere (a custom
+`HISTFILE`, an atuin export, a saved copy) is read with one `--history`
+per file in place of the defaults. A file listed under `unreadable` was
+skipped; say so rather than reading it some other way.
+
 ## Privacy
 
 Report what was learned, not the record.

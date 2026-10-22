@@ -146,6 +146,7 @@ class ShellSource(t.TypedDict):
     """One shell's history, attributed to the repository."""
 
     shell: str
+    file: str
     entries: int
     attributed: int
     heads: list[tuple[str, int]]
@@ -649,7 +650,7 @@ def cmd_git(repo: Path, since: str, top_n: int) -> GitReport:
     }
 
 
-def _history_sources() -> list[tuple[str, Path]]:
+def _history_sources() -> list[tuple[str | None, Path]]:
     zsh = os.environ.get("HISTFILE") or str(Path.home() / ".zsh_history")
     return [
         ("zsh", Path(zsh)),
@@ -658,12 +659,41 @@ def _history_sources() -> list[tuple[str, Path]]:
     ]
 
 
-def cmd_shell(repo_paths: list[str], top_n: int) -> ShellReport:
-    """Attribute shell-history commands to the repository."""
+def history_kind(path: Path, head: bytes) -> str:
+    """Name a history file's shell from its name, else from its first bytes.
+
+    >>> history_kind(Path("fish_history"), b"")
+    'fish'
+    >>> history_kind(Path("saved.txt"), b": 1700000000:0;ls")
+    'zsh'
+    >>> history_kind(Path("saved.txt"), b"- cmd: ls")
+    'fish'
+    >>> history_kind(Path("saved.txt"), b"ls -la")
+    'bash'
+    """
+    for kind in ("fish", "zsh", "bash"):
+        if kind in path.name:
+            return kind
+    if head.startswith(b"- cmd: "):
+        return "fish"
+    if _ZSH_EXTENDED.match(head.split(b"\n", 1)[0].decode("utf-8", "replace")):
+        return "zsh"
+    return "bash"
+
+
+def cmd_shell(
+    repo_paths: list[str], top_n: int, histories: list[Path] | None = None
+) -> ShellReport:
+    """Attribute shell-history commands to the repository.
+
+    ``histories`` replaces the default zsh, bash, and fish locations; each
+    file's shell is inferred by ``history_kind``.
+    """
     parsers = {"zsh": parse_zsh, "bash": parse_bash, "fish": parse_fish}
     report: list[ShellSource] = []
     unreadable: list[str] = []
-    for kind, path in _history_sources():
+    sources = [(None, h) for h in histories] if histories else _history_sources()
+    for named, path in sources:
         if not path.is_file():
             continue
         try:
@@ -671,6 +701,7 @@ def cmd_shell(repo_paths: list[str], top_n: int) -> ShellReport:
         except OSError:
             unreadable.append(tilde(str(path)))
             continue
+        kind = named or history_kind(path, raw[:200])
         text = (unmetafy(raw) if kind == "zsh" else raw).decode("utf-8", "replace")
         entries = parsers[kind](text)
         kept = attribute(entries, repo_paths)
@@ -685,6 +716,7 @@ def cmd_shell(repo_paths: list[str], top_n: int) -> ShellReport:
         report.append(
             {
                 "shell": kind,
+                "file": tilde(str(path)),
                 "entries": len(entries),
                 "attributed": len(kept),
                 "heads": heads.most_common(top_n),
@@ -900,6 +932,9 @@ def build_parser() -> argparse.ArgumentParser:
     shell = sub.add_parser("shell", help="shell history attributed to the repository")
     shell.add_argument("--path", action="append", default=[], help="a repository path")
     shell.add_argument("--top", type=int, default=30)
+    shell.add_argument(
+        "--history", action="append", default=[], help="a history file to read instead"
+    )
     transcripts = sub.add_parser("transcripts", help="summarise an agentgrep NDJSON file")
     transcripts.add_argument("file")
     transcripts.add_argument("--limit", type=int, default=300)
@@ -925,7 +960,8 @@ def main(argv: list[str] | None = None) -> int:
             result = cmd_git(repo, str(args.since), int(args.top))
         elif command == "shell":
             paths = [str(p) for p in args.path] or [tilde(str(toplevel(repo)))]
-            result = cmd_shell(paths, int(args.top))
+            histories = [Path(str(h)).expanduser() for h in args.history]
+            result = cmd_shell(paths, int(args.top), histories)
         elif command == "transcripts":
             keep = [str(c) for c in args.cwd]
             result = cmd_transcripts(Path(str(args.file)).expanduser(), int(args.limit), keep)
