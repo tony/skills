@@ -101,7 +101,8 @@ _REDACTIONS = (
     (re.compile(r"\b([a-z][a-z0-9+.-]*://[^/\s:@]+:)[^@\s/]+@"), r"\1…@"),
     (re.compile("|".join(_TOKEN_SHAPES)), "…"),
 )
-_CD = re.compile(r"(?:^|[;&|]\s*)(?:cd|pushd)(?=\s|$|[;&|])[ \t]*(\"[^\"]*\"|'[^']*'|[^\s;&|]*)")
+_CD_TARGET = r"(\"[^\"]*\"|'[^']*'|[^\s;&|]*)"
+_CD = re.compile(r"(?:^|[;&|]\s*)(?:cd|pushd)(?=\s|$|[;&|])[ \t]*(?:--[ \t]+)?" + _CD_TARGET)
 _ZSH_EXTENDED = re.compile(r"^: (\d+):\d+;(.*)$")
 _ZSH_META = 0x83
 _NESTED_DEPTH = 3
@@ -392,8 +393,9 @@ def next_cwd(cwd: str | None, target: str) -> str | None:
     """Return the tracked directory after ``cd <target>``.
 
     Quotes are stripped, ``$HOME`` becomes ``~``, and ``.`` and ``..`` are
-    resolved. A relative target from an unknown directory, and ``cd -``,
-    leave the directory unknown.
+    resolved. ``cd -``, a relative target from an unknown directory, and a
+    target that still holds a variable or command substitution leave the
+    directory unknown.
 
     >>> next_cwd(None, "~/w")
     '~/w'
@@ -409,12 +411,14 @@ def next_cwd(cwd: str | None, target: str) -> str | None:
     '~'
     >>> next_cwd(None, "..") is None
     True
+    >>> next_cwd("~/w/site", "$OTHER") is None
+    True
     """
     target = target.strip("\"'")
     target = re.sub(r"^\$(?:HOME\b|\{HOME\})", "~", target)
     if not target:
         return "~"
-    if target == "-":
+    if target == "-" or "$" in target or "`" in target:
         return None
     if not target.startswith(("/", "~")):
         if cwd is None:
@@ -429,9 +433,10 @@ def attribute(
 ) -> list[tuple[int | None, str]]:
     """Keep commands run inside, or naming, one of the repository's paths.
 
-    ``cd`` and ``pushd`` move the tracked directory. A relative target
-    descends from it; ``..`` or ``-`` makes it unknown; a bare ``cd`` goes
-    home. The tracking is approximate across shell sessions.
+    ``cd`` and ``pushd`` move the tracked directory as ``next_cwd``
+    describes. A line counts when the directory is inside the repository
+    before or after it, so a command run there before a ``cd`` away is
+    kept. The tracking is approximate across shell sessions.
 
     When some entries carry timestamps, an unstamped entry was written by
     something other than the interactive shell, such as a test harness
@@ -441,7 +446,7 @@ def attribute(
     >>> entries = [(1, "cd ~/w/site"), (2, "make test"), (3, "cd docs"),
     ...            (4, "ls"), (5, "cd /tmp"), (6, "vim ~/w/site/README.md")]
     >>> [c for _, c in attribute(entries, ["~/w/site"])]
-    ['cd ~/w/site', 'make test', 'cd docs', 'ls', 'vim ~/w/site/README.md']
+    ['cd ~/w/site', 'make test', 'cd docs', 'ls', 'cd /tmp', 'vim ~/w/site/README.md']
     """
     home = str(Path.home())
     forms: list[str] = []
@@ -459,10 +464,11 @@ def attribute(
     kept: list[tuple[int | None, str]] = []
     for stamp, command in entries:
         tracked = stamp is not None or not stamped
+        before = tracked and cwd is not None and bool(mention.match(cwd))
         if tracked:
             for target in _CD.findall(command):
                 cwd = next_cwd(cwd, target)
-        inside = tracked and cwd is not None and bool(mention.match(cwd))
+        inside = before or (tracked and cwd is not None and bool(mention.match(cwd)))
         if inside or mention.search(command):
             kept.append((stamp, command))
     return kept

@@ -68,7 +68,7 @@ def test_attribution_matches_absolute_and_tilde_forms() -> None:
         (5, "tmuxp load ~/w/site"),
     ]
     kept = [c for _, c in evidence.attribute(entries, ["~/w/site"])]
-    assert kept == [f"cd {home}/w/site && make", "make test", "tmuxp load ~/w/site"]
+    assert kept == [f"cd {home}/w/site && make", "make test", "cd -", "tmuxp load ~/w/site"]
 
 
 def test_unstamped_lines_in_a_stamped_history_do_not_inherit_the_directory() -> None:
@@ -386,7 +386,20 @@ def test_transcripts_report_a_bounded_scan(tmp_path: Path) -> None:
     ("entries", "kept"),
     [
         ([(1, 'cd "$HOME/w/site"'), (2, "make")], ['cd "$HOME/w/site"', "make"]),
-        ([(1, "cd ~/w/site"), (2, 'cd "$HOME/other"'), (3, "make")], ["cd ~/w/site"]),
+        (
+            [(1, "cd ~/w/site"), (2, 'cd "$HOME/other"'), (3, "make")],
+            ["cd ~/w/site", 'cd "$HOME/other"'],
+        ),
+        ([(1, "cd ~/w/site"), (2, "cd $OTHER"), (3, "ls")], ["cd ~/w/site", "cd $OTHER"]),
+        (
+            [(1, "cd ~/w/site"), (2, 'cd "$(mktemp -d)"'), (3, "ls")],
+            ["cd ~/w/site", 'cd "$(mktemp -d)"'],
+        ),
+        ([(1, "cd ~/w/site"), (2, "cd -- /tmp"), (3, "ls")], ["cd ~/w/site", "cd -- /tmp"]),
+        (
+            [(1, "cd ~/w/site"), (2, "make test; cd /tmp"), (3, "ls")],
+            ["cd ~/w/site", "make test; cd /tmp"],
+        ),
         ([(1, "cd ~/w/site/.."), (2, "make")], ["cd ~/w/site/.."]),
         ([(1, "cd ~/w"), (2, "cd 'site'"), (3, "make")], ["cd 'site'", "make"]),
     ],
