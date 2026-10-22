@@ -74,7 +74,9 @@ _TOOL_OUTPUT_PREFIXES = (
     r"Review this change for security",
 )
 _TOOL_OUTPUT = re.compile("^(?:" + "|".join(_TOOL_OUTPUT_PREFIXES) + ")")
-_STRUCTURED = re.compile(r"(?:-{3}|={3}|#{3,}|\$ |[{<\[]|@@ |diff --git|\+{3} |[0-9a-f]{7,40}\s)")
+_STRUCTURED = re.compile(
+    r"(?:-{3}|={3}|#{3,}|\$ |[{<]|\[\s*[{\[\x22]|@@ |diff --git|\+{3} |[0-9a-f]{7,40}\s)"
+)
 _VALUE = r"(?:\"[^\"]*\"|'[^']*'|[^\s'\"&;|<>]+)"
 _TOKEN_SHAPES = (
     r"gh[pousr]_[A-Za-z0-9]{20,}",
@@ -599,8 +601,9 @@ def is_human_prompt(store: str, text: str) -> bool:
     >>> is_human_prompt("claude.projects", "--- branch --- main")
     False
     >>> [is_human_prompt("cursor.state", t) for t in
-    ...  ['"quote" this', "1. fix it", "#123 fix", "日本語で説明して", "The file upload fails"]]
-    [True, True, True, True, True]
+    ...  ['"quote" this', "1. fix it", "#123 fix", "日本語で説明して", "The file upload fails",
+    ...   "[Image #1] why is this cut off", '[{"a": 1}]']]
+    [True, True, True, True, True, True, False]
     """
     if "subagent" in store:
         return False
