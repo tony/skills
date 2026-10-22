@@ -502,3 +502,23 @@ def test_a_lone_surrogate_does_not_sink_the_report(
     assert evidence.main(["transcripts", str(export)]) == 0
     report = json.loads(capsys.readouterr().out)
     assert report["prompts"][0]["text"] == "cut ? here"
+
+
+@pytest.mark.integration(reason="executes native Git repository queries")
+def test_link_after_moving_real_skills_into_agents(tmp_path: Path) -> None:
+    """Once real skill directories move to .agents/skills, the link replaces the rest."""
+    repo = _repo(tmp_path / "site")
+    local = repo / ".claude" / "skills" / "local"
+    local.mkdir(parents=True)
+    (local / "SKILL.md").write_text("---\n", encoding="utf-8")
+    (repo / ".agents" / "skills").mkdir(parents=True)
+    _git(repo, "add", "--force", ".claude")
+    _git(repo, "commit", "-q", "-m", "local skill")
+    with pytest.raises(evidence.UsageError, match="real-skills"):
+        evidence.cmd_link(repo, check=True)
+
+    _git(repo, "mv", ".claude/skills/local", ".agents/skills/local")
+    report = evidence.cmd_link(repo, check=False)
+
+    assert report["changed"] is True
+    assert (repo / ".claude" / "skills" / "local" / "SKILL.md").is_file()

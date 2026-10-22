@@ -54,8 +54,9 @@ Check these in order. The first failure halts the run.
    ```
 
    Exit 2 means `.claude/skills` holds real skill directories, foreign
-   links, or a link elsewhere. Name them in the plan; moving them into
-   `.agents/skills` needs the user's yes.
+   links, or a link elsewhere. Name them in the plan: a real skill
+   directory moves into `.agents/skills` in commit 1 with the user's yes,
+   and anything else is the user's to resolve before commit 2.
 
 A halted run is one result sentence, then what the user must do. No
 other sections.
@@ -125,6 +126,8 @@ The plan gives:
 - Per skipped category: the evidence that did not clear the bar.
 - Every path outside the repository a skill would name, each needing the
   user's yes.
+- Each real skill directory under `.claude/skills`, to move into
+  `.agents/skills`.
 - The stale claims found, left for separate commits.
 - Commit 1 (skills and the `AGENTS.md` pointer) and commit 2 (the link),
   with subjects in the repository's format.
@@ -181,8 +184,16 @@ skill. Report what still varies.
 
 ## Phase 7: Commit the skills
 
-Stage only the new skill directories and the `AGENTS.md` change, by
-path. Write the message in the repository's commit format, per
+With the user's yes from the plan, move each real skill directory from
+`.claude/skills` into `.agents/skills` first, so commit 2's link
+replaces an empty directory:
+
+```console
+$ git -C <root> mv .claude/skills/<name> .agents/skills/<name>
+```
+
+Stage only the new and moved skill directories and the `AGENTS.md`
+change, by path. Write the message in the repository's commit format, per
 `../../references/prose-rules.md`: the why is the evidence (where agent
 time goes, what the baselines got wrong), the what lists one line per
 skill. No `Co-Authored-By` or tool trailer.
