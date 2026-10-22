@@ -934,7 +934,9 @@ def main(argv: list[str] | None = None) -> int:
     except (UsageError, OSError) as error:
         print(str(error), file=sys.stderr)
         return 2
-    print(json.dumps(result, indent=2, ensure_ascii=False))
+    text = json.dumps(result, indent=2, ensure_ascii=False) + "\n"
+    sys.stdout.buffer.write(text.encode("utf-8", "replace"))
+    sys.stdout.flush()
     return 0
 
 

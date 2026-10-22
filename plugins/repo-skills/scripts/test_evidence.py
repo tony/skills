@@ -487,3 +487,18 @@ def test_paths_skips_an_unreadable_sibling(tmp_path: Path) -> None:
         locked.chmod(0o755)
 
     assert report["root_name"] == "site"
+
+
+def test_a_lone_surrogate_does_not_sink_the_report(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """A truncated emoji in a prompt is replaced, and the report still prints."""
+    export = tmp_path / "export.ndjson"
+    export.write_text(
+        '{"store": "a.history", "text": "cut \\ud83d here", "origin": {"cwd": "/w"}}',
+        encoding="utf-8",
+    )
+
+    assert evidence.main(["transcripts", str(export)]) == 0
+    report = json.loads(capsys.readouterr().out)
+    assert report["prompts"][0]["text"] == "cut ? here"
