@@ -214,8 +214,9 @@ commit in the repository's format, per `../../references/prose-rules.md`:
 the why is that a skill added to `.agents/skills` no longer needs its
 own link. No `Co-Authored-By` or tool trailer.
 
-Read both commits back with `git log -2 --format=%s` and
-`git show --stat --format= HEAD~1 HEAD`. Never push.
+Read back the commits this run made, two or one when commit 2 was
+skipped, with `git log -<n> --format=%s` and
+`git show --stat --format= HEAD~<n>..HEAD`. Never push.
 
 ## Output contract
 
