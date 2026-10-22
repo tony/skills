@@ -261,13 +261,15 @@ def covering_globs(root_name: str, checkouts: list[str]) -> list[str]:
     on its last two path components, never on a bare generated basename.
 
     >>> covering_globs("site", ["~/w/site", "~/w/site-oxc", "~/.wt/site__x/esk",
-    ...                         "~/.wt/esk", "~/w/renamed"])
-    ['*.wt/esk*', '*site*', '*w/renamed*']
+    ...                         "~/.wt/esk", "~/w/renamed", "~/top"])
+    ['*.wt/esk*', '*/top*', '*site*', '*w/renamed*']
     """
     kept = [root_name]
     for path in sorted(set(checkouts), key=len):
         if not any(name in path for name in kept):
-            kept.append("/".join(path.rstrip("/").split("/")[-2:]))
+            parent, _, name = path.rstrip("/").rpartition("/")
+            tail = Path(parent).name
+            kept.append(f"{tail}/{name}" if tail not in {"", "~"} else f"/{name}")
     return sorted(f"*{name}*" for name in kept)
 
 
