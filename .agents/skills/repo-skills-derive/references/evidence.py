@@ -238,11 +238,16 @@ def normalize_remote(url: str) -> str:
     'github.com/tony/site'
     >>> normalize_remote("ssh://git@github.com/tony/site.git/")
     'github.com/tony/site'
+    >>> normalize_remote("ssh://git@github.com:22/tony/site.git")
+    'github.com/tony/site'
     """
     text = url.strip().rstrip("/")
     text = re.sub(r"\.git$", "", text)
+    has_scheme = bool(re.match(r"[a-z+]+://", text))
     text = re.sub(r"^[a-z+]+://", "", text)
     text = re.sub(r"^[^@/]+@", "", text)
+    if has_scheme:
+        return re.sub(r"^([^/:]+):\d+/", r"\1/", text).lower()
     return text.replace(":", "/", 1).lower()
 
 
