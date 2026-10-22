@@ -42,7 +42,8 @@ history for this repository; nothing else is searched.
 
 ## Phase 0: Preconditions
 
-Check these in order. The first failure halts the run.
+Check these in order. A failure in step 1 or 2 halts the run; steps 3
+and 4 only gather what later phases need.
 
 1. `<root>` is a git repository and is neither the home directory nor a
    directory containing it.
