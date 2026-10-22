@@ -141,10 +141,8 @@ def test_transcripts_keep_typed_prompts_and_drop_tool_output(tmp_path: Path) -> 
             "last": "2026-08-01",
         },
     ]
-    assert [p["text"] for p in report["prompts"]] == [
-        "port that from the sibling repo",
-        "update packages",
-    ]
+    assert [p["text"] for p in report["prompts"]] == ["update packages"]
+    assert report["history_agents"] == ["claude"]
 
 
 def test_link_state_classifies_each_layout(tmp_path: Path) -> None:
@@ -397,3 +395,36 @@ def test_cd_tracking_reads_quotes_home_and_parents(
 ) -> None:
     """Quoted, $HOME, and .. targets move the tracked directory correctly."""
     assert [c for _, c in evidence.attribute(entries, ["~/w/site"])] == kept
+
+
+def test_agents_without_history_fall_back_to_screened_conversations(tmp_path: Path) -> None:
+    """Conversation prompts count only for an agent that has no history store."""
+    rows = [
+        {"agent": "claude", "store": "claude.history", "text": "typed", "timestamp": "2026-01-02"},
+        {"agent": "claude", "store": "claude.projects", "text": "OK vitest 5"},
+        {"agent": "cursor", "store": "cursor.state", "text": "1. fix the bug"},
+        {"agent": "cursor", "store": "cursor.state", "text": "--- branch --- main"},
+    ]
+    export = tmp_path / "export.ndjson"
+    export.write_text("\n".join(json.dumps(r) for r in rows), encoding="utf-8")
+
+    report = evidence.cmd_transcripts(export, limit=10)
+
+    assert sorted(p["text"] for p in report["prompts"]) == ["1. fix the bug", "typed"]
+    assert evidence.cmd_transcripts(export, limit=0)["prompts"] == []
+
+
+def test_duplicate_prompts_keep_their_earliest_timestamp(tmp_path: Path) -> None:
+    """The earliest dated copy wins, and an undated copy never replaces a dated one."""
+    rows = [
+        {"agent": "a", "store": "a.history", "text": "same", "timestamp": "2026-09-01T10:00:00Z"},
+        {"agent": "a", "store": "a.history", "text": "same", "timestamp": "2026-09-01T09:00:00Z"},
+        {"agent": "a", "store": "a.history", "text": "same"},
+    ]
+    export = tmp_path / "export.ndjson"
+    export.write_text("\n".join(json.dumps(r) for r in rows), encoding="utf-8")
+
+    report = evidence.cmd_transcripts(export, limit=10)
+
+    assert [p["date"] for p in report["prompts"]] == ["2026-09-01"]
+    assert report["prompts_total"] == 1

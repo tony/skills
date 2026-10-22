@@ -51,7 +51,7 @@ _AGENT_FILES = (
 _TOOL_OUTPUT_PREFIXES = (
     r"Shell cwd was reset",
     r"File created successfully",
-    r"The file ",
+    r"The file \S+ has been ",
     r"Exit code \d",
     r"total \d",
     r"Launching skill",
@@ -74,6 +74,7 @@ _TOOL_OUTPUT_PREFIXES = (
     r"Review this change for security",
 )
 _TOOL_OUTPUT = re.compile("^(?:" + "|".join(_TOOL_OUTPUT_PREFIXES) + ")")
+_STRUCTURED = re.compile(r"(?:-{3}|={3}|#{3,}|\$ |[{<\[]|@@ |diff --git|\+{3} |[0-9a-f]{7,40}\s)")
 _VALUE = r"(?:\"[^\"]*\"|'[^']*'|\S+)"
 _TOKEN_SHAPES = (
     r"\bgh[pousr]_[A-Za-z0-9]{20,}",
@@ -195,6 +196,7 @@ class TranscriptReport(t.TypedDict):
     scan: Scan | None
     records: int
     by_cwd: list[CwdRow]
+    history_agents: list[str]
     prompts_total: int
     prompts: list[Prompt]
 
@@ -492,8 +494,10 @@ def is_human_prompt(store: str, text: str) -> bool:
     """Decide whether a transcript record is a human-typed prompt.
 
     Prompt-history stores hold only typed prompts. Conversation stores also
-    record tool results under the user role, which these rules drop, and
-    sub-agent stores hold prompts one agent wrote for another.
+    record tool results under the user role, and sub-agent stores hold
+    prompts one agent wrote for another. These rules screen a conversation
+    store; ``cmd_transcripts`` uses them only for an agent that has no
+    prompt-history store.
 
     >>> is_human_prompt("claude.history", "anything at all")
     True
@@ -505,6 +509,9 @@ def is_human_prompt(store: str, text: str) -> bool:
     False
     >>> is_human_prompt("claude.projects", "--- branch --- main")
     False
+    >>> [is_human_prompt("cursor.state", t) for t in
+    ...  ['"quote" this', "1. fix it", "#123 fix", "日本語で説明して", "The file upload fails"]]
+    [True, True, True, True, True]
     """
     if "subagent" in store:
         return False
@@ -517,9 +524,7 @@ def is_human_prompt(store: str, text: str) -> bool:
         or stripped.count("\n") > _PROMPT_MAX_LINES
     ):
         return False
-    if not re.match(r"[A-Za-z/]", stripped):
-        return False
-    return not _TOOL_OUTPUT.match(stripped)
+    return not (_TOOL_OUTPUT.match(stripped) or _STRUCTURED.match(stripped))
 
 
 def _git(repo: Path, *args: str, check: bool = True) -> str:
@@ -737,7 +742,10 @@ def under(cwd: str, prefixes: list[str]) -> bool:
 def cmd_transcripts(path: Path, limit: int, keep: list[str] | None = None) -> TranscriptReport:
     """Group an agentgrep NDJSON export by directory and keep human prompts.
 
-    ``keep`` limits the report to records under those directories.
+    Prompts come from prompt-history stores. An agent with none, named
+    outside ``history_agents``, falls back to its conversation records as
+    screened by ``is_human_prompt``. ``keep`` limits the report to records
+    under those directories; ``limit`` caps the newest prompts returned.
     """
     prefixes = [tilde(str(Path(k).expanduser())) for k in keep or []]
     records = 0
@@ -746,6 +754,8 @@ def cmd_transcripts(path: Path, limit: int, keep: list[str] | None = None) -> Tr
     counts: collections.Counter[str] = collections.Counter()
     spans: dict[str, list[str]] = {}
     prompts: dict[str, Prompt] = {}
+    stamps: dict[str, str] = {}
+    history_agents: set[str] = set()
     with path.open(encoding="utf-8", errors="replace") as handle:
         for line in handle:
             try:
@@ -772,12 +782,18 @@ def cmd_transcripts(path: Path, limit: int, keep: list[str] | None = None) -> Tr
                 span[0] = min(span[0], stamp)
                 span[1] = max(span[1], stamp)
             text = str(record["text"]).strip()
-            if is_human_prompt(str(record.get("store") or ""), text):
-                key = text[:100]
-                if key not in prompts or stamp < prompts[key]["date"]:
+            store = str(record.get("store") or "")
+            agent = str(record.get("agent") or "?")
+            if store.endswith(".history"):
+                history_agents.add(agent)
+            if is_human_prompt(store, text):
+                key = f"{agent}\x00{store.endswith('.history')}\x00{text[:100]}"
+                known = stamps.get(key)
+                if known is None or (stamp and (not known or stamp < known)):
+                    stamps[key] = stamp
                     prompts[key] = {
                         "date": stamp[:10],
-                        "agent": str(record.get("agent") or "?"),
+                        "agent": agent,
                         "cwd": cwd,
                         "text": redact(text).replace("\n", " ⏎ ")[:300],
                     }
@@ -791,13 +807,19 @@ def cmd_transcripts(path: Path, limit: int, keep: list[str] | None = None) -> Tr
         }
         for cwd, n in counts.most_common()
     ]
-    ordered = sorted(prompts.values(), key=lambda p: p["date"])
+    kept = [
+        (stamps[key], prompt)
+        for key, prompt in prompts.items()
+        if key.split("\x00")[1] == "True" or prompt["agent"] not in history_agents
+    ]
+    ordered = [prompt for _, prompt in sorted(kept, key=lambda pair: pair[0])]
     return {
         "scan": scan,
         "records": records,
         "by_cwd": by_cwd,
+        "history_agents": sorted(history_agents),
         "prompts_total": len(ordered),
-        "prompts": ordered[-limit:],
+        "prompts": ordered[-limit:] if limit > 0 else [],
     }
 
 
