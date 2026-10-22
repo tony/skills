@@ -578,6 +578,26 @@
       "license": "MIT"
     },
     {
+      "name": "repo-skills",
+      "description": "Derive a repository's own agent skills from its docs, git history, CI, shell history, and AI transcripts, test each with and without itself, and land them in two commits.",
+      "version": "0.1.0",
+      "author": {
+        "name": "Tony Narlock",
+        "email": "tony@git-pull.com"
+      },
+      "source": "./plugins/repo-skills",
+      "category": "productivity",
+      "tags": [
+        "skills",
+        "agents",
+        "onboarding",
+        "conventions",
+        "transcripts"
+      ],
+      "homepage": "https://github.com/tony/skills/tree/main/plugins/repo-skills",
+      "license": "MIT"
+    },
+    {
       "name": "agent-messaging",
       "description": "Message another running Claude Code or Codex session, and verify who actually sent an incoming message.",
       "version": "0.1.0",

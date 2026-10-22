@@ -1,0 +1,41 @@
+{
+  "skill_name": "derive",
+  "trigger": {
+    "positive": [
+      {
+        "prompt": "derive project skills for this repo",
+        "top_k": 1
+      },
+      {
+        "prompt": "create agent skills for this repository from its history",
+        "top_k": 1
+      },
+      {
+        "prompt": "bootstrap .agents/skills for this project and link .claude/skills",
+        "top_k": 1
+      },
+      {
+        "prompt": "make repo-specific skills like the ones google adk ships",
+        "top_k": 3
+      },
+      {
+        "prompt": "write setup, gates, and review skills tailored to this codebase",
+        "top_k": 3
+      }
+    ],
+    "negative": [
+      {
+        "prompt": "rank my skills by how often I invoke them",
+        "owner": "sweep"
+      },
+      {
+        "prompt": "trim this SKILL.md, it is bloated",
+        "owner": "skill-style"
+      },
+      {
+        "prompt": "I came back to this branch after two weeks, what was I in the middle of",
+        "owner": "situational-awareness"
+      }
+    ]
+  }
+}

@@ -1,0 +1,795 @@
+#!/usr/bin/env python3
+"""Gather repository evidence for ``/repo-skills:derive`` and link its skills.
+
+Every subcommand prints one JSON document on stdout. Paths under the home
+directory are written with ``~``.
+
+``paths``
+    Checkouts sharing this repository's origin, its worktrees, earlier
+    session directories, and the transcript ``cwd`` globs covering them.
+``git``
+    Commit-subject heads, direct versus merged trunk commits, merge shape,
+    the most-touched paths, and commits to agent instruction files.
+``shell``
+    Shell-history commands attributed to the repository by ``cd`` tracking
+    or by naming one of its paths.
+``transcripts``
+    An agentgrep NDJSON export grouped by working directory, keeping the
+    human-typed prompts and dropping tool output.
+``link``
+    Replace per-skill links under ``.claude/skills`` with one link to
+    ``../.agents/skills`` and stage it; ``--check`` only reports.
+
+Exits 2 with a message on stderr on a usage or repository error.
+"""
+
+# ruff: noqa: S603, S607
+# pyright: reportAny=false, reportUnusedCallResult=false
+from __future__ import annotations
+
+import argparse
+import collections
+import json
+import os
+import re
+import subprocess
+import sys
+import typing as t
+from pathlib import Path
+
+_AGENT_FILES = (
+    "AGENTS.md",
+    "CLAUDE.md",
+    "GEMINI.md",
+    ".agents/",
+    ".claude/",
+    ".codex/",
+    ".cursor/",
+    ".github/copilot-instructions.md",
+)
+_TOOL_OUTPUT_PREFIXES = (
+    r"Shell cwd was reset",
+    r"File created successfully",
+    r"The file ",
+    r"Exit code \d",
+    r"total \d",
+    r"Launching skill",
+    r"Async agent launched",
+    r"Command running in background",
+    r"Todos have",
+    r"Web search results",
+    r"Found \d+ files",
+    r"No files found",
+    r"Applied \d+ edit",
+    r"Base directory for this skill",
+    r"This session is being continued",
+    r"Caveat:",
+    r"<system-reminder",
+    r"<local-command",
+    r"<command-",
+    r"<task-notification",
+    r"<bash-",
+    r"\[Request interrupted",
+    r"Review this change for security",
+)
+_TOOL_OUTPUT = re.compile("^(?:" + "|".join(_TOOL_OUTPUT_PREFIXES) + ")")
+_SECRET = re.compile(r"(?i)\b([A-Z0-9_]*(?:token|secret|password|passwd|api_?key)[A-Z0-9_]*)=\S+")
+_CD = re.compile(r"(?:^|[;&|]\s*)(?:cd|pushd)(?=\s|$|[;&|])[ \t]*([^\s;&|]*)")
+_ZSH_EXTENDED = re.compile(r"^: (\d+):\d+;(.*)$")
+_ZSH_META = 0x83
+_NESTED_DEPTH = 3
+_PROMPT_MAX_CHARS = 1500
+_PROMPT_MAX_LINES = 12
+_MERGES_CHECKED = 50
+_MERGE_PARENTS = 2
+
+
+class UsageError(Exception):
+    """A request the script refuses; the message goes to stderr with exit 2."""
+
+
+class PathsReport(t.TypedDict):
+    """Known locations of the repository."""
+
+    root_name: str
+    origin: str | None
+    checkouts: list[str]
+    session_dirs: list[str]
+    cwd_globs: list[str]
+
+
+class GitReport(t.TypedDict):
+    """Commit history on the trunk since a date."""
+
+    trunk: str
+    since: str
+    commits: int
+    first_parent_direct: int
+    first_parent_merges: int
+    merges_checked: int
+    merges_semi_linear: int
+    merges_numbered: int
+    subject_heads: list[tuple[str, int]]
+    hot_paths: list[tuple[str, int]]
+    agent_file_commits: list[str]
+
+
+class ShellSource(t.TypedDict):
+    """One shell's history, attributed to the repository."""
+
+    shell: str
+    entries: int
+    attributed: int
+    heads: list[tuple[str, int]]
+    recent: list[str]
+
+
+class ShellReport(t.TypedDict):
+    """Every shell history found."""
+
+    repo_paths: list[str]
+    sources: list[ShellSource]
+
+
+class CwdRow(t.TypedDict):
+    """Transcript records from one working directory."""
+
+    cwd: str
+    records: int
+    sessions: int
+    first: str
+    last: str
+
+
+class Prompt(t.TypedDict):
+    """One human-typed prompt."""
+
+    date: str
+    agent: str
+    cwd: str
+    text: str
+
+
+class TranscriptReport(t.TypedDict):
+    """A transcript export grouped by directory, with its typed prompts."""
+
+    records: int
+    by_cwd: list[CwdRow]
+    prompts_total: int
+    prompts: list[Prompt]
+
+
+class LinkReport(t.TypedDict):
+    """What ``link`` found and whether it changed anything."""
+
+    state: str
+    entries: list[str]
+    changed: bool
+
+
+def tilde(path: str) -> str:
+    """Write a path under the home directory with ``~``.
+
+    >>> home = str(Path.home())
+    >>> tilde(home + "/work/x")
+    '~/work/x'
+    >>> tilde("/opt/x")
+    '/opt/x'
+    """
+    home = str(Path.home())
+    if path == home:
+        return "~"
+    if path.startswith(home + os.sep):
+        return "~" + path[len(home) :]
+    return path
+
+
+def normalize_remote(url: str) -> str:
+    """Reduce a git remote URL to ``host/owner/name`` for comparison.
+
+    >>> normalize_remote("git@github.com:Tony/Site.git")
+    'github.com/tony/site'
+    >>> normalize_remote("https://github.com/tony/site")
+    'github.com/tony/site'
+    >>> normalize_remote("ssh://git@github.com/tony/site.git/")
+    'github.com/tony/site'
+    """
+    text = url.strip().rstrip("/")
+    text = re.sub(r"\.git$", "", text)
+    text = re.sub(r"^[a-z+]+://", "", text)
+    text = re.sub(r"^[^@/]+@", "", text)
+    return text.replace(":", "/", 1).lower()
+
+
+def covering_globs(root_name: str, checkouts: list[str]) -> list[str]:
+    """Return the fewest ``*name*`` globs that match every checkout path.
+
+    The repository's own name comes first. A checkout whose path already
+    contains a kept name adds nothing, so a worktree with a generated
+    basename under a directory named for the repository needs no glob.
+
+    >>> covering_globs("site", ["~/w/site", "~/w/site-oxc",
+    ...                         "~/.wt/site__x/esk", "~/w/renamed"])
+    ['*renamed*', '*site*']
+    """
+    kept = [root_name]
+    for path in sorted(set(checkouts), key=len):
+        if not any(name in path for name in kept):
+            kept.append(Path(path).name)
+    return sorted(f"*{name}*" for name in kept)
+
+
+def encode_session_dir(name: str) -> str:
+    """Encode a directory name the way Claude Code names its project folders.
+
+    >>> encode_session_dir("tony.nl")
+    'tony-nl'
+    """
+    return re.sub(r"[^A-Za-z0-9]", "-", name)
+
+
+def subject_head(subject: str) -> str:
+    """Return a commit subject's first token: its type, scope, or file form.
+
+    >>> subject_head("js(deps[dev]) oxfmt 0.72.0 -> 0.73.0")
+    'js(deps[dev])'
+    >>> subject_head("biome.jsonc: Update to 2.5.9")
+    'biome.jsonc:'
+    >>> subject_head("")
+    ''
+    """
+    parts = subject.split(maxsplit=1)
+    return parts[0] if parts else ""
+
+
+def path_bucket(path: str) -> str:
+    """Bucket a changed path by its first two components when it is nested.
+
+    >>> path_bucket("packages/react/src/App.tsx")
+    'packages/react'
+    >>> path_bucket("src/app.py")
+    'src'
+    >>> path_bucket("README.md")
+    'README.md'
+    """
+    parts = path.split("/")
+    if len(parts) >= _NESTED_DEPTH:
+        return "/".join(parts[:2])
+    return parts[0]
+
+
+def unmetafy(data: bytes) -> bytes:
+    r"""Undo zsh's history metafication of bytes at or above 0x83.
+
+    >>> unmetafy(bytes([0x61, 0x83, 0xA3, 0x62]))
+    b'a\x83b'
+    """
+    out = bytearray()
+    meta = False
+    for byte in data:
+        if meta:
+            out.append(byte ^ 0x20)
+            meta = False
+        elif byte == _ZSH_META:
+            meta = True
+        else:
+            out.append(byte)
+    return bytes(out)
+
+
+def parse_zsh(text: str) -> list[tuple[int | None, str]]:
+    r"""Parse zsh history in extended, plain, or mixed form.
+
+    A line ending in a backslash continues the command on the next line.
+
+    >>> parse_zsh(": 10:0;ls\nplain cmd\n")
+    [(10, 'ls'), (None, 'plain cmd')]
+    """
+    entries: list[tuple[int | None, str]] = []
+    continuing = False
+    for line in text.split("\n"):
+        match = _ZSH_EXTENDED.match(line)
+        if match:
+            entries.append((int(match.group(1)), match.group(2)))
+        elif continuing and entries:
+            stamp, command = entries[-1]
+            entries[-1] = (stamp, command + "\n" + line)
+        elif line.strip():
+            entries.append((None, line))
+        else:
+            continuing = False
+            continue
+        continuing = entries[-1][1].endswith("\\")
+    return entries
+
+
+def parse_bash(text: str) -> list[tuple[int | None, str]]:
+    r"""Parse bash history, reading ``#<epoch>`` lines as timestamps.
+
+    >>> parse_bash("#100\ngit status\nls\n")
+    [(100, 'git status'), (None, 'ls')]
+    """
+    entries: list[tuple[int | None, str]] = []
+    stamp: int | None = None
+    for line in text.split("\n"):
+        if re.fullmatch(r"#\d+", line):
+            stamp = int(line[1:])
+        elif line.strip():
+            entries.append((stamp, line))
+            stamp = None
+    return entries
+
+
+def parse_fish(text: str) -> list[tuple[int | None, str]]:
+    r"""Parse fish history's ``- cmd:`` and ``when:`` records.
+
+    >>> parse_fish("- cmd: cd ~/x\n  when: 5\n- cmd: ls\n")
+    [(5, 'cd ~/x'), (None, 'ls')]
+    """
+    entries: list[tuple[int | None, str]] = []
+    for line in text.split("\n"):
+        if line.startswith("- cmd: "):
+            entries.append((None, line[len("- cmd: ") :].replace("\\n", "\n")))
+        elif line.startswith("  when: ") and entries and entries[-1][0] is None:
+            entries[-1] = (int(line.split(":", 1)[1]), entries[-1][1])
+    return entries
+
+
+def next_cwd(cwd: str | None, target: str) -> str | None:
+    """Return the tracked directory after ``cd <target>``.
+
+    >>> next_cwd(None, "~/w")
+    '~/w'
+    >>> next_cwd("~/w", "site")
+    '~/w/site'
+    >>> next_cwd("~/w", "..") is None
+    True
+    >>> next_cwd("/tmp", "")
+    '~'
+    """
+    if not target:
+        return "~"
+    if target.startswith(("/", "~")):
+        return target
+    if cwd is None or target.startswith(("..", "-")):
+        return None
+    return cwd.rstrip("/") + "/" + target
+
+
+def attribute(
+    entries: list[tuple[int | None, str]],
+    repo_paths: list[str],
+) -> list[tuple[int | None, str]]:
+    """Keep commands run inside, or naming, one of the repository's paths.
+
+    ``cd`` and ``pushd`` move the tracked directory. A relative target
+    descends from it; ``..`` or ``-`` makes it unknown; a bare ``cd`` goes
+    home. The tracking is approximate across shell sessions.
+
+    When some entries carry timestamps, an unstamped entry was written by
+    something other than the interactive shell, such as a test harness
+    sharing the history file. It neither moves nor inherits the tracked
+    directory, and counts only when it names a repository path.
+
+    >>> entries = [(1, "cd ~/w/site"), (2, "make test"), (3, "cd docs"),
+    ...            (4, "ls"), (5, "cd /tmp"), (6, "vim ~/w/site/README.md")]
+    >>> [c for _, c in attribute(entries, ["~/w/site"])]
+    ['cd ~/w/site', 'make test', 'cd docs', 'ls', 'vim ~/w/site/README.md']
+    """
+    home = str(Path.home())
+    forms: list[str] = []
+    for path in repo_paths:
+        forms.append(path)
+        if path.startswith("~"):
+            forms.append(home + path[1:])
+        elif path.startswith(home):
+            forms.append("~" + path[len(home) :])
+    mention = re.compile(
+        "(?:" + "|".join(re.escape(f.rstrip("/")) for f in forms) + r")(?=$|[/\s'\";&|)])"
+    )
+    stamped = any(stamp is not None for stamp, _ in entries)
+    cwd: str | None = None
+    kept: list[tuple[int | None, str]] = []
+    for stamp, command in entries:
+        tracked = stamp is not None or not stamped
+        if tracked:
+            for target in _CD.findall(command):
+                cwd = next_cwd(cwd, target)
+        inside = tracked and cwd is not None and bool(mention.match(cwd))
+        if inside or mention.search(command):
+            kept.append((stamp, command))
+    return kept
+
+
+def command_head(command: str) -> str:
+    """Return the first two words of a command, or one for a bare word.
+
+    >>> command_head("pnpm run test --watch")
+    'pnpm run'
+    >>> command_head("ls")
+    'ls'
+    """
+    return " ".join(command.split()[:2])
+
+
+def redact(command: str) -> str:
+    """Mask values assigned to names that look like credentials.
+
+    >>> redact("GH_TOKEN=abc123 gh pr list")
+    'GH_TOKEN=… gh pr list'
+    """
+    return _SECRET.sub(r"\1=…", command)
+
+
+def is_human_prompt(store: str, text: str) -> bool:
+    """Decide whether a transcript record is a human-typed prompt.
+
+    Prompt-history stores hold only typed prompts. Conversation stores also
+    record tool results under the user role, which these rules drop, and
+    sub-agent stores hold prompts one agent wrote for another.
+
+    >>> is_human_prompt("claude.history", "anything at all")
+    True
+    >>> is_human_prompt("claude.projects_subagents", "Review the diff for bugs")
+    False
+    >>> is_human_prompt("claude.projects", "fix the flaky test please")
+    True
+    >>> is_human_prompt("claude.projects", "Shell cwd was reset to /x")
+    False
+    >>> is_human_prompt("claude.projects", "--- branch --- main")
+    False
+    """
+    if "subagent" in store:
+        return False
+    if store.endswith(".history"):
+        return bool(text.strip())
+    stripped = text.strip()
+    if (
+        not stripped
+        or len(stripped) > _PROMPT_MAX_CHARS
+        or stripped.count("\n") > _PROMPT_MAX_LINES
+    ):
+        return False
+    if not re.match(r"[A-Za-z/]", stripped):
+        return False
+    return not _TOOL_OUTPUT.match(stripped)
+
+
+def _git(repo: Path, *args: str, check: bool = True) -> str:
+    result = subprocess.run(
+        ["git", "-C", str(repo), *args],
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    if check and result.returncode != 0:
+        raise UsageError(result.stderr.strip() or f"git {' '.join(args)} failed")
+    return result.stdout
+
+
+def toplevel(path: Path) -> Path:
+    """Return the repository's top-level directory, or raise ``UsageError``."""
+    return Path(_git(path, "rev-parse", "--show-toplevel").strip())
+
+
+def trunk_ref(repo: Path) -> str:
+    """Return ``origin``'s default branch, else the current branch."""
+    head = _git(repo, "symbolic-ref", "--quiet", "refs/remotes/origin/HEAD", check=False)
+    if head.strip():
+        return head.strip().replace("refs/remotes/", "", 1)
+    return _git(repo, "rev-parse", "--abbrev-ref", "HEAD").strip()
+
+
+def _checkout_remote(path: Path) -> str | None:
+    if not (path / ".git").exists():
+        return None
+    url = _git(path, "config", "--get", "remote.origin.url", check=False).strip()
+    return normalize_remote(url) if url else None
+
+
+def cmd_paths(repo: Path, roots: list[Path]) -> PathsReport:
+    """Collect every known location of the repository."""
+    top = toplevel(repo)
+    origin_url = _git(top, "config", "--get", "remote.origin.url", check=False).strip()
+    origin = normalize_remote(origin_url) if origin_url else None
+    found: set[str] = {str(top)}
+    for line in _git(top, "worktree", "list", "--porcelain").splitlines():
+        if line.startswith("worktree "):
+            found.add(line[len("worktree ") :])
+    if origin:
+        for root in roots or [top.parent, top.parent.parent]:
+            if not root.is_dir():
+                continue
+            for child in root.iterdir():
+                if child.is_dir() and _checkout_remote(child) == origin:
+                    found.add(str(child))
+    projects = Path.home() / ".claude" / "projects"
+    suffix = "-" + encode_session_dir(top.name)
+    sessions = (
+        sorted(p.name for p in projects.iterdir() if p.name.endswith(suffix))
+        if projects.is_dir()
+        else []
+    )
+    checkouts = sorted(tilde(p) for p in found)
+    return {
+        "root_name": top.name,
+        "origin": origin,
+        "checkouts": checkouts,
+        "session_dirs": sessions,
+        "cwd_globs": covering_globs(top.name, checkouts),
+    }
+
+
+def cmd_git(repo: Path, since: str, top_n: int) -> GitReport:
+    """Summarise commit history on the trunk since a date."""
+    top = toplevel(repo)
+    trunk = trunk_ref(top)
+    window = [f"--since={since}", trunk]
+    subjects = _git(top, "log", "--no-merges", "--format=%s", *window).splitlines()
+    heads = collections.Counter(subject_head(s) for s in subjects)
+    direct = _git(top, "rev-list", "--count", "--first-parent", "--no-merges", *window).strip()
+    merges = _git(top, "rev-list", "--first-parent", "--merges", *window).split()
+    semi_linear = 0
+    numbered = 0
+    for sha in merges[:_MERGES_CHECKED]:
+        parents = _git(top, "rev-list", "--parents", "-n", "1", sha).split()[1:]
+        if len(parents) == _MERGE_PARENTS:
+            base = _git(top, "merge-base", parents[0], parents[1], check=False).strip()
+            semi_linear += base == parents[0]
+        subject = _git(top, "log", "-1", "--format=%s", sha).strip()
+        numbered += bool(re.search(r"\(#\d+\)$", subject))
+    changed = _git(top, "log", "--no-merges", "--name-only", "--format=", *window).splitlines()
+    buckets = collections.Counter(path_bucket(p) for p in changed if p)
+    agent_log = _git(
+        top, "log", "--no-merges", "--format=%as %s", *window, "--", *_AGENT_FILES
+    ).splitlines()
+    return {
+        "trunk": trunk,
+        "since": since,
+        "commits": len(subjects),
+        "first_parent_direct": int(direct or 0),
+        "first_parent_merges": len(merges),
+        "merges_checked": min(len(merges), _MERGES_CHECKED),
+        "merges_semi_linear": semi_linear,
+        "merges_numbered": numbered,
+        "subject_heads": heads.most_common(top_n),
+        "hot_paths": buckets.most_common(top_n),
+        "agent_file_commits": agent_log[:top_n],
+    }
+
+
+def _history_sources() -> list[tuple[str, Path]]:
+    zsh = os.environ.get("HISTFILE") or str(Path.home() / ".zsh_history")
+    return [
+        ("zsh", Path(zsh)),
+        ("bash", Path.home() / ".bash_history"),
+        ("fish", Path.home() / ".local" / "share" / "fish" / "fish_history"),
+    ]
+
+
+def cmd_shell(repo_paths: list[str], top_n: int) -> ShellReport:
+    """Attribute shell-history commands to the repository."""
+    parsers = {"zsh": parse_zsh, "bash": parse_bash, "fish": parse_fish}
+    report: list[ShellSource] = []
+    for kind, path in _history_sources():
+        if not path.is_file():
+            continue
+        raw = path.read_bytes()
+        text = (unmetafy(raw) if kind == "zsh" else raw).decode("utf-8", "replace")
+        entries = parsers[kind](text)
+        kept = attribute(entries, repo_paths)
+        heads = collections.Counter(command_head(c) for _, c in kept)
+        samples: list[str] = []
+        for _, command in reversed(kept):
+            line = redact(command.split("\n")[0])[:160]
+            if line not in samples:
+                samples.append(line)
+            if len(samples) >= top_n:
+                break
+        report.append(
+            {
+                "shell": kind,
+                "entries": len(entries),
+                "attributed": len(kept),
+                "heads": heads.most_common(top_n),
+                "recent": samples,
+            }
+        )
+    return {"repo_paths": repo_paths, "sources": report}
+
+
+def _field(record: dict[str, object], outer: str, inner: str) -> str | None:
+    value = record.get(outer)
+    if not isinstance(value, dict):
+        return None
+    found = t.cast("dict[str, object]", value).get(inner)
+    return found if isinstance(found, str) else None
+
+
+def _record_cwd(record: dict[str, object]) -> str:
+    cwd = _field(record, "origin", "cwd") or _field(record, "metadata", "project")
+    return (tilde(cwd).rstrip("/") or "?") if cwd else "?"
+
+
+def under(cwd: str, prefixes: list[str]) -> bool:
+    """Report whether a directory is one of the prefixes or inside one.
+
+    An empty prefix list keeps everything.
+
+    >>> under("~/w/site/packages", ["~/w/site"])
+    True
+    >>> under("~/w/site-old", ["~/w/site"])
+    False
+    >>> under("~/anything", [])
+    True
+    """
+    if not prefixes:
+        return True
+    return any(cwd == p.rstrip("/") or cwd.startswith(p.rstrip("/") + "/") for p in prefixes)
+
+
+def cmd_transcripts(path: Path, limit: int, keep: list[str] | None = None) -> TranscriptReport:
+    """Group an agentgrep NDJSON export by directory and keep human prompts.
+
+    ``keep`` limits the report to records under those directories.
+    """
+    prefixes = [tilde(str(Path(k).expanduser())) for k in keep or []]
+    records = 0
+    sessions: dict[str, set[str]] = collections.defaultdict(set)
+    counts: collections.Counter[str] = collections.Counter()
+    spans: dict[str, list[str]] = {}
+    prompts: dict[str, Prompt] = {}
+    with path.open(encoding="utf-8", errors="replace") as handle:
+        for line in handle:
+            try:
+                parsed: object = json.loads(line)
+            except ValueError:
+                continue
+            if not isinstance(parsed, dict):
+                continue
+            record = t.cast("dict[str, object]", parsed)
+            if not isinstance(record.get("text"), str):
+                continue
+            cwd = _record_cwd(record)
+            if not under(cwd, prefixes):
+                continue
+            records += 1
+            stamp = str(record.get("timestamp") or "")
+            counts[cwd] += 1
+            sessions[cwd].add(str(record.get("session_id") or record.get("path") or ""))
+            if stamp:
+                span = spans.setdefault(cwd, [stamp, stamp])
+                span[0] = min(span[0], stamp)
+                span[1] = max(span[1], stamp)
+            text = str(record["text"]).strip()
+            if is_human_prompt(str(record.get("store") or ""), text):
+                key = text[:100]
+                if key not in prompts or stamp < prompts[key]["date"]:
+                    prompts[key] = {
+                        "date": stamp[:10],
+                        "agent": str(record.get("agent") or "?"),
+                        "cwd": cwd,
+                        "text": text.replace("\n", " ⏎ ")[:300],
+                    }
+    by_cwd: list[CwdRow] = [
+        {
+            "cwd": cwd,
+            "records": n,
+            "sessions": len(sessions[cwd]),
+            "first": spans.get(cwd, ["", ""])[0][:10],
+            "last": spans.get(cwd, ["", ""])[1][:10],
+        }
+        for cwd, n in counts.most_common()
+    ]
+    ordered = sorted(prompts.values(), key=lambda p: p["date"])
+    return {
+        "records": records,
+        "by_cwd": by_cwd,
+        "prompts_total": len(ordered),
+        "prompts": ordered[-limit:],
+    }
+
+
+def link_state(skills: Path) -> tuple[str, list[str]]:
+    """Classify ``.claude/skills`` and name the entries that decide it."""
+    if skills.is_symlink():
+        target = str(skills.readlink())
+        state = "linked" if target.rstrip("/") == "../.agents/skills" else "other-link"
+        return state, [target]
+    if not skills.exists():
+        return "absent", []
+    if not skills.is_dir():
+        return "other", [skills.name]
+    real = [e.name for e in skills.iterdir() if not e.is_symlink()]
+    if real:
+        return "real-skills", sorted(real)
+    foreign = [
+        e.name
+        for e in skills.iterdir()
+        if not str(e.readlink()).startswith("../../.agents/skills/")
+    ]
+    if foreign:
+        return "foreign-links", sorted(foreign)
+    return "per-skill-links", sorted(e.name for e in skills.iterdir())
+
+
+def cmd_link(repo: Path, *, check: bool) -> LinkReport:
+    """Point ``.claude/skills`` at ``../.agents/skills`` and stage the change."""
+    top = toplevel(repo)
+    skills = top / ".claude" / "skills"
+    if not (top / ".agents" / "skills").is_dir():
+        msg = ".agents/skills does not exist; write the skills first"
+        raise UsageError(msg)
+    state, entries = link_state(skills)
+    if state in {"real-skills", "foreign-links", "other-link", "other"}:
+        msg = f".claude/skills is {state} ({', '.join(entries)}); move or remove these first"
+        raise UsageError(msg)
+    if check or state == "linked":
+        return {"state": state, "entries": entries, "changed": False}
+    tracked = set(_git(top, "ls-files", "--", ".claude/skills").splitlines())
+    for name in entries:
+        rel = f".claude/skills/{name}"
+        if rel in tracked:
+            _git(top, "rm", "-q", "--cached", "--", rel)
+        (skills / name).unlink()
+    if skills.is_dir():
+        skills.rmdir()
+    skills.parent.mkdir(exist_ok=True)
+    skills.symlink_to("../.agents/skills")
+    _git(top, "add", "--force", "--", ".claude/skills")
+    return {"state": state, "entries": entries, "changed": True}
+
+
+def build_parser() -> argparse.ArgumentParser:
+    """Build the command-line parser."""
+    parser = argparse.ArgumentParser(description="Gather evidence for /repo-skills:derive.")
+    parser.add_argument("--repo", default=".", help="any path inside the repository")
+    sub = parser.add_subparsers(dest="command", required=True)
+    paths = sub.add_parser("paths", help="known locations of this repository")
+    paths.add_argument("--root", action="append", default=[], help="directory to scan")
+    history = sub.add_parser("git", help="commit history summary")
+    history.add_argument("--since", default="12 months ago")
+    history.add_argument("--top", type=int, default=25)
+    shell = sub.add_parser("shell", help="shell history attributed to the repository")
+    shell.add_argument("--path", action="append", default=[], help="a repository path")
+    shell.add_argument("--top", type=int, default=30)
+    transcripts = sub.add_parser("transcripts", help="summarise an agentgrep NDJSON file")
+    transcripts.add_argument("file")
+    transcripts.add_argument("--limit", type=int, default=300)
+    transcripts.add_argument(
+        "--cwd", action="append", default=[], help="keep records under this directory"
+    )
+    link = sub.add_parser("link", help="link .claude/skills to .agents/skills")
+    link.add_argument("--check", action="store_true", help="report without changing")
+    return parser
+
+
+def main(argv: list[str] | None = None) -> int:
+    """Run one subcommand and print its JSON report."""
+    args = build_parser().parse_args(argv)
+    repo = Path(str(args.repo)).expanduser()
+    result: PathsReport | GitReport | ShellReport | TranscriptReport | LinkReport
+    try:
+        command = str(args.command)
+        if command == "paths":
+            roots = [Path(str(r)).expanduser() for r in args.root]
+            result = cmd_paths(repo, roots)
+        elif command == "git":
+            result = cmd_git(repo, str(args.since), int(args.top))
+        elif command == "shell":
+            paths = [str(p) for p in args.path] or [tilde(str(toplevel(repo)))]
+            result = cmd_shell(paths, int(args.top))
+        elif command == "transcripts":
+            keep = [str(c) for c in args.cwd]
+            result = cmd_transcripts(Path(str(args.file)).expanduser(), int(args.limit), keep)
+        else:
+            result = cmd_link(repo, check=bool(args.check))
+    except UsageError as error:
+        print(str(error), file=sys.stderr)
+        return 2
+    print(json.dumps(result, indent=2, ensure_ascii=False))
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
