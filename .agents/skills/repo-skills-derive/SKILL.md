@@ -62,8 +62,9 @@ Check these in order. The first failure halts the run.
    directory moves into `.agents/skills` in commit 1 with the user's yes,
    and anything else is the user's to resolve before commit 2.
 
-A halted run is one result sentence, then what the user must do. No
-other sections.
+A halted run is one result sentence naming each blocker, such as the
+modified files, then what the user must do about it: commit or stash
+them, and run the skill again. No other sections.
 
 ## Phase 1: Gather evidence
 
