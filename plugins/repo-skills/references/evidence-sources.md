@@ -46,9 +46,9 @@ the exit code is the fact. A command that writes (a formatter without
 - `direct_numbered`: direct commits whose subject ends in `(#N)`. A
   squash or rebase merge leaves these instead of a merge commit, so when
   they outnumber merges, pull requests land squashed or rebased.
-- `merges_semi_linear` and `merges_numbered`: whether branches are
-  rebased before a merge commit, and whether the merge subject carries
-  `(#N)`.
+- `merges_semi_linear` and `merges_numbered`, out of the newest
+  `merges_checked` merges: whether branches are rebased before a merge
+  commit, and whether the merge subject carries `(#N)`.
 - `hot_paths`: where changes concentrate.
 - `agent_file_commits`: how the repository commits its agent files,
   which sets the type and scope for this run's commits.

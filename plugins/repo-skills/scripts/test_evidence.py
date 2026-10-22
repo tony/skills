@@ -642,3 +642,32 @@ def test_hot_paths_keep_non_ascii_names(tmp_path: Path, monkeypatch: pytest.Monk
     report = evidence.cmd_git(repo, since="10 years ago", top_n=5)
 
     assert ["wörk/sub", 1] in [list(row) for row in report["hot_paths"]]
+
+
+def test_merge_shape_counts_share_one_sample(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Semi-linear and numbered merges are counted over the same checked merges."""
+    log = "".join(f"a{i} b{i}\x00feat(x) n{i} (#{i})\n" for i in range(3))
+
+    def fake_git(_repo: Path, *args: str, check: bool = True) -> str:
+        del check
+        if args[:2] == ("rev-parse", "--show-toplevel"):
+            return str(tmp_path)
+        if args[:2] == ("symbolic-ref", "--quiet"):
+            return "refs/remotes/origin/main"
+        if args[:2] == ("rev-parse", "--verify"):
+            return "x"
+        if "--first-parent" in args:
+            return log
+        if args[0] == "merge-base":
+            return args[1]
+        return ""
+
+    monkeypatch.setattr(evidence, "_git", fake_git)
+    monkeypatch.setattr(evidence, "_MERGES_CHECKED", 2)
+
+    report = evidence.cmd_git(tmp_path, since="1 year ago", top_n=5)
+
+    assert (report["first_parent_merges"], report["merges_checked"]) == (3, 2)
+    assert (report["merges_semi_linear"], report["merges_numbered"]) == (2, 2)

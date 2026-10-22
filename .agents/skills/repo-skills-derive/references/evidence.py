@@ -647,11 +647,12 @@ def cmd_git(repo: Path, since: str, top_n: int) -> GitReport:
         else:
             direct += 1
             direct_numbered += bool(_PR_NUMBER.search(subject))
+    checked = merges[:_MERGES_CHECKED]
     semi_linear = 0
-    for parents, _ in merges[:_MERGES_CHECKED]:
+    for parents, _ in checked:
         base = _git(top, "merge-base", parents[0], parents[1], check=False).strip()
         semi_linear += base == parents[0]
-    numbered = sum(bool(_PR_NUMBER.search(subject)) for _, subject in merges)
+    numbered = sum(bool(_PR_NUMBER.search(subject)) for _, subject in checked)
     changed = _git(top, "log", "--no-merges", "--name-only", "--format=", *window).splitlines()
     buckets = collections.Counter(path_bucket(p) for p in changed if p)
     agent_log = _git(
@@ -664,7 +665,7 @@ def cmd_git(repo: Path, since: str, top_n: int) -> GitReport:
         "first_parent_direct": direct,
         "direct_numbered": direct_numbered,
         "first_parent_merges": len(merges),
-        "merges_checked": min(len(merges), _MERGES_CHECKED),
+        "merges_checked": len(checked),
         "merges_semi_linear": semi_linear,
         "merges_numbered": numbered,
         "subject_heads": heads.most_common(top_n),
