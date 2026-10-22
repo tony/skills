@@ -152,8 +152,8 @@ whose baseline gets everything right needs no skill; drop it and say so.
 
 ## Phase 5: Write the skills
 
-One directory per skill, `.agents/skills/<prefix>-<area>/SKILL.md`. Each
-skill:
+One directory per skill, `.agents/skills/<prefix>-<area>/SKILL.md`,
+written per `../../references/prose-rules.md`. Each skill:
 
 - Has frontmatter `name` matching its directory and a `description`
   starting `Use when`, listing triggers in the words a user types.
@@ -173,8 +173,9 @@ skill:
 
 Add one paragraph to the repository's `AGENTS.md` (or `CLAUDE.md` when
 that is the real file) naming `.agents/skills/` as the home of
-step-by-step procedures that defer to the rule files. Name the folder,
-not the skills, so the paragraph never goes stale.
+step-by-step procedures that defer to the rule files, per
+`../../references/prose-rules.md`. Name the folder, not the skills, so
+the paragraph never goes stale.
 
 ## Phase 6: Watch each skill pass
 
@@ -208,8 +209,9 @@ It replaces per-skill links with one `.claude/skills` link to
 `../.agents/skills`, and stages it past any gitignore. `changed: false`
 means the link is already committed: skip commit 2 and say so in the
 report. Otherwise confirm each `.claude/skills/*/SKILL.md` resolves, then
-commit in the repository's format: the why is that a skill added to
-`.agents/skills` no longer needs its own link.
+commit in the repository's format, per `../../references/prose-rules.md`:
+the why is that a skill added to `.agents/skills` no longer needs its
+own link. No `Co-Authored-By` or tool trailer.
 
 Read both commits back with `git log -2 --format=%s` and
 `git show --stat --format= HEAD~1 HEAD`. Never push.
