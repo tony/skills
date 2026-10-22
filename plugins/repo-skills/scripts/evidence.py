@@ -784,6 +784,8 @@ def cmd_shell(
     sources = [(None, h) for h in histories] if histories else _history_sources()
     for named, path in sources:
         if not path.is_file():
+            if named is None:
+                unreadable.append(tilde(str(path)))
             continue
         try:
             raw = path.read_bytes()

@@ -774,3 +774,16 @@ def test_redact_text_masks_credentials_in_prose(text: str, secret: str) -> None:
 def test_redact_text_leaves_prose_alone(text: str) -> None:
     """Prose that mentions tokens, passes, or keys comes back unchanged."""
     assert evidence.redact_text(text) == text
+
+
+def test_a_missing_named_history_is_reported(tmp_path: Path) -> None:
+    """A mistyped --history path is named, not mistaken for an empty history."""
+    missing = tmp_path / "typo_history"
+
+    report = evidence.cmd_shell(["~/w/site"], top_n=5, histories=[missing])
+
+    assert report == {
+        "repo_paths": ["~/w/site"],
+        "sources": [],
+        "unreadable": [evidence.tilde(str(missing))],
+    }

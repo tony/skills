@@ -136,7 +136,8 @@ manager, an install step) and commands typed by hand often.
 Each source names the `file` it read. A history kept elsewhere (a custom
 `HISTFILE`, an atuin export, a saved copy) is read with one `--history`
 per file in place of the defaults. A file listed under `unreadable` was
-skipped; say so rather than reading it some other way.
+missing or could not be read; say so rather than reading it some other
+way.
 
 ## Privacy
 
