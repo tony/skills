@@ -73,7 +73,32 @@ _TOOL_OUTPUT_PREFIXES = (
     r"Review this change for security",
 )
 _TOOL_OUTPUT = re.compile("^(?:" + "|".join(_TOOL_OUTPUT_PREFIXES) + ")")
-_SECRET = re.compile(r"(?i)\b([A-Z0-9_]*(?:token|secret|password|passwd|api_?key)[A-Z0-9_]*)=\S+")
+_VALUE = r"(?:\"[^\"]*\"|'[^']*'|\S+)"
+_TOKEN_SHAPES = (
+    r"\bgh[pousr]_[A-Za-z0-9]{20,}",
+    r"\bgithub_pat_\w{20,}",
+    r"\b(?:AKIA|ASIA)[0-9A-Z]{16}\b",
+    r"\bxox[abposr]-[A-Za-z0-9-]{10,}",
+    r"\bsk-[A-Za-z0-9_-]{20,}",
+    r"\bglpat-[\w-]{20,}",
+    r"\bAIza[\w-]{35}\b",
+)
+_REDACTIONS = (
+    (
+        re.compile(
+            r"(?i)\b([A-Z0-9_]*(?:token|secret|passw(?:or)?d|api_?key|credential)[A-Z0-9_]*)="
+            + _VALUE
+        ),
+        r"\1=…",
+    ),
+    (
+        re.compile(r"(?i)(--(?:token|password|passwd|secret|api-key|apikey)(?:=|\s+))" + _VALUE),
+        r"\1…",
+    ),
+    (re.compile(r"(?i)\b(authorization:\s*(?:bearer|basic|token)\s+)[^\s'\"]+"), r"\1…"),
+    (re.compile(r"\b([a-z][a-z0-9+.-]*://[^/\s:@]+:)[^@\s/]+@"), r"\1…@"),
+    (re.compile("|".join(_TOKEN_SHAPES)), "…"),
+)
 _CD = re.compile(r"(?:^|[;&|]\s*)(?:cd|pushd)(?=\s|$|[;&|])[ \t]*([^\s;&|]*)")
 _ZSH_EXTENDED = re.compile(r"^: (\d+):\d+;(.*)$")
 _ZSH_META = 0x83
@@ -412,13 +437,25 @@ def command_head(command: str) -> str:
     return " ".join(command.split()[:2])
 
 
-def redact(command: str) -> str:
-    """Mask values assigned to names that look like credentials.
+def redact(text: str) -> str:
+    """Mask credentials: assigned or flagged values, auth headers, URL passwords, tokens.
 
-    >>> redact("GH_TOKEN=abc123 gh pr list")
+    >>> redact('GH_TOKEN=abc123 gh pr list')
     'GH_TOKEN=… gh pr list'
+    >>> redact('export TOKEN="abc def" && run')
+    'export TOKEN=… && run'
+    >>> redact("gh auth --token ghp_abc")
+    'gh auth --token …'
+    >>> redact("curl -H 'Authorization: Bearer abc.def'")
+    "curl -H 'Authorization: Bearer …'"
+    >>> redact("psql postgres://u:pw@host/db")
+    'psql postgres://u:…@host/db'
+    >>> redact("echo ghp_" + "a" * 36 + " | gh auth login --with-token")
+    'echo … | gh auth login --with-token'
     """
-    return _SECRET.sub(r"\1=…", command)
+    for pattern, replacement in _REDACTIONS:
+        text = pattern.sub(replacement, text)
+    return text
 
 
 def is_human_prompt(store: str, text: str) -> bool:
@@ -669,7 +706,7 @@ def cmd_transcripts(path: Path, limit: int, keep: list[str] | None = None) -> Tr
                         "date": stamp[:10],
                         "agent": str(record.get("agent") or "?"),
                         "cwd": cwd,
-                        "text": text.replace("\n", " ⏎ ")[:300],
+                        "text": redact(text).replace("\n", " ⏎ ")[:300],
                     }
     by_cwd: list[CwdRow] = [
         {

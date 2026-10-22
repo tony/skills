@@ -293,3 +293,16 @@ def test_shell_heads_never_carry_a_secret(tmp_path: Path, monkeypatch: pytest.Mo
 
     assert "ghp_SECRET123" not in json.dumps(report)
     assert ("GH_TOKEN=… gh", 1) in report["sources"][0]["heads"]
+
+
+def test_transcript_prompts_are_redacted(tmp_path: Path) -> None:
+    """A credential typed into a prompt is masked before it reaches the report."""
+    export = tmp_path / "export.ndjson"
+    token = "ghp_" + "x" * 36
+    record = {"store": "claude.history", "text": f"use {token} to push", "origin": {"cwd": "/w"}}
+    export.write_text(json.dumps(record), encoding="utf-8")
+
+    report = evidence.cmd_transcripts(export, limit=10)
+
+    assert token not in json.dumps(report)
+    assert report["prompts"][0]["text"] == "use … to push"
