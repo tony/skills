@@ -322,3 +322,18 @@ def test_git_summary_counts_squash_merged_pull_requests(tmp_path: Path) -> None:
     assert report["first_parent_direct"] == 4
     assert report["direct_numbered"] == 3
     assert report["first_parent_merges"] == 0
+
+
+@pytest.mark.integration(reason="executes native Git repository queries")
+def test_trunk_is_main_when_origin_head_is_unset(tmp_path: Path) -> None:
+    """On a topic branch with no origin/HEAD, history is still read from main."""
+    repo = _repo(tmp_path / "site")
+    _git(repo, "switch", "-q", "-c", "topic")
+    (repo / "t").write_text("x\n", encoding="utf-8")
+    _git(repo, "add", ".")
+    _git(repo, "commit", "-q", "-m", "topic work")
+
+    report = evidence.cmd_git(repo, since="10 years ago", top_n=5)
+
+    assert report["trunk"] == "main"
+    assert report["commits"] == 1
