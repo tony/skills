@@ -1,0 +1,54 @@
+schema_version: "1.0"
+name: 01-derive-dry-run-plan
+description: >-
+  --dry-run gathers git, location, and exhaustive transcript evidence,
+  plans a dependency skill and a gates skill from it, reports the stale
+  port and failing-gate claims in AGENTS.md, and writes nothing.
+tags: [fixture, git]
+
+context:
+  scaffold_script: scaffold.sh
+
+execution:
+  prompt: >-
+    /repo-skills:derive --dry-run --no-shell-history
+    (uvx is a local stub: run every command with PATH="$PWD/bin:$PATH".)
+  max_turns: 40
+  timeout_seconds: 600
+  allowed_tools: [Bash, Read, Glob, Grep, Skill]
+
+runs: 3
+
+graders:
+  - name: summarises-git-history
+    type: tool_used
+    tool: Bash
+    input_match: '(?:evidence\.py|python3?\s+\$\{?[A-Za-z_]\w*\}?)[\s\S]*\bgit\b'
+
+  - name: lists-every-location
+    type: tool_used
+    tool: Bash
+    input_match: '(?:evidence\.py|python3?\s+\$\{?[A-Za-z_]\w*\}?)[\s\S]*\bpaths\b'
+
+  - name: searches-transcripts-exhaustively
+    type: tool_used
+    tool: Bash
+    input_match: 'uvx\s+(?:--python\s+\S+\s+)?agentgrep@[\w.]+\s+search[\s\S]*depth:exhaustive[\s\S]*cwd:'
+
+  - name: writes-no-skill
+    type: file_exists
+    path: .agents/skills
+    exists: false
+
+  - name: plans-from-the-evidence
+    type: llm
+    focus: last_message
+    criteria: |
+      The first line has the form "N skills planned, M skipped".
+      A "## Plan" section proposes a dependency-update skill citing the
+      repeated dependency commits or the update prompts, and a gates
+      skill citing the CI workflow or the make targets.
+      A "## Stale claims" section says AGENTS.md calls make typecheck
+      failing on main while it exits 0, or that its port 8000 claim
+      disagrees with the serve target's 9100.
+      The reply names no absolute path.

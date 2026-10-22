@@ -1,0 +1,28 @@
+{
+  "name": "repo-skills",
+  "version": "0.1.0",
+  "description": "Derive a repository's own agent skills from its docs, git history, CI, shell history, and AI transcripts, test each with and without itself, and land them in two commits.",
+  "author": {
+    "name": "Tony Narlock",
+    "email": "tony@git-pull.com"
+  },
+  "homepage": "https://github.com/tony/skills/tree/main/plugins/repo-skills",
+  "repository": "https://github.com/tony/skills",
+  "license": "MIT",
+  "keywords": [
+    "skills",
+    "agents",
+    "onboarding",
+    "conventions",
+    "transcripts"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Repo Skills",
+    "shortDescription": "Derive a repository's own agent skills from its docs, git history, CI, shell history, and AI transcripts, test each with and without itself, and land them in two commits.",
+    "longDescription": "Derive a repository's own agent skills from its docs, git history, CI, shell history, and AI transcripts, test each with and without itself, and land them in two commits.",
+    "developerName": "Tony Narlock",
+    "category": "Productivity",
+    "websiteURL": "https://github.com/tony/skills/tree/main/plugins/repo-skills"
+  }
+}

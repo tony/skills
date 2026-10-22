@@ -66,6 +66,7 @@ testpaths = [
     "plugins/pytest-optimizer/scripts",
     "plugins/rebase/scripts",
     "plugins/release/scripts",
+    "plugins/repo-skills/scripts",
     "plugins/research/scripts",
     "plugins/respond/scripts",
     "plugins/ruff/scripts",

@@ -752,6 +752,21 @@
       "bytes": 103958
     },
     {
+      "name": "repo-skills-derive",
+      "sources": [
+        "plugins/repo-skills/skills/derive/SKILL.md"
+      ],
+      "bundled": {
+        "references/evidence-sources.md": "plugins/repo-skills/references/evidence-sources.md",
+        "references/evidence.py": "plugins/repo-skills/scripts/evidence.py",
+        "references/prose-rules.md": "plugins/repo-skills/references/prose-rules.md",
+        "references/skill-catalog.md": "plugins/repo-skills/references/skill-catalog.md",
+        "references/testing-skills.md": "plugins/repo-skills/references/testing-skills.md",
+        "references/verification-gates.md": "plugins/repo-skills/references/verification-gates.md"
+      },
+      "bytes": 73173
+    },
+    {
       "name": "research-assess",
       "sources": [
         "plugins/research/skills/assess/SKILL.md"
@@ -1748,6 +1763,12 @@
     "plugins/release/scripts/bump_pin.py": 1,
     "plugins/release/scripts/consumer_inventory.py": 1,
     "plugins/release/scripts/downstream_check.py": 1,
+    "plugins/repo-skills/references/evidence-sources.md": 1,
+    "plugins/repo-skills/references/prose-rules.md": 1,
+    "plugins/repo-skills/references/skill-catalog.md": 1,
+    "plugins/repo-skills/references/testing-skills.md": 1,
+    "plugins/repo-skills/references/verification-gates.md": 1,
+    "plugins/repo-skills/scripts/evidence.py": 1,
     "plugins/research/references/analysis.md": 1,
     "plugins/research/references/assessment.md": 1,
     "plugins/research/references/continue.md": 1,
@@ -1807,6 +1828,9 @@
     "../..": [
       "research-foray"
     ],
+    "../../.agents/skills/": [
+      "repo-skills-derive"
+    ],
     "../../scripts": [
       "spike-bakeoff",
       "spike-probe",
@@ -1824,6 +1848,9 @@
       "respond-goal",
       "situate-what",
       "skill-style"
+    ],
+    "../.agents/skills": [
+      "repo-skills-derive"
     ],
     "../app-add-signup-validation": [
       "action-worktree"

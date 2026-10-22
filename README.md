@@ -87,6 +87,7 @@ internals, either of which can change without notice.
 | [model-cli](plugins/model-cli/) | Run a prompt through one AI CLI at a time: agy (Gemini), codex (GPT), or cursor's agent, with fallback between tiers. |
 | [agent-messaging](plugins/agent-messaging/) | Message another running Claude Code or Codex session, and verify who actually sent an incoming message. |
 | [self-improvement](plugins/self-improvement/) | Mine local agent prompt history for how the skill catalog is really used, then land the changes that usage evidence supports. |
+| [repo-skills](plugins/repo-skills/) | Derive a repository's own agent skills from its docs, git history, CI, shell history, and AI transcripts, test each with and without itself, and land them in two commits. |
 
 ### Machine upkeep
 
