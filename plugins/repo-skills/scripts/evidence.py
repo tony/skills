@@ -157,6 +157,7 @@ class ShellReport(t.TypedDict):
 
     repo_paths: list[str]
     sources: list[ShellSource]
+    unreadable: list[str]
 
 
 class CwdRow(t.TypedDict):
@@ -560,7 +561,10 @@ def trunk_ref(repo: Path) -> str:
 
 
 def _checkout_remote(path: Path) -> str | None:
-    if not (path / ".git").exists():
+    try:
+        if not (path.is_dir() and (path / ".git").exists()):
+            return None
+    except OSError:
         return None
     url = _git(path, "config", "--get", "remote.origin.url", check=False).strip()
     return normalize_remote(url) if url else None
@@ -580,11 +584,11 @@ def cmd_paths(repo: Path, roots: list[Path]) -> PathsReport:
     found: set[str] = {str(top), *worktrees}
     if origin:
         for root in roots or [primary.parent, primary.parent.parent]:
-            if not root.is_dir():
+            try:
+                children = list(root.iterdir())
+            except OSError:
                 continue
-            for child in root.iterdir():
-                if child.is_dir() and _checkout_remote(child) == origin:
-                    found.add(str(child))
+            found.update(str(c) for c in children if _checkout_remote(c) == origin)
     projects = Path.home() / ".claude" / "projects"
     suffix = "-" + encode_session_dir(primary.name)
     sessions = (
@@ -658,10 +662,15 @@ def cmd_shell(repo_paths: list[str], top_n: int) -> ShellReport:
     """Attribute shell-history commands to the repository."""
     parsers = {"zsh": parse_zsh, "bash": parse_bash, "fish": parse_fish}
     report: list[ShellSource] = []
+    unreadable: list[str] = []
     for kind, path in _history_sources():
         if not path.is_file():
             continue
-        raw = path.read_bytes()
+        try:
+            raw = path.read_bytes()
+        except OSError:
+            unreadable.append(tilde(str(path)))
+            continue
         text = (unmetafy(raw) if kind == "zsh" else raw).decode("utf-8", "replace")
         entries = parsers[kind](text)
         kept = attribute(entries, repo_paths)
@@ -682,7 +691,7 @@ def cmd_shell(repo_paths: list[str], top_n: int) -> ShellReport:
                 "recent": samples,
             }
         )
-    return {"repo_paths": repo_paths, "sources": report}
+    return {"repo_paths": repo_paths, "sources": report, "unreadable": unreadable}
 
 
 def _field(record: dict[str, object], outer: str, inner: str) -> str | None:
@@ -922,7 +931,7 @@ def main(argv: list[str] | None = None) -> int:
             result = cmd_transcripts(Path(str(args.file)).expanduser(), int(args.limit), keep)
         else:
             result = cmd_link(repo, check=bool(args.check))
-    except UsageError as error:
+    except (UsageError, OSError) as error:
         print(str(error), file=sys.stderr)
         return 2
     print(json.dumps(result, indent=2, ensure_ascii=False))

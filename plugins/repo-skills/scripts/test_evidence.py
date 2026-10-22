@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 import json
+import os
 import subprocess
 from pathlib import Path
 
@@ -443,3 +444,46 @@ def test_link_stages_an_existing_untracked_link(tmp_path: Path) -> None:
     assert _git(repo, "diff", "--cached", "--name-only").split() == [".claude/skills"]
     _git(repo, "commit", "-q", "-m", "link")
     assert evidence.cmd_link(repo, check=False)["changed"] is False
+
+
+def test_main_exits_2_on_a_missing_export(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """A file the command cannot read is a usage error, not a traceback."""
+    assert evidence.main(["transcripts", str(tmp_path / "missing.ndjson")]) == 2
+    assert "missing.ndjson" in capsys.readouterr().err
+
+
+def test_unreadable_history_is_listed_not_fatal(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """An unreadable history file is named while the rest are still read."""
+    locked = tmp_path / "locked_history"
+    locked.write_text("ls\n")
+    locked.chmod(0)
+    readable = tmp_path / "bash_history"
+    readable.write_text("cd ~/w/site\n")
+    sources = [("zsh", locked), ("bash", readable)]
+    monkeypatch.setattr(evidence, "_history_sources", lambda: sources)
+    if os.access(locked, os.R_OK):
+        pytest.skip("running with permission to read any file")
+
+    report = evidence.cmd_shell(["~/w/site"], top_n=5)
+
+    assert report["unreadable"] == [evidence.tilde(str(locked))]
+    assert [s["shell"] for s in report["sources"]] == ["bash"]
+
+
+@pytest.mark.integration(reason="executes native Git repository queries")
+def test_paths_skips_an_unreadable_sibling(tmp_path: Path) -> None:
+    """A sibling directory the user cannot enter does not stop the scan."""
+    repo = _repo(tmp_path / "work" / "site")
+    locked = tmp_path / "work" / "locked"
+    locked.mkdir()
+    locked.chmod(0)
+    try:
+        report = evidence.cmd_paths(repo, [tmp_path / "work"])
+    finally:
+        locked.chmod(0o755)
+
+    assert report["root_name"] == "site"
