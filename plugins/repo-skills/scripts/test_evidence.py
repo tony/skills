@@ -281,3 +281,15 @@ def test_link_check_reports_state_before_any_skill_exists(tmp_path: Path) -> Non
     }
     with pytest.raises(evidence.UsageError, match="write the skills first"):
         evidence.cmd_link(repo, check=False)
+
+
+def test_shell_heads_never_carry_a_secret(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Command heads are counted after redaction, like the recent samples."""
+    history = tmp_path / "zsh_history"
+    history.write_text(": 1:0;cd ~/w/site\n: 2:0;GH_TOKEN=ghp_SECRET123 gh pr list\n")
+    monkeypatch.setattr(evidence, "_history_sources", lambda: [("zsh", history)])
+
+    report = evidence.cmd_shell(["~/w/site"], top_n=10)
+
+    assert "ghp_SECRET123" not in json.dumps(report)
+    assert ("GH_TOKEN=… gh", 1) in report["sources"][0]["heads"]

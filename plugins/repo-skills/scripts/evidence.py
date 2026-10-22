@@ -578,7 +578,7 @@ def cmd_shell(repo_paths: list[str], top_n: int) -> ShellReport:
         text = (unmetafy(raw) if kind == "zsh" else raw).decode("utf-8", "replace")
         entries = parsers[kind](text)
         kept = attribute(entries, repo_paths)
-        heads = collections.Counter(command_head(c) for _, c in kept)
+        heads = collections.Counter(command_head(redact(c)) for _, c in kept)
         samples: list[str] = []
         for _, command in reversed(kept):
             line = redact(command.split("\n")[0])[:160]
