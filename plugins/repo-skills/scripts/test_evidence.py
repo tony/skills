@@ -267,3 +267,17 @@ def test_transcripts_keep_only_records_under_named_directories(tmp_path: Path) -
 
     assert report["records"] == 2
     assert sorted(row["cwd"] for row in report["by_cwd"]) == ["~/w/cv", "~/w/cv/pkg"]
+
+
+@pytest.mark.integration(reason="executes native Git repository queries")
+def test_link_check_reports_state_before_any_skill_exists(tmp_path: Path) -> None:
+    """The precondition check works before commit 1 creates .agents/skills."""
+    repo = _repo(tmp_path / "site")
+
+    assert evidence.cmd_link(repo, check=True) == {
+        "state": "absent",
+        "entries": [],
+        "changed": False,
+    }
+    with pytest.raises(evidence.UsageError, match="write the skills first"):
+        evidence.cmd_link(repo, check=False)

@@ -717,15 +717,15 @@ def cmd_link(repo: Path, *, check: bool) -> LinkReport:
     """Point ``.claude/skills`` at ``../.agents/skills`` and stage the change."""
     top = toplevel(repo)
     skills = top / ".claude" / "skills"
-    if not (top / ".agents" / "skills").is_dir():
-        msg = ".agents/skills does not exist; write the skills first"
-        raise UsageError(msg)
     state, entries = link_state(skills)
     if state in {"real-skills", "foreign-links", "other-link", "other"}:
         msg = f".claude/skills is {state} ({', '.join(entries)}); move or remove these first"
         raise UsageError(msg)
     if check or state == "linked":
         return {"state": state, "entries": entries, "changed": False}
+    if not (top / ".agents" / "skills").is_dir():
+        msg = ".agents/skills does not exist; write the skills first"
+        raise UsageError(msg)
     tracked = set(_git(top, "ls-files", "--", ".claude/skills").splitlines())
     for name in entries:
         rel = f".claude/skills/{name}"

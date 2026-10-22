@@ -33,7 +33,8 @@ directory, written literally in each command.
   a short prefix from the repository or package names in the plan.
 - `--since <date>` bounds the git window; the default is `12 months ago`.
 - `--no-transcripts` and `--no-shell-history` skip those sources.
-- `--dry-run` stops after the plan.
+- `--dry-run` runs Phase 1 in full, gates included, and stops after
+  the plan.
 
 Invoking this skill is the request to read AI transcripts and shell
 history for this repository; nothing else is searched.
