@@ -122,6 +122,7 @@ class PathsReport(t.TypedDict):
     origin: str | None
     checkouts: list[str]
     session_dirs: list[str]
+    other_session_dirs: list[str]
     cwd_globs: list[str]
 
 
@@ -265,10 +266,12 @@ def covering_globs(root_name: str, checkouts: list[str]) -> list[str]:
 
 
 def encode_session_dir(name: str) -> str:
-    """Encode a directory name the way Claude Code names its project folders.
+    """Encode a path or name the way Claude Code names its project folders.
 
     >>> encode_session_dir("tony.nl")
     'tony-nl'
+    >>> encode_session_dir("/home/d/w/tony.nl")
+    '-home-d-w-tony-nl'
     """
     return re.sub(r"[^A-Za-z0-9]", "-", name)
 
@@ -598,17 +601,18 @@ def cmd_paths(repo: Path, roots: list[Path]) -> PathsReport:
             found.update(str(c) for c in children if _checkout_remote(c) == origin)
     projects = Path.home() / ".claude" / "projects"
     suffix = "-" + encode_session_dir(primary.name)
-    sessions = (
-        sorted(p.name for p in projects.iterdir() if p.name.endswith(suffix))
-        if projects.is_dir()
-        else []
-    )
+    own = {encode_session_dir(p) for p in found}
+    try:
+        names = sorted(p.name for p in projects.iterdir())
+    except OSError:
+        names = []
     checkouts = sorted(tilde(p) for p in found)
     return {
         "root_name": primary.name,
         "origin": origin,
         "checkouts": checkouts,
-        "session_dirs": sessions,
+        "session_dirs": [n for n in names if n in own],
+        "other_session_dirs": [n for n in names if n.endswith(suffix) and n not in own],
         "cwd_globs": covering_globs(primary.name, checkouts),
     }
 

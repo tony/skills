@@ -56,13 +56,16 @@ the exit code is the fact. A command that writes (a formatter without
 ## Locations
 
 `evidence.py paths` lists checkouts sharing the origin (worktrees,
-sibling clones), `session_dirs` naming where earlier sessions ran, and
-`cwd_globs` covering them. A repository that moved keeps its name, so
-the glob on that name reaches its old path. A `session_dirs` entry that
-matches no checkout points at a former location, but its name encodes
-the path lossily (`/` and `.` both become `-`), so never pass it on as a
-path. The transcript summary's `by_cwd` rows carry the real former
-paths; those go to the shell-history `--path` list.
+sibling clones), `session_dirs` for the checkouts' own Claude Code
+sessions, and `cwd_globs` covering them. A repository that moved keeps
+its name, so the glob on that name reaches its old path.
+
+`other_session_dirs` end in the repository's name but belong to no
+checkout: a former location, or an unrelated repository whose name ends
+the same way. Their names encode paths lossily (`/` and `.` both become
+`-`), so never pass one on as a path. The transcript summary's `by_cwd`
+rows carry the real former paths; those go to the shell-history
+`--path` list.
 
 ## AI transcripts
 

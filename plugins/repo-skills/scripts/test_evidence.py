@@ -584,3 +584,24 @@ def test_agent_file_commits_include_nested_files(tmp_path: Path) -> None:
     assert [line.split(" ", 1)[1] for line in report["agent_file_commits"]] == [
         "ai(rules[pkg]) add nested rules"
     ]
+
+
+@pytest.mark.integration(reason="executes native Git repository queries")
+def test_session_dirs_separate_own_from_lookalikes(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A checkout's own session directory is told apart from same-suffix ones."""
+    repo = _repo(tmp_path / "w" / "site")
+    worktree = tmp_path / "w" / "site-oxc"
+    _git(repo, "worktree", "add", "-q", str(worktree), "-b", "oxc")
+    home = tmp_path / "home"
+    projects = home / ".claude" / "projects"
+    own = sorted(evidence.encode_session_dir(str(p)) for p in (repo, worktree))
+    for name in (*own, "-x-my-site", "-x-site", "-x-other"):
+        (projects / name).mkdir(parents=True)
+    monkeypatch.setenv("HOME", str(home))
+
+    report = evidence.cmd_paths(repo, [])
+
+    assert report["session_dirs"] == own
+    assert report["other_session_dirs"] == ["-x-my-site", "-x-site"]
