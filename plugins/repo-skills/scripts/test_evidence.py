@@ -396,6 +396,8 @@ def test_transcripts_report_a_bounded_scan(tmp_path: Path) -> None:
             ["cd ~/w/site", 'cd "$(mktemp -d)"'],
         ),
         ([(1, "cd ~/w/site"), (2, "cd -- /tmp"), (3, "ls")], ["cd ~/w/site", "cd -- /tmp"]),
+        ([(1, "cd ~/w/site"), (2, "cd -P ~/other"), (3, "ls")], ["cd ~/w/site", "cd -P ~/other"]),
+        ([(1, "pushd ~/w/site"), (2, "popd"), (3, "ls")], ["pushd ~/w/site", "popd"]),
         (
             [(1, "cd ~/w/site"), (2, "make test; cd /tmp"), (3, "ls")],
             ["cd ~/w/site", "make test; cd /tmp"],

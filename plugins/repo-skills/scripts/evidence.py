@@ -135,7 +135,10 @@ _COMMAND_REDACTIONS = (
     (re.compile(r"(\bredis-cli\b[^|;&\n]*\s-a\s+)" + _VALUE), r"\1…"),
 )
 _CD_TARGET = r"(\"[^\"]*\"|'[^']*'|[^\s;&|]*)"
-_CD = re.compile(r"(?:^|[;&|]\s*)(?:cd|pushd)(?=\s|$|[;&|])[ \t]*(?:--[ \t]+)?" + _CD_TARGET)
+_CD = re.compile(
+    r"(?:^|[;&|]\s*)(?:cd|pushd)(?=\s|$|[;&|])[ \t]*(?:(?:-[LPe@]+|--)[ \t]+)*" + _CD_TARGET
+)
+_POPD = re.compile(r"(?:^|[;&|]\s*)popd(?=\s|$|[;&|])")
 _ZSH_EXTENDED = re.compile(r"^: (\d+):\d+;(.*)$")
 _ZSH_META = 0x83
 _USERINFO_TOKEN_MIN = 20
@@ -470,7 +473,8 @@ def attribute(
     """Keep commands run inside, or naming, one of the repository's paths.
 
     ``cd`` and ``pushd`` move the tracked directory as ``next_cwd``
-    describes. A line counts when the directory is inside the repository
+    describes, past ``-L``, ``-P``, and ``--``; ``popd`` makes it unknown,
+    since the stack is not tracked. A line counts when the directory is inside the repository
     before or after it, so a command run there before a ``cd`` away is
     kept. The tracking is approximate across shell sessions.
 
@@ -504,6 +508,8 @@ def attribute(
         if tracked:
             for target in _CD.findall(command):
                 cwd = next_cwd(cwd, target)
+            if _POPD.search(command):
+                cwd = None
         inside = before or (tracked and cwd is not None and bool(mention.match(cwd)))
         if inside or mention.search(command):
             kept.append((stamp, command))
