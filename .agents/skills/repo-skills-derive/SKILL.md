@@ -122,7 +122,7 @@ Enter plan mode before the first edit. In Claude Code call
 `EnterPlanMode`; in Cursor, Codex, or Gemini use `/plan` or `Shift+Tab`.
 Where plan mode is unavailable, present the plan as text.
 
-The plan gives:
+Write the plan per `references/prose-rules.md`. It gives:
 
 - The prefix and the branch. On the trunk, propose a topic branch named
   `<prefix>-skills`.
