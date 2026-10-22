@@ -75,30 +75,44 @@ _TOOL_OUTPUT_PREFIXES = (
 )
 _TOOL_OUTPUT = re.compile("^(?:" + "|".join(_TOOL_OUTPUT_PREFIXES) + ")")
 _STRUCTURED = re.compile(r"(?:-{3}|={3}|#{3,}|\$ |[{<\[]|@@ |diff --git|\+{3} |[0-9a-f]{7,40}\s)")
-_VALUE = r"(?:\"[^\"]*\"|'[^']*'|\S+)"
+_VALUE = r"(?:\"[^\"]*\"|'[^']*'|[^\s'\"&;|]+)"
 _TOKEN_SHAPES = (
-    r"\bgh[pousr]_[A-Za-z0-9]{20,}",
-    r"\bgithub_pat_\w{20,}",
-    r"\b(?:AKIA|ASIA)[0-9A-Z]{16}\b",
-    r"\bxox[abposr]-[A-Za-z0-9-]{10,}",
-    r"\bsk-[A-Za-z0-9_-]{20,}",
-    r"\bglpat-[\w-]{20,}",
-    r"\bAIza[\w-]{35}\b",
+    r"(?<![\w/.-])gh[pousr]_[A-Za-z0-9]{20,}",
+    r"(?<![\w/.-])github_pat_\w{20,}",
+    r"(?<![\w/.-])(?:AKIA|ASIA)[0-9A-Z]{16}\b",
+    r"(?<![\w/.-])xox[abposr]-[A-Za-z0-9-]{10,}",
+    r"(?<![\w/.-])sk-[A-Za-z0-9_-]{32,}",
+    r"(?<![\w/.-])glpat-[\w-]{20,}",
+    r"(?<![\w/.-])AIza[\w-]{35}\b",
 )
-_CREDENTIAL_NAME = r"[A-Z0-9_]*(?:token|secret|passw(?:or)?d|api_?key|credential)[A-Z0-9_]*"
+_CREDENTIAL_NAME = (
+    r"(?:[A-Za-z0-9_]*(?:TOKEN|SECRET|PASSW(?:OR)?D|PASS|CREDENTIALS?|API_?KEY|_KEY)|KEY)"
+)
+_CREDENTIAL_HEADER = r"[\w-]*(?:authorization|api-?key|token|secret)[\w-]*"
 _REDACTIONS = (
+    (re.compile(r"(?i)(?<![\w-])(" + _CREDENTIAL_NAME + r")\s*=\s*" + _VALUE), r"\1=…"),
+    (re.compile(r"(?i)(?<![\w-])(" + _CREDENTIAL_NAME + r")\s*:\s*" + _VALUE), r"\1: …"),
     (
-        re.compile(r"(?i)\b(" + _CREDENTIAL_NAME + r")\s*=\s*" + _VALUE),
-        r"\1=…",
-    ),
-    (re.compile(r"((?:^|\s)(?:-u|--user)[ =]?[^\s:]+:)\S+"), r"\1…"),
-    (re.compile(r"(\bmysql(?:admin|dump)?\b[^|;&\n]*\s-p)(?=\S)\S+"), r"\1…"),
-    (
-        re.compile(r"(?i)(--(?:token|password|passwd|secret|api-key|apikey)(?:=|\s+))" + _VALUE),
+        re.compile(
+            r"(?i)(--(?:token|password|passwd|secret|api-key|apikey|auth)(?:=|\s+))" + _VALUE
+        ),
         r"\1…",
     ),
-    (re.compile(r"(?i)\b(authorization:\s*(?:bearer|basic|token)\s+)[^\s'\"]+"), r"\1…"),
+    (
+        re.compile(
+            r"(?i)((?:^|\s)-[a-z]*\s+'?"
+            + _CREDENTIAL_HEADER
+            + r":\s*(?:bearer|basic|token|apikey)?\s*)"
+            + r"[^\s'\"]+"
+        ),
+        r"\1…",
+    ),
+    (re.compile(r"(?i)\b(authorization:\s*(?:bearer|basic|token|apikey)\s+)[^\s'\"]+"), r"\1…"),
     (re.compile(r"\b([a-z][a-z0-9+.-]*://[^/\s:@]+:)[^@\s/]+@"), r"\1…@"),
+    (re.compile(r"((?:^|\s)(?:-u|--user)[ =]?(?!\d+:\d+\b)[^\s:]+:)[^\s'\"]+"), r"\1…"),
+    (re.compile(r"(\bmysql(?:admin|dump)?\b[^|;&\n]*\s-p)(?=\S)[^\s'\"]+"), r"\1…"),
+    (re.compile(r"(\bsshpass\s+-p\s*)" + _VALUE), r"\1…"),
+    (re.compile(r"(\bredis-cli\b[^|;&\n]*\s-a\s+)" + _VALUE), r"\1…"),
     (re.compile("|".join(_TOKEN_SHAPES)), "…"),
 )
 _CD_TARGET = r"(\"[^\"]*\"|'[^']*'|[^\s;&|]*)"

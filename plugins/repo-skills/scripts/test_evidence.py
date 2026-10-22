@@ -671,3 +671,48 @@ def test_merge_shape_counts_share_one_sample(
 
     assert (report["first_parent_merges"], report["merges_checked"]) == (3, 2)
     assert (report["merges_semi_linear"], report["merges_numbered"]) == (2, 2)
+
+
+_TOKEN = "ghp_" + "c" * 36
+
+
+@pytest.mark.parametrize(
+    ("command", "secret"),
+    [
+        ("sshpass -p hunter2 ssh h", "hunter2"),
+        ("curl -H 'X-Api-Key: abc123def456' u", "abc123def456"),
+        ("curl -H 'Authorization: ApiKey abc123xyz' u", "abc123xyz"),
+        ("redis-cli -a hunter2 ping", "hunter2"),
+        ("echo 'password: hunter2'", "hunter2"),
+        ("curl -u admin:hunter2 https://x", "hunter2"),
+        ("mysql -uroot -phunter2 db", "hunter2"),
+        ("SECRET_KEY = abc987", "abc987"),
+        ('export TOKEN="abc def"', "abc def"),
+        (f"GH_TOKEN={_TOKEN} gh pr list", _TOKEN),
+        (f"gh auth --token {_TOKEN}", _TOKEN),
+        ("psql postgres://u:pw987@host/db", "pw987"),
+        ("export AWS_SECRET_ACCESS_KEY=abcd1234", "abcd1234"),
+    ],
+)
+def test_redact_masks_each_credential_form(command: str, secret: str) -> None:
+    """Every credential form in the corpus is masked."""
+    assert secret not in evidence.redact(command)
+
+
+@pytest.mark.parametrize(
+    "command",
+    [
+        "docker run --rm -u 1000:1000 img",
+        "llm --max-tokens=5 prompt",
+        "TOKENIZER=bert make",
+        "git switch feat/sk-implement-the-feature-xyzxyz",
+        "curl 'https://x/?page=2'",
+        "pnpm --filter @tony/nl-react run test",
+        "git commit -m 'fix the parser'",
+        "mkdir -p out/dir",
+        "uv run pytest -q -k token",
+    ],
+)
+def test_redact_leaves_ordinary_commands_alone(command: str) -> None:
+    """Commands that only look like credentials come back unchanged."""
+    assert evidence.redact(command) == command
