@@ -22,7 +22,7 @@ graders:
   - name: gathers-no-git-evidence
     type: tool_used
     tool: Bash
-    input_match: '(?:evidence\.py|python3?\s+\$\{?[A-Za-z_]\w*\}?)[\s\S]*\bgit\b'
+    input_match: '(?:evidence\.py|python3?\s+["'']?\$\{?[A-Za-z_]\w*\}?["'']?)(?:\s+--repo(?:\s+|=)\S+)?\s+git\b'
     min: 0
     max: 0
 
