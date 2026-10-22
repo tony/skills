@@ -614,3 +614,18 @@ def test_a_stale_origin_head_falls_through_to_main(tmp_path: Path) -> None:
     _git(repo, "symbolic-ref", "refs/remotes/origin/HEAD", "refs/remotes/origin/gone")
 
     assert evidence.cmd_git(repo, since="10 years ago", top_n=5)["trunk"] == "main"
+
+
+@pytest.mark.integration(reason="executes native Git repository queries")
+def test_hot_paths_keep_non_ascii_names(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Paths git would quote under its default config are bucketed by their real names."""
+    monkeypatch.setenv("GIT_CONFIG_GLOBAL", os.devnull)
+    repo = _repo(tmp_path / "site")
+    (repo / "wörk" / "sub").mkdir(parents=True)
+    (repo / "wörk" / "sub" / "a.txt").write_text("x\n", encoding="utf-8")
+    _git(repo, "add", ".")
+    _git(repo, "commit", "-q", "-m", "add")
+
+    report = evidence.cmd_git(repo, since="10 years ago", top_n=5)
+
+    assert ["wörk/sub", 1] in [list(row) for row in report["hot_paths"]]

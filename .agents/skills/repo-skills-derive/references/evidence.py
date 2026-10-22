@@ -545,7 +545,7 @@ def is_human_prompt(store: str, text: str) -> bool:
 
 def _git(repo: Path, *args: str, check: bool = True) -> str:
     result = subprocess.run(
-        ["git", "-C", str(repo), *args],
+        ["git", "-c", "core.quotepath=off", "-C", str(repo), *args],
         capture_output=True,
         text=True,
         check=False,
