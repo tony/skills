@@ -351,3 +351,33 @@ def test_paths_from_a_worktree_name_the_primary_checkout(tmp_path: Path) -> None
 
     assert report["root_name"] == "site"
     assert report["cwd_globs"] == ["*site*", "*wt/esk*"]
+
+
+def test_transcripts_report_a_bounded_scan(tmp_path: Path) -> None:
+    """The summary trailer reaches the report, so a cut-short scan shows."""
+    rows = [
+        {"store": "claude.history", "text": "a", "origin": {"cwd": "/w"}},
+        {
+            "type": "summary",
+            "data": {
+                "status": {"state": "bounded", "reason": "result_limit"},
+                "effort": {"requested": "exhaustive", "completed": "deep"},
+                "coverage": {"sources_failed": 2, "sources_bounded": 1},
+            },
+        },
+    ]
+    export = tmp_path / "export.ndjson"
+    export.write_text("\n".join(json.dumps(r) for r in rows), encoding="utf-8")
+
+    report = evidence.cmd_transcripts(export, limit=10)
+
+    assert report["scan"] == {
+        "state": "bounded",
+        "reason": "result_limit",
+        "effort_requested": "exhaustive",
+        "effort_completed": "deep",
+        "sources_failed": 2,
+        "sources_bounded": 1,
+        "sources_skipped": 0,
+    }
+    assert report["records"] == 1

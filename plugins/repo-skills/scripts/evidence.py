@@ -176,9 +176,22 @@ class Prompt(t.TypedDict):
     text: str
 
 
+class Scan(t.TypedDict):
+    """How far agentgrep's search got, from the export's summary record."""
+
+    state: str
+    reason: str | None
+    effort_requested: str | None
+    effort_completed: str | None
+    sources_failed: int
+    sources_bounded: int
+    sources_skipped: int
+
+
 class TranscriptReport(t.TypedDict):
     """A transcript export grouped by directory, with its typed prompts."""
 
+    scan: Scan | None
     records: int
     by_cwd: list[CwdRow]
     prompts_total: int
@@ -660,6 +673,30 @@ def _field(record: dict[str, object], outer: str, inner: str) -> str | None:
     return found if isinstance(found, str) else None
 
 
+def _scan(data: dict[str, object]) -> Scan:
+    def part(name: str) -> dict[str, object]:
+        value = data.get(name)
+        return t.cast("dict[str, object]", value) if isinstance(value, dict) else {}
+
+    def text(source: dict[str, object], key: str) -> str | None:
+        value = source.get(key)
+        return value if isinstance(value, str) else None
+
+    def count(key: str) -> int:
+        value = part("coverage").get(key)
+        return value if isinstance(value, int) else 0
+
+    return {
+        "state": text(part("status"), "state") or "unknown",
+        "reason": text(part("status"), "reason"),
+        "effort_requested": text(part("effort"), "requested"),
+        "effort_completed": text(part("effort"), "completed"),
+        "sources_failed": count("sources_failed"),
+        "sources_bounded": count("sources_bounded"),
+        "sources_skipped": count("sources_skipped"),
+    }
+
+
 def _record_cwd(record: dict[str, object]) -> str:
     cwd = _field(record, "origin", "cwd") or _field(record, "metadata", "project")
     return (tilde(cwd).rstrip("/") or "?") if cwd else "?"
@@ -689,6 +726,7 @@ def cmd_transcripts(path: Path, limit: int, keep: list[str] | None = None) -> Tr
     """
     prefixes = [tilde(str(Path(k).expanduser())) for k in keep or []]
     records = 0
+    scan: Scan | None = None
     sessions: dict[str, set[str]] = collections.defaultdict(set)
     counts: collections.Counter[str] = collections.Counter()
     spans: dict[str, list[str]] = {}
@@ -702,6 +740,9 @@ def cmd_transcripts(path: Path, limit: int, keep: list[str] | None = None) -> Tr
             if not isinstance(parsed, dict):
                 continue
             record = t.cast("dict[str, object]", parsed)
+            if record.get("type") == "summary" and isinstance(record.get("data"), dict):
+                scan = _scan(t.cast("dict[str, object]", record["data"]))
+                continue
             if not isinstance(record.get("text"), str):
                 continue
             cwd = _record_cwd(record)
@@ -737,6 +778,7 @@ def cmd_transcripts(path: Path, limit: int, keep: list[str] | None = None) -> Tr
     ]
     ordered = sorted(prompts.values(), key=lambda p: p["date"])
     return {
+        "scan": scan,
         "records": records,
         "by_cwd": by_cwd,
         "prompts_total": len(ordered),

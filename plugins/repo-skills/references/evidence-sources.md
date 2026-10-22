@@ -88,6 +88,12 @@ $ <agentgrep> search \
     > <export file>
 ```
 
+The summary's `scan` field comes from agentgrep's own trailer. A state
+other than `complete`, a completed effort below `exhaustive`, or any
+failed, bounded, or skipped source means the counts undercount; say so
+in the report next to every count it affects. A null `scan` means the
+export has no trailer, so its completeness is unknown.
+
 A glob can catch an unrelated directory that shares the name. Read the
 `by_cwd` rows the summary prints, then rerun it with one `--cwd` per
 directory that belongs to this repository:
