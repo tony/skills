@@ -965,17 +965,20 @@ def link_state(skills: Path) -> tuple[str, list[str]]:
         return "absent", []
     if not skills.is_dir():
         return "other", [skills.name]
-    real = [e.name for e in skills.iterdir() if not e.is_symlink()]
-    if real:
-        return "real-skills", sorted(real)
-    foreign = [
-        e.name
-        for e in skills.iterdir()
-        if not str(e.readlink()).startswith("../../.agents/skills/")
-    ]
-    if foreign:
-        return "foreign-links", sorted(foreign)
-    return "per-skill-links", sorted(e.name for e in skills.iterdir())
+    entries = list(skills.iterdir())
+    links = [e for e in entries if e.is_symlink()]
+    checks = (
+        ("real-skills", [e for e in entries if e.is_dir() and not e.is_symlink()]),
+        ("stray-files", [e for e in entries if not e.is_dir() and not e.is_symlink()]),
+        (
+            "foreign-links",
+            [e for e in links if not str(e.readlink()).startswith("../../.agents/skills/")],
+        ),
+    )
+    for state, found in checks:
+        if found:
+            return state, sorted(e.name for e in found)
+    return "per-skill-links", sorted(e.name for e in entries)
 
 
 def cmd_link(repo: Path, *, check: bool) -> LinkReport:
@@ -983,7 +986,7 @@ def cmd_link(repo: Path, *, check: bool) -> LinkReport:
     top = toplevel(repo)
     skills = top / ".claude" / "skills"
     state, entries = link_state(skills)
-    if state in {"real-skills", "foreign-links", "other-link", "other"}:
+    if state in {"real-skills", "stray-files", "foreign-links", "other-link", "other"}:
         msg = f".claude/skills is {state} ({', '.join(entries)}); move or remove these first"
         raise UsageError(msg)
     if state == "linked":

@@ -158,6 +158,9 @@ def test_link_state_classifies_each_layout(tmp_path: Path) -> None:
     (skills / "b").symlink_to("/elsewhere/b")
     assert evidence.link_state(skills) == ("foreign-links", ["b"])
 
+    (skills / ".DS_Store").write_text("", encoding="utf-8")
+    assert evidence.link_state(skills) == ("stray-files", [".DS_Store"])
+
     (skills / "c").mkdir()
     assert evidence.link_state(skills) == ("real-skills", ["c"])
 

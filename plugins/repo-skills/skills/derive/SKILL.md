@@ -54,10 +54,11 @@ and 4 only gather what later phases need.
    $ python3 <evidence.py> --repo <root> link --check
    ```
 
-   Exit 2 means `.claude/skills` holds real skill directories, foreign
-   links, or a link elsewhere. Name them in the plan: a real skill
-   directory moves into `.agents/skills` in commit 1 with the user's yes,
-   and anything else is the user's to resolve before commit 2.
+   Exit 2 means `.claude/skills` holds real skill directories, stray
+   files such as `.DS_Store`, foreign links, or a link elsewhere. Name
+   them in the plan: a real skill directory moves into `.agents/skills`
+   in commit 1 with the user's yes, and anything else is the user's to
+   resolve before commit 2.
 
 A halted run is one result sentence naming each blocker, such as the
 modified files, then what the user must do about it: commit or stash
