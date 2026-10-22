@@ -539,3 +539,18 @@ def test_shell_reads_a_named_history_file_and_infers_its_shell(tmp_path: Path) -
         evidence.tilde(str(saved)),
         2,
     )
+
+
+@pytest.mark.integration(reason="executes native Git repository queries")
+def test_a_staged_but_uncommitted_link_still_needs_commit_2(tmp_path: Path) -> None:
+    """Only a link in HEAD counts as committed; a staged one still reports a change."""
+    repo = _repo(tmp_path / "site")
+    (repo / ".agents" / "skills" / "a").mkdir(parents=True)
+    (repo / ".agents" / "skills" / "a" / "SKILL.md").write_text("---\n", encoding="utf-8")
+    _git(repo, "add", ".agents")
+    _git(repo, "commit", "-q", "-m", "skills")
+
+    assert evidence.cmd_link(repo, check=False)["changed"] is True
+    assert evidence.cmd_link(repo, check=False)["changed"] is True
+    _git(repo, "commit", "-q", "-m", "link")
+    assert evidence.cmd_link(repo, check=False)["changed"] is False

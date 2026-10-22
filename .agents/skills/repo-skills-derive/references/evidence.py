@@ -896,10 +896,10 @@ def cmd_link(repo: Path, *, check: bool) -> LinkReport:
         msg = f".claude/skills is {state} ({', '.join(entries)}); move or remove these first"
         raise UsageError(msg)
     if state == "linked":
-        tracked = bool(_git(top, "ls-files", "--", ".claude/skills").strip())
-        if not check and not tracked:
+        committed = bool(_git(top, "ls-tree", "HEAD", "--", ".claude/skills", check=False).strip())
+        if not check and not committed:
             _git(top, "add", "--force", "--", ".claude/skills")
-        return {"state": state, "entries": entries, "changed": not check and not tracked}
+        return {"state": state, "entries": entries, "changed": not check and not committed}
     if check:
         return {"state": state, "entries": entries, "changed": False}
     if not (top / ".agents" / "skills").is_dir():
