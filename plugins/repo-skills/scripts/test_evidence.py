@@ -692,11 +692,25 @@ _TOKEN = "ghp_" + "c" * 36
         (f"gh auth --token {_TOKEN}", _TOKEN),
         ("psql postgres://u:pw987@host/db", "pw987"),
         ("export AWS_SECRET_ACCESS_KEY=abcd1234", "abcd1234"),
+        (f"git clone https://{_TOKEN}@github.com/x/y", _TOKEN),
+        ('curl -H "X-API-Key: abc123" x', "abc123"),
+        ('curl -H "X-Auth-Token: abc123" x', "abc123"),
+        ('curl -H "PRIVATE-TOKEN: abcdef" x', "abcdef"),
+        ('curl -H "Authorization: abc123" x', "abc123"),
+        ("docker login -u bob -p hunter2 reg", "hunter2"),
+        ("az login -p pw12345", "pw12345"),
+        ("REDIS_URL=redis://:hunter2@h:6379", "hunter2"),
+        ("wget --http-password=abc123", "abc123"),
+        ("aws --secret-access-key abc123", "abc123"),
+        ("curl --oauth2-bearer abc123", "abc123"),
+        ("curl -u bob:'p w' x", "p w"),
+        ("pay " + "sk_" + "live_" + "Q1" * 12, "Q1" * 12),
+        ("npm config set npm_" + "d" * 36, "d" * 36),
     ],
 )
 def test_redact_masks_each_credential_form(command: str, secret: str) -> None:
     """Every credential form in the corpus is masked."""
-    assert secret not in evidence.redact(command)
+    assert secret not in evidence.redact_command(command)
 
 
 @pytest.mark.parametrize(
@@ -711,8 +725,50 @@ def test_redact_masks_each_credential_form(command: str, secret: str) -> None:
         "git commit -m 'fix the parser'",
         "mkdir -p out/dir",
         "uv run pytest -q -k token",
+        "make PASS=1",
+        "cache_key = compute()",
+        "python -c 'print(dict(key=1))'",
+        "docker run -u node:node img",
+        "docker run -p 8080:80 img",
+        "sudo -u deploy:deploy ls",
+        "tar -u foo:bar",
+        "curl http://localhost:3000?x=a@b",
+        "git log --grep='key: value'",
+        "git commit -m 'fix(auth): rotate the token: 24h expiry'",
+        "git clone ssh://git@github.com/o/r",
+        "gh auth login --with-token < token.txt",
     ],
 )
 def test_redact_leaves_ordinary_commands_alone(command: str) -> None:
     """Commands that only look like credentials come back unchanged."""
-    assert evidence.redact(command) == command
+    assert evidence.redact_command(command) == command
+
+
+@pytest.mark.parametrize(
+    ("text", "secret"),
+    [
+        (f"use {_TOKEN} to push", _TOKEN),
+        ("-----BEGIN RSA PRIVATE KEY-----\nMIIEabc123\n", "MIIEabc123"),
+        ("the password: hunter2 expired", "hunter2"),
+        ("db at postgres://u:pw987@h/db", "pw987"),
+        ("my API key = abc123def", "abc123def"),
+    ],
+)
+def test_redact_text_masks_credentials_in_prose(text: str, secret: str) -> None:
+    """Credentials pasted into a prompt are masked."""
+    assert secret not in evidence.redact_text(text)
+
+
+@pytest.mark.parametrize(
+    "text",
+    [
+        "all 12 tests pass: yes, rerun",
+        "fix(auth): rotate the token: 24h expiry",
+        "the cache key: value pairs are stale",
+        "PASS=1 should be the default",
+        "why does the token count differ?",
+    ],
+)
+def test_redact_text_leaves_prose_alone(text: str) -> None:
+    """Prose that mentions tokens, passes, or keys comes back unchanged."""
+    assert evidence.redact_text(text) == text

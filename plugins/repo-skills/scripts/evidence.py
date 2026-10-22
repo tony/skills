@@ -75,50 +75,70 @@ _TOOL_OUTPUT_PREFIXES = (
 )
 _TOOL_OUTPUT = re.compile("^(?:" + "|".join(_TOOL_OUTPUT_PREFIXES) + ")")
 _STRUCTURED = re.compile(r"(?:-{3}|={3}|#{3,}|\$ |[{<\[]|@@ |diff --git|\+{3} |[0-9a-f]{7,40}\s)")
-_VALUE = r"(?:\"[^\"]*\"|'[^']*'|[^\s'\"&;|]+)"
+_VALUE = r"(?:\"[^\"]*\"|'[^']*'|[^\s'\"&;|<>]+)"
 _TOKEN_SHAPES = (
-    r"(?<![\w/.-])gh[pousr]_[A-Za-z0-9]{20,}",
-    r"(?<![\w/.-])github_pat_\w{20,}",
-    r"(?<![\w/.-])(?:AKIA|ASIA)[0-9A-Z]{16}\b",
-    r"(?<![\w/.-])xox[abposr]-[A-Za-z0-9-]{10,}",
-    r"(?<![\w/.-])sk-[A-Za-z0-9_-]{32,}",
-    r"(?<![\w/.-])glpat-[\w-]{20,}",
-    r"(?<![\w/.-])AIza[\w-]{35}\b",
+    r"gh[pousr]_[A-Za-z0-9]{20,}",
+    r"github_pat_\w{20,}",
+    r"(?:AKIA|ASIA)[0-9A-Z]{16}\b",
+    r"xox[abposr]-[A-Za-z0-9-]{10,}",
+    r"sk-[A-Za-z0-9_-]{32,}",
+    r"(?:sk|pk|rk)_(?:live|test)_[A-Za-z0-9]{16,}",
+    r"glpat-[\w-]{20,}",
+    r"npm_[A-Za-z0-9]{36}",
+    r"AIza[\w-]{35}\b",
+    r"eyJ[\w-]{8,}\.eyJ[\w-]{8,}\.[\w-]{8,}",
 )
+_CREDENTIAL_WORD = r"(?:password|passwd|passphrase|api[ _-]?key|secret[ _-]?key|access[ _-]?key)"
+_TEXT_REDACTIONS = (
+    (
+        re.compile(
+            r"-----BEGIN [A-Z ]*PRIVATE KEY-----[\s\S]*?(?:-----END [A-Z ]*PRIVATE KEY-----|\Z)"
+        ),
+        "-----BEGIN PRIVATE KEY-----…",
+    ),
+    (re.compile(r"(?<![\w.-])(?:" + "|".join(_TOKEN_SHAPES) + ")"), "…"),
+    (re.compile(r"(?i)\b(" + _CREDENTIAL_WORD + r"\s*[:=]\s*)" + _VALUE), r"\1…"),
+)
+_URL_USERINFO = re.compile(r"\b([a-z][a-z0-9+.-]*://)([^/\s@:?#]*:)?([^/\s@?#]+)@")
+_KEY_NAME = r"(?:API|ACCESS|SECRET|PRIVATE|CLIENT|SIGNING|ENCRYPTION|MASTER|AUTH)_?KEY"
 _CREDENTIAL_NAME = (
-    r"(?:[A-Za-z0-9_]*(?:TOKEN|SECRET|PASSW(?:OR)?D|PASS|CREDENTIALS?|API_?KEY|_KEY)|KEY)"
+    r"[A-Za-z0-9_]*(?:TOKEN|SECRET|PASSWORD|PASSWD|PASSPHRASE|CREDENTIALS?|" + _KEY_NAME + ")"
 )
-_CREDENTIAL_HEADER = r"[\w-]*(?:authorization|api-?key|token|secret)[\w-]*"
-_REDACTIONS = (
+_CREDENTIAL_FLAG = (
+    r"--[\w-]*(?:password|passwd|passphrase|secret|token|api-?key|access-key|private-key|bearer)"
+)
+_CREDENTIAL_HEADER = r"(?:proxy-)?authorization|[\w-]*(?:api-?key|token|secret|auth)[\w-]*"
+_REGISTRY_LOGIN = r"(?:docker|podman|nerdctl|helm(?:\s+registry)?|oc|az|skopeo)\s+login\b"
+_COMMAND_REDACTIONS = (
     (re.compile(r"(?i)(?<![\w-])(" + _CREDENTIAL_NAME + r")\s*=\s*" + _VALUE), r"\1=…"),
-    (re.compile(r"(?i)(?<![\w-])(" + _CREDENTIAL_NAME + r")\s*:\s*" + _VALUE), r"\1: …"),
+    (re.compile(r"(?i)(" + _CREDENTIAL_FLAG + r"(?:=|\s+))" + _VALUE), r"\1…"),
     (
         re.compile(
-            r"(?i)(--(?:token|password|passwd|secret|api-key|apikey|auth)(?:=|\s+))" + _VALUE
-        ),
-        r"\1…",
-    ),
-    (
-        re.compile(
-            r"(?i)((?:^|\s)-[a-z]*\s+'?"
+            r"(?i)((?:-H|--header)[ =]?\s*([\"']?)(?:"
             + _CREDENTIAL_HEADER
-            + r":\s*(?:bearer|basic|token|apikey)?\s*)"
-            + r"[^\s'\"]+"
+            + r"):\s*(?:(?:bearer|basic|token|apikey)\s+)?)[^\s'\"]+"
         ),
         r"\1…",
     ),
-    (re.compile(r"(?i)\b(authorization:\s*(?:bearer|basic|token|apikey)\s+)[^\s'\"]+"), r"\1…"),
-    (re.compile(r"\b([a-z][a-z0-9+.-]*://[^/\s:@]+:)[^@\s/]+@"), r"\1…@"),
-    (re.compile(r"((?:^|\s)(?:-u|--user)[ =]?(?!\d+:\d+\b)[^\s:]+:)[^\s'\"]+"), r"\1…"),
+    (
+        re.compile(
+            r"(\b(?:curl|wget|http|https)\b[^|;&\n]*?\s(?:-u|--user)[ =]?[^\s:'\"]+:)" + _VALUE
+        ),
+        r"\1…",
+    ),
     (re.compile(r"(\bmysql(?:admin|dump)?\b[^|;&\n]*\s-p)(?=\S)[^\s'\"]+"), r"\1…"),
+    (
+        re.compile(r"(\b" + _REGISTRY_LOGIN + r"[^|;&\n]*?\s(?:-p|--password)[ =]?)" + _VALUE),
+        r"\1…",
+    ),
     (re.compile(r"(\bsshpass\s+-p\s*)" + _VALUE), r"\1…"),
     (re.compile(r"(\bredis-cli\b[^|;&\n]*\s-a\s+)" + _VALUE), r"\1…"),
-    (re.compile("|".join(_TOKEN_SHAPES)), "…"),
 )
 _CD_TARGET = r"(\"[^\"]*\"|'[^']*'|[^\s;&|]*)"
 _CD = re.compile(r"(?:^|[;&|]\s*)(?:cd|pushd)(?=\s|$|[;&|])[ \t]*(?:--[ \t]+)?" + _CD_TARGET)
 _ZSH_EXTENDED = re.compile(r"^: (\d+):\d+;(.*)$")
 _ZSH_META = 0x83
+_USERINFO_TOKEN_MIN = 20
 _NESTED_DEPTH = 3
 _PROMPT_MAX_CHARS = 1500
 _PROMPT_MAX_LINES = 12
@@ -501,31 +521,56 @@ def command_head(command: str) -> str:
     return " ".join(command.split()[:2])
 
 
-def redact(text: str) -> str:
-    """Mask credentials: assigned or flagged values, auth headers, URL passwords, tokens.
+def _mask_userinfo(match: re.Match[str]) -> str:
+    scheme, user, rest = match.group(1), match.group(2), match.group(3)
+    if user is not None:
+        return f"{scheme}{user}…@"
+    return f"{scheme}…@" if len(rest) >= _USERINFO_TOKEN_MIN else match.group(0)
 
-    >>> redact('GH_TOKEN=abc123 gh pr list')
-    'GH_TOKEN=… gh pr list'
-    >>> redact('export TOKEN="abc def" && run')
-    'export TOKEN=… && run'
-    >>> redact("gh auth --token ghp_abc")
-    'gh auth --token …'
-    >>> redact("curl -H 'Authorization: Bearer abc.def'")
-    "curl -H 'Authorization: Bearer …'"
-    >>> redact("psql postgres://u:pw@host/db")
-    'psql postgres://u:…@host/db'
-    >>> redact("curl -u admin:hunter2 https://x")
-    'curl -u admin:… https://x'
-    >>> redact("mysql -uroot -phunter2 db; mkdir -p out")
-    'mysql -uroot -p… db; mkdir -p out'
-    >>> redact("SECRET_KEY = abc")
-    'SECRET_KEY=…'
-    >>> redact("echo ghp_" + "a" * 36 + " | gh auth login --with-token")
-    'echo … | gh auth login --with-token'
+
+def redact_text(text: str) -> str:
+    """Mask credentials that are unambiguous even in prose.
+
+    Token shapes, private key blocks, URL passwords, and a password or key
+    given after a colon or equals sign.
+
+    >>> redact_text("push with ghp_" + "a" * 36 + " please")
+    'push with … please'
+    >>> redact_text("the password: hunter2 expired")
+    'the password: … expired'
+    >>> redact_text("db at postgres://u:pw987@host/db")
+    'db at postgres://u:…@host/db'
+    >>> redact_text("all 12 tests pass: yes, rotate the token: 24h expiry")
+    'all 12 tests pass: yes, rotate the token: 24h expiry'
     """
-    for pattern, replacement in _REDACTIONS:
+    for pattern, replacement in _TEXT_REDACTIONS:
         text = pattern.sub(replacement, text)
-    return text
+    return _URL_USERINFO.sub(_mask_userinfo, text)
+
+
+def redact_command(command: str) -> str:
+    """Mask credentials in a shell command, then anything ``redact_text`` masks.
+
+    Assigned values of credential-named variables, credential flags and
+    headers, client passwords (curl, wget, mysql, registry logins, sshpass,
+    redis-cli), URL passwords, and token shapes.
+
+    >>> redact_command('GH_TOKEN=abc123 gh pr list')
+    'GH_TOKEN=… gh pr list'
+    >>> redact_command('export TOKEN="abc def" && run')
+    'export TOKEN=… && run'
+    >>> redact_command('curl -H "X-API-Key: abc123" -u admin:hunter2 https://x')
+    'curl -H "X-API-Key: …" -u admin:… https://x'
+    >>> redact_command("docker login -u bob -p hunter2 reg")
+    'docker login -u bob -p … reg'
+    >>> redact_command("git clone https://ghp_" + "a" * 36 + "@github.com/o/r")
+    'git clone https://…@github.com/o/r'
+    >>> redact_command("docker run -p 8080:80 -u node:node --max-tokens=5 img")
+    'docker run -p 8080:80 -u node:node --max-tokens=5 img'
+    """
+    for pattern, replacement in _COMMAND_REDACTIONS:
+        command = pattern.sub(replacement, command)
+    return redact_text(command)
 
 
 def is_human_prompt(store: str, text: str) -> bool:
@@ -743,10 +788,10 @@ def cmd_shell(
         text = (unmetafy(raw) if kind == "zsh" else raw).decode("utf-8", "replace")
         entries = parsers[kind](text)
         kept = attribute(entries, repo_paths)
-        heads = collections.Counter(command_head(redact(c)) for _, c in kept)
+        heads = collections.Counter(command_head(redact_command(c)) for _, c in kept)
         samples: list[str] = []
         for _, command in reversed(kept):
-            line = redact(command.split("\n")[0])[:160]
+            line = redact_command(command.split("\n")[0])[:160]
             if line not in samples:
                 samples.append(line)
             if len(samples) >= top_n:
@@ -874,7 +919,7 @@ def cmd_transcripts(path: Path, limit: int, keep: list[str] | None = None) -> Tr
                         "date": stamp[:10],
                         "agent": agent,
                         "cwd": cwd,
-                        "text": redact(text).replace("\n", " ⏎ ")[:300],
+                        "text": redact_text(text).replace("\n", " ⏎ ")[:300],
                     }
     by_cwd: list[CwdRow] = [
         {
