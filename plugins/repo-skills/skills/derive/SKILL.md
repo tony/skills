@@ -243,11 +243,12 @@ Reply in this shape, as plain text outside any code fence, with plain
 bullets, no bold, and no local paths:
 
 ```text
-3 skills on site-skills, 2 skipped
+2 skills on site-skills, 1 skipped
 
 ## Skills
 
 - site-gates: the gate order, CI against local, and measuring a failure on the trunk; its baseline trusted a doc's list of failing gates.
+- site-deps: the release cooldown, held packages, and bumps measured by unchanged output; its baseline bumped a release still inside the cooldown.
 
 ## Skipped
 
@@ -260,4 +261,6 @@ bullets, no bold, and no local paths:
 ## Verification
 
 - site-gates: the baseline missed the generated file a fresh checkout needs; with the skill it ran the generator first, in one round.
+- site-deps: the baseline took a two-day-old release; with the skill it reported the release as gated, in two rounds.
+- The link resolves every skill through `.claude/skills`.
 ```
