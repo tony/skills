@@ -3,6 +3,7 @@ name: repo-skills-derive
 description: >-
   Use when creating project-specific agent skills for a codebase or repo
   from its docs, git history, and transcripts, or setting up .agents/skills.
+disable-model-invocation: true
 allowed-tools: ["Bash", "Read", "Grep", "Glob", "Edit", "Write", "Agent", "AskUserQuestion"]
 metadata:
   argument-hint: "[<repo path>] [--prefix <name>] [--since <date>] [--no-transcripts] [--no-shell-history] [--dry-run]"

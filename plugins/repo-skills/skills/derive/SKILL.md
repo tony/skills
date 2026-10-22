@@ -3,6 +3,7 @@ name: derive
 description: "Use when creating project-specific agent skills for a codebase or repo from its docs, git history, and transcripts, or setting up .agents/skills."
 allowed-tools: ["Bash", "Read", "Grep", "Glob", "Edit", "Write", "Agent", "AskUserQuestion"]
 argument-hint: "[<repo path>] [--prefix <name>] [--since <date>] [--no-transcripts] [--no-shell-history] [--dry-run]"
+disable-model-invocation: true
 ---
 
 # `/repo-skills:derive`

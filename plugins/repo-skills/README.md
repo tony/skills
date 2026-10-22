@@ -48,8 +48,10 @@ itself, then commit the skills and the `.claude/skills` link:
 /repo-skills:derive [<repo path>] [--prefix <name>] [--since <date>]
 ```
 
-`--dry-run` stops after the plan. `--no-transcripts` and
-`--no-shell-history` skip those sources.
+It runs only when invoked by name, since it reads every local AI
+transcript and the shell history and then commits. `--dry-run` stops
+after the plan. `--no-transcripts` and `--no-shell-history` skip those
+sources.
 
 ## What it writes
 
