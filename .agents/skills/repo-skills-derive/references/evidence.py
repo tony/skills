@@ -106,7 +106,7 @@ _NESTED_DEPTH = 3
 _PROMPT_MAX_CHARS = 1500
 _PROMPT_MAX_LINES = 12
 _MERGES_CHECKED = 50
-_MERGE_PARENTS = 2
+_PR_NUMBER = re.compile(r"\(#\d+\)$")
 
 
 class UsageError(Exception):
@@ -130,6 +130,7 @@ class GitReport(t.TypedDict):
     since: str
     commits: int
     first_parent_direct: int
+    direct_numbered: int
     first_parent_merges: int
     merges_checked: int
     merges_semi_linear: int
@@ -564,17 +565,21 @@ def cmd_git(repo: Path, since: str, top_n: int) -> GitReport:
     window = [f"--since={since}", trunk]
     subjects = _git(top, "log", "--no-merges", "--format=%s", *window).splitlines()
     heads = collections.Counter(subject_head(s) for s in subjects)
-    direct = _git(top, "rev-list", "--count", "--first-parent", "--no-merges", *window).strip()
-    merges = _git(top, "rev-list", "--first-parent", "--merges", *window).split()
+    direct = 0
+    direct_numbered = 0
+    merges: list[tuple[list[str], str]] = []
+    for line in _git(top, "log", "--first-parent", "--format=%P%x00%s", *window).splitlines():
+        parents, _, subject = line.partition("\x00")
+        if len(parents.split()) > 1:
+            merges.append((parents.split(), subject))
+        else:
+            direct += 1
+            direct_numbered += bool(_PR_NUMBER.search(subject))
     semi_linear = 0
-    numbered = 0
-    for sha in merges[:_MERGES_CHECKED]:
-        parents = _git(top, "rev-list", "--parents", "-n", "1", sha).split()[1:]
-        if len(parents) == _MERGE_PARENTS:
-            base = _git(top, "merge-base", parents[0], parents[1], check=False).strip()
-            semi_linear += base == parents[0]
-        subject = _git(top, "log", "-1", "--format=%s", sha).strip()
-        numbered += bool(re.search(r"\(#\d+\)$", subject))
+    for parents, _ in merges[:_MERGES_CHECKED]:
+        base = _git(top, "merge-base", parents[0], parents[1], check=False).strip()
+        semi_linear += base == parents[0]
+    numbered = sum(bool(_PR_NUMBER.search(subject)) for _, subject in merges)
     changed = _git(top, "log", "--no-merges", "--name-only", "--format=", *window).splitlines()
     buckets = collections.Counter(path_bucket(p) for p in changed if p)
     agent_log = _git(
@@ -584,7 +589,8 @@ def cmd_git(repo: Path, since: str, top_n: int) -> GitReport:
         "trunk": trunk,
         "since": since,
         "commits": len(subjects),
-        "first_parent_direct": int(direct or 0),
+        "first_parent_direct": direct,
+        "direct_numbered": direct_numbered,
         "first_parent_merges": len(merges),
         "merges_checked": min(len(merges), _MERGES_CHECKED),
         "merges_semi_linear": semi_linear,

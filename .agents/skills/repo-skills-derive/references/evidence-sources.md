@@ -43,6 +43,9 @@ the exit code is the fact. A command that writes (a formatter without
   dominates (dependency bumps, a config file prefix) is a category.
 - `first_parent_direct` against `first_parent_merges`: what lands on the
   trunk directly and what goes through pull requests.
+- `direct_numbered`: direct commits whose subject ends in `(#N)`. A
+  squash or rebase merge leaves these instead of a merge commit, so when
+  they outnumber merges, pull requests land squashed or rebased.
 - `merges_semi_linear` and `merges_numbered`: whether branches are
   rebased before a merge commit, and whether the merge subject carries
   `(#N)`.

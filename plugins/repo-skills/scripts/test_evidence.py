@@ -306,3 +306,19 @@ def test_transcript_prompts_are_redacted(tmp_path: Path) -> None:
 
     assert token not in json.dumps(report)
     assert report["prompts"][0]["text"] == "use … to push"
+
+
+@pytest.mark.integration(reason="executes native Git repository queries")
+def test_git_summary_counts_squash_merged_pull_requests(tmp_path: Path) -> None:
+    """Numbered direct commits show a squash or rebase flow, not direct pushes."""
+    repo = _repo(tmp_path / "site")
+    for number in (2, 3, 4):
+        (repo / f"f{number}").write_text("x\n", encoding="utf-8")
+        _git(repo, "add", ".")
+        _git(repo, "commit", "-q", "-m", f"feat(a) step {number} (#{number})")
+
+    report = evidence.cmd_git(repo, since="10 years ago", top_n=5)
+
+    assert report["first_parent_direct"] == 4
+    assert report["direct_numbered"] == 3
+    assert report["first_parent_merges"] == 0
