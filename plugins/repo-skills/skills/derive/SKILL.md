@@ -151,7 +151,8 @@ $ git -C <root> switch -c <prefix>-skills
 
 Before writing a skill, run its baseline per
 `../../references/testing-skills.md`: one realistic task, a sub-agent
-without the skill, a written record of what it got wrong. A category
+without the skill, a written record of what it got wrong. The record
+feeds the report and commit 1, never the repository's skills. A category
 whose baseline gets everything right needs no skill; drop it and say so.
 
 ## Phase 5: Write the skills
