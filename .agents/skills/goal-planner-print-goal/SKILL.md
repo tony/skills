@@ -202,9 +202,8 @@ Write it per `references/prose-rules.md`. In this order:
 5. `## Modules`: each module on or off, with a few words of reason.
 6. `## Lint`: warnings left standing, each with its reason, or "clean".
 7. Ask with `ask-user-choice`: print the other host's version, toggle a
-   module, tighten further, or stop. In Codex, also offer to set the goal
-   now; `create_goal` runs only after an explicit yes. Without a question tool,
-   print the options as a plain list and stop.
+   module, tighten further, or stop. Without a question tool, print the
+   options as a plain list and stop.
 
 A halted run prints one sentence naming the halt, then what the user must do.
 

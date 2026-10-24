@@ -396,7 +396,7 @@
         "references/verification-gates.md": "plugins/goal-planner/references/verification-gates.md",
         "templates/profile.md": "plugins/goal-planner/templates/profile.md"
       },
-      "bytes": 81100
+      "bytes": 81008
     },
     {
       "name": "goal-planner-recover-goal",
