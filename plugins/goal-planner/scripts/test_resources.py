@@ -168,13 +168,50 @@ def test_sample_returns_command_exit_code() -> None:
     assert code == CHILD_EXIT
 
 
-def test_register_merges_roots(tmp_path: pathlib.Path) -> None:
+def _registered(
+    manifest: pathlib.Path, capsys: pytest.CaptureFixture[str], *roots: pathlib.Path
+) -> list[str]:
+    """Register roots through the CLI and return every root the manifest holds."""
+    assert resources.main(["register", "--manifest", str(manifest), *map(str, roots)]) == 0
+    return t.cast("list[str]", json.loads(capsys.readouterr().out)["roots"])
+
+
+def test_register_merges_roots(tmp_path: pathlib.Path, capsys: pytest.CaptureFixture[str]) -> None:
     """Registering roots twice keeps one entry per root."""
     manifest = tmp_path / "owned.json"
     resources.register(manifest, [tmp_path / "a"])
-    resources.register(manifest, [tmp_path / "a", tmp_path / "b"])
-    roots = t.cast("dict[str, list[str]]", json.loads(manifest.read_text(encoding="utf-8")))
-    assert roots["roots"] == [str(tmp_path / "a"), str(tmp_path / "b")]
+    roots = _registered(manifest, capsys, tmp_path / "a", tmp_path / "b")
+    assert roots == [str(tmp_path / "a"), str(tmp_path / "b")]
+
+
+def test_register_keeps_a_root_another_goal_added_meanwhile(
+    tmp_path: pathlib.Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """A goal that read the manifest before another registered keeps the other's root."""
+    manifest = tmp_path / "owned.json"
+    resources.register(manifest, [tmp_path / "a"])
+    stale = [str(tmp_path / "a")]
+    resources.register(manifest, [tmp_path / "b"])
+
+    def read_before_b(_manifest: pathlib.Path) -> list[str]:
+        return stale
+
+    with monkeypatch.context() as patch:
+        patch.setattr(resources, "_roots", read_before_b)
+        resources.register(manifest, [tmp_path / "c"])
+    assert _registered(manifest, capsys, tmp_path / "a") == [str(tmp_path / n) for n in "abc"]
+
+
+def test_register_survives_a_manifest_cut_short(
+    tmp_path: pathlib.Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """A crash mid-write loses the entry it was writing, not the manifest."""
+    manifest = tmp_path / "owned.json"
+    resources.register(manifest, [tmp_path / "a"])
+    with manifest.open("a", encoding="utf-8") as handle:
+        _ = handle.write(f'"{tmp_path / "half"}')
+    roots = _registered(manifest, capsys, tmp_path / "b")
+    assert roots == [str(tmp_path / "a"), str(tmp_path / "b")]
 
 
 def _git(repo: pathlib.Path, *args: str) -> None:

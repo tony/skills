@@ -301,21 +301,35 @@ def sample(command: list[str], interval: float) -> tuple[int, dict[str, object]]
 
 
 def _roots(manifest: Path) -> list[str]:
+    """Read the registered roots in order, once each, skipping a line cut short."""
     if not manifest.is_file():
         return []
-    data = t.cast("dict[str, list[str]]", json.loads(manifest.read_text(encoding="utf-8")))
-    return list(data.get("roots", []))
+    roots: list[str] = []
+    for line in manifest.read_text(encoding="utf-8", errors="replace").splitlines():
+        try:
+            root = t.cast("object", json.loads(line))
+        except ValueError:
+            continue
+        if isinstance(root, str) and root not in roots:
+            roots.append(root)
+    return roots
 
 
 def register(manifest: Path, roots: list[Path]) -> None:
-    """Record worktrees a goal owns, keeping one entry per resolved root."""
+    """Append each worktree a goal owns to the manifest, one JSON string per line.
+
+    Appending never rewrites another goal's entry, so goals registering at
+    once keep every root.
+    """
     known = _roots(manifest)
-    for root in roots:
-        path = str(root.resolve())
-        if path not in known:
-            known.append(path)
+    new = [p for p in dict.fromkeys(str(r.resolve()) for r in roots) if p not in known]
+    if not new:
+        return
     manifest.parent.mkdir(parents=True, exist_ok=True)
-    _ = manifest.write_text(json.dumps({"roots": known}, indent=2) + "\n", encoding="utf-8")
+    tail = manifest.read_bytes()[-1:] if manifest.is_file() else b""
+    lead = "\n" if tail not in {b"", b"\n"} else ""
+    with manifest.open("a", encoding="utf-8") as handle:
+        _ = handle.write(lead + "".join(f"{json.dumps(p)}\n" for p in new))
 
 
 def _walk_owned(manifest: Path) -> tuple[list[Path], list[Path]]:
