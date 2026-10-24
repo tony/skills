@@ -421,7 +421,7 @@
         "references/resources.md": "plugins/goal-planner/references/resources.md",
         "references/resources.py": "plugins/goal-planner/scripts/resources.py"
       },
-      "bytes": 29319
+      "bytes": 29808
     },
     {
       "name": "goal-planner-setup",

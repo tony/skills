@@ -59,11 +59,12 @@ class Reserves:
 
 
 class Usage(t.NamedTuple):
-    """CPU time and peak RSS of the children this process has waited for."""
+    """CPU time and peak RSS of the children this process waited for, and its own peak."""
 
     user: float
     system: float
     peak_kib: int
+    own_peak_kib: int
 
 
 class Args(argparse.Namespace):
@@ -254,16 +255,17 @@ def _children_usage() -> Usage | None:
     except ImportError:
         return None
     usage = resource.getrusage(resource.RUSAGE_CHILDREN)
-    # ru_maxrss is KiB on Linux and bytes on macOS.
-    peak = usage.ru_maxrss // 1024 if sys.platform == "darwin" else usage.ru_maxrss
-    return Usage(usage.ru_utime, usage.ru_stime, peak)
+    own = resource.getrusage(resource.RUSAGE_SELF)
+    scale = 1024 if sys.platform == "darwin" else 1  # ru_maxrss is bytes on macOS, KiB on Linux
+    return Usage(usage.ru_utime, usage.ru_stime, usage.ru_maxrss // scale, own.ru_maxrss // scale)
 
 
 def sample(command: list[str], interval: float) -> tuple[int, dict[str, object]]:
     """Run a command and report its time and peak memory.
 
-    The peak is the larger of the polled process-tree RSS and the largest single
-    child ``getrusage`` reports.
+    The peak is the polled process-tree RSS, raised to the children's
+    ``getrusage`` peak when that peak is the command's own; None when neither
+    caught the command.
     """
     paths = [Path.cwd()]
     before = snapshot(paths)
@@ -282,15 +284,17 @@ def sample(command: list[str], interval: float) -> tuple[int, dict[str, object]]
     after = _children_usage()
     user = system = None
     if usage is not None and after is not None:
-        # getrusage catches a child that exited between polls.
-        peak = max(peak, after.peak_kib)
+        # A Linux child starts from this interpreter's footprint, so only a peak above
+        # that and above earlier children's is the command's own.
+        if after.peak_kib > max(usage.peak_kib, after.own_peak_kib):
+            peak = max(peak, after.peak_kib)
         user, system = round(after.user - usage.user, 3), round(after.system - usage.system, 3)
     return code, {
         "exit": code,
         "wall_seconds": round(wall, 3),
         "user_seconds": user,
         "system_seconds": system,
-        "max_rss_mib": round(peak / 1024, 1),
+        "max_rss_mib": round(peak / 1024, 1) if peak else None,
         "before": before,
         "after": snapshot(paths),
     }

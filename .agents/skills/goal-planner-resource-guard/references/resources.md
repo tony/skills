@@ -39,7 +39,9 @@ $ python3 <resources.py> sample \
 ```
 
 It reports wall time, user and system CPU time, and the peak RSS of the
-command's process tree, and exits with the command's own status.
+command's process tree, and exits with the command's own status. The peak is
+null when the command exited between polls without outgrowing the sampler's
+own footprint, which a child inherits on Linux: it stayed below that.
 
 ## On a breach
 

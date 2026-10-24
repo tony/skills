@@ -20,6 +20,7 @@ if t.TYPE_CHECKING:
 GIB = 2**30
 CHILD_EXIT = 3
 PEAK_FLOOR_MIB = 90
+TINY_MIB = 8
 
 
 def _fake_proc(root: pathlib.Path, *, pressure: bool = True) -> pathlib.Path:
@@ -231,12 +232,28 @@ def test_clean_refuses_a_root_that_is_not_a_worktree(tmp_path: pathlib.Path) -> 
     assert any("not a git worktree" in r for r in result["refused"])
 
 
-def test_sample_reports_peak_rss_of_a_short_child(capsys: pytest.CaptureFixture[str]) -> None:
+def _sample_peak_mib(*command: str) -> float | None:
+    """Sample a command from a fresh interpreter, whose own footprint is small."""
+    script = str(Path(resources.__file__))
+    out = subprocess.run(
+        [sys.executable, script, "sample", "--interval", "5", "--", *command],
+        capture_output=True,
+        text=True,
+        check=True,
+    ).stdout
+    return t.cast("float | None", json.loads(out)["max_rss_mib"])
+
+
+def test_sample_reports_peak_rss_of_a_short_child() -> None:
     """A child that exits between polls still reports its peak from getrusage."""
     script = "b = bytearray(96 * 2**20); b[::4096] = b'x' * len(b[::4096])"
-    assert resources.main(["sample", "--interval", "5", "--", sys.executable, "-c", script]) == 0
-    report = t.cast("dict[str, object]", json.loads(capsys.readouterr().out))
-    assert t.cast("float", report["max_rss_mib"]) >= PEAK_FLOOR_MIB
+    assert (_sample_peak_mib(sys.executable, "-c", script) or 0) >= PEAK_FLOOR_MIB
+
+
+def test_sample_ignores_the_footprint_a_child_inherits() -> None:
+    """A tiny command does not report the sampler's own memory as its peak."""
+    peak = _sample_peak_mib("true")
+    assert peak is None or peak < TINY_MIB
 
 
 def test_inodes_count_only_when_reported() -> None:
