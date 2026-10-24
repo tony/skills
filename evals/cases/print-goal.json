@@ -1,0 +1,33 @@
+{
+  "skill_name": "print-goal",
+  "trigger": {
+    "positive": [
+      {
+        "prompt": "print a goal <4000 characters to address all issues found above",
+        "top_k": 1
+      },
+      {
+        "prompt": "write a goal under 4000 chars to refactor it for DX",
+        "top_k": 2
+      },
+      {
+        "prompt": "reword this to be under 4000 chars and print the goal",
+        "top_k": 2
+      },
+      {
+        "prompt": "print an addendum to the goal about testing in a sandbox",
+        "top_k": 2
+      }
+    ],
+    "negative": [
+      {
+        "prompt": "print the original goal again, i lost it",
+        "owner": "recover-goal"
+      },
+      {
+        "prompt": "make a new goal based on our prior goals",
+        "owner": "synthesize-goal"
+      }
+    ]
+  }
+}

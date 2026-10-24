@@ -58,6 +58,7 @@ changes, and `respond` to screen review feedback.
 | [action](plugins/action/) | Convert tickets to branches in isolated worktrees. Uses team branch conventions, lands gated commits, and supports parallel tickets. |
 | [ticket](plugins/ticket/) | Manage work across trackers (Linear, Jira, GitHub, etc.) respecting each platform's native object graph. Drafts durable tickets focused on invariants. |
 | [spike](plugins/spike/) | Run no-commit spikes, strategy bakeoffs, or multi-round convergence in git worktrees. Tests ideas against quality gates and returns a commit-by-commit implementation plan. |
+| [goal-planner](plugins/goal-planner/) | Print, synthesize, and recover /goal prompts for Claude Code and Codex, save each revision as a numbered goal and objective, and guard CPU, memory, and disk while a goal runs. |
 
 ### Writing and verification
 

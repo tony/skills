@@ -1,0 +1,25 @@
+{
+  "skill_name": "recover-goal",
+  "trigger": {
+    "positive": [
+      {
+        "prompt": "print the goal we had before this, i lost it",
+        "top_k": 1
+      },
+      {
+        "prompt": "print the original goal",
+        "top_k": 2
+      },
+      {
+        "prompt": "print the current goal again verbatim",
+        "top_k": 2
+      }
+    ],
+    "negative": [
+      {
+        "prompt": "print a goal under 4000 characters for the remaining PRs",
+        "owner": "print-goal"
+      }
+    ]
+  }
+}

@@ -368,6 +368,48 @@
       "bytes": 96671
     },
     {
+      "name": "goal-planner-print-goal",
+      "sources": [
+        "plugins/goal-planner/skills/print-goal/SKILL.md"
+      ],
+      "bundled": {
+        "references/anatomy.md": "plugins/goal-planner/references/anatomy.md",
+        "references/goal.py": "plugins/goal-planner/scripts/goal.py",
+        "references/hosts.md": "plugins/goal-planner/references/hosts.md",
+        "references/modules.md": "plugins/goal-planner/references/modules.md",
+        "references/prose-rules.md": "plugins/goal-planner/references/prose-rules.md",
+        "references/verification-gates.md": "plugins/goal-planner/references/verification-gates.md",
+        "templates/profile.md": "plugins/goal-planner/templates/profile.md"
+      },
+      "bytes": 62527
+    },
+    {
+      "name": "goal-planner-recover-goal",
+      "sources": [
+        "plugins/goal-planner/skills/recover-goal/SKILL.md"
+      ],
+      "bundled": {
+        "references/goal.py": "plugins/goal-planner/scripts/goal.py",
+        "references/history.md": "plugins/goal-planner/references/history.md",
+        "references/prose-rules.md": "plugins/goal-planner/references/prose-rules.md"
+      },
+      "bytes": 39704
+    },
+    {
+      "name": "goal-planner-synthesize-goal",
+      "sources": [
+        "plugins/goal-planner/skills/synthesize-goal/SKILL.md"
+      ],
+      "bundled": {
+        "references/anatomy.md": "plugins/goal-planner/references/anatomy.md",
+        "references/goal.py": "plugins/goal-planner/scripts/goal.py",
+        "references/history.md": "plugins/goal-planner/references/history.md",
+        "references/lineage.md": "plugins/goal-planner/references/lineage.md",
+        "references/prose-rules.md": "plugins/goal-planner/references/prose-rules.md"
+      },
+      "bytes": 45870
+    },
+    {
       "name": "lean-tighten",
       "sources": [
         "plugins/lean/skills/tighten/SKILL.md"
@@ -1633,6 +1675,8 @@
     "plugins/github-actions/references/prose-rules.md": 3,
     "plugins/github-actions/scripts/fleet.py": 3,
     "plugins/github-actions/scripts/pins.py": 3,
+    "plugins/goal-planner/references/prose-rules.md": 3,
+    "plugins/goal-planner/scripts/goal.py": 3,
     "plugins/lean/references/handoff.md": 3,
     "plugins/lean/references/prose-rules.md": 3,
     "plugins/model-cli/references/dispatch.md": 3,
@@ -1686,6 +1730,8 @@
     "plugins/git-branch/scripts/branch_gate.py": 2,
     "plugins/git-branch/scripts/rebase-todo.sh": 2,
     "plugins/github-actions/references/throwaway-worktree.md": 2,
+    "plugins/goal-planner/references/anatomy.md": 2,
+    "plugins/goal-planner/references/history.md": 2,
     "plugins/lean/references/comment-policy.md": 2,
     "plugins/lean/references/lean-rubric.md": 2,
     "plugins/lean/scripts/scope.py": 2,
@@ -1753,6 +1799,11 @@
     "plugins/gh/references/registry-links.md": 1,
     "plugins/gh/references/security-path.md": 1,
     "plugins/git-branch/references/rebuild-contract.md": 1,
+    "plugins/goal-planner/references/hosts.md": 1,
+    "plugins/goal-planner/references/lineage.md": 1,
+    "plugins/goal-planner/references/modules.md": 1,
+    "plugins/goal-planner/references/verification-gates.md": 1,
+    "plugins/goal-planner/templates/profile.md": 1,
     "plugins/lean/scripts/tally.py": 1,
     "plugins/package-updater/references/throwaway-worktree.md": 1,
     "plugins/pytest-optimizer/templates/commit-message.tmpl": 1,
@@ -1923,7 +1974,12 @@
       "self-improvement-apply",
       "self-improvement-sweep"
     ],
+    "/goal-planner:resource-guard": [
+      "goal-planner-print-goal",
+      "goal-planner-synthesize-goal"
+    ],
     "/plugin:skill": [
+      "goal-planner-print-goal",
       "self-improvement-apply",
       "self-improvement-sweep"
     ]

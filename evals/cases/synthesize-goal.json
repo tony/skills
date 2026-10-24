@@ -1,0 +1,25 @@
+{
+  "skill_name": "synthesize-goal",
+  "trigger": {
+    "positive": [
+      {
+        "prompt": "make a goal based on our prior goals",
+        "top_k": 1
+      },
+      {
+        "prompt": "synthesize our current goal against that goal",
+        "top_k": 2
+      },
+      {
+        "prompt": "read our earlier goal in full and its groups, make a new goal based on that",
+        "top_k": 2
+      }
+    ],
+    "negative": [
+      {
+        "prompt": "print a goal under 4000 characters to fix the failing tests",
+        "owner": "print-goal"
+      }
+    ]
+  }
+}

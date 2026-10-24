@@ -246,6 +246,26 @@
       "license": "MIT"
     },
     {
+      "name": "goal-planner",
+      "description": "Print, synthesize, and recover /goal prompts for Claude Code and Codex, save each revision as a numbered goal and objective, and guard CPU, memory, and disk while a goal runs.",
+      "version": "0.1.0",
+      "author": {
+        "name": "Tony Narlock",
+        "email": "tony@git-pull.com"
+      },
+      "source": "./plugins/goal-planner",
+      "category": "productivity",
+      "tags": [
+        "goal",
+        "planning",
+        "claude-code",
+        "codex",
+        "prompt-history"
+      ],
+      "homepage": "https://github.com/tony/skills/tree/main/plugins/goal-planner",
+      "license": "MIT"
+    },
+    {
       "name": "action",
       "description": "Convert tickets to branches in isolated worktrees. Uses team branch conventions, lands gated commits, and supports parallel tickets.",
       "version": "0.1.1",
