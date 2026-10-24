@@ -78,6 +78,28 @@ prompt history:
 /goal-planner:recover-goal [current|previous|original|latest]
 ```
 
+Watch CPU, memory, free disk, and inodes during a goal, print a line its
+evaluator can read, and clean only the build artifacts of worktrees the goal
+created:
+
+```text
+/goal-planner:resource-guard [check|sample|register|clean]
+```
+
+Mine prompt history for guardrails you keep retyping and propose them as
+profile entries. Invoked by name only, since it edits your defaults:
+
+```text
+/goal-planner:harvest
+```
+
+Create or link this machine's profile and resolve its Documents root and
+research paths. Invoked by name only:
+
+```text
+/goal-planner:setup [--from <synced profile>]
+```
+
 Each skill's flags are under `$ARGUMENTS contract` in its
 `skills/<name>/SKILL.md`.
 
@@ -91,14 +113,16 @@ Each skill's flags are under `$ARGUMENTS contract` in its
 - `references/ledger.md`: where goals live and how they are numbered.
 - `references/lineage.md`: how earlier goals carry into a new one.
 - `references/history.md`: reading earlier goals from local prompt history.
+- `references/resources.md`: the reserves and what a goal may clean.
 - `templates/profile.md`: the profile that holds your defaults, at
   `~/.config/goal-planner/profile.md`.
 
 ## Scripts
 
-`scripts/goal.py` measures, lints, saves, lists, and finds goals:
-`measure`, `catalog`, `lint`, `ledger root|next|save|list`, and `find`. It
-needs only the standard library.
+`scripts/goal.py` measures, lints, saves, lists, finds, and harvests goals:
+`measure`, `catalog`, `lint`, `ledger root|next|save|list`, `find`, and
+`harvest`. `scripts/resources.py` runs `check`, `sample`, `register`, and
+`clean`. Both need only the standard library.
 
 ## Prerequisites
 

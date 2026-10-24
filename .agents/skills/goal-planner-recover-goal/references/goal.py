@@ -6,6 +6,7 @@ installed on this machine with their gating. ``lint`` checks a goal against the
 host's rules and that catalog. ``ledger`` resolves the Documents root and saves
 or lists numbered goals and objectives. ``find`` gathers earlier goals from the
 ledger, Codex's goal database and spill files, and a prompt-history export.
+``harvest`` counts the sentences retyped across goal prompts in that export.
 
 Run ``goal.py <command> --help`` for each command.
 """
@@ -20,7 +21,7 @@ import re
 import sqlite3
 import sys
 import typing as t
-from datetime import date, datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 
 if t.TYPE_CHECKING:
@@ -53,6 +54,13 @@ WINDOWS_USERS = Path("/mnt/c/Users")
 SERVICE_PROFILES = frozenset(
     {"All Users", "Default", "Default User", "Public", "WDAGUtilityAccount", "defaultuser0"}
 )
+GOAL_REQUEST_RE = re.compile(
+    r"\b(?:print|draft|write|make|reword|synthesi[sz]e)\b.{0,40}\b(?:goals?|/goal)\b",
+    re.IGNORECASE | re.DOTALL,
+)
+SENTENCE_SPLIT_RE = re.compile(r"(?<=[.!?])\s+|\n+")
+MIN_SENTENCE = 50
+"""Shorter fragments recur by accident; a retyped guardrail is a full sentence."""
 POINTER_RE = re.compile(r"^Read the Codex goal objective file at (.+) before continuing\.$")
 """Codex's TUI stores this pointer in place of an objective it spilled to a file."""
 
@@ -98,6 +106,10 @@ class Args(argparse.Namespace):
     codex_home: str | None = None
     history: str | None = None
     limit: int = 20
+    min_count: int = 5
+    min_projects: int = 2
+    days: int = 30
+    today: str | None = None
 
 
 def parse_frontmatter(text: str) -> dict[str, str]:
@@ -574,6 +586,68 @@ def find_goals(
     return hits
 
 
+def harvest(
+    history: Path,
+    *,
+    min_count: int = 5,
+    min_projects: int = 2,
+    days: int = 30,
+    today: date | None = None,
+) -> list[dict[str, object]]:
+    """Count sentences retyped across goal prompts, keeping those that clear the bar.
+
+    A sentence counts once per prompt. It is kept when it appears in at least
+    ``min_count`` prompts from at least ``min_projects`` working directories,
+    the latest within ``days`` of ``today``. Codex records carry no working
+    directory, so a Codex-only sentence never clears the project bar.
+    """
+    counts: dict[str, int] = {}
+    projects: dict[str, set[str]] = {}
+    hosts: dict[str, set[str]] = {}
+    last: dict[str, str] = {}
+    for line in history.read_text(encoding="utf-8", errors="replace").splitlines():
+        if not line.startswith("{"):
+            continue
+        record = t.cast("dict[str, object]", json.loads(line))
+        text = str(record.get("text", "")).strip()
+        if record.get("kind") != "prompt":
+            continue
+        if not (text.startswith("/goal") or GOAL_REQUEST_RE.search(text)):
+            continue
+        origin = t.cast("dict[str, object]", record.get("origin") or {})
+        where = str(origin.get("cwd") or "")
+        day = str(record.get("timestamp") or "")[:10]
+        body = text[len("/goal") :].strip() if text.startswith("/goal") else text
+        parts = {
+            part.strip().lower()
+            for part in SENTENCE_SPLIT_RE.split(body)
+            if len(part.strip()) >= MIN_SENTENCE
+        }
+        for sentence in parts:
+            counts[sentence] = counts.get(sentence, 0) + 1
+            if where:
+                projects.setdefault(sentence, set()).add(where)
+            hosts.setdefault(sentence, set()).add(str(record.get("agent", "")))
+            last[sentence] = max(last.get(sentence, ""), day)
+    since = ((today or _local_today()) - timedelta(days=days)).isoformat()
+    kept: list[dict[str, object]] = [
+        {
+            "sentence": sentence,
+            "count": count,
+            "projects": len(projects.get(sentence, set())),
+            "last_seen": last[sentence],
+            "hosts": sorted(hosts[sentence]),
+            "skills": sorted({m.group(2) for m in SKILL_TOKEN_RE.finditer(sentence)}),
+        }
+        for sentence, count in counts.items()
+        if count >= min_count
+        and len(projects.get(sentence, set())) >= min_projects
+        and last[sentence] >= since
+    ]
+    kept.sort(key=lambda row: (-t.cast("int", row["count"]), str(row["sentence"])))
+    return kept
+
+
 def _ledger_root(args: Args) -> Path:
     env = dict(os.environ)
     return resolve_root(args.root, env, default_profile(env))[0]
@@ -649,7 +723,21 @@ def _cmd_find(args: Args) -> int:
     return 0
 
 
+def _cmd_harvest(args: Args) -> int:
+    today = date.fromisoformat(args.today) if args.today else None
+    found = harvest(
+        Path(args.history or ""),
+        min_count=args.min_count,
+        min_projects=args.min_projects,
+        days=args.days,
+        today=today,
+    )
+    print(json.dumps(found, indent=2))
+    return 0
+
+
 COMMANDS = {
+    "harvest": _cmd_harvest,
     "measure": _cmd_measure,
     "catalog": _cmd_catalog,
     "lint": _cmd_lint,
@@ -711,6 +799,13 @@ def build_parser() -> argparse.ArgumentParser:
     _ = find.add_argument("--codex-home", help="default $CODEX_HOME or ~/.codex")
     _ = find.add_argument("--history", help="agentgrep NDJSON export of prompt history")
     _ = find.add_argument("--limit", type=int, default=20)
+
+    harvester = sub.add_parser("harvest", help="count guardrail sentences retyped into goals")
+    _ = harvester.add_argument("--history", required=True, help="agentgrep NDJSON export")
+    _ = harvester.add_argument("--min-count", type=int, default=5)
+    _ = harvester.add_argument("--min-projects", type=int, default=2)
+    _ = harvester.add_argument("--days", type=int, default=30)
+    _ = harvester.add_argument("--today", help="YYYY-MM-DD; default today")
     return parser
 
 

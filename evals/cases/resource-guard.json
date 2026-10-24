@@ -1,0 +1,25 @@
+{
+  "skill_name": "resource-guard",
+  "trigger": {
+    "positive": [
+      {
+        "prompt": "watch cpu, memory and free disk space while this builds",
+        "top_k": 1
+      },
+      {
+        "prompt": "keep an eye on memory and cpu during the goal",
+        "top_k": 2
+      },
+      {
+        "prompt": "clean up the build artifacts this goal made to save space",
+        "top_k": 2
+      }
+    ],
+    "negative": [
+      {
+        "prompt": "my disk is full, what is eating all the space",
+        "owner": "disk"
+      }
+    ]
+  }
+}

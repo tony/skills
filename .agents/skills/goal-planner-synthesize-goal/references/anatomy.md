@@ -83,7 +83,7 @@ Authority: one commit per finding in the project's commit style. Never push, ope
 
 Method: spike-ratchet any finding whose fix is uncertain. Before calling a convention accidental, check `git log -S` and prompt history. Use subagents only for independent findings.
 
-Guardrails: no test or comment bloat; test behavior, not implementation. Run /goal-planner:resource-guard before each build; below the reserves, halve parallelism and clean only this goal's artifacts.
+Guardrails: no test or comment bloat; test behavior, not implementation. Run goal-planner-resource-guard before each build; below the reserves, halve parallelism and clean only this goal's artifacts.
 
 Done when, printed in this conversation: (1) the objective's task table with PASS and the commit SHA for every key; (2) the AGENTS.md gates with exit 0 after the last commit; (3) `git status -sb` clean; (4) the last resources line. If one blocker repeats for 3 turns, print it with its evidence and stop. Or stop after 40 turns; end every turn with the line `turn N of 40`.
 ```

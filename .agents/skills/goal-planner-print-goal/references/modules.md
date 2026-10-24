@@ -142,6 +142,6 @@ form below.
 
 - Triggers: "watch cpu", "memory", "free space", "disk", "build artifacts", "save space".
 - Default: on for builds and test suites.
-- Claude: Run /goal-planner:resource-guard before each expensive command; below the reserves, halve parallelism and clean only this goal's artifacts; print its line.
+- Claude: Run the `goal-planner-resource-guard` skill before each expensive command; below the reserves, halve parallelism and clean only this goal's artifacts; print its line.
 - Codex: Run $goal-planner:resource-guard before each expensive command and print its line. On a breach, stop launching work, halve parallelism, and clean only the build artifacts of worktrees this goal registered. Never lower a reserve to hide a breach.
 - Profile: `reserve_disk_gib`, `reserve_inodes`, `reserve_mem_gib`, `cpu_pressure_pct`, `mem_pressure_pct`.

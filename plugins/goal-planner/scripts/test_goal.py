@@ -324,3 +324,30 @@ def test_ledger_cli_save_then_list(
     assert goal.main(["ledger", "list", "--root", root]) == 0
     listed = t.cast("list[dict[str, object]]", json.loads(capsys.readouterr().out))
     assert [(e["topic"], e["number"], e["kind"]) for e in listed] == [("parser", 1, "goal")]
+
+
+def _prompt(text: str, cwd: str, day: str) -> dict[str, object]:
+    return {
+        "kind": "prompt",
+        "agent": "claude",
+        "text": text,
+        "timestamp": f"{day}T10:00:00Z",
+        "origin": {"cwd": cwd},
+    }
+
+
+def test_harvest_applies_sweep_bar(tmp_path: pathlib.Path) -> None:
+    """A sentence needs 5 prompts, 2 projects, and a use within 30 days to count."""
+    kept = "Effort and blast radius do not matter for this package at all."
+    few = "Use the private mirror remote for every single push you make here."
+    lonely = "Run the full benchmark matrix against every port before signing off."
+    stale = "Soft reset and force push over every change that did not work out."
+    records = [_prompt(f"/goal {kept} One.", f"~/p{i % 2}", "2026-10-20") for i in range(5)]
+    records += [_prompt(f"/goal {few}", f"~/p{i % 2}", "2026-10-20") for i in range(4)]
+    records += [_prompt(f"/goal {lonely}", "~/p0", "2026-10-20") for _ in range(5)]
+    records += [_prompt(f"/goal {stale}", f"~/p{i % 2}", "2026-08-01") for i in range(5)]
+    export = tmp_path / "history.ndjson"
+    _ = export.write_text("\n".join(json.dumps(r) for r in records) + "\n", encoding="utf-8")
+    found = goal.harvest(export, today=date(2026, 10, 24))
+    assert [f["sentence"] for f in found] == [kept.lower()]
+    assert (found[0]["count"], found[0]["projects"], found[0]["last_seen"]) == (5, 2, "2026-10-20")
