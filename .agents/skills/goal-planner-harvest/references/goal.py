@@ -43,6 +43,8 @@ BOUND_RE = re.compile(
     re.IGNORECASE,
 )
 TURN_COUNTER_RE = re.compile(r"\bturn N of (?:\d+|M)\b")
+PLACEHOLDER_RE = re.compile(r"(?<![\w$])\{[a-z][a-z0-9_]*\}")
+"""A module's ``{brace}`` that neither the profile nor the request filled."""
 EVIDENCE_WINDOW = 400
 """Characters after a done-when clause searched for the evidence it asks the agent to print."""
 
@@ -320,11 +322,16 @@ def _issue(rule: str, text: str, start: int, detail: str) -> dict[str, object]:
 
 
 def lint_goal(
-    text: str, host: str, skills: list[Skill], ledger_root: Path | None = None
+    text: str,
+    host: str,
+    skills: list[Skill],
+    ledger_root: Path | None = None,
+    budget: int | None = None,
 ) -> dict[str, list[dict[str, object]]]:
     """Check a goal against its host's rules and the installed skill catalog.
 
     An empty ``skills`` list means no catalog: skill names are then not checked.
+    ``budget`` replaces the drafting target, as in ``measure_text``.
 
     Returns
     -------
@@ -333,7 +340,7 @@ def lint_goal(
     """
     errors: list[dict[str, object]] = []
     warnings: list[dict[str, object]] = []
-    measured = measure_text(text, host)
+    measured = measure_text(text, host, budget)
     if measured["verdict"] == "over-cap":
         errors.append(_issue("length", text, 0, f"{measured['utf16']} UTF-16 units; cap {CAP}"))
     elif measured["verdict"] == "over-target":
@@ -368,6 +375,9 @@ def lint_goal(
             continue
         detail = f"{match.group(0)} names one machine's home directory"
         warnings.append(_issue("home-path", text, match.start(), detail))
+    for match in PLACEHOLDER_RE.finditer(text):
+        detail = f"{match.group(0)} is a module placeholder left unfilled"
+        warnings.append(_issue("placeholder", text, match.start(), detail))
 
     if host == "claude":
         done = DONE_WHEN_RE.search(text)
@@ -847,7 +857,7 @@ def _cmd_catalog(args: Args) -> int:
 def _cmd_lint(args: Args) -> int:
     skills = discover_skills([Path(r) for r in args.catalog_root] or None)
     ledger = Path(args.ledger_root) if args.ledger_root else None
-    result = lint_goal(_read_input(args.file), args.host, skills, ledger)
+    result = lint_goal(_read_input(args.file), args.host, skills, ledger, args.budget)
     print(_dumps(result))
     return 1 if result["errors"] else 0
 
@@ -960,6 +970,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     lint = sub.add_parser("lint", help="check a goal against its host and the catalog")
     _ = lint.add_argument("--host", choices=HOSTS, default="claude")
+    _ = lint.add_argument("--budget", type=int, help="drafting target to use instead")
     _ = lint.add_argument("--catalog-root", action="append", default=[])
     _ = lint.add_argument("--ledger-root", help="paths under it are not machine-specific")
     _ = lint.add_argument("file", nargs="?", default="-")

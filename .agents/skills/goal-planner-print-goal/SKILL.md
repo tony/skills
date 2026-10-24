@@ -75,8 +75,10 @@ Apply `references/modules.md` "Choosing modules": profile defaults, then
 the request's words, then what the repository shows. Every module left out is
 named, with its reason, in the Modules section.
 
-Fill each module's `{braces}` from the profile. Leave out any research root
-that does not exist on this machine, and say so under Modules.
+Fill each module's `{braces}` as `references/modules.md` says: the
+profile key of the same name, or the request for `{artifact}` and
+`{exclusions}`. Leave out any research root that does not exist on this
+machine, and say so under Modules.
 
 ## Step 3: Write the objective
 
@@ -116,6 +118,9 @@ Move detail into the objective instead.
 
 ## Step 5: Measure and lint
 
+`<n>` is the user's `--budget`, else the profile's `claude_target` for a
+Claude goal; leave `--budget` out of both commands when neither is set.
+
 ```console
 $ python3 <goal.py> measure \
     --host <host> \
@@ -123,11 +128,10 @@ $ python3 <goal.py> measure \
     <goal draft>
 ```
 
-Pass `--budget` only when the user gave one.
-
 ```console
 $ python3 <goal.py> lint \
     --host <host> \
+    --budget <n> \
     --ledger-root <root> \
     <goal draft>
 ```

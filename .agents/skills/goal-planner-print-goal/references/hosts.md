@@ -80,4 +80,5 @@ $ python3 <goal.py> lint \
 
 `measure` exits 1 past the cap, and for Codex with `--no-spill` (exec and the
 API). `lint` exits 1 on any error and lists warnings for the bound, missing
-evidence, home paths, and the Claude target.
+evidence, home paths, module placeholders left unfilled, and the drafting
+target: Claude's 3,800, or `--budget` on either command.

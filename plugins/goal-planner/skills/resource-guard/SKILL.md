@@ -28,17 +28,26 @@ call this every turn.
 own directory; write it as an absolute path in every command. Run each command
 by itself, with no `cd`, `;`, `&&`, pipe, or shell variable, so a single
 permission rule for `python3` covers every call. The reserves are in
-`../../references/resources.md`; the profile's `reserve_*` and
-`*_pressure_pct` values replace them when set.
+`../../references/resources.md`. Read the profile at
+`$XDG_CONFIG_HOME/goal-planner/profile.md`, or
+`~/.config/goal-planner/profile.md`, when it exists: its `reserve_*` and
+`*_pressure_pct` values replace them.
 
 ## Step 1: Check
 
-Check the worktree and the Documents root that holds the goal's evidence:
+Check the worktree and the Documents root that holds the goal's evidence.
+Each reserve flag takes the profile value of the same name; leave out a flag
+whose key the profile does not set:
 
 ```console
 $ python3 <resources.py> check \
     --path <worktree> \
-    --path <documents>
+    --path <documents> \
+    --reserve-disk-gib <reserve_disk_gib> \
+    --reserve-inodes <reserve_inodes> \
+    --reserve-mem-gib <reserve_mem_gib> \
+    --cpu-pressure-pct <cpu_pressure_pct> \
+    --mem-pressure-pct <mem_pressure_pct>
 ```
 
 Copy its first line into the reply word for word; that line is what Claude's

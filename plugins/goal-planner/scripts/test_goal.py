@@ -635,3 +635,23 @@ def test_harvest_sets_aside_only_sentences_it_left_out(tmp_path: pathlib.Path) -
     _ = export.write_text(json.dumps(record) + "\n", encoding="utf-8")
     result = goal.harvest(export, min_count=1, min_projects=1, today=date(2026, 10, 24))
     assert result["set_aside"] == {"under_bar": 0, "codex_only": 0}
+
+
+def test_lint_cli_judges_length_against_a_budget(
+    tmp_path: pathlib.Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """A lower Claude target from the profile makes a shorter goal long."""
+    path = tmp_path / "g.md"
+    _ = path.write_text(
+        "/goal " + "x" * 3000 + " Done when it builds; print it.\n", encoding="utf-8"
+    )
+    args = ["lint", "--host", "claude", "--catalog-root", str(tmp_path / "none")]
+    assert goal.main([*args, "--budget", "2500", str(path)]) == 0
+    warnings = t.cast("dict[str, list[dict[str, object]]]", json.loads(capsys.readouterr().out))
+    assert "length" in [w["rule"] for w in warnings["warnings"]]
+
+
+def test_lint_warns_on_a_placeholder_left_unfilled() -> None:
+    """A module brace no profile key filled would reach the agent as literal text."""
+    text = "/goal Research in {research_roots} until ${HOME}/x builds; print the build."
+    assert [w["rule"] for w in goal.lint_goal(text, "codex", [])["warnings"]] == ["placeholder"]

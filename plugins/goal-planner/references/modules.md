@@ -4,8 +4,10 @@ Contents: Choosing modules, Quality and method, Research and review, Repository 
 
 Each module is a guardrail a goal can carry. A module has trigger words that
 switch it on, a default, a compact form for Claude, a full form for Codex and
-the objective, and the profile keys it fills. `{braces}` are profile values;
-the user's own wording for a module, when the profile has it, replaces the
+the objective, and the profile keys it fills. A `{brace}` takes the profile
+key of the same name, listed on its module's Profile line; `{artifact}` and
+`{exclusions}` come from the request, and vcs-policy defines `{push_rule}`.
+The user's own wording for a module, when the profile has it, replaces the
 form below.
 
 ## Choosing modules
@@ -40,8 +42,8 @@ form below.
 
 - Triggers: "rated", "9.5/10", "score".
 - Default: on.
-- Claude: Rate the result {target}/10 or better on {dimensions}; print each score with its evidence.
-- Codex: Rate the result on {dimensions}. Anything below {target}/10 on one of them is unfinished work, with the evidence for each score.
+- Claude: Rate the result {rubric_target}/10 or better on {dimensions}; print each score with its evidence.
+- Codex: Rate the result on {dimensions}. Anything below {rubric_target}/10 on one of them is unfinished work, with the evidence for each score.
 - Profile: `rubric_target`, `dimensions.<domain>`.
 
 ## Research and review
@@ -50,8 +52,8 @@ form below.
 
 - Triggers: "study", "research", "~/study", "notes".
 - Default: on.
-- Claude: Research with rg, ag and fd (not grep and find) in {study_roots}; check prompt history and `git log -S` before calling a convention accidental.
-- Codex: Study the sources in {study_roots} with rg, ag and fd. Before calling an existing convention accidental, find its rationale with `git log -S` and a prompt-history search (`history.md`).
+- Claude: Research with rg, ag and fd (not grep and find) in {research_roots}; check prompt history and `git log -S` before calling a convention accidental.
+- Codex: Study the sources in {research_roots} with rg, ag and fd. Before calling an existing convention accidental, find its rationale with `git log -S` and a prompt-history search (`history.md`).
 - Profile: `research_roots`.
 
 ### adversarial-review
