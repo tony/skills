@@ -15,6 +15,9 @@ if t.TYPE_CHECKING:
     import pathlib
 
 NEXT_AFTER_GAP = 4
+AMBIGUOUS_ROOT = 3
+LIMIT_PER_SOURCE = 2
+PREVIEW_MAX = 200
 
 
 def _skill_file(path: pathlib.Path, name: str, *, gated: bool = False) -> None:
@@ -284,7 +287,7 @@ def test_find_resolves_codex_pointer_and_reports_missing(tmp_path: pathlib.Path)
     assert by_ref["t1"]["missing"] is False
     assert by_ref["t2"]["missing"] is True
     assert by_ref["t3"]["text"] == "Fix the parser."
-    assert [h["text"] for h in hits if h["source"] == "codex-attachment"] == ["FULL OBJECTIVE TEXT"]
+    assert [h for h in hits if h["source"] == "codex-attachment"] == []
 
 
 def test_find_reads_history_goal_prompts(tmp_path: pathlib.Path) -> None:
@@ -348,9 +351,11 @@ def test_harvest_applies_sweep_bar(tmp_path: pathlib.Path) -> None:
     records += [_prompt(f"/goal {stale}", f"~/p{i % 2}", "2026-08-01") for i in range(5)]
     export = tmp_path / "history.ndjson"
     _ = export.write_text("\n".join(json.dumps(r) for r in records) + "\n", encoding="utf-8")
-    found = goal.harvest(export, today=date(2026, 10, 24))
+    result = goal.harvest(export, today=date(2026, 10, 24))
+    found = t.cast("list[dict[str, object]]", result["kept"])
     assert [f["sentence"] for f in found] == [kept.lower()]
     assert (found[0]["count"], found[0]["projects"], found[0]["last_seen"]) == (5, 2, "2026-10-20")
+    assert result["set_aside"] == {"under_bar": 3, "codex_only": 0}
 
 
 def test_ledger_save_dry_run_prints_content_without_writing(
@@ -368,3 +373,140 @@ def test_ledger_save_dry_run_prints_content_without_writing(
     assert goal.strip_frontmatter(content) == "/goal Fix it.\n"
     assert goal.parse_frontmatter(content)["number"] == "1"
     assert not root.exists()
+
+
+def test_root_skips_unreadable_and_service_profiles(tmp_path: pathlib.Path) -> None:
+    """An unreadable or service Windows profile never breaks or wins resolution."""
+    (tmp_path / "tony" / "Documents").mkdir(parents=True)
+    (tmp_path / "WsiAccount" / "Documents").mkdir(parents=True)
+    locked = tmp_path / "ann"
+    (locked / "Documents").mkdir(parents=True)
+    locked.chmod(0)
+    try:
+        root = goal.resolve_root(None, {"USER": "d"}, None, mnt=tmp_path, wsl=True)
+    finally:
+        locked.chmod(0o755)
+    assert root == (tmp_path / "tony" / "Documents", "wsl")
+
+
+def test_root_ignores_windows_users_off_wsl(tmp_path: pathlib.Path) -> None:
+    """A Linux machine with a Windows partition mounted is not WSL."""
+    (tmp_path / "mnt" / "tony" / "Documents").mkdir(parents=True)
+    env = {"HOME": str(tmp_path)}
+    root = goal.resolve_root(None, env, None, mnt=tmp_path / "mnt", wsl=False)
+    assert root == (tmp_path / "Documents", "home")
+
+
+def test_root_local_profile_beats_shared_profile(tmp_path: pathlib.Path) -> None:
+    """A machine's profile.local.md overrides the synced profile's documents."""
+    shared = _profile(tmp_path / "cfg" / "profile.md", "auto")
+    _ = _profile(tmp_path / "cfg" / "profile.local.md", str(tmp_path / "here"))
+    root = goal.resolve_root(None, {}, shared, mnt=tmp_path / "nomnt", wsl=False)
+    assert root == (tmp_path / "here", "profile-local")
+
+
+def test_ledger_root_cli_exits_3_when_ambiguous(
+    tmp_path: pathlib.Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """Several Windows users exit 3 and name them, distinct from other errors."""
+    for user in ("ann", "bob"):
+        (tmp_path / user / "Documents").mkdir(parents=True)
+    monkeypatch.setattr(goal, "WINDOWS_USERS", tmp_path)
+    monkeypatch.setattr(goal, "is_wsl", lambda: True)
+    monkeypatch.setenv("USER", "zed")
+    monkeypatch.delenv("GOAL_PLANNER_ROOT", raising=False)
+    monkeypatch.setenv("XDG_CONFIG_HOME", str(tmp_path / "nocfg"))
+    assert goal.main(["ledger", "root"]) == AMBIGUOUS_ROOT
+    out = t.cast("dict[str, object]", json.loads(capsys.readouterr().out))
+    assert out["candidates"] == ["ann", "bob"]
+
+
+def test_find_filters_kind_and_topic_across_sources(tmp_path: pathlib.Path) -> None:
+    """--kind keeps goals only; --topic narrows Codex and history by its words."""
+    day = date(2026, 10, 24)
+    root = tmp_path / "Documents"
+    _ = goal.save_entry(root, "parser", "objective", "# Parser objective\n", {}, day)
+    _ = goal.save_entry(root, "parser", "goal", "/goal Fix the parser.\n", {}, day)
+    hits = goal.find_goals(root, _codex_home(tmp_path), None, None, "parser", kind="goal")
+    sources = sorted((h["source"], str(h["text"])[:20]) for h in hits)
+    assert ("ledger", "/goal Fix the parser") in sources
+    assert all("objective" not in str(h.get("kind", "")) for h in hits)
+    assert [h["ref"] for h in hits if h["source"] == "codex-db"] == ["t3"]
+
+
+def test_find_merges_spill_files_into_their_pointer_rows(tmp_path: pathlib.Path) -> None:
+    """A spilled objective appears once, through the row that points at it."""
+    hits = goal.find_goals(None, _codex_home(tmp_path), None, "FULL OBJECTIVE", None)
+    assert [h["source"] for h in hits] == ["codex-db"]
+
+
+def test_find_limits_each_source(tmp_path: pathlib.Path) -> None:
+    """A busy Codex history cannot crowd saved goals out of the results."""
+    root = tmp_path / "Documents"
+    for _ in range(3):
+        _ = goal.save_entry(root, "parser", "goal", "/goal Fix it.\n", {}, date(2026, 10, 20))
+    hits = goal.find_goals(root, _codex_home(tmp_path), None, None, None, limit=2)
+    by_source = [h["source"] for h in hits]
+    assert by_source.count("ledger") == LIMIT_PER_SOURCE
+    assert by_source.count("codex-db") == LIMIT_PER_SOURCE
+
+
+def test_find_survives_a_broken_codex_database(tmp_path: pathlib.Path) -> None:
+    """An unreadable Codex database is reported and the ledger still answers."""
+    root = tmp_path / "Documents"
+    _ = goal.save_entry(root, "parser", "goal", "/goal Fix it.\n", {}, date(2026, 10, 20))
+    codex = tmp_path / "codex"
+    codex.mkdir()
+    _ = (codex / "goals_1.sqlite").write_text("not a database", encoding="utf-8")
+    hits = goal.find_goals(root, codex, None, None, None)
+    assert [h["source"] for h in hits if h["source"] == "ledger"] == ["ledger"]
+    assert any(h.get("error") for h in hits if h["source"] == "codex-db")
+
+
+def test_find_cli_index_then_raw_ref(
+    tmp_path: pathlib.Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """The index previews each hit; --ref prints one hit's text exactly."""
+    root = tmp_path / "Documents"
+    body = "/goal Ship it \N{EM DASH} carefully \N{ROCKET}\n" + "x" * 400
+    path = goal.save_entry(root, "parser", "goal", body, {}, date(2026, 10, 20))
+    common = ["find", "--root", str(root), "--codex-home", str(tmp_path / "nocodex")]
+    assert goal.main(common) == 0
+    index = t.cast("list[dict[str, object]]", json.loads(capsys.readouterr().out))
+    assert "text" not in index[0]
+    assert len(str(index[0]["preview"])) <= PREVIEW_MAX
+    assert goal.main([*common, "--ref", str(path)]) == 0
+    assert capsys.readouterr().out == body
+
+
+def test_dry_run_json_keeps_non_ascii(
+    tmp_path: pathlib.Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """Text an agent copies back into a file is not escaped."""
+    draft = tmp_path / "draft.md"
+    _ = draft.write_text("/goal Fix it \N{EM DASH} now.\n", encoding="utf-8")
+    args = ["ledger", "save", "--root", str(tmp_path / "D"), "--topic", "p", "--dry-run"]
+    assert goal.main([*args, str(draft)]) == 0
+    assert "\N{EM DASH}" in capsys.readouterr().out
+
+
+def test_catalog_includes_this_plugins_skills() -> None:
+    """The running plugin's own skills are always in the catalog."""
+    names = {s.name for s in goal.own_plugin_skills()}
+    assert {"goal-planner:print-goal", "goal-planner:resource-guard"} <= names
+
+
+def test_skill_roots_follow_host_config_dirs(tmp_path: pathlib.Path) -> None:
+    """CODEX_HOME and CLAUDE_CONFIG_DIR move where installed skills are read."""
+    env = {"CODEX_HOME": str(tmp_path / "cx"), "CLAUDE_CONFIG_DIR": str(tmp_path / "cl")}
+    roots = goal.default_skill_roots(tmp_path, env)
+    assert tmp_path / "cx" / "plugins" / "cache" in roots
+    assert tmp_path / "cl" / "plugins" / "cache" in roots
+    assert tmp_path / "cl" / "skills" in roots
+
+
+def test_lint_ignores_volume_mount_specs() -> None:
+    """A docker volume spec such as /src:ro is not a skill name."""
+    skills = [goal.Skill("spike:ratchet", gated=False, path="p")]
+    text = '/goal Run `docker run -v "$PWD":/src:ro img` until tests pass.'
+    assert goal.lint_goal(text, "codex", skills)["errors"] == []

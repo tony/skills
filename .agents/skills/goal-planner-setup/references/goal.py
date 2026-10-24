@@ -15,6 +15,7 @@ from __future__ import annotations
 
 import argparse
 import dataclasses
+import io
 import json
 import os
 import re
@@ -33,7 +34,7 @@ CLAUDE_TARGET = 4000 - 200
 CAP = 4000
 """Both hosts store at most 4,000 characters: UTF-16 units in Claude Code, code points in Codex."""
 
-SKILL_TOKEN_RE = re.compile(r"(?<![\w/$])([/$])([a-z0-9][a-z0-9-]*:[a-z0-9][a-z0-9-]*)\b")
+SKILL_TOKEN_RE = re.compile(r"(?<![\w/$:])([/$])([a-z0-9][a-z0-9-]*:[a-z0-9][a-z0-9-]*)\b")
 HOME_PATH_RE = re.compile(r"(?<![\w.])(?:/home/|/Users/|/mnt/[a-z]/Users/)[\w.-]+/\S*")
 DONE_WHEN_RE = re.compile(r"\b(?:done|finished|met|complete) when\b", re.IGNORECASE)
 EVIDENCE_RE = re.compile(r"\b(?:print|prints|printed|show|shows|shown)\b", re.IGNORECASE)
@@ -52,8 +53,12 @@ DATE_DIR_RE = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 SAVE_ATTEMPTS = 5
 WINDOWS_USERS = Path("/mnt/c/Users")
 SERVICE_PROFILES = frozenset(
-    {"All Users", "Default", "Default User", "Public", "WDAGUtilityAccount", "defaultuser0"}
+    {"all users", "default", "default user", "public", "wdagutilityaccount", "defaultuser0"}
+    | {"wsiaccount"}
 )
+"""Windows profiles that belong to no person, compared in lower case."""
+PREVIEW = 200
+AMBIGUOUS_ROOT = 3
 GOAL_REQUEST_RE = re.compile(
     r"\b(?:print|draft|write|make|reword|synthesi[sz]e)\b.{0,40}\b(?:goals?|/goal)\b",
     re.IGNORECASE | re.DOTALL,
@@ -106,6 +111,8 @@ class Args(argparse.Namespace):
     codex_home: str | None = None
     history: str | None = None
     limit: int = 20
+    full: bool = False
+    ref: str | None = None
     dry_run: bool = False
     min_count: int = 5
     min_projects: int = 2
@@ -224,15 +231,31 @@ def _version_key(version: str) -> tuple[tuple[int, str], ...]:
     return tuple((int(p), "") if p.isdigit() else (-1, p) for p in re.split(r"[.+-]", version))
 
 
-def default_skill_roots(home: Path | None = None) -> list[Path]:
+def default_skill_roots(
+    home: Path | None = None, env: Mapping[str, str] | None = None
+) -> list[Path]:
     """Return the places Claude Code and Codex install skills on this machine."""
     home = home or Path.home()
+    env = os.environ if env is None else env
+    claude = Path(env.get("CLAUDE_CONFIG_DIR") or home / ".claude")
+    codex = Path(env.get("CODEX_HOME") or home / ".codex")
     return [
-        home / ".claude" / "plugins" / "cache",
-        home / ".codex" / "plugins" / "cache",
-        home / ".claude" / "skills",
+        claude / "plugins" / "cache",
+        codex / "plugins" / "cache",
+        claude / "skills",
         home / ".agents" / "skills",
     ]
+
+
+def own_plugin_skills() -> list[Skill]:
+    """List the skills of the plugin this script ships in, under its manifest name."""
+    plugin_root = Path(__file__).resolve().parents[1]
+    manifest = plugin_root / ".claude-plugin" / "plugin.json"
+    name = plugin_root.name
+    if manifest.is_file():
+        data = t.cast("dict[str, object]", json.loads(manifest.read_text(encoding="utf-8")))
+        name = str(data.get("name") or name)
+    return [_read_skill(path, name) for path in sorted(plugin_root.glob("skills/*/SKILL.md"))]
 
 
 def _read_skill(path: Path, plugin: str | None) -> Skill:
@@ -252,6 +275,8 @@ def discover_skills(roots: list[Path] | None = None) -> list[Skill]:
     """
     newest: dict[tuple[str, str], tuple[tuple[tuple[int, str], ...], Path]] = {}
     found: dict[str, Skill] = {}
+    if roots is None:
+        found.update({s.name: s for s in own_plugin_skills()})
     for root in default_skill_roots() if roots is None else roots:
         if not root.is_dir():
             continue
@@ -353,37 +378,76 @@ def default_profile(env: Mapping[str, str]) -> Path:
     return config / "goal-planner" / "profile.md"
 
 
+def is_wsl() -> bool:
+    """Report whether this Linux kernel is WSL's, not a Linux box with Windows mounted."""
+    try:
+        return "microsoft" in Path("/proc/version").read_text(encoding="utf-8").lower()
+    except OSError:
+        return False
+
+
+def _windows_users(mnt: Path) -> list[str]:
+    """List Windows profiles with a readable Documents folder, people only."""
+    users: list[str] = []
+    try:
+        profiles = sorted(mnt.iterdir())
+    except OSError:
+        return users
+    for profile in profiles:
+        if profile.name.lower() in SERVICE_PROFILES:
+            continue
+        try:
+            if (profile / "Documents").is_dir():
+                users.append(profile.name)
+        except OSError:
+            continue
+    return users
+
+
+def _profile_documents(profile: Path) -> Path | None:
+    if not profile.is_file():
+        return None
+    documents = parse_frontmatter(profile.read_text(encoding="utf-8")).get("documents", "")
+    if not documents or documents == "auto":
+        return None
+    path = Path(documents).expanduser()
+    return path if path.is_absolute() else profile.parent / path
+
+
 def resolve_root(
     flag: str | None,
     env: Mapping[str, str],
     profile: Path | None,
-    mnt: Path = WINDOWS_USERS,
+    mnt: Path | None = None,
+    *,
+    wsl: bool | None = None,
 ) -> tuple[Path, str]:
     """Resolve the Documents root and say where it came from.
 
-    Precedence: the flag, ``GOAL_PLANNER_ROOT``, the profile's ``documents:``
-    (``auto`` skips it), the Windows Documents folder on WSL, then
-    ``~/Documents``. On WSL a Windows profile matching ``$USER`` or named in
-    ``$PATH`` wins; a tie raises ``RootError``.
+    Precedence: the flag, ``GOAL_PLANNER_ROOT``, this machine's
+    ``profile.local.md``, the synced profile's ``documents:`` (``auto`` skips
+    either), the Windows Documents folder on WSL, then ``~/Documents``. On WSL a
+    Windows profile matching ``$USER`` or named in ``$PATH`` wins; a tie raises
+    ``RootError``.
     """
     if flag:
         return Path(flag).expanduser(), "flag"
     if env.get("GOAL_PLANNER_ROOT"):
         return Path(env["GOAL_PLANNER_ROOT"]).expanduser(), "env"
-    if profile is not None and profile.is_file():
-        documents = parse_frontmatter(profile.read_text(encoding="utf-8")).get("documents", "")
-        if documents and documents != "auto":
-            path = Path(documents).expanduser()
-            return (path if path.is_absolute() else profile.parent / path), "profile"
-    if mnt.is_dir():
-        users = sorted(
-            p.name
-            for p in mnt.iterdir()
-            if p.name not in SERVICE_PROFILES and (p / "Documents").is_dir()
-        )
+    if profile is not None:
+        local = _profile_documents(profile.with_name("profile.local.md"))
+        if local is not None:
+            return local, "profile-local"
+        shared = _profile_documents(profile)
+        if shared is not None:
+            return shared, "profile"
+    mnt = WINDOWS_USERS if mnt is None else mnt
+    if is_wsl() if wsl is None else wsl:
+        users = _windows_users(mnt)
         user = env.get("USER", "").lower()
+        path_env = env.get("PATH", "").lower()
         chosen = [u for u in users if u.lower() == user] or [
-            u for u in users if f"{mnt}/{u}/" in env.get("PATH", "")
+            u for u in users if f"{mnt}/{u}/".lower() in path_env
         ]
         if len(users) == 1:
             chosen = users
@@ -497,20 +561,38 @@ def _iso_from_ms(value: object) -> str:
 
 
 def _codex_hits(codex_home: Path) -> list[dict[str, object]]:
+    """Read Codex's goal rows and spill files; a spill file a row points at merges into it."""
     hits: list[dict[str, object]] = []
+    pointed: set[str] = set()
     database = codex_home / "goals_1.sqlite"
     if database.is_file():
-        con = sqlite3.connect(f"{database.resolve().as_uri()}?mode=ro", uri=True)
         try:
-            query = "select thread_id, objective, status, updated_at_ms from thread_goals"
-            rows = t.cast("list[tuple[str, str, str, object]]", con.execute(query).fetchall())
-        finally:
-            con.close()
+            con = sqlite3.connect(f"{database.resolve().as_uri()}?mode=ro", uri=True)
+            try:
+                query = "select thread_id, objective, status, updated_at_ms from thread_goals"
+                rows = t.cast("list[tuple[str, str, str, object]]", con.execute(query).fetchall())
+            finally:
+                con.close()
+        except sqlite3.Error as exc:
+            rows = []
+            hits.append(
+                {
+                    "source": "codex-db",
+                    "when": "",
+                    "ref": str(database),
+                    "text": "",
+                    "missing": True,
+                    "error": f"cannot read the Codex goal database: {exc}",
+                }
+            )
         for thread_id, objective, status, updated in rows:
             pointer = POINTER_RE.match(objective)
             spilled = Path(pointer.group(1)) if pointer else None
             missing = spilled is not None and not spilled.is_file()
-            text = spilled.read_text(encoding="utf-8") if spilled and not missing else objective
+            text = objective
+            if spilled is not None and not missing:
+                text = spilled.read_text(encoding="utf-8")
+                pointed.add(str(spilled.resolve()))
             hits.append(
                 {
                     "source": "codex-db",
@@ -522,6 +604,8 @@ def _codex_hits(codex_home: Path) -> list[dict[str, object]]:
                 }
             )
     for path in sorted((codex_home / "attachments").glob("*/goal-objective.md")):
+        if str(path.resolve()) in pointed:
+            continue
         stamp = datetime.fromtimestamp(path.stat().st_mtime, timezone.utc)
         hits.append(
             {
@@ -556,24 +640,32 @@ def _history_hits(history: Path) -> list[dict[str, object]]:
     return hits
 
 
-def find_goals(
+def find_goals(  # noqa: PLR0913
     root: Path | None,
     codex_home: Path | None,
     history: Path | None,
     text: str | None,
     topic: str | None,
+    *,
+    kind: str = "all",
+    limit: int | None = None,
 ) -> list[dict[str, object]]:
     """Gather earlier goals, newest first, each with its verbatim text and source.
 
     A Codex pointer objective is replaced by the file it names; when that file
-    is gone the hit keeps the pointer and sets ``missing``. ``topic`` narrows
-    ledger hits only; ``text`` matches every source, ignoring case.
+    is gone the hit keeps the pointer and sets ``missing``. ``kind`` keeps goals
+    or objectives; Codex and history hold goals only. ``topic`` matches ledger
+    entries by name and other sources by its words; ``text`` matches every
+    source, ignoring case. ``limit`` applies to each source separately.
     """
-    hits: list[dict[str, object]] = []
+    sources: list[list[dict[str, object]]] = []
     if root is not None and root.is_dir():
+        ledger: list[dict[str, object]] = []
         for entry in list_entries(root, topic):
+            if kind != "all" and entry["kind"] != kind:
+                continue
             path = Path(str(entry["path"]))
-            hits.append(
+            ledger.append(
                 {
                     "source": "ledger",
                     "when": str(entry["created"] or entry["date"]),
@@ -583,13 +675,30 @@ def find_goals(
                     "kind": entry["kind"],
                 }
             )
+        sources.append(ledger)
+    others: list[dict[str, object]] = []
     if codex_home is not None:
-        hits.extend(_codex_hits(codex_home))
+        others.extend(_codex_hits(codex_home))
     if history is not None and history.is_file():
-        hits.extend(_history_hits(history))
-    if text:
-        needle = text.lower()
-        hits = [h for h in hits if needle in str(h["text"]).lower()]
+        others.extend(_history_hits(history))
+    if kind == "objective":
+        others = []
+    if topic:
+        words = [w for w in topic.lower().split("-") if w]
+        others = [
+            h for h in others if h.get("error") or all(w in str(h["text"]).lower() for w in words)
+        ]
+    sources.extend(
+        [h for h in others if h["source"] == name]
+        for name in ("codex-db", "codex-attachment", "history")
+    )
+    hits: list[dict[str, object]] = []
+    for group in sources:
+        if text:
+            needle = text.lower()
+            group = [h for h in group if h.get("error") or needle in str(h["text"]).lower()]  # noqa: PLW2901
+        group.sort(key=lambda h: str(h["when"]), reverse=True)
+        hits.extend(group[:limit] if limit else group)
     hits.sort(key=lambda h: str(h["when"]), reverse=True)
     return hits
 
@@ -601,13 +710,14 @@ def harvest(
     min_projects: int = 2,
     days: int = 30,
     today: date | None = None,
-) -> list[dict[str, object]]:
+) -> dict[str, object]:
     """Count sentences retyped across goal prompts, keeping those that clear the bar.
 
     A sentence counts once per prompt. It is kept when it appears in at least
     ``min_count`` prompts from at least ``min_projects`` working directories,
     the latest within ``days`` of ``today``. Codex records carry no working
-    directory, so a Codex-only sentence never clears the project bar.
+    directory, so a Codex-only sentence never clears the project bar; those
+    and the recurring sentences under the bar are counted in ``set_aside``.
     """
     counts: dict[str, int] = {}
     projects: dict[str, set[str]] = {}
@@ -638,6 +748,11 @@ def harvest(
             hosts.setdefault(sentence, set()).add(str(record.get("agent", "")))
             last[sentence] = max(last.get(sentence, ""), day)
     since = ((today or _local_today()) - timedelta(days=days)).isoformat()
+    codex_only = sum(
+        1
+        for sentence, count in counts.items()
+        if count >= min_count and hosts[sentence] == {"codex"}
+    )
     kept: list[dict[str, object]] = [
         {
             "sentence": sentence,
@@ -653,12 +768,19 @@ def harvest(
         and last[sentence] >= since
     ]
     kept.sort(key=lambda row: (-t.cast("int", row["count"]), str(row["sentence"])))
-    return kept
+    recurring = sum(1 for count in counts.values() if count > 1)
+    set_aside = {"under_bar": recurring - len(kept) - codex_only, "codex_only": codex_only}
+    return {"kept": kept, "set_aside": set_aside}
 
 
 def _ledger_root(args: Args) -> Path:
     env = dict(os.environ)
     return resolve_root(args.root, env, default_profile(env))[0]
+
+
+def _dumps(value: object) -> str:
+    """Serialize JSON for agents to copy: non-ASCII stays as written."""
+    return json.dumps(value, indent=2, ensure_ascii=False)
 
 
 def _read_input(path: str) -> str:
@@ -668,13 +790,13 @@ def _read_input(path: str) -> str:
 
 def _cmd_measure(args: Args) -> int:
     result = measure_text(_read_input(args.file), args.host, args.budget, spill=not args.no_spill)
-    print(json.dumps(result))
+    print(_dumps(result))
     return 1 if result["verdict"] == "over-cap" else 0
 
 
 def _cmd_catalog(args: Args) -> int:
     roots = [Path(r) for r in args.skill_roots] or None
-    print(json.dumps([dataclasses.asdict(s) for s in discover_skills(roots)], indent=2))
+    print(_dumps([dataclasses.asdict(s) for s in discover_skills(roots)]))
     return 0
 
 
@@ -682,7 +804,7 @@ def _cmd_lint(args: Args) -> int:
     skills = discover_skills([Path(r) for r in args.catalog_root] or None)
     ledger = Path(args.ledger_root) if args.ledger_root else None
     result = lint_goal(_read_input(args.file), args.host, skills, ledger)
-    print(json.dumps(result, indent=2))
+    print(_dumps(result))
     return 1 if result["errors"] else 0
 
 
@@ -690,7 +812,7 @@ def _cmd_ledger(args: Args) -> int:
     if args.ledger_cmd == "root":
         env = dict(os.environ)
         path, source = resolve_root(args.root, env, default_profile(env))
-        print(json.dumps({"root": str(path), "source": source}))
+        print(_dumps({"root": str(path), "source": source}))
         return 0
     root = _ledger_root(args)
     if args.ledger_cmd == "next":
@@ -698,7 +820,7 @@ def _cmd_ledger(args: Args) -> int:
         number = next_number(root, topic, args.kind)
         today = _local_today().isoformat()
         path = root / today / KINDS[args.kind] / f"{topic}-{number:03d}.md"
-        print(json.dumps({"number": number, "path": str(path)}))
+        print(_dumps({"number": number, "path": str(path)}))
         return 0
     if args.ledger_cmd == "save":
         meta = {"host": args.host, "status": args.status}
@@ -711,13 +833,13 @@ def _cmd_ledger(args: Args) -> int:
         if args.dry_run:
             number = next_number(root, args.topic or "", args.kind)
             path, content = render_entry(root, args.topic or "", args.kind, body, meta, day, number)
-            print(json.dumps({"path": str(path), "number": number, "content": content, **measured}))
+            print(_dumps({"path": str(path), "number": number, "content": content, **measured}))
             return 0
         path = save_entry(root, args.topic or "", args.kind, body, meta, day)
         number = int(path.stem.rpartition("-")[2])
-        print(json.dumps({"path": str(path), "number": number, **measured}))
+        print(_dumps({"path": str(path), "number": number, **measured}))
         return 0
-    print(json.dumps(list_entries(root, args.topic), indent=2))
+    print(_dumps(list_entries(root, args.topic)))
     return 0
 
 
@@ -731,8 +853,22 @@ def _cmd_find(args: Args) -> int:
     codex_default = Path(env.get("CODEX_HOME") or Path.home() / ".codex")
     codex_home = Path(args.codex_home) if args.codex_home else codex_default
     history = Path(args.history) if args.history else None
-    hits = find_goals(root, codex_home, history, args.text, args.topic)[: args.limit]
-    print(json.dumps(hits, indent=2))
+    hits = find_goals(
+        root, codex_home, history, args.text, args.topic, kind=args.kind, limit=args.limit
+    )
+    if args.ref:
+        chosen = [h for h in hits if h["ref"] == args.ref]
+        if not chosen:
+            print(f"error: no hit with ref {args.ref}", file=sys.stderr)
+            return 1
+        _ = sys.stdout.write(str(chosen[0]["text"]))
+        return 0
+    if not args.full:
+        for hit in hits:
+            body = str(hit.pop("text"))
+            hit["chars"] = len(body)
+            hit["preview"] = " ".join(body.split())[:PREVIEW]
+    print(_dumps(hits))
     return 0
 
 
@@ -745,7 +881,7 @@ def _cmd_harvest(args: Args) -> int:
         days=args.days,
         today=today,
     )
-    print(json.dumps(found, indent=2))
+    print(_dumps(found))
     return 0
 
 
@@ -814,7 +950,10 @@ def build_parser() -> argparse.ArgumentParser:
     _ = find.add_argument("--topic", help="keep ledger hits for this topic")
     _ = find.add_argument("--codex-home", help="default $CODEX_HOME or ~/.codex")
     _ = find.add_argument("--history", help="agentgrep NDJSON export of prompt history")
-    _ = find.add_argument("--limit", type=int, default=20)
+    _ = find.add_argument("--kind", choices=("all", *KINDS), default="all")
+    _ = find.add_argument("--limit", type=int, default=20, help="most hits per source")
+    _ = find.add_argument("--full", action="store_true", help="include each hit's full text")
+    _ = find.add_argument("--ref", help="print this hit's text exactly, nothing else")
 
     harvester = sub.add_parser("harvest", help="count guardrail sentences retyped into goals")
     _ = harvester.add_argument("--history", required=True, help="agentgrep NDJSON export")
@@ -828,8 +967,13 @@ def build_parser() -> argparse.ArgumentParser:
 def main(argv: Sequence[str] | None = None) -> int:
     """Run the command-line interface."""
     args = build_parser().parse_args(argv, namespace=Args())
+    if isinstance(sys.stdout, io.TextIOWrapper):
+        sys.stdout.reconfigure(encoding="utf-8")
     try:
         return COMMANDS[args.cmd](args)
+    except RootError as exc:
+        print(_dumps({"error": str(exc), "candidates": exc.candidates}))
+        return AMBIGUOUS_ROOT
     except (OSError, ValueError) as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 2
