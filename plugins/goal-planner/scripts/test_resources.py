@@ -179,3 +179,50 @@ def test_sample_reports_peak_rss_of_a_short_child(capsys: pytest.CaptureFixture[
     assert resources.main(["sample", "--interval", "5", "--", sys.executable, "-c", script]) == 0
     report = t.cast("dict[str, object]", json.loads(capsys.readouterr().out))
     assert t.cast("float", report["max_rss_mib"]) >= PEAK_FLOOR_MIB
+
+
+def test_inodes_count_only_when_reported() -> None:
+    """Zero free inodes is a real reading; a free count above the total is not."""
+    assert resources.reported_inodes(1000, 0) == 0
+    assert resources.reported_inodes(999, 1000000) is None
+    assert resources.reported_inodes(0, 0) is None
+
+
+@pytest.mark.integration
+def test_clean_never_enters_nested_repositories(tmp_path: pathlib.Path) -> None:
+    """A worktree or clone inside a registered root keeps its tracked build files."""
+    repo = tmp_path / "repo"
+    repo.mkdir()
+    _git(repo, "init", "-q")
+    _ = (repo / ".gitignore").write_text(".worktrees/\nvendor/\n", encoding="utf-8")
+    for nested in (repo / ".worktrees" / "feat", repo / "vendor" / "lib"):
+        nested.mkdir(parents=True)
+        _git(nested, "init", "-q")
+        (nested / "build").mkdir()
+        _ = (nested / "build" / "make.sh").write_text("echo", encoding="utf-8")
+        (nested / ".venv").mkdir()
+        _git(nested, "add", "build/make.sh")
+        _git(nested, "commit", "-q", "-m", "init")
+    manifest = tmp_path / "owned.json"
+    resources.register(manifest, [repo])
+    result = resources.clean(manifest, apply=True)
+    assert result["removed"] == []
+    assert (repo / ".worktrees" / "feat" / "build" / "make.sh").exists()
+    assert (repo / "vendor" / "lib" / ".venv").exists()
+    assert any("nested repository" in r for r in result["refused"])
+
+
+@pytest.mark.integration
+def test_clean_attributes_candidates_by_path_not_prefix(tmp_path: pathlib.Path) -> None:
+    """A root named like another root's prefix still owns its own artifacts."""
+    repos = [tmp_path / "proj", tmp_path / "proj-2"]
+    for repo in repos:
+        repo.mkdir()
+        _git(repo, "init", "-q")
+        _ = (repo / ".gitignore").write_text("target/\n", encoding="utf-8")
+        (repo / "target").mkdir()
+    manifest = tmp_path / "owned.json"
+    resources.register(manifest, repos)
+    dry = resources.clean(manifest, apply=False)
+    assert sorted(dry["would_remove"]) == sorted(str(r / "target") for r in repos)
+    assert dry["refused"] == []

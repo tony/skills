@@ -72,9 +72,11 @@ $ python3 <resources.py> clean \
 
 Only directories named like build artifacts (`target`, `node_modules`,
 `_build`, `deps`, `dist`, `build`, `.venv`, and tool caches) inside registered
-worktrees are candidates. One is removed only when it is a real directory, git
-ignores it, and no tracked file lives in it; everything else is reported as
-refused, with the reason. Shared clones, user edits, and evidence are never
-candidates. Space trouble beyond the goal's own artifacts goes to the `disk` skill.
+worktrees are candidates. The walk never enters a nested repository, such as a
+worktree or clone inside a registered one; register it separately to clean it.
+One is removed only when it is a real directory, git ignores it, and no
+tracked file lives in it; everything else is reported as refused, with the
+reason. Shared clones, user edits, and evidence are never candidates. Space
+trouble beyond the goal's own artifacts goes to the `disk` skill.
 
 Keep the manifest file outside every worktree, beside the goal's objective.

@@ -126,21 +126,28 @@ def _mac_available() -> int | None:
     return pages * page
 
 
+def reported_inodes(files: int, favail: int) -> int | None:
+    """Return free inodes, or None where the filesystem does not count them.
+
+    WSL's drvfs reports more free inodes than it has; a filesystem with no
+    inode table reports zero of each.
+    """
+    return favail if files > 0 and favail <= files else None
+
+
 def _filesystem(path: Path) -> dict[str, int | None]:
     stat = os.statvfs(path)
-    reported = 0 < stat.f_favail <= stat.f_files
     return {
         "free_bytes": stat.f_bavail * stat.f_frsize,
-        "free_inodes": stat.f_favail if reported else None,
+        "free_inodes": reported_inodes(stat.f_files, stat.f_favail),
     }
 
 
 def snapshot(paths: list[Path], proc: Path = PROC) -> dict[str, object]:
     """Read free space and inodes per path, available memory, load, and pressure.
 
-    Inodes read as None where the filesystem does not report them (WSL's drvfs
-    reports a total smaller than the free count); pressure reads as None
-    without pressure stall information (macOS, older kernels).
+    Inodes read as None where the filesystem does not count them; pressure
+    reads as None without pressure stall information (macOS, older kernels).
     """
     mem = _meminfo(proc)
     available: int | None = mem.get("MemAvailable")
@@ -280,19 +287,35 @@ def register(manifest: Path, roots: list[Path]) -> None:
     _ = manifest.write_text(json.dumps({"roots": known}, indent=2) + "\n", encoding="utf-8")
 
 
-def artifact_candidates(manifest: Path) -> list[Path]:
-    """List directories named like build artifacts inside the registered roots."""
+def _walk_owned(manifest: Path) -> tuple[list[Path], list[Path]]:
+    """Find artifact directories in the registered roots, and the nested repositories skipped.
+
+    A directory below a root that holds its own ``.git`` is another worktree or
+    clone, with its own tracked files and uncommitted work, so the walk never
+    enters it.
+    """
     found: list[Path] = []
+    nested: list[Path] = []
     for root in _roots(manifest):
         for dirpath, dirnames, _ in os.walk(root):
             keep: list[str] = []
             for name in sorted(dirnames):
-                if name in ARTIFACT_NAMES:
-                    found.append(Path(dirpath, name))
-                elif name != ".git":
+                path = Path(dirpath, name)
+                if name == ".git":
+                    continue
+                if (path / ".git").exists():
+                    nested.append(path)
+                elif name in ARTIFACT_NAMES:
+                    found.append(path)
+                else:
                     keep.append(name)
             dirnames[:] = keep
-    return found
+    return found, nested
+
+
+def artifact_candidates(manifest: Path) -> list[Path]:
+    """List directories named like build artifacts inside the registered roots."""
+    return _walk_owned(manifest)[0]
 
 
 def _git(root: Path, *args: str) -> subprocess.CompletedProcess[str]:
@@ -326,8 +349,14 @@ def clean(manifest: Path, *, apply: bool) -> dict[str, list[str]]:
     """
     result: dict[str, list[str]] = {"removed": [], "would_remove": [], "refused": []}
     roots = [Path(r) for r in _roots(manifest)]
-    for path in artifact_candidates(manifest):
-        root = next(r for r in roots if str(path).startswith(str(r)))
+    candidates, nested = _walk_owned(manifest)
+    registered = {str(r) for r in roots}
+    for path in nested:
+        if str(path.resolve()) not in registered:
+            result["refused"].append(f"{path}: a nested repository; register it to clean it")
+    for path in candidates:
+        owners = [r for r in roots if path.is_relative_to(r)]
+        root = max(owners, key=lambda r: len(r.parts))
         reason = _refusal(path, root)
         if reason:
             result["refused"].append(reason)
