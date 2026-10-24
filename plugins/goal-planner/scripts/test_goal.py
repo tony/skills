@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import json
+import os
 import sqlite3
 import typing as t
 from datetime import date
@@ -89,6 +90,31 @@ def test_catalog_keeps_newest_version_only(tmp_path: pathlib.Path) -> None:
     skills = goal.discover_skills([tmp_path / "cache"])
     assert [s.name for s in skills] == ["spike:ratchet"]
     assert "0.10.0" in skills[0].path
+
+
+def test_catalog_skips_versions_marked_orphaned(tmp_path: pathlib.Path) -> None:
+    """A cached version Claude Code marked orphaned is not installed, whatever its name."""
+    plugin = tmp_path / "cache" / "mkt" / "review"
+    for version in ("58267944f921", "f359d43b4060"):
+        _skill_file(plugin / version / "skills" / "review", "review")
+    _ = (plugin / "f359d43b4060" / ".orphaned_at").write_text("1790000000000", encoding="utf-8")
+    assert "58267944f921" in goal.discover_skills([tmp_path / "cache"])[0].path
+
+
+def test_catalog_orders_sha_versions_by_age(tmp_path: pathlib.Path) -> None:
+    """Git SHA versions have no order of their own, so the newest directory wins."""
+    plugin = tmp_path / "cache" / "mkt" / "review"
+    for version, stamp in (("f359d43b4060", 1_000_000), ("58267944f921", 2_000_000)):
+        _skill_file(plugin / version / "skills" / "review", "review")
+        os.utime(plugin / version, (stamp, stamp))
+    assert "58267944f921" in goal.discover_skills([tmp_path / "cache"])[0].path
+
+
+def test_catalog_ignores_marketplace_clones(tmp_path: pathlib.Path) -> None:
+    """A temp_* clone Claude Code makes while installing adds no skills."""
+    clone = tmp_path / "cache" / "temp_git_1792340451979_qlapt1"
+    _skill_file(clone / "skills" / "brainstorming", "brainstorming")
+    assert goal.discover_skills([tmp_path / "cache"]) == []
 
 
 def test_catalog_reads_bare_skill_dirs(tmp_path: pathlib.Path) -> None:

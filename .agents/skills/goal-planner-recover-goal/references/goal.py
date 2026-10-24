@@ -68,6 +68,10 @@ MIN_SENTENCE = 50
 """Shorter fragments recur by accident; a retyped guardrail is a full sentence."""
 POINTER_RE = re.compile(r"^Read the Codex goal objective file at (.+) before continuing\.$")
 """Codex's TUI stores this pointer in place of an objective it spilled to a file."""
+ORPHANED_MARK = ".orphaned_at"
+"""Claude Code leaves this file in a cached plugin version no install uses any more."""
+CLONE_PREFIX = "temp_"
+"""Claude Code clones a marketplace into a ``temp_*`` cache entry while installing."""
 
 
 @dataclasses.dataclass(frozen=True)
@@ -220,15 +224,17 @@ def measure_text(
     }
 
 
-def _version_key(version: str) -> tuple[tuple[int, str], ...]:
-    """Order version directory names numerically where they are numbers.
+def _version_key(version: str) -> tuple[int, ...]:
+    """Order dotted version numbers numerically; other names, such as git SHAs, tie.
 
     Examples
     --------
     >>> _version_key("0.10.0") > _version_key("0.9.0")
     True
+    >>> _version_key("f359d43b4060") == _version_key("58267944f921")
+    True
     """
-    return tuple((int(p), "") if p.isdigit() else (-1, p) for p in re.split(r"[.+-]", version))
+    return tuple(int(p) if p.isdigit() else -1 for p in re.split(r"[.+-]", version))
 
 
 def default_skill_roots(
@@ -271,9 +277,11 @@ def discover_skills(roots: list[Path] | None = None) -> list[Skill]:
     A root is read in each layout it holds: a plugin cache
     (``<marketplace>/<plugin>/<version>/skills/<skill>/SKILL.md``), a plugin
     checkout (``<plugin>/skills/<skill>/SKILL.md``), or a bare skill directory
-    (``<skill>/SKILL.md``).
+    (``<skill>/SKILL.md``). Cached versions tied on their number go by age;
+    one Claude Code marked orphaned, and a ``temp_*`` clone it makes while
+    installing, are not installed and are skipped.
     """
-    newest: dict[tuple[str, str], tuple[tuple[tuple[int, str], ...], Path]] = {}
+    newest: dict[tuple[str, str], tuple[tuple[tuple[int, ...], float], Path]] = {}
     found: dict[str, Skill] = {}
     if roots is None:
         found.update({s.name: s for s in own_plugin_skills()})
@@ -281,12 +289,17 @@ def discover_skills(roots: list[Path] | None = None) -> list[Skill]:
         if not root.is_dir():
             continue
         for path in root.glob("*/*/*/skills/*/SKILL.md"):
-            plugin, version = path.parents[3].name, path.parents[2].name
-            key = (str(path.parents[4]), plugin)
+            version, marketplace = path.parents[2], path.parents[4]
+            if marketplace.name.startswith(CLONE_PREFIX) or (version / ORPHANED_MARK).exists():
+                continue
+            key = (str(marketplace), path.parents[3].name)
+            rank = (_version_key(version.name), version.stat().st_mtime)
             best = newest.get(key)
-            if best is None or _version_key(version) > best[0]:
-                newest[key] = (_version_key(version), path.parents[2])
+            if best is None or rank > best[0]:
+                newest[key] = (rank, version)
         for path in root.glob("*/skills/*/SKILL.md"):
+            if path.parents[2].name.startswith(CLONE_PREFIX):
+                continue
             skill = _read_skill(path, path.parents[2].name)
             _ = found.setdefault(skill.name, skill)
         for path in root.glob("*/SKILL.md"):
