@@ -14,7 +14,9 @@ Run ``goal.py <command> --help`` for each command.
 from __future__ import annotations
 
 import argparse
+import contextlib
 import dataclasses
+import getpass
 import io
 import json
 import os
@@ -430,6 +432,15 @@ def _windows_users(mnt: Path) -> list[str]:
     return users
 
 
+def _login_name(env: Mapping[str, str]) -> str:
+    """Return ``$USER``, else the login name a sandboxed shell leaves out of the environment."""
+    if env.get("USER"):
+        return env["USER"]
+    with contextlib.suppress(KeyError, OSError):  # < 3.13: no login name, no passwd entry
+        return getpass.getuser()
+    return ""
+
+
 def _profile_documents(profile: Path) -> Path | None:
     if not profile.is_file():
         return None
@@ -453,8 +464,8 @@ def resolve_root(
     Precedence: the flag, ``GOAL_PLANNER_ROOT``, this machine's
     ``profile.local.md``, the synced profile's ``documents:`` (``auto`` skips
     either), the Windows Documents folder on WSL, then ``~/Documents``. On WSL a
-    Windows profile matching ``$USER`` or named in ``$PATH`` wins; a tie raises
-    ``RootError``.
+    Windows profile matching ``$USER`` (else the login name) or named in
+    ``$PATH`` wins; a tie raises ``RootError``.
     """
     if flag:
         return Path(flag).expanduser(), "flag"
@@ -470,7 +481,7 @@ def resolve_root(
     mnt = WINDOWS_USERS if mnt is None else mnt
     if is_wsl() if wsl is None else wsl:
         users = _windows_users(mnt)
-        user = env.get("USER", "").lower()
+        user = _login_name(env).lower()
         path_env = env.get("PATH", "").lower()
         chosen = [u for u in users if u.lower() == user] or [
             u for u in users if f"{mnt}/{u}/".lower() in path_env

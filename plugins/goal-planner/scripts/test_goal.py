@@ -3,6 +3,7 @@
 # ruff: noqa: S101, INP001
 from __future__ import annotations
 
+import getpass
 import json
 import os
 import sqlite3
@@ -211,6 +212,17 @@ def test_root_wsl_picks_matching_user(tmp_path: pathlib.Path) -> None:
     for user in ("ann", "bob", "Public"):
         (tmp_path / user / "Documents").mkdir(parents=True)
     root = goal.resolve_root(None, {"USER": "bob"}, None, mnt=tmp_path, wsl=True)
+    assert root == (tmp_path / "bob" / "Documents", "wsl")
+
+
+def test_root_wsl_falls_back_to_the_login_name(
+    tmp_path: pathlib.Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A sandboxed shell with no $USER still finds the profile named for the login."""
+    for user in ("ann", "bob"):
+        (tmp_path / user / "Documents").mkdir(parents=True)
+    monkeypatch.setattr(getpass, "getuser", lambda: "bob")
+    root = goal.resolve_root(None, {}, None, mnt=tmp_path, wsl=True)
     assert root == (tmp_path / "bob" / "Documents", "wsl")
 
 
