@@ -75,7 +75,9 @@ named, with its reason, in the Modules section.
 Write the objective per `../../references/anatomy.md` when the content
 exceeds the host's target, when any host is Codex, or when the user asked for
 the full findings to be kept. Write it per `../../references/prose-rules.md`.
-Save it to a draft file outside the working tree, then:
+Write each draft with the file-writing tool to a file in `$TMPDIR`, or the
+host's scratch directory when it names one, never in the working tree; the
+scripts read that file. Then:
 
 ```console
 $ python3 <goal.py> ledger save \
@@ -100,7 +102,9 @@ Follow `../../references/hosts.md` for each host, with the sections in
   printed evidence; the bound carries the `turn N of M` line; only
   model-invocable skills, as `/plugin:skill`.
 - Codex TUI: the objective is the goal. Codex exec or the API: the pointer
-  goal from `hosts.md`.
+  goal from `hosts.md`. Either way, leave out the completion audit and the
+  three-turn blocked rule Codex injects, including "if the same blocker
+  repeats, stop".
 - An addendum: print it alone; then, when the latest goal plus the addendum
   exceeds the target, fold it in and move detail into a new objective
   revision rather than dropping any requirement.

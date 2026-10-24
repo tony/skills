@@ -66,7 +66,7 @@ $ python3 <goal.py> ledger save \
     --kind goal \
     --host <host the source shows> \
     --status set \
-    <file holding the verbatim text>
+    <file in $TMPDIR holding the verbatim text>
 ```
 
 Use `--status draft` when the source shows only that it was printed.

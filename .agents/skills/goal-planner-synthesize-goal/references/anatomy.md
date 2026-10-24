@@ -24,8 +24,10 @@ nothing to say; never pad one.
    parallel, and when to use subagents.
 5. Guardrails: the enabled modules from `modules.md`, in their compact form.
 6. Done when: each criterion with the evidence the agent prints.
-7. Bound: a turn or time clause, the turn-counter line, and what to print and
-   do when one blocker repeats.
+7. Bound: for Claude, a turn or time clause, the turn-counter line, and what
+   to print and do when one blocker repeats. Codex injects its own blocked
+   rule, so a Codex goal carries a bound only when the user asked for one, and
+   never a blocker rule.
 
 ## The objective
 
@@ -62,8 +64,8 @@ requirements and leaves the audit out.
 
 ## Bounding the run
 
-Write the bound and the counter together: "Or stop after 40 turns. End every
-turn with the line `turn N of 40`." In tests with a bound of 5, the counter
+In a Claude goal, write the bound and the counter together: "Or stop after 40
+turns. End every turn with the line `turn N of 40`." In tests with a bound of 5, the counter
 stopped the loop after exactly 5 turns; replies with nothing countable ran a
 turn late, and prose about a blocked task never reached the bound before
 Claude Code's own block cap ended it. For a blocker: "If the same blocker

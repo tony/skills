@@ -60,7 +60,8 @@ conversation; without a question tool, keep it.
 
 Write it per `references/anatomy.md` and
 `references/prose-rules.md`, opening with the `## Lineage` table from
-`lineage.md`. Save it:
+`lineage.md`. Write the draft to a file as Step 3 of
+the `goal-planner-print-goal` skill describes, then save it:
 
 ```console
 $ python3 <goal.py> ledger save \
