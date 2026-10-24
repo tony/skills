@@ -27,7 +27,9 @@ never routed to on the model's initiative: it rewrites the user's defaults.
 ## Step 0: Resolve the script
 
 `<goal.py>` is `references/goal.py`, resolved from this skill's own
-directory; write it as an absolute path in every command.
+directory; write it as an absolute path in every command. Run each command by
+itself, with no `cd`, `;`, `&&`, pipe, or shell variable, so a single
+permission rule for `python3` covers every call.
 
 ## Step 1: Export and count
 

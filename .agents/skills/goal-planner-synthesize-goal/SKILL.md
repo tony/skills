@@ -27,8 +27,10 @@ disappears without a recorded reason.
 ## Step 0: Resolve the script
 
 `<goal.py>` is `references/goal.py`, resolved from this skill's own
-directory; write it as an absolute path in every command. Resolve the root and
-profile as in Step 0 of the `goal-planner-print-goal` skill.
+directory; write it as an absolute path in every command. Run each command by
+itself, with no `cd`, `;`, `&&`, pipe, or shell variable, so a single
+permission rule for `python3` covers every call. Resolve the root and profile
+as in Step 0 of the `goal-planner-print-goal` skill.
 
 ## Step 1: Gather the lineage
 
@@ -68,6 +70,9 @@ $ python3 <goal.py> ledger save \
     --parent <previous objective relative to the root> \
     <objective draft>
 ```
+
+When the save fails because the shell cannot write there, follow the
+read-only fallback in `references/ledger.md`.
 
 ## Step 4: Render, check, and save the goal
 

@@ -29,8 +29,10 @@ call this every turn.
 ## Step 0: Resolve the script and the reserves
 
 `<resources.py>` is `references/resources.py`, resolved from this skill's
-own directory; write it as an absolute path in every command. The reserves
-are in `references/resources.md`; the profile's `reserve_*` and
+own directory; write it as an absolute path in every command. Run each command
+by itself, with no `cd`, `;`, `&&`, pipe, or shell variable, so a single
+permission rule for `python3` covers every call. The reserves are in
+`references/resources.md`; the profile's `reserve_*` and
 `*_pressure_pct` values replace them when set.
 
 ## Step 1: Check

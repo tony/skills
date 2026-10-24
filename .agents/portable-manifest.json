@@ -379,7 +379,7 @@
         "references/prose-rules.md": "plugins/goal-planner/references/prose-rules.md",
         "templates/profile.md": "plugins/goal-planner/templates/profile.md"
       },
-      "bytes": 52732
+      "bytes": 53678
     },
     {
       "name": "goal-planner-print-goal",
@@ -390,12 +390,13 @@
         "references/anatomy.md": "plugins/goal-planner/references/anatomy.md",
         "references/goal.py": "plugins/goal-planner/scripts/goal.py",
         "references/hosts.md": "plugins/goal-planner/references/hosts.md",
+        "references/ledger.md": "plugins/goal-planner/references/ledger.md",
         "references/modules.md": "plugins/goal-planner/references/modules.md",
         "references/prose-rules.md": "plugins/goal-planner/references/prose-rules.md",
         "references/verification-gates.md": "plugins/goal-planner/references/verification-gates.md",
         "templates/profile.md": "plugins/goal-planner/templates/profile.md"
       },
-      "bytes": 66425
+      "bytes": 70728
     },
     {
       "name": "goal-planner-recover-goal",
@@ -405,9 +406,10 @@
       "bundled": {
         "references/goal.py": "plugins/goal-planner/scripts/goal.py",
         "references/history.md": "plugins/goal-planner/references/history.md",
+        "references/ledger.md": "plugins/goal-planner/references/ledger.md",
         "references/prose-rules.md": "plugins/goal-planner/references/prose-rules.md"
       },
-      "bytes": 43592
+      "bytes": 47779
     },
     {
       "name": "goal-planner-resource-guard",
@@ -419,7 +421,7 @@
         "references/resources.md": "plugins/goal-planner/references/resources.md",
         "references/resources.py": "plugins/goal-planner/scripts/resources.py"
       },
-      "bytes": 26488
+      "bytes": 26627
     },
     {
       "name": "goal-planner-setup",
@@ -433,7 +435,7 @@
         "references/prose-rules.md": "plugins/goal-planner/references/prose-rules.md",
         "templates/profile.md": "plugins/goal-planner/templates/profile.md"
       },
-      "bytes": 51814
+      "bytes": 52760
     },
     {
       "name": "goal-planner-synthesize-goal",
@@ -444,10 +446,11 @@
         "references/anatomy.md": "plugins/goal-planner/references/anatomy.md",
         "references/goal.py": "plugins/goal-planner/scripts/goal.py",
         "references/history.md": "plugins/goal-planner/references/history.md",
+        "references/ledger.md": "plugins/goal-planner/references/ledger.md",
         "references/lineage.md": "plugins/goal-planner/references/lineage.md",
         "references/prose-rules.md": "plugins/goal-planner/references/prose-rules.md"
       },
-      "bytes": 49757
+      "bytes": 53944
     },
     {
       "name": "lean-tighten",
@@ -1718,6 +1721,7 @@
     "plugins/github-actions/references/prose-rules.md": 3,
     "plugins/github-actions/scripts/fleet.py": 3,
     "plugins/github-actions/scripts/pins.py": 3,
+    "plugins/goal-planner/references/ledger.md": 3,
     "plugins/goal-planner/references/modules.md": 3,
     "plugins/goal-planner/templates/profile.md": 3,
     "plugins/lean/references/handoff.md": 3,

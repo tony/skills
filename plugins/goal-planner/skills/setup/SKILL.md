@@ -21,7 +21,9 @@ user's configuration.
 ## Step 0: Resolve the script
 
 `<goal.py>` is `../../scripts/goal.py`, resolved from this skill's own
-directory; write it as an absolute path in every command.
+directory; write it as an absolute path in every command. Run each command by
+itself, with no `cd`, `;`, `&&`, pipe, or shell variable, so a single
+permission rule for `python3` covers every call.
 
 ## Step 1: Find what exists
 

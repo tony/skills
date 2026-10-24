@@ -27,7 +27,9 @@ where it came from. Nothing is paraphrased, shortened, or merged.
 ## Step 0: Resolve the script
 
 `<goal.py>` is `references/goal.py`, resolved from this skill's own
-directory; write it as an absolute path in every command.
+directory; write it as an absolute path in every command. Run each command by
+itself, with no `cd`, `;`, `&&`, pipe, or shell variable, so a single
+permission rule for `python3` covers every call.
 
 ## Step 1: Search
 
@@ -73,6 +75,9 @@ $ python3 <goal.py> ledger save \
 ```
 
 Use `--status draft` when the source shows only that it was printed.
+
+When the save fails because the shell cannot write there, follow the
+read-only fallback in `references/ledger.md`.
 
 ## Output
 

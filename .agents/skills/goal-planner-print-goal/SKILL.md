@@ -38,8 +38,9 @@ per target.
 ## Step 0: Resolve the scripts and the profile
 
 `<goal.py>` is `references/goal.py`, resolved from this skill's own
-directory; write it as an absolute path in every command. Print the Documents
-root:
+directory; write it as an absolute path in every command. Run each command by
+itself, with no `cd`, `;`, `&&`, pipe, or shell variable, so a single
+permission rule for `python3` covers every call. Print the Documents root:
 
 ```console
 $ python3 <goal.py> ledger root
@@ -90,6 +91,9 @@ $ python3 <goal.py> ledger save \
 ```
 
 Keep the printed path; the goal names it.
+
+When the save fails because the shell cannot write there, follow the
+read-only fallback in `references/ledger.md`.
 
 ## Step 4: Render the goal
 
@@ -157,6 +161,9 @@ $ python3 <goal.py> ledger save \
 ```
 
 Omit `--objective` or `--parent` when there is none. Delete the draft files.
+
+When the save fails because the shell cannot write there, follow the
+read-only fallback in `references/ledger.md`.
 
 ## Output
 

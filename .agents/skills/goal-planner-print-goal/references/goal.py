@@ -106,6 +106,7 @@ class Args(argparse.Namespace):
     codex_home: str | None = None
     history: str | None = None
     limit: int = 20
+    dry_run: bool = False
     min_count: int = 5
     min_projects: int = 2
     days: int = 30
@@ -412,14 +413,10 @@ def _local_today() -> date:
     return datetime.now(timezone.utc).astimezone().date()
 
 
-def save_entry(  # noqa: PLR0913, PLR0917
-    root: Path, topic: str, kind: str, body: str, meta: dict[str, str], day: date
-) -> Path:
-    """Write the next numbered goal or objective; never overwrite an existing file.
-
-    The file is frontmatter followed by ``body`` exactly. A number another
-    session took first moves the save to the next one.
-    """
+def render_entry(  # noqa: PLR0913, PLR0917
+    root: Path, topic: str, kind: str, body: str, meta: dict[str, str], day: date, number: int
+) -> tuple[Path, str]:
+    """Return the path and exact file text for one numbered goal or objective."""
     if not TOPIC_RE.match(topic):
         msg = f"topic {topic!r} must be a kebab-case slug such as parser-fix"
         raise ValueError(msg)
@@ -432,20 +429,31 @@ def save_entry(  # noqa: PLR0913, PLR0917
         raise ValueError(msg)
     host = meta.get("host", "")
     measured = measure_text(body, host if host in HOSTS else "claude")
-    folder = root / day.isoformat() / KINDS[kind]
-    folder.mkdir(parents=True, exist_ok=True)
+    fields = [("topic", topic), ("kind", kind), ("number", str(number))]
+    fields += [("host", host), ("status", status)]
+    fields += [(k, meta[k]) for k in ("objective", "parent") if meta.get(k)]
+    fields += [("utf16", str(measured["utf16"])), ("codepoints", str(measured["codepoints"]))]
+    fields.append(("created", _utc_now()))
+    head = "---\n" + "".join(f"{key}: {value}\n" for key, value in fields) + "---\n"
+    path = root / day.isoformat() / KINDS[kind] / f"{topic}-{number:03d}.md"
+    return path, head + body
+
+
+def save_entry(  # noqa: PLR0913, PLR0917
+    root: Path, topic: str, kind: str, body: str, meta: dict[str, str], day: date
+) -> Path:
+    """Write the next numbered goal or objective; never overwrite an existing file.
+
+    The file is frontmatter followed by ``body`` exactly. A number another
+    session took first moves the save to the next one.
+    """
     number = next_number(root, topic, kind)
     for _ in range(SAVE_ATTEMPTS):
-        fields = [("topic", topic), ("kind", kind), ("number", str(number))]
-        fields += [("host", host), ("status", status)]
-        fields += [(k, meta[k]) for k in ("objective", "parent") if meta.get(k)]
-        fields += [("utf16", str(measured["utf16"])), ("codepoints", str(measured["codepoints"]))]
-        fields.append(("created", _utc_now()))
-        head = "---\n" + "".join(f"{key}: {value}\n" for key, value in fields) + "---\n"
-        path = folder / f"{topic}-{number:03d}.md"
+        path, content = render_entry(root, topic, kind, body, meta, day, number)
+        path.parent.mkdir(parents=True, exist_ok=True)
         try:
             with path.open("x", encoding="utf-8", newline="") as handle:
-                _ = handle.write(head + body)
+                _ = handle.write(content)
         except FileExistsError:
             number += 1
             continue
@@ -699,9 +707,14 @@ def _cmd_ledger(args: Args) -> int:
         )
         day = date.fromisoformat(args.day) if args.day else _local_today()
         body = _read_input(args.file)
+        measured = measure_text(body, args.host)
+        if args.dry_run:
+            number = next_number(root, args.topic or "", args.kind)
+            path, content = render_entry(root, args.topic or "", args.kind, body, meta, day, number)
+            print(json.dumps({"path": str(path), "number": number, "content": content, **measured}))
+            return 0
         path = save_entry(root, args.topic or "", args.kind, body, meta, day)
         number = int(path.stem.rpartition("-")[2])
-        measured = measure_text(body, args.host)
         print(json.dumps({"path": str(path), "number": number, **measured}))
         return 0
     print(json.dumps(list_entries(root, args.topic), indent=2))
@@ -790,6 +803,9 @@ def build_parser() -> argparse.ArgumentParser:
             _ = action.add_argument("--objective", help="objective path relative to the root")
             _ = action.add_argument("--parent", help="parent goal path relative to the root")
             _ = action.add_argument("--date", dest="day", help="YYYY-MM-DD; default today")
+            _ = action.add_argument(
+                "--dry-run", action="store_true", help="print the path and file text; write nothing"
+            )
             _ = action.add_argument("file", nargs="?", default="-")
 
     find = sub.add_parser("find", help="gather earlier goals from every source")

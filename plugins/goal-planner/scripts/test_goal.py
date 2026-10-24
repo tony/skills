@@ -351,3 +351,20 @@ def test_harvest_applies_sweep_bar(tmp_path: pathlib.Path) -> None:
     found = goal.harvest(export, today=date(2026, 10, 24))
     assert [f["sentence"] for f in found] == [kept.lower()]
     assert (found[0]["count"], found[0]["projects"], found[0]["last_seen"]) == (5, 2, "2026-10-20")
+
+
+def test_ledger_save_dry_run_prints_content_without_writing(
+    tmp_path: pathlib.Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """A dry run names the next path and the exact file text, and writes nothing."""
+    draft = tmp_path / "draft.md"
+    _ = draft.write_text("/goal Fix it.\n", encoding="utf-8")
+    root = tmp_path / "Documents"
+    args = ["ledger", "save", "--root", str(root), "--topic", "parser", "--kind", "goal"]
+    assert goal.main([*args, "--date", "2026-10-24", "--dry-run", str(draft)]) == 0
+    planned = t.cast("dict[str, object]", json.loads(capsys.readouterr().out))
+    assert str(planned["path"]).endswith("2026-10-24/goals/parser-001.md")
+    content = str(planned["content"])
+    assert goal.strip_frontmatter(content) == "/goal Fix it.\n"
+    assert goal.parse_frontmatter(content)["number"] == "1"
+    assert not root.exists()

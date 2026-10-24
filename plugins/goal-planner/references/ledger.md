@@ -1,6 +1,6 @@
 # Ledger
 
-Contents: Files, Numbering, Frontmatter, The Documents root, Commands.
+Contents: Files, Numbering, Frontmatter, The Documents root, Commands (including saving from a read-only shell).
 
 Every printed goal is saved; nothing saved stands in for printing it.
 
@@ -66,6 +66,19 @@ $ python3 <goal.py> ledger save \
     --kind goal \
     --host claude \
     --objective <YYYY-MM-DD>/objectives/<topic>-<NNN>.md \
+    <draft file>
+```
+
+When the shell cannot write to the root (a read-only file system or a
+sandboxed shell), print the path and the exact file text instead, then create
+that path with the file-writing tool, using the printed `content` unchanged:
+
+```console
+$ python3 <goal.py> ledger save \
+    --topic <topic> \
+    --kind goal \
+    --host claude \
+    --dry-run \
     <draft file>
 ```
 
