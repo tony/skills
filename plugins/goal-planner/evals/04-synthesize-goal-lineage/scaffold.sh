@@ -21,6 +21,11 @@ PY
 git add .gitignore parser.py tests/test_parser.py
 git commit -q -m 'Add the comma parser'
 git switch -q -c fix-parser
+cat >parser.py <<'PY'
+def parse(text):
+    return [field.strip() for field in text.split(",")]
+PY
+git commit -q -am 'Strip spaces around each field (P1)'
 
 home="$(cd .. && pwd)"
 for config in "$home/.config" "${XDG_CONFIG_HOME:-$home/.config}"; do

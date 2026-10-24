@@ -35,5 +35,6 @@ graders:
     focus: last_message
     criteria: |
       The reply prints a full goal starting with /goal.
-      Its lineage says what became of P1 (done or kept, with a reason),
-      carries P2 and P3 forward as open, and adds P4 for benchmarking.
+      Its lineage marks P1 as done, citing evidence such as the commit or
+      the passing test, carries P2 and P3 forward as open, and adds P4 for
+      benchmarking.
