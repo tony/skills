@@ -1,0 +1,52 @@
+schema_version: "1.0"
+name: 01-print-goal-claude-target
+description: >-
+  A natural request for a Claude goal fires print-goal, which measures and lints the draft, prints the full goal, and saves it as a numbered file under the profile's Documents root.
+tags: [fixture, git]
+
+context:
+  scaffold_script: scaffold.sh
+
+execution:
+  prompt: >-
+    Print a goal under 4000 characters to fix the failing parser test on this branch: local only, commit often, no pushing. I will paste it into Claude Code's /goal.
+  max_turns: 30
+  timeout_seconds: 600
+  allowed_tools: [Bash, Read, Write, Glob, Grep, Skill]
+
+runs: 3
+
+graders:
+  - name: print-goal-fired
+    type: tool_used
+    tool: Skill
+    input_match: '"skill":\s*"(goal-planner:)?print-goal"'
+
+  - name: measured-the-draft
+    type: tool_used
+    tool: Bash
+    input_match: '\smeasure\b'
+
+  - name: linted-the-draft
+    type: tool_used
+    tool: Bash
+    input_match: '\slint\b'
+
+  - name: prints-the-goal-block
+    type: regex
+    pattern: '```\w*\n/goal '
+
+  - name: saves-a-numbered-goal
+    type: regex
+    pattern: 'Documents/\d{4}-\d{2}-\d{2}/goals/[a-z0-9-]+-\d{3}\.md'
+
+  - name: goal-is-checkable
+    type: llm
+    focus: last_message
+    criteria: |
+      The reply prints one complete goal that starts with /goal and is about
+      fixing the failing parser test on the current branch.
+      The goal says not to push.
+      The goal has a done-when clause that names evidence the agent will
+      print, such as the test run, git status, or a task table.
+      The goal bounds the run with a turn or time limit.

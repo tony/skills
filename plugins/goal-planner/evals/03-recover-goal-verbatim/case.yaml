@@ -1,0 +1,40 @@
+schema_version: "1.0"
+name: 03-recover-goal-verbatim
+description: >-
+  A lost goal is found in the ledger and printed verbatim with its source, not reworded.
+tags: [fixture, git]
+
+context:
+  scaffold_script: scaffold.sh
+
+execution:
+  prompt: >-
+    I lost the goal we had for the parser work. Print it again exactly as it was.
+  max_turns: 30
+  timeout_seconds: 600
+  allowed_tools: [Bash, Read, Write, Glob, Grep, Skill]
+
+runs: 3
+
+graders:
+  - name: recover-goal-fired
+    type: tool_used
+    tool: Skill
+    input_match: '"skill":\s*"(goal-planner:)?recover-goal"'
+
+  - name: searched-for-goals
+    type: tool_used
+    tool: Bash
+    input_match: '\sfind\b'
+
+  - name: prints-the-latest-verbatim
+    type: regex
+    pattern: "Keep the tokenizer's public API unchanged while fixing the parser\\."
+
+  - name: names-its-source
+    type: llm
+    focus: last_message
+    criteria: |
+      The reply prints the goal that finishes P2 and P3, word for word, and
+      says it came from a saved goal file (parser-002), without rewording
+      or summarizing the goal text.

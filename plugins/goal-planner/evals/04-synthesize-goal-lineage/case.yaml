@@ -1,0 +1,39 @@
+schema_version: "1.0"
+name: 04-synthesize-goal-lineage
+description: >-
+  A new goal built from earlier ones maps every earlier task, keeps the open ones, adds the new one, and prints a lineage section.
+tags: [fixture, git]
+
+context:
+  scaffold_script: scaffold.sh
+
+execution:
+  prompt: >-
+    Make a new goal based on our earlier parser goals: P2 and P3 are still open, and add a P4 to benchmark the parser.
+  max_turns: 30
+  timeout_seconds: 600
+  allowed_tools: [Bash, Read, Write, Glob, Grep, Skill]
+
+runs: 3
+
+graders:
+  - name: synthesize-goal-fired
+    type: tool_used
+    tool: Skill
+    input_match: '"skill":\s*"(goal-planner:)?synthesize-goal"'
+
+  - name: has-a-lineage-section
+    type: regex
+    pattern: '## Lineage'
+
+  - name: carries-every-key
+    type: regex
+    pattern: 'P1[\s\S]*P2[\s\S]*P3[\s\S]*P4|P4[\s\S]*P1[\s\S]*P2[\s\S]*P3'
+
+  - name: maps-the-lineage
+    type: llm
+    focus: last_message
+    criteria: |
+      The reply prints a full goal starting with /goal.
+      Its lineage says what became of P1 (done or kept, with a reason),
+      carries P2 and P3 forward as open, and adds P4 for benchmarking.

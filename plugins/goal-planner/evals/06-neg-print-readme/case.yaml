@@ -1,0 +1,33 @@
+schema_version: "1.0"
+name: 06-neg-print-readme
+description: >-
+  Printing a file is not a goal: print-goal stays quiet.
+tags: [fixture, git]
+
+context:
+  scaffold_script: scaffold.sh
+
+execution:
+  prompt: >-
+    Print the contents of README.md.
+  max_turns: 30
+  timeout_seconds: 600
+  allowed_tools: [Bash, Read, Write, Glob, Grep, Skill]
+
+runs: 3
+
+graders:
+  - name: print-goal-not-fired
+    type: tool_used
+    tool: Skill
+    input_match: '"skill":\s*"(goal-planner:)?print-goal"'
+    min: 0
+    max: 0
+    arm: both
+
+  - name: shows-the-readme
+    type: llm
+    focus: last_message
+    criteria: |
+      The reply shows the README's text, including the line about
+      splitting comma-separated text.

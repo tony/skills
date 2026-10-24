@@ -1,0 +1,43 @@
+schema_version: "1.0"
+name: 02-print-goal-codex
+description: >-
+  A request for a Codex goal saves a full objective, measures it as Codex counts, and leaves out the completion audit Codex already injects.
+tags: [fixture, git]
+
+context:
+  scaffold_script: scaffold.sh
+
+execution:
+  prompt: >-
+    Print a goal for Codex to fix the failing parser test on this branch, and keep the full findings with it: local only, commit often.
+  max_turns: 30
+  timeout_seconds: 600
+  allowed_tools: [Bash, Read, Write, Glob, Grep, Skill]
+
+runs: 3
+
+graders:
+  - name: print-goal-fired
+    type: tool_used
+    tool: Skill
+    input_match: '"skill":\s*"(goal-planner:)?print-goal"'
+
+  - name: measured-for-codex
+    type: tool_used
+    tool: Bash
+    input_match: '(?=.*\smeasure\b)(?=.*--host\s+codex)'
+
+  - name: saves-an-objective
+    type: regex
+    pattern: 'objectives/[a-z0-9-]+-\d{3}\.md'
+
+  - name: no-restated-audit
+    type: llm
+    focus: last_message
+    criteria: |
+      The reply prints a goal meant for Codex about fixing the failing
+      parser test.
+      The goal does not restate Codex's own completion rules: it has no
+      sentence telling the agent to treat completion as unproven, to audit
+      every requirement before marking the goal complete, or to mark the
+      goal blocked after the same blocker repeats for three turns.
