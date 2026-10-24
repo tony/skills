@@ -184,7 +184,7 @@ def test_root_wsl_picks_matching_user(tmp_path: pathlib.Path) -> None:
     """On WSL the Windows profile matching the Linux user wins; service profiles never do."""
     for user in ("ann", "bob", "Public"):
         (tmp_path / user / "Documents").mkdir(parents=True)
-    root = goal.resolve_root(None, {"USER": "bob"}, None, mnt=tmp_path)
+    root = goal.resolve_root(None, {"USER": "bob"}, None, mnt=tmp_path, wsl=True)
     assert root == (tmp_path / "bob" / "Documents", "wsl")
 
 
@@ -193,7 +193,7 @@ def test_root_wsl_ambiguous_raises(tmp_path: pathlib.Path) -> None:
     for user in ("ann", "bob"):
         (tmp_path / user / "Documents").mkdir(parents=True)
     with pytest.raises(goal.RootError) as err:
-        _ = goal.resolve_root(None, {"USER": "zed"}, None, mnt=tmp_path)
+        _ = goal.resolve_root(None, {"USER": "zed"}, None, mnt=tmp_path, wsl=True)
     assert sorted(err.value.candidates) == ["ann", "bob"]
 
 
