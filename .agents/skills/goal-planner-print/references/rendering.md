@@ -1,71 +1,63 @@
 # Render and save a goal
 
-Apply [prose-rules.md](./prose-rules.md) to goal text and status. The saved goal
-and the complete user-facing payload must be identical. A path-only response
-fails the output contract even when the file is correct.
+Write under [prose-rules.md](./prose-rules.md). The complete printed payload and
+saved goal must match exactly; links never replace the printed goal.
 
 ## Contents
 
-- Select host and budget
-- Prepare the helper input
+- Select delivery and budget
+- Prepare helper input
 - Save immutable revisions
 - Verify the handoff
 
-## Select host and budget
+## Select delivery and budget
 
-Default Claude output to at most **3,800 characters for the whole `/goal `
-payload**, including prefix, locators, spaces, newlines, and any trailing newline.
-The 4,000-character host ceiling is distinct from this drafting budget. A
-generic “under 4k” request keeps the reserve. Spend it only on explicit request;
-a strict less-than-4,000 ceiling permits at most 3,999. Honor tighter limits.
+Select the destination from the request or explicitly selected profile. The
+assistant drafting in Codex does not impose Claude's limit. Claude defaults to
+**3,800 characters for the whole `/goal ` payload**, including prefix, locators,
+spaces, and all newlines. The host ceiling is 4,000; generic “under 4k” retains
+the drafting reserve. Spend it only on explicit request; strict less-than-4,000
+permits at most 3,999. Honor tighter limits and never pad spare capacity.
 
-Count the final condition and whole payload after all substitutions. Until
-the installed host's counting metric is verified, require both Unicode code
-points and UTF-16 units to fit. Report the measurements and remaining host
-capacity outside the copy block. Never pad the spare capacity.
+Codex receives the full objective unless an explicit user or delivery-interface
+limit applies. Inspect the selected channel: full-text TUI and tool/API limits
+may differ. Never activate a goal to test limits. Count the condition and whole
+payload after substitutions; until the host metric is verified, both Unicode
+code points and UTF-16 units must fit. Report counts/capacity outside the payload.
 
-Codex receives the full objective by default. Do not impose Claude's drafting
-ceiling on it. Inspect the chosen delivery capability: a full-text TUI and a
-bounded tool/API can differ. For a bounded channel use its explicit limit and
-a verified portable companion. Never activate a native goal to test limits.
+If the full contract cannot fit, use a complete **goal specification** with
+requirements, tasks, evidence rules, and provenance. The compact goal retains
+outcome, exclusions, authority, hard acceptance, and companion reference. It
+must require a visible acceptance summary with requirement verdicts, evidence,
+exclusions, and companion identity/digest. If standalone brevity conflicts with
+obligations, print the fullest reviewable candidate and name the conflict;
+never truncate requirements.
 
-If the complete contract cannot fit, save a **goal specification** containing
-all requirements, detailed tasks, evidence rules, and provenance. Preserve the
-outcome, exclusions, authority, hard acceptance conditions, and required
-companion reference in the compact goal. Require a visible acceptance summary
-with requirement-level verdicts, evidence, exclusions, and companion identity
-and digest; a bare claim that the file is complete is insufficient.
-
-If standalone brevity conflicts with mandatory obligations, print the fullest
-reviewable candidate and name the conflict. Do not truncate requirements.
-
-## Prepare the helper input
+## Prepare helper input
 
 `<planner>` is `./planner.py`, resolved from this reference's directory
-to an absolute path and written literally in each command. Skills declare
-their own relative path to this helper. Use the available Python 3.9-or-newer
-interpreter.
+to an absolute path written literally in each command. Use Python 3.9 or newer.
+Skills declare their own relative helper path.
 
-Pass request JSON on stdin from the selected options and complete draft.
-Stdout-only must not create temporary input files. With authorized saving,
-an owned temporary request file is also acceptable; it is disposable rendering
-input, not a second maintained contract. Set
-`host` to `claude` or `codex`, `topic` to a lowercase hyphenated slug, and `body`
-to the goal text without the `/goal ` prefix. Optional fields are
+Generic output is stdout-only; save only when requested or selected by an
+approved profile. Explicit stdout-only wins and forbids all file writes,
+including temporary inputs. Pass JSON on stdin; authorized saving may use an
+owned disposable request file. Set `host` (`claude` or `codex`), `topic`
+(lowercase hyphenated slug), and `body` (without `/goal `). Optional fields:
 `specification` (complete Markdown), `documents_root`, `date` (`YYYY-MM-DD`),
-`max_chars`, `spend_reserve`, `strict_less_than_4000`, and `predecessors`
-(an array of same-topic saved goal paths in the dated `goals/` layout).
-Other-topic or legacy originals remain sourced contract inputs, not helper
-counter inputs. Import does not migrate older layouts or infer their revision
-identity. Report any unresolved lineage and do not silently restart a series.
+`max_chars`, `spend_reserve`, `strict_less_than_4000`, and `predecessors`.
 
-When `specification` is supplied, put exactly one `{{GOAL_SPEC}}` token in
-`body`. The helper inserts its concrete absolute locator and SHA-256 digest
-before counting. Do not hand-substitute an unverified digest or invent a path.
-Use the resolved machine binding for `documents_root`; native and mounted
-Documents folders are distinct.
+`predecessors` contains same-topic saved goal paths in dated `goals/` folders.
+Other-topic/legacy originals remain sourced contract inputs; importing does not
+migrate layouts or infer counter identity. Report unresolved lineage rather
+than resetting a series. Use the selected machine binding for `documents_root`;
+native and mounted Documents roots are distinct.
 
-Render without writing files, substituting the actual draft JSON:
+With `specification`, include exactly one `{{GOAL_SPEC}}` token in `body`.
+The helper inserts the absolute locator and SHA-256 digest before counting;
+do not invent paths or substitute unverified digests.
+
+Render without writes, substituting the draft JSON:
 
 ```console
 $ python3 <planner> render \
@@ -74,7 +66,7 @@ $ python3 <planner> render \
 JSON
 ```
 
-Save when the current request or approved profile selects it:
+For selected saving:
 
 ```console
 $ python3 <planner> render \
@@ -82,49 +74,44 @@ $ python3 <planner> render \
     --save
 ```
 
-Read the complete JSON result, including `payload`, `measurements`, `ready`, paths,
-revision, reuse state, and errors. Print `payload` verbatim as specified in
-[output.md](./output.md); do not summarize or reconstruct it. Stdout-only still
-prints the full contract. A compact draft needing an unsaved companion is not
-ready for activation; print the complete specification as well in that case.
+Read the complete result: `payload`, `measurements`, `ready`, paths, revision,
+reuse state, and errors. Present it under [output.md](./output.md). Stdout-only
+with a required unsaved companion is incomplete and must print that full
+specification too.
 
 ## Save immutable revisions
 
-Use the local calendar date and selected Documents root, defaulting to
-`~/Documents`. Save `YYYY-MM-DD/goals/<topic>-NNN.md` and, when needed,
-`YYYY-MM-DD/goal-specs/<topic>-NNN.md`. The goal file has only the payload;
-the specification may contain contract metadata. A short complete goal needs
-no empty companion.
+Use local calendar date and the selected Documents root (default
+`~/Documents`): `YYYY-MM-DD/goals/<topic>-NNN.md`, plus
+`YYYY-MM-DD/goal-specs/<topic>-NNN.md` when needed. Goal files contain only the
+payload; specifications may contain metadata. Short complete goals need no
+empty companion.
 
-Continue each topic's sequence across dates, starting at `001`, using at least
-three digits (`999` then `1000`). Inspect only dated `goals/` and `goal-specs/`
-folders and explicitly imported same-topic predecessors in that layout.
-Allocate above the known maximum;
-do not fill gaps or count research captures and copied fixtures. Report missing
-or conflicting imported lineage rather than silently resetting it.
+Continue each topic across dates from `001`, with at least three digits
+(`999`, then `1000`). Inspect only dated goal/specification folders and imported
+same-topic predecessors; allocate above the known maximum, never fill gaps or
+count research captures/copied fixtures. Report missing/conflicting lineage.
 
-Keep predecessor provenance in the contract. Pair both files at the same
-revision. Changed specifications require a new pair; a changed rendering may
-use an identical specification snapshot. Unchanged reprints reuse the existing
-revision and print it again. Reuse only the latest completed matching authored
-content in the selected root; an imported draft at another root requires a
-new revision with the resolved locator. Exclusive creation prevents overwrites; local
-collisions retry at a new number. Finalize and verify the specification before
-publishing its goal. Detect interrupted pairs rather than treating them as
-complete. Reservation records prevent a partial write from claiming a complete
-revision; never reclaim one based on age alone. Cross-machine conflicting copies
-require reconciliation; a local
-counter is not distributed coordination.
+Preserve predecessor provenance and pair goal/specification revisions. Changed
+specifications need new pairs; changed renderings may reuse identical
+specification content. Unchanged reprints reuse only the latest completed
+matching authored content in the selected root. Imports from another root need
+a new revision with the resolved locator. Never overwrite existing revisions.
+
+The helper uses exclusive creation and retries local collisions at a new
+number, publishes the specification before the goal, verifies the completed
+pair, and detects interrupted writes. Reservation records must not turn partial
+writes into complete revisions or be reclaimed by age alone. Reconcile cross-machine
+conflicts explicitly; a local counter is not distributed coordination.
 
 ## Verify the handoff
 
-Verify required files, identity, and digest before reporting readiness. The
-copied payload must resolve its companion from an unrelated working directory;
-a bare `../goal-specs/...` needs an explicit base and is insufficient alone.
-Keep both dated folders together when transferring, resolve the new binding,
-and create a new revision when the rendered payload changes.
+Verify required files, identities, and digests. The copied payload must resolve
+its companion from an unrelated working directory; bare `../goal-specs/...`
+without a base is insufficient. Transfer both dated folders, resolve the new
+binding, and create a new revision if the payload changes.
 
-Read back the saved goal and compare it exactly with the printed `payload`.
-If saving fails, print the draft and the concrete error. Mark a missing,
-changed, or unavailable required companion incomplete. Never claim the helper's
-mechanical checks established semantic coverage or independent review.
+Read back saved bytes and compare exactly with the printed payload. On failure,
+print the returned payload (or authored draft if none) and concrete error.
+Missing, changed, or unavailable required companions mean incomplete. Mechanical
+checks do not establish semantic coverage or independent review.

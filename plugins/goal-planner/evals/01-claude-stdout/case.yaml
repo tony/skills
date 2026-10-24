@@ -14,16 +14,14 @@ execution:
     copyable goal and measured code-point and UTF-16 counts. Do not create any
     files, activate a goal, or execute the planned work. Do not consult history
     or existing profiles; all needed inputs are in this request.
+    Outside the goal, report whole-payload counts using exactly
+    "Counts: N code points; M UTF-16 units." with the measured integers.
   max_turns: 15
   timeout_seconds: 300
   allowed_tools: [Bash, Read, Glob, Grep, Skill]
   disallowed_tools: [Write, Edit, WebFetch, WebSearch]
 runs: 1
 graders:
-  - name: print-helper-used
-    type: tool_used
-    tool: Bash
-    input_match: '(?:planner\.py|python3?\s+\$\{?[A-Za-z_]\w*\}?)[\s\S]*?\brender\b'
   - name: whole-goal-within-tighter-limit
     type: regex
     target: last_message

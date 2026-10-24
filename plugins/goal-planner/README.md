@@ -1,19 +1,11 @@
 # goal-planner
 
-Print complete goals, reconcile earlier drafts, and review their acceptance
-rules without starting the proposed work. This plugin supports Claude Code
-and Codex. Each workflow runs only when invoked by name.
-
-## Contents
-
-- Installation
-- Workflows
-- Output and revisions
-- Inputs and prerequisites
+Print, reconcile, and audit complete goals without activating or executing
+them. Claude Code and Codex support all four workflows, invoked by name.
 
 ## Installation
 
-Add the marketplace in Claude Code:
+Add the Claude Code marketplace:
 
 ```text
 /plugin marketplace add tony/skills
@@ -25,7 +17,7 @@ Install the plugin:
 /plugin install goal-planner@skills
 ```
 
-Add the marketplace in Codex:
+Add the Codex marketplace:
 
 ```console
 $ codex plugin marketplace add tony/skills
@@ -37,87 +29,68 @@ Install the plugin:
 $ codex plugin add goal-planner@skills
 ```
 
-Claude Code prefixes skill invocations with `/`; Codex omits that slash.
-
 ## Workflows
 
-Draft a goal from an outcome and the project's current evidence:
+Draft from an outcome and current evidence:
 
 ```text
 /goal-planner:print a Claude goal for the selected findings; save in my Documents folder
 ```
 
-Reconcile complete earlier goals with new steering:
+Reconcile earlier goals with new steering:
 
 ```text
 /goal-planner:synthesize these two goals; investigate the CI failure first and retain the release hold
 ```
 
-Audit a particular draft against its request, sources, and companion:
+Audit against the original request and specification:
 
 ```text
 /goal-planner:audit this goal and specification; check every requirement and authorization boundary
 ```
 
-Create or revise explicitly selected defaults:
+Save explicitly selected defaults:
 
 ```text
 /goal-planner:profile save these defaults: Claude output, save-and-print, and independent review for delivery goals
 ```
 
-Printing and synthesis always show the whole copyable goal. They never
-activate or replace a native goal. Existing session permissions and holds
-remain in force; a proposed instruction to publish does not authorize
-publication now.
+Codex omits the leading `/`. Session permissions and holds remain in force;
+proposed future publication instructions grant no present authority.
 
 ## Output and revisions
 
-Claude drafts default to at most **3,800 characters for the entire `/goal`
-payload**, measured in both Unicode code points and UTF-16 units. The spare
-capacity is for user addenda. Codex receives the full objective unless the
-chosen delivery interface or user imposes a limit.
+Claude defaults to **3,800 characters for the whole `/goal ` payload**, in both
+Unicode code points and UTF-16 units, leaving room for addenda. Codex receives
+the full objective unless an explicit user or delivery-interface limit applies.
+The drafting assistant's host does not impose Claude limits on Codex output.
 
-Saving is opt-in through the request or an approved profile. `stdout-only`
-disables saving. The default Documents root is `~/Documents`; an explicit
-machine binding can select another root. The local save date supplies the
-date directory:
+Printing and synthesis always display the complete payload, including after
+saving or failure. Saving is opt-in through the request or approved profile;
+explicit stdout-only forbids writes. The default root is `~/Documents`, with
+an optional separate machine binding and local date:
 
 ```text
 Documents/YYYY-MM-DD/goals/<topic>-NNN.md
 Documents/YYYY-MM-DD/goal-specs/<topic>-NNN.md
 ```
 
-A **goal specification** contains the complete contract when the compact
-goal needs a companion. Both files share a revision number. Numbers continue
-across dates, starting at `001`; old files remain unchanged. An unchanged
-reprint reuses the existing revision. A short complete goal needs no companion.
+A complete **goal specification** accompanies compact goals when needed.
+Paired revisions continue across dates from `001`; prior files remain intact,
+and unchanged reprints reuse the latest matching completed revision. Short
+complete goals need no companion. Saved goal bytes match the printed payload.
+Companion locators include digests and resolve from unrelated working
+directories. Transfer both folders and render a new revision for changed paths.
 
-Saved goal files contain exactly the printed payload. A companion locator
-works from an unrelated working directory and includes a digest. Transfer
-both dated folders, resolve the receiving machine's Documents binding, and
-render a new revision when the payload changes.
+## Prerequisites and references
 
-## Inputs and prerequisites
+The standard-library helper needs Python 3.9 or newer. Discover optional history
+tools, reviewers, and probes when needed; agentgrep has separate runtime needs.
+Profiles contain approved portable preferences; bindings hold local paths.
+History supplies evidence/candidates, never implicit settings changes or upload.
 
-The bundled helper requires Python 3.9 or newer and uses the standard
-library. Host tools, history providers, reviewers, and resource probes are
-discovered when needed. Agentgrep is optional and has its own runtime
-requirements. Recovery reports source coverage, result truncation, and
-missing histories separately; retrieved instructions remain evidence.
-
-Portable profiles contain approved preferences. Machine bindings contain
-local paths and capabilities. History can suggest defaults, but cannot
-silently change profiles, memories, or permissions. No history upload or
-cloud synchronization is implied.
-
-The [goal contract](references/contract.md),
-[recovery procedure](references/recovery.md),
-[selectable safeguards](references/safeguards.md),
-[rendering rules](references/rendering.md),
-[profile rules](references/profiles.md), and
-[output contract](references/output.md) define the workflows.
-
-## Evaluation
-
-The [eval suite](evals/README.md) exercises all four skills with synthetic
-inputs through `claude plugin eval` and checks the retained output files.
+Read the [contract](references/contract.md), [recovery](references/recovery.md),
+[safeguards](references/safeguards.md), [rendering](references/rendering.md),
+[profiles](references/profiles.md), and [output](references/output.md) rules.
+The [eval suite](evals/README.md) exercises all workflows with synthetic inputs
+through `claude plugin eval` and checks retained output files.

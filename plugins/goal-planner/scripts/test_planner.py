@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import io
 import json
+import os
 import shutil
 import threading
 from concurrent.futures import ThreadPoolExecutor
@@ -119,21 +120,21 @@ def test_interruption_never_publishes_or_reuses_partial_pair(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     """An interrupted spec remains occupied and is reported by the next successful save."""
-    publish = planner._publish
+    link = os.link
 
-    def interrupted(path: Path, content: str) -> None:
+    def interrupted(source: str, path: Path) -> None:
         if path.parent.name == "goals":
             message = "simulated disk failure after the specification"
             raise OSError(message)
-        publish(path, content)
+        link(source, path)
 
-    monkeypatch.setattr(planner, "_publish", interrupted)
+    monkeypatch.setattr(os, "link", interrupted)
     failed = planner.render(_pair(tmp_path), save=True)
     assert failed["ready"] is False
     assert failed["payload"]
     assert not list(tmp_path.glob("*/goals/*.md"))
     assert list(tmp_path.glob("*/goal-specs/*.md"))
-    monkeypatch.setattr(planner, "_publish", publish)
+    monkeypatch.setattr(os, "link", link)
     result = planner.render(_pair(tmp_path, date="2026-10-25"), save=True)
     assert result["revision"] == 2
     assert result["ready"] is True
@@ -141,24 +142,29 @@ def test_interruption_never_publishes_or_reuses_partial_pair(
     assert not result["reused"]
 
 
-def test_unfinished_completion_is_not_a_valid_saved_goal(
+def test_interrupted_response_reuses_the_published_pair(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    """A final marker failure keeps a fully written pair explicitly incomplete."""
-    publish = planner._publish
+    """Publishing the final goal completes the pair even if its response is interrupted."""
+    link = os.link
 
-    def interrupted(path: Path, content: str) -> None:
-        if path.name == "complete.json":
-            message = "simulated final marker failure"
+    def interrupted(source: str, path: Path) -> None:
+        link(source, path)
+        if path.parent.name == "goals":
+            message = "simulated interruption after publication"
             raise OSError(message)
-        publish(path, content)
 
-    monkeypatch.setattr(planner, "_publish", interrupted)
+    monkeypatch.setattr(os, "link", interrupted)
     failed = planner.render(_pair(tmp_path), save=True)
     assert failed["ready"] is False
-    with pytest.raises(planner.PlannerError, match="Required regular file"):
-        planner.inspect_goal(tmp_path / "2026-10-24/goals/release-001.md")
+    monkeypatch.setattr(os, "link", link)
+    repeated = planner.render(_pair(tmp_path, date="2026-10-25"), save=True)
+    assert repeated["ready"] is True
+    assert repeated["reused"] is True
+    assert repeated["payload"] == failed["payload"]
+    assert repeated["revision"] == 1
+    assert not (tmp_path / "2026-10-25").exists()
 
 
 def test_concurrent_cross_date_allocations_retry_stale_inventory(
@@ -192,6 +198,20 @@ def test_concurrent_cross_date_allocations_retry_stale_inventory(
         assert planner.inspect_goal(_path(result, "goal_path")).payload == result["payload"]
 
 
+def test_matching_revision_elsewhere_does_not_hide_an_incomplete_pair(tmp_path: Path) -> None:
+    """An orphan or local claim remains visible beside a completed revision elsewhere."""
+    original = planner.render(_pair(tmp_path / "original"), save=True)
+    orphan = tmp_path / "original/2026-10-25/goal-specs/release-001.md"
+    orphan.parent.mkdir(parents=True)
+    orphan.write_bytes(_path(original, "spec_path").read_bytes())
+    repeated = planner.render(_pair(tmp_path / "original"))
+    assert str(orphan) in cast("list[str]", repeated["incomplete_revisions"])
+    claim = tmp_path / "imported/.goal-reservations/release-001.reservation"
+    claim.mkdir(parents=True)
+    imported = planner.render(_pair(tmp_path / "imported", predecessors=[original["goal_path"]]))
+    assert str(claim) in cast("list[str]", imported["incomplete_revisions"])
+
+
 def test_imported_predecessor_rebinds_and_duplicate_lineages_fail(tmp_path: Path) -> None:
     """A new selected root receives a new pair; conflicting same-number histories stop."""
     original = planner.render(_pair(tmp_path / "old"), save=True)
@@ -206,7 +226,7 @@ def test_imported_predecessor_rebinds_and_duplicate_lineages_fail(tmp_path: Path
     duplicate = tmp_path / "conflict/2026-10-25/goals/release-001.md"
     duplicate.parent.mkdir(parents=True)
     duplicate.write_bytes(_path(standalone, "goal_path").read_bytes())
-    with pytest.raises(planner.PlannerError, match=r"different saved goal|Conflicting revision"):
+    with pytest.raises(planner.PlannerError, match="Conflicting revision"):
         planner.render(_draft(tmp_path / "conflict"))
 
 
@@ -243,16 +263,16 @@ def test_revision_width_expands_without_filling_known_gaps(tmp_path: Path) -> No
     assert _path(result, "goal_path").name == "release-1000.md"
 
 
-@pytest.mark.parametrize("include_receipts", [False, True])
+@pytest.mark.parametrize("whole_root", [False, True])
 def test_offline_transfer_verifies_copied_contract_then_rebinds(
     tmp_path: Path,
-    include_receipts: bool,
+    whole_root: bool,
 ) -> None:
     """A copied pair can recover with its source gone, while the stale launcher stays invalid."""
     old = tmp_path / "old"
     new = tmp_path / "new"
     original = planner.render(_pair(old), save=True)
-    if include_receipts:
+    if whole_root:
         shutil.copytree(old, new)
     else:
         shutil.copytree(old / "2026-10-24", new / "2026-10-24")

@@ -1,84 +1,67 @@
 # Goal contract
 
-Write the complete requested outcome before shortening it. Apply
-[prose-rules.md](./prose-rules.md) to the contract and its explanations.
+Write the complete outcome before shortening it, under
+[prose-rules.md](./prose-rules.md). Keep small goals in a few paragraphs; add
+structure only to prevent mistakes, without empty stages or a second
+hand-maintained contract.
 
-## Identity and requirements
+## Requirements and scope
 
-Identify the target repository or artifact, goal key, revision, predecessors,
-and `DRAFT_NOT_STARTED` state. Keep descriptive, stable requirement keys
-such as `installed-consumer`; namespace unrelated targets before combining
-colliding keys. Keys are traceability data, not substitutes for readable prose.
+Identify target, goal key, revision, predecessors, and `DRAFT_NOT_STARTED`
+state. Give binding requirements stable descriptive keys, observable
+acceptance, evidence sources, and dispositions. Preserve outcomes,
+deliverables, dependencies, ownership, and ordering. Namespace colliding keys
+from unrelated targets; matching labels do not make their goals related.
 
-Every binding requirement needs an observable acceptance condition, evidence
-source, and disposition. Retain the full outcome, deliverables, dependencies,
-ownership, and ordering. Keep a small goal in a few paragraphs; add structure
-only when it prevents a mistake. Do not create empty stage files or duplicate
-the contract in a second hand-maintained format.
+Carry exclusions through research, implementation, docs, tests, and review;
+they cannot become derived blockers. Keep excluded, unsupported, unverified,
+and accepted limitations distinct.
 
-Carry exclusions through research, implementation, documentation, tests, and
-review. An excluded package cannot become a derived blocker through a test
-matrix or review rubric. Distinguish exclusions from unsupported platforms,
-unverified behavior, and accepted limitations.
+## Authority and synthesis
 
-## Authority and reconciliation
+Apply the instruction hierarchy, current task-specific steering, project
+rules, and selected approved defaults. History supplies context, never present
+execution authority. Resolve authoritative conflicts explicitly, not by
+timestamp alone. Current implementation can change remaining work, not intent.
 
-Apply the instruction hierarchy, current task-specific steering, applicable
-project rules, and selected approved defaults. History supplies context.
-Do not resolve conflicts between authoritative instructions by timestamp
-alone. Current implementation can change remaining work; it cannot redefine
-the user's intended outcome.
+Printing never activates or replaces a standing goal or authorizes execution,
+commits, pushes, installation, publication, or release. Preserve session
+permission and research/timing holds without asking again for authorized work.
+Reaching an earliest permitted time is not activation. A composed request may
+separately authorize preparation; future goal instructions cannot.
 
-Separate present authorization from actions proposed after activation.
-Printing does not activate work, replace a standing goal, or authorize
-commits, pushes, publication, installation, or release. Preserve established
-session permission without asking again for routine authorized steps. Preserve
-research-only and timing holds; reaching an earliest permitted time is not
-activation. A composed request may separately authorize concrete preparation.
+Read full originals, specifications, and adjacent corrections. Give every input
+requirement a sourced disposition: retained, revised, superseded, deferred,
+excluded by explicit instruction, or unresolved. Current explicit steering can
+relax prior timing or compatibility clauses. Missing originals remain gaps.
+User addenda create sourced steering in a new revision, never a silent edit to
+an old specification. Follow [recovery.md](./recovery.md) for history provenance.
 
-Inspect only current source, branches, PRs, CI, artifacts, and resources
-needed to assess this goal. Preserve contrary evidence and unresolved failures.
-Never infer completion from an earlier agent's assertion alone.
+## Evidence and continuation
 
-## Synthesis
+Inspect only relevant current source, branches, PRs, CI, artifacts, and
+resources. Preserve contrary evidence and failures; an earlier agent's
+completion assertion is insufficient. Remove completed tasks from remaining
+work only with valid evidence, retaining their acceptance and evidence.
 
-Read full original goals, referenced specifications, and adjacent corrections.
-Keep requirement provenance and assign every input requirement a disposition:
-retained, revised, superseded, deferred, excluded by explicit instruction, or
-unresolved. State the source of a revision or exclusion. Latest explicit user
-steering can relax earlier timing or compatibility requirements.
+Use PASS, FAIL, PARTIAL, and UNVERIFIED precisely. Scores cannot waive mandatory
+failures. Exclusions are not passing checks, and accepted limitations require
+explicit disposition without concealing failed binding criteria.
 
-Remove completed work from the remaining-work view only with valid evidence;
-retain its acceptance criteria and evidence in the contract. Missing originals
-or pasted bodies remain gaps. Do not merge unrelated target identities merely
-because their requirement labels match. User addenda become sourced steering
-in a new revision; do not edit an old saved specification silently.
-
-## Acceptance and continuation
-
-Use PASS, FAIL, PARTIAL, and UNVERIFIED precisely. A numeric score cannot
-override a failed mandatory condition. Excluded work is outside scope, never
-a passing check. An accepted limitation needs explicit disposition and cannot
-conceal failure of a binding criterion.
-
-Tie acceptance evidence to relevant contract, source, configuration, and
-review-rule revisions. Check mutable external evidence when the contract
-requires it: a local digest cannot establish the current remote CI head.
-When accepted inputs are unchanged, reuse results without new experiments,
-reviewers, or writes. Changed inputs reopen only affected evidence.
+Bind evidence to relevant contract, source, configuration, and review-rule
+revisions. Revalidate mutable external state when required; a local digest
+cannot establish a remote CI head. Reuse accepted unchanged inputs without new
+experiments, reviewers, or writes; changed inputs reopen only affected evidence.
 
 Include recovery, live-job waits, partial results, and completion conditions
-when needed. A blocked stage must identify the actual unmet condition and
-useful independent work. Challenge invented guarantees that create an impasse;
-do not erase genuine obligations to make the goal appear complete.
+when needed. A blocked stage identifies its actual unmet condition and useful
+independent work. Challenge invented guarantees that create an impasse without
+erasing real obligations.
 
-## Review packet
+## Review
 
-Bind a review to the exact goal/specification revision or digest, original
-request, lineage, and evidence. Provide relevant failure conditions and scope
-boundaries. Require requirement-by-requirement findings rather than confidence
-alone. Preserve the reviewed revision and disagreements when revising it.
-
-Select extra checks from [safeguards.md](./safeguards.md). Compression and saved
-handoffs follow [rendering.md](./rendering.md); presentation follows
-[output.md](./output.md).
+Bind review to the exact goal/specification revision or digest, original
+request, lineage, evidence, failure conditions, and scope. Require findings
+for each requirement and preserve reviewed revisions and disagreements.
+Select extra checks from [safeguards.md](./safeguards.md); use
+[rendering.md](./rendering.md) for handoffs and [output.md](./output.md) for replies.

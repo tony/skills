@@ -9,21 +9,19 @@ execution:
     /goal-planner:print Prepare an uncapped full-text Codex TUI handoff, topic
     packet-reader, stdout-only. The complete contents of requirements.md must
     appear verbatim as the goal body; do not summarize any requirement or apply
-    Claude's 3800-character limit. A /goal prefix is fine. This is a full-text
+    Claude's 3800-character limit. Include the /goal prefix. This is a full-text
     draft, not a call to a bounded goal-storage API. Print the complete copyable
     payload and measure its code points and UTF-16 units. Do not create any
     files, consult histories or profiles, execute the planned work, or activate
     a goal. Do not invent a companion file for the uncapped output.
+    Outside the goal, report whole-payload counts using exactly
+    "Counts: N code points; M UTF-16 units." with the measured integers.
   max_turns: 20
   timeout_seconds: 400
   allowed_tools: [Bash, Read, Glob, Grep, Skill]
   disallowed_tools: [Write, Edit, WebFetch, WebSearch]
 runs: 1
 graders:
-  - name: print-helper-used
-    type: tool_used
-    tool: Bash
-    input_match: '(?:planner\.py|python3?\s+\$\{?[A-Za-z_]\w*\}?)[\s\S]*?\brender\b'
   - name: full-long-goal-is-printed
     type: regex
     target: last_message

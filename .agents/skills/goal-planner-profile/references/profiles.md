@@ -1,59 +1,42 @@
 # Profiles and machine bindings
 
-A profile holds explicitly approved planning defaults. Write proposed values
-and their rationale under [prose-rules.md](./prose-rules.md). Keep the profile
-small enough to inspect before adopting it.
+Profiles hold explicitly approved planning defaults. Write inspectable values
+and rationale under [prose-rules.md](./prose-rules.md).
 
-## Contents
+## Separate preferences, context, and bindings
 
-- Separate three kinds of input
-- Select and approve
-- Persist and transfer
+Portable preferences cover evidence/prose standards, review triggers, resource
+principles, host/output defaults, and optional integrations. They cannot override
+the instruction hierarchy or grant future publication authority. Re-read target
+identity, tooling, compatibility, exceptions, and delivery requirements from
+project context instead of promoting them to universal defaults.
 
-## Separate three kinds of input
+Store the Documents root in separate machine bindings. Discover workspace
+roots, tools, reviewers, resource probes, and owned scratch/build locations
+when needed. Native/mounted Documents roots remain distinct; never infer a
+username or equate folders by name.
 
-Portable preferences can select evidence standards, prose rules, independent
-review triggers, resource-policy principles, host/output defaults, and optional
-integrations. They cannot override the instruction hierarchy or grant future
-publication authority.
+## Approve selections
 
-Project context supplies target identity, language/framework conventions,
-quality commands, compatibility rules, task-specific exceptions, and delivery
-requirements. Re-read it for the current target rather than copying it into
-universal defaults.
+An explicit request to save named values approves them; preserve session
+approval. Otherwise show candidates and await selection before persistence.
+History suggests candidates under [recovery.md](./recovery.md), never silently
+changes memory/configuration or promotes assistant habits. Prefer direct human
+evidence, retain contradictions/provenance limits, and report absent history
+instead of inventing preferences or claiming exhaustive historical coverage.
 
-Store the chosen Documents root in a separate machine binding. Discover
-workspace roots, installed tools, available reviewers, resource probes, and
-owned scratch/build locations when needed; they are not profile defaults.
-Native and mounted Documents roots remain distinct;
-never infer a username or equate directories because both are called Documents.
+One-off release permissions, model names, platform exclusions, timing holds,
+machine thresholds, and paths remain scoped unless the user deliberately
+promotes an appropriate default. Set `approved: true` only for selected values;
+a CLI approval flag records consent, never creates it.
 
-## Select and approve
+## Validate and persist
 
-An explicit request to save named values is approval for those values. Preserve
-earlier approval in the same session. History can suggest sourced candidate
-defaults, but cannot silently promote them, change memory, or rewrite local
-configuration. Show unselected candidates and await the user's selection
-before persistence. Treat one-off release permissions, model names, platform
-exclusions, timing holds, machine thresholds, and paths as scoped until the
-user deliberately promotes an appropriate default.
-
-For history-derived candidates use [recovery.md](./recovery.md). Prefer direct
-user evidence; retain contradictions and origin limits. Never claim that a
-profile represents every historical preference or turn an assistant's habit
-into the user's rule. No history available is a recovery gap, not a reason
-to invent a preference.
-
-## Persist and transfer
-
-Use `planner.py` profile and binding validation before persistence. The
-helper is `./planner.py`, resolved from this reference's directory to
-an absolute path written literally in every command. Skills declare their own
-relative path to this helper.
-
-A profile uses this strict JSON schema. Set `approved: true` only for values
-the user has selected. `max_chars` is optional; omit it for uncapped Codex
-drafting. Claude profile limits cannot spend the user-addendum reserve.
+`<planner>` is `./planner.py`, resolved from this reference's directory
+to an absolute path written literally in each command. Skills declare their
+own relative helper path. Use these strict schemas. `max_chars` is optional;
+omit it for uncapped Codex. Claude profile limits cannot spend the addendum
+reserve.
 
 ```json
 {
@@ -66,8 +49,8 @@ drafting. Claude profile limits cannot spend the user-addendum reserve.
 }
 ```
 
-The separate binding schema requires an absolute Documents path or a path
-starting with `~/`, so a saved binding is independent of the working directory:
+Bindings require an absolute path or one starting with `~/`, independent of
+the working directory:
 
 ```json
 {
@@ -78,14 +61,14 @@ starting with `~/`, so a saved binding is independent of the working directory:
 }
 ```
 
-Read and validate a selected profile:
+Validate a selected existing profile before updating it:
 
 ```console
 $ python3 <planner> profile read \
     --path <profile.json>
 ```
 
-Persist an approved profile, substituting the actual selected values:
+Persist selected values to a user-selected location:
 
 ```console
 $ python3 <planner> profile write \
@@ -96,25 +79,21 @@ $ python3 <planner> profile write \
 JSON
 ```
 
-Use `bindings read` and `bindings write` with the same options and the bindings
-schema for the selected Documents root. Read back the saved file to compare it
-with the approved values. No automatic profile discovery or application occurs;
-the calling skill supplies selected defaults to rendering explicitly.
+Use `bindings read`/`bindings write` with the same options and binding schema.
+New writes must not overwrite files; add `--replace` only for an approved
+revision of an existing same-kind settings file. Read back through the helper
+and compare with approved values. Report validation/write failures and complete
+values under [output.md](./output.md). There is no automatic discovery or
+application: workflows explicitly select profiles/bindings and supply defaults
+to rendering.
 
-Use a user-selected file location. A new-file write must not overwrite an
-existing file. Replacing an existing profile requires the user's approved
-revision of those values, followed by read-back validation. A CLI approval
-flag records existing authorization; passing it cannot manufacture consent.
-Print the whole proposed/saved values and persistence result using
-[output.md](./output.md).
+## Transfer
 
-Transfer approved preferences by the user's chosen file or repository
-mechanism. Never upload histories implicitly. Exclude transcripts, credentials,
-private paths, and private marketplace dependencies from the portable profile.
-Resolve bindings on the receiving machine; missing tools remain unavailable
-or UNVERIFIED when required. Do not pretend a path or provider exists.
+Use the user's chosen file/repository mechanism. Exclude raw histories,
+credentials, private paths, and private marketplace dependencies from portable
+profiles. Never upload histories implicitly. Resolve receiving-machine bindings;
+missing tools remain unavailable, or UNVERIFIED when required.
 
-When moving a goal bundle, verify companion hashes and identities. Reconcile
-changed contracts before trusting a launcher, and render a new numbered goal
-when its machine-specific locator changes. Profile transfer does not activate
-any goal or import old execution permissions.
+For goal bundles, verify companion hashes/identities, reconcile changed
+contracts, and render a new numbered goal when its locator changes. Transferring
+a profile never activates goals or imports execution permissions.

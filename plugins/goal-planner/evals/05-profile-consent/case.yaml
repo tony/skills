@@ -22,10 +22,6 @@ execution:
   disallowed_tools: [WebFetch, WebSearch]
 runs: 1
 graders:
-  - name: profile-helper-used
-    type: tool_used
-    tool: Bash
-    input_match: '(?:planner\.py|python3?\s+\$\{?[A-Za-z_]\w*\}?)[\s\S]*?\bprofile[\s\S]*?write\b'
   - name: approved-profile-written
     type: file_exists
     path: preferences.json

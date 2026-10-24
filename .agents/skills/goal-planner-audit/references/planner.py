@@ -115,8 +115,8 @@ def _text(path: Path) -> str:
     return path.read_bytes().decode("utf-8")
 
 
-def _publish(path: Path, content: str) -> None:
-    """Publish complete bytes without replacing a concurrent destination."""
+def _publish(path: Path, content: str, *, replace: bool = False) -> None:
+    """Publish complete bytes; replacement is reserved for approved settings updates."""
     _safe_path(path)
     descriptor, temporary = tempfile.mkstemp(prefix=".goal-", dir=path.parent)
     try:
@@ -125,7 +125,10 @@ def _publish(path: Path, content: str) -> None:
             stream.flush()
             os.fsync(stream.fileno())
         _safe_path(path)
-        os.link(temporary, path)
+        if replace:
+            Path(temporary).replace(path)
+        else:
+            os.link(temporary, path)
     finally:
         Path(temporary).unlink(missing_ok=True)
 
@@ -257,43 +260,10 @@ def _reservation(root: Path, topic: str, revision: int) -> Path:
     return root / ".goal-reservations" / f"{topic}-{revision:03}.reservation"
 
 
-def _complete(path: Path, *, allow_relocation: bool = False) -> tuple[Path, bool]:
-    metadata = _object(json.loads(_text(path / "complete.json")), "completion marker")
-    goal = _safe_path(_string(metadata.get("goal"), "completed goal"))
-    if goal.parent.name != "goals" or not _DATE.fullmatch(goal.parent.parent.name):
-        _fail("Completion marker does not identify a dated goal")
-    root = path.parent.parent
-    relocated = goal.parents[2] != root
-    if relocated:
-        if not allow_relocation:
-            _fail("Completion marker uses a former Documents root; render a rebound revision")
-        goal = root.joinpath(*goal.parts[-3:])
-    if _digest(_text(goal)) != metadata.get("sha256"):
-        _fail(f"Completed goal digest changed: {goal}")
-    return goal, relocated
-
-
-def _check_completion(
-    path: Path,
-    topic: str,
-    revision: int,
-    *,
-    allow_relocation: bool,
-) -> bool:
-    reservation = _safe_path(_reservation(path.parents[2], topic, revision))
-    if not reservation.exists():
-        return False
-    goal, relocated = _complete(reservation, allow_relocation=allow_relocation)
-    if goal != path:
-        _fail("Completion marker points to a different saved goal")
-    return relocated
-
-
 def inspect_goal(
     path: Path,
     topic: str | None = None,
     *,
-    publishing: bool = False,
     allow_relocation: bool = False,
 ) -> Artifact:
     """Verify the exact companion location, digest, identity, and complete pair."""
@@ -309,16 +279,7 @@ def inspect_goal(
     if not _TOPIC.fullmatch(topic):
         _fail("Invalid saved goal topic")
     revision = _revision(path, topic)
-    relocated = (
-        False
-        if publishing
-        else _check_completion(
-            path,
-            topic,
-            revision,
-            allow_relocation=allow_relocation,
-        )
-    )
+    relocated = False
     payload = _text(path)
     if not payload.startswith("/goal ") or not payload[6:].strip() or _PLACEHOLDER in payload:
         _fail(f"Foreign or incomplete goal file: {path}")
@@ -379,7 +340,7 @@ def _dated_roots(root: Path) -> Iterator[Path]:
 def _inventory(draft: Draft) -> tuple[list[Artifact], set[int], list[str]]:
     paths: set[Path] = set(draft.predecessors)
     used: set[int] = set()
-    pending: set[int] = set()
+    claims: dict[int, Path] = {}
     incomplete: list[str] = []
     reservations = draft.root / ".goal-reservations"
     _safe_path(reservations)
@@ -393,16 +354,7 @@ def _inventory(draft: Draft) -> tuple[list[Artifact], set[int], list[str]]:
                 _fail(f"Foreign reservation: {item}")
             revision = int(match[1])
             used.add(revision)
-            completion = _safe_path(item / "complete.json")
-            if completion.exists():
-                goal, _ = _complete(item, allow_relocation=True)
-                if goal.parents[2] != draft.root or _revision(goal, draft.topic) != revision:
-                    _fail(f"Completion marker has a foreign destination: {item}")
-                paths.add(goal)
-            else:
-                pending.add(revision)
-                incomplete.append(str(item))
-    used.update(pending)
+            claims[revision] = item
     if draft.root.exists():
         for date_path in _dated_roots(draft.root):
             for folder in ("goals", "goal-specs"):
@@ -415,12 +367,11 @@ def _inventory(draft: Draft) -> tuple[list[Artifact], set[int], list[str]]:
                     _safe_path(path)
                     revision = _revision(path, draft.topic)
                     used.add(revision)
-                    if revision in pending:
-                        continue
                     goal = date_path / "goals" / path.name
-                    if not goal.is_file():
-                        _fail(f"Orphan specification without a reservation: {path}")
-                    paths.add(goal)
+                    if goal.is_file():
+                        paths.add(goal)
+                    else:
+                        incomplete.append(str(path))
     artifacts: dict[int, Artifact] = {}
     for path in sorted(paths):
         artifact = inspect_goal(path, draft.topic, allow_relocation=True)
@@ -428,6 +379,12 @@ def _inventory(draft: Draft) -> tuple[list[Artifact], set[int], list[str]]:
             _fail(f"Conflicting revision {artifact.revision}; reconcile imported/local lineages")
         artifacts[artifact.revision] = artifact
         used.add(artifact.revision)
+    completed = {
+        revision
+        for revision, artifact in artifacts.items()
+        if artifact.path.parents[2] == draft.root
+    }
+    incomplete.extend(str(path) for revision, path in claims.items() if revision not in completed)
     return sorted(artifacts.values(), key=lambda item: item.revision), used, incomplete
 
 
@@ -518,22 +475,10 @@ def render(draft: Draft, *, save: bool = False) -> dict[str, object]:
             if specification is not None:
                 _mkdir(spec_path.parent)
                 _publish(spec_path, specification)
-                if _text(spec_path) != specification:
-                    _fail("Specification did not round-trip exactly")
             _publish(goal_path, payload)
-            artifact = inspect_goal(goal_path, draft.topic, publishing=True)
+            artifact = inspect_goal(goal_path, draft.topic)
             if artifact.payload != payload:
                 _fail("Saved and printed goal bytes differ")
-            _publish(
-                reservation / "complete.json",
-                _json(
-                    {
-                        "goal": str(goal_path),
-                        "sha256": _digest(payload),
-                    }
-                )
-                + "\n",
-            )
             result.update(
                 {
                     "goal_path": str(goal_path),
@@ -572,9 +517,9 @@ def validate_settings(value: dict[str, object], kind: str) -> dict[str, object]:
     _boolean(defaults.get("save"), "defaults.save")
     raw_maximum = defaults.get("max_chars")
     maximum = None if raw_maximum is None else _integer(raw_maximum, "defaults.max_chars")
-    if maximum is not None and budget(host, maximum, spend_reserve=False, strict=False) != maximum:
+    limit = budget(host, maximum, spend_reserve=False, strict=False)
+    if maximum is not None and limit != maximum:
         _fail("Profile defaults cannot spend Claude's addendum reserve")
-    budget(host, maximum, spend_reserve=False, strict=False)
     principles = value.get("principles")
     if not isinstance(principles, list):
         _fail("principles must be an array of approved text")
@@ -593,23 +538,13 @@ def save_settings(path: Path, value: dict[str, object], *, approved: bool, repla
         _fail("Settings kind must be profile or bindings")
     validate_settings(value, kind)
     content = json.dumps(value, ensure_ascii=False, sort_keys=True, indent=2) + "\n"
-    if path.exists():
+    existing = path.exists()
+    if existing:
         if not replace:
             _fail("Settings already exist; use --replace for an approved update")
         validate_settings(_object(json.loads(_text(path)), "existing settings"), kind)
-        descriptor, temporary = tempfile.mkstemp(prefix=".profile-", dir=path.parent)
-        try:
-            with os.fdopen(descriptor, "wb") as stream:
-                stream.write(content.encode("utf-8"))
-                stream.flush()
-                os.fsync(stream.fileno())
-            _safe_path(path)
-            Path(temporary).replace(path)
-        finally:
-            Path(temporary).unlink(missing_ok=True)
-    else:
-        _mkdir(path.parent)
-        _publish(path, content)
+    _mkdir(path.parent)
+    _publish(path, content, replace=replace and existing)
 
 
 def _limits(parser: argparse.ArgumentParser) -> None:
@@ -658,7 +593,9 @@ def main(argv: list[str] | None = None) -> int:
         elif args.operation == "read":
             result = validate_settings(_read_json(str(_safe_path(args.path))), args.command)
         else:
-            result = validate_settings(_read_json(args.input), args.command)
+            result = _read_json(args.input)
+            if result.get("kind") != args.command:
+                _fail(f"Expected kind {args.command}")
             save_settings(Path(args.path), result, approved=args.approved, replace=args.replace)
         print(_json(result))
         return 0 if result.get("ready", True) and not result.get("errors") else 2

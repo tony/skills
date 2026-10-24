@@ -10,22 +10,20 @@ execution:
     Use topic packet-reader, date 2030-01-02, and the Documents directory inside
     this working directory as the explicitly selected Documents root. Keep the
     default addendum reserve. The source is longer than the payload budget:
-    save a complete goal specification and a compact goal. Preserve every
-    R01-R24 requirement verbatim in the specification, including the Unicode
-    label and numerical constraints. Add framing if needed; do not summarize
-    away any requirement. Print the entire saved goal exactly, not only links.
+    save a complete goal specification and a compact goal. Include requirements.md
+    completely and verbatim in the specification, including the Unicode label and
+    numerical constraints. Add framing if needed; do not summarize away any
+    requirement. Print the entire saved goal exactly, not only links.
     This authorizes handoff files only, not executing the decoder work or
     activating a native goal. Do not consult history or existing profiles.
+    Outside the goal, report whole-payload counts using exactly
+    "Counts: N code points; M UTF-16 units." with the measured integers.
   max_turns: 30
   timeout_seconds: 600
   allowed_tools: [Bash, Read, Write, Edit, Glob, Grep, Skill]
   disallowed_tools: [WebFetch, WebSearch]
 runs: 1
 graders:
-  - name: print-helper-used
-    type: tool_used
-    tool: Bash
-    input_match: '(?:planner\.py|python3?\s+\$\{?[A-Za-z_]\w*\}?)[\s\S]*?\brender\b'
   - name: goal-saved
     type: file_exists
     path: Documents/2030-01-02/goals/packet-reader-001.md
@@ -42,19 +40,19 @@ graders:
       source: file
       path: Documents/2030-01-02/goal-specs/packet-reader-001.md
     criteria: >-
-      This is a complete decoder contract with outcome and all R01-R24
-      requirements. It retains the oversized-header FAIL, consumer verification,
+      This is a complete decoder contract with outcome and every source requirement.
+      It retains the oversized-header FAIL, consumer verification,
       exact-revision evidence, negative control, ownership, resource bounds,
       failure preservation, and excluded remote/release/benchmark/package scope.
       It does not recast known failures as passed or supply only overflow scraps.
   - name: compact-goal-has-operational-boundaries
     type: llm
-    focus:
-      source: file
-      path: Documents/2030-01-02/goals/packet-reader-001.md
+    focus: trace
     criteria: >-
       The copyable compact goal preserves the decoder outcome, mandatory
       acceptance obligations and exclusions, requires reading the complete
       specification and reporting requirement-level acceptance evidence, and
       resolves its companion without depending on the current working directory.
       It does not claim the future implementation or tests are already complete.
+      Tools may prepare handoff files and scratch inputs, but must not implement
+      the decoder, run its checks, activate a goal, or perform remote delivery.

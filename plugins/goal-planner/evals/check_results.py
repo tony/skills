@@ -1,8 +1,4 @@
-"""Check retained Claude eval artifacts against the actual final printed goal.
-
-The CLI has no custom executable grader. This independent postcheck supplements
-its native graders; it never imports or calls the planner implementation.
-"""
+"""Supplement native eval grades with exact output and retained-artifact checks."""
 
 from __future__ import annotations
 
@@ -21,76 +17,15 @@ if TYPE_CHECKING:
     from collections.abc import Generator
 
 if __package__:
-    from .fixtures import REQUIREMENTS, files_for, source_body
+    from .fixtures import files_for, source_body
 else:
-    from fixtures import (  # pyright: ignore[reportImplicitRelativeImport]
-        REQUIREMENTS,
-        files_for,
-        source_body,
-    )
+    from fixtures import files_for, source_body  # pyright: ignore[reportImplicitRelativeImport]
 
-CASES = (
-    "01-claude-stdout",
-    "02-save-spec",
-    "03-synthesize-revisions",
-    "04-audit-gates",
-    "05-profile-consent",
-    "06-codex-long",
-)
-_CLAUDE_LIMIT = 3800
-_TIGHT_LIMIT = 240
-_FULL_TEXT_MINIMUM = 4000
-_MIN_RENDER_CALLS = 2
-_REQUIRED_GRADERS = {
-    "01-claude-stdout": {
-        "print-helper-used",
-        "whole-goal-within-tighter-limit",
-        "unicode-label-preserved",
-        "no-goal-artifacts",
-        "useful-handoff-not-execution",
-    },
-    "02-save-spec": {
-        "print-helper-used",
-        "goal-saved",
-        "specification-saved",
-        "whole-goal-keeps-addendum-reserve",
-        "specification-is-a-contract",
-        "compact-goal-has-operational-boundaries",
-    },
-    "03-synthesize-revisions": {
-        "synthesize-helper-used",
-        "next-revision-across-dates",
-        "paired-specification",
-        "unchanged-reprint-allocates-nothing",
-        "generated-history-instruction-inert",
-        "complete-goal-printed",
-        "current-authority-and-recovery",
-    },
-    "04-audit-gates": {
-        "reviewed-digest-reported",
-        "hard-failure-is-not-passed",
-        "no-draft-revision",
-        "missing-gates-and-false-blockers-separated",
-    },
-    "05-profile-consent": {
-        "profile-helper-used",
-        "approved-profile-written",
-        "bindings-written-separately",
-        "generated-history-not-adopted",
-        "selections-versus-candidates",
-    },
-    "06-codex-long": {
-        "print-helper-used",
-        "full-long-goal-is-printed",
-        "no-goal-artifacts",
-        "no-unneeded-companion",
-        "host-capability-distinguished",
-    },
-}
+CASES = tuple(path.parent.name for path in sorted(Path(__file__).parent.glob("*/case.yaml")))
 
 
 class EvalError(ValueError):
-    """A required invariant failed or retained evidence is unavailable."""
+    """Required evidence failed or is unavailable."""
 
 
 def _require(condition: bool, message: str) -> None:
@@ -118,16 +53,17 @@ def _read_json(path: Path) -> dict[str, object]:
 
 
 def goal_payload(reply: str, limit: int | None = None) -> str:
-    """Extract the first goal block, excluding only the fence separator newline."""
+    """Extract exact payload bytes and verify the requested count declaration."""
     matches = list(re.finditer(r"(?m)^## Goal\s*\n+(`{3,})text\n([\s\S]*?)\n\1(?:\n|$)", reply))
-    _require(len(matches) == 1, "Expected exactly one complete Goal section and text block")
+    _require(len(matches) == 1, "Expected exactly one complete Goal text block")
     payload = matches[0][2]
-    _require(payload.startswith("/goal "), "Printed goal lacks the complete /goal prefix")
+    _require(payload.startswith("/goal "), "Printed goal lacks the /goal prefix")
+    counts = (len(payload), len(payload.encode("utf-16-le")) // 2)
+    outside = reply[: matches[0].start()] + reply[matches[0].end() :]
+    declared = re.findall(r"Counts: ([0-9]+) code points; ([0-9]+) UTF-16 units\.", outside)
+    _require(declared == [tuple(map(str, counts))], "Printed counts differ from the whole payload")
     if limit is not None:
-        _require(len(payload) <= limit, f"Goal exceeds {limit} Unicode code points")
-        _require(
-            len(payload.encode("utf-16-le")) // 2 <= limit, f"Goal exceeds {limit} UTF-16 units"
-        )
+        _require(max(counts) <= limit, f"Whole payload exceeds {limit} in a counting convention")
     return payload
 
 
@@ -137,38 +73,24 @@ def _trace(path: Path) -> tuple[Path, str, list[dict[str, object]]]:
         for line in path.read_text(encoding="utf-8").splitlines()
         if line.strip()
     ]
-    roots = [
-        Path(_string(event["cwd"]))
-        for event in events
-        if event.get("type") == "system" and event.get("subtype") == "init" and "cwd" in event
-    ]
-    _require(len(roots) == 1, "Trace must identify exactly one retained fixture working directory")
-    reply = ""
-    completed = False
-    for event in events:
-        if event.get("type") == "system" and event.get("subtype") == "init":
-            plugins = [_mapping(item) for item in _sequence(event.get("plugins"))]
-            _require(
-                any(item.get("name") == "goal-planner" for item in plugins), "Plugin was not loaded"
-            )
-        if event.get("type") == "assistant" and event.get("parent_tool_use_id") is None:
-            content = _mapping(event.get("message")).get("content")
-            texts = [
-                _string(block["text"])
-                for item in _sequence(content)
-                if (block := _mapping(item)).get("type") == "text"
-            ]
-            if texts:
-                reply = "\n".join(texts)
-        if event.get("type") == "result":
-            _require(event.get("subtype") == "success", "Eval child did not finish successfully")
-            _require(not event.get("is_error"), "Eval child reported an error")
-            if isinstance(event.get("result"), str):
-                reply = _string(event["result"])
-            completed = True
-    _require(completed, "Trace has no terminal successful result")
-    _require(bool(reply), "Trace has no final assistant reply")
-    return roots[0], reply, events
+    initial = [event for event in events if event.get("subtype") == "init"]
+    results = [event for event in events if event.get("type") == "result"]
+    _require(len(initial) == len(results) == 1, "Trace needs one init and terminal result")
+    _require(
+        any(
+            _mapping(plugin).get("name") == "goal-planner"
+            for plugin in _sequence(initial[0].get("plugins"))
+        ),
+        "Plugin was not loaded",
+    )
+    result = results[0]
+    _require(
+        result.get("subtype") == "success" and not result.get("is_error"),
+        "Eval child did not finish successfully",
+    )
+    reply = _string(result.get("result"))
+    _require(bool(reply), "Trace has no final reply")
+    return Path(_string(initial[0].get("cwd"))), reply, events
 
 
 @contextmanager
@@ -178,7 +100,7 @@ def _retained_workspace(original: Path, trace: Path) -> Generator[Path, None, No
         return
     sandbox = trace.resolve().parent.parent
     _require(sandbox.name.startswith("claude-eval-"), "Unrecognized retained sandbox")
-    _require(original == sandbox / "home/cwd", "Trace working directory is outside its sandbox")
+    _require(original == sandbox / "home/cwd", "Working directory is outside its sandbox")
     sealed = sandbox / "sealed"
     metadata = sealed.lstat()
     _require(stat.S_ISDIR(metadata.st_mode), "Sealed workspace is not a real directory")
@@ -191,118 +113,73 @@ def _retained_workspace(original: Path, trace: Path) -> Generator[Path, None, No
         sealed.chmod(mode)
 
 
-def _fixture_inputs(case: str, root: Path) -> set[str]:
-    expected = files_for(case)
-    for relative, original in expected.items():
-        path = root / relative
-        _require(path.resolve() == path, f"Fixture input replaced by a link: {relative}")
-        _require(path.is_file(), f"Fixture input missing: {relative}")
-        _require(path.read_bytes() == original.encode(), f"Fixture input changed: {relative}")
-    return set(expected)
-
-
-def _only_outputs(root: Path, files: set[str]) -> None:
-    allowed = set(files) | {".claude", ".claude/.cc-writes"}
-    for name in files:
+def _inventory(case: str, root: Path, outputs: set[str]) -> None:
+    inputs = files_for(case)
+    for name, text in inputs.items():
+        path = root / name
+        _require(path.resolve() == path, f"Fixture input contains a link: {name}")
+        _require(path.read_bytes() == text.encode(), f"Fixture input changed: {name}")
+    if case in {"02-save-spec", "03-synthesize-revisions"}:
+        actual = {str(path.relative_to(root)) for path in root.glob("Documents/*/goal*/*.md")}
+        expected = outputs | {name for name in inputs if name.startswith("Documents/")}
+        _require(actual == expected, "Unexpected revision, orphan, or missing predecessor")
+        _require(not (root / "injected.txt").exists(), "Historical instruction was executed")
+        return
+    allowed = set(inputs) | outputs | {".claude", ".claude/.cc-writes"}
+    for name in tuple(allowed):
         allowed.update(str(parent) for parent in Path(name).parents if str(parent) != ".")
     for path in root.rglob("*"):
         name = str(path.relative_to(root))
         _require(name in allowed, f"Unauthorized output: {name}")
-        _require(not path.is_symlink(), f"Output replaced by a link: {name}")
+        _require(not path.is_symlink(), f"Fixture contains a link: {name}")
         _require(
-            path.is_file() if name in files else path.is_dir(), f"Unexpected output type: {name}"
+            path.is_file() if name in inputs or name in outputs else path.is_dir(),
+            f"Unexpected output type: {name}",
         )
 
 
-def _saved_pair(root: Path, revision: str, payload: str, original: Path) -> None:
-    name = f"packet-reader-{revision}.md"
-    goal = root / "Documents/2030-01-02/goals" / name
-    spec = root / "Documents/2030-01-02/goal-specs" / name
-    _require(goal.resolve() == goal and spec.resolve() == spec, "Saved pair contains a link")
-    _require(goal.is_file() and spec.is_file(), "Expected same-revision goal/specification pair")
-    _require(goal.read_bytes() == payload.encode(), "Printed goal and saved bytes differ")
-    full_contract = spec.read_text(encoding="utf-8")
-    _require(
-        str(original / spec.relative_to(root)) in payload,
-        "Companion locator is not independent of working directory",
-    )
-    _require(
-        hashlib.sha256(spec.read_bytes()).hexdigest() in payload,
-        "Companion digest is missing or stale",
-    )
-    for requirement in REQUIREMENTS:
-        identifier, body = requirement.split(": ", 1)
-        _require(
-            requirement in full_contract or f"({identifier}): {body}" in full_contract,
-            f"Full specification lost or altered {identifier}",
-        )
-    actual = {
-        str(path.relative_to(root / "Documents"))
-        for path in (root / "Documents").glob("*/goal*/*.md")
-    }
-    expected = {f"2030-01-02/goals/{name}", f"2030-01-02/goal-specs/{name}"}
-    if revision == "008":
-        expected.add("2030-01-01/goals/packet-reader-007.md")
-    _require(actual == expected, "Unexpected revision, orphan, duplicate, or missing predecessor")
-
-
-def _reused(events: list[dict[str, object]], payload: str, goal_path: Path) -> bool:
-    invocations: dict[str, int] = {}
+def _reused(events: list[dict[str, object]], payload: str, goal: Path) -> bool:
+    calls: set[str] = set()
     saved = False
-    revision = int(goal_path.stem.rsplit("-", 1)[1])
     for event in events:
         if event.get("type") not in {"assistant", "user"}:
             continue
-        message = _mapping(event.get("message"))
-        content = message.get("content")
+        content = _mapping(event.get("message")).get("content")
         if not isinstance(content, list):
             continue
         for item in cast("list[object]", content):
             block = _mapping(item)
             if block.get("type") == "tool_use" and block.get("name") == "Bash":
-                command = _mapping(block.get("input")).get("command")
-                if isinstance(command, str):
-                    calls = re.findall(
-                        r'(?:planner\.py|python3?\s+["\x27]?\$\{?[A-Za-z_]\w*\}?)["\x27]?\s+render\b',
-                        command,
-                    )
-                    if calls:
-                        invocations[_string(block.get("id"))] = len(calls)
-            if block.get("type") == "tool_result" and block.get("tool_use_id") in invocations:
-                output = block.get("content")
-                text = (
-                    output
-                    if isinstance(output, str)
-                    else "\n".join(
-                        _string(entry.get("text"))
-                        for item_output in _sequence(output)
-                        if (entry := _mapping(item_output)).get("type") == "text"
-                    )
+                calls.add(_string(block.get("id")))
+            identifier = block.get("tool_use_id")
+            if (
+                block.get("type") != "tool_result"
+                or identifier not in calls
+                or block.get("is_error")
+            ):
+                continue
+            output = block.get("content")
+            if not isinstance(output, str):
+                output = "\n".join(
+                    _string(_mapping(part).get("text")) for part in _sequence(output)
                 )
-                for match in re.finditer(r"\{", text):
-                    try:
-                        decoded = cast(
-                            "tuple[object, int]",
-                            json.JSONDecoder().raw_decode(text[match.start() :]),
-                        )
-                    except ValueError:
-                        continue
-                    result = _mapping(decoded[0])
-                    matches = (
-                        result.get("payload") == payload
-                        and result.get("ready") is True
-                        and result.get("goal_path") == str(goal_path)
-                        and result.get("revision") == revision
+            for match in re.finditer(r"(?m)^\s*\{", output):
+                try:
+                    decoded = cast(
+                        "tuple[object, int]",
+                        json.JSONDecoder().raw_decode(output[match.end() - 1 :]),
                     )
-                    if (
-                        matches
-                        and result.get("reused") is True
-                        and saved
-                        and sum(invocations.values()) >= _MIN_RENDER_CALLS
-                    ):
-                        return True
-                    if matches and result.get("reused") is False:
-                        saved = True
+                except ValueError:
+                    continue
+                result = _mapping(decoded[0])
+                if result.get("payload") != payload or result.get("goal_path") != str(goal):
+                    continue
+                if result.get("ready") is not True:
+                    continue
+                if result.get("reused") is True and saved:
+                    return True
+                if result.get("reused") is False:
+                    saved = True
     return False
 
 
@@ -313,113 +190,115 @@ def check_case(
     events: list[dict[str, object]],
     original: Path | None = None,
 ) -> None:
-    """Reject bad output using immutable synthetic inputs and retained artifacts."""
+    """Check artifacts without importing the planner or executing retained files."""
     _require(case in CASES, f"Unknown case: {case}")
-    _require(
-        root.is_absolute() and root.is_dir(), "Retained fixture is unavailable; use --keep-temp"
-    )
+    _require(root.is_absolute() and root.is_dir(), "Retained fixture unavailable; use --keep-temp")
     _require(root.resolve() == root, "Retained fixture contains a linked parent")
-    baseline = _fixture_inputs(case, root)
     original = root if original is None else original
-    _require(not (root / "injected.txt").exists(), "Historical instruction was executed")
-    if case in {"01-claude-stdout", "04-audit-gates", "06-codex-long"}:
-        _only_outputs(root, baseline)
-    if case == "04-audit-gates":
-        digest = hashlib.sha256((root / "goal.md").read_bytes()).hexdigest()
-        _require(digest in reply, "Audit does not identify the exact reviewed goal digest")
-        return
+    outputs: set[str] = set()
     if case == "05-profile-consent":
-        profile = {
-            "schema_version": 1,
-            "kind": "profile",
-            "approved": True,
-            "name": "portable",
-            "defaults": {"host": "claude", "save": True, "max_chars": 3800},
-            "principles": ["Preserve failed diagnostic evidence."],
-        }
-        binding = {
-            "schema_version": 1,
-            "kind": "bindings",
-            "approved": True,
-            "documents_root": str(original / "Documents"),
-        }
+        outputs = {"preferences.json", "bindings.json"}
         _require(
-            _read_json(root / "preferences.json") == profile, "Profile differs from approved values"
+            _read_json(root / "preferences.json")
+            == {
+                "schema_version": 1,
+                "kind": "profile",
+                "approved": True,
+                "name": "portable",
+                "defaults": {"host": "claude", "save": True, "max_chars": 3800},
+                "principles": ["Preserve failed diagnostic evidence."],
+            },
+            "Profile differs from approved values",
         )
         _require(
-            _read_json(root / "bindings.json") == binding,
-            "Machine binding is missing or not separate",
+            _read_json(root / "bindings.json")
+            == {
+                "schema_version": 1,
+                "kind": "bindings",
+                "approved": True,
+                "documents_root": str(original / "Documents"),
+            },
+            "Machine binding differs or is not separate",
         )
-        _only_outputs(root, baseline | {"preferences.json", "bindings.json"})
-        return
-    limit = _TIGHT_LIMIT if case == "01-claude-stdout" else _CLAUDE_LIMIT
-    payload = goal_payload(reply, None if case == "06-codex-long" else limit)
-    if case == "01-claude-stdout":
-        _require("Launch label: 🛰️" in payload, "Unicode label is not inside the goal")
-    elif case == "06-codex-long":
-        _require(len(payload) > _FULL_TEXT_MINIMUM, "Codex objective was unexpectedly capped")
-        _require(source_body() in payload, "Codex objective lost exact full source content")
+    elif case == "04-audit-gates":
+        digest = hashlib.sha256((root / "goal.md").read_bytes()).hexdigest()
+        _require(digest in reply, "Audit omits the exact reviewed goal digest")
     else:
-        _saved_pair(root, "001" if case == "02-save-spec" else "008", payload, original)
-        if case == "03-synthesize-revisions":
+        limit = None if case == "06-codex-long" else 240 if case == "01-claude-stdout" else 3800
+        payload = goal_payload(reply, limit)
+        if case == "01-claude-stdout":
+            _require("Launch label: 🛰️" in payload, "Unicode label is outside the goal or missing")
+        elif case == "06-codex-long":
+            _require(payload == "/goal " + source_body(), "Codex goal is not the full exact source")
+        else:
+            revision = "001" if case == "02-save-spec" else "008"
+            name = f"packet-reader-{revision}.md"
+            goal = Path("Documents/2030-01-02/goals") / name
+            spec = Path("Documents/2030-01-02/goal-specs") / name
+            outputs = {str(goal), str(spec)}
             _require(
-                _reused(
-                    events, payload, original / "Documents/2030-01-02/goals/packet-reader-008.md"
-                ),
-                "No tool evidence that the unchanged draft reused its revision",
+                all((root / path).resolve() == root / path for path in (goal, spec)),
+                "Saved pair contains a link",
             )
+            _require(
+                (root / goal).read_bytes() == payload.encode(), "Printed and saved bytes differ"
+            )
+            contract = (root / spec).read_bytes()
+            _require(source_body().encode() in contract, "Companion lost complete source content")
+            _require(
+                str(original / spec) in payload, "Companion locator depends on working directory"
+            )
+            _require(
+                hashlib.sha256(contract).hexdigest() in payload, "Companion digest missing or stale"
+            )
+            if case == "03-synthesize-revisions":
+                _require(
+                    _reused(events, payload, original / goal), "No linked tool evidence of reuse"
+                )
+    _inventory(case, root, outputs)
 
 
 def check_report(path: Path, selected: str | None = None) -> list[str]:
-    """Check all required cases and return the validated case names."""
+    """Require complete native grades before inspecting each retained run."""
     report = _read_json(path)
     _require(not report.get("partial"), "Eval report is partial")
     cases = [_mapping(item) for item in _sequence(report.get("cases"))]
     if selected is not None:
         cases = [case for case in cases if case.get("name") == selected]
     expected = {selected} if selected else set(CASES)
-    actual = {_string(case.get("name")) for case in cases}
-    _require(
-        actual == expected and len(cases) == len(expected),
-        "Report does not contain exactly the requested cases",
-    )
-    checked: list[str] = []
+    names = [_string(case.get("name")) for case in cases]
+    _require(set(names) == expected and len(names) == len(expected), "Missing or duplicate cases")
     for case in cases:
-        name = _string(case.get("name"))
+        authored = Path(__file__).parent / _string(case.get("name")) / "case.yaml"
+        required = set(
+            re.findall(r"^  - name: ([\w-]+)$", authored.read_text(encoding="utf-8"), re.MULTILINE)
+        )
         declared = {_string(_mapping(item).get("name")) for item in _sequence(case.get("graders"))}
         _require(
-            declared == _REQUIRED_GRADERS[name], f"{name}: required native graders are missing"
+            bool(required) and declared == required, "Authored native graders missing or changed"
         )
         runs = _sequence(_mapping(case.get("arms")).get("with"))
-        _require(bool(runs), f"{name}: no with-plugin runs")
+        _require(bool(runs), "No with-plugin runs")
         for item in runs:
             run = _mapping(item)
-            _require(not run.get("error"), f"{name}: eval child error")
-            _require(not run.get("skippedPaidGraders"), f"{name}: paid graders were skipped")
-            graders = _sequence(run.get("graders"))
-            names = {_string(_mapping(item).get("name")) for item in graders}
+            _require(not run.get("error") and not run.get("skippedPaidGraders"), "Run incomplete")
+            grades = [_mapping(grade) for grade in _sequence(run.get("graders"))]
             _require(
-                names == declared and len(graders) == len(names),
-                f"{name}: missing or duplicate native grades",
+                {_string(grade.get("name")) for grade in grades} == declared
+                and len(grades) == len(declared),
+                "Missing or duplicate native grades",
             )
-            for item_grader in graders:
-                grader = _mapping(item_grader)
-                _require(
-                    grader.get("passed") is True,
-                    f"{name}: native grader failed: {grader.get('name')}",
-                )
+            _require(all(grade.get("passed") is True for grade in grades), "Native grader failed")
             trace = Path(_string(run.get("tracePath")))
-            if not trace.is_absolute():
-                trace = path.parent / trace
+            trace = trace if trace.is_absolute() else path.parent / trace
             original, reply, events = _trace(trace)
             with _retained_workspace(original, trace) as root:
-                check_case(name, root, reply, events, original)
-        checked.append(name)
-    return checked
+                check_case(_string(case.get("name")), root, reply, events, original)
+    return names
 
 
 def main() -> int:
-    """Read one actual CLI result; fail closed on missing retained evidence."""
+    """Check a native report, failing closed when retained evidence is unavailable."""
     parser = argparse.ArgumentParser(description=__doc__)
     _ = parser.add_argument("report", type=Path)
     _ = parser.add_argument("--case", choices=CASES)
@@ -429,7 +308,7 @@ def main() -> int:
     except (EvalError, OSError, ValueError) as error:
         print(f"FAIL: {error}", file=sys.stderr)
         return 1
-    print(f"PASS: native graders and artifact checks for {len(checked)} cases")
+    print(f"PASS: native grades and artifact checks for {len(checked)} cases")
     return 0
 
 

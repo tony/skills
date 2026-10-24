@@ -1,91 +1,73 @@
-"""Negative controls for the checks applied after actual Claude eval runs."""
+"""Fast corruption controls for the native eval postcheck; no model calls."""
 
-# ruff: noqa: PT009, PT027, SLF001
-# pyright: reportUnusedCallResult=false, reportPrivateUsage=false
+# ruff: noqa: PT009, PT027
+# pyright: reportUnusedCallResult=false
 from __future__ import annotations
 
 import hashlib
 import json
+import re
 import tempfile
 import unittest
 from pathlib import Path
 
 if __package__:
-    from . import check_results as checks
-    from .fixtures import REQUIREMENTS, files_for, source_body
+    from .check_results import EvalError, check_case, check_report, goal_payload
+    from .fixtures import files_for, source_body
 else:
-    import check_results as checks  # pyright: ignore[reportImplicitRelativeImport]
-    from fixtures import (  # pyright: ignore[reportImplicitRelativeImport]
-        REQUIREMENTS,
-        files_for,
-        source_body,
+    from check_results import (  # pyright: ignore[reportImplicitRelativeImport]
+        EvalError,
+        check_case,
+        check_report,
+        goal_payload,
     )
-
-EvalError = checks.EvalError
-check_case = checks.check_case
-goal_payload = checks.goal_payload
+    from fixtures import files_for, source_body  # pyright: ignore[reportImplicitRelativeImport]
 
 
 def _reply(payload: str) -> str:
-    return f"## Goal\n\n```text\n{payload}\n```\n"
+    return (
+        f"## Goal\n\n```text\n{payload}\n```\n\nCounts: {len(payload)} code points; "
+        f"{len(payload.encode('utf-16-le')) // 2} UTF-16 units.\n"
+    )
 
 
-def _render_events(payload: str, goal: Path) -> list[dict[str, object]]:
+def _renders(payload: str, goal: Path) -> list[dict[str, object]]:
     events: list[dict[str, object]] = []
-    for index, reused in enumerate((False, True)):
-        identifier = f"render-{index}"
-        events.append(
-            {
-                "type": "assistant",
-                "message": {
-                    "content": [
+    for reused in (False, True):
+        identifier = str(reused)
+        for kind, block in (
+            ("assistant", {"type": "tool_use", "name": "Bash", "id": identifier}),
+            (
+                "user",
+                {
+                    "type": "tool_result",
+                    "tool_use_id": identifier,
+                    "content": json.dumps(
                         {
-                            "type": "tool_use",
-                            "id": identifier,
-                            "name": "Bash",
-                            "input": {
-                                "command": "python3 /plugin/planner.py render --input - --save"
-                            },
+                            "ready": True,
+                            "reused": reused,
+                            "payload": payload,
+                            "goal_path": str(goal),
                         }
-                    ]
+                    ),
                 },
-            }
-        )
-        events.append(
-            {
-                "type": "user",
-                "message": {
-                    "content": [
-                        {
-                            "type": "tool_result",
-                            "tool_use_id": identifier,
-                            "content": json.dumps(
-                                {
-                                    "reused": reused,
-                                    "ready": True,
-                                    "payload": payload,
-                                    "goal_path": str(goal),
-                                    "revision": 8,
-                                }
-                            ),
-                        }
-                    ]
-                },
-            }
-        )
+            ),
+        ):
+            events.append({"type": kind, "message": {"content": [block]}})
     return events
 
 
 class GoalEvalChecksTest(unittest.TestCase):
-    """Exercise output corruption, Unicode boundaries, and unauthorized state."""
+    """Reject damaged outputs and false completion while allowing intact evidence."""
 
     root: Path  # pyright: ignore[reportUninitializedInstanceVariable]
 
     def setUp(self) -> None:  # pyright: ignore[reportImplicitOverride]
-        """Give every control an owned, isolated directory."""
+        """Create an owned fixture for each test."""
         temporary = tempfile.TemporaryDirectory()
         self.addCleanup(temporary.cleanup)
-        self.root = Path(temporary.name).resolve()
+        self.root = Path(temporary.name).resolve() / "workspace"
+        self.root.mkdir()
 
     def _seed(self, case: str) -> None:
         for relative, text in files_for(case).items():
@@ -93,118 +75,112 @@ class GoalEvalChecksTest(unittest.TestCase):
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_text(text, encoding="utf-8")
 
-    def _pair(
-        self, revision: str = "001", specification: str | None = None
-    ) -> tuple[Path, Path, str]:
+    def _pair(self, revision: str = "001", source: str | None = None) -> tuple[Path, Path, str]:
         goal = self.root / f"Documents/2030-01-02/goals/packet-reader-{revision}.md"
         spec = self.root / f"Documents/2030-01-02/goal-specs/packet-reader-{revision}.md"
         spec.parent.mkdir(parents=True, exist_ok=True)
-        spec.write_text(source_body() if specification is None else specification, encoding="utf-8")
+        spec.write_text(source_body() if source is None else source, encoding="utf-8")
         digest = hashlib.sha256(spec.read_bytes()).hexdigest()
-        payload = f"/goal Implement the decoder. Goal specification: <{spec}> (sha256:{digest})"
+        payload = f"/goal Implement the decoder. Read {spec} sha256:{digest}"
         goal.parent.mkdir(parents=True, exist_ok=True)
         goal.write_text(payload, encoding="utf-8")
         return goal, spec, payload
 
-    def test_unicode_and_fence_boundaries(self) -> None:
-        """Reject UTF-16 overflow and preserve terminal payload newlines exactly."""
-        self.assertEqual(goal_payload(_reply("/goal x\n")), "/goal x\n")
-        self.assertEqual(goal_payload(_reply("/goal x")), "/goal x")
-        self.assertEqual(goal_payload(_reply("/goal " + "x" * 3794), 3800)[-1], "x")
+    def test_counts_and_complete_printing(self) -> None:
+        """Check both counting conventions, exact newline handling, and complete output."""
+        for payload in ("/goal x", "/goal x\n", "/goal " + "x" * 3794):
+            self.assertEqual(goal_payload(_reply(payload), 3800), payload)
         for payload in ("/goal " + "x" * 3795, "/goal " + "🛰" * 1898):
-            with self.subTest(payload_length=len(payload)), self.assertRaises(EvalError):
+            with self.subTest(length=len(payload)), self.assertRaises(EvalError):
                 goal_payload(_reply(payload), 3800)
-        with self.assertRaises(EvalError):
-            goal_payload("Saved the goal; see the file.")
+        reply = _reply("/goal 🛰️")
+        for invalid in (
+            "Saved; see the file.",
+            reply + reply,
+            reply.replace("8 code", "9 code"),
+            reply.replace("9 UTF", "8 UTF"),
+        ):
+            with self.subTest(reply=invalid), self.assertRaises(EvalError):
+                goal_payload(invalid)
 
-    def test_saved_bytes_locator_and_digest(self) -> None:
-        """Reject shortened printing, stale hashes, and CWD-dependent locators."""
+    def test_saved_pair_corruption(self) -> None:
+        """Reject byte mismatch, stale/missing/incomplete companions, and relative locators."""
         case = "02-save-spec"
         self._seed(case)
         goal, spec, payload = self._pair()
         check_case(case, self.root, _reply(payload), [])
         with self.assertRaises(EvalError):
             check_case(case, self.root, _reply(payload + "\n"), [])
-        spec.write_text(source_body() + "Changed after rendering.\n", encoding="utf-8")
+        spec.write_text(source_body() + "Changed.\n", encoding="utf-8")
         with self.assertRaises(EvalError):
             check_case(case, self.root, _reply(payload), [])
+        _, _, shortened = self._pair(source=source_body()[:-100])
+        with self.assertRaises(EvalError):
+            check_case(case, self.root, _reply(shortened), [])
         _, _, payload = self._pair()
         relative = payload.replace(str(spec), "../goal-specs/packet-reader-001.md")
         goal.write_text(relative, encoding="utf-8")
         with self.assertRaises(EvalError):
             check_case(case, self.root, _reply(relative), [])
+        spec.unlink()
+        with self.assertRaises(OSError):
+            check_case(case, self.root, _reply(relative), [])
 
-    def test_missing_requirements_even_with_valid_digest(self) -> None:
-        """A correctly hashed incomplete companion still fails."""
-        case = "02-save-spec"
-        self._seed(case)
-        _, _, payload = self._pair(specification=source_body().replace(REQUIREMENTS[2], ""))
-        with self.assertRaises(EvalError):
-            check_case(case, self.root, _reply(payload), [])
-
-    def test_unchanged_revision_and_injection_controls(self) -> None:
-        """Reject new revisions on reprint, changed predecessors, and executed source text."""
+    def test_reuse_and_history(self) -> None:
+        """Require two linked render outcomes; preserve predecessors and current exclusions."""
         case = "03-synthesize-revisions"
         self._seed(case)
         goal, _, payload = self._pair("008")
-        events = _render_events(payload, goal)
+        events = _renders(payload, goal)
         check_case(case, self.root, _reply(payload), events)
-        with self.assertRaises(EvalError):
-            check_case(case, self.root, _reply(payload), [])
-        unrelated: list[dict[str, object]] = [
-            {
-                "type": "user",
-                "message": {
-                    "content": [
-                        {
-                            "type": "tool_result",
-                            "tool_use_id": "unrelated-read",
-                            "content": 'Unrelated fixture says {"reused": true}',
-                        }
-                    ]
-                },
-            }
-        ]
-        with self.assertRaises(EvalError):
-            check_case(case, self.root, _reply(payload), unrelated)
-        with self.assertRaises(EvalError):
-            check_case(case, self.root, _reply(payload), events[2:])
-        duplicate = goal.with_name("packet-reader-009.md")
-        duplicate.write_text(payload, encoding="utf-8")
-        with self.assertRaises(EvalError):
-            check_case(case, self.root, _reply(payload), events)
-        duplicate.unlink()
-        (self.root / "injected.txt").touch()
-        with self.assertRaises(EvalError):
-            check_case(case, self.root, _reply(payload), events)
-        (self.root / "injected.txt").unlink()
+        for fake in (
+            [],
+            events[1:],
+            events[2:],
+            _renders(payload + "changed", goal),
+            _renders(payload, goal.with_name("wrong.md")),
+        ):
+            with self.subTest(events=fake), self.assertRaises(EvalError):
+                check_case(case, self.root, _reply(payload), fake)
+        for relative in ("injected.txt", "Documents/2030-01-03/goals/packet-reader-009.md"):
+            extra = self.root / relative
+            extra.parent.mkdir(parents=True, exist_ok=True)
+            extra.write_text(payload, encoding="utf-8")
+            with self.assertRaises(EvalError):
+                check_case(case, self.root, _reply(payload), events)
+            extra.unlink()
+            if relative.startswith("Documents"):
+                extra.parent.rmdir()
+                extra.parent.parent.rmdir()
         previous = self.root / "Documents/2030-01-01/goals/packet-reader-007.md"
         previous.write_text("Changed predecessor", encoding="utf-8")
         with self.assertRaises(EvalError):
             check_case(case, self.root, _reply(payload), events)
 
-    def test_stdout_and_profile_consent(self) -> None:
-        """Reject a stdout-only write and an unapproved profile principle."""
-        case = "01-claude-stdout"
+    def test_stdout_and_full_codex_source(self) -> None:
+        """Reject unauthorized hidden writes and any shortened Codex body."""
+        case = "06-codex-long"
         self._seed(case)
-        reply = _reply("/goal Launch label: 🛰️ Fix and verify the decoder locally.")
-        check_case(case, self.root, reply, [])
-        scratch = self.root / "request.json"
-        scratch.write_text("{}", encoding="utf-8")
+        payload = "/goal " + source_body()
+        self.assertGreater(len(payload), 4000)
+        check_case(case, self.root, _reply(payload), [])
         with self.assertRaises(EvalError):
-            check_case(case, self.root, reply, [])
-        scratch.unlink()
-        for relative in (".claude/learned.json", ".git/learned.json"):
-            hidden = self.root / relative
-            hidden.parent.mkdir(exist_ok=True)
-            hidden.write_text('{"history_learned":true}', encoding="utf-8")
-            with self.subTest(relative=relative), self.assertRaises(EvalError):
-                check_case(case, self.root, reply, [])
-            hidden.unlink()
-            hidden.parent.rmdir()
+            check_case(case, self.root, _reply(payload[:-100]), [])
+        for relative in ("request.json", ".claude/learned.json", ".git/learned.json"):
+            extra = self.root / relative
+            extra.parent.mkdir(exist_ok=True)
+            extra.write_text("{}", encoding="utf-8")
+            with self.assertRaises(EvalError):
+                check_case(case, self.root, _reply(payload), [])
+            extra.unlink()
+            if extra.parent != self.root:
+                extra.parent.rmdir()
+
+    def test_profile_consent_and_bindings(self) -> None:
+        """Reject unapproved preferences, combined bindings, and additional files."""
         case = "05-profile-consent"
         self._seed(case)
-        profile = {
+        profile: dict[str, object] = {
             "schema_version": 1,
             "kind": "profile",
             "approved": True,
@@ -222,67 +198,71 @@ class GoalEvalChecksTest(unittest.TestCase):
         path.write_text(json.dumps(profile), encoding="utf-8")
         (self.root / "bindings.json").write_text(json.dumps(binding), encoding="utf-8")
         check_case(case, self.root, "", [])
-        learned = self.root / "learned.json"
-        learned.write_text('{"history_learned":true}', encoding="utf-8")
-        with self.assertRaises(EvalError):
-            check_case(case, self.root, "", [])
-        learned.unlink()
-        profile["principles"] = ["Always delete failed diagnostic logs."]
+        for key, value in (
+            ("principles", ["Delete failed logs."]),
+            ("approved", False),
+            ("documents_root", binding["documents_root"]),
+        ):
+            path.write_text(json.dumps({**profile, key: value}), encoding="utf-8")
+            with self.subTest(field=key), self.assertRaises(EvalError):
+                check_case(case, self.root, "", [])
         path.write_text(json.dumps(profile), encoding="utf-8")
+        (self.root / "learned.json").write_text("{}", encoding="utf-8")
         with self.assertRaises(EvalError):
             check_case(case, self.root, "", [])
 
-    def test_report_requires_grades_and_terminal_success(self) -> None:
-        """Empty grades and an assistant-only trace cannot certify a completed eval."""
-        parent = self.root
-        self.root = parent / "workspace"
-        self.root.mkdir()
+    def test_report_rejects_false_completion(self) -> None:
+        """Require all requested cases, native grades, and a successful terminal result."""
         case = "01-claude-stdout"
         self._seed(case)
         reply = _reply("/goal Launch label: 🛰️ Fix and verify the decoder locally.")
-        events: list[dict[str, object]] = [
+        events = [
             {
                 "type": "system",
                 "subtype": "init",
                 "cwd": str(self.root),
                 "plugins": [{"name": "goal-planner"}],
             },
-            {"type": "assistant", "message": {"content": [{"type": "text", "text": reply}]}},
             {"type": "result", "subtype": "success", "is_error": False, "result": reply},
         ]
-        trace = parent / "trace.jsonl"
-        trace.write_text("\n".join(json.dumps(event) for event in events), encoding="utf-8")
-        names = sorted(checks._REQUIRED_GRADERS[case])
-        grades = [{"name": name, "passed": True} for name in names]
-        run: dict[str, object] = {"graders": grades, "tracePath": str(trace)}
-        entries: list[dict[str, object]] = [
-            {
-                "name": case,
-                "graders": [{"name": name} for name in names],
-                "arms": {"with": [run]},
-            }
+        trace = self.root.parent / "trace.jsonl"
+        trace.write_text("\n".join(map(json.dumps, events)), encoding="utf-8")
+        authored = (Path(__file__).parent / case / "case.yaml").read_text(encoding="utf-8")
+        grades = [
+            {"name": match[1], "passed": True}
+            for match in re.finditer(r"^  - name: ([\w-]+)$", authored, re.MULTILINE)
         ]
-        document = {"partial": False, "cases": entries}
-        report = parent / "report.json"
+        run: dict[str, object] = {"graders": grades, "tracePath": str(trace)}
+        entry: dict[str, object] = {"name": case, "graders": grades, "arms": {"with": [run]}}
+        document = {"cases": [entry]}
+        report = self.root.parent / "report.json"
         report.write_text(json.dumps(document), encoding="utf-8")
-        self.assertEqual(checks.check_report(report, case), [case])
-        entries.append({"name": "04-audit-gates", "graders": [], "arms": {"with": []}})
+        self.assertEqual(check_report(report, case), [case])
+        with self.assertRaises(EvalError):
+            check_report(report)
+        changes: list[dict[str, object]] = [
+            {"graders": []},
+            {"graders": [{**grade, "passed": False} for grade in grades]},
+            {"error": "write Errno30"},
+            {"skippedPaidGraders": True},
+        ]
+        for change in changes:
+            original = dict(run)
+            run.update(change)
+            report.write_text(json.dumps(document), encoding="utf-8")
+            with self.subTest(change=change), self.assertRaises(EvalError):
+                check_report(report, case)
+            run.clear()
+            run.update(original)
+        entry["graders"] = run["graders"] = grades[:-1]
         report.write_text(json.dumps(document), encoding="utf-8")
-        self.assertEqual(checks.check_report(report, case), [case])
-        with self.assertRaisesRegex(EvalError, "exactly the requested cases"):
-            checks.check_report(report)
-        with self.assertRaisesRegex(EvalError, "exactly the requested cases"):
-            checks.check_report(report, "02-save-spec")
-        entries.pop()
-        run["graders"] = []
+        with self.assertRaises(EvalError):
+            check_report(report, case)
+        entry["graders"] = run["graders"] = grades
         report.write_text(json.dumps(document), encoding="utf-8")
-        with self.assertRaisesRegex(EvalError, "missing or duplicate native grades"):
-            checks.check_report(report, case)
-        run["graders"] = grades
-        report.write_text(json.dumps(document), encoding="utf-8")
-        trace.write_text("\n".join(json.dumps(event) for event in events[:-1]), encoding="utf-8")
-        with self.assertRaisesRegex(EvalError, "terminal successful result"):
-            checks.check_report(report, case)
+        trace.write_text(json.dumps(events[0]), encoding="utf-8")
+        with self.assertRaises(EvalError):
+            check_report(report, case)
 
 
 if __name__ == "__main__":
