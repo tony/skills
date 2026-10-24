@@ -23,7 +23,9 @@ git commit -q -m 'Add the comma parser'
 git switch -q -c fix-parser
 
 home="$(cd .. && pwd)"
-for config in "$home/.config" "${XDG_CONFIG_HOME:-$home/.config}"; do
-  mkdir -p "$config/goal-planner"
-  printf -- '---\ndocuments: %s/Documents\n---\n' "$PWD" >"$config/goal-planner/profile.md"
-done
+if [ -n "${HOME:-}" ] && [ "$HOME" != "$home" ]; then
+  echo "refusing: run inside an eval sandbox, whose HOME is this directory's parent" >&2
+  exit 1
+fi
+mkdir -p "$home/.config/goal-planner"
+printf -- '---\ndocuments: %s/Documents\n---\n' "$PWD" >"$home/.config/goal-planner/profile.md"

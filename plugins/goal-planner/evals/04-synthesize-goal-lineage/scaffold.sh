@@ -28,10 +28,12 @@ PY
 git commit -q -am 'Strip spaces around each field (P1)'
 
 home="$(cd .. && pwd)"
-for config in "$home/.config" "${XDG_CONFIG_HOME:-$home/.config}"; do
-  mkdir -p "$config/goal-planner"
-  printf -- '---\ndocuments: %s/Documents\n---\n' "$PWD" >"$config/goal-planner/profile.md"
-done
+if [ -n "${HOME:-}" ] && [ "$HOME" != "$home" ]; then
+  echo "refusing: run inside an eval sandbox, whose HOME is this directory's parent" >&2
+  exit 1
+fi
+mkdir -p "$home/.config/goal-planner"
+printf -- '---\ndocuments: %s/Documents\n---\n' "$PWD" >"$home/.config/goal-planner/profile.md"
 
 mkdir -p Documents/2026-10-18/goals Documents/2026-10-18/objectives Documents/2026-10-20/goals
 cat >Documents/2026-10-18/objectives/parser-001.md <<'MD'
