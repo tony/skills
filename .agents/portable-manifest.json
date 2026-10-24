@@ -629,7 +629,7 @@
         "templates/conftest_cache_snippet.py": "plugins/pytest-optimizer/templates/conftest_cache_snippet.py",
         "templates/pytest_optimizer_plugin.py": "plugins/pytest-optimizer/templates/pytest_optimizer_plugin.py"
       },
-      "bytes": 181586
+      "bytes": 181538
     },
     {
       "name": "pytest-optimizer-00-scan",
@@ -649,7 +649,7 @@
         "references/version-matrix.md": "plugins/pytest-optimizer/references/version-matrix.md",
         "templates/pytest_optimizer_plugin.py": "plugins/pytest-optimizer/templates/pytest_optimizer_plugin.py"
       },
-      "bytes": 172915
+      "bytes": 172867
     },
     {
       "name": "pytest-optimizer-01-benchmark",
@@ -667,7 +667,7 @@
         "references/safety-gates.md": "plugins/pytest-optimizer/references/safety-gates.md",
         "templates/pytest_optimizer_plugin.py": "plugins/pytest-optimizer/templates/pytest_optimizer_plugin.py"
       },
-      "bytes": 162577
+      "bytes": 162529
     },
     {
       "name": "pytest-optimizer-02-plan",
@@ -683,7 +683,7 @@
         "references/scoring-rubric.md": "plugins/pytest-optimizer/references/scoring-rubric.md",
         "templates/commit-message.tmpl": "plugins/pytest-optimizer/templates/commit-message.tmpl"
       },
-      "bytes": 131349
+      "bytes": 131301
     },
     {
       "name": "pytest-optimizer-03-execute",
@@ -699,7 +699,7 @@
         "references/prose-rules.md": "plugins/pytest-optimizer/references/prose-rules.md",
         "templates/pytest_optimizer_plugin.py": "plugins/pytest-optimizer/templates/pytest_optimizer_plugin.py"
       },
-      "bytes": 143559
+      "bytes": 143511
     },
     {
       "name": "rebase",

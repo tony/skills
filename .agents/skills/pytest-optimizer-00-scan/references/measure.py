@@ -16,7 +16,7 @@ Run ``measure.py <command> --help`` for arguments.
 from __future__ import annotations
 
 import argparse
-import datetime
+import datetime as dt
 import hashlib
 import json
 import math
@@ -670,13 +670,13 @@ def memory_dir(
     }
 
 
-def run_id(now: datetime.datetime | None = None) -> str:
+def run_id(now: dt.datetime | None = None) -> str:
     """Return a branch-safe id for one ``03-execute`` run.
 
-    >>> run_id(datetime.datetime(2026, 1, 2, 3, 4, 5, tzinfo=datetime.timezone.utc))[:19]
+    >>> run_id(dt.datetime(2026, 1, 2, 3, 4, 5, tzinfo=dt.timezone.utc))[:19]
     'run-20260102T030405'
     """
-    stamp = (now or datetime.datetime.now(datetime.timezone.utc)).strftime("%Y%m%dT%H%M%S")
+    stamp = (now or dt.datetime.now(dt.timezone.utc)).strftime("%Y%m%dT%H%M%S")
     return f"run-{stamp}-{secrets.token_hex(2)}"
 
 
@@ -745,7 +745,7 @@ def baseline_record(
     out = band(runs)
     if not out["valid"]:
         return out
-    stamp = datetime.datetime.now(datetime.timezone.utc).isoformat(timespec="seconds")
+    stamp = dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds")
     return {
         **(previous or {}),
         "captured_at": stamp,
@@ -1000,7 +1000,7 @@ def log_step(  # noqa: PLR0913, PLR0917
     [(1, 'red'), (2, 'depends on a skipped item')]
     """
     by_order = {i["order"]: i for i in plan}
-    stamp = datetime.datetime.now(datetime.timezone.utc).isoformat(timespec="seconds")
+    stamp = dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds")
     rest = [e for e in log if e["order"] != order]
     old = next((e for e in log if e["order"] == order), t.cast("dict[str, t.Any]", {}))
     base = {"order": order, "id": by_order[order]["id"], "ts": stamp}
