@@ -58,6 +58,7 @@ testpaths = [
     "plugins/gh/scripts",
     "plugins/github-actions/scripts",
     "plugins/git-branch/scripts",
+    "plugins/goal-planner/scripts",
     "plugins/lean/scripts",
     "plugins/merge-pr/scripts",
     "plugins/model-cli/scripts",
