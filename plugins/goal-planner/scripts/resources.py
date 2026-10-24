@@ -358,11 +358,6 @@ def _walk_owned(manifest: Path) -> tuple[list[Path], list[Path]]:
     return found, nested
 
 
-def artifact_candidates(manifest: Path) -> list[Path]:
-    """List directories named like build artifacts inside the registered roots."""
-    return _walk_owned(manifest)[0]
-
-
 def _git(root: Path, *args: str) -> subprocess.CompletedProcess[str]:
     return subprocess.run(  # noqa: S603
         ["git", "-C", str(root), *args],  # noqa: S607
