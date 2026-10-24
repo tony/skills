@@ -59,6 +59,9 @@ SERVICE_PROFILES = frozenset(
 """Windows profiles that belong to no person, compared in lower case."""
 PREVIEW = 200
 AMBIGUOUS_ROOT = 3
+GOAL_COMMAND_RE = re.compile(r"/goal\s+(?=\S)")
+"""``/goal`` and its condition; ``/goals`` and ``/goal-planner:...`` are other commands."""
+LEADING_COMMAND_RE = re.compile(r"^/[\w:-]+\s+")
 GOAL_REQUEST_RE = re.compile(
     r"\b(?:print|draft|write|make|reword|synthesi[sz]e)\b.{0,40}\b(?:goals?|/goal)\b",
     re.IGNORECASE | re.DOTALL,
@@ -656,7 +659,7 @@ def _history_hits(history: Path) -> list[dict[str, object]]:
     seen: dict[str, int] = {}
     for record in records:
         text = str(record.get("text", ""))
-        if record.get("kind") != "prompt" or not text.lstrip().startswith("/goal "):
+        if record.get("kind") != "prompt" or not GOAL_COMMAND_RE.match(text.lstrip()):
             continue
         when = str(record.get("timestamp") or "")
         ref = f"{record.get('session_id') or record.get('path') or 'history'}@{when}"
@@ -774,12 +777,12 @@ def harvest(
         text = str(record.get("text", "")).strip()
         if record.get("kind") != "prompt":
             continue
-        if not (text.startswith("/goal") or GOAL_REQUEST_RE.search(text)):
+        if not (GOAL_COMMAND_RE.match(text) or GOAL_REQUEST_RE.search(text)):
             continue
         origin = t.cast("dict[str, object]", record.get("origin") or {})
         where = str(origin.get("cwd") or "")
         day = str(record.get("timestamp") or "")[:10]
-        body = text[len("/goal") :].strip() if text.startswith("/goal") else text
+        body = LEADING_COMMAND_RE.sub("", text, count=1)
         parts = {
             part.strip().lower()
             for part in SENTENCE_SPLIT_RE.split(body)
@@ -792,11 +795,6 @@ def harvest(
             hosts.setdefault(sentence, set()).add(str(record.get("agent", "")))
             last[sentence] = max(last.get(sentence, ""), day)
     since = ((today or _local_today()) - timedelta(days=days)).isoformat()
-    codex_only = sum(
-        1
-        for sentence, count in counts.items()
-        if count >= min_count and hosts[sentence] == {"codex"}
-    )
     kept: list[dict[str, object]] = [
         {
             "sentence": sentence,
@@ -812,8 +810,10 @@ def harvest(
         and last[sentence] >= since
     ]
     kept.sort(key=lambda row: (-t.cast("int", row["count"]), str(row["sentence"])))
-    recurring = sum(1 for count in counts.values() if count > 1)
-    set_aside = {"under_bar": recurring - len(kept) - codex_only, "codex_only": codex_only}
+    chosen = {str(row["sentence"]) for row in kept}
+    codex_only = {s for s, n in counts.items() if n >= min_count and hosts[s] == {"codex"}} - chosen
+    under_bar = {s for s, n in counts.items() if n > 1} - chosen - codex_only
+    set_aside = {"under_bar": len(under_bar), "codex_only": len(codex_only)}
     return {"kept": kept, "set_aside": set_aside, "skipped_lines": skipped}
 
 

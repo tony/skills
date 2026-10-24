@@ -38,10 +38,13 @@ Export prompt history per `references/history.md`, then count:
 ```console
 $ python3 <goal.py> harvest \
     --history <export file> \
-    --days 30
+    --days <n> \
+    --min-count <n> \
+    --min-projects <n>
 ```
 
-It prints `kept`, the sentences that clear the bar with their count, projects,
+Each `<n>` is the matching argument, or its default: 30 days, 5 prompts, and
+2 projects. It prints `kept`, the sentences that clear the bar with their count, projects,
 last use, hosts, and skill names; `set_aside`, the counts of recurring
 sentences under the bar (`under_bar`) and of Codex-only ones (`codex_only`);
 and `skipped_lines`, export lines that were not JSON. Codex prompts carry no

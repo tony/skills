@@ -322,11 +322,13 @@ def test_find_reads_history_goal_prompts(tmp_path: pathlib.Path) -> None:
     records: list[dict[str, object]] = [
         {"kind": "prompt", "text": "/goal Fix the parser.", "timestamp": "2026-10-20T10:00:00Z"},
         {"kind": "prompt", "text": "print a goal", "timestamp": "2026-10-20T09:00:00Z"},
+        {"kind": "prompt", "text": "/goal\nFix the lexer.", "timestamp": "2026-10-20T11:00:00Z"},
+        {"kind": "prompt", "text": "/goal-planner:print-goal x", "timestamp": "2026-10-20T12:00Z"},
         {"type": "summary", "data": {}},
     ]
     _ = export.write_text("\n".join(json.dumps(r) for r in records) + "\n", encoding="utf-8")
     hits = goal.find_goals(None, None, export, None, None)
-    assert [(h["source"], h["text"]) for h in hits] == [("history", "/goal Fix the parser.")]
+    assert [h["text"] for h in hits] == ["/goal\nFix the lexer.", "/goal Fix the parser."]
 
 
 def test_find_filters_ledger_by_text_and_topic(tmp_path: pathlib.Path) -> None:
@@ -610,3 +612,26 @@ def test_find_reads_a_spill_file_that_is_not_utf8(tmp_path: pathlib.Path) -> Non
     _ = spill.write_bytes(b"Fix the \xff parser.")
     hits = goal.find_goals(None, tmp_path / "codex", None, None, None)
     assert [h["text"] for h in hits] == ["Fix the \N{REPLACEMENT CHARACTER} parser."]
+
+
+def test_harvest_reads_a_print_goal_prompt_by_its_words(tmp_path: pathlib.Path) -> None:
+    """A /goal-planner:print-goal prompt counts its sentences, not its command name."""
+    rule = "Keep the tokenizer's public API unchanged across every release we cut."
+    records = [
+        _prompt(f"/goal-planner:print-goal {rule}", f"~/p{i % 2}", "2026-10-20") for i in range(6)
+    ]
+    export = tmp_path / "history.ndjson"
+    _ = export.write_text("\n".join(json.dumps(r) for r in records) + "\n", encoding="utf-8")
+    kept = t.cast("list[dict[str, object]]", goal.harvest(export, today=date(2026, 10, 24))["kept"])
+    assert [k["sentence"] for k in kept] == [rule.lower()]
+
+
+def test_harvest_sets_aside_only_sentences_it_left_out(tmp_path: pathlib.Path) -> None:
+    """With a bar of one prompt, the one sentence is kept and nothing is set aside."""
+    export = tmp_path / "history.ndjson"
+    record = _prompt(
+        "/goal Effort and blast radius do not matter for this package.", "~/p0", "2026-10-20"
+    )
+    _ = export.write_text(json.dumps(record) + "\n", encoding="utf-8")
+    result = goal.harvest(export, min_count=1, min_projects=1, today=date(2026, 10, 24))
+    assert result["set_aside"] == {"under_bar": 0, "codex_only": 0}

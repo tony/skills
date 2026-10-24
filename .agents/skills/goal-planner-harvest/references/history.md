@@ -34,8 +34,10 @@ Codex prompt; run a second export with `agent:codex` when Codex goals matter.
 ## Reading the export
 
 `goal.py find --history <export file>` keeps the prompts that set a goal
-(text starting with `/goal `), verbatim, with their times. `goal.py harvest
---history <export file>` counts the sentences that recur across goal prompts.
+(`/goal` followed by its condition, not `/goals` or `/goal-planner:...`),
+verbatim, with their times. `goal.py harvest --history <export file>` counts
+the sentences that recur across goal prompts and requests to print one,
+leaving out the command a prompt opens with.
 
 The export ends with a summary record. A `status.state` other than
 `complete`, any failed or skipped source, or a `skipped_lines` count from
