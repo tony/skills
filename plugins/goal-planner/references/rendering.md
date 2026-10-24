@@ -113,5 +113,7 @@ binding, and create a new revision if the payload changes.
 
 Read back saved bytes and compare exactly with the printed payload. On failure,
 print the returned payload (or authored draft if none) and concrete error.
+After a save failure, do not bypass exclusive creation with private helper
+calls or manual writes.
 Missing, changed, or unavailable required companions mean incomplete. Mechanical
 checks do not establish semantic coverage or independent review.
