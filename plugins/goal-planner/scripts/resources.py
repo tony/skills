@@ -14,10 +14,10 @@ Run ``resources.py <command> --help`` for each command.
 from __future__ import annotations
 
 import argparse
+import contextlib
 import dataclasses
 import json
 import os
-import resource
 import shutil
 import subprocess
 import sys
@@ -58,6 +58,14 @@ class Reserves:
     mem_pressure_pct: float = 10
 
 
+class Usage(t.NamedTuple):
+    """CPU time and peak RSS of the children this process has waited for."""
+
+    user: float
+    system: float
+    peak_kib: int
+
+
 class Args(argparse.Namespace):
     """Typed view of every CLI option."""
 
@@ -90,17 +98,20 @@ def _meminfo(proc: Path) -> dict[str, int]:
 
 
 def _pressure(proc: Path, name: str) -> float | None:
-    """Return the ``some avg10`` stall percentage, or None without PSI.
+    """Return the ``some avg10`` stall percentage, or None without readable PSI.
+
+    A kernel built with PSI but booted with it off refuses the read.
 
     Examples
     --------
     >>> _pressure(Path("/nonexistent"), "cpu") is None
     True
     """
-    path = proc / "pressure" / name
-    if not path.is_file():
+    try:
+        text = (proc / "pressure" / name).read_text(encoding="utf-8")
+    except OSError:
         return None
-    for line in path.read_text(encoding="utf-8").splitlines():
+    for line in text.splitlines():
         if line.startswith("some "):
             for field in line.split()[1:]:
                 key, _, value = field.partition("=")
@@ -136,6 +147,8 @@ def reported_inodes(files: int, favail: int) -> int | None:
 
 
 def _filesystem(path: Path) -> dict[str, int | None]:
+    if not hasattr(os, "statvfs"):  # Windows: no statvfs and no inode counts
+        return {"free_bytes": shutil.disk_usage(path).free, "free_inodes": None}
     stat = os.statvfs(path)
     return {
         "free_bytes": stat.f_bavail * stat.f_frsize,
@@ -153,10 +166,10 @@ def snapshot(paths: list[Path], proc: Path = PROC) -> dict[str, object]:
     available: int | None = mem.get("MemAvailable")
     if available is None and sys.platform == "darwin":
         available = _mac_available()
-    try:
-        load: list[float] | None = list(os.getloadavg())
-    except OSError:
-        load = None
+    load: list[float] | None = None
+    if hasattr(os, "getloadavg"):
+        with contextlib.suppress(OSError):
+            load = list(os.getloadavg())
     return {
         "filesystems": {str(p): _filesystem(p) for p in paths},
         "mem_available_bytes": available,
@@ -234,6 +247,18 @@ def _tree_rss_kib(root_pid: int) -> int:
     return sum(table[pid][1] for pid in owned if pid in table)
 
 
+def _children_usage() -> Usage | None:
+    """Read CPU time and peak RSS for waited-for children; None without POSIX ``resource``."""
+    try:
+        import resource  # noqa: PLC0415 - POSIX only; check, register, and clean run without it
+    except ImportError:
+        return None
+    usage = resource.getrusage(resource.RUSAGE_CHILDREN)
+    # ru_maxrss is KiB on Linux and bytes on macOS.
+    peak = usage.ru_maxrss // 1024 if sys.platform == "darwin" else usage.ru_maxrss
+    return Usage(usage.ru_utime, usage.ru_stime, peak)
+
+
 def sample(command: list[str], interval: float) -> tuple[int, dict[str, object]]:
     """Run a command and report its time and peak memory.
 
@@ -242,7 +267,7 @@ def sample(command: list[str], interval: float) -> tuple[int, dict[str, object]]
     """
     paths = [Path.cwd()]
     before = snapshot(paths)
-    usage = resource.getrusage(resource.RUSAGE_CHILDREN)
+    usage = _children_usage()
     start = time.monotonic()
     proc = subprocess.Popen(command)  # noqa: S603
     peak = 0
@@ -254,15 +279,17 @@ def sample(command: list[str], interval: float) -> tuple[int, dict[str, object]]
         except subprocess.TimeoutExpired:
             continue
     wall = time.monotonic() - start
-    after_usage = resource.getrusage(resource.RUSAGE_CHILDREN)
-    # ru_maxrss is KiB on Linux and bytes on macOS; it catches a child that exited between polls.
-    child_kib = after_usage.ru_maxrss // 1024 if sys.platform == "darwin" else after_usage.ru_maxrss
-    peak = max(peak, child_kib)
+    after = _children_usage()
+    user = system = None
+    if usage is not None and after is not None:
+        # getrusage catches a child that exited between polls.
+        peak = max(peak, after.peak_kib)
+        user, system = round(after.user - usage.user, 3), round(after.system - usage.system, 3)
     return code, {
         "exit": code,
         "wall_seconds": round(wall, 3),
-        "user_seconds": round(after_usage.ru_utime - usage.ru_utime, 3),
-        "system_seconds": round(after_usage.ru_stime - usage.ru_stime, 3),
+        "user_seconds": user,
+        "system_seconds": system,
         "max_rss_mib": round(peak / 1024, 1),
         "before": before,
         "after": snapshot(paths),

@@ -25,8 +25,10 @@ $ python3 <resources.py> check \
 The first line reads `resources ok: ...` or `resources low (<breaches>): ...`
 and goes into the conversation, where Claude's evaluator can see it. The
 command exits 1 on a breach. On macOS memory comes from `vm_stat`; pressure
-is unknown there, and on WSL's Windows drives inode counts are unknown. An
-unknown reading is reported, never counted as a breach.
+is unknown there, and on WSL's Windows drives inode counts are unknown. On
+native Windows only free space reads, and `sample` reports wall time alone. A
+kernel that refuses to read pressure, as with PSI turned off, reads as
+unknown. An unknown reading is reported, never counted as a breach.
 
 Measure one expensive command:
 

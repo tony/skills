@@ -4,9 +4,12 @@
 from __future__ import annotations
 
 import json
+import os
+import shutil
 import subprocess
 import sys
 import typing as t
+from pathlib import Path
 
 import pytest
 import resources  # pyright: ignore[reportImplicitRelativeImport]
@@ -47,6 +50,61 @@ def test_snapshot_without_pressure_reports_none(tmp_path: pathlib.Path) -> None:
     """Kernels without pressure stall information report it as unknown."""
     snap = resources.snapshot([tmp_path], proc=_fake_proc(tmp_path, pressure=False))
     assert snap["cpu_pressure_pct"] is None
+
+
+def test_snapshot_reads_unreadable_pressure_as_unknown(tmp_path: pathlib.Path) -> None:
+    """A pressure file the kernel refuses to read, as with PSI disabled, is unknown."""
+    proc = _fake_proc(tmp_path)
+    (proc / "pressure" / "cpu").chmod(0)
+    try:
+        snap = resources.snapshot([tmp_path], proc=proc)
+    finally:
+        (proc / "pressure" / "cpu").chmod(0o644)
+    assert snap["cpu_pressure_pct"] is None
+
+
+class _DiskUsage(t.NamedTuple):
+    total: int
+    used: int
+    free: int
+
+
+def _windows_disk_usage(_path: object) -> _DiskUsage:
+    return _DiskUsage(9 * GIB, 4 * GIB, 5 * GIB)
+
+
+def test_snapshot_without_statvfs_or_loadavg(
+    tmp_path: pathlib.Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Without POSIX statvfs and load averages, as on Windows, free space still reads."""
+    monkeypatch.delattr(os, "statvfs")
+    monkeypatch.delattr(os, "getloadavg")
+    monkeypatch.setattr(shutil, "disk_usage", _windows_disk_usage)
+    snap = resources.snapshot([tmp_path], proc=_fake_proc(tmp_path))
+    assert snap["filesystems"] == {str(tmp_path): {"free_bytes": 5 * GIB, "free_inodes": None}}
+    assert snap["load"] is None
+
+
+NO_RESOURCE_MODULE = (
+    "import runpy, sys; sys.modules['resource'] = None; sys.argv = sys.argv[1:]; "
+    "runpy.run_path(sys.argv[0], run_name='__main__')"
+)
+
+
+def test_scripts_run_without_the_resource_module(tmp_path: pathlib.Path) -> None:
+    """Without the POSIX resource module, check still runs and sample reports no CPU time."""
+    base = [sys.executable, "-c", NO_RESOURCE_MODULE, str(Path(resources.__file__))]
+    check = subprocess.run(
+        [*base, "check", "--path", str(tmp_path)], capture_output=True, text=True, check=False
+    )
+    assert check.stdout.startswith("resources ")
+    sampled = subprocess.run(
+        [*base, "sample", "--", sys.executable, "-c", "pass"],
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    assert json.loads(sampled.stdout.splitlines()[-1])["user_seconds"] is None
 
 
 def _snap(**over: object) -> dict[str, object]:
