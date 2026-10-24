@@ -17,6 +17,10 @@
       {
         "prompt": "print an addendum to the goal about testing in a sandbox",
         "top_k": 2
+      },
+      {
+        "prompt": "print a goal to action all those, in order",
+        "top_k": 1
       }
     ],
     "negative": [

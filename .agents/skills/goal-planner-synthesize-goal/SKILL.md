@@ -60,25 +60,14 @@ conversation; without a question tool, keep it.
 
 Write it per `references/anatomy.md` and
 `references/prose-rules.md`, opening with the `## Lineage` table from
-`lineage.md`. Write the draft to a file as Step 3 of
-the `goal-planner-print-goal` skill describes, then save it:
-
-```console
-$ python3 <goal.py> ledger save \
-    --topic <topic> \
-    --kind objective \
-    --host <host> \
-    --parent <previous objective relative to the root> \
-    <objective draft>
-```
-
-When the save fails because the shell cannot write there, follow the
-read-only fallback in `references/ledger.md`.
+`lineage.md`, as a draft file the way Step 3 of the `goal-planner-print-goal` skill
+describes. Nothing is saved before the review in Step 4.
 
 ## Step 4: Render, check, and save the goal
 
-Follow Steps 2 and 4 through 7 of the `goal-planner-print-goal` skill with this objective,
-passing the topic's latest goal as `--parent`.
+Follow Steps 2 and 4 through 7 of the `goal-planner-print-goal` skill with this
+objective. In its Step 7, pass the previous objective as the objective's
+`--parent` and the topic's latest goal as the goal's `--parent`.
 
 ## Output
 

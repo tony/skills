@@ -13,6 +13,10 @@
       {
         "prompt": "print the current goal again verbatim",
         "top_k": 2
+      },
+      {
+        "prompt": "I lost the goal we had for the parser work, print it again",
+        "top_k": 2
       }
     ],
     "negative": [

@@ -40,7 +40,7 @@ off; text under a heading replaces that module's wording with your own.
 
 ## vcs-policy: on
 
-## ci-proof: on
+## ci-proof: auto
 
 ## anti-slop: on
 

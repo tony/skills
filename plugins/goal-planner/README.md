@@ -2,8 +2,8 @@
 
 Print, synthesize, and recover `/goal` prompts for Claude Code and Codex. Each
 goal is sized for the host that runs it, carries your standing guardrails
-without retyping them, and is saved as a numbered revision you can find again
-on any machine.
+without retyping them, and is saved as a numbered revision you can find again,
+on every machine that shares your Documents folder.
 
 Claude Code caps a goal at 4,000 characters, counted in UTF-16 units, and its
 evaluator judges only what the agent prints, so Claude goals target 3,800

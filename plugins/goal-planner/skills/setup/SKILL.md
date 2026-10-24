@@ -17,6 +17,8 @@ user's configuration.
 
 - `--from <path>`: a profile kept in a synced folder, dotfiles, or a private
   repository. It is linked, not copied, so every machine reads one file.
+  What only this machine knows goes in `profile.local.md` beside it, which is
+  never synced.
 
 ## Step 0: Resolve the script
 
@@ -43,13 +45,17 @@ $ python3 <goal.py> ledger root
 
 ## Step 2: Propose and write
 
-Show the profile as it would be written: the template from
-`../../templates/profile.md` or the `--from` file, with this machine's
-`documents:` and the research roots that exist. Ask with `AskUserQuestion`
-before writing; without a question tool, print it and stop.
+Show what would be written. The shared profile is the template from
+`../../templates/profile.md` or the `--from` file, unchanged: `documents:
+auto` and every research root, since other machines read it too. This
+machine's `documents:` goes in `profile.local.md` beside it, and only when
+`ledger root` could not resolve it on its own. Ask with `AskUserQuestion`
+before writing; without a question tool, print both and stop.
 
-With approval, write the profile, or create the link to `--from`. Never
-overwrite an existing profile: show the difference and ask instead.
+With approval, write the profile or create the link to `--from`, and write
+`profile.local.md` when needed. Never overwrite an existing file: show the
+difference and ask instead. Research roots missing on this machine stay in
+the profile; print-goal leaves them out of the goals it renders here.
 
 ## Output
 

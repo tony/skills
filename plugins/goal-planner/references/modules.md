@@ -10,7 +10,8 @@ form below.
 
 ## Choosing modules
 
-1. Start from the profile's defaults (`## <module>: on|off` sections).
+1. Start from the profile's defaults (`## <module>: on|off|auto` sections);
+   `auto` uses the module's own default below.
 2. Turn modules on or off by the request's words: the triggers below, "skip",
    "no", "without".
 3. Turn on what the repository shows it needs: CI configured turns on
@@ -67,15 +68,16 @@ form below.
 
 - Triggers: "commit often", "force push", "worktree", "branch", "don't push".
 - Default: on for code changes.
-- Claude: Work in {worktree_pattern}; commit often in small coherent commits; push to {push_target}; {pull_request}.
-- Codex: Work in a worktree at {worktree_pattern}. Commit often, one coherent change per commit, in the project's commit style; a changelog entry never shares a commit with code. Replace an attempt that failed with a soft reset and `git push --force-with-lease --force-if-includes`. Push target: {push_target}. Pull request: {pull_request}.
+- Claude: Work in {worktree_pattern}; commit often in small coherent commits; {push_rule}.
+- Codex: Work in a worktree at {worktree_pattern}. Commit often, one coherent change per commit, in the project's commit style; a changelog entry never shares a commit with code. {push_rule}.
+- `{push_rule}` with no push target (`push_target: none`, or the request says local): "Never push; replace an attempt that failed with a soft reset". With a target: "Push only to {push_target}; replace a pushed attempt that failed with a soft reset and `git push --force-with-lease --force-if-includes`; {pull_request}".
 - Profile: `worktree_pattern`, `push_target`, `pull_request`, `private_remote`.
 
 ### ci-proof
 
 - Triggers: "CI", "gh pr checks", "checks pass".
-- Default: on when CI is configured and pushing is authorized.
-- Claude: Push and watch the checks on the exact head; some hunches only CI can settle; print the final checks.
+- Default: on when CI is configured and pushing is authorized; off otherwise, whatever the profile says.
+- Claude: Watch the checks on the exact pushed head; some hunches only CI can settle; print the final checks.
 - Codex: Watch the pull request's checks on the exact pushed head (`gh pr checks --watch`). Some hunches can only be settled by pushing and reading CI. A check that never ran is not green.
 
 ### anti-slop

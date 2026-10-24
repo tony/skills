@@ -30,19 +30,22 @@ permission rule for `python3` covers every call.
 
 ```console
 $ python3 <goal.py> find \
+    --kind goal \
     --topic <topic> \
     --text <words>
 ```
 
-Drop `--topic` or `--text` when not given. This reads the dated `goals/`
-folders, Codex's goal database, and Codex's spilled `goal-objective.md`
-files. When nothing matches, or with `--with-history`, export prompt history
-per `../../references/history.md` and repeat with `--history <export file>`.
+Drop `--topic` or `--text` when not given. This prints an index, newest
+first: each hit's source, time, `ref`, size, and a preview, from the dated
+`goals/` folders, Codex's goal database, and Codex's spill files that no goal
+row points at any more. When nothing matches, or with `--with-history`, export
+prompt history per `../../references/history.md` and repeat with
+`--history <export file>`.
 
 Inside Claude Code, a goal set in this session also appears in the
 conversation as `Goal set: ...`; that text is a source too.
 
-## Step 2: Choose the revision
+## Step 2: Choose the revision and print it
 
 - `latest` and `current`: the newest hit. For `current`, prefer a Codex row
   whose status is `active`, or the newest `Goal set:` in this session.
@@ -51,6 +54,14 @@ conversation as `Goal set: ...`; that text is a source too.
 
 When two hits could be the one the user means, list them with their sources
 and times and ask with `AskUserQuestion`; without a question tool, print both.
+
+Print the chosen hit's text exactly, never retyped from the preview:
+
+```console
+$ python3 <goal.py> find \
+    --kind goal \
+    --ref <ref>
+```
 
 A Codex hit marked `missing` is a pointer whose spill file is gone: print the
 pointer and say the full text is not on this machine.

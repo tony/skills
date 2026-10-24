@@ -33,7 +33,10 @@ Every printed goal is saved; nothing saved stands in for printing it.
 In this order: `topic`, `kind`, `number`, `host`, `status`, then `objective`
 and `parent` when set (paths relative to the Documents root), `utf16`,
 `codepoints`, `created` (UTC). The body below it is exactly the text to paste.
-Statuses: `draft` (printed), `set` (the user set it), `achieved`, `superseded`.
+Statuses record what was known at save time: `draft` for a goal printed and
+saved, `set` for one recovered from a source that shows it was set (a Codex
+goal row or a typed `/goal`). A revision another names as its `parent` is
+superseded by it.
 
 ## The Documents root
 
@@ -41,10 +44,12 @@ First match wins:
 
 1. `--root`.
 2. `GOAL_PLANNER_ROOT`.
-3. The profile's `documents:` (`auto` skips it).
-4. On WSL, the Windows user's Documents folder: the one matching `$USER` or
-   named in `$PATH`. Several candidates and no match is an error naming them.
-5. `~/Documents`.
+3. `documents:` in `profile.local.md` beside the profile: this machine's
+   setting, never synced (`auto` skips it).
+4. The synced profile's `documents:` (`auto` skips it).
+5. On WSL, the Windows user's Documents folder: the one matching `$USER` or
+   named in `$PATH`. Several candidates and no match exits 3, naming them.
+6. `~/Documents`.
 
 On WSL, a literal `~/Documents` names the Linux home's folder, not the Windows
 one, so a goal always carries the resolved absolute path.
@@ -90,7 +95,9 @@ $ python3 <goal.py> ledger list \
 ```
 
 Gather earlier goals from the ledger, Codex, and a history export, newest
-first, each with its full text:
+first. The index shows each hit's source, `ref`, size, and a preview, at most
+`--limit` hits per source; `--kind goal` drops objectives, `--full` adds the
+text, and `--ref <ref>` prints one hit's text exactly:
 
 ```console
 $ python3 <goal.py> find \

@@ -36,5 +36,6 @@ detail into the objective instead.
 
 The new objective opens with a `## Lineage` table: earlier item key, its
 source (goal or objective path, or prompt-history time), the decision, and
-the reason. Its frontmatter `parent` names the goal it supersedes, and that
-goal's status becomes `superseded` only when the user sets the new one.
+the reason. The new objective's `parent` names the previous objective, and the
+new goal's `parent` the previous goal. A revision that another names as its
+parent is superseded by it; no file is rewritten to say so.
