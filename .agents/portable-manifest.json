@@ -368,6 +368,74 @@
       "bytes": 96671
     },
     {
+      "name": "goal-planner-audit",
+      "sources": [
+        "plugins/goal-planner/skills/audit/SKILL.md"
+      ],
+      "bundled": {
+        "references/contract.md": "plugins/goal-planner/references/contract.md",
+        "references/output.md": "plugins/goal-planner/references/output.md",
+        "references/planner.py": "plugins/goal-planner/scripts/planner.py",
+        "references/profiles.md": "plugins/goal-planner/references/profiles.md",
+        "references/prose-rules.md": "plugins/goal-planner/references/prose-rules.md",
+        "references/recovery.md": "plugins/goal-planner/references/recovery.md",
+        "references/rendering.md": "plugins/goal-planner/references/rendering.md",
+        "references/safeguards.md": "plugins/goal-planner/references/safeguards.md"
+      },
+      "bytes": 64403
+    },
+    {
+      "name": "goal-planner-print",
+      "sources": [
+        "plugins/goal-planner/skills/print/SKILL.md"
+      ],
+      "bundled": {
+        "references/contract.md": "plugins/goal-planner/references/contract.md",
+        "references/output.md": "plugins/goal-planner/references/output.md",
+        "references/planner.py": "plugins/goal-planner/scripts/planner.py",
+        "references/profiles.md": "plugins/goal-planner/references/profiles.md",
+        "references/prose-rules.md": "plugins/goal-planner/references/prose-rules.md",
+        "references/recovery.md": "plugins/goal-planner/references/recovery.md",
+        "references/rendering.md": "plugins/goal-planner/references/rendering.md",
+        "references/safeguards.md": "plugins/goal-planner/references/safeguards.md"
+      },
+      "bytes": 65046
+    },
+    {
+      "name": "goal-planner-profile",
+      "sources": [
+        "plugins/goal-planner/skills/profile/SKILL.md"
+      ],
+      "bundled": {
+        "references/contract.md": "plugins/goal-planner/references/contract.md",
+        "references/output.md": "plugins/goal-planner/references/output.md",
+        "references/planner.py": "plugins/goal-planner/scripts/planner.py",
+        "references/profiles.md": "plugins/goal-planner/references/profiles.md",
+        "references/prose-rules.md": "plugins/goal-planner/references/prose-rules.md",
+        "references/recovery.md": "plugins/goal-planner/references/recovery.md",
+        "references/rendering.md": "plugins/goal-planner/references/rendering.md",
+        "references/safeguards.md": "plugins/goal-planner/references/safeguards.md"
+      },
+      "bytes": 64215
+    },
+    {
+      "name": "goal-planner-synthesize",
+      "sources": [
+        "plugins/goal-planner/skills/synthesize/SKILL.md"
+      ],
+      "bundled": {
+        "references/contract.md": "plugins/goal-planner/references/contract.md",
+        "references/output.md": "plugins/goal-planner/references/output.md",
+        "references/planner.py": "plugins/goal-planner/scripts/planner.py",
+        "references/profiles.md": "plugins/goal-planner/references/profiles.md",
+        "references/prose-rules.md": "plugins/goal-planner/references/prose-rules.md",
+        "references/recovery.md": "plugins/goal-planner/references/recovery.md",
+        "references/rendering.md": "plugins/goal-planner/references/rendering.md",
+        "references/safeguards.md": "plugins/goal-planner/references/safeguards.md"
+      },
+      "bytes": 65485
+    },
+    {
       "name": "lean-tighten",
       "sources": [
         "plugins/lean/skills/tighten/SKILL.md"
@@ -1606,6 +1674,14 @@
     "plugins/situate/references/situation-sweep.md": 5,
     "plugins/situate/scripts/position.py": 5,
     "plugins/business/references/measurement.md": 4,
+    "plugins/goal-planner/references/contract.md": 4,
+    "plugins/goal-planner/references/output.md": 4,
+    "plugins/goal-planner/references/profiles.md": 4,
+    "plugins/goal-planner/references/prose-rules.md": 4,
+    "plugins/goal-planner/references/recovery.md": 4,
+    "plugins/goal-planner/references/rendering.md": 4,
+    "plugins/goal-planner/references/safeguards.md": 4,
+    "plugins/goal-planner/scripts/planner.py": 4,
     "plugins/package-updater/references/commit-conventions.md": 4,
     "plugins/package-updater/references/prose-rules.md": 4,
     "plugins/package-updater/references/repo-scope.md": 4,
@@ -1870,6 +1946,12 @@
     ],
     "../etc": [
       "research-foray"
+    ],
+    "../goal-specs/...": [
+      "goal-planner-audit",
+      "goal-planner-print",
+      "goal-planner-profile",
+      "goal-planner-synthesize"
     ],
     "../scripts": [
       "spike-bakeoff",

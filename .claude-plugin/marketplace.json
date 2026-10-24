@@ -655,6 +655,26 @@
       ],
       "homepage": "https://github.com/tony/skills/tree/main/plugins/scholar",
       "license": "MIT"
+    },
+    {
+      "name": "goal-planner",
+      "description": "Print, synthesize, and audit portable goals; keep approved planning profiles and numbered goal specifications without activating work.",
+      "version": "0.1.0",
+      "author": {
+        "name": "Tony Narlock",
+        "email": "tony@git-pull.com"
+      },
+      "source": "./plugins/goal-planner",
+      "category": "productivity",
+      "tags": [
+        "goals",
+        "planning",
+        "handoff",
+        "profiles",
+        "revision"
+      ],
+      "homepage": "https://github.com/tony/skills/tree/main/plugins/goal-planner",
+      "license": "MIT"
     }
   ]
 }

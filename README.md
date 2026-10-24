@@ -55,6 +55,7 @@ changes, and `respond` to screen review feedback.
 | Plugin | Description |
 |--------|-------------|
 | [situate](plugins/situate/) | Gain situational awareness before modifying code. Scans branches, PRs, tickets, and project conventions to orient the agent and verify the work required. |
+| [goal-planner](plugins/goal-planner/) | Print, synthesize, and audit portable goals; keep approved planning profiles and numbered goal specifications without activating work. |
 | [action](plugins/action/) | Convert tickets to branches in isolated worktrees. Uses team branch conventions, lands gated commits, and supports parallel tickets. |
 | [ticket](plugins/ticket/) | Manage work across trackers (Linear, Jira, GitHub, etc.) respecting each platform's native object graph. Drafts durable tickets focused on invariants. |
 | [spike](plugins/spike/) | Run no-commit spikes, strategy bakeoffs, or multi-round convergence in git worktrees. Tests ideas against quality gates and returns a commit-by-commit implementation plan. |

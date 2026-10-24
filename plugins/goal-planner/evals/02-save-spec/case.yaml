@@ -1,0 +1,60 @@
+schema_version: "1.0"
+name: 02-save-spec
+description: Long Claude contract saves a complete specification and prints the exact compact goal.
+tags: [fixture, handoff]
+context:
+  scaffold_script: scaffold.sh
+execution:
+  prompt: >-
+    /goal-planner:print Prepare and save a Claude handoff from requirements.md.
+    Use topic packet-reader, date 2030-01-02, and the Documents directory inside
+    this working directory as the explicitly selected Documents root. Keep the
+    default addendum reserve. The source is longer than the payload budget:
+    save a complete goal specification and a compact goal. Preserve every
+    R01-R24 requirement verbatim in the specification, including the Unicode
+    label and numerical constraints. Add framing if needed; do not summarize
+    away any requirement. Print the entire saved goal exactly, not only links.
+    This authorizes handoff files only, not executing the decoder work or
+    activating a native goal. Do not consult history or existing profiles.
+  max_turns: 30
+  timeout_seconds: 600
+  allowed_tools: [Bash, Read, Write, Edit, Glob, Grep, Skill]
+  disallowed_tools: [WebFetch, WebSearch]
+runs: 1
+graders:
+  - name: print-helper-used
+    type: tool_used
+    tool: Bash
+    input_match: '(?:planner\.py|python3?\s+\$\{?[A-Za-z_]\w*\}?)[\s\S]*?\brender\b'
+  - name: goal-saved
+    type: file_exists
+    path: Documents/2030-01-02/goals/packet-reader-001.md
+  - name: specification-saved
+    type: file_exists
+    path: Documents/2030-01-02/goal-specs/packet-reader-001.md
+  - name: whole-goal-keeps-addendum-reserve
+    type: regex
+    target: last_message
+    pattern: '## Goal\s+```text\n/goal [\s\S]{1,3794}\n```'
+  - name: specification-is-a-contract
+    type: llm
+    focus:
+      source: file
+      path: Documents/2030-01-02/goal-specs/packet-reader-001.md
+    criteria: >-
+      This is a complete decoder contract with outcome and all R01-R24
+      requirements. It retains the oversized-header FAIL, consumer verification,
+      exact-revision evidence, negative control, ownership, resource bounds,
+      failure preservation, and excluded remote/release/benchmark/package scope.
+      It does not recast known failures as passed or supply only overflow scraps.
+  - name: compact-goal-has-operational-boundaries
+    type: llm
+    focus:
+      source: file
+      path: Documents/2030-01-02/goals/packet-reader-001.md
+    criteria: >-
+      The copyable compact goal preserves the decoder outcome, mandatory
+      acceptance obligations and exclusions, requires reading the complete
+      specification and reporting requirement-level acceptance evidence, and
+      resolves its companion without depending on the current working directory.
+      It does not claim the future implementation or tests are already complete.
