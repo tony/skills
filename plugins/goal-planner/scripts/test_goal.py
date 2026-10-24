@@ -4,14 +4,17 @@
 from __future__ import annotations
 
 import json
+import sqlite3
 import typing as t
+from datetime import date
 
 import goal  # pyright: ignore[reportImplicitRelativeImport]
+import pytest
 
 if t.TYPE_CHECKING:
     import pathlib
 
-    import pytest
+NEXT_AFTER_GAP = 4
 
 
 def _skill_file(path: pathlib.Path, name: str, *, gated: bool = False) -> None:
@@ -153,3 +156,171 @@ def test_lint_cli_exit_code(tmp_path: pathlib.Path, capsys: pytest.CaptureFixtur
     assert goal.main(["lint", "--host", "claude", "--catalog-root", str(tmp_path), str(path)]) == 1
     out = t.cast("dict[str, object]", json.loads(capsys.readouterr().out))
     assert sorted(out) == ["errors", "warnings"]
+
+
+def _profile(path: pathlib.Path, documents: str) -> pathlib.Path:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    _ = path.write_text(f"---\ndocuments: {documents}\n---\n", encoding="utf-8")
+    return path
+
+
+def test_root_precedence(tmp_path: pathlib.Path) -> None:
+    """A flag beats the environment, which beats the profile, then WSL, then home."""
+    nomnt = tmp_path / "nomnt"
+    assert goal.resolve_root(str(tmp_path), {}, None, mnt=nomnt) == (tmp_path, "flag")
+    env = {"GOAL_PLANNER_ROOT": str(tmp_path)}
+    assert goal.resolve_root(None, env, None, mnt=nomnt) == (tmp_path, "env")
+    profile = _profile(tmp_path / "cfg" / "profile.md", str(tmp_path / "docs"))
+    assert goal.resolve_root(None, {}, profile, mnt=nomnt) == (tmp_path / "docs", "profile")
+    auto = _profile(tmp_path / "cfg2" / "profile.md", "auto")
+    home = {"HOME": str(tmp_path)}
+    assert goal.resolve_root(None, home, auto, mnt=nomnt) == (tmp_path / "Documents", "home")
+
+
+def test_root_wsl_picks_matching_user(tmp_path: pathlib.Path) -> None:
+    """On WSL the Windows profile matching the Linux user wins; service profiles never do."""
+    for user in ("ann", "bob", "Public"):
+        (tmp_path / user / "Documents").mkdir(parents=True)
+    root = goal.resolve_root(None, {"USER": "bob"}, None, mnt=tmp_path)
+    assert root == (tmp_path / "bob" / "Documents", "wsl")
+
+
+def test_root_wsl_ambiguous_raises(tmp_path: pathlib.Path) -> None:
+    """Several Windows users and no match is an error naming them."""
+    for user in ("ann", "bob"):
+        (tmp_path / user / "Documents").mkdir(parents=True)
+    with pytest.raises(goal.RootError) as err:
+        _ = goal.resolve_root(None, {"USER": "zed"}, None, mnt=tmp_path)
+    assert sorted(err.value.candidates) == ["ann", "bob"]
+
+
+def test_next_number_spans_dates_and_never_refills(tmp_path: pathlib.Path) -> None:
+    """Numbering continues past the highest number in any dated folder."""
+    for day, number in (("2026-10-20", 1), ("2026-10-22", 3)):
+        folder = tmp_path / day / "goals"
+        folder.mkdir(parents=True)
+        _ = (folder / f"parser-{number:03d}.md").write_text("x", encoding="utf-8")
+    assert goal.next_number(tmp_path, "parser", "goal") == NEXT_AFTER_GAP
+    assert goal.next_number(tmp_path, "parser", "objective") == 1
+    assert goal.next_number(tmp_path, "parse", "goal") == 1
+
+
+def test_save_writes_frontmatter_and_exact_body(tmp_path: pathlib.Path) -> None:
+    """The body under the frontmatter is exactly the text to paste."""
+    body = "/goal Fix it.\n"
+    meta = {"host": "claude"}
+    path = goal.save_entry(tmp_path, "parser", "goal", body, meta, date(2026, 10, 24))
+    assert path == tmp_path / "2026-10-24" / "goals" / "parser-001.md"
+    text = path.read_text(encoding="utf-8")
+    saved = goal.parse_frontmatter(text)
+    assert (saved["number"], saved["status"], saved["utf16"]) == ("1", "draft", "14")
+    assert list(saved)[:5] == ["topic", "kind", "number", "host", "status"]
+    assert goal.strip_frontmatter(text) == body
+
+
+def _always_one(*_args: object) -> int:
+    return 1
+
+
+def test_save_never_overwrites_on_collision(
+    tmp_path: pathlib.Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """A number taken by another session moves the save to the next number."""
+    folder = tmp_path / "2026-10-24" / "goals"
+    folder.mkdir(parents=True)
+    _ = (folder / "parser-001.md").write_text("theirs", encoding="utf-8")
+    monkeypatch.setattr(goal, "next_number", _always_one)
+    path = goal.save_entry(tmp_path, "parser", "goal", "/goal Mine.\n", {}, date(2026, 10, 24))
+    assert path.name == "parser-002.md"
+    assert (folder / "parser-001.md").read_text(encoding="utf-8") == "theirs"
+
+
+def test_save_rejects_bad_topic(tmp_path: pathlib.Path) -> None:
+    """Topics are kebab-case slugs."""
+    with pytest.raises(ValueError, match="topic"):
+        _ = goal.save_entry(tmp_path, "Parser Work", "goal", "x", {}, date(2026, 10, 24))
+
+
+def _codex_home(tmp_path: pathlib.Path) -> pathlib.Path:
+    home = tmp_path / "codex"
+    attachment = home / "attachments" / "1b4e28ba-2fa1-11d2-883f-0016d3cca427"
+    attachment.mkdir(parents=True)
+    spilled = attachment / "goal-objective.md"
+    _ = spilled.write_text("FULL OBJECTIVE TEXT", encoding="utf-8")
+    con = sqlite3.connect(home / "goals_1.sqlite")
+    columns = (
+        "thread_id text, goal_id text, objective text, status text, token_budget integer,",
+        "tokens_used integer, time_used_seconds integer, created_at_ms integer,",
+        "updated_at_ms integer",
+    )
+    _ = con.execute(f"create table thread_goals ({' '.join(columns)})")
+    pointer = "Read the Codex goal objective file at {} before continuing."
+    rows = [
+        ("t1", "g1", pointer.format(spilled), "complete", 1790000000000),
+        (
+            "t2",
+            "g2",
+            pointer.format(home / "attachments" / "gone" / "goal-objective.md"),
+            "paused",
+            1790000100000,
+        ),
+        ("t3", "g3", "Fix the parser.", "active", 1790000200000),
+    ]
+    insert = (
+        "insert into thread_goals (thread_id, goal_id, objective, status, updated_at_ms)",
+        "values (?, ?, ?, ?, ?)",
+    )
+    _ = con.executemany(" ".join(insert), rows)
+    con.commit()
+    con.close()
+    return home
+
+
+def test_find_resolves_codex_pointer_and_reports_missing(tmp_path: pathlib.Path) -> None:
+    """A pointer objective reads its file; a gone file is reported, not raised."""
+    hits = goal.find_goals(None, _codex_home(tmp_path), None, None, None)
+    by_ref = {h["ref"]: h for h in hits if h["source"] == "codex-db"}
+    assert by_ref["t1"]["text"] == "FULL OBJECTIVE TEXT"
+    assert by_ref["t1"]["missing"] is False
+    assert by_ref["t2"]["missing"] is True
+    assert by_ref["t3"]["text"] == "Fix the parser."
+    assert [h["text"] for h in hits if h["source"] == "codex-attachment"] == ["FULL OBJECTIVE TEXT"]
+
+
+def test_find_reads_history_goal_prompts(tmp_path: pathlib.Path) -> None:
+    """Only prompt records that set a goal come back from a history export."""
+    export = tmp_path / "history.ndjson"
+    records: list[dict[str, object]] = [
+        {"kind": "prompt", "text": "/goal Fix the parser.", "timestamp": "2026-10-20T10:00:00Z"},
+        {"kind": "prompt", "text": "print a goal", "timestamp": "2026-10-20T09:00:00Z"},
+        {"type": "summary", "data": {}},
+    ]
+    _ = export.write_text("\n".join(json.dumps(r) for r in records) + "\n", encoding="utf-8")
+    hits = goal.find_goals(None, None, export, None, None)
+    assert [(h["source"], h["text"]) for h in hits] == [("history", "/goal Fix the parser.")]
+
+
+def test_find_filters_ledger_by_text_and_topic(tmp_path: pathlib.Path) -> None:
+    """Text matches case-insensitively; topic narrows ledger hits only."""
+    day = date(2026, 10, 24)
+    _ = goal.save_entry(tmp_path, "parser", "goal", "/goal Fix the Parser.\n", {}, day)
+    _ = goal.save_entry(tmp_path, "docs", "goal", "/goal Rewrite the docs.\n", {}, day)
+    texts = [h["text"] for h in goal.find_goals(tmp_path, None, None, "parser", None)]
+    assert texts == ["/goal Fix the Parser.\n"]
+    assert len(goal.find_goals(tmp_path, None, None, None, "docs")) == 1
+
+
+def test_ledger_cli_save_then_list(
+    tmp_path: pathlib.Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """The CLI saves a goal from a file and lists it back."""
+    draft = tmp_path / "draft.md"
+    _ = draft.write_text("/goal Fix it.\n", encoding="utf-8")
+    root = str(tmp_path / "Documents")
+    args = ["ledger", "save", "--root", root, "--topic", "parser", "--kind", "goal"]
+    assert goal.main([*args, "--host", "claude", "--date", "2026-10-24", str(draft)]) == 0
+    saved = t.cast("dict[str, object]", json.loads(capsys.readouterr().out))
+    assert str(saved["path"]).endswith("2026-10-24/goals/parser-001.md")
+    assert goal.main(["ledger", "list", "--root", root]) == 0
+    listed = t.cast("list[dict[str, object]]", json.loads(capsys.readouterr().out))
+    assert [(e["topic"], e["number"], e["kind"]) for e in listed] == [("parser", 1, "goal")]
