@@ -42,10 +42,11 @@ $ python3 <goal.py> harvest \
 ```
 
 It prints `kept`, the sentences that clear the bar with their count, projects,
-last use, hosts, and skill names, and `set_aside`, the counts of recurring
-sentences under the bar (`under_bar`) and of Codex-only ones (`codex_only`).
-Codex prompts carry no working directory, so a Codex-only guardrail cannot
-clear the project bar. Report the export's coverage beside every count.
+last use, hosts, and skill names; `set_aside`, the counts of recurring
+sentences under the bar (`under_bar`) and of Codex-only ones (`codex_only`);
+and `skipped_lines`, export lines that were not JSON. Codex prompts carry no
+working directory, so a Codex-only guardrail cannot clear the project bar.
+Report the export's coverage, skipped lines included, beside every count.
 
 ## Step 2: Sort what came back
 

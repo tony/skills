@@ -591,7 +591,7 @@ def _codex_hits(codex_home: Path) -> list[dict[str, object]]:
             missing = spilled is not None and not spilled.is_file()
             text = objective
             if spilled is not None and not missing:
-                text = spilled.read_text(encoding="utf-8")
+                text = spilled.read_text(encoding="utf-8", errors="replace")
                 pointed.add(str(spilled.resolve()))
             hits.append(
                 {
@@ -612,31 +612,64 @@ def _codex_hits(codex_home: Path) -> list[dict[str, object]]:
                 "source": "codex-attachment",
                 "when": stamp.strftime("%Y-%m-%dT%H:%M:%SZ"),
                 "ref": str(path),
-                "text": path.read_text(encoding="utf-8"),
+                "text": path.read_text(encoding="utf-8", errors="replace"),
                 "missing": False,
             }
         )
     return hits
 
 
-def _history_hits(history: Path) -> list[dict[str, object]]:
-    hits: list[dict[str, object]] = []
+def _history_records(history: Path) -> tuple[list[dict[str, object]], int]:
+    """Read an agentgrep NDJSON export and count the lines that are not JSON.
+
+    An export an interrupted run cut short loses its last line, not the rest.
+    """
+    records: list[dict[str, object]] = []
+    skipped = 0
     for line in history.read_text(encoding="utf-8", errors="replace").splitlines():
         if not line.startswith("{"):
             continue
-        record = t.cast("dict[str, object]", json.loads(line))
+        try:
+            records.append(t.cast("dict[str, object]", json.loads(line)))
+        except ValueError:
+            skipped += 1
+    return records, skipped
+
+
+def _history_hits(history: Path) -> list[dict[str, object]]:
+    """Return the export's goal prompts, each with a ref no other hit shares."""
+    records, skipped = _history_records(history)
+    hits: list[dict[str, object]] = []
+    seen: dict[str, int] = {}
+    for record in records:
         text = str(record.get("text", ""))
-        if record.get("kind") == "prompt" and text.lstrip().startswith("/goal "):
-            hits.append(
-                {
-                    "source": "history",
-                    "when": str(record.get("timestamp") or ""),
-                    "ref": str(record.get("session_id") or record.get("path") or ""),
-                    "text": text,
-                    "missing": False,
-                    "agent": str(record.get("agent", "")),
-                }
-            )
+        if record.get("kind") != "prompt" or not text.lstrip().startswith("/goal "):
+            continue
+        when = str(record.get("timestamp") or "")
+        ref = f"{record.get('session_id') or record.get('path') or 'history'}@{when}"
+        seen[ref] = seen.get(ref, 0) + 1
+        hits.append(
+            {
+                "source": "history",
+                "when": when,
+                "ref": ref if seen[ref] == 1 else f"{ref}#{seen[ref]}",
+                "text": text,
+                "missing": False,
+                "agent": str(record.get("agent", "")),
+            }
+        )
+    if skipped:
+        hits.append(
+            {
+                "source": "history",
+                "when": "",
+                "ref": str(history),
+                "text": "",
+                "missing": True,
+                "error": "lines that are not JSON were skipped",
+                "skipped_lines": skipped,
+            }
+        )
     return hits
 
 
@@ -670,7 +703,7 @@ def find_goals(  # noqa: PLR0913
                     "source": "ledger",
                     "when": str(entry["created"] or entry["date"]),
                     "ref": str(path),
-                    "text": strip_frontmatter(path.read_text(encoding="utf-8")),
+                    "text": strip_frontmatter(path.read_text(encoding="utf-8", errors="replace")),
                     "missing": False,
                     "kind": entry["kind"],
                 }
@@ -697,7 +730,7 @@ def find_goals(  # noqa: PLR0913
         if text:
             needle = text.lower()
             group = [h for h in group if h.get("error") or needle in str(h["text"]).lower()]  # noqa: PLW2901
-        group.sort(key=lambda h: str(h["when"]), reverse=True)
+        group.sort(key=lambda h: (bool(h.get("error")), str(h["when"])), reverse=True)
         hits.extend(group[:limit] if limit else group)
     hits.sort(key=lambda h: str(h["when"]), reverse=True)
     return hits
@@ -723,10 +756,8 @@ def harvest(
     projects: dict[str, set[str]] = {}
     hosts: dict[str, set[str]] = {}
     last: dict[str, str] = {}
-    for line in history.read_text(encoding="utf-8", errors="replace").splitlines():
-        if not line.startswith("{"):
-            continue
-        record = t.cast("dict[str, object]", json.loads(line))
+    records, skipped = _history_records(history)
+    for record in records:
         text = str(record.get("text", "")).strip()
         if record.get("kind") != "prompt":
             continue
@@ -770,7 +801,7 @@ def harvest(
     kept.sort(key=lambda row: (-t.cast("int", row["count"]), str(row["sentence"])))
     recurring = sum(1 for count in counts.values() if count > 1)
     set_aside = {"under_bar": recurring - len(kept) - codex_only, "codex_only": codex_only}
-    return {"kept": kept, "set_aside": set_aside}
+    return {"kept": kept, "set_aside": set_aside, "skipped_lines": skipped}
 
 
 def _ledger_root(args: Args) -> Path:
@@ -853,16 +884,17 @@ def _cmd_find(args: Args) -> int:
     codex_default = Path(env.get("CODEX_HOME") or Path.home() / ".codex")
     codex_home = Path(args.codex_home) if args.codex_home else codex_default
     history = Path(args.history) if args.history else None
-    hits = find_goals(
-        root, codex_home, history, args.text, args.topic, kind=args.kind, limit=args.limit
-    )
     if args.ref:
-        chosen = [h for h in hits if h["ref"] == args.ref]
+        hits = find_goals(root, codex_home, history, None, None, kind=args.kind)
+        chosen = [h for h in hits if h["ref"] == args.ref and not h.get("error")]
         if not chosen:
             print(f"error: no hit with ref {args.ref}", file=sys.stderr)
             return 1
         _ = sys.stdout.write(str(chosen[0]["text"]))
         return 0
+    hits = find_goals(
+        root, codex_home, history, args.text, args.topic, kind=args.kind, limit=args.limit
+    )
     if not args.full:
         for hit in hits:
             body = str(hit.pop("text"))
@@ -951,9 +983,11 @@ def build_parser() -> argparse.ArgumentParser:
     _ = find.add_argument("--codex-home", help="default $CODEX_HOME or ~/.codex")
     _ = find.add_argument("--history", help="agentgrep NDJSON export of prompt history")
     _ = find.add_argument("--kind", choices=("all", *KINDS), default="all")
-    _ = find.add_argument("--limit", type=int, default=20, help="most hits per source")
+    _ = find.add_argument("--limit", type=int, default=20, help="most hits per source; 0 for all")
     _ = find.add_argument("--full", action="store_true", help="include each hit's full text")
-    _ = find.add_argument("--ref", help="print this hit's text exactly, nothing else")
+    _ = find.add_argument(
+        "--ref", help="print one hit's text exactly; --limit, --text, and --topic do not apply"
+    )
 
     harvester = sub.add_parser("harvest", help="count guardrail sentences retyped into goals")
     _ = harvester.add_argument("--history", required=True, help="agentgrep NDJSON export")

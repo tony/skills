@@ -55,20 +55,26 @@ conversation as `Goal set: ...`; that text is a source too.
 - `latest` and `current`: the newest hit. For `current`, prefer a Codex row
   whose status is `active`, or the newest `Goal set:` in this session.
 - `previous`: the hit before the current one for the same topic or text.
-- `original`: the oldest hit for the same topic or text.
+- `original`: the oldest hit for the same topic or text. The index stops at
+  20 hits per source; repeat Step 1 with `--limit 0` to list every one.
 
 When two hits could be the one the user means, list them with their sources
 and times and ask with `ask-user-choice`; without a question tool, print both.
 
-Print the chosen hit's text exactly, never retyped from the preview:
+Print the chosen hit's text exactly, never retyped from the preview. `--ref`
+searches every hit, past `--limit`, `--text`, and `--topic`, but only in the
+sources named: keep `--history` when Step 1 used it, and leave it out
+otherwise.
 
 ```console
 $ python3 <goal.py> find \
     --kind goal \
+    --history <export file> \
     --ref <ref>
 ```
 
-A Codex hit marked `missing` is a pointer whose spill file is gone: print the
+A hit with an `error` reports a source that could not be read in full, such
+as `skipped_lines` in a history export; say so beside the result. A Codex hit marked `missing` is a pointer whose spill file is gone: print the
 pointer and say the full text is not on this machine.
 
 ## Step 3: Save it when the ledger lacks it

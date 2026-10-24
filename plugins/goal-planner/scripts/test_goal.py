@@ -510,3 +510,77 @@ def test_lint_ignores_volume_mount_specs() -> None:
     skills = [goal.Skill("spike:ratchet", gated=False, path="p")]
     text = '/goal Run `docker run -v "$PWD":/src:ro img` until tests pass.'
     assert goal.lint_goal(text, "codex", skills)["errors"] == []
+
+
+def test_find_gives_each_history_prompt_its_own_ref(
+    tmp_path: pathlib.Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """Two goals in one session, and that session's Codex row, each print by their own ref."""
+    export = tmp_path / "history.ndjson"
+    records = [
+        {
+            "kind": "prompt",
+            "session_id": "t3",
+            "text": "/goal First.",
+            "timestamp": "2026-10-20T09:00Z",
+        },
+        {
+            "kind": "prompt",
+            "session_id": "t3",
+            "text": "/goal Second.",
+            "timestamp": "2026-10-20T10:00Z",
+        },
+    ]
+    _ = export.write_text("\n".join(json.dumps(r) for r in records) + "\n", encoding="utf-8")
+    codex = _codex_home(tmp_path)
+    hits = goal.find_goals(None, codex, export, None, None)
+    refs = [h["ref"] for h in hits]
+    assert len(refs) == len(set(refs))
+    first = next(h["ref"] for h in hits if h["text"] == "/goal First.")
+    common = ["find", "--root", str(tmp_path / "nodocs"), "--codex-home", str(codex)]
+    assert goal.main([*common, "--history", str(export), "--ref", str(first)]) == 0
+    assert capsys.readouterr().out == "/goal First."
+
+
+def test_find_ref_reaches_hits_past_the_limit(
+    tmp_path: pathlib.Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    """The oldest goal prints by its ref even when the index stops short of it."""
+    common = [
+        "find",
+        "--root",
+        str(tmp_path / "nodocs"),
+        "--codex-home",
+        str(_codex_home(tmp_path)),
+    ]
+    assert goal.main([*common, "--limit", "1", "--ref", "t1"]) == 0
+    assert capsys.readouterr().out == "FULL OBJECTIVE TEXT"
+
+
+def _truncated_export(tmp_path: pathlib.Path) -> pathlib.Path:
+    export = tmp_path / "history.ndjson"
+    good = json.dumps(_prompt("/goal Fix it.", "~/p0", "2026-10-20"))
+    _ = export.write_text(f"{good}\n{good[:20]}\n", encoding="utf-8")
+    return export
+
+
+def test_find_survives_a_truncated_history_export(tmp_path: pathlib.Path) -> None:
+    """A line an interrupted export cut short is counted; the other hits still come back."""
+    hits = goal.find_goals(None, None, _truncated_export(tmp_path), None, None)
+    assert [h["text"] for h in hits if not h.get("error")] == ["/goal Fix it."]
+    assert [h["skipped_lines"] for h in hits if h.get("error")] == [1]
+
+
+def test_harvest_survives_a_truncated_history_export(tmp_path: pathlib.Path) -> None:
+    """Harvest counts the lines it could not read instead of failing."""
+    result = goal.harvest(_truncated_export(tmp_path), today=date(2026, 10, 24))
+    assert result["skipped_lines"] == 1
+
+
+def test_find_reads_a_spill_file_that_is_not_utf8(tmp_path: pathlib.Path) -> None:
+    """One undecodable byte in a spill file costs that byte, not the search."""
+    spill = tmp_path / "codex" / "attachments" / "u1" / "goal-objective.md"
+    spill.parent.mkdir(parents=True)
+    _ = spill.write_bytes(b"Fix the \xff parser.")
+    hits = goal.find_goals(None, tmp_path / "codex", None, None, None)
+    assert [h["text"] for h in hits] == ["Fix the \N{REPLACEMENT CHARACTER} parser."]

@@ -379,7 +379,7 @@
         "references/prose-rules.md": "plugins/goal-planner/references/prose-rules.md",
         "templates/profile.md": "plugins/goal-planner/templates/profile.md"
       },
-      "bytes": 59525
+      "bytes": 60911
     },
     {
       "name": "goal-planner-print-goal",
@@ -396,7 +396,7 @@
         "references/verification-gates.md": "plugins/goal-planner/references/verification-gates.md",
         "templates/profile.md": "plugins/goal-planner/templates/profile.md"
       },
-      "bytes": 77928
+      "bytes": 79174
     },
     {
       "name": "goal-planner-recover-goal",
@@ -409,7 +409,7 @@
         "references/ledger.md": "plugins/goal-planner/references/ledger.md",
         "references/prose-rules.md": "plugins/goal-planner/references/prose-rules.md"
       },
-      "bytes": 53963
+      "bytes": 55759
     },
     {
       "name": "goal-planner-resource-guard",
@@ -435,7 +435,7 @@
         "references/prose-rules.md": "plugins/goal-planner/references/prose-rules.md",
         "templates/profile.md": "plugins/goal-planner/templates/profile.md"
       },
-      "bytes": 58842
+      "bytes": 60153
     },
     {
       "name": "goal-planner-synthesize-goal",
@@ -449,7 +449,7 @@
         "references/lineage.md": "plugins/goal-planner/references/lineage.md",
         "references/prose-rules.md": "plugins/goal-planner/references/prose-rules.md"
       },
-      "bytes": 56373
+      "bytes": 57684
     },
     {
       "name": "lean-tighten",

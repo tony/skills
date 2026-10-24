@@ -96,8 +96,9 @@ $ python3 <goal.py> ledger list \
 
 Gather earlier goals from the ledger, Codex, and a history export, newest
 first. The index shows each hit's source, `ref`, size, and a preview, at most
-`--limit` hits per source; `--kind goal` drops objectives, `--full` adds the
-text, and `--ref <ref>` prints one hit's text exactly:
+`--limit` hits per source (`0` for all); `--kind goal` drops objectives,
+`--full` adds the text, and `--ref <ref>` prints one hit's text exactly,
+searching every hit in the sources given:
 
 ```console
 $ python3 <goal.py> find \
