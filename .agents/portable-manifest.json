@@ -382,7 +382,7 @@
         "references/rendering.md": "plugins/goal-planner/references/rendering.md",
         "references/safeguards.md": "plugins/goal-planner/references/safeguards.md"
       },
-      "bytes": 55484
+      "bytes": 57081
     },
     {
       "name": "goal-planner-print",
@@ -399,7 +399,7 @@
         "references/rendering.md": "plugins/goal-planner/references/rendering.md",
         "references/safeguards.md": "plugins/goal-planner/references/safeguards.md"
       },
-      "bytes": 55756
+      "bytes": 57671
     },
     {
       "name": "goal-planner-profile",
@@ -416,7 +416,7 @@
         "references/rendering.md": "plugins/goal-planner/references/rendering.md",
         "references/safeguards.md": "plugins/goal-planner/references/safeguards.md"
       },
-      "bytes": 55334
+      "bytes": 56891
     },
     {
       "name": "goal-planner-synthesize",
@@ -433,7 +433,7 @@
         "references/rendering.md": "plugins/goal-planner/references/rendering.md",
         "references/safeguards.md": "plugins/goal-planner/references/safeguards.md"
       },
-      "bytes": 55919
+      "bytes": 57833
     },
     {
       "name": "lean-tighten",

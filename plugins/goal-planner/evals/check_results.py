@@ -7,6 +7,7 @@ import hashlib
 import json
 import os
 import re
+import shlex
 import stat
 import sys
 from contextlib import contextmanager
@@ -121,7 +122,7 @@ def _inventory(case: str, root: Path, outputs: set[str]) -> None:
         _require(path.read_bytes() == text.encode(), f"Fixture input changed: {name}")
     if case in {"02-save-spec", "03-synthesize-revisions"}:
         actual = {str(path.relative_to(root)) for path in root.glob("Documents/*/goal*/*.md")}
-        expected = outputs | {name for name in inputs if name.startswith("Documents/")}
+        expected = {name for name in outputs | set(inputs) if name.startswith("Documents/")}
         _require(actual == expected, "Unexpected revision, orphan, or missing predecessor")
         _require(not (root / "injected.txt").exists(), "Historical instruction was executed")
         return
@@ -138,9 +139,47 @@ def _inventory(case: str, root: Path, outputs: set[str]) -> None:
         )
 
 
-def _reused(events: list[dict[str, object]], payload: str, goal: Path) -> bool:
-    calls: set[str] = set()
-    saved = False
+def _render_input(command: str, helper: Path, cwd: Path) -> str | None:
+    """Recognize the fixture's direct public calls, without interpreting shell programs."""
+    try:
+        words = shlex.split(command.replace("\\\n", ""))
+    except ValueError:
+        return None
+    if words and re.fullmatch(r"python(?:[0-9.]+)?", Path(words[0]).name):
+        _ = words.pop(0)
+        while words and words[0] in {"-I", "-B", "-u"}:
+            _ = words.pop(0)
+    if not words or cwd / words[0] != helper or words[1:2] != ["render"]:
+        return None
+    arguments = words[2:]
+    if arguments.count("--save") != 1:
+        return None
+    arguments.remove("--save")
+    if len(arguments) == 1 and arguments[0].startswith("--input="):
+        request = arguments[0].split("=", 1)[1]
+    elif arguments[:1] == ["--input"] and arguments[1:] and not arguments[2:]:
+        request = arguments[1]
+    else:
+        return None
+    path = cwd / request
+    return path.name if path.parent == cwd else None
+
+
+def _renders(
+    events: list[dict[str, object]], cwd: Path
+) -> list[tuple[str, dict[str, object], str, bool]]:
+    """Read linked results of actual public calls from the complete retained trace."""
+    helpers = {
+        Path(_string(_mapping(plugin).get("path"))) / "scripts/planner.py"
+        for event in events
+        if event.get("subtype") == "init"
+        for plugin in _sequence(event.get("plugins"))
+        if _mapping(plugin).get("name") == "goal-planner"
+    }
+    _require(len(helpers) == 1, "Trace does not identify the public planner helper")
+    helper = helpers.pop()
+    calls: dict[str, str] = {}
+    results: list[tuple[str, dict[str, object], str, bool]] = []
     for event in events:
         if event.get("type") not in {"assistant", "user"}:
             continue
@@ -150,13 +189,12 @@ def _reused(events: list[dict[str, object]], payload: str, goal: Path) -> bool:
         for item in cast("list[object]", content):
             block = _mapping(item)
             if block.get("type") == "tool_use" and block.get("name") == "Bash":
-                calls.add(_string(block.get("id")))
+                command = _string(_mapping(block.get("input")).get("command"))
+                request = _render_input(command, helper, cwd)
+                if request is not None:
+                    calls[_string(block.get("id"))] = request
             identifier = block.get("tool_use_id")
-            if (
-                block.get("type") != "tool_result"
-                or identifier not in calls
-                or block.get("is_error")
-            ):
+            if block.get("type") != "tool_result" or identifier not in calls:
                 continue
             output = block.get("content")
             if not isinstance(output, str):
@@ -172,15 +210,54 @@ def _reused(events: list[dict[str, object]], payload: str, goal: Path) -> bool:
                 except ValueError:
                     continue
                 result = _mapping(decoded[0])
-                if result.get("payload") != payload or result.get("goal_path") != str(goal):
-                    continue
-                if result.get("ready") is not True:
-                    continue
-                if result.get("reused") is True and saved:
-                    return True
-                if result.get("reused") is False:
-                    saved = True
-    return False
+                results.append(
+                    (
+                        calls[_string(identifier)],
+                        result,
+                        _string(identifier),
+                        bool(block.get("is_error")),
+                    )
+                )
+    return results
+
+
+def _save_evidence(
+    case: str, root: Path, original: Path, events: list[dict[str, object]], payload: str
+) -> tuple[set[str], str]:
+    requests = ["draft.json"] + (["next-day.json"] if case == "03-synthesize-revisions" else [])
+    _require(all((root / name).resolve() == root / name for name in requests), "Request is a link")
+    documents = [_read_json(root / name) for name in requests]
+    for index, document in enumerate(documents):
+        _require(document.get("date") == f"2030-01-0{index + 2}", "Incorrect requested render date")
+        _require(document.get("documents_root") == str(original / "Documents"), "Wrong save root")
+    if case == "03-synthesize-revisions":
+        _require(
+            {**documents[0], "date": documents[1]["date"]} == documents[1],
+            "Next-day request changed the draft",
+        )
+    outcomes = [entry for entry in _renders(events, original) if entry[0] in requests]
+    _require([entry[0] for entry in outcomes] == requests, "Missing direct public render evidence")
+    for index, (_, result, _, tool_error) in enumerate(outcomes):
+        _require(result.get("payload") == payload, "Render result differs from printed goal")
+        _require(
+            result.get("requested_date") == documents[index]["date"],
+            "Public render did not use the requested date",
+        )
+        if case == "07-denied-save":
+            _require(result.get("ready") is False and bool(result.get("errors")), "Save not denied")
+            _require(
+                _mapping(result.get("measurements")).get("within_limit") is True,
+                "Render failed its budget before attempting allocation",
+            )
+            _require(result.get("goal_path") is None, "Denied save claims a goal file")
+        else:
+            _require(not tool_error, "Public render tool failed")
+            revision = "008" if case == "03-synthesize-revisions" else "001"
+            goal = original / f"Documents/2030-01-02/goals/packet-reader-{revision}.md"
+            _require(result.get("goal_path") == str(goal), "Render result names another goal")
+            _require(result.get("ready") is True and not result.get("errors"), "Render failed")
+            _require(result.get("reused") is (index == 1), "Save/reuse sequence is unproven")
+    return set(requests), outcomes[-1][2]
 
 
 def check_case(
@@ -231,11 +308,46 @@ def check_case(
         elif case == "06-codex-long":
             _require(payload == "/goal " + source_body(), "Codex goal is not the full exact source")
         else:
+            outputs, last_render = _save_evidence(case, root, original, events, payload)
+            if case == "07-denied-save":
+                specifications = list(
+                    re.finditer(
+                        r"(?m)^## Specification\s*\n+(`{3,})text\n([\s\S]*?)\n\1(?:\n|$)", reply
+                    )
+                )
+                _require(len(specifications) == 1, "Denied save omits its complete specification")
+                specification = specifications[0][2]
+                request = _read_json(root / "draft.json")
+                _require(
+                    specification == request.get("specification")
+                    and source_body() in specification,
+                    "Unsaved specification differs from the complete authored contract",
+                )
+                _require(
+                    bool(re.search(r"(?i)\b(?:unsaved|not saved)\b", reply))
+                    and bool(re.search(r"(?i)\bincomplete\b", reply)),
+                    "Denied save is not reported as unsaved/incomplete",
+                )
+                tools = [
+                    _mapping(block)
+                    for event in events
+                    if event.get("type") == "assistant"
+                    for block in _sequence(_mapping(event.get("message")).get("content"))
+                    if _mapping(block).get("type") == "tool_use"
+                ]
+                _require(
+                    bool(tools)
+                    and tools[-1].get("name") == "Bash"
+                    and tools[-1].get("id") == last_render,
+                    "Tools ran after the denied public save",
+                )
+                _inventory(case, root, outputs)
+                return
             revision = "001" if case == "02-save-spec" else "008"
             name = f"packet-reader-{revision}.md"
             goal = Path("Documents/2030-01-02/goals") / name
             spec = Path("Documents/2030-01-02/goal-specs") / name
-            outputs = {str(goal), str(spec)}
+            outputs.update({str(goal), str(spec)})
             _require(
                 all((root / path).resolve() == root / path for path in (goal, spec)),
                 "Saved pair contains a link",
@@ -251,10 +363,6 @@ def check_case(
             _require(
                 hashlib.sha256(contract).hexdigest() in payload, "Companion digest missing or stale"
             )
-            if case == "03-synthesize-revisions":
-                _require(
-                    _reused(events, payload, original / goal), "No linked tool evidence of reuse"
-                )
     _inventory(case, root, outputs)
 
 

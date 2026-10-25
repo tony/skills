@@ -35,6 +35,9 @@ graders:
     type: llm
     focus: last_message
     criteria: >-
+      Grade the accuracy of this audit. A correct audit that gives the draft FAIL
+      must receive PASS here if it satisfies every criterion below; do not confuse
+      the audit verdict with this grading verdict.
       Reject the draft's high score as insufficient: R01 public-consumer proof
       is unverified, R02 known oversized-header regression remains FAIL, and R03
       exact final-revision evidence is absent. Benchmarking and packaging are
@@ -43,3 +46,7 @@ graders:
       obligation to remove or replace with justified acceptance, not a demanded
       proof that blocks all progress. State no independent review occurred,
       identify the exact reviewed goal by digest, and do not claim fixes or tests.
+      Distinguish draft coverage from implementation evidence: labeling a missing
+      draft requirement FAIL is correct when the reply also states that its
+      implementation evidence is absent or unverified. Do not require one status
+      word to describe these different objects.

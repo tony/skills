@@ -55,8 +55,10 @@ Save explicitly selected defaults:
 /goal-planner:profile save these defaults: Claude output, save-and-print, and independent review for delivery goals
 ```
 
-Codex omits the leading `/`. Session permissions and holds remain in force;
-proposed future publication instructions grant no present authority.
+In Codex, invoke the native plugin with `$goal-planner:print` and the other
+skill names above; a standalone portable bundle uses `$goal-planner-print`.
+Session permissions and holds remain in force; proposed future publication
+instructions grant no present authority.
 
 ## Output and revisions
 
@@ -66,7 +68,10 @@ the full objective unless an explicit user or delivery-interface limit applies.
 The drafting assistant's host does not impose Claude limits on Codex output.
 
 Printing and synthesis always display the complete payload, including after
-saving or failure. Saving is opt-in through the request or approved profile;
+saving or failure, followed by compact host, count, and save status. Material
+gaps and synthesis dispositions follow when applicable; completed handoffs end
+without a choice menu. Small goals need outcome, scope, authority, and
+acceptance. Saving is opt-in through the request or approved profile;
 explicit stdout-only forbids writes. The default root is `~/Documents`, with
 an optional separate machine binding and local date:
 
@@ -81,6 +86,8 @@ and unchanged reprints reuse the latest matching completed revision. Short
 complete goals need no companion. Saved goal bytes match the printed payload.
 Companion locators include digests and resolve from unrelated working
 directories. Transfer both folders and render a new revision for changed paths.
+Failed saving prints the full goal and required specification as incomplete;
+it never permits manual publication that bypasses revision allocation.
 
 ## Prerequisites and references
 

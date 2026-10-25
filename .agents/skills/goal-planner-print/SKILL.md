@@ -15,9 +15,9 @@ metadata:
 Draft and print a complete handoff without activating or executing it.
 Arguments: `$ARGUMENTS`.
 
-Read [the contract](references/contract.md),
-[rendering](references/rendering.md), and
-[output contract](references/output.md).
+Read [the contract](references/contract.md)
+and [output contract](references/output.md). Read other references only
+at the applicable step below.
 
 `<planner>` is `references/planner.py`, resolved from this skill's directory
 to an absolute path written literally in every command.
@@ -47,10 +47,12 @@ session already authorizes that plan. Exit plan mode before preparation.
 
 ## 2. Draft and review
 
-Write the complete contract under [prose rules](references/prose-rules.md).
-Select applicable [safeguards](references/safeguards.md), then review
-coverage against the originals. Arrange independent review when required;
-preserve failures and repair gaps without inventing blockers.
+Write outcome, scope, authority, and acceptance under
+[prose rules](references/prose-rules.md). For a concrete risk or selected
+requirement, or before naming another skill in the goal, consult
+[safeguards](references/safeguards.md). Review coverage against the
+originals; arrange independent review only when required. Preserve failures
+and repair gaps without inventing blockers.
 
 ## 3. Render, verify, and print
 
@@ -61,6 +63,11 @@ revision allocation, and verification. Answer under
 even when saved or incomplete. If the helper returns no payload, print the
 authored draft and concrete error without claiming readiness. Stop at handoff;
 never call native goal creation/update tools to test or activate it.
+
+Before sending, check the exact `## Goal` and `## Handoff` headings, complete
+fenced payload, and whole-payload count line. Keep ordinary handoff status to
+one short line; include other sections only when the output contract requires
+them.
 
 
 ## Portability notes

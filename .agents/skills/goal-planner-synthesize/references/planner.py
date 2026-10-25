@@ -414,6 +414,7 @@ def _result(draft: Draft, payload: str, revision: int, incomplete: list[str]) ->
     return {
         "payload": payload,
         "measurements": counts,
+        "requested_date": draft.date,
         "revision": revision,
         "goal_path": None,
         "spec_path": None,

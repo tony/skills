@@ -13,11 +13,15 @@ For unfamiliar contracts or consequential changes, study pinned source,
 existing implementations, root causes, native idioms, and callers. Reuse valid
 studies; retaining the current approach is valid without demonstrated benefit.
 
-Choose an experiment for the uncertainty: `spike:probe` for one unknown,
-`spike:bakeoff` for alternatives, or `spike:ratchet` for iterative evidence.
-Check availability; a plain-language equivalent suffices unless the integration
-is specifically required. Define bounds and decision criteria in the future
-goal without running the experiment while drafting.
+Choose experiments for a stated uncertainty: a probe for one unknown, a bakeoff
+for alternatives, or a ratchet for iterative evidence. Define bounds and
+decision criteria in the future goal without running it while drafting.
+
+Before naming a skill in an emitted goal, verify its installed name, host
+invocation syntax, and whether the executing agent may invoke it. Explicit-only
+skills can require a user invocation; naming one in a goal grants no access.
+Use a plain-language workflow when the integration is optional and unavailable;
+report a missing required integration as a gap. Do not invoke it to test access.
 
 ## Independent review
 
@@ -54,6 +58,9 @@ changes, and exact remote identity when applicable; authorized rewrites need
 lease and recovery rules. Printing does not require repository surgery.
 
 ## Resources, deadlines, and cleanup
+
+These are constraints to include when needed in the future goal; drafting does
+not start resource monitoring, commands, or cleanup.
 
 For heavy phases select CPU, available-memory, free-space, concurrency, and
 expensive-evaluation budgets as applicable. Specify host/owned-process scope,

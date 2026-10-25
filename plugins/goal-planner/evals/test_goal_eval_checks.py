@@ -31,12 +31,39 @@ def _reply(payload: str) -> str:
     )
 
 
-def _renders(payload: str, goal: Path) -> list[dict[str, object]]:
-    events: list[dict[str, object]] = []
-    for reused in (False, True):
+def _renders(
+    payload: str, goal: Path, *, reuse: bool = True, denied: bool = False
+) -> list[dict[str, object]]:
+    root = goal.parents[3]
+    plugin = Path(__file__).parents[1]
+    events: list[dict[str, object]] = [
+        {"subtype": "init", "plugins": [{"name": "goal-planner", "path": str(plugin)}]}
+    ]
+    for reused in (False, True) if reuse else (False,):
         identifier = str(reused)
+        name = "next-day.json" if reused else "draft.json"
+        request = {
+            "host": "claude",
+            "topic": "packet-reader",
+            "body": "Implement the decoder. {{GOAL_SPEC}}",
+            "specification": source_body(),
+            "documents_root": str(root / "Documents"),
+            "date": "2030-01-03" if reused else "2030-01-02",
+        }
+        (root / name).write_text(json.dumps(request), encoding="utf-8")
+        command = f'python3 "{plugin}/scripts/planner.py" render \\\n --save --input {name}'
+        if reused:
+            command = f'python3 -I "{plugin}/scripts/planner.py" render --input={name} --save'
         for kind, block in (
-            ("assistant", {"type": "tool_use", "name": "Bash", "id": identifier}),
+            (
+                "assistant",
+                {
+                    "type": "tool_use",
+                    "name": "Bash",
+                    "id": identifier,
+                    "input": {"command": command},
+                },
+            ),
             (
                 "user",
                 {
@@ -44,10 +71,13 @@ def _renders(payload: str, goal: Path) -> list[dict[str, object]]:
                     "tool_use_id": identifier,
                     "content": json.dumps(
                         {
-                            "ready": True,
+                            "ready": not denied,
                             "reused": reused,
                             "payload": payload,
-                            "goal_path": str(goal),
+                            "goal_path": None if denied else str(goal),
+                            "errors": ["allocation denied"] if denied else [],
+                            "requested_date": request["date"],
+                            "measurements": {"within_limit": True},
                         }
                     ),
                 },
@@ -108,23 +138,30 @@ class GoalEvalChecksTest(unittest.TestCase):
         case = "02-save-spec"
         self._seed(case)
         goal, spec, payload = self._pair()
-        check_case(case, self.root, _reply(payload), [])
+        events = _renders(payload, goal, reuse=False)
+        check_case(case, self.root, _reply(payload), events)
         with self.assertRaises(EvalError):
-            check_case(case, self.root, _reply(payload + "\n"), [])
+            check_case(case, self.root, _reply(payload + "\n"), events)
         spec.write_text(source_body() + "Changed.\n", encoding="utf-8")
         with self.assertRaises(EvalError):
-            check_case(case, self.root, _reply(payload), [])
-        _, _, shortened = self._pair(source=source_body()[:-100])
-        with self.assertRaises(EvalError):
-            check_case(case, self.root, _reply(shortened), [])
+            check_case(case, self.root, _reply(payload), events)
+        for corrupted_source in (
+            source_body()[:-100],
+            source_body().replace("regression is currently FAIL", "regression is currently PASS"),
+        ):
+            _, _, corrupted = self._pair(source=corrupted_source)
+            with self.subTest(source=corrupted_source), self.assertRaises(EvalError):
+                check_case(
+                    case, self.root, _reply(corrupted), _renders(corrupted, goal, reuse=False)
+                )
         _, _, payload = self._pair()
         relative = payload.replace(str(spec), "../goal-specs/packet-reader-001.md")
         goal.write_text(relative, encoding="utf-8")
         with self.assertRaises(EvalError):
-            check_case(case, self.root, _reply(relative), [])
+            check_case(case, self.root, _reply(relative), _renders(relative, goal, reuse=False))
         spec.unlink()
         with self.assertRaises(OSError):
-            check_case(case, self.root, _reply(relative), [])
+            check_case(case, self.root, _reply(relative), _renders(relative, goal, reuse=False))
 
     def test_reuse_and_history(self) -> None:
         """Require two linked render outcomes; preserve predecessors and current exclusions."""
@@ -135,13 +172,72 @@ class GoalEvalChecksTest(unittest.TestCase):
         check_case(case, self.root, _reply(payload), events)
         for fake in (
             [],
-            events[1:],
-            events[2:],
+            [events[0], *events[2:]],
+            events[:3],
             _renders(payload + "changed", goal),
             _renders(payload, goal.with_name("wrong.md")),
         ):
             with self.subTest(events=fake), self.assertRaises(EvalError):
                 check_case(case, self.root, _reply(payload), fake)
+        for command in (
+            "printf fabricated-json",
+            "python3 -c 'import planner; planner._candidate()'",
+        ):
+            echoed = [*events]
+            echoed[1] = {
+                "type": "assistant",
+                "message": {
+                    "content": [
+                        {
+                            "type": "tool_use",
+                            "name": "Bash",
+                            "id": "False",
+                            "input": {"command": command},
+                        }
+                    ]
+                },
+            }
+            with self.subTest(command=command), self.assertRaises(EvalError):
+                check_case(case, self.root, _reply(payload), echoed)
+        for override, tool_error in (
+            ({"reused": False}, False),
+            ({"requested_date": "2030-01-02"}, False),
+            ({}, True),
+        ):
+            false_reuse = [*events]
+            false_reuse[-1] = {
+                "type": "user",
+                "message": {
+                    "content": [
+                        {
+                            "type": "tool_result",
+                            "tool_use_id": "True",
+                            "is_error": tool_error,
+                            "content": json.dumps(
+                                {
+                                    "ready": True,
+                                    "reused": True,
+                                    "payload": payload,
+                                    "goal_path": str(goal),
+                                    "requested_date": "2030-01-03",
+                                    **override,
+                                }
+                            ),
+                        }
+                    ]
+                },
+            }
+            with (
+                self.subTest(override=override, tool_error=tool_error),
+                self.assertRaises(EvalError),
+            ):
+                check_case(case, self.root, _reply(payload), false_reuse)
+        next_day = self.root / "next-day.json"
+        valid_next = next_day.read_text(encoding="utf-8")
+        next_day.write_text(valid_next.replace("2030-01-03", "2030-01-02"), encoding="utf-8")
+        with self.assertRaises(EvalError):
+            check_case(case, self.root, _reply(payload), events)
+        next_day.write_text(valid_next, encoding="utf-8")
         for relative in ("injected.txt", "Documents/2030-01-03/goals/packet-reader-009.md"):
             extra = self.root / relative
             extra.parent.mkdir(parents=True, exist_ok=True)
@@ -156,6 +252,87 @@ class GoalEvalChecksTest(unittest.TestCase):
         previous.write_text("Changed predecessor", encoding="utf-8")
         with self.assertRaises(EvalError):
             check_case(case, self.root, _reply(payload), events)
+
+    def test_denied_save_preserves_full_unsaved_output(self) -> None:
+        """Require a real failed public attempt, full fallback, and no bypass afterward."""
+        case = "07-denied-save"
+        self._seed(case)
+        goal = self.root / "Documents/2030-01-02/goals/packet-reader-001.md"
+        payload = "/goal Implement the decoder; preserve the full unsaved specification."
+        events = _renders(payload, goal, reuse=False, denied=True)
+        reply = (
+            _reply(payload)
+            + f"\n## Specification\n\n```text\n{source_body()}\n```\n"
+            + "\n## Handoff\n\nUnsaved and incomplete: allocation denied.\n"
+        )
+        check_case(case, self.root, reply, events)
+        authored = (Path(__file__).parent / case / "case.yaml").read_text(encoding="utf-8")
+        pattern = next(
+            re.finditer(r"^    pattern: '(## Specification.*)'$", authored, re.MULTILINE)
+        )[1]
+        self.assertRegex(reply, pattern)
+        specification = source_body() + "\n````text\nA literal fenced example.\n````\n"
+        request = self.root / "draft.json"
+        original_request = request.read_text(encoding="utf-8")
+        request.write_text(
+            original_request.replace(json.dumps(source_body()), json.dumps(specification)),
+            encoding="utf-8",
+        )
+        long_fence_reply = (
+            _reply(payload)
+            + f"\n## Specification\n\n`````text\n{specification}\n`````\n"
+            + "\n## Handoff\n\nUnsaved and incomplete: allocation denied.\n"
+        )
+        self.assertRegex(long_fence_reply, pattern)
+        check_case(case, self.root, long_fence_reply, events)
+        mismatched = long_fence_reply.replace("\n`````\n", "\n```\n")
+        self.assertNotRegex(mismatched, pattern)
+        with self.assertRaises(EvalError):
+            check_case(case, self.root, mismatched, events)
+        request.write_text(original_request, encoding="utf-8")
+        budget_failure = [*events]
+        budget_failure[-1] = {
+            "type": "user",
+            "message": {
+                "content": [
+                    {
+                        "type": "tool_result",
+                        "tool_use_id": "False",
+                        "content": json.dumps(
+                            {
+                                "ready": False,
+                                "errors": ["over budget"],
+                                "payload": payload,
+                                "requested_date": "2030-01-02",
+                                "measurements": {"within_limit": False},
+                            }
+                        ),
+                    }
+                ]
+            },
+        }
+        with self.assertRaises(EvalError):
+            check_case(case, self.root, reply, budget_failure)
+        for invalid in (
+            reply.replace(source_body(), source_body()[:-80]),
+            reply.replace("Unsaved and incomplete", "Saved and complete"),
+            reply.replace(payload, payload + " altered"),
+        ):
+            with self.subTest(reply=invalid), self.assertRaises(EvalError):
+                check_case(case, self.root, invalid, events)
+        fallback: dict[str, object] = {
+            "type": "assistant",
+            "message": {
+                "content": [
+                    {"type": "tool_use", "name": "Write", "id": "manual-fallback", "input": {}}
+                ]
+            },
+        }
+        with self.assertRaises(EvalError):
+            check_case(case, self.root, reply, [*events, fallback])
+        (self.root / "Documents/.goal-reservations").unlink()
+        with self.assertRaises(OSError):
+            check_case(case, self.root, reply, events)
 
     def test_stdout_and_full_codex_source(self) -> None:
         """Reject unauthorized hidden writes and any shortened Codex body."""

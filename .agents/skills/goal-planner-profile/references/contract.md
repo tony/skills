@@ -1,17 +1,19 @@
 # Goal contract
 
 Write the complete outcome before shortening it, under
-[prose-rules.md](./prose-rules.md). Keep small goals in a few paragraphs; add
-structure only to prevent mistakes, without empty stages or a second
-hand-maintained contract.
+[prose-rules.md](./prose-rules.md). A small standalone goal needs outcome, scope,
+authority, and observable acceptance in a few sentences. Add structure only
+when it prevents a concrete mistake.
 
 ## Requirements and scope
 
-Identify target, goal key, revision, predecessors, and `DRAFT_NOT_STARTED`
-state. Give binding requirements stable descriptive keys, observable
-acceptance, evidence sources, and dispositions. Preserve outcomes,
-deliverables, dependencies, ownership, and ordering. Namespace colliding keys
-from unrelated targets; matching labels do not make their goals related.
+Identify the target and preserve outcomes, deliverables, dependencies,
+ownership, and ordering. Saved handoffs retain goal/specification identities,
+revisions, and predecessors. Synthesis keeps stable descriptive requirement
+keys, observable acceptance, evidence sources, and dispositions. Namespace
+colliding keys from unrelated targets; matching labels do not make their goals
+related. Do not require identifiers or a literal draft-state token in a small
+unsaved goal when its scope, authority, and acceptance are already clear.
 
 Carry exclusions through research, implementation, docs, tests, and review;
 they cannot become derived blockers. Keep excluded, unsupported, unverified,
@@ -57,6 +59,10 @@ Include recovery, live-job waits, partial results, and completion conditions
 when needed. A blocked stage identifies its actual unmet condition and useful
 independent work. Challenge invented guarantees that create an impasse without
 erasing real obligations.
+
+When a turn bound applies, define what counts and require visible `turn N of M`
+progress and the outcome at the bound. Host-injected audit or continuation
+instructions do not replace the goal's own acceptance criteria.
 
 ## Review
 

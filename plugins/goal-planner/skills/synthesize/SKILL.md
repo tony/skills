@@ -11,9 +11,9 @@ allowed-tools: [Bash, Read, Write, Grep, Glob, AskUserQuestion, Task]
 Reconcile earlier goals with current steering and print the complete handoff
 without activating or executing it. Arguments: `$ARGUMENTS`.
 
-Read [the contract](../../references/contract.md),
-[rendering](../../references/rendering.md), and
-[output contract](../../references/output.md). `<planner>` is
+Read [the contract](../../references/contract.md)
+and [output contract](../../references/output.md). Read other references only
+when their step applies. `<planner>` is
 `../../scripts/planner.py`, resolved from this skill's directory to an absolute
 path written literally in every command.
 
@@ -45,8 +45,9 @@ session already authorizes that plan. Exit plan mode before preparation.
 
 ## 3. Produce the revised contract
 
-Write the revised contract under [prose rules](../../references/prose-rules.md)
-and select applicable [safeguards](../../references/safeguards.md). Check
+Write the revised contract under [prose rules](../../references/prose-rules.md).
+Consult [safeguards](../../references/safeguards.md) for concrete risks or
+selected requirements, and before naming another skill in the goal. Check
 coverage and challenge unnecessary inherited guarantees without dropping real
 obligations. Required independent review covers the exact revised contract;
 unavailable review remains UNVERIFIED.
@@ -60,3 +61,8 @@ inputs, immutable revisions, and verification. Reply under
 every requirement's disposition. If the helper returns no payload, print the
 authored draft and concrete error as incomplete. Stop before native activation,
 replacement, or execution.
+
+Before sending, check the exact `## Goal` and `## Handoff` headings, complete
+fenced payload, whole-payload count line, and inherited requirement dispositions.
+Keep handoff status to one short line, with saved identities and material gaps
+in their prescribed places.

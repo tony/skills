@@ -91,6 +91,7 @@ def test_codex_stays_unabridged_and_topic_prefixes_are_independent(tmp_path: Pat
 def test_pair_print_equality_noop_and_changed_spec_across_dates(tmp_path: Path) -> None:
     """Reprinting reads saved bytes; changing only the contract preserves the prior pair."""
     first = planner.render(_pair(tmp_path), save=True)
+    assert first["requested_date"] == "2026-10-24"
     goal = _path(first, "goal_path")
     spec = _path(first, "spec_path")
     assert first["ready"] is True
@@ -98,6 +99,7 @@ def test_pair_print_equality_noop_and_changed_spec_across_dates(tmp_path: Path) 
     assert str(spec) in cast("str", first["payload"])
     before = {p: (p.read_bytes(), p.stat().st_mtime_ns) for p in tmp_path.rglob("*") if p.is_file()}
     repeated = planner.render(_pair(tmp_path, date="2026-10-25"), save=True)
+    assert repeated["requested_date"] == "2026-10-25"
     assert repeated["reused"] is True
     assert repeated["payload"] == first["payload"]
     assert not (tmp_path / "2026-10-25").exists()

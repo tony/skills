@@ -11,10 +11,9 @@ allowed-tools: [Bash, Read, Grep, Glob, AskUserQuestion, Task]
 Review the exact draft against its sources and evidence without revising,
 saving, activating, or executing it. Arguments: `$ARGUMENTS`.
 
-Read [the contract](../../references/contract.md),
-[safeguards](../../references/safeguards.md),
-[rendering](../../references/rendering.md), and
-[output contract](../../references/output.md).
+Read [the contract](../../references/contract.md)
+and [output contract](../../references/output.md). Read detailed references
+only for checks that apply to this draft.
 
 `<planner>` is `../../scripts/planner.py`, resolved from this skill's directory
 to an absolute path written literally in each command.
@@ -24,8 +23,9 @@ to an absolute path written literally in each command.
 Build the contract's review packet under
 [prose rules](../../references/prose-rules.md), reading full originals and using
 [recovery](../../references/recovery.md) as needed. Inspect only relevant
-current state. State reviewer independence under the safeguard rules; use a
-fresh reviewer when required and report unavailable review as UNVERIFIED.
+current state. State reviewer independence; use
+[safeguards](../../references/safeguards.md) when independent review or extra
+checks are required. Report unavailable required review as UNVERIFIED.
 
 ## 2. Check every obligation
 
@@ -46,7 +46,8 @@ $ python3 <planner> check \
     --host <claude-or-codex>
 ```
 
-Use limit options only when selected. Apply the rendering reference's checks
+Use limit options only when selected. Apply
+[rendering](../../references/rendering.md) checks
 for final counts, companion identity and reachability, and saved/printed
 equality. Check full-contract coverage separately: mechanical success does
 not establish it, and a path-only response fails despite a valid saved file.

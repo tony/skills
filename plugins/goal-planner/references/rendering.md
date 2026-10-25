@@ -21,17 +21,21 @@ permits at most 3,999. Honor tighter limits and never pad spare capacity.
 
 Codex receives the full objective unless an explicit user or delivery-interface
 limit applies. Inspect the selected channel: full-text TUI and tool/API limits
-may differ. Never activate a goal to test limits. Count the condition and whole
-payload after substitutions; until the host metric is verified, both Unicode
-code points and UTF-16 units must fit. Report counts/capacity outside the payload.
+may differ; a printed `/goal` in non-interactive output is still a handoff.
+Verify installed help or primary host documentation before applying a surface
+cap. Never activate a goal to test limits. Count the condition and whole
+payload after substitutions. For Claude, both Unicode code points and UTF-16
+units must fit the selected whole-payload limit. Report whole-payload counts
+outside the payload.
 
 If the full contract cannot fit, use a complete **goal specification** with
 requirements, tasks, evidence rules, and provenance. The compact goal retains
 outcome, exclusions, authority, hard acceptance, and companion reference. It
 must require a visible acceptance summary with requirement verdicts, evidence,
-exclusions, and companion identity/digest. If standalone brevity conflicts with
-obligations, print the fullest reviewable candidate and name the conflict;
-never truncate requirements.
+exclusions, and companion identity/digest. Claude's completion evaluator reads
+the conversation, so file-only evidence is insufficient for that evaluator.
+If standalone brevity conflicts with obligations, print the fullest reviewable
+candidate and name the conflict; never truncate requirements.
 
 ## Prepare helper input
 
@@ -62,7 +66,7 @@ Render without writes, substituting the draft JSON:
 ```console
 $ python3 <planner> render \
     --input - <<'JSON'
-{"host":"claude","topic":"docs-fix","body":"DRAFT_NOT_STARTED. Correct the named documentation example and verify it against the documented interface. Preserve the existing scope and release hold."}
+{"host":"claude","topic":"docs-fix","body":"Correct the named documentation example and verify it against the documented interface. Preserve the existing scope and release hold."}
 JSON
 ```
 
@@ -112,8 +116,9 @@ without a base is insufficient. Transfer both dated folders, resolve the new
 binding, and create a new revision if the payload changes.
 
 Read back saved bytes and compare exactly with the printed payload. On failure,
-print the returned payload (or authored draft if none) and concrete error.
-After a save failure, do not bypass exclusive creation with private helper
-calls or manual writes.
+print the returned payload (or authored draft if none), the complete required
+specification, and the concrete error as an unsaved/incomplete handoff. After
+a save failure, do not bypass exclusive creation with private helper calls
+or manual writes.
 Missing, changed, or unavailable required companions mean incomplete. Mechanical
 checks do not establish semantic coverage or independent review.

@@ -86,18 +86,30 @@ does not activate a goal, execute the decoder work, or grant remote authority.
 
 def files_for(case: str) -> dict[str, str]:
     """Return immutable fixture inputs, independent of planner implementation."""
+    write_scope = "Write only inside this working directory. "
+    if case in {"02-save-spec", "03-synthesize-revisions", "07-denied-save"}:
+        write_scope = (
+            "Keep goal/specification files under this fixture's Documents root and "
+            "final request files in the specified working-directory filenames. "
+            "Scratch files may use this working directory or the native runner's "
+            "owned per-fixture TMPDIR only. "
+        )
     files = {
         "CLAUDE.md": (
             "# Isolated fixture\n\n"
-            "Use only supplied local inputs. Write only inside this working directory. "
+            f"Use only supplied local inputs. {write_scope}"
             "Do not access the network, personal history, home Documents, global "
             "configuration, or another repository. Documents below means the fixture's "
             "Documents directory. Do not publish evaluation artifacts.\n"
         ),
         ".goal-planner-eval": case + "\n",
     }
-    if case in {"02-save-spec", "06-codex-long"}:
+    if case in {"02-save-spec", "06-codex-long", "07-denied-save"}:
         files["requirements.md"] = source_body()
+        if case == "07-denied-save":
+            files["Documents/.goal-reservations"] = (
+                "Owned allocation blocker; preserve these bytes.\n"
+            )
     elif case == "03-synthesize-revisions":
         files["Documents/2030-01-01/goals/packet-reader-007.md"] = "/goal " + source_body()
         files["history.md"] = (
