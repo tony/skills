@@ -18,7 +18,7 @@ and consent. Inputs from [fixtures.py](fixtures.py) are synthetic and local.
 From this directory, run one arm and one concurrent agent, keeping reports local.
 `--scaffold` runs the authored fixture scripts; `--trust-plugin` confirms that
 those scripts and the plugin were reviewed. Tool grants respect each case's
-restrictions. The semantic judge uses Sonnet.
+restrictions. The semantic judge uses Opus.
 
 Inspect `claude plugin eval --help` first. Use an absolute, new output directory
 outside the repository. On Linux, select a short owned temporary root outside
@@ -37,7 +37,7 @@ $ TMPDIR="$eval_tmp_root" claude plugin eval .. \
     --ablation none \
     --runs 1 \
     --concurrency 1 \
-    --judge-model sonnet \
+    --judge-model opus \
     --scaffold \
     --allow-tools Bash Write Edit \
     --trust-plugin \
