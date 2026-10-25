@@ -58,3 +58,6 @@ Report under [output contract](../../references/output.md) and
 [prose rules](../../references/prose-rules.md), separating blockers from optional
 recommendations and preserving disagreements and evidence gaps. Stop with the
 review; editing or execution requires a separate instruction.
+
+Before sending, verify that the verdict identifies the reviewed goal with its
+complete 64-character SHA-256 digest; never abbreviate it with an ellipsis.

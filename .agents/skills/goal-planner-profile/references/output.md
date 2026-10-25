@@ -34,8 +34,9 @@ still fails.
 
 ## Audit replies
 
-1. `## Verdict`: PASS, FAIL, PARTIAL, or UNVERIFIED for the exact revision/digest,
-   with reviewer independence and evidence limits.
+1. `## Verdict`: PASS, FAIL, PARTIAL, or UNVERIFIED for the exact reviewed goal,
+   with its full SHA-256 digest, saved revision when present, reviewer
+   independence, and evidence limits.
 2. `## Blocking findings`, when present: requirement, evidence, impact, and
    correction for mandatory failures.
 3. `## Recommendations`, when useful: optional changes, separate from blockers.
