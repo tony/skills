@@ -1,0 +1,61 @@
+schema_version: "1.0"
+name: 07-denied-save
+description: Failed allocation prints the full unsaved goal and specification without bypassing persistence.
+tags: [fixture, handoff, failure-control]
+context:
+  scaffold_script: scaffold.sh
+execution:
+  prompt: >-
+    /goal-planner:print Prepare a Claude handoff from requirements.md and attempt
+    saving it under this fixture's Documents root, topic packet-reader, date
+    2030-01-02. Keep the default addendum reserve and include requirements.md
+    completely and verbatim in the specification. The owned allocation blocker
+    Documents/.goal-reservations must remain byte-for-byte unchanged. Do not
+    remove it, select another root, or manually publish any goal/specification.
+    For retained eval evidence, keep the helper request in draft.json with the
+    absolute Documents root and explicit date. Make the public render with
+    saving one direct Bash call using the literal absolute helper path and
+    --input draft.json. Leave its unmodified JSON result on tool stdout, without
+    redirecting it or combining it with another shell command. Never repeat that
+    receipt in the final response; print the complete exact goal once.
+    Prepare all inputs first; after
+    that failed call, use no further tools. These conventions apply only to this
+    fixture. Print the complete returned goal and complete authored specification
+    in separate text fences under Goal and Specification, with measured whole-goal
+    counts and explicit unsaved/incomplete status outside them. Do not imply the
+    companion locator works. No private-helper fallback, activation, implementation,
+    network access, history, or profiles. Outside the goal report exactly
+    "Counts: N code points; M UTF-16 units." with the measured integers.
+  max_turns: 25
+  timeout_seconds: 400
+  allowed_tools: [Bash, Read, Write, Edit, Glob, Grep, Skill]
+  disallowed_tools: [WebFetch, WebSearch]
+runs: 1
+graders:
+  - name: complete-goal-printed
+    type: regex
+    target: last_message
+    pattern: '## Goal\s+```text\n/goal [\s\S]{1,3794}\n```'
+  - name: specification-printed
+    type: regex
+    target: last_message
+    pattern: '## Specification\s+(`{3,})text\n[\s\S]{4001,}\n\1(?:\n|$)'
+  - name: no-manual-goal
+    type: file_exists
+    path: '**/goals/*.md'
+    exists: false
+  - name: no-manual-specification
+    type: file_exists
+    path: '**/goal-specs/*.md'
+    exists: false
+  - name: incomplete-save-reported
+    type: llm
+    focus: last_message
+    criteria: >-
+      The reply prints a complete compact goal and the complete authored
+      specification, explicitly reports unsaved/incomplete status, and explains
+      that the companion locator is not usable yet. It must not claim successful
+      saving, verified persistence, activation, decoder implementation, or executed
+      acceptance checks. A future instruction inside the goal is not a completion
+      claim. Exact source content, attempted allocation, immutable blocker, and
+      absence of fallback tool calls are checked separately from the complete trace.

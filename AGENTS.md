@@ -645,6 +645,10 @@ template lives in one reference file.
    (Codex, headless runs), print the options as a plain list and stop.
 4. A halted run prints one result sentence, then what the user must do.
 
+Completed `goal-planner` handoffs may omit empty sections and end after the
+artifact, compact status, and material gaps. They need no next-step panel;
+ask only for a decision needed to finish the requested handoff.
+
 ### Accessible Formatting
 
 - **Prefer prose and nested sections over tables** — reach for a table

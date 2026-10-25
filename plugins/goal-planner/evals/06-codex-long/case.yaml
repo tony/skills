@@ -1,0 +1,45 @@
+schema_version: "1.0"
+name: 06-codex-long
+description: An uncapped Codex handoff prints the complete long objective without writing files.
+tags: [fixture, handoff]
+context:
+  scaffold_script: scaffold.sh
+execution:
+  prompt: >-
+    /goal-planner:print Prepare an uncapped full-text Codex TUI handoff, topic
+    packet-reader, stdout-only. The complete contents of requirements.md must
+    appear verbatim as the goal body; do not summarize any requirement or apply
+    Claude's 3800-character limit. Include the /goal prefix. This is a full-text
+    draft, not a call to a bounded goal-storage API. Print the complete copyable
+    payload and measure its code points and UTF-16 units. Do not create any
+    files, consult histories or profiles, execute the planned work, or activate
+    a goal. Do not invent a companion file for the uncapped output.
+    Outside the goal, report whole-payload counts using exactly
+    "Counts: N code points; M UTF-16 units." with the measured integers.
+  max_turns: 20
+  timeout_seconds: 400
+  allowed_tools: [Bash, Read, Glob, Grep, Skill]
+  disallowed_tools: [Write, Edit, WebFetch, WebSearch]
+runs: 1
+graders:
+  - name: full-long-goal-is-printed
+    type: regex
+    target: last_message
+    pattern: '## Goal\s+```text\n[\s\S]{4001,}\n```'
+  - name: no-goal-artifacts
+    type: file_exists
+    path: '**/goals/*.md'
+    exists: false
+  - name: no-unneeded-companion
+    type: file_exists
+    path: '**/goal-specs/*.md'
+    exists: false
+  - name: host-capability-distinguished
+    type: llm
+    focus: last_message
+    criteria: >-
+      The response provides the full objective, reports both actual counting
+      conventions, and treats this as an uncapped Codex TUI handoff. It neither
+      claims every Codex API accepts that size nor applies Claude's draft cap.
+      It does not invent a saved specification or claim the goal was activated
+      or the planned implementation and checks were performed.

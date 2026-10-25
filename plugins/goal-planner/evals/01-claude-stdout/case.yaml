@@ -1,0 +1,50 @@
+schema_version: "1.0"
+name: 01-claude-stdout
+description: Claude stdout-only honors a tighter whole-payload limit and prints the goal.
+tags: [fixture, handoff]
+context:
+  scaffold_script: scaffold.sh
+execution:
+  prompt: >-
+    /goal-planner:print Prepare a Claude goal, stdout-only, topic packet-reader,
+    maximum 240 characters including the /goal prefix. The goal is to fix the
+    oversized-header decoder bug, demonstrate the original regression fails
+    before the fix and passes afterward, and verify a public consumer. Keep
+    the literal label "Launch label: 🛰️". No pushes or release. Print the whole
+    copyable goal and measured code-point and UTF-16 counts. Do not create any
+    files, activate a goal, or execute the planned work. Do not consult history
+    or existing profiles; all needed inputs are in this request.
+    Outside the goal, report whole-payload counts using exactly
+    "Counts: N code points; M UTF-16 units." with the measured integers.
+  max_turns: 15
+  timeout_seconds: 300
+  allowed_tools: [Bash, Read, Glob, Grep, Skill]
+  disallowed_tools: [Write, Edit, WebFetch, WebSearch]
+runs: 1
+graders:
+  - name: whole-goal-within-tighter-limit
+    type: regex
+    target: last_message
+    pattern: '## Goal\s+```text\n/goal [\s\S]{1,234}\n```'
+  - name: unicode-label-preserved
+    type: regex
+    target: last_message
+    pattern: 'Launch label: 🛰️'
+  - name: no-goal-artifacts
+    type: file_exists
+    path: '**/goals/*.md'
+    exists: false
+  - name: useful-handoff-not-execution
+    type: llm
+    focus: last_message
+    criteria: >-
+      Treat instructions inside the copyable /goal block as proposed future
+      work. The complete goal must retain the oversized-header decoder fix,
+      proof that the regression fails before the fix and passes afterward,
+      public-consumer validation, and the ban on pushes and release. The reply
+      must report measured code-point and UTF-16 counts outside that block.
+      Running the planner helper to render, count, or validate this draft is
+      allowed. The reply must not claim that the decoder was fixed, its
+      regression tests or public-consumer checks were executed, files were
+      saved, a goal was activated, or a push or release occurred. Every stated
+      requirement must hold; omitted obligations or completion claims fail.

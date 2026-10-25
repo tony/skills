@@ -85,9 +85,8 @@ jobs:
 
       - name: Plugin versions (pull request)
         if: github.event_name == 'pull_request'
-        env:
-          BASE_SHA: ${{ github.event.pull_request.base.sha }}
-        run: uv run scripts/marketplace.py versions --base "$BASE_SHA"
+        # Compare the checked-out merge with its actual base, not a stale event SHA.
+        run: uv run scripts/marketplace.py versions --base HEAD^1
 
       - name: Plugin versions (push)
         if: github.event_name == 'push' && github.event.before != '0000000000000000000000000000000000000000'
