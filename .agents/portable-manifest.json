@@ -45,6 +45,18 @@
       "bytes": 45418
     },
     {
+      "name": "beautiful-readmes",
+      "sources": [
+        "plugins/beautiful-readmes/skills/beautiful-readmes/SKILL.md"
+      ],
+      "bundled": {
+        "references/contexts.md": "plugins/beautiful-readmes/references/contexts.md",
+        "references/patterns.md": "plugins/beautiful-readmes/references/patterns.md",
+        "references/prose-rules.md": "plugins/beautiful-readmes/references/prose-rules.md"
+      },
+      "bytes": 14697
+    },
+    {
       "name": "business-case-study-internal",
       "sources": [
         "plugins/business/skills/case-study-internal/SKILL.md"
@@ -1813,6 +1825,9 @@
     "plugins/agent-messaging/references/agents/codex.md": 1,
     "plugins/agent-messaging/references/prose-rules.md": 1,
     "plugins/agent-messaging/scripts/relay.sh": 1,
+    "plugins/beautiful-readmes/references/contexts.md": 1,
+    "plugins/beautiful-readmes/references/patterns.md": 1,
+    "plugins/beautiful-readmes/references/prose-rules.md": 1,
     "plugins/business/references/instruments.md": 1,
     "plugins/changelog/scripts/rewrite.py": 1,
     "plugins/commit/references/prose-rules.md": 1,

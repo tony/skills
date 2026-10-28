@@ -65,6 +65,7 @@ changes, and `respond` to screen review feedback.
 | Plugin | Description |
 |--------|-------------|
 | [lean](plugins/lean/) | Writing discipline and cleanup tools for tight, slop-free prose and code. |
+| [beautiful-readmes](plugins/beautiful-readmes/) | Reader-first README assessment, writing and conservative improvement with useful examples and preservation checks. |
 | [double-check](plugins/double-check/) | Forces verification requests to return re-derived answers instead of diffs against prior turns. The align skill restates a chat's analysis standalone after a revision-log reply. |
 | [gh](plugins/gh/) | File durable GitHub issues with reproductions, pinned links, and stripped PII. Enforces a markdown writing discipline reusable for any PR, comment, or ticket. |
 | [skill-style](plugins/skill-style/) | Hold SKILL.md files to a deletion test: a line stays only when removing it would change what the agent does. Frontmatter, code blocks, and sections survive verbatim. |

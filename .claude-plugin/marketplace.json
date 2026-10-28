@@ -675,6 +675,25 @@
       ],
       "homepage": "https://github.com/tony/skills/tree/main/plugins/goal-planner",
       "license": "MIT"
+    },
+    {
+      "name": "beautiful-readmes",
+      "description": "Reader-first README assessment, writing and conservative improvement with useful examples and preservation checks.",
+      "version": "0.1.0",
+      "author": {
+        "name": "Tony Narlock",
+        "email": "tony@git-pull.com"
+      },
+      "source": "./plugins/beautiful-readmes",
+      "category": "productivity",
+      "tags": [
+        "readme",
+        "documentation",
+        "examples",
+        "writing"
+      ],
+      "homepage": "https://github.com/tony/skills/tree/main/plugins/beautiful-readmes",
+      "license": "MIT"
     }
   ]
 }

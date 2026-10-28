@@ -1,0 +1,50 @@
+schema_version: '1.0'
+name: 07-example-contracts
+description: example contracts
+tags:
+- fixture
+- readme
+context:
+  scaffold_script: scaffold.sh
+execution:
+  prompt: Correct the README from the supplied project facts and implementation. Save outputs/README.md
+    and outputs/review.md. The first example must work standalone for a user in the project
+    root. Keep project/ unchanged.
+  max_turns: 20
+  timeout_seconds: 180
+  allowed_tools:
+  - Read
+  - Glob
+  - Grep
+  - Bash
+  - Write
+  - Edit
+  - Skill
+  disallowed_tools:
+  - WebFetch
+  - WebSearch
+runs: 1
+graders:
+- name: artifact-written
+  type: file_exists
+  path: outputs/README.md
+- name: owned-setup
+  type: regex
+  target:
+    source: file
+    path: outputs/README.md
+  pattern: temporary_server
+- name: reader-contract
+  type: llm
+  focus:
+    source: file
+    path: outputs/README.md
+  criteria: Provide complete imports and setup using temporary_server(), not an undefined pytest
+    server fixture. Explain shared endpoint selection and teardown ownership accurately. Scope
+    brace-prefixed JSON-form layout refusal to versions from 3.4 to below 3.8 and state that
+    version probes can occur before the layout is withheld. Preserve Python 3.11+ and local-module
+    setup. Do not claim real tmux, network, package or rendering tests. The first example must
+    actually run with the supplied API.
+- name: review-note
+  type: file_exists
+  path: outputs/review.md

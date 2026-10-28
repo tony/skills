@@ -1,0 +1,44 @@
+schema_version: '1.0'
+name: 03-preserve-library
+description: preserve library
+tags:
+- fixture
+- readme
+context:
+  scaffold_script: scaffold.sh
+execution:
+  prompt: Polish this README only where it improves the reader experience. Preserve what already
+    works. Save the resulting README.md under outputs/ even if unchanged, plus a brief review.md
+    explaining the decision and checks. Read the supplied inputs in project/. README examples
+    are for a user in the project root; outputs/ is only the handoff directory. Keep project/
+    unchanged.
+  max_turns: 20
+  timeout_seconds: 180
+  allowed_tools:
+  - Read
+  - Glob
+  - Grep
+  - Bash
+  - Write
+  - Edit
+  - Skill
+  disallowed_tools:
+  - WebFetch
+  - WebSearch
+runs: 1
+graders:
+- name: artifact-written
+  type: file_exists
+  path: outputs/README.md
+- name: reader-contract
+  type: llm
+  focus:
+    source: file
+    path: outputs/README.md
+  criteria: The README retains Usage and Limitations anchors, reference route, MIT attribution
+    meaning, Python 3.11+, local-module setup, code-point versus terminal-cell limitations and
+    whitespace normalization. The existing complete example remains meaningful and no unsupported
+    installation or support claim is introduced.
+- name: review-note
+  type: file_exists
+  path: outputs/review.md

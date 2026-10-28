@@ -1,5 +1,5 @@
 closest_model.py: [model-cli, weave]
-prose-rules.md: [action, agent-messaging, business, changelog, commit, disk, double-check, gh, git-branch, github-actions, goal-planner, lean, merge-pr, model-cli, package-updater, pr, pytest-optimizer, rebase, release, repo-skills, research, respond, ruff, scholar, self-improvement, situate, skill-style, slop, spike, tailwind, tdd, terraform, ticket, weave]
+prose-rules.md: [beautiful-readmes, action, agent-messaging, business, changelog, commit, disk, double-check, gh, git-branch, github-actions, goal-planner, lean, merge-pr, model-cli, package-updater, pr, pytest-optimizer, rebase, release, repo-skills, research, respond, ruff, scholar, self-improvement, situate, skill-style, slop, spike, tailwind, tdd, terraform, ticket, weave]
 cooldown-exemption.md: [package-updater, ruff]
 throwaway-worktree.md: [github-actions, package-updater, ruff]
 verification-gates.md: [action, repo-skills, respond, slop, spike]

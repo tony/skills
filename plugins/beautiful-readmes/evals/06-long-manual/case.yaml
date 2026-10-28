@@ -1,0 +1,43 @@
+schema_version: '1.0'
+name: 06-long-manual
+description: long manual
+tags:
+- fixture
+- readme
+context:
+  scaffold_script: scaffold.sh
+execution:
+  prompt: Assess the audience and polish this maintained operator README only where it helps.
+    Read project/. Save outputs/README.md and outputs/review.md; keep project/ unchanged. Preserve
+    existing reader contracts.
+  max_turns: 20
+  timeout_seconds: 180
+  allowed_tools:
+  - Read
+  - Glob
+  - Grep
+  - Bash
+  - Write
+  - Edit
+  - Skill
+  disallowed_tools:
+  - WebFetch
+  - WebSearch
+runs: 1
+graders:
+- name: artifact-written
+  type: file_exists
+  path: outputs/README.md
+- name: reader-contract
+  type: llm
+  focus:
+    source: file
+    path: outputs/README.md
+  criteria: Preserve the useful task manual, contents navigation and all incoming anchors. Keep
+    the format-2 Ledger 3.4 floor, format-1 backup, irreversible comment loss and recovery boundary
+    visible near the decision. Do not demand installation or relocate the actual manual into
+    a nonexistent destination. Explain any edits with concrete reader benefit; unchanged content
+    is valid.
+- name: review-note
+  type: file_exists
+  path: outputs/review.md
