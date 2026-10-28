@@ -180,6 +180,9 @@ check CI runs. `scripts/marketplace.py portable` writes the generated files
 (`.agents/`, each plugin's `.codex-plugin/plugin.json`, and each plugin's copy
 of a file in `shared/`); edit the sources and regenerate, never the outputs.
 
+[README skill research](research/README.md) preserves the standalone
+Beautiful READMEs skill, reference guides, and evaluation fixtures with checksums.
+
 ## Documentation
 
 See the [official Claude Code plugin docs](https://code.claude.com/docs/en/plugins) for
