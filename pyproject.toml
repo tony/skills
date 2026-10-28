@@ -17,8 +17,12 @@ dev = [
 [tool.ruff]
 line-length = 100
 target-version = "py312"
-# User projects receive the templates; their style is the user's, not ours.
-extend-exclude = [".agents", "plugins/pytest-optimizer/templates"]
+# Preserve the style of user templates and immutable research fixtures.
+extend-exclude = [
+    ".agents",
+    "plugins/pytest-optimizer/templates",
+    "research/beautiful-readmes/evals/fixtures",
+]
 # Plugin scripts run under the user's python3, which can be as old as 3.9.
 per-file-target-version = { "plugins/*/scripts/*.py" = "py39", "plugins/goal-planner/evals/*.py" = "py39" }
 
