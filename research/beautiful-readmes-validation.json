@@ -1,0 +1,405 @@
+{
+  "schema": "beautiful-readmes-bounded-validation-v1",
+  "recorded_at": "2026-10-28T23:25:12.837538+00:00",
+  "phase_status": "PARTIAL",
+  "plugin_accepted": false,
+  "source_commit": "f5fda77a80d8de8eaf40a032b5d2779329cd572a",
+  "backup": {
+    "ref": "backup/beautiful-readmes-codex-before-refinement-20261028T222919Z",
+    "sha": "64fa8a108258dd8786acd0f050347cd73d136c07",
+    "remote_verified": true,
+    "original_research_unchanged": true,
+    "original_checksum_manifest_sha256": "617ec094ba752efb0040cf441688a0e6fb48b0f966a29dd46aef895700652870"
+  },
+  "bounds": {
+    "started_at": "2026-10-28T22:29:19Z",
+    "deadline": "2026-10-28T23:59:19Z",
+    "native_rounds_used": 2,
+    "native_round_limit": 2,
+    "correction_passes_used": 1,
+    "correction_pass_limit": 1,
+    "independent_reviews": 1,
+    "cases": 7,
+    "runs_per_arm": 1,
+    "agent_turn_limit": 20,
+    "agent_timeout_seconds": 180,
+    "concurrency_limit": 2,
+    "further_iterations_require_user_instruction": true
+  },
+  "skill": {
+    "core_lines": 62,
+    "references": [
+      {
+        "path": "plugins/beautiful-readmes/references/patterns.md",
+        "purpose": "Commit-pinned examples explain when portals, representative examples, manuals, client alternatives and asset routes help or backfire."
+      },
+      {
+        "path": "plugins/beautiful-readmes/references/contexts.md",
+        "purpose": "Conditional ecosystem and lifecycle checks prevent misleading installation, ownership, version and distribution assumptions."
+      },
+      {
+        "path": "plugins/beautiful-readmes/references/prose-rules.md",
+        "purpose": "Repository-required shared prose policy, generated from its canonical owner."
+      }
+    ],
+    "runtime_scripts": 0,
+    "research_or_eval_logs_in_runtime_instructions": false
+  },
+  "native": {
+    "status": "FAIL",
+    "claude_version": "2.1.312",
+    "cases": 7,
+    "arms_completed": 14,
+    "skill_cases_passed": 2,
+    "baseline_cases_passed": 3,
+    "skill_mean_score": 0.7928571428571428,
+    "mean_score_delta": -0.04761904761904762,
+    "superiority_demonstrated": false,
+    "first_round": "All fourteen arms aborted before grading; no behavioral evidence was accepted.",
+    "second_round": "All fourteen arms completed and were graded. Five skill scenarios failed the native reader-contract bar.",
+    "cases_detail": [
+      {
+        "case": "01-write-new-cli",
+        "with": {
+          "native_passed": false,
+          "native_score": 0.6666666666666666,
+          "completed_without_run_error": true,
+          "all_graders_ran": true,
+          "artifact_status": "PASS",
+          "artifact_issue": null,
+          "failed_graders": [
+            {
+              "name": "reader-contract",
+              "votes": [
+                false,
+                false,
+                false
+              ],
+              "explanation": "judge votes: FAIL FAIL FAIL"
+            }
+          ]
+        },
+        "without": {
+          "native_passed": true,
+          "native_score": 1,
+          "completed_without_run_error": true,
+          "all_graders_ran": true,
+          "artifact_status": "FAIL",
+          "artifact_issue": "Example does not run the supplied sample",
+          "failed_graders": []
+        }
+      },
+      {
+        "case": "02-assess-existing",
+        "with": {
+          "native_passed": false,
+          "native_score": 0.6666666666666666,
+          "completed_without_run_error": true,
+          "all_graders_ran": true,
+          "artifact_status": "PASS",
+          "artifact_issue": null,
+          "failed_graders": [
+            {
+              "name": "reader-contract",
+              "votes": [
+                false,
+                false,
+                false
+              ],
+              "explanation": "judge votes: FAIL FAIL FAIL"
+            }
+          ]
+        },
+        "without": {
+          "native_passed": false,
+          "native_score": 0.6666666666666666,
+          "completed_without_run_error": true,
+          "all_graders_ran": true,
+          "artifact_status": "PASS",
+          "artifact_issue": null,
+          "failed_graders": [
+            {
+              "name": "reader-contract",
+              "votes": [
+                false,
+                false,
+                false
+              ],
+              "explanation": "judge votes: FAIL FAIL FAIL"
+            }
+          ]
+        }
+      },
+      {
+        "case": "03-preserve-library",
+        "with": {
+          "native_passed": false,
+          "native_score": 0.6666666666666666,
+          "completed_without_run_error": true,
+          "all_graders_ran": true,
+          "artifact_status": "PASS",
+          "artifact_issue": null,
+          "failed_graders": [
+            {
+              "name": "reader-contract",
+              "votes": [
+                false,
+                false,
+                false
+              ],
+              "explanation": "judge votes: FAIL FAIL FAIL"
+            }
+          ]
+        },
+        "without": {
+          "native_passed": false,
+          "native_score": 0.6666666666666666,
+          "completed_without_run_error": true,
+          "all_graders_ran": true,
+          "artifact_status": "PASS",
+          "artifact_issue": null,
+          "failed_graders": [
+            {
+              "name": "reader-contract",
+              "votes": [
+                false,
+                false,
+                false
+              ],
+              "explanation": "judge votes: FAIL FAIL FAIL"
+            }
+          ]
+        }
+      },
+      {
+        "case": "04-generated-font",
+        "with": {
+          "native_passed": true,
+          "native_score": 1,
+          "completed_without_run_error": true,
+          "all_graders_ran": true,
+          "artifact_status": "PASS",
+          "artifact_issue": null,
+          "failed_graders": []
+        },
+        "without": {
+          "native_passed": true,
+          "native_score": 1,
+          "completed_without_run_error": true,
+          "all_graders_ran": true,
+          "artifact_status": "PASS",
+          "artifact_issue": null,
+          "failed_graders": []
+        }
+      },
+      {
+        "case": "05-client-routes",
+        "with": {
+          "native_passed": false,
+          "native_score": 0.8,
+          "completed_without_run_error": true,
+          "all_graders_ran": true,
+          "artifact_status": "PASS",
+          "artifact_issue": null,
+          "failed_graders": [
+            {
+              "name": "reader-contract",
+              "votes": [
+                false,
+                true,
+                false
+              ],
+              "explanation": "judge votes: FAIL PASS FAIL"
+            }
+          ]
+        },
+        "without": {
+          "native_passed": false,
+          "native_score": 0.8,
+          "completed_without_run_error": true,
+          "all_graders_ran": true,
+          "artifact_status": "PASS",
+          "artifact_issue": null,
+          "failed_graders": [
+            {
+              "name": "reader-contract",
+              "votes": [
+                false,
+                false,
+                false
+              ],
+              "explanation": "judge votes: FAIL FAIL FAIL"
+            }
+          ]
+        }
+      },
+      {
+        "case": "06-long-manual",
+        "with": {
+          "native_passed": true,
+          "native_score": 1,
+          "completed_without_run_error": true,
+          "all_graders_ran": true,
+          "artifact_status": "PASS",
+          "artifact_issue": null,
+          "failed_graders": []
+        },
+        "without": {
+          "native_passed": true,
+          "native_score": 1,
+          "completed_without_run_error": true,
+          "all_graders_ran": true,
+          "artifact_status": "PASS",
+          "artifact_issue": null,
+          "failed_graders": []
+        }
+      },
+      {
+        "case": "07-example-contracts",
+        "with": {
+          "native_passed": false,
+          "native_score": 0.75,
+          "completed_without_run_error": true,
+          "all_graders_ran": true,
+          "artifact_status": "PASS",
+          "artifact_issue": null,
+          "failed_graders": [
+            {
+              "name": "reader-contract",
+              "votes": [
+                false,
+                false,
+                false
+              ],
+              "explanation": "judge votes: FAIL FAIL FAIL"
+            }
+          ]
+        },
+        "without": {
+          "native_passed": false,
+          "native_score": 0.75,
+          "completed_without_run_error": true,
+          "all_graders_ran": true,
+          "artifact_status": "PASS",
+          "artifact_issue": null,
+          "failed_graders": [
+            {
+              "name": "reader-contract",
+              "votes": [
+                false,
+                false,
+                false
+              ],
+              "explanation": "judge votes: FAIL FAIL FAIL"
+            }
+          ]
+        }
+      }
+    ]
+  },
+  "artifact_checks": {
+    "status": "FAIL",
+    "skill_arms_passed": 7,
+    "scope": "Input hashes, local routes, incoming anchors, generated/template agreement, license preservation and allowlisted executable examples. Native prose judgments remain separate.",
+    "baseline_note": "The baseline CLI artifact checker flags a non-sample shell command; its scope requires adjudication before claiming a comparative artifact advantage."
+  },
+  "model_input_correspondence": {
+    "round_2_packet_sha256": "4d18ce668261cd2d7e1b0c65ba289404cd177e7b2b0b94fcafd082e6e1cb7199",
+    "model_inputs_unchanged_at_source_commit": true,
+    "model_input_tree_sha256": "126a563c335ccb03b44154194631058aeef096b7a97e2f6a2e02d5369cb28d66",
+    "post_run_changes": [
+      "Artifact quarantine handling and isolated fixture execution",
+      "Regression checks for arm binding, quarantine and usage synopsis scope",
+      "Evaluation command working-directory documentation"
+    ],
+    "no_native_regrading_after_postcheck_changes": true
+  },
+  "local_project_checks": {
+    "format": "PASS",
+    "lint": "PASS",
+    "type_check_default": "PASS",
+    "type_check_python39": "PASS",
+    "full_tests": {
+      "status": "PASS",
+      "passed": 2276,
+      "subtests": 28,
+      "seconds": 99.65
+    },
+    "python39_plugin_tests": {
+      "status": "PASS",
+      "passed": 2181,
+      "skipped": 1,
+      "seconds": 156.54
+    },
+    "isolated_claude_codex_lifecycle": {
+      "status": "PASS",
+      "checks_passed": 486
+    },
+    "routing": {
+      "status": "PASS",
+      "trigger_prompts_passed": 135
+    },
+    "marketplace_lint": "PASS",
+    "manifest_sync": "PASS",
+    "portable_drift": "PASS",
+    "plugin_versions": "PASS"
+  },
+  "independent_review": {
+    "input_packet_sha256": "fce2bf036b73d5f1f145dd9ce42e7bef89b6ca1f12cc7abddcc20eeda46606a9",
+    "core_verdict": "Keep the skill; no material deletion-test cuts. Seven pinned examples verified at their exact commits.",
+    "material_findings_addressed": {
+      "file_judge_scope": "Corrected README-only criteria and added explicit note-existence graders.",
+      "arm_accounting": "Postcheck joins all seven native cases and both arms to scaffold evidence via trace roots; empty reports and borrowed baseline workspaces are rejected.",
+      "fixture_contract": "Describes brace-prefixed JSON-form layouts rather than malformed JSON.",
+      "test_namespace": "Moved Python helpers into the uniquely named readme_eval_checks package."
+    },
+    "scope_limit": "One frozen-source review; no second full review or extra model judge rounds."
+  },
+  "remaining_acceptance": [
+    {
+      "criterion": "All required native reader-contract judgments pass",
+      "status": "FAIL",
+      "cases": [
+        "01-write-new-cli",
+        "02-assess-existing",
+        "03-preserve-library",
+        "05-client-routes",
+        "07-example-contracts"
+      ],
+      "next_action": "Adjudicate the recorded judgments against source and artifacts before proposing further changes or evaluations. Do not waive or resample these failures."
+    },
+    {
+      "criterion": "Comparative artifact validity",
+      "status": "UNVERIFIED",
+      "next_action": "Review the baseline CLI non-sample-command finding separately from plugin quality."
+    }
+  ],
+  "delivery_ci": {
+    "status_at_record_creation": "PENDING_FINAL_DELIVERY_HEAD",
+    "authoritative_location": "https://github.com/tony/skills/pull/13/checks",
+    "note": "Final exact-head job results belong to the PR handoff; this record does not assert CI completion."
+  },
+  "retained_local_evidence": [
+    {
+      "path": "evals/results/beautiful-readmes-phase-20261028T222919Z/native-round-1.json",
+      "sha256": "2c76c378f5fc04ad0b3c8edc65a4d6fae422ba56353f2e261b17643ce3659c5a"
+    },
+    {
+      "path": "evals/results/beautiful-readmes-phase-20261028T222919Z/native-round-2.json",
+      "sha256": "3bfddf1095544fb34fcbdee1e72d6846e2118b9cfc3a9e5a61138493ba72ec76"
+    },
+    {
+      "path": "evals/results/beautiful-readmes-phase-20261028T222919Z/artifact-round-2-final.json",
+      "sha256": "820e92a3ca6e7fa9793430c080516c736dce3489d36cfdf3545847d3042b9734"
+    },
+    {
+      "path": "evals/results/beautiful-readmes-phase-20261028T222919Z/round-1-inputs.json",
+      "sha256": "fce2bf036b73d5f1f145dd9ce42e7bef89b6ca1f12cc7abddcc20eeda46606a9"
+    },
+    {
+      "path": "evals/results/beautiful-readmes-phase-20261028T222919Z/round-2-inputs.json",
+      "sha256": "4d18ce668261cd2d7e1b0c65ba289404cd177e7b2b0b94fcafd082e6e1cb7199"
+    }
+  ],
+  "reopening": "Further implementation or native evaluation requires a new user instruction. The bounded phase is complete as a checkpoint, not plugin acceptance."
+}
