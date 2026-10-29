@@ -1,0 +1,33 @@
+{
+  "skill_name": "beautiful-readmes",
+  "trigger": {
+    "positive": [
+      {
+        "prompt": "Assess this README for reader usefulness and scannability without edits",
+        "top_k": 1
+      },
+      {
+        "prompt": "Write a README with complete examples and clear setup for this library",
+        "top_k": 1
+      },
+      {
+        "prompt": "Improve our README while preserving useful project voice and compatibility details",
+        "top_k": 1
+      }
+    ],
+    "negative": [
+      {
+        "prompt": "trim the comments in this retry helper",
+        "owner": "trim-comments"
+      },
+      {
+        "prompt": "keep this commit message tight, no filler and no story of what I tried",
+        "owner": "lean-writing"
+      },
+      {
+        "prompt": "iterate on this draft with critique passes until it is better",
+        "owner": "refine"
+      }
+    ]
+  }
+}
