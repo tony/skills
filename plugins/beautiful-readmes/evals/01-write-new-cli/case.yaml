@@ -1,0 +1,45 @@
+schema_version: '1.0'
+name: 01-write-new-cli
+description: write new cli
+tags:
+- fixture
+- readme
+context:
+  scaffold_script: scaffold.sh
+execution:
+  prompt: Write a concise GitHub README for this project. Help a first-time user understand
+    it and get a useful result. Read the supplied source and project facts. Save README.md and
+    a short validation note under outputs/. Do not invent a published package, URL, or support
+    claim. Read the supplied inputs in project/. README examples are for a user in the project
+    root; outputs/ is only the handoff directory. Keep project/ unchanged. Save the short validation
+    note as outputs/validation.md.
+  max_turns: 20
+  timeout_seconds: 180
+  allowed_tools:
+  - Read
+  - Glob
+  - Grep
+  - Bash
+  - Write
+  - Edit
+  - Skill
+  disallowed_tools:
+  - WebFetch
+  - WebSearch
+runs: 1
+graders:
+- name: artifact-written
+  type: file_exists
+  path: outputs/README.md
+- name: reader-contract
+  type: llm
+  focus:
+    source: file
+    path: outputs/README.md
+  criteria: The README explains UTF-8 line counting with blank and whitespace-only lines excluded,
+    Python 3.11+, local-checkout use, read-only behavior, and a complete real sample command
+    with expected output 2. It invents no package, URL, dependency or platform guarantee. Commands
+    and output are distinguishable.
+- name: validation-note
+  type: file_exists
+  path: outputs/validation.md
