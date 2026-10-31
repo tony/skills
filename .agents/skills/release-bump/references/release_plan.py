@@ -17,7 +17,6 @@ Tags are ordered by parsed version, never by ``git tag --sort``, which ranks a
 prerelease above its own final unless ``versionsort.suffix`` is set.
 """
 
-# pyright: reportAny=false, reportExplicitAny=false, reportUnusedCallResult=false
 import argparse
 import json
 import re

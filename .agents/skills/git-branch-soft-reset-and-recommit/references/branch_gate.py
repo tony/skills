@@ -36,7 +36,6 @@ Subcommands (run from inside the repository):
 """
 
 # ruff: noqa: S603, S607, EM101
-# pyright: reportAny=false, reportUnusedCallResult=false
 import argparse
 import os
 import re

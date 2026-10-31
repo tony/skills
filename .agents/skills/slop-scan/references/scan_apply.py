@@ -7,7 +7,6 @@ has a name and shell command, run from the isolated repository root.
 """
 
 # ruff: noqa: EM101, TRY003
-# pyright: reportAny=false, reportExplicitAny=false, reportUnusedCallResult=false
 
 import argparse
 import json
@@ -198,7 +197,7 @@ def _publish(  # noqa: PLR0913
         return result
     finally:
         # Only this process may remove the lock it acquired.
-        if acquired:
+        if acquired:  # ty: ignore[redundant-condition-strict]
             with _cleanup(lock):
                 lock.unlink(missing_ok=True)
     removed = False

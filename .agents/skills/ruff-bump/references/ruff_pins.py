@@ -33,7 +33,6 @@ when the release or a matching file is missing.
 """
 
 # ruff: noqa: S603, S607
-# pyright: reportAny=false, reportExplicitAny=false, reportUnusedCallResult=false
 import argparse
 import fnmatch
 import json

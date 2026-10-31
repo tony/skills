@@ -12,7 +12,7 @@ Run ``topic.py <command> --help`` for each command.
 """
 
 import argparse
-import concurrent.futures
+import asyncio
 import contextlib
 import csv
 import difflib
@@ -440,7 +440,7 @@ def resolve_root(
     found = sorted(users.glob("*/Documents")) if wsl else None
     hints = windows_users(env.get("PATH", ""))
     if wsl:
-        with contextlib.suppress(KeyError, OSError):  # < 3.13: no login name, no passwd entry
+        with contextlib.suppress(OSError):
             hints.append(getpass.getuser())
     root = pick_root(home or Path.home(), found, hints)
     temp = Path(tempfile.gettempdir()).resolve()
@@ -1251,7 +1251,8 @@ class PublicRedirects(urllib.request.HTTPRedirectHandler):
         super().__init__()
         self.resolve: Resolver = resolve
 
-    def redirect_request(  # noqa: PLR0913, PLR0917  # pyright: ignore[reportImplicitOverride]
+    @t.override
+    def redirect_request(
         self,
         req: urllib.request.Request,
         fp: t.IO[bytes],
@@ -1296,13 +1297,15 @@ class VettedHTTPHandler(urllib.request.HTTPHandler):
         super().__init__()
         self.resolve: Resolver = resolve
 
-    def http_open(self, req: urllib.request.Request) -> http.client.HTTPResponse:  # pyright: ignore[reportImplicitOverride]
+    @t.override
+    def http_open(self, req: urllib.request.Request) -> http.client.HTTPResponse:
         """Open ``req`` over a connection pinned to the vetted address."""
         resolve = self.resolve
 
         @t.final
         class Conn(http.client.HTTPConnection):
-            def connect(self) -> None:  # pyright: ignore[reportImplicitOverride]
+            @t.override
+            def connect(self) -> None:
                 self.sock = connect_vetted(self.host, self.port, resolve, self.timeout)
 
         return self.do_open(Conn, req)
@@ -1317,15 +1320,17 @@ class VettedHTTPSHandler(urllib.request.HTTPSHandler):
         super().__init__(context=ssl.create_default_context())
         self.resolve: Resolver = resolve
 
-    def https_open(self, req: urllib.request.Request) -> http.client.HTTPResponse:  # pyright: ignore[reportImplicitOverride]
+    @t.override
+    def https_open(self, req: urllib.request.Request) -> http.client.HTTPResponse:
         """Open ``req`` over a TLS connection pinned to the vetted address."""
         resolve = self.resolve
 
         @t.final
         class Conn(http.client.HTTPSConnection):
-            def connect(self) -> None:  # pyright: ignore[reportImplicitOverride]
+            @t.override
+            def connect(self) -> None:
                 sock = connect_vetted(self.host, self.port, resolve, self.timeout)
-                self.sock = self._context.wrap_socket(sock, server_hostname=self.host)  # pyright: ignore[reportAttributeAccessIssue, reportUnknownMemberType]
+                self.sock = self._context.wrap_socket(sock, server_hostname=self.host)  # ty: ignore[unresolved-attribute]
 
         return self.do_open(Conn, req, context=ssl.create_default_context())
 
@@ -1912,7 +1917,7 @@ def updated_on(run: Path, day: str) -> str:
         log = (run / "index.md").read_text(encoding="utf-8")
     except OSError:
         return day
-    return max([day, *re.findall(r"(?m)^- (\d{4}-\d{2}-\d{2}):", log)])
+    return max([day, *map(str, re.findall(r"(?m)^- (\d{4}-\d{2}-\d{2}):", log))])
 
 
 def next_step(row: Row) -> tuple[int, str]:
@@ -2320,13 +2325,22 @@ def check_all(run: Path, rows: list[Row], fetch: Fetch | None) -> list[Row]:
     for i, row in enumerate(rows):
         by_host.setdefault(host(_str(row, "url")), []).append(i)
     results: list[Row] = [{} for _ in rows]
+    limit = asyncio.Semaphore(min(8, len(by_host) or 1))
 
-    def work(indexes: list[int]) -> None:
-        for i in indexes:
-            results[i] = check_source(run, rows[i], fetch)
+    async def work(indexes: list[int]) -> None:
+        async with limit:
+            for i in indexes:
+                results[i] = await asyncio.to_thread(check_source, run, rows[i], fetch)
 
-    with concurrent.futures.ThreadPoolExecutor(max_workers=min(8, len(by_host) or 1)) as pool:
-        _ = list(pool.map(work, by_host.values()))
+    async def main() -> None:
+        async with asyncio.TaskGroup() as group:
+            for indexes in by_host.values():
+                group.create_task(work(indexes))
+
+    try:
+        asyncio.run(main())
+    except ExceptionGroup as group:
+        raise group.exceptions[0] from None
     return results
 
 
@@ -2390,7 +2404,7 @@ def host(url: str) -> str:
     ('github.com', '')
     """
     m = re.match(r"https?://(?:www\.)?([^/:]+)", url, re.IGNORECASE)
-    return m[1].lower() if m else ""
+    return str(m[1]).lower() if m else ""
 
 
 def cmd_links(a: Args) -> int:
@@ -2951,7 +2965,7 @@ def confidence_of(text: str) -> str:
     m = CONFIDENCE_RE.search(plain(text))
     if not m:
         return ""
-    level = (m[1] or m[2]).lower()
+    level = str(m[1] or m[2]).lower()
     return "medium" if level == "moderate" else level
 
 
@@ -3367,7 +3381,7 @@ def brief_sentences(text: str) -> list[tuple[int, str]]:
             for x in re.split(r"(?<=[.!?])\s+", joined)
             if len(x.split()) >= MIN_BRIEF_WORDS
         )
-        para, first = [], 0
+        para, first = list[str](), 0
     return out
 
 

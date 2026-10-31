@@ -657,7 +657,7 @@ def parse_locator(locator: str) -> tuple[str, int, int] | None:
     last = int(match.group(3) or first)
     if match.group(2) is not None and not 1 <= first <= last:
         return None
-    return match.group(1), first, last
+    return str(match.group(1)), first, last
 
 
 def _squash(text: str) -> str:

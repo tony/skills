@@ -16,7 +16,6 @@ never trusted. A failed apply leaves the entry in place and exits 1.
 """
 
 # ruff: noqa: EM102, TRY003
-# pyright: reportAny=false, reportUnusedCallResult=false
 
 import re
 import subprocess

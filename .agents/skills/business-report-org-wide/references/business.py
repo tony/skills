@@ -41,7 +41,7 @@ from urllib.parse import urlsplit
 if t.TYPE_CHECKING:
     from collections.abc import Callable, Collection, Sequence
 
-    Subparsers = argparse._SubParsersAction[argparse.ArgumentParser]  # noqa: SLF001  # pyright: ignore[reportPrivateUsage]
+    Subparsers = argparse._SubParsersAction[argparse.ArgumentParser]  # noqa: SLF001
 
 DIRECTIONAL_BELOW = 20
 MIN_OBSERVATIONS = 2
@@ -998,7 +998,7 @@ def _check_figures(
             problems.append(f"{label}: BENCHMARKED figure has no pinned link: {unit[:60]}")
         if "MEASURED" not in unit:
             continue
-        cited: list[str] = CITATION.findall(unit)
+        cited = [str(c) for c in CITATION.findall(unit)]
         if not cited:
             problems.append(f"{label}: MEASURED figure cites no sources.md entry: {unit[:60]}")
         problems.extend(
@@ -1313,7 +1313,7 @@ def _json_documents(text: str) -> list[object]:
         if pos >= len(text):
             return docs
         doc: object
-        doc, pos = decoder.raw_decode(text, pos)  # pyright: ignore[reportAny]
+        doc, pos = decoder.raw_decode(text, pos)
         docs.append(doc)
 
 
@@ -1652,7 +1652,7 @@ def default_roots() -> list[Path]:
 
 def _read(paths: list[str]) -> str:
     if not paths:
-        return sys.stdin.read()
+        return str(sys.stdin.read())
     return "\n".join(Path(p).read_text(encoding="utf-8") for p in paths)
 
 

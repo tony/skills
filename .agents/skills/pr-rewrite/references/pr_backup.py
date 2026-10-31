@@ -12,13 +12,13 @@ CRLF versus LF.
 """
 
 # ruff: noqa: S603, S607, PLR2004
-# pyright: reportUnusedCallResult=false, reportAny=false
 import json
 import subprocess
 import sys
 import tempfile
 from datetime import UTC, datetime
 from pathlib import Path
+from typing import cast
 
 
 def _run(*args: str) -> str:
@@ -31,7 +31,11 @@ def _run(*args: str) -> str:
 
 def _fetch(pr: str) -> dict[str, object]:
     args = ["gh", "pr", "view", *([pr] if pr else []), "--json", "number,title,body"]
-    return json.loads(_run(*args))
+    pr_json: object = json.loads(_run(*args))
+    if not isinstance(pr_json, dict):
+        sys.stderr.write("gh pr view returned unexpected JSON\n")
+        raise SystemExit(1)
+    return cast("dict[str, object]", pr_json)
 
 
 def _same(path: Path, text: str) -> bool:

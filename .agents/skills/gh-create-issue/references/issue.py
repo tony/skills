@@ -54,8 +54,6 @@ matched text.
 """
 
 # ruff: noqa: S603, S607, D103, PLR2004, PLR0911
-# pyright: reportAny=false, reportExplicitAny=false, reportUnknownVariableType=false
-# pyright: reportUnknownMemberType=false, reportUnknownArgumentType=false
 import ipaddress
 import json
 import os
@@ -281,7 +279,8 @@ def _strip_comment(text: str) -> str:
         while quote == "'" and end > 0 and text[end + 1 : end + 2] == "'":
             end = text.find(quote, end + 2)
         return text[: end + 1] if end > 0 else text
-    return re.split(r"\s#", text, maxsplit=1)[0].rstrip()
+    head = str(re.split(r"\s#", text, maxsplit=1)[0])
+    return head.rstrip()
 
 
 def _scalar(text: str, no: int) -> Json:
@@ -862,13 +861,14 @@ def fetch_args(url: str) -> tuple[str, list[str]] | None:
     m = _URL.match(url.strip())
     if not m:
         return None
+    host = str(m.group("host"))
     repo, num, frag = m.group("repo"), m.group("num"), m.group("frag")
     if frag:
         route = "pulls" if frag.startswith("discussion_r") else "issues"
         cid = re.sub(r"\D", "", frag)
-        return m.group("host"), ["api", f"repos/{repo}/{route}/comments/{cid}", "--jq", ".body"]
+        return host, ["api", f"repos/{repo}/{route}/comments/{cid}", "--jq", ".body"]
     verb = "issue" if m.group("kind") == "issues" else "pr"
-    return m.group("host"), [verb, "view", num, "--repo", repo, "--json", "body", "--jq", ".body"]
+    return host, [verb, "view", num, "--repo", repo, "--json", "body", "--jq", ".body"]
 
 
 def cmd_fetch(url: str) -> int:

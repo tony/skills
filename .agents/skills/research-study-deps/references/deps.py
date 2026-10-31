@@ -6,8 +6,6 @@ Every command prints one JSON object on stdout. A refusal prints
 and exits 2. Run ``deps.py <command> --help`` for each command.
 """
 
-# pyright: reportUnusedCallResult=false
-
 import argparse
 import io
 import json
@@ -302,7 +300,7 @@ def toml_tables(text: str) -> tuple[dict[str, dict[str, str]], dict[str, list[di
             continue
         pair = re.match(r"^([A-Za-z0-9_.\"-]+)\s*=\s*(.*)$", stripped)
         if pair:
-            key, value = pair.group(1).strip('"'), pair.group(2)
+            key, value = str(pair.group(1)).strip('"'), str(pair.group(2))
             if _balanced(value):
                 current[key] = value
             else:
@@ -379,7 +377,7 @@ def _npm_declared(rng: str) -> str | None:
 
 def _pep508(spec: str) -> tuple[str, str] | None:
     match = re.match(r"^\s*([A-Za-z0-9][A-Za-z0-9._-]*)\s*(?:\[[^\]]*\])?\s*([^;]*)", spec)
-    return (match.group(1), match.group(2).strip()) if match else None
+    return (str(match.group(1)), str(match.group(2)).strip()) if match else None
 
 
 def _py_deps(path: Path) -> list[dict[str, object]]:
@@ -414,7 +412,7 @@ def _py_deps(path: Path) -> list[dict[str, object]]:
 
 def _inline(raw: str) -> str:
     match = re.search(r'version\s*=\s*"([^"]*)"', raw)
-    return match.group(1) if match else ""
+    return str(match.group(1)) if match else ""
 
 
 def _cargo_deps(path: Path) -> list[dict[str, object]]:
@@ -1190,7 +1188,7 @@ def build_parser() -> argparse.ArgumentParser:
 
 
 def _read_arg(name: str) -> str:
-    return sys.stdin.read() if name == "-" else Path(name).read_text(encoding="utf-8")
+    return str(sys.stdin.read() if name == "-" else Path(name).read_text(encoding="utf-8"))
 
 
 class Args(argparse.Namespace):

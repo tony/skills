@@ -1,6 +1,6 @@
 {
   "name": "pr",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Draft, refresh, rewrite, and review PR descriptions, and draft merge commit messages, from the branch diff.",
   "author": {
     "name": "Tony Narlock",

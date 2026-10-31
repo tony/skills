@@ -5,7 +5,6 @@ Every command emits JSON. ``render --input draft.json --save`` publishes a
 revision; omitting ``--save`` never writes. ``check`` verifies a saved bundle.
 """
 
-# pyright: reportAny=false, reportUnusedCallResult=false
 import argparse
 import datetime as dt
 import hashlib

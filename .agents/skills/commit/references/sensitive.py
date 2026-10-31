@@ -14,7 +14,6 @@ commit must not proceed.
 """
 
 # ruff: noqa: S603, S607
-# pyright: reportUnusedCallResult=false
 import os
 import re
 import subprocess

@@ -10,12 +10,14 @@ for type ``Bot`` or a login ending in ``[bot]``.
 Exit codes: 0 listed (possibly empty), 4 ``gh`` failed (stderr says why).
 """
 
-# pyright: reportAny=false, reportUnusedCallResult=false
 import argparse
+import asyncio
 import json
 import sys
+from functools import partial
 
-from ghcli import GhError, gh  # pyright: ignore[reportImplicitRelativeImport]
+import ghcli
+from ghcli import GhError, gh
 
 _SURFACES = {
     "reviews": "pulls/{n}/reviews",
@@ -66,20 +68,31 @@ def collect(limit: int) -> list[dict[str, object]]:
         "--jq",
         ".[].number",
     )
+    reads = [
+        (number, surface, path) for number in listing.split() for surface, path in _SURFACES.items()
+    ]
+    raws = asyncio.run(
+        ghcli.gather(
+            [
+                partial(
+                    gh,
+                    "api",
+                    f"repos/{{owner}}/{{repo}}/{path.format(n=number)}",
+                    "--paginate",
+                    "--jq",
+                    _USER,
+                )
+                for number, _, path in reads
+            ],
+            limit=4,
+        )
+    )
     seen: list[tuple[str, str, str, str]] = []
-    for number in listing.split():
-        for surface, path in _SURFACES.items():
-            raw = gh(
-                "api",
-                f"repos/{{owner}}/{{repo}}/{path.format(n=number)}",
-                "--paginate",
-                "--jq",
-                _USER,
-            )
-            for line in raw.splitlines():
-                login, _, kind = line.partition("\t")
-                if login:
-                    seen.append((number, surface, login, kind))
+    for (number, surface, _), raw in zip(reads, raws, strict=True):
+        for line in raw.splitlines():
+            login, _, kind = line.partition("\t")
+            if login:
+                seen.append((number, surface, login, kind))
     return summarize(seen)
 
 

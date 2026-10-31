@@ -17,12 +17,11 @@ exactly the stash's (none, without a SHA).
 """
 
 # ruff: noqa: S603, S607
-# pyright: reportUnusedCallResult=false
 import json
 import subprocess
 import sys
 
-from repo_state import changed_paths  # pyright: ignore[reportImplicitRelativeImport]
+from repo_state import changed_paths
 
 _SHA_ARGS = 2
 

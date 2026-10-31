@@ -13,7 +13,6 @@ when a path matches no file, or when nothing changed.
 """
 
 # ruff: noqa: S603
-# pyright: reportAny=false, reportUnusedCallResult=false
 import argparse
 import os
 import re
@@ -103,7 +102,8 @@ def _unquote(path: str) -> str:
     simple = {"t": "\t", "n": "\n", '"': '"', "\\": "\\"}
 
     def sub(m: re.Match[str]) -> str:
-        return chr(int(m.group(1), 8)) if m.group(1) else simple.get(m.group(2), m.group(2))
+        octal, char = str(m.group(1) or ""), str(m.group(2))
+        return chr(int(octal, 8)) if octal else simple.get(char, char)
 
     return _ESCAPE.sub(sub, path[1:-1])
 

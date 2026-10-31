@@ -1,6 +1,6 @@
 {
   "name": "terraform",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Upgrade Terraform and OpenTofu versions. Discovers every root module, moves provider constraints together because they combine across modules, and refreshes lock files.",
   "author": {
     "name": "Tony Narlock",

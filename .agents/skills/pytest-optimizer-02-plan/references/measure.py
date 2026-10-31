@@ -12,7 +12,6 @@ suite's own status.
 Run ``measure.py <command> --help`` for arguments.
 """
 
-# pyright: reportAny=false, reportExplicitAny=false, reportUnusedCallResult=false
 import argparse
 import datetime as dt
 import hashlib
@@ -412,8 +411,8 @@ def expected_total(
         if through is not None and item["order"] > through:
             break
         if item["order"] in applied or item["order"] == through:
-            running += item["expected_total"] - prev
-        prev = item["expected_total"]
+            running += int(item["expected_total"]) - prev
+        prev = int(item["expected_total"])
     return running
 
 
@@ -1000,7 +999,7 @@ def log_step(  # noqa: PLR0913, PLR0917
     by_order = {i["order"]: i for i in plan}
     stamp = dt.datetime.now(dt.UTC).isoformat(timespec="seconds")
     rest = [e for e in log if e["order"] != order]
-    old = next((e for e in log if e["order"] == order), t.cast("dict[str, t.Any]", {}))
+    old = next((e for e in log if e["order"] == order), {})
     base = {"order": order, "id": by_order[order]["id"], "ts": stamp}
     if action == "begin":
         entry = {**base, "applied": False, "skip_reason": None, **fields}

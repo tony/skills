@@ -21,7 +21,6 @@ deletes DIR; it exits 2 and keeps DIR when a file is missing or malformed.
 """
 
 # ruff: noqa: D103
-# pyright: reportAny=false, reportUnusedCallResult=false
 
 import argparse
 import difflib

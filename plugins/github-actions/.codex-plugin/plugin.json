@@ -1,6 +1,6 @@
 {
   "name": "github-actions",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Update GitHub Actions pins fleet-wide. Verifies tags, researches release notes, commits each action separately, and supersedes Dependabot PRs.",
   "author": {
     "name": "Tony Narlock",

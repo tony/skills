@@ -11,7 +11,6 @@ Commands: inputs, stale, exists, start, finish, reset, capture, apply, gate, lan
 Run ``isolate.py <command> --help`` for arguments.
 """
 
-# pyright: reportAny=false, reportExplicitAny=false, reportUnusedCallResult=false
 import argparse
 import hashlib
 import itertools

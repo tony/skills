@@ -33,8 +33,6 @@ line counts as added when ``git diff BASE HEAD`` added it; without
 """
 
 # ruff: noqa: ANN401, PLR2004
-# pyright: reportAny=false, reportExplicitAny=false, reportUnusedCallResult=false
-# pyright: reportUnknownVariableType=false, reportUnknownArgumentType=false
 
 import argparse
 import json

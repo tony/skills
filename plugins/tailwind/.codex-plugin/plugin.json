@@ -1,6 +1,6 @@
 {
   "name": "tailwind",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Detect and fix inconsistent spacing, margin/gap mixing, and padding asymmetry in Tailwind CSS layouts.",
   "author": {
     "name": "Tony Narlock",
