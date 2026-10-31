@@ -1,6 +1,6 @@
 # Merge Readiness and Merge Conventions
 
-Shared contract for `/merge-pr:this` and `/merge-pr:multiple`. Both
+Shared contract for `/merge-pr:merge-one` and `/merge-pr:merge-many`. Both
 commands read this file before touching any PR.
 
 ## Contents
@@ -37,6 +37,10 @@ git state is mixed in:
   skipped: --repo names another repository."
 
 ## Readiness gate
+
+A question about readiness (is it merge-worthy, what blocks it, what is
+outstanding) is not a request to merge. Answer it with the checks below,
+read-only, and stop: no rebase, push, or merge.
 
 A PR merges only after every check below is confirmed. When any of
 them is ambiguous, do discovery first (read the PR, its checks, and
@@ -86,9 +90,9 @@ With `--repo` naming another repository (scope `remote`), halt here: nothing
 below can run against a repository that is not the working directory's.
 A `CLEAN` PR is never rebased or force-pushed, even when an earlier merge
 moved trunk. Consent differs by command on purpose:
-`/merge-pr:this` confirms before rebasing, because a rebase expands "merge
-this PR"; `/merge-pr:multiple` asks once for every PR found behind or conflicting,
-naming each force-push, and halts instead when it cannot ask.
+`/merge-pr:merge-one` confirms before rebasing, because a rebase expands
+"merge this PR"; `/merge-pr:merge-many` asks once for every PR found behind
+or conflicting, naming each force-push, and halts instead when it cannot ask.
 
 1. Check that the working tree is clean (`git status --porcelain` prints
    nothing); if not, halt and ask the user to commit or stash. Note the

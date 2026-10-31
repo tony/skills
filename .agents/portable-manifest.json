@@ -482,28 +482,28 @@
       "bytes": 13548
     },
     {
-      "name": "merge-pr-multiple",
+      "name": "merge-pr-merge-many",
       "sources": [
-        "plugins/merge-pr/skills/multiple/SKILL.md"
+        "plugins/merge-pr/skills/merge-many/SKILL.md"
       ],
       "bundled": {
         "references/merge-readiness.md": "plugins/merge-pr/references/merge-readiness.md",
         "references/merge_pr.py": "plugins/merge-pr/scripts/merge_pr.py",
         "references/prose-rules.md": "plugins/merge-pr/references/prose-rules.md"
       },
-      "bytes": 42246
+      "bytes": 42397
     },
     {
-      "name": "merge-pr-this",
+      "name": "merge-pr-merge-one",
       "sources": [
-        "plugins/merge-pr/skills/this/SKILL.md"
+        "plugins/merge-pr/skills/merge-one/SKILL.md"
       ],
       "bundled": {
         "references/merge-readiness.md": "plugins/merge-pr/references/merge-readiness.md",
         "references/merge_pr.py": "plugins/merge-pr/scripts/merge_pr.py",
         "references/prose-rules.md": "plugins/merge-pr/references/prose-rules.md"
       },
-      "bytes": 41060
+      "bytes": 41230
     },
     {
       "name": "model-cli-agy",
@@ -1937,7 +1937,7 @@
       "ticket-rebuild"
     ],
     "../../scripts/": [
-      "merge-pr-multiple",
+      "merge-pr-merge-many",
       "pr-refresh",
       "pr-rewrite",
       "pytest-optimizer",
@@ -1981,8 +1981,8 @@
       "spike-ratchet"
     ],
     "../scripts/": [
-      "merge-pr-multiple",
-      "merge-pr-this",
+      "merge-pr-merge-many",
+      "merge-pr-merge-one",
       "respond-action",
       "respond-check",
       "respond-goal",

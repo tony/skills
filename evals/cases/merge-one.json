@@ -1,0 +1,29 @@
+{
+  "skill_name": "merge-one",
+  "trigger": {
+    "positive": [
+      {
+        "prompt": "can you just merge julia#17 now in the merge commit style we ask for please? no need to wait on docs",
+        "top_k": 1
+      },
+      {
+        "prompt": "merge it as a merge commit after ci passes",
+        "top_k": 1
+      },
+      {
+        "prompt": "merge this PR once CI is green and sync main",
+        "top_k": 1
+      }
+    ],
+    "negative": [
+      {
+        "prompt": "push and open a pr against main",
+        "owner": "pr"
+      },
+      {
+        "prompt": "fetch, rebase onto trunk, fix conflicts, and force push",
+        "owner": "rebase"
+      }
+    ]
+  }
+}

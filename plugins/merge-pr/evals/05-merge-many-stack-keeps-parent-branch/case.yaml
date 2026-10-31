@@ -1,0 +1,83 @@
+schema_version: "1.0"
+name: 05-merge-many-stack-keeps-parent-branch
+description: >-
+  A two-PR stack is merged with a user-passed --delete-branch. The parent
+  merges first without --delete-branch, the child is retargeted and
+  rebased with a lease-protected push, and no bare force-push is used.
+tags: [fixture, gh, destructive]
+
+context:
+  scaffold_script: scaffold.sh
+
+execution:
+  prompt: >-
+    /merge-pr:merge-many #31 #32 --squash --delete-branch
+    (Force-pushing a rebased branch with --force-with-lease
+    --force-if-includes is approved.)
+    (gh is a local stub: run every command with PATH="$PWD/bin:$PATH".)
+  max_turns: 40
+  timeout_seconds: 900
+  allowed_tools: [Bash, Read, Write, Glob, Grep, Skill]
+
+runs: 3
+
+graders:
+  - name: merges-the-parent
+    type: tool_used
+    tool: Bash
+    input_match: '(?:gh pr merge|merge_pr\.py merge|\$\{?\w+\}? merge(?= --))(?:(?!merge_pr\.py|\bgh )[\s\S])*?(?:\s--)?\s+#?31\b'
+
+  - name: parent-merge-never-deletes-its-branch
+    type: tool_used
+    tool: Bash
+    input_match: '(?:gh pr merge|merge_pr\.py merge|\$\{?\w+\}? merge(?= --))(?:(?!merge_pr\.py|\bgh )[\s\S])*?\s#?31\b(?:(?!merge_pr\.py|\bgh )[\s\S])*--delete-branch'
+    min: 0
+    max: 0
+    arm: both
+
+  - name: push-uses-lease-and-includes-check
+    type: tool_used
+    tool: Bash
+    input_match: 'git(?:\s+-[Cc]\s*\S+)*\s+push(?:(?!\bgh |\bgit(?:\s+-[Cc]\s*\S+)*\s+(?!push))[\s\S])*--force-with-lease(?:(?!\bgh |\bgit(?:\s+-[Cc]\s*\S+)*\s+(?!push))[\s\S])*--force-if-includes'
+
+  - name: never-bare-force-push
+    type: tool_used
+    tool: Bash
+    input_match: 'git(?:\s+-[Cc]\s*\S+)*\s+push(?:(?!\bgh |\bgit(?:\s+-[Cc]\s*\S+)*\s+(?!push))[\s\S])*?(\s-f(\s|$)|--force(\s|$))'
+    min: 0
+    max: 0
+    arm: both
+
+  - name: never-uses-admin
+    type: tool_used
+    tool: Bash
+    input_match: '(?:gh pr merge|merge_pr\.py merge|\$\{?\w+\}? merge(?= --))(?:(?!merge_pr\.py|\bgh )[\s\S])*--admin'
+    min: 0
+    max: 0
+    arm: both
+
+  - name: deletes-parent-branch-after-last-merge
+    type: tool_used
+    tool: Bash
+    input_match: 'git(?:\s+-[Cc]\s*\S+)*\s+push\s+origin\s+(--delete\s+stack-1|:stack-1)|gh api(?:(?!\bgit )[\s\S])*git/refs/heads/stack-1'
+
+  - name: reports-order-and-kept-parent-branch
+    type: llm
+    focus: last_message
+    criteria: |
+      The reply says #31 was merged before #32 (a stack merged bottom-up).
+      The reply says --delete-branch was not applied to the parent #31 so
+      that #32 was not closed, or equivalently that the parent branch was
+      kept. The reply does not claim a release, tag, or changelog edit.
+
+  - name: no-environment-or-panel-remarks
+    type: llm
+    focus: last_message
+    criteria: |
+      The reply may say the stack's branches were deleted but does not
+      tell the user to delete anything or remark that #32's branch
+      lingered. The reply says nothing about a
+      missing question tool or next-steps panel. The reply does not narrate
+      how the trunk pull was run. The run did drop --delete-branch from
+      #31's merge, so naming that is correct; naming --squash, the head
+      pin, or any other flag fails.

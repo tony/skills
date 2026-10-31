@@ -1,0 +1,29 @@
+{
+  "skill_name": "merge-many",
+  "trigger": {
+    "positive": [
+      {
+        "prompt": "you can merge em all",
+        "top_k": 1
+      },
+      {
+        "prompt": "merge these PRs in order, rebasing each onto main",
+        "top_k": 1
+      },
+      {
+        "prompt": "land the stacked PRs bottom-up and watch CI between merges",
+        "top_k": 1
+      },
+      {
+        "prompt": "merge these PRs one at a time, rebasing each onto main",
+        "top_k": 1
+      }
+    ],
+    "negative": [
+      {
+        "prompt": "rebase all PRs onto origin master and force push",
+        "owner": "rebase"
+      }
+    ]
+  }
+}
