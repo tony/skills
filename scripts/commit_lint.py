@@ -2,7 +2,7 @@
 # /// script
 # requires-python = ">=3.15"
 # ///
-"""Check commit messages against the AGENTS.md format.
+"""Check commit messages against the format in .github/WRITING.md.
 
 Usage: commit_lint.py BASE [HEAD]
 
