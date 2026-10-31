@@ -1,0 +1,41 @@
+{
+  "skill_name": "phrase",
+  "trigger": {
+    "positive": [
+      {
+        "prompt": "rephrase this README for a first-time user deciding whether to install",
+        "top_k": 1
+      },
+      {
+        "prompt": "rephrase this paragraph for a downstream engineer audience",
+        "top_k": 1
+      },
+      {
+        "prompt": "rephrase these release notes for the audience reading them",
+        "top_k": 1
+      },
+      {
+        "prompt": "write the install section copy for a first-time user audience",
+        "top_k": 1
+      },
+      {
+        "prompt": "write landing page copy for a UK audience",
+        "top_k": 1
+      }
+    ],
+    "negative": [
+      {
+        "prompt": "polish this README until it reads well",
+        "owner": "refine"
+      },
+      {
+        "prompt": "keep this commit message tight, no filler",
+        "owner": "lean-writing"
+      },
+      {
+        "prompt": "improve the documentation experience for new readers",
+        "owner": "serene-bliss"
+      }
+    ]
+  }
+}

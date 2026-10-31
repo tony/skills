@@ -1452,6 +1452,16 @@
       "bytes": 23681
     },
     {
+      "name": "voice-phrase",
+      "sources": [
+        "plugins/voice/skills/phrase/SKILL.md"
+      ],
+      "bundled": {
+        "references/prose-rules.md": "plugins/voice/references/prose-rules.md"
+      },
+      "bytes": 8346
+    },
+    {
       "name": "weave-architecture",
       "sources": [
         "plugins/weave/skills/architecture/SKILL.md"
@@ -1891,6 +1901,7 @@
     "plugins/tailwind/references/prose-rules.md": 1,
     "plugins/tailwind/scripts/detect.py": 1,
     "plugins/tailwind/skills/spacing-audit/references/patterns.md": 1,
+    "plugins/voice/references/prose-rules.md": 1,
     "plugins/weave/references/results/architecture.md": 1,
     "plugins/weave/references/results/ask.md": 1,
     "plugins/weave/references/results/brainstorm-and-refine.md": 1,
