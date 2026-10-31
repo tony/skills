@@ -445,13 +445,21 @@ def _read_lines(path: Path) -> list[str]:
         raise Refusal(message) from error
 
 
-def _headings(lines: Sequence[str]) -> list[tuple[int, int, str]]:
-    r"""Return ``(index, level, text)`` for each ATX heading outside fenced code.
+class Heading(NamedTuple):
+    """An ATX heading; ``index`` is its zero-based line."""
+
+    index: int
+    level: int
+    text: str
+
+
+def _headings(lines: Sequence[str]) -> list[Heading]:
+    r"""Return each ATX heading outside fenced code.
 
     >>> _headings(["## 1.0", "```console", "# not a heading", "```", "### Fixes"])
-    [(0, 2, '1.0'), (4, 3, 'Fixes')]
+    [Heading(index=0, level=2, text='1.0'), Heading(index=4, level=3, text='Fixes')]
     """
-    found: list[tuple[int, int, str]] = []
+    found: list[Heading] = []
     fence = ""
     for number, line in enumerate(lines):
         mark = _FENCE.match(line)
@@ -464,26 +472,29 @@ def _headings(lines: Sequence[str]) -> list[tuple[int, int, str]]:
             continue
         match = None if fence else _HEADING.match(line)
         if match:
-            found.append((number, len(match.group(1)), match.group(2)))
+            found.append(Heading(number, len(match.group(1)), match.group(2)))
     return found
 
 
-def _section_end(headings: Sequence[tuple[int, int, str]], start: int, total: int) -> int:
-    """Return the index of the heading that closes the section opened at ``start``."""
-    level = next(depth for number, depth, _ in headings if number == start)
-    return next((n for n, depth, _ in headings if n > start and depth <= level), total)
+def _section_end(headings: Sequence[Heading], opener: Heading, total: int) -> int:
+    """Return the index of the heading that closes the section ``opener`` starts."""
+    return next(
+        (h.index for h in headings if h.index > opener.index and h.level <= opener.level),
+        total,
+    )
 
 
 def unreleased_command(path: Path, placeholders: Sequence[str]) -> dict[str, object]:
     """Locate the unreleased section of a Markdown changelog and decide if it is empty."""
     lines = _read_lines(path)
     headings = _headings(lines)
-    found = [h for h in headings if _UNRELEASED.search(h[2])]
+    found = [h for h in headings if _UNRELEASED.search(h.text)]
     if len(found) != 1:
         message = f"{path.name} has {len(found)} unreleased headings; exactly one is supported"
         raise Refusal(message)
-    start, _, text = found[0]
-    end = _section_end(headings, start, len(lines))
+    opener = found[0]
+    start, text = opener.index, opener.text
+    end = _section_end(headings, opener, len(lines))
     body = "\n".join(lines[start + 1 : end])
     if body.count("<!--") != body.count("-->"):
         message = f"{path.name} has an unterminated comment in the unreleased section"
@@ -549,18 +560,18 @@ class Section(NamedTuple):
 def _release_sections(lines: Sequence[str]) -> list[Section]:
     """Return the sections headed by a released version, top to bottom."""
     headings = _headings(lines)
-    level = next((depth for _, depth, text in headings if _UNRELEASED.search(text)), None)
-    named: list[tuple[int, int, str, Version]] = []
-    for number, depth, text in headings:
-        version = None if _UNRELEASED.search(text) else _heading_version(text)
+    level = next((h.level for h in headings if _UNRELEASED.search(h.text)), None)
+    named: list[tuple[Heading, Version]] = []
+    for heading in headings:
+        version = None if _UNRELEASED.search(heading.text) else _heading_version(heading.text)
         if version is not None:
-            named.append((number, depth, text, version))
+            named.append((heading, version))
     if level is None:
-        level = min((depth for _, depth, _, _ in named), default=0)
+        level = min((heading.level for heading, _ in named), default=0)
     return [
-        Section(number, _section_end(headings, number, len(lines)), text, version)
-        for number, depth, text, version in named
-        if depth == level
+        Section(heading.index, _section_end(headings, heading, len(lines)), heading.text, version)
+        for heading, version in named
+        if heading.level == level
     ]
 
 

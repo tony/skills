@@ -147,7 +147,7 @@
         "references/prose-rules.md": "plugins/changelog/references/prose-rules.md",
         "references/release_plan.py": "plugins/changelog/scripts/release_plan.py"
       },
-      "bytes": 61361
+      "bytes": 61482
     },
     {
       "name": "changelog-refresh",
@@ -162,7 +162,7 @@
         "references/prose-rules.md": "plugins/changelog/references/prose-rules.md",
         "references/release_plan.py": "plugins/changelog/scripts/release_plan.py"
       },
-      "bytes": 60987
+      "bytes": 61108
     },
     {
       "name": "changelog-rewrite-aggressively",
@@ -178,7 +178,7 @@
         "references/release_plan.py": "plugins/changelog/scripts/release_plan.py",
         "references/rewrite.py": "plugins/changelog/scripts/rewrite.py"
       },
-      "bytes": 77224
+      "bytes": 77345
     },
     {
       "name": "commit",
@@ -796,7 +796,7 @@
         "references/release-conventions.md": "plugins/release/references/release-conventions.md",
         "references/release_plan.py": "plugins/release/scripts/release_plan.py"
       },
-      "bytes": 49779
+      "bytes": 49900
     },
     {
       "name": "release-cut",
@@ -811,7 +811,7 @@
         "references/release-conventions.md": "plugins/release/references/release-conventions.md",
         "references/release_plan.py": "plugins/release/scripts/release_plan.py"
       },
-      "bytes": 92801
+      "bytes": 92922
     },
     {
       "name": "release-update-downstream-packages",
