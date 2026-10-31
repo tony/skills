@@ -22,6 +22,12 @@ branch, whether earlier releases or other work's unreleased entries, are
 read-only. A correction that needs a line the branch did not add: ask, or without a
 question tool leave it and note the limitation.
 
+A request for a final's section is the exception in `branch-scope.md`: find
+the changelog file and check it is clean as Phase 1 does, write the section
+per `references/graduation.md` in place of the rest of Phases 1 to 3,
+then present and apply it under Phase 4's approval gate, without its scope
+guard.
+
 Additional context from user: $ARGUMENTS
 
 Read these first:
@@ -65,7 +71,8 @@ generate the entries the branch should have from its current net change
 (`git log origin/<base>..HEAD` and `git diff origin/<base>...HEAD`, three-dot,
 so base commits the fetch pulled in stay out). For the PR number, run
 `gh pr view --json number --jq .number`; on failure write `(#???)`. Never copy
-a number from a dropped or stale entry.
+a number from a dropped or stale entry. Check for prerelease sections of a
+final not cut yet, per `branch-scope.md`.
 
 ## Phase 3: Diff documented vs. actual
 

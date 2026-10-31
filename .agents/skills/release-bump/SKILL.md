@@ -115,7 +115,9 @@ what the flags authorize.
 Run the complete the `release-cut` skill procedure (the `release-cut` skill, Phase 1
 onward) with the chosen version, forwarding any `--push` / `--tag` /
 `--push-tag` flags the user passed. `cut`'s Orchestration Plan applies; choosing
-a version does not replace it.
+a version does not replace it. Graduating to a final makes the run a
+graduation: `cut` writes the final's section from the net change since the
+previous final (`references/graduation.md`).
 
 ## Output
 

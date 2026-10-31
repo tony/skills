@@ -51,7 +51,9 @@ Entry edits follow the approval ladder in Phase 3 of
 [`changelog`](skills/changelog/SKILL.md). History rewrites also require the
 explicit approval in Phase 1 of
 [`rewrite-aggressively`](skills/rewrite-aggressively/SKILL.md). Entries land
-in the unreleased section; see `references/branch-scope.md`.
+in the unreleased section; see `references/branch-scope.md`. Ask for a final's
+section after its prereleases and it gets one section for the net change since
+the previous final, replacing theirs; see `references/graduation.md`.
 
 ## Supported Changelog Formats
 
@@ -61,5 +63,6 @@ The format is detected from the existing changelog file; see Phase 1 of
 ## Prerequisites
 
 - git: For commit history analysis.
-- python3 (3.14 or newer): For the `rewrite-aggressively` backup and rebase helper.
+- python3 (3.14 or newer): For the `rewrite-aggressively` backup and rebase
+  helper, and the prerelease-section check.
 - gh (optional): For PR and label detection.

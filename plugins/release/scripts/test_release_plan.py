@@ -1,17 +1,16 @@
 """Version order, tag namespaces, changelog sections and leftover scans."""
 
 # ruff: noqa: S101, INP001, D103, S603, S607
+import doctest
+import importlib.util
 import io
 import json
 import subprocess
 from contextlib import redirect_stderr, redirect_stdout
-from typing import TYPE_CHECKING
+from pathlib import Path
 
 import pytest
 import release_plan as plan
-
-if TYPE_CHECKING:
-    from pathlib import Path
 
 
 def cli(*argv: str) -> tuple[int, str, str]:
@@ -19,6 +18,19 @@ def cli(*argv: str) -> tuple[int, str, str]:
     with redirect_stdout(out), redirect_stderr(err):
         status = plan.main(list(argv))
     return status, out.getvalue(), err.getvalue()
+
+
+def test_doctests() -> None:
+    # Copies of this vendored module share a basename, so pytest collects none.
+    script = Path(__file__).with_name("release_plan.py")
+    spec = importlib.util.spec_from_file_location("release_plan_doctests", script)
+    assert spec is not None
+    assert spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    result = doctest.testmod(module)
+    assert result.attempted > 0
+    assert result.failed == 0
 
 
 def test_compare_orders_prerelease_below_its_final_in_both_schemes() -> None:
@@ -238,3 +250,109 @@ def test_next_target_advances_the_series_or_the_prerelease() -> None:
     status, out, _ = cli("next-target", "1.70.1")
     assert (status, json.loads(out)["track"]) == (0, "stable")
     assert cli("next-target", "7")[0] == 1
+
+
+GRADUATING = """# Changelog
+
+<!-- toc -->
+
+- [Unreleased](#unreleased)
+- [0.1.1-alpha.2 (2026-10-30)](#011-alpha2-2026-10-30)
+- [0.1.1-alpha.1 (2026-10-29)](#011-alpha1-2026-10-29)
+- [0.1.0 (2026-10-25)](#010-2026-10-25)
+
+<!-- /toc -->
+
+## Unreleased
+
+## 0.1.1-alpha.2 (2026-10-30)
+
+```console
+# a comment, not a heading
+```
+
+- Stop a lease from killing another program
+
+## 0.1.1-alpha.1 (2026-10-29)
+
+- Add program leases, see [0.1.0](#010-2026-10-25)
+
+## 0.1.0 (2026-10-25)
+
+- Ship it
+
+## 0.1.0-alpha.15 (2026-10-24)
+
+- Earlier work
+"""
+
+
+def test_graduation_replaces_the_prereleases_and_starts_at_the_final_below(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    path = tmp_path / "CHANGELOG.md"
+    path.write_text(GRADUATING)
+    tags = ["v0.0.9", "v0.1.0-alpha.15", "v0.1.0", "v0.1.1-alpha.1", "v0.1.1-alpha.2"]
+    monkeypatch.setattr(plan, "list_tags", lambda _repo: tags)
+    status, out, _ = cli("graduation", str(path), "--version", "0.1.1", "--repo", str(tmp_path))
+    record = json.loads(out)
+    assert status == 0
+    assert (record["final"], record["graduation"]) == (True, True)
+    assert [
+        (s["version"], s["heading_line"], s["end_line"], s["anchor"]) for s in record["sections"]
+    ] == [
+        ("0.1.1-alpha.2", 14, 21, "011-alpha2-2026-10-30"),
+        ("0.1.1-alpha.1", 22, 25, "011-alpha1-2026-10-29"),
+    ]
+    assert record["links"] == [
+        {"line": 6, "anchor": "011-alpha2-2026-10-30"},
+        {"line": 7, "anchor": "011-alpha1-2026-10-29"},
+    ]
+    assert (record["tag_prefix"], record["baseline"], record["baseline_tag"]) == (
+        "v",
+        "0.1.0",
+        "v0.1.0",
+    )
+    inferred = plan.graduation_command(path, None, tmp_path, None)
+    assert inferred == {**record, "version": "0.1.1"}
+
+
+def test_graduation_is_false_without_a_final_or_its_prereleases(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    path = tmp_path / "CHANGELOG.md"
+    path.write_text(GRADUATING)
+
+    def no_git(_repo: Path) -> list[str]:
+        raise AssertionError
+
+    monkeypatch.setattr(plan, "list_tags", no_git)
+    for version, final in (("0.1.2", True), ("0.1.1-alpha.3", False), ("0.1.1.post1", False)):
+        record = plan.graduation_command(path, version, tmp_path, None)
+        assert (record["final"], record["graduation"], record["sections"]) == (final, False, [])
+    path.write_text(
+        GRADUATING.replace("## Unreleased\n", "## Unreleased\n\n## 0.1.1 (2026-10-31)\n")
+    )
+    assert plan.graduation_command(path, None, tmp_path, None)["version"] is None
+    path.write_text(CHANGES)
+    assert plan.graduation_command(path, None, tmp_path, None)["version"] is None
+
+
+def test_graduation_without_an_earlier_final_or_one_namespace(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    path = tmp_path / "CHANGES.md"
+    path.write_text("## demo 0.1.9a2 (unreleased)\n\n## demo 0.1.9a1 (2026-01-01)\n\n- First\n")
+    monkeypatch.setattr(plan, "list_tags", lambda _repo: ["0.1.9a1"])
+    record = plan.graduation_command(path, "0.1.9", tmp_path, None)
+    assert record["graduation"] is True
+    assert (record["tag_prefix"], record["baseline_tag"]) == ("", None)
+    monkeypatch.setattr(plan, "list_tags", lambda _repo: ["a@0.1.9a1", "b@0.1.9a1", "a@0.1.8"])
+    record = plan.graduation_command(path, "0.1.9", tmp_path, None)
+    assert (record["tag_prefix"], record["prefixes"], record["baseline_tag"]) == (
+        None,
+        ["a@", "b@"],
+        None,
+    )
+    record = plan.graduation_command(path, "0.1.9", tmp_path, "a@")
+    assert record["baseline_tag"] == "a@0.1.8"

@@ -172,6 +172,9 @@ At release time:
    next version per the rule above, with the same maintainer comment
    and placeholder block.
 
+A final cut after its own prereleases instead gets the net change since the
+previous final, replacing the prerelease sections: `graduation.md`.
+
 ## MIGRATION
 
 If a `MIGRATION` file exists, it follows the same lifecycle:
@@ -204,7 +207,8 @@ what:
 - Refresh <lockfile>
 ```
 
-Add a MIGRATION line when that file was retitled.
+Add a MIGRATION line when that file was retitled, and for a graduation a line
+naming the prerelease sections the final's section replaced.
 
 No `Co-Authored-By` line, no "Generated with" or other tool trailer, no emoji.
 

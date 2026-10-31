@@ -56,7 +56,7 @@ truthiness-test-of-none-union = "ignore"
 error-on-warning = true
 
 [tool.pytest.ini_options]
-addopts = "--doctest-modules --ignore-glob=plugins/*/scripts/closest_model.py"
+addopts = "--doctest-modules --ignore-glob=plugins/*/scripts/closest_model.py --ignore-glob=plugins/*/scripts/release_plan.py"
 markers = ["integration: owned Git repositories and CLI subprocess workflows (outer loop)"]
 testpaths = [
     "plugins/action/scripts",

@@ -46,7 +46,9 @@ Claude Code uses a leading slash (`/release:…`). Codex omits it (`release:…`
 ### `/release:cut <version> [--push] [--tag] [--push-tag]`
 
 Cuts a release: bumps versions, refreshes lockfiles, dates changelogs, runs
-quality gates, and commits.
+quality gates, and commits. A final cut after its own prereleases gets one
+changelog section for the net change since the previous final, which replaces
+the prerelease sections.
 
 By default the commit stays local. The flags `--push`, `--tag` and `--push-tag`
 and the full safety contract (refusals, push URL checks, hooks, signing,
@@ -83,7 +85,8 @@ Python's standard library.
 ## Shared reference
 
 `references/release-conventions.md` holds the discovery procedures and
-templates.
+templates. `references/graduation.md` writes a final's section after its
+prereleases.
 
 ## Prerequisites
 
