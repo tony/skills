@@ -1,6 +1,6 @@
 {
   "name": "tdd",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "TDD bug-fix workflow: reproduce bugs as failing tests, determine root cause, fix, and verify.",
   "author": {
     "name": "Tony Narlock",

@@ -23,7 +23,7 @@ itself before it lands, in two commits: the skills, then the
 `<evidence.py>` is `references/evidence.py`, resolved from this
 skill's directory, not the repository root. Resolve it to an absolute
 path once, print it, and use that literal path in every command. It
-needs python 3.9 or newer. `<root>` is the target repository's top-level
+needs python 3.14 or newer. `<root>` is the target repository's top-level
 directory, written literally in each command.
 
 ## `$ARGUMENTS` contract

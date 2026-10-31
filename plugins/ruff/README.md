@@ -82,5 +82,5 @@ Arguments:
 - `git`; remote push access only for `--push` or `--pr`
 - `curl`, or GitHub CLI (`gh`) for release lookups; `gh`, authenticated, only for fork checks and `--pr`
 - `jq`, for resolving a rule's documentation slug in `references/default-rule-set.md`
-- `python3` (3.9 or newer) for the bundled measurement script
+- `python3` (3.14 or newer) for the bundled measurement script
 - Project's resolver and quality-check commands (defined in `AGENTS.md`/`CLAUDE.md` or CI workflow)

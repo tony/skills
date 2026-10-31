@@ -1,9 +1,6 @@
 """Run spike.sh against throwaway repositories under pytest."""
 
 # ruff: noqa: S101, S603, S607, INP001, D103, PLR2004
-# pyright: reportUnusedCallResult=false
-
-from __future__ import annotations
 
 import os
 import pathlib

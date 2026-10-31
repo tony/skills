@@ -1,6 +1,6 @@
 {
   "name": "disk",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Safely reclaim disk space. Classifies consumers as cache, redundant copy, or history, deleting only what is proven safe.",
   "author": {
     "name": "Tony Narlock",

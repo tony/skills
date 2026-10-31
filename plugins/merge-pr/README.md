@@ -76,4 +76,4 @@ The gate, strategy, and flag rules live in `references/merge-readiness.md`.
 
 - gh, authenticated with merge permissions.
 - git, with fetch and push access to PR branches.
-- python3 (3.9 or newer), for `scripts/merge_pr.py`.
+- python3 (3.14 or newer), for `scripts/merge_pr.py`.

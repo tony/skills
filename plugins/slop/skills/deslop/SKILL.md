@@ -36,7 +36,7 @@ is `../../scripts/render_apply.py`, `<autosquash.py>` is
 directory, not the repository root. Resolve each to an absolute path once,
 print it, and write that literal path in every command below, since shell
 variables do not persist between Bash calls, and a relative path breaks
-from the repository root. The scripts need python3 (3.9 or newer).
+from the repository root. The scripts need python3 (3.14 or newer).
 
 Likewise write the literal value of `BASELINE_SHA` and of each gate command
 wherever a step shows `<BASELINE_SHA>` or `<FORMAT_CMD>`; an unset variable

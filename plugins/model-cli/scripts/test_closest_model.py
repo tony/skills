@@ -1,9 +1,6 @@
 """Tests for closest_model.py."""
 
 # ruff: noqa: S101, S603, INP001, PLR2004, D103
-# pyright: reportUnusedCallResult=false
-from __future__ import annotations
-
 import doctest
 import importlib.machinery
 import importlib.util
@@ -139,11 +136,11 @@ def test_newest_rejects_a_template_without_version() -> None:
 
 def test_doctests() -> None:
     # Copies of this vendored module share a basename, so pytest collects none.
-    loader = importlib.machinery.SourceFileLoader("closest_model_doctests", str(SCRIPT))
-    spec = importlib.util.spec_from_loader(loader.name, loader)
+    spec = importlib.util.spec_from_file_location("closest_model_doctests", SCRIPT)
     assert spec is not None
+    assert spec.loader is not None
     module = importlib.util.module_from_spec(spec)
-    loader.exec_module(module)
+    spec.loader.exec_module(module)
     result = doctest.testmod(module)
     assert result.attempted > 0
     assert result.failed == 0

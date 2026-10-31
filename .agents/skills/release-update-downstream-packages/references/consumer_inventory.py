@@ -14,9 +14,6 @@ incomplete or stale evidence, 2 means usage failure. POSIX process groups are
 required. Repository inventory does not identify dependencies semantically.
 """
 
-# pyright: reportAny=false, reportExplicitAny=false, reportUnusedCallResult=false
-from __future__ import annotations
-
 import argparse
 import base64
 import contextlib

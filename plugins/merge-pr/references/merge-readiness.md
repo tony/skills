@@ -16,7 +16,7 @@ commands read this file before touching any PR.
 ## Repo scope and the helper script
 
 `../scripts/merge_pr.py` holds the deterministic steps; it needs `python3`
-(3.9 or newer). Run it by the absolute path that `../scripts/` resolves to
+(3.14 or newer). Run it by the absolute path that `../scripts/` resolves to
 from this file's directory, written literally in each command.
 
 When the user passes `--repo <owner/name>`, find out whether it names the

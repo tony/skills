@@ -61,5 +61,5 @@ The format is detected from the existing changelog file; see Phase 1 of
 ## Prerequisites
 
 - git: For commit history analysis.
-- python3 (3.9 or newer): For the `rewrite-aggressively` backup and rebase helper.
+- python3 (3.14 or newer): For the `rewrite-aggressively` backup and rebase helper.
 - gh (optional): For PR and label detection.

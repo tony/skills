@@ -1,6 +1,6 @@
 {
   "name": "action",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "Convert tickets to branches in isolated worktrees. Uses team branch conventions, lands gated commits, and supports parallel tickets.",
   "author": {
     "name": "Tony Narlock",

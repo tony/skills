@@ -19,8 +19,6 @@ HTML, for what it cannot map: images, raw HTML, tables, nested lists, and a
 'table'
 """
 
-from __future__ import annotations
-
 import html
 import re
 import sys

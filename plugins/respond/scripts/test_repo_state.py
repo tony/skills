@@ -1,16 +1,12 @@
 """Tests for repo_state.py against temporary repositories and a stubbed ``gh``."""
 
-# pyright: reportAny=false
 # ruff: noqa: S101, S603, S607, INP001, PLR2004
-# pyright: reportUnusedCallResult=false, reportPrivateUsage=false
-from __future__ import annotations
-
 import json
 import subprocess
 from typing import TYPE_CHECKING
 
-import repo_state  # pyright: ignore[reportImplicitRelativeImport]
-from ghcli import GhError  # pyright: ignore[reportImplicitRelativeImport]
+import repo_state
+from ghcli import GhError
 
 if TYPE_CHECKING:
     from pathlib import Path

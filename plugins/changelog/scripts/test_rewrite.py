@@ -1,9 +1,6 @@
 """Outer-loop Git rewrites, hooks and recovery against temporary repositories."""
 
 # ruff: noqa: S101, S603, S607, INP001, D103
-# pyright: reportAny=false, reportUnusedCallResult=false
-
-from __future__ import annotations
 
 import json
 import os
@@ -53,7 +50,9 @@ def run(repo: Path, *args: str, script: Path = SCRIPT) -> tuple[int, dict[str, o
         text=True,
         check=False,
     )
-    return done.returncode, json.loads(done.stdout)
+    payload: object = json.loads(done.stdout)
+    assert isinstance(payload, dict)
+    return done.returncode, cast("dict[str, object]", payload)
 
 
 def changes(draft: bool = False, two: bool = False) -> str:

@@ -1,10 +1,8 @@
 """Tests for tally.py."""
 
 # ruff: noqa: S101, INP001
-from __future__ import annotations
-
 import pytest
-import tally  # pyright: ignore[reportImplicitRelativeImport]
+import tally
 
 
 def test_counts_each_verdict() -> None:

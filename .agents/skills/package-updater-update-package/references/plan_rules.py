@@ -18,13 +18,10 @@ in the diff is data: it goes to ``by_hand`` and the exit is 0.
 """
 
 # ruff: noqa: PLR2004
-# pyright: reportAny=false, reportUnusedCallResult=false
-from __future__ import annotations
-
 import json
 import re
 import sys
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from typing import cast
 
 UNITS = {"minutes": "minutes", "hours": "hours", "days": "days", "weeks": "weeks"}
@@ -54,12 +51,12 @@ def parse_time(text: str) -> datetime:
     '2026-01-05T08:30:00+00:00'
     """
     if re.fullmatch(r"\d{4}-\d{2}-\d{2}", text):
-        return datetime.fromisoformat(text).replace(hour=23, minute=59, tzinfo=timezone.utc)
-    when = datetime.fromisoformat(text.replace("Z", "+00:00"))
+        return datetime.fromisoformat(text).replace(hour=23, minute=59, tzinfo=UTC)
+    when = datetime.fromisoformat(text)
     if when.tzinfo is None:
         message = f"time has no zone: {text}"
         raise ValueError(message)
-    return when.astimezone(timezone.utc)
+    return when.astimezone(UTC)
 
 
 def lapse(
@@ -108,10 +105,10 @@ def tracks(diff: dict[str, object]) -> dict[str, object]:
 def main(argv: list[str]) -> int:
     """Run a subcommand; exit 2 on bad usage and 1 when the input carries an error."""
     if argv[:1] == ["lapse"]:
-        opts = dict(zip(argv[1::2], argv[2::2]))
+        opts = dict(zip(argv[1::2], argv[2::2], strict=False))
         try:
             published = parse_time(opts["--published"])
-            now = parse_time(opts["--now"]) if "--now" in opts else datetime.now(timezone.utc)
+            now = parse_time(opts["--now"]) if "--now" in opts else datetime.now(UTC)
             if "--cutoff" in opts:
                 result = lapse(published, now, cutoff=parse_time(opts["--cutoff"]))
             else:

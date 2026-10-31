@@ -11,15 +11,12 @@ Exit codes: 0 digest printed, 2 usage, 4 ``gh`` failed (stderr says why; no
 digest is printed, so a failed fetch never passes for empty feedback).
 """
 
-# pyright: reportUnusedCallResult=false
-from __future__ import annotations
-
 import hashlib
 import re
 import sys
 from pathlib import Path
 
-from ghcli import GhError, gh  # pyright: ignore[reportImplicitRelativeImport]
+from ghcli import GhError, gh
 
 _BLOCK_ARGS = 3
 _PR_ARGS = 2
@@ -64,7 +61,7 @@ def pr_number(ref: str) -> str:
         return ref
     found = re.search(r"/pull/(\d+)", ref)
     if found:
-        return found.group(1)
+        return str(found.group(1))
     return gh("pr", "view", "--json", "number", "--jq", ".number").strip()
 
 

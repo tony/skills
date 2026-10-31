@@ -100,7 +100,7 @@ otherwise re-derive: `preflight` (every refusal, with a code and a reason),
 `base`, `backup`, `remote-tip`, `staged`, `hunks`, `changed` and `carry`,
 and `series`. The refusal codes, the backup name, and the push form are in
 [`references/branch-safety.md`](references/branch-safety.md). It runs under
-the stock `python3` (3.9 or later) and needs nothing installed.
+the stock `python3` (3.14 or later) and needs nothing installed.
 
 ## Relationship to other plugins
 
@@ -113,6 +113,6 @@ but its history is messy.
 
 - **git**: 2.38+ for `RECUT_UPDATE_REFS` (`--update-refs`). Check with
   `git --version`.
-- **python3**: 3.9+ for `scripts/branch_gate.py`.
+- **python3**: 3.14+ for `scripts/branch_gate.py`.
 - **gh**: (Optional) to read PRs, reviews, and linked issues. Degrades to
   git-only if missing.

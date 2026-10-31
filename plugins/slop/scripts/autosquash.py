@@ -16,10 +16,6 @@ commits, on <refs>`` when any remote-tracking ref contains a commit of
 exits 0 either way.
 """
 
-# pyright: reportAny=false, reportUnusedCallResult=false
-
-from __future__ import annotations
-
 import argparse
 import os
 import subprocess

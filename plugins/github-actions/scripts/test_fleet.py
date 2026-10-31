@@ -1,13 +1,11 @@
 """Tests for fleet.py against throwaway local git repositories."""
 
 # ruff: noqa: S101, INP001, S603, S607, PLR2004
-# pyright: reportAny=false, reportUnusedCallResult=false, reportPrivateUsage=false
-from __future__ import annotations
-
+import asyncio
 import subprocess
 from pathlib import Path
 
-import fleet  # pyright: ignore[reportImplicitRelativeImport]
+import fleet
 import pytest
 
 pytestmark = pytest.mark.integration
@@ -48,7 +46,7 @@ def test_discover_refuses_bad_owner(tmp_path: Path, capsys: pytest.CaptureFixtur
     assert capsys.readouterr().err == "--owner takes account names\n"
 
 
-def _fork_is_acme_fork(slug: str) -> bool:
+async def _fork_is_acme_fork(slug: str) -> bool:
     return slug == "acme/fork"
 
 
@@ -143,3 +141,22 @@ def test_pushable_names_commits_not_made_this_run(
     )
     assert ok == 0
     assert fleet.main(["pushable", path, "origin/main", "--made", "abc"]) == 2
+
+
+def test_fork_checks_run_concurrently_and_keep_order(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Fork flags come back in input order, never more than FORK_CHECKS at once."""
+    live = peak = 0
+
+    async def fake(slug: str) -> bool | None:
+        nonlocal live, peak
+        live += 1
+        peak = max(peak, live)
+        await asyncio.sleep(0.01)
+        live -= 1
+        return slug.endswith("0")
+
+    slugs = [f"o/r{i}" for i in range(20)]
+    monkeypatch.setattr(fleet, "_is_fork", fake)
+    flags = asyncio.run(fleet._fork_flags(slugs))  # noqa: SLF001
+    assert flags == [s.endswith("0") for s in slugs]
+    assert 1 < peak <= fleet.FORK_CHECKS

@@ -1,17 +1,14 @@
 """Index and lockfile checks against a local stand-in index."""
 
 # ruff: noqa: S101, INP001, D103
-# pyright: reportAny=false, reportUnusedCallResult=false
-from __future__ import annotations
-
 import io
 import json
 import threading
 from contextlib import redirect_stderr, redirect_stdout
 from http.server import BaseHTTPRequestHandler, HTTPServer
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, override
 
-import downstream_check as check  # pyright: ignore[reportImplicitRelativeImport]
+import downstream_check as check
 import pytest
 
 if TYPE_CHECKING:
@@ -45,9 +42,8 @@ def index_url() -> Iterator[str]:
             self.end_headers()
             self.wfile.write(json.dumps(body or {}).encode())
 
-        def log_message(  # pyright: ignore[reportImplicitOverride, reportIncompatibleMethodOverride]
-            self, *_args: object
-        ) -> None:
+        @override
+        def log_message(self, format: str, *args: object) -> None:
             return
 
     server = HTTPServer(("127.0.0.1", 0), Handler)

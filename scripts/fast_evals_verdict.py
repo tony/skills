@@ -1,6 +1,6 @@
 #!/usr/bin/env -S uv run --script
 # /// script
-# requires-python = ">=3.12"
+# requires-python = ">=3.15"
 # ///
 """Decide whether one fast-suite result counts as a pass.
 
@@ -9,8 +9,6 @@ Skill invocation with one grading the answer, so at a 0.5 threshold the answer
 keeps a broken route green. An interrupted run also writes an aggregate, and
 reusing that verdict reports a suite green on grading that never finished.
 """
-
-from __future__ import annotations
 
 import json
 import os

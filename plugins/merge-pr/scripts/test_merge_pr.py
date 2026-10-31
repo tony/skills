@@ -1,15 +1,14 @@
 """Tests for merge_pr.py against a temp repo and a ``gh`` stub on PATH."""
 
-# ruff: noqa: S101, INP001, S603, S607
-# pyright: reportAny=false, reportUnusedCallResult=false
-from __future__ import annotations
-
+# ruff: noqa: S101, INP001, S603, S607, SLF001
+import asyncio
 import json
 import os
 import subprocess
 import sys
 from pathlib import Path
 
+import merge_pr
 import pytest
 
 pytestmark = pytest.mark.integration(reason="uses an owned Git repository and the merge-pr CLI")
@@ -225,3 +224,47 @@ def test_resolved_waiver_covers_only_the_named_path(repo: Path) -> None:
         "two.txt",
     )
     assert (both.returncode, both.stdout.startswith("resolved 1 ")) == (0, True)
+
+
+_TIMED_GH = """\
+#!/bin/sh
+echo "start $3" >> "$GH_LOG"
+case "$3" in
+  2) echo "boom 2" >&2; exit 1 ;;
+  3) echo "boom 3" >&2; exit 1 ;;
+esac
+sleep 0.3
+echo "end $3" >> "$GH_LOG"
+printf '{}'
+"""
+
+
+@pytest.fixture
+def timed_gh(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
+    """Put a ``gh`` on PATH that logs when each ``pr view`` starts and ends."""
+    bin_dir = tmp_path / "timed-bin"
+    bin_dir.mkdir()
+    gh = bin_dir / "gh"
+    gh.write_text(_TIMED_GH)
+    gh.chmod(0o755)
+    log = tmp_path / "gh.log"
+    monkeypatch.setenv("PATH", f"{bin_dir}{os.pathsep}{os.environ['PATH']}")
+    monkeypatch.setenv("GH_LOG", str(log))
+    return log
+
+
+def test_view_all_reads_prs_concurrently(timed_gh: Path) -> None:
+    """Both reads start before either ends, and results keep the given order."""
+    results = asyncio.run(merge_pr._view_all("", ["7", "5"]))
+    assert [code for code, _, _ in results] == [0, 0]
+    events = timed_gh.read_text().split("\n")
+    assert sorted(events[:2]) == ["start 5", "start 7"]
+
+
+@pytest.mark.usefixtures("timed_gh")
+def test_order_reports_first_failure_in_given_order(capsys: pytest.CaptureFixture[str]) -> None:
+    """With two failing reads, only the earlier one in the given order is reported."""
+    with pytest.raises(SystemExit) as exit_info:
+        merge_pr.order("", ["1", "3", "2"])
+    assert exit_info.value.code == 1
+    assert capsys.readouterr().err == "boom 3\n"

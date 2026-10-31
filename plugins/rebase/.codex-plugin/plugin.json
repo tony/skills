@@ -1,6 +1,6 @@
 {
   "name": "rebase",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Rebase onto remote trunk with a file-overlap reading before the replay, conflict resolution, and quality gate verification.",
   "author": {
     "name": "Tony Narlock",

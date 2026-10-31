@@ -22,7 +22,7 @@ the working tree. the `self-improvement-apply` skill acts on the ledger.
 `<sweep.py>` is `references/sweep.py`, resolved from this skill's
 directory, not the repository root. Resolve it to an absolute path once,
 print it, and use that literal path in every command below. It needs
-python 3.9 or newer.
+python 3.14 or newer.
 
 ## Two shapes carry the signal
 

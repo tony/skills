@@ -174,8 +174,6 @@ needs no citation of its own, since its is-a claims are cited in
 ["a: source 'z' is not in sources.jsonl"]
 """
 
-from __future__ import annotations
-
 import argparse
 import hashlib
 import json
@@ -206,7 +204,7 @@ class _Row(_RowBase, total=False):
     cites: list[_Cite]
 
 
-Vector = dict[str, float]
+type Vector = dict[str, float]
 
 ANALYZER_VERSION = 2
 """Bumped when a change alters scoring output; the digest alone cannot say that."""
@@ -473,7 +471,7 @@ def _contains(haystack: list[frozenset[str]], needle: list[frozenset[str]]) -> b
     """Return whether *needle* occurs in *haystack* as a contiguous run of matching words."""
     width = len(needle)
     return bool(needle) and any(
-        all(a & b for a, b in zip(haystack[i : i + width], needle))
+        all(a & b for a, b in zip(haystack[i : i + width], needle, strict=True))
         for i in range(len(haystack) - width + 1)
     )
 
@@ -659,7 +657,7 @@ def parse_locator(locator: str) -> tuple[str, int, int] | None:
     last = int(match.group(3) or first)
     if match.group(2) is not None and not 1 <= first <= last:
         return None
-    return match.group(1), first, last
+    return str(match.group(1)), first, last
 
 
 def _squash(text: str) -> str:

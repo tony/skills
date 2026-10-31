@@ -52,17 +52,18 @@ $ uv run ruff check
 ### Type check
 
 ```console
-$ uv run basedpyright
+$ uv run ty check
 ```
 
 Plugin scripts run under the user's `python3`, whose version they do not
-control. They target Python 3.9 (`per-file-target-version` in
-`pyproject.toml`), so they also check against 3.9:
+control. They target Python 3.14 (`per-file-target-version` in
+`pyproject.toml`), so they also check against 3.14:
 
 ```console
-$ uv run basedpyright \
-    --pythonversion 3.9 \
-    plugins
+$ uv run ty check \
+    --python-version 3.14 \
+    plugins \
+    shared
 ```
 
 ### Test
@@ -104,13 +105,13 @@ $ for p in plugins/*/; do claude plugin validate --strict "$p" || exit 1; done
 ```
 
 Plugin scripts and their tests use only the standard library, so the tests
-also run on 3.9 with nothing installed but pytest:
+also run on 3.14 with nothing installed but pytest:
 
 ```console
 $ uv run \
     --no-project \
     --isolated \
-    --python 3.9 \
+    --python 3.14 \
     --with pytest \
     pytest -q plugins
 ```

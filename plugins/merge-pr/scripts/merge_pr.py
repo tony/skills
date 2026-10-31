@@ -12,9 +12,7 @@ message passed as arguments, never through a shell.
 """
 
 # ruff: noqa: S603, S607, PLR2004, PLR0911
-# pyright: reportUnusedCallResult=false, reportAny=false, reportImplicitStringConcatenation=false
-from __future__ import annotations
-
+import asyncio
 import contextlib
 import json
 import re
@@ -119,14 +117,44 @@ def order_prs(prs: list[dict[str, object]]) -> dict[str, object]:
     }
 
 
-def order(repo: str, numbers: list[str]) -> int:
-    """Read each PR with ``gh`` and print the merge order as JSON."""
-    prs: list[dict[str, object]] = []
-    for number in numbers:
+PR_READS = 8
+
+
+async def _view_all(repo: str, numbers: list[str]) -> list[tuple[int, str, str]]:
+    """Run ``gh pr view`` for each number, at most ``PR_READS`` at once.
+
+    Returns ``(returncode, stdout, stderr)`` per number, in ``numbers`` order.
+    """
+    gate = asyncio.Semaphore(PR_READS)
+
+    async def one(number: str) -> tuple[int, str, str]:
         args = ["gh", "pr", "view", number, "--json", PR_FIELDS]
         if repo:
             args += ["--repo", repo]
-        prs.append(json.loads(_run(*args)))
+        async with gate:
+            proc = await asyncio.create_subprocess_exec(
+                *args, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
+            )
+            out, err = await proc.communicate()
+        code = proc.returncode if proc.returncode is not None else 1
+        return code, out.decode(), err.decode()
+
+    async with asyncio.TaskGroup() as group:
+        tasks = [group.create_task(one(number)) for number in numbers]
+    return [task.result() for task in tasks]
+
+
+def order(repo: str, numbers: list[str]) -> int:
+    """Read each PR with ``gh`` and print the merge order as JSON.
+
+    The reads run concurrently; the first failure in ``numbers`` order is reported.
+    """
+    prs: list[dict[str, object]] = []
+    for code, out, err in asyncio.run(_view_all(repo, numbers)):
+        if code:
+            sys.stderr.write(err or "gh failed\n")
+            raise SystemExit(1)
+        prs.append(json.loads(out))
     sys.stdout.write(json.dumps(order_prs(prs), indent=2) + "\n")
     return 0
 
@@ -137,7 +165,7 @@ def _commit_patch_ids(sha: str) -> dict[str, str]:
     text = _run("git", "diff-tree", "--no-commit-id", "-p", "-U0", "-r", sha)
     sections = [part for part in re.split(r"(?m)^(?=diff --git )", text) if part]
     ids: dict[str, str] = {}
-    for path, section in zip([n for n in names if n], sections):
+    for path, section in zip([n for n in names if n], sections, strict=True):
         out = _run("git", "patch-id", "--stable", stdin=section).split()
         ids[path] = out[0] if out else ""
     return ids
@@ -205,7 +233,7 @@ def verify(record_path: str, rev_range: str, resolved: list[str]) -> int:
         return 1
     shas = _run("git", "rev-list", "--reverse", rev_range).split()
     bad = 0
-    for i, (was, now) in enumerate(zip(old, new)):
+    for i, (was, now) in enumerate(zip(old, new, strict=True)):
         changed = {p for p in was.keys() | now.keys() if was.get(p) != now.get(p)}
         if not changed:
             continue

@@ -1,12 +1,12 @@
 [project]
 name = "skills"
 version = "0.1.0"
-requires-python = ">=3.12"
+requires-python = ">=3.15"
 
 [dependency-groups]
 dev = [
     "ruff>=0.17.1",
-    "basedpyright>=1.37",
+    "ty>=0.0.93",
     "pytest>=9.0",
     "pydantic>=2.0",
     "rich>=13.0",
@@ -16,11 +16,11 @@ dev = [
 
 [tool.ruff]
 line-length = 100
-target-version = "py312"
+target-version = "py315"
 # User projects receive the templates; their style is the user's, not ours.
 extend-exclude = [".agents", "plugins/pytest-optimizer/templates"]
-# Plugin scripts run under the user's python3, which can be as old as 3.9.
-per-file-target-version = { "plugins/*/scripts/*.py" = "py39", "plugins/goal-planner/evals/*.py" = "py39" }
+# Plugin code runs under the user's python3, not this project's interpreter.
+per-file-target-version = { "plugins/**/*.py" = "py314", "shared/*.py" = "py314" }
 
 [tool.ruff.lint]
 select = ["ALL"]
@@ -34,16 +34,26 @@ ignore = [
     "C901",     # allow complex main() in CLI scripts
     "PLR0912",  # allow many branches in main()
     "CPY001",   # licence lives in LICENSE, not a per-file header
-    "PERF203",  # try in a loop is free from 3.11; the 3.9 cost is noise in CLI scripts
 ]
 
 [tool.ruff.lint.pydocstyle]
 convention = "numpy"
 
-[tool.basedpyright]
-typeCheckingMode = "all"
-include = ["scripts", "plugins"]
-exclude = [".agents", "plugins/pytest-optimizer/templates", "**/__pycache__"]
+[tool.ty.src]
+include = ["scripts", "plugins", "shared"]
+exclude = ["plugins/pytest-optimizer/templates"]
+
+[tool.ty.environment]
+# Scripts import their siblings as top-level modules, as `python3 <script>` does.
+extra-paths = ["scripts", "plugins/goal-planner/evals"]
+
+[tool.ty.rules]
+all = "error"
+# `if value:` treats an empty string like None on purpose throughout these CLIs.
+truthiness-test-of-none-union = "ignore"
+
+[tool.ty.terminal]
+error-on-warning = true
 
 [tool.pytest.ini_options]
 addopts = "--doctest-modules --ignore-glob=plugins/*/scripts/closest_model.py"

@@ -68,5 +68,5 @@ named. `references/example-ideal.md` is the same skill after the test.
 
 ## Prerequisites
 
-- `python3` (3.9 or newer) runs `scripts/skill_diff.py`.
+- `python3` (3.14 or newer) runs `scripts/skill_diff.py`.
 - Reads `AGENTS.md` / `CLAUDE.md` at runtime to match repo voice.

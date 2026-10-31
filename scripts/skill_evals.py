@@ -1,6 +1,6 @@
 #!/usr/bin/env -S uv run --script
 # /// script
-# requires-python = ">=3.12"
+# requires-python = ">=3.15"
 # dependencies = [
 #     "rich>=13.0",
 #     "typer>=0.15",
@@ -44,8 +44,6 @@ Descriptions must say when to use the skill:
 []
 """
 
-from __future__ import annotations
-
 import dataclasses
 import json
 import math
@@ -55,7 +53,7 @@ from pathlib import Path
 
 import rich.console
 import typer
-import yaml
+lazy import yaml
 
 if t.TYPE_CHECKING:
     from collections.abc import Iterable, Sequence

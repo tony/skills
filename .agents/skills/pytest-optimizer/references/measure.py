@@ -12,9 +12,6 @@ suite's own status.
 Run ``measure.py <command> --help`` for arguments.
 """
 
-# pyright: reportAny=false, reportExplicitAny=false, reportUnusedCallResult=false
-from __future__ import annotations
-
 import argparse
 import datetime as dt
 import hashlib
@@ -414,8 +411,8 @@ def expected_total(
         if through is not None and item["order"] > through:
             break
         if item["order"] in applied or item["order"] == through:
-            running += item["expected_total"] - prev
-        prev = item["expected_total"]
+            running += int(item["expected_total"]) - prev
+        prev = int(item["expected_total"])
     return running
 
 
@@ -447,7 +444,7 @@ def order(a: str, b: str) -> dict[str, t.Any]:
     """
     na, nb = _nodeids(a), _nodeids(b)
     diff = next(
-        (i for i, (x, y) in enumerate(zip(na, nb)) if x != y),
+        (i for i, (x, y) in enumerate(zip(na, nb, strict=False)) if x != y),
         None,
     )
     if diff is None and len(na) != len(nb):
@@ -676,7 +673,7 @@ def run_id(now: dt.datetime | None = None) -> str:
     >>> run_id(dt.datetime(2026, 1, 2, 3, 4, 5, tzinfo=dt.timezone.utc))[:19]
     'run-20260102T030405'
     """
-    stamp = (now or dt.datetime.now(dt.timezone.utc)).strftime("%Y%m%dT%H%M%S")
+    stamp = (now or dt.datetime.now(dt.UTC)).strftime("%Y%m%dT%H%M%S")
     return f"run-{stamp}-{secrets.token_hex(2)}"
 
 
@@ -745,7 +742,7 @@ def baseline_record(
     out = band(runs)
     if not out["valid"]:
         return out
-    stamp = dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds")
+    stamp = dt.datetime.now(dt.UTC).isoformat(timespec="seconds")
     return {
         **(previous or {}),
         "captured_at": stamp,
@@ -933,7 +930,7 @@ def plan_build(
                 "depends_on": item.get("depends_on", []),
             }
         )
-    for row, total in zip(plan, totals(baseline["tests"]["total"], removes)):
+    for row, total in zip(plan, totals(baseline["tests"]["total"], removes), strict=True):
         row["expected_total"] = total["expected_total"]
     return {"plan": plan, "dropped": dropped}
 
@@ -1000,9 +997,9 @@ def log_step(  # noqa: PLR0913, PLR0917
     [(1, 'red'), (2, 'depends on a skipped item')]
     """
     by_order = {i["order"]: i for i in plan}
-    stamp = dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds")
+    stamp = dt.datetime.now(dt.UTC).isoformat(timespec="seconds")
     rest = [e for e in log if e["order"] != order]
-    old = next((e for e in log if e["order"] == order), t.cast("dict[str, t.Any]", {}))
+    old = next((e for e in log if e["order"] == order), {})
     base = {"order": order, "id": by_order[order]["id"], "ts": stamp}
     if action == "begin":
         entry = {**base, "applied": False, "skip_reason": None, **fields}

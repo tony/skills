@@ -1,7 +1,7 @@
 {
   "name": "scholar",
   "description": "Distil a checkable ontology from a codebase, a repository set, or a written corpus. Types, controlled vocabulary, cited and measured evidence.",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "author": {
     "name": "Tony Narlock",
     "email": "tony@git-pull.com"

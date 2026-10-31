@@ -18,9 +18,6 @@ repository is rooted at the home directory, 4 ``gh`` failed.
 """
 
 # ruff: noqa: S603, S607
-# pyright: reportAny=false, reportUnusedCallResult=false
-from __future__ import annotations
-
 import argparse
 import hashlib
 import json
@@ -29,7 +26,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-from ghcli import GhError, gh  # pyright: ignore[reportImplicitRelativeImport]
+from ghcli import GhError, gh
 
 _PREFERRED_REMOTES = ("upstream", "origin")
 _COPY_OR_RENAME = {"R", "C"}
@@ -239,7 +236,11 @@ def since_mark() -> list[str]:
     if not record.is_file():
         msg = "no mark recorded; run mark before the gate"
         raise RefusalError(msg)
-    before: dict[str, str] = json.loads(record.read_text(encoding="utf-8"))
+    loaded = json.loads(record.read_text(encoding="utf-8"))
+    if not isinstance(loaded, dict):
+        msg = "mark record is not a JSON object; run mark again"
+        raise RefusalError(msg)
+    before = {str(k): str(v) for k, v in loaded.items()}
     now = {p: _fingerprint(p) for p in changed_paths()}
     return sorted(
         p for p in before.keys() | now.keys() if before.get(p, _CLEAN) != now.get(p, _CLEAN)

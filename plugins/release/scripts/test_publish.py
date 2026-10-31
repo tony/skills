@@ -1,9 +1,6 @@
 """Publication and identity checks against owned bare remotes."""
 
 # ruff: noqa: S101, INP001, D103, PLR2004, S603, S607
-# pyright: reportAny=false, reportExplicitAny=false, reportUnusedCallResult=false
-from __future__ import annotations
-
 import io
 import json
 import os
@@ -13,7 +10,7 @@ from contextlib import redirect_stdout
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, NamedTuple
 
-import publish  # pyright: ignore[reportImplicitRelativeImport]
+import publish
 import pytest
 
 if TYPE_CHECKING:

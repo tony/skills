@@ -1,9 +1,6 @@
 """Critical measurement and resume gates for optimizer execution."""
 
 # ruff: noqa: S101, INP001
-# pyright: reportAny=false, reportUnusedCallResult=false, reportPrivateUsage=false, reportImplicitStringConcatenation=false
-from __future__ import annotations
-
 import json
 import pathlib
 import re
@@ -11,7 +8,7 @@ import subprocess
 import sys
 import typing as t
 
-import measure  # pyright: ignore[reportImplicitRelativeImport]
+import measure
 import pytest
 
 
@@ -194,7 +191,9 @@ IMPACT_QUARTILE = 0.75
 
 def _run_cli(capsys: pytest.CaptureFixture[str], *argv: str) -> tuple[int, dict[str, object]]:
     code = measure.main(list(argv))
-    return code, json.loads(capsys.readouterr().out)
+    payload: object = json.loads(capsys.readouterr().out)
+    assert isinstance(payload, dict)
+    return code, t.cast("dict[str, object]", payload)
 
 
 def test_score_derives_impact_and_refuses_out_of_range_dimensions(

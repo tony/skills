@@ -1,15 +1,12 @@
 """Tests for collect_feedback.py with ``gh`` replaced by canned output."""
 
 # ruff: noqa: S101, INP001, PLR2004
-# pyright: reportAny=false
-from __future__ import annotations
-
 import json
 from typing import TYPE_CHECKING
 
-import collect_feedback  # pyright: ignore[reportImplicitRelativeImport]
-import ghcli  # pyright: ignore[reportImplicitRelativeImport]
-from ghcli import GhError  # pyright: ignore[reportImplicitRelativeImport]
+import collect_feedback
+import ghcli
+from ghcli import GhError
 
 if TYPE_CHECKING:
     import pytest

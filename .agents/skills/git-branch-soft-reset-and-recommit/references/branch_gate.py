@@ -36,16 +36,13 @@ Subcommands (run from inside the repository):
 """
 
 # ruff: noqa: S603, S607, EM101
-# pyright: reportAny=false, reportUnusedCallResult=false
-from __future__ import annotations
-
 import argparse
 import os
 import re
 import shlex
 import subprocess
 import sys
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import final
 
@@ -62,7 +59,7 @@ IN_PROGRESS = (
 )
 TRUNK_CANDIDATES = ("origin/main", "origin/master", "main", "master")
 FIELD = "\x1f"
-Row = tuple[str, str, str, str, str]
+type Row = tuple[str, str, str, str, str]
 
 
 @final
@@ -274,7 +271,7 @@ def cmd_backup(args: argparse.Namespace) -> int:
         head = git("symbolic-ref", "--short", "HEAD")
         if head.returncode != 0 or head.stdout.strip() != args.branch:
             raise Refusal("not-checked-out", f"check out {args.branch} first; nothing was created")
-    stamp = datetime.now(tz=timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+    stamp = datetime.now(tz=UTC).strftime("%Y%m%dT%H%M%SZ")
     stem = f"backup/{flat_name(args.branch)}-{stamp}"
     name = stem
     suffix = 1

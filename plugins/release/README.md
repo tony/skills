@@ -90,7 +90,7 @@ templates.
 - git, gh and ripgrep (`rg`). The CI steps use `gh run list --commit` with the
   `attempt` JSON field, `gh run watch --exit-status`, `gh run rerun --failed` and
   `gh cache delete`, checked against `gh` 2.102.0.
-- python3 (3.9 or newer) on `PATH`, for the bundled scripts.
+- python3 (3.14 or newer) on `PATH`, for the bundled scripts.
 - POSIX process groups for downstream repository discovery, checkout checks and
   publication timeouts.
 - The target project's toolchain (as required by quality gates).

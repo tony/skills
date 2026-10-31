@@ -1,9 +1,6 @@
 """Tests for sensitive.py against a temp repository."""
 
 # ruff: noqa: S101, INP001, S603, S607
-# pyright: reportAny=false, reportUnusedCallResult=false
-from __future__ import annotations
-
 import subprocess
 import sys
 from pathlib import Path

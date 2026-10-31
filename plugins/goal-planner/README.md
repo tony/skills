@@ -91,7 +91,7 @@ it never permits manual publication that bypasses revision allocation.
 
 ## Prerequisites and references
 
-The standard-library helper needs Python 3.9 or newer. Discover optional history
+The standard-library helper needs Python 3.14 or newer. Discover optional history
 tools, reviewers, and probes when needed; agentgrep has separate runtime needs.
 Profiles contain approved portable preferences; bindings hold local paths.
 History supplies evidence/candidates, never implicit settings changes or upload.

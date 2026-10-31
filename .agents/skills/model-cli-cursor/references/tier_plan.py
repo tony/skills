@@ -33,8 +33,6 @@ acted); a second empty plan run also stops it.
 {'next': None, 'stop': 'budget'}
 """
 
-from __future__ import annotations
-
 import argparse
 import json
 import math

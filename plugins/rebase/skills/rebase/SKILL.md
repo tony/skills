@@ -20,7 +20,7 @@ Write reports and any authorized commit message per
 
 ### Phase 1: Inspect the repository and detect trunk
 
-1. Require Git 2.36 or newer and Python 3.9 or newer. Stop if either is absent.
+1. Require Git 2.36 or newer and Python 3.14 or newer. Stop if either is absent.
 2. Read the branch, `git status --short`, and remotes. Stop outside a
    repository, on detached HEAD, or without a remote. Record staged and
    unstaged paths separately so final verification can check both.

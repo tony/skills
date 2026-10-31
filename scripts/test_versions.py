@@ -1,9 +1,6 @@
 """Owned-repository tests for ``marketplace.py versions``."""
 
 # ruff: noqa: S101, S603, S607, INP001
-# pyright: reportPrivateUsage=false, reportImplicitRelativeImport=false
-from __future__ import annotations
-
 import json
 import subprocess
 import typing as t

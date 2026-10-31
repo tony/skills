@@ -1,15 +1,12 @@
 """Redundancy proof: fail-closed behavior."""
 
 # ruff: noqa: S101, INP001, D103, TC003
-# pyright: reportAny=false, reportUnusedCallResult=false
-
-from __future__ import annotations
 
 import os
 from pathlib import Path
 
 import pytest
-import redundancy  # pyright: ignore[reportImplicitRelativeImport]
+import redundancy
 
 
 def run(cand: Path, keep: Path, capsys: pytest.CaptureFixture[str]) -> tuple[int, str]:

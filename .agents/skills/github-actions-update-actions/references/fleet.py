@@ -13,10 +13,7 @@ BASE is ``<remote>/<default>``.
 """
 
 # ruff: noqa: S603, S607, PLR2004, EM101, EM102, TRY003
-# pyright: reportUnusedCallResult=false, reportAny=false, reportExplicitAny=false
-# pyright: reportPrivateUsage=false, reportImplicitOverride=false
-from __future__ import annotations
-
+import asyncio
 import json
 import os
 import re
@@ -25,11 +22,12 @@ import sys
 from pathlib import Path
 from typing import Any, final
 
-import pins  # pyright: ignore[reportImplicitRelativeImport]
+import pins
 
 OWNER = re.compile(r"[A-Za-z0-9_.-]+", re.ASCII)
 MAX_BRANCH_SUFFIX = 50
 MIN_SHA = 7
+FORK_CHECKS = 8
 
 
 @final
@@ -44,16 +42,22 @@ def _git(path: str, *args: str, check: bool = True) -> str:
     return done.stdout if not done.returncode else ""
 
 
-def _is_fork(slug: str) -> bool | None:
-    done = subprocess.run(
-        ["gh", "repo", "view", f"https://github.com/{slug}", "--json", "isFork"],
-        capture_output=True,
-        text=True,
-        check=False,
+async def _is_fork(slug: str) -> bool | None:
+    process = await asyncio.create_subprocess_exec(
+        "gh",
+        "repo",
+        "view",
+        f"https://github.com/{slug}",
+        "--json",
+        "isFork",
+        stdin=asyncio.subprocess.DEVNULL,
+        stdout=asyncio.subprocess.PIPE,
+        stderr=asyncio.subprocess.DEVNULL,
     )
+    out, _ = await process.communicate()
     try:
-        return bool(json.loads(done.stdout)["isFork"]) if done.returncode == 0 else None
-    except (ValueError, KeyError, TypeError):
+        return bool(json.loads(out)["isFork"]) if process.returncode == 0 else None
+    except ValueError, KeyError, TypeError:
         return None
 
 
@@ -68,8 +72,23 @@ def _repos_under(root: str) -> list[str]:
     return sorted(found)
 
 
+async def _fork_flags(slugs: list[str]) -> list[bool | None]:
+    limit = asyncio.Semaphore(FORK_CHECKS)
+
+    async def one(slug: str) -> bool | None:
+        async with limit:
+            return await _is_fork(slug)
+
+    async with asyncio.TaskGroup() as group:
+        tasks = [group.create_task(one(slug)) for slug in slugs]
+    return [task.result() for task in tasks]
+
+
 def discover(root: str, owners: list[str]) -> list[dict[str, Any]]:
-    """Describe each git repository under ``root`` and whether it is in scope."""
+    """Describe each git repository under ``root`` and whether it is in scope.
+
+    Fork checks run concurrently; rows keep the order of the repositories.
+    """
     wanted = {o.lower() for o in owners}
     rows: list[dict[str, Any]] = []
     for path in _repos_under(root):
@@ -78,19 +97,22 @@ def discover(root: str, owners: list[str]) -> list[dict[str, Any]]:
             remote = pins._remote(path)  # noqa: SLF001
             row["slug"] = pins._slug_from_remote(path, remote)  # noqa: SLF001
         except SystemExit as err:
-            rows.append({**row, "in_scope": False, "reason": str(err.code)})
-            continue
-        row["owner"] = row["slug"].split("/")[0]
-        row["fork"] = _is_fork(row["slug"])
+            row.update(in_scope=False, reason=str(err.code))
+        else:
+            row["owner"] = row["slug"].split("/")[0]
+        rows.append(row)
+    resolved = [row for row in rows if row["slug"] is not None]
+    forks = asyncio.run(_fork_flags([r["slug"] for r in resolved]))
+    for row, fork in zip(resolved, forks, strict=True):
+        row["fork"] = fork
         if wanted and row["owner"].lower() not in wanted:
             row.update(in_scope=False, reason="owner not in --owner")
-        elif row["fork"] is None:
+        elif fork is None:
             row.update(in_scope=False, reason="fork status could not be checked")
-        elif row["fork"]:
+        elif fork:
             row.update(in_scope=False, reason="repository is a fork")
         else:
             row.update(in_scope=True, reason="")
-        rows.append(row)
     return rows
 
 

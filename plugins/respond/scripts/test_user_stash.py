@@ -1,14 +1,11 @@
 """Tests for user_stash.py against a temporary repository."""
 
 # ruff: noqa: S101, S603, S607, INP001, PLR2004
-# pyright: reportUnusedCallResult=false
-from __future__ import annotations
-
 import json
 import subprocess
 from typing import TYPE_CHECKING
 
-import user_stash  # pyright: ignore[reportImplicitRelativeImport]
+import user_stash
 
 if TYPE_CHECKING:
     from pathlib import Path

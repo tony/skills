@@ -23,10 +23,6 @@ version signal: v4 loads one through ``@config``
 Exit codes: 0 hits found, 1 no hits, 2 usage error or a path that does not exist.
 """
 
-# pyright: reportUnusedCallResult=false
-
-from __future__ import annotations
-
 import json
 import re
 import sys
@@ -215,7 +211,7 @@ def _package_range(root: Path) -> str:
             spec = pkg[section]["tailwindcss"] if section in pkg else None
             if isinstance(spec, str):
                 return spec
-    except (ValueError, KeyError, TypeError):
+    except ValueError, KeyError, TypeError:
         pass
     return ""
 

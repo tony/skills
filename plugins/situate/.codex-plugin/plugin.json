@@ -1,6 +1,6 @@
 {
   "name": "situate",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "Gain situational awareness before modifying code. Scans branches, PRs, tickets, and project conventions to orient the agent and verify the work required.",
   "author": {
     "name": "Tony Narlock",

@@ -6,9 +6,6 @@ Each bullet starts ``- Kept``, ``- Rewrote``, or ``- Deleted``. Prints
 stderr when a bullet starts with another word or no bullet is present.
 """
 
-# pyright: reportAny=false
-from __future__ import annotations
-
 import sys
 
 _VERDICTS = {"kept": 0, "rewrote": 1, "deleted": 2}

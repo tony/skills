@@ -1,9 +1,6 @@
 """Prove scan publication preserves user state across failures and races."""
 
 # ruff: noqa: S101, S603, S607, INP001, D103
-# pyright: reportAny=false, reportUnusedCallResult=false
-
-from __future__ import annotations
 
 import json
 import os
@@ -12,7 +9,7 @@ import subprocess
 from typing import TYPE_CHECKING
 
 import pytest
-import scan_apply  # pyright: ignore[reportImplicitRelativeImport]
+import scan_apply
 
 if TYPE_CHECKING:
     from pathlib import Path
@@ -87,8 +84,9 @@ def invoke(
     mode = ["--verify"] if "--verify" in extra else ["--entry", "0"]
     args = ["--run-dir", str(run), "--expected-head", head, *mode, *extra]
     scan_apply.main(args)
-    result: dict[str, object] = json.loads(capsys.readouterr().out)
-    return result
+    result = json.loads(capsys.readouterr().out)
+    assert isinstance(result, dict)
+    return {str(k): v for k, v in result.items()}
 
 
 def test_success_preserves_partial_staging_unicode_and_executable_mode(
@@ -192,7 +190,7 @@ def test_ref_failure_rolls_back_only_when_the_target_stays_unchanged(
     repo, run, head = setup
     before = protected(repo)
     original = (repo / "café.sh").read_bytes()
-    real_git = scan_apply._git  # noqa: SLF001  # pyright: ignore[reportPrivateUsage]
+    real_git = scan_apply._git  # noqa: SLF001
 
     def fail_update(
         location: Path, *args: str, index: Path | None = None, check: bool = True
@@ -245,7 +243,7 @@ def test_publication_exception_reports_retained_candidate(
 ) -> None:
     repo, run, head = setup
     before = protected(repo)
-    real_git = scan_apply._git  # noqa: SLF001  # pyright: ignore[reportPrivateUsage]
+    real_git = scan_apply._git  # noqa: SLF001
 
     def fail_update(
         location: Path, *args: str, index: Path | None = None, check: bool = True
@@ -273,7 +271,7 @@ def test_completed_publication_is_not_reported_as_refused_after_cleanup_failure(
 ) -> None:
     repo, run, head = setup
     before = protected(repo)
-    real_git = scan_apply._git  # noqa: SLF001  # pyright: ignore[reportPrivateUsage]
+    real_git = scan_apply._git  # noqa: SLF001
     real_unlink = type(run).unlink
 
     def fail_git_cleanup(

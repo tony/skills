@@ -1,7 +1,7 @@
 {
   "name": "respond",
   "description": "Screen review feedback from humans or bots before changing code. Verifies claims against facts and project decisions. Valid findings become gated, atomic commits; invalid ones get evidence-backed replies.",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "author": {
     "name": "Tony Narlock",
     "email": "tony@git-pull.com"

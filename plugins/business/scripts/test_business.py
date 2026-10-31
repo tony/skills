@@ -1,10 +1,6 @@
 """Tests for the completeness gate, scan allow flags, and permission-safe roots."""
 
 # ruff: noqa: S101, INP001, PLR2004, D103, ARG001, SLF001
-# pyright: reportAny=false, reportUnusedCallResult=false, reportPrivateUsage=false
-# pyright: reportImplicitStringConcatenation=false, reportUnusedParameter=false
-
-from __future__ import annotations
 
 import io
 import json
@@ -14,7 +10,7 @@ import subprocess
 import typing as t
 from pathlib import Path
 
-import business  # pyright: ignore[reportImplicitRelativeImport]
+import business
 import pytest
 
 REGISTER = """\
