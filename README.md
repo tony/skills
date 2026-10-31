@@ -177,7 +177,9 @@ assume no language.
 
 Scripts run under [uv](https://docs.astral.sh/uv/getting-started/installation/).
 [AGENTS.md](AGENTS.md) holds the authoring rules and the commands for every
-check CI runs. `scripts/marketplace.py portable` writes the generated files
+check CI runs. [.github/WRITING.md](.github/WRITING.md) sets how commit
+messages, docs, and comments are written, and
+[.github/PYTHON.md](.github/PYTHON.md) how the scripts are. `scripts/marketplace.py portable` writes the generated files
 (`.agents/`, each plugin's `.codex-plugin/plugin.json`, and each plugin's copy
 of a file in `shared/`); edit the sources and regenerate, never the outputs.
 
