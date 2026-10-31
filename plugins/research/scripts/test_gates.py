@@ -4,7 +4,6 @@ Runs offline in temp directories; no network.
 """
 
 # ruff: noqa: S101, INP001, PLR2004, D101, D102, D103, D105
-# pyright: reportAny=false, reportUnusedCallResult=false, reportPrivateUsage=false
 
 import contextlib
 import io
@@ -17,7 +16,7 @@ import zipfile
 from pathlib import Path
 
 import pytest
-import topic  # pyright: ignore[reportImplicitRelativeImport]
+import topic
 
 REFUSED = "refused"
 REPORT = """\

@@ -200,5 +200,5 @@ Monorepos clone once, with worktrees containing all packages.
 
 ## Prerequisites
 
-- python3 3.9 or newer, for topics and dependency study.
+- python3 3.14 or newer, for topics and dependency study.
 - git, and a project with a supported manifest, for dependency study.

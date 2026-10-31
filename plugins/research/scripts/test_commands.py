@@ -4,7 +4,6 @@ Runs offline in temp directories; fetches are stubs.
 """
 
 # ruff: noqa: S101, INP001, PLR2004, D103
-# pyright: reportAny=false, reportUnusedCallResult=false, reportPrivateUsage=false
 
 import contextlib
 import getpass
@@ -12,12 +11,14 @@ import io
 import json
 import sys
 import tempfile
+import threading
+import time
 import typing as t
 from datetime import date, timedelta
 from pathlib import Path
 
 import pytest
-import topic  # pyright: ignore[reportImplicitRelativeImport]
+import topic
 
 PAST = "2026-01-05"
 TXT = "Readers do not block writers in WAL mode.\n"
@@ -820,3 +821,27 @@ def test_assessment_lint_asks_for_sensitivity_flip_and_rated_sources(root: Path)
         "sample-of-one-high",
         "unsourced-rating",
     }
+
+
+def test_check_all_serial_per_host_parallel_across_hosts_and_ordered() -> None:
+    lock = threading.Lock()
+    active: dict[str, int] = {}
+    peak = {"per_host": 0, "hosts": 0}
+
+    def fake_fetch(url: str) -> tuple[int, str, bytes, dict[str, str]]:
+        h = topic.host(url)
+        with lock:
+            active[h] = active.get(h, 0) + 1
+            peak["per_host"] = max(peak["per_host"], active[h])
+            peak["hosts"] = max(peak["hosts"], sum(1 for v in active.values() if v))
+        time.sleep(0.05)
+        with lock:
+            active[h] -= 1
+        return 200, url, b"", {}
+
+    urls = [f"https://{h}.io/{n}" for h in ("a", "b", "c") for n in range(3)]
+    rows: list[topic.Row] = [{"id": f"S{i}", "url": u} for i, u in enumerate(urls)]
+    results = topic.check_all(Path(tempfile.gettempdir()), rows, fake_fetch)
+    assert [r["url"] for r in results] == urls
+    assert peak["per_host"] == 1
+    assert peak["hosts"] > 1
