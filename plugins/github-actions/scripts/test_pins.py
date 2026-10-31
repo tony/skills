@@ -1,7 +1,6 @@
 """Tests for pins.py with ``gh`` replaced by a stub on PATH."""
 
 # ruff: noqa: S101, INP001, S603, S607, SLF001
-# pyright: reportAny=false, reportUnusedCallResult=false, reportPrivateUsage=false
 import json
 import os
 import re
@@ -12,7 +11,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 from urllib.parse import parse_qs, unquote, urlsplit
 
-import pins  # pyright: ignore[reportImplicitRelativeImport]
+import pins
 import pytest
 
 if TYPE_CHECKING:
