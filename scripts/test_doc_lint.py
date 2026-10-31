@@ -1,9 +1,9 @@
 """Owned-fixture tests for the doc rules ``marketplace.py lint`` can enforce."""
 
 # ruff: noqa: S101, INP001, SLF001
-# pyright: reportPrivateUsage=false, reportImplicitRelativeImport=false
 import typing as t
 
+import _doc_lint
 import marketplace
 import pytest
 
@@ -127,3 +127,11 @@ def test_one_command_sed_bre_and_comment_run(enforced: Path) -> None:
             f"{run}",
         ]
     )
+
+
+def test_ty_pragma_ends_a_comment_run() -> None:
+    """A ``# ty: ignore`` line is a pragma, not prose; ``property:`` is prose."""
+    pragma = "# a\n# b\n# c\n# ty: ignore[x]\n# d\n"
+    assert _doc_lint.check_comment_runs(pragma) == []
+    prose = "# a\n# b\n# c\n# property: d\n"
+    assert [rule for rule, _, _ in _doc_lint.check_comment_runs(prose)] == ["comment-run"]

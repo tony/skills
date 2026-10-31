@@ -1,7 +1,6 @@
 """Owned-fixture tests for ``sync`` keeping entry versions equal to plugin.json."""
 
 # ruff: noqa: S101, INP001
-# pyright: reportPrivateUsage=false, reportImplicitRelativeImport=false
 import json
 import typing as t
 

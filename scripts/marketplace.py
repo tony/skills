@@ -7,6 +7,9 @@
 #     "typer>=0.15",
 #     "pyyaml>=6.0",
 # ]
+#
+# [tool.ty.environment]
+# extra-paths = ["."]
 # ///
 """Marketplace management CLI for tony/skills.
 
@@ -15,7 +18,7 @@ Syncs the marketplace manifest with discovered plugin directories.
 """
 
 import ast
-import concurrent.futures
+import asyncio
 import json
 import os
 import posixpath
@@ -28,14 +31,12 @@ import tomllib
 import typing as t
 from pathlib import Path
 
-import _doc_lint  # pyright: ignore[reportImplicitRelativeImport]
+import _doc_lint
 import pydantic
 import rich.console
 import rich.markup
-import rich.table
 import typer
-import yaml
-from _portable_render import (  # pyright: ignore[reportImplicitRelativeImport]
+from _portable_render import (
     OPENAI_YAML_REL,
     RESOURCE_DIRS,
     SPEC_FRONTMATTER_KEYS,
@@ -53,7 +54,9 @@ from _portable_render import (  # pyright: ignore[reportImplicitRelativeImport]
     sibling_module,
     strip_frontmatter,
 )
-from _private_path import PrivatePath  # pyright: ignore[reportImplicitRelativeImport]
+from _private_path import PrivatePath
+lazy import yaml
+lazy from rich.table import Table
 
 RESERVED_MARKETPLACE_NAMES = frozenset(
     {
@@ -1079,7 +1082,7 @@ def _script_var_offenders() -> set[str]:
             for matcher in t.cast("list[dict[str, object]]", matchers):
                 pattern = matcher.get("input_match")
                 bash = matcher.get("tool") == "Bash" and isinstance(pattern, str)
-                if bash and _lacks_script_var_form(t.cast("str", pattern), scripts):
+                if bash and _lacks_script_var_form(pattern, scripts):
                     offenders.add(f"{plugin_dir.name}/{case.parent.name}:{grader.get('name')}")
     return offenders
 
@@ -1303,15 +1306,43 @@ def validate_plugin_dir(plugin_dir: Path) -> list[str]:
     return errors
 
 
-def _run_claude_validate(path: Path) -> tuple[list[str], list[str]]:
+VALIDATE_TIMEOUT_S = 30
+VALIDATE_WORKERS = min(8, os.cpu_count() or 1)
+
+
+def _parse_validate_output(stdout: str, returncode: int) -> tuple[list[str], list[str]]:
+    r"""Split ``claude plugin validate`` output into (errors, warnings).
+
+    Examples
+    --------
+    >>> _parse_validate_output("\u276f bad\nnoise\n", 1)
+    (['claude validate: bad'], [])
+    >>> _parse_validate_output("\u276f meh\n", 0)
+    ([], ['claude validate: meh'])
+    >>> _parse_validate_output("", 0)
+    ([], [])
+    """
+    marker = "\u276f"
+    findings = [
+        f"claude validate: {line.strip().removeprefix(marker).strip()}"
+        for line in stdout.splitlines()
+        if marker in line
+    ]
+    return (findings, []) if returncode != 0 else ([], findings)
+
+
+async def _run_claude_validate(path: Path, gate: asyncio.Semaphore) -> tuple[list[str], list[str]]:
     """Run ``claude plugin validate`` and return (errors, warnings).
 
-    Returns empty lists if the CLI is not available.
+    Returns empty lists if the CLI is not available. ``gate`` bounds how many
+    validations run at once.
 
     Parameters
     ----------
     path : Path
         Path to validate (marketplace root or plugin directory).
+    gate : asyncio.Semaphore
+        Concurrency limit shared by every call in one run.
 
     Returns
     -------
@@ -1320,25 +1351,35 @@ def _run_claude_validate(path: Path) -> tuple[list[str], list[str]]:
     """
     if shutil.which("claude") is None:
         return [], []
-    try:
-        result = subprocess.run(  # noqa: S603
-            ["claude", "plugin", "validate", "--strict", str(path)],  # noqa: S607
-            capture_output=True,
-            text=True,
-            timeout=30,
-            check=False,
+    async with gate:
+        proc = await asyncio.create_subprocess_exec(
+            "claude",
+            "plugin",
+            "validate",
+            "--strict",
+            str(path),
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.DEVNULL,
         )
-    except subprocess.TimeoutExpired:
-        return [f"claude validate: {path.name} timed out after 30s"], []
-    marker = "\u276f"
-    findings = [
-        line.strip().removeprefix(marker).strip()
-        for line in result.stdout.splitlines()
-        if marker in line
-    ]
-    if result.returncode != 0:
-        return [f"claude validate: {f}" for f in findings], []
-    return [], [f"claude validate: {f}" for f in findings]
+        try:
+            async with asyncio.timeout(VALIDATE_TIMEOUT_S):
+                stdout, _ = await proc.communicate()
+        except TimeoutError:
+            proc.kill()
+            _ = await proc.wait()
+            return [f"claude validate: {path.name} timed out after {VALIDATE_TIMEOUT_S}s"], []
+    return _parse_validate_output(
+        stdout.decode(errors="replace"),
+        proc.returncode if proc.returncode is not None else 1,
+    )
+
+
+async def _validate_all(paths: list[Path]) -> list[tuple[list[str], list[str]]]:
+    """Validate every path concurrently, returning results in ``paths`` order."""
+    gate = asyncio.Semaphore(VALIDATE_WORKERS)
+    async with asyncio.TaskGroup() as group:
+        tasks = [group.create_task(_run_claude_validate(path, gate)) for path in paths]
+    return [task.result() for task in tasks]
 
 
 def _lint_claude_validate() -> tuple[list[str], list[str]]:
@@ -1358,11 +1399,9 @@ def _lint_claude_validate() -> tuple[list[str], list[str]]:
     console.print("\n[bold]Running claude plugin validate...[/bold]")
     all_errors: list[str] = []
     all_warnings: list[str] = []
-    paths = [REPO_ROOT, *discover_plugins()]
-    with concurrent.futures.ThreadPoolExecutor(max_workers=min(8, os.cpu_count() or 1)) as pool:
-        for ve, vw in pool.map(_run_claude_validate, paths):
-            all_errors.extend(ve)
-            all_warnings.extend(vw)
+    for ve, vw in asyncio.run(_validate_all([REPO_ROOT, *discover_plugins()])):
+        all_errors.extend(ve)
+        all_warnings.extend(vw)
     if not all_errors:
         console.print("  [green]OK[/green]")
     return all_errors, all_warnings
@@ -2165,7 +2204,7 @@ def sync(*, write: bool = False, check: bool = False) -> None:
         console.print("[green]Marketplace manifest is in sync with plugins/.[/green]")
         return
 
-    table = rich.table.Table(title="Sync Report")
+    table = Table(title="Sync Report")
     table.add_column("Status", style="bold")
     table.add_column("Plugin")
 
@@ -2230,7 +2269,7 @@ def check_outdated() -> None:
     """Compare versions between plugin.json and marketplace entries."""
     manifest = load_marketplace()
 
-    table = rich.table.Table(title="Version Comparison")
+    table = Table(title="Version Comparison")
     table.add_column("Plugin")
     table.add_column("Marketplace Version")
     table.add_column("plugin.json Version")

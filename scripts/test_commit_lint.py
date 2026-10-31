@@ -1,7 +1,6 @@
 """Owned-repository tests for ``commit_lint.py``."""
 
 # ruff: noqa: S101, S603, S607, INP001
-# pyright: reportImplicitRelativeImport=false
 import subprocess
 import typing as t
 

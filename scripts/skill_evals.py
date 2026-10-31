@@ -53,7 +53,7 @@ from pathlib import Path
 
 import rich.console
 import typer
-import yaml
+lazy import yaml
 
 if t.TYPE_CHECKING:
     from collections.abc import Iterable, Sequence

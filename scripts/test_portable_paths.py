@@ -1,7 +1,6 @@
 """Owned-fixture tests for how ``portable`` spells bundled paths."""
 
 # ruff: noqa: S101, INP001, SLF001
-# pyright: reportPrivateUsage=false, reportImplicitRelativeImport=false
 import posixpath
 import typing as t
 

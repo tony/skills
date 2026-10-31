@@ -12,7 +12,7 @@ import typing as t
 if t.TYPE_CHECKING:
     PrivatePathBase = pathlib.Path
 else:
-    PrivatePathBase = type(pathlib.Path())  # pyright: ignore[reportUnreachable]
+    PrivatePathBase = type(pathlib.Path())
 
 
 class PrivatePath(PrivatePathBase):

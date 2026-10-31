@@ -1,7 +1,6 @@
 """Owned-fixture tests for the lint on graders that name bundled scripts."""
 
 # ruff: noqa: S101, INP001, SLF001
-# pyright: reportPrivateUsage=false, reportImplicitRelativeImport=false
 import typing as t
 
 import marketplace
