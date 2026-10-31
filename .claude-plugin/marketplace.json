@@ -675,6 +675,26 @@
       ],
       "homepage": "https://github.com/tony/skills/tree/main/plugins/goal-planner",
       "license": "MIT"
+    },
+    {
+      "name": "voice",
+      "description": "Rephrase any copy for the reader who will use it, from a brief of who they are, what they came to do, where it renders, when they arrive, and why it matters.",
+      "version": "0.1.0",
+      "author": {
+        "name": "Tony Narlock",
+        "email": "tony@git-pull.com"
+      },
+      "source": "./plugins/voice",
+      "category": "productivity",
+      "tags": [
+        "writing",
+        "rephrase",
+        "reader",
+        "audience",
+        "voice"
+      ],
+      "homepage": "https://github.com/tony/skills/tree/main/plugins/voice",
+      "license": "MIT"
     }
   ]
 }
