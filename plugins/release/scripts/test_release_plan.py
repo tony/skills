@@ -1,17 +1,16 @@
 """Version order, tag namespaces, changelog sections and leftover scans."""
 
 # ruff: noqa: S101, INP001, D103, S603, S607
+import doctest
+import importlib.util
 import io
 import json
 import subprocess
 from contextlib import redirect_stderr, redirect_stdout
-from typing import TYPE_CHECKING
+from pathlib import Path
 
 import pytest
 import release_plan as plan
-
-if TYPE_CHECKING:
-    from pathlib import Path
 
 
 def cli(*argv: str) -> tuple[int, str, str]:
@@ -19,6 +18,19 @@ def cli(*argv: str) -> tuple[int, str, str]:
     with redirect_stdout(out), redirect_stderr(err):
         status = plan.main(list(argv))
     return status, out.getvalue(), err.getvalue()
+
+
+def test_doctests() -> None:
+    # Copies of this vendored module share a basename, so pytest collects none.
+    script = Path(__file__).with_name("release_plan.py")
+    spec = importlib.util.spec_from_file_location("release_plan_doctests", script)
+    assert spec is not None
+    assert spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    result = doctest.testmod(module)
+    assert result.attempted > 0
+    assert result.failed == 0
 
 
 def test_compare_orders_prerelease_below_its_final_in_both_schemes() -> None:

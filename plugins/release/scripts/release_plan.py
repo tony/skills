@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# Vendored from shared/release_plan.py; edit that file, then run 'scripts/marketplace.py portable'.
 """Deterministic release preflight: version order, tags, changelog, leftovers.
 
 Subcommands, each printing one JSON record on stdout:
