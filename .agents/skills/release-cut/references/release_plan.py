@@ -10,6 +10,8 @@ Subcommands, each printing one JSON record on stdout:
 ``tags``              Group a repository's tags into namespaces; resolve the tag
                       prefix of ``--version`` and whether the tag for ``--new`` exists.
 ``unreleased FILE``   Find the unreleased changelog section and say if it is empty.
+``graduation FILE``   Find the prerelease sections a final replaces, and the final tag
+                      below it that the final's net change starts from.
 ``leftover``          List tracked and unignored files that still hold ``--old``.
 
 Exit status: 0 verified, 1 refused with a one-line reason on stderr, 2 usage.
@@ -43,6 +45,11 @@ _UNRELEASED = re.compile(
     r"\bunreleased\b|yet to be released|\bnext release\b|\d\.x\b", re.IGNORECASE
 )
 _HEADING = re.compile(r"^(#{1,6})[ \t]+(.*?)[ \t]*$")
+_FENCE = re.compile(r"^ {0,3}(`{3,}|~{3,})(.*)$")
+_HEADING_VERSION = re.compile(
+    r"(?<![\w.])v?(?P<version>\d+\.\d+(?:\.\d+)*(?:[-.+]?[0-9A-Za-z][0-9A-Za-z.+-]*)?)"
+)
+_ANCHOR_LINK = re.compile(r"\]\(#([^)\s]+)\)")
 _PLACEHOLDER = re.compile(r"^[_*]Notes on the upcoming release will go here\.?[_*]$", re.IGNORECASE)
 _MAX_FILE = 2 * 1024 * 1024
 _MAX_LISTED = 100
@@ -74,18 +81,29 @@ class Version(NamedTuple):
         """Whether this is a prerelease of its release."""
         return self.letter is not None or bool(self.pre)
 
-    def key(self, scheme: str) -> tuple[Any, ...]:
-        """Return the sort key of this version under ``scheme``."""
+    @property
+    def before_final(self) -> bool:
+        """Whether this sorts below the final of its release (a prerelease or a bare dev)."""
+        return self.is_pre or (self.dev is not None and self.post is None)
+
+    @property
+    def base(self) -> tuple[int, ...]:
+        """The release segment without trailing zeros, so ``1.0`` and ``1.0.0`` match."""
         release = list(self.release)
         while len(release) > 1 and release[-1] == 0:
             release.pop()
+        return tuple(release)
+
+    def key(self, scheme: str) -> tuple[Any, ...]:
+        """Return the sort key of this version under ``scheme``."""
+        release = self.base
         if scheme == "mixed":
-            return (tuple(release), 0 if self.is_pre else 1, self.text)
+            return (release, 0 if self.is_pre else 1, self.text)
         if scheme == "semver":
             if not self.pre:
-                return (tuple(release), 1, ())
+                return (release, 1, ())
             ids = tuple((0, int(i), "") if i.isdigit() else (1, 0, i) for i in self.pre)
-            return (tuple(release), 0, ids)
+            return (release, 0, ids)
         if self.letter is not None:
             pre_key = (_LETTERS.index(self.letter), self.number or 0)
         elif self.post is None and self.dev is not None:
@@ -94,7 +112,7 @@ class Version(NamedTuple):
             pre_key = (len(_LETTERS), 0)
         post = -1 if self.post is None else self.post
         dev = 10**9 if self.dev is None else self.dev
-        return (tuple(release), pre_key, post, dev)
+        return (release, pre_key, post, dev)
 
 
 def parse_version(text: str) -> Version:
@@ -419,28 +437,53 @@ def candidates_command(
     }
 
 
-def unreleased_command(path: Path, placeholders: Sequence[str]) -> dict[str, object]:
-    """Locate the unreleased section of a Markdown changelog and decide if it is empty."""
+def _read_lines(path: Path) -> list[str]:
     try:
-        lines = path.read_text(encoding="utf-8").split("\n")
+        return path.read_text(encoding="utf-8").split("\n")
     except (OSError, UnicodeError) as error:
         message = f"cannot read {path.name}: {error}"
         raise Refusal(message) from error
-    headings: list[tuple[int, int, str]] = []
+
+
+def _headings(lines: Sequence[str]) -> list[tuple[int, int, str]]:
+    r"""Return ``(index, level, text)`` for each ATX heading outside fenced code.
+
+    >>> _headings(["## 1.0", "```console", "# not a heading", "```", "### Fixes"])
+    [(0, 2, '1.0'), (4, 3, 'Fixes')]
+    """
+    found: list[tuple[int, int, str]] = []
+    fence = ""
     for number, line in enumerate(lines):
-        match = _HEADING.match(line)
+        mark = _FENCE.match(line)
+        if mark:
+            run = mark.group(1)
+            if not fence:
+                fence = run
+            elif run[0] == fence[0] and len(run) >= len(fence) and not mark.group(2).strip():
+                fence = ""
+            continue
+        match = None if fence else _HEADING.match(line)
         if match:
-            headings.append((number, len(match.group(1)), match.group(2)))
+            found.append((number, len(match.group(1)), match.group(2)))
+    return found
+
+
+def _section_end(headings: Sequence[tuple[int, int, str]], start: int, total: int) -> int:
+    """Return the index of the heading that closes the section opened at ``start``."""
+    level = next(depth for number, depth, _ in headings if number == start)
+    return next((n for n, depth, _ in headings if n > start and depth <= level), total)
+
+
+def unreleased_command(path: Path, placeholders: Sequence[str]) -> dict[str, object]:
+    """Locate the unreleased section of a Markdown changelog and decide if it is empty."""
+    lines = _read_lines(path)
+    headings = _headings(lines)
     found = [h for h in headings if _UNRELEASED.search(h[2])]
     if len(found) != 1:
         message = f"{path.name} has {len(found)} unreleased headings; exactly one is supported"
         raise Refusal(message)
-    start, level, text = found[0]
-    end = len(lines)
-    for number, depth, _ in headings:
-        if number > start and depth <= level:
-            end = number
-            break
+    start, _, text = found[0]
+    end = _section_end(headings, start, len(lines))
     body = "\n".join(lines[start + 1 : end])
     if body.count("<!--") != body.count("-->"):
         message = f"{path.name} has an unterminated comment in the unreleased section"
@@ -465,6 +508,153 @@ def unreleased_command(path: Path, placeholders: Sequence[str]) -> dict[str, obj
         "subheadings": headings_only,
         "empty": entries == 0,
     }
+
+
+def _heading_version(text: str) -> Version | None:
+    """Return the first version a heading names, if any.
+
+    >>> _heading_version("libtmux 0.1.1-alpha.2 (2026-10-30)").text
+    '0.1.1-alpha.2'
+    >>> _heading_version("[v1.2.3] - 2026-01-01").text
+    '1.2.3'
+    >>> _heading_version("Documentation") is None
+    True
+    """
+    for match in _HEADING_VERSION.finditer(text):
+        try:
+            return parse_version(match.group("version").rstrip(".-+"))
+        except Refusal:
+            continue
+    return None
+
+
+def _anchor(text: str) -> str:
+    """Return the GitHub-style anchor of a heading.
+
+    >>> _anchor("0.1.1-alpha.2 (2026-10-30)")
+    '011-alpha2-2026-10-30'
+    """
+    return re.sub(r"[^\w\- ]", "", text.strip().lower()).replace(" ", "-")
+
+
+class Section(NamedTuple):
+    """A released changelog section; ``end`` indexes the heading that closes it."""
+
+    start: int
+    end: int
+    heading: str
+    version: Version
+
+
+def _release_sections(lines: Sequence[str]) -> list[Section]:
+    """Return the sections headed by a released version, top to bottom."""
+    headings = _headings(lines)
+    level = next((depth for _, depth, text in headings if _UNRELEASED.search(text)), None)
+    named: list[tuple[int, int, str, Version]] = []
+    for number, depth, text in headings:
+        version = None if _UNRELEASED.search(text) else _heading_version(text)
+        if version is not None:
+            named.append((number, depth, text, version))
+    if level is None:
+        level = min((depth for _, depth, _, _ in named), default=0)
+    return [
+        Section(number, _section_end(headings, number, len(lines)), text, version)
+        for number, depth, text, version in named
+        if depth == level
+    ]
+
+
+def _pending_final(sections: Sequence[Section]) -> Version | None:
+    """Return the final of the newest section when that section is its unshipped prerelease."""
+    if not sections or not sections[0].version.before_final:
+        return None
+    newest = sections[0].version
+    if any(s.version.base == newest.base and not s.version.before_final for s in sections):
+        return None
+    return parse_version(".".join(str(n) for n in newest.release))
+
+
+def _baseline(tags: Sequence[TagInfo], prefix: str, final: Version) -> TagInfo | None:
+    """Return the highest final tag below ``final`` in the ``prefix`` namespace."""
+    members = [t for t in tags if t.prefix == prefix]
+    try:
+        scheme = shared_scheme(final, *(t.version for t in members))
+    except Refusal:
+        scheme = "mixed"
+    below = [
+        t
+        for t in members
+        if not t.version.before_final and t.version.key(scheme) < final.key(scheme)
+    ]
+    if not below:
+        return None
+    return max(below, key=lambda t: t.version.key(scheme))
+
+
+def graduation_command(
+    path: Path, version: str | None, repo: Path, prefix: str | None
+) -> dict[str, object]:
+    """Find the prerelease sections a final replaces, and the final tag below it.
+
+    Without ``version``, the final is that of the newest section when it is a
+    prerelease whose final has no section yet.
+    """
+    lines = _read_lines(path)
+    sections = _release_sections(lines)
+    target = parse_version(version) if version is not None else _pending_final(sections)
+    record: dict[str, object] = {
+        "file": path.name,
+        "version": None if target is None else target.text,
+        "final": False,
+        "graduation": False,
+        "sections": [],
+        "links": [],
+        "tag_prefix": None,
+        "prefixes": [],
+        "baseline": None,
+        "baseline_tag": None,
+    }
+    if target is None or target.before_final or target.post is not None:
+        return record
+    record["final"] = True
+    replaced = [s for s in sections if s.version.base == target.base and s.version.before_final]
+    if not replaced:
+        return record
+    anchors = {_anchor(s.heading) for s in replaced}
+    links: list[dict[str, object]] = []
+    for number, line in enumerate(lines):
+        if any(s.start <= number < s.end for s in replaced):
+            continue
+        links.extend(
+            {"line": number + 1, "anchor": m.group(1)}
+            for m in _ANCHOR_LINK.finditer(line)
+            if m.group(1) in anchors
+        )
+    tags, _ = parse_tags(list_tags(repo))
+    if prefix is None:
+        prefix, _, prefixes = resolve_prefix(tags, replaced[0].version.text)
+    else:
+        prefixes = [prefix]
+    baseline = None if prefix is None else _baseline(tags, prefix, target)
+    record.update(
+        graduation=True,
+        sections=[
+            {
+                "heading": s.heading,
+                "version": s.version.text,
+                "heading_line": s.start + 1,
+                "end_line": s.end,
+                "anchor": _anchor(s.heading),
+            }
+            for s in replaced
+        ],
+        links=links,
+        tag_prefix=prefix,
+        prefixes=prefixes,
+        baseline=None if baseline is None else baseline.version.text,
+        baseline_tag=None if baseline is None else baseline.name,
+    )
+    return record
 
 
 def _old_pattern(old: str) -> re.Pattern[str]:
@@ -531,6 +721,11 @@ def _parser() -> argparse.ArgumentParser:
     unr = sub.add_parser("unreleased")
     unr.add_argument("file", type=Path)
     unr.add_argument("--placeholder", action="append", default=[])
+    grad = sub.add_parser("graduation")
+    grad.add_argument("file", type=Path)
+    grad.add_argument("--version")
+    grad.add_argument("--repo", type=Path, default=Path())
+    grad.add_argument("--prefix")
     left = sub.add_parser("leftover")
     left.add_argument("--repo", type=Path, default=Path())
     left.add_argument("--old", required=True)
@@ -538,20 +733,27 @@ def _parser() -> argparse.ArgumentParser:
 
 
 def _dispatch(args: argparse.Namespace) -> dict[str, object]:
-    if args.command == "compare":
-        scheme = args.scheme
-        if scheme is None and args.repo is not None:
-            scheme = project_scheme(args.repo, args.prefix, args.old)
-        return compare(args.old, args.new, scheme)
-    if args.command == "next-target":
-        return next_target(args.released)
-    if args.command == "candidates":
-        return candidates_command(args.current, args.kind, args.pre_style, args.repo, args.prefix)
-    if args.command == "tags":
-        return tags_command(args.repo, args.version, args.new)
-    if args.command == "unreleased":
-        return unreleased_command(args.file, args.placeholder)
-    return leftover_command(args.repo, args.old)
+    match args.command:
+        case "compare":
+            scheme = args.scheme
+            if scheme is None and args.repo is not None:
+                scheme = project_scheme(args.repo, args.prefix, args.old)
+            record = compare(args.old, args.new, scheme)
+        case "next-target":
+            record = next_target(args.released)
+        case "candidates":
+            record = candidates_command(
+                args.current, args.kind, args.pre_style, args.repo, args.prefix
+            )
+        case "tags":
+            record = tags_command(args.repo, args.version, args.new)
+        case "unreleased":
+            record = unreleased_command(args.file, args.placeholder)
+        case "graduation":
+            record = graduation_command(args.file, args.version, args.repo, args.prefix)
+        case _:
+            record = leftover_command(args.repo, args.old)
+    return record
 
 
 def main(argv: Sequence[str]) -> int:
