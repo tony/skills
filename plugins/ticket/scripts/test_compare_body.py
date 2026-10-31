@@ -1,7 +1,6 @@
 """Tests for compare_body.py."""
 
 # ruff: noqa: S101, S603, INP001, D103, PLR2004
-# pyright: reportUnusedCallResult=false
 import json
 import subprocess
 import sys

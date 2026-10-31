@@ -1,7 +1,6 @@
 """Registry matcher: added-line scope, path guards, diff and message modes."""
 
 # ruff: noqa: S101, S603, S607, INP001, D103, PLR2004, E501
-# pyright: reportAny=false, reportUnusedCallResult=false, reportImplicitStringConcatenation=false
 
 import json
 import os
@@ -10,7 +9,7 @@ import subprocess
 from pathlib import Path
 
 import pytest
-import slop_detect as detect  # pyright: ignore[reportImplicitRelativeImport]
+import slop_detect as detect
 
 REGISTRY = Path(__file__).resolve().parent.parent / "references" / "signatures.yml"
 ENV = {

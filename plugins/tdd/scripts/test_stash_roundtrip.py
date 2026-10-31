@@ -1,7 +1,6 @@
 """Tests for stash_roundtrip.py using an owned repository and linked worktree."""
 
 # ruff: noqa: S101, S603, S607, INP001, D103
-# pyright: reportAny=false, reportUnusedCallResult=false
 
 import os
 import subprocess

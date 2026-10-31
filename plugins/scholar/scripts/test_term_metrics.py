@@ -1,7 +1,6 @@
 """Tests for term_metrics.py malformed-row and URL handling."""
 
 # ruff: noqa: S101, INP001, PLR2004
-# pyright: reportAny=false, reportUnusedCallResult=false, reportPrivateUsage=false
 import hashlib
 import json
 import subprocess
@@ -9,7 +8,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 import pytest
-import term_metrics  # pyright: ignore[reportImplicitRelativeImport]
+import term_metrics
 
 if TYPE_CHECKING:
     from collections.abc import Mapping

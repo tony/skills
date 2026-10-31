@@ -1,7 +1,6 @@
 """Survey: floor, depth, hardlink and symlink handling."""
 
 # ruff: noqa: S101, INP001, D103
-# pyright: reportAny=false, reportUnusedCallResult=false
 
 import json
 import os
@@ -12,7 +11,7 @@ if TYPE_CHECKING:
     from pathlib import Path
 
 import pytest
-import survey  # pyright: ignore[reportImplicitRelativeImport]
+import survey
 
 
 def run(
@@ -21,7 +20,7 @@ def run(
     pct: float,
     limit: float = 90.0,
     skip: str = "/mnt",
-) -> dict[str, Any]:  # pyright: ignore[reportExplicitAny]
+) -> dict[str, Any]:
     out = survey.survey(str(root), depth, pct, limit, skip)
     return json.loads(json.dumps(out))
 

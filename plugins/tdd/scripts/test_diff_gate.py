@@ -1,7 +1,6 @@
 """Tests for diff_gate.py against temporary repositories."""
 
 # ruff: noqa: S101, S603, S607, INP001, D103
-# pyright: reportAny=false, reportUnusedCallResult=false
 
 import os
 import stat
@@ -9,7 +8,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-import diff_gate  # pyright: ignore[reportImplicitRelativeImport]
+import diff_gate
 import pytest
 
 SCRIPT = Path(__file__).resolve().parent / "diff_gate.py"

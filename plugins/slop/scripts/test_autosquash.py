@@ -1,7 +1,6 @@
 """Autosquash runner: completes over apply.sh output, aborts cleanly on a conflict."""
 
 # ruff: noqa: S101, S603, S607, INP001, D103
-# pyright: reportAny=false, reportUnusedCallResult=false
 
 import os
 import subprocess
@@ -9,7 +8,7 @@ import sys
 from pathlib import Path
 
 import pytest
-import render_apply  # pyright: ignore[reportImplicitRelativeImport]
+import render_apply
 
 pytestmark = pytest.mark.integration(reason="uses owned Git repositories and the autosquash CLI")
 

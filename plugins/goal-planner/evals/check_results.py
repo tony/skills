@@ -16,9 +16,9 @@ if TYPE_CHECKING:
     from collections.abc import Generator
 
 if __package__:
-    from .fixtures import files_for, source_body
+    from .fixtures import files_for, source_body  # ty: ignore[unresolved-import]
 else:
-    from fixtures import files_for, source_body  # pyright: ignore[reportImplicitRelativeImport]
+    from fixtures import files_for, source_body
 
 CASES = tuple(path.parent.name for path in sorted(Path(__file__).parent.glob("*/case.yaml")))
 
@@ -55,7 +55,7 @@ def goal_payload(reply: str, limit: int | None = None) -> str:
     """Extract exact payload bytes and verify the requested count declaration."""
     matches = list(re.finditer(r"(?m)^## Goal\s*\n+(`{3,})text\n([\s\S]*?)\n\1(?:\n|$)", reply))
     _require(len(matches) == 1, "Expected exactly one complete Goal text block")
-    payload = matches[0][2]
+    payload = str(matches[0][2])
     _require(payload.startswith("/goal "), "Printed goal lacks the /goal prefix")
     counts = (len(payload), len(payload.encode("utf-16-le")) // 2)
     outside = reply[: matches[0].start()] + reply[matches[0].end() :]

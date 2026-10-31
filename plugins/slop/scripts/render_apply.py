@@ -7,8 +7,6 @@ Computes the registry SHA-256, substitutes the four placeholders, writes
 ``DIR/apply.sh`` (mode 0755), and prints its path.
 """
 
-# pyright: reportAny=false, reportUnusedCallResult=false
-
 import argparse
 import hashlib
 import sys

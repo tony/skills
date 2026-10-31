@@ -1,12 +1,11 @@
 """Tests for repo_facts.py against throwaway repositories."""
 
 # ruff: noqa: S101, S603, S607, INP001, SLF001, PLR2004
-# pyright: reportAny=false, reportUnusedCallResult=false
 import subprocess
 from typing import TYPE_CHECKING, cast
 
 import pytest
-import repo_facts  # pyright: ignore[reportImplicitRelativeImport]
+import repo_facts
 
 if TYPE_CHECKING:
     import pathlib
@@ -319,11 +318,11 @@ def test_pin_arrays_keep_every_version() -> None:
         "[tools.go]\n"
     )
 
-    tools, understood = repo_facts._mise_tools(text)  # pyright: ignore[reportPrivateUsage]
+    tools, understood = repo_facts._mise_tools(text)
 
     assert tools == {"node": "22", "python": ["3.12", "3.11"]}
     assert understood is False
-    assert repo_facts._mise_tools("[tools]\nnode = latest\n")[1] is False  # pyright: ignore[reportPrivateUsage]
+    assert repo_facts._mise_tools("[tools]\nnode = latest\n")[1] is False
 
 
 @pytest.mark.integration

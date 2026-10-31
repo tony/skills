@@ -1,7 +1,6 @@
 """Tests for scholar_pins.py: local pins, throwaway checkouts, and identifier vetting."""
 
 # ruff: noqa: S101, S603, S607, INP001, PLR2004
-# pyright: reportAny=false, reportUnusedCallResult=false
 import hashlib
 import json
 import subprocess
@@ -9,7 +8,7 @@ import tempfile
 from pathlib import Path
 
 import pytest
-import scholar_pins as pins  # pyright: ignore[reportImplicitRelativeImport]
+import scholar_pins as pins
 
 _ID = ["-c", "user.name=t", "-c", "user.email=t@example.com"]
 

@@ -1,14 +1,13 @@
 """Smoke test: a rendered apply.sh creates a fixup on a temp repo."""
 
 # ruff: noqa: S101, S603, S607, INP001, D103
-# pyright: reportAny=false, reportUnusedCallResult=false
 
 import os
 import subprocess
 from pathlib import Path
 
 import pytest
-import render_apply  # pyright: ignore[reportImplicitRelativeImport]
+import render_apply
 
 EXIT_APPLY_FAILED = 3
 ENV = {

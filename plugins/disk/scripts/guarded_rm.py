@@ -16,8 +16,6 @@ the tree are unlinked, never followed. A completed deletion reports the
 filesystem's observed free-space delta, without attributing its cause.
 """
 
-# pyright: reportAny=false, reportUnusedCallResult=false
-
 import argparse
 import contextlib
 import os

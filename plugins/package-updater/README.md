@@ -86,7 +86,7 @@ Ruby, PHP, Java, bun and deno projects are not covered.
 ## Prerequisites
 
 - git
-- python3 (3.9 or newer): runs `scripts/repo_facts.py`, which reports
+- python3 (3.14 or newer): runs `scripts/repo_facts.py`, which reports
   fork signal, default branch and pins per repository.
 - jq: reads registry responses for the cooldown check.
 - curl and network access: link checks and the cooldown check read

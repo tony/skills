@@ -1,7 +1,6 @@
 """Tests for branch_gate.py against throwaway repositories."""
 
 # ruff: noqa: S101, S603, S607, INP001, D103
-# pyright: reportAny=false, reportUnusedCallResult=false
 
 import os
 import re
@@ -73,7 +72,7 @@ def make_repo(tmp_path: Path) -> Path:
 
 
 def codes(done: subprocess.CompletedProcess[str], kind: str = "refuse") -> list[str]:
-    return re.findall(rf"^{kind} ([a-z-]+):", done.stdout, flags=re.MULTILINE)
+    return [str(c) for c in re.findall(rf"^{kind} ([a-z-]+):", done.stdout, flags=re.MULTILINE)]
 
 
 def test_preflight_clean_passes(tmp_path: Path) -> None:

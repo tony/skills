@@ -1,14 +1,13 @@
 """Snapshot/diff isolates the skill's edits from earlier uncommitted ones."""
 
 # ruff: noqa: S101, INP001, D103
-# pyright: reportAny=false, reportUnusedCallResult=false
 
 import re
 import tempfile
 from pathlib import Path
 
 import pytest
-import skill_diff  # pyright: ignore[reportImplicitRelativeImport]
+import skill_diff
 
 EXIT_MISSING = 2
 

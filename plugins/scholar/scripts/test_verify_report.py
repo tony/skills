@@ -1,13 +1,12 @@
 """Tests for verify_report.py: ref comparison, measurement diff, report assembly."""
 
 # ruff: noqa: S101, S603, S607, INP001, PLR2004
-# pyright: reportAny=false, reportUnusedCallResult=false
 import json
 import subprocess
 from typing import TYPE_CHECKING
 
 import pytest
-import verify_report  # pyright: ignore[reportImplicitRelativeImport]
+import verify_report
 
 if TYPE_CHECKING:
     from pathlib import Path

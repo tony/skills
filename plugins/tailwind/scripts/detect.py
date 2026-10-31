@@ -23,8 +23,6 @@ version signal: v4 loads one through ``@config``
 Exit codes: 0 hits found, 1 no hits, 2 usage error or a path that does not exist.
 """
 
-# pyright: reportUnusedCallResult=false
-
 import json
 import re
 import sys

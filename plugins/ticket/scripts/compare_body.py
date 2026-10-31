@@ -45,7 +45,7 @@ TAG_RE = re.compile(r"</?[A-Za-z][A-Za-z0-9-]*(?:\s[^<>]*)?/?>")
 def words(text: str) -> list[str]:
     """Lowercased word tokens with markup removed."""
     text = ANCHOR_RE.sub(r"\2 (\1)", html.unescape(text))
-    return re.findall(r"\w+", TAG_RE.sub(" ", text).lower())
+    return [str(word) for word in re.findall(r"\w+", TAG_RE.sub(" ", text).lower())]
 
 
 def _adf_text(node: object) -> str:

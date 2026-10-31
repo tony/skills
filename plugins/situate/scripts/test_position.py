@@ -1,13 +1,12 @@
 """Tests for position.py against throwaway repositories."""
 
 # ruff: noqa: S101, S603, S607, INP001, PLR2004
-# pyright: reportAny=false, reportUnusedCallResult=false, reportPrivateUsage=false
 import json
 import os
 import subprocess
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, cast
 
-import position  # pyright: ignore[reportImplicitRelativeImport]
+import position
 import pytest
 
 if TYPE_CHECKING:
@@ -166,7 +165,9 @@ def test_staged_rename_counts_once_and_fetch_age_is_separate(
 
 def _run(capsys: pytest.CaptureFixture[str]) -> dict[str, object]:
     assert position.main([]) == 0
-    return json.loads(capsys.readouterr().out)
+    payload: object = json.loads(capsys.readouterr().out)
+    assert isinstance(payload, dict)
+    return cast("dict[str, object]", payload)
 
 
 def test_branch_tracking_trunk_reports_trunk_base(

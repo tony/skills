@@ -1,7 +1,6 @@
 """Run relay.sh's selftest and its transport-failure mapping under pytest."""
 
 # ruff: noqa: S101, S603, INP001, D103, PLR2004
-# pyright: reportUnusedCallResult=false
 
 import json
 import os

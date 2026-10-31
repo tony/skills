@@ -1,7 +1,6 @@
 """Exercise replay recovery against owned temporary Git repositories."""
 
 # ruff: noqa: S101, S603, S607, INP001, D103
-# pyright: reportAny=false, reportUnusedCallResult=false
 
 import json
 import os
@@ -9,6 +8,7 @@ import re
 import subprocess
 import sys
 from pathlib import Path
+from typing import cast
 
 import pytest
 
@@ -101,7 +101,9 @@ def run(repo: Path, *args: str) -> tuple[int, dict[str, object]]:
         text=True,
         check=False,
     )
-    return result.returncode, json.loads(result.stdout)
+    payload: object = json.loads(result.stdout)
+    assert isinstance(payload, dict)
+    return result.returncode, cast("dict[str, object]", payload)
 
 
 @pytest.fixture

@@ -100,7 +100,7 @@ otherwise re-derive: `preflight` (every refusal, with a code and a reason),
 `base`, `backup`, `remote-tip`, `staged`, `hunks`, `changed` and `carry`,
 and `series`. The refusal codes, the backup name, and the push form are in
 [`references/branch-safety.md`](references/branch-safety.md). It runs under
-the stock `python3` (3.9 or later) and needs nothing installed.
+the stock `python3` (3.14 or later) and needs nothing installed.
 
 ## Relationship to other plugins
 

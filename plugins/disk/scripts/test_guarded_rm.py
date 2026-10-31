@@ -1,7 +1,6 @@
 """Delete guard: scope, keeper, and symlink refusals."""
 
 # ruff: noqa: S101, INP001, D103
-# pyright: reportAny=false, reportUnusedCallResult=false
 
 import os
 import shutil
@@ -9,7 +8,7 @@ import subprocess
 import sys
 from pathlib import Path
 
-import guarded_rm  # pyright: ignore[reportImplicitRelativeImport]
+import guarded_rm
 import pytest
 
 REFUSED = guarded_rm.EXIT_REFUSED
@@ -175,10 +174,10 @@ def test_same_device_bind_mount_is_refused(tmp_path: Path, monkeypatch: pytest.M
     real_read = Path.read_text
     escaped = str(mount).replace(" ", r"\040")
 
-    def mount_table(path: Path, *args: object, **kwargs: object) -> str:
+    def mount_table(path: Path, encoding: str | None = None, errors: str | None = None) -> str:
         if str(path) == "/proc/self/mountinfo":
             return f"1 0 8:1 / {escaped} rw - ext4 /dev/test rw\n"
-        return real_read(path, *args, **kwargs)  # pyright: ignore[reportArgumentType]
+        return real_read(path, encoding, errors)
 
     monkeypatch.setattr(sys, "platform", "linux")
     monkeypatch.setattr(Path, "read_text", mount_table)

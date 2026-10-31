@@ -1,14 +1,13 @@
 """Tests for issue.py."""
 
 # ruff: noqa: S101, INP001, S603, S607, D103, PLR2004
-# pyright: reportAny=false, reportUnusedCallResult=false
 import json
 import os
 import subprocess
 import sys
 from pathlib import Path
 
-import issue  # pyright: ignore[reportImplicitRelativeImport]
+import issue
 import pytest
 
 SCRIPT = Path(__file__).with_name("issue.py")

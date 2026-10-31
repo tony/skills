@@ -1,7 +1,6 @@
 """Tests for worktree_paths.py against throwaway repositories."""
 
 # ruff: noqa: PLR2004, S108, S101, S603, S607, INP001, D103
-# pyright: reportAny=false, reportUnusedCallResult=false
 import os
 import subprocess
 import sys
@@ -11,7 +10,7 @@ import pytest
 
 SCRIPT = Path(__file__).with_name("worktree_paths.py")
 sys.path.insert(0, str(SCRIPT.parent))
-import worktree_paths as wp  # noqa: E402  # pyright: ignore[reportImplicitRelativeImport]
+import worktree_paths as wp  # noqa: E402
 
 ENV = {
     **os.environ,

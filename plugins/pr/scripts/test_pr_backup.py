@@ -1,7 +1,6 @@
 """Tests for pr_backup.py with ``gh`` replaced by a stub on PATH."""
 
 # ruff: noqa: S101, INP001, S603, S607
-# pyright: reportAny=false, reportUnusedCallResult=false
 import json
 import os
 import subprocess

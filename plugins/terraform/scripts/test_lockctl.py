@@ -1,14 +1,13 @@
 """lockctl: lock-file state, block removal, and stable-version filtering."""
 
 # ruff: noqa: S101, S603, S607, PLR2004, INP001, D103
-# pyright: reportAny=false, reportUnusedCallResult=false
 
 import re
 import shlex
 import subprocess
 from pathlib import Path
 
-import lockctl  # pyright: ignore[reportImplicitRelativeImport]
+import lockctl
 import pytest
 
 LOCK = """provider "registry.terraform.io/hashicorp/aws" {

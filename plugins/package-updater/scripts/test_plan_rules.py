@@ -1,17 +1,19 @@
 """Tests for plan_rules.py."""
 
 # ruff: noqa: S101, INP001, PLR2004
-# pyright: reportAny=false, reportUnusedCallResult=false
 import io
 import json
+import typing as t
 
-import plan_rules  # pyright: ignore[reportImplicitRelativeImport]
+import plan_rules
 import pytest
 
 
 def _lapse(capsys: pytest.CaptureFixture[str], *args: str) -> dict[str, object]:
     assert plan_rules.main(["lapse", *args]) == 0
-    return json.loads(capsys.readouterr().out)
+    result: object = json.loads(capsys.readouterr().out)
+    assert isinstance(result, dict)
+    return t.cast("dict[str, object]", result)
 
 
 @pytest.mark.parametrize(

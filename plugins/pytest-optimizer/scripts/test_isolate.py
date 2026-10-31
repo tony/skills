@@ -1,7 +1,6 @@
 """Owned-Git proofs that execution never touches the user's checkout."""
 
 # ruff: noqa: S101, S603, S607, INP001
-# pyright: reportAny=false, reportUnusedCallResult=false, reportPrivateUsage=false, reportImplicitStringConcatenation=false
 import hashlib
 import json
 import pathlib
@@ -9,7 +8,7 @@ import shutil
 import subprocess
 import typing as t
 
-import isolate  # pyright: ignore[reportImplicitRelativeImport]
+import isolate
 import pytest
 
 pytestmark = pytest.mark.integration

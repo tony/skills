@@ -1,7 +1,6 @@
 """Tests for ref_form.py."""
 
 # ruff: noqa: S101, S603, INP001, D103, PLR2004
-# pyright: reportUnusedCallResult=false
 import subprocess
 import sys
 from pathlib import Path

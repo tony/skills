@@ -1,13 +1,12 @@
 """Tests for evidence.py: history parsing, transcript filtering, and linking."""
 
 # ruff: noqa: S101, S603, S607, INP001, PLR2004
-# pyright: reportAny=false, reportUnusedCallResult=false, reportPrivateUsage=false
 import json
 import os
 import subprocess
 from pathlib import Path
 
-import evidence  # pyright: ignore[reportImplicitRelativeImport]
+import evidence
 import pytest
 
 

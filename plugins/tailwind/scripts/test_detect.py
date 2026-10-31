@@ -1,7 +1,6 @@
 """Positive and negative fixtures for each detect pattern."""
 
 # ruff: noqa: S101, S603, INP001, D103, PLR2004
-# pyright: reportUnusedCallResult=false
 
 import re
 import shutil
@@ -11,7 +10,7 @@ import time
 from pathlib import Path
 
 import pytest
-from detect import (  # pyright: ignore[reportImplicitRelativeImport]
+from detect import (
     PATTERNS,
     find,
     tailwind_version,
@@ -307,7 +306,7 @@ FALLBACK_REGEX = re.compile(r"-e '([^\n]*)' \\\n")
 @pytest.mark.parametrize("name", ["margin", "width", "space"])
 def test_rg_fallback_matches_script(tmp_path: Path, name: str) -> None:
     blocks = {m.group(1): m.group(2) for m in FALLBACK_BLOCK.finditer(PATTERNS_MD.read_text())}
-    regexes: list[str] = FALLBACK_REGEX.findall(blocks[name])
+    regexes = [str(r) for r in FALLBACK_REGEX.findall(blocks[name])]
     texts = [t for p, t, _ in CASES if p == name] + [
         '<a className="!me-4">',
         '<a className="md:-ms-(--x)">',

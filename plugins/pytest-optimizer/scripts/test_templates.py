@@ -1,7 +1,6 @@
 """Real-pytest checks for the opt-in scaffolds."""
 
 # ruff: noqa: S101, S603, INP001
-# pyright: reportAny=false, reportUnusedCallResult=false, reportPrivateUsage=false, reportImplicitStringConcatenation=false
 import os
 import pathlib
 import subprocess

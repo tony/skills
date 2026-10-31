@@ -1,13 +1,12 @@
 """Tests for ruff_pins.py."""
 
 # ruff: noqa: S101, S603, S607, INP001, PLR2004
-# pyright: reportAny=false, reportUnusedCallResult=false
 import json
 import subprocess
 from typing import TYPE_CHECKING
 
 import pytest
-import ruff_pins  # pyright: ignore[reportImplicitRelativeImport]
+import ruff_pins
 
 if TYPE_CHECKING:
     import pathlib

@@ -1,11 +1,10 @@
 """Tests for scope.py against a throwaway repository."""
 
 # ruff: noqa: S101, S603, INP001, PLR2004
-# pyright: reportAny=false, reportUnusedCallResult=false
 import subprocess
 from typing import TYPE_CHECKING
 
-import scope  # pyright: ignore[reportImplicitRelativeImport]
+import scope
 
 if TYPE_CHECKING:
     import pathlib

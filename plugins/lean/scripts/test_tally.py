@@ -2,7 +2,7 @@
 
 # ruff: noqa: S101, INP001
 import pytest
-import tally  # pyright: ignore[reportImplicitRelativeImport]
+import tally
 
 
 def test_counts_each_verdict() -> None:
