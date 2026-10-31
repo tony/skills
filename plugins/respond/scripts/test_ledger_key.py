@@ -1,12 +1,11 @@
 """Tests for ledger_key.py."""
 
 # ruff: noqa: S101, INP001, PLR2004
-# pyright: reportUnusedCallResult=false
 import hashlib
 import subprocess
 from typing import TYPE_CHECKING
 
-import ledger_key  # pyright: ignore[reportImplicitRelativeImport]
+import ledger_key
 
 if TYPE_CHECKING:
     from pathlib import Path

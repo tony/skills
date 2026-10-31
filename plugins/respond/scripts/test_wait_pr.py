@@ -1,12 +1,11 @@
 """Tests for wait_pr.py with ``gh`` replaced by canned output."""
 
 # ruff: noqa: S101, INP001, PLR2004
-# pyright: reportAny=false, reportUnusedCallResult=false, reportPrivateUsage=false
 import json
 import subprocess
 from typing import TYPE_CHECKING
 
-import wait_pr  # pyright: ignore[reportImplicitRelativeImport]
+import wait_pr
 
 if TYPE_CHECKING:
     from collections.abc import Callable

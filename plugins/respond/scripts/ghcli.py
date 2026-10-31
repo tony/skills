@@ -5,12 +5,14 @@ message is the tool's own stderr.
 """
 
 # ruff: noqa: S603, INP001
+import asyncio
 import json
 import subprocess
+from contextlib import asynccontextmanager
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from collections.abc import Callable
+    from collections.abc import AsyncGenerator, Callable, Sequence
 
 
 class GhError(Exception):
@@ -55,4 +57,37 @@ def pr_checks(pr: str, fields: str, run: Callable[..., str] = gh) -> list[dict[s
         if rollup.strip() != "0":
             raise
         return []
-    return json.loads(raw) if raw.strip() else []
+    if not raw.strip():
+        return []
+    checks = json.loads(raw)
+    if not isinstance(checks, list):
+        msg = "gh pr checks: expected a JSON list"
+        raise GhError(msg)
+    return [{str(k): str(v) for k, v in item.items()} for item in checks]
+
+
+@asynccontextmanager
+async def task_group() -> AsyncGenerator[asyncio.TaskGroup]:
+    """Yield a ``TaskGroup`` that raises the first failure as itself, not an ``ExceptionGroup``."""
+    try:
+        async with asyncio.TaskGroup() as group:
+            yield group
+    except ExceptionGroup as failure:
+        raise failure.exceptions[0] from None
+
+
+async def gather[T](calls: Sequence[Callable[[], T]], limit: int = 4) -> list[T]:
+    """Run blocking calls in threads, at most ``limit`` at once; results keep call order.
+
+    The first failure is raised as itself (not an ``ExceptionGroup``) and
+    cancels the calls not yet finished.
+    """
+    gate = asyncio.Semaphore(limit)
+
+    async def one(call: Callable[[], T]) -> T:
+        async with gate:
+            return await asyncio.to_thread(call)
+
+    async with task_group() as group:
+        tasks = [group.create_task(one(call)) for call in calls]
+    return [task.result() for task in tasks]
