@@ -1,7 +1,7 @@
 # merge-pr
 
-Two skills merge pull requests with `gh`: `this` for one PR, `multiple` for a
-set merged one at a time. Both gate on readiness and CI and sync trunk after.
+Two skills merge pull requests with `gh`: `merge-one` for one PR, `merge-many`
+for a set merged one at a time. Both gate on readiness and CI and sync trunk after.
 
 Merging is a separate act: verify checks, sync trunk, land branch. It never tags,
 edits changelogs, or claims releases.
@@ -43,7 +43,7 @@ Claude Code uses a leading slash (`/merge-pr:â€¦`). Codex omits it (`merge-pr:â€
 
 ## Components
 
-### `/merge-pr:this`
+### `/merge-pr:merge-one`
 
 Merges a single PR.
 
@@ -51,7 +51,7 @@ Runs the readiness gate, rebases after confirming when behind, merges via
 `gh pr merge` pinned to the verified head with a message matching repo
 history, then syncs trunk and checks it contains the merge commit.
 
-### `/merge-pr:multiple`
+### `/merge-pr:merge-many`
 
 Lands multiple PRs sequentially.
 
