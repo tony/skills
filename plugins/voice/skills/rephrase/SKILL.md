@@ -1,9 +1,8 @@
 ---
 name: rephrase
-description: "Rephrase a file or pasted text for its reader: fill a who, what, where, when, and why brief, keep every fact, and flag what may not suit them."
+description: "Use when a user explicitly wants to rephrase text for its audience: fill the reader's who, what, where, when, and why, keep every fact, flag misfits."
 allowed-tools: ["Read", "Edit", "Grep", "Glob", "AskUserQuestion"]
 argument-hint: "<path or pasted text> [for <reader or situation>]"
-disable-model-invocation: true
 ---
 
 

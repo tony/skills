@@ -41,8 +41,8 @@ Claude Code uses a leading slash (`/voice:…`). Codex omits it (`voice:…`).
 
 ### `rephrase`
 
-Runs only when invoked by name. Pass a file path or pasted text, and
-optionally the reader or situation:
+Runs when you ask to rephrase text for its audience, or by name. Pass
+a file path or pasted text, and optionally the reader or situation:
 
 ```text
 /voice:rephrase README.md for a first-time user deciding whether to install

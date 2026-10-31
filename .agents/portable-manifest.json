@@ -1459,7 +1459,7 @@
       "bundled": {
         "references/prose-rules.md": "plugins/voice/references/prose-rules.md"
       },
-      "bytes": 8067
+      "bytes": 8006
     },
     {
       "name": "weave-architecture",
